@@ -66,6 +66,7 @@ function DynamicTrading.Client.OnCheckStock(arg1, arg2, arg3)
     local currentStock = data.stocks[recipeKey] or 0
     local currentPrice = data.prices[recipeKey] or config.basePrice
 
+    -- Strict Stock Check
     if currentStock <= 0 then return false end
 
     local player = getSpecificPlayer(0)
@@ -79,7 +80,7 @@ function DynamicTrading.Client.OnCheckStock(arg1, arg2, arg3)
 end
 
 -- =================================================
--- LOGIC: Transaction
+-- LOGIC: Transaction (Updated for Auto-Open UI)
 -- =================================================
 function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
     if not character then return end
@@ -110,7 +111,8 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
     if currentStock <= 0 or wealth < currentPrice then
         if resultItem:getContainer() then resultItem:getContainer():Remove(resultItem)
         else inventory:Remove(resultItem) end
-        character:Say("Trade Cancelled: Price changed or Out of Stock")
+        
+        character:Say("Transaction Failed: Out of Stock or Funds")
         character:StopAllActionQueue()
         return
     end
@@ -138,8 +140,17 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
 
     character:Say("Paid $" .. currentPrice .. " for " .. resultItem:getName())
     
-    if DynamicTradingUI and DynamicTradingUI.instance then
-        DynamicTradingUI.instance:populateList()
+    -- =================================================
+    -- UI AUTOMATION LOGIC
+    -- =================================================
+    if DynamicTradingUI then
+        -- If UI is closed, Open it.
+        if not DynamicTradingUI.instance or not DynamicTradingUI.instance:isVisible() then
+             DynamicTradingUI.ToggleWindow()
+        else
+             -- If already open, just refresh the list to remove 0 stock items
+             DynamicTradingUI.instance:populateList()
+        end
     end
 end
 
@@ -151,7 +162,6 @@ function DynamicTrading.Shared.CheckDailyReset()
     local currentDay = math.floor(gameTime:getDaysSurvived())
     local data = DynamicTrading.Shared.GetData()
 
-    -- SAFE SANDBOX VARS ACCESS
     local interval = 1
     local inflation = 1.0
 
@@ -164,10 +174,8 @@ function DynamicTrading.Shared.CheckDailyReset()
         print("DynamicTrading: Restocking Market...")
 
         for recipe, config in pairs(DynamicTrading.Config) do
-            -- Restock
             data.stocks[recipe] = config.maxStock
             
-            -- Dynamic Price Calculation
             local sold = data.salesHistory[recipe] or 0
             local randomVar = ZombRandFloat(0.9, 1.15)
             local demandCost = sold * (config.basePrice * (0.1 * inflation))
