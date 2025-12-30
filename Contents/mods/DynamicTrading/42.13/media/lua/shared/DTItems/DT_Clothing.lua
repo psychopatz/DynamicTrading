@@ -7,7 +7,7 @@ DynamicTrading.AddItem("BuySchoolBag", {
     item = "Base.Bag_Schoolbag",
     category = "Container",
     tags = {"Gear"},
-    basePrice = 25,
+    basePrice = 250,
     stockRange = { min=1, max=3 }
 })
 
@@ -15,7 +15,7 @@ DynamicTrading.AddItem("BuyDuffelBag", {
     item = "Base.Bag_DuffelBag",
     category = "Container",
     tags = {"Gear"},
-    basePrice = 50,
+    basePrice = 500,
     stockRange = { min=1, max=2 }
 })
 
@@ -23,7 +23,7 @@ DynamicTrading.AddItem("BuyBigHikingBag", {
     item = "Base.Bag_BigHikingBag",
     category = "Container",
     tags = {"Gear", "Rare"},
-    basePrice = 80,
+    basePrice = 800,
     stockRange = { min=0, max=1 }
 })
 
@@ -40,7 +40,7 @@ DynamicTrading.AddItem("BuyMilitaryBoots", {
     item = "Base.Shoes_ArmyBoots",
     category = "Clothing",
     tags = {"Armor"},
-    basePrice = 35,
+    basePrice = 350,
     stockRange = { min=1, max=3 }
 })
 
