@@ -10,7 +10,7 @@ print("[DynamicTrading] Loading Core...")
 function DynamicTrading.Shared.OnInit()
     local data = ModData.getOrCreate("DynamicTradingData")
     
-    -- 1. Check if stocks are empty (Fix for broken saves)
+    -- 1. Check if stocks are empty (Fix for broken saves/first load)
     local isStockEmpty = true
     if data.stocks then
         for k, v in pairs(data.stocks) do
@@ -35,6 +35,7 @@ Events.OnInitGlobalModData.Add(DynamicTrading.Shared.OnInit)
 -- SHARED: RESTOCK LOGIC
 -- =================================================
 function DynamicTrading.Shared.RestockMarket(data)
+    -- Verify Economy script is ready
     if not DynamicTrading.Economy or not DynamicTrading.Economy.GenerateDailyStock then
         print("[DynamicTrading] ERROR: Economy script not loaded yet. Retrying next tick...")
         return
@@ -45,15 +46,18 @@ function DynamicTrading.Shared.RestockMarket(data)
     if not data.categoryHeat then data.categoryHeat = {} end
     if not data.salesHistory then data.salesHistory = {} end
 
-    -- 1. Decay Heat
+    -- 1. Decay Category Heat (Market Recovery)
     for cat, val in pairs(data.categoryHeat) do
         data.categoryHeat[cat] = val * 0.5
         if data.categoryHeat[cat] < 0.01 then data.categoryHeat[cat] = 0 end
     end
 
-    -- 2. Generate Stock
-    local newStock = DynamicTrading.Economy.GenerateDailyStock()
+    -- 2. Generate Stock & Get Merchant Archetype
+    -- GenerateDailyStock returns: Table of Items, String Name
+    local newStock, merchantName = DynamicTrading.Economy.GenerateDailyStock()
+    
     data.stocks = newStock
+    data.currentMerchant = merchantName -- Save this for the UI!
 
     -- 3. Calculate Prices
     local noiseBase = 1.0
@@ -63,6 +67,8 @@ function DynamicTrading.Shared.RestockMarket(data)
 
     for key, qty in pairs(newStock) do
         local rawPrice = DynamicTrading.Economy.CalculatePrice(key, qty, data.categoryHeat)
+        
+        -- Apply random noise for daily variance
         local randomFactor = ZombRandFloat(1.0 - (noiseBase/2), 1.0 + noiseBase)
         local finalPrice = math.floor(rawPrice * randomFactor)
         if finalPrice < 1 then finalPrice = 1 end
@@ -85,7 +91,7 @@ function DynamicTrading.Shared.GetData()
 end
 
 -- =================================================
--- LOGIC: CHECK STOCK (For Recipe)
+-- LOGIC: CHECK STOCK (For Recipe Validation)
 -- =================================================
 function DynamicTrading.Client.OnCheckStock(arg1, arg2, arg3)
     local resultType = nil
@@ -106,20 +112,16 @@ function DynamicTrading.Client.OnCheckStock(arg1, arg2, arg3)
             end
         end
     end
+    -- If config not found, allow action (fallback)
     if not config then return true end 
 
     local data = DynamicTrading.Shared.GetData()
     local currentStock = data.stocks and data.stocks[recipeKey] or 0
-    local currentPrice = data.prices and data.prices[recipeKey] or config.basePrice
-
-    -- Note: We only check if stock is 0. If player has no money, we let them try (and fail with message)
+    
+    -- We only block the action if stock is explicitly 0.
+    -- Money check is done in Transaction so we can give a proper error message.
     if currentStock <= 0 then return false end
     
-    -- UI Refresh check (if player is staring at the menu while crafting)
-    if DynamicTradingUI and DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
-         -- DynamicTradingUI.instance:populateList() -- Optional: live update
-    end
-
     return true
 end
 
@@ -135,6 +137,7 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
     local resultType = resultItem:getFullType()
     local inventory = character:getInventory()
 
+    -- 1. Identify Item
     local recipeKey, config
     if DynamicTrading.Config and DynamicTrading.Config.MasterList then
         for key, cfg in pairs(DynamicTrading.Config.MasterList) do
@@ -152,28 +155,32 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
     local currentPrice = data.prices[recipeKey] or config.basePrice
     local wealth = inventory:getItemCount("Base.Money") + (inventory:getItemCount("Base.MoneyBundle") * 100)
     
-    -- Validation: Stock
+    -- 2. Validation: Stock
     if currentStock <= 0 then
+        -- Return item to container (cancel craft result)
         if resultItem:getContainer() then resultItem:getContainer():Remove(resultItem)
         else inventory:Remove(resultItem) end
+        
         character:Say("Transaction Failed: Item is Sold Out!")
         character:StopAllActionQueue()
         return
     end
 
-    -- Validation: Money
+    -- 3. Validation: Money
     if wealth < currentPrice then
         if resultItem:getContainer() then resultItem:getContainer():Remove(resultItem)
         else inventory:Remove(resultItem) end
+        
         character:Say("Transaction Failed: Need $" .. currentPrice .. " (You have $" .. wealth .. ")")
         character:StopAllActionQueue()
         return
     end
 
-    -- Payment
+    -- 4. Process Payment
     local moneyNeeded = currentPrice
     local moneyCount = inventory:getItemCount("Base.Money")
 
+    -- Break bundles if needed
     while moneyCount < moneyNeeded do
         local bundle = inventory:getFirstType("Base.MoneyBundle")
         if bundle then
@@ -183,11 +190,12 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
         else break end
     end
 
+    -- Deduct exact money
     for i = 1, moneyNeeded do
         inventory:RemoveOneOf("Base.Money")
     end
 
-    -- Update Data
+    -- 5. Update Data
     data.stocks[recipeKey] = currentStock - 1
     data.salesHistory[recipeKey] = (data.salesHistory[recipeKey] or 0) + 1
     
@@ -197,6 +205,7 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
 
     character:Say("Paid $" .. currentPrice .. " for " .. resultItem:getName())
     
+    -- Refresh UI live
     if DynamicTradingUI and DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
          DynamicTradingUI.instance:populateList()
     end
@@ -218,7 +227,7 @@ function DynamicTrading.Shared.CheckDailyReset()
     if data.lastResetDay and (currentDay - data.lastResetDay) >= interval then
         print("[DynamicTrading] Daily Reset Triggered.")
         DynamicTrading.Shared.RestockMarket(data)
-        getSpecificPlayer(0):Say("Market Restocked!")
+        getSpecificPlayer(0):Say("Market Restocked: New Trader has arrived!")
     end
 end
 
@@ -231,6 +240,7 @@ local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
     if DynamicTradingUI then
         context:addOption("Check Market Prices", nil, DynamicTradingUI.ToggleWindow)
     end
+    
     if isDebugEnabled() and DynamicTradingDebugUI then
         context:addOption("[DEBUG] Market Sales History", nil, DynamicTradingDebugUI.ToggleWindow)
     end

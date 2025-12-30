@@ -44,4 +44,24 @@ module DynamicTrading
             item 1 Base.Apple,
         }
     }
+    
+    	craftRecipe BuyBattery
+    {
+        time        = 6,
+        timedAction = Making,
+        tags        = AnySurfaceCraft,
+        category    = Merchant,
+
+        OnTest      = DynamicTrading.Client.OnCheckStock,
+        OnCreate    = DynamicTrading.Shared.OnTradeTransaction,
+
+        inputs
+        {
+            item 1 [Base.Money;Base.MoneyBundle] mode:keep,
+        }
+        outputs
+        {
+            item 1 Base.Battery,
+        }
+    }
 }
