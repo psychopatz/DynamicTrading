@@ -10,12 +10,52 @@ option DynamicTrading.RestockInterval
     translation = DynamicTrading_RestockInterval,
 }
 
-option DynamicTrading.PriceInflation
+option DynamicTrading.TraderCapacityMin
+{
+    type = integer,
+    default = 15,
+    min = 1,
+    max = 100,
+    page = DynamicTrading,
+    translation = DynamicTrading_TraderCapacityMin,
+}
+
+option DynamicTrading.TraderCapacityMax
+{
+    type = integer,
+    default = 25,
+    min = 1,
+    max = 100,
+    page = DynamicTrading,
+    translation = DynamicTrading_TraderCapacityMax,
+}
+
+option DynamicTrading.PriceVolatility
+{
+    type = double,
+    default = 0.1,
+    min = 0.0,
+    max = 1.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_PriceVolatility,
+}
+
+option DynamicTrading.SeasonImpact
 {
     type = double,
     default = 1.0,
     min = 0.0,
     max = 5.0,
     page = DynamicTrading,
-    translation = DynamicTrading_PriceInflation,
+    translation = DynamicTrading_SeasonImpact,
+}
+
+option DynamicTrading.CategoryInflation
+{
+    type = double,
+    default = 0.05,
+    min = 0.0,
+    max = 1.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_CategoryInflation,
 }

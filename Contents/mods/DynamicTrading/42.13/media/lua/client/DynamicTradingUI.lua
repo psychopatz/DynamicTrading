@@ -7,146 +7,232 @@ function DynamicTradingUI:initialise()
     ISCollapsableWindow.initialise(self)
     self:setTitle("Market Prices")
     self:setResizable(false)
+    self.collapsed = {} -- Stores the state of categories (true = collapsed)
 end
 
 function DynamicTradingUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
     -- Listbox setup
-    self.listbox = ISScrollingListBox:new(10, 30, self.width - 20, self.height - 40)
+    self.listbox = ISScrollingListBox:new(10, 30, self.width - 20, self.height - 60)
     self.listbox:initialise()
     self.listbox:setAnchorRight(true)
     self.listbox:setAnchorBottom(true)
     self.listbox.font = UIFont.Small
-    self.listbox.itemheight = 25
+    self.listbox.itemheight = 40 
     self.listbox.drawBorder = true
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
     
-    -- Register Custom Draw
+    self.listbox:addScrollBars(true)
     self.listbox.doDrawItem = self.drawListItem
     
+    -- CLICK HANDLER for Collapsing Categories
+    self.listbox.onMouseDown = function(target, x, y)
+        ISScrollingListBox.onMouseDown(target, x, y) -- Keep default behavior (selection)
+        
+        local row = target:rowAt(x, y)
+        if row == -1 then return end
+        
+        local item = target.items[row]
+        if item and item.item and item.item.isCategory then
+            local cat = item.item.categoryName
+            local ui = DynamicTradingUI.instance
+            
+            -- Toggle State
+            if ui.collapsed[cat] then
+                ui.collapsed[cat] = false -- Expand
+            else
+                ui.collapsed[cat] = true  -- Collapse
+            end
+            
+            ui:populateList() -- Refresh list
+        end
+    end
+    
     self:addChild(self.listbox)
+    
+    -- Footer
+    self.restockLabel = ISLabel:new(10, self.height - 25, 16, "Next Restock: ???", 1, 1, 1, 0.5, UIFont.Small, true)
+    self.restockLabel:setAnchorTop(false)
+    self.restockLabel:setAnchorBottom(true)
+    self:addChild(self.restockLabel)
+
     self:populateList()
 end
 
 -- =================================================
--- CUSTOM DRAW FUNCTION
+-- DRAW ITEM
 -- =================================================
 function DynamicTradingUI:drawListItem(y, item, alt)
-    if self.selected == item.index then
+    if not item.height then item.height = self.itemheight end
+
+    -- === CASE 1: CATEGORY HEADER ===
+    if item.item.isCategory then
+        -- Draw Dark Bar
+        self:drawRect(0, y, self:getWidth(), item.height, 0.85, 0.15, 0.15, 0.15)
+        self:drawRectBorder(0, y, self:getWidth(), item.height, 0.5, 0.6, 0.6, 0.6)
+        
+        -- Text with Indicator [+/-]
+        local prefix = "[-] "
+        if DynamicTradingUI.instance.collapsed[item.item.categoryName] then
+            prefix = "[+] "
+        end
+        
+        local fullText = prefix .. item.text
+        local textWid = getTextManager():MeasureStringX(UIFont.Medium, fullText)
+        
+        -- Draw Centered Text (Yellowish)
+        self:drawText(fullText, (self:getWidth()/2) - (textWid/2), y + (item.height - 18)/2, 1, 0.9, 0.4, 1, UIFont.Medium)
+        
+        return y + item.height
+    end
+
+    -- === CASE 2: PRODUCT ITEM ===
+    local data = item.item 
+    local master = DynamicTrading.Config.MasterList[data.key]
+    if not master then return y + item.height end
+
+    -- 1. BACKGROUND LOGIC
+    if data.stock <= 0 then
+        -- SOLD OUT: Dark Red Background
+        self:drawRect(0, y, self:getWidth(), item.height-1, 0.6, 0.2, 0.0, 0.0) 
+    elseif self.selected == item.index then
         self:drawRect(0, y, self:getWidth(), item.height-1, 0.3, 0.7, 0.35, 0.15)
     elseif alt then
-        self:drawRect(0, y, self:getWidth(), item.height-1, 0.3, 0.3, 0.3, 0.05)
+        self:drawRect(0, y, self:getWidth(), item.height-1, 0.2, 0.3, 0.3, 0.3)
     end
+    self:drawRectBorder(0, y, self:getWidth(), item.height, 0.1, 1, 1, 1)
+
+    -- 2. ICON
+    local itemScript = ScriptManager.instance:getItem(master.item)
+    if itemScript then
+        local iconName = itemScript:getIcon()
+        if iconName then
+            local tex = getTexture("Item_" .. iconName)
+            if not tex then tex = getTexture(iconName) end
+            if tex then
+                self:drawTextureScaled(tex, 6, y + (item.height - 28)/2, 28, 28, 1, 1, 1, 1)
+            end
+        end
+    end
+
+    -- 3. TEXT COLORS
+    local nameR, nameG, nameB = 0.9, 0.9, 0.9
+    local priceR, priceG, priceB = 1, 1, 1
+
+    if data.stock <= 0 then
+        nameR, nameG, nameB = 0.6, 0.6, 0.6
+        priceR, priceG, priceB = 0.6, 0.6, 0.6
+    else
+        if data.price > master.basePrice * 1.15 then
+            priceR, priceG, priceB = 1, 0.4, 0.4 
+        elseif data.price < master.basePrice * 0.85 then
+            priceR, priceG, priceB = 0.4, 1, 0.4 
+        end
+
+        if DynamicTrading.Economy then
+            local envMod = DynamicTrading.Economy.GetEnvironmentModifier(master.tags or {})
+            if envMod > 0.2 then
+                nameR, nameG, nameB = 0.6, 0.8, 1.0 
+            end
+        end
+    end
+
+    -- 4. TEXT RENDERING
+    self:drawText(item.text, 45, y + (item.height - 15)/2, nameR, nameG, nameB, 1, self.font)
     
-    self:drawRectBorder(0, y, self:getWidth(), item.height, 0.5, self.borderColor.r, self.borderColor.g, self.borderColor.b)
-
-    local r, g, b = 1, 1, 1 
-    if item.customColor then
-        r = item.customColor.r
-        g = item.customColor.g
-        b = item.customColor.b
+    -- Price
+    local priceText = "$" .. data.price
+    self:drawText(priceText, self:getWidth() - 60, y + (item.height - 15)/2, priceR, priceG, priceB, 1, self.font)
+    
+    -- Quantity / SOLD OUT
+    if data.stock <= 0 then
+        -- Draw RED "SOLD OUT" text
+        self:drawText("SOLD OUT", self:getWidth() - 145, y + (item.height - 15)/2, 1, 0.1, 0.1, 1, self.font)
+    else
+        local stockText = "Qty: " .. data.stock
+        self:drawText(stockText, self:getWidth() - 130, y + (item.height - 15)/2, 0.8, 0.8, 0.8, 1, self.font)
     end
 
-    self:drawText(item.text, 15, y + (item.height - self.fontHgt) / 2, r, g, b, 0.9, self.font)
     return y + item.height
 end
 
+-- =================================================
+-- POPULATE LIST
+-- =================================================
 function DynamicTradingUI:populateList()
     self.listbox:clear()
     
     local data = DynamicTrading.Shared.GetData()
-    local config = DynamicTrading.Config
-    local gt = GameTime:getInstance()
+    local masterList = DynamicTrading.Config.MasterList
+    
+    if not data.stocks then return end
 
-    -- ==========================================================
-    -- 1. CALCULATE DATE & RESTOCK TIME
-    -- ==========================================================
-    local interval = 1
-    if SandboxVars.DynamicTrading then
-        interval = SandboxVars.DynamicTrading.RestockInterval or 1
+    -- 1. Sort into Categories
+    local categorized = {}
+    local categories = {} 
+    
+    for key, stockQty in pairs(data.stocks) do
+        local config = masterList[key]
+        if config then
+            local cat = config.category or "Misc"
+            if not categorized[cat] then 
+                categorized[cat] = {} 
+                table.insert(categories, cat)
+            end
+            
+            local itemName = config.item
+            local scriptItem = ScriptManager.instance:getItem(config.item)
+            if scriptItem then 
+                itemName = scriptItem:getDisplayName() 
+            else
+                local _, _, name = string.find(config.item, "%.(%w+)")
+                if name then itemName = name end
+            end
+
+            table.insert(categorized[cat], {
+                key = key,
+                name = itemName,
+                stock = stockQty,
+                price = data.prices[key] or config.basePrice
+            })
+        end
     end
     
-    local currentDay = math.floor(gt:getDaysSurvived())
-    local lastReset = data.lastResetDay or 0
-    local nextRestockDayIndex = math.floor(lastReset) + interval
-    local daysRemaining = nextRestockDayIndex - currentDay
-    
-    if daysRemaining < 1 then daysRemaining = 1 end
+    table.sort(categories)
 
-    local function getFutureDateString(daysToAdd)
-        local d = gt:getDay()   -- Internal 0-29
-        local m = gt:getMonth() -- Internal 0-11
-        local y = gt:getYear()
+    -- 2. Build List
+    for _, catName in ipairs(categories) do
+        -- Add Header
+        local headerItem = self.listbox:addItem(string.upper(catName), nil)
+        headerItem.item = { isCategory = true, text = string.upper(catName), categoryName = catName }
+        headerItem.height = 30 
         
-        d = d + daysToAdd
-        
-        while true do
-            local daysInMonth = gt:daysInMonth(y, m) 
-            if d < daysInMonth then
-                break 
-            else
-                d = d - daysInMonth
-                m = m + 1
-                if m > 11 then
-                    m = 0
-                    y = y + 1
-                end
+        -- Only add children if NOT collapsed
+        if not self.collapsed[catName] then
+            table.sort(categorized[catName], function(a,b) return a.name < b.name end)
+
+            for _, product in ipairs(categorized[catName]) do
+                local item = self.listbox:addItem(product.name, nil)
+                item.item = product
             end
         end
-        return string.format("%02d/%02d/%d", m + 1, d + 1, y)
     end
 
-    local dateString = getFutureDateString(daysRemaining)
-    local restockMsg = ""
+    -- 3. Footer
+    local gt = GameTime:getInstance()
+    local interval = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.RestockInterval or 1
+    local currentDay = math.floor(gt:getDaysSurvived())
+    local lastReset = data.lastResetDay or 0
+    local nextDay = lastReset + interval
+    local daysLeft = nextDay - currentDay
     
-    if daysRemaining == 1 then
-        restockMsg = "Restock is Tomorrow! (" .. dateString .. ")"
-    else
-        restockMsg = "Next Restock: " .. dateString .. " (" .. daysRemaining .. " days)"
-    end
-
-    -- ==========================================================
-    -- 2. RENDER ITEMS
-    -- ==========================================================
-    local hasAnyStock = false
+    if daysLeft <= 0 then daysLeft = 1 end
     
-    -- Helper
-    local function getItemName(fullType)
-        local item = ScriptManager.instance:getItem(fullType)
-        if item then return item:getDisplayName() end
-        return fullType
-    end
-
-    -- Loop through config to find stocks
-    for key, cfg in pairs(config) do
-        local stock = data.stocks[key] or 0
-        local price = data.prices[key] or cfg.basePrice
-        local name = getItemName(cfg.item)
-        
-        if stock > 0 then
-            hasAnyStock = true
-            local text = string.format("%s   |   Qty: %d   |   $%d", name, stock, price)
-            local entry = self.listbox:addItem(text, nil)
-            entry.customColor = {r=1, g=1, b=1, a=1} 
-        end
-    end
-
-    -- ==========================================================
-    -- 3. RENDER FOOTER (Empty Message or Restock Info)
-    -- ==========================================================
+    local dateStr = "Tomorrow"
+    if daysLeft > 1 then dateStr = "in " .. daysLeft .. " days" end
     
-    -- Spacer Line
-    self.listbox:addItem(" ", nil)
-
-    if not hasAnyStock then
-        local msg1 = self.listbox:addItem("There is nothing left to sell.", nil)
-        msg1.customColor = {r=0.9, g=0.3, b=0.3, a=1} -- Red
-    end
-
-    -- Always show the restock time at the bottom
-    local msgFooter = self.listbox:addItem(restockMsg, nil)
-    msgFooter.customColor = {r=0.7, g=0.7, b=0.7, a=1} -- Grey
+    self.restockLabel:setName("Restock: " .. dateStr)
 end
 
 function DynamicTradingUI:close()
@@ -167,17 +253,8 @@ function DynamicTradingUI.ToggleWindow()
         return
     end
 
-    local ui = DynamicTradingUI:new(100, 100, 320, 300)
+    local ui = DynamicTradingUI:new(100, 100, 420, 600)
     ui:initialise()
     ui:addToUIManager()
     DynamicTradingUI.instance = ui
 end
-
-local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
-    context:addOption("Check Market Prices", nil, DynamicTradingUI.ToggleWindow)
-    if isDebugEnabled() then
-        context:addOption("[DEBUG] Market Sales History", nil, DynamicTradingDebugUI.ToggleWindow)
-    end
-end
-
-Events.OnFillWorldObjectContextMenu.Add(OnFillWorldObjectContextMenu)

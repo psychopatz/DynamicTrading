@@ -4,6 +4,18 @@ Sandbox_EN = {
     Sandbox_DynamicTrading_RestockInterval = "Restock Interval (Days)",
     Sandbox_DynamicTrading_RestockInterval_tooltip = "How many days it takes for the market to restock goods and update prices.",
     
-    Sandbox_DynamicTrading_PriceInflation = "Demand Inflation Multiplier",
-    Sandbox_DynamicTrading_PriceInflation_tooltip = "Controls how much prices rise based on demand.<br>0.0 = Static Prices<br>1.0 = Normal Inflation<br>2.0+ = High Volatility",
+    Sandbox_DynamicTrading_TraderCapacityMin = "Trader Capacity (Min)",
+    Sandbox_DynamicTrading_TraderCapacityMin_tooltip = "The minimum number of different items the trader brings on a restock day.",
+
+    Sandbox_DynamicTrading_TraderCapacityMax = "Trader Capacity (Max)",
+    Sandbox_DynamicTrading_TraderCapacityMax_tooltip = "The maximum number of different items the trader brings. <br>The actual amount will be randomized between Min and Max every restock.",
+
+    Sandbox_DynamicTrading_PriceVolatility = "Price Volatility",
+    Sandbox_DynamicTrading_PriceVolatility_tooltip = "Random daily price fluctuation factor.<br>0.1 = +/- 10%<br>0.5 = +/- 50%",
+
+    Sandbox_DynamicTrading_SeasonImpact = "Environmental Impact",
+    Sandbox_DynamicTrading_SeasonImpact_tooltip = "Multiplier for how much Winter, Power Shutoff, or Water Shutoff affects prices.<br>0 = No effect<br>1 = Normal<br>2 = Extreme Hardcore",
+    
+    Sandbox_DynamicTrading_CategoryInflation = "Category Inflation Sensitivity",
+    Sandbox_DynamicTrading_CategoryInflation_tooltip = "How much prices rise for a specific category when you buy an item from it.<br>0.05 = 5% increase per purchase.",
 }

@@ -5,7 +5,7 @@ DynamicTradingDebugUI.instance = nil
 
 function DynamicTradingDebugUI:initialise()
     ISCollapsableWindow.initialise(self)
-    self:setTitle("DEBUG: Sales History")
+    self:setTitle("Economy Debugger")
     self:setResizable(true)
 end
 
@@ -17,9 +17,8 @@ function DynamicTradingDebugUI:createChildren()
     self.listbox:setAnchorRight(true)
     self.listbox:setAnchorBottom(true)
     self.listbox.font = UIFont.Small
-    self.listbox.itemheight = 25
+    self.listbox.itemheight = 20
     self.listbox.drawBorder = true
-    self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
     self:addChild(self.listbox)
     
     self:populateList()
@@ -29,49 +28,40 @@ function DynamicTradingDebugUI:populateList()
     self.listbox:clear()
     
     local data = DynamicTrading.Shared.GetData()
-    local config = DynamicTrading.Config
+    local config = DynamicTrading.Config.MasterList
     
-    -- Headers
-    self.listbox:addItem("Item ID | Sold Count | Est. Inflation", nil)
-    self.listbox:addItem("-----------------------------------", nil)
-
-    local inflationMult = 1.0
-    if SandboxVars.DynamicTrading then
-        inflationMult = SandboxVars.DynamicTrading.PriceInflation or 1.0
+    -- === SECTION 1: CATEGORY INFLATION ===
+    self.listbox:addItem("=== CATEGORY HEAT (INFLATION) ===", nil)
+    if data.categoryHeat then
+        for cat, val in pairs(data.categoryHeat) do
+            local percent = math.floor(val * 100)
+            local text = string.format("  %s: +%d%% Price", cat, percent)
+            local item = self.listbox:addItem(text, nil)
+            if percent > 0 then item.textColor = {r=1, g=0.5, b=0.5, a=1} end
+        end
+    else
+        self.listbox:addItem("  No active inflation.", nil)
     end
+    self.listbox:addItem(" ", nil)
 
-    for key, cfg in pairs(config) do
-        local sold = data.salesHistory[key] or 0
-        local base = cfg.basePrice
-        -- Estimate logic matching the main script
-        local demandCost = sold * (base * (0.1 * inflationMult))
-        
-        local text = string.format("%s : %d sold (+$%d est)", key, sold, demandCost)
-        
-        local item = self.listbox:addItem(text, nil)
-        
-        -- Color code high sales
-        if sold > 0 then
-            item.textColor = {r=0.4, g=1, b=0.4, a=1} -- Green text for active items
-        else
-            item.textColor = {r=0.6, g=0.6, b=0.6, a=1} -- Grey for inactive
+    -- === SECTION 2: SALES HISTORY ===
+    self.listbox:addItem("=== SALES TODAY ===", nil)
+    for key, count in pairs(data.salesHistory) do
+        if count > 0 then
+            self.listbox:addItem("  " .. key .. ": " .. count, nil)
         end
     end
 end
 
-function DynamicTradingDebugUI:close()
-    self:setVisible(false)
-    self:removeFromUIManager()
-    DynamicTradingDebugUI.instance = nil
-end
-
 function DynamicTradingDebugUI.ToggleWindow()
     if DynamicTradingDebugUI.instance then
-        DynamicTradingDebugUI.instance:close()
+        DynamicTradingDebugUI.instance:setVisible(false)
+        DynamicTradingDebugUI.instance:removeFromUIManager()
+        DynamicTradingDebugUI.instance = nil
         return
     end
 
-    local ui = DynamicTradingDebugUI:new(450, 100, 350, 400)
+    local ui = DynamicTradingDebugUI:new(500, 100, 300, 400)
     ui:initialise()
     ui:addToUIManager()
     DynamicTradingDebugUI.instance = ui
