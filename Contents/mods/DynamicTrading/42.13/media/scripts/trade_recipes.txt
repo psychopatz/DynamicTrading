@@ -7,7 +7,7 @@ module DynamicTrading
 	
     craftRecipe BuyAxe
     {
-        time        = 36,
+        time        = 6,
         timedAction = Making,
         tags        = InHandCraft;CanBeDoneInDark,
         category    = Merchant,
@@ -27,7 +27,7 @@ module DynamicTrading
 	
 	craftRecipe BuyApple
     {
-        time        = 36,
+        time        = 6,
         timedAction = Making,
         tags        = AnySurfaceCraft,
         category    = Merchant,
