@@ -99,14 +99,14 @@ end
 -- LOOSE ROUNDS (For Scavengers)
 -- ==========================================
 
--- DynamicTrading.AddItem("Buy9mmLoose", { item = "Base.Bullets9mm", category = "Ammo", tags = {"Ammo"}, basePrice = 2, stockRange = {min=10, max=50} })
--- DynamicTrading.AddItem("Buy38Loose", { item = "Base.Bullets38", category = "Ammo", tags = {"Ammo"}, basePrice = 1, stockRange = {min=10, max=50} })
--- DynamicTrading.AddItem("Buy45Loose", { item = "Base.Bullets45", category = "Ammo", tags = {"Ammo"}, basePrice = 3, stockRange = {min=10, max=40} })
--- DynamicTrading.AddItem("Buy44Loose", { item = "Base.Bullets44", category = "Ammo", tags = {"Ammo"}, basePrice = 4, stockRange = {min=5, max=20} })
--- DynamicTrading.AddItem("BuyShotgunShellLoose", { item = "Base.ShotgunShells", category = "Ammo", tags = {"Ammo"}, basePrice = 4, stockRange = {min=10, max=30} })
--- DynamicTrading.AddItem("Buy223Loose", { item = "Base.223Bullets", category = "Ammo", tags = {"Ammo"}, basePrice = 5, stockRange = {min=5, max=20} })
--- DynamicTrading.AddItem("Buy308Loose", { item = "Base.308Bullets", category = "Ammo", tags = {"Ammo"}, basePrice = 7, stockRange = {min=5, max=20} })
--- DynamicTrading.AddItem("Buy556Loose", { item = "Base.556Bullets", category = "Ammo", tags = {"Ammo"}, basePrice = 8, stockRange = {min=5, max=20} })
+DynamicTrading.AddItem("Buy9mmLoose", { item = "Base.Bullets9mm", category = "Ammo", tags = {"Ammo"}, basePrice = 2, stockRange = {min=10, max=50} })
+DynamicTrading.AddItem("Buy38Loose", { item = "Base.Bullets38", category = "Ammo", tags = {"Ammo"}, basePrice = 1, stockRange = {min=10, max=50} })
+DynamicTrading.AddItem("Buy45Loose", { item = "Base.Bullets45", category = "Ammo", tags = {"Ammo"}, basePrice = 3, stockRange = {min=10, max=40} })
+DynamicTrading.AddItem("Buy44Loose", { item = "Base.Bullets44", category = "Ammo", tags = {"Ammo"}, basePrice = 4, stockRange = {min=5, max=20} })
+DynamicTrading.AddItem("BuyShotgunShellLoose", { item = "Base.ShotgunShells", category = "Ammo", tags = {"Ammo"}, basePrice = 4, stockRange = {min=10, max=30} })
+DynamicTrading.AddItem("Buy223Loose", { item = "Base.223Bullets", category = "Ammo", tags = {"Ammo"}, basePrice = 5, stockRange = {min=5, max=20} })
+DynamicTrading.AddItem("Buy308Loose", { item = "Base.308Bullets", category = "Ammo", tags = {"Ammo"}, basePrice = 7, stockRange = {min=5, max=20} })
+DynamicTrading.AddItem("Buy556Loose", { item = "Base.556Bullets", category = "Ammo", tags = {"Ammo"}, basePrice = 8, stockRange = {min=5, max=20} })
 
 -- ==========================================
 -- MAGAZINES (Essential Hardware)
