@@ -1,0 +1,47 @@
+module DynamicTrading
+{	
+	import
+    {
+        Base
+    }
+	
+    craftRecipe BuyAxe
+    {
+        time        = 36,
+        timedAction = Making,
+        tags        = InHandCraft;CanBeDoneInDark,
+        category    = Merchant,
+        
+        OnTest      = DynamicTrading.Client.OnCheckStock,
+        OnCreate    = DynamicTrading.Shared.OnTradeTransaction,
+
+        inputs
+        {
+            item 1 [Base.Money;Base.MoneyBundle] mode:keep,
+        }
+        outputs
+        {
+            item 1 Base.Axe,
+        }
+    }
+	
+	craftRecipe BuyApple
+    {
+        time        = 36,
+        timedAction = Making,
+        tags        = AnySurfaceCraft,
+        category    = Merchant,
+
+        OnTest      = DynamicTrading.Client.OnCheckStock,
+        OnCreate    = DynamicTrading.Shared.OnTradeTransaction,
+
+        inputs
+        {
+            item 1 [Base.Money;Base.MoneyBundle] mode:keep,
+        }
+        outputs
+        {
+            item 1 Base.Apple,
+        }
+    }
+}

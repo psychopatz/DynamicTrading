@@ -1,0 +1,4 @@
+Recipes_EN = {
+    BuyAxe = "Buy Axe",
+	BuyApple = "Buy Apple",
+}

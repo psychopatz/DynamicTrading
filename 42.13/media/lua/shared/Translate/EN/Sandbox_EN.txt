@@ -1,0 +1,9 @@
+Sandbox_EN = {
+    Sandbox_DynamicTrading = "Dynamic Trading Market",
+    
+    Sandbox_DynamicTrading_RestockInterval = "Restock Interval (Days)",
+    Sandbox_DynamicTrading_RestockInterval_tooltip = "How many days it takes for the market to restock goods and update prices.",
+    
+    Sandbox_DynamicTrading_PriceInflation = "Demand Inflation Multiplier",
+    Sandbox_DynamicTrading_PriceInflation_tooltip = "Controls how much prices rise based on demand.<br>0.0 = Static Prices<br>1.0 = Normal Inflation<br>2.0+ = High Volatility",
+}

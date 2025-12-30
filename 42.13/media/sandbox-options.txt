@@ -1,0 +1,21 @@
+VERSION = 1,
+
+option DynamicTrading.RestockInterval
+{
+    type = integer,
+    default = 1,
+    min = 1,
+    max = 30,
+    page = DynamicTrading,
+    translation = DynamicTrading_RestockInterval,
+}
+
+option DynamicTrading.PriceInflation
+{
+    type = double,
+    default = 1.0,
+    min = 0.0,
+    max = 5.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_PriceInflation,
+}
