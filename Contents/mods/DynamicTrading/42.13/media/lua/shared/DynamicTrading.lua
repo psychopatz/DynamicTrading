@@ -53,7 +53,6 @@ function DynamicTrading.Shared.RestockMarket(data)
     end
 
     -- 2. Generate Stock & Get Merchant Archetype
-    -- GenerateDailyStock returns: Table of Items, String Name
     local newStock, merchantName = DynamicTrading.Economy.GenerateDailyStock()
     
     data.stocks = newStock
@@ -112,14 +111,12 @@ function DynamicTrading.Client.OnCheckStock(arg1, arg2, arg3)
             end
         end
     end
-    -- If config not found, allow action (fallback)
     if not config then return true end 
 
     local data = DynamicTrading.Shared.GetData()
     local currentStock = data.stocks and data.stocks[recipeKey] or 0
     
-    -- We only block the action if stock is explicitly 0.
-    -- Money check is done in Transaction so we can give a proper error message.
+    -- Block only if specifically sold out
     if currentStock <= 0 then return false end
     
     return true
@@ -157,7 +154,6 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
     
     -- 2. Validation: Stock
     if currentStock <= 0 then
-        -- Return item to container (cancel craft result)
         if resultItem:getContainer() then resultItem:getContainer():Remove(resultItem)
         else inventory:Remove(resultItem) end
         
@@ -180,7 +176,6 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
     local moneyNeeded = currentPrice
     local moneyCount = inventory:getItemCount("Base.Money")
 
-    -- Break bundles if needed
     while moneyCount < moneyNeeded do
         local bundle = inventory:getFirstType("Base.MoneyBundle")
         if bundle then
@@ -190,7 +185,6 @@ function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character)
         else break end
     end
 
-    -- Deduct exact money
     for i = 1, moneyNeeded do
         inventory:RemoveOneOf("Base.Money")
     end
@@ -226,7 +220,15 @@ function DynamicTrading.Shared.CheckDailyReset()
 
     if data.lastResetDay and (currentDay - data.lastResetDay) >= interval then
         print("[DynamicTrading] Daily Reset Triggered.")
+        
+        -- 1. RESTOCK
         DynamicTrading.Shared.RestockMarket(data)
+        
+        -- 2. CLOSE UI (Simulate vendor leaving)
+        if DynamicTradingUI and DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
+            DynamicTradingUI.instance:close()
+        end
+        
         getSpecificPlayer(0):Say("Market Restocked: New Trader has arrived!")
     end
 end
