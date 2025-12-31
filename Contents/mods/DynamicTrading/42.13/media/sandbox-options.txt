@@ -59,3 +59,41 @@ option DynamicTrading.CategoryInflation
     page = DynamicTrading,
     translation = DynamicTrading_CategoryInflation,
 }
+
+option DynamicTrading.SellMarkdown
+{
+    type = double,
+    default = 0.5,
+    min = 0.1,
+    max = 1.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_SellMarkdown,
+}
+
+option DynamicTrading.ArchetypeBonus
+{
+    type = boolean,
+    default = true,
+    page = DynamicTrading,
+    translation = DynamicTrading_ArchetypeBonus,
+}
+
+option DynamicTrading.DemandMultiplier
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 5.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_DemandMultiplier,
+}
+
+option DynamicTrading.DemandBase
+{
+    type = integer,
+    default = 2,
+    min = 0,
+    max = 50,
+    page = DynamicTrading,
+    translation = DynamicTrading_DemandBase,
+}
