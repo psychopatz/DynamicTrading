@@ -2,161 +2,166 @@ require "DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
+
 -- ==========================================
--- SKILL BOOKS (XP Multipliers)
--- Balancing: Vol 1 is expensive, Vol 5 is a fortune.
+-- SKILL BOOKS (XP Multipliers - B42 Updated)
+-- Tier I: 250 | Tier II: 500 | Tier III: 1000 | Tier IV: 1800 | Tier V: 3000
 -- ==========================================
 
 local skills = {
-    {id="Carpentry", tag="Build", item="BookCarpentry"},
-    {id="Cooking", tag="Food", item="BookCooking"},
-    {id="Farming", tag="Farmer", item="BookFarming"},
-    {id="FirstAid", tag="Medical", item="BookFirstAid"},
-    {id="Foraging", tag="Survival", item="BookForaging"},
-    {id="Fishing", tag="Survival", item="BookFishing"},
-    {id="Trapping", tag="Survival", item="BookTrapping"},
-    {id="Mechanics", tag="Mechanic", item="BookMechanic"},
-    {id="Metalworking", tag="Build", item="BookMetalWelding"},
-    {id="Tailoring", tag="Clothing", item="BookTailoring"},
-    {id="Electrical", tag="Electric", item="BookElectric"}
+    {id="Agriculture",   item="BookFarming",       tag="Farmer"},
+    {id="Aiming",        item="BookAiming",        tag="Gun"},
+    {id="AnimalCare",    item="BookHusbandry",     tag="Farmer"},
+    {id="Blacksmithing", item="BookBlacksmith",    tag="Build"},
+    {id="Butchering",    item="BookButchering",    tag="Meat"},
+    {id="Carpentry",     item="BookCarpentry",     tag="Build"},
+    {id="Carving",       item="BookCarving",       tag="Survival"},
+    {id="Cooking",       item="BookCooking",       tag="Food"},
+    {id="Electrical",    item="BookElectrician",   tag="Electronics"},
+    {id="FirstAid",      item="BookFirstAid",      tag="Medical"},
+    {id="Fishing",       item="BookFishing",       tag="Survival"},
+    {id="Foraging",      item="BookForaging",      tag="Survival"},
+    {id="Glassmaking",   item="BookGlassmaking",   tag="Material"},
+    {id="Knapping",      item="BookFlintKnapping", tag="Survival"},
+    {id="LongBlade",     item="BookLongBlade",     tag="Blade"},
+    {id="Maintenance",   item="BookMaintenance",   tag="Tool"},
+    {id="Masonry",       item="BookMasonry",       tag="Build"},
+    {id="Mechanics",     item="BookMechanic",      tag="Car"},
+    {id="Pottery",       item="BookPottery",       tag="Material"},
+    {id="Reloading",     item="BookReloading",     tag="Gun"},
+    {id="Tailoring",     item="BookTailoring",     tag="Clothing"},
+    {id="Tracking",      item="BookTracking",      tag="Survival"},
+    {id="Trapping",      item="BookTrapping",      tag="Survival"},
+    {id="Welding",       item="BookMetalWelding",  tag="Build"}
 }
 
 local tiers = {
-    {suffix="1", label="Beginner", price=150},
-    {suffix="2", label="Intermediate", price=220},
-    {suffix="3", label="Advanced", price=300},
-    {suffix="4", label="Expert", price=400},
-    {suffix="5", label="Master", price=600}
+    {sfx="1", p=250}, {sfx="2", p=500}, {sfx="3", p=1000}, {sfx="4", p=1800}, {sfx="5", p=3000}
 }
 
-for _, skill in ipairs(skills) do
-    for _, tier in ipairs(tiers) do
-        DynamicTrading.AddItem("BuyBook"..skill.id..tier.suffix, {
-            item = "Base."..skill.item..tier.suffix,
+for _, s in ipairs(skills) do
+    for _, t in ipairs(tiers) do
+        DynamicTrading.AddItem("BuyBook"..s.id..t.sfx, {
+            item = "Base."..s.item..t.sfx,
             category = "Literature",
-            tags = {"Literature", "Skill", skill.tag},
-            basePrice = tier.price,
-            stockRange = { min=0, max=1 } -- Books are unique and rare
+            tags = {"Literature", "SkillBook", s.tag},
+            basePrice = t.p,
+            stockRange = { min=0, max=1 }
         })
     end
 end
 
 -- ==========================================
--- ESSENTIAL RECIPE MAGAZINES (Gatekeepers)
+-- RECIPE MAGAZINES (B42 Expanded)
 -- ==========================================
 
--- The Herbalist: Life-saving for foraging and treating poison.
-DynamicTrading.AddItem("BuyHerbalistMag", {
-    item = "Base.HerbalistMag",
-    category = "Literature",
-    tags = {"Literature", "Survival", "Medical", "Rare"},
-    basePrice = 450,
-    stockRange = { min=0, max=1 }
-})
+-- Standard Crafting Magazines (Smithing, Tailoring, etc.)
+local magGroups = {
+    {id="SmithingMag", count=11, tag="Build", price=450},
+    {id="TailoringMag", count=10, tag="Clothing", price=350},
+    {id="ArmorMag", count=7, tag="Armor", price=550},
+    {id="FarmingMag", count=9, tag="Farmer", price=300},
+    {id="CookingMag", count=6, tag="Food", price=250},
+    {id="GlassmakingMag", count=3, tag="Material", price=400},
+    {id="MetalworkMag", count=4, tag="Build", price=450},
+    {id="HuntingMag", count=4, tag="Survival", price=400},
+    {id="ElectronicsMag", count=3, tag="Electronics", price=400} -- 4 is Generator
+}
 
--- How to Use Generators: Requirement for electricity.
+for _, g in ipairs(magGroups) do
+    for i=1, g.count do
+        DynamicTrading.AddItem("Buy"..g.id..i, {
+            item = "Base."..g.id..i,
+            category = "Literature",
+            tags = {"Literature", "Magazine", g.tag},
+            basePrice = g.price,
+            stockRange = { min=0, max=1 }
+        })
+    end
+end
+
+-- The "Big Two" Essentials
 DynamicTrading.AddItem("BuyGeneratorManual", {
     item = "Base.ElectronicsMag4",
     category = "Literature",
-    tags = {"Literature", "Electric", "Rare"},
+    tags = {"Literature", "Electronics", "Rare"},
+    basePrice = 1200,
+    stockRange = { min=0, max=1 }
+})
+
+DynamicTrading.AddItem("BuyHerbalistMag", {
+    item = "Base.HerbalistMag",
+    category = "Literature",
+    tags = {"Literature", "Survival", "Medical"},
+    basePrice = 850,
+    stockRange = { min=0, max=1 }
+})
+
+-- ==========================================
+-- LEISURE (Entertainment & Luxury)
+-- ==========================================
+
+-- HottieZ (The high-end stress relief)
+DynamicTrading.AddItem("BuyHottieZ", {
+    item = "Base.HottieZ_New",
+    category = "Literature",
+    tags = {"Literature", "Rare"},
     basePrice = 500,
     stockRange = { min=0, max=1 }
 })
 
--- Mechanics Magazines: Required to repair specific car types.
-DynamicTrading.AddItem("BuyMechanicMagStandard", {
-    item = "Base.MechanicMag1",
-    category = "Literature",
-    tags = {"Literature", "Mechanic", "Car"},
-    basePrice = 180,
-    stockRange = { min=0, max=2 }
-})
-
-DynamicTrading.AddItem("BuyMechanicMagCommercial", {
-    item = "Base.MechanicMag2",
-    category = "Literature",
-    tags = {"Literature", "Mechanic", "Car"},
-    basePrice = 200,
-    stockRange = { min=0, max=1 }
-})
-
-DynamicTrading.AddItem("BuyMechanicMagPerformance", {
-    item = "Base.MechanicMag3",
-    category = "Literature",
-    tags = {"Literature", "Mechanic", "Car", "Rare"},
-    basePrice = 350,
-    stockRange = { min=0, max=1 }
-})
-
--- ==========================================
--- CRAFTING MAGAZINES (Recipes)
--- ==========================================
-
--- Metalworking Magazines
-for i=1, 4 do
-    DynamicTrading.AddItem("BuyMetalMag"..i, {
-        item = "Base.MetalworkMag"..i,
+-- Leatherbound / Fancy Books (Luxury Trade)
+local fancy = {"Classic", "ClassicFiction", "History", "Legal", "Medical", "MilitaryHistory", "Occult", "Philosophy", "Politics", "Religion"}
+for _, f in ipairs(fancy) do
+    DynamicTrading.AddItem("BuyBookFancy"..f, {
+        item = "Base.BookFancy_"..f,
         category = "Literature",
-        tags = {"Literature", "Build"},
-        basePrice = 120,
+        tags = {"Literature", "Luxury"},
+        basePrice = 400,
         stockRange = { min=0, max=1 }
     })
 end
 
--- Electronics Magazines (Scrap/Sensors/Remotes)
-for i=1, 3 do -- excluding 4 which is the generator
-    DynamicTrading.AddItem("BuyElectricMag"..i, {
-        item = "Base.ElectronicsMag"..i,
-        category = "Literature",
-        tags = {"Literature", "Electric"},
-        basePrice = 100,
-        stockRange = { min=0, max=1 }
-    })
-end
-
--- Wilderness Survival (Traps/Fishing gear)
-for i=1, 5 do
-    DynamicTrading.AddItem("BuySurvivalMag"..i, {
-        item = "Base.HuntingMag"..i,
-        category = "Literature",
-        tags = {"Literature", "Survival"},
-        basePrice = 110,
-        stockRange = { min=0, max=1 }
-    })
-end
-
--- ==========================================
--- ENTERTAINMENT & STRESS RELIEF
--- ==========================================
-
+-- Common Reading
 DynamicTrading.AddItem("BuyComicBook", {
     item = "Base.ComicBook",
     category = "Literature",
-    tags = {"Literature", "Junk"},
-    basePrice = 45,
+    tags = {"Literature"},
+    basePrice = 100,
     stockRange = { min=1, max=3 }
 })
 
-DynamicTrading.AddItem("BuyHottieZ", {
-    item = "Base.Hynes", -- Internal name for HottieZ
+-- ==========================================
+-- CARTOGRAPHY (Maps)
+-- ==========================================
+
+local regions = {"Map", "WestpointMap", "MuldraughMap", "RiversideMap", "RosewoodMap", "MarchRidgeMap"}
+for _, r in ipairs(regions) do
+    DynamicTrading.AddItem("BuyMap"..r, {
+        item = "Base."..r,
+        category = "Literature",
+        tags = {"Literature", "Survival"},
+        basePrice = 150,
+        stockRange = { min=0, max=2 }
+    })
+end
+
+-- ==========================================
+-- WRITABLE (Journals/Notebooks)
+-- ==========================================
+
+DynamicTrading.AddItem("BuyJournal", {
+    item = "Base.Journal",
     category = "Literature",
-    tags = {"Literature", "Rare"},
-    basePrice = 150, -- High value for heavy stress reduction
-    stockRange = { min=0, max=1 }
+    tags = {"Literature", "Survival"},
+    basePrice = 250,
+    stockRange = { min=1, max=2 }
 })
 
-DynamicTrading.AddItem("BuyNewspaper", {
-    item = "Base.Newspaper",
+DynamicTrading.AddItem("BuyNotebook", {
+    item = "Base.Notebook",
     category = "Literature",
-    tags = {"Literature", "Junk"},
-    basePrice = 15,
-    stockRange = { min=1, max=5 }
-})
-
-DynamicTrading.AddItem("BuyMagazine", {
-    item = "Base.Magazine",
-    category = "Literature",
-    tags = {"Literature", "Junk"},
-    basePrice = 20,
-    stockRange = { min=2, max=6 }
+    tags = {"Literature"},
+    basePrice = 120,
+    stockRange = { min=1, max=3 }
 })

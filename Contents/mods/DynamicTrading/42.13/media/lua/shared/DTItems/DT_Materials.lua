@@ -2,61 +2,46 @@ require "DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
--- === BASIC MATERIALS ===
-DynamicTrading.AddItem("BuyNailsBox", {
-    item = "Base.NailsBox",
-    category = "Material",
-    tags = {"Build"},
-    basePrice = 15,
-    stockRange = { min=5, max=20 }
+-- ==========================================================
+-- HELPER FUNCTION
+-- ==========================================================
+local function RegisterMaintenance(items)
+    for _, config in ipairs(items) do
+        -- Extract "NailsBox" from "Base.NailsBox"
+        local itemName = config.item:match(".*%.(.*)") or config.item
+        
+        -- Use provided id, otherwise auto-generate "Buy" + "NailsBox"
+        local uniqueID = config.id or ("Buy" .. itemName)
+
+        DynamicTrading.AddItem(uniqueID, {
+            item = config.item,
+            category = config.category,
+            tags = config.tags or {},
+            basePrice = config.price,
+            stockRange = { min = config.min or 1, max = config.max or 5 }
+        })
+    end
+end
+
+-- ==========================================================
+-- ITEM DEFINITIONS (Compressed)
+-- ==========================================================
+
+-- 1. BASIC MATERIALS
+RegisterMaintenance({
+    { item="Base.NailsBox", price=15, min=5, max=20, tags={"Build"}, category="Material" },
+    { item="Base.Woodglue", price=12, min=2, max=8,  tags={"Build"}, category="Material", id="BuyWoodGlue" },
+    { item="Base.DuctTape", price=12, min=3, max=10, tags={"Build", "Repair"}, category="Material" },
 })
 
-DynamicTrading.AddItem("BuyWoodGlue", {
-    item = "Base.Woodglue",
-    category = "Material",
-    tags = {"Build"},
-    basePrice = 12,
-    stockRange = { min=2, max=8 }
+-- 2. FUEL
+RegisterMaintenance({
+    { item="Base.PetrolCan",   price=45, min=2, max=6, tags={"Fuel"}, category="Fuel" },
+    { item="Base.PropaneTank", price=60, min=1, max=4, tags={"Fuel", "Heavy"}, category="Fuel" },
 })
 
-DynamicTrading.AddItem("BuyDuctTape", {
-    item = "Base.DuctTape",
-    category = "Material",
-    tags = {"Build", "Repair"},
-    basePrice = 12,
-    stockRange = { min=3, max=10 }
-})
-
--- === FUEL ===
-DynamicTrading.AddItem("BuyPetrolCan", {
-    item = "Base.PetrolCan",
-    category = "Fuel",
-    tags = {"Fuel"}, -- Price spikes when electricity is out (Environment Logic)
-    basePrice = 45,
-    stockRange = { min=2, max=6 }
-})
-
-DynamicTrading.AddItem("BuyPropaneTank", {
-    item = "Base.PropaneTank",
-    category = "Fuel",
-    tags = {"Fuel", "Heavy"},
-    basePrice = 60,
-    stockRange = { min=1, max=4 }
-})
-
--- === VEHICLE PARTS ===
-DynamicTrading.AddItem("BuyCarBattery", {
-    item = "Base.CarBattery1",
-    category = "Vehicle part",
-    tags = {"Car", "Electric", "Heavy"},
-    basePrice = 80,
-    stockRange = { min=0, max=2 }
-})
-
-DynamicTrading.AddItem("BuyWrench", {
-    item = "Base.Wrench",
-    category = "Tool", -- Often used for vehicles
-    tags = {"Car", "Tool"},
-    basePrice = 18,
-    stockRange = { min=1, max=3 }
+-- 3. VEHICLE PARTS & TOOLS
+RegisterMaintenance({
+    { item="Base.CarBattery1", price=80, min=0, max=2, tags={"Car", "Electric", "Heavy"}, category="Vehicle part", id="BuyCarBattery" },
+    { item="Base.Wrench",      price=18, min=1, max=3, tags={"Car", "Tool"}, category="Tool" },
 })

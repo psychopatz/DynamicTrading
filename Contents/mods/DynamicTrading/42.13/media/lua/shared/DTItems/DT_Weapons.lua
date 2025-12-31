@@ -2,567 +2,110 @@ require "DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
--- ==========================================
--- HANDGUNS & REVOLVERS
--- ==========================================
+-- ==========================================================
+-- HELPER FUNCTION
+-- ==========================================================
+local function RegisterWeapon(commonTags, items)
+    for _, config in ipairs(items) do
+        local itemName = config.item:match(".*%.(.*)") or config.item
+        local uniqueID = config.id or ("Buy" .. itemName)
 
--- M36 Revolver: Low damage but the quietest gun in the game. Very reliable.
-DynamicTrading.AddItem("BuyM36Revolver", {
-    item = "Base.Revolver",
-    category = "Weapon",
-    tags = {"Gun", "Police", "Civilian"},
-    basePrice = 180,
-    stockRange = { min=1, max=3 }
+        local finalTags = {}
+        if commonTags then for _, t in ipairs(commonTags) do table.insert(finalTags, t) end end
+        if config.tags then for _, t in ipairs(config.tags) do table.insert(finalTags, t) end end
+
+        DynamicTrading.AddItem(uniqueID, {
+            item = config.item,
+            category = "Weapon",
+            tags = finalTags,
+            basePrice = config.price,
+            stockRange = { min = config.min or 0, max = config.max or 3 }
+        })
+    end
+end
+
+-- ==========================================================
+-- ITEM DEFINITIONS (Compressed)
+-- ==========================================================
+
+-- 1. FIREARMS (Handguns, Shotguns, Rifles)
+RegisterWeapon({"Gun"}, {
+    -- Handguns
+    { item="Base.Revolver",      price=180, min=1, max=3, tags={"Police", "Civilian"}, id="BuyM36Revolver" },
+    { item="Base.Pistol",        price=220, min=1, max=4, tags={"Police"}, id="BuyM9Pistol" },
+    { item="Base.Pistol2",       price=280, min=1, max=3, tags={"Police"}, id="BuyM1911Pistol" },
+    { item="Base.Revolver_Long", price=260, min=1, max=2, tags={"Police"}, id="BuyM625Revolver" },
+    { item="Base.Pistol3",       price=450, min=0, max=1, tags={"Rare", "Military"}, id="BuyDEPistol" },
+    { item="Base.Revolver",      price=500, min=0, max=1, tags={"Rare"}, id="BuyMagnum" },
+    -- Shotguns
+    { item="Base.Shotgun",             price=450, min=1, max=3, tags={"Police", "Hunting"}, id="BuyJS2000" },
+    { item="Base.DoubleBarrelShotgun", price=400, min=1, max=2, tags={"Hunting", "Civilian"}, id="BuyDoubleBarrel" },
+    -- Rifles
+    { item="Base.VarmintRifle",  price=350, min=1, max=2, tags={"Hunting"} },
+    { item="Base.HuntingRifle",  price=550, min=0, max=2, tags={"Hunting", "Rare"} },
+    { item="Base.AssaultRifle2", price=750, min=0, max=1, tags={"Military", "Rare"}, id="BuyM14Rifle" },
+    { item="Base.AssaultRifle",  price=1200, min=0, max=1, tags={"Military", "Rare"}, id="BuyM16" },
 })
 
--- M9 Pistol: Standard 15-round mag. Common but reliable for clearing small groups.
-DynamicTrading.AddItem("BuyM9Pistol", {
-    item = "Base.Pistol",
-    category = "Weapon",
-    tags = {"Gun", "Police"},
-    basePrice = 220,
-    stockRange = { min=1, max=4 }
+-- 2. AXES
+RegisterWeapon({"Blade", "Tool"}, {
+    { item="Base.Axe",          price=120, min=1, max=3, tags={"Build", "Military"}, id="BuyFireAxe" },
+    { item="Base.HandAxe",      price=70,  min=1, max=5, tags={"Survival", "Police"} },
+    { item="Base.WoodAxe",      price=140, min=0, max=2, tags={"Build", "Heavy"} },
+    { item="Base.PickAxe",      price=150, min=0, max=1, tags={"Heavy"}, id="BuyPickaxe" },
+    { item="Base.StoneAxe",     price=15,  min=2, max=6, tags={"Survival", "Junk"} },
+    { item="Base.SplittingAxe", price=110, min=0, max=2, tags={"Build"} },
+    { item="Base.Hatchet",      price=65,  min=1, max=4, tags={"Survival"} },
 })
 
--- M1911 Pistol: Higher damage than M9, but smaller magazine (7 rounds).
-DynamicTrading.AddItem("BuyM1911Pistol", {
-    item = "Base.Pistol2",
-    category = "Weapon",
-    tags = {"Gun", "Police"},
-    basePrice = 280,
-    stockRange = { min=1, max=3 }
+-- 3. LONG BLUNT
+RegisterWeapon({"Heavy"}, {
+    { item="Base.Sledgehammer",      price=450, min=0, max=1, tags={"Tool", "Build", "Rare"} },
+    { item="Base.Crowbar",           price=110, min=1, max=4, tags={"Tool", "Mechanic"} },
+    { item="Base.BaseballBat",       price=60,  min=1, max=5, tags={"Sports", "Civilian"} },
+    { item="Base.BaseballBatSpiked", price=95,  min=0, max=2, tags={"Weapon", "Illegal"} },
+    { item="Base.Shovel",            price=75,  min=1, max=3, tags={"Tool", "Gardening", "Build"} },
+    { item="Base.SnowShovel",        price=70,  min=0, max=2, tags={"Tool", "Gardening"} },
+    { item="Base.GardenHoe",         price=65,  min=1, max=3, tags={"Tool", "Gardening", "Farmer"} },
+    { item="Base.LeadPipe",          price=45,  min=1, max=4, tags={"Material", "Scavenge"} },
+    { item="Base.MetalPipe",         price=40,  min=2, max=6, tags={"Material", "Scavenge"} },
+    { item="Base.GolfClub",          price=35,  min=1, max=4, tags={"Sports", "Civilian"} },
+    { item="Base.CanoePaddle",       price=30,  min=1, max=3, tags={"Survival", "Civilian"} },
 })
 
--- M625 Revolver: Uses .45 Auto. Hard-hitting civilian/police revolver.
-DynamicTrading.AddItem("BuyM625Revolver", {
-    item = "Base.Revolver_Long",
-    category = "Weapon",
-    tags = {"Gun", "Police"},
-    basePrice = 260,
-    stockRange = { min=1, max=2 }
+-- 4. SHORT BLUNT & KITCHEN
+RegisterWeapon({}, {
+    { item="Base.Nightstick",     price=85, min=1, max=3, tags={"Weapon", "Police"} },
+    { item="Base.Hammer",         price=50, min=2, max=6, tags={"Tool", "Build", "Carpenter"} },
+    { item="Base.BallPeenHammer", price=40, min=1, max=4, tags={"Tool", "Mechanic", "Scavenge"} },
+    { item="Base.ClubHammer",     price=55, min=1, max=3, tags={"Tool", "Build", "Heavy"} },
+    { item="Base.PipeWrench",     price=75, min=1, max=3, tags={"Tool", "Mechanic", "Car"} },
+    { item="Base.Wrench",         price=45, min=2, max=5, tags={"Tool", "Mechanic", "Car"} },
+    { item="Base.WoodenMallet",   price=30, min=1, max=4, tags={"Tool", "Build"} },
+    { item="Base.Pan",            price=20, min=2, max=5, tags={"Kitchen", "Food", "Civilian"}, id="BuyFryingPan" },
+    { item="Base.GriddlePan",     price=25, min=1, max=3, tags={"Kitchen", "Food", "Civilian"} },
+    { item="Base.Saucepan",       price=15, min=2, max=5, tags={"Kitchen", "Food", "Civilian"} },
+    { item="Base.RollingPin",     price=12, min=1, max=4, tags={"Kitchen", "Food", "Civilian"} },
+    { item="Base.MeatMasher",     price=25, min=1, max=3, tags={"Kitchen", "Meat", "Butcher"} },
+    { item="Base.Plunger",        price=5,  min=1, max=2, tags={"Junk"} },
 })
 
--- Desert Eagle (DE Pistol): Very high damage, very loud, rare.
-DynamicTrading.AddItem("BuyDEPistol", {
-    item = "Base.Pistol3",
-    category = "Weapon",
-    tags = {"Gun", "Rare", "Military"},
-    basePrice = 450,
-    stockRange = { min=0, max=1 }
-})
-
--- Magnum: The most powerful handgun. Iconic and deadly.
-DynamicTrading.AddItem("BuyMagnum", {
-    item = "Base.Revolver",
-    category = "Weapon",
-    tags = {"Gun", "Rare"},
-    basePrice = 500,
-    stockRange = { min=0, max=1 }
-})
-
--- ==========================================
--- SHOTGUNS
--- ==========================================
-
--- JS-2000 Shotgun: The "Gold Standard" for PZ. High capacity, massive crowd clearing.
-DynamicTrading.AddItem("BuyJS2000", {
-    item = "Base.Shotgun",
-    category = "Weapon",
-    tags = {"Gun", "Police", "Hunting"},
-    basePrice = 450,
-    stockRange = { min=1, max=3 }
-})
-
--- Double Barrel Shotgun: Higher crit chance and damage than JS-2000, but only 2 shots.
-DynamicTrading.AddItem("BuyDoubleBarrel", {
-    item = "Base.DoubleBarrelShotgun",
-    category = "Weapon",
-    tags = {"Gun", "Hunting", "Civilian"},
-    basePrice = 400,
-    stockRange = { min=1, max=2 }
-})
-
--- ==========================================
--- RIFLES & ASSAULT RIFLES
--- ==========================================
-
--- Varmint Rifle (M700): Lower damage rifle, good for training at range.
-DynamicTrading.AddItem("BuyVarmintRifle", {
-    item = "Base.VarmintRifle",
-    category = "Weapon",
-    tags = {"Gun", "Hunting"},
-    basePrice = 350,
-    stockRange = { min=1, max=2 }
-})
-
--- Hunting Rifle (M788): Significant damage and range. Great for picking off targets.
-DynamicTrading.AddItem("BuyHuntingRifle", {
-    item = "Base.HuntingRifle",
-    category = "Weapon",
-    tags = {"Gun", "Hunting", "Rare"},
-    basePrice = 550,
-    stockRange = { min=0, max=2 }
-})
-
--- M14 Rifle: Semi-auto, high damage, uses 20-round mags. 
-DynamicTrading.AddItem("BuyM14Rifle", {
-    item = "Base.AssaultRifle2",
-    category = "Weapon",
-    tags = {"Gun", "Military", "Rare"},
-    basePrice = 750,
-    stockRange = { min=0, max=1 }
-})
-
--- M16 Assault Rifle: The rarest and highest DPS gun in the game.
-DynamicTrading.AddItem("BuyM16", {
-    item = "Base.AssaultRifle",
-    category = "Weapon",
-    tags = {"Gun", "Military", "Rare"},
-    basePrice = 1200, -- The "Grail" weapon
-    stockRange = { min=0, max=1 }
-})
-
-
--- ==========================================
--- AXES (High Damage & Utility)
--- ==========================================
-
--- Fire Axe: The gold standard. Perfectly balanced damage and durability.
-DynamicTrading.AddItem("BuyFireAxe", {
-    item = "Base.Axe",
-    category = "Weapon",
-    tags = {"Blade", "Tool", "Build", "Military"},
-    basePrice = 120,
-    stockRange = { min=1, max=3 }
-})
-
--- Hand Axe: One-handed, faster swing, but less reach. Great for secondary slots.
-DynamicTrading.AddItem("BuyHandAxe", {
-    item = "Base.HandAxe",
-    category = "Weapon",
-    tags = {"Blade", "Tool", "Survival", "Police"},
-    basePrice = 70,
-    stockRange = { min=1, max=5 }
-})
-
--- Wood Axe: Heaviest damage, but extremely high endurance cost. Best for trees.
-DynamicTrading.AddItem("BuyWoodAxe", {
-    item = "Base.WoodAxe",
-    category = "Weapon",
-    tags = {"Blade", "Tool", "Build", "Heavy"},
-    basePrice = 140,
-    stockRange = { min=0, max=2 }
-})
-
--- Pickaxe: Massive damage and reach. Rare and very heavy.
-DynamicTrading.AddItem("BuyPickaxe", {
-    item = "Base.PickAxe",
-    category = "Weapon",
-    tags = {"Blade", "Tool", "Heavy"},
-    basePrice = 150,
-    stockRange = { min=0, max=1 }
-})
-
--- Stone Axe: Low durability, crude survivalist tool.
-DynamicTrading.AddItem("BuyStoneAxe", {
-    item = "Base.StoneAxe",
-    category = "Weapon",
-    tags = {"Blade", "Survival", "Junk"},
-    basePrice = 15,
-    stockRange = { min=2, max=6 }
-})
-
--- ==========================================
--- NEW B42/SPECIALIZED AXES
--- ==========================================
-
--- Splitting Axe: High damage, specialized for wood.
-DynamicTrading.AddItem("BuySplittingAxe", {
-    item = "Base.SplittingAxe",
-    category = "Weapon",
-    tags = {"Blade", "Tool", "Build"},
-    basePrice = 110,
-    stockRange = { min=0, max=2 }
-})
-
--- Hatchet: Lightweight, similar to Hand Axe but often found in hardware stores.
-DynamicTrading.AddItem("BuyHatchet", {
-    item = "Base.Hatchet",
-    category = "Weapon",
-    tags = {"Blade", "Tool", "Survival"},
-    basePrice = 65,
-    stockRange = { min=1, max=4 }
-})
-
-
-
--- ==========================================
--- LONG BLUNT WEAPONS
--- ==========================================
-
--- Sledgehammer: The ultimate tool. Extremely rare and allows players to break stairs/walls.
-DynamicTrading.AddItem("BuySledgehammer", {
-    item = "Base.Sledgehammer",
-    category = "Weapon",
-    tags = {"Tool", "Build", "Heavy", "Rare"},
-    basePrice = 450, -- Most expensive tool due to game-changing utility
-    stockRange = { min=0, max=1 }
-})
-
--- Crowbar: The survivor's favorite. Practically infinite durability.
-DynamicTrading.AddItem("BuyCrowbar", {
-    item = "Base.Crowbar",
-    category = "Weapon",
-    tags = {"Tool", "Mechanic", "Heavy"},
-    basePrice = 110,
-    stockRange = { min=1, max=4 }
-})
-
--- Baseball Bat: High knockback and iconic. Can be upgraded by the player.
-DynamicTrading.AddItem("BuyBaseballBat", {
-    item = "Base.BaseballBat",
-    category = "Weapon",
-    tags = {"Sports", "Civilian"},
-    basePrice = 60,
-    stockRange = { min=1, max=5 }
-})
-
--- Spiked Baseball Bat: Pre-upgraded version with significantly higher damage.
-DynamicTrading.AddItem("BuyBaseballBatSpiked", {
-    item = "Base.BaseballBatSpiked",
-    category = "Weapon",
-    tags = {"Weapon", "Illegal"},
-    basePrice = 95,
-    stockRange = { min=0, max=2 }
-})
-
--- Shovel: Great reach and high damage. Essential for gardening/graves.
-DynamicTrading.AddItem("BuyShovel", {
-    item = "Base.Shovel",
-    category = "Weapon",
-    tags = {"Tool", "Gardening", "Build"},
-    basePrice = 75,
-    stockRange = { min=1, max=3 }
-})
-
--- Snow Shovel: Longer reach than a standard shovel but slightly less damage.
-DynamicTrading.AddItem("BuySnowShovel", {
-    item = "Base.SnowShovel",
-    category = "Weapon",
-    tags = {"Tool", "Gardening"},
-    basePrice = 70,
-    stockRange = { min=0, max=2 }
-})
-
--- Garden Hoe: Specifically for farmers, decent weapon reach.
-DynamicTrading.AddItem("BuyGardenHoe", {
-    item = "Base.GardenHoe",
-    category = "Weapon",
-    tags = {"Tool", "Gardening", "Farmer"},
-    basePrice = 65,
-    stockRange = { min=1, max=3 }
-})
-
--- Lead Pipe: Heavy, decent damage, very durable.
-DynamicTrading.AddItem("BuyLeadPipe", {
-    item = "Base.LeadPipe",
-    category = "Weapon",
-    tags = {"Material", "Scavenge"},
-    basePrice = 45,
-    stockRange = { min=1, max=4 }
-})
-
--- Metal Pipe: Slightly lighter and faster than the lead pipe.
-DynamicTrading.AddItem("BuyMetalPipe", {
-    item = "Base.MetalPipe",
-    category = "Weapon",
-    tags = {"Material", "Scavenge"},
-    basePrice = 40,
-    stockRange = { min=2, max=6 }
-})
-
--- Golf Club: Fast swing speed but low durability.
-DynamicTrading.AddItem("BuyGolfClub", {
-    item = "Base.GolfClub",
-    category = "Weapon",
-    tags = {"Sports", "Civilian"},
-    basePrice = 35,
-    stockRange = { min=1, max=4 }
-})
-
--- Canoe Paddle: Longest reach in the category, but fragile.
-DynamicTrading.AddItem("BuyCanoePaddle", {
-    item = "Base.CanoePaddle",
-    category = "Weapon",
-    tags = {"Survival", "Civilian"},
-    basePrice = 30,
-    stockRange = { min=1, max=3 }
-})
-
-
-
--- ==========================================
--- SHORT BLUNT (Tools & Compact Weapons)
--- ==========================================
-
--- Nightstick: Extremely durable, high knockback. The best pure combat short blunt.
-DynamicTrading.AddItem("BuyNightstick", {
-    item = "Base.Nightstick",
-    category = "Weapon",
-    tags = {"Weapon", "Police"},
-    basePrice = 85,
-    stockRange = { min=1, max=3 }
-})
-
--- Hammer: The most essential tool in the game for construction.
-DynamicTrading.AddItem("BuyHammer", {
-    item = "Base.Hammer",
-    category = "Weapon",
-    tags = {"Tool", "Build", "Carpenter"},
-    basePrice = 50,
-    stockRange = { min=2, max=6 }
-})
-
--- Ball Peen Hammer: Great weapon speed, used in mechanics and metalworking.
-DynamicTrading.AddItem("BuyBallPeenHammer", {
-    item = "Base.BallPeenHammer",
-    category = "Weapon",
-    tags = {"Tool", "Mechanic", "Scavenge"},
-    basePrice = 40,
-    stockRange = { min=1, max=4 }
-})
-
--- Club Hammer: Heavier and slower than a standard hammer, but hits harder.
-DynamicTrading.AddItem("BuyClubHammer", {
-    item = "Base.ClubHammer",
-    category = "Weapon",
-    tags = {"Tool", "Build", "Heavy"},
-    basePrice = 55,
-    stockRange = { min=1, max=3 }
-})
-
--- Pipe Wrench: Heavy damage and essential for plumbing/sink installation.
-DynamicTrading.AddItem("BuyPipeWrench", {
-    item = "Base.PipeWrench",
-    category = "Weapon",
-    tags = {"Tool", "Mechanic", "Car"},
-    basePrice = 75,
-    stockRange = { min=1, max=3 }
-})
-
--- Wrench: Essential for vehicle repair.
-DynamicTrading.AddItem("BuyWrench", {
-    item = "Base.Wrench",
-    category = "Weapon",
-    tags = {"Tool", "Mechanic", "Car"},
-    basePrice = 45,
-    stockRange = { min=2, max=5 }
-})
-
--- Wooden Mallet: High knockback, but lower damage than metal hammers.
-DynamicTrading.AddItem("BuyWoodenMallet", {
-    item = "Base.WoodenMallet",
-    category = "Weapon",
-    tags = {"Tool", "Build"},
-    basePrice = 30,
-    stockRange = { min=1, max=4 }
-})
-
--- ==========================================
--- KITCHENWARE & IMPROVISED
--- ==========================================
-
--- Frying Pan: Iconic, decent durability, loud "clang" sound.
-DynamicTrading.AddItem("BuyFryingPan", {
-    item = "Base.Pan",
-    category = "Weapon",
-    tags = {"Kitchen", "Food", "Civilian"},
-    basePrice = 20,
-    stockRange = { min=2, max=5 }
-})
-
--- Griddle Pan: Slightly heavier and more durable than a frying pan.
-DynamicTrading.AddItem("BuyGriddlePan", {
-    item = "Base.GriddlePan",
-    category = "Weapon",
-    tags = {"Kitchen", "Food", "Civilian"},
-    basePrice = 25,
-    stockRange = { min=1, max=3 }
-})
-
--- Saucepan: Common kitchen weapon.
-DynamicTrading.AddItem("BuySaucepan", {
-    item = "Base.Saucepan",
-    category = "Weapon",
-    tags = {"Kitchen", "Food", "Civilian"},
-    basePrice = 15,
-    stockRange = { min=2, max=5 }
-})
-
--- Rolling Pin: Low damage, mostly a backup weapon.
-DynamicTrading.AddItem("BuyRollingPin", {
-    item = "Base.RollingPin",
-    category = "Weapon",
-    tags = {"Kitchen", "Food", "Civilian"},
-    basePrice = 12,
-    stockRange = { min=1, max=4 }
-})
-
--- Meat Masher: High attack speed kitchen weapon.
-DynamicTrading.AddItem("BuyMeatMasher", {
-    item = "Base.MeatMasher",
-    category = "Weapon",
-    tags = {"Kitchen", "Meat", "Butcher"},
-    basePrice = 25,
-    stockRange = { min=1, max=3 }
-})
-
--- Plunger: Effectively a joke weapon with very low damage.
-DynamicTrading.AddItem("BuyPlunger", {
-    item = "Base.Plunger",
-    category = "Weapon",
-    tags = {"Junk"},
-    basePrice = 5,
-    stockRange = { min=1, max=2 }
-})
-
-
-
--- ==========================================
--- LONG BLADES (Elite Melee Weapons)
--- ==========================================
-
--- Katana: The rarest and most powerful melee weapon in the game. 
--- It cannot be repaired in vanilla, making it a high-cost "disposable" power item.
-DynamicTrading.AddItem("BuyKatana", {
-    item = "Base.Katana",
-    category = "Weapon",
-    tags = {"Blade", "Rare", "Military"},
-    basePrice = 1500, -- The "Grail" of melee weapons
-    stockRange = { min=0, max=1 }
-})
-
--- Machete: Extremely high damage and can be attached to spears. 
--- Rare, but repairable, making it a sustainable endgame weapon.
-DynamicTrading.AddItem("BuyMachete", {
-    item = "Base.Machete",
-    category = "Weapon",
-    tags = {"Blade", "Rare", "Military", "Survival"},
-    basePrice = 350,
-    stockRange = { min=0, max=2 }
-})
-
--- Scythe: (Found in B42/Farming contexts) Large reach, unique swing arc.
-DynamicTrading.AddItem("BuyScythe", {
-    item = "Base.Scythe",
-    category = "Weapon",
-    tags = {"Blade", "Farmer", "Heavy"},
-    basePrice = 180,
-    stockRange = { min=0, max=1 }
-})
-
-
-
-
--- ==========================================
--- SHORT BLADES (Stealth & Low Endurance)
--- ==========================================
-
--- Hunting Knife: The best in class. High crit chance, durable, and lethal.
-DynamicTrading.AddItem("BuyHuntingKnife", {
-    item = "Base.HuntingKnife",
-    category = "Weapon",
-    tags = {"Blade", "Survival", "Military", "Hunting"},
-    basePrice = 85,
-    stockRange = { min=1, max=4 }
-})
-
--- Meat Cleaver: The "heavy" short blade. High damage, great for the Butcher.
-DynamicTrading.AddItem("BuyMeatCleaver", {
-    item = "Base.MeatCleaver",
-    category = "Weapon",
-    tags = {"Blade", "Meat", "Butcher", "Kitchen"},
-    basePrice = 60,
-    stockRange = { min=1, max=3 }
-})
-
--- Kitchen Knife: Common civilian blade. Good for early game stealth kills.
-DynamicTrading.AddItem("BuyKitchenKnife", {
-    item = "Base.KitchenKnife",
-    category = "Weapon",
-    tags = {"Blade", "Kitchen", "Civilian"},
-    basePrice = 25,
-    stockRange = { min=2, max=6 }
-})
-
--- Scalpel: Extremely high crit multiplier but very low durability.
-DynamicTrading.AddItem("BuyScalpel", {
-    item = "Base.Scalpel",
-    category = "Weapon",
-    tags = {"Blade", "Medical", "Rare"},
-    basePrice = 45,
-    stockRange = { min=1, max=3 }
-})
-
--- Ice Pick: High penetration, high durability for a short blade.
-DynamicTrading.AddItem("BuyIcePick", {
-    item = "Base.IcePick",
-    category = "Weapon",
-    tags = {"Blade", "Kitchen", "Scavenge"},
-    basePrice = 40,
-    stockRange = { min=1, max=2 }
-})
-
--- Letter Opener: Low damage, desperate backup weapon.
-DynamicTrading.AddItem("BuyLetterOpener", {
-    item = "Base.LetterOpener",
-    category = "Weapon",
-    tags = {"Blade", "Junk", "Civilian"},
-    basePrice = 10,
-    stockRange = { min=1, max=3 }
-})
-
--- Bread Knife: Fragile kitchen tool.
-DynamicTrading.AddItem("BuyBreadKnife", {
-    item = "Base.BreadKnife",
-    category = "Weapon",
-    tags = {"Blade", "Kitchen", "Food"},
-    basePrice = 15,
-    stockRange = { min=2, max=5 }
-})
-
--- Butter Knife: The most fragile "weapon" in the game.
-DynamicTrading.AddItem("BuyButterKnife", {
-    item = "Base.ButterKnife",
-    category = "Weapon",
-    tags = {"Blade", "Kitchen", "Junk"},
-    basePrice = 5,
-    stockRange = { min=2, max=10 }
-})
-
--- Stone Knife: Primitive survival tool.
-DynamicTrading.AddItem("BuyStoneKnife", {
-    item = "Base.StoneKnife",
-    category = "Weapon",
-    tags = {"Blade", "Survival", "Scavenge"},
-    basePrice = 12,
-    stockRange = { min=1, max=4 }
-})
-
--- Hand Fork: Gardening tool used as a crude stabbing weapon.
-DynamicTrading.AddItem("BuyHandFork", {
-    item = "Base.HandFork",
-    category = "Weapon",
-    tags = {"Blade", "Gardening", "Farmer"},
-    basePrice = 20,
-    stockRange = { min=1, max=3 }
-})
-
--- Flensing Knife (B42/Specialized): Used for animal processing.
-DynamicTrading.AddItem("BuyFlensingKnife", {
-    item = "Base.FlensingKnife",
-    category = "Weapon",
-    tags = {"Blade", "Butcher", "Survival"},
-    basePrice = 55,
-    stockRange = { min=0, max=2 }
+-- 5. BLADES (Long & Short)
+RegisterWeapon({"Blade"}, {
+    -- Long Blades
+    { item="Base.Katana",        price=1500, min=0, max=1, tags={"Rare", "Military"} },
+    { item="Base.Machete",       price=350,  min=0, max=2, tags={"Rare", "Military", "Survival"} },
+    { item="Base.Scythe",        price=180,  min=0, max=1, tags={"Farmer", "Heavy"} },
+    -- Short Blades
+    { item="Base.HuntingKnife",  price=85, min=1, max=4, tags={"Survival", "Military", "Hunting"} },
+    { item="Base.MeatCleaver",   price=60, min=1, max=3, tags={"Meat", "Butcher", "Kitchen"} },
+    { item="Base.KitchenKnife",  price=25, min=2, max=6, tags={"Kitchen", "Civilian"} },
+    { item="Base.Scalpel",       price=45, min=1, max=3, tags={"Medical", "Rare"} },
+    { item="Base.IcePick",       price=40, min=1, max=2, tags={"Kitchen", "Scavenge"} },
+    { item="Base.LetterOpener",  price=10, min=1, max=3, tags={"Junk", "Civilian"} },
+    { item="Base.BreadKnife",    price=15, min=2, max=5, tags={"Kitchen", "Food"} },
+    { item="Base.ButterKnife",   price=5,  min=2, max=10, tags={"Kitchen", "Junk"} },
+    { item="Base.StoneKnife",    price=12, min=1, max=4, tags={"Survival", "Scavenge"} },
+    { item="Base.HandFork",      price=20, min=1, max=3, tags={"Gardening", "Farmer"} },
+    { item="Base.FlensingKnife", price=55, min=0, max=2, tags={"Butcher", "Survival"} },
 })
