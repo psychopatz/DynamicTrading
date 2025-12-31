@@ -1,21 +1,21 @@
 require "ISUI/ISCollapsableWindow"
 
 -- ==========================================================
--- DYNAMIC TRADING DEBUGGER
--- Visualizes the "Hidden" Economy numbers
+-- DYNAMIC TRADING INFO UI
+-- Visualizes the Economy numbers
 -- ==========================================================
 
-DynamicTradingDebugUI = ISCollapsableWindow:derive("DynamicTradingDebugUI")
-DynamicTradingDebugUI.instance = nil
+DynamicTradingInfoUI = ISCollapsableWindow:derive("DynamicTradingInfoUI")
+DynamicTradingInfoUI.instance = nil
 
-function DynamicTradingDebugUI:initialise()
+function DynamicTradingInfoUI:initialise()
     ISCollapsableWindow.initialise(self)
-    self:setTitle("Economy Debugger")
+    self:setTitle("Economy UI")
     self:setResizable(true)
-    self.clearStenil = false -- Fix for text rendering in some builds
+    self.clearStencil = false 
 end
 
-function DynamicTradingDebugUI:createChildren()
+function DynamicTradingInfoUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
     -- Create the scrolling list box
@@ -32,7 +32,7 @@ function DynamicTradingDebugUI:createChildren()
     self:populateList()
 end
 
-function DynamicTradingDebugUI:populateList()
+function DynamicTradingInfoUI:populateList()
     self.listbox:clear()
     
     if not DynamicTrading or not DynamicTrading.Shared then 
@@ -161,33 +161,33 @@ function DynamicTradingDebugUI:populateList()
     end
 end
 
-function DynamicTradingDebugUI:onResize()
+function DynamicTradingInfoUI:onResize()
     ISCollapsableWindow.onResize(self)
     self.listbox:setWidth(self.width - 20)
     self.listbox:setHeight(self.height - 40)
 end
 
-function DynamicTradingDebugUI:close()
+function DynamicTradingInfoUI:close()
     self:setVisible(false)
     self:removeFromUIManager()
-    DynamicTradingDebugUI.instance = nil
+    DynamicTradingInfoUI.instance = nil
 end
 
-function DynamicTradingDebugUI.ToggleWindow()
-    if DynamicTradingDebugUI.instance then
-        if DynamicTradingDebugUI.instance:isVisible() then
-            DynamicTradingDebugUI.instance:close()
+function DynamicTradingInfoUI.ToggleWindow()
+    if DynamicTradingInfoUI.instance then
+        if DynamicTradingInfoUI.instance:isVisible() then
+            DynamicTradingInfoUI.instance:close()
         else
-            DynamicTradingDebugUI.instance:setVisible(true)
-            DynamicTradingDebugUI.instance:addToUIManager()
-            DynamicTradingDebugUI.instance:populateList()
+            DynamicTradingInfoUI.instance:setVisible(true)
+            DynamicTradingInfoUI.instance:addToUIManager()
+            DynamicTradingInfoUI.instance:populateList()
         end
         return
     end
 
     -- Default Position and Size
-    local ui = DynamicTradingDebugUI:new(100, 100, 350, 500)
+    local ui = DynamicTradingInfoUI:new(100, 100, 350, 500)
     ui:initialise()
     ui:addToUIManager()
-    DynamicTradingDebugUI.instance = ui
+    DynamicTradingInfoUI.instance = ui
 end
