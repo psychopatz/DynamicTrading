@@ -92,7 +92,7 @@ function DynamicTradingUI:drawListItem(y, item, alt)
     -- === CASE 2: PRODUCT ITEM ===
     local data = item.item 
     
-    -- SAFETY CHECK: Ensure config exists before accessing
+    -- SAFETY CHECK
     if not DynamicTrading.Config or not DynamicTrading.Config.MasterList then
         return y + item.height
     end
@@ -145,12 +145,28 @@ function DynamicTradingUI:drawListItem(y, item, alt)
         end
     end
 
-    -- Draw Text
-    self:drawText(item.text, 45, y + (item.height - 15)/2, nameR, nameG, nameB, 1, self.font)
+    -- === TEXT TRUNCATION LOGIC ===
+    -- Calculate how much space we have for the name.
+    -- Width - 45 (Icon padding) - 155 (Right side buffer for Qty/Price)
+    local availableWidth = self:getWidth() - 200 
+    local displayName = item.text
+    local textManager = getTextManager()
     
+    if textManager:MeasureStringX(self.font, displayName) > availableWidth then
+        while textManager:MeasureStringX(self.font, displayName .. "...") > availableWidth and string.len(displayName) > 0 do
+             displayName = string.sub(displayName, 1, -2) -- Remove last character
+        end
+        displayName = displayName .. "..."
+    end
+
+    -- Draw Name
+    self:drawText(displayName, 45, y + (item.height - 15)/2, nameR, nameG, nameB, 1, self.font)
+    
+    -- Draw Price (Right Aligned)
     local priceText = "$" .. data.price
     self:drawText(priceText, self:getWidth() - 60, y + (item.height - 15)/2, priceR, priceG, priceB, 1, self.font)
     
+    -- Draw Quantity / SOLD OUT (Right Aligned)
     if data.stock <= 0 then
         self:drawText("SOLD OUT", self:getWidth() - 145, y + (item.height - 15)/2, 1, 0.1, 0.1, 1, self.font)
     else
@@ -167,7 +183,7 @@ end
 function DynamicTradingUI:populateList()
     self.listbox:clear()
     
-    -- CRITICAL SAFETY CHECK: Prevent crash if Data or Config is missing
+    -- CRITICAL SAFETY CHECK
     if not DynamicTrading or not DynamicTrading.Shared or not DynamicTrading.Config then
         print("[DynamicTradingUI] Warning: DynamicTrading not ready yet.")
         return
@@ -176,7 +192,6 @@ function DynamicTradingUI:populateList()
     local data = DynamicTrading.Shared.GetData()
     local masterList = DynamicTrading.Config.MasterList
     
-    -- Safety Check for MasterList
     if not masterList then
         print("[DynamicTradingUI] Warning: MasterList is empty or nil.")
         return
