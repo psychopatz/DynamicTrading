@@ -41,20 +41,18 @@ function DynamicTrading.Economy.PickRandomMerchant()
 end
 
 -- =================================================
--- LOGIC: GENERATE DAILY STOCK (WITH DEBUG & FAILSAFE)
+-- LOGIC: GENERATE DAILY STOCK
 -- =================================================
 function DynamicTrading.Economy.GenerateDailyStock(forceMerchantKey)
     print("[DynamicTrading] STARTING STOCK GENERATION...")
 
-    -- 1. Safety Check for MasterList
+    -- 1. Safety Checks
     if not DynamicTrading.Config or not DynamicTrading.Config.MasterList then
         print("[DynamicTrading] CRITICAL ERROR: MasterList is missing or nil!")
         return {}, "Error: No Config"
     end
 
     local totalItemsInDb = tableSize(DynamicTrading.Config.MasterList)
-    print("[DynamicTrading] DEBUG: Total items in MasterList database: " .. totalItemsInDb)
-
     if totalItemsInDb == 0 then
         print("[DynamicTrading] CRITICAL ERROR: MasterList is EMPTY! Populate DTItems folder.")
         return {}, "Error: No Items"
@@ -78,20 +76,16 @@ function DynamicTrading.Economy.GenerateDailyStock(forceMerchantKey)
     if maxSlots < minSlots then maxSlots = minSlots end
     local totalSlots = ZombRand(minSlots, maxSlots + 1)
     
-    print("[DynamicTrading] DEBUG: Target Slots to fill: " .. totalSlots)
-    
-    -- 4. BUILD ITEM POOLS
+    -- 4. Build Pools
     local poolByCategory = {}
     local poolByTag = {}
     local wildCardPool = {} 
 
     for key, data in pairs(DynamicTrading.Config.MasterList) do
-        -- A: Index by Category
         local cat = data.category or "Other"
         if not poolByCategory[cat] then poolByCategory[cat] = {} end
         table.insert(poolByCategory[cat], key)
         
-        -- B: Index by Tags
         if data.tags then
             for _, tag in ipairs(data.tags) do
                 if not poolByTag[tag] then poolByTag[tag] = {} end
@@ -99,59 +93,58 @@ function DynamicTrading.Economy.GenerateDailyStock(forceMerchantKey)
             end
         end
 
-        -- C: Wildcard (Everything)
         table.insert(wildCardPool, key)
     end
 
-    -- Shuffle pools
     for k, list in pairs(poolByCategory) do shuffleList(list) end
     for k, list in pairs(poolByTag) do shuffleList(list) end
     shuffleList(wildCardPool)
 
-    -- 5. FILL STOCK BASED ON ALLOCATIONS
+    -- 5. Fill Allocations
     local newStock = {} 
     local activeItems = {}
     local slotsFilled = 0
     
     if merchantData.allocations then
         for criteria, count in pairs(merchantData.allocations) do
-            print("[DynamicTrading] DEBUG: Attempting allocation: " .. criteria .. " (Count: " .. count .. ")")
-            
-            -- Look for pool matching this criteria
             local validKeys = poolByTag[criteria] or poolByCategory[criteria]
             
             if validKeys and #validKeys > 0 then
-                local added = 0
                 for i = 1, #validKeys do
-                    if added >= count or slotsFilled >= totalSlots then break end
+                    if slotsFilled >= totalSlots then break end
                     
                     local key = validKeys[i]
                     if not activeItems[key] then
                         local itemData = DynamicTrading.Config.MasterList[key]
+                        
+                        -- GENERATE QUANTITY
                         local qty = ZombRand(itemData.stockRange.min, itemData.stockRange.max + 1)
+                        
+                        -- === FIX: FORCE MINIMUM 1 ===
+                        if qty < 1 then qty = 1 end
                         
                         newStock[key] = qty
                         activeItems[key] = true
                         slotsFilled = slotsFilled + 1
-                        added = added + 1
                     end
                 end
-                print("[DynamicTrading] DEBUG:   -> Successfully added " .. added .. " items for " .. criteria)
-            else
-                print("[DynamicTrading] WARNING: No items found for criteria: " .. criteria)
             end
         end
     end
 
-    -- 6. WILDCARDS (Fill remaining slots)
+    -- 6. Fill Wildcards
     if slotsFilled < totalSlots then
-        print("[DynamicTrading] DEBUG: Filling remaining " .. (totalSlots - slotsFilled) .. " slots with Wildcards...")
         for _, key in ipairs(wildCardPool) do
             if slotsFilled >= totalSlots then break end
             
             if not activeItems[key] then
                 local itemData = DynamicTrading.Config.MasterList[key]
+                
+                -- GENERATE QUANTITY
                 local qty = ZombRand(itemData.stockRange.min, itemData.stockRange.max + 1)
+                
+                -- === FIX: FORCE MINIMUM 1 ===
+                if qty < 1 then qty = 1 end
                 
                 newStock[key] = qty
                 activeItems[key] = true
@@ -160,21 +153,24 @@ function DynamicTrading.Economy.GenerateDailyStock(forceMerchantKey)
         end
     end
 
-    -- 7. EMERGENCY FAILSAFE
-    -- If we still have 0 items (because allocations failed AND wildcard pool was empty/exhausted duplicates), force fill.
+    -- 7. Emergency Failsafe (Force Fill if Empty)
     if slotsFilled == 0 and totalItemsInDb > 0 then
         print("[DynamicTrading] FAILSAFE TRIGGERED: Stock was empty! Forcing random items...")
-        
-        -- Just grab the first available items from wildcard pool ignoring everything else
         for _, key in ipairs(wildCardPool) do
-            if slotsFilled >= 5 then break end -- Ensure at least 5 items
+            if slotsFilled >= 5 then break end 
             
             local itemData = DynamicTrading.Config.MasterList[key]
-            -- Ensure stock is at least 1
-            local min = itemData.stockRange.min
-            if min < 1 then min = 1 end
             
-            newStock[key] = ZombRand(min, itemData.stockRange.max + 1)
+            -- GENERATE QUANTITY
+            local min = itemData.stockRange.min
+            if min < 1 then min = 1 end -- Ensure generated range allows at least 1
+            
+            local qty = ZombRand(min, itemData.stockRange.max + 1)
+            
+            -- === FIX: FORCE MINIMUM 1 ===
+            if qty < 1 then qty = 1 end
+            
+            newStock[key] = qty
             slotsFilled = slotsFilled + 1
         end
     end
@@ -216,6 +212,7 @@ function DynamicTrading.Economy.CalculatePrice(key, currentStock, categoryHeatDa
     local envMod = DynamicTrading.Economy.GetEnvironmentModifier(data.tags or {})
     
     local scarcityMod = 0
+    -- If stock is below 20%, increase price by 25%
     if currentStock < (data.stockRange.max * 0.2) then scarcityMod = 0.25 end
 
     local finalPrice = math.floor(base * (1.0 + catHeat + envMod + scarcityMod))
