@@ -1,8 +1,3 @@
--- ==========================================================
--- File: Contents\mods\DynamicTrading\42.13\media\lua\shared\DynamicTrading.lua
--- CORE CONTROLLER
--- ==========================================================
-
 require "DynamicTrading_Economy"
 require "DynamicTrading_Config"
 
@@ -16,9 +11,6 @@ function DynamicTrading.Shared.GetData()
     return ModData.getOrCreate("DynamicTradingData")
 end
 
--- =================================================
--- INIT & RESTOCK
--- =================================================
 function DynamicTrading.Shared.OnInit()
     local data = DynamicTrading.Shared.GetData()
     local isStockEmpty = true
@@ -37,7 +29,7 @@ function DynamicTrading.Shared.RestockMarket(data)
     
     data.stocks = {}
     data.prices = {}
-    data.buyHistory = {} -- Track items sold by player
+    data.buyHistory = {} 
     if not data.categoryHeat then data.categoryHeat = {} end
     if not data.salesHistory then data.salesHistory = {} end
 
@@ -68,7 +60,7 @@ function DynamicTrading.Shared.RestockMarket(data)
 end
 
 -- =================================================
--- TRANSACTION: BUY (RED TEXT)
+-- TRANSACTION: BUY
 -- =================================================
 function DynamicTrading.Shared.PerformTrade(player, recipeKey)
     if not player or not recipeKey then return end
@@ -93,7 +85,7 @@ function DynamicTrading.Shared.PerformTrade(player, recipeKey)
         return
     end
 
-    -- Payment
+    -- Payment Logic
     local moneyNeeded = currentPrice
     local moneyCount = inventory:getItemCount("Base.Money")
     while moneyCount < moneyNeeded do
@@ -114,16 +106,26 @@ function DynamicTrading.Shared.PerformTrade(player, recipeKey)
     data.salesHistory[recipeKey] = (data.salesHistory[recipeKey] or 0) + 1
     if DynamicTrading.Economy then DynamicTrading.Economy.UpdateCategoryHeat(config.category) end
     
-    -- RED TEXT (Loss/Spending)
+    -- Feedback
     player:playSound("Transaction") 
-    player:Say("Bought " .. (config.item:match(".*%.(.*)") or config.item) .. " for $" .. currentPrice, 1.0, 0.2, 0.2, UIFont.Medium, 10, "default")
+    local displayName = config.item
+    local scriptItem = getScriptManager():getItem(config.item)
+    if scriptItem then displayName = scriptItem:getDisplayName() end
+    
+    player:Say("Bought " .. displayName .. " for $" .. currentPrice, 1.0, 0.2, 0.2, UIFont.Medium, 10, "default")
 
     if isClient() then ModData.transmit("DynamicTradingData") end
-    if DynamicTradingUI and DynamicTradingUI.instance then DynamicTradingUI.instance:populateList() end
+    
+    -- REFRESH UI
+    -- We call populateList, which triggers clear(), then populateBuyList(), 
+    -- which reads DynamicTradingUI.instance.selectedBuyKey to restore selection.
+    if DynamicTradingUI and DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then 
+        DynamicTradingUI.instance:populateList() 
+    end
 end
 
 -- =================================================
--- TRANSACTION: SELL (GREEN TEXT)
+-- TRANSACTION: SELL
 -- =================================================
 function DynamicTrading.Shared.PerformSell(player, itemObj, price, masterKey, itemName)
     if not player or not itemObj or not price then return end
@@ -134,7 +136,6 @@ function DynamicTrading.Shared.PerformSell(player, itemObj, price, masterKey, it
     local inventory = player:getInventory()
     if not inventory:contains(itemObj) then return end
 
-    -- Give Money
     local remaining = price
     while remaining >= 100 do
         inventory:AddItem("Base.MoneyBundle")
@@ -142,13 +143,10 @@ function DynamicTrading.Shared.PerformSell(player, itemObj, price, masterKey, it
     end
     if remaining > 0 then inventory:AddItems("Base.Money", remaining) end
 
-    -- Remove Item
     inventory:Remove(itemObj)
 
-    -- Update History
     if masterKey then data.buyHistory[masterKey] = (data.buyHistory[masterKey] or 0) + 1 end
 
-    -- GREEN TEXT (Gain/Earning)
     player:playSound("Transaction") 
     player:Say("Sold " .. (itemName or "Item") .. " for $" .. price, 0.2, 1.0, 0.2, UIFont.Medium, 10, "default")
 
@@ -156,9 +154,6 @@ function DynamicTrading.Shared.PerformSell(player, itemObj, price, masterKey, it
     if DynamicTradingUI and DynamicTradingUI.instance then DynamicTradingUI.instance:populateList() end
 end
 
--- =================================================
--- DAILY TIMER
--- =================================================
 function DynamicTrading.Shared.CheckDailyReset()
     local gameTime = GameTime:getInstance()
     local currentDay = math.floor(gameTime:getDaysSurvived())
@@ -182,6 +177,5 @@ local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
 end
 Events.OnFillWorldObjectContextMenu.Add(OnFillWorldObjectContextMenu)
 
--- Legacy Support
 function DynamicTrading.Client.OnCheckStock(arg1, arg2, arg3) return true end
 function DynamicTrading.Shared.OnTradeTransaction(craftRecipeData, character) end
