@@ -2,43 +2,32 @@ require "DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
--- ==========================================================
--- HELPER FUNCTION
--- ==========================================================
-local function RegisterGear(category, commonTags, items)
-    for _, config in ipairs(items) do
-        local itemName = config.item:match(".*%.(.*)") or config.item
-        local uniqueID = config.id or ("Buy" .. itemName)
-
-        local finalTags = {}
-        if commonTags then for _, t in ipairs(commonTags) do table.insert(finalTags, t) end end
-        if config.tags then for _, t in ipairs(config.tags) do table.insert(finalTags, t) end end
-
-        DynamicTrading.AddItem(uniqueID, {
-            item = config.item,
-            category = category,
-            tags = finalTags,
-            basePrice = config.price,
-            stockRange = { min = config.min or 1, max = config.max or 3 }
-        })
+local function Register(list)
+    for _, data in ipairs(list) do
+        DynamicTrading.AddItem(data.item, data)
     end
 end
 
--- ==========================================================
--- ITEM DEFINITIONS (Compressed)
--- ==========================================================
+Register({
+    -- BASICS
+    { item="Base.Tshirt_White",     basePrice=10,  tags={"Clothing"}, stockRange={min=2, max=8} },
+    { item="Base.Jeans",            basePrice=20,  tags={"Clothing"}, stockRange={min=2, max=6} },
+    { item="Base.Sneakers",         basePrice=25,  tags={"Clothing"}, stockRange={min=1, max=4} },
+    { item="Base.Socks_Ankle",      basePrice=5,   tags={"Clothing"}, stockRange={min=2, max=10} },
 
--- 1. BAGS & CONTAINERS
-RegisterGear("Container", {"Gear"}, {
-    { item="Base.Bag_Schoolbag",    price=250, min=1, max=3, id="BuySchoolBag" },
-    { item="Base.Bag_DuffelBag",    price=500, min=1, max=2, id="BuyDuffelBag" },
-    { item="Base.Bag_BigHikingBag", price=800, min=0, max=1, tags={"Rare"}, id="BuyBigHikingBag" },
-})
+    -- BAGS (High Value)
+    { item="Base.Bag_Schoolbag",    basePrice=40,  tags={"Clothing", "Container"}, stockRange={min=1, max=2} },
+    { item="Base.Bag_DuffelBag",    basePrice=80,  tags={"Clothing", "Container", "Uncommon"}, stockRange={min=1, max=1} },
+    { 
+        item="Base.Bag_BigHikingBag", 
+        basePrice=150, 
+        tags={"Clothing", "Container", "Rare"}, 
+        stockRange={min=1, max=1},
+        chance=3
+    },
 
--- 2. CLOTHING & WEARABLES
-RegisterGear("Clothing", {}, {
-    { item="Base.JacketLong_Random", price=40,  min=1, max=2, tags={"Warm", "Armor"}, id="BuyLeatherJacket" },
-    { item="Base.Shoes_ArmyBoots",   price=350, min=1, max=3, tags={"Armor"}, id="BuyMilitaryBoots" },
-    { item="Base.Hat_Beanie",        price=10,  min=2, max=5, tags={"Warm"}, id="BuyWinterHat" },
-    { item="Base.PonchoYellow",      price=15,  min=1, max=3, tags={"Rain"}, id="BuyPoncho" },
+    -- WINTER GEAR (Tagged for Winter Events)
+    { item="Base.Jacket_Padded",    basePrice=60,  tags={"Clothing", "Winter"}, stockRange={min=1, max=2} },
+    { item="Base.Hat_Wooly",        basePrice=15,  tags={"Clothing", "Winter"}, stockRange={min=1, max=4} },
+    { item="Base.Gloves_Leather",   basePrice=25,  tags={"Clothing", "Winter", "Protection"}, stockRange={min=1, max=2} }
 })

@@ -1,33 +1,19 @@
 Sandbox_EN = {
     Sandbox_DynamicTrading = "Dynamic Trading Market",
     
+    -- Difficulty (Now an Integer)
+    Sandbox_DynamicTrading_Difficulty = "Market Difficulty Level",
+    Sandbox_DynamicTrading_Difficulty_tooltip = "Controls global economy balance.<br>1 = Easy (High Stock, Cheap)<br>2 = Normal<br>3 = Hard<br>4 = Insane (Scare Stock, Expensive)",
+
     Sandbox_DynamicTrading_RestockInterval = "Restock Interval (Days)",
-    Sandbox_DynamicTrading_RestockInterval_tooltip = "How many days it takes for the market to restock goods and update prices.",
+    Sandbox_DynamicTrading_RestockInterval_tooltip = "How often traders generate new inventory.",
     
-    Sandbox_DynamicTrading_TraderCapacityMin = "Trader Capacity (Min)",
-    Sandbox_DynamicTrading_TraderCapacityMin_tooltip = "The minimum number of different items the trader brings on a restock day.",
-
-    Sandbox_DynamicTrading_TraderCapacityMax = "Trader Capacity (Max)",
-    Sandbox_DynamicTrading_TraderCapacityMax_tooltip = "The maximum number of different items the trader brings.",
-
-    Sandbox_DynamicTrading_PriceVolatility = "Price Volatility",
-    Sandbox_DynamicTrading_PriceVolatility_tooltip = "Random daily price fluctuation factor.<br>0.1 = +/- 10%<br>0.5 = +/- 50%",
-
     Sandbox_DynamicTrading_SeasonImpact = "Environmental Impact",
-    Sandbox_DynamicTrading_SeasonImpact_tooltip = "Multiplier for how much Winter or Power Shutoff affects prices.<br>0 = No effect<br>1 = Normal",
+    Sandbox_DynamicTrading_SeasonImpact_tooltip = "Multiplier for Event effects (Winter, Harvest, etc).<br>0.0 = Events disable.<br>1.0 = Normal effects.",
     
-    Sandbox_DynamicTrading_CategoryInflation = "Category Inflation Sensitivity",
-    Sandbox_DynamicTrading_CategoryInflation_tooltip = "How much prices rise for a specific category when you buy an item from it.",
+    Sandbox_DynamicTrading_CategoryInflation = "Inflation Sensitivity",
+    Sandbox_DynamicTrading_CategoryInflation_tooltip = "How much prices rise when you buy an item.<br>0.05 means price +5% per purchase.",
 
     Sandbox_DynamicTrading_SellMarkdown = "Sell Price Multiplier",
-    Sandbox_DynamicTrading_SellMarkdown_tooltip = "The percentage of the base price the trader pays you.<br>0.5 = They pay 50% of the item's value.",
-    
-    Sandbox_DynamicTrading_ArchetypeBonus = "Trader Preference Bonus",
-    Sandbox_DynamicTrading_ArchetypeBonus_tooltip = "If enabled, Traders pay 25% more for items matching their specialty (e.g. Mechanic buys tools) and 25% less for items that don't.",
-
-    Sandbox_DynamicTrading_DemandMultiplier = "Trader Demand Multiplier",
-    Sandbox_DynamicTrading_DemandMultiplier_tooltip = "Multiplies the 'Max Stock' value to determine how many items the trader wants to buy daily.",
-
-    Sandbox_DynamicTrading_DemandBase = "Trader Demand Base",
-    Sandbox_DynamicTrading_DemandBase_tooltip = "Flat amount added to the trader's buying quota.<br>Allows you to sell at least a few items even if they are rare.",
+    Sandbox_DynamicTrading_SellMarkdown_tooltip = "Percentage of the item's value the trader pays you.<br>0.5 = They pay 50% of market value.",
 }

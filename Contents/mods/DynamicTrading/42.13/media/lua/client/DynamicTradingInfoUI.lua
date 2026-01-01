@@ -1,16 +1,16 @@
 require "ISUI/ISCollapsableWindow"
-
--- ==========================================================
--- DYNAMIC TRADING INFO UI
--- Visualizes the Economy numbers
--- ==========================================================
+require "ISUI/ISScrollingListBox"
+require "DynamicTrading_Manager"
+require "DynamicTrading_Config"
+require "DynamicTrading_Events"
+require "DynamicTradingUI" -- Needed to open the trading window
 
 DynamicTradingInfoUI = ISCollapsableWindow:derive("DynamicTradingInfoUI")
 DynamicTradingInfoUI.instance = nil
 
 function DynamicTradingInfoUI:initialise()
     ISCollapsableWindow.initialise(self)
-    self:setTitle("Economy UI")
+    self:setTitle("Global Economy Status")
     self:setResizable(true)
     self.clearStencil = false 
 end
@@ -18,7 +18,6 @@ end
 function DynamicTradingInfoUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
-    -- Create the scrolling list box
     self.listbox = ISScrollingListBox:new(10, 30, self.width - 20, self.height - 40)
     self.listbox:initialise()
     self.listbox:setAnchorRight(true)
@@ -27,6 +26,10 @@ function DynamicTradingInfoUI:createChildren()
     self.listbox.itemheight = 20
     self.listbox.drawBorder = true
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
+    
+    -- [NEW] Enable Mouse Interaction
+    self.listbox.onMouseDown = DynamicTradingInfoUI.onListMouseDown
+    
     self:addChild(self.listbox)
     
     self:populateList()
@@ -35,129 +38,141 @@ end
 function DynamicTradingInfoUI:populateList()
     self.listbox:clear()
     
-    if not DynamicTrading or not DynamicTrading.Shared then 
-        self.listbox:addItem("Error: DynamicTrading ModData not loaded.", nil)
-        return 
-    end
-
-    local data = DynamicTrading.Shared.GetData()
-    local merchantName = data.currentMerchant or "Unknown"
+    local data = DynamicTrading.Manager.GetData()
+    local diff = DynamicTrading.Config.GetDifficultyData()
+    
+    -- ==========================================================
+    -- SECTION 1: DIFFICULTY PROFILE
+    -- ==========================================================
+    local header = self.listbox:addItem("=== DIFFICULTY PROFILE ===", nil)
+    header.textColor = {r=1, g=0.9, b=0.5, a=1}
+    
+    self.listbox:addItem("  Setting: " .. (diff.name or "Unknown"), nil)
+    self.listbox:addItem("  Buying Price: x" .. diff.buyMult, nil)
+    self.listbox:addItem("  Stock Size: x" .. diff.stockMult, nil)
+    self.listbox:addItem(" ", nil)
 
     -- ==========================================================
-    -- SECTION 1: ACTIVE META EVENTS
+    -- SECTION 2: ACTIVE WORLD EVENTS
     -- ==========================================================
-    local header = self.listbox:addItem("=== ACTIVE META EVENTS ===", nil)
-    header.textColor = {r=1, g=1, b=0.8, a=1}
+    header = self.listbox:addItem("=== ACTIVE EVENTS ===", nil)
+    header.textColor = {r=0.5, g=1, b=0.5, a=1}
     
     local anyEvent = false
-    if DynamicTrading.Events and DynamicTrading.Events.Registry then
-        for id, event in pairs(DynamicTrading.Events.Registry) do
-            if event.condition and event.condition() then
-                anyEvent = true
-                local item = self.listbox:addItem(" [!] " .. (event.name or id), nil)
-                item.textColor = {r=0.2, g=1.0, b=0.2, a=1} -- Bright Green for active events
-                
-                if event.effects then
-                    for tag, eff in pairs(event.effects) do
-                        local txt = "    - " .. tag .. " :: "
-                        local parts = {}
-                        if eff.price then table.insert(parts, "Price x" .. eff.price) end
-                        if eff.volume then table.insert(parts, "Vol x" .. eff.volume) end
-                        
-                        self.listbox:addItem(txt .. table.concat(parts, ", "), nil)
-                    end
+    if DynamicTrading.Events and DynamicTrading.Events.ActiveEvents then
+        for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
+            anyEvent = true
+            local item = self.listbox:addItem(" [!] " .. (event.name or "Unknown Event"), nil)
+            item.textColor = {r=0.2, g=1.0, b=0.2, a=1}
+            
+            if event.inject then
+                for tag, count in pairs(event.inject) do
+                    self.listbox:addItem("    + Injecting " .. count .. "x " .. tag, nil)
+                end
+            end
+            
+            if event.effects then
+                for tag, mod in pairs(event.effects) do
+                    local txt = "    - " .. tag .. ": "
+                    if mod.price then txt = txt .. "Price x" .. mod.price .. " " end
+                    if mod.vol then txt = txt .. "Vol x" .. mod.vol end
+                    self.listbox:addItem(txt, nil)
                 end
             end
         end
     end
     
     if not anyEvent then 
-        local item = self.listbox:addItem("  (No active events)", nil)
-        item.textColor = {r=0.6, g=0.6, b=0.6, a=1}
+        self.listbox:addItem("  (No active events)", nil)
     end
-    
-    self.listbox:addItem(" ", nil) -- Spacer
+    self.listbox:addItem(" ", nil)
 
     -- ==========================================================
-    -- SECTION 2: MERCHANT STATE
+    -- SECTION 3: MARKET INFLATION
     -- ==========================================================
-    header = self.listbox:addItem("=== MERCHANT STATE ===", nil)
-    header.textColor = {r=1, g=1, b=0.8, a=1}
-    
-    self.listbox:addItem("  Archetype: " .. merchantName, nil)
-    
-    local gt = GameTime:getInstance()
-    local lastDay = data.lastResetDay or 0
-    local interval = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.RestockInterval or 1
-    local nextReset = lastDay + interval
-    local daysLeft = nextReset - math.floor(gt:getDaysSurvived())
-    
-    self.listbox:addItem("  Next Restock: " .. daysLeft .. " day(s)", nil)
-    
-    self.listbox:addItem(" ", nil) -- Spacer
-
-    -- ==========================================================
-    -- SECTION 3: CATEGORY INFLATION (Buying Heat)
-    -- ==========================================================
-    header = self.listbox:addItem("=== CATEGORY HEAT (Inflation) ===", nil)
-    header.textColor = {r=1, g=1, b=0.8, a=1}
+    header = self.listbox:addItem("=== CATEGORY INFLATION ===", nil)
+    header.textColor = {r=1, g=0.5, b=0.5, a=1}
     
     local anyHeat = false
-    if data.categoryHeat then
-        for cat, val in pairs(data.categoryHeat) do
-            if val > 0.01 then
+    if data.globalHeat then
+        for cat, val in pairs(data.globalHeat) do
+            if math.abs(val) > 0.01 then
                 anyHeat = true
                 local percent = math.floor(val * 100)
-                local text = string.format("  %s: +%d%% Price", cat, percent)
+                local sign = (val > 0) and "+" or ""
+                local text = string.format("  %s: %s%d%% Price", cat, sign, percent)
+                
                 local item = self.listbox:addItem(text, nil)
-                item.textColor = {r=1, g=0.6, b=0.6, a=1} -- Reddish
+                if val > 0 then
+                    item.textColor = {r=1, g=0.6, b=0.6, a=1}
+                else
+                    item.textColor = {r=0.6, g=0.6, b=1, a=1}
+                end
             end
         end
     end
+    
     if not anyHeat then
-        self.listbox:addItem("  (Market Stable)", nil)
+        self.listbox:addItem("  (Market is stable)", nil)
     end
+    self.listbox:addItem(" ", nil)
     
-    self.listbox:addItem(" ", nil) -- Spacer
-
     -- ==========================================================
-    -- SECTION 4: PLAYER SELLING HISTORY (Quotas)
+    -- SECTION 4: TRADER NETWORK (CLICKABLE)
     -- ==========================================================
-    header = self.listbox:addItem("=== YOUR SALES TODAY (Quotas) ===", nil)
-    header.textColor = {r=1, g=1, b=0.8, a=1}
-
-    local anySales = false
-    if data.buyHistory then
-        for key, soldAmount in pairs(data.buyHistory) do
-            anySales = true
-            local limit = 0
+    header = self.listbox:addItem("=== KNOWN TRADERS ===", nil)
+    header.textColor = {r=0.8, g=0.8, b=1, a=1}
+    
+    local count = 0
+    if data.Traders then
+        for id, trader in pairs(data.Traders) do
+            count = count + 1
+            local name = DynamicTrading.Archetypes[trader.archetype] and DynamicTrading.Archetypes[trader.archetype].name or trader.archetype
             
-            -- We need to calculate limit dynamically to show it here
-            if DynamicTrading.Economy and DynamicTrading.Economy.GetDemandLimit then
-                limit = DynamicTrading.Economy.GetDemandLimit(key, merchantName)
+            -- Prepare the display text
+            local txt = "  - " .. name .. " (" .. id .. ")"
+            
+            -- Pass the ID and Archetype as item data
+            local itemData = { traderID = id, archetype = trader.archetype, isDebug = false }
+            
+            -- Check if it's a Debug Trader
+            if string.find(id, "Debug_Trader") then
+                txt = txt .. " [OPEN]"
+                itemData.isDebug = true
             end
             
-            local itemName = key
-            local config = DynamicTrading.Config.MasterList[key]
-            if config then
-                 -- Try to get simple name
-                 itemName = config.item:match(".*%.(.*)") or config.item
-            end
-
-            local txt = string.format("  %s: %d / %d", itemName, soldAmount, limit)
-            local item = self.listbox:addItem(txt, nil)
+            local listItem = self.listbox:addItem(txt, itemData)
             
-            if soldAmount >= limit then
-                item.textColor = {r=1, g=0.3, b=0.3, a=1} -- Red: Limit Reached (Junk Price)
-                item.text = item.text .. " (OVERSTOCK)"
-            else
-                item.textColor = {r=0.6, g=1, b=0.6, a=1} -- Green: Demand Remaining
+            -- Highlight clickable debug traders in Cyan
+            if itemData.isDebug then
+                listItem.textColor = {r=0.0, g=1.0, b=1.0, a=1}
             end
         end
     end
     
-    if not anySales then
-        self.listbox:addItem("  (You haven't sold anything yet)", nil)
+    if count == 0 then
+        self.listbox:addItem("  (No traders discovered yet)", nil)
+    end
+end
+
+-- =================================================
+-- CLICK HANDLER
+-- =================================================
+function DynamicTradingInfoUI.onListMouseDown(target, x, y)
+    -- Standard listbox selection logic
+    local row = target:rowAt(x, y)
+    if row == -1 then return end
+    target.selected = row
+    
+    -- Get the item data we attached in populateList
+    local item = target.items[row]
+    if item and item.item and item.item.isDebug then
+        local data = item.item
+        
+        -- Open the Trading UI for this specific trader
+        if DynamicTradingUI and DynamicTradingUI.ToggleWindow then
+            DynamicTradingUI.ToggleWindow(data.traderID, data.archetype)
+        end
     end
 end
 
@@ -185,7 +200,6 @@ function DynamicTradingInfoUI.ToggleWindow()
         return
     end
 
-    -- Default Position and Size
     local ui = DynamicTradingInfoUI:new(100, 100, 350, 500)
     ui:initialise()
     ui:addToUIManager()

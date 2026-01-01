@@ -2,29 +2,24 @@ require "DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
--- ==========================================================
--- HELPER FUNCTION
--- ==========================================================
-local function RegisterMisc(items)
-    for _, config in ipairs(items) do
-        local itemName = config.item:match(".*%.(.*)") or config.item
-        local uniqueID = config.id or ("Buy" .. itemName)
-
-        DynamicTrading.AddItem(uniqueID, {
-            item = config.item,
-            category = config.category or "Misc",
-            tags = config.tags or {},
-            basePrice = config.price,
-            stockRange = { min = config.min or 1, max = config.max or 5 }
-        })
+local function Register(list)
+    for _, data in ipairs(list) do
+        DynamicTrading.AddItem(data.item, data)
     end
 end
 
--- ==========================================================
--- ITEM DEFINITIONS (Compressed)
--- ==========================================================
-
-RegisterMisc({
-    { item="Base.ScrapMetal", price=5, min=5, max=20, tags={"Metal"}, category="Material" },
-    { item="Base.RubberDuck", price=2, min=1, max=1,  tags={"Toy"},   category="Junk" },
+Register({
+    -- PURE JUNK
+    { item="Base.RubberBand",       basePrice=1,   tags={"Junk"}, stockRange={min=5, max=20} },
+    { item="Base.Paperclip",        basePrice=1,   tags={"Junk"}, stockRange={min=5, max=20} },
+    { item="Base.EmptyBottle",      basePrice=2,   tags={"Junk"}, stockRange={min=3, max=10} },
+    { item="Base.SheetPaper",       basePrice=1,   tags={"Junk"}, stockRange={min=10, max=50} },
+    
+    -- USEFUL JUNK (Materials)
+    { item="Base.UnusableWood",     basePrice=2,   tags={"Junk", "Fuel"}, stockRange={min=5, max=15} },
+    { item="Base.Garbagebag",       basePrice=3,   tags={"Junk", "Container"}, stockRange={min=3, max=8} },
+    
+    -- TOYS
+    { item="Base.ToyBear",          basePrice=5,   tags={"Junk", "Luxury"}, stockRange={min=1, max=1} },
+    { item="Base.Spiffo",           basePrice=50,  tags={"Junk", "Rare", "Luxury"}, stockRange={min=1, max=1}, chance=2 }
 })

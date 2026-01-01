@@ -1,146 +1,110 @@
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Config = {}
 DynamicTrading.Config.MasterList = {} 
+DynamicTrading.Config.Tags = {}
+DynamicTrading.Archetypes = {}
 
--- =================================================
--- MERCHANT ARCHETYPES
--- =================================================
--- Allocations can be a Category Name (e.g., "Food") 
--- OR a Tag (e.g., "Meat", "Gun", "Build").
--- The system checks Tags first, then Categories.
-
-DynamicTrading.Config.MerchantTypes = {
-    -- 1. THE GENERAL TRADER (Balanced)
-    General = {
-        name = "General Trader",
-        desc = "A little bit of everything for everyone.",
-        allocations = {
-            Food = 6,
-            Material = 4,
-            Medical = 2,
-            Junk = 3,
-            Literature = 1,
-            Clothing = 2,
-            Weapon = 2
-        }
+-- =============================================================================
+-- 1. DIFFICULTY REGISTRY
+-- =============================================================================
+-- These profiles determine the global economy state based on Sandbox Settings.
+DynamicTrading.Config.DifficultyProfiles = {
+    [1] = { -- Easy
+        name = "Easy",
+        buyMult = 0.7,    -- Items cost 30% less
+        sellMult = 1.3,   -- Traders pay you 30% more
+        stockMult = 1.5,  -- 50% more items in stock
+        rarityBonus = 20  -- +20 flat weight to Rare items (Common)
     },
-
-    -- 2. THE BUTCHER (Meat Specialist)
-    Butcher = {
-        name = "The Butcher",
-        desc = "Fresh meat, animal parts, and sharp knives.",
-        allocations = {
-            Meat = 8,          -- Tag: Meat
-            AnimalPart = 4,    -- Category: AnimalPart (or Tag)
-            Blade = 3,         -- Tag: Blade (Knives/Axes)
-            Food = 2,          -- Category: Food (General filler)
-        }
+    [2] = { -- Normal
+        name = "Normal",
+        buyMult = 1.0,
+        sellMult = 1.0,
+        stockMult = 1.0,
+        rarityBonus = 0
     },
-
-    -- 3. THE GUNRUNNER (Weapons Specialist)
-    Gunrunner = {
-        name = "The Gunrunner",
-        desc = "Heavy firepower and ammunition.",
-        allocations = {
-            Gun = 5,           -- Tag: Gun
-            Ammo = 7,          -- Tag: Ammo
-            Military = 3,      -- Tag: Military
-            WeaponPart = 3,    -- Category
-            Armor = 2          -- Tag: Armor
-        }
+    [3] = { -- Hard
+        name = "Hard",
+        buyMult = 1.5,    -- Items cost 50% more
+        sellMult = 0.6,   -- Traders pay 40% less
+        stockMult = 0.7,  -- Stock reduced by 30%
+        rarityBonus = -5  -- Rare items are harder to find
     },
-
-    -- 4. THE SURVIVALIST (Outdoorsman)
-    Survivalist = {
-        name = "The Survivalist",
-        desc = "Gear for living off the grid.",
-        allocations = {
-            Camping = 5,       -- Category
-            Trap = 2,          -- Category
-            Survival = 4,      -- Tag: Survival (Lighters, Tents)
-            Weapon = 2,        -- Category
-            Warm = 3,          -- Tag: Warm (Clothing)
-            Medical = 2
-        }
-    },
-
-    -- 5. THE SCAVENGER (Junk & Parts)
-    Scavenger = {
-        name = "The Scavenger",
-        desc = "One man's trash is another man's treasure.",
-        allocations = {
-            Junk = 8,          -- Category
-            Material = 5,      -- Category
-            Electronics = 3,   -- Category
-            SpareParts = 4,    -- Tag: Repair (Duct tape, Glue)
-            Clothing = 2
-        }
-    },
-
-    -- 6. THE MECHANIC (Cars & Tools)
-    Mechanic = {
-        name = "The Mechanic",
-        desc = "Vehicle parts, fuel, and heavy tools.",
-        allocations = {
-            Car = 6,           -- Tag: Car (Batteries, Wrenches)
-            Fuel = 4,          -- Tag: Fuel
-            Tool = 5,          -- Category
-            Heavy = 2,         -- Tag: Heavy (Sledgehammers, Jacks)
-            Electronics = 2
-        }
-    },
-
-    -- 7. THE PHARMACIST (Medical)
-    Pharmacist = {
-        name = "The Pharmacist",
-        desc = "Medicine, hygiene, and chemicals.",
-        allocations = {
-            Medical = 8,       -- Category
-            Clean = 5,         -- Tag: Clean (Soap, Bleach)
-            Heal = 4,          -- Tag: Heal (Bandages)
-            Food = 2,          -- Category (Water/Food)
-        }
-    },
-
-    -- 8. THE CARPENTER (Builder)
-    Carpenter = {
-        name = "The Carpenter",
-        desc = "Building materials and blueprints.",
-        allocations = {
-            Build = 8,         -- Tag: Build (Nails, Hammers, Saws)
-            Material = 5,      -- Category
-            Literature = 3,    -- Category (Skill books)
-            Clothing = 2       -- Work clothes
-        }
-    },
-
-    -- 9. THE FARMER (Crops & Fresh Food)
-    Farmer = {
-        name = "The Farmer",
-        desc = "Fresh produce and gardening tools.",
-        allocations = {
-            Crop = 6,          -- Tag: Crop (Seeds, Veggies)
-            Fresh = 6,         -- Tag: Fresh
-            Gardening = 4,     -- Category
-            Food = 2,
-            Water = 2          -- Tag: Water
-        }
+    [4] = { -- Super Hard
+        name = "Insane",
+        buyMult = 3.0,
+        sellMult = 0.3,
+        stockMult = 0.4,
+        rarityBonus = -10 -- Rares are almost non-existent
     }
+}
 
-} -- <<-- IMPORTANT: This closing bracket must always be here!
+-- Helper to get current difficulty data safely
+function DynamicTrading.Config.GetDifficultyData()
+    local sandboxVal = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.Difficulty or 2
+    return DynamicTrading.Config.DifficultyProfiles[sandboxVal] or DynamicTrading.Config.DifficultyProfiles[2]
+end
 
--- =================================================
--- HELPER: ITEM REGISTRATION
--- =================================================
+-- =============================================================================
+-- 2. TAGS API (The "DNA" of items)
+-- =============================================================================
+-- priceMult: Permanent price modifier (1.1 = +10%)
+-- weight:    Spawn probability in Wildcard slots (Higher = Common)
+function DynamicTrading.RegisterTag(tag, data)
+    if not tag or not data then return end
+    
+    -- Set defaults
+    if not data.priceMult then data.priceMult = 1.0 end
+    if not data.weight then data.weight = 50 end
+    
+    DynamicTrading.Config.Tags[tag] = data
+end
+
+-- =============================================================================
+-- 3. ARCHETYPE API (The "Traders")
+-- =============================================================================
+function DynamicTrading.RegisterArchetype(id, data)
+    if not id or not data then return end
+    
+    data.name = data.name or id
+    
+    -- allocations: Guaranteed stock { ["TagOrCategory"] = Count }
+    data.allocations = data.allocations or {} 
+    
+    -- wants: Bonus price when buying FROM player { ["Tag"] = 1.25 }
+    data.wants = data.wants or {} 
+    
+    -- forbid: Tags that will never generate in this shop { "Tag1", "Tag2" }
+    data.forbid = data.forbid or {} 
+    
+    DynamicTrading.Archetypes[id] = data
+    print("[DynamicTrading] Registered Archetype: " .. id)
+end
+
+-- =============================================================================
+-- 4. ITEM API (The "Goods")
+-- =============================================================================
 function DynamicTrading.AddItem(uniqueID, data)
     if not uniqueID or not data then return end
     
-    -- Set defaults to prevent crashes
+    -- 1. Validate / Set Defaults
     if not data.basePrice then data.basePrice = 10 end
+    
+    -- 2. Handle Tags
+    if not data.tags then data.tags = { "Misc" } end
+    -- Ensure all items have at least one valid tag for the economy engine
+    local hasValid = false
+    for _, t in ipairs(data.tags) do if t then hasValid = true break end end
+    if not hasValid then table.insert(data.tags, "Misc") end
+
+    -- 3. Handle Stock Range
     if not data.stockRange then data.stockRange = {min=1, max=5} end
-    if not data.tags then data.tags = {} end
+    
+    -- 4. Handle Weight/Chance
+    -- If 'chance' is nil, the engine will calculate it based on Tags later.
+    -- If 'chance' is set, it overrides the Tag weights.
     
     DynamicTrading.Config.MasterList[uniqueID] = data
 end
 
-print("[DynamicTrading] Config & Archetypes Loaded.")
+print("[DynamicTrading] Config Core Loaded.")

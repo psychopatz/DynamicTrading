@@ -1,5 +1,10 @@
-require "DynamicTrading_Economy"
 require "DynamicTrading_Config"
+require "DynamicTrading_Tags"
+require "DynamicTrading_Archetypes"
+require "DynamicTrading_Events"
+require "DynamicTrading_Manager"
+require "DynamicTrading_Economy"
+
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Shared = {}
