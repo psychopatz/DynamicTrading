@@ -4,48 +4,36 @@ DynamicTrading.Config.MasterList = {}
 DynamicTrading.Config.Tags = {}
 DynamicTrading.Archetypes = {}
 
--- =============================================================================
--- RADIO TIERS (Based on Transmit Range)
--- =============================================================================
--- The key MUST match the Item ID exactly.
+-- [Keep RadioTiers table as is...]
 DynamicTrading.Config.RadioTiers = {
-    -- LOW TIER (Toys / Makeshift)
-    ["Base.WalkieTalkie1"]          = { power = 0.5, desc = "Weak Signal (Toy)" },       -- Toy (750m)
-    ["Base.WalkieTalkieMakeShift"]  = { power = 0.6, desc = "Weak Signal (Makeshift)" }, -- Makeshift (1000m)
-    
-    -- MID TIER (Civilian)
-    ["Base.WalkieTalkie2"]          = { power = 0.8, desc = "Average Signal" },          -- ValuTech (2000m)
-    ["Base.WalkieTalkie3"]          = { power = 1.0, desc = "Good Signal" },             -- Premium (4000m)
-    
-    -- HIGH TIER (Tactical / Military)
-    ["Base.WalkieTalkie4"]          = { power = 1.2, desc = "Strong Signal" },           -- Tactical (8000m)
-    ["Base.WalkieTalkie5"]          = { power = 1.5, desc = "Military Grade" },          -- US Army (16000m)
-    
-    -- HAM RADIOS (Stationary)
+    ["Base.WalkieTalkie1"]          = { power = 0.5, desc = "Weak Signal (Toy)" },
+    ["Base.WalkieTalkieMakeShift"]  = { power = 0.6, desc = "Weak Signal (Makeshift)" },
+    ["Base.WalkieTalkie2"]          = { power = 0.8, desc = "Average Signal" },
+    ["Base.WalkieTalkie3"]          = { power = 1.0, desc = "Good Signal" },
+    ["Base.WalkieTalkie4"]          = { power = 1.2, desc = "Strong Signal" },
+    ["Base.WalkieTalkie5"]          = { power = 1.5, desc = "Military Grade" },
     ["Base.HamRadioMakeShift"]      = { power = 1.2, desc = "Stationary (Makeshift)" },
     ["Base.HamRadio1"]              = { power = 1.5, desc = "Stationary (Premium)" },
     ["Base.HamRadio2"]              = { power = 2.0, desc = "Stationary (Military)" },
-    ["Base.ManPackRadio"]           = { power = 1.5, desc = "Military Manpack" }         -- Treated as Ham/High Tier
+    ["Base.ManPackRadio"]           = { power = 1.5, desc = "Military Manpack" }
 }
 
 function DynamicTrading.Config.GetRadioData(itemFullType)
     return DynamicTrading.Config.RadioTiers[itemFullType] or { power = 0.5, desc = "Unknown Device" }
 end
 
--- ... (Keep the rest of your DifficultyProfiles and Register functions below) ...
 -- =============================================================================
--- DIFFICULTY REGISTRY
+-- DIFFICULTY (Now purely Sandbox Driven)
 -- =============================================================================
-DynamicTrading.Config.DifficultyProfiles = {
-    [1] = { name="Easy",   buyMult=0.7, sellMult=1.3, stockMult=1.5, rarityBonus=20 },
-    [2] = { name="Normal", buyMult=1.0, sellMult=1.0, stockMult=1.0, rarityBonus=0 },
-    [3] = { name="Hard",   buyMult=1.5, sellMult=0.6, stockMult=0.7, rarityBonus=-5 },
-    [4] = { name="Insane", buyMult=3.0, sellMult=0.3, stockMult=0.4, rarityBonus=-10 }
-}
-
 function DynamicTrading.Config.GetDifficultyData()
-    local sandboxVal = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.Difficulty or 2
-    return DynamicTrading.Config.DifficultyProfiles[sandboxVal] or DynamicTrading.Config.DifficultyProfiles[2]
+    -- Create the data object directly from Sandbox variables
+    return {
+        name        = "Custom Sandbox", -- Static name since we don't have presets anymore
+        buyMult     = SandboxVars.DynamicTrading.PriceBuyMult or 1.0,
+        sellMult    = SandboxVars.DynamicTrading.PriceSellMult or 0.5,
+        stockMult   = SandboxVars.DynamicTrading.StockMult or 1.0,
+        rarityBonus = SandboxVars.DynamicTrading.RarityBonus or 0
+    }
 end
 
 function DynamicTrading.RegisterTag(tag, data)
@@ -75,4 +63,4 @@ function DynamicTrading.AddItem(uniqueID, data)
     DynamicTrading.Config.MasterList[uniqueID] = data
 end
 
-print("[DynamicTrading] Config & Radio Tiers Loaded.")
+print("[DynamicTrading] Config Loaded.")

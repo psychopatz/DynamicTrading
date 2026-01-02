@@ -1,3 +1,7 @@
+-- =============================================================================
+-- File: Contents\mods\DynamicTrading\42.13\media\lua\client\DynamicTradingInfoUI.lua
+-- =============================================================================
+
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"
 require "DynamicTrading_Manager"
@@ -35,14 +39,25 @@ function DynamicTradingInfoUI:populateList()
     self.listbox:clear()
     
     local data = DynamicTrading.Manager.GetData()
+    -- This now pulls directly from SandboxVars via the Config mapping
     local diff = DynamicTrading.Config.GetDifficultyData()
     
-    -- 1. DIFFICULTY
-    local header = self.listbox:addItem("=== DIFFICULTY PROFILE ===", nil)
+    -- 1. MARKET PROFILE (Updated for Granular Sandbox Options)
+    local header = self.listbox:addItem("=== MARKET PROFILE ===", nil)
     header.textColor = {r=1, g=0.9, b=0.5, a=1}
-    self.listbox:addItem("  Setting: " .. (diff.name or "Unknown"), nil)
-    self.listbox:addItem("  Buying Price: x" .. diff.buyMult, nil)
-    self.listbox:addItem("  Selling Price: x" .. diff.sellMult, nil)
+    
+    -- Format multipliers to percentage strings for better readability
+    -- e.g., 1.5 becomes "150%"
+    local buyStr = string.format("%d%%", math.floor((diff.buyMult or 1.0) * 100))
+    local sellStr = string.format("%d%%", math.floor((diff.sellMult or 0.5) * 100))
+    local stockStr = string.format("%d%%", math.floor((diff.stockMult or 1.0) * 100))
+    local rarityStr = tostring(diff.rarityBonus or 0)
+    if (diff.rarityBonus or 0) > 0 then rarityStr = "+" .. rarityStr end
+
+    self.listbox:addItem("  Buy Price: " .. buyStr, nil)
+    self.listbox:addItem("  Sell Return: " .. sellStr, nil)
+    self.listbox:addItem("  Stock Vol: " .. stockStr, nil)
+    self.listbox:addItem("  Rarity Bonus: " .. rarityStr, nil)
     self.listbox:addItem(" ", nil)
 
     -- 2. EVENTS
@@ -58,8 +73,15 @@ function DynamicTradingInfoUI:populateList()
             
             if event.effects then
                 for tag, mod in pairs(event.effects) do
-                    local txt = "    - " .. tag .. ": " .. (mod.price and ("Price x"..mod.price) or "")
-                    self.listbox:addItem(txt, nil)
+                    local effectStr = "    - " .. tag
+                    if mod.price then 
+                        effectStr = effectStr .. " (Price x" .. mod.price .. ")" 
+                    end
+                    if mod.vol then 
+                        effectStr = effectStr .. " (Stock x" .. mod.vol .. ")" 
+                    end
+                    
+                    self.listbox:addItem(effectStr, nil)
                 end
             end
         end
@@ -78,6 +100,7 @@ function DynamicTradingInfoUI:populateList()
                 local percent = math.floor(val * 100)
                 local sign = (val > 0) and "+" or ""
                 local item = self.listbox:addItem(string.format("  %s: %s%d%%", cat, sign, percent), nil)
+                -- Redish if expensive, Blueish if cheap
                 item.textColor = (val > 0) and {r=1, g=0.6, b=0.6, a=1} or {r=0.6, g=0.6, b=1, a=1}
             end
         end

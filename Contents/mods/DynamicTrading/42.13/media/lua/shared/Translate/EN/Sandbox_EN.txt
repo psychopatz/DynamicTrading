@@ -1,52 +1,48 @@
 Sandbox_EN = {
     Sandbox_DynamicTrading = "Dynamic Trading Market",
     
-    -- DIFFICULTY & TIMING
-    Sandbox_DynamicTrading_Difficulty = "Market Difficulty Level",
-    Sandbox_DynamicTrading_Difficulty_tooltip = "Controls global economy balance.<br>1 = Easy (Cheap prices, high stock)<br>4 = Insane (Expensive, low stock, items rare)",
+    Sandbox_DynamicTrading_PriceBuyMult = "Buying Price Multiplier",
+    Sandbox_DynamicTrading_PriceBuyMult_tooltip = "Global multiplier for item costs.<br>1.0 = Base Value.<br>2.0 = Items cost double.",
+
+    Sandbox_DynamicTrading_PriceSellMult = "Selling Price Multiplier",
+    Sandbox_DynamicTrading_PriceSellMult_tooltip = "Global multiplier for selling items to traders.<br>0.5 = You get 50% of the item's value.",
+
+    Sandbox_DynamicTrading_StockMult = "Stock Quantity Multiplier",
+    Sandbox_DynamicTrading_StockMult_tooltip = "Multiplier for how many items traders have in stock.<br>0.5 = Half stock.<br>2.0 = Double stock.",
+
+    Sandbox_DynamicTrading_RarityBonus = "Rarity Weight Bonus",
+    Sandbox_DynamicTrading_RarityBonus_tooltip = "Adds raw weight to all items during generation.<br>Positive values make Rare items much more common.<br>Negative values make Rare items vanish.<br>0 = Standard Logic.",
 
     Sandbox_DynamicTrading_RestockInterval = "Restock Interval (Days)",
     Sandbox_DynamicTrading_RestockInterval_tooltip = "How many days must pass before a trader replenishes their inventory.",
     
-    -- RADIO MECHANICS
     Sandbox_DynamicTrading_ScanBaseChance = "Radio Scan Base Chance (%)",
     Sandbox_DynamicTrading_ScanBaseChance_tooltip = "The starting probability of finding a signal using a basic Walkie Talkie.<br>Better radios (Military/HAM) multiply this chance.",
     
     Sandbox_DynamicTrading_ScanCooldown = "Scan Cooldown (Minutes)",
     Sandbox_DynamicTrading_ScanCooldown_tooltip = "How long a player must wait between scan attempts.",
 
-    Sandbox_DynamicTrading_BatteryDrain = "Scan Battery Cost",
-    Sandbox_DynamicTrading_BatteryDrain_tooltip = "How much battery charge is consumed per scan attempt.<br>0.1 = 10% of the battery.",
-    
     Sandbox_DynamicTrading_HamRadioBonus = "HAM Radio Bonus",
     Sandbox_DynamicTrading_HamRadioBonus_tooltip = "Multiplier applied to success chance when using stationary HAM radios or Military Manpacks.<br>2.0 = Double the chance compared to a handheld.",
 
-    -- TRADER BEHAVIOR
-    Sandbox_DynamicTrading_TraderStayDuration = "Signal Duration (Days)",
-    Sandbox_DynamicTrading_TraderStayDuration_tooltip = "How many days a trader stays in contact before leaving signal range or expiring.",
-
-    -- DAILY LIMITS & PROGRESSIVE DIFFICULTY
     Sandbox_DynamicTrading_DailyTraderMin = "Daily Trader Limit (Min)",
-    Sandbox_DynamicTrading_DailyTraderMin_tooltip = "The minimum number of traders that can exist in the network on any given day.<br>Used to calculate the daily cap at midnight.",
+    Sandbox_DynamicTrading_DailyTraderMin_tooltip = "The minimum number of traders that can exist in the network on any given day.",
 
     Sandbox_DynamicTrading_DailyTraderMax = "Daily Trader Limit (Max)",
-    Sandbox_DynamicTrading_DailyTraderMax_tooltip = "The maximum number of traders available globally per day.<br>Prevents players from spamming scans infinitely.<br>Once this limit is reached, all scans will fail until tomorrow.",
+    Sandbox_DynamicTrading_DailyTraderMax_tooltip = "The maximum number of traders available globally per day.<br>Prevents players from spamming scans infinitely.",
 
     Sandbox_DynamicTrading_ScanPenaltyPerTrader = "Progressive Difficulty",
-    Sandbox_DynamicTrading_ScanPenaltyPerTrader_tooltip = "Increases scan difficulty for every trader already found today.<br>0.0 = Randomization Disabled (Fixed Chance).<br>0.2 = Each trader makes the next scan 20% harder.<br>This mechanic rewards players with high Electricity skill and better radios as the day progresses.",
+    Sandbox_DynamicTrading_ScanPenaltyPerTrader_tooltip = "Increases scan difficulty for every trader already found today.<br>0.2 = Each trader makes the next scan 20% harder.",
 
-    -- ECONOMY & INFLATION
     Sandbox_DynamicTrading_SeasonImpact = "Environmental Impact",
     Sandbox_DynamicTrading_SeasonImpact_tooltip = "Multiplier for Event effects.<br>Controls how strongly seasons (Winter) or events (Harvest) affect prices.",
 
     Sandbox_DynamicTrading_CategoryInflation = "Inflation Sensitivity",
-    Sandbox_DynamicTrading_CategoryInflation_tooltip = "How much prices rise when players buy many items of the same category (Buying Heat).<br>Higher values mean prices spike faster.",
+    Sandbox_DynamicTrading_CategoryInflation_tooltip = "How much prices rise when players buy many items of the same category (Buying Heat).",
 
-    Sandbox_DynamicTrading_SellMarkdown = "Sell Price Multiplier",
-    Sandbox_DynamicTrading_SellMarkdown_tooltip = "Base percentage of value offered when selling items to traders.<br>0.5 = Traders buy items at 50% of their base value.",
     Sandbox_DynamicTrading_TraderStayHoursMin = "Signal Duration Min (Hours)",
-Sandbox_DynamicTrading_TraderStayHoursMin_tooltip = "The minimum number of in-game hours a trader signal remains active.",
+    Sandbox_DynamicTrading_TraderStayHoursMin_tooltip = "The minimum number of in-game hours a trader signal remains active.",
 
-Sandbox_DynamicTrading_TraderStayHoursMax = "Signal Duration Max (Hours)",
-Sandbox_DynamicTrading_TraderStayHoursMax_tooltip = "The maximum number of in-game hours a trader signal remains active.",
+    Sandbox_DynamicTrading_TraderStayHoursMax = "Signal Duration Max (Hours)",
+    Sandbox_DynamicTrading_TraderStayHoursMax_tooltip = "The maximum number of in-game hours a trader signal remains active.",
 }
