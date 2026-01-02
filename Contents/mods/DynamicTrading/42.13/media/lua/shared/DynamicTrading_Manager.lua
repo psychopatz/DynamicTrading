@@ -4,33 +4,56 @@ DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
 
 -- =============================================================================
--- 1. DATA RETRIEVAL
+-- 1. DATA RETRIEVAL & LOGGING (New)
 -- =============================================================================
 function DynamicTrading.Manager.GetData()
     local data = ModData.getOrCreate("DynamicTrading_Engine_v1")
     if not data.init then
         data.globalHeat = {}
         data.Traders = {}
-        data.scanCooldowns = {} -- Stores last scan time per player (username)
+        data.scanCooldowns = {}
+        data.NetworkLogs = {} -- Stores system logs
         data.init = true
     end
-    -- Backward compatibility for saves created before cooldown update
-    if not data.scanCooldowns then data.scanCooldowns = {} end
-    
+    if not data.NetworkLogs then data.NetworkLogs = {} end
     return data
 end
 
+-- Adds a log entry to the network history
+-- Categories: "info" (White), "good" (Green), "bad" (Red), "event" (Yellow)
+function DynamicTrading.Manager.AddLog(text, category)
+    local data = DynamicTrading.Manager.GetData()
+    
+    local gt = GameTime:getInstance()
+    local day = gt:getDay() + 1
+    local hour = gt:getHour()
+    local min = gt:getMinutes()
+    local timeStr = string.format("Day %d %02d:%02d", day, hour, min)
+    
+    -- Insert at the beginning (Newest first)
+    table.insert(data.NetworkLogs, 1, {
+        text = text,
+        cat = category or "info",
+        time = timeStr
+    })
+    
+    -- Limit history to 50 entries to save space
+    if #data.NetworkLogs > 50 then
+        table.remove(data.NetworkLogs)
+    end
+    
+    if isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
+end
+
 -- =============================================================================
--- 2. TRADER GENERATION (Unique Names & Expiration)
+-- 2. TRADER GENERATION
 -- =============================================================================
 function DynamicTrading.Manager.GenerateRandomContact()
     local data = DynamicTrading.Manager.GetData()
     
     -- A. Pick Random Archetype
     local archetypes = {}
-    for id, _ in pairs(DynamicTrading.Archetypes) do
-        table.insert(archetypes, id)
-    end
+    for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
     if #archetypes == 0 then return nil end
     local archetype = archetypes[ZombRand(#archetypes) + 1]
     
@@ -38,53 +61,32 @@ function DynamicTrading.Manager.GenerateRandomContact()
     local name = "Unknown Survivor"
     local uniqueFound = false
     local attempts = 0
-    
     while not uniqueFound and attempts < 15 do
         attempts = attempts + 1
-        
-        -- Use PZ internal SurvivorFactory for lore-friendly names
         if SurvivorFactory then
             local desc = SurvivorFactory.CreateSurvivor()
-            if desc then
-                name = desc:getForename() .. " " .. desc:getSurname()
-            end
+            if desc then name = desc:getForename() .. " " .. desc:getSurname() end
         else
-            -- Fallback
             name = "Trader " .. tostring(ZombRand(1000))
         end
-        
-        -- Check duplicates in existing traders
         local duplicate = false
         for _, t in pairs(data.Traders) do
-            if t.name == name then 
-                duplicate = true 
-                break 
-            end
+            if t.name == name then duplicate = true break end
         end
-        
         if not duplicate then uniqueFound = true end
     end
-    
-    -- Fallback if super unlucky with names
-    if not uniqueFound then
-        name = name .. " (" .. archetype .. ")"
-    end
+    if not uniqueFound then name = name .. " (" .. archetype .. ")" end
 
-    -- C. Calculate Expiration
+    -- C. Expiration
     local gt = GameTime:getInstance()
     local currentDay = math.floor(gt:getDaysSurvived())
     local duration = SandboxVars.DynamicTrading.TraderStayDuration or 3
-    
-    -- Randomized Stay: Duration +/- 1 day
     local stay = duration + ZombRand(-1, 2)
     if stay < 1 then stay = 1 end
-    
     local expireDay = currentDay + stay
 
-    -- D. Create Unique ID and Instance
-    -- Using os.time() ensures safety even if scanned simultaneously
+    -- D. Create
     local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
-    
     data.Traders[uniqueID] = {
         id = uniqueID,
         archetype = archetype,
@@ -94,10 +96,11 @@ function DynamicTrading.Manager.GenerateRandomContact()
         expirationDay = expireDay
     }
     
-    -- Generate initial stock
     DynamicTrading.Manager.RestockTrader(uniqueID, true)
     
-    -- Transmit to other players
+    -- [LOGGING]
+    DynamicTrading.Manager.AddLog("New Signal: " .. name .. " (" .. archetype .. ")", "good")
+    
     if isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
     
     return data.Traders[uniqueID]
@@ -110,18 +113,16 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
     if not traderID then return nil end
     local data = DynamicTrading.Manager.GetData()
     
-    -- If it's a persistent/debug trader (not radio), create if missing
     if not data.Traders[traderID] and not string.find(traderID, "Radio_") then
         data.Traders[traderID] = {
             id = traderID,
             archetype = archetype or "General",
             stocks = {},
             lastRestockDay = -1,
-            expirationDay = nil -- Permanent
+            expirationDay = nil
         }
         DynamicTrading.Manager.RestockTrader(traderID, true)
     end
-    
     return data.Traders[traderID]
 end
 
@@ -136,8 +137,7 @@ function DynamicTrading.Manager.RestockTrader(traderID, force)
     
     if force or (currentDay - (trader.lastRestockDay or 0) >= interval) then
         if DynamicTrading.Economy and DynamicTrading.Economy.GenerateStock then
-            local newStock = DynamicTrading.Economy.GenerateStock(trader.archetype)
-            trader.stocks = newStock
+            trader.stocks = DynamicTrading.Economy.GenerateStock(trader.archetype)
             trader.lastRestockDay = currentDay
         end
     end
@@ -151,11 +151,8 @@ function DynamicTrading.Manager.UpdateHeat(category, amount)
     local data = DynamicTrading.Manager.GetData()
     local current = data.globalHeat[category] or 0
     data.globalHeat[category] = current + amount
-    
-    -- Clamp Heat (-50% to +200%)
     if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
     if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
-    
     if isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
 end
 
@@ -178,12 +175,10 @@ function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
 end
 
 -- =============================================================================
--- 5. COOLDOWN MANAGEMENT (Scanning)
+-- 5. COOLDOWN MANAGEMENT
 -- =============================================================================
--- Returns: boolean (canScan), number (minutesRemaining)
 function DynamicTrading.Manager.CanScan(player)
     if not player then return false, 0 end
-    
     local data = DynamicTrading.Manager.GetData()
     if not data.scanCooldowns then data.scanCooldowns = {} end
     
@@ -191,22 +186,17 @@ function DynamicTrading.Manager.CanScan(player)
     local lastTime = data.scanCooldowns[username] or 0
     local currentTime = GameTime:getInstance():getWorldAgeHours()
     
-    -- Config: Cooldown in Minutes (Default 30 if undefined)
     local cooldownMinutes = 30
     if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanCooldown then
          cooldownMinutes = SandboxVars.DynamicTrading.ScanCooldown
     end
-    
-    -- Convert minutes to game-hours (1 game hour = 1.0)
-    -- Actually getWorldAgeHours returns exact hours float.
     local cooldownHours = cooldownMinutes / 60.0
     
     if currentTime >= lastTime + cooldownHours then
         return true, 0
     else
         local diffHours = (lastTime + cooldownHours) - currentTime
-        local diffMins = diffHours * 60
-        return false, diffMins
+        return false, diffHours * 60
     end
 end
 
@@ -214,19 +204,15 @@ function DynamicTrading.Manager.SetScanTimestamp(player)
     if not player then return end
     local data = DynamicTrading.Manager.GetData()
     if not data.scanCooldowns then data.scanCooldowns = {} end
-    
     local username = player:getUsername()
     data.scanCooldowns[username] = GameTime:getInstance():getWorldAgeHours()
-    
     if isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
 end
 
 -- =============================================================================
--- 6. DAILY MAINTENANCE (Multiplayer Safe)
+-- 6. DAILY MAINTENANCE
 -- =============================================================================
 function DynamicTrading.Manager.OnDailyTick()
-    -- [MP SAFETY]
-    -- Only the Server (or Host in SP) processes decay/expiration
     if isClient() and not isServer() then return end
 
     local data = DynamicTrading.Manager.GetData()
@@ -235,25 +221,20 @@ function DynamicTrading.Manager.OnDailyTick()
     local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
     local changesMade = false
 
-    -- A. Remove Expired Radio Traders
-    local removedCount = 0
+    -- A. Remove Expired Traders
     if data.Traders then
         for id, trader in pairs(data.Traders) do
             if trader.expirationDay and currentDay >= trader.expirationDay then
+                -- [LOGGING]
+                DynamicTrading.Manager.AddLog("Signal Lost: " .. trader.name, "bad")
+                
                 data.Traders[id] = nil
-                removedCount = removedCount + 1
                 changesMade = true
-            else
-                -- Optional: Daily Restock logic could go here if enabled
             end
         end
     end
-    
-    if removedCount > 0 then
-        print("[DynamicTrading] " .. removedCount .. " traders moved out of signal range.")
-    end
 
-    -- B. Decay Heat (Inflation)
+    -- B. Decay Heat
     for cat, val in pairs(data.globalHeat) do
         if val ~= 0 then
             data.globalHeat[cat] = val * 0.90
@@ -262,21 +243,29 @@ function DynamicTrading.Manager.OnDailyTick()
         end
     end
     
-    -- C. Event Check
+    -- C. Event Check with Logging
     if DynamicTrading.Events and DynamicTrading.Events.CheckEvents then
+        -- Capture active events before update
+        local oldEvents = {}
+        for _, ev in ipairs(DynamicTrading.Events.ActiveEvents) do oldEvents[ev.name] = true end
+        
+        -- Run Update
         DynamicTrading.Events.CheckEvents()
+        
+        -- Compare
+        for _, ev in ipairs(DynamicTrading.Events.ActiveEvents) do
+            if not oldEvents[ev.name] then
+                DynamicTrading.Manager.AddLog("Event Started: " .. ev.name, "event")
+                changesMade = true
+            end
+            oldEvents[ev.name] = nil -- Mark processed
+        end
+        -- Whatever remains in oldEvents has ended (optional to log)
     end
     
-    -- Transmit updates
     if changesMade then
-        if isClient() then 
-            ModData.transmit("DynamicTrading_Engine_v1") -- Host
-        else
-            ModData.transmit("DynamicTrading_Engine_v1") -- Dedicated
-        end
+        ModData.transmit("DynamicTrading_Engine_v1")
     end
 end
 
 Events.EveryDays.Add(DynamicTrading.Manager.OnDailyTick)
-
-print("[DynamicTrading] Manager Loaded.")
