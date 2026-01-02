@@ -41,10 +41,66 @@ function DynamicTradingTraderListUI:createChildren()
     self:addChild(self.listbox)
 end
 
+-- ==========================================================
+-- VALIDATION LOOP (Auto-Close Logic)
+-- ==========================================================
+function DynamicTradingTraderListUI:CheckConnectionValidity()
+    local player = getSpecificPlayer(0)
+    if not player or not self.radioObj then return false end
+    
+    local data = self.radioObj:getDeviceData()
+    if not data then return false end
+
+    -- 1. CHECK IF TURNED ON
+    if not data:getIsTurnedOn() then return false end
+
+    -- 2. CHECK SPECIFIC TYPE LOGIC
+    if self.isHam then
+        -- A. Object Existence
+        local sq = self.radioObj:getSquare()
+        if not sq then return false end -- Object destroyed or removed
+        
+        -- B. Distance (Must be close to base station)
+        -- Using getX() check to avoid complex math if not needed
+        local dist = IsoUtils.DistanceTo(player:getX(), player:getY(), self.radioObj:getX(), self.radioObj:getY())
+        if dist > 2.5 then return false end -- Close if moved away ~2-3 tiles
+        
+        -- C. Power
+        local hasPower = false
+        if data:getIsBatteryPowered() then
+            if data:getPower() > 0 then hasPower = true end
+        elseif sq:haveElectricity() then
+            hasPower = true
+        end
+        if not hasPower then return false end
+
+    else
+        -- Walkie Talkie Logic
+        
+        -- A. Inventory Check (Must be in main inventory or equipped)
+        if self.radioObj:getContainer() ~= player:getInventory() then return false end
+        
+        -- B. Power
+        if data:getPower() <= 0.001 then return false end
+    end
+
+    return true
+end
+
 function DynamicTradingTraderListUI:render()
     ISCollapsableWindow.render(self)
     
-    -- Update Button State (Cooldown)
+    -- 1. Auto-Close if connection lost
+    if not self:CheckConnectionValidity() then
+        self:close()
+        -- Close the trading window too if it's open
+        if DynamicTradingUI and DynamicTradingUI.instance then
+             DynamicTradingUI.instance:close()
+        end
+        return
+    end
+
+    -- 2. Update Button State (Cooldown)
     local player = getSpecificPlayer(0)
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
     
@@ -62,24 +118,16 @@ end
 function DynamicTradingTraderListUI:onScanClick()
     local player = getSpecificPlayer(0)
     
-    -- Verify Radio is still valid
-    local valid = false
-    if self.isHam then
-        if self.radioObj and self.radioObj:getSquare() then valid = true end
-    else
-        if self.radioObj and self.radioObj:getContainer() == player:getInventory() then valid = true end
-    end
-    
-    if not valid then
+    -- Verify Radio again just in case
+    if not self:CheckConnectionValidity() then
         self:close()
-        player:Say("I lost connection to the radio.")
+        player:Say("Signal lost!")
         return
     end
     
     -- Perform Scan
     local found = DT_RadioInteraction.PerformScan(player, self.radioObj, self.isHam)
     
-    -- If found, refresh list
     if found then
         self:populateList()
     end
@@ -109,7 +157,6 @@ function DynamicTradingTraderListUI.drawItem(this, y, item, alt)
     local height = this.itemheight
     local width = this:getWidth()
     
-    -- Selection
     if this.selected == item.index then
         this:drawRect(0, y, width, height, 0.3, 0.7, 0.35, 0.2)
     elseif alt then
@@ -122,11 +169,9 @@ function DynamicTradingTraderListUI.drawItem(this, y, item, alt)
         return y + height
     end
 
-    -- Icon
     local icon = getTexture("Item_WalkieTalkie1")
     if icon then this:drawTextureScaled(icon, 6, y + 5, 20, 20, 1, 1, 1, 1) end
 
-    -- Text
     this:drawText(item.text, 35, y + 8, 0.9, 0.9, 0.9, 1, this.font)
 
     return y + height
@@ -141,8 +186,6 @@ function DynamicTradingTraderListUI.onListMouseDown(target, x, y)
     if item.item.traderID then
         local data = item.item
         if DynamicTradingUI and DynamicTradingUI.ToggleWindow then
-            -- Pass the active radio ID so the Trade Window knows we are legit
-            -- (Optional safety enhancement for Trade Window)
             DynamicTradingUI.ToggleWindow(data.traderID, data.archetype)
         end
     end
@@ -154,14 +197,12 @@ function DynamicTradingTraderListUI:close()
     DynamicTradingTraderListUI.instance = nil
 end
 
--- ==========================================================
--- TOGGLE (Called by Context Menu)
--- ==========================================================
 function DynamicTradingTraderListUI.ToggleWindow(radioObj, isHam)
     if DynamicTradingTraderListUI.instance then
         DynamicTradingTraderListUI.instance:close()
-        -- If just clicking to close, stop here. 
-        -- If opening different radio, reopen.
+        -- If user clicked the SAME radio to toggle it off, we stop here.
+        -- But if they clicked a DIFFERENT radio, ideally we would reopen, 
+        -- but simpler behavior is just close first.
         return
     end
 

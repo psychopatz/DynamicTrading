@@ -1,6 +1,6 @@
 require "DynamicTrading_Manager"
 require "DynamicTrading_Config"
-require "DynamicTradingTraderListUI" -- Ensure UI is loaded
+require "DynamicTradingTraderListUI" 
 
 DT_RadioInteraction = {}
 
@@ -10,12 +10,10 @@ DT_RadioInteraction = {}
 function DT_RadioInteraction.GetDeviceType(obj)
     if not obj then return "Base.WalkieTalkie1" end
 
-    -- Inventory Item
     if instanceof(obj, "InventoryItem") then
         return obj:getFullType()
     end
 
-    -- World Object (HAM)
     if instanceof(obj, "IsoWaveSignal") or instanceof(obj, "IsoObject") then
         local sprite = obj:getSprite() and obj:getSprite():getName() or ""
         if sprite == "appliances_radio_01_5" then return "Base.HamRadio2" 
@@ -37,15 +35,22 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     if not canScan then
         player:Say("I need to wait " .. math.ceil(timeRem) .. " minutes before scanning again.")
         player:playSound("Click")
-        return false -- Scan failed
+        return false 
     end
 
     -- 2. GET DATA
     local deviceData = deviceItem:getDeviceData()
     if not deviceData then return false end
 
-    -- 3. POWER CHECK (Safety Re-Check)
+    -- 3. POWER & STATE CHECK
     local hasPower = false
+    
+    -- Must be turned ON
+    if not deviceData:getIsTurnedOn() then
+        player:Say("I need to turn it on first.")
+        return false
+    end
+
     if isHam then
         if deviceData:getIsBatteryPowered() then
             if deviceData:getPower() > 0 then hasPower = true end
@@ -53,8 +58,8 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
             if deviceItem:getSquare() and deviceItem:getSquare():haveElectricity() then hasPower = true end
         end
     else
-        -- Walkie Talkie
-        if deviceData:getIsTurnedOn() and deviceData:getPower() > 0.001 then hasPower = true end
+        -- Walkie
+        if deviceData:getPower() > 0.001 then hasPower = true end
     end
 
     if not hasPower then
@@ -64,7 +69,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
 
     -- 4. PERFORM SCAN
     player:playSound("RadioStatic")
-    DynamicTrading.Manager.SetScanTimestamp(player) -- Apply Cooldown
+    DynamicTrading.Manager.SetScanTimestamp(player) 
 
     local baseChance = SandboxVars.DynamicTrading.ScanBaseChance or 30
     local typeID = DT_RadioInteraction.GetDeviceType(deviceItem)
@@ -85,18 +90,18 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
             player:playSound("RadioZombies") 
             player:Say("Connected: " .. trader.name)
             HaloTextHelper.addTextWithArrow(player, "New Signal Found", true, HaloTextHelper.getColorGreen())
-            return true -- Success
+            return true 
         end
     else
         local failLines = {"Static...", "Just noise.", "No response.", "Dead air."}
         player:Say(failLines[ZombRand(#failLines)+1])
     end
     
-    return false -- Scan complete (but no trader found)
+    return false 
 end
 
 -- ==========================================================
--- CONTEXT MENU (Opens UI)
+-- CONTEXT MENU: INVENTORY (Walkie Talkie)
 -- ==========================================================
 local function OnFillInventoryObjectContextMenu(playerNum, context, items)
     local player = getSpecificPlayer(playerNum)
@@ -117,21 +122,24 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
         local option = context:addOption("Open Trader Network", 
             radioItem, 
             function(item) 
-                -- Open UI passing the specific Item
                 DynamicTradingTraderListUI.ToggleWindow(item, false) 
             end
         )
         
         local d = radioItem:getDeviceData()
-        if not d or not d:getIsTurnedOn() then
+        -- Must be ON and have Power
+        if not d or not d:getIsTurnedOn() or d:getPower() <= 0.001 then
             option.notAvailable = true
             local tooltip = ISWorldObjectContextMenu.addToolTip()
-            tooltip.description = "Turn ON to access network."
+            tooltip.description = "Radio must be ON and have Power."
             option.toolTip = tooltip
         end
     end
 end
 
+-- ==========================================================
+-- CONTEXT MENU: WORLD OBJECT (Ham Radio)
+-- ==========================================================
 local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, test)
     local player = getSpecificPlayer(playerNum)
     local hamRadio = nil
@@ -144,11 +152,16 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
     end
     
     if hamRadio then
-         -- Check power roughly for the option enabling
          local data = hamRadio:getDeviceData()
-         local powered = false
-         if data and data:getIsBatteryPowered() and data:getPower() > 0 then powered = true
-         elseif hamRadio:getSquare() and hamRadio:getSquare():haveElectricity() then powered = true end
+         local isOperational = false
+         
+         if data and data:getIsTurnedOn() then
+             if data:getIsBatteryPowered() then
+                 if data:getPower() > 0 then isOperational = true end
+             elseif hamRadio:getSquare() and hamRadio:getSquare():haveElectricity() then
+                 isOperational = true
+             end
+         end
 
          local option = context:addOption("Open Trader Network (HAM)", 
             hamRadio,
@@ -157,10 +170,10 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
             end
         )
         
-        if not powered then
+        if not isOperational then
             option.notAvailable = true
             local tooltip = ISWorldObjectContextMenu.addToolTip()
-            tooltip.description = "Needs Power."
+            tooltip.description = "Radio must be ON and Powered."
             option.toolTip = tooltip
         end
     end
