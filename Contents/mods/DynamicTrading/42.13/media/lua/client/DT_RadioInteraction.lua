@@ -1,6 +1,6 @@
 require "DynamicTrading_Manager"
 require "DynamicTrading_Config"
-require "DynamicTradingTraderListUI" 
+require "DynamicTradingTraderListUI" -- [CRITICAL] Ensures the UI file is loaded
 
 DT_RadioInteraction = {}
 
@@ -45,7 +45,6 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     -- 3. POWER & STATE CHECK
     local hasPower = false
     
-    -- Must be turned ON
     if not deviceData:getIsTurnedOn() then
         player:Say("I need to turn it on first.")
         return false
@@ -58,7 +57,6 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
             if deviceItem:getSquare() and deviceItem:getSquare():haveElectricity() then hasPower = true end
         end
     else
-        -- Walkie
         if deviceData:getPower() > 0.001 then hasPower = true end
     end
 
@@ -101,7 +99,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
 end
 
 -- ==========================================================
--- CONTEXT MENU: INVENTORY (Walkie Talkie)
+-- CONTEXT MENUS
 -- ==========================================================
 local function OnFillInventoryObjectContextMenu(playerNum, context, items)
     local player = getSpecificPlayer(playerNum)
@@ -122,24 +120,25 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
         local option = context:addOption("Open Trader Network", 
             radioItem, 
             function(item) 
-                DynamicTradingTraderListUI.ToggleWindow(item, false) 
+                -- [SAFETY CHECK]
+                if not DynamicTradingTraderListUI then require "DynamicTradingTraderListUI" end
+                if DynamicTradingTraderListUI then
+                    DynamicTradingTraderListUI.ToggleWindow(item, false) 
+                else
+                    player:Say("Error: UI failed to load.")
+                end
             end
         )
         
         local d = radioItem:getDeviceData()
-        -- Must be ON and have Power
         if not d or not d:getIsTurnedOn() or d:getPower() <= 0.001 then
             option.notAvailable = true
-            local tooltip = ISWorldObjectContextMenu.addToolTip()
-            tooltip.description = "Radio must be ON and have Power."
-            option.toolTip = tooltip
+            option.toolTip = ISWorldObjectContextMenu.addToolTip()
+            option.toolTip.description = "Radio must be ON and have Power."
         end
     end
 end
 
--- ==========================================================
--- CONTEXT MENU: WORLD OBJECT (Ham Radio)
--- ==========================================================
 local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, test)
     local player = getSpecificPlayer(playerNum)
     local hamRadio = nil
@@ -166,15 +165,20 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
          local option = context:addOption("Open Trader Network (HAM)", 
             hamRadio,
             function(obj) 
-                DynamicTradingTraderListUI.ToggleWindow(obj, true) 
+                -- [SAFETY CHECK]
+                if not DynamicTradingTraderListUI then require "DynamicTradingTraderListUI" end
+                if DynamicTradingTraderListUI then
+                    DynamicTradingTraderListUI.ToggleWindow(obj, true)
+                else
+                    player:Say("Error: UI failed to load.")
+                end
             end
         )
         
         if not isOperational then
             option.notAvailable = true
-            local tooltip = ISWorldObjectContextMenu.addToolTip()
-            tooltip.description = "Radio must be ON and Powered."
-            option.toolTip = tooltip
+            option.toolTip = ISWorldObjectContextMenu.addToolTip()
+            option.toolTip.description = "Radio must be ON and Powered."
         end
     end
 end

@@ -4,7 +4,7 @@ DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
 
 -- =============================================================================
--- 1. DATA RETRIEVAL & LOGGING (New)
+-- 1. DATA & LOGGING
 -- =============================================================================
 function DynamicTrading.Manager.GetData()
     local data = ModData.getOrCreate("DynamicTrading_Engine_v1")
@@ -12,52 +12,43 @@ function DynamicTrading.Manager.GetData()
         data.globalHeat = {}
         data.Traders = {}
         data.scanCooldowns = {}
-        data.NetworkLogs = {} -- Stores system logs
+        data.NetworkLogs = {} 
         data.init = true
     end
     if not data.NetworkLogs then data.NetworkLogs = {} end
     return data
 end
 
--- Adds a log entry to the network history
--- Categories: "info" (White), "good" (Green), "bad" (Red), "event" (Yellow)
 function DynamicTrading.Manager.AddLog(text, category)
     local data = DynamicTrading.Manager.GetData()
-    
     local gt = GameTime:getInstance()
     local day = gt:getDay() + 1
     local hour = gt:getHour()
     local min = gt:getMinutes()
     local timeStr = string.format("Day %d %02d:%02d", day, hour, min)
     
-    -- Insert at the beginning (Newest first)
     table.insert(data.NetworkLogs, 1, {
         text = text,
         cat = category or "info",
         time = timeStr
     })
     
-    -- Limit history to 50 entries to save space
-    if #data.NetworkLogs > 50 then
-        table.remove(data.NetworkLogs)
-    end
-    
+    if #data.NetworkLogs > 50 then table.remove(data.NetworkLogs) end
     if isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
 end
 
 -- =============================================================================
--- 2. TRADER GENERATION
+-- 2. TRADER GENERATION (With Realistic Schedules)
 -- =============================================================================
 function DynamicTrading.Manager.GenerateRandomContact()
     local data = DynamicTrading.Manager.GetData()
     
-    -- A. Pick Random Archetype
+    -- A. Archetype & Name (Same as before)
     local archetypes = {}
     for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
     if #archetypes == 0 then return nil end
     local archetype = archetypes[ZombRand(#archetypes) + 1]
     
-    -- B. Generate Unique Name
     local name = "Unknown Survivor"
     local uniqueFound = false
     local attempts = 0
@@ -77,15 +68,21 @@ function DynamicTrading.Manager.GenerateRandomContact()
     end
     if not uniqueFound then name = name .. " (" .. archetype .. ")" end
 
-    -- C. Expiration
+    -- B. Calculate Precise Expiration (Day + Hour)
     local gt = GameTime:getInstance()
     local currentDay = math.floor(gt:getDaysSurvived())
     local duration = SandboxVars.DynamicTrading.TraderStayDuration or 3
-    local stay = duration + ZombRand(-1, 2)
-    if stay < 1 then stay = 1 end
-    local expireDay = currentDay + stay
+    
+    local stayDays = duration + ZombRand(-1, 2)
+    if stayDays < 1 then stayDays = 1 end
+    
+    local expireDay = currentDay + stayDays
+    
+    -- [NEW] Randomize Departure Hour (06:00 to 22:00)
+    -- This prevents them from leaving exactly at midnight.
+    local expireHour = ZombRand(6, 23) 
 
-    -- D. Create
+    -- C. Create Instance
     local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
     data.Traders[uniqueID] = {
         id = uniqueID,
@@ -93,12 +90,12 @@ function DynamicTrading.Manager.GenerateRandomContact()
         name = name,
         stocks = {},
         lastRestockDay = -1,
-        expirationDay = expireDay
+        expirationDay = expireDay,
+        expirationHour = expireHour -- Store the hour
     }
     
     DynamicTrading.Manager.RestockTrader(uniqueID, true)
     
-    -- [LOGGING]
     DynamicTrading.Manager.AddLog("New Signal: " .. name .. " (" .. archetype .. ")", "good")
     
     if isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
@@ -210,57 +207,71 @@ function DynamicTrading.Manager.SetScanTimestamp(player)
 end
 
 -- =============================================================================
--- 6. DAILY MAINTENANCE
+-- 6. HOURLY MAINTENANCE (Replaces Daily Tick)
 -- =============================================================================
-function DynamicTrading.Manager.OnDailyTick()
+function DynamicTrading.Manager.OnHourlyTick()
+    -- Only Server/Host handles this
     if isClient() and not isServer() then return end
 
     local data = DynamicTrading.Manager.GetData()
     if not data or not data.init then return end
     
-    local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
+    local gt = GameTime:getInstance()
+    local currentDay = math.floor(gt:getDaysSurvived())
+    local currentHour = gt:getHour()
+    
     local changesMade = false
 
-    -- A. Remove Expired Traders
+    -- A. Remove Expired Traders (Hourly Check)
     if data.Traders then
         for id, trader in pairs(data.Traders) do
-            if trader.expirationDay and currentDay >= trader.expirationDay then
-                -- [LOGGING]
-                DynamicTrading.Manager.AddLog("Signal Lost: " .. trader.name, "bad")
+            if trader.expirationDay then
+                -- Check if Day has passed OR (Same Day AND Hour has passed)
+                local isExpired = false
                 
-                data.Traders[id] = nil
-                changesMade = true
+                if currentDay > trader.expirationDay then
+                    isExpired = true
+                elseif currentDay == trader.expirationDay then
+                    -- Default to 12:00 if old save w/o hour data
+                    local targetHour = trader.expirationHour or 12 
+                    if currentHour >= targetHour then
+                        isExpired = true
+                    end
+                end
+                
+                if isExpired then
+                    DynamicTrading.Manager.AddLog("Signal Lost: " .. trader.name, "bad")
+                    data.Traders[id] = nil
+                    changesMade = true
+                end
             end
         end
     end
 
-    -- B. Decay Heat
-    for cat, val in pairs(data.globalHeat) do
-        if val ~= 0 then
-            data.globalHeat[cat] = val * 0.90
-            if math.abs(data.globalHeat[cat]) < 0.01 then data.globalHeat[cat] = 0 end
-            changesMade = true
-        end
-    end
-    
-    -- C. Event Check with Logging
-    if DynamicTrading.Events and DynamicTrading.Events.CheckEvents then
-        -- Capture active events before update
-        local oldEvents = {}
-        for _, ev in ipairs(DynamicTrading.Events.ActiveEvents) do oldEvents[ev.name] = true end
-        
-        -- Run Update
-        DynamicTrading.Events.CheckEvents()
-        
-        -- Compare
-        for _, ev in ipairs(DynamicTrading.Events.ActiveEvents) do
-            if not oldEvents[ev.name] then
-                DynamicTrading.Manager.AddLog("Event Started: " .. ev.name, "event")
+    -- B. Daily Tasks (Run ONLY at 00:00)
+    -- We still need to decay heat and check events, but only once a day
+    if currentHour == 0 then
+        -- Decay Heat
+        for cat, val in pairs(data.globalHeat) do
+            if val ~= 0 then
+                data.globalHeat[cat] = val * 0.90
+                if math.abs(data.globalHeat[cat]) < 0.01 then data.globalHeat[cat] = 0 end
                 changesMade = true
             end
-            oldEvents[ev.name] = nil -- Mark processed
         end
-        -- Whatever remains in oldEvents has ended (optional to log)
+        
+        -- Event Check
+        if DynamicTrading.Events and DynamicTrading.Events.CheckEvents then
+            local oldEvents = {}
+            for _, ev in ipairs(DynamicTrading.Events.ActiveEvents) do oldEvents[ev.name] = true end
+            DynamicTrading.Events.CheckEvents()
+            for _, ev in ipairs(DynamicTrading.Events.ActiveEvents) do
+                if not oldEvents[ev.name] then
+                    DynamicTrading.Manager.AddLog("Event Started: " .. ev.name, "event")
+                    changesMade = true
+                end
+            end
+        end
     end
     
     if changesMade then
@@ -268,4 +279,5 @@ function DynamicTrading.Manager.OnDailyTick()
     end
 end
 
-Events.EveryDays.Add(DynamicTrading.Manager.OnDailyTick)
+-- Changed from EveryDays to EveryHours
+Events.EveryHours.Add(DynamicTrading.Manager.OnHourlyTick)
