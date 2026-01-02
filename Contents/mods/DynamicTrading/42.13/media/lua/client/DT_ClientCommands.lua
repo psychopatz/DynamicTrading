@@ -1,4 +1,5 @@
 require "ISUI/ISUIHandler"
+-- No extra require needed for HaloTextHelper, it's global
 
 local function OnServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
@@ -7,13 +8,42 @@ local function OnServerCommand(module, command, args)
         local player = getSpecificPlayer(0)
         if not player then return end
 
-        if args.success then
-            -- The Server finished creating the trader. Now we show the success message.
+        -- 1. SUCCESS (Green)
+        if args.status == "SUCCESS" then
             player:playSound("RadioZombies")
             player:Say("Connected: " .. (args.name or "Unknown"))
-            HaloTextHelper.addTextWithArrow(player, "New Signal Found", true, HaloTextHelper.getColorGreen())
+            if HaloTextHelper then
+                HaloTextHelper.addTextWithArrow(player, "New Signal Found", true, HaloTextHelper.getColorGreen())
+            end
+        
+        -- 2. FAILURE: LIMIT REACHED (Red)
+        elseif args.status == "LIMIT_REACHED" then
+            player:playSound("RadioStatic")
+            
+            local failMsg = "Network Exhausted. Try again tomorrow."
+            player:Say("The airwaves are dead... no more traders today.")
+            
+            if HaloTextHelper then
+                HaloTextHelper.addTextWithArrow(player, failMsg, true, HaloTextHelper.getColorRed())
+            end
+            
+        -- 3. FAILURE: RNG / BAD LUCK (Red)
         else
-            player:Say("Failed to establish connection.")
+            local failLines = {
+                "Just static...",
+                "Signal too weak.",
+                "Connection lost.",
+                "Dead air.",
+                "No response.",
+                "White noise..."
+            }
+            local text = failLines[ZombRand(#failLines)+1]
+            
+            player:Say(text)
+            
+            if HaloTextHelper then
+                HaloTextHelper.addTextWithArrow(player, text, true, HaloTextHelper.getColorRed())
+            end
         end
     end
 end

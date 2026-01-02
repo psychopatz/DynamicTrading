@@ -65,43 +65,47 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
         return false
     end
 
-    -- 4. PERFORM SCAN CALCULATION
+    -- 4. PERFORM SCAN (VISUALS)
     player:playSound("RadioStatic")
     DynamicTrading.Manager.SetScanTimestamp(player) 
 
-    local baseChance = SandboxVars.DynamicTrading.ScanBaseChance or 30
+    -- Flavor Text
+    local scanLines = {
+        "Scanning frequencies...",
+        "Tuning the dial...",
+        "Searching the bands...",
+        "Listening for static breaks...",
+        "Adjusting gain...",
+        "Sweeping channels...",
+        "Checking for broadcasts..."
+    }
+    player:Say(scanLines[ZombRand(#scanLines)+1])
+
+    -- [FIX IS HERE] 
+    -- Replaced the invalid table {r=0.9...} with the correct Java method HaloTextHelper.getColorWhite()
+    if HaloTextHelper then
+        HaloTextHelper.addTextWithArrow(player, "Scanning...", true, HaloTextHelper.getColorWhite())
+    end
+
+    -- 5. GATHER STATS
     local typeID = DT_RadioInteraction.GetDeviceType(deviceItem)
     local radioData = DynamicTrading.Config.GetRadioData(typeID)
-    local tierMult = radioData.power or 0.5
+    local radioTier = radioData.power or 0.5
     
-    if isHam then tierMult = tierMult * (SandboxVars.DynamicTrading.HamRadioBonus or 2.0) end
+    if isHam then 
+        radioTier = radioTier * (SandboxVars.DynamicTrading.HamRadioBonus or 2.0) 
+    end
     
     local elecLevel = player:getPerkLevel(Perks.Electricity)
     local skillBonus = 1.0 + (elecLevel * 0.05)
-    local finalChance = baseChance * tierMult * skillBonus
-    if finalChance > 95 then finalChance = 95 end
 
-    -- 5. RESULT (MULTIPLAYER SAFE)
-    if ZombRand(100) + 1 <= finalChance then
-        -- SUCCESS:
-        -- We do NOT generate the trader here. We tell the server to do it.
-        player:Say("Signal detected... Decoding...")
-        
-        -- Arg 1: The Player object
-        -- Arg 2: Module Name (Must match ServerCommands)
-        -- Arg 3: Command Name
-        -- Arg 4: Data Table (Empty here, but you could pass radio type if you wanted)
-        sendClientCommand(player, "DynamicTrading", "GenerateTrader", {})
-        
-        return true 
-    else
-        -- FAILURE:
-        -- Handled locally because it changes no data.
-        local failLines = {"Static...", "Just noise.", "No response.", "Dead air."}
-        player:Say(failLines[ZombRand(#failLines)+1])
-    end
+    -- 6. SEND TO SERVER
+    sendClientCommand(player, "DynamicTrading", "AttemptScan", {
+        radioTier = radioTier,
+        skillBonus = skillBonus
+    })
     
-    return false 
+    return true 
 end
 
 -- ==========================================================

@@ -20,7 +20,7 @@ option DynamicTrading.RestockInterval
     translation = DynamicTrading_RestockInterval,
 }
 
--- [NEW] RADIO MECHANICS
+-- RADIO MECHANICS
 option DynamicTrading.ScanBaseChance
 {
     type = integer,
@@ -29,6 +29,16 @@ option DynamicTrading.ScanBaseChance
     max = 100,
     page = DynamicTrading,
     translation = DynamicTrading_ScanBaseChance,
+}
+
+option DynamicTrading.ScanCooldown
+{
+    type = integer,
+    default = 30,
+    min = 0,
+    max = 1440,
+    page = DynamicTrading,
+    translation = DynamicTrading_ScanCooldown,
 }
 
 option DynamicTrading.BatteryDrain
@@ -41,16 +51,6 @@ option DynamicTrading.BatteryDrain
     translation = DynamicTrading_BatteryDrain,
 }
 
-option DynamicTrading.TraderStayDuration
-{
-    type = integer,
-    default = 3,
-    min = 1,
-    max = 30,
-    page = DynamicTrading,
-    translation = DynamicTrading_TraderStayDuration,
-}
-
 option DynamicTrading.HamRadioBonus
 {
     type = double,
@@ -61,7 +61,49 @@ option DynamicTrading.HamRadioBonus
     translation = DynamicTrading_HamRadioBonus,
 }
 
--- Existing Economy Options
+-- TRADER BEHAVIOR
+option DynamicTrading.TraderStayDuration
+{
+    type = integer,
+    default = 3,
+    min = 1,
+    max = 30,
+    page = DynamicTrading,
+    translation = DynamicTrading_TraderStayDuration,
+}
+
+-- [NEW] DAILY LIMITS & PROGRESSIVE DIFFICULTY
+option DynamicTrading.DailyTraderMin
+{
+    type = integer,
+    default = 3,
+    min = 1,
+    max = 20,
+    page = DynamicTrading,
+    translation = DynamicTrading_DailyTraderMin,
+}
+
+option DynamicTrading.DailyTraderMax
+{
+    type = integer,
+    default = 8,
+    min = 1,
+    max = 50,
+    page = DynamicTrading,
+    translation = DynamicTrading_DailyTraderMax,
+}
+
+option DynamicTrading.ScanPenaltyPerTrader
+{
+    type = double,
+    default = 0.2,
+    min = 0.0,
+    max = 1.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_ScanPenaltyPerTrader,
+}
+
+-- ECONOMY & INFLATION
 option DynamicTrading.SeasonImpact
 {
     type = double,
@@ -90,4 +132,26 @@ option DynamicTrading.SellMarkdown
     max = 1.0,
     page = DynamicTrading,
     translation = DynamicTrading_SellMarkdown,
+}
+
+
+-- REPLACE "DynamicTrading.TraderStayDuration" WITH THESE TWO:
+option DynamicTrading.TraderStayHoursMin
+{
+    type = integer,
+    default = 6,
+    min = 1,
+    max = 32, -- 168 = 1 Week
+    page = DynamicTrading,
+    translation = DynamicTrading_TraderStayHoursMin,
+}
+
+option DynamicTrading.TraderStayHoursMax
+{
+    type = integer,
+    default = 24,
+    min = 1,
+    max = 336, -- 2 Weeks
+    page = DynamicTrading,
+    translation = DynamicTrading_TraderStayHoursMax,
 }
