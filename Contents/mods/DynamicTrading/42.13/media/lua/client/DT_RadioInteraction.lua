@@ -1,6 +1,6 @@
 require "DynamicTrading_Manager"
 require "DynamicTrading_Config"
-require "DynamicTradingTraderListUI" -- [CRITICAL] Ensures the UI file is loaded
+require "DynamicTradingTraderListUI" 
 
 DT_RadioInteraction = {}
 
@@ -65,7 +65,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
         return false
     end
 
-    -- 4. PERFORM SCAN
+    -- 4. PERFORM SCAN CALCULATION
     player:playSound("RadioStatic")
     DynamicTrading.Manager.SetScanTimestamp(player) 
 
@@ -81,16 +81,22 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     local finalChance = baseChance * tierMult * skillBonus
     if finalChance > 95 then finalChance = 95 end
 
-    -- 5. RESULT
+    -- 5. RESULT (MULTIPLAYER SAFE)
     if ZombRand(100) + 1 <= finalChance then
-        local trader = DynamicTrading.Manager.GenerateRandomContact()
-        if trader then
-            player:playSound("RadioZombies") 
-            player:Say("Connected: " .. trader.name)
-            HaloTextHelper.addTextWithArrow(player, "New Signal Found", true, HaloTextHelper.getColorGreen())
-            return true 
-        end
+        -- SUCCESS:
+        -- We do NOT generate the trader here. We tell the server to do it.
+        player:Say("Signal detected... Decoding...")
+        
+        -- Arg 1: The Player object
+        -- Arg 2: Module Name (Must match ServerCommands)
+        -- Arg 3: Command Name
+        -- Arg 4: Data Table (Empty here, but you could pass radio type if you wanted)
+        sendClientCommand(player, "DynamicTrading", "GenerateTrader", {})
+        
+        return true 
     else
+        -- FAILURE:
+        -- Handled locally because it changes no data.
         local failLines = {"Static...", "Just noise.", "No response.", "Dead air."}
         player:Say(failLines[ZombRand(#failLines)+1])
     end
@@ -120,7 +126,6 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
         local option = context:addOption("Open Trader Network", 
             radioItem, 
             function(item) 
-                -- [SAFETY CHECK]
                 if not DynamicTradingTraderListUI then require "DynamicTradingTraderListUI" end
                 if DynamicTradingTraderListUI then
                     DynamicTradingTraderListUI.ToggleWindow(item, false) 
@@ -165,7 +170,6 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
          local option = context:addOption("Open Trader Network (HAM)", 
             hamRadio,
             function(obj) 
-                -- [SAFETY CHECK]
                 if not DynamicTradingTraderListUI then require "DynamicTradingTraderListUI" end
                 if DynamicTradingTraderListUI then
                     DynamicTradingTraderListUI.ToggleWindow(obj, true)
