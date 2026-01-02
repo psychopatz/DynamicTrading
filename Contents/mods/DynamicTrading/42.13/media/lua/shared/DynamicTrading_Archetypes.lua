@@ -3,11 +3,10 @@ require "DynamicTrading_Config"
 -- =============================================================================
 -- 1. THE GENERAL STORE
 -- =============================================================================
--- The jack-of-all-trades. Good for basics, pays average prices.
+-- The General store buys everything at standard market rates.
 DynamicTrading.RegisterArchetype("General", {
     name = "General Trader",
     
-    -- Guaranteed Stock (The "Shopping List")
     allocations = {
         ["Food"] = 5,
         ["Drink"] = 3,
@@ -15,96 +14,92 @@ DynamicTrading.RegisterArchetype("General", {
         ["Junk"] = 3
     },
     
-    -- He has no specific buying preference, so 'wants' is empty.
-    wants = {}, 
-    
-    -- He doesn't sell illegal goods or super rare artifacts.
+    wants = {}, -- No special preferences
     forbid = { "Illegal", "Legendary" }
 })
 
 -- =============================================================================
--- 2. THE FARMER
+-- 2. THE FARMER (Supply Chain: Needs Tools -> Makes Food)
 -- =============================================================================
--- Sells food cheap. Buys seeds and tools for a premium.
 DynamicTrading.RegisterArchetype("Farmer", {
     name = "The Farmer",
     
     allocations = {
-        ["Food"] = 8,    -- Lots of food
-        ["Seed"] = 4,    -- Seeds
-        ["Tool"] = 2     -- Garden tools
+        ["Food"] = 6,     -- Sells Crops
+        ["Seed"] = 6,     -- Sells Seeds
+        ["Vegetable"] = 4
     },
     
+    -- He HAS food. He NEEDS gear to run the farm.
     wants = {
-        ["Seed"] = 1.5,  -- Pays +50% for seeds
-        ["Tool"] = 1.2,  -- Pays +20% for tools
-        ["Sack"] = 1.5   -- Pays +50% for sacks (Custom tag you might add)
+        ["Tool"] = 1.3,   -- Pays +30% for Shovels/Trowels
+        ["Water"] = 1.2,  -- Pays +20% for Water containers
+        ["Sack"] = 1.5    -- Pays +50% for Empty Sacks (if tagged)
     },
     
-    -- Farmers don't sell Guns or Electronics
     forbid = { "Weapon", "Ammo", "Electronics", "Modern" }
 })
 
 -- =============================================================================
--- 3. THE BUTCHER / HUNTER
+-- 3. THE BUTCHER (Supply Chain: Needs Ammo/Knives -> Makes Meat)
 -- =============================================================================
--- Focuses on Meat and Weapons.
 DynamicTrading.RegisterArchetype("Butcher", {
     name = "The Butcher",
     
     allocations = {
-        ["Meat"] = 6,    -- Needs items tagged "Meat"
-        ["Weapon"] = 4,  -- Knives, Axes
-        ["Leather"] = 3  -- Animal skins (if you have mods for this)
+        ["Meat"] = 8,      -- Sells Meat
+        ["Bag"] = 2        -- Sells storage
     },
     
+    -- He HAS meat. He NEEDS ways to kill animals.
     wants = {
-        ["Meat"] = 1.2,     -- Buys raw meat
-        ["Weapon"] = 1.25,  -- Buys hunting gear
-        ["Ammo"] = 1.1      -- Buys ammo
+        ["Ammo"] = 1.4,    -- Pays +40% for Ammo (High Demand)
+        ["Blade"] = 1.3,   -- Pays +30% for Knives (Tools of the trade)
+        ["Weapon"] = 1.2   -- Pays +20% for Hunting Rifles
     },
     
     forbid = { "Vegetable", "Fruit", "Literature" }
 })
 
 -- =============================================================================
--- 4. THE DOCTOR
+-- 4. THE DOCTOR (Supply Chain: Needs Hygiene -> Provides Healing)
 -- =============================================================================
--- High value, low stock volume.
 DynamicTrading.RegisterArchetype("Doctor", {
     name = "Field Medic",
     
     allocations = {
-        ["Medical"] = 8,
-        ["Clean"] = 3    -- Soap, bleach
+        ["Medical"] = 10,  -- Sells Meds
+        ["Literature"] = 2 -- First Aid Books
     },
     
+    -- He HAS pills. He NEEDS a sterile environment.
     wants = {
-        ["Medical"] = 1.5, -- Pays huge for meds
-        ["Alcohol"] = 1.2  -- Alcohol for disinfection
+        ["Clean"] = 1.5,   -- Pays +50% for Soap/Bleach (Vital for him)
+        ["Alcohol"] = 1.3, -- Pays +30% for disinfectants
+        ["Luxury"] = 1.2   -- Pays extra for Chocolate/Comfort items for patients
     },
     
-    forbid = { "Junk", "Weapon", "Construction" }
+    forbid = { "Junk", "Weapon", "Construction", "CarPart" }
 })
 
 -- =============================================================================
--- 5. THE MECHANIC
+-- 5. THE MECHANIC (Supply Chain: Needs Scrap/Electronics -> Fixes Cars)
 -- =============================================================================
 DynamicTrading.RegisterArchetype("Mechanic", {
     name = "The Mechanic",
     
     allocations = {
-        ["CarPart"] = 6,
+        ["CarPart"] = 8,   -- Sells Car Parts
         ["Fuel"] = 4,
-        ["Tool"] = 4,
-        ["Electronics"] = 2
+        ["Tool"] = 4
     },
     
+    -- He HAS parts. He NEEDS materials to refurbish them.
     wants = {
-        ["CarPart"] = 1.3,
-        ["Fuel"] = 1.2,
-        ["ScrapMetal"] = 1.1
+        ["Electronics"] = 1.3, -- Pays +30% for circuit boards
+        ["Material"] = 1.2,    -- Pays +20% for Scrap Metal/Wire
+        ["Food"] = 1.2         -- He's hungry working on cars all day
     },
     
-    forbid = { "Food", "Clothing", "Medical" }
+    forbid = { "Clothing", "Medical", "Seed" }
 })

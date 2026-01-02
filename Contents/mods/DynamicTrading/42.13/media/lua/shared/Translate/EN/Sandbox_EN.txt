@@ -1,19 +1,25 @@
 Sandbox_EN = {
     Sandbox_DynamicTrading = "Dynamic Trading Market",
     
-    -- Difficulty (Now an Integer)
     Sandbox_DynamicTrading_Difficulty = "Market Difficulty Level",
-    Sandbox_DynamicTrading_Difficulty_tooltip = "Controls global economy balance.<br>1 = Easy (High Stock, Cheap)<br>2 = Normal<br>3 = Hard<br>4 = Insane (Scare Stock, Expensive)",
+    Sandbox_DynamicTrading_Difficulty_tooltip = "Controls global economy balance.<br>1 = Easy<br>4 = Insane",
 
     Sandbox_DynamicTrading_RestockInterval = "Restock Interval (Days)",
-    Sandbox_DynamicTrading_RestockInterval_tooltip = "How often traders generate new inventory.",
     
-    Sandbox_DynamicTrading_SeasonImpact = "Environmental Impact",
-    Sandbox_DynamicTrading_SeasonImpact_tooltip = "Multiplier for Event effects (Winter, Harvest, etc).<br>0.0 = Events disable.<br>1.0 = Normal effects.",
+    -- [NEW] RADIO SETTINGS
+    Sandbox_DynamicTrading_ScanBaseChance = "Radio Scan Chance (%)",
+    Sandbox_DynamicTrading_ScanBaseChance_tooltip = "Base probability of finding a trader when scanning.<br>Better radios increase this chance.",
     
-    Sandbox_DynamicTrading_CategoryInflation = "Inflation Sensitivity",
-    Sandbox_DynamicTrading_CategoryInflation_tooltip = "How much prices rise when you buy an item.<br>0.05 means price +5% per purchase.",
+    Sandbox_DynamicTrading_BatteryDrain = "Scan Battery Cost",
+    Sandbox_DynamicTrading_BatteryDrain_tooltip = "How much battery is consumed per scan.<br>0.1 = 10% of the battery.",
+    
+    Sandbox_DynamicTrading_TraderStayDuration = "Signal Duration (Days)",
+    Sandbox_DynamicTrading_TraderStayDuration_tooltip = "How many days a trader stays in contact before leaving signal range.",
+    
+    Sandbox_DynamicTrading_HamRadioBonus = "HAM Radio Bonus",
+    Sandbox_DynamicTrading_HamRadioBonus_tooltip = "Multiplier for success chance when using stationary HAM radios.",
 
+    Sandbox_DynamicTrading_SeasonImpact = "Environmental Impact",
+    Sandbox_DynamicTrading_CategoryInflation = "Inflation Sensitivity",
     Sandbox_DynamicTrading_SellMarkdown = "Sell Price Multiplier",
-    Sandbox_DynamicTrading_SellMarkdown_tooltip = "Percentage of the item's value the trader pays you.<br>0.5 = They pay 50% of market value.",
 }
