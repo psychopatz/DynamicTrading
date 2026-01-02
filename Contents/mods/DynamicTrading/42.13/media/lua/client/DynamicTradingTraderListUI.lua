@@ -4,8 +4,6 @@ require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "DynamicTrading_Manager"
 require "DynamicTrading_Config"
--- We don't require DynamicTradingUI here to avoid circular dependency issues during load,
--- we check for it globally when needed.
 
 DynamicTradingTraderListUI = ISCollapsableWindow:derive("DynamicTradingTraderListUI")
 DynamicTradingTraderListUI.instance = nil
@@ -18,21 +16,18 @@ function DynamicTradingTraderListUI:initialise()
     self.radioObj = nil
     self.isHam = false
     
-    -- State Trackers for Auto-Refresh
+    -- State Trackers
     self.lastLogCount = -1
+    self.lastTopLogID = "" -- [FIX] Tracks the specific content of the newest log
     self.lastTraderCount = -1 
 end
 
--- ==========================================================
--- SETUP UI
--- ==========================================================
 function DynamicTradingTraderListUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
     local th = self:titleBarHeight()
     local width = self.width
-    local height = self.height
-
+    
     -- 1. SCAN BUTTON
     self.btnScan = ISButton:new(10, th + 10, width - 20, 25, "SCAN FREQUENCIES", self, self.onScanClick)
     self.btnScan:initialise()
@@ -40,7 +35,7 @@ function DynamicTradingTraderListUI:createChildren()
     self.btnScan.borderColor = {r=1, g=1, b=1, a=0.5}
     self:addChild(self.btnScan)
 
-    -- 2. TRADER LIST
+    -- 2. TRADER LIST (Top)
     self.lblTraders = ISLabel:new(10, th + 45, 16, "Active Signals:", 0.8, 0.8, 1, 1, UIFont.Small, true)
     self:addChild(self.lblTraders)
 
@@ -50,22 +45,19 @@ function DynamicTradingTraderListUI:createChildren()
     self.listbox = ISScrollingListBox:new(10, list1Y, width - 20, list1Height)
     self.listbox:initialise()
     self.listbox:setAnchorRight(true)
-    self.listbox:setAnchorBottom(false)
     self.listbox.font = UIFont.Small
     self.listbox.itemheight = 30
     self.listbox.drawBorder = true
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
-    self.listbox.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.9} -- Opaque Background
+    self.listbox.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.9}
     self.listbox.doDrawItem = self.drawItem 
     self.listbox.onMouseDown = self.onListMouseDown
-    
-    self:ApplyClipping(self.listbox) -- Force Clipping
     self:addChild(self.listbox)
 
-    -- 3. LOG LIST
+    -- 3. LOG LIST (Bottom - Static/Non-Scrollable)
     local logLabelY = list1Y + list1Height + 15
     local logListY = logLabelY + 20
-    local list2Height = height - logListY - 15
+    local list2Height = (12 * 20) + 2 -- Exact height for 12 items
     
     self.lblLogs = ISLabel:new(10, logLabelY, 16, "System Logs (Last 12):", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
     self:addChild(self.lblLogs)
@@ -78,79 +70,31 @@ function DynamicTradingTraderListUI:createChildren()
     self.logList.itemheight = 20
     self.logList.drawBorder = true
     self.logList.borderColor = {r=0.3, g=0.3, b=0.3, a=1}
-    self.logList.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.9} -- Opaque Background
+    self.logList.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.9}
     self.logList.doDrawItem = self.drawLogItem
     
-    self:ApplyClipping(self.logList) -- Force Clipping
+    -- Disable Scroll Wheel
+    self.logList.onMouseWheel = function(self, del) return true end
+    
     self:addChild(self.logList)
 end
 
--- Helper: Forces text to cut off at the edge of the listbox
-function DynamicTradingTraderListUI:ApplyClipping(uiElement)
-    if not uiElement then return end
-    
-    uiElement.prerender = function(self)
-        self:setStencilRect(0, 0, self.width, self.height)
-        ISScrollingListBox.prerender(self)
-    end
-    
-    uiElement.render = function(self)
-        ISScrollingListBox.render(self)
-        self:clearStencilRect()
-    end
-end
-
 -- ==========================================================
--- LOGIC & VALIDATION
+-- UPDATE LOGIC (THE FIX IS HERE)
 -- ==========================================================
-function DynamicTradingTraderListUI:CheckConnectionValidity()
-    local player = getSpecificPlayer(0)
-    if not player or not self.radioObj then return false end
-    
-    local data = self.radioObj:getDeviceData()
-    if not data then return false end
-
-    -- 1. Must be Turned ON
-    if not data:getIsTurnedOn() then return false end
-
-    -- 2. Device Specific Checks
-    if self.isHam then
-        local sq = self.radioObj:getSquare()
-        if not sq then return false end 
-        -- Distance check (2.5 tiles)
-        if IsoUtils.DistanceTo(player:getX(), player:getY(), self.radioObj:getX(), self.radioObj:getY()) > 2.5 then return false end 
-        
-        -- Power Check (Battery OR Grid)
-        local hasPower = false
-        if data:getIsBatteryPowered() then
-            if data:getPower() > 0 then hasPower = true end
-        elseif sq:haveElectricity() then 
-            hasPower = true 
-        end
-        if not hasPower then return false end
-    else
-        -- Walkie Check
-        if self.radioObj:getContainer() ~= player:getInventory() then return false end
-        if data:getPower() <= 0.001 then return false end
-    end
-
-    return true
-end
-
 function DynamicTradingTraderListUI:render()
     ISCollapsableWindow.render(self)
     
-    -- 1. Auto-Close if signal lost
+    -- 1. Auto-Close check
     if not self:CheckConnectionValidity() then
         self:close()
-        -- Close child window too
         if DynamicTradingUI and DynamicTradingUI.instance then 
             DynamicTradingUI.instance:close() 
         end
         return
     end
 
-    -- 2. Button Cooldown State
+    -- 2. Cooldown Button
     local player = getSpecificPlayer(0)
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
     
@@ -164,17 +108,25 @@ function DynamicTradingTraderListUI:render()
         self.btnScan.textColor = {r=1, g=0.5, b=0.5, a=1}
     end
     
-    -- 3. Auto-Refresh Lists
     local data = DynamicTrading.Manager.GetData()
 
-    -- Check Logs
+    -- 3. LOG AUTO-REFRESH [FIXED]
     local currentLogCount = data.NetworkLogs and #data.NetworkLogs or 0
-    if currentLogCount ~= self.lastLogCount then
+    local currentTopLog = ""
+    
+    -- Grab the "Time + Text" of the newest log to see if it changed
+    if data.NetworkLogs and data.NetworkLogs[1] then
+        currentTopLog = data.NetworkLogs[1].time .. data.NetworkLogs[1].text
+    end
+    
+    -- Update if Count changed OR if the Top Log changed
+    if currentLogCount ~= self.lastLogCount or currentTopLog ~= self.lastTopLogID then
         self:populateLogs()
         self.lastLogCount = currentLogCount
+        self.lastTopLogID = currentTopLog
     end
 
-    -- Check Traders
+    -- 4. TRADER AUTO-REFRESH
     local currentTraderCount = 0
     if data.Traders then
         for _ in pairs(data.Traders) do currentTraderCount = currentTraderCount + 1 end
@@ -186,19 +138,23 @@ function DynamicTradingTraderListUI:render()
     end
 end
 
-function DynamicTradingTraderListUI:onScanClick()
-    local player = getSpecificPlayer(0)
-    if not self:CheckConnectionValidity() then self:close() return end
+-- ==========================================================
+-- POPULATION & DRAWING
+-- ==========================================================
+function DynamicTradingTraderListUI:populateLogs()
+    self.logList:clear()
+    local data = DynamicTrading.Manager.GetData()
     
-    -- Trigger Scan
-    if DT_RadioInteraction and DT_RadioInteraction.PerformScan then
-        DT_RadioInteraction.PerformScan(player, self.radioObj, self.isHam)
+    if data.NetworkLogs then
+        -- Force limit to 12 in UI so it fits perfectly
+        local limit = math.min(#data.NetworkLogs, 12)
+        for i=1, limit do
+            local log = data.NetworkLogs[i]
+            self.logList:addItem(log.time .. ": " .. log.text, log)
+        end
     end
 end
 
--- ==========================================================
--- POPULATE LISTS
--- ==========================================================
 function DynamicTradingTraderListUI:populateList()
     self.listbox:clear()
     local data = DynamicTrading.Manager.GetData()
@@ -208,7 +164,6 @@ function DynamicTradingTraderListUI:populateList()
         return 
     end
 
-    -- Sort: Newest First (Using ID which contains timestamp)
     local sortedList = {}
     for id, trader in pairs(data.Traders) do
         table.insert(sortedList, { id = id, data = trader })
@@ -228,25 +183,50 @@ function DynamicTradingTraderListUI:populateList()
     end
 end
 
-function DynamicTradingTraderListUI:populateLogs()
-    self.logList:clear()
-    local data = DynamicTrading.Manager.GetData()
+-- ==========================================================
+-- HELPERS & EVENTS
+-- ==========================================================
+function DynamicTradingTraderListUI:CheckConnectionValidity()
+    local player = getSpecificPlayer(0)
+    if not player or not self.radioObj then return false end
     
-    if data.NetworkLogs then
-        for _, log in ipairs(data.NetworkLogs) do
-            self.logList:addItem(log.time .. ": " .. log.text, log)
+    local data = self.radioObj:getDeviceData()
+    if not data then return false end
+
+    if not data:getIsTurnedOn() then return false end
+
+    if self.isHam then
+        local sq = self.radioObj:getSquare()
+        if not sq then return false end 
+        if IsoUtils.DistanceTo(player:getX(), player:getY(), self.radioObj:getX(), self.radioObj:getY()) > 2.5 then return false end 
+        
+        local hasPower = false
+        if data:getIsBatteryPowered() then
+            if data:getPower() > 0 then hasPower = true end
+        elseif sq:haveElectricity() then 
+            hasPower = true 
         end
+        if not hasPower then return false end
+    else
+        if self.radioObj:getContainer() ~= player:getInventory() then return false end
+        if data:getPower() <= 0.001 then return false end
+    end
+
+    return true
+end
+
+function DynamicTradingTraderListUI:onScanClick()
+    local player = getSpecificPlayer(0)
+    if not self:CheckConnectionValidity() then self:close() return end
+    if DT_RadioInteraction and DT_RadioInteraction.PerformScan then
+        DT_RadioInteraction.PerformScan(player, self.radioObj, self.isHam)
     end
 end
 
--- ==========================================================
--- DRAWING
--- ==========================================================
 function DynamicTradingTraderListUI.drawItem(this, y, item, alt)
     local height = this.itemheight
     local width = this:getWidth()
     
-    -- Selection Highlight
     if this.selected == item.index then
         this:drawRect(0, y, width, height, 0.3, 0.7, 0.35, 0.2)
     elseif alt then
@@ -254,19 +234,14 @@ function DynamicTradingTraderListUI.drawItem(this, y, item, alt)
     end
     this:drawRectBorder(0, y, width, height, 0.1, 1, 1, 1)
 
-    -- Empty message check
     if not item.item.traderID then
         this:drawText(item.text, 10, y + 8, 0.7, 0.7, 0.7, 1, this.font)
         return y + height
     end
 
-    -- Icon
     local icon = getTexture("Item_WalkieTalkie1")
     if icon then this:drawTextureScaled(icon, 6, y + 5, 20, 20, 1, 1, 1, 1) end
-    
-    -- Text
     this:drawText(item.text, 35, y + 8, 0.9, 0.9, 0.9, 1, this.font)
-    
     return y + height
 end
 
@@ -279,34 +254,26 @@ function DynamicTradingTraderListUI.drawLogItem(this, y, item, alt)
         this:drawRect(0, y, width, height, 0.05, 0.05, 0.05, 0.5) 
     end
     
-    -- Color Coding
     local r, g, b = 0.8, 0.8, 0.8
     if log.cat == "good" then r, g, b = 0.4, 1.0, 0.4 
     elseif log.cat == "bad" then r, g, b = 1.0, 0.4, 0.4
     elseif log.cat == "event" then r, g, b = 1.0, 1.0, 0.4 end
     
-    -- Time
     this:drawText(log.time, 5, y + 2, 0.5, 0.5, 0.5, 1, this.font)
     
-    -- Message
     local timeWid = TextManager.instance:MeasureStringX(this.font, log.time)
     this:drawText(log.text, 5 + timeWid + 8, y + 2, r, g, b, 1, this.font)
     
     return y + height
 end
 
--- ==========================================================
--- INTERACTION
--- ==========================================================
 function DynamicTradingTraderListUI.onListMouseDown(target, x, y)
     local row = target:rowAt(x, y)
     if row == -1 then return end
     target.selected = row
     
     local item = target.items[row]
-    -- Open Trade Window on click
     if item.item and item.item.traderID and DynamicTradingUI then
-        -- [CRITICAL] We must pass the radioObj from this window (parent) to the child
         local parentWin = target.parent
         if parentWin and parentWin.radioObj then
              DynamicTradingUI.ToggleWindow(item.item.traderID, item.item.archetype, parentWin.radioObj)
@@ -323,24 +290,26 @@ end
 function DynamicTradingTraderListUI.ToggleWindow(radioObj, isHam)
     if DynamicTradingTraderListUI.instance then
         DynamicTradingTraderListUI.instance:close()
-        -- Close resets the UI. To reopen with new radio, simply call Toggle again if desired logic requires it,
-        -- but typically toggling off means close.
         return
     end
 
-    local ui = DynamicTradingTraderListUI:new(200, 100, 380, 500)
+    local ui = DynamicTradingTraderListUI:new(200, 100, 380, 565)
     ui:initialise()
     ui.radioObj = radioObj
     ui.isHam = isHam
     ui:addToUIManager()
     
-    -- Initial Population
     ui:populateList()
     ui:populateLogs()
     
-    -- Sync Trackers
+    -- Initialize State Logic
     local data = DynamicTrading.Manager.GetData()
-    if data.NetworkLogs then ui.lastLogCount = #data.NetworkLogs end
+    if data.NetworkLogs then 
+        ui.lastLogCount = #data.NetworkLogs 
+        if data.NetworkLogs[1] then
+            ui.lastTopLogID = data.NetworkLogs[1].time .. data.NetworkLogs[1].text
+        end
+    end
     local count = 0
     if data.Traders then for _ in pairs(data.Traders) do count = count + 1 end end
     ui.lastTraderCount = count
