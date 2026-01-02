@@ -16,11 +16,53 @@ function DynamicTradingUI:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(false)
     self.isBuying = true 
-    self.selectedKey = nil -- Used to persist selection across refreshes
+    self.selectedKey = nil 
     self.radioObj = nil
-    
-    -- Categories State (Open/Closed)
     self.collapsed = {} 
+end
+
+-- =================================================
+-- LIVE STATE CHECK (MOVED TO UPDATE)
+-- =================================================
+function DynamicTradingUI:update()
+    ISCollapsableWindow.update(self)
+
+    -- Safety: If no ID is set, we shouldn't be open
+    if not self.traderID then 
+        self:close() 
+        return 
+    end
+
+    -- 1. Fetch Latest Data
+    local data = DynamicTrading.Manager.GetData()
+
+    -- 2. "DEATH CHECK": Does the trader still exist in ModData?
+    -- If the Server removed it, data.Traders[self.traderID] will be NIL.
+    local traderExists = false
+    if data.Traders and data.Traders[self.traderID] then
+        traderExists = true
+    end
+
+    if not traderExists then
+        print("[DynamicTrading] Client UI: Trader " .. tostring(self.traderID) .. " no longer exists. Closing.")
+        
+        local player = getSpecificPlayer(0)
+        if player then
+            player:playSound("RadioStatic")
+            player:Say("Signal Lost: The trader signed off.")
+        end
+        
+        self:close()
+        return
+    end
+
+    -- 3. Check Physical Connection (Distance/Power)
+    if not self:isConnectionValid() then
+        local player = getSpecificPlayer(0)
+        if player then player:Say("Connection lost (Check Power/Distance)") end
+        self:close()
+        return
+    end
 end
 
 -- =================================================
@@ -38,7 +80,8 @@ function DynamicTradingUI:isConnectionValid()
     if instanceof(obj, "IsoWaveSignal") then
         local sq = obj:getSquare()
         if not sq then return false end
-        if IsoUtils.DistanceTo(player:getX(), player:getY(), obj:getX(), obj:getY()) > 3.0 then return false end
+        -- Relaxed distance to 5.0 to prevent accidental closes
+        if IsoUtils.DistanceTo(player:getX(), player:getY(), obj:getX(), obj:getY()) > 5.0 then return false end
         if data:getIsBatteryPowered() then
             if data:getPower() <= 0 then return false end
         elseif not sq:haveElectricity() then return false end
@@ -97,9 +140,7 @@ function DynamicTradingUI:createChildren()
         if item.item.isCategory then
             local catName = item.item.categoryName
             local ui = DynamicTradingUI.instance
-            -- Toggle State
             ui.collapsed[catName] = not ui.collapsed[catName]
-            -- Refresh List
             ui:populateList()
             return
         end
@@ -108,7 +149,7 @@ function DynamicTradingUI:createChildren()
         target.selected = row
         local ui = DynamicTradingUI.instance
         if ui then 
-            ui.selectedKey = item.item.key -- Store key for persistence
+            ui.selectedKey = item.item.key 
             ui.btnAction:setEnable(true) 
         end
     end
@@ -132,12 +173,11 @@ function DynamicTradingUI:createChildren()
 end
 
 -- =================================================
--- LOGIC: POPULATE LIST (Categorized)
+-- LOGIC: POPULATE LIST
 -- =================================================
 function DynamicTradingUI:populateList()
-    -- 1. Setup
     self.listbox:clear()
-    self.listbox.selected = -1 -- Reset selection
+    self.listbox.selected = -1 
     
     local managerData = DynamicTrading.Manager.GetData()
     if not managerData or not self.traderID then return end
@@ -145,18 +185,15 @@ function DynamicTradingUI:populateList()
     local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
     if not trader then return end
     
-    -- 2. Header Info & Timer
     local archetypeName = DynamicTrading.Archetypes[trader.archetype] and DynamicTrading.Archetypes[trader.archetype].name or "Unknown"
     self.lblTitle:setName((trader.name or "Unknown") .. " - " .. archetypeName)
     
     self:updateSignalDisplay(trader)
     self:updateWallet()
 
-    -- 3. Prepare Data Buckets
     local categorized = {} 
     local categories = {}  
 
-    -- === BUY MODE ===
     if self.isBuying then
         self.btnSwitch:setTitle("SWITCH TO SELLING")
         self.btnAction:setTitle("BUY ITEM")
@@ -190,8 +227,6 @@ function DynamicTradingUI:populateList()
                 end
             end
         end
-
-    -- === SELL MODE ===
     else
         self.btnSwitch:setTitle("SWITCH TO BUYING")
         self.btnAction:setTitle("SELL ITEM")
@@ -233,24 +268,19 @@ function DynamicTradingUI:populateList()
         end
     end
 
-    -- 4. Sort and Populate Listbox
     table.sort(categories) 
 
     for _, catName in ipairs(categories) do
-        -- Add Header
         local hItem = self.listbox:addItem(string.upper(catName), nil)
         hItem.item = { isCategory = true, categoryName = catName, text = string.upper(catName) }
         hItem.height = 32
         
-        -- Add Children if not collapsed
         if not self.collapsed[catName] then
             local itemsInCat = categorized[catName]
             table.sort(itemsInCat, function(a,b) return a.name < b.name end)
             
             for _, prod in ipairs(itemsInCat) do
                 self.listbox:addItem(prod.name, prod)
-                
-                -- Restore Selection
                 if self.selectedKey and prod.key == self.selectedKey then
                     self.listbox.selected = #self.listbox.items
                 end
@@ -267,7 +297,6 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local d = item.item
     local width = listbox:getWidth()
     
-    -- === DRAW CATEGORY HEADER ===
     if d.isCategory then
         listbox:drawRect(0, y, width, height, 0.9, 0.1, 0.1, 0.1)
         listbox:drawRectBorder(0, y, width, height, 0.3, 0.5, 0.5, 0.5)
@@ -280,7 +309,6 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         return y + height
     end
 
-    -- === DRAW ITEM ===
     if listbox.selected == item.index then
         listbox:drawRect(0, y, width, height, 0.3, 0.7, 0.35, 0.2)
     elseif alt then
@@ -288,7 +316,6 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     end
     listbox:drawRectBorder(0, y, width, height, 0.1, 1, 1, 1)
 
-    -- Icon
     local texName = d.data.item
     local scriptItem = getScriptManager():getItem(texName)
     if scriptItem then
@@ -299,15 +326,12 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         end
     end
     
-    -- Name Logic (Grey out if sold out)
     local nameColor = {r=0.9, g=0.9, b=0.9}
     if d.isBuy and d.qty <= 0 then nameColor = {r=0.5, g=0.5, b=0.5} end
     
     listbox:drawText(d.name, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
     
-    -- Price & Stock Logic
     if d.isBuy then
-        -- SOLD OUT LOGIC (Red Text)
         if d.qty <= 0 then
             listbox:drawText("(SOLD OUT)", width - 140, y + 12, 1.0, 0.2, 0.2, 1, UIFont.Small)
         else
@@ -315,7 +339,6 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         end
         listbox:drawText("$" .. d.price, width - 60, y + 12, 0.6, 1.0, 0.6, 1, listbox.font)
     else
-        -- Sell Mode
         listbox:drawText("$" .. d.price, width - 60, y + 12, 0.6, 1.0, 0.6, 1, listbox.font)
     end
     
@@ -332,7 +355,6 @@ function DynamicTradingUI:onAction()
     local d = selItem.item
     local player = getSpecificPlayer(0)
 
-    -- Radio Check
     if not self:isConnectionValid() then
         self:close()
         player:Say("Signal lost!")
@@ -353,7 +375,6 @@ function DynamicTradingUI:onAction()
             player:getInventory():AddItem(d.data.item)
             local primaryCat = d.data.tags[1] or "Misc"
             
-            -- [MP] This triggers a server ModData update
             DynamicTrading.Manager.OnBuyItem(self.traderID, d.key, primaryCat, 1)
             
             player:playSound("Transaction") 
@@ -371,41 +392,37 @@ function DynamicTradingUI:onAction()
     end
 
     if transactionSuccess then
-        -- Refresh UI (This will auto-restore selection via populateList)
         self:populateList()
     end
 end
 
 -- =================================================
--- HELPERS (DISPLAY & ECONOMY)
+-- HELPERS
 -- =================================================
 function DynamicTradingUI:updateSignalDisplay(trader)
     local gt = GameTime:getInstance()
     local text = "Signal: Permanent Connection"
-    local r, g, b = 0.5, 0.8, 1.0 -- Default Blue
+    local r, g, b = 0.5, 0.8, 1.0 
 
-    -- [NEW] Precise Hour Calculation
     if trader.expirationTime then
         local currentHours = gt:getWorldAgeHours()
         local diff = trader.expirationTime - currentHours
 
         if diff <= 0 then
             text = "Signal: Lost"
-            r, g, b = 1.0, 0.0, 0.0 -- Red
+            r, g, b = 1.0, 0.0, 0.0 
         elseif diff > 24 then
             local days = math.floor(diff / 24)
             local hours = math.floor(diff % 24)
             text = string.format("Signal: Stable (%dd %dh)", days, hours)
-            r, g, b = 0.2, 1.0, 0.2 -- Green
+            r, g, b = 0.2, 1.0, 0.2 
         elseif diff > 1 then
             text = string.format("Signal: Fading (%dh)", math.floor(diff))
-            r, g, b = 1.0, 0.8, 0.2 -- Orange
+            r, g, b = 1.0, 0.8, 0.2 
         else
             text = "Signal: Critical (< 1h)"
-            r, g, b = 1.0, 0.2, 0.2 -- Red
+            r, g, b = 1.0, 0.2, 0.2 
         end
-        
-    -- [LEGACY] Backward compatibility for old Day-based traders
     elseif trader.expirationDay then
         local days = trader.expirationDay - math.floor(gt:getDaysSurvived())
         text = string.format("Signal: Stable (%d Days)", days)

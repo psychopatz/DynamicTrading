@@ -3,9 +3,10 @@ if isClient() then return end
 require "DynamicTrading_Manager"
 
 local Commands = {}
+local lastProcessedDay = -1 
 
 -- =============================================================================
--- CLIENT COMMAND HANDLER
+-- 1. CLIENT COMMAND HANDLER
 -- =============================================================================
 function Commands.AttemptScan(player, args)
     print("[Server] DynamicTrading: Scan requested by " .. player:getUsername())
@@ -25,6 +26,7 @@ function Commands.AttemptScan(player, args)
     local skillBonus = args.skillBonus or 1.0
 
     local finalChance = (baseChance * radioTier * skillBonus) / penaltyFactor
+    
     if finalChance < 1 then finalChance = 1 end
     if finalChance > 95 then finalChance = 95 end
     
@@ -55,51 +57,56 @@ end
 Events.OnClientCommand.Add(OnClientCommand)
 
 -- =============================================================================
--- SERVER MAINTENANCE LOOP (The Fix)
+-- 2. SERVER MAINTENANCE LOOP
 -- =============================================================================
--- This runs on Dedicated Servers AND Singleplayer/Host instances.
--- It never runs on MP Clients.
 local function Server_OnHourlyTick()
+    -- Safety Check: Ensure Manager is loaded
+    if not DynamicTrading or not DynamicTrading.Manager then return end
+
     local data = DynamicTrading.Manager.GetData()
     local gt = GameTime:getInstance()
+    
     local currentHours = gt:getWorldAgeHours()
     local currentDay = math.floor(gt:getDaysSurvived())
+    local currentHourOfDay = gt:getHour()
     
     local changesMade = false
 
+    -- A. TRADER EXPIRATION CHECK
     if data.Traders then
         for id, trader in pairs(data.Traders) do
             local shouldRemove = false
             
-            -- Check Precise Hours (New System)
             if trader.expirationTime then
-                if currentHours > trader.expirationTime then
-                    shouldRemove = true
-                end
-                
-            -- Check Legacy Days (Old System compatibility)
+                if currentHours > trader.expirationTime then shouldRemove = true end
             elseif trader.expirationDay then
-                if currentDay > trader.expirationDay then
-                    shouldRemove = true
-                end
+                if currentDay > trader.expirationDay then shouldRemove = true end
             end
             
             if shouldRemove then
-                -- Add log locally (it syncs automatically via ModData)
-                DynamicTrading.Manager.AddLog("Signal Lost: " .. trader.name, "bad")
-                
-                -- Actually remove the trader from the table
+                DynamicTrading.Manager.AddLog("Signal Lost: " .. (trader.name or "Unknown"), "bad")
                 data.Traders[id] = nil
-                
                 print("[Server] DynamicTrading: Removed expired trader " .. id)
                 changesMade = true
             end
         end
     end
     
-    -- Sync removal to all clients
     if changesMade then 
         ModData.transmit("DynamicTrading_Engine_v1") 
+    end
+
+    -- B. DAILY EVENT TRIGGER
+    if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then
+        print("[Server] DynamicTrading: Running Daily Event Logic (Day " .. currentDay .. ")")
+        
+        -- [FIX] Safety check for ProcessEvents existence
+        if DynamicTrading.Manager.ProcessEvents then
+            DynamicTrading.Manager.ProcessEvents()
+            lastProcessedDay = currentDay
+        else
+            print("[Server] Error: DynamicTrading.Manager.ProcessEvents is missing! Please restart the server.")
+        end
     end
 end
 

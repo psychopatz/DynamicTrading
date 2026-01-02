@@ -60,7 +60,7 @@ function DynamicTradingInfoUI:populateList()
     self.listbox:addItem("  Rarity Bonus: " .. rarityStr, nil)
     self.listbox:addItem(" ", nil)
 
-    -- 2. EVENTS
+    -- 2. EVENTS (Updated for Description)
     header = self.listbox:addItem("=== ACTIVE EVENTS ===", nil)
     header.textColor = {r=0.5, g=1, b=0.5, a=1}
     
@@ -68,12 +68,21 @@ function DynamicTradingInfoUI:populateList()
     if DynamicTrading.Events and DynamicTrading.Events.ActiveEvents then
         for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
             anyEvent = true
+            
+            -- Event Name
             local item = self.listbox:addItem(" [!] " .. (event.name or "Unknown"), nil)
             item.textColor = {r=0.2, g=1.0, b=0.2, a=1}
             
+            -- Event Description (New)
+            if event.description then
+                local descItem = self.listbox:addItem("     \"" .. event.description .. "\"", nil)
+                descItem.textColor = {r=0.7, g=0.7, b=0.7, a=1} -- Greyish
+            end
+
+            -- Event Effects
             if event.effects then
                 for tag, mod in pairs(event.effects) do
-                    local effectStr = "    - " .. tag
+                    local effectStr = "      - " .. tag
                     if mod.price then 
                         effectStr = effectStr .. " (Price x" .. mod.price .. ")" 
                     end
@@ -84,6 +93,7 @@ function DynamicTradingInfoUI:populateList()
                     self.listbox:addItem(effectStr, nil)
                 end
             end
+            self.listbox:addItem(" ", nil) -- Spacing between events
         end
     end
     if not anyEvent then self.listbox:addItem("  (No active events)", nil) end
@@ -125,7 +135,7 @@ function DynamicTradingInfoUI.ToggleWindow()
         end
         return
     end
-    local ui = DynamicTradingInfoUI:new(500, 100, 300, 400)
+    local ui = DynamicTradingInfoUI:new(500, 100, 360, 450) -- Slightly wider/taller
     ui:initialise()
     ui:addToUIManager()
     DynamicTradingInfoUI.instance = ui

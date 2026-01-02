@@ -1,10 +1,11 @@
 require "DynamicTrading_Config"
+require "DynamicTrading_Events"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
 
 -- =============================================================================
--- 1. DATA MANAGEMENT & LAZY RESET
+-- 1. DATA MANAGEMENT
 -- =============================================================================
 function DynamicTrading.Manager.GetData()
     local data = ModData.getOrCreate("DynamicTrading_Engine_v1")
@@ -17,6 +18,14 @@ function DynamicTrading.Manager.GetData()
         data.dailyLimit = 5 
         data.dailyTradersFound = 0 
         data.lastResetDay = -1
+    end
+
+    if not data.EventSystem then
+        data.EventSystem = {
+            activeID = nil,
+            endDay = -1,
+            lastEventDay = -1
+        }
     end
 
     local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
@@ -40,12 +49,89 @@ function DynamicTrading.Manager.GetData()
         end
 
         DynamicTrading.Manager.AddLog("Daily Cycle: Market Reset.", "info")
-        -- Only transmit if we are the authority (Server/Host) to prevent spam
         if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
     end
     
+    DynamicTrading.Manager.RebuildActiveCache(data)
+    
     return data
 end
+
+-- =============================================================================
+-- 2. EVENT ENGINE
+-- =============================================================================
+function DynamicTrading.Manager.ProcessEvents()
+    local data = DynamicTrading.Manager.GetData()
+    local es = data.EventSystem
+    local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
+    
+    local changed = false
+
+    if es.activeID then
+        if currentDay >= es.endDay then
+            local endingEvent = DynamicTrading.Events.Registry[es.activeID]
+            local name = endingEvent and endingEvent.name or "Unknown Event"
+            DynamicTrading.Manager.AddLog("Event Ended: " .. name, "info")
+            es.activeID = nil
+            es.lastEventDay = currentDay
+            changed = true
+        end
+    else
+        local daysSinceLast = currentDay - es.lastEventDay
+        local interval = SandboxVars.DynamicTrading.EventFrequency or 5
+        
+        if daysSinceLast >= interval then
+            local chance = SandboxVars.DynamicTrading.EventChance or 50
+            if ZombRand(100) < chance then
+                
+                -- Requires DynamicTrading_Events.lua to have GetValidCandidates
+                if DynamicTrading.Events.GetValidCandidates then
+                    local candidates = DynamicTrading.Events.GetValidCandidates()
+                    
+                    if #candidates > 0 then
+                        local pickID = candidates[ZombRand(#candidates) + 1]
+                        local eventDef = DynamicTrading.Events.Registry[pickID]
+                        
+                        if eventDef then
+                            local duration = SandboxVars.DynamicTrading.EventDuration or 3
+                            es.activeID = pickID
+                            es.endDay = currentDay + duration
+                            
+                            DynamicTrading.Manager.AddLog("ALERT: " .. eventDef.name, "event")
+                            changed = true
+                            print("[DynamicTrading] Event Started: " .. pickID)
+                        end
+                    end
+                else
+                    print("[DynamicTrading] Error: GetValidCandidates missing.")
+                end
+            end
+        end
+    end
+
+    if changed then
+        ModData.transmit("DynamicTrading_Engine_v1")
+        DynamicTrading.Manager.RebuildActiveCache(data)
+    end
+end
+
+-- =============================================================================
+-- 3. UTILITIES
+-- =============================================================================
+function DynamicTrading.Manager.RebuildActiveCache(data)
+    DynamicTrading.Events.ActiveEvents = {}
+    local id = data.EventSystem.activeID
+    if id and DynamicTrading.Events.Registry[id] then
+        table.insert(DynamicTrading.Events.ActiveEvents, DynamicTrading.Events.Registry[id])
+    end
+end
+
+local function OnReceiveGlobalModData(key, data)
+    if key == "DynamicTrading_Engine_v1" then
+        DynamicTrading.Manager.RebuildActiveCache(data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
 
 function DynamicTrading.Manager.GetDailyStatus()
     local data = DynamicTrading.Manager.GetData()
@@ -55,13 +141,18 @@ end
 function DynamicTrading.Manager.IncrementDailyCounter()
     local data = DynamicTrading.Manager.GetData()
     data.dailyTradersFound = (data.dailyTradersFound or 0) + 1
-    -- Transmit handled by caller usually, but safe to keep here for consistency
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
 end
 
--- =============================================================================
--- 2. TRADER GENERATION
--- =============================================================================
+function DynamicTrading.Manager.AddLog(text, category)
+    local data = DynamicTrading.Manager.GetData()
+    local gt = GameTime:getInstance()
+    local timeStr = string.format("%02d/%02d %02d:%02d", gt:getDay()+1, gt:getMonth()+1, gt:getHour(), gt:getMinutes())
+    table.insert(data.NetworkLogs, 1, { text = text, cat = category or "info", time = timeStr })
+    while #data.NetworkLogs > 12 do table.remove(data.NetworkLogs) end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
+end
+
 function DynamicTrading.Manager.GenerateRandomContact()
     local data = DynamicTrading.Manager.GetData()
     
@@ -79,15 +170,14 @@ function DynamicTrading.Manager.GenerateRandomContact()
 
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
-    
     local minHours = SandboxVars.DynamicTrading.TraderStayHoursMin or 6
     local maxHours = SandboxVars.DynamicTrading.TraderStayHoursMax or 24
     if minHours > maxHours then minHours = maxHours end
     
     local duration = ZombRand(minHours, maxHours + 1)
     local expireTime = currentHours + duration
-
     local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
+    
     data.Traders[uniqueID] = {
         id = uniqueID,
         archetype = archetype,
@@ -106,29 +196,12 @@ function DynamicTrading.Manager.GenerateRandomContact()
     return data.Traders[uniqueID]
 end
 
--- =============================================================================
--- 3. UTILITIES & LOGS
--- =============================================================================
-function DynamicTrading.Manager.AddLog(text, category)
-    local data = DynamicTrading.Manager.GetData()
-    local gt = GameTime:getInstance()
-    local timeStr = string.format("%02d/%02d %02d:%02d", gt:getDay()+1, gt:getMonth()+1, gt:getHour(), gt:getMinutes())
-    
-    table.insert(data.NetworkLogs, 1, { text = text, cat = category or "info", time = timeStr })
-    
-    while #data.NetworkLogs > 12 do table.remove(data.NetworkLogs) end
-    
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
-end
-
 function DynamicTrading.Manager.RestockTrader(traderID)
     local data = DynamicTrading.Manager.GetData()
     local trader = data.Traders[traderID]
     if not trader then return end
-    
     local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
     local interval = SandboxVars.DynamicTrading.RestockInterval or 1
-    
     if (currentDay - (trader.lastRestockDay or 0) >= interval) then
         if DynamicTrading.Economy and DynamicTrading.Economy.GenerateStock then
             trader.stocks = DynamicTrading.Economy.GenerateStock(trader.archetype)
@@ -140,7 +213,6 @@ end
 function DynamicTrading.Manager.GetTrader(traderID, archetype)
     if not traderID then return nil end
     local data = DynamicTrading.Manager.GetData()
-    
     if not data.Traders[traderID] and not string.find(traderID, "Radio_") then
         data.Traders[traderID] = {
             id = traderID,
@@ -154,9 +226,6 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
     return data.Traders[traderID]
 end
 
--- =============================================================================
--- 4. ECONOMY
--- =============================================================================
 function DynamicTrading.Manager.UpdateHeat(category, amount)
     if not category or category == "Misc" then return end
     local data = DynamicTrading.Manager.GetData()
@@ -181,9 +250,6 @@ function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
     DynamicTrading.Manager.UpdateHeat(category, -0.01 * qty)
 end
 
--- =============================================================================
--- 5. COOLDOWNS
--- =============================================================================
 function DynamicTrading.Manager.CanScan(player)
     if not player then return false, 0 end
     local data = DynamicTrading.Manager.GetData()
@@ -205,5 +271,3 @@ function DynamicTrading.Manager.SetScanTimestamp(player)
     data.scanCooldowns[player:getUsername()] = GameTime:getInstance():getWorldAgeHours()
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
 end
-
--- [REMOVED OnHourlyTick] - Logic moved to DT_ServerCommands.lua

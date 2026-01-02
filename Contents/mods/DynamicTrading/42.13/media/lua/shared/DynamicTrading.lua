@@ -19,7 +19,6 @@ require "DT_RadioInteraction"  -- [NEW] Radio Scanning Logic
 -- 4. USER INTERFACE
 require "DynamicTradingUI"     -- The Shop Window
 require "DynamicTradingInfoUI" -- The Info/Debug Window
-require "DT_Debug"             -- Debug Tool (Press T)
 
 -- 5. ITEM DEFINITIONS
 -- (Loads your custom items into the MasterList)
