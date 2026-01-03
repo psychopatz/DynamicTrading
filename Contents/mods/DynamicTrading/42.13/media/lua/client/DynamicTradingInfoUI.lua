@@ -1,7 +1,3 @@
--- =============================================================================
--- File: Contents\mods\DynamicTrading\42.13\media\lua\client\DynamicTradingInfoUI.lua
--- =============================================================================
-
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"
 require "DynamicTrading_Manager"
@@ -39,15 +35,29 @@ function DynamicTradingInfoUI:populateList()
     self.listbox:clear()
     
     local data = DynamicTrading.Manager.GetData()
-    -- This now pulls directly from SandboxVars via the Config mapping
     local diff = DynamicTrading.Config.GetDifficultyData()
     
-    -- 1. MARKET PROFILE (Updated for Granular Sandbox Options)
+    -- 1. MARKET PROFILE
     local header = self.listbox:addItem("=== MARKET PROFILE ===", nil)
     header.textColor = {r=1, g=0.9, b=0.5, a=1}
     
-    -- Format multipliers to percentage strings for better readability
-    -- e.g., 1.5 becomes "150%"
+    -- [NEW] DAILY NETWORK STATUS
+    -- This reads from the new 'DailyCycle' structure in Manager.lua
+    if data.DailyCycle then
+        local found = data.DailyCycle.currentTradersFound or 0
+        local limit = data.DailyCycle.dailyTraderLimit or 5
+        
+        -- Color logic: Green = Available, Red = Full/Limit Reached
+        local statusColor = {r=0.5, g=1, b=0.5, a=1}
+        if found >= limit then 
+            statusColor = {r=1, g=0.5, b=0.5, a=1} 
+        end
+        
+        local statItem = self.listbox:addItem(string.format("  Daily Network: %d / %d Found", found, limit), nil)
+        statItem.textColor = statusColor
+    end
+
+    -- Format multipliers to percentage strings
     local buyStr = string.format("%d%%", math.floor((diff.buyMult or 1.0) * 100))
     local sellStr = string.format("%d%%", math.floor((diff.sellMult or 0.5) * 100))
     local stockStr = string.format("%d%%", math.floor((diff.stockMult or 1.0) * 100))
@@ -60,7 +70,7 @@ function DynamicTradingInfoUI:populateList()
     self.listbox:addItem("  Rarity Bonus: " .. rarityStr, nil)
     self.listbox:addItem(" ", nil)
 
-    -- 2. EVENTS (Updated for Description)
+    -- 2. ACTIVE EVENTS
     header = self.listbox:addItem("=== ACTIVE EVENTS ===", nil)
     header.textColor = {r=0.5, g=1, b=0.5, a=1}
     
@@ -73,7 +83,7 @@ function DynamicTradingInfoUI:populateList()
             local item = self.listbox:addItem(" [!] " .. (event.name or "Unknown"), nil)
             item.textColor = {r=0.2, g=1.0, b=0.2, a=1}
             
-            -- Event Description (New)
+            -- Event Description
             if event.description then
                 local descItem = self.listbox:addItem("     \"" .. event.description .. "\"", nil)
                 descItem.textColor = {r=0.7, g=0.7, b=0.7, a=1} -- Greyish
@@ -99,7 +109,7 @@ function DynamicTradingInfoUI:populateList()
     if not anyEvent then self.listbox:addItem("  (No active events)", nil) end
     self.listbox:addItem(" ", nil)
 
-    -- 3. INFLATION
+    -- 3. INFLATION / HEAT
     header = self.listbox:addItem("=== CATEGORY INFLATION ===", nil)
     header.textColor = {r=1, g=0.5, b=0.5, a=1}
     local anyHeat = false
@@ -135,7 +145,7 @@ function DynamicTradingInfoUI.ToggleWindow()
         end
         return
     end
-    local ui = DynamicTradingInfoUI:new(500, 100, 360, 450) -- Slightly wider/taller
+    local ui = DynamicTradingInfoUI:new(500, 100, 360, 450)
     ui:initialise()
     ui:addToUIManager()
     DynamicTradingInfoUI.instance = ui
