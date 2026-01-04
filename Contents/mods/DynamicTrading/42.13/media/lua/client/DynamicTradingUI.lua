@@ -5,6 +5,7 @@ require "ISUI/ISScrollingListBox"
 require "DynamicTrading_Config"
 require "DynamicTrading_Manager"
 require "DynamicTrading_Economy"
+require "DynamicTrading_Events" 
 
 DynamicTradingUI = ISCollapsableWindow:derive("DynamicTradingUI")
 DynamicTradingUI.instance = nil
@@ -37,7 +38,6 @@ function DynamicTradingUI:update()
     local data = DynamicTrading.Manager.GetData()
 
     -- 2. "DEATH CHECK": Does the trader still exist in ModData?
-    -- If the Server removed it, data.Traders[self.traderID] will be NIL.
     local traderExists = false
     if data.Traders and data.Traders[self.traderID] then
         traderExists = true
@@ -194,6 +194,12 @@ function DynamicTradingUI:populateList()
     local categorized = {} 
     local categories = {}  
 
+    -- Get Global Stock Modifier
+    local globalStockMult = 1.0
+    if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
+        globalStockMult = DynamicTrading.Events.GetSystemModifier("globalStock")
+    end
+
     if self.isBuying then
         self.btnSwitch:setTitle("SWITCH TO SELLING")
         self.btnAction:setTitle("BUY ITEM")
@@ -205,15 +211,29 @@ function DynamicTradingUI:populateList()
                     local scriptItem = getScriptManager():getItem(itemData.item)
                     local sortName = scriptItem and scriptItem:getDisplayName() or key
                     
+                    -- Calculate prices first
+                    local price = DynamicTrading.Economy.GetBuyPrice(key, managerData.globalHeat)
+                    
                     local cat = "Misc"
                     if itemData.tags and #itemData.tags > 0 then cat = itemData.tags[1] end
 
+                    -- [FIX] Ensure Category creation happens HERE
                     if not categorized[cat] then 
                         categorized[cat] = {}
                         table.insert(categories, cat)
                     end
 
-                    local price = DynamicTrading.Economy.GetBuyPrice(key, managerData.globalHeat)
+                    local priceMod = 1.0
+                    local stockMod = globalStockMult
+                    
+                    if DynamicTrading.Events then
+                        if DynamicTrading.Events.GetPriceModifier then
+                            priceMod = DynamicTrading.Events.GetPriceModifier(itemData.tags)
+                        end
+                        if DynamicTrading.Events.GetVolumeModifier then
+                            stockMod = stockMod * DynamicTrading.Events.GetVolumeModifier(itemData.tags)
+                        end
+                    end
 
                     table.insert(categorized[cat], {
                         key = key,
@@ -222,7 +242,9 @@ function DynamicTradingUI:populateList()
                         price = price,
                         data = itemData,
                         isBuy = true,
-                        isCategory = false
+                        isCategory = false,
+                        priceMod = priceMod, 
+                        stockMod = stockMod
                     })
                 end
             end
@@ -238,32 +260,47 @@ function DynamicTradingUI:populateList()
             local invItem = items:get(i)
             local fullType = invItem:getFullType()
             
-            local masterKey = nil
-            for k, v in pairs(DynamicTrading.Config.MasterList) do
-                if v.item == fullType then masterKey = k break end
-            end
-            
-            if masterKey then
-                local itemData = DynamicTrading.Config.MasterList[masterKey]
-                local cat = "Misc"
-                if itemData.tags and #itemData.tags > 0 then cat = itemData.tags[1] end
+            -- 1. Filter out actual Currency items
+            if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
 
-                if not categorized[cat] then 
-                    categorized[cat] = {}
-                    table.insert(categories, cat)
+                local masterKey = nil
+                for k, v in pairs(DynamicTrading.Config.MasterList) do
+                    if v.item == fullType then masterKey = k break end
                 end
+                
+                if masterKey then
+                    local itemData = DynamicTrading.Config.MasterList[masterKey]
+                    local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
 
-                local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
+                    -- [FIX] 2. Filter out items worth $0 AND initialize Category inside check
+                    if price > 0 then
+                        local cat = "Misc"
+                        if itemData.tags and #itemData.tags > 0 then cat = itemData.tags[1] end
 
-                table.insert(categorized[cat], {
-                    key = masterKey,
-                    invItem = invItem,
-                    name = invItem:getDisplayName(),
-                    price = price,
-                    data = itemData,
-                    isBuy = false,
-                    isCategory = false
-                })
+                        -- [FIX] Create Category only if item is valid
+                        if not categorized[cat] then 
+                            categorized[cat] = {}
+                            table.insert(categories, cat)
+                        end
+
+                        local priceMod = 1.0
+                        if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then
+                            priceMod = DynamicTrading.Events.GetPriceModifier(itemData.tags)
+                        end
+
+                        table.insert(categorized[cat], {
+                            key = masterKey,
+                            invItem = invItem,
+                            name = invItem:getDisplayName(),
+                            price = price,
+                            data = itemData,
+                            isBuy = false,
+                            isCategory = false,
+                            priceMod = priceMod,
+                            stockMod = 1.0 
+                        })
+                    end
+                end
             end
         end
     end
@@ -271,20 +308,23 @@ function DynamicTradingUI:populateList()
     table.sort(categories) 
 
     for _, catName in ipairs(categories) do
-        local hItem = self.listbox:addItem(string.upper(catName), nil)
-        hItem.item = { isCategory = true, categoryName = catName, text = string.upper(catName) }
-        hItem.height = 32
-        
-        if not self.collapsed[catName] then
-            local itemsInCat = categorized[catName]
-            table.sort(itemsInCat, function(a,b) return a.name < b.name end)
+        -- [FIX] Double Check: Only add header if category actually has items
+        if categorized[catName] and #categorized[catName] > 0 then
             
-            for _, prod in ipairs(itemsInCat) do
-                self.listbox:addItem(prod.name, prod)
+            local hItem = self.listbox:addItem(string.upper(catName), nil)
+            hItem.item = { isCategory = true, categoryName = catName, text = string.upper(catName) }
+            hItem.height = 32
+            
+            if not self.collapsed[catName] then
+                local itemsInCat = categorized[catName]
+                table.sort(itemsInCat, function(a,b) return a.name < b.name end)
                 
-                -- BUY MODE: Preserve selection by KEY (identity)
-                if self.isBuying and self.selectedKey and prod.key == self.selectedKey then
-                    self.listbox.selected = #self.listbox.items
+                for _, prod in ipairs(itemsInCat) do
+                    self.listbox:addItem(prod.name, prod)
+                    
+                    if self.isBuying and self.selectedKey and prod.key == self.selectedKey then
+                        self.listbox.selected = #self.listbox.items
+                    end
                 end
             end
         end
@@ -333,15 +373,38 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     
     listbox:drawText(d.name, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
     
+    -- DYNAMIC COLORING LOGIC
+    local priceR, priceG, priceB = 0.6, 1.0, 0.6 -- Default Light Green
+    local stockR, stockG, stockB = 0.7, 0.7, 0.7 -- Default Grey
+
+    if d.isBuy then
+        -- BUY MODE
+        -- Price: Cyan = Cheap, Red = Expensive
+        if d.priceMod < 0.99 then priceR, priceG, priceB = 0.2, 1.0, 1.0 
+        elseif d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.4, 0.4 
+        end
+        
+        -- Stock: Green = High, Red = Low
+        if d.stockMod > 1.01 then stockR, stockG, stockB = 0.4, 1.0, 0.4
+        elseif d.stockMod < 0.99 then stockR, stockG, stockB = 1.0, 0.4, 0.4
+        end
+    else
+        -- SELL MODE
+        -- Price: Cyan = High Payout, Red = Low Payout
+        if d.priceMod > 1.01 then priceR, priceG, priceB = 0.2, 1.0, 1.0
+        elseif d.priceMod < 0.99 then priceR, priceG, priceB = 1.0, 0.4, 0.4
+        end
+    end
+
     if d.isBuy then
         if d.qty <= 0 then
             listbox:drawText("(SOLD OUT)", width - 140, y + 12, 1.0, 0.2, 0.2, 1, UIFont.Small)
         else
-            listbox:drawText("Stock: " .. d.qty, width - 140, y + 12, 0.7, 0.7, 0.7, 1, listbox.font)
+            listbox:drawText("Stock: " .. d.qty, width - 140, y + 12, stockR, stockG, stockB, 1, listbox.font)
         end
-        listbox:drawText("$" .. d.price, width - 60, y + 12, 0.6, 1.0, 0.6, 1, listbox.font)
+        listbox:drawText("$" .. d.price, width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
     else
-        listbox:drawText("$" .. d.price, width - 60, y + 12, 0.6, 1.0, 0.6, 1, listbox.font)
+        listbox:drawText("$" .. d.price, width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
     end
     
     return y + height
@@ -397,7 +460,7 @@ function DynamicTradingUI:onAction()
     end
 
     if transactionSuccess then
-        -- Refresh the list (This removes the sold item from view)
+        -- Refresh the list
         self:populateList()
 
         -- SELL MODE: AUTO-SELECT NEXT ITEM
@@ -405,26 +468,21 @@ function DynamicTradingUI:onAction()
             local newCount = #self.listbox.items
             
             if newCount > 0 then
-                -- Clamp index (e.g. if we sold the last item, select the new last item)
                 if savedSelectionIndex > newCount then 
                     savedSelectionIndex = newCount 
                 end
                 
-                -- Force selection visually
                 self.listbox.selected = savedSelectionIndex
                 
-                -- Update "Button" state for the new selection
                 local nextItem = self.listbox.items[savedSelectionIndex]
                 if nextItem and nextItem.item and not nextItem.item.isCategory then
                      self.selectedKey = nextItem.item.key
                      self.btnAction:setEnable(true)
                 else
-                     -- We landed on a Category Header or invalid item
                      self.btnAction:setEnable(false)
                      self.selectedKey = nil
                 end
             else
-                -- List is now empty
                 self.btnAction:setEnable(false)
             end
         end
