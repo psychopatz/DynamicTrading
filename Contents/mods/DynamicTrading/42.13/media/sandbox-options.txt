@@ -223,3 +223,43 @@ option DynamicTrading.WalkieDropChance
         page = DynamicTrading,
         translation = DynamicTrading_WalkieDropChance,
     }
+
+option DynamicTrading.WalletMinCash
+    {
+        type = integer,
+        default = 1,
+        min = 1,
+        max = 100,
+        page = DynamicTrading,
+        translation = DynamicTrading_WalletMinCash,
+    }
+
+    option DynamicTrading.WalletMaxCash
+    {
+        type = integer,
+        default = 150,
+        min = 10,
+        max = 2000,
+        page = DynamicTrading,
+        translation = DynamicTrading_WalletMaxCash,
+    }
+
+    option DynamicTrading.WalletEmptyChance
+    {
+        type = integer,
+        default = 20,
+        min = 0,
+        max = 100,
+        page = DynamicTrading,
+        translation = DynamicTrading_WalletEmptyChance,
+    }
+
+    option DynamicTrading.WalletJackpotChance
+    {
+        type = double,
+        default = 5.0,
+        min = 0.0,
+        max = 100.0,
+        page = DynamicTrading,
+        translation = DynamicTrading_WalletJackpotChance,
+    }
