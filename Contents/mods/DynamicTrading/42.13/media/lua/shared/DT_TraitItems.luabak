@@ -1,0 +1,104 @@
+require "DynamicTrading_Config"
+
+-- =======================================================================
+-- CONFIGURATION
+-- =======================================================================
+local TraitLoot = {
+    -- keys must match the string inside the console logs exactly
+    ["DynamicTrading:DT_SignalEnthusiast"] = { "Base.WalkieTalkieMakeShift", "Base.Battery", "Base.Battery" },
+    ["DynamicTrading:DT_RadioOperator"]    = { "Base.WalkieTalkie3", "Base.BatteryBox" },
+    ["DynamicTrading:DT_DXChaser"]         = { "Base.HamRadio1", "Base.ElectricWire", "Base.BatteryBox" },
+    ["DynamicTrading:DT_TacticalComms"]    = { "Base.WalkieTalkie5", "Base.BatteryBox", "Base.BatteryBox" }
+}
+
+-- =======================================================================
+-- HELPER: CRASH-PROOF LIST READER
+-- =======================================================================
+local function GetListSize(list)
+    if not list then return 0 end
+    
+    -- 1. Try standard Java .size() method (Protected mode)
+    local status, result = pcall(function() return list:size() end)
+    if status then return result end
+
+    -- 2. Try .size field (Old Java/Lua bridge style)
+    if list.size then return list.size end
+
+    -- 3. Try Lua Length (Standard tables)
+    return #list
+end
+
+-- =======================================================================
+-- MAIN FUNCTION
+-- =======================================================================
+function DT_GiveStarterItems(playerIndex, player)
+    -- 1. Validate
+    if not player then return end
+    if player:isLocalPlayer() == false then return end
+
+    local pData = player:getModData()
+    if pData.DT_StarterItemsGiven then return end
+
+    local inv = player:getInventory()
+    
+    -- 2. Get the raw list (We know this exists from your logs)
+    local traits = player:getTraits()
+    
+    -- 3. Get size safely
+    local count = GetListSize(traits)
+    
+    if count <= 0 then
+        -- Mark as done even if empty, so we don't spam checks
+        pData.DT_StarterItemsGiven = true
+        return 
+    end
+
+    print("DT DEBUG: Found " .. count .. " traits.")
+    local itemsGiven = false
+
+    -- 4. Iterate using index (0 to size-1)
+    for i = 0, count - 1 do
+        -- Safe Get
+        local status, traitObj = pcall(function() return traits:get(i) end)
+        
+        if status and traitObj then
+            local traitID = tostring(traitObj)
+            print("DT CHECK: " .. traitID)
+
+            local loot = TraitLoot[traitID]
+            if loot then
+                print("DT SUCCESS: Match found! Adding items...")
+                for _, itemID in ipairs(loot) do
+                    local itm = inv:AddItem(itemID)
+                    if not itm then
+                        print("DT ERROR: Item ID '" .. itemID .. "' is invalid in Build 42.")
+                    end
+                end
+                itemsGiven = true
+            end
+        end
+    end
+
+    -- 5. Finish
+    pData.DT_StarterItemsGiven = true
+    if itemsGiven then
+        player:sendObjectChange("addItem")
+    end
+end
+
+Events.OnCreatePlayer.Add(DT_GiveStarterItems)
+
+-- =======================================================================
+-- DEBUG KEY: "T" (Reset & Retry)
+-- =======================================================================
+Events.OnKeyPressed.Add(function(key)
+    if key == 20 then 
+        local p = getSpecificPlayer(0)
+        if p then
+            print("DT DEBUG: T Pressed.")
+            p:getModData().DT_StarterItemsGiven = nil
+            DT_GiveStarterItems(0, p)
+            p:Say("Script Ran.")
+        end
+    end
+end)

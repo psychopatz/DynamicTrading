@@ -1,0 +1,146 @@
+
+-- 1. Define the logic
+function DebugScanSurroundings()
+    local player = getPlayer()
+    if not player then return end
+
+    -- FIX 1: Safely attempt to load TraitFactory
+    -- In some contexts (or B42 changes), direct access might fail, so we check it.
+    local TraitFactory = nil
+    if zombie.characters.traits and zombie.characters.traits.TraitFactory then
+        TraitFactory = zombie.characters.traits.TraitFactory
+    end
+
+    print("\n\n")
+    print("==========================================")
+    print("DEBUG SCAN TRIGGERED (Key: L)")
+    print("==========================================")
+
+    -- A. PLAYER STATS
+    print("--- [ PLAYER STATS ] ---")
+    local desc = player:getDescriptor()
+    
+    -- FIX 2: Handle nil profession (Unemployed) and missing methods
+    local profession = "Unemployed"
+    
+    if desc then
+        -- Check if the method exists before calling it (B42 safety)
+        local rawProf = nil
+        if desc.getProfession then
+            rawProf = desc:getProfession()
+        elseif desc.profession then
+            rawProf = desc.profession
+        end
+
+        -- If it returns a value, use it. Otherwise keep "Unemployed".
+        if rawProf and tostring(rawProf) ~= "" then
+            profession = rawProf
+        end
+    end
+    
+    -- FIX 3: Use tostring() to strictly prevent "Object tried to call nil" errors
+    print(string.format("Profession: %s", tostring(profession)))
+    print(string.format("Weight:     %.2f", player:getNutrition():getWeight()))
+    print(string.format("Kills:      %d", player:getZombieKills()))
+    print(string.format("Survived:   %.1f Hours", player:getHoursSurvived()))
+
+    -- B. TRAITS (Fixed)
+    print("\n--- [ ACTIVE TRAITS ] ---")
+    local traitsList = player:getTraits() -- Returns a Java List of Strings (IDs)
+    
+    if not traitsList or traitsList:size() == 0 then
+        print("No active traits.")
+    else
+        for i = 0, traitsList:size() - 1 do
+            local traitID = traitsList:get(i) -- Get the ID string (e.g., "Strong")
+            
+            -- FIX 4: Only try to get details if TraitFactory was found
+            local traitLabel = "Unknown Label"
+            local traitCost = 0
+            
+            if TraitFactory and TraitFactory.getTrait then
+                local traitObj = TraitFactory.getTrait(traitID)
+                if traitObj then
+                    -- Schema: https://projectzomboid.com/modding/zombie/characters/traits/TraitFactory.Trait.html
+                    traitLabel = traitObj:getLabel() or traitID
+                    traitCost = traitObj:getCost()
+                end
+            else
+                 -- Fallback if Factory is missing: use ID as label
+                 traitLabel = traitID
+            end
+            
+            print(string.format("- %s", tostring(traitLabel)))
+            print(string.format("    ID: %s | Cost: %d", tostring(traitID), traitCost))
+        end
+    end
+
+    -- C. PLAYER INVENTORY
+    print("\n--- [ INVENTORY ] ---")
+    local inventory = player:getInventory()
+    local items = inventory:getItems()
+    
+    for i = 0, items:size() - 1 do
+        local item = items:get(i)
+        print(string.format("- %s (Cond: %d/%d)", 
+            item:getDisplayName(), 
+            item:getCondition(),
+            item:getConditionMax()
+        ))
+    end
+
+    -- D. ITEMS ON GROUND
+    print("\n--- [ ITEMS ON GROUND (Radius: 10) ] ---")
+    local range = 10
+    local pX, pY, pZ = player:getX(), player:getY(), player:getZ()
+    local cell = getCell()
+    local foundGroundItems = false
+
+    for x = -range, range do
+        for y = -range, range do
+            local sq = cell:getGridSquare(pX + x, pY + y, pZ)
+            if sq then
+                local worldObjects = sq:getWorldObjects()
+                for k = 0, worldObjects:size() - 1 do
+                    local obj = worldObjects:get(k)
+                    local item = obj:getItem()
+                    if item then
+                        foundGroundItems = true
+                        print(string.format("- %s (at %d,%d)", item:getDisplayName(), sq:getX(), sq:getY()))
+                    end
+                end
+            end
+        end
+    end
+    if not foundGroundItems then print("No items on ground.") end
+
+    -- E. ZOMBIES
+    print("\n--- [ ZOMBIES NEARBY ] ---")
+    local zombieList = cell:getZombieList()
+    local foundZombies = false
+    
+    for i = 0, zombieList:size() - 1 do
+        local z = zombieList:get(i)
+        local dist = z:DistTo(player)
+        if dist < 20 then
+            foundZombies = true
+            print(string.format("- Zombie ID: %d | Dist: %.1f | HP: %.1f", 
+                z:getOnlineID(), dist, z:getHealth()))
+        end
+    end
+    if not foundZombies then print("No zombies nearby.") end
+    print("==========================================")
+end
+
+-- 2. Key Listener
+function DebugKeyListener(key)
+    if key == Keyboard.KEY_L then
+        getPlayer():Say("Running Debug Scan...")
+        DebugScanSurroundings()
+    end
+end
+
+-- 3. Init
+Events.OnKeyPressed.Remove(DebugKeyListener)
+Events.OnKeyPressed.Add(DebugKeyListener)
+print("SUCCESS: Debug Key Listener (L) Updated.")

@@ -1,0 +1,42 @@
+module DynamicTrading
+{
+    character_trait_definition DynamicTrading:DT_SignalEnthusiast
+    {
+        IsProfessionTrait = false,
+        DisabledInMultiplayer = false,
+        CharacterTrait = DynamicTrading:DT_SignalEnthusiast,
+        Cost = 4,
+        UIName = UI_trait_DT_SignalEnthusiast,
+        UIDescription = UI_trait_DT_SignalEnthusiast_desc,
+    }
+
+    character_trait_definition DynamicTrading:DT_RadioOperator
+    {
+        IsProfessionTrait = false,
+        DisabledInMultiplayer = false,
+        CharacterTrait = DynamicTrading:DT_RadioOperator,
+        Cost = 6,
+        UIName = UI_trait_DT_RadioOperator,
+        UIDescription = UI_trait_DT_RadioOperator_desc,
+    }
+
+    character_trait_definition DynamicTrading:DT_DXChaser
+    {
+        IsProfessionTrait = false,
+        DisabledInMultiplayer = false,
+        CharacterTrait = DynamicTrading:DT_DXChaser,
+        Cost = 8,
+        UIName = UI_trait_DT_DXChaser,
+        UIDescription = UI_trait_DT_DXChaser_desc,
+    }
+
+    character_trait_definition DynamicTrading:DT_TacticalComms
+    {
+        IsProfessionTrait = false,
+        DisabledInMultiplayer = false,
+        CharacterTrait = DynamicTrading:DT_TacticalComms,
+        Cost = 12,
+        UIName = UI_trait_DT_TacticalComms,
+        UIDescription = UI_trait_DT_TacticalComms_desc,
+    }
+}

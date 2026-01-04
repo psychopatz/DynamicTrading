@@ -46,7 +46,9 @@ require "DTItems/DT_Junk"
 require "DTItems/DT_Luxury"
 require "DTItems/DT_Household"
 require "DTItems/DT_Literature"
-require "DTItems/DT_Vehicle"           
+require "DTItems/DT_Vehicle"
+-- 6. TRAITS
 
+-- require "DT_TraitItems"
 
 print("[DynamicTrading] Radio Trading System Fully Loaded.")

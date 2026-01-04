@@ -1,0 +1,13 @@
+UI_EN = {
+    UI_trait_DT_SignalEnthusiast = "Signal Enthusiast",
+    UI_trait_DT_SignalEnthusiast_desc = "Start with a Makeshift Walkie Talkie and extra batteries.",
+    
+    UI_trait_DT_RadioOperator = "Radio Operator",
+    UI_trait_DT_RadioOperator_desc = "Start with a reliable Civilian Walkie Talkie (Tier 3) and a battery box.",
+    
+    UI_trait_DT_DXChaser = "DX Chaser",
+    UI_trait_DT_DXChaser_desc = "Start with a Stationary Ham Radio (Heavy) and setup supplies.",
+    
+    UI_trait_DT_TacticalComms = "Tactical Comms",
+    UI_trait_DT_TacticalComms_desc = "Start with a Military Grade Walkie Talkie (Tier 5) and ample power.",
+}
