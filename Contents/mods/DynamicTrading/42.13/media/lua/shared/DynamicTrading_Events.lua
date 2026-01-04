@@ -146,37 +146,75 @@ end
 -- =============================================================================
 -- 3. EVENT DEFINITIONS
 -- =============================================================================
--- [NEGATIVE] Municipal water shutoff. Water becomes expensive.
-DynamicTrading.Events.Register("WaterFail", {
-    name = "Drought (Water Shutoff)",
-    type = "meta", 
-    description = "Municipal water is gone. Bottled water is liquid gold.",
+
+-- #############################################################################
+-- META POSITIVE
+-- (Permanent/Seasonal conditions that benefit the player)
+-- #############################################################################
+
+-- [POSITIVE] Cheap food.
+DynamicTrading.Events.Register("Harvest", {
+    name = "Harvest Season",
+    type = "meta",
+    description = "Farms are overflowing. Produce is cheap.",
     condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > (SandboxVars.WaterShutModifier or 14)
+        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        return ClimateManager:getInstance():getSeasonName() == "Autumn" 
     end,
     effects = {
-        ["Water"] = { price = 5.0, vol = 0.2 },
-        ["Drink"] = { price = 2.0 },
-        ["Hygiene"] = { price = 1.5 }
+        ["Vegetable"] = { price = 0.4, vol = 3.0 },
+        ["Fruit"] = { price = 0.5, vol = 2.0 },
+        ["Farming"] = { price = 1.5, vol = 0.5 },
+        ["Pickle"] = { price = 0.8, vol = 2.0 }
+    },
+    inject = { ["Vegetable"] = 5, ["Pickle"] = 2 }
+})
+
+-- =============================================================================
+-- SEASONAL: SPRING THAW
+-- =============================================================================
+-- Concept: Winter is over. It's raining constantly. Time to plant.
+DynamicTrading.Events.Register("Spring", {
+    name = "Spring Thaw",
+    type = "meta",
+    description = "The frost has melted. Rain is frequent, and planting season has begun.",
+    condition = function() 
+        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        return ClimateManager:getInstance():getSeasonName() == "Spring" 
+    end,
+    effects = {
+        ["Farming"] = { price = 2.0, vol = 0.5 },   -- Everyone needs seeds NOW
+        ["Water"] = { price = 0.2, vol = 3.0 },     -- Rain collectors are full
+        ["Fish"] = { price = 0.8, vol = 2.0 },      -- Rivers are active
+        ["Clothing"] = { price = 1.2 }              -- Waterproof gear needed
+    },
+    inject = { ["Farming"] = 5 }
+})
+
+-- =============================================================================
+-- ERA: NATURE'S RECLAMATION (Starts ~100 Days)
+-- =============================================================================
+-- Concept: Erosion is setting in. Wood is everywhere, but clearing paths is hard.
+DynamicTrading.Events.Register("NatureReclamation", {
+    name = "Overgrowth",
+    type = "meta",
+    description = "Vegetation is reclaiming the cities. Wood is abundant; clear paths are not.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 100
+    end,
+    effects = {
+        ["Wood"] = { price = 0.2, vol = 5.0 },      -- Trees are everywhere
+        ["Blade"] = { price = 1.5 },                -- Machetes needed to clear vines
+        ["Herb"] = { price = 0.5, vol = 3.0 },      -- Foraging is easier
+        ["Game"] = { vol = 1.5 }                    -- Animals entering cities
     }
 })
 
--- [NEGATIVE] Grid collapse. Fuel/Generators become expensive.
-DynamicTrading.Events.Register("PowerFail", {
-    name = "Grid Collapse",
-    type = "meta", 
-    description = "The power grid is dead. Generators and fuel are critical.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > (SandboxVars.ElecShutModifier or 14)
-    end,
-    effects = {
-        ["Electronics"] = { price = 2.0 },
-        ["Fuel"] = { price = 3.0, vol = 0.5 },
-        ["Light"] = { price = 1.5 },
-        ["Generator"] = { price = 4.0, vol = 0.1 },
-        ["Battery"] = { price = 2.5 }
-    }
-})
+
+-- #############################################################################
+-- META NEGATIVE
+-- (Permanent/Seasonal conditions that challenge the player, Sorted by Start Time)
+-- #############################################################################
 
 -- [NEGATIVE] Winter season. Fresh food is rare, heat is expensive.
 DynamicTrading.Events.Register("Winter", {
@@ -214,121 +252,204 @@ DynamicTrading.Events.Register("Heatwave", {
     }
 })
 
--- [NEGATIVE] War. Fewer traders, expensive guns/ammo.
-DynamicTrading.Events.Register("Warzone", {
-    name = "Faction Conflict",
-    type = "flash",
-    description = "War has broken out. Traders are hiding, ammo is scarce.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
-    system = { traderLimit = 0.5 },
-    effects = {
-        ["Gun"] = { price = 2.5, vol = 0.5 },
-        ["Ammo"] = { price = 3.0, vol = 0.2 },
-        ["Medical"] = { price = 1.5 },
-        ["Armor"] = { price = 2.0 }
-    }
-})
-
--- [NEGATIVE] Sickness. Meds expensive, food expensive.
-DynamicTrading.Events.Register("Outbreak", {
-    name = "Viral Outbreak",
-    type = "flash",
-    description = "A sickness spreads. Medicine is critical.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
-    effects = {
-        ["Medical"] = { price = 3.5, vol = 0.2 },
-        ["Pill"] = { price = 3.0 },
-        ["Hygiene"] = { price = 2.5 },
-        ["Food"] = { price = 1.2 }
-    }
-})
-
--- [NEGATIVE] Crop failure. Food very expensive.
-DynamicTrading.Events.Register("Famine", {
-    name = "Crop Blight",
-    type = "flash",
-    description = "Crops have died. Food prices skyrocket.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
-    effects = {
-        ["Food"] = { price = 2.5, vol = 0.3 },
-        ["Farming"] = { price = 3.0 },
-        ["Canned"] = { price = 2.0 },
-        ["Fresh"] = { price = 4.0, vol = 0.1 }
-    }
-})
-
--- [NEGATIVE] No gas. Cars and generators useless.
-DynamicTrading.Events.Register("FuelShortage", {
-    name = "Refinery Explosion",
-    type = "flash",
-    description = "Fuel production has halted.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
-    effects = {
-        ["Fuel"] = { price = 4.0, vol = 0.1 },
-        ["CarPart"] = { price = 0.5 },
-        ["Generator"] = { price = 0.5 }
-    }
-})
-
--- [NEGATIVE] Bandits. Weapons and Security needed.
-DynamicTrading.Events.Register("CrimeWave", {
-    name = "Looter Gangs",
-    type = "flash",
-    description = "Bandits are raiding. Locks and weapons needed.",
-    canSpawn = function() return true end,
-    effects = {
-        ["Police"] = { price = 2.0, vol = 0.5 },
-        ["Weapon"] = { price = 1.5 },
-        ["Gun"] = { price = 1.5 },
-        ["Safety"] = { price = 2.0 } -- Found in DT_Household
-    }
-})
-
--- [NEGATIVE] Hard to scan for traders.
-DynamicTrading.Events.Register("SolarFlare", {
-    name = "Solar Flare",
-    type = "flash",
-    description = "Atmospheric interference hits radios.",
-    canSpawn = function() return true end,
-    system = {
-        scanChance = 0.4,
-        traderLimit = 0.8
-    },
-    effects = {
-        ["Communication"] = { price = 3.0 },
-        ["Electronics"] = { price = 0.5 }
-    }
-})
-
--- [NEGATIVE] Money loses value. Prices double.
-DynamicTrading.Events.Register("Inflation", {
-    name = "Market Panic",
-    type = "flash",
-    description = "Currency is losing value rapidly.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
-    effects = {
-        ["Misc"] = { price = 2.0 },
-        ["Luxury"] = { price = 0.2 }
-    }
-})
-
--- [POSITIVE] Cheap food.
-DynamicTrading.Events.Register("Harvest", {
-    name = "Harvest Season",
-    type = "meta",
-    description = "Farms are overflowing. Produce is cheap.",
+-- [NEGATIVE] Municipal water shutoff. Water becomes expensive. (~14 Days)
+DynamicTrading.Events.Register("WaterFail", {
+    name = "Drought (Water Shutoff)",
+    type = "meta", 
+    description = "Municipal water is gone. Bottled water is liquid gold.",
     condition = function() 
-        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
-        return ClimateManager:getInstance():getSeasonName() == "Autumn" 
+        return GameTime:getInstance():getNightsSurvived() > (SandboxVars.WaterShutModifier or 14)
     end,
     effects = {
-        ["Vegetable"] = { price = 0.4, vol = 3.0 },
-        ["Fruit"] = { price = 0.5, vol = 2.0 },
-        ["Farming"] = { price = 1.5, vol = 0.5 },
-        ["Pickle"] = { price = 0.8, vol = 2.0 }
-    },
-    inject = { ["Vegetable"] = 5, ["Pickle"] = 2 }
+        ["Water"] = { price = 5.0, vol = 0.2 },
+        ["Drink"] = { price = 2.0 },
+        ["Hygiene"] = { price = 1.5 }
+    }
 })
+
+-- [NEGATIVE] Grid collapse. Fuel/Generators become expensive. (~14 Days)
+DynamicTrading.Events.Register("PowerFail", {
+    name = "Grid Collapse",
+    type = "meta", 
+    description = "The power grid is dead. Generators and fuel are critical.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > (SandboxVars.ElecShutModifier or 14)
+    end,
+    effects = {
+        ["Electronics"] = { price = 2.0 },
+        ["Fuel"] = { price = 3.0, vol = 0.5 },
+        ["Light"] = { price = 1.5 },
+        ["Generator"] = { price = 4.0, vol = 0.1 },
+        ["Battery"] = { price = 2.5 }
+    }
+})
+
+-- =============================================================================
+-- ERA: THE GREAT ROT (Starts ~1 Month / 30 Days)
+-- =============================================================================
+-- Concept: The power is definitely out. All perishable food in the world has rotted.
+DynamicTrading.Events.Register("GreatRot", {
+    name = "The Great Rot",
+    type = "meta",
+    description = "Refrigeration is a memory. Scavenging fresh food is no longer possible.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 30
+    end,
+    effects = {
+        ["Fresh"] = { price = 5.0, vol = 0.05 },    -- Traders almost never have it
+        ["Rotten"] = { price = 0.0 },               -- Worthless
+        ["Salt"] = { price = 2.0 },                 -- If item exists (Spice)
+        ["Spice"] = { price = 1.5 }                 -- To mask the taste of bad meat
+    }
+})
+
+-- =============================================================================
+-- ERA: HYGIENE COLLAPSE (Starts ~2 Months / 60 Days)
+-- =============================================================================
+-- Concept: Manufactured soap and bleach have run out. Infection risk is high.
+DynamicTrading.Events.Register("HygieneCollapse", {
+    name = "Sanitation Failure",
+    type = "meta",
+    description = "Soap supplies are exhausted. Infection risks are rising.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 60
+    end,
+    effects = {
+        ["Hygiene"] = { price = 4.0, vol = 0.1 },   -- Soap is incredibly expensive
+        ["Clean"] = { price = 3.0 },                -- Bleach
+        ["Medical"] = { price = 1.2 },              -- Antibiotics demand up
+        ["Chemical"] = { price = 2.0 }              -- To make homemade soap
+    }
+})
+
+-- =============================================================================
+-- ERA 1: BALLISTIC EXHAUSTION (Starts ~3 Months / 90 Days)
+-- =============================================================================
+-- Concept: Factory-made ammo is drying up. Guns are becoming clubs.
+DynamicTrading.Events.Register("BallisticExhaustion", {
+    name = "Ballistic Exhaustion",
+    type = "meta",
+    description = "The world's ammo reserves are running dry. Bullets are a luxury.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 90 
+    end,
+    effects = {
+        ["Ammo"] = { price = 4.0, vol = 0.3 },      -- Extremely expensive and rare
+        ["Gun"] = { price = 0.4 },                  -- Useless without ammo
+        ["Gunrunner"] = { price = 0.5 },            -- Losing business
+        ["Spear"] = { price = 1.5, vol = 2.0 },     -- Primitive weapons rise
+        ["Blade"] = { price = 1.5, vol = 2.0 },
+        ["Heavy"] = { price = 1.5 }                 -- Blunt weapons
+    }
+})
+
+-- =============================================================================
+-- ERA 2: THE MANUFACTURING HALT (Starts ~4 Months / 120 Days)
+-- =============================================================================
+-- Concept: Supermarket canned goods are gone. Preservation is life.
+DynamicTrading.Events.Register("ManufacturingHalt", {
+    name = "Supply Chain Collapse",
+    type = "meta",
+    description = "Canned goods are no longer 'common'. Preservation supplies are vital.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 120
+    end,
+    effects = {
+        ["Canned"] = { price = 2.5, vol = 0.4 },    -- Rare luxury
+        ["Farming"] = { price = 0.8, vol = 2.0 },   -- Everyone is farming now
+        ["Spice"] = { price = 3.0 },                -- Salt/Vinegar for jars
+        ["Preservation"] = { price = 3.0, vol = 0.5 }, -- Jars/Lids
+        ["Fresh"] = { price = 1.0 }                 -- Normal price, but demand is high
+    },
+    inject = { ["Farming"] = 4 } -- Traders stock seeds to survive
+})
+
+-- =============================================================================
+-- ERA: THE KNOWLEDGE GAP (Starts ~6 Months / 180 Days)
+-- =============================================================================
+-- Concept: Books are rotting or have been burned for fuel. Education is dying.
+DynamicTrading.Events.Register("KnowledgeGap", {
+    name = "Literacy Crisis",
+    type = "meta",
+    description = "Technical manuals are degrading or lost. Knowledge is becoming the ultimate currency.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 180
+    end,
+    effects = {
+        ["SkillBook"] = { price = 3.5, vol = 0.2 }, -- Extremely rare/expensive
+        ["Literature"] = { price = 2.0 },           -- Entertainment is precious
+        ["Paper"] = { price = 1.5 },                -- For writing new notes
+        ["Scholastic"] = { price = 2.5 }
+    }
+})
+
+-- =============================================================================
+-- ERA 3: THE IRON AGE (Starts ~8 Months / 240 Days)
+-- =============================================================================
+-- Concept: High-quality steel tools are breaking. Repair items are crucial.
+DynamicTrading.Events.Register("IronAge", {
+    name = "Tool Scarcity",
+    type = "meta",
+    description = "Refined steel tools are breaking down. Repairs and smithing are essential.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 240
+    end,
+    effects = {
+        ["Tool"] = { price = 2.0, vol = 0.6 },      -- Hard to find good tools
+        ["Heavy"] = { price = 3.0, vol = 0.2 },     -- Sledgehammers are mythical
+        ["Repair"] = { price = 3.0, vol = 1.5 },    -- Glue, Duct Tape
+        ["Smithing"] = { price = 1.5, vol = 2.0 },  -- Blacksmithing rises
+        ["Junk"] = { price = 0.5 }                  -- Scrap is everywhere, but useless without skill
+    }
+})
+
+-- =============================================================================
+-- ERA 4: THE FUEL CRISIS (Starts ~1 Year / 365 Days)
+-- =============================================================================
+-- Concept: Gas stations are dry or degraded. The age of the automobile is ending.
+DynamicTrading.Events.Register("FuelCrisis", {
+    name = "The Fuel Crisis",
+    type = "meta",
+    description = "Gasoline reserves have degraded. Combustion engines are becoming obsolete.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 365
+    end,
+    effects = {
+        ["Fuel"] = { price = 5.0, vol = 0.1 },      -- Liquid Gold
+        ["CarPart"] = { price = 0.5 },              -- Useless without gas
+        ["Generator"] = { price = 0.5 },            -- Useless without gas
+        ["Battery"] = { price = 2.5, vol = 1.5 },   -- Solar/Electric becomes king
+        ["Electronics"] = { price = 1.5 }           -- For repairing batteries/solar
+    }
+})
+
+-- =============================================================================
+-- ERA 5: SIGNAL DECAY (Starts ~1 Year / 365 Days)
+-- =============================================================================
+-- Concept: The trader network is fracturing. Finding a trader is harder, but they are richer.
+DynamicTrading.Events.Register("SignalDecay", {
+    name = "Network Fragmentation",
+    type = "meta",
+    description = "Repeater towers are failing. Signals are rare, but survivors are veterans.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > 365
+    end,
+    system = {
+        scanChance = 0.7,   -- -30% Chance to find a signal
+        traderLimit = 0.8,  -- -20% Total Traders
+        globalStock = 1.5   -- But the traders you find have +50% loot (Veterans)
+    },
+    effects = {
+        ["Communication"] = { price = 2.0 },        -- High quality radios needed
+        ["Luxury"] = { price = 1.5 }                -- Veterans trade in high value items
+    }
+})
+
+
+-- #############################################################################
+-- FLASH POSITIVE
+-- (Temporary events that benefit the player)
+-- #############################################################################
 
 -- [POSITIVE] Cheap military gear.
 DynamicTrading.Events.Register("Surplus", {
@@ -602,6 +723,110 @@ DynamicTrading.Events.Register("FreeMarket", {
     }
 })
 
+
+-- #############################################################################
+-- FLASH NEGATIVE
+-- (Temporary events that challenge the player)
+-- #############################################################################
+
+-- [NEGATIVE] War. Fewer traders, expensive guns/ammo.
+DynamicTrading.Events.Register("Warzone", {
+    name = "Faction Conflict",
+    type = "flash",
+    description = "War has broken out. Traders are hiding, ammo is scarce.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    system = { traderLimit = 0.5 },
+    effects = {
+        ["Gun"] = { price = 2.5, vol = 0.5 },
+        ["Ammo"] = { price = 3.0, vol = 0.2 },
+        ["Medical"] = { price = 1.5 },
+        ["Armor"] = { price = 2.0 }
+    }
+})
+
+-- [NEGATIVE] Sickness. Meds expensive, food expensive.
+DynamicTrading.Events.Register("Outbreak", {
+    name = "Viral Outbreak",
+    type = "flash",
+    description = "A sickness spreads. Medicine is critical.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Medical"] = { price = 3.5, vol = 0.2 },
+        ["Pill"] = { price = 3.0 },
+        ["Hygiene"] = { price = 2.5 },
+        ["Food"] = { price = 1.2 }
+    }
+})
+
+-- [NEGATIVE] Crop failure. Food very expensive.
+DynamicTrading.Events.Register("Famine", {
+    name = "Crop Blight",
+    type = "flash",
+    description = "Crops have died. Food prices skyrocket.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Food"] = { price = 2.5, vol = 0.3 },
+        ["Farming"] = { price = 3.0 },
+        ["Canned"] = { price = 2.0 },
+        ["Fresh"] = { price = 4.0, vol = 0.1 }
+    }
+})
+
+-- [NEGATIVE] No gas. Cars and generators useless.
+DynamicTrading.Events.Register("FuelShortage", {
+    name = "Refinery Explosion",
+    type = "flash",
+    description = "Fuel production has halted.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Fuel"] = { price = 4.0, vol = 0.1 },
+        ["CarPart"] = { price = 0.5 },
+        ["Generator"] = { price = 0.5 }
+    }
+})
+
+-- [NEGATIVE] Bandits. Weapons and Security needed.
+DynamicTrading.Events.Register("CrimeWave", {
+    name = "Looter Gangs",
+    type = "flash",
+    description = "Bandits are raiding. Locks and weapons needed.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Police"] = { price = 2.0, vol = 0.5 },
+        ["Weapon"] = { price = 1.5 },
+        ["Gun"] = { price = 1.5 },
+        ["Safety"] = { price = 2.0 } -- Found in DT_Household
+    }
+})
+
+-- [NEGATIVE] Hard to scan for traders.
+DynamicTrading.Events.Register("SolarFlare", {
+    name = "Solar Flare",
+    type = "flash",
+    description = "Atmospheric interference hits radios.",
+    canSpawn = function() return true end,
+    system = {
+        scanChance = 0.4,
+        traderLimit = 0.8
+    },
+    effects = {
+        ["Communication"] = { price = 3.0 },
+        ["Electronics"] = { price = 0.5 }
+    }
+})
+
+-- [NEGATIVE] Money loses value. Prices double.
+DynamicTrading.Events.Register("Inflation", {
+    name = "Market Panic",
+    type = "flash",
+    description = "Currency is losing value rapidly.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Misc"] = { price = 2.0 },
+        ["Luxury"] = { price = 0.2 }
+    }
+})
+
 -- [NEGATIVE] Very hard to scan.
 DynamicTrading.Events.Register("SignalJamming", {
     name = "Military Jamming",
@@ -683,207 +908,6 @@ DynamicTrading.Events.Register("PanicBroadcast", {
         ["Weapon"] = { price = 2.0 },
         ["Food"] = { price = 2.0 },
         ["Medical"] = { price = 2.0 }
-    }
-})
-
--- =============================================================================
--- ERA 1: BALLISTIC EXHAUSTION (Starts ~3 Months / 90 Days)
--- =============================================================================
--- Concept: Factory-made ammo is drying up. Guns are becoming clubs.
-DynamicTrading.Events.Register("BallisticExhaustion", {
-    name = "Ballistic Exhaustion",
-    type = "meta",
-    description = "The world's ammo reserves are running dry. Bullets are a luxury.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 90 
-    end,
-    effects = {
-        ["Ammo"] = { price = 4.0, vol = 0.3 },      -- Extremely expensive and rare
-        ["Gun"] = { price = 0.4 },                  -- Useless without ammo
-        ["Gunrunner"] = { price = 0.5 },            -- Losing business
-        ["Spear"] = { price = 1.5, vol = 2.0 },     -- Primitive weapons rise
-        ["Blade"] = { price = 1.5, vol = 2.0 },
-        ["Heavy"] = { price = 1.5 }                 -- Blunt weapons
-    }
-})
-
--- =============================================================================
--- ERA 2: THE MANUFACTURING HALT (Starts ~4 Months / 120 Days)
--- =============================================================================
--- Concept: Supermarket canned goods are gone. Preservation is life.
-DynamicTrading.Events.Register("ManufacturingHalt", {
-    name = "Supply Chain Collapse",
-    type = "meta",
-    description = "Canned goods are no longer 'common'. Preservation supplies are vital.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 120
-    end,
-    effects = {
-        ["Canned"] = { price = 2.5, vol = 0.4 },    -- Rare luxury
-        ["Farming"] = { price = 0.8, vol = 2.0 },   -- Everyone is farming now
-        ["Spice"] = { price = 3.0 },                -- Salt/Vinegar for jars
-        ["Preservation"] = { price = 3.0, vol = 0.5 }, -- Jars/Lids
-        ["Fresh"] = { price = 1.0 }                 -- Normal price, but demand is high
-    },
-    inject = { ["Farming"] = 4 } -- Traders stock seeds to survive
-})
-
--- =============================================================================
--- ERA 3: THE IRON AGE (Starts ~8 Months / 240 Days)
--- =============================================================================
--- Concept: High-quality steel tools are breaking. Repair items are crucial.
-DynamicTrading.Events.Register("IronAge", {
-    name = "Tool Scarcity",
-    type = "meta",
-    description = "Refined steel tools are breaking down. Repairs and smithing are essential.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 240
-    end,
-    effects = {
-        ["Tool"] = { price = 2.0, vol = 0.6 },      -- Hard to find good tools
-        ["Heavy"] = { price = 3.0, vol = 0.2 },     -- Sledgehammers are mythical
-        ["Repair"] = { price = 3.0, vol = 1.5 },    -- Glue, Duct Tape
-        ["Smithing"] = { price = 1.5, vol = 2.0 },  -- Blacksmithing rises
-        ["Junk"] = { price = 0.5 }                  -- Scrap is everywhere, but useless without skill
-    }
-})
-
--- =============================================================================
--- ERA 4: THE FUEL CRISIS (Starts ~1 Year / 365 Days)
--- =============================================================================
--- Concept: Gas stations are dry or degraded. The age of the automobile is ending.
-DynamicTrading.Events.Register("FuelCrisis", {
-    name = "The Fuel Crisis",
-    type = "meta",
-    description = "Gasoline reserves have degraded. Combustion engines are becoming obsolete.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 365
-    end,
-    effects = {
-        ["Fuel"] = { price = 5.0, vol = 0.1 },      -- Liquid Gold
-        ["CarPart"] = { price = 0.5 },              -- Useless without gas
-        ["Generator"] = { price = 0.5 },            -- Useless without gas
-        ["Battery"] = { price = 2.5, vol = 1.5 },   -- Solar/Electric becomes king
-        ["Electronics"] = { price = 1.5 }           -- For repairing batteries/solar
-    }
-})
-
--- =============================================================================
--- ERA 5: SIGNAL DECAY (Starts ~1 Year / 365 Days)
--- =============================================================================
--- Concept: The trader network is fracturing. Finding a trader is harder, but they are richer.
-DynamicTrading.Events.Register("SignalDecay", {
-    name = "Network Fragmentation",
-    type = "meta",
-    description = "Repeater towers are failing. Signals are rare, but survivors are veterans.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 365
-    end,
-    system = {
-        scanChance = 0.7,   -- -30% Chance to find a signal
-        traderLimit = 0.8,  -- -20% Total Traders
-        globalStock = 1.5   -- But the traders you find have +50% loot (Veterans)
-    },
-    effects = {
-        ["Communication"] = { price = 2.0 },        -- High quality radios needed
-        ["Luxury"] = { price = 1.5 }                -- Veterans trade in high value items
-    }
-})
-
--- =============================================================================
--- SEASONAL: SPRING THAW
--- =============================================================================
--- Concept: Winter is over. It's raining constantly. Time to plant.
-DynamicTrading.Events.Register("Spring", {
-    name = "Spring Thaw",
-    type = "meta",
-    description = "The frost has melted. Rain is frequent, and planting season has begun.",
-    condition = function() 
-        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
-        return ClimateManager:getInstance():getSeasonName() == "Spring" 
-    end,
-    effects = {
-        ["Farming"] = { price = 2.0, vol = 0.5 },   -- Everyone needs seeds NOW
-        ["Water"] = { price = 0.2, vol = 3.0 },     -- Rain collectors are full
-        ["Fish"] = { price = 0.8, vol = 2.0 },      -- Rivers are active
-        ["Clothing"] = { price = 1.2 }              -- Waterproof gear needed
-    },
-    inject = { ["Farming"] = 5 }
-})
-
--- =============================================================================
--- ERA: NATURE'S RECLAMATION (Starts ~100 Days)
--- =============================================================================
--- Concept: Erosion is setting in. Wood is everywhere, but clearing paths is hard.
-DynamicTrading.Events.Register("NatureReclamation", {
-    name = "Overgrowth",
-    type = "meta",
-    description = "Vegetation is reclaiming the cities. Wood is abundant; clear paths are not.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 100
-    end,
-    effects = {
-        ["Wood"] = { price = 0.2, vol = 5.0 },      -- Trees are everywhere
-        ["Blade"] = { price = 1.5 },                -- Machetes needed to clear vines
-        ["Herb"] = { price = 0.5, vol = 3.0 },      -- Foraging is easier
-        ["Game"] = { vol = 1.5 }                    -- Animals entering cities
-    }
-})
-
--- =============================================================================
--- ERA: THE KNOWLEDGE GAP (Starts ~6 Months / 180 Days)
--- =============================================================================
--- Concept: Books are rotting or have been burned for fuel. Education is dying.
-DynamicTrading.Events.Register("KnowledgeGap", {
-    name = "Literacy Crisis",
-    type = "meta",
-    description = "Technical manuals are degrading or lost. Knowledge is becoming the ultimate currency.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 180
-    end,
-    effects = {
-        ["SkillBook"] = { price = 3.5, vol = 0.2 }, -- Extremely rare/expensive
-        ["Literature"] = { price = 2.0 },           -- Entertainment is precious
-        ["Paper"] = { price = 1.5 },                -- For writing new notes
-        ["Scholastic"] = { price = 2.5 }
-    }
-})
-
--- =============================================================================
--- ERA: HYGIENE COLLAPSE (Starts ~2 Months / 60 Days)
--- =============================================================================
--- Concept: Manufactured soap and bleach have run out. Infection risk is high.
-DynamicTrading.Events.Register("HygieneCollapse", {
-    name = "Sanitation Failure",
-    type = "meta",
-    description = "Soap supplies are exhausted. Infection risks are rising.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 60
-    end,
-    effects = {
-        ["Hygiene"] = { price = 4.0, vol = 0.1 },   -- Soap is incredibly expensive
-        ["Clean"] = { price = 3.0 },                -- Bleach
-        ["Medical"] = { price = 1.2 },              -- Antibiotics demand up
-        ["Chemical"] = { price = 2.0 }              -- To make homemade soap
-    }
-})
-
--- =============================================================================
--- ERA: THE GREAT ROT (Starts ~1 Month / 30 Days)
--- =============================================================================
--- Concept: The power is definitely out. All perishable food in the world has rotted.
-DynamicTrading.Events.Register("GreatRot", {
-    name = "The Great Rot",
-    type = "meta",
-    description = "Refrigeration is a memory. Scavenging fresh food is no longer possible.",
-    condition = function() 
-        return GameTime:getInstance():getNightsSurvived() > 30
-    end,
-    effects = {
-        ["Fresh"] = { price = 5.0, vol = 0.05 },    -- Traders almost never have it
-        ["Rotten"] = { price = 0.0 },               -- Worthless
-        ["Salt"] = { price = 2.0 },                 -- If item exists (Spice)
-        ["Spice"] = { price = 1.5 }                 -- To mask the taste of bad meat
     }
 })
 
