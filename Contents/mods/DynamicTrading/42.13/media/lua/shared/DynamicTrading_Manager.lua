@@ -28,13 +28,14 @@ function DynamicTrading.Manager.GetData()
         data.Traders = {}
         data.globalHeat = {}
         data.scanCooldowns = {}
-        data.NetworkLogs = {} 
         
         data.DailyCycle = {
             dailyTraderLimit = 5,
             currentTradersFound = 0,
             lastResetDay = -1
         }
+        
+        data.NetworkLogs = {} 
     end
 
     -- 3. MIGRATION: Convert old "Single Event" system to "Stackable System"
@@ -90,7 +91,7 @@ function DynamicTrading.Manager.GetData()
             end
         end
 
-        DynamicTrading.Manager.AddLog("Daily Cycle: Market Reset (5 AM).", "info")
+        DynamicTrading.Manager.AddLog("Daily Cycle: Market Reset.", "info")
         
         -- Force Sync changes to all clients
         ModData.transmit("DynamicTrading_Engine_v1")
