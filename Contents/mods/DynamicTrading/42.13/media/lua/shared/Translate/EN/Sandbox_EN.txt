@@ -66,4 +66,7 @@ Sandbox_EN = {
 
     Sandbox_DynamicTrading_MaxEvents = "Max Simultaneous Events",
     Sandbox_DynamicTrading_MaxEvents_tooltip = "Maximum number of active events allowed (Stacking). Includes both Seasonal and Random events.",
+    
+    Sandbox_DynamicTrading_WalkieDropChance = "Walkie Talkie Loot Chance (%)",
+    Sandbox_DynamicTrading_WalkieDropChance_tooltip = "The percentage chance (0-100) that a zombie will spawn with a Makeshift Walkie Talkie on death.",
 }

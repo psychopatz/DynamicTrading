@@ -213,3 +213,13 @@ option DynamicTrading.MaxEvents
     page = DynamicTrading,
     translation = DynamicTrading_MaxEvents,
 }
+
+option DynamicTrading.WalkieDropChance
+    {
+        type = double,
+        default = 2.0,
+        min = 0.0,
+        max = 100.0,
+        page = DynamicTrading,
+        translation = DynamicTrading_WalkieDropChance,
+    }
