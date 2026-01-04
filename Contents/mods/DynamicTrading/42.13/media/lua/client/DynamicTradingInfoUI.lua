@@ -12,6 +12,7 @@ function DynamicTradingInfoUI:initialise()
     self:setTitle("Global Economy Stats")
     self:setResizable(true)
     self.clearStencil = false 
+    self.refreshTimer = 0 -- Timer for auto-update
 end
 
 function DynamicTradingInfoUI:createChildren()
@@ -25,13 +26,33 @@ function DynamicTradingInfoUI:createChildren()
     self.listbox.itemheight = 22
     self.listbox.drawBorder = true
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
-    -- Use default drawing, no fancy buttons needed here
+    -- Use default drawing
     self:addChild(self.listbox)
     
     self:populateList()
 end
 
+-- ==========================================================
+-- AUTO-UPDATE LOGIC
+-- ==========================================================
+function DynamicTradingInfoUI:update()
+    ISCollapsableWindow.update(self)
+    
+    -- Refresh every 60 ticks (approx 1 second) to keep data live without killing performance
+    self.refreshTimer = self.refreshTimer + 1
+    if self.refreshTimer >= 60 then
+        self:populateList()
+        self.refreshTimer = 0
+    end
+end
+
+-- ==========================================================
+-- POPULATE LIST
+-- ==========================================================
 function DynamicTradingInfoUI:populateList()
+    -- Remember scroll position to prevent jumping during auto-refresh
+    local yScroll = self.listbox:getYScroll()
+    
     self.listbox:clear()
     
     local data = DynamicTrading.Manager.GetData()
@@ -41,8 +62,7 @@ function DynamicTradingInfoUI:populateList()
     local header = self.listbox:addItem("=== MARKET PROFILE ===", nil)
     header.textColor = {r=1, g=0.9, b=0.5, a=1}
     
-    -- [NEW] DAILY NETWORK STATUS
-    -- This reads from the new 'DailyCycle' structure in Manager.lua
+    -- DAILY NETWORK STATUS
     if data.DailyCycle then
         local found = data.DailyCycle.currentTradersFound or 0
         local limit = data.DailyCycle.dailyTraderLimit or 5
@@ -70,23 +90,33 @@ function DynamicTradingInfoUI:populateList()
     self.listbox:addItem("  Rarity Bonus: " .. rarityStr, nil)
     self.listbox:addItem(" ", nil)
 
-    -- 2. ACTIVE EVENTS
+    -- 2. ACTIVE EVENTS (STACKABLE)
     header = self.listbox:addItem("=== ACTIVE EVENTS ===", nil)
     header.textColor = {r=0.5, g=1, b=0.5, a=1}
     
     local anyEvent = false
+    
+    -- Iterate through the ActiveEvents list rebuilt by the Manager
     if DynamicTrading.Events and DynamicTrading.Events.ActiveEvents then
         for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
             anyEvent = true
             
-            -- Event Name
-            local item = self.listbox:addItem(" [!] " .. (event.name or "Unknown"), nil)
-            item.textColor = {r=0.2, g=1.0, b=0.2, a=1}
+            -- Event Name & Type Coloring
+            local nameColor = {r=0.2, g=1.0, b=0.2, a=1} -- Green (Default/Flash)
+            local typeLabel = "[NEWS] "
+            
+            if event.type == "meta" then
+                nameColor = {r=0.4, g=0.8, b=1.0, a=1} -- Cyan for Meta/World State
+                typeLabel = "[WORLD] "
+            end
+            
+            local item = self.listbox:addItem(" " .. typeLabel .. (event.name or "Unknown"), nil)
+            item.textColor = nameColor
             
             -- Event Description
             if event.description then
                 local descItem = self.listbox:addItem("     \"" .. event.description .. "\"", nil)
-                descItem.textColor = {r=0.7, g=0.7, b=0.7, a=1} -- Greyish
+                descItem.textColor = {r=0.7, g=0.7, b=0.7, a=1} 
             end
 
             -- Event Effects
@@ -106,8 +136,12 @@ function DynamicTradingInfoUI:populateList()
             self.listbox:addItem(" ", nil) -- Spacing between events
         end
     end
-    if not anyEvent then self.listbox:addItem("  (No active events)", nil) end
-    self.listbox:addItem(" ", nil)
+    
+    if not anyEvent then 
+        self.listbox:addItem("  (No active events)", nil) 
+        self.listbox:addItem(" ", nil)
+    end
+    
 
     -- 3. INFLATION / HEAT
     header = self.listbox:addItem("=== CATEGORY INFLATION ===", nil)
@@ -126,6 +160,9 @@ function DynamicTradingInfoUI:populateList()
         end
     end
     if not anyHeat then self.listbox:addItem("  (Market is stable)", nil) end
+    
+    -- Restore scroll position
+    self.listbox:setYScroll(yScroll)
 end
 
 function DynamicTradingInfoUI:close()
@@ -145,7 +182,7 @@ function DynamicTradingInfoUI.ToggleWindow()
         end
         return
     end
-    local ui = DynamicTradingInfoUI:new(500, 100, 360, 450)
+    local ui = DynamicTradingInfoUI:new(500, 100, 380, 500)
     ui:initialise()
     ui:addToUIManager()
     DynamicTradingInfoUI.instance = ui

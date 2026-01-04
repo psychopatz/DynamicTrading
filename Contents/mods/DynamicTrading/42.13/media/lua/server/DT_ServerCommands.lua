@@ -11,13 +11,21 @@ local lastProcessedDay = -1
 function Commands.AttemptScan(player, args)
     print("[Server] DynamicTrading: Scan requested by " .. player:getUsername())
     
+    -- Identify the user so clients know who this message is for
+    local targetUser = player:getUsername()
+
     local found, limit = DynamicTrading.Manager.GetDailyStatus()
     
+    -- CHECK DAILY LIMIT
     if found >= limit then
-        sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "LIMIT_REACHED" })
+        sendServerCommand("DynamicTrading", "ScanResult", { 
+            status = "LIMIT_REACHED", 
+            targetUser = targetUser 
+        })
         return
     end
 
+    -- CALCULATE CHANCE
     local penaltyPerTrader = SandboxVars.DynamicTrading.ScanPenaltyPerTrader or 0.2
     local penaltyFactor = 1.0 + (found * penaltyPerTrader) 
     
@@ -27,24 +35,37 @@ function Commands.AttemptScan(player, args)
 
     local finalChance = (baseChance * radioTier * skillBonus) / penaltyFactor
     
+    -- Clamp chances
     if finalChance < 1 then finalChance = 1 end
     if finalChance > 95 then finalChance = 95 end
     
+    -- ROLL RNG
     local roll = ZombRand(100) + 1
     
     if roll <= finalChance then
+        -- SUCCESS: Generate Trader
         local trader = DynamicTrading.Manager.GenerateRandomContact()
         if trader then
-            sendServerCommand(player, "DynamicTrading", "ScanResult", { 
+            -- Broadcast Success (Clients will filter based on Sandbox Settings)
+            sendServerCommand("DynamicTrading", "ScanResult", { 
                 status = "SUCCESS", 
                 name = trader.name,
-                archetype = trader.archetype
+                archetype = trader.archetype,
+                targetUser = targetUser
             })
         else
-            sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "FAILED_RNG" })
+            -- Rare error fallback
+            sendServerCommand("DynamicTrading", "ScanResult", { 
+                status = "FAILED_RNG", 
+                targetUser = targetUser
+            })
         end
     else
-        sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "FAILED_RNG" })
+        -- FAILURE: Bad Roll
+        sendServerCommand("DynamicTrading", "ScanResult", { 
+            status = "FAILED_RNG", 
+            targetUser = targetUser
+        })
     end
 end
 

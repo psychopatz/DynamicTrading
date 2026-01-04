@@ -1,64 +1,69 @@
 Sandbox_EN = {
-    Sandbox_DynamicTrading = "Dynamic Trading Market",
-    
-    Sandbox_DynamicTrading_PriceBuyMult = "Buying Price Multiplier",
-    Sandbox_DynamicTrading_PriceBuyMult_tooltip = "Global multiplier for item costs.",
-    
-    Sandbox_DynamicTrading_PriceSellMult = "Selling Price Multiplier",
-    Sandbox_DynamicTrading_PriceSellMult_tooltip = "Global multiplier for selling items to traders.",
+    Sandbox_DynamicTrading = "Dynamic Trading",
+
+    Sandbox_DynamicTrading_PriceBuyMult = "Buy Price Multiplier",
+    Sandbox_DynamicTrading_PriceBuyMult_tooltip = "Adjusts how expensive items are when buying from traders. Higher = More expensive.",
+
+    Sandbox_DynamicTrading_PriceSellMult = "Sell Price Multiplier",
+    Sandbox_DynamicTrading_PriceSellMult_tooltip = "Adjusts how much traders pay you for items. Lower = Less profit.",
 
     Sandbox_DynamicTrading_StockMult = "Stock Quantity Multiplier",
-    Sandbox_DynamicTrading_StockMult_tooltip = "Multiplier for how many items traders have in stock.",
+    Sandbox_DynamicTrading_StockMult_tooltip = "Adjusts the amount of items traders have in stock.",
 
     Sandbox_DynamicTrading_RarityBonus = "Rarity Weight Bonus",
-    Sandbox_DynamicTrading_RarityBonus_tooltip = "Adds raw weight to all items during generation.",
+    Sandbox_DynamicTrading_RarityBonus_tooltip = "Increases or decreases the likelihood of rare items appearing. Positive values make rare loot more common.",
 
     Sandbox_DynamicTrading_RestockInterval = "Restock Interval (Days)",
-    Sandbox_DynamicTrading_RestockInterval_tooltip = "Days before a trader replenishes inventory.",
-    
-    Sandbox_DynamicTrading_ScanBaseChance = "Radio Scan Base Chance (%)",
-    Sandbox_DynamicTrading_ScanBaseChance_tooltip = "Starting probability of finding a signal.",
-    
+    Sandbox_DynamicTrading_RestockInterval_tooltip = "How many days must pass before a trader refreshes their inventory.",
+
+    Sandbox_DynamicTrading_ScanBaseChance = "Base Scan Chance (%)",
+    Sandbox_DynamicTrading_ScanBaseChance_tooltip = "The base probability of finding a signal when scanning with a standard Walkie Talkie.",
+
     Sandbox_DynamicTrading_ScanCooldown = "Scan Cooldown (Minutes)",
-    Sandbox_DynamicTrading_ScanCooldown_tooltip = "Wait time between scans.",
+    Sandbox_DynamicTrading_ScanCooldown_tooltip = "Real-time minutes a player must wait between scanning attempts.",
 
     Sandbox_DynamicTrading_HamRadioBonus = "HAM Radio Bonus",
-    Sandbox_DynamicTrading_HamRadioBonus_tooltip = "Multiplier for stationary HAM radios.",
+    Sandbox_DynamicTrading_HamRadioBonus_tooltip = "Multiplier applied to scan chance when using a stationary HAM Radio (vs Handheld).",
 
-    Sandbox_DynamicTrading_DailyTraderMin = "Daily Trader Limit (Min)",
-    Sandbox_DynamicTrading_DailyTraderMin_tooltip = "Minimum traders in the network per day.",
+    Sandbox_DynamicTrading_DailyTraderMin = "Daily Traders (Min)",
+    Sandbox_DynamicTrading_DailyTraderMin_tooltip = "Minimum number of traders available to be found by the entire server per day.",
 
-    Sandbox_DynamicTrading_DailyTraderMax = "Daily Trader Limit (Max)",
-    Sandbox_DynamicTrading_DailyTraderMax_tooltip = "Maximum traders in the network per day.",
+    Sandbox_DynamicTrading_DailyTraderMax = "Daily Traders (Max)",
+    Sandbox_DynamicTrading_DailyTraderMax_tooltip = "Maximum number of traders available to be found by the entire server per day.",
 
-    Sandbox_DynamicTrading_ScanPenaltyPerTrader = "Progressive Difficulty",
-    Sandbox_DynamicTrading_ScanPenaltyPerTrader_tooltip = "Increases scan difficulty for every trader already found today.",
+    Sandbox_DynamicTrading_ScanPenaltyPerTrader = "Difficulty Scaling",
+    Sandbox_DynamicTrading_ScanPenaltyPerTrader_tooltip = "Reduces scan chance based on how many traders have already been found today. Higher = Harder to find the last few traders.",
 
-    Sandbox_DynamicTrading_SeasonImpact = "Environmental Impact",
-    Sandbox_DynamicTrading_SeasonImpact_tooltip = "Multiplier for Event effects.",
+    Sandbox_DynamicTrading_SeasonImpact = "Seasonal Impact",
+    Sandbox_DynamicTrading_SeasonImpact_tooltip = "How strongly seasons affect prices (e.g. Winter making food expensive).",
 
     Sandbox_DynamicTrading_CategoryInflation = "Inflation Sensitivity",
-    Sandbox_DynamicTrading_CategoryInflation_tooltip = "How fast prices rise when buying many items of the same category.",
+    Sandbox_DynamicTrading_CategoryInflation_tooltip = "How fast prices rise when players buy out a specific category (Supply & Demand).",
 
-    Sandbox_DynamicTrading_TraderStayHoursMin = "Signal Duration Min (Hours)",
-    Sandbox_DynamicTrading_TraderStayHoursMin_tooltip = "Minimum hours a signal remains active.",
+    Sandbox_DynamicTrading_TraderStayHoursMin = "Trader Duration (Min Hours)",
+    Sandbox_DynamicTrading_TraderStayHoursMin_tooltip = "Minimum in-game hours a trader stays connected before leaving.",
 
-    Sandbox_DynamicTrading_TraderStayHoursMax = "Signal Duration Max (Hours)",
-    Sandbox_DynamicTrading_TraderStayHoursMax_tooltip = "Maximum hours a signal remains active.",
-
+    Sandbox_DynamicTrading_TraderStayHoursMax = "Trader Duration (Max Hours)",
+    Sandbox_DynamicTrading_TraderStayHoursMax_tooltip = "Maximum in-game hours a trader stays connected before leaving.",
 
     Sandbox_DynamicTrading_EventFrequency = "Event Frequency (Days)",
-    Sandbox_DynamicTrading_EventFrequency_tooltip = "Minimum days between random global events.",
+    Sandbox_DynamicTrading_EventFrequency_tooltip = "How often the system checks to start a new Global Economic Event.",
 
     Sandbox_DynamicTrading_EventChance = "Event Chance (%)",
-    Sandbox_DynamicTrading_EventChance_tooltip = "Probability of an event starting once the frequency timer is ready.",
+    Sandbox_DynamicTrading_EventChance_tooltip = "Probability of an event starting when the frequency check occurs.",
 
     Sandbox_DynamicTrading_EventDuration = "Event Duration (Days)",
-    Sandbox_DynamicTrading_EventDuration_tooltip = "How many days a random event lasts.",
+    Sandbox_DynamicTrading_EventDuration_tooltip = "How long global events (e.g. Market Crash, Harvest) last.",
 
-    Sandbox_DynamicTrading_AllowSeasonalEvents = "Allow Seasonal Events",
-    Sandbox_DynamicTrading_AllowSeasonalEvents_tooltip = "If true, Autumn/Winter will automatically affect prices.",
+    Sandbox_DynamicTrading_AllowSeasonalEvents = "Enable Seasonal Events",
+    Sandbox_DynamicTrading_AllowSeasonalEvents_tooltip = "If enabled, events like Harvest (Autumn) and Deep Freeze (Winter) can occur.",
 
-    Sandbox_DynamicTrading_AllowHardcoreEvents = "Allow Hardcore Events",
-    Sandbox_DynamicTrading_AllowHardcoreEvents_tooltip = "If true, severe events like War or Famine can occur.",
+    Sandbox_DynamicTrading_AllowHardcoreEvents = "Enable Hardcore Events",
+    Sandbox_DynamicTrading_AllowHardcoreEvents_tooltip = "If enabled, negative events like Famine, War, and Inflation can occur.",
+
+    Sandbox_DynamicTrading_PublicNetwork = "Public Network Broadcast",
+    Sandbox_DynamicTrading_PublicNetwork_tooltip = "If enabled, radio scan results (Success/Failure) are shown to ALL players on the server. If disabled, only the scanning player sees the result.",
+
+    Sandbox_DynamicTrading_MaxEvents = "Max Simultaneous Events",
+    Sandbox_DynamicTrading_MaxEvents_tooltip = "Maximum number of active events allowed (Stacking). Includes both Seasonal and Random events.",
 }

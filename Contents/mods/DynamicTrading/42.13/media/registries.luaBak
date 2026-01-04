@@ -1,9 +1,0 @@
--- Register Dynamic Trading traits so scripts can reference them
--- The format is "Module:TraitID"
-
-CharacterTrait.register("DynamicTrading:DT_SignalEnthusiast")
-CharacterTrait.register("DynamicTrading:DT_RadioOperator")
-CharacterTrait.register("DynamicTrading:DT_DXChaser")
-CharacterTrait.register("DynamicTrading:DT_TacticalComms")
-
-print("[DynamicTrading] Traits registered in media/registries.lua")

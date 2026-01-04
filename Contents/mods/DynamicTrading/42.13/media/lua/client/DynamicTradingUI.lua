@@ -281,7 +281,9 @@ function DynamicTradingUI:populateList()
             
             for _, prod in ipairs(itemsInCat) do
                 self.listbox:addItem(prod.name, prod)
-                if self.selectedKey and prod.key == self.selectedKey then
+                
+                -- BUY MODE: Preserve selection by KEY (identity)
+                if self.isBuying and self.selectedKey and prod.key == self.selectedKey then
                     self.listbox.selected = #self.listbox.items
                 end
             end
@@ -349,6 +351,9 @@ end
 -- ACTION LOGIC
 -- =================================================
 function DynamicTradingUI:onAction()
+    -- 1. CAPTURE CURRENT ROW INDEX BEFORE REFRESH
+    local savedSelectionIndex = self.listbox.selected
+    
     local selItem = self.listbox.items[self.listbox.selected]
     if not selItem or not selItem.item or selItem.item.isCategory then return end
     
@@ -392,7 +397,37 @@ function DynamicTradingUI:onAction()
     end
 
     if transactionSuccess then
+        -- Refresh the list (This removes the sold item from view)
         self:populateList()
+
+        -- SELL MODE: AUTO-SELECT NEXT ITEM
+        if not self.isBuying then
+            local newCount = #self.listbox.items
+            
+            if newCount > 0 then
+                -- Clamp index (e.g. if we sold the last item, select the new last item)
+                if savedSelectionIndex > newCount then 
+                    savedSelectionIndex = newCount 
+                end
+                
+                -- Force selection visually
+                self.listbox.selected = savedSelectionIndex
+                
+                -- Update "Button" state for the new selection
+                local nextItem = self.listbox.items[savedSelectionIndex]
+                if nextItem and nextItem.item and not nextItem.item.isCategory then
+                     self.selectedKey = nextItem.item.key
+                     self.btnAction:setEnable(true)
+                else
+                     -- We landed on a Category Header or invalid item
+                     self.btnAction:setEnable(false)
+                     self.selectedKey = nil
+                end
+            else
+                -- List is now empty
+                self.btnAction:setEnable(false)
+            end
+        end
     end
 end
 

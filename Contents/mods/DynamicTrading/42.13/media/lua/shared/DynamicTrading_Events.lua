@@ -10,6 +10,8 @@ DynamicTrading.Events.ActiveEvents = {}
 -- =============================================================================
 function DynamicTrading.Events.Register(id, data)
     if not id or not data then return end
+    -- Default to "flash" if not explicitly set to "meta"
+    if not data.type then data.type = "flash" end
     DynamicTrading.Events.Registry[id] = data
 end
 
@@ -17,7 +19,7 @@ end
 -- 2. ECONOMY HOOKS (GETTERS)
 -- =============================================================================
 
--- Used by Economy to adjust prices based on active events
+-- Used by Economy to adjust prices based on ALL active events (Meta + Flash)
 function DynamicTrading.Events.GetPriceModifier(itemTags)
     local multiplier = 1.0
     if not itemTags then return 1.0 end
@@ -64,20 +66,21 @@ function DynamicTrading.Events.GetInjections()
     return injections
 end
 
--- [NEW] Used by Manager to build the lottery pool for today
-function DynamicTrading.Events.GetValidCandidates()
+-- Used by Manager to build the lottery pool for RANDOM events only
+function DynamicTrading.Events.GetFlashCandidates()
     local candidates = {}
     for id, event in pairs(DynamicTrading.Events.Registry) do
-        -- Use pcall to prevent a script error in one event from crashing the whole system
-        local success, shouldSpawn = pcall(function()
-            if event.canSpawn then
-                return event.canSpawn()
+        -- Only Flash events are eligible for the RNG lottery
+        if event.type == "flash" then
+            -- Use pcall to prevent script errors in custom conditions
+            local success, shouldSpawn = pcall(function()
+                if event.canSpawn then return event.canSpawn() end
+                return true -- If no condition defined, it's always eligible
+            end)
+            
+            if success and shouldSpawn == true then
+                table.insert(candidates, id)
             end
-            return true -- If no condition is defined, it is always a candidate
-        end)
-
-        if success and shouldSpawn == true then
-            table.insert(candidates, id)
         end
     end
     return candidates
@@ -86,275 +89,261 @@ end
 -- =============================================================================
 -- 3. EVENT DEFINITIONS
 -- =============================================================================
-local function InitEvents()
-    -- ==========================================================
-    -- CATEGORY: SEASONAL
-    -- ==========================================================
-    
-    -- [AUTUMN] THE HARVEST
-    DynamicTrading.Events.Register("Harvest", {
-        name = "Harvest Season",
-        description = "Farms are overflowing with crops. Vegetable prices have crashed due to oversupply.",
-        canSpawn = function() 
-            -- Only happens in Autumn, and only if Seasonal Events are enabled
-            if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
-            return ClimateManager:getInstance():getSeasonName() == "Autumn" 
-        end,
-        effects = {
-            ["Vegetable"] = { price = 0.4, vol = 3.0 },
-            ["Fruit"] = { price = 0.5, vol = 2.0 },
-            ["Seed"] = { price = 1.5, vol = 0.5 }
-        },
-        inject = { ["Vegetable"] = 5, ["Pickle"] = 2 }
-    })
 
-    -- [WINTER] THE DEEP FREEZE
-    DynamicTrading.Events.Register("Winter", {
-        name = "Deep Freeze",
-        description = "Temperatures have plummeted. Fresh food is gone, and fuel is liquid gold.",
-        canSpawn = function() 
-            if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
-            return ClimateManager:getInstance():getSeasonName() == "Winter" 
-        end,
-        effects = {
-            ["Fresh"] = { price = 3.0, vol = 0.1 },
-            ["Fuel"] = { price = 2.5, vol = 0.5 },
-            ["Warm"] = { price = 2.0, vol = 0.5 }, -- Custom tag for heaters/parkas
-            ["Material"] = { price = 1.5 }
-        },
-        inject = { ["Winter"] = 2 }
-    })
+-- ==========================================================
+-- GROUP A: META EVENTS (Permanent / World State)
+-- These DO NOT count towards the Event Limit.
+-- ==========================================================
 
-    -- [SUMMER] HEATWAVE
-    DynamicTrading.Events.Register("Heatwave", {
-        name = "Severe Drought",
-        description = "A scorching heatwave has dried up wells. Water is becoming the new currency.",
-        canSpawn = function() 
-            if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
-            return ClimateManager:getInstance():getSeasonName() == "Summer" 
-        end,
-        effects = {
-            ["Water"] = { price = 4.0, vol = 0.2 },
-            ["Drink"] = { price = 2.0, vol = 0.5 },
-            ["Clothing"] = { price = 0.5 }
-        },
-        inject = { ["Water"] = 1 }
-    })
+-- 1. WATER FAILURE
+DynamicTrading.Events.Register("WaterFail", {
+    name = "Drought (Water Shutoff)",
+    type = "meta", 
+    description = "The municipal water supply has failed. Clean water is now a luxury commodity.",
+    condition = function() 
+        -- Checks if the world age is past the sandbox shutdown setting
+        return GameTime:getInstance():getNightsSurvived() > (SandboxVars.WaterShutModifier or 14)
+    end,
+    effects = {
+        ["Water"] = { price = 5.0, vol = 0.2 },
+        ["Drink"] = { price = 2.0 },
+    }
+})
 
-    -- ==========================================================
-    -- CATEGORY: MILITARY & CONFLICT
-    -- ==========================================================
+-- 2. GRID FAILURE
+DynamicTrading.Events.Register("PowerFail", {
+    name = "Grid Collapse (Power Shutoff)",
+    type = "meta", 
+    description = "The power grid is dead. Generators, fuel, and batteries are in extreme demand.",
+    condition = function() 
+        return GameTime:getInstance():getNightsSurvived() > (SandboxVars.ElecShutModifier or 14)
+    end,
+    effects = {
+        ["Electronics"] = { price = 2.0 },
+        ["Fuel"] = { price = 3.0, vol = 0.5 },
+        ["LightSource"] = { price = 1.5 }
+    }
+})
 
-    -- [BAD] FACTION WAR
-    DynamicTrading.Events.Register("Warzone", {
-        name = "Faction Conflict",
-        description = "War has broken out between major settlements. Weapons and ammo are being hoarded.",
-        canSpawn = function() 
-            return SandboxVars.DynamicTrading.AllowHardcoreEvents 
-        end,
-        effects = {
-            ["Weapon"] = { price = 2.5, vol = 0.5 },
-            ["Ammo"] = { price = 3.0, vol = 0.3 },
-            ["Medical"] = { price = 1.5 }
-        }
-    })
+-- 3. SEASONAL: WINTER
+DynamicTrading.Events.Register("Winter", {
+    name = "Deep Freeze",
+    type = "meta",
+    description = "Temperatures have plummeted. Fresh food is gone, and fuel is liquid gold.",
+    condition = function() 
+        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        return ClimateManager:getInstance():getSeasonName() == "Winter" 
+    end,
+    effects = {
+        ["Fresh"] = { price = 3.0, vol = 0.1 },
+        ["Fuel"] = { price = 1.5 }, -- Stacks with PowerFail for massive price hike
+        ["Warm"] = { price = 2.0, vol = 0.5 }, 
+        ["Material"] = { price = 1.5 }
+    },
+    inject = { ["Winter"] = 2 }
+})
 
-    -- [GOOD] MILITARY SURPLUS
-    DynamicTrading.Events.Register("Surplus", {
-        name = "Military Surplus",
-        description = "A hidden military bunker was opened. High-grade tactical gear is flooding the market.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Weapon"] = { price = 0.6, vol = 2.0 },
-            ["Ammo"] = { price = 0.5, vol = 3.0 },
-            ["Clothing"] = { price = 0.8 }
-        },
-        inject = { ["Ammo"] = 5, ["Weapon"] = 2 }
-    })
+-- 4. SEASONAL: HARVEST (Autumn)
+DynamicTrading.Events.Register("Harvest", {
+    name = "Harvest Season",
+    type = "meta",
+    description = "Farms are overflowing. Vegetable prices have crashed.",
+    condition = function() 
+        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        return ClimateManager:getInstance():getSeasonName() == "Autumn" 
+    end,
+    effects = {
+        ["Vegetable"] = { price = 0.4, vol = 3.0 },
+        ["Fruit"] = { price = 0.5, vol = 2.0 },
+        ["Seed"] = { price = 1.5, vol = 0.5 }
+    },
+    inject = { ["Vegetable"] = 5, ["Pickle"] = 2 }
+})
 
-    -- ==========================================================
-    -- CATEGORY: HEALTH & DISEASE
-    -- ==========================================================
+-- 5. SEASONAL: HEATWAVE (Summer)
+DynamicTrading.Events.Register("Heatwave", {
+    name = "Severe Drought",
+    type = "meta",
+    description = "A scorching heatwave. Water is becoming the new currency.",
+    condition = function() 
+        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        return ClimateManager:getInstance():getSeasonName() == "Summer" 
+    end,
+    effects = {
+        ["Water"] = { price = 2.0 }, -- Stacks with WaterFail
+        ["Drink"] = { price = 1.5 },
+        ["Clothing"] = { price = 0.5 }
+    }
+})
 
-    -- [BAD] PANDEMIC
-    DynamicTrading.Events.Register("Outbreak", {
-        name = "Viral Outbreak",
-        description = "A new strain of the infection is spreading. Medical supplies are critical.",
-        canSpawn = function() 
-            return SandboxVars.DynamicTrading.AllowHardcoreEvents 
-        end,
-        effects = {
-            ["Medical"] = { price = 3.5, vol = 0.2 },
-            ["Clean"] = { price = 2.5 },
-            ["Food"] = { price = 1.2 }
-        }
-    })
 
-    -- [GOOD] HUMANITARIAN AID
-    DynamicTrading.Events.Register("HospitalFound", {
-        name = "Medical Supply Drop",
-        description = "A hospital supply line has been restored. Meds are abundant and cheap.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Medical"] = { price = 0.3, vol = 5.0 },
-            ["Clean"] = { price = 0.5, vol = 2.0 }
-        },
-        inject = { ["Medical"] = 8 }
-    })
+-- ==========================================================
+-- GROUP B: FLASH EVENTS (RNG / Temporary)
+-- These respect the "Max Simultaneous Events" limit.
+-- ==========================================================
 
-    -- ==========================================================
-    -- CATEGORY: CONSTRUCTION & INFRASTRUCTURE
-    -- ==========================================================
+-- [BAD] FACTION WAR
+DynamicTrading.Events.Register("Warzone", {
+    name = "Faction Conflict",
+    type = "flash",
+    description = "War has broken out. Weapons and ammo are being hoarded.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Weapon"] = { price = 2.5, vol = 0.5 },
+        ["Ammo"] = { price = 3.0, vol = 0.3 },
+        ["Medical"] = { price = 1.5 }
+    }
+})
 
-    DynamicTrading.Events.Register("Fortification", {
-        name = "Horde Migration",
-        description = "Massive herds are moving through. Everyone is buying nails and planks to board up.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Material"] = { price = 2.5, vol = 0.2 },
-            ["Tool"] = { price = 1.8 },
-            ["Ammo"] = { price = 1.2 }
-        }
-    })
+-- [GOOD] MILITARY SURPLUS
+DynamicTrading.Events.Register("Surplus", {
+    name = "Military Surplus",
+    type = "flash",
+    description = "A hidden military bunker was opened. Tactical gear is cheap.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Weapon"] = { price = 0.6, vol = 2.0 },
+        ["Ammo"] = { price = 0.5, vol = 3.0 },
+        ["Clothing"] = { price = 0.8 }
+    },
+    inject = { ["Ammo"] = 5, ["Weapon"] = 2 }
+})
 
-    DynamicTrading.Events.Register("SalvageOp", {
-        name = "Urban Salvage",
-        description = "Scavengers cleared a city block. Building materials and scrap are dirt cheap.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Material"] = { price = 0.5, vol = 4.0 },
-            ["Junk"] = { price = 0.1, vol = 5.0 },
-            ["Electronics"] = { price = 0.8 }
-        },
-        inject = { ["Material"] = 5 }
-    })
+-- [BAD] PANDEMIC
+DynamicTrading.Events.Register("Outbreak", {
+    name = "Viral Outbreak",
+    type = "flash",
+    description = "A new strain is spreading. Medical supplies are critical.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Medical"] = { price = 3.5, vol = 0.2 },
+        ["Clean"] = { price = 2.5 },
+        ["Food"] = { price = 1.2 }
+    }
+})
 
-    -- ==========================================================
-    -- CATEGORY: TECHNOLOGY & ENERGY
-    -- ==========================================================
+-- [GOOD] HOSPITAL FOUND
+DynamicTrading.Events.Register("HospitalFound", {
+    name = "Medical Supply Drop",
+    type = "flash",
+    description = "A hospital supply line restored. Meds are abundant.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Medical"] = { price = 0.3, vol = 5.0 },
+        ["Clean"] = { price = 0.5, vol = 2.0 }
+    },
+    inject = { ["Medical"] = 8 }
+})
 
-    DynamicTrading.Events.Register("Blackout", {
-        name = "Grid Failure",
-        description = "A solar storm has fried local electronics. Spare parts and generators are rare.",
-        canSpawn = function() 
-            return SandboxVars.DynamicTrading.AllowHardcoreEvents 
-        end,
-        effects = {
-            ["Electronics"] = { price = 4.0, vol = 0.1 },
-            ["Fuel"] = { price = 2.0 },
-            ["Communication"] = { price = 3.0 }
-        }
-    })
+DynamicTrading.Events.Register("Fortification", {
+    name = "Horde Migration",
+    type = "flash",
+    description = "Massive herds moving through. Everyone needs construction mats.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Material"] = { price = 2.5, vol = 0.2 },
+        ["Tool"] = { price = 1.8 },
+        ["Ammo"] = { price = 1.2 }
+    }
+})
 
-    DynamicTrading.Events.Register("TechBoom", {
-        name = "Tech Discovery",
-        description = "An electronics warehouse was found. Components are available for cheap.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Electronics"] = { price = 0.4, vol = 3.0 },
-            ["Communication"] = { price = 0.5, vol = 2.0 }
-        },
-        inject = { ["Electronics"] = 4 }
-    })
+DynamicTrading.Events.Register("SalvageOp", {
+    name = "Urban Salvage",
+    type = "flash",
+    description = "Scavengers cleared a city block. Materials are dirt cheap.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Material"] = { price = 0.5, vol = 4.0 },
+        ["Junk"] = { price = 0.1, vol = 5.0 },
+        ["Electronics"] = { price = 0.8 }
+    },
+    inject = { ["Material"] = 5 }
+})
 
-    -- ==========================================================
-    -- CATEGORY: INDUSTRY & FUEL
-    -- ==========================================================
+-- [TECH EVENTS]
+DynamicTrading.Events.Register("TechBoom", {
+    name = "Tech Discovery",
+    type = "flash",
+    description = "An electronics warehouse was found.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Electronics"] = { price = 0.4, vol = 3.0 },
+        ["Communication"] = { price = 0.5, vol = 2.0 }
+    },
+    inject = { ["Electronics"] = 4 }
+})
 
-    DynamicTrading.Events.Register("FuelCrisis", {
-        name = "Fuel Crisis",
-        description = "A refinery explosion halted production. Gas prices are skyrocketing.",
-        canSpawn = function() 
-            return SandboxVars.DynamicTrading.AllowHardcoreEvents 
-        end,
-        effects = {
-            ["Fuel"] = { price = 4.0, vol = 0.1 },
-            ["CarPart"] = { price = 0.5 }
-        }
-    })
+DynamicTrading.Events.Register("FuelCrisis", {
+    name = "Fuel Crisis",
+    type = "flash",
+    description = "A refinery explosion halted production.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Fuel"] = { price = 4.0, vol = 0.1 },
+        ["CarPart"] = { price = 0.5 }
+    }
+})
 
-    DynamicTrading.Events.Register("IndustryBoom", {
-        name = "Industrial Restart",
-        description = "A local factory came back online. Tools and materials are flowing.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Material"] = { price = 0.5, vol = 3.0 },
-            ["Tool"] = { price = 0.6, vol = 2.0 },
-            ["Electronics"] = { price = 0.7 }
-        }
-    })
+-- [UNDERGROUND]
+DynamicTrading.Events.Register("Smugglers", {
+    name = "Black Market Surge",
+    type = "flash",
+    description = "Smugglers are in town.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Alcohol"] = { price = 0.6, vol = 2.0 },
+        ["Tobacco"] = { price = 0.6, vol = 2.0 },
+        ["Jewelry"] = { price = 0.5 }
+    }
+})
 
-    -- ==========================================================
-    -- CATEGORY: UNDERGROUND
-    -- ==========================================================
+-- [FOOD]
+DynamicTrading.Events.Register("Famine", {
+    name = "Crop Blight",
+    type = "flash",
+    description = "Crops have failed. Food is scarce.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Food"] = { price = 2.5, vol = 0.3 },
+        ["Seed"] = { price = 3.0 },
+        ["Canned"] = { price = 2.0 }
+    }
+})
 
-    DynamicTrading.Events.Register("Smugglers", {
-        name = "Black Market Surge",
-        description = "Smugglers are in town. Alcohol, tobacco, and luxury goods are cheap.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Alcohol"] = { price = 0.6, vol = 2.0 },
-            ["Tobacco"] = { price = 0.6, vol = 2.0 },
-            ["Jewelry"] = { price = 0.5 }
-        }
-    })
-    
-    -- ==========================================================
-    -- CATEGORY: FOOD SUPPLY
-    -- ==========================================================
+DynamicTrading.Events.Register("AidDrop", {
+    name = "Relief Shipment",
+    type = "flash",
+    description = "Humanitarian aid packages dropped.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Medical"] = { price = 0.2, vol = 4.0 },
+        ["Canned"] = { price = 0.5, vol = 3.0 },
+        ["Water"] = { price = 0.5, vol = 2.0 }
+    },
+    inject = { ["Medical"] = 6, ["Canned"] = 4 }
+})
 
-    DynamicTrading.Events.Register("Famine", {
-        name = "Crop Blight",
-        description = "Crops across the region have failed. Food is scarce and expensive.",
-        canSpawn = function() 
-            return SandboxVars.DynamicTrading.AllowHardcoreEvents 
-        end,
-        effects = {
-            ["Food"] = { price = 2.5, vol = 0.3 },
-            ["Seed"] = { price = 3.0 },
-            ["Canned"] = { price = 2.0 }
-        }
-    })
+-- [ECONOMY]
+DynamicTrading.Events.Register("Inflation", {
+    name = "Market Panic",
+    type = "flash",
+    description = "Currency is losing value rapidly.",
+    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    effects = {
+        ["Misc"] = { price = 2.0 },
+        ["Luxury"] = { price = 0.1 }
+    }
+})
 
-    DynamicTrading.Events.Register("AidDrop", {
-        name = "Relief Shipment",
-        description = "Humanitarian aid packages were dropped nearby. Free food and meds.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Medical"] = { price = 0.2, vol = 4.0 },
-            ["Canned"] = { price = 0.5, vol = 3.0 },
-            ["Water"] = { price = 0.5, vol = 2.0 }
-        },
-        inject = { ["Medical"] = 6, ["Canned"] = 4 }
-    })
+DynamicTrading.Events.Register("FireSale", {
+    name = "Liquidation Event",
+    type = "flash",
+    description = "Traders are selling stock at half price.",
+    canSpawn = function() return true end,
+    effects = {
+        ["Misc"] = { price = 0.5, vol = 1.5 },
+        ["Luxury"] = { price = 1.5 }
+    }
+})
 
-    -- ==========================================================
-    -- CATEGORY: MACRO ECONOMICS
-    -- ==========================================================
-
-    DynamicTrading.Events.Register("Inflation", {
-        name = "Market Panic",
-        description = "Currency is losing value rapidly. Everything costs double.",
-        canSpawn = function() 
-            return SandboxVars.DynamicTrading.AllowHardcoreEvents 
-        end,
-        effects = {
-            ["Misc"] = { price = 2.0 },
-            ["Luxury"] = { price = 0.1 }
-        }
-    })
-
-    DynamicTrading.Events.Register("FireSale", {
-        name = "Liquidation Event",
-        description = "Traders are leaving the area and selling stock at half price.",
-        canSpawn = function() return true end,
-        effects = {
-            ["Misc"] = { price = 0.5, vol = 1.5 },
-            ["Luxury"] = { price = 1.5 }
-        }
-    })
-
-    print("[DynamicTrading] Events Initialized.")
-end
-
-Events.OnGameBoot.Add(InitEvents)
+print("[DynamicTrading] Events Initialized.")

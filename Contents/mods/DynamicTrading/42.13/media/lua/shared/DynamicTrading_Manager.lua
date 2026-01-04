@@ -7,9 +7,6 @@ DynamicTrading.Manager = {}
 -- =============================================================================
 -- 1. HELPER: CALCULATE "TRADING DAY" (5 AM START)
 -- =============================================================================
--- This converts game time into an integer that only flips at 5:00 AM.
--- Example: Day 1 at 4:59 AM = Trading Day 0
---          Day 1 at 5:00 AM = Trading Day 1
 function DynamicTrading.Manager.GetTradingDay()
     local gt = GameTime:getInstance()
     -- Calculate total hours passed in the entire playthrough
@@ -20,7 +17,7 @@ function DynamicTrading.Manager.GetTradingDay()
 end
 
 -- =============================================================================
--- 2. DATA MANAGEMENT (RESTRUCTURED)
+-- 2. DATA MANAGEMENT (WITH MIGRATION)
 -- =============================================================================
 function DynamicTrading.Manager.GetData()
     -- 1. Load the MAIN ModData table
@@ -33,46 +30,48 @@ function DynamicTrading.Manager.GetData()
         data.scanCooldowns = {}
         data.NetworkLogs = {} 
         
-        -- [NEW STRUCTURE] Group Daily Stats here
         data.DailyCycle = {
-            dailyTraderLimit = 5,      -- Renamed from dailyLimit
-            currentTradersFound = 0,   -- Renamed from dailyTradersFound
+            dailyTraderLimit = 5,
+            currentTradersFound = 0,
             lastResetDay = -1
         }
     end
 
-    -- Legacy Migration: Safety check to move old save data to new structure
-    if data.dailyLimit then 
-        data.DailyCycle = {
-            dailyTraderLimit = data.dailyLimit,
-            currentTradersFound = data.dailyTradersFound or 0,
-            lastResetDay = data.lastResetDay or -1
-        }
-        -- Clear old keys to clean up
-        data.dailyLimit = nil
-        data.dailyTradersFound = nil
-        data.lastResetDay = nil
-    end
-
+    -- 3. MIGRATION: Convert old "Single Event" system to "Stackable System"
     if not data.EventSystem then
         data.EventSystem = {
-            activeID = nil,
-            endDay = -1,
-            lastEventDay = -1
+            activeEvents = {}, -- New Table Structure
+            lastEventDay = -10 -- Set back in time so events can spawn immediately on new saves
         }
+    elseif data.EventSystem.activeID ~= nil then
+        -- DETECT OLD SAVE FORMAT: Migration Required
+        local oldID = data.EventSystem.activeID
+        local oldEnd = data.EventSystem.endDay or -1
+        
+        data.EventSystem.activeEvents = {}
+        
+        -- Move the currently running event to the new table
+        if oldID and DynamicTrading.Events.Registry[oldID] then
+            data.EventSystem.activeEvents[oldID] = { expires = oldEnd }
+        end
+        
+        -- Clean up old keys
+        data.EventSystem.activeID = nil
+        data.EventSystem.endDay = nil
+        
+        print("[DynamicTrading] Save Data Migrated to Stackable Event System.")
     end
 
-    -- 3. RESET LOGIC (5 AM Check)
+    -- Safety check to ensure the table exists after migration or load
+    if not data.EventSystem.activeEvents then data.EventSystem.activeEvents = {} end
+
+    -- 4. DAILY CYCLE RESET LOGIC (5 AM Check)
     local currentTradingDay = DynamicTrading.Manager.GetTradingDay()
     
-    -- IMPORTANT: Only the Server performs the WRITE/RESET to avoid desync.
-    -- Clients will read the old data until the Server updates and transmits it.
+    -- IMPORTANT: Only the Server performs the WRITE/RESET to avoid desync
     if (isServer() or not isClient()) and currentTradingDay > (data.DailyCycle.lastResetDay or -1) then
         
-        -- Update the Date
         data.DailyCycle.lastResetDay = currentTradingDay
-        
-        -- Reset the Counter
         data.DailyCycle.currentTradersFound = 0
         
         -- Randomize the Limit based on Sandbox
@@ -93,74 +92,135 @@ function DynamicTrading.Manager.GetData()
 
         DynamicTrading.Manager.AddLog("Daily Cycle: Market Reset (5 AM).", "info")
         
-        -- Force Sync changes to all clients immediately
+        -- Force Sync changes to all clients
         ModData.transmit("DynamicTrading_Engine_v1")
     end
 
+    -- 5. Rebuild Cache Locally
     DynamicTrading.Manager.RebuildActiveCache(data)
     
     return data
 end
 
 -- =============================================================================
--- 3. UTILITIES (UPDATED FOR NEW STRUCTURE)
+-- 3. UTILITIES
 -- =============================================================================
 
 function DynamicTrading.Manager.GetDailyStatus()
     local data = DynamicTrading.Manager.GetData()
-    -- Access via the new "DailyCycle" object
     return (data.DailyCycle.currentTradersFound or 0), (data.DailyCycle.dailyTraderLimit or 5)
 end
 
 function DynamicTrading.Manager.IncrementDailyCounter()
     local data = DynamicTrading.Manager.GetData()
-    -- Access via the new "DailyCycle" object
     data.DailyCycle.currentTradersFound = (data.DailyCycle.currentTradersFound or 0) + 1
-    
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
 end
 
 -- =============================================================================
--- 4. EVENTS & LOGGING
+-- 4. EVENTS & LOGGING (STACKABLE LOGIC)
 -- =============================================================================
 
 function DynamicTrading.Manager.ProcessEvents()
     local data = DynamicTrading.Manager.GetData()
+    -- Safety check
+    if not data.EventSystem then return end
+    
     local es = data.EventSystem
-    -- Events still use standard calendar days (Midnight) for simplicity
     local currentDay = math.floor(GameTime:getInstance():getDaysSurvived()) 
     local changed = false
 
-    if es.activeID then
-        if currentDay >= es.endDay then
-            local endingEvent = DynamicTrading.Events.Registry[es.activeID]
-            local name = endingEvent and endingEvent.name or "Unknown Event"
+    -- STEP A: CLEANUP EXPIRED EVENTS
+    for id, eventData in pairs(es.activeEvents) do
+        -- Only remove if it has an expiration date (-1 means permanent until removed by condition)
+        if eventData.expires ~= -1 and currentDay >= eventData.expires then
+            local def = DynamicTrading.Events.Registry[id]
+            local name = def and def.name or id
             DynamicTrading.Manager.AddLog("Event Ended: " .. name, "info")
-            es.activeID = nil
-            es.lastEventDay = currentDay
+            es.activeEvents[id] = nil
             changed = true
         end
-    else
-        local daysSinceLast = currentDay - es.lastEventDay
+    end
+
+    -- STEP B: PROCESS META EVENTS (Seasons, World State)
+    -- These DO NOT count towards the limit. They are forced by the world state.
+    for id, def in pairs(DynamicTrading.Events.Registry) do
+        if def.type == "meta" and def.condition then
+            local isActive = es.activeEvents[id] ~= nil
+            local shouldBeActive = def.condition()
+            
+            if shouldBeActive and not isActive then
+                -- START PERMANENT EVENT
+                es.activeEvents[id] = { expires = -1 } -- -1 = Controlled by condition, not time
+                DynamicTrading.Manager.AddLog("WORLD ALERT: " .. def.name, "event")
+                changed = true
+            elseif not shouldBeActive and isActive then
+                -- END PERMANENT EVENT
+                es.activeEvents[id] = nil
+                DynamicTrading.Manager.AddLog("Condition Cleared: " .. def.name, "info")
+                changed = true
+            end
+        end
+    end
+
+    -- STEP C: PROCESS FLASH EVENTS (RNG)
+    -- These ARE limited by the Sandbox option.
+    
+    -- 1. Count current FLASH events
+    local activeFlashCount = 0
+    for id, _ in pairs(es.activeEvents) do
+        local def = DynamicTrading.Events.Registry[id]
+        if def and def.type == "flash" then
+            activeFlashCount = activeFlashCount + 1
+        end
+    end
+
+    local maxFlashEvents = SandboxVars.DynamicTrading.MaxEvents or 3
+
+    -- 2. Try to spawn new event if under limit
+    if activeFlashCount < maxFlashEvents then
+        local daysSinceLast = currentDay - (es.lastEventDay or -10)
         local interval = SandboxVars.DynamicTrading.EventFrequency or 5
+        
         if daysSinceLast >= interval then
             local chance = SandboxVars.DynamicTrading.EventChance or 50
-            if ZombRand(100) < chance then
-                if DynamicTrading.Events.GetValidCandidates then
-                    local candidates = DynamicTrading.Events.GetValidCandidates()
-                    if #candidates > 0 then
-                        local pickID = candidates[ZombRand(#candidates) + 1]
-                        local eventDef = DynamicTrading.Events.Registry[pickID]
-                        if eventDef then
-                            local duration = SandboxVars.DynamicTrading.EventDuration or 3
-                            es.activeID = pickID
-                            es.endDay = currentDay + duration
-                            DynamicTrading.Manager.AddLog("ALERT: " .. eventDef.name, "event")
-                            changed = true
-                            print("[DynamicTrading] Event Started: " .. pickID)
-                        end
+            local roll = ZombRand(100) + 1
+            
+            -- Debug
+            print("[DynamicTrading] Flash Event Roll: " .. roll .. " (Target: < " .. chance .. ")")
+
+            if roll <= chance then
+                -- Roll Success: Find a candidate
+                local candidates = DynamicTrading.Events.GetFlashCandidates()
+                
+                -- Filter out events already running
+                local validCandidates = {}
+                for _, id in ipairs(candidates) do
+                    if not es.activeEvents[id] then
+                        table.insert(validCandidates, id)
                     end
                 end
+
+                if #validCandidates > 0 then
+                    local pickID = validCandidates[ZombRand(#validCandidates) + 1]
+                    local def = DynamicTrading.Events.Registry[pickID]
+                    
+                    if def then
+                        local duration = SandboxVars.DynamicTrading.EventDuration or 3
+                        es.activeEvents[pickID] = { expires = currentDay + duration }
+                        es.lastEventDay = currentDay
+                        
+                        DynamicTrading.Manager.AddLog("BREAKING NEWS: " .. def.name, "event")
+                        changed = true
+                        print("[DynamicTrading] Flash Event Started: " .. pickID)
+                    end
+                else
+                    print("[DynamicTrading] Flash Event Roll passed, but no valid candidates available.")
+                end
+            else
+                -- Roll Failed: Reset counter slightly so we retry tomorrow
+                es.lastEventDay = currentDay - (interval - 1)
+                changed = true
             end
         end
     end
@@ -171,11 +231,17 @@ function DynamicTrading.Manager.ProcessEvents()
     end
 end
 
+-- [UPDATED] Rebuilds memory cache from the new table structure
 function DynamicTrading.Manager.RebuildActiveCache(data)
     DynamicTrading.Events.ActiveEvents = {}
-    local id = data.EventSystem.activeID
-    if id and DynamicTrading.Events.Registry[id] then
-        table.insert(DynamicTrading.Events.ActiveEvents, DynamicTrading.Events.Registry[id])
+    
+    if not data or not data.EventSystem or not data.EventSystem.activeEvents then return end
+    
+    for id, _ in pairs(data.EventSystem.activeEvents) do
+        local def = DynamicTrading.Events.Registry[id]
+        if def then
+            table.insert(DynamicTrading.Events.ActiveEvents, def)
+        end
     end
 end
 
