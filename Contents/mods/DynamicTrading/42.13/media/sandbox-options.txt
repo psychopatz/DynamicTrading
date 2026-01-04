@@ -83,7 +83,7 @@ option DynamicTrading.HamRadioBonus
 option DynamicTrading.DailyTraderMin
 {
     type = integer,
-    default = 3,
+    default = 2,
     min = 1,
     max = 20,
     page = DynamicTrading,
@@ -103,7 +103,7 @@ option DynamicTrading.DailyTraderMax
 option DynamicTrading.ScanPenaltyPerTrader
 {
     type = double,
-    default = 0.2,
+    default = 0.4,
     min = 0.0,
     max = 1.0,
     page = DynamicTrading,
@@ -153,7 +153,7 @@ option DynamicTrading.TraderStayHoursMax
 option DynamicTrading.EventFrequency
 {
     type = integer,
-    default = 5,
+    default = 3,
     min = 1,
     max = 30,
     page = DynamicTrading,
@@ -163,7 +163,7 @@ option DynamicTrading.EventFrequency
 option DynamicTrading.EventChance
 {
     type = integer,
-    default = 50,
+    default = 80,
     min = 1,
     max = 100,
     page = DynamicTrading,
@@ -199,7 +199,7 @@ option DynamicTrading.AllowHardcoreEvents
 option DynamicTrading.PublicNetwork
 {
     type = boolean,
-    default = false,
+    default = true,
     page = DynamicTrading,
     translation = DynamicTrading_PublicNetwork,
 }
@@ -207,7 +207,7 @@ option DynamicTrading.PublicNetwork
 option DynamicTrading.MaxEvents
 {
     type = integer,
-    default = 3,
+    default = 6,
     min = 1,
     max = 10,
     page = DynamicTrading,
@@ -217,7 +217,7 @@ option DynamicTrading.MaxEvents
 option DynamicTrading.WalkieDropChance
     {
         type = double,
-        default = 2.0,
+        default = 20.0,
         min = 0.0,
         max = 100.0,
         page = DynamicTrading,
