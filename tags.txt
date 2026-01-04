@@ -1,0 +1,84 @@
+{
+filename ="DT_Ammo.lua",
+tags =["Ammo", "Common", "Legendary", "Magazine", "Military", "Rare", "Stockpile", "Uncommon", "Weapon"]
+}
+{
+filename ="DT_AnimalProducts.lua",
+tags =["Bone", "Food", "Fresh", "Junk", "Leather", "Material", "Meat", "Medical", "Melee", "Rare", "Trophy", "Weapon"]
+}
+{
+filename ="DT_Appearance.lua",
+tags =["Clothing", "Common", "Cosmetic", "Fuel", "Hygiene", "Luxury", "Misc", "Rare", "Tool", "Uncommon"]
+}
+{
+filename ="DT_Camping.lua",
+tags =["Bedding", "Build", "Camping", "Carpenter", "Common", "Fuel", "General", "Junk", "Luxury", "Medical", "Rare", "Scavenger", "Shelter", "Survival", "Tool", "Uncommon", "Winter"]
+}
+{
+filename ="DT_Clothing.lua",
+tags =["Armor", "Carpenter", "Clothing", "Common", "Container", "Electronics", "Gunrunner", "Heavy", "Junk", "Legendary", "Mechanic", "Medical", "Military", "Police", "Rare", "Scavenger", "Survival", "Survivalist", "Uncommon"]
+}
+{
+filename ="DT_Containers.lua",
+tags =["Backpack", "Common", "Container", "Decor", "Electronics", "Farming", "Food", "Heavy", "Junk", "Legendary", "Luxury", "Material", "Medical", "Military", "Music", "Office", "Organizer", "Primitive", "Rare", "Scholastic", "Secret", "Stockpile", "Survival", "Tactical", "Tool", "Travel", "Uncommon", "Weapon", "Wearable"]
+}
+{
+filename ="DT_ContainersFluid.lua",
+tags =["Alcohol", "Build", "Butcher", "Clean", "Clothing", "Common", "Container", "Cooking", "Drink", "Farmer", "Food", "Fuel", "General", "Heavy", "Junk", "Luxury", "Material", "Mechanic", "Medical", "Military", "Pharmacist", "Rare", "Scavenger", "Survivalist", "Tool", "Uncommon", "Water"]
+}
+{
+filename ="DT_Cooking.lua",
+tags =["Common", "Container", "Cooking", "Copper", "Durable", "Electronics", "Gold", "Ingredient", "Junk", "Luxury", "Metal", "Military", "Preservation", "Primitive", "Sharp", "Silver", "Stockpile", "Tool", "Weapon", "Wood"]
+}
+{
+filename ="DT_Electronics.lua",
+tags =["Battery", "Communication", "Component", "Electronics", "Generator", "Heavy", "Junk", "Legendary", "Light", "Luxury", "Material", "Military", "Premium", "Rare", "Stockpile", "Tool"]
+}
+{
+filename ="DT_Food.lua",
+tags =["Bait", "Canned", "Drink", "Fish", "Food", "Fresh", "Frozen", "Fruit", "Game", "Grain", "HighCalorie", "Junk", "Luxury", "Material", "Meat", "Medical", "Pickle", "Protein", "Rare", "Spice", "Sweets", "Vegetable"]
+}
+{
+filename ="DT_Fuel.lua",
+tags =["Glass", "Legendary", "Luxury", "Rare"]
+}
+{
+filename ="DT_Household.lua",
+tags =["Cleaning", "Clothing", "Common", "Decor", "Electronics", "Fire", "Fuel", "Fun", "Heavy", "Hygiene", "Junk", "Luxury", "Material", "Medical", "Music", "Poison", "Rare", "Safety", "Scholastic", "Spear", "Tactical", "Tool", "Trash", "Uncommon", "Weapon"]
+}
+{
+filename ="DT_Junk.lua",
+tags =["Ceramic", "Common", "Decor", "Electronics", "Fuel", "Fun", "Hygiene", "Junk", "Luxury", "Material", "Metal", "Office", "Paper", "Plastic", "Rare", "Stockpile", "Textile", "Tobacco", "Tool", "Trash", "Uncommon", "Wood", "Woodwork"]
+}
+{
+filename ="DT_Literature.lua",
+tags =["Cartography", "Common", "Fuel", "Illegal", "Junk", "Legendary", "Leisure", "Literature", "Luxury", "Random", "Rare", "Recipe", "SkillBook", "Uncommon"]
+}
+{
+filename ="DT_Luxury.lua",
+tags =["Clothing", "Common", "Electronics", "General", "Jewelry", "Junk", "Luxury", "Military", "Personal", "Rare", "Survivalist", "Uncommon"]
+}
+{
+filename ="DT_Materials.lua",
+tags =["Ammo", "Build", "Carpenter", "Common", "Electronics", "Fragile", "Fuel", "Heavy", "Junk", "Legendary", "Luxury", "Material", "Mechanic", "Military", "Rare", "Repair", "Smithing", "Survival", "Survivalist", "Textile", "Tool", "Uncommon", "Weapon"]
+}
+{
+filename ="DT_Medical.lua",
+tags =["Bone", "Clothing", "Combat", "Common", "Component", "Container", "Energy", "Herb", "Junk", "Liquid", "Luxury", "Material", "Medical", "Pill", "Processed", "Sterile", "Stockpile", "Survival", "Tool", "Trash", "Weapon"]
+}
+{
+filename ="DT_Tools.lua",
+tags =["Blade", "Builder", "Butcher", "Carpenter", "Clean", "Common", "Farmer", "Heavy", "Legendary", "Mechanic", "Medical", "Painter", "Police", "Rare", "Scavenger", "Smithing", "Survival", "Survivalist", "Tailor", "Thief", "Tool", "Uncommon"]
+}
+{
+filename ="DT_Traps.lua",
+tags =["Common", "Durable", "Metal", "Primitive", "Tool", "Trapping", "Wood"]
+}
+{
+filename ="DT_Vehicle.lua",
+tags =["CarPart", "Common", "Fuel", "Heavy", "Improvised", "Mechanic", "Rare", "Sport", "Tool", "Uncommon"]
+}
+{
+filename ="DT_Weapons.lua",
+tags =["Butcher", "Carpenter", "Common", "Distraction", "Electronics", "Farmer", "General", "Gun", "Gunrunner", "Heavy", "Hunting", "Junk", "Legendary", "Material", "Mechanic", "Military", "Police", "Rare", "Scavenger", "Spear", "Survivalist", "Tool", "Toy", "Uncommon", "Weapon", "WeaponPart"]
+}
