@@ -1,3 +1,48 @@
+-- =============================================================================
+--  HOW TO ADD CUSTOM EVENTS (USER GUIDE)
+-- =============================================================================
+--  You can add your own events by following this template.
+--  Copy-paste an example below and change the ID and values.
+--
+--  DynamicTrading.Events.Register("MyUniqueEventID", {
+--      name = "My Custom Event",
+--      description = "Flavor text shown in the Global Info UI.",
+--
+--      -- TYPE:
+--      -- "flash" = Random temporary event (e.g., Airdrop). Respects 'Max Simultaneous Events' limit.
+--      -- "meta"  = Permanent/World condition (e.g., Winter). Ignores limits. Requires 'condition' function.
+--      type = "flash",
+--
+--      -- SPAWN LOGIC:
+--      -- For "flash": return true/false based on Sandbox vars or chance.
+--      canSpawn = function() return true end,
+--
+--      -- For "meta": return true (Start Event) or false (End Event) based on game state.
+--      -- condition = function() return ClimateManager:getInstance():getSeasonName() == "Winter" end,
+--
+--      -- SYSTEM MODIFIERS (Global Effects):
+--      -- traderLimit: Multiplier for Daily Trader Cap (0.5 = Half traders, 2.0 = Double traders).
+--      -- globalStock: Multiplier for ALL items in ALL shops (1.5 = +50% loot everywhere).
+--      -- scanChance:  Multiplier for radio scan success rate (0.5 = Harder to find signals).
+--      system = {
+--          traderLimit = 1.0, 
+--          globalStock = 1.0,
+--          scanChance = 1.0
+--      },
+--
+--      -- TAG EFFECTS (Specific Items):
+--      -- price: Multiplier (> 1.0 is Expensive, < 1.0 is Cheap).
+--      -- vol:   Stock Quantity (> 1.0 is Abundant, < 1.0 is Scarce).
+--      effects = {
+--          ["Food"]   = { price = 2.0, vol = 0.5 }, -- Food is 2x price, half stock
+--          ["Weapon"] = { price = 0.5, vol = 2.0 }  -- Weapons are half price, double stock
+--      },
+--
+--      -- INJECTIONS (Guaranteed Items):
+--      -- Force specific tags to appear even if the Trader doesn't usually sell them.
+--      inject = { ["Medical"] = 5 }
+--  })
+-- =============================================================================
 require "DynamicTrading_Config"
 
 DynamicTrading = DynamicTrading or {}
@@ -48,6 +93,18 @@ function DynamicTrading.Events.GetVolumeModifier(itemTags)
                     multiplier = multiplier * event.effects[tag].vol
                 end
             end
+        end
+    end
+    return multiplier
+end
+
+-- [NEW] Used by Manager/Economy/Server to get system-wide changes
+-- Valid Keys: "traderLimit", "globalStock", "scanChance"
+function DynamicTrading.Events.GetSystemModifier(key)
+    local multiplier = 1.0
+    for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
+        if event.system and event.system[key] then
+            multiplier = multiplier * event.system[key]
         end
     end
     return multiplier
@@ -186,8 +243,11 @@ DynamicTrading.Events.Register("Heatwave", {
 DynamicTrading.Events.Register("Warzone", {
     name = "Faction Conflict",
     type = "flash",
-    description = "War has broken out. Weapons and ammo are being hoarded.",
+    description = "War has broken out. Traders are hiding, and ammo is scarce.",
     canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    system = {
+        traderLimit = 0.5 -- 50% Fewer traders appear today
+    },
     effects = {
         ["Weapon"] = { price = 2.5, vol = 0.5 },
         ["Ammo"] = { price = 3.0, vol = 0.3 },
@@ -199,8 +259,11 @@ DynamicTrading.Events.Register("Warzone", {
 DynamicTrading.Events.Register("Surplus", {
     name = "Military Surplus",
     type = "flash",
-    description = "A hidden military bunker was opened. Tactical gear is cheap.",
+    description = "A hidden military bunker was opened. The market is flooded with gear.",
     canSpawn = function() return true end,
+    system = {
+        globalStock = 1.5 -- Every shop has 50% more items
+    },
     effects = {
         ["Weapon"] = { price = 0.6, vol = 2.0 },
         ["Ammo"] = { price = 0.5, vol = 3.0 },
@@ -343,6 +406,21 @@ DynamicTrading.Events.Register("FireSale", {
     effects = {
         ["Misc"] = { price = 0.5, vol = 1.5 },
         ["Luxury"] = { price = 1.5 }
+    }
+})
+
+-- [COMMUNICATION]
+DynamicTrading.Events.Register("SolarFlare", {
+    name = "Solar Flare Interference",
+    type = "flash",
+    description = "Atmospheric interference makes radio contact extremely difficult.",
+    canSpawn = function() return true end,
+    system = {
+        scanChance = 0.5, -- 50% Harder to find signals
+        traderLimit = 0.8
+    },
+    effects = {
+        ["Communication"] = { price = 3.0 }
     }
 })
 

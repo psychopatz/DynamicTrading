@@ -67,13 +67,21 @@ function DynamicTradingInfoUI:populateList()
         local found = data.DailyCycle.currentTradersFound or 0
         local limit = data.DailyCycle.dailyTraderLimit or 5
         
+        -- [NEW] Adjust Limit display if modified by an event
+        local eventMult = 1.0
+        if DynamicTrading.Events.GetSystemModifier then
+            eventMult = DynamicTrading.Events.GetSystemModifier("traderLimit")
+        end
+        local displayLimit = math.floor(limit * eventMult)
+        if displayLimit < 1 then displayLimit = 1 end
+
         -- Color logic: Green = Available, Red = Full/Limit Reached
         local statusColor = {r=0.5, g=1, b=0.5, a=1}
-        if found >= limit then 
+        if found >= displayLimit then 
             statusColor = {r=1, g=0.5, b=0.5, a=1} 
         end
         
-        local statItem = self.listbox:addItem(string.format("  Daily Network: %d / %d Found", found, limit), nil)
+        local statItem = self.listbox:addItem(string.format("  Daily Network: %d / %d Found", found, displayLimit), nil)
         statItem.textColor = statusColor
     end
 
@@ -119,18 +127,69 @@ function DynamicTradingInfoUI:populateList()
                 descItem.textColor = {r=0.7, g=0.7, b=0.7, a=1} 
             end
 
-            -- Event Effects
+            -- [A] SYSTEM MODIFIERS (Global Effects)
+            if event.system then
+                for sysKey, val in pairs(event.system) do
+                    local txt = "      > GLOBAL: "
+                    local isGood = false
+                    
+                    if sysKey == "traderLimit" then
+                        txt = txt .. "Trader Network Cap (x" .. val .. ")"
+                        if val > 1 then isGood = true end
+                    elseif sysKey == "globalStock" then
+                        txt = txt .. "All Stock Levels (x" .. val .. ")"
+                        if val > 1 then isGood = true end
+                    elseif sysKey == "scanChance" then
+                        txt = txt .. "Signal Reception (x" .. val .. ")"
+                        if val > 1 then isGood = true end
+                    else
+                        txt = txt .. sysKey .. " (x" .. val .. ")"
+                        if val > 1 then isGood = true end
+                    end
+                    
+                    local sysItem = self.listbox:addItem(txt, nil)
+                    -- Cyan for Good, Purple for Bad (Distinct from standard Price/Stock colors)
+                    if isGood then sysItem.textColor = {r=0.4, g=1.0, b=1.0, a=1} 
+                    else sysItem.textColor = {r=1.0, g=0.4, b=1.0, a=1} 
+                    end
+                end
+            end
+
+            -- [B] ITEM CATEGORY EFFECTS (Price/Stock)
             if event.effects then
                 for tag, mod in pairs(event.effects) do
                     local effectStr = "      - " .. tag
+                    local isBad = false  -- High Price / Low Stock
+                    local isGood = false -- Low Price / High Stock
+
                     if mod.price then 
-                        effectStr = effectStr .. " (Price x" .. mod.price .. ")" 
-                    end
-                    if mod.vol then 
-                        effectStr = effectStr .. " (Stock x" .. mod.vol .. ")" 
+                        effectStr = effectStr .. " (Price x" .. mod.price .. ")"
+                        if mod.price > 1.01 then isBad = true end
+                        if mod.price < 0.99 then isGood = true end
                     end
                     
-                    self.listbox:addItem(effectStr, nil)
+                    if mod.vol then 
+                        effectStr = effectStr .. " (Stock x" .. mod.vol .. ")" 
+                        if mod.vol < 0.99 then isBad = true end
+                        if mod.vol > 1.01 then isGood = true end
+                    end
+                    
+                    local lineItem = self.listbox:addItem(effectStr, nil)
+                    
+                    -- Color Logic based on "Consumer" perspective (Buying)
+                    if isBad and not isGood then
+                         -- Red (Expensive/Scarce)
+                         lineItem.textColor = {r=1.0, g=0.4, b=0.4, a=1} 
+                    elseif isGood and not isBad then
+                         -- Green (Cheap/Abundant)
+                         lineItem.textColor = {r=0.4, g=1.0, b=0.4, a=1} 
+                    elseif isGood and isBad then
+                         -- Yellow (Mixed Bag)
+                         lineItem.textColor = {r=1.0, g=0.9, b=0.4, a=1} 
+                    else
+                         -- Grey (Neutral)
+                         lineItem.textColor = {r=0.8, g=0.8, b=0.8, a=1} 
+                    end
                 end
             end
             self.listbox:addItem(" ", nil) -- Spacing between events
@@ -142,7 +201,6 @@ function DynamicTradingInfoUI:populateList()
         self.listbox:addItem(" ", nil)
     end
     
-
     -- 3. INFLATION / HEAT
     header = self.listbox:addItem("=== CATEGORY INFLATION ===", nil)
     header.textColor = {r=1, g=0.5, b=0.5, a=1}

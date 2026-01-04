@@ -108,7 +108,19 @@ end
 
 function DynamicTrading.Manager.GetDailyStatus()
     local data = DynamicTrading.Manager.GetData()
-    return (data.DailyCycle.currentTradersFound or 0), (data.DailyCycle.dailyTraderLimit or 5)
+    local currentFound = data.DailyCycle.currentTradersFound or 0
+    local baseLimit = data.DailyCycle.dailyTraderLimit or 5
+    
+    -- [NEW] Apply System Modifiers from Events (e.g. Warzone = fewer traders)
+    local eventMult = 1.0
+    if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
+        eventMult = DynamicTrading.Events.GetSystemModifier("traderLimit")
+    end
+    
+    local finalLimit = math.floor(baseLimit * eventMult)
+    if finalLimit < 1 then finalLimit = 1 end -- Minimum safety
+    
+    return currentFound, finalLimit
 end
 
 function DynamicTrading.Manager.IncrementDailyCounter()

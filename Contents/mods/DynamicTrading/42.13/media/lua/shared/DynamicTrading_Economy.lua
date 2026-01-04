@@ -53,10 +53,16 @@ function DynamicTrading.Economy.GenerateStock(archetypeKey)
     local diff = DynamicTrading.Config.GetDifficultyData() -- Easy/Hard/Insane logic
     local archetype = DynamicTrading.Archetypes[archetypeKey] or DynamicTrading.Archetypes["General"]
     
+    -- [NEW] GLOBAL EVENT MODIFIER (e.g. Military Surplus = 1.5x Stock)
+    local globalStockMult = 1.0
+    if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
+        globalStockMult = DynamicTrading.Events.GetSystemModifier("globalStock")
+    end
+
     -- B. Determine Shop Size (Slots)
-    -- Base range (15-25) modified by Difficulty
-    local minSlots = math.floor(15 * diff.stockMult)
-    local maxSlots = math.floor(25 * diff.stockMult)
+    -- Base range (15-25) modified by Difficulty AND Global Events
+    local minSlots = math.floor(15 * diff.stockMult * globalStockMult)
+    local maxSlots = math.floor(25 * diff.stockMult * globalStockMult)
     local totalSlots = ZombRand(minSlots, maxSlots + 1)
     if totalSlots < 1 then totalSlots = 1 end
 
@@ -190,7 +196,7 @@ function DynamicTrading.Economy.GenerateStock(archetypeKey)
             local min = itemData.stockRange.min
             local max = itemData.stockRange.max
             
-            -- Event Volume Multiplier (e.g., Famine = 0.5x Food)
+            -- Event Volume Multiplier (Specific Tag)
             local volumeMult = 1.0
             if DynamicTrading.Events and DynamicTrading.Events.GetVolumeModifier then
                 volumeMult = DynamicTrading.Events.GetVolumeModifier(itemData.tags)
@@ -199,8 +205,8 @@ function DynamicTrading.Economy.GenerateStock(archetypeKey)
             -- Calculate Quantity
             local qty = ZombRand(min, max + 1)
             
-            -- Apply Difficulty & Event Modifiers
-            qty = math.floor(qty * diff.stockMult * volumeMult)
+            -- Apply Difficulty + Tag Volume + [NEW] Global Stock Mult
+            qty = math.floor(qty * diff.stockMult * volumeMult * globalStockMult)
             
             -- Always ensure at least 1 if it was picked
             if qty < 1 then qty = 1 end 

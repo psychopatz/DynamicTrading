@@ -1,6 +1,7 @@
 if isClient() then return end
 
 require "DynamicTrading_Manager"
+require "DynamicTrading_Events"
 
 local Commands = {}
 local lastProcessedDay = -1 
@@ -25,15 +26,23 @@ function Commands.AttemptScan(player, args)
         return
     end
 
-    -- CALCULATE CHANCE
+    -- CALCULATE PENALTY (Diminishing returns for finding multiple traders in one day)
     local penaltyPerTrader = SandboxVars.DynamicTrading.ScanPenaltyPerTrader or 0.2
     local penaltyFactor = 1.0 + (found * penaltyPerTrader) 
     
+    -- CALCULATE BONUSES
     local radioTier = args.radioTier or 0.5
     local baseChance = SandboxVars.DynamicTrading.ScanBaseChance or 30
     local skillBonus = args.skillBonus or 1.0
+    
+    -- [NEW] APPLY EVENT SYSTEM MODIFIERS (e.g. Solar Flare reduces scan chance)
+    local eventMult = 1.0
+    if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
+        eventMult = DynamicTrading.Events.GetSystemModifier("scanChance")
+    end
 
-    local finalChance = (baseChance * radioTier * skillBonus) / penaltyFactor
+    -- FINAL CHANCE CALCULATION
+    local finalChance = (baseChance * radioTier * skillBonus * eventMult) / penaltyFactor
     
     -- Clamp chances
     if finalChance < 1 then finalChance = 1 end
@@ -41,6 +50,10 @@ function Commands.AttemptScan(player, args)
     
     -- ROLL RNG
     local roll = ZombRand(100) + 1
+    
+    -- Debug Print for Server Admin
+    print(string.format("[DynamicTrading] Scan Roll: %d (Need <= %d) | Modifiers: Tier=%.1f Skill=%.1f Event=%.1f Penalty=%.1f", 
+        roll, finalChance, radioTier, skillBonus, eventMult, penaltyFactor))
     
     if roll <= finalChance then
         -- SUCCESS: Generate Trader
@@ -117,7 +130,7 @@ local function Server_OnHourlyTick()
         ModData.transmit("DynamicTrading_Engine_v1") 
     end
 
-    -- B. DAILY EVENT TRIGGER
+    -- B. DAILY EVENT TRIGGER (Runs at 8 AM)
     if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then
         print("[Server] DynamicTrading: Running Daily Event Logic (Day " .. currentDay .. ")")
         
