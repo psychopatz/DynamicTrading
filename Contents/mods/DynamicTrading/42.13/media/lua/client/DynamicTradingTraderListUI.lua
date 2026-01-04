@@ -4,6 +4,7 @@ require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "DynamicTrading_Manager"
 require "DynamicTrading_Config"
+require "DynamicTradingInfoUI" -- Added dependency to open the Info Window
 
 DynamicTradingTraderListUI = ISCollapsableWindow:derive("DynamicTradingTraderListUI")
 DynamicTradingTraderListUI.instance = nil
@@ -16,9 +17,9 @@ function DynamicTradingTraderListUI:initialise()
     self.radioObj = nil
     self.isHam = false
     
-    -- State Trackers
+    -- State Trackers (for auto-refresh optimization)
     self.lastLogCount = -1
-    self.lastTopLogID = "" -- [FIX] Tracks the specific content of the newest log
+    self.lastTopLogID = "" 
     self.lastTraderCount = -1 
 end
 
@@ -35,7 +36,7 @@ function DynamicTradingTraderListUI:createChildren()
     self.btnScan.borderColor = {r=1, g=1, b=1, a=0.5}
     self:addChild(self.btnScan)
 
-    -- 2. TRADER LIST (Top)
+    -- 2. TRADER LIST (Top Section)
     self.lblTraders = ISLabel:new(10, th + 45, 16, "Active Signals:", 0.8, 0.8, 1, 1, UIFont.Small, true)
     self:addChild(self.lblTraders)
 
@@ -54,10 +55,10 @@ function DynamicTradingTraderListUI:createChildren()
     self.listbox.onMouseDown = self.onListMouseDown
     self:addChild(self.listbox)
 
-    -- 3. LOG LIST (Bottom - Static/Non-Scrollable)
+    -- 3. LOG LIST (Bottom Section - Static/Non-Scrollable history)
     local logLabelY = list1Y + list1Height + 15
     local logListY = logLabelY + 20
-    local list2Height = (12 * 20) + 2 -- Exact height for 12 items
+    local list2Height = (12 * 20) + 2 -- Exact height for 12 lines
     
     self.lblLogs = ISLabel:new(10, logLabelY, 16, "System Logs (Last 12):", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
     self:addChild(self.lblLogs)
@@ -65,7 +66,6 @@ function DynamicTradingTraderListUI:createChildren()
     self.logList = ISScrollingListBox:new(10, logListY, width - 20, list2Height)
     self.logList:initialise()
     self.logList:setAnchorRight(true)
-    self.logList:setAnchorBottom(true)
     self.logList.font = UIFont.NewSmall
     self.logList.itemheight = 20
     self.logList.drawBorder = true
@@ -73,19 +73,27 @@ function DynamicTradingTraderListUI:createChildren()
     self.logList.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.9}
     self.logList.doDrawItem = self.drawLogItem
     
-    -- Disable Scroll Wheel
+    -- Disable Scroll Wheel on logs (it's a fixed display)
     self.logList.onMouseWheel = function(self, del) return true end
     
     self:addChild(self.logList)
+
+    -- 4. MARKET INFO BUTTON (New)
+    local btnInfoY = logListY + list2Height + 10
+    self.btnInfo = ISButton:new(10, btnInfoY, width - 20, 25, "VIEW MARKET INFO", self, self.onInfoClick)
+    self.btnInfo:initialise()
+    self.btnInfo.borderColor = {r=1, g=1, b=1, a=0.5}
+    self.btnInfo.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0} -- Slight Blue tint
+    self:addChild(self.btnInfo)
 end
 
 -- ==========================================================
--- UPDATE LOGIC (THE FIX IS HERE)
+-- UPDATE LOGIC
 -- ==========================================================
 function DynamicTradingTraderListUI:render()
     ISCollapsableWindow.render(self)
     
-    -- 1. Auto-Close check
+    -- 1. Auto-Close check (Distance/Power)
     if not self:CheckConnectionValidity() then
         self:close()
         if DynamicTradingUI and DynamicTradingUI.instance then 
@@ -94,7 +102,7 @@ function DynamicTradingTraderListUI:render()
         return
     end
 
-    -- 2. Cooldown Button
+    -- 2. Cooldown Button State
     local player = getSpecificPlayer(0)
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
     
@@ -110,16 +118,14 @@ function DynamicTradingTraderListUI:render()
     
     local data = DynamicTrading.Manager.GetData()
 
-    -- 3. LOG AUTO-REFRESH [FIXED]
+    -- 3. LOG AUTO-REFRESH
     local currentLogCount = data.NetworkLogs and #data.NetworkLogs or 0
     local currentTopLog = ""
     
-    -- Grab the "Time + Text" of the newest log to see if it changed
     if data.NetworkLogs and data.NetworkLogs[1] then
         currentTopLog = data.NetworkLogs[1].time .. data.NetworkLogs[1].text
     end
     
-    -- Update if Count changed OR if the Top Log changed
     if currentLogCount ~= self.lastLogCount or currentTopLog ~= self.lastTopLogID then
         self:populateLogs()
         self.lastLogCount = currentLogCount
@@ -146,7 +152,6 @@ function DynamicTradingTraderListUI:populateLogs()
     local data = DynamicTrading.Manager.GetData()
     
     if data.NetworkLogs then
-        -- Force limit to 12 in UI so it fits perfectly
         local limit = math.min(#data.NetworkLogs, 12)
         for i=1, limit do
             local log = data.NetworkLogs[i]
@@ -223,6 +228,18 @@ function DynamicTradingTraderListUI:onScanClick()
     end
 end
 
+-- [NEW] Open the Market Info UI
+function DynamicTradingTraderListUI:onInfoClick()
+    if DynamicTradingInfoUI then
+        -- If already open, just bring to front (or standard toggle behavior)
+        if DynamicTradingInfoUI.instance and DynamicTradingInfoUI.instance:isVisible() then
+            DynamicTradingInfoUI.instance:addToUIManager()
+        else
+            DynamicTradingInfoUI.ToggleWindow()
+        end
+    end
+end
+
 function DynamicTradingTraderListUI.drawItem(this, y, item, alt)
     local height = this.itemheight
     local width = this:getWidth()
@@ -293,7 +310,8 @@ function DynamicTradingTraderListUI.ToggleWindow(radioObj, isHam)
         return
     end
 
-    local ui = DynamicTradingTraderListUI:new(200, 100, 380, 565)
+    -- [MODIFIED] Increased height to 600 to fit new button
+    local ui = DynamicTradingTraderListUI:new(200, 100, 380, 600)
     ui:initialise()
     ui.radioObj = radioObj
     ui.isHam = isHam
