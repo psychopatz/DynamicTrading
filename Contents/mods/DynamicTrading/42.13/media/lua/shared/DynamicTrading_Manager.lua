@@ -17,32 +17,32 @@ function DynamicTrading.Manager.GetTradingDay()
 end
 
 -- =============================================================================
--- 2. DATA MANAGEMENT (WITH MIGRATION)
+-- 2. DATA MANAGEMENT (WITH ROBUST INITIALIZATION)
 -- =============================================================================
 function DynamicTrading.Manager.GetData()
     -- 1. Load the MAIN ModData table
     local data = ModData.getOrCreate("DynamicTrading_Engine_v1")
     
-    -- 2. Initialize Sub-Tables if they don't exist
-    if not data.Traders then
-        data.Traders = {}
-        data.globalHeat = {}
-        data.scanCooldowns = {}
-        
+    -- 2. Initialize Sub-Tables Individually (Fixes "Missing Table" bugs on old saves)
+    if not data.Traders then data.Traders = {} end
+    if not data.globalHeat then data.globalHeat = {} end
+    if not data.scanCooldowns then data.scanCooldowns = {} end
+    if not data.NetworkLogs then data.NetworkLogs = {} end
+
+    -- Explicitly check DailyCycle to ensure it exists even if Traders already did
+    if not data.DailyCycle then
         data.DailyCycle = {
             dailyTraderLimit = 5,
             currentTradersFound = 0,
             lastResetDay = -1
         }
-        
-        data.NetworkLogs = {} 
     end
 
     -- 3. MIGRATION: Convert old "Single Event" system to "Stackable System"
     if not data.EventSystem then
         data.EventSystem = {
-            activeEvents = {}, -- New Table Structure
-            lastEventDay = -10 -- Set back in time so events can spawn immediately on new saves
+            activeEvents = {}, 
+            lastEventDay = -10 
         }
     elseif data.EventSystem.activeID ~= nil then
         -- DETECT OLD SAVE FORMAT: Migration Required
@@ -51,26 +51,26 @@ function DynamicTrading.Manager.GetData()
         
         data.EventSystem.activeEvents = {}
         
-        -- Move the currently running event to the new table
         if oldID and DynamicTrading.Events.Registry[oldID] then
             data.EventSystem.activeEvents[oldID] = { expires = oldEnd }
         end
         
-        -- Clean up old keys
         data.EventSystem.activeID = nil
         data.EventSystem.endDay = nil
         
         print("[DynamicTrading] Save Data Migrated to Stackable Event System.")
     end
 
-    -- Safety check to ensure the table exists after migration or load
     if not data.EventSystem.activeEvents then data.EventSystem.activeEvents = {} end
 
     -- 4. DAILY CYCLE RESET LOGIC (5 AM Check)
     local currentTradingDay = DynamicTrading.Manager.GetTradingDay()
     
+    -- Safety Check: Ensure lastResetDay is not nil
+    if not data.DailyCycle.lastResetDay then data.DailyCycle.lastResetDay = -1 end
+    
     -- IMPORTANT: Only the Server performs the WRITE/RESET to avoid desync
-    if (isServer() or not isClient()) and currentTradingDay > (data.DailyCycle.lastResetDay or -1) then
+    if (isServer() or not isClient()) and currentTradingDay > data.DailyCycle.lastResetDay then
         
         data.DailyCycle.lastResetDay = currentTradingDay
         data.DailyCycle.currentTradersFound = 0
@@ -104,7 +104,21 @@ function DynamicTrading.Manager.GetData()
 end
 
 -- =============================================================================
--- 3. UTILITIES
+-- 3. DATA SYNC (THE FIX FOR CLIENTS)
+-- =============================================================================
+local function OnReceiveGlobalModData(key, data)
+    if key == "DynamicTrading_Engine_v1" then
+        -- CRITICAL FIX: Overwrite local client memory with the server's data.
+        ModData.add(key, data)
+        
+        -- Rebuild local event cache
+        DynamicTrading.Manager.RebuildActiveCache(data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
+
+-- =============================================================================
+-- 4. UTILITIES
 -- =============================================================================
 
 function DynamicTrading.Manager.GetDailyStatus()
@@ -112,14 +126,13 @@ function DynamicTrading.Manager.GetDailyStatus()
     local currentFound = data.DailyCycle.currentTradersFound or 0
     local baseLimit = data.DailyCycle.dailyTraderLimit or 5
     
-    -- [NEW] Apply System Modifiers from Events (e.g. Warzone = fewer traders)
     local eventMult = 1.0
     if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
         eventMult = DynamicTrading.Events.GetSystemModifier("traderLimit")
     end
     
     local finalLimit = math.floor(baseLimit * eventMult)
-    if finalLimit < 1 then finalLimit = 1 end -- Minimum safety
+    if finalLimit < 1 then finalLimit = 1 end 
     
     return currentFound, finalLimit
 end
@@ -127,25 +140,24 @@ end
 function DynamicTrading.Manager.IncrementDailyCounter()
     local data = DynamicTrading.Manager.GetData()
     data.DailyCycle.currentTradersFound = (data.DailyCycle.currentTradersFound or 0) + 1
+    -- Only transmit if on server (safety check)
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
 end
 
 -- =============================================================================
--- 4. EVENTS & LOGGING (STACKABLE LOGIC)
+-- 5. EVENTS & LOGGING
 -- =============================================================================
 
 function DynamicTrading.Manager.ProcessEvents()
     local data = DynamicTrading.Manager.GetData()
-    -- Safety check
     if not data.EventSystem then return end
     
     local es = data.EventSystem
     local currentDay = math.floor(GameTime:getInstance():getDaysSurvived()) 
     local changed = false
 
-    -- STEP A: CLEANUP EXPIRED EVENTS
+    -- A: CLEANUP EXPIRED EVENTS
     for id, eventData in pairs(es.activeEvents) do
-        -- Only remove if it has an expiration date (-1 means permanent until removed by condition)
         if eventData.expires ~= -1 and currentDay >= eventData.expires then
             local def = DynamicTrading.Events.Registry[id]
             local name = def and def.name or id
@@ -155,20 +167,17 @@ function DynamicTrading.Manager.ProcessEvents()
         end
     end
 
-    -- STEP B: PROCESS META EVENTS (Seasons, World State)
-    -- These DO NOT count towards the limit. They are forced by the world state.
+    -- B: PROCESS META EVENTS
     for id, def in pairs(DynamicTrading.Events.Registry) do
         if def.type == "meta" and def.condition then
             local isActive = es.activeEvents[id] ~= nil
             local shouldBeActive = def.condition()
             
             if shouldBeActive and not isActive then
-                -- START PERMANENT EVENT
-                es.activeEvents[id] = { expires = -1 } -- -1 = Controlled by condition, not time
+                es.activeEvents[id] = { expires = -1 }
                 DynamicTrading.Manager.AddLog("WORLD ALERT: " .. def.name, "event")
                 changed = true
             elseif not shouldBeActive and isActive then
-                -- END PERMANENT EVENT
                 es.activeEvents[id] = nil
                 DynamicTrading.Manager.AddLog("Condition Cleared: " .. def.name, "info")
                 changed = true
@@ -176,21 +185,15 @@ function DynamicTrading.Manager.ProcessEvents()
         end
     end
 
-    -- STEP C: PROCESS FLASH EVENTS (RNG)
-    -- These ARE limited by the Sandbox option.
-    
-    -- 1. Count current FLASH events
+    -- C: PROCESS FLASH EVENTS
     local activeFlashCount = 0
     for id, _ in pairs(es.activeEvents) do
         local def = DynamicTrading.Events.Registry[id]
-        if def and def.type == "flash" then
-            activeFlashCount = activeFlashCount + 1
-        end
+        if def and def.type == "flash" then activeFlashCount = activeFlashCount + 1 end
     end
 
     local maxFlashEvents = SandboxVars.DynamicTrading.MaxEvents or 3
 
-    -- 2. Try to spawn new event if under limit
     if activeFlashCount < maxFlashEvents then
         local daysSinceLast = currentDay - (es.lastEventDay or -10)
         local interval = SandboxVars.DynamicTrading.EventFrequency or 5
@@ -199,39 +202,25 @@ function DynamicTrading.Manager.ProcessEvents()
             local chance = SandboxVars.DynamicTrading.EventChance or 50
             local roll = ZombRand(100) + 1
             
-            -- Debug
-            print("[DynamicTrading] Flash Event Roll: " .. roll .. " (Target: < " .. chance .. ")")
-
             if roll <= chance then
-                -- Roll Success: Find a candidate
                 local candidates = DynamicTrading.Events.GetFlashCandidates()
-                
-                -- Filter out events already running
                 local validCandidates = {}
                 for _, id in ipairs(candidates) do
-                    if not es.activeEvents[id] then
-                        table.insert(validCandidates, id)
-                    end
+                    if not es.activeEvents[id] then table.insert(validCandidates, id) end
                 end
 
                 if #validCandidates > 0 then
                     local pickID = validCandidates[ZombRand(#validCandidates) + 1]
                     local def = DynamicTrading.Events.Registry[pickID]
-                    
                     if def then
                         local duration = SandboxVars.DynamicTrading.EventDuration or 3
                         es.activeEvents[pickID] = { expires = currentDay + duration }
                         es.lastEventDay = currentDay
-                        
                         DynamicTrading.Manager.AddLog("BREAKING NEWS: " .. def.name, "event")
                         changed = true
-                        print("[DynamicTrading] Flash Event Started: " .. pickID)
                     end
-                else
-                    print("[DynamicTrading] Flash Event Roll passed, but no valid candidates available.")
                 end
             else
-                -- Roll Failed: Reset counter slightly so we retry tomorrow
                 es.lastEventDay = currentDay - (interval - 1)
                 changed = true
             end
@@ -244,26 +233,14 @@ function DynamicTrading.Manager.ProcessEvents()
     end
 end
 
--- [UPDATED] Rebuilds memory cache from the new table structure
 function DynamicTrading.Manager.RebuildActiveCache(data)
     DynamicTrading.Events.ActiveEvents = {}
-    
     if not data or not data.EventSystem or not data.EventSystem.activeEvents then return end
-    
     for id, _ in pairs(data.EventSystem.activeEvents) do
         local def = DynamicTrading.Events.Registry[id]
-        if def then
-            table.insert(DynamicTrading.Events.ActiveEvents, def)
-        end
+        if def then table.insert(DynamicTrading.Events.ActiveEvents, def) end
     end
 end
-
-local function OnReceiveGlobalModData(key, data)
-    if key == "DynamicTrading_Engine_v1" then
-        DynamicTrading.Manager.RebuildActiveCache(data)
-    end
-end
-Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
 
 function DynamicTrading.Manager.AddLog(text, category)
     local data = DynamicTrading.Manager.GetData()
@@ -275,7 +252,7 @@ function DynamicTrading.Manager.AddLog(text, category)
 end
 
 -- =============================================================================
--- 5. TRADER MANAGEMENT
+-- 6. TRADER MANAGEMENT
 -- =============================================================================
 
 function DynamicTrading.Manager.GenerateRandomContact()
@@ -360,18 +337,35 @@ function DynamicTrading.Manager.UpdateHeat(category, amount)
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
 end
 
+-- Server Authority
 function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
     local data = DynamicTrading.Manager.GetData()
     local trader = data.Traders[traderID]
     if not trader or not trader.stocks[itemKey] then return end
+    
     trader.stocks[itemKey] = math.max(0, trader.stocks[itemKey] - qty)
+    
     local sensitivity = SandboxVars.DynamicTrading.CategoryInflation or 0.05
-    DynamicTrading.Manager.UpdateHeat(category, sensitivity * qty)
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1") end
+    local current = data.globalHeat[category] or 0
+    data.globalHeat[category] = current + (sensitivity * qty)
+    if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
+    
+    if isServer() or not isClient() then 
+        ModData.transmit("DynamicTrading_Engine_v1") 
+    end
 end
 
+-- Server Authority
 function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
-    DynamicTrading.Manager.UpdateHeat(category, -0.01 * qty)
+    local data = DynamicTrading.Manager.GetData()
+    local current = data.globalHeat[category] or 0
+    
+    data.globalHeat[category] = current - (0.01 * qty)
+    if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
+    
+    if isServer() or not isClient() then 
+        ModData.transmit("DynamicTrading_Engine_v1") 
+    end
 end
 
 function DynamicTrading.Manager.CanScan(player)

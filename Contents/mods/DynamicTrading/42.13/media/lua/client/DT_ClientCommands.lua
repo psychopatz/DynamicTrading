@@ -1,6 +1,9 @@
 require "ISUI/ISUIHandler"
 -- No extra require needed for HaloTextHelper, it's global
 
+-- =============================================================================
+-- 1. HANDLE SERVER RESPONSES (SCAN RESULTS)
+-- =============================================================================
 local function OnServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
 
@@ -36,7 +39,7 @@ local function OnServerCommand(module, command, args)
                     HaloTextHelper.addTextWithArrow(player, failMsg, true, HaloTextHelper.getColorRed())
                 end
                 
-            -- 3. FAILURE: RNG / BAD LUCK (Red)
+            -- 3. FAILURE: RNG / BAD LUCK / COOLDOWN (Red)
             else
                 local failLines = {
                     "Just static...",
@@ -76,3 +79,19 @@ local function OnServerCommand(module, command, args)
 end
 
 Events.OnServerCommand.Add(OnServerCommand)
+
+-- =============================================================================
+-- 2. INITIALIZATION (SYNC ON JOIN)
+-- =============================================================================
+-- This fixes the issue where a player joins an existing server but sees
+-- "0 Traders Found" because they haven't received the global table yet.
+local function RequestInitialSync()
+    local player = getSpecificPlayer(0)
+    if player then
+        -- Send command to Server: "Send me the full ModData table right now"
+        sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
+        print("[DynamicTrading] Client: Requested initial server state sync.")
+    end
+end
+
+Events.OnGameStart.Add(RequestInitialSync)
