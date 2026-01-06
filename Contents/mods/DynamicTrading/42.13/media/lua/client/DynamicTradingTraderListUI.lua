@@ -223,6 +223,12 @@ end
 function DynamicTradingTraderListUI:onScanClick()
     local player = getSpecificPlayer(0)
     if not self:CheckConnectionValidity() then self:close() return end
+    
+    -- [FORCE SYNC FIX]
+    -- Request fresh state from server before/while scanning to ensure client isn't desynced.
+    -- This handles the "Server Restart" case where client cache is empty/stale.
+    sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
+
     if DT_RadioInteraction and DT_RadioInteraction.PerformScan then
         DT_RadioInteraction.PerformScan(player, self.radioObj, self.isHam)
     end

@@ -183,26 +183,6 @@ function DynamicTradingUI:updateWallet()
     end
 end
 
-function DynamicTradingUI:removeMoney(player, amount)
-    local inv = player:getInventory()
-    local current = self:getPlayerWealth(player)
-    local remaining = current - amount
-    
-    inv:RemoveAll("Base.Money")
-    inv:RemoveAll("Base.MoneyBundle")
-    
-    self:addMoney(player, remaining)
-end
-
-function DynamicTradingUI:addMoney(player, amount)
-    local inv = player:getInventory()
-    local bundles = math.floor(amount / 100)
-    local loose = amount % 100
-    if bundles > 0 then inv:AddItems("Base.MoneyBundle", bundles) end
-    if loose > 0 then inv:AddItems("Base.Money", loose) end
-    self:updateWallet()
-end
-
 -- =================================================
 -- DRAWING
 -- =================================================
@@ -456,7 +436,7 @@ function DynamicTradingUI:populateList()
 end
 
 -- =================================================
--- ACTION LOGIC (SYNC FIX)
+-- ACTION LOGIC (SERVER AUTHORITATIVE FIX)
 -- =================================================
 function DynamicTradingUI:onAction()
     if not self.listbox or type(self.listbox.selected) ~= "number" or self.listbox.selected == -1 then return end
@@ -473,7 +453,10 @@ function DynamicTradingUI:onAction()
         return
     end
 
+    local primaryCat = d.data.tags[1] or "Misc"
+
     if self.isBuying then
+        -- Client Side Pre-Check (Visual feedback only)
         if d.qty <= 0 then 
             player:Say("It's sold out.")
             return 
@@ -481,15 +464,7 @@ function DynamicTradingUI:onAction()
         
         local wealth = self:getPlayerWealth(player)
         if wealth >= d.price then
-            self:removeMoney(player, d.price)
-            
-            -- [FIX] Use standard AddItem
-            -- This handles creation logic internally in C++/Java.
-            player:getInventory():AddItem(d.data.item)
-            
-            local primaryCat = d.data.tags[1] or "Misc"
-            
-            -- Send server update for Stock
+            -- SEND TO SERVER (Server handles inventory & money)
             sendClientCommand(player, "DynamicTrading", "TradeTransaction", {
                 type = "buy",
                 traderID = self.traderID,
@@ -497,20 +472,14 @@ function DynamicTradingUI:onAction()
                 category = primaryCat,
                 qty = 1
             })
-            player:playSound("Transaction") 
-            
-            -- [FIX] FORCE INVENTORY UI REFRESH
-            -- This ensures the player's inventory UI syncs up with the new item immediately,
-            -- fixing the "Ghost Item" bug.
-            triggerEvent("OnContainerUpdate")
+            -- Disable button temporarily to prevent spam
+            self.btnAction:setEnable(false)
         else
             player:Say("Not enough cash!")
         end
     else
-        player:getInventory():Remove(d.invItem)
-        self:addMoney(player, d.price)
-        local primaryCat = d.data.tags[1] or "Misc"
-        
+        -- SELLING
+        -- SEND TO SERVER
         sendClientCommand(player, "DynamicTrading", "TradeTransaction", {
             type = "sell",
             traderID = self.traderID,
@@ -518,12 +487,8 @@ function DynamicTradingUI:onAction()
             category = primaryCat,
             qty = 1
         })
-        player:playSound("Transaction")
-        
-        -- [FIX] FORCE INVENTORY UI REFRESH
-        triggerEvent("OnContainerUpdate")
+        self.btnAction:setEnable(false)
     end
-    self.btnAction:setEnable(false)
 end
 
 function DynamicTradingUI:onToggleMode()
@@ -558,6 +523,9 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
     DynamicTradingUI.instance = ui
 end
 
+-- =================================================
+-- EVENT LISTENERS
+-- =================================================
 local function OnDataSync(key, data)
     if key == "DynamicTrading_Engine_v1" then
         if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
@@ -566,3 +534,19 @@ local function OnDataSync(key, data)
     end
 end
 Events.OnReceiveGlobalModData.Add(OnDataSync)
+
+-- [NEW] Listen for Transaction Success to play sound
+local function OnServerCommand(module, command, args)
+    if module == "DynamicTrading" and command == "TransactionResult" then
+        if args.success then
+            getSpecificPlayer(0):playSound("Transaction")
+            -- Refresh list to update wallet/stock immediately
+            if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
+                DynamicTradingUI.instance:populateList()
+            end
+        else
+            if args.msg then getSpecificPlayer(0):Say(args.msg) end
+        end
+    end
+end
+Events.OnServerCommand.Add(OnServerCommand)
