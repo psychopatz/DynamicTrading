@@ -20,15 +20,15 @@ function DynamicTradingUI:initialise()
     self.selectedKey = nil 
     self.radioObj = nil
     self.collapsed = {} 
+    self.lastSelectedIndex = -1
 end
 
 -- =================================================
--- LIVE STATE CHECK & CRASH PREVENTION
+-- LIVE STATE CHECK
 -- =================================================
 function DynamicTradingUI:update()
     ISCollapsableWindow.update(self)
 
-    -- [CRASH FIX] EMERGENCY SANITY CHECK
     if self.listbox and type(self.listbox.selected) ~= "number" then
         self.listbox.selected = -1
     end
@@ -37,7 +37,11 @@ function DynamicTradingUI:update()
 
     local data = DynamicTrading.Manager.GetData()
     if not data.Traders or not data.Traders[self.traderID] then
-        print("[DynamicTrading] Trader lost signal.")
+        local player = getSpecificPlayer(0)
+        if player then
+            player:playSound("RadioStatic")
+            player:Say("Signal Lost: The trader signed off.")
+        end
         self:close()
         return
     end
@@ -66,6 +70,9 @@ function DynamicTradingUI:isConnectionValid()
     return true
 end
 
+-- =================================================
+-- UI LAYOUT
+-- =================================================
 function DynamicTradingUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
@@ -92,6 +99,15 @@ function DynamicTradingUI:createChildren()
     self.listbox.drawBorder = true
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
     self.listbox.doDrawItem = DynamicTradingUI.drawItem 
+
+    -- CRASH SHIELD
+    local oldPrerender = self.listbox.prerender
+    self.listbox.prerender = function(box)
+        if box.items == nil then box.items = {} end
+        if type(box.selected) ~= "number" then box.selected = -1 end
+        if box.selected ~= -1 and box.selected > #box.items then box.selected = -1 end
+        if oldPrerender then oldPrerender(box) end
+    end
     
     self.listbox.onMouseDown = function(target, x, y)
         local row = target:rowAt(x, y)
@@ -112,6 +128,7 @@ function DynamicTradingUI:createChildren()
         local ui = DynamicTradingUI.instance
         if ui then 
             ui.selectedKey = item.item.key 
+            ui.lastSelectedIndex = row
             ui.btnAction:setEnable(true) 
         end
     end
@@ -134,6 +151,38 @@ end
 -- =================================================
 -- HELPERS
 -- =================================================
+function DynamicTradingUI.TruncateString(text, font, maxWidth)
+    local tm = TextManager.instance
+    if tm:MeasureStringX(font, text) <= maxWidth then return text end
+    
+    local len = string.len(text)
+    while len > 0 do
+        text = string.sub(text, 1, len - 1)
+        if tm:MeasureStringX(font, text .. "...") <= maxWidth then
+            return text .. "..."
+        end
+        len = len - 1
+    end
+    return "..."
+end
+
+function DynamicTradingUI:getPlayerWealth(player)
+    local inv = player:getInventory()
+    local looseList = inv:getItemsFromType("Base.Money", true)
+    local bundleList = inv:getItemsFromType("Base.MoneyBundle", true)
+    local looseCount = looseList and looseList:size() or 0
+    local bundleCount = bundleList and bundleList:size() or 0
+    return looseCount + (bundleCount * 100)
+end
+
+function DynamicTradingUI:updateWallet()
+    local player = getSpecificPlayer(0)
+    local wealth = self:getPlayerWealth(player)
+    if self.lblInfo then
+        self.lblInfo:setName("Wallet: $" .. wealth)
+    end
+end
+
 function DynamicTradingUI:updateSignalDisplay(trader)
     local gt = GameTime:getInstance()
     local text = "Signal: Permanent Connection"
@@ -142,7 +191,6 @@ function DynamicTradingUI:updateSignalDisplay(trader)
     if trader.expirationTime then
         local currentHours = gt:getWorldAgeHours()
         local diff = trader.expirationTime - currentHours
-
         if diff <= 0 then
             text = "Signal: Lost"
             r, g, b = 1.0, 0.0, 0.0 
@@ -151,35 +199,15 @@ function DynamicTradingUI:updateSignalDisplay(trader)
             local hours = math.floor(diff % 24)
             text = string.format("Signal: Stable (%dd %dh)", days, hours)
             r, g, b = 0.2, 1.0, 0.2 
-        elseif diff > 1 then
+        else
             text = string.format("Signal: Fading (%dh)", math.floor(diff))
             r, g, b = 1.0, 0.8, 0.2 
-        else
-            text = "Signal: Critical (< 1h)"
-            r, g, b = 1.0, 0.2, 0.2 
         end
-    elseif trader.expirationDay then
-        local days = trader.expirationDay - math.floor(gt:getDaysSurvived())
-        text = string.format("Signal: Stable (%d Days)", days)
-        if days <= 1 then r,g,b = 1.0, 0.2, 0.2 else r,g,b = 0.2, 1.0, 0.2 end
     end
 
     if self.lblSignal then
         self.lblSignal:setName(text)
         self.lblSignal:setColor(r, g, b, 1)
-    end
-end
-
-function DynamicTradingUI:getPlayerWealth(player)
-    local inv = player:getInventory()
-    return inv:getItemCount("Base.Money") + (inv:getItemCount("Base.MoneyBundle") * 100)
-end
-
-function DynamicTradingUI:updateWallet()
-    local player = getSpecificPlayer(0)
-    local wealth = self:getPlayerWealth(player)
-    if self.lblInfo then
-        self.lblInfo:setName("Wallet: $" .. wealth)
     end
 end
 
@@ -224,49 +252,33 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local qty = tonumber(d.qty) or 0
     if d.isBuy and qty <= 0 then nameColor = {r=0.5, g=0.5, b=0.5} end
     
-    listbox:drawText(d.name, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
+    -- TRUNCATION
+    local maxNameWidth = (width - 150) - 45
+    local displayName = DynamicTradingUI.TruncateString(d.name, listbox.font, maxNameWidth)
+    listbox:drawText(displayName, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
     
     local priceR, priceG, priceB = 0.6, 1.0, 0.6 
-    local stockR, stockG, stockB = 0.7, 0.7, 0.7 
-
-    local pMod = tonumber(d.priceMod) or 1.0
-    local sMod = tonumber(d.stockMod) or 1.0
-
-    if d.isBuy then
-        if pMod < 0.99 then priceR, priceG, priceB = 0.2, 1.0, 1.0 
-        elseif pMod > 1.01 then priceR, priceG, priceB = 1.0, 0.4, 0.4 
-        end
-        if sMod > 1.01 then stockR, stockG, stockB = 0.4, 1.0, 0.4
-        elseif sMod < 0.99 then stockR, stockG, stockB = 1.0, 0.4, 0.4
-        end
-    else
-        if pMod > 1.01 then priceR, priceG, priceB = 0.2, 1.0, 1.0
-        elseif pMod < 0.99 then priceR, priceG, priceB = 1.0, 0.4, 0.4
-        end
-    end
+    if d.isBuy and d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.4, 0.4 end
+    if d.isBuy and d.priceMod < 0.99 then priceR, priceG, priceB = 0.2, 1.0, 1.0 end
 
     if d.isBuy then
         if qty <= 0 then
             listbox:drawText("(SOLD OUT)", width - 140, y + 12, 1.0, 0.2, 0.2, 1, UIFont.Small)
         else
-            listbox:drawText("Stock: " .. qty, width - 140, y + 12, stockR, stockG, stockB, 1, listbox.font)
+            listbox:drawText("Stock: " .. qty, width - 140, y + 12, 0.7, 0.7, 0.7, 1, listbox.font)
         end
-        listbox:drawText("$" .. d.price, width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
-    else
-        listbox:drawText("$" .. d.price, width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
     end
+    listbox:drawText("$" .. d.price, width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
     
     return y + height
 end
 
 -- =================================================
--- LOGIC: POPULATE LIST
+-- POPULATE LIST (ROBUST SELECTION RESTORE)
 -- =================================================
 function DynamicTradingUI:populateList()
     local oldScroll = self.listbox:getYScroll()
-    
     self.listbox:clear()
-    self.listbox.selected = -1 
     
     local managerData = DynamicTrading.Manager.GetData()
     if not managerData or not self.traderID then return end
@@ -274,23 +286,13 @@ function DynamicTradingUI:populateList()
     local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
     if not trader then return end
     
-    local archetypeName = DynamicTrading.Archetypes[trader.archetype] and DynamicTrading.Archetypes[trader.archetype].name or "Unknown"
-    if self.lblTitle then
-        self.lblTitle:setName((trader.name or "Unknown") .. " - " .. archetypeName)
-    end
-    
     self:updateSignalDisplay(trader)
     self:updateWallet()
 
     local categorized = {} 
     local categories = {}  
 
-    local globalStockMult = 1.0
-    if DynamicTrading.Events and type(DynamicTrading.Events.GetSystemModifier) == "function" then
-        local val = DynamicTrading.Events.GetSystemModifier("globalStock")
-        if type(val) == "number" then globalStockMult = val end
-    end
-
+    -- 1. BUILD DATA STRUCTURE
     if self.isBuying then
         self.btnSwitch:setTitle("SWITCH TO SELLING")
         self.btnAction:setTitle("BUY ITEM")
@@ -301,30 +303,17 @@ function DynamicTradingUI:populateList()
                 if itemData then
                     local scriptItem = getScriptManager():getItem(itemData.item)
                     local sortName = tostring(scriptItem and scriptItem:getDisplayName() or key)
-                    
                     local price = DynamicTrading.Economy.GetBuyPrice(key, managerData.globalHeat)
-                    
-                    local cat = "Misc"
-                    if itemData.tags and #itemData.tags > 0 then cat = itemData.tags[1] end
-                    cat = tostring(cat)
+                    local cat = itemData.tags[1] or "Misc"
 
                     if not categorized[cat] then 
                         categorized[cat] = {}
                         table.insert(categories, cat)
                     end
-
-                    local priceMod = 1.0
-                    local stockMod = globalStockMult
                     
-                    if DynamicTrading.Events then
-                        if type(DynamicTrading.Events.GetPriceModifier) == "function" then
-                            local val = DynamicTrading.Events.GetPriceModifier(itemData.tags)
-                            if type(val) == "number" then priceMod = val end
-                        end
-                        if type(DynamicTrading.Events.GetVolumeModifier) == "function" then
-                            local val = DynamicTrading.Events.GetVolumeModifier(itemData.tags)
-                            if type(val) == "number" then stockMod = stockMod * val end
-                        end
+                    local priceMod = 1.0
+                    if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then
+                        priceMod = DynamicTrading.Events.GetPriceModifier(itemData.tags)
                     end
 
                     table.insert(categorized[cat], {
@@ -335,8 +324,7 @@ function DynamicTradingUI:populateList()
                         data = itemData,
                         isBuy = true,
                         isCategory = false,
-                        priceMod = priceMod, 
-                        stockMod = stockMod
+                        priceMod = priceMod
                     })
                 end
             end
@@ -346,7 +334,8 @@ function DynamicTradingUI:populateList()
         self.btnAction:setTitle("SELL ITEM")
 
         local player = getSpecificPlayer(0)
-        local items = player:getInventory():getItems()
+        local inv = player:getInventory()
+        local items = inv:getItems()
         
         for i=0, items:size()-1 do
             local invItem = items:get(i)
@@ -362,35 +351,27 @@ function DynamicTradingUI:populateList()
                     local itemData = DynamicTrading.Config.MasterList[masterKey]
                     if itemData then
                         local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
-
                         if price > 0 then
-                            local cat = "Misc"
-                            if itemData.tags and #itemData.tags > 0 then cat = itemData.tags[1] end
-                            cat = tostring(cat)
-
+                            local cat = itemData.tags[1] or "Misc"
                             if not categorized[cat] then 
                                 categorized[cat] = {}
                                 table.insert(categories, cat)
                             end
-
+                            
                             local priceMod = 1.0
-                            if DynamicTrading.Events and type(DynamicTrading.Events.GetPriceModifier) == "function" then
-                                local val = DynamicTrading.Events.GetPriceModifier(itemData.tags)
-                                if type(val) == "number" then priceMod = val end
+                            if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then
+                                priceMod = DynamicTrading.Events.GetPriceModifier(itemData.tags)
                             end
-
-                            local displayName = tostring(invItem:getDisplayName())
 
                             table.insert(categorized[cat], {
                                 key = masterKey,
                                 invItem = invItem,
-                                name = displayName,
+                                name = tostring(invItem:getDisplayName()),
                                 price = tonumber(price) or 0,
                                 data = itemData,
                                 isBuy = false,
                                 isCategory = false,
-                                priceMod = priceMod,
-                                stockMod = 1.0 
+                                priceMod = priceMod
                             })
                         end
                     end
@@ -399,72 +380,117 @@ function DynamicTradingUI:populateList()
         end
     end
 
-    table.sort(categories, function(a,b) return tostring(a) < tostring(b) end)
+    table.sort(categories)
 
+    -- 2. ADD TO LISTBOX
     for _, catName in ipairs(categories) do
         if categorized[catName] and #categorized[catName] > 0 then
-            
             local hItem = self.listbox:addItem(string.upper(catName), nil)
             hItem.item = { isCategory = true, categoryName = catName, text = string.upper(catName) }
             hItem.height = 32
             
             if not self.collapsed[catName] then
                 local itemsInCat = categorized[catName]
-                
-                table.sort(itemsInCat, function(a,b) 
-                    local na = tostring(a.name or "")
-                    local nb = tostring(b.name or "")
-                    return na < nb
-                end)
+                table.sort(itemsInCat, function(a,b) return a.name < b.name end)
                 
                 for _, prod in ipairs(itemsInCat) do
-                    local index = self.listbox:addItem(prod.name, prod)
-                    
-                    if self.isBuying and self.selectedKey and prod.key == self.selectedKey then
-                        if type(index) == "number" then
-                            self.listbox.selected = index
-                        else
-                            self.listbox.selected = -1
-                        end
-                    end
+                    self.listbox:addItem(prod.name, prod)
                 end
             end
         end
+    end
+    
+    -- 3. POST-POPULATION SELECTION RECOVERY
+    -- This runs AFTER the listbox is fully populated to ensure indexes are stable.
+    local foundSelection = false
+    
+    if self.selectedKey then
+        -- Iterate the ACTUAL listbox items, not our source table
+        for i, listItem in ipairs(self.listbox.items) do
+            if listItem.item and not listItem.item.isCategory then
+                if listItem.item.key == self.selectedKey then
+                    -- FOUND IT!
+                    self.listbox.selected = i
+                    foundSelection = true
+                    
+                    -- Check if we should enable button
+                    if self.isBuying then
+                        if listItem.item.qty > 0 then
+                            self.btnAction:setEnable(true)
+                        else
+                            self.btnAction:setEnable(false)
+                        end
+                    else
+                        self.btnAction:setEnable(true)
+                    end
+                    break
+                end
+            end
+        end
+    end
+    
+    -- 4. AUTO-SELECT NEXT (Sell Mode only)
+    -- If we didn't find the old item (because we sold it), try to select the item at the same position.
+    if not foundSelection and not self.isBuying and self.lastSelectedIndex > -1 then
+        local count = #self.listbox.items
+        if count > 0 then
+            -- Clamp index
+            if self.lastSelectedIndex > count then self.lastSelectedIndex = count end
+            
+            -- If we landed on a category header, move down 1
+            local candidate = self.listbox.items[self.lastSelectedIndex]
+            if candidate and candidate.item and candidate.item.isCategory then
+                self.lastSelectedIndex = self.lastSelectedIndex + 1
+            end
+            
+            -- Validate new index
+            if self.lastSelectedIndex <= count then
+                local newItem = self.listbox.items[self.lastSelectedIndex]
+                if newItem and newItem.item and not newItem.item.isCategory then
+                    self.listbox.selected = self.lastSelectedIndex
+                    self.selectedKey = newItem.item.key
+                    self.btnAction:setEnable(true)
+                else
+                    self.selectedKey = nil
+                    self.btnAction:setEnable(false)
+                end
+            else
+                self.selectedKey = nil
+                self.btnAction:setEnable(false)
+            end
+        else
+            self.selectedKey = nil
+            self.btnAction:setEnable(false)
+        end
+    end
+    
+    -- If buying and not found (or cleared), disable button
+    if self.isBuying and not foundSelection then
+        self.btnAction:setEnable(false)
     end
     
     self.listbox:setYScroll(oldScroll)
 end
 
 -- =================================================
--- ACTION LOGIC (SERVER AUTHORITATIVE FIX)
+-- ACTION
 -- =================================================
 function DynamicTradingUI:onAction()
-    if not self.listbox or type(self.listbox.selected) ~= "number" or self.listbox.selected == -1 then return end
-
+    if not self.listbox or self.listbox.selected == -1 then return end
     local selItem = self.listbox.items[self.listbox.selected]
     if not selItem or not selItem.item or selItem.item.isCategory then return end
     
     local d = selItem.item
     local player = getSpecificPlayer(0)
-
-    if not self:isConnectionValid() then
-        self:close()
-        player:Say("Signal lost!")
-        return
-    end
-
     local primaryCat = d.data.tags[1] or "Misc"
 
     if self.isBuying then
-        -- Client Side Pre-Check (Visual feedback only)
         if d.qty <= 0 then 
             player:Say("It's sold out.")
             return 
         end
-        
         local wealth = self:getPlayerWealth(player)
         if wealth >= d.price then
-            -- SEND TO SERVER (Server handles inventory & money)
             sendClientCommand(player, "DynamicTrading", "TradeTransaction", {
                 type = "buy",
                 traderID = self.traderID,
@@ -472,14 +498,11 @@ function DynamicTradingUI:onAction()
                 category = primaryCat,
                 qty = 1
             })
-            -- Disable button temporarily to prevent spam
-            self.btnAction:setEnable(false)
+            -- Do NOT disable button. Leave it clickable for rapid buying.
         else
             player:Say("Not enough cash!")
         end
     else
-        -- SELLING
-        -- SEND TO SERVER
         sendClientCommand(player, "DynamicTrading", "TradeTransaction", {
             type = "sell",
             traderID = self.traderID,
@@ -487,13 +510,13 @@ function DynamicTradingUI:onAction()
             category = primaryCat,
             qty = 1
         })
-        self.btnAction:setEnable(false)
     end
 end
 
 function DynamicTradingUI:onToggleMode()
     self.isBuying = not self.isBuying
     self.selectedKey = nil
+    self.lastSelectedIndex = -1
     self:populateList()
     self.btnAction:setEnable(false)
 end
@@ -524,7 +547,7 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
 end
 
 -- =================================================
--- EVENT LISTENERS
+-- EVENTS
 -- =================================================
 local function OnDataSync(key, data)
     if key == "DynamicTrading_Engine_v1" then
@@ -535,12 +558,10 @@ local function OnDataSync(key, data)
 end
 Events.OnReceiveGlobalModData.Add(OnDataSync)
 
--- [NEW] Listen for Transaction Success to play sound
 local function OnServerCommand(module, command, args)
     if module == "DynamicTrading" and command == "TransactionResult" then
         if args.success then
             getSpecificPlayer(0):playSound("Transaction")
-            -- Refresh list to update wallet/stock immediately
             if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
                 DynamicTradingUI.instance:populateList()
             end
