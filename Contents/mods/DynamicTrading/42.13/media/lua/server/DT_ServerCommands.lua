@@ -1,13 +1,16 @@
--- [DYNAMIC TRADING] Server Command Handler
+-- =============================================================================
+-- DYNAMIC TRADING: SERVER COMMAND HANDLER
+-- =============================================================================
 -- Compatible with Singleplayer, MP Hosted, and MP Dedicated.
+-- Handles all secure logic: Money removal, Inventory management, Scanning RNG.
 
 require "DynamicTrading_Manager"
 require "DynamicTrading_Events"
 require "DynamicTrading_Economy"
 
 -- 1. GLOBAL TABLE REGISTRATION
--- We expose this table globally so Singleplayer Client scripts can call functions directly,
--- bypassing the network layer which doesn't exist in SP.
+-- We expose this table globally so Singleplayer Client scripts can call functions directly
+-- if needed, though we primarily use the Command Bridge now.
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.ServerCommands = {}
 
@@ -15,36 +18,57 @@ local Commands = DynamicTrading.ServerCommands
 local lastProcessedDay = -1 
 
 -- =============================================================================
--- 0. SINGLEPLAYER / MULTIPLAYER DETECTION
+-- 0. SINGLEPLAYER / MULTIPLAYER BRIDGE
 -- =============================================================================
 
 local function ShouldSendNetworkPackets()
-    -- Only send packets if we are the Authority (MP Server/Host).
+    -- Only send container update packets if we are the Authority (MP Server/Host).
     return isServer()
 end
 
+-- [CRITICAL FIX]
+-- Helper to handle the difference between SP and MP communication.
+-- In SP, sendServerCommand doesn't fire 'OnServerCommand' on the client side automatically.
+-- We must manually trigger the event to bridge the gap.
+local function SendResponse(player, command, args)
+    if isServer() then
+        -- MULTIPLAYER: Send packet over network
+        sendServerCommand(player, "DynamicTrading", command, args)
+    else
+        -- SINGLEPLAYER: Simulate packet arrival immediately
+        -- This triggers 'OnServerCommand' in DT_ClientCommands.lua
+        triggerEvent("OnServerCommand", "DynamicTrading", command, args)
+    end
+end
+
 -- =============================================================================
--- 1. HELPERS
+-- 1. HELPERS (INVENTORY & MONEY)
 -- =============================================================================
 
+-- Helper to remove a specific item instance and sync it
 local function ServerRemoveItem(item)
     if not item then return end
     local container = item:getContainer()
     if not container then return end
     
+    -- Perform Action
     container:DoRemoveItem(item)
     
+    -- Sync
     if ShouldSendNetworkPackets() then
         sendRemoveItemFromContainer(container, item)
     end
 end
 
+-- Helper to add items by type and sync them
 local function ServerAddItem(container, fullType, count)
     if not container or not fullType then return end
     local qty = count or 1
     
+    -- AddItems returns an ArrayList of the created items
     local items = container:AddItems(fullType, qty)
     
+    -- Sync
     if ShouldSendNetworkPackets() and items then
         for i=0, items:size()-1 do
             local item = items:get(i)
@@ -53,6 +77,7 @@ local function ServerAddItem(container, fullType, count)
     end
 end
 
+-- Calculate total wealth (Loose Cash + Bundles)
 local function GetServerWealth(player)
     local inv = player:getInventory()
     local looseList = inv:getItemsFromType("Base.Money", true)
@@ -64,6 +89,7 @@ local function GetServerWealth(player)
     return looseCount + (bundleCount * 100)
 end
 
+-- Smart Money Removal (Handles change automatically)
 local function ServerRemoveMoney(player, amount)
     local inv = player:getInventory()
     local currentWealth = GetServerWealth(player)
@@ -79,6 +105,7 @@ local function ServerRemoveMoney(player, amount)
     local looseTable = {}
     local bundleTable = {}
     
+    -- Snapshot items
     if looseList then
         for i=0, looseList:size()-1 do table.insert(looseTable, looseList:get(i)) end
     end
@@ -86,6 +113,7 @@ local function ServerRemoveMoney(player, amount)
         for i=0, bundleList:size()-1 do table.insert(bundleTable, bundleList:get(i)) end
     end
 
+    -- Prioritize Loose Cash first
     for _, item in ipairs(looseTable) do
         if remainingCost > 0 then
             table.insert(itemsToRemove, item)
@@ -93,6 +121,7 @@ local function ServerRemoveMoney(player, amount)
         else break end
     end
 
+    -- Then Bundles
     if remainingCost > 0 then
         for _, item in ipairs(bundleTable) do
             if remainingCost > 0 then
@@ -102,10 +131,12 @@ local function ServerRemoveMoney(player, amount)
         end
     end
 
+    -- Execute Removal
     for _, item in ipairs(itemsToRemove) do
         ServerRemoveItem(item)
     end
 
+    -- Handle Change (if we took a bundle but only needed $20)
     if remainingCost < 0 then
         local changeDue = math.abs(remainingCost)
         local bundlesBack = math.floor(changeDue / 100)
@@ -122,13 +153,17 @@ end
 -- 2. COMMAND HANDLERS
 -- =============================================================================
 
+-- COMMAND: RequestFullState
+-- Description: Client asking for the latest Trader List / Events
 function Commands.RequestFullState(player, args)
     local data = DynamicTrading.Manager.GetData()
     if data then
-        ModData.transmit("DynamicTrading_Engine_v1.1")
+        ModData.transmit("DynamicTrading_Engine_v1")
     end
 end
 
+-- COMMAND: TradeTransaction
+-- Description: Buying or Selling items
 function Commands.TradeTransaction(player, args)
     local type = args.type
     local traderID = args.traderID
@@ -144,31 +179,36 @@ function Commands.TradeTransaction(player, args)
     local inv = player:getInventory()
 
     if type == "buy" then
+        -- 1. Calculate Price
         local price = DynamicTrading.Economy.GetBuyPrice(key, data.globalHeat)
         local totalCost = price * clientQty
         
+        -- 2. Check Stock
         local currentStock = trader.stocks[key] or 0
         if currentStock < clientQty then
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Sold Out!" })
-            ModData.transmit("DynamicTrading_Engine_v1.1")
+            SendResponse(player, "TransactionResult", { success=false, msg="Sold Out!" })
+            ModData.transmit("DynamicTrading_Engine_v1")
             return
         end
 
+        -- 3. Check Wealth
         local wealth = GetServerWealth(player)
         if wealth < totalCost then
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Not enough cash! (Server: " .. wealth .. ")" })
+            SendResponse(player, "TransactionResult", { success=false, msg="Not enough cash! (Server: " .. wealth .. ")" })
             return
         end
 
+        -- 4. Execute Trade
         if ServerRemoveMoney(player, totalCost) then
             DynamicTrading.Manager.OnBuyItem(traderID, key, category, clientQty)
             ServerAddItem(inv, itemData.item, clientQty)
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=true, msg="Purchased!" })
+            SendResponse(player, "TransactionResult", { success=true, msg="Purchased!" })
         else
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Transaction Error" })
+            SendResponse(player, "TransactionResult", { success=false, msg="Transaction Error" })
         end
 
     elseif type == "sell" then
+        -- 1. Check Item Existence
         local itemObj = nil
         local allItems = inv:getItemsFromType(itemData.item, true)
         if allItems and allItems:size() > 0 then
@@ -176,13 +216,15 @@ function Commands.TradeTransaction(player, args)
         end
         
         if not itemObj then
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item missing!" })
+            SendResponse(player, "TransactionResult", { success=false, msg="Item missing!" })
             return
         end
 
+        -- 2. Calculate Price
         local price = DynamicTrading.Economy.GetSellPrice(itemObj, key, trader.archetype)
         if price <= 0 then price = 0 end 
 
+        -- 3. Execute Trade
         ServerRemoveItem(itemObj)
         
         local bundles = math.floor(price / 100)
@@ -191,32 +233,38 @@ function Commands.TradeTransaction(player, args)
         if loose > 0 then ServerAddItem(inv, "Base.Money", loose) end
         
         DynamicTrading.Manager.OnSellItem(traderID, key, category, clientQty)
-        sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=true, msg="Sold!" })
+        SendResponse(player, "TransactionResult", { success=true, msg="Sold!" })
     end
 end
 
+-- COMMAND: AttemptScan
+-- Description: The RNG roll for finding new traders
 function Commands.AttemptScan(player, args)
     print("[DT-Debug] AttemptScan Called by: " .. tostring(player:getUsername()))
 
     local targetUser = player:getUsername()
 
+    -- 1. Cooldown Check
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
     if not canScan then
         print("[DT-Debug] Scan Blocked: Cooldown Active (" .. timeRem .. " mins)")
-        sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
+        SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         return
     end
 
+    -- 2. Daily Limit Check
     local found, limit = DynamicTrading.Manager.GetDailyStatus()
     if found >= limit then
         print("[DT-Debug] Scan Blocked: Daily Limit Reached (" .. found .. "/" .. limit .. ")")
-        sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "LIMIT_REACHED", targetUser = targetUser })
+        SendResponse(player, "ScanResult", { status = "LIMIT_REACHED", targetUser = targetUser })
         return
     end
 
+    -- 3. Apply Cooldown
     DynamicTrading.Manager.SetScanTimestamp(player)
 
-    -- MATH DEBUGGING
+    -- 4. Calculate Chances
+    -- The more traders found today, the harder it gets (Penalty Factor)
     local penaltyPerTrader = SandboxVars.DynamicTrading.ScanPenaltyPerTrader or 0.2
     local penaltyFactor = 1.0 + (found * penaltyPerTrader) 
     
@@ -224,6 +272,7 @@ function Commands.AttemptScan(player, args)
     local baseChance = SandboxVars.DynamicTrading.ScanBaseChance or 30
     local skillBonus = args.skillBonus or 1.0
     
+    -- Event Modifiers
     local eventMult = 1.0
     if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
         eventMult = DynamicTrading.Events.GetSystemModifier("scanChance")
@@ -238,11 +287,12 @@ function Commands.AttemptScan(player, args)
     print(string.format("[DT-Debug] MATH: Base(%d) * Radio(%.2f) * Skill(%.2f) * Event(%.2f) / Penalty(%.2f)", baseChance, radioTier, skillBonus, eventMult, penaltyFactor))
     print(string.format("[DT-Debug] FINAL CHANCE: %.2f%%  vs  ROLL: %d", finalChance, roll))
     
+    -- 5. Roll Dice
     if roll <= finalChance then
         local trader = DynamicTrading.Manager.GenerateRandomContact()
         if trader then
             print("[DT-Debug] RESULT: SUCCESS -> " .. trader.name)
-            sendServerCommand(player, "DynamicTrading", "ScanResult", { 
+            SendResponse(player, "ScanResult", { 
                 status = "SUCCESS", 
                 name = trader.name,
                 archetype = trader.archetype,
@@ -250,11 +300,11 @@ function Commands.AttemptScan(player, args)
             })
         else
             print("[DT-Debug] RESULT: SUCCESS (But Generation Failed?)")
-            sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
+            SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         end
     else
         print("[DT-Debug] RESULT: FAIL (RNG)")
-        sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
+        SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
     end
 end
 
@@ -272,6 +322,7 @@ Events.OnClientCommand.Add(OnClientCommand)
 -- =============================================================================
 -- 4. SERVER MAINTENANCE LOOP
 -- =============================================================================
+-- Runs every hour to check for Expired Traders, Daily Resets, and Events.
 local function Server_OnHourlyTick()
     if not DynamicTrading or not DynamicTrading.Manager then return end
 
@@ -282,8 +333,10 @@ local function Server_OnHourlyTick()
     local currentHourOfDay = gt:getHour()
     local changesMade = false
 
+    -- 1. Daily Reset Check (5 AM)
     DynamicTrading.Manager.CheckDailyReset()
 
+    -- 2. Trader Expiration Check
     if data.Traders then
         for id, trader in pairs(data.Traders) do
             local shouldRemove = false
@@ -301,8 +354,10 @@ local function Server_OnHourlyTick()
         end
     end
     
-    if changesMade then ModData.transmit("DynamicTrading_Engine_v1.1") end
+    -- Sync if traders removed
+    if changesMade then ModData.transmit("DynamicTrading_Engine_v1") end
 
+    -- 3. Event System Check (8 AM)
     if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then
         if DynamicTrading.Manager.ProcessEvents then
             DynamicTrading.Manager.ProcessEvents()
