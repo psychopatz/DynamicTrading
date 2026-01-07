@@ -25,7 +25,7 @@ function DT_RadioInteraction.GetDeviceType(obj)
 end
 
 -- ==========================================================
--- SCAN LOGIC (Called from UI)
+-- SCAN LOGIC
 -- ==========================================================
 function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     local player = playerObj
@@ -67,9 +67,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
 
     -- 4. PERFORM SCAN (VISUALS)
     player:playSound("RadioStatic")
-    DynamicTrading.Manager.SetScanTimestamp(player) 
-
-    -- Flavor Text
+    
     local scanLines = {
         "Scanning frequencies...",
         "Tuning the dial...",
@@ -81,8 +79,6 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     }
     player:Say(scanLines[ZombRand(#scanLines)+1])
 
-    -- [FIX IS HERE] 
-    -- Replaced the invalid table {r=0.9...} with the correct Java method HaloTextHelper.getColorWhite()
     if HaloTextHelper then
         HaloTextHelper.addTextWithArrow(player, "Scanning...", true, HaloTextHelper.getColorWhite())
     end
@@ -99,11 +95,33 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     local elecLevel = player:getPerkLevel(Perks.Electricity)
     local skillBonus = 1.0 + (elecLevel * 0.05)
 
-    -- 6. SEND TO SERVER
-    sendClientCommand(player, "DynamicTrading", "AttemptScan", {
+    -- 6. PREPARE ARGUMENTS
+    local args = {
         radioTier = radioTier,
         skillBonus = skillBonus
-    })
+    }
+
+    -- 7. EXECUTE (SP vs MP BRIDGE)
+    -- We use getGameMode() because getCore():isMultiplayer() can crash on some threads,
+    -- and isClient() is true for both SP and MP Client.
+    local gameMode = getWorld():getGameMode()
+    local isMultiplayer = (gameMode == "Multiplayer")
+
+    if isMultiplayer then
+        -- [MULTIPLAYER PATH]
+        -- Send network packet to the remote server.
+        sendClientCommand(player, "DynamicTrading", "AttemptScan", args)
+    else
+        -- [SINGLEPLAYER PATH]
+        -- Direct function call to bypass the missing network layer.
+        if DynamicTrading.ServerCommands and DynamicTrading.ServerCommands.AttemptScan then
+            print("[DynamicTrading] SP Mode: Calling AttemptScan directly.")
+            DynamicTrading.ServerCommands.AttemptScan(player, args)
+        else
+            print("[DynamicTrading] Error: ServerCommands table missing in Singleplayer!")
+            player:Say("Error: Mod logic not loaded.")
+        end
+    end
     
     return true 
 end

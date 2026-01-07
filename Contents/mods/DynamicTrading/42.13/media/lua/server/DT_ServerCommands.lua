@@ -1,40 +1,51 @@
-if isClient() then return end
+-- [DYNAMIC TRADING] Server Command Handler
+-- Compatible with Singleplayer, MP Hosted, and MP Dedicated.
 
 require "DynamicTrading_Manager"
 require "DynamicTrading_Events"
 require "DynamicTrading_Economy"
 
-local Commands = {}
+-- 1. GLOBAL TABLE REGISTRATION
+-- We expose this table globally so Singleplayer Client scripts can call functions directly,
+-- bypassing the network layer which doesn't exist in SP.
+DynamicTrading = DynamicTrading or {}
+DynamicTrading.ServerCommands = {}
+
+local Commands = DynamicTrading.ServerCommands
 local lastProcessedDay = -1 
 
 -- =============================================================================
--- 0. SERVER-SIDE HELPERS (STRICT NETWORK COMPLIANCE)
+-- 0. SINGLEPLAYER / MULTIPLAYER DETECTION
 -- =============================================================================
 
--- Helper: Remove specific items and SYNC them to client
--- Now handles items inside bags correctly by using item:getContainer()
+local function ShouldSendNetworkPackets()
+    -- Only send packets if we are the Authority (MP Server/Host).
+    return isServer()
+end
+
+-- =============================================================================
+-- 1. HELPERS
+-- =============================================================================
+
 local function ServerRemoveItem(item)
     if not item then return end
     local container = item:getContainer()
     if not container then return end
     
-    -- 1. Remove from Server Memory
     container:DoRemoveItem(item)
     
-    -- 2. Tell Client to remove it
-    sendRemoveItemFromContainer(container, item)
+    if ShouldSendNetworkPackets() then
+        sendRemoveItemFromContainer(container, item)
+    end
 end
 
--- Helper: Add items safely using native methods
 local function ServerAddItem(container, fullType, count)
     if not container or not fullType then return end
     local qty = count or 1
     
-    -- Native AddItems handles creation and placement logic automatically
     local items = container:AddItems(fullType, qty)
     
-    -- Force sync the container to ensure client sees the new items
-    if items then
+    if ShouldSendNetworkPackets() and items then
         for i=0, items:size()-1 do
             local item = items:get(i)
             sendAddItemToContainer(container, item)
@@ -42,10 +53,8 @@ local function ServerAddItem(container, fullType, count)
     end
 end
 
--- RECURSIVE WEALTH CHECK (Finds money in bags)
 local function GetServerWealth(player)
     local inv = player:getInventory()
-    -- getItemsFromType(type, recursive=true) finds items in all equipped bags
     local looseList = inv:getItemsFromType("Base.Money", true)
     local bundleList = inv:getItemsFromType("Base.MoneyBundle", true)
     
@@ -55,23 +64,18 @@ local function GetServerWealth(player)
     return looseCount + (bundleCount * 100)
 end
 
--- SMART DEDUCT (Recursive & Container Aware)
 local function ServerRemoveMoney(player, amount)
     local inv = player:getInventory()
     local currentWealth = GetServerWealth(player)
     
-    if currentWealth < amount then 
-        return false 
-    end
+    if currentWealth < amount then return false end
 
     local remainingCost = amount
     local itemsToRemove = {}
 
-    -- 1. GATHER ALL MONEY (Recursive)
     local looseList = inv:getItemsFromType("Base.Money", true)
     local bundleList = inv:getItemsFromType("Base.MoneyBundle", true)
     
-    -- Convert Java Lists to Lua Tables for easier processing
     local looseTable = {}
     local bundleTable = {}
     
@@ -82,40 +86,31 @@ local function ServerRemoveMoney(player, amount)
         for i=0, bundleList:size()-1 do table.insert(bundleTable, bundleList:get(i)) end
     end
 
-    -- 2. PAY WITH LOOSE CASH FIRST
     for _, item in ipairs(looseTable) do
         if remainingCost > 0 then
             table.insert(itemsToRemove, item)
             remainingCost = remainingCost - 1
-        else
-            break
-        end
+        else break end
     end
 
-    -- 3. PAY REMAINDER WITH BUNDLES
     if remainingCost > 0 then
         for _, item in ipairs(bundleTable) do
             if remainingCost > 0 then
                 table.insert(itemsToRemove, item)
-                remainingCost = remainingCost - 100 -- Bundle is worth 100
-            else
-                break
-            end
+                remainingCost = remainingCost - 100 
+            else break end
         end
     end
 
-    -- 4. EXECUTE REMOVALS
     for _, item in ipairs(itemsToRemove) do
         ServerRemoveItem(item)
     end
 
-    -- 5. GIVE CHANGE (If we overpaid with a bundle)
     if remainingCost < 0 then
         local changeDue = math.abs(remainingCost)
         local bundlesBack = math.floor(changeDue / 100)
         local looseBack = changeDue % 100
         
-        -- Add change to Main Inventory
         if bundlesBack > 0 then ServerAddItem(inv, "Base.MoneyBundle", bundlesBack) end
         if looseBack > 0 then ServerAddItem(inv, "Base.Money", looseBack) end
     end
@@ -124,11 +119,10 @@ local function ServerRemoveMoney(player, amount)
 end
 
 -- =============================================================================
--- 1. CLIENT COMMAND HANDLERS
+-- 2. COMMAND HANDLERS
 -- =============================================================================
 
 function Commands.RequestFullState(player, args)
-    -- Force load data to ensure validity
     local data = DynamicTrading.Manager.GetData()
     if data then
         ModData.transmit("DynamicTrading_Engine_v1")
@@ -153,7 +147,6 @@ function Commands.TradeTransaction(player, args)
         local price = DynamicTrading.Economy.GetBuyPrice(key, data.globalHeat)
         local totalCost = price * clientQty
         
-        -- Check Stock
         local currentStock = trader.stocks[key] or 0
         if currentStock < clientQty then
             sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Sold Out!" })
@@ -161,25 +154,21 @@ function Commands.TradeTransaction(player, args)
             return
         end
 
-        -- Check Money (Recursive)
         local wealth = GetServerWealth(player)
         if wealth < totalCost then
             sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Not enough cash! (Server: " .. wealth .. ")" })
             return
         end
 
-        -- Execute
         if ServerRemoveMoney(player, totalCost) then
             DynamicTrading.Manager.OnBuyItem(traderID, key, category, clientQty)
             ServerAddItem(inv, itemData.item, clientQty)
-            print("[Server] DynamicTrading: " .. player:getUsername() .. " bought " .. key)
             sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=true, msg="Purchased!" })
         else
             sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Transaction Error" })
         end
 
     elseif type == "sell" then
-        -- Find specific item instance (Recursive search to find it in bags too)
         local itemObj = nil
         local allItems = inv:getItemsFromType(itemData.item, true)
         if allItems and allItems:size() > 0 then
@@ -194,38 +183,40 @@ function Commands.TradeTransaction(player, args)
         local price = DynamicTrading.Economy.GetSellPrice(itemObj, key, trader.archetype)
         if price <= 0 then price = 0 end 
 
-        -- Execute
         ServerRemoveItem(itemObj)
         
-        -- Add money
         local bundles = math.floor(price / 100)
         local loose = price % 100
         if bundles > 0 then ServerAddItem(inv, "Base.MoneyBundle", bundles) end
         if loose > 0 then ServerAddItem(inv, "Base.Money", loose) end
         
         DynamicTrading.Manager.OnSellItem(traderID, key, category, clientQty)
-        print("[Server] DynamicTrading: " .. player:getUsername() .. " sold " .. key)
         sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=true, msg="Sold!" })
     end
 end
 
 function Commands.AttemptScan(player, args)
+    print("[DT-Debug] AttemptScan Called by: " .. tostring(player:getUsername()))
+
     local targetUser = player:getUsername()
 
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
     if not canScan then
+        print("[DT-Debug] Scan Blocked: Cooldown Active (" .. timeRem .. " mins)")
         sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         return
     end
 
     local found, limit = DynamicTrading.Manager.GetDailyStatus()
     if found >= limit then
+        print("[DT-Debug] Scan Blocked: Daily Limit Reached (" .. found .. "/" .. limit .. ")")
         sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "LIMIT_REACHED", targetUser = targetUser })
         return
     end
 
     DynamicTrading.Manager.SetScanTimestamp(player)
 
+    -- MATH DEBUGGING
     local penaltyPerTrader = SandboxVars.DynamicTrading.ScanPenaltyPerTrader or 0.2
     local penaltyFactor = 1.0 + (found * penaltyPerTrader) 
     
@@ -243,10 +234,14 @@ function Commands.AttemptScan(player, args)
     if finalChance > 95 then finalChance = 95 end
     
     local roll = ZombRand(100) + 1
+
+    print(string.format("[DT-Debug] MATH: Base(%d) * Radio(%.2f) * Skill(%.2f) * Event(%.2f) / Penalty(%.2f)", baseChance, radioTier, skillBonus, eventMult, penaltyFactor))
+    print(string.format("[DT-Debug] FINAL CHANCE: %.2f%%  vs  ROLL: %d", finalChance, roll))
     
     if roll <= finalChance then
         local trader = DynamicTrading.Manager.GenerateRandomContact()
         if trader then
+            print("[DT-Debug] RESULT: SUCCESS -> " .. trader.name)
             sendServerCommand(player, "DynamicTrading", "ScanResult", { 
                 status = "SUCCESS", 
                 name = trader.name,
@@ -254,13 +249,18 @@ function Commands.AttemptScan(player, args)
                 targetUser = targetUser
             })
         else
+            print("[DT-Debug] RESULT: SUCCESS (But Generation Failed?)")
             sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         end
     else
+        print("[DT-Debug] RESULT: FAIL (RNG)")
         sendServerCommand(player, "DynamicTrading", "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
     end
 end
 
+-- =============================================================================
+-- 3. EVENT LISTENER (MULTIPLAYER BRIDGE)
+-- =============================================================================
 local function OnClientCommand(module, command, player, args)
     if module == "DynamicTrading" and Commands[command] then
         Commands[command](player, args)
@@ -270,7 +270,7 @@ end
 Events.OnClientCommand.Add(OnClientCommand)
 
 -- =============================================================================
--- 2. SERVER MAINTENANCE LOOP
+-- 4. SERVER MAINTENANCE LOOP
 -- =============================================================================
 local function Server_OnHourlyTick()
     if not DynamicTrading or not DynamicTrading.Manager then return end
