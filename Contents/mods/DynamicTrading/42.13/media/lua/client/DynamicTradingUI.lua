@@ -29,7 +29,7 @@ end
 function DynamicTradingUI:update()
     ISCollapsableWindow.update(self)
 
-    -- [CRASH FIX] Emergency Safety Check
+    -- Crash Shield
     if self.listbox then
         if self.listbox.items == nil then self.listbox.items = {} end
         if type(self.listbox.selected) ~= "number" then self.listbox.selected = -1 end
@@ -50,12 +50,11 @@ function DynamicTradingUI:update()
         return
     end
 
-    -- [TITLE FIX] Continuously ensure title is correct (handles sync lag)
+    -- Update Title if changed
     if self.lblTitle then
         local archetypeName = DynamicTrading.Archetypes[trader.archetype] and DynamicTrading.Archetypes[trader.archetype].name or "Unknown"
         local desiredTitle = (trader.name or "Unknown") .. " - " .. archetypeName
         
-        -- Only update if changed to avoid overhead
         if self.lblTitle.name ~= desiredTitle then
             self.lblTitle:setName(desiredTitle)
         end
@@ -91,7 +90,6 @@ end
 function DynamicTradingUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
-    -- HEADER (Starts as Loading, updated in update/populateList)
     self.lblTitle = ISLabel:new(self.width / 2, 15, 20, "Establishing Connection...", 1, 1, 1, 1, UIFont.Medium, true)
     self.lblTitle:setAnchorTop(true)
     self.lblTitle.center = true
@@ -116,7 +114,6 @@ function DynamicTradingUI:createChildren()
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
     self.listbox.doDrawItem = DynamicTradingUI.drawItem 
 
-    -- CRASH SHIELD
     local oldPrerender = self.listbox.prerender
     self.listbox.prerender = function(box)
         if box.items == nil then box.items = {} end
@@ -301,7 +298,6 @@ function DynamicTradingUI:populateList()
     local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
     if not trader then return end
     
-    -- FORCE TITLE UPDATE (Double check)
     local archetypeName = DynamicTrading.Archetypes[trader.archetype] and DynamicTrading.Archetypes[trader.archetype].name or "Unknown"
     local desiredTitle = (trader.name or "Unknown") .. " - " .. archetypeName
     self.lblTitle:setName(desiredTitle)
@@ -402,7 +398,6 @@ function DynamicTradingUI:populateList()
 
     table.sort(categories)
 
-    -- 2. ADD TO LISTBOX
     for _, catName in ipairs(categories) do
         if categorized[catName] and #categorized[catName] > 0 then
             local hItem = self.listbox:addItem(string.upper(catName), nil)
@@ -420,16 +415,14 @@ function DynamicTradingUI:populateList()
         end
     end
     
-    -- 3. SELECTION RECOVERY
+    -- Selection Recovery
     local foundSelection = false
-    
     if self.selectedKey then
         for i, listItem in ipairs(self.listbox.items) do
             if listItem.item and not listItem.item.isCategory then
                 if listItem.item.key == self.selectedKey then
                     self.listbox.selected = i
                     foundSelection = true
-                    
                     if self.isBuying then
                         if listItem.item.qty > 0 then self.btnAction:setEnable(true)
                         else self.btnAction:setEnable(false) end
@@ -442,7 +435,6 @@ function DynamicTradingUI:populateList()
         end
     end
     
-    -- 4. AUTO-SELECT NEXT (Sell Mode)
     if not foundSelection and not self.isBuying and self.lastSelectedIndex > -1 then
         local count = #self.listbox.items
         if count > 0 then
@@ -481,7 +473,7 @@ function DynamicTradingUI:populateList()
 end
 
 -- =================================================
--- ACTION
+-- ACTION (SP/MP BRIDGE)
 -- =================================================
 function DynamicTradingUI:onAction()
     if not self.listbox or self.listbox.selected == -1 then return end
@@ -492,31 +484,43 @@ function DynamicTradingUI:onAction()
     local player = getSpecificPlayer(0)
     local primaryCat = d.data.tags[1] or "Misc"
 
+    -- Pre-checks for feedback
     if self.isBuying then
         if d.qty <= 0 then 
             player:Say("It's sold out.")
             return 
         end
         local wealth = self:getPlayerWealth(player)
-        if wealth >= d.price then
-            sendClientCommand(player, "DynamicTrading", "TradeTransaction", {
-                type = "buy",
-                traderID = self.traderID,
-                key = d.key,
-                category = primaryCat,
-                qty = 1
-            })
-        else
+        if wealth < d.price then
             player:Say("Not enough cash!")
+            return
         end
+    end
+
+    local args = {
+        type = self.isBuying and "buy" or "sell",
+        traderID = self.traderID,
+        key = d.key,
+        category = primaryCat,
+        qty = 1
+    }
+
+    -- 1. DETECT MODE
+    local gameMode = getWorld():getGameMode()
+    local isMultiplayer = (gameMode == "Multiplayer")
+
+    if isMultiplayer then
+        -- [MULTIPLAYER] Send packet, wait for OnServerCommand event to refresh UI
+        sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
     else
-        sendClientCommand(player, "DynamicTrading", "TradeTransaction", {
-            type = "sell",
-            traderID = self.traderID,
-            key = d.key,
-            category = primaryCat,
-            qty = 1
-        })
+        -- [SINGLEPLAYER] Direct Call & Manual Refresh
+        if DynamicTrading.ServerCommands and DynamicTrading.ServerCommands.TradeTransaction then
+            DynamicTrading.ServerCommands.TradeTransaction(player, args)
+            
+            -- FORCE REFRESH IMMEDIATELY (Fixes the SP UI update lag)
+            self:populateList()
+            player:playSound("Transaction")
+        end
     end
 end
 
@@ -554,7 +558,7 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
 end
 
 -- =================================================
--- EVENTS
+-- EVENTS (MP ONLY REFRESH)
 -- =================================================
 local function OnDataSync(key, data)
     if key == "DynamicTrading_Engine_v1" then
@@ -568,6 +572,8 @@ Events.OnReceiveGlobalModData.Add(OnDataSync)
 local function OnServerCommand(module, command, args)
     if module == "DynamicTrading" and command == "TransactionResult" then
         if args.success then
+            -- This plays sound/refreshes for MP. 
+            -- In SP, the manual call in onAction handles this, so this is just redundant but harmless.
             getSpecificPlayer(0):playSound("Transaction")
             if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
                 DynamicTradingUI.instance:populateList()
