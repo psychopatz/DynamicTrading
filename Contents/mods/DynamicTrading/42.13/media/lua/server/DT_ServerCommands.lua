@@ -125,7 +125,7 @@ end
 function Commands.RequestFullState(player, args)
     local data = DynamicTrading.Manager.GetData()
     if data then
-        ModData.transmit("DynamicTrading_Engine_v1")
+        ModData.transmit("DynamicTrading_Engine_v1.1")
     end
 end
 
@@ -150,7 +150,7 @@ function Commands.TradeTransaction(player, args)
         local currentStock = trader.stocks[key] or 0
         if currentStock < clientQty then
             sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Sold Out!" })
-            ModData.transmit("DynamicTrading_Engine_v1")
+            ModData.transmit("DynamicTrading_Engine_v1.1")
             return
         end
 
@@ -301,7 +301,7 @@ local function Server_OnHourlyTick()
         end
     end
     
-    if changesMade then ModData.transmit("DynamicTrading_Engine_v1") end
+    if changesMade then ModData.transmit("DynamicTrading_Engine_v1.1") end
 
     if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then
         if DynamicTrading.Manager.ProcessEvents then

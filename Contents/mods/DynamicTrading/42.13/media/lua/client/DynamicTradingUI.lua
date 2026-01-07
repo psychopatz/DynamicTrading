@@ -561,7 +561,7 @@ end
 -- EVENTS (MP ONLY REFRESH)
 -- =================================================
 local function OnDataSync(key, data)
-    if key == "DynamicTrading_Engine_v1" then
+    if key == "DynamicTrading_Engine_v1.1" then
         if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
             DynamicTradingUI.instance:populateList()
         end

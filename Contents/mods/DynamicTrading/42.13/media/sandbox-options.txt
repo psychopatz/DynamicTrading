@@ -82,7 +82,7 @@ option DynamicTrading.ScanCooldown
 option DynamicTrading.HamRadioBonus
 {
     type = double,
-    default = 2.0,
+    default = 1.5,
     min = 1.0,
     max = 5.0,
     page = DynamicTrading,
@@ -246,7 +246,7 @@ option DynamicTrading.WalletMinCash
 option DynamicTrading.WalletMaxCash
 {
     type = integer,
-    default = 150,
+    default = 100,
     min = 10,
     max = 2000,
     page = DynamicTrading,
@@ -256,7 +256,7 @@ option DynamicTrading.WalletMaxCash
 option DynamicTrading.WalletEmptyChance
 {
     type = integer,
-    default = 20,
+    default = 35,
     min = 0,
     max = 100,
     page = DynamicTrading,

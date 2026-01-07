@@ -175,7 +175,7 @@ DynamicTrading.Events.Register("Harvest", {
 -- =============================================================================
 -- Concept: Winter is over. It's raining constantly. Time to plant.
 DynamicTrading.Events.Register("Spring", {
-    name = "Spring Thaw",
+    name = "Spring Thaw ",
     type = "meta",
     description = "The frost has melted. Rain is frequent, and planting season has begun.",
     condition = function() 
