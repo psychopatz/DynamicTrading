@@ -246,11 +246,3 @@ function DynamicTradingInfoUI.ToggleWindow()
     DynamicTradingInfoUI.instance = ui
 end
 
--- ==========================================================
--- CONTEXT MENU
--- ==========================================================
-local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
-    context:addOption("Global Economy Stats", nil, DynamicTradingInfoUI.ToggleWindow)
-end
-
-Events.OnFillWorldObjectContextMenu.Add(OnFillWorldObjectContextMenu)

@@ -19,6 +19,7 @@ require "DT_RadioInteraction"  -- Radio Scanning Logic
 -- 4. USER INTERFACE
 require "DynamicTradingUI"     -- The Shop Window
 require "DynamicTradingInfoUI" -- The Market Info Window
+require "DT_SidebarButton"     -- The Sidebar Button
 
 -- 5. ITEM DEFINITIONS
 -- Basics & Survival
