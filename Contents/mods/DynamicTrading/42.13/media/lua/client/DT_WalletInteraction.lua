@@ -50,24 +50,28 @@ local function GetRandomLine(category)
 end
 
 -- =============================================================================
--- 2. FLOATING TEXT HELPER (BUILD 42 ROBUST)
+-- 2. VISUAL HELPERS
 -- =============================================================================
-local function ShowFloatingText(player, text, r, g, b)
-    -- Wrap in pcall to prevent crashes from hiding the text completely
-    local success = pcall(function()
-        if HaloTextHelper then
-            -- B42: r, g, b are usually 0-255 ints
-            HaloTextHelper.addText(player, text, r, g, b)
-        else
-            -- Legacy / Fallback
-            player:setHaloNote(text, r, g, b, 300)
-        end
-    end)
 
-    -- If the fancy method failed, force the standard HaloNote
-    if not success then
-        player:setHaloNote(text, r, g, b, 300)
+-- HELPER: Force the character to speak, overriding any previous text immediately.
+-- This prevents the "Anticipation" text from hiding the "Result" text in Singleplayer.
+local function ForceSay(player, text)
+    if not player or not text then return end
+    
+    -- Reset the speech timer to 0 so the previous bubble vanishes instantly
+    if player.setSpeakTime then
+        player:setSpeakTime(0)
     end
+    
+    player:Say(text)
+end
+
+-- HELPER: Display the floating "+ $100" text using the native engine function
+local function ShowFloatingText(player, text, r, g, b)
+    if not player then return end
+    -- Native function: Safe, robust, prevents crashes
+    -- Arguments: Text, R, G, B, Duration (frames?)
+    player:setHaloNote(text, r, g, b, 300)
 end
 
 -- =============================================================================
@@ -87,7 +91,7 @@ function ISWalletAction:start()
     self:setOverrideHandModels(nil, nil)
     self.character:playSound("ClothesRustle")
     
-    -- Anticipation Text (50% chance to speak while searching)
+    -- Anticipation Text (50% chance)
     if ZombRand(100) < 50 then
         self.character:Say(GetRandomLine(WalletTalk.Anticipation))
     end
@@ -99,8 +103,10 @@ end
 
 function ISWalletAction:perform()
     local args = { item = self.item }
-    -- Send command to server
+    
+    -- Trigger Server Logic
     sendClientCommand(self.character, "DynamicTrading", "OpenWallet", args)
+    
     ISBaseTimedAction.perform(self)
 end
 
@@ -115,7 +121,7 @@ function ISWalletAction:new(character, item)
 end
 
 -- =============================================================================
--- 4. SERVER RESPONSE HANDLER (VISUALS)
+-- 4. SERVER RESPONSE HANDLER
 -- =============================================================================
 local function OnServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
@@ -127,17 +133,17 @@ local function OnServerCommand(module, command, args)
         local total = args.total
         local type = args.type
         
-        -- Default: Grey (170, 170, 170)
-        local r, g, b = 170, 170, 170 
+        -- Variables for color calculation
+        local r, g, b = 170, 170, 170 -- Default Grey
         local messageText = ""
 
         if type == "EMPTY" then
             player:playSound("PZ_PaperCrumple")
             
-            -- 1. Reaction (Speech)
-            player:Say(GetRandomLine(WalletTalk.Empty))
+            -- Speech
+            ForceSay(player, GetRandomLine(WalletTalk.Empty))
             
-            -- 2. Floating Text (Halo)
+            -- Floating Text (Grey for Empty)
             ShowFloatingText(player, "Empty", 150, 150, 150)
             
         else
@@ -146,20 +152,23 @@ local function OnServerCommand(module, command, args)
             local maxPossible = SandboxVars.DynamicTrading.WalletMaxCash or 300
             local ratio = total / maxPossible
 
+            -- ==========================================================
+            -- COLOR CODING LOGIC
+            -- ==========================================================
             if type == "JACKPOT" or ratio >= 0.7 then
-                -- HIGH: Bright Green
-                r, g, b = 50, 255, 50
-                player:Say(GetRandomLine(WalletTalk.High))
+                -- HIGH: Bright Neon Green
+                r, g, b = 50, 255, 50 
+                ForceSay(player, GetRandomLine(WalletTalk.High))
                 
             elseif ratio >= 0.3 then
                 -- MEDIUM: Normal Green
-                r, g, b = 100, 255, 100
-                player:Say(GetRandomLine(WalletTalk.Medium))
+                r, g, b = 100, 255, 100 
+                ForceSay(player, GetRandomLine(WalletTalk.Medium))
                 
             else
-                -- LOW: Pale Green
-                r, g, b = 150, 200, 150
-                player:Say(GetRandomLine(WalletTalk.Low))
+                -- LOW: Pale/Dull Green
+                r, g, b = 150, 200, 150 
+                ForceSay(player, GetRandomLine(WalletTalk.Low))
             end
             
             -- Display the Cash Amount floating up
@@ -177,6 +186,7 @@ Events.OnServerCommand.Add(OnServerCommand)
 local function WalletContextMenu(player, context, items)
     local playerObj = getSpecificPlayer(player)
     if not items then return end
+    
     local selectedItems = ISInventoryPane.getActualItems(items) 
     
     for _, item in ipairs(selectedItems) do
