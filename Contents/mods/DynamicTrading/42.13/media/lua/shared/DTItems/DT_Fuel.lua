@@ -9,42 +9,36 @@ local function Register(list)
 end
 
 Register({
-    -- ======================================================
-    -- HIGH VALUE (Gold & Gems)
-    -- ======================================================
-    -- These are rare but provide a massive cash injection.
-    { item="Base.Ring_Diamond",     basePrice=250, tags={"Luxury", "Legendary"}, stockRange={min=0, max=1}, chance=1 },
-    { item="Base.Ring_Gold",        basePrice=80,  tags={"Luxury", "Rare"},      stockRange={min=0, max=1}, chance=5 },
-    { item="Base.Necklace_Gold",    basePrice=120, tags={"Luxury", "Rare"},      stockRange={min=0, max=1}, chance=4 },
-    { item="Base.Earring_Gold",     basePrice=60,  tags={"Luxury", "Rare"},      stockRange={min=0, max=2}, chance=5 },
+-- =============================================================================
+-- 1. GASOLINE & CONTAINERS (The Lifeblood)
+-- =============================================================================
+-- The Gas Can is the standard unit of trade for energy.
+{ item="Base.PetrolCan", basePrice=120, tags={"Fuel", "Generator", "Essential"}, stockRange={min=1, max=3} },
+{ item="Base.EmptyPetrolCan", basePrice=40, tags={"Fuel", "Tool", "Essential"}, stockRange={min=1, max=5} },
+-- Improvised Fuel Containers (Molotov components / Small transport)
+-- Prices vary slightly by container size/utility
+{ item="Base.PetrolBleachBottle",   basePrice=45,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=1, max=5} },
+{ item="Base.WhiskeyPetrol",        basePrice=35,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=1, max=5} },
+{ item="Base.WinePetrol",           basePrice=35,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=1, max=6} },
+{ item="Base.PetrolPopBottle",      basePrice=20,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=2, max=10} },
+{ item="Base.WaterBottlePetrol",    basePrice=30,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=1, max=8} },
 
-    -- ======================================================
-    -- SILVER & COMMON JEWELRY
-    -- ======================================================
-    -- Very common on corpses. Good steady income.
-    { item="Base.Ring_Silver",      basePrice=30,  tags={"Luxury"}, stockRange={min=0, max=2} },
-    { item="Base.Necklace_Silver",  basePrice=45,  tags={"Luxury"}, stockRange={min=0, max=2} },
-    { item="Base.Earring_Silver",   basePrice=25,  tags={"Luxury"}, stockRange={min=0, max=3} },
-    
-    -- ======================================================
-    -- WEDDING RINGS
-    -- ======================================================
-    -- Extremely common. The bread and butter of corpse looting.
-    { item="Base.WeddingRing_Man",   basePrice=40, tags={"Luxury"}, stockRange={min=0, max=1} },
-    { item="Base.WeddingRing_Woman", basePrice=40, tags={"Luxury"}, stockRange={min=0, max=1} },
+-- =============================================================================
+-- 2. FIRE STARTERS (Ignition)
+-- =============================================================================
+-- Essential for smokers, cooking, and heating.
 
-    -- ======================================================
-    -- COSMETICS & ACCESSORIES
-    -- ======================================================
-    -- Often found in bathroom cabinets/handbags.
-    { item="Base.Perfume",          basePrice=25,  tags={"Luxury", "Glass"}, stockRange={min=1, max=3} },
-    { item="Base.Cologne",          basePrice=25,  tags={"Luxury", "Glass"}, stockRange={min=1, max=3} },
-    { item="Base.Locket",           basePrice=35,  tags={"Luxury"},          stockRange={min=0, max=1} },
-    
-    -- Makeup (Low value, but sellable)
-    { item="Base.MakeupEyeshadow",  basePrice=10,  tags={"Luxury"}, stockRange={min=1, max=5} },
-    { item="Base.Lipstick",         basePrice=10,  tags={"Luxury"}, stockRange={min=1, max=5} },
-    { item="Base.MakeupFoundation", basePrice=10,  tags={"Luxury"}, stockRange={min=1, max=5} },
+-- Lighters (Durable / High Capacity)
+{ item="Base.Lighter",              basePrice=10,  tags={"Fire", "Tool", "Tobacco", "Common"}, stockRange={min=5, max=20} },
+{ item="Base.LighterDisposable",    basePrice=8,   tags={"Fire", "Tool", "Tobacco", "Common"}, stockRange={min=5, max=20} },
+{ item="Base.LighterBBQ",           basePrice=15,  tags={"Fire", "Tool", "Cooking"}, stockRange={min=2, max=10} }, -- Best durability
+
+-- Matches (Finite / Cheap)
+{ item="Base.Matches",              basePrice=2,   tags={"Fire", "Tobacco", "Common"}, stockRange={min=10, max=50} }, -- Matchbook (10)
+{ item="Base.Matchbox",             basePrice=8,   tags={"Fire", "Tobacco", "Stockpile"}, stockRange={min=5, max=20} }, -- Matchbox (50)
+
+-- Primitive / Improvised (Last Resort)
+{ item="Base.PercedWood",           basePrice=1,   tags={"Fire", "Tool", "Primitive", "Junk"}, stockRange={min=1, max=5} }, -- Notched Plank
+{ item="Base.Lighter_Battery",      basePrice=2,   tags={"Fire", "Tool", "Improvised"}, stockRange={min=0, max=5} }, -- Engineer craft
 })
-
 print("[DynamicTrading] Luxury Items Registered.")
