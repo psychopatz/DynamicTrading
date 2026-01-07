@@ -151,7 +151,7 @@ Register({
 { item="Base.Onion",            basePrice=4,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=5, max=15} },
 { item="Base.Potato",           basePrice=4,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=10, max=30} }, -- Staple
 { item="Base.Pumpkin",          basePrice=10, tags={"Food", "Vegetable", "Fresh"}, stockRange={min=1, max=3} },
-{ item="Base.Radish",           basePrice=3,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=5, max=15} },
+{ item="Base.RedRadish",        basePrice=3,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=5, max=15} },
 { item="Base.Tomato",           basePrice=4,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=5, max=15} },
 { item="Base.Zucchini",         basePrice=4,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=2, max=10} },
 { item="Base.Mushrooms",        basePrice=5,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=2, max=10} },

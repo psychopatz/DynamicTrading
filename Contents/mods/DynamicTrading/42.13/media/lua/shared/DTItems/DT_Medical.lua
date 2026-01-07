@@ -65,7 +65,7 @@ Register({
 { item="Base.BlackSage",            basePrice=5,  tags={"Medical", "Herb"}, stockRange={min=1, max=5} }, -- Pain
 { item="Base.CommonMallow",         basePrice=5,  tags={"Medical", "Herb"}, stockRange={min=1, max=5} }, -- Cold
 { item="Base.Ginseng",              basePrice=15, tags={"Medical", "Herb", "Energy"}, stockRange={min=1, max=5} }, -- Endurance
-{ item="Base.Lemongrass",           basePrice=20, tags={"Medical", "Herb", "Survival"}, stockRange={min=1, max=5} }, -- Poison Cure (Essential)
+{ item="Base.LemonGrass",           basePrice=20, tags={"Medical", "Herb", "Survival"}, stockRange={min=1, max=5} }, -- Poison Cure (Essential)
 { item="Base.Plantain",             basePrice=8,  tags={"Medical", "Herb"}, stockRange={min=1, max=5} }, -- Wound
 { item="Base.Comfrey",              basePrice=10, tags={"Medical", "Herb"}, stockRange={min=1, max=5} }, -- Bone
 { item="Base.WildGarlic2",          basePrice=8,  tags={"Medical", "Herb"}, stockRange={min=1, max=5} }, -- Infection
