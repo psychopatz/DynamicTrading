@@ -9,6 +9,9 @@ Sandbox_EN = {
 
     Sandbox_DynamicTrading_StockMult = "Stock Quantity Multiplier",
     Sandbox_DynamicTrading_StockMult_tooltip = "Adjusts the amount of items traders have in stock.",
+    
+    Sandbox_DynamicTrading_InflationDecay = "Inflation Decay (Daily %)",
+    Sandbox_DynamicTrading_InflationDecay_tooltip = "Percentage of price inflation that recovers every day.\n0.1 = 10% Decay.\n0.5 = 50% Decay (Fast Recovery).\n0.0 = Inflation never decays.",
 
     Sandbox_DynamicTrading_RarityBonus = "Rarity Weight Bonus",
     Sandbox_DynamicTrading_RarityBonus_tooltip = "Increases or decreases the likelihood of rare items appearing. Positive values make rare loot more common.",

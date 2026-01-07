@@ -92,11 +92,19 @@ function DynamicTrading.Manager.CheckDailyReset()
         if min > max then min = max end 
         data.DailyCycle.dailyTraderLimit = ZombRand(min, max + 1)
 
-        -- 4. Decay Heat / Inflation
+        -- 4. Decay Heat / Inflation (CONFIGURABLE)
+        local decayRate = SandboxVars.DynamicTrading.InflationDecay or 0.01
+        local retention = 1.0 - decayRate
+        -- Clamp to ensure we don't multiply by negative if user sets decay > 1.0
+        if retention < 0 then retention = 0 end
+
         if data.globalHeat then
             for cat, val in pairs(data.globalHeat) do
                 if val ~= 0 then
-                    data.globalHeat[cat] = val * 0.90
+                    -- Apply retention factor
+                    data.globalHeat[cat] = val * retention
+                    
+                    -- Snap to zero if very small to keep table clean
                     if math.abs(data.globalHeat[cat]) < 0.01 then data.globalHeat[cat] = 0 end
                 end
             end
