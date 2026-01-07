@@ -14,11 +14,8 @@ DynamicTradingUI.instance = nil
 -- =================================================
 -- CONFIGURATION: AVATAR MAPPING
 -- =================================================
--- Maps trader Archetypes to textures. 
--- Currently using Vanilla Item Icons as safe placeholders.
--- Replace "Item_..." with your custom paths (e.g. "media/ui/Traders/Farmer.png")
 local ArchetypeIcons = {
-    ["General"]     = "Item_Spiffo",        -- Default
+    ["General"]     = "Item_Spiffo",
     ["Farmer"]      = "Item_Corn",
     ["Butcher"]     = "Item_MeatCleaver",
     ["Doctor"]      = "Item_FirstAidKit",
@@ -56,7 +53,7 @@ local ArchetypeIcons = {
     ["Designer"]    = "Item_Rug",
     ["Office"]      = "Item_Paperclip",
     ["Geek"]        = "Item_ToyCar",
-    ["Brewer"]      = "Item_AlcoholWipes", -- Close enough to moonshine
+    ["Brewer"]      = "Item_AlcoholWipes",
     ["Demo"]        = "Item_PipeBomb"
 }
 
@@ -71,13 +68,11 @@ function DynamicTradingUI:initialise()
     self.radioObj = nil
     self.collapsed = {} 
     self.lastSelectedIndex = -1
-    
-    -- Local session log (Clears on restart/close)
     self.localLogs = {}
 end
 
 -- =================================================
--- LIVE STATE CHECK
+-- UPDATE LOOP
 -- =================================================
 function DynamicTradingUI:update()
     ISCollapsableWindow.update(self)
@@ -99,10 +94,8 @@ function DynamicTradingUI:update()
         return
     end
 
-    -- Update Signal Status Text
-    if self.lblSignal then
-        self:updateSignalDisplay(trader)
-    end
+    -- Update Identity Info
+    self:updateIdentityDisplay(trader)
     
     -- Update Wallet Text
     self:updateWallet()
@@ -137,8 +130,7 @@ end
 function DynamicTradingUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
-    -- Dimensions based on 2-Column Layout
-    -- Total Width: 750 (Left: 250, Right: 480, Padding: 20)
+    -- Layout Metrics
     local leftColW = 250
     local rightX = 270
     local rightW = self.width - rightX - 10
@@ -148,38 +140,46 @@ function DynamicTradingUI:createChildren()
     -- LEFT COLUMN (Identity & Logs)
     -- ====================================
 
-    -- 1. TRADER IMAGE (Placeholder Box for now)
-    -- We draw the actual texture in the render() method
+    -- 1. TRADER IMAGE AREA
     self.imageY = th + 10
-    self.imageH = 200 -- Big square image
-    -- (No child element needed for pure texture drawing, handled in render)
+    self.imageH = 200
+    
+    -- 2. TEXT LABELS (Name, Archetype, Signal)
+    -- Using separate labels to control centering and color perfectly
+    local nameY = self.imageY + self.imageH + 10      -- Y = ~226
+    local archY = nameY + 25                          -- Y = ~251
+    local sigY  = archY + 20                          -- Y = ~271
+    local wallY = sigY + 30                           -- Y = ~301
+    
+    -- LABEL: Name (White, Large)
+    self.lblName = ISLabel:new(leftColW / 2 + 10, nameY, 25, "Loading...", 1, 1, 1, 1, UIFont.Medium, true)
+    self.lblName.center = true
+    self:addChild(self.lblName)
+    
+    -- LABEL: Archetype (Gold, No Parens)
+    self.lblArchetype = ISLabel:new(leftColW / 2 + 10, archY, 20, "Survivor", 1.0, 0.8, 0.2, 1, UIFont.Small, true)
+    self.lblArchetype.center = true
+    self:addChild(self.lblArchetype)
 
-    -- 2. INFO LABELS (Name / Signal)
-    local infoY = self.imageY + self.imageH + 10
-    
-    self.lblTitle = ISLabel:new(leftColW / 2 + 10, infoY, 20, "Connecting...", 1, 1, 1, 1, UIFont.Medium, true)
-    self.lblTitle.center = true
-    self:addChild(self.lblTitle)
-    
-    self.lblSignal = ISLabel:new(leftColW / 2 + 10, infoY + 25, 16, "Signal: Stable", 0.5, 0.5, 0.5, 1, UIFont.Small, true)
+    -- LABEL: Signal (Dynamic Color)
+    self.lblSignal = ISLabel:new(leftColW / 2 + 10, sigY, 16, "Signal: ...", 0.5, 0.5, 0.5, 1, UIFont.Small, true)
     self.lblSignal.center = true
     self:addChild(self.lblSignal)
 
     -- 3. WALLET DISPLAY
-    self.lblInfo = ISLabel:new(leftColW / 2 + 10, infoY + 55, 25, "Wallet: $0", 0.2, 1.0, 0.2, 1, UIFont.Medium, true)
+    self.lblInfo = ISLabel:new(leftColW / 2 + 10, wallY, 25, "Wallet: $0", 0.2, 1.0, 0.2, 1, UIFont.Medium, true)
     self.lblInfo.center = true
     self:addChild(self.lblInfo)
 
     -- 4. ACTION BUTTON (Buy/Sell)
-    self.btnAction = ISButton:new(20, infoY + 90, leftColW - 20, 30, "BUY ITEM", self, self.onAction)
+    self.btnAction = ISButton:new(20, wallY + 35, leftColW - 20, 30, "BUY ITEM", self, self.onAction)
     self.btnAction:initialise()
     self.btnAction.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1.0}
     self.btnAction:setEnable(false)
     self:addChild(self.btnAction)
 
     -- 5. LOCAL MESSAGE LOG (Bottom Left)
-    -- Calculates remaining height to bottom
-    local logY = infoY + 130
+    local logY = wallY + 75
     local logH = self.height - logY - 10
     
     self.chatList = ISScrollingListBox:new(10, logY, leftColW, logH)
@@ -190,10 +190,9 @@ function DynamicTradingUI:createChildren()
     self.chatList.drawBorder = true
     self.chatList.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
     self.chatList.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.8}
-    self.chatList.doDrawItem = self.drawLogItem -- Custom drawer
+    self.chatList.doDrawItem = self.drawLogItem 
     self:addChild(self.chatList)
     
-    -- Init message
     self:logLocal("Connection established.", false)
 
     -- ====================================
@@ -218,7 +217,6 @@ function DynamicTradingUI:createChildren()
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
     self.listbox.doDrawItem = DynamicTradingUI.drawItem 
 
-    -- Custom Prerender to prevent crashes
     local oldPrerender = self.listbox.prerender
     self.listbox.prerender = function(box)
         if box.items == nil then box.items = {} end
@@ -234,7 +232,6 @@ function DynamicTradingUI:createChildren()
         local item = target.items[row]
         if not item then return end
         
-        -- Category Click
         if item.item.isCategory then
             local catName = item.item.categoryName
             local ui = DynamicTradingUI.instance
@@ -243,7 +240,6 @@ function DynamicTradingUI:createChildren()
             return
         end
         
-        -- Item Click
         target.selected = row
         local ui = DynamicTradingUI.instance
         if ui then 
@@ -251,7 +247,6 @@ function DynamicTradingUI:createChildren()
             ui.lastSelectedIndex = row
             ui.btnAction:setEnable(true) 
             
-            -- Updates button text dynamically
             if ui.isBuying then
                 ui.btnAction:setTitle("BUY ($" .. item.item.price .. ")")
             else
@@ -266,12 +261,10 @@ end
 -- LOGIC & HELPERS
 -- =================================================
 
--- LOGGING SYSTEM
 function DynamicTradingUI:logLocal(text, isError)
     local entry = { text = text, error = isError }
     table.insert(self.localLogs, entry)
     
-    -- Update Listbox
     self.chatList:clear()
     for _, log in ipairs(self.localLogs) do
         self.chatList:addItem(log.text, log)
@@ -283,34 +276,27 @@ function DynamicTradingUI:drawLogItem(y, item, alt)
     local height = self.itemheight
     local width = self:getWidth()
     
-    -- Background
     if alt then 
         self:drawRect(0, y, width, height, 0.1, 0.1, 0.1, 0.5) 
     end
     
     local r, g, b = 0.8, 0.8, 0.8
-    if item.item.error then r, g, b = 1.0, 0.4, 0.4 end -- Red for errors
-    if string.find(item.item.text, "Purchased") then r, g, b = 0.4, 1.0, 0.4 end -- Green for success
-    if string.find(item.item.text, "Sold") then r, g, b = 0.4, 0.8, 1.0 end -- Blue for sales
+    if item.item.error then r, g, b = 1.0, 0.4, 0.4 end 
+    if string.find(item.item.text, "Purchased") then r, g, b = 0.4, 1.0, 0.4 end 
+    if string.find(item.item.text, "Sold") then r, g, b = 0.4, 0.8, 1.0 end 
 
     self:drawText(item.text, 5, y + 2, r, g, b, 1, self.font)
     return y + height
 end
 
--- TEXTURE HELPERS
 function DynamicTradingUI:getTraderTexture(archetype)
-    -- 1. Check mapping
     local iconName = ArchetypeIcons[archetype]
     if not iconName then iconName = "Item_Spiffo" end
     
-    -- 2. Try to get Texture
     local tex = getTexture(iconName)
     if not tex then 
-        -- Fallback to Item_ prefix if user just put "Spiffo"
         tex = getTexture("Item_" .. iconName)
     end
-    
-    -- 3. Ultimate Fallback
     if not tex then tex = getTexture("Item_Radio") end
     
     return tex
@@ -348,36 +334,46 @@ function DynamicTradingUI:updateWallet()
     end
 end
 
-function DynamicTradingUI:updateSignalDisplay(trader)
-    local gt = GameTime:getInstance()
-    local text = "Signal: Permanent"
-    local r, g, b = 0.5, 0.8, 1.0 
-
-    if trader.expirationTime then
-        local currentHours = gt:getWorldAgeHours()
-        local diff = trader.expirationTime - currentHours
-        if diff <= 0 then
-            text = "Signal: Lost"
-            r, g, b = 1.0, 0.0, 0.0 
-        elseif diff > 24 then
-            local days = math.floor(diff / 24)
-            text = string.format("Signal: Stable (%dd)", days)
-            r, g, b = 0.2, 1.0, 0.2 
-        else
-            text = string.format("Signal: Fading (%dh)", math.floor(diff))
-            r, g, b = 1.0, 0.8, 0.2 
-        end
+-- [REVISED] Update all identity text elements
+function DynamicTradingUI:updateIdentityDisplay(trader)
+    -- 1. NAME
+    if self.lblName then
+        self.lblName:setName(trader.name or "Unknown")
     end
 
+    -- 2. ARCHETYPE (Gold Color, No Parens)
+    if self.lblArchetype then
+        local archName = DynamicTrading.Archetypes[trader.archetype] and DynamicTrading.Archetypes[trader.archetype].name or "Unknown"
+        self.lblArchetype:setName(archName)
+        -- Set Color (Gold/Orange)
+        self.lblArchetype:setColor(1.0, 0.8, 0.2, 1) 
+    end
+
+    -- 3. SIGNAL (Color Logic)
     if self.lblSignal then
+        local gt = GameTime:getInstance()
+        local text = "Signal: Permanent"
+        local r, g, b = 0.5, 0.8, 1.0 
+
+        if trader.expirationTime then
+            local currentHours = gt:getWorldAgeHours()
+            local diff = trader.expirationTime - currentHours
+            if diff <= 0 then
+                text = "Signal: Lost"
+                r, g, b = 1.0, 0.0, 0.0 
+            elseif diff > 24 then
+                local days = math.floor(diff / 24)
+                text = string.format("Signal: Stable (%dd)", days)
+                r, g, b = 0.2, 1.0, 0.2 
+            else
+                text = string.format("Signal: Fading (%dh)", math.floor(diff))
+                r, g, b = 1.0, 0.8, 0.2 
+            end
+        end
+        
         self.lblSignal:setName(text)
         self.lblSignal:setColor(r, g, b, 1)
     end
-    
-    -- Update Name Title
-    local archetypeName = DynamicTrading.Archetypes[trader.archetype] and DynamicTrading.Archetypes[trader.archetype].name or "Unknown"
-    local desiredTitle = (trader.name or "Unknown") .. "\n(" .. archetypeName .. ")"
-    if self.lblTitle then self.lblTitle:setName(desiredTitle) end
 end
 
 -- =================================================
@@ -389,9 +385,7 @@ function DynamicTradingUI:render()
     -- Draw Trader Avatar
     local tex = self:getTraderTexture(self.archetype)
     if tex then
-        -- Draw white border box
         self:drawRectBorder(10, self.imageY, 250, 200, 1.0, 1.0, 1.0, 1.0)
-        -- Draw Image centered in box
         self:drawTextureScaled(tex, 11, self.imageY + 1, 248, 198, 1.0, 1.0, 1.0, 1.0)
     end
 end
@@ -404,7 +398,6 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local d = item.item
     local width = listbox:getWidth()
     
-    -- Category Header
     if d.isCategory then
         listbox:drawRect(0, y, width, height, 0.9, 0.1, 0.1, 0.1)
         listbox:drawRectBorder(0, y, width, height, 0.3, 0.5, 0.5, 0.5)
@@ -417,7 +410,6 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         return y + height
     end
 
-    -- Selection Highlight
     if listbox.selected == item.index then
         listbox:drawRect(0, y, width, height, 0.3, 0.7, 0.35, 0.2)
     elseif alt then
@@ -425,7 +417,6 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     end
     listbox:drawRectBorder(0, y, width, height, 0.1, 1, 1, 1)
 
-    -- Icon
     local texName = d.data.item
     local scriptItem = getScriptManager():getItem(texName)
     if scriptItem then
@@ -436,7 +427,6 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         end
     end
     
-    -- Item Name
     local nameColor = {r=0.9, g=0.9, b=0.9}
     local qty = tonumber(d.qty) or 0
     if d.isBuy and qty <= 0 then nameColor = {r=0.5, g=0.5, b=0.5} end
@@ -445,17 +435,14 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local displayName = DynamicTradingUI.TruncateString(d.name, listbox.font, maxNameWidth)
     listbox:drawText(displayName, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
     
-    -- Price Color Logic
-    local priceR, priceG, priceB = 0.6, 1.0, 0.6 -- Green (Good)
+    local priceR, priceG, priceB = 0.6, 1.0, 0.6 
     if d.isBuy then
-        if d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.4, 0.4 end -- Red (Expensive)
-        if d.priceMod < 0.99 then priceR, priceG, priceB = 0.2, 1.0, 1.0 end -- Cyan (Cheap)
+        if d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.4, 0.4 end 
+        if d.priceMod < 0.99 then priceR, priceG, priceB = 0.2, 1.0, 1.0 end 
     else
-        -- Selling Logic
-        if d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.8, 0.2 end -- Gold (High Demand)
+        if d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.8, 0.2 end 
     end
 
-    -- Stock & Price Columns
     if d.isBuy then
         if qty <= 0 then
             listbox:drawText("(SOLD OUT)", width - 140, y + 12, 1.0, 0.2, 0.2, 1, UIFont.Small)
@@ -469,7 +456,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
 end
 
 -- =================================================
--- POPULATION
+-- POPULATE LIST
 -- =================================================
 function DynamicTradingUI:populateList()
     local oldScroll = self.listbox:getYScroll()
@@ -481,13 +468,12 @@ function DynamicTradingUI:populateList()
     local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
     if not trader then return end
     
-    self:updateSignalDisplay(trader)
+    self:updateIdentityDisplay(trader)
     self:updateWallet()
 
     local categorized = {} 
     local categories = {}  
 
-    -- 1. BUILD DATA
     if self.isBuying then
         self.btnSwitch:setTitle("SWITCH TO SELLING")
         self.btnAction:setTitle("SELECT AN ITEM")
@@ -594,7 +580,6 @@ function DynamicTradingUI:populateList()
         end
     end
     
-    -- Selection Recovery
     local foundSelection = false
     if self.selectedKey then
         for i, listItem in ipairs(self.listbox.items) do
@@ -626,7 +611,7 @@ function DynamicTradingUI:populateList()
 end
 
 -- =================================================
--- ACTIONS
+-- ACTION (SP/MP BRIDGE)
 -- =================================================
 function DynamicTradingUI:onAction()
     if not self.listbox or self.listbox.selected == -1 then return end
@@ -637,7 +622,6 @@ function DynamicTradingUI:onAction()
     local player = getSpecificPlayer(0)
     local primaryCat = d.data.tags[1] or "Misc"
 
-    -- Pre-checks for feedback
     if self.isBuying then
         if d.qty <= 0 then 
             self:logLocal("Error: Item is sold out.", true)
@@ -669,7 +653,6 @@ function DynamicTradingUI:onAction()
             self:populateList()
             player:playSound("Transaction")
             
-            -- Manual Log in SP (Server event doesn't fire back)
             if self.isBuying then
                 self:logLocal("Purchased: " .. d.name .. " (-$" .. d.price .. ")", false)
             else
@@ -699,7 +682,6 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
         return
     end
 
-    -- WIDER WINDOW FOR SPLIT LAYOUT (750x600)
     local ui = DynamicTradingUI:new(100, 100, 750, 600)
     ui:initialise()
     ui:addToUIManager()
@@ -714,7 +696,7 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
 end
 
 -- =================================================
--- EVENTS
+-- EVENTS (MP ONLY REFRESH)
 -- =================================================
 local function OnDataSync(key, data)
     if key == "DynamicTrading_Engine_v1.1" then
@@ -728,14 +710,10 @@ Events.OnReceiveGlobalModData.Add(OnDataSync)
 local function OnServerCommand(module, command, args)
     if module == "DynamicTrading" and command == "TransactionResult" then
         if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
-            
-            -- Capture message for local log
             if args.msg then
-                -- Determine if good or bad based on success boolean
                 local isErr = not args.success
                 DynamicTradingUI.instance:logLocal(args.msg, isErr)
             end
-            
             if args.success then
                 getSpecificPlayer(0):playSound("Transaction")
                 DynamicTradingUI.instance:populateList()
