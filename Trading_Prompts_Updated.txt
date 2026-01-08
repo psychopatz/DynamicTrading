@@ -1,0 +1,362 @@
+------------------------------------------------------- 
+------------------------------------------------------- 
+ 
+======================================================= 
+ General 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE regular survivors, everyday clothing, dirty t-shirts and jeans, tired expressions, disheveled hair, nervous looks, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE regular survivors, everyday clothing, dirty t-shirts and jeans, tired expressions, disheveled hair, nervous looks, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Farmer 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE farmers, wearing denim overalls and plaid shirts, straw hats or trucker caps, sun-weathered skin, dirt on faces, rural look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE farmers, wearing denim overalls and plaid shirts, straw hats or trucker caps, sun-weathered skin, dirt on faces, rural look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Butcher 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE butchers, wearing bloodstained white aprons, heavy set build, thick necks, intense expressions, holding cleavers or knives, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE butchers, wearing bloodstained white aprons, heavy set build, thick necks, intense expressions, holding cleavers or knives, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Doctor 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE medical doctors, wearing white lab coats and scrubs, stethoscopes around necks, surgical masks pulled down, exhausted eyes, clean glasses, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE medical doctors, wearing white lab coats and scrubs, stethoscopes around necks, surgical masks pulled down, exhausted eyes, clean glasses, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Mechanic 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE mechanics, wearing oil-stained blue jumpsuits, grease smudges on faces, backwards caps, holding wrenches, rugged look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE mechanics, wearing oil-stained blue jumpsuits, grease smudges on faces, backwards caps, holding wrenches, rugged look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Survivalist 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE hardcore preppers, wearing tactical vests and camo gear, gas masks hanging around neck, scars, rugged beards or tied back hair, intense stare, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE hardcore preppers, wearing tactical vests and camo gear, gas masks hanging around neck, scars, rugged beards or tied back hair, intense stare, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Gunrunner 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE arms dealers, wearing long trench coats and dark sunglasses, slicked back hair, intimidating aura, holsters visible, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE arms dealers, wearing long trench coats and dark sunglasses, slicked back hair, intimidating aura, holsters visible, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Foreman 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE construction foremen, wearing yellow hard hats and high-visibility vests, safety goggles, clipboard, commanding expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE construction foremen, wearing yellow hard hats and high-visibility vests, safety goggles, clipboard, commanding expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Scavenger 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE wasteland scavengers, wearing mismatched layered clothing, large backpacks straps, goggles, hoodies, dirty and rugged, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE wasteland scavengers, wearing mismatched layered clothing, large backpacks straps, goggles, hoodies, dirty and rugged, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Tailor 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE tailors and clothiers, wearing vests with measuring tapes around neck, pins in clothing, fashionable but worn clothes, glasses, precise look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE tailors and clothiers, wearing vests with measuring tapes around neck, pins in clothing, fashionable but worn clothes, glasses, precise look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Electrician 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE electricians, wearing utility belts with tools, safety glasses on forehead, rubber gloves, work shirts, technical look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE electricians, wearing utility belts with tools, safety glasses on forehead, rubber gloves, work shirts, technical look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Welder 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE metalworkers, wearing leather welding aprons, welding goggles lifted onto forehead, soot marks on face, bandana, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE metalworkers, wearing leather welding aprons, welding goggles lifted onto forehead, soot marks on face, bandana, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Chef 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE professional chefs, wearing white chef coats (whites), tall chef hats or toques, food stains, sweat on brow, kitchen setting, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE professional chefs, wearing white chef coats (whites), tall chef hats or toques, food stains, sweat on brow, kitchen setting, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Herbalist 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE nature experts, wearing earth-toned ponchos and hiking gear, dried flowers in hair or hats, gentle expressions, dirt under fingernails, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE nature experts, wearing earth-toned ponchos and hiking gear, dried flowers in hair or hats, gentle expressions, dirt under fingernails, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Smuggler 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE shady smugglers, wearing dark hoodies and leather jackets, faces partially obscured by shadows or scarves, shifty eyes, distrustful look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE shady smugglers, wearing dark hoodies and leather jackets, faces partially obscured by shadows or scarves, shifty eyes, distrustful look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Librarian 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE librarians, wearing cardigans and reading glasses on chains, hair in buns, older age range, clutching books, timid but intelligent, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE librarians, wearing cardigans and reading glasses on chains, hair in buns, older age range, clutching books, timid but intelligent, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Angler 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE fishermen, wearing bucket hats with fishing hooks, waterproof rain coats and waders, weather-beaten faces, beards, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE fishermen, wearing bucket hats with fishing hooks, waterproof rain coats and waders, weather-beaten faces, beards, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Sheriff 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE police sheriffs, wearing beige uniforms and stetson cowboy hats, golden badges, stern authority, aviator sunglasses, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE police sheriffs, wearing beige uniforms and stetson cowboy hats, golden badges, stern authority, aviator sunglasses, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Bartender 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE barkeeps, wearing waistcoats and bowties (untied), rolling up sleeves, cleaning rags, weary but welcoming smiles, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE barkeeps, wearing waistcoats and bowties (untied), rolling up sleeves, cleaning rags, weary but welcoming smiles, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Teacher 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE school teachers, wearing sweater vests or blouses, lanyards with keys, kind but stressed expressions, chalk dust on clothes, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE school teachers, wearing sweater vests or blouses, lanyards with keys, kind but stressed expressions, chalk dust on clothes, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Hunter 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE wilderness hunters, wearing realtree camouflage, fur trapper hats, face paint or mud, determined expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE wilderness hunters, wearing realtree camouflage, fur trapper hats, face paint or mud, determined expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Quartermaster 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE military supply officers, wearing fatigue uniforms, berets, clipboards, strict and orderly appearance, clean shaven or tight buns, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE military supply officers, wearing fatigue uniforms, berets, clipboards, strict and orderly appearance, clean shaven or tight buns, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Musician 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE rockers and musicians, wearing leather jackets with patches, bandanas, piercings, dyed hair, holding instrument cases or guitar picks, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE rockers and musicians, wearing leather jackets with patches, bandanas, piercings, dyed hair, holding instrument cases or guitar picks, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Janitor 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE custodians, wearing blue maintenance uniforms, large key rings on belts, mop buckets nearby, caps, tired working class look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE custodians, wearing blue maintenance uniforms, large key rings on belts, mop buckets nearby, caps, tired working class look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Carpenter 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE carpenters, wearing flannel shirts and tool belts, pencils tucked behind ears, sawdust on shoulders, strong hands, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE carpenters, wearing flannel shirts and tool belts, pencils tucked behind ears, sawdust on shoulders, strong hands, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Pawnbroker 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE pawn shop owners, wearing cheap suits with gold chains and rings, greedy expressions, looking through jeweler loupes, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE pawn shop owners, wearing cheap suits with gold chains and rings, greedy expressions, looking through jeweler loupes, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Pyro 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE arsonists, slight burn scars on face, soot stains, manic expressions, wearing fire-resistant gear or ragged clothes, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE arsonists, slight burn scars on face, soot stains, manic expressions, wearing fire-resistant gear or ragged clothes, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Athlete 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE sports coaches and athletes, wearing tracksuits, headbands, sweatbands, whistles around neck, fit physique, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE sports coaches and athletes, wearing tracksuits, headbands, sweatbands, whistles around neck, fit physique, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Pharmacist 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE pharmacists, wearing clean white coats (distinct from doctors), reading glasses, pens in pockets, clinical look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE pharmacists, wearing clean white coats (distinct from doctors), reading glasses, pens in pockets, clinical look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Hiker 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE backpackers, wearing windbreakers, beanies, large hiking backpacks visible, tanned skin, adventurous look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE backpackers, wearing windbreakers, beanies, large hiking backpacks visible, tanned skin, adventurous look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Burglar 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE cat burglars, wearing black beanies and dark tight clothing, black gloves, masks pulled up to reveal face, sneaky expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE cat burglars, wearing black beanies and dark tight clothing, black gloves, masks pulled up to reveal face, sneaky expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Blacksmith 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE blacksmiths, heavy leather aprons, muscular build, heavy soot on face and arms, holding hammers, sweat, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE blacksmiths, heavy leather aprons, muscular build, heavy soot on face and arms, holding hammers, sweat, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Tribal 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE primitive survivors, wearing improvised furs and leather, bone jewelry, tribal face paint, wild hair, intense primal look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE primitive survivors, wearing improvised furs and leather, bone jewelry, tribal face paint, wild hair, intense primal look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Painter 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE house painters, wearing white overalls covered in colorful paint splatters, painter caps, artistic or messy look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE house painters, wearing white overalls covered in colorful paint splatters, painter caps, artistic or messy look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ RoadWarrior 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE post-apocalyptic drivers, wearing spiked leather armor, motorcycle helmets or goggles, mohawks, Mad Max aesthetic, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE post-apocalyptic drivers, wearing spiked leather armor, motorcycle helmets or goggles, mohawks, Mad Max aesthetic, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Designer 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE interior designers, wearing trendy glasses, colorful scarves, sharp haircuts, judgemental or stylish expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE interior designers, wearing trendy glasses, colorful scarves, sharp haircuts, judgemental or stylish expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Office 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE corporate office workers, wearing business suits with unbuttoned collars and loosened ties, disheveled, stressed corporate look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE corporate office workers, wearing business suits with unbuttoned collars and loosened ties, disheveled, stressed corporate look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Geek 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE tech geeks and gamers, wearing graphic t-shirts, thick rimmed glasses, large headphones around neck, pale skin, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE tech geeks and gamers, wearing graphic t-shirts, thick rimmed glasses, large headphones around neck, pale skin, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Brewer 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE moonshiners, wearing suspenders and undershirts, flushed red cheeks, holding jugs or bottles, rustic look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE moonshiners, wearing suspenders and undershirts, flushed red cheeks, holding jugs or bottles, rustic look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Demo 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct portraits of MALE demolition experts, wearing heavy padded blast vests, protective visors, ear protection, grime and dust, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct portraits of FEMALE demolition experts, wearing heavy padded blast vests, protective visors, ear protection, grime and dust, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, front facing, looking straight at camera, isolated on white background, no background, high quality, 8k, square aspect ratio --ar 1:1 
+ 

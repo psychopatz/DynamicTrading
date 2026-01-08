@@ -1,3 +1,7 @@
+-- =============================================================================
+-- File: Contents\mods\DynamicTrading\42.13\media\lua\client\UI\DynamicTradingUI_Helpers.lua
+-- =============================================================================
+
 function DynamicTradingUI:isConnectionValid()
     local player = getSpecificPlayer(0)
     local obj = self.radioObj
@@ -47,12 +51,34 @@ function DynamicTradingUI:drawLogItem(y, item, alt)
     return y + height
 end
 
-function DynamicTradingUI:getTraderTexture(archetype)
-    local iconName = self.ArchetypeIcons[archetype] or "Item_Spiffo"
-    local tex = getTexture("Item_" .. iconName)
-    if not tex then tex = getTexture(iconName) end
-    if not tex then tex = getTexture("Item_Radio") end
-    return tex
+-- =============================================================================
+-- PORTRAIT LOADING 
+-- =============================================================================
+function DynamicTradingUI:getTraderTexture(trader)
+    -- Default fallback if no data
+    if not trader then return getTexture("Item_Radio") end
+
+    -- Data Extraction
+    local arch = trader.archetype or "General"
+    local gender = trader.gender or "Male"
+    local id = trader.portraitID or 1
+
+    -- 1. Try Specific Path (In media/ui/)
+    -- Path Example: media/ui/Portraits/Pawnbroker/Male/1.png
+    local specificPath = "media/ui/Portraits/" .. arch .. "/" .. gender .. "/" .. id .. ".png"
+    local tex = getTexture(specificPath)
+
+    if tex then return tex end
+
+    -- 2. Try Fallback Path (General)
+    -- Path Example: media/ui/Portraits/General/Male/1.png
+    local fallbackPath = "media/ui/Portraits/General/" .. gender .. "/" .. id .. ".png"
+    tex = getTexture(fallbackPath)
+
+    if tex then return tex end
+
+    -- 3. Ultimate Fallback (Icon)
+    return getTexture("Item_Radio")
 end
 
 function DynamicTradingUI.TruncateString(text, font, maxWidth)

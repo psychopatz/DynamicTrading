@@ -1,0 +1,362 @@
+------------------------------------------------------- 
+------------------------------------------------------- 
+ 
+======================================================= 
+ General 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE regular survivors, everyday clothing collars, dirty t-shirts, tired expressions, disheveled hair, nervous looks, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE regular survivors, everyday clothing collars, dirty t-shirts, tired expressions, disheveled hair, nervous looks, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Farmer 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE farmers, wearing plaid shirt collars, straw hats or trucker caps, sun-weathered skin, dirt on faces, rural look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE farmers, wearing plaid shirt collars, straw hats or trucker caps, sun-weathered skin, dirt on faces, rural look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Butcher 
+======================================================= 
+ 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE butchers, heavy set build, thick necks, intense expressions, blood splatters on face and neck, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE butchers, heavy set build, thick necks, intense expressions, blood splatters on face and neck, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Doctor 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE medical doctors, white lab coat collars, stethoscopes around necks, surgical masks pulled down to chin, exhausted eyes, clean glasses, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE medical doctors, white lab coat collars, stethoscopes around necks, surgical masks pulled down to chin, exhausted eyes, clean glasses, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Mechanic 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE mechanics, blue jumpsuit collars, grease smudges on faces, backwards caps, rugged look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE mechanics, blue jumpsuit collars, grease smudges on faces, backwards caps, rugged look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Survivalist 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE hardcore preppers, camo gear collars, gas masks hanging loose around neck, scars, rugged beards or tied back hair, intense stare, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE hardcore preppers, camo gear collars, gas masks hanging loose around neck, scars, rugged beards or tied back hair, intense stare, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Gunrunner 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE arms dealers, high trench coat collars, dark sunglasses, slicked back hair, intimidating aura, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE arms dealers, high trench coat collars, dark sunglasses, slicked back hair, intimidating aura, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Foreman 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE construction foremen, yellow hard hats, high-visibility vest collars, safety goggles on forehead, commanding expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE construction foremen, yellow hard hats, high-visibility vest collars, safety goggles on forehead, commanding expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Scavenger 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE wasteland scavengers, layers of mismatched hoodies, goggles on forehead, bandana around neck, dirty and rugged, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE wasteland scavengers, layers of mismatched hoodies, goggles on forehead, bandana around neck, dirty and rugged, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Tailor 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE tailors and clothiers, measuring tapes draped around neck, pins in collar, glasses, precise look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE tailors and clothiers, measuring tapes draped around neck, pins in collar, glasses, precise look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Electrician 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE electricians, safety glasses on forehead, work shirt collars, technical look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE electricians, safety glasses on forehead, work shirt collars, technical look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Welder 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE metalworkers, welding goggles lifted onto forehead, soot marks on face, bandana around neck, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE metalworkers, welding goggles lifted onto forehead, soot marks on face, bandana around neck, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Chef 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE professional chefs, white chef coat collars, tall chef hats or toques, sweat on brow, food smudges on face, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE professional chefs, white chef coat collars, tall chef hats or toques, sweat on brow, food smudges on face, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Herbalist 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE nature experts, earth-toned poncho collars, dried flowers in hair or stuck in hats, gentle expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE nature experts, earth-toned poncho collars, dried flowers in hair or stuck in hats, gentle expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Smuggler 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE shady smugglers, hoodie hoods up, faces partially obscured by shadows or scarves, shifty eyes, distrustful look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE shady smugglers, hoodie hoods up, faces partially obscured by shadows or scarves, shifty eyes, distrustful look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Librarian 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE librarians, reading glasses on chains around neck, hair in buns, older age range, timid but intelligent expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE librarians, reading glasses on chains around neck, hair in buns, older age range, timid but intelligent expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Angler 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE fishermen, bucket hats with fishing hooks attached, waterproof rain coat collars, weather-beaten faces, beards, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE fishermen, bucket hats with fishing hooks attached, waterproof rain coat collars, weather-beaten faces, beards, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Sheriff 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE police sheriffs, beige uniform collars, stetson cowboy hats, aviator sunglasses, stern authority, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE police sheriffs, beige uniform collars, stetson cowboy hats, aviator sunglasses, stern authority, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Bartender 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE barkeeps, bowtie untied around neck, vest collars, weary but welcoming smiles, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE barkeeps, bowtie untied around neck, vest collars, weary but welcoming smiles, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Teacher 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE school teachers, sweater vest or blouse collars, lanyards visible at neck, kind but stressed expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE school teachers, sweater vest or blouse collars, lanyards visible at neck, kind but stressed expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Hunter 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE wilderness hunters, fur trapper hats, camo collars, face paint or mud on cheeks, determined expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE wilderness hunters, fur trapper hats, camo collars, face paint or mud on cheeks, determined expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Quartermaster 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE military supply officers, fatigue uniform collars, berets, strict and orderly appearance, clean shaven or tight buns, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE military supply officers, fatigue uniform collars, berets, strict and orderly appearance, clean shaven or tight buns, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Musician 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE rockers and musicians, leather jacket collars, bandanas, piercings, dyed hair, makeup, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE rockers and musicians, leather jacket collars, bandanas, piercings, dyed hair, makeup, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Janitor 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE custodians, blue maintenance uniform collars, caps, tired working class look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE custodians, blue maintenance uniform collars, caps, tired working class look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Carpenter 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE carpenters, flannel shirt collars, pencils tucked behind ears, sawdust in hair, strong jawlines, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE carpenters, flannel shirt collars, pencils tucked behind ears, sawdust in hair, strong jawlines, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Pawnbroker 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE pawn shop owners, cheap suit collars, gold chains around neck, greedy expressions, jeweler loupe over one eye, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE pawn shop owners, cheap suit collars, gold chains around neck, greedy expressions, jeweler loupe over one eye, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Pyro 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE arsonists, slight burn scars on face, soot stains, manic expressions, singed hair, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE arsonists, slight burn scars on face, soot stains, manic expressions, singed hair, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Athlete 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE sports coaches and athletes, tracksuit collars, headbands, sweatbands, whistles around neck, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE sports coaches and athletes, tracksuit collars, headbands, sweatbands, whistles around neck, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Pharmacist 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE pharmacists, clean white coat collars, reading glasses on nose, clinical professional look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE pharmacists, clean white coat collars, reading glasses on nose, clinical professional look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Hiker 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE backpackers, windbreaker collars, beanies, tanned skin, adventurous look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE backpackers, windbreaker collars, beanies, tanned skin, adventurous look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Burglar 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE cat burglars, black beanies, black masks pulled up to reveal mouth, sneaky expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE cat burglars, black beanies, black masks pulled up to reveal mouth, sneaky expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Blacksmith 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE blacksmiths, muscular necks, heavy soot on face, sweat dripping, intense focus, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE blacksmiths, muscular necks, heavy soot on face, sweat dripping, intense focus, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Tribal 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE primitive survivors, bone necklaces, tribal face paint, wild hair, intense primal look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE primitive survivors, bone necklaces, tribal face paint, wild hair, intense primal look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Painter 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE house painters, white overalls straps, paint splatters on face and hair, painter caps, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE house painters, white overalls straps, paint splatters on face and hair, painter caps, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ RoadWarrior 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE post-apocalyptic drivers, motorcycle helmets or goggles on forehead, mohawks, dirt, Mad Max aesthetic, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE post-apocalyptic drivers, motorcycle helmets or goggles on forehead, mohawks, dirt, Mad Max aesthetic, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Designer 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE interior designers, trendy glasses, colorful scarves around neck, sharp haircuts, judgemental or stylish expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE interior designers, trendy glasses, colorful scarves around neck, sharp haircuts, judgemental or stylish expressions, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Office 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE corporate office workers, suit collars with loosened ties, disheveled hair, stressed corporate look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE corporate office workers, suit collars with loosened ties, disheveled hair, stressed corporate look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Geek 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE tech geeks and gamers, graphic t-shirt necklines, thick rimmed glasses, large headphones around neck, pale skin, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE tech geeks and gamers, graphic t-shirt necklines, thick rimmed glasses, large headphones around neck, pale skin, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Brewer 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE moonshiners, suspender straps visible, flushed red cheeks, rustic look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE moonshiners, suspender straps visible, flushed red cheeks, rustic look, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 
+ 
+======================================================= 
+ Demo 
+======================================================= 
+On Top 
+Character sheet, grid layout, 5 distinct ID-style face portraits of MALE demolition experts, thick protective neck guards, protective visors on forehead, ear protection, grime and dust, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+On Bottom   
+Character sheet, grid layout, 5 distinct ID-style face portraits of FEMALE demolition experts, thick protective neck guards, protective visors on forehead, ear protection, grime and dust, Project Zomboid art style, digital painting, semi-realistic, gritty survivalist aesthetic, zombie apocalypse survivors, distinct facial features, ID photo composition, close-up face portrait, headshot only, from the neck up, passport style, front facing, looking straight at camera, isolated on white background, no background, no body, no torso, no hands, high quality, 8k, square aspect ratio --ar 1:1 
+ 

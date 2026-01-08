@@ -1,3 +1,7 @@
+-- =============================================================================
+-- File: Contents\mods\DynamicTrading\42.13\media\lua\client\UI\DynamicTradingUI_Layout.lua
+-- =============================================================================
+
 function DynamicTradingUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
@@ -7,14 +11,18 @@ function DynamicTradingUI:createChildren()
     local th = self:titleBarHeight()
 
     self.imageY = th + 10
-    self.imageH = 200
+    
+    -- [CHANGE] Set Height to 250 to match Width (250). 
+    -- This ensures a perfect square aspect ratio for 512x512 images.
+    self.imageH = 250 
 
+    -- Calculate Y positions relative to the image height
     local nameY = self.imageY + self.imageH + 10
     local archY = nameY + 25
     local sigY  = archY + 20
     local wallY = sigY + 30
 
-    -- Labels (kept your original centering attempt - adjust if needed)
+    -- Labels
     self.lblName = ISLabel:new(leftColW / 2 + 10, nameY, 25, "Loading...", 1, 1, 1, 1, UIFont.Medium, true)
     self.lblName.center = true
     self:addChild(self.lblName)
@@ -39,6 +47,7 @@ function DynamicTradingUI:createChildren()
     self:addChild(self.btnAction)
 
     -- Log list
+    -- Calculate remaining height for the log list
     local logY = wallY + 75
     local logH = self.height - logY - 10
 
@@ -120,9 +129,19 @@ end
 function DynamicTradingUI:render()
     ISCollapsableWindow.render(self)
 
-    local tex = self:getTraderTexture(self.archetype)
-    if tex then
-        self:drawRectBorder(10, self.imageY, 250, 200, 1.0, 1.0, 1.0, 1.0)
-        self:drawTextureScaled(tex, 11, self.imageY + 1, 248, 198, 1.0, 1.0, 1.0, 1.0)
+    if self.traderID then
+        -- 1. Get the real trader object (contains gender, portraitID, etc)
+        local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
+        
+        -- 2. Pass the FULL object to the helper
+        local tex = self:getTraderTexture(trader)
+
+        if tex then
+            -- [CHANGE] Draw Border: 250 Width, 250 Height (Square)
+            self:drawRectBorder(10, self.imageY, 250, 250, 1.0, 1.0, 1.0, 1.0)
+            
+            -- [CHANGE] Draw Texture: 248 Width, 248 Height (Square, with 1px padding inside border)
+            self:drawTextureScaled(tex, 11, self.imageY + 1, 248, 248, 1.0, 1.0, 1.0, 1.0)
+        end
     end
 end

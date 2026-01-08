@@ -1,5 +1,6 @@
 require "DynamicTrading_Config"
 require "DynamicTrading_Events"
+require "DynamicTrading_PortraitConfig"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
@@ -291,43 +292,71 @@ end
 -- =============================================================================
 function DynamicTrading.Manager.GenerateRandomContact()
     local data = DynamicTrading.Manager.GetData()
-    local archetypes = {}
-    for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
-    if #archetypes == 0 then return nil end
-    local archetype = archetypes[ZombRand(#archetypes) + 1]
-    
-    local name = "Trader " .. tostring(ZombRand(1000))
-    if SurvivorFactory then
-        local desc = SurvivorFactory.CreateSurvivor()
-        if desc then name = desc:getForename() .. " " .. desc:getSurname() end
-    end
+    -- 1. Pick Archetype
+local archetypes = {}
+for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
+if #archetypes == 0 then return nil end
+local archetype = archetypes[ZombRand(#archetypes) + 1]
 
-    local gt = GameTime:getInstance()
-    local currentHours = gt:getWorldAgeHours()
-    local minHours = SandboxVars.DynamicTrading.TraderStayHoursMin or 6
-    local maxHours = SandboxVars.DynamicTrading.TraderStayHoursMax or 24
-    if minHours > maxHours then minHours = maxHours end
-    
-    local duration = ZombRand(minHours, maxHours + 1)
-    local expireTime = currentHours + duration
-    local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
-    
-    data.Traders[uniqueID] = {
-        id = uniqueID,
-        archetype = archetype,
-        name = name,
-        stocks = {},
-        lastRestockDay = -1,
-        expirationTime = expireTime
-    }
-    
-    DynamicTrading.Manager.RestockTrader(uniqueID)
-    DynamicTrading.Manager.IncrementDailyCounter()
-    DynamicTrading.Manager.AddLog("Signal Acquired: " .. name, "good")
-    
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
-    
-    return data.Traders[uniqueID]
+-- 2. Generate Identity (SurvivorFactory)
+local name = "Trader " .. tostring(ZombRand(1000))
+local gender = "Male"
+
+if SurvivorFactory then
+    local desc = SurvivorFactory.CreateSurvivor()
+    if desc then 
+        name = desc:getForename() .. " " .. desc:getSurname() 
+        if desc:isFemale() then 
+            gender = "Female" 
+        end
+    end
+end
+
+-- 3. Determine Portrait
+local portraitID = 1
+local maxPhotos = 5 -- Safe default
+
+-- Check config for actual counts (e.g. Farmer might have 5, General might have 5)
+if DynamicTrading.Portraits and DynamicTrading.Portraits.GetMaxCount then
+    local count = DynamicTrading.Portraits.GetMaxCount(archetype, gender)
+    if count > 0 then
+        maxPhotos = count
+    end
+end
+
+-- Roll ID
+portraitID = ZombRand(maxPhotos) + 1
+
+-- 4. Expiration
+local gt = GameTime:getInstance()
+local currentHours = gt:getWorldAgeHours()
+local minHours = SandboxVars.DynamicTrading.TraderStayHoursMin or 6
+local maxHours = SandboxVars.DynamicTrading.TraderStayHoursMax or 24
+if minHours > maxHours then minHours = maxHours end
+
+local duration = ZombRand(minHours, maxHours + 1)
+local expireTime = currentHours + duration
+local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
+
+-- 5. Create Data Object
+data.Traders[uniqueID] = {
+    id = uniqueID,
+    archetype = archetype,
+    name = name,
+    gender = gender,           -- [NEW]
+    portraitID = portraitID,   -- [NEW]
+    stocks = {},
+    lastRestockDay = -1,
+    expirationTime = expireTime
+}
+
+DynamicTrading.Manager.RestockTrader(uniqueID)
+DynamicTrading.Manager.IncrementDailyCounter()
+DynamicTrading.Manager.AddLog("Signal Acquired: " .. name, "good")
+
+if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
+
+return data.Traders[uniqueID]
 end
 
 function DynamicTrading.Manager.RestockTrader(traderID)

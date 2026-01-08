@@ -3,6 +3,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local d = item.item
     local width = listbox:getWidth()
 
+    -- 1. DRAW CATEGORY HEADER
     if d.isCategory then
         listbox:drawRect(0, y, width, height, 0.9, 0.1, 0.1, 0.1)
         listbox:drawRectBorder(0, y, width, height, 0.3, 0.5, 0.5, 0.5)
@@ -15,6 +16,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         return y + height
     end
 
+    -- 2. DRAW LIST ITEM (BACKGROUND)
     if listbox.selected == item.index then
         listbox:drawRect(0, y, width, height, 0.3, 0.7, 0.35, 0.2)
     elseif alt then
@@ -23,7 +25,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
 
     listbox:drawRectBorder(0, y, width, height, 0.1, 1, 1, 1)
 
-    -- Icon
+    -- 3. DRAW ICON
     local scriptItem = getScriptManager():getItem(d.data.item)
     if scriptItem then
         local icon = scriptItem:getIcon()
@@ -35,7 +37,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         end
     end
 
-    -- Name
+    -- 4. DRAW NAME
     local nameColor = {r=0.9, g=0.9, b=0.9}
     if d.isBuy and (tonumber(d.qty) or 0) <= 0 then
         nameColor = {r=0.5, g=0.5, b=0.5}
@@ -45,7 +47,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local displayName = DynamicTradingUI.TruncateString(d.name, listbox.font, maxNameWidth)
     listbox:drawText(displayName, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
 
-    -- Price coloring
+    -- 5. PRICE COLORING
     local priceR, priceG, priceB = 0.6, 1.0, 0.6
     if d.isBuy then
         if d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.4, 0.4 end
@@ -54,7 +56,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         if d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.8, 0.2 end
     end
 
-    -- Stock / Sold out
+    -- 6. STOCK / SOLD OUT
     if d.isBuy then
         local qty = tonumber(d.qty) or 0
         if qty <= 0 then
@@ -85,6 +87,9 @@ function DynamicTradingUI:populateList()
     local categorized = {}
     local categories = {}
 
+    -- ==========================================================
+    -- MODE: BUYING
+    -- ==========================================================
     if self.isBuying then
         self.btnSwitch:setTitle("SWITCH TO SELLING")
         if trader.stocks then
@@ -96,8 +101,11 @@ function DynamicTradingUI:populateList()
                     local price = DynamicTrading.Economy.GetBuyPrice(key, managerData.globalHeat or 0)
                     local cat = itemData.tags[1] or "Misc"
 
-                    categorized[cat] = categorized[cat] or {}
-                    table.insert(categories, cat)
+                    -- [FIX] Only insert category name ONCE
+                    if not categorized[cat] then
+                        categorized[cat] = {}
+                        table.insert(categories, cat)
+                    end
 
                     local priceMod = DynamicTrading.Events.GetPriceModifier and DynamicTrading.Events.GetPriceModifier(itemData.tags) or 1.0
 
@@ -113,6 +121,10 @@ function DynamicTradingUI:populateList()
                 end
             end
         end
+
+    -- ==========================================================
+    -- MODE: SELLING
+    -- ==========================================================
     else
         self.btnSwitch:setTitle("SWITCH TO BUYING")
 
@@ -138,8 +150,12 @@ function DynamicTradingUI:populateList()
                     local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
                     if price > 0 then
                         local cat = itemData.tags[1] or "Misc"
-                        categorized[cat] = categorized[cat] or {}
-                        table.insert(categories, cat)
+                        
+                        -- [FIX] Only insert category name ONCE
+                        if not categorized[cat] then
+                            categorized[cat] = {}
+                            table.insert(categories, cat)
+                        end
 
                         local priceMod = DynamicTrading.Events.GetPriceModifier and DynamicTrading.Events.GetPriceModifier(itemData.tags) or 1.0
 
@@ -158,6 +174,9 @@ function DynamicTradingUI:populateList()
         end
     end
 
+    -- ==========================================================
+    -- DRAW LIST
+    -- ==========================================================
     table.sort(categories)
 
     for _, catName in ipairs(categories) do
