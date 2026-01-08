@@ -52,35 +52,72 @@ function DynamicTradingUI:drawLogItem(y, item, alt)
 end
 
 -- =============================================================================
--- PORTRAIT LOADING 
+-- TRADER TEXTURES (LAYER 2: PORTRAIT)
 -- =============================================================================
 function DynamicTradingUI:getTraderTexture(trader)
-    -- Default fallback if no data
     if not trader then return getTexture("Item_Radio") end
 
-    -- Data Extraction
     local arch = trader.archetype or "General"
     local gender = trader.gender or "Male"
     local id = trader.portraitID or 1
 
-    -- 1. Try Specific Path (In media/ui/)
-    -- Path Example: media/ui/Portraits/Pawnbroker/Male/1.png
+    -- 1. Try Specific Path
     local specificPath = "media/ui/Portraits/" .. arch .. "/" .. gender .. "/" .. id .. ".png"
     local tex = getTexture(specificPath)
-
     if tex then return tex end
 
-    -- 2. Try Fallback Path (General)
-    -- Path Example: media/ui/Portraits/General/Male/1.png
+    -- 2. Try Fallback Path
     local fallbackPath = "media/ui/Portraits/General/" .. gender .. "/" .. id .. ".png"
     tex = getTexture(fallbackPath)
-
     if tex then return tex end
 
-    -- 3. Ultimate Fallback (Icon)
+    -- 3. Ultimate Fallback
     return getTexture("Item_Radio")
 end
 
+-- =============================================================================
+-- BACKGROUND TEXTURES (LAYER 1: DYNAMIC TIME)
+-- =============================================================================
+function DynamicTradingUI:getBackgroundTexture()
+    local hour = GameTime:getInstance():getHour()
+    local filename = "twilight" -- Default / Night
+
+    -- Time Mapping Logic
+    if hour >= 4 and hour < 6 then
+        filename = "dawn"
+    elseif hour >= 6 and hour < 9 then
+        filename = "sunrise"
+    elseif hour >= 9 and hour < 17 then
+        -- Day Phase: Tries 'day.png', falls back to 'sunrise.png' if missing
+        local dayTex = getTexture("media/ui/Backgrounds/day.png")
+        if dayTex then return dayTex else filename = "sunrise" end
+    elseif hour >= 17 and hour < 19 then
+        filename = "sunset"
+    elseif hour >= 19 and hour < 21 then
+        filename = "dusk"
+    elseif hour >= 21 or hour < 4 then
+        filename = "twilight"
+    end
+
+    local path = "media/ui/Backgrounds/" .. filename .. ".png"
+    local tex = getTexture(path)
+    
+    -- Fallback if specific phase missing
+    if not tex then return getTexture("media/ui/Backgrounds/twilight.png") end
+    
+    return tex
+end
+
+-- =============================================================================
+-- OVERLAY TEXTURES (LAYER 3: CRT EFFECT)
+-- =============================================================================
+function DynamicTradingUI:getOverlayTexture()
+    return getTexture("media/ui/Effects/crt.png")
+end
+
+-- =============================================================================
+-- UTILITIES
+-- =============================================================================
 function DynamicTradingUI.TruncateString(text, font, maxWidth)
     local tm = TextManager.instance
     if tm:MeasureStringX(font, text) <= maxWidth then return text end
@@ -133,12 +170,17 @@ function DynamicTradingUI:updateIdentityDisplay(trader)
 
         if trader.expirationTime then
             local diff = trader.expirationTime - gt:getWorldAgeHours()
+            
             if diff <= 0 then
-                text = "Signal: Lost"
+                text = "Signal: Imminent Loss"
                 r, g, b = 1.0, 0.0, 0.0
-            elseif diff > 24 then
-                text = string.format("Signal: Stable (%dd)", math.floor(diff / 24))
+            elseif diff > 8 then
+                text = string.format("Signal: Stable (%dh)", math.floor(diff))
                 r, g, b = 0.2, 1.0, 0.2
+            elseif diff < 1 then
+                -- [NEW] Special handling for <1h remaining
+                text = "Signal: Heavy Interference"
+                r, g, b = 1.0, 0.4, 0.0 -- Bright Orange-Red alert color
             else
                 text = string.format("Signal: Fading (%dh)", math.floor(diff))
                 r, g, b = 1.0, 0.8, 0.2

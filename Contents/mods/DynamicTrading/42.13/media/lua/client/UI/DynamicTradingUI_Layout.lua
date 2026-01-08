@@ -12,8 +12,7 @@ function DynamicTradingUI:createChildren()
 
     self.imageY = th + 10
     
-    -- [CHANGE] Set Height to 250 to match Width (250). 
-    -- This ensures a perfect square aspect ratio for 512x512 images.
+    -- Height set to 250 to match Width (250) for a perfect square 512x512 aspect ratio
     self.imageH = 250 
 
     -- Calculate Y positions relative to the image height
@@ -47,7 +46,6 @@ function DynamicTradingUI:createChildren()
     self:addChild(self.btnAction)
 
     -- Log list
-    -- Calculate remaining height for the log list
     local logY = wallY + 75
     local logH = self.height - logY - 10
 
@@ -130,18 +128,77 @@ function DynamicTradingUI:render()
     ISCollapsableWindow.render(self)
 
     if self.traderID then
-        -- 1. Get the real trader object (contains gender, portraitID, etc)
         local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
         
-        -- 2. Pass the FULL object to the helper
-        local tex = self:getTraderTexture(trader)
+        -- Dimensions for the images (Inside the border)
+        local imgX = 11
+        local imgY = self.imageY + 1
+        local imgW = 248
+        local imgH = 248
 
-        if tex then
-            -- [CHANGE] Draw Border: 250 Width, 250 Height (Square)
-            self:drawRectBorder(10, self.imageY, 250, 250, 1.0, 1.0, 1.0, 1.0)
-            
-            -- [CHANGE] Draw Texture: 248 Width, 248 Height (Square, with 1px padding inside border)
-            self:drawTextureScaled(tex, 11, self.imageY + 1, 248, 248, 1.0, 1.0, 1.0, 1.0)
+        -- ==========================================================
+        -- LAYER 1: Dynamic Background (Time of Day)
+        -- ==========================================================
+        local bgTex = self:getBackgroundTexture()
+        if bgTex then
+            self:drawTextureScaled(bgTex, imgX, imgY, imgW, imgH, 1.0, 1.0, 1.0, 1.0)
         end
+
+        -- ==========================================================
+        -- LAYER 2: Trader Portrait (Transparent PNG)
+        -- ==========================================================
+        -- Safe to pass 'nil' trader, helper returns "Item_Radio"
+        local faceTex = self:getTraderTexture(trader)
+        if faceTex then
+            self:drawTextureScaled(faceTex, imgX, imgY, imgW, imgH, 1.0, 1.0, 1.0, 1.0)
+        end
+
+        -- ==========================================================
+        -- LAYER 3: CRT Overlay (Chaotic Signal Logic)
+        -- ==========================================================
+        local crtTex = self:getOverlayTexture()
+        if crtTex then
+            local gt = GameTime:getInstance()
+            local chaosFactor = 0.0 -- 0.0 = Perfect Signal, 1.0 = Dead Signal
+
+            -- [CRITICAL FIX] Check if trader exists before accessing expirationTime
+            if trader and trader.expirationTime then
+                local timeLeft = trader.expirationTime - gt:getWorldAgeHours()
+                
+                if timeLeft > 24 then
+                    chaosFactor = 0.0 -- Stable
+                elseif timeLeft <= 0 then
+                    chaosFactor = 1.0 -- Lost
+                else
+                    -- Normalize 24h..0h to 0.0..1.0
+                    chaosFactor = 1.0 - (timeLeft / 24.0)
+                end
+            elseif not trader then
+                -- Trader deleted/nil -> Signal Lost completely
+                chaosFactor = 1.0
+            end
+            
+            -- Base Alpha: Starts at 15% (Visible), goes up to 45% (Obscured) as signal dies
+            local baseAlpha = 0.15 + (chaosFactor * 0.3)
+
+            -- Flicker Intensity: Random noise range
+            -- Good Signal: Random 0.0 to 0.05 (Tiny flicker)
+            -- Bad Signal:  Random 0.0 to 0.45 (Huge glitches)
+            local flickerRange = 0.05 + (chaosFactor * 0.4)
+            local currentFlicker = ZombRandFloat(0.0, flickerRange)
+            
+            -- Combine:
+            local finalAlpha = baseAlpha + currentFlicker
+            
+            -- Clamp just in case (Never go 100% white)
+            if finalAlpha > 0.9 then finalAlpha = 0.9 end
+            
+            self:drawTextureScaled(crtTex, imgX, imgY, imgW, imgH, finalAlpha, 1.0, 1.0, 1.0)
+        end
+
+        -- ==========================================================
+        -- BORDER (On Top)
+        -- ==========================================================
+        self:drawRectBorder(10, self.imageY, 250, 250, 1.0, 1.0, 1.0, 1.0)
     end
 end
