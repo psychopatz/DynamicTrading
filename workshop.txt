@@ -1,6 +1,6 @@
 version=1
 id=3635333613
-title=Dynamic Trading
+title=Dynamic Trading B42.13.1
 description=[h1]DYNAMIC TRADING SYSTEM (Build 42)[/h1]
 description=
 description=[h2]The Apocalypse Has a Price Tag.[/h2]
@@ -118,6 +118,9 @@ description=
 description=As this is my very first mod, I appreciate everyone who gives it a try. Thanks for playing! 😊
 description=
 description=[i]Found a bug? Report it in the discussions![/i]
+description=
+description=Workshop ID: 3635333613
+description=Mod ID: DynamicTrading
 description=
 description=Workshop ID: 3635333613
 description=Mod ID: DynamicTrading
