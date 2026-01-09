@@ -135,8 +135,13 @@ function DynamicTradingUI:populateList()
         local inv = player:getInventory()
         local items = inv:getItems()
         
-        -- Get the Unique ID of the radio currently in use
-        local activeRadioID = self.radioObj and self.radioObj:getID() or -1
+        -- [MULTIPLAYER FIX] Safe check for Radio ID
+        -- World Objects (HAM Radios) do not have getID(). 
+        -- We only fetch the ID if the radio is an InventoryItem.
+        local activeRadioID = -1
+        if self.radioObj and instanceof(self.radioObj, "InventoryItem") then
+            activeRadioID = self.radioObj:getID()
+        end
 
         for i = 0, items:size() - 1 do
             local invItem = items:get(i)
@@ -146,9 +151,8 @@ function DynamicTradingUI:populateList()
 
                 if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
                     
-                    -- [ROBUST ID PROTECTION] 
-                    -- We check the physical ID of the item. 
-                    -- This allows selling identical radios as long as they aren't the physical one being held.
+                    -- Compare unique IDs to prevent selling the radio you're currently using.
+                    -- If it's a world radio (ID -1), this check safely ignores it.
                     local isActuallyInUse = (invItem:getID() == activeRadioID)
 
                     if not isActuallyInUse then
@@ -175,7 +179,7 @@ function DynamicTradingUI:populateList()
 
                                 table.insert(categorized[cat], {
                                     key = masterKey,
-                                    itemID = invItem:getID(), -- Store the ID for exact transaction
+                                    itemID = invItem:getID(), -- Used by server to delete exact item
                                     name = invItem:getDisplayName(),
                                     price = tonumber(price) or 0,
                                     data = itemData,
@@ -211,7 +215,7 @@ function DynamicTradingUI:populateList()
         end
     end
 
-    -- Persistence logic (Keeps the button enabled for bulk clicking)
+    -- Persistence logic for bulk transactions
     local foundSelection = false
     if self.selectedKey then
         for i = 1, #self.listbox.items do
