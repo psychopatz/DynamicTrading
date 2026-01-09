@@ -1,8 +1,6 @@
-
 require "DT_DialogueManager"
 
 -- 1. DATA SYNC (Global Mod Data updates)
--- This ensures that when the server changes stock or prices, your UI updates.
 local function OnDataSync(key, data)
     if key == "DynamicTrading_Engine_v1.1" then
         if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
@@ -13,7 +11,6 @@ end
 Events.OnReceiveGlobalModData.Add(OnDataSync)
 
 -- 2. SERVER COMMAND HANDLING (Transaction Results)
--- This is where the server tells us if the Buy/Sell actually worked.
 local function OnServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
 
@@ -21,53 +18,79 @@ local function OnServerCommand(module, command, args)
         local ui = DynamicTradingUI.instance
         if not ui or not ui:isVisible() then return end
         
-        -- Reset Idle Timer because the player just did something
+        -- Reset Idle Timer
         if ui.resetIdleTimer then ui:resetIdleTimer() end
 
-        -- Fetch the Trader identity for the dialogue engine
+        -- Fetch Trader
         local trader = DynamicTrading.Manager.GetTrader(ui.traderID, ui.archetype)
         if not trader then return end
 
-        -- [FIX] We now use itemName and price provided by the SERVER args.
-        -- This prevents the "null" concatenation crash if the list selection is lost.
         local srvItemName = args.itemName or "Unknown Item"
         local srvPrice = args.price or 0
+        local actionType = ui.isBuying and "Buy" or "Sell"
 
-        -- Prepare arguments for the Dialogue Manager (Flavor Text)
+        -- ==========================================================
+        -- "LAST STOCK" DETECTION LOGIC
+        -- ==========================================================
+        -- We scan the CURRENT listbox (which represents the state BEFORE this buy)
+        -- to see if the quantity was 1.
+        local wasLastOne = false
+        
+        if ui.isBuying and args.success then
+            for i=1, #ui.listbox.items do
+                local row = ui.listbox.items[i]
+                -- Match by name and ensure it's a Buyable item
+                if row.item and row.item.name == srvItemName and row.item.isBuy then
+                    if row.item.qty <= 1 then
+                        wasLastOne = true
+                    end
+                    break -- Found it, stop looking
+                end
+            end
+        end
+
+        -- Prepare arguments for Dialogue Manager
         local diagArgs = {
             itemName = srvItemName,
             price = srvPrice,
-            success = args.success
+            success = args.success,
+            wasLastOne = wasLastOne -- [NEW] Pass the flag
         }
 
         if args.success then
-            -- 1. [SFX] SUCCESS SOUND
+            -- 1. [SFX]
             local player = getSpecificPlayer(0)
             if player then
-                getSoundManager():PlaySound("DT_Cashier", false, 1.0) -- Financial 'Ding'
-                getSoundManager():PlaySound("DT_RadioClick", false, 0.5)   -- Trader 'Mic Click'
+                getSoundManager():PlaySound("DT_Cashier", false, 1.0)
+                getSoundManager():PlaySound("DT_RadioClick", false, 0.5)
             end
 
-            -- 2. Trader Dialogue (Flavor Text)
-            local talkMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, diagArgs)
-            ui:logLocal(talkMsg, false)
+            -- 2. [PLAYER DIALOGUE] (Right Side, Cyan)
+            -- Logic inside DialogueManager now checks diagArgs.wasLastOne
+            -- to switch to "BuyLast" lines if needed.
+            local playerMsg = DynamicTrading.DialogueManager.GeneratePlayerMessage(actionType, diagArgs)
+            ui:logLocal(playerMsg, false, true)
 
-            -- 3. System Audit Log (Financial Record)
-            -- We use the safe server-provided variables here.
+            -- 3. [TRADER DIALOGUE] (Left Side, Grey)
+            -- Logic inside DialogueManager now checks diagArgs.wasLastOne
+            -- to switch to "LastStock" replies if needed.
+            local traderMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, diagArgs)
+            ui:logLocal(traderMsg, false, false)
+
+            -- 4. [SYSTEM LOG] (Left Side, Colored)
             local auditMsg = ""
             if ui.isBuying then
                 auditMsg = "Purchased: " .. srvItemName .. " (-$" .. srvPrice .. ")"
             else
                 auditMsg = "Sold: " .. srvItemName .. " (+$" .. srvPrice .. ")"
             end
-            ui:logLocal(auditMsg, false)
+            ui:logLocal(auditMsg, false, false)
             
-            -- 4. Refresh List to show updated inventory/wallet
+            -- 5. Refresh List
             ui:populateList()
 
         else
             -- FAILURE HANDLING
-            -- Determine why it failed based on the server message
             local srvMsg = args.msg or ""
             
             if string.find(srvMsg, "Sold Out") then
@@ -78,13 +101,15 @@ local function OnServerCommand(module, command, args)
                 diagArgs.failReason = "Generic"
             end
             
-            -- Trader Dialogue (Refusal message)
+            -- Player Intent
+            local playerMsg = DynamicTrading.DialogueManager.GeneratePlayerMessage(actionType, diagArgs)
+            ui:logLocal(playerMsg, false, true) 
+            
+            -- Trader Refusal
             local failMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
+            ui:logLocal(failMsg, true, false) -- isError = true
             
-            -- Log as Error (Red Text)
-            ui:logLocal(failMsg, true)
-            
-            -- Force refresh in case the failure was due to a stock desync
+            -- Force refresh
             ui:populateList()
         end
     end

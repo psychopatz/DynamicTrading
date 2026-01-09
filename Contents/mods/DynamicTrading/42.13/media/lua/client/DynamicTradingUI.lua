@@ -70,6 +70,7 @@ function DynamicTradingUI:update()
     
     if not trader then
         self:logLocal("Signal Lost: Trader signed off.", true)
+        getSoundManager():PlaySound("DT_Disconnected", false, 0.5)
         self:close()
         return
     end
