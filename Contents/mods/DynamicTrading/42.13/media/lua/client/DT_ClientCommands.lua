@@ -20,7 +20,7 @@ local function OnServerCommand(module, command, args)
         if isMe then
             -- 1. SUCCESS (Green)
             if args.status == "SUCCESS" then
-                player:playSound("RadioZombies")
+                getSoundManager():PlaySound("DT_RadioClick", false, 0.5)
                 player:Say("Connected: " .. (args.name or "Unknown"))
                 
                 if HaloTextHelper then
@@ -29,7 +29,7 @@ local function OnServerCommand(module, command, args)
             
             -- 2. FAILURE: LIMIT REACHED (Red)
             elseif args.status == "LIMIT_REACHED" then
-                player:playSound("RadioStatic")
+                -- player:playSound("RadioStatic")
                 
                 local failMsg = "Network Exhausted. Try again tomorrow."
                 player:Say("The airwaves are dead... no more traders today.")

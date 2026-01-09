@@ -41,9 +41,13 @@ local function OnServerCommand(module, command, args)
         }
 
         if args.success then
-            -- 1. Success Sound
-            getSpecificPlayer(0):playSound("Transaction")
-            
+            -- 1. [SFX] SUCCESS SOUND
+            local player = getSpecificPlayer(0)
+            if player then
+                getSoundManager():PlaySound("DT_Cashier", false, 1.0) -- Financial 'Ding'
+                getSoundManager():PlaySound("DT_RadioClick", false, 0.5)   -- Trader 'Mic Click'
+            end
+
             -- 2. Trader Dialogue (Flavor Text)
             local talkMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, diagArgs)
             ui:logLocal(talkMsg, false)

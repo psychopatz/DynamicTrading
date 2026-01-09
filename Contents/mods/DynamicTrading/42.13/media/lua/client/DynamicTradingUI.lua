@@ -1,7 +1,3 @@
--- =============================================================================
--- File: Contents\mods\DynamicTrading\42.13\media\lua\client\UI\DynamicTradingUI.lua
--- =============================================================================
-
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISButton"
 require "ISUI/ISLabel"
@@ -79,6 +75,9 @@ function DynamicTradingUI:update()
             local idleMsg = DynamicTrading.DialogueManager.GenerateIdleMessage(trader)
             if idleMsg then
                 self:logLocal(idleMsg, false)
+                -- 2. [SFX] Play Mic Click
+                local player = getSpecificPlayer(0)
+                if player then getSoundManager():PlaySound("DT_RadioClick", false, 0.5) end
             end
         end
         
@@ -109,6 +108,9 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
     if trader and DynamicTrading.DialogueManager then
         local greeting = DynamicTrading.DialogueManager.GenerateGreeting(trader)
         ui:logLocal(greeting, false)
+        -- 2. [SFX] Play Mic Click
+        local player = getSpecificPlayer(0)
+        if player then getSoundManager():PlaySound("DT_RadioClick", false, 0.5) end
     end
 
     DynamicTradingUI.instance = ui

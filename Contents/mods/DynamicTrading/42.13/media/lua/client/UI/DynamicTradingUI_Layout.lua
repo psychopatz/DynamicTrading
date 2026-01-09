@@ -1,7 +1,3 @@
--- =============================================================================
--- File: media/lua/client/UI/DynamicTradingUI_Layout.lua
--- =============================================================================
-
 function DynamicTradingUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 

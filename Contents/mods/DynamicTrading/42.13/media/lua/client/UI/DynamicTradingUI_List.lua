@@ -1,7 +1,3 @@
--- =============================================================================
--- File: media/lua/client/UI/DynamicTradingUI_List.lua
--- =============================================================================
-
 function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local height = listbox.itemheight
     local d = item.item

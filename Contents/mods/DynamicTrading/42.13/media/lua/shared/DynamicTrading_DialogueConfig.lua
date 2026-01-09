@@ -1,7 +1,3 @@
--- =============================================================================
--- File: Contents\mods\DynamicTrading\42.13\media\lua\shared\DynamicTrading_DialogueConfig.lua
--- =============================================================================
-
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Dialogue = {}
 

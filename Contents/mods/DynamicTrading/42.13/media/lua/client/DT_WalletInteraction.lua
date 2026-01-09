@@ -147,7 +147,7 @@ local function OnServerCommand(module, command, args)
             ShowFloatingText(player, "Empty", 150, 150, 150)
             
         else
-            player:playSound("CashRegister")
+            getSoundManager():PlaySound("DT_Cashier", false, 1.0)
             
             local maxPossible = SandboxVars.DynamicTrading.WalletMaxCash or 300
             local ratio = total / maxPossible
