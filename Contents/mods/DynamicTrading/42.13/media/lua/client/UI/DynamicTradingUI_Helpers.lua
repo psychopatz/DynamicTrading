@@ -1,3 +1,4 @@
+require "Utils/DT_StringUtils"
 
 -- =============================================================================
 -- 1. CONNECTION & POWER VALIDATION
@@ -33,49 +34,7 @@ function DynamicTradingUI:isConnectionValid()
 end
 
 -- =============================================================================
--- 2. TEXT WRAPPING UTILITY (NEW FIX)
--- =============================================================================
--- Helper function to split text into lines that fit the width.
--- Replaces the failed Java call with pure Lua logic using MeasureStringX.
-function DynamicTradingUI.WrapText(text, maxWidth, font)
-    local tm = getTextManager()
-    local result = {}
-    
-    if not text then return {""} end
-    text = tostring(text)
-
-    -- Split explicit newlines (paragraphs) first
-    local paragraphs = {}
-    for s in string.gmatch(text, "[^\r\n]+") do
-        table.insert(paragraphs, s)
-    end
-    if #paragraphs == 0 then table.insert(paragraphs, text) end
-
-    -- Process each paragraph for wrapping
-    for _, para in ipairs(paragraphs) do
-        local currentLine = ""
-        
-        for word in string.gmatch(para, "%S+") do
-            local testLine = (currentLine == "") and word or (currentLine .. " " .. word)
-            
-            if tm:MeasureStringX(font, testLine) <= maxWidth then
-                currentLine = testLine
-            else
-                -- If line is full, push it and start new line with current word
-                if currentLine ~= "" then table.insert(result, currentLine) end
-                currentLine = word
-            end
-        end
-        -- Push the remaining text
-        if currentLine ~= "" then table.insert(result, currentLine) end
-    end
-    
-    if #result == 0 then return {""} end
-    return result
-end
-
--- =============================================================================
--- 3. LOGGING & FEEDBACK (UPDATED)
+-- 2. LOGGING & FEEDBACK (USING UTILS)
 -- =============================================================================
 function DynamicTradingUI:logLocal(text, isError)
     -- Calculate text wrapping logic
@@ -85,8 +44,8 @@ function DynamicTradingUI:logLocal(text, isError)
     
     local font = self.chatList.font
     
-    -- [FIX] Use Lua wrapper instead of Java splitIntoLines
-    local lines = DynamicTradingUI.WrapText(text, listWidth, font)
+    -- [REFACTOR] Use the centralized string utility
+    local lines = DynamicTrading.Utils.WrapText(text, listWidth, font)
     
     -- Calculate total height needed
     local lineHeight = self.chatList.itemheight or 18
@@ -146,7 +105,7 @@ function DynamicTradingUI:drawLogItem(y, item, alt)
 end
 
 -- =============================================================================
--- 4. TEXTURE & VISUAL ENGINE
+-- 3. TEXTURE & VISUAL ENGINE
 -- =============================================================================
 function DynamicTradingUI:getTraderTexture(trader)
     if not trader then return getTexture("Item_Radio") end
@@ -192,7 +151,7 @@ function DynamicTradingUI:getOverlayTexture()
 end
 
 -- =============================================================================
--- 5. PLAYER DATA & ECONOMY HELPERS
+-- 4. PLAYER DATA & ECONOMY HELPERS
 -- =============================================================================
 function DynamicTradingUI:getPlayerWealth(player)
     local inv = player:getInventory()
@@ -240,21 +199,13 @@ function DynamicTradingUI:updateIdentityDisplay(trader)
 end
 
 -- =============================================================================
--- 6. UTILITIES (STRING & LOCKS)
+-- 5. UTILITIES (WRAPPERS)
 -- =============================================================================
-function DynamicTradingUI.TruncateString(text, font, maxWidth)
-    local tm = TextManager.instance
-    if tm:MeasureStringX(font, text) <= maxWidth then return text end
 
-    local len = #text
-    while len > 0 do
-        local truncated = string.sub(text, 1, len - 1) .. "..."
-        if tm:MeasureStringX(font, truncated) <= maxWidth then
-            return truncated
-        end
-        len = len - 1
-    end
-    return "..."
+-- [REFACTOR] Proxy to the Utils module
+-- This ensures 'DynamicTradingUI_List.lua' calls still work without modification.
+function DynamicTradingUI.TruncateString(text, font, maxWidth)
+    return DynamicTrading.Utils.TruncateString(text, font, maxWidth)
 end
 
 -- [NEW] ITEM LOCK HELPER

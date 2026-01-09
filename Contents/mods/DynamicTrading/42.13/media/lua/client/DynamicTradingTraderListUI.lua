@@ -4,7 +4,8 @@ require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "DynamicTrading_Manager"
 require "DynamicTrading_Config"
-require "DynamicTradingInfoUI" -- Added dependency to open the Info Window
+require "DynamicTradingInfoUI" 
+require "Utils/DT_StringUtils" -- [NEW] Utils for text wrapping
 
 DynamicTradingTraderListUI = ISCollapsableWindow:derive("DynamicTradingTraderListUI")
 DynamicTradingTraderListUI.instance = nil
@@ -78,7 +79,7 @@ function DynamicTradingTraderListUI:createChildren()
     
     self:addChild(self.logList)
 
-    -- 4. MARKET INFO BUTTON (New)
+    -- 4. MARKET INFO BUTTON
     local btnInfoY = logListY + list2Height + 10
     self.btnInfo = ISButton:new(10, btnInfoY, width - 20, 25, "VIEW MARKET INFO", self, self.onInfoClick)
     self.btnInfo:initialise()
@@ -151,11 +152,39 @@ function DynamicTradingTraderListUI:populateLogs()
     self.logList:clear()
     local data = DynamicTrading.Manager.GetData()
     
+    -- [REFACTOR] Use Utils for Text Wrapping
+    local listWidth = self.logList:getWidth() - 25 -- Scrollbar allowance
+    local tm = getTextManager()
+    local font = self.logList.font
+    
     if data.NetworkLogs then
         local limit = math.min(#data.NetworkLogs, 12)
         for i=1, limit do
             local log = data.NetworkLogs[i]
-            self.logList:addItem(log.time .. ": " .. log.text, log)
+            
+            -- 1. Measure the timestamp width to indent text properly
+            local timeWid = tm:MeasureStringX(font, log.time)
+            
+            -- 2. Calculate remaining space for the message
+            local textSpace = listWidth - timeWid - 15 -- Padding
+            if textSpace < 50 then textSpace = 50 end
+            
+            -- 3. Wrap the text
+            local lines = DynamicTrading.Utils.WrapText(log.text, textSpace, font)
+            
+            -- 4. Calculate Height
+            local lineHeight = self.logList.itemheight
+            local totalHeight = #lines * lineHeight
+            if totalHeight < lineHeight then totalHeight = lineHeight end
+            
+            -- 5. Add to List with metadata
+            local addedItem = self.logList:addItem(log.time, {
+                log = log,
+                lines = lines,
+                timeWidth = timeWid,
+                height = totalHeight
+            })
+            addedItem.height = totalHeight
         end
     end
 end
@@ -224,9 +253,7 @@ function DynamicTradingTraderListUI:onScanClick()
     local player = getSpecificPlayer(0)
     if not self:CheckConnectionValidity() then self:close() return end
     
-    -- [FORCE SYNC FIX]
-    -- Request fresh state from server before/while scanning to ensure client isn't desynced.
-    -- This handles the "Server Restart" case where client cache is empty/stale.
+    -- Force Sync to ensure limits are accurate
     sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
 
     if DT_RadioInteraction and DT_RadioInteraction.PerformScan then
@@ -234,10 +261,8 @@ function DynamicTradingTraderListUI:onScanClick()
     end
 end
 
--- [NEW] Open the Market Info UI
 function DynamicTradingTraderListUI:onInfoClick()
     if DynamicTradingInfoUI then
-        -- If already open, just bring to front (or standard toggle behavior)
         if DynamicTradingInfoUI.instance and DynamicTradingInfoUI.instance:isVisible() then
             DynamicTradingInfoUI.instance:addToUIManager()
         else
@@ -269,9 +294,11 @@ function DynamicTradingTraderListUI.drawItem(this, y, item, alt)
 end
 
 function DynamicTradingTraderListUI.drawLogItem(this, y, item, alt)
-    local height = this.itemheight
+    local data = item.item -- Contains: { log, lines, timeWidth, height }
+    local log = data.log
+    local height = data.height
     local width = this:getWidth()
-    local log = item.item
+    local lineHeight = this.itemheight
     
     if alt then 
         this:drawRect(0, y, width, height, 0.05, 0.05, 0.05, 0.5) 
@@ -282,10 +309,22 @@ function DynamicTradingTraderListUI.drawLogItem(this, y, item, alt)
     elseif log.cat == "bad" then r, g, b = 1.0, 0.4, 0.4
     elseif log.cat == "event" then r, g, b = 1.0, 1.0, 0.4 end
     
+    -- 1. Draw Timestamp (Gray)
     this:drawText(log.time, 5, y + 2, 0.5, 0.5, 0.5, 1, this.font)
     
-    local timeWid = TextManager.instance:MeasureStringX(this.font, log.time)
-    this:drawText(log.text, 5 + timeWid + 8, y + 2, r, g, b, 1, this.font)
+    -- 2. Draw Wrapped Text (Colored & Indented)
+    local textX = 5 + data.timeWidth + 8 -- Start after timestamp
+    local currentY = y
+    
+    if data.lines and #data.lines > 0 then
+        for _, line in ipairs(data.lines) do
+            this:drawText(line, textX, currentY + 2, r, g, b, 1, this.font)
+            currentY = currentY + lineHeight
+        end
+    else
+        -- Fallback safety
+        this:drawText(log.text, textX, y + 2, r, g, b, 1, this.font)
+    end
     
     return y + height
 end
@@ -316,7 +355,6 @@ function DynamicTradingTraderListUI.ToggleWindow(radioObj, isHam)
         return
     end
 
-    -- [MODIFIED] Increased height to 600 to fit new button
     local ui = DynamicTradingTraderListUI:new(200, 100, 380, 600)
     ui:initialise()
     ui.radioObj = radioObj
