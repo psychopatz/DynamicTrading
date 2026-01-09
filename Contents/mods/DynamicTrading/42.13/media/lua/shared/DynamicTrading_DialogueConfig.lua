@@ -7,6 +7,19 @@ DynamicTrading.Dialogue = {}
 -- The Player speaks naturally, proposing deals and confirming actions.
 -- Tone: Survivor-to-Survivor. Not a robot.
 DynamicTrading.Dialogue.Player = {
+
+    -- ACTION: Opening the Connection (Handshake) [NEW]
+    Intro = {
+        "This is {player}. Do you copy?",
+        "Radio check. This is {player} calling on this frequency.",
+        "Can anyone hear me? This is {player}.",
+        "Signal check. {player.firstname} here. Are you open?",
+        "Calling any traders. This is {player}, over.",
+        "Broadcasting on open channel. {player} requesting trade.",
+        "Is this thing working? This is {player}.",
+        "Hey, it's {player.firstname}. Pick up if you're there.",
+        "This is {player}. Seeking supplies, over."
+    },
     
     -- ACTION: Player Buys Item
     -- Context: "I see it, I have the money, give it to me."

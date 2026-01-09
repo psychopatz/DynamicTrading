@@ -7,7 +7,6 @@ DynamicTrading.DialogueManager = {}
 -- 1. INTERNAL HELPERS
 -- =============================================================================
 
-
 -- Helper: Safely picks a random string from a table
 local function PickRandom(pool)
     if not pool or #pool == 0 then return nil end
@@ -20,7 +19,7 @@ local function FormatMessage(text, args)
     
     local player = getSpecificPlayer(0)
     
-    -- [UPDATED] Name Resolution Logic
+    -- Name Resolution Logic
     local pFirst = "Survivor"
     local pLast = ""
     local pFull = "Survivor"
@@ -47,12 +46,8 @@ local function FormatMessage(text, args)
     local iName = args and args.itemName or "Item"
     local iPrice = args and args.price or 0
     
-    -- [UPDATED] Substitution Logic
-    -- IMPORTANT: We must replace the specific tags (firstname/surname) FIRST,
-    -- otherwise replacing "{player}" might break strings like "{player.firstname}".
-    
+    -- Substitution Logic
     -- 1. Specific Name Parts
-    -- We use % to escape the dot in the pattern match
     text = string.gsub(text, "{player%.firstname}", pFirst)
     text = string.gsub(text, "{player%.surname}", pLast)
     
@@ -212,6 +207,7 @@ end
 function DynamicTrading.DialogueManager.GeneratePlayerMessage(action, args)
     if not action then action = "Buy" end
     
+    -- Handle special overrides
     if action == "Buy" and args and args.wasLastOne then
         action = "BuyLast"
     end
@@ -219,9 +215,11 @@ function DynamicTrading.DialogueManager.GeneratePlayerMessage(action, args)
     local db = GetDB()
     local pool = nil
     
+    -- Try Config first
     if db and db.Player and db.Player[action] then
         pool = db.Player[action]
     else
+        -- Fallback to local
         pool = PlayerDialogue[action]
     end
     
