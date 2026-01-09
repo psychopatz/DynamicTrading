@@ -1,13 +1,5 @@
 module Base
 {
-    /* 
-       ==========================================================
-       DYNAMIC TRADING: CUSTOM UI SOUND DEFINITIONS
-       ==========================================================
-       These sounds are categorized as 'UI' to ensure they play 
-       at full volume even when the trading menu is open.
-    */
-
     sound DT_Cashier
     {
         category = UI,
@@ -26,6 +18,17 @@ module Base
         clip
         {
             file = media/sound/DT_RadioClick.ogg,
+            volume = 0.5,
+        }
+    }
+
+        sound DT_Disconnected
+    {
+        category = UI,
+        is3D = false,
+        clip
+        {
+            file = media/sound/DT_Disconnected.ogg,
             volume = 0.5,
         }
     }
