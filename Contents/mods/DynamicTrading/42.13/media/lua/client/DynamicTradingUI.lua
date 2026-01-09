@@ -15,7 +15,6 @@ require "DynamicTrading_Events"
 require "DT_DialogueManager" 
 
 -- UI sub-modules
-require "DynamicTrading/UI/DynamicTradingUI_Icons"
 require "DynamicTrading/UI/DynamicTradingUI_Helpers"
 require "DynamicTrading/UI/DynamicTradingUI_Layout"
 require "DynamicTrading/UI/DynamicTradingUI_List"

@@ -1,36 +1,53 @@
 -- =============================================================================
--- File: Contents\mods\DynamicTrading\42.13\media\lua\client\UI\DynamicTradingUI_Helpers.lua
+-- File: media/lua/client/UI/DynamicTradingUI_Helpers.lua
 -- =============================================================================
 
+-- =============================================================================
+-- 1. CONNECTION & POWER VALIDATION
+-- =============================================================================
 function DynamicTradingUI:isConnectionValid()
     local player = getSpecificPlayer(0)
     local obj = self.radioObj
     if not obj then return false end
 
-    local data = obj:getDeviceData()
+    local data = nil
+    -- Safe check to get device data from either an Item or a World Object
+    if obj.getDeviceData then
+        data = obj:getDeviceData()
+    end
+    
     if not data or not data:getIsTurnedOn() then return false end
 
+    -- Check for World HAM Radios
     if instanceof(obj, "IsoWaveSignal") then
         local sq = obj:getSquare()
         if not sq then return false end
+        -- Distance check: Must be near the stationary radio
         if IsoUtils.DistanceTo(player:getX(), player:getY(), obj:getX(), obj:getY()) > 5.0 then return false end
+        -- Power check: Battery or Grid
         if data:getIsBatteryPowered() and data:getPower() <= 0 then return false end
         if not data:getIsBatteryPowered() and not sq:haveElectricity() then return false end
     else
+        -- Check for Handheld Walkies
         if obj:getContainer() ~= player:getInventory() then return false end
         if data:getPower() <= 0.001 then return false end
     end
     return true
 end
 
+-- =============================================================================
+-- 2. LOGGING & FEEDBACK
+-- =============================================================================
 function DynamicTradingUI:logLocal(text, isError)
     local entry = { text = text, error = isError or false }
     table.insert(self.localLogs, entry)
 
     self.chatList:clear()
+    -- Rebuild the list from the logs table
     for _, log in ipairs(self.localLogs) do
         self.chatList:addItem(log.text, log)
     end
+    -- Auto-scroll to the bottom so newest messages are visible
     self.chatList:ensureVisible(#self.chatList.items)
 end
 
@@ -43,16 +60,16 @@ function DynamicTradingUI:drawLogItem(y, item, alt)
     end
 
     local r, g, b = 0.8, 0.8, 0.8
-    if item.item.error then r, g, b = 1.0, 0.4, 0.4 end
-    if string.find(item.item.text, "Purchased") then r, g, b = 0.4, 1.0, 0.4 end
-    if string.find(item.item.text, "Sold") then r, g, b = 0.4, 0.8, 1.0 end
+    if item.item.error then r, g, b = 1.0, 0.4, 0.4 end -- Failure/Error
+    if string.find(item.item.text, "Purchased") then r, g, b = 0.4, 1.0, 0.4 end -- Finance Green
+    if string.find(item.item.text, "Sold") then r, g, b = 0.4, 0.8, 1.0 end -- Finance Blue
 
     self:drawText(item.text, 5, y + 2, r, g, b, 1, self.font)
     return y + height
 end
 
 -- =============================================================================
--- TRADER TEXTURES (LAYER 2: PORTRAIT)
+-- 3. TEXTURE & VISUAL ENGINE
 -- =============================================================================
 function DynamicTradingUI:getTraderTexture(trader)
     if not trader then return getTexture("Item_Radio") end
@@ -61,78 +78,45 @@ function DynamicTradingUI:getTraderTexture(trader)
     local gender = trader.gender or "Male"
     local id = trader.portraitID or 1
 
-    -- 1. Try Specific Path
+    -- Attempt to find the specific portrait file
     local specificPath = "media/ui/Portraits/" .. arch .. "/" .. gender .. "/" .. id .. ".png"
     local tex = getTexture(specificPath)
     if tex then return tex end
 
-    -- 2. Try Fallback Path
+    -- Fallback to General category if specific is missing
     local fallbackPath = "media/ui/Portraits/General/" .. gender .. "/" .. id .. ".png"
     tex = getTexture(fallbackPath)
     if tex then return tex end
 
-    -- 3. Ultimate Fallback
-    return getTexture("Item_Radio")
+    return getTexture("media/ui/Effects/crt.png")
 end
 
--- =============================================================================
--- BACKGROUND TEXTURES (LAYER 1: DYNAMIC TIME)
--- =============================================================================
 function DynamicTradingUI:getBackgroundTexture()
     local hour = GameTime:getInstance():getHour()
-    local filename = "twilight" -- Default / Night
+    local filename = "twilight"
 
-    -- Time Mapping Logic
-    if hour >= 4 and hour < 6 then
-        filename = "dawn"
-    elseif hour >= 6 and hour < 9 then
-        filename = "sunrise"
-    elseif hour >= 9 and hour < 17 then
-        -- Day Phase: Tries 'day.png', falls back to 'sunrise.png' if missing
+    if hour >= 4 and hour < 6 then filename = "dawn"
+    elseif hour >= 6 and hour < 9 then filename = "sunrise"
+    elseif hour >= 9 and hour < 17 then 
         local dayTex = getTexture("media/ui/Backgrounds/day.png")
         if dayTex then return dayTex else filename = "sunrise" end
-    elseif hour >= 17 and hour < 19 then
-        filename = "sunset"
-    elseif hour >= 19 and hour < 21 then
-        filename = "dusk"
-    elseif hour >= 21 or hour < 4 then
-        filename = "twilight"
+    elseif hour >= 17 and hour < 19 then filename = "sunset"
+    elseif hour >= 19 and hour < 21 then filename = "dusk"
+    elseif hour >= 21 or hour < 4 then filename = "twilight"
     end
 
     local path = "media/ui/Backgrounds/" .. filename .. ".png"
     local tex = getTexture(path)
-    
-    -- Fallback if specific phase missing
-    if not tex then return getTexture("media/ui/Backgrounds/twilight.png") end
-    
-    return tex
+    return tex or getTexture("media/ui/Backgrounds/twilight.png")
 end
 
--- =============================================================================
--- OVERLAY TEXTURES (LAYER 3: CRT EFFECT)
--- =============================================================================
 function DynamicTradingUI:getOverlayTexture()
     return getTexture("media/ui/Effects/crt.png")
 end
 
 -- =============================================================================
--- UTILITIES
+-- 4. PLAYER DATA & ECONOMY HELPERS
 -- =============================================================================
-function DynamicTradingUI.TruncateString(text, font, maxWidth)
-    local tm = TextManager.instance
-    if tm:MeasureStringX(font, text) <= maxWidth then return text end
-
-    local len = #text
-    while len > 0 do
-        local truncated = string.sub(text, 1, len - 1) .. "..."
-        if tm:MeasureStringX(font, truncated) <= maxWidth then
-            return truncated
-        end
-        len = len - 1
-    end
-    return "..."
-end
-
 function DynamicTradingUI:getPlayerWealth(player)
     local inv = player:getInventory()
     local loose = inv:getItemsFromType("Base.Money", true)
@@ -151,9 +135,7 @@ function DynamicTradingUI:updateWallet()
 end
 
 function DynamicTradingUI:updateIdentityDisplay(trader)
-    if self.lblName then
-        self.lblName:setName(trader.name or "Unknown")
-    end
+    if self.lblName then self.lblName:setName(trader.name or "Unknown") end
 
     if self.lblArchetype then
         local archName = "Survivor"
@@ -170,24 +152,46 @@ function DynamicTradingUI:updateIdentityDisplay(trader)
 
         if trader.expirationTime then
             local diff = trader.expirationTime - gt:getWorldAgeHours()
-            
-            if diff <= 0 then
-                text = "Signal: Imminent Loss"
-                r, g, b = 1.0, 0.0, 0.0
-            elseif diff > 8 then
-                text = string.format("Signal: Stable (%dh)", math.floor(diff))
-                r, g, b = 0.2, 1.0, 0.2
-            elseif diff < 1 then
-                -- [NEW] Special handling for <1h remaining
-                text = "Signal: Heavy Interference"
-                r, g, b = 1.0, 0.4, 0.0 -- Bright Orange-Red alert color
-            else
-                text = string.format("Signal: Fading (%dh)", math.floor(diff))
-                r, g, b = 1.0, 0.8, 0.2
-            end
+            if diff <= 0 then text = "Signal: Disconnection Imminent!"; r, g, b = 1, 0, 0
+            elseif diff < 1 then text = "Signal: Unstable Transmission"; r, g, b = 1, 0.4, 0
+            elseif diff < 8 then text = string.format("Signal: Fading (%dh)", math.floor(diff)); r, g, b = 1, 0.8, 0.2
+            else text = string.format("Signal: Stable (%dh)", math.floor(diff)); r, g, b = 0.2, 1, 0.2 end
         end
-
         self.lblSignal:setName(text)
         self.lblSignal:setColor(r, g, b, 1)
     end
+end
+
+-- =============================================================================
+-- 5. UTILITIES (STRING & LOCKS)
+-- =============================================================================
+function DynamicTradingUI.TruncateString(text, font, maxWidth)
+    local tm = TextManager.instance
+    if tm:MeasureStringX(font, text) <= maxWidth then return text end
+
+    local len = #text
+    while len > 0 do
+        local truncated = string.sub(text, 1, len - 1) .. "..."
+        if tm:MeasureStringX(font, truncated) <= maxWidth then
+            return truncated
+        end
+        len = len - 1
+    end
+    return "..."
+end
+
+-- [NEW] ITEM LOCK HELPER
+-- Checks the player's private ModData to see if a specific item is protected.
+function DynamicTradingUI:isItemLocked(itemID)
+    if not itemID or itemID == -1 then return false end
+    
+    local player = getSpecificPlayer(0)
+    local modData = player:getModData()
+    
+    -- Check if the Lock table exists and contains this ID
+    if modData.DT_LockedItems and modData.DT_LockedItems[itemID] then
+        return true
+    end
+    
+    return false
 end
