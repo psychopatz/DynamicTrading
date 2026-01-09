@@ -1,4 +1,3 @@
-
 require "DynamicTrading_DialogueConfig"
 
 DynamicTrading = DynamicTrading or {}
@@ -34,27 +33,20 @@ end
 
 -- Helper: safely retrieve the DB
 local function GetDB()
-    -- If missing, try to force load
     if not DynamicTrading.Dialogue then
-        print("[DT-WARNING] Dialogue DB missing. Attempting re-require...")
+        -- Attempt to reload if missing (Safety Net)
         require "DynamicTrading_DialogueConfig"
     end
     return DynamicTrading.Dialogue
 end
 
--- Helper: Finds the best pool of strings. 
--- Priority: Archetype Specific Subcategory -> General Subcategory -> General Default
+-- Helper: Finds the best pool of strings based on Trader Archetype
+-- Priority: Archetype Specific -> General Specific -> General Default -> Generic
 local function GetDialoguePool(archetype, category, subContext)
     local db = GetDB()
-    
-    -- CRASH PREVENTION: If DB is still nil, return safe default
-    if not db then 
-        print("[DT-ERROR] DynamicTrading.Dialogue is nil! Check DynamicTrading_DialogueConfig.lua location.")
-        return { "..." } 
-    end
+    if not db then return { "..." } end
 
-    -- 1. Try Archetype Specific
-    -- Check if Archetypes table exists before indexing
+    -- 1. Try Archetype Specific (e.g., Sheriff -> Greetings -> Morning)
     if db.Archetypes and db.Archetypes[archetype] then
         local archDB = db.Archetypes[archetype]
         if archDB[category] and archDB[category][subContext] then
@@ -62,17 +54,17 @@ local function GetDialoguePool(archetype, category, subContext)
         end
     end
 
-    -- 2. Try General Specific
+    -- 2. Try General Specific (e.g., General -> Greetings -> Morning)
     if db.General and db.General[category] and db.General[category][subContext] then
         return db.General[category][subContext]
     end
 
-    -- 3. Fallback to General Default (Safety Net)
+    -- 3. Fallback to General Default
     if db.General and db.General[category] and db.General[category]["Default"] then
         return db.General[category]["Default"]
     end
     
-    -- 4. Fallback to Generic (Buying/Selling often use 'Generic' instead of 'Default')
+    -- 4. Final Fallback (Generic)
     if db.General and db.General[category] and db.General[category]["Generic"] then
         return db.General[category]["Generic"]
     end
@@ -81,7 +73,7 @@ local function GetDialoguePool(archetype, category, subContext)
 end
 
 -- =============================================================================
--- 2. GREETING GENERATOR
+-- 2. GREETING GENERATOR (On Window Open)
 -- =============================================================================
 function DynamicTrading.DialogueManager.GenerateGreeting(trader)
     if not trader then return "..." end
@@ -92,45 +84,74 @@ function DynamicTrading.DialogueManager.GenerateGreeting(trader)
     
     local subContext = "Default"
 
-    -- A. Check Weather (Priority)
+    -- Priority Logic: Weather > Time
     if cm:getRainIntensity() > 0.4 then
         subContext = "Raining"
     elseif cm:getFogIntensity() > 0.4 then
         subContext = "Fog"
     else
-        -- B. Check Time
-        if hour >= 5 and hour < 10 then
-            subContext = "Morning"
-        elseif hour >= 17 and hour < 21 then
-            subContext = "Evening"
-        elseif hour >= 21 or hour < 5 then
-            subContext = "Night"
+        -- Time Contexts
+        if hour >= 5 and hour < 10 then subContext = "Morning"
+        elseif hour >= 17 and hour < 21 then subContext = "Evening"
+        elseif hour >= 21 or hour < 5 then subContext = "Night"
         end
     end
 
     local pool = GetDialoguePool(trader.archetype, "Greetings", subContext)
-    local rawText = PickRandom(pool)
-    
-    return FormatMessage(rawText, {})
+    return FormatMessage(PickRandom(pool), {})
 end
 
 -- =============================================================================
--- 3. IDLE GENERATOR (NEW)
+-- 3. IDLE GENERATOR (Triggered by Timer)
 -- =============================================================================
 function DynamicTrading.DialogueManager.GenerateIdleMessage(trader)
     if not trader then return "..." end
     
-    -- Currently relies on 'Default', but logic allows expansion (e.g., if Raining)
+    -- We use "Idle" category. 
+    -- Currently only "Default" exists, but logic supports "Raining" etc if you add it later.
     local subContext = "Default" 
     
     local pool = GetDialoguePool(trader.archetype, "Idle", subContext)
-    local rawText = PickRandom(pool)
-    
-    return FormatMessage(rawText, {})
+    return FormatMessage(PickRandom(pool), {})
 end
 
 -- =============================================================================
--- 4. TRANSACTION GENERATOR
+-- 4. AMBIENT GENERATOR (NEW - Triggered by Environment Changes)
+-- =============================================================================
+-- This function maps specific events (Time/Weather) to existing dialogue categories.
+-- This allows the NPC to comment on changes without needing a massive new config.
+function DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, eventType)
+    if not trader or not eventType then return nil end
+    
+    -- Map the "Event" to a "Dialogue Category"
+    -- We reuse "Greetings" categories because they usually contain observations like 
+    -- "Sun is coming up" or "It's raining".
+    local category = "Greetings" 
+    local subContext = "Default"
+
+    if eventType == "Morning" then subContext = "Morning"
+    elseif eventType == "Evening" then subContext = "Evening"
+    elseif eventType == "Night" then subContext = "Night"
+    elseif eventType == "RainStart" then subContext = "Raining"
+    elseif eventType == "FogStart" then subContext = "Fog"
+    elseif eventType == "RainStop" then 
+        -- If you don't have a "ClearSky" category, fall back to Default
+        subContext = "Default" 
+    end
+
+    -- Fetch the pool
+    local pool = GetDialoguePool(trader.archetype, category, subContext)
+    
+    -- [Logic Tweak]
+    -- Since we are reusing Greeting lines, some might sound weird mid-conversation 
+    -- (e.g. "Hello!"). In a polished mod, you would create a separate "Ambient" category
+    -- in your Config file. For now, this reusing method works for 90% of lines.
+    
+    return FormatMessage(PickRandom(pool), {})
+end
+
+-- =============================================================================
+-- 5. TRANSACTION GENERATOR (Buying/Selling)
 -- =============================================================================
 function DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, args)
     if not trader then return "..." end
@@ -139,12 +160,10 @@ function DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy
     local category = isBuy and "Buying" or "Selling"
     local subContext = "Generic"
 
-    -- A. FAILURE SCENARIOS (Buying Only)
+    -- A. FAILURE SCENARIOS
     if isBuy and not safeArgs.success then
-        if safeArgs.failReason == "SoldOut" then
-            subContext = "SoldOut"
-        elseif safeArgs.failReason == "NoCash" then
-            subContext = "NoCash"
+        if safeArgs.failReason == "SoldOut" then subContext = "SoldOut"
+        elseif safeArgs.failReason == "NoCash" then subContext = "NoCash"
         end
         local pool = GetDialoguePool(trader.archetype, category, subContext)
         return FormatMessage(PickRandom(pool), safeArgs)
@@ -156,31 +175,17 @@ function DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy
     if base <= 0 then base = 1 end
     
     if isBuy then
-        -- BUYING LOGIC
         local ratio = price / base
-        
-        if price >= 200 then
-            subContext = "HighValue"
-        elseif ratio > 1.2 then
-            subContext = "HighMarkup" -- Trader ripped you off
-        elseif ratio < 0.9 then
-            subContext = "LowMarkup" -- You got a deal
-        else
-            subContext = "Generic"
-        end
+        if price >= 200 then subContext = "HighValue"
+        elseif ratio > 1.2 then subContext = "HighMarkup"
+        elseif ratio < 0.9 then subContext = "LowMarkup"
+        else subContext = "Generic" end
     else
-        -- SELLING LOGIC
-        if price >= 200 then
-            subContext = "HighValue"
-        elseif price < 10 then
-            subContext = "Trash"
-        else
-            subContext = "Generic"
-        end
+        if price >= 200 then subContext = "HighValue"
+        elseif price < 10 then subContext = "Trash"
+        else subContext = "Generic" end
     end
     
     local pool = GetDialoguePool(trader.archetype, category, subContext)
-    local rawText = PickRandom(pool)
-    
-    return FormatMessage(rawText, safeArgs)
+    return FormatMessage(PickRandom(pool), safeArgs)
 end
