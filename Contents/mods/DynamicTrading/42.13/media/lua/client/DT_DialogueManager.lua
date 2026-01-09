@@ -7,6 +7,7 @@ DynamicTrading.DialogueManager = {}
 -- 1. INTERNAL HELPERS
 -- =============================================================================
 
+
 -- Helper: Safely picks a random string from a table
 local function PickRandom(pool)
     if not pool or #pool == 0 then return nil end
@@ -207,9 +208,13 @@ end
 function DynamicTrading.DialogueManager.GeneratePlayerMessage(action, args)
     if not action then action = "Buy" end
     
-    -- Handle special overrides
-    if action == "Buy" and args and args.wasLastOne then
-        action = "BuyLast"
+    -- LOGIC: Check failure reasons FIRST to override success logic
+    if action == "Buy" and args then
+        if args.failReason == "NoCash" then
+            action = "NoCash" -- Switch to Haggling lines
+        elseif args.wasLastOne then
+            action = "BuyLast" -- Switch to Last Stock lines
+        end
     end
     
     local db = GetDB()

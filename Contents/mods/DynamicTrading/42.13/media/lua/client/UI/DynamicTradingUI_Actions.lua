@@ -24,27 +24,44 @@ function DynamicTradingUI:onAction()
         basePrice = d.data and d.data.basePrice or d.price
     }
 
-    -- BUYING PRE-CHECKS
+    -- BUYING PRE-CHECKS (Local)
     if self.isBuying then
+        -- CHECK 1: SOLD OUT
         if d.qty <= 0 then
             diagArgs.success = false
             diagArgs.failReason = "SoldOut"
-            local msg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
-            self:logLocal(msg, true) 
+            
+            -- 1. Player: "I'll take that..." (Immediate)
+            local playerMsg = DynamicTrading.DialogueManager.GeneratePlayerMessage("Buy", diagArgs) 
+            self:queueMessage(playerMsg, false, true, 0)
+            
+            -- 2. Trader: "It's gone." (~1s Delay)
+            local failMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
+            self:queueMessage(failMsg, true, false, 10, "DT_RadioClick")
+            
             return
         end
         
+        -- CHECK 2: INSUFFICIENT FUNDS
         local wealth = self:getPlayerWealth(player)
         if wealth < d.price then
             diagArgs.success = false
             diagArgs.failReason = "NoCash"
-            local msg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
-            self:logLocal(msg, true)
+            
+            -- 1. Player: "Can I get a discount?" (Immediate)
+            -- The Manager detects 'NoCash' and switches to Haggling lines automatically
+            local playerMsg = DynamicTrading.DialogueManager.GeneratePlayerMessage("Buy", diagArgs)
+            self:queueMessage(playerMsg, false, true, 0)
+            
+            -- 2. Trader: "No cash, no deal." (~1s Delay)
+            local failMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
+            self:queueMessage(failMsg, true, false, 10, "DT_RadioClick")
+            
             return
         end
     end
 
-    -- CONSTRUCT ARGUMENTS
+    -- CONSTRUCT ARGUMENTS (If checks pass, send to server)
     local args = {
         type = self.isBuying and "buy" or "sell",
         traderID = self.traderID,
@@ -59,7 +76,7 @@ function DynamicTradingUI:onAction()
 end
 
 -- =============================================================================
--- 2. LOCK/UNLOCK ACTION (NEW)
+-- 2. LOCK/UNLOCK ACTION
 -- =============================================================================
 function DynamicTradingUI:onToggleLock()
     if not self.selectedItemID or self.selectedItemID == -1 then return end
@@ -67,7 +84,7 @@ function DynamicTradingUI:onToggleLock()
     local player = getSpecificPlayer(0)
     local modData = player:getModData()
     
-    -- Initialize the lock table if it doesn't exist in the save file
+    -- Initialize the lock table if it doesn't exist
     if not modData.DT_LockedItems then
         modData.DT_LockedItems = {}
     end
@@ -85,8 +102,7 @@ function DynamicTradingUI:onToggleLock()
         player:playSound("LockDoor")
     end
     
-    -- Refresh the list. 
-    -- If locked, it will disappear from the 'Sell' list immediately.
+    -- Refresh the list
     self:populateList()
 end
 

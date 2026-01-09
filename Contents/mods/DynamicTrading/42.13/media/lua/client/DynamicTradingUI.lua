@@ -44,13 +44,27 @@ function DynamicTradingUI:initialise()
     self.wasRaining = false
     self.wasFoggy = false
     
-    -- [NEW] Transmission Delay State
-    -- Used to separate the Player Intro from the Trader Greeting
-    self.greetingTimer = -1 
+    -- [NEW] MESSAGE QUEUE SYSTEM
+    -- Stores pending messages to simulate conversation flow
+    -- Structure: { text="", isError=false, isPlayer=false, delay=0, sound=nil }
+    self.msgQueue = {}
 end
 
 function DynamicTradingUI:resetIdleTimer()
     self.idleTimer = 0
+end
+
+-- ==========================================================
+-- [NEW] QUEUE HELPER
+-- ==========================================================
+function DynamicTradingUI:queueMessage(text, isError, isPlayer, delay, soundName)
+    table.insert(self.msgQueue, {
+        text = text,
+        isError = isError or false,
+        isPlayer = isPlayer or false,
+        delay = delay or 0,
+        sound = soundName
+    })
 end
 
 -- =============================================================================
@@ -88,28 +102,39 @@ function DynamicTradingUI:update()
     end
     
     -- ==========================================================
-    -- GREETING DELAY SYSTEM (Simulate Radio Lag)
+    -- MESSAGE QUEUE PROCESSOR
     -- ==========================================================
-    if self.greetingTimer > 0 then
-        self.greetingTimer = self.greetingTimer - 1
-        if self.greetingTimer == 0 then
-            -- Trigger the Trader's Reply now
-            if DynamicTrading.DialogueManager then
-                local greeting = DynamicTrading.DialogueManager.GenerateGreeting(trader)
-                self:logLocal(greeting, false, false) -- isPlayer = false
-                
-                -- SFX
-                local player = getSpecificPlayer(0)
-                if player then getSoundManager():PlaySound("DT_RadioClick", false, 0.5) end
+    if #self.msgQueue > 0 then
+        local msg = self.msgQueue[1]
+        
+        if msg.delay > 0 then
+            -- Count down the delay
+            msg.delay = msg.delay - 1
+        else
+            -- Delay finished, show message
+            self:logLocal(msg.text, msg.isError, msg.isPlayer)
+            
+            -- Play Audio Sync
+            local player = getSpecificPlayer(0)
+            if player then
+                -- Play specific sound if provided (e.g., cash register)
+                if msg.sound then
+                     getSoundManager():PlaySound(msg.sound, false, 1.0)
+                -- Otherwise play default radio click
+                else
+                     getSoundManager():PlaySound("DT_RadioClick", false, 0.5)
+                end
             end
-            self.greetingTimer = -1 -- Disable
+            
+            -- Remove from queue and reset idle
+            table.remove(self.msgQueue, 1)
+            self:resetIdleTimer()
         end
     end
 
     -- ==========================================================
     -- OBSERVER & IDLE SYSTEM
     -- ==========================================================
-    -- We run logic checks every 30 frames (~0.5 seconds) to save CPU.
     self.updateTick = self.updateTick + 1
     if self.updateTick >= 30 then
         self.updateTick = 0
@@ -120,17 +145,13 @@ function DynamicTradingUI:update()
         local currentHour = gt:getHour()
         local isRaining = cm:getRainIntensity() > 0.4
         local isFoggy = cm:getFogIntensity() > 0.4
-        local eventTriggered = false
         local ambientMsg = nil
 
-        -- B. TIME OBSERVER (Triggers only when hour changes)
+        -- B. TIME OBSERVER
         if currentHour ~= self.lastHour then
-            if currentHour == 5 then
-                ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "Morning")
-            elseif currentHour == 17 then
-                ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "Evening")
-            elseif currentHour == 21 then
-                ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "Night")
+            if currentHour == 5 then ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "Morning")
+            elseif currentHour == 17 then ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "Evening")
+            elseif currentHour == 21 then ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "Night")
             end
             self.lastHour = currentHour
         end
@@ -138,42 +159,30 @@ function DynamicTradingUI:update()
         -- C. WEATHER OBSERVER
         if not ambientMsg then 
             if isRaining ~= self.wasRaining then
-                if isRaining then
-                    ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "RainStart")
-                else
-                    ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "RainStop")
-                end
+                ambientMsg = isRaining and DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "RainStart") or DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "RainStop")
                 self.wasRaining = isRaining
             elseif isFoggy ~= self.wasFoggy then
-                if isFoggy then
-                    ambientMsg = DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "FogStart")
-                end
+                ambientMsg = isFoggy and DynamicTrading.DialogueManager.GenerateAmbientMessage(trader, "FogStart")
                 self.wasFoggy = isFoggy
             end
         end
 
         -- D. EXECUTE AMBIENT EVENT
-        -- Only fire ambient events if we aren't currently waiting for the initial greeting
-        if ambientMsg and self.greetingTimer == -1 then
-            self:logLocal(ambientMsg, false, false) 
-            self:resetIdleTimer() 
-            eventTriggered = true
-            
-            local player = getSpecificPlayer(0)
-            if player then getSoundManager():PlaySound("DT_RadioClick", false, 0.5) end
+        -- We add it to the queue with a small delay to avoid interrupting active convos abruptly
+        if ambientMsg then
+            self:queueMessage(ambientMsg, false, false, 10) 
         end
 
         -- E. IDLE LOGIC
-        if not eventTriggered and self.greetingTimer == -1 then
+        -- Only tick up if queue is empty (no active conversation)
+        if #self.msgQueue == 0 then
             self.idleTimer = self.idleTimer + 30
             
             if self.idleTimer >= 3600 then
                 if DynamicTrading.DialogueManager then
                     local idleMsg = DynamicTrading.DialogueManager.GenerateIdleMessage(trader)
                     if idleMsg then
-                        self:logLocal(idleMsg, false, false)
-                        local player = getSpecificPlayer(0)
-                        if player then getSoundManager():PlaySound("DT_RadioClick", false, 0.5) end
+                        self:queueMessage(idleMsg, false, false, 0)
                     end
                 end
                 self.idleTimer = 0
@@ -213,18 +222,13 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
     -- ==========================================================
     if trader and DynamicTrading.DialogueManager then
         
-        -- 1. Player Initiates Call (Immediate)
+        -- 1. Player Initiates Call (Delay 0 - Instant)
         local introMsg = DynamicTrading.DialogueManager.GeneratePlayerMessage("Intro", {})
-        ui:logLocal(introMsg, false, true) -- isPlayer = true
+        ui:queueMessage(introMsg, false, true, 0)
 
-        -- 2. Queue Trader Response (Delayed)
-        -- We set the timer to 50 ticks (~0.8 seconds). 
-        -- The update() loop handles firing the reply when this hits 0.
-        ui.greetingTimer = 50 
-        
-        -- SFX (Initial click for player)
-        local player = getSpecificPlayer(0)
-        if player then getSoundManager():PlaySound("DT_RadioClick", false, 0.5) end
+        -- 2. Trader Responds (Delay 60 - ~1 Second later)
+        local greeting = DynamicTrading.DialogueManager.GenerateGreeting(trader)
+        ui:queueMessage(greeting, false, false, 20)
     end
 
     DynamicTradingUI.instance = ui
