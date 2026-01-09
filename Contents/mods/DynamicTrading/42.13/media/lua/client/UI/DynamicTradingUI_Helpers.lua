@@ -1,3 +1,4 @@
+
 -- =============================================================================
 -- 1. CONNECTION & POWER VALIDATION
 -- =============================================================================
@@ -32,40 +33,120 @@ function DynamicTradingUI:isConnectionValid()
 end
 
 -- =============================================================================
--- 2. LOGGING & FEEDBACK
+-- 2. TEXT WRAPPING UTILITY (NEW FIX)
+-- =============================================================================
+-- Helper function to split text into lines that fit the width.
+-- Replaces the failed Java call with pure Lua logic using MeasureStringX.
+function DynamicTradingUI.WrapText(text, maxWidth, font)
+    local tm = getTextManager()
+    local result = {}
+    
+    if not text then return {""} end
+    text = tostring(text)
+
+    -- Split explicit newlines (paragraphs) first
+    local paragraphs = {}
+    for s in string.gmatch(text, "[^\r\n]+") do
+        table.insert(paragraphs, s)
+    end
+    if #paragraphs == 0 then table.insert(paragraphs, text) end
+
+    -- Process each paragraph for wrapping
+    for _, para in ipairs(paragraphs) do
+        local currentLine = ""
+        
+        for word in string.gmatch(para, "%S+") do
+            local testLine = (currentLine == "") and word or (currentLine .. " " .. word)
+            
+            if tm:MeasureStringX(font, testLine) <= maxWidth then
+                currentLine = testLine
+            else
+                -- If line is full, push it and start new line with current word
+                if currentLine ~= "" then table.insert(result, currentLine) end
+                currentLine = word
+            end
+        end
+        -- Push the remaining text
+        if currentLine ~= "" then table.insert(result, currentLine) end
+    end
+    
+    if #result == 0 then return {""} end
+    return result
+end
+
+-- =============================================================================
+-- 3. LOGGING & FEEDBACK (UPDATED)
 -- =============================================================================
 function DynamicTradingUI:logLocal(text, isError)
-    local entry = { text = text, error = isError or false }
+    -- Calculate text wrapping logic
+    -- Subtract scrollbar width (~15px) + padding (~10px)
+    local listWidth = self.chatList:getWidth() - 25 
+    if listWidth <= 50 then listWidth = 200 end -- Safety fallback
+    
+    local font = self.chatList.font
+    
+    -- [FIX] Use Lua wrapper instead of Java splitIntoLines
+    local lines = DynamicTradingUI.WrapText(text, listWidth, font)
+    
+    -- Calculate total height needed
+    local lineHeight = self.chatList.itemheight or 18
+    local totalHeight = #lines * lineHeight
+    if totalHeight < lineHeight then totalHeight = lineHeight end 
+
+    local entry = { 
+        text = text, 
+        error = isError or false,
+        lines = lines,       -- Store the lua table of lines
+        height = totalHeight -- Store the dynamic height
+    }
     table.insert(self.localLogs, entry)
 
     self.chatList:clear()
     -- Rebuild the list from the logs table
     for _, log in ipairs(self.localLogs) do
-        self.chatList:addItem(log.text, log)
+        local addedItem = self.chatList:addItem(log.text, log)
+        -- CRITICAL: Set the height of this specific row so the listbox scrolls correctly
+        addedItem.height = log.height
     end
     -- Auto-scroll to the bottom so newest messages are visible
     self.chatList:ensureVisible(#self.chatList.items)
 end
 
 function DynamicTradingUI:drawLogItem(y, item, alt)
-    local height = self.itemheight
+    local data = item.item -- This is the 'entry' table created in logLocal
+    
+    -- Use the calculated dynamic height, or fallback to default
+    local height = data.height or self.itemheight
     local width = self:getWidth()
+    local lineHeight = self.itemheight
 
     if alt then
         self:drawRect(0, y, width, height, 0.1, 0.1, 0.1, 0.5)
     end
 
     local r, g, b = 0.8, 0.8, 0.8
-    if item.item.error then r, g, b = 1.0, 0.4, 0.4 end -- Failure/Error
-    if string.find(item.item.text, "Purchased") then r, g, b = 0.4, 1.0, 0.4 end -- Finance Green
-    if string.find(item.item.text, "Sold") then r, g, b = 0.4, 0.8, 1.0 end -- Finance Blue
+    if data.error then r, g, b = 1.0, 0.4, 0.4 end -- Failure/Error
+    if string.find(data.text, "Purchased") then r, g, b = 0.4, 1.0, 0.4 end -- Finance Green
+    if string.find(data.text, "Sold") then r, g, b = 0.4, 0.8, 1.0 end -- Finance Blue
 
-    self:drawText(item.text, 5, y + 2, r, g, b, 1, self.font)
+    -- Draw the multi-line text (Iterating Lua Table)
+    if data.lines and #data.lines > 0 then
+        local currentY = y
+        for _, lineStr in ipairs(data.lines) do
+            self:drawText(lineStr, 5, currentY + 2, r, g, b, 1, self.font)
+            currentY = currentY + lineHeight
+        end
+    else
+        -- Fallback if lines weren't calculated
+        self:drawText(data.text, 5, y + 2, r, g, b, 1, self.font)
+    end
+    
+    -- Return the Y position where the NEXT item should start
     return y + height
 end
 
 -- =============================================================================
--- 3. TEXTURE & VISUAL ENGINE
+-- 4. TEXTURE & VISUAL ENGINE
 -- =============================================================================
 function DynamicTradingUI:getTraderTexture(trader)
     if not trader then return getTexture("Item_Radio") end
@@ -111,7 +192,7 @@ function DynamicTradingUI:getOverlayTexture()
 end
 
 -- =============================================================================
--- 4. PLAYER DATA & ECONOMY HELPERS
+-- 5. PLAYER DATA & ECONOMY HELPERS
 -- =============================================================================
 function DynamicTradingUI:getPlayerWealth(player)
     local inv = player:getInventory()
@@ -159,7 +240,7 @@ function DynamicTradingUI:updateIdentityDisplay(trader)
 end
 
 -- =============================================================================
--- 5. UTILITIES (STRING & LOCKS)
+-- 6. UTILITIES (STRING & LOCKS)
 -- =============================================================================
 function DynamicTradingUI.TruncateString(text, font, maxWidth)
     local tm = TextManager.instance
