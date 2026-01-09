@@ -1,10 +1,15 @@
 -- =============================================================================
--- File: Contents\mods\DynamicTrading\42.13\media\lua\client\UI\DynamicTradingUI_Actions.lua
+-- File: media/lua/client/UI/DynamicTradingUI_Actions.lua
 -- =============================================================================
 
 require "DT_DialogueManager"
 
 function DynamicTradingUI:onAction()
+    -- 1. ACTIVITY RESET
+    -- Reset the idle timer so the trader doesn't complain about you being quiet.
+    if self.resetIdleTimer then self:resetIdleTimer() end
+
+    -- 2. SELECTION VALIDATION
     if not self.listbox or self.listbox.selected == -1 then return end
     local selItem = self.listbox.items[self.listbox.selected]
     if not selItem or not selItem.item or selItem.item.isCategory then return end
@@ -12,79 +17,67 @@ function DynamicTradingUI:onAction()
     local d = selItem.item
     local player = getSpecificPlayer(0)
     
-    -- 1. FETCH TRADER CONTEXT
-    -- We need the trader object to know their Archetype (Sheriff, Smuggler, etc.)
+    -- Fetch trader for potential local error messages (Dialogue)
     local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
     
-    -- Prepare arguments for the Dialogue Engine
     local diagArgs = {
         itemName = d.name,
         price = d.price,
         basePrice = d.data and d.data.basePrice or d.price
     }
 
-    -- 2. VALIDATION CHECKS (Buying)
+    -- 3. BUYING PRE-CHECKS
     if self.isBuying then
-        -- Check Stock
+        -- Check Stock levels
         if d.qty <= 0 then
             diagArgs.success = false
             diagArgs.failReason = "SoldOut"
-            
             local msg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
-            self:logLocal(msg, true) -- Red text
+            self:logLocal(msg, true) 
             return
         end
         
-        -- Check Wealth
+        -- Check Player Wealth
         local wealth = self:getPlayerWealth(player)
         if wealth < d.price then
             diagArgs.success = false
             diagArgs.failReason = "NoCash"
-            
             local msg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
-            self:logLocal(msg, true) -- Red text
+            self:logLocal(msg, true)
             return
         end
     end
 
-    -- 3. PREPARE TRANSACTION
+    -- 4. CONSTRUCT TRANSACTION ARGUMENTS
     local args = {
         type = self.isBuying and "buy" or "sell",
         traderID = self.traderID,
         key = d.key,
         category = d.data.tags[1] or "Misc",
-        qty = 1
+        qty = 1,
+        -- [CRITICAL FIX] We now pass the Unique Item ID for selling.
+        -- This ensures the server sells the EXACT physical item selected in the list.
+        itemID = d.itemID or -1 
     }
 
-    -- 4. EXECUTE
-    if getWorld():getGameMode() == "Multiplayer" then
-        -- In MP, we send the command. 
-        -- The "Success" dialogue happens in DynamicTradingUI_Events.lua upon receiving the Server Callback.
-        sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
-    else
-        -- In SP, we execute immediately and log the dialogue here.
-        if DynamicTrading.ServerCommands and DynamicTrading.ServerCommands.TradeTransaction then
-            DynamicTrading.ServerCommands.TradeTransaction(player, args)
-            self:populateList()
-            player:playSound("Transaction")
-
-            -- Generate Success Message
-            diagArgs.success = true
-            local msg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, self.isBuying, diagArgs)
-            
-            -- Log with standard colors (Green/Blue handled by drawLogItem based on "Purchased/Sold" keywords? 
-            -- Actually, since the text is dynamic now, drawLogItem might need to just check 'isError'.
-            -- But for now, we pass false for isError).
-            self:logLocal(msg, false) 
-        end
-    end
+    -- 5. EXECUTE COMMAND
+    -- We send the request to the server. 
+    -- Feedback (Logs/Sounds/Refreshes) is handled by DynamicTradingUI_Events.lua 
+    -- once the server confirms the trade was successful.
+    sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
 end
 
 function DynamicTradingUI:onToggleMode()
+    -- Reset activity timer
+    if self.resetIdleTimer then self:resetIdleTimer() end
+
     self.isBuying = not self.isBuying
     self.selectedKey = nil
     self.lastSelectedIndex = -1
+    
+    -- Refresh the list (Filters out active radio if switching to Sell)
     self:populateList()
+    
     self.btnAction:setEnable(false)
 end
 

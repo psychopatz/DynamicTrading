@@ -158,7 +158,7 @@ end
 function Commands.RequestFullState(player, args)
     local data = DynamicTrading.Manager.GetData()
     if data then
-        ModData.transmit("DynamicTrading_Engine_v1")
+        ModData.transmit("DynamicTrading_Engine_v1.1")
     end
 end
 
@@ -169,7 +169,7 @@ function Commands.TradeTransaction(player, args)
     local traderID = args.traderID
     local key = args.key
     local category = args.category or "Misc"
-    local clientQty = args.qty or 1
+    local clientQty = tonumber(args.qty) or 1 
 
     local data = DynamicTrading.Manager.GetData()
     local trader = data.Traders[traderID]
@@ -178,23 +178,25 @@ function Commands.TradeTransaction(player, args)
     if not trader or not itemData then return end
     local inv = player:getInventory()
 
+    -- Cache Display Name from Script for logging
+    local scriptItem = getScriptManager():getItem(itemData.item)
+    local safeDisplayName = scriptItem and scriptItem:getDisplayName() or "Unknown Item"
+
     if type == "buy" then
         -- 1. Calculate Price
-        local price = DynamicTrading.Economy.GetBuyPrice(key, data.globalHeat)
-        local totalCost = price * clientQty
+        local unitPrice = DynamicTrading.Economy.GetBuyPrice(key, data.globalHeat)
+        local totalCost = unitPrice * clientQty
         
         -- 2. Check Stock
         local currentStock = trader.stocks[key] or 0
         if currentStock < clientQty then
             SendResponse(player, "TransactionResult", { success=false, msg="Sold Out!" })
-            ModData.transmit("DynamicTrading_Engine_v1")
             return
         end
 
         -- 3. Check Wealth
-        local wealth = GetServerWealth(player)
-        if wealth < totalCost then
-            SendResponse(player, "TransactionResult", { success=false, msg="Not enough cash! (Server: " .. wealth .. ")" })
+        if GetServerWealth(player) < totalCost then
+            SendResponse(player, "TransactionResult", { success=false, msg="Not enough cash!" })
             return
         end
 
@@ -202,17 +204,27 @@ function Commands.TradeTransaction(player, args)
         if ServerRemoveMoney(player, totalCost) then
             DynamicTrading.Manager.OnBuyItem(traderID, key, category, clientQty)
             ServerAddItem(inv, itemData.item, clientQty)
-            SendResponse(player, "TransactionResult", { success=true, msg="Purchased!" })
+            
+            SendResponse(player, "TransactionResult", { 
+                success = true, 
+                itemName = safeDisplayName,
+                price = totalCost
+            })
         else
             SendResponse(player, "TransactionResult", { success=false, msg="Transaction Error" })
         end
 
     elseif type == "sell" then
-        -- 1. Check Item Existence
-        local itemObj = nil
-        local allItems = inv:getItemsFromType(itemData.item, true)
-        if allItems and allItems:size() > 0 then
-            itemObj = allItems:get(0)
+        -- 1. Locate specific physical item by ID
+        -- [ROBUST FIX] We now find the item by the unique ID passed from the client
+        local itemObj = inv:getItemById(args.itemID)
+        
+        if not itemObj then
+            -- Fallback: If ID search fails, try traditional search (rare)
+            local allItems = inv:getItemsFromType(itemData.item, true)
+            if allItems and allItems:size() > 0 then
+                itemObj = allItems:get(0)
+            end
         end
         
         if not itemObj then
@@ -220,34 +232,49 @@ function Commands.TradeTransaction(player, args)
             return
         end
 
-        -- 2. Calculate Price
-        local price = DynamicTrading.Economy.GetSellPrice(itemObj, key, trader.archetype)
-        if price <= 0 then price = 0 end 
+        -- [NEW SAFETY LOCK] Double check it's not the active radio
+        -- If the physical radio is turned on, the server blocks the sale as a safeguard.
+        if itemObj.getDeviceData then
+            local dev = itemObj:getDeviceData()
+            if dev and dev:getIsTurnedOn() then
+                SendResponse(player, "TransactionResult", { success=false, msg="Cannot sell an active radio!" })
+                return
+            end
+        end
 
-        -- 3. Execute Trade
+        -- Capture Price and Name BEFORE removing the item
+        local unitPrice = DynamicTrading.Economy.GetSellPrice(itemObj, key, trader.archetype)
+        local totalGain = unitPrice * clientQty
+        local itemNameForLog = itemObj:getDisplayName()
+
+        -- 2. Execute Trade
         ServerRemoveItem(itemObj)
         
-        local bundles = math.floor(price / 100)
-        local loose = price % 100
+        local bundles = math.floor(totalGain / 100)
+        local loose = totalGain % 100
         if bundles > 0 then ServerAddItem(inv, "Base.MoneyBundle", bundles) end
         if loose > 0 then ServerAddItem(inv, "Base.Money", loose) end
         
         DynamicTrading.Manager.OnSellItem(traderID, key, category, clientQty)
-        SendResponse(player, "TransactionResult", { success=true, msg="Sold!" })
+        
+        -- Send exact keys client expects for Audit Log
+        SendResponse(player, "TransactionResult", { 
+            success = true, 
+            itemName = itemNameForLog,
+            price = totalGain
+        })
     end
 end
+
 
 -- COMMAND: AttemptScan
 -- Description: The RNG roll for finding new traders
 function Commands.AttemptScan(player, args)
-    print("[DT-Debug] AttemptScan Called by: " .. tostring(player:getUsername()))
-
     local targetUser = player:getUsername()
 
     -- 1. Cooldown Check
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
     if not canScan then
-        print("[DT-Debug] Scan Blocked: Cooldown Active (" .. timeRem .. " mins)")
         SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         return
     end
@@ -255,7 +282,6 @@ function Commands.AttemptScan(player, args)
     -- 2. Daily Limit Check
     local found, limit = DynamicTrading.Manager.GetDailyStatus()
     if found >= limit then
-        print("[DT-Debug] Scan Blocked: Daily Limit Reached (" .. found .. "/" .. limit .. ")")
         SendResponse(player, "ScanResult", { status = "LIMIT_REACHED", targetUser = targetUser })
         return
     end
@@ -264,7 +290,6 @@ function Commands.AttemptScan(player, args)
     DynamicTrading.Manager.SetScanTimestamp(player)
 
     -- 4. Calculate Chances
-    -- The more traders found today, the harder it gets (Penalty Factor)
     local penaltyPerTrader = SandboxVars.DynamicTrading.ScanPenaltyPerTrader or 0.2
     local penaltyFactor = 1.0 + (found * penaltyPerTrader) 
     
@@ -272,26 +297,18 @@ function Commands.AttemptScan(player, args)
     local baseChance = SandboxVars.DynamicTrading.ScanBaseChance or 30
     local skillBonus = args.skillBonus or 1.0
     
-    -- Event Modifiers
     local eventMult = 1.0
     if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
         eventMult = DynamicTrading.Events.GetSystemModifier("scanChance")
     end
 
     local finalChance = (baseChance * radioTier * skillBonus * eventMult) / penaltyFactor
-    if finalChance < 1 then finalChance = 1 end
-    if finalChance > 95 then finalChance = 95 end
-    
     local roll = ZombRand(100) + 1
-
-    print(string.format("[DT-Debug] MATH: Base(%d) * Radio(%.2f) * Skill(%.2f) * Event(%.2f) / Penalty(%.2f)", baseChance, radioTier, skillBonus, eventMult, penaltyFactor))
-    print(string.format("[DT-Debug] FINAL CHANCE: %.2f%%  vs  ROLL: %d", finalChance, roll))
     
     -- 5. Roll Dice
     if roll <= finalChance then
         local trader = DynamicTrading.Manager.GenerateRandomContact()
         if trader then
-            print("[DT-Debug] RESULT: SUCCESS -> " .. trader.name)
             SendResponse(player, "ScanResult", { 
                 status = "SUCCESS", 
                 name = trader.name,
@@ -299,11 +316,9 @@ function Commands.AttemptScan(player, args)
                 targetUser = targetUser
             })
         else
-            print("[DT-Debug] RESULT: SUCCESS (But Generation Failed?)")
             SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         end
     else
-        print("[DT-Debug] RESULT: FAIL (RNG)")
         SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
     end
 end
@@ -340,10 +355,8 @@ local function Server_OnHourlyTick()
     if data.Traders then
         for id, trader in pairs(data.Traders) do
             local shouldRemove = false
-            if trader.expirationTime then
-                if currentHours > trader.expirationTime then shouldRemove = true end
-            elseif trader.expirationDay then
-                if currentDay > trader.expirationDay then shouldRemove = true end
+            if trader.expirationTime and currentHours > trader.expirationTime then 
+                shouldRemove = true 
             end
             
             if shouldRemove then
@@ -355,7 +368,7 @@ local function Server_OnHourlyTick()
     end
     
     -- Sync if traders removed
-    if changesMade then ModData.transmit("DynamicTrading_Engine_v1") end
+    if changesMade then ModData.transmit("DynamicTrading_Engine_v1.1") end
 
     -- 3. Event System Check (8 AM)
     if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then

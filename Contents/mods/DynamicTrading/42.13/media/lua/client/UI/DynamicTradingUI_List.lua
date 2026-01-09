@@ -1,3 +1,7 @@
+-- =============================================================================
+-- File: media/lua/client/UI/DynamicTradingUI_List.lua
+-- =============================================================================
+
 function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local height = listbox.itemheight
     local d = item.item
@@ -101,7 +105,6 @@ function DynamicTradingUI:populateList()
                     local price = DynamicTrading.Economy.GetBuyPrice(key, managerData.globalHeat or 0)
                     local cat = itemData.tags[1] or "Misc"
 
-                    -- [FIX] Only insert category name ONCE
                     if not categorized[cat] then
                         categorized[cat] = {}
                         table.insert(categories, cat)
@@ -131,43 +134,56 @@ function DynamicTradingUI:populateList()
         local player = getSpecificPlayer(0)
         local inv = player:getInventory()
         local items = inv:getItems()
+        
+        -- Get the Unique ID of the radio currently in use
+        local activeRadioID = self.radioObj and self.radioObj:getID() or -1
 
         for i = 0, items:size() - 1 do
             local invItem = items:get(i)
-            local fullType = invItem:getFullType()
+            
+            if invItem then 
+                local fullType = invItem:getFullType()
 
-            if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
-                local masterKey = nil
-                for k, v in pairs(DynamicTrading.Config.MasterList) do
-                    if v.item == fullType then
-                        masterKey = k
-                        break
-                    end
-                end
+                if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
+                    
+                    -- [ROBUST ID PROTECTION] 
+                    -- We check the physical ID of the item. 
+                    -- This allows selling identical radios as long as they aren't the physical one being held.
+                    local isActuallyInUse = (invItem:getID() == activeRadioID)
 
-                if masterKey then
-                    local itemData = DynamicTrading.Config.MasterList[masterKey]
-                    local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
-                    if price > 0 then
-                        local cat = itemData.tags[1] or "Misc"
-                        
-                        -- [FIX] Only insert category name ONCE
-                        if not categorized[cat] then
-                            categorized[cat] = {}
-                            table.insert(categories, cat)
+                    if not isActuallyInUse then
+                        local masterKey = nil
+                        for k, v in pairs(DynamicTrading.Config.MasterList) do
+                            if v.item == fullType then
+                                masterKey = k
+                                break
+                            end
                         end
 
-                        local priceMod = DynamicTrading.Events.GetPriceModifier and DynamicTrading.Events.GetPriceModifier(itemData.tags) or 1.0
+                        if masterKey then
+                            local itemData = DynamicTrading.Config.MasterList[masterKey]
+                            local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
+                            if price > 0 then
+                                local cat = itemData.tags[1] or "Misc"
+                                
+                                if not categorized[cat] then
+                                    categorized[cat] = {}
+                                    table.insert(categories, cat)
+                                end
 
-                        table.insert(categorized[cat], {
-                            key = masterKey,
-                            invItem = invItem,
-                            name = invItem:getDisplayName(),
-                            price = tonumber(price) or 0,
-                            data = itemData,
-                            isBuy = false,
-                            priceMod = priceMod
-                        })
+                                local priceMod = DynamicTrading.Events.GetPriceModifier and DynamicTrading.Events.GetPriceModifier(itemData.tags) or 1.0
+
+                                table.insert(categorized[cat], {
+                                    key = masterKey,
+                                    itemID = invItem:getID(), -- Store the ID for exact transaction
+                                    name = invItem:getDisplayName(),
+                                    price = tonumber(price) or 0,
+                                    data = itemData,
+                                    isBuy = false,
+                                    priceMod = priceMod
+                                })
+                            end
+                        end
                     end
                 end
             end
@@ -195,7 +211,7 @@ function DynamicTradingUI:populateList()
         end
     end
 
-    -- Restore selection if possible
+    -- Persistence logic (Keeps the button enabled for bulk clicking)
     local foundSelection = false
     if self.selectedKey then
         for i = 1, #self.listbox.items do
@@ -206,13 +222,20 @@ function DynamicTradingUI:populateList()
 
                 local actionStr = self.isBuying and "BUY" or "SELL"
                 self.btnAction:setTitle(actionStr .. " ($" .. listItem.item.price .. ")")
-                self.btnAction:setEnable(self.isBuying and listItem.item.qty > 0)
+                
+                if self.isBuying then
+                    self.btnAction:setEnable(listItem.item.qty > 0)
+                else
+                    self.btnAction:setEnable(true)
+                end
                 break
             end
         end
     end
 
     if not foundSelection then
+        self.listbox.selected = -1
+        self.selectedKey = nil
         self.btnAction:setEnable(false)
         self.btnAction:setTitle("SELECT AN ITEM")
     end

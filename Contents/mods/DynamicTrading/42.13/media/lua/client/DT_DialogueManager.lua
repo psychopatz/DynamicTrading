@@ -1,3 +1,4 @@
+
 require "DynamicTrading_DialogueConfig"
 
 DynamicTrading = DynamicTrading or {}
