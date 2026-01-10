@@ -1,20 +1,18 @@
 -- ==============================================================================
 -- MyNPC_Logic.lua
--- The "Driver": Controls the movement, facing, and behavior.
--- FIXED: Replaced deprecated path:clear() with zombie:setPath2(nil).
+-- The "Driver": Controls the movement.
+-- FIXED: Updated Teleport logic to use B42 function names (setLastX/setLastY).
 -- ==============================================================================
 
 MyNPCLogic = MyNPCLogic or {}
 
--- Performance Settings
-local TICK_LIMIT = 10 -- Run logic every 10 ticks
+local TICK_LIMIT = 10 
 local tickCounter = 0
 
 -- ==============================================================================
 -- 1. UTILITY FUNCTIONS
 -- ==============================================================================
 
--- Safe distance calculator (Math-based, crash-proof)
 local function calculateDistance(obj1, obj2)
     if not obj1 or not obj2 then return 9999 end
     local dx = obj1:getX() - obj2:getX()
@@ -27,14 +25,12 @@ end
 -- ==============================================================================
 
 function MyNPCLogic.OnTick()
-    -- Run on Server (Dedicated/Host)
     if isClient() then return end
 
     tickCounter = tickCounter + 1
     if tickCounter < TICK_LIMIT then return end
     tickCounter = 0
 
-    -- Get zombies in the current cell
     local cell = getCell()
     if not cell then return end
     
@@ -43,8 +39,6 @@ function MyNPCLogic.OnTick()
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        
-        -- Check if this zombie has our custom Brain
         local brain = MyNPC.GetBrain(zombie)
         if brain then
             MyNPCLogic.ProcessNPC(zombie, brain)
@@ -60,7 +54,6 @@ function MyNPCLogic.GetClosestTarget(zombie)
     local bestTarget = nil
     local closestDist = 9999
 
-    -- A. Check specific player slots (0-3 covers SP and Split-screen)
     for i = 0, 3 do
         local p = getSpecificPlayer(i)
         if p and not p:isDead() then
@@ -72,7 +65,6 @@ function MyNPCLogic.GetClosestTarget(zombie)
         end
     end
 
-    -- B. IF MULTIPLAYER: Check the online players list as well
     if isServer() then
         local onlinePlayers = getOnlinePlayers()
         if onlinePlayers then
@@ -93,57 +85,80 @@ function MyNPCLogic.GetClosestTarget(zombie)
 end
 
 -- ==============================================================================
--- 4. DECISION MAKING
+-- 4. DECISION MAKING (STATE MACHINE)
 -- ==============================================================================
 
 function MyNPCLogic.ProcessNPC(zombie, brain)
-    -- 1. Safety Override
-    zombie:setTarget(nil)
-    zombie:setUseless(true) 
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+    end
     
-    -- 2. Find Interest (Closest Entity)
     local target, dist = MyNPCLogic.GetClosestTarget(zombie)
     
-    if not target then return end -- Nothing to do
+    if not brain.pathTimer then brain.pathTimer = 0 end
+    brain.pathTimer = brain.pathTimer - 1
 
-    local isMoving = false
-
-    -- 3. Behavior: "Follow" (Only follows Players)
-    if brain.state == "Follow" and instanceof(target, "IsoPlayer") then
+    -- STATE: FOLLOW
+    if brain.state == "Follow" and target then
         
-        -- TELEPORT (Rubber-banding)
-        if dist > 50 then
-            zombie:setX(target:getX() + 2)
-            zombie:setY(target:getY() + 2)
-            zombie:setZ(target:getZ())
-            zombie:setLx(target:getX()) 
-            zombie:setLy(target:getY())
+        if dist > 50 then -- Teleport if lost
+            -- FIXED: B42 uses setLastX instead of setLx
+            local tx = target:getX() + 2
+            local ty = target:getY() + 2
+            local tz = target:getZ()
+
+            zombie:setX(tx)
+            zombie:setY(ty)
+            zombie:setZ(tz)
             
-        -- MOVE
-        elseif dist > 3 then
-            zombie:pathToLocation(target:getX(), target:getY(), target:getZ())
-            isMoving = true
+            if zombie.setLastX then zombie:setLastX(tx) end
+            if zombie.setLastY then zombie:setLastY(ty) end
             
-            if dist > 8 then
-                zombie:setRunning(true)
-            else
+            brain.lastTx = nil
+            
+        elseif dist > 3 then -- Move
+            
+            if brain.pathTimer <= 0 then
+                local tx = math.floor(target:getX())
+                local ty = math.floor(target:getY())
+                local tz = math.floor(target:getZ())
+                
+                zombie:pathToLocation(tx, ty, tz)
                 zombie:setRunning(false)
+                
+                brain.pathTimer = 20 
             end
             
-        -- STOP
-        else
-            -- FIXED: clear() does not exist in B42 path objects.
-            -- setPath2(nil) forces the character to stop moving.
+        else -- Stop
             zombie:setPath2(nil)
-            isMoving = false
+            brain.pathTimer = 0
+            zombie:faceThisObject(target)
         end
-    end
 
-    -- 4. "Smart Look" (Face the target when not moving)
-    if not isMoving then
-        zombie:faceThisObject(target)
+    -- STATE: STAY
+    elseif brain.state == "Stay" then
+        zombie:setPath2(nil)
+        if target then
+            zombie:faceThisObject(target)
+        end
+
+    -- STATE: GOTO
+    elseif brain.state == "GoTo" and brain.targetX then
+        local dx = zombie:getX() - brain.targetX
+        local dy = zombie:getY() - brain.targetY
+        local distToSpot = math.sqrt(dx * dx + dy * dy)
+
+        if distToSpot > 1 then
+            if brain.pathTimer <= 0 then
+                zombie:pathToLocation(math.floor(brain.targetX), math.floor(brain.targetY), math.floor(brain.targetZ or 0))
+                zombie:setRunning(false)
+                brain.pathTimer = 20
+            end
+        else
+            brain.state = "Stay"
+            zombie:setPath2(nil)
+        end
     end
 end
 
--- Register the loop
 Events.OnTick.Add(MyNPCLogic.OnTick)

@@ -1,78 +1,163 @@
 -- ==============================================================================
 -- MyNPC_Spawn.lua
--- Server-side Logic: Handles creating the NPC entity.
--- UPDATED: Now uses the Wardrobe System to assign random outfits.
+-- Server-side Logic: Spawning, Commands, and SUMMONING.
+-- UPDATED: Added "Summon" logic to recover lost NPCs.
 -- ==============================================================================
 
 MyNPCSpawn = MyNPCSpawn or {}
 
 -- ==============================================================================
--- 1. THE SPAWNER FUNCTION
+-- 1. SPAWN LOGIC
 -- ==============================================================================
 
-function MyNPCSpawn.SpawnNPC(player)
+function MyNPCSpawn.SpawnNPC(player, existingBrain)
     if not player then return end
     
-    local x = player:getX()
-    local y = player:getY()
-    local z = player:getZ()
-
-    -- 1. Define Parameters
-    local spawnX = x + 2
-    local spawnY = y + 2
+    local x, y, z = player:getX(), player:getY(), player:getZ()
+    local spawnX, spawnY = x + 2, y + 2
+    local outfitStr, femaleChance = "Naked", 50
     
-    -- We spawn them "Naked" first so our ApplyVisuals has a clean slate
-    -- (The game might auto-assign underwear, which is fine)
-    local outfitStr = "Naked" 
-    local femaleChance = 50
-    
-    -- 2. Spawn using the native global function (B42 Compatible)
-    -- Arg signature: x, y, z, count, outfit, femaleChance, crawler, fallOnFront, fakeDead, knockedDown, invulnerable, sitting, health
     local zombieList = addZombiesInOutfit(spawnX, spawnY, z, 1, outfitStr, femaleChance, false, false, false, false, false, false, 1)
     
-    if not zombieList or zombieList:size() == 0 then
-        print("[MyNPC] Error: Failed to spawn zombie.")
-        return
-    end
+    if not zombieList or zombieList:size() == 0 then return end
 
-    -- 3. Get the Zombie Object
     local zombie = zombieList:get(0)
     
-    -- 4. Generate Random Stats (The Brain)
-    local isFemale = zombie:isFemale()
+    -- BRAIN LOGIC:
+    -- If we passed an 'existingBrain' (from a Summon), use that.
+    -- Otherwise, generate a new one.
+    local brain = existingBrain
     
-    -- [NEW] Pick a random outfit from our Wardrobe
-    local myOutfit = MyNPC.GetOutfit(isFemale, "Casual")
+    if not brain then
+        local isFemale = zombie:isFemale()
+        local myOutfit = MyNPC.GetOutfit(isFemale, "Casual")
+        brain = {
+            name = MyNPC.GenerateName(isFemale),
+            isFemale = isFemale,
+            hairStyle = nil, 
+            outfit = myOutfit,
+            state = "Follow", 
+            master = player:getUsername(),
+            masterID = player:getOnlineID()
+        }
+    else
+        -- Force state to follow if we just summoned them
+        brain.state = "Follow"
+    end
 
-    local brain = {
-        name = MyNPC.GenerateName(isFemale),
-        isFemale = isFemale,
-        hairStyle = nil, 
-        outfit = myOutfit, -- The list of clothing items
-        state = "Follow",
-        master = player:getUsername(),
-        masterID = player:getOnlineID()
-    }
-
-    -- 5. Attach Data & Apply Look
     MyNPC.AttachBrain(zombie, brain)
     MyNPC.ApplyVisuals(zombie, brain)
 
-    -- 6. Strip Default Zombie Behavior
+    if MyNPCManager then
+        MyNPCManager.Register(zombie, brain)
+    end
+
     zombie:setUseless(true) 
     zombie:DoZombieStats()   
     zombie:setHealth(1.5)    
 
-    print("[MyNPC] Spawned NPC: " .. brain.name .. " (" .. (isFemale and "F" or "M") .. ") at " .. spawnX .. "," .. spawnY)
+    print("[MyNPC] Spawned/Summoned: " .. brain.name)
 end
 
 -- ==============================================================================
--- 2. COMMAND HANDLER
+-- 2. SUMMON LOGIC
+-- ==============================================================================
+
+function MyNPCSpawn.SummonAll(player)
+    if not MyNPCManager then return end
+    
+    local username = player:getUsername()
+    local cell = getCell()
+    
+    -- Loop through the Database
+    -- We use a separate list to store actions to avoid modifying the table while looping
+    local toTeleport = {}
+    local toRecreate = {}
+    
+    for id, brain in pairs(MyNPCManager.Data) do
+        if brain.master == username then
+            
+            -- CHECK: Is this NPC currently loaded in the world?
+            -- We scan the ZombieList for this ID.
+            local foundObj = nil
+            local zombieList = cell:getZombieList()
+            for i=0, zombieList:size()-1 do
+                local z = zombieList:get(i)
+                if z:getPersistentOutfitID() == id then
+                    foundObj = z
+                    break
+                end
+            end
+            
+            if foundObj then
+                -- NPC is Loaded: Just Teleport
+                table.insert(toTeleport, foundObj)
+            else
+                -- NPC is Unloaded/Lost: Recreate (Clone)
+                -- We verify they aren't dead by checking the Manager (if they were dead, they wouldn't be in the list)
+                brain.oldID = id -- Mark old ID for deletion
+                table.insert(toRecreate, brain)
+            end
+        end
+    end
+    
+    -- ACTION: Teleport Loaded
+    for _, npc in ipairs(toTeleport) do
+        npc:setX(player:getX() + 1)
+        npc:setY(player:getY() + 1)
+        npc:setZ(player:getZ())
+        npc:setLastX(player:getX()) -- Fix B42 rubberbanding
+        npc:setLastY(player:getY())
+        print("[MyNPC] Teleported loaded NPC.")
+    end
+    
+    -- ACTION: Recreate Lost
+    for _, brain in ipairs(toRecreate) do
+        -- 1. Remove the old entry so we don't have duplicates in the DB
+        MyNPCManager.RemoveData(brain.oldID)
+        
+        -- 2. Spawn a new body with the old mind
+        MyNPCSpawn.SpawnNPC(player, brain)
+        print("[MyNPC] Recreated lost NPC.")
+    end
+end
+
+-- ==============================================================================
+-- 3. COMMAND HANDLER
 -- ==============================================================================
 
 local function onClientCommand(module, command, player, args)
-    if module == "MyNPC" and command == "Spawn" then
-        MyNPCSpawn.SpawnNPC(player)
+    if module ~= "MyNPC" then return end
+
+    if command == "Spawn" then
+        MyNPCSpawn.SpawnNPC(player, nil)
+    end
+
+    if command == "Summon" then
+        MyNPCSpawn.SummonAll(player)
+    end
+
+    if command == "Order" then
+        -- (Same order code as before)
+        local square = getCell():getGridSquare(args.x, args.y, args.z)
+        if square then
+            local movingObjects = square:getMovingObjects()
+            for i=0, movingObjects:size()-1 do
+                local obj = movingObjects:get(i)
+                if instanceof(obj, "IsoZombie") then
+                    local brain = MyNPC.GetBrain(obj)
+                    if brain then
+                        brain.state = args.state
+                        brain.targetX = args.targetX
+                        brain.targetY = args.targetY
+                        brain.targetZ = args.targetZ
+                        MyNPC.AttachBrain(obj, brain)
+                        if MyNPCManager then MyNPCManager.Register(obj, brain) end
+                        break
+                    end
+                end
+            end
+        end
     end
 end
 
