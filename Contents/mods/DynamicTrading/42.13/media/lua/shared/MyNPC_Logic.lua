@@ -1,17 +1,29 @@
 -- ==============================================================================
 -- MyNPC_Logic.lua
--- The "Driver": Controls the movement and behavior of the NPC.
--- FIXED: Replaced non-existent 'getClosestPlayer' with manual player search.
+-- The "Driver": Controls the movement, facing, and behavior.
+-- FIXED: Replaced deprecated path:clear() with zombie:setPath2(nil).
 -- ==============================================================================
 
 MyNPCLogic = MyNPCLogic or {}
 
--- Performance: Run logic only every 10 ticks (approx 6 times/sec)
-local TICK_LIMIT = 10
+-- Performance Settings
+local TICK_LIMIT = 10 -- Run logic every 10 ticks
 local tickCounter = 0
 
 -- ==============================================================================
--- 1. MAIN LOOP
+-- 1. UTILITY FUNCTIONS
+-- ==============================================================================
+
+-- Safe distance calculator (Math-based, crash-proof)
+local function calculateDistance(obj1, obj2)
+    if not obj1 or not obj2 then return 9999 end
+    local dx = obj1:getX() - obj2:getX()
+    local dy = obj1:getY() - obj2:getY()
+    return math.sqrt(dx * dx + dy * dy)
+end
+
+-- ==============================================================================
+-- 2. MAIN LOOP
 -- ==============================================================================
 
 function MyNPCLogic.OnTick()
@@ -22,7 +34,12 @@ function MyNPCLogic.OnTick()
     if tickCounter < TICK_LIMIT then return end
     tickCounter = 0
 
-    local zombieList = getCell():getZombieList()
+    -- Get zombies in the current cell
+    local cell = getCell()
+    if not cell then return end
+    
+    local zombieList = cell:getZombieList()
+    if not zombieList then return end
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
@@ -36,66 +53,95 @@ function MyNPCLogic.OnTick()
 end
 
 -- ==============================================================================
--- 2. DECISION MAKING
+-- 3. HELPER: FIND CLOSEST ENTITY
 -- ==============================================================================
 
-function MyNPCLogic.ProcessNPC(zombie, brain)
-    -- 1. Safety Override: Ensure it doesn't attack the player
-    zombie:setTarget(nil)
-    zombie:setUseless(true) 
-    
-    -- 2. Find the Master (Closest Player)
-    local player = nil
+function MyNPCLogic.GetClosestTarget(zombie)
+    local bestTarget = nil
     local closestDist = 9999
-    
-    -- Get list of all players currently in the server/game
-    local players = getOnlinePlayers()
-    
-    if players then
-        for i = 0, players:size() - 1 do
-            local p = players:get(i)
-            if p and not p:isDead() then
-                local dist = zombie:getDistTo(p)
-                if dist < closestDist then
-                    closestDist = dist
-                    player = p
+
+    -- A. Check specific player slots (0-3 covers SP and Split-screen)
+    for i = 0, 3 do
+        local p = getSpecificPlayer(i)
+        if p and not p:isDead() then
+            local dist = calculateDistance(zombie, p)
+            if dist < closestDist then
+                closestDist = dist
+                bestTarget = p
+            end
+        end
+    end
+
+    -- B. IF MULTIPLAYER: Check the online players list as well
+    if isServer() then
+        local onlinePlayers = getOnlinePlayers()
+        if onlinePlayers then
+            for i = 0, onlinePlayers:size() - 1 do
+                local p = onlinePlayers:get(i)
+                if p and not p:isDead() then
+                    local dist = calculateDistance(zombie, p)
+                    if dist < closestDist then
+                        closestDist = dist
+                        bestTarget = p
+                    end
                 end
             end
         end
     end
-    
-    if not player then return end -- No master nearby, just idle
 
-    -- 3. Behavior: "Follow"
-    if brain.state == "Follow" then
+    return bestTarget, closestDist
+end
+
+-- ==============================================================================
+-- 4. DECISION MAKING
+-- ==============================================================================
+
+function MyNPCLogic.ProcessNPC(zombie, brain)
+    -- 1. Safety Override
+    zombie:setTarget(nil)
+    zombie:setUseless(true) 
+    
+    -- 2. Find Interest (Closest Entity)
+    local target, dist = MyNPCLogic.GetClosestTarget(zombie)
+    
+    if not target then return end -- Nothing to do
+
+    local isMoving = false
+
+    -- 3. Behavior: "Follow" (Only follows Players)
+    if brain.state == "Follow" and instanceof(target, "IsoPlayer") then
         
-        -- TELEPORT: If left way behind (Rubber-banding)
-        if closestDist > 50 then
-            zombie:setX(player:getX() + 2)
-            zombie:setY(player:getY() + 2)
-            zombie:setZ(player:getZ())
-            zombie:setLx(player:getX()) 
-            zombie:setLy(player:getY())
+        -- TELEPORT (Rubber-banding)
+        if dist > 50 then
+            zombie:setX(target:getX() + 2)
+            zombie:setY(target:getY() + 2)
+            zombie:setZ(target:getZ())
+            zombie:setLx(target:getX()) 
+            zombie:setLy(target:getY())
             
-        -- MOVE: If too far away, walk to player
-        elseif closestDist > 3 then
-            zombie:pathToLocation(player:getX(), player:getY(), player:getZ())
+        -- MOVE
+        elseif dist > 3 then
+            zombie:pathToLocation(target:getX(), target:getY(), target:getZ())
+            isMoving = true
             
-            if closestDist > 8 then
+            if dist > 8 then
                 zombie:setRunning(true)
             else
                 zombie:setRunning(false)
             end
             
-        -- STOP: If close enough, stop moving
+        -- STOP
         else
-            zombie:getPath():clear()
+            -- FIXED: clear() does not exist in B42 path objects.
+            -- setPath2(nil) forces the character to stop moving.
+            zombie:setPath2(nil)
+            isMoving = false
         end
-        
-        -- 4. Face the player when idle
-        if closestDist <= 3 then
-           zombie:faceThisObject(player)
-        end
+    end
+
+    -- 4. "Smart Look" (Face the target when not moving)
+    if not isMoving then
+        zombie:faceThisObject(target)
     end
 end
 
