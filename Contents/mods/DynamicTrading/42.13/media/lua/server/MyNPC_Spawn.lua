@@ -1,14 +1,10 @@
 -- ==============================================================================
 -- MyNPC_Spawn.lua
 -- Server-side Logic: Spawning, Commands, and SUMMONING.
--- UPDATED: Added "Summon" logic to recover lost NPCs.
+-- UPDATED: Default state is now "Stay" (Guard). Added task queue init.
 -- ==============================================================================
 
 MyNPCSpawn = MyNPCSpawn or {}
-
--- ==============================================================================
--- 1. SPAWN LOGIC
--- ==============================================================================
 
 function MyNPCSpawn.SpawnNPC(player, existingBrain)
     if not player then return end
@@ -23,9 +19,6 @@ function MyNPCSpawn.SpawnNPC(player, existingBrain)
 
     local zombie = zombieList:get(0)
     
-    -- BRAIN LOGIC:
-    -- If we passed an 'existingBrain' (from a Summon), use that.
-    -- Otherwise, generate a new one.
     local brain = existingBrain
     
     if not brain then
@@ -36,13 +29,14 @@ function MyNPCSpawn.SpawnNPC(player, existingBrain)
             isFemale = isFemale,
             hairStyle = nil, 
             outfit = myOutfit,
-            state = "Follow", 
+            state = "Stay", -- CHANGED: Default is now Stay/Guard
             master = player:getUsername(),
-            masterID = player:getOnlineID()
+            masterID = player:getOnlineID(),
+            tasks = {} -- NEW: The Task Queue
         }
     else
-        -- Force state to follow if we just summoned them
-        brain.state = "Follow"
+        -- Keep existing state if summoning, but ensure tasks table exists
+        if not brain.tasks then brain.tasks = {} end
     end
 
     MyNPC.AttachBrain(zombie, brain)
@@ -59,26 +53,15 @@ function MyNPCSpawn.SpawnNPC(player, existingBrain)
     print("[MyNPC] Spawned/Summoned: " .. brain.name)
 end
 
--- ==============================================================================
--- 2. SUMMON LOGIC
--- ==============================================================================
-
 function MyNPCSpawn.SummonAll(player)
     if not MyNPCManager then return end
-    
     local username = player:getUsername()
     local cell = getCell()
-    
-    -- Loop through the Database
-    -- We use a separate list to store actions to avoid modifying the table while looping
     local toTeleport = {}
     local toRecreate = {}
     
     for id, brain in pairs(MyNPCManager.Data) do
         if brain.master == username then
-            
-            -- CHECK: Is this NPC currently loaded in the world?
-            -- We scan the ZombieList for this ID.
             local foundObj = nil
             local zombieList = cell:getZombieList()
             for i=0, zombieList:size()-1 do
@@ -90,41 +73,27 @@ function MyNPCSpawn.SummonAll(player)
             end
             
             if foundObj then
-                -- NPC is Loaded: Just Teleport
                 table.insert(toTeleport, foundObj)
             else
-                -- NPC is Unloaded/Lost: Recreate (Clone)
-                -- We verify they aren't dead by checking the Manager (if they were dead, they wouldn't be in the list)
-                brain.oldID = id -- Mark old ID for deletion
+                brain.oldID = id 
                 table.insert(toRecreate, brain)
             end
         end
     end
     
-    -- ACTION: Teleport Loaded
     for _, npc in ipairs(toTeleport) do
         npc:setX(player:getX() + 1)
         npc:setY(player:getY() + 1)
         npc:setZ(player:getZ())
-        npc:setLastX(player:getX()) -- Fix B42 rubberbanding
+        npc:setLastX(player:getX())
         npc:setLastY(player:getY())
-        print("[MyNPC] Teleported loaded NPC.")
     end
     
-    -- ACTION: Recreate Lost
     for _, brain in ipairs(toRecreate) do
-        -- 1. Remove the old entry so we don't have duplicates in the DB
         MyNPCManager.RemoveData(brain.oldID)
-        
-        -- 2. Spawn a new body with the old mind
         MyNPCSpawn.SpawnNPC(player, brain)
-        print("[MyNPC] Recreated lost NPC.")
     end
 end
-
--- ==============================================================================
--- 3. COMMAND HANDLER
--- ==============================================================================
 
 local function onClientCommand(module, command, player, args)
     if module ~= "MyNPC" then return end
@@ -138,7 +107,6 @@ local function onClientCommand(module, command, player, args)
     end
 
     if command == "Order" then
-        -- (Same order code as before)
         local square = getCell():getGridSquare(args.x, args.y, args.z)
         if square then
             local movingObjects = square:getMovingObjects()
@@ -148,9 +116,15 @@ local function onClientCommand(module, command, player, args)
                     local brain = MyNPC.GetBrain(obj)
                     if brain then
                         brain.state = args.state
-                        brain.targetX = args.targetX
-                        brain.targetY = args.targetY
-                        brain.targetZ = args.targetZ
+                        
+                        -- CLEAR TASKS ON NEW ORDER
+                        brain.tasks = {} 
+                        
+                        -- If GoTo, add it as the first task immediately
+                        if args.state == "GoTo" then
+                           table.insert(brain.tasks, {x = math.floor(args.targetX), y = math.floor(args.targetY), z = math.floor(args.targetZ or 0)})
+                        end
+
                         MyNPC.AttachBrain(obj, brain)
                         if MyNPCManager then MyNPCManager.Register(obj, brain) end
                         break
