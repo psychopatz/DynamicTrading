@@ -1,17 +1,20 @@
 -- ==============================================================================
 -- MyNPC_Logic.lua
--- The "Driver": Controls behavior.
--- UPDATED: Adds Sound Suppression and Aggressive Pathing Enforcement.
+-- The "Controller": Manages the NPC's decisions and delegates specific tasks.
+-- UPDATED: Fixed Crash when NPCs are removed/despawned (Backwards Iteration).
 -- ==============================================================================
 
 MyNPCLogic = MyNPCLogic or {}
 
--- Ticking every 10 ticks (approx 0.5s) to check status without killing FPS
+-- 1. BEHAVIOR REGISTRY
+MyNPCLogic.Behaviors = {} 
+
+-- Ticking limit to save performance (Run logic every ~0.5s)
 local TICK_LIMIT = 10 
 local tickCounter = 0
 
 -- ==============================================================================
--- 1. UTILITY
+-- 2. HELPER UTILITIES
 -- ==============================================================================
 
 local function calculateDistance(obj1, obj2)
@@ -21,23 +24,15 @@ local function calculateDistance(obj1, obj2)
     return math.sqrt(dx * dx + dy * dy)
 end
 
-local function distToCoords(obj, x, y)
-    local dx = obj:getX() - x
-    local dy = obj:getY() - y
-    return math.sqrt(dx * dx + dy * dy)
-end
-
+-- Silence the zombie sounds so they don't groan while working
 local function suppressSound(zombie)
     if not zombie then return end
     
-    -- Method 1: B42 / Late B41 Voice Prefix Hack
-    -- Sets the voice family to something that doesn't exist, effectively muting them.
     local desc = zombie:getDescriptor()
     if desc then
         desc:setVoicePrefix("None") 
     end
     
-    -- Method 2: Stop Emitter (Direct Silence)
     local emitter = zombie:getEmitter()
     if emitter then
         if emitter:isPlaying("MaleZombieCombined") then emitter:stopSoundByName("MaleZombieCombined") end
@@ -47,10 +42,11 @@ local function suppressSound(zombie)
 end
 
 -- ==============================================================================
--- 2. MAIN LOOP
+-- 3. CORE LOOP
 -- ==============================================================================
 
 function MyNPCLogic.OnTick()
+    -- Only run on Server (Logic) or Singleplayer
     if isClient() then return end
 
     tickCounter = tickCounter + 1
@@ -63,29 +59,82 @@ function MyNPCLogic.OnTick()
     local zombieList = cell:getZombieList()
     if not zombieList then return end
     
-    for i = 0, zombieList:size() - 1 do
+    -- CRITICAL FIX: Iterate BACKWARDS (size-1 to 0)
+    -- This prevents crashes if a behavior (like Flee) removes the zombie from the world.
+    for i = zombieList:size() - 1, 0, -1 do
         local zombie = zombieList:get(i)
         
-        -- Check if this is our NPC
-        if zombie:getModData().IsMyNPC then
-            local brain = MyNPC.GetBrain(zombie)
-            if brain then
-                -- Always silence them
-                suppressSound(zombie)
-                -- Run logic
-                MyNPCLogic.ProcessNPC(zombie, brain)
+        -- SAFETY CHECK: Ensure the zombie object is valid/loaded
+        if zombie then
+            
+            -- Wrapped in pcall (protected call) to prevent mod crashes from breaking the whole loop
+            local success, err = pcall(function()
+                if zombie:getModData() and zombie:getModData().IsMyNPC then
+                    local brain = MyNPC.GetBrain(zombie)
+                    if brain then
+                        suppressSound(zombie)
+                        MyNPCLogic.ProcessNPC(zombie, brain)
+                    end
+                end
+            end)
+            
+            -- Optional: Print error if one specific NPC crashes, but keep game running
+            if not success then 
+                print("[MyNPC] Error processing NPC: " .. tostring(err))
             end
         end
     end
 end
 
+Events.OnTick.Add(MyNPCLogic.OnTick)
+
 -- ==============================================================================
--- 3. TARGET FINDER
+-- 4. DECISION MAKER
+-- ==============================================================================
+
+function MyNPCLogic.ProcessNPC(zombie, brain)
+    -- A. Find the Master
+    local master, dist = MyNPCLogic.GetClosestTarget(zombie)
+
+    -- B. CHECK FOR BETRAYAL (Self Defense)
+    -- If the NPC is hit by their master, they become hostile.
+    MyNPCLogic.CheckForBetrayal(zombie, brain, master)
+
+    -- C. EXECUTE BEHAVIOR
+    -- We look up the state in our Behaviors table (e.g., Behaviors["Follow"])
+    local currentState = brain.state
+    local behaviorFunc = MyNPCLogic.Behaviors[currentState]
+
+    if behaviorFunc then
+        -- Run the specific logic for this state (Follow, Guard, Attack, etc.)
+        behaviorFunc(zombie, brain, master, dist)
+    else
+        -- Fallback if state is missing or typo
+        if MyNPCLogic.Behaviors["Stay"] then
+            MyNPCLogic.Behaviors["Stay"](zombie, brain, master, dist)
+        end
+    end
+end
+
+-- ==============================================================================
+-- 5. TARGETING & EVENTS
 -- ==============================================================================
 
 function MyNPCLogic.GetClosestTarget(zombie)
     local brain = MyNPC.GetBrain(zombie)
-    if brain and brain.masterID then
+    if not brain then return nil, 9999 end
+
+    -- 1. If we are hostile, we don't care about the master, we target ANY nearby player
+    if brain.isHostile then
+        local player = zombie:getTarget() -- Built-in zombie target
+        if player and instanceof(player, "Player") then
+            return player, calculateDistance(zombie, player)
+        end
+        -- If no current target, check master ID to attack them
+    end
+
+    -- 2. Normal Behavior: Find the specific Master
+    if brain.masterID then
         local onlinePlayers = getOnlinePlayers()
         if onlinePlayers then
             for i = 0, onlinePlayers:size() - 1 do
@@ -96,6 +145,7 @@ function MyNPCLogic.GetClosestTarget(zombie)
             end
         end
         
+        -- Singleplayer fallback
         local p = getSpecificPlayer(0)
         if p and p:getUsername() == brain.master then
              return p, calculateDistance(zombie, p)
@@ -105,120 +155,24 @@ function MyNPCLogic.GetClosestTarget(zombie)
     return nil, 9999
 end
 
--- ==============================================================================
--- 4. BEHAVIOR LOGIC
--- ==============================================================================
-
-function MyNPCLogic.ProcessNPC(zombie, brain)
-    local target, dist = MyNPCLogic.GetClosestTarget(zombie)
-
-    -- ==========================================================================
-    -- STATE: FOLLOW
-    -- ==========================================================================
-    if brain.state == "Follow" and target then
+function MyNPCLogic.CheckForBetrayal(zombie, brain, master)
+    -- Get the object that last attacked this zombie
+    local attacker = zombie:getAttackedBy()
+    
+    if attacker and master and attacker == master then
         
-        -- 1. Anti-Despawn / Stuck Teleport
-        if dist > 50 then
-            zombie:setX(target:getX())
-            zombie:setY(target:getY())
-            zombie:setZ(target:getZ())
-            zombie:setPath2(nil)
-            return
-        end
-
-        local stopDistance = 2.5
+        -- 1. Switch State to ATTACK or FLEE
+        -- Change this to "Flee" if you want them to run away instead of fighting back.
+        brain.state = "Attack" 
+        brain.isHostile = true
         
-        if dist > stopDistance then
-            -- == MOVING ==
-            
-            -- Ensure AI is active so they can walk
-            if zombie:isUseless() then zombie:setUseless(false) end
-            
-            -- FORCEFULLY CLEAR TARGETS so they don't get distracted/aggressive
-            zombie:setTarget(nil)
-            zombie:setAttackedBy(nil)
-            zombie:setEatBodyTarget(nil, false)
-            
-            local tx = target:getX()
-            local ty = target:getY()
-            local tz = target:getZ()
-            
-            local isRunning = (dist > 6.0) or target:isRunning() or target:isSprinting()
-            
-            -- If not moving, OR if target moved significantly, issue new command
-            if not zombie:isMoving() or not brain.lastTargetX or 
-               math.abs(brain.lastTargetX - tx) > 2.0 or 
-               math.abs(brain.lastTargetY - ty) > 2.0 then
-               
-                zombie:setRunning(isRunning)
-                zombie:pathToLocation(tx, ty, tz)
-                
-                brain.lastTargetX = tx
-                brain.lastTargetY = ty
-            end
-            
-        else
-            -- == STOPPING ==
-            -- We are close enough. Freeze them to stop wandering.
-            if not zombie:isUseless() then
-                zombie:setPath2(nil)
-                zombie:setUseless(true)
-                zombie:setRunning(false)
-            end
-            
-            -- Manual Facing (Since AI is off)
-            zombie:faceLocation(target:getX(), target:getY())
-        end
+        -- 2. Clear Tasks (Stop farming/following immediately)
+        brain.tasks = {}
         
-        brain.tasks = {} -- Clear manual tasks
-
-    -- ==========================================================================
-    -- STATE: GOTO (Manual Order)
-    -- ==========================================================================
-    elseif brain.state == "GoTo" then
+        -- 3. Visual/Debug Feedback
+        print("[MyNPC] Betrayal! " .. brain.name .. " is now hostile towards " .. master:getUsername())
         
-        if brain.tasks and #brain.tasks > 0 then
-            local task = brain.tasks[1]
-            local d = distToCoords(zombie, task.x, task.y)
-            
-            if d < 1.0 then
-                -- Arrived
-                table.remove(brain.tasks, 1)
-                zombie:setPath2(nil)
-                
-                if #brain.tasks == 0 then
-                    brain.state = "Stay"
-                    zombie:setUseless(true)
-                end
-            else
-                -- Moving
-                if zombie:isUseless() then zombie:setUseless(false) end
-                zombie:setTarget(nil) -- No aggression
-                
-                if not zombie:isMoving() then
-                    zombie:setRunning(true)
-                    zombie:pathToLocation(task.x, task.y, task.z)
-                end
-            end
-        else
-            brain.state = "Stay"
-        end
-
-    -- ==========================================================================
-    -- STATE: STAY / GUARD
-    -- ==========================================================================
-    elseif brain.state == "Stay" then
-        -- Freeze
-        if not zombie:isUseless() then
-            zombie:setUseless(true)
-            zombie:setPath2(nil)
-        end
-        
-        -- Look at player
-        if target and dist < 10 then
-            zombie:faceLocation(target:getX(), target:getY())
-        end
+        -- 4. Clear the attacked flag so we don't spam this logic
+        zombie:setAttackedBy(nil)
     end
 end
-
-Events.OnTick.Add(MyNPCLogic.OnTick)
