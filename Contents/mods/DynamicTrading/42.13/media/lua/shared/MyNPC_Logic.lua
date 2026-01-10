@@ -1,11 +1,12 @@
 -- ==============================================================================
 -- MyNPC_Logic.lua
 -- The "Driver": Controls behavior.
--- UPDATED: Implements Bandits-style Task Queue (Sequencial Movement).
+-- UPDATED: Adds Sound Suppression and Aggressive Pathing Enforcement.
 -- ==============================================================================
 
 MyNPCLogic = MyNPCLogic or {}
 
+-- Ticking every 10 ticks (approx 0.5s) to check status without killing FPS
 local TICK_LIMIT = 10 
 local tickCounter = 0
 
@@ -24,6 +25,25 @@ local function distToCoords(obj, x, y)
     local dx = obj:getX() - x
     local dy = obj:getY() - y
     return math.sqrt(dx * dx + dy * dy)
+end
+
+local function suppressSound(zombie)
+    if not zombie then return end
+    
+    -- Method 1: B42 / Late B41 Voice Prefix Hack
+    -- Sets the voice family to something that doesn't exist, effectively muting them.
+    local desc = zombie:getDescriptor()
+    if desc then
+        desc:setVoicePrefix("None") 
+    end
+    
+    -- Method 2: Stop Emitter (Direct Silence)
+    local emitter = zombie:getEmitter()
+    if emitter then
+        if emitter:isPlaying("MaleZombieCombined") then emitter:stopSoundByName("MaleZombieCombined") end
+        if emitter:isPlaying("FemaleZombieCombined") then emitter:stopSoundByName("FemaleZombieCombined") end
+        if emitter:isPlaying("ZombieIdle") then emitter:stopSoundByName("ZombieIdle") end
+    end
 end
 
 -- ==============================================================================
@@ -45,9 +65,16 @@ function MyNPCLogic.OnTick()
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        local brain = MyNPC.GetBrain(zombie)
-        if brain then
-            MyNPCLogic.ProcessNPC(zombie, brain)
+        
+        -- Check if this is our NPC
+        if zombie:getModData().IsMyNPC then
+            local brain = MyNPC.GetBrain(zombie)
+            if brain then
+                -- Always silence them
+                suppressSound(zombie)
+                -- Run logic
+                MyNPCLogic.ProcessNPC(zombie, brain)
+            end
         end
     end
 end
@@ -57,145 +84,139 @@ end
 -- ==============================================================================
 
 function MyNPCLogic.GetClosestTarget(zombie)
-    local bestTarget = nil
-    local closestDist = 9999
-
-    for i = 0, 3 do
-        local p = getSpecificPlayer(i)
-        if p and not p:isDead() then
-            local dist = calculateDistance(zombie, p)
-            if dist < closestDist then
-                closestDist = dist
-                bestTarget = p
-            end
-        end
-    end
-
-    if isServer() then
+    local brain = MyNPC.GetBrain(zombie)
+    if brain and brain.masterID then
         local onlinePlayers = getOnlinePlayers()
         if onlinePlayers then
             for i = 0, onlinePlayers:size() - 1 do
                 local p = onlinePlayers:get(i)
-                if p and not p:isDead() then
-                    local dist = calculateDistance(zombie, p)
-                    if dist < closestDist then
-                        closestDist = dist
-                        bestTarget = p
-                    end
+                if p and p:getOnlineID() == brain.masterID then
+                    return p, calculateDistance(zombie, p)
                 end
             end
         end
-    end
-
-    return bestTarget, closestDist
-end
-
--- ==============================================================================
--- 4. TASK GENERATION (The Strategist)
--- ==============================================================================
-
-function MyNPCLogic.GenerateFollowTasks(zombie, brain, target)
-    if not target then return end
-    
-    -- Ensure brain memory exists
-    if not brain.tasks then brain.tasks = {} end
-    if not brain.lastFollowX then 
-        brain.lastFollowX = math.floor(zombie:getX()) 
-        brain.lastFollowY = math.floor(zombie:getY()) 
-    end
-
-    -- Where is the player NOW?
-    local pX = math.floor(target:getX())
-    local pY = math.floor(target:getY())
-    local pZ = math.floor(target:getZ())
-
-    -- Calculate distance from the LAST waypoint we added
-    local dx = brain.lastFollowX - pX
-    local dy = brain.lastFollowY - pY
-    local distFromLast = math.sqrt(dx*dx + dy*dy)
-
-    -- If player has moved 3 tiles away from the last breadcrumb, drop a new breadcrumb
-    if distFromLast > 3 then
-        local newTask = { x = pX, y = pY, z = pZ }
         
-        -- Add to end of queue
-        table.insert(brain.tasks, newTask)
-        
-        -- Update memory
-        brain.lastFollowX = pX
-        brain.lastFollowY = pY
-        
-        -- Cap queue size to prevent infinite memory if they get stuck
-        if #brain.tasks > 10 then
-            table.remove(brain.tasks, 1) -- Remove oldest
+        local p = getSpecificPlayer(0)
+        if p and p:getUsername() == brain.master then
+             return p, calculateDistance(zombie, p)
         end
     end
+
+    return nil, 9999
 end
 
 -- ==============================================================================
--- 5. TASK EXECUTION (The Driver)
+-- 4. BEHAVIOR LOGIC
 -- ==============================================================================
 
 function MyNPCLogic.ProcessNPC(zombie, brain)
-    -- 1. Basics
-    if not zombie:isUseless() then zombie:setUseless(true) end
     local target, dist = MyNPCLogic.GetClosestTarget(zombie)
 
-    -- 2. State: FOLLOW (Generate tasks)
+    -- ==========================================================================
+    -- STATE: FOLLOW
+    -- ==========================================================================
     if brain.state == "Follow" and target then
-        -- Teleport safety
+        
+        -- 1. Anti-Despawn / Stuck Teleport
         if dist > 50 then
-            zombie:setX(target:getX() + 2)
-            zombie:setY(target:getY() + 2)
+            zombie:setX(target:getX())
+            zombie:setY(target:getY())
             zombie:setZ(target:getZ())
-            zombie:setLastX(target:getX())
-            zombie:setLastY(target:getY())
-            brain.tasks = {} -- Clear queue on teleport
-            brain.lastFollowX = math.floor(target:getX())
-            brain.lastFollowY = math.floor(target:getY())
-        else
-            -- Add new waypoints if player moves
-            MyNPCLogic.GenerateFollowTasks(zombie, brain, target)
+            zombie:setPath2(nil)
+            return
         end
-    end
 
-    -- 3. EXECUTE QUEUE
-    -- Do we have tasks?
-    if brain.tasks and #brain.tasks > 0 then
+        local stopDistance = 2.5
         
-        local currentTask = brain.tasks[1] -- Look at the first one
-        local distToTask = distToCoords(zombie, currentTask.x, currentTask.y)
-        
-        -- ARE WE THERE YET?
-        if distToTask < 1.0 then
-            -- YES: Remove this task and proceed to next
-            table.remove(brain.tasks, 1)
-            zombie:setPath2(nil) -- Brief stop to retarget
+        if dist > stopDistance then
+            -- == MOVING ==
             
-            -- If that was the last task (queue empty now), and state is GoTo, switch to Stay
-            if #brain.tasks == 0 and brain.state == "GoTo" then
-                brain.state = "Stay"
+            -- Ensure AI is active so they can walk
+            if zombie:isUseless() then zombie:setUseless(false) end
+            
+            -- FORCEFULLY CLEAR TARGETS so they don't get distracted/aggressive
+            zombie:setTarget(nil)
+            zombie:setAttackedBy(nil)
+            zombie:setEatBodyTarget(nil, false)
+            
+            local tx = target:getX()
+            local ty = target:getY()
+            local tz = target:getZ()
+            
+            local isRunning = (dist > 6.0) or target:isRunning() or target:isSprinting()
+            
+            -- If not moving, OR if target moved significantly, issue new command
+            if not zombie:isMoving() or not brain.lastTargetX or 
+               math.abs(brain.lastTargetX - tx) > 2.0 or 
+               math.abs(brain.lastTargetY - ty) > 2.0 then
+               
+                zombie:setRunning(isRunning)
+                zombie:pathToLocation(tx, ty, tz)
+                
+                brain.lastTargetX = tx
+                brain.lastTargetY = ty
             end
+            
         else
-            -- NO: Move towards task
-            -- Only issue command if we stopped moving or target changed significantly
-            if not zombie:isMoving() or not brain.currentTaskX or brain.currentTaskX ~= currentTask.x then
-                
-                zombie:pathToLocation(currentTask.x, currentTask.y, currentTask.z)
+            -- == STOPPING ==
+            -- We are close enough. Freeze them to stop wandering.
+            if not zombie:isUseless() then
+                zombie:setPath2(nil)
+                zombie:setUseless(true)
                 zombie:setRunning(false)
-                
-                -- Remember what we are currently doing
-                brain.currentTaskX = currentTask.x
             end
+            
+            -- Manual Facing (Since AI is off)
+            zombie:faceLocation(target:getX(), target:getY())
         end
         
-    else
-        -- QUEUE EMPTY
-        zombie:setPath2(nil)
+        brain.tasks = {} -- Clear manual tasks
+
+    -- ==========================================================================
+    -- STATE: GOTO (Manual Order)
+    -- ==========================================================================
+    elseif brain.state == "GoTo" then
         
-        -- Guard Mode facing
-        if target and (brain.state == "Stay" or brain.state == "Follow") then
-             zombie:faceThisObject(target)
+        if brain.tasks and #brain.tasks > 0 then
+            local task = brain.tasks[1]
+            local d = distToCoords(zombie, task.x, task.y)
+            
+            if d < 1.0 then
+                -- Arrived
+                table.remove(brain.tasks, 1)
+                zombie:setPath2(nil)
+                
+                if #brain.tasks == 0 then
+                    brain.state = "Stay"
+                    zombie:setUseless(true)
+                end
+            else
+                -- Moving
+                if zombie:isUseless() then zombie:setUseless(false) end
+                zombie:setTarget(nil) -- No aggression
+                
+                if not zombie:isMoving() then
+                    zombie:setRunning(true)
+                    zombie:pathToLocation(task.x, task.y, task.z)
+                end
+            end
+        else
+            brain.state = "Stay"
+        end
+
+    -- ==========================================================================
+    -- STATE: STAY / GUARD
+    -- ==========================================================================
+    elseif brain.state == "Stay" then
+        -- Freeze
+        if not zombie:isUseless() then
+            zombie:setUseless(true)
+            zombie:setPath2(nil)
+        end
+        
+        -- Look at player
+        if target and dist < 10 then
+            zombie:faceLocation(target:getX(), target:getY())
         end
     end
 end
