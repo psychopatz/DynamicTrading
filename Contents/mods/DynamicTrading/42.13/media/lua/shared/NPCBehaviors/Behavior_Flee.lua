@@ -1,85 +1,146 @@
 -- ==============================================================================
 -- Behavior_Flee.lua
 -- Handles "Fleeing" and "Merchant Leaving" logic.
--- UPDATED: Implements BANDIT-STYLE "Continuous Target Suppression".
+-- UPDATED: Forces Animation variables to prevent "Ice Skating" while Useless.
 -- ==============================================================================
 
 MyNPCLogic = MyNPCLogic or {}
 MyNPCLogic.Behaviors = MyNPCLogic.Behaviors or {}
 
-local function getFleeVector(zombie, target)
-    local dx = zombie:getX() - target:getX()
-    local dy = zombie:getY() - target:getY()
-    local length = math.sqrt(dx * dx + dy * dy)
-    if length == 0 then return 1, 0 end 
-    return dx / length, dy / length
+-- MOVEMENT SETTINGS
+local SPEED = 0.09 -- Slightly faster than GoTo (Panic Run)
+local DESPAWN_DIST = 35 -- Distance at which they escape the map
+
+-- Helper: Get distance
+local function getDist(x1, y1, x2, y2)
+    local dx = x1 - x2
+    local dy = y1 - y2
+    return math.sqrt(dx * dx + dy * dy)
 end
 
-local function getValidFleeDest(zombie, vx, vy)
-    local cell = getCell()
-    local startX, startY, z = zombie:getX(), zombie:getY(), zombie:getZ()
-    -- Try distances: 30, 15, 5
-    local tryDistances = {30, 15, 5}
-    for _, dist in ipairs(tryDistances) do
-        local tx = startX + (vx * dist)
-        local ty = startY + (vy * dist)
-        local sq = cell:getGridSquare(tx, ty, z)
-        if sq and sq:isFree(false) then
-            return tx, ty
-        end
-    end
-    return startX + (vx * 2), startY + (vy * 2)
+-- Helper: Force Animation Variables
+-- Since the zombie is "Useless", the engine thinks it's Idle. We must lie to it.
+local function forceRunAnimation(zombie)
+    -- 1. Vanilla Variables
+    zombie:setVariable("bMoving", true)
+    zombie:setVariable("Speed", 1.0)
+    zombie:setVariable("WalkType", "Run")
+    zombie:setVariable("isMoving", true)
+    
+    -- 2. Bandits/Custom Variables (If AnimSets are present)
+    zombie:setVariable("BanditWalkType", "Run")
 end
 
 MyNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
     
-    -- 1. BANDIT TRICK: CONTINUOUS BLINDNESS
-    -- We run this EVERY TICK. The zombie AI tries to re-target you every frame.
-    -- We force it to nil immediately, effectively blinding the combat AI.
-    zombie:setTarget(nil)
-    zombie:setAttackedBy(nil)
-    zombie:setEatBodyTarget(nil, false)
-    
-    -- 2. ENABLE AI (Required for walking)
-    if zombie:isUseless() then zombie:setUseless(false) end
-
-    -- 3. SPEED CONTROL
-    -- Use variable speed. Walk if close (to avoid lunge), Run if far.
-    if dist < 3.0 then
-        zombie:setRunning(false) -- Walk to disengage safely
-    else
-        zombie:setRunning(true)  -- Sprint once clear
+    -- 1. FORCE SAFETY
+    -- Disable the AI so they don't lock onto the player for combat.
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+        zombie:setPath2(nil)
+        zombie:setRunning(false)
     end
 
-    -- 4. EMERGENCY PUSH
-    -- If they are practically hugging you, the Pathfinder fails. Push them slightly.
-    if dist < 0.8 and target then
-        local vx, vy = getFleeVector(zombie, target)
-        zombie:setX(zombie:getX() + (vx * 0.2))
-        zombie:setY(zombie:getY() + (vy * 0.2))
-    end
-
-    -- 5. DESTINATION LOGIC
-    local needsUpdate = false
-    if not brain.fleeDestX or not brain.fleeDestY then needsUpdate = true end
-    if not zombie:isMoving() then needsUpdate = true end
-
-    -- Re-calculate path if blocked or finished
-    if needsUpdate and target then
-        local vx, vy = getFleeVector(zombie, target)
-        local tx, ty = getValidFleeDest(zombie, vx, vy)
-        
-        brain.fleeDestX = tx
-        brain.fleeDestY = ty
-        
-        zombie:pathToLocation(tx, ty, zombie:getZ())
-    end
-
-    -- 6. MERCHANT DESPAWN
-    if dist > 35 then
+    -- 2. DESPAWN CHECK
+    if dist > DESPAWN_DIST then
         if MyNPCManager then MyNPCManager.Unregister(zombie) end
         zombie:removeFromWorld()
         zombie:removeFromSquare()
-        print("[MyNPC] Merchant has left the map.")
+        print("[MyNPC] " .. brain.name .. " has escaped safely.")
+        return
+    end
+
+    -- 3. DETERMINE DIRECTION
+    local dx, dy = 0, 0
+    local zx, zy = zombie:getX(), zombie:getY()
+
+    if target then
+        -- Vector: ZombiePos - TargetPos = Direction AWAY
+        dx = zx - target:getX()
+        dy = zy - target:getY()
+        
+        -- Normalize
+        local len = math.sqrt(dx * dx + dy * dy)
+        if len > 0 then
+            dx = dx / len
+            dy = dy / len
+        end
+        
+        -- Save this direction in case we lose the target momentarily
+        brain.lastFleeX = dx
+        brain.lastFleeY = dy
+    elseif brain.lastFleeX then
+        -- Keep running in previous direction if target lost
+        dx = brain.lastFleeX
+        dy = brain.lastFleeY
+    else
+        -- No target, no memory? Just stand there.
+        zombie:setVariable("bMoving", false)
+        zombie:setVariable("Speed", 0.0)
+        return
+    end
+
+    -- 4. CALCULATE NEXT POSITION
+    local nextX = zx + (dx * SPEED)
+    local nextY = zy + (dy * SPEED)
+    local z = zombie:getZ()
+
+    -- 5. COLLISION CHECK
+    local cell = getCell()
+    local nextSq = cell:getGridSquare(nextX, nextY, z)
+    local currentSq = zombie:getSquare()
+    local canMove = true
+
+    if nextSq and nextSq ~= currentSq then
+        if not nextSq:isFree(false) then
+            canMove = false
+        end
+        -- Check for solid objects (Safe Boolean Method)
+        if nextSq:isSolid() or nextSq:isSolidTrans() then
+             canMove = false 
+        end
+    end
+
+    -- 6. APPLY MOVEMENT
+    if canMove then
+        zombie:setX(nextX)
+        zombie:setY(nextY)
+        forceRunAnimation(zombie)
+    else
+        -- Wall Sliding Logic (Wiggle along walls)
+        local moved = false
+        
+        -- Try moving ONLY X
+        local tryX = cell:getGridSquare(nextX, zy, z)
+        local xOk = tryX and tryX:isFree(false) and not tryX:isSolid() and not tryX:isSolidTrans()
+        
+        if xOk then
+            zombie:setX(nextX)
+            moved = true
+        else
+            -- Try moving ONLY Y
+            local tryY = cell:getGridSquare(zx, nextY, z)
+            local yOk = tryY and tryY:isFree(false) and not tryY:isSolid() and not tryY:isSolidTrans()
+            
+            if yOk then
+                zombie:setY(nextY)
+                moved = true
+            end
+        end
+        
+        if moved then
+            forceRunAnimation(zombie)
+        else
+            -- Totally stuck
+            zombie:setVariable("bMoving", false)
+            zombie:setVariable("Speed", 0.0)
+        end
+    end
+
+    -- 7. ROTATION (Server Safe)
+    local dirVector = zombie:getForwardDirection()
+    if dirVector then
+        dirVector:set(dx, dy)
+        dirVector:normalize()
     end
 end
