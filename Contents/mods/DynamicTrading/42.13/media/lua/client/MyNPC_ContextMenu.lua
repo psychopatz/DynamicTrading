@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- MyNPC_ContextMenu.lua
 -- Client-side Logic: Context Menu for Orders and DEBUGGING.
--- UPDATED: Fixed "IsoPlayer vs Int" crash in ISTextBox.
+-- UPDATED: Added "Ranged Attack" Debug Option.
 -- ==============================================================================
 
 MyNPCMenu = MyNPCMenu or {}
@@ -42,14 +42,13 @@ local function onOrder(npc, state, player)
 end
 
 -- Callback for the Input Box (The "OK" button logic)
--- Params passed from ISTextBox: target(self), button, param1, param2
 local function onCoordInput(target, button, player, npc)
     if button.internal ~= "OK" then return end
     
     local text = button.parent.entry:getText()
     if not text or text == "" then return end
     
-    -- Parse the text (Patterns look for numbers: "10820, 9463, 0" or just "10820 9463")
+    -- Parse the text (Patterns look for numbers: "10820, 9463, 0")
     local xStr, yStr, zStr = text:match("(%d+)[^%d]+(%d+)[^%d]*(%d*)")
     
     if xStr and yStr then
@@ -76,14 +75,8 @@ end
 
 -- Function to launch the Input Box
 local function onOpenCoordBox(player, npc)
-    -- Default text shows current player pos for reference
     local defaultText = math.floor(player:getX()) .. "," .. math.floor(player:getY()) .. ",0"
-    
-    -- ISTextBox:new(x, y, w, h, title, defaultText, target, onclick, playerNum, param1, param2)
-    -- CRITICAL FIX: The 9th argument MUST be a number (player index), not the player object.
-    -- We pass the player object as the 10th argument (Param1) so onCoordInput receives it.
     local modal = ISTextBox:new(0, 0, 280, 180, "Enter Target Coordinates (X,Y,Z):", defaultText, nil, onCoordInput, player:getPlayerNum(), player, npc)
-    
     modal:initialise()
     modal:addToUIManager()
 end
@@ -131,6 +124,7 @@ function MyNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
     end
 
     scanSquare(square)
+    -- Check surrounding squares for easier clicking
     local sx, sy, sz = square:getX(), square:getY(), square:getZ()
     for x = -1, 1 do
         for y = -1, 1 do
@@ -165,7 +159,8 @@ function MyNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
 
             debugSub:addOption("TEST: Enter Coordinates...", player, onOpenCoordBox, npc)
             debugSub:addOption("TEST: Flee (Merchant Exit)", npc, onOrder, "Flee", player)
-            debugSub:addOption("TEST: Attack Me", npc, onOrder, "Attack", player)
+            debugSub:addOption("TEST: Attack Me (Melee)", npc, onOrder, "Attack", player)
+            debugSub:addOption("TEST: Attack Me (Gun)", npc, onOrder, "AttackRange", player) -- NEW
         end
     else
         local mOption = context:addOption("MyNPC Manager")
