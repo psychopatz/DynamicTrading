@@ -144,14 +144,45 @@ local function onTick()
         if zombie then
             local id = zombie:getPersistentOutfitID()
             local cached = DTNPCClient.NPCCache[id]
+            local modData = zombie:getModData()
             
+            -- 1. Attach Brain if missing (Server -> Client Sync)
             if cached and cached.brain then
-                -- Always attach brain to moddata so debug menu shows it
-                local modData = zombie:getModData()
                 if not modData.IsDTNPC then
                     modData.DTNPCBrain = cached.brain
                     modData.IsDTNPC = true
                     DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
+                else
+                    -- 2. State Watcher (Client -> Server Sync)
+                    -- If local logic changed the state (e.g. finished Moving), sync back to server
+                    local localBrain = modData.DTNPCBrain
+                    local serverBrain = cached.brain
+                    
+                    if localBrain and serverBrain then
+                         local changed = false
+                         local updates = {}
+                         
+                         if localBrain.state ~= serverBrain.state then
+                             updates.state = localBrain.state
+                             changed = true
+                         end
+                         
+                         -- Simple check for task completion (active to empty)
+                         if localBrain.tasks and serverBrain.tasks then
+                             if #localBrain.tasks ~= #serverBrain.tasks then
+                                 updates.tasks = localBrain.tasks
+                                 changed = true
+                             end
+                         end
+                         
+                         if changed and zombie:isLocal() then -- Only Authority sends updates
+                             -- Update cache immediately to stop spam
+                             if updates.state then serverBrain.state = updates.state end
+                             if updates.tasks then serverBrain.tasks = updates.tasks end
+                             
+                             sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { id = id, updates = updates })
+                         end
+                    end
                 end
             end
         end

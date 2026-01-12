@@ -240,6 +240,65 @@ local function onClientCommand(module, command, player, args)
         
         print("[DTNPC] Sent NPC sync data to: " .. player:getUsername())
     end
+
+    if command == "UpdateNPC" then
+        -- Client reporting state change (e.g. finished GoTo)
+        if not args.id or not args.updates then return end
+        
+        local id = args.id
+        local serverBrain = DTNPCManager.Data[id]
+        
+        if serverBrain then
+            -- Apply updates
+            for k, v in pairs(args.updates) do
+                serverBrain[k] = v
+            end
+            
+            DTNPCManager.Save()
+            
+            -- Find zombie to sync back/update server entity
+            local cell = getCell()
+            if cell then
+                local zombieList = cell:getZombieList()
+                for i = 0, zombieList:size() - 1 do
+                    local z = zombieList:get(i)
+                    if z and z:getPersistentOutfitID() == id then
+                         DTNPC.AttachBrain(z, serverBrain)
+                         DTNPCSpawn.SyncToAllClients(z, serverBrain)
+                         break
+                    end
+                end
+            end
+        end
+    end
+
+    if command == "RemoveNPC" then
+        -- Client reporting NPC exit/death
+        if not args.id then return end
+        
+        if DTNPCManager then
+            -- Remove from DB
+            DTNPCManager.Data[args.id] = nil
+            DTNPCManager.Save()
+            
+            -- Notify all clients to remove from cache
+            DTNPCSpawn.NotifyRemoval(args.id)
+            
+            -- Try to remove server entity if it exists
+            local cell = getCell()
+            if cell then
+                local zombieList = cell:getZombieList()
+                for i = 0, zombieList:size() - 1 do
+                    local z = zombieList:get(i)
+                    if z and z:getPersistentOutfitID() == args.id then
+                         z:removeFromWorld()
+                         z:removeFromSquare()
+                         break
+                    end
+                end
+            end
+        end
+    end
 end
 
 Events.OnClientCommand.Add(onClientCommand)

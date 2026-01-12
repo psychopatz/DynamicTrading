@@ -56,6 +56,19 @@ local function onOrder(npc, state, player)
     
     local brain = getBrain(npc)
     if brain then
+        -- OPTIMIZATION: Predict local state for immediate response
+        brain.state = state
+        if state == "GoTo" then
+            brain.tasks = {{x = args.targetX, y = args.targetY, z = args.targetZ}}
+        else
+            brain.tasks = {}
+        end
+        
+        -- Force update local zombie Logic check
+        if DTNPC and DTNPC.AttachBrain then
+             DTNPC.AttachBrain(npc, brain)
+        end
+        
         player:Say("Order (" .. brain.name .. "): " .. state)
     end
 end

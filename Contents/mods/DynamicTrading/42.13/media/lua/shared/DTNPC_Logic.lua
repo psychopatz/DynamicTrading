@@ -39,9 +39,8 @@ end
 -- ==============================================================================
 
 function DTNPCLogic.OnTick()
-    -- Only run on Server or Singleplayer
-    if isClient() then return end
-
+    -- Run on both Client and Server, but only for Local (Owned) zombies
+    
     local cell = getCell()
     if not cell then return end
     
@@ -51,7 +50,8 @@ function DTNPCLogic.OnTick()
     for i = zombieList:size() - 1, 0, -1 do
         local zombie = zombieList:get(i)
         
-        if zombie and zombie:getModData().IsDTNPC then
+        -- CRITICAL: Only run logic if we own the zombie (Authority)
+        if zombie and zombie:isLocal() and zombie:getModData().IsDTNPC then
             local success, err = pcall(function()
                 DTNPCLogic.ProcessNPC(zombie)
             end)

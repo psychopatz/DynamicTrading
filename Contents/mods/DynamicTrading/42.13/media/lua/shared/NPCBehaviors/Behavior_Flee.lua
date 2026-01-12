@@ -41,10 +41,20 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
     end
 
     if dist > DESPAWN_DIST then
-        if DTNPCManager then DTNPCManager.Unregister(zombie) end
-        zombie:removeFromWorld()
-        zombie:removeFromSquare()
-        print("[DTNPC] " .. brain.name .. " has escaped safely.")
+        if isClient() then
+            -- Send command to server to unregister/delete
+             local id = zombie:getPersistentOutfitID()
+             sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { id = id })
+             
+             -- Remove locally immediately
+             zombie:removeFromWorld()
+             zombie:removeFromSquare()
+        elseif DTNPCManager then 
+             DTNPCManager.Unregister(zombie)
+             zombie:removeFromWorld()
+             zombie:removeFromSquare()
+        end
+        print("[DTNPC] " .. (brain.name or "NPC") .. " has escaped safely.")
         return
     end
 
