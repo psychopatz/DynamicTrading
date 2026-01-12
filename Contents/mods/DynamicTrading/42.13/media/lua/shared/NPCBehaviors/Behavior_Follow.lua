@@ -1,80 +1,135 @@
 -- ==============================================================================
 -- Behavior_Follow.lua
 -- Handles the logic for following the Master.
+-- REWRITTEN: Uses GoTo approach - disables AI, teleports incrementally.
+-- Build 42 Compatible.
 -- ==============================================================================
 
-MyNPCLogic = MyNPCLogic or {}
-MyNPCLogic.Behaviors = MyNPCLogic.Behaviors or {}
+DTNPCLogic = DTNPCLogic or {}
+DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 
-MyNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
+local STOP_DIST = 2.5
+local TELEPORT_DIST = 50
+
+local function getDist(x1, y1, x2, y2)
+    local dx = x1 - x2
+    local dy = y1 - y2
+    return math.sqrt(dx * dx + dy * dy)
+end
+
+local function isTileSafe(x, y, z)
+    local cell = getCell()
+    local sq = cell:getGridSquare(x, y, z)
+    if not sq then return true end
+    if not sq:isFree(false) then return false end
+    if sq:isSolid() or sq:isSolidTrans() then return false end
+    return true
+end
+
+local function forceWalkAnimation(zombie, isRunning)
+    if isRunning then
+        zombie:setVariable("bMoving", true)
+        zombie:setVariable("Speed", 1.0)
+        zombie:setVariable("WalkType", "Run")
+        zombie:setVariable("BanditWalkType", "Run")
+    else
+        zombie:setVariable("bMoving", true)
+        zombie:setVariable("Speed", 0.6)
+        zombie:setVariable("WalkType", "Walk")
+        zombie:setVariable("BanditWalkType", "Walk")
+    end
+    zombie:setVariable("isMoving", true)
+end
+
+local function stopAnimation(zombie)
+    zombie:setVariable("bMoving", false)
+    zombie:setVariable("Speed", 0.0)
+    zombie:setVariable("isMoving", false)
+end
+
+DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
     
-    -- If we have no master to follow, do nothing
-    if not target then return end
-
-    -- 1. TELEPORT CATCH-UP (Anti-Despawn)
-    -- If the player drove away or ran too fast, warp the NPC to them.
-    if dist > 50 then
-        zombie:setX(target:getX())
-        zombie:setY(target:getY())
-        zombie:setZ(target:getZ())
+    -- 1. Force safety - disable AI
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
         zombie:setPath2(nil)
+        zombie:setRunning(false)
+    end
+    
+    -- No target, just stand
+    if not target then 
+        stopAnimation(zombie)
+        return 
+    end
+
+    -- 2. Teleport catch-up if too far
+    if dist > TELEPORT_DIST then
+        zombie:setX(target:getX() + 1)
+        zombie:setY(target:getY() + 1)
+        zombie:setZ(target:getZ())
+        stopAnimation(zombie)
         return
     end
 
-    local stopDistance = 2.5
-    
-    -- 2. MOVEMENT LOGIC
-    if dist > stopDistance then
-        
-        -- A. Activate AI
-        -- We need the AI active ('useless' = false) so the pathfinder works.
-        if zombie:isUseless() then zombie:setUseless(false) end
-        
-        -- B. Pacify
-        -- Prevent them from getting distracted by corpses or other zombies while following.
-        zombie:setTarget(nil)
-        zombie:setAttackedBy(nil)
-        zombie:setEatBodyTarget(nil, false)
-        
-        -- C. Calculate Path
-        local tx = target:getX()
-        local ty = target:getY()
-        local tz = target:getZ()
-        
-        -- Run if far away OR if the player is hurrying
-        local isRunning = (dist > 6.0) or target:isRunning() or target:isSprinting()
-        
-        -- D. Optimization
-        -- Only recalculate the path if the target moved significantly (> 2 tiles) 
-        -- or if the NPC has stopped moving for some reason.
-        if not zombie:isMoving() or not brain.lastTargetX or 
-           math.abs(brain.lastTargetX - tx) > 2.0 or 
-           math.abs(brain.lastTargetY - ty) > 2.0 then
-           
-            zombie:setRunning(isRunning)
-            zombie:pathToLocation(tx, ty, tz)
-            
-            -- Save where we last told them to go
-            brain.lastTargetX = tx
-            brain.lastTargetY = ty
-        end
-        
-    else
-        -- 3. STOPPING LOGIC
-        -- We are close enough (<= 2.5 tiles).
-        
-        -- Freeze them ('useless' = true) so they don't wander.
-        if not zombie:isUseless() then
-            zombie:setPath2(nil) -- Clear current path
-            zombie:setUseless(true)
-            zombie:setRunning(false)
-        end
-        
-        -- Manually face the player to look attentive
+    -- 3. If close enough, stop
+    if dist <= STOP_DIST then
+        stopAnimation(zombie)
         zombie:faceLocation(target:getX(), target:getY())
+        brain.tasks = {}
+        return
+    end
+
+    -- 4. Movement calculation
+    local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
+    local tx, ty = target:getX(), target:getY()
+    
+    local dx = tx - zx
+    local dy = ty - zy
+    local len = math.sqrt(dx * dx + dy * dy)
+    
+    if len > 0 then
+        dx = dx / len
+        dy = dy / len
+    end
+
+    -- Determine speed based on distance
+    local isRunning = dist > 6.0 or target:isRunning() or target:isSprinting()
+    local speed = isRunning and (brain.runSpeed or DTNPC.DefaultRunSpeed) or (brain.walkSpeed or DTNPC.DefaultWalkSpeed)
+
+    -- 5. Calculate next position
+    local nextX = zx + (dx * speed)
+    local nextY = zy + (dy * speed)
+
+    -- 6. Collision check
+    local canMove = isTileSafe(nextX, nextY, zz)
+    
+    if not canMove then
+        -- Try X only
+        if isTileSafe(nextX, zy, zz) then
+            nextY = zy
+            canMove = true
+        -- Try Y only
+        elseif isTileSafe(zx, nextY, zz) then
+            nextX = zx
+            canMove = true
+        end
+    end
+
+    -- 7. Apply movement
+    if canMove then
+        zombie:setX(nextX)
+        zombie:setY(nextY)
+        forceWalkAnimation(zombie, isRunning)
+    else
+        stopAnimation(zombie)
+    end
+
+    -- 8. Rotation
+    local dirVector = zombie:getForwardDirection()
+    if dirVector then
+        dirVector:set(dx, dy)
+        dirVector:normalize()
     end
     
-    -- 4. HOUSEKEEPING
-    -- If we are following, we shouldn't have any manual "Go To" tasks queued.
-    brain.tasks = {} 
+    brain.tasks = {}
 end

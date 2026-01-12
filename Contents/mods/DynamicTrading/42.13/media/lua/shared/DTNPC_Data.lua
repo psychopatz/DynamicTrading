@@ -1,20 +1,16 @@
 -- ==============================================================================
--- MyNPC_Data.lua
+-- DTNPC_Data.lua
 -- Shared Logic: Defines the Brain structure, Wardrobe, and Visual overrides.
--- UPDATED: Added Wardrobe Framework for easy clothing management.
+-- Build 42 Compatible. Works on both client and server.
 -- ==============================================================================
 
-MyNPC = MyNPC or {}
+DTNPC = DTNPC or {}
 
 -- ==============================================================================
 -- 1. WARDROBE DATABASE (The Dress System)
 -- ==============================================================================
 
--- Define your outfits here. You can add as many categories and sets as you want.
--- Item names must match the "Base.ItemName" format from the game files.
-MyNPC.Wardrobe = {
-    
-    -- CASUAL OUTFITS
+DTNPC.Wardrobe = {
     Casual = {
         Male = {
             { "Base.Tshirt_White", "Base.Jeans_Black", "Base.Shoes_Sneakers" },
@@ -29,24 +25,22 @@ MyNPC.Wardrobe = {
             { "Base.Top_SpaghettiStrap_White", "Base.Skirt_Knees_Denim", "Base.Shoes_Trainer" },
         }
     },
-
-    -- EXAMPLE: You can add a "Police" category later
-    -- Police = { Male = { ... }, Female = { ... } }
 }
 
--- Helper to pick a random outfit based on Gender and Category
-function MyNPC.GetOutfit(isFemale, category)
+-- Default walking speeds
+DTNPC.DefaultWalkSpeed = 0.06
+DTNPC.DefaultRunSpeed = 0.09
+
+function DTNPC.GetOutfit(isFemale, category)
     local genderKey = isFemale and "Female" or "Male"
-    local cat = category or "Casual" -- Default to Casual
+    local cat = category or "Casual"
     
-    local pool = MyNPC.Wardrobe[cat] and MyNPC.Wardrobe[cat][genderKey]
+    local pool = DTNPC.Wardrobe[cat] and DTNPC.Wardrobe[cat][genderKey]
     
     if pool and #pool > 0 then
-        -- Return a random set from the list
         return pool[ZombRand(#pool) + 1]
     else
-        -- Fallback if typo or empty
-        print("[MyNPC] Warning: No outfit found for " .. cat .. "/" .. genderKey)
+        print("[DTNPC] Warning: No outfit found for " .. cat .. "/" .. genderKey)
         return { "Base.Tshirt_White", "Base.Jeans_Black" }
     end
 end
@@ -55,24 +49,33 @@ end
 -- 2. BRAIN MANAGEMENT
 -- ==============================================================================
 
-function MyNPC.GetBrain(zombie)
+function DTNPC.GetBrain(zombie)
     if not zombie then return nil end
     local modData = zombie:getModData()
-    return modData.MyNPCBrain
+    if not modData then return nil end
+    return modData.DTNPCBrain
 end
 
-function MyNPC.AttachBrain(zombie, brainData)
+function DTNPC.AttachBrain(zombie, brainData)
+    if not zombie or not brainData then return end
     local modData = zombie:getModData()
-    modData.MyNPCBrain = brainData
-    modData.IsMyNPC = true
+    if not modData then return end
+    modData.DTNPCBrain = brainData
+    modData.IsDTNPC = true
+end
+
+function DTNPC.IsNPC(zombie)
+    if not zombie then return false end
+    local modData = zombie:getModData()
+    return modData and modData.IsDTNPC == true
 end
 
 -- ==============================================================================
 -- 3. VISUALS (THE COSTUME)
 -- ==============================================================================
 
-function MyNPC.ApplyVisuals(zombie, brain)
-    if not zombie then return end
+function DTNPC.ApplyVisuals(zombie, brain)
+    if not zombie or not brain then return end
 
     local humanVisual = zombie:getHumanVisual()
     if not humanVisual then return end 
@@ -85,7 +88,7 @@ function MyNPC.ApplyVisuals(zombie, brain)
     local skinTexture = brain.isFemale and "FemaleBody01" or "MaleBody01"
     humanVisual:setSkinTextureName(skinTexture)
     
-    -- 3. Apply Hair (Crash-Proof Version)
+    -- 3. Apply Hair
     local hairStyles = getAllHairStyles(brain.isFemale)
     if hairStyles and hairStyles:size() > 0 then
         local hairIndex = brain.hairStyle or ZombRand(hairStyles:size())
@@ -118,10 +121,8 @@ function MyNPC.ApplyVisuals(zombie, brain)
         humanVisual:setBeardColor(color)
     end
 
-    -- 6. APPLY CLOTHING FROM BRAIN
-    -- The brain should now contain a list of items (brain.outfit)
+    -- 6. Apply Clothing
     local outfit = brain.outfit
-    
     if outfit then
         local itemVisuals = zombie:getItemVisuals()
         for _, itemType in ipairs(outfit) do
@@ -141,13 +142,90 @@ function MyNPC.ApplyVisuals(zombie, brain)
 end
 
 -- ==============================================================================
--- 4. UTILITIES
+-- 4. DIALOGUE SYSTEM
 -- ==============================================================================
 
-function MyNPC.GenerateName(isFemale)
+-- Color definitions for dialogue
+DTNPC.Colors = {
+    white = "<RGB:1,1,1>",
+    red = "<RGB:1,0.2,0.2>",
+    green = "<RGB:0.2,1,0.2>",
+    blue = "<RGB:0.4,0.6,1>",
+    gray = "<RGB:0.6,0.6,0.6>",
+    yellow = "<RGB:1,1,0.2>",
+    orange = "<RGB:1,0.6,0.2>",
+    purple = "<RGB:0.8,0.4,1>",
+}
+
+-- Make NPC say something with optional color
+-- Usage: DTNPC.Say(zombie, "Hello!", "green")
+function DTNPC.Say(zombie, text, colorName)
+    if not zombie or not text then return end
+    
+    local brain = DTNPC.GetBrain(zombie)
+    local prefix = ""
+    
+    -- Add NPC name as prefix if available
+    if brain and brain.name then
+        prefix = "[" .. brain.name .. "] "
+    end
+    
+    -- Apply color if specified
+    local colorTag = ""
+    if colorName and DTNPC.Colors[colorName] then
+        colorTag = DTNPC.Colors[colorName]
+    end
+    
+    local fullText = colorTag .. prefix .. text
+    
+    pcall(function()
+        zombie:Say(fullText)
+    end)
+end
+
+-- Make NPC say something with custom RGB color
+-- Usage: DTNPC.SayRGB(zombie, "Hello!", 1, 0.5, 0)
+function DTNPC.SayRGB(zombie, text, r, g, b)
+    if not zombie or not text then return end
+    
+    local brain = DTNPC.GetBrain(zombie)
+    local prefix = ""
+    
+    if brain and brain.name then
+        prefix = "[" .. brain.name .. "] "
+    end
+    
+    r = r or 1
+    g = g or 1
+    b = b or 1
+    
+    local colorTag = string.format("<RGB:%s,%s,%s>", r, g, b)
+    local fullText = colorTag .. prefix .. text
+    
+    pcall(function()
+        zombie:Say(fullText)
+    end)
+end
+
+-- Announce NPC name overhead (call periodically to show name)
+function DTNPC.AnnounceName(zombie)
+    if not zombie then return end
+    
+    local brain = DTNPC.GetBrain(zombie)
+    if not brain or not brain.name then return end
+    
+    DTNPC.Say(zombie, brain.name, "white")
+end
+
+-- ==============================================================================
+-- 5. UTILITIES
+-- ==============================================================================
+
+function DTNPC.GenerateName(isFemale)
     local maleNames = {"Bob", "Jim", "Mike", "Steve", "Alex", "Zed", "Arthur", "John"}
     local femaleNames = {"Alice", "Jane", "Sarah", "Emily", "Kate", "Rose", "Anna"}
     
     local list = isFemale and femaleNames or maleNames
     return list[ZombRand(#list) + 1] .. " Survivor"
 end
+
