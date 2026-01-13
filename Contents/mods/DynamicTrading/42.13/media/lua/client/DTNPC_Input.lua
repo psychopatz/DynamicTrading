@@ -12,9 +12,29 @@ function DTNPCInput.OnKeyPressed(key)
         local player = getPlayer()
         if not player then return end
 
-        player:Say("Signal Sent: Spawning NPC...")
+        local occupations = {
+            "General", "Farmer", "Butcher", "Doctor", "Mechanic", "Survivalist", 
+            "Gunrunner", "Foreman", "Scavenger", "Tailor", "Electrician", "Welder", 
+            "Chef", "Herbalist", "Smuggler", "Librarian", "Angler", "Sheriff", 
+            "Bartender", "Teacher", "Hunter", "Quartermaster", "Musician", "Janitor", 
+            "Carpenter", "Pawnbroker", "Pyro", "Athlete", "Pharmacist", "Hiker", 
+            "Burglar", "Blacksmith", "Tribal", "Painter", "RoadWarrior", "Designer", 
+            "Office", "Geek", "Brewer", "Demo"
+        }
+        
+        local randomOcc = occupations[ZombRand(#occupations) + 1]
+        local randomWalk = 0.04 + (ZombRand(5) / 100) -- 0.04 to 0.08
+        local randomRun = 0.06 + (ZombRand(8) / 100) -- 0.06 to 0.13
+        
+        player:Say("Signal Sent: Spawning " .. randomOcc .. " NPC...")
 
-        sendClientCommand(player, "DTNPC", "Spawn", {})
+        local args = {
+            occupation = randomOcc,
+            walkSpeed = randomWalk,
+            runSpeed = randomRun
+        }
+
+        sendClientCommand(player, "DTNPC", "Spawn", args)
     end
 end
 

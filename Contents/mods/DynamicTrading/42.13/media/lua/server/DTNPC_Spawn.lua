@@ -4,6 +4,8 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
+require "DTNPC_Generator"
+
 DTNPCSpawn = DTNPCSpawn or {}
 
 -- ==============================================================================
@@ -76,7 +78,15 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     
     local x, y, z = player:getX(), player:getY(), player:getZ()
     local spawnX, spawnY = x + 2, y + 2
-    local outfitStr, femaleChance = "Naked", 50
+    
+    -- Spawn a naked zombie initially to ensure we have full control over outfit
+    local outfitStr = "Naked"
+    local femaleChance = 50 
+    
+    -- If we have an existing brain, match the gender of the zombie to the brain
+    if existingBrain then
+        femaleChance = existingBrain.isFemale and 100 or 0
+    end
     
     local zombieList = addZombiesInOutfit(spawnX, spawnY, z, 1, outfitStr, femaleChance, false, false, false, false, false, false, 1)
     
@@ -87,21 +97,18 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     local brain = existingBrain
     
     if not brain then
-        local isFemale = zombie:isFemale()
-        local myOutfit = DTNPC.GetOutfit(isFemale, "Casual")
-        brain = {
-            name = options.name or DTNPC.GenerateName(isFemale),
-            isFemale = isFemale,
-            hairStyle = nil, 
-            outfit = myOutfit,
-            state = "Stay",
-            master = player:getUsername(),
+        -- GENERATE NEW BRAIN
+        local genOptions = {
+            masterName = player:getUsername(),
             masterID = player:getOnlineID(),
-            tasks = {},
-            walkSpeed = options.walkSpeed or DTNPC.DefaultWalkSpeed,
-            runSpeed = options.runSpeed or DTNPC.DefaultRunSpeed,
+            forceMVP = options.forceMVP,
+            walkSpeed = options.walkSpeed,
+            runSpeed = options.runSpeed
         }
+        
+        brain = DTNPCGenerator.Generate(genOptions)
     else
+        -- REHYDRATE BRAIN
         if not brain.tasks then brain.tasks = {} end
         if not brain.walkSpeed then brain.walkSpeed = DTNPC.DefaultWalkSpeed end
         if not brain.runSpeed then brain.runSpeed = DTNPC.DefaultRunSpeed end
@@ -120,7 +127,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
 
     DTNPCSpawn.SyncToAllClients(zombie, brain)
 
-    print("[DTNPC] Spawned/Summoned: " .. brain.name)
+    print("[DTNPC] Spawned/Summoned: " .. brain.name .. " | Job: " .. (options.occupation or "General"))
     
     return zombie, brain
 end

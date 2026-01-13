@@ -192,6 +192,23 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
         local mSub = context:getNew(context)
         context:addSubMenu(mOption, mSub)
         mSub:addOption("Summon All Followers", player, onSummon)
+        
+        -- Debug Spawn
+        local function onSpawn(p)
+            local occupations = {
+                "General", "Farmer", "Butcher", "Doctor", "Mechanic", "Survivalist", 
+                "Gunrunner", "Foreman", "Scavenger", "Tailor", "Electrician", "Welder", 
+                "Chef", "Herbalist", "Smuggler", "Librarian", "Angler", "Sheriff", 
+                "Bartender", "Teacher", "Hunter", "Quartermaster", "Musician", "Janitor", 
+                "Carpenter", "Pawnbroker", "Pyro", "Athlete", "Pharmacist", "Hiker", 
+                "Burglar", "Blacksmith", "Tribal", "Painter", "RoadWarrior", "Designer", 
+                "Office", "Geek", "Brewer", "Demo"
+            }
+            local occ = occupations[ZombRand(#occupations) + 1]
+            sendClientCommand(p, "DTNPC", "Spawn", { occupation = occ })
+        end
+        
+        mSub:addOption("Spawn Random NPC", player, onSpawn)
     end
 end
 
