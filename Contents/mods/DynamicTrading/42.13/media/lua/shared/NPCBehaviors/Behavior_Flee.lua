@@ -1,6 +1,7 @@
 -- ==============================================================================
 -- Behavior_Flee.lua
 -- Handles "Fleeing" and "Merchant Leaving" logic.
+-- REWRITTEN: Implements "Fake Attack" Wake-Up to fix Mannequin bug.
 -- Build 42 Compatible.
 -- ==============================================================================
 
@@ -26,27 +27,21 @@ end
 
 local function forceRunAnimation(zombie)
     zombie:setVariable("bMoving", true)
-    zombie:setVariable("Speed", 1.0)
-    zombie:setVariable("WalkType", "Run")
     zombie:setVariable("isMoving", true)
+    
+    -- Let engine handle WalkType
+    
+    zombie:setVariable("Speed", 1.2) -- Force run speed
     zombie:setVariable("BanditWalkType", "Run")
 end
 
 DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
     
-    if not zombie:isUseless() then
-        zombie:setUseless(true)
-        zombie:setPath2(nil)
-        zombie:setRunning(false)
-    end
-
+    -- 1. DESPAWN CHECK (Merchant Exit)
     if dist > DESPAWN_DIST then
         if isClient() then
-            -- Send command to server to unregister/delete
              local id = zombie:getPersistentOutfitID()
              sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { id = id })
-             
-             -- Remove locally immediately
              zombie:removeFromWorld()
              zombie:removeFromSquare()
         elseif DTNPCManager then 
@@ -58,10 +53,13 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
         return
     end
 
+    -- 2. DETERMINE MOVEMENT VECTOR
     local dx, dy = 0, 0
     local zx, zy = zombie:getX(), zombie:getY()
+    local hasDestination = false
 
     if target then
+        -- Run AWAY from target
         dx = zx - target:getX()
         dy = zy - target:getY()
         
@@ -71,15 +69,44 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
             dy = dy / len
         end
         
+        -- Store direction in case target vanishes/dies so we keep running
         brain.lastFleeX = dx
         brain.lastFleeY = dy
+        hasDestination = true
     elseif brain.lastFleeX then
+        -- Keep running in last known direction
         dx = brain.lastFleeX
         dy = brain.lastFleeY
+        hasDestination = true
     else
+        -- No target, no memory. Stand still.
+        if not zombie:isUseless() then zombie:setUseless(true) end
+        brain.isMovingState = false
         zombie:setVariable("bMoving", false)
         zombie:setVariable("Speed", 0.0)
         return
+    end
+
+    -- 3. WAKE UP CALL (The Fix)
+    if not brain.isMovingState then brain.isMovingState = false end
+    
+    local wasMoving = brain.isMovingState
+    brain.isMovingState = hasDestination -- Fleeing is binary: we run or we don't.
+
+    if brain.isMovingState and not wasMoving then
+        -- Trigger Attack logic for 1 tick to reset skeleton
+        if DTNPCLogic.Behaviors["Attack"] then
+            DTNPCLogic.Behaviors["Attack"](zombie, brain, target, dist)
+        end
+        return -- Let engine process the animation update
+    end
+
+    -- 4. MANUAL MOVEMENT
+    -- Frame 2+ of fleeing. Take control.
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+        zombie:setPath2(nil)
+        zombie:setRunning(false)
     end
 
     local speed = brain.runSpeed or DTNPC.DefaultRunSpeed
@@ -89,6 +116,7 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
 
     local canMove = isTileSafe(nextX, nextY, z)
     
+    -- Simple obstacle avoidance (Slide along walls)
     if not canMove then
         if isTileSafe(nextX, zy, z) then
             nextY = zy
@@ -103,14 +131,16 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
         zombie:setX(nextX)
         zombie:setY(nextY)
         forceRunAnimation(zombie)
+        
+        -- Rotation
+        local dirVector = zombie:getForwardDirection()
+        if dirVector then
+            dirVector:set(dx, dy)
+            dirVector:normalize()
+        end
     else
+        -- Blocked completely
         zombie:setVariable("bMoving", false)
         zombie:setVariable("Speed", 0.0)
-    end
-
-    local dirVector = zombie:getForwardDirection()
-    if dirVector then
-        dirVector:set(dx, dy)
-        dirVector:normalize()
     end
 end

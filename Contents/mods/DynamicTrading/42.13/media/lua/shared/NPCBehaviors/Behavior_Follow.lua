@@ -1,15 +1,26 @@
 -- ==============================================================================
 -- Behavior_Follow.lua
 -- Handles the logic for following the Master.
--- REWRITTEN: Uses GoTo approach - disables AI, teleports incrementally.
+-- REWRITTEN: Implements "Fake Attack" Wake-Up Call.
+-- Triggers 1 tick of Attack Behavior when starting to move to fix "Mannequin" bug.
 -- Build 42 Compatible.
 -- ==============================================================================
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 
-local STOP_DIST = 2.5
+-- MOVEMENT CONFIGURATION
+local STOP_THRESHOLD_START = 3.5  -- Distance to START moving (Buffer zone)
+local STOP_THRESHOLD_END   = 2.0  -- Distance to STOP moving
 local TELEPORT_DIST = 50
+
+-- Speeds
+local WALK_SPEED_PHYSICAL = 0.040
+local RUN_SPEED_PHYSICAL = 0.075
+
+-- ==============================================================================
+-- 1. UTILITIES
+-- ==============================================================================
 
 local function getDist(x1, y1, x2, y2)
     local dx = x1 - x2
@@ -26,43 +37,45 @@ local function isTileSafe(x, y, z)
     return true
 end
 
+-- ==============================================================================
+-- 2. ANIMATION HANDLERS
+-- ==============================================================================
+
 local function forceWalkAnimation(zombie, isRunning)
-    if isRunning then
-        zombie:setVariable("bMoving", true)
-        zombie:setVariable("Speed", 1.0)
-        zombie:setVariable("WalkType", "Run")
-        zombie:setVariable("BanditWalkType", "Run")
-    else
-        zombie:setVariable("bMoving", true)
-        zombie:setVariable("Speed", 0.6)
-        zombie:setVariable("WalkType", "Walk")
-        zombie:setVariable("BanditWalkType", "Walk")
-    end
+    zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
+    
+    -- Note: We rely on the engine to pick WalkType now.
+    
+    if isRunning then
+        zombie:setVariable("Speed", 1.2)
+        zombie:setRunning(true)
+    else
+        zombie:setVariable("Speed", 1.0)
+        zombie:setRunning(false)
+    end
 end
 
 local function stopAnimation(zombie)
     zombie:setVariable("bMoving", false)
-    zombie:setVariable("Speed", 0.0)
     zombie:setVariable("isMoving", false)
+    zombie:setVariable("Speed", 0.0)
+    zombie:setRunning(false)
 end
+
+-- ==============================================================================
+-- 3. BEHAVIOR LOGIC
+-- ==============================================================================
 
 DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
     
-    -- 1. Force safety - disable AI
-    if not zombie:isUseless() then
-        zombie:setUseless(true)
-        zombie:setPath2(nil)
-        zombie:setRunning(false)
-    end
-    
-    -- No target, just stand
     if not target then 
+        if not zombie:isUseless() then zombie:setUseless(true) end
         stopAnimation(zombie)
         return 
     end
 
-    -- 2. Teleport catch-up if too far
+    -- 1. Teleport catch-up
     if dist > TELEPORT_DIST then
         zombie:setX(target:getX() + 1)
         zombie:setY(target:getY() + 1)
@@ -71,15 +84,58 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
         return
     end
 
-    -- 3. If close enough, stop
-    if dist <= STOP_DIST then
+    -- 2. HYSTERESIS CHECK
+    if not brain.isMovingState then brain.isMovingState = false end
+    
+    local wasMoving = brain.isMovingState -- Track previous frame state
+    local shouldMove = brain.isMovingState
+
+    if brain.isMovingState then
+        if dist <= STOP_THRESHOLD_END then
+            shouldMove = false
+        end
+    else
+        if dist >= STOP_THRESHOLD_START then
+            shouldMove = true
+        end
+    end
+    
+    brain.isMovingState = shouldMove
+
+    -- 3. WAKE UP CALL (THE FIX)
+    -- If we are transitioning from Idle -> Moving, execute the Attack Behavior for 1 tick.
+    if shouldMove and not wasMoving then
+        -- Execute Attack logic (setUseless(false), DoZombieStats, etc)
+        if DTNPCLogic.Behaviors["Attack"] then
+            DTNPCLogic.Behaviors["Attack"](zombie, brain, target, dist)
+        end
+        
+        -- IMPORTANT: Return immediately. 
+        -- Do NOT override with manual movement this frame.
+        -- This lets the engine process the "Attack" state fully for one tick, fixing the feet.
+        return 
+    end
+
+    -- 4. STOPPING LOGIC
+    if not shouldMove then
+        if not zombie:isUseless() then zombie:setUseless(true) end
         stopAnimation(zombie)
         zombie:faceLocation(target:getX(), target:getY())
         brain.tasks = {}
         return
     end
 
-    -- 4. Movement calculation
+    -- 5. MOVING LOGIC (Manual Control)
+    -- If we reach here, 'shouldMove' is true AND 'wasMoving' is true (Frame 2+)
+    -- We now take full control back from the AI to ensure they follow us smoothly.
+    
+    if not zombie:isUseless() then
+        zombie:setUseless(true) -- Disable AI biting/wandering
+        zombie:setPath2(nil)
+        zombie:setRunning(false)
+    end
+
+    -- Movement Vector Calculation
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
     
@@ -92,43 +148,38 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
         dy = dy / len
     end
 
-    -- Determine speed based on distance
-    local isRunning = dist > 6.0 or target:isRunning() or target:isSprinting()
-    local speed = isRunning and (brain.runSpeed or DTNPC.DefaultRunSpeed) or (brain.walkSpeed or DTNPC.DefaultWalkSpeed)
+    -- Rotation
+    local dirVector = zombie:getForwardDirection()
+    if dirVector then
+        dirVector:set(dx, dy)
+        dirVector:normalize()
+    end
 
-    -- 5. Calculate next position
+    -- Speed & Collision
+    local isRunning = dist > 7.0 or target:isRunning() or target:isSprinting()
+    local speed = isRunning and RUN_SPEED_PHYSICAL or WALK_SPEED_PHYSICAL
+    
     local nextX = zx + (dx * speed)
     local nextY = zy + (dy * speed)
-
-    -- 6. Collision check
     local canMove = isTileSafe(nextX, nextY, zz)
     
     if not canMove then
-        -- Try X only
         if isTileSafe(nextX, zy, zz) then
             nextY = zy
             canMove = true
-        -- Try Y only
         elseif isTileSafe(zx, nextY, zz) then
             nextX = zx
             canMove = true
         end
     end
 
-    -- 7. Apply movement
+    -- Apply Movement
     if canMove then
+        forceWalkAnimation(zombie, isRunning)
         zombie:setX(nextX)
         zombie:setY(nextY)
-        forceWalkAnimation(zombie, isRunning)
     else
         stopAnimation(zombie)
-    end
-
-    -- 8. Rotation
-    local dirVector = zombie:getForwardDirection()
-    if dirVector then
-        dirVector:set(dx, dy)
-        dirVector:normalize()
     end
     
     brain.tasks = {}

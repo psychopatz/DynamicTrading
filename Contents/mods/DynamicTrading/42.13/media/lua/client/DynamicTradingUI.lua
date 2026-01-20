@@ -119,7 +119,7 @@ function DynamicTradingUI:update()
             if player then
                 -- Play specific sound if provided (e.g., cash register)
                 if msg.sound then
-                     getSoundManager():PlaySound(msg.sound, false, 1.0)
+                     getSoundManager():PlaySound("DT_Cashier", false, 0.1)
                 -- Otherwise play default radio click
                 else
                      getSoundManager():PlaySound("DT_RadioRandom", false, 0.1)

@@ -22,14 +22,5 @@ module Base
         }
     }
 
-        sound DT_Disconnected
-    {
-        category = UI,
-        is3D = false,
-        clip
-        {
-            file = media/sound/DT_Disconnected.ogg,
-            volume = 0.4,
-        }
-    }
+
 }

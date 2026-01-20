@@ -2,8 +2,9 @@ module Base
 {
 sound DT_RadioRandom
 {
-category = UI,
-is3D = false,
+    volume = 0.1,
+    category = UI,
+    is3D = false,
     clip { file = media/sound/radio/1.ogg, }
     clip { file = media/sound/radio/2.ogg, }
     clip { file = media/sound/radio/3.ogg, }
@@ -21,6 +22,15 @@ is3D = false,
     clip { file = media/sound/radio/15.ogg, }
 }
 
-  
+        sound DT_Disconnected
+    {
+        category = UI,
+        is3D = false,
+        clip
+        {
+            file = media/sound/DT_Disconnected.ogg,
+            volume = 0.4,
+        }
+    }
 
 }
