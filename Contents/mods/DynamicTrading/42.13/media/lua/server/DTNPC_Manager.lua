@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- DTNPC_Manager.lua
 -- Server-side Logic: Persists NPC data and TRACKS LOCATIONS.
--- Build 42 Compatible. Uses GlobalModData.save() for multiplayer persistence.
+-- Uses GlobalModData.save() for multiplayer persistence.
 -- ==============================================================================
 
 DTNPCManager = DTNPCManager or {}

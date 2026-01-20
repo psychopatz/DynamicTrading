@@ -20,7 +20,7 @@ local function OnServerCommand(module, command, args)
         if isMe then
             -- 1. SUCCESS (Green)
             if args.status == "SUCCESS" then
-                getSoundManager():PlaySound("DT_RadioClick", false, 0.5)
+                getSoundManager():PlaySound("DT_RadioRandom", false, 0.1)
                 player:Say("Connected: " .. (args.name or "Unknown"))
                 
                 if HaloTextHelper then

@@ -188,7 +188,7 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             debugSub:addOption("TEST: Attack Me (Gun)", npc, onOrder, "AttackRange", player)
         end
     else
-        local mOption = context:addOption("DTNPC Manager")
+        local mOption = context:addOption("NPC Manager (Please Test)")
         local mSub = context:getNew(context)
         context:addSubMenu(mOption, mSub)
         mSub:addOption("Summon All Followers", player, onSummon)

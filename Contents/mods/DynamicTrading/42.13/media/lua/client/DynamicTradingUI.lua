@@ -122,7 +122,7 @@ function DynamicTradingUI:update()
                      getSoundManager():PlaySound(msg.sound, false, 1.0)
                 -- Otherwise play default radio click
                 else
-                     getSoundManager():PlaySound("DT_RadioClick", false, 0.5)
+                     getSoundManager():PlaySound("DT_RadioRandom", false, 0.1)
                 end
             end
             

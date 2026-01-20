@@ -64,9 +64,9 @@ local function OnServerCommand(module, command, args)
             -- "Credits received."
             local traderMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, diagArgs)
             -- Delay 60 ticks: Wait for signal travel time
-            -- Sound: "DT_RadioClick" (Defined implicitly in UI processor if no sound arg, 
+            -- Sound: "DT_RadioRandom" (Defined implicitly in UI processor if no sound arg, 
             -- or explicit here if we want to be safe)
-            ui:queueMessage(traderMsg, false, false, 10, "DT_RadioClick")
+            ui:queueMessage(traderMsg, false, false, 10, "DT_RadioRandom")
 
             -- 3. [SYSTEM AUDIT LOG] (~0.3 Seconds Later)
             -- "Purchased: Apple (-$10)"
@@ -102,7 +102,7 @@ local function OnServerCommand(module, command, args)
             -- 2. Trader Refusal (~1 Second Later)
             local failMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
             -- isError = true (Red Text)
-            ui:queueMessage(failMsg, true, false, 20, "DT_RadioClick")
+            ui:queueMessage(failMsg, true, false, 20, "DT_RadioRandom")
             
             -- Force refresh
             ui:populateList()

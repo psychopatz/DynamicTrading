@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- DTNPC_Data.lua
 -- Shared Logic: Defines the Brain structure, Wardrobe, and Visual overrides.
--- Build 42 Compatible. Works on both client and server.
+-- Works on both client and server.
 -- ==============================================================================
 
 DTNPC = DTNPC or {}

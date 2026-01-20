@@ -1,7 +1,6 @@
 -- ==============================================================================
 -- DTNPC_Spawn.lua
 -- Server-side Logic: Spawning, Commands, Summoning, and Multiplayer Sync.
--- Build 42 Compatible.
 -- ==============================================================================
 
 require "DTNPC_Generator"

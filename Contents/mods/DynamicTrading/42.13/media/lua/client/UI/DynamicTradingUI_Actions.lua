@@ -37,7 +37,7 @@ function DynamicTradingUI:onAction()
             
             -- 2. Trader: "It's gone." (~1s Delay)
             local failMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
-            self:queueMessage(failMsg, true, false, 10, "DT_RadioClick")
+            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom")
             
             return
         end
@@ -55,7 +55,7 @@ function DynamicTradingUI:onAction()
             
             -- 2. Trader: "No cash, no deal." (~1s Delay)
             local failMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, true, diagArgs)
-            self:queueMessage(failMsg, true, false, 10, "DT_RadioClick")
+            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom")
             
             return
         end
