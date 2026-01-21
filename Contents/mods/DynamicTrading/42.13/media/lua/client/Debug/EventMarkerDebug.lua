@@ -74,7 +74,7 @@ local function createDebugMenu(player, context, worldobjects, test)
     if not playerObj then return end
     
     -- Main menu
-    local mainMenu = context:addOption("Event Marker Debug", worldobjects, nil)
+    local mainMenu = context:addOption("[DEBUG]Event Marker", worldobjects, nil)
     local subMenu = ISContextMenu:getNew(context)
     context:addSubMenu(mainMenu, subMenu)
     

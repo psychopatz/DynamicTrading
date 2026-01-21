@@ -1,5 +1,8 @@
--- Debug Menu for Dynamic Trading V2
--- Place in media/lua/client/Debug/DT_DebugMenu.lua
+-- [[ OPTIMIZATION CHECK ]]
+-- If we are not in Debug Mode, stop reading this file immediately.
+-- This prevents functions from loading and prevents the Event listener from registering.
+if not isDebugEnabled() then return end
+-- [[ END CHECK ]]
 
 DT_DebugMenu = {}
 
@@ -35,7 +38,7 @@ end
 DT_DebugMenu.OnFillWorldObjectContextMenu = function(player, context, worldobjects, test)
     if not isDebugEnabled() then return end
 
-    local dtOption = context:addOption("Dynamic Trading Debug", worldobjects, nil)
+    local dtOption = context:addOption("[DEBUG]Dynamic Trading", worldobjects, nil)
     local subMenu = context:getNew(context)
     context:addSubMenu(dtOption, subMenu)
 
