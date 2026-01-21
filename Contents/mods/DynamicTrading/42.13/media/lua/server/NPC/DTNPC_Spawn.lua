@@ -247,6 +247,25 @@ local function onClientCommand(module, command, player, args)
         print("[DTNPC] Sent NPC sync data to: " .. player:getUsername())
     end
 
+    if command == "RequestBrain" then
+        if not args or not args.id then return end
+        if not DTNPCManager then return end
+        
+        local brain = DTNPCManager.Data[args.id]
+        if brain then
+            -- Find the zombie to sync
+            local cell = getCell()
+            local zombieList = cell:getZombieList()
+            for i = 0, zombieList:size() - 1 do
+                local z = zombieList:get(i)
+                if z and z:getPersistentOutfitID() == args.id then
+                    DTNPCSpawn.SyncToPlayer(player, z, brain)
+                    break
+                end
+            end
+        end
+    end
+
     if command == "UpdateNPC" then
         -- Client reporting state change (e.g. finished GoTo)
         if not args.id or not args.updates then return end

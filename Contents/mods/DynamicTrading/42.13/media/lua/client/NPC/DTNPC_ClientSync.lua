@@ -50,6 +50,12 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     if not zombie or not brain then return end
     if isServer() then return end
     
+    -- 1. Check if visuals were ALREADY applied to this specific OBJECT instance
+    -- (zombie.DTNPC_VisualsID is a local Lua field, not synced/saved, so it resets on load)
+    if zombie.DTNPC_VisualsID == brain.visualID then
+        return 
+    end
+
     if DTNPC and DTNPC.ApplyVisuals then
         DTNPC.ApplyVisuals(zombie, brain)
     end
@@ -57,6 +63,11 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     if DTNPC and DTNPC.AttachBrain then
         DTNPC.AttachBrain(zombie, brain)
     end
+    
+    zombie.DTNPC_VisualsID = brain.visualID
+    
+    -- Also update ModData for logic checks (LastVisualID stays in ModData)
+    zombie:getModData().LastVisualID = brain.visualID
 end
 
 function DTNPCClient.FindZombieByID(id)
@@ -148,7 +159,8 @@ local function onTick()
             
             -- 1. Attach Brain if missing (Server -> Client Sync)
             if cached and cached.brain then
-                if not modData.IsDTNPC then
+                -- Check if object needs visual application (using local instance flag)
+                if not modData.IsDTNPC or zombie.DTNPC_VisualsID ~= cached.brain.visualID then
                     modData.DTNPCBrain = cached.brain
                     modData.IsDTNPC = true
                     DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
@@ -170,8 +182,8 @@ local function onTick()
                          -- Simple check for task completion (active to empty)
                          if localBrain.tasks and serverBrain.tasks then
                              if #localBrain.tasks ~= #serverBrain.tasks then
-                                 updates.tasks = localBrain.tasks
-                                 changed = true
+                                  updates.tasks = localBrain.tasks
+                                  changed = true
                              end
                          end
                          
@@ -183,6 +195,14 @@ local function onTick()
                              sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { id = id, updates = updates })
                          end
                     end
+                end
+            elseif modData.IsDTNPC then
+                -- 3. BRAIN MISSING! We see modData.IsDTNPC but have no cached brain.
+                -- Request it from server. (Throttled by timestamp)
+                if not zombie.lastBrainRequest or (getTimestampMs() - zombie.lastBrainRequest > 5000) then
+                    zombie.lastBrainRequest = getTimestampMs()
+                    sendClientCommand(getPlayer(), "DTNPC", "RequestBrain", { id = id })
+                    -- print("[DTNPC] Identified unknown NPC " .. tostring(id) .. ". Requesting brain...")
                 end
             end
         end
