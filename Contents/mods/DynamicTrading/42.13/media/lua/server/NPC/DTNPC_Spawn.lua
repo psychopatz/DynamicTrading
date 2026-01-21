@@ -3,7 +3,7 @@
 -- Server-side Logic: Spawning, Commands, Summoning, and Multiplayer Sync.
 -- ==============================================================================
 
-require "DTNPC_Generator"
+require "NPC/Sys/DTNPC_Generator"
 
 DTNPCSpawn = DTNPCSpawn or {}
 

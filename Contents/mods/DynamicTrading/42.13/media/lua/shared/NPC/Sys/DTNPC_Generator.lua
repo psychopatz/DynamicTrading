@@ -6,8 +6,8 @@
 
 DTNPCGenerator = DTNPCGenerator or {}
 
-require "DTNPC_Presets"
-require "DTNPC_MVP"
+require "NPC/Templates/DTNPC_Presets"
+require "NPC/Templates/DTNPC_MVP"
 
 -- ==============================================================================
 -- 1. CONFIGURATION

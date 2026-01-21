@@ -3,9 +3,15 @@
 -- The "Controller": Manages the NPC's decisions and delegates specific tasks.
 -- Build 42 Compatible. Runs on Server only in multiplayer.
 -- ==============================================================================
-
 DTNPCLogic = DTNPCLogic or {}
-DTNPCLogic.Behaviors = {} 
+DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+
+require "NPC/Behaviors/Behavior_GoTo"
+require "NPC/Behaviors/Behavior_Attack"
+require "NPC/Behaviors/Behavior_AttackRange"
+require "NPC/Behaviors/Behavior_Flee"
+require "NPC/Behaviors/Behavior_Follow"
+require "NPC/Behaviors/Behavior_Guard" 
 
 -- ==============================================================================
 -- 2. HELPER UTILITIES

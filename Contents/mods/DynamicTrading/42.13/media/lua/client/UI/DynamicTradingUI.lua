@@ -11,11 +11,11 @@ require "DynamicTrading_Events"
 require "DT_DialogueManager" 
 
 -- UI sub-modules
-require "DynamicTrading/UI/DynamicTradingUI_Helpers"
-require "DynamicTrading/UI/DynamicTradingUI_Layout"
-require "DynamicTrading/UI/DynamicTradingUI_List"
-require "DynamicTrading/UI/DynamicTradingUI_Actions"
-require "DynamicTrading/UI/DynamicTradingUI_Events"
+require "DynamicTradingUI_Helpers"
+require "DynamicTradingUI_Layout"
+require "DynamicTradingUI_List"
+require "DynamicTradingUI_Actions"
+require "DynamicTradingUI_Events"
 
 DynamicTradingUI = ISCollapsableWindow:derive("DynamicTradingUI")
 DynamicTradingUI.instance = nil
