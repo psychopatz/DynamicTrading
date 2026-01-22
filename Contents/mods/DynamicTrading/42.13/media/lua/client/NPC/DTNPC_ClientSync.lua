@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- DTNPC_ClientSync.lua
 -- Client-side Logic: Receives NPC data from server and manages local cache.
--- Build 42 Compatible.
+-- FIXED: Better position reconciliation and zombie finding
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
@@ -34,11 +34,14 @@ function DTNPCClient.CacheBrain(id, brain)
         brain = brain,
         lastSync = getTimestampMs()
     }
+    
+    print("[DTNPC-Client] Cached brain for: " .. (brain.name or id))
 end
 
 function DTNPCClient.RemoveFromCache(id)
     if id then
         DTNPCClient.NPCCache[id] = nil
+        print("[DTNPC-Client] Removed from cache: " .. id)
     end
 end
 
@@ -55,6 +58,8 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
         -- Skip if visuals are already correct to prevent flickering/shuffling
         return 
     end
+
+    print("[DTNPC-Client] Applying visuals for: " .. (brain.name or "Unknown"))
 
     if DTNPC and DTNPC.ApplyVisuals then
         DTNPC.ApplyVisuals(zombie, brain)
@@ -84,6 +89,37 @@ function DTNPCClient.FindZombieByID(id)
     return nil
 end
 
+-- NEW: Position reconciliation with tolerance
+function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
+    if not zombie then return end
+    
+    local localX = zombie:getX()
+    local localY = zombie:getY()
+    local localZ = zombie:getZ()
+    
+    local dx = math.abs(localX - serverX)
+    local dy = math.abs(localY - serverY)
+    local dz = math.abs(localZ - serverZ)
+    
+    -- Tolerance threshold: 5 tiles
+    local TOLERANCE = 5.0
+    
+    if dx > TOLERANCE or dy > TOLERANCE or dz > 0 then
+        print("[DTNPC-Client] Position mismatch detected. Local: " .. math.floor(localX) .. "," .. math.floor(localY) .. " Server: " .. math.floor(serverX) .. "," .. math.floor(serverY))
+        print("[DTNPC-Client] Correcting position (delta: " .. math.floor(dx) .. "," .. math.floor(dy) .. ")")
+        
+        -- Smooth interpolation instead of hard snap
+        local lerpFactor = 0.3 -- 30% towards server position per update
+        zombie:setX(localX + (serverX - localX) * lerpFactor)
+        zombie:setY(localY + (serverY - localY) * lerpFactor)
+        zombie:setZ(serverZ)
+        
+        return true
+    end
+    
+    return false
+end
+
 -- ==============================================================================
 -- 3. SERVER COMMAND HANDLER
 -- ==============================================================================
@@ -94,23 +130,56 @@ local function onServerCommand(module, command, args)
     if command == "SyncNPC" then
         if not args or not args.id or not args.brain then return end
         
+        print("[DTNPC-Client] Received SyncNPC for: " .. (args.brain.name or args.id))
+        
         DTNPCClient.CacheBrain(args.id, args.brain)
         
         local zombie = DTNPCClient.FindZombieByID(args.id)
         if zombie then
             DTNPCClient.ApplyVisualsToNPC(zombie, args.brain)
+            DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
+        else
+            print("[DTNPC-Client] WARNING: Zombie not found for ID: " .. args.id)
+        end
+        return
+    end
+
+    if command == "UpdatePosition" then
+        if not args or not args.id then return end
+        
+        local cached = DTNPCClient.NPCCache[args.id]
+        if cached and cached.brain then
+            -- Update cached position
+            cached.brain.lastX = math.floor(args.x)
+            cached.brain.lastY = math.floor(args.y)
+            cached.brain.lastZ = math.floor(args.z)
+            
+            if args.health then cached.brain.health = args.health end
+            if args.state then cached.brain.state = args.state end
+            
+            -- Find and reconcile zombie position
+            local zombie = DTNPCClient.FindZombieByID(args.id)
+            if zombie then
+                -- Only reconcile if this client doesn't own the zombie
+                if not zombie:isLocal() then
+                    DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
+                end
+            end
         end
         return
     end
 
     if command == "RemoveNPC" then
         if not args or not args.id then return end
+        print("[DTNPC-Client] Received RemoveNPC for: " .. args.id)
         DTNPCClient.RemoveFromCache(args.id)
         return
     end
 
     if command == "SyncAllNPCs" then
         if not args or not args.npcs then return end
+        
+        print("[DTNPC-Client] Received SyncAllNPCs. Count: " .. DTNPCClient.GetTableSize(args.npcs))
         
         for id, brain in pairs(args.npcs) do
             DTNPCClient.CacheBrain(id, brain)
@@ -130,7 +199,7 @@ Events.OnServerCommand.Add(onServerCommand)
 -- 4. PERIODIC VISUAL CHECK & BRAIN ATTACHMENT
 -- ==============================================================================
 
-local VISUAL_CHECK_RATE = 20 -- Check every ~0.3 seconds (was 60)
+local VISUAL_CHECK_RATE = 60 -- Increased to 60 ticks (~1 second) for performance
 local visualCheckCounter = 0
 
 local function onTick()
@@ -147,6 +216,9 @@ local function onTick()
     local zombieList = cell:getZombieList()
     if not zombieList then return end
     
+    local attachedCount = 0
+    local updatedCount = 0
+    
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
         if zombie then
@@ -160,40 +232,54 @@ local function onTick()
                     modData.DTNPCBrain = cached.brain
                     modData.IsDTNPC = true
                     DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
+                    attachedCount = attachedCount + 1
                 else
                     -- 2. State Watcher (Client -> Server Sync)
-                    -- If local logic changed the state (e.g. finished Moving), sync back to server
-                    local localBrain = modData.DTNPCBrain
-                    local serverBrain = cached.brain
-                    
-                    if localBrain and serverBrain then
-                         local changed = false
-                         local updates = {}
-                         
-                         if localBrain.state ~= serverBrain.state then
-                             updates.state = localBrain.state
-                             changed = true
-                         end
-                         
-                         -- Simple check for task completion (active to empty)
-                         if localBrain.tasks and serverBrain.tasks then
-                             if #localBrain.tasks ~= #serverBrain.tasks then
-                                 updates.tasks = localBrain.tasks
-                                 changed = true
-                             end
-                         end
-                         
-                         if changed and zombie:isLocal() then -- Only Authority sends updates
-                             -- Update cache immediately to stop spam
-                             if updates.state then serverBrain.state = updates.state end
-                             if updates.tasks then serverBrain.tasks = updates.tasks end
-                             
-                             sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { id = id, updates = updates })
-                         end
+                    -- Only if we're the authority (local zombie)
+                    if zombie:isLocal() then
+                        local localBrain = modData.DTNPCBrain
+                        local serverBrain = cached.brain
+                        
+                        if localBrain and serverBrain then
+                            local changed = false
+                            local updates = {}
+                            
+                            if localBrain.state ~= serverBrain.state then
+                                updates.state = localBrain.state
+                                changed = true
+                            end
+                            
+                            -- Check for task completion
+                            if localBrain.tasks and serverBrain.tasks then
+                                if #localBrain.tasks ~= #serverBrain.tasks then
+                                    updates.tasks = localBrain.tasks
+                                    changed = true
+                                end
+                            end
+                            
+                            if changed then
+                                -- Update cache immediately to prevent spam
+                                if updates.state then 
+                                    serverBrain.state = updates.state
+                                    print("[DTNPC-Client] State changed for " .. (localBrain.name or id) .. ": " .. updates.state)
+                                end
+                                if updates.tasks then serverBrain.tasks = updates.tasks end
+                                
+                                sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { id = id, updates = updates })
+                                updatedCount = updatedCount + 1
+                            end
+                        end
                     end
                 end
             end
         end
+    end
+    
+    if attachedCount > 0 then
+        print("[DTNPC-Client] Attached brains to " .. attachedCount .. " NPCs")
+    end
+    if updatedCount > 0 then
+        print("[DTNPC-Client] Sent " .. updatedCount .. " state updates to server")
     end
 end
 
@@ -203,13 +289,28 @@ Events.OnTick.Add(onTick)
 -- 5. REQUEST SYNC ON JOIN
 -- ==============================================================================
 
+local hasSyncedOnce = false
+
 local function onPlayerCreated(playerNum)
     if not isClient() then return end
+    if hasSyncedOnce then return end
     
     local player = getSpecificPlayer(playerNum)
     if not player then return end
     
+    print("[DTNPC-Client] Requesting initial sync for player: " .. player:getUsername())
     sendClientCommand(player, "DTNPC", "RequestSync", {})
+    hasSyncedOnce = true
 end
 
 Events.OnCreatePlayer.Add(onPlayerCreated)
+
+-- ==============================================================================
+-- 6. UTILITIES
+-- ==============================================================================
+
+function DTNPCClient.GetTableSize(t)
+    local count = 0
+    for _, __ in pairs(t) do count = count + 1 end
+    return count
+end

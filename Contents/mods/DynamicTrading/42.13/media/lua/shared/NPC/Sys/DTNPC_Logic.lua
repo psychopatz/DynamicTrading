@@ -1,6 +1,7 @@
 -- ==============================================================================
 -- DTNPC_Logic.lua
 -- The "Controller": Manages the NPC's decisions and delegates specific tasks.
+-- FIXED: Added aggressive wander prevention for Stay state
 -- Build 42 Compatible. Runs on Server only in multiplayer.
 -- ==============================================================================
 DTNPCLogic = DTNPCLogic or {}
@@ -80,6 +81,38 @@ function DTNPCLogic.ProcessNPC(zombie)
     if not brain then return end
 
     local state = brain.state or "Stay"
+    
+    -- AGGRESSIVE WANDER PREVENTION
+    -- Lock down zombies that should be stationary
+    if state == "Stay" or state == "Guard" then
+        zombie:setPath2(nil)
+        zombie:setTarget(nil)
+        
+        -- Store anchor position if not set
+        if not brain.anchorX then
+            brain.anchorX = zombie:getX()
+            brain.anchorY = zombie:getY()
+            brain.anchorZ = zombie:getZ()
+            print("[DTNPC] Set anchor for " .. (brain.name or "NPC") .. " at " .. math.floor(brain.anchorX) .. "," .. math.floor(brain.anchorY))
+        end
+        
+        -- Check if they've drifted from anchor
+        local dx = math.abs(zombie:getX() - brain.anchorX)
+        local dy = math.abs(zombie:getY() - brain.anchorY)
+        
+        if dx > 1 or dy > 1 then
+            -- Snap back to anchor
+            print("[DTNPC] NPC " .. (brain.name or "Unknown") .. " drifted from anchor. Snapping back.")
+            zombie:setX(brain.anchorX)
+            zombie:setY(brain.anchorY)
+            zombie:setZ(brain.anchorZ)
+        end
+    else
+        -- Clear anchor when moving
+        brain.anchorX = nil
+        brain.anchorY = nil
+        brain.anchorZ = nil
+    end
     
     -- Track health for betrayal detection (ignores pushes/non-damaging hits)
     local currentHealth = zombie:getHealth()

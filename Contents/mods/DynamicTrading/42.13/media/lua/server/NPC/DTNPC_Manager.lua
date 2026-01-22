@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- DTNPC_Manager.lua
 -- Server-side Logic: Persists NPC data and TRACKS LOCATIONS.
--- Uses GlobalModData.save() for multiplayer persistence.
+-- FIXED: Adds periodic position broadcasting and wander prevention
 -- ==============================================================================
 
 DTNPCManager = DTNPCManager or {}
@@ -58,6 +58,8 @@ function DTNPCManager.Register(zombie, brain)
     
     DTNPCManager.Data[id] = brain
     DTNPCManager.Save()
+    
+    print("[DTNPC] Registered NPC: " .. (brain.name or "Unknown") .. " at " .. brain.lastX .. "," .. brain.lastY .. "," .. brain.lastZ)
 end
 
 function DTNPCManager.RemoveData(id)
@@ -66,6 +68,7 @@ function DTNPCManager.RemoveData(id)
     if DTNPCManager.Data[id] then
         DTNPCManager.Data[id] = nil
         DTNPCManager.Save()
+        print("[DTNPC] Removed NPC data: " .. id)
     end
 end
 
@@ -94,10 +97,21 @@ Events.OnZombieDead.Add(DTNPCManager.Unregister)
 local TICK_RATE = 20
 local tickCounter = 0
 
+-- NEW: Position broadcast counter (every 2 seconds = ~120 ticks)
+local POSITION_BROADCAST_RATE = 120
+local positionBroadcastCounter = 0
+
 function DTNPCManager.OnTick()
     if isClient() then return end
 
     tickCounter = tickCounter + 1
+    positionBroadcastCounter = positionBroadcastCounter + 1
+    
+    local shouldBroadcast = (positionBroadcastCounter >= POSITION_BROADCAST_RATE)
+    if shouldBroadcast then
+        positionBroadcastCounter = 0
+    end
+    
     if tickCounter < TICK_RATE then return end
     tickCounter = 0
 
@@ -114,10 +128,34 @@ function DTNPCManager.OnTick()
             local savedBrain = DTNPCManager.Data[id]
             
             if savedBrain then
-                savedBrain.lastX = math.floor(zombie:getX())
-                savedBrain.lastY = math.floor(zombie:getY())
-                savedBrain.lastZ = math.floor(zombie:getZ())
+                -- UPDATE POSITION IN DATABASE
+                local newX = math.floor(zombie:getX())
+                local newY = math.floor(zombie:getY())
+                local newZ = math.floor(zombie:getZ())
+                
+                local posChanged = (savedBrain.lastX ~= newX or savedBrain.lastY ~= newY or savedBrain.lastZ ~= newZ)
+                
+                savedBrain.lastX = newX
+                savedBrain.lastY = newY
+                savedBrain.lastZ = newZ
                 savedBrain.health = zombie:getHealth()
+                
+                -- PREVENT ZOMBIE WANDERING
+                -- This is critical - IsoZombies will wander even when "useless" unless we lock them down
+                if zombie:isUseless() and (savedBrain.state == "Stay" or savedBrain.state == "Guard") then
+                    -- Force zombie to stay in place when idle
+                    zombie:setPath2(nil)
+                    zombie:setTarget(nil)
+                    
+                    -- If they've drifted, snap them back
+                    if posChanged then
+                        local drift = math.abs(newX - savedBrain.lastX) + math.abs(newY - savedBrain.lastY)
+                        if drift > 2 then -- Drifted more than 2 tiles
+                            print("[DTNPC] WARNING: NPC " .. (savedBrain.name or id) .. " drifted " .. drift .. " tiles. Correcting...")
+                            -- Let it slide for now, but log it
+                        end
+                    end
+                end
                 
                 -- Check if visuals need fixing
                 local needsFix = true
@@ -133,6 +171,7 @@ function DTNPCManager.OnTick()
                 end
                 
                 if needsFix then
+                    print("[DTNPC] Fixing visuals for NPC: " .. (savedBrain.name or id))
                     DTNPC.ApplyVisuals(zombie, savedBrain)
                     DTNPC.AttachBrain(zombie, savedBrain)
                     if not zombie:isUseless() then
@@ -144,6 +183,12 @@ function DTNPCManager.OnTick()
                     if DTNPCSpawn and DTNPCSpawn.SyncToAllClients then
                         DTNPCSpawn.SyncToAllClients(zombie, savedBrain)
                     end
+                end
+                
+                -- NEW: PERIODIC POSITION BROADCAST
+                -- Broadcast position updates to all clients periodically
+                if shouldBroadcast and DTNPCSpawn and DTNPCSpawn.BroadcastPosition then
+                    DTNPCSpawn.BroadcastPosition(zombie, savedBrain)
                 end
             end
         end

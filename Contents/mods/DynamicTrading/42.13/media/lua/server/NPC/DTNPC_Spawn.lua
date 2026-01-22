@@ -1,6 +1,7 @@
 -- ==============================================================================
 -- DTNPC_Spawn.lua
 -- Server-side Logic: Spawning, Commands, Summoning, and Multiplayer Sync.
+-- FIXED: Adds position broadcasting and better sync handling
 -- ==============================================================================
 
 require "NPC/Sys/DTNPC_Generator"
@@ -33,6 +34,8 @@ function DTNPCSpawn.SyncToAllClients(zombie, brain)
             end
         end
     end
+    
+    print("[DTNPC] Synced NPC to all clients: " .. (brain.name or id) .. " at " .. syncData.x .. "," .. syncData.y)
 end
 
 function DTNPCSpawn.SyncToPlayer(player, zombie, brain)
@@ -49,6 +52,33 @@ function DTNPCSpawn.SyncToPlayer(player, zombie, brain)
     }
     
     sendServerCommand(player, "DTNPC", "SyncNPC", syncData)
+    print("[DTNPC] Synced NPC to player " .. player:getUsername() .. ": " .. (brain.name or id))
+end
+
+-- NEW: Lightweight position-only broadcast
+function DTNPCSpawn.BroadcastPosition(zombie, brain)
+    if not zombie or not brain then return end
+    if not isServer() then return end
+    
+    local id = zombie:getPersistentOutfitID()
+    local posData = {
+        id = id,
+        x = zombie:getX(),
+        y = zombie:getY(),
+        z = zombie:getZ(),
+        health = zombie:getHealth(),
+        state = brain.state
+    }
+    
+    local onlinePlayers = getOnlinePlayers()
+    if onlinePlayers then
+        for i = 0, onlinePlayers:size() - 1 do
+            local player = onlinePlayers:get(i)
+            if player then
+                sendServerCommand(player, "DTNPC", "UpdatePosition", posData)
+            end
+        end
+    end
 end
 
 function DTNPCSpawn.NotifyRemoval(id)
@@ -64,6 +94,8 @@ function DTNPCSpawn.NotifyRemoval(id)
             end
         end
     end
+    
+    print("[DTNPC] Notified all clients of NPC removal: " .. id)
 end
 
 -- ==============================================================================
@@ -94,6 +126,8 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         end
         if foundSafe then break end
     end
+    
+    print("[DTNPC] Spawning NPC at: " .. spawnX .. "," .. spawnY .. "," .. z)
     
     -- Spawn a naked zombie initially to ensure we have full control over outfit
     local outfitStr = "Naked"
@@ -126,6 +160,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         }
         
         brain = DTNPCGenerator.Generate(genOptions)
+        print("[DTNPC] Generated new brain for: " .. brain.name)
     else
         -- REHYDRATE BRAIN
         if not brain.tasks then brain.tasks = {} end
@@ -136,6 +171,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         -- RESET STATE (Fixes "Spawns Hostile" bug when summoning/respawning)
         brain.state = "Stay"
         brain.isHostile = false
+        print("[DTNPC] Rehydrated brain for: " .. brain.name)
     end
 
     DTNPC.AttachBrain(zombie, brain)
@@ -151,7 +187,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
 
     DTNPCSpawn.SyncToAllClients(zombie, brain)
 
-    print("[DTNPC] Spawned/Summoned: " .. brain.name .. " | Job: " .. (options.occupation or "General"))
+    print("[DTNPC] Spawned/Summoned: " .. brain.name .. " | ID: " .. zombie:getPersistentOutfitID())
     
     return zombie, brain
 end
@@ -167,6 +203,8 @@ function DTNPCSpawn.SummonAll(player)
     local toTeleport = {}
     local toRecreate = {}
     
+    print("[DTNPC] Summoning NPCs for player: " .. username)
+    
     for id, brain in pairs(DTNPCManager.Data) do
         if brain.master == username then
             local foundObj = nil
@@ -181,9 +219,11 @@ function DTNPCSpawn.SummonAll(player)
             
             if foundObj then
                 table.insert(toTeleport, foundObj)
+                print("[DTNPC] Found existing NPC to teleport: " .. (brain.name or id))
             else
                 brain.oldID = id 
                 table.insert(toRecreate, brain)
+                print("[DTNPC] NPC not found in world, will recreate: " .. (brain.name or id))
             end
         end
     end
@@ -197,6 +237,9 @@ function DTNPCSpawn.SummonAll(player)
         
         local brain = DTNPC.GetBrain(npc)
         if brain then
+            brain.lastX = math.floor(npc:getX())
+            brain.lastY = math.floor(npc:getY())
+            brain.lastZ = math.floor(npc:getZ())
             DTNPCSpawn.SyncToAllClients(npc, brain)
         end
     end
@@ -205,6 +248,8 @@ function DTNPCSpawn.SummonAll(player)
         DTNPCManager.RemoveData(brain.oldID)
         DTNPCSpawn.SpawnNPC(player, brain)
     end
+    
+    print("[DTNPC] Summon complete. Teleported: " .. #toTeleport .. ", Recreated: " .. #toRecreate)
 end
 
 -- ==============================================================================
@@ -215,14 +260,17 @@ local function onClientCommand(module, command, player, args)
     if module ~= "DTNPC" then return end
 
     if command == "Spawn" then
+        print("[DTNPC] Received Spawn command from: " .. player:getUsername())
         DTNPCSpawn.SpawnNPC(player, nil, args)
     end
 
     if command == "Summon" then
+        print("[DTNPC] Received Summon command from: " .. player:getUsername())
         DTNPCSpawn.SummonAll(player)
     end
 
     if command == "Order" then
+        print("[DTNPC] Received Order command from: " .. player:getUsername() .. " | State: " .. (args.state or "Unknown"))
         local square = getCell():getGridSquare(args.x, args.y, args.z)
         if square then
             local movingObjects = square:getMovingObjects()
@@ -236,6 +284,7 @@ local function onClientCommand(module, command, player, args)
                         
                         if args.state == "GoTo" then
                            table.insert(brain.tasks, {x = math.floor(args.targetX), y = math.floor(args.targetY), z = math.floor(args.targetZ or 0)})
+                           print("[DTNPC] GoTo task added: " .. args.targetX .. "," .. args.targetY)
                         end
 
                         DTNPC.AttachBrain(obj, brain)
@@ -250,6 +299,7 @@ local function onClientCommand(module, command, player, args)
     end
     
     if command == "RequestSync" then
+        print("[DTNPC] Received RequestSync from: " .. player:getUsername())
         if not DTNPCManager then return end
         
         local cell = getCell()
@@ -258,6 +308,7 @@ local function onClientCommand(module, command, player, args)
         local zombieList = cell:getZombieList()
         if not zombieList then return end
         
+        local syncCount = 0
         for i = 0, zombieList:size() - 1 do
             local zombie = zombieList:get(i)
             if zombie then
@@ -265,16 +316,19 @@ local function onClientCommand(module, command, player, args)
                 local brain = DTNPCManager.Data[id]
                 if brain then
                     DTNPCSpawn.SyncToPlayer(player, zombie, brain)
+                    syncCount = syncCount + 1
                 end
             end
         end
         
-        print("[DTNPC] Sent NPC sync data to: " .. player:getUsername())
+        print("[DTNPC] Sent " .. syncCount .. " NPCs to: " .. player:getUsername())
     end
 
     if command == "UpdateNPC" then
         -- Client reporting state change (e.g. finished GoTo)
         if not args.id or not args.updates then return end
+        
+        print("[DTNPC] Received UpdateNPC for ID: " .. args.id)
         
         local id = args.id
         local serverBrain = DTNPCManager.Data[id]
@@ -282,6 +336,7 @@ local function onClientCommand(module, command, player, args)
         if serverBrain then
             -- Apply updates
             for k, v in pairs(args.updates) do
+                print("[DTNPC]   Updating " .. k .. " to " .. tostring(v))
                 serverBrain[k] = v
             end
             
@@ -296,16 +351,21 @@ local function onClientCommand(module, command, player, args)
                     if z and z:getPersistentOutfitID() == id then
                          DTNPC.AttachBrain(z, serverBrain)
                          DTNPCSpawn.SyncToAllClients(z, serverBrain)
+                         print("[DTNPC] Updated and synced NPC to all clients")
                          break
                     end
                 end
             end
+        else
+            print("[DTNPC] WARNING: UpdateNPC for unknown ID: " .. id)
         end
     end
 
     if command == "RemoveNPC" then
         -- Client reporting NPC exit/death
         if not args.id then return end
+        
+        print("[DTNPC] Received RemoveNPC for ID: " .. args.id)
         
         if DTNPCManager then
             -- Remove from DB
@@ -324,6 +384,7 @@ local function onClientCommand(module, command, player, args)
                     if z and z:getPersistentOutfitID() == args.id then
                          z:removeFromWorld()
                          z:removeFromSquare()
+                         print("[DTNPC] Removed NPC from world")
                          break
                     end
                 end
