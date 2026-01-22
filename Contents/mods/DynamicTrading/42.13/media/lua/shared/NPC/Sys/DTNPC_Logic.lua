@@ -79,13 +79,17 @@ function DTNPCLogic.ProcessNPC(zombie)
     local brain = DTNPC.GetBrain(zombie)
     if not brain then return end
 
-    suppressSound(zombie)
-
     local state = brain.state or "Stay"
+    
+    -- Track health for betrayal detection (ignores pushes/non-damaging hits)
+    local currentHealth = zombie:getHealth()
+    if not brain.lastHealth then brain.lastHealth = currentHealth end
+    local wasDamaged = currentHealth < brain.lastHealth
+    brain.lastHealth = currentHealth
 
     -- HIGH SPEED BEHAVIORS (Every Frame)
     if state == "GoTo" or state == "Flee" or state == "AttackRange" or state == "Follow" then
-        DTNPCLogic.ExecuteBehavior(zombie, brain, state)
+        DTNPCLogic.ExecuteBehavior(zombie, brain, state, wasDamaged)
         return
     end
 
@@ -95,14 +99,14 @@ function DTNPCLogic.ProcessNPC(zombie)
     
     if brain.tickTimer >= 10 then
         brain.tickTimer = 0
-        DTNPCLogic.ExecuteBehavior(zombie, brain, state)
+        DTNPCLogic.ExecuteBehavior(zombie, brain, state, wasDamaged)
     end
 end
 
-function DTNPCLogic.ExecuteBehavior(zombie, brain, state)
+function DTNPCLogic.ExecuteBehavior(zombie, brain, state, wasDamaged)
     local master, dist = DTNPCLogic.GetClosestTarget(zombie)
 
-    DTNPCLogic.CheckForBetrayal(zombie, brain, master)
+    DTNPCLogic.CheckForCombatInitiation(zombie, brain, master, wasDamaged)
     
     if brain.state ~= state then
         state = brain.state
@@ -173,15 +177,24 @@ function DTNPCLogic.GetClosestTarget(zombie)
     return nil, 9999
 end
 
-function DTNPCLogic.CheckForBetrayal(zombie, brain, master)
+function DTNPCLogic.CheckForCombatInitiation(zombie, brain, master, wasDamaged)
     local attacker = zombie:getAttackedBy()
     
-    if attacker and master and attacker == master then
-        brain.state = "Attack" 
-        brain.isHostile = true
-        brain.tasks = {}
+    -- Only initiate combat if damaged by a PLAYER (ignores pushes)
+    if wasDamaged and attacker and instanceof(attacker, "IsoPlayer") then
+        local isMaster = (master and attacker == master)
         
-        print("[DTNPC] Betrayal! " .. brain.name .. " is attacking " .. master:getUsername())
-        zombie:setAttackedBy(nil)
+        -- If master betrayed us OR any other player attacked us
+        if isMaster or not brain.isHostile then
+            brain.state = "AttackRange" 
+            brain.isHostile = true
+            brain.tasks = {}
+            
+            local attackerName = attacker:getUsername() or "Unknown Player"
+            print("[DTNPC] Combat Initiated! " .. brain.name .. " is attacking " .. attackerName)
+            
+            zombie:setTarget(attacker)
+            zombie:setAttackedBy(nil)
+        end
     end
 end

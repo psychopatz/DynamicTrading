@@ -58,7 +58,7 @@ function DTNPCGenerator.CreateMVPBrain(mvpData, options)
         walkSpeed = options.walkSpeed or 0.06,
         runSpeed = options.runSpeed or 0.09,
         isMVP = true,
-        visualID = ZombRand(1000000) -- Unique ID for this specific look
+        visualID = ZombRand(1000000)
     }
     
     return brain
@@ -122,7 +122,7 @@ function DTNPCGenerator.CreateStandardBrain(options)
         tasks = {},
         walkSpeed = options.walkSpeed or 0.06,
         runSpeed = options.runSpeed or 0.09,
-        visualID = ZombRand(1000000) -- Unique ID for this specific look
+        visualID = ZombRand(1000000)
     }
     
     return brain

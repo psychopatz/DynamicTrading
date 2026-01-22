@@ -54,6 +54,7 @@ function DTNPCManager.Register(zombie, brain)
     brain.lastX = math.floor(zombie:getX())
     brain.lastY = math.floor(zombie:getY())
     brain.lastZ = math.floor(zombie:getZ())
+    brain.health = zombie:getHealth()
     
     DTNPCManager.Data[id] = brain
     DTNPCManager.Save()
@@ -169,8 +170,34 @@ function DTNPCManager.OnTick()
                 savedBrain.lastX = math.floor(zombie:getX())
                 savedBrain.lastY = math.floor(zombie:getY())
                 savedBrain.lastZ = math.floor(zombie:getZ())
+                savedBrain.health = zombie:getHealth()
                 
-                DTNPCManager.EnsureNPC(zombie, savedBrain)
+                -- Check if visuals need fixing
+                local needsFix = true
+                local visuals = zombie:getHumanVisual()
+                if visuals then
+                    local skin = visuals:getSkinTexture()
+                    if skin then
+                        skin = tostring(skin)
+                        if string.find(skin, "MaleBody01") or string.find(skin, "FemaleBody01") then
+                            needsFix = false
+                        end
+                    end
+                end
+                
+                if needsFix then
+                    DTNPC.ApplyVisuals(zombie, savedBrain)
+                    DTNPC.AttachBrain(zombie, savedBrain)
+                    if not zombie:isUseless() then
+                        zombie:setUseless(true)
+                        zombie:DoZombieStats()
+                        zombie:setHealth(2)
+                    end
+                    
+                    if DTNPCSpawn and DTNPCSpawn.SyncToAllClients then
+                        DTNPCSpawn.SyncToAllClients(zombie, savedBrain)
+                    end
+                end
             end
         end
     end

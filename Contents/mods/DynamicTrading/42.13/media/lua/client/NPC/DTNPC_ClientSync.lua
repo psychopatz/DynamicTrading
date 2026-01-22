@@ -50,9 +50,9 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     if not zombie or not brain then return end
     if isServer() then return end
     
-    -- 1. Check if visuals were ALREADY applied to this specific OBJECT instance
-    -- (zombie.DTNPC_VisualsID is a local Lua field, not synced/saved, so it resets on load)
-    if zombie.DTNPC_VisualsID == brain.visualID then
+    local modData = zombie:getModData()
+    if brain.visualID and modData.DTNPCVisualID == brain.visualID then
+        -- Skip if visuals are already correct to prevent flickering/shuffling
         return 
     end
 
@@ -64,10 +64,7 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
         DTNPC.AttachBrain(zombie, brain)
     end
     
-    zombie.DTNPC_VisualsID = brain.visualID
-    
-    -- Also update ModData for logic checks (LastVisualID stays in ModData)
-    zombie:getModData().LastVisualID = brain.visualID
+    modData.DTNPCVisualID = brain.visualID
 end
 
 function DTNPCClient.FindZombieByID(id)

@@ -76,7 +76,24 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     options = options or {}
     
     local x, y, z = player:getX(), player:getY(), player:getZ()
-    local spawnX, spawnY = x + 2, y + 2
+    
+    -- Pick a safe spawn location
+    local spawnX, spawnY = x + 1, y + 1
+    local cell = getCell()
+    local foundSafe = false
+    
+    for _x = -2, 2 do
+        for _y = -2, 2 do
+            local sq = cell:getGridSquare(x + _x, y + _y, z)
+            if sq and sq:isFree(false) and not sq:isSolid() and not sq:isSolidTrans() then
+                spawnX = x + _x
+                spawnY = y + _y
+                foundSafe = true
+                break
+            end
+        end
+        if foundSafe then break end
+    end
     
     -- Spawn a naked zombie initially to ensure we have full control over outfit
     local outfitStr = "Naked"
@@ -89,7 +106,10 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     
     local zombieList = addZombiesInOutfit(spawnX, spawnY, z, 1, outfitStr, femaleChance, false, false, false, false, false, false, 1)
     
-    if not zombieList or zombieList:size() == 0 then return end
+    if not zombieList or zombieList:size() == 0 then 
+        print("[DTNPC] ERROR: Failed to spawn zombie at " .. spawnX .. "," .. spawnY)
+        return 
+    end
 
     local zombie = zombieList:get(0)
     
@@ -111,6 +131,11 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         if not brain.tasks then brain.tasks = {} end
         if not brain.walkSpeed then brain.walkSpeed = DTNPC.DefaultWalkSpeed end
         if not brain.runSpeed then brain.runSpeed = DTNPC.DefaultRunSpeed end
+        if not brain.visualID then brain.visualID = ZombRand(1000000) end
+        
+        -- RESET STATE (Fixes "Spawns Hostile" bug when summoning/respawning)
+        brain.state = "Stay"
+        brain.isHostile = false
     end
 
     DTNPC.AttachBrain(zombie, brain)
@@ -122,7 +147,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
 
     zombie:setUseless(true) 
     zombie:DoZombieStats()   
-    zombie:setHealth(1.5)    
+    zombie:setHealth(2)    
 
     DTNPCSpawn.SyncToAllClients(zombie, brain)
 
