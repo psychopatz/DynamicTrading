@@ -50,6 +50,12 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     if not zombie or not brain then return end
     if isServer() then return end
     
+    local modData = zombie:getModData()
+    if brain.visualID and modData.DTNPCVisualID == brain.visualID then
+        -- Skip if visuals are already correct to prevent flickering/shuffling
+        return 
+    end
+
     if DTNPC and DTNPC.ApplyVisuals then
         DTNPC.ApplyVisuals(zombie, brain)
     end
@@ -57,6 +63,8 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     if DTNPC and DTNPC.AttachBrain then
         DTNPC.AttachBrain(zombie, brain)
     end
+    
+    modData.DTNPCVisualID = brain.visualID
 end
 
 function DTNPCClient.FindZombieByID(id)
