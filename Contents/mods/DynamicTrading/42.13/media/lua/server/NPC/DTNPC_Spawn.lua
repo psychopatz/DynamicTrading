@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- DTNPC_Spawn.lua
 -- Server-side Logic: Spawning, Commands, Summoning, and Multiplayer Sync.
--- FIXED: Adds position broadcasting and better sync handling
+-- FIXED: Better position broadcasting and state change handling
 -- ==============================================================================
 
 require "NPC/Sys/DTNPC_Generator"
@@ -290,7 +290,9 @@ local function onClientCommand(module, command, player, args)
                         DTNPC.AttachBrain(obj, brain)
                         if DTNPCManager then DTNPCManager.Register(obj, brain) end
                         
+                        -- IMPORTANT: Broadcast position immediately on state change
                         DTNPCSpawn.SyncToAllClients(obj, brain)
+                        DTNPCSpawn.BroadcastPosition(obj, brain)
                         break
                     end
                 end
@@ -334,10 +336,14 @@ local function onClientCommand(module, command, player, args)
         local serverBrain = DTNPCManager.Data[id]
         
         if serverBrain then
+            local shouldBroadcast = args.updates.broadcastPosition or false
+            
             -- Apply updates
             for k, v in pairs(args.updates) do
-                print("[DTNPC]   Updating " .. k .. " to " .. tostring(v))
-                serverBrain[k] = v
+                if k ~= "broadcastPosition" then -- Skip the flag itself
+                    print("[DTNPC]   Updating " .. k .. " to " .. tostring(v))
+                    serverBrain[k] = v
+                end
             end
             
             DTNPCManager.Save()
@@ -351,6 +357,13 @@ local function onClientCommand(module, command, player, args)
                     if z and z:getPersistentOutfitID() == id then
                          DTNPC.AttachBrain(z, serverBrain)
                          DTNPCSpawn.SyncToAllClients(z, serverBrain)
+                         
+                         -- CRITICAL: Broadcast position when state changes
+                         if shouldBroadcast then
+                             print("[DTNPC] Broadcasting position due to state change")
+                             DTNPCSpawn.BroadcastPosition(z, serverBrain)
+                         end
+                         
                          print("[DTNPC] Updated and synced NPC to all clients")
                          break
                     end

@@ -2,6 +2,7 @@
 -- DTNPC_ContextMenu.lua
 -- Client-side Logic: Context Menu for Orders and DEBUGGING.
 -- Build 42 Compatible.
+-- ADDED: EventMarker integration
 -- ==============================================================================
 
 -- [[ OPTIMIZATION CHECK ]]
@@ -122,6 +123,132 @@ local function onSummon(player)
     player:Say("Signal Sent: Summoning Team...")
 end
 
+local function onMarkNPC(player, npc)
+    if not npc or not player then return end
+    
+    local brain = getBrain(npc)
+    if not brain then
+        player:Say("Cannot mark: No brain data")
+        return
+    end
+    
+    if not EventMarkerHandler then
+        player:Say("EventMarkerHandler not available!")
+        return
+    end
+    
+    local id = npc:getPersistentOutfitID()
+    local x = npc:getX()
+    local y = npc:getY()
+    
+    -- Determine marker color based on NPC state
+    local color = {r=0.2, g=1, b=0.2} -- Default green
+    local icon = "friend.png"
+    
+    if brain.state == "Follow" then
+        color = {r=0.2, g=0.8, b=1} -- Cyan
+        icon = "crew.png"
+    elseif brain.state == "Stay" or brain.state == "Guard" then
+        color = {r=1, g=1, b=0.2} -- Yellow
+        icon = "defend.png"
+    elseif brain.state == "GoTo" then
+        color = {r=1, g=0.5, b=0.2} -- Orange
+        icon = "loot.png"
+    elseif brain.isHostile then
+        color = {r=1, g=0.2, b=0.2} -- Red
+        icon = "raid.png"
+    end
+    
+    local distance = calculateDistance(player, npc)
+    local distText = string.format("%.0fm away", distance)
+    local description = brain.name .. " - " .. (brain.state or "Idle") .. " - " .. distText
+    
+    -- Create marker (30 minute duration)
+    EventMarkerHandler.set(
+        "npc_" .. id,
+        icon,
+        1800, -- 30 minutes
+        x,
+        y,
+        color,
+        description
+    )
+    
+    player:Say("Marked NPC: " .. brain.name)
+end
+
+local function onMarkAllNPCs(player)
+    if not EventMarkerHandler then
+        player:Say("EventMarkerHandler not available!")
+        return
+    end
+    
+    local count = 0
+    
+    -- Mark all NPCs from cache
+    if DTNPCClient and DTNPCClient.NPCCache then
+        for id, entry in pairs(DTNPCClient.NPCCache) do
+            local brain = entry.brain
+            if brain and brain.lastX and brain.lastY then
+                local color = {r=0.2, g=1, b=0.2}
+                local icon = "friend.png"
+                
+                if brain.state == "Follow" then
+                    color = {r=0.2, g=0.8, b=1}
+                    icon = "crew.png"
+                elseif brain.state == "Stay" or brain.state == "Guard" then
+                    color = {r=1, g=1, b=0.2}
+                    icon = "defend.png"
+                elseif brain.state == "GoTo" then
+                    color = {r=1, g=0.5, b=0.2}
+                    icon = "loot.png"
+                elseif brain.isHostile then
+                    color = {r=1, g=0.2, b=0.2}
+                    icon = "raid.png"
+                end
+                
+                local dx = player:getX() - brain.lastX
+                local dy = player:getY() - brain.lastY
+                local distance = math.sqrt(dx * dx + dy * dy)
+                local distText = string.format("%.0fm away", distance)
+                
+                local description = brain.name .. " - " .. (brain.state or "Idle") .. " - " .. distText
+                
+                EventMarkerHandler.set(
+                    "npc_" .. id,
+                    icon,
+                    1800,
+                    brain.lastX,
+                    brain.lastY,
+                    color,
+                    description
+                )
+                
+                count = count + 1
+            end
+        end
+    end
+    
+    player:Say("Marked " .. count .. " NPCs")
+end
+
+local function onClearNPCMarkers(player)
+    if not EventMarkerHandler then
+        player:Say("EventMarkerHandler not available!")
+        return
+    end
+    
+    local count = 0
+    for markerId, _ in pairs(EventMarkerHandler.markers) do
+        if string.sub(markerId, 1, 4) == "npc_" then
+            EventMarkerHandler.remove(markerId)
+            count = count + 1
+        end
+    end
+    
+    player:Say("Cleared " .. count .. " NPC markers")
+end
+
 -- ==============================================================================
 -- 3. MAIN MENU BUILDER
 -- ==============================================================================
@@ -184,6 +311,11 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             subMenu:addOption("Follow Me", npc, onOrder, "Follow", player)
             subMenu:addOption("Stop / Guard", npc, onOrder, "Stay", player)
             subMenu:addOption("Come Here (My Pos)", npc, onOrder, "GoTo", player)
+            
+            -- NEW: Mark NPC option
+            if EventMarkerHandler then
+                subMenu:addOption("Mark NPC Location", player, onMarkNPC, npc)
+            end
 
             local debugOption = subMenu:addOption("DEBUG / TEST")
             local debugSub = subMenu:getNew(subMenu)
@@ -233,6 +365,16 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
         end
         
         mSub:addOption("Spawn Random NPC", player, onSpawn)
+        
+        -- NEW: Marker management
+        if EventMarkerHandler then
+            local markerOption = mSub:addOption("NPC Markers")
+            local markerSub = mSub:getNew(mSub)
+            context:addSubMenu(markerOption, markerSub)
+            
+            markerSub:addOption("Mark All NPCs", player, onMarkAllNPCs)
+            markerSub:addOption("Clear All NPC Markers", player, onClearNPCMarkers)
+        end
         
         -- Global Debugger
         mSub:addOption("Open NPC Global Debugger", nil, DTNPC_Debugger.OnOpenWindow)

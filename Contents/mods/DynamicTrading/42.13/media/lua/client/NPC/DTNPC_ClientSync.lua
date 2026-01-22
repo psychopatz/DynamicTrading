@@ -1,11 +1,12 @@
 -- ==============================================================================
 -- DTNPC_ClientSync.lua
 -- Client-side Logic: Receives NPC data from server and manages local cache.
--- FIXED: Better position reconciliation and zombie finding
+-- FIXED: Prevents ghost duplicates and improves position reconciliation
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
 DTNPCClient.NPCCache = {}
+DTNPCClient.ProcessedZombies = {} -- Track which zombies we've already processed
 
 -- ==============================================================================
 -- 1. CACHE MANAGEMENT
@@ -41,6 +42,7 @@ end
 function DTNPCClient.RemoveFromCache(id)
     if id then
         DTNPCClient.NPCCache[id] = nil
+        DTNPCClient.ProcessedZombies[id] = nil
         print("[DTNPC-Client] Removed from cache: " .. id)
     end
 end
@@ -120,6 +122,24 @@ function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
     return false
 end
 
+-- NEW: Check if zombie is actually an NPC (prevents claiming regular zombies)
+function DTNPCClient.IsValidNPC(zombie)
+    if not zombie then return false end
+    
+    local modData = zombie:getModData()
+    
+    -- Must have the IsDTNPC flag set
+    if not modData.IsDTNPC then return false end
+    
+    -- Must have a brain attached
+    if not modData.DTNPCBrain then return false end
+    
+    -- Must be useless (our NPCs are always useless)
+    if not zombie:isUseless() then return false end
+    
+    return true
+end
+
 -- ==============================================================================
 -- 3. SERVER COMMAND HANDLER
 -- ==============================================================================
@@ -136,8 +156,14 @@ local function onServerCommand(module, command, args)
         
         local zombie = DTNPCClient.FindZombieByID(args.id)
         if zombie then
-            DTNPCClient.ApplyVisualsToNPC(zombie, args.brain)
-            DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
+            -- Only apply if it's a valid NPC
+            if DTNPCClient.IsValidNPC(zombie) then
+                DTNPCClient.ApplyVisualsToNPC(zombie, args.brain)
+                DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
+                DTNPCClient.ProcessedZombies[args.id] = true
+            else
+                print("[DTNPC-Client] WARNING: Zombie found but not a valid NPC: " .. args.id)
+            end
         else
             print("[DTNPC-Client] WARNING: Zombie not found for ID: " .. args.id)
         end
@@ -185,8 +211,9 @@ local function onServerCommand(module, command, args)
             DTNPCClient.CacheBrain(id, brain)
             
             local zombie = DTNPCClient.FindZombieByID(id)
-            if zombie then
+            if zombie and DTNPCClient.IsValidNPC(zombie) then
                 DTNPCClient.ApplyVisualsToNPC(zombie, brain)
+                DTNPCClient.ProcessedZombies[id] = true
             end
         end
         return
@@ -199,7 +226,7 @@ Events.OnServerCommand.Add(onServerCommand)
 -- 4. PERIODIC VISUAL CHECK & BRAIN ATTACHMENT
 -- ==============================================================================
 
-local VISUAL_CHECK_RATE = 60 -- Increased to 60 ticks (~1 second) for performance
+local VISUAL_CHECK_RATE = 120 -- Increased to 120 ticks (~2 seconds) for performance
 local visualCheckCounter = 0
 
 local function onTick()
@@ -226,16 +253,13 @@ local function onTick()
             local cached = DTNPCClient.NPCCache[id]
             local modData = zombie:getModData()
             
-            -- 1. Attach Brain if missing (Server -> Client Sync)
-            if cached and cached.brain then
-                if not modData.IsDTNPC then
-                    modData.DTNPCBrain = cached.brain
-                    modData.IsDTNPC = true
-                    DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
-                    attachedCount = attachedCount + 1
-                else
-                    -- 2. State Watcher (Client -> Server Sync)
-                    -- Only if we're the authority (local zombie)
+            -- CRITICAL FIX: Only process if we have cached data AND zombie is marked as NPC
+            if cached and cached.brain and modData.IsDTNPC then
+                
+                -- Skip if already processed to prevent duplicates
+                if DTNPCClient.ProcessedZombies[id] then
+                    
+                    -- Only watch state changes if we're the authority (local zombie)
                     if zombie:isLocal() then
                         local localBrain = modData.DTNPCBrain
                         local serverBrain = cached.brain
@@ -244,6 +268,7 @@ local function onTick()
                             local changed = false
                             local updates = {}
                             
+                            -- Track state changes
                             if localBrain.state ~= serverBrain.state then
                                 updates.state = localBrain.state
                                 changed = true
@@ -262,6 +287,9 @@ local function onTick()
                                 if updates.state then 
                                     serverBrain.state = updates.state
                                     print("[DTNPC-Client] State changed for " .. (localBrain.name or id) .. ": " .. updates.state)
+                                    
+                                    -- IMPORTANT: Broadcast position on state change
+                                    updates.broadcastPosition = true
                                 end
                                 if updates.tasks then serverBrain.tasks = updates.tasks end
                                 
@@ -270,6 +298,12 @@ local function onTick()
                             end
                         end
                     end
+                    
+                else
+                    -- First time seeing this zombie - attach brain
+                    DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
+                    DTNPCClient.ProcessedZombies[id] = true
+                    attachedCount = attachedCount + 1
                 end
             end
         end
@@ -306,7 +340,27 @@ end
 Events.OnCreatePlayer.Add(onPlayerCreated)
 
 -- ==============================================================================
--- 6. UTILITIES
+-- 6. CLEANUP ON ZOMBIE REMOVAL
+-- ==============================================================================
+
+local function onZombieRemoved(zombie)
+    if not zombie then return end
+    
+    local id = zombie:getPersistentOutfitID()
+    if id and DTNPCClient.ProcessedZombies[id] then
+        print("[DTNPC-Client] Zombie removed from world: " .. id)
+        DTNPCClient.ProcessedZombies[id] = nil
+    end
+end
+
+Events.OnZombieUpdate.Add(function(zombie)
+    if not zombie or zombie:isDead() then
+        onZombieRemoved(zombie)
+    end
+end)
+
+-- ==============================================================================
+-- 7. UTILITIES
 -- ==============================================================================
 
 function DTNPCClient.GetTableSize(t)
