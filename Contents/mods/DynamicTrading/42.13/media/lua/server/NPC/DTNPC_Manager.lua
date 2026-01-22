@@ -54,6 +54,7 @@ function DTNPCManager.Register(zombie, brain)
     brain.lastX = math.floor(zombie:getX())
     brain.lastY = math.floor(zombie:getY())
     brain.lastZ = math.floor(zombie:getZ())
+    brain.health = zombie:getHealth()
     
     DTNPCManager.Data[id] = brain
     DTNPCManager.Save()
@@ -116,6 +117,7 @@ function DTNPCManager.OnTick()
                 savedBrain.lastX = math.floor(zombie:getX())
                 savedBrain.lastY = math.floor(zombie:getY())
                 savedBrain.lastZ = math.floor(zombie:getZ())
+                savedBrain.health = zombie:getHealth()
                 
                 -- Check if visuals need fixing
                 local needsFix = true
@@ -136,7 +138,7 @@ function DTNPCManager.OnTick()
                     if not zombie:isUseless() then
                         zombie:setUseless(true)
                         zombie:DoZombieStats()
-                        zombie:setHealth(1.5)
+                        zombie:setHealth(2)
                     end
                     
                     if DTNPCSpawn and DTNPCSpawn.SyncToAllClients then

@@ -147,7 +147,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
 
     zombie:setUseless(true) 
     zombie:DoZombieStats()   
-    zombie:setHealth(1.5)    
+    zombie:setHealth(2)    
 
     DTNPCSpawn.SyncToAllClients(zombie, brain)
 

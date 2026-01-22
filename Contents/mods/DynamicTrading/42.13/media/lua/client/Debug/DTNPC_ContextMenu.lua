@@ -11,6 +11,7 @@ if not isDebugEnabled() then return end
 -- [[ END CHECK ]]
 
 DTNPCMenu = DTNPCMenu or {}
+require "Debug/DTNPC_Debugger"
 
 -- ==============================================================================
 -- 1. HELPER FUNCTIONS
@@ -192,6 +193,23 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             debugSub:addOption("TEST: Flee (Merchant Exit)", npc, onOrder, "Flee", player)
             debugSub:addOption("TEST: Attack Me (Melee)", npc, onOrder, "Attack", player)
             debugSub:addOption("TEST: Attack Me (Gun)", npc, onOrder, "AttackRange", player)
+            
+            -- Inspect NPC Data
+            debugSub:addOption("DEBUG: Inspect Data", nil, function()
+                DTNPC_Debugger.OnOpenWindow()
+                if DTNPC_Debugger.instance then
+                    local id = npc:getPersistentOutfitID()
+                    -- Select in list if possible
+                    local list = DTNPC_Debugger.instance.npcList
+                    for i, listEntry in ipairs(list.items) do
+                        if listEntry.item and listEntry.item.id == id then
+                            list.selected = i
+                            DTNPC_Debugger.instance:onSelectNPC(listEntry.item)
+                            break
+                        end
+                    end
+                end
+            end)
         end
     else
         local mOption = context:addOption("[DEBUG]NPC Manager")
@@ -215,6 +233,9 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
         end
         
         mSub:addOption("Spawn Random NPC", player, onSpawn)
+        
+        -- Global Debugger
+        mSub:addOption("Open NPC Global Debugger", nil, DTNPC_Debugger.OnOpenWindow)
     end
 end
 
