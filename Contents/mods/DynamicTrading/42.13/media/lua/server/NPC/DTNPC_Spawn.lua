@@ -323,7 +323,16 @@ local function onClientCommand(module, command, player, args)
             end
         end
         
-        print("[DTNPC] Sent " .. syncCount .. " NPCs to: " .. player:getUsername())
+        print("[DTNPC] Sent " .. syncCount .. " nearby NPCs to: " .. player:getUsername())
+    end
+
+    if command == "RequestFullSync" then
+        print("[DTNPC] Received RequestFullSync from: " .. player:getUsername())
+        if not DTNPCManager or not DTNPCManager.Data then return end
+        
+        -- Send the entire database
+        sendServerCommand(player, "DTNPC", "SyncAllNPCs", { npcs = DTNPCManager.Data })
+        print("[DTNPC] Sent full database (" .. DTNPCManager.GetTableSize(DTNPCManager.Data) .. " NPCs) to: " .. player:getUsername())
     end
 
     if command == "UpdateNPC" then

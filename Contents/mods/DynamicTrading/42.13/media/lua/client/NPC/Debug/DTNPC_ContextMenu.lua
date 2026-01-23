@@ -12,7 +12,7 @@ if not isDebugEnabled() then return end
 -- [[ END CHECK ]]
 
 DTNPCMenu = DTNPCMenu or {}
-require "Debug/DTNPC_Debugger"
+require "NPC/Debug/DTNPC_Debugger"
 
 -- ==============================================================================
 -- 1. HELPER FUNCTIONS
