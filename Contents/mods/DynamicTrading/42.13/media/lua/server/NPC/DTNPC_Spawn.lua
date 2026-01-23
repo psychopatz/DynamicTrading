@@ -257,12 +257,17 @@ function DTNPCSpawn.RespawnNPC(brain, uuid)
     local zombie = zombieList:get(0)
     local newOutfitID = zombie:getPersistentOutfitID()
     
+    print("[DTNPC] Respawned with new OutfitID: " .. newOutfitID)
+    
     local modData = zombie:getModData()
     modData.IsDTNPC = true
     modData.DTNPC_UUID = uuid
     
     -- Keep the same UUID
     brain.uuid = uuid
+    
+    -- CRITICAL: Generate new visual ID to force clients to reapply visuals
+    brain.visualID = ZombRand(1000000)
     
     DTNPC.AttachBrain(zombie, brain)
     DTNPC.ApplyVisuals(zombie, brain)
@@ -279,9 +284,10 @@ function DTNPCSpawn.RespawnNPC(brain, uuid)
         DTNPCManager.Register(zombie, brain)
     end
 
+    -- Force sync to all clients with new visual ID
     DTNPCSpawn.SyncToAllClients(zombie, brain)
 
-    print("[DTNPC] Respawned: " .. brain.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID)
+    print("[DTNPC] Respawned: " .. brain.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID .. " | New VisualID: " .. brain.visualID)
     
     return zombie, brain
 end

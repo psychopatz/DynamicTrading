@@ -78,8 +78,26 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     local modData = zombie:getModData()
     local uuid = brain.uuid
     
+    -- CRITICAL FIX: Check if zombie actually has human visuals applied
+    -- Don't just trust the flag, verify the actual appearance
+    local needsVisuals = true
     if brain.visualID and modData.DTNPCVisualID == brain.visualID then
-        return
+        -- Flag says it's applied, but verify it actually is
+        local visuals = zombie:getHumanVisual()
+        if visuals then
+            local skin = visuals:getSkinTexture()
+            if skin then
+                local skinStr = tostring(skin)
+                -- Check if it has proper human skin (not zombie skin)
+                if string.find(skinStr, "MaleBody01") or string.find(skinStr, "FemaleBody01") then
+                    needsVisuals = false -- Visuals actually applied
+                end
+            end
+        end
+    end
+    
+    if not needsVisuals then
+        return -- Already properly dressed
     end
 
     print("[DTNPC-Client] Applying visuals for: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ")")
@@ -338,15 +356,41 @@ local function onTick()
             
             if cached and cached.brain then
                 
-                if not DTNPCClient.ProcessedZombies[uuid] or modData.DTNPCVisualID ~= cached.brain.visualID then
+                -- CRITICAL FIX: Always check if visuals need reapplication
+                -- Don't just trust processed flag - verify actual appearance
+                local needsVisuals = false
+                
+                if not DTNPCClient.ProcessedZombies[uuid] then
+                    needsVisuals = true
+                else
+                    -- Even if "processed", verify visuals are actually there
+                    local visuals = zombie:getHumanVisual()
+                    if visuals then
+                        local skin = visuals:getSkinTexture()
+                        if skin then
+                            local skinStr = tostring(skin)
+                            -- If it has zombie skin instead of human skin, needs reapplication
+                            if not (string.find(skinStr, "MaleBody01") or string.find(skinStr, "FemaleBody01")) then
+                                needsVisuals = true
+                                print("[DTNPC-Client] Zombie " .. uuid .. " lost visuals, reapplying...")
+                            end
+                        else
+                            needsVisuals = true
+                        end
+                    else
+                        needsVisuals = true
+                    end
+                    
+                    -- Also check if visual ID changed
+                    if modData.DTNPCVisualID ~= cached.brain.visualID then
+                        needsVisuals = true
+                    end
+                end
+                
+                if needsVisuals then
                     DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
                     DTNPCClient.ProcessedZombies[uuid] = true
-                    
-                    if modData.DTNPCVisualID ~= cached.brain.visualID then
-                        reappliedCount = reappliedCount + 1
-                    else
-                        attachedCount = attachedCount + 1
-                    end
+                    reappliedCount = reappliedCount + 1
                 else
                     if zombie:isLocal() and modData.IsDTNPC then
                         DTNPCClient.SetLocalControl(uuid, true)
