@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- DTNPC_Spawn.lua
 -- Server-side Logic: Spawning, Commands, Summoning, and Multiplayer Sync.
--- FIXED: Better position broadcasting and state change handling
+-- FIXED: Proper spawn sequence to prevent validation failures
 -- ==============================================================================
 
 require "NPC/Sys/DTNPC_Generator"
@@ -17,6 +17,12 @@ function DTNPCSpawn.SyncToAllClients(zombie, brain)
     if not isServer() then return end
     
     local id = zombie:getPersistentOutfitID()
+    
+    -- Ensure modData is set up properly
+    local modData = zombie:getModData()
+    modData.IsDTNPC = true
+    modData.DTNPCVisualID = brain.visualID
+    
     local syncData = {
         id = id,
         x = zombie:getX(),
@@ -43,6 +49,11 @@ function DTNPCSpawn.SyncToPlayer(player, zombie, brain)
     if not isServer() then return end
     
     local id = zombie:getPersistentOutfitID()
+    
+    local modData = zombie:getModData()
+    modData.IsDTNPC = true
+    modData.DTNPCVisualID = brain.visualID
+    
     local syncData = {
         id = id,
         x = zombie:getX(),
@@ -55,7 +66,6 @@ function DTNPCSpawn.SyncToPlayer(player, zombie, brain)
     print("[DTNPC] Synced NPC to player " .. player:getUsername() .. ": " .. (brain.name or id))
 end
 
--- NEW: Lightweight position-only broadcast
 function DTNPCSpawn.BroadcastPosition(zombie, brain)
     if not zombie or not brain then return end
     if not isServer() then return end
@@ -129,11 +139,10 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     
     print("[DTNPC] Spawning NPC at: " .. spawnX .. "," .. spawnY .. "," .. z)
     
-    -- Spawn a naked zombie initially to ensure we have full control over outfit
+    -- Spawn naked zombie
     local outfitStr = "Naked"
     local femaleChance = 50 
     
-    -- If we have an existing brain, match the gender of the zombie to the brain
     if existingBrain then
         femaleChance = existingBrain.isFemale and 100 or 0
     end
@@ -146,11 +155,16 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     end
 
     local zombie = zombieList:get(0)
+    local id = zombie:getPersistentOutfitID()
+    
+    -- CRITICAL: Mark as NPC IMMEDIATELY to prevent duplicate spawns
+    local modData = zombie:getModData()
+    modData.IsDTNPC = true
     
     local brain = existingBrain
     
     if not brain then
-        -- GENERATE NEW BRAIN
+        -- Generate new brain
         local genOptions = {
             masterName = player:getUsername(),
             masterID = player:getOnlineID(),
@@ -162,34 +176,63 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         brain = DTNPCGenerator.Generate(genOptions)
         print("[DTNPC] Generated new brain for: " .. brain.name)
     else
-        -- REHYDRATE BRAIN
+        -- Rehydrate brain
         if not brain.tasks then brain.tasks = {} end
         if not brain.walkSpeed then brain.walkSpeed = DTNPC.DefaultWalkSpeed end
         if not brain.runSpeed then brain.runSpeed = DTNPC.DefaultRunSpeed end
         if not brain.visualID then brain.visualID = ZombRand(1000000) end
         
-        -- RESET STATE (Fixes "Spawns Hostile" bug when summoning/respawning)
+        -- Reset state
         brain.state = "Stay"
         brain.isHostile = false
         print("[DTNPC] Rehydrated brain for: " .. brain.name)
     end
 
+    -- Attach brain BEFORE applying visuals
     DTNPC.AttachBrain(zombie, brain)
+    
+    -- Apply visuals on server
     DTNPC.ApplyVisuals(zombie, brain)
+    
+    -- Set visual ID in modData
+    modData.DTNPCVisualID = brain.visualID
 
+    -- Set zombie properties
+    zombie:setUseless(true) 
+    zombie:DoZombieStats()   
+    zombie:setHealth(2)
+    
+    -- Force model refresh
+    zombie:resetModelNextFrame()
+
+    -- Register with manager AFTER everything is set up
     if DTNPCManager then
         DTNPCManager.Register(zombie, brain)
     end
 
-    zombie:setUseless(true) 
-    zombie:DoZombieStats()   
-    zombie:setHealth(2)    
-
+    -- Sync to all clients
     DTNPCSpawn.SyncToAllClients(zombie, brain)
 
-    print("[DTNPC] Spawned/Summoned: " .. brain.name .. " | ID: " .. zombie:getPersistentOutfitID())
+    print("[DTNPC] Spawned/Summoned: " .. brain.name .. " | ID: " .. id)
     
     return zombie, brain
+end
+
+function DTNPCSpawn.FindZombieByID(id)
+    local cell = getCell()
+    if not cell then return nil end
+    
+    local zombieList = cell:getZombieList()
+    if not zombieList then return nil end
+    
+    for i = 0, zombieList:size() - 1 do
+        local zombie = zombieList:get(i)
+        if zombie and zombie:getPersistentOutfitID() == id then
+            return zombie
+        end
+    end
+    
+    return nil
 end
 
 -- ==============================================================================
@@ -282,6 +325,11 @@ local function onClientCommand(module, command, player, args)
                         brain.state = args.state
                         brain.tasks = {} 
                         
+                        -- Clear anchor when changing state
+                        brain.anchorX = nil
+                        brain.anchorY = nil
+                        brain.anchorZ = nil
+                        
                         if args.state == "GoTo" then
                            table.insert(brain.tasks, {x = math.floor(args.targetX), y = math.floor(args.targetY), z = math.floor(args.targetZ or 0)})
                            print("[DTNPC] GoTo task added: " .. args.targetX .. "," .. args.targetY)
@@ -290,7 +338,6 @@ local function onClientCommand(module, command, player, args)
                         DTNPC.AttachBrain(obj, brain)
                         if DTNPCManager then DTNPCManager.Register(obj, brain) end
                         
-                        -- IMPORTANT: Broadcast position immediately on state change
                         DTNPCSpawn.SyncToAllClients(obj, brain)
                         DTNPCSpawn.BroadcastPosition(obj, brain)
                         break
@@ -330,13 +377,11 @@ local function onClientCommand(module, command, player, args)
         print("[DTNPC] Received RequestFullSync from: " .. player:getUsername())
         if not DTNPCManager or not DTNPCManager.Data then return end
         
-        -- Send the entire database
         sendServerCommand(player, "DTNPC", "SyncAllNPCs", { npcs = DTNPCManager.Data })
         print("[DTNPC] Sent full database (" .. DTNPCManager.GetTableSize(DTNPCManager.Data) .. " NPCs) to: " .. player:getUsername())
     end
 
     if command == "UpdateNPC" then
-        -- Client reporting state change (e.g. finished GoTo)
         if not args.id or not args.updates then return end
         
         print("[DTNPC] Received UpdateNPC for ID: " .. args.id)
@@ -347,9 +392,8 @@ local function onClientCommand(module, command, player, args)
         if serverBrain then
             local shouldBroadcast = args.updates.broadcastPosition or false
             
-            -- Apply updates
             for k, v in pairs(args.updates) do
-                if k ~= "broadcastPosition" then -- Skip the flag itself
+                if k ~= "broadcastPosition" then
                     print("[DTNPC]   Updating " .. k .. " to " .. tostring(v))
                     serverBrain[k] = v
                 end
@@ -357,7 +401,6 @@ local function onClientCommand(module, command, player, args)
             
             DTNPCManager.Save()
             
-            -- Find zombie to sync back/update server entity
             local cell = getCell()
             if cell then
                 local zombieList = cell:getZombieList()
@@ -367,7 +410,6 @@ local function onClientCommand(module, command, player, args)
                          DTNPC.AttachBrain(z, serverBrain)
                          DTNPCSpawn.SyncToAllClients(z, serverBrain)
                          
-                         -- CRITICAL: Broadcast position when state changes
                          if shouldBroadcast then
                              print("[DTNPC] Broadcasting position due to state change")
                              DTNPCSpawn.BroadcastPosition(z, serverBrain)
@@ -384,20 +426,16 @@ local function onClientCommand(module, command, player, args)
     end
 
     if command == "RemoveNPC" then
-        -- Client reporting NPC exit/death
         if not args.id then return end
         
         print("[DTNPC] Received RemoveNPC for ID: " .. args.id)
         
         if DTNPCManager then
-            -- Remove from DB
             DTNPCManager.Data[args.id] = nil
             DTNPCManager.Save()
             
-            -- Notify all clients to remove from cache
             DTNPCSpawn.NotifyRemoval(args.id)
             
-            -- Try to remove server entity if it exists
             local cell = getCell()
             if cell then
                 local zombieList = cell:getZombieList()
@@ -416,3 +454,9 @@ local function onClientCommand(module, command, player, args)
 end
 
 Events.OnClientCommand.Add(onClientCommand)
+
+function DTNPCManager.GetTableSize(t)
+    local count = 0
+    for _, __ in pairs(t) do count = count + 1 end
+    return count
+end

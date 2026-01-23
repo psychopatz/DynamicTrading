@@ -1,8 +1,7 @@
 -- ==============================================================================
 -- Behavior_Follow.lua
 -- Handles the logic for following the Master.
--- REWRITTEN: Implements "Fake Attack" Wake-Up Call.
--- Triggers 1 tick of Attack Behavior when starting to move to fix "Mannequin" bug.
+-- FIXED: Prevents rubber banding by clearing anchor on Follow state
 -- Build 42 Compatible.
 -- ==============================================================================
 
@@ -10,8 +9,8 @@ DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 
 -- MOVEMENT CONFIGURATION
-local STOP_THRESHOLD_START = 3.5  -- Distance to START moving (Buffer zone)
-local STOP_THRESHOLD_END   = 2.0  -- Distance to STOP moving
+local STOP_THRESHOLD_START = 3.5
+local STOP_THRESHOLD_END   = 2.0
 local TELEPORT_DIST = 50
 
 -- Speeds
@@ -45,8 +44,6 @@ local function forceWalkAnimation(zombie, isRunning)
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
     
-    -- Note: We rely on the engine to pick WalkType now.
-    
     if isRunning then
         zombie:setVariable("Speed", 1.2)
         zombie:setRunning(true)
@@ -69,6 +66,12 @@ end
 
 DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
     
+    -- CRITICAL FIX: Clear anchor when following
+    -- This prevents rubber banding when switching from Stay to Follow
+    brain.anchorX = nil
+    brain.anchorY = nil
+    brain.anchorZ = nil
+    
     if not target then 
         if not zombie:isUseless() then zombie:setUseless(true) end
         stopAnimation(zombie)
@@ -87,7 +90,7 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
     -- 2. HYSTERESIS CHECK
     if not brain.isMovingState then brain.isMovingState = false end
     
-    local wasMoving = brain.isMovingState -- Track previous frame state
+    local wasMoving = brain.isMovingState
     local shouldMove = brain.isMovingState
 
     if brain.isMovingState then
@@ -102,17 +105,11 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
     
     brain.isMovingState = shouldMove
 
-    -- 3. WAKE UP CALL (THE FIX)
-    -- If we are transitioning from Idle -> Moving, execute the Attack Behavior for 1 tick.
+    -- 3. WAKE UP CALL
     if shouldMove and not wasMoving then
-        -- Execute Attack logic (setUseless(false), DoZombieStats, etc)
         if DTNPCLogic.Behaviors["Attack"] then
             DTNPCLogic.Behaviors["Attack"](zombie, brain, target, dist)
         end
-        
-        -- IMPORTANT: Return immediately. 
-        -- Do NOT override with manual movement this frame.
-        -- This lets the engine process the "Attack" state fully for one tick, fixing the feet.
         return 
     end
 
@@ -125,12 +122,9 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
         return
     end
 
-    -- 5. MOVING LOGIC (Manual Control)
-    -- If we reach here, 'shouldMove' is true AND 'wasMoving' is true (Frame 2+)
-    -- We now take full control back from the AI to ensure they follow us smoothly.
-    
+    -- 5. MOVING LOGIC
     if not zombie:isUseless() then
-        zombie:setUseless(true) -- Disable AI biting/wandering
+        zombie:setUseless(true)
         zombie:setPath2(nil)
         zombie:setRunning(false)
     end
