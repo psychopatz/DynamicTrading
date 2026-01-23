@@ -1,13 +1,14 @@
 -- ==============================================================================
 -- DTNPC_ClientSync.lua
 -- Client-side Logic: Receives NPC data from server and manages local cache.
--- FIXED: Relaxed validity check and proper sync timing
+-- FIXED: Use UUID system for proper tracking across respawns
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
-DTNPCClient.NPCCache = {}
-DTNPCClient.ProcessedZombies = {}
-DTNPCClient.LocalControlled = {}
+DTNPCClient.NPCCache = {} -- Now keyed by UUID
+DTNPCClient.OutfitIDToUUID = {} -- Maps outfit IDs to UUIDs
+DTNPCClient.ProcessedZombies = {} -- Tracks which zombies have had visuals applied
+DTNPCClient.LocalControlled = {} -- Tracks locally controlled NPCs
 
 -- ==============================================================================
 -- 1. CACHE MANAGEMENT
@@ -16,36 +17,53 @@ DTNPCClient.LocalControlled = {}
 function DTNPCClient.GetBrain(zombie)
     if not zombie then return nil end
     
-    local id = zombie:getPersistentOutfitID()
-    if id and DTNPCClient.NPCCache[id] then
-        return DTNPCClient.NPCCache[id].brain
-    end
-    
+    -- First check modData for direct brain
     local modData = zombie:getModData()
     if modData and modData.DTNPCBrain then
         return modData.DTNPCBrain
     end
     
+    -- Try to find by UUID
+    local uuid = modData.DTNPC_UUID
+    if uuid and DTNPCClient.NPCCache[uuid] then
+        return DTNPCClient.NPCCache[uuid].brain
+    end
+    
+    -- Fallback to outfit ID
+    local outfitID = zombie:getPersistentOutfitID()
+    uuid = DTNPCClient.OutfitIDToUUID[outfitID]
+    if uuid and DTNPCClient.NPCCache[uuid] then
+        return DTNPCClient.NPCCache[uuid].brain
+    end
+    
     return nil
 end
 
-function DTNPCClient.CacheBrain(id, brain)
-    if not id or not brain then return end
+function DTNPCClient.CacheBrain(uuid, outfitID, brain)
+    if not uuid or not brain then return end
     
-    DTNPCClient.NPCCache[id] = {
+    DTNPCClient.NPCCache[uuid] = {
         brain = brain,
         lastSync = getTimestampMs()
     }
     
-    print("[DTNPC-Client] Cached brain for: " .. (brain.name or id))
+    if outfitID then
+        DTNPCClient.OutfitIDToUUID[outfitID] = uuid
+    end
+    
+    print("[DTNPC-Client] Cached brain for: " .. (brain.name or uuid) .. " (UUID: " .. uuid .. ")")
 end
 
-function DTNPCClient.RemoveFromCache(id)
-    if id then
-        DTNPCClient.NPCCache[id] = nil
-        DTNPCClient.ProcessedZombies[id] = nil
-        DTNPCClient.LocalControlled[id] = nil
-        print("[DTNPC-Client] Removed from cache: " .. id)
+function DTNPCClient.RemoveFromCache(uuid, outfitID)
+    if uuid then
+        DTNPCClient.NPCCache[uuid] = nil
+        DTNPCClient.ProcessedZombies[uuid] = nil
+        DTNPCClient.LocalControlled[uuid] = nil
+        print("[DTNPC-Client] Removed from cache: " .. uuid)
+    end
+    
+    if outfitID then
+        DTNPCClient.OutfitIDToUUID[outfitID] = nil
     end
 end
 
@@ -58,42 +76,36 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     if isServer() then return end
     
     local modData = zombie:getModData()
-    local id = zombie:getPersistentOutfitID()
+    local uuid = brain.uuid
     
-    -- Check if visuals need updating
     if brain.visualID and modData.DTNPCVisualID == brain.visualID then
-        return -- Already applied
+        return
     end
 
-    print("[DTNPC-Client] Applying visuals for: " .. (brain.name or "Unknown") .. " (ID: " .. id .. ")")
+    print("[DTNPC-Client] Applying visuals for: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ")")
 
-    -- First, mark as NPC BEFORE applying visuals
     modData.IsDTNPC = true
+    modData.DTNPC_UUID = uuid
     
-    -- Attach brain to modData BEFORE applying visuals
     if DTNPC and DTNPC.AttachBrain then
         DTNPC.AttachBrain(zombie, brain)
     end
     
-    -- Apply visuals using shared function
     if DTNPC and DTNPC.ApplyVisuals then
         DTNPC.ApplyVisuals(zombie, brain)
     end
     
-    -- Mark as applied
     modData.DTNPCVisualID = brain.visualID
     
-    -- Ensure useless flag is set
     if not zombie:isUseless() then
         zombie:setUseless(true)
         zombie:DoZombieStats()
     end
     
-    -- Force model refresh
     zombie:resetModelNextFrame()
 end
 
-function DTNPCClient.FindZombieByID(id)
+function DTNPCClient.FindZombieByUUID(uuid)
     local cell = getCell()
     if not cell then return nil end
     
@@ -102,7 +114,27 @@ function DTNPCClient.FindZombieByID(id)
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie and zombie:getPersistentOutfitID() == id then
+        if zombie then
+            local modData = zombie:getModData()
+            if modData.DTNPC_UUID == uuid then
+                return zombie
+            end
+        end
+    end
+    
+    return nil
+end
+
+function DTNPCClient.FindZombieByOutfitID(outfitID)
+    local cell = getCell()
+    if not cell then return nil end
+    
+    local zombieList = cell:getZombieList()
+    if not zombieList then return nil end
+    
+    for i = 0, zombieList:size() - 1 do
+        local zombie = zombieList:get(i)
+        if zombie and zombie:getPersistentOutfitID() == outfitID then
             return zombie
         end
     end
@@ -110,14 +142,13 @@ function DTNPCClient.FindZombieByID(id)
     return nil
 end
 
--- Position reconciliation with tolerance
 function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
     if not zombie then return end
     
-    local id = zombie:getPersistentOutfitID()
+    local modData = zombie:getModData()
+    local uuid = modData.DTNPC_UUID
     
-    -- Don't reconcile if we control this NPC
-    if DTNPCClient.LocalControlled[id] then
+    if DTNPCClient.LocalControlled[uuid] then
         return false
     end
     
@@ -129,11 +160,9 @@ function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
     local dy = math.abs(localY - serverY)
     local dz = math.abs(localZ - serverZ)
     
-    -- Tolerance threshold: 3 tiles
     local TOLERANCE = 3.0
     
     if dx > TOLERANCE or dy > TOLERANCE or dz > 0 then
-        -- Smooth interpolation
         local lerpFactor = 0.2
         zombie:setX(localX + (serverX - localX) * lerpFactor)
         zombie:setY(localY + (serverY - localY) * lerpFactor)
@@ -145,22 +174,16 @@ function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
     return false
 end
 
--- RELAXED validity check - only check if it has IsDTNPC flag
--- Don't require brain or useless state yet, as those are applied during sync
 function DTNPCClient.IsValidNPC(zombie)
     if not zombie then return false end
     
     local modData = zombie:getModData()
+    local uuid = modData.DTNPC_UUID
     
-    -- Only requirement: Must have the IsDTNPC flag OR we have cached data for it
-    local id = zombie:getPersistentOutfitID()
-    
-    -- If we have cached brain data for this ID, it's valid
-    if id and DTNPCClient.NPCCache[id] then
+    if uuid and DTNPCClient.NPCCache[uuid] then
         return true
     end
     
-    -- Otherwise check modData flag
     if modData.IsDTNPC then
         return true
     end
@@ -168,9 +191,9 @@ function DTNPCClient.IsValidNPC(zombie)
     return false
 end
 
-function DTNPCClient.SetLocalControl(id, isControlled)
-    if id then
-        DTNPCClient.LocalControlled[id] = isControlled
+function DTNPCClient.SetLocalControl(uuid, isControlled)
+    if uuid then
+        DTNPCClient.LocalControlled[uuid] = isControlled
     end
 end
 
@@ -182,45 +205,57 @@ local function onServerCommand(module, command, args)
     if module ~= "DTNPC" then return end
 
     if command == "SyncNPC" then
-        if not args or not args.id or not args.brain then return end
+        if not args or not args.uuid or not args.brain then return end
         
-        print("[DTNPC-Client] Received SyncNPC for: " .. (args.brain.name or args.id))
+        local uuid = args.uuid
+        local outfitID = args.outfitID
         
-        -- Cache the brain data FIRST
-        DTNPCClient.CacheBrain(args.id, args.brain)
+        print("[DTNPC-Client] Received SyncNPC for: " .. (args.brain.name or uuid))
         
-        -- Try to find zombie
-        local zombie = DTNPCClient.FindZombieByID(args.id)
+        DTNPCClient.CacheBrain(uuid, outfitID, args.brain)
+        
+        local zombie = DTNPCClient.FindZombieByUUID(uuid)
+        
+        if not zombie and outfitID then
+            zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
+        end
+        
         if zombie then
-            -- APPLY VISUALS IMMEDIATELY - don't check IsValidNPC first
-            -- because the zombie won't be "valid" until we apply the visuals!
             DTNPCClient.ApplyVisualsToNPC(zombie, args.brain)
             DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
-            DTNPCClient.ProcessedZombies[args.id] = true
-            print("[DTNPC-Client] Applied visuals to zombie: " .. args.id)
+            DTNPCClient.ProcessedZombies[uuid] = true
+            print("[DTNPC-Client] Applied visuals to zombie: " .. uuid)
         else
-            -- Zombie not loaded yet, cache will be applied when it appears
-            print("[DTNPC-Client] Zombie not in world yet, cached for later: " .. args.id)
+            print("[DTNPC-Client] Zombie not in world yet, cached for later: " .. uuid)
         end
         return
     end
 
     if command == "UpdatePosition" then
-        if not args or not args.id then return end
+        if not args or not args.uuid then return end
         
-        local cached = DTNPCClient.NPCCache[args.id]
+        local uuid = args.uuid
+        local cached = DTNPCClient.NPCCache[uuid]
+        
         if cached and cached.brain then
-            -- Update cached position
             cached.brain.lastX = math.floor(args.x)
             cached.brain.lastY = math.floor(args.y)
             cached.brain.lastZ = math.floor(args.z)
             
             if args.health then cached.brain.health = args.health end
             if args.state then cached.brain.state = args.state end
+            if args.outfitID then
+                DTNPCClient.OutfitIDToUUID[args.outfitID] = uuid
+                cached.brain.currentOutfitID = args.outfitID
+            end
             
-            -- Find and reconcile zombie position (only if not locally controlled)
-            local zombie = DTNPCClient.FindZombieByID(args.id)
-            if zombie and not DTNPCClient.LocalControlled[args.id] then
+            local zombie = DTNPCClient.FindZombieByUUID(uuid)
+            
+            if not zombie and args.outfitID then
+                zombie = DTNPCClient.FindZombieByOutfitID(args.outfitID)
+            end
+            
+            if zombie and not DTNPCClient.LocalControlled[uuid] then
                 DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
             end
         end
@@ -228,9 +263,9 @@ local function onServerCommand(module, command, args)
     end
 
     if command == "RemoveNPC" then
-        if not args or not args.id then return end
-        print("[DTNPC-Client] Received RemoveNPC for: " .. args.id)
-        DTNPCClient.RemoveFromCache(args.id)
+        if not args or not args.uuid then return end
+        print("[DTNPC-Client] Received RemoveNPC for: " .. args.uuid)
+        DTNPCClient.RemoveFromCache(args.uuid, args.outfitID)
         return
     end
 
@@ -239,14 +274,19 @@ local function onServerCommand(module, command, args)
         
         print("[DTNPC-Client] Received SyncAllNPCs. Count: " .. DTNPCClient.GetTableSize(args.npcs))
         
-        for id, brain in pairs(args.npcs) do
-            DTNPCClient.CacheBrain(id, brain)
+        for uuid, brain in pairs(args.npcs) do
+            local outfitID = brain.currentOutfitID
+            DTNPCClient.CacheBrain(uuid, outfitID, brain)
             
-            local zombie = DTNPCClient.FindZombieByID(id)
+            local zombie = DTNPCClient.FindZombieByUUID(uuid)
+            
+            if not zombie and outfitID then
+                zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
+            end
+            
             if zombie then
-                -- Apply visuals immediately without validity check
                 DTNPCClient.ApplyVisualsToNPC(zombie, brain)
-                DTNPCClient.ProcessedZombies[id] = true
+                DTNPCClient.ProcessedZombies[uuid] = true
             end
         end
         return
@@ -259,7 +299,7 @@ Events.OnServerCommand.Add(onServerCommand)
 -- 4. PERIODIC VISUAL CHECK & BRAIN ATTACHMENT
 -- ==============================================================================
 
-local VISUAL_CHECK_RATE = 60 -- Check every ~1 second
+local VISUAL_CHECK_RATE = 60
 local visualCheckCounter = 0
 
 local function onTick()
@@ -283,18 +323,24 @@ local function onTick()
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
         if zombie then
-            local id = zombie:getPersistentOutfitID()
-            local cached = DTNPCClient.NPCCache[id]
             local modData = zombie:getModData()
+            local uuid = modData.DTNPC_UUID
             
-            -- If we have cached data for this zombie
+            if not uuid then
+                local outfitID = zombie:getPersistentOutfitID()
+                uuid = DTNPCClient.OutfitIDToUUID[outfitID]
+                if uuid then
+                    modData.DTNPC_UUID = uuid
+                end
+            end
+            
+            local cached = DTNPCClient.NPCCache[uuid]
+            
             if cached and cached.brain then
                 
-                -- Check if visuals need application/reapplication
-                if not DTNPCClient.ProcessedZombies[id] or modData.DTNPCVisualID ~= cached.brain.visualID then
-                    -- Apply visuals
+                if not DTNPCClient.ProcessedZombies[uuid] or modData.DTNPCVisualID ~= cached.brain.visualID then
                     DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
-                    DTNPCClient.ProcessedZombies[id] = true
+                    DTNPCClient.ProcessedZombies[uuid] = true
                     
                     if modData.DTNPCVisualID ~= cached.brain.visualID then
                         reappliedCount = reappliedCount + 1
@@ -302,9 +348,8 @@ local function onTick()
                         attachedCount = attachedCount + 1
                     end
                 else
-                    -- Already processed, check if we control this NPC
                     if zombie:isLocal() and modData.IsDTNPC then
-                        DTNPCClient.SetLocalControl(id, true)
+                        DTNPCClient.SetLocalControl(uuid, true)
                         
                         local localBrain = modData.DTNPCBrain
                         local serverBrain = cached.brain
@@ -313,13 +358,11 @@ local function onTick()
                             local changed = false
                             local updates = {}
                             
-                            -- Track state changes
                             if localBrain.state ~= serverBrain.state then
                                 updates.state = localBrain.state
                                 changed = true
                             end
                             
-                            -- Check for task completion
                             if localBrain.tasks and serverBrain.tasks then
                                 if #localBrain.tasks ~= #serverBrain.tasks then
                                     updates.tasks = localBrain.tasks
@@ -328,19 +371,18 @@ local function onTick()
                             end
                             
                             if changed then
-                                -- Update cache immediately
                                 if updates.state then 
                                     serverBrain.state = updates.state
                                     updates.broadcastPosition = true
                                 end
                                 if updates.tasks then serverBrain.tasks = updates.tasks end
                                 
-                                sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { id = id, updates = updates })
+                                sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { uuid = uuid, updates = updates })
                                 updatedCount = updatedCount + 1
                             end
                         end
                     else
-                        DTNPCClient.SetLocalControl(id, false)
+                        DTNPCClient.SetLocalControl(uuid, false)
                     end
                 end
             end
@@ -387,11 +429,13 @@ Events.OnCreatePlayer.Add(onPlayerCreated)
 local function onZombieRemoved(zombie)
     if not zombie then return end
     
-    local id = zombie:getPersistentOutfitID()
-    if id and DTNPCClient.ProcessedZombies[id] then
-        print("[DTNPC-Client] Zombie removed from world: " .. id)
-        DTNPCClient.ProcessedZombies[id] = nil
-        DTNPCClient.LocalControlled[id] = nil
+    local modData = zombie:getModData()
+    local uuid = modData.DTNPC_UUID
+    
+    if uuid and DTNPCClient.ProcessedZombies[uuid] then
+        print("[DTNPC-Client] Zombie removed from world: " .. uuid)
+        DTNPCClient.ProcessedZombies[uuid] = nil
+        DTNPCClient.LocalControlled[uuid] = nil
     end
 end
 

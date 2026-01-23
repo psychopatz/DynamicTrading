@@ -1,7 +1,7 @@
 -- ==============================================================================
 -- DTNPC_Spawn.lua
 -- Server-side Logic: Spawning, Commands, Summoning, and Multiplayer Sync.
--- FIXED: Proper spawn sequence to prevent validation failures
+-- FIXED: Use UUID system instead of outfit IDs
 -- ==============================================================================
 
 require "NPC/Sys/DTNPC_Generator"
@@ -16,15 +16,17 @@ function DTNPCSpawn.SyncToAllClients(zombie, brain)
     if not zombie or not brain then return end
     if not isServer() then return end
     
-    local id = zombie:getPersistentOutfitID()
+    local outfitID = zombie:getPersistentOutfitID()
+    local uuid = brain.uuid
     
-    -- Ensure modData is set up properly
     local modData = zombie:getModData()
     modData.IsDTNPC = true
     modData.DTNPCVisualID = brain.visualID
+    modData.DTNPC_UUID = uuid
     
     local syncData = {
-        id = id,
+        uuid = uuid,
+        outfitID = outfitID,
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
@@ -41,21 +43,24 @@ function DTNPCSpawn.SyncToAllClients(zombie, brain)
         end
     end
     
-    print("[DTNPC] Synced NPC to all clients: " .. (brain.name or id) .. " at " .. syncData.x .. "," .. syncData.y)
+    print("[DTNPC] Synced NPC to all clients: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
 end
 
 function DTNPCSpawn.SyncToPlayer(player, zombie, brain)
     if not player or not zombie or not brain then return end
     if not isServer() then return end
     
-    local id = zombie:getPersistentOutfitID()
+    local outfitID = zombie:getPersistentOutfitID()
+    local uuid = brain.uuid
     
     local modData = zombie:getModData()
     modData.IsDTNPC = true
     modData.DTNPCVisualID = brain.visualID
+    modData.DTNPC_UUID = uuid
     
     local syncData = {
-        id = id,
+        uuid = uuid,
+        outfitID = outfitID,
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
@@ -63,16 +68,17 @@ function DTNPCSpawn.SyncToPlayer(player, zombie, brain)
     }
     
     sendServerCommand(player, "DTNPC", "SyncNPC", syncData)
-    print("[DTNPC] Synced NPC to player " .. player:getUsername() .. ": " .. (brain.name or id))
+    print("[DTNPC] Synced NPC to player " .. player:getUsername() .. ": " .. (brain.name or uuid))
 end
 
 function DTNPCSpawn.BroadcastPosition(zombie, brain)
     if not zombie or not brain then return end
     if not isServer() then return end
     
-    local id = zombie:getPersistentOutfitID()
+    local uuid = brain.uuid
     local posData = {
-        id = id,
+        uuid = uuid,
+        outfitID = zombie:getPersistentOutfitID(),
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
@@ -91,8 +97,8 @@ function DTNPCSpawn.BroadcastPosition(zombie, brain)
     end
 end
 
-function DTNPCSpawn.NotifyRemoval(id)
-    if not id then return end
+function DTNPCSpawn.NotifyRemoval(uuid, outfitID)
+    if not uuid then return end
     if not isServer() then return end
     
     local onlinePlayers = getOnlinePlayers()
@@ -100,12 +106,12 @@ function DTNPCSpawn.NotifyRemoval(id)
         for i = 0, onlinePlayers:size() - 1 do
             local player = onlinePlayers:get(i)
             if player then
-                sendServerCommand(player, "DTNPC", "RemoveNPC", { id = id })
+                sendServerCommand(player, "DTNPC", "RemoveNPC", { uuid = uuid, outfitID = outfitID })
             end
         end
     end
     
-    print("[DTNPC] Notified all clients of NPC removal: " .. id)
+    print("[DTNPC] Notified all clients of NPC removal: " .. uuid)
 end
 
 -- ==============================================================================
@@ -119,7 +125,6 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     
     local x, y, z = player:getX(), player:getY(), player:getZ()
     
-    -- Pick a safe spawn location
     local spawnX, spawnY = x + 1, y + 1
     local cell = getCell()
     local foundSafe = false
@@ -139,7 +144,6 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     
     print("[DTNPC] Spawning NPC at: " .. spawnX .. "," .. spawnY .. "," .. z)
     
-    -- Spawn naked zombie
     local outfitStr = "Naked"
     local femaleChance = 50 
     
@@ -155,16 +159,14 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     end
 
     local zombie = zombieList:get(0)
-    local id = zombie:getPersistentOutfitID()
+    local outfitID = zombie:getPersistentOutfitID()
     
-    -- CRITICAL: Mark as NPC IMMEDIATELY to prevent duplicate spawns
     local modData = zombie:getModData()
     modData.IsDTNPC = true
     
     local brain = existingBrain
     
     if not brain then
-        -- Generate new brain
         local genOptions = {
             masterName = player:getUsername(),
             masterID = player:getOnlineID(),
@@ -176,49 +178,115 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         brain = DTNPCGenerator.Generate(genOptions)
         print("[DTNPC] Generated new brain for: " .. brain.name)
     else
-        -- Rehydrate brain
         if not brain.tasks then brain.tasks = {} end
         if not brain.walkSpeed then brain.walkSpeed = DTNPC.DefaultWalkSpeed end
         if not brain.runSpeed then brain.runSpeed = DTNPC.DefaultRunSpeed end
         if not brain.visualID then brain.visualID = ZombRand(1000000) end
         
-        -- Reset state
         brain.state = "Stay"
         brain.isHostile = false
         print("[DTNPC] Rehydrated brain for: " .. brain.name)
     end
-
-    -- Attach brain BEFORE applying visuals
-    DTNPC.AttachBrain(zombie, brain)
     
-    -- Apply visuals on server
+    -- Ensure UUID exists
+    if not brain.uuid then
+        brain.uuid = DTNPCManager.GenerateUUID()
+    end
+    
+    modData.DTNPC_UUID = brain.uuid
+
+    DTNPC.AttachBrain(zombie, brain)
     DTNPC.ApplyVisuals(zombie, brain)
     
-    -- Set visual ID in modData
     modData.DTNPCVisualID = brain.visualID
 
-    -- Set zombie properties
     zombie:setUseless(true) 
     zombie:DoZombieStats()   
     zombie:setHealth(2)
     
-    -- Force model refresh
     zombie:resetModelNextFrame()
 
-    -- Register with manager AFTER everything is set up
     if DTNPCManager then
         DTNPCManager.Register(zombie, brain)
     end
 
-    -- Sync to all clients
     DTNPCSpawn.SyncToAllClients(zombie, brain)
 
-    print("[DTNPC] Spawned/Summoned: " .. brain.name .. " | ID: " .. id)
+    print("[DTNPC] Spawned/Summoned: " .. brain.name .. " | UUID: " .. brain.uuid .. " | OutfitID: " .. outfitID)
     
     return zombie, brain
 end
 
-function DTNPCSpawn.FindZombieByID(id)
+-- ==============================================================================
+-- 3. RESPAWN FUNCTION
+-- ==============================================================================
+
+function DTNPCSpawn.RespawnNPC(brain, uuid)
+    if not brain or not brain.lastX or not brain.lastY then return end
+    
+    local x = brain.lastX
+    local y = brain.lastY
+    local z = brain.lastZ or 0
+    
+    print("[DTNPC] Respawning NPC: " .. (brain.name or uuid) .. " at " .. x .. "," .. y .. "," .. z)
+    
+    local cell = getCell()
+    local sq = cell:getGridSquare(x, y, z)
+    
+    if not sq or not sq:isFree(false) then
+        for _x = -2, 2 do
+            for _y = -2, 2 do
+                sq = cell:getGridSquare(x + _x, y + _y, z)
+                if sq and sq:isFree(false) and not sq:isSolid() and not sq:isSolidTrans() then
+                    x = x + _x
+                    y = y + _y
+                    break
+                end
+            end
+        end
+    end
+    
+    local femaleChance = brain.isFemale and 100 or 0
+    local zombieList = addZombiesInOutfit(x, y, z, 1, "Naked", femaleChance, false, false, false, false, false, false, 1)
+    
+    if not zombieList or zombieList:size() == 0 then 
+        print("[DTNPC] ERROR: Failed to respawn NPC")
+        return 
+    end
+
+    local zombie = zombieList:get(0)
+    local newOutfitID = zombie:getPersistentOutfitID()
+    
+    local modData = zombie:getModData()
+    modData.IsDTNPC = true
+    modData.DTNPC_UUID = uuid
+    
+    -- Keep the same UUID
+    brain.uuid = uuid
+    
+    DTNPC.AttachBrain(zombie, brain)
+    DTNPC.ApplyVisuals(zombie, brain)
+    
+    modData.DTNPCVisualID = brain.visualID
+
+    zombie:setUseless(true) 
+    zombie:DoZombieStats()   
+    zombie:setHealth(2)
+    
+    zombie:resetModelNextFrame()
+
+    if DTNPCManager then
+        DTNPCManager.Register(zombie, brain)
+    end
+
+    DTNPCSpawn.SyncToAllClients(zombie, brain)
+
+    print("[DTNPC] Respawned: " .. brain.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID)
+    
+    return zombie, brain
+end
+
+function DTNPCSpawn.FindZombieByUUID(uuid)
     local cell = getCell()
     if not cell then return nil end
     
@@ -227,7 +295,27 @@ function DTNPCSpawn.FindZombieByID(id)
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie and zombie:getPersistentOutfitID() == id then
+        if zombie then
+            local modData = zombie:getModData()
+            if modData.DTNPC_UUID == uuid then
+                return zombie
+            end
+        end
+    end
+    
+    return nil
+end
+
+function DTNPCSpawn.FindZombieByOutfitID(outfitID)
+    local cell = getCell()
+    if not cell then return nil end
+    
+    local zombieList = cell:getZombieList()
+    if not zombieList then return nil end
+    
+    for i = 0, zombieList:size() - 1 do
+        local zombie = zombieList:get(i)
+        if zombie and zombie:getPersistentOutfitID() == outfitID then
             return zombie
         end
     end
@@ -236,7 +324,7 @@ function DTNPCSpawn.FindZombieByID(id)
 end
 
 -- ==============================================================================
--- 3. SUMMON FUNCTION
+-- 4. SUMMON FUNCTION
 -- ==============================================================================
 
 function DTNPCSpawn.SummonAll(player)
@@ -248,55 +336,45 @@ function DTNPCSpawn.SummonAll(player)
     
     print("[DTNPC] Summoning NPCs for player: " .. username)
     
-    for id, brain in pairs(DTNPCManager.Data) do
+    for uuid, brain in pairs(DTNPCManager.Data) do
         if brain.master == username then
-            local foundObj = nil
-            local zombieList = cell:getZombieList()
-            for i=0, zombieList:size()-1 do
-                local z = zombieList:get(i)
-                if z:getPersistentOutfitID() == id then
-                    foundObj = z
-                    break
-                end
-            end
+            local foundObj = DTNPCSpawn.FindZombieByUUID(uuid)
             
             if foundObj then
-                table.insert(toTeleport, foundObj)
-                print("[DTNPC] Found existing NPC to teleport: " .. (brain.name or id))
+                table.insert(toTeleport, {zombie = foundObj, brain = brain})
+                print("[DTNPC] Found existing NPC to teleport: " .. (brain.name or uuid))
             else
-                brain.oldID = id 
-                table.insert(toRecreate, brain)
-                print("[DTNPC] NPC not found in world, will recreate: " .. (brain.name or id))
+                table.insert(toRecreate, {uuid = uuid, brain = brain})
+                print("[DTNPC] NPC not found in world, will recreate: " .. (brain.name or uuid))
             end
         end
     end
     
-    for _, npc in ipairs(toTeleport) do
+    for _, data in ipairs(toTeleport) do
+        local npc = data.zombie
+        local brain = data.brain
+        
         npc:setX(player:getX() + 1)
         npc:setY(player:getY() + 1)
         npc:setZ(player:getZ())
         npc:setLastX(player:getX())
         npc:setLastY(player:getY())
         
-        local brain = DTNPC.GetBrain(npc)
-        if brain then
-            brain.lastX = math.floor(npc:getX())
-            brain.lastY = math.floor(npc:getY())
-            brain.lastZ = math.floor(npc:getZ())
-            DTNPCSpawn.SyncToAllClients(npc, brain)
-        end
+        brain.lastX = math.floor(npc:getX())
+        brain.lastY = math.floor(npc:getY())
+        brain.lastZ = math.floor(npc:getZ())
+        DTNPCSpawn.SyncToAllClients(npc, brain)
     end
     
-    for _, brain in ipairs(toRecreate) do
-        DTNPCManager.RemoveData(brain.oldID)
-        DTNPCSpawn.SpawnNPC(player, brain)
+    for _, data in ipairs(toRecreate) do
+        DTNPCSpawn.RespawnNPC(data.brain, data.uuid)
     end
     
     print("[DTNPC] Summon complete. Teleported: " .. #toTeleport .. ", Recreated: " .. #toRecreate)
 end
 
 -- ==============================================================================
--- 4. CLIENT COMMAND HANDLER
+-- 5. CLIENT COMMAND HANDLER
 -- ==============================================================================
 
 local function onClientCommand(module, command, player, args)
@@ -325,14 +403,13 @@ local function onClientCommand(module, command, player, args)
                         brain.state = args.state
                         brain.tasks = {} 
                         
-                        -- Clear anchor when changing state
                         brain.anchorX = nil
                         brain.anchorY = nil
                         brain.anchorZ = nil
                         
                         if args.state == "GoTo" then
-                           table.insert(brain.tasks, {x = math.floor(args.targetX), y = math.floor(args.targetY), z = math.floor(args.targetZ or 0)})
-                           print("[DTNPC] GoTo task added: " .. args.targetX .. "," .. args.targetY)
+                           table.insert(brain.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
+                           print("[DTNPC] GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
                         end
 
                         DTNPC.AttachBrain(obj, brain)
@@ -361,11 +438,13 @@ local function onClientCommand(module, command, player, args)
         for i = 0, zombieList:size() - 1 do
             local zombie = zombieList:get(i)
             if zombie then
-                local id = zombie:getPersistentOutfitID()
-                local brain = DTNPCManager.Data[id]
-                if brain then
-                    DTNPCSpawn.SyncToPlayer(player, zombie, brain)
-                    syncCount = syncCount + 1
+                local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
+                if uuid then
+                    local brain = DTNPCManager.Data[uuid]
+                    if brain then
+                        DTNPCSpawn.SyncToPlayer(player, zombie, brain)
+                        syncCount = syncCount + 1
+                    end
                 end
             end
         end
@@ -382,12 +461,12 @@ local function onClientCommand(module, command, player, args)
     end
 
     if command == "UpdateNPC" then
-        if not args.id or not args.updates then return end
+        if not args.uuid or not args.updates then return end
         
-        print("[DTNPC] Received UpdateNPC for ID: " .. args.id)
+        print("[DTNPC] Received UpdateNPC for UUID: " .. args.uuid)
         
-        local id = args.id
-        local serverBrain = DTNPCManager.Data[id]
+        local uuid = args.uuid
+        local serverBrain = DTNPCManager.Data[uuid]
         
         if serverBrain then
             local shouldBroadcast = args.updates.broadcastPosition or false
@@ -401,53 +480,36 @@ local function onClientCommand(module, command, player, args)
             
             DTNPCManager.Save()
             
-            local cell = getCell()
-            if cell then
-                local zombieList = cell:getZombieList()
-                for i = 0, zombieList:size() - 1 do
-                    local z = zombieList:get(i)
-                    if z and z:getPersistentOutfitID() == id then
-                         DTNPC.AttachBrain(z, serverBrain)
-                         DTNPCSpawn.SyncToAllClients(z, serverBrain)
-                         
-                         if shouldBroadcast then
-                             print("[DTNPC] Broadcasting position due to state change")
-                             DTNPCSpawn.BroadcastPosition(z, serverBrain)
-                         end
-                         
-                         print("[DTNPC] Updated and synced NPC to all clients")
-                         break
-                    end
+            local zombie = DTNPCSpawn.FindZombieByUUID(uuid)
+            if zombie then
+                DTNPC.AttachBrain(zombie, serverBrain)
+                DTNPCSpawn.SyncToAllClients(zombie, serverBrain)
+                
+                if shouldBroadcast then
+                    print("[DTNPC] Broadcasting position due to state change")
+                    DTNPCSpawn.BroadcastPosition(zombie, serverBrain)
                 end
+                
+                print("[DTNPC] Updated and synced NPC to all clients")
             end
         else
-            print("[DTNPC] WARNING: UpdateNPC for unknown ID: " .. id)
+            print("[DTNPC] WARNING: UpdateNPC for unknown UUID: " .. uuid)
         end
     end
 
     if command == "RemoveNPC" then
-        if not args.id then return end
+        if not args.uuid then return end
         
-        print("[DTNPC] Received RemoveNPC for ID: " .. args.id)
+        print("[DTNPC] Received RemoveNPC for UUID: " .. args.uuid)
         
         if DTNPCManager then
-            DTNPCManager.Data[args.id] = nil
-            DTNPCManager.Save()
+            DTNPCManager.RemoveData(args.uuid)
             
-            DTNPCSpawn.NotifyRemoval(args.id)
-            
-            local cell = getCell()
-            if cell then
-                local zombieList = cell:getZombieList()
-                for i = 0, zombieList:size() - 1 do
-                    local z = zombieList:get(i)
-                    if z and z:getPersistentOutfitID() == args.id then
-                         z:removeFromWorld()
-                         z:removeFromSquare()
-                         print("[DTNPC] Removed NPC from world")
-                         break
-                    end
-                end
+            local zombie = DTNPCSpawn.FindZombieByUUID(args.uuid)
+            if zombie then
+                zombie:removeFromWorld()
+                zombie:removeFromSquare()
+                print("[DTNPC] Removed NPC from world")
             end
         end
     end

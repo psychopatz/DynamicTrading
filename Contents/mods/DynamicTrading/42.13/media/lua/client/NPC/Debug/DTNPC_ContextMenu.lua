@@ -2,14 +2,10 @@
 -- DTNPC_ContextMenu.lua
 -- Client-side Logic: Context Menu for Orders and DEBUGGING.
 -- Build 42 Compatible.
--- ADDED: EventMarker integration
+-- FIXED: Coordinate parsing to properly convert string to numbers
 -- ==============================================================================
 
--- [[ OPTIMIZATION CHECK ]]
--- If we are not in Debug Mode, stop reading this file immediately.
--- This prevents functions from loading and prevents the Event listener from registering.
 if not isDebugEnabled() then return end
--- [[ END CHECK ]]
 
 DTNPCMenu = DTNPCMenu or {}
 require "NPC/Debug/DTNPC_Debugger"
@@ -64,7 +60,6 @@ local function onOrder(npc, state, player)
     
     local brain = getBrain(npc)
     if brain then
-        -- OPTIMIZATION: Predict local state for immediate response
         brain.state = state
         if state == "GoTo" then
             brain.tasks = {{x = args.targetX, y = args.targetY, z = args.targetZ}}
@@ -72,7 +67,6 @@ local function onOrder(npc, state, player)
             brain.tasks = {}
         end
         
-        -- Force update local zombie Logic check
         if DTNPC and DTNPC.AttachBrain then
              DTNPC.AttachBrain(npc, brain)
         end
@@ -87,25 +81,46 @@ local function onCoordInput(target, button, player, npc)
     local text = button.parent.entry:getText()
     if not text or text == "" then return end
     
-    local xStr, yStr, zStr = text:match("(%d+)[^%d]+(%d+)[^%d]*(%d*)")
+    -- FIXED: More robust parsing that handles spaces and converts to numbers properly
+    local parts = {}
+    for num in string.gmatch(text, "[%d%.%-]+") do
+        table.insert(parts, tonumber(num))
+    end
     
-    if xStr and yStr then
-        local tx = tonumber(xStr)
-        local ty = tonumber(yStr)
-        local tz = tonumber(zStr) or 0 
+    if #parts >= 2 then
+        local tx = parts[1]
+        local ty = parts[2]
+        local tz = parts[3] or 0
         
-        local args = {
-            x = npc:getX(),
-            y = npc:getY(),
-            z = npc:getZ(),
-            state = "GoTo",
-            targetX = tx,
-            targetY = ty,
-            targetZ = tz
-        }
-        
-        sendClientCommand(player, "DTNPC", "Order", args)
-        player:Say("Sent GoTo: " .. tx .. ", " .. ty .. ", " .. tz)
+        -- Ensure values are valid numbers
+        if tx and ty and tz then
+            local args = {
+                x = npc:getX(),
+                y = npc:getY(),
+                z = npc:getZ(),
+                state = "GoTo",
+                targetX = tx,
+                targetY = ty,
+                targetZ = tz
+            }
+            
+            print("[DTNPC] Sending GoTo command with coords: " .. tx .. "," .. ty .. "," .. tz)
+            sendClientCommand(player, "DTNPC", "Order", args)
+            
+            -- Update local brain immediately
+            local brain = getBrain(npc)
+            if brain then
+                brain.state = "GoTo"
+                brain.tasks = {{x = tx, y = ty, z = tz}}
+                if DTNPC and DTNPC.AttachBrain then
+                    DTNPC.AttachBrain(npc, brain)
+                end
+            end
+            
+            player:Say("Sent GoTo: " .. math.floor(tx) .. ", " .. math.floor(ty) .. ", " .. math.floor(tz))
+        else
+            player:Say("Invalid Coords! Numbers not recognized.")
+        end
     else
         player:Say("Invalid Coords! Use format: 10820,9463,0")
     end
@@ -141,21 +156,20 @@ local function onMarkNPC(player, npc)
     local x = npc:getX()
     local y = npc:getY()
     
-    -- Determine marker color based on NPC state
-    local color = {r=0.2, g=1, b=0.2} -- Default green
+    local color = {r=0.2, g=1, b=0.2}
     local icon = "friend.png"
     
     if brain.state == "Follow" then
-        color = {r=0.2, g=0.8, b=1} -- Cyan
+        color = {r=0.2, g=0.8, b=1}
         icon = "crew.png"
     elseif brain.state == "Stay" or brain.state == "Guard" then
-        color = {r=1, g=1, b=0.2} -- Yellow
+        color = {r=1, g=1, b=0.2}
         icon = "defend.png"
     elseif brain.state == "GoTo" then
-        color = {r=1, g=0.5, b=0.2} -- Orange
+        color = {r=1, g=0.5, b=0.2}
         icon = "loot.png"
     elseif brain.isHostile then
-        color = {r=1, g=0.2, b=0.2} -- Red
+        color = {r=1, g=0.2, b=0.2}
         icon = "raid.png"
     end
     
@@ -163,11 +177,10 @@ local function onMarkNPC(player, npc)
     local distText = string.format("%.0fm away", distance)
     local description = brain.name .. " - " .. (brain.state or "Idle") .. " - " .. distText
     
-    -- Create marker (30 minute duration)
     EventMarkerHandler.set(
         "npc_" .. id,
         icon,
-        1800, -- 30 minutes
+        1800,
         x,
         y,
         color,
@@ -185,7 +198,6 @@ local function onMarkAllNPCs(player)
     
     local count = 0
     
-    -- Mark all NPCs from cache
     if DTNPCClient and DTNPCClient.NPCCache then
         for id, entry in pairs(DTNPCClient.NPCCache) do
             local brain = entry.brain
@@ -312,7 +324,6 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             subMenu:addOption("Stop / Guard", npc, onOrder, "Stay", player)
             subMenu:addOption("Come Here (My Pos)", npc, onOrder, "GoTo", player)
             
-            -- NEW: Mark NPC option
             if EventMarkerHandler then
                 subMenu:addOption("Mark NPC Location", player, onMarkNPC, npc)
             end
@@ -326,12 +337,10 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             debugSub:addOption("TEST: Attack Me (Melee)", npc, onOrder, "Attack", player)
             debugSub:addOption("TEST: Attack Me (Gun)", npc, onOrder, "AttackRange", player)
             
-            -- Inspect NPC Data
             debugSub:addOption("DEBUG: Inspect Data", nil, function()
                 DTNPC_Debugger.OnOpenWindow()
                 if DTNPC_Debugger.instance then
                     local id = npc:getPersistentOutfitID()
-                    -- Select in list if possible
                     local list = DTNPC_Debugger.instance.npcList
                     for i, listEntry in ipairs(list.items) do
                         if listEntry.item and listEntry.item.id == id then
@@ -349,7 +358,6 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
         context:addSubMenu(mOption, mSub)
         mSub:addOption("Summon All Followers", player, onSummon)
         
-        -- Debug Spawn
         local function onSpawn(p)
             local occupations = {
                 "General", "Farmer", "Butcher", "Doctor", "Mechanic", "Survivalist", 
@@ -366,7 +374,6 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
         
         mSub:addOption("Spawn Random NPC", player, onSpawn)
         
-        -- NEW: Marker management
         if EventMarkerHandler then
             local markerOption = mSub:addOption("NPC Markers")
             local markerSub = mSub:getNew(mSub)
@@ -376,7 +383,6 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             markerSub:addOption("Clear All NPC Markers", player, onClearNPCMarkers)
         end
         
-        -- Global Debugger
         mSub:addOption("Open NPC Global Debugger", nil, DTNPC_Debugger.OnOpenWindow)
     end
 end
