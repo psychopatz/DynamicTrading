@@ -32,8 +32,15 @@ function DynamicTradingUI:createChildren()
     self.lblInfo.center = true
     self:addChild(self.lblInfo)
 
+    -- Ask Button (Organic immersion)
+    self.btnAsk = ISButton:new(20, wallY + 35, leftColW - 20, 25, "ASK WHAT THEY WANT", self, self.onAsk)
+    self.btnAsk:initialise()
+    self.btnAsk.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0}
+    self.btnAsk:setVisible(false) 
+    self:addChild(self.btnAsk)
+
     -- Lock Button (Client-side protection)
-    self.btnLock = ISButton:new(20, wallY + 35, leftColW - 20, 25, "LOCK ITEM", self, self.onToggleLock)
+    self.btnLock = ISButton:new(20, wallY + 65, leftColW - 20, 25, "LOCK ITEM", self, self.onToggleLock)
     self.btnLock:initialise()
     self.btnLock.backgroundColor = {r=0.4, g=0.4, b=0.1, a=1.0}
     self.btnLock:setEnable(false)
@@ -41,14 +48,14 @@ function DynamicTradingUI:createChildren()
     self:addChild(self.btnLock)
 
     -- Main Action Button (Buy/Sell)
-    self.btnAction = ISButton:new(20, wallY + 65, leftColW - 20, 30, "BUY ITEM", self, self.onAction)
+    self.btnAction = ISButton:new(20, wallY + 95, leftColW - 20, 30, "BUY ITEM", self, self.onAction)
     self.btnAction:initialise()
     self.btnAction.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1.0}
     self.btnAction:setEnable(false)
     self:addChild(self.btnAction)
 
     -- Chat/Log List
-    local logY = wallY + 105
+    local logY = wallY + 135
     local logH = self.height - logY - 10
 
     self.chatList = ISScrollingListBox:new(10, logY, leftColW, logH)
@@ -114,10 +121,11 @@ function DynamicTradingUI:createChildren()
             ui.btnLock:setVisible(false)
             ui.btnAction:setEnable(item.item.qty > 0)
         else
-            -- Selling Mode: Show Lock button
+            -- Selling Mode: Show Lock & Ask buttons
             ui.btnAction:setTitle("SELL ($" .. item.item.price .. ")")
             ui.btnLock:setVisible(true)
             ui.btnLock:setEnable(true)
+            if ui.btnAsk then ui.btnAsk:setVisible(true) end
             
             -- [CRITICAL SAFETY CHECK]
             -- Check if helper function exists before calling to prevent crash

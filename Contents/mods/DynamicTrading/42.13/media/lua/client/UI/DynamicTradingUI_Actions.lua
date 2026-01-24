@@ -203,9 +203,29 @@ function DynamicTradingUI:onToggleMode()
     if self.btnLock then
         self.btnLock:setVisible(not self.isBuying)
     end
+    if self.btnAsk then
+        self.btnAsk:setVisible(not self.isBuying)
+        self.btnAsk:setEnable(not self.isBuying)
+    end
     
     self:populateList()
     self.btnAction:setEnable(false)
+end
+
+function DynamicTradingUI:onAsk()
+    -- Reset activity timer
+    if self.resetIdleTimer then self:resetIdleTimer() end
+
+    local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
+    if not trader or not DynamicTrading.DialogueManager then return end
+
+    -- 1. Player ask
+    local playerMsg = DynamicTrading.DialogueManager.GeneratePlayerSellAskMessage()
+    self:queueMessage(playerMsg, false, true, 0)
+
+    -- 2. NPC reply
+    local npcMsg = DynamicTrading.DialogueManager.GenerateSellAskDialogue(trader)
+    self:queueMessage(npcMsg, false, false, 30) -- ~1.5s delay
 end
 
 function DynamicTradingUI:close()

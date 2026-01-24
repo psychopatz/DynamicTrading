@@ -201,7 +201,7 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
         return
     end
 
-    local ui = DynamicTradingUI:new(100, 100, 750, 600)
+    local ui = DynamicTradingUI:new(100, 100, 750, 700)
     ui:initialise()
     ui:addToUIManager()
     ui.traderID = traderID

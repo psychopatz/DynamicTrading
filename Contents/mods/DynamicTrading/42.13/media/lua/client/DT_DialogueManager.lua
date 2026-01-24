@@ -231,3 +231,98 @@ function DynamicTrading.DialogueManager.GeneratePlayerMessage(action, args)
     local rawText = PickRandom(pool) or "..."
     return FormatMessage(rawText, args)
 end
+
+-- =============================================================================
+-- 7. [NEW] SELL-ASK DIALOGUE GENERATOR
+-- =============================================================================
+function DynamicTrading.DialogueManager.GeneratePlayerSellAskMessage()
+    local db = GetDB()
+    local pool = (db.Player and db.Player.SellAsk) and db.Player.SellAsk or { "What are you buying?" }
+    local rawText = PickRandom(pool)
+    return FormatMessage(rawText, {})
+end
+
+-- Helper: Formats a list of tags with "and" and random suffixes
+local function FormatNaturalList(list)
+    if not list or #list == 0 then return "nothing in particular" end
+    
+    local suffixes = {"", " things", " stuffs", " items", " goods", " supplies"}
+    local processed = {}
+    for i, item in ipairs(list) do
+        local suffix = suffixes[ZombRand(#suffixes) + 1]
+        table.insert(processed, (item or "misc") .. suffix)
+    end
+    
+    if #processed == 1 then return processed[1] end
+    
+    local last = table.remove(processed)
+    return table.concat(processed, ", ") .. " and " .. last
+end
+
+function DynamicTrading.DialogueManager.GenerateSellAskDialogue(trader)
+    if not trader then return "..." end
+    
+    local db = GetDB()
+    local archetype = trader.archetype or "General"
+
+    -- 1. Try to Load Archetype File Dynamically (Decoupling Support)
+    if archetype ~= "General" then
+        -- Check if table already has data, if not try to load
+        if not db.Archetypes[archetype] or not db.Archetypes[archetype].SellAskResponse then
+            print("[DynamicTrading] Dialogue: Attempting to load archetype file: Dialogue/" .. archetype .. "/Sell_ask")
+            
+            -- PZ Lua handles 'require' paths relative to media/lua/shared or client
+            -- pcall(require) in PZ might return true even if it logs a warning but if the file is truly 
+            -- missing, the table won't be populated.
+            pcall(require, "Dialogue/" .. archetype .. "/Sell_ask")
+            
+            -- Validate if it actually worked
+            if db.Archetypes[archetype] and db.Archetypes[archetype].SellAskResponse then
+                print("[DynamicTrading] Dialogue: Successfully loaded " .. archetype)
+            else
+                -- print("[DynamicTrading] Dialogue: Info - No unique file found for " .. archetype)
+            end
+        end
+    end
+
+    -- 2. Get Archetype Data (Tags for formatting)
+    local archData = DynamicTrading.Archetypes[archetype] or DynamicTrading.Archetypes["General"]
+
+    -- 3. Format Wants
+    local wantsList = {}
+    if archData and archData.wants then
+        for tag, mult in pairs(archData.wants) do
+            table.insert(wantsList, tag)
+        end
+    end
+    local wantsStr = FormatNaturalList(wantsList)
+
+    -- 4. Format Forbid
+    local forbidList = archData and archData.forbid or {}
+    local forbidStr = FormatNaturalList(forbidList)
+
+    -- 5. Determine Message Pool (Priority: Archetype > General)
+    local pool = nil
+    local poolSource = "General (Failsafe)"
+    
+    if db.Archetypes[archetype] and db.Archetypes[archetype].SellAskResponse then
+        pool = db.Archetypes[archetype].SellAskResponse
+        poolSource = "Archetype (" .. archetype .. ")"
+    elseif db.General and db.General.SellAskResponse then
+        pool = db.General.SellAskResponse
+        poolSource = "General (Decoupled)"
+    else
+        pool = { "I'm looking for {wants}. No {forbid}." }
+        poolSource = "Hardcoded Failsafe"
+    end
+
+    print("[DynamicTrading] Dialogue: Pool Selected -> " .. poolSource)
+
+    local rawText = PickRandom(pool)
+
+    -- 6. Format Variables
+    local text = string.gsub(rawText, "{wants}", wantsStr)
+    text = string.gsub(text, "{forbid}", forbidStr)
+    
+    return FormatMessage(text, {})
+end

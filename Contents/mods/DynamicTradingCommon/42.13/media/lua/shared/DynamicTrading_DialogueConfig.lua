@@ -1,12 +1,18 @@
 DynamicTrading = DynamicTrading or {}
-DynamicTrading.Dialogue = {}
+DynamicTrading.Dialogue = DynamicTrading.Dialogue or {}
+DynamicTrading.Dialogue.Archetypes = DynamicTrading.Dialogue.Archetypes or {}
+DynamicTrading.Dialogue.Player = DynamicTrading.Dialogue.Player or {}
+DynamicTrading.Dialogue.General = DynamicTrading.Dialogue.General or {}
+
+require "Dialogue/Player/Sell_ask"
+require "Dialogue/General/Sell_ask"
 
 -- =============================================================================
 -- 1. PLAYER DIALOGUE
 -- =============================================================================
 -- The Player speaks naturally, proposing deals and confirming actions.
 -- Tone: Survivor-to-Survivor. Not a robot.
-DynamicTrading.Dialogue.Player = {
+local playerLines = {
 
     -- ACTION: Opening the Connection (Handshake) [NEW]
     Intro = {
@@ -85,14 +91,14 @@ DynamicTrading.Dialogue.Player = {
         "Just looted a {item}. How about {price} for it?",
         "I've got a {item} taking up space. Asking {price}. Over.",
         "Quick sale: {item} for {price}. Do we have a deal?",
-        "I'm willing to part with the {item} for {price}. Yes or no?"
-    }
+        }
 }
+for k,v in pairs(playerLines) do DynamicTrading.Dialogue.Player[k] = v end
 
 -- =============================================================================
 -- 2. GENERAL TRADER RESPONSES
 -- =============================================================================
-DynamicTrading.Dialogue.General = {
+local generalLines = {
 
     -- GREETINGS
     Greetings = {
@@ -264,11 +270,12 @@ DynamicTrading.Dialogue.General = {
         }
     }
 }
+for k,v in pairs(generalLines) do DynamicTrading.Dialogue.General[k] = v end
 
 -- =============================================================================
 -- 3. ARCHETYPE OVERRIDES
 -- =============================================================================
-DynamicTrading.Dialogue.Archetypes = {}
+DynamicTrading.Dialogue.Archetypes = DynamicTrading.Dialogue.Archetypes or {}
 
 -- SHERIFF (Uses Surname, authoritative)
 DynamicTrading.Dialogue.Archetypes["Sheriff"] = {
