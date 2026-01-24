@@ -219,35 +219,30 @@ function Commands.TradeTransaction(player, args)
         -- [ROBUST FIX] We now find the item by the unique ID passed from the client
         local itemObj = inv:getItemById(args.itemID)
         
-        -- [B42 ROBUST] If direct main-inv lookup fails, do a recursive search across carried and equipped bags
+        -- [B42 ROBUST] If direct main-inv lookup fails, do a recursive search across ALL carried containers
         if not itemObj then
-            local mainItems = inv:getItems()
-            for i = 0, mainItems:size() - 1 do
-                local it = mainItems:get(i)
-                if it:getID() == args.itemID then
-                    itemObj = it
-                    break
-                end
-                -- Check inside equipped containers
-                if instanceof(it, "InventoryContainer") and (player:isEquipped(it) or player:getClothingItem_Back() == it) then
-                    local bagInv = it:getItemContainer()
-                    if bagInv then
-                        local bagItems = bagInv:getItems()
-                        for j = 0, bagItems:size() - 1 do
-                            local bit = bagItems:get(j)
-                            if bit:getID() == args.itemID then
-                                itemObj = bit
-                                break
-                            end
+            local function findItemRecursive(container)
+                local items = container:getItems()
+                for i = 0, items:size() - 1 do
+                    local it = items:get(i)
+                    if it:getID() == args.itemID then
+                        return it
+                    end
+                    if instanceof(it, "InventoryContainer") then
+                        local sub = it:getItemContainer()
+                        if sub then
+                            local found = findItemRecursive(sub)
+                            if found then return found end
                         end
                     end
                 end
-                if itemObj then break end
+                return nil
             end
+            itemObj = findItemRecursive(inv)
         end
         
         if not itemObj then
-            -- Fallback: If ID search fails, try traditional search (rare)
+            -- Fallback: If ID search fails, try traditional search by type (rare but safe)
             local allItemsList = inv:getItemsFromType(itemData.item, true)
             if allItemsList and allItemsList:size() > 0 then
                 itemObj = allItemsList:get(0)

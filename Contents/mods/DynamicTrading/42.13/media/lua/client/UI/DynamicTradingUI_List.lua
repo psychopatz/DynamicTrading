@@ -144,24 +144,26 @@ function DynamicTradingUI:populateList()
         local player = getSpecificPlayer(0)
         local inv = player:getInventory()
         
-        -- [B42 ROBUST SCAN] Manually collect all items from carried and equipped containers
+        -- [B42 ROBUST SCAN] Collect all items recursively from all containers in main inventory
         local itemList = {}
-        local mainItems = inv:getItems()
-        for i = 0, mainItems:size() - 1 do
-            local item = mainItems:get(i)
-            table.insert(itemList, item)
-            
-            -- If it's a container and it's being "worn" or "held", scan its contents too
-            if instanceof(item, "InventoryContainer") and (player:isEquipped(item) or player:getClothingItem_Back() == item) then
-                local bagInv = item:getItemContainer()
-                if bagInv then
-                    local bagItems = bagInv:getItems()
-                    for j = 0, bagItems:size() - 1 do
-                        table.insert(itemList, bagItems:get(j))
+        local function collectItems(container)
+            local items = container:getItems()
+            for i = 0, items:size() - 1 do
+                local item = items:get(i)
+                table.insert(itemList, item)
+                -- If it's a container (backpack, fanny pack, bag), scan its internal inventory too
+                if instanceof(item, "InventoryContainer") then
+                    local subContainer = item:getItemContainer()
+                    if subContainer then
+                        local subItems = subContainer:getItems()
+                        for j = 0, subItems:size() - 1 do
+                            table.insert(itemList, subItems:get(j))
+                        end
                     end
                 end
             end
         end
+        collectItems(inv)
         
         local activeRadioID = -1
         if self.radioObj and instanceof(self.radioObj, "InventoryItem") then

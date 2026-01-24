@@ -80,30 +80,25 @@ function DynamicTradingUI:onAction()
                 
                 -- Let's do a quick scan or use a helper if available. 
                 -- Simple scan:
-                -- [B42 ROBUST] Manual search through main and equipped bags
-                local mainItems = playerInv:getItems()
-                for i = 0, mainItems:size() - 1 do
-                    local it = mainItems:get(i)
-                    if it:getID() == d.itemID then
-                        invItem = it
-                        break
-                    end
-                    -- Check inside categories of items too? No, for sellable items we just need bags
-                    if instanceof(it, "InventoryContainer") and (player:isEquipped(it) or player:getClothingItem_Back() == it) then
-                        local bagInv = it:getItemContainer()
-                        if bagInv then
-                            local bagItems = bagInv:getItems()
-                            for j = 0, bagItems:size() - 1 do
-                                local bit = bagItems:get(j)
-                                if bit:getID() == d.itemID then
-                                    invItem = bit
-                                    break
-                                end
+                -- [B42 ROBUST] Recursive search through all carried containers
+                local function findItemRecursive(container)
+                    local items = container:getItems()
+                    for i = 0, items:size() - 1 do
+                        local it = items:get(i)
+                        if it:getID() == d.itemID then
+                            return it
+                        end
+                        if instanceof(it, "InventoryContainer") then
+                            local sub = it:getItemContainer()
+                            if sub then
+                                local found = findItemRecursive(sub)
+                                if found then return found end
                             end
                         end
                     end
-                    if invItem then break end
+                    return nil
                 end
+                invItem = findItemRecursive(playerInv)
             end
             
             if invItem and instanceof(invItem, "InventoryContainer") then
