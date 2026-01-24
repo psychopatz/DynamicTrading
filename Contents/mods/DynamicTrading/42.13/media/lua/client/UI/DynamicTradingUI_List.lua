@@ -34,16 +34,17 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     listbox:drawRectBorder(0, y, width, height, 0.1, 1, 1, 1)
 
     -- 4. DRAW ICON
-    local scriptItem = getScriptManager():getItem(d.data.item)
-    if scriptItem then
-        local icon = scriptItem:getIcon()
-        if icon then
-            local tex = getTexture("Item_" .. icon) or getTexture(icon)
-            if tex then
-                local alpha = isLocked and 0.4 or 1.0
-                listbox:drawTextureScaled(tex, 6, y + 4, 32, 32, alpha, 1, 1, 1)
-            end
-        end
+    local invItem = nil
+    if d.itemID and d.itemID ~= -1 then
+        local player = getSpecificPlayer(0)
+        invItem = player:getInventory():getItemById(d.itemID)
+    end
+    
+    local tex = DynamicTradingUI.GetItemTexture(d.data.item, invItem)
+
+    if tex then
+        local alpha = isLocked and 0.4 or 1.0
+        listbox:drawTextureScaled(tex, 6, y + 4, 32, 32, alpha, 1, 1, 1)
     end
 
     -- 5. DRAW NAME & LOCK STATUS

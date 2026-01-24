@@ -90,16 +90,9 @@ function DT_SellConfirmationModal.drawItem(list, y, item, alt)
     
     -- Icon
     if it then
-        local icon = it:getIcon() or it:getTexture()
-        if icon then
-            local tex = icon
-            if type(icon) == "string" then
-                tex = getTexture("Item_" .. icon) or getTexture(icon)
-            end
-            
-            if tex then
-                list:drawTextureScaled(tex, 4, y + 2, 20, 20, 1, 1, 1, 1)
-            end
+        local tex = DynamicTradingUI.GetItemTexture(it:getFullType(), it)
+        if tex then
+            list:drawTextureScaled(tex, 4, y + 2, 20, 20, 1, 1, 1, 1)
         end
     end
 

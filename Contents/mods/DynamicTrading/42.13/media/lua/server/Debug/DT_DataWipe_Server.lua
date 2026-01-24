@@ -10,7 +10,7 @@ if isClient() then return end -- Safety check: Only load on Server
 local ServerWipe = {}
 ServerWipe.TargetKeys = {
     "DTNPC_GlobalList",
-    "DynamicTrading_Engine_v1.1",
+    "DynamicTrading_Engine_v1.2",
     "DynamicTrading_Stock",
     "DynamicTrading_Roster",
     "DynamicTrading_Factions"
@@ -51,7 +51,7 @@ local function OnClientCommand(module, command, player, args)
             table.insert(keysToWipe, "DynamicTrading_Roster")
             table.insert(keysToWipe, "DTNPC_GlobalList")
         elseif target == "ENGINE" then
-            table.insert(keysToWipe, "DynamicTrading_Engine_v1.1")
+            table.insert(keysToWipe, "DynamicTrading_Engine_v1.2")
         end
 
         if #keysToWipe == 0 then

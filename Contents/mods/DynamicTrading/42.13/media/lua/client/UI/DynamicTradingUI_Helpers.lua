@@ -238,3 +238,69 @@ function DynamicTradingUI:isItemLocked(itemID)
     end
     return false
 end
+
+-- =============================================================================
+-- 6. ICON & TEXTURE ENGINE (V2 ROBUST)
+-- =============================================================================
+local function split(str, sep)
+    local result = {}
+    for s in string.gmatch(str, "([^" .. sep .. "]+)") do
+        table.insert(result, s)
+    end
+    return result
+end
+
+function DynamicTradingUI.GetItemTexture(fullType, itemObj)
+    -- 1. ELEGANT Build 42 APPROACH (Item Instance)
+    if itemObj then
+        -- Build 42: getTex() returns the actual resolved texture (including variations/coloring)
+        if itemObj.getTex then
+            local tex = itemObj:getTex()
+            if tex and tex:getName() ~= "Question_Highlight" then
+                return tex
+            end
+        end
+        
+        -- Build 42: getIcon() can return a Texture object for dynamic items
+        local icon = itemObj:getIcon()
+        if type(icon) ~= "string" and icon then
+            return icon
+        end
+        
+        -- Fallback: standard getTexture()
+        local tex = itemObj:getTexture()
+        if tex and tex:getName() ~= "Question_Highlight" then
+            return tex
+        end
+    end
+    
+    -- 2. DYNAMIC LOOKUP (Script/Trader Items)
+    if fullType then
+        local script = getScriptManager():getItem(fullType)
+        if script then
+            local iconStr = script:getIcon()
+            if iconStr and iconStr ~= "" then
+                -- Standard search
+                local tex = getTexture("Item_" .. iconStr) or getTexture(iconStr)
+                if tex then return tex end
+                
+                -- B42 Apparel Path Fallback
+                tex = getTexture("media/textures/Item_" .. iconStr .. ".png")
+                if tex then return tex end
+            end
+            
+            -- Guess based on fullType (last resort)
+            local parts = split(fullType, "%.")
+            local shortName = parts[#parts]
+            if shortName then
+                local guesses = { shortName, "Bag_" .. shortName, "Item_" .. shortName }
+                for _, g in ipairs(guesses) do
+                    local tex = getTexture("Item_" .. g) or getTexture(g)
+                    if tex then return tex end
+                end
+            end
+        end
+    end
+    
+    return nil
+end

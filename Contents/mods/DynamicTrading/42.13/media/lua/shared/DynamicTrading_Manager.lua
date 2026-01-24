@@ -21,7 +21,7 @@ end
 -- 2. DATA MANAGEMENT (PURE INITIALIZATION)
 -- =============================================================================
 function DynamicTrading.Manager.GetData()
-    local data = ModData.getOrCreate("DynamicTrading_Engine_v1.1")
+    local data = ModData.getOrCreate("DynamicTrading_Engine_v1.2")
     
     -- Initialize Sub-Tables
     if not data.Traders then data.Traders = {} end
@@ -104,7 +104,7 @@ function DynamicTrading.Manager.CheckDailyReset()
         print("[DynamicTrading] SERVER: Reset Complete. New Limit: " .. data.DailyCycle.dailyTraderLimit)
 
         -- 5. Force Sync to ALL Clients
-        ModData.transmit("DynamicTrading_Engine_v1.1")
+        ModData.transmit("DynamicTrading_Engine_v1.2")
     end
 end
 
@@ -112,7 +112,7 @@ end
 -- 4. DATA SYNC (CLIENT RECEPTION)
 -- =============================================================================
 local function OnReceiveGlobalModData(key, data)
-    if key == "DynamicTrading_Engine_v1.1" then
+    if key == "DynamicTrading_Engine_v1.2" then
         ModData.add(key, data)
         DynamicTrading.Manager.RebuildActiveCache(data)
     end
@@ -141,7 +141,7 @@ end
 function DynamicTrading.Manager.IncrementDailyCounter()
     local data = DynamicTrading.Manager.GetData()
     data.DailyCycle.currentTradersFound = (data.DailyCycle.currentTradersFound or 0) + 1
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 end
 
 -- =============================================================================
@@ -264,7 +264,7 @@ function DynamicTrading.Manager.ProcessEvents()
     end
 
     if changed then
-        ModData.transmit("DynamicTrading_Engine_v1.1")
+        ModData.transmit("DynamicTrading_Engine_v1.2")
         DynamicTrading.Manager.RebuildActiveCache(data)
     end
 end
@@ -284,7 +284,7 @@ function DynamicTrading.Manager.AddLog(text, category)
     local timeStr = string.format("%02d/%02d %02d:%02d", gt:getDay()+1, gt:getMonth()+1, gt:getHour(), gt:getMinutes())
     table.insert(data.NetworkLogs, 1, { text = text, cat = category or "info", time = timeStr })
     while #data.NetworkLogs > 12 do table.remove(data.NetworkLogs) end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 end
 
 -- =============================================================================
@@ -354,7 +354,7 @@ DynamicTrading.Manager.RestockTrader(uniqueID)
 DynamicTrading.Manager.IncrementDailyCounter()
 DynamicTrading.Manager.AddLog("Signal Acquired: " .. name, "good")
 
-if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
+if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 
 return data.Traders[uniqueID]
 end
@@ -396,7 +396,7 @@ function DynamicTrading.Manager.UpdateHeat(category, amount)
     data.globalHeat[category] = current + amount
     if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
     if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 end
 
 function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
@@ -408,7 +408,7 @@ function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
     local current = data.globalHeat[category] or 0
     data.globalHeat[category] = current + (sensitivity * qty)
     if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 end
 
 function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
@@ -416,7 +416,7 @@ function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
     local current = data.globalHeat[category] or 0
     data.globalHeat[category] = current - (0.01 * qty)
     if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 end
 
 function DynamicTrading.Manager.CanScan(player)
@@ -438,5 +438,5 @@ function DynamicTrading.Manager.SetScanTimestamp(player)
     if not player then return end
     local data = DynamicTrading.Manager.GetData()
     data.scanCooldowns[player:getUsername()] = GameTime:getInstance():getWorldAgeHours()
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.1") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 end

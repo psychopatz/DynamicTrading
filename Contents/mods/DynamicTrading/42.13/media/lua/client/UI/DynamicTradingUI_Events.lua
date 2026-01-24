@@ -2,7 +2,7 @@ require "DT_DialogueManager"
 
 -- 1. DATA SYNC (Global Mod Data updates)
 local function OnDataSync(key, data)
-    if key == "DynamicTrading_Engine_v1.1" then
+    if key == "DynamicTrading_Engine_v1.2" then
         if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
             DynamicTradingUI.instance:populateList()
         end

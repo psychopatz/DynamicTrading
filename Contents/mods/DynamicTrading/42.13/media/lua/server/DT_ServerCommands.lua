@@ -158,7 +158,7 @@ end
 function Commands.RequestFullState(player, args)
     local data = DynamicTrading.Manager.GetData()
     if data then
-        ModData.transmit("DynamicTrading_Engine_v1.1")
+        ModData.transmit("DynamicTrading_Engine_v1.2")
     end
 end
 
@@ -409,7 +409,7 @@ local function Server_OnHourlyTick()
     end
     
     -- Sync if traders removed
-    if changesMade then ModData.transmit("DynamicTrading_Engine_v1.1") end
+    if changesMade then ModData.transmit("DynamicTrading_Engine_v1.2") end
 
     -- 3. Event System Check (8 AM)
     if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then
