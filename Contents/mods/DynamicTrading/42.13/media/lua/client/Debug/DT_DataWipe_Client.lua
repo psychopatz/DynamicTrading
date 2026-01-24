@@ -5,14 +5,22 @@
 -- Handles the network feedback loop.
 -- =============================================================================
 
-local function RequestServerWipe(playerObj)
+local function RequestServerWipe(playerObj, target)
     if not playerObj then return end
     
-    -- Send signal to Server (See: DT_DataWipe_Server.lua)
-    -- In Singleplayer, this sends to the internal server logic.
-    sendClientCommand(playerObj, "DynamicTrading", "WipeSystem", {})
+    local targetLabel = target or "ALL DATA"
+    local warningText = "ARE YOU SURE YOU WANT TO WIPE " .. targetLabel .. "?\n\nThis action is PERMANENT and cannot be undone.\nA server restart is highly recommended afterwards."
     
-    playerObj:Say("Requesting System Wipe...")
+    local function doWipe(this, button)
+        if button.internal == "YES" then
+            sendClientCommand(playerObj, "DynamicTrading", "WipeSystem", { target = target })
+            playerObj:Say("Requesting System Wipe (" .. targetLabel .. ")...")
+        end
+    end
+
+    local modal = ISModalDialog:new(0, 0, 350, 150, warningText, true, nil, doWipe, nil)
+    modal:initialise()
+    modal:addToUIManager()
 end
 
 -- =============================================================================
@@ -36,7 +44,7 @@ local function OnServerCommand(module, command, args)
             
             -- Warning about reload
             local modal = ISModalDialog:new(0, 0, 350, 150, 
-                "Dynamic Trading data has been wiped from the server.\n\nIt is HIGHLY RECOMMENDED to restart the server/session now to clear memory cache.", 
+                args.msg .. "\n\nIt is HIGHLY RECOMMENDED to restart the server/session now to clear memory cache.", 
                 true, nil, nil, nil)
             modal:initialise()
             modal:addToUIManager()
@@ -62,10 +70,9 @@ local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
     local playerObj = getSpecificPlayer(player)
     if not playerObj then return end
 
-    -- Check for Admin/Debug privileges if you want to hide the button entirely from normal users
-    -- For now, we leave it visible but the Server script will block execution if unauthorized.
+    -- Check for Admin/Debug privileges
     if not isDebugEnabled() and playerObj:getAccessLevel() == "None" then
-        -- Optional: return here to hide the menu for normal players
+        return
     end
 
     -- 1. Main Option
@@ -73,14 +80,41 @@ local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
     local subMenu = context:getNew(context)
     context:addSubMenu(debugOption, subMenu)
 
-    -- 2. Wipe Option
-    local wipeOption = subMenu:addOption("WIPE ALL SERVER DATA (Hazardous)", playerObj, RequestServerWipe)
-    
-    -- 3. Tooltip
-    local toolTip = ISWorldObjectContextMenu.addToolTip()
-    toolTip:setName("SERVER COMMAND")
-    toolTip.description = "Sends a command to the Server/Host to delete all persistent Dynamic Trading data.\n\n- Requires Admin Access\n- Irreversible\n- Requires Server Restart"
-    wipeOption.toolTip = toolTip
+    -- 2. Wipe Options
+    -- A. Wipe ALL
+    local wipeAll = subMenu:addOption("WIPE ALL DATA (HAZARDOUS)", playerObj, RequestServerWipe, "ALL")
+    local toolTipAll = ISWorldObjectContextMenu.addToolTip()
+    toolTipAll:setName("DANGER: WIPE ALL")
+    toolTipAll.description = "Deletes ALL Dynamic Trading Data.\n- Stocks\n- Factions\n- Roster\n- Engine Data\n\nREQUIRES SERVER RESTART."
+    wipeAll.toolTip = toolTipAll
+
+    -- B. Wipe STOCKS
+    local wipeStocks = subMenu:addOption("Wipe Stocks Only", playerObj, RequestServerWipe, "STOCKS")
+    local toolTipStocks = ISWorldObjectContextMenu.addToolTip()
+    toolTipStocks:setName("Wipe Stocks")
+    toolTipStocks.description = "Reset valid storage, market values, and stock data."
+    wipeStocks.toolTip = toolTipStocks
+
+    -- C. Wipe FACTIONS
+    local wipeFactions = subMenu:addOption("Wipe Factions Only", playerObj, RequestServerWipe, "FACTIONS")
+    local toolTipFactions = ISWorldObjectContextMenu.addToolTip()
+    toolTipFactions:setName("Wipe Factions")
+    toolTipFactions.description = "Reset faction standings, generated factions, and alliances."
+    wipeFactions.toolTip = toolTipFactions
+
+    -- D. Wipe ROSTER
+    local wipeRoster = subMenu:addOption("Wipe NPC Roster Only", playerObj, RequestServerWipe, "ROSTER")
+    local toolTipRoster = ISWorldObjectContextMenu.addToolTip()
+    toolTipRoster:setName("Wipe NPC Roster")
+    toolTipRoster.description = "Delete all stored NPC data (Soul & Puppet data)."
+    wipeRoster.toolTip = toolTipRoster
+
+    -- E. Wipe ENGINE (Legacy)
+    local wipeEngine = subMenu:addOption("Wipe Engine Data (Legacy)", playerObj, RequestServerWipe, "ENGINE")
+    local toolTipEngine = ISWorldObjectContextMenu.addToolTip()
+    toolTipEngine:setName("Wipe Engine Data")
+    toolTipEngine.description = "Delete legacy engine data (DynamicTrading_Engine_v1.1)."
+    wipeEngine.toolTip = toolTipEngine
 end
 
 Events.OnFillWorldObjectContextMenu.Add(OnFillWorldObjectContextMenu)
