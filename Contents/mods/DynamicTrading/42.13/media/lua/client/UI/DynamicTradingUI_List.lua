@@ -182,25 +182,32 @@ function DynamicTradingUI:populateList()
                         end
 
                         if masterKey then
-                            local itemData = DynamicTrading.Config.MasterList[masterKey]
-                            local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
-                            if price > 0 then
-                                local cat = itemData.tags[1] or "Misc"
-                                if not categorized[cat] then
-                                    categorized[cat] = {}
-                                    table.insert(categories, cat)
-                                end
-                                local priceMod = DynamicTrading.Events.GetPriceModifier and DynamicTrading.Events.GetPriceModifier(itemData.tags) or 1.0
+                            -- [FIX] Skip items that exist in trader's stock catalog (prevent reselling bought items)
+                            -- Check if key exists in stocks at all, not just if qty > 0
+                            local isInTraderStock = trader.stocks and trader.stocks[masterKey] ~= nil
+                            if isInTraderStock then
+                                -- Skip this item - it's a type the trader sells
+                            else
+                                local itemData = DynamicTrading.Config.MasterList[masterKey]
+                                local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
+                                if price > 0 then
+                                    local cat = itemData.tags[1] or "Misc"
+                                    if not categorized[cat] then
+                                        categorized[cat] = {}
+                                        table.insert(categories, cat)
+                                    end
+                                    local priceMod = DynamicTrading.Events.GetPriceModifier and DynamicTrading.Events.GetPriceModifier(itemData.tags) or 1.0
 
-                                table.insert(categorized[cat], {
-                                    key = masterKey,
-                                    itemID = invItem:getID(),
-                                    name = invItem:getDisplayName(),
-                                    price = tonumber(price) or 0,
-                                    data = itemData,
-                                    isBuy = false,
-                                    priceMod = priceMod
-                                })
+                                    table.insert(categorized[cat], {
+                                        key = masterKey,
+                                        itemID = invItem:getID(),
+                                        name = invItem:getDisplayName(),
+                                        price = tonumber(price) or 0,
+                                        data = itemData,
+                                        isBuy = false,
+                                        priceMod = priceMod
+                                    })
+                                end
                             end
                         end
                     end

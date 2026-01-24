@@ -157,6 +157,12 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
             end
         )
         
+        -- [FIX] Use static Market Info icon as requested
+        local deviceIcon = getTexture("media/ui/Icon_MarketInfo.png")
+        if deviceIcon and option then
+            option.iconTexture = deviceIcon
+        end
+        
         local d = radioItem:getDeviceData()
         if not d or not d:getIsTurnedOn() or d:getPower() <= 0.001 then
             option.notAvailable = true
@@ -200,6 +206,12 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
                 end
             end
         )
+        
+        -- [FIX] Use static Market Info icon for HAM as well
+        local hamIcon = getTexture("media/ui/Icon_MarketInfo.png")
+        if hamIcon and option then
+            option.iconTexture = hamIcon
+        end
         
         if not isOperational then
             option.notAvailable = true

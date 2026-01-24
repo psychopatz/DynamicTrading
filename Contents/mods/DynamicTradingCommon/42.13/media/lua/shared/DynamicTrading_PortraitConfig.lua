@@ -127,7 +127,8 @@ else
 end
 
 -- NOTE: In texture paths, use forward slashes.
-return "Portraits/" .. target .. "/" .. gender .. "/"
+-- NOTE: In texture paths, use forward slashes.
+return "media/ui/Portraits/" .. target .. "/" .. gender .. "/"
 
 
 end

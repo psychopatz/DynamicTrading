@@ -241,6 +241,13 @@ local function WalletContextMenu(player, context, items)
                     end
                 end
             )
+            
+            -- [NEW] Add dice icon to signify lottery/RNG aspect
+            local diceIcon = getTexture("Item_Dice")
+            if diceIcon and option then
+                option.iconTexture = diceIcon
+            end
+            
             break 
         end
     end

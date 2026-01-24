@@ -4,6 +4,7 @@ require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "DynamicTrading_Manager"
 require "DynamicTrading_Config"
+require "DynamicTrading_PortraitConfig"
 require "DynamicTradingInfoUI" 
 require "Utils/DT_StringUtils" -- [NEW] Utils for text wrapping
 
@@ -48,7 +49,7 @@ function DynamicTradingTraderListUI:createChildren()
     self.listbox:initialise()
     self.listbox:setAnchorRight(true)
     self.listbox.font = UIFont.Small
-    self.listbox.itemheight = 30
+    self.listbox.itemheight = 38 -- [CHANGED] Slightly increased to fit larger portrait icons
     self.listbox.drawBorder = true
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
     self.listbox.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.9}
@@ -283,13 +284,35 @@ function DynamicTradingTraderListUI.drawItem(this, y, item, alt)
     this:drawRectBorder(0, y, width, height, 0.1, 1, 1, 1)
 
     if not item.item.traderID then
-        this:drawText(item.text, 10, y + 8, 0.7, 0.7, 0.7, 1, this.font)
+        this:drawText(item.text, 10, y + 12, 0.7, 0.7, 0.7, 1, this.font)
         return y + height
     end
 
-    local icon = getTexture("Item_WalkieTalkie1")
-    if icon then this:drawTextureScaled(icon, 6, y + 5, 20, 20, 1, 1, 1, 1) end
-    this:drawText(item.text, 35, y + 8, 0.9, 0.9, 0.9, 1, this.font)
+    -- [NEW] Load and display portrait icon
+    local data = DynamicTrading.Manager.GetData()
+    local trader = data.Traders and data.Traders[item.item.traderID]
+    local tex = nil
+    
+    if trader and DynamicTrading.Portraits then
+        local archetype = trader.archetype or "General"
+        local gender = trader.gender or "Male"
+        local portraitID = trader.portraitID or 1
+        
+        local pathFolder = DynamicTrading.Portraits.GetPathFolder(archetype, gender)
+        local fullPath = pathFolder .. tostring(portraitID) .. ".png"
+        tex = getTexture(fullPath)
+    end
+    
+    -- Fallback to walkie-talkie icon if portrait not found
+    if not tex then
+        tex = getTexture("Item_WalkieTalkie1")
+    end
+    
+    if tex then 
+        this:drawTextureScaled(tex, 5, y + 5, 28, 28, 1, 1, 1, 1) 
+    end
+    
+    this:drawText(item.text, 38, y + 12, 1, 1, 1, 1, this.font)
     return y + height
 end
 
