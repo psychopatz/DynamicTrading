@@ -219,11 +219,38 @@ function Commands.TradeTransaction(player, args)
         -- [ROBUST FIX] We now find the item by the unique ID passed from the client
         local itemObj = inv:getItemById(args.itemID)
         
+        -- [B42 ROBUST] If direct main-inv lookup fails, do a recursive search across carried and equipped bags
+        if not itemObj then
+            local mainItems = inv:getItems()
+            for i = 0, mainItems:size() - 1 do
+                local it = mainItems:get(i)
+                if it:getID() == args.itemID then
+                    itemObj = it
+                    break
+                end
+                -- Check inside equipped containers
+                if instanceof(it, "InventoryContainer") and (player:isEquipped(it) or player:getClothingItem_Back() == it) then
+                    local bagInv = it:getItemContainer()
+                    if bagInv then
+                        local bagItems = bagInv:getItems()
+                        for j = 0, bagItems:size() - 1 do
+                            local bit = bagItems:get(j)
+                            if bit:getID() == args.itemID then
+                                itemObj = bit
+                                break
+                            end
+                        end
+                    end
+                end
+                if itemObj then break end
+            end
+        end
+        
         if not itemObj then
             -- Fallback: If ID search fails, try traditional search (rare)
-            local allItems = inv:getItemsFromType(itemData.item, true)
-            if allItems and allItems:size() > 0 then
-                itemObj = allItems:get(0)
+            local allItemsList = inv:getItemsFromType(itemData.item, true)
+            if allItemsList and allItemsList:size() > 0 then
+                itemObj = allItemsList:get(0)
             end
         end
         
@@ -246,6 +273,14 @@ function Commands.TradeTransaction(player, args)
         local unitPrice = DynamicTrading.Economy.GetSellPrice(itemObj, key, trader.archetype)
         local totalGain = unitPrice * clientQty
         local itemNameForLog = itemObj:getDisplayName()
+
+        -- [FIX] Ensure item is unequipped before removal to prevent duplication (Ghost Item Glitch)
+        if player:getPrimaryHandItem() == itemObj then
+            player:setPrimaryHandItem(nil)
+        end
+        if player:getSecondaryHandItem() == itemObj then
+            player:setSecondaryHandItem(nil)
+        end
 
         -- 2. Execute Trade
         ServerRemoveItem(itemObj)

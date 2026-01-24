@@ -143,14 +143,32 @@ function DynamicTradingUI:populateList()
         self.btnSwitch:setTitle("SWITCH TO BUYING")
         local player = getSpecificPlayer(0)
         local inv = player:getInventory()
-        local items = inv:getItems()
+        
+        -- [B42 ROBUST SCAN] Manually collect all items from carried and equipped containers
+        local itemList = {}
+        local mainItems = inv:getItems()
+        for i = 0, mainItems:size() - 1 do
+            local item = mainItems:get(i)
+            table.insert(itemList, item)
+            
+            -- If it's a container and it's being "worn" or "held", scan its contents too
+            if instanceof(item, "InventoryContainer") and (player:isEquipped(item) or player:getClothingItem_Back() == item) then
+                local bagInv = item:getItemContainer()
+                if bagInv then
+                    local bagItems = bagInv:getItems()
+                    for j = 0, bagItems:size() - 1 do
+                        table.insert(itemList, bagItems:get(j))
+                    end
+                end
+            end
+        end
+        
         local activeRadioID = -1
         if self.radioObj and instanceof(self.radioObj, "InventoryItem") then
             activeRadioID = self.radioObj:getID()
         end
 
-        for i = 0, items:size() - 1 do
-            local invItem = items:get(i)
+        for _, invItem in ipairs(itemList) do
             if invItem then 
                 local fullType = invItem:getFullType()
                 if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
