@@ -32,16 +32,8 @@ function PsychopatzDebugWindow:createChildren()
     -- 1. SEQUENTIAL CHECKBOXES
     -- ==========================================
     
-    -- Option A: Spawn
-    self.chkSpawn = ISTickBox:new(padX, currentY, elementWidth, 20, "", self, nil)
-    self.chkSpawn:initialise(); self.chkSpawn:instantiate()
-    self.chkSpawn:addOption("Spawn Item")
-    self.chkSpawn:setSelected(1, false) 
-    self.chkSpawn:setFont(UIFont.Small)
-    self:addChild(self.chkSpawn)
-    currentY = currentY + lineHeight
-
-    -- Option B: Heal
+    
+    -- Option A: Heal
     self.chkHeal = ISTickBox:new(padX, currentY, elementWidth, 20, "", self, nil)
     self.chkHeal:initialise(); self.chkHeal:instantiate()
     self.chkHeal:addOption("Heal Wounds")
@@ -50,7 +42,7 @@ function PsychopatzDebugWindow:createChildren()
     self:addChild(self.chkHeal)
     currentY = currentY + lineHeight
 
-    -- Option C: Stats
+    -- Option B: Stats
     self.chkStats = ISTickBox:new(padX, currentY, elementWidth, 20, "", self, nil)
     self.chkStats:initialise(); self.chkStats:instantiate()
     self.chkStats:addOption("Reset Stats")
@@ -58,6 +50,15 @@ function PsychopatzDebugWindow:createChildren()
     self.chkStats:setFont(UIFont.Small)
     self:addChild(self.chkStats)
     currentY = currentY + lineHeight + 5 
+
+    -- Option C: Spawn
+    self.chkSpawn = ISTickBox:new(padX, currentY, elementWidth, 20, "", self, nil)
+    self.chkSpawn:initialise(); self.chkSpawn:instantiate()
+    self.chkSpawn:addOption("Spawn Item")
+    self.chkSpawn:setSelected(1, false) 
+    self.chkSpawn:setFont(UIFont.Small)
+    self:addChild(self.chkSpawn)
+    currentY = currentY + lineHeight
 
     -- ==========================================
     -- 2. LABELS ROW
