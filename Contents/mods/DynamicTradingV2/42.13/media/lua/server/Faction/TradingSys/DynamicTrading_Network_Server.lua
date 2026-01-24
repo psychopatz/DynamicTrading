@@ -14,6 +14,7 @@ require "DynamicTrading_Factions"
 require "DynamicTrading_Roster"
 require "DynamicTrading_Stock"
 require "DynamicTrading_Engine"
+require "DynamicTrading_Archetypes"
 
 -- =============================================================================
 -- 1. COMMAND HANDLERS

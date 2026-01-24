@@ -1,8 +1,8 @@
 DynamicTrading = DynamicTrading or {}
-DynamicTrading.Config = {}
-DynamicTrading.Config.MasterList = {} 
-DynamicTrading.Config.Tags = {}
-DynamicTrading.Archetypes = {}
+DynamicTrading.Config = DynamicTrading.Config or {}
+DynamicTrading.Config.MasterList = DynamicTrading.Config.MasterList or {} 
+DynamicTrading.Config.Tags = DynamicTrading.Config.Tags or {}
+DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
 -- [Keep RadioTiers table as is...]
 DynamicTrading.Config.RadioTiers = {

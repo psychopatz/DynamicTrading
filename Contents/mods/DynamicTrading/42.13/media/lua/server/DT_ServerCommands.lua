@@ -7,6 +7,7 @@
 require "DynamicTrading_Manager"
 require "DynamicTrading_Events"
 require "DynamicTrading_Economy"
+require "DynamicTrading_Archetypes"
 
 -- 1. GLOBAL TABLE REGISTRATION
 -- We expose this table globally so Singleplayer Client scripts can call functions directly
@@ -374,12 +375,24 @@ function Commands.AttemptScan(player, args)
     end
 
     local finalChance = (baseChance * radioTier * skillBonus * eventMult) / penaltyFactor
-    local roll = ZombRand(100) + 1
     
+    -- [DEBUG PRINTS]
+    print("[DynamicTrading] Scanning for traders...")
+    print("  - Base Chance: " .. baseChance)
+    print("  - Radio Tier: " .. radioTier)
+    print("  - Skill Bonus: " .. skillBonus)
+    print("  - Event Mult: " .. eventMult)
+    print("  - Penalty Factor: " .. penaltyFactor .. " (Found: " .. found .. ")")
+    print("  - Final Calculated Chance: " .. string.format("%.2f", finalChance) .. "%")
+    
+    local roll = ZombRand(100) + 1
+    print("  - Roll: " .. roll)
+
     -- 5. Roll Dice
     if roll <= finalChance then
         local trader = DynamicTrading.Manager.GenerateRandomContact()
         if trader then
+            print("  - SUCCESS! Found: " .. trader.name .. " (" .. trader.archetype .. ")")
             SendResponse(player, "ScanResult", { 
                 status = "SUCCESS", 
                 name = trader.name,
@@ -387,9 +400,16 @@ function Commands.AttemptScan(player, args)
                 targetUser = targetUser
             })
         else
+            print("  - FAILED: Generated trader was nil (Archetypes empty?)")
+            local count = 0
+            if DynamicTrading.Archetypes then
+                for _ in pairs(DynamicTrading.Archetypes) do count = count + 1 end
+            end
+            print("  - Registered Archetypes Count: " .. count)
             SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         end
     else
+        print("  - FAILED: Roll > Final Chance")
         SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
     end
 end
