@@ -267,6 +267,47 @@ function Commands.TradeTransaction(player, args)
 end
 
 
+-- COMMAND: UnpackContainer
+-- Description: Drops everything inside a bag to the player's feet
+function Commands.UnpackContainer(player, args)
+    if not player or not args.itemID then return end
+    
+    local inv = player:getInventory()
+    local bag = inv:getItemById(args.itemID)
+    
+    if not bag or not instanceof(bag, "InventoryContainer") then return end
+    
+    local container = bag:getItemContainer()
+    local items = container:getItems()
+    local square = player:getSquare()
+    
+    if not square or not items or items:isEmpty() then return end
+    
+    -- We must iterate backwards because we are removing items
+    for i = items:size()-1, 0, -1 do
+        local item = items:get(i)
+        if item then
+            -- 1. Remove from bag
+            container:DoRemoveItem(item)
+            
+            -- Sync Removal (MP)
+            if ShouldSendNetworkPackets() then
+                sendRemoveItemFromContainer(container, item)
+            end
+            
+            -- 2. Add to world (at player's location)
+            -- We use ZombRand small offsets to avoid perfect stacking
+            local offX = (ZombRand(100) / 100) * 0.4 - 0.2
+            local offY = (ZombRand(100) / 100) * 0.4 - 0.2
+            
+            square:AddWorldInventoryItem(item, 0.5 + offX, 0.5 + offY, 0)
+        end
+    end
+    
+    -- Notify Client to refresh UI
+    SendResponse(player, "UnpackResult", { success = true })
+end
+
 -- COMMAND: AttemptScan
 -- Description: The RNG roll for finding new traders
 function Commands.AttemptScan(player, args)

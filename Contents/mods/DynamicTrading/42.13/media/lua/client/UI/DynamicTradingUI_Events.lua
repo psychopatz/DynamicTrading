@@ -107,6 +107,10 @@ local function OnServerCommand(module, command, args)
             -- Force refresh
             ui:populateList()
         end
+    elseif command == "UnpackResult" then
+        if DynamicTradingUI.instance and DynamicTradingUI.instance:isVisible() then
+            DynamicTradingUI.instance:populateList()
+        end
     end
 end
 

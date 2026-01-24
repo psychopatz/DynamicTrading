@@ -61,6 +61,49 @@ function DynamicTradingUI:onAction()
         end
     end
 
+    -- =============================================================================
+    -- SELLING PRE-CHECKS (Local)
+    -- =============================================================================
+    if not self.isBuying then
+        -- 1. Check if it's a non-empty container
+        if d.itemID and d.itemID ~= -1 then
+            local invItem = nil
+            -- Try to find the item in player inventory
+            if player then
+                local playerInv = player:getInventory()
+                -- Warning: getItems() returns an ArrayList, finding by ID is O(N) but necessary unless we trust the object reference persists
+                -- We can try to assume d.item or re-fetch. 
+                -- Ideally we should iterate to be safe or use object reference if available.
+                -- However, for the UI loop we relied on population. Let's iterate briefly or trust we can use the object if we had it.
+                -- 'd' in this context is the list item data table, NOT the InventoryItem object directly.
+                -- But wait, inside populateList we stored 'itemID'.
+                
+                -- Let's do a quick scan or use a helper if available. 
+                -- Simple scan:
+                local items = playerInv:getItems()
+                for i=0, items:size()-1 do
+                    local it = items:get(i)
+                    if it:getID() == d.itemID then
+                        invItem = it
+                        break
+                    end
+                end
+            end
+            
+            if invItem and instanceof(invItem, "InventoryContainer") then
+                local container = invItem:getItemContainer()
+                if container and container:getItems() and not container:getItems():isEmpty() then
+                    -- IT IS POPULATED!
+                    -- Show Modal Interception
+                    if DT_SellConfirmationModal then
+                        DT_SellConfirmationModal.Show(invItem, self, self.onConfirmSell, d, self.onUnpackContainer)
+                        return -- HALT execution here.
+                    end
+                end
+            end
+        end
+    end
+
     -- CONSTRUCT ARGUMENTS (If checks pass, send to server)
     local args = {
         type = self.isBuying and "buy" or "sell",
@@ -73,6 +116,34 @@ function DynamicTradingUI:onAction()
 
     -- EXECUTE
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
+end
+
+function DynamicTradingUI:onConfirmSell(invItem, data)
+    -- Callback from Modal
+    if not data then return end
+    
+    local player = getSpecificPlayer(0)
+    local args = {
+        type = "sell",
+        traderID = self.traderID,
+        key = data.key,
+        category = data.data and data.data.tags[1] or "Misc",
+        qty = 1,
+        itemID = data.itemID or -1
+    }
+    
+    sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
+end
+
+function DynamicTradingUI:onUnpackContainer(invItem)
+    if not invItem then return end
+    
+    local player = getSpecificPlayer(0)
+    local args = {
+        itemID = invItem:getID()
+    }
+    
+    sendClientCommand(player, "DynamicTrading", "UnpackContainer", args)
 end
 
 -- =============================================================================

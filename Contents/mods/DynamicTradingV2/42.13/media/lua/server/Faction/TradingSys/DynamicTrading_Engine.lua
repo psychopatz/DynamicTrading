@@ -1,7 +1,7 @@
 if isClient() then return end -- Server Side Only
 
 DynamicTrading_Engine = {}
-local MOD_DATA_KEY = "DynamicTrading_Engine_v1.1"
+local MOD_DATA_KEY = "DynamicTrading_Engine_v2"
 
 -- Default Schema
 local defaultData = {

@@ -16,6 +16,7 @@ require "DynamicTradingUI_Layout"
 require "DynamicTradingUI_List"
 require "DynamicTradingUI_Actions"
 require "DynamicTradingUI_Events"
+require "DT_SellConfirmationModal"
 
 DynamicTradingUI = ISCollapsableWindow:derive("DynamicTradingUI")
 DynamicTradingUI.instance = nil
