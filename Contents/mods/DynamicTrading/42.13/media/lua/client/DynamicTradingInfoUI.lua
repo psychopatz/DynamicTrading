@@ -47,7 +47,7 @@ DynamicTradingInfoUI.Colors = {
 -- ==============================================================================
 function DynamicTradingInfoUI:initialise()
     ISCollapsableWindow.initialise(self)
-    self:setTitle("📊 Global Economy Monitor")
+    self:setTitle("Global Economy Monitor")
     self:setResizable(true)
     self.clearStencil = false 
     self.refreshTimer = 0
@@ -107,25 +107,25 @@ end
 
 function DynamicTradingInfoUI:createMarketProfileTab()
     self.marketPanel = self:createListPanel()
-    self.tabPanel:addView("📈 Market", self.marketPanel)
+    self.tabPanel:addView("Market", self.marketPanel)
     self.marketPanel.listbox.backgroundColor = {r=0.12, g=0.1, b=0.05, a=0.95}
 end
 
 function DynamicTradingInfoUI:createMetaEventsTab()
     self.metaPanel = self:createListPanel()
-    self.tabPanel:addView("🌍 World", self.metaPanel)
+    self.tabPanel:addView("World", self.metaPanel)
     self.metaPanel.listbox.backgroundColor = {r=0.05, g=0.1, b=0.15, a=0.95}
 end
 
 function DynamicTradingInfoUI:createFlashEventsTab()
     self.flashPanel = self:createListPanel()
-    self.tabPanel:addView("⚡ News", self.flashPanel)
+    self.tabPanel:addView("News", self.flashPanel)
     self.flashPanel.listbox.backgroundColor = {r=0.05, g=0.12, b=0.05, a=0.95}
 end
 
 function DynamicTradingInfoUI:createInflationTab()
     self.inflationPanel = self:createListPanel()
-    self.tabPanel:addView("📉 Inflation", self.inflationPanel)
+    self.tabPanel:addView("Inflation", self.inflationPanel)
     self.inflationPanel.listbox.backgroundColor = {r=0.15, g=0.08, b=0.08, a=0.95}
 end
 
@@ -218,21 +218,21 @@ function DynamicTradingInfoUI:populateMarketProfile()
     
     -- Buy Price (Higher = Worse for player)
     local buyStr = string.format("%d%%", math.floor(buyMult * 100))
-    local buyItem = listbox:addItem("  💰 Buy Price Modifier: " .. buyStr, nil)
+    local buyItem = listbox:addItem("  BUY PRICE MODIFIER: " .. buyStr, nil)
     if buyMult > 1.0 then buyItem.textColor = colors.EffectExpensive
     elseif buyMult < 1.0 then buyItem.textColor = colors.EffectCheap
     else buyItem.textColor = colors.Normal end
     
     -- Sell Return (Higher = Better for player)
     local sellStr = string.format("%d%%", math.floor(sellMult * 100))
-    local sellItem = listbox:addItem("  💵 Sell Return Rate: " .. sellStr, nil)
+    local sellItem = listbox:addItem("  SELL RETURN RATE: " .. sellStr, nil)
     if sellMult > 0.5 then sellItem.textColor = colors.EffectCheap
     elseif sellMult < 0.5 then sellItem.textColor = colors.EffectExpensive
     else sellItem.textColor = colors.Normal end
     
     -- Stock Volume (Higher = Better)
     local stockStr = string.format("%d%%", math.floor(stockMult * 100))
-    local stockItem = listbox:addItem("  📦 Stock Volume: " .. stockStr, nil)
+    local stockItem = listbox:addItem("  STOCK VOLUME: " .. stockStr, nil)
     if stockMult > 1.0 then stockItem.textColor = colors.EffectCheap
     elseif stockMult < 1.0 then stockItem.textColor = colors.EffectExpensive
     else stockItem.textColor = colors.Normal end
@@ -240,7 +240,7 @@ function DynamicTradingInfoUI:populateMarketProfile()
     -- Rarity Bonus
     local rarityStr = tostring(rarityBonus)
     if rarityBonus > 0 then rarityStr = "+" .. rarityStr end
-    local rarityItem = listbox:addItem("  ✨ Rarity Tier Bonus: " .. rarityStr, nil)
+    local rarityItem = listbox:addItem("  RARITY TIER BONUS: " .. rarityStr, nil)
     if rarityBonus > 0 then rarityItem.textColor = colors.EffectCheap
     elseif rarityBonus < 0 then rarityItem.textColor = colors.EffectExpensive
     else rarityItem.textColor = colors.Normal end
@@ -276,7 +276,7 @@ function DynamicTradingInfoUI:populateMetaEvents()
     end
     
     if not anyMeta then
-        local emptyItem = listbox:addItem("  ℹ️ No world state events active", nil)
+        local emptyItem = listbox:addItem("  [INFO] No world state events active", nil)
         emptyItem.textColor = colors.Muted
         listbox:addItem(" ", nil)
         local infoItem = listbox:addItem("  World events are long-term changes that", nil)
@@ -316,7 +316,7 @@ function DynamicTradingInfoUI:populateFlashEvents()
     end
     
     if not anyFlash then
-        local emptyItem = listbox:addItem("  ℹ️ No breaking news events active", nil)
+        local emptyItem = listbox:addItem("  [INFO] No breaking news events active", nil)
         emptyItem.textColor = colors.Muted
         listbox:addItem(" ", nil)
         local infoItem = listbox:addItem("  Flash events are short-term market disruptions", nil)
@@ -335,7 +335,7 @@ function DynamicTradingInfoUI:renderEventDetails(listbox, event, headerColor)
     local colors = DynamicTradingInfoUI.Colors
     
     -- Event Name with icon
-    local typeIcon = event.type == "meta" and "🌍" or "⚡"
+    local typeIcon = event.type == "meta" and "[WORLD]" or "[NEWS]"
     local nameItem = listbox:addItem(string.format(" %s %s", typeIcon, event.name or "Unknown Event"), nil)
     nameItem.textColor = headerColor
     
@@ -451,7 +451,7 @@ function DynamicTradingInfoUI:populateInflation()
                     hasInflated = true
                 end
                 local percent = math.floor(heat.value * 100)
-                local icon = "🔺"
+                local icon = "[+]"
                 local item = listbox:addItem(string.format("   %s %s: +%d%%", icon, heat.category, percent), nil)
                 item.textColor = colors.InflationHigh
             end
@@ -469,7 +469,7 @@ function DynamicTradingInfoUI:populateInflation()
                     hasDeflated = true
                 end
                 local percent = math.floor(heat.value * 100)
-                local icon = "🔻"
+                local icon = "[-]"
                 local item = listbox:addItem(string.format("   %s %s: %d%%", icon, heat.category, percent), nil)
                 item.textColor = colors.InflationLow
             end
@@ -477,7 +477,7 @@ function DynamicTradingInfoUI:populateInflation()
     end
     
     if not anyHeat then
-        local stableIcon = "⚖️"
+        local stableIcon = "[STABLE]"
         local stableItem = listbox:addItem(string.format("  %s Market is currently stable", stableIcon), nil)
         stableItem.textColor = colors.StatusGood
         listbox:addItem(" ", nil)

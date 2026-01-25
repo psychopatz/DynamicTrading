@@ -206,6 +206,10 @@ function Commands.TradeTransaction(player, args)
             DynamicTrading.Manager.OnBuyItem(traderID, key, category, clientQty)
             ServerAddItem(inv, itemData.item, clientQty)
             
+            -- [NEW] Log transaction for global history
+            local logText = string.format("Trade: %s purchased %s for $%d", player:getUsername(), safeDisplayName, totalCost)
+            DynamicTrading.Manager.AddLog(logText, "info")
+
             SendResponse(player, "TransactionResult", { 
                 success = true, 
                 itemName = safeDisplayName,
@@ -288,6 +292,10 @@ function Commands.TradeTransaction(player, args)
         
         DynamicTrading.Manager.OnSellItem(traderID, key, category, clientQty)
         
+        -- [NEW] Log transaction for global history
+        local logText = string.format("Trade: %s sold %s for $%d", player:getUsername(), itemNameForLog, totalGain)
+        DynamicTrading.Manager.AddLog(logText, "info")
+
         -- Send exact keys client expects for Audit Log
         SendResponse(player, "TransactionResult", { 
             success = true, 

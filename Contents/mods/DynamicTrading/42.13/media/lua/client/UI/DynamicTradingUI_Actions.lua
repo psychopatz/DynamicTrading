@@ -125,7 +125,12 @@ function DynamicTradingUI:onAction()
         itemID = d.itemID or -1 -- Unique ID for secure selling
     }
 
-    -- EXECUTE
+    -- 1. Prompt Player Dialogue (Restore intended interaction)
+    local pAction = self.isBuying and "Buy" or "Sell"
+    local pMsg = DynamicTrading.DialogueManager.GeneratePlayerMessage(pAction, diagArgs)
+    self:queueMessage(pMsg, false, true, 0)
+
+    -- 2. EXECUTE
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
 end
 
@@ -140,9 +145,18 @@ function DynamicTradingUI:onConfirmSell(invItem, data)
         key = data.key,
         category = data.data and data.data.tags[1] or "Misc",
         qty = 1,
-        itemID = data.itemID or -1
+        itemID = data.itemID or -1,
+        price = data.price -- For dialogue generator
     }
     
+    -- 1. Prompt Player Dialogue (Restore intended interaction)
+    local pMsg = DynamicTrading.DialogueManager.GeneratePlayerMessage("Sell", {
+        itemName = invItem:getDisplayName(),
+        price = args.price or 0
+    })
+    self:queueMessage(pMsg, false, true, 0)
+
+    -- 2. EXECUTE
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
 end
 

@@ -23,6 +23,34 @@ function DynamicTradingTraderListUI:initialise()
     self.lastLogCount = -1
     self.lastTopLogID = "" 
     self.lastTraderCount = -1 
+    
+    -- [NEW] Signal Animation State
+    self.signalState = "search"  -- "search", "found", "none"
+    self.signalFrame = 1
+    self.signalAnimTimer = 0
+    self.signalFrameDuration = 200  -- milliseconds per frame
+    self.signalFoundPersist = false -- True when user just found a trader this session
+    
+    -- [NEW] Frame counts per signal type
+    self.signalFrameCounts = {
+        search = 5,
+        found = 3,
+        none = 3
+    }
+    
+    -- [NEW] Preload signal textures
+    self.signalTextures = {
+        search = {},
+        found = {},
+        none = {}
+    }
+    for i = 1, 5 do
+        self.signalTextures.search[i] = getTexture("media/ui/Radio/Signal_search/" .. i .. ".png")
+    end
+    for i = 1, 3 do
+        self.signalTextures.found[i] = getTexture("media/ui/Radio/Signal_found/" .. i .. ".png")
+        self.signalTextures.none[i] = getTexture("media/ui/Radio/Signal_none/" .. i .. ".png")
+    end
 end
 
 function DynamicTradingTraderListUI:createChildren()
@@ -31,19 +59,41 @@ function DynamicTradingTraderListUI:createChildren()
     local th = self:titleBarHeight()
     local width = self.width
     
-    -- 1. SCAN BUTTON
-    self.btnScan = ISButton:new(10, th + 10, width - 20, 25, "SCAN FREQUENCIES", self, self.onScanClick)
+    -- [CHANGED] Layout constants for signal sprite area - Resized to 140px for high visibility
+    local spriteSize = 140
+    local spritePadding = 10
+    local topRowHeight = spriteSize
+    
+    -- 1. SCAN BUTTON (Top Left Stack)
+    local btnWidth = width - spriteSize - (spritePadding * 3)
+    local btnX = 10
+    local btnY = th + 25
+    
+    self.btnScan = ISButton:new(btnX, btnY, btnWidth, 25, "SCAN FREQUENCIES", self, self.onScanClick)
     self.btnScan:initialise()
     self.btnScan.backgroundColor = {r=0.1, g=0.3, b=0.1, a=1.0}
     self.btnScan.borderColor = {r=1, g=1, b=1, a=0.5}
     self:addChild(self.btnScan)
+    
+    -- 2. MARKET INFO BUTTON (Immediately below Scan button)
+    self.btnInfo = ISButton:new(btnX, btnY + 35, btnWidth, 25, "VIEW MARKET INFO", self, self.onInfoClick)
+    self.btnInfo:initialise()
+    self.btnInfo.borderColor = {r=1, g=1, b=1, a=0.5}
+    self.btnInfo.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0} 
+    self:addChild(self.btnInfo)
+    
+    -- Store sprite position for render
+    self.signalSpriteSize = spriteSize
+    self.signalSpriteX = width - spriteSize - spritePadding
+    self.signalSpriteY = th + 5
 
-    -- 2. TRADER LIST (Top Section)
-    self.lblTraders = ISLabel:new(10, th + 45, 16, "Active Signals:", 0.8, 0.8, 1, 1, UIFont.Small, true)
+    -- 3. TRADER LIST (Below the top row)
+    local list1Y = th + topRowHeight + 15
+    self.lblTraders = ISLabel:new(10, list1Y, 16, "Active Signals:", 0.8, 0.8, 1, 1, UIFont.Small, true)
     self:addChild(self.lblTraders)
 
     local list1Height = 180
-    local list1Y = th + 65
+    list1Y = list1Y + 20
     
     self.listbox = ISScrollingListBox:new(10, list1Y, width - 20, list1Height)
     self.listbox:initialise()
@@ -57,7 +107,7 @@ function DynamicTradingTraderListUI:createChildren()
     self.listbox.onMouseDown = self.onListMouseDown
     self:addChild(self.listbox)
 
-    -- 3. LOG LIST (Bottom Section - Static/Non-Scrollable history)
+    -- 4. LOG LIST (Bottom Section - Static/Non-Scrollable history)
     local logLabelY = list1Y + list1Height + 15
     local logListY = logLabelY + 20
     local list2Height = (12 * 20) + 2 -- Exact height for 12 lines
@@ -79,14 +129,6 @@ function DynamicTradingTraderListUI:createChildren()
     self.logList.onMouseWheel = function(self, del) return true end
     
     self:addChild(self.logList)
-
-    -- 4. MARKET INFO BUTTON
-    local btnInfoY = logListY + list2Height + 10
-    self.btnInfo = ISButton:new(10, btnInfoY, width - 20, 25, "VIEW MARKET INFO", self, self.onInfoClick)
-    self.btnInfo:initialise()
-    self.btnInfo.borderColor = {r=1, g=1, b=1, a=0.5}
-    self.btnInfo.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0} -- Slight Blue tint
-    self:addChild(self.btnInfo)
 end
 
 -- ==========================================================
@@ -141,8 +183,56 @@ function DynamicTradingTraderListUI:render()
     end
 
     if currentTraderCount ~= self.lastTraderCount then
+        -- [NEW] Detect if a new trader was found during this session
+        if currentTraderCount > self.lastTraderCount and self.lastTraderCount >= 0 then
+            self.signalFoundPersist = true
+        end
         self:populateList()
         self.lastTraderCount = currentTraderCount
+    end
+    
+    -- ==========================================================
+    -- 5. SIGNAL ANIMATION LOGIC
+    -- ==========================================================
+    local currentFound, dailyLimit = DynamicTrading.Manager.GetDailyStatus()
+    
+    -- Determine signal state
+    if self.signalFoundPersist then
+        -- Player just found a signal, persist this state until scan or close
+        self.signalState = "found"
+    elseif currentFound >= dailyLimit then
+        -- Daily limit reached, no more signals available
+        self.signalState = "none"
+    else
+        -- Still searching for signals
+        self.signalState = "search"
+    end
+    
+    -- Update animation timer
+    local deltaTime = UIManager.getMillisSinceLastRender()
+    self.signalAnimTimer = self.signalAnimTimer + deltaTime
+    
+    -- Advance frame when timer exceeds duration
+    local frameCount = self.signalFrameCounts[self.signalState] or 3
+    if self.signalAnimTimer >= self.signalFrameDuration then
+        self.signalAnimTimer = self.signalAnimTimer - self.signalFrameDuration
+        self.signalFrame = self.signalFrame + 1
+        if self.signalFrame > frameCount then
+            self.signalFrame = 1
+        end
+    end
+    
+    -- Clamp frame to valid range
+    if self.signalFrame > frameCount then self.signalFrame = 1 end
+    
+    -- Draw animated signal sprite (using stored position from createChildren)
+    local tex = self.signalTextures[self.signalState] and self.signalTextures[self.signalState][self.signalFrame]
+    if tex then
+        local size = self.signalSpriteSize or 80
+        local sx = self.signalSpriteX or (self.width - size - 10)
+        local sy = self.signalSpriteY or (self:titleBarHeight() + 10)
+        
+        self:drawTextureScaled(tex, sx, sy, size, size, 1, 1, 1, 1)
     end
 end
 
@@ -258,6 +348,9 @@ end
 function DynamicTradingTraderListUI:onScanClick()
     local player = getSpecificPlayer(0)
     if not self:CheckConnectionValidity() then self:close() return end
+    
+    -- [NEW] Reset signal found state when clicking scan
+    self.signalFoundPersist = false
     
     -- Force Sync to ensure limits are accurate
     sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
@@ -383,7 +476,7 @@ function DynamicTradingTraderListUI.ToggleWindow(radioObj, isHam)
         return
     end
 
-    local ui = DynamicTradingTraderListUI:new(200, 100, 380, 600)
+    local ui = DynamicTradingTraderListUI:new(200, 100, 380, 660)
     ui:initialise()
     ui.radioObj = radioObj
     ui.isHam = isHam
