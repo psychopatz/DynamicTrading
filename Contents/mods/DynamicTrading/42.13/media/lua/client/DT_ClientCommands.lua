@@ -83,12 +83,8 @@ local function OnServerCommand(module, command, args)
             -- 1. NPC Response Dialogue
             local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, args)
             ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier")
-            
-            -- 2. Local Chat Feedback
-            local prefix = ui.isBuying and "Purchased" or "Sold"
-            ui:logLocal(prefix .. " " .. (args.itemName or "Item") .. " ($" .. (args.price or 0) .. ")", false, false)
-            
-            -- 3. FIX: Immediate UI Refresh (Fixes sell list not updating)
+         
+            -- 2. FIX: Immediate UI Refresh (Fixes sell list not updating)
             ui:populateList()
         end
     end

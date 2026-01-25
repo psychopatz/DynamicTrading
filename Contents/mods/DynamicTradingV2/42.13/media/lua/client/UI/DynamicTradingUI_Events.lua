@@ -66,20 +66,7 @@ local function OnServerCommand(module, command, args)
             -- Delay 60 ticks: Wait for signal travel time
             -- Sound: "DT_RadioRandom" (Defined implicitly in UI processor if no sound arg, 
             -- or explicit here if we want to be safe)
-            ui:queueMessage(traderMsg, false, false, 10, "DT_RadioRandom")
-
-            -- 3. [SYSTEM AUDIT LOG] (~0.3 Seconds Later)
-            -- "Purchased: Apple (-$10)"
-            local auditMsg = ""
-            if ui.isBuying then
-                auditMsg = "Purchased: " .. srvItemName .. " (-$" .. srvPrice .. ")"
-            else
-                auditMsg = "Sold: " .. srvItemName .. " (+$" .. srvPrice .. ")"
-            end
-            -- Delay 20 ticks: Short pause after trader speaks
-            -- Sound: "DT_Cashier" (The money actually moving)
-            ui:queueMessage(auditMsg, false, false, 10, "DT_Cashier")
-            
+            ui:queueMessage(traderMsg, false, false, 10, "DT_RadioRandom")            
             -- Refresh List (Happens immediately so logic is secure)
             ui:populateList()
 

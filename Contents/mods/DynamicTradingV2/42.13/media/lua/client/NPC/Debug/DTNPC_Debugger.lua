@@ -3,7 +3,7 @@
 -- Main Window: Controls the decoupled NPC debug components.
 -- ==============================================================================
 
-if not isDebugEnabled() then return end
+-- if not isDebugEnabled() then return end
 
 require "client/NPC/Debug/DTNPC_LiveListPanel"
 require "client/NPC/Debug/DTNPC_GlobalListPanel"

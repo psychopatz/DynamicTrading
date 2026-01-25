@@ -3,7 +3,7 @@
 -- Standalone Window for browsing Project Zomboid Lua API / Engine Methods.
 -- ==============================================================================
 
-if not isDebugEnabled() then return end
+-- if not isDebugEnabled() then return end
 
 require "client/Debug/API/DT_APIViePanel"
 

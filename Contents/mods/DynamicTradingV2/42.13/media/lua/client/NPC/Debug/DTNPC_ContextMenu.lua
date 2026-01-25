@@ -5,7 +5,7 @@
 -- FIXED: Coordinate parsing to properly convert string to numbers
 -- ==============================================================================
 
-if not isDebugEnabled() then return end
+-- if not isDebugEnabled() then return end
 
 DTNPCMenu = DTNPCMenu or {}
 require "NPC/Debug/DTNPC_Debugger"

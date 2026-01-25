@@ -4,7 +4,7 @@
 -- Adds the UI button to trigger the server-side wipe.
 -- Handles the network feedback loop.
 -- =============================================================================
-if not isDebugEnabled() then return end
+-- if not isDebugEnabled() then return end
 local function RequestServerWipe(playerObj, target)
     if not playerObj then return end
     

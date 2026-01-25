@@ -6,7 +6,7 @@
 
 -- [[ OPTIMIZATION CHECK ]]
 -- If we are not in Debug Mode, stop reading this file immediately.
-if not isDebugEnabled() then return end
+-- if not isDebugEnabled() then return end
 
 DT_DebugFactions = {}
 
