@@ -347,9 +347,11 @@ data.Traders[uniqueID] = {
     portraitID = portraitID,   -- [NEW]
     stocks = {},
     lastRestockDay = -1,
-    expirationTime = expireTime
+    expirationTime = expireTime,
+    discoveredBy = {}          -- [PUBLIC NETWORK] Track which players discovered this trader
 }
 
+-- Auto-discover for the creating player (handled by server command)
 DynamicTrading.Manager.RestockTrader(uniqueID)
 DynamicTrading.Manager.IncrementDailyCounter()
 DynamicTrading.Manager.AddLog("Signal Acquired: " .. name, "good")
@@ -439,4 +441,70 @@ function DynamicTrading.Manager.SetScanTimestamp(player)
     local data = DynamicTrading.Manager.GetData()
     data.scanCooldowns[player:getUsername()] = GameTime:getInstance():getWorldAgeHours()
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+end
+
+-- =============================================================================
+-- 8. PUBLIC NETWORK DISCOVERY SYSTEM
+-- =============================================================================
+
+-- Add a player to a trader's discoveredBy list
+function DynamicTrading.Manager.DiscoverTrader(traderID, player)
+    if not traderID or not player then return false end
+    local data = DynamicTrading.Manager.GetData()
+    local trader = data.Traders[traderID]
+    if not trader then return false end
+    
+    local username = player:getUsername()
+    if not trader.discoveredBy then trader.discoveredBy = {} end
+    
+    if not trader.discoveredBy[username] then
+        trader.discoveredBy[username] = true
+        if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+        return true
+    end
+    return false -- Already discovered
+end
+
+-- Check if a player has discovered a specific trader
+function DynamicTrading.Manager.HasDiscovered(traderID, player)
+    if not traderID or not player then return false end
+    local data = DynamicTrading.Manager.GetData()
+    local trader = data.Traders[traderID]
+    if not trader then return false end
+    
+    -- If PublicNetwork is enabled (shared mode), everyone has discovered everyone
+    if SandboxVars.DynamicTrading.PublicNetwork then return true end
+    
+    local username = player:getUsername()
+    return trader.discoveredBy and trader.discoveredBy[username] == true
+end
+
+-- Get all traders this player has NOT discovered yet
+function DynamicTrading.Manager.GetUndiscoveredTraders(player)
+    if not player then return {} end
+    local data = DynamicTrading.Manager.GetData()
+    local undiscovered = {}
+    local username = player:getUsername()
+    
+    for id, trader in pairs(data.Traders) do
+        if not trader.discoveredBy or not trader.discoveredBy[username] then
+            table.insert(undiscovered, trader)
+        end
+    end
+    return undiscovered
+end
+
+-- Get count of traders discovered by this player
+function DynamicTrading.Manager.GetDiscoveredCount(player)
+    if not player then return 0 end
+    local data = DynamicTrading.Manager.GetData()
+    local count = 0
+    local username = player:getUsername()
+    
+    for id, trader in pairs(data.Traders) do
+        if trader.discoveredBy and trader.discoveredBy[username] then
+            count = count + 1
+        end
+    end
+    return count
 end

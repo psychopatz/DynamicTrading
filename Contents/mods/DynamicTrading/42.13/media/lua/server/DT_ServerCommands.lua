@@ -341,8 +341,10 @@ end
 
 -- COMMAND: AttemptScan
 -- Description: The RNG roll for finding new traders
+-- [PUBLIC NETWORK] When disabled, players must individually discover traders
 function Commands.AttemptScan(player, args)
     local targetUser = player:getUsername()
+    local isPublicNetwork = SandboxVars.DynamicTrading.PublicNetwork
 
     -- 1. Cooldown Check
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
@@ -351,17 +353,30 @@ function Commands.AttemptScan(player, args)
         return
     end
 
-    -- 2. Daily Limit Check
+    -- 2. Daily Limit Check (Global)
     local found, limit = DynamicTrading.Manager.GetDailyStatus()
-    if found >= limit then
+    local canGenerateNew = (found < limit)
+    
+    -- 3. Get Undiscovered Traders (for Private Network mode)
+    local undiscovered = DynamicTrading.Manager.GetUndiscoveredTraders(player)
+    local hasUndiscovered = (#undiscovered > 0)
+
+    -- [PUBLIC NETWORK MODE] Block if limit reached (old behavior)
+    if isPublicNetwork and not canGenerateNew then
+        SendResponse(player, "ScanResult", { status = "LIMIT_REACHED", targetUser = targetUser })
+        return
+    end
+    
+    -- [PRIVATE NETWORK MODE] Block if limit reached AND no undiscovered traders left
+    if not isPublicNetwork and not canGenerateNew and not hasUndiscovered then
         SendResponse(player, "ScanResult", { status = "LIMIT_REACHED", targetUser = targetUser })
         return
     end
 
-    -- 3. Apply Cooldown
+    -- 4. Apply Cooldown
     DynamicTrading.Manager.SetScanTimestamp(player)
 
-    -- 4. Calculate Chances
+    -- 5. Calculate Chances
     local penaltyPerTrader = SandboxVars.DynamicTrading.ScanPenaltyPerTrader or 0.2
     local penaltyFactor = 1.0 + (found * penaltyPerTrader) 
     
@@ -378,26 +393,69 @@ function Commands.AttemptScan(player, args)
     
     -- [DEBUG PRINTS]
     print("[DynamicTrading] Scanning for traders...")
+    print("  - Public Network Mode: " .. tostring(isPublicNetwork))
     print("  - Base Chance: " .. baseChance)
     print("  - Radio Tier: " .. radioTier)
     print("  - Skill Bonus: " .. skillBonus)
     print("  - Event Mult: " .. eventMult)
     print("  - Penalty Factor: " .. penaltyFactor .. " (Found: " .. found .. ")")
     print("  - Final Calculated Chance: " .. string.format("%.2f", finalChance) .. "%")
+    print("  - Undiscovered Traders Available: " .. #undiscovered)
     
     local roll = ZombRand(100) + 1
     print("  - Roll: " .. roll)
 
-    -- 5. Roll Dice
+    -- 6. Roll Dice
     if roll <= finalChance then
-        local trader = DynamicTrading.Manager.GenerateRandomContact()
+        local trader = nil
+        local wasNewGeneration = false
+        
+        -- ==========================================================
+        -- PUBLIC NETWORK MODE (Old Behavior: Everyone shares)
+        -- ==========================================================
+        if isPublicNetwork then
+            trader = DynamicTrading.Manager.GenerateRandomContact()
+            wasNewGeneration = true
+            
+        -- ==========================================================
+        -- PRIVATE NETWORK MODE (Per-player discovery)
+        -- ==========================================================
+        else
+            if canGenerateNew then
+                -- 70% Generate New / 30% Discover Existing (if any)
+                local generateChance = hasUndiscovered and 70 or 100
+                if ZombRand(100) < generateChance then
+                    -- Generate NEW trader
+                    trader = DynamicTrading.Manager.GenerateRandomContact()
+                    wasNewGeneration = true
+                    
+                    if trader then
+                        -- Auto-discover for creating player
+                        DynamicTrading.Manager.DiscoverTrader(trader.id, player)
+                        print("  - Generated NEW trader, auto-discovered for " .. targetUser)
+                    end
+                else
+                    -- Discover EXISTING trader
+                    trader = undiscovered[ZombRand(#undiscovered) + 1]
+                    DynamicTrading.Manager.DiscoverTrader(trader.id, player)
+                    print("  - Discovered EXISTING trader: " .. trader.name)
+                end
+            else
+                -- Cap reached: Can ONLY discover existing
+                trader = undiscovered[ZombRand(#undiscovered) + 1]
+                DynamicTrading.Manager.DiscoverTrader(trader.id, player)
+                print("  - Cap reached, discovered EXISTING trader: " .. trader.name)
+            end
+        end
+        
         if trader then
             print("  - SUCCESS! Found: " .. trader.name .. " (" .. trader.archetype .. ")")
             SendResponse(player, "ScanResult", { 
                 status = "SUCCESS", 
                 name = trader.name,
                 archetype = trader.archetype,
-                targetUser = targetUser
+                targetUser = targetUser,
+                wasNew = wasNewGeneration
             })
         else
             print("  - FAILED: Generated trader was nil (Archetypes empty?)")
@@ -413,6 +471,7 @@ function Commands.AttemptScan(player, args)
         SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
     end
 end
+
 
 -- =============================================================================
 -- 3. EVENT LISTENER (MULTIPLAYER BRIDGE)

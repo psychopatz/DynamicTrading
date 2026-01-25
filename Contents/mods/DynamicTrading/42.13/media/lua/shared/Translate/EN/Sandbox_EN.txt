@@ -1,5 +1,5 @@
 Sandbox_EN = {
-    Sandbox_DynamicTrading = "Dynamic Trading",
+    Sandbox_DynamicTrading = "Dynamic Trading System V1",
 
     Sandbox_DynamicTrading_PriceBuyMult = "Buy Price Multiplier",
     Sandbox_DynamicTrading_PriceBuyMult_tooltip = "Adjusts how expensive items are when buying from traders. Higher = More expensive.",
@@ -64,8 +64,9 @@ Sandbox_EN = {
     Sandbox_DynamicTrading_AllowHardcoreEvents = "Enable Hardcore Events",
     Sandbox_DynamicTrading_AllowHardcoreEvents_tooltip = "If enabled, negative events like Famine, War, and Inflation can occur.",
 
-    Sandbox_DynamicTrading_PublicNetwork = "Public Network Broadcast",
-    Sandbox_DynamicTrading_PublicNetwork_tooltip = "If enabled, radio scan results (Success/Failure) are shown to ALL players on the server. If disabled, only the scanning player sees the result.",
+    Sandbox_DynamicTrading_PublicNetwork = "Shared Trader Network",
+    Sandbox_DynamicTrading_PublicNetwork_tooltip = "ENABLED: All traders are shared. Everyone sees all discovered traders instantly (Classic Mode).\\nDISABLED: Players must individually discover traders via radio scanning. Better radios = more discoveries before traders leave.",
+
 
     Sandbox_DynamicTrading_MaxEvents = "Max Simultaneous Events",
     Sandbox_DynamicTrading_MaxEvents_tooltip = "Maximum number of active events allowed (Stacking). Includes both Seasonal and Random events.",

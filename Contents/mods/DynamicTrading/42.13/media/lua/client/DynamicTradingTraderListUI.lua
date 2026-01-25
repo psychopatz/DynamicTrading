@@ -193,6 +193,7 @@ end
 function DynamicTradingTraderListUI:populateList()
     self.listbox:clear()
     local data = DynamicTrading.Manager.GetData()
+    local player = getSpecificPlayer(0)
     
     if not data.Traders then 
         self.listbox:addItem("No signals. Try scanning.", {})
@@ -201,7 +202,10 @@ function DynamicTradingTraderListUI:populateList()
 
     local sortedList = {}
     for id, trader in pairs(data.Traders) do
-        table.insert(sortedList, { id = id, data = trader })
+        -- [PUBLIC NETWORK] Only show traders this player has discovered
+        if DynamicTrading.Manager.HasDiscovered(id, player) then
+            table.insert(sortedList, { id = id, data = trader })
+        end
     end
     table.sort(sortedList, function(a, b) return a.id > b.id end)
 
@@ -217,6 +221,7 @@ function DynamicTradingTraderListUI:populateList()
         self.listbox:addItem("No signals. Try scanning.", {})
     end
 end
+
 
 -- ==========================================================
 -- HELPERS & EVENTS

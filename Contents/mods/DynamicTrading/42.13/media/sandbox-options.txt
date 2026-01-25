@@ -208,7 +208,7 @@ option DynamicTrading.AllowHardcoreEvents
 option DynamicTrading.PublicNetwork
 {
     type = boolean,
-    default = true,
+    default = false,
     page = DynamicTrading,
     translation = DynamicTrading_PublicNetwork,
 }
