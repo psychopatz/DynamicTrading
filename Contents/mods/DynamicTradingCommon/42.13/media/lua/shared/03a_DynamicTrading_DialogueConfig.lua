@@ -5,239 +5,239 @@ DynamicTrading.Dialogue.Player = DynamicTrading.Dialogue.Player or {}
 DynamicTrading.Dialogue.General = DynamicTrading.Dialogue.General or {}
 
 -- Core Dialogue
-require "Dialogue/Player/Sell_ask"
-require "Dialogue/General/Sell_ask"
+require "05_Archetypes/Player/Dialogue/Sell_ask"
+require "05_Archetypes/General/Dialogue/Sell_ask"
 
 -- Player
-require "Dialogue/Player/Intro"
-require "Dialogue/Player/Buy"
-require "Dialogue/Player/BuyLast"
-require "Dialogue/Player/NoCash"
-require "Dialogue/Player/Sell"
+require "05_Archetypes/Player/Dialogue/Intro"
+require "05_Archetypes/Player/Dialogue/Buy"
+require "05_Archetypes/Player/Dialogue/BuyLast"
+require "05_Archetypes/Player/Dialogue/NoCash"
+require "05_Archetypes/Player/Dialogue/Sell"
 
 -- General
-require "Dialogue/General/Greetings"
-require "Dialogue/General/Idle"
-require "Dialogue/General/Buying"
-require "Dialogue/General/Selling"
+require "05_Archetypes/General/Dialogue/Greetings"
+require "05_Archetypes/General/Dialogue/Idle"
+require "05_Archetypes/General/Dialogue/Buying"
+require "05_Archetypes/General/Dialogue/Selling"
 
 -- Archetypes - Sheriff
-require "Dialogue/Sheriff/Greetings"
-require "Dialogue/Sheriff/Buying"
-require "Dialogue/Sheriff/Selling"
+require "05_Archetypes/Sheriff/Dialogue/Greetings"
+require "05_Archetypes/Sheriff/Dialogue/Buying"
+require "05_Archetypes/Sheriff/Dialogue/Selling"
 
 -- Archetypes - Smuggler
-require "Dialogue/Smuggler/Greetings"
-require "Dialogue/Smuggler/Buying"
-require "Dialogue/Smuggler/Selling"
+require "05_Archetypes/Smuggler/Dialogue/Greetings"
+require "05_Archetypes/Smuggler/Dialogue/Buying"
+require "05_Archetypes/Smuggler/Dialogue/Selling"
 
 -- Archetypes - Doctor
-require "Dialogue/Doctor/Greetings"
-require "Dialogue/Doctor/Buying"
-require "Dialogue/Doctor/Selling"
+require "05_Archetypes/Doctor/Dialogue/Greetings"
+require "05_Archetypes/Doctor/Dialogue/Buying"
+require "05_Archetypes/Doctor/Dialogue/Selling"
 
 -- Archetypes - Butcher
-require "Dialogue/Butcher/Greetings"
-require "Dialogue/Butcher/Buying"
-require "Dialogue/Butcher/Selling"
-require "Dialogue/Butcher/Sell_ask"
+require "05_Archetypes/Butcher/Dialogue/Greetings"
+require "05_Archetypes/Butcher/Dialogue/Buying"
+require "05_Archetypes/Butcher/Dialogue/Selling"
+require "05_Archetypes/Butcher/Dialogue/Sell_ask"
 
 -- Archetypes - Mechanic
-require "Dialogue/Mechanic/Greetings"
-require "Dialogue/Mechanic/Buying"
-require "Dialogue/Mechanic/Selling"
-require "Dialogue/Mechanic/Sell_ask"
+require "05_Archetypes/Mechanic/Dialogue/Greetings"
+require "05_Archetypes/Mechanic/Dialogue/Buying"
+require "05_Archetypes/Mechanic/Dialogue/Selling"
+require "05_Archetypes/Mechanic/Dialogue/Sell_ask"
 
 -- Archetypes - Survivalist
-require "Dialogue/Survivalist/Greetings"
-require "Dialogue/Survivalist/Buying"
-require "Dialogue/Survivalist/Selling"
-require "Dialogue/Survivalist/Sell_ask"
+require "05_Archetypes/Survivalist/Dialogue/Greetings"
+require "05_Archetypes/Survivalist/Dialogue/Buying"
+require "05_Archetypes/Survivalist/Dialogue/Selling"
+require "05_Archetypes/Survivalist/Dialogue/Sell_ask"
 
 -- Archetypes - Foreman
-require "Dialogue/Foreman/Greetings"
-require "Dialogue/Foreman/Buying"
-require "Dialogue/Foreman/Selling"
-require "Dialogue/Foreman/Sell_ask"
+require "05_Archetypes/Foreman/Dialogue/Greetings"
+require "05_Archetypes/Foreman/Dialogue/Buying"
+require "05_Archetypes/Foreman/Dialogue/Selling"
+require "05_Archetypes/Foreman/Dialogue/Sell_ask"
 
 -- Archetypes - Scavenger
-require "Dialogue/Scavenger/Greetings"
-require "Dialogue/Scavenger/Buying"
-require "Dialogue/Scavenger/Selling"
-require "Dialogue/Scavenger/Sell_ask"
+require "05_Archetypes/Scavenger/Dialogue/Greetings"
+require "05_Archetypes/Scavenger/Dialogue/Buying"
+require "05_Archetypes/Scavenger/Dialogue/Selling"
+require "05_Archetypes/Scavenger/Dialogue/Sell_ask"
 
 -- Archetypes - Tailor
-require "Dialogue/Tailor/Greetings"
-require "Dialogue/Tailor/Buying"
-require "Dialogue/Tailor/Selling"
-require "Dialogue/Tailor/Sell_ask"
+require "05_Archetypes/Tailor/Dialogue/Greetings"
+require "05_Archetypes/Tailor/Dialogue/Buying"
+require "05_Archetypes/Tailor/Dialogue/Selling"
+require "05_Archetypes/Tailor/Dialogue/Sell_ask"
 
 -- Archetypes - Electrician
-require "Dialogue/Electrician/Greetings"
-require "Dialogue/Electrician/Buying"
-require "Dialogue/Electrician/Selling"
-require "Dialogue/Electrician/Sell_ask"
+require "05_Archetypes/Electrician/Dialogue/Greetings"
+require "05_Archetypes/Electrician/Dialogue/Buying"
+require "05_Archetypes/Electrician/Dialogue/Selling"
+require "05_Archetypes/Electrician/Dialogue/Sell_ask"
 
 -- Archetypes - Welder
-require "Dialogue/Welder/Greetings"
-require "Dialogue/Welder/Buying"
-require "Dialogue/Welder/Selling"
-require "Dialogue/Welder/Sell_ask"
+require "05_Archetypes/Welder/Dialogue/Greetings"
+require "05_Archetypes/Welder/Dialogue/Buying"
+require "05_Archetypes/Welder/Dialogue/Selling"
+require "05_Archetypes/Welder/Dialogue/Sell_ask"
 
 -- Archetypes - Chef
-require "Dialogue/Chef/Greetings"
-require "Dialogue/Chef/Buying"
-require "Dialogue/Chef/Selling"
-require "Dialogue/Chef/Sell_ask"
+require "05_Archetypes/Chef/Dialogue/Greetings"
+require "05_Archetypes/Chef/Dialogue/Buying"
+require "05_Archetypes/Chef/Dialogue/Selling"
+require "05_Archetypes/Chef/Dialogue/Sell_ask"
 
 -- Archetypes - Herbalist
-require "Dialogue/Herbalist/Greetings"
-require "Dialogue/Herbalist/Buying"
-require "Dialogue/Herbalist/Selling"
-require "Dialogue/Herbalist/Sell_ask"
+require "05_Archetypes/Herbalist/Dialogue/Greetings"
+require "05_Archetypes/Herbalist/Dialogue/Buying"
+require "05_Archetypes/Herbalist/Dialogue/Selling"
+require "05_Archetypes/Herbalist/Dialogue/Sell_ask"
 
 -- Archetypes - Librarian
-require "Dialogue/Librarian/Greetings"
-require "Dialogue/Librarian/Buying"
-require "Dialogue/Librarian/Selling"
-require "Dialogue/Librarian/Sell_ask"
+require "05_Archetypes/Librarian/Dialogue/Greetings"
+require "05_Archetypes/Librarian/Dialogue/Buying"
+require "05_Archetypes/Librarian/Dialogue/Selling"
+require "05_Archetypes/Librarian/Dialogue/Sell_ask"
 
 -- Archetypes - Angler
-require "Dialogue/Angler/Greetings"
-require "Dialogue/Angler/Buying"
-require "Dialogue/Angler/Selling"
-require "Dialogue/Angler/Sell_ask"
+require "05_Archetypes/Angler/Dialogue/Greetings"
+require "05_Archetypes/Angler/Dialogue/Buying"
+require "05_Archetypes/Angler/Dialogue/Selling"
+require "05_Archetypes/Angler/Dialogue/Sell_ask"
 
 -- Archetypes - Bartender
-require "Dialogue/Bartender/Greetings"
-require "Dialogue/Bartender/Buying"
-require "Dialogue/Bartender/Selling"
-require "Dialogue/Bartender/Sell_ask"
+require "05_Archetypes/Bartender/Dialogue/Greetings"
+require "05_Archetypes/Bartender/Dialogue/Buying"
+require "05_Archetypes/Bartender/Dialogue/Selling"
+require "05_Archetypes/Bartender/Dialogue/Sell_ask"
 
 -- Archetypes - Teacher
-require "Dialogue/Teacher/Greetings"
-require "Dialogue/Teacher/Buying"
-require "Dialogue/Teacher/Selling"
-require "Dialogue/Teacher/Sell_ask"
+require "05_Archetypes/Teacher/Dialogue/Greetings"
+require "05_Archetypes/Teacher/Dialogue/Buying"
+require "05_Archetypes/Teacher/Dialogue/Selling"
+require "05_Archetypes/Teacher/Dialogue/Sell_ask"
 
 -- Archetypes - Hunter
-require "Dialogue/Hunter/Greetings"
-require "Dialogue/Hunter/Buying"
-require "Dialogue/Hunter/Selling"
-require "Dialogue/Hunter/Sell_ask"
+require "05_Archetypes/Hunter/Dialogue/Greetings"
+require "05_Archetypes/Hunter/Dialogue/Buying"
+require "05_Archetypes/Hunter/Dialogue/Selling"
+require "05_Archetypes/Hunter/Dialogue/Sell_ask"
 
 -- Archetypes - Quartermaster
-require "Dialogue/Quartermaster/Greetings"
-require "Dialogue/Quartermaster/Buying"
-require "Dialogue/Quartermaster/Selling"
-require "Dialogue/Quartermaster/Sell_ask"
+require "05_Archetypes/Quartermaster/Dialogue/Greetings"
+require "05_Archetypes/Quartermaster/Dialogue/Buying"
+require "05_Archetypes/Quartermaster/Dialogue/Selling"
+require "05_Archetypes/Quartermaster/Dialogue/Sell_ask"
 
 -- Archetypes - Musician
-require "Dialogue/Musician/Greetings"
-require "Dialogue/Musician/Buying"
-require "Dialogue/Musician/Selling"
-require "Dialogue/Musician/Sell_ask"
+require "05_Archetypes/Musician/Dialogue/Greetings"
+require "05_Archetypes/Musician/Dialogue/Buying"
+require "05_Archetypes/Musician/Dialogue/Selling"
+require "05_Archetypes/Musician/Dialogue/Sell_ask"
 
 -- Archetypes - Janitor
-require "Dialogue/Janitor/Greetings"
-require "Dialogue/Janitor/Buying"
-require "Dialogue/Janitor/Selling"
-require "Dialogue/Janitor/Sell_ask"
+require "05_Archetypes/Janitor/Dialogue/Greetings"
+require "05_Archetypes/Janitor/Dialogue/Buying"
+require "05_Archetypes/Janitor/Dialogue/Selling"
+require "05_Archetypes/Janitor/Dialogue/Sell_ask"
 
 -- Archetypes - Carpenter
-require "Dialogue/Carpenter/Greetings"
-require "Dialogue/Carpenter/Buying"
-require "Dialogue/Carpenter/Selling"
-require "Dialogue/Carpenter/Sell_ask"
+require "05_Archetypes/Carpenter/Dialogue/Greetings"
+require "05_Archetypes/Carpenter/Dialogue/Buying"
+require "05_Archetypes/Carpenter/Dialogue/Selling"
+require "05_Archetypes/Carpenter/Dialogue/Sell_ask"
 
 -- Archetypes - Pawnbroker
-require "Dialogue/Pawnbroker/Greetings"
-require "Dialogue/Pawnbroker/Buying"
-require "Dialogue/Pawnbroker/Selling"
-require "Dialogue/Pawnbroker/Sell_ask"
+require "05_Archetypes/Pawnbroker/Dialogue/Greetings"
+require "05_Archetypes/Pawnbroker/Dialogue/Buying"
+require "05_Archetypes/Pawnbroker/Dialogue/Selling"
+require "05_Archetypes/Pawnbroker/Dialogue/Sell_ask"
 
 -- Archetypes - Pyro
-require "Dialogue/Pyro/Greetings"
-require "Dialogue/Pyro/Buying"
-require "Dialogue/Pyro/Selling"
-require "Dialogue/Pyro/Sell_ask"
+require "05_Archetypes/Pyro/Dialogue/Greetings"
+require "05_Archetypes/Pyro/Dialogue/Buying"
+require "05_Archetypes/Pyro/Dialogue/Selling"
+require "05_Archetypes/Pyro/Dialogue/Sell_ask"
 
 -- Archetypes - Athlete
-require "Dialogue/Athlete/Greetings"
-require "Dialogue/Athlete/Buying"
-require "Dialogue/Athlete/Selling"
-require "Dialogue/Athlete/Sell_ask"
+require "05_Archetypes/Athlete/Dialogue/Greetings"
+require "05_Archetypes/Athlete/Dialogue/Buying"
+require "05_Archetypes/Athlete/Dialogue/Selling"
+require "05_Archetypes/Athlete/Dialogue/Sell_ask"
 
 -- Archetypes - Pharmacist
-require "Dialogue/Pharmacist/Greetings"
-require "Dialogue/Pharmacist/Buying"
-require "Dialogue/Pharmacist/Selling"
-require "Dialogue/Pharmacist/Sell_ask"
+require "05_Archetypes/Pharmacist/Dialogue/Greetings"
+require "05_Archetypes/Pharmacist/Dialogue/Buying"
+require "05_Archetypes/Pharmacist/Dialogue/Selling"
+require "05_Archetypes/Pharmacist/Dialogue/Sell_ask"
 
 -- Archetypes - Hiker
-require "Dialogue/Hiker/Greetings"
-require "Dialogue/Hiker/Buying"
-require "Dialogue/Hiker/Selling"
-require "Dialogue/Hiker/Sell_ask"
+require "05_Archetypes/Hiker/Dialogue/Greetings"
+require "05_Archetypes/Hiker/Dialogue/Buying"
+require "05_Archetypes/Hiker/Dialogue/Selling"
+require "05_Archetypes/Hiker/Dialogue/Sell_ask"
 
 -- Archetypes - Burglar
-require "Dialogue/Burglar/Greetings"
-require "Dialogue/Burglar/Buying"
-require "Dialogue/Burglar/Selling"
-require "Dialogue/Burglar/Sell_ask"
+require "05_Archetypes/Burglar/Dialogue/Greetings"
+require "05_Archetypes/Burglar/Dialogue/Buying"
+require "05_Archetypes/Burglar/Dialogue/Selling"
+require "05_Archetypes/Burglar/Dialogue/Sell_ask"
 
 -- Archetypes - Blacksmith
-require "Dialogue/Blacksmith/Greetings"
-require "Dialogue/Blacksmith/Buying"
-require "Dialogue/Blacksmith/Selling"
-require "Dialogue/Blacksmith/Sell_ask"
+require "05_Archetypes/Blacksmith/Dialogue/Greetings"
+require "05_Archetypes/Blacksmith/Dialogue/Buying"
+require "05_Archetypes/Blacksmith/Dialogue/Selling"
+require "05_Archetypes/Blacksmith/Dialogue/Sell_ask"
 
 -- Archetypes - Tribal
-require "Dialogue/Tribal/Greetings"
-require "Dialogue/Tribal/Buying"
-require "Dialogue/Tribal/Selling"
-require "Dialogue/Tribal/Sell_ask"
+require "05_Archetypes/Tribal/Dialogue/Greetings"
+require "05_Archetypes/Tribal/Dialogue/Buying"
+require "05_Archetypes/Tribal/Dialogue/Selling"
+require "05_Archetypes/Tribal/Dialogue/Sell_ask"
 
 -- Archetypes - Painter
-require "Dialogue/Painter/Greetings"
-require "Dialogue/Painter/Buying"
-require "Dialogue/Painter/Selling"
-require "Dialogue/Painter/Sell_ask"
+require "05_Archetypes/Painter/Dialogue/Greetings"
+require "05_Archetypes/Painter/Dialogue/Buying"
+require "05_Archetypes/Painter/Dialogue/Selling"
+require "05_Archetypes/Painter/Dialogue/Sell_ask"
 
 -- Archetypes - RoadWarrior
-require "Dialogue/RoadWarrior/Greetings"
-require "Dialogue/RoadWarrior/Buying"
-require "Dialogue/RoadWarrior/Selling"
-require "Dialogue/RoadWarrior/Sell_ask"
+require "05_Archetypes/RoadWarrior/Dialogue/Greetings"
+require "05_Archetypes/RoadWarrior/Dialogue/Buying"
+require "05_Archetypes/RoadWarrior/Dialogue/Selling"
+require "05_Archetypes/RoadWarrior/Dialogue/Sell_ask"
 
 -- Archetypes - Designer
-require "Dialogue/Designer/Greetings"
-require "Dialogue/Designer/Buying"
-require "Dialogue/Designer/Selling"
-require "Dialogue/Designer/Sell_ask"
+require "05_Archetypes/Designer/Dialogue/Greetings"
+require "05_Archetypes/Designer/Dialogue/Buying"
+require "05_Archetypes/Designer/Dialogue/Selling"
+require "05_Archetypes/Designer/Dialogue/Sell_ask"
 
 -- Archetypes - Office
-require "Dialogue/Office/Greetings"
-require "Dialogue/Office/Buying"
-require "Dialogue/Office/Selling"
-require "Dialogue/Office/Sell_ask"
+require "05_Archetypes/Office/Dialogue/Greetings"
+require "05_Archetypes/Office/Dialogue/Buying"
+require "05_Archetypes/Office/Dialogue/Selling"
+require "05_Archetypes/Office/Dialogue/Sell_ask"
 
 -- Archetypes - Geek
-require "Dialogue/Geek/Greetings"
-require "Dialogue/Geek/Buying"
-require "Dialogue/Geek/Selling"
-require "Dialogue/Geek/Sell_ask"
+require "05_Archetypes/Geek/Dialogue/Greetings"
+require "05_Archetypes/Geek/Dialogue/Buying"
+require "05_Archetypes/Geek/Dialogue/Selling"
+require "05_Archetypes/Geek/Dialogue/Sell_ask"
 
 -- Archetypes - Brewer
-require "Dialogue/Brewer/Greetings"
-require "Dialogue/Brewer/Buying"
-require "Dialogue/Brewer/Selling"
-require "Dialogue/Brewer/Sell_ask"
+require "05_Archetypes/Brewer/Dialogue/Greetings"
+require "05_Archetypes/Brewer/Dialogue/Buying"
+require "05_Archetypes/Brewer/Dialogue/Selling"
+require "05_Archetypes/Brewer/Dialogue/Sell_ask"
 
 -- Archetypes - Demo
-require "Dialogue/Demo/Greetings"
-require "Dialogue/Demo/Buying"
-require "Dialogue/Demo/Selling"
-require "Dialogue/Demo/Sell_ask"
+require "05_Archetypes/Demo/Dialogue/Greetings"
+require "05_Archetypes/Demo/Dialogue/Buying"
+require "05_Archetypes/Demo/Dialogue/Selling"
+require "05_Archetypes/Demo/Dialogue/Sell_ask"
 
 print("[DynamicTrading] Dialogue Registry Complete.")
