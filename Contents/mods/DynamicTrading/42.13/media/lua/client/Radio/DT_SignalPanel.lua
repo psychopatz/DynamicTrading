@@ -11,6 +11,7 @@ function DT_SignalPanel:initialise()
     self.signalAnimTimer = 0
     self.signalFrameDuration = 200
     self.signalFoundPersist = false
+    self.clickAnimTimer = 0 -- [NEW] Timer for click feedback overrides
     
     self.signalFrameCounts = { search = 5, found = 3, none = 3 }
     self.signalTextures = { search = {}, found = {}, none = {} }
@@ -68,7 +69,14 @@ end
 function DT_SignalPanel:render()
     ISPanel.render(self)
     -- Draw Animation
+    -- Draw Animation
     local tex = self.signalTextures[self.signalState] and self.signalTextures[self.signalState][self.signalFrame]
+    
+    -- [NEW] Click Feedback Override
+    if self.clickAnimTimer > 0 and self.signalTextures.none and self.signalTextures.none[2] then
+        tex = self.signalTextures.none[2]
+    end
+    
     if tex then
         local size = 150 
         local x = 10 -- Left side padding
@@ -97,6 +105,12 @@ function DT_SignalPanel:updateSignalLogic()
     local currentFound, dailyLimit = DynamicTrading.Manager.GetDailyStatus()
     local isPublic = SandboxVars.DynamicTrading.PublicNetwork
     local signalAvailable = true
+    
+    -- [NEW] Update Click Timer
+    local deltaTime = UIManager.getMillisSinceLastRender()
+    if self.clickAnimTimer > 0 then
+        self.clickAnimTimer = self.clickAnimTimer - deltaTime
+    end
     
     if isPublic then
         if currentFound >= dailyLimit then signalAvailable = false end
@@ -133,6 +147,7 @@ function DT_SignalPanel:onScanClick()
     end
     
     self.signalFoundPersist = false
+    self.clickAnimTimer = 300 -- [NEW] Show override for 300ms
     sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
 
     if DT_RadioInteraction and DT_RadioInteraction.PerformScan then
