@@ -50,6 +50,7 @@ function DynamicTradingUI:initialise()
     -- Stores pending messages to simulate conversation flow
     -- Structure: { text="", isError=false, isPlayer=false, delay=0, sound=nil }
     self.msgQueue = {}
+    self.typingTick = 0
 end
 
 function DynamicTradingUI:resetIdleTimer()
@@ -133,6 +134,8 @@ function DynamicTradingUI:update()
             self:resetIdleTimer()
         end
     end
+
+    self.typingTick = self.typingTick + 1
 
     -- ==========================================================
     -- OBSERVER & IDLE SYSTEM

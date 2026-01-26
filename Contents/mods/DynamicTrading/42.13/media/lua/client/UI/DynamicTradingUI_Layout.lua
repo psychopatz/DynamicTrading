@@ -177,5 +177,22 @@ function DynamicTradingUI:render()
         end
 
         self:drawRectBorder(10, self.imageY, 250, 250, 1.0, 1.0, 1.0, 1.0)
+        
+        -- [NEW] TYPING INDICATOR
+        if #self.msgQueue > 0 then
+            local nextMsg = self.msgQueue[1]
+            if (not nextMsg.isPlayer) and (nextMsg.delay > 0) then
+                local frame = math.floor(self.typingTick / 10) % 4
+                local dots = ""
+                if frame == 1 then dots = "."
+                elseif frame == 2 then dots = ".."
+                elseif frame == 3 then dots = "..."
+                end
+                local bubbleX, bubbleY = self.chatList:getX() + 5, self.chatList:getY() + self.chatList:getHeight() - 25
+                self:drawRect(bubbleX, bubbleY, 40, 20, 0.9, 0.2, 0.2, 0.2)
+                self:drawRectBorder(bubbleX, bubbleY, 40, 20, 0.5, 0.5, 0.5, 0.5)
+                self:drawText(dots, bubbleX + 12, bubbleY + 2, 0.8, 0.8, 0.8, 1, self.chatList.font)
+            end
+        end
     end
 end
