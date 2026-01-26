@@ -253,54 +253,73 @@ end
 function DynamicTradingUI.GetItemTexture(fullType, itemObj)
     -- 1. ELEGANT Build 42 APPROACH (Item Instance)
     if itemObj then
-        -- Build 42: getTex() returns the actual resolved texture (including variations/coloring)
-        if itemObj.getTex then
-            local tex = itemObj:getTex()
-            if tex and tex:getName() ~= "Question_Highlight" then
-                return tex
+        -- Build 42: Clothing instances often need a specific texture lookup
+        if instanceof(itemObj, "Clothing") then
+            -- getTex() returns the actual resolved texture (including variations/coloring)
+            if itemObj.getTex then
+                local tex = itemObj:getTex()
+                if tex and tex:getName() ~= "Question_Highlight" then
+                    return tex
+                end
+            end
+        end
+
+        -- Standard Build 42 icon lookup for any InventoryItem
+        if itemObj.getIcon then
+            local icon = itemObj:getIcon()
+            -- If it returns a texture object directly
+            if icon and type(icon) ~= "string" then
+                if icon:getName() ~= "Question_Highlight" then
+                    return icon
+                end
             end
         end
         
-        -- Build 42: getIcon() can return a Texture object for dynamic items
-        local icon = itemObj:getIcon()
-        if type(icon) ~= "string" and icon then
-            return icon
-        end
-        
-        -- Fallback: standard getTexture()
+        -- Fallback: standard getTexture() (usually defined in Java/C++ layers)
         local tex = itemObj:getTexture()
         if tex and tex:getName() ~= "Question_Highlight" then
             return tex
         end
     end
     
-    -- 2. DYNAMIC LOOKUP (Script/Trader Items)
+    -- 2. DYNAMIC LOOKUP (Script/Trader Items where itemObj is nil)
     if fullType then
         local script = getScriptManager():getItem(fullType)
         if script then
             local iconStr = script:getIcon()
+            
+            -- If the script has a specific icon string defined
             if iconStr and iconStr ~= "" then
-                -- Standard search
+                -- Try standard "Item_" prefix first
                 local tex = getTexture("Item_" .. iconStr) or getTexture(iconStr)
-                if tex then return tex end
+                if tex and tex:getName() ~= "Question_Highlight" then return tex end
                 
-                -- B42 Apparel Path Fallback
+                -- B42 Apparel Path Fallback (common for newer items)
                 tex = getTexture("media/textures/Item_" .. iconStr .. ".png")
-                if tex then return tex end
+                if tex and tex:getName() ~= "Question_Highlight" then return tex end
             end
             
+            -- guess: ClothingItem name lookup
+            -- Many B42 clothes use their 'ClothingItem' name as the icon key
+            if script:getClothingItem() then
+                local ciName = script:getClothingItem()
+                local tex = getTexture("Item_" .. ciName) or getTexture(ciName)
+                if tex and tex:getName() ~= "Question_Highlight" then return tex end
+            end
+
             -- Guess based on fullType (last resort)
             local parts = split(fullType, "%.")
             local shortName = parts[#parts]
             if shortName then
-                local guesses = { shortName, "Bag_" .. shortName, "Item_" .. shortName }
+                local guesses = { shortName, "Bag_" .. shortName, "Item_" .. shortName, "Clothing_" .. shortName }
                 for _, g in ipairs(guesses) do
                     local tex = getTexture("Item_" .. g) or getTexture(g)
-                    if tex then return tex end
+                    if tex and tex:getName() ~= "Question_Highlight" then return tex end
                 end
             end
         end
     end
     
-    return nil
+    -- Final fallback to a generic icon if everything else fails
+    return getTexture("media/ui/Effects/crt.png")
 end
