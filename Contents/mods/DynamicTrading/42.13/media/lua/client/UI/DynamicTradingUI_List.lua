@@ -59,6 +59,14 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     local displayName = DynamicTradingUI.TruncateString(d.name, listbox.font, maxNameWidth)
     listbox:drawText(displayName, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
 
+    -- [NEW] DRAW TAGS ON HIGHLIGHT
+    if listbox.selected == item.index and d.data and d.data.tags then
+        local tagsStr = table.concat(d.data.tags, ", ")
+        local maxTagWidth = width - 180
+        local displayTags = DynamicTradingUI.TruncateString(tagsStr, UIFont.Small, maxTagWidth)
+        listbox:drawText(displayTags, 45, y + 24, 0.4, 0.7, 0.9, 1, UIFont.Small)
+    end
+
     if isLocked then
         local nameWid = TextManager.instance:MeasureStringX(listbox.font, displayName)
         listbox:drawText("(LOCKED)", 50 + nameWid, y + 12, 1, 0.2, 0.2, 1, listbox.font)
