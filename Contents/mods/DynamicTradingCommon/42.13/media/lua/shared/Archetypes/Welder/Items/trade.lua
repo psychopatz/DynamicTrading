@@ -15,3 +15,4 @@ DynamicTrading.RegisterArchetype("Welder", {
     },
     forbid = { "Farming", "Bedding" }
 })
+print("[DynamicTrading] Registered archetype: Welder")

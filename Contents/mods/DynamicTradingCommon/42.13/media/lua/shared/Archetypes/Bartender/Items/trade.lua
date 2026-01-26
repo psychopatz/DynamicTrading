@@ -16,3 +16,4 @@ DynamicTrading.RegisterArchetype("Bartender", {
     },
     forbid = { "Weapon", "Ammo" }
 })
+print("[DynamicTrading] Registered archetype: Bartender")

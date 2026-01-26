@@ -16,4 +16,4 @@ DynamicTrading.RegisterArchetype("Athlete", {
     },
     forbid = { "Alcohol", "Tobacco", "Junk" }
 })
-print("[DynamicTrading] Athlete Archetype Registered.")
+print("[DynamicTrading] Registered archetype: Athlete")

@@ -1,6 +1,7 @@
 require "DynamicTrading_Manager"
 require "DynamicTrading_Config"
 require "DynamicTradingTraderListUI" 
+require "Utils/DT_AudioManager" 
 
 DT_RadioInteraction = {}
 
@@ -34,7 +35,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
     if not canScan then
         player:Say("I need to wait " .. math.ceil(timeRem) .. " minutes before scanning again.")
-        getSoundManager():PlaySound("DT_RadioRandom", false, 0.1)
+        if DT_AudioManager then DT_AudioManager.PlaySound("DT_RadioRandom", false, 0.1) end
         return false 
     end
 

@@ -17,3 +17,4 @@ DynamicTrading.RegisterArchetype("Pawnbroker", {
     },
     forbid = { "Trash", "Junk", "Rotten" }
 })
+print("[DynamicTrading] Registered archetype: Pawnbroker")

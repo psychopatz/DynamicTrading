@@ -11,8 +11,11 @@ DT_ConfigManager.fileName = "DynamicTrading_Config.txt"
 
 -- Default settings if no file is found
 DT_ConfigManager.defaultSettings = {
-    enableSound = true, -- true or false
-    volume = 1.0        -- 0.0 to 1.0
+    enableSound = true,
+    volMaster = 1.0,
+    volRadio = 1.0,
+    volWallet = 1.0,
+    volTrade = 1.0
 }
 
 -- This table holds the *active* settings
@@ -33,14 +36,11 @@ function DT_ConfigManager.save()
     
     if fileWriter then
         print("[DT_ConfigManager] Saving config to " .. DT_ConfigManager.fileName)
-        
-        -- Write EnableSound
-        -- We convert boolean true/false to string "true"/"false"
         fileWriter:write("enableSound=" .. tostring(DT_ConfigManager.settings.enableSound) .. "\r\n")
-        
-        -- Write Volume
-        fileWriter:write("volume=" .. tostring(DT_ConfigManager.settings.volume) .. "\r\n")
-        
+        fileWriter:write("volMaster=" .. tostring(DT_ConfigManager.settings.volMaster) .. "\r\n")
+        fileWriter:write("volRadio=" .. tostring(DT_ConfigManager.settings.volRadio) .. "\r\n")
+        fileWriter:write("volWallet=" .. tostring(DT_ConfigManager.settings.volWallet) .. "\r\n")
+        fileWriter:write("volTrade=" .. tostring(DT_ConfigManager.settings.volTrade) .. "\r\n")
         fileWriter:close()
     else
         print("[DT_ConfigManager] ERROR: Could not create file writer.")
@@ -61,65 +61,69 @@ function DT_ConfigManager.load()
     
     local line = fileReader:readLine()
     while line do
-        -- We parse the line looking for "key=value"
-        -- This is a simple manual parser
-        
-        -- Check for enableSound
         if string.find(line, "enableSound=") then
-            local valueStr = string.sub(line, 13) -- "enableSound=" is 12 chars, so start at 13
-            if valueStr == "true" then
-                DT_ConfigManager.settings.enableSound = true
-            else
-                DT_ConfigManager.settings.enableSound = false
-            end
+            DT_ConfigManager.settings.enableSound = (string.sub(line, 13) == "true")
         end
-        
-        -- Check for volume
-        if string.find(line, "volume=") then
-            local valueStr = string.sub(line, 8) -- "volume=" is 7 chars, so start at 8
-            local num = tonumber(valueStr)
-            if num then
-                DT_ConfigManager.settings.volume = num
-            end
+        if string.find(line, "volMaster=") then
+            local n = tonumber(string.sub(line, 11))
+            if n then DT_ConfigManager.settings.volMaster = n end
+        end
+        if string.find(line, "volRadio=") then
+            local n = tonumber(string.sub(line, 10))
+            if n then DT_ConfigManager.settings.volRadio = n end
+        end
+        if string.find(line, "volWallet=") then
+            local n = tonumber(string.sub(line, 11))
+            if n then DT_ConfigManager.settings.volWallet = n end
+        end
+        if string.find(line, "volTrade=") then
+            local n = tonumber(string.sub(line, 10))
+            if n then DT_ConfigManager.settings.volTrade = n end
         end
 
         line = fileReader:readLine()
     end
     
     fileReader:close()
-    print("[DT_ConfigManager] Config loaded. Sound: " .. tostring(DT_ConfigManager.settings.enableSound) .. ", Vol: " .. DT_ConfigManager.settings.volume)
+    print("[DT_ConfigManager] Loaded.")
 end
 
 -- =============================================================================
 -- PUBLIC HELPERS (Call these from other scripts)
 -- =============================================================================
 
---- Toggles sound on/off and saves
 function DT_ConfigManager.toggleSound()
     DT_ConfigManager.settings.enableSound = not DT_ConfigManager.settings.enableSound
     DT_ConfigManager.save()
     return DT_ConfigManager.settings.enableSound
 end
 
---- Sets volume (0.0 to 1.0) and saves
-function DT_ConfigManager.setVolume(level)
-    -- Clamp volume between 0 and 1
+function DT_ConfigManager.setVolume(category, level)
     if level < 0 then level = 0 end
     if level > 1 then level = 1 end
     
-    DT_ConfigManager.settings.volume = level
+    if category == "Master" then DT_ConfigManager.settings.volMaster = level
+    elseif category == "Radio" then DT_ConfigManager.settings.volRadio = level
+    elseif category == "Wallet" then DT_ConfigManager.settings.volWallet = level
+    elseif category == "Trade" then DT_ConfigManager.settings.volTrade = level
+    end
+    
     DT_ConfigManager.save()
 end
 
---- Returns true if sound should play
 function DT_ConfigManager.shouldPlaySound()
     return DT_ConfigManager.settings.enableSound
 end
 
---- Returns the volume level
-function DT_ConfigManager.getVolume()
-    return DT_ConfigManager.settings.volume
+function DT_ConfigManager.getVolume(category)
+    if category == "Master" then return DT_ConfigManager.settings.volMaster or 1.0
+    elseif category == "Radio" then return DT_ConfigManager.settings.volRadio or 1.0
+    elseif category == "Wallet" then return DT_ConfigManager.settings.volWallet or 1.0
+    elseif category == "Trade" then return DT_ConfigManager.settings.volTrade or 1.0
+    end
+    return 1.0
 end
+
 
 -- =============================================================================
 -- INITIALIZATION

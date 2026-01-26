@@ -45,6 +45,7 @@ function DT_SellConfirmationModal:createChildren()
     self.btnConfirm:initialise()
     self.btnConfirm.backgroundColor = {r=0.6, g=0.2, b=0.2, a=1.0}
     self.btnConfirm.borderColor = {r=1, g=1, b=1, a=0.4}
+    self.btnConfirm:setTooltip("Warning: The Trader would just pretend that they haven't \nsaw what items are inside and grab this item with passion. \nYou have been warned!")
     self:addChild(self.btnConfirm)
     
     -- UNPACK [MP-SAFE]
@@ -52,7 +53,7 @@ function DT_SellConfirmationModal:createChildren()
     self.btnUnpack:initialise()
     self.btnUnpack.backgroundColor = {r=0.2, g=0.4, b=0.6, a=1.0}
     self.btnUnpack.borderColor = {r=1, g=1, b=1, a=0.4}
-    self.btnUnpack:setTooltip("Dumps items to the floor safely (Server Synced)")
+    self.btnUnpack:setTooltip("Dumps items to the floor safely")
     self:addChild(self.btnUnpack)
     
     -- CANCEL

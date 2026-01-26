@@ -16,3 +16,4 @@ DynamicTrading.RegisterArchetype("Gunrunner", {
     },
     forbid = { "Tool", "Farming", "Literature" }
 })
+print("[DynamicTrading] Registered archetype: Gunrunner")

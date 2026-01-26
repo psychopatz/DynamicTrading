@@ -17,3 +17,4 @@ DynamicTrading.RegisterArchetype("Sheriff", {
     },
     forbid = { "Illegal", "Heavy" }
 })
+print("[DynamicTrading] Registered archetype: Sheriff")

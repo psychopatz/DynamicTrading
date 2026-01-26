@@ -9,6 +9,7 @@ require "DynamicTrading_Manager"
 require "DynamicTrading_Economy"
 require "DynamicTrading_Events"
 require "DT_DialogueManager" 
+require "Utils/DT_AudioManager" 
 
 -- UI sub-modules
 require "DynamicTradingUI_Helpers"
@@ -120,10 +121,10 @@ function DynamicTradingUI:update()
             if player then
                 -- Play specific sound if provided (e.g., cash register)
                 if msg.sound then
-                     getSoundManager():PlaySound("DT_Cashier", false, 0.1)
+                     if DT_AudioManager then DT_AudioManager.PlaySound("DT_Cashier", false, 0.1) end
                 -- Otherwise play default radio click
                 else
-                     getSoundManager():PlaySound("DT_RadioRandom", false, 0.1)
+                     if DT_AudioManager then DT_AudioManager.PlaySound("DT_RadioRandom", false, 0.1) end
                 end
             end
             

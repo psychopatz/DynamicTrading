@@ -16,3 +16,4 @@ DynamicTrading.RegisterArchetype("Survivalist", {
     },
     forbid = { "Fresh", "Luxury", "Toy" }
 })
+print("[DynamicTrading] Registered archetype: Survivalist")

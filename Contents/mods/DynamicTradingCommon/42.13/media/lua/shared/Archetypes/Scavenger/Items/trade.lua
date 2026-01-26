@@ -16,3 +16,4 @@ DynamicTrading.RegisterArchetype("Scavenger", {
     },
     forbid = {}
 })
+print("[DynamicTrading] Registered archetype: Scavenger")

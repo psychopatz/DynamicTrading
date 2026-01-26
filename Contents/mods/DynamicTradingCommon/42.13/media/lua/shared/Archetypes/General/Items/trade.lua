@@ -19,3 +19,4 @@ DynamicTrading.RegisterArchetype("General", {
     }, 
     forbid = { "Illegal", "Legendary" }
 })
+print("[DynamicTrading] Registered archetype: General")

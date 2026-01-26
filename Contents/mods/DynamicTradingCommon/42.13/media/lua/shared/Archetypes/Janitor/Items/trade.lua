@@ -17,3 +17,4 @@ DynamicTrading.RegisterArchetype("Janitor", {
     },
     forbid = { "Food", "Fresh", "Luxury" }
 })
+print("[DynamicTrading] Registered archetype: Janitor")

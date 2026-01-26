@@ -16,3 +16,4 @@ DynamicTrading.RegisterArchetype("Musician", {
     },
     forbid = { "Weapon", "Medical", "Farming" }
 })
+print("[DynamicTrading] Registered archetype: Musician")

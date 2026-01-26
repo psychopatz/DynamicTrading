@@ -1,4 +1,5 @@
 require "ISUI/ISUIHandler"
+require "Utils/DT_AudioManager"
 
 -- =============================================================================
 -- 1. HANDLE SERVER RESPONSES (SCAN RESULTS)
@@ -20,7 +21,7 @@ local function OnServerCommand(module, command, args)
         if isMe then
             -- 1. SUCCESS (Green)
             if args.status == "SUCCESS" then
-                getSoundManager():PlaySound("DT_RadioRandom", false, 0.1)
+                if DT_AudioManager then DT_AudioManager.PlaySound("DT_RadioRandom", false, 0.1) end
                 player:Say("Connected: " .. (args.name or "Unknown"))
                 
                 -- [FIX] Force UI Animation and List Refresh immediately

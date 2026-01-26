@@ -58,6 +58,13 @@ function DT_SignalPanel:createChildren()
     self.btnInfo.borderColor = {r=1, g=1, b=1, a=0.5}
     self.btnInfo.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0}
     self:addChild(self.btnInfo)
+    
+    -- Options Button [NEW]
+    self.btnOptions = ISButton:new(btnX, startY + 70, btnWidth, 25, "OPTIONS", self, self.onOptionsClick)
+    self.btnOptions:initialise()
+    self.btnOptions.borderColor = {r=1, g=1, b=1, a=0.5}
+    self.btnOptions.backgroundColor = {r=0.4, g=0.4, b=0.4, a=1.0}
+    self:addChild(self.btnOptions)
 end
 
 function DT_SignalPanel:prerender()
@@ -162,6 +169,21 @@ function DT_SignalPanel:onInfoClick()
         else
             DynamicTradingInfoUI.ToggleWindow()
         end
+    end
+end
+
+function DT_SignalPanel:onOptionsClick()
+    print("[DT_SignalPanel] onOptionsClick called.")
+    if not DT_OptionsUI then 
+        print("[DT_SignalPanel] DT_OptionsUI nil. Attempting valid requires...")
+        pcall(require, "UI/DT_OptionsUI")
+        if not DT_OptionsUI then pcall(require, "client/UI/DT_OptionsUI") end
+    end
+    
+    if DT_OptionsUI then
+        DT_OptionsUI.ToggleWindow()
+    else
+        print("[DT_SignalPanel] ERROR: DT_OptionsUI failed to load. (still nil)")
     end
 end
 

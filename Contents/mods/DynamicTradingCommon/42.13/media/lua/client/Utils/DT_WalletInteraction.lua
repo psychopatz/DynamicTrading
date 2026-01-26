@@ -4,6 +4,7 @@
 
 require "TimedActions/ISBaseTimedAction"
 require "TimedActions/ISInventoryTransferAction"
+require "Utils/DT_AudioManager"
 
 -- =============================================================================
 -- 1. FLAVOR TEXT & CONFIG
@@ -122,7 +123,11 @@ function ISWalletAction:update()
     if not self.soundStarted then
         self.soundStarted = true
         
-        getSoundManager():PlaySound("DT_CasinoRandom", false, 0)
+        if DT_AudioManager then
+            DT_AudioManager.PlaySound("DT_CasinoRandom", false, 1.0)
+        else
+            getSoundManager():PlaySound("DT_CasinoRandom", false, 1.0)
+        end
         
         if ZombRand(100) < 50 then
             self.character:Say(GetRandomLine(WalletTalk.Anticipation))
@@ -187,11 +192,11 @@ local function OnServerCommand(module, command, args)
         local r, g, b = 170, 170, 170 
 
         if type == "EMPTY" then
-            getSoundManager():PlaySound("DT_CasinoLose", false, 1.0)
+            if DT_AudioManager then DT_AudioManager.PlaySound("DT_CasinoLose", false, 1.0) else getSoundManager():PlaySound("DT_CasinoLose", false, 1.0) end
             ForceSay(player, GetRandomLine(WalletTalk.Empty))
             ShowFloatingText(player, "Empty", 150, 150, 150)
         else
-            getSoundManager():PlaySound("DT_Cashier", false, 1.0)
+            if DT_AudioManager then DT_AudioManager.PlaySound("DT_Cashier", false, 1.0) else getSoundManager():PlaySound("DT_Cashier", false, 1.0) end
             
             local maxPossible = SandboxVars.DynamicTrading.WalletMaxCash or 300
             local ratio = total / maxPossible
