@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -93,4 +93,4 @@ Register({
 
 })
 
-print("[DynamicTrading] Jewelry Registered.")
+print("[DynamicTrading] Luxury Registry Complete.")

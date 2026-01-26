@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -119,3 +119,5 @@ Register({
 { item="Base.Spear_Plunger",        basePrice=8,  tags={"Weapon", "Spear", "Junk"}, stockRange={min=0, max=5} },
 { item="Base.Broom_Twig",           basePrice=2,  tags={"Cleaning", "Junk"}, stockRange={min=1, max=5} },
 })
+
+print("[DynamicTrading] Household Registry Complete.")

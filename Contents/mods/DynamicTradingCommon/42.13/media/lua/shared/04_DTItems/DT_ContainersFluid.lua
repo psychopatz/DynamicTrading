@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -144,3 +144,5 @@ Register({
     { item="Base.CeramicTeacup",    tags={"Food", "General", "Common"},      basePrice=4, stockRange={min=2, max=8} },
     { item="Base.HotWaterBottle",   tags={"Medical", "Pharmacist", "Common"}, basePrice=12, stockRange={min=1, max=3} },
 })
+
+print("[DynamicTrading] Containers (Fluid) Registry Complete.")

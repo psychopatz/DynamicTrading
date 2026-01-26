@@ -55,4 +55,4 @@ end
 -- Hook into the death event
 Events.OnZombieDead.Add(OnZombieDead)
 
-print("[DynamicTrading] Loot System Loaded.")
+print("[DynamicTrading] Registered loot system.")

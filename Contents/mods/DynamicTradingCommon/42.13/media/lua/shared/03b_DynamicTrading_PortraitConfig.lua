@@ -133,4 +133,4 @@ return "media/ui/Portraits/" .. target .. "/" .. gender .. "/"
 
 end
 
-print("[DynamicTrading] Portrait Config Loaded.")
+print("[DynamicTrading] Portrait Registry Complete.")

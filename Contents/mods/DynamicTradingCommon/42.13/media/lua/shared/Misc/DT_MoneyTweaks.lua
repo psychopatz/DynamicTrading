@@ -126,3 +126,5 @@ else
     Events.OnGameBoot.Add(SetMoneyWeight)
     Events.OnFillInventoryObjectContextMenu.Add(OnFillInventoryObjectContextMenu)
 end
+
+print("[DynamicTrading] Money Tweaks Registered.")

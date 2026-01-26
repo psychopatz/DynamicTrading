@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -141,3 +141,5 @@ Register({
     { item="Base.Bag_MedicalBag",      tags={"Clothing", "Container", "Medical", "Uncommon"},     basePrice=180, stockRange={min=1, max=3} },
 
 })
+
+print("[DynamicTrading] Clothing Registry Complete.")

@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -142,3 +142,5 @@ Register({
 { item="Base.Timer",                basePrice=8,  tags={"Cooking", "Electronics"}, stockRange={min=1, max=5} }, -- Component for bombs too
 
 })
+
+print("[DynamicTrading] Cooking Registry Complete.")

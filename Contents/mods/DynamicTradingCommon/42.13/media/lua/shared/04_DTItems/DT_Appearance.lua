@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -39,3 +39,5 @@ Register({
 { item="Base.HairDyeUncommon",  basePrice=18, tags={"Cosmetic", "Uncommon"}, stockRange={min=1, max=4} }, -- Red/White/Grey
 { item="Base.HairDyeRare",      basePrice=30, tags={"Cosmetic", "Rare", "Luxury"}, stockRange={min=0, max=2} }, -- Pink/Blue/Green (The "E-Girl" tax)
 })
+
+print("[DynamicTrading] Appearance Registry Complete.")

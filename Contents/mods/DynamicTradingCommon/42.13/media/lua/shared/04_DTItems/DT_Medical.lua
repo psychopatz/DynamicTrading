@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -102,3 +102,5 @@ Register({
 { item="Base.Hat_SurgicalCap",      basePrice=2,  tags={"Clothing", "Medical"}, stockRange={min=2, max=10} },
 { item="Base.Stethoscope",          basePrice=5,  tags={"Medical", "Luxury"}, stockRange={min=0, max=2} }, -- Doctor RP item
 })
+
+print("[DynamicTrading] Medical Registry Complete.")

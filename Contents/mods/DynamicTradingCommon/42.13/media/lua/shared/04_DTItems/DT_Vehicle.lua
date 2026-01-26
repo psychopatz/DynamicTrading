@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -164,3 +164,5 @@ Register({
     { item="Base.RearWindow2",       tags={"CarPart", "Heavy", "Common"},    basePrice=35,  stockRange={min=1, max=3} },
     { item="Base.RearWindow3",       tags={"CarPart", "Sport", "Uncommon"},  basePrice=50,  stockRange={min=0, max=2} },
 })
+
+print("[DynamicTrading] Vehicle Registry Complete.")

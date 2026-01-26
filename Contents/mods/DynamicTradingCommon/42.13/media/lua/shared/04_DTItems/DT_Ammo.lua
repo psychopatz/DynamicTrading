@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -64,3 +64,5 @@ Register({
 { item="Base.M14Clip",  basePrice=60, tags={"Weapon", "Magazine", "Rare"},   stockRange={min=0, max=3} }, -- 20 rounds
 { item="Base.556Clip",  basePrice=80, tags={"Weapon", "Magazine", "Legendary", "Military"}, stockRange={min=0, max=2} } -- M16 (30 rounds)
 })
+
+print("[DynamicTrading] Ammo Registry Complete.")

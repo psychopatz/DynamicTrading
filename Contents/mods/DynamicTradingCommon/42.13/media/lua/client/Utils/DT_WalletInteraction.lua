@@ -259,3 +259,4 @@ local function WalletContextMenu(player, context, items)
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(WalletContextMenu)
+print("[DynamicTrading] Registered wallet interaction.")

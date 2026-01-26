@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -415,3 +415,5 @@ Register({
 { item="Base.WestpointMap",       basePrice=15, tags={"Literature", "Cartography", "Uncommon"}, stockRange={min=1, max=3} },
 { item="Base.MarchRidgeMap",      basePrice=15, tags={"Literature", "Cartography", "Uncommon"}, stockRange={min=1, max=3} },
 })
+
+print("[DynamicTrading] Literature Registry Complete.")

@@ -90,3 +90,4 @@ function DynamicTrading.Utils.TruncateString(text, font, maxWidth)
     
     return "..."
 end
+print("[DynamicTrading] Registered string utilities.")

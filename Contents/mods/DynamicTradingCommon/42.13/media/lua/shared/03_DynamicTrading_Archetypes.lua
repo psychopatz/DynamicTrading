@@ -37,12 +37,9 @@
     =============================================================================
 ]]
 DynamicTrading = DynamicTrading or {}
-if not DynamicTrading.Archetypes then
-    print("[DynamicTrading] Initializing Archetype Table...")
-    DynamicTrading.Archetypes = {}
-end
+DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 print("[DynamicTrading] Booting Archetype Registry...")
 
@@ -57,30 +54,21 @@ local archetypesToLoad = {
     "Designer", "Office", "Geek", "Brewer", "Demo"
 }
 
--- Registry Function (Standalone definition to ensure it exists before loading)
-if not DynamicTrading.RegisterArchetype then
-    print("[DynamicTrading] Registering Archetype Function...")
-    function DynamicTrading.RegisterArchetype(id, data)
-        if not id or not data then return end
-        DynamicTrading.Archetypes[id] = data
-        -- print("  - Registered: " .. id)
-    end
-end
-
 -- Registry Function
 function DynamicTrading.LoadArchetypes()
     print("[DynamicTrading] Loading " .. #archetypesToLoad .. " decoupled archetypes...")
     local successCount = 0
     
     for _, id in ipairs(archetypesToLoad) do
-        local path = "Archetypes/" .. id .. "/Items/trade"
+        local path = "05_Archetypes/" .. id .. "/Items/trade"
+        -- Use force-loading for debugging if needed, but require is standard
         local success, err = pcall(function() require(path) end)
         
         if success then
             successCount = successCount + 1
         else
-            print("[DynamicTrading] WARNING: Failed to load archetype [" .. id .. "] at path: media/lua/shared/" .. path .. ".lua")
-            print("  - Reason: " .. tostring(err))
+            print("[DynamicTrading] FAILED to load archetype [" .. id .. "] at path: media/lua/shared/" .. path .. ".lua")
+            print("  - Error: " .. tostring(err))
         end
     end
     
@@ -92,6 +80,13 @@ function DynamicTrading.LoadArchetypes()
 end
 
 -- Execute Loading
+if not DynamicTrading.RegisterArchetype then
+    function DynamicTrading.RegisterArchetype(id, data)
+        if not id or not data then return end
+        DynamicTrading.Archetypes[id] = data
+    end
+end
+
 DynamicTrading.LoadArchetypes()
 
-print("[DynamicTrading] Archetype Boot Sequence Complete.")
+print("[DynamicTrading] Archetype Registry Complete.")

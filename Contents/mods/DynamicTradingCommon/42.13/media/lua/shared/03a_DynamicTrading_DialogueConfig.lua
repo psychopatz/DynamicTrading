@@ -239,3 +239,5 @@ require "Dialogue/Demo/Greetings"
 require "Dialogue/Demo/Buying"
 require "Dialogue/Demo/Selling"
 require "Dialogue/Demo/Sell_ask"
+
+print("[DynamicTrading] Dialogue Registry Complete.")

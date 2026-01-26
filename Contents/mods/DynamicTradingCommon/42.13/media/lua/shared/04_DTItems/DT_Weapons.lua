@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -257,3 +257,5 @@ Register({
     { item="Base.CompassGeometry",    tags={"Tool", "Junk"},       basePrice=8,  stockRange={min=1, max=3} },
 
 })
+
+print("[DynamicTrading] Weapons Registry Complete.")

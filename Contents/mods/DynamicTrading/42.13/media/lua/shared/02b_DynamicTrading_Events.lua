@@ -43,7 +43,7 @@
 --      inject = { ["Medical"] = 5 }
 --  })
 -- =============================================================================
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Events = {}

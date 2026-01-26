@@ -4,10 +4,10 @@
 -- Compatible with Singleplayer, MP Hosted, and MP Dedicated.
 -- Handles all secure logic: Money removal, Inventory management, Scanning RNG.
 
-require "DynamicTrading_Manager"
-require "DynamicTrading_Events"
-require "DynamicTrading_Economy"
-require "DynamicTrading_Archetypes"
+require "02_DynamicTrading_Manager"
+require "02b_DynamicTrading_Events"
+require "02a_DynamicTrading_Economy"
+require "03_DynamicTrading_Archetypes"
 
 -- 1. GLOBAL TABLE REGISTRATION
 -- We expose this table globally so Singleplayer Client scripts can call functions directly
@@ -538,3 +538,5 @@ local function Server_OnHourlyTick()
 end
 
 Events.EveryHours.Add(Server_OnHourlyTick)
+
+print("[DynamicTrading] Server Maintenance Loop Complete.")

@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -146,3 +146,5 @@ Register({
 { item="Base.LargeBoneClub",        basePrice=8,   tags={"Weapon", "Melee", "Junk"}, stockRange={min=1, max=3} },
 { item="Base.LargeBoneClub_Spiked", basePrice=12,  tags={"Weapon", "Melee", "Junk"}, stockRange={min=1, max=3} },
 })
+
+print("[DynamicTrading] Animal Products Registry Complete.")

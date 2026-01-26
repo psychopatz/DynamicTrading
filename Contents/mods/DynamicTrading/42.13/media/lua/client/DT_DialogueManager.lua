@@ -1,4 +1,4 @@
-require "DynamicTrading_DialogueConfig"
+require "03a_DynamicTrading_DialogueConfig"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.DialogueManager = {}
@@ -65,7 +65,7 @@ end
 -- Helper: safely retrieve the DB
 local function GetDB()
     if not DynamicTrading.Dialogue then
-        require "DynamicTrading_DialogueConfig"
+        require "03a_DynamicTrading_DialogueConfig"
     end
     return DynamicTrading.Dialogue
 end

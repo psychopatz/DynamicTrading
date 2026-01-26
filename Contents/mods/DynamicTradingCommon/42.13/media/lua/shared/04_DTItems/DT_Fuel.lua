@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -41,4 +41,5 @@ Register({
 { item="Base.PercedWood",           basePrice=1,   tags={"Fire", "Tool", "Primitive", "Junk"}, stockRange={min=1, max=5} }, -- Notched Plank
 { item="Base.Lighter_Battery",      basePrice=2,   tags={"Fire", "Tool", "Improvised"}, stockRange={min=0, max=5} }, -- Engineer craft
 })
-print("[DynamicTrading] Luxury Items Registered.")
+
+print("[DynamicTrading] Fuel Registry Complete.")

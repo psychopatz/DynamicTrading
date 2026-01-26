@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -140,3 +140,5 @@ Register({
     { item="Base.SteelWool",            tags={"Tool", "Clean", "Common"},          basePrice=12,  stockRange={min=5, max=15} },
     { item="Base.Funnel",               tags={"Tool", "Mechanic", "Common"},       basePrice=15,  stockRange={min=2, max=6} },
 })
+
+print("[DynamicTrading] Tools Registry Complete.")

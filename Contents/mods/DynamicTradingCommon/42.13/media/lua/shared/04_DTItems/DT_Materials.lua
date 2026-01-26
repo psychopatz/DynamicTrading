@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -121,3 +121,5 @@ Register({
     { item="Base.BlacksmithAnvilUntreated", tags={"Tool", "Smithing", "Heavy", "Rare"}, basePrice=1000, stockRange={min=0, max=1} },
 
 })
+
+print("[DynamicTrading] Materials Registry Complete.")

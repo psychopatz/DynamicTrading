@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 -- =============================================================================
 -- 1. RARITY TIERS

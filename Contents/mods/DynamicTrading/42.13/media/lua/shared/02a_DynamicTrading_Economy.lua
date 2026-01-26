@@ -1,6 +1,6 @@
-require "DynamicTrading_Config"
-require "DynamicTrading_Tags"
-require "DynamicTrading_Events"
+require "01_DynamicTrading_Config"
+require "01a_DynamicTrading_Tags"
+require "02b_DynamicTrading_Events"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Economy = {}

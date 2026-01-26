@@ -144,4 +144,4 @@ end
 
 Events.OnClientCommand.Add(OnClientCommand)
 
-print("[DynamicTrading] Server: Wallet System Loaded (MP/SP Compatible).")
+print("[DynamicTrading] Registered wallet system.")

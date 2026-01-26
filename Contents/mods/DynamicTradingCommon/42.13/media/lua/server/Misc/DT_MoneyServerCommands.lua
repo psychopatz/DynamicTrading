@@ -129,3 +129,5 @@ local function OnClientCommand(module, command, player, args)
 end
 
 Events.OnClientCommand.Add(OnClientCommand)
+print("[DynamicTrading] Registered server command: CompressMoney")
+print("[DynamicTrading] Registered server command: UncompressMoney")

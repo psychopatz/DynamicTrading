@@ -131,3 +131,4 @@ end
 
 -- Load settings as soon as the game boots up
 Events.OnGameBoot.Add(DT_ConfigManager.load)
+print("[DynamicTrading] Registered config manager.")

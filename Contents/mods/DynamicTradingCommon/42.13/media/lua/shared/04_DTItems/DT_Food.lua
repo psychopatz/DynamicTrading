@@ -1,4 +1,4 @@
-require "DynamicTrading_Config"
+require "01_DynamicTrading_Config"
 
 if not DynamicTrading then return end
 
@@ -327,3 +327,5 @@ Register({
 { item="Base.WildEggs",         basePrice=1,  tags={"Food", "Fresh", "Protein"}, stockRange={min=5, max=15} },
 { item="Base.TurkeyEgg",        basePrice=3,  tags={"Food", "Fresh", "Protein"}, stockRange={min=2, max=10} }
 })
+
+print("[DynamicTrading] Food Registry Complete.")

@@ -2,9 +2,9 @@ require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISTabPanel"
 require "ISUI/ISPanel"
-require "DynamicTrading_Manager"
-require "DynamicTrading_Config"
-require "DynamicTrading_Events"
+require "02_DynamicTrading_Manager"
+require "01_DynamicTrading_Config"
+require "02b_DynamicTrading_Events"
 
 -- ==============================================================================
 -- DynamicTradingInfoUI - Tabbed Economy Stats Window
