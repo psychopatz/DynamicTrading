@@ -187,7 +187,7 @@ local function onPsychopatzKey(key)
         else
             
             if HaloTextHelper then
-                HaloTextHelper.addTextWithArrow(player, "ACCESS DENIED", true, HaloTextHelper.getColorRed())
+                -- HaloTextHelper.addTextWithArrow(player, "ACCESS DENIED", true, HaloTextHelper.getColorRed())
             end
         end
     end

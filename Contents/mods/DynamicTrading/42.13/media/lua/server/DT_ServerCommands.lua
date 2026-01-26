@@ -422,7 +422,7 @@ function Commands.AttemptScan(player, args)
         -- PUBLIC NETWORK MODE (Old Behavior: Everyone shares)
         -- ==========================================================
         if isPublicNetwork then
-            trader = DynamicTrading.Manager.GenerateRandomContact()
+            trader = DynamicTrading.Manager.GenerateRandomContact(player)
             wasNewGeneration = true
             
         -- ==========================================================
@@ -434,7 +434,7 @@ function Commands.AttemptScan(player, args)
                 local generateChance = hasUndiscovered and 70 or 100
                 if ZombRand(100) < generateChance then
                     -- Generate NEW trader
-                    trader = DynamicTrading.Manager.GenerateRandomContact()
+                    trader = DynamicTrading.Manager.GenerateRandomContact(player)
                     wasNewGeneration = true
                     
                     if trader then

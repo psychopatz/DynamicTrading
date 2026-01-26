@@ -148,9 +148,9 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
         local option = context:addOption("Open Trader Network", 
             radioItem, 
             function(item) 
-                if not DynamicTradingTraderListUI then require "DynamicTradingTraderListUI" end
-                if DynamicTradingTraderListUI then
-                    DynamicTradingTraderListUI.ToggleWindow(item, false) 
+                if not DT_RadioWindow then require "client/Radio/DT_RadioWindow" end
+                if DT_RadioWindow then
+                    DT_RadioWindow.ToggleWindow(item, false) 
                 else
                     player:Say("Error: UI failed to load.")
                 end
@@ -198,9 +198,9 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
          local option = context:addOption("Open Trader Network (HAM)", 
             hamRadio,
             function(obj) 
-                if not DynamicTradingTraderListUI then require "DynamicTradingTraderListUI" end
-                if DynamicTradingTraderListUI then
-                    DynamicTradingTraderListUI.ToggleWindow(obj, true)
+                if not DT_RadioWindow then require "client/Radio/DT_RadioWindow" end
+                if DT_RadioWindow then
+                    DT_RadioWindow.ToggleWindow(obj, true)
                 else
                     player:Say("Error: UI failed to load.")
                 end

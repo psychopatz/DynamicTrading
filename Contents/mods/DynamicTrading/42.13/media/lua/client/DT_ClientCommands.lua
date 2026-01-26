@@ -24,15 +24,15 @@ local function OnServerCommand(module, command, args)
                 player:Say("Connected: " .. (args.name or "Unknown"))
                 
                 -- [FIX] Force UI Animation and List Refresh immediately
-                if DynamicTradingTraderListUI and DynamicTradingTraderListUI.instance then
-                    DynamicTradingTraderListUI.instance.signalFoundPersist = true
-                    DynamicTradingTraderListUI.instance:populateList()
-                    -- Update tracker so render loop doesn't double-refresh unnecessarily
-                    DynamicTradingTraderListUI.instance.lastDiscoveredCount = DynamicTrading.Manager.GetDiscoveredCount(player)
+                if DT_RadioWindow and DT_RadioWindow.instance and DT_RadioWindow.instance:isVisible() then
+                    -- Access panel via children
+                    if DT_RadioWindow.instance.signalPanel then DT_RadioWindow.instance.signalPanel.signalFoundPersist = true end
+                    if DT_RadioWindow.instance.refreshList then DT_RadioWindow.instance.refreshList() end
                 end
                 
                 if HaloTextHelper then
-                    HaloTextHelper.addTextWithArrow(player, "New Signal Found", true, HaloTextHelper.getColorGreen())
+                    local alias = args.name or "Unknown"
+                    HaloTextHelper.addTextWithArrow(player, "Signal Acquired: " .. alias, true, HaloTextHelper.getColorGreen())
                 end
             
             -- 2. FAILURE: LIMIT REACHED (Red)
@@ -76,7 +76,7 @@ local function OnServerCommand(module, command, args)
             -- If Public, we only care about SUCCESS (Don't spam me when others fail)
             if args.status == "SUCCESS" then
                 if HaloTextHelper then
-                    local msg = targetName .. " located: " .. (args.name or "Unknown")
+                    local msg = "Signal Acquired by " .. targetName .. ": " .. (args.name or "Unknown")
                     -- Show as a general notification (no arrow, just text on screen)
                     HaloTextHelper.addText(player, msg, HaloTextHelper.getColorGreen())
                 end

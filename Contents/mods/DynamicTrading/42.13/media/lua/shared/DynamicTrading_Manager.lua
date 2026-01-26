@@ -290,75 +290,88 @@ end
 -- =============================================================================
 -- 7. TRADER & TRANSACTION FUNCTIONS
 -- =============================================================================
-function DynamicTrading.Manager.GenerateRandomContact()
+function DynamicTrading.Manager.GenerateRandomContact(finder)
     local data = DynamicTrading.Manager.GetData()
     -- 1. Pick Archetype
-local archetypes = {}
-for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
-if #archetypes == 0 then return nil end
-local archetype = archetypes[ZombRand(#archetypes) + 1]
+    local archetypes = {}
+    for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
+    if #archetypes == 0 then return nil end
+    local archetype = archetypes[ZombRand(#archetypes) + 1]
 
--- 2. Generate Identity (SurvivorFactory)
-local name = "Trader " .. tostring(ZombRand(1000))
-local gender = "Male"
+    -- 2. Generate Identity (SurvivorFactory)
+    local name = "Trader " .. tostring(ZombRand(1000))
+    local gender = "Male"
 
-if SurvivorFactory then
-    local desc = SurvivorFactory.CreateSurvivor()
-    if desc then 
-        name = desc:getForename() .. " " .. desc:getSurname() 
-        if desc:isFemale() then 
-            gender = "Female" 
+    if SurvivorFactory then
+        local desc = SurvivorFactory.CreateSurvivor()
+        if desc then 
+            name = desc:getForename() .. " " .. desc:getSurname() 
+            if desc:isFemale() then 
+                gender = "Female" 
+            end
         end
     end
-end
 
--- 3. Determine Portrait
-local portraitID = 1
-local maxPhotos = 5 -- Safe default
+    -- 3. Determine Portrait
+    local portraitID = 1
+    local maxPhotos = 5 -- Safe default
 
--- Check config for actual counts (e.g. Farmer might have 5, General might have 5)
-if DynamicTrading.Portraits and DynamicTrading.Portraits.GetMaxCount then
-    local count = DynamicTrading.Portraits.GetMaxCount(archetype, gender)
-    if count > 0 then
-        maxPhotos = count
+    -- Check config for actual counts (e.g. Farmer might have 5, General might have 5)
+    if DynamicTrading.Portraits and DynamicTrading.Portraits.GetMaxCount then
+        local count = DynamicTrading.Portraits.GetMaxCount(archetype, gender)
+        if count > 0 then
+            maxPhotos = count
+        end
     end
-end
 
--- Roll ID
-portraitID = ZombRand(maxPhotos) + 1
+    -- Roll ID
+    portraitID = ZombRand(maxPhotos) + 1
 
--- 4. Expiration
-local gt = GameTime:getInstance()
-local currentHours = gt:getWorldAgeHours()
-local minHours = SandboxVars.DynamicTrading.TraderStayHoursMin or 6
-local maxHours = SandboxVars.DynamicTrading.TraderStayHoursMax or 24
-if minHours > maxHours then minHours = maxHours end
+    -- 4. Expiration
+    local gt = GameTime:getInstance()
+    local currentHours = gt:getWorldAgeHours()
+    local minHours = SandboxVars.DynamicTrading.TraderStayHoursMin or 6
+    local maxHours = SandboxVars.DynamicTrading.TraderStayHoursMax or 24
+    if minHours > maxHours then minHours = maxHours end
 
-local duration = ZombRand(minHours, maxHours + 1)
-local expireTime = currentHours + duration
-local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
+    local duration = ZombRand(minHours, maxHours + 1)
+    local expireTime = currentHours + duration
+    local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
 
--- 5. Create Data Object
-data.Traders[uniqueID] = {
-    id = uniqueID,
-    archetype = archetype,
-    name = name,
-    gender = gender,           -- [NEW]
-    portraitID = portraitID,   -- [NEW]
-    stocks = {},
-    lastRestockDay = -1,
-    expirationTime = expireTime,
-    discoveredBy = {}          -- [PUBLIC NETWORK] Track which players discovered this trader
-}
+    -- 5. Create Data Object
+    data.Traders[uniqueID] = {
+        id = uniqueID,
+        archetype = archetype,
+        name = name,
+        gender = gender,           -- [NEW]
+        portraitID = portraitID,   -- [NEW]
+        stocks = {},
+        lastRestockDay = -1,
+        expirationTime = expireTime,
+        discoveredBy = {}          -- [PUBLIC NETWORK] Track which players discovered this trader
+    }
 
--- Auto-discover for the creating player (handled by server command)
-DynamicTrading.Manager.RestockTrader(uniqueID)
-DynamicTrading.Manager.IncrementDailyCounter()
-DynamicTrading.Manager.AddLog("Signal Acquired: " .. name, "good")
+    -- Auto-discover for the creating player (handled by server command)
+    DynamicTrading.Manager.RestockTrader(uniqueID)
+    DynamicTrading.Manager.IncrementDailyCounter()
+    
+    local finderName = "Unknown"
+    
+    if finder then
+        -- Handle String (Generic Calls)
+        if type(finder) == "string" then
+            finderName = finder
+        -- Handle IsoPlayer (Server Calls)
+        elseif finder.getUsername then
+            finderName = finder:getUsername()
+        end
+    end
+    
+    DynamicTrading.Manager.AddLog("Signal Acquired by " .. finderName .. ": " .. name, "good")
 
-if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 
-return data.Traders[uniqueID]
+    return data.Traders[uniqueID]
 end
 
 function DynamicTrading.Manager.RestockTrader(traderID)
