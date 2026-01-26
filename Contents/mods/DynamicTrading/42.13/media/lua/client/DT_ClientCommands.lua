@@ -23,6 +23,14 @@ local function OnServerCommand(module, command, args)
                 getSoundManager():PlaySound("DT_RadioRandom", false, 0.1)
                 player:Say("Connected: " .. (args.name or "Unknown"))
                 
+                -- [FIX] Force UI Animation and List Refresh immediately
+                if DynamicTradingTraderListUI and DynamicTradingTraderListUI.instance then
+                    DynamicTradingTraderListUI.instance.signalFoundPersist = true
+                    DynamicTradingTraderListUI.instance:populateList()
+                    -- Update tracker so render loop doesn't double-refresh unnecessarily
+                    DynamicTradingTraderListUI.instance.lastDiscoveredCount = DynamicTrading.Manager.GetDiscoveredCount(player)
+                end
+                
                 if HaloTextHelper then
                     HaloTextHelper.addTextWithArrow(player, "New Signal Found", true, HaloTextHelper.getColorGreen())
                 end

@@ -22,7 +22,7 @@ function DynamicTradingTraderListUI:initialise()
     -- State Trackers (for auto-refresh optimization)
     self.lastLogCount = -1
     self.lastTopLogID = "" 
-    self.lastTraderCount = -1 
+    self.lastDiscoveredCount = -1 
     
     -- [NEW] Signal Animation State
     self.signalState = "search"  -- "search", "found", "none"
@@ -176,32 +176,46 @@ function DynamicTradingTraderListUI:render()
         self.lastTopLogID = currentTopLog
     end
 
-    -- 4. TRADER AUTO-REFRESH
-    local currentTraderCount = 0
-    if data.Traders then
-        for _ in pairs(data.Traders) do currentTraderCount = currentTraderCount + 1 end
-    end
+    -- 4. TRADER AUTO-REFRESH (Using Discovered Count for Private Network Support)
+    local player = getSpecificPlayer(0)
+    local currentDiscovered = DynamicTrading.Manager.GetDiscoveredCount(player)
 
-    if currentTraderCount ~= self.lastTraderCount then
+    if currentDiscovered ~= self.lastDiscoveredCount then
         -- [NEW] Detect if a new trader was found during this session
-        if currentTraderCount > self.lastTraderCount and self.lastTraderCount >= 0 then
+        if currentDiscovered > self.lastDiscoveredCount and self.lastDiscoveredCount >= 0 then
             self.signalFoundPersist = true
         end
         self:populateList()
-        self.lastTraderCount = currentTraderCount
+        self.lastDiscoveredCount = currentDiscovered
     end
     
     -- ==========================================================
     -- 5. SIGNAL ANIMATION LOGIC
     -- ==========================================================
     local currentFound, dailyLimit = DynamicTrading.Manager.GetDailyStatus()
+    local isPublic = SandboxVars.DynamicTrading.PublicNetwork
+    local signalAvailable = true
+    
+    if isPublic then
+        -- Public Mode: Only reliable metric is the global limit
+        if currentFound >= dailyLimit then signalAvailable = false end
+    else
+        -- Private Mode: Check Global Limit AND Personal Undiscovered List
+        local canGenNew = (currentFound < dailyLimit)
+        local undiscovered = DynamicTrading.Manager.GetUndiscoveredTraders(player)
+        
+        -- If we can't gen new AND we have found all existing, then signal is dead
+        if not canGenNew and #undiscovered == 0 then 
+            signalAvailable = false 
+        end
+    end
     
     -- Determine signal state
     if self.signalFoundPersist then
         -- Player just found a signal, persist this state until scan or close
         self.signalState = "found"
-    elseif currentFound >= dailyLimit then
-        -- Daily limit reached, no more signals available
+    elseif not signalAvailable then
+        -- No more signals to find today
         self.signalState = "none"
     else
         -- Still searching for signals
@@ -493,9 +507,8 @@ function DynamicTradingTraderListUI.ToggleWindow(radioObj, isHam)
             ui.lastTopLogID = data.NetworkLogs[1].time .. data.NetworkLogs[1].text
         end
     end
-    local count = 0
-    if data.Traders then for _ in pairs(data.Traders) do count = count + 1 end end
-    ui.lastTraderCount = count
+    local player = getSpecificPlayer(0)
+    ui.lastDiscoveredCount = DynamicTrading.Manager.GetDiscoveredCount(player)
     
     DynamicTradingTraderListUI.instance = ui
 end
