@@ -40,22 +40,6 @@ function DT_SellConfirmationModal:createChildren()
     local btnH = 25
     local btnY = self.height - 35
     
-    -- CONFIRM
-    self.btnConfirm = ISButton:new(self.width - btnW - 10, btnY, btnW, btnH, "CONFIRM SELL", self, self.onConfirm)
-    self.btnConfirm:initialise()
-    self.btnConfirm.backgroundColor = {r=0.6, g=0.2, b=0.2, a=1.0}
-    self.btnConfirm.borderColor = {r=1, g=1, b=1, a=0.4}
-    self.btnConfirm:setTooltip("Warning: The Trader would just pretend that they haven't \nsaw what items are inside and grab this item with passion. \nYou have been warned!")
-    self:addChild(self.btnConfirm)
-    
-    -- UNPACK [MP-SAFE]
-    self.btnUnpack = ISButton:new(self.width / 2 - btnW / 2, btnY, btnW, btnH, "UNPACK", self, self.onUnpack)
-    self.btnUnpack:initialise()
-    self.btnUnpack.backgroundColor = {r=0.2, g=0.4, b=0.6, a=1.0}
-    self.btnUnpack.borderColor = {r=1, g=1, b=1, a=0.4}
-    self.btnUnpack:setTooltip("Dumps items to the floor safely")
-    self:addChild(self.btnUnpack)
-    
     -- CANCEL
     self.btnCancel = ISButton:new(10, btnY, btnW, btnH, "CANCEL", self, self.close)
     self.btnCancel:initialise()
@@ -63,7 +47,51 @@ function DT_SellConfirmationModal:createChildren()
     self.btnCancel.borderColor = {r=1, g=1, b=1, a=0.4}
     self:addChild(self.btnCancel)
     
+    -- LOCK CONTAINER
+    self.btnLock = ISButton:new(120, btnY, btnW, btnH, "LOCK CONTAINER", self, self.onLockContainer)
+    self.btnLock:initialise()
+    self.btnLock.backgroundColor = {r=0.4, g=0.4, b=0.1, a=1.0}
+    self.btnLock.borderColor = {r=1, g=1, b=1, a=0.4}
+    self.btnLock:setTooltip("Lock this container to prevent accidental sale")
+    self:addChild(self.btnLock)
+
+    -- UNPACK [MP-SAFE]
+    self.btnUnpack = ISButton:new(230, btnY, btnW, btnH, "UNPACK", self, self.onUnpack)
+    self.btnUnpack:initialise()
+    self.btnUnpack.backgroundColor = {r=0.2, g=0.4, b=0.6, a=1.0}
+    self.btnUnpack.borderColor = {r=1, g=1, b=1, a=0.4}
+    self.btnUnpack:setTooltip("Dumps items to the floor safely")
+    self:addChild(self.btnUnpack)
+
+    -- CONFIRM
+    self.btnConfirm = ISButton:new(340, btnY, btnW, btnH, "CONFIRM SELL", self, self.onConfirm)
+    self.btnConfirm:initialise()
+    self.btnConfirm.backgroundColor = {r=0.6, g=0.2, b=0.2, a=1.0}
+    self.btnConfirm.borderColor = {r=1, g=1, b=1, a=0.4}
+    self.btnConfirm:setTooltip("Warning: The Trader would just pretend that they haven't \nsaw what items are inside and grab this item with passion. \nYou have been warned!")
+    self:addChild(self.btnConfirm)
+
     self:populateList()
+end
+
+function DT_SellConfirmationModal:onLockContainer()
+    if not self.item then return end
+    
+    local player = getSpecificPlayer(0)
+    local modData = player:getModData()
+    if not modData.DT_LockedItems then modData.DT_LockedItems = {} end
+    
+    modData.DT_LockedItems[self.item:getID()] = true
+    
+    player:setHaloNote("Container Locked (Protected)", 255, 255, 100, 300)
+    player:playSound("LockDoor")
+    
+    -- Refresh Parent UI
+    if self.callbackTarget and self.callbackTarget.populateList then
+        self.callbackTarget:populateList()
+    end
+    
+    self:close()
 end
 
 function DT_SellConfirmationModal:populateList()
@@ -125,7 +153,7 @@ end
 
 -- STATIC SHOW HELPER
 function DT_SellConfirmationModal.Show(item, target, func, data, unpackFunc)
-    local modal = DT_SellConfirmationModal:new(0, 0, 360, 300) -- Wider for 3 buttons
+    local modal = DT_SellConfirmationModal:new(0, 0, 450, 300) -- Wider for 4 buttons
     modal:initialise()
     modal.item = item
     modal.callbackTarget = target
@@ -133,6 +161,6 @@ function DT_SellConfirmationModal.Show(item, target, func, data, unpackFunc)
     modal.callbackUnpackFunc = unpackFunc
     modal.data = data
     modal:addToUIManager()
-    modal:setX((getCore():getScreenWidth() / 2) - 180)
+    modal:setX((getCore():getScreenWidth() / 2) - 225)
     modal:setY((getCore():getScreenHeight() / 2) - 150)
 end

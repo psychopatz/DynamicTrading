@@ -235,3 +235,21 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
 
     DynamicTradingUI.instance = ui
 end
+-- ==========================================================
+-- AUTO-REFRESH HANDLERS
+-- ==========================================================
+
+local function onInventoryChange()
+    if DynamicTradingUI.instance and DynamicTradingUI.instance:getIsVisible() then
+        -- Only refresh if we are in SELLING mode (buying mode doesn't depend on player inventory)
+        if not DynamicTradingUI.instance.isBuying then
+            DynamicTradingUI.instance:populateList()
+        end
+    end
+end
+
+-- Trigger on any container update (pick up, drop, move)
+Events.OnContainerUpdate.Add(onInventoryChange)
+
+-- Trigger specifically when the inventory window refreshes (covers Favorite toggle)
+Events.OnRefreshInventoryWindowContainers.Add(onInventoryChange)

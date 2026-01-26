@@ -180,6 +180,13 @@ function DynamicTradingUI:populateList()
 
         for _, invItem in ipairs(itemList) do
             if invItem then 
+                -- [NEW] Sync Favorite status to Lock Data
+                if invItem:isFavorite() then
+                    local modData = player:getModData()
+                    if not modData.DT_LockedItems then modData.DT_LockedItems = {} end
+                    modData.DT_LockedItems[invItem:getID()] = true
+                end
+
                 local fullType = invItem:getFullType()
                 if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
                     -- Safety: Hide active communication radio
