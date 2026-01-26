@@ -273,3 +273,23 @@ option DynamicTrading.WalletJackpotChance
     translation = DynamicTrading_WalletJackpotChance,
 }
 
+option DynamicTrading.SellDeflationChance
+{
+    type = integer,
+    default = 30,
+    min = 10,
+    max = 100,
+    page = DynamicTrading,
+    translation = DynamicTrading_SellDeflationChance,
+}
+
+option DynamicTrading.SellPriceReductionChance
+{
+    type = integer,
+    default = 20,
+    min = 0,
+    max = 100,
+    page = DynamicTrading,
+    translation = DynamicTrading_SellPriceReductionChance,
+}
+

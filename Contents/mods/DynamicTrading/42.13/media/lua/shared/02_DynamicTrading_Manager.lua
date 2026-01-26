@@ -429,8 +429,16 @@ end
 function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
     local data = DynamicTrading.Manager.GetData()
     local current = data.globalHeat[category] or 0
-    data.globalHeat[category] = current - (0.01 * qty)
-    if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
+    
+    -- [NEW] Random Chance to decrease inflation (deflation)
+    local chance = SandboxVars.DynamicTrading.SellDeflationChance or 30
+    local roll = ZombRand(1, 101)
+    
+    if roll <= chance then
+        data.globalHeat[category] = current - (0.01 * qty)
+        if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
+    end
+    
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
 end
 

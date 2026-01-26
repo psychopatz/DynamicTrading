@@ -50,6 +50,7 @@ DynamicTrading.RegisterTag("Seed",      { priceMult = 0.8, weight = 40 })
 -- LUXURY / SPECIFIC
 DynamicTrading.RegisterTag("Jewelry",   { priceMult = 3.0, weight = 5 })  -- High value
 DynamicTrading.RegisterTag("Electronics",{ priceMult = 1.4, weight = 20 })
+DynamicTrading.RegisterTag("Luxury",     { priceMult = 4.0, weight = 2 })  -- Premium status
 
 -- =============================================================================
 -- 3. CONDITIONAL / SEASONAL

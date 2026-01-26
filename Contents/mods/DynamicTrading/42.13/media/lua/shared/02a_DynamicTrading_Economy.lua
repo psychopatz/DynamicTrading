@@ -308,6 +308,22 @@ function DynamicTrading.Economy.GetSellPrice(itemObj, itemKey, archetypeKey)
         end
     end
     
+    -- 5. Random Price Reduction (Cheese Prevention)
+    local reductionChance = SandboxVars.DynamicTrading.SellPriceReductionChance or 20
+    local hasExemption = false
+    
+    for _, tag in ipairs(itemData.tags) do
+        if tag == "Rare" or tag == "Legendary" or tag == "Luxury" then
+            hasExemption = true
+            break
+        end
+    end
+
+    if not hasExemption and ZombRand(100) < reductionChance then
+        -- Apply a random penalty (30% reduction) if the roll succeeds
+        price = price * 0.7
+    end
+
     -- Safety: Don't allow free money exploits or negatives
     if price < 0 then price = 0 end
 
