@@ -1,6 +1,7 @@
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
 require "DynamicTrading_Manager"
+require "client/DT_RadioInteraction" -- Required for GetDeviceType
 
 DT_SignalPanel = ISPanel:derive("DT_SignalPanel")
 
@@ -11,7 +12,7 @@ function DT_SignalPanel:initialise()
     self.signalAnimTimer = 0
     self.signalFrameDuration = 200
     self.signalFoundPersist = false
-    self.clickAnimTimer = 0 -- [NEW] Timer for click feedback overrides
+    self.clickAnimTimer = 0 
     
     self.signalFrameCounts = { search = 5, found = 3, none = 3 }
     self.signalTextures = { search = {}, found = {}, none = {} }
@@ -29,21 +30,16 @@ function DT_SignalPanel:createChildren()
     local width = self.width
     local btnWidth = 180
     
-    -- Layout: Animation (Left) | Buttons (Right)
-    -- AnimSize ~150 + Padding ~20 = 170 Left Offset
-    -- Remaining Width = width - 170
-    -- Center of Right Side = 170 + (Remaining / 2)
-    -- Button X = Center - (btnWidth / 2)
-    
+    -- Layout Calculation
     local animSpace = 170
     local remWidth = width - animSpace
     local btnX = animSpace + (remWidth - btnWidth) / 2
-    
-    -- Vertical Centering for Buttons considering height ~170
-    -- Total Height 170. Buttons take ~60 height (25 + 10 gap + 25)
-    -- StartY = (170 - 60) / 2 = 55
-    
     local startY = 55
+    
+    -- Store button coordinates for dynamic text rendering
+    self.btnX = btnX
+    self.btnY = startY
+    self.btnWidth = btnWidth
     
     -- Scan Button
     self.btnScan = ISButton:new(btnX, startY, btnWidth, 25, "SCAN FREQUENCIES", self, self.onScanClick)
@@ -59,7 +55,7 @@ function DT_SignalPanel:createChildren()
     self.btnInfo.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0}
     self:addChild(self.btnInfo)
     
-    -- Options Button [NEW]
+    -- Options Button
     self.btnOptions = ISButton:new(btnX, startY + 70, btnWidth, 25, "OPTIONS", self, self.onOptionsClick)
     self.btnOptions:initialise()
     self.btnOptions.borderColor = {r=1, g=1, b=1, a=0.5}
@@ -75,20 +71,64 @@ end
 
 function DT_SignalPanel:render()
     ISPanel.render(self)
-    -- Draw Animation
-    -- Draw Animation
+    
+    -- 1. Draw Signal Animation
     local tex = self.signalTextures[self.signalState] and self.signalTextures[self.signalState][self.signalFrame]
     
-    -- [NEW] Click Feedback Override
     if self.clickAnimTimer > 0 and self.signalTextures.none and self.signalTextures.none[2] then
         tex = self.signalTextures.none[2]
     end
     
     if tex then
         local size = 150 
-        local x = 10 -- Left side padding
-        local y = (self.height - size) / 2 -- Vertically center
+        local x = 10 
+        local y = (self.height - size) / 2 
         self:drawTextureScaled(tex, x, y, size, size, 1, 1, 1, 1)
+    end
+
+    -- 2. Draw Signal Power (Bonus) above Scan Button
+    if self.parent and self.parent.radioObj then
+        -- Calculate Power
+        local typeID = DT_RadioInteraction.GetDeviceType(self.parent.radioObj)
+        local radioData = DynamicTrading.Config.GetRadioData(typeID)
+        local power = radioData.power or 0.5
+        
+        if self.parent.isHam then
+            power = power * (SandboxVars.DynamicTrading.HamRadioBonus or 2.0)
+        end
+        
+        -- Determine Color
+        local r, g, b = 1, 1, 1 -- Default White
+        if power < 1.0 then
+            r, g, b = 1.0, 0.4, 0.4 -- Red (Weak)
+        elseif power < 1.5 then
+            r, g, b = 1.0, 0.9, 0.4 -- Yellow (Average)
+        else
+            r, g, b = 0.4, 1.0, 0.4 -- Green (Strong)
+        end
+        
+        -- Draw Text
+        local label = "Broadcast Power: x" .. string.format("%.1f", power)
+        local font = UIFont.Small
+        local textWidth = getTextManager():MeasureStringX(font, label)
+        local iconSize = 20
+        local spacing = 8
+        
+        local totalWidth = textWidth + spacing + iconSize
+        local startX = self.btnX + (self.btnWidth - totalWidth) / 2
+        local textY = self.btnY - 18
+        
+        -- Draw Icon
+        local itemScript = ScriptManager.instance:getItem(typeID)
+        local iconName = itemScript and itemScript:getIcon()
+        local iconTex = iconName and getTexture("Item_" .. iconName)
+        
+        if iconTex then
+            self:drawTextureScaled(iconTex, startX, textY - 2, iconSize, iconSize, 1, 1, 1, 1)
+        end
+        
+        -- Draw Label
+        self:drawText(label, startX + iconSize + spacing, textY, r, g, b, 1.0, font)
     end
 end
 
@@ -113,7 +153,6 @@ function DT_SignalPanel:updateSignalLogic()
     local isPublic = SandboxVars.DynamicTrading.PublicNetwork
     local signalAvailable = true
     
-    -- [NEW] Update Click Timer
     local deltaTime = UIManager.getMillisSinceLastRender()
     if self.clickAnimTimer > 0 then
         self.clickAnimTimer = self.clickAnimTimer - deltaTime
@@ -136,7 +175,6 @@ function DT_SignalPanel:updateSignalLogic()
     end
     
     -- Animate
-    local deltaTime = UIManager.getMillisSinceLastRender()
     self.signalAnimTimer = self.signalAnimTimer + deltaTime
     if self.signalAnimTimer >= self.signalFrameDuration then
         self.signalAnimTimer = self.signalAnimTimer - self.signalFrameDuration
@@ -154,7 +192,7 @@ function DT_SignalPanel:onScanClick()
     end
     
     self.signalFoundPersist = false
-    self.clickAnimTimer = 300 -- [NEW] Show override for 300ms
+    self.clickAnimTimer = 300 
     sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
 
     if DT_RadioInteraction and DT_RadioInteraction.PerformScan then
@@ -173,9 +211,7 @@ function DT_SignalPanel:onInfoClick()
 end
 
 function DT_SignalPanel:onOptionsClick()
-    print("[DT_SignalPanel] onOptionsClick called.")
     if not DT_OptionsUI then 
-        print("[DT_SignalPanel] DT_OptionsUI nil. Attempting valid requires...")
         pcall(require, "UI/DT_OptionsUI")
         if not DT_OptionsUI then pcall(require, "client/UI/DT_OptionsUI") end
     end
@@ -183,7 +219,7 @@ function DT_SignalPanel:onOptionsClick()
     if DT_OptionsUI then
         DT_OptionsUI.ToggleWindow()
     else
-        print("[DT_SignalPanel] ERROR: DT_OptionsUI failed to load. (still nil)")
+        print("[DT_SignalPanel] ERROR: DT_OptionsUI failed to load.")
     end
 end
 
@@ -191,6 +227,6 @@ function DT_SignalPanel:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.backgroundColor = {r=0, g=0, b=0, a=0} -- transparent
+    o.backgroundColor = {r=0, g=0, b=0, a=0} 
     return o
-end
+end     

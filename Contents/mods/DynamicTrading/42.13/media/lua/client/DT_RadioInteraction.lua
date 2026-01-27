@@ -6,13 +6,12 @@ require "Utils/DT_AudioManager"
 DT_RadioInteraction = {}
 
 -- ==========================================================
--- HELPER: IDENTIFY RADIO TIER (ROBUST)
+-- HELPER: IDENTIFY RADIO TIER (ROBUST & ROTATION AWARE)
 -- ==========================================================
 function DT_RadioInteraction.GetDeviceType(obj)
     if not obj then return nil end
 
     -- 1. HANDHELD (InventoryItem)
-    -- Directly check if the item type exists in our Config
     if instanceof(obj, "InventoryItem") then
         local typeID = obj:getFullType()
         if DynamicTrading.Config.RadioTiers[typeID] then
@@ -22,7 +21,6 @@ function DT_RadioInteraction.GetDeviceType(obj)
     end
 
     -- 2. DROPPED ITEM (IsoWorldInventoryObject)
-    -- This handles radios dropped on the floor (3D items)
     if instanceof(obj, "IsoWorldInventoryObject") then
         local item = obj:getItem()
         if item then
@@ -35,7 +33,6 @@ function DT_RadioInteraction.GetDeviceType(obj)
     end
 
     -- 3. STATIONARY / MAP OBJECTS (IsoWaveSignal)
-    -- This handles placed furniture radios
     if instanceof(obj, "IsoWaveSignal") then
         local data = obj:getDeviceData()
         
@@ -44,19 +41,54 @@ function DT_RadioInteraction.GetDeviceType(obj)
             return nil 
         end
 
-        -- At this point, we KNOW it is a valid Two-Way radio.
-        -- We try to guess the specific tier based on the sprite, 
-        -- but if the sprite is unknown (due to rotation), we fallback to a safe default.
-        
         local sprite = obj:getSprite() and obj:getSprite():getName() or ""
+        local range = data:getTransmitRange()
+        local isPortable = data:getIsPortable()
         
-        -- specific matches
-        if sprite == "appliances_radio_01_5" then return "Base.HamRadio2" end -- Military
-        if string.find(sprite, "makeshift") then return "Base.HamRadioMakeShift" end
+        -- [DEBUG] Print sprite to help identify missing tiers
+        -- print("[DT_Debug] Checking Radio Sprite: " .. tostring(sprite))
+
+        -- A. MILITARY HAM RADIO (Ham2)
+        if sprite == "appliances_com_01_8" or sprite == "appliances_com_01_9" or 
+           sprite == "appliances_com_01_10" or sprite == "appliances_com_01_11" or
+           sprite == "appliances_radio_01_5" then
+            return "Base.HamRadio2"
+        end
+
+        -- B. STANDARD HAM RADIO (Ham1)
+        if sprite == "appliances_com_01_0" or sprite == "appliances_com_01_1" or 
+           sprite == "appliances_com_01_2" or sprite == "appliances_com_01_3" or
+           sprite == "appliances_radio_01_4" then
+            return "Base.HamRadio1"
+        end
+
+        -- C. MAKESHIFT HAM RADIO
+        if sprite == "appliances_com_01_56" or sprite == "appliances_com_01_57" or 
+           sprite == "appliances_com_01_58" or sprite == "appliances_com_01_59" then
+            return "Base.HamRadioMakeShift"
+        end
+
+        -- D. RANGE-BASED ROBUST IDENTIFICATION (Fallback/Modded)
+        if range >= 1000000 then return "Base.HamRadio2" end
+        if range >= 100000 then return "Base.HamRadio1" end
         
-        -- Safe Fallback: If it's Two-Way but we don't recognize the sprite, treat as Standard Ham.
-        -- This fixes the issue where rotating a radio broke the interaction.
-        return "Base.HamRadio1"
+        -- Manpack / High-End Portable
+        if isPortable and range >= 40000 then return "Base.ManPackRadio" end
+        
+        if isPortable then
+            if range >= 16000 then return "Base.WalkieTalkie5" end
+            if range >= 8000 then return "Base.WalkieTalkie4" end
+            if range >= 4000 then return "Base.WalkieTalkie3" end
+            if range >= 2000 then return "Base.WalkieTalkie2" end
+            if range >= 750 then return "Base.WalkieTalkie1" end
+            return "Base.WalkieTalkieMakeShift"
+        else
+            -- Stationary fallbacks
+            if string.find(sprite, "makeshift") or string.find(sprite, "crafted") then
+                return "Base.HamRadioMakeShift"
+            end
+            return "Base.HamRadio1" -- Default for stationary 2-way radios
+        end
     end
 
     return nil
@@ -84,7 +116,8 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     end
 
     -- 2. GET DATA
-    local deviceData = deviceItem:getDeviceData()
+    local deviceData = nil 
+    if deviceItem.getDeviceData then deviceData = deviceItem:getDeviceData() end
     if not deviceData then return false end
 
     -- 3. POWER & STATE CHECK
@@ -168,7 +201,6 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
         local item = v
         if not instanceof(v, "InventoryItem") then item = v.items[1] end
         
-        -- Strict check against Config List
         local typeID = DT_RadioInteraction.GetDeviceType(item)
         if typeID then
             radioItem = item
@@ -204,30 +236,40 @@ end
 
 local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, test)
     local player = getSpecificPlayer(playerNum)
-    local hamRadio = nil
+    local radioObj = nil
+    local isPortable = false
     
     for _, obj in ipairs(worldObjects) do
-        -- Strict Check: Is this a Valid Two-Way Radio?
-        if DT_RadioInteraction.GetDeviceType(obj) then
-            hamRadio = obj
-            break
+        -- Only allow stationary IsoWaveSignal objects in world interaction
+        if instanceof(obj, "IsoWaveSignal") then
+            local typeID = DT_RadioInteraction.GetDeviceType(obj)
+            if typeID then
+                -- Check if it's a portable type (which we want to exclude from world context)
+                if string.find(typeID, "WalkieTalkie") or typeID == "Base.ManPackRadio" then
+                    isPortable = true
+                else
+                    radioObj = obj
+                end
+                break
+            end
         end
     end
     
-    if hamRadio then
-         local data = hamRadio:getDeviceData()
+    -- If we found a stationary HAM radio and it's NOT a portable device dropped/placed
+    if radioObj and not isPortable then
+         local data = radioObj:getDeviceData()
          local isOperational = false
          
          if data and data:getIsTurnedOn() then
              if data:getIsBatteryPowered() then
                  if data:getPower() > 0 then isOperational = true end
-             elseif hamRadio:getSquare() and hamRadio:getSquare():haveElectricity() then
+             elseif radioObj:getSquare() and radioObj:getSquare():haveElectricity() then
                  isOperational = true
              end
          end
 
          local option = context:addOption("Open Trader Network (HAM)", 
-            hamRadio,
+            radioObj,
             function(obj) 
                 if DT_RadioWindow then
                     DT_RadioWindow.ToggleWindow(obj, true)
