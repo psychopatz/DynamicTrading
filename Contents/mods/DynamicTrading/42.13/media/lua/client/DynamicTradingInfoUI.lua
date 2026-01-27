@@ -236,7 +236,7 @@ function DynamicTradingInfoUI:populateMarketProfile()
     local colors = DynamicTradingInfoUI.Colors
     
     -- Header
-    local header = listbox:addItem("═══ MARKET PROFILE ═══", {})
+    local header = listbox:addItem("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= MARKET PROFILE ", {})
     header.textColor = colors.HeaderMarket
     
     listbox:addItem(" ", {})
@@ -302,7 +302,7 @@ function DynamicTradingInfoUI:populateMetaEvents()
     local colors = DynamicTradingInfoUI.Colors
     
     -- Header
-    local header = listbox:addItem("═══ WORLD STATE EVENTS ═══", nil)
+    local header = listbox:addItem("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= WORLD STATE EVENTS ", nil)
     header.textColor = colors.HeaderMeta
     
     listbox:addItem(" ", nil)
@@ -342,7 +342,7 @@ function DynamicTradingInfoUI:populateFlashEvents()
     local colors = DynamicTradingInfoUI.Colors
     
     -- Header
-    local header = listbox:addItem("═══ BREAKING NEWS ═══", nil)
+    local header = listbox:addItem("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= BREAKING NEWS ", nil)
     header.textColor = colors.HeaderFlash
     
     listbox:addItem(" ", nil)
@@ -457,8 +457,18 @@ function DynamicTradingInfoUI:populateInflation()
     local data = DynamicTrading.Manager.GetData()
     local colors = DynamicTradingInfoUI.Colors
     
+    -- Global Wealth
+    local wealthHeader = listbox:addItem("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL WEALTH ", nil)
+    wealthHeader.textColor = colors.HeaderMarket
+    
+    local wealth = data.GlobalWealthPool or 0
+    local wealthItem = listbox:addItem(string.format("  Current Trader Wealth: $%d", wealth), nil)
+    wealthItem.textColor = colors.EffectCheap
+    
+    listbox:addItem(" ", nil)
+
     -- Header
-    local header = listbox:addItem("═══ CATEGORY INFLATION ═══", nil)
+    local header = listbox:addItem("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= CATEGORY INFLATION ", nil)
     header.textColor = colors.HeaderInflation
     
     listbox:addItem(" ", nil)

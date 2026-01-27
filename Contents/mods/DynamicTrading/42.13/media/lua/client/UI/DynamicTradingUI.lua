@@ -17,6 +17,8 @@ require "DynamicTradingUI_Layout"
 require "DynamicTradingUI_List"
 require "DynamicTradingUI_Actions"
 require "DynamicTradingUI_Events"
+require "UI/DT_TraderDialogue_Hub"
+require "UI/DT_TraderDialogue_Request"
 require "DT_SellConfirmationModal"
 
 DynamicTradingUI = ISCollapsableWindow:derive("DynamicTradingUI")
@@ -119,6 +121,29 @@ function DynamicTradingUI:update()
     if not self:isConnectionValid() then
         self:close()
         return
+    end
+
+    -- [NEW] "Ask a Favor" Button State Management
+    if self.isBuying and self.btnAsk then
+        local btnEnabled = true
+        
+        -- Check 1: Server Cap Reached? (Info only)
+        local current, limit = DynamicTrading.Manager.GetDailyStatus()
+        if current >= limit then 
+            self.btnAsk.tooltip = "Trader Network Busy (Max Requests Reached)"
+        end
+        
+        -- Check 2: Already requested from this trader? (Info only)
+        if trader.hasRequestedFavor then
+            self.btnAsk.tooltip = "Favor already requested from this contact."
+        end
+
+        -- Check 3: Clear tooltip if no restrictions
+        if current < limit and not trader.hasRequestedFavor then 
+            self.btnAsk.tooltip = nil 
+        end
+        
+        self.btnAsk:setEnable(true)
     end
     
     -- ==========================================================

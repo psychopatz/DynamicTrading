@@ -213,13 +213,22 @@ function DynamicTradingUI:onToggleMode()
     self.selectedItemID = -1
     self.lastSelectedIndex = -1
     
-    -- Update Button Visibilities
-    if self.btnLock then
-        self.btnLock:setVisible(not self.isBuying)
-    end
-    if self.btnAsk then
-        self.btnAsk:setVisible(not self.isBuying)
-        self.btnAsk:setEnable(not self.isBuying)
+    if self.isBuying then
+        -- Buying Mode: Show Ask Favor
+        if self.btnAsk then 
+            self.btnAsk:setTitle("Talk")
+            self.btnAsk:setVisible(true) 
+            self.btnAsk:setEnable(true)
+        end
+        if self.btnLock then self.btnLock:setVisible(false) end
+    else
+        -- Selling Mode: Show Lock & Ask What They Want
+        if self.btnLock then self.btnLock:setVisible(true) end
+        if self.btnAsk then
+            self.btnAsk:setTitle("ASK WHAT THEY WANT")
+            self.btnAsk:setVisible(true)
+            self.btnAsk:setEnable(true)
+        end
     end
     
     self:populateList()
@@ -233,16 +242,30 @@ function DynamicTradingUI:onAsk()
     local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
     if not trader or not DynamicTrading.DialogueManager then return end
 
-    -- 1. Player ask
-    local playerMsg = DynamicTrading.DialogueManager.GeneratePlayerSellAskMessage()
-    self:queueMessage(playerMsg, false, true, 0)
-
-    -- 2. NPC reply
-    local npcMsg = DynamicTrading.DialogueManager.GenerateSellAskDialogue(trader)
-    self:queueMessage(npcMsg, false, false, 30) -- ~1.5s delay
+    if self.isBuying then
+        -- [NEW] HUB FLOW
+        require "UI/DT_TraderDialogue_Hub"
+        DT_TraderDialogue_Hub.Init(nil, trader, self)
+    else
+        -- ORIGINAL SELL ASK FLOW
+        -- 1. Player ask
+        local playerMsg = DynamicTrading.DialogueManager.GeneratePlayerSellAskMessage()
+        self:queueMessage(playerMsg, false, true, 0)
+    
+        -- 2. NPC reply
+        local npcMsg = DynamicTrading.DialogueManager.GenerateSellAskDialogue(trader)
+        self:queueMessage(npcMsg, false, false, 30) 
+    end
 end
 
 function DynamicTradingUI:close()
+    -- [NEW] Close child conversation window if open
+    if DT_ConversationUI and DT_ConversationUI.instance then
+        if DT_ConversationUI.instance.parentUI == self then
+            DT_ConversationUI.instance:close()
+        end
+    end
+
     self:setVisible(false)
     self:removeFromUIManager()
     DynamicTradingUI.instance = nil

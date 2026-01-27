@@ -104,6 +104,14 @@ end
 -- =============================================================================
 -- 2. GREETING GENERATOR
 -- =============================================================================
+function DynamicTrading.DialogueManager.GetDialogue(trader, category, subContext, args)
+    if not trader or not category or not subContext then return "..." end
+    
+    local pool = GetDialoguePool(trader.archetype, category, subContext)
+    local rawText = PickRandom(pool)
+    return FormatMessage(rawText, args or {})
+end
+
 function DynamicTrading.DialogueManager.GenerateGreeting(trader)
     if not trader then return "..." end
     

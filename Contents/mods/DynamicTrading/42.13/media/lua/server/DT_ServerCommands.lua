@@ -314,6 +314,57 @@ function Commands.TradeTransaction(player, args)
 end
 
 
+-- COMMAND: RequestTrader
+-- Description: Buying a specific contact lead (Favor)
+function Commands.RequestTrader(player, args)
+    local archetype = args.archetype
+    local price = args.price or 0
+    local targetUser = player:getUsername()
+
+    -- 1. Validate Money
+    if GetServerWealth(player) < price then
+        SendResponse(player, "RequestResult", { success=false, msg="Insufficient Funds" })
+        return
+    end
+
+    -- 2. Validate Cap (Double Check Server Side)
+    local found, limit = DynamicTrading.Manager.GetDailyStatus()
+    if found >= limit then
+        SendResponse(player, "RequestResult", { success=false, msg="Network Busy (Cap Reached)" })
+        return
+    end
+
+    -- 3. Deduct Money
+    if not ServerRemoveMoney(player, price) then
+        SendResponse(player, "RequestResult", { success=false, msg="Transaction Error" })
+        return
+    end
+
+    -- 4. Generate Trader
+    local trader = DynamicTrading.Manager.GenerateRandomContact(player, archetype)
+    
+    if trader then
+        -- [NEW] Auto-discover for requesting player
+        DynamicTrading.Manager.DiscoverTrader(trader.id, player)
+        
+        DynamicTrading.NetworkLogs.AddLog("Favor: " .. targetUser .. " requested a " .. archetype, "info")
+        SendResponse(player, "RequestResult", { success=true, name=trader.name })
+    else
+        ServerAddItem(player:getInventory(), "Base.Money", price) -- Refund
+        SendResponse(player, "RequestResult", { success=false, msg="Contact unavailable" })
+    end
+end
+
+-- COMMAND: BurnMoney
+-- Description: Removes money without reward (Scam/Theft mechanics)
+function Commands.BurnMoney(player, args)
+    local amount = args.amount
+    if amount and amount > 0 then
+        ServerRemoveMoney(player, amount)
+        DynamicTrading.NetworkLogs.AddLog("Scam: " .. player:getUsername() .. " lost $" .. amount, "bad")
+    end
+end
+
 -- COMMAND: UnpackContainer
 -- Description: Drops everything inside a bag to the player's feet
 function Commands.UnpackContainer(player, args)

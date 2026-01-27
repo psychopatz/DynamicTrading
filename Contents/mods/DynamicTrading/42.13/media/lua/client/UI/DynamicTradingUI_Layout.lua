@@ -38,10 +38,10 @@ function DynamicTradingUI:createChildren()
     self:addChild(self.lblInfo)
 
     -- Ask Button (Organic immersion)
-    self.btnAsk = ISButton:new(20, budgetY + 35, leftColW - 20, 25, "ASK WHAT THEY WANT", self, self.onAsk)
+    self.btnAsk = ISButton:new(20, budgetY + 35, leftColW - 20, 25, "Talk", self, self.onAsk)
     self.btnAsk:initialise()
     self.btnAsk.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0}
-    self.btnAsk:setVisible(false) 
+    self.btnAsk:setVisible(true) 
     self:addChild(self.btnAsk)
 
     -- Lock Button (Client-side protection)

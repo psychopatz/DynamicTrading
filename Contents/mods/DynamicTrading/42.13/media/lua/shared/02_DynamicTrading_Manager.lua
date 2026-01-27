@@ -344,13 +344,17 @@ end
 -- =============================================================================
 -- 7. TRADER & TRANSACTION FUNCTIONS
 -- =============================================================================
-function DynamicTrading.Manager.GenerateRandomContact(finder)
+function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
     local data = DynamicTrading.Manager.GetData()
     -- 1. Pick Archetype
-    local archetypes = {}
-    for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
-    if #archetypes == 0 then return nil end
-    local archetype = archetypes[ZombRand(#archetypes) + 1]
+    local archetype = targetArchetype
+    
+    if not archetype then
+        local archetypes = {}
+        for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
+        if #archetypes == 0 then return nil end
+        archetype = archetypes[ZombRand(#archetypes) + 1]
+    end
 
     -- 2. Generate Identity (SurvivorFactory)
     local name = "Trader " .. tostring(ZombRand(1000))
