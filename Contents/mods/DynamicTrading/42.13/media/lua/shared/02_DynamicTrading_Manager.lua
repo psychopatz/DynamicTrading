@@ -47,8 +47,15 @@ function DynamicTrading.Manager.GetData()
         }
     end
 
+
     -- [NEW] Global Deflation Tracker (Clear daily)
     if not data.deflatedGlobal then data.deflatedGlobal = {} end
+
+    -- [NEW] Global Wealth Pool
+    if not data.GlobalWealthPool then 
+        local startWealth = SandboxVars.DynamicTrading.GlobalWealthStart or 50000
+        data.GlobalWealthPool = startWealth
+    end
 
     -- Legacy Migration (Fixes old saves missing the cooldown table)
     if not data.EventSystem.cooldowns then data.EventSystem.cooldowns = {} end
@@ -58,6 +65,43 @@ function DynamicTrading.Manager.GetData()
     DynamicTrading.Manager.RebuildActiveCache(data)
     
     return data
+end
+
+-- =============================================================================
+-- 2b. GLOBAL WEALTH API
+-- =============================================================================
+function DynamicTrading.Manager.GetGlobalWealth()
+    local data = DynamicTrading.Manager.GetData()
+    return data.GlobalWealthPool or 0
+end
+
+function DynamicTrading.Manager.AddToWealthPool(amount)
+    local data = DynamicTrading.Manager.GetData()
+    local current = data.GlobalWealthPool or 0
+    data.GlobalWealthPool = current + amount
+    
+    -- Sync if this causes a significant change? 
+    -- For now we rely on the caller to ModData.transmit or the periodic sync.
+    -- But since this is often called during transactions, we should probably sync.
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+end
+
+function DynamicTrading.Manager.TakeFromWealthPool(requestAmount)
+    local data = DynamicTrading.Manager.GetData()
+    local current = data.GlobalWealthPool or 0
+    
+    local withdrawn = 0
+    if current >= requestAmount then
+        withdrawn = requestAmount
+        data.GlobalWealthPool = current - requestAmount
+    else
+        -- Pool is drained! Take what's left.
+        withdrawn = current
+        data.GlobalWealthPool = 0
+    end
+    
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    return withdrawn
 end
 
 -- =============================================================================
@@ -352,6 +396,22 @@ function DynamicTrading.Manager.GenerateRandomContact(finder)
     local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
 
     -- 5. Create Data Object
+    -- [UPDATED] Wealth Pool Integration
+    local minBudget = SandboxVars.DynamicTrading.TraderBudgetMin or 100
+    local maxBudget = SandboxVars.DynamicTrading.TraderBudgetMax or 500
+    local requestedBudget = ZombRand(minBudget, maxBudget + 1)
+    
+    local actualBudget = DynamicTrading.Manager.TakeFromWealthPool(requestedBudget)
+    
+    -- Fallback: If pool gave us 0 (or very little), invoke the Bailout Fund
+    local fallback = SandboxVars.DynamicTrading.GlobalWealthFallback or 100
+    if actualBudget < fallback then
+        local missing = fallback - actualBudget
+        actualBudget = actualBudget + missing
+        -- We don't deduct this 'missing' amount from the pool because the pool is empty/insufficient.
+        -- This is inflation/printing money to keep the game playable.
+    end
+
     data.Traders[uniqueID] = {
         id = uniqueID,
         archetype = archetype,
@@ -362,7 +422,7 @@ function DynamicTrading.Manager.GenerateRandomContact(finder)
         lastRestockDay = -1,
         expirationTime = expireTime,
         discoveredBy = {},          -- [PUBLIC NETWORK] Track which players discovered this trader
-        budget = ZombRand(SandboxVars.DynamicTrading.TraderBudgetMin or 500, (SandboxVars.DynamicTrading.TraderBudgetMax or 2000) + 1), -- [NEW]
+        budget = actualBudget,      -- [NEW] Derived from Pool
         localDeflation = {} -- [NEW] Per-item count
     }
 
@@ -439,7 +499,13 @@ function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if itemData then
         local unitPrice = DynamicTrading.Economy.GetBuyPrice(itemKey, data.globalHeat)
-        trader.budget = (trader.budget or 1000) + (unitPrice * qty)
+        local totalGain = unitPrice * qty
+        trader.budget = (trader.budget or 1000) + totalGain
+        
+        -- Buying means Player -> Trader.
+        -- Money goes INTO the Trader's local budget.
+        -- Eventually, when the trader leaves, this money returns to the Global Pool.
+        -- So we don't need to touch the pool here.
     end
 
     local sensitivity = SandboxVars.DynamicTrading.CategoryInflation or 0.05

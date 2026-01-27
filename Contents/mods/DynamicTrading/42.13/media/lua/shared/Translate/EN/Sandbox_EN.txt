@@ -97,4 +97,10 @@ Sandbox_EN = {
 
     Sandbox_DynamicTrading_TraderBudgetMax = "Trader Budget (Max)",
     Sandbox_DynamicTrading_TraderBudgetMax_tooltip = "The maximum starting cash for a newly discovered trader.",
+
+    Sandbox_DynamicTrading_GlobalWealthStart = "Global Economy (Start)",
+    Sandbox_DynamicTrading_GlobalWealthStart_tooltip = "The total amount of money available in the global economy at the start of the game.",
+
+    Sandbox_DynamicTrading_GlobalWealthFallback = "Broke Trader Fallback",
+    Sandbox_DynamicTrading_GlobalWealthFallback_tooltip = "If the Global Economy is empty, traders will spawn with this minimum amount of cash (created from thin air) to keep the game playable.",
 }

@@ -525,7 +525,15 @@ local function Server_OnHourlyTick()
             end
             
             if shouldRemove then
-                DynamicTrading.Manager.AddLog("Signal Lost: " .. (trader.name or "Unknown"), "bad")
+                -- [NEW] Recycle Wealth
+                local leftover = trader.budget or 0
+                if leftover > 0 then
+                    DynamicTrading.Manager.AddToWealthPool(leftover)
+                    DynamicTrading.Manager.AddLog("Signal Lost: " .. (trader.name or "Unknown") .. " (Returned $" .. math.floor(leftover) .. " to economy)", "bad")
+                else
+                    DynamicTrading.Manager.AddLog("Signal Lost: " .. (trader.name or "Unknown"), "bad")
+                end
+                
                 data.Traders[id] = nil
                 changesMade = true
             end

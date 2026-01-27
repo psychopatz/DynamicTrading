@@ -303,6 +303,7 @@ option DynamicTrading.SellDeflationChance
     translation = DynamicTrading_SellDeflationChance,
 }
 
+
 option DynamicTrading.SellPriceReductionChance
 {
     type = integer,
@@ -311,5 +312,25 @@ option DynamicTrading.SellPriceReductionChance
     max = 100,
     page = DynamicTrading,
     translation = DynamicTrading_SellPriceReductionChance,
+}
+
+option DynamicTrading.GlobalWealthStart
+{
+    type = integer,
+    default = 50000,
+    min = 0,
+    max = 10000000,
+    page = DynamicTrading,
+    translation = DynamicTrading_GlobalWealthStart,
+}
+
+option DynamicTrading.GlobalWealthFallback
+{
+    type = integer,
+    default = 100,
+    min = 0,
+    max = 10000,
+    page = DynamicTrading,
+    translation = DynamicTrading_GlobalWealthFallback,
 }
 
