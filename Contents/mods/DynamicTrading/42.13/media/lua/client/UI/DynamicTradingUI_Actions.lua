@@ -113,6 +113,22 @@ function DynamicTradingUI:onAction()
                 end
             end
         end
+
+        -- [NEW] TRADER BUDGET CHECK
+        if trader and trader.budget and trader.budget < d.price then
+            diagArgs.success = false
+            diagArgs.failReason = "NoCash"
+            
+            -- 1. Player dialogue
+            local playerMsg = DynamicTrading.DialogueManager.GeneratePlayerMessage("Sell", diagArgs)
+            self:queueMessage(playerMsg, false, true, 0)
+            
+            -- 2. Trader response
+            local failMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, false, diagArgs)
+            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom")
+            
+            return
+        end
     end
 
     -- CONSTRUCT ARGUMENTS (If checks pass, send to server)

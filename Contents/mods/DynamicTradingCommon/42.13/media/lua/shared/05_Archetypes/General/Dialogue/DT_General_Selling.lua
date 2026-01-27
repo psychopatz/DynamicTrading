@@ -44,5 +44,12 @@ DynamicTrading.Dialogue.General.Selling = {
         "It's barely holding together, {player}. {price} is my best offer.",
         "This {item} is garbage, but I'll recycle it for {price}.",
         "I'm doing you a favor taking this trash for {price}."
+    },
+    NoCash = {
+        "Man, I'm dry. I'd take it, but the till is empty.",
+        "System says I'm over budget for today. Can't buy that {item} right now.",
+        "I'm all out of credits, {player.firstname}. Come back when I've moved some stock.",
+        "Radio network's tapped me out. No cash left for a {item}.",
+        "I'm running on empty here. I can't afford to pay you what that's worth."
     }
 }

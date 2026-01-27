@@ -187,9 +187,13 @@ function DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy
     local subContext = "Generic"
 
     -- Failure Check
-    if isBuy and not safeArgs.success then
-        if safeArgs.failReason == "SoldOut" then subContext = "SoldOut"
-        elseif safeArgs.failReason == "NoCash" then subContext = "NoCash"
+    if not safeArgs.success then
+        if isBuy then
+            if safeArgs.failReason == "SoldOut" then subContext = "SoldOut"
+            elseif safeArgs.failReason == "NoCash" then subContext = "NoCash"
+            end
+        else
+            if safeArgs.failReason == "NoCash" then subContext = "NoCash" end
         end
         local pool = GetDialoguePool(trader.archetype, category, subContext)
         return FormatMessage(PickRandom(pool), safeArgs)
