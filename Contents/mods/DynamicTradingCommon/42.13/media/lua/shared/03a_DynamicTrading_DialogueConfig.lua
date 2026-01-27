@@ -20,6 +20,9 @@ require "05_Archetypes/General/Dialogue/DT_General_Greetings"
 require "05_Archetypes/General/Dialogue/DT_General_Idle"
 require "05_Archetypes/General/Dialogue/DT_General_Buying"
 require "05_Archetypes/General/Dialogue/DT_General_Selling"
+require "05_Archetypes/General/Dialogue/Chat/DT_General_Chat_History"
+require "05_Archetypes/General/Dialogue/Chat/DT_General_Chat_World"
+require "05_Archetypes/General/Dialogue/Chat/DT_General_Chat_Personal"
 
 -- Archetypes - Sheriff
 require "05_Archetypes/Sheriff/Dialogue/DT_Sheriff_Greetings"

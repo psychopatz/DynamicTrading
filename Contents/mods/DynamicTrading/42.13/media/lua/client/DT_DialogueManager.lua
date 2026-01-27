@@ -54,6 +54,11 @@ local function FormatMessage(text, args)
     
     -- 2. Full Name
     text = string.gsub(text, "{player}", pFull)
+
+    -- 2b. NPC Name (if available)
+    local nName = args and args.traderName or "Trader"
+    text = string.gsub(text, "{npc}", nName)
+    text = string.gsub(text, "{npc%.name}", nName)
     
     -- 3. Item & Price
     text = string.gsub(text, "{item}", iName)
@@ -107,9 +112,14 @@ end
 function DynamicTrading.DialogueManager.GetDialogue(trader, category, subContext, args)
     if not trader or not category or not subContext then return "..." end
     
+    local safeArgs = args or {}
+    if trader.name and not safeArgs.traderName then
+        safeArgs.traderName = trader.name
+    end
+    
     local pool = GetDialoguePool(trader.archetype, category, subContext)
     local rawText = PickRandom(pool)
-    return FormatMessage(rawText, args or {})
+    return FormatMessage(rawText, safeArgs)
 end
 
 function DynamicTrading.DialogueManager.GenerateGreeting(trader)

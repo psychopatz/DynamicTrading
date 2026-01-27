@@ -52,14 +52,13 @@ function DT_TraderDialogue_Hub.GenerateHubOptions(ui, trader)
         })
     end
 
-    -- OPTION 2: CHAT (Placeholder)
+    -- OPTION 2: CHAT
     table.insert(options, {
-        text = "Small Talk",
-        message = "How is it out there?",
+        text = "Chat",
+        message = "Got a minute to talk?",
         onSelect = function(ui)
-            local idle = DynamicTrading.DialogueManager.GenerateIdleMessage(trader)
-            ui:speak(idle or "Same as always. Quiet and dangerous.")
-            DT_TraderDialogue_Hub.GenerateHubOptions(ui, trader)
+            require "UI/DT_TraderDialogue_Chat"
+            DT_TraderDialogue_Chat.Start(ui, trader)
         end
     })
 
