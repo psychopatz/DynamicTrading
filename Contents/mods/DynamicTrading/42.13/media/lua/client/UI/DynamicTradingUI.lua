@@ -41,6 +41,11 @@ function DynamicTradingUI:initialise()
     -- Performance Throttling
     self.updateTick = 0 
     
+    -- [NEW] PERFORMANCE THROTTLING
+    -- Prevents FPS drops by limiting inventory scanning frequency
+    self.inventoryDirty = false
+    self.refreshCooldown = 0
+    
     -- Observer State
     self.lastHour = -1
     self.wasRaining = false
@@ -80,6 +85,18 @@ function DynamicTradingUI:update()
     if self.listbox then
         if self.listbox.items == nil then self.listbox.items = {} end
         if type(self.listbox.selected) ~= "number" then self.listbox.selected = -1 end
+    end
+
+    -- [NEW] INVENTORY REFRESH THROTTLING
+    -- Instead of refreshing every frame an event fires, we process it here at a safe rate.
+    if self.refreshCooldown and self.refreshCooldown > 0 then
+        self.refreshCooldown = self.refreshCooldown - 1
+    end
+
+    if self.inventoryDirty and self.refreshCooldown and self.refreshCooldown <= 0 then
+        self:populateList()
+        self.inventoryDirty = false
+        self.refreshCooldown = 30 -- Refresh at most twice per second
     end
 
     -- 2. Validate Trader Existence
@@ -244,9 +261,9 @@ end
 
 local function onInventoryChange()
     if DynamicTradingUI.instance and DynamicTradingUI.instance:getIsVisible() then
-        -- Only refresh if we are in SELLING mode (buying mode doesn't depend on player inventory)
+        -- Only flag for refresh if we are in SELLING mode
         if not DynamicTradingUI.instance.isBuying then
-            DynamicTradingUI.instance:populateList()
+            DynamicTradingUI.instance.inventoryDirty = true
         end
     end
 end
