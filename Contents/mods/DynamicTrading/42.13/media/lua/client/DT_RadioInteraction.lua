@@ -1,28 +1,65 @@
 require "02_DynamicTrading_Manager"
 require "01_DynamicTrading_Config"
-require "DynamicTradingTraderListUI" 
+require "client/Radio/DT_RadioWindow"
 require "Utils/DT_AudioManager" 
 
 DT_RadioInteraction = {}
 
 -- ==========================================================
--- HELPER: IDENTIFY RADIO TIER
+-- HELPER: IDENTIFY RADIO TIER (ROBUST)
 -- ==========================================================
 function DT_RadioInteraction.GetDeviceType(obj)
-    if not obj then return "Base.WalkieTalkie1" end
+    if not obj then return nil end
 
+    -- 1. HANDHELD (InventoryItem)
+    -- Directly check if the item type exists in our Config
     if instanceof(obj, "InventoryItem") then
-        return obj:getFullType()
+        local typeID = obj:getFullType()
+        if DynamicTrading.Config.RadioTiers[typeID] then
+            return typeID
+        end
+        return nil
     end
 
-    if instanceof(obj, "IsoWaveSignal") or instanceof(obj, "IsoObject") then
+    -- 2. DROPPED ITEM (IsoWorldInventoryObject)
+    -- This handles radios dropped on the floor (3D items)
+    if instanceof(obj, "IsoWorldInventoryObject") then
+        local item = obj:getItem()
+        if item then
+            local typeID = item:getFullType()
+            if DynamicTrading.Config.RadioTiers[typeID] then
+                return typeID
+            end
+        end
+        return nil
+    end
+
+    -- 3. STATIONARY / MAP OBJECTS (IsoWaveSignal)
+    -- This handles placed furniture radios
+    if instanceof(obj, "IsoWaveSignal") then
+        local data = obj:getDeviceData()
+        
+        -- CRITICAL: Filter out Receive-Only devices (TVs, Kitchen Radios)
+        if not data or not data:getIsTwoWay() then
+            return nil 
+        end
+
+        -- At this point, we KNOW it is a valid Two-Way radio.
+        -- We try to guess the specific tier based on the sprite, 
+        -- but if the sprite is unknown (due to rotation), we fallback to a safe default.
+        
         local sprite = obj:getSprite() and obj:getSprite():getName() or ""
-        if sprite == "appliances_radio_01_5" then return "Base.HamRadio2" 
-        elseif sprite == "appliances_radio_01_4" then return "Base.HamRadio1" 
-        elseif string.find(sprite, "makeshift") then return "Base.HamRadioMakeShift" end
+        
+        -- specific matches
+        if sprite == "appliances_radio_01_5" then return "Base.HamRadio2" end -- Military
+        if string.find(sprite, "makeshift") then return "Base.HamRadioMakeShift" end
+        
+        -- Safe Fallback: If it's Two-Way but we don't recognize the sprite, treat as Standard Ham.
+        -- This fixes the issue where rotating a radio broke the interaction.
         return "Base.HamRadio1"
     end
-    return "Base.WalkieTalkie1"
+
+    return nil
 end
 
 -- ==========================================================
@@ -31,6 +68,13 @@ end
 function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     local player = playerObj
     
+    -- 0. VALIDATE DEVICE TYPE
+    local typeID = DT_RadioInteraction.GetDeviceType(deviceItem)
+    if not typeID then
+        player:Say("This radio cannot transmit on secure frequencies.")
+        return false
+    end
+
     -- 1. COOLDOWN CHECK
     local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
     if not canScan then
@@ -67,10 +111,8 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     end
 
     -- 4. PERFORM SCAN (VISUALS)
-    -- player:playSound("RadioStatic")
-    
     local scanLines = {
-        "Scanning frequencies...",
+        "Mayday, do you copy?",
         "Tuning the dial...",
         "Searching the bands...",
         "Listening for static breaks...",
@@ -80,12 +122,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     }
     player:Say(scanLines[ZombRand(#scanLines)+1])
 
-    if HaloTextHelper then
-        HaloTextHelper.addTextWithArrow(player, "Scanning...", true, HaloTextHelper.getColorWhite())
-    end
-
     -- 5. GATHER STATS
-    local typeID = DT_RadioInteraction.GetDeviceType(deviceItem)
     local radioData = DynamicTrading.Config.GetRadioData(typeID)
     local radioTier = radioData.power or 0.5
     
@@ -103,20 +140,13 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     }
 
     -- 7. EXECUTE (SP vs MP BRIDGE)
-    -- We use getGameMode() because getCore():isMultiplayer() can crash on some threads,
-    -- and isClient() is true for both SP and MP Client.
     local gameMode = getWorld():getGameMode()
     local isMultiplayer = (gameMode == "Multiplayer")
 
     if isMultiplayer then
-        -- [MULTIPLAYER PATH]
-        -- Send network packet to the remote server.
         sendClientCommand(player, "DynamicTrading", "AttemptScan", args)
     else
-        -- [SINGLEPLAYER PATH]
-        -- Direct function call to bypass the missing network layer.
         if DynamicTrading.ServerCommands and DynamicTrading.ServerCommands.AttemptScan then
-            print("[DynamicTrading] SP Mode: Calling AttemptScan directly.")
             DynamicTrading.ServerCommands.AttemptScan(player, args)
         else
             print("[DynamicTrading] Error: ServerCommands table missing in Singleplayer!")
@@ -138,8 +168,9 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
         local item = v
         if not instanceof(v, "InventoryItem") then item = v.items[1] end
         
-        local id = item:getFullType()
-        if DynamicTrading.Config and DynamicTrading.Config.RadioTiers[id] then
+        -- Strict check against Config List
+        local typeID = DT_RadioInteraction.GetDeviceType(item)
+        if typeID then
             radioItem = item
             break
         end
@@ -149,7 +180,6 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
         local option = context:addOption("Open Trader Network", 
             radioItem, 
             function(item) 
-                if not DT_RadioWindow then require "client/Radio/DT_RadioWindow" end
                 if DT_RadioWindow then
                     DT_RadioWindow.ToggleWindow(item, false) 
                 else
@@ -158,7 +188,6 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
             end
         )
         
-        -- [FIX] Use static Market Info icon as requested
         local deviceIcon = getTexture("media/ui/Icon_MarketInfo.png")
         if deviceIcon and option then
             option.iconTexture = deviceIcon
@@ -178,7 +207,8 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
     local hamRadio = nil
     
     for _, obj in ipairs(worldObjects) do
-        if instanceof(obj, "IsoWaveSignal") then
+        -- Strict Check: Is this a Valid Two-Way Radio?
+        if DT_RadioInteraction.GetDeviceType(obj) then
             hamRadio = obj
             break
         end
@@ -199,7 +229,6 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
          local option = context:addOption("Open Trader Network (HAM)", 
             hamRadio,
             function(obj) 
-                if not DT_RadioWindow then require "client/Radio/DT_RadioWindow" end
                 if DT_RadioWindow then
                     DT_RadioWindow.ToggleWindow(obj, true)
                 else
@@ -208,7 +237,6 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
             end
         )
         
-        -- [FIX] Use static Market Info icon for HAM as well
         local hamIcon = getTexture("media/ui/Icon_MarketInfo.png")
         if hamIcon and option then
             option.iconTexture = hamIcon
