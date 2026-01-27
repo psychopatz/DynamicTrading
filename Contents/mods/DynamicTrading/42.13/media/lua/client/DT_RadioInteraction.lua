@@ -108,7 +108,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     end
 
     -- 1. COOLDOWN CHECK
-    local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
+    local canScan, timeRem = DynamicTrading.CooldownManager.CanScan(player)
     if not canScan then
         player:Say("I need to wait " .. math.ceil(timeRem) .. " minutes before scanning again.")
         if DT_AudioManager then DT_AudioManager.PlaySound("DT_RadioRandom", false, 0.1) end

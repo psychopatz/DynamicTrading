@@ -50,19 +50,59 @@ local function OnServerCommand(module, command, args)
             -- 3. FAILURE: RNG / BAD LUCK / COOLDOWN (Red)
             else
                 local failLines = {
-                    "Just static...",
-                    "Signal too weak.",
-                    "Connection lost.",
-                    "Dead air.",
-                    "No response.",
-                    "White noise..."
-                }
-                local text = failLines[ZombRand(#failLines)+1]
+                        "Anyone trading out there? Come in.",
+                        "This is a survivor looking to trade. Copy?",
+                        "Calling any merchants on this frequency.",
+                        "Hello? Anyone running a market today?",
+                        "Any traders alive out there?",
+                        "Trying to reach a trading post. Respond.",
+                        "If anyone's selling, I'm listening.",
+                        "Merchant frequency check. Over.",
+                        "Looking for supplies. Any traders?",
+                        "Broadcasting for trade. Anyone home?",
+                        "This is an open call for merchants.",
+                        "Any caravans or traders nearby?",
+                        "Trying all channels… looking for trade.",
+                        "Anyone buying or selling out there?",
+                        "This is a survivor seeking commerce.",
+                        "Requesting trade contact. Over.",
+                        "Any safe zones or traders responding?",
+                        "Looking to barter. Respond if you can.",
+                        "Calling any active traders.",
+                        "If you can hear this, answer back."
+                    }
+
+                    local failState = {
+                        "Harsh static crackles through the speaker.",
+                        "The signal fades into white noise.",
+                        "A burst of interference drowns everything out.",
+                        "The radio hisses, then goes silent.",
+                        "Only distorted static replies.",
+                        "The channel collapses into noise.",
+                        "A low hum replaces the signal.",
+                        "The transmission cuts off abruptly.",
+                        "Heavy interference blocks the channel.",
+                        "The radio pops and crackles erratically.",
+                        "Nothing but dead air.",
+                        "The signal drops mid-transmission.",
+                        "A wall of static answers back.",
+                        "The frequency is completely jammed.",
+                        "The radio squeals, then quiets.",
+                        "Broken noise pulses through the speaker.",
+                        "The channel is overwhelmed by interference.",
+                        "A weak hiss lingers, then fades.",
+                        "The signal fails to connect.",
+                        "Silence. No reply."
+                    }
+
+
+                local textSay = failLines[ZombRand(#failLines)+1]
+                local textHalo = failState[ZombRand(#failState)+1]
                 
-                player:Say(text)
+                player:Say(textSay)
                 
                 if HaloTextHelper then
-                    HaloTextHelper.addTextWithArrow(player, text, true, HaloTextHelper.getColorRed())
+                    HaloTextHelper.addTextWithArrow(player, textHalo, true, HaloTextHelper.getColorRed())
                 end
             end
 
@@ -103,6 +143,14 @@ local function OnServerCommand(module, command, args)
                     HaloTextHelper.addTextWithArrow(getSpecificPlayer(0), args.msg or "Failed", true, HaloTextHelper.getColorRed())
                 end
             end
+        end
+
+    elseif command == "UpdateCooldown" then
+        -- [NEW] Targeted Sync from Server
+        if args.time then
+            DynamicTrading.CooldownManager.ClientCache = args.time
+            -- Force UI update if open
+            if DT_RadioWindow and DT_RadioWindow.instance then DT_RadioWindow.instance:updateButtonState() end
         end
     end
 end

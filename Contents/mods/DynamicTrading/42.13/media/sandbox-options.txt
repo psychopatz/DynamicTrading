@@ -3,7 +3,7 @@ VERSION = 1,
 option DynamicTrading.PriceBuyMult
 {
     type = double,
-    default = 1.0,
+    default = 3.0,
     min = 0.1,
     max = 10.0,
     page = DynamicTrading,
@@ -102,7 +102,7 @@ option DynamicTrading.DailyTraderMin
 option DynamicTrading.DailyTraderMax
 {
     type = integer,
-    default = 8,
+    default = 10,
     min = 1,
     max = 50,
     page = DynamicTrading,
@@ -112,7 +112,7 @@ option DynamicTrading.DailyTraderMax
 option DynamicTrading.ScanPenaltyPerTrader
 {
     type = double,
-    default = 0.4,
+    default = 0.5,
     min = 0.0,
     max = 1.0,
     page = DynamicTrading,
@@ -182,7 +182,7 @@ option DynamicTrading.TraderBudgetMax
 option DynamicTrading.EventFrequency
 {
     type = integer,
-    default = 3,
+    default = 2,
     min = 1,
     max = 30,
     page = DynamicTrading,
@@ -236,7 +236,7 @@ option DynamicTrading.PublicNetwork
 option DynamicTrading.MaxEvents
 {
     type = integer,
-    default = 6,
+    default = 8,
     min = 1,
     max = 10,
     page = DynamicTrading,
@@ -266,7 +266,7 @@ option DynamicTrading.WalletMinCash
 option DynamicTrading.WalletMaxCash
 {
     type = integer,
-    default = 100,
+    default = 80,
     min = 10,
     max = 2000,
     page = DynamicTrading,
@@ -286,7 +286,7 @@ option DynamicTrading.WalletEmptyChance
 option DynamicTrading.WalletJackpotChance
 {
     type = double,
-    default = 5.0,
+    default = 1.0,
     min = 0.0,
     max = 100.0,
     page = DynamicTrading,
@@ -317,7 +317,7 @@ option DynamicTrading.SellPriceReductionChance
 option DynamicTrading.GlobalWealthStart
 {
     type = integer,
-    default = 50000,
+    default = 10000,
     min = 0,
     max = 10000000,
     page = DynamicTrading,

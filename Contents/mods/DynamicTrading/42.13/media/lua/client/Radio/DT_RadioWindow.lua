@@ -124,10 +124,11 @@ function DT_RadioWindow.ToggleWindow(radioObj, isHam)
          ui.traderListPanel.lastDiscoveredCount = DynamicTrading.Manager.GetDiscoveredCount(player)
     end
     
-    if data.NetworkLogs and ui.logPanel then 
-        ui.logPanel.lastLogCount = #data.NetworkLogs 
-        if data.NetworkLogs[1] then
-            ui.logPanel.lastTopLogID = data.NetworkLogs[1].time .. data.NetworkLogs[1].text
+    local logData = ModData.getOrCreate("DynamicTrading_Logs_v1.0")
+    if logData.list and ui.logPanel then 
+        ui.logPanel.lastLogCount = #logData.list 
+        if logData.list[1] then
+            ui.logPanel.lastTopLogID = logData.list[1].time .. logData.list[1].text
         end
     end
     

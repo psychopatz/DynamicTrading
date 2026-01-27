@@ -134,7 +134,7 @@ end
 
 function DT_SignalPanel:updateButtonState()
     local player = getSpecificPlayer(0)
-    local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
+    local canScan, timeRem = DynamicTrading.CooldownManager.CanScan(player)
     
     if canScan then
         self.btnScan:setEnable(true)

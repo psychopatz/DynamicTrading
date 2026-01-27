@@ -1,6 +1,8 @@
 require "01_DynamicTrading_Config"
 require "02b_DynamicTrading_Events"
 require "03b_DynamicTrading_PortraitConfig"
+require "02c_DT_NetworkLogs"
+require "02d_DT_CooldownManager"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
@@ -21,13 +23,14 @@ end
 -- 2. DATA MANAGEMENT (PURE INITIALIZATION)
 -- =============================================================================
 function DynamicTrading.Manager.GetData()
-    local data = ModData.getOrCreate("DynamicTrading_Engine_v1.2")
+    local data = ModData.getOrCreate("DynamicTrading_Engine_v1.3")
     
     -- Initialize Sub-Tables
     if not data.Traders then data.Traders = {} end
     if not data.globalHeat then data.globalHeat = {} end
-    if not data.scanCooldowns then data.scanCooldowns = {} end
-    if not data.NetworkLogs then data.NetworkLogs = {} end
+    -- [REMOVED] Legacy Cooldowns/Logs moved to isolated ModData
+    -- if not data.scanCooldowns then data.scanCooldowns = {} end
+    -- if not data.NetworkLogs then data.NetworkLogs = {} end
 
     -- Daily Cycle Init
     if not data.DailyCycle then
@@ -42,7 +45,8 @@ function DynamicTrading.Manager.GetData()
     if not data.EventSystem then
         data.EventSystem = { 
             activeEvents = {}, 
-            cooldowns = {}, -- [NEW] Tracks when events finished to prevent repetition
+            -- [REMOVED] Cooldowns moved to DynamicTrading_Cooldowns_v1.0 (Server Only)
+            -- cooldowns = {}, 
             lastEventDay = -10 
         }
     end
@@ -53,12 +57,12 @@ function DynamicTrading.Manager.GetData()
 
     -- [NEW] Global Wealth Pool
     if not data.GlobalWealthPool then 
-        local startWealth = SandboxVars.DynamicTrading.GlobalWealthStart or 50000
+        local startWealth = SandboxVars.DynamicTrading.GlobalWealthStart or 10000
         data.GlobalWealthPool = startWealth
     end
 
     -- Legacy Migration (Fixes old saves missing the cooldown table)
-    if not data.EventSystem.cooldowns then data.EventSystem.cooldowns = {} end
+    -- if not data.EventSystem.cooldowns then data.EventSystem.cooldowns = {} end
     if not data.EventSystem.activeEvents then data.EventSystem.activeEvents = {} end
 
     -- Rebuild Cache (Client Side Visuals)
@@ -83,7 +87,7 @@ function DynamicTrading.Manager.AddToWealthPool(amount)
     -- Sync if this causes a significant change? 
     -- For now we rely on the caller to ModData.transmit or the periodic sync.
     -- But since this is often called during transactions, we should probably sync.
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
 end
 
 function DynamicTrading.Manager.TakeFromWealthPool(requestAmount)
@@ -100,7 +104,7 @@ function DynamicTrading.Manager.TakeFromWealthPool(requestAmount)
         data.GlobalWealthPool = 0
     end
     
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
     return withdrawn
 end
 
@@ -157,11 +161,11 @@ function DynamicTrading.Manager.CheckDailyReset()
             end
         end
 
-        DynamicTrading.Manager.AddLog("Daily Cycle: Market Reset.", "info")
+        DynamicTrading.NetworkLogs.AddLog("Daily Cycle: Market Reset.", "info")
         print("[DynamicTrading] SERVER: Reset Complete. New Limit: " .. data.DailyCycle.dailyTraderLimit)
 
         -- 7. Force Sync to ALL Clients
-        ModData.transmit("DynamicTrading_Engine_v1.2")
+        ModData.transmit("DynamicTrading_Engine_v1.3")
     end
 end
 
@@ -169,7 +173,7 @@ end
 -- 4. DATA SYNC (CLIENT RECEPTION)
 -- =============================================================================
 local function OnReceiveGlobalModData(key, data)
-    if key == "DynamicTrading_Engine_v1.2" then
+    if key == "DynamicTrading_Engine_v1.3" then
         ModData.add(key, data)
         DynamicTrading.Manager.RebuildActiveCache(data)
     end
@@ -198,7 +202,7 @@ end
 function DynamicTrading.Manager.IncrementDailyCounter()
     local data = DynamicTrading.Manager.GetData()
     data.DailyCycle.currentTradersFound = (data.DailyCycle.currentTradersFound or 0) + 1
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
 end
 
 -- =============================================================================
@@ -217,11 +221,11 @@ function DynamicTrading.Manager.ProcessEvents()
         if eventData.expires ~= -1 and currentDay >= eventData.expires then
             local def = DynamicTrading.Events.Registry[id]
             local name = def and def.name or id
-            DynamicTrading.Manager.AddLog("Event Ended: " .. name, "info")
+            DynamicTrading.NetworkLogs.AddLog("Event Ended: " .. name, "info")
             
             -- [NEW] Set Cooldown: Current Day + 14 Days (prevents immediate repeat)
             -- If you have few events, you might want to lower 14 to 7.
-            es.cooldowns[id] = currentDay + 14
+            DynamicTrading.CooldownManager.SetEventCooldown(id, currentDay + 14)
             
             es.activeEvents[id] = nil
             changed = true
@@ -236,11 +240,11 @@ function DynamicTrading.Manager.ProcessEvents()
             
             if shouldBeActive and not isActive then
                 es.activeEvents[id] = { expires = -1 }
-                DynamicTrading.Manager.AddLog("WORLD ALERT: " .. def.name, "event")
+                DynamicTrading.NetworkLogs.AddLog("WORLD ALERT: " .. def.name, "event")
                 changed = true
             elseif not shouldBeActive and isActive then
                 es.activeEvents[id] = nil
-                DynamicTrading.Manager.AddLog("Condition Cleared: " .. def.name, "info")
+                DynamicTrading.NetworkLogs.AddLog("Condition Cleared: " .. def.name, "info")
                 changed = true
             end
         end
@@ -275,7 +279,7 @@ function DynamicTrading.Manager.ProcessEvents()
                     if not es.activeEvents[id] then
                         
                         -- 2. Check Cooldown
-                        local unlockDay = es.cooldowns[id] or 0
+                        local unlockDay = DynamicTrading.CooldownManager.GetEventCooldown(id)
                         
                         if currentDay >= unlockDay then
                             table.insert(validPool, id)
@@ -303,7 +307,7 @@ function DynamicTrading.Manager.ProcessEvents()
                         local duration = SandboxVars.DynamicTrading.EventDuration or 3
                         es.activeEvents[finalPickID] = { expires = currentDay + duration }
                         es.lastEventDay = currentDay
-                        DynamicTrading.Manager.AddLog("BREAKING NEWS: " .. def.name, "event")
+                        DynamicTrading.NetworkLogs.AddLog("BREAKING NEWS: " .. def.name, "event")
                         changed = true
                     end
                 else
@@ -321,7 +325,7 @@ function DynamicTrading.Manager.ProcessEvents()
     end
 
     if changed then
-        ModData.transmit("DynamicTrading_Engine_v1.2")
+        ModData.transmit("DynamicTrading_Engine_v1.3")
         DynamicTrading.Manager.RebuildActiveCache(data)
     end
 end
@@ -335,14 +339,7 @@ function DynamicTrading.Manager.RebuildActiveCache(data)
     end
 end
 
-function DynamicTrading.Manager.AddLog(text, category)
-    local data = DynamicTrading.Manager.GetData()
-    local gt = GameTime:getInstance()
-    local timeStr = string.format("%02d/%02d %02d:%02d", gt:getDay()+1, gt:getMonth()+1, gt:getHour(), gt:getMinutes())
-    table.insert(data.NetworkLogs, 1, { text = text, cat = category or "info", time = timeStr })
-    while #data.NetworkLogs > 12 do table.remove(data.NetworkLogs) end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
-end
+-- [REFACTORED] Logging moved to DT_NetworkLogs.lua
 
 -- =============================================================================
 -- 7. TRADER & TRANSACTION FUNCTIONS
@@ -442,9 +439,9 @@ function DynamicTrading.Manager.GenerateRandomContact(finder)
         end
     end
     
-    DynamicTrading.Manager.AddLog("Signal Acquired by " .. finderName .. ": " .. name, "good")
+    DynamicTrading.NetworkLogs.AddLog("Signal Acquired by " .. finderName .. ": " .. name, "good")
 
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
 
     return data.Traders[uniqueID]
 end
@@ -486,7 +483,7 @@ function DynamicTrading.Manager.UpdateHeat(category, amount)
     data.globalHeat[category] = current + amount
     if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
     if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
 end
 
 function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
@@ -512,7 +509,7 @@ function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
     local current = data.globalHeat[category] or 0
     data.globalHeat[category] = current + (sensitivity * qty)
     if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
 end
 
 function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
@@ -546,30 +543,10 @@ function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
         end
     end
     
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
 end
 
-function DynamicTrading.Manager.CanScan(player)
-    if not player then return false, 0 end
-    local data = DynamicTrading.Manager.GetData()
-    local username = player:getUsername()
-    local lastTime = data.scanCooldowns[username] or 0
-    local currentTime = GameTime:getInstance():getWorldAgeHours()
-    local cooldownHours = (SandboxVars.DynamicTrading.ScanCooldown or 30) / 60.0
-    
-    if currentTime >= lastTime + cooldownHours then
-        return true, 0
-    else
-        return false, (lastTime + cooldownHours - currentTime) * 60
-    end
-end
-
-function DynamicTrading.Manager.SetScanTimestamp(player)
-    if not player then return end
-    local data = DynamicTrading.Manager.GetData()
-    data.scanCooldowns[player:getUsername()] = GameTime:getInstance():getWorldAgeHours()
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
-end
+-- [REFACTORED] Scan Cooldown Logic moved to DT_CooldownManager.lua
 
 -- =============================================================================
 -- 8. PUBLIC NETWORK DISCOVERY SYSTEM
@@ -587,7 +564,7 @@ function DynamicTrading.Manager.DiscoverTrader(traderID, player)
     
     if not trader.discoveredBy[username] then
         trader.discoveredBy[username] = true
-        if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end
+        if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
         return true
     end
     return false -- Already discovered

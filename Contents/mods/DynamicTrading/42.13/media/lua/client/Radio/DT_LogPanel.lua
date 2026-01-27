@@ -33,12 +33,12 @@ end
 function DT_LogPanel:prerender()
     ISPanel.prerender(self)
     
-    local data = DynamicTrading.Manager.GetData()
-    local currentLogCount = data.NetworkLogs and #data.NetworkLogs or 0
+    local data = ModData.getOrCreate("DynamicTrading_Logs_v1.0")
+    local currentLogCount = data.list and #data.list or 0
     local currentTopLog = ""
     
-    if data.NetworkLogs and data.NetworkLogs[1] then
-        currentTopLog = data.NetworkLogs[1].time .. data.NetworkLogs[1].text
+    if data.list and data.list[1] then
+        currentTopLog = data.list[1].time .. data.list[1].text
     end
     
     if currentLogCount ~= self.lastLogCount or currentTopLog ~= self.lastTopLogID then
@@ -50,16 +50,16 @@ end
 
 function DT_LogPanel:populateLogs()
     self.logList:clear()
-    local data = DynamicTrading.Manager.GetData()
+    local data = ModData.getOrCreate("DynamicTrading_Logs_v1.0")
     
     local listWidth = self.logList:getWidth() - 25
     local tm = getTextManager()
     local font = self.logList.font
     
-    if data.NetworkLogs then
-        local limit = math.min(#data.NetworkLogs, 12)
+    if data.list then
+        local limit = math.min(#data.list, 12)
         for i=1, limit do
-            local log = data.NetworkLogs[i]
+            local log = data.list[i]
             local timeWid = tm:MeasureStringX(font, log.time)
             
             local textSpace = listWidth - timeWid - 15

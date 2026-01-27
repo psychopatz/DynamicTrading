@@ -8,6 +8,7 @@ require "02_DynamicTrading_Manager"
 require "02b_DynamicTrading_Events"
 require "02a_DynamicTrading_Economy"
 require "03_DynamicTrading_Archetypes"
+-- Note: NetworkLogs and CooldownManager already required by Manager, giving access globally.
 
 -- 1. GLOBAL TABLE REGISTRATION
 -- We expose this table globally so Singleplayer Client scripts can call functions directly
@@ -159,7 +160,7 @@ end
 function Commands.RequestFullState(player, args)
     local data = DynamicTrading.Manager.GetData()
     if data then
-        ModData.transmit("DynamicTrading_Engine_v1.2")
+        ModData.transmit("DynamicTrading_Engine_v1.3")
     end
 end
 
@@ -208,7 +209,7 @@ function Commands.TradeTransaction(player, args)
             
             -- [NEW] Log transaction for global history
             local logText = string.format("Trade: %s purchased %s for $%d", player:getUsername(), safeDisplayName, totalCost)
-            DynamicTrading.Manager.AddLog(logText, "info")
+            DynamicTrading.NetworkLogs.AddLog(logText, "info")
 
             SendResponse(player, "TransactionResult", { 
                 success = true, 
@@ -301,7 +302,7 @@ function Commands.TradeTransaction(player, args)
         
         -- [NEW] Log transaction for global history
         local logText = string.format("Trade: %s sold %s for $%d", player:getUsername(), itemNameForLog, totalGain)
-        DynamicTrading.Manager.AddLog(logText, "info")
+        DynamicTrading.NetworkLogs.AddLog(logText, "info")
 
         -- Send exact keys client expects for Audit Log
         SendResponse(player, "TransactionResult", { 
@@ -362,7 +363,7 @@ function Commands.AttemptScan(player, args)
     local isPublicNetwork = SandboxVars.DynamicTrading.PublicNetwork
 
     -- 1. Cooldown Check
-    local canScan, timeRem = DynamicTrading.Manager.CanScan(player)
+    local canScan, timeRem = DynamicTrading.CooldownManager.CanScan(player)
     if not canScan then
         SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         return
@@ -389,7 +390,7 @@ function Commands.AttemptScan(player, args)
     end
 
     -- 4. Apply Cooldown
-    DynamicTrading.Manager.SetScanTimestamp(player)
+    DynamicTrading.CooldownManager.SetScanTimestamp(player)
 
     -- 5. Calculate Chances
     local penaltyPerTrader = SandboxVars.DynamicTrading.ScanPenaltyPerTrader or 0.2
@@ -504,6 +505,11 @@ Events.OnClientCommand.Add(OnClientCommand)
 -- =============================================================================
 -- Runs every hour to check for Expired Traders, Daily Resets, and Events.
 local function Server_OnHourlyTick()
+    -- Initialize Persistence on first run if needed
+    if DynamicTrading.CooldownManager and DynamicTrading.CooldownManager.Init then
+         DynamicTrading.CooldownManager.Init() 
+    end
+
     if not DynamicTrading or not DynamicTrading.Manager then return end
 
     local data = DynamicTrading.Manager.GetData()
@@ -529,9 +535,9 @@ local function Server_OnHourlyTick()
                 local leftover = trader.budget or 0
                 if leftover > 0 then
                     DynamicTrading.Manager.AddToWealthPool(leftover)
-                    DynamicTrading.Manager.AddLog("Signal Lost: " .. (trader.name or "Unknown") .. " (Returned $" .. math.floor(leftover) .. " to economy)", "bad")
+                    DynamicTrading.NetworkLogs.AddLog("Signal Lost: " .. (trader.name or "Unknown") .. " (Returned $" .. math.floor(leftover) .. " to economy)", "bad")
                 else
-                    DynamicTrading.Manager.AddLog("Signal Lost: " .. (trader.name or "Unknown"), "bad")
+                    DynamicTrading.NetworkLogs.AddLog("Signal Lost: " .. (trader.name or "Unknown"), "bad")
                 end
                 
                 data.Traders[id] = nil
@@ -541,7 +547,7 @@ local function Server_OnHourlyTick()
     end
     
     -- Sync if traders removed
-    if changesMade then ModData.transmit("DynamicTrading_Engine_v1.2") end
+    if changesMade then ModData.transmit("DynamicTrading_Engine_v1.3") end
 
     -- 3. Event System Check (8 AM)
     if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then

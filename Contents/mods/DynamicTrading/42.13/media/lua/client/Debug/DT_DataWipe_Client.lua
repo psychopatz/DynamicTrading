@@ -113,7 +113,7 @@ local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
     local wipeEngine = subMenu:addOption("Wipe Engine Data (Legacy)", playerObj, RequestServerWipe, "ENGINE")
     local toolTipEngine = ISWorldObjectContextMenu.addToolTip()
     toolTipEngine:setName("Wipe Engine Data")
-    toolTipEngine.description = "Delete legacy engine data (DynamicTrading_Engine_v1.2)."
+    toolTipEngine.description = "Delete legacy engine data (DynamicTrading_Engine_v1.3)."
     wipeEngine.toolTip = toolTipEngine
 end
 
