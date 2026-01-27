@@ -78,5 +78,24 @@ return "media/ui/Portraits/" .. target .. "/" .. gender .. "/"
 
 
 end
+local archetypes = {
+    "General", "Farmer", "Butcher", "Doctor", "Mechanic",
+    "Survivalist", "Gunrunner", "Foreman", "Scavenger", "Tailor",
+    "Electrician", "Welder", "Chef", "Herbalist", "Smuggler",
+    "Librarian", "Angler", "Sheriff", "Bartender", "Teacher",
+    "Hunter", "Quartermaster", "Musician", "Janitor", "Carpenter",
+    "Pawnbroker", "Pyro", "Athlete", "Pharmacist", "Hiker",
+    "Burglar", "Blacksmith", "Tribal", "Painter", "RoadWarrior",
+    "Designer", "Office", "Geek", "Brewer", "Demo"
+}
+
+print("[DynamicTrading] Loading archetype portraits...")
+for _, id in ipairs(archetypes) do
+    local path = "05_Archetypes/" .. id .. "/Image/DT_" .. id .. "_Portrait"
+    local success, err = pcall(function() require(path) end)
+    if not success then
+        -- print("[DynamicTrading] Warning: No portrait data for " .. id)
+    end
+end
 
 print("[DynamicTrading] Portrait Registry Complete.")

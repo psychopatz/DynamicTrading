@@ -69,7 +69,7 @@ function DT_AudioManager.PlaySound(soundName, isLoop, baseVolume)
     -- Round to 4 decimal places for consistency
     finalVolume = math.floor(finalVolume * 10000 + 0.5) / 10000
     
-    print("[DT_AudioManager] PlaySound: " .. soundName .. " | Base: " .. baseVolume .. " | Mult: " .. multiplier .. " | Final: " .. finalVolume)
+    -- print("[DT_AudioManager] PlaySound: " .. soundName .. " | Base: " .. baseVolume .. " | Mult: " .. multiplier .. " | Final: " .. finalVolume)
     
     -- Prevent playing absolute silence, but allow very low volumes
     if finalVolume <= 0.0001 then return end
