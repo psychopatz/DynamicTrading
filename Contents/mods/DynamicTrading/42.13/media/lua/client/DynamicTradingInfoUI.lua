@@ -5,6 +5,7 @@ require "ISUI/ISPanel"
 require "02_DynamicTrading_Manager"
 require "01_DynamicTrading_Config"
 require "02b_DynamicTrading_Events"
+require "UI/DynamicTradingInfoUI_Settings"
 
 -- ==============================================================================
 -- DynamicTradingInfoUI - Tabbed Economy Stats Window
@@ -19,6 +20,11 @@ DynamicTradingInfoUI.Colors = {
     HeaderMeta = {r=0.4, g=0.8, b=1.0, a=1},         -- Cyan
     HeaderFlash = {r=0.3, g=1.0, b=0.3, a=1},        -- Green
     HeaderInflation = {r=1.0, g=0.5, b=0.5, a=1},    -- Red
+    
+    -- Sandbox Colors
+    SandboxHardcore = {r=1.0, g=0.4, b=0.4, a=1},
+    SandboxStandard = {r=0.8, g=0.8, b=0.8, a=1},
+    SandboxCasual = {r=0.4, g=1.0, b=0.6, a=1},
     
     -- Status Colors
     StatusGood = {r=0.4, g=1.0, b=0.5, a=1},         -- Green (Available/Positive)
@@ -47,7 +53,7 @@ DynamicTradingInfoUI.Colors = {
 -- ==============================================================================
 function DynamicTradingInfoUI:initialise()
     ISCollapsableWindow.initialise(self)
-    self:setTitle("Global Economy Monitor")
+    self:setTitle("Dynamic Trading Info")
     self:setResizable(true)
     self.clearStencil = false 
     self.refreshTimer = 0
@@ -59,7 +65,6 @@ function DynamicTradingInfoUI:createChildren()
     
     local titleBarHeight = 24
     local tabHeight = 28
-    local padding = 10
     
     -- Tab Panel
     self.tabPanel = ISTabPanel:new(0, titleBarHeight, self.width, self.height - titleBarHeight)
@@ -106,9 +111,52 @@ function DynamicTradingInfoUI:createListPanel()
 end
 
 function DynamicTradingInfoUI:createMarketProfileTab()
-    self.marketPanel = self:createListPanel()
-    self.tabPanel:addView("Market", self.marketPanel)
-    self.marketPanel.listbox.backgroundColor = {r=0.12, g=0.1, b=0.05, a=0.95}
+    local panel = ISPanel:new(0, 0, self.width, self.height - 52)
+    panel:initialise()
+    panel:setAnchorRight(true)
+    panel:setAnchorBottom(true)
+    
+    -- Listbox (Top half)
+    local listbox = ISScrollingListBox:new(10, 10, panel.width - 20, panel.height - 180)
+    listbox:initialise()
+    listbox:setAnchorRight(true)
+    listbox:setAnchorBottom(true)
+    listbox.font = UIFont.Small
+    listbox.itemheight = 24
+    listbox.drawBorder = true
+    listbox.backgroundColor = {r=0.12, g=0.1, b=0.05, a=0.95}
+    listbox.doDrawItem = DynamicTradingInfoUI.drawListBoxItem
+    listbox.onMouseDown = function(target, x, y)
+        local row = target:rowAt(x, y)
+        if row ~= -1 then
+            target.selected = row
+            local item = target.items[row].item
+            if item and item.settingKey then
+                local ui = DynamicTradingInfoUI.instance
+                if ui and ui.descriptionPanel then
+                    local desc = DynamicTradingInfoUI_Settings.getDetail(item.settingKey)
+                    ui.descriptionPanel:setText(" <RGB:1.0,0.8,0.2> <SIZE:medium> " .. item.label .. " </SIZE> </RGB> <LINE> <RGB:0.8,0.8,0.8> Value: " .. item.val .. " </RGB> <LINE> <LINE> " .. desc)
+                    ui.descriptionPanel:paginate()
+                end
+            end
+        end
+    end
+    panel:addChild(listbox)
+    
+    -- Description Panel (Bottom half)
+    local descPanel = ISRichTextPanel:new(10, panel.height - 160, panel.width - 20, 150)
+    descPanel:initialise()
+    descPanel:setAnchorRight(true)
+    descPanel:setAnchorBottom(true)
+    descPanel.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.6}
+    descPanel:setText(" <RGB:0.6,0.6,0.6> Select a difficulty setting above to see details. </RGB> ")
+    descPanel:paginate()
+    panel:addChild(descPanel)
+    
+    self.marketPanel = panel
+    self.marketPanel.listbox = listbox
+    self.descriptionPanel = descPanel
+    self.tabPanel:addView("Current Setup", self.marketPanel)
 end
 
 function DynamicTradingInfoUI:createMetaEventsTab()
@@ -125,7 +173,7 @@ end
 
 function DynamicTradingInfoUI:createInflationTab()
     self.inflationPanel = self:createListPanel()
-    self.tabPanel:addView("Inflation", self.inflationPanel)
+    self.tabPanel:addView("Market", self.inflationPanel)
     self.inflationPanel.listbox.backgroundColor = {r=0.15, g=0.08, b=0.08, a=0.95}
 end
 
@@ -158,6 +206,25 @@ function DynamicTradingInfoUI:populateAllTabs()
 end
 
 -- ==============================================================================
+-- SHARED: LISTBOX DRAWING (FIX FOR COLORS)
+-- ==============================================================================
+function DynamicTradingInfoUI.drawListBoxItem(listbox, y, item, alt)
+    local height = listbox.itemheight
+    local width = listbox:getWidth()
+    
+    if listbox.selected == item.index then
+        listbox:drawRect(0, y, width, height, 0.2, 0.5, 0.5, 0.5)
+    elseif alt then
+        -- listbox:drawRect(0, y, width, height, 0.05, 1, 1, 1)
+    end
+    
+    local color = item.item and item.item.textColor or {r=0.9, g=0.9, b=0.9, a=1}
+    listbox:drawText(item.text, 10, y + (height/2) - 7, color.r, color.g, color.b, color.a or 1, listbox.font)
+    
+    return y + height
+end
+
+-- ==============================================================================
 -- MARKET PROFILE TAB
 -- ==============================================================================
 function DynamicTradingInfoUI:populateMarketProfile()
@@ -166,84 +233,60 @@ function DynamicTradingInfoUI:populateMarketProfile()
     listbox:clear()
     
     local data = DynamicTrading.Manager.GetData()
-    local diff = DynamicTrading.Config.GetDifficultyData()
     local colors = DynamicTradingInfoUI.Colors
     
     -- Header
-    local header = listbox:addItem("═══ MARKET PROFILE ═══", nil)
+    local header = listbox:addItem("═══ MARKET PROFILE ═══", {})
     header.textColor = colors.HeaderMarket
     
-    listbox:addItem(" ", nil)
+    listbox:addItem(" ", {})
     
-    -- Daily Network Status
+    -- Network Status (Kept for immersion)
     if data.DailyCycle then
         local found = data.DailyCycle.currentTradersFound or 0
         local limit = data.DailyCycle.dailyTraderLimit or 5
-        
-        -- Adjust Limit if modified by an event
         local eventMult = 1.0
-        if DynamicTrading.Events.GetSystemModifier then
-            eventMult = DynamicTrading.Events.GetSystemModifier("traderLimit")
-        end
+        if DynamicTrading.Events.GetSystemModifier then eventMult = DynamicTrading.Events.GetSystemModifier("traderLimit") end
         local displayLimit = math.floor(limit * eventMult)
-        if displayLimit < 1 then displayLimit = 1 end
         
-        -- Status indicator
-        local statusIcon = "●"
-        local statusColor = colors.StatusGood
-        local statusText = "ACTIVE"
-        if found >= displayLimit then 
-            statusColor = colors.StatusBad
-            statusText = "LIMIT REACHED"
-        end
+        local statusColor = found >= displayLimit and colors.StatusBad or colors.StatusGood
+        local statusText = found >= displayLimit and "LIMIT REACHED" or "ACTIVE"
         
-        local networkItem = listbox:addItem(string.format("  %s Network Status: %s", statusIcon, statusText), nil)
-        networkItem.textColor = statusColor
-        
-        local countItem = listbox:addItem(string.format("    Traders Found: %d / %d", found, displayLimit), nil)
-        countItem.textColor = colors.Normal
+        local netItem = listbox:addItem("  ● Network Status: " .. statusText, {})
+        netItem.textColor = statusColor
+        listbox:addItem(string.format("    Traders Found: %d / %d", found, displayLimit or 5), {})
     end
     
-    listbox:addItem(" ", nil)
+    listbox:addItem(" ", {})
     
-    -- Difficulty Multipliers Section
-    local diffHeader = listbox:addItem("─── DIFFICULTY SETTINGS ───", nil)
-    diffHeader.textColor = colors.Muted
-    
-    -- Format multipliers
-    local buyMult = diff.buyMult or 1.0
-    local sellMult = diff.sellMult or 0.5
-    local stockMult = diff.stockMult or 1.0
-    local rarityBonus = diff.rarityBonus or 0
-    
-    -- Buy Price (Higher = Worse for player)
-    local buyStr = string.format("%d%%", math.floor(buyMult * 100))
-    local buyItem = listbox:addItem("  BUY PRICE MODIFIER: " .. buyStr, nil)
-    if buyMult > 1.0 then buyItem.textColor = colors.EffectExpensive
-    elseif buyMult < 1.0 then buyItem.textColor = colors.EffectCheap
-    else buyItem.textColor = colors.Normal end
-    
-    -- Sell Return (Higher = Better for player)
-    local sellStr = string.format("%d%%", math.floor(sellMult * 100))
-    local sellItem = listbox:addItem("  SELL RETURN RATE: " .. sellStr, nil)
-    if sellMult > 0.5 then sellItem.textColor = colors.EffectCheap
-    elseif sellMult < 0.5 then sellItem.textColor = colors.EffectExpensive
-    else sellItem.textColor = colors.Normal end
-    
-    -- Stock Volume (Higher = Better)
-    local stockStr = string.format("%d%%", math.floor(stockMult * 100))
-    local stockItem = listbox:addItem("  STOCK VOLUME: " .. stockStr, nil)
-    if stockMult > 1.0 then stockItem.textColor = colors.EffectCheap
-    elseif stockMult < 1.0 then stockItem.textColor = colors.EffectExpensive
-    else stockItem.textColor = colors.Normal end
-    
-    -- Rarity Bonus
-    local rarityStr = tostring(rarityBonus)
-    if rarityBonus > 0 then rarityStr = "+" .. rarityStr end
-    local rarityItem = listbox:addItem("  RARITY TIER BONUS: " .. rarityStr, nil)
-    if rarityBonus > 0 then rarityItem.textColor = colors.EffectCheap
-    elseif rarityBonus < 0 then rarityItem.textColor = colors.EffectExpensive
-    else rarityItem.textColor = colors.Normal end
+    -- Decoupled Sandbox Logic
+    if DynamicTradingInfoUI_Settings then
+        local groups = DynamicTradingInfoUI_Settings.getGroups()
+        for _, group in ipairs(groups) do
+            local gHeader = listbox:addItem("─── " .. group.name .. " ───", {})
+            gHeader.textColor = colors.Muted
+            
+            for _, setting in ipairs(group.items) do
+                local label = "  " .. setting.label .. ": " .. setting.desc
+                local item = listbox:addItem(label, { 
+                    settingKey = setting.key, 
+                    label = setting.label, 
+                    desc = setting.desc, 
+                    val = setting.val 
+                })
+                
+                -- Dynamic Color Assignment
+                if setting.desc == "Hardcore" or setting.desc == "Poor" or setting.desc == "Scarcity" or setting.desc == "Chaotic" or setting.desc == "Exorbitant" then
+                    item.textColor = colors.SandboxHardcore
+                elseif setting.desc == "Lucrative" or setting.desc == "Abundant" or setting.desc == "Affordable" or setting.desc == "Stable" or setting.desc == "Wealthy" then
+                    item.textColor = colors.SandboxCasual
+                else
+                    item.textColor = colors.SandboxStandard
+                end
+            end
+            listbox:addItem(" ", {})
+        end
+    end
     
     listbox:setYScroll(yScroll)
 end

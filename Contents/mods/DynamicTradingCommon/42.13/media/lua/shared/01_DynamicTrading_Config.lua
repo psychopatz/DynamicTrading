@@ -4,7 +4,6 @@ DynamicTrading.Config.MasterList = DynamicTrading.Config.MasterList or {}
 DynamicTrading.Config.Tags = DynamicTrading.Config.Tags or {}
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
--- [Keep RadioTiers table as is...]
 DynamicTrading.Config.RadioTiers = {
     ["Base.WalkieTalkie1"]          = { power = 0.5, desc = "Weak Signal (Toy)" },
     ["Base.WalkieTalkieMakeShift"]  = { power = 0.6, desc = "Weak Signal (Makeshift)" },

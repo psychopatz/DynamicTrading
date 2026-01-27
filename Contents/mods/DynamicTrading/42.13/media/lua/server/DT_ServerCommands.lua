@@ -269,9 +269,16 @@ function Commands.TradeTransaction(player, args)
             end
         end
 
-        -- Capture Price and Name BEFORE removing the item
-        local unitPrice = DynamicTrading.Economy.GetSellPrice(itemObj, key, trader.archetype)
+        -- [NEW] Check Trader Budget
+        local localCount = (trader.localDeflation and trader.localDeflation[key]) or 0
+        local unitPrice = DynamicTrading.Economy.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
         local totalGain = unitPrice * clientQty
+
+        if (trader.budget or 0) < totalGain then
+            SendResponse(player, "TransactionResult", { success=false, msg="Trader cannot afford this!" })
+            return
+        end
+
         local itemNameForLog = itemObj:getDisplayName()
 
         -- [FIX] Ensure item is unequipped before removal to prevent duplication (Ghost Item Glitch)

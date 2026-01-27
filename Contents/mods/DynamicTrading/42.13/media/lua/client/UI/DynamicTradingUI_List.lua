@@ -204,7 +204,8 @@ function DynamicTradingUI:populateList()
                                 -- Skip this item - it's a type the trader sells
                             else
                                 local itemData = DynamicTrading.Config.MasterList[masterKey]
-                                local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype)
+                                local localCnt = (trader.localDeflation and trader.localDeflation[masterKey]) or 0
+                                local price = DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype, managerData.globalHeat, localCnt)
                                 if price > 0 then
                                     local cat = itemData.tags[1] or "Misc"
                                     if not categorized[cat] then

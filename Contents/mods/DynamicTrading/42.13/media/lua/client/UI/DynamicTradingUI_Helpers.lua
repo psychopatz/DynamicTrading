@@ -206,6 +206,15 @@ function DynamicTradingUI:updateIdentityDisplay(trader)
         end
         self.lblArchetype:setName(archName)
     end
+    if self.lblTraderBudget then
+        local budget = trader.budget or 0
+        self.lblTraderBudget:setName("Trader Budget: $" .. budget)
+        if budget < 50 then
+            self.lblTraderBudget:setColor(1, 0.2, 0.2, 1)
+        else
+            self.lblTraderBudget:setColor(1, 0.8, 0.2, 1)
+        end
+    end
     if self.lblSignal then
         local gt = GameTime:getInstance()
         local text = "Signal: Permanent"

@@ -47,6 +47,9 @@ function DynamicTrading.Manager.GetData()
         }
     end
 
+    -- [NEW] Global Deflation Tracker (Clear daily)
+    if not data.deflatedGlobal then data.deflatedGlobal = {} end
+
     -- Legacy Migration (Fixes old saves missing the cooldown table)
     if not data.EventSystem.cooldowns then data.EventSystem.cooldowns = {} end
     if not data.EventSystem.activeEvents then data.EventSystem.activeEvents = {} end
@@ -100,10 +103,20 @@ function DynamicTrading.Manager.CheckDailyReset()
             end
         end
 
+        -- 5. [NEW] Reset Global Deflation Checklist
+        data.deflatedGlobal = {}
+
+        -- 6. [NEW] Reset Local Trader Deflation
+        if data.Traders then
+            for _, trader in pairs(data.Traders) do
+                trader.localDeflation = {}
+            end
+        end
+
         DynamicTrading.Manager.AddLog("Daily Cycle: Market Reset.", "info")
         print("[DynamicTrading] SERVER: Reset Complete. New Limit: " .. data.DailyCycle.dailyTraderLimit)
 
-        -- 5. Force Sync to ALL Clients
+        -- 7. Force Sync to ALL Clients
         ModData.transmit("DynamicTrading_Engine_v1.2")
     end
 end
@@ -348,7 +361,9 @@ function DynamicTrading.Manager.GenerateRandomContact(finder)
         stocks = {},
         lastRestockDay = -1,
         expirationTime = expireTime,
-        discoveredBy = {}          -- [PUBLIC NETWORK] Track which players discovered this trader
+        discoveredBy = {},          -- [PUBLIC NETWORK] Track which players discovered this trader
+        budget = ZombRand(SandboxVars.DynamicTrading.TraderBudgetMin or 500, (SandboxVars.DynamicTrading.TraderBudgetMax or 2000) + 1), -- [NEW]
+        localDeflation = {} -- [NEW] Per-item count
     }
 
     -- Auto-discover for the creating player (handled by server command)
@@ -419,6 +434,14 @@ function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
     local trader = data.Traders[traderID]
     if not trader or not trader.stocks[itemKey] then return end
     trader.stocks[itemKey] = math.max(0, trader.stocks[itemKey] - qty)
+    
+    -- [NEW] Increase Trader Budget
+    local itemData = DynamicTrading.Config.MasterList[itemKey]
+    if itemData then
+        local unitPrice = DynamicTrading.Economy.GetBuyPrice(itemKey, data.globalHeat)
+        trader.budget = (trader.budget or 1000) + (unitPrice * qty)
+    end
+
     local sensitivity = SandboxVars.DynamicTrading.CategoryInflation or 0.05
     local current = data.globalHeat[category] or 0
     data.globalHeat[category] = current + (sensitivity * qty)
@@ -428,15 +451,33 @@ end
 
 function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
     local data = DynamicTrading.Manager.GetData()
+    local trader = data.Traders[traderID]
+    if not trader then return end
+    
     local current = data.globalHeat[category] or 0
     
-    -- [NEW] Random Chance to decrease inflation (deflation)
-    local chance = SandboxVars.DynamicTrading.SellDeflationChance or 30
-    local roll = ZombRand(1, 101)
-    
-    if roll <= chance then
-        data.globalHeat[category] = current - (0.01 * qty)
-        if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
+    -- 1. [NEW] Decrement Trader Budget
+    local localCount = (trader.localDeflation and trader.localDeflation[itemKey]) or 0
+    local unitPrice = DynamicTrading.Economy.GetSellPrice(nil, itemKey, trader.archetype, data.globalHeat, localCount)
+    trader.budget = math.max(0, (trader.budget or 1000) - (unitPrice * qty))
+
+    -- 2. [NEW] Local Deflation (Trader specific saturation)
+    if not trader.localDeflation then trader.localDeflation = {} end
+    trader.localDeflation[itemKey] = (trader.localDeflation[itemKey] or 0) + qty
+
+    -- 3. [UPDATED] Global Deflation (Configurable Roll, Once per item kind per day)
+    if not data.deflatedGlobal[itemKey] then
+        local roll = ZombRand(SandboxVars.DynamicTrading.SellDeflationChance or 30) + 1
+        
+        if roll == 1 then
+            local sensitivity = SandboxVars.DynamicTrading.CategoryDeflation or 0.02
+            data.globalHeat[category] = current - sensitivity
+            
+            -- Clamp deflation (Min -80% price)
+            if data.globalHeat[category] < -0.8 then data.globalHeat[category] = -0.8 end
+            
+            data.deflatedGlobal[itemKey] = true
+        end
     end
     
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.2") end

@@ -39,7 +39,7 @@ function DT_SidebarButton:createChildren()
         btn:setDisplayBackground(false)
     end
     
-    self.btn:setTooltip("Global Market Info")
+    self.btn:setTooltip("Dynamic Trading Info")
     self:addChild(self.btn)
 end
 

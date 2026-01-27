@@ -159,6 +159,26 @@ option DynamicTrading.TraderStayHoursMax
     translation = DynamicTrading_TraderStayHoursMax,
 }
 
+option DynamicTrading.TraderBudgetMin
+{
+    type = integer,
+    default = 100,
+    min = 0,
+    max = 100000,
+    page = DynamicTrading,
+    translation = DynamicTrading_TraderBudgetMin,
+}
+
+option DynamicTrading.TraderBudgetMax
+{
+    type = integer,
+    default = 500,
+    min = 10,
+    max = 1000000,
+    page = DynamicTrading,
+    translation = DynamicTrading_TraderBudgetMax,
+}
+
 option DynamicTrading.EventFrequency
 {
     type = integer,
@@ -276,8 +296,8 @@ option DynamicTrading.WalletJackpotChance
 option DynamicTrading.SellDeflationChance
 {
     type = integer,
-    default = 30,
-    min = 10,
+    default = 5,
+    min = 1,
     max = 100,
     page = DynamicTrading,
     translation = DynamicTrading_SellDeflationChance,

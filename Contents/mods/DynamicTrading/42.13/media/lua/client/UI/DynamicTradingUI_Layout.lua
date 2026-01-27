@@ -13,7 +13,8 @@ function DynamicTradingUI:createChildren()
     local nameY = self.imageY + self.imageH + 10
     local archY = nameY + 25
     local sigY  = archY + 20
-    local wallY = sigY + 30
+    local wallY = sigY + 25
+    local budgetY = wallY + 25
 
     -- Identity Labels
     self.lblName = ISLabel:new(leftColW / 2 + 10, nameY, 25, "Loading...", 1, 1, 1, 1, UIFont.Medium, true)
@@ -28,19 +29,23 @@ function DynamicTradingUI:createChildren()
     self.lblSignal.center = true
     self:addChild(self.lblSignal)
 
-    self.lblInfo = ISLabel:new(leftColW / 2 + 10, wallY, 25, "Wallet: $0", 0.2, 1.0, 0.2, 1, UIFont.Medium, true)
+    self.lblTraderBudget = ISLabel:new(leftColW / 2 + 10, wallY, 25, "Trader Budget: $0", 1.0, 0.8, 0.2, 1, UIFont.Medium, true)
+    self.lblTraderBudget.center = true
+    self:addChild(self.lblTraderBudget)
+
+    self.lblInfo = ISLabel:new(leftColW / 2 + 10, budgetY, 25, "Wallet: $0", 0.2, 1.0, 0.2, 1, UIFont.Medium, true)
     self.lblInfo.center = true
     self:addChild(self.lblInfo)
 
     -- Ask Button (Organic immersion)
-    self.btnAsk = ISButton:new(20, wallY + 35, leftColW - 20, 25, "ASK WHAT THEY WANT", self, self.onAsk)
+    self.btnAsk = ISButton:new(20, budgetY + 35, leftColW - 20, 25, "ASK WHAT THEY WANT", self, self.onAsk)
     self.btnAsk:initialise()
     self.btnAsk.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0}
     self.btnAsk:setVisible(false) 
     self:addChild(self.btnAsk)
 
     -- Lock Button (Client-side protection)
-    self.btnLock = ISButton:new(20, wallY + 65, leftColW - 20, 25, "LOCK ITEM", self, self.onToggleLock)
+    self.btnLock = ISButton:new(20, budgetY + 65, leftColW - 20, 25, "LOCK ITEM", self, self.onToggleLock)
     self.btnLock:initialise()
     self.btnLock.backgroundColor = {r=0.4, g=0.4, b=0.1, a=1.0}
     self.btnLock:setEnable(false)
@@ -48,14 +53,14 @@ function DynamicTradingUI:createChildren()
     self:addChild(self.btnLock)
 
     -- Main Action Button (Buy/Sell)
-    self.btnAction = ISButton:new(20, wallY + 95, leftColW - 20, 30, "BUY ITEM", self, self.onAction)
+    self.btnAction = ISButton:new(20, budgetY + 95, leftColW - 20, 30, "BUY ITEM", self, self.onAction)
     self.btnAction:initialise()
     self.btnAction.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1.0}
     self.btnAction:setEnable(false)
     self:addChild(self.btnAction)
 
     -- Chat/Log List
-    local logY = wallY + 135
+    local logY = wallY + 170
     local logH = self.height - logY - 10
 
     self.chatList = ISScrollingListBox:new(10, logY, leftColW, logH)

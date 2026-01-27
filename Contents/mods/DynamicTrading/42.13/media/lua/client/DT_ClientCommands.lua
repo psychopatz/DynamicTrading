@@ -85,16 +85,24 @@ local function OnServerCommand(module, command, args)
         end
 
     elseif command == "TransactionResult" then
-        if args.success and DynamicTradingUI and DynamicTradingUI.instance then
+        if DynamicTradingUI and DynamicTradingUI.instance then
             local ui = DynamicTradingUI.instance
-            local trader = DynamicTrading.Manager.GetTrader(ui.traderID, ui.archetype)
-            
-            -- 1. NPC Response Dialogue
-            local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, args)
-            ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier")
-         
-            -- 2. FIX: Immediate UI Refresh (Fixes sell list not updating)
-            ui:populateList()
+            if args.success then
+                local trader = DynamicTrading.Manager.GetTrader(ui.traderID, ui.archetype)
+                
+                -- 1. NPC Response Dialogue
+                local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, args)
+                ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier")
+             
+                -- 2. FIX: Immediate UI Refresh (Fixes sell list not updating)
+                ui:populateList()
+            else
+                -- [NEW] Show Failure Message
+                ui:queueMessage(args.msg or "Transaction Failed", true, false, 0)
+                if HaloTextHelper and getSpecificPlayer(0) then
+                    HaloTextHelper.addTextWithArrow(getSpecificPlayer(0), args.msg or "Failed", true, HaloTextHelper.getColorRed())
+                end
+            end
         end
     end
 end

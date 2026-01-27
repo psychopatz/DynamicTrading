@@ -273,7 +273,7 @@ end
 -- =============================================================================
 -- 4. SELL PRICE CALCULATOR (Player -> Trader)
 -- =============================================================================
-function DynamicTrading.Economy.GetSellPrice(itemObj, itemKey, archetypeKey)
+function DynamicTrading.Economy.GetSellPrice(itemObj, itemKey, archetypeKey, globalHeat, localDeflationCount)
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if not itemData then return 0 end
 
@@ -284,19 +284,39 @@ function DynamicTrading.Economy.GetSellPrice(itemObj, itemKey, archetypeKey)
     local price = itemData.basePrice * diff.sellMult
 
     -- 2. Condition Penalty
-    if itemObj:IsDrainable() or itemObj:isBroken() then
+    if itemObj and (itemObj:IsDrainable() or itemObj:isBroken()) then
         local cond = itemObj:getCondition() / itemObj:getConditionMax()
         price = price * cond
     end
 
     -- 3. Event Modifiers (Supply/Demand)
-    -- If "Winter" makes food expensive to buy (x2.0), it should also be expensive to sell (x2.0).
     if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then
         local eventMult = DynamicTrading.Events.GetPriceModifier(itemData.tags)
         price = price * eventMult
     end
 
-    -- 4. Archetype Bonus ("Wants")
+    -- 4. Global Inflation/Deflation (Heat)
+    if globalHeat then
+        for _, tag in ipairs(itemData.tags) do
+            local heat = globalHeat[tag]
+            if heat and heat ~= 0 then
+                price = price * (1.0 + heat)
+            end
+        end
+    end
+
+    -- 5. [NEW] Local Deflation (Trader specific interest)
+    -- This penalty stacks for every unit of this item already sold to this trader today.
+    if localDeflationCount and localDeflationCount > 0 then
+        -- Each item sold reduces interest by 5% (Example)
+        -- This logic can be modified to be less aggressive or capped.
+        local penaltyPerItem = 0.05
+        local localMult = 1.0 - (localDeflationCount * penaltyPerItem)
+        if localMult < 0.2 then localMult = 0.2 end -- Min 20% value floor for local sat
+        price = price * localMult
+    end
+
+    -- 6. Archetype Bonus ("Wants")
     -- If the trader specializes in this, they pay a premium.
     if archetype and archetype.wants then
         for _, tag in ipairs(itemData.tags) do
@@ -306,22 +326,6 @@ function DynamicTrading.Economy.GetSellPrice(itemObj, itemKey, archetypeKey)
                 break 
             end
         end
-    end
-    
-    -- 5. Random Price Reduction (Cheese Prevention)
-    local reductionChance = SandboxVars.DynamicTrading.SellPriceReductionChance or 20
-    local hasExemption = false
-    
-    for _, tag in ipairs(itemData.tags) do
-        if tag == "Rare" or tag == "Legendary" or tag == "Luxury" then
-            hasExemption = true
-            break
-        end
-    end
-
-    if not hasExemption and ZombRand(100) < reductionChance then
-        -- Apply a random penalty (30% reduction) if the roll succeeds
-        price = price * 0.7
     end
 
     -- Safety: Don't allow free money exploits or negatives

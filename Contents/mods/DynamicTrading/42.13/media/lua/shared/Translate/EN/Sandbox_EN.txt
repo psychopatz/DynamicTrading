@@ -85,4 +85,16 @@ Sandbox_EN = {
 
     Sandbox_DynamicTrading_WalletJackpotChance = "Wallet: Jackpot Chance (%)",
     Sandbox_DynamicTrading_WalletJackpotChance_tooltip = "Chance to hit the 'Tax Return' tier, granting max cash + bonus.",
+
+    Sandbox_DynamicTrading_SellDeflationChance = "Global Deflation Chance",
+    Sandbox_DynamicTrading_SellDeflationChance_tooltip = "The chance (1 in X) that selling an item causes its global market value to decrease.",
+
+    Sandbox_DynamicTrading_SellPriceReductionChance = "Personal Deflation Chance (%)",
+    Sandbox_DynamicTrading_SellPriceReductionChance_tooltip = "The probability that selling an item to a specific trader makes them pay less for subsequent copies of that item.",
+
+    Sandbox_DynamicTrading_TraderBudgetMin = "Trader Budget (Min)",
+    Sandbox_DynamicTrading_TraderBudgetMin_tooltip = "The minimum starting cash for a newly discovered trader.",
+
+    Sandbox_DynamicTrading_TraderBudgetMax = "Trader Budget (Max)",
+    Sandbox_DynamicTrading_TraderBudgetMax_tooltip = "The maximum starting cash for a newly discovered trader.",
 }
