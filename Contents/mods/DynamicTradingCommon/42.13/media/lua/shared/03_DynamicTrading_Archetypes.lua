@@ -60,7 +60,7 @@ function DynamicTrading.LoadArchetypes()
     local successCount = 0
     
     for _, id in ipairs(archetypesToLoad) do
-        local path = "05_Archetypes/" .. id .. "/Items/trade"
+        local path = "05_Archetypes/" .. id .. "/Items/DT_" .. id
         -- Use force-loading for debugging if needed, but require is standard
         local success, err = pcall(function() require(path) end)
         
