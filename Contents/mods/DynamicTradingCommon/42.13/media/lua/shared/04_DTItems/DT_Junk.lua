@@ -73,8 +73,6 @@ Register({
 -- =============================================================================
 -- Useless functionality, but high RP trade value.
 { item="Base.StockCertificate",     basePrice=5,   tags={"Luxury", "Paper", "Junk"}, stockRange={min=0, max=5} }, -- Gambler's item
-{ item="Base.MoneyBundle",          basePrice=5,   tags={"Fuel", "Junk"}, stockRange={min=1, max=5} }, -- Good kindling
-{ item="Base.Money",                basePrice=0.1, tags={"Fuel", "Junk"}, stockRange={min=10, max=50} },
 { item="Base.CreditCard",           basePrice=0.5, tags={"Junk", "Plastic"}, stockRange={min=1, max=10} },
 { item="Base.CreditCard_Stolen",    basePrice=0.5, tags={"Junk", "Plastic"}, stockRange={min=1, max=10} },
 { item="Base.DogTag_Pet_Blank",     basePrice=1,   tags={"Junk", "Metal"}, stockRange={min=1, max=5} },
