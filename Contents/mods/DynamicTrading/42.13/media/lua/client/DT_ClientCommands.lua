@@ -150,7 +150,9 @@ local function OnServerCommand(module, command, args)
         if args.time then
             DynamicTrading.CooldownManager.ClientCache = args.time
             -- Force UI update if open
-            if DT_RadioWindow and DT_RadioWindow.instance then DT_RadioWindow.instance:updateButtonState() end
+            if DT_RadioWindow and DT_RadioWindow.instance and DT_RadioWindow.instance.updateButtonState then 
+                DT_RadioWindow.instance:updateButtonState() 
+            end
         end
     end
 end

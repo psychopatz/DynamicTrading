@@ -100,6 +100,12 @@ function DT_RadioWindow:close()
     DT_RadioWindow.instance = nil
 end
 
+function DT_RadioWindow:updateButtonState()
+    if self.signalPanel then
+        self.signalPanel:updateButtonState()
+    end
+end
+
 function DT_RadioWindow.ToggleWindow(radioObj, isHam)
     if DT_RadioWindow.instance then
         DT_RadioWindow.instance:close()
