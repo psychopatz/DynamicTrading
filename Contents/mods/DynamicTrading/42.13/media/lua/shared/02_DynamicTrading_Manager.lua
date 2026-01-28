@@ -1,4 +1,5 @@
 require "01_DynamicTrading_Config"
+require "03_DynamicTrading_Archetypes"
 require "02b_DynamicTrading_Events"
 require "03b_DynamicTrading_PortraitConfig"
 require "02c_DT_NetworkLogs"
