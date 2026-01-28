@@ -108,7 +108,7 @@ Register({
     { item="Base.Wire",              tags={"Material", "Build", "Electronics"},    basePrice=35,  stockRange={min=2, max=8} },
     { item="Base.PropaneTank",       tags={"Fuel", "Mechanic", "Heavy"},           basePrice=250, stockRange={min=1, max=3} },
     { item="Base.WeldingRods",       tags={"Material", "Mechanic", "Uncommon"},    basePrice=60,  stockRange={min=2, max=10} },
-    { item="Base.GunPowder",         tags={"Material", "Ammo", "Military"},        basePrice=150, stockRange={min=1, max=4} },
+    { item="Base.GunPowder",         tags={"Material", "Ammo", "Military"},        basePrice=5, stockRange={min=1, max=4} },
 
     -- TOOL HEADS (The "Holy Grail" of scavenging)
     { item="Base.SledgehammerHead",  tags={"Tool", "Smithing", "Heavy", "Rare"},   basePrice=350, stockRange={min=0, max=2} },
