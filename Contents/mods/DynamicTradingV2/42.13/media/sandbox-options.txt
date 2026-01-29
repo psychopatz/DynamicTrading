@@ -59,15 +59,6 @@ option DynamicTrading.RestockInterval
     translation = DynamicTrading_RestockInterval,
 }
 
-option DynamicTrading.ScanBaseChance
-{
-    type = integer,
-    default = 30,
-    min = 1,
-    max = 100,
-    page = DynamicTrading,
-    translation = DynamicTrading_ScanBaseChance,
-}
 
 option DynamicTrading.ScanCooldown
 {
@@ -79,15 +70,6 @@ option DynamicTrading.ScanCooldown
     translation = DynamicTrading_ScanCooldown,
 }
 
-option DynamicTrading.HamRadioBonus
-{
-    type = double,
-    default = 1.5,
-    min = 1.0,
-    max = 5.0,
-    page = DynamicTrading,
-    translation = DynamicTrading_HamRadioBonus,
-}
 
 option DynamicTrading.DailyTraderMin
 {
@@ -205,14 +187,6 @@ option DynamicTrading.AllowHardcoreEvents
     translation = DynamicTrading_AllowHardcoreEvents,
 }
 
-option DynamicTrading.PublicNetwork
-{
-    type = boolean,
-    default = true,
-    page = DynamicTrading,
-    translation = DynamicTrading_PublicNetwork,
-}
-
 option DynamicTrading.MaxEvents
 {
     type = integer,
@@ -271,5 +245,76 @@ option DynamicTrading.WalletJackpotChance
     max = 100.0,
     page = DynamicTrading,
     translation = DynamicTrading_WalletJackpotChance,
+}
+
+
+option DynamicTrading.FactionStartPop
+{
+    type = integer,
+    default = 10,
+    min = 1,
+    max = 100,
+    page = DynamicTrading,
+    translation = DynamicTrading_FactionStartPop,
+}
+
+option DynamicTrading.FactionDailyConsumption
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 5.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_FactionDailyConsumption,
+}
+
+option DynamicTrading.FactionGrowthChance
+{
+    type = integer,
+    default = 50,
+    min = 0,
+    max = 100,
+    page = DynamicTrading,
+    translation = DynamicTrading_FactionGrowthChance,
+}
+
+option DynamicTrading.GlobalRecruitCount
+{
+    type = integer,
+    default = 5,
+    min = 0,
+    max = 50,
+    page = DynamicTrading,
+    translation = DynamicTrading_GlobalRecruitCount,
+}
+
+option DynamicTrading.FactionDeathThreshold
+{
+    type = integer,
+    default = 3,
+    min = 1,
+    max = 30,
+    page = DynamicTrading,
+    translation = DynamicTrading_FactionDeathThreshold,
+}
+
+option DynamicTrading.MaxFactionsPerTown
+{
+    type = integer,
+    default = 2,
+    min = 1,
+    max = 5,
+    page = DynamicTrading,
+    translation = DynamicTrading_MaxFactionsPerTown,
+}
+
+option DynamicTrading.FactionRespawnChance
+{
+    type = integer,
+    default = 10,
+    min = 0,
+    max = 100,
+    page = DynamicTrading,
+    translation = DynamicTrading_FactionRespawnChance,
 }
 

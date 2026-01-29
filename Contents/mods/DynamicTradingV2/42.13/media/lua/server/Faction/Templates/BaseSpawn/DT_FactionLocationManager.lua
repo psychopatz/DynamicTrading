@@ -4,6 +4,11 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
+require "Faction/Templates/BaseSpawn/Rosewood"
+require "Faction/Templates/BaseSpawn/Muldraugh"
+require "Faction/Templates/BaseSpawn/WestPoint"
+require "Faction/Templates/BaseSpawn/Riverside"
+
 DT_FactionLocationManager = {}
 
 -- ==========================================================

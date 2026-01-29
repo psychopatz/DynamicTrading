@@ -84,4 +84,26 @@ Sandbox_EN = {
 
     Sandbox_DynamicTrading_WalletJackpotChance = "Wallet: Jackpot Chance (%)",
     Sandbox_DynamicTrading_WalletJackpotChance_tooltip = "Chance to hit the 'Tax Return' tier, granting max cash + bonus.",
+
+    -- Faction System
+    Sandbox_DynamicTrading_FactionStartPop = "Faction: Starting Population",
+    Sandbox_DynamicTrading_FactionStartPop_tooltip = "Initial number of members in a generated faction.",
+
+    Sandbox_DynamicTrading_FactionDailyConsumption = "Faction: Consumption Multiplier",
+    Sandbox_DynamicTrading_FactionDailyConsumption_tooltip = "Multiplier for daily food/meds consumption. Higher = Harder for factions to survive.",
+
+    Sandbox_DynamicTrading_FactionGrowthChance = "Faction: Growth Chance (%)",
+    Sandbox_DynamicTrading_FactionGrowthChance_tooltip = "Daily chance for a stable faction to recruit a new member (if recruits are available).",
+
+    Sandbox_DynamicTrading_GlobalRecruitCount = "Global Recruits per Day",
+    Sandbox_DynamicTrading_GlobalRecruitCount_tooltip = "Total number of new wanderers available for all factions to recruit each day.",
+
+    Sandbox_DynamicTrading_FactionDeathThreshold = "Faction: Starvation Limit (Days)",
+    Sandbox_DynamicTrading_FactionDeathThreshold_tooltip = "How many days a faction can go without food before members start dying rapidly.",
+
+    Sandbox_DynamicTrading_MaxFactionsPerTown = "Max Factions Per Town",
+    Sandbox_DynamicTrading_MaxFactionsPerTown_tooltip = "The maximum number of distinct factions that can exist in a single town at once.",
+
+    Sandbox_DynamicTrading_FactionRespawnChance = "Faction Respawn Chance (%)",
+    Sandbox_DynamicTrading_FactionRespawnChance_tooltip = "Daily chance for a new faction to arrive in a town if the number of existing factions is below the limit.",
 }
