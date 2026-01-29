@@ -136,15 +136,18 @@ function DT_FactionDebugWindow:createChildren()
     self:addChild(self.btnLocate)
 
     self:refreshList()
+end
 
-    -- Reactive Refresh for Multiplayer
+-- Reactive Refresh for Multiplayer (Static/Singleton level)
+if not DT_FactionDebugWindow.EventsAdded then
     Events.OnReceiveGlobalModData.Add(function(key, data)
-        if key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster" then
-            if self:getIsVisible() then
-                self:refreshList()
+        if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster") and DT_FactionDebugWindow.instance then
+            if DT_FactionDebugWindow.instance:getIsVisible() then
+                DT_FactionDebugWindow.instance:refreshList()
             end
         end
     end)
+    DT_FactionDebugWindow.EventsAdded = true
 end
 
 function DT_FactionDebugWindow:refreshList()

@@ -274,46 +274,41 @@ function DTNPCManager.CheckRosterSpawns()
             
             if targetX then
                 for _, player in ipairs(players) do
-                     local dx = player:getX() - targetX
-                     local dy = player:getY() - targetY
-                     local dz = player:getZ() - targetZ
+                    local dx = player:getX() - targetX
+                    local dy = player:getY() - targetY
+                    local dz = player:getZ() - targetZ
                         
-                         -- Relaxed Z-check: Allow +/- 1 floor (e.g. player on ground, NPC on 2nd floor)
-                         if math.abs(dz) <= 1 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
-                                -- Player is near this Roster soul. Hydrate it!
-                                print("[DTNPC] Found Roster Soul nearby: " .. (registry.name or uuid) .. " Dist: " .. math.sqrt(dx*dx + dy*dy))
-                                local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
-                                
-                                if fullBrain then
-                                    -- Ensure coordinates are set for spawn
-                                    if not fullBrain.lastX then
-                                        print("[DTNPC] Hydrating brain coordinates from registry for spawn.")
-                                        fullBrain.lastX = targetX
-                                        fullBrain.lastY = targetY
-                                        fullBrain.lastZ = targetZ
-                                    end
-                                    
-                                    local zombie = DTNPCSpawn.RespawnNPC(fullBrain, uuid)
-                                    if zombie then
-                                         print("[DTNPC] Roster Spawn SUCCESS for " .. uuid)
-                                    else
-                                         print("[DTNPC] Roster Spawn FAILED for " .. uuid)
-                                    end
-                                else
-                                    print("[DTNPC] ERROR: Could not retrieve full brain for " .. uuid)
-                                end
-                                break -- Spawned, move to next soul
-                         end
+                    -- Relaxed Z-check: Allow +/- 1 floor (e.g. player on ground, NPC on 2nd floor)
+                    if math.abs(dz) <= 1 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
+                        -- Player is near this Roster soul. Hydrate it!
+                        print("[DTNPC] Found Roster Soul nearby: " .. (registry.name or uuid) .. " Dist: " .. math.sqrt(dx*dx + dy*dy))
+                        local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
+                        
+                        if fullBrain then
+                            -- Ensure coordinates are set for spawn
+                            if not fullBrain.lastX then
+                                print("[DTNPC] Hydrating brain coordinates from registry for spawn.")
+                                fullBrain.lastX = targetX
+                                fullBrain.lastY = targetY
+                                fullBrain.lastZ = targetZ
+                            end
+                            
+                            local zombie = DTNPCSpawn.RespawnNPC(fullBrain, uuid)
+                            if zombie then
+                                    print("[DTNPC] Roster Spawn SUCCESS for " .. uuid)
+                            else
+                                    print("[DTNPC] Roster Spawn FAILED for " .. uuid)
+                            end
+                        else
+                            print("[DTNPC] ERROR: Could not retrieve full brain for " .. uuid)
+                        end
+                        break -- Spawned, move to next soul
                     end
                 end
             end
         end
     end
-
-
--- ==============================================================================
--- 5. RESTORATION & TRACKING LOOP
--- ==============================================================================
+end
 
 local TICK_RATE = 20
 local tickCounter = 0

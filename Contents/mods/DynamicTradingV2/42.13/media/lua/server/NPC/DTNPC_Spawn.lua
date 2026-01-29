@@ -35,20 +35,11 @@ function DTNPCSpawn.SyncToAllClients(zombie, brain)
         brain = brain
     }
     
-    -- Handle Multiplayer
-    local onlinePlayers = getOnlinePlayers()
-    if onlinePlayers and onlinePlayers:size() > 0 then
-        for i = 0, onlinePlayers:size() - 1 do
-            local player = onlinePlayers:get(i)
-            if player then
-                sendServerCommand(player, "DTNPC", "SyncNPC", syncData)
-            end
-        end
+    if isServer() then
+        sendServerCommand("DTNPC", "SyncNPC", syncData)
     else
-        -- Handle Single Player fallback: Trigger event manually for the local client
-        if not isServer() and not isClient() then
-            triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
-        end
+        -- Single Player fallback
+        triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
     end
     
     print("[DTNPC] Synced NPC: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
@@ -98,19 +89,11 @@ function DTNPCSpawn.BroadcastPosition(zombie, brain)
         state = brain.state
     }
     
-    local onlinePlayers = getOnlinePlayers()
-    if onlinePlayers and onlinePlayers:size() > 0 then
-        for i = 0, onlinePlayers:size() - 1 do
-            local player = onlinePlayers:get(i)
-            if player then
-                sendServerCommand(player, "DTNPC", "UpdatePosition", posData)
-            end
-        end
+    if isServer() then
+        sendServerCommand("DTNPC", "UpdatePosition", posData)
     else
         -- Single Player fallback
-        if not isServer() and not isClient() then
-            triggerEvent("OnServerCommand", "DTNPC", "UpdatePosition", posData)
-        end
+        triggerEvent("OnServerCommand", "DTNPC", "UpdatePosition", posData)
     end
 end
 
@@ -119,19 +102,11 @@ function DTNPCSpawn.NotifyRemoval(uuid, outfitID)
     
     local data = { uuid = uuid, outfitID = outfitID }
     
-    local onlinePlayers = getOnlinePlayers()
-    if onlinePlayers and onlinePlayers:size() > 0 then
-        for i = 0, onlinePlayers:size() - 1 do
-            local player = onlinePlayers:get(i)
-            if player then
-                sendServerCommand(player, "DTNPC", "RemoveNPC", data)
-            end
-        end
+    if isServer() then
+        sendServerCommand("DTNPC", "RemoveNPC", data)
     else
         -- Single Player fallback
-        if not isServer() and not isClient() then
-            triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", data)
-        end
+        triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", data)
     end
     
     print("[DTNPC] Notified removal: " .. uuid)
