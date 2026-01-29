@@ -42,11 +42,12 @@ function DT_FactionDebugWindow:createChildren()
     -- 4. ROSTER LIST (Right Side)
     local rosterX = detailsX + detailsWidth + 10
     local rosterWidth = self.width - rosterX - 10
-    self.rosterlist = ISScrollingListBox:new(rosterX, 45, rosterWidth, self.height - 140)
+    self.rosterlist = ISScrollingListBox:new(rosterX, 45, rosterWidth, self.height - 180)
     self.rosterlist:initialise()
     self.rosterlist:instantiate()
     self.rosterlist.itemheight = 45 -- Slightly taller for status lines
     self.rosterlist.doDrawItem = DT_FactionDebugWindow.doDrawRosterItem
+    self.rosterlist.onmousedown = DT_FactionDebugWindow.onRosterMouseDown
     self.rosterlist.backgroundColor = {r=0, g=0, b=0, a=0.5}
     self:addChild(self.rosterlist)
 
@@ -127,6 +128,17 @@ function DT_FactionDebugWindow:createChildren()
     self.btnRepSub:initialise()
     self:addChild(self.btnRepSub)
 
+    -- 7. LOCATE NPC BUTTON (Under Roster)
+    local locateX = rosterX
+    local locateY = self.height - 130
+    local locateWidth = 150
+
+    self.btnLocate = ISButton:new(locateX, locateY, locateWidth, 25, "LOCATE NPC", self, DT_FactionDebugWindow.onLocateNPC)
+    self.btnLocate:initialise()
+    self.btnLocate.backgroundColor = {r=0.2, g=0.2, b=0.7, a=1}
+    self.btnLocate.enable = false
+    self:addChild(self.btnLocate)
+
     self:refreshList()
 end
 
@@ -202,6 +214,7 @@ function DT_FactionDebugWindow:onListMouseDown(item)
 
     -- Repopulate Roster List
     DT_FactionDebugWindow.instance.rosterlist:clear()
+    DT_FactionDebugWindow.instance.btnLocate.enable = false
     local rosterData = ModData.get("DynamicTrading_Roster")
     if rosterData then
         local members = rosterData.FactionMembers and rosterData.FactionMembers[f.id]
@@ -212,13 +225,18 @@ function DT_FactionDebugWindow:onListMouseDown(item)
                 if soul then
                     local data = {
                         soul = soul,
-                        trader = trader
+                        trader = trader,
+                        uuid = uuid
                     }
                     DT_FactionDebugWindow.instance.rosterlist:addItem(soul.name or uuid, data)
                 end
             end
         end
     end
+end
+
+function DT_FactionDebugWindow:onRosterMouseDown(item)
+    DT_FactionDebugWindow.instance.btnLocate.enable = true
 end
 
 function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
@@ -250,6 +268,52 @@ function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
     self:drawText("Status: " .. status .. " | " .. spawned .. " | " .. retTime, 10, y + 20, r, g, b, 0.8, UIFont.Small)
 
     return y + self.itemheight
+end
+
+function DT_FactionDebugWindow:onLocateNPC()
+    local item = self.rosterlist.items[self.rosterlist.selected]
+    if not item or not item.item then return end
+    
+    local soul = item.item.soul
+    local uuid = item.item.uuid
+    
+    local targetX, targetY
+    local status = soul.status or "Rest"
+    
+    if status == "Rest" or status == "Away" then
+        targetX = soul.homeCoords and soul.homeCoords.x
+        targetY = soul.homeCoords and soul.homeCoords.y
+    elseif status == "Trading" then
+        targetX = soul.lastX
+        targetY = soul.lastY
+    elseif status == "Working" then
+        targetX = soul.workCoords and soul.workCoords.x
+        targetY = soul.workCoords and soul.workCoords.y
+    end
+    
+    if not targetX or not targetY then
+        local player = getPlayer()
+        if player then player:Say("No coordinates found for NPC: " .. soul.name) end
+        return
+    end
+    
+    if EventMarkerHandler then
+        local color = {r=0, g=1, b=1}
+        local description = "Target: " .. soul.name .. " (" .. status .. ")"
+        
+        EventMarkerHandler.set(
+            "locate_" .. uuid,
+            "friend.png",
+            600, -- 10 minutes
+            targetX,
+            targetY,
+            color,
+            description
+        )
+        
+        local player = getPlayer()
+        if player then player:Say("Marked NPC location on map: " .. soul.name) end
+    end
 end
 
 -- Singleton Access

@@ -126,12 +126,14 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
         factionID = brain.factionID,
         archetypeID = brain.archetypeID,
         homeCoords = brain.homeCoords,
+        workCoords = brain.workCoords or { x=0, y=0, z=0 },
         lastX = brain.lastX,
         lastY = brain.lastY,
         lastZ = brain.lastZ,
         health = brain.health or 1.0,
-        status = brain.status or "Active",
-        master = brain.master
+        status = brain.status or "Rest",
+        master = brain.master,
+        isFemale = brain.isFemale
     }
     ModData.transmit(MOD_DATA_KEY)
 end
@@ -152,7 +154,8 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     brain.factionID = factionID
     brain.archetypeID = archetypeID
     brain.homeCoords = homeCoords or { x=0, y=0, z=0 }
-    brain.status = "Active" -- Active, Dead, Away, Home
+    brain.workCoords = { x=0, y=0, z=0 }
+    brain.status = "Rest" -- Rest, Away, Trading, Working
     brain.memory = {}
     
     -- Save full brain to individual key

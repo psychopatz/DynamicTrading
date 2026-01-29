@@ -9,8 +9,6 @@ DTNPCManager.Data = {}
 DTNPCManager.PendingRegistrations = {}
 DTNPCManager.OutfitIDToUUID = {} -- Maps current outfit IDs to persistent UUIDs
 
-require "Faction/TradingSys/DynamicTrading_Roster" -- V2 Roster Bridge
-
 -- ==============================================================================
 -- 1. SAVE / LOAD SYSTEM
 -- ==============================================================================
@@ -230,75 +228,6 @@ function DTNPCManager.CheckForRespawn(brain, uuid)
     return false
 end
 
-function DTNPCManager.CheckRosterSpawns()
-    if not DynamicTrading_Roster then return end
-    
-    local rosterData = ModData.get("DynamicTrading_Roster")
-    if not rosterData or not rosterData.Souls then return end
-    
-    local onlinePlayers = getOnlinePlayers()
-    if not onlinePlayers or onlinePlayers:size() == 0 then return end
-    
-    local onlinePlayers = getOnlinePlayers()
-    if not onlinePlayers or onlinePlayers:size() == 0 then return end
-    
-    local RESPAWN_RANGE = 100 -- Increased from 50 to ensure preload before visibility
-    
-    for uuid, registry in pairs(rosterData.Souls) do
-        -- Skip if already active/tracked by the Manager
-        if not DTNPCManager.Data[uuid] then
-            local targetX, targetY, targetZ
-            
-            -- Prefer last known position, otherwise home
-            if registry.lastX then
-                targetX, targetY, targetZ = registry.lastX, registry.lastY, registry.lastZ or 0
-            elseif registry.homeCoords then
-                 targetX, targetY, targetZ = registry.homeCoords.x, registry.homeCoords.y, registry.homeCoords.z or 0
-            end
-            
-            if targetX then
-                for i = 0, onlinePlayers:size() - 1 do
-                    local player = onlinePlayers:get(i)
-                    if player then
-                         local dx = player:getX() - targetX
-                         local dy = player:getY() - targetY
-                         local dz = player:getZ() - targetZ
-                        
-                         local dz = player:getZ() - targetZ
-                        
-                         -- Relaxed Z-check: Allow +/- 1 floor (e.g. player on ground, NPC on 2nd floor)
-                         if math.abs(dz) <= 1 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
-                                -- Player is near this Roster soul. Hydrate it!
-                                print("[DTNPC] Found Roster Soul nearby: " .. (registry.name or uuid) .. " Dist: " .. math.sqrt(dx*dx + dy*dy))
-                                local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
-                                
-                                if fullBrain then
-                                    -- Ensure coordinates are set for spawn
-                                    if not fullBrain.lastX then
-                                        print("[DTNPC] Hydrating brain coordinates from registry for spawn.")
-                                        fullBrain.lastX = targetX
-                                        fullBrain.lastY = targetY
-                                        fullBrain.lastZ = targetZ
-                                    end
-                                    
-                                    local zombie = DTNPCSpawn.RespawnNPC(fullBrain, uuid)
-                                    if zombie then
-                                         print("[DTNPC] Roster Spawn SUCCESS for " .. uuid)
-                                    else
-                                         print("[DTNPC] Roster Spawn FAILED for " .. uuid)
-                                    end
-                                else
-                                    print("[DTNPC] ERROR: Could not retrieve full brain for " .. uuid)
-                                end
-                                break -- Spawned, move to next soul
-                         end
-                    end
-                end
-            end
-        end
-    end
-end
-
 -- ==============================================================================
 -- 5. RESTORATION & TRACKING LOOP
 -- ==============================================================================
@@ -309,7 +238,7 @@ local tickCounter = 0
 local POSITION_BROADCAST_RATE = 120
 local positionBroadcastCounter = 0
 
-local RESPAWN_CHECK_RATE = 60 -- Check every 3 seconds (was 300/15s) for responsiveness
+local RESPAWN_CHECK_RATE = 300
 local respawnCheckCounter = 0
 
 function DTNPCManager.OnTick()
@@ -331,13 +260,9 @@ function DTNPCManager.OnTick()
     
     -- Respawn check
     if shouldCheckRespawn then
-        -- 1. Check existing tracked NPCs
         for uuid, brain in pairs(DTNPCManager.Data) do
             DTNPCManager.CheckForRespawn(brain, uuid)
         end
-        
-        -- 2. Check for new spawns from Roster (Bridge)
-        DTNPCManager.CheckRosterSpawns()
     end
     
     if tickCounter < TICK_RATE then return end
