@@ -4,7 +4,7 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
-if isClient() then return end -- Server Side Only
+if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
 
 -- Required modules
 require "Faction/TradingSys/DynamicTrading_Engine"

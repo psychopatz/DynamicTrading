@@ -6,15 +6,17 @@
 
 require "NPC/Sys/DTNPC_Generator"
 
-DTNPCSpawn = DTNPCSpawn or {}
+    DTNPCSpawn = DTNPCSpawn or {}
+    
+    -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
+if isClient() and not isServer() then return end
 
--- ==============================================================================
+    -- ==============================================================================
 -- 1. MULTIPLAYER SYNC FUNCTIONS
 -- ==============================================================================
 
 function DTNPCSpawn.SyncToAllClients(zombie, brain)
     if not zombie or not brain then return end
-    if not isServer() then return end
     
     local outfitID = zombie:getPersistentOutfitID()
     local uuid = brain.uuid
@@ -33,22 +35,27 @@ function DTNPCSpawn.SyncToAllClients(zombie, brain)
         brain = brain
     }
     
+    -- Handle Multiplayer
     local onlinePlayers = getOnlinePlayers()
-    if onlinePlayers then
+    if onlinePlayers and onlinePlayers:size() > 0 then
         for i = 0, onlinePlayers:size() - 1 do
             local player = onlinePlayers:get(i)
             if player then
                 sendServerCommand(player, "DTNPC", "SyncNPC", syncData)
             end
         end
+    else
+        -- Handle Single Player fallback: Trigger event manually for the local client
+        if not isServer() and not isClient() then
+            triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
+        end
     end
     
-    print("[DTNPC] Synced NPC to all clients: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
+    print("[DTNPC] Synced NPC: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
 end
 
 function DTNPCSpawn.SyncToPlayer(player, zombie, brain)
     if not player or not zombie or not brain then return end
-    if not isServer() then return end
     
     local outfitID = zombie:getPersistentOutfitID()
     local uuid = brain.uuid
@@ -67,13 +74,18 @@ function DTNPCSpawn.SyncToPlayer(player, zombie, brain)
         brain = brain
     }
     
-    sendServerCommand(player, "DTNPC", "SyncNPC", syncData)
-    print("[DTNPC] Synced NPC to player " .. player:getUsername() .. ": " .. (brain.name or uuid))
+    if isServer() or isClient() then
+        sendServerCommand(player, "DTNPC", "SyncNPC", syncData)
+    else
+        -- Single Player fallback
+        triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
+    end
+    
+    print("[DTNPC] Synced NPC to player: " .. (brain.name or uuid))
 end
 
 function DTNPCSpawn.BroadcastPosition(zombie, brain)
     if not zombie or not brain then return end
-    if not isServer() then return end
     
     local uuid = brain.uuid
     local posData = {
@@ -87,31 +99,42 @@ function DTNPCSpawn.BroadcastPosition(zombie, brain)
     }
     
     local onlinePlayers = getOnlinePlayers()
-    if onlinePlayers then
+    if onlinePlayers and onlinePlayers:size() > 0 then
         for i = 0, onlinePlayers:size() - 1 do
             local player = onlinePlayers:get(i)
             if player then
                 sendServerCommand(player, "DTNPC", "UpdatePosition", posData)
             end
         end
+    else
+        -- Single Player fallback
+        if not isServer() and not isClient() then
+            triggerEvent("OnServerCommand", "DTNPC", "UpdatePosition", posData)
+        end
     end
 end
 
 function DTNPCSpawn.NotifyRemoval(uuid, outfitID)
     if not uuid then return end
-    if not isServer() then return end
+    
+    local data = { uuid = uuid, outfitID = outfitID }
     
     local onlinePlayers = getOnlinePlayers()
-    if onlinePlayers then
+    if onlinePlayers and onlinePlayers:size() > 0 then
         for i = 0, onlinePlayers:size() - 1 do
             local player = onlinePlayers:get(i)
             if player then
-                sendServerCommand(player, "DTNPC", "RemoveNPC", { uuid = uuid, outfitID = outfitID })
+                sendServerCommand(player, "DTNPC", "RemoveNPC", data)
             end
+        end
+    else
+        -- Single Player fallback
+        if not isServer() and not isClient() then
+            triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", data)
         end
     end
     
-    print("[DTNPC] Notified all clients of NPC removal: " .. uuid)
+    print("[DTNPC] Notified removal: " .. uuid)
 end
 
 -- ==============================================================================
@@ -522,9 +545,3 @@ local function onClientCommand(module, command, player, args)
 end
 
 Events.OnClientCommand.Add(onClientCommand)
-
-function DTNPCManager.GetTableSize(t)
-    local count = 0
-    for _, __ in pairs(t) do count = count + 1 end
-    return count
-end

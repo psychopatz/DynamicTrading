@@ -73,7 +73,7 @@ end
 
 function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     if not zombie or not brain then return end
-    if isServer() then return end
+    if isServer() and isDedicatedServer() then return end
     
     local modData = zombie:getModData()
     local uuid = brain.uuid
@@ -321,8 +321,7 @@ local VISUAL_CHECK_RATE = 60
 local visualCheckCounter = 0
 
 local function onTick()
-    if isServer() then return end
-    if not isClient() then return end
+    if isServer() and isDedicatedServer() then return end
     
     visualCheckCounter = visualCheckCounter + 1
     if visualCheckCounter < VISUAL_CHECK_RATE then return end
@@ -453,7 +452,7 @@ Events.OnTick.Add(onTick)
 local hasSyncedOnce = false
 
 local function onPlayerCreated(playerNum)
-    if not isClient() then return end
+    if isServer() and isDedicatedServer() then return end
     if hasSyncedOnce then return end
     
     local player = getSpecificPlayer(playerNum)

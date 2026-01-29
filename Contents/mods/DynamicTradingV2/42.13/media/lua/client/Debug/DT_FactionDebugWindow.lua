@@ -92,7 +92,6 @@ function DT_FactionDebugWindow:createChildren()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "ModifyWealth", factionID = f.item.id, amount = 1000 })
-            self:refreshList()
         end
     end)
     self.btnWealthAdd:initialise()
@@ -102,7 +101,6 @@ function DT_FactionDebugWindow:createChildren()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "ModifyWealth", factionID = f.item.id, amount = -1000 })
-            self:refreshList()
         end
     end)
     self.btnWealthSub:initialise()
@@ -112,7 +110,6 @@ function DT_FactionDebugWindow:createChildren()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "ModifyReputation", factionID = f.item.id, amount = 10 })
-            self:refreshList()
         end
     end)
     self.btnRepAdd:initialise()
@@ -122,7 +119,6 @@ function DT_FactionDebugWindow:createChildren()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "ModifyReputation", factionID = f.item.id, amount = -10 })
-            self:refreshList()
         end
     end)
     self.btnRepSub:initialise()
@@ -140,6 +136,15 @@ function DT_FactionDebugWindow:createChildren()
     self:addChild(self.btnLocate)
 
     self:refreshList()
+
+    -- Reactive Refresh for Multiplayer
+    Events.OnReceiveGlobalModData.Add(function(key, data)
+        if key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster" then
+            if self:getIsVisible() then
+                self:refreshList()
+            end
+        end
+    end)
 end
 
 function DT_FactionDebugWindow:refreshList()

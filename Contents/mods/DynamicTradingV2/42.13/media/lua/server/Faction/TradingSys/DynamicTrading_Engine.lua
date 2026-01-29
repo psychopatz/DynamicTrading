@@ -1,4 +1,4 @@
-if isClient() then return end -- Server Side Only
+if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
 
 require "DT_V2_Config"
 

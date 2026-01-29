@@ -1,4 +1,4 @@
-if isClient() then return end -- Server Side Only
+if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
 
 DynamicTrading_Stock = {}
 local MOD_DATA_KEY = "DynamicTrading_Stock"

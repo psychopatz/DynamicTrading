@@ -4,7 +4,7 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
-if isClient() then return end
+if isClient() and not isServer() then return end
 
 local ServerNetwork = {}
 local COMMAND_MODULE = "DynamicTrading_V2"

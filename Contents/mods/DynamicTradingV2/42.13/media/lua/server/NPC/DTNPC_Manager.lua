@@ -11,12 +11,35 @@ DTNPCManager.OutfitIDToUUID = {} -- Maps current outfit IDs to persistent UUIDs
 
 require "Faction/TradingSys/DynamicTrading_Roster" -- V2 Roster Bridge
 
+-- Helper for SP/MP Compatibility
+function DTNPCManager.GetActivePlayers()
+    local players = {}
+    if not isServer() and not isClient() then
+         -- Single Player
+         local p = getSpecificPlayer(0)
+         if p then table.insert(players, p) end
+    else
+         -- Dedicated Server / Host
+         local online = getOnlinePlayers()
+         if online then
+             for i=0, online:size()-1 do
+                 local p = online:get(i)
+                 if p then table.insert(players, p) end
+             end
+         end
+    end
+    return players
+end
+
+-- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
+if isClient() and not isServer() then return end
+
 -- ==============================================================================
 -- 1. SAVE / LOAD SYSTEM
 -- ==============================================================================
 
 function DTNPCManager.Load()
-    if isClient() then return end
+    -- if isClient() then return end -- REMOVED for Single Player Support
     
     local globalData = ModData.getOrCreate("DTNPC_GlobalList")
     DTNPCManager.Data = globalData.NPCs or {}
@@ -34,7 +57,7 @@ function DTNPCManager.Load()
 end
 
 function DTNPCManager.Save()
-    if isClient() then return end
+    -- if isClient() then return end -- REMOVED for SP Support
     
     local globalData = ModData.getOrCreate("DTNPC_GlobalList")
     globalData.NPCs = DTNPCManager.Data
@@ -87,7 +110,7 @@ end
 -- ==============================================================================
 
 function DTNPCManager.Register(zombie, brain)
-    if isClient() then return end
+    -- if isClient() then return end -- REMOVED for SP Support
     if not zombie or not brain then return end
     
     local outfitID = zombie:getPersistentOutfitID()
@@ -150,7 +173,7 @@ function DTNPCManager.Register(zombie, brain)
 end
 
 function DTNPCManager.RemoveData(uuid)
-    if isClient() then return end
+    -- if isClient() then return end -- REMOVED for SP Support
     
     if DTNPCManager.Data[uuid] then
         local brain = DTNPCManager.Data[uuid]
@@ -175,7 +198,7 @@ function DTNPCManager.RemoveData(uuid)
 end
 
 function DTNPCManager.Unregister(zombie)
-    if isClient() then return end
+    -- if isClient() then return end -- REMOVED for SP Support
     
     local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
     
@@ -199,20 +222,18 @@ Events.OnZombieDead.Add(DTNPCManager.Unregister)
 -- 4. RESPAWN SYSTEM
 -- ==============================================================================
 
+local RESPAWN_RANGE = 100 -- Distance at which NPCs hydrate/spawn near players
+
 function DTNPCManager.CheckForRespawn(brain, uuid)
     if not brain or not brain.lastX or not brain.lastY then return end
     
-    local onlinePlayers = getOnlinePlayers()
-    if not onlinePlayers then return end
-    
-    local RESPAWN_RANGE = 50
-    
-    for i = 0, onlinePlayers:size() - 1 do
-        local player = onlinePlayers:get(i)
-        if player then
-            local dx = player:getX() - brain.lastX
-            local dy = player:getY() - brain.lastY
-            local dz = player:getZ() - (brain.lastZ or 0)
+    local players = DTNPCManager.GetActivePlayers()
+    for _, player in ipairs(players) do
+        local dx = player:getX() - brain.lastX
+        local dy = player:getY() - brain.lastY
+        local dz = player:getZ() - (brain.lastZ or 0)
+        
+
             
             if math.abs(dz) == 0 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
                 -- Check if zombie exists by UUID
@@ -223,7 +244,6 @@ function DTNPCManager.CheckForRespawn(brain, uuid)
                     DTNPCSpawn.RespawnNPC(brain, uuid)
                     return true
                 end
-            end
         end
     end
     
@@ -236,13 +256,9 @@ function DTNPCManager.CheckRosterSpawns()
     local rosterData = ModData.get("DynamicTrading_Roster")
     if not rosterData or not rosterData.Souls then return end
     
-    local onlinePlayers = getOnlinePlayers()
-    if not onlinePlayers or onlinePlayers:size() == 0 then return end
+    local players = DTNPCManager.GetActivePlayers()
+    if #players == 0 then return end
     
-    local onlinePlayers = getOnlinePlayers()
-    if not onlinePlayers or onlinePlayers:size() == 0 then return end
-    
-    local RESPAWN_RANGE = 100 -- Increased from 50 to ensure preload before visibility
     
     for uuid, registry in pairs(rosterData.Souls) do
         -- Skip if already active/tracked by the Manager
@@ -257,14 +273,10 @@ function DTNPCManager.CheckRosterSpawns()
             end
             
             if targetX then
-                for i = 0, onlinePlayers:size() - 1 do
-                    local player = onlinePlayers:get(i)
-                    if player then
-                         local dx = player:getX() - targetX
-                         local dy = player:getY() - targetY
-                         local dz = player:getZ() - targetZ
-                        
-                         local dz = player:getZ() - targetZ
+                for _, player in ipairs(players) do
+                     local dx = player:getX() - targetX
+                     local dy = player:getY() - targetY
+                     local dz = player:getZ() - targetZ
                         
                          -- Relaxed Z-check: Allow +/- 1 floor (e.g. player on ground, NPC on 2nd floor)
                          if math.abs(dz) <= 1 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
@@ -297,7 +309,7 @@ function DTNPCManager.CheckRosterSpawns()
             end
         end
     end
-end
+
 
 -- ==============================================================================
 -- 5. RESTORATION & TRACKING LOOP
@@ -313,7 +325,7 @@ local RESPAWN_CHECK_RATE = 60 -- Check every 3 seconds (was 300/15s) for respons
 local respawnCheckCounter = 0
 
 function DTNPCManager.OnTick()
-    if isClient() then return end
+    -- Run on Server or Single Player
 
     tickCounter = tickCounter + 1
     positionBroadcastCounter = positionBroadcastCounter + 1

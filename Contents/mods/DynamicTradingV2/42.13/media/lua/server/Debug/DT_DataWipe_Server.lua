@@ -5,7 +5,7 @@
 -- This script runs on the Server (MP) or the Host (SP).
 -- =============================================================================
 
-if isClient() then return end -- Safety check: Only load on Server
+if isClient() and not isServer() then return end -- Safety check: Only return on remote MP Client
 
 local ServerWipe = {}
 ServerWipe.TargetKeys = {
