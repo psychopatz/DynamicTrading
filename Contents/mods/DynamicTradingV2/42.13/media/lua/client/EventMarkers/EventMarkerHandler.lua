@@ -7,22 +7,19 @@ function EventMarkerHandler.set(markerID, icon, duration, posX, posY, color, des
     local marker = EventMarkerHandler.markers[markerID]
 
     if not marker and duration > 0 then
-        local dist = IsoUtils.DistanceTo(posX, posY, player:getX(), player:getY())
-        if dist <= EventMarker.maxRange then
-            local oldX
-            local oldY
-            local pModData = player:getModData()["EventMarkerPlacement"]
-            if pModData then
-                oldX = pModData[1]
-                oldY = pModData[2]
-            end
-            
-            local screenX = oldX or (getCore():getScreenWidth() / 2) - (EventMarker.iconSize / 2)
-            local screenY = oldY or (EventMarker.iconSize / 2)
-
-            marker = EventMarker:new(markerID, icon, duration, posX, posY, player, screenX, screenY, color, desc)
-            EventMarkerHandler.markers[markerID] = marker
+        local oldX
+        local oldY
+        local pModData = player:getModData()["EventMarkerPlacement"]
+        if pModData then
+            oldX = pModData[1]
+            oldY = pModData[2]
         end
+        
+        local screenX = oldX or (getCore():getScreenWidth() / 2) - (EventMarker.iconSize / 2)
+        local screenY = oldY or (EventMarker.iconSize / 2)
+
+        marker = EventMarker:new(markerID, icon, duration, posX, posY, player, screenX, screenY, color, desc)
+        EventMarkerHandler.markers[markerID] = marker
     end
 
     if marker then

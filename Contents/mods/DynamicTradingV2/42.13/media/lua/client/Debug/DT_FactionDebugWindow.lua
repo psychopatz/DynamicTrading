@@ -20,8 +20,8 @@ function DT_FactionDebugWindow:createChildren()
     self:addChild(self.labelTitle)
 
     -- 2. LIST BOX (Left Side)
-    local listWidth = 350
-    self.listbox = ISScrollingListBox:new(10, 45, listWidth, self.height - 100)
+    local listWidth = 250
+    self.listbox = ISScrollingListBox:new(10, 45, listWidth, self.height - 140)
     self.listbox:initialise()
     self.listbox:instantiate()
     self.listbox.itemheight = 40
@@ -29,16 +29,28 @@ function DT_FactionDebugWindow:createChildren()
     self.listbox.onmousedown = DT_FactionDebugWindow.onListMouseDown
     self:addChild(self.listbox)
 
-    -- 3. DETAIL PANEL (Right Side)
+    -- 3. DETAIL PANEL (Middle)
     local detailsX = 10 + listWidth + 10
-    local detailsWidth = self.width - detailsX - 10
-    self.details = ISRichTextPanel:new(detailsX, 45, detailsWidth, self.height - 100)
+    local detailsWidth = 300
+    self.details = ISRichTextPanel:new(detailsX, 45, detailsWidth, self.height - 140)
     self.details:initialise()
     self.details.backgroundColor = {r=0, g=0, b=0, a=0.5}
+    self.details:addScrollBars()
     self:addChild(self.details)
-    self.details:setText("Select a faction to see details.")
+    self.details:setText("Select a faction.")
 
-    -- 4. BUTTONS (Centered at bottom)
+    -- 4. ROSTER LIST (Right Side)
+    local rosterX = detailsX + detailsWidth + 10
+    local rosterWidth = self.width - rosterX - 10
+    self.rosterlist = ISScrollingListBox:new(rosterX, 45, rosterWidth, self.height - 140)
+    self.rosterlist:initialise()
+    self.rosterlist:instantiate()
+    self.rosterlist.itemheight = 45 -- Slightly taller for status lines
+    self.rosterlist.doDrawItem = DT_FactionDebugWindow.doDrawRosterItem
+    self.rosterlist.backgroundColor = {r=0, g=0, b=0, a=0.5}
+    self:addChild(self.rosterlist)
+
+    -- 5. BUTTONS (Centered at bottom)
     local btnWidth = 120
     local totalBtnWidth = (btnWidth * 4) + 30
     local startBtnX = (self.width - totalBtnWidth) / 2
@@ -70,7 +82,7 @@ function DT_FactionDebugWindow:createChildren()
     self.btnClose:initialise()
     self:addChild(self.btnClose)
 
-    -- 5. SELECTED FACTION CONTROLS
+    -- 6. SELECTED FACTION CONTROLS
     local ctrlX = detailsX
     local ctrlY = self.height - 75
     local ctrlBtnWidth = 100
@@ -187,6 +199,57 @@ function DT_FactionDebugWindow:onListMouseDown(item)
 
     DT_FactionDebugWindow.instance.details:setText(text)
     DT_FactionDebugWindow.instance.details:paginate()
+
+    -- Repopulate Roster List
+    DT_FactionDebugWindow.instance.rosterlist:clear()
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    if rosterData then
+        local members = rosterData.FactionMembers and rosterData.FactionMembers[f.id]
+        if members and #members > 0 then
+            for _, uuid in ipairs(members) do
+                local soul = rosterData.Souls and rosterData.Souls[uuid]
+                local trader = rosterData.Traders and rosterData.Traders[uuid]
+                if soul then
+                    local data = {
+                        soul = soul,
+                        trader = trader
+                    }
+                    DT_FactionDebugWindow.instance.rosterlist:addItem(soul.name or uuid, data)
+                end
+            end
+        end
+    end
+end
+
+function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
+    local data = item.item
+    local soul = data.soul
+    local trader = data.trader
+
+    if not soul then return y end
+
+    if item.selected then
+        self:drawRect(0, y, self.width, self.itemheight, 0.3, 0.7, 0.7, 0.7)
+    elseif alt then
+        self:drawRect(0, y, self.width, self.itemheight, 0.1, 1, 1, 1)
+    else
+        self:drawRect(0, y, self.width, self.itemheight, 0.1, 0, 0, 0)
+    end
+
+    local status = soul.status or "Active"
+    local spawned = trader and trader.isPhysicallySpawned and "Spawned: YES" or "Spawned: NO"
+    local retTime = trader and string.format("Ret: %.2f", trader.returnTime or 0) or "Ret: 0"
+    
+    local r, g, b = 1, 1, 1
+    if status == "Dead" then r,g,b = 1,0,0
+    elseif status == "Away" then r,g,b = 0.5, 0.5, 1
+    elseif status == "Home" then r,g,b = 0.5, 1, 0.5
+    end
+
+    self:drawText(soul.name .. " [" .. (soul.archetypeID or "N/A") .. "]", 10, y + 2, 1, 1, 1, 1, UIFont.Small)
+    self:drawText("Status: " .. status .. " | " .. spawned .. " | " .. retTime, 10, y + 20, r, g, b, 0.8, UIFont.Small)
+
+    return y + self.itemheight
 end
 
 -- Singleton Access
@@ -198,7 +261,7 @@ function DT_FactionDebugWindow.Open()
         return
     end
 
-    local window = DT_FactionDebugWindow:new(100, 100, 800, 500)
+    local window = DT_FactionDebugWindow:new(100, 100, 1000, 500)
     window:initialise()
     window:addToUIManager()
     DT_FactionDebugWindow.instance = window

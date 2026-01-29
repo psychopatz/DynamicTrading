@@ -7,12 +7,12 @@
 if isClient() then return end -- Server Side Only
 
 -- Required modules
-require "DynamicTrading_Engine"
-require "DT_FactionLocationManager"
-require "Faction/DT_FactionNames" -- Our new naming engine
+require "Faction/TradingSys/DynamicTrading_Engine"
+require "Faction/Templates/BaseSpawn/DT_FactionLocationManager"
+require "Faction/Templates/FactionNames/DT_FactionNames" -- Our new naming engine
 require "DT_V2_Config"
 require "03_DynamicTrading_Archetypes" -- To access Archetype allocations
-require "DynamicTrading_Roster"
+require "Faction/TradingSys/DynamicTrading_Roster"
 
 DynamicTrading_Factions = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"
@@ -30,7 +30,7 @@ function DynamicTrading_Factions.Init()
     -- 1. Create the nomadic failsafe faction if it doesn't exist
     if not data["Independent"] then
         DynamicTrading_Factions.CreateFaction("Independent", {
-            memberCount = 50,
+            memberCount = 10,
             isNomadic = true
         })
     end
@@ -70,7 +70,7 @@ function DynamicTrading_Factions.RepopulateTowns()
             local maxFactions = SandboxVars.DynamicTrading.MaxFactionsPerTown or 2
             for i=1, maxFactions do
                 -- We generate unique IDs for each faction instance
-                local factionID = townName .. "_" .. tostring(math.floor(ZombRand(100000, 999999)))
+                local factionID = townName .. "_" .. tostring(100000 + ZombRand(900000))
                 DynamicTrading_Factions.CreateFaction(factionID, {
                     town = townName,
                     memberCount = SandboxVars.DynamicTrading.FactionStartPop or 10
@@ -132,6 +132,7 @@ function DynamicTrading_Factions.CreateFaction(factionID, initialData)
 end
 
 -- ==========================================================
+-- ==========================================================
 -- 2.1 HELPER: ROSTER GENERATION
 -- ==========================================================
 function DynamicTrading_Factions.GenerateRoster(factionID)
@@ -149,9 +150,23 @@ function DynamicTrading_Factions.GenerateRoster(factionID)
     
     if #archetypes == 0 then return end
     
+    local home = faction.homeCoords
+    local scatterRange = 10 -- +/- 10 tiles
+
     for i=1, faction.memberCount do
         local randomArch = archetypes[ZombRand(#archetypes) + 1]
-        DynamicTrading_Roster.AddSoul(factionID, randomArch)
+        
+        -- Scattered Home logic
+        local scatteredHome = nil
+        if home and home.x then
+            scatteredHome = {
+                x = home.x + (ZombRand(scatterRange * 2 + 1) - scatterRange),
+                y = home.y + (ZombRand(scatterRange * 2 + 1) - scatterRange),
+                z = home.z or 0
+            }
+        end
+        
+        DynamicTrading_Roster.AddSoul(factionID, randomArch, scatteredHome)
     end
 end
 
@@ -180,16 +195,20 @@ function DynamicTrading_Factions.UpdateDaily()
     for id, faction in pairs(data) do
         -- 0. CALCULATE PRODUCTION (Based on Roster)
         local production = { food=0, ammo=0, meds=0, fuel=0 }
-        local souls = DynamicTrading_Roster.GetSouls(id)
+        local soulUUIDs = DynamicTrading_Roster.GetSouls(id)
         
-        for _, archID in ipairs(souls) do
-            local archData = DynamicTrading.Archetypes[archID]
-            if archData and archData.allocations then
-                for tag, score in pairs(archData.allocations) do
-                    local resourceType = DynamicTrading.V2.Config.ResourceMap[tag]
-                    if resourceType then
-                         -- Score * Multiplier (e.g., 6 * 2.0 = 12 units)
-                        production[resourceType] = production[resourceType] + (score * DynamicTrading.V2.Config.Sim.ProductionMultiplier)
+        for _, uuid in ipairs(soulUUIDs) do
+            local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
+            if soul then
+                local archID = soul.archetypeID
+                local archData = DynamicTrading.Archetypes[archID]
+                if archData and archData.allocations then
+                    for tag, score in pairs(archData.allocations) do
+                        local resourceType = DynamicTrading.V2.Config.ResourceMap[tag]
+                        if resourceType then
+                             -- Score * Multiplier (e.g., 6 * 2.0 = 12 units)
+                            production[resourceType] = production[resourceType] + (score * DynamicTrading.V2.Config.Sim.ProductionMultiplier)
+                        end
                     end
                 end
             end
@@ -250,7 +269,17 @@ function DynamicTrading_Factions.UpdateDaily()
                         local newRecruit = archetypes[ZombRand(#archetypes)+1]
                         
                         -- Add to roster in Roster module
-                        DynamicTrading_Roster.AddSoul(id, newRecruit)
+                        local home = faction.homeCoords
+                        local scatteredHome = nil
+                        if home and home.x then
+                            local scatterRange = 10
+                            scatteredHome = {
+                                x = home.x + (ZombRand(scatterRange * 2 + 1) - scatterRange),
+                                y = home.y + (ZombRand(scatterRange * 2 + 1) - scatterRange),
+                                z = home.z or 0
+                            }
+                        end
+                        DynamicTrading_Roster.AddSoul(id, newRecruit, scatteredHome)
                         
                         -- Growth Cost (Initial Setup)
                         faction.stockpile.food = faction.stockpile.food - DynamicTrading.V2.Config.Sim.RecruitCost.food
@@ -306,7 +335,7 @@ function DynamicTrading_Factions.UpdateDaily()
             
             if count < maxFactions and ZombRand(100) < respawnChance then
                 -- New faction arrives!
-                local factionID = townName .. "_" .. tostring(math.floor(ZombRand(100000, 999999)))
+                local factionID = townName .. "_" .. tostring(100000 + ZombRand(900000))
                 DynamicTrading_Factions.CreateFaction(factionID, {
                     town = townName,
                     memberCount = SandboxVars.DynamicTrading.FactionStartPop or 10

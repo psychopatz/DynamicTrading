@@ -64,6 +64,24 @@ local function OnClientCommand(module, command, player, args)
 
         -- 3. WIPE DATA
         local count = 0
+        
+        -- Special Handling: fragmented Souls
+        local rosterTarget = false
+        for _, k in ipairs(keysToWipe) do if k == "DynamicTrading_Roster" then rosterTarget = true break end end
+        
+        if rosterTarget then
+            local roster = ModData.get("DynamicTrading_Roster")
+            if roster and roster.Souls then
+                for uuid, _ in pairs(roster.Souls) do
+                    local soulKey = "DTSOUL_" .. uuid
+                    if ModData.exists(soulKey) then
+                        ModData.remove(soulKey)
+                        count = count + 1
+                    end
+                end
+            end
+        end
+
         for _, key in ipairs(keysToWipe) do
             if ModData.exists(key) then
                 ModData.remove(key)

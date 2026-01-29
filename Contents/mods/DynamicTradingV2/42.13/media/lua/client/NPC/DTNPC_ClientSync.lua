@@ -99,6 +99,13 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     if not needsVisuals then
         return -- Already properly dressed
     end
+    
+    -- LAZY LOAD CHECK: ensure we have visual data
+    if not brain.visualID and not brain.outfit then
+        print("[DTNPC-Client] WARNING: Registry-only data for " .. uuid .. ". Requesting full data...")
+        sendClientCommand(getPlayer(), "DTNPC", "RequestSoulData", { uuid = uuid })
+        return
+    end
 
     print("[DTNPC-Client] Applying visuals for: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ")")
 
@@ -245,6 +252,18 @@ local function onServerCommand(module, command, args)
             print("[DTNPC-Client] Applied visuals to zombie: " .. uuid)
         else
             print("[DTNPC-Client] Zombie not in world yet, cached for later: " .. uuid)
+        end
+    end
+    
+    if command == "SyncSoulData" then
+        if not args or not args.uuid or not args.brain then return end
+        print("[DTNPC-Client] Received SyncSoulData for: " .. (args.brain.name or args.uuid))
+        DTNPCClient.CacheBrain(args.uuid, args.brain.currentOutfitID, args.brain)
+        
+        -- If zombie exists, apply visuals now that we have them
+        local zombie = DTNPCClient.FindZombieByUUID(args.uuid)
+        if zombie then
+            DTNPCClient.ApplyVisualsToNPC(zombie, args.brain)
         end
         return
     end

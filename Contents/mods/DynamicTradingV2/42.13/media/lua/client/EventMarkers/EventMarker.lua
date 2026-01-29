@@ -4,7 +4,7 @@ EventMarker = ISUIElement:derive("EventMarker")
 
 EventMarker.iconSize = 96
 EventMarker.clickableSize = 45
-EventMarker.maxRange = 500
+EventMarker.maxRange = 100000
 
 function EventMarker:initialise()
     ISUIElement.initialise(self)
@@ -285,12 +285,12 @@ function EventMarker:update(posX, posY)
     if self.duration > 0 then
         self.posX = posX
         self.posY = posY
-        if dist and (dist <= self.radius) then
+        if dist then
             self:setDistance(dist)
             self:setAngleFromPoint(self.posX, self.posY)
             self:setVisible(true)
         else
-            self:setVisible(false)
+            self:setVisible(true) -- Fallback visibility
         end
     else
         self:setVisible(false)

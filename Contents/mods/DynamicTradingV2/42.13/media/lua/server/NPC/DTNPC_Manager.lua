@@ -5,7 +5,8 @@
 -- ==============================================================================
 
 DTNPCManager = DTNPCManager or {}
-DTNPCManager.Data = {} 
+DTNPCManager.Data = {} -- The Registry (lightweight)
+DTNPCManager.ActiveBrains = {} -- Cache for full brains of manifested NPCs
 DTNPCManager.PendingRegistrations = {}
 DTNPCManager.OutfitIDToUUID = {} -- Maps current outfit IDs to persistent UUIDs
 
@@ -13,33 +14,36 @@ DTNPCManager.OutfitIDToUUID = {} -- Maps current outfit IDs to persistent UUIDs
 -- 1. SAVE / LOAD SYSTEM
 -- ==============================================================================
 
+require "DynamicTrading_Roster"
+
 function DTNPCManager.Load()
     if isClient() then return end
     
-    local globalData = ModData.getOrCreate("DTNPC_GlobalList")
-    DTNPCManager.Data = globalData.NPCs or {}
-    globalData.NPCs = DTNPCManager.Data
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    if not rosterData then
+        DynamicTrading_Roster.Init()
+        rosterData = ModData.get("DynamicTrading_Roster")
+    end
+    
+    DTNPCManager.Data = rosterData.Souls or {}
     
     -- Rebuild outfit ID mapping
     DTNPCManager.OutfitIDToUUID = {}
-    for uuid, brain in pairs(DTNPCManager.Data) do
+    for uuid, soul in pairs(DTNPCManager.Data) do
+        -- A soul in Roster has a 'brain' field containing visuals and state
+        local brain = soul.brain or soul
         if brain.currentOutfitID then
             DTNPCManager.OutfitIDToUUID[brain.currentOutfitID] = uuid
         end
     end
     
-    print("[DTNPC] Manager Loaded. Tracking " .. tostring(DTNPCManager.GetTableSize(DTNPCManager.Data)) .. " NPCs.")
+    print("[DTNPC] Manager Unified with Roster. Tracking " .. tostring(DTNPCManager.GetTableSize(DTNPCManager.Data)) .. " souls.")
 end
 
 function DTNPCManager.Save()
     if isClient() then return end
-    
-    local globalData = ModData.getOrCreate("DTNPC_GlobalList")
-    globalData.NPCs = DTNPCManager.Data
-    
-    if GlobalModData and GlobalModData.save then
-        GlobalModData.save()
-    end
+    -- ModData.transmit for the Roster key handles the actual transmission
+    ModData.transmit("DynamicTrading_Roster")
 end
 
 Events.OnInitGlobalModData.Add(DTNPCManager.Load)
@@ -139,8 +143,8 @@ function DTNPCManager.Register(zombie, brain)
     brain.registeredTime = os.time()
     
     -- Store in database by UUID
-    DTNPCManager.Data[uuid] = brain
-    DTNPCManager.Save()
+    DynamicTrading_Roster.SaveSoul(uuid, brain)
+    DTNPCManager.ActiveBrains[uuid] = brain -- Keep in cache since it's active
     
     DTNPCManager.PendingRegistrations[uuid] = nil
     
@@ -150,24 +154,29 @@ end
 function DTNPCManager.RemoveData(uuid)
     if isClient() then return end
     
-    if DTNPCManager.Data[uuid] then
-        local brain = DTNPCManager.Data[uuid]
-        
+    local soulRegistry = DTNPCManager.Data[uuid]
+    if soulRegistry then
         -- Remove from outfit mapping
-        if brain.currentOutfitID then
-            DTNPCManager.OutfitIDToUUID[brain.currentOutfitID] = nil
+        if soulRegistry.currentOutfitID then
+            DTNPCManager.OutfitIDToUUID[soulRegistry.currentOutfitID] = nil
         end
         
-        -- Remove from database
+        -- Remove from Roster (Handles individual deletion)
+        DynamicTrading_Roster.RemoveSoul(soulRegistry.factionID, 1) -- Note: this removes A soul, we need internal logic to remove SPECIFIC uuid if we go that deep
+        -- For now, let's manually clean up if Roster.RemoveSoul doesn't support specific UUID
+        local rosterData = ModData.get("DynamicTrading_Roster")
+        rosterData.Souls[uuid] = nil
         DTNPCManager.Data[uuid] = nil
-        DTNPCManager.PendingRegistrations[uuid] = nil
-        DTNPCManager.Save()
+        DTNPCManager.ActiveBrains[uuid] = nil
+        if ModData.remove then ModData.remove("DTSOUL_" .. uuid) end
+        
+        DynamicTrading_Roster.Save()
         
         print("[DTNPC] Removed NPC data: " .. uuid)
         
         -- Broadcast removal to all clients
         if DTNPCSpawn and DTNPCSpawn.NotifyRemoval then
-            DTNPCSpawn.NotifyRemoval(uuid, brain.currentOutfitID)
+            DTNPCSpawn.NotifyRemoval(uuid, soulRegistry.currentOutfitID)
         end
     end
 end
@@ -208,11 +217,17 @@ function DTNPCManager.CheckForRespawn(brain, uuid)
     for i = 0, onlinePlayers:size() - 1 do
         local player = onlinePlayers:get(i)
         if player then
-            local dx = player:getX() - brain.lastX
-            local dy = player:getY() - brain.lastY
-            local dz = player:getZ() - (brain.lastZ or 0)
+            local targetX = brain.lastX or (brain.homeCoords and brain.homeCoords.x)
+            local targetY = brain.lastY or (brain.homeCoords and brain.homeCoords.y)
+            local targetZ = brain.lastZ or (brain.homeCoords and brain.homeCoords.z) or 0
             
-            if math.abs(dz) == 0 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
+            if not targetX or not targetY then return false end
+
+            local dx = player:getX() - targetX
+            local dy = player:getY() - targetY
+            local dz = player:getZ() - targetZ
+            
+            if math.abs(dz) <= 1 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
                 -- Check if zombie exists by UUID
                 local zombie = DTNPCSpawn.FindZombieByUUID(uuid)
                 
@@ -280,77 +295,109 @@ function DTNPCManager.OnTick()
             local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
             
             if uuid then
-                local savedBrain = DTNPCManager.Data[uuid]
+                local registry = DTNPCManager.Data[uuid]
                 
-                if savedBrain then
-                    -- Update outfit ID mapping in case it changed
-                    local currentOutfitID = zombie:getPersistentOutfitID()
-                    if savedBrain.currentOutfitID ~= currentOutfitID then
-                        -- Outfit ID changed (respawn), update mapping
-                        if savedBrain.currentOutfitID then
-                            DTNPCManager.OutfitIDToUUID[savedBrain.currentOutfitID] = nil
+                if registry then
+                    -- Lazy Load Brain if not in cache
+                    local brain = DTNPCManager.ActiveBrains[uuid]
+                    if not brain then
+                        brain = DynamicTrading_Roster.GetSoul(uuid)
+                        DTNPCManager.ActiveBrains[uuid] = brain
+                    end
+                    
+                    if brain then
+                        -- Update outfit ID mapping in case it changed
+                        local currentOutfitID = zombie:getPersistentOutfitID()
+                        if brain.currentOutfitID ~= currentOutfitID then
+                            -- Outfit ID changed (respawn), update mapping
+                            if brain.currentOutfitID then
+                                DTNPCManager.OutfitIDToUUID[brain.currentOutfitID] = nil
+                            end
+                            DTNPCManager.OutfitIDToUUID[currentOutfitID] = uuid
+                            brain.currentOutfitID = currentOutfitID
+                            print("[DTNPC] Updated outfit ID for " .. (brain.name or uuid) .. ": " .. currentOutfitID)
                         end
-                        DTNPCManager.OutfitIDToUUID[currentOutfitID] = uuid
-                        savedBrain.currentOutfitID = currentOutfitID
-                        print("[DTNPC] Updated outfit ID for " .. (savedBrain.name or uuid) .. ": " .. currentOutfitID)
-                    end
-                    
-                    -- Update position
-                    local newX = math.floor(zombie:getX())
-                    local newY = math.floor(zombie:getY())
-                    local newZ = math.floor(zombie:getZ())
-                    
-                    savedBrain.lastX = newX
-                    savedBrain.lastY = newY
-                    savedBrain.lastZ = newZ
-                    savedBrain.health = zombie:getHealth()
-                    
-                    -- Prevent wandering
-                    if zombie:isUseless() and (savedBrain.state == "Stay" or savedBrain.state == "Guard") then
-                        zombie:setPath2(nil)
-                        zombie:setTarget(nil)
-                    end
-                    
-                    -- Check if visuals need fixing
-                    local needsFix = true
-                    local visuals = zombie:getHumanVisual()
-                    if visuals then
-                        local skin = visuals:getSkinTexture()
-                        if skin then
-                            skin = tostring(skin)
-                            if string.find(skin, "MaleBody01") or string.find(skin, "FemaleBody01") then
-                                needsFix = false
+                        
+                        -- Update position
+                        local newX = math.floor(zombie:getX())
+                        local newY = math.floor(zombie:getY())
+                        local newZ = math.floor(zombie:getZ())
+                        
+                        brain.lastX = newX
+                        brain.lastY = newY
+                        brain.lastZ = newZ
+                        brain.health = zombie:getHealth()
+                        
+                        -- Periodically persist brain data
+                        if tickCounter == 0 then
+                            DynamicTrading_Roster.SaveSoul(uuid, brain)
+                        end
+
+                        -- Prevent wandering
+                        if zombie:isUseless() and (brain.state == "Stay" or brain.state == "Guard") then
+                            zombie:setPath2(nil)
+                            zombie:setTarget(nil)
+                        end
+                        
+                        -- Check if visuals need fixing
+                        local needsFix = true
+                        local visuals = zombie:getHumanVisual()
+                        if visuals then
+                            local skin = visuals:getSkinTexture()
+                            if skin then
+                                skin = tostring(skin)
+                                if string.find(skin, "MaleBody01") or string.find(skin, "FemaleBody01") then
+                                    needsFix = false
+                                end
                             end
                         end
-                    end
-                    
-                    if needsFix then
-                        print("[DTNPC] Fixing visuals for NPC: " .. (savedBrain.name or uuid))
-                        DTNPC.ApplyVisuals(zombie, savedBrain)
-                        DTNPC.AttachBrain(zombie, savedBrain)
                         
-                        local modData = zombie:getModData()
-                        modData.DTNPCVisualID = savedBrain.visualID
-                        modData.DTNPC_UUID = uuid
-                        
-                        if not zombie:isUseless() then
-                            zombie:setUseless(true)
-                            zombie:DoZombieStats()
-                            zombie:setHealth(2)
+                        if needsFix then
+                            print("[DTNPC] Fixing visuals for NPC: " .. (brain.name or uuid))
+                            DTNPC.ApplyVisuals(zombie, brain)
+                            DTNPC.AttachBrain(zombie, brain)
+                            
+                            local modData = zombie:getModData()
+                            modData.DTNPCVisualID = brain.visualID
+                            modData.DTNPC_UUID = uuid
+                            
+                            if not zombie:isUseless() then
+                                zombie:setUseless(true)
+                                zombie:DoZombieStats()
+                                zombie:setHealth(2)
+                            end
+                            
+                            zombie:resetModelNextFrame()
+                            
+                            if DTNPCSpawn and DTNPCSpawn.SyncToAllClients then
+                                DTNPCSpawn.SyncToAllClients(zombie, brain)
+                            end
                         end
                         
-                        zombie:resetModelNextFrame()
-                        
-                        if DTNPCSpawn and DTNPCSpawn.SyncToAllClients then
-                            DTNPCSpawn.SyncToAllClients(zombie, savedBrain)
+                        -- Periodic position broadcast
+                        if shouldBroadcast and DTNPCSpawn and DTNPCSpawn.BroadcastPosition then
+                            DTNPCSpawn.BroadcastPosition(zombie, brain)
                         end
-                    end
-                    
-                    -- Periodic position broadcast
-                    if shouldBroadcast and DTNPCSpawn and DTNPCSpawn.BroadcastPosition then
-                        DTNPCSpawn.BroadcastPosition(zombie, savedBrain)
                     end
                 end
+            end
+        end
+    end
+    
+    -- Cleanup Cache: If no zombie is using the brain, eventually remove from memory
+    -- Simple check: if tickCounter == 0, check which cached brains are actually manifested
+    if tickCounter == 0 then
+        local manifested = {}
+        for i = 0, zombieList:size() - 1 do
+            local z = zombieList:get(i)
+            local zid = DTNPCManager.GetUUIDFromZombie(z)
+            if zid then manifested[zid] = true end
+        end
+        
+        for uuid, _ in pairs(DTNPCManager.ActiveBrains) do
+            if not manifested[uuid] then
+                DTNPCManager.ActiveBrains[uuid] = nil
+                -- print("[DTNPC] Purged inactive brain from cache: " .. uuid)
             end
         end
     end

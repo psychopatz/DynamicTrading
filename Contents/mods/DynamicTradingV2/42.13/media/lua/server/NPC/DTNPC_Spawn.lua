@@ -222,11 +222,23 @@ end
 -- ==============================================================================
 
 function DTNPCSpawn.RespawnNPC(brain, uuid)
-    if not brain or not brain.lastX or not brain.lastY then return end
+    if not brain then return end
     
-    local x = brain.lastX
-    local y = brain.lastY
-    local z = brain.lastZ or 0
+    -- LAZY LOAD: If we only have registry data, fetch full brain
+    if not brain.visualID and not brain.outfit then
+        print("[DTNPC] Lazy Loading brain for respawn: " .. uuid)
+        brain = DynamicTrading_Roster.GetSoul(uuid)
+    end
+    if not brain then return end
+    
+    local x = brain.lastX or (brain.homeCoords and brain.homeCoords.x)
+    local y = brain.lastY or (brain.homeCoords and brain.homeCoords.y)
+    local z = brain.lastZ or (brain.homeCoords and brain.homeCoords.z) or 0
+    
+    if not x or not y then
+        print("[DTNPC] ERROR: Cannot respawn " .. (brain.name or uuid) .. " - no coordinates.")
+        return 
+    end
     
     print("[DTNPC] Respawning NPC: " .. (brain.name or uuid) .. " at " .. x .. "," .. y .. "," .. z)
     
@@ -500,6 +512,14 @@ local function onClientCommand(module, command, player, args)
             end
         else
             print("[DTNPC] WARNING: UpdateNPC for unknown UUID: " .. uuid)
+        end
+    end
+
+    if command == "RequestSoulData" then
+        if not args.uuid then return end
+        local brain = DynamicTrading_Roster.GetSoul(args.uuid)
+        if brain then
+            sendServerCommand(player, "DTNPC", "SyncSoulData", { uuid = args.uuid, brain = brain })
         end
     end
 

@@ -1,18 +1,30 @@
-if isClient() then return end -- Server Side Only
+require "NPC/Sys/DTNPC_Generator"
 
 DynamicTrading_Roster = {}
 local MOD_DATA_KEY = "DynamicTrading_Roster"
 
+-- ==========================================================
+-- 1. INITIALIZATION
+-- ==========================================================
 function DynamicTrading_Roster.Init()
     if not ModData.exists(MOD_DATA_KEY) then
         ModData.add(MOD_DATA_KEY, {
-            Traders = {},  -- Existing physical traders/radio traders
-            Souls = {}     -- Faction members pool
+            Traders = {},       -- Existing physical traders/radio traders
+            Souls = {},        -- Persistent identities: [uuid] = soulData
+            FactionMembers = {} -- Index: [factionID] = { uuid1, uuid2, ... }
         })
         ModData.transmit(MOD_DATA_KEY)
     end
+    
+    local data = ModData.get(MOD_DATA_KEY)
+    if not data.FactionMembers then
+        data.FactionMembers = {}
+    end
 end
 
+-- ==========================================================
+-- 2. TRADER MANAGEMENT (Physical/Radio)
+-- ==========================================================
 function DynamicTrading_Roster.CreateTrader(traderID, config)
     local data = ModData.get(MOD_DATA_KEY)
     if not data.Traders[traderID] then
@@ -66,33 +78,109 @@ function DynamicTrading_Roster.UpdateMemory(traderID, username, tradeValue)
 end
 
 -- ==========================================================
--- SOULS MANAGEMENT (Faction Members)
+-- 3. SOULS MANAGEMENT (Faction Members)
 -- ==========================================================
 
 function DynamicTrading_Roster.GetSouls(factionID)
     local data = ModData.get(MOD_DATA_KEY)
-    if not data.Souls[factionID] then
-        data.Souls[factionID] = {}
+    if not data.FactionMembers[factionID] then
+        data.FactionMembers[factionID] = {}
     end
-    return data.Souls[factionID]
+    return data.FactionMembers[factionID]
 end
 
-function DynamicTrading_Roster.AddSoul(factionID, archetypeID)
+-- Lightweight registry check
+function DynamicTrading_Roster.GetSoulRegistry(uuid)
     local data = ModData.get(MOD_DATA_KEY)
-    local souls = DynamicTrading_Roster.GetSouls(factionID)
-    table.insert(souls, archetypeID)
+    return data.Souls[uuid]
+end
+
+-- Fetch full brain data (Lazy Load)
+function DynamicTrading_Roster.GetSoul(uuid)
+    local soulKey = "DTSOUL_" .. uuid
+    if ModData.exists(soulKey) then
+        return ModData.get(soulKey)
+    end
+    -- Fallback/Migration: check registry in case it's still there
+    local registry = DynamicTrading_Roster.GetSoulRegistry(uuid)
+    if registry and registry.name then return registry end 
+    return nil
+end
+
+function DynamicTrading_Roster.SaveSoul(uuid, brain)
+    local soulKey = "DTSOUL_" .. uuid
+    if not ModData.exists(soulKey) then
+        ModData.add(soulKey, brain)
+    else
+        -- Direct assignment to ModData entry
+        local entry = ModData.get(soulKey)
+        for k, v in pairs(brain) do entry[k] = v end
+    end
+    ModData.transmit(soulKey)
+    
+    -- Update Registry with minimal info
+    local data = ModData.get(MOD_DATA_KEY)
+    data.Souls[uuid] = {
+        uuid = uuid,
+        name = brain.name or "Unknown",
+        factionID = brain.factionID,
+        archetypeID = brain.archetypeID,
+        homeCoords = brain.homeCoords,
+        lastX = brain.lastX,
+        lastY = brain.lastY,
+        lastZ = brain.lastZ,
+        health = brain.health or 1.0,
+        status = brain.status or "Active",
+        master = brain.master
+    }
     ModData.transmit(MOD_DATA_KEY)
+end
+
+function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
+    local data = ModData.get(MOD_DATA_KEY)
+    
+    -- Generate UUID
+    local uuid = (DTNPCManager and DTNPCManager.GenerateUUID) and DTNPCManager.GenerateUUID() or string.format("soul_%d_%d", ZombRand(1000000), os.time())
+    
+    -- Generate Brain (Visuals/Identity)
+    local brain = DTNPCGenerator.Generate({
+        occupation = archetypeID or "General"
+    })
+    
+    -- Merge Soul Metadata into Brain
+    brain.uuid = uuid
+    brain.factionID = factionID
+    brain.archetypeID = archetypeID
+    brain.homeCoords = homeCoords or { x=0, y=0, z=0 }
+    brain.status = "Active" -- Active, Dead, Away, Home
+    brain.memory = {}
+    
+    -- Save full brain to individual key
+    DynamicTrading_Roster.SaveSoul(uuid, brain)
+    
+    if not data.FactionMembers[factionID] then
+        data.FactionMembers[factionID] = {}
+    end
+    table.insert(data.FactionMembers[factionID], uuid)
+    
+    ModData.transmit(MOD_DATA_KEY)
+    return uuid
 end
 
 function DynamicTrading_Roster.RemoveSoul(factionID, count)
     local data = ModData.get(MOD_DATA_KEY)
-    local souls = data.Souls[factionID]
-    if not souls or #souls == 0 then return end
+    local members = data.FactionMembers[factionID]
+    if not members or #members == 0 then return end
     
     count = count or 1
     for i=1, count do
-        if #souls > 0 then
-            table.remove(souls, ZombRand(#souls) + 1)
+        if #members > 0 then
+            local idx = ZombRand(#members) + 1
+            local uuid = table.remove(members, idx)
+            data.Souls[uuid] = nil -- Registry removal
+            -- We don't necessarily delete the DTSOUL_ key immediately to avoid file system thrashing, 
+            -- but we could: ModData.remove("DTSOUL_"..uuid)
+            if ModData.remove then ModData.remove("DTSOUL_" .. uuid) end
         end
     end
     ModData.transmit(MOD_DATA_KEY)
@@ -100,7 +188,14 @@ end
 
 function DynamicTrading_Roster.ClearSouls(factionID)
     local data = ModData.get(MOD_DATA_KEY)
-    data.Souls[factionID] = nil
+    local members = data.FactionMembers[factionID]
+    if members then
+        for _, uuid in ipairs(members) do
+            data.Souls[uuid] = nil
+            if ModData.remove then ModData.remove("DTSOUL_" .. uuid) end
+        end
+        data.FactionMembers[factionID] = nil
+    end
     ModData.transmit(MOD_DATA_KEY)
 end
 

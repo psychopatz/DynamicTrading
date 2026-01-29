@@ -93,11 +93,11 @@ function DTNPC_Debugger:createChildren()
     self:addChild(self.detailsPanel)
     
     -- 4. BUTTONS (Shared Footer)
-    local btnW = 120
+    local btnW = 110
     local btnH = 25
     local btnY = self.height - footerH + 15
     local btnSpacing = 10
-    local totalBtnW = (btnW * 4) + (btnSpacing * 3)
+    local totalBtnW = (btnW * 5) + (btnSpacing * 4)
     local startX = (self.width - totalBtnW) / 2
     
     self.refreshBtn = ISButton:new(startX, btnY, btnW, btnH, "Refresh", self, self.refresh)
@@ -116,8 +116,14 @@ function DTNPC_Debugger:createChildren()
     self.markerBtn.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1}
     self.markerBtn.enable = false
     self:addChild(self.markerBtn)
+
+    self.markerHomeBtn = ISButton:new(startX + (btnW + btnSpacing) * 3, btnY, btnW, btnH, "Mark Home", self, self.onMarkHome)
+    self.markerHomeBtn:initialise()
+    self.markerHomeBtn.backgroundColor = {r=0.5, g=0.5, b=0.2, a=1}
+    self.markerHomeBtn.enable = false
+    self:addChild(self.markerHomeBtn)
     
-    self.clearMarkersBtn = ISButton:new(startX + (btnW + btnSpacing) * 3, btnY, btnW, btnH, "Clear Markers", self, self.onClearMarkers)
+    self.clearMarkersBtn = ISButton:new(startX + (btnW + btnSpacing) * 4, btnY, btnW, btnH, "Clear Markers", self, self.onClearMarkers)
     self.clearMarkersBtn:initialise()
     self.clearMarkersBtn.backgroundColor = {r=0.5, g=0.2, b=0.2, a=1}
     self:addChild(self.clearMarkersBtn)
@@ -136,13 +142,23 @@ function DTNPC_Debugger:refresh()
     self.selectedNPC = nil
     self.teleportBtn.enable = false
     self.markerBtn.enable = false
+    self.markerHomeBtn.enable = false
 end
 
 function DTNPC_Debugger:onSelectNPC(item, sourcePanel)
     self.selectedNPC = item
     self.teleportBtn.enable = true
     self.markerBtn.enable = true
+    self.markerHomeBtn.enable = item.brain and item.brain.homeCoords ~= nil
     
+    -- LAZY LOAD: If this is just registry data, request full brain
+    if item.id and item.brain and not item.brain.visualID then
+        if isClient() then
+            sendClientCommand(getPlayer(), "DTNPC", "RequestSoulData", { uuid = item.id })
+            if HaloTextHelper then HaloTextHelper.addText(getPlayer(), "Fetching NPC Data...") end
+        end
+    end
+
     -- Deselect other panel logic
     if sourcePanel == self.livePanel then
         self.globalPanel.npcList.selected = -1
@@ -196,13 +212,35 @@ function DTNPC_Debugger:onMarkNPC()
     EventMarkerHandler.set("npc_" .. id, icon, 1800, x, y, color, brain.name)
     
     local player = getSpecificPlayer(0)
-    if player then player:Say("Marked NPC: " .. brain.name) end
+    if player then player:Say("Marked NPC Current Pos: " .. brain.name) end
+end
+
+function DTNPC_Debugger:onMarkHome()
+    if not self.selectedNPC or not self.selectedNPC.brain then return end
+    
+    local brain = self.selectedNPC.brain
+    if not brain.homeCoords then return end
+    
+    local id = self.selectedNPC.id
+    local x = brain.homeCoords.x
+    local y = brain.homeCoords.y
+    
+    if not x or not y then return end
+    if not EventMarkerHandler then return end
+    
+    local color = {r=1, g=1, b=0.2} 
+    local icon = "house.png"
+    
+    EventMarkerHandler.set("npc_home_" .. id, icon, 1800, x, y, color, brain.name .. "'s House")
+    
+    local player = getSpecificPlayer(0)
+    if player then player:Say("Marked NPC Home: " .. brain.name) end
 end
 
 function DTNPC_Debugger:onClearMarkers()
     if EventMarkerHandler then
         for markerId, _ in pairs(EventMarkerHandler.markers) do
-            if string.sub(markerId, 1, 4) == "npc_" then
+            if string.sub(markerId, 1, 4) == "npc_" or string.sub(markerId, 1, 9) == "npc_home_" then
                 EventMarkerHandler.remove(markerId)
             end
         end

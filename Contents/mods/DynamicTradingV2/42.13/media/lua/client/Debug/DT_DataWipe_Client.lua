@@ -106,7 +106,7 @@ local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
     local wipeRoster = subMenu:addOption("Wipe NPC Roster Only", playerObj, RequestServerWipe, "ROSTER")
     local toolTipRoster = ISWorldObjectContextMenu.addToolTip()
     toolTipRoster:setName("Wipe NPC Roster")
-    toolTipRoster.description = "Delete all stored NPC data (Soul & Puppet data)."
+    toolTipRoster.description = "Delete all stored NPC data (Registry & fragmented Soul data)."
     wipeRoster.toolTip = toolTipRoster
 
     -- E. Wipe ENGINE (Legacy)

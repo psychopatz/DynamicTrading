@@ -52,6 +52,9 @@ function DTNPC_DetailsPanel:setData(item)
     addProp("Hostile", brain.isHostile, brain.isHostile and {r=1, g=0.2, b=0.2, a=1} or {r=0.2, g=1, b=0.2, a=1})
     addProp("Master", brain.master or "None", {r=0.8, g=0.8, b=1, a=1})
     addProp("Last Pos", (brain.lastX or "?") .. "," .. (brain.lastY or "?") .. "," .. (brain.lastZ or "?"), {r=0, g=1, b=1, a=1})
+    if brain.homeCoords then
+        addProp("Home Coords", (brain.homeCoords.x or "?") .. "," .. (brain.homeCoords.y or "?") .. "," .. (brain.homeCoords.z or "?"), {r=0.5, g=1, b=0.5, a=1})
+    end
 
     -- 3. ZOMBIE DATA (LIVE)
     if zombie then
