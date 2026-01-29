@@ -137,6 +137,12 @@ Handlers.DebugCommand = function(player, args)
         DynamicTrading_Factions.ModifyWealth(factionID, amt)
         sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Wealth Modified" })
 
+    elseif action == "ModifyReputation" then
+        local factionID = args.factionID
+        local amt = args.amount
+        DynamicTrading_Factions.ModifyReputation(factionID, player:getUsername(), amt)
+        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Reputation Modified" })
+
     elseif action == "ForceSpawn" then
         local town = args.town or "Rosewood"
         local factionID = town .. "_" .. tostring(math.floor(ZombRand(100000, 999999)))

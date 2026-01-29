@@ -49,6 +49,18 @@ function DynamicTrading_Factions.Init()
         DynamicTrading_Factions.RepopulateTowns()
     end
 
+    -- 3. Data Integrity: Ensure proper data types for existing factions
+    for id, f in pairs(data) do
+        -- Fallback: ensure reputation is a table
+        if type(f.reputation) ~= "table" then
+            f.reputation = {}
+        end
+        
+        if type(f.wealth) ~= "number" then
+            f.wealth = 1000
+        end
+    end
+
     ModData.transmit(MOD_DATA_KEY)
 end
 
@@ -103,8 +115,8 @@ function DynamicTrading_Factions.CreateFaction(factionID, initialData)
             state = initialData.state or "Stable",
             memberCount = initialData.memberCount or (SandboxVars.DynamicTrading.FactionStartPop or 10),
             wealth = initialData.wealth or 1000, -- Stores the total money of all the traders in the faction
+            reputation = initialData.reputation or {}, -- [Username] = Integer
             starvationDays = 0, -- Track days without food
-            reputation = {} -- [Username] = Integer
         }
         
         -- Generate Initial Roster in DynamicTrading_Roster
@@ -327,6 +339,21 @@ function DynamicTrading_Factions.ModifyWealth(factionID, amount)
     local faction = data[factionID]
     if faction then
         faction.wealth = math.max(0, (faction.wealth or 0) + amount)
+        ModData.transmit(MOD_DATA_KEY)
+        return true
+    end
+    return false
+end
+
+function DynamicTrading_Factions.ModifyReputation(factionID, username, amount)
+    local data = ModData.get(MOD_DATA_KEY)
+    local faction = data[factionID]
+    if faction and username then
+        if type(faction.reputation) ~= "table" then
+             faction.reputation = {}
+        end
+        
+        faction.reputation[username] = (faction.reputation[username] or 0) + (amount or 0)
         ModData.transmit(MOD_DATA_KEY)
         return true
     end

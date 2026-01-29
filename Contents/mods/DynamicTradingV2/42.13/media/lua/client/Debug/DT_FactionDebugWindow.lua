@@ -70,6 +70,51 @@ function DT_FactionDebugWindow:createChildren()
     self.btnClose:initialise()
     self:addChild(self.btnClose)
 
+    -- 5. SELECTED FACTION CONTROLS
+    local ctrlX = detailsX
+    local ctrlY = self.height - 75
+    local ctrlBtnWidth = 100
+
+    self.btnWealthAdd = ISButton:new(ctrlX, ctrlY, ctrlBtnWidth, 20, "+ WEALTH", self, function()
+        local f = self.listbox.items[self.listbox.selected]
+        if f then
+            sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "ModifyWealth", factionID = f.item.id, amount = 1000 })
+            self:refreshList()
+        end
+    end)
+    self.btnWealthAdd:initialise()
+    self:addChild(self.btnWealthAdd)
+
+    self.btnWealthSub = ISButton:new(ctrlX + ctrlBtnWidth + 5, ctrlY, ctrlBtnWidth, 20, "- WEALTH", self, function()
+        local f = self.listbox.items[self.listbox.selected]
+        if f then
+            sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "ModifyWealth", factionID = f.item.id, amount = -1000 })
+            self:refreshList()
+        end
+    end)
+    self.btnWealthSub:initialise()
+    self:addChild(self.btnWealthSub)
+
+    self.btnRepAdd = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 2, ctrlY, ctrlBtnWidth, 20, "+ REP", self, function()
+        local f = self.listbox.items[self.listbox.selected]
+        if f then
+            sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "ModifyReputation", factionID = f.item.id, amount = 10 })
+            self:refreshList()
+        end
+    end)
+    self.btnRepAdd:initialise()
+    self:addChild(self.btnRepAdd)
+
+    self.btnRepSub = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 3, ctrlY, ctrlBtnWidth, 20, "- REP", self, function()
+        local f = self.listbox.items[self.listbox.selected]
+        if f then
+            sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "ModifyReputation", factionID = f.item.id, amount = -10 })
+            self:refreshList()
+        end
+    end)
+    self.btnRepSub:initialise()
+    self:addChild(self.btnRepSub)
+
     self:refreshList()
 end
 
@@ -124,6 +169,14 @@ function DT_FactionDebugWindow:onListMouseDown(item)
     end
     
     text = text .. "Wealth: <RGB:0.2,1,0.2> " .. tostring(f.wealth or 0) .. " <LINE> "
+    text = text .. " <LINE> <RGB:0.2,0.2,1> PLAYER REPUTATIONS: <LINE> "
+    if f.reputation and type(f.reputation) == "table" then
+        for user, rep in pairs(f.reputation) do
+            text = text .. " <RGB:0.7,0.7,0.7> - " .. user .. ": <RGB:1,1,1> " .. rep .. " <LINE> "
+        end
+    else
+        text = text .. " <RGB:0.7,0.7,0.7> - No reputation data. <LINE> "
+    end
     
     text = text .. " <LINE> <RGB:0,1,0> STOCKPILE: <LINE> "
     if f.stockpile then
