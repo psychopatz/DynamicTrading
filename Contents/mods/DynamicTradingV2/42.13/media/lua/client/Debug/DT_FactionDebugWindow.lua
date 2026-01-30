@@ -151,8 +151,20 @@ if not DT_FactionDebugWindow.EventsAdded then
 end
 
 function DT_FactionDebugWindow:refreshList()
-    self.listbox:clear()
+    -- In multiplayer, request data from server
+    if isClient() and not isServer() then
+        sendClientCommand(getPlayer(), "DynamicTrading_V2", "RequestFactionData", {})
+        -- Data will arrive via OnServerCommand and populate the list
+        return
+    end
+    
+    -- In singleplayer, access directly
     local factionData = ModData.get("DynamicTrading_Factions") or {}
+    self:populateList(factionData)
+end
+
+function DT_FactionDebugWindow:populateList(factionData)
+    self.listbox:clear()
     
     -- Sort keys
     local keys = {}
@@ -223,7 +235,10 @@ function DT_FactionDebugWindow:onListMouseDown(item)
     -- Repopulate Roster List
     DT_FactionDebugWindow.instance.rosterlist:clear()
     DT_FactionDebugWindow.instance.btnLocate.enable = false
-    local rosterData = ModData.get("DynamicTrading_Roster")
+    
+    -- Use cached roster data in multiplayer
+    local rosterData = DT_FactionDebugWindow.cachedRosterData or ModData.get("DynamicTrading_Roster")
+    
     if rosterData then
         local members = rosterData.FactionMembers and rosterData.FactionMembers[f.id]
         if members and #members > 0 then
@@ -324,6 +339,24 @@ function DT_FactionDebugWindow:onLocateNPC()
     end
 end
 
+-- Handle server response
+local function onServerCommand(module, command, args)
+    if module ~= "DynamicTrading_V2" then return end
+    
+    if command == "SyncFactionDebugData" then
+        if DT_FactionDebugWindow.instance and DT_FactionDebugWindow.instance:getIsVisible() then
+            -- Cache the data locally
+            DT_FactionDebugWindow.cachedFactionData = args.factions
+            DT_FactionDebugWindow.cachedRosterData = args.roster
+            
+            -- Populate the UI
+            DT_FactionDebugWindow.instance:populateList(args.factions)
+        end
+    end
+end
+
+Events.OnServerCommand.Add(onServerCommand)
+
 -- Singleton Access
 function DT_FactionDebugWindow.Open()
     if DT_FactionDebugWindow.instance then
@@ -337,6 +370,7 @@ function DT_FactionDebugWindow.Open()
     window:initialise()
     window:addToUIManager()
     DT_FactionDebugWindow.instance = window
+    window:refreshList() -- This will trigger the server request in multiplayer
 end
 
 function DT_FactionDebugWindow:new(x, y, width, height)

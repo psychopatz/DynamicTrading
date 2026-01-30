@@ -50,6 +50,17 @@ Handlers.RequestStock = function(player, args)
     end
 end
 
+-- [FACTION DATA REQUEST]
+Handlers.RequestFactionData = function(player, args)
+    local factionData = ModData.get("DynamicTrading_Factions") or {}
+    local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    
+    sendServerCommand(player, COMMAND_MODULE, "SyncFactionDebugData", {
+        factions = factionData,
+        roster = rosterData
+    })
+end
+
 -- [DEBUG & ADMIN COMMANDS]
 Handlers.DebugCommand = function(player, args)
     -- Security Check: Only allow if Debug is on OR player is an Admin
