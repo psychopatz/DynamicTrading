@@ -102,7 +102,7 @@ function DynamicTrading_Factions.CreateFaction(factionID, initialData)
             -- Use our new dynamic naming engine
             displayName = DT_FactionNames.Generate()
             -- Ask the location manager for a physical base
-            assignedHome = DT_FactionLocationManager.AssignHome(factionID)
+            assignedHome = DT_FactionLocationManager.AssignHome(factionID, initialData.town)
         end
 
         -- B. Construct the Faction Object

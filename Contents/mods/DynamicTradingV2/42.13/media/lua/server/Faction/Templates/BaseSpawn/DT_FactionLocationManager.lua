@@ -41,7 +41,7 @@ end
 -- ==========================================================
 -- 2. LOGIC: CLAIM A HOME FOR A FACTION
 -- ==========================================================
-function DT_FactionLocationManager.AssignHome(factionID)
+function DT_FactionLocationManager.AssignHome(factionID, targetTown)
     -- FAILSAFE: If the faction is the "Independent" faction, they are nomads.
     -- They get no home coordinates.
     if factionID == "Independent" or factionID == "Factionless" then
@@ -62,17 +62,19 @@ function DT_FactionLocationManager.AssignHome(factionID)
         end
     end
 
-    -- Filter out the taken ones
+    -- Filter out the taken ones and filter by town if targetTown is provided
     local available = {}
     for _, base in ipairs(allPotential) do
-        if not takenLocations[base.name] then
+        local isCorrectTown = (not targetTown) or (base.town == targetTown)
+        if isCorrectTown and not takenLocations[base.name] then
             table.insert(available, base)
         end
     end
 
-    -- If no spots are left, this faction becomes nomadic by default
+    -- If no spots are left in this town, this faction becomes nomadic by default
     if #available == 0 then
-        print("DT WARNING: All registered faction bases are occupied! Faction [" .. factionID .. "] is now nomadic.")
+        local townLog = targetTown and (" in " .. targetTown) or ""
+        print("DT WARNING: All registered faction bases" .. townLog .. " are occupied! Faction [" .. factionID .. "] is now nomadic.")
         return nil
     end
 
