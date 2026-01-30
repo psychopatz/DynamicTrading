@@ -411,7 +411,11 @@ local function onClientCommand(module, command, player, args)
                         brain.anchorY = nil
                         brain.anchorZ = nil
                         
-                        if args.state == "GoTo" then
+                        if args.state == "Follow" then
+                            brain.master = player:getUsername()
+                            brain.masterID = isClient() and player:getOnlineID() or 0
+                            print("[DTNPC] Master assigned for Follow order: " .. brain.master)
+                        elseif args.state == "GoTo" then
                            table.insert(brain.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
                            print("[DTNPC] GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
                         end
@@ -502,19 +506,31 @@ local function onClientCommand(module, command, player, args)
     end
 
     if command == "RemoveNPC" then
-        if not args.uuid then return end
+        if not args.uuid then 
+            print("[DTNPC] ERROR: RemoveNPC received with no UUID!")
+            return 
+        end
         
-        print("[DTNPC] Received RemoveNPC for UUID: " .. args.uuid)
+        print("[DTNPC] Received RemoveNPC request for UUID: " .. args.uuid)
         
         if DTNPCManager then
-            DTNPCManager.RemoveData(args.uuid)
+            if DTNPCManager.Data[args.uuid] then
+                DTNPCManager.RemoveData(args.uuid)
+                print("[DTNPC] SUCCESS: Removed NPC data from database: " .. args.uuid)
+            else
+                print("[DTNPC] WARNING: UUID " .. args.uuid .. " not found in database for removal.")
+            end
             
             local zombie = DTNPCSpawn.FindZombieByUUID(args.uuid)
             if zombie then
                 zombie:removeFromWorld()
                 zombie:removeFromSquare()
-                print("[DTNPC] Removed NPC from world")
+                print("[DTNPC] SUCCESS: Removed NPC from world: " .. args.uuid)
+            else
+                print("[DTNPC] INFO: NPC " .. args.uuid .. " not found in local world (may already be unloaded).")
             end
+        else
+            print("[DTNPC] ERROR: DTNPCManager not available for removal!")
         end
     end
 end

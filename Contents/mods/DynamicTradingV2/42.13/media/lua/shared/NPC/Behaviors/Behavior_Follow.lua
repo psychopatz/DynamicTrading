@@ -73,10 +73,13 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
     brain.anchorZ = nil
     
     if not target then 
+        -- print("[DTNPC-Follow] No target for " .. (brain.name or "NPC"))
         if not zombie:isUseless() then zombie:setUseless(true) end
         stopAnimation(zombie)
         return 
     end
+
+    -- print("[DTNPC-Follow] Following target " .. target:getUsername() .. " at dist " .. dist)
 
     -- 1. Teleport catch-up
     if dist > TELEPORT_DIST then

@@ -69,42 +69,58 @@ function DTNPCClient.OnTick()
                     DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
                     DTNPCClient.ProcessedZombies[uuid] = true
                     reappliedCount = reappliedCount + 1
+                    attachedCount = attachedCount + 1
                 else
+                    -- Brain might not be in modData yet if ApplyVisualsToNPC returned early
+                    if not modData.DTNPCBrain then
+                        DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
+                    end
+
                     if zombie:isLocal() and modData.IsDTNPC then
                         DTNPCClient.SetLocalControl(uuid, true)
                         
                         local localBrain = modData.DTNPCBrain
-                        local serverBrain = cached.brain
                         
-                        if localBrain and serverBrain then
+                        if localBrain then
                             local changed = false
                             local updates = {}
                             
-                            if localBrain.state ~= serverBrain.state then
+                            -- Initialize last reported state if missing
+                            if not cached.lastReportedState then 
+                                cached.lastReportedState = {
+                                    state = localBrain.state,
+                                    tasksCount = (localBrain.tasks and #localBrain.tasks or 0)
+                                }
+                            end
+                            
+                            -- Detect state change
+                            if localBrain.state ~= cached.lastReportedState.state then
                                 updates.state = localBrain.state
+                                cached.lastReportedState.state = localBrain.state
                                 changed = true
                             end
                             
-                            if localBrain.tasks and serverBrain.tasks then
-                                if #localBrain.tasks ~= #serverBrain.tasks then
-                                    updates.tasks = localBrain.tasks
-                                    changed = true
-                                end
+                            -- Detect tasks change
+                            local currentTasksCount = (localBrain.tasks and #localBrain.tasks or 0)
+                            if currentTasksCount ~= cached.lastReportedState.tasksCount then
+                                updates.tasks = localBrain.tasks
+                                cached.lastReportedState.tasksCount = currentTasksCount
+                                changed = true
                             end
                             
                             if changed then
-                                if updates.state then 
-                                    serverBrain.state = updates.state
-                                    updates.broadcastPosition = true
-                                end
-                                if updates.tasks then serverBrain.tasks = updates.tasks end
+                                -- Broadcast position if state changed
+                                if updates.state then updates.broadcastPosition = true end
                                 
                                 sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { uuid = uuid, updates = updates })
                                 updatedCount = updatedCount + 1
+                                print("[DTNPC-Client] Syncing behavioral change for " .. (localBrain.name or uuid) .. ": " .. (updates.state or "tasks updated"))
                             end
                         end
                     else
                         DTNPCClient.SetLocalControl(uuid, false)
+                        -- Reset reported state when not local to force fresh sync if we regain control
+                        cached.lastReportedState = nil
                     end
                 end
             end

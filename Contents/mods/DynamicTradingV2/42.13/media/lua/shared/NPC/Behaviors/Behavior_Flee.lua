@@ -39,18 +39,26 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
     
     -- 1. DESPAWN CHECK (Merchant Exit)
     if dist > DESPAWN_DIST then
+        local uuid = brain.uuid
         if isClient() then
-             local id = zombie:getPersistentOutfitID()
-             sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { id = id })
-             zombie:removeFromWorld()
-             zombie:removeFromSquare()
+             print("[DTNPC-Flee] TARGET REACHED: Requesting removal for fleeing NPC: " .. (brain.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
+             sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { uuid = uuid })
+             -- We stop processing locally but let the server handle removeFromWorld to avoid sync issues
         elseif DTNPCManager then 
+             print("[DTNPC-Flee] TARGET REACHED: Server-side removal for fleeing NPC: " .. (brain.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
              DTNPCManager.Unregister(zombie)
              zombie:removeFromWorld()
              zombie:removeFromSquare()
         end
-        print("[DTNPC] " .. (brain.name or "NPC") .. " has escaped safely.")
         return
+    end
+
+    -- Periodic Fleeing Update
+    if not brain.fleePrintTimer then brain.fleePrintTimer = 0 end
+    brain.fleePrintTimer = brain.fleePrintTimer + 1
+    if brain.fleePrintTimer >= 60 then
+        brain.fleePrintTimer = 0
+        print("[DTNPC-Flee] NPC " .. (brain.name or "NPC") .. " is running away. Dist: " .. math.floor(dist) .. "/" .. DESPAWN_DIST)
     end
 
     -- 2. DETERMINE MOVEMENT VECTOR

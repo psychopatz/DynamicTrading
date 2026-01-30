@@ -59,6 +59,7 @@ function DTNPCLogic.OnTick()
         
         -- CRITICAL: Only run logic if we own the zombie (Authority)
         if zombie and zombie:isLocal() and zombie:getModData().IsDTNPC then
+            -- print("[DTNPC-Logic] Processing Local NPC: " .. tostring(zombie:getModData().DTNPC_UUID)) 
             local success, err = pcall(function()
                 DTNPCLogic.ProcessNPC(zombie)
             end)
@@ -190,12 +191,12 @@ function DTNPCLogic.GetClosestTarget(zombie)
     end
 
     -- 2. Master Targeting (Friendly)
-    if brain.masterID then
+    if brain.masterID or brain.master then
         local onlinePlayers = getOnlinePlayers()
         if onlinePlayers then
             for i = 0, onlinePlayers:size() - 1 do
                 local p = onlinePlayers:get(i)
-                if p and p:getOnlineID() == brain.masterID then
+                if p and ((brain.masterID and p:getOnlineID() == brain.masterID) or (brain.master and p:getUsername() == brain.master)) then
                     return p, calculateDistance(zombie, p)
                 end
             end
@@ -205,6 +206,8 @@ function DTNPCLogic.GetClosestTarget(zombie)
         if p and p:getUsername() == brain.master then
              return p, calculateDistance(zombie, p)
         end
+        
+        -- print("[DTNPC-Logic] Master not found for: " .. (brain.name or "NPC") .. " (Master: " .. tostring(brain.master) .. ")")
     end
 
     return nil, 9999

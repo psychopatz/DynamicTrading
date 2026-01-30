@@ -26,18 +26,19 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
         end
     end
     
+    modData.IsDTNPC = true
+    modData.DTNPC_UUID = uuid
+    
+    -- Ensure brain is attached even if we don't need to reapply visuals
+    if DTNPC and DTNPC.AttachBrain then
+        DTNPC.AttachBrain(zombie, brain)
+    end
+
     if not needsVisuals then
         return
     end
 
     print("[DTNPC-Client] Applying visuals for: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ")")
-
-    modData.IsDTNPC = true
-    modData.DTNPC_UUID = uuid
-    
-    if DTNPC and DTNPC.AttachBrain then
-        DTNPC.AttachBrain(zombie, brain)
-    end
     
     if DTNPC and DTNPC.ApplyVisuals then
         DTNPC.ApplyVisuals(zombie, brain)

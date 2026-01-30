@@ -61,7 +61,11 @@ local function onOrder(npc, state, player)
     local brain = getBrain(npc)
     if brain then
         brain.state = state
-        if state == "GoTo" then
+        if state == "Follow" then
+            brain.master = player:getUsername()
+            brain.masterID = isClient() and player:getOnlineID() or 0
+            brain.tasks = {}
+        elseif state == "GoTo" then
             brain.tasks = {{x = args.targetX, y = args.targetY, z = args.targetZ}}
         else
             brain.tasks = {}

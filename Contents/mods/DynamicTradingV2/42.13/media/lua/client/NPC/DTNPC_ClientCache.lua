@@ -32,12 +32,16 @@ function DTNPCClient.GetBrain(zombie)
     return nil
 end
 
+function DTNPCClient.GetTimestamp()
+    return os.time()
+end
+
 function DTNPCClient.CacheBrain(uuid, outfitID, brain)
     if not uuid or not brain then return end
     
     DTNPCClient.NPCCache[uuid] = {
         brain = brain,
-        lastSync = getTimestampMs()
+        lastSync = DTNPCClient.GetTimestamp()
     }
     
     if outfitID then

@@ -28,6 +28,16 @@ function DTNPCClient.OnServerCommand(module, command, args)
             DTNPCClient.ApplyVisualsToNPC(zombie, args.brain)
             DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
             DTNPCClient.ProcessedZombies[uuid] = true
+            
+            -- Sync reported state
+            local cached = DTNPCClient.NPCCache[uuid]
+            if cached then
+                cached.lastReportedState = {
+                    state = args.brain.state,
+                    tasksCount = (args.brain.tasks and #args.brain.tasks or 0)
+                }
+            end
+            
             print("[DTNPC-Client] Applied visuals to zombie: " .. uuid)
         else
             print("[DTNPC-Client] Zombie not in world yet, cached for later: " .. uuid)
@@ -62,6 +72,12 @@ function DTNPCClient.OnServerCommand(module, command, args)
             if zombie and not DTNPCClient.LocalControlled[uuid] then
                 DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
             end
+            
+            -- Sync reported state if state was provided
+            if args.state then
+                cached.lastReportedState = cached.lastReportedState or {}
+                cached.lastReportedState.state = args.state
+            end
         end
         return
     end
@@ -91,6 +107,15 @@ function DTNPCClient.OnServerCommand(module, command, args)
             if zombie then
                 DTNPCClient.ApplyVisualsToNPC(zombie, brain)
                 DTNPCClient.ProcessedZombies[uuid] = true
+                
+                -- Sync reported state
+                local cached = DTNPCClient.NPCCache[uuid]
+                if cached then
+                    cached.lastReportedState = {
+                        state = brain.state,
+                        tasksCount = (brain.tasks and #brain.tasks or 0)
+                    }
+                end
             end
         end
         return
