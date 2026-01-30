@@ -58,8 +58,11 @@ function DTNPCGenerator.CreateMVPBrain(mvpData, options)
         walkSpeed = options.walkSpeed or 0.06,
         runSpeed = options.runSpeed or 0.09,
         isMVP = true,
-        visualID = ZombRand(1000000)
+        visualID = ZombRand(1000000),
+        archetypeID = mvpData.archetypeID or options.occupation or "General",
+        portraitID = mvpData.portraitID or 1
     }
+
     
     return brain
 end
@@ -122,8 +125,20 @@ function DTNPCGenerator.CreateStandardBrain(options)
         tasks = {},
         walkSpeed = options.walkSpeed or 0.06,
         runSpeed = options.runSpeed or 0.09,
-        visualID = ZombRand(1000000)
+        visualID = ZombRand(1000000),
+        archetypeID = occupation,
+        portraitID = 1 -- Default fallback
     }
+
+    -- 4. Calculate Portrait ID using common portrait system
+    if DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.GetMaxCount then
+        local genderStr = isFemale and "Female" or "Male"
+        local maxCount = DynamicTrading.Portraits.GetMaxCount(occupation, genderStr)
+        if maxCount > 0 then
+            brain.portraitID = ZombRand(maxCount) + 1
+        end
+    end
+
     
     return brain
 end

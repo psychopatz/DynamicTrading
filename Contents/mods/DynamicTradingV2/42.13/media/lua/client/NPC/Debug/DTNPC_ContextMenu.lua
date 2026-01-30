@@ -321,6 +321,8 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             context:addSubMenu(option, subMenu)
 
             subMenu:addOption("Follow Me", npc, onOrder, "Follow", player)
+
+
             subMenu:addOption("Stop / Guard", npc, onOrder, "Stay", player)
             subMenu:addOption("Come Here (My Pos)", npc, onOrder, "GoTo", player)
             

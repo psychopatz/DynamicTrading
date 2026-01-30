@@ -133,8 +133,10 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
         health = brain.health or 1.0,
         status = brain.status or "Rest",
         master = brain.master,
-        isFemale = brain.isFemale
+        isFemale = brain.isFemale,
+        portraitID = brain.portraitID
     }
+
     ModData.transmit(MOD_DATA_KEY)
 end
 

@@ -9,7 +9,7 @@ DT_FactionLocations = DT_FactionLocations or {}
 
 -- Create a specific entry for Rosewood to keep things organized
 DT_FactionLocations.Rosewood = {
-DT_FactionLocations.Rosewood = {
+
     -- CIVIC & PUBLIC SERVICES
     {
         name = "Rosewood Fire Station",
