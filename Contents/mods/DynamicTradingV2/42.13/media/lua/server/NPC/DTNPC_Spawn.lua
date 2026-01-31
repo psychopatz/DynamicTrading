@@ -511,14 +511,18 @@ local function onClientCommand(module, command, player, args)
             return 
         end
         
-        print("[DTNPC] Received RemoveNPC request for UUID: " .. args.uuid)
+        print("[DTNPC] Received RemoveNPC request for UUID: " .. args.uuid .. " (Status: " .. (args.status or "nil") .. ")")
         
         if DTNPCManager then
             if DTNPCManager.Data[args.uuid] then
-                DTNPCManager.RemoveData(args.uuid)
+                DTNPCManager.RemoveData(args.uuid, args.status)
                 print("[DTNPC] SUCCESS: Removed NPC data from database: " .. args.uuid)
             else
                 print("[DTNPC] WARNING: UUID " .. args.uuid .. " not found in database for removal.")
+                -- Even if not in Manager, we might want to update Roster status if provided
+                if DynamicTrading_Roster and args.status then
+                    DynamicTrading_Roster.UpdateSoulStatus(args.uuid, args.status)
+                end
             end
             
             local zombie = DTNPCSpawn.FindZombieByUUID(args.uuid)

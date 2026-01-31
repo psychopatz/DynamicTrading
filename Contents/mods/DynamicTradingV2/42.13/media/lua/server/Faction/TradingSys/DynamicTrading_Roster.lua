@@ -140,6 +140,25 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
     ModData.transmit(MOD_DATA_KEY)
 end
 
+function DynamicTrading_Roster.UpdateSoulStatus(uuid, status)
+    -- Update full brain
+    local brain = DynamicTrading_Roster.GetSoul(uuid)
+    if brain then
+        brain.status = status
+        local soulKey = "DTSOUL_" .. uuid
+        ModData.transmit(soulKey)
+    end
+    
+    -- Update Registry
+    local data = ModData.get(MOD_DATA_KEY)
+    if data.Souls[uuid] then
+        data.Souls[uuid].status = status
+        ModData.transmit(MOD_DATA_KEY)
+    end
+    
+    print("[DTNPC-Roster] Updated status for " .. uuid .. " to " .. (status or "nil"))
+end
+
 function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     local data = ModData.get(MOD_DATA_KEY)
     

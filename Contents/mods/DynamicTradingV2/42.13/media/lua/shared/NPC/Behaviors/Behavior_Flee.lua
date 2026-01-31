@@ -42,11 +42,11 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
         local uuid = brain.uuid
         if isClient() then
              print("[DTNPC-Flee] TARGET REACHED: Requesting removal for fleeing NPC: " .. (brain.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
-             sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { uuid = uuid })
+             sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { uuid = uuid, status = "Away" })
              -- We stop processing locally but let the server handle removeFromWorld to avoid sync issues
         elseif DTNPCManager then 
              print("[DTNPC-Flee] TARGET REACHED: Server-side removal for fleeing NPC: " .. (brain.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
-             DTNPCManager.Unregister(zombie)
+             DTNPCManager.RemoveData(uuid, "Away")
              zombie:removeFromWorld()
              zombie:removeFromSquare()
         end

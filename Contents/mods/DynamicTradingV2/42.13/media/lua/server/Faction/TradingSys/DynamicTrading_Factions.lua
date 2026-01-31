@@ -315,6 +315,17 @@ function DynamicTrading_Factions.UpdateDaily()
         end
     end
     
+    -- 4. RESET AWAY STATUS (Allow fleeing NPCs to return next day)
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    if rosterData and rosterData.Souls then
+        for uuid, registry in pairs(rosterData.Souls) do
+            if registry.status == "Away" then
+                print("[DTNPC] Resetting status for Away NPC: " .. (registry.name or uuid))
+                DynamicTrading_Roster.UpdateSoulStatus(uuid, "Rest")
+            end
+        end
+    end
+    
     -- Cleanup Dead Factions
     for _, deadID in ipairs(factionsToRemove) do
         data[deadID] = nil

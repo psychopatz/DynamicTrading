@@ -172,7 +172,7 @@ function DTNPCManager.Register(zombie, brain)
     print("[DTNPC] Registered NPC: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ", OutfitID: " .. outfitID .. ") at " .. brain.lastX .. "," .. brain.lastY .. "," .. brain.lastZ)
 end
 
-function DTNPCManager.RemoveData(uuid)
+function DTNPCManager.RemoveData(uuid, status)
     -- if isClient() then return end -- REMOVED for SP Support
     
     if DTNPCManager.Data[uuid] then
@@ -183,12 +183,17 @@ function DTNPCManager.RemoveData(uuid)
             DTNPCManager.OutfitIDToUUID[brain.currentOutfitID] = nil
         end
         
+        -- Update persistent status in Roster
+        if DynamicTrading_Roster and status then
+            DynamicTrading_Roster.UpdateSoulStatus(uuid, status)
+        end
+
         -- Remove from database
         DTNPCManager.Data[uuid] = nil
         DTNPCManager.PendingRegistrations[uuid] = nil
         DTNPCManager.Save()
         
-        print("[DTNPC] Removed NPC data: " .. uuid)
+        print("[DTNPC] Removed NPC data: " .. uuid .. " (Status: " .. (status or "Removed") .. ")")
         
         -- Broadcast removal to all clients
         if DTNPCSpawn and DTNPCSpawn.NotifyRemoval then
@@ -204,14 +209,14 @@ function DTNPCManager.Unregister(zombie)
     
     if uuid and DTNPCManager.Data[uuid] then
         print("[DTNPC] NPC Died: " .. uuid)
-        DTNPCManager.RemoveData(uuid)
+        DTNPCManager.RemoveData(uuid, "Dead")
     else
         -- Fallback: try outfit ID
         local outfitID = zombie:getPersistentOutfitID()
         local fallbackUUID = DTNPCManager.GetUUIDFromOutfitID(outfitID)
         if fallbackUUID and DTNPCManager.Data[fallbackUUID] then
             print("[DTNPC] NPC Died (fallback lookup): " .. fallbackUUID)
-            DTNPCManager.RemoveData(fallbackUUID)
+            DTNPCManager.RemoveData(fallbackUUID, "Dead")
         end
     end
 end
@@ -263,46 +268,50 @@ function DTNPCManager.CheckRosterSpawns()
     for uuid, registry in pairs(rosterData.Souls) do
         -- Skip if already active/tracked by the Manager
         if not DTNPCManager.Data[uuid] then
-            local targetX, targetY, targetZ
-            
-            -- Prefer last known position, otherwise home
-            if registry.lastX then
-                targetX, targetY, targetZ = registry.lastX, registry.lastY, registry.lastZ or 0
-            elseif registry.homeCoords then
-                 targetX, targetY, targetZ = registry.homeCoords.x, registry.homeCoords.y, registry.homeCoords.z or 0
-            end
-            
-            if targetX then
-                for _, player in ipairs(players) do
-                    local dx = player:getX() - targetX
-                    local dy = player:getY() - targetY
-                    local dz = player:getZ() - targetZ
-                        
-                    -- Relaxed Z-check: Allow +/- 1 floor (e.g. player on ground, NPC on 2nd floor)
-                    if math.abs(dz) <= 1 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
-                        -- Player is near this Roster soul. Hydrate it!
-                        print("[DTNPC] Found Roster Soul nearby: " .. (registry.name or uuid) .. " Dist: " .. math.sqrt(dx*dx + dy*dy))
-                        local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
-                        
-                        if fullBrain then
-                            -- Ensure coordinates are set for spawn
-                            if not fullBrain.lastX then
-                                print("[DTNPC] Hydrating brain coordinates from registry for spawn.")
-                                fullBrain.lastX = targetX
-                                fullBrain.lastY = targetY
-                                fullBrain.lastZ = targetZ
-                            end
+            -- ONLY spawn if status is Rest, Working, or Trading
+            local status = registry.status or "Rest"
+            if status == "Rest" or status == "Working" or status == "Trading" then
+                local targetX, targetY, targetZ
+                
+                -- Prefer last known position, otherwise home
+                if registry.lastX then
+                    targetX, targetY, targetZ = registry.lastX, registry.lastY, registry.lastZ or 0
+                elseif registry.homeCoords then
+                     targetX, targetY, targetZ = registry.homeCoords.x, registry.homeCoords.y, registry.homeCoords.z or 0
+                end
+                
+                if targetX then
+                    for _, player in ipairs(players) do
+                        local dx = player:getX() - targetX
+                        local dy = player:getY() - targetY
+                        local dz = player:getZ() - targetZ
                             
-                            local zombie = DTNPCSpawn.RespawnNPC(fullBrain, uuid)
-                            if zombie then
-                                    print("[DTNPC] Roster Spawn SUCCESS for " .. uuid)
+                        -- Relaxed Z-check: Allow +/- 1 floor (e.g. player on ground, NPC on 2nd floor)
+                        if math.abs(dz) <= 1 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
+                            -- Player is near this Roster soul. Hydrate it!
+                            print("[DTNPC] Found Roster Soul nearby: " .. (registry.name or uuid) .. " Dist: " .. math.sqrt(dx*dx + dy*dy))
+                            local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
+                            
+                            if fullBrain then
+                                -- Ensure coordinates are set for spawn
+                                if not fullBrain.lastX then
+                                    print("[DTNPC] Hydrating brain coordinates from registry for spawn.")
+                                    fullBrain.lastX = targetX
+                                    fullBrain.lastY = targetY
+                                    fullBrain.lastZ = targetZ
+                                end
+                                
+                                local zombie = DTNPCSpawn.RespawnNPC(fullBrain, uuid)
+                                if zombie then
+                                        print("[DTNPC] Roster Spawn SUCCESS for " .. uuid)
+                                else
+                                        print("[DTNPC] Roster Spawn FAILED for " .. uuid)
+                                end
                             else
-                                    print("[DTNPC] Roster Spawn FAILED for " .. uuid)
+                                print("[DTNPC] ERROR: Could not retrieve full brain for " .. uuid)
                             end
-                        else
-                            print("[DTNPC] ERROR: Could not retrieve full brain for " .. uuid)
+                            break -- Spawned, move to next soul
                         end
-                        break -- Spawned, move to next soul
                     end
                 end
             end
