@@ -84,8 +84,16 @@ function DTNPCClient.OnServerCommand(module, command, args)
 
     if command == "RemoveNPC" then
         if not args or not args.uuid then return end
-        print("[DTNPC-Client] Received RemoveNPC for: " .. args.uuid)
-        DTNPCClient.RemoveFromCache(args.uuid, args.outfitID)
+        
+        local uuid = args.uuid
+        local name = args.name or "Unknown"
+        
+        if name == "Unknown" and DTNPCClient.NPCCache[uuid] then
+            name = DTNPCClient.NPCCache[uuid].brain.name or "Unknown"
+        end
+        
+        print("[DTNPC-Client] Received RemoveNPC for: " .. name .. " (" .. uuid .. ")")
+        DTNPCClient.RemoveFromCache(uuid, args.outfitID)
         return
     end
 

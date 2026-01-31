@@ -193,11 +193,11 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
         DTNPCManager.PendingRegistrations[uuid] = nil
         DTNPCManager.Save()
         
-        print("[DTNPC] Removed NPC data: " .. uuid .. " (Status: " .. (status or "Removed") .. ")")
+        print("[DTNPC] Removed NPC data: " .. (brain.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
         
         -- Broadcast removal to all clients
         if DTNPCSpawn and DTNPCSpawn.NotifyRemoval then
-            DTNPCSpawn.NotifyRemoval(uuid, brain.currentOutfitID)
+            DTNPCSpawn.NotifyRemoval(uuid, brain.currentOutfitID, brain.name)
         end
     end
 end
@@ -208,14 +208,16 @@ function DTNPCManager.Unregister(zombie)
     local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
     
     if uuid and DTNPCManager.Data[uuid] then
-        print("[DTNPC] NPC Died: " .. uuid)
+        local brain = DTNPCManager.Data[uuid]
+        print("[DTNPC] NPC Died: " .. (brain.name or uuid))
         DTNPCManager.RemoveData(uuid, "Dead")
     else
         -- Fallback: try outfit ID
         local outfitID = zombie:getPersistentOutfitID()
         local fallbackUUID = DTNPCManager.GetUUIDFromOutfitID(outfitID)
         if fallbackUUID and DTNPCManager.Data[fallbackUUID] then
-            print("[DTNPC] NPC Died (fallback lookup): " .. fallbackUUID)
+            local brain = DTNPCManager.Data[fallbackUUID]
+            print("[DTNPC] NPC Died (fallback lookup): " .. (brain.name or fallbackUUID))
             DTNPCManager.RemoveData(fallbackUUID, "Dead")
         end
     end

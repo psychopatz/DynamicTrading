@@ -97,10 +97,10 @@ function DTNPCSpawn.BroadcastPosition(zombie, brain)
     end
 end
 
-function DTNPCSpawn.NotifyRemoval(uuid, outfitID)
+function DTNPCSpawn.NotifyRemoval(uuid, outfitID, name)
     if not uuid then return end
     
-    local data = { uuid = uuid, outfitID = outfitID }
+    local data = { uuid = uuid, outfitID = outfitID, name = name }
     
     if isServer() then
         sendServerCommand("DTNPC", "RemoveNPC", data)
@@ -109,7 +109,7 @@ function DTNPCSpawn.NotifyRemoval(uuid, outfitID)
         triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", data)
     end
     
-    print("[DTNPC] Notified removal: " .. uuid)
+    print("[DTNPC] Notified removal: " .. (name or uuid))
 end
 
 -- ==============================================================================
@@ -266,6 +266,11 @@ function DTNPCSpawn.RespawnNPC(brain, uuid)
     
     -- CRITICAL: Generate new visual ID to force clients to reapply visuals
     brain.visualID = ZombRand(1000000)
+    
+    -- Ensure state is reset on respawn to avoid flee-loop
+    brain.state = "Stay"
+    brain.master = nil
+    brain.masterID = nil
     
     DTNPC.AttachBrain(zombie, brain)
     DTNPC.ApplyVisuals(zombie, brain)
@@ -514,9 +519,11 @@ local function onClientCommand(module, command, player, args)
         print("[DTNPC] Received RemoveNPC request for UUID: " .. args.uuid .. " (Status: " .. (args.status or "nil") .. ")")
         
         if DTNPCManager then
+            local name = "Unknown"
             if DTNPCManager.Data[args.uuid] then
+                name = DTNPCManager.Data[args.uuid].name or "Unknown"
                 DTNPCManager.RemoveData(args.uuid, args.status, args.returnTime, args.returnStatus)
-                print("[DTNPC] SUCCESS: Removed NPC data from database: " .. args.uuid)
+                print("[DTNPC] SUCCESS: Removed NPC data from database: " .. name .. " (" .. args.uuid .. ")")
             else
                 print("[DTNPC] WARNING: UUID " .. args.uuid .. " not found in database for removal.")
                 -- Even if not in Manager, we might want to update Roster status if provided

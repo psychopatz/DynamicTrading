@@ -146,6 +146,14 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
     -- Update full brain
     local brain = DynamicTrading_Roster.GetSoul(uuid)
     if brain then
+        -- If we are returning from "Away", reset their state to "Stay" to avoid flee-loop
+        if brain.status == "Away" and status ~= "Away" then
+            print("[DTNPC-Roster] Resetting state and master for " .. (brain.name or uuid) .. " on return.")
+            brain.state = "Stay"
+            brain.master = nil
+            brain.masterID = nil
+        end
+
         brain.status = status
         brain.returnTime = returnTime
         brain.returnStatus = returnStatus
@@ -156,9 +164,11 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
     -- Update Registry
     local data = ModData.get(MOD_DATA_KEY)
     if data.Souls[uuid] then
-        data.Souls[uuid].status = status
-        data.Souls[uuid].returnTime = returnTime
-        data.Souls[uuid].returnStatus = returnStatus
+        local registry = data.Souls[uuid]
+        -- Registry doesn't store state/master usually, but it stores status/timers
+        registry.status = status
+        registry.returnTime = returnTime
+        registry.returnStatus = returnStatus
         ModData.transmit(MOD_DATA_KEY)
     end
     
