@@ -73,7 +73,7 @@ function DynamicTrading_Factions.RepopulateTowns()
                 local factionID = townName .. "_" .. tostring(100000 + ZombRand(900000))
                 DynamicTrading_Factions.CreateFaction(factionID, {
                     town = townName,
-                    memberCount = SandboxVars.DynamicTrading.FactionStartPop or 10
+                    memberCount = SandboxVars.DynamicTrading.FactionStartPop or 3
                 })
             end
         end
@@ -312,17 +312,6 @@ function DynamicTrading_Factions.UpdateDaily()
             end
         else
             print("DT ERROR: BaseConsumption not found in config for simulation!")
-        end
-    end
-    
-    -- 4. RESET AWAY STATUS (Allow fleeing NPCs to return next day)
-    local rosterData = ModData.get("DynamicTrading_Roster")
-    if rosterData and rosterData.Souls then
-        for uuid, registry in pairs(rosterData.Souls) do
-            if registry.status == "Away" then
-                print("[DTNPC] Resetting status for Away NPC: " .. (registry.name or uuid))
-                DynamicTrading_Roster.UpdateSoulStatus(uuid, "Rest")
-            end
         end
     end
     

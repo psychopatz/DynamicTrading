@@ -172,7 +172,7 @@ function DTNPCManager.Register(zombie, brain)
     print("[DTNPC] Registered NPC: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ", OutfitID: " .. outfitID .. ") at " .. brain.lastX .. "," .. brain.lastY .. "," .. brain.lastZ)
 end
 
-function DTNPCManager.RemoveData(uuid, status)
+function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
     -- if isClient() then return end -- REMOVED for SP Support
     
     if DTNPCManager.Data[uuid] then
@@ -185,7 +185,7 @@ function DTNPCManager.RemoveData(uuid, status)
         
         -- Update persistent status in Roster
         if DynamicTrading_Roster and status then
-            DynamicTrading_Roster.UpdateSoulStatus(uuid, status)
+            DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)
         end
 
         -- Remove from database
@@ -319,6 +319,25 @@ function DTNPCManager.CheckRosterSpawns()
     end
 end
 
+function DTNPCManager.ProcessAwayTransitions()
+    if not DynamicTrading_Roster then return end
+    
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    if not rosterData or not rosterData.Souls then return end
+    
+    local currentHours = getGameTime():getWorldAgeHours()
+    
+    for uuid, registry in pairs(rosterData.Souls) do
+        if registry.status == "Away" and registry.returnTime then
+            if currentHours >= registry.returnTime then
+                local nextStatus = registry.returnStatus or "Rest"
+                print("[DTNPC] Away Transition TIMER EXPIRED for " .. (registry.name or uuid) .. ". Returning to: " .. nextStatus)
+                DynamicTrading_Roster.UpdateSoulStatus(uuid, nextStatus)
+            end
+        end
+    end
+end
+
 local TICK_RATE = 20
 local tickCounter = 0
 
@@ -328,12 +347,16 @@ local positionBroadcastCounter = 0
 local RESPAWN_CHECK_RATE = 60 -- Check every 3 seconds (was 300/15s) for responsiveness
 local respawnCheckCounter = 0
 
+local TRANSITION_CHECK_RATE = 600 -- Check transitions every 30 seconds
+local transitionCheckCounter = 0
+
 function DTNPCManager.OnTick()
     -- Run on Server or Single Player
 
     tickCounter = tickCounter + 1
     positionBroadcastCounter = positionBroadcastCounter + 1
     respawnCheckCounter = respawnCheckCounter + 1
+    transitionCheckCounter = transitionCheckCounter + 1
     
     local shouldBroadcast = (positionBroadcastCounter >= POSITION_BROADCAST_RATE)
     if shouldBroadcast then
@@ -343,6 +366,12 @@ function DTNPCManager.OnTick()
     local shouldCheckRespawn = (respawnCheckCounter >= RESPAWN_CHECK_RATE)
     if shouldCheckRespawn then
         respawnCheckCounter = 0
+    end
+
+    local shouldCheckTransitions = (transitionCheckCounter >= TRANSITION_CHECK_RATE)
+    if shouldCheckTransitions then
+        transitionCheckCounter = 0
+        DTNPCManager.ProcessAwayTransitions()
     end
     
     -- Respawn check
@@ -383,7 +412,7 @@ function DTNPCManager.OnTick()
                         end
                         DTNPCManager.OutfitIDToUUID[currentOutfitID] = uuid
                         savedBrain.currentOutfitID = currentOutfitID
-                        print("[DTNPC] Updated outfit ID for " .. (savedBrain.name or uuid) .. ": " .. currentOutfitID)
+                        -- print("[DTNPC] Updated outfit ID for " .. (savedBrain.name or uuid) .. ": " .. currentOutfitID)
                     end
                     
                     -- Update position

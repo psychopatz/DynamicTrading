@@ -38,15 +38,19 @@ end
 DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
     
     -- 1. DESPAWN CHECK (Merchant Exit)
-    if dist > DESPAWN_DIST then
+    -- Only despawn if we have a valid target and are actually far away.
+    -- dist == 9999 means target not found, so we should NOT despawn yet.
+    if target and dist > DESPAWN_DIST and dist < 1000 then
         local uuid = brain.uuid
+        local returnTime = getGameTime():getWorldAgeHours() + ZombRand(2, 5) -- Returns in 2-4 hours
+        
         if isClient() then
              print("[DTNPC-Flee] TARGET REACHED: Requesting removal for fleeing NPC: " .. (brain.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
-             sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { uuid = uuid, status = "Away" })
+             sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { uuid = uuid, status = "Away", returnTime = returnTime, returnStatus = "Rest" })
              -- We stop processing locally but let the server handle removeFromWorld to avoid sync issues
         elseif DTNPCManager then 
              print("[DTNPC-Flee] TARGET REACHED: Server-side removal for fleeing NPC: " .. (brain.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
-             DTNPCManager.RemoveData(uuid, "Away")
+             DTNPCManager.RemoveData(uuid, "Away", returnTime, "Rest")
              zombie:removeFromWorld()
              zombie:removeFromSquare()
         end

@@ -132,6 +132,8 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
         lastZ = brain.lastZ,
         health = brain.health or 1.0,
         status = brain.status or "Rest",
+        returnTime = brain.returnTime,
+        returnStatus = brain.returnStatus,
         master = brain.master,
         isFemale = brain.isFemale,
         portraitID = brain.portraitID
@@ -140,11 +142,13 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
     ModData.transmit(MOD_DATA_KEY)
 end
 
-function DynamicTrading_Roster.UpdateSoulStatus(uuid, status)
+function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)
     -- Update full brain
     local brain = DynamicTrading_Roster.GetSoul(uuid)
     if brain then
         brain.status = status
+        brain.returnTime = returnTime
+        brain.returnStatus = returnStatus
         local soulKey = "DTSOUL_" .. uuid
         ModData.transmit(soulKey)
     end
@@ -153,10 +157,12 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status)
     local data = ModData.get(MOD_DATA_KEY)
     if data.Souls[uuid] then
         data.Souls[uuid].status = status
+        data.Souls[uuid].returnTime = returnTime
+        data.Souls[uuid].returnStatus = returnStatus
         ModData.transmit(MOD_DATA_KEY)
     end
     
-    print("[DTNPC-Roster] Updated status for " .. uuid .. " to " .. (status or "nil"))
+    print("[DTNPC-Roster] Updated status for " .. uuid .. " to " .. (status or "nil") .. " (Return in: " .. tostring(returnTime) .. " as " .. tostring(returnStatus) .. ")")
 end
 
 function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)

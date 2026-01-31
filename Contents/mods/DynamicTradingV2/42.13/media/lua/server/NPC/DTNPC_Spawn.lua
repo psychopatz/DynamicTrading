@@ -411,10 +411,10 @@ local function onClientCommand(module, command, player, args)
                         brain.anchorY = nil
                         brain.anchorZ = nil
                         
-                        if args.state == "Follow" then
+                        if args.state == "Follow" or args.state == "Flee" then
                             brain.master = player:getUsername()
                             brain.masterID = isClient() and player:getOnlineID() or 0
-                            print("[DTNPC] Master assigned for Follow order: " .. brain.master)
+                            print("[DTNPC] Master assigned for " .. args.state .. " order: " .. brain.master)
                         elseif args.state == "GoTo" then
                            table.insert(brain.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
                            print("[DTNPC] GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
@@ -515,13 +515,13 @@ local function onClientCommand(module, command, player, args)
         
         if DTNPCManager then
             if DTNPCManager.Data[args.uuid] then
-                DTNPCManager.RemoveData(args.uuid, args.status)
+                DTNPCManager.RemoveData(args.uuid, args.status, args.returnTime, args.returnStatus)
                 print("[DTNPC] SUCCESS: Removed NPC data from database: " .. args.uuid)
             else
                 print("[DTNPC] WARNING: UUID " .. args.uuid .. " not found in database for removal.")
                 -- Even if not in Manager, we might want to update Roster status if provided
                 if DynamicTrading_Roster and args.status then
-                    DynamicTrading_Roster.UpdateSoulStatus(args.uuid, args.status)
+                    DynamicTrading_Roster.UpdateSoulStatus(args.uuid, args.status, args.returnTime, args.returnStatus)
                 end
             end
             

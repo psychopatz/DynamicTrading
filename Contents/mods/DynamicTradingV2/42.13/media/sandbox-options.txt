@@ -251,7 +251,7 @@ option DynamicTrading.WalletJackpotChance
 option DynamicTrading.FactionStartPop
 {
     type = integer,
-    default = 10,
+    default = 3,
     min = 1,
     max = 100,
     page = DynamicTrading,

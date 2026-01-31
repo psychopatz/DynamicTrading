@@ -288,7 +288,13 @@ function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
     end
 
     self:drawText(soul.name .. " [" .. (soul.archetypeID or "N/A") .. "]", 10, y + 2, 1, 1, 1, 1, UIFont.Small)
-    self:drawText("Status: " .. status .. " | " .. spawned .. " | " .. retTime, 10, y + 20, r, g, b, 0.8, UIFont.Small)
+    
+    local returnInfo = ""
+    if soul.status == "Away" and soul.returnTime then
+        returnInfo = string.format(" | Ret: %.2f (%s)", soul.returnTime, soul.returnStatus or "Rest")
+    end
+    
+    self:drawText("Status: " .. status .. " | " .. spawned .. " | " .. retTime .. returnInfo, 10, y + 20, r, g, b, 0.8, UIFont.Small)
 
     return y + self.itemheight
 end
