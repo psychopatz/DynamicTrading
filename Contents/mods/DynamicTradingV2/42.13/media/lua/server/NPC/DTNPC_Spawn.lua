@@ -416,6 +416,8 @@ local function onClientCommand(module, command, player, args)
                         brain.anchorY = nil
                         brain.anchorZ = nil
                         
+                        brain.requestedReturnStatus = args.returnStatus
+                        
                         if args.state == "Follow" or args.state == "Flee" then
                             brain.master = player:getUsername()
                             brain.masterID = isClient() and player:getOnlineID() or 0

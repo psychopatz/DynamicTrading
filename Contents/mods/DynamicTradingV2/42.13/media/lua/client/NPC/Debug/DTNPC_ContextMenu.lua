@@ -40,14 +40,15 @@ end
 -- 2. COMMAND SENDERS
 -- ==============================================================================
 
-local function onOrder(npc, state, player)
+local function onOrder(npc, state, player, returnStatus)
     if not npc or not player then return end
     
     local args = {
         x = npc:getX(),
         y = npc:getY(),
         z = npc:getZ(),
-        state = state
+        state = state,
+        returnStatus = returnStatus
     }
 
     if state == "GoTo" then
@@ -339,7 +340,8 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             context:addSubMenu(debugOption, debugSub)
 
             debugSub:addOption("TEST: Enter Coordinates...", player, onOpenCoordBox, npc)
-            debugSub:addOption("TEST: Flee (Merchant Exit)", npc, onOrder, "Flee", player)
+            debugSub:addOption("TEST: Flee (Return as Rest)", npc, onOrder, "Flee", player, "Rest")
+            debugSub:addOption("TEST: Flee (Return as Trading)", npc, onOrder, "Flee", player, "Trading")
             debugSub:addOption("TEST: Attack Me (Melee)", npc, onOrder, "Attack", player)
             debugSub:addOption("TEST: Attack Me (Gun)", npc, onOrder, "AttackRange", player)
             
