@@ -279,8 +279,6 @@ function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
 
     local status = soul.status or "Active"
     local spawned = trader and trader.isPhysicallySpawned and "Spawned: YES" or "Spawned: NO"
-    local retTime = trader and string.format("Ret: %.2f", trader.returnTime or 0) or "Ret: 0"
-    
     local r, g, b = 1, 1, 1
     if status == "Dead" then r,g,b = 1,0,0
     elseif status == "Away" then r,g,b = 0.5, 0.5, 1
@@ -290,11 +288,15 @@ function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
     self:drawText(soul.name .. " [" .. (soul.archetypeID or "N/A") .. "]", 10, y + 2, 1, 1, 1, 1, UIFont.Small)
     
     local returnInfo = ""
-    if soul.status == "Away" and soul.returnTime then
-        returnInfo = string.format(" | Ret: %.2f (%s)", soul.returnTime, soul.returnStatus or "")
+    local valRet = (soul.returnTime and soul.returnTime > 0) and soul.returnTime or (trader and trader.returnTime)
+    if valRet and valRet > 0 then
+        returnInfo = string.format(" | Ret: %.2f", valRet)
+        if soul.returnStatus and soul.returnStatus ~= "" then
+            returnInfo = returnInfo .. " (" .. soul.returnStatus .. ")"
+        end
     end
     
-    self:drawText("Status: " .. status .. " | " .. spawned .. " | " .. retTime .. returnInfo, 10, y + 20, r, g, b, 0.8, UIFont.Small)
+    self:drawText("Status: " .. status .. " | " .. spawned .. returnInfo, 10, y + 20, r, g, b, 0.8, UIFont.Small)
 
     return y + self.itemheight
 end
