@@ -87,13 +87,27 @@ function DTNPCClient.OnServerCommand(module, command, args)
         
         local uuid = args.uuid
         local name = args.name or "Unknown"
+        local outfitID = args.outfitID
         
         if name == "Unknown" and DTNPCClient.NPCCache[uuid] then
             name = DTNPCClient.NPCCache[uuid].brain.name or "Unknown"
         end
         
         print("[DTNPC-Client] Received RemoveNPC for: " .. name .. " (" .. uuid .. ")")
-        DTNPCClient.RemoveFromCache(uuid, args.outfitID)
+        
+        -- World Removal: Physically remove the zombie if it exists locally
+        local zombie = DTNPCClient.FindZombieByUUID(uuid)
+        if not zombie and outfitID then
+            zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
+        end
+        
+        if zombie then
+            zombie:removeFromWorld()
+            zombie:removeFromSquare()
+            print("[DTNPC-Client] SUCCESS: Removed zombie from local world: " .. name)
+        end
+        
+        DTNPCClient.RemoveFromCache(uuid, outfitID)
         return
     end
 

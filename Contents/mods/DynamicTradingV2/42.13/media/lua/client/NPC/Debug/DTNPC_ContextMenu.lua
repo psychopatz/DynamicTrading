@@ -340,7 +340,7 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             context:addSubMenu(debugOption, debugSub)
 
             debugSub:addOption("TEST: Enter Coordinates...", player, onOpenCoordBox, npc)
-            debugSub:addOption("TEST: Flee (Return as Rest)", npc, onOrder, "Flee", player, "Rest")
+            debugSub:addOption("TEST: Flee (Return as Resting)", npc, onOrder, "Flee", player, "Resting")
             debugSub:addOption("TEST: Flee (Return as Trading)", npc, onOrder, "Flee", player, "Trading")
             debugSub:addOption("TEST: Attack Me (Melee)", npc, onOrder, "Attack", player)
             debugSub:addOption("TEST: Attack Me (Gun)", npc, onOrder, "AttackRange", player)

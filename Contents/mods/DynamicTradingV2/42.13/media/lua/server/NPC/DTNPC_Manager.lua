@@ -270,9 +270,9 @@ function DTNPCManager.CheckRosterSpawns()
     for uuid, registry in pairs(rosterData.Souls) do
         -- Skip if already active/tracked by the Manager
         if not DTNPCManager.Data[uuid] then
-            -- ONLY spawn if status is Rest, Working, or Trading
-            local status = registry.status or "Rest"
-            if status == "Rest" or status == "Working" or status == "Trading" then
+            -- ONLY spawn if status is Resting, Working, or Trading
+            local status = registry.status or "Resting"
+            if status == "Resting" or status == "Working" or status == "Trading" then
                 local targetX, targetY, targetZ
                 
                 -- Prefer last known position, otherwise home
@@ -332,7 +332,7 @@ function DTNPCManager.ProcessAwayTransitions()
     for uuid, registry in pairs(rosterData.Souls) do
         if registry.status == "Away" and registry.returnTime then
             if currentHours >= registry.returnTime then
-                local nextStatus = registry.returnStatus or "Rest"
+                local nextStatus = registry.returnStatus or "Resting"
                 print("[DTNPC] Away Transition TIMER EXPIRED for " .. (registry.name or uuid) .. ". Returning to: " .. nextStatus)
                 DynamicTrading_Roster.UpdateSoulStatus(uuid, nextStatus)
             end

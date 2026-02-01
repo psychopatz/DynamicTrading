@@ -291,7 +291,7 @@ function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
     
     local returnInfo = ""
     if soul.status == "Away" and soul.returnTime then
-        returnInfo = string.format(" | Ret: %.2f (%s)", soul.returnTime, soul.returnStatus or "Rest")
+        returnInfo = string.format(" | Ret: %.2f (%s)", soul.returnTime, soul.returnStatus or "")
     end
     
     self:drawText("Status: " .. status .. " | " .. spawned .. " | " .. retTime .. returnInfo, 10, y + 20, r, g, b, 0.8, UIFont.Small)
@@ -307,9 +307,9 @@ function DT_FactionDebugWindow:onLocateNPC()
     local uuid = item.item.uuid
     
     local targetX, targetY
-    local status = soul.status or "Rest"
+    local status = soul.status or "Resting"
     
-    if status == "Rest" or status == "Away" then
+    if status == "Resting" or status == "Away" then
         targetX = soul.homeCoords and soul.homeCoords.x
         targetY = soul.homeCoords and soul.homeCoords.y
     elseif status == "Trading" then

@@ -131,7 +131,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
         lastY = brain.lastY,
         lastZ = brain.lastZ,
         health = brain.health or 1.0,
-        status = brain.status or "Rest",
+        status = brain.status or "Resting",
         returnTime = brain.returnTime,
         returnStatus = brain.returnStatus,
         master = brain.master,
@@ -192,7 +192,7 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     brain.archetypeID = archetypeID
     brain.homeCoords = homeCoords or { x=0, y=0, z=0 }
     brain.workCoords = { x=0, y=0, z=0 }
-    brain.status = "Rest" -- Rest, Away, Trading, Working
+    brain.status = "Resting" -- Resting, Away, Trading, Working
     brain.memory = {}
     
     -- Save full brain to individual key
