@@ -456,7 +456,7 @@ function DynamicTrading.Manager.RestockTrader(traderID)
     if not trader then return end
     local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
     local interval = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.RestockInterval) or 1
-    if (currentDay - (trader.lastRestockDay or 0) >= interval) then
+    if (currentDay - (trader.lastResetDay or 0) >= interval) then
         if DynamicTrading.Economy and DynamicTrading.Economy.GenerateStock then
             trader.stocks = DynamicTrading.Economy.GenerateStock(trader.archetype)
             trader.lastRestockDay = currentDay
