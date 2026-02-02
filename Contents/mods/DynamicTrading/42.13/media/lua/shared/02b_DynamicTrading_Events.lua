@@ -158,7 +158,7 @@ DynamicTrading.Events.Register("Harvest", {
     type = "meta",
     description = "Farms are overflowing. Produce is cheap.",
     condition = function() 
-        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        if not (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowSeasonalEvents) then return false end
         return ClimateManager:getInstance():getSeasonName() == "Autumn" 
     end,
     effects = {
@@ -179,7 +179,7 @@ DynamicTrading.Events.Register("Spring", {
     type = "meta",
     description = "The frost has melted. Rain is frequent, and planting season has begun.",
     condition = function() 
-        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        if not (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowSeasonalEvents) then return false end
         return ClimateManager:getInstance():getSeasonName() == "Spring" 
     end,
     effects = {
@@ -222,7 +222,7 @@ DynamicTrading.Events.Register("Winter", {
     type = "meta",
     description = "It's freezing. Warm clothes and heat sources are essential.",
     condition = function() 
-        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        if not (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowSeasonalEvents) then return false end
         return ClimateManager:getInstance():getSeasonName() == "Winter" 
     end,
     effects = {
@@ -241,7 +241,7 @@ DynamicTrading.Events.Register("Heatwave", {
     type = "meta",
     description = "A scorching heatwave. Hydration is key.",
     condition = function() 
-        if not SandboxVars.DynamicTrading.AllowSeasonalEvents then return false end
+        if not (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowSeasonalEvents) then return false end
         return ClimateManager:getInstance():getSeasonName() == "Summer" 
     end,
     effects = {
@@ -734,7 +734,7 @@ DynamicTrading.Events.Register("Warzone", {
     name = "Faction Conflict",
     type = "flash",
     description = "War has broken out. Traders are hiding, ammo is scarce.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
     system = { traderLimit = 0.5 },
     effects = {
         ["Gun"] = { price = 2.5, vol = 0.5 },
@@ -749,7 +749,7 @@ DynamicTrading.Events.Register("Outbreak", {
     name = "Viral Outbreak",
     type = "flash",
     description = "A sickness spreads. Medicine is critical.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
     effects = {
         ["Medical"] = { price = 3.5, vol = 0.2 },
         ["Pill"] = { price = 3.0 },
@@ -763,7 +763,7 @@ DynamicTrading.Events.Register("Famine", {
     name = "Crop Blight",
     type = "flash",
     description = "Crops have died. Food prices skyrocket.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
     effects = {
         ["Food"] = { price = 2.5, vol = 0.3 },
         ["Farming"] = { price = 3.0 },
@@ -777,7 +777,7 @@ DynamicTrading.Events.Register("FuelShortage", {
     name = "Refinery Explosion",
     type = "flash",
     description = "Fuel production has halted.",
-    canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
     effects = {
         ["Fuel"] = { price = 4.0, vol = 0.1 },
         ["CarPart"] = { price = 0.5 },

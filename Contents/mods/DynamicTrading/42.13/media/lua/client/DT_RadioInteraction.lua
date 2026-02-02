@@ -160,7 +160,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     local radioTier = radioData.power or 0.5
     
     if isHam then 
-        radioTier = radioTier * (SandboxVars.DynamicTrading.HamRadioBonus or 2.0) 
+        radioTier = radioTier * ((SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.HamRadioBonus) or 2.0) 
     end
     
     local elecLevel = player:getPerkLevel(Perks.Electricity)

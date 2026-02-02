@@ -410,8 +410,9 @@ end
 -- Description: The RNG roll for finding new traders
 -- [PUBLIC NETWORK] When disabled, players must individually discover traders
 function Commands.AttemptScan(player, args)
+    if not player then return end
     local targetUser = player:getUsername()
-    local isPublicNetwork = SandboxVars.DynamicTrading.PublicNetwork
+    local isPublicNetwork = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork)
 
     -- 1. Cooldown Check
     local canScan, timeRem = DynamicTrading.CooldownManager.CanScan(player)
@@ -444,11 +445,11 @@ function Commands.AttemptScan(player, args)
     DynamicTrading.CooldownManager.SetScanTimestamp(player)
 
     -- 5. Calculate Chances
-    local penaltyPerTrader = SandboxVars.DynamicTrading.ScanPenaltyPerTrader or 0.2
+    local penaltyPerTrader = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanPenaltyPerTrader) or 0.2
     local penaltyFactor = 1.0 + (found * penaltyPerTrader) 
     
     local radioTier = args.radioTier or 0.5
-    local baseChance = SandboxVars.DynamicTrading.ScanBaseChance or 30
+    local baseChance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanBaseChance) or 30
     local skillBonus = args.skillBonus or 1.0
     
     local eventMult = 1.0

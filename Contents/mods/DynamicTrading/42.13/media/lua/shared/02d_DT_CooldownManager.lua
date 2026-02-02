@@ -23,7 +23,7 @@ function DynamicTrading.CooldownManager.CanScan(player)
         local username = player:getUsername()
         local lastTime = data.timers[username] or 0
         local currentTime = GameTime:getInstance():getWorldAgeHours()
-        local cooldownHours = (SandboxVars.DynamicTrading.ScanCooldown or 30) / 60.0
+        local cooldownHours = ((SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanCooldown) or 30) / 60.0
         
         if currentTime >= lastTime + cooldownHours then
             return true, 0
@@ -35,7 +35,7 @@ function DynamicTrading.CooldownManager.CanScan(player)
     else
         local lastTime = DynamicTrading.CooldownManager.ClientCache or 0
         local currentTime = GameTime:getInstance():getWorldAgeHours()
-        local cooldownHours = (SandboxVars.DynamicTrading.ScanCooldown or 30) / 60.0
+        local cooldownHours = ((SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanCooldown) or 30) / 60.0
         
         if currentTime >= lastTime + cooldownHours then
             return true, 0

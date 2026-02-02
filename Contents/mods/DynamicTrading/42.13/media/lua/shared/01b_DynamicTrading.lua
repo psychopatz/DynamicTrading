@@ -2,11 +2,13 @@
 -- DYNAMIC TRADING: CORE MANIFEST
 -- ==========================================================
 -- This file ensures all modules load in the correct order.
+DynamicTrading = DynamicTrading or {}
+DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
 -- 1. CONFIGURATION & RULES
 require "01_DynamicTrading_Config"
 require "01a_DynamicTrading_Tags"
-require "03_DynamicTrading_Archetypes"
+require "DynamicTradingCommon/03_DynamicTrading_Archetypes"
 require "02b_DynamicTrading_Events"
 
 -- 2. LOGIC ENGINE
@@ -23,31 +25,31 @@ require "DT_SidebarButton"     -- The Sidebar Button
 
 -- 5. ITEM DEFINITIONS
 -- Basics & Survival
-require "04_DTItems/DT_Food"
-require "04_DTItems/DT_Cooking"
-require "04_DTItems/DT_Camping"
-require "04_DTItems/DT_Traps"             
-require "04_DTItems/DT_AnimalProducts"  
+require "DynamicTradingCommon/04_DTItems/DT_Food"
+require "DynamicTradingCommon/04_DTItems/DT_Cooking"
+require "DynamicTradingCommon/04_DTItems/DT_Camping"
+require "DynamicTradingCommon/04_DTItems/DT_Traps"             
+require "DynamicTradingCommon/04_DTItems/DT_AnimalProducts"  
 -- Equipment
-require "04_DTItems/DT_Clothing"
-require "04_DTItems/DT_Appearance"        
-require "04_DTItems/DT_Weapons"
-require "04_DTItems/DT_Ammo"
-require "04_DTItems/DT_Tools"
+require "DynamicTradingCommon/04_DTItems/DT_Clothing"
+require "DynamicTradingCommon/04_DTItems/DT_Appearance"        
+require "DynamicTradingCommon/04_DTItems/DT_Weapons"
+require "DynamicTradingCommon/04_DTItems/DT_Ammo"
+require "DynamicTradingCommon/04_DTItems/DT_Tools"
 -- Medical & Tech
-require "04_DTItems/DT_Medical"
-require "04_DTItems/DT_Electronics"
+require "DynamicTradingCommon/04_DTItems/DT_Medical"
+require "DynamicTradingCommon/04_DTItems/DT_Electronics"
 -- Storage & Materials
-require "04_DTItems/DT_Containers"        
-require "04_DTItems/DT_ContainersFluid"   
-require "04_DTItems/DT_Materials"
-require "04_DTItems/DT_Fuel"             
+require "DynamicTradingCommon/04_DTItems/DT_Containers"        
+require "DynamicTradingCommon/04_DTItems/DT_ContainersFluid"   
+require "DynamicTradingCommon/04_DTItems/DT_Materials"
+require "DynamicTradingCommon/04_DTItems/DT_Fuel"             
 -- Misc & Loot
-require "04_DTItems/DT_Junk"
-require "04_DTItems/DT_Luxury"
-require "04_DTItems/DT_Household"
-require "04_DTItems/DT_Literature"
-require "04_DTItems/DT_Vehicle"
+require "DynamicTradingCommon/04_DTItems/DT_Junk"
+require "DynamicTradingCommon/04_DTItems/DT_Luxury"
+require "DynamicTradingCommon/04_DTItems/DT_Household"
+require "DynamicTradingCommon/04_DTItems/DT_Literature"
+require "DynamicTradingCommon/04_DTItems/DT_Vehicle"
 -- 6. TRAITS
 
 -- require "DT_TraitItems"

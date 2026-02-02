@@ -1,5 +1,4 @@
 require "01_DynamicTrading_Config"
-require "03_DynamicTrading_Archetypes"
 require "02b_DynamicTrading_Events"
 require "03b_DynamicTrading_PortraitConfig"
 require "02c_DT_NetworkLogs"
@@ -58,7 +57,7 @@ function DynamicTrading.Manager.GetData()
 
     -- [NEW] Global Wealth Pool
     if not data.GlobalWealthPool then 
-        local startWealth = SandboxVars.DynamicTrading.GlobalWealthStart or 10000
+        local startWealth = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.GlobalWealthStart) or 10000
         data.GlobalWealthPool = startWealth
     end
 
@@ -133,13 +132,13 @@ function DynamicTrading.Manager.CheckDailyReset()
         data.DailyCycle.currentTradersFound = 0
         
         -- 3. Randomize New Limit
-        local min = SandboxVars.DynamicTrading.DailyTraderMin or 3
-        local max = SandboxVars.DynamicTrading.DailyTraderMax or 8
+        local min = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DailyTraderMin) or 3
+        local max = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DailyTraderMax) or 8
         if min > max then min = max end 
         data.DailyCycle.dailyTraderLimit = ZombRand(min, max + 1)
 
         -- 4. Decay Heat / Inflation
-        local decayRate = SandboxVars.DynamicTrading.InflationDecay or 0.01
+        local decayRate = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.InflationDecay) or 0.01
         local retention = 1.0 - decayRate
         if retention < 0 then retention = 0 end
 
@@ -258,14 +257,14 @@ function DynamicTrading.Manager.ProcessEvents()
         if def and def.type == "flash" then activeFlashCount = activeFlashCount + 1 end
     end
 
-    local maxFlashEvents = SandboxVars.DynamicTrading.MaxEvents or 3
+    local maxFlashEvents = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.MaxEvents) or 3
 
     if activeFlashCount < maxFlashEvents then
         local daysSinceLast = currentDay - (es.lastEventDay or -10)
-        local interval = SandboxVars.DynamicTrading.EventFrequency or 5
+        local interval = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.EventFrequency) or 5
         
         if daysSinceLast >= interval then
-            local chance = SandboxVars.DynamicTrading.EventChance or 50
+            local chance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.EventChance) or 50
             local roll = ZombRand(100) + 1
             
             if roll <= chance then
@@ -305,7 +304,7 @@ function DynamicTrading.Manager.ProcessEvents()
                 if finalPickID then
                     local def = DynamicTrading.Events.Registry[finalPickID]
                     if def then
-                        local duration = SandboxVars.DynamicTrading.EventDuration or 3
+                        local duration = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.EventDuration) or 3
                         es.activeEvents[finalPickID] = { expires = currentDay + duration }
                         es.lastEventDay = currentDay
                         DynamicTrading.NetworkLogs.AddLog("BREAKING NEWS: " .. def.name, "event")
@@ -389,8 +388,8 @@ function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
     -- 4. Expiration
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
-    local minHours = SandboxVars.DynamicTrading.TraderStayHoursMin or 6
-    local maxHours = SandboxVars.DynamicTrading.TraderStayHoursMax or 24
+    local minHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6
+    local maxHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMax) or 24
     if minHours > maxHours then minHours = maxHours end
 
     local duration = ZombRand(minHours, maxHours + 1)
@@ -399,14 +398,14 @@ function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
 
     -- 5. Create Data Object
     -- [UPDATED] Wealth Pool Integration
-    local minBudget = SandboxVars.DynamicTrading.TraderBudgetMin or 100
-    local maxBudget = SandboxVars.DynamicTrading.TraderBudgetMax or 500
+    local minBudget = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderBudgetMin) or 100
+    local maxBudget = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderBudgetMax) or 500
     local requestedBudget = ZombRand(minBudget, maxBudget + 1)
     
     local actualBudget = DynamicTrading.Manager.TakeFromWealthPool(requestedBudget)
     
     -- Fallback: If pool gave us 0 (or very little), invoke the Bailout Fund
-    local fallback = SandboxVars.DynamicTrading.GlobalWealthFallback or 100
+    local fallback = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.GlobalWealthFallback) or 100
     if actualBudget < fallback then
         local missing = fallback - actualBudget
         actualBudget = actualBudget + missing
@@ -456,7 +455,7 @@ function DynamicTrading.Manager.RestockTrader(traderID)
     local trader = data.Traders[traderID]
     if not trader then return end
     local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
-    local interval = SandboxVars.DynamicTrading.RestockInterval or 1
+    local interval = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.RestockInterval) or 1
     if (currentDay - (trader.lastRestockDay or 0) >= interval) then
         if DynamicTrading.Economy and DynamicTrading.Economy.GenerateStock then
             trader.stocks = DynamicTrading.Economy.GenerateStock(trader.archetype)
@@ -510,7 +509,7 @@ function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
         -- So we don't need to touch the pool here.
     end
 
-    local sensitivity = SandboxVars.DynamicTrading.CategoryInflation or 0.05
+    local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryInflation) or 0.05
     local current = data.globalHeat[category] or 0
     data.globalHeat[category] = current + (sensitivity * qty)
     if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
@@ -535,10 +534,10 @@ function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
 
     -- 3. [UPDATED] Global Deflation (Configurable Roll, Once per item kind per day)
     if not data.deflatedGlobal[itemKey] then
-        local roll = ZombRand(SandboxVars.DynamicTrading.SellDeflationChance or 30) + 1
+        local roll = ZombRand((SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.SellDeflationChance) or 30) + 1
         
         if roll == 1 then
-            local sensitivity = SandboxVars.DynamicTrading.CategoryDeflation or 0.02
+            local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryDeflation) or 0.02
             data.globalHeat[category] = current - sensitivity
             
             -- Clamp deflation (Min -80% price)
@@ -583,7 +582,7 @@ function DynamicTrading.Manager.HasDiscovered(traderID, player)
     if not trader then return false end
     
     -- If PublicNetwork is enabled (shared mode), everyone has discovered everyone
-    if SandboxVars.DynamicTrading.PublicNetwork then return true end
+    if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork then return true end
     
     local username = player:getUsername()
     return trader.discoveredBy and trader.discoveredBy[username] == true
