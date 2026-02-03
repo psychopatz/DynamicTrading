@@ -13,6 +13,7 @@ require "NPC/Behaviors/Behavior_AttackRange"
 require "NPC/Behaviors/Behavior_Flee"
 require "NPC/Behaviors/Behavior_Follow"
 require "NPC/Behaviors/Behavior_Guard" 
+require "NPC/Behaviors/Behavior_Trade"
 
 -- ==============================================================================
 -- 2. HELPER UTILITIES

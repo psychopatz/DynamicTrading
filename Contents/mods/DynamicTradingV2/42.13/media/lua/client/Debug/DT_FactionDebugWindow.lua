@@ -135,6 +135,12 @@ function DT_FactionDebugWindow:createChildren()
     self.btnLocate.enable = false
     self:addChild(self.btnLocate)
 
+    self.btnForceTrade = ISButton:new(locateX + locateWidth + 10, locateY, locateWidth, 25, "FORCE TRADE", self, DT_FactionDebugWindow.onForceTradeNPC)
+    self.btnForceTrade:initialise()
+    self.btnForceTrade.backgroundColor = {r=0.7, g=0.2, b=0.2, a=1}
+    self.btnForceTrade.enable = false
+    self:addChild(self.btnForceTrade)
+
     self:refreshList()
 end
 
@@ -260,6 +266,7 @@ end
 
 function DT_FactionDebugWindow:onRosterMouseDown(item)
     DT_FactionDebugWindow.instance.btnLocate.enable = true
+    DT_FactionDebugWindow.instance.btnForceTrade.enable = true
 end
 
 function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
@@ -290,9 +297,19 @@ function DT_FactionDebugWindow:doDrawRosterItem(y, item, alt)
     local returnInfo = ""
     local valRet = (soul.returnTime and soul.returnTime > 0) and soul.returnTime or (trader and trader.returnTime)
     if valRet and valRet > 0 then
-        returnInfo = string.format(" | Ret: %.2f", valRet)
-        if soul.returnStatus and soul.returnStatus ~= "" then
-            returnInfo = returnInfo .. " (" .. soul.returnStatus .. ")"
+        local currentHours = getGameTime():getWorldAgeHours()
+        local diff = math.max(0, valRet - currentHours)
+        
+        if status == "Trading" then
+            returnInfo = string.format(" | Trading Ends: %.1fh", diff)
+        elseif status == "Away" then
+            local dest = soul.returnStatus or "Destination"
+            returnInfo = string.format(" | %s in: %.1fh", dest, diff)
+        else
+            returnInfo = string.format(" | Ret: %.2f", valRet)
+            if soul.returnStatus and soul.returnStatus ~= "" then
+                returnInfo = returnInfo .. " (" .. soul.returnStatus .. ")"
+            end
         end
     end
     
@@ -345,6 +362,22 @@ function DT_FactionDebugWindow:onLocateNPC()
         local player = getPlayer()
         if player then player:Say("Marked NPC location on map: " .. soul.name) end
     end
+end
+
+function DT_FactionDebugWindow:onForceTradeNPC()
+    local item = self.rosterlist.items[self.rosterlist.selected]
+    if not item or not item.item then return end
+    
+    local soul = item.item.soul
+    local uuid = item.item.uuid
+    
+    if soul.status ~= "Resting" then
+        if getPlayer() then getPlayer():Say("Only 'Resting' NPCs can be forced to trade.") end
+        return
+    end
+    
+    sendClientCommand(getPlayer(), "DynamicTrading_V2", "ForceTradeMission", { uuid = uuid })
+    if getPlayer() then getPlayer():Say("Forced trade mission for: " .. soul.name) end
 end
 
 -- Handle server response

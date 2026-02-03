@@ -48,12 +48,22 @@ function DTNPC_GlobalListPanel:refresh()
             end
             
             local stateText = " [" .. (brain.state or "??") .. "]"
+            
+            -- Display remaining trading time
+            if brain.status == "Trading" and brain.returnTime then
+                local currentHours = getGameTime():getWorldAgeHours()
+                local remaining = brain.returnTime - currentHours
+                if remaining > 0 then
+                    stateText = stateText .. string.format(" (%.1fh)", remaining)
+                end
+            end
+
             self.npcList:addItem(name .. stateText .. distText, {id = id, brain = brain})
             
             local item = self.npcList.items[#self.npcList.items]
             local color = {r=1, g=1, b=1, a=1}
             if brain.state == "Follow" then color = {r=0, g=0.8, b=1, a=1}
-            elseif brain.state == "Stay" or brain.state == "Guard" then color = {r=1, g=1, b=0, a=1}
+            elseif brain.state == "Stay" or brain.state == "Guard" or brain.status == "Trading" then color = {r=1, g=1, b=0, a=1}
             elseif brain.isHostile then color = {r=1, g=0.2, b=0.2, a=1}
             end
             item.color = color

@@ -226,30 +226,69 @@ function DTNPCSpawn.RespawnNPC(brain, uuid)
     local y = brain.lastY
     local z = brain.lastZ or 0
     
-    print("[DTNPC] Respawning NPC: " .. (brain.name or uuid) .. " at " .. x .. "," .. y .. "," .. z)
+    print("[DTNPC] | Targeted Square: " .. x .. "," .. y .. "," .. z)
     
     local cell = getCell()
     local sq = cell:getGridSquare(x, y, z)
     
-    if not sq or not sq:isFree(false) then
-        for _x = -2, 2 do
-            for _y = -2, 2 do
-                sq = cell:getGridSquare(x + _x, y + _y, z)
-                if sq and sq:isFree(false) and not sq:isSolid() and not sq:isSolidTrans() then
-                    x = x + _x
-                    y = y + _y
-                    break
+    -- EXTREME SPAWN SEARCH (15 Tile Radius, 2 Passes)
+    local foundSq = nil
+    
+    -- Pass 1: Perfect Square (Not Solid, Free, Not Nil)
+    if sq and sq:isFree(false) and not sq:isSolid() and not sq:isSolidTrans() then
+        foundSq = sq
+    else
+        if not sq then print("[DTNPC] | Target chunk not fully loaded (sq is nil). Searching wider...") end
+        for radius = 1, 15 do
+            for _x = -radius, radius do
+                for _y = -radius, radius do
+                    local tSq = cell:getGridSquare(x + _x, y + _y, z)
+                    if tSq and tSq:isFree(false) and not tSq:isSolid() and not tSq:isSolidTrans() then
+                        x = x + _x
+                        y = y + _y
+                        foundSq = tSq
+                        break
+                    end
                 end
+                if foundSq then break end
             end
+            if foundSq then break end
         end
+    end
+    
+    -- Pass 2: Tolerable Square (Not Solid, but maybe has objects/blocked)
+    if not foundSq then
+        print("[DTNPC] | No perfect square found. Searching for any non-solid square...")
+        for radius = 1, 15 do
+            for _x = -radius, radius do
+                for _y = -radius, radius do
+                    local tSq = cell:getGridSquare(x + _x, y + _y, z)
+                    if tSq and not tSq:isSolid() and not tSq:isSolidTrans() then
+                        x = x + _x
+                        y = y + _y
+                        foundSq = tSq
+                        break
+                    end
+                end
+                if foundSq then break end
+            end
+            if foundSq then break end
+        end
+    end
+    
+    if foundSq then
+        print("[DTNPC] | SUCCESS: Found suitable square at " .. x .. "," .. y)
+    else
+        print("[DTNPC] | ERROR: Extreme search failed. Chunk likely UNLOADED or area is blocked. Skipping spawn attempt.")
+        return nil
     end
     
     local femaleChance = brain.isFemale and 100 or 0
     local zombieList = addZombiesInOutfit(x, y, z, 1, "Naked", femaleChance, false, false, false, false, false, false, 1)
     
     if not zombieList or zombieList:size() == 0 then 
-        print("[DTNPC] ERROR: Failed to respawn NPC")
-        return 
+        print("[DTNPC] | ERROR: addZombiesInOutfit returned 0 even on found square!")
+        return nil
     end
 
     local zombie = zombieList:get(0)
@@ -267,8 +306,18 @@ function DTNPCSpawn.RespawnNPC(brain, uuid)
     -- CRITICAL: Generate new visual ID to force clients to reapply visuals
     brain.visualID = ZombRand(1000000)
     
-    -- Ensure state is reset on respawn to avoid flee-loop
-    brain.state = "Stay"
+    -- CRITICAL: Determine state based on status
+    local status = brain.status or "Resting"
+    if status == "Trading" then
+        brain.state = "Trading"
+    elseif status == "Working" then
+        brain.state = "Guard"
+    else
+        brain.state = "Stay"
+    end
+    
+    print("[DTNPC] | Mapped Status [" .. status .. "] to Behavior State [" .. brain.state .. "]")
+    
     brain.master = nil
     brain.masterID = nil
     

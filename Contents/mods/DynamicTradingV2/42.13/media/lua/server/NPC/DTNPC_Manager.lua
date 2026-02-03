@@ -272,7 +272,12 @@ function DTNPCManager.CheckRosterSpawns()
         if not DTNPCManager.Data[uuid] then
             -- ONLY spawn if status is Resting, Working, or Trading
             local status = registry.status or "Resting"
-            if status == "Resting" or status == "Working" or status == "Trading" then
+            
+            -- SPAWN BACKOFF: Skip if we failed recently
+            local currentHours = getGameTime():getWorldAgeHours()
+            if registry.spawnRetryTime and currentHours < registry.spawnRetryTime then
+                -- Skip for now
+            elseif status == "Resting" or status == "Working" or status == "Trading" then
                 local targetX, targetY, targetZ
                 
                 -- Prefer last known position, otherwise home
@@ -288,29 +293,30 @@ function DTNPCManager.CheckRosterSpawns()
                         local dy = player:getY() - targetY
                         local dz = player:getZ() - targetZ
                             
+                        local dist = math.sqrt(dx*dx + dy*dy)
                         -- Relaxed Z-check: Allow +/- 1 floor (e.g. player on ground, NPC on 2nd floor)
-                        if math.abs(dz) <= 1 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
+                        if math.abs(dz) <= 1 and dist < RESPAWN_RANGE then
                             -- Player is near this Roster soul. Hydrate it!
-                            print("[DTNPC] Found Roster Soul nearby: " .. (registry.name or uuid) .. " Dist: " .. math.sqrt(dx*dx + dy*dy))
+                            print("[DTNPC] Player " .. player:getUsername() .. " is near Soul: " .. (registry.name or uuid) .. " (Dist: " .. string.format("%.1f", dist) .. "m, Status: " .. (status or "nil") .. ")")
                             local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
                             
                             if fullBrain then
-                                -- Ensure coordinates are set for spawn
-                                if not fullBrain.lastX then
-                                    print("[DTNPC] Hydrating brain coordinates from registry for spawn.")
-                                    fullBrain.lastX = targetX
-                                    fullBrain.lastY = targetY
-                                    fullBrain.lastZ = targetZ
-                                end
+                                -- Ensure coordinates are accurate for spawn
+                                fullBrain.lastX = targetX
+                                fullBrain.lastY = targetY
+                                fullBrain.lastZ = targetZ
+                                fullBrain.status = status -- Sync status to brain
                                 
                                 local zombie = DTNPCSpawn.RespawnNPC(fullBrain, uuid)
                                 if zombie then
-                                        print("[DTNPC] Roster Spawn SUCCESS for " .. uuid)
+                                        print("[DTNPC] | Spawn SUCCESS for " .. uuid)
+                                        registry.spawnRetryTime = nil -- Reset on success
                                 else
-                                        print("[DTNPC] Roster Spawn FAILED for " .. uuid)
+                                        print("[DTNPC] | Spawn FAILED for " .. uuid .. " (SafeSq search likely failed or chunk unloaded)")
+                                        registry.spawnRetryTime = currentHours + 0.1 -- Retry in ~6 minutes game time
                                 end
                             else
-                                print("[DTNPC] ERROR: Could not retrieve full brain for " .. uuid)
+                                print("[DTNPC] | ERROR: Brain content missing for " .. uuid)
                             end
                             break -- Spawned, move to next soul
                         end
@@ -330,15 +336,195 @@ function DTNPCManager.ProcessAwayTransitions()
     local currentHours = getGameTime():getWorldAgeHours()
     
     for uuid, registry in pairs(rosterData.Souls) do
-        if registry.status == "Away" and registry.returnTime then
+        -- CHECK BOTH AWAY AND TRADING FOR TRANSITIONS
+        if (registry.status == "Away" or registry.status == "Trading") and registry.returnTime then
             if currentHours >= registry.returnTime then
                 local nextStatus = registry.returnStatus or "Resting"
-                print("[DTNPC] Away Transition TIMER EXPIRED for " .. (registry.name or uuid) .. ". Returning to: " .. nextStatus)
-                DynamicTrading_Roster.UpdateSoulStatus(uuid, nextStatus)
+                local newReturnTime = 0
+                local newReturnStatus = nil
+
+                print("[DTNPC] Away Transition TIMER EXPIRED for " .. (registry.name or uuid) .. ". Target: " .. nextStatus)
+                
+                -- IF WE ARE TRANSITIONING TO TRADING, WE NEED TO FIND A LOCATION
+                if nextStatus == "Trading" then
+                    -- 0. Ensure Building Data is Loaded
+                    if not DTM or not DTM.Buildings then
+                        print("[DTNPC] Building data missing. Attempting lazy load...")
+                        if DTM and DTM.LoadBuildings then DTM.LoadBuildings() end
+                    end
+
+                    -- 1. Get Home Town
+                    local homeCoords = registry.homeCoords
+                    local town = "Rosewood" -- Default fallback
+                    if homeCoords and homeCoords.x and homeCoords.y then
+                        if DTM and DTM.GetTownName then
+                            town = DTM.GetTownName(homeCoords.x, homeCoords.y)
+                        end
+                    end
+                    print("[DTNPC] Trading mission town: " .. town)
+                    
+                    -- 2. Find random building in that town
+                    local targetBuilding = nil
+                    if DTM and DTM.Buildings then
+                        local townBuildings = {}
+                        for _, b in ipairs(DTM.Buildings) do
+                            if b.town == town then
+                                table.insert(townBuildings, b)
+                            end
+                        end
+                        print("[DTNPC] Found " .. #townBuildings .. " potential buildings in " .. town)
+                        
+                        if #townBuildings > 0 then
+                            targetBuilding = townBuildings[ZombRand(#townBuildings) + 1]
+                        end
+                    else
+                        print("[DTNPC] ERROR: DTM.Buildings is still NIL/Empty after load attempt.")
+                    end
+                    
+                    if targetBuilding then
+                        print("[DTNPC] NPC " .. (registry.name or uuid) .. " SUCCESS! Trading spot found in " .. town .. " at " .. targetBuilding.cx .. "," .. targetBuilding.cy)
+                        
+                        -- Update Roster Soul with new temporary coordinates
+                        local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
+                        if fullBrain then
+                            fullBrain.lastX = targetBuilding.cx
+                            fullBrain.lastY = targetBuilding.cy
+                            fullBrain.lastZ = 0
+                            
+                            -- Set Return Time for Trading Session
+                            local stayHours = SandboxVars.DynamicTrading.NPCTradingStayHours or 4.0
+                            newReturnTime = currentHours + stayHours
+                            newReturnStatus = "Away" -- Walk back home after trading
+                            
+                            print("[DTNPC] Session duration: " .. stayHours .. "h. Return Time: " .. newReturnTime)
+                            DynamicTrading_Roster.SaveSoul(uuid, fullBrain)
+                        end
+                    else
+                        print("[DTNPC] WARNING: No buildings found for town " .. town .. ". Returning NPC to base.")
+                        nextStatus = "Resting" -- Failsafe
+                    end
+                elseif nextStatus == "Resting" then
+                    print("[DTNPC] NPC " .. (registry.name or uuid) .. " transitioning to Home (Resting).")
+                    -- Returning Home from Away
+                    local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
+                    if fullBrain and fullBrain.homeCoords then
+                        fullBrain.lastX = fullBrain.homeCoords.x
+                        fullBrain.lastY = fullBrain.homeCoords.y
+                        fullBrain.lastZ = fullBrain.homeCoords.z or 0
+                        
+                        -- Reset transition info
+                        newReturnTime = 0
+                        newReturnStatus = nil
+                        
+                        DynamicTrading_Roster.SaveSoul(uuid, fullBrain)
+                    end
+                elseif nextStatus == "Away" then
+                    print("[DTNPC] NPC " .. (registry.name or uuid) .. " mission ended. Transitioning to Away (Walking Home).")
+                    -- Return walk initiated (Trading -> Away -> Resting)
+                    local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
+                    if fullBrain then
+                        local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
+                        newReturnTime = currentHours + walkHours
+                        newReturnStatus = "Resting"
+                        
+                        DynamicTrading_Roster.SaveSoul(uuid, fullBrain)
+                    end
+                end
+
+                -- CRITICAL: Handle Removal if active in world
+                if (registry.status == "Trading" or DTNPCManager.Data[uuid]) and (nextStatus == "Away" or nextStatus == "Resting") then
+                    print("[DTNPC] | Transitioning from Active to " .. nextStatus .. ". Removing from world.")
+                    DTNPCManager.RemoveData(uuid, nextStatus, newReturnTime, newReturnStatus)
+                else
+                    -- Standard status update for non-spawned NPCs
+                    DynamicTrading_Roster.UpdateSoulStatus(uuid, nextStatus, newReturnTime, newReturnStatus)
+                end
             end
         end
     end
 end
+
+function DTNPCManager.ProcessTradeCycles()
+    if not DynamicTrading_Roster then return end
+    
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    if not rosterData or not rosterData.Souls then return end
+    
+    local popLimitPercent = SandboxVars.DynamicTrading.NPCTradePopPercent or 40
+    local currentHours = getGameTime():getWorldAgeHours()
+    
+    -- Group souls by faction to check population limits
+    local factionTradingCounts = {}
+    local factionTotalCounts = {}
+    
+    -- First pass: Count trading/away and total population per faction
+    for uuid, registry in pairs(rosterData.Souls) do
+        local factionID = registry.factionID or "Independent"
+        factionTotalCounts[factionID] = (factionTotalCounts[factionID] or 0) + 1
+        
+        if registry.status == "Away" or registry.status == "Trading" then
+            factionTradingCounts[factionID] = (factionTradingCounts[factionID] or 0) + 1
+        end
+    end
+    
+    -- Second pass: Trigger missions based on limits
+    for uuid, registry in pairs(rosterData.Souls) do
+        if registry.status == "Resting" then
+            local factionID = registry.factionID or "Independent"
+            local currentTrading = factionTradingCounts[factionID] or 0
+            local totalMembers = factionTotalCounts[factionID] or 1
+            
+            local currentPercent = (currentTrading / totalMembers) * 100
+            
+            if currentPercent < popLimitPercent then
+                -- Small random chance to trigger (simulating daily chance spread over ticks)
+                -- 1 in 2000 chance per check (~1 min real time if check is every 30s)
+                if ZombRand(2000) < 10 then 
+                    DTNPCManager.StartTradeMission(uuid)
+                    -- Update count so we don't over-spawn in the same tick
+                    factionTradingCounts[factionID] = currentTrading + 1
+                end
+            end
+        end
+    end
+end
+
+function DTNPCManager.StartTradeMission(uuid)
+    local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
+    if not soul then 
+        print("[DTNPC] ERROR: StartTradeMission failed - Soul not found for " .. tostring(uuid))
+        return 
+    end
+    
+    local currentHours = getGameTime():getWorldAgeHours()
+    local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
+    
+    print("[DTNPC] STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)
+    print("[DTNPC] | Travel Time: " .. walkHours .. "h. Status: Away. Target: Trading")
+    
+    -- Transition to Away (Traveling)
+    DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", currentHours + walkHours, "Trading")
+    
+    -- Remove from world if spawned
+    if DTNPCManager.Data[uuid] then
+        print("[DTNPC] | NPC is currently spawned. Removing from world for travel.")
+        DTNPCManager.RemoveData(uuid, "Away", currentHours + walkHours, "Trading")
+    end
+end
+
+local function onClientCommand(module, command, player, args)
+    if module ~= "DynamicTrading_V2" then return end
+    
+    if command == "ForceTradeMission" then
+        local uuid = args.uuid
+        if uuid then
+            print("[DTNPC] Admin/Debug Force Trade Mission for: " .. uuid)
+            DTNPCManager.StartTradeMission(uuid)
+        end
+    end
+end
+
+Events.OnClientCommand.Add(onClientCommand)
 
 local TICK_RATE = 20
 local tickCounter = 0
@@ -374,6 +560,7 @@ function DTNPCManager.OnTick()
     if shouldCheckTransitions then
         transitionCheckCounter = 0
         DTNPCManager.ProcessAwayTransitions()
+        DTNPCManager.ProcessTradeCycles()
     end
     
     -- Respawn check
