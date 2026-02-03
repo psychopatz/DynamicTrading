@@ -379,14 +379,28 @@ function DTNPCManager.ProcessAwayTransitions()
                     end
 
                     -- 1. Get Home Town
-                    local homeCoords = registry.homeCoords
                     local town = "Rosewood" -- Default fallback
-                    if homeCoords and homeCoords.x and homeCoords.y then
-                        if DTM and DTM.GetTownName then
-                            town = DTM.GetTownName(homeCoords.x, homeCoords.y)
+                    
+                    -- PRIORITY 1: Check Faction Data directly for the Town name
+                    if registry.factionID and DynamicTrading_Factions then
+                        local faction = DynamicTrading_Factions.GetFaction(registry.factionID)
+                        if faction and faction.town then
+                            town = faction.town
+                            print("[DTNPC] | Faction [" .. registry.factionID .. "] town identified: " .. town)
                         end
                     end
-                    print("[DTNPC] Trading mission town: " .. town)
+                    
+                    -- PRIORITY 2: Fallback to coordinate-based detection ONLY if faction town is missing
+                    if (not town or town == "Rosewood") and registry.homeCoords then
+                        if DTM and DTM.GetTownName then
+                            local detected = DTM.GetTownName(registry.homeCoords.x, registry.homeCoords.y)
+                            if detected and detected ~= "Wilderness" then
+                                town = detected
+                            end
+                        end
+                    end
+                    
+                    print("[DTNPC] | Mission town locked to: " .. town)
                     
                     -- 2. Find random building in that town
                     local targetBuilding = nil
