@@ -341,7 +341,7 @@ option DynamicTrading.NPCTradingWalkHours
 option DynamicTrading.NPCTradingStayHours
 {
     type = double,
-    default = 4.0,
+    default = 24.0,
     min = 0.5,
     max = 72.0,
     page = DynamicTrading,

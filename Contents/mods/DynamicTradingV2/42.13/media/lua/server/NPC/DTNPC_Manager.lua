@@ -193,11 +193,36 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
         DTNPCManager.PendingRegistrations[uuid] = nil
         DTNPCManager.Save()
         
-        print("[DTNPC] Removed NPC data: " .. (brain.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
+        print("[DTNPC] Removed NPC data from world tracker: " .. (brain.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
         
         -- Broadcast removal to all clients
         if DTNPCSpawn and DTNPCSpawn.NotifyRemoval then
             DTNPCSpawn.NotifyRemoval(uuid, brain.currentOutfitID, brain.name)
+        end
+    end
+end
+
+function DTNPCManager.SetNPCStatus(uuid, status, returnTime, returnStatus)
+    -- 1. Always update the persistent Roster (Bridge)
+    if DynamicTrading_Roster then
+        DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)
+    end
+
+    -- 2. If the status implies they are "Away" or "Dead", clean up physical presence
+    if status == "Away" or status == "Dead" then
+        if DTNPCManager.Data[uuid] then
+            print("[DTNPC] Status change to " .. status .. " requires world removal.")
+            DTNPCManager.RemoveData(uuid) -- No arguments to avoid recursion loop
+        end
+        
+        -- Clean up physical zombie if it exists
+        if DTNPCSpawn and DTNPCSpawn.FindZombieByUUID then
+            local zombie = DTNPCSpawn.FindZombieByUUID(uuid)
+            if zombie then
+                zombie:removeFromWorld()
+                zombie:removeFromSquare()
+                print("[DTNPC] Forcefully removed physical zombie for Away/Dead state: " .. uuid)
+            end
         end
     end
 end
@@ -431,14 +456,8 @@ function DTNPCManager.ProcessAwayTransitions()
                     end
                 end
 
-                -- CRITICAL: Handle Removal if active in world
-                if (registry.status == "Trading" or DTNPCManager.Data[uuid]) and (nextStatus == "Away" or nextStatus == "Resting") then
-                    print("[DTNPC] | Transitioning from Active to " .. nextStatus .. ". Removing from world.")
-                    DTNPCManager.RemoveData(uuid, nextStatus, newReturnTime, newReturnStatus)
-                else
-                    -- Standard status update for non-spawned NPCs
-                    DynamicTrading_Roster.UpdateSoulStatus(uuid, nextStatus, newReturnTime, newReturnStatus)
-                end
+                -- CRITICAL: Use the new centralized status setter
+                DTNPCManager.SetNPCStatus(uuid, nextStatus, newReturnTime, newReturnStatus)
             end
         end
     end
@@ -502,14 +521,8 @@ function DTNPCManager.StartTradeMission(uuid)
     print("[DTNPC] STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)
     print("[DTNPC] | Travel Time: " .. walkHours .. "h. Status: Away. Target: Trading")
     
-    -- Transition to Away (Traveling)
-    DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", currentHours + walkHours, "Trading")
-    
-    -- Remove from world if spawned
-    if DTNPCManager.Data[uuid] then
-        print("[DTNPC] | NPC is currently spawned. Removing from world for travel.")
-        DTNPCManager.RemoveData(uuid, "Away", currentHours + walkHours, "Trading")
-    end
+    -- Centralized transition
+    DTNPCManager.SetNPCStatus(uuid, "Away", currentHours + walkHours, "Trading")
 end
 
 local function onClientCommand(module, command, player, args)
