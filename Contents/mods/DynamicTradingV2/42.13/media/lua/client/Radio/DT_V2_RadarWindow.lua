@@ -19,8 +19,13 @@ function DT_V2_RadarWindow:createChildren()
     self.labelTitle:initialise()
     self:addChild(self.labelTitle)
 
+    -- Broadcast Range Label (Relocated Info)
+    self.lblRangeInfo = ISLabel:new(self.width/2, 35, 18, "Broadcast Range: Unknown", 1, 1, 1, 1, UIFont.Small, true)
+    self.lblRangeInfo:initialise()
+    self:addChild(self.lblRangeInfo)
+
     -- List of Traders
-    self.listbox = ISScrollingListBox:new(10, 40, self.width - 20, self.height - 100)
+    self.listbox = ISScrollingListBox:new(10, 60, self.width - 20, self.height - 110)
     self.listbox:initialise()
     self.listbox:instantiate()
     self.listbox.itemheight = 50
@@ -55,6 +60,33 @@ function DT_V2_RadarWindow:refresh()
     self.btnLocate.enable = false
     
     if not DT_V2_RadarManager then return end
+
+    -- Detect Current Broadcast Range (Relocated from Patch)
+    local player = getSpecificPlayer(0)
+    if player and self.lblRangeInfo then
+        local bestRange = 0
+        local items = player:getInventory():getItems()
+        for i=0, items:size()-1 do
+            local item = items:get(i)
+            if item:getCategory() == "Communications" and item:getIsTwoWay() then
+                local typeID = item:getFullType()
+                local r = DT_V2_RadarManager.Ranges[typeID] or 500
+                if r > bestRange then bestRange = r end
+            end
+        end
+        
+        if bestRange > 0 then
+            self.lblRangeInfo:setName("Broadcast Range: " .. tostring(bestRange) .. "m")
+            -- Tier colors
+            if bestRange < 500 then self.lblRangeInfo:setColor(1, 0.3, 0.3)
+            elseif bestRange < 1000 then self.lblRangeInfo:setColor(1, 0.8, 0.2)
+            elseif bestRange < 2000 then self.lblRangeInfo:setColor(0.4, 1.0, 0.4)
+            else self.lblRangeInfo:setColor(0.4, 0.9, 1.0) end
+        else
+            self.lblRangeInfo:setName("Broadcast Range: No Signal")
+            self.lblRangeInfo:setColor(1, 1, 1)
+        end
+    end
     
     -- Cleanup any expired traders first
     DT_V2_RadarManager.Cleanup()
@@ -142,8 +174,7 @@ end
 function DT_V2_RadarWindow.ToggleWindow()
     if DT_V2_RadarWindow.instance then
         if DT_V2_RadarWindow.instance:getIsVisible() then
-            DT_V2_RadarWindow.instance:setVisible(false)
-            DT_V2_RadarWindow.instance:removeFromUIManager()
+            DT_V2_RadarWindow.CloseWindow()
         else
             DT_V2_RadarWindow.instance:setVisible(true)
             DT_V2_RadarWindow.instance:addToUIManager()
@@ -156,6 +187,13 @@ function DT_V2_RadarWindow.ToggleWindow()
     window:initialise()
     window:addToUIManager()
     DT_V2_RadarWindow.instance = window
+end
+
+function DT_V2_RadarWindow.CloseWindow()
+    if DT_V2_RadarWindow.instance then
+        DT_V2_RadarWindow.instance:setVisible(false)
+        DT_V2_RadarWindow.instance:removeFromUIManager()
+    end
 end
 
 function DT_V2_RadarWindow:new(x, y, width, height)

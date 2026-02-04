@@ -1,40 +1,42 @@
--- ==============================================================================
 -- DT_V2_RadarPatch.lua
 -- Hooks into ISRadioWindow to add the Trader Radar functionality.
+-- Version [V2.5] - Operational Sync (Auto-Close on Power Off)
 -- ==============================================================================
 
 require "RadioComms/ISUI/ISRadioWindow"
 
 local original_createChildren = ISRadioWindow.createChildren
+local original_close = ISRadioWindow.close
+local original_readFromObject = ISRadioWindow.readFromObject
+
+function ISRadioWindow:close()
+    if DT_V2_RadarWindow then
+        DT_V2_RadarWindow.CloseWindow()
+    end
+    original_close(self)
+end
+
+function ISRadioWindow:readFromObject(_player, _deviceObject)
+    -- If device changes, close our radar list (it might have stale data/range)
+    if self.device ~= _deviceObject then
+        if DT_V2_RadarWindow then
+            DT_V2_RadarWindow.CloseWindow()
+        end
+    end
+    original_readFromObject(self, _player, _deviceObject)
+end
 
 function ISRadioWindow:createChildren()
     original_createChildren(self)
     
-    local th = self:titleBarHeight()
     local btnWidth = 110
     local btnHeight = 22
     local totalW = (btnWidth * 2) + 10
     local startX = (self.width - totalW) / 2
-    local y = th + 65 -- Initial default
-
-    if self.modules then
-        print("[DT_RADAR] createChildren: Finding Signal Panel among " .. #self.modules .. " modules.")
-        for i, module in ipairs(self.modules) do
-            local element = module.element
-            local subpanel = element and element.subpanel
-            local title = element and element.titleText
-            print("[DT_RADAR] createChildren: Module " .. i .. ": Title=" .. tostring(title) .. ", Subpanel=" .. tostring(subpanel))
-        end
-    end
-
-    -- Add "Broadcast Power" label (bLeft = false for centering)
-    self.lblBroadcastPower = ISLabel:new(self.width / 2, y, 18, "Broadcast Power: ---", 1, 1, 1, 1, UIFont.Small, false)
-    self.lblBroadcastPower:initialise()
-    self.lblBroadcastPower:setVisible(false)
-    self:addChild(self.lblBroadcastPower)
+    local y = 100 -- Default placeholder
 
     -- Add the "SCAN FOR TRADERS" button
-    self.btnTraderScan = ISButton:new(startX, y + 20, btnWidth, btnHeight, "SCAN TRADERS", self, function(self)
+    self.btnTraderScan = ISButton:new(startX, y, btnWidth, btnHeight, "SCAN TRADERS", self, function(self)
         if DT_V2_RadarManager then
             DT_V2_RadarManager.Scan(getPlayer(), self.device)
         end
@@ -45,7 +47,7 @@ function ISRadioWindow:createChildren()
     self:addChild(self.btnTraderScan)
 
     -- Add the "OPEN RADAR LIST" button
-    self.btnTraderList = ISButton:new(startX + btnWidth + 10, y + 20, btnWidth, btnHeight, "RADAR LIST", self, function(self)
+    self.btnTraderList = ISButton:new(startX + btnWidth + 10, y, btnWidth, btnHeight, "RADAR LIST", self, function(self)
         if DT_V2_RadarWindow then
             DT_V2_RadarWindow.ToggleWindow()
         end
@@ -70,20 +72,25 @@ function ISRadioWindow:prerender()
     -- Fallback/Safety Check for UI state
     if self.btnTraderScan then self.btnTraderScan:setVisible(isValid) end
     if self.btnTraderList then self.btnTraderList:setVisible(isValid) end
-    if self.lblBroadcastPower then self.lblBroadcastPower:setVisible(isValid) end
 
     if not isValid then return end
 
     -- 2. Operational status update
-    if self.btnTraderScan then
+    if self.btnTraderScan and self.btnTraderList then
         local operational = false
         if self.deviceData and self.deviceData:getIsTurnedOn() then
             if self.deviceData:getPower() > 0 then operational = true end
         end
         self.btnTraderScan.enable = operational
+        self.btnTraderList.enable = operational
+
+        -- V2.5: Auto-close Radar Window if radio loses power/is turned off
+        if not operational and DT_V2_RadarWindow then
+            DT_V2_RadarWindow.CloseWindow()
+        end
     end
 
-    -- 3. Dynamic Positioning, Expansion, and Power Label Update
+    -- 3. Dynamic Positioning and Expansion (V2.3 Simplified)
     if self.modules and self.btnTraderScan and self.btnTraderList then
         for i, module in ipairs(self.modules) do
             local element = module.element
@@ -98,65 +105,43 @@ function ISRadioWindow:prerender()
             end
 
             if isSignal then
-                -- Expand heights if not done yet for THIS device
-                if element.dtExpanded ~= self.deviceData then
-                    local devName = "Unknown"
-                    if self.device then devName = self.device:getName() end
-                    print("[DT_RADAR] Expanding Signal Module for Radar UI (Device: " .. tostring(devName) .. ")")
-                    
-                    element:setHeight(element:getHeight() + 45) -- More space for label + buttons
+                -- Persistent Base Height Discovery
+                if not element.dt_baseHeight then
+                    local currentH = element:getHeight()
+                    -- If we catch it already expanded, find true base
+                    if currentH > 80 then currentH = currentH - 45 end
+                    element.dt_baseHeight = currentH
+                    local devName = self.device and self.device:getName() or "Unknown"
+                    print("[DT_RADAR] [V2.3] Base Height captured for " .. tostring(devName) .. ": " .. tostring(element.dt_baseHeight))
+                end
+
+                -- Force persistent expanded height (Only +25 for buttons now)
+                local offset = 25
+                local targetH = element.dt_baseHeight + offset
+                if element:getHeight() ~= targetH then
+                    element:setHeight(targetH)
                     if subpanel then
-                        subpanel:setHeight(subpanel:getHeight() + 45)
+                        subpanel:setHeight(subpanel:getHeight() + (targetH - element.dt_baseHeight))
                     end
-                    -- Also increase main window height slightly if needed
-                    if self.height < element:getY() + element:getHeight() + 50 then
-                        self:setHeight(self.height + 45)
-                    end
-                    element.dtExpanded = self.deviceData
-                end
-
-                -- Update Broadcast Power Text & Tiered Color
-                if self.lblBroadcastPower and self.device then
-                    local range = 0
-                    local typeID = self.device:getFullType()
-                    if DT_V2_RadarManager and DT_V2_RadarManager.Ranges then
-                        range = DT_V2_RadarManager.Ranges[typeID] or 500
-                    end
-                    self.lblBroadcastPower:setName("Broadcast Power: " .. tostring(range) .. "m")
-                    
-                    -- Apply Tier color based on range
-                    if range < 500 then -- Tier 0: Makeshift (Red)
-                        self.lblBroadcastPower.r, self.lblBroadcastPower.g, self.lblBroadcastPower.b = 1.0, 0.3, 0.3
-                    elseif range < 1000 then -- Tier 1: Standard (Orange/Yellow)
-                        self.lblBroadcastPower.r, self.lblBroadcastPower.g, self.lblBroadcastPower.b = 1.0, 0.8, 0.2
-                    elseif range < 2000 then -- Tier 2: High Grade (Green)
-                        self.lblBroadcastPower.r, self.lblBroadcastPower.g, self.lblBroadcastPower.b = 0.4, 1.0, 0.4
-                    else -- Tier 3: Military/Long Range (Cyan)
-                        self.lblBroadcastPower.r, self.lblBroadcastPower.g, self.lblBroadcastPower.b = 0.4, 0.9, 1.0
+                    -- Adjust window height slightly if needed
+                    if self.height < element:getY() + targetH + 30 then
+                        self:setHeight(self.height + 25)
                     end
                 end
 
-                local baseLineY = element:getY() + element:getHeight() - 40
-                local btnW = (self.btnTraderScan and self.btnTraderScan.width) or 110
+                -- Reposition Buttons to bottom
+                local baseLineY = element:getY() + element:getHeight() - 25
+                local btnW = self.btnTraderScan.width
                 local totalW = (btnW * 2) + 10
                 local startX = (self.width - totalW) / 2
                 
-                if self.btnTraderScan and (self.btnTraderScan:getY() ~= baseLineY + 18 or self.btnTraderScan:getX() ~= startX) then
-                    print("[DT_RADAR] Centering and Repositioning buttons to Y: " .. baseLineY)
-                    -- Position Label
-                    if self.lblBroadcastPower then
-                        self.lblBroadcastPower:setX(self.width / 2)
-                        self.lblBroadcastPower:setY(baseLineY)
-                    end
-                    -- Position Buttons
-                    if self.btnTraderScan then
-                        self.btnTraderScan:setX(startX)
-                        self.btnTraderScan:setY(baseLineY + 18)
-                    end
-                    if self.btnTraderList then
-                        self.btnTraderList:setX(startX + btnW + 10)
-                        self.btnTraderList:setY(baseLineY + 18)
-                    end
+                if self.btnTraderScan then
+                    self.btnTraderScan:setX(startX)
+                    self.btnTraderScan:setY(baseLineY)
+                end
+                if self.btnTraderList then
+                    self.btnTraderList:setX(startX + btnW + 10)
+                    self.btnTraderList:setY(baseLineY)
                 end
                 break
             end
