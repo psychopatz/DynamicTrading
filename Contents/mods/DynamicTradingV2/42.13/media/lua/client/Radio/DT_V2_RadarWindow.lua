@@ -14,8 +14,9 @@ DT_V2_RadarWindow.instance = nil
 
 function DT_V2_RadarWindow:initialise()
     ISCollapsableWindow.initialise(self)
-    self:setTitle("Trader Radar")
     self:setResizable(true)
+    self.minimumWidth = 450
+    self.minimumHeight = 400
 end
 
 function DT_V2_RadarWindow:createChildren()
