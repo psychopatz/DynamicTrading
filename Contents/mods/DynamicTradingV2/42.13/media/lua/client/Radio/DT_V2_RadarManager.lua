@@ -18,10 +18,10 @@ DT_V2_RadarManager.Ranges = {
     ["Base.ManPackRadio"] = 2000,
     ["Base.WalkieTalkieMakeShift"] = 400,
     ["Base.HamRadioMakeShift"] = 1500,
-    -- World Object Name Mappings (Dynamic Names)
+    -- Tier Mappings (Matches getDeviceName())
     ["Makeshift Ham Radio"] = 1500,
-    ["Premium Technologies Ham Radio"] = 2500,
     ["US ARMY COMM. Ham Radio"] = 5000,
+    ["Premium Technologies Ham Radio"] = 2500,
 }
 
 function DT_V2_RadarManager.Init()
@@ -68,46 +68,82 @@ function DT_V2_RadarManager.GetTraderCoords(uuid)
     return nil, nil, nil, false
 end
 
+-- Centralized Device Info Extraction
+function DT_V2_RadarManager.GetDeviceInfo(device)
+    if not device then return "Unknown Device", 0 end
+
+    local name = "Unknown Device"
+    local typeID = "Unknown"
+    local range = 0
+
+    -- 1. Try to get a clean name and type
+    if device.getDisplayName then
+        name = device:getDisplayName() or name -- Best for InventoryItems
+    elseif device.getName then
+        name = device:getName() or name
+    end
+    
+    if device.getFullType then
+        typeID = device:getFullType() or typeID
+    elseif device.getDeviceData then
+        local dd = device:getDeviceData()
+        if dd then 
+            local rawName = dd:getDeviceName()
+            if rawName and rawName ~= "" then
+                typeID = rawName
+                -- If we still don't have a good display name, use the device data name
+                if name == "Unknown Device" then
+                    name = rawName
+                end
+            end
+        end
+    end
+    
+    -- 2. World Object Fallbacks (Sprites)
+    if name == "Unknown Device" and device.getSprite then
+        local sprite = device:getSprite()
+        if sprite and sprite:getName() then
+             -- Try to infer from sprite name if strictly necessary
+             -- But don't overwrite typeID if we already have a specific one
+             if typeID == "Unknown" then typeID = sprite:getName() end
+        end
+    end
+
+    -- 3. Determine Range based on Name or Type
+    -- Check specific TypeID first (e.g. Base.HamRadioMakeShift)
+    if DT_V2_RadarManager.Ranges[typeID] then
+        range = DT_V2_RadarManager.Ranges[typeID]
+    elseif DT_V2_RadarManager.Ranges[name] then
+        range = DT_V2_RadarManager.Ranges[name]
+    else
+        -- 4. Fuzzy Matching / Heuristics
+        -- Ensure neither is nil for string ops
+        local safeType = typeID or ""
+        local safeName = name or ""
+        local checkStr = string.lower(tostring(safeType) .. " " .. tostring(safeName))
+        
+        if string.find(checkStr, "ham") or string.find(checkStr, "location_business_office") then
+            range = 2500
+            if name == "Unknown Device" then name = "Ham Radio" end
+        elseif string.find(checkStr, "walkie") then
+            range = 750
+            if name == "Unknown Device" then name = "Walkie Talkie" end
+        elseif string.find(checkStr, "manpack") or string.find(checkStr, "military") then
+            range = 2000
+             if name == "Unknown Device" then name = "Military Radio" end
+        else
+            range = 500 -- Default fallback
+        end
+    end
+
+    return name, range
+end
+
 -- Scan for traders in vicinity
 function DT_V2_RadarManager.Scan(player, device)
     if not player or not device then return end
     
-    -- "Name Trick" Fix: Safely get the type/name (World objects don't have getFullType)
-    local typeID = "Unknown"
-    local deviceName = "Unknown"
-
-    if device.getFullType then 
-        typeID = device:getFullType() or "Unknown"
-        deviceName = device:getName() or "Walkie-Talkie"
-    elseif device.getDeviceData then
-        local dd = device:getDeviceData()
-        if dd then
-            typeID = dd:getDeviceName() or "Unknown"
-            deviceName = typeID
-        end
-    end
-
-    -- Deep Sprite/Instance Inspection for World Objects
-    if typeID == "Unknown" or typeID == "" then
-        if device.getSprite and device:getSprite() then
-            typeID = device:getSprite():getName() or "Unknown"
-            deviceName = "Fixed Radio"
-        end
-    end
-    
-    -- Prioritize specific range lookup
-    local range = DT_V2_RadarManager.Ranges[typeID] or DT_V2_RadarManager.Ranges[deviceName] or 500
-    
-    -- Robust Ham Radio detection fallback ONLY if specific range not found
-    if range == 500 then
-        local checkStr = string.lower(tostring(typeID) .. " " .. tostring(deviceName))
-        if string.find(checkStr, "ham") or string.find(checkStr, "location_business_office") then 
-            range = 2500
-            deviceName = (deviceName == "Unknown") and "Ham Radio" or deviceName
-        elseif string.find(checkStr, "military") or string.find(checkStr, "walkie") then 
-            range = 1000 
-        end
-    end
+    local deviceName, range = DT_V2_RadarManager.GetDeviceInfo(device)
     
     print("[DT_RADAR] [V3.0] Starting scan with " .. tostring(deviceName) .. " (Range: " .. tostring(range) .. ")")
     

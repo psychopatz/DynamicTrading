@@ -10,8 +10,8 @@ local original_close = ISRadioWindow.close
 local original_readFromObject = ISRadioWindow.readFromObject
 
 function ISRadioWindow:close()
-    if DT_V2_RadarWindow then
-        DT_V2_RadarWindow.CloseWindow()
+    if DT_V2_RadarWindow and DT_V2_RadarWindow.instance then
+        DT_V2_RadarWindow.instance:close()
     end
     original_close(self)
 end
@@ -19,8 +19,8 @@ end
 function ISRadioWindow:readFromObject(_player, _deviceObject)
     -- If device changes, close our radar list (it might have stale data/range)
     if self.device ~= _deviceObject then
-        if DT_V2_RadarWindow then
-            DT_V2_RadarWindow.CloseWindow()
+        if DT_V2_RadarWindow and DT_V2_RadarWindow.instance then
+            DT_V2_RadarWindow.instance:close()
         end
     end
     original_readFromObject(self, _player, _deviceObject)
@@ -85,8 +85,8 @@ function ISRadioWindow:prerender()
         self.btnTraderList.enable = operational
 
         -- V2.5: Auto-close Radar Window if radio loses power/is turned off
-        if not operational and DT_V2_RadarWindow then
-            DT_V2_RadarWindow.CloseWindow()
+        if not operational and DT_V2_RadarWindow and DT_V2_RadarWindow.instance then
+            DT_V2_RadarWindow.instance:close()
         end
     end
 
