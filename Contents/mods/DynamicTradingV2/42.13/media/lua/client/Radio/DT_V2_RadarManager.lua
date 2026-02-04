@@ -6,7 +6,7 @@
 DT_V2_RadarManager = {}
 DT_V2_RadarManager.FoundTraders = {} -- Persistent list of UUIDs
 
--- Ranges based on device type
+-- Ranges based on device type or display name
 DT_V2_RadarManager.Ranges = {
     ["Base.WalkieTalkie1"] = 500,
     ["Base.WalkieTalkie2"] = 750,
@@ -18,6 +18,10 @@ DT_V2_RadarManager.Ranges = {
     ["Base.ManPackRadio"] = 2000,
     ["Base.WalkieTalkieMakeShift"] = 400,
     ["Base.HamRadioMakeShift"] = 1500,
+    -- World Object Name Mappings (Dynamic Names)
+    ["Makeshift Ham Radio"] = 1500,
+    ["Premium Technologies Ham Radio"] = 2500,
+    ["US ARMY COMM. Ham Radio"] = 5000,
 }
 
 function DT_V2_RadarManager.Init()
@@ -68,10 +72,44 @@ end
 function DT_V2_RadarManager.Scan(player, device)
     if not player or not device then return end
     
-    local typeID = device:getFullType()
-    local range = DT_V2_RadarManager.Ranges[typeID] or 500
+    -- "Name Trick" Fix: Safely get the type/name (World objects don't have getFullType)
+    local typeID = "Unknown"
+    local deviceName = "Unknown"
+
+    if device.getFullType then 
+        typeID = device:getFullType() or "Unknown"
+        deviceName = device:getName() or "Walkie-Talkie"
+    elseif device.getDeviceData then
+        local dd = device:getDeviceData()
+        if dd then
+            typeID = dd:getDeviceName() or "Unknown"
+            deviceName = typeID
+        end
+    end
+
+    -- Deep Sprite/Instance Inspection for World Objects
+    if typeID == "Unknown" or typeID == "" then
+        if device.getSprite and device:getSprite() then
+            typeID = device:getSprite():getName() or "Unknown"
+            deviceName = "Fixed Radio"
+        end
+    end
     
-    print("[DT_RADAR] Starting scan with " .. typeID .. " (Range: " .. range .. " units)")
+    -- Prioritize specific range lookup
+    local range = DT_V2_RadarManager.Ranges[typeID] or DT_V2_RadarManager.Ranges[deviceName] or 500
+    
+    -- Robust Ham Radio detection fallback ONLY if specific range not found
+    if range == 500 then
+        local checkStr = string.lower(tostring(typeID) .. " " .. tostring(deviceName))
+        if string.find(checkStr, "ham") or string.find(checkStr, "location_business_office") then 
+            range = 2500
+            deviceName = (deviceName == "Unknown") and "Ham Radio" or deviceName
+        elseif string.find(checkStr, "military") or string.find(checkStr, "walkie") then 
+            range = 1000 
+        end
+    end
+    
+    print("[DT_RADAR] [V3.0] Starting scan with " .. tostring(deviceName) .. " (Range: " .. tostring(range) .. ")")
     
     local rosterData = ModData.get("DynamicTrading_Roster")
     if not rosterData or not rosterData.Souls then

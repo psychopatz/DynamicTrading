@@ -61,31 +61,60 @@ function DT_V2_RadarWindow:refresh()
     
     if not DT_V2_RadarManager then return end
 
-    -- Detect Current Broadcast Range (Relocated from Patch)
     local player = getSpecificPlayer(0)
-    if player and self.lblRangeInfo then
-        local bestRange = 0
+    if not player or not self.lblRangeInfo then return end
+
+    local bestRange = 0
+    local bestName = "Unknown"
+
+    -- 1. Check Injected Device first (The one that opened the UI)
+    if self.device then
+        local devData = self.device.getDeviceData and self.device:getDeviceData()
+        local typeID = (self.device.getFullType and self.device:getFullType()) or (devData and devData:getDeviceName()) or "Unknown"
+        bestName = (self.device.getName and self.device:getName()) or typeID
+        bestRange = DT_V2_RadarManager.Ranges[typeID] or DT_V2_RadarManager.Ranges[bestName] or 500
+
+        -- Ham Fallback
+        if bestRange == 500 then
+            local checkStr = string.lower(tostring(typeID) .. " " .. tostring(bestName))
+            if string.find(checkStr, "ham") or string.find(checkStr, "location_business_office") then 
+                bestRange = 2500
+                bestName = (bestName == "Unknown" or string.find(bestName, "location_")) and "Ham Radio" or bestName
+            end
+        end
+    end
+
+    -- 2. Fallback to Inventory search if no active device or range is 0
+    if bestRange == 0 then
         local items = player:getInventory():getItems()
         for i=0, items:size()-1 do
             local item = items:get(i)
             if item:getCategory() == "Communications" and item:getIsTwoWay() then
                 local typeID = item:getFullType()
-                local r = DT_V2_RadarManager.Ranges[typeID] or 500
-                if r > bestRange then bestRange = r end
+                local r = DT_V2_RadarManager.Ranges[typeID] or DT_V2_RadarManager.Ranges[item:getName()] or 500
+                if r > bestRange then 
+                    bestRange = r 
+                    bestName = item:getName() or "Walkie-Talkie"
+                end
             end
         end
-        
-        if bestRange > 0 then
-            self.lblRangeInfo:setName("Broadcast Range: " .. tostring(bestRange) .. "m")
-            -- Tier colors
-            if bestRange < 500 then self.lblRangeInfo:setColor(1, 0.3, 0.3)
-            elseif bestRange < 1000 then self.lblRangeInfo:setColor(1, 0.8, 0.2)
-            elseif bestRange < 2000 then self.lblRangeInfo:setColor(0.4, 1.0, 0.4)
-            else self.lblRangeInfo:setColor(0.4, 0.9, 1.0) end
-        else
-            self.lblRangeInfo:setName("Broadcast Range: No Signal")
-            self.lblRangeInfo:setColor(1, 1, 1)
-        end
+    end
+
+    -- Update Diagnostic UI
+    if self.labelTitle then
+        self.labelTitle:setName("TRADER RADAR - [" .. tostring(bestName) .. "]")
+    end
+
+    if bestRange > 0 then
+        self.lblRangeInfo:setName("Broadcast Range: " .. tostring(bestRange) .. "m")
+        -- Tier colors
+        if bestRange < 500 then self.lblRangeInfo:setColor(1, 0.3, 0.3)
+        elseif bestRange < 1000 then self.lblRangeInfo:setColor(1, 0.8, 0.2)
+        elseif bestRange < 2000 then self.lblRangeInfo:setColor(0.4, 1.0, 0.4)
+        else self.lblRangeInfo:setColor(0.4, 0.9, 1.0) end
+    else
+        self.lblRangeInfo:setName("Broadcast Range: No Signal")
+        self.lblRangeInfo:setColor(1, 1, 1)
     end
     
     -- Cleanup any expired traders first
@@ -171,11 +200,12 @@ function DT_V2_RadarWindow:onLocate()
     end
 end
 
-function DT_V2_RadarWindow.ToggleWindow()
+function DT_V2_RadarWindow.ToggleWindow(device)
     if DT_V2_RadarWindow.instance then
         if DT_V2_RadarWindow.instance:getIsVisible() then
             DT_V2_RadarWindow.CloseWindow()
         else
+            DT_V2_RadarWindow.instance.device = device
             DT_V2_RadarWindow.instance:setVisible(true)
             DT_V2_RadarWindow.instance:addToUIManager()
             DT_V2_RadarWindow.instance:refresh()
@@ -184,6 +214,7 @@ function DT_V2_RadarWindow.ToggleWindow()
     end
 
     local window = DT_V2_RadarWindow:new(200, 200, 300, 400)
+    window.device = device
     window:initialise()
     window:addToUIManager()
     DT_V2_RadarWindow.instance = window

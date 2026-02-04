@@ -1,6 +1,6 @@
 -- DT_V2_RadarPatch.lua
 -- Hooks into ISRadioWindow to add the Trader Radar functionality.
--- Version [V2.5] - Operational Sync (Auto-Close on Power Off)
+-- Version [V3.1] - UI Logic Recovery (Device Injection Support)
 -- ==============================================================================
 
 require "RadioComms/ISUI/ISRadioWindow"
@@ -49,7 +49,7 @@ function ISRadioWindow:createChildren()
     -- Add the "OPEN RADAR LIST" button
     self.btnTraderList = ISButton:new(startX + btnWidth + 10, y, btnWidth, btnHeight, "RADAR LIST", self, function(self)
         if DT_V2_RadarWindow then
-            DT_V2_RadarWindow.ToggleWindow()
+            DT_V2_RadarWindow.ToggleWindow(self.device)
         end
     end)
     self.btnTraderList:initialise()
