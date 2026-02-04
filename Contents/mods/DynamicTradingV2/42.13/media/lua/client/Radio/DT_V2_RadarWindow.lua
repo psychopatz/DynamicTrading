@@ -8,6 +8,8 @@ require "Radio/DT_V2_RadarHeaderPanel"
 require "Radio/DT_V2_RadarListPanel"
 require "Radio/DT_V2_RadarActionPanel"
 require "Radio/DT_V2_RadarManager"
+require "Faction/TradingSys/DynamicTrading_Roster"
+require "Faction/TradingSys/DynamicTrading_Factions"
 
 DT_V2_RadarWindow = ISCollapsableWindow:derive("DT_V2_RadarWindow")
 DT_V2_RadarWindow.instance = nil
@@ -17,6 +19,7 @@ function DT_V2_RadarWindow:initialise()
     self:setResizable(true)
     self.minimumWidth = 450
     self.minimumHeight = 400
+    self.updateTimer = 0
 end
 
 function DT_V2_RadarWindow:createChildren()
@@ -58,12 +61,32 @@ function DT_V2_RadarWindow:createChildren()
     self:refresh()
 end
 
+function DT_V2_RadarWindow:update()
+    ISCollapsableWindow.update(self)
+    
+    if self:getIsVisible() then
+        self.updateTimer = self.updateTimer + getGameTime():getRealworldSecondsSinceLastUpdate()
+        if self.updateTimer >= 2.0 then
+            self.updateTimer = 0
+            self:refresh()
+        end
+    end
+end
+
 function DT_V2_RadarWindow:refresh()
     if not self.listPanel or not self.headerPanel or not self.actionPanel then return end
     
     local listbox = self.listPanel.listbox
+    
+    -- Save selection before clear
+    local selectedUUID = nil
+    if listbox.selected and listbox.selected ~= -1 and listbox.items[listbox.selected] then
+        selectedUUID = listbox.items[listbox.selected].item.uuid
+    end
+
     listbox:clear()
-    self.actionPanel.btnLocate.enable = false
+    listbox.selected = -1 -- Reset to safe numeric value
+    self.actionPanel.btnLocate.enable = (selectedUUID ~= nil)
     
     if not DT_V2_RadarManager then return end
 
@@ -98,17 +121,42 @@ function DT_V2_RadarWindow:refresh()
     -- Populate List
     DT_V2_RadarManager.Cleanup()
     
+    -- 1. Collect and Calculate Distances
+    local tempList = {}
     for uuid, data in pairs(DT_V2_RadarManager.FoundTraders) do
         local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(uuid)
-        
+        local dist = 99999
         local distText = "Distance: Unknown"
+        
         if tx and ty then
             local dx = tx - player:getX()
             local dy = ty - player:getY()
-            local dist = math.sqrt(dx*dx + dy*dy)
+            dist = math.sqrt(dx*dx + dy*dy)
             distText = string.format("Distance: %.0fm", dist)
         end
-
+        
+        table.insert(tempList, {
+            uuid = uuid,
+            data = data,
+            tx = tx, ty = ty, tz = tz,
+            isLive = isLive,
+            dist = dist,
+            distText = distText
+        })
+    end
+    
+    -- 2. Sort by Distance
+    table.sort(tempList, function(a, b) 
+        local d1 = a.dist or 999999
+        local d2 = b.dist or 999999
+        return d1 < d2 
+    end)
+    
+    -- 3. Populate UI
+    for _, entry in ipairs(tempList) do
+        local uuid = entry.uuid
+        local data = entry.data
+        
         local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(uuid)
         local archetypeID = soul and soul.archetypeID or "General"
         local gender = (soul and soul.isFemale) and "Female" or "Male"
@@ -116,6 +164,14 @@ function DT_V2_RadarWindow:refresh()
         
         local factionData = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction(data.faction)
         local factionName = factionData and factionData.name or data.faction or "Independent"
+
+        -- Calculate Expiration
+        local expireText = ""
+        if soul and soul.returnTime and soul.returnTime > 0 then
+            local hours = math.ceil(soul.returnTime - getGameTime():getWorldAgeHours())
+            if hours < 0 then hours = 0 end
+            expireText = "Expires: " .. hours .. "h"
+        end
 
         local item = {
             uuid = uuid,
@@ -125,13 +181,19 @@ function DT_V2_RadarWindow:refresh()
             archetype = archetypeID,
             gender = gender,
             portraitID = portraitID,
-            distText = distText,
-            isLive = isLive,
-            x = tx,
-            y = ty,
-            z = tz
+            distText = entry.distText,
+            expireText = expireText,
+            isLive = entry.isLive,
+            x = entry.tx,
+            y = entry.ty,
+            z = entry.tz
         }
-        listbox:addItem(data.name, item)
+        local addedItem = listbox:addItem(data.name, item)
+        
+        -- Restore selection
+        if selectedUUID == uuid and #listbox.items > 0 then
+            listbox.selected = #listbox.items
+        end
     end
 end
 

@@ -50,8 +50,18 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
     -- 'self' is the listbox here
     local target = self.target
 
-    if item.selected then
-        self:drawRect(0, y, self.width, self.itemheight, 0.3, 0.7, 0.7, 0.7)
+    -- Use a more robust check for selection
+    local isSelected = (item.selected == true)
+    if not isSelected and self.selected ~= -1 then
+        if self.items[self.selected] == item then
+            isSelected = true
+        end
+    end
+
+    if isSelected then
+        -- Stronger selection highlight (Premium Green)
+        self:drawRect(0, y, self.width, self.itemheight, 0.4, 0.05, 0.5, 0.05)
+        self:drawRectBorder(0, y, self.width, self.itemheight, 1.0, 0.1, 0.8, 0.1)
     elseif alt then
         self:drawRect(0, y, self.width, self.itemheight, 0.1, 1, 1, 1)
     else
@@ -82,10 +92,19 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
     -- Distance & Signal
     self:drawText(tostring(data.distText) .. (data.isLive and " [SIGNAL STRONG]" or " [SIGNAL WEAK]"), contentX, y + 45, color.r, color.g, color.b, 1, UIFont.Small)
 
+    -- Expiration (Right Aligned - Bottom line to avoid name overlap)
+    -- Moved to width - 65 to safely avoid Scrollbar overlay
+    if data.expireText and data.expireText ~= "" then
+        -- Yellowish color for visibility
+        local expR, expG, expB = 1.0, 1.0, 0.6 
+        self:drawTextRight(data.expireText, self.width - 65, y + 45, expR, expG, expB, 1, UIFont.Small)
+    end
+
     return y + self.itemheight
 end
 
-function DT_V2_RadarListPanel:onListMouseDown(item)
+function DT_V2_RadarListPanel:onListMouseDown(itemData)
+    -- 'self' is the DT_V2_RadarListPanel panel here (set by listbox.target)
     if self.parent and self.parent.actionPanel then
         self.parent.actionPanel.btnLocate.enable = true
     end
