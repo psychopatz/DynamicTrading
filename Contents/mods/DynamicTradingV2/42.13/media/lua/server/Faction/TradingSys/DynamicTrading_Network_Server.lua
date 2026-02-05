@@ -61,6 +61,36 @@ Handlers.RequestStock = function(player, args)
     end
 end
 
+-- [STOCK GENERATION REQUEST]
+Handlers.GenerateStock = function(player, args)
+    local traderID = args.traderID
+    local success, reason = DynamicTrading_Stock.CheckAndGenerateStock(traderID)
+    
+    if success then
+        -- Send updated stock back to client (useful for Debug UI and Trading UI)
+        local stockData = DynamicTrading_Stock.GetStock(traderID)
+        if stockData then
+             -- We might want to sync everyone, but for now just the requester is fine unless we need global sync
+             -- Actually, for radar/debug consistency, maybe broadcast? 
+             -- But standard pattern here seems to be targeted response for "Request" type, 
+             -- however "Generate" changes state, so maybe we rely on the ModData.transmit inside CheckAndGenerateStock?
+             -- ModData.transmit syncs the data, but UI might need a specific signal to refresh.
+             
+             -- Let's send a SyncStock to the player to ensure immediate UI update
+             sendServerCommand(player, COMMAND_MODULE, "SyncStock", { 
+                id = traderID, 
+                items = stockData.items, 
+                restock = stockData.restock 
+            })
+            
+            -- Also trigger a debug sync if needed, or rely on client to request
+             sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Stock Generated" })
+        end
+    else
+        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=false, reason=reason })
+    end
+end
+
 -- [FACTION DATA REQUEST]
 Handlers.RequestFactionData = function(player, args)
     local factionData = ModData.get("DynamicTrading_Factions") or {}

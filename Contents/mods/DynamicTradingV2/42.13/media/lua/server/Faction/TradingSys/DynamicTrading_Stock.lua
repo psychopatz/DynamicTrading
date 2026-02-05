@@ -98,18 +98,49 @@ end
 -- 3. STATE HANDLER HOOKS
 -- ==========================================================
 
+function DynamicTrading_Stock.ClearStock(traderUUID)
+    local data = ModData.get(MOD_DATA_KEY)
+    if data[traderUUID] then
+        print("[DT-Stock] Clearing stock for " .. traderUUID)
+        data[traderUUID] = nil
+        ModData.transmit(MOD_DATA_KEY)
+    end
+end
+
+function DynamicTrading_Stock.CheckAndGenerateStock(traderUUID)
+    local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
+    if not soul then return false, "Soul not found" end
+    
+    if soul.status ~= "Trading" then
+        return false, "Not in Trading state"
+    end
+    
+    local data = ModData.get(MOD_DATA_KEY)
+    if not data[traderUUID] then
+        print("[DT-Stock] Generating fresh stock for " .. traderUUID)
+        local newItems = DynamicTrading.Economy.GenerateStock(traderUUID)
+        DynamicTrading_Stock.InitializeInventory(traderUUID, newItems)
+        return true, "Stock Generated"
+    else
+        return true, "Stock Already Existed"
+    end
+end
+
+
 function DynamicTrading_Stock.OnSoulStatusChanged(uuid, status)
-    if status == "Trading" then
-        print("[DT-Stock] Soul " .. uuid .. " entered Trading state. Checking stock...")
-        local stock = DynamicTrading_Stock.GetStock(uuid)
-        
-        -- If no stock or it expired, generate fresh
-        if not stock or getGameTime():getWorldAgeHours() >= stock.restock.nextRestockTime then
-            print("[DT-Stock] Generating fresh stock for " .. uuid)
-            local newItems = DynamicTrading.Economy.GenerateStock(uuid)
-            DynamicTrading_Stock.InitializeInventory(uuid, newItems)
+    -- If LEAVING "Trading" state, clear the stock
+    if status ~= "Trading" then
+        -- Check if we were previously trading? 
+        -- Actually, just checking if we have stock to clear is enough/safer
+        local data = ModData.get(MOD_DATA_KEY)
+        if data[uuid] then
+            print("[DT-Stock] Soul " .. uuid .. " left Trading state (now: " .. tostring(status) .. "). Clearing stock.")
+            DynamicTrading_Stock.ClearStock(uuid)
         end
     end
+    
+    -- We NO LONGER auto-generate on entering "Trading".
+    -- This is now handled by explicit interaction (Client -> Server command).
 end
 
 Events.OnInitGlobalModData.Add(DynamicTrading_Stock.Init)

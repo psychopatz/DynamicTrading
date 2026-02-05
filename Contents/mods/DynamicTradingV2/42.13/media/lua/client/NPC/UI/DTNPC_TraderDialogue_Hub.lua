@@ -2,6 +2,7 @@
 -- DYNAMIC TRADING V2: NPC TRADER DIALOGUE HUB
 -- =============================================================================
 require "UI/DT_ConversationUI"
+require "NPC/DTNPC_TradingHandler"
 
 DTNPC_TraderDialogue_Hub = {}
 
@@ -47,15 +48,33 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
         end
     })
 
-    -- OPTION 2: TRADE (Placeholder)
-    table.insert(options, {
-        text = "Trade",
-        message = "Let's see what you've got.",
-        onSelect = function(ui)
-            ui:speak("I don't have anything for trade right now.")
-            DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
+    -- OPTION 2: TRADE (Conditional)
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    local isTrading = false
+    
+    local brain = npc:getModData().DTNPCBrain
+    local id = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
+    
+    if rosterData and rosterData.Souls and rosterData.Souls[id] then
+        if rosterData.Souls[id].status == "Trading" then
+            isTrading = true
         end
-    })
+    end
+
+    if isTrading then
+        table.insert(options, {
+            text = "Trade",
+            message = "Let's see what you've got.",
+            onSelect = function(ui)
+                if DTNPC_TradingHandler then
+                     DTNPC_TradingHandler.InitiateTrade(ui, npc, player)
+                else
+                     print("Error: DTNPC_TradingHandler missing")
+                     ui:speak("I... forgot how to trade.")
+                end
+            end
+        })
+    end
 
     -- OPTION 3: QUEST (Placeholder)
     table.insert(options, {

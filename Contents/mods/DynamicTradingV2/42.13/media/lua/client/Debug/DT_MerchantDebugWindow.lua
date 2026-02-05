@@ -48,6 +48,11 @@ function DT_MerchantDebugWindow:createChildren()
     self.btnRefresh.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1}
     self:addChild(self.btnRefresh)
 
+    self.btnGenerate = ISButton:new(10 + btnWidth + 10, btnY, btnWidth, 25, "GENERATE", self, DT_MerchantDebugWindow.onGenerateClick)
+    self.btnGenerate:initialise()
+    self.btnGenerate.enable = false -- Only enabled when valid trader selected
+    self:addChild(self.btnGenerate)
+
     self.btnClose = ISButton:new(self.width - btnWidth - 10, btnY, btnWidth, 25, "CLOSE", self, function(self) self:setVisible(false); self:removeFromUIManager() end)
     self.btnClose:initialise()
     self:addChild(self.btnClose)
@@ -70,21 +75,38 @@ function DT_MerchantDebugWindow:populateList(stockData, rosterData)
     self.listbox:clear()
     
     local keys = {}
-    for id in pairs(stockData) do table.insert(keys, id) end
+    -- Iterate over SOULS but FILTER for only "Trading" status
+    if rosterData.Souls then
+        for id, soul in pairs(rosterData.Souls) do 
+            if soul.status == "Trading" then
+                table.insert(keys, id) 
+            end
+        end
+    end
     table.sort(keys)
 
     for _, uuid in ipairs(keys) do
         local stock = stockData[uuid]
         local soul = rosterData.Souls and rosterData.Souls[uuid]
-        local name = soul and soul.name or "Unknown NPC"
+        
+        -- Fallbacks if soul data is missing but stock exists (unlikely given new logic, but safe)
+        local name = soul and soul.name or ("Unknown (" .. uuid .. ")")
         local faction = soul and soul.factionID or "Independent"
         
+        -- Status Checks
+        local isTrading = (soul and soul.status == "Trading")
+        local isCallable = (soul and soul.isCallable) or false -- Placeholder as requested
+        local factionStatus = soul and soul.status or "Unknown"
+
         local data = {
             uuid = uuid,
             name = name,
             faction = faction,
             archetype = soul and soul.archetypeID or "N/A",
-            stock = stock
+            stock = stock,
+            isTrading = isTrading,
+            isCallable = isCallable,
+            status = factionStatus
         }
         self.listbox:addItem(name, data)
     end
@@ -103,14 +125,33 @@ function DT_MerchantDebugWindow:doDrawMerchantItem(y, item, alt)
     end
     
     self:drawText(data.name, 10, y + 2, 1, 1, 1, 1, UIFont.Medium)
-    self:drawText("Faction: " .. data.faction .. " | " .. data.archetype, 10, y + 22, 0.7, 0.7, 0.7, 1, UIFont.Small)
+    
+    -- Draw Status Line
+    local statusStr = "Faction: " .. data.faction .. " | " .. data.archetype
+    
+    -- Show Trading status (controls Generation)
+    if data.isTrading then
+        statusStr = statusStr .. " | [TRADING]"
+    else
+        statusStr = statusStr .. " | [" .. data.status .. "]"
+    end
+    
+    -- Show Callable status (Placeholder/Future feature)
+    if data.isCallable then
+        statusStr = statusStr .. " | [CALLABLE]"
+    end
+    
+    self:drawText(statusStr, 10, y + 22, 0.7, 0.7, 0.7, 1, UIFont.Small)
 
     return y + self.itemheight
 end
 
-function DT_MerchantDebugWindow:onListMouseDown(item)
+function DT_MerchantDebugWindow.onListMouseDown(target, item)
     local data = item
     if not DT_MerchantDebugWindow.instance or not DT_MerchantDebugWindow.instance.details then return end
+    
+    -- Safety check if data is valid
+    if not data then return end
     
     DT_MerchantDebugWindow.instance.details:clear()
     
@@ -124,6 +165,41 @@ function DT_MerchantDebugWindow:onListMouseDown(item)
         for _, entry in ipairs(sortedItems) do
             DT_MerchantDebugWindow.instance.details:addItem(entry.type, entry.data)
         end
+    end
+    
+    -- Update Generate Button State
+    if DT_MerchantDebugWindow.instance.btnGenerate then
+         local hasStock = false
+         if data.stock and data.stock.items then
+             -- Safe Empty Check
+             for _,_ in pairs(data.stock.items) do 
+                 hasStock = true 
+                 break 
+             end
+         end
+         
+         -- Enable ONLY if Trading AND No Stock (as requested)
+         DT_MerchantDebugWindow.instance.btnGenerate.enable = data.isTrading and not hasStock
+         
+         print("DT DEBUG: Selected " .. tostring(data.name) .. " | Trading: " .. tostring(data.isTrading) .. " | HasStock: " .. tostring(hasStock))
+    end
+end
+
+function DT_MerchantDebugWindow:onGenerateClick()
+    local list = self.listbox
+    if not list or not list.items or not list.selected then return end
+    
+    local item = list.items[list.selected]
+    if not item then return end
+    
+    local data = item.item 
+    
+    if data and data.uuid then
+        -- We removed the client-side optimization block here because the button is now disabled if stock exists.
+        -- If the user bypasses UI (e.g. Chat Menu), that optimization still exists there.
+        -- Sending command to server.
+        print("DT DEBUG: Requesting Stock for " .. data.uuid)
+        sendClientCommand(getPlayer(), "DynamicTrading_V2", "GenerateStock", { traderID = data.uuid })
     end
 end
 
@@ -149,8 +225,22 @@ local function onServerCommand(module, command, args)
     if command == "SyncFactionDebugData" then
         if DT_MerchantDebugWindow.instance and DT_MerchantDebugWindow.instance:getIsVisible() then
             local roster = args.roster or {}
-            local stock = args.stock or {} -- We'll update the server to send this
+            local stock = args.stock or {} 
             DT_MerchantDebugWindow.instance:populateList(stock, roster)
+        end
+    elseif command == "TradeResult" then
+        -- Show feedback for operations
+        local success = args.success
+        local reason = args.reason or "Unknown"
+        local color = success and {r=0, g=1, b=0, a=1} or {r=1, g=0, b=0, a=1}
+        
+        if DT_MerchantDebugWindow.instance and DT_MerchantDebugWindow.instance:getIsVisible() then
+            -- We don't have a status label, let's just use HaloText or print for now
+            if HaloTextHelper then
+                HaloTextHelper.addText(getPlayer(), "DT: " .. reason, color)
+            else
+                print("DT TradeResult: " .. reason)
+            end
         end
     end
 end

@@ -67,8 +67,14 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
             local name = brain and brain.name or "Survivor"
             
             context:addOption("Talk to " .. name, npc, function(n)
-                require "NPC/UI/DTNPC_TraderDialogue_Hub"
-                DTNPC_TraderDialogue_Hub.Init(nil, n, player)
+                local id = n:getPersistentOutfitID() or n:getID()
+                
+                -- Delegate all interaction logic to the Dialogue Hub
+                if DTNPC_TraderDialogue_Hub and DTNPC_TraderDialogue_Hub.Init then
+                    DTNPC_TraderDialogue_Hub.Init(nil, npc, player)
+                else
+                    print("Error: DTNPC_TraderDialogue_Hub not found")
+                end
             end)
         end
     end
