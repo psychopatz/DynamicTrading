@@ -19,7 +19,9 @@ function DT_V2_RadarWindow:initialise()
     self:setResizable(true)
     self.minimumWidth = 450
     self.minimumHeight = 400
-    self.updateTimer = 0
+    self.minimumHeight = 400
+    self.updateTimer = 0 -- Local UI refresh (2s)
+    self.syncTimer = 0   -- Server Data Sync (10s)
 end
 
 function DT_V2_RadarWindow:createChildren()
@@ -59,16 +61,31 @@ function DT_V2_RadarWindow:createChildren()
     self:addChild(self.actionPanel)
 
     self:refresh()
+    
+    -- [MP FIX] Request fresh Roster data when window opens
+    if isClient() then
+        DT_V2_RadarManager.RequestRoster()
+    end
 end
 
 function DT_V2_RadarWindow:update()
     ISCollapsableWindow.update(self)
     
     if self:getIsVisible() then
+        -- 1. Local UI Refresh (Animations, Distance Calc)
         self.updateTimer = self.updateTimer + getGameTime():getRealworldSecondsSinceLastUpdate()
         if self.updateTimer >= 2.0 then
             self.updateTimer = 0
             self:refresh()
+        end
+        
+        -- 2. Server Data Sync (MP Only) - Every 10 seconds
+        if isClient() then
+            self.syncTimer = self.syncTimer + getGameTime():getRealworldSecondsSinceLastUpdate()
+            if self.syncTimer >= 10.0 then
+                self.syncTimer = 0
+                DT_V2_RadarManager.RequestRoster()
+            end
         end
     end
 end
@@ -157,12 +174,13 @@ function DT_V2_RadarWindow:refresh()
         local uuid = entry.uuid
         local data = entry.data
         
-        local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(uuid)
+        -- [FIX] Use Manager Accessors (works for both MP Cache and SP ModData)
+        local soul = DT_V2_RadarManager.GetSoul(uuid)
         local archetypeID = soul and soul.archetypeID or "General"
         local gender = (soul and soul.isFemale) and "Female" or "Male"
         local portraitID = soul and soul.portraitID or 1
         
-        local factionData = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction(data.faction)
+        local factionData = DT_V2_RadarManager.GetFaction(data.faction)
         local factionName = factionData and factionData.name or data.faction or "Independent"
 
         -- Calculate Expiration

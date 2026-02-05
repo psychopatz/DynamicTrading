@@ -37,6 +37,17 @@ Handlers.RequestTrader = function(player, args)
     end
 end
 
+-- [ROSTER DATA REQUEST (FOR RADAR)]
+Handlers.RequestRoster = function(player, args)
+    local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    local factionData = ModData.get("DynamicTrading_Factions") or {}
+    
+    sendServerCommand(player, COMMAND_MODULE, "SyncRoster", {
+        roster = rosterData,
+        factions = factionData
+    })
+end
+
 -- [STOCK DATA REQUEST]
 Handlers.RequestStock = function(player, args)
     local traderID = args.traderID

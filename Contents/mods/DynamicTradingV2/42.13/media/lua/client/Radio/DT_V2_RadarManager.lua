@@ -5,6 +5,10 @@
 
 DT_V2_RadarManager = {}
 DT_V2_RadarManager.FoundTraders = {} -- Persistent list of UUIDs
+DT_V2_RadarManager.ClientRoster = nil -- Local cache of server roster for MP
+DT_V2_RadarManager.ClientFactions = nil -- Local cache of server factions for MP
+
+
 
 -- Ranges based on device type or display name
 DT_V2_RadarManager.Ranges = {
@@ -27,8 +31,35 @@ DT_V2_RadarManager.Ranges = {
 function DT_V2_RadarManager.Init()
     local data = ModData.getOrCreate("DT_V2_RadarFound")
     DT_V2_RadarManager.FoundTraders = data
+    
+    -- In SP, we can just grab the roster directly. 
+    -- In MP, we start nil and wait for sync.
+    if not isClient() then 
+        DT_V2_RadarManager.ClientRoster = ModData.get("DynamicTrading_Roster")
+        DT_V2_RadarManager.ClientFactions = ModData.get("DynamicTrading_Factions")
+    end
+
     print("[DT_RADAR] Manager Initialized. Traders in cache: " .. DT_V2_RadarManager.GetCount())
 end
+
+-- Request fresh roster data from server (MP Only)
+function DT_V2_RadarManager.RequestRoster()
+    if not isClient() then return end
+    print("[DT_RADAR] Requesting fresh Roster from Server...")
+    sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestRoster", {})
+end
+
+-- Handle incoming roster/faction data
+local function OnServerCommand(module, command, arguments)
+    if module == "DynamicTrading_V2" and command == "SyncRoster" then
+        print("[DT_RADAR] Received Roster & Faction Sync from Server.")
+        DT_V2_RadarManager.ClientRoster = arguments.roster
+        DT_V2_RadarManager.ClientFactions = arguments.factions
+    end
+end
+
+
+Events.OnServerCommand.Add(OnServerCommand)
 
 function DT_V2_RadarManager.GetCount()
     local count = 0
@@ -56,7 +87,14 @@ function DT_V2_RadarManager.GetTraderCoords(uuid)
     end
 
     -- 2. Fallback to Roster Data (Cached or Global)
-    local rosterData = ModData.get("DynamicTrading_Roster")
+    -- In MP, use our synced ClientRoster. In SP, ModData is fine (and ClientRoster falls back to it or is nil)
+    local rosterData = DT_V2_RadarManager.ClientRoster
+    
+    -- If we are in SP, ensure we have data if ClientRoster is nil (though Init should handle it)
+    if not isClient() and not rosterData then
+         rosterData = ModData.get("DynamicTrading_Roster")
+    end
+    
     if rosterData and rosterData.Souls and rosterData.Souls[uuid] then
         local soul = rosterData.Souls[uuid]
         local x = soul.lastX or (soul.homeCoords and soul.homeCoords.x)
@@ -147,9 +185,21 @@ function DT_V2_RadarManager.Scan(player, device)
     
     print("[DT_RADAR] [V3.0] Starting scan with " .. tostring(deviceName) .. " (Range: " .. tostring(range) .. ")")
     
-    local rosterData = ModData.get("DynamicTrading_Roster")
+    local rosterData = DT_V2_RadarManager.ClientRoster
+    
+    -- Safety Fallback for SP
+    if not isClient() and not rosterData then
+        rosterData = ModData.get("DynamicTrading_Roster")
+    end
+
     if not rosterData or not rosterData.Souls then
-        player:Say("Static... no frequencies found.")
+        if isClient() then
+            -- Auto-request if missing
+            DT_V2_RadarManager.RequestRoster()
+            player:Say("Syncing radar frequencies... try again.")
+        else
+            player:Say("Static... no frequencies found.")
+        end
         return
     end
 
@@ -202,7 +252,9 @@ function DT_V2_RadarManager.Scan(player, device)
 end
 
 function DT_V2_RadarManager.Cleanup()
-    local rosterData = ModData.get("DynamicTrading_Roster")
+    local rosterData = DT_V2_RadarManager.ClientRoster
+    if not isClient() and not rosterData then rosterData = ModData.get("DynamicTrading_Roster") end
+
     if not rosterData or not rosterData.Souls then return end
     
     local toRemove = {}
@@ -217,6 +269,35 @@ function DT_V2_RadarManager.Cleanup()
         print("[DT_RADAR] Removing expired/inactive trader from radar: " .. uuid)
         DT_V2_RadarManager.FoundTraders[uuid] = nil
     end
+end
+
+-- ==========================================================
+-- SAFE ACCESSORS (Unified SP/MP)
+-- ==========================================================
+function DT_V2_RadarManager.GetSoul(uuid)
+    -- 1. Try Client Cache for MP
+    if isClient() and DT_V2_RadarManager.ClientRoster and DT_V2_RadarManager.ClientRoster.Souls then
+        return DT_V2_RadarManager.ClientRoster.Souls[uuid]
+    end
+    
+    -- 2. Try ModData for SP (or Client Fallback if initialized)
+    local data = ModData.get("DynamicTrading_Roster")
+    if data and data.Souls then return data.Souls[uuid] end
+    
+    return nil
+end
+
+function DT_V2_RadarManager.GetFaction(factionID)
+    -- 1. Try Client Cache for MP
+    if isClient() and DT_V2_RadarManager.ClientFactions then
+        return DT_V2_RadarManager.ClientFactions[factionID]
+    end
+    
+    -- 2. Try ModData for SP
+    local data = ModData.get("DynamicTrading_Factions")
+    if data then return data[factionID] end
+    
+    return nil
 end
 
 Events.OnGameStart.Add(DT_V2_RadarManager.Init)
