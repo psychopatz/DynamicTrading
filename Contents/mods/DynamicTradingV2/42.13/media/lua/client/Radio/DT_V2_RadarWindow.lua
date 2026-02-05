@@ -18,8 +18,10 @@ function DT_V2_RadarWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
     self.minimumWidth = 450
-    self.minimumHeight = 400
-    self.minimumHeight = 400
+    self.minimumHeight = 450 -- Increased for tabs
+    
+    self.currentCategory = "Stationary" -- Default category
+    
     self.updateTimer = 0 -- Local UI refresh (2s)
     self.syncTimer = 0   -- Server Data Sync (10s)
 end
@@ -30,17 +32,17 @@ function DT_V2_RadarWindow:createChildren()
     local th = self:titleBarHeight()
     local w = self.width
     
-    -- 1. Header Panel (Title & Range)
-    -- Positioned below title bar
-    self.headerPanel = DT_V2_RadarHeaderPanel:new(0, th, w, 60)
+    -- 1. Header Panel (Title & Range & Tabs)
+    -- Increased height to 85 to accommodate tabs
+    local headerHeight = 85
+    self.headerPanel = DT_V2_RadarHeaderPanel:new(0, th, w, headerHeight)
     self.headerPanel:initialise()
     self.headerPanel:instantiate()
     self.headerPanel:setAnchorRight(true)
     self:addChild(self.headerPanel)
 
     -- 2. List Panel (Trader entries)
-    -- Adjust height to account for title bar (th), header (60), and footer (40)
-    local listY = th + 60
+    local listY = th + headerHeight
     local footerHeight = 40
     local listHeight = self.height - listY - footerHeight
     
@@ -90,6 +92,12 @@ function DT_V2_RadarWindow:update()
     end
 end
 
+function DT_V2_RadarWindow:setCategory(category)
+    if self.currentCategory == category then return end
+    self.currentCategory = category
+    self:refresh()
+end
+
 function DT_V2_RadarWindow:refresh()
     if not self.listPanel or not self.headerPanel or not self.actionPanel then return end
     
@@ -132,34 +140,44 @@ function DT_V2_RadarWindow:refresh()
         end
     end
 
-    -- Update Header
+    -- Update Header (Pass category info if needed, or rely on Header's own draw logic for tabs)
+    -- For now just standard update
     self.headerPanel:updateSignalInfo(bestName, bestRange)
     
-    -- Populate List
+    -- Populate List based on CATEGORY
     DT_V2_RadarManager.Cleanup()
     
     -- 1. Collect and Calculate Distances
     local tempList = {}
-    for uuid, data in pairs(DT_V2_RadarManager.FoundTraders) do
-        local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(uuid)
-        local dist = 99999
-        local distText = "Distance: Unknown"
-        
-        if tx and ty then
-            local dx = tx - player:getX()
-            local dy = ty - player:getY()
-            dist = math.sqrt(dx*dx + dy*dy)
-            distText = string.format("Distance: %.0fm", dist)
+    
+    -- Currently only "Stationary" has implementation
+    -- In future, add logic for "Callable" and "Quest"
+    if self.currentCategory == "Stationary" then
+        for uuid, data in pairs(DT_V2_RadarManager.FoundTraders) do
+            local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(uuid)
+            local dist = 99999
+            local distText = "Distance: Unknown"
+            
+            if tx and ty then
+                local dx = tx - player:getX()
+                local dy = ty - player:getY()
+                dist = math.sqrt(dx*dx + dy*dy)
+                distText = string.format("Distance: %.0fm", dist)
+            end
+            
+            table.insert(tempList, {
+                uuid = uuid,
+                data = data,
+                tx = tx, ty = ty, tz = tz,
+                isLive = isLive,
+                dist = dist,
+                distText = distText
+            })
         end
-        
-        table.insert(tempList, {
-            uuid = uuid,
-            data = data,
-            tx = tx, ty = ty, tz = tz,
-            isLive = isLive,
-            dist = dist,
-            distText = distText
-        })
+    elseif self.currentCategory == "Callable" then
+        -- Placeholder for callable traders
+    elseif self.currentCategory == "Quest" then
+        -- Placeholder for quest givers
     end
     
     -- 2. Sort by Distance
@@ -236,7 +254,7 @@ function DT_V2_RadarWindow.ToggleWindow(device)
     
     -- Minimum threshold
     width = math.max(450, width)
-    height = math.max(400, height)
+    height = math.max(450, height) -- Increased for tabs
 
     local window = DT_V2_RadarWindow:new(screenW/2 - width/2, screenH/2 - height/2, width, height)
     window.device = device

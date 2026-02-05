@@ -23,6 +23,7 @@ function DT_V2_RadarListPanel:createChildren()
     self.listbox.itemheight = 65
     self.listbox.doDrawItem = self.doDrawItem
     self.listbox.onmousedown = self.onListMouseDown
+    self.listbox.onmousedblclick = self.onListDoubleClick
     self.listbox.target = self
     self.listbox:setAnchorRight(true)
     self.listbox:setAnchorBottom(true)
@@ -107,6 +108,15 @@ function DT_V2_RadarListPanel:onListMouseDown(itemData)
     -- 'self' is the DT_V2_RadarListPanel panel here (set by listbox.target)
     if self.parent and self.parent.actionPanel then
         self.parent.actionPanel.btnLocate.enable = true
+    end
+end
+
+function DT_V2_RadarListPanel:onListDoubleClick(itemData)
+    if self.parent and self.parent.actionPanel then
+        self.parent.actionPanel.btnLocate.enable = true
+        if self.parent.actionPanel.onLocate then
+            self.parent.actionPanel:onLocate()
+        end
     end
 end
 

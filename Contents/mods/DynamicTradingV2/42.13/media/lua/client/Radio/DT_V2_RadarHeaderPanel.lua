@@ -28,6 +28,38 @@ function DT_V2_RadarHeaderPanel:createChildren()
     self.lblRangeInfo = ISLabel:new(self.width/2, 43, 18, "Broadcast Range: Unknown", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
     self.lblRangeInfo:initialise()
     self:addChild(self.lblRangeInfo)
+
+    -- Category Tabs (Health Panel Style)
+    local tabHeight = 20
+    local tabY = self.height - tabHeight
+    local tabWidth = self.width / 3
+
+    self.btnStat = ISButton:new(0, tabY, tabWidth, tabHeight, "Stationary", self, function(self) self:onCategoryClick("Stationary") end)
+    self.btnStat:initialise()
+    self.btnStat.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
+    self.btnStat:setAnchorTop(false)
+    self.btnStat:setAnchorBottom(true)
+    self:addChild(self.btnStat)
+
+    self.btnCall = ISButton:new(tabWidth, tabY, tabWidth, tabHeight, "Callable", self, function(self) self:onCategoryClick("Callable") end)
+    self.btnCall:initialise()
+    self.btnCall.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
+    self.btnCall:setAnchorTop(false)
+    self.btnCall:setAnchorBottom(true)
+    self:addChild(self.btnCall)
+
+    self.btnQuest = ISButton:new(tabWidth * 2, tabY, tabWidth, tabHeight, "Quest", self, function(self) self:onCategoryClick("Quest") end)
+    self.btnQuest:initialise()
+    self.btnQuest.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
+    self.btnQuest:setAnchorTop(false)
+    self.btnQuest:setAnchorBottom(true)
+    self:addChild(self.btnQuest)
+end
+
+function DT_V2_RadarHeaderPanel:onCategoryClick(category)
+    if self.parent and self.parent.setCategory then
+        self.parent:setCategory(category)
+    end
 end
 
 function DT_V2_RadarHeaderPanel:prerender()
@@ -40,10 +72,38 @@ function DT_V2_RadarHeaderPanel:prerender()
         lbl:setX( (self.width / 2) - (width / 2) )
     end
 
-    -- Keep labels centered dynamically on resize
+    -- Keep labels centered
     centerLabel(self.labelTitle, UIFont.Medium)
     centerLabel(self.lblDeviceName, UIFont.Small)
     centerLabel(self.lblRangeInfo, UIFont.Small)
+
+    -- Update Tab Widths dynamically
+    local tabWidth = self.width / 3
+    if self.btnStat then self.btnStat:setWidth(tabWidth) end
+    if self.btnCall then self.btnCall:setX(tabWidth); self.btnCall:setWidth(tabWidth) end
+    if self.btnQuest then self.btnQuest:setX(tabWidth * 2); self.btnQuest:setWidth(tabWidth) end
+
+    -- Update Tab Visuals (Highlight Active)
+    local activeCat = "Stationary"
+    if self.parent and self.parent.currentCategory then
+        activeCat = self.parent.currentCategory
+    end
+
+    local activeColor = {r=0.2, g=0.2, b=0.2, a=1}
+    local inactiveColor = {r=0, g=0, b=0, a=0.5}
+
+    if self.btnStat then 
+        self.btnStat.backgroundColor = (activeCat == "Stationary") and activeColor or inactiveColor
+        self.btnStat.textColor = (activeCat == "Stationary") and {r=1,g=1,b=1,a=1} or {r=0.7,g=0.7,b=0.7,a=1}
+    end
+    if self.btnCall then 
+        self.btnCall.backgroundColor = (activeCat == "Callable") and activeColor or inactiveColor 
+        self.btnCall.textColor = (activeCat == "Callable") and {r=1,g=1,b=1,a=1} or {r=0.7,g=0.7,b=0.7,a=1}
+    end
+    if self.btnQuest then 
+        self.btnQuest.backgroundColor = (activeCat == "Quest") and activeColor or inactiveColor 
+        self.btnQuest.textColor = (activeCat == "Quest") and {r=1,g=1,b=1,a=1} or {r=0.7,g=0.7,b=0.7,a=1}
+    end
 end
 
 function DT_V2_RadarHeaderPanel:updateSignalInfo(bestName, bestRange)

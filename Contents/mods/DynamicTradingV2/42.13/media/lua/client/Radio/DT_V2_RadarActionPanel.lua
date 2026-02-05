@@ -19,29 +19,24 @@ function DT_V2_RadarActionPanel:createChildren()
     local btnHeight = 25
     local spacing = 10
     
-    self.btnLocate = ISButton:new(spacing, 0, btnWidth, btnHeight, "LOCATE", self, self.onLocate)
-    self.btnLocate:initialise()
-    self.btnLocate.backgroundColor = {r=0, g=0.5, b=0, a=1}
-    self.btnLocate.enable = false
-    self.btnLocate:setAnchorLeft(true)
-    self.btnLocate:setAnchorTop(false)
-    self.btnLocate:setAnchorBottom(true)
-    self:addChild(self.btnLocate)
-
-    self.btnRefresh = ISButton:new(spacing + btnWidth + spacing, 0, btnWidth, btnHeight, "REFRESH", self, self.onRefresh)
+    -- Refresh Button (Left)
+    self.btnRefresh = ISButton:new(spacing, 0, btnWidth, btnHeight, "REFRESH", self, self.onRefresh)
     self.btnRefresh:initialise()
     self.btnRefresh:setAnchorLeft(true)
     self.btnRefresh:setAnchorTop(false)
     self.btnRefresh:setAnchorBottom(true)
     self:addChild(self.btnRefresh)
 
-    self.btnClose = ISButton:new(self.width - btnWidth - spacing, 0, btnWidth, btnHeight, "CLOSE", self, self.onClose)
-    self.btnClose:initialise()
-    self.btnClose:setAnchorLeft(false)
-    self.btnClose:setAnchorRight(true)
-    self.btnClose:setAnchorTop(false)
-    self.btnClose:setAnchorBottom(true)
-    self:addChild(self.btnClose)
+    -- Locate Button (Right)
+    self.btnLocate = ISButton:new(self.width - btnWidth - spacing, 0, btnWidth, btnHeight, "LOCATE", self, self.onLocate)
+    self.btnLocate:initialise()
+    self.btnLocate.backgroundColor = {r=0, g=0.5, b=0, a=1}
+    self.btnLocate.enable = false
+    self.btnLocate:setAnchorLeft(false)
+    self.btnLocate:setAnchorRight(true)
+    self.btnLocate:setAnchorTop(false)
+    self.btnLocate:setAnchorBottom(true)
+    self:addChild(self.btnLocate)
 end
 
 function DT_V2_RadarActionPanel:onRefresh()
@@ -50,12 +45,7 @@ function DT_V2_RadarActionPanel:onRefresh()
     end
 end
 
-function DT_V2_RadarActionPanel:onClose()
-    if self.parent and self.parent.setVisible then
-        self.parent:setVisible(false)
-        self.parent:removeFromUIManager()
-    end
-end
+
 
 function DT_V2_RadarActionPanel:onLocate()
     if not self.parent or not self.parent.listPanel then return end
