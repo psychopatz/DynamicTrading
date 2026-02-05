@@ -9,6 +9,7 @@
 -- if not (isDebugEnabled() or (getSpecificPlayer(0) and getSpecificPlayer(0):getAccessLevel() ~= "None")) then return end
 
 require "client/Debug/DT_FactionDebugWindow"
+require "client/Debug/DT_MerchantDebugWindow"
 
 DT_DebugFactions = {}
 
@@ -69,6 +70,15 @@ DT_DebugFactions.OnFillWorldObjectContextMenu = function(playerNum, context, wor
 
     simMenu:addOption("Wipe Faction ModData", worldobjects, function()
         SendDebugAction("WipeFactions")
+    end)
+
+    -- --- SECTION: MERCHANTS ---
+    local merchOption = mainSubMenu:addOption("Merchants", worldobjects, nil)
+    local merchMenu = mainSubMenu:getNew(mainSubMenu)
+    mainSubMenu:addSubMenu(merchOption, merchMenu)
+
+    merchMenu:addOption("OPEN MERCHANT DEBUG WINDOW", worldobjects, function()
+        DT_MerchantDebugWindow.Open()
     end)
 end
 

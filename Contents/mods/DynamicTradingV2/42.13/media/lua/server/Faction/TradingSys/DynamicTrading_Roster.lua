@@ -159,6 +159,11 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         brain.returnStatus = returnStatus
         local soulKey = "DTSOUL_" .. uuid
         ModData.transmit(soulKey)
+
+        -- [NEW] Trigger Stock Generation if entering Trading state
+        if DynamicTrading_Stock and DynamicTrading_Stock.OnSoulStatusChanged then
+            DynamicTrading_Stock.OnSoulStatusChanged(uuid, status)
+        end
     end
     
     -- Update Registry

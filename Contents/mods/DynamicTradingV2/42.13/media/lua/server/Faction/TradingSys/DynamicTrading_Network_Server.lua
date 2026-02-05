@@ -65,10 +65,12 @@ end
 Handlers.RequestFactionData = function(player, args)
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    local stockData = ModData.get("DynamicTrading_Stock") or {}
     
     sendServerCommand(player, COMMAND_MODULE, "SyncFactionDebugData", {
         factions = factionData,
-        roster = rosterData
+        roster = rosterData,
+        stock = stockData
     })
 end
 
