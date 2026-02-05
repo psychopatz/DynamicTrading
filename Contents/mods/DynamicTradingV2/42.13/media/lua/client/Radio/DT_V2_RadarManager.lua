@@ -8,20 +8,20 @@ DT_V2_RadarManager.FoundTraders = {} -- Persistent list of UUIDs
 
 -- Ranges based on device type or display name
 DT_V2_RadarManager.Ranges = {
-    ["Base.WalkieTalkie1"] = 500,
-    ["Base.WalkieTalkie2"] = 750,
-    ["Base.WalkieTalkie3"] = 1000,
-    ["Base.WalkieTalkie4"] = 1250,
-    ["Base.WalkieTalkie5"] = 1500,
-    ["Base.HamRadio1"] = 2500,
-    ["Base.HamRadio2"] = 5000,
-    ["Base.ManPackRadio"] = 2000,
-    ["Base.WalkieTalkieMakeShift"] = 400,
-    ["Base.HamRadioMakeShift"] = 1500,
+    ["Base.WalkieTalkie1"] = 750,
+    ["Base.WalkieTalkie2"] = 2000,
+    ["Base.WalkieTalkie3"] = 4000,
+    ["Base.WalkieTalkie4"] = 8000,
+    ["Base.WalkieTalkie5"] = 10000,
+    ["Base.HamRadio1"] = 12000,
+    ["Base.HamRadio2"] = 15000,
+    ["Base.ManPackRadio"] = 12000,
+    ["Base.WalkieTalkieMakeShift"] = 1000,
+    ["Base.HamRadioMakeShift"] = 10000,
     -- Tier Mappings (Matches getDeviceName())
-    ["Makeshift Ham Radio"] = 1500,
-    ["US ARMY COMM. Ham Radio"] = 5000,
-    ["Premium Technologies Ham Radio"] = 2500,
+    ["Makeshift Ham Radio"] = 10000,
+    ["US ARMY COMM. Ham Radio"] = 15000,
+    ["Premium Technologies Ham Radio"] = 12000,
 }
 
 function DT_V2_RadarManager.Init()

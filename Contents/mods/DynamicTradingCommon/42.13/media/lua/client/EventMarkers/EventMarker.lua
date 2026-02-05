@@ -119,8 +119,8 @@ function EventMarker:getDuration()
 end
 
 function EventMarker:formatDistance(tiles)
-    -- Convert tiles to meters (1 tile ≈ 3 meters in Project Zomboid)
-    local meters = tiles * 3
+    -- Convert tiles to meters (1 tile = 1 meter for consistency with Radar/Engine)
+    local meters = tiles 
     
     if meters < 1000 then
         return string.format("%.0fm", meters)

@@ -65,21 +65,39 @@ function DT_V2_RadarActionPanel:onLocate()
     if not item or not item.item then return end
     
     local data = item.item
-    if not data.x or not data.y then
-        getSpecificPlayer(0):Say("Signal too weak to pinpoint.")
+    
+    -- [FIX] Query fresh coordinates directly from Manager to ensure accuracy
+    -- This fixes the discrepancy between list data (which might be slightly stale) and actual position
+    local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(data.uuid)
+    
+    if not tx or not ty then
+        getSpecificPlayer(0):Say("Signal lost. Cannot locate.")
         return
     end
 
     if EventMarkerHandler then
-        local color = {r=0, g=1, b=1}
+        local player = getSpecificPlayer(0)
+        local dist = IsoUtils.DistanceTo(tx, ty, player:getX(), player:getY())
+        
+        -- [FIX] Dynamic Background Color based on Proximity
+        local color = {r=0, g=1, b=1} -- Default Cyan (Far)
+        
+        if dist < 300 then
+            color = {r=0.1, g=1, b=0.1} -- Green (Close / < 300m)
+        elseif dist < 1500 then
+            color = {r=1, g=0.9, b=0.2} -- Yellow (Medium / < 1.5km)
+        else
+            color = {r=1, g=0.4, b=0.1} -- Orange (Far / > 1.5km)
+        end
+        
         local description = "Trader: " .. tostring(data.name)
         
         EventMarkerHandler.set(
             "radar_" .. data.uuid,
             "friend.png",
             600, 
-            data.x,
-            data.y,
+            tx,
+            ty,
             color,
             description
         )
