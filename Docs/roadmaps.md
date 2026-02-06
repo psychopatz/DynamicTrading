@@ -29,11 +29,11 @@
 
 ## 2. ROADMAP
 
-### Phase 1: Foundation & Isolation (Current)
+### Phase 1: Foundation & Isolation (Complete)
 
 - [X] **Legacy Isolation:** `v1.1` code moved to `Legacy/` directories.
-- [ ] **Engine Initialization:** Implement `DynamicTrading_Engine_v2` localized signals.
-- [ ] **Dependency Cleanup:** Ensure new modules do not require Legacy files.
+- [X] **Engine Initialization:** Implement `DynamicTrading_Engine_v2` localized signals.
+- [X] **Dependency Cleanup:** Ensure new modules do not require Legacy files.
 
 ### Phase 2: Core System Consolidation
 
