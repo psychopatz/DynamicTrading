@@ -56,10 +56,30 @@ Handlers.RequestStock = function(player, args)
     local traderID = args.traderID
     local stockData = DynamicTrading_Stock.GetStock(traderID)
     if stockData then
+        -- Get soul data for factionID and archetype
+        local soul = DynamicTrading_Roster.GetSoulRegistry(traderID)
+        local factionID = soul and soul.factionID or nil
+        local archetype = soul and soul.archetypeID or "General"
+        
+        -- Get faction wealth for budget
+        local factionWealth = 0
+        if factionID then
+            local faction = DynamicTrading_Factions.GetFaction(factionID)
+            if faction then
+                factionWealth = faction.wealth or 0
+            end
+        end
+        
         sendServerCommand(player, COMMAND_MODULE, "SyncStock", { 
             id = traderID, 
             items = stockData.items, 
-            restock = stockData.restock 
+            restock = stockData.restock,
+            factionID = factionID,
+            archetype = archetype,
+            factionWealth = factionWealth,
+            name = soul and soul.name or "Trader",
+            portraitID = soul and soul.portraitID,
+            gender = soul and soul.isFemale and "Female" or "Male"
         })
     end
 end
@@ -73,25 +93,73 @@ Handlers.GenerateStock = function(player, args)
         -- Send updated stock back to client (useful for Debug UI and Trading UI)
         local stockData = DynamicTrading_Stock.GetStock(traderID)
         if stockData then
-             -- We might want to sync everyone, but for now just the requester is fine unless we need global sync
-             -- Actually, for radar/debug consistency, maybe broadcast? 
-             -- But standard pattern here seems to be targeted response for "Request" type, 
-             -- however "Generate" changes state, so maybe we rely on the ModData.transmit inside CheckAndGenerateStock?
-             -- ModData.transmit syncs the data, but UI might need a specific signal to refresh.
+            -- Get soul data for factionID and archetype (same as RequestStock)
+            local soul = DynamicTrading_Roster.GetSoulRegistry(traderID)
+            local factionID = soul and soul.factionID or nil
+            local archetype = soul and soul.archetypeID or "General"
+            
+            -- Get faction wealth for budget
+            local factionWealth = 0
+            if factionID then
+                local faction = DynamicTrading_Factions.GetFaction(factionID)
+                if faction then
+                    factionWealth = faction.wealth or 0
+                end
+            end
              
-             -- Let's send a SyncStock to the player to ensure immediate UI update
-             sendServerCommand(player, COMMAND_MODULE, "SyncStock", { 
+            -- Send complete SyncStock with all required fields
+            sendServerCommand(player, COMMAND_MODULE, "SyncStock", { 
                 id = traderID, 
                 items = stockData.items, 
-                restock = stockData.restock 
+                restock = stockData.restock,
+                factionID = factionID,
+                archetype = archetype,
+                factionWealth = factionWealth,
+                name = soul and soul.name or "Trader",
+                portraitID = soul and soul.portraitID,
+                gender = soul and soul.isFemale and "Female" or "Male"
             })
             
-            -- Also trigger a debug sync if needed, or rely on client to request
-             sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Stock Generated" })
+            sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Stock Generated" })
         end
     else
         sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=false, reason=reason })
     end
+end
+
+-- [HELPER: Send Complete SyncStock to Player]
+-- Used after transactions to update client cache with latest stock and faction wealth
+local function SendSyncStockToPlayer(player, traderID)
+    local stockData = DynamicTrading_Stock.GetStock(traderID)
+    if not stockData then return end
+    
+    local soul = DynamicTrading_Roster.GetSoulRegistry(traderID) or DynamicTrading_Roster.GetTrader(traderID)
+    local factionID = soul and soul.factionID or nil
+    local archetype = soul and soul.archetypeID or "General"
+    
+    -- Get current faction wealth (after transaction)
+    local factionWealth = 0
+    if factionID then
+        local faction = DynamicTrading_Factions.GetFaction(factionID)
+        if faction then
+            factionWealth = faction.wealth or 0
+        end
+    end
+    
+    print("[DT-V2-Server] Sending SyncStock: traderID=" .. tostring(traderID) .. ", factionID=" .. tostring(factionID) .. ", factionWealth=" .. tostring(factionWealth))
+    
+    sendServerCommand(player, COMMAND_MODULE, "SyncStock", { 
+        id = traderID, 
+        items = stockData.items, 
+        restock = stockData.restock,
+        deflation = stockData.deflation,
+        factionID = factionID,
+        archetype = archetype,
+        factionWealth = factionWealth,
+        name = soul and soul.name or "Trader",
+        portraitID = soul and soul.portraitID,
+        gender = soul and soul.isFemale and "Female" or "Male"
+    })
 end
 
 -- [TRADE TRANSACTION - BUY/SELL]
@@ -125,9 +193,11 @@ Handlers.TradeTransaction = function(player, args)
     local safeDisplayName = scriptItem and scriptItem:getDisplayName() or "Unknown Item"
     
     -- Get faction data for wealth
-    local soul = DynamicTrading_Roster.GetTrader(traderID)
+    -- V2 souls use GetSoulRegistry, V1 physical traders use GetTrader
+    local soul = DynamicTrading_Roster.GetSoulRegistry(traderID) or DynamicTrading_Roster.GetTrader(traderID)
     local factionID = soul and soul.factionID or nil
     local factionData = factionID and DynamicTrading_Factions.GetFaction(factionID) or nil
+    print(DEBUG_PREFIX .. " FactionID: " .. tostring(factionID) .. ", Faction wealth: $" .. tostring(factionData and factionData.wealth or 0))
     
     if txType == "buy" then
         -- 1. Get price from stock
@@ -177,10 +247,15 @@ Handlers.TradeTransaction = function(player, args)
             ModData.transmit("DynamicTrading_Stock")
             
             print(DEBUG_PREFIX .. " SUCCESS: Bought " .. safeDisplayName)
+            
+            -- Send updated stock to client cache (fixes UI not refreshing)
+            SendSyncStockToPlayer(player, traderID)
+            
             sendServerCommand(player, "DynamicTrading", "TransactionResult", { 
                 success = true, 
                 itemName = safeDisplayName,
-                price = totalCost
+                price = totalCost,
+                isBuy = true
             })
         else
             sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Transaction Error" })
@@ -248,10 +323,15 @@ Handlers.TradeTransaction = function(player, args)
         ModData.transmit("DynamicTrading_Stock")
         
         print(DEBUG_PREFIX .. " SUCCESS: Sold " .. itemObj:getDisplayName())
+        
+        -- Send updated stock to client cache (fixes UI not refreshing)
+        SendSyncStockToPlayer(player, traderID)
+        
         sendServerCommand(player, "DynamicTrading", "TransactionResult", { 
             success = true, 
             itemName = itemObj:getDisplayName(),
-            price = totalGain
+            price = totalGain,
+            isBuy = false
         })
     end
 end
@@ -379,11 +459,18 @@ end
 -- =============================================================================
 -- This function listens for the 'sendClientCommand' from the UI
 local function OnClientCommand(module, command, player, args)
+    -- Handle V2-specific commands
     if module == COMMAND_MODULE and Handlers[command] then
+        Handlers[command](player, args)
+        return
+    end
+    
+    -- Handle shared commands from TradingWindow (uses "DynamicTrading" module)
+    if module == "DynamicTrading" and Handlers[command] then
         Handlers[command](player, args)
     end
 end
 
 Events.OnClientCommand.Add(OnClientCommand)
 
-print("DynamicTrading: Server Network Layer (Factions Update) Initialized.")
+print("DynamicTrading: Server Network Layer (Factions Update + Trade) Initialized.")

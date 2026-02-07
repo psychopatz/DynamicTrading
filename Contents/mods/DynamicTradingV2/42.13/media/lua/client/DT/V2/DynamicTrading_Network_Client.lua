@@ -74,4 +74,74 @@ local function OnServerCommand(module, command, args)
 end
 
 Events.OnServerCommand.Add(OnServerCommand)
+
+-- =============================================================================
+-- SHARED MODULE HANDLER (for TransactionResult from DynamicTrading module)
+-- This is needed because the server sends TransactionResult to "DynamicTrading",
+-- not "DynamicTrading_V2", for compatibility with the common TradingWindow.
+-- =============================================================================
+local function OnSharedServerCommand(module, command, args)
+    if module ~= "DynamicTrading" then return end
+    
+    if command == "TransactionResult" then
+        print("[DT-V2-Client] Received TransactionResult: " .. tostring(args.success))
+        
+        if DT_TradingWindow and DT_TradingWindow.instance then
+            local ui = DT_TradingWindow.instance
+            
+            if args.success then
+                -- Get trader for dialogue generation
+                local trader = ui.dataProvider and ui.dataProvider:getTrader(ui.traderID, ui.archetype)
+                
+                if trader and DynamicTrading.DialogueManager then
+                    -- Generate NPC response dialogue
+                    local diagArgs = {
+                        itemName = args.itemName or "Item",
+                        price = args.price or 0,
+                        success = true
+                    }
+                    
+                    local isBuy = args.isBuy ~= false -- Default to buy if not specified
+                    local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, diagArgs)
+                    ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier", "transaction")
+                end
+                
+                -- Refresh UI is now handled by OnDynamicTradingStockUpdated event below
+            else
+                -- Show failure message
+                ui:queueMessage(args.msg or "Transaction Failed", true, false, 0, nil, "transaction")
+                if HaloTextHelper and getSpecificPlayer(0) then
+                    HaloTextHelper.addTextWithArrow(getSpecificPlayer(0), args.msg or "Failed", true, HaloTextHelper.getColorRed())
+                end
+            end
+        end
+        
+        -- Also trigger generic event for other listeners
+        triggerEvent("OnDynamicTradingTradeCompleted", args)
+    end
+end
+
+Events.OnServerCommand.Add(OnSharedServerCommand)
+
+-- =============================================================================
+-- STOCK UPDATE LISTENER (Refreshes UI when stock is synced from server)
+-- This ensures the cache is updated BEFORE we refresh the list
+-- =============================================================================
+local function OnStockUpdated(traderID)
+    if DT_TradingWindow and DT_TradingWindow.instance then
+        local ui = DT_TradingWindow.instance
+        -- Only refresh if this update is for our current trader
+        if ui.traderID == traderID then
+            print("[DT-V2-Client] Stock updated for current trader, refreshing UI")
+            ui:populateList()
+        end
+    end
+end
+
+-- Listen for stock update events
+if LuaEventManager then
+    LuaEventManager.AddEvent("OnDynamicTradingStockUpdated")
+end
+Events.OnDynamicTradingStockUpdated.Add(OnStockUpdated)
+
 print("DynamicTrading: Client Network Layer V2 Initialized")

@@ -16,12 +16,19 @@ end
 function DynamicTrading_Stock.InitializeInventory(traderID, initialItems)
     local data = ModData.get(MOD_DATA_KEY)
     if not data[traderID] then
+        -- Get soul data for factionID (persisted for client fallback)
+        local soul = DynamicTrading_Roster.GetSoulRegistry(traderID)
+        local factionID = soul and soul.factionID or nil
+        
         data[traderID] = {
             items = initialItems or {}, -- [ItemFullType] = { qty, basePrice, dynamicMod }
             restock = {
                 lastRestockTime = getGameTime():getWorldAgeHours(),
                 nextRestockTime = getGameTime():getWorldAgeHours() + 24 -- 24 hours default
-            }
+            },
+            factionID = factionID,  -- Store factionID for client ModData fallback
+            name = soul and soul.name or "Trader",
+            archetype = soul and soul.archetypeID or "General"
         }
         ModData.transmit(MOD_DATA_KEY)
     end

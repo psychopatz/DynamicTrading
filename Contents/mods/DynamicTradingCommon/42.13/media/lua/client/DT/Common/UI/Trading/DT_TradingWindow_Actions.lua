@@ -229,6 +229,12 @@ function DT_TradingWindow:setTradingMode(isBuying)
     self.selectedKey = nil
     self.selectedItemID = -1
     self.lastSelectedIndex = -1
+
+    -- Force inventory scan when switching to sell mode to ensure list populates immediately
+    if not isBuying then
+        self.inventoryDirty = true
+        self.refreshCooldown = 0
+    end
     
     -- Update Tab Visuals
     if self.btnTabBuy and self.btnTabSell then

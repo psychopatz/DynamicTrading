@@ -14,6 +14,58 @@ require "DT/V2/NPC/DTNPC_ClientCache"
 
 local DEBUG_PREFIX = "[DT-V2-TradingWrapper]"
 
+-- Stock version tracking for polling-based refresh
+local _lastStockVersion = nil
+local _currentTraderID = nil
+
+-- =============================================================================
+-- POLLING: Auto-refresh when stock cache changes
+-- =============================================================================
+local function OnPreUIDraw()
+    if not DT_TradingWindow or not DT_TradingWindow.instance then return end
+    if not DT_TradingWindow.instance:getIsVisible() then return end
+    
+    local ui = DT_TradingWindow.instance
+    local traderID = ui.traderID
+    if not traderID then return end
+    
+    -- Get current stock from cache
+    local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
+                      or ModData.get("DynamicTrading_Stock")
+    
+    if not stockData or not stockData[traderID] then return end
+    
+    local stock = stockData[traderID]
+    
+    -- Build a version fingerprint from factionWealth + total qty
+    local totalQty = 0
+    if stock.items then
+        for _, item in pairs(stock.items) do
+            if type(item) == "table" then
+                totalQty = totalQty + (item.qty or 0)
+            else
+                totalQty = totalQty + (item or 0)
+            end
+        end
+    end
+    
+    local version = tostring(stock.factionWealth or 0) .. "_" .. tostring(totalQty)
+    
+    -- Check if version changed
+    if _currentTraderID == traderID and _lastStockVersion and _lastStockVersion ~= version then
+        print(DEBUG_PREFIX .. " Stock version changed: " .. _lastStockVersion .. " -> " .. version .. ", refreshing UI")
+        _lastStockVersion = version
+        ui:populateList()
+    elseif _currentTraderID ~= traderID then
+        -- Different trader, just update tracking
+        _currentTraderID = traderID
+        _lastStockVersion = version
+    elseif not _lastStockVersion then
+        _lastStockVersion = version
+    end
+end
+
+Events.OnPreUIDraw.Add(OnPreUIDraw)
 
 -- =============================================================================
 -- V2 DATA PROVIDER
@@ -24,9 +76,9 @@ V2_DataProvider = {}
 -- TRADER DATA
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:getTrader(traderID, archetype)
-    print(DEBUG_PREFIX .. " getTrader called for ID: " .. tostring(traderID))
+    -- print(DEBUG_PREFIX .. " getTrader called for ID: " .. tostring(traderID))
     
-    -- Get stock data from synced ModData
+    -- Get stock data from synced ModData (prefer client cache)
     local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
                       or ModData.get("DynamicTrading_Stock")
     
@@ -36,7 +88,7 @@ function V2_DataProvider:getTrader(traderID, archetype)
     end
     
     local stock = stockData[traderID]
-    print(DEBUG_PREFIX .. " Stock found. Items: " .. tostring(V2_DataProvider:countTable(stock.items or {})))
+    -- print(DEBUG_PREFIX .. " Stock found. Items: " .. tostring(V2_DataProvider:countTable(stock.items or {})))
     
     -- Convert V2 stock format {key: {qty, price}} to V1 format {key: qty}
     local flattenedStocks = {}
@@ -54,19 +106,28 @@ function V2_DataProvider:getTrader(traderID, archetype)
     self._stockItems = stock.items or {}
     
     -- Get faction wealth for budget display
-    local factionWealth = 0
-    if stock.factionID then
-        local factionData = ModData.get("DynamicTrading_Factions")
+    -- PRIORITY 1: Use factionWealth from SyncStock (most up-to-date from server)
+    local factionWealth = stock.factionWealth or 0
+    
+    -- DEBUG: Log what value came from server
+    -- print(DEBUG_PREFIX .. " Stock factionWealth from server: " .. tostring(stock.factionWealth) .. ", factionID: " .. tostring(stock.factionID))
+    
+    -- PRIORITY 2: Fallback to ModData lookup if factionID is available
+    if factionWealth == 0 and stock.factionID then
+        local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions)
+                            or ModData.get("DynamicTrading_Factions")
         if factionData and factionData[stock.factionID] then
             factionWealth = factionData[stock.factionID].wealth or 0
-            print(DEBUG_PREFIX .. " Faction wealth: $" .. tostring(factionWealth))
+            -- print(DEBUG_PREFIX .. " Fallback wealth from Factions cache: " .. tostring(factionWealth))
         end
     end
+    
+    -- print(DEBUG_PREFIX .. " Final faction wealth resolved: $" .. tostring(factionWealth))
     
     -- Build merged trader proxy (using 'stocks' and 'budget' as expected by TradingWindow)
     local trader = {
         traderID = traderID,
-        archetype = archetype or stock.archetype or "General",
+        archetype = stock.archetype or archetype or "General",
         name = stock.name or "Trader",
         wallet = stock.wallet or factionWealth or 0,  -- V2 individual wallet
         budget = factionWealth,  -- TradingWindow expects 'budget' for display
@@ -79,9 +140,9 @@ function V2_DataProvider:getTrader(traderID, archetype)
         npcRef = self._currentNPC
     }
     
-    print(DEBUG_PREFIX .. " Trader proxy built: " .. trader.name .. " (" .. trader.archetype .. ")")
-    print(DEBUG_PREFIX .. " Stocks count: " .. tostring(V2_DataProvider:countTable(flattenedStocks)))
-    print(DEBUG_PREFIX .. " Budget: $" .. tostring(trader.budget))
+    -- print(DEBUG_PREFIX .. " Trader proxy built: " .. trader.name .. " (" .. trader.archetype .. ")")
+    -- print(DEBUG_PREFIX .. " Stocks count: " .. tostring(V2_DataProvider:countTable(flattenedStocks)))
+    -- print(DEBUG_PREFIX .. " Budget: $" .. tostring(trader.budget))
     return trader
 end
 
@@ -137,14 +198,14 @@ function V2_DataProvider:getItemData(key)
 end
 
 function V2_DataProvider:getBuyPrice(key)
-    print(DEBUG_PREFIX .. " getBuyPrice: " .. tostring(key))
+    -- print(DEBUG_PREFIX .. " getBuyPrice: " .. tostring(key))
     
     -- First try cached stock items (fastest)
     if self._stockItems and self._stockItems[key] then
         local itemStock = self._stockItems[key]
         if type(itemStock) == "table" then
             local price = itemStock.price or itemStock.basePrice or 0
-            print(DEBUG_PREFIX .. " Price from _stockItems: $" .. tostring(price))
+            -- print(DEBUG_PREFIX .. " Price from _stockItems: $" .. tostring(price))
             return price
         end
     end
@@ -157,7 +218,7 @@ function V2_DataProvider:getBuyPrice(key)
         local items = stockData[self._currentTraderID].items
         if items and items[key] then
             local price = items[key].price or items[key].basePrice or 99999
-            print(DEBUG_PREFIX .. " Price from ModData: $" .. tostring(price))
+            -- print(DEBUG_PREFIX .. " Price from ModData: $" .. tostring(price))
             return price
         end
     end
@@ -165,7 +226,7 @@ function V2_DataProvider:getBuyPrice(key)
     -- Fallback to base price from MasterList
     local itemData = DynamicTrading.Config.MasterList[key]
     if itemData then
-        print(DEBUG_PREFIX .. " Price from MasterList (fallback): $" .. tostring(itemData.basePrice))
+        -- print(DEBUG_PREFIX .. " Price from MasterList (fallback): $" .. tostring(itemData.basePrice))
         return itemData.basePrice
     end
     
@@ -174,7 +235,7 @@ function V2_DataProvider:getBuyPrice(key)
 end
 
 function V2_DataProvider:getSellPrice(invItem, masterKey, trader)
-    print(DEBUG_PREFIX .. " getSellPrice: " .. tostring(masterKey))
+    -- print(DEBUG_PREFIX .. " getSellPrice: " .. tostring(masterKey))
     
     local itemData = DynamicTrading.Config.MasterList[masterKey]
     if not itemData then
@@ -190,7 +251,7 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader)
         if invItem:getCondition() and invItem:getConditionMax() and invItem:getConditionMax() > 0 then
             local cond = invItem:getCondition() / invItem:getConditionMax()
             price = price * cond
-            print(DEBUG_PREFIX .. " Condition modifier: " .. string.format("%.2f", cond))
+            -- print(DEBUG_PREFIX .. " Condition modifier: " .. string.format("%.2f", cond))
         end
     end
     
@@ -199,11 +260,11 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader)
         local deflationCount = trader.deflation[masterKey]
         local deflationMod = math.max(0.5, 1.0 - (deflationCount * 0.05)) -- 5% per sale, min 50%
         price = price * deflationMod
-        print(DEBUG_PREFIX .. " Deflation modifier: " .. string.format("%.2f", deflationMod) .. " (sold " .. deflationCount .. "x)")
+        -- print(DEBUG_PREFIX .. " Deflation modifier: " .. string.format("%.2f", deflationMod) .. " (sold " .. deflationCount .. "x)")
     end
     
     local finalPrice = math.floor(price)
-    print(DEBUG_PREFIX .. " Final sell price: $" .. tostring(finalPrice))
+    -- print(DEBUG_PREFIX .. " Final sell price: $" .. tostring(finalPrice))
     return finalPrice
 end
 
@@ -326,7 +387,7 @@ function V2_DataProvider:getPlayerWealth(player)
     local looseCount = loose and loose:size() or 0
     local bundleCount = bundles and bundles:size() or 0
     local total = looseCount + (bundleCount * 100)
-    print(DEBUG_PREFIX .. " Player wealth: $" .. tostring(total))
+    -- print(DEBUG_PREFIX .. " Player wealth: $" .. tostring(total))
     return total
 end
 
