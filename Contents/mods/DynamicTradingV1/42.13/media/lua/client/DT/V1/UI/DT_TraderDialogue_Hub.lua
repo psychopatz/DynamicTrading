@@ -11,7 +11,8 @@ function DT_TraderDialogue_Hub.Init(ui, trader, parentUI)
     if not ui then
         -- Open if not already open
         if DT_ConversationUI then
-            ui = DT_ConversationUI.Open(trader, nil, nil, true, parentUI)
+            local interactionObj = parentUI and parentUI.radioObj or nil
+            ui = DT_ConversationUI.Open(trader, nil, nil, true, interactionObj)
         else
             return
         end

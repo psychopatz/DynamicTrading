@@ -14,6 +14,7 @@ require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "Utils/DT_StringUtils" 
+require "Utils/DT_CoreUtils"
 
 DT_ConversationUI = ISCollapsableWindow:derive("DT_ConversationUI")
 DT_ConversationUI.instance = nil
@@ -37,6 +38,7 @@ function DT_ConversationUI:initialise()
     self.isRadio = true      
     self.msgQueue = {}       
     self.typingTick = 0      
+    self.interactionObj = nil
 end
 
 function DT_ConversationUI:createChildren()
@@ -120,6 +122,12 @@ end
 -- =============================================================================
 function DT_ConversationUI:update()
     ISCollapsableWindow.update(self)
+
+    -- IDLE/DISTANCE CHECK
+    if not DynamicTrading.Utils.IsInteractionValid(self.interactionObj, nil, self.target) then
+        self:close()
+        return
+    end
     
     self.typingTick = self.typingTick + 1
 
@@ -430,7 +438,7 @@ end
 -- =============================================================================
 -- 7. PUBLIC API
 -- =============================================================================
-function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio)
+function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio, interactionObj)
     if DT_ConversationUI.instance then
         DT_ConversationUI.instance:close()
     end
@@ -505,6 +513,8 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio)
     if initialOptions then
         ui:updateOptions(initialOptions)
     end
+
+    ui.interactionObj = interactionObj
 
     DT_ConversationUI.instance = ui
     return ui

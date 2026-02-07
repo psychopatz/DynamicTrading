@@ -6,7 +6,7 @@
 -- Access: DynamicTrading.Utils.WrapText(...)
 
 DynamicTrading = DynamicTrading or {}
-DynamicTrading.Utils = {}
+DynamicTrading.Utils = DynamicTrading.Utils or {}
 
 -- =============================================================================
 -- 1. TEXT WRAPPING

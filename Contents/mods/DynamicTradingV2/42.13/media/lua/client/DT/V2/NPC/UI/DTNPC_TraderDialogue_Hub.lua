@@ -1,7 +1,7 @@
 -- =============================================================================
 -- DYNAMIC TRADING V2: NPC TRADER DIALOGUE HUB
 -- =============================================================================
-require "DT/V2/UI/DT_ConversationUI"
+require "UI/DT_ConversationUI"
 require "DT/V2/NPC/DTNPC_TradingHandler"
 
 DTNPC_TraderDialogue_Hub = {}
@@ -18,10 +18,17 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 archetype = brain and brain.archetypeID or brain.occupation or "Survivor",
                 gender = npc:isFemale() and "Female" or "Male",
                 portraitID = brain and brain.portraitID or 1,
-                factionID = brain and brain.factionID
+                factionID = brain and brain.factionID,
+                expirationTime = brain and brain.returnTime
             }
+            print("Trader Name: " .. traderProxy.name)
+            print("Trader Archetype: " .. traderProxy.archetype)
+            print("Trader Gender: " .. traderProxy.gender)
+            print("Trader Portrait ID: " .. traderProxy.portraitID)
+            print("Trader Faction ID: " .. traderProxy.factionID)
+            print("Trader Expiration Time: " .. traderProxy.expirationTime)
 
-            ui = DT_ConversationUI.Open(traderProxy, nil, nil, false) -- isRadio = false
+            ui = DT_ConversationUI.Open(traderProxy, nil, nil, false, npc) -- isRadio = false
         else
             return
         end
