@@ -253,24 +253,24 @@ option DynamicTrading.WalkieDropChance
     translation = DynamicTrading_WalkieDropChance,
 }
 
-option DynamicTrading.WalletMinCash
+option DynamicTrading.WalletMinCashPercent
 {
     type = integer,
-    default = 1,
+    default = 20,
     min = 1,
-    max = 100,
+    max = 80,
     page = DynamicTrading,
-    translation = DynamicTrading_WalletMinCash,
+    translation = DynamicTrading_WalletMinCashPercent,
 }
 
-option DynamicTrading.WalletMaxCash
+option DynamicTrading.WalletMaxCashPercent
 {
     type = integer,
     default = 80,
-    min = 10,
-    max = 2000,
+    min = 2,
+    max = 100,
     page = DynamicTrading,
-    translation = DynamicTrading_WalletMaxCash,
+    translation = DynamicTrading_WalletMaxCashPercent,
 }
 
 option DynamicTrading.WalletEmptyChance
@@ -324,13 +324,13 @@ option DynamicTrading.GlobalWealthStart
     translation = DynamicTrading_GlobalWealthStart,
 }
 
-option DynamicTrading.GlobalWealthFallback
+option DynamicTrading.GlobalWealthStimulus
 {
     type = integer,
-    default = 100,
+    default = 500,
     min = 0,
-    max = 10000,
+    max = 50000,
     page = DynamicTrading,
-    translation = DynamicTrading_GlobalWealthFallback,
+    translation = DynamicTrading_GlobalWealthStimulus,
 }
 

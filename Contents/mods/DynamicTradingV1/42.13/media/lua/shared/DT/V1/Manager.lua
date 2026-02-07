@@ -161,10 +161,20 @@ function DynamicTrading.Manager.CheckDailyReset()
             end
         end
 
+        -- 7. [NEW] Global Wealth Stimulus (Every 3 Days)
+        if currentTradingDay > 0 and (currentTradingDay % 3 == 0) then
+            local stimulus = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.GlobalWealthStimulus) or 500
+            if stimulus > 0 then
+                DynamicTrading.Manager.AddToWealthPool(stimulus)
+                DynamicTrading.NetworkLogs.AddLog("Economic Report: Global Wealth Stimulus applied (+" .. stimulus .. ")", "good")
+                print("[DynamicTrading] SERVER: Stimulus Applied. New Wealth: " .. data.GlobalWealthPool)
+            end
+        end
+
         DynamicTrading.NetworkLogs.AddLog("Daily Cycle: Market Reset.", "info")
         print("[DynamicTrading] SERVER: Reset Complete. New Limit: " .. data.DailyCycle.dailyTraderLimit)
 
-        -- 7. Force Sync to ALL Clients
+        -- 8. Force Sync to ALL Clients
         ModData.transmit("DynamicTrading_Engine_v1.3")
     end
 end
@@ -386,20 +396,39 @@ function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
     local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
 
     -- 5. Create Data Object
-    -- [UPDATED] Wealth Pool Integration
-    local minBudget = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderBudgetMin) or 100
-    local maxBudget = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderBudgetMax) or 500
-    local requestedBudget = ZombRand(minBudget, maxBudget + 1)
+    -- [UPDATED] Wealth Pool Integration (Dynamic Percentage of Total Capacity)
+    local globalWealth = DynamicTrading.Manager.GetGlobalWealth()
+    local _, capacity = DynamicTrading.Manager.GetDailyStatus()
     
+    local minPct = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.WalletMinCashPercent) or 1
+    local maxPct = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.WalletMaxCashPercent) or 40
+    if minPct > maxPct then minPct = maxPct end
+    
+    local rollPct = ZombRand(minPct, maxPct + 1) / 100
+    
+    -- Formula: (Total Wealth / Capacity) * Random Percentage
+    local shareOfEconomy = globalWealth / capacity
+    local requestedBudget = math.floor(shareOfEconomy * rollPct)
+    
+    -- Safety Floor: Use a small fraction of stimulus as fallback if budget is too low
+    local stimulusFactor = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.GlobalWealthStimulus) or 500
+    local floor = math.floor(stimulusFactor * 0.2) -- 20% of stimulus is the bare minimum floor
+    if requestedBudget < floor then requestedBudget = floor end
+
+    print("[DynamicTrading] Budget Calculation for " .. name)
+    print("  > Global Wealth: " .. globalWealth)
+    print("  > Daily Capacity: " .. capacity)
+    print("  > Base Share: " .. shareOfEconomy)
+    print("  > Roll: " .. (rollPct * 100) .. "%")
+    print("  > Requested: " .. requestedBudget .. " (Floor: " .. floor .. ")")
+
     local actualBudget = DynamicTrading.Manager.TakeFromWealthPool(requestedBudget)
     
-    -- Fallback: If pool gave us 0 (or very little), invoke the Bailout Fund
-    local fallback = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.GlobalWealthFallback) or 100
-    if actualBudget < fallback then
-        local missing = fallback - actualBudget
-        actualBudget = actualBudget + missing
-        -- We don't deduct this 'missing' amount from the pool because the pool is empty/insufficient.
-        -- This is inflation/printing money to keep the game playable.
+    print("  > Actual Awarded: " .. actualBudget)
+    
+    -- Final Bailout: If pool is absolutely empty, give the floor from thin air
+    if actualBudget < floor then
+        actualBudget = floor
     end
 
     data.Traders[uniqueID] = {

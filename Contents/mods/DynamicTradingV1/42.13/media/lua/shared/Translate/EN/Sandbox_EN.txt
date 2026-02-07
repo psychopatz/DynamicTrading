@@ -74,11 +74,11 @@ Sandbox_EN = {
     Sandbox_DynamicTrading_WalkieDropChance = "Walkie Talkie Loot Chance (%)",
     Sandbox_DynamicTrading_WalkieDropChance_tooltip = "The percentage chance (0-100) that a zombie will spawn with a Makeshift Walkie Talkie on death.",
     
-    Sandbox_DynamicTrading_WalletMinCash = "Wallet: Min Cash",
-    Sandbox_DynamicTrading_WalletMinCash_tooltip = "The minimum amount of money found in a wallet (if not empty).",
+    Sandbox_DynamicTrading_WalletMinCashPercent = "Budget Share: Min %",
+    Sandbox_DynamicTrading_WalletMinCashPercent_tooltip = "The minimum percentage of (Global Wealth / Trader Capacity) that a trader receives as their budget.",
 
-    Sandbox_DynamicTrading_WalletMaxCash = "Wallet: Max Cash",
-    Sandbox_DynamicTrading_WalletMaxCash_tooltip = "The maximum amount of money found in a normal wallet. Jackpots can exceed this.",
+    Sandbox_DynamicTrading_WalletMaxCashPercent = "Budget Share: Max %",
+    Sandbox_DynamicTrading_WalletMaxCashPercent_tooltip = "The maximum percentage of (Global Wealth / Trader Capacity) that a trader receives as their budget.",
 
     Sandbox_DynamicTrading_WalletEmptyChance = "Wallet: Empty Chance (%)",
     Sandbox_DynamicTrading_WalletEmptyChance_tooltip = "Percentage chance a wallet contains nothing but junk.",
@@ -101,6 +101,6 @@ Sandbox_EN = {
     Sandbox_DynamicTrading_GlobalWealthStart = "Global Economy (Start)",
     Sandbox_DynamicTrading_GlobalWealthStart_tooltip = "The total amount of money available in the global economy at the start of the game.",
 
-    Sandbox_DynamicTrading_GlobalWealthFallback = "Broke Trader Fallback",
-    Sandbox_DynamicTrading_GlobalWealthFallback_tooltip = "If the Global Economy is empty, traders will spawn with this minimum amount of cash (created from thin air) to keep the game playable.",
+    Sandbox_DynamicTrading_GlobalWealthStimulus = "Global Wealth Stimulus",
+    Sandbox_DynamicTrading_GlobalWealthStimulus_tooltip = "The amount of money added to the Global Wealth pool every 3 days. This helps sustain the economy and prevent it from completely stalling.",
 }
