@@ -443,7 +443,10 @@ local function Server_OnHourlyTick()
     end
     
     -- Sync if traders removed
-    if changesMade then ModData.transmit("DynamicTrading_Engine_v1.3") end
+    if changesMade then 
+        DynamicTrading.Manager.BumpTradersVersion()
+        -- ModData.transmit already called by BumpTradersVersion
+    end
 
     -- 3. Event System Check (8 AM)
     if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then

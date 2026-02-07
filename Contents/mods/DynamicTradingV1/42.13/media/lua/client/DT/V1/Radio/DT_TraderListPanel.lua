@@ -8,6 +8,7 @@ DT_TraderListPanel = ISPanel:derive("DT_TraderListPanel")
 function DT_TraderListPanel:initialise()
     ISPanel.initialise(self)
     self.lastDiscoveredCount = -1
+    self.lastTradersVersion = -1
 end
 
 function DT_TraderListPanel:createChildren()
@@ -35,9 +36,11 @@ function DT_TraderListPanel:prerender()
     
     -- Auto Refresh Logic
     local player = getSpecificPlayer(0)
+    local data = DynamicTrading.Manager.GetData()
+    local currentVersion = (data.DailyCycle and data.DailyCycle.tradersVersion) or 0
     local currentDiscovered = DynamicTrading.Manager.GetDiscoveredCount(player)
 
-    if currentDiscovered ~= self.lastDiscoveredCount then
+    if currentVersion ~= self.lastTradersVersion or currentDiscovered ~= self.lastDiscoveredCount then
         -- Notify parent to persist found state animation if relevant
         if currentDiscovered > self.lastDiscoveredCount and self.lastDiscoveredCount >= 0 then
             if self.parent and self.parent.signalPanel then
@@ -46,6 +49,7 @@ function DT_TraderListPanel:prerender()
         end
         self:populateList()
         self.lastDiscoveredCount = currentDiscovered
+        self.lastTradersVersion = currentVersion
     end
 end
 

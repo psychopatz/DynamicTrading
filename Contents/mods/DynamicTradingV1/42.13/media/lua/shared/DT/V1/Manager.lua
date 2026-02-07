@@ -37,7 +37,8 @@ function DynamicTrading.Manager.GetData()
         data.DailyCycle = {
             dailyTraderLimit = 5,
             currentTradersFound = 0,
-            lastResetDay = -1
+            lastResetDay = -1,
+            tradersVersion = 0 -- [NEW] Used to signal UI refreshes
         }
     end
 
@@ -103,6 +104,8 @@ function DynamicTrading.Manager.TakeFromWealthPool(requestAmount)
         withdrawn = current
         data.GlobalWealthPool = 0
     end
+    
+    print("[DynamicTrading] TakeFromWealthPool: Requested " .. requestAmount .. " | Pool: " .. current .. " -> " .. data.GlobalWealthPool)
     
     if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
     return withdrawn
@@ -212,7 +215,7 @@ end
 function DynamicTrading.Manager.IncrementDailyCounter()
     local data = DynamicTrading.Manager.GetData()
     data.DailyCycle.currentTradersFound = (data.DailyCycle.currentTradersFound or 0) + 1
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
+    DynamicTrading.Manager.BumpTradersVersion()
 end
 
 -- =============================================================================
@@ -425,6 +428,7 @@ function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
     local actualBudget = DynamicTrading.Manager.TakeFromWealthPool(requestedBudget)
     
     print("  > Actual Awarded: " .. actualBudget)
+    print("  > Remaining Pool: " .. DynamicTrading.Manager.GetGlobalWealth())
     
     -- Final Bailout: If pool is absolutely empty, give the floor from thin air
     if actualBudget < floor then
@@ -588,7 +592,7 @@ function DynamicTrading.Manager.DiscoverTrader(traderID, player)
     
     if not trader.discoveredBy[username] then
         trader.discoveredBy[username] = true
-        if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
+        DynamicTrading.Manager.BumpTradersVersion()
         return true
     end
     return false -- Already discovered
@@ -627,6 +631,15 @@ end
 function DynamicTrading.Manager.GetDiscoveredCount(player)
     if not player then return 0 end
     local data = DynamicTrading.Manager.GetData()
+    
+    -- [FIX] If PublicNetwork is enabled, everyone sees every trader.
+    -- This ensures the UI "Refresh Trigger" works for everyone when a trader is added/removed.
+    if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork then
+        local count = 0
+        for _ in pairs(data.Traders) do count = count + 1 end
+        return count
+    end
+
     local count = 0
     local username = player:getUsername()
     
@@ -636,4 +649,12 @@ function DynamicTrading.Manager.GetDiscoveredCount(player)
         end
     end
     return count
+end
+
+-- [NEW] Helper to signal UI that trader data has changed significantly
+function DynamicTrading.Manager.BumpTradersVersion()
+    local data = DynamicTrading.Manager.GetData()
+    if not data.DailyCycle then return end
+    data.DailyCycle.tradersVersion = (data.DailyCycle.tradersVersion or 0) + 1
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
 end
