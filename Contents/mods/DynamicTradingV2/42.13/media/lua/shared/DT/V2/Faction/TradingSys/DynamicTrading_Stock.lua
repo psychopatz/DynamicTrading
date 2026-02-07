@@ -28,7 +28,9 @@ function DynamicTrading_Stock.InitializeInventory(traderID, initialItems)
             },
             factionID = factionID,  -- Store factionID for client ModData fallback
             name = soul and soul.name or "Trader",
-            archetype = soul and soul.archetypeID or "General"
+            archetype = soul and soul.archetypeID or "General",
+            portraitID = soul and soul.portraitID or 1,
+            gender = (soul and soul.isFemale) and "Female" or "Male"
         }
         ModData.transmit(MOD_DATA_KEY)
     end

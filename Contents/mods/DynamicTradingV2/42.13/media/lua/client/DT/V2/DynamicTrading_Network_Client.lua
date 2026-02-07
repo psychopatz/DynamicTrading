@@ -106,7 +106,9 @@ local function OnSharedServerCommand(module, command, args)
                     ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier", "transaction")
                 end
                 
-                -- Refresh UI is now handled by OnDynamicTradingStockUpdated event below
+                -- [FIX] Update wallet display and force immediate list refresh
+                if ui.updateWallet then ui:updateWallet() end
+                ui:populateList()
             else
                 -- Show failure message
                 ui:queueMessage(args.msg or "Transaction Failed", true, false, 0, nil, "transaction")

@@ -17,7 +17,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
             -- We create a "fake" trader object from the NPC for the UI
             local brain = npc:getModData().DTNPCBrain
             local traderProxy = {
-                id = npc:getPersistentOutfitID() or npc:getID(),
+                id = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID(),
                 name = brain and brain.name or "Survivor",
                 archetype = brain and brain.archetypeID or brain.occupation or "Survivor",
                 gender = npc:isFemale() and "Female" or "Male",
@@ -25,6 +25,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 factionID = brain and brain.factionID,
                 expirationTime = brain and brain.returnTime
             }
+            print("Trader ID: " .. traderProxy.id)
             print("Trader Name: " .. traderProxy.name)
             print("Trader Archetype: " .. traderProxy.archetype)
             print("Trader Gender: " .. traderProxy.gender)

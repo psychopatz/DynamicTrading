@@ -49,7 +49,15 @@ local function OnPreUIDraw()
         end
     end
     
-    local version = tostring(stock.factionWealth or 0) .. "_" .. tostring(totalQty)
+    -- [FIX] Also track player inventory count for sell mode refreshing
+    local playerItemCount = 0
+    if not ui.isBuying then
+        local player = getSpecificPlayer(0)
+        if player and player:getInventory() then
+            playerItemCount = player:getInventory():getItems():size()
+        end
+    end
+    local version = tostring(stock.factionWealth or 0) .. "_" .. tostring(totalQty) .. "_" .. tostring(playerItemCount)
     
     -- Check if version changed
     if _currentTraderID == traderID and _lastStockVersion and _lastStockVersion ~= version then
