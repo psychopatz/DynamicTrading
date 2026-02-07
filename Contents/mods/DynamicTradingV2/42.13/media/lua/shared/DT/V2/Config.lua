@@ -1,3 +1,4 @@
+require "DT/Common/Config"
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.V2 = {}
 DynamicTrading.V2.Config = {}

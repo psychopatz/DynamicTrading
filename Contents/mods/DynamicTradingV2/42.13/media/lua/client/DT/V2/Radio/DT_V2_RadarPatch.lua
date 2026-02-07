@@ -3,7 +3,7 @@
 -- Version [V3.1] - UI Logic Recovery (Device Injection Support)
 -- ==============================================================================
 
-require "RadioComms/ISUI/ISRadioWindow"
+require "ISUI/ISRadioWindow"
 
 local original_createChildren = ISRadioWindow.createChildren
 local original_close = ISRadioWindow.close
