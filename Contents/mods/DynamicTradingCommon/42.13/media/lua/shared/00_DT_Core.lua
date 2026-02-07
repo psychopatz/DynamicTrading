@@ -21,6 +21,19 @@ if LuaEventManager then
     if not LuaEventManager.OnDynamicTradingHourlyTick then
         LuaEventManager.AddEvent("OnDynamicTradingHourlyTick")
     end
+    -- UI & Network Sync Events
+    if not LuaEventManager.OnDynamicTradingTraderUpdated then
+        LuaEventManager.AddEvent("OnDynamicTradingTraderUpdated")
+    end
+    if not LuaEventManager.OnDynamicTradingFactionUpdated then
+        LuaEventManager.AddEvent("OnDynamicTradingFactionUpdated")
+    end
+    if not LuaEventManager.OnDynamicTradingStockUpdated then
+        LuaEventManager.AddEvent("OnDynamicTradingStockUpdated")
+    end
+    if not LuaEventManager.OnDynamicTradingTradeCompleted then
+        LuaEventManager.AddEvent("OnDynamicTradingTradeCompleted")
+    end
 end
 
 -- 1. STATIC CONFIGURATION (Commonly referenced)
@@ -66,7 +79,7 @@ function DynamicTrading.AddItem(uniqueID, data)
     if not data.stockRange then data.stockRange = {min=1, max=5} end
     DynamicTrading.Config.MasterList[uniqueID] = data
     if isDebugEnabled() then
-        print("[DynamicTrading] Registered Item: " .. tostring(uniqueID))
+        -- print("[DynamicTrading] Registered Item: " .. tostring(uniqueID))
     end
 end
 

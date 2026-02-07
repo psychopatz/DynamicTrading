@@ -235,17 +235,21 @@ local function onServerCommand(module, command, args)
         local color = success and {r=0, g=1, b=0, a=1} or {r=1, g=0, b=0, a=1}
         
         if DT_MerchantDebugWindow.instance and DT_MerchantDebugWindow.instance:getIsVisible() then
-            -- We don't have a status label, let's just use HaloText or print for now
-            if HaloTextHelper then
-                HaloTextHelper.addText(getPlayer(), "DT: " .. reason, color)
-            else
-                print("DT TradeResult: " .. reason)
-            end
+            -- We don't have a status label, let's just use print/Halo as requested (switching to print)
+            print("DT: " .. tostring(reason))
         end
     end
 end
 
+local function onStockUpdated(traderID)
+    if DT_MerchantDebugWindow.instance and DT_MerchantDebugWindow.instance:getIsVisible() then
+        -- Refresh the list to show new stock
+        DT_MerchantDebugWindow.instance:refreshList()
+    end
+end
+
 Events.OnServerCommand.Add(onServerCommand)
+Events.OnDynamicTradingStockUpdated.Add(onStockUpdated)
 
 -- Singleton Access
 function DT_MerchantDebugWindow.Open()

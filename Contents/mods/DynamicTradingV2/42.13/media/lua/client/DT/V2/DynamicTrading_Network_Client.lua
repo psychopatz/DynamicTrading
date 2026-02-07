@@ -46,32 +46,30 @@ local function OnServerCommand(module, command, args)
         local id = args.id
         if id then
             DynamicTrading_Client.Cache.Traders[id] = args
-            Events.OnCustomUIEvent.Trigger("DynamicTrading_TraderUpdated", id)
+            triggerEvent("OnDynamicTradingTraderUpdated", id)
         end
 
     elseif command == "SyncFaction" then
         -- args is { [ID] = data }
         for id, data in pairs(args) do
             DynamicTrading_Client.Cache.Factions[id] = data
-            Events.OnCustomUIEvent.Trigger("DynamicTrading_FactionUpdated", id)
+            triggerEvent("OnDynamicTradingFactionUpdated", id)
         end
 
     elseif command == "SyncStock" then
         local id = args.id
         if id then
             DynamicTrading_Client.Cache.Stocks[id] = args -- contains items, restock
-            Events.OnCustomUIEvent.Trigger("DynamicTrading_StockUpdated", id)
+            triggerEvent("OnDynamicTradingStockUpdated", id)
         end
 
     elseif command == "TradeResult" then
         if args.success then
-            HaloTextHelper.addText(getPlayer(), "Trade Successful", HaloTextHelper.getColorGreen())
-            -- Refresh stock automatically
-            -- DynamicTrading_Client.RequestStock(lastTraderID) -- If we tracked context
+            print("DT: Trade Successful")
         else
-            HaloTextHelper.addText(getPlayer(), "Trade Failed: " .. tostring(args.reason), HaloTextHelper.getColorRed())
+            print("DT: Trade Failed: " .. tostring(args.reason))
         end
-        Events.OnCustomUIEvent.Trigger("DynamicTrading_TradeCompleted", args)
+        triggerEvent("OnDynamicTradingTradeCompleted", args)
     end
 end
 
