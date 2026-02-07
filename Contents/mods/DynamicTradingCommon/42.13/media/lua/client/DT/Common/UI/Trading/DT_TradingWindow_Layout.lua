@@ -1,4 +1,4 @@
-function DynamicTradingUI:createChildren()
+function DT_TradingWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
 
     local leftColW = 250
@@ -90,7 +90,7 @@ function DynamicTradingUI:createChildren()
     self.listbox.itemheight = 40
     self.listbox.drawBorder = true
     self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
-    self.listbox.doDrawItem = DynamicTradingUI.drawItem
+    self.listbox.doDrawItem = DT_TradingWindow.drawItem
 
     -- Selection Logic with Safety Checks
     self.listbox.onMouseDown = function(target, x, y)
@@ -100,7 +100,7 @@ function DynamicTradingUI:createChildren()
         local item = target.items[row]
         if not item or not item.item then return end
 
-        local ui = DynamicTradingUI.instance
+        local ui = DT_TradingWindow.instance
         if not ui then return end
 
         -- Handle Categories
@@ -152,11 +152,11 @@ function DynamicTradingUI:createChildren()
     self:addChild(self.listbox)
 end
 
-function DynamicTradingUI:render()
+function DT_TradingWindow:render()
     ISCollapsableWindow.render(self)
 
     if self.traderID then
-        local trader = DynamicTrading.Manager.GetTrader(self.traderID, self.archetype)
+        local trader = self.dataProvider:getTrader(self.traderID, self.archetype)
         local imgX, imgY = 11, self.imageY + 1
         local imgW, imgH = 248, 248
 

@@ -16,7 +16,7 @@ require "DT/V1/Manager"
 require "DT/V1/Economy"
 require "DT/V1/NetworkLogs"
 require "DT/V1/CooldownManager"
-require "DT/V1/PortraitConfig"
+require "03b_DynamicTrading_PortraitConfig"
 
 -- 3. CLIENT-ONLY SYSTEMS
 if isClient() then
@@ -24,7 +24,7 @@ if isClient() then
     require "DT/V1/RadioInteraction"  -- Radio Scanning Logic
 
     -- USER INTERFACE
-    require "DT/V1/UI/DynamicTradingUI"     -- The Shop Window
+    require "DT/V1/UI/DT_TradingWindow_Wrapper"     -- The Shop Window (Wrapper)
     require "DT/V1/UI/DynamicTradingInfoUI" -- The Market Info Window
     require "DT/V1/UI/DT_SidebarButton"     -- The Sidebar Button
 end

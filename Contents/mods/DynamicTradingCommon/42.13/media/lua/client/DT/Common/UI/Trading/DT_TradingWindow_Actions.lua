@@ -3,7 +3,7 @@
 -- =============================================================================
 -- 1. TRANSACTION ACTION (BUY/SELL)
 -- =============================================================================
-function DynamicTradingUI:onAction()
+function DT_TradingWindow:onAction()
     -- Reset activity timer
     if self.resetIdleTimer then self:resetIdleTimer() end
 
@@ -150,7 +150,7 @@ function DynamicTradingUI:onAction()
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
 end
 
-function DynamicTradingUI:onConfirmSell(invItem, data)
+function DT_TradingWindow:onConfirmSell(invItem, data)
     -- Callback from Modal
     if not data then return end
     
@@ -176,7 +176,7 @@ function DynamicTradingUI:onConfirmSell(invItem, data)
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
 end
 
-function DynamicTradingUI:onUnpackContainer(invItem)
+function DT_TradingWindow:onUnpackContainer(invItem)
     if not invItem then return end
     
     local player = getSpecificPlayer(0)
@@ -190,7 +190,7 @@ end
 -- =============================================================================
 -- 2. LOCK/UNLOCK ACTION
 -- =============================================================================
-function DynamicTradingUI:onToggleLock()
+function DT_TradingWindow:onToggleLock()
     if not self.selectedItemID or self.selectedItemID == -1 then return end
     
     local player = getSpecificPlayer(0)
@@ -221,7 +221,7 @@ end
 -- =============================================================================
 -- 3. INTERFACE CONTROLS
 -- =============================================================================
-function DynamicTradingUI:onToggleMode()
+function DT_TradingWindow:onToggleMode()
     if self.resetIdleTimer then self:resetIdleTimer() end
 
     self.isBuying = not self.isBuying
@@ -248,7 +248,7 @@ function DynamicTradingUI:onToggleMode()
     self.btnAction:setEnable(false)
 end
 
-function DynamicTradingUI:onAsk()
+function DT_TradingWindow:onAsk()
     -- Reset activity timer
     if self.resetIdleTimer then self:resetIdleTimer() end
 
@@ -258,7 +258,7 @@ function DynamicTradingUI:onAsk()
     self.dataProvider:onAsk(trader, self.isBuying, self)
 end
 
-function DynamicTradingUI:close()
+function DT_TradingWindow:close()
     -- [NEW] Close child conversation window if open
     if DT_ConversationUI and DT_ConversationUI.instance then
         if DT_ConversationUI.instance.parentUI == self then
@@ -268,5 +268,5 @@ function DynamicTradingUI:close()
 
     self:setVisible(false)
     self:removeFromUIManager()
-    DynamicTradingUI.instance = nil
+    DT_TradingWindow.instance = nil
 end

@@ -105,13 +105,17 @@ function DT_TraderListPanel.drawItem(this, y, item, alt)
         local gender = trader.gender or "Male"
         local seed = trader.portraitID or 1
         
+        -- CRITICAL FIX: The portraitID is a persistent seed (1-1000).
+        -- It MUST be mapped to the actual file count using GetMappedID.
         local mappedID = 1
         if DynamicTrading.Portraits.GetMappedID then
             mappedID = DynamicTrading.Portraits.GetMappedID(archetype, gender, seed)
         end
 
-        local pathFolder = DynamicTrading.Portraits.GetPathFolder(archetype, gender)
-        tex = getTexture(pathFolder .. tostring(mappedID) .. ".png")
+        if DynamicTrading.Portraits.GetPathFolder then
+            local pathFolder = DynamicTrading.Portraits.GetPathFolder(archetype, gender)
+            tex = getTexture(pathFolder .. tostring(mappedID) .. ".png")
+        end
     end
     
     if not tex then tex = getTexture("Item_WalkieTalkie1") end
@@ -130,9 +134,9 @@ function DT_TraderListPanel.onListMouseDown(target, x, y)
     -- Access Main Window via parent logic (target -> listbox, listbox.parentPanel -> TraderList, TraderList.parent -> RadioWindow)
     local mainWindow = target.parentPanel.parent
     
-    if item.item and item.item.traderID and mainWindow and DynamicTradingUI then
+    if item.item and item.item.traderID and mainWindow and DT_TradingWindow then
         if mainWindow.radioObj then
-             DynamicTradingUI.ToggleWindow(item.item.traderID, item.item.archetype, mainWindow.radioObj)
+             DT_TradingWindow.ToggleWindow(item.item.traderID, item.item.archetype, mainWindow.radioObj)
         end
     end
 end

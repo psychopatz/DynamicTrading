@@ -1,8 +1,8 @@
-function DynamicTradingUI.drawItem(listbox, y, item, alt)
+function DT_TradingWindow.drawItem(listbox, y, item, alt)
     local height = listbox.itemheight
     local d = item.item
     local width = listbox:getWidth()
-    local ui = DynamicTradingUI.instance
+    local ui = DT_TradingWindow.instance
 
     -- 1. DRAW CATEGORY HEADER
     if d.isCategory then
@@ -40,7 +40,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
         invItem = player:getInventory():getItemById(d.itemID)
     end
     
-    local tex = DynamicTradingUI.GetItemTexture(d.data.item, invItem)
+    local tex = DT_TradingWindow.GetItemTexture(d.data.item, invItem)
 
     if tex then
         local alpha = isLocked and 0.4 or 1.0
@@ -56,14 +56,14 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     end
 
     local maxNameWidth = width - 210
-    local displayName = DynamicTradingUI.TruncateString(d.name, listbox.font, maxNameWidth)
+    local displayName = DT_TradingWindow.TruncateString(d.name, listbox.font, maxNameWidth)
     listbox:drawText(displayName, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
 
     -- [NEW] DRAW TAGS ON HIGHLIGHT
     if listbox.selected == item.index and d.data and d.data.tags then
         local tagsStr = table.concat(d.data.tags, ", ")
         local maxTagWidth = width - 180
-        local displayTags = DynamicTradingUI.TruncateString(tagsStr, UIFont.Small, maxTagWidth)
+        local displayTags = DT_TradingWindow.TruncateString(tagsStr, UIFont.Small, maxTagWidth)
         listbox:drawText(displayTags, 45, y + 24, 0.4, 0.7, 0.9, 1, UIFont.Small)
     end
 
@@ -98,7 +98,7 @@ function DynamicTradingUI.drawItem(listbox, y, item, alt)
     return y + height
 end
 
-function DynamicTradingUI:populateList()
+function DT_TradingWindow:populateList()
     local oldScroll = self.listbox:getYScroll()
     self.listbox:clear()
 

@@ -78,8 +78,8 @@ function DT_TraderDialogue_Request.OnSelectArchetype(ui, data)
         trader.hasRequestedFavor = true 
         -- [CHANGED] Do not disable the main Talk button. 
         -- The Hub will handle disabling the 'Request' option internally.
-        if DynamicTradingUI.instance and DynamicTradingUI.instance.btnAsk then
-            DynamicTradingUI.instance.btnAsk.tooltip = "Favor requested."
+        if DT_TradingWindow.instance and DT_TradingWindow.instance.btnAsk then
+            DT_TradingWindow.instance.btnAsk.tooltip = "Favor requested."
         end
     end
 

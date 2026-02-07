@@ -125,8 +125,8 @@ local function OnServerCommand(module, command, args)
         end
 
     elseif command == "TransactionResult" then
-        if DynamicTradingUI and DynamicTradingUI.instance then
-            local ui = DynamicTradingUI.instance
+        if DT_TradingWindow and DT_TradingWindow.instance then
+            local ui = DT_TradingWindow.instance
             if args.success then
                 local trader = DynamicTrading.Manager.GetTrader(ui.traderID, ui.archetype)
                 

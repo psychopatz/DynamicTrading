@@ -58,8 +58,8 @@ function DT_RadioWindow:render()
     -- Auto-Close Validation
     if not self:CheckConnectionValidity() then
         self:close()
-        if DynamicTradingUI and DynamicTradingUI.instance then 
-            DynamicTradingUI.instance:close() 
+        if DT_TradingWindow and DT_TradingWindow.instance then 
+            DT_TradingWindow.instance:close() 
         end
         return
     end

@@ -9,10 +9,10 @@ require "DT/Common/Config"
 -- =============================================================================
 -- CLASS DEFINITION
 -- =============================================================================
-DynamicTradingUI = ISCollapsableWindow:derive("DynamicTradingUI")
-DynamicTradingUI.instance = nil
+DT_TradingWindow = ISCollapsableWindow:derive("DT_TradingWindow")
+DT_TradingWindow.instance = nil
 
-function DynamicTradingUI:initialise()
+function DT_TradingWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(false)
     self.isBuying = true
@@ -49,14 +49,14 @@ function DynamicTradingUI:initialise()
     self.typingTick = 0
 end
 
-function DynamicTradingUI:resetIdleTimer()
+function DT_TradingWindow:resetIdleTimer()
     self.idleTimer = 0
 end
 
 -- ==========================================================
 -- [NEW] QUEUE HELPER
 -- ==========================================================
-function DynamicTradingUI:queueMessage(text, isError, isPlayer, delay, soundName)
+function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName)
     table.insert(self.msgQueue, {
         text = text,
         isError = isError or false,
@@ -67,16 +67,16 @@ function DynamicTradingUI:queueMessage(text, isError, isPlayer, delay, soundName
 end
 
 -- UI sub-modules (Relative to common)
-require "DT/Common/UI/DynamicTradingUI_Helpers"
-require "DT/Common/UI/DynamicTradingUI_Layout"
-require "DT/Common/UI/DynamicTradingUI_List"
-require "DT/Common/UI/DynamicTradingUI_Actions"
+require "DT/Common/UI/Trading/DT_TradingWindow_Helpers"
+require "DT/Common/UI/Trading/DT_TradingWindow_Layout"
+require "DT/Common/UI/Trading/DT_TradingWindow_List"
+require "DT/Common/UI/Trading/DT_TradingWindow_Actions"
 -- require "DT/Common/UI/DynamicTradingUI_Events" REMOVED: Agnostic
 
 -- =============================================================================
 -- MAIN UPDATE LOOP
 -- =============================================================================
-function DynamicTradingUI:update()
+function DT_TradingWindow:update()
     ISCollapsableWindow.update(self)
 
     -- 1. Crash Shield for Listbox
@@ -222,13 +222,13 @@ end
 -- =============================================================================
 -- WINDOW MANAGEMENT
 -- =============================================================================
-function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj, dataProvider)
-    if DynamicTradingUI.instance then
-        DynamicTradingUI.instance:close()
+function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvider)
+    if DT_TradingWindow.instance then
+        DT_TradingWindow.instance:close()
         return
     end
 
-    local ui = DynamicTradingUI:new(100, 100, 750, 750)
+    local ui = DT_TradingWindow:new(100, 100, 750, 750)
     ui:initialise()
     ui.dataProvider = dataProvider -- INJECT PROVIDER
     ui:addToUIManager()
@@ -260,17 +260,17 @@ function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj, dataProvid
         ui:queueMessage(greeting, false, false, 20)
     end
 
-    DynamicTradingUI.instance = ui
+    DT_TradingWindow.instance = ui
 end
 -- ==========================================================
 -- AUTO-REFRESH HANDLERS
 -- ==========================================================
 
 local function onInventoryChange()
-    if DynamicTradingUI.instance and DynamicTradingUI.instance:getIsVisible() then
+    if DT_TradingWindow.instance and DT_TradingWindow.instance:getIsVisible() then
         -- Only flag for refresh if we are in SELLING mode
-        if not DynamicTradingUI.instance.isBuying then
-            DynamicTradingUI.instance.inventoryDirty = true
+        if not DT_TradingWindow.instance.isBuying then
+            DT_TradingWindow.instance.inventoryDirty = true
         end
     end
 end
@@ -278,5 +278,6 @@ end
 -- Trigger on any container update (pick up, drop, move)
 Events.OnContainerUpdate.Add(onInventoryChange)
 
+-- Trigger specifically when the inventory window refreshes (covers Favorite toggle)
 -- Trigger specifically when the inventory window refreshes (covers Favorite toggle)
 Events.OnRefreshInventoryWindowContainers.Add(onInventoryChange)

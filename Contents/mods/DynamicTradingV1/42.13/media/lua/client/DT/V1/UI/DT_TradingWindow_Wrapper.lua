@@ -1,7 +1,7 @@
 -- =============================================================================
 -- DYNAMIC TRADING V1: UI WRAPPER
 -- =============================================================================
-require "DT/Common/UI/DynamicTradingUI"
+require "DT/Common/UI/Trading/DT_TradingWindow"
 require "DT/V1/Manager"
 require "DT/V1/Economy"
 require "DT/V1/Events"
@@ -176,7 +176,7 @@ function V1_DataProvider:getPlayerWealth(player)
 end
 
 -- V1 Specific Toggle Implementation
-local originalToggle = DynamicTradingUI.ToggleWindow
-function DynamicTradingUI.ToggleWindow(traderID, archetype, radioObj)
+local originalToggle = DT_TradingWindow.ToggleWindow
+function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj)
     originalToggle(traderID, archetype, radioObj, V1_DataProvider)
 end

@@ -65,7 +65,9 @@ function DynamicTrading.AddItem(uniqueID, data)
     if not hasValid then table.insert(data.tags, "Misc") end
     if not data.stockRange then data.stockRange = {min=1, max=5} end
     DynamicTrading.Config.MasterList[uniqueID] = data
-    print("[DynamicTrading] Registered Item: " .. tostring(uniqueID))
+    if isDebugEnabled() then
+        print("[DynamicTrading] Registered Item: " .. tostring(uniqueID))
+    end
 end
 
 function DynamicTrading.GetMasterListCount()

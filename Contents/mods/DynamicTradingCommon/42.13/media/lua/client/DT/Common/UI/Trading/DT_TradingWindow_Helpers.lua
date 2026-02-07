@@ -3,7 +3,7 @@ require "Utils/DT_StringUtils" -- This is common utils
 -- =============================================================================
 -- 1. CONNECTION & POWER VALIDATION
 -- =============================================================================
-function DynamicTradingUI:isConnectionValid()
+function DT_TradingWindow:isConnectionValid()
     return self.dataProvider:isConnectionValid(self.radioObj)
 end
 
@@ -11,7 +11,7 @@ end
 -- 2. LOGGING & FEEDBACK (BUBBLE STYLE)
 -- =============================================================================
 --- Adds a message to the chat list.
-function DynamicTradingUI:logLocal(text, isError, isPlayer)
+function DT_TradingWindow:logLocal(text, isError, isPlayer)
     -- [ADJUSTED] Reduced padding from 25 to 13 to match scrollbar width exactly
     local padding = 13 
     local fullWidth = self.chatList:getWidth() - padding
@@ -43,7 +43,7 @@ function DynamicTradingUI:logLocal(text, isError, isPlayer)
     self.chatList:ensureVisible(#self.chatList.items)
 end
 
-function DynamicTradingUI:drawLogItem(y, item, alt)
+function DT_TradingWindow:drawLogItem(y, item, alt)
     local data = item.item 
     local height = data.height or self.itemheight
     local width = self:getWidth()
@@ -121,17 +121,22 @@ end
 -- =============================================================================
 -- 3. TEXTURE & VISUAL ENGINE
 -- =============================================================================
-function DynamicTradingUI:getTraderTexture(trader)
+function DT_TradingWindow:getTraderTexture(trader)
     if not trader then return getTexture("Item_Radio") end
     local arch = trader.archetype or "General"
     local gender = trader.gender or "Male"
     local seed = trader.portraitID or 1
 
+    -- CRITICAL FIX: The portraitID is a persistent seed (1-1000).
+    -- It MUST be mapped to the actual file count using GetMappedID.
     local mappedID = 1
     if self.dataProvider and self.dataProvider.getPortraitID then
         mappedID = self.dataProvider:getPortraitID(arch, gender, seed)
     elseif DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.GetMappedID then
         mappedID = DynamicTrading.Portraits.GetMappedID(arch, gender, seed)
+    else
+        -- Fallback if no mapper exists (shouldn't happen in finalized build)
+        mappedID = 1
     end
 
     local pathFolder = "media/ui/Portraits/" .. arch .. "/" .. gender .. "/"
@@ -148,7 +153,7 @@ function DynamicTradingUI:getTraderTexture(trader)
     return getTexture("media/ui/Portraits/General/" .. gender .. "/1.png")
 end
 
-function DynamicTradingUI:getBackgroundTexture()
+function DT_TradingWindow:getBackgroundTexture()
     local hour = GameTime:getInstance():getHour()
     local filename = "twilight"
     if hour >= 4 and hour < 6 then filename = "dawn"
@@ -165,18 +170,18 @@ function DynamicTradingUI:getBackgroundTexture()
     return tex or getTexture("media/ui/Backgrounds/twilight.png")
 end
 
-function DynamicTradingUI:getOverlayTexture()
+function DT_TradingWindow:getOverlayTexture()
     return getTexture("media/ui/Effects/crt.png")
 end
 
 -- =============================================================================
 -- 4. PLAYER DATA & ECONOMY HELPERS
 -- =============================================================================
-function DynamicTradingUI:getPlayerWealth(player)
+function DT_TradingWindow:getPlayerWealth(player)
     return self.dataProvider:getPlayerWealth(player)
 end
 
-function DynamicTradingUI:updateWallet()
+function DT_TradingWindow:updateWallet()
     local player = getSpecificPlayer(0)
     local wealth = self:getPlayerWealth(player)
     if self.lblInfo then
@@ -184,7 +189,7 @@ function DynamicTradingUI:updateWallet()
     end
 end
 
-function DynamicTradingUI:updateIdentityDisplay(trader)
+function DT_TradingWindow:updateIdentityDisplay(trader)
     if self.lblName then self.lblName:setName(trader.name or "Unknown") end
     if self.lblArchetype then
         local archName = "Survivor"
@@ -223,11 +228,11 @@ end
 -- =============================================================================
 -- 5. UTILITIES (WRAPPERS)
 -- =============================================================================
-function DynamicTradingUI.TruncateString(text, font, maxWidth)
+function DT_TradingWindow.TruncateString(text, font, maxWidth)
     return DynamicTrading.Utils.TruncateString(text, font, maxWidth)
 end
 
-function DynamicTradingUI:isItemLocked(itemID)
+function DT_TradingWindow:isItemLocked(itemID)
     if not itemID or itemID == -1 then return false end
     local player = getSpecificPlayer(0)
     local modData = player:getModData()
@@ -248,7 +253,7 @@ local function split(str, sep)
     return result
 end
 
-function DynamicTradingUI.GetItemTexture(fullType, itemObj)
+function DT_TradingWindow.GetItemTexture(fullType, itemObj)
     -- 1. ELEGANT Build 42 APPROACH (Item Instance)
     if itemObj then
         -- Build 42: Clothing instances often need a specific texture lookup
