@@ -1,7 +1,7 @@
 -- =============================================================================
 -- DYNAMIC TRADING: TRADER DIALOGUE CHAT LOGIC
 -- =============================================================================
-require "DT/V1/UI/DT_ConversationUI"
+require "UI/DT_ConversationUI"
 require "DT/V1/Manager"
 
 DT_TraderDialogue_Chat = {}

@@ -1,5 +1,5 @@
 require "ISUI/ISUIHandler"
-require "Utils/DT_AudioManager"
+require "DT/V1/Utils/DT_AudioManager"
 
 -- =============================================================================
 -- 1. HANDLE SERVER RESPONSES (SCAN RESULTS)

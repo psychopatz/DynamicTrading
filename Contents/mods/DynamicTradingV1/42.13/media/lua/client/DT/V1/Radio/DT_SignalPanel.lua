@@ -1,7 +1,8 @@
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
-require "DynamicTrading_Manager"
-require "client/DT_RadioInteraction" -- Required for GetDeviceType
+require "DT/V1/Manager"
+require "DT/Common/Config"
+-- require "DT/V1/DT_RadioInteraction" -- Removed to break recursive loop
 
 DT_SignalPanel = ISPanel:derive("DT_SignalPanel")
 

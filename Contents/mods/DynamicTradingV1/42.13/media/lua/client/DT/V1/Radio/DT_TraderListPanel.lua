@@ -1,7 +1,7 @@
 require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISLabel"
-require "DynamicTrading_Manager"
+require "DT/V1/Manager"
 
 DT_TraderListPanel = ISPanel:derive("DT_TraderListPanel")
 

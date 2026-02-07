@@ -4,7 +4,7 @@
 
 require "TimedActions/ISBaseTimedAction"
 require "TimedActions/ISInventoryTransferAction"
-require "Utils/DT_AudioManager"
+require "DT/V1/Utils/DT_AudioManager"
 
 -- =============================================================================
 -- 1. FLAVOR TEXT & CONFIG

@@ -1,7 +1,7 @@
 -- =============================================================================
 -- DYNAMIC TRADING: TRADER DIALOGUE REQUEST LOGIC
 -- =============================================================================
-require "DT/V1/UI/DT_ConversationUI"
+require "UI/DT_ConversationUI"
 require "DT/V1/Manager"
 
 DT_TraderDialogue_Request = {}
@@ -44,7 +44,7 @@ function DT_TraderDialogue_Request.GenerateArchetypeOptions(ui, trader)
         message = "Actually, nevermind.",
         onSelect = function(ui) 
             -- Return to Hub
-            require "UI/DT_TraderDialogue_Hub"
+            require "DT/V1/UI/DT_TraderDialogue_Hub"
             DT_TraderDialogue_Hub.Init(ui, trader)
         end
     })

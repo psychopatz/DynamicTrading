@@ -6,9 +6,9 @@
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
 require "ISUI/ISLabel"
-require "ISUI/ISSliderPanel"
+require "ISUI/UserInterface/ISSliderPanel"
 require "Utils/DT_ConfigManager"
-require "Utils/DT_AudioManager"
+require "DT/V1/Utils/DT_AudioManager"
 
 print("[DT_OptionsUI] Defining class...")
 DT_OptionsUI = ISPanel:derive("DT_OptionsUI")

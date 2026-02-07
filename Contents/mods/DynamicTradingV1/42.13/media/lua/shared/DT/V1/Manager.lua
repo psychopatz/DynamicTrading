@@ -1,6 +1,6 @@
 require "DT/Common/Config"
 require "DT/V1/Events"
-require "DT/V1/PortraitConfig"
+require "03b_DynamicTrading_PortraitConfig"
 require "DT/V1/NetworkLogs"
 require "DT/V1/CooldownManager"
 

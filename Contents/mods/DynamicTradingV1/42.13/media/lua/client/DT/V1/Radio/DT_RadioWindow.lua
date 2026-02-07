@@ -1,7 +1,7 @@
 require "ISUI/ISCollapsableWindow"
-require "client/Radio/DT_SignalPanel"
-require "client/Radio/DT_TraderListPanel"
-require "client/Radio/DT_LogPanel"
+require "DT/V1/Radio/DT_SignalPanel"
+require "DT/V1/Radio/DT_TraderListPanel"
+require "DT/V1/Radio/DT_LogPanel"
 
 DT_RadioWindow = ISCollapsableWindow:derive("DT_RadioWindow")
 DT_RadioWindow.instance = nil

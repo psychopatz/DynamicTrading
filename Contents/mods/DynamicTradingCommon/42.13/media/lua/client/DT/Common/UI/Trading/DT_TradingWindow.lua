@@ -67,11 +67,11 @@ function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName
 end
 
 -- UI sub-modules (Relative to common)
+require "DT/Common/UI/Trading/DT_SellConfirmationModal"
 require "DT/Common/UI/Trading/DT_TradingWindow_Helpers"
 require "DT/Common/UI/Trading/DT_TradingWindow_Layout"
 require "DT/Common/UI/Trading/DT_TradingWindow_List"
 require "DT/Common/UI/Trading/DT_TradingWindow_Actions"
--- require "DT/Common/UI/DynamicTradingUI_Events" REMOVED: Agnostic
 
 -- =============================================================================
 -- MAIN UPDATE LOOP
@@ -278,6 +278,5 @@ end
 -- Trigger on any container update (pick up, drop, move)
 Events.OnContainerUpdate.Add(onInventoryChange)
 
--- Trigger specifically when the inventory window refreshes (covers Favorite toggle)
 -- Trigger specifically when the inventory window refreshes (covers Favorite toggle)
 Events.OnRefreshInventoryWindowContainers.Add(onInventoryChange)

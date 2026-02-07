@@ -1,7 +1,7 @@
 -- =============================================================================
 -- DYNAMIC TRADING: TRADER DIALOGUE HUB
 -- =============================================================================
-require "DT/V1/UI/DT_ConversationUI"
+require "UI/DT_ConversationUI"
 require "DT/V1/Manager"
 require "DT/V1/DT_DialogueManager"
 
