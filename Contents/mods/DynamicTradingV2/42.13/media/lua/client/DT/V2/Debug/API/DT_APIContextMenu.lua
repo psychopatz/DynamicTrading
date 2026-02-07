@@ -3,10 +3,9 @@
 -- Standalone Context Menu for Engine API Tools.
 -- Build 42 Compatible.
 -- ==============================================================================
-
 if not isDebugEnabled() then return end
 
-require "Debug/API/DT_APIBrowser"
+require "DT/V2/Debug/API/DT_APIBrowser"
 
 DT_APIMenu = DT_APIMenu or {}
 

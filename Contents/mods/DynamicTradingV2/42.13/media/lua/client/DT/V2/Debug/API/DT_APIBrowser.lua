@@ -3,9 +3,9 @@
 -- Standalone Window for browsing Project Zomboid Lua API / Engine Methods.
 -- ==============================================================================
 
--- if not isDebugEnabled() then return end
+if not isDebugEnabled() then return end
 
-require "client/Debug/API/DT_APIViePanel"
+require "DT/V2/Debug/API/DT_APIViePanel"
 
 DT_APIBrowser = ISCollapsableWindow:derive("DT_APIBrowser")
 DT_APIBrowser.instance = nil

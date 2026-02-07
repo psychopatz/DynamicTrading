@@ -8,8 +8,8 @@
 -- If we are not in Debug Mode AND not an Admin, stop reading this file immediately.
 -- if not (isDebugEnabled() or (getSpecificPlayer(0) and getSpecificPlayer(0):getAccessLevel() ~= "None")) then return end
 
-require "client/Debug/DT_FactionDebugWindow"
-require "client/Debug/DT_MerchantDebugWindow"
+require "DT/V2/Debug/DT_FactionDebugWindow"
+require "DT/V2/Debug/DT_MerchantDebugWindow"
 
 DT_DebugFactions = {}
 

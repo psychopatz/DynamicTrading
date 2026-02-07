@@ -1,6 +1,6 @@
 require "ISUI/ISUIElement"
 require "ISUI/ISButton"
-require "DynamicTradingInfoUI"
+require "DT/V1/DynamicTradingInfoUI"
 
 DT_SidebarButton = ISUIElement:derive("DT_SidebarButton")
 DT_SidebarButton.instance = nil

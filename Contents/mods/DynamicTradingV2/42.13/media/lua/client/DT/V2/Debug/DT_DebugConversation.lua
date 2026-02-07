@@ -3,11 +3,7 @@
 -- =============================================================================
 -- Adds a context menu option to easily test the DT_ConversationUI framework.
 -- =============================================================================
--- [[ OPTIMIZATION CHECK ]]
--- If we are not in Debug Mode, stop reading this file immediately.
--- This prevents functions from loading and prevents the Event listener from registering.
--- if not isDebugEnabled() then return end
--- [[ END CHECK ]]
+if not isDebugEnabled() then return end
 
 require "UI/DT_ConversationUI"
 

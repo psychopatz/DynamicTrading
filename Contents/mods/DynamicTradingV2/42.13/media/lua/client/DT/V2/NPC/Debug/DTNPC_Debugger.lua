@@ -2,12 +2,11 @@
 -- DTNPC_Debugger.lua
 -- Main Window: Controls the decoupled NPC debug components.
 -- ==============================================================================
+if not isDebugEnabled() then return end
 
--- if not isDebugEnabled() then return end
-
-require "client/NPC/Debug/DTNPC_LiveListPanel"
-require "client/NPC/Debug/DTNPC_GlobalListPanel"
-require "client/NPC/Debug/DTNPC_DetailsPanel"
+require "DT/V2/NPC/Debug/DTNPC_LiveListPanel"
+require "DT/V2/NPC/Debug/DTNPC_GlobalListPanel"
+require "DT/V2/NPC/Debug/DTNPC_DetailsPanel"
 
 DTNPC_Debugger = ISCollapsableWindow:derive("DTNPC_Debugger")
 DTNPC_Debugger.instance = nil

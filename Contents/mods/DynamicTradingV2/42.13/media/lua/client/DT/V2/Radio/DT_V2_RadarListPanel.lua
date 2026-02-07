@@ -5,8 +5,8 @@
 
 require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
-require "Faction/TradingSys/DynamicTrading_Roster"
-require "Faction/TradingSys/DynamicTrading_Factions"
+require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 
 DT_V2_RadarListPanel = ISPanel:derive("DT_V2_RadarListPanel")
 

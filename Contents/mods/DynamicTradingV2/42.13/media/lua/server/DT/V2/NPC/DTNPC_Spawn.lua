@@ -4,7 +4,7 @@
 -- FIXED: Use UUID system instead of outfit IDs
 -- ==============================================================================
 
-require "NPC/Sys/DTNPC_Generator"
+require "DT/V2/NPC/Sys/DTNPC_Generator"
 
     DTNPCSpawn = DTNPCSpawn or {}
     

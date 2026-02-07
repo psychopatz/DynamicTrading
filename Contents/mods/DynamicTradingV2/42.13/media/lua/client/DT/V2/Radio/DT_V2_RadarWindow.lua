@@ -4,12 +4,12 @@
 -- ==============================================================================
 
 require "ISUI/ISCollapsableWindow"
-require "Radio/DT_V2_RadarHeaderPanel"
-require "Radio/DT_V2_RadarListPanel"
-require "Radio/DT_V2_RadarActionPanel"
-require "Radio/DT_V2_RadarManager"
-require "Faction/TradingSys/DynamicTrading_Roster"
-require "Faction/TradingSys/DynamicTrading_Factions"
+require "DT/V2/Radio/DT_V2_RadarHeaderPanel"
+require "DT/V2/Radio/DT_V2_RadarListPanel"
+require "DT/V2/Radio/DT_V2_RadarActionPanel"
+require "DT/V2/Radio/DT_V2_RadarManager"
+require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 
 DT_V2_RadarWindow = ISCollapsableWindow:derive("DT_V2_RadarWindow")
 DT_V2_RadarWindow.instance = nil

@@ -4,10 +4,10 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
-require "Faction/Templates/BaseSpawn/Rosewood"
-require "Faction/Templates/BaseSpawn/Muldraugh"
-require "Faction/Templates/BaseSpawn/WestPoint"
-require "Faction/Templates/BaseSpawn/Riverside"
+require "DT/V2/Faction/Templates/BaseSpawn/Rosewood"
+require "DT/V2/Faction/Templates/BaseSpawn/Muldraugh"
+require "DT/V2/Faction/Templates/BaseSpawn/WestPoint"
+require "DT/V2/Faction/Templates/BaseSpawn/Riverside"
 
 DT_FactionLocationManager = {}
 

@@ -9,7 +9,7 @@ DTNPCManager.Data = {}
 DTNPCManager.PendingRegistrations = {}
 DTNPCManager.OutfitIDToUUID = {} -- Maps current outfit IDs to persistent UUIDs
 
-require "Faction/TradingSys/DynamicTrading_Roster" -- V2 Roster Bridge
+require "DT/V2/Faction/TradingSys/DynamicTrading_Roster" -- V2 Roster Bridge
 
 -- Helper for SP/MP Compatibility
 function DTNPCManager.GetActivePlayers()

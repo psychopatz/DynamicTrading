@@ -1,8 +1,8 @@
 -- =============================================================================
 -- DYNAMIC TRADING V2: NPC TRADER DIALOGUE HUB
 -- =============================================================================
-require "UI/DT_ConversationUI"
-require "NPC/DTNPC_TradingHandler"
+require "DT/V2/UI/DT_ConversationUI"
+require "DT/V2/NPC/DTNPC_TradingHandler"
 
 DTNPC_TraderDialogue_Hub = {}
 
@@ -17,7 +17,8 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 name = brain and brain.name or "Survivor",
                 archetype = brain and brain.archetypeID or brain.occupation or "Survivor",
                 gender = npc:isFemale() and "Female" or "Male",
-                portraitID = brain and brain.portraitID or 1
+                portraitID = brain and brain.portraitID or 1,
+                factionID = brain and brain.factionID
             }
 
             ui = DT_ConversationUI.Open(traderProxy, nil, nil, false) -- isRadio = false
