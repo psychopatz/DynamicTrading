@@ -66,9 +66,26 @@ function DT_ConversationUI:createChildren()
     self.lblName.center = true
     self:addChild(self.lblName)
 
-    self.lblDesc = ISLabel:new(leftColW / 2 + pad, self.lblName:getY() + 25, 18, "Survivor", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
+    self.lblDesc = ISLabel:new(leftColW / 2 + pad, self.lblName:getY() + 25, 18, "Survivor", 1.0, 1.0, 0.8, 1, UIFont.Small, true)
     self.lblDesc.center = true
     self:addChild(self.lblDesc)
+
+    -- Refined Faction Layout
+    local factionY = self.lblDesc:getY() + 35 -- Added padding
+    self.lblFactionTitle = ISLabel:new(leftColW / 2 + pad, factionY, 18, "FACTION", 0.7, 0.7, 0.8, 1, UIFont.Small, true)
+    self.lblFactionTitle.center = true
+    self.lblFactionTitle:setVisible(false)
+    self:addChild(self.lblFactionTitle)
+
+    self.lblFactionName = ISLabel:new(leftColW / 2 + pad, factionY + 15, 18, "Independent", 1, 1, 1, 1, UIFont.Small, true)
+    self.lblFactionName.center = true
+    self.lblFactionName:setVisible(false)
+    self:addChild(self.lblFactionName)
+
+    self.lblReputation = ISLabel:new(leftColW / 2 + pad, self.lblFactionName:getY() + 20, 18, "Reputation: 0 (Neutral)", 1, 1, 1, 1, UIFont.Small, true)
+    self.lblReputation.center = true
+    self.lblReputation:setVisible(false)
+    self:addChild(self.lblReputation)
 
     -- CALCULATE HEIGHTS
     local optionHeight = 180 
@@ -132,7 +149,7 @@ function DT_ConversationUI:resolvePortrait(trader)
     if not trader then return nil end
     if trader.texture then return trader.texture end
     
-    local arch = trader.archetype or "General"
+    local arch = trader.archetype or trader.role or "General"
     local gender = trader.gender or "Male"
     local seed = trader.portraitID or 1
     
@@ -413,7 +430,7 @@ end
 -- =============================================================================
 -- 7. PUBLIC API
 -- =============================================================================
-function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio, parentUI)
+function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio)
     if DT_ConversationUI.instance then
         DT_ConversationUI.instance:close()
     end
@@ -425,8 +442,6 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
     if isRadio == false then ui.isRadio = false else ui.isRadio = true end
     
     ui.target = traderObj
-    ui.parentUI = parentUI -- [NEW] Parent Reference
-    
     local name = traderObj.name or "Unknown"
     ui.lblName:setName(name)
     
@@ -434,6 +449,52 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
     if traderObj.archetype then role = traderObj.archetype
     elseif traderObj.role then role = traderObj.role end
     ui.lblDesc:setName(role)
+    
+    -- FACTION & REPUTATION (Optional)
+    if traderObj.factionID then
+        local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions) or ModData.get("DynamicTrading_Factions") or {}
+        local f = factionData[traderObj.factionID]
+        if f then
+            ui.lblFactionTitle:setVisible(true)
+            ui.lblFactionName:setName(f.name or traderObj.factionID)
+            ui.lblFactionName:setVisible(true)
+            
+            local player = getPlayer()
+            local username = player:getUsername()
+            local rep = (f.reputation and f.reputation[username]) or 0
+            
+            -- REPUTATION STAGES & COLORS
+            local stage = "Neutral"
+            local r, g, b = 0.8, 0.8, 0.8 -- Silver (Neutral)
+            
+            if rep >= 81 then
+                stage = "Exalted"
+                r, g, b = 1.0, 0.8, 0.0 -- Gold
+            elseif rep >= 41 then
+                stage = "Honored"
+                r, g, b = 0.2, 1.0, 0.2 -- Green
+            elseif rep >= 11 then
+                stage = "Friendly"
+                r, g, b = 0.5, 1.0, 0.5 -- Light Green
+            elseif rep >= -10 then
+                stage = "Neutral"
+                r, g, b = 0.8, 0.8, 0.8
+            elseif rep >= -39 then
+                stage = "Unfriendly"
+                r, g, b = 1.0, 0.5, 0.2 -- Orange
+            elseif rep >= -79 then
+                stage = "Hostile"
+                r, g, b = 1.0, 0.2, 0.2 -- Red
+            else
+                stage = "Nemesis"
+                r, g, b = 0.8, 0.0, 0.0 -- Dark Red
+            end
+            
+            ui.lblReputation:setName(string.format("Reputation: %d (%s)", rep, stage))
+            ui.lblReputation:setColor(r, g, b)
+            ui.lblReputation:setVisible(true)
+        end
+    end
     
     ui.targetTexture = ui:resolvePortrait(traderObj)
     
