@@ -14,7 +14,9 @@ DT_TradingWindow.instance = nil
 
 function DT_TradingWindow:initialise()
     ISCollapsableWindow.initialise(self)
-    self:setResizable(false)
+    self:setResizable(true)
+    self.minimumWidth = 600
+    self.minimumHeight = 650
     self.isBuying = true
     self.selectedKey = nil
     self.radioObj = nil
@@ -236,7 +238,17 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
         return
     end
 
-    local ui = DT_TradingWindow:new(100, 100, 750, 750)
+    -- Dynamic Sizing Logic
+    local screenW = getCore():getScreenWidth()
+    local screenH = getCore():getScreenHeight()
+    local width = math.min(750, screenW * 0.6)
+    local height = math.min(750, screenH * 0.7)
+    
+    -- Minimum threshold
+    width = math.max(600, width)
+    height = math.max(650, height)
+
+    local ui = DT_TradingWindow:new(screenW/2 - width/2, screenH/2 - height/2, width, height)
     ui:initialise()
     ui.dataProvider = dataProvider -- INJECT PROVIDER
     ui:addToUIManager()
@@ -245,6 +257,14 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     ui.radioObj = radioObj
 
     local trader = dataProvider:getTrader(traderID, archetype)
+    
+    -- Dynamic Store Title
+    if dataProvider.getWindowTitle then
+        ui:setTitle(dataProvider:getWindowTitle(trader))
+    else
+        ui:setTitle("Trading Window")
+    end
+    
     ui:populateList()
     
     -- Sync Observer

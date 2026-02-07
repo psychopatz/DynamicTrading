@@ -1,51 +1,48 @@
+local LEFT_COL_W = 250
+local RIGHT_MARGIN = 10
+local PADDING = 10
+
 function DT_TradingWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
 
-    local leftColW = 250
-    local rightX = 270
-    local rightW = self.width - rightX - 10
     local th = self:titleBarHeight()
+    local rightX = LEFT_COL_W + 20
+    local rightW = self.width - rightX - RIGHT_MARGIN
 
-    self.imageY = th + 10
-    self.imageH = 250 
-
-    -- Calculate Y positions
-    local nameY = self.imageY + self.imageH + 10
-    local archY = nameY + 25
-    local sigY  = archY + 20
-    local wallY = sigY + 25
-    local budgetY = wallY + 25
+    self.imageY = th + PADDING
+    self.imageH = 250 -- Fixed square height
+    self.imageW = 250 -- Fixed square width
 
     -- Identity Labels
-    self.lblName = ISLabel:new(leftColW / 2 + 10, nameY, 25, "Loading...", 1, 1, 1, 1, UIFont.Medium, true)
+    self.lblName = ISLabel:new(LEFT_COL_W / 2 + 10, 0, 25, "Loading...", 1, 1, 1, 1, UIFont.Medium, true)
     self.lblName.center = true
     self:addChild(self.lblName)
 
-    self.lblArchetype = ISLabel:new(leftColW / 2 + 10, archY, 20, "Survivor", 1.0, 0.8, 0.2, 1, UIFont.Small, true)
+    self.lblArchetype = ISLabel:new(LEFT_COL_W / 2 + 10, 0, 20, "Survivor", 1.0, 0.8, 0.2, 1, UIFont.Small, true)
     self.lblArchetype.center = true
     self:addChild(self.lblArchetype)
 
-    self.lblSignal = ISLabel:new(leftColW / 2 + 10, sigY, 16, "Signal: ...", 0.5, 0.5, 0.5, 1, UIFont.Small, true)
+    self.lblSignal = ISLabel:new(LEFT_COL_W / 2 + 10, 0, 16, "Signal: ...", 0.5, 0.5, 0.5, 1, UIFont.Small, true)
     self.lblSignal.center = true
     self:addChild(self.lblSignal)
 
-    self.lblTraderBudget = ISLabel:new(leftColW / 2 + 10, wallY, 25, "Trader Budget: $0", 1.0, 0.8, 0.2, 1, UIFont.Medium, true)
+    self.lblTraderBudget = ISLabel:new(LEFT_COL_W / 2 + 10, 0, 25, "Trader Budget: $0", 1.0, 0.8, 0.2, 1, UIFont.Medium, true)
     self.lblTraderBudget.center = true
     self:addChild(self.lblTraderBudget)
 
-    self.lblInfo = ISLabel:new(leftColW / 2 + 10, budgetY, 25, "Wallet: $0", 0.2, 1.0, 0.2, 1, UIFont.Medium, true)
+    self.lblInfo = ISLabel:new(LEFT_COL_W / 2 + 10, 0, 25, "Wallet: $0", 0.2, 1.0, 0.2, 1, UIFont.Medium, true)
     self.lblInfo.center = true
     self:addChild(self.lblInfo)
 
     -- Ask Button (Organic immersion)
-    self.btnAsk = ISButton:new(20, budgetY + 35, leftColW - 20, 25, "Talk", self, self.onAsk)
+    self.btnAsk = ISButton:new(20, 0, LEFT_COL_W - 20, 25, "Talk", self, self.onAsk)
     self.btnAsk:initialise()
     self.btnAsk.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0}
     self.btnAsk:setVisible(true) 
     self:addChild(self.btnAsk)
 
     -- Lock Button (Client-side protection)
-    self.btnLock = ISButton:new(20, budgetY + 65, leftColW - 20, 25, "LOCK ITEM", self, self.onToggleLock)
+    self.btnLock = ISButton:new(20, 0, LEFT_COL_W - 20, 25, "LOCK ITEM", self, self.onToggleLock)
     self.btnLock:initialise()
     self.btnLock.backgroundColor = {r=0.4, g=0.4, b=0.1, a=1.0}
     self.btnLock:setEnable(false)
@@ -53,17 +50,14 @@ function DT_TradingWindow:createChildren()
     self:addChild(self.btnLock)
 
     -- Main Action Button (Buy/Sell)
-    self.btnAction = ISButton:new(20, budgetY + 95, leftColW - 20, 30, "BUY ITEM", self, self.onAction)
+    self.btnAction = ISButton:new(20, 0, LEFT_COL_W - 20, 30, "BUY ITEM", self, self.onAction)
     self.btnAction:initialise()
     self.btnAction.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1.0}
     self.btnAction:setEnable(false)
     self:addChild(self.btnAction)
 
     -- Chat/Log List
-    local logY = wallY + 170
-    local logH = self.height - logY - 10
-
-    self.chatList = ISScrollingListBox:new(10, logY, leftColW, logH)
+    self.chatList = ISScrollingListBox:new(10, 0, LEFT_COL_W, 100)
     self.chatList:initialise()
     self.chatList:setAnchorBottom(true)
     self.chatList.font = UIFont.NewSmall
@@ -75,7 +69,7 @@ function DT_TradingWindow:createChildren()
     self:addChild(self.chatList)
 
     -- Mode Switch Button
-    self.btnSwitch = ISButton:new(rightX, th + 10, rightW, 25, "SWITCH TO SELLING", self, self.onToggleMode)
+    self.btnSwitch = ISButton:new(rightX, th + PADDING, rightW, 25, "SWITCH TO SELLING", self, self.onToggleMode)
     self.btnSwitch:initialise()
     self.btnSwitch.backgroundColor = {r=0.2, g=0.2, b=0.2, a=1.0}
     self.btnSwitch:setAnchorRight(true)
@@ -150,6 +144,66 @@ function DT_TradingWindow:createChildren()
     end
 
     self:addChild(self.listbox)
+    
+    -- Initial Layout Strike
+    self:relayout()
+end
+
+function DT_TradingWindow:relayout()
+    local th = self:titleBarHeight()
+    local rightX = LEFT_COL_W + 20
+    local rightW = self.width - rightX - RIGHT_MARGIN
+    
+    -- 1. Portrait stays top-left square
+    self.imageY = th + PADDING
+    self.imageH = 250
+    self.imageW = 250
+    
+    -- 2. Labels follow portrait
+    local nextY = self.imageY + self.imageH + PADDING
+    if self.lblName then self.lblName:setY(nextY) end
+    if self.lblArchetype then self.lblArchetype:setY(nextY + 25) end
+    if self.lblSignal then self.lblSignal:setY(nextY + 45) end
+    if self.lblTraderBudget then self.lblTraderBudget:setY(nextY + 70) end
+    if self.lblInfo then self.lblInfo:setY(nextY + 95) end
+    
+    -- 3. Buttons follow labels
+    local buttonBaseY = nextY + 130
+    if self.btnAsk then self.btnAsk:setY(buttonBaseY) end
+    if self.btnLock then self.btnLock:setY(buttonBaseY + 30) end
+    if self.btnAction then self.btnAction:setY(buttonBaseY + 60) end
+    
+    -- 4. Chat List starts below last button and fills to bottom
+    local logY = buttonBaseY + 100
+    if self.chatList then
+        self.chatList:setY(logY)
+        self.chatList:setHeight(self.height - logY - PADDING)
+        -- Force scrollbar update
+        if self.chatList.vscroll then
+            self.chatList.vscroll:setHeight(self.chatList:getHeight())
+        end
+    end
+    
+    -- 5. Right column (Switch & Listbox) updates
+    if self.btnSwitch then
+        self.btnSwitch:setX(rightX)
+        self.btnSwitch:setWidth(rightW)
+    end
+    
+    if self.listbox then
+        self.listbox:setX(rightX)
+        self.listbox:setWidth(rightW)
+        self.listbox:setHeight(self.height - (th + 55))
+        -- Force scrollbar update
+        if self.listbox.vscroll then
+            self.listbox.vscroll:setHeight(self.listbox:getHeight())
+        end
+    end
+end
+
+function DT_TradingWindow:onResize()
+    ISCollapsableWindow.onResize(self)
+    self:relayout()
 end
 
 function DT_TradingWindow:render()
@@ -157,8 +211,9 @@ function DT_TradingWindow:render()
 
     if self.traderID then
         local trader = self.dataProvider:getTrader(self.traderID, self.archetype)
-        local imgX, imgY = 11, self.imageY + 1
-        local imgW, imgH = 248, 248
+        -- Portrait stays fixed size
+        local imgW, imgH = 250, 250
+        local imgX, imgY = 10, self.imageY
 
         local bgTex = self:getBackgroundTexture()
         if bgTex then self:drawTextureScaled(bgTex, imgX, imgY, imgW, imgH, 1.0, 1.0, 1.0, 1.0) end
@@ -181,8 +236,10 @@ function DT_TradingWindow:render()
             self:drawTextureScaled(crtTex, imgX, imgY, imgW, imgH, math.min(alpha, 0.9), 1, 1, 1)
         end
 
-        self:drawRectBorder(10, self.imageY, 250, 250, 1.0, 1.0, 1.0, 1.0)
+        self:drawRectBorder(imgX - 1, self.imageY - 1, imgW + 2, imgH + 2, 1.0, 1.0, 1.0, 1.0)
         
+        -- Positioning is now handled by relayout()
+
         -- [NEW] TYPING INDICATOR
         if #self.msgQueue > 0 then
             local nextMsg = self.msgQueue[1]

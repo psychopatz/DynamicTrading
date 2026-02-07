@@ -142,6 +142,30 @@ function V1_DataProvider:getLockButtonVisible(isBuying)
     return not isBuying
 end
 
+function V1_DataProvider:getWindowTitle(trader)
+    if not trader then return "Trading Terminal" end
+    
+    local name = trader.name or "Unknown Trader"
+    local postfixes = {
+        "Store", "Emporium", "Outpost", "Supplies", "Direct", 
+        "Exchange", "Market", "Corner", "Trading Co.", "Depot",
+        "Wares", "Bazaar", "Stockpile", "General Store"
+    }
+    
+    -- Use traderID as seed for consistency (so it doesn't change every time we open window)
+    local seed = 0
+    if trader.traderID then
+        for i = 1, #trader.traderID do
+            seed = seed + string.byte(trader.traderID, i)
+        end
+    end
+    
+    local index = (seed % #postfixes) + 1
+    local postfix = postfixes[index]
+    
+    return name .. "'s " .. postfix
+end
+
 function V1_DataProvider:isConnectionValid(obj)
     local player = getSpecificPlayer(0)
     if not obj then return false end
