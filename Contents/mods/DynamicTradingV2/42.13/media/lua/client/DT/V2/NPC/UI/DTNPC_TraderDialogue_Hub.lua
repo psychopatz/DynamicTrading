@@ -50,15 +50,19 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     })
 
     -- OPTION 2: TRADE (Conditional)
-    local rosterData = ModData.get("DynamicTrading_Roster")
+    local brain = npc:getModData().DTNPCBrain
     local isTrading = false
     
-    local brain = npc:getModData().DTNPCBrain
-    local id = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
-    
-    if rosterData and rosterData.Souls and rosterData.Souls[id] then
-        if rosterData.Souls[id].status == "Trading" then
-            isTrading = true
+    if brain and brain.status == "Trading" then
+        isTrading = true
+    else
+        -- Fallback to Roster ModData if brain is missing or unsynced
+        local id = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
+        local rosterData = ModData.get("DynamicTrading_Roster")
+        if rosterData and rosterData.Souls and rosterData.Souls[id] then
+            if rosterData.Souls[id].status == "Trading" then
+                isTrading = true
+            end
         end
     end
 

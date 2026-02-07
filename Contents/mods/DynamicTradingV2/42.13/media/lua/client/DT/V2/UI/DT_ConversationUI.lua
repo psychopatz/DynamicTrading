@@ -452,7 +452,7 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio)
     
     -- FACTION & REPUTATION (Optional)
     if traderObj.factionID then
-        local factionData = ModData.get("DynamicTrading_Factions") or {}
+        local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions) or ModData.get("DynamicTrading_Factions") or {}
         local f = factionData[traderObj.factionID]
         if f then
             ui.lblFactionTitle:setVisible(true)

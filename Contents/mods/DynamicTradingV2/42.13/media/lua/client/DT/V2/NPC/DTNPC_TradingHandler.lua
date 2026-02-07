@@ -38,7 +38,8 @@ function DTNPC_TradingHandler.InitiateTrade(ui, npc, player)
     local name = brain and brain.name or "Survivor"
 
     -- Check if we already have stock cached
-    local stockData = ModData.get("DynamicTrading_Stock")
+    -- In MP, use the client network cache. In SP, fall back to global ModData.
+    local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) or ModData.get("DynamicTrading_Stock")
     
     if stockData and stockData[id] then
         DTNPC_TradingHandler.DisplayStock(ui, id, stockData)
@@ -83,7 +84,8 @@ local function OnTick()
     local currentHours = gt:getWorldAgeHours()
     if not currentHours then return end
     
-    local stockData = ModData.get("DynamicTrading_Stock")
+    -- In MP, use the client network cache. In SP, fall back to global ModData.
+    local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) or ModData.get("DynamicTrading_Stock")
     
     for id, data in pairs(DTNPC_TradingHandler.PendingTrades) do
         -- Check if UI still exists and is valid (ISPanel check)
