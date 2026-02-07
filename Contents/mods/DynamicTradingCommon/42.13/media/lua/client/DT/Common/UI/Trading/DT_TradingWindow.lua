@@ -53,16 +53,24 @@ function DT_TradingWindow:resetIdleTimer()
     self.idleTimer = 0
 end
 
--- ==========================================================
 -- [NEW] QUEUE HELPER
--- ==========================================================
-function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName)
+function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName, tag)
+    -- Fast-forward older messages with the same tag
+    if tag then
+        for _, m in ipairs(self.msgQueue) do
+            if m.tag == tag then
+                m.delay = 0
+            end
+        end
+    end
+
     table.insert(self.msgQueue, {
         text = text,
         isError = isError or false,
         isPlayer = isPlayer or false,
         delay = delay or 0,
-        sound = soundName
+        sound = soundName,
+        tag = tag
     })
 end
 

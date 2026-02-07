@@ -33,11 +33,11 @@ function DT_TradingWindow:onAction()
             
             -- 1. Player: "I'll take that..." (Immediate)
             local playerMsg = self.dataProvider:getPlayerMessage("Buy", diagArgs) 
-            self:queueMessage(playerMsg, false, true, 0)
+            self:queueMessage(playerMsg, false, true, 0, nil, "transaction")
             
             -- 2. Trader: "It's gone." (~1s Delay)
             local failMsg = self.dataProvider:getTransactionMessage(trader, true, diagArgs)
-            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom")
+            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom", "transaction")
             
             return
         end
@@ -51,11 +51,11 @@ function DT_TradingWindow:onAction()
             -- 1. Player: "Can I get a discount?" (Immediate)
             -- The Manager detects 'NoCash' and switches to Haggling lines automatically
             local playerMsg = self.dataProvider:getPlayerMessage("Buy", diagArgs)
-            self:queueMessage(playerMsg, false, true, 0)
+            self:queueMessage(playerMsg, false, true, 0, nil, "transaction")
             
             -- 2. Trader: "No cash, no deal." (~1s Delay)
             local failMsg = self.dataProvider:getTransactionMessage(trader, true, diagArgs)
-            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom")
+            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom", "transaction")
             
             return
         end
@@ -121,11 +121,11 @@ function DT_TradingWindow:onAction()
             
             -- 1. Player dialogue
             local playerMsg = self.dataProvider:getPlayerMessage("Sell", diagArgs)
-            self:queueMessage(playerMsg, false, true, 0)
+            self:queueMessage(playerMsg, false, true, 0, nil, "transaction")
             
             -- 2. Trader response
             local failMsg = self.dataProvider:getTransactionMessage(trader, false, diagArgs)
-            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom")
+            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom", "transaction")
             
             return
         end
@@ -144,7 +144,7 @@ function DT_TradingWindow:onAction()
     -- 1. Prompt Player Dialogue (Restore intended interaction)
     local pAction = self.isBuying and "Buy" or "Sell"
     local pMsg = self.dataProvider:getPlayerMessage(pAction, diagArgs)
-    self:queueMessage(pMsg, false, true, 0)
+    self:queueMessage(pMsg, false, true, 0, nil, "transaction")
 
     -- 2. EXECUTE
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
@@ -170,7 +170,7 @@ function DT_TradingWindow:onConfirmSell(invItem, data)
         itemName = invItem:getDisplayName(),
         price = args.price or 0
     })
-    self:queueMessage(pMsg, false, true, 0)
+    self:queueMessage(pMsg, false, true, 0, nil, "transaction")
 
     -- 2. EXECUTE
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)

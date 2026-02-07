@@ -132,13 +132,13 @@ local function OnServerCommand(module, command, args)
                 
                 -- 1. NPC Response Dialogue
                 local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, args)
-                ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier")
+                ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier", "transaction")
              
                 -- 2. FIX: Immediate UI Refresh (Fixes sell list not updating)
                 ui:populateList()
             else
                 -- [NEW] Show Failure Message
-                ui:queueMessage(args.msg or "Transaction Failed", true, false, 0)
+                ui:queueMessage(args.msg or "Transaction Failed", true, false, 0, nil, "transaction")
                 if HaloTextHelper and getSpecificPlayer(0) then
                     HaloTextHelper.addTextWithArrow(getSpecificPlayer(0), args.msg or "Failed", true, HaloTextHelper.getColorRed())
                 end
