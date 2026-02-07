@@ -15,6 +15,9 @@ require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/Archetypes"
+require "DT/Common/Config"
+require "DT/Common/ServerHelpers"
+
 
 -- =============================================================================
 -- 1. COMMAND HANDLERS
@@ -90,6 +93,169 @@ Handlers.GenerateStock = function(player, args)
         sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=false, reason=reason })
     end
 end
+
+-- [TRADE TRANSACTION - BUY/SELL]
+Handlers.TradeTransaction = function(player, args)
+    local DEBUG_PREFIX = "[DT-V2-Trade]"
+    print(DEBUG_PREFIX .. " TradeTransaction received")
+    print(DEBUG_PREFIX .. " Type: " .. tostring(args.type) .. ", TraderID: " .. tostring(args.traderID))
+    
+    local txType = args.type
+    local traderID = args.traderID
+    local key = args.key
+    local clientQty = tonumber(args.qty) or 1
+    
+    -- Get stock and item data
+    local stockData = DynamicTrading_Stock.GetStock(traderID)
+    if not stockData then
+        print(DEBUG_PREFIX .. " ERROR: No stock data for trader")
+        sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Trader unavailable" })
+        return
+    end
+    
+    local itemData = DynamicTrading.Config.MasterList[key]
+    if not itemData then
+        print(DEBUG_PREFIX .. " ERROR: Item not in MasterList: " .. tostring(key))
+        sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item not found" })
+        return
+    end
+    
+    local inv = player:getInventory()
+    local scriptItem = getScriptManager():getItem(itemData.item)
+    local safeDisplayName = scriptItem and scriptItem:getDisplayName() or "Unknown Item"
+    
+    -- Get faction data for wealth
+    local soul = DynamicTrading_Roster.GetTrader(traderID)
+    local factionID = soul and soul.factionID or nil
+    local factionData = factionID and DynamicTrading_Factions.GetFaction(factionID) or nil
+    
+    if txType == "buy" then
+        -- 1. Get price from stock
+        local itemStock = stockData.items[key]
+        if not itemStock then
+            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Not in stock" })
+            return
+        end
+        
+        local currentQty = type(itemStock) == "table" and itemStock.qty or itemStock
+        local unitPrice = type(itemStock) == "table" and (itemStock.price or itemStock.basePrice) or (itemData.basePrice or 100)
+        local totalCost = unitPrice * clientQty
+        
+        print(DEBUG_PREFIX .. " Buy: " .. key .. " x" .. clientQty .. " @ $" .. unitPrice)
+        
+        -- 2. Check Stock
+        if currentQty < clientQty then
+            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Sold Out!" })
+            return
+        end
+        
+        -- 3. Check Player Wealth
+        local playerWealth = DynamicTrading.ServerHelpers.GetWealth(player)
+        if playerWealth < totalCost then
+            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Not enough cash!" })
+            return
+        end
+        
+        -- 4. Execute Trade
+        if DynamicTrading.ServerHelpers.RemoveMoney(player, totalCost) then
+            -- Decrease stock
+            if type(itemStock) == "table" then
+                itemStock.qty = itemStock.qty - clientQty
+            else
+                stockData.items[key] = currentQty - clientQty
+            end
+            
+            -- Add money to faction
+            if factionData then
+                DynamicTrading_Factions.ModifyWealth(factionID, totalCost)
+            end
+            
+            -- Add item to player
+            DynamicTrading.ServerHelpers.AddItem(inv, itemData.item, clientQty)
+            
+            -- Sync stock
+            ModData.transmit("DynamicTrading_Stock")
+            
+            print(DEBUG_PREFIX .. " SUCCESS: Bought " .. safeDisplayName)
+            sendServerCommand(player, "DynamicTrading", "TransactionResult", { 
+                success = true, 
+                itemName = safeDisplayName,
+                price = totalCost
+            })
+        else
+            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Transaction Error" })
+        end
+        
+    elseif txType == "sell" then
+        -- 1. Locate item by ID
+        local itemObj = inv:getItemById(args.itemID)
+        if not itemObj then
+            itemObj = DynamicTrading.ServerHelpers.FindItemByIDRecursive(inv, args.itemID)
+        end
+        
+        if not itemObj then
+            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item missing!" })
+            return
+        end
+        
+        -- 2. Calculate sell price
+        local basePrice = itemData.basePrice or 0
+        local unitPrice = math.floor(basePrice * 0.5)
+        
+        -- Condition penalty
+        if itemObj:getConditionMax() and itemObj:getConditionMax() > 0 then
+            local cond = itemObj:getCondition() / itemObj:getConditionMax()
+            unitPrice = math.floor(unitPrice * cond)
+        end
+        
+        local totalGain = unitPrice * clientQty
+        print(DEBUG_PREFIX .. " Sell: " .. key .. " @ $" .. totalGain)
+        
+        -- 3. Check faction can afford
+        local factionWealth = factionData and factionData.wealth or 999999
+        if factionWealth < totalGain then
+            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Trader cannot afford this!" })
+            return
+        end
+        
+        -- 4. Unequip if necessary
+        if player:getPrimaryHandItem() == itemObj then
+            player:setPrimaryHandItem(nil)
+        end
+        if player:getSecondaryHandItem() == itemObj then
+            player:setSecondaryHandItem(nil)
+        end
+        
+        -- 5. Execute Trade
+        DynamicTrading.ServerHelpers.RemoveItem(itemObj)
+        
+        -- Add money to player
+        local bundles = math.floor(totalGain / 100)
+        local loose = totalGain % 100
+        if bundles > 0 then DynamicTrading.ServerHelpers.AddItem(inv, "Base.MoneyBundle", bundles) end
+        if loose > 0 then DynamicTrading.ServerHelpers.AddItem(inv, "Base.Money", loose) end
+        
+        -- Deduct from faction wealth
+        if factionData then
+            DynamicTrading_Factions.ModifyWealth(factionID, -totalGain)
+        end
+        
+        -- Update deflation (if tracked)
+        if not stockData.deflation then stockData.deflation = {} end
+        stockData.deflation[key] = (stockData.deflation[key] or 0) + 1
+        
+        -- Sync stock
+        ModData.transmit("DynamicTrading_Stock")
+        
+        print(DEBUG_PREFIX .. " SUCCESS: Sold " .. itemObj:getDisplayName())
+        sendServerCommand(player, "DynamicTrading", "TransactionResult", { 
+            success = true, 
+            itemName = itemObj:getDisplayName(),
+            price = totalGain
+        })
+    end
+end
+
 
 -- [FACTION DATA REQUEST]
 Handlers.RequestFactionData = function(player, args)

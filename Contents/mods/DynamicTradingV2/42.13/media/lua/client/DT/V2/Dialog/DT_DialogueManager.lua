@@ -231,3 +231,77 @@ function DynamicTrading.DialogueManager.GeneratePlayerMessage(action, args)
     local rawText = PickRandom(pool) or "..."
     return FormatMessage(rawText, args)
 end
+
+-- =============================================================================
+-- 7. SELL-ASK DIALOGUE GENERATOR (Uses Common Archetypes)
+-- =============================================================================
+local DEBUG_PREFIX = "[DT-V2-Dialogue]"
+
+-- Helper: Formats a list of tags with "and" and random suffixes
+local function FormatNaturalList(list)
+    if not list or #list == 0 then return "nothing in particular" end
+    
+    local suffixes = {"", " things", " stuff", " items", " goods", " supplies"}
+    local processed = {}
+    for i, item in ipairs(list) do
+        local suffix = suffixes[ZombRand(#suffixes) + 1]
+        table.insert(processed, (item or "misc") .. suffix)
+    end
+    
+    if #processed == 1 then return processed[1] end
+    
+    local last = table.remove(processed)
+    return table.concat(processed, ", ") .. " and " .. last
+end
+
+function DynamicTrading.DialogueManager.GenerateSellAskDialogue(trader)
+    if not trader then return "..." end
+    print(DEBUG_PREFIX .. " GenerateSellAskDialogue for archetype: " .. tostring(trader.archetype))
+    
+    local db = GetDB()
+    local archetype = trader.archetype or "General"
+
+    -- 1. Try to Load Archetype File Dynamically
+    if archetype ~= "General" then
+        if not db.Archetypes[archetype] or not db.Archetypes[archetype].SellAskResponse then
+            pcall(require, "DT/Common/ArchetypeDefinitions/" .. archetype .. "/Dialogue/Sell_ask")
+        end
+    end
+
+    -- 2. Get Archetype Data from COMMON Archetypes (wants/forbid)
+    local archData = DynamicTrading.Archetypes[archetype] or DynamicTrading.Archetypes["General"]
+
+    -- 3. Format Wants
+    local wantsList = {}
+    if archData and archData.wants then
+        for tag, mult in pairs(archData.wants) do
+            table.insert(wantsList, tag)
+        end
+    end
+    local wantsStr = FormatNaturalList(wantsList)
+    print(DEBUG_PREFIX .. " Wants: " .. wantsStr)
+
+    -- 4. Format Forbid
+    local forbidList = archData and archData.forbid or {}
+    local forbidStr = FormatNaturalList(forbidList)
+    print(DEBUG_PREFIX .. " Forbid: " .. forbidStr)
+
+    -- 5. Determine Message Pool
+    local pool = nil
+    
+    if db.Archetypes[archetype] and db.Archetypes[archetype].SellAskResponse then
+        pool = db.Archetypes[archetype].SellAskResponse
+    elseif db.General and db.General.SellAskResponse then
+        pool = db.General.SellAskResponse
+    else
+        pool = { "I'm looking for {wants}. No {forbid}." }
+    end
+
+    local rawText = PickRandom(pool)
+
+    -- 6. Format Variables
+    local text = string.gsub(rawText, "{wants}", wantsStr)
+    text = string.gsub(text, "{forbid}", forbidStr)
+    
+    return FormatMessage(text, {})
+end

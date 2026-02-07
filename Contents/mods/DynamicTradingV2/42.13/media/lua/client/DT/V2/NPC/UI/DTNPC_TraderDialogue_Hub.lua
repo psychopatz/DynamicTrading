@@ -3,8 +3,12 @@
 -- =============================================================================
 require "UI/DT_ConversationUI"
 require "DT/V2/NPC/DTNPC_TradingHandler"
+require "DT/V2/UI/DT_TradingWindow_Wrapper"
+
+local DEBUG_PREFIX = "[DT-V2-Hub]"
 
 DTNPC_TraderDialogue_Hub = {}
+
 
 function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
     if not ui then
@@ -78,15 +82,42 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             text = "Trade",
             message = "Let's see what you've got.",
             onSelect = function(ui)
-                if DTNPC_TradingHandler then
-                     DTNPC_TradingHandler.InitiateTrade(ui, npc, player)
+                print(DEBUG_PREFIX .. " Trade option selected")
+                
+                local traderID = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
+                local archetype = brain and brain.archetypeID or "General"
+                
+                -- Check if stock is already cached
+                local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
+                                  or ModData.get("DynamicTrading_Stock")
+                
+                if stockData and stockData[traderID] then
+                    -- Stock ready - close conversation UI and open trading window
+                    print(DEBUG_PREFIX .. " Stock cached, opening TradingWindow")
+                    ui:close()
+                    DT_TradingWindow.ToggleWindowV2(traderID, archetype, npc)
                 else
-                     print("Error: DTNPC_TradingHandler missing")
-                     ui:speak("I... forgot how to trade.")
+                    -- Request stock generation, then open window
+                    print(DEBUG_PREFIX .. " Requesting stock generation...")
+                    ui:speak("Let me check what I have in stock...")
+                    
+                    -- Request stock from server
+                    local args = { traderID = traderID }
+                    sendClientCommand(player, "DynamicTrading_V2", "GenerateStock", args)
+                    
+                    -- Store pending trade context
+                    DTNPC_TraderDialogue_Hub.PendingTrade = {
+                        traderID = traderID,
+                        archetype = archetype,
+                        npc = npc,
+                        ui = ui,
+                        startTime = getGameTime():getWorldAgeHours()
+                    }
                 end
             end
         })
     end
+
 
     -- OPTION 3: QUEST (Placeholder)
     table.insert(options, {
@@ -109,3 +140,56 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     
     ui:updateOptions(options)
 end
+
+-- =============================================================================
+-- PENDING TRADE POLLING
+-- =============================================================================
+DTNPC_TraderDialogue_Hub.PendingTrade = nil
+
+local function OnTick()
+    if not DTNPC_TraderDialogue_Hub.PendingTrade then return end
+    
+    local pending = DTNPC_TraderDialogue_Hub.PendingTrade
+    
+    -- Check if UI is still valid
+    local uiValid = pending.ui and pending.ui:getIsVisible()
+    if not uiValid then
+        print(DEBUG_PREFIX .. " Pending trade cancelled - UI closed")
+        DTNPC_TraderDialogue_Hub.PendingTrade = nil
+        return
+    end
+    
+    -- Check for stock arrival
+    local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
+                      or ModData.get("DynamicTrading_Stock")
+    
+    if stockData and stockData[pending.traderID] then
+        print(DEBUG_PREFIX .. " Stock arrived! Opening TradingWindow")
+        
+        -- Close conversation UI
+        pending.ui:close()
+        
+        -- Open trading window
+        DT_TradingWindow.ToggleWindowV2(pending.traderID, pending.archetype, pending.npc)
+        
+        -- Clear pending
+        DTNPC_TraderDialogue_Hub.PendingTrade = nil
+        return
+    end
+    
+    -- Timeout check (~5 seconds)
+    local gt = getGameTime()
+    if gt and (gt:getWorldAgeHours() - pending.startTime) > 0.005 then
+        print(DEBUG_PREFIX .. " Stock request timeout")
+        if uiValid then
+            pending.ui:speak("Sorry, I'm having trouble with my inventory right now.")
+        end
+        DTNPC_TraderDialogue_Hub.PendingTrade = nil
+    end
+end
+
+-- Register tick handler
+Events.OnTick.Remove(OnTick)
+Events.OnTick.Add(OnTick)
+
+print(DEBUG_PREFIX .. " NPC Trader Dialogue Hub loaded")
