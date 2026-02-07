@@ -32,4 +32,4 @@ Register({
 
 })
 
-print("[DynamicTrading] Traps Registry Complete.")
+print("[DynamicTrading] Traps Registry Complete \n.")

@@ -16,4 +16,3 @@ DynamicTrading.RegisterArchetype("Office", {
     },
     forbid = { "Farm", "Heavy", "Dirty" }
 })
-print("[DynamicTrading] Registered archetype: Office")

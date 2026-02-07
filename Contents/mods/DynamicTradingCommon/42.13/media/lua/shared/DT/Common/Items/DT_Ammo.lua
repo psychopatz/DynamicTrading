@@ -64,4 +64,4 @@ Register({
 { item="Base.556Clip",  basePrice=80, tags={"Weapon", "Magazine", "Legendary", "Military"}, stockRange={min=0, max=2} } -- M16 (30 rounds)
 })
 
-print("[DynamicTrading] Ammo Registry Complete.")
+print("[DynamicTrading] Ammo Registry Complete \n.")

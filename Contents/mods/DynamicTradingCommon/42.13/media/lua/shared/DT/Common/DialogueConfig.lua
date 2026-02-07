@@ -243,4 +243,4 @@ require "DT/Common/ArchetypeDefinitions/Demo/Dialogue/DT_Demo_Buying"
 require "DT/Common/ArchetypeDefinitions/Demo/Dialogue/DT_Demo_Selling"
 require "DT/Common/ArchetypeDefinitions/Demo/Dialogue/DT_Demo_Sell_ask"
 
-print("[DynamicTrading] Dialogue Registry Complete.")
+print("[DynamicTrading] Dialogue Registry Complete \n.")

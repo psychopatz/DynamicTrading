@@ -102,4 +102,4 @@ Register({
 { item="Base.Stethoscope",          basePrice=5,  tags={"Medical", "Luxury"}, stockRange={min=0, max=2} }, -- Doctor RP item
 })
 
-print("[DynamicTrading] Medical Registry Complete.")
+print("[DynamicTrading] Medical Registry Complete \n.")

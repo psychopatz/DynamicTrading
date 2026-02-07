@@ -39,4 +39,4 @@ Register({
 { item="Base.HairDyeRare",      basePrice=30, tags={"Cosmetic", "Rare", "Luxury"}, stockRange={min=0, max=2} }, -- Pink/Blue/Green (The "E-Girl" tax)
 })
 
-print("[DynamicTrading] Appearance Registry Complete.")
+print("[DynamicTrading] Appearance Registry Complete \n.")

@@ -41,4 +41,4 @@ Register({
 { item="Base.Lighter_Battery",      basePrice=2,   tags={"Fire", "Tool", "Improvised"}, stockRange={min=0, max=5} }, -- Engineer craft
 })
 
-print("[DynamicTrading] Fuel Registry Complete.")
+print("[DynamicTrading] Fuel Registry Complete \n.")

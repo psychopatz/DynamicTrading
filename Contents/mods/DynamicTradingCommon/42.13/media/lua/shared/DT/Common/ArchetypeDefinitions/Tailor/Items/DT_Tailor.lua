@@ -16,4 +16,3 @@ DynamicTrading.RegisterArchetype("Tailor", {
     },
     forbid = { "Fuel", "CarPart", "Heavy" }
 })
-print("[DynamicTrading] Registered archetype: Tailor")

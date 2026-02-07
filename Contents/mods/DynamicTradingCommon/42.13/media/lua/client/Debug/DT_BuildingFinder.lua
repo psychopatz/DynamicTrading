@@ -4,7 +4,7 @@
 -- PURPOSE: Visual interface to scan buildings, wilderness, and roads with county grouping
 -- VERSION: 2.0 - Fixed and Enhanced
 -- =============================================================================
-
+if not isDebugEnabled() then return end
 -- Ensure DTM global exists
 DTM = DTM or {}
 

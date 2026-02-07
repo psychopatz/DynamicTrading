@@ -140,4 +140,4 @@ Register({
     { item="Base.Funnel",               tags={"Tool", "Mechanic", "Common"},       basePrice=15,  stockRange={min=2, max=6} },
 })
 
-print("[DynamicTrading] Tools Registry Complete.")
+print("[DynamicTrading] Tools Registry Complete \n.")

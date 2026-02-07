@@ -122,4 +122,4 @@ Register({
 
 })
 
-print("[DynamicTrading] Electronics Registry Complete.")
+print("[DynamicTrading] Electronics Registry Complete \n.")

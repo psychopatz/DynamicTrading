@@ -119,4 +119,4 @@ Register({
 { item="Base.Broom_Twig",           basePrice=2,  tags={"Cleaning", "Junk"}, stockRange={min=1, max=5} },
 })
 
-print("[DynamicTrading] Household Registry Complete.")
+print("[DynamicTrading] Household Registry Complete \n.")

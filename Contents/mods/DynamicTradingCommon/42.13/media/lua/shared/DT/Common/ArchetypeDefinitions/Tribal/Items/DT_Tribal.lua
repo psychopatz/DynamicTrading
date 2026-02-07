@@ -16,4 +16,3 @@ DynamicTrading.RegisterArchetype("Tribal", {
     },
     forbid = { "Electronics", "Gun", "Computer" }
 })
-print("[DynamicTrading] Registered archetype: Tribal")

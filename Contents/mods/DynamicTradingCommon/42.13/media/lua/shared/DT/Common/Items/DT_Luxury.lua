@@ -92,4 +92,4 @@ Register({
 
 })
 
-print("[DynamicTrading] Luxury Registry Complete.")
+print("[DynamicTrading] Luxury Registry Complete \n.")

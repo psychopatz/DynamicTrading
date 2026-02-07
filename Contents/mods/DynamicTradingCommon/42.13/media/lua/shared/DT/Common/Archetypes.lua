@@ -65,6 +65,7 @@ function DynamicTrading.LoadArchetypes()
         local success, err = pcall(function() require(path) end)
         
         if success then
+            print("[DynamicTrading] Successfully loaded archetype: " .. id)
             successCount = successCount + 1
         else
             print("[DynamicTrading] FAILED to load archetype [" .. id .. "] at path: media/lua/shared/" .. path .. ".lua")
@@ -89,4 +90,4 @@ end
 
 DynamicTrading.LoadArchetypes()
 
-print("[DynamicTrading] Archetype Registry Complete.")
+print("[DynamicTrading] Archetype Registry Complete \n.")

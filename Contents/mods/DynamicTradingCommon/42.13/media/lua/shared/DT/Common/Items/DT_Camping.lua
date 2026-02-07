@@ -107,4 +107,4 @@ Register({
     { item="Base.PercedWood", category="Survival", tags={"Survival", "Build", "Carpenter"}, basePrice=35, stockRange={min=1, max=3} },
 })
 
-print("[DynamicTrading] Camping Registry Complete.")
+print("[DynamicTrading] Camping Registry Complete \n.")

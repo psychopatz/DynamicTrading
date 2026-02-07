@@ -415,4 +415,4 @@ Register({
 { item="Base.MarchRidgeMap",      basePrice=15, tags={"Literature", "Cartography", "Uncommon"}, stockRange={min=1, max=3} },
 })
 
-print("[DynamicTrading] Literature Registry Complete.")
+print("[DynamicTrading] Literature Registry Complete \n.")

@@ -359,4 +359,4 @@ Register({
 { item="Base.Purse",                        basePrice=5,   tags={"Container", "Junk"}, stockRange={min=2, max=10} },
 })
 
-print("[DynamicTrading] Containers Registry Complete.")
+print("[DynamicTrading] Containers Registry Complete \n.")

@@ -130,4 +130,4 @@ Register({
 
 })
 
-print("[DynamicTrading] Junk Registry Complete.")
+print("[DynamicTrading] Junk Registry Complete \n.")

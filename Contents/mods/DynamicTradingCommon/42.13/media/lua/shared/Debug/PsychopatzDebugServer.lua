@@ -29,7 +29,6 @@ local function onPsychopatzCommand(module, command, player, args)
         local username = player:getUsername()
         local safeID   = getSafeSteamID(player)
 
-        print("[PsychopatzDebug] Command Received from: " .. tostring(username) .. " | ID: " .. tostring(safeID))
 
         -- =================================================
         -- SECURITY CHECK
@@ -43,18 +42,18 @@ local function onPsychopatzCommand(module, command, player, args)
         end
 
         if not isAllowed then
-            print("[PsychopatzDebug] SECURITY ALERT: Access Denied.")
+
             return 
         end
 
         -- =================================================
         -- ACTION 1: HEAL WOUNDS
-        -- =================================================
+        -- ================================================
         if args.doHeal then
             local bodyDamage = player:getBodyDamage()
             if bodyDamage and bodyDamage.RestoreToFullHealth then
                 bodyDamage:RestoreToFullHealth()
-                print("[PsychopatzDebug] Action: Wounds Healed.")
+                
             end
         end
 
@@ -72,7 +71,7 @@ local function onPsychopatzCommand(module, command, player, args)
                 if player.sendObjectChange then
                     player:sendObjectChange("stats")
                 end
-                print("[PsychopatzDebug] Action: Stats Reset.")
+                
             end
         end
 
@@ -101,10 +100,7 @@ local function onPsychopatzCommand(module, command, player, args)
                                 sendAddItemToContainer(inv, item)
                             end
                         end
-                        print("[PsychopatzDebug] Action: Spawned " .. itemID .. " x" .. quantity)
                     end
-                else
-                    print("[PsychopatzDebug] ERROR: Item '" .. tostring(itemID) .. "' not found.")
                 end
             end
         end

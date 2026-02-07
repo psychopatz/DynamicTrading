@@ -16,4 +16,3 @@ DynamicTrading.RegisterArchetype("Designer", {
     },
     forbid = { "Weapon", "Trash", "Junk" }
 })
-print("[DynamicTrading] Registered archetype: Designer")

@@ -186,9 +186,6 @@ local function onPsychopatzKey(key)
             if ui.itemEntry then ui.itemEntry:selectAll() end
         else
             
-            if HaloTextHelper then
-                -- HaloTextHelper.addTextWithArrow(player, "ACCESS DENIED", true, HaloTextHelper.getColorRed())
-            end
         end
     end
 end

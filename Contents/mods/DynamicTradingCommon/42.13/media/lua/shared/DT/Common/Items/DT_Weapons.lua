@@ -257,4 +257,4 @@ Register({
 
 })
 
-print("[DynamicTrading] Weapons Registry Complete.")
+print("[DynamicTrading] Weapons Registry Complete \n.")

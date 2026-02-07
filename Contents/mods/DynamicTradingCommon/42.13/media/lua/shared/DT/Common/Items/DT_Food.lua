@@ -327,4 +327,4 @@ Register({
 { item="Base.TurkeyEgg",        basePrice=3,  tags={"Food", "Fresh", "Protein"}, stockRange={min=2, max=10} }
 })
 
-print("[DynamicTrading] Food Registry Complete.")
+print("[DynamicTrading] Food Registry Complete \n.")

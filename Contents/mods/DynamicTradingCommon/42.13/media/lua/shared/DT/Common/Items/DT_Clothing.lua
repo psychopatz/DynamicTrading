@@ -141,4 +141,4 @@ Register({
 
 })
 
-print("[DynamicTrading] Clothing Registry Complete.")
+print("[DynamicTrading] Clothing Registry Complete \n.")

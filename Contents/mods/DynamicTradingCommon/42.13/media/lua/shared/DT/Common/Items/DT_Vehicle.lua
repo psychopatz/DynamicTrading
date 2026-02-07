@@ -164,4 +164,4 @@ Register({
     { item="Base.RearWindow3",       tags={"CarPart", "Sport", "Uncommon"},  basePrice=50,  stockRange={min=0, max=2} },
 })
 
-print("[DynamicTrading] Vehicle Registry Complete.")
+print("[DynamicTrading] Vehicle Registry Complete \n.")

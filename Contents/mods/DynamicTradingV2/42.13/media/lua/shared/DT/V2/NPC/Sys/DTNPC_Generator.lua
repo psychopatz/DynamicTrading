@@ -130,14 +130,9 @@ function DTNPCGenerator.CreateStandardBrain(options)
         portraitID = 1 -- Default fallback
     }
 
-    -- 4. Calculate Portrait ID using common portrait system
-    if DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.GetMaxCount then
-        local genderStr = isFemale and "Female" or "Male"
-        local maxCount = DynamicTrading.Portraits.GetMaxCount(occupation, genderStr)
-        if maxCount > 0 then
-            brain.portraitID = ZombRand(maxCount) + 1
-        end
-    end
+        -- We use a seed between 1 and 1000 from the unified system.
+        -- The client will modulo this against their local texture count.
+        brain.portraitID = DynamicTrading.Portraits.RollPortraitSeed()
 
     
     return brain

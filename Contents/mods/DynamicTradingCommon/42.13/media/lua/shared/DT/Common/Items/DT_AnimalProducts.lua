@@ -146,4 +146,4 @@ Register({
 { item="Base.LargeBoneClub_Spiked", basePrice=12,  tags={"Weapon", "Melee", "Junk"}, stockRange={min=1, max=3} },
 })
 
-print("[DynamicTrading] Animal Products Registry Complete.")
+print("[DynamicTrading] Animal Products Registry Complete \n.")

@@ -144,4 +144,4 @@ Register({
     { item="Base.HotWaterBottle",   tags={"Medical", "Pharmacist", "Common"}, basePrice=12, stockRange={min=1, max=3} },
 })
 
-print("[DynamicTrading] Containers (Fluid) Registry Complete.")
+print("[DynamicTrading] Containers (Fluid) Registry Complete \n.")

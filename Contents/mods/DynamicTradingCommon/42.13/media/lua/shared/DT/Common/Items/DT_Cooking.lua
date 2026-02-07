@@ -142,4 +142,4 @@ Register({
 
 })
 
-print("[DynamicTrading] Cooking Registry Complete.")
+print("[DynamicTrading] Cooking Registry Complete \n.")

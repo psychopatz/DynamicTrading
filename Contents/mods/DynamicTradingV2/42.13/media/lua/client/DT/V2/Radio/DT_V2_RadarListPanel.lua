@@ -33,8 +33,14 @@ end
 function DT_V2_RadarListPanel:drawPortrait(ctx, y, itemData)
     local tex = nil
     if DynamicTrading and DynamicTrading.Portraits then
+        local seed = itemData.portraitID or 1
+        local mappedID = 1
+        if DynamicTrading.Portraits.GetMappedID then
+            mappedID = DynamicTrading.Portraits.GetMappedID(itemData.archetype, itemData.gender, seed)
+        end
+        
         local pathFolder = DynamicTrading.Portraits.GetPathFolder(itemData.archetype, itemData.gender)
-        tex = getTexture(pathFolder .. tostring(itemData.portraitID) .. ".png")
+        tex = getTexture(pathFolder .. tostring(mappedID) .. ".png")
     end
     
     if not tex then tex = getTexture("Item_WalkieTalkie1") end

@@ -134,14 +134,19 @@ function DT_ConversationUI:resolvePortrait(trader)
     
     local arch = trader.archetype or "General"
     local gender = trader.gender or "Male"
-    local id = trader.portraitID or 1
+    local seed = trader.portraitID or 1
     
-    local path = "media/ui/Portraits/" .. arch .. "/" .. gender .. "/" .. id .. ".png"
-    local tex = getTexture(path)
+    local mappedID = 1
+    if DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.GetMappedID then
+        mappedID = DynamicTrading.Portraits.GetMappedID(arch, gender, seed)
+    end
+    
+    local pathFolder = DynamicTrading.Portraits.GetPathFolder(arch, gender)
+    local tex = getTexture(pathFolder .. tostring(mappedID) .. ".png")
     if tex then return tex end
     
-    path = "media/ui/Portraits/General/" .. gender .. "/" .. id .. ".png"
-    return getTexture(path)
+    -- Final fallback
+    return getTexture("media/ui/Portraits/General/" .. gender .. "/1.png")
 end
 
 function DT_ConversationUI:getBackgroundTexture()

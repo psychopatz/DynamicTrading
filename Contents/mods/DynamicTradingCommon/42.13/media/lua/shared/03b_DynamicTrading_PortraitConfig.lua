@@ -11,91 +11,86 @@ DynamicTrading.Portraits.Counts = DynamicTrading.Portraits.Counts or {}
 -- HELPER FUNCTIONS
 -- =============================================================================
 
---- Checks if a specific Archetype has custom photos defined.
---- @param archetype string
---- @return boolean
 
-function DynamicTrading.Portraits.HasCustom(archetype)
-    if not archetype then return false end
-local data = DynamicTrading.Portraits.Counts[archetype]
-return data ~= nil
+function DynamicTrading.Portraits.ScanTextures()
+    if isServer() then return end
+    
+    print("[DynamicTrading] Beginning Portrait Texture Scan...")
+    local archetypes = {
+        "General", "Farmer", "Butcher", "Doctor", "Mechanic",
+        "Survivalist", "Gunrunner", "Foreman", "Scavenger", "Tailor",
+        "Electrician", "Welder", "Chef", "Herbalist", "Smuggler",
+        "Librarian", "Angler", "Sheriff", "Bartender", "Teacher",
+        "Hunter", "Quartermaster", "Musician", "Janitor", "Carpenter",
+        "Pawnbroker", "Pyro", "Athlete", "Pharmacist", "Hiker",
+        "Burglar", "Blacksmith", "Tribal", "Painter", "RoadWarrior",
+        "Designer", "Office", "Geek", "Brewer", "Demo"
+    }
+    local genders = {"Male", "Female"}
+    local totalFound = 0
+
+    for _, arch in ipairs(archetypes) do
+        DynamicTrading.Portraits.Counts[arch] = {}
+        for _, gender in ipairs(genders) do
+            local count = 0
+            while true do
+                local texPath = "media/ui/Portraits/" .. arch .. "/" .. gender .. "/" .. (count + 1) .. ".png"
+                if getTexture(texPath) then
+                    count = count + 1
+                else
+                    break
+                end
+            end
+            DynamicTrading.Portraits.Counts[arch][gender] = count
+            if count > 0 then
+                print("[DynamicTrading] Portrait Scan: [" .. arch .. "][" .. gender .. "] Found " .. count)
+                totalFound = totalFound + count
+            end
+        end
+    end
+    print("[DynamicTrading] Portrait Scan Complete. Total unique textures found: " .. totalFound)
 end
 
---- Returns the max photo count for a specific Archetype + Gender combo.
---- Falls back to "General" if the specific archetype is empty or missing.
---- @param archetype string
---- @param gender string "Male" or "Female"
---- @return number The max index (e.g. 4), or 0 if totally missing.
-function DynamicTrading.Portraits.GetMaxCount(archetype, gender)
-local target = archetype
-
-
--- 1. Check if Archetype exists in our table
-if not DynamicTrading.Portraits.Counts[target] then
-    target = "General"
+--- Returns a random portrait seed (1-1000).
+--- This is used by generators to store a persistent variety key.
+--- @return number
+function DynamicTrading.Portraits.RollPortraitSeed()
+    return ZombRand(1000) + 1
 end
 
--- 2. Check if the specific entry has valid counts
-local data = DynamicTrading.Portraits.Counts[target]
-
--- 3. If "Chef" exists but has 0 photos, fallback to "General"
-if (not data[gender]) or (data[gender] <= 0) then
-    target = "General"
-    data = DynamicTrading.Portraits.Counts[target]
-end
-
--- 4. Return count (or 0 if even General is broken)
-if data and data[gender] then
-    return data[gender]
-end
-
-return 0
-
-end
-
---- Returns the path string prefix for the UI to use later.
---- e.g., "Portraits/Chef/Male/" or "Portraits/General/Male/"
+--- Returns the actual texture ID relative to the folder by applying (seed % count) + 1.
+--- This ensures server-client sync without the server needing texture access.
 --- @param archetype string
 --- @param gender string
---- @return string
-function DynamicTrading.Portraits.GetPathFolder(archetype, gender)
-local target = archetype
-
-
--- Logic mirrors GetMaxCount to ensure we point to the folder that actually has the file
-if not DynamicTrading.Portraits.Counts[target] then
-    target = "General"
-else
+--- @param seed number (1-1000)
+--- @return number
+function DynamicTrading.Portraits.GetMappedID(archetype, gender, seed)
+    local target = archetype
+    if not DynamicTrading.Portraits.Counts[target] then target = "General" end
+    
     local data = DynamicTrading.Portraits.Counts[target]
     if (not data[gender]) or (data[gender] <= 0) then
         target = "General"
+        data = DynamicTrading.Portraits.Counts[target]
     end
+
+    if not data or not data[gender] or data[gender] <= 0 then return 1 end
+    
+    -- Formula: (seed % available) + 1
+    -- We use seed-1 to handle modulo 0 correctly, then add 1 back.
+    return ((seed - 1) % data[gender]) + 1
 end
 
--- NOTE: In texture paths, use forward slashes.
--- NOTE: In texture paths, use forward slashes.
-return "media/ui/Portraits/" .. target .. "/" .. gender .. "/"
-
-
-end
-local archetypes = {
-    "General", "Farmer", "Butcher", "Doctor", "Mechanic",
-    "Survivalist", "Gunrunner", "Foreman", "Scavenger", "Tailor",
-    "Electrician", "Welder", "Chef", "Herbalist", "Smuggler",
-    "Librarian", "Angler", "Sheriff", "Bartender", "Teacher",
-    "Hunter", "Quartermaster", "Musician", "Janitor", "Carpenter",
-    "Pawnbroker", "Pyro", "Athlete", "Pharmacist", "Hiker",
-    "Burglar", "Blacksmith", "Tribal", "Painter", "RoadWarrior",
-    "Designer", "Office", "Geek", "Brewer", "Demo"
-}
-
-print("[DynamicTrading] Loading archetype portraits...")
-for _, id in ipairs(archetypes) do
-    local path = "05_Archetypes/" .. id .. "/Image/DT_" .. id .. "_Portrait"
-    local success, err = pcall(function() require(path) end)
-    if not success then
-        -- print("[DynamicTrading] Warning: No portrait data for " .. id)
+function DynamicTrading.Portraits.GetPathFolder(archetype, gender)
+    local target = archetype
+    local data = DynamicTrading.Portraits.Counts[target]
+    
+    if not data or (not data[gender]) or (data[gender] <= 0) then
+        target = "General"
     end
+
+    return "media/ui/Portraits/" .. target .. "/" .. gender .. "/"
 end
 
-print("[DynamicTrading] Portrait Registry Complete.")
+-- Hook to main menu enter to ensure textures are loaded before use
+Events.OnMainMenuEnter.Add(DynamicTrading.Portraits.ScanTextures)
