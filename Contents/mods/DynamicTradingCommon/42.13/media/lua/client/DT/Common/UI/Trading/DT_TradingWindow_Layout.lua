@@ -68,12 +68,19 @@ function DT_TradingWindow:createChildren()
     self.chatList.doDrawItem = self.drawLogItem
     self:addChild(self.chatList)
 
-    -- Mode Switch Button
-    self.btnSwitch = ISButton:new(rightX, th + PADDING, rightW, 25, "SWITCH TO SELLING", self, self.onToggleMode)
-    self.btnSwitch:initialise()
-    self.btnSwitch.backgroundColor = {r=0.2, g=0.2, b=0.2, a=1.0}
-    self.btnSwitch:setAnchorRight(true)
-    self:addChild(self.btnSwitch)
+    -- Tab Panel (Mode Switching)
+    local tabW = rightW / 2
+    self.btnTabBuy = ISButton:new(rightX, th + PADDING, tabW, 25, "BUY FROM TRADER", self, function(self) self:setTradingMode(true) end)
+    self.btnTabBuy:initialise()
+    self.btnTabBuy.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1.0}
+    self.btnTabBuy:setAnchorRight(true)
+    self:addChild(self.btnTabBuy)
+
+    self.btnTabSell = ISButton:new(rightX + tabW, th + PADDING, tabW, 25, "SELL TO TRADER", self, function(self) self:setTradingMode(false) end)
+    self.btnTabSell:initialise()
+    self.btnTabSell.backgroundColor = {r=0.2, g=0.2, b=0.2, a=1.0}
+    self.btnTabSell:setAnchorRight(true)
+    self:addChild(self.btnTabSell)
 
     -- Main Item List
     self.listbox = ISScrollingListBox:new(rightX, th + 45, rightW, self.height - (th + 55))
@@ -184,10 +191,15 @@ function DT_TradingWindow:relayout()
         end
     end
     
-    -- 5. Right column (Switch & Listbox) updates
-    if self.btnSwitch then
-        self.btnSwitch:setX(rightX)
-        self.btnSwitch:setWidth(rightW)
+    -- 5. Right column (Tabs & Listbox) updates
+    local tabW = rightW / 2
+    if self.btnTabBuy then
+        self.btnTabBuy:setX(rightX)
+        self.btnTabBuy:setWidth(tabW)
+    end
+    if self.btnTabSell then
+        self.btnTabSell:setX(rightX + tabW)
+        self.btnTabSell:setWidth(tabW)
     end
     
     if self.listbox then

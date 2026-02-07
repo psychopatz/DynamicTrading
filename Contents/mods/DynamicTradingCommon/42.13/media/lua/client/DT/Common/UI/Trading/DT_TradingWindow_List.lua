@@ -118,7 +118,6 @@ function DT_TradingWindow:populateList()
     -- DATA SCANNING
     -- ==========================================================
     if self.isBuying then
-        self.btnSwitch:setTitle("SWITCH TO SELLING")
         if trader.stocks then
             for key, qty in pairs(trader.stocks) do
                 local itemData = dataProvider:getItemData(key)
@@ -148,7 +147,6 @@ function DT_TradingWindow:populateList()
             end
         end
     else
-        self.btnSwitch:setTitle("SWITCH TO BUYING")
         local player = getSpecificPlayer(0)
         local inv = player:getInventory()
         
