@@ -1,6 +1,7 @@
 require "ISUI/ISUIElement"
 require "ISUI/ISButton"
 require "DT/V1/DynamicTradingInfoUI"
+require "Utils/DT_ConfigManager"
 
 DT_SidebarButton = ISUIElement:derive("DT_SidebarButton")
 DT_SidebarButton.instance = nil
@@ -11,8 +12,6 @@ end
 
 function DT_SidebarButton:createChildren()
     -- 1. LOAD CUSTOM TEXTURE
-    -- Place your PNG in: YourMod/media/ui/Icon_MarketInfo.png
-    -- Then use: getTexture("media/ui/Icon_MarketInfo.png")
     local btnIcon = getTexture("media/ui/Icon_MarketInfo.png")
     
     -- Fallback for testing: uses vanilla hammer icon (very visible)
@@ -53,6 +52,12 @@ end
 -- VISIBILITY SYNC
 -- =============================================================================
 function DT_SidebarButton:render()
+    -- Config Check: If disabled in options, force hidden and stop here
+    if not DT_ConfigManager.settings.showSidebar then
+        if self:isVisible() then self:setVisible(false) end
+        return
+    end
+
     ISUIElement.render(self)
     
     -- Sync visibility with the vanilla sidebar (ISEquippedItem)
@@ -62,6 +67,22 @@ function DT_SidebarButton:render()
         if self:isVisible() ~= vanillaVisible then
             self:setVisible(vanillaVisible)
         end
+    end
+end
+
+-- =============================================================================
+-- PUBLIC HELPER
+-- =============================================================================
+function DT_SidebarButton.UpdateVisibility()
+    if not DT_SidebarButton.instance then return end
+    
+    local allowed = DT_ConfigManager.settings.showSidebar
+    if allowed then
+        -- We set it to true, let render() handle the vanilla sync logic
+        DT_SidebarButton.instance:setVisible(true)
+    else
+        -- Force hide immediately
+        DT_SidebarButton.instance:setVisible(false)
     end
 end
 
@@ -101,9 +122,11 @@ local function CreateSidebarButton()
     btn:createChildren()
     btn:setAlwaysOnTop(true)
     btn:addToUIManager()
-    btn:setVisible(true)
     
     DT_SidebarButton.instance = btn
+    
+    -- Apply initial visibility from config
+    DT_SidebarButton.UpdateVisibility()
 end
 
 -- OnGameStart is reliable for HUD creation in build 42

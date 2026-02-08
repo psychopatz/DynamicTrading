@@ -12,6 +12,7 @@ DT_ConfigManager.fileName = "DynamicTrading_Config.txt"
 -- Default settings if no file is found
 DT_ConfigManager.defaultSettings = {
     enableSound = true,
+    showSidebar = true,
     volMaster = 1.0,
     volRadio = 1.0,
     volWallet = 1.0,
@@ -37,6 +38,7 @@ function DT_ConfigManager.save()
     if fileWriter then
         print("[DT_ConfigManager] Saving config to " .. DT_ConfigManager.fileName)
         fileWriter:write("enableSound=" .. tostring(DT_ConfigManager.settings.enableSound) .. "\r\n")
+        fileWriter:write("showSidebar=" .. tostring(DT_ConfigManager.settings.showSidebar) .. "\r\n")
         fileWriter:write("volMaster=" .. tostring(DT_ConfigManager.settings.volMaster) .. "\r\n")
         fileWriter:write("volRadio=" .. tostring(DT_ConfigManager.settings.volRadio) .. "\r\n")
         fileWriter:write("volWallet=" .. tostring(DT_ConfigManager.settings.volWallet) .. "\r\n")
@@ -63,6 +65,9 @@ function DT_ConfigManager.load()
     while line do
         if string.find(line, "enableSound=") then
             DT_ConfigManager.settings.enableSound = (string.sub(line, 13) == "true")
+        end
+        if string.find(line, "showSidebar=") then
+            DT_ConfigManager.settings.showSidebar = (string.sub(line, 13) == "true")
         end
         if string.find(line, "volMaster=") then
             local n = tonumber(string.sub(line, 11))
@@ -96,6 +101,11 @@ function DT_ConfigManager.toggleSound()
     DT_ConfigManager.settings.enableSound = not DT_ConfigManager.settings.enableSound
     DT_ConfigManager.save()
     return DT_ConfigManager.settings.enableSound
+end
+
+function DT_ConfigManager.setShowSidebar(isVisible)
+    DT_ConfigManager.settings.showSidebar = isVisible
+    DT_ConfigManager.save()
 end
 
 function DT_ConfigManager.setVolume(category, level)
