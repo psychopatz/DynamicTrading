@@ -30,6 +30,29 @@ function DT_LogPanel:createChildren()
     self:addChild(self.logList)
 end
 
+-- [FIXED] Removed invalid 'recalcStencil' call and fixed Scrollbar logic
+function DT_LogPanel:onResize()
+    ISPanel.onResize(self)
+    if self.logList then
+        local w = self:getWidth() - 20
+        local h = self:getHeight() - 25
+        
+        self.logList:setWidth(w)
+        self.logList:setHeight(h)
+        
+        -- Manually update scrollbar if it exists
+        if self.logList.vscroll then
+            self.logList.vscroll:setHeight(h)
+            -- Stick to the right edge (Width - ScrollWidth)
+            -- Standard scroll width is usually ~13-16px
+            self.logList.vscroll:setX(w - 13) 
+        end
+        
+        -- Re-populate to re-wrap text to new width
+        self:populateLogs()
+    end
+end
+
 function DT_LogPanel:prerender()
     ISPanel.prerender(self)
     
@@ -52,7 +75,9 @@ function DT_LogPanel:populateLogs()
     self.logList:clear()
     local data = ModData.getOrCreate("DynamicTrading_Logs_v1.0")
     
+    -- Calculate text width: ListWidth - Scrollbar(13) - Padding(12)
     local listWidth = self.logList:getWidth() - 25
+    if listWidth < 50 then listWidth = 50 end 
     local tm = getTextManager()
     local font = self.logList.font
     
@@ -83,7 +108,6 @@ function DT_LogPanel.drawLogItem(this, y, item, alt)
     local log = data.log
     local height = data.height
     local width = this:getWidth()
-    local lineHeight = this.itemheight
     
     if alt then this:drawRect(0, y, width, height, 0.05, 0.05, 0.05, 0.5) end
     
@@ -96,6 +120,7 @@ function DT_LogPanel.drawLogItem(this, y, item, alt)
     
     local textX = 5 + data.timeWidth + 8
     local currentY = y
+    local lineHeight = this.itemheight
     
     if data.lines and #data.lines > 0 then
         for _, line in ipairs(data.lines) do

@@ -27,21 +27,48 @@ function DT_TraderListPanel:createChildren()
     self.listbox.backgroundColor = {r=0.0, g=0.0, b=0.0, a=0.9}
     self.listbox.doDrawItem = self.drawItem
     self.listbox.onMouseDown = self.onListMouseDown
-    self.listbox.parentPanel = self -- reference back
+    self.listbox.parentPanel = self 
     self:addChild(self.listbox)
+end
+
+-- [UPDATED] Scale List Item Height & Font
+function DT_TraderListPanel:onResize()
+    ISPanel.onResize(self)
+    local w = self:getWidth()
+    
+    -- Dynamic Item Height based on width
+    -- Base: 38px at ~380w. Scale up from there.
+    local newHeight = math.floor(w * 0.12)
+    
+    -- Clamps
+    if newHeight < 38 then newHeight = 38 end
+    if newHeight > 80 then newHeight = 80 end
+    
+    if self.listbox then
+        self.listbox:setWidth(w - 20)
+        self.listbox:setHeight(self:getHeight() - 25)
+        self.listbox.itemheight = newHeight
+        
+        -- Scale Font
+        if newHeight >= 65 then self.listbox.font = UIFont.Large
+        elseif newHeight >= 50 then self.listbox.font = UIFont.Medium
+        else self.listbox.font = UIFont.Small end
+        
+        if self.listbox.vscroll then
+             self.listbox.vscroll:setHeight(self.listbox:getHeight())
+        end
+    end
 end
 
 function DT_TraderListPanel:prerender()
     ISPanel.prerender(self)
     
-    -- Auto Refresh Logic
     local player = getSpecificPlayer(0)
     local data = DynamicTrading.Manager.GetData()
     local currentVersion = (data.DailyCycle and data.DailyCycle.tradersVersion) or 0
     local currentDiscovered = DynamicTrading.Manager.GetDiscoveredCount(player)
 
     if currentVersion ~= self.lastTradersVersion or currentDiscovered ~= self.lastDiscoveredCount then
-        -- Notify parent to persist found state animation if relevant
         if currentDiscovered > self.lastDiscoveredCount and self.lastDiscoveredCount >= 0 then
             if self.parent and self.parent.signalPanel then
                 self.parent.signalPanel.signalFoundPersist = true
@@ -94,8 +121,12 @@ function DT_TraderListPanel.drawItem(this, y, item, alt)
     end
     this:drawRectBorder(0, y, width, height, 0.1, 1, 1, 1)
 
+    -- [UPDATED] Vertical Alignment Logic
+    local fontH = getTextManager():getFontHeight(this.font)
+    local textY = y + (height - fontH) / 2
+
     if not item.item.traderID then
-        this:drawText(item.text, 10, y + 12, 0.7, 0.7, 0.7, 1, this.font)
+        this:drawText(item.text, 10, textY, 0.7, 0.7, 0.7, 1, this.font)
         return y + height
     end
 
@@ -109,8 +140,6 @@ function DT_TraderListPanel.drawItem(this, y, item, alt)
         local gender = trader.gender or "Male"
         local seed = trader.portraitID or 1
         
-        -- CRITICAL FIX: The portraitID is a persistent seed (1-1000).
-        -- It MUST be mapped to the actual file count using GetMappedID.
         local mappedID = 1
         if DynamicTrading.Portraits.GetMappedID then
             mappedID = DynamicTrading.Portraits.GetMappedID(archetype, gender, seed)
@@ -124,8 +153,20 @@ function DT_TraderListPanel.drawItem(this, y, item, alt)
     
     if not tex then tex = getTexture("Item_WalkieTalkie1") end
     
-    if tex then this:drawTextureScaled(tex, 5, y + 5, 28, 28, 1, 1, 1, 1) end
-    this:drawText(item.text, 38, y + 12, 1, 1, 1, 1, this.font)
+    -- [STRICT 1:1 SCALING]
+    -- Icon size scales with row height, minus padding (e.g. 5px top/bottom)
+    local iconSize = height - 10
+    local iconX = 5
+    local iconY = y + 5
+    
+    if tex then 
+        this:drawTextureScaled(tex, iconX, iconY, iconSize, iconSize, 1, 1, 1, 1) 
+    end
+    
+    -- Text positioned after icon
+    local textX = iconX + iconSize + 10
+    this:drawText(item.text, textX, textY, 1, 1, 1, 1, this.font)
+    
     return y + height
 end
 
@@ -135,12 +176,11 @@ function DT_TraderListPanel.onListMouseDown(target, x, y)
     target.selected = row
     
     local item = target.items[row]
-    -- Access Main Window via parent logic (target -> listbox, listbox.parentPanel -> TraderList, TraderList.parent -> RadioWindow)
     local mainWindow = target.parentPanel.parent
     
     if item.item and item.item.traderID and mainWindow and DT_TradingWindow then
         if mainWindow.radioObj then
-             DT_TradingWindow.ToggleWindow(item.item.traderID, item.item.archetype, mainWindow.radioObj)
+             DT_TradingWindow.ToggleWindow(item.item.traderID, item.item.archetype, mainWindow.radioObj, mainWindow.dataProvider)
         end
     end
 end

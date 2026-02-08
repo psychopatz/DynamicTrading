@@ -9,10 +9,13 @@ DT_RadioWindow.instance = nil
 function DT_RadioWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setTitle("Trader Network & Logs")
-    self:setResizable(false)
+    self:setResizable(true) 
     self.clearStencil = false 
     self.radioObj = nil
     self.isHam = false
+    
+    self.minimumWidth = 380
+    self.minimumHeight = 500
 end
 
 function DT_RadioWindow:createChildren()
@@ -22,45 +25,98 @@ function DT_RadioWindow:createChildren()
     local w = self.width
     
     -- 1. Signal & Control Panel (Top)
-    -- Height ~170 (accommodate bigger anim)
-    self.signalPanel = DT_SignalPanel:new(0, th, w, 170)
+    -- Height is now dynamic in relayout(), initial placeholder
+    self.signalPanel = DT_SignalPanel:new(0, th, w, 150)
     self.signalPanel:initialise()
     self:addChild(self.signalPanel)
     
     -- 2. Trader List Panel (Middle)
-    -- Height ~220
-    self.traderListPanel = DT_TraderListPanel:new(0, th + 170, w, 220)
+    self.traderListPanel = DT_TraderListPanel:new(0, th + 150, w, 200)
     self.traderListPanel:initialise()
     self:addChild(self.traderListPanel)
     
     -- 3. Logs Panel (Bottom)
-    -- Remaining Height
-    local startY = th + 170 + 220
-    local remInh = self.height - startY
-    self.logPanel = DT_LogPanel:new(0, startY, w, remInh)
+    self.logPanel = DT_LogPanel:new(0, th + 350, w, 100)
     self.logPanel:initialise()
     self:addChild(self.logPanel)
     
-    -- Expose helper for refresh logic (referenced by other scripts)
+    -- Resize Widget Logic
+    if self.resizeWidget then
+        self.resizeWidget:bringToTop()
+        self.resizeWidget:setVisible(true)
+    end
+    
     self.refreshList = function() 
         if self.traderListPanel then self.traderListPanel:populateList() end 
-        -- Also update internal state to prevent double refresh
         if self.traderListPanel then 
             local p = getSpecificPlayer(0)
             self.traderListPanel.lastDiscoveredCount = DynamicTrading.Manager.GetDiscoveredCount(p)
         end
     end
+    
+    self:relayout()
+end
+
+function DT_RadioWindow:onResize()
+    ISCollapsableWindow.onResize(self)
+    self:relayout()
+end
+
+-- [UPDATED] Dynamic Layout Engine
+function DT_RadioWindow:relayout()
+    local th = self:titleBarHeight()
+    local w = self:getWidth()
+    local h = self:getHeight()
+    
+    -- 1. Signal Panel Height Logic
+    -- We want the radio image to scale with width, so we make height proportional to width.
+    -- Target: ~35% of width, clamped between 140px and 250px.
+    local signalH = math.floor(w * 0.35)
+    if signalH < 140 then signalH = 140 end
+    if signalH > 250 then signalH = 250 end
+    
+    -- Ensure Signal Panel doesn't eat the whole window if user resizes height very small
+    if signalH > (h * 0.4) then signalH = math.floor(h * 0.4) end
+
+    -- 2. Calculate remaining space
+    local availableH = h - th - signalH
+    if availableH < 50 then availableH = 50 end 
+    
+    -- 3. Split remaining space (45% Trader List / 55% Logs)
+    local listH = math.floor(availableH * 0.45)
+    local logH = availableH - listH 
+    
+    -- Apply Signal Panel
+    if self.signalPanel then
+        self.signalPanel:setWidth(w)
+        self.signalPanel:setHeight(signalH)
+        if self.signalPanel.onResize then self.signalPanel:onResize() end
+    end
+    
+    -- Apply Trader List Panel
+    if self.traderListPanel then
+        self.traderListPanel:setY(th + signalH)
+        self.traderListPanel:setWidth(w)
+        self.traderListPanel:setHeight(listH)
+        if self.traderListPanel.onResize then self.traderListPanel:onResize() end
+    end
+    
+    -- Apply Log Panel
+    if self.logPanel then
+        self.logPanel:setY(th + signalH + listH)
+        self.logPanel:setWidth(w)
+        self.logPanel:setHeight(logH)
+        if self.logPanel.onResize then self.logPanel:onResize() end
+    end
+    
+    if self.resizeWidget then self.resizeWidget:bringToTop() end
 end
 
 function DT_RadioWindow:render()
     ISCollapsableWindow.render(self)
-    
-    -- Auto-Close Validation
     if not self:CheckConnectionValidity() then
         self:close()
-        if DT_TradingWindow and DT_TradingWindow.instance then 
-            DT_TradingWindow.instance:close() 
-        end
+        if DT_TradingWindow and DT_TradingWindow.instance then DT_TradingWindow.instance:close() end
         return
     end
 end
@@ -82,9 +138,7 @@ function DT_RadioWindow:CheckConnectionValidity()
         local hasPower = false
         if data:getIsBatteryPowered() then
             if data:getPower() > 0 then hasPower = true end
-        elseif sq:haveElectricity() then 
-            hasPower = true 
-        end
+        elseif sq:haveElectricity() then hasPower = true end
         if not hasPower then return false end
     else
         if self.radioObj:getContainer() ~= player:getInventory() then return false end
@@ -112,30 +166,29 @@ function DT_RadioWindow.ToggleWindow(radioObj, isHam)
         return
     end
 
-    local ui = DT_RadioWindow:new(200, 100, 380, 660)
+    -- Dynamic Sizing
+    local screenW = getCore():getScreenWidth()
+    local screenH = getCore():getScreenHeight()
+    local width = math.min(550, math.floor(screenW * 0.35))
+    local height = math.min(900, math.floor(screenH * 0.75))
+    width = math.max(380, width)
+    height = math.max(600, height)
+    
+    local x = 200
+    local y = 100
+    
+    local ui = DT_RadioWindow:new(x, y, width, height)
     ui:initialise()
     ui.radioObj = radioObj
     ui.isHam = isHam
     ui:addToUIManager()
     
-    -- Initial Data Load
     if ui.traderListPanel then ui.traderListPanel:populateList() end
     if ui.logPanel then ui.logPanel:populateLogs() end
     
-    -- Initial State Sync
-    local data = DynamicTrading.Manager.GetData()
-    local player = getSpecificPlayer(0)
-    
+    local p = getSpecificPlayer(0)
     if ui.traderListPanel then
-         ui.traderListPanel.lastDiscoveredCount = DynamicTrading.Manager.GetDiscoveredCount(player)
-    end
-    
-    local logData = ModData.getOrCreate("DynamicTrading_Logs_v1.0")
-    if logData.list and ui.logPanel then 
-        ui.logPanel.lastLogCount = #logData.list 
-        if logData.list[1] then
-            ui.logPanel.lastTopLogID = logData.list[1].time .. logData.list[1].text
-        end
+         ui.traderListPanel.lastDiscoveredCount = DynamicTrading.Manager.GetDiscoveredCount(p)
     end
     
     DT_RadioWindow.instance = ui

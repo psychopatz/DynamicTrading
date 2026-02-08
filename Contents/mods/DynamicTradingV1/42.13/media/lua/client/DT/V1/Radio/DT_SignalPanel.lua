@@ -2,7 +2,6 @@ require "ISUI/ISPanel"
 require "ISUI/ISButton"
 require "DT/V1/Manager"
 require "DT/Common/Config"
--- require "DT/V1/DT_RadioInteraction" -- Removed to break recursive loop
 
 DT_SignalPanel = ISPanel:derive("DT_SignalPanel")
 
@@ -23,45 +22,97 @@ function DT_SignalPanel:initialise()
         self.signalTextures.found[i] = getTexture("media/ui/Radio/Signal_found/" .. i .. ".png")
         self.signalTextures.none[i] = getTexture("media/ui/Radio/Signal_none/" .. i .. ".png")
     end
+    
+    self.imgSize = 130
+    self.imgX = 10
+    self.imgY = 10
 end
 
 function DT_SignalPanel:createChildren()
     ISPanel.createChildren(self)
     
-    local width = self.width
-    local btnWidth = 180
-    
-    -- Layout Calculation
-    local animSpace = 170
-    local remWidth = width - animSpace
-    local btnX = animSpace + (remWidth - btnWidth) / 2
-    local startY = 55
-    
-    -- Store button coordinates for dynamic text rendering
-    self.btnX = btnX
-    self.btnY = startY
-    self.btnWidth = btnWidth
-    
-    -- Scan Button
-    self.btnScan = ISButton:new(btnX, startY, btnWidth, 25, "SCAN FREQUENCIES", self, self.onScanClick)
+    self.btnScan = ISButton:new(0, 0, 100, 25, "SCAN FREQUENCIES", self, self.onScanClick)
     self.btnScan:initialise()
     self.btnScan.backgroundColor = {r=0.1, g=0.3, b=0.1, a=1.0}
     self.btnScan.borderColor = {r=1, g=1, b=1, a=0.5}
     self:addChild(self.btnScan)
     
-    -- Market Info Button
-    self.btnInfo = ISButton:new(btnX, startY + 35, btnWidth, 25, "VIEW MARKET INFO", self, self.onInfoClick)
+    self.btnInfo = ISButton:new(0, 0, 100, 25, "VIEW MARKET INFO", self, self.onInfoClick)
     self.btnInfo:initialise()
     self.btnInfo.borderColor = {r=1, g=1, b=1, a=0.5}
     self.btnInfo.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0}
     self:addChild(self.btnInfo)
     
-    -- Options Button
-    self.btnOptions = ISButton:new(btnX, startY + 70, btnWidth, 25, "OPTIONS", self, self.onOptionsClick)
+    self.btnOptions = ISButton:new(0, 0, 100, 25, "OPTIONS", self, self.onOptionsClick)
     self.btnOptions:initialise()
     self.btnOptions.borderColor = {r=1, g=1, b=1, a=0.5}
     self.btnOptions.backgroundColor = {r=0.4, g=0.4, b=0.4, a=1.0}
     self:addChild(self.btnOptions)
+    
+    self:onResize()
+end
+
+function DT_SignalPanel:onResize()
+    ISPanel.onResize(self)
+    local w = self:getWidth()
+    local h = self:getHeight()
+    
+    -- 1. Image Logic (Square, centered vertically)
+    self.imgSize = h - 20
+    if self.imgSize > w * 0.45 then self.imgSize = math.floor(w * 0.45) end
+    if self.imgSize < 80 then self.imgSize = 80 end
+    
+    self.imgX = 10
+    self.imgY = (h - self.imgSize) / 2
+    
+    -- 2. Button Layout Logic
+    local startX = self.imgX + self.imgSize + 20
+    local remWidth = w - startX - 10
+    if remWidth < 120 then remWidth = 120 end 
+    
+    -- [FIX] Enforce specific spacing for Text Header
+    local headerSpace = 25 -- Space reserved for "Power: x1.0"
+    local bottomSpace = 5
+    local spacing = 6 -- Gap between buttons
+    
+    -- Calculate height available strictly for buttons
+    local availableH = h - headerSpace - bottomSpace
+    
+    -- Calculate ideal button height to fit 3 buttons in available space
+    local btnH = math.floor((availableH - (spacing * 2)) / 3)
+    
+    -- Clamp Button Height
+    if btnH < 22 then btnH = 22 end -- Minimum readable height
+    if btnH > 35 then btnH = 35 end -- Max height for aesthetics
+    
+    -- Font Scaling
+    local font = UIFont.Small
+    if h > 220 then font = UIFont.Medium end
+    
+    -- Calculate vertical start position (centering within the safe zone)
+    local totalBlockH = (btnH * 3) + (spacing * 2)
+    local safeZoneCenterY = headerSpace + (availableH / 2)
+    local currentY = safeZoneCenterY - (totalBlockH / 2)
+    
+    -- Hard safety clamp: Never start higher than headerSpace
+    if currentY < headerSpace then currentY = headerSpace end
+    
+    local btns = {self.btnScan, self.btnInfo, self.btnOptions}
+    for _, btn in ipairs(btns) do
+        if btn then
+            btn:setX(startX)
+            btn:setWidth(remWidth)
+            btn:setHeight(btnH)
+            btn:setY(currentY)
+            btn.font = font
+            currentY = currentY + btnH + spacing
+        end
+    end
+    
+    -- Save for render
+    self.btnX = startX
+    self.btnWidth = remWidth
+    self.btnY = self.btnScan:getY()
 end
 
 function DT_SignalPanel:prerender()
@@ -81,55 +132,56 @@ function DT_SignalPanel:render()
     end
     
     if tex then
-        local size = 150 
-        local x = 10 
-        local y = (self.height - size) / 2 
-        self:drawTextureScaled(tex, x, y, size, size, 1, 1, 1, 1)
+        self:drawTextureScaled(tex, self.imgX, self.imgY, self.imgSize, self.imgSize, 1, 1, 1, 1)
+        -- Transparent sprite, no border
     end
 
-    -- 2. Draw Signal Power (Bonus) above Scan Button
+    -- 2. Draw Signal Power Text
     if self.parent and self.parent.radioObj then
-        -- Calculate Power
-        local typeID = DT_RadioInteraction.GetDeviceType(self.parent.radioObj)
+        local typeID = nil
+        if DT_RadioInteraction and DT_RadioInteraction.GetDeviceType then
+             typeID = DT_RadioInteraction.GetDeviceType(self.parent.radioObj)
+        end
+        if not typeID and self.parent.radioObj.getFullType then
+            typeID = self.parent.radioObj:getFullType()
+        end
+
         local radioData = DynamicTrading.Config.GetRadioData(typeID)
-        local power = radioData.power or 0.5
-        
+        local power = radioData and radioData.power or 0.5
         if self.parent.isHam then
             power = power * (SandboxVars.DynamicTrading.HamRadioBonus or 2.0)
         end
         
-        -- Determine Color
-        local r, g, b = 1, 1, 1 -- Default White
-        if power < 1.0 then
-            r, g, b = 1.0, 0.4, 0.4 -- Red (Weak)
-        elseif power < 1.5 then
-            r, g, b = 1.0, 0.9, 0.4 -- Yellow (Average)
-        else
-            r, g, b = 0.4, 1.0, 0.4 -- Green (Strong)
-        end
+        local r, g, b = 1, 1, 1 
+        if power < 1.0 then r, g, b = 1.0, 0.4, 0.4 
+        elseif power < 1.5 then r, g, b = 1.0, 0.9, 0.4 
+        else r, g, b = 0.4, 1.0, 0.4 end
         
-        -- Draw Text
-        local label = "Broadcast Power: x" .. string.format("%.1f", power)
-        local font = UIFont.Small
+        local label = "Power: x" .. string.format("%.1f", power)
+        
+        local font = self.btnScan.font
         local textWidth = getTextManager():MeasureStringX(font, label)
-        local iconSize = 20
-        local spacing = 8
         
-        local totalWidth = textWidth + spacing + iconSize
-        local startX = self.btnX + (self.btnWidth - totalWidth) / 2
-        local textY = self.btnY - 18
+        local centerX = self.btnX + (self.btnWidth / 2)
+        local textX = centerX - (textWidth / 2)
         
-        -- Draw Icon
-        local itemScript = ScriptManager.instance:getItem(typeID)
-        local iconName = itemScript and itemScript:getIcon()
-        local iconTex = iconName and getTexture("Item_" .. iconName)
+        -- Draw text 20px above the first button
+        -- Since we clamped btnY to >= 25 in onResize, this textY is guaranteed >= 5
+        local textY = self.btnY - 20 
         
-        if iconTex then
-            self:drawTextureScaled(iconTex, startX, textY - 2, iconSize, iconSize, 1, 1, 1, 1)
+        local iconSize = 16
+        if font == UIFont.Medium then iconSize = 20 end
+        
+        if typeID then
+            local itemScript = ScriptManager.instance:getItem(typeID)
+            local iconName = itemScript and itemScript:getIcon()
+            local iconTex = iconName and getTexture("Item_" .. iconName)
+            if iconTex then
+                self:drawTextureScaled(iconTex, textX - iconSize - 5, textY - 2, iconSize, iconSize, 1, 1, 1, 1)
+            end
         end
         
-        -- Draw Label
-        self:drawText(label, startX + iconSize + spacing, textY, r, g, b, 1.0, font)
+        self:drawText(label, textX, textY, r, g, b, 1.0, font)
     end
 end
 
@@ -143,7 +195,7 @@ function DT_SignalPanel:updateButtonState()
         self.btnScan.textColor = {r=1, g=1, b=1, a=1}
     else
         self.btnScan:setEnable(false)
-        self.btnScan:setTitle("COOLDOWN (" .. math.ceil(timeRem) .. "m)")
+        self.btnScan:setTitle("WAIT (" .. math.ceil(timeRem) .. "m)")
         self.btnScan.textColor = {r=1, g=0.5, b=0.5, a=1}
     end
 end
@@ -175,7 +227,6 @@ function DT_SignalPanel:updateSignalLogic()
         self.signalState = "search"
     end
     
-    -- Animate
     self.signalAnimTimer = self.signalAnimTimer + deltaTime
     if self.signalAnimTimer >= self.signalFrameDuration then
         self.signalAnimTimer = self.signalAnimTimer - self.signalFrameDuration
