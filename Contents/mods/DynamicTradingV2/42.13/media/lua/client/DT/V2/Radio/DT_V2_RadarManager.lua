@@ -3,12 +3,13 @@
 -- NPC Radar Logic: Manages scanning, discovery, and coordinate tracking of traders.
 -- ==============================================================================
 
+-- We require the new handler to delegate location tasks
+require "DT/V2/Radio/DT_V2_RadarLocationHandler"
+
 DT_V2_RadarManager = {}
 DT_V2_RadarManager.FoundTraders = {} -- Persistent list of UUIDs
 DT_V2_RadarManager.ClientRoster = nil -- Local cache of server roster for MP
 DT_V2_RadarManager.ClientFactions = nil -- Local cache of server factions for MP
-
-
 
 -- Ranges based on device type or display name
 DT_V2_RadarManager.Ranges = {
@@ -22,12 +23,15 @@ DT_V2_RadarManager.Ranges = {
     ["Base.ManPackRadio"] = 12000,
     ["Base.WalkieTalkieMakeShift"] = 1000,
     ["Base.HamRadioMakeShift"] = 10000,
-    -- Tier Mappings (Matches getDeviceName())
+    -- Tier Mappings
     ["Makeshift Ham Radio"] = 10000,
     ["US ARMY COMM. Ham Radio"] = 15000,
     ["Premium Technologies Ham Radio"] = 12000,
 }
 
+-- ==============================================================================
+-- INITIALIZATION
+-- ==============================================================================
 function DT_V2_RadarManager.Init()
     local data = ModData.getOrCreate("DT_V2_RadarFound")
     DT_V2_RadarManager.FoundTraders = data
@@ -42,6 +46,9 @@ function DT_V2_RadarManager.Init()
     print("[DT_RADAR] Manager Initialized. Traders in cache: " .. DT_V2_RadarManager.GetCount())
 end
 
+-- ==============================================================================
+-- NETWORK SYNC (MP)
+-- ==============================================================================
 -- Request fresh roster data from server (MP Only)
 function DT_V2_RadarManager.RequestRoster()
     if not isClient() then return end
@@ -49,7 +56,7 @@ function DT_V2_RadarManager.RequestRoster()
     sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestRoster", {})
 end
 
--- Handle incoming roster/faction data
+-- Handle incoming roster/faction data from Server
 local function OnServerCommand(module, command, arguments)
     if module == "DynamicTrading_V2" and command == "SyncRoster" then
         print("[DT_RADAR] Received Roster & Faction Sync from Server.")
@@ -57,8 +64,6 @@ local function OnServerCommand(module, command, arguments)
         DT_V2_RadarManager.ClientFactions = arguments.factions
     end
 end
-
-
 Events.OnServerCommand.Add(OnServerCommand)
 
 function DT_V2_RadarManager.GetCount()
@@ -67,9 +72,12 @@ function DT_V2_RadarManager.GetCount()
     return count
 end
 
+-- ==============================================================================
+-- COORDINATE LOGIC
+-- ==============================================================================
 -- Determine the best available coordinate for a trader
 function DT_V2_RadarManager.GetTraderCoords(uuid)
-    -- 1. Check Live NPCs (Spawned in World)
+    -- 1. Check Live NPCs (Spawned in World) - Most Accurate
     local cell = getCell()
     if cell then
         local zombieList = cell:getZombieList()
@@ -86,17 +94,15 @@ function DT_V2_RadarManager.GetTraderCoords(uuid)
         end
     end
 
-    -- 2. Fallback to Roster Data (Cached or Global)
-    -- In MP, use our synced ClientRoster. In SP, ModData is fine (and ClientRoster falls back to it or is nil)
+    -- 2. Fallback to Roster Data (Cached or Global) - Virtual Location
     local rosterData = DT_V2_RadarManager.ClientRoster
-    
-    -- If we are in SP, ensure we have data if ClientRoster is nil (though Init should handle it)
     if not isClient() and not rosterData then
          rosterData = ModData.get("DynamicTrading_Roster")
     end
     
     if rosterData and rosterData.Souls and rosterData.Souls[uuid] then
         local soul = rosterData.Souls[uuid]
+        -- Use last known location, or home coords if never seen
         local x = soul.lastX or (soul.homeCoords and soul.homeCoords.x)
         local y = soul.lastY or (soul.homeCoords and soul.homeCoords.y)
         local z = soul.lastZ or (soul.homeCoords and soul.homeCoords.z) or 0
@@ -106,7 +112,10 @@ function DT_V2_RadarManager.GetTraderCoords(uuid)
     return nil, nil, nil, false
 end
 
--- Centralized Device Info Extraction
+-- ==============================================================================
+-- DEVICE INFO
+-- ==============================================================================
+-- Centralized Device Info Extraction to determine range
 function DT_V2_RadarManager.GetDeviceInfo(device)
     if not device then return "Unknown Device", 0 end
 
@@ -116,7 +125,7 @@ function DT_V2_RadarManager.GetDeviceInfo(device)
 
     -- 1. Try to get a clean name and type
     if device.getDisplayName then
-        name = device:getDisplayName() or name -- Best for InventoryItems
+        name = device:getDisplayName() or name 
     elseif device.getName then
         name = device:getName() or name
     end
@@ -129,10 +138,7 @@ function DT_V2_RadarManager.GetDeviceInfo(device)
             local rawName = dd:getDeviceName()
             if rawName and rawName ~= "" then
                 typeID = rawName
-                -- If we still don't have a good display name, use the device data name
-                if name == "Unknown Device" then
-                    name = rawName
-                end
+                if name == "Unknown Device" then name = rawName end
             end
         end
     end
@@ -141,21 +147,17 @@ function DT_V2_RadarManager.GetDeviceInfo(device)
     if name == "Unknown Device" and device.getSprite then
         local sprite = device:getSprite()
         if sprite and sprite:getName() then
-             -- Try to infer from sprite name if strictly necessary
-             -- But don't overwrite typeID if we already have a specific one
              if typeID == "Unknown" then typeID = sprite:getName() end
         end
     end
 
     -- 3. Determine Range based on Name or Type
-    -- Check specific TypeID first (e.g. Base.HamRadioMakeShift)
     if DT_V2_RadarManager.Ranges[typeID] then
         range = DT_V2_RadarManager.Ranges[typeID]
     elseif DT_V2_RadarManager.Ranges[name] then
         range = DT_V2_RadarManager.Ranges[name]
     else
         -- 4. Fuzzy Matching / Heuristics
-        -- Ensure neither is nil for string ops
         local safeType = typeID or ""
         local safeName = name or ""
         local checkStr = string.lower(tostring(safeType) .. " " .. tostring(safeName))
@@ -177,13 +179,24 @@ function DT_V2_RadarManager.GetDeviceInfo(device)
     return name, range
 end
 
--- Scan for traders in vicinity
+-- ==============================================================================
+-- SCAN LOGIC
+-- ==============================================================================
 function DT_V2_RadarManager.Scan(player, device)
     if not player or not device then return end
     
     local deviceName, range = DT_V2_RadarManager.GetDeviceInfo(device)
     
     print("[DT_RADAR] [V3.0] Starting scan with " .. tostring(deviceName) .. " (Range: " .. tostring(range) .. ")")
+    
+    -- ==========================================================
+    -- DELEGATE LOCATION DEBUG TO HANDLER
+    -- ==========================================================
+    -- This prints the detailed player location info to console
+    if DT_V2_RadarLocationHandler then
+        DT_V2_RadarLocationHandler.PrintDebug(player)
+    end
+    -- ==========================================================
     
     local rosterData = DT_V2_RadarManager.ClientRoster
     
@@ -217,7 +230,7 @@ function DT_V2_RadarManager.Scan(player, device)
                 
                 if dist <= range then
                     -- Proximity check passed! Now add random chance.
-                    -- Skill bonus
+                    -- Skill bonus: Electricity skill improves detection
                     local elecLevel = player:getPerkLevel(Perks.Electricity)
                     local chance = 20 + (elecLevel * 5) -- 20% to 70% chance
                     
@@ -237,7 +250,7 @@ function DT_V2_RadarManager.Scan(player, device)
         end
     end
 
-    -- Cleanup expired traders
+    -- Cleanup expired traders (status no longer Trading)
     DT_V2_RadarManager.Cleanup()
 
     if foundNew then

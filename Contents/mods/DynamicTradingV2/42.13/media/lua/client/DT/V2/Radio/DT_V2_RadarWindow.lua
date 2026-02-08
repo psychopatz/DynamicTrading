@@ -8,6 +8,7 @@ require "DT/V2/Radio/DT_V2_RadarHeaderPanel"
 require "DT/V2/Radio/DT_V2_RadarListPanel"
 require "DT/V2/Radio/DT_V2_RadarActionPanel"
 require "DT/V2/Radio/DT_V2_RadarManager"
+require "DT/V2/Radio/DT_V2_RadarLocationHandler" -- NEW: Require Handler
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 
@@ -33,7 +34,6 @@ function DT_V2_RadarWindow:createChildren()
     local w = self.width
     
     -- 1. Header Panel (Title & Range & Tabs)
-    -- Increased height to 85 to accommodate tabs
     local headerHeight = 85
     self.headerPanel = DT_V2_RadarHeaderPanel:new(0, th, w, headerHeight)
     self.headerPanel:initialise()
@@ -106,7 +106,9 @@ function DT_V2_RadarWindow:refresh()
     -- Save selection before clear
     local selectedUUID = nil
     if listbox.selected and listbox.selected ~= -1 and listbox.items[listbox.selected] then
-        selectedUUID = listbox.items[listbox.selected].item.uuid
+        if listbox.items[listbox.selected].item then
+            selectedUUID = listbox.items[listbox.selected].item.uuid
+        end
     end
 
     listbox:clear()
@@ -140,18 +142,31 @@ function DT_V2_RadarWindow:refresh()
         end
     end
 
-    -- Update Header (Pass category info if needed, or rely on Header's own draw logic for tabs)
-    -- For now just standard update
+    -- Update Header (Pass category info if needed)
     self.headerPanel:updateSignalInfo(bestName, bestRange)
     
-    -- Populate List based on CATEGORY
+    -- ==========================================================
+    -- LOCATION TAB LOGIC
+    -- ==========================================================
+    if self.currentCategory == "Location" then
+        -- Delegate population to the Handler
+        if DT_V2_RadarLocationHandler then
+            DT_V2_RadarLocationHandler.PopulateList(listbox, player)
+        else
+            listbox:addItem("Module Missing: LocationHandler", {})
+        end
+        
+        -- Disable "Locate" button in this mode
+        self.actionPanel.btnLocate.enable = false
+        return
+    end
+    -- ==========================================================
+
     DT_V2_RadarManager.Cleanup()
     
     -- 1. Collect and Calculate Distances
     local tempList = {}
     
-    -- Currently only "Stationary" has implementation
-    -- In future, add logic for "Callable" and "Quest"
     if self.currentCategory == "Stationary" then
         for uuid, data in pairs(DT_V2_RadarManager.FoundTraders) do
             local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(uuid)
@@ -249,12 +264,11 @@ function DT_V2_RadarWindow.ToggleWindow(device)
     -- Dynamic Sizing Logic
     local screenW = getCore():getScreenWidth()
     local screenH = getCore():getScreenHeight()
-    local width = math.min(500, screenW * 0.4) -- Max 500, or 40% of screen
-    local height = math.min(600, screenH * 0.6) -- Max 600, or 60% of screen
+    local width = math.min(500, screenW * 0.4) 
+    local height = math.min(600, screenH * 0.6) 
     
-    -- Minimum threshold
     width = math.max(450, width)
-    height = math.max(450, height) -- Increased for tabs
+    height = math.max(450, height) 
 
     local window = DT_V2_RadarWindow:new(screenW/2 - width/2, screenH/2 - height/2, width, height)
     window.device = device
@@ -272,7 +286,6 @@ function DT_V2_RadarWindow:new(x, y, width, height)
     local o = ISCollapsableWindow:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    -- ISCollapsableWindow handles bg/border usually, but explicit initialization helps
     o.title = "Trader Radar"
     o.resizable = true
     return o

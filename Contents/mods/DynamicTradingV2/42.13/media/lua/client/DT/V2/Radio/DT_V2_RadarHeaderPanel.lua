@@ -32,7 +32,7 @@ function DT_V2_RadarHeaderPanel:createChildren()
     -- Category Tabs (Health Panel Style)
     local tabHeight = 20
     local tabY = self.height - tabHeight
-    local tabWidth = self.width / 3
+    local tabWidth = self.width / 4 -- Changed from 3 to 4 to accommodate Location tab
 
     self.btnStat = ISButton:new(0, tabY, tabWidth, tabHeight, "Stationary", self, function(self) self:onCategoryClick("Stationary") end)
     self.btnStat:initialise()
@@ -54,6 +54,14 @@ function DT_V2_RadarHeaderPanel:createChildren()
     self.btnQuest:setAnchorTop(false)
     self.btnQuest:setAnchorBottom(true)
     self:addChild(self.btnQuest)
+    
+    -- New Location Tab
+    self.btnLoc = ISButton:new(tabWidth * 3, tabY, tabWidth, tabHeight, "Location", self, function(self) self:onCategoryClick("Location") end)
+    self.btnLoc:initialise()
+    self.btnLoc.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
+    self.btnLoc:setAnchorTop(false)
+    self.btnLoc:setAnchorBottom(true)
+    self:addChild(self.btnLoc)
 end
 
 function DT_V2_RadarHeaderPanel:onCategoryClick(category)
@@ -78,10 +86,11 @@ function DT_V2_RadarHeaderPanel:prerender()
     centerLabel(self.lblRangeInfo, UIFont.Small)
 
     -- Update Tab Widths dynamically
-    local tabWidth = self.width / 3
+    local tabWidth = self.width / 4
     if self.btnStat then self.btnStat:setWidth(tabWidth) end
     if self.btnCall then self.btnCall:setX(tabWidth); self.btnCall:setWidth(tabWidth) end
     if self.btnQuest then self.btnQuest:setX(tabWidth * 2); self.btnQuest:setWidth(tabWidth) end
+    if self.btnLoc then self.btnLoc:setX(tabWidth * 3); self.btnLoc:setWidth(tabWidth) end
 
     -- Update Tab Visuals (Highlight Active)
     local activeCat = "Stationary"
@@ -92,18 +101,16 @@ function DT_V2_RadarHeaderPanel:prerender()
     local activeColor = {r=0.2, g=0.2, b=0.2, a=1}
     local inactiveColor = {r=0, g=0, b=0, a=0.5}
 
-    if self.btnStat then 
-        self.btnStat.backgroundColor = (activeCat == "Stationary") and activeColor or inactiveColor
-        self.btnStat.textColor = (activeCat == "Stationary") and {r=1,g=1,b=1,a=1} or {r=0.7,g=0.7,b=0.7,a=1}
+    local function updateBtn(btn, catName)
+        if not btn then return end
+        btn.backgroundColor = (activeCat == catName) and activeColor or inactiveColor
+        btn.textColor = (activeCat == catName) and {r=1,g=1,b=1,a=1} or {r=0.7,g=0.7,b=0.7,a=1}
     end
-    if self.btnCall then 
-        self.btnCall.backgroundColor = (activeCat == "Callable") and activeColor or inactiveColor 
-        self.btnCall.textColor = (activeCat == "Callable") and {r=1,g=1,b=1,a=1} or {r=0.7,g=0.7,b=0.7,a=1}
-    end
-    if self.btnQuest then 
-        self.btnQuest.backgroundColor = (activeCat == "Quest") and activeColor or inactiveColor 
-        self.btnQuest.textColor = (activeCat == "Quest") and {r=1,g=1,b=1,a=1} or {r=0.7,g=0.7,b=0.7,a=1}
-    end
+
+    updateBtn(self.btnStat, "Stationary")
+    updateBtn(self.btnCall, "Callable")
+    updateBtn(self.btnQuest, "Quest")
+    updateBtn(self.btnLoc, "Location")
 end
 
 function DT_V2_RadarHeaderPanel:updateSignalInfo(bestName, bestRange)

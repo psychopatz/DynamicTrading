@@ -57,6 +57,20 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
     -- 'self' is the listbox here
     local target = self.target
 
+    -- SPECIAL CASE: Location Info (Simple Text Mode)
+    if data.isLocationInfo then
+        if alt then
+             self:drawRect(0, y, self.width, self.itemheight, 0.1, 0.2, 0.2, 0.2)
+        end
+        
+        local titleColor = {r=0.8, g=0.8, b=1.0}
+        self:drawText(data.label, 15, y + 10, titleColor.r, titleColor.g, titleColor.b, 1, UIFont.Medium)
+        self:drawText(tostring(data.value), 15, y + 35, 0.7, 0.7, 0.7, 1, UIFont.Small)
+        
+        return y + self.itemheight
+    end
+    -- END SPECIAL CASE
+
     -- Use a more robust check for selection
     local isSelected = (item.selected == true)
     if not isSelected and self.selected ~= -1 then
@@ -113,15 +127,22 @@ end
 function DT_V2_RadarListPanel:onListMouseDown(itemData)
     -- 'self' is the DT_V2_RadarListPanel panel here (set by listbox.target)
     if self.parent and self.parent.actionPanel then
-        self.parent.actionPanel.btnLocate.enable = true
+        -- Only enable Locate if it is a Trader item (has uuid)
+        if itemData and itemData.uuid then
+            self.parent.actionPanel.btnLocate.enable = true
+        else
+            self.parent.actionPanel.btnLocate.enable = false
+        end
     end
 end
 
 function DT_V2_RadarListPanel:onListDoubleClick(itemData)
     if self.parent and self.parent.actionPanel then
-        self.parent.actionPanel.btnLocate.enable = true
-        if self.parent.actionPanel.onLocate then
-            self.parent.actionPanel:onLocate()
+        if itemData and itemData.uuid then
+            self.parent.actionPanel.btnLocate.enable = true
+            if self.parent.actionPanel.onLocate then
+                self.parent.actionPanel:onLocate()
+            end
         end
     end
 end
