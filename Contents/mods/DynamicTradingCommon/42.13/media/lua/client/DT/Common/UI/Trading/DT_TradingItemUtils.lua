@@ -25,29 +25,48 @@ function DT_TradingItemUtils.findItemRecursively(container, itemID)
     return nil
 end
 
---- Internal helper to get a readable fluid name in B42.
-local function getFluidName(fluidContainer, typeStr)
-    local fType = typeStr
+--- Internal helper to get the strict Fluid ID string (e.g. "Base.Water") in B42.
+local function getFluidTypeID(fluidContainer)
+    if not fluidContainer then return nil end
+    local fType = nil
     
-    -- B42: Fluid containers usually have a primary fluid or a fluid stack.
-    if (not fType or fType == "") and fluidContainer then
-        if fluidContainer.getPrimaryFluid then
-            local pFluid = fluidContainer:getPrimaryFluid()
-            if pFluid then
-                if pFluid.getFluidType then fType = pFluid:getFluidType() end
-                if (not fType or fType == "") and pFluid.getDisplayName then
-                    return pFluid:getDisplayName()
+    -- Try B42 Primary Fluid logic
+    if fluidContainer.getPrimaryFluid then
+        local pFluid = fluidContainer:getPrimaryFluid()
+        if pFluid then
+            if pFluid.getFluidType then 
+                fType = pFluid:getFluidType() -- Usually returns the string ID in B42
+            end
+            -- If still nil, try getting it from the Fluid object itself
+            if (not fType or fType == "") and pFluid.getFluid then
+                local fluidObj = pFluid:getFluid()
+                if fluidObj and fluidObj.getName then
+                    fType = fluidObj:getName()
                 end
             end
         end
-        
-        -- Fallback to getFluidType on the container itself
-        if (not fType or fType == "") and fluidContainer.getFluidType then
-            fType = fluidContainer:getFluidType()
-        end
     end
     
-    if not fType or fType == "" then return "" end
+    -- Fallback to legacy/direct method
+    if (not fType or fType == "") and fluidContainer.getFluidType then
+        fType = fluidContainer:getFluidType()
+    end
+    
+    return fType
+end
+
+--- Internal helper to get a readable fluid name in B42.
+local function getFluidName(fluidContainer, typeStr)
+    local fType = typeStr or getFluidTypeID(fluidContainer)
+    
+    if not fType or fType == "" then 
+        -- Last ditch: If we have a PrimaryFluid but no ID, maybe it has a display name?
+        if fluidContainer and fluidContainer.getPrimaryFluid then
+            local pf = fluidContainer:getPrimaryFluid()
+            if pf and pf.getDisplayName then return pf:getDisplayName() end
+        end
+        return "" 
+    end
     
     -- Case A: It's a string (e.g. "Base.Water")
     if type(fType) == "string" then
@@ -171,10 +190,7 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                 local cap = fluidContainer.getCapacity and fluidContainer:getCapacity() or 0
                 local amt = fluidContainer.getAmount and fluidContainer:getAmount() or 0
                 
-                local fType = nil
-                if fluidContainer.getFluidType then
-                    fType = fluidContainer:getFluidType()
-                end
+                local fType = getFluidTypeID(fluidContainer)
                 
                 if isDebugEnabled() then
                     print("[DT DEBUG] invItem Fluid: " .. tostring(fType) .. " | Amt: " .. amt .. "/" .. cap)

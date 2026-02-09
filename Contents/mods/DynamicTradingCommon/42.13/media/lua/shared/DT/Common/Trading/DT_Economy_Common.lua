@@ -424,22 +424,45 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             local ratio = 0
             if capacity > 0 then ratio = currentAmount / capacity end
 
-            -- Identify the Fluid Type
+            -- Identify the Fluid Type (B42 Robust Way)
             local fluidType = nil
-            if fluidContainer.getFluidType then
+            if fluidContainer.getPrimaryFluid then
+                local pFluid = fluidContainer:getPrimaryFluid()
+                if pFluid then
+                    if pFluid.getFluidType then fluidType = pFluid:getFluidType() end
+                    if (not fluidType or fluidType == "") and pFluid.getFluid then
+                        local fluidObj = pFluid:getFluid()
+                        if fluidObj and fluidObj.getName then
+                            fluidType = fluidObj:getName()
+                        end
+                    end
+                end
+            end
+
+            if (not fluidType or fluidType == "") and fluidContainer.getFluidType then
                 fluidType = fluidContainer:getFluidType()
             end
 
             -- pricing Logic based on Fluid Type
             local fluidValue = 0
-            if fluidType and DynamicTrading.Fluids and DynamicTrading.Fluids[fluidType] then
-                local fluidData = DynamicTrading.Fluids[fluidType]
+            local fluidData = nil
+            if fluidType and DynamicTrading.Fluids then
+                -- Ensure it's a string for lookups/find
+                local typeStr = tostring(fluidType)
+                fluidData = DynamicTrading.Fluids[typeStr]
+                
+                -- Try with Base. prefix if not found
+                if not fluidData and not typeStr:find("%.") then
+                    fluidData = DynamicTrading.Fluids["Base." .. typeStr]
+                end
+            end
+
+            if fluidData then
                 -- Registry prices are "raw", apply sell multiplier
                 fluidValue = (fluidData.basePrice * currentAmount) * diffData.sellMult
             else
                 -- [ANTI-CHEAT] Fallback if fluid type unknown
                 -- Use a flat low value (similar to water) instead of a percentage of the container item.
-                -- This prevents expensive wine bottles filled with unknown liquids from selling high.
                 local unknownFluidBase = 1.0
                 fluidValue = (unknownFluidBase * currentAmount) * diffData.sellMult
             end
