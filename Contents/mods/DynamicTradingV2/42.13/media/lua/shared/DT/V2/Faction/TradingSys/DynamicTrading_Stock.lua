@@ -62,10 +62,10 @@ function DynamicTrading_Stock.UpdateItemQty(traderUUID, itemFullType, delta, pla
         -- [NEW] Faction Interaction
         local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
         if soul and soul.factionID then
-            local pricePerUnit = DynamicTrading.Economy.GetBuyPrice(traderUUID, itemFullType)
+            local pricePerUnit = DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType)
             -- delta is negative if player buys, positive if player sells
             local totalValue = math.abs(delta) * pricePerUnit
-            
+
             if delta < 0 then -- Player BUYS from NPC
                 DynamicTrading_Factions.ModifyWealth(soul.factionID, totalValue)
                 -- Decrease Faction stockpile (Macro level)
@@ -127,7 +127,7 @@ function DynamicTrading_Stock.CheckAndGenerateStock(traderUUID)
     local data = ModData.get(MOD_DATA_KEY)
     if not data[traderUUID] then
         print("[DT-Stock] Generating fresh stock for " .. traderUUID)
-        local newItems = DynamicTrading.Economy.GenerateStock(traderUUID)
+        local newItems = DynamicTrading.Economy.V2.GenerateStock(traderUUID)
         DynamicTrading_Stock.InitializeInventory(traderUUID, newItems)
         return true, "Stock Generated"
     else

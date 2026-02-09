@@ -3,14 +3,18 @@ if isClient() and not isServer() then return end
 require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Config"
+require "DT/Common/Trading/DT_Economy_Common"
 
 DynamicTrading = DynamicTrading or {}
-DynamicTrading.Economy = {}
+DynamicTrading.Economy = DynamicTrading.Economy or {}
+DynamicTrading.Economy.V2 = {}
+
+local Common = DynamicTrading.Economy.Common
 
 -- =============================================================================
--- 1. V2 STOCK GENERATOR
+-- 1. V2 STOCK GENERATOR (Wrapper)
 -- =============================================================================
-function DynamicTrading.Economy.GenerateStock(traderUUID)
+function DynamicTrading.Economy.V2.GenerateStock(traderUUID)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     if not soul then return {} end
     
@@ -20,121 +24,74 @@ function DynamicTrading.Economy.GenerateStock(traderUUID)
     local masterList = DynamicTrading.Config.MasterList
     if not masterList then return {} end
 
-    local resultStock = {}
+    -- Difficulty (V2 might need its own or use Common)
+    local diff = DynamicTrading.Config.GetDifficultyData()
+
+    -- Modifiers (V2 specific)
+    local modifiers = {
+        tagsConfig = DynamicTrading.Config.Tags,
+        globalStockMult = 1.0
+    }
     
-    -- Determine Shop Size
-    local baseMin, baseMax = 15, 25
-    local totalSlots = ZombRand(baseMin, baseMax + 1)
-    
-    local slotsFilled = 0
-    
-    -- PHASE 1: ALLOCATIONS (Archetype based)
-    if archetype.allocations then
-        for tag, count in pairs(archetype.allocations) do
-            local validItems = {}
-            for itemKey, itemData in pairs(masterList) do
-                for _, t in ipairs(itemData.tags) do
-                    if t == tag then
-                        table.insert(validItems, itemKey)
-                        break
-                    end
-                end
-            end
-            
-            if #validItems > 0 then
-                for i=1, count do
-                    if slotsFilled >= totalSlots then break end
-                    local pick = validItems[ZombRand(#validItems) + 1]
-                    resultStock[pick] = true
-                    slotsFilled = slotsFilled + 1
-                end
-            end
-        end
-    end
-    
-    -- PHASE 2: FILLER (Random from MasterList, respecting forbidden tags)
-    -- Simplified for now: just pick random items until full
-    local itemKeys = {}
-    for k, _ in pairs(masterList) do table.insert(itemKeys, k) end
-    
-    while slotsFilled < totalSlots do
-        local pick = itemKeys[ZombRand(#itemKeys) + 1]
-        if not resultStock[pick] then
-            resultStock[pick] = true
-            slotsFilled = slotsFilled + 1
-        end
-    end
-    
-    -- PHASE 3: QUANTITIES & PRICING
+    -- Future: Add V2 specific modifiers here (e.g., Faction Stockpile level)
+
+    -- Delegate to Common
+    local rawStock = Common.GenerateStock(archetype, masterList, diff, modifiers)
+
+    -- Adapt to V2 Format { [item] = {qty=..., basePrice=..., dynamicMod=...} }
     local finalItems = {}
-    for itemKey, _ in pairs(resultStock) do
+    for itemKey, qty in pairs(rawStock) do
         local itemData = masterList[itemKey]
-        local qty = ZombRand(itemData.stockRange.min, itemData.stockRange.max + 1)
-        
-        -- Apply Faction Stockpile Multiplier (Optional enhancement)
-        -- If faction has high food stockpile, food items might be more abundant
-        
-        finalItems[itemKey] = {
-            qty = math.max(1, qty),
-            basePrice = itemData.basePrice,
-            dynamicMod = 1.0
-        }
+        if itemData then
+            finalItems[itemKey] = {
+                qty = qty,
+                basePrice = itemData.basePrice,
+                dynamicMod = 1.0 -- Placeholder for dynamic pricing variations
+            }
+        end
     end
     
     return finalItems
 end
 
 -- =============================================================================
--- 2. V2 PRICING LOGIC
+-- 2. V2 PRICING LOGIC (Wrapper)
 -- =============================================================================
 
-function DynamicTrading.Economy.GetBuyPrice(traderUUID, itemFullType)
+function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 99999 end
     
-    local price = itemData.basePrice
+    local diff = DynamicTrading.Config.GetDifficultyData()
+    local modifiers = {
+        tagsConfig = DynamicTrading.Config.Tags,
+    }
     
-    -- Tag Multipliers
-    local maxTagMult = 1.0
-    for _, tag in ipairs(itemData.tags) do
-        local tagConfig = DynamicTrading.Config.Tags[tag]
-        if tagConfig and tagConfig.priceMult and tagConfig.priceMult > maxTagMult then
-            maxTagMult = tagConfig.priceMult
-        end
-    end
-    price = price * maxTagMult
+    -- V2 Specific: Faction Reputation could be added as a modifier here?
+    -- For now, we stick to the basic calculation + modifiers.
     
-    -- Faction Reputation (Placeholder/Basic implementation)
-    local faction = DynamicTrading_Factions.GetFaction(soul.factionID)
-    -- Logic for reputation adjustment could go here
+    local price = Common.GetBuyPrice(itemFullType, itemData, diff, modifiers)
     
-    return math.ceil(price)
+    -- Post-Common V2 adjustments (e.g. Reputation)
+    -- local faction = DynamicTrading_Factions.GetFaction(soul.factionID)
+    -- if faction then apply rep bonus end
+
+    return price
 end
 
-function DynamicTrading.Economy.GetSellPrice(traderUUID, itemObj, itemFullType)
+function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullType)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 0 end
     
-    local price = itemData.basePrice * 0.5 -- Base 50% sell-back
-    
-    -- Condition Penalty
-    if itemObj:IsDrainable() or itemObj:isBroken() then
-        local cond = itemObj:getCondition() / itemObj:getConditionMax()
-        price = price * cond
-    end
-    
-    -- Archetype Interest (Wants)
+    local diff = DynamicTrading.Config.GetDifficultyData()
     local archetype = DynamicTrading.Archetypes[soul.archetypeID]
-    if archetype and archetype.wants then
-        for _, tag in ipairs(itemData.tags) do
-            if archetype.wants[tag] then
-                price = price * archetype.wants[tag]
-                break
-            end
-        end
-    end
+    local modifiers = {
+        tagsConfig = DynamicTrading.Config.Tags,
+    }
     
-    return math.floor(price)
+    local price = Common.GetSellPrice(itemFullType, itemData, itemObj, diff, archetype, modifiers)
+    
+    return price
 end

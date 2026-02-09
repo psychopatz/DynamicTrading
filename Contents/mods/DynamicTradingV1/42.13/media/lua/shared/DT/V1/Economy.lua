@@ -1,47 +1,19 @@
 require "DT/Common/Config"
 require "DT/Common/Tags"
 require "DT/V1/Events"
+require "DT/Common/Trading/DT_Economy_Common"
 
 DynamicTrading = DynamicTrading or {}
-DynamicTrading.Economy = {}
+DynamicTrading.Economy = DynamicTrading.Economy or {}
+DynamicTrading.Economy.V1 = {}
+
+-- Shortcut to Common Logic
+local Common = DynamicTrading.Economy.Common
 
 -- =============================================================================
--- 1. HELPER: WEIGHTED RANDOM PICKER
+-- 1. STOCK GENERATOR (Wrapper)
 -- =============================================================================
--- Picks an item key from a pool based on 'weight' property.
--- pool = { {key="Base.Apple", weight=100}, {key="Base.Axe", weight=10} }
-local function PickFromWeightedPool(pool)
-    if not pool or #pool == 0 then return nil end
-    
-    -- 1. Calculate Total Weight
-    local totalWeight = 0
-    for _, entry in ipairs(pool) do
-        totalWeight = totalWeight + entry.weight
-    end
-    
-    -- Fallback if weights are busted
-    if totalWeight <= 0 then return pool[ZombRand(#pool)+1].key end 
-    
-    -- 2. Roll the Dice
-    local roll = ZombRandFloat(0, totalWeight)
-    
-    -- 3. Find the Winner
-    local current = 0
-    for _, entry in ipairs(pool) do
-        current = current + entry.weight
-        if roll <= current then
-            return entry.key
-        end
-    end
-    
-    return pool[#pool].key
-end
-
--- =============================================================================
--- 2. STOCK GENERATOR
--- =============================================================================
-function DynamicTrading.Economy.GenerateStock(archetypeKey)
-    local resultStock = {}
+function DynamicTrading.Economy.V1.GenerateStock(archetypeKey)
     local masterList = DynamicTrading.Config.MasterList
     
     local masterCount = 0
@@ -54,292 +26,81 @@ function DynamicTrading.Economy.GenerateStock(archetypeKey)
     end
 
     -- A. Load Context
-    local diff = DynamicTrading.Config.GetDifficultyData() -- Easy/Hard/Insane logic
+    local diff = DynamicTrading.Config.GetDifficultyData()
     local archetype = DynamicTrading.Archetypes[archetypeKey] or DynamicTrading.Archetypes["General"]
     
-    -- [NEW] GLOBAL EVENT MODIFIER (e.g. Military Surplus = 1.5x Stock)
-    local globalStockMult = 1.0
-    if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
-        globalStockMult = DynamicTrading.Events.GetSystemModifier("globalStock")
-    end
+    -- B. Prepare Modifiers
+    local modifiers = {
+        tagsConfig = DynamicTrading.Config.Tags,
+        globalStockMult = 1.0,
+        eventInjections = {},
+        getVolumeModifier = nil
+    }
 
-    -- B. Determine Shop Size (Slots)
-    -- Base range (15-25) modified by Difficulty AND Global Events
-    local minSlots = math.floor(15 * diff.stockMult * globalStockMult)
-    local maxSlots = math.floor(25 * diff.stockMult * globalStockMult)
-    local totalSlots = ZombRand(minSlots, maxSlots + 1)
-    if totalSlots < 1 then totalSlots = 1 end
-
-    local slotsFilled = 0
-
-    -- ---------------------------------------------------------
-    -- PHASE 1: ALLOCATIONS & INJECTIONS (Guaranteed Items)
-    -- ---------------------------------------------------------
-    -- 1. Merge Archetype Allocations with Event Injections
-    local priorityList = {}
-    
-    -- Add Archetype defaults (e.g., Butcher needs Meat)
-    if archetype.allocations then
-        for criteria, count in pairs(archetype.allocations) do
-            priorityList[criteria] = count
+    if DynamicTrading.Events then
+        if DynamicTrading.Events.GetSystemModifier then
+            modifiers.globalStockMult = DynamicTrading.Events.GetSystemModifier("globalStock")
         end
-    end
-    
-    -- Add Event Injections (e.g., Harvest Season forces Vegetables)
-    if DynamicTrading.Events and DynamicTrading.Events.GetInjections then
-        local injections = DynamicTrading.Events.GetInjections()
-        for tag, count in pairs(injections) do
-            priorityList[tag] = (priorityList[tag] or 0) + count
+        if DynamicTrading.Events.GetInjections then
+            modifiers.eventInjections = DynamicTrading.Events.GetInjections()
+        end
+        if DynamicTrading.Events.GetVolumeModifier then
+            modifiers.getVolumeModifier = DynamicTrading.Events.GetVolumeModifier
         end
     end
 
-    -- 2. Process the merged list
-    for criteria, count in pairs(priorityList) do
-        -- Find all valid items for this Tag/Category
-        local validItems = {}
-        
-        for key, itemData in pairs(masterList) do
-            local hasTag = false
-            local isForbidden = false
-            
-            -- Check Tags
-            for _, t in ipairs(itemData.tags) do
-                if t == criteria then hasTag = true end
-                -- Check Forbidden (Trader Overrules Events)
-                if archetype.forbid then
-                    for _, f in ipairs(archetype.forbid) do 
-                        if t == f then isForbidden = true end 
-                    end
-                end
-            end
-            
-            if hasTag and not isForbidden then
-                table.insert(validItems, key)
-            end
-        end
-        
-        -- Pick 'count' random items from this specific list
-        if #validItems > 0 then
-            for i=1, count do
-                if slotsFilled >= totalSlots then break end
-                local pick = validItems[ZombRand(#validItems)+1]
-                resultStock[pick] = (resultStock[pick] or 0) -- Quantity calc comes later
-                slotsFilled = slotsFilled + 1
-            end
-            print("[DynamicTrading] Economy.GenerateStock: Phase 1 Matched " .. criteria .. ". Items found: " .. #validItems)
-        end
-    end
-
-    -- ---------------------------------------------------------
-    -- PHASE 2: WILDCARDS (The Weighted Lottery)
-    -- ---------------------------------------------------------
-    -- Fill remaining slots based on Rarity and Difficulty
-    if slotsFilled < totalSlots then
-        
-        local lotteryPool = {}
-        
-        for key, itemData in pairs(masterList) do
-            local isForbidden = false
-            
-            -- Check Forbidden Tags
-            if archetype.forbid then
-                for _, t in ipairs(itemData.tags) do
-                    for _, f in ipairs(archetype.forbid) do
-                        if t == f then isForbidden = true break end
-                    end
-                end
-            end
-
-            if not isForbidden then
-                -- CALCULATE WEIGHT
-                local baseWeight = 0
-                
-                -- Check for explicit chance override first
-                if itemData.chance then
-                    baseWeight = itemData.chance
-                else
-                    -- Fallback to Tag Weight
-                    local primaryTag = itemData.tags[1] or "Misc"
-                    if DynamicTrading.Config.Tags[primaryTag] then
-                        baseWeight = DynamicTrading.Config.Tags[primaryTag].weight
-                    else
-                        baseWeight = 50 -- Safety default
-                    end
-                end
-                
-                -- Difficulty Bonus
-                -- Easy mode (+20) makes everything common.
-                -- Hard mode (-5) makes rare things (weight < 5) disappear completely.
-                local finalWeight = baseWeight + diff.rarityBonus
-                
-                -- Ensure items with 0 weight (like "Winter" tags out of season) are skipped
-                -- unless they have a positive weight override.
-                if finalWeight > 0 then
-                    table.insert(lotteryPool, { key=key, weight=finalWeight })
-                end
-            end
-        end
-
-        -- Spin the wheel until full
-        while slotsFilled < totalSlots do
-            local pickKey = PickFromWeightedPool(lotteryPool)
-            if pickKey then
-                resultStock[pickKey] = (resultStock[pickKey] or 0)
-                slotsFilled = slotsFilled + 1
-            else
-                print("[DynamicTrading] Economy.GenerateStock: No more valid items found in lottery pool. SlotsFilled=" .. slotsFilled .. "/" .. totalSlots)
-                break -- No valid items in pool?
-            end
-        end
-    end
+    -- C. Delegate to Common
+    local resultStock = Common.GenerateStock(archetype, masterList, diff, modifiers)
 
     local finalCount = 0
     for _ in pairs(resultStock) do finalCount = finalCount + 1 end
     print("[DynamicTrading] Economy.GenerateStock: FINISHED. Unique Items Picked: " .. finalCount)
 
-    -- ---------------------------------------------------------
-    -- PHASE 3: QUANTITY & FINALIZATION
-    -- ---------------------------------------------------------
-    for key, _ in pairs(resultStock) do
-        local itemData = masterList[key]
-        if itemData then
-            local min = itemData.stockRange.min
-            local max = itemData.stockRange.max
-            
-            -- Event Volume Multiplier (Specific Tag)
-            local volumeMult = 1.0
-            if DynamicTrading.Events and DynamicTrading.Events.GetVolumeModifier then
-                volumeMult = DynamicTrading.Events.GetVolumeModifier(itemData.tags)
-            end
-            
-            -- Calculate Quantity
-            local qty = ZombRand(min, max + 1)
-            
-            -- Apply Difficulty + Tag Volume + [NEW] Global Stock Mult
-            qty = math.floor(qty * diff.stockMult * volumeMult * globalStockMult)
-            
-            -- Always ensure at least 1 if it was picked
-            if qty < 1 then qty = 1 end 
-            
-            resultStock[key] = qty
-        end
-    end
-
     return resultStock
 end
 
 -- =============================================================================
--- 3. BUY PRICE CALCULATOR (Trader -> Player)
+-- 2. BUY PRICE CALCULATOR (Wrapper)
 -- =============================================================================
--- Formula: Base * (Highest Tag Mod) * (Event Mod) * (Inflation) * (Difficulty)
-function DynamicTrading.Economy.GetBuyPrice(itemKey, globalHeat)
+function DynamicTrading.Economy.V1.GetBuyPrice(itemKey, globalHeat)
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if not itemData then return 1 end
     
     local diff = DynamicTrading.Config.GetDifficultyData()
-    local price = itemData.basePrice
+    
+    local modifiers = {
+        tagsConfig = DynamicTrading.Config.Tags,
+        globalHeat = globalHeat,
+        getPriceModifier = nil
+    }
 
-    -- 1. Tag Multipliers (Rarity/Quality)
-    -- We take the HIGHEST multiplier found on the item to avoid compounding explosion.
-    -- e.g. "Food"(1.0) and "Rare"(2.0) -> Result 2.0. Not 2.0.
-    local maxTagMult = 1.0
-    for _, tag in ipairs(itemData.tags) do
-        local tagConfig = DynamicTrading.Config.Tags[tag]
-        if tagConfig and tagConfig.priceMult then
-            if tagConfig.priceMult > maxTagMult then
-                maxTagMult = tagConfig.priceMult
-            end
-        end
-    end
-    price = price * maxTagMult
-
-    -- 2. Event Modifiers (Stacked)
-    -- Events usually represent external forces (War, Winter), so they stack on top.
     if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then
-        local eventMult = DynamicTrading.Events.GetPriceModifier(itemData.tags)
-        price = price * eventMult
+        modifiers.getPriceModifier = DynamicTrading.Events.GetPriceModifier
     end
 
-    -- 3. Global Inflation (Heat)
-    if globalHeat then
-        for _, tag in ipairs(itemData.tags) do
-            local heat = globalHeat[tag]
-            if heat and heat ~= 0 then
-                -- heat 0.1 means +10% price
-                price = price * (1.0 + heat)
-            end
-        end
-    end
-
-    -- 4. Difficulty (The final punish/reward)
-    price = price * diff.buyMult
-
-    -- Safety Clamp: Price cannot be 0
-    if price < 1 then price = 1 end
-
-    return math.ceil(price)
+    return Common.GetBuyPrice(itemKey, itemData, diff, modifiers)
 end
 
 -- =============================================================================
--- 4. SELL PRICE CALCULATOR (Player -> Trader)
+-- 3. SELL PRICE CALCULATOR (Wrapper)
 -- =============================================================================
-function DynamicTrading.Economy.GetSellPrice(itemObj, itemKey, archetypeKey, globalHeat, localDeflationCount)
+function DynamicTrading.Economy.V1.GetSellPrice(itemObj, itemKey, archetypeKey, globalHeat, localDeflationCount)
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if not itemData then return 0 end
 
     local diff = DynamicTrading.Config.GetDifficultyData()
     local archetype = DynamicTrading.Archetypes[archetypeKey]
 
-    -- 1. Base Value & Difficulty
-    local price = itemData.basePrice * diff.sellMult
+    local modifiers = {
+        tagsConfig = DynamicTrading.Config.Tags,
+        globalHeat = globalHeat,
+        localDeflationCount = localDeflationCount,
+        getPriceModifier = nil
+    }
 
-    -- 2. Condition Penalty
-    if itemObj and (itemObj:IsDrainable() or itemObj:isBroken()) then
-        local cond = itemObj:getCondition() / itemObj:getConditionMax()
-        price = price * cond
-    end
-
-    -- 3. Event Modifiers (Supply/Demand)
     if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then
-        local eventMult = DynamicTrading.Events.GetPriceModifier(itemData.tags)
-        price = price * eventMult
+        modifiers.getPriceModifier = DynamicTrading.Events.GetPriceModifier
     end
 
-    -- 4. Global Inflation/Deflation (Heat)
-    if globalHeat then
-        for _, tag in ipairs(itemData.tags) do
-            local heat = globalHeat[tag]
-            if heat and heat ~= 0 then
-                price = price * (1.0 + heat)
-            end
-        end
-    end
-
-    -- 5. [NEW] Local Deflation (Trader specific interest)
-    -- This penalty stacks for every unit of this item already sold to this trader today.
-    if localDeflationCount and localDeflationCount > 0 then
-        -- Each item sold reduces interest by 5% (Example)
-        -- This logic can be modified to be less aggressive or capped.
-        local penaltyPerItem = 0.05
-        local localMult = 1.0 - (localDeflationCount * penaltyPerItem)
-        if localMult < 0.2 then localMult = 0.2 end -- Min 20% value floor for local sat
-        price = price * localMult
-    end
-
-    -- 6. Archetype Bonus ("Wants")
-    -- If the trader specializes in this, they pay a premium.
-    if archetype and archetype.wants then
-        for _, tag in ipairs(itemData.tags) do
-            if archetype.wants[tag] then
-                price = price * archetype.wants[tag]
-                -- Apply bonus only once per item
-                break 
-            end
-        end
-    end
-
-    -- Safety: Don't allow free money exploits or negatives
-    if price < 0 then price = 0 end
-
-    return math.floor(price)
+    return Common.GetSellPrice(itemKey, itemData, itemObj, diff, archetype, modifiers)
 end

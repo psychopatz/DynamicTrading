@@ -54,13 +54,13 @@ end
 
 function V1_DataProvider:getBuyPrice(key)
     local data = DynamicTrading.Manager.GetData()
-    return DynamicTrading.Economy.GetBuyPrice(key, data.globalHeat or 0)
+    return DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat or 0)
 end
 
 function V1_DataProvider:getSellPrice(invItem, masterKey, trader)
     local data = DynamicTrading.Manager.GetData()
     local localCnt = (trader.localDeflation and trader.localDeflation[masterKey]) or 0
-    return DynamicTrading.Economy.GetSellPrice(invItem, masterKey, trader.archetype, data.globalHeat, localCnt)
+    return DynamicTrading.Economy.V1.GetSellPrice(invItem, masterKey, trader.archetype, data.globalHeat, localCnt)
 end
 
 function V1_DataProvider:getPriceModifier(tags)

@@ -4,7 +4,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 
 DynamicTrading.RegisterArchetype("Pawnbroker", {
-    name = "Fence",
+    name = "Pawnbroker",
     allocations = {
         ["Jewelry"] = 6,
         ["Gold"] = 4,

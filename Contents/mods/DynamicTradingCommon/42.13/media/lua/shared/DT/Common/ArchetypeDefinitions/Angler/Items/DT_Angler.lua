@@ -15,7 +15,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
             ["Textile"] = 1.4,
             ["Spice"] = 1.3
         },
-        forbid = { "Electronics", "Gun" }
+        forbid = { "Electronics", "Gun", "Rotten" }
     })
 
 end

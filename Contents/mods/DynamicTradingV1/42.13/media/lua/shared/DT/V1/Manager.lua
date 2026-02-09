@@ -481,8 +481,8 @@ function DynamicTrading.Manager.RestockTrader(traderID)
     local interval = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.RestockInterval) or 1
     -- Check if new trader (-1) or if interval passed
     if (trader.lastRestockDay == -1) or (currentDay - trader.lastRestockDay >= interval) then
-        if DynamicTrading.Economy and DynamicTrading.Economy.GenerateStock then
-            trader.stocks = DynamicTrading.Economy.GenerateStock(trader.archetype)
+        if DynamicTrading.Economy and DynamicTrading.Economy.V1 and DynamicTrading.Economy.V1.GenerateStock then
+            trader.stocks = DynamicTrading.Economy.V1.GenerateStock(trader.archetype)
             trader.lastRestockDay = currentDay
         end
     end
@@ -523,7 +523,7 @@ function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
     -- [NEW] Increase Trader Budget
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if itemData then
-        local unitPrice = DynamicTrading.Economy.GetBuyPrice(itemKey, data.globalHeat)
+        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(itemKey, data.globalHeat)
         local totalGain = unitPrice * qty
         trader.budget = (trader.budget or 1000) + totalGain
         
@@ -549,7 +549,7 @@ function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
     
     -- 1. [NEW] Decrement Trader Budget
     local localCount = (trader.localDeflation and trader.localDeflation[itemKey]) or 0
-    local unitPrice = DynamicTrading.Economy.GetSellPrice(nil, itemKey, trader.archetype, data.globalHeat, localCount)
+    local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(nil, itemKey, trader.archetype, data.globalHeat, localCount)
     trader.budget = math.max(0, (trader.budget or 1000) - (unitPrice * qty))
 
     -- 2. [NEW] Local Deflation (Trader specific saturation)

@@ -70,7 +70,7 @@ function Commands.TradeTransaction(player, args)
 
     if type == "buy" then
         -- 1. Calculate Price
-        local unitPrice = DynamicTrading.Economy.GetBuyPrice(key, data.globalHeat)
+        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat)
         local totalCost = unitPrice * clientQty
         
         -- 2. Check Stock
@@ -139,7 +139,7 @@ function Commands.TradeTransaction(player, args)
 
         -- [NEW] Check Trader Budget
         local localCount = (trader.localDeflation and trader.localDeflation[key]) or 0
-        local unitPrice = DynamicTrading.Economy.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
+        local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
         local totalGain = unitPrice * clientQty
 
         if (trader.budget or 0) < totalGain then
