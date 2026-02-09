@@ -8,7 +8,6 @@ DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 -- 1. CONFIGURATION & RULES (Shared)
 require "DT/Common/Config"
 require "DT/Common/Tags"
-require "DT/Common/Archetypes"
 require "DT/V1/Events"
 
 -- 2. LOGIC ENGINE (Shared)

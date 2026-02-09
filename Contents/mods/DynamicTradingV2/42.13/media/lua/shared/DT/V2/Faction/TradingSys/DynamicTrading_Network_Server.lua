@@ -14,7 +14,6 @@ require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
-require "DT/Common/Archetypes"
 require "DT/Common/Config"
 require "DT/Common/ServerHelpers"
 

@@ -11,7 +11,6 @@ require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/V2/Faction/Templates/BaseSpawn/DT_FactionLocationManager"
 require "DT/V2/Faction/Templates/FactionNames/DT_FactionNames"
 require "DT/V2/Config"
-require "DT/Common/Archetypes"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 
 DynamicTrading_Factions = {}

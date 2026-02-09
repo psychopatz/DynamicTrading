@@ -6,7 +6,6 @@
 -- =============================================================================
 
 require "DT/Common/UI/Trading/DT_TradingWindow"
-require "DT/Common/Archetypes"
 require "DT/Common/Config"
 require "Utils/DT_CoreUtils"
 require "DT/V2/Dialog/DT_DialogueManager"

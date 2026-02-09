@@ -7,7 +7,6 @@
 require "DT/V1/Manager"
 require "DT/V1/Economy"
 require "DT/V1/Events"
-require "DT/Common/Archetypes"
 require "DT/Common/ServerHelpers"
 -- Note: NetworkLogs and CooldownManager already required by Manager, giving access globally.
 

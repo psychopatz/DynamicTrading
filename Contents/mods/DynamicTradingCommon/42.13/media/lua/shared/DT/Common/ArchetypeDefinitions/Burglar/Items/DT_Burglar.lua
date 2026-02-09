@@ -1,5 +1,5 @@
-DynamicTrading = DynamicTrading or {}
-DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
+require "DT/Common/Config"
+if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Burglar", {
     name = "The Fence",
@@ -17,3 +17,4 @@ DynamicTrading.RegisterArchetype("Burglar", {
     },
     forbid = { "Heavy", "Furniture", "Farming" }
 })
+end

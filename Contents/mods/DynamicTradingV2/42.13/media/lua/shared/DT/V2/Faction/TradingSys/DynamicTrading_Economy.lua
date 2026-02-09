@@ -2,7 +2,6 @@ if isClient() and not isServer() then return end
 
 require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
-require "DT/Common/Archetypes"
 require "DT/V2/Config"
 
 DynamicTrading = DynamicTrading or {}
