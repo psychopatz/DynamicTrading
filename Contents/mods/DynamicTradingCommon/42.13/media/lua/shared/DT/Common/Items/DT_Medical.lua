@@ -1,13 +1,7 @@
-
+require "DT/Common/Config" 
 if not DynamicTrading then return end
 
-local function Register(list)
-    for _, data in ipairs(list) do
-        DynamicTrading.AddItem(data.item, data)
-    end
-end
-
-Register({
+DynamicTrading.RegisterBatch({
 -- =============================================================================
 -- 1. PHARMACEUTICALS (Pills & Life Saving)
 -- =============================================================================
