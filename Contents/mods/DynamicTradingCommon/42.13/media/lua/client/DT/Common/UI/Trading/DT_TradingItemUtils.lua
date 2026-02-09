@@ -28,8 +28,23 @@ end
 --- Internal helper to get a readable fluid name in B42.
 local function getFluidName(fluidContainer, typeStr)
     local fType = typeStr
-    if (not fType or fType == "") and fluidContainer and fluidContainer.getFluidType then
-        fType = fluidContainer:getFluidType()
+    
+    -- B42: Fluid containers usually have a primary fluid or a fluid stack.
+    if (not fType or fType == "") and fluidContainer then
+        if fluidContainer.getPrimaryFluid then
+            local pFluid = fluidContainer:getPrimaryFluid()
+            if pFluid then
+                if pFluid.getFluidType then fType = pFluid:getFluidType() end
+                if (not fType or fType == "") and pFluid.getDisplayName then
+                    return pFluid:getDisplayName()
+                end
+            end
+        end
+        
+        -- Fallback to getFluidType on the container itself
+        if (not fType or fType == "") and fluidContainer.getFluidType then
+            fType = fluidContainer:getFluidType()
+        end
     end
     
     if not fType or fType == "" then return "" end
@@ -58,43 +73,60 @@ end
 
 --- Returns the most appropriate display name, handling fluid renaming.
 function DT_TradingItemUtils.getItemDisplayName(listItem, invItem, scriptItem)
-    -- DEBUG: SELLING LOGIC
-    if not listItem.isBuy then
-        if invItem then
-            local dName = invItem:getDisplayName()
-            local iType = invItem:getFullType()
-            if isDebugEnabled() then
-                print("[DT DEBUG] Selling Item: " .. iType .. " | ID: " .. invItem:getID() .. " | DisplayName: " .. dName)
-            end
-            return dName
-        else
-            if isDebugEnabled() then
-                print("[DT DEBUG] Selling Item: NO invItem FOUND for ID: " .. (listItem.itemID or "NIL"))
-            end
+    local isBuy = listItem.isBuy
+    
+    -- Construction logic for both sides if it's a fluid container
+    local fluidContainer = nil
+    if isBuy then
+        if scriptItem and scriptItem.getFluidContainer then 
+            fluidContainer = scriptItem:getFluidContainer() 
+        end
+    else
+        if invItem and invItem.getFluidContainer then 
+            fluidContainer = invItem:getFluidContainer() 
         end
     end
     
-    -- BUYING: Construct name if fluid exists
-    if listItem.isBuy and listItem.customData and (listItem.customData.fluidAmount or 0) > 0 then
-        local fName = getFluidName(nil, listItem.customData.fluidType)
-        if fName and fName ~= "" then
-            local containerName = scriptItem and scriptItem:getDisplayName() or ""
-            -- Try to find Empty counterpart for a cleaner container name (e.g. "Glass Bottle")
-            if scriptItem and scriptItem.getReplaceOnDeplete then
-                local emptyType = scriptItem:getReplaceOnDeplete()
-                if emptyType then
-                    local emptyScript = getScriptManager():getItem(emptyType)
-                    if emptyScript then containerName = emptyScript:getDisplayName() end
+    if fluidContainer then
+        local amt = 0
+        if isBuy then
+            amt = (listItem.customData and listItem.customData.fluidAmount or 0)
+        elseif fluidContainer.getAmount then 
+            amt = fluidContainer:getAmount()
+        end
+
+        if amt > 0 then
+            local fType = isBuy and listItem.customData.fluidType or nil
+            local fName = getFluidName(fluidContainer, fType)
+            
+            if fName and fName ~= "" then
+                local containerName = scriptItem and scriptItem.getDisplayName and scriptItem:getDisplayName() or ""
+                -- Try to find Empty counterpart for a cleaner container name (e.g. "Glass Bottle")
+                if scriptItem and scriptItem.getReplaceOnDeplete then
+                    local emptyType = scriptItem:getReplaceOnDeplete()
+                    if emptyType then
+                        local emptyScript = getScriptManager():getItem(emptyType)
+                        if emptyScript and emptyScript.getDisplayName then 
+                            containerName = emptyScript:getDisplayName() 
+                        end
+                    end
                 end
+                
+                local finalName = fName .. " (" .. containerName .. ")"
+                if isDebugEnabled() then
+                    print("[DT DEBUG] Dynamic Name Constructed: " .. finalName .. " | Side: " .. (isBuy and "BUY" or "SELL"))
+                end
+                return finalName
             end
-            if isDebugEnabled() then
-                print("[DT DEBUG] Buying Fluid Item: " .. fName .. " (" .. containerName .. ")")
-            end
-            return fName .. " (" .. containerName .. ")"
         end
     end
+
+    -- Fallback to standard names
+    if not isBuy and invItem and invItem.getDisplayName then
+        return invItem:getDisplayName()
+    end
     
-    return listItem.name or (scriptItem and scriptItem:getDisplayName()) or "Unknown Item"
+    return listItem.name or (scriptItem and scriptItem.getDisplayName and scriptItem:getDisplayName()) or "Unknown Item"
 end
 
 --- Generates a suffix like " (Rotten)" or " (50%)" for display.
@@ -107,12 +139,15 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
         local customData = listItem.customData
         if customData then
             if (customData.fluidAmount or 0) > 0 then
-                if scriptItem and scriptItem:getFluidContainer() then
-                    local cap = scriptItem:getFluidContainer():getCapacity()
-                    if cap > 0 then
-                        local pct = math.floor((customData.fluidAmount / cap) * 100)
-                        statusSuffix = " (" .. pct .. "%)"
-                        isFluid = true
+                if scriptItem and scriptItem.getFluidContainer and scriptItem:getFluidContainer() then
+                    local fc = scriptItem:getFluidContainer()
+                    if fc.getCapacity then
+                        local cap = fc:getCapacity()
+                        if cap > 0 then
+                            local pct = math.floor((customData.fluidAmount / cap) * 100)
+                            statusSuffix = " (" .. pct .. "%)"
+                            isFluid = true
+                        end
                     end
                 end
             elseif customData.usedDelta then
@@ -133,8 +168,9 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
             -- DEBUG: FLUID CONTAINER CHECK
             if invItem.getFluidContainer and invItem:getFluidContainer() then
                 local fluidContainer = invItem:getFluidContainer()
-                local cap = fluidContainer:getCapacity()
-                local amt = fluidContainer:getAmount()
+                local cap = fluidContainer.getCapacity and fluidContainer:getCapacity() or 0
+                local amt = fluidContainer.getAmount and fluidContainer:getAmount() or 0
+                
                 local fType = nil
                 if fluidContainer.getFluidType then
                     fType = fluidContainer:getFluidType()
@@ -162,7 +198,7 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                     if pct < 100 then statusSuffix = " (" .. pct .. "%)" end
                 end
             elseif invItem.IsDrainable and invItem:IsDrainable() then
-                local delta = invItem:getUsedDelta()
+                local delta = invItem.getUsedDelta and invItem:getUsedDelta() or 0
                 local pct = math.floor(delta * 100)
                 if pct < 100 then statusSuffix = " (" .. pct .. "%)" end
             end
