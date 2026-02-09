@@ -38,15 +38,19 @@ function DynamicTrading.Economy.V2.GenerateStock(traderUUID)
     -- Delegate to Common
     local rawStock = Common.GenerateStock(archetype, masterList, diff, modifiers)
 
-    -- Adapt to V2 Format { [item] = {qty=..., basePrice=..., dynamicMod=...} }
+    -- Adapt to V2 Format { [item] = {qty=..., basePrice=..., dynamicMod=..., customData=...} }
     local finalItems = {}
     for itemKey, qty in pairs(rawStock) do
         local itemData = masterList[itemKey]
         if itemData then
+            -- [NEW] Generate Random Condition/Fluid
+            local conditionData = Common.GenerateItemCondition(itemData)
+            
             finalItems[itemKey] = {
                 qty = qty,
                 basePrice = itemData.basePrice,
-                dynamicMod = 1.0 -- Placeholder for dynamic pricing variations
+                dynamicMod = 1.0, -- Placeholder for dynamic pricing variations
+                customData = conditionData -- Store usedDelta/fluidAmount here
             }
         end
     end

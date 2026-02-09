@@ -13,7 +13,9 @@ local COMMAND_MODULE = "DynamicTrading_V2"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Stock"
+require "DT/V2/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
+require "DT/V2/Faction/TradingSys/DynamicTrading_Economy"
 require "DT/Common/Config"
 require "DT/Common/ServerHelpers"
 
@@ -239,8 +241,11 @@ Handlers.TradeTransaction = function(player, args)
                 DynamicTrading_Factions.ModifyWealth(factionID, totalCost)
             end
             
-            -- Add item to player
-            DynamicTrading.ServerHelpers.AddItem(inv, itemData.item, clientQty)
+            -- Add item to player (with custom condition support)
+            local itemStockData = (type(itemStock) == "table") and itemStock or {}
+            local customData = itemStockData.customData
+            
+            DynamicTrading.ServerHelpers.AddItemWithCondition(inv, itemData.item, clientQty, customData)
             
             -- Sync stock
             ModData.transmit("DynamicTrading_Stock")
@@ -273,14 +278,8 @@ Handlers.TradeTransaction = function(player, args)
         end
         
         -- 2. Calculate sell price
-        local basePrice = itemData.basePrice or 0
-        local unitPrice = math.floor(basePrice * 0.5)
-        
-        -- Condition penalty
-        if itemObj:getConditionMax() and itemObj:getConditionMax() > 0 then
-            local cond = itemObj:getCondition() / itemObj:getConditionMax()
-            unitPrice = math.floor(unitPrice * cond)
-        end
+        -- Use Unified V2 Pricing Logic (which handles Decay, Fluid, etc.)
+        local unitPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, itemObj, key)
         
         local totalGain = unitPrice * clientQty
         print(DEBUG_PREFIX .. " Sell: " .. key .. " @ $" .. totalGain)

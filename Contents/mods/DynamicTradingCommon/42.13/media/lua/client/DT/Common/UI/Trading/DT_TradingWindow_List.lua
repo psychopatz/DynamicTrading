@@ -1,3 +1,5 @@
+require "DT/Common/UI/Trading/DT_TradingItemUtils"
+
 function DT_TradingWindow.drawItem(listbox, y, item, alt)
     local height = listbox.itemheight
     local d = item.item
@@ -37,7 +39,7 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
     local invItem = nil
     if d.itemID and d.itemID ~= -1 then
         local player = getSpecificPlayer(0)
-        invItem = player:getInventory():getItemById(d.itemID)
+        invItem = DT_TradingItemUtils.findItemRecursively(player:getInventory(), d.itemID)
     end
     
     local tex = DT_TradingWindow.GetItemTexture(d.data.item, invItem)
@@ -47,7 +49,7 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
         listbox:drawTextureScaled(tex, 6, y + 4, 32, 32, alpha, 1, 1, 1)
     end
 
-    -- 5. DRAW NAME & LOCK STATUS
+    -- 5. DRAW NAME & STATUS
     local nameColor = {r=0.9, g=0.9, b=0.9}
     if isLocked then
         nameColor = {r=0.5, g=0.5, b=0.5}
@@ -55,8 +57,18 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
         nameColor = {r=0.5, g=0.5, b=0.5}
     end
 
+    -- Use Utility for status suffix, rotten check, and DYNAMIC NAME
+    local scriptItem = getScriptManager():getItem(d.data.item)
+    local statusSuffix, isRotten = DT_TradingItemUtils.getStatusSuffix(d, invItem, scriptItem)
+    local itemName = DT_TradingItemUtils.getItemDisplayName(d, invItem, scriptItem)
+    
+    if isRotten then
+        nameColor = {r=0.8, g=0.3, b=0.3}
+    end
+
+    local finalName = itemName .. statusSuffix
     local maxNameWidth = width - 210
-    local displayName = DT_TradingWindow.TruncateString(d.name, listbox.font, maxNameWidth)
+    local displayName = DT_TradingWindow.TruncateString(finalName, listbox.font, maxNameWidth)
     listbox:drawText(displayName, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
 
     -- [NEW] DRAW TAGS ON HIGHLIGHT
@@ -73,15 +85,7 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
     end
 
     -- 6. PRICE COLORING
-    local priceR, priceG, priceB = 0.6, 1.0, 0.6
-    if isLocked then
-        priceR, priceG, priceB = 0.4, 0.4, 0.4
-    elseif d.isBuy then
-        if d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.4, 0.4 end
-        if d.priceMod < 0.99 then priceR, priceG, priceB = 0.2, 1.0, 1.0 end
-    else
-        if d.priceMod > 1.01 then priceR, priceG, priceB = 1.0, 0.8, 0.2 end
-    end
+    local priceR, priceG, priceB = DT_TradingItemUtils.getPriceColors(d, isLocked)
 
     -- 7. STOCK DISPLAY
     if d.isBuy then
@@ -114,117 +118,19 @@ function DT_TradingWindow:populateList()
     local categorized = {}
     local categories = {}
 
-    -- ==========================================================
-    -- DATA SCANNING
-    -- ==========================================================
+    -- SCAN DATA USING UTILITY
     if self.isBuying then
-        if trader.stocks then
-            for key, qty in pairs(trader.stocks) do
-                local itemData = dataProvider:getItemData(key)
-                if itemData then
-                    local scriptItem = getScriptManager():getItem(itemData.item)
-                    local sortName = scriptItem and scriptItem:getDisplayName() or key
-                    local price = dataProvider:getBuyPrice(key)
-                    local cat = itemData.tags[1] or "Misc"
-
-                    if not categorized[cat] then
-                        categorized[cat] = {}
-                        table.insert(categories, cat)
-                    end
-
-                    local priceMod = self.dataProvider:getPriceModifier(itemData.tags)
-
-                    table.insert(categorized[cat], {
-                        key = key,
-                        name = sortName,
-                        qty = tonumber(qty) or 0,
-                        price = tonumber(price) or 0,
-                        data = itemData,
-                        isBuy = true,
-                        priceMod = priceMod
-                    })
-                end
-            end
-        end
+        DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized, categories)
     else
         local player = getSpecificPlayer(0)
-        local inv = player:getInventory()
-        
-        -- [B42 ROBUST SCAN] Collect all items recursively from all containers in main inventory
-        local itemList = {}
-        local function collectItems(container)
-            local items = container:getItems()
-            for i = 0, items:size() - 1 do
-                local item = items:get(i)
-                table.insert(itemList, item)
-                -- If it's a container (backpack, fanny pack, bag), scan its internal inventory too
-                if instanceof(item, "InventoryContainer") then
-                    local subContainer = item:getItemContainer()
-                    if subContainer then
-                        local subItems = subContainer:getItems()
-                        for j = 0, subItems:size() - 1 do
-                            table.insert(itemList, subItems:get(j))
-                        end
-                    end
-                end
-            end
-        end
-        collectItems(inv)
-        
         local activeRadioID = -1
         if self.radioObj and instanceof(self.radioObj, "InventoryItem") then
             activeRadioID = self.radioObj:getID()
         end
-
-        for _, invItem in ipairs(itemList) do
-            if invItem then 
-                -- [NEW] Sync Favorite status to Lock Data
-                if invItem:isFavorite() then
-                    dataProvider:lockItem(invItem:getID())
-                end
-
-                local fullType = invItem:getFullType()
-                if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
-                    -- Safety: Hide active communication radio
-                    if invItem:getID() ~= activeRadioID then
-                        local masterKey = dataProvider:getMasterKey(fullType)
-
-                        if masterKey then
-                            -- [FIX] Skip items that exist in trader's stock catalog (prevent reselling bought items)
-                            local isInTraderStock = trader.stocks and trader.stocks[masterKey] ~= nil
-                            if not isInTraderStock then
-                                local itemData = dataProvider:getItemData(masterKey)
-                                local price = dataProvider:getSellPrice(invItem, masterKey, trader)
-                                
-                                if price > 0 then
-                                    local cat = itemData.tags[1] or "Misc"
-                                    if not categorized[cat] then
-                                        categorized[cat] = {}
-                                        table.insert(categories, cat)
-                                    end
-                                    local priceMod = self.dataProvider:getPriceModifier(itemData.tags)
-
-                                    table.insert(categorized[cat], {
-                                        key = masterKey,
-                                        itemID = invItem:getID(),
-                                        name = invItem:getDisplayName(),
-                                        price = tonumber(price) or 0,
-                                        data = itemData,
-                                        isBuy = false,
-                                        priceMod = priceMod
-                                    })
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
+        DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, categorized, categories, activeRadioID)
     end
 
-    -- ==========================================================
     -- BUILD THE LISTBOX
-    -- ==========================================================
     table.sort(categories)
     for _, catName in ipairs(categories) do
         local itemsInCat = categorized[catName]
@@ -242,14 +148,11 @@ function DT_TradingWindow:populateList()
         end
     end
 
-    -- ==========================================================
-    -- RESTORE SELECTION & BUTTON LOGIC (FIXED)
-    -- ==========================================================
+    -- RESTORE SELECTION & BUTTON LOGIC
     local foundValidSelection = false
     
     if self.selectedKey then
         local targetIndex = -1
-        -- Look for the item we were previously selecting
         for i = 1, #self.listbox.items do
             local listItem = self.listbox.items[i]
             if listItem.item and not listItem.item.isCategory and listItem.item.key == self.selectedKey then
@@ -260,18 +163,15 @@ function DT_TradingWindow:populateList()
 
         if targetIndex ~= -1 then
             local checkItem = self.listbox.items[targetIndex].item
-            -- Use the robust helper check
             local isLocked = false
             if self.isItemLocked then
                 isLocked = self:isItemLocked(checkItem.itemID)
             end
 
             if not isLocked then
-                -- Item is found and unlocked. Select it and ENABLE button.
                 self.listbox.selected = targetIndex
                 foundValidSelection = true
             else
-                -- If locked, try to find the NEXT available unlocked item
                 for i = targetIndex + 1, #self.listbox.items do
                     local nextItem = self.listbox.items[i].item
                     if nextItem and not nextItem.isCategory and not self:isItemLocked(nextItem.itemID) then
@@ -295,7 +195,6 @@ function DT_TradingWindow:populateList()
         if self.isBuying then
             self.btnAction:setEnable(sel.qty > 0)
         else
-            -- [FIX] Logic Check: Enable SELL if item is NOT locked.
             local isCurrentlyLocked = false
             if self.isItemLocked then isCurrentlyLocked = self:isItemLocked(sel.itemID) end
             
@@ -304,7 +203,7 @@ function DT_TradingWindow:populateList()
                 self.btnAction:setEnable(false)
             else
                 self.btnLock:setTitle("LOCK ITEM")
-                self.btnAction:setEnable(true) -- RE-ENABLED BULK SELLING
+                self.btnAction:setEnable(true)
             end
         end
     else

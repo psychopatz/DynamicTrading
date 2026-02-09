@@ -9,6 +9,8 @@ DynamicTrading = DynamicTrading or {}
 DynamicTrading.Economy = DynamicTrading.Economy or {}
 DynamicTrading.Economy.Common = {}
 
+require "DT/Common/Items/DT_Fluids"
+
 local Common = DynamicTrading.Economy.Common
 
 -- =============================================================================
@@ -206,15 +208,117 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             local qty = ZombRand(min, max + 1)
             
             -- Apply factors
-            qty = math.floor(qty * diffData.stockMult * volumeMult * globalStockMult)
+            local qty = math.floor(qty * diffData.stockMult * volumeMult * globalStockMult)
             
             if qty < 1 then qty = 1 end 
+            
+            -- V1 Structure update: 
+            -- V1 resultStock was { [key] = qty }.
+            -- To support customData, we might need to change the structure OR
+            -- store it in a separate table? 
+            -- But Economy.V1.GenerateStock returns resultStock directly.
+            -- If we change the return type to { [key] = { qty=.., customData=.. } }, check if V1 UI breaks.
+            
+            -- Checking V1 consumers: 
+            -- Manager.lua uses it.
+            -- DT_ServerCommands writes it to 'trader.stocks'.
+            -- GetStock sends it to client.
+            -- V1 UI (DT_TradingWindow) iterates it.
+            
+            -- If we change V1 structure now, it's a breaking change for V1 UI.
+            -- USER INTENT: "I want the trader to sell me a random amount... how do we approach this"
+            -- USER defined: "since this is being used by both mod versions, I would recommend you to put it on commons"
+            
+            -- For V1, keeping simple maps {key=qty} makes it hard to store per-item data.
+            -- However, we can store it in a parallel structure in the Trader Object?
+            -- Or, since V1 is legacy/maintenance, maybe we just enable it for V2?
+            -- Wait, the user said "It would price the liquid itself... when I sell... Also same as buying too".
+            
+            -- If we want V1 to have this, we MUST update the stock structure.
+            -- V1 UI iterates `for k,v in pairs(stock)`. If v is table, UI might break if it expects number.
+            
+            -- Let's stick to V2 implementation primarily unless user explicitly asked to Refactor V1 UI.
+            -- User said: "It would price the liquid itself... Also same as buying too".
+            -- The "Buying" part requires the stock data to exist.
+            
+            -- DECISION: For V1, we will NOT change the stock structure to avoid breaking legacy UI.
+            -- V1 will get the "Sell" improvements (Price logic in Common), but maybe not the "Buy Randomized" feature
+            -- unless we do a massive V1 refactor. 
+            
+            -- BUT, I can inject it into a separate field if needed? 
+            -- Actually, let's look at `DT_Economy_Common.GenerateStock`. It returns `resultStock` as { key = qty }.
+            -- I can't easily change Common.GenerateStock return type without breaking V1 if V1 relies on it being strict.
+            -- Common.GenerateStock is already returning { key = qty }.
+            
+            -- To support V2, V2 wrapper iterates this and converts it.
+            -- So `Common` doesn't need to change to return complex objects.
+            -- `Common` is fine.
+            
+            -- V2 Wrapper (`DynamicTrading.Economy.V2.GenerateStock`) is where we add the complexity.
+            -- V1 Wrapper (`DynamicTrading.Economy.V1.GenerateStock`) calls Common.
             
             resultStock[key] = qty
         end
     end
 
     return resultStock
+end
+
+--- Generates random condition/fluid data for an item if applicable.
+-- @param itemData (Table) MasterList entry
+-- @return (Table|nil) customData { usedDelta=0.5, fluidAmount=... } or nil
+function Common.GenerateItemCondition(itemData)
+    if not itemData then return nil end
+    
+    -- We can't easily check 'isDrainable' from just the MasterList entry without looking up the ScriptItem.
+    -- However, we can use a heuristic or just always return nil unless we want to force something.
+    -- Better approach: The caller (Stock Generator) might check ScriptManager.
+    
+    local scriptItem = getScriptManager():getItem(itemData.item)
+    if not scriptItem then return nil end
+    
+    local data = {}
+    local hasData = false
+    
+    -- 1. Fluid Container (e.g. Gas Can, Water Bottle)
+    -- We want to randomize the amount, but maybe bias towards full for shops? 
+    -- Let's do random for now as requested.
+    if scriptItem:getFluidContainer() then
+        local capacity = scriptItem:getFluidContainer():getCapacity()
+        -- Randomize: 0 to Capacity (or maybe 10% to 100%?)
+        -- Let's do 0.1 to 1.0 multiplier
+        local mult = (ZombRand(10, 101) / 100.0) 
+        data.fluidAmount = capacity * mult
+
+        -- [NEW] Store default fluid type
+        if scriptItem:getFluidContainer().getFluidType then
+            data.fluidType = scriptItem:getFluidContainer():getFluidType()
+        end
+
+        hasData = true
+    end
+    
+    -- 2. Drainable (e.g. Bleach, Vitamins)
+    -- Only if it's NOT a fluid container (usually distinct, but check IsDrainable)
+    if scriptItem:IsDrainable() and not data.fluidAmount then
+        local mult = (ZombRand(1, 101) / 100.0)
+        data.usedDelta = mult
+        hasData = true
+    end
+    
+    -- 3. Food (e.g. Apple, Steak)
+    if scriptItem.getHungerChange and not data.fluidAmount and not data.usedDelta then
+        local baseHunger = scriptItem:getHungerChange()
+        if baseHunger < 0 then
+            -- Randomize: 10% to 100% of base hunger
+            local mult = (ZombRand(1, 11) / 10.0)
+            data.hungerChange = baseHunger * mult
+            hasData = true
+        end
+    end
+    
+    if hasData then return data end
+    return nil
 end
 
 -- =============================================================================
@@ -291,10 +395,87 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
     -- 1. Base & Difficulty
     local price = itemData.basePrice * diffData.sellMult
 
-    -- 2. Condition Penalty
-    if itemObj and (itemObj:IsDrainable() or itemObj:isBroken()) then
-        local cond = itemObj:getCondition() / itemObj:getConditionMax()
-        price = price * cond
+    -- 2. Condition & State Penalty
+    if itemObj then
+        -- ROTTEN CHECK
+        -- Safety: isRotten might not exist on all item types or older API versions
+        if itemObj.isRotten and itemObj:isRotten() then
+            return 1
+        end
+
+        local maxCond = itemObj:getConditionMax()
+        if maxCond > 0 then
+             local cond = itemObj:getCondition() / maxCond
+             price = price * cond
+        end
+        
+        -- DRAINABLE / FLUID PRICING
+        -- Safety: getScriptItem might not exist on older API, but should on B42.
+        -- If it fails, we skip specific fluid logic.
+        local scriptItem = nil
+        if itemObj.getScriptItem then scriptItem = itemObj:getScriptItem() end
+        
+        -- A. Fluid Container
+        -- Check if method exists first
+        if itemObj.getFluidContainer and itemObj:getFluidContainer() then
+            local fluidContainer = itemObj:getFluidContainer()
+            local capacity = fluidContainer:getCapacity()
+            local currentAmount = fluidContainer:getAmount()
+            local ratio = 0
+            if capacity > 0 then ratio = currentAmount / capacity end
+
+            -- Identify the Fluid Type
+            local fluidType = nil
+            if fluidContainer.getFluidType then
+                fluidType = fluidContainer:getFluidType()
+            end
+
+            -- pricing Logic based on Fluid Type
+            local fluidValue = 0
+            if fluidType and DynamicTrading.Fluids and DynamicTrading.Fluids[fluidType] then
+                local fluidData = DynamicTrading.Fluids[fluidType]
+                -- Registry prices are "raw", apply sell multiplier
+                fluidValue = (fluidData.basePrice * currentAmount) * diffData.sellMult
+            else
+                -- [ANTI-CHEAT] Fallback if fluid type unknown
+                -- Use a flat low value (similar to water) instead of a percentage of the container item.
+                -- This prevents expensive wine bottles filled with unknown liquids from selling high.
+                local unknownFluidBase = 1.0
+                fluidValue = (unknownFluidBase * currentAmount) * diffData.sellMult
+            end
+
+            -- Container Reconstruction
+            -- Instead of 20% of CURRENT item (which might be expensive wine), 
+            -- we try to find the actual empty container price.
+            local containerValue = price * 0.2 -- Default Fallback
+            if scriptItem and scriptItem.getReplaceOnDeplete then
+                local emptyID = scriptItem:getReplaceOnDeplete()
+                if emptyID and DynamicTrading.Config.MasterList[emptyID] then
+                    local emptyData = DynamicTrading.Config.MasterList[emptyID]
+                    containerValue = emptyData.basePrice * diffData.sellMult
+                end
+            end
+
+            price = containerValue + fluidValue
+
+        -- B. Food Consumption (Partially eaten)
+        elseif itemObj.getHungerChange and scriptItem and scriptItem.getHungerChange then
+            local currentHunger = itemObj:getHungerChange()
+            local baseHunger = scriptItem:getHungerChange()
+            
+            if baseHunger < 0 then -- Hunger items have negative values (e.g. -20)
+                local ratio = currentHunger / baseHunger
+                price = price * math.max(0, math.min(1, ratio))
+            end
+
+        -- C. Standard Drainable (Pills, Vitamins, etc.)
+        elseif itemObj.IsDrainable and itemObj:IsDrainable() then
+            local delta = 0
+            if itemObj.getUsedDelta then
+                delta = itemObj:getUsedDelta()
+            end
+            price = price * delta
+        end
     end
 
     -- 3. Event Modifiers

@@ -139,6 +139,13 @@ function Commands.TradeTransaction(player, args)
 
         -- [NEW] Check Trader Budget
         local localCount = (trader.localDeflation and trader.localDeflation[key]) or 0
+        -- We already have GetSellPrice called below, but wait, the original code called `GetSellPrice`?
+        -- No, let me check the original code from view_file.
+        -- Original line 142: local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
+        -- It ALREADY calls V1.GetSellPrice!
+        -- And V1.GetSellPrice calls Common.GetSellPrice.
+        -- So V1 is automatically updated by my change to Common!
+        
         local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
         local totalGain = unitPrice * clientQty
 

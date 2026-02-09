@@ -96,6 +96,55 @@ function Helpers.AddItem(container, fullType, count)
             sendAddItemToContainer(container, item)
         end
     end
+    
+    return items
+end
+
+--- Adds items with custom condition/fluid data.
+-- @param container ItemContainer
+-- @param fullType string
+-- @param count number
+-- @param customData table { usedDelta=..., fluidAmount=... }
+function Helpers.AddItemWithCondition(container, fullType, count, customData)
+    if not container or not fullType then return end
+    local qty = count or 1
+    
+    -- 1. Add Items (Raw)
+    -- We suppress the default sync in AddItem if we can, 
+    -- but AddItem doesn't have a 'nosync' arg here.
+    -- So we just use built-in AddItems directly to avoid double sync if we were to modify it.
+    -- Or we use our own logic.
+    
+    local items = container:AddItems(fullType, qty)
+    
+    -- 2. Apply Custom Data
+    if customData and items then
+        for i = 0, items:size() - 1 do
+            local item = items:get(i)
+            
+            -- Apply Used Delta
+            if customData.usedDelta and item:IsDrainable() then
+                item:setUsedDelta(customData.usedDelta)
+            end
+            
+            -- Apply Fluid Amount
+            if customData.fluidAmount and item:getFluidContainer() then
+                item:getFluidContainer():setAmount(customData.fluidAmount)
+            end
+            
+            -- Future: Condition?
+        end
+    end
+    
+    -- 3. Sync to Clients (MP)
+    if Helpers.ShouldSendNetworkPackets() and items then
+        for i = 0, items:size() - 1 do
+            local item = items:get(i)
+            sendAddItemToContainer(container, item)
+        end
+    end
+    
+    return items
 end
 
 --- Recursively searches a container (and nested bags) for an item by ID.
