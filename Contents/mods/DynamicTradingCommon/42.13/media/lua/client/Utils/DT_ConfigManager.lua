@@ -41,7 +41,7 @@ function DT_ConfigManager.save()
     local fileWriter = getFileWriter(DT_ConfigManager.fileName, true, false)
     
     if fileWriter then
-        print("[DT_ConfigManager] Saving config to " .. DT_ConfigManager.fileName)
+        -- print("[DT_ConfigManager] Saving config to " .. DT_ConfigManager.fileName)
         fileWriter:write("enableSound=" .. tostring(DT_ConfigManager.settings.enableSound) .. "\r\n")
         fileWriter:write("showSidebar=" .. tostring(DT_ConfigManager.settings.showSidebar) .. "\r\n")
         fileWriter:write("volMaster=" .. tostring(DT_ConfigManager.settings.volMaster) .. "\r\n")

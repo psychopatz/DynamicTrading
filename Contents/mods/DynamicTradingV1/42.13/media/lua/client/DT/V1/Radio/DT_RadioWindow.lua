@@ -2,6 +2,7 @@ require "ISUI/ISCollapsableWindow"
 require "DT/V1/Radio/DT_SignalPanel"
 require "DT/V1/Radio/DT_TraderListPanel"
 require "DT/V1/Radio/DT_LogPanel"
+require "Utils/DT_ConfigManager"
 
 
 DT_RadioWindow = ISCollapsableWindow:derive("DT_RadioWindow")
@@ -150,6 +151,9 @@ function DT_RadioWindow:CheckConnectionValidity()
 end
 
 function DT_RadioWindow:close()
+    if DT_ConfigManager and DT_ConfigManager.setWindowState then
+        DT_ConfigManager.setWindowState("RadioWindow", self:getX(), self:getY(), self:getWidth(), self:getHeight())
+    end
     self:setVisible(false)
     self:removeFromUIManager()
     DT_RadioWindow.instance = nil
@@ -177,6 +181,23 @@ function DT_RadioWindow.ToggleWindow(radioObj, isHam)
     
     local x = 200
     local y = 100
+
+    -- Attempt to load persisted state
+    if DT_ConfigManager and DT_ConfigManager.getWindowState then
+        local state = DT_ConfigManager.getWindowState("RadioWindow")
+        if state then
+            x = state.x
+            y = state.y
+            width = state.w
+            height = state.h
+            
+            -- Basic bounds check to prevent lost windows
+            if x < 0 then x = 0 end
+            if y < 0 then y = 0 end
+            if x > screenW - 50 then x = screenW - width end
+            if y > screenH - 50 then y = screenH - height end
+        end
+    end
     
     local ui = DT_RadioWindow:new(x, y, width, height)
     ui:initialise()
