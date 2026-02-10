@@ -1,0 +1,21 @@
+require "DT/Common/Config"
+
+if DynamicTrading and DynamicTrading.RegisterArchetype then
+
+DynamicTrading.RegisterArchetype("Athlete", {
+    name = "Coach",
+    allocations = {
+        ["Sport"] = 8,
+        ["Clothing"] = 4,
+        ["Protein"] = 4,
+        ["Water"] = 4
+    },
+    wants = {
+        ["Medical"] = 1.3,
+        ["HighCalorie"] = 1.2,
+        ["Vitamin"] = 1.4
+    },
+    forbid = { "Alcohol", "Tobacco", "Junk" }
+})
+
+end

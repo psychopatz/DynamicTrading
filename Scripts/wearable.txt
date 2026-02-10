@@ -1,0 +1,1397 @@
+ITEM ID                                       | BODY LOCATION                  | BLOOD LOCATION
+------------------------------------------------------------------------------------------------------------------------
+F_Hair_Stubble                                | base:zeddmg                    | 
+M_Beard_Stubble                               | base:zeddmg                    | 
+M_Hair_Stubble                                | base:zeddmg                    | 
+Dress_Knees                                   | base:dress                     | ShortsShort;Shirt
+DressKnees_Straps                             | base:dress                     | ShortsShort;Shirt
+Dress_Long                                    | base:longdress                 | Trousers;Shirt
+Dress_long_Straps                             | base:longdress                 | Trousers;Shirt
+Dress_Normal                                  | base:longdress                 | Trousers;Shirt
+Dress_SatinNegligee                           | base:dress                     | ShortsShort;Shirt
+Dress_Short                                   | base:dress                     | ShortsShort;Shirt
+Dress_SmallBlackStrapless                     | base:dress                     | ShortsShort;Shirt
+Dress_SmallBlackStraps                        | base:dress                     | ShortsShort;Shirt
+Dress_SmallStrapless                          | base:dress                     | ShortsShort;Shirt
+Dress_SmallStraps                             | base:dress                     | ShortsShort;Shirt
+Dress_Straps                                  | base:longdress                 | Trousers;Shirt
+WeddingDress                                  | base:fullsuit                  | Trousers;Shirt
+BlackRobe                                     | base:bathrobe                  | Trousers;Shirt
+Dress_Long_Crafted_Burlap                     | base:longdress                 | Trousers;Shirt
+Dress_Long_Crafted_Cotton                     | base:longdress                 | Trousers;Shirt
+Dress_Long_Crafted_Denim                      | base:longdress                 | Trousers;Shirt
+Dress_Long_Crafted_DenimBlack                 | base:longdress                 | Trousers;Shirt
+Dress_Long_Crafted_DenimLight                 | base:longdress                 | Trousers;Shirt
+Dress_Knees_Crafted_Burlap                    | base:dress                     | ShortsShort;Shirt
+Dress_Knees_Crafted_Cotton                    | base:dress                     | ShortsShort;Shirt
+Dress_Knees_Crafted_Denim                     | base:dress                     | ShortsShort;Shirt
+Dress_Knees_Crafted_DenimBlack                | base:dress                     | ShortsShort;Shirt
+Dress_Knees_Crafted_DenimLight                | base:dress                     | ShortsShort;Shirt
+Dress_SmallGarbageStrapless                   | base:dress                     | ShortsShort;Shirt
+Dress_SmallTarpStrapless                      | base:dress                     | ShortsShort;Shirt
+Dress_SmallDeerHideStrapless                  | base:dress                     | ShortsShort;Shirt
+Dress_SmallHideStrapless                      | base:dress                     | ShortsShort;Shirt
+Skirt_Knees_DeerHide                          | base:skirt                     | ShortsShort
+Skirt_Knees_Hide                              | base:skirt                     | ShortsShort
+Skirt_Long_Hide                               | base:longskirt                 | Trousers
+Skirt_Normal_Hide                             | base:longskirt                 | Trousers
+Skirt_Short_FaunHide                          | base:skirt                     | ShortsShort
+Skirt_Short_Hide                              | base:skirt                     | ShortsShort
+Skirt_Knees_Garbage                           | base:skirt                     | ShortsShort
+Skirt_Long_Garbage                            | base:longskirt                 | Trousers
+Skirt_Normal_Garbage                          | base:longskirt                 | Trousers
+Skirt_Short_Garbage                           | base:skirt                     | ShortsShort
+Skirt_Knees_Tarp                              | base:skirt                     | ShortsShort
+Skirt_Long_Tarp                               | base:longskirt                 | Trousers
+Skirt_Normal_Tarp                             | base:longskirt                 | Trousers
+Skirt_Short_Tarp                              | base:skirt                     | ShortsShort
+Hat_BunnyEarsBlack                            | base:hat                       | Head
+Hat_BunnyEarsWhite                            | base:hat                       | Head
+Hat_FurryEars                                 | base:hat                       | Head
+Glasses                                       | base:eyes                      | 
+Glasses_Prescription                          | base:eyes                      | 
+Glasses_Aviators                              | base:eyes                      | 
+Glasses_Prescription_Aviators                 | base:eyes                      | 
+Glasses_Normal                                | base:eyes                      | 
+Glasses_Cosmetic_Normal                       | base:eyes                      | 
+Glasses_Reading                               | base:eyes                      | 
+Glasses_SafetyGoggles                         | base:eyes                      | Head
+Glasses_Shooting                              | base:eyes                      | 
+Glasses_Prescription_Shooting                 | base:eyes                      | 
+Glasses_SkiGoggles                            | base:eyes                      | Head
+Glasses_Sun                                   | base:eyes                      | 
+Glasses_Prescription_Sun                      | base:eyes                      | 
+Glasses_SwimmingGoggles                       | base:eyes                      | 
+Glasses_Eyepatch_Left                         | base:lefteye                   | 
+Glasses_Eyepatch_Right                        | base:righteye                  | 
+Glasses_CatsEye                               | base:eyes                      | 
+Glasses_CatsEye_Sun                           | base:eyes                      | 
+Glasses_Cosmetic_CatsEye                      | base:eyes                      | 
+Glasses_Prescription_CatsEye_Sun              | base:eyes                      | 
+Glasses_Normal_HornRimmed                     | base:eyes                      | 
+Glasses_Cosmetic_Normal_HornRimmed            | base:eyes                      | 
+Glasses_JackieO                               | base:eyes                      | 
+Glasses_Prescription_JackieO                  | base:eyes                      | 
+Glasses_Macho                                 | base:eyes                      | 
+Glasses_Round_Normal                          | base:eyes                      | 
+Glasses_Round_Shades                          | base:eyes                      | 
+Glasses_Cosmetic_Round_Normal                 | base:eyes                      | 
+Glasses_Prescription_Round_Shades             | base:eyes                      | 
+Glasses_70s_Gold                              | base:eyes                      | 
+Glasses_Cosmetic_70s_Gold                     | base:eyes                      | 
+Glasses_Round_HoloSkulls                      | base:eyes                      | 
+Glasses_OldWeldingGoggles                     | base:eyes                      | 
+Glasses_HalfMoon                              | base:eyes                      | 
+Glasses_Cosmetic_HalfMoon                     | base:eyes                      | 
+Glasses_MonocleLeft                           | base:eyes                      | 
+Glasses_MonocleRight                          | base:eyes                      | 
+Glasses_Cosmetic_MonocleLeft                  | base:eyes                      | 
+Glasses_Cosmetic_MonocleRight                 | base:eyes                      | 
+Glasses_SunCheap                              | base:eyes                      | 
+Glasses_3dGlasses                             | base:eyes                      | 
+Glasses_Groucho                               | base:eyes                      | 
+Glasses_Venetian                              | base:eyes                      | 
+Glasses_NewWave                               | base:eyes                      | 
+Glasses_Novelty_Xray                          | base:eyes                      | 
+Gloves_FingerlessGloves                       | base:hands                     | Hands
+Gloves_FingerlessLeatherGloves                | base:hands                     | Hands
+Gloves_FingerlessLeatherGloves_Black          | base:hands                     | Hands
+Gloves_FingerlessLeatherGloves_Brown          | base:hands                     | Hands
+Gloves_LeatherGloves                          | base:hands                     | Hands
+Gloves_LeatherGlovesBlack                     | base:hands                     | Hands
+Gloves_LeatherGlovesBrown                     | base:hands                     | Hands
+Gloves_LongWomenGloves                        | base:hands                     | Hands
+Gloves_WhiteTINT                              | base:hands                     | Hands
+Gloves_Dish                                   | base:hands                     | Hands
+Gloves_Surgical                               | base:hands                     | Hands
+Gloves_BoxingRed                              | base:hands                     | Hands
+Gloves_BoxingBlue                             | base:hands                     | Hands
+Chainmail_Hand_L                              | base:handsleft                 | Hand_L
+Chainmail_Hand_R                              | base:handsright                | Hand_R
+Gloves_IceHockeyGloves                        | base:hands                     | Hands
+Gloves_IceHockeyGloves_Black                  | base:hands                     | Hands
+Gloves_IceHockeyGloves_Blue                   | base:hands                     | Hands
+Gloves_IceHockeyGloves_White                  | base:hands                     | Hands
+Gloves_HuntingCamo                            | base:hands                     | Hands
+Gloves_BurlapWrap                             | base:hands                     | Hands;ForeArm_L;ForeArm_R
+Gloves_DenimWrap                              | base:hands                     | Hands;ForeArm_L;ForeArm_R
+Gloves_LeatherWrap                            | base:hands                     | Hands;ForeArm_L;ForeArm_R
+Gloves_RagWrap                                | base:hands                     | Hands;ForeArm_L;ForeArm_R
+Gloves_TarpWrap                               | base:hands                     | Hands;ForeArm_L;ForeArm_R
+Hat_Bandana                                   | base:hat                       | 
+Hat_Bandana_Green                             | base:hat                       | 
+Hat_BandanaTINT                               | base:hat                       | 
+Hat_BaseballCap                               | base:hat                       | 
+Hat_BaseballCap_Reverse                       | base:hat                       | 
+Hat_BaseballCap_AmericanEats                  | base:hat                       | 
+Hat_BaseballCap_AmericanEats_Reverse          | base:hat                       | 
+Hat_BaseballCap_3N                            | base:hat                       | 
+Hat_BaseballCap_3N_Reverse                    | base:hat                       | 
+Hat_BaseballCap_AmericanTire                  | base:hat                       | 
+Hat_BaseballCap_AmericanTire_Reverse          | base:hat                       | 
+Hat_BaseballCap_AmeriglobeCom                 | base:hat                       | 
+Hat_BaseballCap_AmeriglobeCom_Reverse         | base:hat                       | 
+Hat_BaseballCap_BodyChisel                    | base:hat                       | 
+Hat_BaseballCap_BodyChisel_Reverse            | base:hat                       | 
+Hat_BaseballCap_BoxpopBrewery                 | base:hat                       | 
+Hat_BaseballCap_BoxpopBrewery_Reverse         | base:hat                       | 
+Hat_BaseballCap_FireDept                      | base:hat                       | 
+Hat_BaseballCap_FireDept_Reverse              | base:hat                       | 
+Hat_BaseballCap_Fossoil                       | base:hat                       | 
+Hat_BaseballCap_Fossoil_Reverse               | base:hat                       | 
+Hat_BaseballCap_Fossoil02                     | base:hat                       | 
+Hat_BaseballCap_Fossoil02_Reverse             | base:hat                       | 
+Hat_BaseballCap_JaysChicken                   | base:hat                       | 
+Hat_BaseballCap_JaysChicken_Reverse           | base:hat                       | 
+Hat_BaseballCap_KnoxDistillery                | base:hat                       | 
+Hat_BaseballCap_KnoxDistillery_Reverse        | base:hat                       | 
+Hat_BaseballCap_KYTransit                     | base:hat                       | 
+Hat_BaseballCap_KYTransit_Reverse             | base:hat                       | 
+Hat_BaseballCap_LBMW                          | base:hat                       | 
+Hat_BaseballCap_LBMW_Reverse                  | base:hat                       | 
+Hat_BaseballCap_LouisvilleBruiser             | base:hat                       | 
+Hat_BaseballCap_LouisvilleBruiser_Reverse     | base:hat                       | 
+Hat_BaseballCap_LSU                           | base:hat                       | 
+Hat_BaseballCap_LSU_Reverse                   | base:hat                       | 
+Hat_BaseballCap_MassGenfac                    | base:hat                       | 
+Hat_BaseballCap_MassGenfac_Reverse            | base:hat                       | 
+Hat_BaseballCap_Police                        | base:hat                       | 
+Hat_BaseballCap_Police_Reverse                | base:hat                       | 
+Hat_BaseballCap_ScarletOakDistillery          | base:hat                       | 
+Hat_BaseballCap_ScarletOakDistillery_Reverse  | base:hat                       | 
+Hat_BaseballCap_Sheriff                       | base:hat                       | 
+Hat_BaseballCap_Sheriff_Reverse               | base:hat                       | 
+Hat_BaseballCap_Spiffos                       | base:hat                       | 
+Hat_BaseballCap_Spiffos_Reverse               | base:hat                       | 
+Hat_BaseballCap_SpiffosLogo                   | base:hat                       | 
+Hat_BaseballCap_SpiffosLogo_Reverse           | base:hat                       | 
+Hat_BaseballCap_SWAT                          | base:hat                       | 
+Hat_BaseballCap_SWAT_Reverse                  | base:hat                       | 
+Hat_BaseballCap_USL                           | base:hat                       | 
+Hat_BaseballCap_USL_Reverse                   | base:hat                       | 
+Hat_BaseballCap_WestMapleCountryClub          | base:hat                       | 
+Hat_BaseballCap_WestMapleCountryClub_Reverse  | base:hat                       | 
+Hat_BaseballCap_PizzaWhirled                  | base:hat                       | 
+Hat_BaseballCap_PizzaWhirled_Reverse          | base:hat                       | 
+Hat_BaseballCap_Gas2Go                        | base:hat                       | 
+Hat_BaseballCap_Gas2Go_Reverse                | base:hat                       | 
+Hat_BaseballCapKY                             | base:hat                       | 
+Hat_BaseballCapKY_Reverse                     | base:hat                       | 
+Hat_BaseballCapKY_Red                         | base:hat                       | 
+Hat_BaseballCapKY_Red_Reverse                 | base:hat                       | 
+Hat_BaseballCapBlue                           | base:hat                       | 
+Hat_BaseballCapBlue_Reverse                   | base:hat                       | 
+Hat_BaseballCapRed                            | base:hat                       | 
+Hat_BaseballCapRed_Reverse                    | base:hat                       | 
+Hat_BaseballCapGreen                          | base:hat                       | 
+Hat_BaseballCapGreen_Reverse                  | base:hat                       | 
+Hat_BaseballCapArmy                           | base:hat                       | 
+Hat_BaseballCapArmy_Reverse                   | base:hat                       | 
+Hat_BaseballCapTINT                           | base:hat                       | 
+Hat_BaseballCapTINT_Reverse                   | base:hat                       | 
+Hat_Beany                                     | base:hat                       | Head
+Hat_Beret                                     | base:hat                       | Head
+Hat_BeretArmy                                 | base:hat                       | Head
+Hat_ChefHat                                   | base:hat                       | 
+Hat_Cowboy                                    | base:hat                       | Head
+Hat_Cowboy_Black                              | base:hat                       | Head
+Hat_Cowboy_Plastic                            | base:hat                       | Head
+Hat_Cowboy_White                              | base:hat                       | Head
+Hat_EarMuffs                                  | base:hat                       | Head
+Hat_EarMuff_Protectors                        | base:hat                       | Head
+Hat_FastFood                                  | base:hat                       | 
+Hat_FastFood_IceCream                         | base:hat                       | 
+Hat_FastFood_Spiffo                           | base:hat                       | 
+Hat_Fedora                                    | base:hat                       | Head
+Hat_Fedora_Delmonte                           | base:hat                       | Head
+Hat_GolfHat                                   | base:hat                       | 
+Hat_GolfHatTINT                               | base:hat                       | 
+Hat_Police                                    | base:hat                       | 
+Hat_Sheriff                                   | base:hat                       | 
+Hat_Police_Grey                               | base:hat                       | 
+Hat_Raccoon                                   | base:hat                       | Head
+Hat_Ranger                                    | base:hat                       | Head
+Hat_SantaHat                                  | base:hat                       | Head
+Hat_SantaHatGreen                             | base:hat                       | Head
+Hat_ShowerCap                                 | base:hat                       | 
+Hat_FishermanRainHat                          | base:hat                       | 
+Hat_SummerHat                                 | base:hat                       | Head
+Hat_SummerFlowerHat                           | base:hat                       | Head
+Hat_StrawHat                                  | base:hat                       | Head
+Hat_SurgicalCap                               | base:hat                       | 
+Hat_Sweatband                                 | base:hat                       | Head
+Hat_WeddingVeil                               | base:hat                       | 
+Hat_WinterHat                                 | base:hat                       | Head
+Hat_WinterHat_SheepSkin                       | base:hat                       | Head
+Hat_WoolyHat                                  | base:hat                       | Head
+Hat_BucketHat                                 | base:hat                       | Head
+Hat_BucketHatFishing                          | base:hat                       | Head
+Hat_BonnieHat                                 | base:hat                       | Head
+Hat_BonnieHat_CamoGreen                       | base:hat                       | Head
+Hat_BonnieHat_OliveDrab                       | base:hat                       | Head
+Hat_BonnieHat_DesertCamoNew                   | base:hat                       | Head
+Hat_BonnieHat_MiliusCamo                      | base:hat                       | Head
+Hat_BonnieHat_TigerStripeCamo                 | base:hat                       | Head
+Hat_VisorBlack                                | base:hat                       | 
+Hat_VisorRed                                  | base:hat                       | 
+Hat_Visor_WhiteTINT                           | base:hat                       | 
+Hat_PeakedCapArmy                             | base:hat                       | Head
+Hat_PeakedCapYacht                            | base:hat                       | Head
+Hat_BandanaTied                               | base:hat                       | 
+Hat_BandanaTied_Green                         | base:hat                       | 
+Hat_BandanaTiedTINT                           | base:hat                       | 
+Hat_NewspaperHat                              | base:hat                       | 
+Hat_PartyHat_Stars                            | base:hat                       | 
+Hat_PartyHat_TINT                             | base:hat                       | 
+Hat_TinFoilHat                                | base:hat                       | 
+Hat_BoxingRed                                 | base:fullhat                   | FullHelmet
+Hat_BoxingBlue                                | base:fullhat                   | FullHelmet
+Hat_GoldStar                                  | base:hat                       | Head
+Hat_Antlers                                   | base:hat                       | Head
+Hat_Jay                                       | base:hat                       | Head
+Hat_JokeArrow                                 | base:hat                       | Head
+Hat_JokeKnife                                 | base:hat                       | Head
+Hat_Pilgrim                                   | base:hat                       | Head
+Hat_Pirate                                    | base:hat                       | Head
+Hat_Stovepipe                                 | base:hat                       | Head
+Hat_Stovepipe_Black                           | base:hat                       | Head
+Hat_Stovepipe_UncleSam                        | base:hat                       | Head
+Hat_Witch                                     | base:hat                       | Head
+Hat_Wizard                                    | base:hat                       | Head
+Hat_HeadMirrorUP                              | base:hat                       | 
+Hat_HeadMirrorDOWN                            | base:hat                       | 
+Hat_BonnieHat_DesertCamo                      | base:hat                       | Head
+Hat_BaseballCap_HuntingCamo                   | base:hat                       | 
+Hat_BaseballCap_HuntingCamo_Reverse           | base:hat                       | 
+Hat_LeatherStripTied                          | base:hat                       | 
+Hat_RagBandana                                | base:hat                       | 
+Hat_RagBandanaMask                            | base:mask                      | Head
+Hat_RagBandanaTied                            | base:hat                       | 
+Hat_HideHat                                   | base:hat                       | Head
+Hat_TarpHat                                   | base:hat                       | Head
+Hat_Cowboy_CowHide                            | base:hat                       | Head
+Hat_Cowboy_Angus                              | base:hat                       | Head
+Hat_Cowboy_Holstein                           | base:hat                       | Head
+Hat_Cowboy_Simmental                          | base:hat                       | Head
+Hat_Army                                      | base:hat                       | Head
+Hat_ArmyWWII                                  | base:hat                       | Head
+Hat_SWAT                                      | base:hat                       | Head
+Hat_BaseballHelmet                            | base:hat                       | FullHelmet
+Hat_BaseballHelmet_KY                         | base:hat                       | FullHelmet
+Hat_BaseballHelmet_Rangers                    | base:hat                       | FullHelmet
+Hat_BaseballHelmet_Z                          | base:hat                       | FullHelmet
+Hat_BicycleHelmet                             | base:hat                       | Head
+Hat_CrashHelmet                               | base:hat                       | Head
+Hat_CrashHelmetFULL                           | base:fullhat                   | FullHelmet
+Hat_CrashHelmetFULL_Black                     | base:fullhat                   | FullHelmet
+Hat_CrashHelmet_Police                        | base:hat                       | FullHelmet
+Hat_CrashHelmet_Stars                         | base:hat                       | FullHelmet
+Hat_Fireman                                   | base:hat                       | Head
+Hat_FootballHelmet                            | base:fullhat                   | FullHelmet
+Hat_FootballHelmet_Blue                       | base:fullhat                   | FullHelmet
+Hat_FootballHelmet_Red                        | base:fullhat                   | FullHelmet
+Hat_FootballHelmet_White                      | base:fullhat                   | FullHelmet
+Hat_HardHat                                   | base:hat                       | Head
+Hat_HardHat_Miner                             | base:hat                       | Head
+Hat_HockeyHelmet                              | base:hat                       | Head
+Hat_HockeyHelmet_TINT                         | base:hat                       | Head
+Hat_JockeyHelmet01                            | base:hat                       | Head
+Hat_JockeyHelmet02                            | base:hat                       | Head
+Hat_JockeyHelmet03                            | base:hat                       | Head
+Hat_JockeyHelmet04                            | base:hat                       | Head
+Hat_JockeyHelmet05                            | base:hat                       | Head
+Hat_JockeyHelmet06                            | base:hat                       | Head
+Hat_RidingHelmet                              | base:hat                       | Head
+Hat_RiotHelmet                                | base:fullhat                   | FullHelmet
+Hat_SPHhelmet                                 | base:fullhat                   | FullHelmet
+Hat_ArmyDesertNew                             | base:hat                       | Head
+Hat_ArmyDesert                                | base:hat                       | Head
+Hat_CrashHelmetFULL_Spiked                    | base:fullhat                   | FullHelmet
+Hat_CrashHelmetFULL_Black_Spiked              | base:fullhat                   | FullHelmet
+HolsterAnkle                                  | base:ankleholster              | 
+HolsterDouble                                 | base:beltextra                 | 
+HolsterSimple                                 | base:beltextra                 | 
+HolsterSimple_Black                           | base:beltextra                 | 
+HolsterSimple_Brown                           | base:beltextra                 | 
+HolsterSimple_Green                           | base:beltextra                 | 
+Holster_DuctTape                              | base:beltextra                 | 
+Holster_Hide                                  | base:beltextra                 | 
+WeddingJacket                                 | base:jacketsuit                | Jacket
+Ghillie_Top                                   | base:fulltop                   | Jacket
+Suit_Jacket                                   | base:jacketsuit                | Jacket
+Suit_Jacket_White                             | base:jacketsuit                | Jacket
+Suit_JacketTINT                               | base:jacketsuit                | Jacket
+Jacket_Varsity                                | base:jacket                    | Jacket
+JacketLong_Doctor                             | base:jacketsuit                | LongJacket
+Jacket_CoatArmy                               | base:jacket                    | LongJacket
+JacketLong_Random                             | base:jacketsuit                | LongJacket
+JacketLong_Black                              | base:jacketsuit                | LongJacket
+JacketLong_Santa                              | base:jacketsuit                | LongJacket
+JacketLong_SantaGreen                         | base:jacketsuit                | LongJacket
+Jacket_ArmyCamoDesert                         | base:jacket                    | Jacket
+Jacket_ArmyCamoGreen                          | base:jacket                    | Jacket
+Jacket_ArmyCamoUrban                          | base:jacket                    | Jacket
+Jacket_ArmyOliveDrab                          | base:jacket                    | Jacket
+Jacket_ArmyCamoDesertNew                      | base:jacket                    | Jacket
+Jacket_ArmyCamoMilius                         | base:jacket                    | Jacket
+Jacket_ArmyCamoTigerStripe                    | base:jacket                    | Jacket
+Jacket_Black                                  | base:jacket                    | Jacket
+Jacket_Chef                                   | base:jacket                    | Jacket
+Jacket_Fireman                                | base:jacket                    | Jacket
+Jacket_Padded                                 | base:jackethat_bulky           | Jumper;FullHelmet;Neck
+Jacket_PaddedDOWN                             | base:jacket_bulky              | Jacket
+Jacket_Padded_HuntingCamo                     | base:jackethat_bulky           | Jumper;Neck;FullHelmet
+Jacket_Padded_HuntingCamoDOWN                 | base:jacket_bulky              | Jacket
+Jacket_Police                                 | base:jacket                    | Jacket
+Jacket_Sheriff                                | base:jacket                    | Jacket
+Jacket_Ranger                                 | base:jacket                    | Jacket
+Jacket_WhiteTINT                              | base:jacket                    | Jacket
+Jumper_DiamondPatternTINT                     | base:sweater                   | Jacket
+Jumper_PoloNeck                               | base:sweater                   | Jumper;Neck
+Jumper_RoundNeck                              | base:sweater                   | Jumper
+Jumper_TankTopDiamondTINT                     | base:sweater                   | JumperNoSleeves
+Jumper_TankTopTINT                            | base:sweater                   | JumperNoSleeves
+Jumper_VNeck                                  | base:sweater                   | Jumper
+HoodieDOWN_WhiteTINT                          | base:sweater                   | Jumper
+HoodieUP_WhiteTINT                            | base:sweaterhat                | Jumper;Neck;FullHelmet
+PonchoGreen                                   | base:jackethat                 | Shirt;Neck;FullHelmet;ShortsShort
+PonchoGreenDOWN                               | base:jacket_down               | Shirt;ShortsShort
+PonchoYellow                                  | base:jackethat                 | Shirt;Neck;FullHelmet;ShortsShort
+PonchoYellowDOWN                              | base:jacket_down               | Shirt;ShortsShort
+Jacket_NavyBlue                               | base:jacket                    | Jacket
+Jacket_LeatherWildRacoons                     | base:jacket                    | Jacket
+Jacket_LeatherIronRodent                      | base:jacket                    | Jacket
+Jacket_LeatherBarrelDogs                      | base:jacket                    | Jacket
+Jacket_Shellsuit_Black                        | base:jacket_bulky              | Jumper
+Jacket_Shellsuit_Blue                         | base:jacket_bulky              | Jumper
+Jacket_Shellsuit_Green                        | base:jacket_bulky              | Jumper
+Jacket_Shellsuit_Pink                         | base:jacket_bulky              | Jumper
+Jacket_Shellsuit_Teal                         | base:jacket_bulky              | Jumper
+Jacket_Shellsuit_TINT                         | base:jacket_bulky              | Jumper
+Jacket_Leather                                | base:jacket                    | Jacket
+Jacket_LeatherBlack                           | base:jacket                    | Jacket
+Jacket_LeatherBrown                           | base:jacket                    | Jacket
+Jacket_Leather_Punk                           | base:jacket                    | Jacket
+Jacket_HuntingCamo                            | base:jacket                    | Jacket
+Hoodie_HuntingCamo_DOWN                       | base:sweater                   | Jumper
+Hoodie_HuntingCamo_UP                         | base:sweaterhat                | Jumper;Neck;FullHelmet
+Jacket_Hide                                   | base:jacket                    | Jacket
+JacketLong_Hide                               | base:jacketsuit                | LongJacket
+Hoodie_Hide_DOWN                              | base:sweater                   | Jumper
+Hoodie_Hide_UP                                | base:sweaterhat                | Jumper;Neck;FullHelmet
+PonchoGarbageBag                              | base:jackethat                 | Shirt;Neck;FullHelmet;ShortsShort
+PonchoGarbageBagDOWN                          | base:jacket_down               | Shirt;ShortsShort
+PonchoTarp                                    | base:jackethat                 | Shirt;Neck;FullHelmet;ShortsShort
+PonchoTarpDOWN                                | base:jacket_down               | Shirt;ShortsShort
+LongCoat_Hide                                 | base:bathrobe                  | Trousers;Jumper
+JacketLong_CowHide                            | base:jacketsuit                | LongJacket
+JacketLong_AngusHide                          | base:jacketsuit                | LongJacket
+JacketLong_AngusCalfHide                      | base:jacketsuit                | LongJacket
+JacketLong_HolsteinHide                       | base:jacketsuit                | LongJacket
+JacketLong_HolsteinCalfHide                   | base:jacketsuit                | LongJacket
+JacketLong_SimmentalHide                      | base:jacketsuit                | LongJacket
+JacketLong_SimmentalCalfHide                  | base:jacketsuit                | LongJacket
+Jacket_CowHide                                | base:jacket                    | Jacket
+Jacket_AngusHide                              | base:jacket                    | Jacket
+Jacket_AngusCalfHide                          | base:jacket                    | Jacket
+Jacket_DeerHide                               | base:jacket                    | Jacket
+Jacket_HolsteinHide                           | base:jacket                    | Jacket
+Jacket_HolsteinCalfHide                       | base:jacket                    | Jacket
+Jacket_SimmentalHide                          | base:jacket                    | Jacket
+Jacket_SimmentalCalfHide                      | base:jacket                    | Jacket
+Jacket_SheepSkin                              | base:jacket                    | Jacket
+JacketLong_SheepSkin                          | base:jacketsuit                | LongJacket
+Locket                                        | base:necklace                  | 
+Necklace_DogTag                               | base:necklace                  | 
+Necklace_DogTag_Female                        | base:necklace                  | 
+Necklace_DogTag_Male                          | base:necklace                  | 
+Necklace_Gold                                 | base:necklace                  | 
+Necklace_GoldRuby                             | base:necklace                  | 
+Necklace_GoldDiamond                          | base:necklace                  | 
+Necklace_Silver                               | base:necklace                  | 
+Necklace_SilverSapphire                       | base:necklace                  | 
+Necklace_SilverCrucifix                       | base:necklace                  | 
+Necklace_SilverDiamond                        | base:necklace                  | 
+Necklace_Crucifix                             | base:necklace                  | 
+Necklace_YingYang                             | base:necklace                  | 
+Necklace_Pearl                                | base:necklace                  | 
+NecklaceLong_Gold                             | base:necklace_long             | 
+NecklaceLong_GoldDiamond                      | base:necklace_long             | 
+NecklaceLong_Silver                           | base:necklace_long             | 
+NecklaceLong_SilverEmerald                    | base:necklace_long             | 
+NecklaceLong_SilverSapphire                   | base:necklace_long             | 
+NecklaceLong_SilverDiamond                    | base:necklace_long             | 
+NecklaceLong_Amber                            | base:necklace_long             | 
+Necklace_Choker                               | base:neck                      | 
+Necklace_Choker_Sapphire                      | base:neck                      | 
+Necklace_Choker_Amber                         | base:neck                      | 
+Necklace_Choker_Diamond                       | base:neck                      | 
+NoseRing_Gold                                 | base:nose                      | 
+NoseRing_Silver                               | base:nose                      | 
+NoseStud_Gold                                 | base:nose                      | 
+NoseStud_Silver                               | base:nose                      | 
+Earring_LoopLrg_Gold                          | base:ears                      | 
+Earring_LoopLrg_Silver                        | base:ears                      | 
+Earring_LoopMed_Silver                        | base:ears                      | 
+Earring_LoopMed_Gold                          | base:ears                      | 
+Earring_LoopSmall_Silver_Both                 | base:ears                      | 
+Earring_LoopSmall_Gold_Both                   | base:ears                      | 
+Earring_LoopSmall_Gold_Top                    | base:eartop                    | 
+Earring_LoopSmall_Silver_Top                  | base:eartop                    | 
+Earring_Stud_Gold                             | base:ears                      | 
+Earring_Stud_Silver                           | base:ears                      | 
+Earring_Stone_Sapphire                        | base:ears                      | 
+Earring_Stone_Emerald                         | base:ears                      | 
+Earring_Stone_Ruby                            | base:ears                      | 
+Earring_Pearl                                 | base:ears                      | 
+Earring_Dangly_Sapphire                       | base:ears                      | 
+Earring_Dangly_Emerald                        | base:ears                      | 
+Earring_Dangly_Ruby                           | base:ears                      | 
+Earring_Dangly_Diamond                        | base:ears                      | 
+Earring_Dangly_Pearl                          | base:ears                      | 
+Ring_Right_MiddleFinger_Gold                  | base:right_middlefinger        | 
+Ring_Left_MiddleFinger_Gold                   | base:left_middlefinger         | 
+Ring_Right_RingFinger_Gold                    | base:right_ringfinger          | 
+Ring_Left_RingFinger_Gold                     | base:left_ringfinger           | 
+Ring_Right_MiddleFinger_Silver                | base:right_middlefinger        | 
+Ring_Left_MiddleFinger_Silver                 | base:left_middlefinger         | 
+Ring_Right_RingFinger_Silver                  | base:right_ringfinger          | 
+Ring_Left_RingFinger_Silver                   | base:left_ringfinger           | 
+Ring_Right_MiddleFinger_SilverDiamond         | base:right_middlefinger        | 
+Ring_Left_MiddleFinger_SilverDiamond          | base:left_middlefinger         | 
+Ring_Right_RingFinger_SilverDiamond           | base:right_ringfinger          | 
+Ring_Left_RingFinger_SilverDiamond            | base:left_ringfinger           | 
+Ring_Right_MiddleFinger_GoldRuby              | base:right_middlefinger        | 
+Ring_Left_MiddleFinger_GoldRuby               | base:left_middlefinger         | 
+Ring_Right_RingFinger_GoldRuby                | base:right_ringfinger          | 
+Ring_Left_RingFinger_GoldRuby                 | base:left_ringfinger           | 
+Ring_Right_MiddleFinger_GoldDiamond           | base:right_middlefinger        | 
+Ring_Left_MiddleFinger_GoldDiamond            | base:left_middlefinger         | 
+Ring_Right_RingFinger_GoldDiamond             | base:right_ringfinger          | 
+Ring_Left_RingFinger_GoldDiamond              | base:left_ringfinger           | 
+Bracelet_BangleRightGold                      | base:rightwrist                | 
+Bracelet_BangleLeftGold                       | base:leftwrist                 | 
+Bracelet_ChainRightGold                       | base:rightwrist                | 
+Bracelet_ChainLeftGold                        | base:leftwrist                 | 
+Bracelet_BangleRightSilver                    | base:rightwrist                | 
+Bracelet_BangleLeftSilver                     | base:leftwrist                 | 
+Bracelet_ChainRightSilver                     | base:rightwrist                | 
+Bracelet_ChainLeftSilver                      | base:leftwrist                 | 
+Bracelet_RightFriendshipTINT                  | base:rightwrist                | 
+Bracelet_LeftFriendshipTINT                   | base:leftwrist                 | 
+BellyButton_DangleGold                        | base:bellybutton               | 
+BellyButton_DangleGoldRuby                    | base:bellybutton               | 
+BellyButton_DangleSilver                      | base:bellybutton               | 
+BellyButton_DangleSilverDiamond               | base:bellybutton               | 
+BellyButton_RingGold                          | base:bellybutton               | 
+BellyButton_RingGoldDiamond                   | base:bellybutton               | 
+BellyButton_RingGoldRuby                      | base:bellybutton               | 
+BellyButton_RingSilver                        | base:bellybutton               | 
+BellyButton_RingSilverAmethyst                | base:bellybutton               | 
+BellyButton_RingSilverDiamond                 | base:bellybutton               | 
+BellyButton_RingSilverRuby                    | base:bellybutton               | 
+BellyButton_StudGold                          | base:bellybutton               | 
+BellyButton_StudGoldDiamond                   | base:bellybutton               | 
+BellyButton_StudSilver                        | base:bellybutton               | 
+BellyButton_StudSilverDiamond                 | base:bellybutton               | 
+Medal_Gold                                    | base:necklace                  | 
+Medal_Silver                                  | base:necklace                  | 
+Medal_Bronze                                  | base:necklace                  | 
+Ring_Right_MiddleFinger_Signet                | base:right_middlefinger        | 
+Ring_Left_MiddleFinger_Signet                 | base:left_middlefinger         | 
+Ring_Right_RingFinger_Signet                  | base:right_ringfinger          | 
+Ring_Left_RingFinger_Signet                   | base:left_ringfinger           | 
+Hat_DeerHeadress                              | base:hat                       | Head
+Necklace_Teeth                                | base:necklace                  | 
+NecklaceLong_Teeth                            | base:necklace_long             | 
+Necklace_SkullMammal                          | base:necklace                  | 
+NecklaceLong_SkullMammal                      | base:necklace_long             | 
+Necklace_SkullMammal_Multi                    | base:necklace                  | 
+NecklaceLong_SkullMammal_Multi                | base:necklace_long             | 
+Necklace_SkullSmall                           | base:necklace                  | 
+NecklaceLong_SkullSmall                       | base:necklace_long             | 
+Necklace_SkullSmall_Multi                     | base:necklace                  | 
+NecklaceLong_SkullSmall_Multi                 | base:necklace_long             | 
+Necklace_BoarTusk                             | base:necklace                  | 
+Necklace_BoarTusk_Multi                       | base:necklace                  | 
+Earring_BirdSkull                             | base:ears                      | 
+Earring_BoarTusk                              | base:ears                      | 
+Hat_BalaclavaFace                             | base:mask                      | Head
+Hat_BalaclavaFull                             | base:mask                      | Head
+Hat_BandanaMask                               | base:mask                      | Head
+Hat_BandanaMask_Green                         | base:mask                      | Head
+Hat_BandanaMaskTINT                           | base:mask                      | Head
+Hat_BuildersRespirator                        | base:mask                      | Head
+Hat_BuildersRespirator_nofilter               | base:mask                      | Head
+Hat_DustMask                                  | base:mask                      | Head
+Hat_GasMask                                   | base:maskeyes                  | Head
+Hat_GasMask_nofilter                          | base:maskeyes                  | Head
+Hat_HalloweenMaskDevil                        | base:maskeyes                  | Head
+Hat_HalloweenMaskMonster                      | base:maskeyes                  | Head
+Hat_HalloweenMaskPumpkin                      | base:maskeyes                  | Head
+Hat_HalloweenMaskSkeleton                     | base:maskeyes                  | Head
+Hat_HalloweenMaskVampire                      | base:maskeyes                  | Head
+Hat_HalloweenMaskWitch                        | base:maskeyes                  | Head
+Hat_HockeyMask                                | base:maskeyes                  | Head
+Hat_NBCmask                                   | base:fullhat                   | Head
+Hat_NBCmask_nofilter                          | base:fullhat                   | Head
+Hat_ShemaghFace                               | base:hat                       | Neck;Head
+Hat_ShemaghFull                               | base:fullhat                   | Neck;Head
+ShemaghScarf                                  | base:scarf                     | Neck
+ShemaghScarfFace                              | base:mask                      | Neck;Head
+Hat_ShemaghFace_Green                         | base:hat                       | Neck;Head
+Hat_ShemaghFull_Green                         | base:fullhat                   | Neck;Head
+ShemaghScarf_Green                            | base:scarf                     | Neck
+ShemaghScarfFace_Green                        | base:mask                      | Neck;Head
+Hat_Spiffo                                    | base:fullhat                   | Head
+Hat_SurgicalMask                              | base:mask                      | Head
+WeldingMask                                   | base:maskfull                  | Head
+Hat_ImprovisedGasMask                         | base:maskeyes                  | Head
+Hat_ImprovisedGasMask_nofilter                | base:maskeyes                  | Head
+Hat_ShemaghFull_Burlap                        | base:fullhat                   | Neck;Head
+Hat_ShemaghFace_Burlap                        | base:fullhat                   | Neck;Head
+Hat_ShemaghFull_Cotton                        | base:fullhat                   | Neck;Head
+Hat_ShemaghFace_Cotton                        | base:fullhat                   | Neck;Head
+Hat_HeadSack_Burlap                           | base:fullhat                   | Head
+Hat_HeadSack_Cotton                           | base:fullhat                   | Head
+Hat_HeadSack_Garbage                          | base:fullhat                   | Head
+Hat_HeadSack_Hide                             | base:fullhat                   | Head
+Hat_HeadSack_Tarp                             | base:fullhat                   | Head
+Hat_HockeyMask_Hide                           | base:maskeyes                  | Head
+Apron_Black                                   | base:torsoextra                | Apron
+Apron_BBQ                                     | base:torsoextra                | Apron
+Apron_IceCream                                | base:torsoextra                | Apron
+Apron_Jay                                     | base:torsoextra                | Apron
+Apron_PileOCrepe                              | base:torsoextra                | Apron
+Apron_PizzaWhirled                            | base:torsoextra                | Apron
+Apron_Spiffos                                 | base:torsoextra                | Apron
+Apron_White                                   | base:torsoextra                | Apron
+Apron_WhiteTEXTURE                            | base:torsoextra                | Apron
+Tie_BowTieFull                                | base:neck                      | 
+Tie_BowTieWorn                                | base:neck_texture              | 
+Tie_Full                                      | base:neck                      | 
+Tie_Full_Spiffo                               | base:neck                      | 
+Tie_Worn                                      | base:neck_texture              | 
+Tie_Worn_Spiffo                               | base:neck_texture              | 
+Scarf_White                                   | base:scarf                     | Neck
+Scarf_StripeBlackWhite                        | base:scarf                     | Neck
+Scarf_StripeBlueWhite                         | base:scarf                     | Neck
+Scarf_StripeRedWhite                          | base:scarf                     | Neck
+Bikini_TINT                                   | base:underwear                 | 
+Bikini_Pattern01                              | base:underwear                 | 
+SwimTrunks_Blue                               | base:underwear                 | 
+SwimTrunks_Green                              | base:underwear                 | 
+SwimTrunks_Red                                | base:underwear                 | 
+SwimTrunks_Yellow                             | base:underwear                 | 
+Swimsuit_TINT                                 | base:underwear                 | 
+MakeUp_CamoFullFace1                          | base:makeup_fullface           | 
+MakeUp_CamoFullFace2                          | base:makeup_fullface           | 
+MakeUp_BraveHeart                             | base:makeup_fullface           | 
+MakeUp_ClownFace1                             | base:makeup_fullface           | 
+MakeUp_ClownFace2                             | base:makeup_fullface           | 
+MakeUp_SkullFace1                             | base:makeup_fullface           | 
+MakeUp_SkullFace2                             | base:makeup_fullface           | 
+MakeUp_Crow                                   | base:makeup_eyes               | 
+MakeUp_RedStripes1                            | base:makeup_eyes               | 
+MakeUp_RedStripes2                            | base:makeup_eyes               | 
+MakeUp_CamoEyes1                              | base:makeup_eyes               | 
+MakeUp_CamoEyes2                              | base:makeup_eyes               | 
+MakeUp_CamoStripes                            | base:makeup_eyes               | 
+MakeUp_Football                               | base:makeup_eyes               | 
+MakeUp_EyesShadowWhite                        | base:makeup_eyesshadow         | 
+MakeUp_EyesShadowLightBlue                    | base:makeup_eyesshadow         | 
+MakeUp_EyesShadowBlue                         | base:makeup_eyesshadow         | 
+MakeUp_EyesShadowRed                          | base:makeup_eyesshadow         | 
+MakeUp_EyesShadowPink                         | base:makeup_eyesshadow         | 
+MakeUp_EyesShadowGreen                        | base:makeup_eyesshadow         | 
+MakeUp_EyesShadowYellow                       | base:makeup_eyesshadow         | 
+MakeUp_LipsRed                                | base:makeup_lips               | 
+MakeUp_LipsLightBlue                          | base:makeup_lips               | 
+MakeUp_LipsBlue                               | base:makeup_lips               | 
+MakeUp_LipsBlack                              | base:makeup_lips               | 
+MakeUp_LipsGreen                              | base:makeup_lips               | 
+MakeUp_LipsPink                               | base:makeup_lips               | 
+Belt2                                         | base:belt                      | 
+RopeBelt                                      | base:belt                      | 
+BunnySuitBlack                                | base:underwear                 | 
+BunnySuitPink                                 | base:underwear                 | 
+SCBA                                          | base:scba                      | Head
+SCBA_notank                                   | base:scbanotank                | Head
+Apron_Garbage                                 | base:torsoextra                | Apron
+Apron_Hide                                    | base:torsoextra                | Apron
+Apron_Leather                                 | base:torsoextra                | Apron
+Apron_Tarp                                    | base:torsoextra                | Apron
+LongJohns_Bottoms                             | base:legs1                     | Trousers
+Shorts_CamoGreenLong                          | base:shortpants                | Trousers
+Shorts_CamoUrbanLong                          | base:shortpants                | Trousers
+Shorts_OliveDrabLong                          | base:shortpants                | Trousers
+Shorts_CamoDesertNewLong                      | base:shortpants                | Trousers
+Shorts_CamoMiliusLong                         | base:shortpants                | Trousers
+Shorts_CamoTigerStripeLong                    | base:shortpants                | Trousers
+Shorts_LongDenim                              | base:shortpants                | Trousers
+Shorts_LongDenim_Punk                         | base:shortpants                | Trousers
+Shorts_LongSport                              | base:shortpants                | Trousers
+Shorts_LongSport_Red                          | base:shortpants                | Trousers
+Shorts_BoxingRed                              | base:shortsshort               | ShortsShort
+Shorts_BoxingBlue                             | base:shortsshort               | ShortsShort
+Shorts_ShortDenim                             | base:shortsshort               | ShortsShort
+Shorts_ShortFormal                            | base:shortsshort               | ShortsShort
+Shorts_ShortSport                             | base:shortsshort               | ShortsShort
+Skirt_Knees                                   | base:skirt                     | ShortsShort
+Skirt_Mini                                    | base:skirt                     | ShortsShort
+Skirt_Long                                    | base:longskirt                 | Trousers
+Skirt_Normal                                  | base:longskirt                 | Trousers
+Skirt_Short                                   | base:skirt                     | ShortsShort
+Ghillie_Trousers                              | base:pants                     | Trousers
+Trousers                                      | base:pants                     | Trousers
+TrousersMesh_DenimLight                       | base:pants_skinny              | Trousers
+TrousersMesh_Leather                          | base:pants_skinny              | Trousers
+Trousers_LeatherBlack                         | base:pants                     | Trousers
+Trousers_CamoDesert                           | base:pants                     | Trousers
+Trousers_CamoDesertNew                        | base:pants                     | Trousers
+Trousers_CamoGreen                            | base:pants                     | Trousers
+Trousers_CamoUrban                            | base:pants                     | Trousers
+Trousers_OliveDrab                            | base:pants                     | Trousers
+Trousers_CamoMilius                           | base:pants                     | Trousers
+Trousers_CamoTigerStripe                      | base:pants                     | Trousers
+Trousers_Chef                                 | base:pants                     | Trousers
+Trousers_DefaultTEXTURE                       | base:pants_skinny              | Trousers
+Trousers_DefaultTEXTURE_HUE                   | base:pants_skinny              | Trousers
+Trousers_DefaultTEXTURE_TINT                  | base:pants_skinny              | Trousers
+Trousers_Denim                                | base:pants                     | Trousers
+Trousers_Denim_Punk                           | base:pants                     | Trousers
+Trousers_Fireman                              | base:pants                     | Trousers
+Trousers_JeanBaggy                            | base:pants                     | Trousers
+Trousers_JeanBaggy_Punk                       | base:pants                     | Trousers
+Trousers_Padded                               | base:pants                     | Trousers
+Trousers_Padded_HuntingCamo                   | base:pants                     | Trousers
+Trousers_Police                               | base:pants                     | Trousers
+Trousers_Sheriff                              | base:pants                     | Trousers
+Trousers_PoliceGrey                           | base:pants                     | Trousers
+Trousers_PrisonGuard                          | base:pants                     | Trousers
+Trousers_Ranger                               | base:pants                     | Trousers
+Trousers_Santa                                | base:pants_skinny              | Trousers
+Trousers_SantaGreen                           | base:pants_skinny              | Trousers
+Trousers_Scrubs                               | base:pants                     | Trousers
+Trousers_Suit                                 | base:pants                     | Trousers
+Trousers_SuitTEXTURE                          | base:pants_skinny              | Trousers
+Trousers_SuitWhite                            | base:pants                     | Trousers
+Trousers_SuitWhite_White                      | base:pants                     | Trousers
+Trousers_WhiteTEXTURE                         | base:pants_skinny              | Trousers
+Trousers_WhiteTINT                            | base:pants                     | Trousers
+Dungarees                                     | base:pantsextra                | Trousers;ShirtNoSleeves
+Dungarees_HuntingCamo                         | base:pantsextra                | Trousers;ShirtNoSleeves
+Trousers_ArmyService                          | base:pants                     | Trousers
+Trousers_Black                                | base:pants                     | Trousers
+Trousers_NavyBlue                             | base:pants                     | Trousers
+Trousers_Shellsuit_Black                      | base:pants                     | Trousers
+Trousers_Shellsuit_Blue                       | base:pants                     | Trousers
+Trousers_Shellsuit_Green                      | base:pants                     | Trousers
+Trousers_Shellsuit_Pink                       | base:pants                     | Trousers
+Trousers_Shellsuit_Teal                       | base:pants                     | Trousers
+Trousers_Shellsuit_TINT                       | base:pants                     | Trousers
+Trousers_Sport                                | base:pants                     | Trousers
+Shorts_FootballPants                          | base:shortpants                | Trousers
+Shorts_FootballPants_Black                    | base:shortpants                | Trousers
+Shorts_FootballPants_Gold                     | base:shortpants                | Trousers
+Shorts_FootballPants_White                    | base:shortpants                | Trousers
+Shorts_HockeyPants                            | base:shortsshort               | Trousers
+Shorts_HockeyPants_Black                      | base:shortsshort               | Trousers
+Shorts_HockeyPants_Red                        | base:shortsshort               | Trousers
+Shorts_HockeyPants_UniBlue                    | base:shortsshort               | Trousers
+Shorts_HockeyPants_White                      | base:shortsshort               | Trousers
+Trousers_HuntingCamo                          | base:pants                     | Trousers
+Trousers_Crafted_Burlap                       | base:pants                     | Trousers
+Trousers_Crafted_Cotton                       | base:pants                     | Trousers
+Trousers_Crafted_Denim                        | base:pants                     | Trousers
+Trousers_Crafted_DenimLight                   | base:pants                     | Trousers
+Trousers_Crafted_DenimBlack                   | base:pants                     | Trousers
+Trousers_Crafted_DenimRandom                  | base:pants                     | Trousers
+LongJohns_Bottoms_Crafted_Burlap              | base:legs1                     | Trousers
+LongJohns_Bottoms_Crafted_Cotton              | base:legs1                     | Trousers
+Skirt_Knees_Crafted_Burlap                    | base:skirt                     | ShortsShort
+Skirt_Knees_Crafted_Cotton                    | base:skirt                     | ShortsShort
+Skirt_Knees_Crafted_Denim                     | base:skirt                     | ShortsShort
+Skirt_Knees_Crafted_DenimBlack                | base:skirt                     | ShortsShort
+Skirt_Knees_Crafted_DenimLight                | base:skirt                     | ShortsShort
+Skirt_Long_Crafted_Burlap                     | base:longskirt                 | Trousers
+Skirt_Long_Crafted_Cotton                     | base:longskirt                 | Trousers
+Skirt_Long_Crafted_Denim                      | base:longskirt                 | Trousers
+Skirt_Long_Crafted_DenimBlack                 | base:longskirt                 | Trousers
+Skirt_Long_Crafted_DenimLight                 | base:longskirt                 | Trousers
+Trousers_DeerHide                             | base:pants                     | Trousers
+Trousers_FaunHide                             | base:pants                     | Trousers
+Trousers_Hide                                 | base:pants                     | Trousers
+Trousers_LeatherCrafted                       | base:pants                     | Trousers
+Trousers_SheepSkin                            | base:pants                     | Trousers
+Shoulderpads_Football                         | base:sportshoulderpad          | UpperBody
+Shoulderpads_FootballOnTop                    | base:sportshoulderpadontop     | UpperBody
+Shoulderpad_Football_L                        | base:shoulderpadleft           | UpperBody
+Shoulderpad_Football_R                        | base:shoulderpadright          | UpperBody
+Shoulderpads_IceHockey                        | base:sportshoulderpad          | UpperBody;UpperArms
+Shoulderpads_IceHockeyOnTop                   | base:sportshoulderpadontop     | UpperBody;UpperArms
+Vest_CatcherVest                              | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_CatcherVest_Red                          | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_CatcherVest_Blue                         | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_CatcherVest_Green                        | base:torsoextravestbullet      | ShirtNoSleeves
+IceHockeyNeckGuard                            | base:gorget                    | Neck
+AthleticCup                                   | base:underwearbottom           | Groin
+Shoulderpads_FootballOnTop_Spiked             | base:sportshoulderpadontop     | UpperBody
+Shoulderpad_Football_Spiked_L                 | base:shoulderpadleft           | UpperBody
+Shoulderpad_Football_Spiked_R                 | base:shoulderpadright          | UpperBody
+Cuirass_Bone                                  | base:cuirass                   | ShirtNoSleeves
+GreaveBone_Right                              | base:calf_right                | LowerLeg_R
+GreaveBone_Left                               | base:calf_left                 | LowerLeg_L
+VambraceBone_Right                            | base:forearm_right             | ForeArm_R
+VambraceBone_Left                             | base:forearm_left              | ForeArm_L
+Shoulderpad_Bone_L                            | base:shoulderpadleft           | UpperArm_L
+Shoulderpad_Bone_R                            | base:shoulderpadright          | UpperArm_R
+ThighBone_R                                   | base:thigh_right               | UpperLeg_R
+ThighBone_L                                   | base:thigh_left                | UpperLeg_L
+Gloves_BoneGloves                             | base:hands                     | Hands
+Necklace_Choker_Bone                          | base:gorget                    | Neck
+Hat_BoneMask                                  | base:maskeyes                  | Head
+Cuirass_BasicBone                             | base:necklace_long             | UpperBody
+GreaveBodyArmour_Right                        | base:calf_right                | LowerLeg_R
+GreaveBodyArmour_Left                         | base:calf_left                 | LowerLeg_L
+GreaveBodyArmour_Right_Police                 | base:calf_right                | LowerLeg_R
+GreaveBodyArmour_Left_Police                  | base:calf_left                 | LowerLeg_L
+GreaveBodyArmour_Right_Army                   | base:calf_right                | LowerLeg_R
+GreaveBodyArmour_Left_Army                    | base:calf_left                 | LowerLeg_L
+GreaveBodyArmour_Right_Civ                    | base:calf_right                | LowerLeg_R
+GreaveBodyArmour_Left_Civ                     | base:calf_left                 | LowerLeg_L
+GreaveBodyArmour_Right_SWAT                   | base:calf_right                | LowerLeg_R
+GreaveBodyArmour_Left_SWAT                    | base:calf_left                 | LowerLeg_L
+ThighBodyArmour_R                             | base:thigh_right               | UpperLeg_R
+ThighBodyArmour_L                             | base:thigh_left                | UpperLeg_L
+ThighBodyArmour_R_Police                      | base:thigh_right               | UpperLeg_R
+ThighBodyArmour_L_Police                      | base:thigh_left                | UpperLeg_L
+ThighBodyArmour_R_Army                        | base:thigh_right               | UpperLeg_R
+ThighBodyArmour_L_Army                        | base:thigh_left                | UpperLeg_L
+ThighBodyArmour_R_Civ                         | base:thigh_right               | UpperLeg_R
+ThighBodyArmour_L_Civ                         | base:thigh_left                | UpperLeg_L
+ThighBodyArmour_R_SWAT                        | base:thigh_right               | UpperLeg_R
+ThighBodyArmour_L_SWAT                        | base:thigh_left                | UpperLeg_L
+Vambrace_BodyArmour_Right                     | base:forearm_right             | ForeArm_R
+Vambrace_BodyArmour_Left                      | base:forearm_left              | ForeArm_L
+Vambrace_BodyArmour_Right_Police              | base:forearm_right             | ForeArm_R
+Vambrace_BodyArmour_Left_Police               | base:forearm_left              | ForeArm_L
+Vambrace_BodyArmour_Right_Army                | base:forearm_right             | ForeArm_R
+Vambrace_BodyArmour_Left_Army                 | base:forearm_left              | ForeArm_L
+Vambrace_BodyArmour_Right_Civ                 | base:forearm_right             | ForeArm_R
+Vambrace_BodyArmour_Left_Civ                  | base:forearm_left              | ForeArm_L
+Vambrace_BodyArmour_Right_SWAT                | base:forearm_right             | ForeArm_R
+Vambrace_BodyArmour_Left_SWAT                 | base:forearm_left              | ForeArm_L
+Vambrace_BodyArmour_Right_Desert              | base:forearm_right             | ForeArm_R
+Vambrace_BodyArmour_Left_Desert               | base:forearm_left              | ForeArm_L
+ThighBodyArmour_R_Desert                      | base:thigh_right               | UpperLeg_R
+ThighBodyArmour_L_Desert                      | base:thigh_left                | UpperLeg_L
+GreaveBodyArmour_Right_Desert                 | base:calf_right                | LowerLeg_R
+GreaveBodyArmour_Left_Desert                  | base:calf_left                 | LowerLeg_L
+Gorget_Burlap                                 | base:gorget                    | Neck
+Gorget_Denim                                  | base:gorget                    | Neck
+Gorget_Rag                                    | base:gorget                    | Neck
+Vambrace_Leather_Right                        | base:forearm_right             | ForeArm_R
+Vambrace_Leather_Left                         | base:forearm_left              | ForeArm_L
+Vambrace_LeatherSpike_Right                   | base:forearm_right             | ForeArm_R
+Vambrace_LeatherSpike_Left                    | base:forearm_left              | ForeArm_L
+Gorget_Leather                                | base:gorget                    | Neck
+Gorget_LeatherWrap                            | base:gorget                    | Neck
+Codpiece_Leather                              | base:codpiece                  | Groin
+ShinKneeGuardSpike_R                          | base:calf_right                | LowerLeg_R
+ShinKneeGuardSpike_L                          | base:calf_left                 | LowerLeg_L
+ShinKneeGuardSpike_R_Baseball                 | base:calf_right                | LowerLeg_R
+ShinKneeGuardSpike_L_Baseball                 | base:calf_left                 | LowerLeg_L
+ShinKneeGuardSpike_R_IceHockey                | base:calf_right                | LowerLeg_R
+ShinKneeGuardSpike_L_IceHockey                | base:calf_left                 | LowerLeg_L
+ShinKneeGuardSpike_R_Protective               | base:calf_right                | LowerLeg_R
+ShinKneeGuardSpike_L_Protective               | base:calf_left                 | LowerLeg_L
+ElbowPad_Right_Leather                        | base:elbow_right               | ForeArm_R;UpperArm_R
+ElbowPad_Left_Leather                         | base:elbow_left                | ForeArm_L;UpperArm_L
+Kneepad_Right_Leather                         | base:knee_right                | LowerLeg_R;UpperLeg_R
+Kneepad_Left_Leather                          | base:knee_left                 | LowerLeg_L;UpperLeg_L
+Cuirass_Magazine                              | base:cuirass                   | ShirtNoSleeves
+GreaveMagazine_Right                          | base:calf_right                | LowerLeg_R
+GreaveMagazine_Left                           | base:calf_left                 | LowerLeg_L
+VambraceMagazine_Right                        | base:forearm_right             | ForeArm_R
+VambraceMagazine_Left                         | base:forearm_left              | ForeArm_L
+ThighMagazine_R                               | base:thigh_right               | UpperLeg_R
+ThighMagazine_L                               | base:thigh_left                | UpperLeg_L
+GreaveTire_Right                              | base:calf_right                | LowerLeg_R
+GreaveTire_Left                               | base:calf_left                 | LowerLeg_L
+ThighTire_R                                   | base:thigh_right               | UpperLeg_R
+ThighTire_L                                   | base:thigh_left                | UpperLeg_L
+VambraceTire_Right                            | base:forearm_right             | ForeArm_R
+VambraceTire_Left                             | base:forearm_left              | ForeArm_L
+Shoulderpad_Tire_L                            | base:shoulderpadleft           | UpperBody
+Shoulderpad_Tire_R                            | base:shoulderpadright          | UpperBody
+Cuirass_Tire                                  | base:cuirass                   | ShirtNoSleeves
+GreaveWood_Right                              | base:calf_right                | LowerLeg_R
+GreaveWood_Left                               | base:calf_left                 | LowerLeg_L
+ThighWood_R                                   | base:thigh_right               | UpperLeg_R
+ThighWood_L                                   | base:thigh_left                | UpperLeg_L
+Cuirass_Wood                                  | base:cuirass                   | ShirtNoSleeves
+Shoulderpad_Wood_L                            | base:shoulderpadleft           | UpperArm_L
+Shoulderpad_Wood_R                            | base:shoulderpadright          | UpperArm_R
+VambraceWood_Right                            | base:forearm_right             | ForeArm_R
+VambraceWood_Left                             | base:forearm_left              | ForeArm_L
+Hat_HockeyMask_Wood                           | base:maskeyes                  | Head
+Shinpad_L                                     | base:calf_left_texture         | LowerLeg_L
+Shinpad_R                                     | base:calf_right_texture        | LowerLeg_R
+Shinpad_L_Blue                                | base:calf_left_texture         | LowerLeg_L
+Shinpad_R_Blue                                | base:calf_right_texture        | LowerLeg_R
+Shinpad_L_White                               | base:calf_left_texture         | LowerLeg_L
+Shinpad_R_White                               | base:calf_right_texture        | LowerLeg_R
+Shinpad_L_Rigid                               | base:calf_left_texture         | LowerLeg_L
+Shinpad_R_Rigid                               | base:calf_right_texture        | LowerLeg_R
+ShinKneeGuard_L                               | base:calf_left                 | LowerLeg_L
+ShinKneeGuard_R                               | base:calf_right                | LowerLeg_R
+ShinKneeGuard_L_Baseball                      | base:calf_left                 | LowerLeg_L
+ShinKneeGuard_R_Baseball                      | base:calf_right                | LowerLeg_R
+ShinKneeGuard_L_IceHockey                     | base:calf_left                 | LowerLeg_L
+ShinKneeGuard_R_IceHockey                     | base:calf_right                | LowerLeg_R
+ShinKneeGuard_L_Protective                    | base:calf_left                 | LowerLeg_L
+ShinKneeGuard_R_Protective                    | base:calf_right                | LowerLeg_R
+ShinKneeGuard_L_TINT                          | base:calf_left                 | LowerLeg_L
+ShinKneeGuard_R_TINT                          | base:calf_right                | LowerLeg_R
+Shinpad_HockeyGoalie_L                        | base:calf_left                 | LowerLeg_L
+Shinpad_HockeyGoalie_R                        | base:calf_right                | LowerLeg_R
+Shinpad_HockeyGoalie_L_Blue                   | base:calf_left                 | LowerLeg_L
+Shinpad_HockeyGoalie_R_Blue                   | base:calf_right                | LowerLeg_R
+Shinpad_HockeyGoalie_L_Red                    | base:calf_left                 | LowerLeg_L
+Shinpad_HockeyGoalie_R_Red                    | base:calf_right                | LowerLeg_R
+Shinpad_HockeyGoalie_L_White                  | base:calf_left                 | LowerLeg_L
+Shinpad_HockeyGoalie_R_White                  | base:calf_right                | LowerLeg_R
+Kneepad_Right                                 | base:knee_right                | LowerLeg_R;UpperLeg_R
+Kneepad_Left                                  | base:knee_left                 | LowerLeg_L;UpperLeg_L
+Kneepad_Right_Workman                         | base:knee_right                | LowerLeg_R;UpperLeg_R
+Kneepad_Left_Workman                          | base:knee_left                 | LowerLeg_L;UpperLeg_L
+Kneepad_Right_Military                        | base:knee_right                | LowerLeg_R;UpperLeg_R
+Kneepad_Left_Military                         | base:knee_left                 | LowerLeg_L;UpperLeg_L
+Kneepad_Right_Sport                           | base:knee_right                | LowerLeg_R;UpperLeg_R
+Kneepad_Left_Sport                            | base:knee_left                 | LowerLeg_L;UpperLeg_L
+Kneepad_Right_Tactical                        | base:knee_right                | LowerLeg_R;UpperLeg_R
+Kneepad_Left_Tactical                         | base:knee_left                 | LowerLeg_L;UpperLeg_L
+Kneepad_Right_TINT                            | base:knee_right                | LowerLeg_R;UpperLeg_R
+Kneepad_Left_TINT                             | base:knee_left                 | LowerLeg_L;UpperLeg_L
+ElbowPad_Right                                | base:elbow_right               | ForeArm_R;UpperArm_R
+ElbowPad_Left                                 | base:elbow_left                | ForeArm_L;UpperArm_L
+ElbowPad_Right_Military                       | base:elbow_right               | ForeArm_R;UpperArm_R
+ElbowPad_Left_Military                        | base:elbow_left                | ForeArm_L;UpperArm_L
+ElbowPad_Right_Sport                          | base:elbow_right               | ForeArm_R;UpperArm_R
+ElbowPad_Left_Sport                           | base:elbow_left                | ForeArm_L;UpperArm_L
+ElbowPad_Right_Tactical                       | base:elbow_right               | ForeArm_R;UpperArm_R
+ElbowPad_Left_Tactical                        | base:elbow_left                | ForeArm_L;UpperArm_L
+ElbowPad_Right_TINT                           | base:elbow_right               | ForeArm_R;UpperArm_R
+ElbowPad_Left_TINT                            | base:elbow_left                | ForeArm_L;UpperArm_L
+ElbowPad_Right_Workman                        | base:elbow_right               | ForeArm_R;UpperArm_R
+ElbowPad_Left_Workman                         | base:elbow_left                | ForeArm_L;UpperArm_L
+Chainmail_SleeveFull_R                        | base:rightarm                  | ForeArm_R;UpperArm_R;Hand_R
+Chainmail_SleeveFull_L                        | base:leftarm                   | ForeArm_L;UpperArm_L;Hand_L
+ThighProtective_R                             | base:thigh_right               | UpperLeg_R
+ThighProtective_L                             | base:thigh_left                | UpperLeg_L
+Gaiter_Left                                   | base:gaiter_left               | LowerLeg_L
+Gaiter_Right                                  | base:gaiter_right              | LowerLeg_R
+Shirt_Baseball_KY                             | base:shortsleeveshirt          | Shirt
+Shirt_Baseball_Rangers                        | base:shortsleeveshirt          | UpperBody
+Shirt_Baseball_Z                              | base:shortsleeveshirt          | Shirt
+Shirt_CamoDesert                              | base:shirt                     | ShirtLongSleeves
+Shirt_CamoGreen                               | base:shirt                     | ShirtLongSleeves
+Shirt_CamoUrban                               | base:shirt                     | ShirtLongSleeves
+Shirt_OliveDrab                               | base:shirt                     | ShirtLongSleeves
+Shirt_CamoDesertNew                           | base:shirt                     | ShirtLongSleeves
+Shirt_CamoMilius                              | base:shirt                     | ShirtLongSleeves
+Shirt_CamoTigerStripe                         | base:shirt                     | ShirtLongSleeves
+Shirt_Denim                                   | base:shirt                     | ShirtLongSleeves
+Shirt_Jockey01                                | base:shirt                     | ShirtLongSleeves
+Shirt_Jockey02                                | base:shirt                     | ShirtLongSleeves
+Shirt_Jockey03                                | base:shirt                     | ShirtLongSleeves
+Shirt_Jockey04                                | base:shirt                     | ShirtLongSleeves
+Shirt_Jockey05                                | base:shirt                     | ShirtLongSleeves
+Shirt_Jockey06                                | base:shirt                     | ShirtLongSleeves
+Shirt_Lumberjack                              | base:shirt                     | ShirtLongSleeves
+Shirt_Lumberjack_Green                        | base:shirt                     | ShirtLongSleeves
+Shirt_Lumberjack_TINT                         | base:shirt                     | ShirtLongSleeves
+Shirt_OfficerWhite                            | base:shirt                     | ShirtLongSleeves
+Shirt_PoliceBlue                              | base:shirt                     | ShirtLongSleeves
+Shirt_Sheriff                                 | base:shirt                     | ShirtLongSleeves
+Shirt_PoliceGrey                              | base:shirt                     | ShirtLongSleeves
+Shirt_PrisonGuard                             | base:shirt                     | ShirtLongSleeves
+Shirt_Priest                                  | base:shirt                     | ShirtLongSleeves
+Shirt_Ranger                                  | base:shirt                     | ShirtLongSleeves
+Shirt_Scrubs                                  | base:shirt                     | ShirtLongSleeves
+Shirt_FormalTINT                              | base:shirt                     | ShirtLongSleeves
+Shirt_FormalWhite                             | base:shirt                     | ShirtLongSleeves
+Shirt_FormalWhite_ShortSleeve                 | base:shortsleeveshirt          | Shirt
+Shirt_FormalWhite_ShortSleeveTINT             | base:shortsleeveshirt          | Shirt
+Shirt_Workman                                 | base:shirt                     | ShirtLongSleeves
+Shirt_HawaiianRed                             | base:shortsleeveshirt          | Shirt
+Shirt_HawaiianTINT                            | base:shortsleeveshirt          | Shirt
+Tshirt_ArmyGreen                              | base:tshirt                    | Shirt
+Tshirt_CamoDesert                             | base:tshirt                    | Shirt
+Tshirt_CamoGreen                              | base:tshirt                    | Shirt
+Tshirt_CamoUrban                              | base:tshirt                    | Shirt
+Tshirt_CamoDesertNew                          | base:tshirt                    | Shirt
+Tshirt_OliveDrab                              | base:tshirt                    | Shirt
+Tshirt_CamoMilius                             | base:tshirt                    | Shirt
+Tshirt_CamoTigerStripe                        | base:tshirt                    | Shirt
+Tshirt_Fossoil                                | base:tshirt                    | Shirt
+Tshirt_Gas2Go                                 | base:tshirt                    | Shirt
+Tshirt_ThunderGas                             | base:tshirt                    | Shirt
+Tshirt_Rock                                   | base:tshirt                    | Shirt
+Tshirt_Rock2                                  | base:tshirt                    | Shirt
+Tshirt_BluesCountry                           | base:tshirt                    | Shirt
+Tshirt_Metal                                  | base:tshirt                    | Shirt
+Tshirt_EMD                                    | base:tshirt                    | Shirt
+Tshirt_Punk                                   | base:tshirt                    | Shirt
+Tshirt_HipHop                                 | base:tshirt                    | Shirt
+Tshirt_Indie                                  | base:tshirt                    | Shirt
+Tshirt_McCoys                                 | base:tshirt                    | Shirt
+Tshirt_PileOCrepe                             | base:tshirt                    | Shirt
+Tshirt_PizzaWhirled                           | base:tshirt                    | Shirt
+Tshirt_BusinessSpiffo                         | base:tshirt                    | Shirt
+Tshirt_ValleyStation                          | base:tshirt                    | Shirt
+Tshirt_DefaultDECAL                           | base:tshirt                    | Shirt
+Tshirt_DefaultDECAL_TINT                      | base:tshirt                    | Shirt
+Tshirt_DefaultTEXTURE                         | base:tshirt                    | Shirt
+Tshirt_DefaultTEXTURE_TINT                    | base:tshirt                    | Shirt
+Tshirt_PoliceBlue                             | base:tshirt                    | Shirt
+Tshirt_Sheriff                                | base:tshirt                    | Shirt
+Tshirt_PoliceGrey                             | base:tshirt                    | Shirt
+Tshirt_PoloStripedTINT                        | base:tshirt                    | Shirt
+Tshirt_PoloTINT                               | base:tshirt                    | Shirt
+Tshirt_Ranger                                 | base:tshirt                    | Shirt
+Tshirt_Scrubs                                 | base:tshirt                    | Shirt
+Tshirt_IndieStoneDECAL                        | base:tshirt                    | Shirt
+Tshirt_SpiffoDECAL                            | base:tshirt                    | Shirt
+Tshirt_Sport                                  | base:tshirt                    | Shirt
+Tshirt_SportDECAL                             | base:tshirt                    | Shirt
+Tshirt_WhiteLongSleeve                        | base:tshirt                    | ShirtLongSleeves
+Tshirt_WhiteLongSleeveTINT                    | base:tshirt                    | ShirtLongSleeves
+Tshirt_LongSleeve_SuperColor                  | base:tshirt                    | ShirtLongSleeves
+Tshirt_WhiteTINT                              | base:tshirt                    | Shirt
+Tshirt_SuperColor                             | base:tshirt                    | Shirt
+Tshirt_TieDye                                 | base:tshirt                    | Shirt
+Tshirt_Profession_FiremanBlue                 | base:tshirt                    | Shirt
+Tshirt_Profession_FiremanRed                  | base:tshirt                    | Shirt
+Tshirt_Profession_FiremanRed02                | base:tshirt                    | Shirt
+Tshirt_Profession_FiremanWhite                | base:tshirt                    | Shirt
+Tshirt_Profession_PoliceBlue                  | base:tshirt                    | Shirt
+Tshirt_Profession_PoliceWhite                 | base:tshirt                    | Shirt
+Tshirt_Profession_RangerBrown                 | base:tshirt                    | Shirt
+Tshirt_Profession_RangerGreen                 | base:tshirt                    | Shirt
+Tshirt_Profession_VeterenGreen                | base:tshirt                    | Shirt
+Tshirt_Profession_VeterenRed                  | base:tshirt                    | Shirt
+Shirt_CropTopTINT                             | base:tanktop                   | Shirt
+Shirt_CropTopNoArmTINT                        | base:tanktop                   | Shirt
+BoobTube                                      | base:underweartop              | Shirt
+BoobTubeSmall                                 | base:underweartop              | UpperBody
+Shirt_Bowling_Blue                            | base:shortsleeveshirt          | Shirt
+Shirt_Bowling_Brown                           | base:shortsleeveshirt          | Shirt
+Shirt_Bowling_Green                           | base:shortsleeveshirt          | Shirt
+Shirt_Bowling_LimeGreen                       | base:shortsleeveshirt          | Shirt
+Shirt_Bowling_Pink                            | base:shortsleeveshirt          | Shirt
+Shirt_Bowling_White                           | base:shortsleeveshirt          | Shirt
+Football_Jersey_White                         | base:jersey                    | Shirt
+Football_Jersey_Black                         | base:jersey                    | Shirt
+Football_Jersey_Blue                          | base:jersey                    | Shirt
+Ice_Hockey_Jersey_White                       | base:jersey                    | Shirt
+Ice_Hockey_Jersey_Black                       | base:jersey                    | Shirt
+Ice_Hockey_Jersey_BlueUni                     | base:jersey                    | Shirt
+Ice_Hockey_Jersey_Red                         | base:jersey                    | Shirt
+Tshirt_LongSleeve_HuntingCamo                 | base:tshirt                    | ShirtLongSleeves
+Tshirt_HuntingCamo                            | base:tshirt                    | Shirt
+Tshirt_Tuxedo                                 | base:tshirt                    | Shirt
+Shirt_Crafted_Burlap                          | base:shortsleeveshirt          | ShirtLongSleeves
+Shirt_Crafted_Cotton                          | base:shortsleeveshirt          | ShirtLongSleeves
+Shirt_Crafted_Denim                           | base:shortsleeveshirt          | ShirtLongSleeves
+Shirt_Crafted_DenimBlack                      | base:shortsleeveshirt          | ShirtLongSleeves
+Shirt_Crafted_DenimLight                      | base:shortsleeveshirt          | ShirtLongSleeves
+Shirt_Crafted_DenimRandom                     | base:shortsleeveshirt          | ShirtLongSleeves
+Shirt_NoSleeves_Crafted_Burlap                | base:shortsleeveshirt          | ShirtNoSleeves
+Shirt_NoSleeves_Crafted_Cotton                | base:shortsleeveshirt          | ShirtNoSleeves
+Shirt_NoSleeves_Crafted_Denim                 | base:shortsleeveshirt          | ShirtNoSleeves
+Shirt_NoSleeves_Crafted_DenimBlack            | base:shortsleeveshirt          | ShirtNoSleeves
+Shirt_NoSleeves_Crafted_DenimLight            | base:shortsleeveshirt          | ShirtNoSleeves
+Bandeau_Burlap                                | base:tshirt                    | UpperBody
+Bandeau_Denim                                 | base:tshirt                    | UpperBody
+Bandeau_FaunHide                              | base:tshirt                    | UpperBody
+Bandeau_Garbage                               | base:tshirt                    | UpperBody
+Bandeau_Hide                                  | base:tshirt                    | UpperBody
+Bandeau_Rag                                   | base:tshirt                    | UpperBody
+Bandeau_Tarp                                  | base:tshirt                    | UpperBody
+Socks_Ankle                                   | base:socks                     | Shoes
+Socks_Ankle_White                             | base:socks                     | Shoes
+Socks_Ankle_Black                             | base:socks                     | Shoes
+Socks_Long                                    | base:socks                     | Shoes;LowerLegs
+Socks_Long_White                              | base:socks                     | Shoes;LowerLegs
+Socks_Long_Black                              | base:socks                     | Shoes;LowerLegs
+Socks_Heavy                                   | base:socks                     | Shoes;LowerLegs
+Socks_LegWarmers                              | base:legs1                     | LowerLegs
+Shoes_ArmyBoots                               | base:shoes                     | Shoes
+Shoes_ArmyBootsDesert                         | base:shoes                     | Shoes
+Shoes_WorkBoots                               | base:shoes                     | Shoes
+Shoes_HikingBoots                             | base:shoes                     | Shoes
+Shoes_Black                                   | base:shoes                     | Shoes
+Shoes_BlackBoots                              | base:shoes                     | Shoes
+Shoes_BlueTrainers                            | base:shoes                     | Shoes
+Shoes_Brown                                   | base:shoes                     | Shoes
+Shoes_Random                                  | base:shoes                     | Shoes
+Shoes_RedTrainers                             | base:shoes                     | Shoes
+Shoes_RidingBoots                             | base:shoes                     | Shoes
+Shoes_Slippers                                | base:shoes                     | Shoes
+Shoes_TrainerTINT                             | base:shoes                     | Shoes
+Shoes_Wellies                                 | base:shoes                     | Shoes
+Shoes_FlipFlop                                | base:shoes                     | Shoes
+Shoes_Bowling                                 | base:shoes                     | Shoes
+Shoes_Fancy                                   | base:shoes                     | Shoes
+Shoes_Sandals                                 | base:shoes                     | Shoes
+Shoes_Strapped                                | base:shoes                     | Shoes
+Shoes_CowboyBoots                             | base:shoes                     | Shoes
+Shoes_CowboyBoots_Brown                       | base:shoes                     | Shoes
+Shoes_CowboyBoots_Black                       | base:shoes                     | Shoes
+Shoes_CowboyBoots_Fancy                       | base:shoes                     | Shoes
+Shoes_CowboyBoots_SnakeSkin                   | base:shoes                     | Shoes
+Shoes_BurlapWrap                              | base:shoes                     | Shoes;LowerLeg_L;LowerLeg_R
+Shoes_CrudeLeatherFootwear                    | base:shoes                     | Shoes
+Shoes_DenimWrap                               | base:shoes                     | Shoes;LowerLeg_L;LowerLeg_R
+Shoes_HideBoots                               | base:shoes                     | Shoes
+Shoes_LeatherWrap                             | base:shoes                     | Shoes;LowerLeg_L;LowerLeg_R
+Shoes_RagWrap                                 | base:shoes                     | Shoes;LowerLeg_L;LowerLeg_R
+Shoes_TarpWrap                                | base:shoes                     | Shoes;LowerLeg_L;LowerLeg_R
+Shoes_TireSandals                             | base:shoes                     | Shoes
+Shoes_Twine                                   | base:shoes                     | Shoes
+Boilersuit                                    | base:boilersuit                | Trousers;Jumper
+Boilersuit_BlueRed                            | base:boilersuit                | Trousers;Jumper
+Boilersuit_Flying                             | base:boilersuit                | Trousers;Jumper
+Boilersuit_Prisoner                           | base:boilersuit                | Trousers;Jumper
+Boilersuit_PrisonerKhaki                      | base:boilersuit                | Trousers;Jumper
+Boilersuit_SWAT                               | base:boilersuit                | Trousers;Jumper
+Boilersuit_Yellow                             | base:boilersuit                | Trousers;Jumper
+HazmatSuit                                    | base:fullsuithead              | Trousers;Jumper;Head;Neck;Hands;Shoes
+HospitalGown                                  | base:longdress                 | Trousers;Shirt
+LongCoat_Bathrobe                             | base:bathrobe                  | Trousers;Jumper
+LongJohns                                     | base:torso1legs1               | Trousers;ShirtLongSleeves
+SpiffoSuit                                    | base:fullsuit                  | Trousers;Jumper
+LongJohns_Crafted_Burlap                      | base:torso1legs1               | Trousers;ShirtLongSleeves
+LongJohns_Crafted_Cotton                      | base:torso1legs1               | Trousers;ShirtLongSleeves
+BunnyTail                                     | base:tail                      | 
+SpiffoTail                                    | base:tail                      | 
+Bra_Strapless_Black                           | base:underweartop              | 
+Bra_Strapless_RedSpots                        | base:underweartop              | 
+Bra_Strapless_White                           | base:underweartop              | 
+Bra_Straps_Black                              | base:underweartop              | 
+Bra_Straps_White                              | base:underweartop              | 
+Underpants_Black                              | base:underwearbottom           | 
+Underpants_RedSpots                           | base:underwearbottom           | 
+Underpants_White                              | base:underwearbottom           | 
+Boxers_Hearts                                 | base:underwearbottom           | 
+Boxers_Silk_Black                             | base:underwearbottom           | 
+Boxers_Silk_Red                               | base:underwearbottom           | 
+Boxers_RedStripes                             | base:underwearbottom           | 
+Boxers_White                                  | base:underwearbottom           | 
+Briefs_White                                  | base:underwearbottom           | 
+Briefs_AnimalPrints                           | base:underwearbottom           | 
+Briefs_SmallTrunks_Black                      | base:underwearbottom           | 
+Briefs_SmallTrunks_Blue                       | base:underwearbottom           | 
+Briefs_SmallTrunks_Red                        | base:underwearbottom           | 
+Briefs_SmallTrunks_WhiteTINT                  | base:underwearbottom           | 
+StockingsBlack                                | base:underwearextra1           | 
+StockingsBlackTrans                           | base:underwearextra1           | 
+StockingsBlackSemiTrans                       | base:underwearextra1           | 
+TightsBlack                                   | base:underwearextra1           | 
+TightsBlackTrans                              | base:underwearextra1           | 
+TightsBlackSemiTrans                          | base:underwearextra1           | 
+TightsFishnets                                | base:underwearextra1           | 
+StockingsWhite                                | base:underwearextra1           | 
+Garter                                        | base:underwearextra2           | 
+Corset_Black                                  | base:underweartop              | 
+Corset_Red                                    | base:underweartop              | 
+Corset                                        | base:underweartop              | 
+Corset_Medical                                | base:underweartop              | 
+Bra_Strapless_AnimalPrint                     | base:underweartop              | 
+Bra_Straps_AnimalPrint                        | base:underweartop              | 
+Bra_Straps_FrillyBlack                        | base:underweartop              | 
+Bra_Strapless_FrillyBlack                     | base:underweartop              | 
+Bra_Straps_FrillyPink                         | base:underweartop              | 
+Bra_Strapless_FrillyPink                      | base:underweartop              | 
+Bra_Straps_FrillyRed                          | base:underweartop              | 
+Bra_Strapless_FrillyRed                       | base:underweartop              | 
+Underpants_AnimalPrint                        | base:underwearbottom           | 
+FrillyUnderpants_Black                        | base:underwearbottom           | 
+FrillyUnderpants_Pink                         | base:underwearbottom           | 
+FrillyUnderpants_Red                          | base:underwearbottom           | 
+Briefs_Burlap                                 | base:underwearbottom           | Groin
+Briefs_Denim                                  | base:underwearbottom           | Groin
+Briefs_Garbage                                | base:underwearbottom           | Groin
+Briefs_Hide                                   | base:underwearbottom           | Groin
+Briefs_Rag                                    | base:underwearbottom           | Groin
+Briefs_Tarp                                   | base:underwearbottom           | Groin
+Bra_Strapless_Hide                            | base:underweartop              | 
+Bra_Straps_Hide                               | base:underweartop              | 
+Underpants_Hide                               | base:underwearbottom           | Groin
+Vest_BulletArmy                               | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_BulletCivilian                           | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_BulletPolice                             | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_BulletSWAT                               | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_DefaultTEXTURE                           | base:tanktop                   | ShirtNoSleeves
+Vest_DefaultTEXTURE_TINT                      | base:tanktop                   | ShirtNoSleeves
+Vest_Foreman                                  | base:torsoextravest            | ShirtNoSleeves
+Vest_HighViz                                  | base:torsoextravest            | ShirtNoSleeves
+Vest_Hunting_Grey                             | base:torsoextravest            | ShirtNoSleeves
+Vest_Trucker                                  | base:torsoextravest            | ShirtNoSleeves
+Vest_Hunting_Orange                           | base:torsoextravest            | ShirtNoSleeves
+Vest_Hunting_Camo                             | base:torsoextravest            | ShirtNoSleeves
+Vest_Hunting_CamoGreen                        | base:torsoextravest            | ShirtNoSleeves
+Vest_Waistcoat_GigaMart                       | base:vesttexture               | ShirtNoSleeves
+Vest_Waistcoat                                | base:vesttexture               | ShirtNoSleeves
+Vest_WaistcoatTINT                            | base:vesttexture               | ShirtNoSleeves
+Vest_Hunting_Khaki                            | base:torsoextravest            | ShirtNoSleeves
+Vest_Leather                                  | base:torsoextravest            | ShirtNoSleeves
+Vest_Leather_Biker                            | base:torsoextravest            | ShirtNoSleeves
+Vest_Leather_Veteran                          | base:torsoextravest            | ShirtNoSleeves
+Vest_Leather_BarrelDogs                       | base:torsoextravest            | ShirtNoSleeves
+Vest_Leather_IronRodents                      | base:torsoextravest            | ShirtNoSleeves
+Vest_Leather_WildRaccoons                     | base:torsoextravest            | ShirtNoSleeves
+Vest_BulletDesert                             | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_BulletDesertNew                          | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_BulletOliveDrab                          | base:torsoextravestbullet      | ShirtNoSleeves
+Vest_Garbage                                  | base:tanktop                   | ShirtNoSleeves
+Vest_DeerHide                                 | base:tanktop                   | ShirtNoSleeves
+Vest_FawnHide                                 | base:tanktop                   | ShirtNoSleeves
+Vest_Hide                                     | base:tanktop                   | ShirtNoSleeves
+Vest_AngusHide                                | base:tanktop                   | ShirtNoSleeves
+Vest_HolsteinHide                             | base:tanktop                   | ShirtNoSleeves
+Vest_SimmentalHide                            | base:tanktop                   | ShirtNoSleeves
+Vest_Tarp                                     | base:tanktop                   | ShirtNoSleeves
+Vest_SheepSkin                                | base:jacket_bulky              | ShirtNoSleeves
+ZedDmg_BACK_Slash                             | base:zeddmg                    | 
+ZedDmg_BACK_Spine                             | base:zeddmg                    | 
+ZedDmg_BellySlashLeft                         | base:zeddmg                    | 
+ZedDmg_BellySlashRight                        | base:zeddmg                    | 
+ZedDmg_BELLY_Bullet                           | base:zeddmg                    | 
+ZedDmg_BELLY_Shotgun                          | base:zeddmg                    | 
+ZedDmg_BELLY_Skin                             | base:zeddmg                    | 
+ZedDmg_BELLY_Slash                            | base:zeddmg                    | 
+ZedDmg_BulletBelly01                          | base:zeddmg                    | 
+ZedDmg_BulletBelly02                          | base:zeddmg                    | 
+ZedDmg_BulletBelly03                          | base:zeddmg                    | 
+ZedDmg_BulletChest01                          | base:zeddmg                    | 
+ZedDmg_BulletChest02                          | base:zeddmg                    | 
+ZedDmg_BulletChest03                          | base:zeddmg                    | 
+ZedDmg_BulletChest04                          | base:zeddmg                    | 
+ZedDmg_BulletFace01                           | base:zeddmg                    | 
+ZedDmg_BulletFace02                           | base:zeddmg                    | 
+ZedDmg_BulletForehead01                       | base:zeddmg                    | 
+ZedDmg_BulletForehead02                       | base:zeddmg                    | 
+ZedDmg_BulletForehead03                       | base:zeddmg                    | 
+ZedDmg_BulletLeftTemple                       | base:zeddmg                    | 
+ZedDmg_BulletRightTemple                      | base:zeddmg                    | 
+ZedDmg_ChestSlashLeft                         | base:zeddmg                    | 
+ZedDmg_CHEST_Bullet                           | base:zeddmg                    | 
+ZedDmg_CHEST_Shotgun                          | base:zeddmg                    | 
+ZedDmg_CHEST_Slash                            | base:zeddmg                    | 
+ZedDmg_FaceSkullLeft                          | base:zeddmg                    | 
+ZedDmg_FaceSkullRight                         | base:zeddmg                    | 
+ZedDmg_HeadSlashCentre01                      | base:zeddmg                    | 
+ZedDmg_HeadSlashCentre02                      | base:zeddmg                    | 
+ZedDmg_HeadSlashCentre03                      | base:zeddmg                    | 
+ZedDmg_HeadSlashLeft01                        | base:zeddmg                    | 
+ZedDmg_HeadSlashLeft02                        | base:zeddmg                    | 
+ZedDmg_HeadSlashLeft03                        | base:zeddmg                    | 
+ZedDmg_HeadSlashLeftBack01                    | base:zeddmg                    | 
+ZedDmg_HeadSlashLeftBack02                    | base:zeddmg                    | 
+ZedDmg_HeadSlashRight01                       | base:zeddmg                    | 
+ZedDmg_HeadSlashRight02                       | base:zeddmg                    | 
+ZedDmg_HeadSlashRight03                       | base:zeddmg                    | 
+ZedDmg_HeadSlashRightBack01                   | base:zeddmg                    | 
+ZedDmg_HeadSlashRightBack02                   | base:zeddmg                    | 
+ZedDmg_HEAD_Bullet                            | base:zeddmg                    | 
+ZedDmg_HEAD_Shotgun                           | base:zeddmg                    | 
+ZedDmg_HEAD_Skin                              | base:zeddmg                    | 
+ZedDmg_HEAD_Slash                             | base:zeddmg                    | 
+ZedDmg_Mouth01                                | base:zeddmg                    | 
+ZedDmg_Mouth02                                | base:zeddmg                    | 
+ZedDmg_MouthLeft                              | base:zeddmg                    | 
+ZedDmg_MouthRight                             | base:zeddmg                    | 
+ZedDmg_NeckBiteBackLeft                       | base:zeddmg                    | 
+ZedDmg_NeckBiteBackRight                      | base:zeddmg                    | 
+ZedDmg_NeckBiteFrontLeft                      | base:zeddmg                    | 
+ZedDmg_NeckBiteFrontRight                     | base:zeddmg                    | 
+ZedDmg_NECK_Bite                              | base:zeddmg                    | 
+ZedDmg_NoChin                                 | base:zeddmg                    | 
+ZedDmg_NoEarLeft                              | base:zeddmg                    | 
+ZedDmg_NoEarRight                             | base:zeddmg                    | 
+ZedDmg_NoNose                                 | base:zeddmg                    | 
+ZedDmg_RibsLeft                               | base:zeddmg                    | 
+ZedDmg_RibsRight                              | base:zeddmg                    | 
+ZedDmg_ShotgunBelly                           | base:zeddmg                    | 
+ZedDmg_ShotgunChestCentre                     | base:zeddmg                    | 
+ZedDmg_ShotgunChestLeft                       | base:zeddmg                    | 
+ZedDmg_ShotgunChestRight                      | base:zeddmg                    | 
+ZedDmg_ShotgunFaceFull                        | base:zeddmg                    | 
+ZedDmg_ShotgunFaceLeft                        | base:zeddmg                    | 
+ZedDmg_ShotgunFaceRight                       | base:zeddmg                    | 
+ZedDmg_ShotgunLeft                            | base:zeddmg                    | 
+ZedDmg_ShotgunRight                           | base:zeddmg                    | 
+ZedDmg_ShoulderSlashLeft                      | base:zeddmg                    | 
+ZedDmg_ShoulderSlashRight                     | base:zeddmg                    | 
+ZedDmg_SkullCap                               | base:zeddmg                    | 
+ZedDmg_SkullUpLeft                            | base:zeddmg                    | 
+ZedDmg_SkullUpRight                           | base:zeddmg                    | 
+Bandage_LeftUpperArm                          | base:bandage                   | 
+Bandage_LeftUpperArm_Blood                    | base:bandage                   | 
+Bandage_RightUpperArm                         | base:bandage                   | 
+Bandage_RightUpperArm_Blood                   | base:bandage                   | 
+Bandage_Abdomen                               | base:bandage                   | 
+Bandage_Abdomen_Blood                         | base:bandage                   | 
+Bandage_Chest                                 | base:bandage                   | 
+Bandage_Chest_Blood                           | base:bandage                   | 
+Bandage_Groin                                 | base:bandage                   | 
+Bandage_Groin_Blood                           | base:bandage                   | 
+Bandage_LeftLowerLeg                          | base:bandage                   | 
+Bandage_LeftLowerLeg_Blood                    | base:bandage                   | 
+Bandage_RightLowerLeg                         | base:bandage                   | 
+Bandage_RightLowerLeg_Blood                   | base:bandage                   | 
+Bandage_LeftFoot                              | base:bandage                   | 
+Bandage_LeftFoot_Blood                        | base:bandage                   | 
+Bandage_RightFoot                             | base:bandage                   | 
+Bandage_RightFoot_Blood                       | base:bandage                   | 
+Bandage_LeftHand                              | base:bandage                   | 
+Bandage_LeftHand_Blood                        | base:bandage                   | 
+Bandage_RightHand                             | base:bandage                   | 
+Bandage_RightHand_Blood                       | base:bandage                   | 
+Bandage_LeftUpperLeg                          | base:bandage                   | 
+Bandage_LeftUpperLeg_Blood                    | base:bandage                   | 
+Bandage_RightUpperLeg                         | base:bandage                   | 
+Bandage_RightUpperLeg_Blood                   | base:bandage                   | 
+Bandage_LeftLowerArm                          | base:bandage                   | 
+Bandage_LeftLowerArm_Blood                    | base:bandage                   | 
+Bandage_RightLowerArm                         | base:bandage                   | 
+Bandage_RightLowerArm_Blood                   | base:bandage                   | 
+Bandage_Neck                                  | base:bandage                   | 
+Bandage_Neck_Blood                            | base:bandage                   | 
+Bandage_Head                                  | base:bandage                   | 
+Bandage_Head_Blood                            | base:bandage                   | 
+Wound_Chest_Bite_Male                         | base:wound                     | 
+Wound_Chest_Scratch_Male                      | base:wound                     | 
+Wound_Chest_Laceration_Male                   | base:wound                     | 
+Wound_Chest_Bite_Female                       | base:wound                     | 
+Wound_Chest_Scratch_Female                    | base:wound                     | 
+Wound_Chest_Laceration_Female                 | base:wound                     | 
+Wound_Abdomen_Bite_Male                       | base:wound                     | 
+Wound_Abdomen_Scratch_Male                    | base:wound                     | 
+Wound_Abdomen_Laceration_Male                 | base:wound                     | 
+Wound_Abdomen_Bite_Female                     | base:wound                     | 
+Wound_Abdomen_Scratch_Female                  | base:wound                     | 
+Wound_Abdomen_Laceration_Female               | base:wound                     | 
+Wound_LHand_Bite_Male                         | base:wound                     | 
+Wound_LHand_Scratch_Male                      | base:wound                     | 
+Wound_LHand_Laceration_Male                   | base:wound                     | 
+Wound_LHand_Bite_Female                       | base:wound                     | 
+Wound_LHand_Scratch_Female                    | base:wound                     | 
+Wound_LHand_Laceration_Female                 | base:wound                     | 
+Wound_RHand_Bite_Male                         | base:wound                     | 
+Wound_RHand_Scratch_Male                      | base:wound                     | 
+Wound_RHand_Laceration_Male                   | base:wound                     | 
+Wound_RHand_Bite_Female                       | base:wound                     | 
+Wound_RHand_Scratch_Female                    | base:wound                     | 
+Wound_RHand_Laceration_Female                 | base:wound                     | 
+Wound_Neck_Bite_Male                          | base:wound                     | 
+Wound_Neck_Scratch_Male                       | base:wound                     | 
+Wound_Neck_Laceration_Male                    | base:wound                     | 
+Wound_Neck_Bite_Female                        | base:wound                     | 
+Wound_Neck_Scratch_Female                     | base:wound                     | 
+Wound_Neck_Laceration_Female                  | base:wound                     | 
+Wound_LUArm_Bite_Male                         | base:wound                     | 
+Wound_LUArm_Scratch_Male                      | base:wound                     | 
+Wound_LUArm_Laceration_Male                   | base:wound                     | 
+Wound_LUArm_Bite_Female                       | base:wound                     | 
+Wound_LUArm_Scratch_Female                    | base:wound                     | 
+Wound_LUArm_Laceration_Female                 | base:wound                     | 
+Wound_RUArm_Bite_Male                         | base:wound                     | 
+Wound_RUArm_Scratch_Male                      | base:wound                     | 
+Wound_RUArm_Laceration_Male                   | base:wound                     | 
+Wound_RUArm_Bite_Female                       | base:wound                     | 
+Wound_RUArm_Scratch_Female                    | base:wound                     | 
+Wound_RUArm_Laceration_Female                 | base:wound                     | 
+Wound_LForearm_Bite_Male                      | base:wound                     | 
+Wound_LForearm_Scratch_Male                   | base:wound                     | 
+Wound_LForearm_Laceration_Male                | base:wound                     | 
+Wound_LForearm_Bite_Female                    | base:wound                     | 
+Wound_LForearm_Scratch_Female                 | base:wound                     | 
+Wound_LForearm_Laceration_Female              | base:wound                     | 
+Wound_RForearm_Bite_Male                      | base:wound                     | 
+Wound_RForearm_Scratch_Male                   | base:wound                     | 
+Wound_RForearm_Laceration_Male                | base:wound                     | 
+Wound_RForearm_Bite_Female                    | base:wound                     | 
+Wound_RForearm_Scratch_Female                 | base:wound                     | 
+Wound_RForearm_Laceration_Female              | base:wound                     | 
+Wound_Groin_Bite_Male                         | base:wound                     | 
+Wound_Groin_Scratch_Male                      | base:wound                     | 
+Wound_Groin_Laceration_Male                   | base:wound                     | 
+Wound_Groin_Bite_Female                       | base:wound                     | 
+Wound_Groin_Scratch_Female                    | base:wound                     | 
+Wound_Groin_Laceration_Female                 | base:wound                     | 
+ThighMetal_R                                  | base:thigh_right               | UpperLeg_R
+ThighMetal_L                                  | base:thigh_left                | UpperLeg_L
+ThighMetalSpike_R                             | base:thigh_right               | UpperLeg_R
+ThighMetalSpike_L                             | base:thigh_left                | UpperLeg_L
+Greave_Right                                  | base:calf_right                | LowerLeg_R
+Greave_Left                                   | base:calf_left                 | LowerLeg_L
+GreaveSpike_Left                              | base:calf_left                 | LowerLeg_L
+GreaveSpike_Right                             | base:calf_right                | LowerLeg_R
+Vambrace_Right                                | base:forearm_right             | ForeArm_R
+Vambrace_Left                                 | base:forearm_left              | ForeArm_L
+VambraceSpike_Left                            | base:forearm_left              | ForeArm_L
+VambraceSpike_Right                           | base:forearm_right             | ForeArm_R
+Shoulderpad_Articulated_L_Metal               | base:shoulderpadleft           | UpperArm_L
+Shoulderpad_Articulated_R_Metal               | base:shoulderpadright          | UpperArm_R
+Shoulderpad_ArticulatedSpike_L                | base:shoulderpadleft           | UpperArm_L
+Shoulderpad_ArticulatedSpike_R                | base:shoulderpadright          | UpperArm_R
+Hat_HockeyMask_Metal                          | base:maskeyes                  | Head
+Hat_HockeyMask_Copper                         | base:maskeyes                  | Head
+Hat_HockeyMask_Gold                           | base:maskeyes                  | Head
+Hat_HockeyMask_Silver                         | base:maskeyes                  | Head
+Cuirass_Metal                                 | base:cuirass                   | ShirtNoSleeves
+Gloves_MetalArmour                            | base:hands                     | Hands
+Hat_MetalHelmet                               | base:fullhat                   | FullHelmet;Neck
+Thigh_ArticMetal_R                            | base:thigh_right               | UpperLeg_R
+Thigh_ArticMetal_L                            | base:thigh_left                | UpperLeg_L
+Vambrace_FullMetal_Right                      | base:forearm_right             | ForeArm_R
+Vambrace_FullMetal_Left                       | base:forearm_left              | ForeArm_L
+Cuirass_CoatOfPlates                          | base:cuirass                   | ShirtNoSleeves
+Shoulderpad_Metal_L                           | base:shoulderpadleft           | UpperArm_L
+Shoulderpad_Metal_R                           | base:shoulderpadright          | UpperArm_R
+Shoulderpad_MetalSpike_L                      | base:shoulderpadleft           | UpperArm_L
+Shoulderpad_MetalSpike_R                      | base:shoulderpadright          | UpperArm_R
+ShinKneeGuard_L_Metal                         | base:calf_left                 | LowerLeg_L
+ShinKneeGuard_R_Metal                         | base:calf_right                | LowerLeg_R
+ShinKneeGuardSpike_R_Metal                    | base:calf_right                | LowerLeg_R
+ShinKneeGuardSpike_L_Metal                    | base:calf_left                 | LowerLeg_L
+Gorget_Metal                                  | base:gorget                    | Neck
+Codpiece_Metal                                | base:codpiece                  | Groin
+ThighScrapMetal_R                             | base:thigh_right               | UpperLeg_R
+ThighScrapMetal_L                             | base:thigh_left                | UpperLeg_L
+ThighScrapMetalSpike_R                        | base:thigh_right               | UpperLeg_R
+ThighScrapMetalSpike_L                        | base:thigh_left                | UpperLeg_L
+GreaveScrap_Left                              | base:calf_left                 | LowerLeg_L
+GreaveScrap_Right                             | base:calf_right                | LowerLeg_R
+GreaveSpikeScrap_Left                         | base:calf_left                 | LowerLeg_L
+GreaveSpikeScrap_Right                        | base:calf_right                | LowerLeg_R
+VambraceScrap_Right                           | base:forearm_right             | ForeArm_R
+VambraceScrap_Left                            | base:forearm_left              | ForeArm_L
+VambraceSpikeScrap_Left                       | base:forearm_left              | ForeArm_L
+VambraceSpikeScrap_Right                      | base:forearm_right             | ForeArm_R
+Hat_HockeyMask_MetalScrap                     | base:maskeyes                  | Head
+Cuirass_MetalScrap                            | base:cuirass                   | ShirtNoSleeves
+Hat_MetalScrapHelmet                          | base:fullhat                   | FullHelmet;Neck
+Shoulderpad_MetalScrap_L                      | base:shoulderpadleft           | UpperArm_L
+Shoulderpad_MetalScrap_R                      | base:shoulderpadright          | UpperArm_R
+Shoulderpad_MetalSpikeScrap_L                 | base:shoulderpadleft           | UpperArm_L
+Shoulderpad_MetalSpikeScrap_R                 | base:shoulderpadright          | UpperArm_R
+Gloves_MetalScrapArmour                       | base:hands                     | Hands
+Bag_LeatherWaterBag                           | base:satchel                   | 
+CanteenCowboy                                 | base:satchel                   | 
+KnapsackSprayer                               | base:back                      | Bag
+KnapsackSprayer_Stowed                        | base:back                      | Bag

@@ -1,0 +1,163 @@
+-- ==============================================================================
+-- DTNPC_ClientVisuals.lua
+-- Visual application and world searching for NPCs.
+-- ==============================================================================
+
+DTNPCClient = DTNPCClient or {}
+
+function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
+    if not zombie or not brain then return end
+    if isServer() and isDedicatedServer() then return end
+    
+    local modData = zombie:getModData()
+    local uuid = brain.uuid
+    
+    local needsVisuals = true
+    if brain.visualID and modData.DTNPCVisualID == brain.visualID then
+        local visuals = zombie:getHumanVisual()
+        if visuals then
+            local skin = visuals:getSkinTexture()
+            if skin then
+                local skinStr = tostring(skin)
+                if string.find(skinStr, "MaleBody01") or string.find(skinStr, "FemaleBody01") then
+                    needsVisuals = false
+                end
+            end
+        end
+    end
+    
+    modData.IsDTNPC = true
+    modData.DTNPC_UUID = uuid
+    
+    -- Ensure brain is attached even if we don't need to reapply visuals
+    if DTNPC and DTNPC.AttachBrain then
+        DTNPC.AttachBrain(zombie, brain)
+    end
+
+    if not needsVisuals then
+        return
+    end
+
+    print("[DTNPC-Client] Applying visuals for: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ")")
+    
+    if DTNPC and DTNPC.ApplyVisuals then
+        DTNPC.ApplyVisuals(zombie, brain)
+    end
+    
+    modData.DTNPCVisualID = brain.visualID
+    
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+        zombie:DoZombieStats()
+    end
+    
+    zombie:resetModelNextFrame()
+end
+
+function DTNPCClient.FindZombieByUUID(uuid)
+    local cell = getCell()
+    if not cell then return nil end
+    
+    local zombieList = cell:getZombieList()
+    if not zombieList then return nil end
+    
+    for i = 0, zombieList:size() - 1 do
+        local zombie = zombieList:get(i)
+        if zombie then
+            local modData = zombie:getModData()
+            if modData.DTNPC_UUID == uuid then
+                return zombie
+            end
+        end
+    end
+    
+    return nil
+end
+
+function DTNPCClient.FindZombieByOutfitID(outfitID)
+    local cell = getCell()
+    if not cell then return nil end
+    
+    local zombieList = cell:getZombieList()
+    if not zombieList then return nil end
+    
+    for i = 0, zombieList:size() - 1 do
+        local zombie = zombieList:get(i)
+        if zombie and zombie:getPersistentOutfitID() == outfitID then
+            return zombie
+        end
+    end
+    
+    return nil
+end
+
+function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
+    if not zombie then return end
+    
+    local modData = zombie:getModData()
+    local uuid = modData.DTNPC_UUID
+    
+    if DTNPCClient.LocalControlled[uuid] then
+        return false
+    end
+    
+    local localX = zombie:getX()
+    local localY = zombie:getY()
+    local localZ = zombie:getZ()
+    
+    local dx = math.abs(localX - serverX)
+    local dy = math.abs(localY - serverY)
+    local dz = math.abs(localZ - serverZ)
+    
+    local TOLERANCE = 3.0
+    
+    if dx > TOLERANCE or dy > TOLERANCE or dz > 0 then
+        local lerpFactor = 0.2
+        zombie:setX(localX + (serverX - localX) * lerpFactor)
+        zombie:setY(localY + (serverY - localY) * lerpFactor)
+        zombie:setZ(serverZ)
+        
+        return true
+    end
+    
+    return false
+end
+
+function DTNPCClient.IsValidNPC(zombie)
+    if not zombie then return false end
+    
+    local modData = zombie:getModData()
+    local uuid = modData.DTNPC_UUID
+    
+    if uuid and DTNPCClient.NPCCache[uuid] then
+        return true
+    end
+    
+    if modData.IsDTNPC then
+        return true
+    end
+    
+    return false
+end
+
+function DTNPCClient.SetLocalControl(uuid, isControlled)
+    if uuid then
+        DTNPCClient.LocalControlled[uuid] = isControlled
+    end
+end
+
+-- ==============================================================================
+-- 7. EVENT REGISTRATION (Entry Point)
+-- ==============================================================================
+
+-- These must be registered after all modules have initialized their DTNPCClient functions.
+-- This file (Visuals.lua) loads last alphabetically.
+
+Events.OnTick.Add(DTNPCClient.OnTick)
+Events.OnServerCommand.Add(DTNPCClient.OnServerCommand)
+Events.OnCreatePlayer.Add(DTNPCClient.RequestInitialSync)
+
+-- Safety check for non-vanilla event
+if Events.OnZombieUpdate then
+    Events.OnZombieUpdate.Add(DTNPCClient.OnZombieUpdate)
+end

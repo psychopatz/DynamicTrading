@@ -1,0 +1,478 @@
+-- =============================================================================
+-- DYNAMIC TRADING: SERVER COMMAND HANDLER
+-- =============================================================================
+-- Compatible with Singleplayer, MP Hosted, and MP Dedicated.
+-- Handles all secure logic: Money removal, Inventory management, Scanning RNG.
+
+require "DT/V1/Manager"
+require "DT/V1/Economy"
+require "DT/V1/Events"
+require "DT/Common/ServerHelpers"
+-- Note: NetworkLogs and CooldownManager already required by Manager, giving access globally.
+
+-- 1. GLOBAL TABLE REGISTRATION
+-- We expose this table globally so Singleplayer Client scripts can call functions directly
+-- if needed, though we primarily use the Command Bridge now.
+DynamicTrading = DynamicTrading or {}
+DynamicTrading.ServerCommands = {}
+
+local Commands = DynamicTrading.ServerCommands
+local lastProcessedDay = -1 
+
+-- =============================================================================
+-- 0. ALIASES TO SHARED HELPERS
+-- =============================================================================
+-- Use centralized helpers from DynamicTradingCommon for SP/MP compatibility.
+
+local Helpers = DynamicTrading.ServerHelpers
+local ServerRemoveItem = Helpers.RemoveItem
+local ServerAddItem = Helpers.AddItem
+local GetServerWealth = Helpers.GetWealth
+local ServerRemoveMoney = Helpers.RemoveMoney
+
+-- Local wrapper for SendResponse to maintain existing call signature
+local function SendResponse(player, command, args)
+    Helpers.SendResponse(player, "DynamicTrading", command, args)
+end
+
+-- =============================================================================
+-- 2. COMMAND HANDLERS
+-- =============================================================================
+
+-- COMMAND: RequestFullState
+-- Description: Client asking for the latest Trader List / Events
+function Commands.RequestFullState(player, args)
+    local data = DynamicTrading.Manager.GetData()
+    if data then
+        ModData.transmit("DynamicTrading_Engine_v1.3")
+    end
+end
+
+-- COMMAND: TradeTransaction
+-- Description: Buying or Selling items
+function Commands.TradeTransaction(player, args)
+    local transactionType = args.type
+    local traderID = args.traderID
+    local key = args.key
+    local category = args.category or "Misc"
+    local clientQty = tonumber(args.qty) or 1 
+
+    local data = DynamicTrading.Manager.GetData()
+    local trader = data.Traders[traderID]
+    local itemData = DynamicTrading.Config.MasterList[key]
+
+    if not trader or not itemData then return end
+    local inv = player:getInventory()
+
+    -- Cache Display Name from Script for logging
+    local scriptItem = getScriptManager():getItem(itemData.item)
+    local safeDisplayName = scriptItem and scriptItem:getDisplayName() or "Unknown Item"
+
+    if transactionType == "buy" then
+        -- 1. Check Stock & Data
+        local stockEntry = trader.stocks[key]
+        local currentStock = 0
+        local customData = nil
+        
+        if type(stockEntry) == "table" then
+            currentStock = tonumber(stockEntry.qty) or 0
+            customData = stockEntry.customData
+        else
+            currentStock = tonumber(stockEntry) or 0
+        end
+
+        -- 2. Calculate Price
+        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat, customData)
+        local totalCost = unitPrice * clientQty
+        
+        if currentStock < clientQty then
+            SendResponse(player, "TransactionResult", { success=false, msg="Sold Out!" })
+            return
+        end
+
+        -- 3. Check Wealth
+        if GetServerWealth(player) < totalCost then
+            SendResponse(player, "TransactionResult", { success=false, msg="Not enough cash!" })
+            return
+        end
+
+        -- 4. Execute Trade
+        if ServerRemoveMoney(player, totalCost) then
+            DynamicTrading.Manager.OnBuyItem(traderID, key, category, clientQty)
+            Helpers.AddItemWithCondition(inv, itemData.item, clientQty, customData)
+            
+            -- [NEW] Log transaction for global history
+            local logText = string.format("Trade: %s purchased %s for $%d", player:getUsername(), safeDisplayName, totalCost)
+            DynamicTrading.NetworkLogs.AddLog(logText, "info")
+
+            SendResponse(player, "TransactionResult", { 
+                success = true, 
+                itemName = safeDisplayName,
+                price = totalCost
+            })
+        else
+            SendResponse(player, "TransactionResult", { success=false, msg="Transaction Error" })
+        end
+
+    elseif transactionType == "sell" then
+        -- 1. Locate specific physical item by ID
+        -- [ROBUST FIX] We now find the item by the unique ID passed from the client
+        local itemObj = inv:getItemById(args.itemID)
+        
+        -- [B42 ROBUST] If direct main-inv lookup fails, do a recursive search across ALL carried containers
+        if not itemObj then
+            itemObj = Helpers.FindItemByIDRecursive(inv, args.itemID)
+        end
+        
+        if not itemObj then
+            -- Fallback: If ID search fails, try traditional search by type (rare but safe)
+            local allItemsList = inv:getItemsFromType(itemData.item, true)
+            if allItemsList and allItemsList:size() > 0 then
+                itemObj = allItemsList:get(0)
+            end
+        end
+        
+        if not itemObj then
+            SendResponse(player, "TransactionResult", { success=false, msg="Item missing!" })
+            return
+        end
+
+        -- [NEW SAFETY LOCK] Double check it's not the active radio
+        -- If the physical radio is turned on, the server blocks the sale as a safeguard.
+        if itemObj.getDeviceData then
+            local dev = itemObj:getDeviceData()
+            if dev and dev:getIsTurnedOn() then
+                SendResponse(player, "TransactionResult", { success=false, msg="Cannot sell an active radio!" })
+                return
+            end
+        end
+
+        -- [NEW] Check Trader Budget
+        local localCount = (trader.localDeflation and trader.localDeflation[key]) or 0
+        -- We already have GetSellPrice called below, but wait, the original code called `GetSellPrice`?
+        -- No, let me check the original code from view_file.
+        -- Original line 142: local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
+        -- It ALREADY calls V1.GetSellPrice!
+        -- And V1.GetSellPrice calls Common.GetSellPrice.
+        -- So V1 is automatically updated by my change to Common!
+        
+        local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
+        local totalGain = unitPrice * clientQty
+
+        if (trader.budget or 0) < totalGain then
+            SendResponse(player, "TransactionResult", { success=false, msg="Trader cannot afford this!" })
+            return
+        end
+
+        local itemNameForLog = itemObj:getDisplayName()
+
+        -- [FIX] Ensure item is unequipped before removal to prevent duplication (Ghost Item Glitch)
+        if player:getPrimaryHandItem() == itemObj then
+            player:setPrimaryHandItem(nil)
+        end
+        if player:getSecondaryHandItem() == itemObj then
+            player:setSecondaryHandItem(nil)
+        end
+
+        -- 2. Execute Trade
+        ServerRemoveItem(itemObj)
+        
+        local bundles = math.floor(totalGain / 100)
+        local loose = totalGain % 100
+        if bundles > 0 then ServerAddItem(inv, "Base.MoneyBundle", bundles) end
+        if loose > 0 then ServerAddItem(inv, "Base.Money", loose) end
+        
+        DynamicTrading.Manager.OnSellItem(traderID, key, category, clientQty)
+        
+        -- [NEW] Log transaction for global history
+        local logText = string.format("Trade: %s sold %s for $%d", player:getUsername(), itemNameForLog, totalGain)
+        DynamicTrading.NetworkLogs.AddLog(logText, "info")
+
+        -- Send exact keys client expects for Audit Log
+        SendResponse(player, "TransactionResult", { 
+            success = true, 
+            itemName = itemNameForLog,
+            price = totalGain
+        })
+    end
+end
+
+
+-- COMMAND: RequestTrader
+-- Description: Buying a specific contact lead (Favor)
+function Commands.RequestTrader(player, args)
+    local archetype = args.archetype
+    local price = args.price or 0
+    local targetUser = player:getUsername()
+
+    -- 1. Validate Money
+    if GetServerWealth(player) < price then
+        SendResponse(player, "RequestResult", { success=false, msg="Insufficient Funds" })
+        return
+    end
+
+    -- 2. Validate Cap (Double Check Server Side)
+    local found, limit = DynamicTrading.Manager.GetDailyStatus()
+    if found >= limit then
+        SendResponse(player, "RequestResult", { success=false, msg="Network Busy (Cap Reached)" })
+        return
+    end
+
+    -- 3. Deduct Money
+    if not ServerRemoveMoney(player, price) then
+        SendResponse(player, "RequestResult", { success=false, msg="Transaction Error" })
+        return
+    end
+
+    -- 4. Generate Trader
+    local trader = DynamicTrading.Manager.GenerateRandomContact(player, archetype)
+    
+    if trader then
+        -- [NEW] Auto-discover for requesting player
+        DynamicTrading.Manager.DiscoverTrader(trader.id, player)
+        
+        DynamicTrading.NetworkLogs.AddLog("Favor: " .. targetUser .. " requested a " .. archetype, "info")
+        SendResponse(player, "RequestResult", { success=true, name=trader.name })
+    else
+        ServerAddItem(player:getInventory(), "Base.Money", price) -- Refund
+        SendResponse(player, "RequestResult", { success=false, msg="Contact unavailable" })
+    end
+end
+
+-- COMMAND: BurnMoney
+-- Description: Removes money without reward (Scam/Theft mechanics)
+function Commands.BurnMoney(player, args)
+    local amount = args.amount
+    if amount and amount > 0 then
+        ServerRemoveMoney(player, amount)
+        DynamicTrading.NetworkLogs.AddLog("Scam: " .. player:getUsername() .. " lost $" .. amount, "bad")
+    end
+end
+
+-- COMMAND: UnpackContainer
+-- Description: Drops everything inside a bag to the player's feet
+function Commands.UnpackContainer(player, args)
+    if not player or not args.itemID then return end
+    
+    local inv = player:getInventory()
+    local bag = inv:getItemById(args.itemID)
+    
+    if not bag or not instanceof(bag, "InventoryContainer") then return end
+    
+    -- Use shared helper for the actual drop logic
+    Helpers.DropContainerToGround(player, bag)
+    
+    -- Notify Client to refresh UI
+    SendResponse(player, "UnpackResult", { success = true })
+end
+
+-- COMMAND: AttemptScan
+-- Description: The RNG roll for finding new traders
+-- [PUBLIC NETWORK] When disabled, players must individually discover traders
+function Commands.AttemptScan(player, args)
+    if not player then return end
+    local targetUser = player:getUsername()
+    local isPublicNetwork = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork)
+
+    -- 1. Cooldown Check
+    local canScan, timeRem = DynamicTrading.CooldownManager.CanScan(player)
+    if not canScan then
+        SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
+        return
+    end
+
+    -- 2. Daily Limit Check (Global)
+    local found, limit = DynamicTrading.Manager.GetDailyStatus()
+    local canGenerateNew = (found < limit)
+    
+    -- 3. Get Undiscovered Traders (for Private Network mode)
+    local undiscovered = DynamicTrading.Manager.GetUndiscoveredTraders(player)
+    local hasUndiscovered = (#undiscovered > 0)
+
+    -- [PUBLIC NETWORK MODE] Block if limit reached (old behavior)
+    if isPublicNetwork and not canGenerateNew then
+        SendResponse(player, "ScanResult", { status = "LIMIT_REACHED", targetUser = targetUser })
+        return
+    end
+    
+    -- [PRIVATE NETWORK MODE] Block if limit reached AND no undiscovered traders left
+    if not isPublicNetwork and not canGenerateNew and not hasUndiscovered then
+        SendResponse(player, "ScanResult", { status = "LIMIT_REACHED", targetUser = targetUser })
+        return
+    end
+
+    -- 4. Apply Cooldown
+    DynamicTrading.CooldownManager.SetScanTimestamp(player)
+
+    -- 5. Calculate Chances
+    local penaltyPerTrader = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanPenaltyPerTrader) or 0.2
+    local penaltyFactor = 1.0 + (found * penaltyPerTrader) 
+    
+    local radioTier = args.radioTier or 0.5
+    local baseChance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanBaseChance) or 30
+    local skillBonus = args.skillBonus or 1.0
+    
+    local eventMult = 1.0
+    if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
+        eventMult = DynamicTrading.Events.GetSystemModifier("scanChance")
+    end
+
+    local finalChance = (baseChance * radioTier * skillBonus * eventMult) / penaltyFactor
+    
+    -- [DEBUG PRINTS]
+    print("[DynamicTrading] Scanning for traders...")
+    print("  - Public Network Mode: " .. tostring(isPublicNetwork))
+    print("  - Base Chance: " .. baseChance)
+    print("  - Radio Tier: " .. radioTier)
+    print("  - Skill Bonus: " .. skillBonus)
+    print("  - Event Mult: " .. eventMult)
+    print("  - Penalty Factor: " .. penaltyFactor .. " (Found: " .. found .. ")")
+    print("  - Final Calculated Chance: " .. string.format("%.2f", finalChance) .. "%")
+    print("  - Undiscovered Traders Available: " .. #undiscovered)
+    
+    local roll = ZombRand(100) + 1
+    print("  - Roll: " .. roll)
+
+    -- 6. Roll Dice
+    if roll <= finalChance then
+        local trader = nil
+        local wasNewGeneration = false
+        
+        -- ==========================================================
+        -- PUBLIC NETWORK MODE (Old Behavior: Everyone shares)
+        -- ==========================================================
+        if isPublicNetwork then
+            trader = DynamicTrading.Manager.GenerateRandomContact(player)
+            wasNewGeneration = true
+            
+        -- ==========================================================
+        -- PRIVATE NETWORK MODE (Per-player discovery)
+        -- ==========================================================
+        else
+            if canGenerateNew then
+                -- 70% Generate New / 30% Discover Existing (if any)
+                local generateChance = hasUndiscovered and 70 or 100
+                if ZombRand(100) < generateChance then
+                    -- Generate NEW trader
+                    trader = DynamicTrading.Manager.GenerateRandomContact(player)
+                    wasNewGeneration = true
+                    
+                    if trader then
+                        -- Auto-discover for creating player
+                        DynamicTrading.Manager.DiscoverTrader(trader.id, player)
+                        print("  - Generated NEW trader, auto-discovered for " .. targetUser)
+                    end
+                else
+                    -- Discover EXISTING trader
+                    trader = undiscovered[ZombRand(#undiscovered) + 1]
+                    DynamicTrading.Manager.DiscoverTrader(trader.id, player)
+                    print("  - Discovered EXISTING trader: " .. trader.name)
+                end
+            else
+                -- Cap reached: Can ONLY discover existing
+                trader = undiscovered[ZombRand(#undiscovered) + 1]
+                DynamicTrading.Manager.DiscoverTrader(trader.id, player)
+                print("  - Cap reached, discovered EXISTING trader: " .. trader.name)
+            end
+        end
+        
+        if trader then
+            print("  - SUCCESS! Found: " .. trader.name .. " (" .. trader.archetype .. ")")
+            SendResponse(player, "ScanResult", { 
+                status = "SUCCESS", 
+                name = trader.name,
+                archetype = trader.archetype,
+                targetUser = targetUser,
+                wasNew = wasNewGeneration
+            })
+        else
+            print("  - FAILED: Generated trader was nil (Archetypes empty?)")
+            local count = 0
+            if DynamicTrading.Archetypes then
+                for _ in pairs(DynamicTrading.Archetypes) do count = count + 1 end
+            end
+            print("  - Registered Archetypes Count: " .. count)
+            SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
+        end
+    else
+        print("  - FAILED: Roll > Final Chance")
+        SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
+    end
+end
+
+
+-- =============================================================================
+-- 3. EVENT LISTENER (MULTIPLAYER BRIDGE)
+-- =============================================================================
+local function OnClientCommand(module, command, player, args)
+    if module == "DynamicTrading" and Commands[command] then
+        Commands[command](player, args)
+    end
+end
+
+Events.OnClientCommand.Add(OnClientCommand)
+
+-- =============================================================================
+-- 4. SERVER MAINTENANCE LOOP
+-- =============================================================================
+-- Runs every hour to check for Expired Traders, Daily Resets, and Events.
+local function Server_OnHourlyTick()
+    -- Initialize Persistence on first run if needed
+    if DynamicTrading.CooldownManager and DynamicTrading.CooldownManager.Init then
+         DynamicTrading.CooldownManager.Init() 
+    end
+
+    if not DynamicTrading or not DynamicTrading.Manager then return end
+
+    local data = DynamicTrading.Manager.GetData()
+    local gt = GameTime:getInstance()
+    local currentHours = gt:getWorldAgeHours()
+    local currentDay = math.floor(gt:getDaysSurvived())
+    local currentHourOfDay = gt:getHour()
+    local changesMade = false
+
+    -- 1. Daily Reset Check (5 AM)
+    DynamicTrading.Manager.CheckDailyReset()
+
+    -- 2. Trader Expiration Check
+    if data.Traders then
+        for id, trader in pairs(data.Traders) do
+            local shouldRemove = false
+            if trader.expirationTime and currentHours > trader.expirationTime then 
+                shouldRemove = true 
+            end
+            
+            if shouldRemove then
+                -- [NEW] Recycle Wealth
+                local leftover = trader.budget or 0
+                if leftover > 0 then
+                    DynamicTrading.Manager.AddToWealthPool(leftover)
+                    DynamicTrading.NetworkLogs.AddLog("Signal Lost: " .. (trader.name or "Unknown") .. " (Returned $" .. math.floor(leftover) .. " to economy)", "bad")
+                else
+                    DynamicTrading.NetworkLogs.AddLog("Signal Lost: " .. (trader.name or "Unknown"), "bad")
+                end
+                
+                data.Traders[id] = nil
+                changesMade = true
+            end
+        end
+    end
+    
+    -- Sync if traders removed
+    if changesMade then 
+        DynamicTrading.Manager.BumpTradersVersion()
+        -- ModData.transmit already called by BumpTradersVersion
+    end
+
+    -- 3. Event System Check (8 AM)
+    if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then
+        if DynamicTrading.Manager.ProcessEvents then
+            DynamicTrading.Manager.ProcessEvents()
+            lastProcessedDay = currentDay
+        end
+    end
+end
+
+Events.EveryHours.Add(Server_OnHourlyTick)
+
+print("[DynamicTrading] Server Maintenance Loop Complete.")
