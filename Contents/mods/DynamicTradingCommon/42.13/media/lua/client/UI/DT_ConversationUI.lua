@@ -122,14 +122,18 @@ end
 -- =============================================================================
 function DT_ConversationUI:update()
     ISCollapsableWindow.update(self)
-
-    -- IDLE/DISTANCE CHECK
-    if not DynamicTrading.Utils.IsInteractionValid(self.interactionObj, nil, self.target) then
-        self:close()
-        return
-    end
     
     self.typingTick = self.typingTick + 1
+
+    -- OPTIMIZATION: Throttling Distance Checks
+    -- Only check distance every 15 ticks (approx 4 times a second at 60FPS).
+    -- Checking every single frame is unnecessary and this saves CPU cycles.
+    if self.typingTick % 15 == 0 then
+        if not DynamicTrading.Utils.IsInteractionValid(self.interactionObj, nil, self.target) then
+            self:close()
+            return
+        end
+    end
 
     -- QUEUE PROCESSING
     if #self.msgQueue > 0 then
