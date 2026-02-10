@@ -421,15 +421,83 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers)
         local cd = modifiers.customData
         local scale = 1.0
         
-        -- A. Fluid
+        -- A. Fluid(Per-Liter Pricing)
         if cd.fluidAmount and itemData.item then
+            -- [NEW] Calculate Price = Container + (FluidPrice * Amount)
             local script = getScriptManager():getItem(itemData.item)
-            if script and script.getFluidContainer then
-                local fc = script:getFluidContainer()
-                if fc and fc.getCapacity and fc:getCapacity() > 0 then
-                    scale = cd.fluidAmount / fc:getCapacity()
+            local containerBase = 0
+            local fluidTotal = 0
+            
+            -- 1. Determine Container Price
+            if script and script.getReplaceOnDeplete then
+                local emptyID = script:getReplaceOnDeplete()
+                if emptyID and DynamicTrading.Config and DynamicTrading.Config.MasterList then
+                    local emptyData = DynamicTrading.Config.MasterList[emptyID]
+                    if emptyData then containerBase = emptyData.basePrice end
                 end
             end
+            -- Fallback: Assume container is ~20% of the filled item's base price if empty not found
+            if containerBase == 0 then
+                containerBase = itemData.basePrice * 0.2
+            end
+
+            -- 2. Determine Fluid Price
+            local fType = cd.fluidType
+            if fType and DynamicTrading.Fluids then
+                -- Try direct lookup or Base. lookup
+                local fTypeStr = tostring(fType)
+                local fData = DynamicTrading.Fluids[fTypeStr] or DynamicTrading.Fluids["Base." .. fTypeStr]
+                if fData then
+                    fluidTotal = fData.basePrice * cd.fluidAmount
+                end
+            end
+            
+            -- 3. Calculate separate multipliers for Container and Fluid
+            -- A. Container Multipliers (Base Logic)
+            -- 'price' currently holds value calculated from ITEM keys/tags.
+            -- This is effectively 'Container + Default Content' price.
+            -- We want pure Container price mults. Ideally we'd scan empty container tags.
+            -- Approximating: Use default item tags for container part.
+            local containerMults = 1.0
+            if itemData.basePrice > 0 then
+                 containerMults = price / itemData.basePrice
+            end
+            
+            -- B. Fluid Multipliers (Dynamic based on Fluid Tags)
+            local fluidMults = diffData.buyMult or 1.0
+            
+            if fData and fData.tags then
+                -- 1. Tags Config
+                local maxFluidTagMult = 1.0
+                for _, tag in ipairs(fData.tags) do
+                    local tagConfig = tagsConfig[tag]
+                    if tagConfig and tagConfig.priceMult then
+                        if tagConfig.priceMult > maxFluidTagMult then
+                            maxFluidTagMult = tagConfig.priceMult
+                        end
+                    end
+                end
+                fluidMults = fluidMults * maxFluidTagMult
+                
+                -- 2. Event Modifiers
+                if getPriceMod then
+                    local eventMult = getPriceMod(fData.tags)
+                    fluidMults = fluidMults * eventMult
+                end
+                
+                -- 3. Global Heat
+                for _, tag in ipairs(fData.tags) do
+                    local heat = globalHeat[tag]
+                    if heat and heat ~= 0 then
+                        fluidMults = fluidMults * (1.0 + heat)
+                    end
+                end
+            end
+            
+            price = (containerBase * containerMults) + (fluidTotal * fluidMults)
+            
+            return math.ceil(price)
+
         -- B. Drainable
         elseif cd.usedDelta then
             scale = cd.usedDelta
@@ -541,7 +609,36 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             end
 
             if fluidData then
-                fluidValue = (fluidData.basePrice * currentAmount) * diffData.sellMult
+                -- [NEW] Apply dynamic multipliers to FLUID portion based on FLUID TAGS
+                local fluidMults = diffData.sellMult or 0.5
+                
+                if fluidData.tags then
+                    -- 1. Event Modifiers
+                    if getPriceMod then
+                        local eventMult = getPriceMod(fluidData.tags)
+                        fluidMults = fluidMults * eventMult
+                    end
+                    
+                    -- 2. Global Heat
+                    for _, tag in ipairs(fluidData.tags) do
+                        local heat = globalHeat[tag]
+                        if heat and heat ~= 0 then
+                            fluidMults = fluidMults * (1.0 + heat)
+                        end
+                    end
+                    
+                    -- 3. Archetype 'Wants'
+                    if archetype and archetype.wants then
+                        for _, tag in ipairs(fluidData.tags) do
+                            if archetype.wants[tag] then
+                                fluidMults = fluidMults * archetype.wants[tag]
+                                break 
+                            end
+                        end
+                    end
+                end
+                
+                fluidValue = (fluidData.basePrice * currentAmount) * fluidMults
             else
                 local unknownFluidBase = 1.0
                 fluidValue = (unknownFluidBase * currentAmount) * diffData.sellMult

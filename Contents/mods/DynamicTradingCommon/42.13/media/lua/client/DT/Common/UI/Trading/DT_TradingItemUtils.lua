@@ -298,6 +298,22 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
 
                         if price > 0 then
                             local cat = itemData.tags[1] or "Misc"
+                            
+                            if invItem.getFluidContainer and invItem:getFluidContainer() then
+                                local fc = invItem:getFluidContainer()
+                                if fc:getAmount() > 0 then
+                                    local fType = getFluidTypeID(fc)
+                                    if fType and DynamicTrading.Fluids then
+                                        -- Try direct lookup or Base. lookup
+                                        local fTypeStr = tostring(fType)
+                                        local fData = DynamicTrading.Fluids[fTypeStr] or DynamicTrading.Fluids["Base." .. fTypeStr]
+                                        if fData and fData.tags and fData.tags[1] then
+                                            cat = fData.tags[1]
+                                        end
+                                    end
+                                end
+                            end
+
                             if invItem.isRotten and invItem:isRotten() then
                                 cat = "Rotten"
                             end
@@ -339,6 +355,20 @@ function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized,
             local scriptItem = getScriptManager():getItem(itemData.item)
             local sortName = scriptItem and scriptItem:getDisplayName() or key
             local cat = itemData.tags[1] or "Misc"
+            
+            -- [NEW] Content-Based Tagging for Fluids (Buy Side)
+            -- We need to check customData inside the loop, but it's extracted later. 
+            -- Let's peek at qty table if it is one.
+            if type(qty) == "table" and qty.customData and qty.customData.fluidType then
+                local fType = qty.customData.fluidType
+                if DynamicTrading.Fluids then
+                    local fTypeStr = tostring(fType)
+                    local fData = DynamicTrading.Fluids[fTypeStr] or DynamicTrading.Fluids["Base." .. fTypeStr]
+                    if fData and fData.tags and fData.tags[1] then
+                        cat = fData.tags[1]
+                    end
+                end
+            end
 
             if not categorized[cat] then
                 categorized[cat] = {}
