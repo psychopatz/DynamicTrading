@@ -27,6 +27,11 @@ for k, v in pairs(DT_ConfigManager.defaultSettings) do
     DT_ConfigManager.settings[k] = v
 end
 
+-- Ensure windows table exists
+if not DT_ConfigManager.settings.windows then
+    DT_ConfigManager.settings.windows = {}
+end
+
 -- =============================================================================
 -- CORE LOGIC: SAVE & LOAD
 -- =============================================================================
@@ -43,6 +48,17 @@ function DT_ConfigManager.save()
         fileWriter:write("volRadio=" .. tostring(DT_ConfigManager.settings.volRadio) .. "\r\n")
         fileWriter:write("volWallet=" .. tostring(DT_ConfigManager.settings.volWallet) .. "\r\n")
         fileWriter:write("volTrade=" .. tostring(DT_ConfigManager.settings.volTrade) .. "\r\n")
+        
+        -- Save Window States
+        if DT_ConfigManager.settings.windows then
+            for winID, data in pairs(DT_ConfigManager.settings.windows) do
+                if data then
+                    local line = string.format("window_%s=%d,%d,%d,%d", winID, data.x, data.y, data.w, data.h)
+                    fileWriter:write(line .. "\r\n")
+                end
+            end
+        end
+        
         fileWriter:close()
     else
         print("[DT_ConfigManager] ERROR: Could not create file writer.")
@@ -60,6 +76,9 @@ function DT_ConfigManager.load()
     end
 
     print("[DT_ConfigManager] Loading config...")
+    
+    -- Reset windows table on load to avoid stale data if we were to re-read
+    DT_ConfigManager.settings.windows = {} 
     
     local line = fileReader:readLine()
     while line do
@@ -84,6 +103,32 @@ function DT_ConfigManager.load()
         if string.find(line, "volTrade=") then
             local n = tonumber(string.sub(line, 10))
             if n then DT_ConfigManager.settings.volTrade = n end
+        end
+        
+        -- Window State Parsing: window_ID=x,y,w,h
+        if string.find(line, "window_") then
+            local s, e = string.find(line, "=")
+            if s then
+                local key = string.sub(line, 1, s-1) -- e.g. "window_TradingWindow"
+                local val = string.sub(line, s+1)    -- e.g. "100,100,500,600"
+                
+                local winID = string.sub(key, 8) -- strip "window_"
+                
+                -- Parse CSV
+                local parts = {}
+                for p in string.gmatch(val, "([^,]+)") do
+                    table.insert(parts, tonumber(p))
+                end
+                
+                if #parts == 4 then
+                    DT_ConfigManager.settings.windows[winID] = {
+                        x = parts[1],
+                        y = parts[2],
+                        w = parts[3],
+                        h = parts[4]
+                    }
+                end
+            end
         end
 
         line = fileReader:readLine()
@@ -132,6 +177,24 @@ function DT_ConfigManager.getVolume(category)
     elseif category == "Trade" then return DT_ConfigManager.settings.volTrade or 1.0
     end
     return 1.0
+end
+
+-- =============================================================================
+-- WINDOW STATE HELPERS
+-- =============================================================================
+
+function DT_ConfigManager.setWindowState(winID, x, y, w, h)
+    if not DT_ConfigManager.settings.windows then
+        DT_ConfigManager.settings.windows = {}
+    end
+    
+    DT_ConfigManager.settings.windows[winID] = { x=x, y=y, w=w, h=h }
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getWindowState(winID)
+    if not DT_ConfigManager.settings.windows then return nil end
+    return DT_ConfigManager.settings.windows[winID]
 end
 
 

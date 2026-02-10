@@ -438,12 +438,35 @@ end
 -- =============================================================================
 -- 7. PUBLIC API
 -- =============================================================================
+
 function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio, interactionObj)
     if DT_ConversationUI.instance then
         DT_ConversationUI.instance:close()
     end
 
-    local ui = DT_ConversationUI:new(150, 150, 600, 600) 
+    local x, y = 150, 150
+    local w, h = 600, 600
+    
+    -- Load Persistence
+    if DT_ConfigManager and DT_ConfigManager.getWindowState then
+        local state = DT_ConfigManager.getWindowState("ConversationUI")
+        if state then
+            x = state.x
+            y = state.y
+            -- We typically respect X/Y for this window but stick to default size if it's fixed
+            -- However, if we ever make it resizable, we can use state.w/h
+        end
+    end
+    
+    -- Bounds Check
+    local screenW = getCore():getScreenWidth()
+    local screenH = getCore():getScreenHeight()
+    if x < 0 then x = 0 end
+    if y < 0 then y = 0 end
+    if x > screenW - 50 then x = screenW - 600 end
+    if y > screenH - 50 then y = screenH - 600 end
+
+    local ui = DT_ConversationUI:new(x, y, w, h) 
     ui:initialise()
     ui:addToUIManager()
     
@@ -521,6 +544,10 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
 end
 
 function DT_ConversationUI:close()
+    if DT_ConfigManager and DT_ConfigManager.setWindowState then
+        DT_ConfigManager.setWindowState("ConversationUI", self:getX(), self:getY(), self:getWidth(), self:getHeight())
+    end
+
     self:setVisible(false)
     self:removeFromUIManager()
     DT_ConversationUI.instance = nil

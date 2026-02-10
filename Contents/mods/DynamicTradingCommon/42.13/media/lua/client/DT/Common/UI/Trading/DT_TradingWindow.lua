@@ -232,13 +232,25 @@ end
 -- =============================================================================
 -- WINDOW MANAGEMENT
 -- =============================================================================
+
+function DT_TradingWindow:close()
+    if DT_ConfigManager and DT_ConfigManager.setWindowState then
+        DT_ConfigManager.setWindowState("TradingWindow", self:getX(), self:getY(), self:getWidth(), self:getHeight())
+    end
+    ISCollapsableWindow.close(self)
+    DT_TradingWindow.instance = nil
+end
+
+-- =============================================================================
+-- WINDOW MANAGEMENT
+-- =============================================================================
 function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvider)
     if DT_TradingWindow.instance then
         DT_TradingWindow.instance:close()
         return
     end
 
-    -- Dynamic Sizing Logic
+    -- Dynamic Sizing Logic (Default)
     local screenW = getCore():getScreenWidth()
     local screenH = getCore():getScreenHeight()
     local width = math.min(750, screenW * 0.6)
@@ -247,8 +259,28 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     -- Minimum threshold
     width = math.max(600, width)
     height = math.max(650, height)
+    
+    local x = screenW/2 - width/2
+    local y = screenH/2 - height/2
 
-    local ui = DT_TradingWindow:new(screenW/2 - width/2, screenH/2 - height/2, width, height)
+    -- Attempt to load persisted state
+    if DT_ConfigManager and DT_ConfigManager.getWindowState then
+        local state = DT_ConfigManager.getWindowState("TradingWindow")
+        if state then
+            x = state.x
+            y = state.y
+            width = state.w
+            height = state.h
+            
+            -- Basic bounds check to prevent lost windows
+            if x < 0 then x = 0 end
+            if y < 0 then y = 0 end
+            if x > screenW - 50 then x = screenW - width end
+            if y > screenH - 50 then y = screenH - height end
+        end
+    end
+
+    local ui = DT_TradingWindow:new(x, y, width, height)
     ui:initialise()
     ui.dataProvider = dataProvider -- INJECT PROVIDER
     ui:addToUIManager()
