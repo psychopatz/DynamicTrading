@@ -69,6 +69,7 @@ end
 
 function V1_DataProvider:lockItem(itemID)
     local player = getSpecificPlayer(0)
+    if not player then return end -- Crash fix
     local modData = player:getModData()
     if not modData.DT_LockedItems then modData.DT_LockedItems = {} end
     modData.DT_LockedItems[itemID] = true
@@ -168,6 +169,8 @@ end
 
 function V1_DataProvider:isConnectionValid(obj)
     local player = getSpecificPlayer(0)
+    -- [CRASH FIX]
+    if not player or player:isDead() then return false end
     if not obj then return false end
 
     local data = nil
@@ -191,6 +194,8 @@ function V1_DataProvider:isConnectionValid(obj)
 end
 
 function V1_DataProvider:getPlayerWealth(player)
+    -- [CRASH FIX] Handle nil player
+    if not player then return 0 end
     local inv = player:getInventory()
     local loose = inv:getItemsFromType("Base.Money", true)
     local bundles = inv:getItemsFromType("Base.MoneyBundle", true)

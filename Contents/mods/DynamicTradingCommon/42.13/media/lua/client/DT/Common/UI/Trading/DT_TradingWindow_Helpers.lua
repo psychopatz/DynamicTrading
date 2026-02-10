@@ -183,6 +183,12 @@ end
 
 function DT_TradingWindow:updateWallet()
     local player = getSpecificPlayer(0)
+    -- [CRASH FIX] Check for valid player
+    if not player or player:isDead() then 
+        if self.lblInfo then self.lblInfo:setName("Wallet: ---") end
+        return 
+    end
+
     local wealth = self:getPlayerWealth(player)
     if self.lblInfo then
         self.lblInfo:setName("Wallet: $" .. wealth)
@@ -235,6 +241,7 @@ end
 function DT_TradingWindow:isItemLocked(itemID)
     if not itemID or itemID == -1 then return false end
     local player = getSpecificPlayer(0)
+    if not player then return false end -- Safety check
     local modData = player:getModData()
     if modData.DT_LockedItems and modData.DT_LockedItems[itemID] then
         return true

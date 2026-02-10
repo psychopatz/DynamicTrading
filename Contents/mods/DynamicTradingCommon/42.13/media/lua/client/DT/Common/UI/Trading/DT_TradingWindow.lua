@@ -89,6 +89,13 @@ require "DT/Common/UI/Trading/DT_TradingWindow_Actions"
 function DT_TradingWindow:update()
     ISCollapsableWindow.update(self)
 
+    -- [CRASH FIX] Safety check for player death
+    local player = getSpecificPlayer(0)
+    if not player or player:isDead() then
+        self:close()
+        return
+    end
+
     -- 1. Crash Shield for Listbox
     if self.listbox then
         if self.listbox.items == nil then self.listbox.items = {} end
@@ -153,7 +160,6 @@ function DT_TradingWindow:update()
             self:logLocal(msg.text, msg.isError, msg.isPlayer)
             
             -- Play Audio Sync
-            local player = getSpecificPlayer(0)
             if player then
                 -- Play specific sound if provided (e.g., cash register)
                 if msg.sound then
@@ -249,6 +255,10 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
         DT_TradingWindow.instance:close()
         return
     end
+    
+    -- [CRASH FIX] Do not open if player is dead
+    local player = getSpecificPlayer(0)
+    if not player or player:isDead() then return end
 
     -- Dynamic Sizing Logic (Default)
     local screenW = getCore():getScreenWidth()

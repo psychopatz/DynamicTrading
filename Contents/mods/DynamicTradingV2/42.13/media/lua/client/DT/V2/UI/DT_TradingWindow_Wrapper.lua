@@ -52,7 +52,8 @@ local function OnPreUIDraw()
     local playerItemCount = 0
     if not ui.isBuying then
         local player = getSpecificPlayer(0)
-        if player and player:getInventory() then
+        -- [CRASH FIX] Check valid player
+        if player and not player:isDead() and player:getInventory() then
             playerItemCount = player:getInventory():getItems():size()
         end
     end
@@ -258,6 +259,7 @@ end
 function V2_DataProvider:lockItem(itemID)
     print(DEBUG_PREFIX .. " Locking item: " .. tostring(itemID))
     local player = getSpecificPlayer(0)
+    if not player then return end -- Crash fix
     local modData = player:getModData()
     if not modData.DT_LockedItems then modData.DT_LockedItems = {} end
     modData.DT_LockedItems[itemID] = true
@@ -360,6 +362,8 @@ end
 -- PLAYER WEALTH
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:getPlayerWealth(player)
+    -- [CRASH FIX] Handle nil player
+    if not player then return 0 end
     local inv = player:getInventory()
     local loose = inv:getItemsFromType("Base.Money", true)
     local bundles = inv:getItemsFromType("Base.MoneyBundle", true)
