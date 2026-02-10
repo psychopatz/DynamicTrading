@@ -150,8 +150,6 @@ function V2_DataProvider:getTrader(traderID, archetype)
     return trader
 end
 
-
-
 function V2_DataProvider:countTable(t)
     local count = 0
     if t then for _ in pairs(t) do count = count + 1 end end
@@ -257,7 +255,7 @@ end
 -- ITEM LOCKING
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:lockItem(itemID)
-    print(DEBUG_PREFIX .. " Locking item: " .. tostring(itemID))
+    -- print(DEBUG_PREFIX .. " Locking item: " .. tostring(itemID))
     local player = getSpecificPlayer(0)
     if not player then return end -- Crash fix
     local modData = player:getModData()
@@ -276,7 +274,7 @@ end
 -- HUB / ASK BUTTON (Agnostic - returns to parent)
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:openHub(trader, parentUI)
-    print(DEBUG_PREFIX .. " openHub called - returning to dialogue hub")
+    -- print(DEBUG_PREFIX .. " openHub called - returning to dialogue hub")
     if parentUI then parentUI:close() end
     
     if trader.npcRef and DTNPC_TraderDialogue_Hub then
@@ -305,8 +303,6 @@ function V2_DataProvider:getAskButtonConfig(isBuying)
 end
 
 function V2_DataProvider:onAsk(trader, isBuying, ui)
-    print(DEBUG_PREFIX .. " onAsk called, isBuying: " .. tostring(isBuying))
-    
     if isBuying then
         -- Return to Hub
         self:openHub(trader, ui)
@@ -345,17 +341,26 @@ end
 -- CONNECTION VALIDATION (NPC Distance)
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:isConnectionValid(npc)
+    -- [OPTIMIZATION]
+    -- 1. If we don't have an NPC reference (maybe using Radio?), use internal state.
     if not npc then
-        print(DEBUG_PREFIX .. " isConnectionValid: No NPC reference")
         return self._currentNPC ~= nil
     end
-    
-    -- Use common utility (4 tiles for NPCs)
-    local valid = DynamicTrading.Utils.IsInteractionValid(npc, nil, nil)
-    if not valid then
-        print(DEBUG_PREFIX .. " Connection invalid - NPC out of range or dead")
+
+    -- 2. VISIBILITY CHECK (The "Kill Switch")
+    -- If the main trading window exists but is NOT visible, we immediately return false.
+    -- This ensures we don't run checks in the background if the window got stuck hidden.
+    if DT_TradingWindow and DT_TradingWindow.instance then
+        if not DT_TradingWindow.instance:getIsVisible() then
+            print(DEBUG_PREFIX .. " [OPTIMIZATION] Window is NOT visible, returning false")
+            return false
+        end
     end
-    return valid
+    
+    -- 3. DISTANCE CHECK
+    -- This math is very fast. The log flooding was the issue, which is now removed.
+    -- If this returns false, the Window Logic (Common) will handle closing the UI.
+    return DynamicTrading.Utils.IsInteractionValid(npc, nil, nil)
 end
 
 -- -----------------------------------------------------------------------------
