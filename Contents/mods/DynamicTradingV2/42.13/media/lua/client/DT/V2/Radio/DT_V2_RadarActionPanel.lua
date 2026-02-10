@@ -39,13 +39,24 @@ function DT_V2_RadarActionPanel:createChildren()
     self:addChild(self.btnLocate)
 end
 
+function DT_V2_RadarActionPanel:updateButtonState(selectedUUID)
+    if not self.parent then return end
+    
+    -- Check if the selected item is the one currently being tracked
+    if self.parent.trackingUUID and self.parent.trackingUUID == selectedUUID then
+        self.btnLocate.title = "STOP"
+        self.btnLocate.backgroundColor = {r=0.6, g=0.1, b=0.1, a=1} -- Red
+    else
+        self.btnLocate.title = "LOCATE"
+        self.btnLocate.backgroundColor = {r=0, g=0.5, b=0, a=1} -- Green
+    end
+end
+
 function DT_V2_RadarActionPanel:onRefresh()
     if self.parent and self.parent.refresh then
         self.parent:refresh()
     end
 end
-
-
 
 function DT_V2_RadarActionPanel:onLocate()
     if not self.parent or not self.parent.listPanel then return end
@@ -55,46 +66,19 @@ function DT_V2_RadarActionPanel:onLocate()
     if not item or not item.item then return end
     
     local data = item.item
+    local uuid = data.uuid
     
-    -- [FIX] Query fresh coordinates directly from Manager to ensure accuracy
-    -- This fixes the discrepancy between list data (which might be slightly stale) and actual position
-    local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(data.uuid)
-    
-    if not tx or not ty then
-        getSpecificPlayer(0):Say("Signal lost. Cannot locate.")
-        return
-    end
-
-    if EventMarkerHandler then
-        local player = getSpecificPlayer(0)
-        local dist = IsoUtils.DistanceTo(tx, ty, player:getX(), player:getY())
-        
-        -- [FIX] Dynamic Background Color based on Proximity
-        local color = {r=0, g=1, b=1} -- Default Cyan (Far)
-        
-        if dist < 300 then
-            color = {r=0.1, g=1, b=0.1} -- Green (Close / < 300m)
-        elseif dist < 1500 then
-            color = {r=1, g=0.9, b=0.2} -- Yellow (Medium / < 1.5km)
-        else
-            color = {r=1, g=0.4, b=0.1} -- Orange (Far / > 1.5km)
-        end
-        
-        local description = "Trader: " .. tostring(data.name)
-        
-        EventMarkerHandler.set(
-            "radar_" .. data.uuid,
-            "friend.png",
-            600, 
-            tx,
-            ty,
-            color,
-            description
-        )
-        getSpecificPlayer(0):Say("Location marked on map.")
+    -- Toggle Logic
+    if self.parent.trackingUUID == uuid then
+        -- Stop Tracking
+        self.parent:stopTracking()
     else
-        getSpecificPlayer(0):Say("GPS System Error.")
+        -- Start Tracking (Overwrites previous due to window logic)
+        self.parent:startTracking(uuid, data.name)
     end
+    
+    -- Update UI immediately
+    self:updateButtonState(uuid)
 end
 
 function DT_V2_RadarActionPanel:new(x, y, width, height)

@@ -54,10 +54,9 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
     local data = item.item
     if not data then return y end
 
-    -- 'self' is the listbox here
     local target = self.target
 
-    -- SPECIAL CASE: Location Info (Simple Text Mode)
+    -- SPECIAL CASE: Location Info
     if data.isLocationInfo then
         if alt then
              self:drawRect(0, y, self.width, self.itemheight, 0.1, 0.2, 0.2, 0.2)
@@ -69,9 +68,7 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
         
         return y + self.itemheight
     end
-    -- END SPECIAL CASE
 
-    -- Use a more robust check for selection
     local isSelected = (item.selected == true)
     if not isSelected and self.selected ~= -1 then
         if self.items[self.selected] == item then
@@ -80,7 +77,6 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
     end
 
     if isSelected then
-        -- Stronger selection highlight (Premium Green)
         self:drawRect(0, y, self.width, self.itemheight, 0.4, 0.05, 0.5, 0.05)
         self:drawRectBorder(0, y, self.width, self.itemheight, 1.0, 0.1, 0.8, 0.1)
     elseif alt then
@@ -89,17 +85,14 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
         self:drawRect(0, y, self.width, self.itemheight, 0.1, 0, 0, 0)
     end
 
-    -- 1. Draw Portrait
     target:drawPortrait(self, y, data)
 
-    -- 2. Draw Text Info
     local contentX = 75
     local color = data.isLive and {r=0.4, g=1, b=0.4} or {r=0.7, g=0.7, b=0.7}
     
     local archName = (DynamicTrading and DynamicTrading.Archetypes and DynamicTrading.Archetypes[data.archetype]) and DynamicTrading.Archetypes[data.archetype].name or data.archetype
     self:drawText(tostring(data.name) .. " [" .. tostring(archName) .. "]", contentX, y + 5, 1, 1, 1, 1, UIFont.Small)
     
-    -- Faction Info (Color Coded)
     local fR, fG, fB = 1, 1, 1
     if data.faction == "Independent" then
         fR, fG, fB = 0.8, 0.8, 0.4 
@@ -110,13 +103,9 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
     end
     self:drawText("Faction: " .. tostring(data.factionName), contentX, y + 25, fR, fG, fB, 1, UIFont.Small)
 
-    -- Distance & Signal
     self:drawText(tostring(data.distText) .. (data.isLive and " [SIGNAL STRONG]" or " [SIGNAL WEAK]"), contentX, y + 45, color.r, color.g, color.b, 1, UIFont.Small)
 
-    -- Expiration (Right Aligned - Bottom line to avoid name overlap)
-    -- Moved to width - 65 to safely avoid Scrollbar overlay
     if data.expireText and data.expireText ~= "" then
-        -- Yellowish color for visibility
         local expR, expG, expB = 1.0, 1.0, 0.6 
         self:drawTextRight(data.expireText, self.width - 65, y + 45, expR, expG, expB, 1, UIFont.Small)
     end
@@ -125,11 +114,12 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
 end
 
 function DT_V2_RadarListPanel:onListMouseDown(itemData)
-    -- 'self' is the DT_V2_RadarListPanel panel here (set by listbox.target)
+    -- 'self' is the DT_V2_RadarListPanel here
     if self.parent and self.parent.actionPanel then
-        -- Only enable Locate if it is a Trader item (has uuid)
         if itemData and itemData.uuid then
             self.parent.actionPanel.btnLocate.enable = true
+            -- [NEW] Update Button Label ("LOCATE" or "STOP")
+            self.parent.actionPanel:updateButtonState(itemData.uuid)
         else
             self.parent.actionPanel.btnLocate.enable = false
         end

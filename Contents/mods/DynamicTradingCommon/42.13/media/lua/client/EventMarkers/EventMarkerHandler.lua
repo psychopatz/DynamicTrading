@@ -25,6 +25,11 @@ function EventMarkerHandler.set(markerID, icon, duration, posX, posY, color, des
     if marker then
         marker.textureIcon = getTexture("media/ui/EventMarkers/" .. icon)
         marker:setDuration(duration)
+        
+        -- [UPDATED] Allow updating color and description dynamically
+        if color then marker.markerColor = color end
+        if desc then marker.desc = desc end
+        
         marker:update(posX, posY)
     end
 end
@@ -34,6 +39,8 @@ function EventMarkerHandler.remove(markerID)
     local marker = EventMarkerHandler.markers[markerID]
     if marker then
         marker:setDuration(0)
+        marker:setVisible(false) -- Force hide immediately
+        marker:removeFromUIManager() -- Ensure it's removed from UI
         EventMarkerHandler.markers[markerID] = nil
     end
 end
@@ -42,6 +49,8 @@ end
 function EventMarkerHandler.removeAll()
     for markerID, marker in pairs(EventMarkerHandler.markers) do
         marker:setDuration(0)
+        marker:setVisible(false)
+        marker:removeFromUIManager()
         EventMarkerHandler.markers[markerID] = nil
     end
 end
