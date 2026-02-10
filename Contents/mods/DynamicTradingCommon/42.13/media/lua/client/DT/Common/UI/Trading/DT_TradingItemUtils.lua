@@ -211,7 +211,15 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                     if pct < 100 then statusSuffix = " (" .. pct .. "%)" end
                 end
             elseif invItem.IsDrainable and invItem:IsDrainable() then
-                local delta = invItem.getUsedDelta and invItem:getUsedDelta() or 0
+                -- Use shared robust B42 logic
+                local delta = 0
+                if DynamicTrading.Economy and DynamicTrading.Economy.Common and DynamicTrading.Economy.Common.GetItemCharge then
+                    delta = DynamicTrading.Economy.Common.GetItemCharge(invItem)
+                else
+                    -- Fallback local logic
+                    delta = invItem.getDrainableUsesFloat and invItem:getDrainableUsesFloat() or (invItem.getUsedDelta and invItem:getUsedDelta() or 0)
+                end
+                
                 local pct = math.floor(delta * 100)
                 if pct < 100 then statusSuffix = " (" .. pct .. "%)" end
             end

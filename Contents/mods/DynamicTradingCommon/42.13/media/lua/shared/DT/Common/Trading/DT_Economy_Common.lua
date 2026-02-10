@@ -47,7 +47,48 @@ function Common.PickFromWeightedPool(pool)
 end
 
 -- =============================================================================
--- 2. STOCK GENERATION
+-- 2. DRAINABLE & CHARGE HELPERS (B42 Compatible)
+-- =============================================================================
+
+function Common.GetItemCharge(itemObj)
+    if not itemObj then return 0 end
+    
+    local d_maxUses = itemObj.getMaxUses and itemObj:getMaxUses() or 0
+    local d_curUses = itemObj.getCurrentUses and itemObj:getCurrentUses() or nil
+    local d_delta = itemObj.getDelta and itemObj:getDelta() or nil
+    local d_usedDelta = itemObj.getUsedDelta and itemObj:getUsedDelta() or nil
+    local d_drainUses = itemObj.getDrainableUsesFloat and itemObj:getDrainableUsesFloat() or nil
+
+    -- 1. Try B42 Specific Getters found in diagnostic
+    if d_curUses and d_maxUses > 0 then
+        return d_curUses / d_maxUses
+    end
+
+    -- 2. Try Standard Float Getters
+    if d_drainUses and d_drainUses > 0 then return d_drainUses end
+    if d_delta and d_delta > 0 then return d_delta end
+    if d_usedDelta and d_usedDelta > 0 then return d_usedDelta end
+    
+    -- 3. Try other potential Integer Uses / Max (B42 style)
+    local d_drainInt = itemObj.getDrainableUsesInt and itemObj:getDrainableUsesInt() or nil
+    local d_drainUsesRaw = itemObj.getDrainableUses and itemObj:getDrainableUses() or nil
+    local d_remUsesInt = itemObj.getRemainingUsesInt and itemObj:getRemainingUsesInt() or nil
+    
+    if d_drainInt and d_maxUses > 0 then return d_drainInt / d_maxUses end
+    if d_drainUsesRaw and d_maxUses > 0 then return d_drainUsesRaw / d_maxUses end
+    if d_remUsesInt and d_maxUses > 0 then return d_remUsesInt / d_maxUses end
+    
+    -- Safe Fallback: If we detect no usage data but the item is considered drainable, assume full.
+    -- This prevents pricing items like Twine at 0 if they haven't been used yet.
+    if d_maxUses > 0 then
+        return 1.0
+    end
+    
+    return 0
+end
+
+-- =============================================================================
+-- 3. STOCK GENERATION
 -- =============================================================================
 
 --- Generates a stock list based on archetype and difficulty.
@@ -486,12 +527,9 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
                 debugLog = debugLog .. " | FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price
             end
 
-        -- C. Standard Drainable (Pills, Vitamins, etc.)
+        -- C. Standard Drainable (Pills, Batteries, Flashlights, etc.)
         elseif itemObj.IsDrainable and itemObj:IsDrainable() then
-            local delta = 0
-            if itemObj.getUsedDelta then
-                delta = itemObj:getUsedDelta()
-            end
+            local delta = Common.GetItemCharge(itemObj)
             price = price * delta
             debugLog = debugLog .. " | DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price
         end
