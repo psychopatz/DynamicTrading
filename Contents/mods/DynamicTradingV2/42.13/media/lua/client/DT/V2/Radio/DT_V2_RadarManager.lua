@@ -255,9 +255,17 @@ function DT_V2_RadarManager.Scan(player, device)
 
     if foundNew then
         player:Say("Found something! Frequency locked.")
-        -- Trigger UI Refresh if open
-        if DT_V2_RadarWindow and DT_V2_RadarWindow.instance then
-            DT_V2_RadarWindow.instance:refresh()
+        
+        -- [MODIFIED] Auto-open window for visual feedback
+        if DT_V2_RadarWindow then
+            -- 1. Check if window is already OPEN and VISIBLE
+            if DT_V2_RadarWindow.instance and DT_V2_RadarWindow.instance:getIsVisible() then
+                -- Just refresh the list
+                DT_V2_RadarWindow.instance:refresh()
+            else
+                -- 2. If NOT open, Force Open it (Pop out)
+                DT_V2_RadarWindow.ToggleWindow(device)
+            end
         end
     else
         player:Say("Nothing but static...")
