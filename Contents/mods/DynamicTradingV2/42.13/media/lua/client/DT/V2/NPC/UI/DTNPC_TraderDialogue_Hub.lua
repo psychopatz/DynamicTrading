@@ -25,13 +25,25 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 factionID = brain and brain.factionID,
                 expirationTime = brain and brain.returnTime
             }
-            print("Trader ID: " .. traderProxy.id)
-            print("Trader Name: " .. traderProxy.name)
-            print("Trader Archetype: " .. traderProxy.archetype)
-            print("Trader Gender: " .. traderProxy.gender)
-            print("Trader Portrait ID: " .. traderProxy.portraitID)
-            print("Trader Faction ID: " .. traderProxy.factionID)
-            print("Trader Expiration Time: " .. traderProxy.expirationTime)
+            
+            -- [FIX] Safety checks for debug prints to prevent "concatenation with nil" crashes
+            print("Trader ID: " .. tostring(traderProxy.id))
+            print("Trader Name: " .. tostring(traderProxy.name))
+            print("Trader Archetype: " .. tostring(traderProxy.archetype))
+            print("Trader Gender: " .. tostring(traderProxy.gender))
+            print("Trader Portrait ID: " .. tostring(traderProxy.portraitID))
+            
+            if traderProxy.factionID then
+                print("Trader Faction ID: " .. traderProxy.factionID)
+            else
+                print("Trader Faction ID: nil")
+            end
+
+            if traderProxy.expirationTime then
+                print("Trader Expiration Time: " .. traderProxy.expirationTime)
+            else
+                print("Trader Expiration Time: nil")
+            end
 
             ui = DT_ConversationUI.Open(traderProxy, nil, nil, false, npc) -- isRadio = false
         else
@@ -61,7 +73,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
         end
     })
 
-    -- OPTION 2: TRADE (Conditional)
+    -- OPTION 2: TRADE (Always Visible)
     local brain = npc:getModData().DTNPCBrain
     local isTrading = false
     
@@ -78,17 +90,15 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
         end
     end
 
-    if isTrading then
-        table.insert(options, {
-            text = "Trade",
-            message = "Let's see what you've got.",
-            onSelect = function(ui)
+    -- [CHANGE] We now insert the option regardless of isTrading status
+    table.insert(options, {
+        text = "Trade",
+        message = "Let's see what you've got.",
+        onSelect = function(ui)
+            -- [CHANGE] Logic check happens here instead
+            if isTrading then
+                -- SUCCESS: Open Trade Window
                 print(DEBUG_PREFIX .. " Trade option selected")
-                print(DEBUG_PREFIX .. " DT_TradingWindow type: " .. type(DT_TradingWindow))
-                if DT_TradingWindow then
-                    print(DEBUG_PREFIX .. " DT_TradingWindow.ToggleWindow type: " .. type(DT_TradingWindow.ToggleWindow))
-                    print(DEBUG_PREFIX .. " DT_TradingWindow.ToggleWindowV2 type: " .. type(DT_TradingWindow.ToggleWindowV2))
-                end
                 
                 local traderID = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
                 local archetype = brain and brain.archetypeID or "General"
@@ -120,9 +130,28 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
                         startTime = getGameTime():getWorldAgeHours()
                     }
                 end
+            else
+                -- FAILURE: Refusal Dialogue
+                local refusals = {
+                    "I'm not open for business right now. Just resting.",
+                    "Shop's closed. I need a break.",
+                    "Can't you see I'm busy? Come back later.",
+                    "I'm off the clock. Stop bothering me.",
+                    "Not now. Check back in a bit.",
+                    "I don't have my stock organized yet.",
+                    "Stop bothering me, I'm resting.",
+                    "I'm just holding onto this spot for now. No trading."
+                }
+                
+                -- Pick a random refusal
+                local msg = refusals[ZombRand(#refusals) + 1]
+                ui:speak(msg)
+                
+                -- Regenerate options so player can choose something else
+                DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             end
-        })
-    end
+        end
+    })
 
 
     -- OPTION 3: QUEST (Placeholder)
