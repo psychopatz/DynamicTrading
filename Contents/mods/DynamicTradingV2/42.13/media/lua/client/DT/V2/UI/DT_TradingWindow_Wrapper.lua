@@ -97,15 +97,11 @@ function V2_DataProvider:getTrader(traderID, archetype)
     local stock = stockData[traderID]
     -- print(DEBUG_PREFIX .. " Stock found. Items: " .. tostring(V2_DataProvider:countTable(stock.items or {})))
     
-    -- Convert V2 stock format {key: {qty, price}} to V1 format {key: qty}
-    local flattenedStocks = {}
+    -- [FIX] Do NOT flatten the stock. Pass the full object so CustomData persists.
+    local processedStocks = {}
     if stock.items then
         for key, itemStock in pairs(stock.items) do
-            if type(itemStock) == "table" then
-                flattenedStocks[key] = itemStock.qty or 0
-            else
-                flattenedStocks[key] = itemStock
-            end
+            processedStocks[key] = itemStock
         end
     end
     
@@ -138,7 +134,7 @@ function V2_DataProvider:getTrader(traderID, archetype)
         name = stock.name or "Trader",
         wallet = stock.wallet or factionWealth or 0,  -- V2 individual wallet
         budget = factionWealth,  -- TradingWindow expects 'budget' for display
-        stocks = flattenedStocks,  -- TradingWindow expects 'stocks', not 'items'
+        stocks = processedStocks,  -- TradingWindow expects 'stocks', not 'items'
         deflation = stock.deflation or {},
         factionID = stock.factionID,
         portraitID = stock.portraitID,
@@ -205,74 +201,50 @@ function V2_DataProvider:getItemData(key)
 end
 
 function V2_DataProvider:getBuyPrice(key, customData)
-    -- print(DEBUG_PREFIX .. " getBuyPrice: " .. tostring(key))
+    local traderID = self._currentTraderID
+    if not traderID then return 99999 end
+
+    -- [FIX] MP Crash: Cannot use DynamicTrading.Economy.V2 on client.
+    -- Implement logic locally using cached data and Common.
     
-    -- First try cached stock items (fastest)
-    if self._stockItems and self._stockItems[key] then
-        local itemStock = self._stockItems[key]
-        if type(itemStock) == "table" then
-            local price = itemStock.price or itemStock.basePrice or 0
-            -- print(DEBUG_PREFIX .. " Price from _stockItems: $" .. tostring(price))
-            return price
-        end
-    end
-    
-    -- Fallback: Get from ModData
-    local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
-                      or ModData.get("DynamicTrading_Stock")
-    
-    if stockData and self._currentTraderID and stockData[self._currentTraderID] then
-        local items = stockData[self._currentTraderID].items
-        if items and items[key] then
-            local price = items[key].price or items[key].basePrice or 99999
-            -- print(DEBUG_PREFIX .. " Price from ModData: $" .. tostring(price))
-            return price
-        end
-    end
-    
-    -- Fallback to base price from MasterList
     local itemData = DynamicTrading.Config.MasterList[key]
-    if itemData then
-        -- print(DEBUG_PREFIX .. " Price from MasterList (fallback): $" .. tostring(itemData.basePrice))
-        return itemData.basePrice
-    end
+    if not itemData then return 99999 end
+
+    -- Fetch local difficulty context
+    local diff = DynamicTrading.Config.GetDifficultyData()
     
-    print(DEBUG_PREFIX .. " WARNING: No price found for " .. tostring(key))
-    return 99999
+    -- Prepare modifiers
+    local modifiers = {
+        tagsConfig = DynamicTrading.Config.Tags,
+        customData = customData
+    }
+
+    -- Use Shared Common Logic
+    return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers)
 end
 
 function V2_DataProvider:getSellPrice(invItem, masterKey, trader)
-    -- print(DEBUG_PREFIX .. " getSellPrice: " .. tostring(masterKey))
+    local traderID = self._currentTraderID
+    if not traderID or not invItem then return 0 end
     
+    -- [FIX] MP Crash: Use Common logic locally.
     local itemData = DynamicTrading.Config.MasterList[masterKey]
-    if not itemData then
-        print(DEBUG_PREFIX .. " WARNING: Item not in MasterList")
-        return 0
-    end
+    if not itemData then return 0 end
+
+    -- Get Context
+    local diff = DynamicTrading.Config.GetDifficultyData()
+    local archetypeID = trader.archetype or "General"
+    local archetype = DynamicTrading.Archetypes[archetypeID]
+
+    local modifiers = {
+        tagsConfig = DynamicTrading.Config.Tags,
+        -- Client doesn't track globalHeat or localDeflation perfectly for now, 
+        -- but we can add them if cached in 'trader' proxy object.
+        -- trader.deflation is passed from getTrader() which gets it from cache.
+    }
     
-    local basePrice = itemData.basePrice or 0
-    local price = basePrice * 0.5 -- Base 50% sell-back
-    
-    -- Condition penalty
-    if invItem and (invItem.IsDrainable or invItem.getCondition) then
-        if invItem:getCondition() and invItem:getConditionMax() and invItem:getConditionMax() > 0 then
-            local cond = invItem:getCondition() / invItem:getConditionMax()
-            price = price * cond
-            -- print(DEBUG_PREFIX .. " Condition modifier: " .. string.format("%.2f", cond))
-        end
-    end
-    
-    -- Apply deflation from cache if available
-    if trader and trader.deflation and trader.deflation[masterKey] then
-        local deflationCount = trader.deflation[masterKey]
-        local deflationMod = math.max(0.5, 1.0 - (deflationCount * 0.05)) -- 5% per sale, min 50%
-        price = price * deflationMod
-        -- print(DEBUG_PREFIX .. " Deflation modifier: " .. string.format("%.2f", deflationMod) .. " (sold " .. deflationCount .. "x)")
-    end
-    
-    local finalPrice = math.floor(price)
-    -- print(DEBUG_PREFIX .. " Final sell price: $" .. tostring(finalPrice))
-    return finalPrice
+    -- Use Shared Common Logic
+    return DynamicTrading.Economy.Common.GetSellPrice(masterKey, itemData, invItem, diff, archetype, modifiers)
 end
 
 function V2_DataProvider:getPriceModifier(tags)

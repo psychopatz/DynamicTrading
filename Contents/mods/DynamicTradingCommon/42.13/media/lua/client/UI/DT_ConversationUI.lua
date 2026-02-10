@@ -16,7 +16,7 @@ require "ISUI/ISLabel"
 require "Utils/DT_StringUtils" 
 require "Utils/DT_CoreUtils"
 
-DT_ConversationUI = ISCollapsableWindow:derive("DT_ConversationUI")
+DT_ConversationUI = DT_ConversationUI or ISCollapsableWindow:derive("DT_ConversationUI")
 DT_ConversationUI.instance = nil
 
 -- =============================================================================

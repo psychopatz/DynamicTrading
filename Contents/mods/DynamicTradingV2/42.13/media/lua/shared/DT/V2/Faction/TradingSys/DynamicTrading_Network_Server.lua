@@ -209,10 +209,13 @@ Handlers.TradeTransaction = function(player, args)
         end
         
         local currentQty = type(itemStock) == "table" and itemStock.qty or itemStock
-        local unitPrice = type(itemStock) == "table" and (itemStock.price or itemStock.basePrice) or (itemData.basePrice or 100)
+        local customData = type(itemStock) == "table" and itemStock.customData or nil
+        
+        -- Use Unified V2 Pricing (Correctly handles condition scaling)
+        local unitPrice = DynamicTrading.Economy.V2.GetBuyPrice(traderID, key, customData)
         local totalCost = unitPrice * clientQty
         
-        print(DEBUG_PREFIX .. " Buy: " .. key .. " x" .. clientQty .. " @ $" .. unitPrice)
+        print(DEBUG_PREFIX .. " Buy: " .. key .. " x" .. clientQty .. " @ $" .. unitPrice .. " (Total: $" .. totalCost .. ")")
         
         -- 2. Check Stock
         if currentQty < clientQty then

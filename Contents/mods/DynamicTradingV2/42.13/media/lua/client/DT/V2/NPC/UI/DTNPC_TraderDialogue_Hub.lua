@@ -84,6 +84,11 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             message = "Let's see what you've got.",
             onSelect = function(ui)
                 print(DEBUG_PREFIX .. " Trade option selected")
+                print(DEBUG_PREFIX .. " DT_TradingWindow type: " .. type(DT_TradingWindow))
+                if DT_TradingWindow then
+                    print(DEBUG_PREFIX .. " DT_TradingWindow.ToggleWindow type: " .. type(DT_TradingWindow.ToggleWindow))
+                    print(DEBUG_PREFIX .. " DT_TradingWindow.ToggleWindowV2 type: " .. type(DT_TradingWindow.ToggleWindowV2))
+                end
                 
                 local traderID = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
                 local archetype = brain and brain.archetypeID or "General"

@@ -9,7 +9,7 @@ require "DT/Common/Config"
 -- =============================================================================
 -- CLASS DEFINITION
 -- =============================================================================
-DT_TradingWindow = ISCollapsableWindow:derive("DT_TradingWindow")
+DT_TradingWindow = DT_TradingWindow or ISCollapsableWindow:derive("DT_TradingWindow")
 DT_TradingWindow.instance = nil
 
 function DT_TradingWindow:initialise()

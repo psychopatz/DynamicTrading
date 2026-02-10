@@ -59,15 +59,16 @@ end
 -- 2. V2 PRICING LOGIC (Wrapper)
 -- =============================================================================
 
-function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType)
+function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customData)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 99999 end
     
-    -- Fetch customData from stock if available
-    local customData = nil
-    if soul.stocks and soul.stocks[itemFullType] then
-        customData = soul.stocks[itemFullType].customData
+    -- Fetch customData from stock if not provided (e.g. for server-side verification)
+    if not customData then
+        if soul.stocks and soul.stocks[itemFullType] then
+            customData = soul.stocks[itemFullType].customData
+        end
     end
 
     local diff = DynamicTrading.Config.GetDifficultyData()
