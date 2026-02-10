@@ -5,10 +5,7 @@ if not DT_TradingItemUtils then DT_TradingItemUtils = {} end
 -- =============================================================================
 -- This file contains the logic for checking items, generating status strings,
 -- and extracting data for both Buying and Selling lists.
-local DEBUG = true
 
---- Internal helper to check debug state.
-local function isDebugEnabled() return DEBUG end
 
 --- Recursively finds an item by ID in a container and its sub-containers.
 function DT_TradingItemUtils.findItemRecursively(container, itemID)
@@ -132,9 +129,9 @@ function DT_TradingItemUtils.getItemDisplayName(listItem, invItem, scriptItem)
                 end
                 
                 local finalName = fName .. " (" .. containerName .. ")"
-                if isDebugEnabled() then
-                    print("[DT DEBUG] Dynamic Name Constructed: " .. finalName .. " | Side: " .. (isBuy and "BUY" or "SELL"))
-                end
+                -- if isDebugEnabled() then
+                --     print("[DT DEBUG] Dynamic Name Constructed: " .. finalName .. " | Side: " .. (isBuy and "BUY" or "SELL"))
+                -- end
                 return finalName
             end
         end
@@ -192,9 +189,9 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                 
                 local fType = getFluidTypeID(fluidContainer)
                 
-                if isDebugEnabled() then
-                    print("[DT DEBUG] invItem Fluid: " .. tostring(fType) .. " | Amt: " .. amt .. "/" .. cap)
-                end
+                -- if isDebugEnabled() then
+                --     print("[DT DEBUG] invItem Fluid: " .. tostring(fType) .. " | Amt: " .. amt .. "/" .. cap)
+                -- end
                 
                 if cap > 0 then
                     local pct = math.floor((amt / cap) * 100)
@@ -287,6 +284,9 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
 
                         if price > 0 then
                             local cat = itemData.tags[1] or "Misc"
+                            if invItem.isRotten and invItem:isRotten() then
+                                cat = "Rotten"
+                            end
                             if not categorized[cat] then
                                 categorized[cat] = {}
                                 table.insert(categories, cat)
@@ -301,8 +301,14 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
                                 isBuy = false,
                                 priceMod = dataProvider:getPriceModifier(itemData.tags)
                             })
+                        else
+                            if isDebugEnabled() then print("[DT DEBUG] Sell Scan: " .. fullType .. " | REJECTED: Price is 0 (or floor to 0)") end
                         end
+                    else
+                        if isDebugEnabled() then print("[DT DEBUG] Sell Scan: " .. fullType .. " | REJECTED: Trader already has this exact item key in stock") end
                     end
+                else
+                    if isDebugEnabled() then print("[DT DEBUG] Sell Scan: " .. fullType .. " | REJECTED: Item not found in Master Registry") end
                 end
             end
         end

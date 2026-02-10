@@ -394,29 +394,31 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
 
     -- 1. Base & Difficulty
     local price = itemData.basePrice * diffData.sellMult
+    local debugLog = "[DT DEBUG] Sell Price Calc: " .. itemKey .. " | Base: " .. price
 
     -- 2. Condition & State Penalty
     if itemObj then
         -- ROTTEN CHECK
         -- Safety: isRotten might not exist on all item types or older API versions
         if itemObj.isRotten and itemObj:isRotten() then
+            -- [NEW] Add a virtual tag for Rotten items so archetypes can target them
+            table.insert(itemData.tags, "Rotten")
+            print(debugLog .. " | STATE: ROTTEN (PRICE = 1)")
             return 1
         end
 
         local maxCond = itemObj:getConditionMax()
         if maxCond > 0 then
-             local cond = itemObj:getCondition() / maxCond
-             price = price * cond
+             local condRatio = itemObj:getCondition() / maxCond
+             price = price * condRatio
+             debugLog = debugLog .. " | Condition: " .. math.floor(condRatio * 100) .. "%"
         end
         
         -- DRAINABLE / FLUID PRICING
-        -- Safety: getScriptItem might not exist on older API, but should on B42.
-        -- If it fails, we skip specific fluid logic.
         local scriptItem = nil
         if itemObj.getScriptItem then scriptItem = itemObj:getScriptItem() end
         
         -- A. Fluid Container
-        -- Check if method exists first
         if itemObj.getFluidContainer and itemObj:getFluidContainer() then
             local fluidContainer = itemObj:getFluidContainer()
             local capacity = fluidContainer:getCapacity()
@@ -443,34 +445,25 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
                 fluidType = fluidContainer:getFluidType()
             end
 
-            -- pricing Logic based on Fluid Type
             local fluidValue = 0
             local fluidData = nil
             if fluidType and DynamicTrading.Fluids then
-                -- Ensure it's a string for lookups/find
                 local typeStr = tostring(fluidType)
                 fluidData = DynamicTrading.Fluids[typeStr]
                 
-                -- Try with Base. prefix if not found
                 if not fluidData and not typeStr:find("%.") then
                     fluidData = DynamicTrading.Fluids["Base." .. typeStr]
                 end
             end
 
             if fluidData then
-                -- Registry prices are "raw", apply sell multiplier
                 fluidValue = (fluidData.basePrice * currentAmount) * diffData.sellMult
             else
-                -- [ANTI-CHEAT] Fallback if fluid type unknown
-                -- Use a flat low value (similar to water) instead of a percentage of the container item.
                 local unknownFluidBase = 1.0
                 fluidValue = (unknownFluidBase * currentAmount) * diffData.sellMult
             end
 
-            -- Container Reconstruction
-            -- Instead of 20% of CURRENT item (which might be expensive wine), 
-            -- we try to find the actual empty container price.
-            local containerValue = price * 0.2 -- Default Fallback
+            local containerValue = price * 0.2
             if scriptItem and scriptItem.getReplaceOnDeplete then
                 local emptyID = scriptItem:getReplaceOnDeplete()
                 if emptyID and DynamicTrading.Config.MasterList[emptyID] then
@@ -480,15 +473,17 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             end
 
             price = containerValue + fluidValue
+            debugLog = debugLog .. " | FLUID: " .. tostring(fluidType) .. " (" .. math.floor(ratio*100) .. "%) | NewPrice: " .. price
 
         -- B. Food Consumption (Partially eaten)
         elseif itemObj.getHungerChange and scriptItem and scriptItem.getHungerChange then
             local currentHunger = itemObj:getHungerChange()
             local baseHunger = scriptItem:getHungerChange()
             
-            if baseHunger < 0 then -- Hunger items have negative values (e.g. -20)
+            if baseHunger < 0 then
                 local ratio = currentHunger / baseHunger
                 price = price * math.max(0, math.min(1, ratio))
+                debugLog = debugLog .. " | FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price
             end
 
         -- C. Standard Drainable (Pills, Vitamins, etc.)
@@ -498,6 +493,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
                 delta = itemObj:getUsedDelta()
             end
             price = price * delta
+            debugLog = debugLog .. " | DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price
         end
     end
 
@@ -505,6 +501,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
     if getPriceMod then
         local eventMult = getPriceMod(itemData.tags)
         price = price * eventMult
+        if eventMult ~= 1.0 then debugLog = debugLog .. " | EventMult: " .. eventMult end
     end
 
     -- 4. Global Inflation (Heat)
@@ -512,6 +509,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         local heat = globalHeat[tag]
         if heat and heat ~= 0 then
             price = price * (1.0 + heat)
+            debugLog = debugLog .. " | Heat(" .. tag .. "): " .. heat
         end
     end
 
@@ -521,6 +519,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         local localMult = 1.0 - (localDeflationCount * penaltyPerItem)
         if localMult < 0.2 then localMult = 0.2 end
         price = price * localMult
+        debugLog = debugLog .. " | Deflation: " .. localMult
     end
 
     -- 6. Archetype Bonus ("Wants")
@@ -528,12 +527,15 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         for _, tag in ipairs(itemData.tags) do
             if archetype.wants[tag] then
                 price = price * archetype.wants[tag]
+                debugLog = debugLog .. " | Want(" .. tag .. "): " .. archetype.wants[tag]
                 break 
             end
         end
     end
 
     if price < 0 then price = 0 end
+    
+    if isDebugEnabled() then print(debugLog .. " | FINAL: " .. math.floor(price)) end
 
     return math.floor(price)
 end
