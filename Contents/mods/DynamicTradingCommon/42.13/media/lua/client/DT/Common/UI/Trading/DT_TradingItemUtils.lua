@@ -171,7 +171,7 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                 if pct < 100 then statusSuffix = " (" .. pct .. "%)" end
             elseif customData.hungerChange then
                 if scriptItem and scriptItem.getHungerChange then
-                    local base = scriptItem:getHungerChange()
+                    local base = DynamicTrading.Economy.Common.GetNormalizedHunger(scriptItem)
                     if base < 0 then
                         local pct = math.floor((customData.hungerChange / base) * 100)
                         if pct < 100 then statusSuffix = " (" .. pct .. "%)" end
@@ -205,7 +205,7 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                 isRotten = true
             elseif invItem.getHungerChange and scriptItem and scriptItem.getHungerChange then
                 local current = invItem:getHungerChange()
-                local base = scriptItem:getHungerChange()
+                local base = DynamicTrading.Economy.Common.GetNormalizedHunger(scriptItem)
                 if base < 0 then
                     local pct = math.floor((current / base) * 100)
                     if pct < 100 then statusSuffix = " (" .. pct .. "%)" end

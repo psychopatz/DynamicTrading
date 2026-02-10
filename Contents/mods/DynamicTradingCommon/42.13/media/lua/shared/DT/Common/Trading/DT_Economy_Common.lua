@@ -17,6 +17,15 @@ local Common = DynamicTrading.Economy.Common
 -- 1. UTILITIES
 -- =============================================================================
 
+-- Helper to handle the Build 42 hunger/thirst normalization discrepancy.
+-- Script values are often integers (e.g. -15) while instance values are floats (e.g. -0.15).
+function Common.GetNormalizedHunger(scriptItem)
+    if not scriptItem or not scriptItem.getHungerChange then return 0 end
+    local val = scriptItem:getHungerChange()
+    if math.abs(val) > 1.0 then return val / 100.0 end
+    return val
+end
+
 -- Picks an item key from a pool based on 'weight' property.
 -- pool = { {key="Base.Apple", weight=100}, {key="Base.Axe", weight=10} }
 function Common.PickFromWeightedPool(pool)
@@ -349,7 +358,7 @@ function Common.GenerateItemCondition(itemData)
     
     -- 3. Food (e.g. Apple, Steak)
     if scriptItem.getHungerChange and not data.fluidAmount and not data.usedDelta then
-        local baseHunger = scriptItem:getHungerChange()
+        local baseHunger = Common.GetNormalizedHunger(scriptItem)
         if baseHunger < 0 then
             -- Randomize: 10% to 100% of base hunger
             local mult = (ZombRand(1, 11) / 10.0)
@@ -519,7 +528,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         -- B. Food Consumption (Partially eaten)
         elseif itemObj.getHungerChange and scriptItem and scriptItem.getHungerChange then
             local currentHunger = itemObj:getHungerChange()
-            local baseHunger = scriptItem:getHungerChange()
+            local baseHunger = Common.GetNormalizedHunger(scriptItem)
             
             if baseHunger < 0 then
                 local ratio = currentHunger / baseHunger
