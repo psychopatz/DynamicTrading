@@ -1,4 +1,5 @@
 if not DT_TradingItemUtils then DT_TradingItemUtils = {} end
+require "DT/Common/Trading/DT_Economy_Common"
 
 -- =============================================================================
 -- DT_TradingItemUtils: Logic for Trading Items
@@ -177,6 +178,11 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                         if pct < 100 then statusSuffix = " (" .. pct .. "%)" end
                     end
                 end
+            elseif customData.condition then
+                if scriptItem and scriptItem.getConditionMax and scriptItem:getConditionMax() > 0 then
+                    local pct = math.floor((customData.condition / scriptItem:getConditionMax()) * 100)
+                    if pct < 100 then statusSuffix = " (" .. pct .. "%)" end
+                end
             end
         end
     else
@@ -332,7 +338,6 @@ function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized,
         if itemData then
             local scriptItem = getScriptManager():getItem(itemData.item)
             local sortName = scriptItem and scriptItem:getDisplayName() or key
-            local price = dataProvider:getBuyPrice(key)
             local cat = itemData.tags[1] or "Misc"
 
             if not categorized[cat] then
@@ -345,9 +350,21 @@ function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized,
             if type(qty) == "table" then
                 stockQty = tonumber(qty.qty) or 0
                 customData = qty.customData
+                
+                -- DEEP DEBUG
+                local debugStr = ""
+                if customData then
+                    for k, v in pairs(customData) do
+                        debugStr = debugStr .. k .. "=" .. tostring(v) .. ", "
+                    end
+                end
+                print("[DT DEBUG] Client Scan: " .. key .. " Data: " .. debugStr)
             else
                 stockQty = tonumber(qty) or 0
+                print("[DT DEBUG] Client Scan: " .. key .. " is OLD FORMAT (number only)")
             end
+
+            local price = dataProvider:getBuyPrice(key, customData)
 
             table.insert(categorized[cat], {
                 key = key,

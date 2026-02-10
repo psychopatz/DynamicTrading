@@ -52,9 +52,9 @@ function V1_DataProvider:getItemData(key)
     return DynamicTrading.Config.MasterList[key]
 end
 
-function V1_DataProvider:getBuyPrice(key)
+function V1_DataProvider:getBuyPrice(key, customData)
     local data = DynamicTrading.Manager.GetData()
-    return DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat or 0)
+    return DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat or 0, customData)
 end
 
 function V1_DataProvider:getSellPrice(invItem, masterKey, trader)

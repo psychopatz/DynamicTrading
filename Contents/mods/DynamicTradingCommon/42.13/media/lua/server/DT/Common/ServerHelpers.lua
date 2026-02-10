@@ -132,7 +132,10 @@ function Helpers.AddItemWithCondition(container, fullType, count, customData)
                 item:getFluidContainer():setAmount(customData.fluidAmount)
             end
             
-            -- Future: Condition?
+            -- Apply Condition (Durability)
+            if customData.condition then
+                item:setCondition(customData.condition)
+            end
         end
     end
     

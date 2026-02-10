@@ -21,6 +21,7 @@ local Common = DynamicTrading.Economy.Common
 -- Script values are often integers (e.g. -15) while instance values are floats (e.g. -0.15).
 function Common.GetNormalizedHunger(scriptItem)
     if not scriptItem or not scriptItem.getHungerChange then return 0 end
+    
     local val = scriptItem:getHungerChange()
     if math.abs(val) > 1.0 then return val / 100.0 end
     return val
@@ -258,57 +259,37 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             local qty = ZombRand(min, max + 1)
             
             -- Apply factors
-            local qty = math.floor(qty * diffData.stockMult * volumeMult * globalStockMult)
+            qty = math.floor(qty * diffData.stockMult * volumeMult * globalStockMult)
             
             if qty < 1 then qty = 1 end 
             
-            -- V1 Structure update: 
-            -- V1 resultStock was { [key] = qty }.
-            -- To support customData, we might need to change the structure OR
-            -- store it in a separate table? 
-            -- But Economy.V1.GenerateStock returns resultStock directly.
-            -- If we change the return type to { [key] = { qty=.., customData=.. } }, check if V1 UI breaks.
+            -- [NEW] EXPERT TAG CHECK (Agnostic variation system)
+            local isExpert = false
+            if archetype and archetype.expertTags then
+                for _, tag in ipairs(itemData.tags) do
+                    for _, eTag in ipairs(archetype.expertTags) do
+                        if tag == eTag then isExpert = true break end
+                    end
+                    if isExpert then break end
+                end
+            end
+
+            -- [NEW] Unified Table Structure {qty=X, customData=Y}
+            local conditionData = Common.GenerateItemCondition(itemData, isExpert)
             
-            -- Checking V1 consumers: 
-            -- Manager.lua uses it.
-            -- DT_ServerCommands writes it to 'trader.stocks'.
-            -- GetStock sends it to client.
-            -- V1 UI (DT_TradingWindow) iterates it.
+            print("[DT DEBUG] GenerateStock: " .. key .. " | Qty: " .. qty .. " | CustomData: " .. (conditionData and "YES" or "NO") .. " | IsExpert: " .. tostring(isExpert))
             
-            -- If we change V1 structure now, it's a breaking change for V1 UI.
-            -- USER INTENT: "I want the trader to sell me a random amount... how do we approach this"
-            -- USER defined: "since this is being used by both mod versions, I would recommend you to put it on commons"
-            
-            -- For V1, keeping simple maps {key=qty} makes it hard to store per-item data.
-            -- However, we can store it in a parallel structure in the Trader Object?
-            -- Or, since V1 is legacy/maintenance, maybe we just enable it for V2?
-            -- Wait, the user said "It would price the liquid itself... when I sell... Also same as buying too".
-            
-            -- If we want V1 to have this, we MUST update the stock structure.
-            -- V1 UI iterates `for k,v in pairs(stock)`. If v is table, UI might break if it expects number.
-            
-            -- Let's stick to V2 implementation primarily unless user explicitly asked to Refactor V1 UI.
-            -- User said: "It would price the liquid itself... Also same as buying too".
-            -- The "Buying" part requires the stock data to exist.
-            
-            -- DECISION: For V1, we will NOT change the stock structure to avoid breaking legacy UI.
-            -- V1 will get the "Sell" improvements (Price logic in Common), but maybe not the "Buy Randomized" feature
-            -- unless we do a massive V1 refactor. 
-            
-            -- BUT, I can inject it into a separate field if needed? 
-            -- Actually, let's look at `DT_Economy_Common.GenerateStock`. It returns `resultStock` as { key = qty }.
-            -- I can't easily change Common.GenerateStock return type without breaking V1 if V1 relies on it being strict.
-            -- Common.GenerateStock is already returning { key = qty }.
-            
-            -- To support V2, V2 wrapper iterates this and converts it.
-            -- So `Common` doesn't need to change to return complex objects.
-            -- `Common` is fine.
-            
-            -- V2 Wrapper (`DynamicTrading.Economy.V2.GenerateStock`) is where we add the complexity.
-            -- V1 Wrapper (`DynamicTrading.Economy.V1.GenerateStock`) calls Common.
-            
-            resultStock[key] = qty
+            resultStock[key] = {
+                qty = qty,
+                customData = conditionData
+            }
         end
+    end
+
+    -- [DEBUG FINAL STRUCTURE]
+    for k, v in pairs(resultStock) do
+        print("[DT DEBUG] GenerateStock Result Sample: " .. tostring(k) .. " -> type is " .. type(v))
+        break
     end
 
     return resultStock
@@ -316,13 +297,10 @@ end
 
 --- Generates random condition/fluid data for an item if applicable.
 -- @param itemData (Table) MasterList entry
+-- @param isExpert (Boolean) If true, returns "perfect" values (100% capacity/charge)
 -- @return (Table|nil) customData { usedDelta=0.5, fluidAmount=... } or nil
-function Common.GenerateItemCondition(itemData)
+function Common.GenerateItemCondition(itemData, isExpert)
     if not itemData then return nil end
-    
-    -- We can't easily check 'isDrainable' from just the MasterList entry without looking up the ScriptItem.
-    -- However, we can use a heuristic or just always return nil unless we want to force something.
-    -- Better approach: The caller (Stock Generator) might check ScriptManager.
     
     local scriptItem = getScriptManager():getItem(itemData.item)
     if not scriptItem then return nil end
@@ -330,41 +308,59 @@ function Common.GenerateItemCondition(itemData)
     local data = {}
     local hasData = false
     
+    -- [DEBUG]
+    print("[DT DEBUG] GenerateItemCondition for: " .. tostring(itemData.item) .. " | IsExpert: " .. tostring(isExpert))
+    
     -- 1. Fluid Container (e.g. Gas Can, Water Bottle)
-    -- We want to randomize the amount, but maybe bias towards full for shops? 
-    -- Let's do random for now as requested.
-    if scriptItem:getFluidContainer() then
-        local capacity = scriptItem:getFluidContainer():getCapacity()
-        -- Randomize: 0 to Capacity (or maybe 10% to 100%?)
-        -- Let's do 0.1 to 1.0 multiplier
-        local mult = (ZombRand(10, 101) / 100.0) 
+    local fc = scriptItem.getFluidContainer and scriptItem:getFluidContainer()
+    if fc then
+        local capacity = (fc.getCapacity and fc:getCapacity()) or 0
+        -- Expert/Perfect Item check
+        local mult = isExpert and 1.0 or (ZombRand(10, 101) / 100.0) 
         data.fluidAmount = capacity * mult
+        
+        print("  - FLUID detected. Capacity: " .. capacity .. " | Amount: " .. data.fluidAmount)
 
-        -- [NEW] Store default fluid type
-        if scriptItem:getFluidContainer().getFluidType then
-            data.fluidType = scriptItem:getFluidContainer():getFluidType()
+        -- Store default fluid type
+        if fc.getFluidType then
+            data.fluidType = fc:getFluidType()
+            print("  - Fluid Type: " .. tostring(data.fluidType))
         end
 
         hasData = true
     end
     
     -- 2. Drainable (e.g. Bleach, Vitamins)
-    -- Only if it's NOT a fluid container (usually distinct, but check IsDrainable)
-    if scriptItem:IsDrainable() and not data.fluidAmount then
-        local mult = (ZombRand(1, 101) / 100.0)
+    if not hasData and scriptItem.IsDrainable and scriptItem:IsDrainable() then
+        local mult = isExpert and 1.0 or (ZombRand(1, 101) / 100.0)
         data.usedDelta = mult
+        print("  - DRAINABLE detected. usedDelta: " .. mult)
         hasData = true
     end
     
     -- 3. Food (e.g. Apple, Steak)
-    if scriptItem.getHungerChange and not data.fluidAmount and not data.usedDelta then
+    if not hasData and scriptItem.getHungerChange then
         local baseHunger = Common.GetNormalizedHunger(scriptItem)
-        if baseHunger < 0 then
-            -- Randomize: 10% to 100% of base hunger
-            local mult = (ZombRand(1, 11) / 10.0)
+        if baseHunger and baseHunger < 0 then
+            local mult = isExpert and 1.0 or (ZombRand(1, 11) / 10.0)
             data.hungerChange = baseHunger * mult
+            print("  - FOOD detected. baseHunger: " .. baseHunger .. " | hungerChange: " .. data.hungerChange)
             hasData = true
         end
+    end
+    
+    -- 4. Condition (Durability, Weapons, Tools)
+    if not hasData and scriptItem.getConditionMax and scriptItem:getConditionMax() > 0 then
+        local max = scriptItem:getConditionMax()
+        local mult = isExpert and 1.0 or (ZombRand(2, 11) / 10.0) -- 20% to 100%
+        data.condition = math.floor(max * mult)
+        if data.condition < 1 then data.condition = 1 end
+        print("  - CONDITION detected. Value: " .. data.condition .. "/" .. max)
+        hasData = true
+    end
+    
+    if not hasData then
+        print("  - NO dynamic data generated for this item.")
     end
     
     if hasData then return data end
@@ -419,6 +415,44 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers)
 
     -- 4. Difficulty
     price = price * diffData.buyMult
+
+    -- [NEW] Condition/Charge Scaler (Dynamic Buying Variation)
+    if modifiers.customData then
+        local cd = modifiers.customData
+        local scale = 1.0
+        
+        -- A. Fluid
+        if cd.fluidAmount and itemData.item then
+            local script = getScriptManager():getItem(itemData.item)
+            if script and script.getFluidContainer then
+                local fc = script:getFluidContainer()
+                if fc and fc.getCapacity and fc:getCapacity() > 0 then
+                    scale = cd.fluidAmount / fc:getCapacity()
+                end
+            end
+        -- B. Drainable
+        elseif cd.usedDelta then
+            scale = cd.usedDelta
+        -- C. Food
+        elseif cd.hungerChange then
+            local script = getScriptManager():getItem(itemData.item)
+            if script then
+                local base = Common.GetNormalizedHunger(script)
+                if base < 0 then
+                    scale = cd.hungerChange / base
+                end
+            end
+        -- D. Condition
+        elseif cd.condition and itemData.item then
+            local script = getScriptManager():getItem(itemData.item)
+            if script and script.getConditionMax and script:getConditionMax() > 0 then
+                scale = cd.condition / script:getConditionMax()
+            end
+        end
+
+        -- Scaled price (minimum 20% value even if near empty, for the container)
+        price = price * math.max(0.2, scale)
+    end
 
     if price < 1 then price = 1 end
 

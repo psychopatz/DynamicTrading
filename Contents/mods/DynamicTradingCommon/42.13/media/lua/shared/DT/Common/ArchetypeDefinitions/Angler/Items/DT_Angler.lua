@@ -10,6 +10,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
             ["Trapping"] = 4,
             ["Water"] = 4
         },
+        expertTags = { "Fish", "Fishing", "Bait" },
         wants = {
             ["Tool"] = 1.2,
             ["Textile"] = 1.4,

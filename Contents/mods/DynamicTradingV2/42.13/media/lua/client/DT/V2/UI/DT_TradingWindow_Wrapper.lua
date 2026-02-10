@@ -204,7 +204,7 @@ function V2_DataProvider:getItemData(key)
     return DynamicTrading.Config.MasterList[key]
 end
 
-function V2_DataProvider:getBuyPrice(key)
+function V2_DataProvider:getBuyPrice(key, customData)
     -- print(DEBUG_PREFIX .. " getBuyPrice: " .. tostring(key))
     
     -- First try cached stock items (fastest)

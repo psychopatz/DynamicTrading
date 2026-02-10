@@ -62,7 +62,7 @@ end
 -- =============================================================================
 -- 2. BUY PRICE CALCULATOR (Wrapper)
 -- =============================================================================
-function DynamicTrading.Economy.V1.GetBuyPrice(itemKey, globalHeat)
+function DynamicTrading.Economy.V1.GetBuyPrice(itemKey, globalHeat, customData)
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if not itemData then return 1 end
     
@@ -71,7 +71,8 @@ function DynamicTrading.Economy.V1.GetBuyPrice(itemKey, globalHeat)
     local modifiers = {
         tagsConfig = DynamicTrading.Config.Tags,
         globalHeat = globalHeat,
-        getPriceModifier = nil
+        getPriceModifier = nil,
+        customData = customData
     }
 
     if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then

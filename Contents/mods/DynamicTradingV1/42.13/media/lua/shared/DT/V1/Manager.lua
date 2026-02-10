@@ -479,11 +479,20 @@ function DynamicTrading.Manager.RestockTrader(traderID)
     if not trader then return end
     local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
     local interval = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.RestockInterval) or 1
-    -- Check if new trader (-1) or if interval passed
     if (trader.lastRestockDay == -1) or (currentDay - trader.lastRestockDay >= interval) then
         if DynamicTrading.Economy and DynamicTrading.Economy.V1 and DynamicTrading.Economy.V1.GenerateStock then
-            trader.stocks = DynamicTrading.Economy.V1.GenerateStock(trader.archetype)
+            local newStock = DynamicTrading.Economy.V1.GenerateStock(trader.archetype)
+            trader.stocks = newStock
             trader.lastRestockDay = currentDay
+            
+            -- [DEBUG]
+            local count = 0
+            local withData = 0
+            for k, v in pairs(newStock) do
+                count = count + 1
+                if type(v) == "table" then withData = withData + 1 end
+            end
+            print("[DT DEBUG] Manager.RestockTrader: " .. traderID .. " | Total Items: " .. count .. " | Tables: " .. withData)
         end
     end
 end
@@ -517,13 +526,20 @@ end
 function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
     local data = DynamicTrading.Manager.GetData()
     local trader = data.Traders[traderID]
-    if not trader or not trader.stocks[itemKey] then return end
-    trader.stocks[itemKey] = math.max(0, trader.stocks[itemKey] - qty)
+    if not trader or not trader.stocks then return end
+    
+    local entry = trader.stocks[itemKey]
+    if type(entry) == "table" then
+        entry.qty = math.max(0, (tonumber(entry.qty) or 0) - qty)
+    else
+        trader.stocks[itemKey] = math.max(0, (tonumber(entry) or 0) - qty)
+    end
     
     -- [NEW] Increase Trader Budget
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if itemData then
-        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(itemKey, data.globalHeat)
+        local customData = (type(entry) == "table") and entry.customData or nil
+        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(itemKey, data.globalHeat, customData)
         local totalGain = unitPrice * qty
         trader.budget = (trader.budget or 1000) + totalGain
         

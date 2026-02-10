@@ -51,7 +51,7 @@ end
 -- COMMAND: TradeTransaction
 -- Description: Buying or Selling items
 function Commands.TradeTransaction(player, args)
-    local type = args.type
+    local transactionType = args.type
     local traderID = args.traderID
     local key = args.key
     local category = args.category or "Misc"
@@ -68,13 +68,23 @@ function Commands.TradeTransaction(player, args)
     local scriptItem = getScriptManager():getItem(itemData.item)
     local safeDisplayName = scriptItem and scriptItem:getDisplayName() or "Unknown Item"
 
-    if type == "buy" then
-        -- 1. Calculate Price
-        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat)
+    if transactionType == "buy" then
+        -- 1. Check Stock & Data
+        local stockEntry = trader.stocks[key]
+        local currentStock = 0
+        local customData = nil
+        
+        if type(stockEntry) == "table" then
+            currentStock = tonumber(stockEntry.qty) or 0
+            customData = stockEntry.customData
+        else
+            currentStock = tonumber(stockEntry) or 0
+        end
+
+        -- 2. Calculate Price
+        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat, customData)
         local totalCost = unitPrice * clientQty
         
-        -- 2. Check Stock
-        local currentStock = trader.stocks[key] or 0
         if currentStock < clientQty then
             SendResponse(player, "TransactionResult", { success=false, msg="Sold Out!" })
             return
@@ -89,7 +99,7 @@ function Commands.TradeTransaction(player, args)
         -- 4. Execute Trade
         if ServerRemoveMoney(player, totalCost) then
             DynamicTrading.Manager.OnBuyItem(traderID, key, category, clientQty)
-            ServerAddItem(inv, itemData.item, clientQty)
+            Helpers.AddItemWithCondition(inv, itemData.item, clientQty, customData)
             
             -- [NEW] Log transaction for global history
             local logText = string.format("Trade: %s purchased %s for $%d", player:getUsername(), safeDisplayName, totalCost)
@@ -104,7 +114,7 @@ function Commands.TradeTransaction(player, args)
             SendResponse(player, "TransactionResult", { success=false, msg="Transaction Error" })
         end
 
-    elseif type == "sell" then
+    elseif transactionType == "sell" then
         -- 1. Locate specific physical item by ID
         -- [ROBUST FIX] We now find the item by the unique ID passed from the client
         local itemObj = inv:getItemById(args.itemID)

@@ -11,6 +11,7 @@ DynamicTrading.RegisterArchetype("Chef", {
         ["Spice"] = 3,
         ["Ingredient"] = 3
     },
+    expertTags = { "Food", "Spice" },
     wants = {
         ["Preservation"] = 1.5,
         ["Fuel"] = 1.2,

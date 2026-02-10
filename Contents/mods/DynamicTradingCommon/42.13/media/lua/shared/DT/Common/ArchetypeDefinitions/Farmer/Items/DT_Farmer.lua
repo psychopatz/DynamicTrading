@@ -11,6 +11,7 @@ DynamicTrading.RegisterArchetype("Farmer", {
         ["Farming"] = 3,
         ["Farmer"] = 2
     },
+    expertTags = { "Vegetable", "Fruit", "Grain", "Farming" },
     wants = {
         ["Tool"] = 1.3,
         ["Water"] = 1.2,

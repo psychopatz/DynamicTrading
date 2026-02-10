@@ -10,6 +10,7 @@ DynamicTrading.RegisterArchetype("Carpenter", {
         ["Carpenter"] = 5,
         ["Build"] = 3
     },
+    expertTags = { "Wood", "Build" },
     wants = {
         ["Tool"] = 1.3,
         ["Food"] = 1.2,

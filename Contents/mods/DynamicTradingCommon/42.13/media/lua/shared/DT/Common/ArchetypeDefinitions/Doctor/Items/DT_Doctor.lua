@@ -11,6 +11,7 @@ DynamicTrading.RegisterArchetype("Doctor", {
         ["Sterile"] = 3,
         ["Pharmacist"] = 2
     },
+    expertTags = { "Medical" },
     wants = {
         ["Clean"] = 1.5,
         ["Alcohol"] = 1.3,

@@ -10,6 +10,7 @@ DynamicTrading.RegisterArchetype("Mechanic", {
         ["Fuel"] = 3,
         ["Tool"] = 4
     },
+    expertTags = { "CarPart", "Mechanic" },
     wants = {
         ["Electronics"] = 1.3,
         ["Junk"] = 1.1,
