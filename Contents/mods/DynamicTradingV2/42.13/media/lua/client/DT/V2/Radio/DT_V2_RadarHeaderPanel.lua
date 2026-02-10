@@ -56,7 +56,7 @@ function DT_V2_RadarHeaderPanel:createChildren()
     self:addChild(self.btnQuest)
     
     -- New Location Tab
-    self.btnLoc = ISButton:new(tabWidth * 3, tabY, tabWidth, tabHeight, "Location", self, function(self) self:onCategoryClick("Location") end)
+    self.btnLoc = ISButton:new(tabWidth * 3, tabY, tabWidth, tabHeight, "Info", self, function(self) self:onCategoryClick("Location") end)
     self.btnLoc:initialise()
     self.btnLoc.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
     self.btnLoc:setAnchorTop(false)

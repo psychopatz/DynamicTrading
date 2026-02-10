@@ -19,8 +19,48 @@ function DT_V2_RadarLocationHandler.GetLocationData(player)
     local town = "Unknown"
     if DTM and DTM.GetCountyName then county = DTM.GetCountyName(x, y) end
     if DTM and DTM.GetTownName then town = DTM.GetTownName(x, y) end
+
+    -- 2. TRADER CENSUS (Town Population & Global Active)
+    local townPopulation = 0
+    local totalActiveTraders = 0
     
-    -- 2. STRUCTURE ANALYSIS
+    local roster = nil
+    -- Try Manager Client Cache first (MP Sync)
+    if DT_V2_RadarManager and DT_V2_RadarManager.ClientRoster then
+        roster = DT_V2_RadarManager.ClientRoster
+    -- Fallback to direct ModData (SP)
+    else
+        roster = ModData.get("DynamicTrading_Roster")
+    end
+    
+    if roster and roster.Souls then
+        for uuid, soul in pairs(roster.Souls) do
+            -- Only check living NPCs
+            if soul.status and soul.status ~= "Dead" then
+                
+                -- A. Count Global Active Traders (Status specific)
+                if soul.status == "Trading" then
+                    totalActiveTraders = totalActiveTraders + 1
+                end
+
+                -- B. Count Town Population (Location specific, ANY Status)
+                if town ~= "Unknown" then
+                    local sx = soul.lastX or (soul.homeCoords and soul.homeCoords.x)
+                    local sy = soul.lastY or (soul.homeCoords and soul.homeCoords.y)
+                    
+                    if sx and sy then
+                        -- Check if NPC is in the same town as Player
+                        local sTown = DTM.GetTownName(sx, sy)
+                        if sTown == town then
+                            townPopulation = townPopulation + 1
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- 3. STRUCTURE ANALYSIS
     local roomName = "Outside"
     local buildingInfo = "None"
     local isInside = false
@@ -46,7 +86,7 @@ function DT_V2_RadarLocationHandler.GetLocationData(player)
         end
     end
 
-    -- 3. META ZONES
+    -- 4. META ZONES
     local zoneType = "None"
     local meta = getWorld():getMetaGrid()
     if meta then
@@ -63,7 +103,7 @@ function DT_V2_RadarLocationHandler.GetLocationData(player)
         end
     end
 
-    -- 4. UTILITIES & ENVIRONMENT
+    -- 5. UTILITIES & ENVIRONMENT
     local hasPower = "No"
     local hasWater = "No"
     local lightLevel = 0.0
@@ -84,7 +124,6 @@ function DT_V2_RadarLocationHandler.GetLocationData(player)
         end
         
         -- B42 Lighting: getLightLevel might be deprecated or changed.
-        -- We try to use it safely, otherwise default to 0.
         if sq.getLightLevel then
             lightLevel = sq:getLightLevel(0)
         end
@@ -95,7 +134,7 @@ function DT_V2_RadarLocationHandler.GetLocationData(player)
         temperature = clim:getAirTemperatureForCharacter(player)
     end
     
-    -- 5. SAFEHOUSE STATUS
+    -- 6. SAFEHOUSE STATUS
     local safehouseTxt = "None"
     if sq and SafeHouse and SafeHouse.getSafeHouse then
         local safehouse = SafeHouse.getSafeHouse(sq)
@@ -110,6 +149,8 @@ function DT_V2_RadarLocationHandler.GetLocationData(player)
         x = x, y = y, z = z,
         county = county,
         town = town,
+        townPop = townPopulation,         -- All living NPCs in town
+        activeTraders = totalActiveTraders, -- All "Trading" NPCs globally
         room = roomName,
         building = buildingInfo,
         zone = zoneType,
@@ -133,6 +174,8 @@ function DT_V2_RadarLocationHandler.PrintDebug(player)
     print(string.format("COORDS    : %d, %d, %d", loc.x, loc.y, loc.z))
     print(string.format("COUNTY    : %s", loc.county))
     print(string.format("TOWN      : %s", loc.town))
+    print(string.format("TOWN POP  : %d", loc.townPop))
+    print(string.format("ACTIVE    : %d", loc.activeTraders))
     print(string.format("ZONE      : %s", loc.zone))
     print("--------------------------------------------------")
     print(string.format("ROOM      : %s", loc.room))
@@ -166,6 +209,8 @@ function DT_V2_RadarLocationHandler.PopulateList(listbox, player)
     
     addLocItem("Coordinates", loc.x .. ", " .. loc.y .. ", " .. loc.z)
     addLocItem("Region", loc.town .. " (" .. loc.county .. ")")
+    addLocItem("Town Population", tostring(loc.townPop))         
+    addLocItem("Current Traders", tostring(loc.activeTraders))   
     addLocItem("Zone Type", loc.zone)
     addLocItem("Room Name", loc.room)
     addLocItem("Building Info", loc.building)
