@@ -59,7 +59,7 @@ end
 -- 2. V2 PRICING LOGIC (Wrapper)
 -- =============================================================================
 
-function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customData)
+function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customData, verbose)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 99999 end
@@ -77,12 +77,12 @@ function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customD
         customData = customData
     }
     
-    local price = Common.GetBuyPrice(itemFullType, itemData, diff, modifiers)
+    local price = Common.GetBuyPrice(itemFullType, itemData, diff, modifiers, verbose)
     
     return price
 end
 
-function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullType)
+function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullType, verbose)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 0 end
@@ -93,7 +93,7 @@ function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullTyp
         tagsConfig = DynamicTrading.Config.Tags,
     }
     
-    local price = Common.GetSellPrice(itemFullType, itemData, itemObj, diff, archetype, modifiers)
+    local price = Common.GetSellPrice(itemFullType, itemData, itemObj, diff, archetype, modifiers, verbose)
     
     return price
 end

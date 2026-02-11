@@ -120,6 +120,9 @@ end
 function DT_TradingWindow:populateList()
     local oldScroll = self.listbox:getYScroll()
     self.listbox:clear()
+    
+    -- [NEW] Rejection Tracking
+    self.scanRejections = {}
 
     local dataProvider = self.dataProvider
     if not dataProvider or not self.traderID then return end
@@ -135,14 +138,14 @@ function DT_TradingWindow:populateList()
 
     -- SCAN DATA USING UTILITY
     if self.isBuying then
-        DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized, categories)
+        DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized, categories, self.scanRejections)
     else
         local player = getSpecificPlayer(0)
         local activeRadioID = -1
         if self.radioObj and instanceof(self.radioObj, "InventoryItem") then
             activeRadioID = self.radioObj:getID()
         end
-        DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, categorized, categories, activeRadioID)
+        DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, categorized, categories, activeRadioID, self.scanRejections)
     end
 
     -- BUILD THE LISTBOX

@@ -199,7 +199,7 @@ function V2_DataProvider:getItemData(key)
     return DynamicTrading.Config.MasterList[key]
 end
 
-function V2_DataProvider:getBuyPrice(key, customData)
+function V2_DataProvider:getBuyPrice(key, customData, verbose)
     local traderID = self._currentTraderID
     if not traderID then return 99999 end
 
@@ -219,15 +219,16 @@ function V2_DataProvider:getBuyPrice(key, customData)
     }
 
     -- Use Shared Common Logic
-    return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers)
+    return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
 end
 
-function V2_DataProvider:getSellPrice(invItem, masterKey, trader)
+function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
     local traderID = self._currentTraderID
     if not traderID or not invItem then return 0 end
     
     -- [FIX] MP Crash: Use Common logic locally.
-    local itemData = DynamicTrading.Config.MasterList[masterKey]
+    local itemData = DynamicTrading.Config.MasterKey and DynamicTrading.Config.MasterList[masterKey]
+    if not itemData then itemData = DynamicTrading.Config.MasterList[masterKey] end
     if not itemData then return 0 end
 
     -- Get Context
@@ -237,13 +238,13 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader)
 
     local modifiers = {
         tagsConfig = DynamicTrading.Config.Tags,
-        -- Client doesn't track globalHeat or localDeflation perfectly for now, 
+        -- Client doesn't track globalHeat or local Deflation perfectly for now, 
         -- but we can add them if cached in 'trader' proxy object.
         -- trader.deflation is passed from getTrader() which gets it from cache.
     }
     
     -- Use Shared Common Logic
-    return DynamicTrading.Economy.Common.GetSellPrice(masterKey, itemData, invItem, diff, archetype, modifiers)
+    return DynamicTrading.Economy.Common.GetSellPrice(masterKey, itemData, invItem, diff, archetype, modifiers, verbose)
 end
 
 function V2_DataProvider:getPriceModifier(tags)

@@ -82,6 +82,7 @@ require "DT/Common/UI/Trading/DT_TradingWindow_Helpers"
 require "DT/Common/UI/Trading/DT_TradingWindow_Layout"
 require "DT/Common/UI/Trading/DT_TradingWindow_List"
 require "DT/Common/UI/Trading/DT_TradingWindow_Actions"
+require "DT/Common/UI/Trading/DT_TradingWindow_Debug"
 
 -- =============================================================================
 -- MAIN UPDATE LOOP
@@ -99,7 +100,10 @@ function DT_TradingWindow:update()
     -- 1. Crash Shield for Listbox
     if self.listbox then
         if self.listbox.items == nil then self.listbox.items = {} end
+        if self.listbox.items == nil then self.listbox.items = {} end
         if type(self.listbox.selected) ~= "number" then self.listbox.selected = -1 end
+        -- [HOST DEBUG] Hook right click
+        self.listbox.onRightMouseUp = self.onListRightMouseUp
     end
 
     -- [NEW] INVENTORY REFRESH THROTTLING

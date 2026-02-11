@@ -62,7 +62,7 @@ end
 -- =============================================================================
 -- 2. BUY PRICE CALCULATOR (Wrapper)
 -- =============================================================================
-function DynamicTrading.Economy.V1.GetBuyPrice(itemKey, globalHeat, customData)
+function DynamicTrading.Economy.V1.GetBuyPrice(itemKey, globalHeat, customData, verbose)
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if not itemData then return 1 end
     
@@ -79,13 +79,13 @@ function DynamicTrading.Economy.V1.GetBuyPrice(itemKey, globalHeat, customData)
         modifiers.getPriceModifier = DynamicTrading.Events.GetPriceModifier
     end
 
-    return Common.GetBuyPrice(itemKey, itemData, diff, modifiers)
+    return Common.GetBuyPrice(itemKey, itemData, diff, modifiers, verbose)
 end
 
 -- =============================================================================
 -- 3. SELL PRICE CALCULATOR (Wrapper)
 -- =============================================================================
-function DynamicTrading.Economy.V1.GetSellPrice(itemObj, itemKey, archetypeKey, globalHeat, localDeflationCount)
+function DynamicTrading.Economy.V1.GetSellPrice(itemObj, itemKey, archetypeKey, globalHeat, localDeflationCount, verbose)
     local itemData = DynamicTrading.Config.MasterList[itemKey]
     if not itemData then return 0 end
 
@@ -103,5 +103,5 @@ function DynamicTrading.Economy.V1.GetSellPrice(itemObj, itemKey, archetypeKey, 
         modifiers.getPriceModifier = DynamicTrading.Events.GetPriceModifier
     end
 
-    return Common.GetSellPrice(itemKey, itemData, itemObj, diff, archetype, modifiers)
+    return Common.GetSellPrice(itemKey, itemData, itemObj, diff, archetype, modifiers, verbose)
 end

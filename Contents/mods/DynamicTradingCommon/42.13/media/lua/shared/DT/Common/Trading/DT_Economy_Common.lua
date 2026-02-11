@@ -376,7 +376,7 @@ end
 -- @param itemData (Table) MasterList entry
 -- @param diffData (Table) Difficulty settings
 -- @param modifiers (Table) { tagsConfig={}, getPriceModifier=func, globalHeat={} }
-function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers)
+function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
     if not itemData then return 99999 end
     diffData = diffData or { buyMult = 1.0 }
     modifiers = modifiers or {}
@@ -386,6 +386,10 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers)
     local getPriceMod = modifiers.getPriceModifier
     
     local price = itemData.basePrice
+    
+    if verbose then
+        print("[DT TRACE] Buy Price Calc: " .. itemKey .. " | Base: " .. price)
+    end
 
     -- 1. Tag Multipliers (Highest Wins)
     local maxTagMult = 1.0
@@ -398,11 +402,13 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers)
         end
     end
     price = price * maxTagMult
+    if verbose and maxTagMult ~= 1.0 then print("[DT TRACE] | TagMult: " .. maxTagMult) end
 
     -- 2. Event Modifiers
     if getPriceMod then
         local eventMult = getPriceMod(itemData.tags)
         price = price * eventMult
+        if verbose and eventMult ~= 1.0 then print("[DT TRACE] | EventMult: " .. eventMult) end
     end
 
     -- 3. Global Inflation (Heat)
@@ -410,11 +416,13 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers)
         local heat = globalHeat[tag]
         if heat and heat ~= 0 then
             price = price * (1.0 + heat)
+            if verbose then print("[DT TRACE] | Heat(" .. tag .. "): " .. heat) end
         end
     end
 
     -- 4. Difficulty
     price = price * diffData.buyMult
+    if verbose and diffData.buyMult ~= 1.0 then print("[DT TRACE] | DiffMult: " .. diffData.buyMult) end
 
     -- [NEW] Condition/Charge Scaler (Dynamic Buying Variation)
     if modifiers.customData then
@@ -490,12 +498,19 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers)
                     local heat = globalHeat[tag]
                     if heat and heat ~= 0 then
                         fluidMults = fluidMults * (1.0 + heat)
+                        if verbose then print("[DT TRACE] | FluidHeat(" .. tag .. "): " .. heat) end
                     end
                 end
             end
             
             price = (containerBase * containerMults) + (fluidTotal * fluidMults)
             
+            if verbose then
+                 print("[DT TRACE] | DYNAMIC CONTENT DETECTED")
+                 print("[DT TRACE] |   Container Price: " .. math.floor(containerBase * containerMults))
+                 print("[DT TRACE] |   FluidTotal: " .. math.floor(fluidTotal * fluidMults) .. " (" .. tostring(fType) .. ")")
+            end
+
             return math.ceil(price)
 
         -- B. Drainable
@@ -520,9 +535,12 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers)
 
         -- Scaled price (minimum 20% value even if near empty, for the container)
         price = price * math.max(0.2, scale)
+        if verbose and scale ~= 1.0 then print("[DT TRACE] | ItemScale: " .. scale) end
     end
 
     if price < 1 then price = 1 end
+    
+    if verbose then print("[DT TRACE] | FINAL: " .. math.floor(price)) end
 
     return math.ceil(price)
 end
@@ -534,7 +552,7 @@ end
 -- @param diffData (Table) Difficulty settings
 -- @param archetype (Table) Archetype def (for 'wants')
 -- @param modifiers (Table) { tagsConfig={}, getPriceModifier=func, globalHeat={}, localDeflationCount=int }
-function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, modifiers)
+function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, modifiers, verbose)
     if not itemData then return 0 end
     diffData = diffData or { sellMult = 0.5 }
     modifiers = modifiers or {}
@@ -546,9 +564,9 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
 
     -- 1. Base & Difficulty
     local price = itemData.basePrice * diffData.sellMult
-    local debugLog = ""
-    if isDebugEnabled() then
-        debugLog = "[DT DEBUG] Sell Price Calc: " .. itemKey .. " | Base: " .. price
+    
+    if verbose then
+        print("[DT TRACE] Sell Price Calc: " .. itemKey .. " | Base: " .. price)
     end
 
     -- 2. Condition & State Penalty
@@ -558,7 +576,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         if itemObj.isRotten and itemObj:isRotten() then
             -- [NEW] Add a virtual tag for Rotten items so archetypes can target them
             table.insert(itemData.tags, "Rotten")
-            if isDebugEnabled() then print(debugLog .. " | STATE: ROTTEN (PRICE = 1)") end
+            if verbose then print("[DT TRACE] | STATE: ROTTEN (PRICE = 1)") end
             return 1
         end
 
@@ -566,7 +584,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         if maxCond > 0 then
              local condRatio = itemObj:getCondition() / maxCond
              price = price * condRatio
-             if isDebugEnabled() then debugLog = debugLog .. " | Condition: " .. math.floor(condRatio * 100) .. "%" end
+             if verbose then print("[DT TRACE] | Condition: " .. math.floor(condRatio * 100) .. "%") end
         end
         
         -- DRAINABLE / FLUID PRICING
@@ -639,6 +657,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
                             end
                         end
                     end
+                    if verbose then print("[DT TRACE] | FLUID_MULTS: " .. fluidMults) end
                 end
                 
                 fluidValue = (fluidData.basePrice * currentAmount) * fluidMults
@@ -657,8 +676,9 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             end
 
             price = containerValue + fluidValue
-            price = containerValue + fluidValue
-            if isDebugEnabled() then debugLog = debugLog .. " | FLUID: " .. tostring(fluidType) .. " (" .. math.floor(ratio*100) .. "%) | NewPrice: " .. price end
+            if verbose then 
+                print("[DT TRACE] | FLUID: " .. tostring(fluidType) .. " (" .. math.floor(ratio*100) .. "%) | NewPrice: " .. price) 
+            end
 
         -- B. Food Consumption (Partially eaten)
         elseif itemObj.getHungerChange and scriptItem and scriptItem.getHungerChange then
@@ -668,14 +688,14 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             if baseHunger < 0 then
                 local ratio = currentHunger / baseHunger
                 price = price * math.max(0, math.min(1, ratio))
-                if isDebugEnabled() then debugLog = debugLog .. " | FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price end
+                if verbose then print("[DT TRACE] | FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price) end
             end
 
         -- C. Standard Drainable (Pills, Batteries, Flashlights, etc.)
         elseif itemObj.IsDrainable and itemObj:IsDrainable() then
             local delta = Common.GetItemCharge(itemObj)
             price = price * delta
-            if isDebugEnabled() then debugLog = debugLog .. " | DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price end
+            if verbose then print("[DT TRACE] | DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price) end
         end
     end
 
@@ -683,7 +703,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
     if getPriceMod then
         local eventMult = getPriceMod(itemData.tags)
         price = price * eventMult
-        if isDebugEnabled() and eventMult ~= 1.0 then debugLog = debugLog .. " | EventMult: " .. eventMult end
+        if verbose and eventMult ~= 1.0 then print("[DT TRACE] | EventMult: " .. eventMult) end
     end
 
     -- 4. Global Inflation (Heat)
@@ -691,7 +711,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         local heat = globalHeat[tag]
         if heat and heat ~= 0 then
             price = price * (1.0 + heat)
-            if isDebugEnabled() then debugLog = debugLog .. " | Heat(" .. tag .. "): " .. heat end
+            if verbose then print("[DT TRACE] | Heat(" .. tag .. "): " .. heat) end
         end
     end
 
@@ -701,7 +721,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         local localMult = 1.0 - (localDeflationCount * penaltyPerItem)
         if localMult < 0.2 then localMult = 0.2 end
         price = price * localMult
-        if isDebugEnabled() then debugLog = debugLog .. " | Deflation: " .. localMult end
+        if verbose then print("[DT TRACE] | Deflation: " .. localMult) end
     end
 
     -- 6. Archetype Bonus ("Wants")
@@ -709,7 +729,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         for _, tag in ipairs(itemData.tags) do
             if archetype.wants[tag] then
                 price = price * archetype.wants[tag]
-                if isDebugEnabled() then debugLog = debugLog .. " | Want(" .. tag .. "): " .. archetype.wants[tag] end
+                if verbose then print("[DT TRACE] | Want(" .. tag .. "): " .. archetype.wants[tag]) end
                 break 
             end
         end
@@ -717,7 +737,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
 
     if price < 0 then price = 0 end
     
-    if isDebugEnabled() then print(debugLog .. " | FINAL: " .. math.floor(price)) end
-
+    if verbose then print("[DT TRACE] | FINAL: " .. math.floor(price)) end
+    
     return math.floor(price)
 end

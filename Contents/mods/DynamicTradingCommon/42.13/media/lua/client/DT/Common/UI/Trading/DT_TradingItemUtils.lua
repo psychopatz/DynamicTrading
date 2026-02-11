@@ -130,9 +130,6 @@ function DT_TradingItemUtils.getItemDisplayName(listItem, invItem, scriptItem)
                 end
                 
                 local finalName = fName .. " (" .. containerName .. ")"
-                -- if isDebugEnabled() then
-                --     print("[DT DEBUG] Dynamic Name Constructed: " .. finalName .. " | Side: " .. (isBuy and "BUY" or "SELL"))
-                -- end
                 return finalName
             end
         end
@@ -199,10 +196,6 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                 
                 local fType = getFluidTypeID(fluidContainer)
                 
-                -- if isDebugEnabled() then
-                --     print("[DT DEBUG] invItem Fluid: " .. tostring(fType) .. " | Amt: " .. amt .. "/" .. cap)
-                -- end
-                
                 if cap > 0 then
                     -- [DISPLAY CHANGE] Show Liters instead of %
                     local amtStr = string.format("%.2f", amt)
@@ -265,7 +258,7 @@ function DT_TradingItemUtils.getPriceColors(listItem, isLocked)
 end
 
 --- Populates a table with items sellable by the player.
-function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, categorized, categories, activeRadioID)
+function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, categorized, categories, activeRadioID, rejections)
     local inv = player:getInventory()
     local itemList = {}
     
@@ -344,13 +337,13 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
                                 isRotten = (invItem.isRotten and invItem:isRotten()) or false
                             })
                         else
-                            if isDebugEnabled() then print("[DT DEBUG] Sell Scan: " .. fullType .. " | REJECTED: Price is 0 (or floor to 0)") end
+                            if rejections then table.insert(rejections, "[Sell] " .. fullType .. " | REJECTED: Price is 0") end
                         end
                     else
-                        if isDebugEnabled() then print("[DT DEBUG] Sell Scan: " .. fullType .. " | REJECTED: Trader already has this exact item key in stock") end
+                        if rejections then table.insert(rejections, "[Sell] " .. fullType .. " | REJECTED: Trader already has this key in stock") end
                     end
                 else
-                    if isDebugEnabled() then print("[DT DEBUG] Sell Scan: " .. fullType .. " | REJECTED: Item not found in Master Registry") end
+                    if rejections then table.insert(rejections, "[Sell] " .. fullType .. " | REJECTED: Item not found in Master Registry") end
                 end
             end
         end
@@ -358,7 +351,7 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
 end
 
 --- Populates a table with items buyable from the trader.
-function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized, categories)
+function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized, categories, rejections)
     if not trader.stocks then return end
 
     for key, qty in pairs(trader.stocks) do
@@ -393,17 +386,9 @@ function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized,
                 stockQty = tonumber(qty.qty) or 0
                 customData = qty.customData
                 
-                -- DEEP DEBUG
-                local debugStr = ""
-                if customData then
-                    for k, v in pairs(customData) do
-                        debugStr = debugStr .. k .. "=" .. tostring(v) .. ", "
-                    end
-                end
-                print("[DT DEBUG] Client Scan: " .. key .. " Data: " .. debugStr)
             else
                 stockQty = tonumber(qty) or 0
-                print("[DT DEBUG] Client Scan: " .. key .. " is OLD FORMAT (number only)")
+                -- print("[DT DEBUG] Client Scan: " .. key .. " is OLD FORMAT (number only)")
             end
 
             local price = dataProvider:getBuyPrice(key, customData)
