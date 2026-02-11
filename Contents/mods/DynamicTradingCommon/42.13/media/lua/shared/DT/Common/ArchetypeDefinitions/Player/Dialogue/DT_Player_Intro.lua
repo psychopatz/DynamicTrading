@@ -1,4 +1,4 @@
-DynamicTrading = DynamicTrading or {}
+require "DT/Common/Config"
 DynamicTrading.Dialogue = DynamicTrading.Dialogue or {}
 DynamicTrading.Dialogue.Player = DynamicTrading.Dialogue.Player or {}
 

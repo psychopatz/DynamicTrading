@@ -1,11 +1,10 @@
 require "DT/Common/Config"
 
-if DynamicTrading and DynamicTrading.RegisterDialogue then
-    DynamicTrading.RegisterDialogue("Athlete", "Buying", {
-        EN = {
-            Generic = {
-                "A strong choice! I'll package the {item} with care. {price} received.",
-                "Transaction complete. That {item} will boost your performance, {player.firstname}.",
+DynamicTrading.RegisterDialogue("Athlete", "Buying", {
+    EN = {
+        Generic = {
+            "A strong choice! I'll package the {item} with care. {price} received.",
+            "Transaction complete. That {item} will boost your performance, {player.firstname}.",
                 "I'll pull the {item} from the training room. Enjoy.",
                 "Quality gear. The {item} is yours for {price}.",
             },

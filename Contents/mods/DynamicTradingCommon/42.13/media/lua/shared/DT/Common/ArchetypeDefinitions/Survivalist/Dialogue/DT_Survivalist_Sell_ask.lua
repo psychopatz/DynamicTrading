@@ -1,4 +1,4 @@
-DynamicTrading = DynamicTrading or {}
+require "DT/Common/Config"
 
 DynamicTrading.RegisterDialogue("Survivalist", "Sell_ask", {
     EN = {

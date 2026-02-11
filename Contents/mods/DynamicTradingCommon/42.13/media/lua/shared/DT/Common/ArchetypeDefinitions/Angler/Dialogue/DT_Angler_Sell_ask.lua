@@ -1,5 +1,4 @@
-DynamicTrading = DynamicTrading or {}
-
+require "DT/Common/Config"
 DynamicTrading.RegisterDialogue("Angler", "Sell_ask", {
     EN = {
         "Need {wants} for some trips. Don't bother with {forbid}.",

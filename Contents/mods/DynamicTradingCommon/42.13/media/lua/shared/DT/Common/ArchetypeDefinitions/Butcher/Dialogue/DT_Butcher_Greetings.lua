@@ -1,4 +1,4 @@
-DynamicTrading = DynamicTrading or {}
+require "DT/Common/Config"
 
 DynamicTrading.RegisterDialogue("Butcher", "Greetings", {
     EN = {
