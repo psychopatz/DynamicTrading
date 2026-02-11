@@ -126,7 +126,38 @@ local languages = {
 local dialogueTypes = { "Greetings", "Buying", "Selling", "Sell_ask", "Idle", "Request" }
 
 -- Debug Flag
-DynamicTrading.Debug = true
+DynamicTrading.Debug = false
+
+-- Helper to check file existence to avoid console spam
+local function FileExists(path)
+    local fullPath = "media/lua/shared/" .. path .. ".lua"
+    local exists = false
+    local checked = false
+    
+    if getZomboidFileSystem then
+        local fs = getZomboidFileSystem()
+        if fs then
+            local file = fs:getFile(fullPath)
+            if file and file:exists() then exists = true end
+            checked = true
+        end
+    elseif ZomboidFileSystem and ZomboidFileSystem.instance then
+            local file = ZomboidFileSystem.instance:getFile(fullPath)
+            if file and file:exists() then exists = true end
+            checked = true
+    elseif fileExists then
+            -- Some environments have this global
+            if fileExists(fullPath) then exists = true end
+            checked = true
+    end
+    
+    -- Fallback: If we couldn't check (API missing), try to load anyway to be safe
+    if not checked then 
+        exists = true 
+    end
+    
+    return exists
+end
 
 function DynamicTrading.LoadArchetypes()
     print("[DynamicTrading] Starting Dynamic Archetype Loading...")
@@ -138,30 +169,40 @@ function DynamicTrading.LoadArchetypes()
 
         -- 1. Load Archetype Definition (Item Data)
         local itemPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Items/DT_" .. id
-        local itemOk, err = pcall(require, itemPath)
-        if not itemOk then
-             print("[DynamicTrading] [ERROR] Failed to load Item Definition for " .. id .. ": " .. tostring(err))
-             errors = errors + 1
+        -- Items are mandatory, so we still want to know if they fail, but checking existence first is cleaner
+        if FileExists(itemPath) then
+             local itemOk, err = pcall(require, itemPath)
+             if not itemOk then
+                  print("[DynamicTrading] [ERROR] Failed to load Item Definition for " .. id .. ": " .. tostring(err))
+                  errors = errors + 1
+             end
+        else
+             -- Warn if definition is missing entirely, as this might be critical
+             if DynamicTrading.Debug then print("[DynamicTrading] [WARN] Missing Item Definition for: " .. id) end
         end
         
         -- 2. Load Dialogues and Translations
         for _, dType in ipairs(dialogueTypes) do
             local baseDialoguePath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/DT_" .. id .. "_" .. dType
+            
             -- Attempt base require (English/Default)
-            local success, dErr = pcall(require, baseDialoguePath)
-            if success then
-                if DynamicTrading.Debug then print("[DynamicTrading]   >> Loaded " .. dType .. " (Base)") end
-                totalLoaded = totalLoaded + 1
-            else
-                -- Silent fail for missing dialogue files is expected behavior for some types
+            if FileExists(baseDialoguePath) then
+                local success, dErr = pcall(require, baseDialoguePath)
+                if success then
+                    if DynamicTrading.Debug then print("[DynamicTrading]   >> Loaded " .. dType .. " (Base)") end
+                    totalLoaded = totalLoaded + 1
+                end
             end
             
             -- Attempt Translation loading
             for _, lang in ipairs(languages) do
                 local transPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/Translations/" .. lang .. "/DT_" .. id .. "_" .. dType .. "_" .. lang
-                local tSuccess, _ = pcall(require, transPath)
-                if tSuccess then
-                    if DynamicTrading.Debug then print("[DynamicTrading]   >> Loaded " .. dType .. " (" .. lang .. ")") end
+                
+                if FileExists(transPath) then
+                    local tSuccess, _ = pcall(require, transPath)
+                    if tSuccess then
+                        if DynamicTrading.Debug then print("[DynamicTrading]   >> Loaded " .. dType .. " (" .. lang .. ")") end
+                    end
                 end
             end
         end
@@ -189,6 +230,6 @@ function DynamicTrading.Config.GetDifficultyData()
 end
 
 print("[DynamicTrading] Config & Registry Core Loaded.")
-
--- Trigger the loading process
-DynamicTrading.LoadArchetypes()
+ 
+-- Trigger the loading process LATER to avoid recursive require loops
+Events.OnGameBoot.Add(DynamicTrading.LoadArchetypes)

@@ -34,4 +34,4 @@ DynamicTrading.RegisterDialogue("Athlete", "Buying", {
             }
         }
     })
-end
+
