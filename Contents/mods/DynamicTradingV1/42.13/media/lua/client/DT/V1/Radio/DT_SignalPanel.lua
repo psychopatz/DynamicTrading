@@ -44,10 +44,13 @@ function DT_SignalPanel:createChildren()
     self.btnInfo.backgroundColor = {r=0.2, g=0.2, b=0.4, a=1.0}
     self:addChild(self.btnInfo)
     
-    self.btnOptions = ISButton:new(0, 0, 100, 25, "OPTIONS", self, self.onOptionsClick)
+    -- [UPDATED] Settings Icon Button (V2 Style)
+    local btnSize = 18
+    self.btnOptions = ISButton:new(0, 0, btnSize, btnSize, "", self, self.onOptionsClick)
     self.btnOptions:initialise()
-    self.btnOptions.borderColor = {r=1, g=1, b=1, a=0.5}
-    self.btnOptions.backgroundColor = {r=0.4, g=0.4, b=0.4, a=1.0}
+    self.btnOptions.borderColor = {r=1, g=1, b=1, a=0.2}
+    self.btnOptions.backgroundColor = {r=0, g=0, b=0, a=0}
+    self.btnOptions:setImage(getTexture("media/ui/inventoryPanes/Button_Settings.png")) 
     self:addChild(self.btnOptions)
     
     self:onResize()
@@ -71,16 +74,25 @@ function DT_SignalPanel:onResize()
     local remWidth = w - startX - 10
     if remWidth < 120 then remWidth = 120 end 
     
+    -- Position Settings Button (Top-Right)
+    if self.btnOptions then
+        local btnSize = 18
+        self.btnOptions:setX(w - btnSize - 10)
+        self.btnOptions:setY(10)
+        self.btnOptions:setWidth(btnSize)
+        self.btnOptions:setHeight(btnSize)
+    end
+    
     -- [FIX] Enforce specific spacing for Text Header
     local headerSpace = 25 -- Space reserved for "Power: x1.0"
     local bottomSpace = 5
     local spacing = 6 -- Gap between buttons
     
-    -- Calculate height available strictly for buttons
+    -- Calculate height available strictly for main buttons (Scan/Info)
     local availableH = h - headerSpace - bottomSpace
     
-    -- Calculate ideal button height to fit 3 buttons in available space
-    local btnH = math.floor((availableH - (spacing * 2)) / 3)
+    -- Calculate ideal button height to fit 2 buttons in available space
+    local btnH = math.floor((availableH - spacing) / 2)
     
     -- Clamp Button Height
     if btnH < 22 then btnH = 22 end -- Minimum readable height
@@ -91,14 +103,14 @@ function DT_SignalPanel:onResize()
     if h > 220 then font = UIFont.Medium end
     
     -- Calculate vertical start position (centering within the safe zone)
-    local totalBlockH = (btnH * 3) + (spacing * 2)
+    local totalBlockH = (btnH * 2) + spacing
     local safeZoneCenterY = headerSpace + (availableH / 2)
     local currentY = safeZoneCenterY - (totalBlockH / 2)
     
     -- Hard safety clamp: Never start higher than headerSpace
     if currentY < headerSpace then currentY = headerSpace end
     
-    local btns = {self.btnScan, self.btnInfo, self.btnOptions}
+    local btns = {self.btnScan, self.btnInfo}
     for _, btn in ipairs(btns) do
         if btn then
             btn:setX(startX)

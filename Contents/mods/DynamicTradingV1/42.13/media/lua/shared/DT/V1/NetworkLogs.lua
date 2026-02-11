@@ -10,16 +10,16 @@ local LOGS_KEY = "DynamicTrading_Logs_v1.0"
 
 function DynamicTrading.NetworkLogs.AddLog(text, category)
     -- Check for shared module availability
-    if DynamicTrading.NetworkLogs.Append then
-        DynamicTrading.NetworkLogs.Append(LOGS_KEY, text, category)
+    if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.Append then
+        DynamicTrading.NetworkLogManager.Append(LOGS_KEY, text, category)
     else
         -- Fallback: If shared module isn't loaded (e.g. strict load order issues),
         -- try to load it.
-        require("DT/Common/NetworkLogs")
-        if DynamicTrading.NetworkLogs.Append then
-            DynamicTrading.NetworkLogs.Append(LOGS_KEY, text, category)
+        require("DT/Common/DT_NetworkLogManager")
+        if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.Append then
+            DynamicTrading.NetworkLogManager.Append(LOGS_KEY, text, category)
         else
-            print("[DynamicTrading] Error: Shared NetworkLogs module missing.")
+            print("[DynamicTrading] Error: Shared DT_NetworkLogManager module missing.")
         end
     end
 end

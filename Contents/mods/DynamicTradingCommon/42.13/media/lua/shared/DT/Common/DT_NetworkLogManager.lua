@@ -1,15 +1,15 @@
 DynamicTrading = DynamicTrading or {}
-DynamicTrading.NetworkLogs = DynamicTrading.NetworkLogs or {}
+DynamicTrading.NetworkLogManager = DynamicTrading.NetworkLogManager or {}
 
 -- =============================================================================
--- SHARED NETWORK LOGS MANAGER
+-- SHARED NETWORK LOG MANAGER
 -- =============================================================================
 
 -- Main function to add logs. 
 -- @param key: The unique ModData key for this log instance (e.g., "DynamicTrading_Logs_v1.0")
 -- @param text: The log message
 -- @param category: The category (e.g., "info", "trade", "error")
-function DynamicTrading.NetworkLogs.Append(key, text, category)
+function DynamicTrading.NetworkLogManager.Append(key, text, category)
     if not key then return end
 
     local data = ModData.getOrCreate(key)
