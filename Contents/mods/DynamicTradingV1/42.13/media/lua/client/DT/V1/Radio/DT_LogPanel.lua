@@ -9,12 +9,14 @@ function DT_LogPanel:initialise()
     ISPanel.initialise(self)
     self.lastLogCount = -1
     self.lastTopLogID = ""
+    -- Default key if none provided
+    if not self.logKey then self.logKey = "DynamicTrading_Logs_v1.0" end
 end
 
 function DT_LogPanel:createChildren()
     ISPanel.createChildren(self)
     
-    self.lblLogs = ISLabel:new(10, 0, 16, "System Logs (Last 12):", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
+    self.lblLogs = ISLabel:new(10, 0, 16, "Network Log:", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
     self:addChild(self.lblLogs)
     
     self.logList = ISScrollingListBox:new(10, 20, self.width - 20, self.height - 25)
@@ -28,6 +30,13 @@ function DT_LogPanel:createChildren()
     self.logList.doDrawItem = self.drawLogItem
     self.logList.onMouseWheel = function(self, del) return true end
     self:addChild(self.logList)
+    
+    -- Dummy element to clear stencil AFTER children are rendered
+    self.stencilClearer = ISUIElement:new(0, 0, 0, 0)
+    self.stencilClearer.prerender = function(self)
+        if self.parent then self.parent:clearStencilRect() end
+    end
+    self:addChild(self.stencilClearer)
 end
 
 -- [FIXED] Removed invalid 'recalcStencil' call and fixed Scrollbar logic
@@ -56,7 +65,7 @@ end
 function DT_LogPanel:prerender()
     ISPanel.prerender(self)
     
-    local data = ModData.getOrCreate("DynamicTrading_Logs_v1.0")
+    local data = ModData.getOrCreate(self.logKey)
     local currentLogCount = data.list and #data.list or 0
     local currentTopLog = ""
     
@@ -69,11 +78,17 @@ function DT_LogPanel:prerender()
         self.lastLogCount = currentLogCount
         self.lastTopLogID = currentTopLog
     end
+    
+    -- Enable Stencil for this panel
+    self:setStencilRect(0, 0, self:getWidth(), self:getHeight())
 end
+
+-- Stencil is cleared by self.stencilClearer child to ensure children are clipped
 
 function DT_LogPanel:populateLogs()
     self.logList:clear()
-    local data = ModData.getOrCreate("DynamicTrading_Logs_v1.0")
+    local data = ModData.getOrCreate(self.logKey)
+-- ... rest of file ...
     
     -- Calculate text width: ListWidth - Scrollbar(13) - Padding(12)
     local listWidth = self.logList:getWidth() - 25
@@ -82,8 +97,8 @@ function DT_LogPanel:populateLogs()
     local font = self.logList.font
     
     if data.list then
-        local limit = math.min(#data.list, 12)
-        for i=1, limit do
+        -- No limit on display, show all available logs
+        for i=1, #data.list do
             local log = data.list[i]
             local timeWid = tm:MeasureStringX(font, log.time)
             
@@ -134,10 +149,11 @@ function DT_LogPanel.drawLogItem(this, y, item, alt)
     return y + height
 end
 
-function DT_LogPanel:new(x, y, width, height)
+function DT_LogPanel:new(x, y, width, height, logKey)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
     o.backgroundColor = {r=0, g=0, b=0, a=0}
+    o.logKey = logKey 
     return o
 end

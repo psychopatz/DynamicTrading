@@ -38,7 +38,7 @@ function DT_RadioWindow:createChildren()
     self:addChild(self.traderListPanel)
     
     -- 3. Logs Panel (Bottom)
-    self.logPanel = DT_LogPanel:new(0, th + 350, w, 100)
+    self.logPanel = DT_LogPanel:new(0, th + 350, w, 100, "DynamicTrading_Logs_v1.0")
     self.logPanel:initialise()
     self:addChild(self.logPanel)
     
