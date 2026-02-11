@@ -8,6 +8,8 @@ require "DT/V2/Faction/Templates/BaseSpawn/Rosewood"
 require "DT/V2/Faction/Templates/BaseSpawn/Muldraugh"
 require "DT/V2/Faction/Templates/BaseSpawn/WestPoint"
 require "DT/V2/Faction/Templates/BaseSpawn/Riverside"
+require "DT/V2/Faction/Templates/BaseSpawn/Louisville"
+
 
 DT_FactionLocationManager = {}
 
