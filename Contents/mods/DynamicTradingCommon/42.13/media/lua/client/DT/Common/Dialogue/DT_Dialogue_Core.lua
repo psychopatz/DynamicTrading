@@ -119,9 +119,15 @@ function DynamicTrading.Dialogue.Core.GetDialoguePool(archetype, category, subCo
         if pool then return pool end
     end
 
-    -- 2. Try General Specific
-    if db.General then
-        local pool = GetFromTarget(db.General)
+    -- 2. Try General Specific (Fallback for all traders)
+    if db.Archetypes and db.Archetypes["General"] then
+        local pool = GetFromTarget(db.Archetypes["General"])
+        if pool then return pool end
+    end
+
+    -- 3. Try Player Specific (Last resort fallback)
+    if db.Archetypes and db.Archetypes["Player"] then
+        local pool = GetFromTarget(db.Archetypes["Player"])
         if pool then return pool end
     end
 

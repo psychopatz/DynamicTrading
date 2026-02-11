@@ -92,7 +92,6 @@ function V2_DataProvider:getTrader(traderID, archetype)
                       or ModData.get("DynamicTrading_Stock")
     
     if not stockData or not stockData[traderID] then
-        print(DEBUG_PREFIX .. " WARNING: No stock data found for trader " .. tostring(traderID))
         return nil
     end
     
@@ -175,9 +174,9 @@ function V2_DataProvider:getPlayerMessage(category, diagArgs)
     return DynamicTrading.DialogueManager.GeneratePlayerMessage(category, diagArgs)
 end
 
-function V2_DataProvider:getTransactionMessage(trader, isSuccess, diagArgs)
-    if not DynamicTrading.DialogueManager then return isSuccess and "Done." or "No deal." end
-    return DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isSuccess, diagArgs)
+function V2_DataProvider:getTransactionMessage(trader, isBuy, diagArgs)
+    if not DynamicTrading.DialogueManager then return isBuy and "Done." or "No deal." end
+    return DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, diagArgs)
 end
 
 function V2_DataProvider:getSellAskDialogue(trader)
@@ -357,7 +356,7 @@ function V2_DataProvider:isConnectionValid(npc)
     -- This ensures we don't run checks in the background if the window got stuck hidden.
     if DT_TradingWindow and DT_TradingWindow.instance then
         if not DT_TradingWindow.instance:getIsVisible() then
-            print(DEBUG_PREFIX .. " [OPTIMIZATION] Window is NOT visible, returning false")
+            print("[DynamicTrading] Window is NOT visible, returning false")
             return false
         end
     end

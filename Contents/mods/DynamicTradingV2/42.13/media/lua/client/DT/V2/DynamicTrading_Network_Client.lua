@@ -103,7 +103,19 @@ local function OnSharedServerCommand(module, command, args)
                     
                     local isBuy = args.isBuy ~= false -- Default to buy if not specified
                     local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, diagArgs)
+                    
+                    if DynamicTrading.Debug then
+                        print("[DT-V2-Client] Dialogue Debug:")
+                        print("  - Trader Archetype: " .. tostring(trader.archetype))
+                        print("  - isBuy: " .. tostring(isBuy))
+                        print("  - Generated Msg: " .. tostring(npcMsg))
+                    end
+                    
                     ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier", "transaction")
+                else
+                    if DynamicTrading.Debug then
+                        print("[DT-V2-Client] [ERROR] Failed to generate dialogue: trader=" .. tostring(trader) .. ", Manager=" .. tostring(DynamicTrading.DialogueManager))
+                    end
                 end
                 
                 -- [FIX] Update wallet display and force immediate list refresh
