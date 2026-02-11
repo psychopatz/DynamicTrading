@@ -1,3 +1,5 @@
+require "DT/Common/Config"
+
 DynamicTrading = DynamicTrading or {}
 
 DynamicTrading.RegisterDialogue("Angler", "Buying", {

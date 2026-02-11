@@ -1,16 +1,24 @@
-DynamicTrading = DynamicTrading or {}
-DynamicTrading.Dialogue = DynamicTrading.Dialogue or {}
-DynamicTrading.Dialogue.Archetypes = DynamicTrading.Dialogue.Archetypes or {}
-DynamicTrading.Dialogue.Archetypes["Gunrunner"] = DynamicTrading.Dialogue.Archetypes["Gunrunner"] or {}
+require "DT/Common/Config"
 
-DynamicTrading.Dialogue.Archetypes["Gunrunner"].Selling = {
-    Generic = {
-        "I can strip this {item} for parts. Deal at {price}.",
-        "Looks like it shoots straight. I'll buy the {item} for {price}.",
-        "Never have enough brass. Sending {price} credits."
-    },
-    HighMarkup = {
-        "You're bleeding me dry at {price}... but I need the firepower. Done.",
-        "Fine. {price}. But this {item} better not jam."
-    }
-}
+if DynamicTrading and DynamicTrading.RegisterDialogue then
+    DynamicTrading.RegisterDialogue("Gunrunner", "Selling", {
+        EN = {
+            Generic = {
+                "I can scrap this {item} for parts. Here's {price}.",
+                "Interesting hardware. {price} sent for the {item}. What else you got, {player}?",
+                "I'll take the {item}. Might save a life later."
+            },
+            HighValue = {
+                "Whoa! That's a rare piece of hardware! {price} for the {item}. You're a pro.",
+                "Legendary find! This {item} is worth its weight in brass. {price} incoming."
+            },
+            HighMarkup = {
+                "You're a tough negotiator, {player.firstname}. {price} for a {item}? Fine."
+            },
+            Trash = {
+                "This {item} is basically scrap metal. I'll give you {price}.",
+                "Barrel's worn... but salvageable. {price} for the {item}."
+            }
+        }
+    })
+end

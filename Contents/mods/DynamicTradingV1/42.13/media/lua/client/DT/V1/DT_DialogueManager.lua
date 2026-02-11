@@ -88,14 +88,27 @@ local function GetDialoguePool(archetype, category, subContext)
         
         local categoryTable = target[category]
         
-        -- If it's a direct array (old format), just return it
+        -- 1. If it's a direct array (old format), just return it
         if categoryTable[1] then return categoryTable end
         
-        -- If it's the new format (keyed by language), try current lang then EN
+        -- 2. Structure 1: Lang -> Context -> Lines (Preferred, e.g. Angler)
+        if categoryTable[lang] then
+            local lTable = categoryTable[lang]
+            local pool = lTable[subContext] or lTable["Default"] or lTable["Generic"] or (lTable[1] and lTable)
+            if pool then return pool end
+        end
+        if categoryTable["EN"] then
+            local lTable = categoryTable["EN"]
+            local pool = lTable[subContext] or lTable["Default"] or lTable["Generic"] or (lTable[1] and lTable)
+            if pool then return pool end
+        end
+
+        -- 3. Structure 2: Context -> Lang -> Lines (Fallback/Mixed Style)
         local subTable = categoryTable[subContext] or categoryTable["Default"] or categoryTable["Generic"]
         if subTable then
             return subTable[lang] or subTable["EN"] or subTable -- Fallback to direct array if not keyed
         end
+
         return nil
     end
 
@@ -333,17 +346,13 @@ function DynamicTrading.DialogueManager.GenerateSellAskDialogue(trader)
 
     -- 5. Determine Message Pool (Priority: Archetype > General)
     local pool = nil
-    local poolSource = "General (Failsafe)"
     
-    if db.Archetypes[archetype] and db.Archetypes[archetype].SellAskResponse then
-        pool = db.Archetypes[archetype].SellAskResponse
-        poolSource = "Archetype (" .. archetype .. ")"
-    elseif db.General and db.General.SellAskResponse then
-        pool = db.General.SellAskResponse
-        poolSource = "General (Decoupled)"
+    if db.Archetypes[archetype] and db.Archetypes[archetype].Sell_ask then
+        pool = GetDialoguePool(archetype, "Sell_ask", "Default")
+    elseif db.General and db.General.Sell_ask then
+        pool = GetDialoguePool("General", "Sell_ask", "Default")
     else
         pool = { "I'm looking for {wants}. No {forbid}." }
-        poolSource = "Hardcoded Failsafe"
     end
 
     print("[DynamicTrading] Dialogue: Pool Selected -> " .. poolSource)

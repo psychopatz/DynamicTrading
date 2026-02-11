@@ -1,2 +1,0 @@
--- All dialogue loading logic has been moved to media/lua/shared/DT/Common/Config.lua
--- This file is now empty and can be deleted.
