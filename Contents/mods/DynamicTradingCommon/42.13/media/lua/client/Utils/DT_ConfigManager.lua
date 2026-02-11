@@ -13,10 +13,11 @@ DT_ConfigManager.fileName = "DynamicTrading_Config.txt"
 DT_ConfigManager.defaultSettings = {
     enableSound = true,
     showSidebar = true,
-    volMaster = 1.0,
-    volRadio = 1.0,
-    volWallet = 1.0,
-    volTrade = 1.0
+    volMaster = 0.6,
+    volRadio = 0.6,
+    volWallet = 0.5,
+    volTrade = 0.5,
+    volGeneral = 0.5
 }
 
 -- This table holds the *active* settings
@@ -48,6 +49,7 @@ function DT_ConfigManager.save()
         fileWriter:write("volRadio=" .. tostring(DT_ConfigManager.settings.volRadio) .. "\r\n")
         fileWriter:write("volWallet=" .. tostring(DT_ConfigManager.settings.volWallet) .. "\r\n")
         fileWriter:write("volTrade=" .. tostring(DT_ConfigManager.settings.volTrade) .. "\r\n")
+        fileWriter:write("volGeneral=" .. tostring(DT_ConfigManager.settings.volGeneral) .. "\r\n")
         
         -- Save Window States
         if DT_ConfigManager.settings.windows then
@@ -103,6 +105,10 @@ function DT_ConfigManager.load()
         if string.find(line, "volTrade=") then
             local n = tonumber(string.sub(line, 10))
             if n then DT_ConfigManager.settings.volTrade = n end
+        end
+        if string.find(line, "volGeneral=") then
+            local n = tonumber(string.sub(line, 12))
+            if n then DT_ConfigManager.settings.volGeneral = n end
         end
         
         -- Window State Parsing: window_ID=x,y,w,h
@@ -161,6 +167,7 @@ function DT_ConfigManager.setVolume(category, level)
     elseif category == "Radio" then DT_ConfigManager.settings.volRadio = level
     elseif category == "Wallet" then DT_ConfigManager.settings.volWallet = level
     elseif category == "Trade" then DT_ConfigManager.settings.volTrade = level
+    elseif category == "General" then DT_ConfigManager.settings.volGeneral = level
     end
     
     DT_ConfigManager.save()
@@ -173,8 +180,9 @@ end
 function DT_ConfigManager.getVolume(category)
     if category == "Master" then return DT_ConfigManager.settings.volMaster or 1.0
     elseif category == "Radio" then return DT_ConfigManager.settings.volRadio or 1.0
-    elseif category == "Wallet" then return DT_ConfigManager.settings.volWallet or 1.0
-    elseif category == "Trade" then return DT_ConfigManager.settings.volTrade or 1.0
+    elseif category == "Wallet" then return DT_ConfigManager.settings.volWallet or 0.5
+    elseif category == "Trade" then return DT_ConfigManager.settings.volTrade or 0.5
+    elseif category == "General" then return DT_ConfigManager.settings.volGeneral or 0.5
     end
     return 1.0
 end

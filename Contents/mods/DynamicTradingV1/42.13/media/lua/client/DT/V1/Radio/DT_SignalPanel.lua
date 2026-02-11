@@ -2,6 +2,7 @@ require "ISUI/ISPanel"
 require "ISUI/ISButton"
 require "DT/V1/Manager"
 require "DT/Common/Config"
+require "DT/V1/Utils/DT_OptionsManager"
 
 DT_SignalPanel = ISPanel:derive("DT_SignalPanel")
 
@@ -263,15 +264,10 @@ function DT_SignalPanel:onInfoClick()
 end
 
 function DT_SignalPanel:onOptionsClick()
-    if not DT_OptionsUI then 
-        pcall(require, "UI/DT_OptionsUI")
-        if not DT_OptionsUI then pcall(require, "client/UI/DT_OptionsUI") end
-    end
-    
-    if DT_OptionsUI then
-        DT_OptionsUI.ToggleWindow()
+    if DT_OptionsManager then
+        DT_OptionsManager.ToggleWindow()
     else
-        print("[DT_SignalPanel] ERROR: DT_OptionsUI failed to load.")
+        print("[DT_SignalPanel] ERROR: DT_OptionsManager failed to load.")
     end
 end
 

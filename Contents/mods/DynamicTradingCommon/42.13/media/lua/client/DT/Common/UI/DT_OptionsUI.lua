@@ -17,12 +17,16 @@ require "DT/Common/Utils/DT_AudioManager"
 DT_OptionsUI = ISCollapsableWindow:derive("DT_OptionsUI")
 DT_OptionsUI.instance = nil
 
--- Configuration Holder
+-- Configuration Holder (Registries)
 DT_OptionsUI.config = {
     title = "Dynamic Trading Settings",
     audioCategories = {}, -- { {label="Radio", configKey="Radio", exampleSound="DT_RadioRandom"} }
     generalSettings = {}  -- { {label="Show Sidebar", configKey="showSidebar", callback:func} }
 }
+
+-- Registry Lookup to prevent duplicates
+local _audioKeys = {}
+local _generalKeys = {}
 
 function DT_OptionsUI:initialise()
     ISCollapsableWindow.initialise(self)
@@ -95,7 +99,7 @@ function DT_OptionsUI:createGeneralChildren(panel)
         
         panel:addChild(self.tickGeneral)
     else
-        local noSettings = ISLabel:new(pad, y, 20, "No general settings configured.", 1, 0.5, 0.5, 0.5, UIFont.Small, true)
+        local noSettings = ISLabel:new(pad, y, 20, "No general settings registered.", 1, 0.5, 0.5, 0.5, UIFont.Small, true)
         panel:addChild(noSettings)
     end
 end
@@ -167,7 +171,7 @@ function DT_OptionsUI:createAudioChildren(panel)
     -- Always show master
     AddSlider("Master:", "Master", nil)
 
-    -- Show configured categories
+    -- Show registered categories
     for _, cat in ipairs(DT_OptionsUI.config.audioCategories) do
         AddSlider(cat.label, cat.configKey, cat.exampleSound)
     end
@@ -197,12 +201,28 @@ function DT_OptionsUI:close()
     DT_OptionsUI.instance = nil
 end
 
---- Static method to set configuration before opening
--- @param configTable Table matching structure of DT_OptionsUI.config
-function DT_OptionsUI.SetConfig(configTable)
-    if configTable.title then DT_OptionsUI.config.title = configTable.title end
-    if configTable.audioCategories then DT_OptionsUI.config.audioCategories = configTable.audioCategories end
-    if configTable.generalSettings then DT_OptionsUI.config.generalSettings = configTable.generalSettings end
+-- =============================================================================
+-- REGISTRY METHODS
+-- =============================================================================
+
+function DT_OptionsUI.RegisterAudioCategory(label, configKey, exampleSound)
+    if _audioKeys[configKey] then return end -- Skip duplicates
+    table.insert(DT_OptionsUI.config.audioCategories, {
+        label = label,
+        configKey = configKey,
+        exampleSound = exampleSound
+    })
+    _audioKeys[configKey] = true
+end
+
+function DT_OptionsUI.RegisterGeneralSetting(label, configKey, callback)
+    if _generalKeys[configKey] then return end -- Skip duplicates
+    table.insert(DT_OptionsUI.config.generalSettings, {
+        label = label,
+        configKey = configKey,
+        callback = callback
+    })
+    _generalKeys[configKey] = true
 end
 
 function DT_OptionsUI.ToggleWindow()

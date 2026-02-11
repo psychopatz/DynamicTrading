@@ -10,6 +10,7 @@ require "DT/Common/Config"
 require "Utils/DT_CoreUtils"
 require "DT/V2/Dialog/DT_DialogueManager"
 require "DT/V2/NPC/DTNPC_ClientCache"
+require "DT/Common/Utils/DT_AudioManager"
 
 local DEBUG_PREFIX = "[DT-V2-TradingWrapper]"
 
@@ -320,7 +321,11 @@ end
 -- AUDIO
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:playSound(soundName)
-    getSoundManager():PlaySound(soundName, false, 0.1)
+    if DT_AudioManager then
+        DT_AudioManager.PlaySound(soundName, false, 1.0) -- volume 1.0, let manager handle multiplier
+    else
+        getSoundManager():PlaySound(soundName, false, 1.0)
+    end
 end
 
 -- -----------------------------------------------------------------------------

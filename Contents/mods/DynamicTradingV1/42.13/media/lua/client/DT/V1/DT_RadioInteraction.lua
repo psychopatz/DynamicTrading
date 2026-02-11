@@ -1,7 +1,7 @@
 require "DT/V1/Manager"
 require "DT/Common/Config"
 require "DT/V1/Radio/DT_RadioWindow"
-require "DT/V1/Utils/DT_AudioManager" 
+require "DT/V1/Utils/DT_OptionsManager" 
 
 DT_RadioInteraction = {}
 

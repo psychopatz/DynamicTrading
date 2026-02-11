@@ -4,6 +4,7 @@
 -- ==============================================================================
 
 require "ISUI/ISPanel"
+require "DT/V2/Utils/DT_V2_OptionsManager"
 
 DT_V2_RadarHeaderPanel = ISPanel:derive("DT_V2_RadarHeaderPanel")
 
@@ -23,6 +24,17 @@ function DT_V2_RadarHeaderPanel:createChildren()
     self.lblDeviceName = ISLabel:new(self.width/2, 24, 18, "Device: Unknown", 1, 1, 1, 1, UIFont.Small, true)
     self.lblDeviceName:initialise()
     self:addChild(self.lblDeviceName)
+
+    -- Settings Button (Cog/Text)
+    local btnSize = 18
+    self.btnOptions = ISButton:new(self.width - btnSize - 5, 5, btnSize, btnSize, "", self, function()
+        if DT_V2_OptionsManager then DT_V2_OptionsManager.ToggleWindow() end
+    end)
+    self.btnOptions:initialise()
+    self.btnOptions.borderColor = {r=1, g=1, b=1, a=0.2}
+    self.btnOptions.backgroundColor = {r=0, g=0, b=0, a=0}
+    self.btnOptions:setImage(getTexture("media/ui/inventoryPanes/Button_Settings.png")) -- Specific button icon
+    self:addChild(self.btnOptions)
 
     -- Broadcast Range Label
     self.lblRangeInfo = ISLabel:new(self.width/2, 43, 18, "Broadcast Range: Unknown", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
@@ -91,6 +103,11 @@ function DT_V2_RadarHeaderPanel:prerender()
     if self.btnCall then self.btnCall:setX(tabWidth); self.btnCall:setWidth(tabWidth) end
     if self.btnQuest then self.btnQuest:setX(tabWidth * 2); self.btnQuest:setWidth(tabWidth) end
     if self.btnLoc then self.btnLoc:setX(tabWidth * 3); self.btnLoc:setWidth(tabWidth) end
+
+    -- Update Settings Button Position
+    if self.btnOptions then
+        self.btnOptions:setX(self.width - self.btnOptions:getWidth() - 5)
+    end
 
     -- Update Tab Visuals (Highlight Active)
     local activeCat = "Stationary"

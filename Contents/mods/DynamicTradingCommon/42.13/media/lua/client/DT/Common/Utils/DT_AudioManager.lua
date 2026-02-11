@@ -29,10 +29,10 @@ end
 local function GetCategoryMultiplier(soundName)
     -- Safe retrieval of Master Volume
     local masterRaw = DT_ConfigManager.getVolume("Master")
-    local master = tonumber(masterRaw) or 1.0
+    local master = tonumber(masterRaw) or 0.6
     
-    -- Check exact or prefix match
-    local cat = "Master"
+    -- Check for prefix/exact match in map
+    local cat = "General" -- Default to General, not Master
     
     -- Exact match in map?
     if DT_AudioManager.CategoryMap[soundName] then
@@ -47,10 +47,8 @@ local function GetCategoryMultiplier(soundName)
         end
     end
     
-    if cat == "Master" then return master end
-    
     local subRaw = DT_ConfigManager.getVolume(cat)
-    local subVol = tonumber(subRaw) or 1.0
+    local subVol = tonumber(subRaw) or 0.5
     
     return master * subVol
 end

@@ -4,6 +4,7 @@
 require "UI/DT_ConversationUI"
 require "DT/V2/NPC/DTNPC_TradingHandler"
 require "DT/V2/UI/DT_TradingWindow_Wrapper"
+require "DT/V2/Utils/DT_V2_OptionsManager"
 
 local DEBUG_PREFIX = "[DT-V2-Hub]"
 
@@ -154,17 +155,20 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     })
 
 
-    -- OPTION 3: QUEST (Placeholder)
+    -- OPTION 4: SETTINGS (Common UI)
     table.insert(options, {
-        text = "Quest",
-        message = "Got any work for me?",
+        text = "Settings",
+        message = "Can I adjust some settings real quick?",
         onSelect = function(ui)
-            ui:speak("Nothing at the moment. Check back later.")
-            DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
+            if DT_V2_OptionsManager then
+                DT_V2_OptionsManager.ToggleWindow()
+                -- Keep Hub open in background
+                DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
+            end
         end
     })
 
-    -- OPTION 4: LEAVE
+    -- OPTION 5: LEAVE
     table.insert(options, {
         text = "Leave",
         message = "I'll be going now. Good luck.",

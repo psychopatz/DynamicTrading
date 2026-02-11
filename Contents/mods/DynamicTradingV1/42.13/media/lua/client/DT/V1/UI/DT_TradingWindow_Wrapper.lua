@@ -6,7 +6,7 @@ require "DT/V1/Manager"
 require "DT/V1/Economy"
 require "DT/V1/Events"
 require "DT/V1/DT_DialogueManager" 
-require "DT/V1/Utils/DT_AudioManager" 
+require "DT/V1/Utils/DT_OptionsManager" 
 
 V1_DataProvider = {}
 
