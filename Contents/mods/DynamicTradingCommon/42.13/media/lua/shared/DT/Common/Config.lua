@@ -66,34 +66,8 @@ function DynamicTrading.RegisterDialogue(archetypeID, dialogueType, data)
         archTable[dialogueType][lang] = lines
     end
 
-    -- [NEW] Backward Compatibility for Meta Archetypes (Player, General)
-    if archetypeID == "Player" or archetypeID == "General" then
-        DynamicTrading.Dialogue[archetypeID] = DynamicTrading.Dialogue[archetypeID] or {}
-        local metaTable = DynamicTrading.Dialogue[archetypeID]
-        
-        -- Map "Buy" or "Buying" to "Buy" context etc.
-        local targetKey = dialogueType
-        if archetypeID == "Player" then
-            if dialogueType == "Buying" then targetKey = "Buy"
-            elseif dialogueType == "Selling" then targetKey = "Sell"
-            elseif dialogueType == "Greetings" then targetKey = "Intro"
-            end
-        end
-
-        for lang, lines in pairs(data) do
-            if lang == "EN" then
-                -- For player dialogues, they are often just the lines or context aware
-                if lines.Generic or lines.Default then
-                    local base = lines.Generic or lines.Default
-                    metaTable[targetKey] = base
-                    -- Explode context for player
-                    if lines.LastStock then metaTable["BuyLast"] = lines.LastStock end
-                    if lines.NoCash then metaTable["NoCash"] = lines.NoCash end
-                else
-                    metaTable[targetKey] = lines
-                end
-            end
-        end
+    if archetypeID == "Player" and DynamicTrading.Debug then
+         print("[DynamicTrading] Debug: Registered Player Dialogue: " .. dialogueType)
     end
 end
 
@@ -126,7 +100,7 @@ local languages = {
 local dialogueTypes = { "Greetings", "Buying", "Selling", "Sell_ask", "Idle", "Request" }
 
 -- Debug Flag
-DynamicTrading.Debug = false
+DynamicTrading.Debug = true
 
 -- Helper to check file existence to avoid console spam
 local function FileExists(path)
