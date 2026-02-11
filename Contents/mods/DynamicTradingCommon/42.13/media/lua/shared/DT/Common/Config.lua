@@ -41,15 +41,93 @@ function DynamicTrading.RegisterArchetype(id, data)
     -- Ensure the ID is inside the data table too, just in case, 
     -- but primarily use it as the Table Key for lookups.
     data.id = id 
-    
     DynamicTrading.Archetypes[id] = data
     
-    -- Debug Print (Requested)
     print("[DynamicTrading] Registered Archetype: " .. id)
 end
 
 -- =============================================================================
--- 3. GAMEPLAY HELPERS
+-- 3. DIALOGUE REGISTRY
+-- =============================================================================
+DynamicTrading.Dialogue = DynamicTrading.Dialogue or {}
+DynamicTrading.Dialogue.Archetypes = DynamicTrading.Dialogue.Archetypes or {}
+
+-- New RegisterDialogue for In-Code Translations
+function DynamicTrading.RegisterDialogue(archetypeID, dialogueType, data)
+    if not archetypeID or not dialogueType or not data then return end
+    
+    DynamicTrading.Dialogue.Archetypes[archetypeID] = DynamicTrading.Dialogue.Archetypes[archetypeID] or {}
+    local archTable = DynamicTrading.Dialogue.Archetypes[archetypeID]
+    
+    archTable[dialogueType] = archTable[dialogueType] or {}
+    
+    -- Merge translations (supports overrides and cross-file loading)
+    for lang, lines in pairs(data) do
+        archTable[dialogueType][lang] = lines
+    end
+end
+
+-- Detection Helper: Returns the current game language code (e.g., "EN", "PH", "RU")
+function DynamicTrading.GetLanguage()
+    if Translator and Translator.getLanguage() then
+        return Translator.getLanguage():toString()
+    end
+    return "EN" -- Default fallback
+end
+
+-- =============================================================================
+-- 4. DYNAMIC LOADER
+-- =============================================================================
+DynamicTrading.Config.ArchetypeList = {
+    "Angler", "Athlete", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
+    "Carpenter", "Chef", "Demo", "Designer", "Doctor", "Electrician", "Foreman",
+    "Geek", "Herbalist", "Hiker", "Hunter", "Janitor", "Librarian", "Mechanic",
+    "Musician", "Office", "Painter", "Pawnbroker", "Pharmacist", "Pyro",
+    "Quartermaster", "RoadWarrior", "Scavenger", "Sheriff", "Smuggler",
+    "Survivalist", "Tailor", "Teacher", "Tribal", "Welder",
+    "General", "Player" -- Meta archetypes
+}
+
+local languages = { 
+    "AR", "CA", "CH", "CN", "CS", "DA", "DE", "EN", "ES", "FI", 
+    "FR", "HU", "ID", "IT", "JP", "KO", "NL", "NO", "PH", "PL", 
+    "PT", "PTBR", "RO", "RU", "TH", "TR", "UA" 
+}
+local dialogueTypes = { "Greetings", "Buying", "Selling", "Sell_ask", "Intro", "Buy", "BuyLast", "NoCash", "Sell" }
+
+function DynamicTrading.LoadArchetypes()
+    print("[DynamicTrading] Starting Dynamic Archetype Loading...")
+    
+    for _, id in ipairs(DynamicTrading.Config.ArchetypeList) do
+        -- 1. Load Archetype Definition (Item Data)
+        local itemPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Items/DT_" .. id
+        require(itemPath)
+        
+        -- 2. Load Dialogues and Translations
+        for _, dType in ipairs(dialogueTypes) do
+            local baseDialoguePath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/DT_" .. id .. "_" .. dType
+            -- Attempt base require (English/Default)
+            local success, _ = pcall(require, baseDialoguePath)
+            if success then
+                print("[DynamicTrading]   >> Loaded " .. dType .. " (Base)")
+            end
+            
+            -- Attempt Translation loading
+            for _, lang in ipairs(languages) do
+                local transPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/Translations/" .. lang .. "/DT_" .. id .. "_" .. dType .. "_" .. lang
+                local tSuccess, _ = pcall(require, transPath)
+                if tSuccess then
+                    print("[DynamicTrading]   >> Loaded " .. dType .. " (" .. lang .. ")")
+                end
+            end
+        end
+    end
+    
+    print("[DynamicTrading] Dynamic Loading Complete.")
+end
+
+-- =============================================================================
+-- 5. GAMEPLAY HELPERS
 -- =============================================================================
 function DynamicTrading.Config.GetRadioData(itemFullType)
     return DynamicTrading.Config.RadioTiers[itemFullType] or { power = 0.5, desc = "Unknown Device" }
@@ -67,5 +145,8 @@ function DynamicTrading.Config.GetDifficultyData()
 end
 
 print("[DynamicTrading] Config & Registry Core Loaded.")
+
+-- Trigger the loading process
+DynamicTrading.LoadArchetypes()
 
 

@@ -1,4 +1,4 @@
-require "DT/Common/DialogueConfig"
+require "DT/Common/Config"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.DialogueManager = {}
@@ -70,37 +70,45 @@ end
 -- Helper: safely retrieve the DB
 local function GetDB()
     if not DynamicTrading.Dialogue then
-        require "DT/Common/DialogueConfig"
+        require "DT/Common/Config"
     end
     return DynamicTrading.Dialogue
 end
 
--- Helper: Finds the best pool of strings based on Trader Archetype
+-- Helper: Finds the best pool of strings based on Trader Archetype and Language
 local function GetDialoguePool(archetype, category, subContext)
     local db = GetDB()
     if not db then return { "..." } end
 
+    local lang = DynamicTrading.GetLanguage()
+
+    -- Helper to check a specific table for language-aware dialogues
+    local function GetFromTarget(target)
+        if not target or not target[category] then return nil end
+        
+        local categoryTable = target[category]
+        
+        -- If it's a direct array (old format), just return it
+        if categoryTable[1] then return categoryTable end
+        
+        -- If it's the new format (keyed by language), try current lang then EN
+        local subTable = categoryTable[subContext] or categoryTable["Default"] or categoryTable["Generic"]
+        if subTable then
+            return subTable[lang] or subTable["EN"] or subTable -- Fallback to direct array if not keyed
+        end
+        return nil
+    end
+
     -- 1. Try Archetype Specific
     if db.Archetypes and db.Archetypes[archetype] then
-        local archDB = db.Archetypes[archetype]
-        if archDB[category] and archDB[category][subContext] then
-            return archDB[category][subContext]
-        end
+        local pool = GetFromTarget(db.Archetypes[archetype])
+        if pool then return pool end
     end
 
     -- 2. Try General Specific
-    if db.General and db.General[category] and db.General[category][subContext] then
-        return db.General[category][subContext]
-    end
-
-    -- 3. Fallback to General Default
-    if db.General and db.General[category] and db.General[category]["Default"] then
-        return db.General[category]["Default"]
-    end
-    
-    -- 4. Final Fallback (Generic)
-    if db.General and db.General[category] and db.General[category]["Generic"] then
-        return db.General[category]["Generic"]
+    if db.General then
+        local pool = GetFromTarget(db.General)
+        if pool then return pool end
     end
 
     return { "..." }
