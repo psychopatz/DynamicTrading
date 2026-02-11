@@ -161,8 +161,12 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                     if fc.getCapacity then
                         local cap = fc:getCapacity()
                         if cap > 0 then
-                            local pct = math.floor((customData.fluidAmount / cap) * 100)
-                            statusSuffix = " (" .. pct .. "%)"
+                            local amt = customData.fluidAmount
+                            -- [DISPLAY CHANGE] Show Liters instead of %
+                            -- Round to 2 decimals for amount, 1 for capacity
+                            local amtStr = string.format("%.2f", amt)
+                            local capStr = string.format("%.1f", cap)
+                            statusSuffix = " (" .. amtStr .. "/" .. capStr .. "L)"
                             isFluid = true
                         end
                     end
@@ -200,8 +204,10 @@ function DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
                 -- end
                 
                 if cap > 0 then
-                    local pct = math.floor((amt / cap) * 100)
-                    statusSuffix = " (" .. pct .. "%)"
+                    -- [DISPLAY CHANGE] Show Liters instead of %
+                    local amtStr = string.format("%.2f", amt)
+                    local capStr = string.format("%.1f", cap)
+                    statusSuffix = " (" .. amtStr .. "/" .. capStr .. "L)"
                     isFluid = true
                 end
             end
@@ -328,8 +334,14 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
                                 name = invItem:getDisplayName(),
                                 price = tonumber(price) or 0,
                                 data = itemData,
+                                scriptItem = getScriptManager():getItem(itemData.item), -- [PERFORMANCE] Cache script reference
                                 isBuy = false,
-                                priceMod = dataProvider:getPriceModifier(itemData.tags)
+                                priceMod = dataProvider:getPriceModifier(itemData.tags),
+                                -- [PERFORMANCE] Pre-calculate display data to avoid recursion in render loop
+                                invItem = invItem,
+                                displayName = DT_TradingItemUtils.getItemDisplayName({isBuy=false}, invItem, getScriptManager():getItem(itemData.item)),
+                                statusSuffix = DT_TradingItemUtils.getStatusSuffix({isBuy=false}, invItem, getScriptManager():getItem(itemData.item)),
+                                isRotten = (invItem.isRotten and invItem:isRotten()) or false
                             })
                         else
                             if isDebugEnabled() then print("[DT DEBUG] Sell Scan: " .. fullType .. " | REJECTED: Price is 0 (or floor to 0)") end
@@ -404,7 +416,11 @@ function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized,
                 data = itemData,
                 isBuy = true,
                 priceMod = dataProvider:getPriceModifier(itemData.tags),
-                customData = customData
+                customData = customData,
+                -- [PERFORMANCE] Pre-calculate display data
+                displayName = DT_TradingItemUtils.getItemDisplayName({isBuy=true, customData=customData, name=sortName}, nil, scriptItem),
+                statusSuffix = DT_TradingItemUtils.getStatusSuffix({isBuy=true, customData=customData}, nil, scriptItem),
+                isRotten = false
             })
         end
     end

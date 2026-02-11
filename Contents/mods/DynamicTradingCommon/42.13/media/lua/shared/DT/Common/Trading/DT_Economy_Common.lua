@@ -546,7 +546,10 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
 
     -- 1. Base & Difficulty
     local price = itemData.basePrice * diffData.sellMult
-    local debugLog = "[DT DEBUG] Sell Price Calc: " .. itemKey .. " | Base: " .. price
+    local debugLog = ""
+    if isDebugEnabled() then
+        debugLog = "[DT DEBUG] Sell Price Calc: " .. itemKey .. " | Base: " .. price
+    end
 
     -- 2. Condition & State Penalty
     if itemObj then
@@ -555,7 +558,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         if itemObj.isRotten and itemObj:isRotten() then
             -- [NEW] Add a virtual tag for Rotten items so archetypes can target them
             table.insert(itemData.tags, "Rotten")
-            print(debugLog .. " | STATE: ROTTEN (PRICE = 1)")
+            if isDebugEnabled() then print(debugLog .. " | STATE: ROTTEN (PRICE = 1)") end
             return 1
         end
 
@@ -563,7 +566,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         if maxCond > 0 then
              local condRatio = itemObj:getCondition() / maxCond
              price = price * condRatio
-             debugLog = debugLog .. " | Condition: " .. math.floor(condRatio * 100) .. "%"
+             if isDebugEnabled() then debugLog = debugLog .. " | Condition: " .. math.floor(condRatio * 100) .. "%" end
         end
         
         -- DRAINABLE / FLUID PRICING
@@ -654,7 +657,8 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             end
 
             price = containerValue + fluidValue
-            debugLog = debugLog .. " | FLUID: " .. tostring(fluidType) .. " (" .. math.floor(ratio*100) .. "%) | NewPrice: " .. price
+            price = containerValue + fluidValue
+            if isDebugEnabled() then debugLog = debugLog .. " | FLUID: " .. tostring(fluidType) .. " (" .. math.floor(ratio*100) .. "%) | NewPrice: " .. price end
 
         -- B. Food Consumption (Partially eaten)
         elseif itemObj.getHungerChange and scriptItem and scriptItem.getHungerChange then
@@ -664,14 +668,14 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             if baseHunger < 0 then
                 local ratio = currentHunger / baseHunger
                 price = price * math.max(0, math.min(1, ratio))
-                debugLog = debugLog .. " | FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price
+                if isDebugEnabled() then debugLog = debugLog .. " | FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price end
             end
 
         -- C. Standard Drainable (Pills, Batteries, Flashlights, etc.)
         elseif itemObj.IsDrainable and itemObj:IsDrainable() then
             local delta = Common.GetItemCharge(itemObj)
             price = price * delta
-            debugLog = debugLog .. " | DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price
+            if isDebugEnabled() then debugLog = debugLog .. " | DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price end
         end
     end
 
@@ -679,7 +683,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
     if getPriceMod then
         local eventMult = getPriceMod(itemData.tags)
         price = price * eventMult
-        if eventMult ~= 1.0 then debugLog = debugLog .. " | EventMult: " .. eventMult end
+        if isDebugEnabled() and eventMult ~= 1.0 then debugLog = debugLog .. " | EventMult: " .. eventMult end
     end
 
     -- 4. Global Inflation (Heat)
@@ -687,7 +691,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         local heat = globalHeat[tag]
         if heat and heat ~= 0 then
             price = price * (1.0 + heat)
-            debugLog = debugLog .. " | Heat(" .. tag .. "): " .. heat
+            if isDebugEnabled() then debugLog = debugLog .. " | Heat(" .. tag .. "): " .. heat end
         end
     end
 
@@ -697,7 +701,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         local localMult = 1.0 - (localDeflationCount * penaltyPerItem)
         if localMult < 0.2 then localMult = 0.2 end
         price = price * localMult
-        debugLog = debugLog .. " | Deflation: " .. localMult
+        if isDebugEnabled() then debugLog = debugLog .. " | Deflation: " .. localMult end
     end
 
     -- 6. Archetype Bonus ("Wants")
@@ -705,7 +709,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         for _, tag in ipairs(itemData.tags) do
             if archetype.wants[tag] then
                 price = price * archetype.wants[tag]
-                debugLog = debugLog .. " | Want(" .. tag .. "): " .. archetype.wants[tag]
+                if isDebugEnabled() then debugLog = debugLog .. " | Want(" .. tag .. "): " .. archetype.wants[tag] end
                 break 
             end
         end

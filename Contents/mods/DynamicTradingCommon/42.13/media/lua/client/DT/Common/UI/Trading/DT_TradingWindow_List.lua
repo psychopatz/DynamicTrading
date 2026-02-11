@@ -36,11 +36,7 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
     listbox:drawRectBorder(0, y, width, height, 0.1, 1, 1, 1)
 
     -- 4. DRAW ICON
-    local invItem = nil
-    if d.itemID and d.itemID ~= -1 then
-        local player = getSpecificPlayer(0)
-        invItem = DT_TradingItemUtils.findItemRecursively(player:getInventory(), d.itemID)
-    end
+    local invItem = d.invItem -- [PERFORMANCE] Use cached reference
     
     local tex = DT_TradingWindow.GetItemTexture(d.data.item, invItem)
 
@@ -57,10 +53,20 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
         nameColor = {r=0.5, g=0.5, b=0.5}
     end
 
-    -- Use Utility for status suffix, rotten check, and DYNAMIC NAME
-    local scriptItem = getScriptManager():getItem(d.data.item)
-    local statusSuffix, isRotten = DT_TradingItemUtils.getStatusSuffix(d, invItem, scriptItem)
-    local itemName = DT_TradingItemUtils.getItemDisplayName(d, invItem, scriptItem)
+    -- Use Pre-calculated values by default
+    local statusSuffix = d.statusSuffix or ""
+    local isRotten = d.isRotten or false
+    local itemName = d.displayName or d.name or "Unknown Item"
+
+    -- [DYNAMIC UPDATE] Live Refresh for Owned Items
+    -- Allows liquids/durability to update instantly without full list rebuilds
+    if invItem then
+        local scriptItem = d.scriptItem or getScriptManager():getItem(d.data.item)
+        if scriptItem then
+            statusSuffix, isRotten = DT_TradingItemUtils.getStatusSuffix(d, invItem, scriptItem)
+            itemName = DT_TradingItemUtils.getItemDisplayName(d, invItem, scriptItem)
+        end
+    end
     
     if isRotten then
         nameColor = {r=0.8, g=0.3, b=0.3}
@@ -97,7 +103,16 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
         end
     end
 
-    listbox:drawText("$" .. d.price, width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
+    -- [DYNAMIC UPDATE] Live Price Recalculation
+    local displayPrice = d.price
+    if invItem and ui and ui.dataProvider and ui.traderID then
+        local trader = ui.dataProvider:getTrader(ui.traderID, ui.archetype)
+        if trader then
+            displayPrice = ui.dataProvider:getSellPrice(invItem, d.key, trader)
+        end
+    end
+
+    listbox:drawText("$" .. displayPrice, width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
 
     return y + height
 end
