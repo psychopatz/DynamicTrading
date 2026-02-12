@@ -2,7 +2,7 @@
 -- DYNAMIC TRADING: WALLET SYSTEM (SERVER SIDE)
 -- =============================================================================
 
-require "00_DT_ServerHelpers"
+require "DT/Common/ServerHelpers"
 
 local Commands = {}
 local Helpers = DynamicTrading.ServerHelpers

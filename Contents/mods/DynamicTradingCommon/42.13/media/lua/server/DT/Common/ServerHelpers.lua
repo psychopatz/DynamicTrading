@@ -4,8 +4,7 @@
 -- Centralized utility functions for server-side inventory, money, and world
 -- interactions. Compatible with Singleplayer, MP Hosted, and MP Dedicated.
 --
--- USAGE: require "00_DT_ServerHelpers"
---        DynamicTrading.ServerHelpers.RemoveItem(item)
+-- USAGE: require "DT/Common/ServerHelpers"--        DynamicTrading.ServerHelpers.RemoveItem(item)
 -- =============================================================================
 
 DynamicTrading = DynamicTrading or {}
@@ -317,4 +316,4 @@ function Helpers.BurnMoney(player, amount)
     end
 end
 
-print("[DynamicTradingCommon] 00_DT_ServerHelpers loaded.")
+print("[DynamicTradingCommon] DT/Common/ServerHelpers loaded.")

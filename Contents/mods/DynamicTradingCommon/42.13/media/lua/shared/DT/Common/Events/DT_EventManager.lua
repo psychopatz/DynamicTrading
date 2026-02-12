@@ -4,12 +4,11 @@
 --  Shared Event Manager for Dynamic Trading V1 and V2.
 -- =============================================================================
 
-require "DT/Common/Config"
-
+-- Generic Global Initialization (Breaks circular dependency with Config.lua)
 DynamicTrading = DynamicTrading or {}
-DynamicTrading.Events = {}
-DynamicTrading.Events.Registry = {}
-DynamicTrading.Events.ActiveEvents = {} 
+DynamicTrading.Events = DynamicTrading.Events or {}
+DynamicTrading.Events.Registry = DynamicTrading.Events.Registry or {}
+DynamicTrading.Events.ActiveEvents = DynamicTrading.Events.ActiveEvents or {} 
 
 -- =============================================================================
 -- 1. REGISTRATION API
@@ -19,6 +18,8 @@ function DynamicTrading.Events.Register(id, data)
     -- Default to "flash" if not explicitly set
     if not data.type then data.type = "flash" end
     DynamicTrading.Events.Registry[id] = data
+    
+    print("[DynamicTrading] [Events] Registered: " .. tostring(id) .. " (" .. tostring(data.type) .. ")")
 end
 
 -- =============================================================================
@@ -34,6 +35,9 @@ function DynamicTrading.Events.GetPriceModifier(itemTags)
             for _, tag in ipairs(itemTags) do
                 if event.effects[tag] and event.effects[tag].price then
                     multiplier = multiplier * event.effects[tag].price
+                    if DynamicTrading.Debug then
+                        print("[DynamicTrading] [Events] Price Mod: " .. tostring(tag) .. " x" .. tostring(event.effects[tag].price) .. " (Total: " .. tostring(multiplier) .. ")")
+                    end
                 end
             end
         end
@@ -50,6 +54,9 @@ function DynamicTrading.Events.GetVolumeModifier(itemTags)
             for _, tag in ipairs(itemTags) do
                 if event.effects[tag] and event.effects[tag].vol then
                     multiplier = multiplier * event.effects[tag].vol
+                    if DynamicTrading.Debug then
+                        print("[DynamicTrading] [Events] Volume Mod: " .. tostring(tag) .. " x" .. tostring(event.effects[tag].vol) .. " (Total: " .. tostring(multiplier) .. ")")
+                    end
                 end
             end
         end
@@ -62,6 +69,9 @@ function DynamicTrading.Events.GetSystemModifier(key)
     for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
         if event.system and event.system[key] then
             multiplier = multiplier * event.system[key]
+            if DynamicTrading.Debug then
+                print("[DynamicTrading] [Events] System Mod: " .. tostring(key) .. " x" .. tostring(event.system[key]) .. " (Total: " .. tostring(multiplier) .. ")")
+            end
         end
     end
     return multiplier
@@ -73,6 +83,9 @@ function DynamicTrading.Events.GetInjections()
         if event.inject then
             for tag, count in pairs(event.inject) do
                 injections[tag] = (injections[tag] or 0) + count
+                if DynamicTrading.Debug then
+                    print("[DynamicTrading] [Events] Injecting: " .. tostring(tag) .. " (+" .. tostring(count) .. ")")
+                end
             end
         end
     end
@@ -95,66 +108,5 @@ function DynamicTrading.Events.GetFlashCandidates()
     end
     return candidates
 end
-
--- =============================================================================
--- 3. LOAD DEFINITIONS
--- =============================================================================
-
--- Meta - Positive
-require "DT/Common/Events/Meta/Positive/NatureReclamation"
-
--- Meta - Negative
-require "DT/Common/Events/Meta/Negative/WaterFail"
-require "DT/Common/Events/Meta/Negative/PowerFail"
-require "DT/Common/Events/Meta/Negative/GreatRot"
-require "DT/Common/Events/Meta/Negative/HygieneCollapse"
-require "DT/Common/Events/Meta/Negative/BallisticExhaustion"
-require "DT/Common/Events/Meta/Negative/ManufacturingHalt"
-require "DT/Common/Events/Meta/Negative/KnowledgeGap"
-require "DT/Common/Events/Meta/Negative/IronAge"
-require "DT/Common/Events/Meta/Negative/FuelCrisis"
-require "DT/Common/Events/Meta/Negative/SignalDecay"
-
--- Seasonal - Positive
-require "DT/Common/Events/Seasonal/Positive/Harvest"
-require "DT/Common/Events/Seasonal/Positive/Spring"
-
--- Seasonal - Negative
-require "DT/Common/Events/Seasonal/Negative/Winter"
-require "DT/Common/Events/Seasonal/Negative/Heatwave"
-
--- Flash - Positive
-require "DT/Common/Events/Flash/Positive/Surplus"
-require "DT/Common/Events/Flash/Positive/HospitalFound"
-require "DT/Common/Events/Flash/Positive/FishingTourney"
-require "DT/Common/Events/Flash/Positive/HuntingSeason"
-require "DT/Common/Events/Flash/Positive/ConstructionBoom"
-require "DT/Common/Events/Flash/Positive/SalvageOp"
-require "DT/Common/Events/Flash/Positive/GoldRush"
-require "DT/Common/Events/Flash/Positive/Smugglers"
-require "DT/Common/Events/Flash/Positive/Celebration"
-require "DT/Common/Events/Flash/Positive/SchoolStart"
-require "DT/Common/Events/Flash/Positive/TechBoom"
-require "DT/Common/Events/Flash/Positive/MechanicFair"
-require "DT/Common/Events/Flash/Positive/FireSale"
-require "DT/Common/Events/Flash/Positive/CaravanArrival"
-require "DT/Common/Events/Flash/Positive/AtmosphericClear"
-require "DT/Common/Events/Flash/Positive/RadioClub"
-require "DT/Common/Events/Flash/Positive/EmergencyNet"
-require "DT/Common/Events/Flash/Positive/FreeMarket"
-
--- Flash - Negative
-require "DT/Common/Events/Flash/Negative/Warzone"
-require "DT/Common/Events/Flash/Negative/Outbreak"
-require "DT/Common/Events/Flash/Negative/Famine"
-require "DT/Common/Events/Flash/Negative/FuelShortage"
-require "DT/Common/Events/Flash/Negative/CrimeWave"
-require "DT/Common/Events/Flash/Negative/SolarFlare"
-require "DT/Common/Events/Flash/Negative/Inflation"
-require "DT/Common/Events/Flash/Negative/SignalJamming"
-require "DT/Common/Events/Flash/Negative/WitchHunt"
-require "DT/Common/Events/Flash/Negative/ElectricalStorm"
-require "DT/Common/Events/Flash/Negative/BridgeCollapse"
-require "DT/Common/Events/Flash/Negative/PanicBroadcast"
 
 print("[DynamicTrading] Common Event Manager Initialized.")
