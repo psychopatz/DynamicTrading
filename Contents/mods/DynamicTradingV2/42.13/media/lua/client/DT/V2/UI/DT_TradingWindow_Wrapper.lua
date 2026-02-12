@@ -11,6 +11,7 @@ require "Utils/DT_CoreUtils"
 require "DT/V2/Dialog/DT_DialogueManager"
 require "DT/V2/NPC/DTNPC_ClientCache"
 require "DT/Common/Utils/DT_AudioManager"
+require "DT/Common/Trading/DT_Economy_Common"
 
 local DEBUG_PREFIX = "[DT-V2-TradingWrapper]"
 
@@ -220,7 +221,12 @@ function V2_DataProvider:getBuyPrice(key, customData, verbose)
     }
 
     -- Use Shared Common Logic
-    return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
+    if DynamicTrading.Economy and DynamicTrading.Economy.Common and DynamicTrading.Economy.Common.GetBuyPrice then
+        return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
+    end
+    
+    print("[DT-V2-TradingWrapper] ERROR: DynamicTrading.Economy.Common.GetBuyPrice is NULL!")
+    return 99999
 end
 
 function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)

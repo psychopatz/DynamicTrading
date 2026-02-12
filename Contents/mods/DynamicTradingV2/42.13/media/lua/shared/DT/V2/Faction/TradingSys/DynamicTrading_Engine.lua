@@ -91,6 +91,17 @@ function DynamicTrading_Engine.OnTick()
         
         -- Generate Daily Recruits
         local recruitCount = SandboxVars.DynamicTrading.GlobalRecruitCount or 5
+        
+        -- Apply Event Modifiers
+        if DynamicTrading.Events and DynamicTrading.Events.GetDemographicsModifier then
+            local mult = DynamicTrading.Events.GetDemographicsModifier("recruitMult")
+            if mult ~= 1.0 then
+                local old = recruitCount
+                recruitCount = math.floor(recruitCount * mult)
+                print("DT Engine: Recruit Count modified by events: " .. old .. " -> " .. recruitCount)
+            end
+        end
+
         data.Demographics.availableRecruits = recruitCount
         print("DT Engine: generated " .. recruitCount .. " global recruits for Day " .. currentDay)
         
@@ -168,6 +179,33 @@ function DynamicTrading_Engine.ConsumeRecruit()
         return true
     end
     return false
+end
+
+-- =============================================================================
+-- EVENT-AWARE GETTERS (WORLD ECONOMY)
+-- =============================================================================
+
+function DynamicTrading_Engine.GetScavengeEfficiency()
+    local data = DynamicTrading_Engine.GetEngineData()
+    local base = data and data.WorldEconomy.scavengeEfficiency or 1.0
+    
+    if DynamicTrading.Events and DynamicTrading.Events.GetWorldModifier then
+        return base * DynamicTrading.Events.GetWorldModifier("scavengeEfficiencyMult")
+    end
+    return base
+end
+
+function DynamicTrading_Engine.GetConsumptionModifier(resourceType)
+    local data = DynamicTrading_Engine.GetEngineData()
+    local base = 1.0
+    if data and data.WorldEconomy.consumptionMods then
+        base = data.WorldEconomy.consumptionMods[resourceType] or 1.0
+    end
+    
+    if DynamicTrading.Events and DynamicTrading.Events.GetWorldModifier then
+        return base * DynamicTrading.Events.GetWorldModifier("consumptionMults", resourceType)
+    end
+    return base
 end
 
 -- Hook into Game Events

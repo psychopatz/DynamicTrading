@@ -1,9 +1,4 @@
--- ==============================================================================
--- DynamicTrading_Director.lua
--- Logic: V2 Event Director (Candidate Discovery, Selection, and Wildcards)
--- ==============================================================================
-
-if isClient() and not isServer() then return end
+-- if isClient() and not isServer() then return end
 
 require "DT/V2/Config"
 require "DT/Common/Events/DT_EventManager"
@@ -15,9 +10,10 @@ DynamicTrading.V2.Director = {}
 local Director = DynamicTrading.V2.Director
 
 -- =============================================================================
--- 1. EVENT UPDATE (Called Daily Per Faction)
+-- 1. EVENT UPDATE (Called Daily Per Faction) - SERVER ONLY
 -- =============================================================================
 function Director.Update(faction)
+    if isClient() and not isServer() then return end
     if not faction then return end
     
     local currentHour = math.floor(getGameTime():getWorldAgeHours())
@@ -101,10 +97,41 @@ function Director.Update(faction)
         
         print("DT Director: Faction [" .. faction.id .. "] triggered Event: " .. finalID .. " for " .. duration .. " hours.")
         
-        -- Reset stability if negative wildcard hit
+        -- PRE-CALCULATE IMPACTS (V2 Revamp)
         local def = DynamicTrading.Events.Registry[finalID]
-        if def and def.sentiment == "Negative" then
-            faction.consecutiveStableDays = 0
+        if def then
+            -- 1. Casualties (Distributed)
+            if def.factionImpact and def.factionImpact.memberCountPct then
+                local pct = def.factionImpact.memberCountPct
+                local totalToKill = math.floor(math.abs(faction.memberCount * pct))
+                if totalToKill == 1 and pct < 0 then totalToKill = 1 end -- Ensure at least 1 if % is set
+                faction.ActiveFlashEvent.targetCasualties = totalToKill
+                print("  > Pre-calculated " .. totalToKill .. " casualties for duration of event.")
+            else
+                faction.ActiveFlashEvent.targetCasualties = 0
+            end
+
+            -- 2. Immediate Impacts (Wealth, Stockpile, Stability)
+            if def.factionImpact then
+                if def.factionImpact.wealthAdd then
+                    faction.wealth = (faction.wealth or 0) + def.factionImpact.wealthAdd
+                    print("  > Applied wealth hit: " .. def.factionImpact.wealthAdd)
+                end
+                if def.factionImpact.stockpileAdd then
+                    for res, amt in pairs(def.factionImpact.stockpileAdd) do
+                        faction.stockpile[res] = (faction.stockpile[res] or 0) + amt
+                        print("  > Applied stockpile hit [" .. res .. "]: " .. amt)
+                    end
+                end
+                if def.factionImpact.stabilityAdd then
+                    faction.consecutiveStableDays = math.max(0, (faction.consecutiveStableDays or 0) + def.factionImpact.stabilityAdd)
+                end
+            end
+
+            -- Reset stability if negative wildcard/sentiment hit
+            if def.sentiment == "Negative" then
+                faction.consecutiveStableDays = 0
+            end
         end
     end
 end
@@ -178,6 +205,88 @@ function Director.GetSystemModifier(factionID, key)
     end
     
     return multiplier
+end
+
+-- =============================================================================
+-- 4. STOCK MODIFIERS (V2 Support)
+-- =============================================================================
+
+function Director.GetVolumeModifier(factionID, itemTags)
+    local multiplier = 1.0
+    
+    -- 1. Global (Seasonal/Meta)
+    if DynamicTrading.Events and DynamicTrading.Events.GetVolumeModifier then
+        multiplier = multiplier * DynamicTrading.Events.GetVolumeModifier(itemTags)
+    end
+    
+    -- 2. Faction Specific
+    if factionID then
+        local factionData = ModData.get("DynamicTrading_Factions")
+        local faction = factionData and factionData[factionID]
+        if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+            local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+            if def and def.stock and def.stock.volumeMult then
+                multiplier = multiplier * def.stock.volumeMult
+            end
+        end
+    end
+    
+    return multiplier
+end
+
+function Director.GetInjections(factionID)
+    local injections = {}
+    
+    -- 1. Global
+    if DynamicTrading.Events and DynamicTrading.Events.GetInjections then
+        injections = DynamicTrading.Events.GetInjections()
+    end
+    
+    -- 2. Faction Specific
+    if factionID then
+        local factionData = ModData.get("DynamicTrading_Factions")
+        local faction = factionData and factionData[factionID]
+        if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+            local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+            if def and def.stock and def.stock.injections then
+                for tag, count in pairs(def.stock.injections) do
+                    injections[tag] = (injections[tag] or 0) + count
+                end
+            end
+        end
+    end
+    
+    return injections
+end
+
+function Director.GetExpertTags(factionID)
+    local tags = {}
+    if factionID then
+        local factionData = ModData.get("DynamicTrading_Factions")
+        local faction = factionData and factionData[factionID]
+        if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+            local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+            if def and def.stock and def.stock.expertTags then
+                for _, tag in ipairs(def.stock.expertTags) do tags[tag] = true end
+            end
+        end
+    end
+    return tags
+end
+
+function Director.GetForbidTags(factionID)
+    local tags = {}
+    if factionID then
+        local factionData = ModData.get("DynamicTrading_Factions")
+        local faction = factionData and factionData[factionID]
+        if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+            local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+            if def and def.stock and def.stock.forbidTags then
+                for _, tag in ipairs(def.stock.forbidTags) do tags[tag] = true end
+            end
+        end
+    end
+    return tags
 end
 
 print("DynamicTrading: V2 Director Module Loaded.")

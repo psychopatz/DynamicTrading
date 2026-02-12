@@ -4,7 +4,7 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
-if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
+-- if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
 
 -- =============================================================================
 -- 1. LOAD SUB-MODULES
@@ -36,5 +36,7 @@ DynamicTrading_Factions.ModifyReputation  = Interaction.ModifyReputation
 -- =============================================================================
 -- 3. EVENT WIRING
 -- =============================================================================
-Events.OnInitGlobalModData.Add(DynamicTrading_Factions.Init)
-Events.OnDynamicTradingDailySimulation.Add(DynamicTrading_Factions.UpdateDaily)
+if not isClient() or isServer() then
+    Events.OnInitGlobalModData.Add(DynamicTrading_Factions.Init)
+    Events.OnDynamicTradingDailySimulation.Add(DynamicTrading_Factions.UpdateDaily)
+end

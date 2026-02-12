@@ -7,11 +7,12 @@
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Economy = DynamicTrading.Economy or {}
-DynamicTrading.Economy.Common = {}
+DynamicTrading.Economy.Common = DynamicTrading.Economy.Common or {}
 
 require "DT/Common/Items/DT_Fluids"
 
 local Common = DynamicTrading.Economy.Common
+print("[DynamicTrading] Common Economy Module initialized.")
 
 -- =============================================================================
 -- 1. UTILITIES
@@ -156,11 +157,14 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             -- Check Tags
             for _, t in ipairs(itemData.tags) do
                 if t == criteria then hasTag = true end
-                -- Check Forbidden
+                -- Check Forbidden (Archetype + Event Banned)
                 if archetype.forbid then
                     for _, f in ipairs(archetype.forbid) do 
                         if t == f then isForbidden = true end 
                     end
+                end
+                if modifiers.forbidTags and modifiers.forbidTags[t] then
+                    isForbidden = true
                 end
             end
             
@@ -196,9 +200,11 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
                         if t == f then isForbidden = true break end
                     end
                 end
+                if modifiers.forbidTags and modifiers.forbidTags[t] then
+                    isForbidden = true
+                end
+                if isForbidden then break end
             end
-
-            if not isForbidden then
                 -- CALCULATE WEIGHT
                 local baseWeight = 0
                 
@@ -263,7 +269,7 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             
             if qty < 1 then qty = 1 end 
             
-            -- [NEW] EXPERT TAG CHECK (Agnostic variation system)
+            -- [NEW] EXPERT TAG CHECK (Agnostic variation system: Archetype + Events)
             local isExpert = false
             if archetype and archetype.expertTags then
                 for _, tag in ipairs(itemData.tags) do
@@ -271,6 +277,11 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
                         if tag == eTag then isExpert = true break end
                     end
                     if isExpert then break end
+                end
+            end
+            if not isExpert and modifiers.expertTags then
+                 for _, tag in ipairs(itemData.tags) do
+                    if modifiers.expertTags[tag] then isExpert = true break end
                 end
             end
 

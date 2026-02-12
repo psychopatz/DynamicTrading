@@ -7,7 +7,9 @@ This document provides a comprehensive map of the variables and ModData structur
 **Location:** `media/lua/shared/DT/V2/Config.lua`
 
 ### Resource Mapping
+
 Maps item tags (from `Archetype Tags`) to macro resource pools.
+
 * `DynamicTrading.V2.Config.ResourceMap`: Table
   * `Vegetable`, `Fruit`, `Grain`, `Meat`, `Fresh`, `Canned`, `Fish`, `Farming` -> `food`
   * `Ammo`, `Gun`, `Weapon` -> `ammo`
@@ -15,7 +17,9 @@ Maps item tags (from `Archetype Tags`) to macro resource pools.
   * `Fuel`, `Electronics` -> `fuel`
 
 ### Simulation Constants
+
 Used by the daily simulation engine to calculate faction survival and growth.
+
 * `DynamicTrading.V2.Config.Sim`: Table
   * `BaseConsumption`: { food: 1.0, meds: 0.1, ammo: 0.2, fuel: 0.5 }
   * `ProductionMultiplier`: 2.0 (Converts allocation score to resource units)
@@ -31,6 +35,7 @@ Used by the daily simulation engine to calculate faction survival and growth.
 All V2 persistence is handled via `ModData`.
 
 ### Engine State (`DynamicTrading_Engine_v2`)
+
 The global conductor for the simulation.
 
 **Location:** `media/lua/shared/DT/V2/Faction/TradingSys/DynamicTrading_Engine.lua`
@@ -52,6 +57,7 @@ The global conductor for the simulation.
   * `rangeMax`: Float (108.0)
 
 ### Faction State (`DynamicTrading_Factions`)
+
 Tracks macro-level data for groups.
 
 **Location:** `media/lua/shared/DT/V2/Faction/TradingSys/Factions/Lifecycle.lua` (Initialized) | `Factions/Interaction.lua` (Modified)
@@ -69,6 +75,7 @@ Tracks macro-level data for groups.
   * `starvationDays`: Integer (Consecutive days without food)
 
 ### Roster State (`DynamicTrading_Roster`)
+
 Manages both persistent "Souls" and active "Traders".
 
 **Location:** `media/lua/shared/DT/V2/Faction/TradingSys/DynamicTrading_Roster.lua`
@@ -81,6 +88,7 @@ Manages both persistent "Souls" and active "Traders".
   * `[factionID]`: List of `uuid`s belonging to this faction.
 
 ### Soul Data (`DTSOUL_[uuid]`)
+
 Full "Brain" data for an NPC. This is the source of truth for an NPC's identity, visuals, and logic state.
 
 **Location:** `media/lua/shared/DT/V2/NPC/Sys/DTNPC_Generator.lua` (Schema) | `DynamicTrading_Roster.lua` (Storage)
@@ -107,6 +115,7 @@ Full "Brain" data for an NPC. This is the source of truth for an NPC's identity,
 * `memory`: Table { [Username] = { trust, lastSeen, tradeVolume } }
 
 ### Stock State (`DynamicTrading_Stock`)
+
 Tracks what each trader is currently selling.
 
 **Location:** `media/lua/shared/DT/V2/Faction/TradingSys/DynamicTrading_Stock.lua`
@@ -129,17 +138,21 @@ These variables are attached to the spawned `IsoZombie` objects in the game worl
 **Location:** `media/lua/shared/DT/V2/NPC/Sys/DTNPC_Data.lua` (Accessors) | `DTNPC_Logic.lua` (Processing)
 
 ### Object ModData
+
 * `modData.IsDTNPC`: Boolean (Flag to identify the zombie as an NPC)
 * `modData.DTNPCBrain`: Table (The physical manifestation of a "Soul")
 
 ### Runtime Logic Variables
+
 These are added to the `brain` table when the NPC is physically spawned.
+
 * `brain.anchorX`, `brain.anchorY`, `brain.anchorZ`: Float (Locked coordinates for `Stay` or `Guard` states)
 * `brain.tickTimer`: Integer (Internal counter for behavior throttling)
 * `brain.lastHealth`: Float (Used to detect player betrayal/attacks)
 * `brain.isHostile`: Boolean (Flag for combat initiation)
 
 ### Global Constants
+
 * `DTNPC.DefaultWalkSpeed`: 0.06
 * `DTNPC.DefaultRunSpeed`: 0.09
 
@@ -160,6 +173,7 @@ These are added to the `brain` table when the NPC is physically spawned.
 V2 pricing delegates core math to the `DynamicTradingCommon` module but wraps it with V2-specific state (Heat, Director modifiers).
 
 ### 5.1 Buy Price (Trader -> Player)
+
 Calculated via `DynamicTrading.Economy.V2.GetBuyPrice`.
 
 **Formula:**
@@ -170,17 +184,18 @@ Calculated via `DynamicTrading.Economy.V2.GetBuyPrice`.
 * **EventMult**: Dynamic modifier from `DynamicTrading.V2.Director` (e.g., shortages, sales).
 * **GlobalHeat**: Global inflation tracked in `DynamicTrading_Engine_v2`. Range: -0.8 (Deflation) to 2.0 (Hyperinflation).
 * **BuyDifficultyMult**: Scaler from Sandbox settings (e.g., 1.0 = Normal).
-* **ItemScale**: 
+* **ItemScale**:
   * **Drainable/Food**: Ratio of Current / Max (min 20% floor for container).
   * **Fluids**: `(ContainerPrice * Mults) + (FluidVolume * FluidPrice * Mults)`.
 
 ### 5.2 Sell Price (Player -> Trader)
+
 Calculated via `DynamicTrading.Economy.V2.GetSellPrice`.
 
 **Formula:**
 `FinalPrice = BasePrice * SellDifficultyMult * ConditionPenalty * EventMult * (1 + GlobalHeat) * LocalDeflation * ArchetypeWant`
 
-* **ConditionPenalty**: 
+* **ConditionPenalty**:
   * If Rotten: Fixed Price `1`.
   * Else: `Condition / MaxCondition` ratio.
 * **LocalDeflation**: Trader-specific saturation. Each item sold reduces price by **5%** for that category (capped at 80% reduction / 0.2 multiplier).
@@ -191,18 +206,22 @@ Calculated via `DynamicTrading.Economy.V2.GetSellPrice`.
 ## 6. Core Methods & API
 
 ### 6.1 Engine (`DynamicTrading_Engine`)
+
 * `Init()`: Initializes/migrates global ModData.
 * `RunDailySimulation()`: Processes heat decay (inflation recovery) and triggers events.
 * `UpdateHeat(category, amount)`: Adjusts global inflation for a specific category.
 
 ### 6.2 Factions (`DynamicTrading_Factions`)
+
 * `ModifyWealth(factionID, amount)`: Directly shifts the faction's capital.
 * `ModifyStockpile(factionID, resource, delta)`: Adds/removes units from macro stockpiles (food, ammo, meds, fuel).
 
 ### 6.3 Stock (`DynamicTrading_Stock`)
+
 * `UpdateItemQty(traderUUID, itemFullType, delta)`: Handles player transactions, updates scarcity pricing, and triggers faction wealth/stockpile updates.
 * `CheckAndGenerateStock(traderUUID)`: Generates fresh stock based on archetype and logic states.
 
 ### 6.4 Roster (`DynamicTrading_Roster`)
+
 * `GetSoulRegistry(uuid)`: Fetches the persistent "Brain" data for an NPC.
 * `UpdateSoulStatus(uuid, status)`: Transitions an NPC between states (Trading, Resting, etc.).

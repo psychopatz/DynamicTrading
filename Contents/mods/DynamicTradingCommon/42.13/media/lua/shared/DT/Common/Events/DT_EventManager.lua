@@ -251,6 +251,48 @@ function DynamicTrading.Events.GetSystemModifier(key)
     return multiplier
 end
 
+function DynamicTrading.Events.GetDemographicsModifier(key)
+    local modifier = nil -- Using nil for multiplicative (1.0) and additive (0) distinction
+    
+    for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
+        if event.demographics and event.demographics[key] then
+            if key:find("Mult") then
+                modifier = (modifier or 1.0) * event.demographics[key]
+            else
+                modifier = (modifier or 0) + event.demographics[key]
+            end
+        end
+    end
+    
+    -- Final defaults
+    if key:find("Mult") then return modifier or 1.0 end
+    return modifier or 0
+end
+
+function DynamicTrading.Events.GetWorldModifier(key, subKey)
+    local modifier = nil
+    
+    for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
+        if event.world then
+            local val = event.world[key]
+            if type(val) == "table" and subKey then
+                val = val[subKey]
+            end
+            
+            if val then
+                if key:find("Mult") or (type(event.world[key]) == "table" and key:find("Mults")) then
+                    modifier = (modifier or 1.0) * val
+                else
+                    modifier = (modifier or 0) + val
+                end
+            end
+        end
+    end
+    
+    if key:find("Mult") or key:find("Mults") then return modifier or 1.0 end
+    return modifier or 0
+end
+
 function DynamicTrading.Events.GetInjections()
     local injections = {}
     for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do

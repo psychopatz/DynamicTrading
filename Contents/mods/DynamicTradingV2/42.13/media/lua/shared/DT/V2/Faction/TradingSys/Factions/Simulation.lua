@@ -59,11 +59,72 @@ function Simulation.UpdateDaily()
             faction.stockpile[res] = (faction.stockpile[res] or 0) + amt
         end
 
+        -- ==========================================================
+        -- [EVENT IMPACTS] V2 Revamp
+        -- ==========================================================
+        
+        -- A. DISTRIBUTED CASUALTIES
+        if faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+            local afe = faction.ActiveFlashEvent
+            if afe.targetCasualties and afe.targetCasualties > 0 then
+                -- Calculate days remaining in event
+                local hoursLeft = afe.expires - currentHour
+                local daysLeft = math.ceil(hoursLeft / 24)
+                if daysLeft < 1 then daysLeft = 1 end
+                
+                -- Determine how many die today
+                local killToday = math.ceil(afe.targetCasualties / daysLeft)
+                -- Add some RNG spice
+                if killToday > 1 and ZombRand(100) < 30 then killToday = killToday - 1 end
+                
+                if killToday > afe.targetCasualties then killToday = afe.targetCasualties end
+                
+                if killToday > 0 then
+                    faction.memberCount = math.max(0, faction.memberCount - killToday)
+                    afe.targetCasualties = afe.targetCasualties - killToday
+                    DynamicTrading_Roster.RemoveSoul(id, killToday)
+                    print("DT Director: Event casualty hit for faction [" .. faction.name .. "] | Killed: " .. killToday .. " | Remaining Targets: " .. afe.targetCasualties)
+                end
+            end
+            
+            -- B. ATTRITION (Resource Dependent)
+            local def = DynamicTrading.Events.Registry[afe.id]
+            if def and def.attrition and def.attrition.sickPct then
+                local sickPct = def.attrition.sickPct
+                local medsPerSick = def.attrition.medsPerSick or 1.0
+                
+                local sickCount = math.floor(faction.memberCount * sickPct)
+                if sickCount > 0 then
+                    local medsNeeded = sickCount * medsPerSick
+                    if (faction.stockpile.meds or 0) >= medsNeeded then
+                        -- Faction has enough meds!
+                        faction.stockpile.meds = faction.stockpile.meds - medsNeeded
+                        print("DT Simulation: Faction [" .. faction.name .. "] treated " .. sickCount .. " sick members (Consumed " .. medsNeeded .. " meds).")
+                    else
+                        -- SHORTAGE! 20% of sick members die
+                        local casualties = math.ceil(sickCount * 0.2)
+                        faction.memberCount = math.max(0, faction.memberCount - casualties)
+                        DynamicTrading_Roster.RemoveSoul(id, casualties)
+                        print("DT Simulation: Faction [" .. faction.name .. "] MED SHORTAGE! " .. sickCount .. " sick, but meds short. " .. casualties .. " died.")
+                        faction.state = "Starving" -- Change state to show crisis
+                    end
+                end
+            end
+        end
+
         -- 1. CONSUMPTION
         local consumes = DynamicTrading.V2.Config.Sim.BaseConsumption
         if consumes then
-            local foodBurn = faction.memberCount * (consumes.food or 1) * consumptionMult
-            local medsBurn = faction.memberCount * (consumes.meds or 0.1) * consumptionMult
+            -- Apply Global Event Consumption Modifiers
+            local foodBurnMod = 1.0
+            local medsBurnMod = 1.0
+            if DynamicTrading_Engine and DynamicTrading_Engine.GetConsumptionModifier then
+                foodBurnMod = DynamicTrading_Engine.GetConsumptionModifier("food")
+                medsBurnMod = DynamicTrading_Engine.GetConsumptionModifier("meds")
+            end
+
+            local foodBurn = faction.memberCount * (consumes.food or 1) * consumptionMult * foodBurnMod
+            local medsBurn = faction.memberCount * (consumes.meds or 0.1) * consumptionMult * medsBurnMod
             
             faction.stockpile.food = (faction.stockpile.food or 0) - foodBurn
             faction.stockpile.meds = (faction.stockpile.meds or 0) - medsBurn
@@ -144,6 +205,19 @@ function Simulation.UpdateDaily()
                 faction.stockpile.food = math.max(faction.stockpile.food or 0, 500)
                 faction.wealth = math.max(faction.wealth or 0, 5000) -- Nomads are wealthy
             else
+                -- [NEW] PASSIVE ATTRITION (Global Demographics)
+                if DynamicTrading.Events and DynamicTrading.Events.GetDemographicsModifier then
+                    local attritionAdd = DynamicTrading.Events.GetDemographicsModifier("attritionAdd")
+                    if attritionAdd > 0 then
+                        local passiveDeaths = math.floor(faction.memberCount * attritionAdd)
+                        if passiveDeaths > 0 then
+                            faction.memberCount = math.max(0, faction.memberCount - passiveDeaths)
+                            DynamicTrading_Roster.RemoveSoul(id, passiveDeaths)
+                            print("DT Simulation: Global Attrition hit faction [" .. faction.name .. "] | Casualties: " .. passiveDeaths)
+                        end
+                    end
+                end
+
                 -- Basic Wealth Simulation: Factions earn small revenue from internal trading/scavenging
                 -- We can scale this based on member count
                 local dailyEarn = faction.memberCount * 50

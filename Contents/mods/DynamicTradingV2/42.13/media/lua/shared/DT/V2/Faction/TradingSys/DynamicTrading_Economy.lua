@@ -1,4 +1,4 @@
-if isClient() and not isServer() then return end
+-- if isClient() and not isServer() then return end
 
 require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
@@ -10,11 +10,13 @@ DynamicTrading.Economy = DynamicTrading.Economy or {}
 DynamicTrading.Economy.V2 = {}
 
 local Common = DynamicTrading.Economy.Common
+print("[DynamicTrading] V2 Economy Module (Shared Wrapper) loaded.")
 
 -- =============================================================================
--- 1. V2 STOCK GENERATOR (Wrapper)
+-- 1. V2 STOCK GENERATOR (Wrapper) - SERVER ONLY
 -- =============================================================================
 function DynamicTrading.Economy.V2.GenerateStock(traderUUID)
+    if isClient() and not isServer() then return {} end
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     if not soul then return {} end
     
@@ -33,7 +35,15 @@ function DynamicTrading.Economy.V2.GenerateStock(traderUUID)
         globalStockMult = 1.0
     }
     
-    -- Future: Add V2 specific modifiers here (e.g., Faction Stockpile level)
+    -- [V2 Revamp] Event Integration
+    if DynamicTrading.V2.Director then
+        modifiers.getVolumeModifier = function(tags)
+            return DynamicTrading.V2.Director.GetVolumeModifier(soul.factionID, tags)
+        end
+        modifiers.eventInjections = DynamicTrading.V2.Director.GetInjections(soul.factionID)
+        modifiers.expertTags = DynamicTrading.V2.Director.GetExpertTags(soul.factionID)
+        modifiers.forbidTags = DynamicTrading.V2.Director.GetForbidTags(soul.factionID)
+    end
 
     -- Delegate to Common
     local rawStock = Common.GenerateStock(archetype, masterList, diff, modifiers)
