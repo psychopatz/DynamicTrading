@@ -1,0 +1,17 @@
+-- =============================================================================
+-- FLASH POSITIVE: IONOSPHERIC CLARITY
+-- =============================================================================
+
+DynamicTrading.Events.Register("AtmosphericClear", {
+    name = "Ionospheric Clarity",
+    type = "flash",
+    description = "Perfect atmospheric conditions. Radio signals are crystal clear.",
+    canSpawn = function() return true end,
+    system = {
+        scanChance = 2.0, -- Double scan chance (Easy mode)
+    },
+    effects = {
+        ["Communication"] = { price = 1.2 }, -- Good radios in demand to use the clear air
+        ["Electronics"] = { price = 1.1 }
+    }
+})

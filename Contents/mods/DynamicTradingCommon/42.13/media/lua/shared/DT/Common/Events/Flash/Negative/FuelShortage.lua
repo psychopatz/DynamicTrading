@@ -1,0 +1,15 @@
+-- =============================================================================
+-- FLASH NEGATIVE: REFINERY EXPLOSION
+-- =============================================================================
+
+DynamicTrading.Events.Register("FuelShortage", {
+    name = "Refinery Explosion",
+    type = "flash",
+    description = "Fuel production has halted.",
+    canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
+    effects = {
+        ["Fuel"] = { price = 4.0, vol = 0.1 },
+        ["CarPart"] = { price = 0.5 },
+        ["Generator"] = { price = 0.5 }
+    }
+})

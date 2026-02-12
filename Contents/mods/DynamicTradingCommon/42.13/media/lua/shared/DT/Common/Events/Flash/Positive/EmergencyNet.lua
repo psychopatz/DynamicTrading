@@ -1,0 +1,19 @@
+-- =============================================================================
+-- FLASH POSITIVE: EMERGENCY BROADCAST
+-- =============================================================================
+
+DynamicTrading.Events.Register("EmergencyNet", {
+    name = "Emergency Broadcast",
+    type = "flash",
+    description = "The automated emergency network is pinging all active stations.",
+    canSpawn = function() return true end,
+    system = {
+        scanChance = 1.8,
+        traderLimit = 1.2
+    },
+    effects = {
+        ["Medical"] = { price = 0.8 },
+        ["Safety"] = { price = 0.8 },
+        ["Survival"] = { price = 0.8 }
+    }
+})

@@ -203,6 +203,11 @@ function DynamicTrading.Config.GetDifficultyData()
     }
 end
 
+-- =============================================================================
+-- 6. EVENT SYSTEM
+-- =============================================================================
+require "DT/Common/Events/DT_EventManager"
+
 print("[DynamicTrading] Config & Registry Core Loaded.")
  
 -- Trigger the loading process LATER to avoid recursive require loops
