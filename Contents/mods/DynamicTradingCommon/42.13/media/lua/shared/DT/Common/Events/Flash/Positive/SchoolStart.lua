@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("SchoolStart", {
-    name = "Education Initiative",
+    name = "School Supplies Demand",
+    sentiment = "Positive",
     type = "flash",
     description = "Communities are rebuilding schools.",
     canSpawn = function() return true end,

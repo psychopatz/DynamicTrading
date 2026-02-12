@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("HygieneCollapse", {
     name = "Sanitation Failure",
+    sentiment = "Negative",
     type = "meta",
     description = "Soap supplies are exhausted. Infection risks are rising.",
     condition = function() 

@@ -4,8 +4,9 @@ require "DT/Common/Events/DT_EventManager"
 -- FLASH POSITIVE: MILITARY SURPLUS
 -- =============================================================================
 
-DynamicTrading.Events.Register("Surplus", {
+DynamicTrading.Events.Register("MilitarySurplus", {
     name = "Military Surplus",
+    sentiment = "Positive",
     type = "flash",
     description = "A military bunker was raided. Gear is everywhere.",
     canSpawn = function() return true end,

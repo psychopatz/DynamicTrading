@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("CrimeWave", {
-    name = "Looter Gangs",
+    name = "Crime Wave",
+    sentiment = "Negative",
     type = "flash",
     description = "Bandits are raiding. Locks and weapons needed.",
     canSpawn = function() return true end,

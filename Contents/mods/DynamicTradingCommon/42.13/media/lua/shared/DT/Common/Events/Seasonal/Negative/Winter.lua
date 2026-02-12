@@ -5,8 +5,9 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("Winter", {
-    name = "Deep Freeze",
-    type = "meta",
+    name = "Winter Scarcity",
+    sentiment = "Negative",
+    type = "seasonal", 
     description = "It's freezing. Warm clothes and heat sources are essential.",
     condition = function() 
         if not (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowSeasonalEvents) then return false end

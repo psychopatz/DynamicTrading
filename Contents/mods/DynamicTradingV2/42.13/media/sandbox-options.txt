@@ -1,34 +1,5 @@
 VERSION = 1,
 
-option DynamicTrading.PriceBuyMult
-{
-    type = double,
-    default = 1.0,
-    min = 0.1,
-    max = 10.0,
-    page = DynamicTrading,
-    translation = DynamicTrading_PriceBuyMult,
-}
-
-option DynamicTrading.PriceSellMult
-{
-    type = double,
-    default = 0.5,
-    min = 0.0,
-    max = 5.0,
-    page = DynamicTrading,
-    translation = DynamicTrading_PriceSellMult,
-}
-
-option DynamicTrading.StockMult
-{
-    type = double,
-    default = 1.0,
-    min = 0.1,
-    max = 5.0,
-    page = DynamicTrading,
-    translation = DynamicTrading_StockMult,
-}
 option DynamicTrading.InflationDecay
 {
     type = double,
@@ -141,113 +112,6 @@ option DynamicTrading.TraderStayHoursMax
     translation = DynamicTrading_TraderStayHoursMax,
 }
 
-option DynamicTrading.EventFrequency
-{
-    type = integer,
-    default = 3,
-    min = 1,
-    max = 30,
-    page = DynamicTrading,
-    translation = DynamicTrading_EventFrequency,
-}
-
-option DynamicTrading.EventChance
-{
-    type = integer,
-    default = 80,
-    min = 1,
-    max = 100,
-    page = DynamicTrading,
-    translation = DynamicTrading_EventChance,
-}
-
-option DynamicTrading.EventDuration
-{
-    type = integer,
-    default = 3,
-    min = 1,
-    max = 14,
-    page = DynamicTrading,
-    translation = DynamicTrading_EventDuration,
-}
-
-option DynamicTrading.AllowSeasonalEvents
-{
-    type = boolean,
-    default = true,
-    page = DynamicTrading,
-    translation = DynamicTrading_AllowSeasonalEvents,
-}
-
-option DynamicTrading.AllowHardcoreEvents
-{
-    type = boolean,
-    default = true,
-    page = DynamicTrading,
-    translation = DynamicTrading_AllowHardcoreEvents,
-}
-
-option DynamicTrading.MaxEvents
-{
-    type = integer,
-    default = 6,
-    min = 1,
-    max = 10,
-    page = DynamicTrading,
-    translation = DynamicTrading_MaxEvents,
-}
-
-option DynamicTrading.WalkieDropChance
-{
-    type = double,
-    default = 20.0,
-    min = 0.0,
-    max = 100.0,
-    page = DynamicTrading,
-    translation = DynamicTrading_WalkieDropChance,
-}
-
-option DynamicTrading.WalletMinCash
-{
-    type = integer,
-    default = 1,
-    min = 1,
-    max = 100,
-    page = DynamicTrading,
-    translation = DynamicTrading_WalletMinCash,
-}
-
-option DynamicTrading.WalletMaxCash
-{
-    type = integer,
-    default = 100,
-    min = 10,
-    max = 2000,
-    page = DynamicTrading,
-    translation = DynamicTrading_WalletMaxCash,
-}
-
-option DynamicTrading.WalletEmptyChance
-{
-    type = integer,
-    default = 35,
-    min = 0,
-    max = 100,
-    page = DynamicTrading,
-    translation = DynamicTrading_WalletEmptyChance,
-}
-
-option DynamicTrading.WalletJackpotChance
-{
-    type = double,
-    default = 5.0,
-    min = 0.0,
-    max = 100.0,
-    page = DynamicTrading,
-    translation = DynamicTrading_WalletJackpotChance,
-}
-
-
 option DynamicTrading.FactionStartPop
 {
     type = integer,
@@ -347,4 +211,3 @@ option DynamicTrading.NPCTradingStayHours
     page = DynamicTrading,
     translation = DynamicTrading_NPCTradingStayHours,
 }
-

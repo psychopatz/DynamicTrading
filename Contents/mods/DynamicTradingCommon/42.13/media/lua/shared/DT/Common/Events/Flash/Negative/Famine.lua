@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("Famine", {
     name = "Crop Blight",
+    sentiment = "Negative",
     type = "flash",
     description = "Crops have died. Food prices skyrocket.",
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,

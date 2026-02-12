@@ -5,12 +5,13 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("Heatwave", {
-    name = "Severe Drought",
-    type = "meta",
+    name = "Heatwave",
+    sentiment = "Negative",
+    type = "seasonal",
     description = "A scorching heatwave. Hydration is key.",
-    condition = function() 
+    condition = function()
         if not (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowSeasonalEvents) then return false end
-        return ClimateManager:getInstance():getSeasonName() == "Summer" 
+        return ClimateManager:getInstance():getSeasonName() == "Summer"
     end,
     effects = {
         ["Water"] = { price = 2.0 }, 

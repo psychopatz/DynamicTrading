@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("IronAge", {
-    name = "Tool Scarcity",
+    name = "The Iron Age",
+    sentiment = "Negative",
     type = "meta",
     description = "Refined steel tools are breaking down. Repairs and smithing are essential.",
     condition = function() 

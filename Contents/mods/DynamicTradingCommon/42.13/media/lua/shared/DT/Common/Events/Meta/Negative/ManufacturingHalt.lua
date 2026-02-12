@@ -5,10 +5,11 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("ManufacturingHalt", {
-    name = "Supply Chain Collapse",
+    name = "Manufacturing Halt",
+    sentiment = "Negative",
     type = "meta",
     description = "Canned goods are no longer 'common'. Preservation supplies are vital.",
-    condition = function() 
+    condition = function()
         return GameTime:getInstance():getNightsSurvived() > 120
     end,
     effects = {

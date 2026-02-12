@@ -5,8 +5,9 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("Harvest", {
-    name = "Harvest Season",
-    type = "meta",
+    name = "Great Harvest",
+    sentiment = "Positive",
+    type = "seasonal",
     description = "Farms are overflowing. Produce is cheap.",
     condition = function() 
         if not (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowSeasonalEvents) then return false end

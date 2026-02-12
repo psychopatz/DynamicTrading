@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("WaterFail", {
     name = "Drought (Water Shutoff)",
+    sentiment = "Negative",
     type = "meta", 
     description = "Municipal water is gone. Bottled water is liquid gold.",
     condition = function() 

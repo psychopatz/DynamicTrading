@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("WitchHunt", {
     name = "Radio Silence",
+    sentiment = "Negative",
     type = "flash",
     description = "Someone is hunting broadcasters. Traders have gone dark.",
     canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,

@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("SignalDecay", {
     name = "Network Fragmentation",
+    sentiment = "Negative",
     type = "meta",
     description = "Repeater towers are failing. Signals are rare, but survivors are veterans.",
     condition = function() 

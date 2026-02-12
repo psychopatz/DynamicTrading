@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("TechBoom", {
     name = "Old World Cache",
+    sentiment = "Positive",
     type = "flash",
     description = "A shipment of electronics was found.",
     canSpawn = function() return true end,

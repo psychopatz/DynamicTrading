@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("HuntingSeason", {
     name = "Migration",
+    sentiment = "Positive",
     type = "flash",
     description = "Wild game is migrating through the area.",
     canSpawn = function() return true end,

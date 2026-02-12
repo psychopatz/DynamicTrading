@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("RadioClub", {
-    name = "Ham Radio Meetup",
+    name = "Radio Club Meet",
+    sentiment = "Positive",
     type = "flash",
     description = "The old Ham Radio operators are active tonight.",
     canSpawn = function() return true end,

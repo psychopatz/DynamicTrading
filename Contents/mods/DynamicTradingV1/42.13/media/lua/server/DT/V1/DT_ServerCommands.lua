@@ -466,8 +466,8 @@ local function Server_OnHourlyTick()
 
     -- 3. Event System Check (8 AM)
     if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then
-        if DynamicTrading.Manager.ProcessEvents then
-            DynamicTrading.Manager.ProcessEvents()
+        if DynamicTrading.Events and DynamicTrading.Events.Tick then
+            DynamicTrading.Events.Tick(data)
             lastProcessedDay = currentDay
         end
     end

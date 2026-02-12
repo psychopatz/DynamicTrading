@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("FireSale", {
-    name = "Liquidation",
+    name = "Fire Sale",
+    sentiment = "Positive",
     type = "flash",
     description = "Traders are offloading stock cheap.",
     canSpawn = function() return true end,

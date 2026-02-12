@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("ElectricalStorm", {
     name = "Thunderstorm Interference",
+    sentiment = "Negative",
     type = "flash",
     description = "Heavy static makes long-range comms impossible.",
     canSpawn = function() return true end,

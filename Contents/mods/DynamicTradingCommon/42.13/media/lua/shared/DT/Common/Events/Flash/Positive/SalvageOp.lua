@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("SalvageOp", {
     name = "Urban Salvage",
+    sentiment = "Positive",
     type = "flash",
     description = "Scavengers cleared a warehouse.",
     canSpawn = function() return true end,

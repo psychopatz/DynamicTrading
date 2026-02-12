@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("CaravanArrival", {
     name = "Trader Caravan",
+    sentiment = "Positive",
     type = "flash",
     description = "A massive convoy of traders is passing through the region.",
     canSpawn = function() return true end,

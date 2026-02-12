@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("EmergencyNet", {
     name = "Emergency Broadcast",
+    sentiment = "Positive",
     type = "flash",
     description = "The automated emergency network is pinging all active stations.",
     canSpawn = function() return true end,

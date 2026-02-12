@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("FishingTourney", {
-    name = "Salmon Run",
+    name = "Fishing Tournament",
+    sentiment = "Positive",
     type = "flash",
     description = "Fish are biting like crazy!",
     canSpawn = function() return true end,

@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("FuelCrisis", {
     name = "The Fuel Crisis",
+    sentiment = "Negative",
     type = "meta",
     description = "Gasoline reserves have degraded. Combustion engines are becoming obsolete.",
     condition = function() 

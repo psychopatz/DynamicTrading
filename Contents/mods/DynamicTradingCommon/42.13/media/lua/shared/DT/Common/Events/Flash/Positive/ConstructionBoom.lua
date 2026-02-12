@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("ConstructionBoom", {
-    name = "Fortification Effort",
+    name = "Construction Boom",
+    sentiment = "Positive",
     type = "flash",
     description = "Everyone is reinforcing their bases.",
     canSpawn = function() return true end,

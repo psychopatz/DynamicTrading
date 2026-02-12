@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("FreeMarket", {
     name = "Free Market Day",
+    sentiment = "Positive",
     type = "flash",
     description = "Traders are actively broadcasting to sell stock.",
     canSpawn = function() return true end,

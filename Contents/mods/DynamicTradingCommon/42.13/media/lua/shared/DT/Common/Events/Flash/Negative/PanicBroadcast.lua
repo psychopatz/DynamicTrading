@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("PanicBroadcast", {
     name = "Mass Panic",
+    sentiment = "Negative",
     type = "flash",
     description = "Everyone is screaming over the radio. Signals are everywhere but chaotic.",
     canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,

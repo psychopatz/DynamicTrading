@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("BallisticExhaustion", {
     name = "Ballistic Exhaustion",
+    sentiment = "Negative",
     type = "meta",
     description = "The world's ammo reserves are running dry. Bullets are a luxury.",
     condition = function() 

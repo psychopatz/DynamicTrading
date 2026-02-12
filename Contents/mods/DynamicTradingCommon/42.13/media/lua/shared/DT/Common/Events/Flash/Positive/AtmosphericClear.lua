@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("AtmosphericClear", {
-    name = "Ionospheric Clarity",
+    name = "Atmospheric Clear",
+    sentiment = "Positive",
     type = "flash",
     description = "Perfect atmospheric conditions. Radio signals are crystal clear.",
     canSpawn = function() return true end,

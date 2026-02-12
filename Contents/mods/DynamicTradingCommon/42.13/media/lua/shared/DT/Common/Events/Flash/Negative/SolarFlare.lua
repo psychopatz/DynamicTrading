@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("SolarFlare", {
     name = "Solar Flare",
+    sentiment = "Negative",
     type = "flash",
     description = "Atmospheric interference hits radios.",
     canSpawn = function() return true end,

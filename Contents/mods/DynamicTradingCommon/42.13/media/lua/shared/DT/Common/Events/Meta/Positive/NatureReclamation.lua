@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("NatureReclamation", {
     name = "Overgrowth",
+    sentiment = "Positive",
     type = "meta",
     description = "Vegetation is reclaiming the cities. Wood is abundant; clear paths are not.",
     condition = function() 

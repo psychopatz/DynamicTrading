@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("GoldRush", {
     name = "Gold Panic",
+    sentiment = "Positive",
     type = "flash",
     description = "Survivors are hoarding precious metals.",
     canSpawn = function() return true end,

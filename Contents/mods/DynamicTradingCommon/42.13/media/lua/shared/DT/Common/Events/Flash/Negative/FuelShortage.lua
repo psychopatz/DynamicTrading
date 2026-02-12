@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("FuelShortage", {
     name = "Refinery Explosion",
+    sentiment = "Negative",
     type = "flash",
     description = "Fuel production has halted.",
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,

@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("PowerFail", {
     name = "Grid Collapse",
+    sentiment = "Negative",
     type = "meta", 
     description = "The power grid is dead. Generators and fuel are critical.",
     condition = function() 

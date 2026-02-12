@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("BridgeCollapse", {
     name = "Logistics Failure",
+    sentiment = "Negative",
     type = "flash",
     description = "A major trade route collapsed. Fewer traders can reach range.",
     canSpawn = function() return true end,

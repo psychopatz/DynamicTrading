@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("Warzone", {
-    name = "Faction Conflict",
+    name = "Active Warzone",
+    sentiment = "Negative",
     type = "flash",
     description = "War has broken out. Traders are hiding, ammo is scarce.",
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,

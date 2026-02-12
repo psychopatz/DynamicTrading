@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("Celebration", {
-    name = "New World Festival",
+    name = "Holiday Celebration",
+    sentiment = "Positive",
     type = "flash",
     description = "Survivors are gathering to party.",
     canSpawn = function() return true end,

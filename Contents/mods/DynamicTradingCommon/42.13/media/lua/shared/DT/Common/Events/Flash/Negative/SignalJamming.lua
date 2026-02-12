@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("SignalJamming", {
     name = "Military Jamming",
+    sentiment = "Negative",
     type = "flash",
     description = "A rogue military signal is drowning out all traffic.",
     canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,

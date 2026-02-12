@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("Smugglers", {
-    name = "Black Market Surge",
+    name = "Smuggler Run",
+    sentiment = "Positive",
     type = "flash",
     description = "The underground market is active.",
     canSpawn = function() return true end,

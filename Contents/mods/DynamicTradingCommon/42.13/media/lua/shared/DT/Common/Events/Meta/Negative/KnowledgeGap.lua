@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("KnowledgeGap", {
-    name = "Literacy Crisis",
+    name = "Knowledge Gap",
+    sentiment = "Negative",
     type = "meta",
     description = "Technical manuals are degrading or lost. Knowledge is becoming the ultimate currency.",
     condition = function() 

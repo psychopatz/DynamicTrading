@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("HospitalFound", {
-    name = "Pharmacy Raid",
+    name = "Hospital Discovered",
+    sentiment = "Positive",
     type = "flash",
     description = "A hospital was looted. Meds are cheap.",
     canSpawn = function() return true end,

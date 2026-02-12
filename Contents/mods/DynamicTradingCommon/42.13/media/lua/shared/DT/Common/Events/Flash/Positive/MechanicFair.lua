@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("MechanicFair", {
-    name = "Auto Meet",
+    name = "Mechanic Fair",
+    sentiment = "Positive",
     type = "flash",
     description = "Mechanics are trading parts freely.",
     canSpawn = function() return true end,

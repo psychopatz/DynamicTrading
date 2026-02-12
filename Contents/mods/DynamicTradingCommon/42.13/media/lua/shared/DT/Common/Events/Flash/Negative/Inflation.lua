@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("Inflation", {
     name = "Market Panic",
+    sentiment = "Negative",
     type = "flash",
     description = "Currency is losing value rapidly.",
     canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,

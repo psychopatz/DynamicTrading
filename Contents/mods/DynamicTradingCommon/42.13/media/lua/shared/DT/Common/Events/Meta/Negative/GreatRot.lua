@@ -6,6 +6,7 @@ require "DT/Common/Events/DT_EventManager"
 
 DynamicTrading.Events.Register("GreatRot", {
     name = "The Great Rot",
+    sentiment = "Negative",
     type = "meta",
     description = "Refrigeration is a memory. Scavenging fresh food is no longer possible.",
     condition = function() 

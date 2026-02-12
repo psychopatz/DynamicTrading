@@ -19,6 +19,7 @@ DynamicTradingInfoUI.Colors = {
     HeaderMarket = {r=1.0, g=0.85, b=0.3, a=1},      -- Golden Yellow
     HeaderMeta = {r=0.4, g=0.8, b=1.0, a=1},         -- Cyan
     HeaderFlash = {r=0.3, g=1.0, b=0.3, a=1},        -- Green
+    HeaderSeasonal = {r=1.0, g=0.6, b=0.2, a=1},     -- Orange
     HeaderInflation = {r=1.0, g=0.5, b=0.5, a=1},    -- Red
     
     -- Sandbox Colors
@@ -79,6 +80,7 @@ function DynamicTradingInfoUI:createChildren()
     -- Create tabs
     self:createMarketProfileTab()
     self:createMetaEventsTab()
+    self:createSeasonalEventsTab()
     self:createFlashEventsTab()
     self:createInflationTab()
     
@@ -171,6 +173,12 @@ function DynamicTradingInfoUI:createFlashEventsTab()
     self.flashPanel.listbox.backgroundColor = {r=0.05, g=0.12, b=0.05, a=0.95}
 end
 
+function DynamicTradingInfoUI:createSeasonalEventsTab()
+    self.seasonalPanel = self:createListPanel()
+    self.tabPanel:addView("Seasons", self.seasonalPanel)
+    self.seasonalPanel.listbox.backgroundColor = {r=0.15, g=0.1, b=0.05, a=0.95}
+end
+
 function DynamicTradingInfoUI:createInflationTab()
     self.inflationPanel = self:createListPanel()
     self.tabPanel:addView("Market", self.inflationPanel)
@@ -201,6 +209,7 @@ end
 function DynamicTradingInfoUI:populateAllTabs()
     self:populateMarketProfile()
     self:populateMetaEvents()
+    self:populateSeasonalEvents()
     self:populateFlashEvents()
     self:populateInflation()
 end
@@ -351,7 +360,7 @@ function DynamicTradingInfoUI:populateFlashEvents()
     
     if DynamicTrading.Events and DynamicTrading.Events.ActiveEvents then
         for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
-            if event.type ~= "meta" then
+            if event.type == "flash" then
                 anyFlash = true
                 self:renderEventDetails(listbox, event, colors.HeaderFlash)
             end
@@ -372,13 +381,56 @@ function DynamicTradingInfoUI:populateFlashEvents()
 end
 
 -- ==============================================================================
+-- SEASONAL EVENTS TAB (Long-term / Seasonal Events)
+-- ==============================================================================
+function DynamicTradingInfoUI:populateSeasonalEvents()
+    local listbox = self.seasonalPanel.listbox
+    local yScroll = listbox:getYScroll()
+    listbox:clear()
+    
+    local colors = DynamicTradingInfoUI.Colors
+    
+    -- Header
+    local header = listbox:addItem("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= SEASONAL CHANGES ", nil)
+    header.textColor = colors.HeaderSeasonal
+    
+    listbox:addItem(" ", nil)
+    
+    local anySeasonal = false
+    
+    if DynamicTrading.Events and DynamicTrading.Events.ActiveEvents then
+        for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
+            if event.type == "seasonal" then
+                anySeasonal = true
+                self:renderEventDetails(listbox, event, colors.HeaderSeasonal)
+            end
+        end
+    end
+    
+    if not anySeasonal then
+        local emptyItem = listbox:addItem("  [INFO] No seasonal events active", nil)
+        emptyItem.textColor = colors.Muted
+        listbox:addItem(" ", nil)
+        local infoItem = listbox:addItem("  Seasonal events represent the ebb and flow", nil)
+        infoItem.textColor = colors.Description
+        local infoItem2 = listbox:addItem("  of the year and changes in local weather.", nil)
+        infoItem2.textColor = colors.Description
+    end
+    
+    listbox:setYScroll(yScroll)
+end
+
+-- ==============================================================================
 -- SHARED: RENDER EVENT DETAILS
 -- ==============================================================================
 function DynamicTradingInfoUI:renderEventDetails(listbox, event, headerColor)
     local colors = DynamicTradingInfoUI.Colors
     
     -- Event Name with icon
-    local typeIcon = event.type == "meta" and "[WORLD]" or "[NEWS]"
+    local typeIcon = "[NEWS]"
+    if event.type == "meta" then typeIcon = "[WORLD]" 
+    elseif event.type == "seasonal" then typeIcon = "[SEASON]" end
+    
     local nameItem = listbox:addItem(string.format(" %s %s", typeIcon, event.name or "Unknown Event"), nil)
     nameItem.textColor = headerColor
     

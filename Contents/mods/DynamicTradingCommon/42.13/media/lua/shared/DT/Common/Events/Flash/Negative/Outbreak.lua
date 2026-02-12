@@ -5,7 +5,8 @@ require "DT/Common/Events/DT_EventManager"
 -- =============================================================================
 
 DynamicTrading.Events.Register("Outbreak", {
-    name = "Viral Outbreak",
+    name = "Virus Outbreak",
+    sentiment = "Negative",
     type = "flash",
     description = "A sickness spreads. Medicine is critical.",
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
