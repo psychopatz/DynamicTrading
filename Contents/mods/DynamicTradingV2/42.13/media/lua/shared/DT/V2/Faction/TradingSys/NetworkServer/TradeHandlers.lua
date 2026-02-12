@@ -70,7 +70,11 @@ Handlers.TradeTransaction = function(player, args)
         local unitPrice = DynamicTrading.Economy.V2.GetBuyPrice(traderID, key, customData)
         local totalCost = unitPrice * clientQty
         
-        print(DEBUG_PREFIX .. " Buy: " .. key .. " x" .. clientQty .. " @ $" .. unitPrice .. " (Total: $" .. totalCost .. ")")
+        -- Get Base Price (Pre-event) for Dialogue markup checks
+        local baseUnitPrice = DynamicTrading.Economy.V2.GetBuyPrice(traderID, key, customData, false, true)
+        local totalBaseCost = baseUnitPrice * clientQty
+        
+        print(DEBUG_PREFIX .. " Buy: " .. key .. " x" .. clientQty .. " @ $" .. unitPrice .. " (Base: $" .. baseUnitPrice .. ")")
         
         -- 2. Check Stock
         if currentQty < clientQty then
@@ -117,6 +121,7 @@ Handlers.TradeTransaction = function(player, args)
                 success = true, 
                 itemName = safeDisplayName,
                 price = totalCost,
+                basePrice = totalBaseCost,
                 isBuy = true
             })
         else
@@ -138,9 +143,13 @@ Handlers.TradeTransaction = function(player, args)
         -- 2. Calculate sell price
         -- Use Unified V2 Pricing Logic (which handles Decay, Fluid, etc.)
         local unitPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, itemObj, key)
-        
         local totalGain = unitPrice * clientQty
-        print(DEBUG_PREFIX .. " Sell: " .. key .. " @ $" .. totalGain)
+        
+        -- Get Base Price (Pre-event)
+        local baseUnitPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, itemObj, key, false, true)
+        local totalBaseGain = baseUnitPrice * clientQty
+
+        print(DEBUG_PREFIX .. " Sell: " .. key .. " @ $" .. totalGain .. " (Base: $" .. totalBaseGain .. ")")
         
         -- 3. Check faction can afford
         local factionWealth = factionData and factionData.wealth or 999999
@@ -187,6 +196,7 @@ Handlers.TradeTransaction = function(player, args)
             success = true, 
             itemName = itemObj:getDisplayName(),
             price = totalGain,
+            basePrice = totalBaseGain,
             isBuy = false
         })
     end

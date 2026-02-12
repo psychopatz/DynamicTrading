@@ -203,9 +203,6 @@ function V2_DataProvider:getBuyPrice(key, customData, verbose)
     local traderID = self._currentTraderID
     if not traderID then return 99999 end
 
-    -- [FIX] MP Crash: Cannot use DynamicTrading.Economy.V2 on client.
-    -- Implement logic locally using cached data and Common.
-    
     local itemData = DynamicTrading.Config.MasterList[key]
     if not itemData then return 99999 end
 
@@ -215,7 +212,11 @@ function V2_DataProvider:getBuyPrice(key, customData, verbose)
     -- Prepare modifiers
     local modifiers = {
         tagsConfig = DynamicTrading.Config.Tags,
-        customData = customData
+        customData = customData,
+        -- [NEW] Pass event modifier resolver to common economy
+        getPriceModifier = function(tags)
+            return self:getPriceModifier(tags)
+        end
     }
 
     -- Use Shared Common Logic
@@ -226,7 +227,6 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
     local traderID = self._currentTraderID
     if not traderID or not invItem then return 0 end
     
-    -- [FIX] MP Crash: Use Common logic locally.
     local itemData = DynamicTrading.Config.MasterKey and DynamicTrading.Config.MasterList[masterKey]
     if not itemData then itemData = DynamicTrading.Config.MasterList[masterKey] end
     if not itemData then return 0 end
@@ -238,9 +238,10 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
 
     local modifiers = {
         tagsConfig = DynamicTrading.Config.Tags,
-        -- Client doesn't track globalHeat or local Deflation perfectly for now, 
-        -- but we can add them if cached in 'trader' proxy object.
-        -- trader.deflation is passed from getTrader() which gets it from cache.
+        -- [NEW] Pass event modifier resolver
+        getPriceModifier = function(tags)
+            return self:getPriceModifier(tags)
+        end
     }
     
     -- Use Shared Common Logic
@@ -248,7 +249,21 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
 end
 
 function V2_DataProvider:getPriceModifier(tags)
-    -- Skip for now - will implement later
+    -- V2 Event Integration for UI highlighting
+    if DynamicTrading.V2.Director then
+        -- In V2_DataProvider, we can get factionID from the current trader proxy
+        local factionID = self._currentFactionID
+        if not factionID and self._currentTraderID then
+            -- Fallback: try to find it in the cache
+            local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
+                              or ModData.get("DynamicTrading_Stock")
+            if stockData and stockData[self._currentTraderID] then
+                factionID = stockData[self._currentTraderID].factionID
+            end
+        end
+        
+        return DynamicTrading.V2.Director.GetPriceModifiers(self._currentTraderID, factionID, tags)
+    end
     return 1.0
 end
 

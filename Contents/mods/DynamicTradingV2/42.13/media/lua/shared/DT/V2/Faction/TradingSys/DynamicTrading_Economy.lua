@@ -59,7 +59,7 @@ end
 -- 2. V2 PRICING LOGIC (Wrapper)
 -- =============================================================================
 
-function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customData, verbose)
+function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customData, verbose, skipEvents)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 99999 end
@@ -80,7 +80,7 @@ function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customD
         customData = customData,
         -- Event Modifiers (V2 Director Integration)
         getPriceModifier = function(tags)
-            if DynamicTrading.V2.Director then
+            if not skipEvents and DynamicTrading.V2.Director then
                 return DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, soul.factionID, tags)
             end
             return 1.0
@@ -92,7 +92,7 @@ function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customD
     return price
 end
 
-function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullType, verbose)
+function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullType, verbose, skipEvents)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 0 end
@@ -106,7 +106,7 @@ function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullTyp
         tagsConfig = DynamicTrading.Config.Tags,
         -- Event Modifiers (V2 Director Integration)
         getPriceModifier = function(tags)
-            if DynamicTrading.V2.Director then
+            if not skipEvents and DynamicTrading.V2.Director then
                 return DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, soul.factionID, tags)
             end
             return 1.0

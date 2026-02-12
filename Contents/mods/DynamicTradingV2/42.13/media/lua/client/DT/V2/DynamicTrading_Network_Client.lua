@@ -90,7 +90,12 @@ local function OnSharedServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
     
     if command == "TransactionResult" then
-        print("[DT-V2-Client] Received TransactionResult: " .. tostring(args.success))
+        if DynamicTrading.Debug then
+            print("[DT-V2-Client] Received TransactionResult: " .. tostring(args.success))
+            print("  - Item: " .. tostring(args.itemName))
+            print("  - Price: " .. tostring(args.price))
+            print("  - BasePrice: " .. tostring(args.basePrice))
+        end
         
         if DT_TradingWindow and DT_TradingWindow.instance then
             local ui = DT_TradingWindow.instance
@@ -104,10 +109,11 @@ local function OnSharedServerCommand(module, command, args)
                     local diagArgs = {
                         itemName = args.itemName or "Item",
                         price = args.price or 0,
+                        basePrice = args.basePrice or args.price or 0,
                         success = true
                     }
                     
-                    local isBuy = args.isBuy ~= false -- Default to buy if not specified
+                    local isBuy = (args.isBuy == true) -- Explicit check
                     local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, diagArgs)
                     
                     if DynamicTrading.Debug then
