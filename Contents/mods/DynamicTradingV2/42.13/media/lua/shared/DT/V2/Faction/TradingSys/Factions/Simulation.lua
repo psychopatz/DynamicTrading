@@ -89,24 +89,28 @@ function Simulation.UpdateDaily()
             
             -- B. ATTRITION (Resource Dependent)
             local def = DynamicTrading.Events.Registry[afe.id]
-            if def and def.attrition and def.attrition.sickPct then
-                local sickPct = def.attrition.sickPct
-                local medsPerSick = def.attrition.medsPerSick or 1.0
+            if def and def.attrition then
+                local attr = def.attrition
+                local resource = attr.resource or "meds" -- Default to meds for backward compatibility
+                local affectedPct = attr.pct or attr.sickPct or 0
+                local costPerHead = attr.cost or attr.medsPerSick or 1.0
                 
-                local sickCount = math.floor(faction.memberCount * sickPct)
-                if sickCount > 0 then
-                    local medsNeeded = sickCount * medsPerSick
-                    if (faction.stockpile.meds or 0) >= medsNeeded then
-                        -- Faction has enough meds!
-                        faction.stockpile.meds = faction.stockpile.meds - medsNeeded
-                        print("DT Simulation: Faction [" .. faction.name .. "] treated " .. sickCount .. " sick members (Consumed " .. medsNeeded .. " meds).")
+                local affectedCount = math.floor(faction.memberCount * affectedPct)
+                if affectedCount > 0 then
+                    local totalNeeded = affectedCount * costPerHead
+                    local stockpile = (faction.stockpile[resource] or 0)
+                    
+                    if stockpile >= totalNeeded then
+                        -- Requirement met!
+                        faction.stockpile[resource] = stockpile - totalNeeded
+                        print("DT Simulation: Faction [" .. faction.name .. "] met " .. resource .. " requirements for " .. affectedCount .. " souls.")
                     else
-                        -- SHORTAGE! 20% of sick members die
-                        local casualties = math.ceil(sickCount * 0.2)
+                        -- SHORTAGE! 20% of affected members die
+                        local casualties = math.ceil(affectedCount * 0.2)
                         faction.memberCount = math.max(0, faction.memberCount - casualties)
                         DynamicTrading_Roster.RemoveSoul(id, casualties)
-                        print("DT Simulation: Faction [" .. faction.name .. "] MED SHORTAGE! " .. sickCount .. " sick, but meds short. " .. casualties .. " died.")
-                        faction.state = "Starving" -- Change state to show crisis
+                        print("DT Simulation: Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
+                        faction.state = "Starving"
                     end
                 end
             end

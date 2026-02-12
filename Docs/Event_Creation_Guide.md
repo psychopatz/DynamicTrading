@@ -31,9 +31,11 @@ Direct hits to a faction's state. Applied immediately or distributed over time.
 - `stabilityAdd`: (Number) Changes internal stability days (affects event frequency).
 
 ### B. Attrition (V2 Only)
-Simulates resource shortages or disease.
-- `sickPct`: (Number) Chance for members to become sick daily.
-- `medsPerSick`: (Number) Amount of `meds` required per sick person. Failure to supply causes deaths.
+Simulates resource shortages, disease, or upkeep.
+- `resource`: (String) The resource required (e.g., "food", "meds", "ammo"). Defaults to "meds".
+- `pct`: (Number) % of population affected by this requirement.
+- `cost`: (Number) Amount of resource required per affected person. Failure to supply causes deaths.
+- *(Legacy support for `sickPct` and `medsPerSick` is maintained).*
 
 ### C. World Economy
 Global modifiers that affect all factions and players.
