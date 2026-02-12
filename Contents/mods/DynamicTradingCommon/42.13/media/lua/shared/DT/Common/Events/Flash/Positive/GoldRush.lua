@@ -15,5 +15,9 @@ DynamicTrading.Events.Register("GoldRush", {
         ["Silver"] = { price = 2.5 },
         ["Jewelry"] = { price = 2.0 },
         ["Luxury"] = { price = 1.5 }
+    },
+    factionImpact = {
+        wealthAdd = 2000,
+        stabilityAdd = -1
     }
 })

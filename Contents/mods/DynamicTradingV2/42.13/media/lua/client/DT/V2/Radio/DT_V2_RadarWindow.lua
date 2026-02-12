@@ -59,6 +59,9 @@ function DT_V2_RadarWindow:createChildren()
     self.listPanel:setAnchorRight(true)
     self.listPanel:setAnchorBottom(true)
     self:addChild(self.listPanel)
+    
+    -- Initialize layout
+    self.listPanel:setLayoutMode(self.currentCategory == "Location" and "Location" or "Standard")
 
     -- 3. Action Panel
     self.actionPanel = DT_V2_RadarActionPanel:new(0, self.height - footerHeight, w, 30)
@@ -184,6 +187,12 @@ end
 function DT_V2_RadarWindow:setCategory(category)
     if self.currentCategory == category then return end
     self.currentCategory = category
+    
+    -- Update List Panel Layout (Show/Hide Faction Button)
+    if self.listPanel and self.listPanel.setLayoutMode then
+        self.listPanel:setLayoutMode(category)
+    end
+    
     self:refresh()
 end
 

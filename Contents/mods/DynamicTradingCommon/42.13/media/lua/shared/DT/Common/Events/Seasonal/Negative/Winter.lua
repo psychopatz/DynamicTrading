@@ -20,5 +20,8 @@ DynamicTrading.Events.Register("Winter", {
         ["Material"] = { price = 1.5 },
         ["Camping"] = { price = 1.2 }
     },
-    inject = { ["Winter"] = 3, ["Survival"] = 2 }
+    inject = { ["Winter"] = 3, ["Survival"] = 2 },
+    factionImpact = {
+        stockpileAdd = { food = -200, fuel = -200 }
+    }
 })

@@ -14,5 +14,9 @@ DynamicTrading.Events.Register("FireSale", {
         ["Misc"] = { price = 0.5, vol = 1.5 },
         ["Luxury"] = { price = 1.5 },
         ["Junk"] = { price = 0.1 }
+    },
+    factionImpact = {
+        wealthAdd = -100,
+        stockpileAdd = { food = 200, ammo = 200 }
     }
 })

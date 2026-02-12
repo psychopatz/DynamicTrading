@@ -16,5 +16,9 @@ DynamicTrading.Events.Register("MechanicFair", {
         ["Tool"] = { price = 0.9 },
         ["Fuel"] = { price = 1.2 }
     },
-    inject = { ["CarPart"] = 5 }
+    inject = { ["CarPart"] = 5 },
+    factionImpact = {
+        stockpileAdd = { fuel = 100 },
+        wealthAdd = 100
+    }
 })

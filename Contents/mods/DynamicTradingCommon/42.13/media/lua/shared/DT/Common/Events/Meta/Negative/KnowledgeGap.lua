@@ -17,5 +17,8 @@ DynamicTrading.Events.Register("KnowledgeGap", {
         ["Literature"] = { price = 2.0 },           -- Entertainment is precious
         ["Paper"] = { price = 1.5 },                -- For writing new notes
         ["Scholastic"] = { price = 2.5 }
+    },
+    factionImpact = {
+        stabilityAdd = -3
     }
 })

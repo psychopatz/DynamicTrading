@@ -14,5 +14,9 @@ DynamicTrading.Events.Register("FuelShortage", {
         ["Fuel"] = { price = 4.0, vol = 0.1 },
         ["CarPart"] = { price = 0.5 },
         ["Generator"] = { price = 0.5 }
+    },
+    factionImpact = {
+        stockpileAdd = { fuel = -200 },
+        wealthAdd = -100
     }
 })

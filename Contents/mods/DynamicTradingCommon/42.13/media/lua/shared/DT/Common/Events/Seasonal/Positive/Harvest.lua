@@ -19,5 +19,8 @@ DynamicTrading.Events.Register("Harvest", {
         ["Farming"] = { price = 1.5, vol = 0.5 },
         ["Pickle"] = { price = 0.8, vol = 2.0 }
     },
-    inject = { ["Vegetable"] = 5, ["Pickle"] = 2 }
+    inject = { ["Vegetable"] = 5, ["Pickle"] = 2 },
+    factionImpact = {
+        stockpileAdd = { food = 1000 }
+    }
 })

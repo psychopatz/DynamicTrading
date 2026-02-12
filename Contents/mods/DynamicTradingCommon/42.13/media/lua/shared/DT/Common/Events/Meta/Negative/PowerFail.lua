@@ -18,5 +18,8 @@ DynamicTrading.Events.Register("PowerFail", {
         ["Light"] = { price = 1.5 },
         ["Generator"] = { price = 4.0, vol = 0.1 },
         ["Battery"] = { price = 2.5 }
+    },
+    factionImpact = {
+        stockpileAdd = { fuel = -500 }
     }
 })

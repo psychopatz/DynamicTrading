@@ -18,5 +18,8 @@ DynamicTrading.Events.Register("EmergencyNet", {
         ["Medical"] = { price = 0.8 },
         ["Safety"] = { price = 0.8 },
         ["Survival"] = { price = 0.8 }
+    },
+    factionImpact = {
+        stabilityAdd = 5
     }
 })

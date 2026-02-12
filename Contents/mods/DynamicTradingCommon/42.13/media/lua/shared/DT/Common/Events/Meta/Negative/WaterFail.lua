@@ -16,5 +16,8 @@ DynamicTrading.Events.Register("WaterFail", {
         ["Water"] = { price = 5.0, vol = 0.2 },
         ["Drink"] = { price = 2.0 },
         ["Hygiene"] = { price = 1.5 }
+    },
+    factionImpact = {
+        stabilityAdd = -3
     }
 })

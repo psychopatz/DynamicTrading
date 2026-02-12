@@ -17,5 +17,9 @@ DynamicTrading.Events.Register("HygieneCollapse", {
         ["Clean"] = { price = 3.0 },                -- Bleach
         ["Medical"] = { price = 1.2 },              -- Antibiotics demand up
         ["Chemical"] = { price = 2.0 }              -- To make homemade soap
+    },
+    factionImpact = {
+        stockpileAdd = { meds = -200 },
+        stabilityAdd = -5
     }
 })

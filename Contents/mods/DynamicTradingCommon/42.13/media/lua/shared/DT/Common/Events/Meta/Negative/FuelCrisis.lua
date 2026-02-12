@@ -18,5 +18,9 @@ DynamicTrading.Events.Register("FuelCrisis", {
         ["Generator"] = { price = 0.5 },            -- Useless without gas
         ["Battery"] = { price = 2.5, vol = 1.5 },   -- Solar/Electric becomes king
         ["Electronics"] = { price = 1.5 }           -- For repairing batteries/solar
+    },
+    factionImpact = {
+        stockpileAdd = { fuel = -1000 },
+        wealthAdd = -500
     }
 })

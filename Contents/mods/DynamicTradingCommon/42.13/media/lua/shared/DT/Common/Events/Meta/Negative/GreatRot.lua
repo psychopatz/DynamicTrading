@@ -17,5 +17,8 @@ DynamicTrading.Events.Register("GreatRot", {
         ["Rotten"] = { price = 0.0 },               -- Worthless
         ["Salt"] = { price = 2.0 },                 -- If item exists (Spice)
         ["Spice"] = { price = 1.5 }                 -- To mask the taste of bad meat
+    },
+    factionImpact = {
+        stockpileAdd = { food = -1000 }
     }
 })

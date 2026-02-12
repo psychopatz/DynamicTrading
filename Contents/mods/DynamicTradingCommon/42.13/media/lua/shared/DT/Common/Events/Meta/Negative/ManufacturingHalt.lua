@@ -19,5 +19,8 @@ DynamicTrading.Events.Register("ManufacturingHalt", {
         ["Preservation"] = { price = 3.0, vol = 0.5 }, -- Jars/Lids
         ["Fresh"] = { price = 1.0 }                 -- Normal price, but demand is high
     },
-    inject = { ["Farming"] = 4 } -- Traders stock seeds to survive
+    inject = { ["Farming"] = 4 }, -- Traders stock seeds to survive
+    factionImpact = {
+        stockpileAdd = { food = -200 }
+    }
 })

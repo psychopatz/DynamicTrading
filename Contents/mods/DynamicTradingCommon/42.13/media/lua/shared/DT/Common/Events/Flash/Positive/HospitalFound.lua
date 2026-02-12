@@ -15,5 +15,8 @@ DynamicTrading.Events.Register("HospitalFound", {
         ["Pill"] = { price = 0.4, vol = 4.0 },
         ["Sterile"] = { price = 0.5 }
     },
-    inject = { ["Medical"] = 8 }
+    inject = { ["Medical"] = 8 },
+    factionImpact = {
+        stockpileAdd = { meds = 500 }
+    }
 })

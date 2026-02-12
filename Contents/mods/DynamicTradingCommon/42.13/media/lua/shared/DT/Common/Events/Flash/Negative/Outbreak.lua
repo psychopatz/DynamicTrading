@@ -15,5 +15,10 @@ DynamicTrading.Events.Register("Outbreak", {
         ["Pill"] = { price = 3.0 },
         ["Hygiene"] = { price = 2.5 },
         ["Food"] = { price = 1.2 }
+    },
+    factionImpact = {
+        memberCountPct = -0.15,
+        stockpileAdd = { meds = -100 },
+        stabilityAdd = -20
     }
 })

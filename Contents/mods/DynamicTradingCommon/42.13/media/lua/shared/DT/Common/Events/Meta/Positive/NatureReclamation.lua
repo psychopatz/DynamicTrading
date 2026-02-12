@@ -17,5 +17,8 @@ DynamicTrading.Events.Register("NatureReclamation", {
         ["Blade"] = { price = 1.5 },                -- Machetes needed to clear vines
         ["Herb"] = { price = 0.5, vol = 3.0 },      -- Foraging is easier
         ["Game"] = { vol = 1.5 }                    -- Animals entering cities
+    },
+    factionImpact = {
+        stockpileAdd = { food = 200 }
     }
 })

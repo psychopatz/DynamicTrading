@@ -7,6 +7,7 @@ require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/V2/UI/DT_FactionInfoWindow"
 
 DT_V2_RadarListPanel = ISPanel:derive("DT_V2_RadarListPanel")
 
@@ -28,6 +29,28 @@ function DT_V2_RadarListPanel:createChildren()
     self.listbox:setAnchorRight(true)
     self.listbox:setAnchorBottom(true)
     self:addChild(self.listbox)
+
+    -- FACTION INTEL BUTTON (Hidden by default)
+    self.btnFaction = ISButton:new(0, 0, self.width, 30, "FACTION INTELLIGENCE", self, function()
+        if DT_FactionInfoWindow then DT_FactionInfoWindow.Open() end
+    end)
+    self.btnFaction:initialise()
+    self.btnFaction.backgroundColor = {r=0, g=0.2, b=0.5, a=1}
+    self.btnFaction.borderColor = {r=0.4, g=0.4, b=1, a=1}
+    self.btnFaction:setVisible(false)
+    self:addChild(self.btnFaction)
+end
+
+function DT_V2_RadarListPanel:setLayoutMode(mode)
+    if mode == "Location" then
+        self.btnFaction:setVisible(true)
+        self.listbox:setY(35)
+        self.listbox:setHeight(self.height - 35)
+    else
+        self.btnFaction:setVisible(false)
+        self.listbox:setY(0)
+        self.listbox:setHeight(self.height)
+    end
 end
 
 function DT_V2_RadarListPanel:drawPortrait(ctx, y, itemData)

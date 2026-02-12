@@ -15,5 +15,9 @@ DynamicTrading.Events.Register("FishingTourney", {
         ["Bait"] = { price = 1.5, vol = 0.5 },
         ["Food"] = { price = 0.9 }
     },
-    inject = { ["Fish"] = 5 }
+    inject = { ["Fish"] = 5 },
+    factionImpact = {
+        stockpileAdd = { food = 300 },
+        stabilityAdd = 3
+    }
 })

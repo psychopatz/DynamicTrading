@@ -15,5 +15,8 @@ DynamicTrading.Events.Register("TechBoom", {
         ["Common"] = { price = 0.5, vol = 2.0 }, -- Generic parts
         ["Communication"] = { price = 0.5, vol = 2.0 }
     },
-    inject = { ["Electronics"] = 4 }
+    inject = { ["Electronics"] = 4 },
+    factionImpact = {
+        wealthAdd = 500
+    }
 })

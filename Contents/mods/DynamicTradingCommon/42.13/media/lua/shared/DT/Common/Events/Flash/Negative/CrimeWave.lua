@@ -15,5 +15,10 @@ DynamicTrading.Events.Register("CrimeWave", {
         ["Weapon"] = { price = 1.5 },
         ["Gun"] = { price = 1.5 },
         ["Safety"] = { price = 2.0 } -- Found in DT_Household
+    },
+    factionImpact = {
+        wealthAdd = -200,
+        stabilityAdd = -5,
+        stockpileAdd = { ammo = -20 }
     }
 })

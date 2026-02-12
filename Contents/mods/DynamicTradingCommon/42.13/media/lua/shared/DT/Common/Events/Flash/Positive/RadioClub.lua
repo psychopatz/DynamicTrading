@@ -19,5 +19,8 @@ DynamicTrading.Events.Register("RadioClub", {
         ["Component"] = { vol = 2.0 },
         ["Battery"] = { vol = 2.0 }
     },
-    inject = { ["Communication"] = 3 }
+    inject = { ["Communication"] = 3 },
+    factionImpact = {
+        stabilityAdd = 5
+    }
 })

@@ -18,5 +18,9 @@ DynamicTrading.Events.Register("CaravanArrival", {
         ["General"] = { price = 0.8, vol = 2.0 },
         ["Food"] = { vol = 1.5 },
         ["Material"] = { vol = 1.5 }
+    },
+    factionImpact = {
+        wealthAdd = 500,
+        stockpileAdd = { food = 50, ammo = 50, meds = 50, fuel = 50 }
     }
 })

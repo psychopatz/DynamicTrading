@@ -16,5 +16,9 @@ DynamicTrading.Events.Register("Celebration", {
         ["Music"] = { price = 2.0 },
         ["Fun"] = { price = 2.0 },
         ["Cosmetic"] = { price = 1.5 }
+    },
+    factionImpact = {
+        stabilityAdd = 10,
+        stockpileAdd = { food = -50 }
     }
 })

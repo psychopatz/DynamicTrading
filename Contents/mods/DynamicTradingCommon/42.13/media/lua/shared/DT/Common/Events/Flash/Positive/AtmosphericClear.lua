@@ -16,5 +16,8 @@ DynamicTrading.Events.Register("AtmosphericClear", {
     effects = {
         ["Communication"] = { price = 1.2 }, -- Good radios in demand to use the clear air
         ["Electronics"] = { price = 1.1 }
+    },
+    factionImpact = {
+        stabilityAdd = 1
     }
 })

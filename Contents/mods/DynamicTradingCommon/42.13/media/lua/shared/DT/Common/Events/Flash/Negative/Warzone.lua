@@ -16,5 +16,10 @@ DynamicTrading.Events.Register("Warzone", {
         ["Ammo"] = { price = 3.0, vol = 0.2 },
         ["Medical"] = { price = 1.5 },
         ["Armor"] = { price = 2.0 }
+    },
+    factionImpact = {
+        memberCountPct = -0.10,
+        stockpileAdd = { ammo = -100, meds = -50 },
+        stabilityAdd = -10
     }
 })

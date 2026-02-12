@@ -18,5 +18,8 @@ DynamicTrading.Events.Register("SignalJamming", {
         ["Communication"] = { price = 3.0 }, -- Better radios needed to punch through
         ["Military"] = { price = 0.5 }, -- Maybe they are selling surplus?
         ["Electronics"] = { price = 2.0 }
+    },
+    factionImpact = {
+        stabilityAdd = -3
     }
 })

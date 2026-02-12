@@ -16,5 +16,8 @@ DynamicTrading.Events.Register("HuntingSeason", {
         ["Trapping"] = { price = 1.5 },
         ["Leather"] = { price = 0.5 }
     },
-    inject = { ["Game"] = 4, ["Trapping"] = 2 }
+    inject = { ["Game"] = 4, ["Trapping"] = 2 },
+    factionImpact = {
+        stockpileAdd = { food = 400, ammo = -50 }
+    }
 })

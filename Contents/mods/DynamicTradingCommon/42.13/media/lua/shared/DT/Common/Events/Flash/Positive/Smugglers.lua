@@ -15,5 +15,10 @@ DynamicTrading.Events.Register("Smugglers", {
         ["Tobacco"] = { price = 0.6, vol = 2.0 },
         ["Jewelry"] = { price = 0.5 },
         ["Illegal"] = { price = 0.5, vol = 2.0 }
+    },
+    factionImpact = {
+        wealthAdd = 300,
+        stockpileAdd = { ammo = 200 },
+        stabilityAdd = -2
     }
 })

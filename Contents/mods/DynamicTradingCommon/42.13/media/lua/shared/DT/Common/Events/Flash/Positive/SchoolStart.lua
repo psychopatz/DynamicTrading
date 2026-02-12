@@ -16,5 +16,8 @@ DynamicTrading.Events.Register("SchoolStart", {
         ["SkillBook"] = { price = 1.5 },
         ["Paper"] = { price = 2.0 }
     },
-    inject = { ["Scholastic"] = 4 }
+    inject = { ["Scholastic"] = 4 },
+    factionImpact = {
+        stabilityAdd = 5
+    }
 })

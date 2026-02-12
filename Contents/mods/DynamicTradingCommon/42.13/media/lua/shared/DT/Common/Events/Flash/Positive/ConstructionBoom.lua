@@ -16,5 +16,9 @@ DynamicTrading.Events.Register("ConstructionBoom", {
         ["Build"] = { price = 1.8 },
         ["Tool"] = { price = 1.5 },
         ["Heavy"] = { price = 1.5 }
+    },
+    factionImpact = {
+        wealthAdd = 200,
+        stabilityAdd = 2
     }
 })

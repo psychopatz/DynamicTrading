@@ -18,5 +18,9 @@ DynamicTrading.Events.Register("Heatwave", {
         ["Drink"] = { price = 1.5 },
         ["Clothing"] = { price = 0.5 },
         ["Winter"] = { price = 0.1, vol = 0.0 }
+    },
+    factionImpact = {
+        stabilityAdd = -2,
+        stockpileAdd = { meds = -50 }
     }
 })

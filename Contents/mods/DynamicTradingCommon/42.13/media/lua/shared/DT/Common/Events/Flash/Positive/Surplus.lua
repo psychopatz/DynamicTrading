@@ -17,5 +17,8 @@ DynamicTrading.Events.Register("MilitarySurplus", {
         ["Military"] = { price = 0.7, vol = 2.0 },
         ["Tactical"] = { price = 0.7 }
     },
-    inject = { ["Ammo"] = 5, ["Military"] = 3 }
+    inject = { ["Ammo"] = 5, ["Military"] = 3 },
+    factionImpact = {
+        stockpileAdd = { food = 200, ammo = 50, meds = 50 }
+    }
 })

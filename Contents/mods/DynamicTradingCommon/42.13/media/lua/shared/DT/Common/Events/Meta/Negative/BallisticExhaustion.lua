@@ -19,5 +19,8 @@ DynamicTrading.Events.Register("BallisticExhaustion", {
         ["Spear"] = { price = 1.5, vol = 2.0 },     -- Primitive weapons rise
         ["Blade"] = { price = 1.5, vol = 2.0 },
         ["Heavy"] = { price = 1.5 }                 -- Blunt weapons
+    },
+    factionImpact = {
+        stockpileAdd = { ammo = -500 }
     }
 })

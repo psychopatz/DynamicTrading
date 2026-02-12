@@ -19,5 +19,9 @@ DynamicTrading.Events.Register("Spring", {
         ["Fish"] = { price = 0.8, vol = 2.0 },      -- Rivers are active
         ["Clothing"] = { price = 1.2 }              -- Waterproof gear needed
     },
-    inject = { ["Farming"] = 5 }
+    inject = { ["Farming"] = 5 },
+    factionImpact = {
+        stabilityAdd = 5,
+        stockpileAdd = { food = 100 }
+    }
 })

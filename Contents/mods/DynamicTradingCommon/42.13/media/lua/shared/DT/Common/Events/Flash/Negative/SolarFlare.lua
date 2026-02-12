@@ -17,5 +17,8 @@ DynamicTrading.Events.Register("SolarFlare", {
     effects = {
         ["Communication"] = { price = 3.0 },
         ["Electronics"] = { price = 0.5 }
+    },
+    factionImpact = {
+        stabilityAdd = -2
     }
 })

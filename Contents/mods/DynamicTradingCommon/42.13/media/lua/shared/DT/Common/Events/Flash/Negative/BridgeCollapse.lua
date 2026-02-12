@@ -18,5 +18,9 @@ DynamicTrading.Events.Register("BridgeCollapse", {
         ["Fuel"] = { price = 2.5 },
         ["Heavy"] = { price = 2.0 },
         ["CarPart"] = { price = 2.0 }
+    },
+    factionImpact = {
+        stockpileAdd = { fuel = -50 },
+        stabilityAdd = -2
     }
 })

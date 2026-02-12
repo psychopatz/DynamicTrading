@@ -16,5 +16,8 @@ DynamicTrading.Events.Register("SalvageOp", {
         ["Electronics"] = { price = 0.8 },
         ["Metal"] = { price = 0.6 }
     },
-    inject = { ["Material"] = 5 }
+    inject = { ["Material"] = 5 },
+    factionImpact = {
+        stockpileAdd = { ammo = 100, fuel = 100, meds = 50 }
+    }
 })

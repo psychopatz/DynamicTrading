@@ -18,5 +18,8 @@ DynamicTrading.Events.Register("IronAge", {
         ["Repair"] = { price = 3.0, vol = 1.5 },    -- Glue, Duct Tape
         ["Smithing"] = { price = 1.5, vol = 2.0 },  -- Blacksmithing rises
         ["Junk"] = { price = 0.5 }                  -- Scrap is everywhere, but useless without skill
+    },
+    factionImpact = {
+        stabilityAdd = -2
     }
 })

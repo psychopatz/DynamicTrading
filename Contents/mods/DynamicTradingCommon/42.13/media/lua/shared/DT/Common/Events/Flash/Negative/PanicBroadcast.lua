@@ -18,5 +18,8 @@ DynamicTrading.Events.Register("PanicBroadcast", {
         ["Weapon"] = { price = 2.0 },
         ["Food"] = { price = 2.0 },
         ["Medical"] = { price = 2.0 }
+    },
+    factionImpact = {
+        stabilityAdd = -15
     }
 })
