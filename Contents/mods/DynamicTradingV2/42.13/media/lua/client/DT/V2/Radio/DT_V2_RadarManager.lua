@@ -219,6 +219,16 @@ function DT_V2_RadarManager.Scan(player, device)
     local foundNew = false
     local px, py = player:getX(), player:getY()
     
+    -- [NEW] Get Event Modifiers
+    local globalRangeMult = 1.0
+    local globalChanceMult = 1.0
+    if DynamicTrading and DynamicTrading.V2 and DynamicTrading.V2.Director then
+        globalRangeMult = DynamicTrading.V2.Director.GetSystemModifier(nil, "signalRange")
+        globalChanceMult = DynamicTrading.V2.Director.GetSystemModifier(nil, "scanChance")
+    end
+
+    local effectiveRange = range * globalRangeMult
+    
     -- Filter Roster for "Trading" souls within range
     for uuid, soul in pairs(rosterData.Souls) do
         if soul.status == "Trading" then
@@ -228,11 +238,17 @@ function DT_V2_RadarManager.Scan(player, device)
                 local dy = ty - py
                 local dist = math.sqrt(dx*dx + dy*dy)
                 
-                if dist <= range then
+                if dist <= effectiveRange then
+                    -- [NEW] Apply Faction-Specific Modifiers
+                    local factionChanceMult = 1.0
+                    if DynamicTrading and DynamicTrading.V2 and DynamicTrading.V2.Director then
+                        factionChanceMult = DynamicTrading.V2.Director.GetSystemModifier(soul.factionID, "scanChance")
+                    end
+
                     -- Proximity check passed! Now add random chance.
                     -- Skill bonus: Electricity skill improves detection
                     local elecLevel = player:getPerkLevel(Perks.Electricity)
-                    local chance = 20 + (elecLevel * 5) -- 20% to 70% chance
+                    local chance = (20 + (elecLevel * 5)) * globalChanceMult * factionChanceMult
                     
                     if ZombRand(100) < chance then
                         if not DT_V2_RadarManager.FoundTraders[uuid] then

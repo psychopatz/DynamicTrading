@@ -114,10 +114,15 @@ end
 -- =============================================================================
 function Director.GetPriceModifiers(traderID, factionID, itemTags)
     local multiplier = 1.0
+    local verbose = DynamicTrading.Debug
     
     -- 1. Get Global Multipliers (Seasonal/Meta) via Common Event Manager
     if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then
-        multiplier = multiplier * DynamicTrading.Events.GetPriceModifier(itemTags)
+        local globalMult = DynamicTrading.Events.GetPriceModifier(itemTags)
+        if verbose and globalMult ~= 1.0 then
+            print("[DT-V2-Director] Global Multiplier applied: " .. globalMult)
+        end
+        multiplier = multiplier * globalMult
     end
     
     -- 2. Get Faction Specific Multiplier
@@ -130,9 +135,44 @@ function Director.GetPriceModifiers(traderID, factionID, itemTags)
             if eventDef and eventDef.effects then
                 for _, tag in ipairs(itemTags or {}) do
                     if eventDef.effects[tag] and eventDef.effects[tag].price then
-                        multiplier = multiplier * eventDef.effects[tag].price
+                        local fMult = eventDef.effects[tag].price
+                        if verbose then
+                            print("[DT-V2-Director] Faction Event (" .. faction.ActiveFlashEvent.id .. ") Multiplier for tag [" .. tag .. "]: " .. fMult)
+                        end
+                        multiplier = multiplier * fMult
                     end
                 end
+            end
+        end
+    end
+    
+    if verbose and multiplier ~= 1.0 then
+        print("[DT-V2-Director] Final Event Multiplier: " .. multiplier)
+    end
+
+    return multiplier
+end
+
+-- =============================================================================
+-- 3. SYSTEM MODIFIERS (traderLimit, scanChance, etc.)
+-- =============================================================================
+function Director.GetSystemModifier(factionID, key)
+    local multiplier = 1.0
+    
+    -- 1. Global System Modifiers
+    if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
+        multiplier = multiplier * DynamicTrading.Events.GetSystemModifier(key)
+    end
+    
+    -- 2. Faction-Specific System Modifiers
+    if factionID then
+        local factionData = ModData.get("DynamicTrading_Factions")
+        local faction = factionData and factionData[factionID]
+        
+        if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+            local eventDef = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+            if eventDef and eventDef.system and eventDef.system[key] then
+                multiplier = multiplier * eventDef.system[key]
             end
         end
     end

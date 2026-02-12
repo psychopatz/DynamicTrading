@@ -64,6 +64,9 @@ function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customD
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 99999 end
     
+    -- Always verbose if DynamicTrading.Debug is true
+    verbose = verbose or DynamicTrading.Debug
+
     -- Fetch customData from stock if not provided (e.g. for server-side verification)
     if not customData then
         if soul.stocks and soul.stocks[itemFullType] then
@@ -74,16 +77,17 @@ function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customD
     local diff = DynamicTrading.Config.GetDifficultyData()
     local modifiers = {
         tagsConfig = DynamicTrading.Config.Tags,
-        customData = customData
+        customData = customData,
+        -- Event Modifiers (V2 Director Integration)
+        getPriceModifier = function(tags)
+            if DynamicTrading.V2.Director then
+                return DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, soul.factionID, tags)
+            end
+            return 1.0
+        end
     }
     
-    -- Event Modifiers (V2 Director Integration)
-    if DynamicTrading.V2.Director then
-        local factionID = soul.factionID
-        local eventMult = DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, factionID, itemData.tags)
-        price = price * eventMult
-        if verbose then print("  - Event Multiplier: " .. eventMult) end
-    end
+    local price = Common.GetBuyPrice(itemFullType, itemData, diff, modifiers, verbose)
     
     return price
 end
@@ -93,21 +97,23 @@ function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullTyp
     local itemData = DynamicTrading.Config.MasterList[itemFullType]
     if not itemData or not soul then return 0 end
     
+    -- Always verbose if DynamicTrading.Debug is true
+    verbose = verbose or DynamicTrading.Debug
+
     local diff = DynamicTrading.Config.GetDifficultyData()
-    local archetype = DynamicTrading.Archetypes[soul.archetypeID]
+    local archetype = soul.archetypeID and DynamicTrading.Archetypes[soul.archetypeID]
     local modifiers = {
         tagsConfig = DynamicTrading.Config.Tags,
+        -- Event Modifiers (V2 Director Integration)
+        getPriceModifier = function(tags)
+            if DynamicTrading.V2.Director then
+                return DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, soul.factionID, tags)
+            end
+            return 1.0
+        end
     }
     
     local price = Common.GetSellPrice(itemFullType, itemData, itemObj, diff, archetype, modifiers, verbose)
-
-    -- Event Modifiers (V2 Director Integration)
-    if DynamicTrading.V2.Director then
-        local factionID = soul.factionID
-        local eventMult = DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, factionID, itemData.tags)
-        price = price * eventMult
-        if verbose then print("  - Event Multiplier: " .. eventMult) end
-    end
     
     return price
 end

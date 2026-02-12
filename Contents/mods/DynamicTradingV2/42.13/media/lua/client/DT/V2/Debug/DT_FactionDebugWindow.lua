@@ -141,6 +141,12 @@ function DT_FactionDebugWindow:createChildren()
     self.btnForceTrade.enable = false
     self:addChild(self.btnForceTrade)
 
+    -- FORCE EVENT BUTTON
+    self.btnForceEvent = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 4, ctrlY, ctrlBtnWidth, 20, "FORCE EVENT", self, DT_FactionDebugWindow.onForceEvent)
+    self.btnForceEvent:initialise()
+    self.btnForceEvent.backgroundColor = {r=0.7, g=0.5, b=0, a=1}
+    self:addChild(self.btnForceEvent)
+
     self:refreshList()
 end
 
@@ -391,6 +397,38 @@ function DT_FactionDebugWindow:onForceTradeNPC()
     
     sendClientCommand(getPlayer(), "DynamicTrading_V2", "ForceTradeMission", { uuid = uuid })
     if getPlayer() then getPlayer():Say("Forced trade mission for: " .. soul.name) end
+end
+
+function DT_FactionDebugWindow:onForceEvent()
+    local f = self.listbox.items[self.listbox.selected]
+    if not f then 
+        if HaloTextHelper then HaloTextHelper.addText(getPlayer(), "Select a faction first!") end
+        return 
+    end
+    
+    local context = ISContextMenu.get(0, getMouseX(), getMouseY())
+    
+    -- CLEAR OPTION
+    context:addOption("--- CLEAR CURRENT EVENT ---", self, function()
+        sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "InjectEvent", factionID = f.item.id, eventID = nil })
+    end)
+
+    -- Get available events from Registry
+    if DynamicTrading.Events and DynamicTrading.Events.Registry then
+        local events = {}
+        for id, def in pairs(DynamicTrading.Events.Registry) do
+            if def.type == "flash" or def.type == "meta" then
+                table.insert(events, { id = id, name = def.name or id })
+            end
+        end
+        table.sort(events, function(a,b) return a.name < b.name end)
+        
+        for _, e in ipairs(events) do
+            context:addOption("Force: " .. e.name, self, function()
+                sendClientCommand(getPlayer(), "DynamicTrading_V2", "DebugCommand", { action = "InjectEvent", factionID = f.item.id, eventID = e.id })
+            end)
+        end
+    end
 end
 
 -- Handle server response

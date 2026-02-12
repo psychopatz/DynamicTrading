@@ -507,9 +507,16 @@ function DTNPCManager.ProcessTradeCycles()
             local currentTrading = factionTradingCounts[factionID] or 0
             local totalMembers = factionTotalCounts[factionID] or 1
             
+            -- [NEW] Apply Event Modifiers
+            local limitMult = 1.0
+            if DynamicTrading and DynamicTrading.V2 and DynamicTrading.V2.Director then
+                limitMult = DynamicTrading.V2.Director.GetSystemModifier(factionID, "traderLimit")
+            end
+            
+            local effectivePopLimit = popLimitPercent * limitMult
             local currentPercent = (currentTrading / totalMembers) * 100
             
-            if currentPercent < popLimitPercent then
+            if currentPercent < effectivePopLimit then
                 -- Small random chance to trigger (simulating daily chance spread over ticks)
                 -- 1 in 2000 chance per check (~1 min real time if check is every 30s)
                 if ZombRand(2000) < 10 then 

@@ -132,6 +132,25 @@ Handlers.DebugCommand = function(player, args)
             memberCount = 10
         })
         sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Faction Spawned" })
+    
+    elseif action == "InjectEvent" then
+        local factionID = args.factionID
+        local eventID = args.eventID
+        local hours = args.hours or 72 -- Default 3 days
+        
+        local factionData = ModData.get("DynamicTrading_Factions")
+        local faction = factionData and factionData[factionID]
+        
+        if faction then
+            local currentHour = math.floor(getGameTime():getWorldAgeHours())
+            faction.ActiveFlashEvent = faction.ActiveFlashEvent or {}
+            faction.ActiveFlashEvent.id = eventID
+            faction.ActiveFlashEvent.expires = eventID and (currentHour + hours) or 0
+            
+            ModData.transmit("DynamicTrading_Factions")
+            local msg = eventID and ("Event Injected: " .. eventID) or "Event Cleared"
+            sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason=msg })
+        end
     end
 end
 
