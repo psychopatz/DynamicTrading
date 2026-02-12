@@ -55,6 +55,14 @@ function Lifecycle.Init()
         if type(f.wealth) ~= "number" then
             f.wealth = 1000
         end
+
+        if not f.ActiveFlashEvent then
+            f.ActiveFlashEvent = { id = nil, expires = 0 }
+        end
+
+        if not f.consecutiveStableDays then
+            f.consecutiveStableDays = 0
+        end
     end
 
     ModData.transmit(MOD_DATA_KEY)
@@ -113,6 +121,8 @@ function Lifecycle.CreateFaction(factionID, initialData)
             wealth = initialData.wealth or 1000, -- Stores the total money of all the traders in the faction
             reputation = initialData.reputation or {}, -- [Username] = Integer
             starvationDays = 0, -- Track days without food
+            consecutiveStableDays = 0, -- Track how long they've been stable (for wildcard triggers)
+            ActiveFlashEvent = { id = nil, expires = 0 } -- id = event string, expires = world age hour
         }
         
         -- Generate Initial Roster in DynamicTrading_Roster

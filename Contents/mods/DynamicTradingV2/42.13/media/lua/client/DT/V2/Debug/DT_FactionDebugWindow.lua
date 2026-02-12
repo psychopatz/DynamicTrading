@@ -200,8 +200,12 @@ function DT_FactionDebugWindow:doDrawItem(y, item, alt)
         self:drawRect(0, y, self.width, self.itemheight, 0.1, 0, 0, 0)
     end
     
+    local eventStr = f.ActiveFlashEvent and f.ActiveFlashEvent.id or "None"
+    local eventColor = " <RGB:0.7,0.7,0.7> "
+    if eventStr ~= "None" then eventColor = " <RGB:0,1,1> " end
+
     self:drawText(item.text, 10, y + 2, r, g, b, 1, UIFont.Medium)
-    self:drawText("State: " .. tostring(f.state) .. " | Pop: " .. tostring(f.memberCount), 10, y + 20, 0.7, 0.7, 0.7, 1, UIFont.Small)
+    self:drawText("State: " .. tostring(f.state) .. " | Pop: " .. tostring(f.memberCount) .. " | Event: " .. eventStr, 10, y + 20, 0.7, 0.7, 0.7, 1, UIFont.Small)
 
     return y + self.itemheight
 end
@@ -226,6 +230,15 @@ function DT_FactionDebugWindow:onListMouseDown(item)
         end
     else
         text = text .. " <RGB:0.7,0.7,0.7> - No reputation data. <LINE> "
+    end
+    
+    text = text .. " <LINE> <RGB:1,1,0> ACTIVE EVENT: <LINE> "
+    if f.ActiveFlashEvent and f.ActiveFlashEvent.id then
+        local currentHours = getGameTime():getWorldAgeHours()
+        local diff = math.max(0, f.ActiveFlashEvent.expires - currentHours)
+        text = text .. " <RGB:0,1,1> " .. f.ActiveFlashEvent.id .. " <RGB:0.7,0.7,0.7> (Expires in: " .. string.format("%.1f", diff) .. "h) <LINE> "
+    else
+        text = text .. " <RGB:0.7,0.7,0.7> - None <LINE> "
     end
     
     text = text .. " <LINE> <RGB:0,1,0> STOCKPILE: <LINE> "

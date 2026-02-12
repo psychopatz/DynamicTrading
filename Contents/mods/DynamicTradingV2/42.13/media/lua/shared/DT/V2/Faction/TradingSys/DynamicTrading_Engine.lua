@@ -30,6 +30,10 @@ local defaultData = {
         assignedFrequencies = {},
         rangeMin = 88.0,
         rangeMax = 108.0
+    },
+    EventSystem = {
+        activeEvents = {}, -- [id] = { expires = -1 }
+        lastEventDay = 0
     }
 }
 
@@ -87,7 +91,12 @@ end
 function DynamicTrading_Engine.RunDailySimulation()
     print("DynamicTrading: Running Daily Simulation Signals...")
     
-    -- Broadcase daily simulation signal
+    local data = DynamicTrading_Engine.GetEngineData()
+    if data and DynamicTrading.Events and DynamicTrading.Events.Tick then
+        DynamicTrading.Events.Tick(data)
+    end
+
+    -- Broadcast daily simulation signal
     -- Modules like Factions should hook into this via Events.OnDynamicTradingDailySimulation
     triggerEvent("OnDynamicTradingDailySimulation")
 end

@@ -165,3 +165,53 @@ option DynamicTrading.MaxEvents
     page = DynamicTradingEvents,
     translation = DynamicTrading_MaxEvents,
 }
+
+option DynamicTrading.V2_FlashEventThreshold_Food
+{
+    type = double,
+    default = 50.0,
+    min = 0.0,
+    max = 500.0,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_FlashEventThreshold_Food,
+}
+
+option DynamicTrading.V2_FlashEventThreshold_Ammo
+{
+    type = double,
+    default = 10.0,
+    min = 0.0,
+    max = 200.0,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_FlashEventThreshold_Ammo,
+}
+
+option DynamicTrading.V2_MetaEventChance
+{
+    type = integer,
+    default = 5,
+    min = 0,
+    max = 100,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_MetaEventChance,
+}
+
+option DynamicTrading.V2_FlashEventMinDuration
+{
+    type = integer,
+    default = 24,
+    min = 1,
+    max = 168,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_FlashEventMinDuration,
+}
+
+option DynamicTrading.V2_FlashEventMaxDuration
+{
+    type = integer,
+    default = 72,
+    min = 1,
+    max = 336,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_FlashEventMaxDuration,
+}

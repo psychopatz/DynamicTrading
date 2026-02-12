@@ -44,6 +44,7 @@ function DataHandlers.SendSyncStockToPlayer(player, traderID)
         factionID = factionID,
         archetype = archetype,
         factionWealth = factionWealth,
+        activeFlashEvent = faction and faction.ActiveFlashEvent or { id = nil, expires = 0 },
         name = soul and soul.name or "Trader",
         portraitID = soul and soul.portraitID,
         gender = soul and soul.isFemale and "Female" or "Male"
@@ -74,10 +75,12 @@ end
 Handlers.RequestRoster = function(player, args)
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
     local factionData = ModData.get("DynamicTrading_Factions") or {}
+    local engineData = DynamicTrading_Engine.GetEngineData()
     
     sendServerCommand(player, COMMAND_MODULE, "SyncRoster", {
         roster = rosterData,
-        factions = factionData
+        factions = factionData,
+        globalEvents = engineData and engineData.EventSystem and engineData.EventSystem.activeEvents or {}
     })
 end
 
@@ -145,6 +148,7 @@ Handlers.GenerateStock = function(player, args)
                 factionID = factionID,
                 archetype = archetype,
                 factionWealth = factionWealth,
+                activeFlashEvent = faction and faction.ActiveFlashEvent or { id = nil, expires = 0 },
                 name = soul and soul.name or "Trader",
                 portraitID = soul and soul.portraitID,
                 gender = soul and soul.isFemale and "Female" or "Male"

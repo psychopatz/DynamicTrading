@@ -77,7 +77,13 @@ function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customD
         customData = customData
     }
     
-    local price = Common.GetBuyPrice(itemFullType, itemData, diff, modifiers, verbose)
+    -- Event Modifiers (V2 Director Integration)
+    if DynamicTrading.V2.Director then
+        local factionID = soul.factionID
+        local eventMult = DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, factionID, itemData.tags)
+        price = price * eventMult
+        if verbose then print("  - Event Multiplier: " .. eventMult) end
+    end
     
     return price
 end
@@ -94,6 +100,14 @@ function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullTyp
     }
     
     local price = Common.GetSellPrice(itemFullType, itemData, itemObj, diff, archetype, modifiers, verbose)
+
+    -- Event Modifiers (V2 Director Integration)
+    if DynamicTrading.V2.Director then
+        local factionID = soul.factionID
+        local eventMult = DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, factionID, itemData.tags)
+        price = price * eventMult
+        if verbose then print("  - Event Multiplier: " .. eventMult) end
+    end
     
     return price
 end

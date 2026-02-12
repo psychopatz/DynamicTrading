@@ -4,7 +4,8 @@ DynamicTrading_Client = {}
 DynamicTrading_Client.Cache = {
     Traders = {},
     Factions = {},
-    Stocks = {}
+    Stocks = {},
+    GlobalEvents = {}
 }
 
 local COMMAND_MODULE = "DynamicTrading_V2"
@@ -50,10 +51,15 @@ local function OnServerCommand(module, command, args)
         end
 
     elseif command == "SyncFaction" then
-        -- args is { [ID] = data }
-        for id, data in pairs(args) do
-            DynamicTrading_Client.Cache.Factions[id] = data
-            triggerEvent("OnDynamicTradingFactionUpdated", id)
+        -- args is { [ID] = data, globalEvents = ... }
+        if args.factions then
+             for id, data in pairs(args.factions) do
+                DynamicTrading_Client.Cache.Factions[id] = data
+                triggerEvent("OnDynamicTradingFactionUpdated", id)
+            end
+        end
+        if args.globalEvents then
+            DynamicTrading_Client.Cache.GlobalEvents = args.globalEvents
         end
 
     elseif command == "SyncStock" then

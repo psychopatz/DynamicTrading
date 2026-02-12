@@ -60,3 +60,29 @@ DynamicTrading.V2.Config.Sim = {
     },
     MaxDailyGrowth = 2 -- Max recruits a single faction can absorb per day
 }
+-- =============================================================================
+-- EVENT REGISTRY (V2 Director Logic)
+-- =============================================================================
+DynamicTrading.V2.Config.Events = {
+    -- Thresholds for reactive flash events (units per member)
+    Thresholds = {
+        FoodHigh = 50.0,  -- Above this -> BumperCrop
+        FoodLow = 5.0,    -- Below this -> Famine
+        AmmoLow = 10.0,   -- Below this -> Vulnerable
+        WealthHigh = 5000 -- Above this -> Raid (candidate)
+    },
+    
+    -- Meta Event Names (Global/Permanent)
+    Meta = {
+        "Inflation",
+        "EconomicCollapse",
+        "Recession"
+    }
+}
+
+-- Ensure common events are reachable
+require "DT/Common/Events/DT_EventManager"
+require "DT/Common/Events/Seasonal/Negative/Winter"
+-- future: add other base seasonal/flash events here if not auto-loaded
+
+print("DynamicTrading: V2 Config Initialized.")

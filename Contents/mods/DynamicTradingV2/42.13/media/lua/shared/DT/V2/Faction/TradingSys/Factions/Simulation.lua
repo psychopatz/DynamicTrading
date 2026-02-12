@@ -7,6 +7,7 @@
 require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/V2/Config"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/V2/Faction/TradingSys/Factions/DynamicTrading_Director"
 
 local Simulation = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"
@@ -26,7 +27,12 @@ function Simulation.UpdateDaily()
     local factionsToRemove = {}
 
     for id, faction in pairs(data) do
-        -- 0. CALCULATE PRODUCTION (Based on Roster)
+        -- 0. DIRECTORS CUT (Trigger Events & Wildcards)
+        if DynamicTrading.V2.Director then
+            DynamicTrading.V2.Director.Update(faction)
+        end
+
+        -- 0.1 CALCULATE PRODUCTION (Based on Roster)
         local production = { food=0, ammo=0, meds=0, fuel=0 }
         local soulUUIDs = DynamicTrading_Roster.GetSouls(id)
         
