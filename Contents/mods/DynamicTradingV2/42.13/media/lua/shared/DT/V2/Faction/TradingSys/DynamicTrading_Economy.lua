@@ -74,10 +74,14 @@ function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customD
         end
     end
 
+    local engineData = DynamicTrading_Engine.GetEngineData()
+    local globalHeat = engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat or {}
+
     local diff = DynamicTrading.Config.GetDifficultyData()
     local modifiers = {
         tagsConfig = DynamicTrading.Config.Tags,
         customData = customData,
+        globalHeat = globalHeat,
         -- Event Modifiers (V2 Director Integration)
         getPriceModifier = function(tags)
             if not skipEvents and DynamicTrading.V2.Director then
@@ -100,10 +104,24 @@ function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullTyp
     -- Always verbose if DynamicTrading.Debug is true
     verbose = verbose or DynamicTrading.Debug
 
+    local engineData = DynamicTrading_Engine.GetEngineData()
+    local globalHeat = engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat or {}
+
+    -- [NEW] Fetch Local Deflation from Stock
+    local localDeflationCount = 0
+    if DynamicTrading_Stock then
+        local stockData = DynamicTrading_Stock.GetStock(traderUUID)
+        if stockData and stockData.deflation then
+            localDeflationCount = stockData.deflation[itemFullType] or 0
+        end
+    end
+
     local diff = DynamicTrading.Config.GetDifficultyData()
     local archetype = soul.archetypeID and DynamicTrading.Archetypes[soul.archetypeID]
     local modifiers = {
         tagsConfig = DynamicTrading.Config.Tags,
+        globalHeat = globalHeat,
+        localDeflationCount = localDeflationCount,
         -- Event Modifiers (V2 Director Integration)
         getPriceModifier = function(tags)
             if not skipEvents and DynamicTrading.V2.Director then

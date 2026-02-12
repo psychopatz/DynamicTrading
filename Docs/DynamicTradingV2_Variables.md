@@ -152,3 +152,57 @@ These are added to the `brain` table when the NPC is physically spawned.
 * `OnDynamicTradingHourlyTick`: Fires every game hour.
 * `OnDynamicTradingDailySimulation`: Fires at 05:00 AM game time.
 * `OnDynamicTradingStockUpdate`: Fires when a trader's stock changes.
+
+---
+
+## 5. Pricing Logic & Formulas
+
+V2 pricing delegates core math to the `DynamicTradingCommon` module but wraps it with V2-specific state (Heat, Director modifiers).
+
+### 5.1 Buy Price (Trader -> Player)
+Calculated via `DynamicTrading.Economy.V2.GetBuyPrice`.
+
+**Formula:**
+`FinalPrice = BasePrice * MaxTagMult * EventMult * (1 + GlobalHeat) * BuyDifficultyMult * ItemScale`
+
+* **BasePrice**: Defined in `DynamicTrading.Config.MasterList`.
+* **MaxTagMult**: The highest `priceMult` from `Config.Tags` for any tag the item possesses.
+* **EventMult**: Dynamic modifier from `DynamicTrading.V2.Director` (e.g., shortages, sales).
+* **GlobalHeat**: Global inflation tracked in `DynamicTrading_Engine_v2`. Range: -0.8 (Deflation) to 2.0 (Hyperinflation).
+* **BuyDifficultyMult**: Scaler from Sandbox settings (e.g., 1.0 = Normal).
+* **ItemScale**: 
+  * **Drainable/Food**: Ratio of Current / Max (min 20% floor for container).
+  * **Fluids**: `(ContainerPrice * Mults) + (FluidVolume * FluidPrice * Mults)`.
+
+### 5.2 Sell Price (Player -> Trader)
+Calculated via `DynamicTrading.Economy.V2.GetSellPrice`.
+
+**Formula:**
+`FinalPrice = BasePrice * SellDifficultyMult * ConditionPenalty * EventMult * (1 + GlobalHeat) * LocalDeflation * ArchetypeWant`
+
+* **ConditionPenalty**: 
+  * If Rotten: Fixed Price `1`.
+  * Else: `Condition / MaxCondition` ratio.
+* **LocalDeflation**: Trader-specific saturation. Each item sold reduces price by **5%** for that category (capped at 80% reduction / 0.2 multiplier).
+* **ArchetypeWant**: Bonus multiplier if the trader's archetype "wants" that tag (e.g., Gunrunners pay 2x for Ammo).
+
+---
+
+## 6. Core Methods & API
+
+### 6.1 Engine (`DynamicTrading_Engine`)
+* `Init()`: Initializes/migrates global ModData.
+* `RunDailySimulation()`: Processes heat decay (inflation recovery) and triggers events.
+* `UpdateHeat(category, amount)`: Adjusts global inflation for a specific category.
+
+### 6.2 Factions (`DynamicTrading_Factions`)
+* `ModifyWealth(factionID, amount)`: Directly shifts the faction's capital.
+* `ModifyStockpile(factionID, resource, delta)`: Adds/removes units from macro stockpiles (food, ammo, meds, fuel).
+
+### 6.3 Stock (`DynamicTrading_Stock`)
+* `UpdateItemQty(traderUUID, itemFullType, delta)`: Handles player transactions, updates scarcity pricing, and triggers faction wealth/stockpile updates.
+* `CheckAndGenerateStock(traderUUID)`: Generates fresh stock based on archetype and logic states.
+
+### 6.4 Roster (`DynamicTrading_Roster`)
+* `GetSoulRegistry(uuid)`: Fetches the persistent "Brain" data for an NPC.
+* `UpdateSoulStatus(uuid, status)`: Transitions an NPC between states (Trading, Resting, etc.).

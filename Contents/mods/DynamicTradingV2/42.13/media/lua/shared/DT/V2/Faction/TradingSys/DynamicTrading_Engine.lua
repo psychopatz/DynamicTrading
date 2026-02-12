@@ -24,7 +24,9 @@ local defaultData = {
             ammo = 1.0,
             meds = 1.0,
             fuel = 1.0
-        }
+        },
+        GlobalHeat = {},
+        DeflatedGlobal = {}
     },
     Spectrum = {
         assignedFrequencies = {},
@@ -45,9 +47,19 @@ function DynamicTrading_Engine.Init()
         ModData.add(MOD_DATA_KEY, data)
         ModData.transmit(MOD_DATA_KEY)
     else
-        -- Integrity Check / Migration
+        -- Integrity Check / Migration (Recursive-lite for V2 economic fields)
         for k, v in pairs(defaultData) do
-            if data[k] == nil then data[k] = v end
+            if data[k] == nil then 
+                data[k] = v 
+            elseif type(v) == "table" then
+                -- Check one level deeper for specific important sub-tables
+                for subK, subV in pairs(v) do
+                    if data[k][subK] == nil then
+                        data[k][subK] = subV
+                        print("DT Engine: Migrating missing field [" .. k .. "." .. subK .. "]")
+                    end
+                end
+            end
         end
     end
 end
@@ -92,13 +104,61 @@ function DynamicTrading_Engine.RunDailySimulation()
     print("DynamicTrading: Running Daily Simulation Signals...")
     
     local data = DynamicTrading_Engine.GetEngineData()
-    if data and DynamicTrading.Events and DynamicTrading.Events.Tick then
-        DynamicTrading.Events.Tick(data)
+    if data then
+        -- 1. Heat Decay (Inflation Recovery)
+        local decayRate = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.InflationDecay) or 0.1
+        local retention = 1.0 - decayRate
+        if retention < 0 then retention = 0 end
+
+        if data.WorldEconomy.GlobalHeat then
+            print("[DT Engine] Daily Heat Decay Starting (Rate: " .. tostring(decayRate) .. ")")
+            for cat, val in pairs(data.WorldEconomy.GlobalHeat) do
+                if val ~= 0 then
+                    local oldVal = val
+                    data.WorldEconomy.GlobalHeat[cat] = val * retention
+                    -- Clamp to zero if negligible
+                    if math.abs(data.WorldEconomy.GlobalHeat[cat]) < 0.01 then 
+                        data.WorldEconomy.GlobalHeat[cat] = 0 
+                    end
+                    if oldVal ~= data.WorldEconomy.GlobalHeat[cat] then
+                        print("  > Category: " .. tostring(cat) .. " | Heat: " .. tostring(oldVal) .. " -> " .. tostring(data.WorldEconomy.GlobalHeat[cat]))
+                    end
+                end
+            end
+        end
+
+        -- 2. Reset Daily Deflation Checklist
+        data.WorldEconomy.DeflatedGlobal = {}
+
+        -- 3. Proceed with existing Event Ticks
+        if DynamicTrading.Events and DynamicTrading.Events.Tick then
+            DynamicTrading.Events.Tick(data)
+        end
     end
 
     -- Broadcast daily simulation signal
     -- Modules like Factions should hook into this via Events.OnDynamicTradingDailySimulation
     triggerEvent("OnDynamicTradingDailySimulation")
+end
+
+function DynamicTrading_Engine.UpdateHeat(category, amount)
+    if not category or category == "Misc" then return end
+    
+    local data = DynamicTrading_Engine.GetEngineData()
+    if not data then return end
+    
+    local current = data.WorldEconomy.GlobalHeat[category] or 0
+    data.WorldEconomy.GlobalHeat[category] = current + amount
+    
+    -- Safety Clamps (Shared with V1 logic)
+    if data.WorldEconomy.GlobalHeat[category] > 2.0 then data.WorldEconomy.GlobalHeat[category] = 2.0 end
+    if data.WorldEconomy.GlobalHeat[category] < -0.8 then data.WorldEconomy.GlobalHeat[category] = -0.8 end
+    
+    if DynamicTrading.Debug or amount ~= 0 then
+        print("[DT Engine] UpdateHeat: " .. tostring(category) .. " | Change: " .. tostring(amount) .. " | New: " .. tostring(data.WorldEconomy.GlobalHeat[category]))
+    end
+    
+    ModData.transmit(MOD_DATA_KEY)
 end
 
 function DynamicTrading_Engine.ConsumeRecruit()

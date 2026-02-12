@@ -112,6 +112,13 @@ Handlers.TradeTransaction = function(player, args)
             -- Sync stock
             ModData.transmit("DynamicTrading_Stock")
             
+            -- [NEW] HEAT / INFLATION (Supply & Demand)
+            local category = itemData.tags[1] or "Misc"
+            local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryInflation) or 0.05
+            local change = sensitivity * clientQty
+            DynamicTrading_Engine.UpdateHeat(category, change)
+            
+            print(DEBUG_PREFIX .. " Buy Inflation: Category=[" .. tostring(category) .. "] | Adding Heat: " .. tostring(change))
             print(DEBUG_PREFIX .. " SUCCESS: Bought " .. safeDisplayName)
             
             -- Send updated stock to client cache (fixes UI not refreshing)
@@ -186,6 +193,23 @@ Handlers.TradeTransaction = function(player, args)
         
         -- Sync stock
         ModData.transmit("DynamicTrading_Stock")
+        
+        -- [NEW] HEAT / DEFLATION (Supply & Demand)
+        local category = itemData.tags[1] or "Misc"
+        local engineData = DynamicTrading_Engine.GetEngineData()
+        
+        -- V1 Logic: Global Deflation (Configurable Roll, Once per item kind per day)
+        if engineData and engineData.WorldEconomy and not engineData.WorldEconomy.DeflatedGlobal[key] then
+            local chance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.SellDeflationChance) or 30
+            local roll = ZombRand(chance) + 1
+            
+            if roll == 1 then
+                local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryDeflation) or 0.02
+                DynamicTrading_Engine.UpdateHeat(category, -sensitivity)
+                engineData.WorldEconomy.DeflatedGlobal[key] = true
+                print(DEBUG_PREFIX .. " GLOBAL DEFLATION triggered for category: " .. tostring(category))
+            end
+        end
         
         print(DEBUG_PREFIX .. " SUCCESS: Sold " .. itemObj:getDisplayName())
         
