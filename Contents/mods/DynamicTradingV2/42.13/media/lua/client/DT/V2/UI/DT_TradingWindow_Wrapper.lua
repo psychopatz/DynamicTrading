@@ -221,11 +221,21 @@ function V2_DataProvider:getBuyPrice(key, customData, verbose)
     }
 
     -- Use Shared Common Logic
-    if DynamicTrading.Economy and DynamicTrading.Economy.Common and DynamicTrading.Economy.Common.GetBuyPrice then
-        return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
+    if DynamicTrading.Economy and DynamicTrading.Economy.Common then
+        if DynamicTrading.Economy.Common.GetBuyPrice then
+            return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
+        else
+            print(DEBUG_PREFIX .. " ERROR: DynamicTrading.Economy.Common exists but GetBuyPrice is missing!")
+        end
+    else
+        print(DEBUG_PREFIX .. " ERROR: DynamicTrading.Economy.Common is nil! Attempting emergency require...")
+        require "DT/Common/Trading/DT_Economy_Common"
+        if DynamicTrading.Economy and DynamicTrading.Economy.Common and DynamicTrading.Economy.Common.GetBuyPrice then
+            print(DEBUG_PREFIX .. " Emergency require successful.")
+            return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
+        end
     end
     
-    print("[DT-V2-TradingWrapper] ERROR: DynamicTrading.Economy.Common.GetBuyPrice is NULL!")
     return 99999
 end
 
@@ -251,7 +261,17 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
     }
     
     -- Use Shared Common Logic
-    return DynamicTrading.Economy.Common.GetSellPrice(masterKey, itemData, invItem, diff, archetype, modifiers, verbose)
+    if DynamicTrading.Economy and DynamicTrading.Economy.Common then
+        if DynamicTrading.Economy.Common.GetSellPrice then
+            return DynamicTrading.Economy.Common.GetSellPrice(masterKey, itemData, invItem, diff, archetype, modifiers, verbose)
+        else
+            print(DEBUG_PREFIX .. " ERROR: DynamicTrading.Economy.Common exists but GetSellPrice is missing!")
+        end
+    else
+        print(DEBUG_PREFIX .. " ERROR: DynamicTrading.Economy.Common is nil during Sell Price calc!")
+    end
+    
+    return 0
 end
 
 function V2_DataProvider:getPriceModifier(tags)

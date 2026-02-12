@@ -199,12 +199,21 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
                     for _, f in ipairs(archetype.forbid) do
                         if t == f then isForbidden = true break end
                     end
+                    if isForbidden then break end
                 end
-                if modifiers.forbidTags and modifiers.forbidTags[t] then
-                    isForbidden = true
-                end
-                if isForbidden then break end
             end
+
+            -- Check Event Forbidden Tags
+            if not isForbidden and modifiers.forbidTags then
+                for _, t in ipairs(itemData.tags) do
+                    if modifiers.forbidTags[t] then
+                        isForbidden = true
+                        break
+                    end
+                end
+            end
+                
+            if not isForbidden then
                 -- CALCULATE WEIGHT
                 local baseWeight = 0
                 
