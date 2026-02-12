@@ -1,4 +1,4 @@
-if not isClient() then return end
+if isServer() then return end
 
 DynamicTrading_Client = {}
 DynamicTrading_Client.Cache = {
@@ -90,30 +90,41 @@ local function OnSharedServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
     
     if command == "TransactionResult" then
-        if DynamicTrading.Debug then
-            print("[DT-V2-Client] Received TransactionResult: " .. tostring(args.success))
-            print("  - Item: " .. tostring(args.itemName))
-            print("  - Price: " .. tostring(args.price))
-            print("  - BasePrice: " .. tostring(args.basePrice))
-        end
+        print("[DT-V2-Client] >>> OnSharedServerCommand RECEIVED TransactionResult")
+        print("[DT-V2-Client]   success=" .. tostring(args.success) .. ", isBuy=" .. tostring(args.isBuy) .. ", item=" .. tostring(args.itemName))
+        print("[DT-V2-Client]   DT_TradingWindow=" .. tostring(DT_TradingWindow) .. ", instance=" .. tostring(DT_TradingWindow and DT_TradingWindow.instance))
         
         if DT_TradingWindow and DT_TradingWindow.instance then
             local ui = DT_TradingWindow.instance
             
             if args.success then
-                -- Get trader for dialogue generation
+                -- 1. Resolve transaction type (isBuy)
+                -- Prefer args from server, fallback to current UI state
+                local isBuy = (args.isBuy == true)
+                if args.isBuy == nil then isBuy = ui.isBuying end
+
+                -- 2. Resolve trader for dialogue generation
                 local trader = ui.dataProvider and ui.dataProvider:getTrader(ui.traderID, ui.archetype)
                 
-                if trader and DynamicTrading.DialogueManager then
-                    -- Generate NPC response dialogue
+                -- [ROBUSTNESS] Fallback trader if cache is missing
+                if not trader then
+                    trader = {
+                        traderID = ui.traderID,
+                        archetype = ui.archetype or "General",
+                        name = "Trader"
+                    }
+                end
+                
+                -- 3. Trigger Dialogue & SFX
+                if DynamicTrading.DialogueManager then
                     local diagArgs = {
                         itemName = args.itemName or "Item",
                         price = args.price or 0,
                         basePrice = args.basePrice or args.price or 0,
+                        wasLastOne = args.wasLastOne or false,
                         success = true
                     }
                     
-                    local isBuy = (args.isBuy == true) -- Explicit check
                     local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, diagArgs)
                     
                     if DynamicTrading.Debug then
@@ -125,9 +136,8 @@ local function OnSharedServerCommand(module, command, args)
                     
                     ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier", "transaction")
                 else
-                    if DynamicTrading.Debug then
-                        print("[DT-V2-Client] [ERROR] Failed to generate dialogue: trader=" .. tostring(trader) .. ", Manager=" .. tostring(DynamicTrading.DialogueManager))
-                    end
+                    -- Fallback SFX if dialogue manager is missing
+                    ui:queueMessage("...", false, false, 0, "DT_Cashier", "transaction")
                 end
                 
                 -- [FIX] Update wallet display and force immediate list refresh

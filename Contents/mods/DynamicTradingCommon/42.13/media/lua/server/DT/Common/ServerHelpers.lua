@@ -40,9 +40,9 @@ function Helpers.SendResponse(player, module, command, args)
         sendServerCommand(player, module, command, args)
     else
         -- SINGLEPLAYER: Simulate packet arrival immediately
-        if isDebugEnabled() then
-            print("[DynamicTradingCommon] Sending SP: " .. module .. ":" .. command .. " to player: " .. player:getUsername())
-        end
+        -- if isDebugEnabled() then
+        --     print("[DynamicTradingCommon] Sending SP: " .. module .. ":" .. command .. " to player: " .. player:getUsername())
+        -- end
         triggerEvent("OnServerCommand", module, command, args)
     end
 end
@@ -58,18 +58,18 @@ function Helpers.RemoveItem(item)
     if not item then return end
     local container = item:getContainer()
     if not container then return end
-    if isDebugEnabled() then
-        print("[DynamicTradingCommon] Removing item: " .. item:getFullType() .. " from container: " .. container:getType())
-    end
+    -- if isDebugEnabled() then
+    --     print("[DynamicTradingCommon] Removing item: " .. item:getFullType() .. " from container: " .. container:getType())
+    -- end
     
     -- Perform Action
     container:DoRemoveItem(item)
     
     -- Sync to Clients (MP only)
     if Helpers.ShouldSendNetworkPackets() then
-        if isDebugEnabled() then
-            print("[DynamicTradingCommon] Sending MP: RemoveItemFromContainer")
-        end
+        -- if isDebugEnabled() then
+        --     print("[DynamicTradingCommon] Sending MP: RemoveItemFromContainer")
+        -- end
         sendRemoveItemFromContainer(container, item)
     end
 end
@@ -81,9 +81,9 @@ end
 function Helpers.AddItem(container, fullType, count)
     if not container or not fullType then return end
     local qty = count or 1
-    if isDebugEnabled() then
-        print("[DynamicTradingCommon] Adding item: " .. fullType .. " to container: " .. container:getType())
-    end
+    -- if isDebugEnabled() then
+    --     print("[DynamicTradingCommon] Adding item: " .. fullType .. " to container: " .. container:getType())
+    -- end
     
     -- AddItems returns an ArrayList of the created items
     local items = container:AddItems(fullType, qty)
@@ -161,9 +161,9 @@ function Helpers.FindItemByIDRecursive(container, itemID)
     for i = 0, items:size() - 1 do
         local it = items:get(i)
         if it:getID() == itemID then
-            if isDebugEnabled() then
-                print("[DynamicTradingCommon] Found item: " .. it:getFullType() .. " in container: " .. container:getType())
-            end
+            -- if isDebugEnabled() then
+            --     print("[DynamicTradingCommon] Found item: " .. it:getFullType() .. " in container: " .. container:getType())
+            -- end
             return it
         end
         -- Check nested containers (bags inside bags)
@@ -172,9 +172,9 @@ function Helpers.FindItemByIDRecursive(container, itemID)
             if sub then
                 local found = Helpers.FindItemByIDRecursive(sub, itemID)
                 if found then 
-                    if isDebugEnabled() then
-                        print("[DynamicTradingCommon] Found item: " .. it:getFullType() .. " in container: " .. container:getType())
-                    end
+                    -- if isDebugEnabled() then
+                    --     print("[DynamicTradingCommon] Found item: " .. it:getFullType() .. " in container: " .. container:getType())
+                    -- end
                     return found 
                 end
             end
@@ -309,9 +309,9 @@ end
 -- @param amount number The amount to remove.
 function Helpers.BurnMoney(player, amount)
     if amount and amount > 0 then
-        if isDebugEnabled() then
-            print("[DynamicTradingCommon] Burning money: " .. amount .. " from player: " .. player:getUsername())
-        end
+        -- if isDebugEnabled() then
+        --     print("[DynamicTradingCommon] Burning money: " .. amount .. " from player: " .. player:getUsername())
+        -- end
         Helpers.RemoveMoney(player, amount)
     end
 end

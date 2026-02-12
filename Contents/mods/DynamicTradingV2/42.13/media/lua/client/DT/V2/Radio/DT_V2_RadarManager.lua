@@ -51,7 +51,7 @@ end
 -- ==============================================================================
 -- Request fresh roster data from server (MP Only)
 function DT_V2_RadarManager.RequestRoster()
-    if not isClient() then return end
+    if isServer() then return end
     print("[DT_RADAR] Requesting fresh Roster from Server...")
     sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestRoster", {})
 end

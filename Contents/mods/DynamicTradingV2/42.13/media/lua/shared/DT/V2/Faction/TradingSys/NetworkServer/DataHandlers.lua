@@ -9,6 +9,7 @@ local COMMAND_MODULE = "DynamicTrading_V2"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Stock"
+require "DT/Common/ServerHelpers"
 
 local DataHandlers = {}
 local Handlers = {}
@@ -36,7 +37,7 @@ function DataHandlers.SendSyncStockToPlayer(player, traderID)
     
     print("[DT-V2-Server] Sending SyncStock: traderID=" .. tostring(traderID) .. ", factionID=" .. tostring(factionID) .. ", factionWealth=" .. tostring(factionWealth))
     
-    sendServerCommand(player, COMMAND_MODULE, "SyncStock", { 
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncStock", { 
         id = traderID, 
         items = stockData.items, 
         restock = stockData.restock,
@@ -67,7 +68,7 @@ Handlers.RequestTrader = function(player, args)
             homeCoords = traderData.homeCoords,
             isSpawned = traderData.isPhysicallySpawned
         }
-        sendServerCommand(player, COMMAND_MODULE, "SyncTrader", response)
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncTrader", response)
     end
 end
 
@@ -77,7 +78,7 @@ Handlers.RequestRoster = function(player, args)
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local engineData = DynamicTrading_Engine.GetEngineData()
     
-    sendServerCommand(player, COMMAND_MODULE, "SyncRoster", {
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncRoster", {
         roster = rosterData,
         factions = factionData,
         globalEvents = engineData and engineData.EventSystem and engineData.EventSystem.activeEvents or {}
@@ -103,7 +104,7 @@ Handlers.RequestStock = function(player, args)
             end
         end
         
-        sendServerCommand(player, COMMAND_MODULE, "SyncStock", { 
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncStock", { 
             id = traderID, 
             items = stockData.items, 
             restock = stockData.restock,
@@ -141,7 +142,7 @@ Handlers.GenerateStock = function(player, args)
             end
              
             -- Send complete SyncStock with all required fields
-            sendServerCommand(player, COMMAND_MODULE, "SyncStock", { 
+            DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncStock", { 
                 id = traderID, 
                 items = stockData.items, 
                 restock = stockData.restock,
@@ -154,10 +155,10 @@ Handlers.GenerateStock = function(player, args)
                 gender = soul and soul.isFemale and "Female" or "Male"
             })
             
-            sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Stock Generated" })
+            DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Stock Generated" })
         end
     else
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=false, reason=reason })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=false, reason=reason })
     end
 end
 

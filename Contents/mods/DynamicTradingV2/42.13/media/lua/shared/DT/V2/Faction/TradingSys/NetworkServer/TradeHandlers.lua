@@ -33,14 +33,14 @@ Handlers.TradeTransaction = function(player, args)
     local stockData = DynamicTrading_Stock.GetStock(traderID)
     if not stockData then
         print(DEBUG_PREFIX .. " ERROR: No stock data for trader")
-        sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Trader unavailable" })
+        DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Trader unavailable" })
         return
     end
     
     local itemData = DynamicTrading.Config.MasterList[key]
     if not itemData then
         print(DEBUG_PREFIX .. " ERROR: Item not in MasterList: " .. tostring(key))
-        sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item not found" })
+        DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item not found" })
         return
     end
     
@@ -59,7 +59,7 @@ Handlers.TradeTransaction = function(player, args)
         -- 1. Get price from stock
         local itemStock = stockData.items[key]
         if not itemStock then
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Not in stock" })
+            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Not in stock" })
             return
         end
         
@@ -78,14 +78,14 @@ Handlers.TradeTransaction = function(player, args)
         
         -- 2. Check Stock
         if currentQty < clientQty then
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Sold Out!" })
+            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Sold Out!" })
             return
         end
         
         -- 3. Check Player Wealth
         local playerWealth = DynamicTrading.ServerHelpers.GetWealth(player)
         if playerWealth < totalCost then
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Not enough cash!" })
+            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Not enough cash!" })
             return
         end
         
@@ -117,7 +117,7 @@ Handlers.TradeTransaction = function(player, args)
             -- Send updated stock to client cache (fixes UI not refreshing)
             DataHandlers.SendSyncStockToPlayer(player, traderID)
             
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { 
+            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { 
                 success = true, 
                 itemName = safeDisplayName,
                 price = totalCost,
@@ -125,7 +125,7 @@ Handlers.TradeTransaction = function(player, args)
                 isBuy = true
             })
         else
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Transaction Error" })
+            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Transaction Error" })
         end
         
     elseif txType == "sell" then
@@ -136,7 +136,7 @@ Handlers.TradeTransaction = function(player, args)
         end
         
         if not itemObj then
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item missing!" })
+            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item missing!" })
             return
         end
         
@@ -154,7 +154,7 @@ Handlers.TradeTransaction = function(player, args)
         -- 3. Check faction can afford
         local factionWealth = factionData and factionData.wealth or 999999
         if factionWealth < totalGain then
-            sendServerCommand(player, "DynamicTrading", "TransactionResult", { success=false, msg="Trader cannot afford this!" })
+            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Trader cannot afford this!" })
             return
         end
         
@@ -192,7 +192,7 @@ Handlers.TradeTransaction = function(player, args)
         -- Send updated stock to client cache (fixes UI not refreshing)
         DataHandlers.SendSyncStockToPlayer(player, traderID)
         
-        sendServerCommand(player, "DynamicTrading", "TransactionResult", { 
+        DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { 
             success = true, 
             itemName = itemObj:getDisplayName(),
             price = totalGain,

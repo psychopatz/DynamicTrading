@@ -5,6 +5,8 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
+-- NOTE: Loads on Server, Host, and Singleplayer.
+-- In SP, isClient() and isServer() are both false.
 if isClient() and not isServer() then return end
 
 -- =============================================================================

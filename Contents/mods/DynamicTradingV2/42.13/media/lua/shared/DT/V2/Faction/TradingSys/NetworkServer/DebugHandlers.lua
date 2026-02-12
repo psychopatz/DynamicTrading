@@ -10,6 +10,7 @@ require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
+require "DT/Common/ServerHelpers"
 
 local DebugHandlers = {}
 local Handlers = {}
@@ -22,7 +23,7 @@ Handlers.RequestFactionData = function(player, args)
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
     local stockData = ModData.get("DynamicTrading_Stock") or {}
     
-    sendServerCommand(player, COMMAND_MODULE, "SyncFactionDebugData", {
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionDebugData", {
         factions = factionData,
         roster = rosterData,
         stock = stockData
@@ -47,7 +48,7 @@ Handlers.DebugCommand = function(player, args)
         DynamicTrading_Factions.UpdateDaily()
         -- Also force the engine simulation
         DynamicTrading_Engine.RunDailySimulation()
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Simulation Triggered" })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Simulation Triggered" })
 
     elseif action == "createTestFaction" then
         local targetID = args.targetID or ("Faction_" .. ZombRand(1000))
@@ -56,7 +57,7 @@ Handlers.DebugCommand = function(player, args)
             memberCount = ZombRand(5, 15),
             stockpile = { food = 200, ammo = 100 }
         })
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Faction Created" })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Faction Created" })
 
     elseif action == "WipeFactions" then
         -- Clear the ModData table completely
@@ -73,7 +74,7 @@ Handlers.DebugCommand = function(player, args)
         -- Re-initialize to restore the "Independent" nomadic faction and Town factions
         DynamicTrading_Factions.Init()
         ModData.transmit(key)
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="All Factions Wiped & Repopulated" })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="All Factions Wiped & Repopulated" })
 
     elseif action == "ForceRestock" then
         -- Reset restock timers for a specific trader
@@ -82,7 +83,7 @@ Handlers.DebugCommand = function(player, args)
         if stock then
             stock.restock.nextRestockTime = 0
             ModData.transmit("DynamicTrading_Stock")
-            sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Restock Forced" })
+            DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Restock Forced" })
         end
     elseif action == "ModifySoul" then
         local factionID = args.factionID
@@ -103,26 +104,26 @@ Handlers.DebugCommand = function(player, args)
             if f then f.memberCount = math.max(0, f.memberCount + amount) end
         end
         ModData.transmit("DynamicTrading_Factions")
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Roster Modified" })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Roster Modified" })
 
     elseif action == "ModifyStockpile" then
         local factionID = args.factionID
         local res = args.resource
         local amt = args.amount
         DynamicTrading_Factions.ModifyStockpile(factionID, res, amt)
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Stockpile Modified" })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Stockpile Modified" })
 
     elseif action == "ModifyWealth" then
         local factionID = args.factionID
         local amt = args.amount
         DynamicTrading_Factions.ModifyWealth(factionID, amt)
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Wealth Modified" })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Wealth Modified" })
 
     elseif action == "ModifyReputation" then
         local factionID = args.factionID
         local amt = args.amount
         DynamicTrading_Factions.ModifyReputation(factionID, player:getUsername(), amt)
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Reputation Modified" })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Reputation Modified" })
 
     elseif action == "ForceSpawn" then
         local town = args.town or "Rosewood"
@@ -131,7 +132,7 @@ Handlers.DebugCommand = function(player, args)
             town = town,
             memberCount = 10
         })
-        sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Faction Spawned" })
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Faction Spawned" })
     
     elseif action == "InjectEvent" then
         local factionID = args.factionID
@@ -149,7 +150,7 @@ Handlers.DebugCommand = function(player, args)
             
             ModData.transmit("DynamicTrading_Factions")
             local msg = eventID and ("Event Injected: " .. eventID) or "Event Cleared"
-            sendServerCommand(player, COMMAND_MODULE, "TradeResult", { success=true, reason=msg })
+            DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason=msg })
         end
     end
 end
