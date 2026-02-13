@@ -28,16 +28,45 @@ function DT_FactionInfoTab_Reputation:createChildren()
     self.richText.backgroundColor = {r=0, g=0, b=0, a=0.0}
     self.richText.borderColor = {r=0, g=0, b=0, a=0.0}
     self.richText:addScrollBars()
+    self.richText:setAnchorRight(true)
+    self.richText:setAnchorBottom(true)
     self:addChild(self.richText)
 end
 
+function DT_FactionInfoTab_Reputation:onResize()
+    ISPanel.onResize(self)
+    if self.richText then
+        self.richText:paginate()
+    end
+end
+
 function DT_FactionInfoTab_Reputation:updateData(f)
+    self.currentFaction = f
     if not f then 
         self.richText:setText("")
         return 
     end
 
-    local text = " <RGB:0.4,0.8,1> <SIZE:Medium> REPUTATION STATUS <SIZE:Small> <LINE> <LINE> "
+    local scale = "Medium"
+    if self.parent and self.parent.parent and self.parent.parent.fontScale then
+        scale = self.parent.parent.fontScale
+    end
+
+    local titleTag = "Medium"
+    local bodyTag = "Small"
+    
+    if scale == "Large" then
+        titleTag = "Large"
+        bodyTag = "Medium"
+    elseif scale == "Medium" then
+        titleTag = "Medium"
+        bodyTag = "Small"
+    else
+        titleTag = "Small"
+        bodyTag = "Small"
+    end
+
+    local text = " <RGB:0.4,0.8,1> <SIZE:" .. titleTag .. "> REPUTATION STATUS <SIZE:" .. bodyTag .. "> <LINE> <LINE> "
 
     if f.reputation and type(f.reputation) == "table" then
         local found = false

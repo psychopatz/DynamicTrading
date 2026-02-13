@@ -28,16 +28,45 @@ function DT_FactionInfoTab_Info:createChildren()
     self.richText.backgroundColor = {r=0, g=0, b=0, a=0.0}
     self.richText.borderColor = {r=0, g=0, b=0, a=0.0}
     self.richText:addScrollBars()
+    self.richText:setAnchorRight(true)
+    self.richText:setAnchorBottom(true)
     self:addChild(self.richText)
 end
 
+function DT_FactionInfoTab_Info:onResize()
+    ISPanel.onResize(self)
+    if self.richText then
+        self.richText:paginate()
+    end
+end
+
 function DT_FactionInfoTab_Info:updateData(f)
+    self.currentFaction = f
     if not f then 
         self.richText:setText(" <RGB:0.6,0.6,0.6> No faction selected.")
         return 
     end
 
-    local text = " <RGB:1,0.8,0> <SIZE:Medium> " .. f.name .. " <SIZE:Small> <LINE> "
+    local scale = "Medium"
+    if self.parent and self.parent.parent and self.parent.parent.fontScale then
+        scale = self.parent.parent.fontScale
+    end
+
+    local titleTag = "Medium"
+    local bodyTag = "Small"
+    
+    if scale == "Large" then
+        titleTag = "Large"
+        bodyTag = "Medium"
+    elseif scale == "Medium" then
+        titleTag = "Medium"
+        bodyTag = "Small"
+    else
+        titleTag = "Small"
+        bodyTag = "Small"
+    end
+
+    local text = " <RGB:1,0.8,0> <SIZE:" .. titleTag .. "> " .. f.name .. " <SIZE:" .. bodyTag .. "> <LINE> "
     text = text .. " <RGB:0.6,0.6,0.6> ID: " .. f.id .. " <LINE> <LINE> "
     
     -- Location
@@ -52,7 +81,7 @@ function DT_FactionInfoTab_Info:updateData(f)
     -- Economy
     text = text .. " <LINE> <RGB:0.4,0.8,1> ECONOMIC DATA: <LINE> "
     text = text .. " <RGB:0.2,1,0.2> Wealth: $" .. tostring(f.wealth or 0) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Value Trend: " .. (f.valueTrend or "Stable") .. " <LINE> " -- Adding placeholder for trend if exists
+    text = text .. " <RGB:0.8,0.8,0.8> Value Trend: " .. (f.valueTrend or "Stable") .. " <LINE> " 
     
     self.richText:setText(text)
     self.richText:paginate()

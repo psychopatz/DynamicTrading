@@ -26,11 +26,23 @@ function DT_FactionInfoTab_Population:createChildren()
     self.rosterlist = ISScrollingListBox:new(0, 0, self.width, self.height)
     self.rosterlist:initialise()
     self.rosterlist:instantiate()
-    self.rosterlist.itemheight = 30 
+    self.rosterlist.itemheight = 40 
     self.rosterlist.doDrawItem = DT_FactionInfoTab_Population.doDrawRosterItem
     self.rosterlist.backgroundColor = {r=0.1, g=0.1, b=0.1, a=0.5}
     self.rosterlist.drawBorder = true
+    self.rosterlist:setAnchorRight(true)
+    self.rosterlist:setAnchorBottom(true)
     self:addChild(self.rosterlist)
+end
+
+function DT_FactionInfoTab_Population:onResizeFont(scale)
+    if scale == "Large" then
+        self.rosterlist.itemheight = 50
+    elseif scale == "Medium" then
+        self.rosterlist.itemheight = 40
+    else
+        self.rosterlist.itemheight = 32
+    end
 end
 
 function DT_FactionInfoTab_Population:updateData(f, rosterData)
@@ -60,7 +72,7 @@ end
 function DT_FactionInfoTab_Population:doDrawRosterItem(y, item, alt)
     local data = item.item
     if not data then -- "No Members" placeholder
-        self:drawText(item.text, 10, y + 5, 0.7, 0.7, 0.7, 1, UIFont.Small)
+        self:drawText(item.text, 10, y + 5, 0.7, 0.7, 0.7, 1, UIFont.Medium)
         return y + self.itemheight
     end
     
@@ -81,8 +93,15 @@ function DT_FactionInfoTab_Population:doDrawRosterItem(y, item, alt)
     elseif status == "Trading" then r,g,b = 0.9, 0.8, 0.2
     end
     
-    self:drawText(soul.name, 10, y + 5, r, g, b, 1, UIFont.Small)
-    self:drawText(status, self.width - 80, y + 5, r*0.8, g*0.8, b*0.8, 1, UIFont.Small)
+    local font = UIFont.Medium
+    if self.parent and self.parent.parent and self.parent.parent.fontScale then
+        local scale = self.parent.parent.fontScale
+        if scale == "Large" then font = UIFont.Large
+        elseif scale == "Small" then font = UIFont.Small end
+    end
+    
+    self:drawText(soul.name, 10, y + 5, r, g, b, 1, font)
+    self:drawText(status, self.width - 120, y + 5, r*0.8, g*0.8, b*0.8, 1, font)
 
     return y + self.itemheight
 end

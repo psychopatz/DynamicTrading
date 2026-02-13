@@ -28,16 +28,45 @@ function DT_FactionInfoTab_Events:createChildren()
     self.richText.backgroundColor = {r=0, g=0, b=0, a=0.0}
     self.richText.borderColor = {r=0, g=0, b=0, a=0.0}
     self.richText:addScrollBars()
+    self.richText:setAnchorRight(true)
+    self.richText:setAnchorBottom(true)
     self:addChild(self.richText)
 end
 
+function DT_FactionInfoTab_Events:onResize()
+    ISPanel.onResize(self)
+    if self.richText then
+        self.richText:paginate()
+    end
+end
+
 function DT_FactionInfoTab_Events:updateData(f)
+    self.currentFaction = f
     if not f then 
         self.richText:setText("")
         return 
     end
 
-    local text = " <RGB:1,1,1> <SIZE:Medium> ACTIVE EVENTS <SIZE:Small> <LINE> <LINE> "
+    local scale = "Medium"
+    if self.parent and self.parent.parent and self.parent.parent.fontScale then
+        scale = self.parent.parent.fontScale
+    end
+
+    local titleTag = "Medium"
+    local bodyTag = "Small"
+    
+    if scale == "Large" then
+        titleTag = "Large"
+        bodyTag = "Medium"
+    elseif scale == "Medium" then
+        titleTag = "Medium"
+        bodyTag = "Small"
+    else
+        titleTag = "Small"
+        bodyTag = "Small"
+    end
+
+    local text = " <RGB:1,1,1> <SIZE:" .. titleTag .. "> ACTIVE EVENTS <SIZE:" .. bodyTag .. "> <LINE> <LINE> "
 
     if f.ActiveFlashEvent and f.ActiveFlashEvent.id then
         local currentHours = getGameTime():getWorldAgeHours()

@@ -12,13 +12,24 @@ function DT_FactionList:new(x, y, width, height)
     local o = ISScrollingListBox:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.itemheight = 40
+    o.itemheight = 55
     o.selected = 1
     o.joypadParent = nil
-    o.font = UIFont.NewSmall
-    o.doDrawItem = self.doDrawItem
     o.drawBorder = true
     return o
+end
+
+function DT_FactionList:onResizeFont(scale)
+    if scale == "Large" then
+        self.font = UIFont.Large
+        self.itemheight = 75
+    elseif scale == "Medium" then
+        self.font = UIFont.Medium
+        self.itemheight = 55
+    else
+        self.font = UIFont.Small
+        self.itemheight = 45
+    end
 end
 
 function DT_FactionList:doDrawItem(y, item, alt)
@@ -52,11 +63,25 @@ function DT_FactionList:doDrawItem(y, item, alt)
 
     -- Text Rendering
     -- Name
-    self:drawText(item.text, 10, y + 5, r, g, b, 1, UIFont.Medium)
+    local nameFont = UIFont.Medium
+    local statusFont = UIFont.Small
+    local statusY = 22
+    
+    if self.font == UIFont.Large then
+        nameFont = UIFont.Large
+        statusFont = UIFont.Medium
+        statusY = 35
+    elseif self.font == UIFont.Medium then
+        nameFont = UIFont.Large
+        statusFont = UIFont.Medium
+        statusY = 30
+    end
+
+    self:drawText(item.text, 10, y + 5, r, g, b, 1, nameFont)
     
     -- Status Line (State | Pop)
     local statusText = "State: " .. tostring(f.state) .. " | Pop: " .. tostring(f.memberCount)
-    self:drawText(statusText, 10, y + 22, 0.6, 0.6, 0.6, 0.8, UIFont.Small)
+    self:drawText(statusText, 10, y + statusY, 0.6, 0.6, 0.6, 0.8, statusFont)
 
     -- Borders between items
     self:drawRectBorder(0, y, self.width, self.itemheight, 0.1, 1, 1, 1)
