@@ -1,10 +1,8 @@
--- ==============================================================================
--- media/lua/client/DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Population.lua
--- Tab: Population & Roster
--- ==============================================================================
-
 require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
+require "ISUI/ISButton"
+require "ISUI/ISLabel"
+require "DT/V2/UI/Faction/DT_NPCProfilePanel"
 
 DT_FactionInfoTab_Population = ISPanel:derive("DT_FactionInfoTab_Population")
 
@@ -19,38 +17,71 @@ end
 
 function DT_FactionInfoTab_Population:initialise()
     ISPanel.initialise(self)
-    self:createChildren()
 end
 
 function DT_FactionInfoTab_Population:createChildren()
-    self.rosterlist = ISScrollingListBox:new(0, 0, self.width, self.height)
+    local topH = 130 -- Increased from 85 to fit larger portrait
+    local padding = 5
+    
+    -- 1. PROFILE AREA (TOP) - Extracted Component
+    self.profilePanel = DT_NPCProfilePanel:new(0, 0, self.width, topH)
+    self.profilePanel:initialise()
+    self.profilePanel:setAnchorRight(true)
+    self:addChild(self.profilePanel)
+    
+    -- 2. ROSTER LIST
+    local listY = topH + padding
+    local listH = self.height - topH - padding -- Fill to bottom
+    
+    self.rosterlist = ISScrollingListBox:new(0, listY, self.width, listH)
     self.rosterlist:initialise()
     self.rosterlist:instantiate()
     self.rosterlist.itemheight = 40 
-    self.rosterlist.doDrawItem = DT_FactionInfoTab_Population.doDrawRosterItem
-    self.rosterlist.backgroundColor = {r=0.1, g=0.1, b=0.1, a=0.5}
+    self.rosterlist.doDrawItem = self.doDrawRosterItem
+    self.rosterlist.backgroundColor = {r=0.05, g=0.05, b=0.05, a=0.5}
     self.rosterlist.drawBorder = true
     self.rosterlist:setAnchorRight(true)
     self.rosterlist:setAnchorBottom(true)
+    
+    self.rosterlist.target = self
+    self.rosterlist.onmousedown = self.onRosterClick
     self:addChild(self.rosterlist)
 end
 
-function DT_FactionInfoTab_Population:onResizeFont(scale)
-    if scale == "Large" then
-        self.rosterlist.itemheight = 50
-    elseif scale == "Medium" then
-        self.rosterlist.itemheight = 40
-    else
-        self.rosterlist.itemheight = 32
+function DT_FactionInfoTab_Population:onRosterClick(data)
+    if not data or not data.soul then return end
+    
+    self.selectedSoul = data.soul
+    self.selectedUUID = data.uuid
+    
+    -- Update Header UI via component
+    if self.profilePanel then
+        self.profilePanel:setNPC(data.soul, data.uuid)
     end
+end
+
+function DT_FactionInfoTab_Population:onOpenDetails()
+    -- Reserved for future use or expanded view
+    if self.selectedSoul then
+        print("[DT] Opening details for " .. tostring(self.selectedSoul.name))
+    end
+end
+
+function DT_FactionInfoTab_Population:onResize()
+    ISPanel.onResize(self)
+    -- Anchors should handle resizing of subpanels
 end
 
 function DT_FactionInfoTab_Population:updateData(f, rosterData)
     self.rosterlist:clear()
     
+    -- Reset selection
+    if self.profilePanel then
+        self.profilePanel:setNPC(nil)
+    end
+
     if not f then return end
     
-    -- Ensure rosterData is available (passed from parent)
     if rosterData then
         local members = rosterData.FactionMembers and rosterData.FactionMembers[f.id]
         if members and #members > 0 then
@@ -61,17 +92,13 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                     self.rosterlist:addItem(soul.name or uuid, data)
                 end
             end
-        else
-            self.rosterlist:addItem("No Members", nil)
         end
-    else
-         self.rosterlist:addItem("Data Unavailable", nil)
     end
 end
 
 function DT_FactionInfoTab_Population:doDrawRosterItem(y, item, alt)
     local data = item.item
-    if not data then -- "No Members" placeholder
+    if not data then -- Placeholder for empty
         self:drawText(item.text, 10, y + 5, 0.7, 0.7, 0.7, 1, UIFont.Medium)
         return y + self.itemheight
     end
@@ -79,13 +106,16 @@ function DT_FactionInfoTab_Population:doDrawRosterItem(y, item, alt)
     local soul = data.soul
     if not soul then return y end
 
+    local isMouseOver = self:isMouseOver() and self:getMouseY() >= y and self:getMouseY() < y + self.itemheight
+
     if item.selected then
-        self:drawRect(0, y, self.width, self.itemheight, 0.2, 0.7, 0.7, 0.7)
+        self:drawRect(0, y, self.width, self.itemheight, 0.4, 0.4, 0.9, 0.6)
+    elseif isMouseOver then
+        self:drawRect(0, y, self.width, self.itemheight, 0.2, 0.3, 0.5, 0.4)
     elseif alt then
         self:drawRect(0, y, self.width, self.itemheight, 0.05, 1, 1, 1)
     end
     
-    -- Status Color
     local status = soul.status or "Active"
     local r, g, b = 0.8, 0.8, 0.8
     if status == "Dead" then r,g,b = 0.6, 0.2, 0.2
