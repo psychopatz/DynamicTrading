@@ -149,8 +149,13 @@ function DT_FactionInfoWindow:onResize()
         
         -- Update active tab
         local activeView = self.panel:getActiveView()
-        if activeView and activeView.updateData then
-             activeView:updateData(self.selectedFaction)
+        if activeView then
+            activeView:setWidth(self.panel:getWidth())
+            activeView:setHeight(self.panel:getHeight() - self.panel.tabHeight)
+            if activeView.onResize then activeView:onResize() end
+            if activeView.updateData then
+                 activeView:updateData(self.selectedFaction)
+            end
         end
     end
 end
