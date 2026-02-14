@@ -164,20 +164,39 @@ function DT_FactionInfoWindow:refreshList()
     
     -- Singleplayer Direct Access
     local factionData = ModData.get("DynamicTrading_Factions") or {}
-    self:populateList(factionData)
+    local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    self:populateList(factionData, rosterData)
 end
 
-function DT_FactionInfoWindow:populateList(factionData)
+function DT_FactionInfoWindow:populateList(factionData, rosterData)
     if not self.listbox then return end
     self.listbox:clear()
     
+    -- If rosterData wasn't passed (e.g. from network callback old sig), try to get cached
+    if not rosterData then
+        rosterData = DT_FactionInfoWindow.cachedRosterData or {}
+    end
+
     local keys = {}
     for id in pairs(factionData) do table.insert(keys, id) end
     table.sort(keys)
 
     for _, id in ipairs(keys) do
         local f = factionData[id]
-        self.listbox:addItem(f.name or id, f)
+        
+        -- Check Population
+        local isAlive = true
+        if rosterData and rosterData.FactionMembers then
+            local members = rosterData.FactionMembers[id]
+            if not members or #members == 0 then
+                isAlive = false
+            end
+        end
+
+        -- Only add if alive (or if we can't determine, default to show to be safe)
+        if isAlive then
+            self.listbox:addItem(f.name or id, f)
+        end
     end
 end
 
@@ -220,7 +239,7 @@ local function onServerCommand(module, command, args)
             DT_FactionInfoWindow.cachedRosterData = args.roster
             
             -- Populate
-            DT_FactionInfoWindow.instance:populateList(args.factions)
+            DT_FactionInfoWindow.instance:populateList(args.factions, args.roster)
         end
     end
 end

@@ -219,12 +219,12 @@ function DT_V2_RadarManager.Scan(player, device)
     local foundNew = false
     local px, py = player:getX(), player:getY()
     
-    -- [NEW] Get Event Modifiers
+    -- [UNIFIED] Get Event Modifiers
     local globalRangeMult = 1.0
     local globalChanceMult = 1.0
-    if DynamicTrading and DynamicTrading.V2 and DynamicTrading.V2.Director then
-        globalRangeMult = DynamicTrading.V2.Director.GetSystemModifier(nil, "signalRange")
-        globalChanceMult = DynamicTrading.V2.Director.GetSystemModifier(nil, "scanChance")
+    if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
+        globalRangeMult = DynamicTrading.Events.GetFactionSystemModifier(nil, "signalRange")
+        globalChanceMult = DynamicTrading.Events.GetFactionSystemModifier(nil, "scanChance")
     end
 
     local effectiveRange = range * globalRangeMult
@@ -239,10 +239,11 @@ function DT_V2_RadarManager.Scan(player, device)
                 local dist = math.sqrt(dx*dx + dy*dy)
                 
                 if dist <= effectiveRange then
-                    -- [NEW] Apply Faction-Specific Modifiers
+                    -- [UNIFIED] Apply Faction-Specific Modifiers
                     local factionChanceMult = 1.0
-                    if DynamicTrading and DynamicTrading.V2 and DynamicTrading.V2.Director then
-                        factionChanceMult = DynamicTrading.V2.Director.GetSystemModifier(soul.factionID, "scanChance")
+                    if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
+                        local faction = DT_V2_RadarManager.GetFaction(soul.factionID)
+                        factionChanceMult = DynamicTrading.Events.GetFactionSystemModifier(faction, "scanChance")
                     end
 
                     -- Proximity check passed! Now add random chance.

@@ -507,10 +507,11 @@ function DTNPCManager.ProcessTradeCycles()
             local currentTrading = factionTradingCounts[factionID] or 0
             local totalMembers = factionTotalCounts[factionID] or 1
             
-            -- [NEW] Apply Event Modifiers
+            -- [UNIFIED] Apply Event Modifiers
             local limitMult = 1.0
-            if DynamicTrading and DynamicTrading.V2 and DynamicTrading.V2.Director then
-                limitMult = DynamicTrading.V2.Director.GetSystemModifier(factionID, "traderLimit")
+            if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
+                local faction = DynamicTrading_Factions.GetFaction(factionID)
+                limitMult = DynamicTrading.Events.GetFactionSystemModifier(faction, "traderLimit")
             end
             
             local effectivePopLimit = popLimitPercent * limitMult

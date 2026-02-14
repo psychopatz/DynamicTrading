@@ -89,6 +89,16 @@ function DT_ConversationUI:createChildren()
     self.lblReputation:setVisible(false)
     self:addChild(self.lblReputation)
 
+    self.lblWealth = ISLabel:new(leftColW / 2 + pad, self.lblReputation:getY() + 20, 18, "Wealth: 0$", 0.8, 1, 0.8, 1, UIFont.Small, true)
+    self.lblWealth.center = true
+    self.lblWealth:setVisible(false)
+    self:addChild(self.lblWealth)
+
+    self.lblState = ISLabel:new(leftColW / 2 + pad, self.lblWealth:getY() + 20, 18, "Status: Stable", 0.9, 0.9, 0.9, 1, UIFont.Small, true)
+    self.lblState.center = true
+    self.lblState:setVisible(false)
+    self:addChild(self.lblState)
+
     -- CALCULATE HEIGHTS
     local optionHeight = 180 
     local chatH = self.height - th - pad - optionHeight - 15 
@@ -487,7 +497,11 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
     
     -- FACTION & REPUTATION (Optional)
     if traderObj.factionID then
-        local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions) or ModData.get("DynamicTrading_Factions") or {}
+        local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions) 
+                            or (DT_V2_RadarManager and DT_V2_RadarManager.ClientFactions)
+                            or ModData.get("DynamicTrading_Factions") 
+                            or {}
+                            
         local f = factionData[traderObj.factionID]
         if f then
             ui.lblFactionTitle:setVisible(true)
@@ -528,6 +542,17 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
             ui.lblReputation:setName(string.format("Reputation: %d (%s)", rep, stage))
             ui.lblReputation:setColor(r, g, b)
             ui.lblReputation:setVisible(true)
+
+            -- WEALTH & STATE (New in V2)
+            if f.wealth ~= nil then
+                ui.lblWealth:setName(string.format("Wealth: %d$", f.wealth))
+                ui.lblWealth:setVisible(true)
+            end
+
+            if f.state then
+                ui.lblState:setName(string.format("Status: %s", f.state))
+                ui.lblState:setVisible(true)
+            end
         end
     end
     

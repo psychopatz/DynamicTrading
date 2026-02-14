@@ -35,14 +35,14 @@ function DynamicTrading.Economy.V2.GenerateStock(traderUUID)
         globalStockMult = 1.0
     }
     
-    -- [V2 Revamp] Event Integration
-    if DynamicTrading.V2.Director then
+    -- [V2 Revamp] Event Integration (Unified)
+    if DynamicTrading.Events and DynamicTrading.Events.UpdateFaction then
         modifiers.getVolumeModifier = function(tags)
-            return DynamicTrading.V2.Director.GetVolumeModifier(soul.factionID, tags)
+            return DynamicTrading.Events.GetFactionVolumeModifier(faction, tags)
         end
-        modifiers.eventInjections = DynamicTrading.V2.Director.GetInjections(soul.factionID)
-        modifiers.expertTags = DynamicTrading.V2.Director.GetExpertTags(soul.factionID)
-        modifiers.forbidTags = DynamicTrading.V2.Director.GetForbidTags(soul.factionID)
+        modifiers.eventInjections = DynamicTrading.Events.GetFactionInjections(faction)
+        modifiers.expertTags = DynamicTrading.Events.GetFactionExpertTags(faction)
+        modifiers.forbidTags = DynamicTrading.Events.GetFactionForbidTags(faction)
     end
 
     -- Delegate to Common
@@ -92,10 +92,11 @@ function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customD
         tagsConfig = DynamicTrading.Config.Tags,
         customData = customData,
         globalHeat = globalHeat,
-        -- Event Modifiers (V2 Director Integration)
+        -- Event Modifiers (Unified Manager Integration)
         getPriceModifier = function(tags)
-            if not skipEvents and DynamicTrading.V2.Director then
-                return DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, soul.factionID, tags)
+            if not skipEvents and DynamicTrading.Events and DynamicTrading.Events.GetFactionPriceModifier then
+                local faction = DynamicTrading_Factions.GetFaction(soul.factionID)
+                return DynamicTrading.Events.GetFactionPriceModifier(faction, tags, verbose)
             end
             return 1.0
         end
@@ -132,10 +133,11 @@ function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullTyp
         tagsConfig = DynamicTrading.Config.Tags,
         globalHeat = globalHeat,
         localDeflationCount = localDeflationCount,
-        -- Event Modifiers (V2 Director Integration)
+        -- Event Modifiers (Unified Manager Integration)
         getPriceModifier = function(tags)
-            if not skipEvents and DynamicTrading.V2.Director then
-                return DynamicTrading.V2.Director.GetPriceModifiers(traderUUID, soul.factionID, tags)
+            if not skipEvents and DynamicTrading.Events and DynamicTrading.Events.GetFactionPriceModifier then
+                local faction = DynamicTrading_Factions.GetFaction(soul.factionID)
+                return DynamicTrading.Events.GetFactionPriceModifier(faction, tags, verbose)
             end
             return 1.0
         end

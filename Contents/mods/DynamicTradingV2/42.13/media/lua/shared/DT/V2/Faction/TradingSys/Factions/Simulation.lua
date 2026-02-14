@@ -7,7 +7,10 @@
 require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/V2/Config"
 require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
-require "DT/V2/Faction/TradingSys/Factions/DynamicTrading_Director"
+require "DT/V2/Config"
+require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
+-- require "DT/V2/Faction/TradingSys/Factions/DynamicTrading_Director" -- Deprecated
+require "DT/Common/Events/DT_EventManager"
 
 local Simulation = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"
@@ -16,6 +19,9 @@ local MOD_DATA_KEY = "DynamicTrading_Factions"
 -- DAILY SIMULATION
 -- ==========================================================
 function Simulation.UpdateDaily()
+    local gameTime = getGameTime()
+    local currentHour = math.floor(gameTime:getWorldAgeHours())
+
     local data = ModData.get(MOD_DATA_KEY)
     local engineData = DynamicTrading_Engine.GetEngineData()
     local Sandbox = SandboxVars.DynamicTrading
@@ -28,8 +34,10 @@ function Simulation.UpdateDaily()
 
     for id, faction in pairs(data) do
         -- 0. DIRECTORS CUT (Trigger Events & Wildcards)
-        if DynamicTrading.V2.Director then
-            DynamicTrading.V2.Director.Update(faction)
+        -- 0. DIRECTORS CUT (Trigger Events & Wildcards)
+        -- [UNIFIED] Used Shared Event Manager
+        if DynamicTrading.Events and DynamicTrading.Events.UpdateFaction then
+            DynamicTrading.Events.UpdateFaction(faction)
         end
 
         -- 0.1 CALCULATE PRODUCTION (Based on Roster)

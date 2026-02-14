@@ -36,6 +36,17 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
             
             if traderProxy.factionID then
                 print("Trader Faction ID: " .. traderProxy.factionID)
+                
+                -- [NEW] Request roster if faction data is not in cache
+                local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions) 
+                                    or (DT_V2_RadarManager and DT_V2_RadarManager.ClientFactions)
+                
+                if not factionData or not factionData[traderProxy.factionID] then
+                    if DT_V2_RadarManager and DT_V2_RadarManager.RequestRoster then
+                        print("[DT-V2-Hub] Faction data missing in cache, requesting Roster sync...")
+                        DT_V2_RadarManager.RequestRoster()
+                    end
+                end
             else
                 print("Trader Faction ID: nil")
             end

@@ -205,19 +205,150 @@ function DynamicTrading.Events.RebuildActiveCache(data)
     end
 end
 
+
 -- =============================================================================
+-- 4. FACTION EVENT PROCESSING (Unified V2 Director Logic)
+-- =============================================================================
+function DynamicTrading.Events.UpdateFaction(faction)
+    if isClient() and not isServer() then return end
+    if not faction then return end
+    
+    local currentHour = math.floor(getGameTime():getWorldAgeHours())
+    local Sandbox = SandboxVars.DynamicTrading
+    
+    -- A. EXPIRY CHECK
+    if faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+        if currentHour >= faction.ActiveFlashEvent.expires then
+            print("[DynamicTrading] [Events] Event [" .. faction.ActiveFlashEvent.id .. "] expired for faction " .. faction.id)
+            faction.ActiveFlashEvent.id = nil
+            faction.ActiveFlashEvent.expires = 0
+            faction.ActiveFlashEvent.targetCasualties = 0 
+        else
+            -- Event still active, skip new triggers
+            return
+        end
+    end
+
+    -- B. STABILITY TRACKING (Ensure key exists)
+    if faction.state == "Stable" then
+        faction.consecutiveStableDays = (faction.consecutiveStableDays or 0) + 1
+    else
+        faction.consecutiveStableDays = 0
+    end
+
+    -- C. TRIGGER ROLL
+    local baseChance = (Sandbox and Sandbox.EventChance) or 50
+    local stabilityBonus = math.floor((faction.consecutiveStableDays or 0) / 7) * 10 
+    local roll = ZombRand(100) + 1
+    
+    if roll > (baseChance + stabilityBonus) then
+        return -- No event today
+    end
+
+    -- D. CANDIDATE DISCOVERY
+    local candidates = {}
+    local wildcardPool = {}
+    
+    for id, def in pairs(DynamicTrading.Events.Registry) do
+        if def.type == "flash" then
+            -- Context-Aware Spawn Check
+            local canSpawn = true
+            if def.canSpawn then
+                local ok, result = pcall(def.canSpawn, faction)
+                canSpawn = ok and result
+            end
+            
+            if canSpawn then
+                table.insert(candidates, id)
+                
+                -- Wildcard Pool (Negative events or 5% chaos chance)
+                if def.sentiment == "Negative" or roll <= 5 then
+                    table.insert(wildcardPool, id)
+                end
+            end
+        end
+    end
+
+    -- E. SELECTION
+    local finalID = nil
+    -- Prolonged stability increases risk of "Wildcard" crisis
+    local isWildcard = (faction.consecutiveStableDays or 0) > 14 and ZombRand(100) < (faction.consecutiveStableDays) 
+    
+    if isWildcard and #wildcardPool > 0 then
+        finalID = wildcardPool[ZombRand(#wildcardPool) + 1]
+        print("[DynamicTrading] [Events] WILDCARD selected for faction " .. faction.id .. " (Stability: " .. faction.consecutiveStableDays .. ")")
+    elseif #candidates > 0 then
+        finalID = candidates[ZombRand(#candidates) + 1]
+    end
+
+    -- F. ACTIVATION & IMMEDIATE IMPACTS
+    if finalID then
+        local minDur = (Sandbox and Sandbox.V2_FlashEventMinDuration) or 24
+        local maxDur = (Sandbox and Sandbox.V2_FlashEventMaxDuration) or 72
+        local duration = minDur + ZombRand(maxDur - minDur + 1)
+        
+        -- Init Event Instance
+        if not faction.ActiveFlashEvent then faction.ActiveFlashEvent = {} end
+        faction.ActiveFlashEvent.id = finalID
+        faction.ActiveFlashEvent.expires = currentHour + duration
+        
+        local def = DynamicTrading.Events.Registry[finalID]
+        print("[DynamicTrading] [Events] Faction [" .. faction.id .. "] triggered: " .. tostring(def and def.name or finalID))
+        
+        if def then
+            -- 1. Casualty Calculation (Target for Simulation)
+            if def.factionImpact and def.factionImpact.memberCountPct then
+                local pct = def.factionImpact.memberCountPct
+                local totalToKill = math.floor(math.abs(faction.memberCount * pct))
+                if totalToKill == 1 and pct < 0 then totalToKill = 1 end 
+                faction.ActiveFlashEvent.targetCasualties = totalToKill
+            else
+                faction.ActiveFlashEvent.targetCasualties = 0
+            end
+
+            -- 2. Immediate Impacts
+            if def.factionImpact then
+                if def.factionImpact.wealthAdd then
+                    faction.wealth = (faction.wealth or 0) + def.factionImpact.wealthAdd
+                end
+                
+                if def.factionImpact.stockpileAdd then
+                    if not faction.stockpile then faction.stockpile = {} end
+                    for res, amt in pairs(def.factionImpact.stockpileAdd) do
+                        faction.stockpile[res] = (faction.stockpile[res] or 0) + amt
+                    end
+                end
+                
+                if def.factionImpact.stabilityAdd then
+                    faction.consecutiveStableDays = math.max(0, (faction.consecutiveStableDays or 0) + def.factionImpact.stabilityAdd)
+                end
+            end
+
+            -- 3. Reset stability on Crisis
+            if def.sentiment == "Negative" then
+                faction.consecutiveStableDays = 0
+            end
+        end
+    end
+end
+
 -- 2. ECONOMY HOOKS (GETTERS)
 -- =============================================================================
 
-function DynamicTrading.Events.GetPriceModifier(itemTags)
+function DynamicTrading.Events.GetPriceModifier(itemTags, verbose)
     local multiplier = 1.0
     if not itemTags then return 1.0 end
+    verbose = verbose or DynamicTrading.Debug
     
     for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
         if event.effects then
             for _, tag in ipairs(itemTags) do
                 if event.effects[tag] and event.effects[tag].price then
-                    multiplier = multiplier * event.effects[tag].price
+                    local mult = event.effects[tag].price
+                    if verbose and mult ~= 1.0 then
+                        print("[DynamicTrading] [Events] Global Price Multiplier [" .. tostring(event.id or "event") .. "] for tag [" .. tag .. "]: " .. mult)
+                    end
+                    multiplier = multiplier * mult
                 end
             end
         end
@@ -245,11 +376,72 @@ function DynamicTrading.Events.GetSystemModifier(key)
     local multiplier = 1.0
     for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
         if event.system and event.system[key] then
-            multiplier = multiplier * event.system[key]
+            local mult = event.system[key]
+            if DynamicTrading.Debug and mult ~= 1.0 then
+                print("[DynamicTrading] [Events] Global System Multiplier [" .. tostring(event.id or "event") .. "] for key [" .. key .. "]: " .. mult)
+            end
+            multiplier = multiplier * mult
         end
     end
     return multiplier
 end
+
+function DynamicTrading.Events.GetFactionSystemModifier(faction, key)
+    local multiplier = 1.0
+    
+    -- 1. Global
+    if DynamicTrading.Events.GetSystemModifier then
+        multiplier = multiplier * DynamicTrading.Events.GetSystemModifier(key)
+    end
+    
+    -- 2. Faction
+    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+        if def and def.system and def.system[key] then
+            multiplier = multiplier * def.system[key]
+        end
+    end
+    
+    return multiplier
+end
+
+
+-- =============================================================================
+-- FACTION SPECIFIC MODIFIERS (Previously Director)
+-- =============================================================================
+
+function DynamicTrading.Events.GetFactionPriceModifier(faction, itemTags, verbose)
+    local multiplier = 1.0
+    verbose = verbose or DynamicTrading.Debug
+
+    -- 1. Apply Global Modifiers First
+    if DynamicTrading.Events.GetPriceModifier then
+        multiplier = multiplier * DynamicTrading.Events.GetPriceModifier(itemTags, verbose)
+    end
+
+    -- 2. Apply Faction Specific Logic
+    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+        if def and def.effects then
+            for _, tag in ipairs(itemTags or {}) do
+                if def.effects[tag] and def.effects[tag].price then
+                    local fMult = def.effects[tag].price
+                    if verbose and fMult ~= 1.0 then
+                        print("[DynamicTrading] [Events] Faction Event [" .. faction.ActiveFlashEvent.id .. "] Multiplier for tag [" .. tag .. "] for faction [" .. (faction.id or "unknown") .. "]: " .. fMult)
+                    end
+                    multiplier = multiplier * fMult
+                end
+            end
+        end
+    end
+    
+    if verbose and multiplier ~= 1.0 then
+        print("[DynamicTrading] [Events] Final Unified Price Multiplier: " .. multiplier)
+    end
+
+    return multiplier
+end
+
 
 function DynamicTrading.Events.GetDemographicsModifier(key)
     local modifier = nil -- Using nil for multiplicative (1.0) and additive (0) distinction
@@ -304,6 +496,70 @@ function DynamicTrading.Events.GetInjections()
     end
     return injections
 end
+
+function DynamicTrading.Events.GetFactionVolumeModifier(faction, itemTags)
+    local multiplier = 1.0
+    
+    -- 1. Global
+    if DynamicTrading.Events.GetVolumeModifier then
+        multiplier = multiplier * DynamicTrading.Events.GetVolumeModifier(itemTags)
+    end
+    
+    -- 2. Faction
+    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+        if def and def.stock and def.stock.volumeMult then
+            multiplier = multiplier * def.stock.volumeMult
+        end
+    end
+    
+    return multiplier
+end
+
+function DynamicTrading.Events.GetFactionInjections(faction)
+    local injections = {}
+    
+    -- 1. Global
+    if DynamicTrading.Events.GetInjections then
+         local global = DynamicTrading.Events.GetInjections()
+         for k,v in pairs(global) do injections[k] = v end
+    end
+    
+    -- 2. Faction
+    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+        if def and def.stock and def.stock.injections then
+            for tag, count in pairs(def.stock.injections) do
+                injections[tag] = (injections[tag] or 0) + count
+            end
+        end
+    end
+    
+    return injections
+end
+
+function DynamicTrading.Events.GetFactionExpertTags(faction)
+    local tags = {}
+    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+        if def and def.stock and def.stock.expertTags then
+            for _, tag in ipairs(def.stock.expertTags) do tags[tag] = true end
+        end
+    end
+    return tags
+end
+
+function DynamicTrading.Events.GetFactionForbidTags(faction)
+    local tags = {}
+    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
+        if def and def.stock and def.stock.forbidTags then
+            for _, tag in ipairs(def.stock.forbidTags) do tags[tag] = true end
+        end
+    end
+    return tags
+end
+
 
 function DynamicTrading.Events.GetFlashCandidates()
     local candidates = {}

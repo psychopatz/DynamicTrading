@@ -216,7 +216,7 @@ function V2_DataProvider:getBuyPrice(key, customData, verbose)
         customData = customData,
         -- [NEW] Pass event modifier resolver to common economy
         getPriceModifier = function(tags)
-            return self:getPriceModifier(tags)
+            return self:getPriceModifier(tags, verbose)
         end
     }
 
@@ -256,7 +256,7 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
         tagsConfig = DynamicTrading.Config.Tags,
         -- [NEW] Pass event modifier resolver
         getPriceModifier = function(tags)
-            return self:getPriceModifier(tags)
+            return self:getPriceModifier(tags, verbose)
         end
     }
     
@@ -274,9 +274,9 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
     return 0
 end
 
-function V2_DataProvider:getPriceModifier(tags)
+function V2_DataProvider:getPriceModifier(tags, verbose)
     -- V2 Event Integration for UI highlighting
-    if DynamicTrading.V2.Director then
+    if DynamicTrading.Events and DynamicTrading.Events.GetFactionPriceModifier then
         -- In V2_DataProvider, we can get factionID from the current trader proxy
         local factionID = self._currentFactionID
         if not factionID and self._currentTraderID then
@@ -288,7 +288,12 @@ function V2_DataProvider:getPriceModifier(tags)
             end
         end
         
-        return DynamicTrading.V2.Director.GetPriceModifiers(self._currentTraderID, factionID, tags)
+        -- Get Faction Object from cache for the modifier logic
+        local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions)
+                            or ModData.get("DynamicTrading_Factions")
+        local faction = factionData and factionID and factionData[factionID]
+        
+        return DynamicTrading.Events.GetFactionPriceModifier(faction, tags, verbose)
     end
     return 1.0
 end

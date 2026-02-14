@@ -62,6 +62,24 @@ local function OnServerCommand(module, command, args)
             DynamicTrading_Client.Cache.GlobalEvents = args.globalEvents
         end
 
+    elseif command == "SyncRoster" then
+        -- args is { roster = ..., factions = ..., globalEvents = ... }
+        if args.factions then
+            for id, data in pairs(args.factions) do
+                DynamicTrading_Client.Cache.Factions[id] = data
+                triggerEvent("OnDynamicTradingFactionUpdated", id)
+            end
+        end
+        if args.roster and args.roster.Souls then
+            for id, data in pairs(args.roster.Souls) do
+                DynamicTrading_Client.Cache.Traders[id] = data
+                triggerEvent("OnDynamicTradingTraderUpdated", id)
+            end
+        end
+        if args.globalEvents then
+            DynamicTrading_Client.Cache.GlobalEvents = args.globalEvents
+        end
+
     elseif command == "SyncStock" then
         local id = args.id
         if id then
