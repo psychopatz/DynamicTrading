@@ -30,6 +30,9 @@ function DT_FactionEconomics_Trends:createChildren()
     self.richText.borderColor = {r=0.4, g=0.4, b=0.4, a=0.5}
     self.richText:setAnchorRight(true)
     self.richText:setAnchorBottom(true)
+    self.richText.autosetheight = false
+    self.richText:setMargins(10, 10, 10, 10)
+    self.richText.clip = true
     self.richText:addScrollBars()
     self:addChild(self.richText)
 end
