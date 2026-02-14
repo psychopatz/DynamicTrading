@@ -58,6 +58,23 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
         return 
     end
 
+    -- Fetch Active Events (with MP Fallback)
+    local activeEventsList = {}
+    local rawList = (DynamicTrading.Events and DynamicTrading.Events.ActiveEvents) or {}
+    for _, v in ipairs(rawList) do table.insert(activeEventsList, v) end
+
+    if #activeEventsList == 0 then
+        local engine = DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData()
+        if engine and engine.EventSystem and engine.EventSystem.activeEvents then
+            for id, _ in pairs(engine.EventSystem.activeEvents) do
+                if DynamicTrading.Events and DynamicTrading.Events.Registry then
+                    local def = DynamicTrading.Events.Registry[id]
+                    if def then table.insert(activeEventsList, def) end
+                end
+            end
+        end
+    end
+
     local scale = fontScale or "Medium"
     local titleSize = (scale == "Large" and "Large") or (scale == "Medium" and "Medium") or "Small"
     local bodySize = (scale == "Large" and "Medium") or "Small"
@@ -79,7 +96,7 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
     elseif self.mode == "Meta" then
         text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> GLOBAL MEGA-TRENDS <SIZE:" .. bodySize .. "> <LINE> <LINE> "
         local count = 0
-        for _, eventDef in ipairs(DynamicTrading.Events.ActiveEvents or {}) do
+        for _, eventDef in ipairs(activeEventsList) do
             if eventDef.type == "meta" then
                 text = text .. self:formatEventDetails(eventDef, -1, bodySize) .. " <LINE> "
                 count = count + 1

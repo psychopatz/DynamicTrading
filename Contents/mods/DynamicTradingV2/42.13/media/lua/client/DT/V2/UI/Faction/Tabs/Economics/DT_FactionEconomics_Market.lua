@@ -59,8 +59,29 @@ function DT_FactionEconomics_Market:updateData(f, fontScale)
     end
 
     -- 1. Gather Data
+    -- 1. Gather Data
     local activeDefs = {}
-    for _, def in ipairs(DynamicTrading.Events.ActiveEvents or {}) do
+    
+    -- Try direct list first (Server/SP)
+    local rawList = (DynamicTrading.Events and DynamicTrading.Events.ActiveEvents) or {}
+    local sourceList = {}
+    for _, v in ipairs(rawList) do table.insert(sourceList, v) end
+
+    -- Fallback to Engine Data (MP Client)
+    if #sourceList == 0 then
+        local engine = DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData()
+        if engine and engine.EventSystem and engine.EventSystem.activeEvents then
+            -- Engine stores as [id] = { expires = ... }
+            for id, _ in pairs(engine.EventSystem.activeEvents) do
+                if DynamicTrading.Events and DynamicTrading.Events.Registry then
+                    local def = DynamicTrading.Events.Registry[id]
+                    if def then table.insert(sourceList, def) end
+                end
+            end
+        end
+    end
+
+    for _, def in ipairs(sourceList) do
         table.insert(activeDefs, def)
     end
     if f.ActiveFlashEvent and f.ActiveFlashEvent.id then

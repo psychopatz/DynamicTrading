@@ -1,4 +1,5 @@
-if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
+-- Server Side Only Check Removed to allow Shared Access (Sim functions guarded instead)
+
 
 require "DT/V2/Config"
 
@@ -40,6 +41,16 @@ local defaultData = {
 }
 
 function DynamicTrading_Engine.Init()
+    -- Server/Authority Logic Only
+    if isClient() and not isServer() then
+        -- Client: Request data to ensure sync
+        if ModData.request then 
+            ModData.request(MOD_DATA_KEY)
+            print("DT Engine: Client requested ModData sync.")
+        end
+        return 
+    end
+
     local data = ModData.get(MOD_DATA_KEY)
     if not data then
         print("DynamicTrading: Initializing Engine Data...")
@@ -69,6 +80,9 @@ function DynamicTrading_Engine.GetEngineData()
 end
 
 function DynamicTrading_Engine.OnTick()
+    -- Server/Authority Logic Only
+    if isClient() and not isServer() then return end
+
     local gameTime = getGameTime()
     local data = DynamicTrading_Engine.GetEngineData()
     if not data then return end
@@ -112,6 +126,9 @@ function DynamicTrading_Engine.OnTick()
 end
 
 function DynamicTrading_Engine.RunDailySimulation()
+    -- Server/Authority Logic Only
+    if isClient() and not isServer() then return end
+
     print("DynamicTrading: Running Daily Simulation Signals...")
     
     local data = DynamicTrading_Engine.GetEngineData()
@@ -153,6 +170,9 @@ function DynamicTrading_Engine.RunDailySimulation()
 end
 
 function DynamicTrading_Engine.UpdateHeat(category, amount)
+    -- Server/Authority Logic Only
+    if isClient() and not isServer() then return end
+
     if not category or category == "Misc" then return end
     
     local data = DynamicTrading_Engine.GetEngineData()
@@ -173,6 +193,9 @@ function DynamicTrading_Engine.UpdateHeat(category, amount)
 end
 
 function DynamicTrading_Engine.ConsumeRecruit()
+    -- Server/Authority Logic Only
+    if isClient() and not isServer() then return end
+
     local data = DynamicTrading_Engine.GetEngineData()
     if data and data.Demographics.availableRecruits > 0 then
         data.Demographics.availableRecruits = data.Demographics.availableRecruits - 1
