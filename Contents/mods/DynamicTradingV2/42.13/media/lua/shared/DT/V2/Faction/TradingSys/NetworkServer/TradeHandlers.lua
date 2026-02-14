@@ -199,15 +199,27 @@ Handlers.TradeTransaction = function(player, args)
         local engineData = DynamicTrading_Engine.GetEngineData()
         
         -- V1 Logic: Global Deflation (Configurable Roll, Once per item kind per day)
-        if engineData and engineData.WorldEconomy and not engineData.WorldEconomy.DeflatedGlobal[key] then
-            local chance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.SellDeflationChance) or 30
-            local roll = ZombRand(chance) + 1
-            
-            if roll == 1 then
-                local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryDeflation) or 0.02
-                DynamicTrading_Engine.UpdateHeat(category, -sensitivity)
-                engineData.WorldEconomy.DeflatedGlobal[key] = true
-                print(DEBUG_PREFIX .. " GLOBAL DEFLATION triggered for category: " .. tostring(category))
+        -- FIXED: Ensure engineData exists before checking table
+        if engineData and engineData.WorldEconomy then
+             if not engineData.WorldEconomy.DeflatedGlobal then engineData.WorldEconomy.DeflatedGlobal = {} end
+
+            -- Bypass "Once per day" lock for now if debug is on, or just rely on chance
+            -- Actually, let's keep the lock but Log it clearly
+            if not engineData.WorldEconomy.DeflatedGlobal[key] then
+                local chance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.SellDeflationChance) or 30
+                local roll = ZombRand(chance) + 1
+                
+                if roll == 1 then
+                    local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryDeflation) or 0.02
+                    -- Invert heat (Selling reduces inflation/heat)
+                    DynamicTrading_Engine.UpdateHeat(category, -sensitivity)
+                    engineData.WorldEconomy.DeflatedGlobal[key] = true
+                    print(DEBUG_PREFIX .. " GLOBAL DEFLATION triggered for category: " .. tostring(category) .. " ( - " .. sensitivity .. ")")
+                else
+                    print(DEBUG_PREFIX .. " Deflation Roll Failed: " .. roll .. "/" .. chance)
+                end
+            else
+                print(DEBUG_PREFIX .. " Deflation Skipped: Already deflated this item type today.")
             end
         end
         
