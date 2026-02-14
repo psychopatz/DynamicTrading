@@ -43,25 +43,26 @@ function DT_FactionInfoTab_Economics:createChildren()
     local contentH = self.height - self.tabs.tabHeight
     local contentW = self.width
 
-    -- 1. Flash
+    -- 1. Market (Default View)
+    self.marketPanel = DT_FactionEconomics_Market:new(0, 0, contentW, contentH)
+    self.marketPanel:initialise()
+    self.tabs:addView("Market", self.marketPanel)
+
+    -- 2. Flash
     self.flashPanel = DT_FactionEconomics_EventList:new(0, 0, contentW, contentH, "Flash")
     self.flashPanel:initialise()
     self.tabs:addView("Flash", self.flashPanel)
 
-    -- 2. Meta
+    -- 3. Meta
     self.metaPanel = DT_FactionEconomics_EventList:new(0, 0, contentW, contentH, "Meta")
     self.metaPanel:initialise()
     self.tabs:addView("Meta", self.metaPanel)
 
-    -- 3. Seasonal
+    -- 4. Seasonal
     self.seasonalPanel = DT_FactionEconomics_EventList:new(0, 0, contentW, contentH, "Seasonal")
     self.seasonalPanel:initialise()
     self.tabs:addView("Seasonal", self.seasonalPanel)
 
-    -- 4. Market
-    self.marketPanel = DT_FactionEconomics_Market:new(0, 0, contentW, contentH)
-    self.marketPanel:initialise()
-    self.tabs:addView("Market", self.marketPanel)
 
     -- 5. Trends
     self.trendsPanel = DT_FactionEconomics_Trends:new(0, 0, contentW, contentH)

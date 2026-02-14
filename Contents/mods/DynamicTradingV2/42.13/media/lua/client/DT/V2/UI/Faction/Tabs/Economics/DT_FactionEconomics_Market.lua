@@ -53,9 +53,9 @@ function DT_FactionEconomics_Market:updateData(f, fontScale)
     local titleSize = (scale == "Large" and "Large") or (scale == "Medium" and "Medium") or "Small"
     local bodySize = (scale == "Large" and "Medium") or "Small"
 
-    if not f then 
-        self.richText:setText("") 
-        return 
+    if not f then
+        self.richText:setText("")
+        return
     end
 
     -- 1. Gather Data
@@ -71,23 +71,27 @@ function DT_FactionEconomics_Market:updateData(f, fontScale)
     -- 2. Get Global Heat (Inflation/Deflation)
     local engineData = DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData()
     local globalHeat = (engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat) or {}
+    
+    -- Count affected categories
+    local activeCats = 0
+    for _, _ in pairs(globalHeat) do activeCats = activeCats + 1 end
 
     -- 3. Calculate Cumulative Multipliers
     local totalMultipliers = {}
     
     -- A. Apply Events
     for _, def in ipairs(activeDefs) do
-         if def.effects then
+        if def.effects then
             for tag, impact in pairs(def.effects) do
                 if not totalMultipliers[tag] then totalMultipliers[tag] = { price = 1.0, vol = 1.0, eventPrice = 1.0, heatPrice = 1.0 } end
                 
-                if impact.price then 
-                    totalMultipliers[tag].price = totalMultipliers[tag].price * impact.price 
+                if impact.price then
+                    totalMultipliers[tag].price = totalMultipliers[tag].price * impact.price
                     totalMultipliers[tag].eventPrice = totalMultipliers[tag].eventPrice * impact.price
                 end
                 
-                if impact.vol then 
-                    totalMultipliers[tag].vol = totalMultipliers[tag].vol * impact.vol 
+                if impact.vol then
+                    totalMultipliers[tag].vol = totalMultipliers[tag].vol * impact.vol
                 end
             end
         end
@@ -104,8 +108,15 @@ function DT_FactionEconomics_Market:updateData(f, fontScale)
         end
     end
 
-    -- 4. Build Text
-    local text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> MARKET MULTIPLIERS <SIZE:" .. bodySize .. "> <LINE> <RGB:0.7,0.7,0.7> (Events x Inflation) <LINE> <LINE> "
+    -- 4. Build Text (Dashboard Style)
+    local text = " <RGB:0.9,0.9,0.9> <SIZE:" .. titleSize .. "> GLOBAL MARKET DASHBOARD <SIZE:" .. bodySize .. "> <LINE> "
+    
+    -- HEADER STATS
+    text = text .. " <RGB:0.3,0.3,0.3> ------------------------------------------------------------------------------------------------ <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> Active Events: <RGB:1,1,1> " .. #activeDefs
+    text = text .. "    <RGB:0.4,0.4,0.4> | <RGB:0.8,0.8,0.8> Inflation Impact: <RGB:1,1,1> " .. activeCats .. " Categories"
+    text = text .. "    <RGB:0.4,0.4,0.4> | <RGB:0.8,0.8,0.8> Status: " .. ((#activeDefs > 0 or activeCats > 0) and " <RGB:1,0.5,0> VOLATILE " or " <RGB:0,1,0> STABLE ") .. " <LINE> "
+    text = text .. " <RGB:0.3,0.3,0.3> ------------------------------------------------------------------------------------------------ <LINE> <LINE> "
     
     local isEmpty = true
     for _, _ in pairs(totalMultipliers) do
@@ -114,58 +125,61 @@ function DT_FactionEconomics_Market:updateData(f, fontScale)
     end
 
     if isEmpty then
-         text = text .. " <RGB:0.6,0.6,0.6> No active market deviations. Market is stable. <LINE> "
+        text = text .. " <RGB:0.6,0.6,0.6> <CENTER> No active market deviations. Prices and volumes are at baseline levels. <LINE> "
     else
-        for tag, multi in pairs(totalMultipliers) do
+        text = text .. " <RGB:1,0.8,0> DETAILED MARKET MULTIPLIERS (Events x Inflation) <LINE> "
+        
+        -- Sort keys alphabetically
+        local sortedTags = {}
+        for k in pairs(totalMultipliers) do table.insert(sortedTags, k) end
+        table.sort(sortedTags)
+
+        for _, tag in ipairs(sortedTags) do
+            local multi = totalMultipliers[tag]
             if multi.price ~= 1.0 or multi.vol ~= 1.0 then
                 
                 local cleanTag = tag
                 if tag == "Medical" then cleanTag = "Medical Supplies" end
                 
-                local tagLine = " <RGB:1,0.8,0> • " .. cleanTag .. " <LINE> "
+                -- Header with Background simulation (using dark grey text asbg?) - No, just indent.
+                text = text .. " <RGB:0.4,0.8,1> * " .. cleanTag .. " <LINE> "
                 
                 -- Price Line
                 if multi.price ~= 1.0 then
                     local color = (multi.price < 1.0) and " <RGB:0,1,0> " or " <RGB:1,0,0> "
+                    local arrow = (multi.price < 1.0) and "v" or "^"
                     
                     local breakdown = ""
                     if multi.eventPrice ~= 1.0 or multi.heatPrice ~= 1.0 then
-                        breakdown = " <RGB:0.5,0.5,0.5> ("
-                        if multi.eventPrice ~= 1.0 then 
-                            breakdown = breakdown .. "Evt:x" .. string.format("%.2f", multi.eventPrice) 
+                        breakdown = " <RGB:0.5,0.5,0.5>   ("
+                        if multi.eventPrice ~= 1.0 then
+                            local eCol = (multi.eventPrice < 1.0) and " <RGB:0,1,0> " or " <RGB:1,0.5,0.5> "
+                            breakdown = breakdown .. "Event:" .. eCol .. string.format("x%.2f", multi.eventPrice) .. " <RGB:0.5,0.5,0.5> "
                         end
                         if multi.heatPrice ~= 1.0 then
-                             if multi.eventPrice ~= 1.0 then breakdown = breakdown .. " * " end
-                             breakdown = breakdown .. "Inf:x" .. string.format("%.2f", multi.heatPrice)
+                            if multi.eventPrice ~= 1.0 then breakdown = breakdown .. "| " end
+                            local hCol = (multi.heatPrice < 1.0) and " <RGB:0,1,0> " or " <RGB:1,0.5,0.5> "
+                            breakdown = breakdown .. "Inflation:" .. hCol .. string.format("x%.2f", multi.heatPrice)
                         end
-                         breakdown = breakdown .. ")"
+                        
+                        breakdown = breakdown .. " <RGB:0.5,0.5,0.5> )"
                     end
                     
-                    tagLine = tagLine .. "    <RGB:0.8,0.8,0.8> Price:" .. color .. string.format("x%.2f", multi.price) .. breakdown .. " <LINE> "
+                    text = text .. "      <RGB:0.8,0.8,0.8> Price: " .. color .. string.format("x%.2f", multi.price) .. " " .. arrow .. breakdown .. " <LINE> "
                 end
                 
                 -- Volume Line
                 if multi.vol ~= 1.0 then
                     local color = (multi.vol > 1.0) and " <RGB:0,1,0> " or " <RGB:1,0,0> "
-                    tagLine = tagLine .. "    <RGB:0.8,0.8,0.8> Volume:" .. color .. string.format("x%.2f", multi.vol) .. " <LINE> "
+                    local arrow = (multi.vol > 1.0) and "^" or "v"
+                    text = text .. "      <RGB:0.8,0.8,0.8> Volume: " .. color .. string.format("x%.2f", multi.vol) .. " " .. arrow .. " <LINE> "
                 end
                 
-                text = text .. tagLine
+                text = text .. " <LINE> "
             end
         end
     end
     
-    text = text .. " <LINE> "
-    
-    -- 5. Faction Impacts (Wealth/Stability/Stock) - moved here or stay in Summary?
-    -- The user requested "Market" to calculate multipliers. 
-    -- The "Events" tab calculates explicit Faction Impacts. 
-    -- Let's put the Faction specific impacts (Wealth diffs) here too as a summary?
-    -- Actually, keep it focused on Market Pricing/Volume. 
-    -- Faction Impacts are better suited for the "Info" or "Events" tab? 
-    -- The prompt said: "Market(Calculates the total Multiplier of the current event + inflation/deflation)"
-    -- So I will stick to multipliers here.
-
     self.richText:setText(text)
     self.richText:paginate()
 end

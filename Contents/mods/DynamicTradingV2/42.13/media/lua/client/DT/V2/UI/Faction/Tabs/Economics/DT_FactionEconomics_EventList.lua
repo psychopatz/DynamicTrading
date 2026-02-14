@@ -110,65 +110,95 @@ end
 function DT_FactionEconomics_EventList:formatEventDetails(def, expires, size)
     if not def then return " <RGB:1,0,0> [ERROR: Event Definition Missing] <LINE> " end
 
-    local text = " <RGB:0,1,1> " .. (def.name or def.id) .. " <LINE> "
+    local text = ""
+    
+    -- Format Header based on type
+    local typeColor = " <RGB:0,0.8,1> " -- Cyan default
+    
+    if def.type == "flash" then 
+        typeColor = " <RGB:1,0.8,0> " -- Gold
+    elseif def.type == "meta" then
+        typeColor = " <RGB:0.8,0.4,1> " -- Purple
+    elseif def.type == "seasonal" then
+        typeColor = " <RGB:0,1,0> " -- Green
+    end
+
+    -- EVENT CARD HEADER
+    text = text .. " <RGB:0.3,0.3,0.3> ------------------------------------------------------------------------------------------------ <LINE> "
+    text = text .. typeColor .. ">> " .. (def.name or def.id) .. " <LINE> "
+    
+    -- Expiry / Timing
     if expires and expires > 0 then
-        text = text .. " <RGB:1,0.8,0> Expires in: " .. string.format("%.1f", expires) .. " hours <LINE> "
+        local expColor = (expires < 12) and " <RGB:1,0,0> " or " <RGB:0.6,0.6,0.6> "
+        text = text .. "    " .. expColor .. "Expires in: " .. string.format("%.1f", expires) .. " hours <LINE> "
+    elseif expires == -1 then
+         text = text .. "    <RGB:0.6,0.6,0.6> Status: Active <LINE> "
     end
     
+    -- Description
     if def.description then
-        text = text .. " <RGB:0.8,0.8,0.8> " .. def.description .. " <LINE> "
+        text = text .. "    <RGB:0.8,0.8,0.8> " .. def.description .. " <LINE> "
     end
-
     text = text .. " <LINE> "
 
+    -- SECTION 1: MARKET EFFECTS
     if def.effects then
-        text = text .. " <RGB:0.8,0.8,0.8> <SIZE:" .. size .. "> MARKET EFFECTS: <LINE> "
+        text = text .. "    <RGB:0.4,0.8,1> [ MARKET INFLUENCE ] <LINE> "
         for tag, impact in pairs(def.effects) do
             local priceStr = ""
             if impact.price then
-                local color = (impact.price < 1.0) and " <RGB:0,1,0> " or " <RGB:1,0,0> "
-                if impact.price == 1.0 then color = " <RGB:1,1,1> " end
-                priceStr = "  Price " .. color .. string.format("x%.2f", impact.price)
+                local color = (impact.price < 1.0) and " <RGB:0,1,0> " or " <RGB:1,0,0> " -- Green for cheap, Red for expensive
+                local arrow = (impact.price < 1.0) and "v" or "^"
+                if impact.price == 1.0 then color = " <RGB:0.6,0.6,0.6> " arrow = "-" end
+                
+                priceStr = "Price " .. color .. arrow .. string.format("x%.2f", impact.price)
             end
             
             local volStr = ""
             if impact.vol then
-                local color = (impact.vol > 1.0) and " <RGB:0,1,0> " or " <RGB:1,0,0> "
-                if impact.vol == 1.0 then color = " <RGB:1,1,1> " end
-                local separator = (priceStr ~= "") and " <RGB:0.5,0.5,0.5> | " or " "
-                volStr = separator .. " <RGB:1,1,1> Volume " .. color .. string.format("x%.2f", impact.vol)
+                local color = (impact.vol > 1.0) and " <RGB:0,1,0> " or " <RGB:1,0,0> " -- Green for more stock
+                local arrow = (impact.vol > 1.0) and "^" or "v"
+                if impact.vol == 1.0 then color = " <RGB:0.6,0.6,0.6> " arrow = "-" end
+                
+                local separator = (priceStr ~= "") and " <RGB:0.4,0.4,0.4> | " or " "
+                volStr = separator .. " <RGB:0.8,0.8,0.8> Volume " .. color .. arrow .. string.format("x%.2f", impact.vol)
             end
             
             local cleanTag = tag
             if tag == "Medical" then cleanTag = "Medical Supplies" end
             
-            text = text .. " <RGB:1,0.8,0> • " .. cleanTag .. ":" .. priceStr .. volStr .. " <LINE> "
+            text = text .. "    <RGB:0.6,0.6,0.6> * " .. cleanTag .. ":  <RGB:0.8,0.8,0.8> " .. priceStr .. volStr .. " <LINE> "
         end
         text = text .. " <LINE> "
     end
 
+    -- SECTION 2: FACTION IMPACTS
     if def.factionImpact then
-        text = text .. " <RGB:0.8,0.8,0.8> FACTION IMPACTS: <LINE> "
+        text = text .. "    <RGB:0.8,0.4,1> [ FACTION IMPACT ] <LINE> "
         
         if def.factionImpact.wealthAdd then
             local color = (def.factionImpact.wealthAdd > 0) and " <RGB:0,1,0> " or " <RGB:1,0,0> "
-            text = text .. " <RGB:1,1,1> • Wealth: " .. color .. (def.factionImpact.wealthAdd > 0 and "+" or "") .. def.factionImpact.wealthAdd .. " <LINE> "
+            local sign = (def.factionImpact.wealthAdd > 0 and "+" or "")
+            text = text .. "    <RGB:0.6,0.6,0.6> * Wealth: " .. color .. sign .. def.factionImpact.wealthAdd .. " <LINE> "
         end
 
         if def.factionImpact.stabilityAdd then
             local color = (def.factionImpact.stabilityAdd > 0) and " <RGB:0,1,0> " or " <RGB:1,0,0> "
-            text = text .. " <RGB:1,1,1> • Stability: " .. color .. (def.factionImpact.stabilityAdd > 0 and "+" or "") .. def.factionImpact.stabilityAdd .. " <LINE> "
+            local sign = (def.factionImpact.stabilityAdd > 0 and "+" or "")
+            text = text .. "    <RGB:0.6,0.6,0.6> * Stability: " .. color .. sign .. def.factionImpact.stabilityAdd .. " <LINE> "
         end
 
         if def.factionImpact.stockpileAdd then
             for res, amt in pairs(def.factionImpact.stockpileAdd) do
                 local color = (amt > 0) and " <RGB:0,1,0> " or " <RGB:1,0,0> "
                 local sign = (amt > 0 and "+" or "")
-                text = text .. " <RGB:1,1,1> • " .. res:gsub("^%l", string.upper) .. ": " .. color .. sign .. amt .. " <LINE> "
+                text = text .. "    <RGB:0.6,0.6,0.6> * " .. res:gsub("^%l", string.upper) .. ": " .. color .. sign .. amt .. " <LINE> "
             end
         end
         text = text .. " <LINE> "
     end
+    
+    text = text .. " <RGB:0.3,0.3,0.3> ------------------------------------------------------------------------------------------------ <LINE> <LINE> "
 
     return text
 end
