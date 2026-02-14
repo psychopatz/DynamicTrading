@@ -10,7 +10,7 @@ require "DT/V2/UI/Faction/DT_FactionList"
 require "DT/V2/UI/Faction/DT_FactionInfoHeaderPanel"
 require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Info"
 require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Reputation"
-require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Events"
+require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Economics"
 require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Stockpiles"
 require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Population"
 require "DT/V2/UI/Faction/DT_NPCProfilePanel"
@@ -97,12 +97,12 @@ function DT_FactionInfoWindow:createChildren()
     self.tabReputation:setAnchorBottom(true)
     self.panel:addView("Reputation", self.tabReputation)
     
-    -- Events Tab
-    self.tabEvents = DT_FactionInfoTab_Events:new(0, 0, tabWidth, contentHeight)
-    self.tabEvents:initialise()
-    self.tabEvents:setAnchorRight(true)
-    self.tabEvents:setAnchorBottom(true)
-    self.panel:addView("Events", self.tabEvents)
+    -- Economics Tab (Was Events)
+    self.tabEconomics = DT_FactionInfoTab_Economics:new(0, 0, tabWidth, contentHeight)
+    self.tabEconomics:initialise()
+    self.tabEconomics:setAnchorRight(true)
+    self.tabEconomics:setAnchorBottom(true)
+    self.panel:addView("Economics", self.tabEconomics)
     
     -- Stockpiles Tab
     self.tabStockpiles = DT_FactionInfoTab_Stockpiles:new(0, 0, tabWidth, contentHeight)
@@ -220,7 +220,7 @@ function DT_FactionInfoWindow:onListMouseDown(item)
         local win = DT_FactionInfoWindow.instance
         if win.tabInfo then win.tabInfo:updateData(f) end
         if win.tabReputation then win.tabReputation:updateData(f) end
-        if win.tabEvents then win.tabEvents:updateData(f) end
+        if win.tabEconomics then win.tabEconomics:updateData(f) end
         if win.tabStockpiles then win.tabStockpiles:updateData(f) end
         
         -- Population Tab needs roster data too
