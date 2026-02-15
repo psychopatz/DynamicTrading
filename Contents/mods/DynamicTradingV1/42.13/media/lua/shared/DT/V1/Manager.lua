@@ -256,6 +256,9 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
         -- Deflation (from Stock system)
         localDeflation = (stockData and stockData.deflation) or {},
         
+        -- Status (from Roster) [NEW]
+        status = soul and soul.status or "Away",
+        
         -- Restock
         lastRestockDay = -1
     }
@@ -343,7 +346,7 @@ function DynamicTrading.Manager.GetUndiscoveredTraders(player)
     for id, radioData in pairs(data.RadioTraders) do
         if not radioData.discoveredBy or not radioData.discoveredBy[username] then
             local trader = DynamicTrading.Manager.GetTrader(id)
-            if trader then
+            if trader and trader.status == "Trading" then
                 table.insert(undiscovered, trader)
             end
         end
@@ -395,7 +398,7 @@ function DynamicTrading.Manager.GetActiveRadioTraders(player)
         local visible = isPublic or (radioData.discoveredBy and username and radioData.discoveredBy[username])
         if visible then
             local trader = DynamicTrading.Manager.GetTrader(id)
-            if trader then
+            if trader and trader.status == "Trading" then
                 table.insert(traders, trader)
             end
         end

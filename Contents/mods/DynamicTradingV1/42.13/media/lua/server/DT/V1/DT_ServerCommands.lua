@@ -64,6 +64,17 @@ function Commands.RequestFullState(player, args)
     local data = DynamicTrading.Manager.GetData()
     if data then
         ModData.transmit("DynamicTrading_V1_Radio")
+        
+        -- Targeted Sync: Transmit individual soul brains for active radio traders
+        -- This ensures clients get visuals and full identity for found traders
+        if data.RadioTraders then
+            for uuid, _ in pairs(data.RadioTraders) do
+                local soulKey = "DTSOUL_" .. uuid
+                if ModData.exists(soulKey) then
+                    ModData.transmit(soulKey)
+                end
+            end
+        end
     end
 end
 

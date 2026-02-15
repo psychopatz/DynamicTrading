@@ -33,9 +33,16 @@ DynamicTrading_Factions.ModifyStockpile   = Interaction.ModifyStockpile
 DynamicTrading_Factions.ModifyWealth      = Interaction.ModifyWealth
 DynamicTrading_Factions.ModifyReputation  = Interaction.ModifyReputation
 
--- =============================================================================
--- 3. EVENT WIRING
--- =============================================================================
+-- ==========================================================
+-- 4. MP SYNC LISTENER
+-- ==========================================================
+local function OnReceiveGlobalModData(key, data)
+    if key == "DynamicTrading_Factions" then
+        ModData.add(key, data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
+
 if not isClient() or isServer() then
     Events.OnInitGlobalModData.Add(DynamicTrading_Factions.Init)
     Events.OnDynamicTradingDailySimulation.Add(DynamicTrading_Factions.UpdateDaily)

@@ -281,4 +281,16 @@ function DynamicTrading_Roster.ClearSouls(factionID)
     ModData.transmit(MOD_DATA_KEY)
 end
 
+-- ==========================================================
+-- 4. MP SYNC LISTENER
+-- ==========================================================
+local function OnReceiveGlobalModData(key, data)
+    if key == MOD_DATA_KEY then
+        ModData.add(key, data)
+    elseif string.find(key, "DTSOUL_") then
+        ModData.add(key, data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
+
 Events.OnInitGlobalModData.Add(DynamicTrading_Roster.Init)

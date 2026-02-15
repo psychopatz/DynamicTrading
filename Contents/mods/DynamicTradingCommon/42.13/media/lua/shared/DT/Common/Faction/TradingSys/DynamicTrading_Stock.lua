@@ -1,4 +1,4 @@
-if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
+-- DynamicTrading_Stock.lua (Shared)
 
 require "DT/Common/Faction/TradingSys/DynamicTrading_Economy"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
@@ -151,5 +151,15 @@ function DynamicTrading_Stock.OnSoulStatusChanged(uuid, status)
     -- We NO LONGER auto-generate on entering "Trading".
     -- This is now handled by explicit interaction (Client -> Server command).
 end
+
+-- ==========================================================
+-- 4. MP SYNC LISTENER
+-- ==========================================================
+local function OnReceiveGlobalModData(key, data)
+    if key == MOD_DATA_KEY then
+        ModData.add(key, data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
 
 Events.OnInitGlobalModData.Add(DynamicTrading_Stock.Init)

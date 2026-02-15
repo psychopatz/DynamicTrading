@@ -211,6 +211,12 @@ function V1_DataProvider:isConnectionValid(obj)
         if not data.RadioTraders or not data.RadioTraders[self._currentTraderID] then
             return false
         end
+        
+        -- Check Soul Status (must be "Trading")
+        local trader = DynamicTrading.Manager.GetTrader(self._currentTraderID)
+        if not trader or trader.status ~= "Trading" then
+            return false
+        end
     end
 
     if instanceof(obj, "IsoWaveSignal") then
