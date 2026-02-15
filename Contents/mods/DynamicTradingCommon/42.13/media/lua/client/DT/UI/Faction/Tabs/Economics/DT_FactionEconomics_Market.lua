@@ -1,5 +1,5 @@
 -- ==============================================================================
--- media/lua/client/DT/V2/UI/Faction/Tabs/Economics/DT_FactionEconomics_Market.lua
+-- media/lua/client/DT/UI/Faction/Tabs/Economics/DT_FactionEconomics_Market.lua
 -- Sub-Panel: Market Multipliers (Events + Inflation)
 -- ==============================================================================
 

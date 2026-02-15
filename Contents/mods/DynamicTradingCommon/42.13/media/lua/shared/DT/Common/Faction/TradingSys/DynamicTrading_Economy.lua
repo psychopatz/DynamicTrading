@@ -1,7 +1,7 @@
 -- if isClient() and not isServer() then return end
 
-require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/V2/Config"
 require "DT/Common/Trading/DT_Economy_Common"
 

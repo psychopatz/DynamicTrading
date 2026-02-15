@@ -1,7 +1,7 @@
 if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
 
-require "DT/V2/Faction/TradingSys/DynamicTrading_Economy"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Economy"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 
 DynamicTrading_Stock = {}
 local MOD_DATA_KEY = "DynamicTrading_Stock"

@@ -1,14 +1,14 @@
 -- ==============================================================================
--- media/lua/client/DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Economics.lua
+-- media/lua/client/DT/UI/Faction/Tabs/DT_FactionInfoTab_Economics.lua
 -- Tab: ECONOMICS (Flash, Meta, Seasonal, Market, Trends)
 -- Flat layout as requested.
 -- ==============================================================================
 
 require "ISUI/ISPanel"
 require "ISUI/ISTabPanel"
-require "DT/V2/UI/Faction/Tabs/Economics/DT_FactionEconomics_EventList"
-require "DT/V2/UI/Faction/Tabs/Economics/DT_FactionEconomics_Market"
-require "DT/V2/UI/Faction/Tabs/Economics/DT_FactionEconomics_Trends"
+require "DT/UI/Faction/Tabs/Economics/DT_FactionEconomics_EventList"
+require "DT/UI/Faction/Tabs/Economics/DT_FactionEconomics_Market"
+require "DT/UI/Faction/Tabs/Economics/DT_FactionEconomics_Trends"
 
 DT_FactionInfoTab_Economics = ISPanel:derive("DT_FactionInfoTab_Economics")
 

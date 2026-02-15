@@ -1,5 +1,5 @@
 -- ==============================================================================
--- media/lua/client/DT/V2/UI/Faction/DT_NPCProfilePanel.lua
+-- media/lua/client/DT/UI/Faction/DT_NPCProfilePanel.lua
 -- Dedicated panel for displaying selected NPC identity/profile.
 -- ==============================================================================
 

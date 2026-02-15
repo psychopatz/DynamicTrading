@@ -9,9 +9,9 @@
 -- =============================================================================
 -- 1. LOAD SUB-MODULES
 -- =============================================================================
-local Lifecycle   = require "DT/V2/Faction/TradingSys/Factions/Lifecycle"
-local Simulation  = require "DT/V2/Faction/TradingSys/Factions/Simulation"
-local Interaction = require "DT/V2/Faction/TradingSys/Factions/Interaction"
+local Lifecycle   = require "DT/Common/Faction/TradingSys/Factions/Lifecycle"
+local Simulation  = require "DT/Common/Faction/TradingSys/Factions/Simulation"
+local Interaction = require "DT/Common/Faction/TradingSys/Factions/Interaction"
 
 -- =============================================================================
 -- 2. MERGE INTO GLOBAL API

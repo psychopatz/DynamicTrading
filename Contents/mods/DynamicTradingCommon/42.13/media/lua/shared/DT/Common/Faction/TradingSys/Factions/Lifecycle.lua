@@ -4,11 +4,11 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
-require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
-require "DT/V2/Faction/Templates/BaseSpawn/DT_FactionLocationManager"
-require "DT/V2/Faction/Templates/FactionNames/DT_FactionNames"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
+require "DT/Common/Faction/Templates/BaseSpawn/DT_FactionLocationManager"
+require "DT/Common/Faction/Templates/FactionNames/DT_FactionNames"
 require "DT/V2/Config"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
 
 local Lifecycle = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"

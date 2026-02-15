@@ -12,9 +12,9 @@ if isClient() and not isServer() then return end
 -- =============================================================================
 -- 1. LOAD HANDLER SUB-MODULES
 -- =============================================================================
-local DataHandlers  = require "DT/V2/Faction/TradingSys/NetworkServer/DataHandlers"
-local TradeHandlers = require "DT/V2/Faction/TradingSys/NetworkServer/TradeHandlers"
-local DebugHandlers = require "DT/V2/Faction/TradingSys/NetworkServer/DebugHandlers"
+local DataHandlers  = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers"
+local TradeHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/TradeHandlers"
+local DebugHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DebugHandlers"
 
 -- =============================================================================
 -- 2. MERGE HANDLERS INTO A SINGLE DISPATCH TABLE

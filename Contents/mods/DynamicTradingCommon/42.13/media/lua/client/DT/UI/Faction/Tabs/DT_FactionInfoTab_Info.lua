@@ -1,5 +1,5 @@
 -- ==============================================================================
--- media/lua/client/DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Info.lua
+-- media/lua/client/DT/UI/Faction/Tabs/DT_FactionInfoTab_Info.lua
 -- Tab: General Information & Economy
 -- ==============================================================================
 

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- media/lua/client/DT/V2/UI/Faction/Tabs/Economics/DT_FactionEconomics_EventList.lua
+-- media/lua/client/DT/UI/Faction/Tabs/Economics/DT_FactionEconomics_EventList.lua
 -- Sub-Panel: Generic Event List (Flash, Meta, or Seasonal)
 -- ==============================================================================
 

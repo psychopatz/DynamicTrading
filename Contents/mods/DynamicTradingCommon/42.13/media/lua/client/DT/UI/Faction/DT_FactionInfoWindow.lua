@@ -1,19 +1,19 @@
 -- ==============================================================================
--- media/lua/client/DT/V2/UI/Faction/DT_FactionInfoWindow.lua
+-- media/lua/client/DT/UI/Faction/DT_FactionInfoWindow.lua
 -- Dedicated Info UI for Factions
 -- Refactored to match Radar Window (Scalable, Hideable, Header Separated)
 -- ==============================================================================
 
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISTabPanel"
-require "DT/V2/UI/Faction/DT_FactionList"
-require "DT/V2/UI/Faction/DT_FactionInfoHeaderPanel"
-require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Info"
-require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Reputation"
-require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Economics"
-require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Stockpiles"
-require "DT/V2/UI/Faction/Tabs/DT_FactionInfoTab_Population"
-require "DT/V2/UI/Faction/DT_NPCProfilePanel"
+require "DT/UI/Faction/DT_FactionList"
+require "DT/UI/Faction/DT_FactionInfoHeaderPanel"
+require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Info"
+require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Reputation"
+require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Economics"
+require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Stockpiles"
+require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Population"
+require "DT/UI/Faction/DT_NPCProfilePanel"
 
 DT_FactionInfoWindow = ISCollapsableWindow:derive("DT_FactionInfoWindow")
 DT_FactionInfoWindow.instance = nil

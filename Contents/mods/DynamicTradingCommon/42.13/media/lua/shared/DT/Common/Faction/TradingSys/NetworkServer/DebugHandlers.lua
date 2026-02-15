@@ -6,10 +6,10 @@
 
 local COMMAND_MODULE = "DynamicTrading_V2"
 
-require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Stock"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/ServerHelpers"
 
 local DebugHandlers = {}

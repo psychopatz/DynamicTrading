@@ -2,7 +2,7 @@ require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISLabel"
-require "DT/V2/UI/Faction/DT_NPCProfilePanel"
+require "DT/UI/Faction/DT_NPCProfilePanel"
 
 DT_FactionInfoTab_Population = ISPanel:derive("DT_FactionInfoTab_Population")
 

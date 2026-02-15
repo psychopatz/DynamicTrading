@@ -4,12 +4,10 @@
 -- Build 42 Compatible.
 -- ==============================================================================
 
-require "DT/V2/Faction/TradingSys/DynamicTrading_Engine"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/V2/Config"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
-require "DT/V2/Config"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
--- require "DT/V2/Faction/TradingSys/Factions/DynamicTrading_Director" -- Deprecated
+require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
+-- require "DT/Common/Faction/TradingSys/Factions/DynamicTrading_Director" -- Deprecated
 require "DT/Common/Events/DT_EventManager"
 
 local Simulation = {}

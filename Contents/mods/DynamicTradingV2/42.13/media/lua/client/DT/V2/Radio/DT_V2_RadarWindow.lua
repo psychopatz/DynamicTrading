@@ -9,8 +9,8 @@ require "DT/V2/Radio/DT_V2_RadarListPanel"
 require "DT/V2/Radio/DT_V2_RadarActionPanel"
 require "DT/V2/Radio/DT_V2_RadarManager"
 require "DT/V2/Radio/DT_V2_RadarLocationHandler"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Roster"
-require "DT/V2/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 
 DT_V2_RadarWindow = ISCollapsableWindow:derive("DT_V2_RadarWindow")
 DT_V2_RadarWindow.instance = nil
