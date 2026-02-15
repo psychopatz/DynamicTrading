@@ -2,6 +2,8 @@ require "ISUI/ISUIElement"
 require "ISUI/ISButton"
 require "DT/V1/DynamicTradingInfoUI"
 require "Utils/DT_ConfigManager"
+require "DT/UI/Faction/DT_FactionInfoWindow"
+
 
 DT_SidebarButton = ISUIElement:derive("DT_SidebarButton")
 DT_SidebarButton.instance = nil
@@ -38,13 +40,14 @@ function DT_SidebarButton:createChildren()
         btn:setDisplayBackground(false)
     end
     
-    self.btn:setTooltip("Dynamic Trading Info")
+    self.btn:setTooltip("Faction Intelligence")
+
     self:addChild(self.btn)
 end
 
 function DT_SidebarButton.onButtonClick()
-    if DynamicTradingInfoUI then
-        DynamicTradingInfoUI.ToggleWindow()
+    if DT_FactionInfoWindow then
+        DT_FactionInfoWindow.ToggleWindow()
     end
 end
 
@@ -131,3 +134,7 @@ end
 
 -- OnGameStart is reliable for HUD creation in build 42
 Events.OnGameStart.Add(CreateSidebarButton)
+Events.OnCreatePlayer.Add(function(id) if id == 0 then CreateSidebarButton() end end)
+
+-- Immediate init for Lua reloads
+if getSpecificPlayer(0) then CreateSidebarButton() end

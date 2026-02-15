@@ -3,6 +3,8 @@ require "ISUI/ISButton"
 require "DT/V1/Manager"
 require "DT/Common/Config"
 require "DT/V1/Utils/DT_OptionsManager"
+require "DT/UI/Faction/DT_FactionInfoWindow"
+
 
 DT_SignalPanel = ISPanel:derive("DT_SignalPanel")
 
@@ -266,12 +268,8 @@ function DT_SignalPanel:onScanClick()
 end
 
 function DT_SignalPanel:onInfoClick()
-    if DynamicTradingInfoUI then
-        if DynamicTradingInfoUI.instance and DynamicTradingInfoUI.instance:isVisible() then
-            DynamicTradingInfoUI.instance:addToUIManager()
-        else
-            DynamicTradingInfoUI.ToggleWindow()
-        end
+    if DT_FactionInfoWindow then
+        DT_FactionInfoWindow.ToggleWindow()
     end
 end
 

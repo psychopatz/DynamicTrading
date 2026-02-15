@@ -62,6 +62,17 @@ function DT_TraderDialogue_Hub.GenerateHubOptions(ui, trader)
             DT_TraderDialogue_Chat.Start(ui, trader)
         end
     })
+    
+    -- [NEW] OPTION: VIEW MARKET INFO
+    table.insert(options, {
+        text = "View Market Info",
+        message = "Tell me about the local trade network.",
+        onSelect = function(ui)
+            if DT_FactionInfoWindow then
+                DT_FactionInfoWindow.ToggleWindow()
+            end
+        end
+    })
 
     -- OPTION 3: LEAVE
     table.insert(options, {

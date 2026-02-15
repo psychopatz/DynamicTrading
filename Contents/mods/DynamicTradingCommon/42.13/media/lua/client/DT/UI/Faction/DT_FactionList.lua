@@ -47,13 +47,14 @@ function DT_FactionList:doDrawItem(y, item, alt)
 
     -- Color Coding based on Status
     local r, g, b = 0.8, 0.8, 0.8 -- Default gray-ish
-    if f.state == "Starving" then 
+    local state = f.state or "Stable"
+    if state == "Starving" then 
         r, g, b = 1, 0.2, 0.2 -- Red
-    elseif f.state == "Vulnerable" then 
+    elseif state == "Vulnerable" then 
         r, g, b = 1, 0.6, 0.2 -- Orange
-    elseif f.state == "Prospering" then
+    elseif state == "Prospering" then
         r, g, b = 0.2, 1, 0.2 -- Green
-    elseif f.state == "Stable" then
+    elseif state == "Stable" then
         r, g, b = 0.4, 0.8, 1 -- Light Blue
     end
 
@@ -80,7 +81,11 @@ function DT_FactionList:doDrawItem(y, item, alt)
     self:drawText(item.text, 10, y + 5, r, g, b, 1, nameFont)
     
     -- Status Line (State | Pop)
-    local statusText = "State: " .. tostring(f.state) .. " | Pop: " .. tostring(f.memberCount)
+    local popCount = f.memberCount or "0"
+    if f.isV1 and DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetDiscoveredCount then
+        popCount = DynamicTrading.Manager.GetDiscoveredCount(getSpecificPlayer(0))
+    end
+    local statusText = "State: " .. tostring(state) .. " | Pop: " .. tostring(popCount)
     self:drawText(statusText, 10, y + statusY, 0.6, 0.6, 0.6, 0.8, statusFont)
 
     -- Borders between items

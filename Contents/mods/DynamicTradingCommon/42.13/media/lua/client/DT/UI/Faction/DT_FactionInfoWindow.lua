@@ -161,15 +161,53 @@ function DT_FactionInfoWindow:onResize()
 end
 
 function DT_FactionInfoWindow:refreshList()
+    local player = getSpecificPlayer(0)
+    if not player then return end
+
+    local isV1 = (DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetData) ~= nil
+
     -- Request Data
     if isClient() and not isServer() then
-        sendClientCommand(getPlayer(), "DynamicTrading_V2", "RequestFactionData", {})
+        if isV1 then
+            sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
+        end
+        sendClientCommand(player, "DynamicTrading_V2", "RequestFactionData", {})
         return
     end
     
     -- Singleplayer Direct Access
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    
+    -- Virtual V1 Faction Injection
+    local hasFactions = false
+    if factionData then
+        for _ in pairs(factionData) do hasFactions = true break end
+    end
+
+    if isV1 and not hasFactions then
+        factionData = factionData or {}
+        
+        local wealth = 0
+        if DynamicTrading.Manager.GetGlobalWealth then
+            wealth = DynamicTrading.Manager.GetGlobalWealth()
+        end
+        
+        local count = 0
+        if DynamicTrading.Manager.GetDiscoveredCount then
+            count = DynamicTrading.Manager.GetDiscoveredCount(player)
+        end
+
+        factionData["V1_RADIO"] = {
+            id = "V1_RADIO",
+            name = "Radio Network",
+            state = "Stable",
+            memberCount = count,
+            wealth = wealth,
+            isV1 = true
+        }
+    end
+
     self:populateList(factionData, rosterData)
 end
 
@@ -191,7 +229,10 @@ function DT_FactionInfoWindow:populateList(factionData, rosterData)
         
         -- Check Population
         local isAlive = true
-        if rosterData and rosterData.FactionMembers then
+        if f.isV1 then
+            -- Virtual faction is always alive
+            isAlive = true
+        elseif rosterData and rosterData.FactionMembers then
             local members = rosterData.FactionMembers[id]
             if not members or #members == 0 then
                 isAlive = false
@@ -256,7 +297,7 @@ if not DT_FactionInfoWindow.EventsAdded then
         
         if DT_FactionInfoWindow.instance:getIsVisible() then
             -- Faction/Roster Data -> Update List
-            if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster") then
+            if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster" or key == "DynamicTrading_Engine_v1.3") then
                 DT_FactionInfoWindow.instance:refreshList()
             
             -- Engine Data (Inflation/Events) -> Update Active Tab Details

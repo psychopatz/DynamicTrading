@@ -61,21 +61,30 @@ function DT_FactionEconomics_Market:updateData(f, fontScale)
     -- 1. Gather Data
     -- 1. Gather Data
     local activeDefs = {}
-    
-    -- Try direct list first (Server/SP)
-    local rawList = (DynamicTrading.Events and DynamicTrading.Events.ActiveEvents) or {}
     local sourceList = {}
-    for _, v in ipairs(rawList) do table.insert(sourceList, v) end
+    
+    -- [V1 SUPPORT]
+    if DynamicTrading and DynamicTrading.Events and DynamicTrading.Events.ActiveEvents then
+        for _, v in ipairs(DynamicTrading.Events.ActiveEvents) do 
+            table.insert(sourceList, v) 
+        end
+    end
 
-    -- Fallback to Engine Data (MP Client)
-    if #sourceList == 0 then
-        local engine = DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData()
+    -- [V2 SUPPORT] (Fallback or combined)
+    if DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData then
+        local engine = DynamicTrading_Engine.GetEngineData()
         if engine and engine.EventSystem and engine.EventSystem.activeEvents then
-            -- Engine stores as [id] = { expires = ... }
             for id, _ in pairs(engine.EventSystem.activeEvents) do
                 if DynamicTrading.Events and DynamicTrading.Events.Registry then
                     local def = DynamicTrading.Events.Registry[id]
-                    if def then table.insert(sourceList, def) end
+                    if def then 
+                        -- Avoid duplicates if V1 and V2 are somehow both active
+                        local found = false
+                        for _, existing in ipairs(sourceList) do
+                             if existing.id == id then found = true break end
+                        end
+                        if not found then table.insert(sourceList, def) end
+                    end
                 end
             end
         end
@@ -84,18 +93,44 @@ function DT_FactionEconomics_Market:updateData(f, fontScale)
     for _, def in ipairs(sourceList) do
         table.insert(activeDefs, def)
     end
+
+    -- Faction Specific Event (V2)
     if f.ActiveFlashEvent and f.ActiveFlashEvent.id then
-        local def = DynamicTrading.Events.Registry[f.ActiveFlashEvent.id]
-        if def then table.insert(activeDefs, def) end
+        if DynamicTrading.Events and DynamicTrading.Events.Registry then
+            local def = DynamicTrading.Events.Registry[f.ActiveFlashEvent.id]
+            if def then table.insert(activeDefs, def) end
+        end
     end
 
     -- 2. Get Global Heat (Inflation/Deflation)
-    local engineData = DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData()
-    local globalHeat = (engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat) or {}
+    local globalHeat = {}
+    
+    -- [V1 HEAT]
+    if DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetData then
+        local data = DynamicTrading.Manager.GetData()
+        if data and data.globalHeat then
+            for k, v in pairs(data.globalHeat) do globalHeat[k] = v end
+        end
+    end
+    
+    -- [V2 HEAT] (Merge/Overlay)
+    if DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData then
+        local engine = DynamicTrading_Engine.GetEngineData()
+        local v2Heat = (engine and engine.WorldEconomy and engine.WorldEconomy.GlobalHeat)
+        if v2Heat then
+            for k, v in pairs(v2Heat) do 
+                -- If both exist, we could average or just take V2? 
+                -- Usually only one system is active. V2 takes precedence for shared tags.
+                globalHeat[k] = v 
+            end
+        end
+    end
     
     -- Count affected categories
     local activeCats = 0
-    for _, _ in pairs(globalHeat) do activeCats = activeCats + 1 end
+    for _, heat in pairs(globalHeat) do 
+        if math.abs(heat) > 0.01 then activeCats = activeCats + 1 end
+    end
 
     -- 3. Calculate Cumulative Multipliers
     local totalMultipliers = {}

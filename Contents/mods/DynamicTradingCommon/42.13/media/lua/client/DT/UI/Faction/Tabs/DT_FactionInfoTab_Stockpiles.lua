@@ -68,7 +68,10 @@ function DT_FactionInfoTab_Stockpiles:updateData(f)
 
     local text = " <RGB:1,1,1> <SIZE:" .. titleTag .. "> KNOWN STOCKPILES <SIZE:" .. bodyTag .. "> <LINE> <LINE> "
 
-    if f.stockpile then
+    if f.isV1 then
+        text = text .. " <RGB:0.6,0.6,0.6> The Radio Network does not store physical stockpiles. Resources are distributed across independent moving trade caravans. <LINE> <LINE> "
+        text = text .. " <RGB:0.8,0.8,0.8> Check <RGB:0.4,0.8,1> Economics > Market <RGB:0.8,0.8,0.8> to see global supply and demand modifiers. <LINE> "
+    elseif f.stockpile then
         -- Sort keys for consistent display
         local keys = {}
         for k in pairs(f.stockpile) do table.insert(keys, k) end

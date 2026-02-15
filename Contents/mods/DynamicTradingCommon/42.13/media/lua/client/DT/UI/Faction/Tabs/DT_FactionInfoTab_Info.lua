@@ -69,18 +69,26 @@ function DT_FactionInfoTab_Info:updateData(f)
     local text = " <RGB:1,0.8,0> <SIZE:" .. titleTag .. "> " .. f.name .. " <SIZE:" .. bodyTag .. "> <LINE> "
     text = text .. " <RGB:0.6,0.6,0.6> ID: " .. f.id .. " <LINE> <LINE> "
     
-    -- Location
-    text = text .. " <RGB:0.4,0.8,1> LOCATION DATA: <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Town: " .. tostring(f.town or "N/A") .. " <LINE> "
-    if f.homeCoords then
-        text = text .. " Base: " .. f.homeCoords.name .. " (" .. f.homeCoords.x .. "," .. f.homeCoords.y .. "," .. f.homeCoords.z .. ") <LINE> "
+    -- V1 Specific Description
+    if f.isV1 then
+        text = text .. " <RGB:0.8,0.8,0.8> The broad frequency network used by independent survivors and merchants across the exclusion zone. <LINE> <LINE> "
+        text = text .. " <RGB:0.4,0.8,1> NETWORK DATA: <LINE> "
+        text = text .. " <RGB:0.8,0.8,0.8> Type: Decentralized Radio Mesh <LINE> "
+        text = text .. " Reach: Global (Exclusion Zone) <LINE> "
     else
-        text = text .. " Base: NOMADIC (Roaming) <LINE> "
+        -- Location (V2)
+        text = text .. " <RGB:0.4,0.8,1> LOCATION DATA: <LINE> "
+        text = text .. " <RGB:0.8,0.8,0.8> Town: " .. tostring(f.town or "N/A") .. " <LINE> "
+        if f.homeCoords then
+            text = text .. " Base: " .. f.homeCoords.name .. " (" .. f.homeCoords.x .. "," .. f.homeCoords.y .. "," .. f.homeCoords.z .. ") <LINE> "
+        else
+            text = text .. " Base: NOMADIC (Roaming) <LINE> "
+        end
     end
     
     -- Economy
     text = text .. " <LINE> <RGB:0.4,0.8,1> ECONOMIC DATA: <LINE> "
-    text = text .. " <RGB:0.2,1,0.2> Wealth: $" .. tostring(f.wealth or 0) .. " <LINE> "
+    text = text .. " <RGB:0.2,1,0.2> Global Wealth: $" .. tostring(f.wealth or 0) .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Value Trend: " .. (f.valueTrend or "Stable") .. " <LINE> " 
     
     self.richText:setText(text)

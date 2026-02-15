@@ -81,15 +81,42 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
     end
 
     if not f then return end
+
+    -- [V1 SUPPORT]
+    if f.isV1 then
+        if DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetData then
+            local data = DynamicTrading.Manager.GetData()
+            if data and data.Traders then
+                -- Sort by name for consistency
+                local sorted = {}
+                for id, trader in pairs(data.Traders) do table.insert(sorted, trader) end
+                table.sort(sorted, function(a, b) return a.name < b.name end)
+
+                for _, trader in ipairs(sorted) do
+                    local soul = {
+                        name = trader.name,
+                        archetypeID = trader.archetype,
+                        portraitID = trader.portraitID,
+                        status = "Active",
+                        isFemale = (trader.gender == "Female")
+                    }
+                    local dataEntry = { soul = soul, uuid = trader.id }
+                    self.rosterlist:addItem(trader.name, dataEntry)
+                end
+            end
+        end
+        return
+    end
     
+    -- [V2 SUPPORT]
     if rosterData then
         local members = rosterData.FactionMembers and rosterData.FactionMembers[f.id]
         if members and #members > 0 then
             for _, uuid in ipairs(members) do
                 local soul = rosterData.Souls and rosterData.Souls[uuid]
                 if soul then
-                    local data = { soul = soul, uuid = uuid }
-                    self.rosterlist:addItem(soul.name or uuid, data)
+                    local dataEntry = { soul = soul, uuid = uuid }
+                    self.rosterlist:addItem(soul.name or uuid, dataEntry)
                 end
             end
         end
