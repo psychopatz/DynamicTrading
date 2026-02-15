@@ -46,7 +46,7 @@ function DynamicTrading_Engine.Init()
         -- Client: Request data to ensure sync
         if ModData.request then 
             ModData.request(MOD_DATA_KEY)
-            print("DT Engine: Client requested ModData sync.")
+            -- print("DT Engine: Client requested ModData sync.")
         end
         return 
     end
@@ -112,7 +112,7 @@ function DynamicTrading_Engine.OnTick()
             if mult ~= 1.0 then
                 local old = recruitCount
                 recruitCount = math.floor(recruitCount * mult)
-                print("DT Engine: Recruit Count modified by events: " .. old .. " -> " .. recruitCount)
+                -- print("DT Engine: Recruit Count modified by events: " .. old .. " -> " .. recruitCount)
             end
         end
 
@@ -170,14 +170,16 @@ function DynamicTrading_Engine.RunDailySimulation()
 end
 
 function DynamicTrading_Engine.UpdateHeat(category, amount)
-    -- Server/Authority Logic Only
-    if isClient() and not isServer() then return end
-
+    -- Guard removed to allow MP Host/Server execution from TradeHandlers
+    -- (TradeHandlers is already authority-checked)
+    
     if not category or category == "Misc" then return end
     
     local data = DynamicTrading_Engine.GetEngineData()
     if not data then return end
-    
+    -- Initialise GlobalHeat if missing (Safety)
+    if not data.WorldEconomy.GlobalHeat then data.WorldEconomy.GlobalHeat = {} end
+
     local current = data.WorldEconomy.GlobalHeat[category] or 0
     data.WorldEconomy.GlobalHeat[category] = current + amount
     
@@ -187,15 +189,15 @@ function DynamicTrading_Engine.UpdateHeat(category, amount)
     
     if DynamicTrading.Debug or amount ~= 0 then
         print("[DT Engine] UpdateHeat: " .. tostring(category) .. " | Change: " .. tostring(amount) .. " | New: " .. tostring(data.WorldEconomy.GlobalHeat[category]))
+        -- Debug: Log Sync Trigger
+        -- print("[DT Engine] Transmitting ModData...")
     end
     
     ModData.transmit(MOD_DATA_KEY)
 end
 
 function DynamicTrading_Engine.ConsumeRecruit()
-    -- Server/Authority Logic Only
-    if isClient() and not isServer() then return end
-
+    -- Guard removed to allow MP Host execution
     local data = DynamicTrading_Engine.GetEngineData()
     if data and data.Demographics.availableRecruits > 0 then
         data.Demographics.availableRecruits = data.Demographics.availableRecruits - 1

@@ -252,9 +252,23 @@ end
 -- Reactive Refresh for Multiplayer (Static/Singleton level)
 if not DT_FactionInfoWindow.EventsAdded then
     Events.OnReceiveGlobalModData.Add(function(key, data)
-        if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster") and DT_FactionInfoWindow.instance then
-            if DT_FactionInfoWindow.instance:getIsVisible() then
+        if not DT_FactionInfoWindow.instance then return end
+        
+        if DT_FactionInfoWindow.instance:getIsVisible() then
+            -- Faction/Roster Data -> Update List
+            if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster") then
                 DT_FactionInfoWindow.instance:refreshList()
+            
+            -- Engine Data (Inflation/Events) -> Update Active Tab Details
+            elseif key == "DynamicTrading_Engine_v2" then
+                 local panel = DT_FactionInfoWindow.instance.panel
+                 if panel then
+                     local activeView = panel:getActiveView()
+                     if activeView and activeView.updateData then
+                         -- data is already in ModData, just re-render
+                         activeView:updateData(DT_FactionInfoWindow.selectedFaction)
+                     end
+                 end
             end
         end
     end)
