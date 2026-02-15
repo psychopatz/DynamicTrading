@@ -1,10 +1,10 @@
 -- ==============================================================================
--- DTNPC_MVP.lua
+-- DT_NPC_Archetypes.lua
 -- Database for Custom/Donator NPCs.
 -- The Generator will check this list for specific spawning rules or random chances.
 -- ==============================================================================
 
-DTNPC_MVP = DTNPC_MVP or {}
+DT_NPC_Archetypes = DT_NPC_Archetypes or {}
 
 -- Format:
 -- {
@@ -13,10 +13,11 @@ DTNPC_MVP = DTNPC_MVP or {}
 --     outfit = { "Base.Tshirt_White", "Base.Jeans_Black", "Base.Shoes_Sneakers" },
 --     hairStyle = "Bob", -- Optional
 --     beardStyle = "Full", -- Optional
+--     archetypeID = "Chef", -- Optional: Forces this archetype during generation
 --     weight = 10, -- Chance weight relative to others
 -- }
 
-DTNPC_MVP.List = {
+DT_NPC_Archetypes.List = {
     -- 1. The Sheriff (Rick)
     {
         name = "Rick Grimes",
@@ -24,6 +25,7 @@ DTNPC_MVP.List = {
         outfit = { "Base.Hat_Sheriff", "Base.Shirt_Sheriff", "Base.Trousers_Sheriff", "Base.Shoes_Black", "Base.HolsterSimple" },
         beardStyle = "BeardFull",
         hairStyle = "Short",
+        archetypeID = "Sheriff",
         weight = 10
     },
 
@@ -34,6 +36,7 @@ DTNPC_MVP.List = {
         outfit = { "Base.JacketLong_Doctor", "Base.Shirt_FormalWhite", "Base.Trousers_Suit", "Base.Shoes_Black" },
         beardStyle = "BeardStubble",
         hairStyle = "BaldSpot",
+        archetypeID = "Doctor",
         weight = 10
     },
 
@@ -43,6 +46,7 @@ DTNPC_MVP.List = {
         isFemale = false,
         outfit = { "Base.PonchoGreen", "Base.Trousers_HuntingCamo", "Base.Shoes_HikingBoots", "Base.Bag_LeatherWaterBag" },
         hairStyle = "Messy",
+        archetypeID = "Survivalist",
         weight = 10
     },
 
@@ -52,6 +56,7 @@ DTNPC_MVP.List = {
         isFemale = false,
         outfit = { "Base.Jacket_Chef", "Base.Hat_ChefHat", "Base.Trousers_Chef", "Base.Shoes_Black" },
         hairStyle = "Spiky",
+        archetypeID = "Chef",
         weight = 10
     },
 
@@ -61,6 +66,7 @@ DTNPC_MVP.List = {
         isFemale = true,
         outfit = { "Base.Shorts_ShortDenim", "Base.Vest_HighViz", "Base.Hat_BandanaTied", "Base.Shoes_WorkBoots" },
         hairStyle = "Ponytail",
+        archetypeID = "Mechanic",
         weight = 10
     },
     
@@ -71,6 +77,7 @@ DTNPC_MVP.List = {
         outfit = { "Base.Vest_Hunting_Camo", "Base.Shirt_Denim", "Base.Trousers_JeanBaggy", "Base.Shoes_BlackBoots" },
         hairStyle = "Long2",
         beardStyle = "BeardGoatee",
+        archetypeID = "Survivalist",
         weight = 10
     },
     
@@ -80,6 +87,7 @@ DTNPC_MVP.List = {
         isFemale = false,
         outfit = { "Base.JacketLong_Doctor", "Base.Shirt_FormalWhite", "Base.Tie_Red", "Base.Trousers_Suit", "Base.Shoes_Black", "Base.Glasses_Thick" },
         hairStyle = "BaldSpot",
+        archetypeID = "Doctor",
         weight = 10
     },
 
@@ -89,12 +97,13 @@ DTNPC_MVP.List = {
         isFemale = false,
         outfit = { "Base.Shirt_Lumberjack", "Base.Trousers_Denim", "Base.Shoes_WorkBoots", "Base.Hat_WinterHat" },
         beardStyle = "BeardLong",
+        archetypeID = "Foreman",
         weight = 10
     }
 }
 
 -- Return a random MVP or nil if list is empty
-function DTNPC_MVP.GetRandom()
-    if #DTNPC_MVP.List == 0 then return nil end
-    return DTNPC_MVP.List[ZombRand(#DTNPC_MVP.List) + 1]
+function DT_NPC_Archetypes.GetRandom()
+    if #DT_NPC_Archetypes.List == 0 then return nil end
+    return DT_NPC_Archetypes.List[ZombRand(#DT_NPC_Archetypes.List) + 1]
 end

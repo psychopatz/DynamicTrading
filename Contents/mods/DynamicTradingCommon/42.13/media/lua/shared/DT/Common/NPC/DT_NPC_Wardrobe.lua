@@ -4,9 +4,9 @@
 -- Contains valid Build 42 clothing items to ensure NPCs do not spawn naked.
 -- ==============================================================================
 
-DTNPCPresets = DTNPCPresets or {}
+DT_NPC_Wardrobe = DT_NPC_Wardrobe or {}
 
-DTNPCPresets.Wardrobe = {
+DT_NPC_Wardrobe.Wardrobe = {
     -- 1. General (Casual Survivor)
     General = {
         Male = {
@@ -728,15 +728,15 @@ DTNPCPresets.Wardrobe = {
     }
 }
 
-function DTNPCPresets.GetRandomOutfit(category, isFemale)
+function DT_NPC_Wardrobe.GetRandomOutfit(category, isFemale)
     local cat = category or "General"
     local gender = isFemale and "Female" or "Male"
     
-    local pool = DTNPCPresets.Wardrobe[cat] and DTNPCPresets.Wardrobe[cat][gender]
+    local pool = DT_NPC_Wardrobe.Wardrobe[cat] and DT_NPC_Wardrobe.Wardrobe[cat][gender]
     
     if not pool or #pool == 0 then
         -- Fallback to General if category missing
-        pool = DTNPCPresets.Wardrobe["General"] and DTNPCPresets.Wardrobe["General"][gender]
+        pool = DT_NPC_Wardrobe.Wardrobe["General"] and DT_NPC_Wardrobe.Wardrobe["General"][gender]
         print("[DTNPC] Error: No valid outfit found for category " .. cat .. " and gender " .. gender .. ". Fallback to General.")
     end
     

@@ -6,8 +6,8 @@
 
 DTNPCGenerator = DTNPCGenerator or {}
 
-require "DT/V2/NPC/Templates/DTNPC_Presets"
-require "DT/V2/NPC/Templates/DTNPC_MVP"
+require "DT/Common/NPC/DT_NPC_Wardrobe"
+require "DT/Common/NPC/DT_NPC_Archetypes"
 
 -- ==============================================================================
 -- 1. CONFIGURATION
@@ -25,8 +25,8 @@ function DTNPCGenerator.Generate(options)
     -- 1. Try MVP Roll
     local mvp = nil
     if options.forceMVP or (ZombRand(100) < DTNPCGenerator.MVPChance) then
-        if DTNPC_MVP and DTNPC_MVP.GetRandom then
-            mvp = DTNPC_MVP.GetRandom()
+        if DT_NPC_Archetypes and DT_NPC_Archetypes.GetRandom then
+            mvp = DT_NPC_Archetypes.GetRandom()
         end
     end
     
@@ -90,7 +90,7 @@ function DTNPCGenerator.CreateStandardBrain(options)
     
     -- 2. Pick Costume
     local occupation = options.occupation or "General"
-    local outfit = DTNPCPresets.GetRandomOutfit(occupation, isFemale)
+    local outfit = DT_NPC_Wardrobe.GetRandomOutfit(occupation, isFemale)
     
     -- 3. Visuals Persistence (Fixes MP Reshuffling)
     local hairStyle = nil
