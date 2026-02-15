@@ -208,6 +208,36 @@ end
 -- =============================================================================
 require "DT/Common/Events/DT_EventManager"
 
+-- =============================================================================
+-- 7. FACTION SYSTEM CONFIGURATION (SHARED PARITY)
+-- =============================================================================
+DynamicTrading.Config.ResourceMap = {
+    ["Vegetable"] = "food", ["Fruit"] = "food", ["Grain"] = "food", ["Meat"] = "food",
+    ["Fresh"] = "food", ["Canned"] = "food", ["Fish"] = "food", ["Farming"] = "food",
+    ["Ammo"] = "ammo", ["Gun"] = "ammo", ["Weapon"] = "ammo",
+    ["Medical"] = "meds", ["Pills"] = "meds", ["Bandage"] = "meds",
+    ["Fuel"] = "fuel", ["Electronics"] = "fuel"
+}
+
+DynamicTrading.Config.Sim = {
+    BaseConsumption = { food = 1.0, meds = 0.1, ammo = 0.2, fuel = 0.5 },
+    ProductionMultiplier = 2.0,
+    StarvationThreshold = 3,
+    DeathRate = 0.1,
+    RecruitCost = { food = 50, meds = 10 },
+    MaxDailyGrowth = 2
+}
+
+DynamicTrading.Config.FactionEvents = {
+    Thresholds = {
+        FoodHigh = 50.0,
+        FoodLow = 5.0,
+        AmmoLow = 10.0,
+        WealthHigh = 5000
+    },
+    Meta = { "Inflation", "EconomicCollapse", "Recession" }
+}
+
 print("[DynamicTrading] Config & Registry Core Loaded.")
  
 -- Trigger the loading process LATER to avoid recursive require loops

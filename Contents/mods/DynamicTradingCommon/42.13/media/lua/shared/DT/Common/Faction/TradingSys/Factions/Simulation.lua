@@ -5,7 +5,7 @@
 -- ==============================================================================
 
 require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
-require "DT/V2/Config"
+require "DT/Common/Config"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
 -- require "DT/Common/Faction/TradingSys/Factions/DynamicTrading_Director" -- Deprecated
 require "DT/Common/Events/DT_EventManager"
@@ -49,10 +49,10 @@ function Simulation.UpdateDaily()
                 local archData = DynamicTrading.Archetypes[archID]
                 if archData and archData.allocations then
                     for tag, score in pairs(archData.allocations) do
-                        local resourceType = DynamicTrading.V2.Config.ResourceMap[tag]
+                        local resourceType = DynamicTrading.Config.ResourceMap[tag]
                         if resourceType then
                              -- Score * Multiplier (e.g., 6 * 2.0 = 12 units)
-                            production[resourceType] = production[resourceType] + (score * DynamicTrading.V2.Config.Sim.ProductionMultiplier)
+                            production[resourceType] = production[resourceType] + (score * DynamicTrading.Config.Sim.ProductionMultiplier)
                         end
                     end
                 end
@@ -123,7 +123,7 @@ function Simulation.UpdateDaily()
         end
 
         -- 1. CONSUMPTION
-        local consumes = DynamicTrading.V2.Config.Sim.BaseConsumption
+        local consumes = DynamicTrading.Config.Sim.BaseConsumption
         if consumes then
             -- Apply Global Event Consumption Modifiers
             local foodBurnMod = 1.0
@@ -147,7 +147,7 @@ function Simulation.UpdateDaily()
                 
                 if faction.starvationDays >= deathThreshold then
                     -- Kill people
-                    local deaths = math.ceil(faction.memberCount * DynamicTrading.V2.Config.Sim.DeathRate)
+                    local deaths = math.ceil(faction.memberCount * DynamicTrading.Config.Sim.DeathRate)
                     deaths = math.max(1, deaths) -- At least 1 dies
                     faction.memberCount = faction.memberCount - deaths
                     
@@ -192,7 +192,7 @@ function Simulation.UpdateDaily()
                         DynamicTrading_Roster.AddSoul(id, newRecruit, scatteredHome)
                         
                         -- Growth Cost (Initial Setup)
-                        faction.stockpile.food = faction.stockpile.food - DynamicTrading.V2.Config.Sim.RecruitCost.food
+                        faction.stockpile.food = faction.stockpile.food - DynamicTrading.Config.Sim.RecruitCost.food
                         
                         print("DT Faction ["..faction.name.."] RECRUITED a new " .. tostring(newRecruit))
                     end

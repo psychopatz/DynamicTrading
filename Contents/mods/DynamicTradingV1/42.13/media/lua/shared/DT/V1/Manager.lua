@@ -3,6 +3,7 @@ require "DT/V1/Events"
 require "03b_DynamicTrading_PortraitConfig"
 require "DT/V1/NetworkLogs"
 require "DT/V1/CooldownManager"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
