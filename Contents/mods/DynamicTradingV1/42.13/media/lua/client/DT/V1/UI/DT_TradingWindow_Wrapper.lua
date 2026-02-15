@@ -204,6 +204,15 @@ function V1_DataProvider:isConnectionValid(obj)
     
     if not data or not data:getIsTurnedOn() then return false end
 
+    -- [NEW] Signal Validity Check (V1 Parity)
+    -- If the trader has expired or is no longer discovered, sever the connection.
+    if self._currentTraderID then
+        local data = DynamicTrading.Manager.GetData()
+        if not data.RadioTraders or not data.RadioTraders[self._currentTraderID] then
+            return false
+        end
+    end
+
     if instanceof(obj, "IsoWaveSignal") then
         local sq = obj:getSquare()
         if not sq then return false end

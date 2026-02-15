@@ -2,7 +2,7 @@
 
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
-require "DT/V2/Config"
+require "DT/Common/Faction/TradingSys/Factions/SimulationConfig"
 require "DT/Common/Trading/DT_Economy_Common"
 
 DynamicTrading = DynamicTrading or {}

@@ -1,7 +1,7 @@
 -- Server Side Only Check Removed to allow Shared Access (Sim functions guarded instead)
 
 
-require "DT/V2/Config"
+require "DT/Common/Faction/TradingSys/Factions/SimulationConfig"
 
 DynamicTrading_Engine = {}
 local MOD_DATA_KEY = "DynamicTrading_Engine_v2"

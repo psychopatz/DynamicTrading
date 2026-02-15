@@ -7,7 +7,7 @@
 require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/Faction/Templates/BaseSpawn/DT_FactionLocationManager"
 require "DT/Common/Faction/Templates/FactionNames/DT_FactionNames"
-require "DT/V2/Config"
+require "DT/Common/Faction/TradingSys/Factions/SimulationConfig"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
 
 local Lifecycle = {}
