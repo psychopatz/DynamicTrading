@@ -1,36 +1,38 @@
 -- =============================================================================
--- DYNAMIC TRADING: SERVER COMMAND HANDLER
+-- DYNAMIC TRADING V1: SERVER COMMAND HANDLER (FACTION PARITY)
 -- =============================================================================
 -- Compatible with Singleplayer, MP Hosted, and MP Dedicated.
--- Handles all secure logic: Money removal, Inventory management, Scanning RNG.
+-- Radio-specific commands: Scanning, RequestTrader, BurnMoney, UnpackContainer.
+-- Trade transactions are delegated to the shared TradeHandlers in Common.
+-- =============================================================================
 
 require "DT/V1/Manager"
-require "DT/V1/Economy"
-require "DT/V1/Events"
+require "DT/Common/Config"
 require "DT/Common/ServerHelpers"
--- Note: NetworkLogs and CooldownManager already required by Manager, giving access globally.
+require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
+
+local TradeHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/TradeHandlers"
+local DataHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers"
 
 -- 1. GLOBAL TABLE REGISTRATION
--- We expose this table globally so Singleplayer Client scripts can call functions directly
--- if needed, though we primarily use the Command Bridge now.
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.ServerCommands = {}
 
 local Commands = DynamicTrading.ServerCommands
-local lastProcessedDay = -1 
+local lastProcessedDay = -1
 
 -- =============================================================================
 -- 0. ALIASES TO SHARED HELPERS
 -- =============================================================================
--- Use centralized helpers from DynamicTradingCommon for SP/MP compatibility.
-
 local Helpers = DynamicTrading.ServerHelpers
 local ServerRemoveItem = Helpers.RemoveItem
 local ServerAddItem = Helpers.AddItem
 local GetServerWealth = Helpers.GetWealth
 local ServerRemoveMoney = Helpers.RemoveMoney
 
--- Local wrapper for SendResponse to maintain existing call signature
 local function SendResponse(player, command, args)
     Helpers.SendResponse(player, "DynamicTrading", command, args)
 end
@@ -40,163 +42,36 @@ end
 -- =============================================================================
 
 -- COMMAND: RequestFullState
--- Description: Client asking for the latest Trader List / Events
+-- Description: Client asking for the latest state (Engine + Roster + V1 Radio)
 function Commands.RequestFullState(player, args)
+    -- Sync Engine v2 data
+    if ModData.exists("DynamicTrading_Engine_v2") then
+        ModData.transmit("DynamicTrading_Engine_v2")
+    end
+    -- Sync Roster
+    if ModData.exists("DynamicTrading_Roster") then
+        ModData.transmit("DynamicTrading_Roster")
+    end
+    -- Sync Factions
+    if ModData.exists("DynamicTrading_Factions") then
+        ModData.transmit("DynamicTrading_Factions")
+    end
+    -- Sync Stock
+    if ModData.exists("DynamicTrading_Stock") then
+        ModData.transmit("DynamicTrading_Stock")
+    end
+    -- Sync V1 Radio state (scanning limits, discovery data)
     local data = DynamicTrading.Manager.GetData()
     if data then
-        ModData.transmit("DynamicTrading_Engine_v1.3")
+        ModData.transmit("DynamicTrading_V1_Radio")
     end
 end
 
 -- COMMAND: TradeTransaction
--- Description: Buying or Selling items
+-- Description: Delegates to the shared TradeHandlers (same logic as V2)
 function Commands.TradeTransaction(player, args)
-    local transactionType = args.type
-    local traderID = args.traderID
-    local key = args.key
-    local category = args.category or "Misc"
-    local clientQty = tonumber(args.qty) or 1 
-
-    local data = DynamicTrading.Manager.GetData()
-    local trader = data.Traders[traderID]
-    local itemData = DynamicTrading.Config.MasterList[key]
-
-    if not trader or not itemData then return end
-    local inv = player:getInventory()
-
-    -- Cache Display Name from Script for logging
-    local scriptItem = getScriptManager():getItem(itemData.item)
-    local safeDisplayName = scriptItem and scriptItem:getDisplayName() or "Unknown Item"
-
-    if transactionType == "buy" then
-        -- 1. Check Stock & Data
-        local stockEntry = trader.stocks[key]
-        local currentStock = 0
-        local customData = nil
-        
-        if type(stockEntry) == "table" then
-            currentStock = tonumber(stockEntry.qty) or 0
-            customData = stockEntry.customData
-        else
-            currentStock = tonumber(stockEntry) or 0
-        end
-
-        -- 2. Calculate Price
-        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat, customData)
-        local totalCost = unitPrice * clientQty
-        
-        if currentStock < clientQty then
-            SendResponse(player, "TransactionResult", { success=false, msg="Sold Out!" })
-            return
-        end
-
-        -- 3. Check Wealth
-        if GetServerWealth(player) < totalCost then
-            SendResponse(player, "TransactionResult", { success=false, msg="Not enough cash!" })
-            return
-        end
-
-        -- 4. Execute Trade
-        if ServerRemoveMoney(player, totalCost) then
-            DynamicTrading.Manager.OnBuyItem(traderID, key, category, clientQty)
-            Helpers.AddItemWithCondition(inv, itemData.item, clientQty, customData)
-            
-            -- [NEW] Log transaction for global history
-            local logText = string.format("Trade: %s purchased %s for $%d", player:getUsername(), safeDisplayName, totalCost)
-            DynamicTrading.NetworkLogs.AddLog(logText, "info")
-
-            SendResponse(player, "TransactionResult", { 
-                success = true, 
-                itemName = safeDisplayName,
-                price = totalCost
-            })
-        else
-            SendResponse(player, "TransactionResult", { success=false, msg="Transaction Error" })
-        end
-
-    elseif transactionType == "sell" then
-        -- 1. Locate specific physical item by ID
-        -- [ROBUST FIX] We now find the item by the unique ID passed from the client
-        local itemObj = inv:getItemById(args.itemID)
-        
-        -- [B42 ROBUST] If direct main-inv lookup fails, do a recursive search across ALL carried containers
-        if not itemObj then
-            itemObj = Helpers.FindItemByIDRecursive(inv, args.itemID)
-        end
-        
-        if not itemObj then
-            -- Fallback: If ID search fails, try traditional search by type (rare but safe)
-            local allItemsList = inv:getItemsFromType(itemData.item, true)
-            if allItemsList and allItemsList:size() > 0 then
-                itemObj = allItemsList:get(0)
-            end
-        end
-        
-        if not itemObj then
-            SendResponse(player, "TransactionResult", { success=false, msg="Item missing!" })
-            return
-        end
-
-        -- [NEW SAFETY LOCK] Double check it's not the active radio
-        -- If the physical radio is turned on, the server blocks the sale as a safeguard.
-        if itemObj.getDeviceData then
-            local dev = itemObj:getDeviceData()
-            if dev and dev:getIsTurnedOn() then
-                SendResponse(player, "TransactionResult", { success=false, msg="Cannot sell an active radio!" })
-                return
-            end
-        end
-
-        -- [NEW] Check Trader Budget
-        local localCount = (trader.localDeflation and trader.localDeflation[key]) or 0
-        -- We already have GetSellPrice called below, but wait, the original code called `GetSellPrice`?
-        -- No, let me check the original code from view_file.
-        -- Original line 142: local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
-        -- It ALREADY calls V1.GetSellPrice!
-        -- And V1.GetSellPrice calls Common.GetSellPrice.
-        -- So V1 is automatically updated by my change to Common!
-        
-        local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(itemObj, key, trader.archetype, data.globalHeat, localCount)
-        local totalGain = unitPrice * clientQty
-
-        if (trader.budget or 0) < totalGain then
-            SendResponse(player, "TransactionResult", { success=false, msg="Trader cannot afford this!" })
-            return
-        end
-
-        local itemNameForLog = itemObj:getDisplayName()
-
-        -- [FIX] Ensure item is unequipped before removal to prevent duplication (Ghost Item Glitch)
-        if player:getPrimaryHandItem() == itemObj then
-            player:setPrimaryHandItem(nil)
-        end
-        if player:getSecondaryHandItem() == itemObj then
-            player:setSecondaryHandItem(nil)
-        end
-
-        -- 2. Execute Trade
-        ServerRemoveItem(itemObj)
-        
-        local bundles = math.floor(totalGain / 100)
-        local loose = totalGain % 100
-        if bundles > 0 then ServerAddItem(inv, "Base.MoneyBundle", bundles) end
-        if loose > 0 then ServerAddItem(inv, "Base.Money", loose) end
-        
-        DynamicTrading.Manager.OnSellItem(traderID, key, category, clientQty)
-        
-        -- [NEW] Log transaction for global history
-        local logText = string.format("Trade: %s sold %s for $%d", player:getUsername(), itemNameForLog, totalGain)
-        DynamicTrading.NetworkLogs.AddLog(logText, "info")
-
-        -- Send exact keys client expects for Audit Log
-        SendResponse(player, "TransactionResult", { 
-            success = true, 
-            itemName = itemNameForLog,
-            price = totalGain
-        })
-    end
+    TradeHandlers.Handlers.TradeTransaction(player, args)
 end
-
 
 -- COMMAND: RequestTrader
 -- Description: Buying a specific contact lead (Favor)
@@ -224,11 +99,11 @@ function Commands.RequestTrader(player, args)
         return
     end
 
-    -- 4. Generate Trader
+    -- 4. Generate Trader (creates Soul in Roster + Stock)
     local trader = DynamicTrading.Manager.GenerateRandomContact(player, archetype)
     
     if trader then
-        -- [NEW] Auto-discover for requesting player
+        -- Auto-discover for requesting player
         DynamicTrading.Manager.DiscoverTrader(trader.id, player)
         
         DynamicTrading.NetworkLogs.AddLog("Favor: " .. targetUser .. " requested a " .. archetype, "info")
@@ -267,8 +142,7 @@ function Commands.UnpackContainer(player, args)
 end
 
 -- COMMAND: AttemptScan
--- Description: The RNG roll for finding new traders
--- [PUBLIC NETWORK] When disabled, players must individually discover traders
+-- Description: The RNG roll for finding new traders via radio
 function Commands.AttemptScan(player, args)
     if not player then return end
     local targetUser = player:getUsername()
@@ -353,7 +227,7 @@ function Commands.AttemptScan(player, args)
                 -- 70% Generate New / 30% Discover Existing (if any)
                 local generateChance = hasUndiscovered and 70 or 100
                 if ZombRand(100) < generateChance then
-                    -- Generate NEW trader
+                    -- Generate NEW trader (creates Soul in Roster)
                     trader = DynamicTrading.Manager.GenerateRandomContact(player)
                     wasNewGeneration = true
                     
@@ -415,7 +289,8 @@ Events.OnClientCommand.Add(OnClientCommand)
 -- =============================================================================
 -- 4. SERVER MAINTENANCE LOOP
 -- =============================================================================
--- Runs every hour to check for Expired Traders, Daily Resets, and Events.
+-- Runs every hour to check for V1 Radio Trader expirations and daily resets.
+-- Economy ticks (heat, events, faction sim) are handled by Engine v2.
 local function Server_OnHourlyTick()
     -- Initialize Persistence on first run if needed
     if DynamicTrading.CooldownManager and DynamicTrading.CooldownManager.Init then
@@ -424,35 +299,20 @@ local function Server_OnHourlyTick()
 
     if not DynamicTrading or not DynamicTrading.Manager then return end
 
-    local data = DynamicTrading.Manager.GetData()
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
-    local currentDay = math.floor(gt:getDaysSurvived())
-    local currentHourOfDay = gt:getHour()
-    local changesMade = false
 
-    -- 1. Daily Reset Check (5 AM)
+    -- 1. V1 Radio Daily Reset (scanning limits only — economy is in Engine v2)
     DynamicTrading.Manager.CheckDailyReset()
 
-    -- 2. Trader Expiration Check
-    if data.Traders then
-        for id, trader in pairs(data.Traders) do
-            local shouldRemove = false
-            if trader.expirationTime and currentHours > trader.expirationTime then 
-                shouldRemove = true 
-            end
-            
-            if shouldRemove then
-                -- [NEW] Recycle Wealth
-                local leftover = trader.budget or 0
-                if leftover > 0 then
-                    DynamicTrading.Manager.AddToWealthPool(leftover)
-                    DynamicTrading.NetworkLogs.AddLog("Signal Lost: " .. (trader.name or "Unknown") .. " (Returned $" .. math.floor(leftover) .. " to economy)", "bad")
-                else
-                    DynamicTrading.NetworkLogs.AddLog("Signal Lost: " .. (trader.name or "Unknown"), "bad")
-                end
-                
-                data.Traders[id] = nil
+    -- 2. Radio Trader Expiration Check
+    local data = DynamicTrading.Manager.GetData()
+    local changesMade = false
+    
+    if data.RadioTraders then
+        for id, radioData in pairs(data.RadioTraders) do
+            if radioData.expirationTime and currentHours > radioData.expirationTime then
+                DynamicTrading.Manager.ExpireRadioTrader(id)
                 changesMade = true
             end
         end
@@ -461,18 +321,9 @@ local function Server_OnHourlyTick()
     -- Sync if traders removed
     if changesMade then 
         DynamicTrading.Manager.BumpTradersVersion()
-        -- ModData.transmit already called by BumpTradersVersion
-    end
-
-    -- 3. Event System Check (8 AM)
-    if currentHourOfDay == 8 and lastProcessedDay ~= currentDay then
-        if DynamicTrading.Events and DynamicTrading.Events.Tick then
-            DynamicTrading.Events.Tick(data)
-            lastProcessedDay = currentDay
-        end
     end
 end
 
 Events.EveryHours.Add(Server_OnHourlyTick)
 
-print("[DynamicTrading] Server Maintenance Loop Complete.")
+print("[DynamicTrading] V1 Server Commands (Faction Parity) Loaded.")
