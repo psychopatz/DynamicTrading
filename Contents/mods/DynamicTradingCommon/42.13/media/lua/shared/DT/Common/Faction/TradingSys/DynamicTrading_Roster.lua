@@ -1,4 +1,5 @@
-require "DT/V2/NPC/Sys/DTNPC_Generator"
+-- Try to load DTNPCGenerator (V2 only) — graceful fallback if V2 not present
+local hasGenerator = pcall(require, "DT/V2/NPC/Sys/DTNPC_Generator")
 
 DynamicTrading_Roster = {}
 local MOD_DATA_KEY = "DynamicTrading_Roster"
@@ -187,9 +188,45 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     local uuid = (DTNPCManager and DTNPCManager.GenerateUUID) and DTNPCManager.GenerateUUID() or string.format("soul_%d_%d", ZombRand(1000000), os.time())
     
     -- Generate Brain (Visuals/Identity)
-    local brain = DTNPCGenerator.Generate({
-        occupation = archetypeID or "General"
-    })
+    local brain = nil
+    if DTNPCGenerator and DTNPCGenerator.Generate then
+        -- V2 path: full NPC generator with MVPs, wardrobe, portraits
+        brain = DTNPCGenerator.Generate({
+            occupation = archetypeID or "General"
+        })
+    else
+        -- V1 fallback: minimal brain (no V2 NPC generator available)
+        local isFemale = (ZombRand(2) == 0)
+        local name = "Unknown Trader"
+        
+        if SurvivorFactory then
+            local survivor = SurvivorFactory.CreateSurvivor()
+            if survivor then
+                isFemale = survivor:isFemale()
+                name = survivor:getForename() .. " " .. survivor:getSurname()
+            end
+        end
+        
+        -- Try wardrobe if available (it's in Common)
+        local outfit = nil
+        if DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetRandomOutfit then
+            outfit = DT_NPC_Wardrobe.GetRandomOutfit(archetypeID or "General", isFemale)
+        end
+        
+        brain = {
+            name = name,
+            isFemale = isFemale,
+            outfit = outfit,
+            state = "Stay",
+            tasks = {},
+            walkSpeed = 0.06,
+            runSpeed = 0.09,
+            visualID = ZombRand(1000000),
+            archetypeID = archetypeID or "General",
+            portraitID = (DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.RollPortraitSeed) 
+                and DynamicTrading.Portraits.RollPortraitSeed() or ZombRand(1000) + 1
+        }
+    end
     
     -- Merge Soul Metadata into Brain
     brain.uuid = uuid
@@ -243,5 +280,17 @@ function DynamicTrading_Roster.ClearSouls(factionID)
     end
     ModData.transmit(MOD_DATA_KEY)
 end
+
+-- ==========================================================
+-- 4. MP SYNC LISTENER
+-- ==========================================================
+local function OnReceiveGlobalModData(key, data)
+    if key == MOD_DATA_KEY then
+        ModData.add(key, data)
+    elseif string.find(key, "DTSOUL_") then
+        ModData.add(key, data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
 
 Events.OnInitGlobalModData.Add(DynamicTrading_Roster.Init)

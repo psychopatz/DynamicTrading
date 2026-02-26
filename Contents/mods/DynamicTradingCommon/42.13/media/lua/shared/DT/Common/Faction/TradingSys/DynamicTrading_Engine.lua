@@ -233,6 +233,16 @@ function DynamicTrading_Engine.GetConsumptionModifier(resourceType)
     return base
 end
 
+-- ==========================================================
+-- 4. MP SYNC LISTENER
+-- ==========================================================
+local function OnReceiveGlobalModData(key, data)
+    if key == MOD_DATA_KEY then
+        ModData.add(key, data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
+
 -- Hook into Game Events
 Events.OnInitGlobalModData.Add(DynamicTrading_Engine.Init)
 Events.OnTick.Add(DynamicTrading_Engine.OnTick)

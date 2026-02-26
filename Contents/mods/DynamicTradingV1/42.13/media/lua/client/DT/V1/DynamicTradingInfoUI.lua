@@ -4,7 +4,7 @@ require "ISUI/ISTabPanel"
 require "ISUI/ISPanel"
 require "DT/V1/Manager"
 require "DT/Common/Config"
-require "DT/V1/Events"
+require "DT/Common/Events/DT_EventManager"
 require "DT/V1/UI/DynamicTradingInfoUI_Settings"
 
 -- ==============================================================================
@@ -506,15 +506,22 @@ function DynamicTradingInfoUI:populateInflation()
     local yScroll = listbox:getYScroll()
     listbox:clear()
     
-    local data = DynamicTrading.Manager.GetData()
     local colors = DynamicTradingInfoUI.Colors
     
-    -- Global Wealth
-    local wealthHeader = listbox:addItem("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= GLOBAL WEALTH ", nil)
+    -- Faction Wealth Summary (from Engine v2 / Factions)
+    local wealthHeader = listbox:addItem("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= FACTION WEALTH ", nil)
     wealthHeader.textColor = colors.HeaderMarket
     
-    local wealth = data.GlobalWealthPool or 0
-    local wealthItem = listbox:addItem(string.format("  Current Trader Wealth: $%d", wealth), nil)
+    local totalWealth = 0
+    local factionData = ModData.get("DynamicTrading_Factions")
+    if factionData then
+        for fID, faction in pairs(factionData) do
+            if type(faction) == "table" and faction.wealth then
+                totalWealth = totalWealth + (faction.wealth or 0)
+            end
+        end
+    end
+    local wealthItem = listbox:addItem(string.format("  Total Faction Wealth: $%d", totalWealth), nil)
     wealthItem.textColor = colors.EffectCheap
     
     listbox:addItem(" ", nil)
@@ -533,8 +540,12 @@ function DynamicTradingInfoUI:populateInflation()
     local anyHeat = false
     local sortedHeat = {}
     
-    if data.globalHeat then
-        for cat, val in pairs(data.globalHeat) do
+    -- Read globalHeat from Engine v2
+    local engineData = DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData and DynamicTrading_Engine.GetEngineData()
+    local globalHeat = engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat
+    
+    if globalHeat then
+        for cat, val in pairs(globalHeat) do
             if math.abs(val) > 0.01 then
                 table.insert(sortedHeat, {category = cat, value = val})
             end

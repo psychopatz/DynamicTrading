@@ -1,6 +1,17 @@
+-- =============================================================================
+-- DYNAMIC TRADING V1: MANAGER (RADIO-SPECIFIC)
+-- =============================================================================
+-- This module handles radio-specific concerns ONLY:
+--   - Radio scanning daily limits & counters
+--   - Trader discovery (per-player visibility)
+--   - Radio trader lifecycle (creation → expiration)
+--
+-- ALL economy, pricing, stock, and faction logic is delegated to the shared
+-- faction system in DynamicTradingCommon (Engine, Factions, Roster, Stock).
+-- =============================================================================
+
 require "DT/Common/Config"
-require "DT/V1/Events"
-require "03b_DynamicTrading_PortraitConfig"
+require "DT/Common/Events/DT_EventManager"
 require "DT/V1/NetworkLogs"
 require "DT/V1/CooldownManager"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
@@ -8,194 +19,41 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
 
+local V1_DATA_KEY = "DynamicTrading_V1_Radio"
+
 -- =============================================================================
 -- 1. HELPER: CALCULATE "TRADING DAY" (5 AM START)
 -- =============================================================================
 function DynamicTrading.Manager.GetTradingDay()
-    -- Using WorldAgeHours is the most robust way to track absolute server time.
     local gt = GameTime:getInstance()
     local hours = gt:getWorldAgeHours()
-    
-    -- Subtract 5 hours so the integer division flips exactly at 5 AM
     return math.floor((hours - 5) / 24)
 end
 
 -- =============================================================================
--- 2. DATA MANAGEMENT (PURE INITIALIZATION)
+-- 2. V1 RADIO DATA (Lightweight — scanning state + discovery only)
 -- =============================================================================
 function DynamicTrading.Manager.GetData()
-    local data = ModData.getOrCreate("DynamicTrading_Engine_v1.3")
+    local data = ModData.getOrCreate(V1_DATA_KEY)
     
-    -- Initialize Sub-Tables
-    if not data.Traders then data.Traders = {} end
-    if not data.globalHeat then data.globalHeat = {} end
-    -- [REMOVED] Legacy Cooldowns/Logs moved to isolated ModData
-    -- if not data.scanCooldowns then data.scanCooldowns = {} end
-    -- if not data.NetworkLogs then data.NetworkLogs = {} end
-
-    -- Daily Cycle Init
+    -- Radio Traders Registry: maps traderID (Soul UUID) → radio-specific metadata
+    if not data.RadioTraders then data.RadioTraders = {} end
+    
+    -- Daily Cycle (Radio scanning limits)
     if not data.DailyCycle then
         data.DailyCycle = {
             dailyTraderLimit = 5,
             currentTradersFound = 0,
             lastResetDay = -1,
-            tradersVersion = 0 -- [NEW] Used to signal UI refreshes
+            tradersVersion = 0
         }
     end
-
-    -- Event System Init
-    if not data.EventSystem then
-        data.EventSystem = { 
-            activeEvents = {}, 
-            -- [REMOVED] Cooldowns moved to DynamicTrading_Cooldowns_v1.0 (Server Only)
-            -- cooldowns = {}, 
-            lastEventDay = -10 
-        }
-    end
-
-
-    -- [NEW] Global Deflation Tracker (Clear daily)
-    if not data.deflatedGlobal then data.deflatedGlobal = {} end
-
-    -- [NEW] Global Wealth Pool
-    if not data.GlobalWealthPool then 
-        local startWealth = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.GlobalWealthStart) or 10000
-        data.GlobalWealthPool = startWealth
-    end
-
-    -- Legacy Migration (Fixes old saves missing the cooldown table)
-    -- if not data.EventSystem.cooldowns then data.EventSystem.cooldowns = {} end
-    if not data.EventSystem.activeEvents then data.EventSystem.activeEvents = {} end
-
-    -- Rebuild Cache (Client Side Visuals)
-    DynamicTrading.Events.RebuildActiveCache(data)
     
     return data
 end
 
 -- =============================================================================
--- 2b. GLOBAL WEALTH API
--- =============================================================================
-function DynamicTrading.Manager.GetGlobalWealth()
-    local data = DynamicTrading.Manager.GetData()
-    return data.GlobalWealthPool or 0
-end
-
-function DynamicTrading.Manager.AddToWealthPool(amount)
-    local data = DynamicTrading.Manager.GetData()
-    local current = data.GlobalWealthPool or 0
-    data.GlobalWealthPool = current + amount
-    
-    -- Sync if this causes a significant change? 
-    -- For now we rely on the caller to ModData.transmit or the periodic sync.
-    -- But since this is often called during transactions, we should probably sync.
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
-end
-
-function DynamicTrading.Manager.TakeFromWealthPool(requestAmount)
-    local data = DynamicTrading.Manager.GetData()
-    local current = data.GlobalWealthPool or 0
-    
-    local withdrawn = 0
-    if current >= requestAmount then
-        withdrawn = requestAmount
-        data.GlobalWealthPool = current - requestAmount
-    else
-        -- Pool is drained! Take what's left.
-        withdrawn = current
-        data.GlobalWealthPool = 0
-    end
-    
-    print("[DynamicTrading] TakeFromWealthPool: Requested " .. requestAmount .. " | Pool: " .. current .. " -> " .. data.GlobalWealthPool)
-    
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
-    return withdrawn
-end
-
--- =============================================================================
--- 3. DAILY RESET LOGIC (SERVER AUTHORITATIVE)
--- =============================================================================
-function DynamicTrading.Manager.CheckDailyReset()
-    -- STRICT SAFETY: Clients should never run this logic.
-    if isClient() then return end
-
-    local data = DynamicTrading.Manager.GetData()
-    local currentTradingDay = DynamicTrading.Manager.GetTradingDay()
-    
-    -- Safety Init for old saves
-    if not data.DailyCycle.lastResetDay then data.DailyCycle.lastResetDay = -1 end
-
-    -- THE TRIGGER
-    if currentTradingDay > data.DailyCycle.lastResetDay then
-        print("[DynamicTrading] SERVER: 5AM Reached. Performing Daily Reset (Day " .. currentTradingDay .. ").")
-        
-        -- 1. Update Tracker
-        data.DailyCycle.lastResetDay = currentTradingDay
-        
-        -- 2. Reset Found Counter
-        data.DailyCycle.currentTradersFound = 0
-        
-        -- 3. Randomize New Limit
-        local min = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DailyTraderMin) or 3
-        local max = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DailyTraderMax) or 8
-        if min > max then min = max end 
-        data.DailyCycle.dailyTraderLimit = ZombRand(min, max + 1)
-
-        -- 4. Decay Heat / Inflation
-        local decayRate = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.InflationDecay) or 0.01
-        local retention = 1.0 - decayRate
-        if retention < 0 then retention = 0 end
-
-        if data.globalHeat then
-            for cat, val in pairs(data.globalHeat) do
-                if val ~= 0 then
-                    data.globalHeat[cat] = val * retention
-                    if math.abs(data.globalHeat[cat]) < 0.01 then data.globalHeat[cat] = 0 end
-                end
-            end
-        end
-
-        -- 5. [NEW] Reset Global Deflation Checklist
-        data.deflatedGlobal = {}
-
-        -- 6. [NEW] Reset Local Trader Deflation
-        if data.Traders then
-            for _, trader in pairs(data.Traders) do
-                trader.localDeflation = {}
-            end
-        end
-
-        -- 7. [NEW] Global Wealth Stimulus (Every 3 Days)
-        if currentTradingDay > 0 and (currentTradingDay % 3 == 0) then
-            local stimulus = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.GlobalWealthStimulus) or 500
-            if stimulus > 0 then
-                DynamicTrading.Manager.AddToWealthPool(stimulus)
-                DynamicTrading.NetworkLogs.AddLog("Economic Report: Global Wealth Stimulus applied (+" .. stimulus .. ")", "good")
-                print("[DynamicTrading] SERVER: Stimulus Applied. New Wealth: " .. data.GlobalWealthPool)
-            end
-        end
-
-        DynamicTrading.NetworkLogs.AddLog("Daily Cycle: Market Reset.", "info")
-        print("[DynamicTrading] SERVER: Reset Complete. New Limit: " .. data.DailyCycle.dailyTraderLimit)
-
-        -- 8. Force Sync to ALL Clients
-        ModData.transmit("DynamicTrading_Engine_v1.3")
-    end
-end
-
--- =============================================================================
--- 4. DATA SYNC (CLIENT RECEPTION)
--- =============================================================================
-local function OnReceiveGlobalModData(key, data)
-    if key == "DynamicTrading_Engine_v1.3" then
-        ModData.add(key, data)
-        DynamicTrading.Manager.RebuildActiveCache(data)
-    end
-end
-Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
-
--- =============================================================================
--- 5. UTILITIES
+-- 3. DAILY STATUS (Radio scanning limits)
 -- =============================================================================
 function DynamicTrading.Manager.GetDailyStatus()
     local data = DynamicTrading.Manager.GetData()
@@ -220,20 +78,53 @@ function DynamicTrading.Manager.IncrementDailyCounter()
 end
 
 -- =============================================================================
--- 6. EVENTS & LOGGING (IMPROVED VARIETY LOGIC)
+-- 4. DAILY RESET (Radio-specific — scanning limits only)
 -- =============================================================================
--- [REFACTORED] Event processing moved to DT_EventManager.lua
+function DynamicTrading.Manager.CheckDailyReset()
+    if isClient() then return end
 
--- [REFACTORED] Logging moved to DT_NetworkLogs.lua
+    local data = DynamicTrading.Manager.GetData()
+    local currentTradingDay = DynamicTrading.Manager.GetTradingDay()
+    
+    if not data.DailyCycle.lastResetDay then data.DailyCycle.lastResetDay = -1 end
+
+    if currentTradingDay > data.DailyCycle.lastResetDay then
+        print("[DynamicTrading] V1 Radio: Daily Reset (Day " .. currentTradingDay .. ")")
+        
+        data.DailyCycle.lastResetDay = currentTradingDay
+        data.DailyCycle.currentTradersFound = 0
+        
+        -- Randomize new daily trader limit
+        local min = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DailyTraderMin) or 3
+        local max = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DailyTraderMax) or 8
+        if min > max then min = max end 
+        data.DailyCycle.dailyTraderLimit = ZombRand(min, max + 1)
+        
+        DynamicTrading.NetworkLogs.AddLog("Daily Cycle: Market Reset.", "info")
+        print("[DynamicTrading] V1 Radio: New Limit: " .. data.DailyCycle.dailyTraderLimit)
+        
+        if isServer() or not isClient() then ModData.transmit(V1_DATA_KEY) end
+    end
+end
 
 -- =============================================================================
--- 7. TRADER & TRANSACTION FUNCTIONS
+-- 5. DATA SYNC (CLIENT RECEPTION)
+-- =============================================================================
+local function OnReceiveGlobalModData(key, data)
+    if key == V1_DATA_KEY then
+        ModData.add(key, data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
+
+-- =============================================================================
+-- 6. TRADER CREATION (Creates Soul in shared Roster + Stock)
 -- =============================================================================
 function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
     local data = DynamicTrading.Manager.GetData()
+    
     -- 1. Pick Archetype
     local archetype = targetArchetype
-    
     if not archetype then
         local archetypes = {}
         for id, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, id) end
@@ -241,308 +132,278 @@ function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
         archetype = archetypes[ZombRand(#archetypes) + 1]
     end
 
-    -- 2. Generate Identity (SurvivorFactory)
-    local name = "Trader " .. tostring(ZombRand(1000))
-    local gender = "Male"
-
-    if SurvivorFactory then
-        local desc = SurvivorFactory.CreateSurvivor()
-        if desc then 
-            name = desc:getForename() .. " " .. desc:getSurname() 
-            if desc:isFemale() then 
-                gender = "Female" 
+    -- 2. Pick a random faction to assign this radio trader to
+    local factionID = "Independent"
+    if DynamicTrading_Factions then
+        local factionData = ModData.get("DynamicTrading_Factions")
+        if factionData then
+            local factionIDs = {}
+            for id, _ in pairs(factionData) do
+                table.insert(factionIDs, id)
+            end
+            if #factionIDs > 0 then
+                factionID = factionIDs[ZombRand(#factionIDs) + 1]
             end
         end
     end
 
-    -- 3. Determine Portrait Seed (1-1000)
-    -- The client will modulo this against their local texture count.
-    local portraitID = DynamicTrading.Portraits.RollPortraitSeed()
+    -- 3. Create Soul in shared Roster
+    local uuid = nil
+    if DynamicTrading_Roster and DynamicTrading_Roster.AddSoul then
+        uuid = DynamicTrading_Roster.AddSoul(factionID, archetype, nil)
+    end
+    
+    if not uuid then
+        print("[DynamicTrading] V1 Radio: Failed to create Soul in Roster!")
+        return nil
+    end
 
-    -- 4. Expiration
+    -- 4. Set Soul to "Trading" status so stock can be generated
+    if DynamicTrading_Roster.UpdateSoulStatus then
+        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", nil, nil)
+    end
+
+    -- 5. Generate Stock via shared economy
+    if DynamicTrading_Stock and DynamicTrading_Stock.CheckAndGenerateStock then
+        local success, reason = DynamicTrading_Stock.CheckAndGenerateStock(uuid)
+        print("[DynamicTrading] V1 Radio: Stock for " .. uuid .. " => " .. tostring(reason))
+    end
+
+    -- 6. Expiration (Radio specific — traders leave after X hours)
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
     local minHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6
     local maxHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMax) or 24
     if minHours > maxHours then minHours = maxHours end
-
     local duration = ZombRand(minHours, maxHours + 1)
     local expireTime = currentHours + duration
-    local uniqueID = "Radio_" .. tostring(os.time()) .. "_" .. tostring(ZombRand(10000))
 
-    -- 5. Create Data Object
-    -- [UPDATED] Wealth Pool Integration (Dynamic Percentage of Total Capacity)
-    local globalWealth = DynamicTrading.Manager.GetGlobalWealth()
-    local _, capacity = DynamicTrading.Manager.GetDailyStatus()
-    
-    local minPct = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.WalletMinCashPercent) or 1
-    local maxPct = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.WalletMaxCashPercent) or 40
-    if minPct > maxPct then minPct = maxPct end
-    
-    local rollPct = ZombRand(minPct, maxPct + 1) / 100
-    
-    -- Formula: (Total Wealth / Capacity) * Random Percentage
-    local shareOfEconomy = globalWealth / capacity
-    local requestedBudget = math.floor(shareOfEconomy * rollPct)
-    
-    -- Safety Floor: Use a small fraction of stimulus as fallback if budget is too low
-    local stimulusFactor = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.GlobalWealthStimulus) or 500
-    local floor = math.floor(stimulusFactor * 0.2) -- 20% of stimulus is the bare minimum floor
-    if requestedBudget < floor then requestedBudget = floor end
-
-    print("[DynamicTrading] Budget Calculation for " .. name)
-    print("  > Global Wealth: " .. globalWealth)
-    print("  > Daily Capacity: " .. capacity)
-    print("  > Base Share: " .. shareOfEconomy)
-    print("  > Roll: " .. (rollPct * 100) .. "%")
-    print("  > Requested: " .. requestedBudget .. " (Floor: " .. floor .. ")")
-
-    local actualBudget = DynamicTrading.Manager.TakeFromWealthPool(requestedBudget)
-    
-    print("  > Actual Awarded: " .. actualBudget)
-    print("  > Remaining Pool: " .. DynamicTrading.Manager.GetGlobalWealth())
-    
-    -- Final Bailout: If pool is absolutely empty, give the floor from thin air
-    if actualBudget < floor then
-        actualBudget = floor
-    end
-
-    data.Traders[uniqueID] = {
-        id = uniqueID,
-        archetype = archetype,
-        name = name,
-        gender = gender,           -- [NEW]
-        portraitID = portraitID,   -- [NEW]
-        stocks = {},
-        lastRestockDay = -1,
+    -- 7. Store radio-specific metadata (keyed by Soul UUID)
+    local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
+    data.RadioTraders[uuid] = {
+        id = uuid,
         expirationTime = expireTime,
-        discoveredBy = {},          -- [PUBLIC NETWORK] Track which players discovered this trader
-        budget = actualBudget,      -- [NEW] Derived from Pool
-        localDeflation = {} -- [NEW] Per-item count
+        discoveredBy = {},
+        createdHour = currentHours
     }
 
-    -- Auto-discover for the creating player (handled by server command)
-    DynamicTrading.Manager.RestockTrader(uniqueID)
+    -- Auto-discover for the creating player
     DynamicTrading.Manager.IncrementDailyCounter()
     
+    local traderName = (soul and soul.name) or ("Trader " .. tostring(ZombRand(1000)))
     local finderName = "Unknown"
-    
     if finder then
-        -- Handle String (Generic Calls)
         if type(finder) == "string" then
             finderName = finder
-        -- Handle IsoPlayer (Server Calls)
         elseif finder.getUsername then
             finderName = finder:getUsername()
         end
     end
     
-    DynamicTrading.NetworkLogs.AddLog("Signal Acquired by " .. finderName .. ": " .. name, "good")
-
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
-
-    return data.Traders[uniqueID]
+    DynamicTrading.NetworkLogs.AddLog("Signal Acquired by " .. finderName .. ": " .. traderName, "good")
+    
+    if isServer() or not isClient() then ModData.transmit(V1_DATA_KEY) end
+    
+    -- Return a V1-compatible trader object for the caller
+    return DynamicTrading.Manager.GetTrader(uuid)
 end
 
-function DynamicTrading.Manager.RestockTrader(traderID)
-    print("[DynamicTrading] Manager.RestockTrader called for " .. tostring(traderID))
-    local data = DynamicTrading.Manager.GetData()
-    local trader = data.Traders[traderID]
-    if not trader then return end
-    local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
-    local interval = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.RestockInterval) or 1
-    if (trader.lastRestockDay == -1) or (currentDay - trader.lastRestockDay >= interval) then
-        if DynamicTrading.Economy and DynamicTrading.Economy.V1 and DynamicTrading.Economy.V1.GenerateStock then
-            local newStock = DynamicTrading.Economy.V1.GenerateStock(trader.archetype)
-            trader.stocks = newStock
-            trader.lastRestockDay = currentDay
-            
-            -- [DEBUG]
-            local count = 0
-            local withData = 0
-            for k, v in pairs(newStock) do
-                count = count + 1
-                if type(v) == "table" then withData = withData + 1 end
-            end
-            print("[DT DEBUG] Manager.RestockTrader: " .. traderID .. " | Total Items: " .. count .. " | Tables: " .. withData)
-        end
-    end
-end
-
+-- =============================================================================
+-- 7. GET TRADER (Builds V1-compatible object from Roster + Stock)
+-- =============================================================================
 function DynamicTrading.Manager.GetTrader(traderID, archetype)
     if not traderID then return nil end
-    local data = DynamicTrading.Manager.GetData()
-    if not data.Traders[traderID] and not string.find(traderID, "Radio_") then
-        data.Traders[traderID] = {
-            id = traderID,
-            archetype = archetype or "General",
-            stocks = {},
-            lastRestockDay = -1,
-            expirationTime = nil 
-        }
-        DynamicTrading.Manager.RestockTrader(traderID)
-    end
-    return data.Traders[traderID]
-end
-
-function DynamicTrading.Manager.UpdateHeat(category, amount)
-    if not category or category == "Misc" then return end
-    local data = DynamicTrading.Manager.GetData()
-    local current = data.globalHeat[category] or 0
-    data.globalHeat[category] = current + amount
-    if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
-    if data.globalHeat[category] < -0.5 then data.globalHeat[category] = -0.5 end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
-end
-
-function DynamicTrading.Manager.OnBuyItem(traderID, itemKey, category, qty)
-    local data = DynamicTrading.Manager.GetData()
-    local trader = data.Traders[traderID]
-    if not trader or not trader.stocks then return end
     
-    local entry = trader.stocks[itemKey]
-    if type(entry) == "table" then
-        entry.qty = math.max(0, (tonumber(entry.qty) or 0) - qty)
-    else
-        trader.stocks[itemKey] = math.max(0, (tonumber(entry) or 0) - qty)
-    end
+    -- Fetch from shared systems
+    local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(traderID)
+    local stockData = DynamicTrading_Stock and DynamicTrading_Stock.GetStock(traderID)
+    local radioData = DynamicTrading.Manager.GetData().RadioTraders[traderID]
     
-    -- [NEW] Increase Trader Budget
-    local itemData = DynamicTrading.Config.MasterList[itemKey]
-    if itemData then
-        local customData = (type(entry) == "table") and entry.customData or nil
-        local unitPrice = DynamicTrading.Economy.V1.GetBuyPrice(itemKey, data.globalHeat, customData)
-        local totalGain = unitPrice * qty
-        trader.budget = (trader.budget or 1000) + totalGain
-        
-        -- Buying means Player -> Trader.
-        -- Money goes INTO the Trader's local budget.
-        -- Eventually, when the trader leaves, this money returns to the Global Pool.
-        -- So we don't need to touch the pool here.
-    end
-
-    local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryInflation) or 0.05
-    local current = data.globalHeat[category] or 0
-    data.globalHeat[category] = current + (sensitivity * qty)
-    if data.globalHeat[category] > 2.0 then data.globalHeat[category] = 2.0 end
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
-end
-
-function DynamicTrading.Manager.OnSellItem(traderID, itemKey, category, qty)
-    local data = DynamicTrading.Manager.GetData()
-    local trader = data.Traders[traderID]
-    if not trader then return end
+    -- If soul doesn't exist and this isn't a Radio_ prefixed ID, skip
+    if not soul and not radioData then return nil end
     
-    local current = data.globalHeat[category] or 0
-    
-    -- 1. [NEW] Decrement Trader Budget
-    local localCount = (trader.localDeflation and trader.localDeflation[itemKey]) or 0
-    local unitPrice = DynamicTrading.Economy.V1.GetSellPrice(nil, itemKey, trader.archetype, data.globalHeat, localCount)
-    trader.budget = math.max(0, (trader.budget or 1000) - (unitPrice * qty))
-
-    -- 2. [NEW] Local Deflation (Trader specific saturation)
-    if not trader.localDeflation then trader.localDeflation = {} end
-    trader.localDeflation[itemKey] = (trader.localDeflation[itemKey] or 0) + qty
-
-    -- 3. [UPDATED] Global Deflation (Configurable Roll, Once per item kind per day)
-    if not data.deflatedGlobal[itemKey] then
-        local roll = ZombRand((SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.SellDeflationChance) or 30) + 1
-        
-        if roll == 1 then
-            local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryDeflation) or 0.02
-            data.globalHeat[category] = current - sensitivity
-            
-            -- Clamp deflation (Min -80% price)
-            if data.globalHeat[category] < -0.8 then data.globalHeat[category] = -0.8 end
-            
-            data.deflatedGlobal[itemKey] = true
+    -- Get faction data for wealth (acts as "budget")
+    local factionWealth = 0
+    local factionID = soul and soul.factionID
+    if factionID and DynamicTrading_Factions then
+        local faction = DynamicTrading_Factions.GetFaction(factionID)
+        if faction then
+            factionWealth = faction.wealth or 0
         end
     end
+
+    -- Build V1-compatible trader object
+    local trader = {
+        -- Identity
+        id = traderID,
+        traderID = traderID,
+        name = (soul and soul.name) or "Unknown Trader",
+        gender = (soul and soul.isFemale) and "Female" or "Male",
+        portraitID = (soul and soul.portraitID) or 1,
+        archetype = (soul and soul.archetypeID) or archetype or "General",
+        
+        -- Stock (from shared Stock system)
+        stocks = (stockData and stockData.items) or {},
+        
+        -- Economy (from faction)
+        budget = factionWealth,
+        factionID = factionID,
+        
+        -- Radio-specific
+        expirationTime = radioData and radioData.expirationTime,
+        discoveredBy = radioData and radioData.discoveredBy or {},
+        
+        -- Deflation (from Stock system)
+        localDeflation = (stockData and stockData.deflation) or {},
+        
+        -- Status (from Roster) [NEW]
+        status = soul and soul.status or "Away",
+        
+        -- Restock
+        lastRestockDay = -1
+    }
     
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
+    return trader
 end
 
--- [REFACTORED] Scan Cooldown Logic moved to DT_CooldownManager.lua
+-- =============================================================================
+-- 8. RESTOCK (Delegates to shared Stock system)
+-- =============================================================================
+function DynamicTrading.Manager.RestockTrader(traderID)
+    if DynamicTrading_Stock and DynamicTrading_Stock.CheckAndGenerateStock then
+        local success, reason = DynamicTrading_Stock.CheckAndGenerateStock(traderID)
+        print("[DynamicTrading] V1 RestockTrader: " .. tostring(traderID) .. " => " .. tostring(reason))
+    end
+end
 
 -- =============================================================================
--- 8. PUBLIC NETWORK DISCOVERY SYSTEM
+-- 9. RADIO TRADER EXPIRATION (Cleanup Soul + Stock)
 -- =============================================================================
+function DynamicTrading.Manager.ExpireRadioTrader(traderID)
+    local data = DynamicTrading.Manager.GetData()
+    local radioData = data.RadioTraders[traderID]
+    if not radioData then return end
+    
+    local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(traderID)
+    local traderName = (soul and soul.name) or "Unknown"
+    
+    -- Clear stock
+    if DynamicTrading_Stock and DynamicTrading_Stock.ClearStock then
+        DynamicTrading_Stock.ClearStock(traderID)
+    end
+    
+    -- Update soul status to "Away" (or remove)
+    if DynamicTrading_Roster and DynamicTrading_Roster.UpdateSoulStatus then
+        DynamicTrading_Roster.UpdateSoulStatus(traderID, "Away", nil, nil)
+    end
+    
+    -- Remove from V1 radio registry
+    data.RadioTraders[traderID] = nil
+    
+    DynamicTrading.NetworkLogs.AddLog("Signal Lost: " .. traderName, "bad")
+    
+    if isServer() or not isClient() then ModData.transmit(V1_DATA_KEY) end
+end
 
--- Add a player to a trader's discoveredBy list
+-- =============================================================================
+-- 10. DISCOVERY SYSTEM (Radio-specific per-player visibility)
+-- =============================================================================
 function DynamicTrading.Manager.DiscoverTrader(traderID, player)
     if not traderID or not player then return false end
     local data = DynamicTrading.Manager.GetData()
-    local trader = data.Traders[traderID]
-    if not trader then return false end
+    local radioData = data.RadioTraders[traderID]
+    if not radioData then return false end
     
     local username = player:getUsername()
-    if not trader.discoveredBy then trader.discoveredBy = {} end
+    if not radioData.discoveredBy then radioData.discoveredBy = {} end
     
-    if not trader.discoveredBy[username] then
-        trader.discoveredBy[username] = true
+    if not radioData.discoveredBy[username] then
+        radioData.discoveredBy[username] = true
         DynamicTrading.Manager.BumpTradersVersion()
         return true
     end
-    return false -- Already discovered
+    return false
 end
 
--- Check if a player has discovered a specific trader
 function DynamicTrading.Manager.HasDiscovered(traderID, player)
     if not traderID or not player then return false end
     local data = DynamicTrading.Manager.GetData()
-    local trader = data.Traders[traderID]
-    if not trader then return false end
+    local radioData = data.RadioTraders[traderID]
+    if not radioData then return false end
     
-    -- If PublicNetwork is enabled (shared mode), everyone has discovered everyone
     if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork then return true end
     
     local username = player:getUsername()
-    return trader.discoveredBy and trader.discoveredBy[username] == true
+    return radioData.discoveredBy and radioData.discoveredBy[username] == true
 end
 
--- Get all traders this player has NOT discovered yet
 function DynamicTrading.Manager.GetUndiscoveredTraders(player)
     if not player then return {} end
     local data = DynamicTrading.Manager.GetData()
     local undiscovered = {}
     local username = player:getUsername()
     
-    for id, trader in pairs(data.Traders) do
-        if not trader.discoveredBy or not trader.discoveredBy[username] then
-            table.insert(undiscovered, trader)
+    for id, radioData in pairs(data.RadioTraders) do
+        if not radioData.discoveredBy or not radioData.discoveredBy[username] then
+            local trader = DynamicTrading.Manager.GetTrader(id)
+            if trader and trader.status == "Trading" then
+                table.insert(undiscovered, trader)
+            end
         end
     end
     return undiscovered
 end
 
--- Get count of traders discovered by this player
 function DynamicTrading.Manager.GetDiscoveredCount(player)
     if not player then return 0 end
     local data = DynamicTrading.Manager.GetData()
     
-    -- [FIX] If PublicNetwork is enabled, everyone sees every trader.
-    -- This ensures the UI "Refresh Trigger" works for everyone when a trader is added/removed.
     if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork then
         local count = 0
-        for _ in pairs(data.Traders) do count = count + 1 end
+        for _ in pairs(data.RadioTraders) do count = count + 1 end
         return count
     end
 
     local count = 0
     local username = player:getUsername()
     
-    for id, trader in pairs(data.Traders) do
-        if trader.discoveredBy and trader.discoveredBy[username] then
+    for id, radioData in pairs(data.RadioTraders) do
+        if radioData.discoveredBy and radioData.discoveredBy[username] then
             count = count + 1
         end
     end
     return count
 end
 
--- [NEW] Helper to signal UI that trader data has changed significantly
+-- =============================================================================
+-- 11. VERSION BUMPING (Signals UI refreshes)
+-- =============================================================================
 function DynamicTrading.Manager.BumpTradersVersion()
     local data = DynamicTrading.Manager.GetData()
     if not data.DailyCycle then return end
     data.DailyCycle.tradersVersion = (data.DailyCycle.tradersVersion or 0) + 1
-    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
+    if isServer() or not isClient() then ModData.transmit(V1_DATA_KEY) end
 end
+
+-- =============================================================================
+-- 12. ACTIVE RADIO TRADERS LIST (For UI)
+-- =============================================================================
+function DynamicTrading.Manager.GetActiveRadioTraders(player)
+    local data = DynamicTrading.Manager.GetData()
+    local traders = {}
+    local username = player and player:getUsername()
+    local isPublic = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork
+    
+    for id, radioData in pairs(data.RadioTraders) do
+        local visible = isPublic or (radioData.discoveredBy and username and radioData.discoveredBy[username])
+        if visible then
+            local trader = DynamicTrading.Manager.GetTrader(id)
+            if trader and trader.status == "Trading" then
+                table.insert(traders, trader)
+            end
+        end
+    end
+    return traders
+end
+
+print("[DynamicTrading] V1 Manager (Faction Parity) Loaded.")

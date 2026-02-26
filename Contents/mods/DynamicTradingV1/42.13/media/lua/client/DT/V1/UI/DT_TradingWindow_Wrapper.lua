@@ -1,10 +1,12 @@
 -- =============================================================================
--- DYNAMIC TRADING V1: UI WRAPPER
+-- DYNAMIC TRADING V1: UI WRAPPER (FACTION PARITY)
+-- =============================================================================
+-- V1 uses the shared faction economy (Engine v2, Roster, Stock, Economy V2).
+-- This wrapper provides V1-specific UI behavior (radio connection, window title).
 -- =============================================================================
 require "DT/Common/UI/Trading/DT_TradingWindow"
 require "DT/V1/Manager"
-require "DT/V1/Economy"
-require "DT/V1/Events"
+require "DT/Common/Events/DT_EventManager"
 require "DT/V1/DT_DialogueManager" 
 require "DT/V1/Utils/DT_OptionsManager" 
 
@@ -52,19 +54,41 @@ function V1_DataProvider:getItemData(key)
     return DynamicTrading.Config.MasterList[key]
 end
 
+-- PRICING: Uses shared V2 Economy (faction-aware, globalHeat from Engine v2)
 function V1_DataProvider:getBuyPrice(key, customData, verbose)
-    local data = DynamicTrading.Manager.GetData()
-    return DynamicTrading.Economy.V1.GetBuyPrice(key, data.globalHeat or 0, customData, verbose)
+    -- V1_DataProvider receives a traderID from the trading window context
+    local traderID = self._currentTraderID
+    if traderID and DynamicTrading.Economy and DynamicTrading.Economy.V2 then
+        return DynamicTrading.Economy.V2.GetBuyPrice(traderID, key, customData, verbose)
+    end
+    -- Fallback: use base price
+    local itemData = DynamicTrading.Config.MasterList[key]
+    return itemData and itemData.basePrice or 99999
 end
 
 function V1_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
-    local data = DynamicTrading.Manager.GetData()
-    local localCnt = (trader.localDeflation and trader.localDeflation[masterKey]) or 0
-    return DynamicTrading.Economy.V1.GetSellPrice(invItem, masterKey, trader.archetype, data.globalHeat, localCnt, verbose)
+    local traderID = trader and trader.id or self._currentTraderID
+    if traderID and DynamicTrading.Economy and DynamicTrading.Economy.V2 then
+        return DynamicTrading.Economy.V2.GetSellPrice(traderID, invItem, masterKey, verbose)
+    end
+    return 0
 end
 
 function V1_DataProvider:getPriceModifier(tags)
-    return DynamicTrading.Events.GetPriceModifier and DynamicTrading.Events.GetPriceModifier(tags) or 1.0
+    -- Faction-aware event modifier
+    local traderID = self._currentTraderID
+    if traderID and DynamicTrading.Events and DynamicTrading.Events.GetFactionPriceModifier then
+        local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(traderID)
+        if soul then
+            local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction(soul.factionID)
+            return DynamicTrading.Events.GetFactionPriceModifier(faction, tags)
+        end
+    end
+    -- Fallback to global event modifier
+    if DynamicTrading.Events and DynamicTrading.Events.GetPriceModifier then
+        return DynamicTrading.Events.GetPriceModifier(tags)
+    end
+    return 1.0
 end
 
 function V1_DataProvider:lockItem(itemID)
@@ -180,6 +204,21 @@ function V1_DataProvider:isConnectionValid(obj)
     
     if not data or not data:getIsTurnedOn() then return false end
 
+    -- [NEW] Signal Validity Check (V1 Parity)
+    -- If the trader has expired or is no longer discovered, sever the connection.
+    if self._currentTraderID then
+        local data = DynamicTrading.Manager.GetData()
+        if not data.RadioTraders or not data.RadioTraders[self._currentTraderID] then
+            return false
+        end
+        
+        -- Check Soul Status (must be "Trading")
+        local trader = DynamicTrading.Manager.GetTrader(self._currentTraderID)
+        if not trader or trader.status ~= "Trading" then
+            return false
+        end
+    end
+
     if instanceof(obj, "IsoWaveSignal") then
         local sq = obj:getSquare()
         if not sq then return false end
@@ -207,5 +246,7 @@ end
 -- V1 Specific Toggle Implementation
 local originalToggle = DT_TradingWindow.ToggleWindow
 function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj)
+    -- Set the current trader ID so pricing functions can look up the soul
+    V1_DataProvider._currentTraderID = traderID
     originalToggle(traderID, archetype, radioObj, V1_DataProvider)
 end

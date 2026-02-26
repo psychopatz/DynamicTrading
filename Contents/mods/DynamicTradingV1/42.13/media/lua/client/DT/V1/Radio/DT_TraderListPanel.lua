@@ -82,27 +82,21 @@ end
 
 function DT_TraderListPanel:populateList()
     self.listbox:clear()
-    local data = DynamicTrading.Manager.GetData()
     local player = getSpecificPlayer(0)
     
-    if not data.Traders then 
-        self.listbox:addItem("No signals. Try scanning.", {})
-        return 
-    end
-
+    local traders = DynamicTrading.Manager.GetActiveRadioTraders(player)
+    
     local sortedList = {}
-    for id, trader in pairs(data.Traders) do
-        if DynamicTrading.Manager.HasDiscovered(id, player) then
-            table.insert(sortedList, { id = id, data = trader })
-        end
+    for _, trader in ipairs(traders) do
+        table.insert(sortedList, trader)
     end
     table.sort(sortedList, function(a, b) return a.id > b.id end)
 
-    for _, entry in ipairs(sortedList) do
-        local trader = entry.data
-        local occupation = DynamicTrading.Archetypes[trader.archetype] and DynamicTrading.Archetypes[trader.archetype].name or trader.archetype
+    for _, trader in ipairs(sortedList) do
+        local archetypeData = DynamicTrading.Archetypes[trader.archetype]
+        local occupation = archetypeData and archetypeData.name or trader.archetype
         local txt = (trader.name or "Unknown") .. " - " .. occupation
-        self.listbox:addItem(txt, { traderID = entry.id, archetype = trader.archetype })
+        self.listbox:addItem(txt, { traderID = trader.id, archetype = trader.archetype })
     end
     
     if #sortedList == 0 then
@@ -131,8 +125,7 @@ function DT_TraderListPanel.drawItem(this, y, item, alt)
     end
 
     -- Icon Logic
-    local data = DynamicTrading.Manager.GetData()
-    local trader = data.Traders and data.Traders[item.item.traderID]
+    local trader = DynamicTrading.Manager.GetTrader(item.item.traderID)
     local tex = nil
     
     if trader and DynamicTrading.Portraits then
