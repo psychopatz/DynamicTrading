@@ -61,19 +61,32 @@ local function onPsychopatzCommand(module, command, player, args)
         -- ACTION 2: RESET STATS
         -- =================================================
         if args.doStats then
-            local stats = player:getStats()
-            if stats then
-                -- Crash Safety: Check if functions exist before calling
-                if stats.setHunger  then stats:setHunger(0.0) end
-                if stats.setThirst  then stats:setThirst(0.0) end
-                if stats.setFatigue then stats:setFatigue(0.0) end
-                
-                if player.sendObjectChange then
-                    player:sendObjectChange("stats")
-                end
-                
+            -- 1. SET CORE STATS DIRECTLY ON PLAYER
+            -- In Build 42, use the IsoPlayer setters for better compatibility.
+            if player.setStatsHunger then 
+                player:setStatsHunger(0.0) 
+            else
+                -- Fallback if the above isn't available in your specific sub-build
+                local stats = player:getStats()
+                if stats and stats.setHunger then stats:setHunger(0.0) end
+            end
+
+            -- Repeat for Thirst and Fatigue
+            if player.setStatsThirst then player:setStatsThirst(0.0) end
+            if player.setStatsFatigue then player:setStatsFatigue(0.0) end
+
+            -- 2. RESET B42 DIGESTION (Crucial to prevent "Full to Bursting")
+            local bodyDamage = player:getBodyDamage()
+            if bodyDamage then
+                bodyDamage:setHealthFromFoodTimer(0.0)
+            end
+
+            -- 3. SYNC FOR MULTIPLAYER
+            if isClient() and player.sendPlayerStatsPacket then
+                player:sendPlayerStatsPacket()
             end
         end
+
 
         -- =================================================
         -- ACTION 3: SPAWN ITEM
