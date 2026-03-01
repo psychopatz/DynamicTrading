@@ -78,10 +78,50 @@ Handlers.RequestRoster = function(player, args)
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local engineData = DynamicTrading_Engine.GetEngineData()
     
+    -- Optimize Radar Roster: Only send souls that are currently Trading
+    local minimalSouls = {}
+    if rosterData.Souls then
+        for uuid, soul in pairs(rosterData.Souls) do
+            if soul.status == "Trading" then
+                minimalSouls[uuid] = soul
+            end
+        end
+    end
+
+    local minimalRoster = {
+        FactionMembers = rosterData.FactionMembers,
+        Souls = minimalSouls,
+        Traders = rosterData.Traders -- Traders are usually few, keeping for now
+    }
+    
     DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncRoster", {
-        roster = rosterData,
+        roster = minimalRoster,
         factions = factionData,
         globalEvents = engineData and engineData.EventSystem and engineData.EventSystem.activeEvents or {}
+    })
+end
+
+-- [ON-DEMAND ROSTER REQUEST]
+-- Duplicated here for general mod data sync (Radar/Common UIs)
+Handlers.RequestFactionRoster = function(player, args)
+    local factionID = args.factionID
+    if not factionID then return end
+    
+    local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    local members = rosterData.FactionMembers and rosterData.FactionMembers[factionID] or {}
+    
+    local factionSouls = {}
+    if rosterData.Souls then
+        for _, uuid in ipairs(members) do
+            if rosterData.Souls[uuid] then
+                factionSouls[uuid] = rosterData.Souls[uuid]
+            end
+        end
+    end
+    
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionRoster", {
+        factionID = factionID,
+        souls = factionSouls
     })
 end
 

@@ -112,12 +112,19 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
     if rosterData then
         local members = rosterData.FactionMembers and rosterData.FactionMembers[f.id]
         if members and #members > 0 then
+            local hasSouls = false
             for _, uuid in ipairs(members) do
                 local soul = rosterData.Souls and rosterData.Souls[uuid]
                 if soul then
                     local dataEntry = { soul = soul, uuid = uuid }
                     self.rosterlist:addItem(soul.name or uuid, dataEntry)
+                    hasSouls = true
                 end
+            end
+            
+            -- [MP] Placeholder if data hasn't arrived from server yet
+            if not hasSouls and isClient() and not isServer() then
+                self.rosterlist:addItem("Syncing Frequency...", nil)
             end
         end
     end

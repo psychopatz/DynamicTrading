@@ -212,6 +212,7 @@ function DT_FactionInfoWindow:refreshList()
 end
 
 function DT_FactionInfoWindow:populateList(factionData, rosterData)
+    if not factionData then return end
     if not self.listbox then return end
     self.listbox:clear()
     
@@ -227,19 +228,26 @@ function DT_FactionInfoWindow:populateList(factionData, rosterData)
     for _, id in ipairs(keys) do
         local f = factionData[id]
         
-        -- Check Population
         local isAlive = true
         if f.isV1 then
             -- Virtual faction is always alive
             isAlive = true
         elseif rosterData and rosterData.FactionMembers then
             local members = rosterData.FactionMembers[id]
-            if not members or #members == 0 then
-                isAlive = false
+            -- If we have members info, use it to determine life
+            if members then
+                isAlive = #members > 0
+            else
+                -- If we don't have members for this specific faction yet, 
+                -- default to show it if f.memberCount > 0 (optimistic sync)
+                isAlive = (f.memberCount or 0) > 0
             end
+        else
+            -- No roster data at all? Default to show based on faction's own count
+            isAlive = (f.memberCount or 0) > 0
         end
 
-        -- Only add if alive (or if we can't determine, default to show to be safe)
+        -- Always show if we have no reason to hide it (prevents UI flicker during sync)
         if isAlive then
             self.listbox:addItem(f.name or id, f)
         end
@@ -268,6 +276,12 @@ function DT_FactionInfoWindow:onListMouseDown(item)
         local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster")
         if win.tabPopulation then win.tabPopulation:updateData(f, rosterData) end
     end
+
+    -- [MP OPTIMIZATION] Request detailed soul data for this faction on-demand
+    if isClient() and not isServer() and not f.isV1 then
+        print("[DT] Requesting detailed roster for faction: " .. tostring(f.id))
+        sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestFactionRoster", { factionID = f.id })
+    end
 end
 
 -- =============================================================================
@@ -286,6 +300,25 @@ local function onServerCommand(module, command, args)
             
             -- Populate
             DT_FactionInfoWindow.instance:populateList(args.factions, args.roster)
+        end
+    elseif command == "SyncFactionRoster" then
+        -- Detailed souls for a specific faction arrived
+        local factionID = args.factionID
+        local souls = args.souls
+        
+        DT_FactionInfoWindow.cachedRosterData = DT_FactionInfoWindow.cachedRosterData or {}
+        DT_FactionInfoWindow.cachedRosterData.Souls = DT_FactionInfoWindow.cachedRosterData.Souls or {}
+        
+        -- Merge the new souls into our cache
+        for uuid, soul in pairs(souls) do
+            DT_FactionInfoWindow.cachedRosterData.Souls[uuid] = soul
+        end
+        
+        -- If this is the currently selected faction, refresh the population tab
+        if DT_FactionInfoWindow.selectedFaction and DT_FactionInfoWindow.selectedFaction.id == factionID then
+            if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.tabPopulation then
+                DT_FactionInfoWindow.instance.tabPopulation:updateData(DT_FactionInfoWindow.selectedFaction, DT_FactionInfoWindow.cachedRosterData)
+            end
         end
     end
 end

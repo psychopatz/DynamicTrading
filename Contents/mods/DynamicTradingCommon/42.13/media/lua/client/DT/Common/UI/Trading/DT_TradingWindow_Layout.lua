@@ -1,3 +1,5 @@
+require "DT/Common/UI/Trading/DT_TradingWindow"
+
 local LEFT_COL_W = 250
 local RIGHT_MARGIN = 10
 local PADDING = 10

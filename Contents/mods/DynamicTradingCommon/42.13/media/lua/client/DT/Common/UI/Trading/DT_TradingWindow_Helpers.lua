@@ -1,4 +1,5 @@
 require "Utils/DT_StringUtils" -- This is common utils
+require "DT/Common/UI/Trading/DT_TradingWindow"
 
 -- =============================================================================
 -- 1. CONNECTION & POWER VALIDATION

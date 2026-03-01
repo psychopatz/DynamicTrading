@@ -176,6 +176,7 @@ function DT_FactionDebugWindow:refreshList()
 end
 
 function DT_FactionDebugWindow:populateList(factionData)
+    if not factionData then return end
     self.listbox:clear()
     
     -- Sort keys
@@ -280,6 +281,12 @@ function DT_FactionDebugWindow:onListMouseDown(item)
                 end
             end
         end
+    end
+
+    -- [MP OPTIMIZATION] Request detailed soul data for this faction on-demand
+    if isClient() and not isServer() then
+        print("[DT-Debug] Requesting detailed roster for faction: " .. tostring(f.id))
+        sendClientCommand(getPlayer(), "DynamicTrading_V2", "RequestFactionRoster", { factionID = f.id })
     end
 end
 
@@ -443,6 +450,24 @@ local function onServerCommand(module, command, args)
             
             -- Populate the UI
             DT_FactionDebugWindow.instance:populateList(args.factions)
+        end
+    elseif command == "SyncFactionRoster" then
+        -- Detailed souls for a specific faction arrived (MP)
+        local factionID = args.factionID
+        local souls = args.souls
+        
+        DT_FactionDebugWindow.cachedRosterData = DT_FactionDebugWindow.cachedRosterData or {}
+        DT_FactionDebugWindow.cachedRosterData.Souls = DT_FactionDebugWindow.cachedRosterData.Souls or {}
+        
+        -- Merge the new souls into our cache
+        for uuid, soul in pairs(souls) do
+            DT_FactionDebugWindow.cachedRosterData.Souls[uuid] = soul
+        end
+        
+        -- If this is the currently selected faction, refresh the roster list
+        local selected = DT_FactionDebugWindow.instance and DT_FactionDebugWindow.instance.listbox.items[DT_FactionDebugWindow.instance.listbox.selected]
+        if selected and selected.item.id == factionID then
+            DT_FactionDebugWindow.instance:onListMouseDown(selected.item)
         end
     end
 end

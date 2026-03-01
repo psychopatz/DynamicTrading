@@ -14,7 +14,7 @@ function DynamicTrading_Roster.Init()
             Souls = {},        -- Persistent identities: [uuid] = soulData
             FactionMembers = {} -- Index: [factionID] = { uuid1, uuid2, ... }
         })
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
     end
     
     local data = ModData.get(MOD_DATA_KEY)
@@ -37,7 +37,7 @@ function DynamicTrading_Roster.CreateTrader(traderID, config)
             visuals = config.visuals or {}, -- model, outfitID, etc
             memory = {} -- [Username] = { trust, lastSeen, tradeVolume }
         }
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
         print("DynamicTrading: Registered Trader " .. traderID)
     end
 end
@@ -51,7 +51,7 @@ function DynamicTrading_Roster.SetSpawnStatus(traderID, isSpawned)
     local data = ModData.get(MOD_DATA_KEY)
     if data.Traders[traderID] then
         data.Traders[traderID].isPhysicallySpawned = isSpawned
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
     end
 end
 
@@ -59,7 +59,7 @@ function DynamicTrading_Roster.SetReturnTime(traderID, timestamp)
     local data = ModData.get(MOD_DATA_KEY)
     if data.Traders[traderID] then
         data.Traders[traderID].returnTime = timestamp
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
     end
 end
 
@@ -74,7 +74,7 @@ function DynamicTrading_Roster.UpdateMemory(traderID, username, tradeValue)
         mem.lastSeen = getGameTime():getWorldAgeHours()
         mem.tradeVolume = mem.tradeVolume + tradeValue
         mem.trust = math.min(100, mem.trust + (tradeValue * 0.1))
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
     end
 end
 
@@ -117,7 +117,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
         local entry = ModData.get(soulKey)
         for k, v in pairs(brain) do entry[k] = v end
     end
-    ModData.transmit(soulKey)
+    -- ModData.transmit(soulKey) -- Disabled global broadcast
     
     -- Update Registry with minimal info
     local data = ModData.get(MOD_DATA_KEY)
@@ -140,7 +140,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
         portraitID = brain.portraitID
     }
 
-    ModData.transmit(MOD_DATA_KEY)
+    -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
 end
 
 function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)
@@ -159,7 +159,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         brain.returnTime = returnTime
         brain.returnStatus = returnStatus
         local soulKey = "DTSOUL_" .. uuid
-        ModData.transmit(soulKey)
+        -- ModData.transmit(soulKey) -- Disabled global broadcast
 
         -- [NEW] Trigger Stock Generation if entering Trading state
         if DynamicTrading_Stock and DynamicTrading_Stock.OnSoulStatusChanged then
@@ -175,7 +175,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         registry.status = status
         registry.returnTime = returnTime
         registry.returnStatus = returnStatus
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
     end
     
     print("[DTNPC-Roster] Updated status for " .. uuid .. " to " .. (status or "nil") .. " (Return in: " .. tostring(returnTime) .. " as " .. tostring(returnStatus) .. ")")
@@ -245,7 +245,7 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     end
     table.insert(data.FactionMembers[factionID], uuid)
     
-    ModData.transmit(MOD_DATA_KEY)
+    -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
     return uuid
 end
 
@@ -265,7 +265,7 @@ function DynamicTrading_Roster.RemoveSoul(factionID, count)
             if ModData.remove then ModData.remove("DTSOUL_" .. uuid) end
         end
     end
-    ModData.transmit(MOD_DATA_KEY)
+    -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
 end
 
 function DynamicTrading_Roster.ClearSouls(factionID)
@@ -278,7 +278,7 @@ function DynamicTrading_Roster.ClearSouls(factionID)
         end
         data.FactionMembers[factionID] = nil
     end
-    ModData.transmit(MOD_DATA_KEY)
+    -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
 end
 
 -- ==========================================================

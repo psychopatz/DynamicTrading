@@ -9,7 +9,7 @@ local MOD_DATA_KEY = "DynamicTrading_Stock"
 function DynamicTrading_Stock.Init()
     if not ModData.exists(MOD_DATA_KEY) then
         ModData.add(MOD_DATA_KEY, {})
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
     end
 end
 
@@ -32,7 +32,7 @@ function DynamicTrading_Stock.InitializeInventory(traderID, initialItems)
             portraitID = soul and soul.portraitID or 1,
             gender = (soul and soul.isFemale) and "Female" or "Male"
         }
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
     end
 end
 
@@ -97,7 +97,7 @@ function DynamicTrading_Stock.UpdateItemQty(traderUUID, itemFullType, delta, pla
             end
         end
         
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
         return true
     end
     return false
@@ -112,7 +112,7 @@ function DynamicTrading_Stock.ClearStock(traderUUID)
     if data[traderUUID] then
         print("[DT-Stock] Clearing stock for " .. traderUUID)
         data[traderUUID] = nil
-        ModData.transmit(MOD_DATA_KEY)
+        -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
     end
 end
 
@@ -139,8 +139,6 @@ end
 function DynamicTrading_Stock.OnSoulStatusChanged(uuid, status)
     -- If LEAVING "Trading" state, clear the stock
     if status ~= "Trading" then
-        -- Check if we were previously trading? 
-        -- Actually, just checking if we have stock to clear is enough/safer
         local data = ModData.get(MOD_DATA_KEY)
         if data[uuid] then
             print("[DT-Stock] Soul " .. uuid .. " left Trading state (now: " .. tostring(status) .. "). Clearing stock.")

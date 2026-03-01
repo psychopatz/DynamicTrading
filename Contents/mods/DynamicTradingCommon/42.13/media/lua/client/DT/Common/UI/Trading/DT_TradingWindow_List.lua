@@ -1,4 +1,5 @@
 require "DT/Common/UI/Trading/DT_TradingItemUtils"
+require "DT/Common/UI/Trading/DT_TradingWindow"
 
 function DT_TradingWindow.drawItem(listbox, y, item, alt)
     local height = listbox.itemheight

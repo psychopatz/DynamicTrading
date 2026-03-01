@@ -1,4 +1,5 @@
 -- require "DT_DialogueManager" -- REMOVED: Data Agnostic
+require "DT/Common/UI/Trading/DT_TradingWindow"
 
 -- =============================================================================
 -- 1. TRANSACTION ACTION (BUY/SELL)
