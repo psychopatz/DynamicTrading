@@ -100,7 +100,7 @@ local languages = {
 local dialogueTypes = { "Greetings", "Buying", "Selling", "Sell_ask", "Idle", "Request" }
 
 -- Debug Flag
-DynamicTrading.Debug = true
+DynamicTrading.Debug = false
 
 -- Helper to check file existence to avoid console spam
 local function FileExists(path)

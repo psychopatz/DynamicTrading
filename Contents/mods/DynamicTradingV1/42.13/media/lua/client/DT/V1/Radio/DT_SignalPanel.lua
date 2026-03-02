@@ -217,21 +217,20 @@ end
 
 function DT_SignalPanel:updateSignalLogic()
     local player = getSpecificPlayer(0)
-    local currentFound, dailyLimit = DynamicTrading.Manager.GetDailyStatus()
-    local isPublic = SandboxVars.DynamicTrading.PublicNetwork
-    local signalAvailable = true
+    local signalAvailable = false
     
     local deltaTime = UIManager.getMillisSinceLastRender()
     if self.clickAnimTimer > 0 then
         self.clickAnimTimer = self.clickAnimTimer - deltaTime
     end
     
-    if isPublic then
-        if currentFound >= dailyLimit then signalAvailable = false end
-    else
-        local canGenNew = (currentFound < dailyLimit)
-        local undiscovered = DynamicTrading.Manager.GetUndiscoveredTraders(player)
-        if not canGenNew and #undiscovered == 0 then signalAvailable = false end
+    -- [NEW] Dynamic Signal Logic: Parity with V2
+    -- Check if there are any signals in the "Trading" state that we HAVEN'T found yet.
+    local totalTrading = DynamicTrading.Manager.GetTotalTradingSignals() or 0
+    local foundByMe = DynamicTrading.Manager.GetFoundSignalsCount(player) or 0
+    
+    if totalTrading > 0 and foundByMe < totalTrading then
+        signalAvailable = true
     end
     
     if self.signalFoundPersist then

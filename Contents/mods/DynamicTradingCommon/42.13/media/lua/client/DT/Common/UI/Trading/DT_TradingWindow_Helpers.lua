@@ -220,12 +220,22 @@ function DT_TradingWindow:updateIdentityDisplay(trader)
         local gt = GameTime:getInstance()
         local text = "Signal: Permanent"
         local r, g, b = 0.5, 0.8, 1.0
-        if trader.expirationTime then
-            local diff = trader.expirationTime - gt:getWorldAgeHours()
-            if diff <= 0 then text = "Signal: Disconnection Imminent!"; r, g, b = 1, 0, 0
-            elseif diff < 1 then text = "Signal: Unstable Transmission"; r, g, b = 1, 0.4, 0
-            elseif diff < 8 then text = string.format("Signal: Fading (%dh)", math.floor(diff)); r, g, b = 1, 0.8, 0.2
-            else text = string.format("Signal: Stable (%dh)", math.floor(diff)); r, g, b = 0.2, 1, 0.2 end
+        local expireTime = trader.expirationTime or trader.returnTime
+        if expireTime then
+            local diff = expireTime - gt:getWorldAgeHours()
+            if diff <= 0 then 
+                text = "Signal: Disconnection Imminent!"
+                r, g, b = 1, 0, 0
+            elseif diff < 1 then 
+                text = string.format("Signal: Fading (%dm)", math.floor(diff * 60))
+                r, g, b = 1, 0.4, 0
+            elseif diff < 8 then 
+                text = string.format("Signal: Stable (%dh)", math.ceil(diff))
+                r, g, b = 1, 0.8, 0.2
+            else 
+                text = string.format("Signal: Optimal (%dh)", math.ceil(diff))
+                r, g, b = 0.2, 1, 0.2 
+            end
         end
         self.lblSignal:setName(text)
         self.lblSignal:setColor(r, g, b, 1)

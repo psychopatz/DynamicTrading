@@ -12,6 +12,7 @@ local MOD_DATA_KEY = "DynamicTrading_Factions"
 -- ==========================================================
 function Interaction.GetFaction(factionID)
     local data = ModData.get(MOD_DATA_KEY)
+    if not data then return nil end
     return data[factionID]
 end
 

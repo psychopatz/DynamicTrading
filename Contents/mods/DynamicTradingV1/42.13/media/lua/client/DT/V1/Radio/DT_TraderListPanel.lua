@@ -2,6 +2,7 @@ require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISLabel"
 require "DT/V1/Manager"
+require "DT/V1/Radio/DT_V1_Dialogue_Hub"
 
 DT_TraderListPanel = ISPanel:derive("DT_TraderListPanel")
 
@@ -65,10 +66,20 @@ function DT_TraderListPanel:prerender()
     
     local player = getSpecificPlayer(0)
     local data = DynamicTrading.Manager.GetData()
-    local currentVersion = (data.DailyCycle and data.DailyCycle.tradersVersion) or 0
+    if not data then return end
+    
+    local currentVersion = data.tradersVersion or 0
     local currentDiscovered = DynamicTrading.Manager.GetDiscoveredCount(player)
 
-    if currentVersion ~= self.lastTradersVersion or currentDiscovered ~= self.lastDiscoveredCount then
+    -- [NEW] Periodic Refresh for Expirations
+    self.refreshTimer = (self.refreshTimer or 0) + UIManager.getMillisSinceLastRender()
+    local forceRefresh = false
+    if self.refreshTimer > 10000 then -- Every 10 seconds
+        self.refreshTimer = 0
+        forceRefresh = true
+    end
+
+    if currentVersion ~= self.lastTradersVersion or currentDiscovered ~= self.lastDiscoveredCount or forceRefresh then
         if currentDiscovered > self.lastDiscoveredCount and self.lastDiscoveredCount >= 0 then
             if self.parent and self.parent.signalPanel then
                 self.parent.signalPanel.signalFoundPersist = true
@@ -85,17 +96,37 @@ function DT_TraderListPanel:populateList()
     local player = getSpecificPlayer(0)
     
     local traders = DynamicTrading.Manager.GetActiveRadioTraders(player)
+    if not traders then return end
     
     local sortedList = {}
     for _, trader in ipairs(traders) do
-        table.insert(sortedList, trader)
+        if trader and trader.id then
+            table.insert(sortedList, trader)
+        end
     end
-    table.sort(sortedList, function(a, b) return a.id > b.id end)
+    
+    if #sortedList > 1 then
+        table.sort(sortedList, function(a, b) 
+            if not a.id or not b.id then return false end
+            return a.id > b.id 
+        end)
+    end
 
     for _, trader in ipairs(sortedList) do
         local archetypeData = DynamicTrading.Archetypes[trader.archetype]
-        local occupation = archetypeData and archetypeData.name or trader.archetype
-        local txt = (trader.name or "Unknown") .. " - " .. occupation
+        local occupation = archetypeData and archetypeData.name or trader.archetype or "General"
+        
+        -- [NEW] Duration Display
+        local durationText = ""
+        local expireTime = trader.expirationTime or trader.returnTime
+        if expireTime then
+            local diff = expireTime - getGameTime():getWorldAgeHours()
+            if diff <= 0 then durationText = " (EXPIRED)"
+            elseif diff < 1 then durationText = string.format(" (%dm)", math.floor(diff * 60))
+            else durationText = string.format(" (%dh)", math.ceil(diff)) end
+        end
+
+        local txt = (trader.name or "Unknown") .. " - " .. occupation .. durationText
         self.listbox:addItem(txt, { traderID = trader.id, archetype = trader.archetype })
     end
     
@@ -105,6 +136,8 @@ function DT_TraderListPanel:populateList()
 end
 
 function DT_TraderListPanel.drawItem(this, y, item, alt)
+    if not item or not item.item then return y end
+    
     local height = this.itemheight
     local width = this:getWidth()
     
@@ -140,7 +173,9 @@ function DT_TraderListPanel.drawItem(this, y, item, alt)
 
         if DynamicTrading.Portraits.GetPathFolder then
             local pathFolder = DynamicTrading.Portraits.GetPathFolder(archetype, gender)
-            tex = getTexture(pathFolder .. tostring(mappedID) .. ".png")
+            if pathFolder then
+                tex = getTexture(pathFolder .. tostring(mappedID) .. ".png")
+            end
         end
     end
     
@@ -171,9 +206,9 @@ function DT_TraderListPanel.onListMouseDown(target, x, y)
     local item = target.items[row]
     local mainWindow = target.parentPanel.parent
     
-    if item.item and item.item.traderID and mainWindow and DT_TradingWindow then
+    if item.item and item.item.traderID and mainWindow and DT_V1_Dialogue_Hub then
         if mainWindow.radioObj then
-             DT_TradingWindow.ToggleWindow(item.item.traderID, item.item.archetype, mainWindow.radioObj, mainWindow.dataProvider)
+             DT_V1_Dialogue_Hub.Init(nil, mainWindow.radioObj, item.item.traderID, getSpecificPlayer(0))
         end
     end
 end

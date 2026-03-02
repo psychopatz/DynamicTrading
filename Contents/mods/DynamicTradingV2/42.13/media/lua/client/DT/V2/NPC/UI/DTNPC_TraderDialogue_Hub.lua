@@ -238,7 +238,7 @@ local function OnTick()
     end
 
     if gt and elapsed > 0.02 then
-        print(DEBUG_PREFIX .. " Stock request timeout")
+        print(DEBUG_PREFIX .. " Stock arrived! Opening TradingWindow")
         if uiValid then
             pending.ui:speak("Sorry, I'm having trouble with my inventory right now.")
         end
