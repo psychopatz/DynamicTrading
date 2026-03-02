@@ -293,10 +293,10 @@ function DTNPCManager.StartTradeMission(uuid, forceImmediate)
     end
     
     local currentHours = getGameTime():getWorldAgeHours()
-    local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
+    local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 2
     
-    if forceImmediate then
-        walkHours = 0 -- Trigger transition immediately on next tick
+    if forceImmediate then 
+        walkHours = 0.02 -- Force Trade still simulates travel (approx 1.2 mins) but at a priority speed
     end
     
     print("[DTNPC] STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)

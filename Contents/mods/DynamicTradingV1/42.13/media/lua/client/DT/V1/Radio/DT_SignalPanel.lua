@@ -270,8 +270,6 @@ end
 function DT_SignalPanel:onInfoClick()
     if DT_FactionInfoWindow then
         DT_FactionInfoWindow.ToggleWindow()
-    if DT_FactionInfoWindow then
-        DT_FactionInfoWindow.ToggleWindow()
     end
 end
 

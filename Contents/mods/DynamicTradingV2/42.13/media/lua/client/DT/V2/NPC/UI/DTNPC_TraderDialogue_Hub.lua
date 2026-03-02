@@ -227,9 +227,17 @@ local function OnTick()
         return
     end
     
-    -- Timeout check (~5 seconds)
+    -- Timeout check (increased for multiplayer latency)
     local gt = getGameTime()
-    if gt and (gt:getWorldAgeHours() - pending.startTime) > 0.005 then
+    local elapsed = gt:getWorldAgeHours() - pending.startTime
+    
+    -- Provide status update to player every few seconds
+    if elapsed > 0.005 and not pending.hasSpokenShortWait then
+        pending.ui:speak("Still looking for it, just a second...")
+        pending.hasSpokenShortWait = true
+    end
+
+    if gt and elapsed > 0.02 then
         print(DEBUG_PREFIX .. " Stock request timeout")
         if uiValid then
             pending.ui:speak("Sorry, I'm having trouble with my inventory right now.")

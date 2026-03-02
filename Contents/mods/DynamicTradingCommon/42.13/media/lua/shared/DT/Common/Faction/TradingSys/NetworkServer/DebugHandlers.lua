@@ -21,16 +21,27 @@ local Handlers = {}
 Handlers.RequestFactionData = function(player, args)
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    local stockData = ModData.get("DynamicTrading_Stock") or {}
     
-    -- Optimize: Only send FactionMembers mapping, not all Souls.
-    -- Souls will be requested on-demand when the user clicks a faction.
+    -- Optimize: Send metadata + Souls that are currently Trading (for Merchant debug)
+    local filteredSouls = {}
+    if rosterData.Souls then
+        for uuid, soul in pairs(rosterData.Souls) do
+            if soul.status == "Trading" then
+                filteredSouls[uuid] = soul
+            end
+        end
+    end
+
     local minimalRoster = {
-        FactionMembers = rosterData.FactionMembers or {}
+        FactionMembers = rosterData.FactionMembers or {},
+        Souls = filteredSouls
     }
     
     DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionDebugData", {
         factions = factionData,
-        roster = minimalRoster
+        roster = minimalRoster,
+        stock = stockData
     })
 end
 

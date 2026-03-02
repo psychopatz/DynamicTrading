@@ -147,6 +147,14 @@ function DT_FactionDebugWindow:createChildren()
     self.btnForceEvent.backgroundColor = {r=0.7, g=0.5, b=0, a=1}
     self:addChild(self.btnForceEvent)
 
+    -- MERCHANT STOCK BUTTON
+    self.btnMerchant = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 5, ctrlY, ctrlBtnWidth, 20, "MERCHANTS", self, function()
+        DT_MerchantDebugWindow.Open()
+    end)
+    self.btnMerchant:initialise()
+    self.btnMerchant.backgroundColor = {r=0, g=0.5, b=0.5, a=1}
+    self:addChild(self.btnMerchant)
+
     self:refreshList()
 end
 
