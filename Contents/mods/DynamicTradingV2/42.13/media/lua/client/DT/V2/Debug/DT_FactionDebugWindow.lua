@@ -217,7 +217,7 @@ function DT_FactionDebugWindow:doDrawItem(y, item, alt)
     return y + self.itemheight
 end
 
-function DT_FactionDebugWindow:onListMouseDown(item)
+function DT_FactionDebugWindow:onListMouseDown(item, fromSync)
     local f = item
     local text = " <RGB:1,1,0> TITLE: " .. f.name .. " <LINE> "
     text = text .. " <RGB:1,1,1> ID: " .. f.id .. " <LINE> "
@@ -284,7 +284,7 @@ function DT_FactionDebugWindow:onListMouseDown(item)
     end
 
     -- [MP OPTIMIZATION] Request detailed soul data for this faction on-demand
-    if isClient() and not isServer() then
+    if isClient() and not isServer() and not fromSync then
         print("[DT-Debug] Requesting detailed roster for faction: " .. tostring(f.id))
         sendClientCommand(getPlayer(), "DynamicTrading_V2", "RequestFactionRoster", { factionID = f.id })
     end
@@ -467,7 +467,7 @@ local function onServerCommand(module, command, args)
         -- If this is the currently selected faction, refresh the roster list
         local selected = DT_FactionDebugWindow.instance and DT_FactionDebugWindow.instance.listbox.items[DT_FactionDebugWindow.instance.listbox.selected]
         if selected and selected.item.id == factionID then
-            DT_FactionDebugWindow.instance:onListMouseDown(selected.item)
+            DT_FactionDebugWindow.instance:onListMouseDown(selected.item, true)
         end
     end
 end

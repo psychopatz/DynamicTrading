@@ -5,9 +5,9 @@
 -- ==============================================================================
 
 DTNPCManager = DTNPCManager or {}
-DTNPCManager.Data = {}
-DTNPCManager.PendingRegistrations = {}
-DTNPCManager.OutfitIDToUUID = {} -- Maps current outfit IDs to persistent UUIDs
+DTNPCManager.Data = DTNPCManager.Data or {}
+DTNPCManager.PendingRegistrations = DTNPCManager.PendingRegistrations or {}
+DTNPCManager.OutfitIDToUUID = DTNPCManager.OutfitIDToUUID or {} -- Maps current outfit IDs to persistent UUIDs
 
 require "DT/Common/Faction/TradingSys/DynamicTrading_Roster" -- V2 Roster Bridge
 

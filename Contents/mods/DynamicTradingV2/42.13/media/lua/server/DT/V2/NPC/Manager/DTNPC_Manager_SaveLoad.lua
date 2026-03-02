@@ -3,6 +3,9 @@
 -- Save / Load system for NPC persistence.
 -- ==============================================================================
 
+-- GUARD: Ensure DTNPCManager table exists
+DTNPCManager = DTNPCManager or {}
+
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 

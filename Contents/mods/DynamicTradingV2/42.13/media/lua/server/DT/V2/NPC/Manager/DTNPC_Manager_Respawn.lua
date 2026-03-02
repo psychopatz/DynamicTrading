@@ -3,6 +3,9 @@
 -- Respawn checks, Roster hydration, Away transitions, and Trade cycles.
 -- ==============================================================================
 
+-- GUARD: Ensure DTNPCManager table exists
+DTNPCManager = DTNPCManager or {}
+
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
@@ -282,7 +285,7 @@ function DTNPCManager.ProcessTradeCycles()
     end
 end
 
-function DTNPCManager.StartTradeMission(uuid)
+function DTNPCManager.StartTradeMission(uuid, forceImmediate)
     local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
     if not soul then 
         print("[DTNPC] ERROR: StartTradeMission failed - Soul not found for " .. tostring(uuid))
@@ -291,6 +294,10 @@ function DTNPCManager.StartTradeMission(uuid)
     
     local currentHours = getGameTime():getWorldAgeHours()
     local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
+    
+    if forceImmediate then
+        walkHours = 0 -- Trigger transition immediately on next tick
+    end
     
     print("[DTNPC] STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)
     print("[DTNPC] | Travel Time: " .. walkHours .. "h. Status: Away. Target: Trading")
@@ -306,7 +313,7 @@ local function onClientCommand(module, command, player, args)
         local uuid = args.uuid
         if uuid then
             print("[DTNPC] Admin/Debug Force Trade Mission for: " .. uuid)
-            DTNPCManager.StartTradeMission(uuid)
+            DTNPCManager.StartTradeMission(uuid, true)
         end
     end
 end
