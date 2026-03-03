@@ -158,9 +158,11 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     -- 5. GATHER STATS
     local radioData = DynamicTrading.Config.GetRadioData(typeID)
     local radioTier = radioData.power or 0.5
+    local capacity = radioData.capacity or 1
     
     if isHam then 
         radioTier = radioTier * ((SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.HamRadioBonus) or 2.0) 
+        -- Ham radios have high capacity, so maybe don't multiply it, just use base
     end
     
     local elecLevel = player:getPerkLevel(Perks.Electricity)
@@ -169,7 +171,9 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     -- 6. PREPARE ARGUMENTS
     local args = {
         radioTier = radioTier,
-        skillBonus = skillBonus
+        skillBonus = skillBonus,
+        capacity = capacity,
+        foundSignals = DynamicTrading.Manager.GetFoundSignalsCount(player)
     }
 
     -- 7. EXECUTE (SP vs MP BRIDGE)

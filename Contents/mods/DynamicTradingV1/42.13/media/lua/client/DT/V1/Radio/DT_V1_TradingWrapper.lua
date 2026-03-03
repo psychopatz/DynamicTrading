@@ -116,23 +116,14 @@ function V1_Radio_DataProvider:getTrader(traderID, archetype)
         factionID = stock.factionID,
         portraitID = stock.portraitID,
         gender = stock.gender or "Male",
-        expirationTime = stock.expirationTime,
         returnTime = stock.returnTime,
         radioObj = self.radioObj
     }
     
     -- Fallback: Fetch from Radio Manager if missing in stock
-    if (not trader.expirationTime or not trader.returnTime) and DynamicTrading.Manager and DynamicTrading.Manager.GetData then
-        local radioData = DynamicTrading.Manager.GetData().RadioTraders[traderID]
-        if radioData then
-            trader.expirationTime = trader.expirationTime or radioData.expirationTime
-        end
-        local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(traderID)
         if soul then
             trader.returnTime = trader.returnTime or soul.returnTime
-            trader.expirationTime = trader.expirationTime or soul.expirationTime
         end
-    end
     
     return trader
 end

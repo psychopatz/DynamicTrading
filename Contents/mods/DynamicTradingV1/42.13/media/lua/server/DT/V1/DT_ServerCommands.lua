@@ -188,12 +188,21 @@ function Commands.AttemptScan(player, args)
         eventMult = DynamicTrading.Events.GetSystemModifier("scanChance")
     end
 
-    -- [NEW] Difficulty Scaling (Incentivize better radios/hams)
-    local totalSignals = DynamicTrading.Manager.GetTotalTradingSignals() or 0
-    local foundSignals = DynamicTrading.Manager.GetFoundSignalsCount(player) or 0
-    local progressRatio = (totalSignals > 0) and (foundSignals / totalSignals) or 0
+    -- [REFACTORED] Difficulty Scaling (Based on Capacity)
+    local capacity = args.capacity or 1
+    local foundSignals = args.foundSignals or 0
     
-    -- Penalty increases linearly with progress (at 100% found, it's 5x harder)
+    -- BLOCK: Capacity Check
+    if foundSignals >= capacity then
+        print("  - FAILED: Radio Capacity Full (" .. foundSignals .. "/" .. capacity .. ")")
+        SendResponse(player, "ScanResult", { status = "CAPACITY_FULL", targetUser = targetUser, currentCount = foundSignals, capacity = capacity })
+        return
+    end
+
+    local progressRatio = foundSignals / capacity
+    
+    -- Penalty increases as you approach capacity
+    -- At 0% full, penalty is 1.0. At 99% full, penalty is ~5.0.
     local penaltyFactor = 1.0 + (progressRatio * 4.0)
     
     local finalChance = (baseChance * radioTier * skillBonus * eventMult) / penaltyFactor
@@ -206,7 +215,7 @@ function Commands.AttemptScan(player, args)
     print("  - Base Chance: " .. baseChance)
     print("  - Radio Tier: " .. radioTier)
     print("  - Skill Bonus: " .. skillBonus)
-    print("  - Progress Ratio: " .. string.format("%.2f", progressRatio) .. " (" .. foundSignals .. "/" .. totalSignals .. ")")
+    print("  - Radio Capacity: " .. foundSignals .. "/" .. capacity .. " (Ratio: " .. string.format("%.2f", progressRatio) .. ")")
     print("  - Penalty Factor: " .. string.format("%.2f", penaltyFactor))
     print("  - Final Calculated Chance: " .. string.format("%.2f", finalChance) .. "%")
     print("  - Undiscovered Traders Pool: " .. #undiscovered)
@@ -278,7 +287,7 @@ local function Server_OnHourlyTick()
     
     if data.RadioTraders then
         for id, radioData in pairs(data.RadioTraders) do
-            if radioData.expirationTime and currentHours > radioData.expirationTime then
+            if radioData.returnTime and currentHours > radioData.returnTime then
                 DynamicTrading.Manager.ExpireRadioTrader(id)
                 changesMade = true
             end

@@ -220,7 +220,7 @@ function DT_TradingWindow:updateIdentityDisplay(trader)
         local gt = GameTime:getInstance()
         local text = "Signal: Permanent"
         local r, g, b = 0.5, 0.8, 1.0
-        local expireTime = trader.expirationTime or trader.returnTime
+        local expireTime = trader.returnTime
         if expireTime then
             local diff = expireTime - gt:getWorldAgeHours()
             if diff <= 0 then 

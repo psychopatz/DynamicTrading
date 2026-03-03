@@ -140,7 +140,7 @@ function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
     local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
     data.RadioTraders[uuid] = {
         id = uuid,
-        expirationTime = expireTime,
+        returnTime = expireTime,
         discoveredBy = {},
         createdHour = currentHours
     }
@@ -196,8 +196,7 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
         factionID = factionID,
         
         -- Radio-specific
-        expirationTime = (radioData and radioData.expirationTime) or (soul and soul.expirationTime),
-        returnTime = soul and soul.returnTime,
+        returnTime = (radioData and radioData.returnTime) or (soul and soul.returnTime),
         discoveredBy = radioData and radioData.discoveredBy or {},
         
         -- Deflation (from Stock system)
@@ -264,7 +263,7 @@ function DynamicTrading.Manager.DiscoverTrader(traderID, player)
         local gt = GameTime:getInstance()
         data.RadioTraders[traderID] = {
             id = traderID,
-            expirationTime = nil, -- V2 NPCs usually stay forever or handle their own expiration
+            returnTime = nil, -- V2 NPCs usually stay forever or handle their own expiration
             discoveredBy = {},
             createdHour = gt:getWorldAgeHours()
         }
@@ -413,7 +412,7 @@ function DynamicTrading.Manager.GetActiveRadioTraders(player)
         local visible = isPublic or (radioData.discoveredBy and username and radioData.discoveredBy[username])
         if visible then
             -- [NEW] Local Expiration Filter
-            local expired = radioData.expirationTime and currentHours > radioData.expirationTime
+            local expired = radioData.returnTime and currentHours > radioData.returnTime
             if not expired then
                 local trader = DynamicTrading.Manager.GetTrader(id)
                 if trader and trader.status == "Trading" then

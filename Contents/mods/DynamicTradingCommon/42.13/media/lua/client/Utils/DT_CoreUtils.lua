@@ -13,9 +13,9 @@ DynamicTrading.Utils = DynamicTrading.Utils or {}
 --- @return boolean: True if valid, false otherwise.
 function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
     -- 0. SIGNAL EXPIRATION CHECK
-    if trader and trader.expirationTime then
+    if trader and trader.returnTime then
         local gt = GameTime:getInstance()
-        if trader.expirationTime <= gt:getWorldAgeHours() then
+        if trader.returnTime <= gt:getWorldAgeHours() then
             return false
         end
     end

@@ -40,7 +40,6 @@ function DT_V1_Dialogue_Hub.Init(ui, radioObj, traderID, player)
             gender = trader.gender or "Male",
             portraitID = trader.portraitID or 1,
             factionID = trader.factionID,
-            expirationTime = trader.expirationTime or trader.returnTime,
             returnTime = trader.returnTime
         }
         

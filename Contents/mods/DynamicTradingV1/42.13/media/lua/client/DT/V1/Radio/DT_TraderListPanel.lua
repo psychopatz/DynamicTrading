@@ -15,7 +15,7 @@ end
 function DT_TraderListPanel:createChildren()
     ISPanel.createChildren(self)
     
-    self.lblTraders = ISLabel:new(10, 0, 16, "Active Signals:", 0.8, 0.8, 1, 1, UIFont.Small, true)
+    self.lblTraders = ISLabel:new(10, 0, 16, "Active Signals: 0/0", 0.8, 0.8, 1, 1, UIFont.Small, true)
     self:addChild(self.lblTraders)
 
     self.listbox = ISScrollingListBox:new(10, 20, self.width - 20, self.height - 25)
@@ -118,18 +118,47 @@ function DT_TraderListPanel:populateList()
         
         -- [NEW] Duration Display
         local durationText = ""
-        local expireTime = trader.expirationTime or trader.returnTime
+        local expireTime = trader.returnTime
+        local skipTrader = false
         if expireTime then
             local diff = expireTime - getGameTime():getWorldAgeHours()
-            if diff <= 0 then durationText = " (EXPIRED)"
+            if diff <= 0 then 
+                -- Skip expired traders (Automatically removed from list)
+                skipTrader = true
             elseif diff < 1 then durationText = string.format(" (%dm)", math.floor(diff * 60))
             else durationText = string.format(" (%dh)", math.ceil(diff)) end
         end
 
-        local txt = (trader.name or "Unknown") .. " - " .. occupation .. durationText
-        self.listbox:addItem(txt, { traderID = trader.id, archetype = trader.archetype })
+        if not skipTrader then
+            local txt = (trader.name or "Unknown") .. " - " .. occupation .. durationText
+            self.listbox:addItem(txt, { traderID = trader.id, archetype = trader.archetype })
+        end
     end
     
+    -- [NEW] Update Capacity Header
+    local typeID = nil
+    if self.parent and self.parent.radioObj then
+        if DT_RadioInteraction and DT_RadioInteraction.GetDeviceType then
+             typeID = DT_RadioInteraction.GetDeviceType(self.parent.radioObj)
+        end
+        if not typeID and self.parent.radioObj.getFullType then
+            typeID = self.parent.radioObj:getFullType()
+        end
+    end
+    
+    local radioData = typeID and DynamicTrading.Config.GetRadioData(typeID)
+    local capacity = radioData and radioData.capacity or 1
+    local currentCount = DynamicTrading.Manager.GetFoundSignalsCount(player) or 0
+    
+    if self.lblTraders then
+        self.lblTraders:setName(string.format("Active Signals: %d/%d", currentCount, capacity))
+        if currentCount >= capacity then
+            self.lblTraders:setColor(1.0, 0.5, 0.5, 1.0) -- Red if full
+        else
+            self.lblTraders:setColor(0.8, 0.8, 1.0, 1.0) -- Normal
+        end
+    end
+
     if #sortedList == 0 then
         self.listbox:addItem("No signals. Try scanning.", {})
     end

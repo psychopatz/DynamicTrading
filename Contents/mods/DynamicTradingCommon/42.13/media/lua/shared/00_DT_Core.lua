@@ -11,6 +11,11 @@ DynamicTrading.Config.MasterList = DynamicTrading.Config.MasterList or {}
 DynamicTrading.Config.Tags = DynamicTrading.Config.Tags or {}
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
+-- CORE MODULES
+require "DT/Common/Quests/DT_QuestManager"
+require "DT/Common/Items/DT_QuestItems"
+
+
 -- 0. CUSTOM SIGNALS
 -- Definitions for custom events to handle engine simulation phases.
 -- Added to LuaEventManager so other modules can hook via Events.OnDynamicTrading...
@@ -39,16 +44,16 @@ end
 -- 1. STATIC CONFIGURATION (Commonly referenced)
 
 DynamicTrading.Config.RadioTiers = {
-    ["Base.WalkieTalkie1"]          = { power = 0.5, desc = "Weak Signal (Toy)" },
-    ["Base.WalkieTalkieMakeShift"]  = { power = 0.6, desc = "Weak Signal (Makeshift)" },
-    ["Base.WalkieTalkie2"]          = { power = 0.8, desc = "Average Signal" },
-    ["Base.WalkieTalkie3"]          = { power = 1.0, desc = "Good Signal" },
-    ["Base.WalkieTalkie4"]          = { power = 1.2, desc = "Strong Signal" },
-    ["Base.WalkieTalkie5"]          = { power = 1.5, desc = "Military Grade" },
-    ["Base.HamRadioMakeShift"]      = { power = 1.2, desc = "Stationary (Makeshift)" },
-    ["Base.HamRadio1"]              = { power = 1.5, desc = "Stationary (Premium)" },
-    ["Base.HamRadio2"]              = { power = 2.0, desc = "Stationary (Military)" },
-    ["Base.ManPackRadio"]           = { power = 1.5, desc = "Military Manpack" }
+    ["Base.WalkieTalkie1"]          = { power = 0.5, capacity = 1, desc = "Weak Signal (Toy)" },
+    ["Base.WalkieTalkieMakeShift"]  = { power = 0.6, capacity = 1, desc = "Weak Signal (Makeshift)" },
+    ["Base.WalkieTalkie2"]          = { power = 0.8, capacity = 2, desc = "Average Signal" },
+    ["Base.WalkieTalkie3"]          = { power = 1.0, capacity = 3, desc = "Good Signal" },
+    ["Base.WalkieTalkie4"]          = { power = 1.2, capacity = 4, desc = "Strong Signal" },
+    ["Base.WalkieTalkie5"]          = { power = 1.5, capacity = 5, desc = "Military Grade" },
+    ["Base.HamRadioMakeShift"]      = { power = 1.2, capacity = 8, desc = "Stationary (Makeshift)" },
+    ["Base.HamRadio1"]              = { power = 1.5, capacity = 12, desc = "Stationary (Premium)" },
+    ["Base.HamRadio2"]              = { power = 2.0, capacity = 20, desc = "Stationary (Military)" },
+    ["Base.ManPackRadio"]           = { power = 1.5, capacity = 10, desc = "Military Manpack" }
 }
 
 -- 2. REGISTRATION API

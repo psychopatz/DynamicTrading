@@ -197,6 +197,17 @@ function DT_SignalPanel:render()
         end
         
         self:drawText(label, textX, textY, r, g, b, 1.0, font)
+
+        -- [NEW] Signals: X/Y Display
+        local signalsLabel = string.format("Signals: %d/%d", foundSignals, capacity)
+        local sigTextWidth = getTextManager():MeasureStringX(font, signalsLabel)
+        local sigTextX = centerX - (sigTextWidth / 2)
+        local sigTextY = textY + (font == UIFont.Medium and 20 or 15)
+        
+        local sr, sg, sb = 0.8, 0.8, 1.0
+        if foundSignals >= capacity then sr, sg, sb = 1.0, 0.5, 0.5 end
+        
+        self:drawText(signalsLabel, sigTextX, sigTextY, sr, sg, sb, 1.0, font)
     end
 end
 
@@ -224,12 +235,26 @@ function DT_SignalPanel:updateSignalLogic()
         self.clickAnimTimer = self.clickAnimTimer - deltaTime
     end
     
-    -- [NEW] Dynamic Signal Logic: Parity with V2
-    -- Check if there are any signals in the "Trading" state that we HAVEN'T found yet.
+    -- [NEW] Dynamic Signal Logic: Capacity Aware
+    -- Check if there are any signals in the "Trading" state that we HAVEN'T found yet,
+    -- AND ensure we have capacity to find them.
     local totalTrading = DynamicTrading.Manager.GetTotalTradingSignals() or 0
     local foundByMe = DynamicTrading.Manager.GetFoundSignalsCount(player) or 0
     
-    if totalTrading > 0 and foundByMe < totalTrading then
+    local typeID = nil
+    if self.parent and self.parent.radioObj then
+        if DT_RadioInteraction and DT_RadioInteraction.GetDeviceType then
+             typeID = DT_RadioInteraction.GetDeviceType(self.parent.radioObj)
+        end
+        if not typeID and self.parent.radioObj.getFullType then
+            typeID = self.parent.radioObj:getFullType()
+        end
+    end
+    
+    local radioData = typeID and DynamicTrading.Config.GetRadioData(typeID)
+    local capacity = radioData and radioData.capacity or 1
+
+    if totalTrading > 0 and foundByMe < totalTrading and foundByMe < capacity then
         signalAvailable = true
     end
     
@@ -265,6 +290,21 @@ function DT_SignalPanel:onScanClick()
         DT_RadioInteraction.PerformScan(player, self.parent.radioObj, self.parent.isHam)
     end
 end
+
+-- [NEW] Handle Capacity Full Response
+function DT_SignalPanel.OnServerCommand(module, command, args)
+    if module == "DynamicTrading" and command == "ScanResult" then
+        if args.status == "CAPACITY_FULL" then
+            local player = getSpecificPlayer(0)
+            if player then
+                player:Say("This radio's memory is full. (" .. args.currentCount .. "/" .. args.capacity .. ")")
+                if DT_AudioManager then DT_AudioManager.PlaySound("DT_RadioRandom", false, 0.1) end
+            end
+        end
+    end
+end
+
+Events.OnServerCommand.Add(DT_SignalPanel.OnServerCommand)
 
 function DT_SignalPanel:onInfoClick()
     if DT_FactionInfoWindow then

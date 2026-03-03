@@ -239,8 +239,8 @@ function DT_TradingWindow:render()
         if crtTex then
             local gt = GameTime:getInstance()
             local chaosFactor = 0.0
-            if trader and trader.expirationTime then
-                local timeLeft = trader.expirationTime - gt:getWorldAgeHours()
+            if trader and trader.returnTime then
+                local timeLeft = trader.returnTime - gt:getWorldAgeHours()
                 if timeLeft > 24 then chaosFactor = 0.0
                 elseif timeLeft <= 0 then chaosFactor = 1.0
                 else chaosFactor = 1.0 - (timeLeft / 24.0) end

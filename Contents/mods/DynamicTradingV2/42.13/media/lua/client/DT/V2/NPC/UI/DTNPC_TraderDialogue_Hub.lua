@@ -24,7 +24,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 gender = npc:isFemale() and "Female" or "Male",
                 portraitID = brain and brain.portraitID or 1,
                 factionID = brain and brain.factionID,
-                expirationTime = brain and brain.returnTime
+                returnTime = brain and brain.returnTime
             }
             
             -- [FIX] Safety checks for debug prints to prevent "concatenation with nil" crashes
@@ -51,10 +51,10 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 print("Trader Faction ID: nil")
             end
 
-            if traderProxy.expirationTime then
-                print("Trader Expiration Time: " .. traderProxy.expirationTime)
+            if traderProxy.returnTime then
+                print("Trader Return Time: " .. traderProxy.returnTime)
             else
-                print("Trader Expiration Time: nil")
+                print("Trader Return Time: nil")
             end
 
             ui = DT_ConversationUI.Open(traderProxy, nil, nil, false, npc) -- isRadio = false
