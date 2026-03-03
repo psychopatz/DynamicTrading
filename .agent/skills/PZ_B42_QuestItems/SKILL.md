@@ -41,7 +41,6 @@ To modify items dynamically after they are spawned (e.g., for unique quest items
 - `item:setName("Unique Name")`: Changes the display name in the inventory.
 - `item:setTooltip("Custom Tooltip Text")`: Sets a multi-line tooltip shown on hover.
 - `item:setActualWeight(float)`: Changes the item's weight. Must also call `item:setCustomWeight(true)`.
-  - **Tip**: Cap weight at **50.0**. Items heavier than 50kg cannot be picked up from the ground because they exceed the default absolute capacity of the player's main inventory, causing a "bugged action" error in the console.
 - `item:getModData()`: Store persistent custom variables (Quest IDs, Timestamps).
 
 ### Example

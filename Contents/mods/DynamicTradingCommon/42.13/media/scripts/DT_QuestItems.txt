@@ -8,6 +8,7 @@ module DTQuest
         DisplayName = "Quest Package (Small)",
         Icon = Parcel_Small_Food,
         Tooltip = "Quest Item (Carry to destination)",
+        RequiresEquippedBothHands = true
     }
 
     item PackageMediumQuest
@@ -18,6 +19,7 @@ module DTQuest
         DisplayName = "Quest Package (Medium)",
         Icon = Parcel_Medium_Food,
         Tooltip = "Quest Item (Carry to destination)",
+        RequiresEquippedBothHands = true
     }
 
     item PackageLargeQuest
@@ -28,6 +30,7 @@ module DTQuest
         DisplayName = "Quest Package (Large)",
         Icon = Parcel_Large_Hardware,
         Tooltip = "Quest Item (Carry to destination)",
+        RequiresEquippedBothHands = true
     }
 
     item PackageFragileQuest
@@ -38,6 +41,7 @@ module DTQuest
         DisplayName = "Fragile Quest Package",
         Icon = Parcel_Small_Food,
         Tooltip = "Handle with care! Do not drop.",
+        RequiresEquippedBothHands = true
     }
 
     item PackageMedicalQuest
@@ -48,6 +52,7 @@ module DTQuest
         DisplayName = "Medical Supplies Package",
         Icon = GenericMedicalParcel1,
         Tooltip = "Urgent medical supplies.",
+        RequiresEquippedBothHands = true
     }
 
     item PackageMilitaryQuest
@@ -58,6 +63,7 @@ module DTQuest
         DisplayName = "Military Crate",
         Icon = Parcel_Medium_Military,
         Tooltip = "Heavy military equipment.",
+        RequiresEquippedBothHands = true
     }
 
     item PackageGiftQuest
@@ -68,5 +74,6 @@ module DTQuest
         DisplayName = "Gift Package",
         Icon = Present4,
         Tooltip = "A small gift for someone special.",
+        RequiresEquippedBothHands = true
     }
 }
