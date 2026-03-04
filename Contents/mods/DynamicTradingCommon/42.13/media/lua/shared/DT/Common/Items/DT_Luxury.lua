@@ -71,7 +71,7 @@ DynamicTrading.RegisterBatch({
     -- Bracelets
     { item="Base.Bracelet_BangleLeftGold",         tags={"Luxury.Jewelry", "Quality.Luxury", "Rarity.Uncommon"}, basePrice=45, stockRange={min=1, max=2} },
     { item="Base.Bracelet_ChainLeftSilver",        tags={"Luxury.Jewelry", "Rarity.Common"},             basePrice=25,  stockRange={min=1, max=4} },
-    { item="Base.Bracelet_LeftFriendshipTINT",     tags={"Clothing.Accessory.Jewelry", "Quality.Junk", "Rarity.Common"}, basePrice=2,  stockRange={min=5, max=15} },
+    { item="Base.Bracelet_LeftFriendshipTINT",     tags={"Luxury.Jewelry", "Quality.Junk", "Rarity.Common"}, basePrice=2,  stockRange={min=5, max=15} },
 
     -- ==========================================================
     -- 4. PRIMITIVE & BONE JEWELRY (Survivalist)
@@ -79,11 +79,11 @@ DynamicTrading.RegisterBatch({
     -- Logic: Cheap, crafted items. 'Survivalist' tag fits Merchant themes.
     
     { item="Base.Cuirass_BasicBone",               tags={"Clothing.Armor.Torso", "Origin.Primitive", "Rarity.Common"}, basePrice=45, stockRange={min=1, max=3} },
-    { item="Base.Necklace_SkullMammal_Multi",      tags={"Clothing.Accessory.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=25,  stockRange={min=1, max=3} },
-    { item="Base.Necklace_BoarTusk_Multi",         tags={"Clothing.Accessory.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=20,  stockRange={min=1, max=3} },
-    { item="Base.Necklace_SkullSmall",             tags={"Clothing.Accessory.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=15,  stockRange={min=2, max=5} },
-    { item="Base.Necklace_Teeth",                  tags={"Clothing.Accessory.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=10,  stockRange={min=2, max=6} },
-    { item="Base.Earring_BirdSkull",               tags={"Clothing.Accessory.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=10,  stockRange={min=2, max=6} },
+    { item="Base.Necklace_SkullMammal_Multi",      tags={"Luxury.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=25,  stockRange={min=1, max=3} },
+    { item="Base.Necklace_BoarTusk_Multi",         tags={"Luxury.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=20,  stockRange={min=1, max=3} },
+    { item="Base.Necklace_SkullSmall",             tags={"Luxury.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=15,  stockRange={min=2, max=5} },
+    { item="Base.Necklace_Teeth",                  tags={"Luxury.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=10,  stockRange={min=2, max=6} },
+    { item="Base.Earring_BirdSkull",               tags={"Luxury.Jewelry", "Origin.Primitive", "Rarity.Common"}, basePrice=10,  stockRange={min=2, max=6} },
 
 })
 

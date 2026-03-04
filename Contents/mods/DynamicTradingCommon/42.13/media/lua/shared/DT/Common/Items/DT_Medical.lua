@@ -37,10 +37,10 @@ DynamicTrading.RegisterBatch({
 { item="Base.LeatherStrips",        basePrice=5,  tags={"Medical.Utility.Bandage", "Quality.Junk"}, stockRange={min=5, max=25} },
 
 -- Dirty (Trash)
-{ item="Base.RippedSheetsDirty",    basePrice=0,  tags={"Junk.Trash", "Category.Medical"}, stockRange={min=0, max=0} },
-{ item="Base.BandageDirty",         basePrice=0,  tags={"Junk.Trash", "Category.Medical"}, stockRange={min=0, max=0} },
-{ item="Base.DenimStripsDirty",     basePrice=0,  tags={"Junk.Trash", "Category.Medical"}, stockRange={min=0, max=0} },
-{ item="Base.LeatherStripsDirty",   basePrice=0,  tags={"Junk.Trash", "Category.Medical"}, stockRange={min=0, max=0} },
+{ item="Base.RippedSheetsDirty",    basePrice=0,  tags={"Junk.Trash", "Medical"}, stockRange={min=0, max=0} },
+{ item="Base.BandageDirty",         basePrice=0,  tags={"Junk.Trash", "Medical"}, stockRange={min=0, max=0} },
+{ item="Base.DenimStripsDirty",     basePrice=0,  tags={"Junk.Trash", "Medical"}, stockRange={min=0, max=0} },
+{ item="Base.LeatherStripsDirty",   basePrice=0,  tags={"Junk.Trash", "Medical"}, stockRange={min=0, max=0} },
 
 -- =============================================================================
 -- 3. SURGICAL TOOLS & DEEP WOUNDS

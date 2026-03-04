@@ -165,9 +165,9 @@ DynamicTrading.RegisterBatch({
     { item="Base.SpearScrewdriver",       tags={"Weapon.Melee.Spear", "Origin.Scavenger", "Quality.Junk"},  basePrice=75,  stockRange={min=1, max=3} },
     
     -- Basic Spears
-    { item="Base.SpearCrafted",           tags={"Weapon", "Spear", "Common"},        basePrice=15,  stockRange={min=2, max=6} },
-    { item="Base.SpearCraftedFireHardened", tags={"Weapon", "Spear", "Common"},      basePrice=25,  stockRange={min=1, max=5} },
-    { item="Base.ClosedUmbrellaBlack",    tags={"Weapon", "Spear", "Junk"},          basePrice=10,  stockRange={min=1, max=3} },
+    { item="Base.SpearCrafted",           tags={"Weapon", "Weapon.Melee.Spear", "Rarity.Common"},        basePrice=15,  stockRange={min=2, max=6} },
+    { item="Base.SpearCraftedFireHardened", tags={"Weapon", "Weapon.Melee.Spear", "Rarity.Common"},      basePrice=25,  stockRange={min=1, max=5} },
+    { item="Base.ClosedUmbrellaBlack",    tags={"Weapon", "Weapon.Melee.Spear", "Quality.Junk"},          basePrice=10,  stockRange={min=1, max=3} },
 
     -- ==========================================================
     -- 10. FIREARMS
@@ -197,15 +197,15 @@ DynamicTrading.RegisterBatch({
     -- ==========================================================
     -- 11. WEAPON PARTS & ATTACHMENTS
     -- ==========================================================
-    { item="Base.x8Scope",            tags={"WeaponPart.Sight", "Origin.Military", "Rarity.Rare"},    basePrice=650, stockRange={min=0, max=1} },
-    { item="Base.x4Scope",            tags={"WeaponPart.Sight", "Theme.Hunting", "Rarity.Uncommon"},  basePrice=380, stockRange={min=0, max=2} },
-    { item="Base.x2Scope",            tags={"WeaponPart.Sight", "Rarity.Common"},                  basePrice=210, stockRange={min=1, max=3} },
-    { item="Base.RedDot",             tags={"WeaponPart.Sight", "Origin.Military", "Rarity.Uncommon"}, basePrice=320, stockRange={min=1, max=2} },
-    { item="Base.Laser",              tags={"WeaponPart.Utility", "Origin.Military", "Rarity.Rare"},   basePrice=450, stockRange={min=0, max=1} },
-    { item="Base.GunLight",           tags={"WeaponPart.Utility", "Origin.Police", "Rarity.Uncommon"}, basePrice=180, stockRange={min=1, max=4} },
-    { item="Base.AmmoStraps",         tags={"WeaponPart.Utility", "Rarity.Common"},                  basePrice=120, stockRange={min=1, max=3} },
-    { item="Base.RecoilPad",          tags={"WeaponPart.Utility", "Rarity.Common"},                  basePrice=110, stockRange={min=1, max=3} },
-    { item="Base.ChokeTubeFull",      tags={"WeaponPart.Barrel", "Theme.Hunting", "Rarity.Uncommon"}, basePrice=180, stockRange={min=0, max=2} },
+    { item="Base.x8Scope",            tags={"Weapon.Part.Sight", "Origin.Military", "Rarity.Rare"},    basePrice=650, stockRange={min=0, max=1} },
+    { item="Base.x4Scope",            tags={"Weapon.Part.Sight", "Theme.Hunting", "Rarity.Uncommon"},  basePrice=380, stockRange={min=0, max=2} },
+    { item="Base.x2Scope",            tags={"Weapon.Part.Sight", "Rarity.Common"},                  basePrice=210, stockRange={min=1, max=3} },
+    { item="Base.RedDot",             tags={"Weapon.Part.Sight", "Origin.Military", "Rarity.Uncommon"}, basePrice=320, stockRange={min=1, max=2} },
+    { item="Base.Laser",              tags={"Weapon.Part.Utility", "Origin.Military", "Rarity.Rare"},   basePrice=450, stockRange={min=0, max=1} },
+    { item="Base.GunLight",           tags={"Weapon.Part.Utility", "Origin.Police", "Rarity.Uncommon"}, basePrice=180, stockRange={min=1, max=4} },
+    { item="Base.AmmoStraps",         tags={"Weapon.Part.Utility", "Rarity.Common"},                  basePrice=120, stockRange={min=1, max=3} },
+    { item="Base.RecoilPad",          tags={"Weapon.Part.Utility", "Rarity.Common"},                  basePrice=110, stockRange={min=1, max=3} },
+    { item="Base.ChokeTubeFull",      tags={"Weapon.Part.Barrel", "Theme.Hunting", "Rarity.Uncommon"}, basePrice=180, stockRange={min=0, max=2} },
 
     -- ==========================================================
     -- 12. EXPLOSIVES & TRAPS
@@ -219,18 +219,18 @@ DynamicTrading.RegisterBatch({
     { item="Base.PipeBombRemote",     tags={"Weapon.Ranged.Explosive", "Origin.Military", "Rarity.Rare"},     basePrice=450, stockRange={min=0, max=1} },
     { item="Base.AerosolbombSensorV3",tags={"Weapon.Ranged.Explosive", "Origin.Scavenger", "Rarity.Legendary"}, basePrice=650, stockRange={min=0, max=1} },
     { item="Base.NoiseTrapSensorV3",  tags={"Weapon.Ranged.Explosive", "Origin.Scavenger", "Rarity.Rare"},      basePrice=350, stockRange={min=0, max=1} },
-    { item="Base.Firecracker",        tags={"Junk.Fun.Distraction", "Rarity.Common"}, stockRange={min=2, max=10}, basePrice=35 },
+    { item="Base.Firecracker",        tags={"Luxury.Fun.Distraction", "Rarity.Common"}, stockRange={min=2, max=10}, basePrice=35 },
 
     -- ==========================================================
     -- 13. MUSICAL & IMPROVISED JUNK
     -- ==========================================================
-    { item="Base.GuitarAcoustic",     tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Uncommon"}, basePrice=150, stockRange={min=0, max=2} },
-    { item="Base.GuitarElectric",     tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"},     basePrice=250, stockRange={min=0, max=1} },
-    { item="Base.GuitarElectricBass", tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"},     basePrice=260, stockRange={min=0, max=1} },
-    { item="Base.Banjo",              tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Uncommon"}, basePrice=130, stockRange={min=0, max=2} },
-    { item="Base.Saxophone",          tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"},     basePrice=300, stockRange={min=0, max=1} },
-    { item="Base.Trumpet",            tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"},     basePrice=220, stockRange={min=0, max=1} },
-    { item="Base.Keytar",             tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Legendary"},basePrice=450, stockRange={min=0, max=1} },
+    { item="Base.GuitarAcoustic",     tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Uncommon"}, basePrice=150, stockRange={min=0, max=2} },
+    { item="Base.GuitarElectric",     tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"},     basePrice=250, stockRange={min=0, max=1} },
+    { item="Base.GuitarElectricBass", tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"},     basePrice=260, stockRange={min=0, max=1} },
+    { item="Base.Banjo",              tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Uncommon"}, basePrice=130, stockRange={min=0, max=2} },
+    { item="Base.Saxophone",          tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"},     basePrice=300, stockRange={min=0, max=1} },
+    { item="Base.Trumpet",            tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"},     basePrice=220, stockRange={min=0, max=1} },
+    { item="Base.Keytar",             tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Legendary"},basePrice=450, stockRange={min=0, max=1} },
     
     { item="Base.Plank",              tags={"Resource.Material.Wood", "Rarity.Common"}, basePrice=15,  stockRange={min=5, max=20} },
     { item="Base.Plank_Nails",        tags={"Weapon.Melee.LongBlunt", "Theme.Survival", "Quality.Junk"}, basePrice=25, stockRange={min=2, max=10} },

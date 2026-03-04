@@ -94,20 +94,20 @@ DynamicTrading.RegisterBatch({
 { item="Base.Bag_ShotgunSawnoffBag",        basePrice=35,  tags={"Container.Backpack.Hydration", "Weapon"}, stockRange={min=1, max=3} },
 
 -- HYDRATION
-{ item="Base.Bag_HydrationBackpack",        basePrice=50,  tags={"Container.Backpack.Hydration", "Survival"}, stockRange={min=0, max=2} },
-{ item="Base.Bag_HydrationBackpack_Camo",   basePrice=55,  tags={"Container.Backpack.Hydration", "Survival"}, stockRange={min=0, max=2} },
+{ item="Base.Bag_HydrationBackpack",        basePrice=50,  tags={"Container.Backpack.Hydration", "Theme.Survival"}, stockRange={min=0, max=2} },
+{ item="Base.Bag_HydrationBackpack_Camo",   basePrice=55,  tags={"Container.Backpack.Hydration", "Theme.Survival"}, stockRange={min=0, max=2} },
 
 -- =============================================================================
 -- 2. WEARABLE STORAGE (Belt/Webbing/Fanny)
 -- =============================================================================
 
 -- FANNY PACKS (Essential Extra Storage)
-{ item="Base.Bag_FannyPackFront",           basePrice=30,  tags={"Container.Wearable.FannyPack", "Common"}, stockRange={min=2, max=10} },
-{ item="Base.Bag_FannyPackBack",            basePrice=30,  tags={"Container.Wearable.FannyPack", "Common"}, stockRange={min=2, max=10} },
-{ item="Base.Bag_FannyPackBack_Hide",       basePrice=30,  tags={"Container.Wearable.FannyPack", "Primitive"}, stockRange={min=1, max=5} },
-{ item="Base.Bag_FannyPackFront_Hide",      basePrice=30,  tags={"Container.Wearable.FannyPack", "Primitive"}, stockRange={min=1, max=5} },
-{ item="Base.Bag_FannyPackBack_Tarp",       basePrice=20,  tags={"Container.Wearable.FannyPack", "Primitive"}, stockRange={min=1, max=5} },
-{ item="Base.Bag_FannyPackFront_Tarp",      basePrice=20,  tags={"Container.Wearable.FannyPack", "Primitive"}, stockRange={min=1, max=5} },
+{ item="Base.Bag_FannyPackFront",           basePrice=30,  tags={"Container.Wearable.FannyPack", "Rarity.Common"}, stockRange={min=2, max=10} },
+{ item="Base.Bag_FannyPackBack",            basePrice=30,  tags={"Container.Wearable.FannyPack", "Rarity.Common"}, stockRange={min=2, max=10} },
+{ item="Base.Bag_FannyPackBack_Hide",       basePrice=30,  tags={"Container.Wearable.FannyPack", "Origin.Primitive"}, stockRange={min=1, max=5} },
+{ item="Base.Bag_FannyPackFront_Hide",      basePrice=30,  tags={"Container.Wearable.FannyPack", "Origin.Primitive"}, stockRange={min=1, max=5} },
+{ item="Base.Bag_FannyPackBack_Tarp",       basePrice=20,  tags={"Container.Wearable.FannyPack", "Origin.Primitive"}, stockRange={min=1, max=5} },
+{ item="Base.Bag_FannyPackFront_Tarp",      basePrice=20,  tags={"Container.Wearable.FannyPack", "Origin.Primitive"}, stockRange={min=1, max=5} },
 
 -- TACTICAL WEBBING (Hotbar Slots)
 { item="Base.Bag_ALICE_BeltSus",            basePrice=350, tags={"Container.Wearable.Tactical", "Origin.Military", "Rarity.Rare"}, stockRange={min=0, max=1} },
@@ -118,11 +118,11 @@ DynamicTrading.RegisterBatch({
 { item="Base.HolsterShoulder",              basePrice=250, tags={"Container.Wearable.Tactical", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
 
 -- BANDOLIERS (Ammo Efficiency)
-{ item="Base.AmmoStrap_Bullets",            basePrice=50,  tags={"Container.Wearable.FannyPack", "Tactical"}, stockRange={min=1, max=3} },
-{ item="Base.AmmoStrap_Brown_Bullets",      basePrice=50,  tags={"Container.Wearable.FannyPack", "Tactical"}, stockRange={min=1, max=3} },
-{ item="Base.AmmoStrap_Bullets_308",        basePrice=50,  tags={"Container.Wearable.FannyPack", "Tactical"}, stockRange={min=1, max=3} },
-{ item="Base.AmmoStrap_Shells",             basePrice=50,  tags={"Container.Wearable.FannyPack", "Tactical"}, stockRange={min=1, max=3} },
-{ item="Base.AmmoStrap_Brown_Shells",       basePrice=50,  tags={"Container.Wearable.FannyPack", "Tactical"}, stockRange={min=1, max=3} },
+{ item="Base.AmmoStrap_Bullets",            basePrice=50,  tags={"Container.Wearable.FannyPack", "Clothing.Utility.Belt"}, stockRange={min=1, max=3} },
+{ item="Base.AmmoStrap_Brown_Bullets",      basePrice=50,  tags={"Container.Wearable.FannyPack", "Clothing.Utility.Belt"}, stockRange={min=1, max=3} },
+{ item="Base.AmmoStrap_Bullets_308",        basePrice=50,  tags={"Container.Wearable.FannyPack", "Clothing.Utility.Belt"}, stockRange={min=1, max=3} },
+{ item="Base.AmmoStrap_Shells",             basePrice=50,  tags={"Container.Wearable.FannyPack", "Clothing.Utility.Belt"}, stockRange={min=1, max=3} },
+{ item="Base.AmmoStrap_Brown_Shells",       basePrice=50,  tags={"Container.Wearable.FannyPack", "Clothing.Utility.Belt"}, stockRange={min=1, max=3} },
 
 -- =============================================================================
 -- 3. HANDHELD & BASE STORAGE (Organizers)
@@ -130,9 +130,9 @@ DynamicTrading.RegisterBatch({
 
 -- PROTECTIVE CASES (Heavy Duty)
 { item="Base.Bag_ProtectiveCase",           basePrice=25,  tags={"Container.Organizer", "Tool"}, stockRange={min=1, max=5} },
-{ item="Base.Bag_ProtectiveCase_Survivalist",basePrice=30, tags={"Container.Organizer", "Survival"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_ProtectiveCase_Survivalist",basePrice=30, tags={"Container.Organizer", "Theme.Survival"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCase_Tools",     basePrice=30,  tags={"Container.Organizer", "Tool"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_ProtectiveCaseMilitary",   basePrice=35,  tags={"Container.Organizer", "Military"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_ProtectiveCaseMilitary",   basePrice=35,  tags={"Container.Organizer", "Origin.Military"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseMilitary_Medical", basePrice=35, tags={"Container.Organizer", "Medical"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseMilitary_Tools", basePrice=35, tags={"Container.Organizer", "Tool"}, stockRange={min=1, max=3} },
 
@@ -148,22 +148,22 @@ DynamicTrading.RegisterBatch({
 { item="Base.Bag_ProtectiveCaseSmall_Revolver1",basePrice=15,tags={"Container.Organizer", "Weapon"}, stockRange={min=1, max=5} },
 { item="Base.Bag_ProtectiveCaseSmall_Revolver2",basePrice=15,tags={"Container.Organizer", "Weapon"}, stockRange={min=1, max=5} },
 { item="Base.Bag_ProtectiveCaseSmall_Revolver3",basePrice=15,tags={"Container.Organizer", "Weapon"}, stockRange={min=1, max=5} },
-{ item="Base.Bag_ProtectiveCaseSmall_Survivalist",basePrice=20,tags={"Container.Organizer", "Survival"}, stockRange={min=1, max=5} },
+{ item="Base.Bag_ProtectiveCaseSmall_Survivalist",basePrice=20,tags={"Container.Organizer", "Theme.Survival"}, stockRange={min=1, max=5} },
 { item="Base.Bag_ProtectiveCaseSmall_WalkieTalkie",basePrice=15,tags={"Container.Organizer", "Electronics"}, stockRange={min=1, max=5} },
 { item="Base.Bag_ProtectiveCaseSmall_WalkieTalkiePolice",basePrice=15,tags={"Container.Organizer", "Electronics"}, stockRange={min=1, max=5} },
-{ item="Base.Bag_ProtectiveCaseSmallMilitary",basePrice=20,tags={"Container.Organizer", "Military"}, stockRange={min=1, max=5} },
+{ item="Base.Bag_ProtectiveCaseSmallMilitary",basePrice=20,tags={"Container.Organizer", "Origin.Military"}, stockRange={min=1, max=5} },
 { item="Base.Bag_ProtectiveCaseSmallMilitary_FirstAid",basePrice=25,tags={"Container.Organizer", "Medical"}, stockRange={min=1, max=5} },
 { item="Base.Bag_ProtectiveCaseSmallMilitary_Pistol1",basePrice=20,tags={"Container.Organizer", "Weapon"}, stockRange={min=1, max=5} },
 { item="Base.Bag_ProtectiveCaseSmallMilitary_WalkieTalkie",basePrice=20,tags={"Container.Organizer", "Electronics"}, stockRange={min=1, max=5} },
 
 -- BULKY CASES (Heavy Storage)
-{ item="Base.Bag_ProtectiveCaseBulky",      basePrice=30,  tags={"Container.Organizer", "Heavy"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_ProtectiveCaseBulky",      basePrice=30,  tags={"Container.Organizer", "Quality.Heavy"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseBulky_Audio",basePrice=30,  tags={"Container.Organizer", "Electronics"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseBulky_HAMRadio1",basePrice=35,tags={"Container.Organizer", "Electronics"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseBulky_SCBA", basePrice=30,  tags={"Container.Organizer", "Tool"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseBulkyHazard",basePrice=35,  tags={"Container.Organizer", "Medical"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_ProtectiveCaseBulky_Survivalist",basePrice=35,tags={"Container.Organizer", "Survival"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_ProtectiveCaseBulkyMilitary",basePrice=40,tags={"Container.Organizer", "Military"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_ProtectiveCaseBulky_Survivalist",basePrice=35,tags={"Container.Organizer", "Theme.Survival"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_ProtectiveCaseBulkyMilitary",basePrice=40,tags={"Container.Organizer", "Origin.Military"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseBulkyMilitary_HAMRadio2",basePrice=45,tags={"Container.Organizer", "Electronics"}, stockRange={min=1, max=3} },
 
 -- BULKY AMMO CASES
@@ -183,9 +183,9 @@ DynamicTrading.RegisterBatch({
 { item="Base.Bag_RifleCase_Police2",        basePrice=25,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=5} },
 { item="Base.Bag_RifleCase_Police3",        basePrice=25,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=5} },
 { item="Base.Bag_ShotgunCase_Police",       basePrice=25,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=5} },
-{ item="Base.Bag_RifleCaseGreen",           basePrice=30,  tags={"Container.Organizer", "Military"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_RifleCaseGreen2",          basePrice=30,  tags={"Container.Organizer", "Military"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_ShotgunCaseGreen",         basePrice=30,  tags={"Container.Organizer", "Military"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_RifleCaseGreen",           basePrice=30,  tags={"Container.Organizer", "Origin.Military"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_RifleCaseGreen2",          basePrice=30,  tags={"Container.Organizer", "Origin.Military"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_ShotgunCaseGreen",         basePrice=30,  tags={"Container.Organizer", "Origin.Military"}, stockRange={min=1, max=3} },
 { item="Base.RifleCase1",                   basePrice=25,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=5} },
 { item="Base.RifleCase2",                   basePrice=25,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=5} },
 { item="Base.RifleCase3",                   basePrice=25,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=5} },
@@ -198,15 +198,15 @@ DynamicTrading.RegisterBatch({
 { item="Base.RevolverCase1",                basePrice=15,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=8} },
 { item="Base.RevolverCase2",                basePrice=15,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=8} },
 { item="Base.RevolverCase3",                basePrice=15,  tags={"Container.Organizer", "Weapon"}, stockRange={min=2, max=8} },
-{ item="Base.Guitarcase",                   basePrice=20,  tags={"Container.Organizer", "Music"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_SaxophoneCase",            basePrice=20,  tags={"Container.Organizer", "Music"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_TrumpetCase",              basePrice=15,  tags={"Container.Organizer", "Music"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_ViolinCase",               basePrice=15,  tags={"Container.Organizer", "Music"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_FluteCase",                basePrice=10,  tags={"Container.Organizer", "Music"}, stockRange={min=1, max=3} },
-{ item="Base.Briefcase",                    basePrice=15,  tags={"Container.Organizer", "Office"}, stockRange={min=2, max=8} },
+{ item="Base.Guitarcase",                   basePrice=20,  tags={"Container.Organizer", "Literature.Music"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_SaxophoneCase",            basePrice=20,  tags={"Container.Organizer", "Literature.Music"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_TrumpetCase",              basePrice=15,  tags={"Container.Organizer", "Literature.Music"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_ViolinCase",               basePrice=15,  tags={"Container.Organizer", "Literature.Music"}, stockRange={min=1, max=3} },
+{ item="Base.Bag_FluteCase",                basePrice=10,  tags={"Container.Organizer", "Literature.Music"}, stockRange={min=1, max=3} },
+{ item="Base.Briefcase",                    basePrice=15,  tags={"Container.Organizer", "Theme.Office"}, stockRange={min=2, max=8} },
 { item="Base.Briefcase_Money",              basePrice=40,  tags={"Container.Organizer", "Luxury"}, stockRange={min=1, max=3} },
-{ item="Base.Suitcase",                     basePrice=15,  tags={"Container.Organizer", "Travel"}, stockRange={min=2, max=8} },
-{ item="Base.Flightcase",                   basePrice=20,  tags={"Container.Organizer", "Travel"}, stockRange={min=1, max=5} },
+{ item="Base.Suitcase",                     basePrice=15,  tags={"Container.Organizer", "Container.Misc"}, stockRange={min=2, max=8} },
+{ item="Base.Flightcase",                   basePrice=20,  tags={"Container.Organizer", "Container.Misc"}, stockRange={min=1, max=5} },
 
 -- AMMO BOXES (Organization)
 { item="Base.Bag_AmmoBox",                  basePrice=10,  tags={"Container.Organizer", "Weapon"}, stockRange={min=5, max=15} },
@@ -266,8 +266,8 @@ DynamicTrading.RegisterBatch({
 { item="Base.JewelleryBox",                 basePrice=10,  tags={"Luxury.Decor"}, stockRange={min=2, max=8} },
 { item="Base.JewelleryBox_Fancy",           basePrice=20,  tags={"Luxury.Decor"}, stockRange={min=1, max=3} },
 { item="Base.MakeupCase_Professional",      basePrice=15,  tags={"Container.Organizer"}, stockRange={min=1, max=5} },
-{ item="Base.PencilCase",                   basePrice=5,   tags={"Container", "Scholastic"}, stockRange={min=5, max=15} },
-{ item="Base.PencilCase_Gaming",            basePrice=5,   tags={"Container", "Scholastic"}, stockRange={min=2, max=8} },
+{ item="Base.PencilCase",                   basePrice=5,   tags={"Container", "Container.Misc"}, stockRange={min=5, max=15} },
+{ item="Base.PencilCase_Gaming",            basePrice=5,   tags={"Container", "Container.Misc"}, stockRange={min=2, max=8} },
 { item="Base.ToolRoll_Fabric",              basePrice=8,   tags={"Container.Organizer", "Tool"}, stockRange={min=2, max=10} },
 { item="Base.ToolRoll_Leather",             basePrice=12,  tags={"Container.Organizer", "Tool"}, stockRange={min=2, max=10} },
 { item="Base.Hatbox",                       basePrice=5,   tags={"Container.Organizer"}, stockRange={min=1, max=5} },
@@ -290,9 +290,9 @@ DynamicTrading.RegisterBatch({
 -- 6. JUNK CONTAINERS & SACKS
 -- =============================================================================
 -- Trash bags (Utility)
-{ item="Base.Bag_TrashBag",                 basePrice=2,   tags={"Container", "Junk"}, stockRange={min=10, max=50} },
-{ item="Base.Garbagebag",                   basePrice=2,   tags={"Container", "Junk"}, stockRange={min=10, max=50} },
-{ item="Base.Garbagebag_box",               basePrice=10,  tags={"Container", "Stockpile"}, stockRange={min=1, max=5} },
+{ item="Base.Bag_TrashBag",                 basePrice=2,   tags={"Container", "Quality.Junk"}, stockRange={min=10, max=50} },
+{ item="Base.Garbagebag",                   basePrice=2,   tags={"Container", "Quality.Junk"}, stockRange={min=10, max=50} },
+{ item="Base.Garbagebag_box",               basePrice=10,  tags={"Container", "Container.Bag"}, stockRange={min=1, max=5} },
 
 -- Sacks (Farming/Sand)
 { item="Base.Bag_Gunny",                    basePrice=5,   tags={"Container.Sack.Material"}, stockRange={min=5, max=20} },
@@ -304,7 +304,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.Bag_DeadMice",                 basePrice=10,  tags={"Container.Sack.Junk"}, stockRange={min=0, max=1} },
 { item="Base.Bag_DeadRats",                 basePrice=10,  tags={"Container.Sack.Junk"}, stockRange={min=0, max=1} },
 { item="Base.Bag_DeadRoaches",              basePrice=5,   tags={"Container.Sack.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Bag_TreasureBag",              basePrice=50,  tags={"Container", "Rare"}, stockRange={min=0, max=1} },
+{ item="Base.Bag_TreasureBag",              basePrice=50,  tags={"Container", "Rarity.Rare"}, stockRange={min=0, max=1} },
 
 -- Laundry
 { item="Base.Bag_Laundry",                  basePrice=5,   tags={"Container.Sack.Junk"}, stockRange={min=5, max=15} },
@@ -323,8 +323,8 @@ DynamicTrading.RegisterBatch({
 -- Pouches
 { item="Base.DiceBag",                      basePrice=2,   tags={"Container.Sack.Junk"}, stockRange={min=5, max=20} },
 { item="Base.GemBag",                       basePrice=5,   tags={"Luxury.Decor"}, stockRange={min=2, max=10} },
-{ item="Base.SeedBag",                      basePrice=2,   tags={"Container", "Farming"}, stockRange={min=5, max=20} },
-{ item="Base.SeedBag_Farming",              basePrice=2,   tags={"Container", "Farming"}, stockRange={min=5, max=20} },
+{ item="Base.SeedBag",                      basePrice=2,   tags={"Container", "Theme.Farming"}, stockRange={min=5, max=20} },
+{ item="Base.SeedBag_Farming",              basePrice=2,   tags={"Container", "Theme.Farming"}, stockRange={min=5, max=20} },
 
 -- Paper/Plastic Disposables
 { item="Base.Plasticbag",                   basePrice=0.5, tags={"Container.Sack.Junk"}, stockRange={min=10, max=50} },

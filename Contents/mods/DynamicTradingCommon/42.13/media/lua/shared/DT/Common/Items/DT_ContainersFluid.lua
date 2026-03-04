@@ -132,12 +132,12 @@ DynamicTrading.RegisterBatch({
     -- 8. HOUSEHOLD ITEMS
     -- =============================================================================
 
-    { item="Base.Bowl",             tags={"Food", "General", "Common"},      basePrice=2, stockRange={min=5, max=15} },
-    { item="Base.ClayBowl",         tags={"Food", "Scavenger", "Common"},    basePrice=1, stockRange={min=5, max=10} },
-    { item="Base.DrinkingGlass",    tags={"Food", "General", "Common"},      basePrice=3, stockRange={min=5, max=10} },
-    { item="Base.MugWhite",         tags={"Food", "General", "Common"},      basePrice=2, stockRange={min=5, max=15} },
-    { item="Base.CeramicTeacup",    tags={"Food", "General", "Common"},      basePrice=4, stockRange={min=2, max=8} },
-    { item="Base.HotWaterBottle",   tags={"Medical", "Pharmacist", "Common"}, basePrice=12, stockRange={min=1, max=3} },
+    { item="Base.Bowl",             tags={"Food", "Misc.General", "Rarity.Common"},      basePrice=2, stockRange={min=5, max=15} },
+    { item="Base.ClayBowl",         tags={"Food", "Scavenger", "Rarity.Common"},    basePrice=1, stockRange={min=5, max=10} },
+    { item="Base.DrinkingGlass",    tags={"Food", "Misc.General", "Rarity.Common"},      basePrice=3, stockRange={min=5, max=10} },
+    { item="Base.MugWhite",         tags={"Food", "Misc.General", "Rarity.Common"},      basePrice=2, stockRange={min=5, max=15} },
+    { item="Base.CeramicTeacup",    tags={"Food", "Misc.General", "Rarity.Common"},      basePrice=4, stockRange={min=2, max=8} },
+    { item="Base.HotWaterBottle",   tags={"Medical", "Medical.Tool", "Rarity.Common"}, basePrice=12, stockRange={min=1, max=3} },
 })
 
 print("[DynamicTrading] Containers (Fluid) Registry Complete \n.")

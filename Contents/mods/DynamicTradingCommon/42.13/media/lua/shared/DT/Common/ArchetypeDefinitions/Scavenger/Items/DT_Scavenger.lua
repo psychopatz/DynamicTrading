@@ -5,14 +5,14 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Scavenger", {
     name = "Scavenger",
     allocations = {
-        { tags = {"Junk"}, count = 10 },
-        { tags = {"Trash"}, count = 5 },
-        { tags = {"Scavenger"}, count = 5 },
-        { tags = {"Material"}, count = 3 }
+        { tags={"Quality.Junk"}, count = 10 },
+        { tags={"Junk.Trash"}, count = 5 },
+        { tags={"Tool.Crafting.Scavenger"}, count = 5 },
+        { tags={"Resource.Material"}, count = 3 }
     },
     wants = {
-        ["Backpack"] = 1.5,
-        ["Water"] = 1.2,
+        ["Container.Backpack"] = 1.5,
+        ["Container.Fluid"] = 1.2,
         ["Food"] = 1.2
     },
     forbid = {}

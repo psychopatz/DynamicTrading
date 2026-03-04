@@ -6,19 +6,19 @@ DynamicTrading.RegisterBatch({
 -- 1. CLEANING & HYGIENE (Disease Prevention)
 -- =============================================================================
 -- Cleaning
-{ item="Base.Soap2", basePrice=25, tags={"Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.Bleach", basePrice=45, tags={"Cleaning.Hazard", "Quality.Junk", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.CleaningLiquid2", basePrice=20, tags={"Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.BathTowel", basePrice=25, tags={"Clothing.Accessory.Towel", "Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
-{ item="Base.DishCloth", basePrice=10, tags={"Resource.Material.Cloth", "Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
-{ item="Base.Sponge", basePrice=8, tags={"Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
-{ item="Base.Broom", basePrice=25, tags={"Weapon.Melee.LongBlunt", "Cleaning.Utility", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.Mop", basePrice=30, tags={"Weapon.Melee.LongBlunt", "Cleaning.Utility", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.Plunger", basePrice=15, tags={"Weapon.Melee.ShortBlunt", "Cleaning.Utility", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.ToiletBrush", basePrice=5, tags={"Weapon.Melee.ShortBlunt", "Cleaning.Utility", "Rarity.Common"}, stockRange={min=1, max=3} },
+{ item="Base.Soap2", basePrice=25, tags={"Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=10} },
+{ item="Base.Bleach", basePrice=45, tags={"Tool.Cleaning.Hazard", "Quality.Junk", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.CleaningLiquid2", basePrice=20, tags={"Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.BathTowel", basePrice=25, tags={"Clothing.Accessory.Towel", "Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
+{ item="Base.DishCloth", basePrice=10, tags={"Resource.Material.Cloth", "Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
+{ item="Base.Sponge", basePrice=8, tags={"Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
+{ item="Base.Broom", basePrice=25, tags={"Weapon.Melee.LongBlunt", "Tool.Cleaning.Utility", "Rarity.Common"}, stockRange={min=1, max=3} },
+{ item="Base.Mop", basePrice=30, tags={"Weapon.Melee.LongBlunt", "Tool.Cleaning.Utility", "Rarity.Common"}, stockRange={min=1, max=3} },
+{ item="Base.Plunger", basePrice=15, tags={"Weapon.Melee.ShortBlunt", "Tool.Cleaning.Utility", "Rarity.Common"}, stockRange={min=1, max=3} },
+{ item="Base.ToiletBrush", basePrice=5, tags={"Weapon.Melee.ShortBlunt", "Tool.Cleaning.Utility", "Rarity.Common"}, stockRange={min=1, max=3} },
 -- Wet items
-{ item="Base.BathTowelWet",     basePrice=5,  tags={"Cleaning.Hygiene", "Quality.Junk"}, stockRange={min=0, max=0} },
-{ item="Base.DishClothWet",     basePrice=2,  tags={"Cleaning.Hygiene", "Quality.Junk"}, stockRange={min=0, max=0} },
+{ item="Base.BathTowelWet",     basePrice=5,  tags={"Tool.Cleaning.Hygiene", "Quality.Junk"}, stockRange={min=0, max=0} },
+{ item="Base.DishClothWet",     basePrice=2,  tags={"Tool.Cleaning.Hygiene", "Quality.Junk"}, stockRange={min=0, max=0} },
 
 -- =============================================================================
 -- 2. FIRE SAFETY & FUEL
@@ -59,7 +59,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.Scissors",         basePrice=45, tags={"Tool.Crafting.Tailor", "Rarity.Common"}, stockRange={min=2, max=10} }, -- Essential for Tailoring
 { item="Base.ScissorsBlunt",    basePrice=25, tags={"Tool.Crafting.Tailor", "Quality.Junk"}, stockRange={min=1, max=5} },
 { item="Base.ScissorsForged",   basePrice=35, tags={"Tool.Crafting.Tailor", "Rarity.Uncommon"}, stockRange={min=1, max=5} },
-{ item="Base.StraightRazor",    basePrice=45, tags={"Weapon.Melee.SmallBlade", "Cleaning.Hygiene", "Rarity.Uncommon"}, stockRange={min=1, max=5} }, -- Good short blade
+{ item="Base.StraightRazor",    basePrice=45, tags={"Weapon.Melee.SmallBlade", "Tool.Cleaning.Hygiene", "Rarity.Uncommon"}, stockRange={min=1, max=5} }, -- Good short blade
 { item="Base.LetterOpener",     basePrice=15, tags={"Weapon.Melee.SmallBlade", "Quality.Junk"}, stockRange={min=1, max=5} },
 { item="Base.AlarmClock2",      basePrice=25, tags={"Electronics.Utility.Clock", "Rarity.Common"}, stockRange={min=2, max=10} }, -- Trap component / Waking up
 { item="Base.RatPoison",        basePrice=60, tags={"Resource.Poison.Lethal", "Origin.Medical", "Rarity.Uncommon"}, stockRange={min=1, max=5} }, -- Potent poison
@@ -78,34 +78,34 @@ DynamicTrading.RegisterBatch({
 
 -- Rags (Craftable Trash)
 { item="Base.RippedSheets",     basePrice=5,  tags={"Medical.Utility.Bandage", "Quality.Junk"}, stockRange={min=10, max=100} },
-{ item="Base.RippedSheetsDirty",basePrice=0,   tags={"Junk.Trash", "Category.Medical"}, stockRange={min=0, max=0} },
-{ item="Base.Doily",            basePrice=2,   tags={"Junk.Decor.Textile", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.RippedSheetsDirty",basePrice=0,   tags={"Junk.Trash", "Medical"}, stockRange={min=0, max=0} },
+{ item="Base.Doily",            basePrice=2,   tags={"Luxury.Decor.Textile", "Rarity.Common"}, stockRange={min=1, max=5} },
 
 -- =============================================================================
 -- Musical Instruments (Large - Blunt Weapons)
 -- =============================================================================
-{ item="Base.GuitarAcoustic",       basePrice=150, tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.GuitarElectric",       basePrice=250, tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"}, stockRange={min=0, max=1} },
-{ item="Base.GuitarElectricBass",   basePrice=260, tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"}, stockRange={min=0, max=1} },
-{ item="Base.Banjo",                basePrice=130, tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.Keytar",               basePrice=450, tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.Saxophone",            basePrice=300, tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"}, stockRange={min=0, max=1} },
-{ item="Base.Violin",               basePrice=280, tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.GuitarAcoustic",       basePrice=150, tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.GuitarElectric",       basePrice=250, tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.GuitarElectricBass",   basePrice=260, tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.Banjo",                basePrice=130, tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.Keytar",               basePrice=450, tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.Saxophone",            basePrice=300, tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.Violin",               basePrice=280, tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"}, stockRange={min=0, max=1} },
 
 -- Small Instruments (Pocket Happiness)
-{ item="Base.Harmonica",            basePrice=45, tags={"Junk.Music.Instrument", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.Flute",                basePrice=35, tags={"Junk.Music.Instrument", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.Trumpet",              basePrice=220, tags={"Weapon.Melee.Blunt", "Junk.Music.Instrument", "Rarity.Rare"}, stockRange={min=1, max=3} },
+{ item="Base.Harmonica",            basePrice=45, tags={"Literature.Music.Instrument", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.Flute",                basePrice=35, tags={"Literature.Music.Instrument", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.Trumpet",              basePrice=220, tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"}, stockRange={min=1, max=3} },
 
 -- Whistles (Tactical Zombie Luring)
 { item="Base.Whistle",              basePrice=25,  tags={"Tool.General.Noise", "Theme.Tactical", "Rarity.Common"}, stockRange={min=2, max=10} },
 { item="Base.Whistle_Bone",         basePrice=15,  tags={"Tool.General.Noise", "Theme.Survival", "Quality.Primitive"}, stockRange={min=1, max=5} },
-{ item="Base.Hat_Cowboy_Plastic",   basePrice=15,  tags={"Clothing.Head.Hat", "Junk.Music.Fun"}, stockRange={min=0, max=2} }, -- It has a whistle
+{ item="Base.Hat_Cowboy_Plastic",   basePrice=15,  tags={"Clothing.Head.Hat", "Literature.Music.Fun"}, stockRange={min=0, max=2} }, -- It has a whistle
 
 -- Accessories
-{ item="Base.GuitarPick",           basePrice=2,  tags={"Junk.Music.Accessory", "Rarity.Common"}, stockRange={min=5, max=20} },
-{ item="Base.Drumstick",            basePrice=15, tags={"Weapon.Melee.ShortBlunt", "Junk.Music.Instrument", "Quality.Junk"}, stockRange={min=2, max=10} },
-{ item="Base.TuningFork",           basePrice=35, tags={"Tool.General.Audio", "Junk.Music.Accessory", "Rarity.Uncommon"}, stockRange={min=1, max=5} },
+{ item="Base.GuitarPick",           basePrice=2,  tags={"Literature.Music.Accessory", "Rarity.Common"}, stockRange={min=5, max=20} },
+{ item="Base.Drumstick",            basePrice=15, tags={"Weapon.Melee.ShortBlunt", "Literature.Music.Instrument", "Quality.Junk"}, stockRange={min=2, max=10} },
+{ item="Base.TuningFork",           basePrice=35, tags={"Literature.Audio", "Literature.Music.Accessory", "Rarity.Uncommon"}, stockRange={min=1, max=5} },
 
 -- Improvised Weapons from Household items
 { item="Base.Spear_Plunger",        basePrice=25, tags={"Weapon.Melee.Spear", "Quality.Junk"}, stockRange={min=0, max=5} },

@@ -5,16 +5,16 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Butcher", {
     name = "Butcher",
     allocations = {
-        { tags = {"Meat"}, count = 8 },
-        { tags = {"Butcher"}, count = 4 },
-        { tags = {"Container"}, count = 2 }
+        { tags={"Food.Meat"}, count = 8 },
+        { tags={"Tool.Resource.Butcher"}, count = 4 },
+        { tags={"Container"}, count = 2 }
     },
     wants = {
-        ["Ammo"] = 1.4,
+        ["Weapon.Ranged.Ammo"] = 1.4,
         ["Blade"] = 1.3,
         ["Spice"] = 1.2
     },
-    forbid = { "Vegetable", "Fruit", "Literature" }
+    forbid = { "Vegetable", "Fruit", "Literature.Book" }
 })
 
 end

@@ -5,17 +5,17 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Designer", {
     name = "Home Stager",
     allocations = {
-        { tags = {"Decor"}, count = 10 },
-        { tags = {"Furniture"}, count = 4 },
-        { tags = {"Light"}, count = 4 },
-        { tags = {"Organizer"}, count = 3 }
+        { tags={"Luxury.Decor"}, count = 10 },
+        { tags={"Resource.Material.Build"}, count = 4 },
+        { tags={"Electronics.Component.Light"}, count = 4 },
+        { tags={"Container.Organizer"}, count = 3 }
     },
     wants = {
-        ["Clean"] = 1.3,
-        ["Textile"] = 1.2,
+        ["Tool.Cleaning"] = 1.3,
+        ["Resource.Textile"] = 1.2,
         ["Paint"] = 1.1
     },
-    forbid = { "Weapon", "Trash", "Junk" }
+    forbid = { "Weapon", "Junk.Trash", "Quality.Junk" }
 })
 
 end

@@ -65,26 +65,26 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 
 -- Primitive
-{ item="Base.HideTent",                 basePrice=25, tags={"Tool.Camping.Shelter", "Winter"}, stockRange={min=1, max=2} },
-{ item="Base.HideTent_Packed",          basePrice=25, tags={"Tool.Camping.Shelter", "Winter"}, stockRange={min=1, max=2} },
-{ item="Base.ImprovisedTentKit",        basePrice=15, tags={"Tool.Camping.Shelter", "Junk"},   stockRange={min=1, max=5} },
-{ item="Base.ImprovisedTentKit_Packed", basePrice=15, tags={"Tool.Camping.Shelter", "Junk"},   stockRange={min=1, max=5} },
+{ item="Base.HideTent",                 basePrice=25, tags={"Tool.Camping.Shelter", "Theme.Winter"}, stockRange={min=1, max=2} },
+{ item="Base.HideTent_Packed",          basePrice=25, tags={"Tool.Camping.Shelter", "Theme.Winter"}, stockRange={min=1, max=2} },
+{ item="Base.ImprovisedTentKit",        basePrice=15, tags={"Tool.Camping.Shelter", "Quality.Junk"},   stockRange={min=1, max=5} },
+{ item="Base.ImprovisedTentKit_Packed", basePrice=15, tags={"Tool.Camping.Shelter", "Quality.Junk"},   stockRange={min=1, max=5} },
 
 -- Manufactured (Modern)
 -- Standard Kit
-{ item="Base.CampingTentKit2",          basePrice=50, tags={"Tool.Camping.Shelter", "Winter", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.CampingTentKit2_Packed",   basePrice=50, tags={"Tool.Camping.Shelter", "Winter", "Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.CampingTentKit2",          basePrice=50, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.CampingTentKit2_Packed",   basePrice=50, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
 
 -- Colored Tents (Higher value as they imply pre-war quality)
-{ item="Base.TentBlue",                 basePrice=65, tags={"Tool.Camping.Shelter", "Winter", "Rare"}, stockRange={min=0, max=2} },
-{ item="Base.TentBrown",                basePrice=65, tags={"Tool.Camping.Shelter", "Winter", "Rare"}, stockRange={min=0, max=2} },
-{ item="Base.TentGreen",                basePrice=65, tags={"Tool.Camping.Shelter", "Winter", "Rare"}, stockRange={min=0, max=2} },
-{ item="Base.TentYellow",               basePrice=65, tags={"Tool.Camping.Shelter", "Winter", "Rare"}, stockRange={min=0, max=2} },
+{ item="Base.TentBlue",                 basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.TentBrown",                basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.TentGreen",                basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.TentYellow",               basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
 -- Packed versions
-{ item="Base.TentBlue_Packed",          basePrice=65, tags={"Tool.Camping.Shelter", "Winter", "Rare"}, stockRange={min=0, max=2} },
-{ item="Base.TentBrown_Packed",         basePrice=65, tags={"Tool.Camping.Shelter", "Winter", "Rare"}, stockRange={min=0, max=2} },
-{ item="Base.TentGreen_Packed",         basePrice=65, tags={"Tool.Camping.Shelter", "Winter", "Rare"}, stockRange={min=0, max=2} },
-{ item="Base.TentYellow_Packed",        basePrice=65, tags={"Tool.Camping.Shelter", "Winter", "Rare"}, stockRange={min=0, max=2} },
+{ item="Base.TentBlue_Packed",          basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.TentBrown_Packed",         basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.TentGreen_Packed",         basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.TentYellow_Packed",        basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
 
 -- Lighters (High Convenience)
 { item="Base.Lighter",           basePrice=80, tags={"Tool.Camping.Fire", "Rarity.Uncommon"}, stockRange={min=1, max=3} },

@@ -6,24 +6,24 @@ DynamicTrading.RegisterBatch({
 -- 1. SMOKING & TOBACCO (The Apocalyptic Currency)
 -- =============================================================================
 -- High demand, reduces stress.
-{ item="Base.CigaretteSingle", basePrice=4, tags={"Junk.Tobacco", "Rarity.Common"}, stockRange={min=10, max=50} },
-{ item="Base.CigaretteRolled", basePrice=3, tags={"Junk.Tobacco", "Rarity.Common"}, stockRange={min=10, max=50} },
-{ item="Base.Cigarillo", basePrice=15, tags={"Junk.Tobacco", "Rarity.Common"}, stockRange={min=5, max=15} },
-{ item="Base.Cigar", basePrice=50, tags={"Junk.Tobacco", "Quality.Luxury", "Rarity.Uncommon"}, stockRange={min=1, max=5} },
+{ item="Base.CigaretteSingle", basePrice=4, tags={"Medical.Tobacco", "Rarity.Common"}, stockRange={min=10, max=50} },
+{ item="Base.CigaretteRolled", basePrice=3, tags={"Medical.Tobacco", "Rarity.Common"}, stockRange={min=10, max=50} },
+{ item="Base.Cigarillo", basePrice=15, tags={"Medical.Tobacco", "Rarity.Common"}, stockRange={min=5, max=15} },
+{ item="Base.Cigar", basePrice=50, tags={"Medical.Tobacco", "Quality.Luxury", "Rarity.Uncommon"}, stockRange={min=1, max=5} },
 
 -- Bulk
-{ item="Base.CigarettePack",        basePrice=80,  tags={"Junk.Tobacco", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.CigaretteCarton",      basePrice=1500, tags={"Junk.Tobacco", "Quality.Luxury", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.CigarettePack",        basePrice=80,  tags={"Medical.Tobacco", "Rarity.Common"}, stockRange={min=2, max=10} },
+{ item="Base.CigaretteCarton",      basePrice=1500, tags={"Medical.Tobacco", "Quality.Luxury", "Rarity.Legendary"}, stockRange={min=0, max=1} },
 
 -- Components
-{ item="Base.TobaccoLoose",         basePrice=85,  tags={"Resource.Material.Tobacco", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.TobaccoChewing",       basePrice=45,  tags={"Resource.Material.Tobacco", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.CigaretteRollingPapers",basePrice=15, tags={"Resource.Material.Tobacco", "Rarity.Common"}, stockRange={min=2, max=10} },
+{ item="Base.TobaccoLoose",         basePrice=85,  tags={"Medical.Tobacco", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.TobaccoChewing",       basePrice=45,  tags={"Medical.Tobacco", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.CigaretteRollingPapers",basePrice=15, tags={"Medical.Tobacco", "Rarity.Common"}, stockRange={min=2, max=10} },
 
 -- Paraphernalia
-{ item="Base.CanPipe",              basePrice=5,   tags={"Junk.Tobacco.Tool", "Quality.Junk"}, stockRange={min=1, max=5} },
-{ item="Base.CanPipe_Tobacco",      basePrice=10,  tags={"Junk.Tobacco.Tool", "Quality.Junk"}, stockRange={min=0, max=5} },
-{ item="Base.SmokingPipe_Tobacco",  basePrice=65,  tags={"Junk.Tobacco.Tool", "Quality.Standard", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
+{ item="Base.CanPipe",              basePrice=5,   tags={"Medical.Tobacco", "Quality.Junk"}, stockRange={min=1, max=5} },
+{ item="Base.CanPipe_Tobacco",      basePrice=10,  tags={"Medical.Tobacco", "Quality.Junk"}, stockRange={min=0, max=5} },
+{ item="Base.SmokingPipe_Tobacco",  basePrice=65,  tags={"Medical.Tobacco", "Quality.Standard", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
 
 -- =============================================================================
 -- 2. HYGIENE & GROOMING (Health & Morale)
@@ -41,20 +41,20 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 -- 3. ENTERTAINMENT & HOBBIES (Stress Reduction)
 -- =============================================================================
-{ item="Base.CardDeck",             basePrice=25,  tags={"Junk.Fun.Game", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.Dice",                 basePrice=5,   tags={"Junk.Fun.Game", "Rarity.Common"}, stockRange={min=2, max=8} },
-{ item="Base.Dice_Bone",            basePrice=15,  tags={"Junk.Fun.Game", "Quality.Primitive", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.Dice_Wood",            basePrice=10,  tags={"Junk.Fun.Game", "Quality.Primitive", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.Crayons",              basePrice=15,  tags={"Junk.Fun.Art", "Rarity.Common"}, stockRange={min=1, max=3} },
+{ item="Base.CardDeck",             basePrice=25,  tags={"Luxury.Fun.Game", "Rarity.Common"}, stockRange={min=1, max=3} },
+{ item="Base.Dice",                 basePrice=5,   tags={"Luxury.Fun.Game", "Rarity.Common"}, stockRange={min=2, max=8} },
+{ item="Base.Dice_Bone",            basePrice=15,  tags={"Luxury.Fun.Game", "Quality.Primitive", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.Dice_Wood",            basePrice=10,  tags={"Luxury.Fun.Game", "Quality.Primitive", "Rarity.Common"}, stockRange={min=1, max=3} },
+{ item="Base.Crayons",              basePrice=15,  tags={"Luxury.Fun.Art", "Rarity.Common"}, stockRange={min=1, max=3} },
 
 -- Board Games (Complete sets valued higher)
-{ item="Base.ChessWhite",           basePrice=15,  tags={"Junk.Fun.Game", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.ChessBlack",           basePrice=15,  tags={"Junk.Fun.Game", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.CheckerBoard",         basePrice=85,  tags={"Junk.Fun.Game", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
-{ item="Base.BackgammonBoard",      basePrice=85,  tags={"Junk.Fun.Game", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
-{ item="Base.GamePieceBlack",       basePrice=2,   tags={"Junk.Fun.Game", "Rarity.Common"}, stockRange={min=5, max=10} },
-{ item="Base.GamePieceRed",         basePrice=2,   tags={"Junk.Fun.Game", "Rarity.Common"}, stockRange={min=5, max=10} },
-{ item="Base.GamePieceWhite",       basePrice=2,   tags={"Junk.Fun.Game", "Rarity.Common"}, stockRange={min=5, max=10} },
+{ item="Base.ChessWhite",           basePrice=15,  tags={"Luxury.Fun.Game", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.ChessBlack",           basePrice=15,  tags={"Luxury.Fun.Game", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.CheckerBoard",         basePrice=85,  tags={"Luxury.Fun.Game", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
+{ item="Base.BackgammonBoard",      basePrice=85,  tags={"Luxury.Fun.Game", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
+{ item="Base.GamePieceBlack",       basePrice=2,   tags={"Luxury.Fun.Game", "Rarity.Common"}, stockRange={min=5, max=10} },
+{ item="Base.GamePieceRed",         basePrice=2,   tags={"Luxury.Fun.Game", "Rarity.Common"}, stockRange={min=5, max=10} },
+{ item="Base.GamePieceWhite",       basePrice=2,   tags={"Luxury.Fun.Game", "Rarity.Common"}, stockRange={min=5, max=10} },
 
 -- Photography
 { item="Base.Camera",               basePrice=120, tags={"Electronics.Utility", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=1} },
@@ -66,16 +66,16 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 -- Useless functionality, but high RP trade value.
 { item="Base.StockCertificate",     basePrice=150,  tags={"Quality.Luxury", "Theme.Social", "Rarity.Rare"}, stockRange={min=0, max=1} },
-{ item="Base.CreditCard",           basePrice=5,    tags={"Junk.Trash.Relict", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.CreditCard_Stolen",    basePrice=5,    tags={"Junk.Trash.Relict", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.DogTag_Pet_Blank",     basePrice=15,   tags={"Junk.Trash.Relict", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
+{ item="Base.CreditCard",           basePrice=5,    tags={"Luxury.Relict", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.CreditCard_Stolen",    basePrice=5,    tags={"Luxury.Relict", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.DogTag_Pet_Blank",     basePrice=15,   tags={"Luxury.Relict", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
 
 -- Decor / Shiny
 { item="Base.Bell",                 basePrice=5,   tags={"Quality.Luxury", "Resource.Material.Metal", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
 { item="Base.BrassNameplate",       basePrice=10,  tags={"Quality.Luxury", "Resource.Material.Metal", "Rarity.Rare"}, stockRange={min=0, max=2} },
 { item="Base.Pinecone",             basePrice=1,   tags={"Resource.Fuel.Organic", "Rarity.Common"}, stockRange={min=5, max=20} },
-{ item="Base.Book_Prop",            basePrice=5,   tags={"Junk.Decor.Paper", "Resource.Fuel.Organic", "Rarity.Common"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_Prop",       basePrice=15,  tags={"Junk.Decor.Paper", "Quality.Luxury", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
+{ item="Base.Book_Prop",            basePrice=5,   tags={"Luxury.Decor.Paper", "Resource.Fuel.Organic", "Rarity.Common"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Prop",       basePrice=15,  tags={"Luxury.Decor.Paper", "Quality.Luxury", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
 
 -- =============================================================================
 -- 5. TRUE JUNK & SCRAP MATERIALS
@@ -119,7 +119,7 @@ DynamicTrading.RegisterBatch({
 
 -- Tools
 { item="Base.Tsquare",              basePrice=65,  tags={"Tool.Household", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.Frame",                basePrice=15,  tags={"Junk.Decor.Wood", "Resource.Material.Wood", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.Frame",                basePrice=15,  tags={"Luxury.Decor.Wood", "Resource.Material.Wood", "Rarity.Common"}, stockRange={min=1, max=5} },
 
 })
 

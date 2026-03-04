@@ -39,7 +39,7 @@ DynamicTrading.RegisterBatch({
 -- 4. HAM RADIOS (Stationary Communication)
 -- =============================================================================
 -- Heavy items, mostly for base decoration or listening to AEBS.
-{ item="Base.RadioMakeShift",        basePrice=5,   tags={"Tool.Electronics", "Communication", "Junk"}, stockRange={min=1, max=3} }, -- Receiver only
+{ item="Base.RadioMakeShift",        basePrice=5,   tags={"Tool.Electronics", "Electronics.Communication", "Quality.Junk"}, stockRange={min=1, max=3} }, -- Receiver only
 { item="Base.HamRadioMakeShift",     basePrice=80,  tags={"Electronics.Communication.Stationary", "Quality.Primitive", "Rarity.Uncommon"}, stockRange={min=1, max=2} },
 { item="Base.HamRadio1",             basePrice=250, tags={"Electronics.Communication.Stationary", "Quality.Premium", "Rarity.Rare"}, stockRange={min=0, max=1} },
 { item="Base.HamRadio2",             basePrice=600, tags={"Electronics.Communication.Stationary", "Origin.Military", "Rarity.Legendary"}, stockRange={min=0, max=1} },
