@@ -14,7 +14,7 @@ DynamicTrading.Events.Register("FreeMarket", {
         traderLimit = 1.8 -- Almost double traders
     },
     effects = {
-        ["Luxury"] = { price = 1.2, vol = 1.5 },
+        ["Quality.Luxury"] = { price = 1.2, vol = 1.5 },
         ["Money"] = { price = 1.5 }, -- If currency items exist
         ["General"] = { price = 0.9, vol = 1.5 }
     },

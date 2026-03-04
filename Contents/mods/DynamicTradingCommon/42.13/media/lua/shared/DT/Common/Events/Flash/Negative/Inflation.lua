@@ -12,7 +12,7 @@ DynamicTrading.Events.Register("Inflation", {
     canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
     effects = {
         ["Misc"] = { price = 2.0 },
-        ["Luxury"] = { price = 0.2 }
+        ["Quality.Luxury"] = { price = 0.2 }
     },
     factionImpact = {
         wealthAdd = -500,

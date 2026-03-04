@@ -19,7 +19,7 @@ DynamicTrading.Events.Register("SignalDecay", {
     },
     effects = {
         ["Communication"] = { price = 2.0 },        -- High quality radios needed
-        ["Luxury"] = { price = 1.5 }                -- Veterans trade in high value items
+        ["Quality.Luxury"] = { price = 1.5 }                -- Veterans trade in high value items
     },
     factionImpact = {
         stabilityAdd = -2
