@@ -7,15 +7,15 @@ DynamicTrading.RegisterArchetype("Smuggler", {
     allocations = {
         { tags={"Food.Drink.Alcohol"}, count = 5 },
         { tags={"Medical.Tobacco"}, count = 5 },
-        { tags={"Luxury"}, count = 3 },
+        { tags={"Quality.Luxury"}, count = 3 },
         { tags={"Quality.Illegal"}, count = 3 }
     },
     wants = {
         ["Weapon.Ranged.Firearm"] = 1.5,
         ["Weapon.Ranged.Ammo"] = 1.3,
-        ["Jewelry"] = 1.4
+        ["Misc.Cosmetic"] = 1.4
     },
-    forbid = { "Quality.Junk", "Resource.Material", "Theme.Farming" }
+    forbid = { "Quality.Waste", "Resource.Material.General", "Theme.Farming" }
 })
 
 end

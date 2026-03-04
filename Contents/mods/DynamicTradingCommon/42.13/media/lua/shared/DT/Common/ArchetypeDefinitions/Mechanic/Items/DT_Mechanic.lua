@@ -8,15 +8,15 @@ DynamicTrading.RegisterArchetype("Mechanic", {
         { tags={"Vehicle.Part"}, count = 8 },
         { tags={"Tool.Crafting.Mechanic"}, count = 5 },
         { tags={"Resource.Fuel"}, count = 3 },
-        { tags={"Tool"}, count = 4 }
+        { tags={"Tool.General"}, count = 4 }
     },
-    expertTags = { "CarPart", "Mechanic" },
+    expertTags = { "Vehicle.Part", "Tool.Crafting.Mechanic" },
     wants = {
-        ["Electronics"] = 1.3,
-        ["Quality.Junk"] = 1.1,
-        ["Drink"] = 1.2
+        ["Electronics.General"] = 1.3,
+        ["Quality.Waste"] = 1.1,
+        ["Food.Drink"] = 1.2
     },
-    forbid = { "Clothing", "Medical", "Theme.Farming" }
+    forbid = { "Clothing.General", "Medical.General", "Theme.Farming" }
 })
 
 end

@@ -12,7 +12,7 @@ DynamicTrading.RegisterArchetype("Pyro", {
     },
     wants = {
         ["Food.Drink.Alcohol"] = 1.3,
-        ["Resource.Textile"] = 1.2,
+        ["Resource.Material.Textile"] = 1.2,
         ["Resource.Material.Glass"] = 1.2
     },
     forbid = { "Container.Fluid", "FireExtinguisher", "Ice" }

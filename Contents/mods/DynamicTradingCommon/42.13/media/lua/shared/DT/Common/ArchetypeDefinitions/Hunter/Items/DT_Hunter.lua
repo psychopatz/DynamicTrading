@@ -5,18 +5,18 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Hunter", {
     name = "Trapper",
     allocations = {
-        { tags={"Tool.Trap"}, count = 5 },
-        { tags={"Food.Meat"}, count = 5 },
-        { tags={"Resource.Material.Leather"}, count = 4 },
+        { tags={"Tool.Resource.Trapper"}, count = 5 },
+        { tags={"Food.Perishable.Meat"}, count = 5 },
+        { tags={"Resource.Material.Textile"}, count = 4 },
         { tags={"Theme.Hunting"}, count = 3 },
-        { tags={"Resource.Material.Bone"}, count = 2 }
+        { tags={"Resource.Material.Bio"}, count = 2 }
     },
-    expertTags = { "Game", "Trapping", "Leather" },
+    expertTags = { "Food.Perishable.Meat", "Tool.Resource.Trapper", "Resource.Material.Textile" },
     wants = {
-        ["Spice"] = 1.3,
-        ["Tool.Camping"] = 1.4,
-        ["Blade"] = 1.2
+        ["Food.Spice"] = 1.3,
+        ["Tool.Utility.Survival"] = 1.4,
+        ["Weapon.Melee.Blade"] = 1.2
     },
-    forbid = { "Electronics", "Theme.Office", "Junk.Toy" }
+    forbid = { "Electronics.General", "Theme.Business", "Misc.General" }
 })
 end

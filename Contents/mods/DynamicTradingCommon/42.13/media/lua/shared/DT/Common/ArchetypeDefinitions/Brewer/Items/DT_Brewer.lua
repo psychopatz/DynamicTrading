@@ -11,11 +11,11 @@ DynamicTrading.RegisterArchetype("Brewer", {
         { tags={"Resource.Material.Glass"}, count = 3 }
     },
     wants = {
-        ["Fruit"] = 1.4,
-        ["Grain"] = 1.4,
-        ["Fuel"] = 1.3
+        ["Food.Perishable.Fruit"] = 1.4,
+        ["Food.NonPerishable.Grain"] = 1.4,
+        ["Resource.Fuel"] = 1.3
     },
-    forbid = { "Origin.Police", "Law", "Book" }
+    forbid = { "Origin.Police", "Literature.Book", "Literature.Book" }
 })
 
 end

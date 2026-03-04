@@ -33,24 +33,24 @@ DynamicTrading.RegisterBatch({
     { item="Base.ThighWood_R",         tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=60, stockRange={min=1, max=7} },
 
     -- TIRE (Heavy protection)
-    { item="Base.Cuirass_Tire",        tags={"Clothing.Armor.Torso", "Quality.Junk", "Rarity.Uncommon"}, basePrice=180, stockRange={min=0, max=3} },
-    { item="Base.VambraceTire_Left",   tags={"Clothing.Armor.Arms", "Quality.Junk", "Rarity.Uncommon"}, basePrice=75, stockRange={min=0, max=4} },
-    { item="Base.VambraceTire_Right",  tags={"Clothing.Armor.Arms", "Quality.Junk", "Rarity.Uncommon"}, basePrice=75, stockRange={min=0, max=4} },
-    { item="Base.GreaveTire_Left",     tags={"Clothing.Armor.Legs", "Quality.Junk", "Rarity.Uncommon"}, basePrice=90, stockRange={min=0, max=4} },
-    { item="Base.GreaveTire_Right",    tags={"Clothing.Armor.Legs", "Quality.Junk", "Rarity.Uncommon"}, basePrice=90, stockRange={min=0, max=4} },
-    { item="Base.Shoulderpad_Tire_L",  tags={"Clothing.Armor.Shoulders", "Quality.Junk", "Rarity.Uncommon"}, basePrice=70, stockRange={min=0, max=4} },
-    { item="Base.Shoulderpad_Tire_R",  tags={"Clothing.Armor.Shoulders", "Quality.Junk", "Rarity.Uncommon"}, basePrice=70, stockRange={min=0, max=4} },
-    { item="Base.ThighTire_L",         tags={"Clothing.Armor.Legs", "Quality.Junk", "Rarity.Uncommon"}, basePrice=100, stockRange={min=0, max=4} },
-    { item="Base.ThighTire_R",         tags={"Clothing.Armor.Legs", "Quality.Junk", "Rarity.Uncommon"}, basePrice=100, stockRange={min=0, max=4} },
+    { item="Base.Cuirass_Tire",        tags={"Clothing.Armor.Torso", "Quality.Waste", "Rarity.Uncommon"}, basePrice=180, stockRange={min=0, max=3} },
+    { item="Base.VambraceTire_Left",   tags={"Clothing.Armor.Arms", "Quality.Waste", "Rarity.Uncommon"}, basePrice=75, stockRange={min=0, max=4} },
+    { item="Base.VambraceTire_Right",  tags={"Clothing.Armor.Arms", "Quality.Waste", "Rarity.Uncommon"}, basePrice=75, stockRange={min=0, max=4} },
+    { item="Base.GreaveTire_Left",     tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Uncommon"}, basePrice=90, stockRange={min=0, max=4} },
+    { item="Base.GreaveTire_Right",    tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Uncommon"}, basePrice=90, stockRange={min=0, max=4} },
+    { item="Base.Shoulderpad_Tire_L",  tags={"Clothing.Armor.Shoulders", "Quality.Waste", "Rarity.Uncommon"}, basePrice=70, stockRange={min=0, max=4} },
+    { item="Base.Shoulderpad_Tire_R",  tags={"Clothing.Armor.Shoulders", "Quality.Waste", "Rarity.Uncommon"}, basePrice=70, stockRange={min=0, max=4} },
+    { item="Base.ThighTire_L",         tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Uncommon"}, basePrice=100, stockRange={min=0, max=4} },
+    { item="Base.ThighTire_R",         tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Uncommon"}, basePrice=100, stockRange={min=0, max=4} },
 
     -- MAGAZINE (Improvised)
-    { item="Base.Cuirass_Magazine",       tags={"Clothing.Armor.Torso", "Quality.Junk", "Rarity.Common"}, basePrice=40, stockRange={min=2, max=10} },
-    { item="Base.GreaveMagazine_Left",    tags={"Clothing.Armor.Legs", "Quality.Junk", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
-    { item="Base.GreaveMagazine_Right",   tags={"Clothing.Armor.Legs", "Quality.Junk", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
-    { item="Base.ThighMagazine_L",        tags={"Clothing.Armor.Legs", "Quality.Junk", "Rarity.Common"}, basePrice=25, stockRange={min=2, max=10} },
-    { item="Base.ThighMagazine_R",        tags={"Clothing.Armor.Legs", "Quality.Junk", "Rarity.Common"}, basePrice=25, stockRange={min=2, max=10} },
-    { item="Base.VambraceMagazine_Left",  tags={"Clothing.Armor.Arms", "Quality.Junk", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
-    { item="Base.VambraceMagazine_Right", tags={"Clothing.Armor.Arms", "Quality.Junk", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
+    { item="Base.Cuirass_Magazine",       tags={"Clothing.Armor.Torso", "Quality.Waste", "Rarity.Common"}, basePrice=40, stockRange={min=2, max=10} },
+    { item="Base.GreaveMagazine_Left",    tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
+    { item="Base.GreaveMagazine_Right",   tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
+    { item="Base.ThighMagazine_L",        tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Common"}, basePrice=25, stockRange={min=2, max=10} },
+    { item="Base.ThighMagazine_R",        tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Common"}, basePrice=25, stockRange={min=2, max=10} },
+    { item="Base.VambraceMagazine_Left",  tags={"Clothing.Armor.Arms", "Quality.Waste", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
+    { item="Base.VambraceMagazine_Right", tags={"Clothing.Armor.Arms", "Quality.Waste", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
 
     -- =============================================================================
     -- MILITARY & LAW ENFORCEMENT

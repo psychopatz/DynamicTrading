@@ -11,11 +11,11 @@ DynamicTrading.RegisterArchetype("Gunrunner", {
         { tags={"Quality.Illegal"}, count = 3 }
     },
     wants = {
-        ["Armor"] = 1.5,
-        ["Medical"] = 1.3,
-        ["Food.Perishable.Canned"] = 1.1
+        ["Clothing.Protection"] = 1.5,
+        ["Medical.General"] = 1.3,
+        ["Food.NonPerishable.Canned"] = 1.1
     },
-    forbid = { "Tool", "Theme.Farming", "Literature.Book" }
+    forbid = { "Tool.General", "Theme.Farming", "Literature.Media" }
 })
 
 end

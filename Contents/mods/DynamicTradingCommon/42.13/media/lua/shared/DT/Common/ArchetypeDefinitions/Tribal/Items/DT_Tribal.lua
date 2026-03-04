@@ -8,15 +8,15 @@ DynamicTrading.RegisterArchetype("Tribal", {
     allocations = {
         { tags={"Origin.Primitive"}, count = 8 },
         { tags={"Weapon.Melee.Spear"}, count = 6 },
-        { tags={"Resource.Material.Bone"}, count = 4 },
-        { tags={"Resource.Material.Leather"}, count = 3 }
+        { tags={"Resource.Material.Bio"}, count = 4 },
+        { tags={"Resource.Material.Textile"}, count = 3 }
     },
     wants = {
-        ["Blade"] = 1.3,
-        ["Resource.Textile"] = 1.2,
-        ["Medicine"] = 1.4
+        ["Weapon.Melee.Blade"] = 1.3,
+        ["Resource.Material.Textile"] = 1.2,
+        ["Medical.General"] = 1.4
     },
-    forbid = { "Electronics", "Weapon.Ranged.Firearm", "Computer" }
+    forbid = { "Electronics.General", "Weapon.Ranged.Firearm", "Electronics.General" }
 })
 
 end

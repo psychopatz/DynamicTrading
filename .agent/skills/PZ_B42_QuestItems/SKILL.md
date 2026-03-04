@@ -129,33 +129,39 @@ Stock levels are primarily driven by **Weight**, then modified by **Category**.
   - Winter/Hazard (Ins/Wind > 0.5): 250 - 500
   - Specialized Gear: 100 - 300
 
-### Standardized Property Tagging (Dot-Notation)
+### Standardized Property Tagging (The "No-Collision" System)
 
-To ensure consistency and modularity, follow the `Category.SubCategory.Detail` hierarchy.
+To ensure consistency and prevent confusion between **what an item is** and **what it relates to**, follow the distinct Root vs. Descriptor naming convention.
 
-#### **Core Rules**
+#### **1. Core Rules**
 
 1. **Format**: `RootCategory.SubCategory.Detail` (e.g., `Food.Meat.Fresh`).
 2. **Casing**: Always use `PascalCase`.
 3. **Naming**: Use singular nouns (e.g., `Tool`, not `Tools`).
+4. **No Collisions**: Never use the same name for a Primary Root and a Secondary Descriptor.
 
-#### **Taxonomy Roots**
+#### **2. Primary Taxonomy Roots (The "Identity")**
 
-- `Food` (`.Perishable`, `.NonPerishable`, `.Cooking`)
-- `Weapon`, `Clothing`, `Medical`, `Resource`, `Container`, `Tool`, `Junk`.
+*Defines the core nature of the item.*
 
-#### **Descriptor Roots (Secondary)**
+- `Weapon`, `Tool`, `Medical`, `Food`, `Clothing`, `Container`, `Resource`, `Literature`, `Electronics`, `Appliance`, `Misc`.
 
-- `Rarity.*`: `Common` (Default), `Uncommon`, `Rare`, `Legendary`.
-- `Theme.*`: `Winter`, `Camping`, `Survival` (Default for general tools/gear), `Hazard`.
-- `Quality.*`: `Luxury`, `Primitive`, `Junk`, `Sterile`.
-- `Origin.*`: `Military`, `Police`, `Industrial`, `Medical`, `Mod`.
+#### **3. Global Descriptors (The "Properties")**
+
+*Contextual terms that provide properties or affiliation.*
+
+| Concept | Descriptor Root | Permitted Values |
+| :--- | :--- | :--- |
+| **Scarcity** | `Rarity.*` | `Common`, `Uncommon`, `Rare`, `Legendary` |
+| **Tier/Value** | `Quality.*` | `Luxury`, `Sterile`, `Basic`, `Heavy`, `Waste` |
+| **Affiliation** | `Origin.*` | `Corps`, `Police`, `Militia`, `Civ`, `Nomad` |
+| **Context** | `Theme.*` | `Combat`, `Utility`, `Clinical`, `Digital`, `Survival`, `Camping`, `Winter` |
 
 ### **Standardized Execution Guidelines**
 
 1. **Descriptor Inference**:
-    - **Infer from Name/Context**: "Canteen" -> `Origin.Military`, "Propane Tank" -> `Origin.Industrial`.
-    - **Safe Defaults**: If an item is common gear, use `Theme.Survival`. If it's ordinary junk, use `Rarity.Common`.
+    - **Infer from Name/Context**: "Canteen" -> `Origin.Militia`, "Propane Tank" -> `Origin.Industrial` (Now sub of Resource.Fuel).
+    - **Safe Defaults**: If an item is common gear, use `Theme.Survival`. If it's ordinary waste, use `Rarity.Common` and `Quality.Waste`.
 2. **Rarity Flagging**:
     - **Manual Calibration**: Use game knowledge to elevate rare items. (e.g., Caviar or Spices -> `Rarity.Rare`).
 3. **Pricing (Weapon & Material)**:
@@ -169,6 +175,7 @@ Use **Dual Tagging** to satisfy both generic and specific trader requirements:
 
 1. **Taxonomy Tag**: `Weapon.Firearm.Rifle` (Generic stock targeting).
 2. **Origin/Quality Tag**: `Origin.Mod.Brita` or `Quality.Luxury` (Specific targeting).
+3. **Theme Tag**: `Theme.Combat` (For accessories like rifle cases that are technically containers).
 
 ```lua
 -- Example: Canned Beans Registration

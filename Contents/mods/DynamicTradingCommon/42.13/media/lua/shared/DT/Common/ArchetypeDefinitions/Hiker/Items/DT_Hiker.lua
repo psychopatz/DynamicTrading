@@ -5,17 +5,17 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Hiker", {
     name = "Drifter",
     allocations = {
-        { tags={"Tool.Camping"}, count = 8 },
-        { tags={"Container.Misc"}, count = 5 },
+        { tags={"Tool.Utility.Survival"}, count = 8 },
+        { tags={"Container.General"}, count = 5 },
         { tags={"Container.Backpack"}, count = 4 },
-        { tags={"Tool.Camping.Shelter"}, count = 3 }
+        { tags={"Tool.Utility.Survival"}, count = 3 }
     },
     wants = {
-        ["Food.Perishable.Canned"] = 1.3,
-        ["Sweets"] = 1.2,
-        ["Clothing"] = 1.2
+        ["Food.NonPerishable.Canned"] = 1.3,
+        ["Food.NonPerishable.Sweets"] = 1.2,
+        ["Clothing.General"] = 1.2
     },
-    forbid = { "Quality.Heavy", "Electronics.Generator", "Resource.Material.Build" }
+    forbid = { "Quality.Heavy", "Appliance.Generator", "Resource.Material.Build" }
 })
 
 end

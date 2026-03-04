@@ -19,10 +19,10 @@ DynamicTrading.RegisterBatch({
 
 -- Skinned Carcasses (Gross but edible)
 -- Skinned Carcasses (Gross but edible)
-{ item="Base.DeadMouseSkinned",     basePrice=2, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Junk"}, stockRange={min=1, max=5} },
-{ item="Base.DeadMousePupsSkinned", basePrice=1, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Junk"}, stockRange={min=1, max=5} },
-{ item="Base.DeadRatSkinned",       basePrice=3, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Junk"}, stockRange={min=1, max=5} },
-{ item="Base.DeadRatBabySkinned",   basePrice=1, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Junk"}, stockRange={min=1, max=5} },
+{ item="Base.DeadMouseSkinned",     basePrice=2, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Waste"}, stockRange={min=1, max=5} },
+{ item="Base.DeadMousePupsSkinned", basePrice=1, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Waste"}, stockRange={min=1, max=5} },
+{ item="Base.DeadRatSkinned",       basePrice=3, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Waste"}, stockRange={min=1, max=5} },
+{ item="Base.DeadRatBabySkinned",   basePrice=1, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Waste"}, stockRange={min=1, max=5} },
 
 -- =============================================================================
 -- 2. HIDES & LEATHER (Crafting Materials)
@@ -73,23 +73,23 @@ DynamicTrading.RegisterBatch({
 
 -- Small/Juvenile Heads (Junk mostly)
 -- Small/Juvenile Heads (Junk mostly)
-{ item="Base.Calf_Head_Angus",          basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Calf_Head_Holstein",       basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Calf_Head_Simmental",      basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Deer_Fawn_Head",           basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Pig_Piglet_Head_Pink",     basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Pig_Piglet_Head_Black",    basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Sheep_Lamb_Head_White",    basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Sheep_Lamb_Head_Black",    basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
+{ item="Base.Calf_Head_Angus",          basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Calf_Head_Holstein",       basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Calf_Head_Simmental",      basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Deer_Fawn_Head",           basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Pig_Piglet_Head_Pink",     basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Pig_Piglet_Head_Black",    basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Sheep_Lamb_Head_White",    basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Sheep_Lamb_Head_Black",    basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
 
 -- Poultry Heads
 -- Poultry Heads
-{ item="Base.Chicken_Rooster_Head_White", basePrice=1, tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=5} },
-{ item="Base.Chicken_Rooster_Head_Brown", basePrice=1, tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=5} },
-{ item="Base.Chicken_Hen_Brown_Head",     basePrice=1, tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=5} },
-{ item="Base.Chicken_Hen_White_Head",     basePrice=1, tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=5} },
-{ item="Base.Turkey_Gobbler_Head",        basePrice=2, tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=3} },
-{ item="Base.Turkey_Hen_Head",            basePrice=2, tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=3} },
+{ item="Base.Chicken_Rooster_Head_White", basePrice=1, tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=5} },
+{ item="Base.Chicken_Rooster_Head_Brown", basePrice=1, tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=5} },
+{ item="Base.Chicken_Hen_Brown_Head",     basePrice=1, tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=5} },
+{ item="Base.Chicken_Hen_White_Head",     basePrice=1, tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=5} },
+{ item="Base.Turkey_Gobbler_Head",        basePrice=2, tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=3} },
+{ item="Base.Turkey_Hen_Head",            basePrice=2, tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=3} },
 
 -- =============================================================================
 -- 4. TROPHIES: SKULLS (Permanent Decor)
@@ -103,30 +103,30 @@ DynamicTrading.RegisterBatch({
 { item="Base.Pig_Skull",                basePrice=10, tags={"Resource.Material.Trophy", "Rarity.Common"}, stockRange={min=0, max=1} },
 
 -- Small Skulls
-{ item="Base.Calf_Skull",               basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Piglet_Skull",             basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Lamb_Skull",               basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.DeerFawn_Skull",           basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=1} },
-{ item="Base.Raccoon_Skull",            basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=2} },
-{ item="Base.Rabbit_Skull",             basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=3} },
-{ item="Base.Chicken_Rooster_Skull",    basePrice=1,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=5} },
-{ item="Base.Chicken_Hen_Skull",        basePrice=1,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=5} },
-{ item="Base.Turkey_Skull",             basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Junk"}, stockRange={min=0, max=2} },
+{ item="Base.Calf_Skull",               basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Piglet_Skull",             basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Lamb_Skull",               basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.DeerFawn_Skull",           basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=1} },
+{ item="Base.Raccoon_Skull",            basePrice=3,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=2} },
+{ item="Base.Rabbit_Skull",             basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=3} },
+{ item="Base.Chicken_Rooster_Skull",    basePrice=1,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=5} },
+{ item="Base.Chicken_Hen_Skull",        basePrice=1,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=5} },
+{ item="Base.Turkey_Skull",             basePrice=2,  tags={"Resource.Material.Trophy", "Quality.Waste"}, stockRange={min=0, max=2} },
 
 -- =============================================================================
 -- 5. BONES & BYPRODUCTS
 -- =============================================================================
 { item="Base.AnimalBone",           basePrice=5,   tags={"Resource.Material.Bone", "Rarity.Common"}, stockRange={min=5, max=20} },
 { item="Base.LargeAnimalBone",      basePrice=15,  tags={"Resource.Material.Bone", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.SmallAnimalBone",      basePrice=2,   tags={"Resource.Material.Bone", "Quality.Junk"}, stockRange={min=5, max=30} },
-{ item="Base.SharpBoneFragment",    basePrice=1,   tags={"Resource.Material.Bone", "Quality.Junk"}, stockRange={min=5, max=30} },
+{ item="Base.SmallAnimalBone",      basePrice=2,   tags={"Resource.Material.Bone", "Quality.Waste"}, stockRange={min=5, max=30} },
+{ item="Base.SharpBoneFragment",    basePrice=1,   tags={"Resource.Material.Bone", "Quality.Waste"}, stockRange={min=5, max=30} },
 { item="Base.AnimalSinew",          basePrice=25,  tags={"Resource.Material.Thread", "Origin.Animal", "Rarity.Uncommon"}, stockRange={min=2, max=10} }, -- Useful for stitching
 { item="Base.Animal_Brain",         basePrice=10,  tags={"Food.Meat.Perishable", "Theme.Survival"}, stockRange={min=1, max=5} }, -- Edible if desperate
 { item="Base.Animal_Brain_Small",   basePrice=5,   tags={"Food.Meat.Perishable", "Theme.Survival"}, stockRange={min=1, max=5} },
-{ item="Base.ChickenFeather",       basePrice=1,   tags={"Resource.Material.Feather", "Quality.Junk"}, stockRange={min=10, max=50} },
-{ item="Base.TurkeyFeather",        basePrice=1,   tags={"Resource.Material.Feather", "Quality.Junk"}, stockRange={min=10, max=50} },
-{ item="Base.ChickenFoot",          basePrice=2,   tags={"Food.Meat.Perishable", "Quality.Junk"}, stockRange={min=2, max=10} },
-{ item="Base.HerbivoreTeeth",       basePrice=1,   tags={"Resource.Material.Bone", "Quality.Junk"}, stockRange={min=1, max=10} },
+{ item="Base.ChickenFeather",       basePrice=1,   tags={"Resource.Material.Feather", "Quality.Waste"}, stockRange={min=10, max=50} },
+{ item="Base.TurkeyFeather",        basePrice=1,   tags={"Resource.Material.Feather", "Quality.Waste"}, stockRange={min=10, max=50} },
+{ item="Base.ChickenFoot",          basePrice=2,   tags={"Food.Meat.Perishable", "Quality.Waste"}, stockRange={min=2, max=10} },
+{ item="Base.HerbivoreTeeth",       basePrice=1,   tags={"Resource.Material.Bone", "Quality.Waste"}, stockRange={min=1, max=10} },
 { item="Base.PigTusk",              basePrice=15,  tags={"Resource.Material.Trophy", "Rarity.Uncommon"}, stockRange={min=1, max=5} },
 { item="Base.JawboneBovide",        basePrice=10,  tags={"Resource.Material.Bone", "Rarity.Common"}, stockRange={min=1, max=5} },
 

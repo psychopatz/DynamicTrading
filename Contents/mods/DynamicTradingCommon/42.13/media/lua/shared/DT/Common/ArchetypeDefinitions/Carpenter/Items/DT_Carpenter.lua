@@ -10,13 +10,13 @@ DynamicTrading.RegisterArchetype("Carpenter", {
         { tags={"Tool.Crafting.Carpenter"}, count = 5 },
         { tags={"Resource.Material.Build"}, count = 3 }
     },
-    expertTags = { "Wood", "Build" },
+    expertTags = { "Resource.Material.Wood", "Resource.Material.Build" },
     wants = {
-        ["Tool"] = 1.3,
-        ["Food"] = 1.2,
-        ["Medical"] = 1.1
+        ["Tool.General"] = 1.3,
+        ["Food.General"] = 1.2,
+        ["Medical.General"] = 1.1
     },
-    forbid = { "Resource.Material.Metal", "Electronics", "Jewelry" }
+    forbid = { "Resource.Material.Metal", "Electronics.General", "Misc.Cosmetic" }
 })
 
 end

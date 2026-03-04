@@ -10,11 +10,11 @@ DynamicTrading.RegisterArchetype("Blacksmith", {
         { tags={"Resource.Fuel.Solid"}, count = 3 }
     },
     wants = {
-        ["Fuel"] = 1.4,
+        ["Resource.Fuel"] = 1.4,
         ["Container.Fluid"] = 1.2,
-        ["Resource.Material.Leather"] = 1.2
+        ["Resource.Material.Textile"] = 1.2
     },
-    forbid = { "Plastic", "Electronics", "Junk.Paper" }
+    forbid = { "Plastic", "Electronics.General", "Resource.Material.Paper" }
 })
 
 end

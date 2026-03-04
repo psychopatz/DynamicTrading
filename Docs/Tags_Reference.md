@@ -1,401 +1,187 @@
 # Dynamic Trading - Tag Reference Guide
 
-This document lists all available hierarchical tags to be used in item registries and trader archetypes.
+This document lists all available hierarchical tags used in item registries and trader archetypes, adhering to the **"No-Collision"** taxonomy.
 
-## 1. Taxonomy Roots (What the item is)
+## 1. Taxonomy Roots (Identity - "What it IS")
+
+### Appliance
+
+- `Appliance.General` (TVs, Radios, Stoves)
+- `Appliance.Generator`
+
 ### Clothing
-- `Clothing`
-- `Clothing.Accessory`
-- `Clothing.Accessory.Mask`
+
+- `Clothing.Accessory` (Neck, Towel, Umbrella)
+- `Clothing.Accessory.Belt`
 - `Clothing.Accessory.Neck`
-- `Clothing.Accessory.Towel`
 - `Clothing.Accessory.Umbrella`
-- `Clothing.Armor`
-- `Clothing.Armor.Arms`
-- `Clothing.Armor.Legs`
-- `Clothing.Armor.Shoulders`
-- `Clothing.Armor.Torso`
-- `Clothing.Armor.Vest`
-- `Clothing.Hands`
-- `Clothing.Hands.Gloves`
-- `Clothing.Head`
+- `Clothing.General` (Everyday wear)
 - `Clothing.Head.Hat`
-- `Clothing.Utility`
-- `Clothing.Utility.Accessory`
-- `Clothing.Utility.Belt`
-- `Clothing.Utility.Mask`
+- `Clothing.Hands.Gloves`
+- `Clothing.Protection` (Armor, Masks, Vests)
+- `Clothing.Protection.Arms`
+- `Clothing.Protection.Legs`
+- `Clothing.Protection.Torso`
+- `Clothing.Protection.Vest`
 
 ### Container
-- `Container`
-- `Container.Backpack`
+
+- `Container.Backpack` (Wearables)
 - `Container.Backpack.Civ`
 - `Container.Backpack.Duffel`
-- `Container.Backpack.Hydration`
-- `Container.Backpack.Military`
+- `Container.Backpack.Militia`
 - `Container.Backpack.Satchel`
-- `Container.Backpack.Sling`
-- `Container.Backpack.Survival`
-- `Container.Bag`
-- `Container.Cooking`
-- `Container.Cooking.Baking`
-- `Container.Cooking.Boiling`
-- `Container.Cooking.Serving`
-- `Container.Fluid`
-- `Container.Misc`
-- `Container.Organizer`
-- `Container.Sack`
-- `Container.Sack.Junk`
+- `Container.Fluid` (Bottles, Cans, Reservoirs)
+- `Container.General` (Sacks, Bowls, Boxes)
+- `Container.Organizer` (Kits, Pouches, Toolboxes)
 - `Container.Sack.Material`
-- `Container.Secret`
-- `Container.Wearable`
-- `Container.Wearable.FannyPack`
-- `Container.Wearable.Tactical`
 
 ### Electronics
-- `Electronics`
-- `Electronics.Battery`
-- `Electronics.Communication`
-- `Electronics.Communication.Handheld`
-- `Electronics.Communication.Receiver`
-- `Electronics.Communication.Stationary`
-- `Electronics.Component`
-- `Electronics.Component.Audio`
-- `Electronics.Component.Communication`
-- `Electronics.Component.Light`
-- `Electronics.Component.Power`
-- `Electronics.Component.Security`
-- `Electronics.Component.Sensor`
-- `Electronics.Component.Trigger`
-- `Electronics.Entertainment`
-- `Electronics.Entertainment.Audio`
-- `Electronics.Entertainment.Gaming`
-- `Electronics.Entertainment.TV`
-- `Electronics.Gadget`
-- `Electronics.Gadget.Audio`
-- `Electronics.Gadget.Household`
-- `Electronics.Gadget.Phone`
-- `Electronics.Gadget.Wristwatch`
-- `Electronics.Generator`
-- `Electronics.Scholastic`
-- `Electronics.Utility`
-- `Electronics.Utility.Clock`
+
+- `Electronics.General` (Components, Scraps)
+- `Electronics.Gadget` (Wristwatches, Calculators)
+- `Electronics.Gadget.Radio` (Handhelds)
 
 ### Food
-- `Food`
-- `Food.Cooking`
-- `Food.Cooking.Ingredient`
-- `Food.Drink`
-- `Food.Drink.Alcohol`
-- `Food.Meat`
-- `Food.Meat.Perishable`
-- `Food.NonPerishable`
-- `Food.NonPerishable.Cooking`
-- `Food.NonPerishable.Drink`
-- `Food.NonPerishable.Fruit`
-- `Food.NonPerishable.Grain`
-- `Food.NonPerishable.Junk`
-- `Food.NonPerishable.Meat`
-- `Food.NonPerishable.Spice`
-- `Food.NonPerishable.Sweets`
-- `Food.NonPerishable.Unknown`
-- `Food.NonPerishable.Vegetable`
-- `Food.Perishable`
-- `Food.Perishable.Bait`
-- `Food.Perishable.Canned`
-- `Food.Perishable.Cooking`
-- `Food.Perishable.Fruit`
-- `Food.Perishable.Grain`
-- `Food.Perishable.Junk`
-- `Food.Perishable.Meat`
-- `Food.Perishable.Protein`
-- `Food.Perishable.Spice`
-- `Food.Perishable.Sweets`
-- `Food.Perishable.Vegetable`
 
-### Junk
-- `Junk.Household`
-- `Junk.Household.Scholastic`
-- `Junk.Household.Tool`
-- `Junk.Hygiene`
-- `Junk.Paper`
-- `Junk.Toy`
-- `Junk.Trash`
-- `Junk.Waste`
-- `Junk.Waste.Metal`
-- `Junk.Waste.Paper`
-- `Junk.Waste.Plastic`
-- `Junk.Waste.Wood`
+- `Food.Cooking` (Utensils, Stationary)
+- `Food.Cooking.Ingredient`
+- `Food.Drink.Alcohol`
+- `Food.Drink.NonAlcoholic`
+- `Food.General`
+- `Food.General.HighCalorie`
+- `Food.General.HighProtein`
+- `Food.NonPerishable.Canned`
+- `Food.NonPerishable.Dry`
+- `Food.NonPerishable.Grain`
+- `Food.NonPerishable.Meat`
+- `Food.NonPerishable.Sweets`
+- `Food.Perishable.Bait`
+- `Food.Perishable.Fish`
+- `Food.Perishable.Fruit`
+- `Food.Perishable.Meat`
+- `Food.Perishable.Vegetable`
+- `Food.Spice`
 
 ### Literature
-- `Literature.Audio`
-- `Literature.Book`
-- `Literature.Leisure`
+
+- `Literature.Book` (Reading material)
+- `Literature.Media` (Music, VHS, Audio)
 - `Literature.Map`
-- `Literature.Music`
-- `Literature.Music.Accessory`
-- `Literature.Music.Fun`
-- `Literature.Music.Instrument`
-- `Literature.Recipe`
-- `Literature.Recipe.Armor`
-- `Literature.Recipe.Cooking`
-- `Literature.Recipe.Electronics`
-- `Literature.Recipe.Engineer`
-- `Literature.Recipe.Farming`
-- `Literature.Recipe.Fishing`
-- `Literature.Recipe.Industrial`
-- `Literature.Recipe.Mechanic`
-- `Literature.Recipe.Medicine`
-- `Literature.Recipe.Radio`
-- `Literature.Recipe.Tool`
-- `Literature.Recipe.Trapping`
-- `Literature.Recipe.Utility`
-- `Literature.Recipe.Weapon`
+- `Literature.Recipe.[Profession]`
 - `Literature.SkillBook`
 
-### Luxury
-- `Luxury`
-- `Luxury.Cosmetic`
-- `Luxury.Decor`
-- `Luxury.Decor.Paper`
-- `Luxury.Decor.Textile`
-- `Luxury.Decor.Wood`
-- `Luxury.Fun`
-- `Luxury.Fun.Art`
-- `Luxury.Fun.Distraction`
-- `Luxury.Fun.Game`
-- `Luxury.Grooming`
-- `Luxury.Jewelry`
-- `Luxury.Jewelry.Watch`
-- `Luxury.Relict`
-
 ### Medical
-- `Medical`
-- `Medical.Herb`
-- `Medical.Herb.Bone`
-- `Medical.Herb.Cold`
-- `Medical.Herb.Energy`
-- `Medical.Herb.Infection`
-- `Medical.Herb.Pain`
-- `Medical.Herb.Processed`
-- `Medical.Herb.Survival`
-- `Medical.Herb.Tool`
-- `Medical.Herb.Wound`
-- `Medical.Surgical`
-- `Medical.Surgical.Tool`
+
+- `Medical.General` (First aid, Bandages)
+- `Medical.General.Clinical` (Hospital equipment)
+- `Medical.General.Pills`
+- `Medical.General.Poison`
+- `Medical.General.Vitamin`
+- `Medical.Healthcare` (Standard medical supplies)
+- `Medical.Healthcare.Botanical` (Herbs)
 - `Medical.Tobacco`
-- `Medical.Tool`
-- `Medical.Utility`
-- `Medical.Utility.Bandage`
-- `Medical.Utility.Coldpack`
-- `Medical.Utility.Cotton`
-- `Medical.Utility.Liquid`
-- `Medical.Utility.Pill`
-- `Medical.Utility.Protection`
-- `Medical.Utility.Purification`
-- `Medical.Utility.Splint`
-- `Medical.Utility.Tissues`
-- `Medical.Utility.Tool`
+- `Medical.Tool` (Scalpels, Syringes)
 
 ### Misc
-- `Misc.General`
 
-### Quest
-- `Quest`
-- `Quest.Courier`
-- `Quest.Courier.Fragile`
-- `Quest.Courier.Large`
-- `Quest.Courier.Medical`
-- `Quest.Courier.Medium`
-- `Quest.Courier.Military`
-- `Quest.Courier.Small`
-- `Quest.NPC`
-- `Quest.NPC.Gift`
+- `Misc.Artifact` (Unique/Old items)
+- `Misc.Artifact.Trash` (Debris)
+- `Misc.Cosmetic` (Jewelry, Makeup)
+- `Misc.Decor` (Paintings, Interior)
+- `Misc.General` (Toys, Hobbies)
 
 ### Resource
-- `Resource`
-- `Resource.Component`
-- `Resource.Cooking`
-- `Resource.Fuel`
-- `Resource.Fuel.Aerosol`
-- `Resource.Fuel.Container`
-- `Resource.Fuel.Igniter`
-- `Resource.Fuel.Industrial`
-- `Resource.Fuel.Organic`
-- `Resource.Fuel.Solid`
-- `Resource.Material`
-- `Resource.Material.Bone`
-- `Resource.Material.Build`
+
+- `Resource.Fuel` (Gasoline, Propane)
+- `Resource.Fuel.Solid` (Log, Coal)
+- `Resource.Material.Bio` (Bone, Leather)
+- `Resource.Material.Build` (Cement, Plaster)
 - `Resource.Material.Chemical`
-- `Resource.Material.Cloth`
-- `Resource.Material.Cordage`
-- `Resource.Material.Dye`
-- `Resource.Material.Feather`
+- `Resource.Material.General` (Screws, Nails)
 - `Resource.Material.Glass`
-- `Resource.Material.Industrial`
-- `Resource.Material.Leather`
 - `Resource.Material.Metal`
-- `Resource.Material.Organic`
-- `Resource.Material.Plastic`
-- `Resource.Material.Precious`
-- `Resource.Material.Raw`
-- `Resource.Material.Textile`
-- `Resource.Material.Thread`
-- `Resource.Material.Tinder`
-- `Resource.Material.Trophy`
-- `Resource.Material.Wood`
-- `Resource.Medical`
-- `Resource.Poison`
-- `Resource.Poison.Lethal`
-- `Resource.Storage`
-- `Resource.Storage.Preservation`
-- `Resource.Textile`
+- `Resource.Material.Paper`
+- `Resource.Material.Textile` (Cloth, Dye, Yarn)
+- `Resource.Material.Utility` (Tape, Wire, Glue)
+- `Resource.Money`
+- `Resource.Storage.Preservation` (Jars)
 
 ### Tool
-- `Tool`
-- `Tool.Camping`
-- `Tool.Camping.Bedding`
-- `Tool.Camping.Fire`
-- `Tool.Camping.Shelter`
-- `Tool.Cleaning`
-- `Tool.Cleaning.Hazard`
+
+- `Tool.Cleaning.General`
 - `Tool.Cleaning.Hygiene`
-- `Tool.Cleaning.Utility`
-- `Tool.Cooking`
-- `Tool.Cooking.Utensil`
-- `Tool.Crafting`
-- `Tool.Crafting.Art`
-- `Tool.Crafting.Builder`
 - `Tool.Crafting.Carpenter`
-- `Tool.Crafting.Farmer`
-- `Tool.Crafting.Mason`
 - `Tool.Crafting.Mechanic`
 - `Tool.Crafting.Metal`
-- `Tool.Crafting.Scavenger`
-- `Tool.Crafting.Survival`
 - `Tool.Crafting.Tailor`
-- `Tool.Demolition`
-- `Tool.Electronics`
-- `Tool.Farmer`
-- `Tool.Farming`
-- `Tool.Farming.Bucket`
-- `Tool.Fuel`
-- `Tool.Fuel.Container`
-- `Tool.General`
-- `Tool.General.Clean`
-- `Tool.General.Heavy`
-- `Tool.General.Liquid`
-- `Tool.General.Noise`
-- `Tool.General.Restraint`
-- `Tool.General.Safety`
-- `Tool.General.Survival`
-- `Tool.Household`
-- `Tool.Industrial`
-- `Tool.Kitchen`
-- `Tool.Military`
-- `Tool.Mining`
-- `Tool.Navigation`
-- `Tool.Resource`
+- `Tool.General` (Utility tools)
+- `Tool.Resource.Angler`
 - `Tool.Resource.Butcher`
-- `Tool.Resource.Farmer`
+- `Tool.Resource.Farming`
+- `Tool.Resource.Smithing`
+- `Tool.Resource.Trapper`
 - `Tool.Resource.Wood`
-- `Tool.Smithing`
-- `Tool.Smithing.Anvil`
-- `Tool.Smithing.Crucible`
-- `Tool.Smithing.Mold`
-- `Tool.Survival`
-- `Tool.Trap`
+- `Tool.Utility.Demolition`
+- `Tool.Utility.Navigation`
+- `Tool.Utility.Survival` (Camping, Fire)
 
 ### Vehicle
-- `Vehicle`
-- `Vehicle.Body`
-- `Vehicle.Body.Door`
-- `Vehicle.Body.Hood`
-- `Vehicle.Body.Trunk`
-- `Vehicle.Body.Window`
-- `Vehicle.Body.Windshield`
+
 - `Vehicle.Part`
-- `Vehicle.Part.Battery`
 - `Vehicle.Part.Brake`
 - `Vehicle.Part.Engine`
-- `Vehicle.Part.FuelTank`
-- `Vehicle.Part.Muffler`
 - `Vehicle.Part.Suspension`
 - `Vehicle.Part.Tire`
 
 ### Weapon
-- `Weapon`
-- `Weapon.Melee`
+
+- `Weapon.General`
 - `Weapon.Melee.Axe`
+- `Weapon.Melee.Blade` (Sharp/Knife)
 - `Weapon.Melee.Blunt`
-- `Weapon.Melee.HeavyBlunt`
-- `Weapon.Melee.LongBlunt`
-- `Weapon.Melee.Primitive`
-- `Weapon.Melee.Sharp`
-- `Weapon.Melee.ShortBlunt`
-- `Weapon.Melee.SmallAxe`
-- `Weapon.Melee.SmallBlade`
 - `Weapon.Melee.Spear`
 - `Weapon.Part`
-- `Weapon.Part.Barrel`
-- `Weapon.Part.Magazine`
-- `Weapon.Part.Sight`
-- `Weapon.Part.Utility`
-- `Weapon.Ranged`
 - `Weapon.Ranged.Ammo`
 - `Weapon.Ranged.Explosive`
 - `Weapon.Ranged.Firearm`
 
-## 2. Descriptor Roots (Filters for Economy)
-### Origin
-- `Origin`
-- `Origin.Animal`
-- `Origin.Botanical`
-- `Origin.Industrial`
-- `Origin.Medical`
-- `Origin.Military`
-- `Origin.Police`
-- `Origin.Primitive`
-- `Origin.Scavenger`
+## 2. Global Descriptors (Properties - "Context/Filter")
 
-### Quality
-- `Quality`
+### Origin (Affiliation)
+
+- `Origin.Civ`
+- `Origin.Healthcare`
+- `Origin.Industrial`
+- `Origin.Militia`
+- `Origin.Police`
+
+### Quality (Tier)
+
+- `Quality.Dirty`
 - `Quality.Heavy`
 - `Quality.Illegal`
-- `Quality.Junk`
 - `Quality.Luxury`
-- `Quality.Metal`
-- `Quality.Premium`
 - `Quality.Primitive`
-- `Quality.Sport`
-- `Quality.Standard`
+- `Quality.Rotten`
 - `Quality.Sterile`
+- `Quality.Waste`
 
-### Rarity
-- `Rarity`
+### Rarity (Scarcity)
+
 - `Rarity.Common`
-- `Rarity.Legendary`
-- `Rarity.Rare`
 - `Rarity.Uncommon`
+- `Rarity.Rare`
+- `Rarity.Legendary`
 
-### Theme
-- `Theme`
-- `Theme.Asian`
-- `Theme.Cooking`
+### Theme (Context)
+
+- `Theme.Business`
+- `Theme.Clinical`
+- `Theme.Combat`
+- `Theme.Digital`
 - `Theme.Farming`
-- `Theme.Hazard`
-- `Theme.Hunting`
-- `Theme.Industrial`
 - `Theme.Leisure`
-- `Theme.Office`
-- `Theme.Seasonal`
-- `Theme.Social`
-- `Theme.Society`
-- `Theme.Storage`
 - `Theme.Survival`
-- `Theme.Tactical`
+- `Theme.Utility`
 - `Theme.Winter`
-
-## 3. Other / Uncategorized (Needs Review)
-These tags currently do not fall into our designated branches. They should be mapped during execution.
-
-*None remaining!*

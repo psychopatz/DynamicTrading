@@ -181,9 +181,9 @@ DynamicTrading.RegisterBatch({
 { item="Base.GlassmakingMag1",    basePrice=200, tags={"Literature.Recipe.Industrial", "Rarity.Rare"}, stockRange={min=0, max=1} },
 { item="Base.GlassmakingMag2",    basePrice=200, tags={"Literature.Recipe.Industrial", "Rarity.Rare"}, stockRange={min=0, max=1} },
 { item="Base.GlassmakingMag3",    basePrice=250, tags={"Literature.Recipe.Industrial", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Bottles/Jars
-{ item="Base.PrimitiveToolMag1",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Primitive", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.PrimitiveToolMag2",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Primitive", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.PrimitiveToolMag3",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Primitive", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.PrimitiveToolMag1",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Nomad", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.PrimitiveToolMag2",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Nomad", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.PrimitiveToolMag3",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Nomad", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
 { item="Base.EngineerMagazine1",  basePrice=300, tags={"Literature.Recipe.Engineer", "Quality.Illegal", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Noise Makers
 { item="Base.EngineerMagazine2",  basePrice=350, tags={"Literature.Recipe.Engineer", "Quality.Illegal", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Smoke/Gas
 { item="Base.EngineerMagazine3",  basePrice=500, tags={"Literature.Recipe.Engineer", "Quality.Illegal", "Rarity.Legendary"}, stockRange={min=0, max=1} }, -- Pipe Bombs
@@ -209,7 +209,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.FarmingMag6",        basePrice=150, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Crops
 { item="Base.FarmingMag7",        basePrice=150, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Veggies
 { item="Base.FarmingMag8",        basePrice=120, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Herbs
-{ item="Base.FarmingMag9",        basePrice=150, tags={"Literature.Recipe.Medicine", "Origin.Botanical", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Medicinal
+{ item="Base.FarmingMag9",        basePrice=150, tags={"Literature.Recipe.Medicine", "Theme.Clinical", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Medicinal
 { item="Base.HempMag1",           basePrice=200, tags={"Literature.Recipe.Farming", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Hemp
 { item="Base.FishingMag1",        basePrice=120, tags={"Literature.Recipe.Fishing", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Rods
 { item="Base.FishingMag2",        basePrice=150, tags={"Literature.Recipe.Fishing", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Nets
@@ -242,26 +242,26 @@ DynamicTrading.RegisterBatch({
 { item="Base.TrickMag1",          basePrice=50,  tags={"Literature.Book", "Literature.Recipe", "Rarity.Common"}, stockRange={min=0, max=1} },
 { item="Base.TrickMag2",          basePrice=50,  tags={"Literature.Book", "Literature.Recipe", "Rarity.Common"}, stockRange={min=0, max=1} },
 { item="Base.KeyMag1",            basePrice=100, tags={"Literature.Book", "Literature.Recipe", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.ArmorSchematic",     basePrice=150, tags={"Literature.Book", "Literature.Recipe", "Literature.Recipe"}, stockRange={min=0, max=2} },
-{ item="Base.CookwareSchematic",  basePrice=100, tags={"Literature.Book", "Literature.Recipe", "Literature.Recipe"}, stockRange={min=0, max=2} },
-{ item="Base.ExplosiveSchematic", basePrice=400, tags={"Literature.Book", "Literature.Recipe", "Literature.Recipe"}, stockRange={min=0, max=1} },
-{ item="Base.MeleeWeaponSchematic",basePrice=150,tags={"Literature.Book", "Literature.Recipe", "Literature.Recipe"}, stockRange={min=0, max=2} },
-{ item="Base.RecipeClipping",     basePrice=50,  tags={"Literature.Book", "Literature.Recipe", "Literature.Recipe"}, stockRange={min=0, max=3} },
-{ item="Base.SewingPattern",      basePrice=80,  tags={"Literature.Book", "Literature.Recipe", "Literature.Recipe"}, stockRange={min=0, max=3} },
-{ item="Base.SurvivalSchematic",  basePrice=200, tags={"Literature.Book", "Literature.Recipe", "Literature.Recipe"}, stockRange={min=0, max=1} },
-{ item="Base.BSToolsSchematic",   basePrice=200, tags={"Literature.Book", "Literature.Recipe", "Literature.Recipe"}, stockRange={min=0, max=1} },
+{ item="Base.ArmorSchematic",     basePrice=150, tags={"Literature.Recipe.Armor"}, stockRange={min=0, max=2} },
+{ item="Base.CookwareSchematic",  basePrice=100, tags={"Literature.Recipe.Tool"}, stockRange={min=0, max=2} },
+{ item="Base.ExplosiveSchematic", basePrice=400, tags={"Literature.Recipe.Engineer"}, stockRange={min=0, max=1} },
+{ item="Base.MeleeWeaponSchematic",basePrice=150,tags={"Literature.Recipe.Weapon"}, stockRange={min=0, max=2} },
+{ item="Base.RecipeClipping",     basePrice=50,  tags={"Literature.Recipe"}, stockRange={min=0, max=3} },
+{ item="Base.SewingPattern",      basePrice=80,  tags={"Literature.Recipe.Armor"}, stockRange={min=0, max=3} },
+{ item="Base.SurvivalSchematic",  basePrice=200, tags={"Literature.Recipe.Survival"}, stockRange={min=0, max=1} },
+{ item="Base.BSToolsSchematic",   basePrice=200, tags={"Literature.Recipe.Tool"}, stockRange={min=0, max=1} },
 
 -- =============================================================================
 -- 3. LEISURE (Sanity & Boredom Management)
 -- =============================================================================
 
 -- THE LEGEND
-{ item="Base.HottieZ",            basePrice=120, tags={"Literature.Leisure", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
-{ item="Base.HottieZ_New",        basePrice=150, tags={"Literature.Leisure", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.HottieZ",            basePrice=120, tags={"Literature.Media", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.HottieZ_New",        basePrice=150, tags={"Literature.Media", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
 
 -- HARDCOVERS
-{ item="Base.Book",               basePrice=40, tags={"Literature.Leisure", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.Book_Bible",         basePrice=50, tags={"Literature.Leisure", "Rarity.Common"}, stockRange={min=1, max=3} },
+{ item="Base.Book",               basePrice=40, tags={"Literature.Book", "Rarity.Common"}, stockRange={min=2, max=10} },
+{ item="Base.Book_Bible",         basePrice=50, tags={"Literature.Book", "Rarity.Common"}, stockRange={min=1, max=3} },
 -- Note: Grouping all genre hardcovers under generic Leisure price/tags to save space
 -- but explicitly listing IDs as requested.
 { item="Base.Book_AdventureNonFiction", basePrice=20, tags={"Literature.Book", "Theme.Leisure"}, stockRange={min=1, max=3} },
@@ -310,18 +310,18 @@ DynamicTrading.RegisterBatch({
 { item="Base.Book_Western", basePrice=20, tags={"Literature.Book", "Theme.Leisure"}, stockRange={min=1, max=3} },
 
 -- LEATHERBOUND (Higher Value)
-{ item="Base.BookFancy_Classic", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_ClassicFiction", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_ClassicNonfiction", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_History", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_Legal", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_Medical", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_MilitaryHistory", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_Occult", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_Philosophy", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_Politics", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_Religion", basePrice=30, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
-{ item="Base.BookFancy_Bible", basePrice=35, tags={"Literature.Book", "Theme.Leisure", "Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Classic", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_ClassicFiction", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_ClassicNonfiction", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_History", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Legal", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Medical", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_MilitaryHistory", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Occult", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Philosophy", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Politics", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Religion", basePrice=30, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
+{ item="Base.BookFancy_Bible", basePrice=35, tags={"Literature.Book", "Quality.Luxury"}, stockRange={min=0, max=2} },
 
 -- PAPERBACKS (Cheap/Fuel)
 { item="Base.Paperback",          basePrice=5, tags={"Literature.Book", "Theme.Leisure", "Resource.Fuel"}, stockRange={min=5, max=20} },
@@ -382,12 +382,12 @@ DynamicTrading.RegisterBatch({
 { item="Base.Paperback_Western", basePrice=5, tags={"Literature.Book", "Theme.Leisure", "Resource.Fuel"}, stockRange={min=2, max=5} },
 
 -- MAGAZINES & NEWSPAPERS (Generic / Light Reading)
-{ item="Base.Magazine",           basePrice=2, tags={"Literature.Book", "Theme.Leisure", "Resource.Fuel", "Quality.Junk"}, stockRange={min=5, max=30} },
-{ item="Base.MagazineCrossword",  basePrice=3, tags={"Literature.Book", "Theme.Leisure"}, stockRange={min=2, max=10} },
-{ item="Base.MagazineWordsearch", basePrice=3, tags={"Literature.Book", "Theme.Leisure"}, stockRange={min=2, max=10} },
-{ item="Base.TVMagazine",         basePrice=1, tags={"Literature.Book", "Theme.Leisure", "Resource.Fuel"}, stockRange={min=5, max=20} },
-{ item="Base.Newspaper",          basePrice=1, tags={"Literature.Book", "Theme.Leisure", "Resource.Fuel"}, stockRange={min=10, max=50} },
-{ item="Base.Newspaper_New",      basePrice=1, tags={"Literature.Book", "Theme.Leisure", "Resource.Fuel"}, stockRange={min=10, max=50} },
+{ item="Base.Magazine",           basePrice=2, tags={"Literature.Media", "Quality.Waste"}, stockRange={min=5, max=30} },
+{ item="Base.MagazineCrossword",  basePrice=3, tags={"Literature.Media"}, stockRange={min=2, max=10} },
+{ item="Base.MagazineWordsearch", basePrice=3, tags={"Literature.Media"}, stockRange={min=2, max=10} },
+{ item="Base.TVMagazine",         basePrice=1, tags={"Literature.Media"}, stockRange={min=5, max=20} },
+{ item="Base.Newspaper",          basePrice=1, tags={"Literature.Media"}, stockRange={min=10, max=50} },
+{ item="Base.Newspaper_New",      basePrice=1, tags={"Literature.Media"}, stockRange={min=10, max=50} },
 
 -- =============================================================================
 -- 4. CARTOGRAPHY (Maps)

@@ -8,14 +8,14 @@ DynamicTrading.RegisterArchetype("Demo", {
         { tags={"Quality.Heavy"}, count = 6 },
         { tags={"Tool.Camping.Fire"}, count = 4 },
         { tags={"Resource.Fuel"}, count = 4 },
-        { tags={"Electronics"}, count = 3 }
+        { tags={"Electronics.General"}, count = 3 }
     },
     wants = {
-        ["Gunpowder"] = 2.0,
-        ["Wire"] = 1.5,
-        ["Medical"] = 1.2
+        ["Resource.Material.Chemical"] = 2.0,
+        ["Resource.Material.Utility"] = 1.5,
+        ["Medical.General"] = 1.2
     },
-    forbid = { "Fragile", "Resource.Material.Glass", "Luxury.Decor" }
+    forbid = { "Fragile", "Resource.Material.Glass", "Misc.Decor" }
 })
 
 end

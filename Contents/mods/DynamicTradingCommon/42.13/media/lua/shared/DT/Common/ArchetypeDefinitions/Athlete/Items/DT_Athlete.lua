@@ -5,17 +5,17 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Athlete", {
     name = "Coach",
     allocations = {
-        { tags={"Quality.Sport"}, count = 8 },
-        { tags={"Clothing"}, count = 4 },
-        { tags={"Food.Perishable.Protein"}, count = 4 },
+        { tags={"Theme.Sports"}, count = 8 },
+        { tags={"Clothing.General"}, count = 4 },
+        { tags={"Food.General.HighProtein"}, count = 4 },
         { tags={"Container.Fluid"}, count = 4 }
     },
     wants = {
-        ["Medical"] = 1.3,
-        ["HighCalorie"] = 1.2,
-        ["Vitamin"] = 1.4
+        ["Medical.General"] = 1.3,
+        ["Food.General.HighCalorie"] = 1.2,
+        ["Medical.General.Vitamin"] = 1.4
     },
-    forbid = { "Food.Drink.Alcohol", "Tobacco", "Quality.Junk" }
+    forbid = { "Food.Drink.Alcohol", "Medical.Tobacco", "Quality.Waste" }
 })
 
 end

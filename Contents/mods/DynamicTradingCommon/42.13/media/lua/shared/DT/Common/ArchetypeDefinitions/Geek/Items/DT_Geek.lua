@@ -5,17 +5,17 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Geek", {
     name = "Collector",
     allocations = {
-        { tags={"Junk.Toy"}, count = 6 },
-        { tags={"Luxury.Fun"}, count = 5 },
-        { tags={"Electronics"}, count = 5 },
+        { tags={"Misc.General"}, count = 6 },
+        { tags={"Misc.General"}, count = 5 },
+        { tags={"Electronics.General"}, count = 5 },
         { tags={"Literature.Book"}, count = 4 }
     },
     wants = {
-        ["Electronics.Battery"] = 1.5,
-        ["Sweets"] = 1.4,
-        ["Drink"] = 1.2
+        ["Resource.Material.Utility"] = 1.5,
+        ["Food.NonPerishable.Sweets"] = 1.4,
+        ["Food.Drink"] = 1.2
     },
-    forbid = { "Food.Drink.Alcohol", "Farm", "Tool" }
+    forbid = { "Food.Drink.Alcohol", "Theme.Farming", "Tool.General" }
 })
 
 end

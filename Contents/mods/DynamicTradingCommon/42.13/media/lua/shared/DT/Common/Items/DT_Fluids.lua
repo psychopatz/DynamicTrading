@@ -20,7 +20,7 @@ DynamicTrading.Fluids = {
     ["Base.Coffee"]     = { basePrice = 150.0, tags = {"Food.Drink", "Rarity.Uncommon"} },
     
     -- CHEMICALS
-    ["Base.Bleach"]           = { basePrice = 3.0,  tags = {"Medical.Utility.Clean", "Quality.Junk"} },
+    ["Base.Bleach"]           = { basePrice = 3.0,  tags = {"Medical.Utility.Clean", "Quality.Waste"} },
     ["Base.CleaningLiquid"]  = { basePrice = 2.0,  tags = {"Medical.Utility.Clean"} },
     ["Base.Disinfectant"]   = { basePrice = 45.0, tags = {"Medical.Utility.Disinfectant", "Rarity.Uncommon"} },
 }

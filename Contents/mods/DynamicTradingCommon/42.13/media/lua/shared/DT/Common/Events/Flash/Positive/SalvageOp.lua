@@ -11,12 +11,12 @@ DynamicTrading.Events.Register("SalvageOp", {
     description = "Scavengers cleared a warehouse.",
     canSpawn = function() return true end,
     effects = {
-        ["Material"] = { price = 0.5, vol = 4.0 },
-        ["Junk"] = { price = 0.1, vol = 5.0 },
-        ["Electronics"] = { price = 0.8 },
-        ["Metal"] = { price = 0.6 }
+        ["Resource.Material"] = { price = 0.5, vol = 4.0 },
+        ["Quality.Waste"] = { price = 0.1, vol = 5.0 },
+        ["Electronics.General"] = { price = 0.8 },
+        ["Resource.Material.Metal"] = { price = 0.6 }
     },
-    inject = { ["Material"] = 5 },
+    inject = { ["Resource.Material"] = 5 },
     factionImpact = {
         stockpileAdd = { ammo = 100, fuel = 100, meds = 50 }
     }

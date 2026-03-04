@@ -5,16 +5,16 @@ DynamicTrading.RegisterArchetype("Burglar", {
     name = "The Fence",
     allocations = {
         { tags={"Quality.Illegal"}, count = 5 },
-        { tags={"Luxury"}, count = 4 },
-        { tags={"Luxury.Jewelry"}, count = 4 },
+        { tags={"Quality.Luxury"}, count = 4 },
+        { tags={"Misc.Cosmetic"}, count = 4 },
         { tags={"Quality.Illegal"}, count = 2 },
-        { tags={"Weapon"}, count = 2 }
+        { tags={"Weapon.General"}, count = 2 }
     },
     wants = {
-        ["Electronics"] = 1.3,
-        ["Cash"] = 1.5,
+        ["Electronics.General"] = 1.3,
+        ["Resource.Money"] = 1.5,
         ["Container.Backpack"] = 1.2
     },
-    forbid = { "Quality.Heavy", "Resource.Material.Build", "Theme.Farming" }
+    forbid = { "Quality.Heavy", "Resource.Material.Build", "Theme.Business" }
 })
 end

@@ -9,15 +9,15 @@ DynamicTrading.RegisterArchetype("Farmer", {
         { tags={"Food.Perishable.Fruit"}, count = 4 },
         { tags={"Food.Perishable.Grain"}, count = 4 },
         { tags={"Theme.Farming"}, count = 3 },
-        { tags={"Tool.Farming"}, count = 2 }
+        { tags={"Tool.Resource.Farming"}, count = 2 }
     },
-    expertTags = { "Vegetable", "Fruit", "Grain", "Farming" },
+    expertTags = { "Food.Perishable.Vegetable", "Food.Perishable.Fruit", "Food.Perishable.Grain", "Tool.Resource.Farming" },
     wants = {
-        ["Tool"] = 1.3,
+        ["Tool.General"] = 1.3,
         ["Container.Fluid"] = 1.2,
         ["Fuel"] = 1.2
     },
-    forbid = { "Weapon.Ranged.Firearm", "Weapon.Ranged.Ammo", "Electronics" }
+    forbid = { "Weapon.Ranged.Firearm", "Weapon.Ranged.Ammo", "Electronics.General" }
 })
 
 end

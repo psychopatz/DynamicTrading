@@ -30,10 +30,10 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 -- Calculated: (PerRound * Count) * 0.7 (Massive Discount) but extremely rare spawn
 
-{ item="Base.Bullets38Carton",     basePrice=1400, tags={"Weapon.Ranged.Ammo", "Origin.Military", "Rarity.Rare"}, stockRange={min=1, max=2} },
-{ item="Base.Bullets9mmCarton",    basePrice=1750, tags={"Weapon.Ranged.Ammo", "Origin.Military", "Rarity.Rare"}, stockRange={min=1, max=2} },
-{ item="Base.ShotgunShellsCarton", basePrice=1750, tags={"Weapon.Ranged.Ammo", "Origin.Military", "Rarity.Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.Bullets45Carton",     basePrice=2450, tags={"Weapon.Ranged.Ammo", "Origin.Military", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.Bullets38Carton",     basePrice=1400, tags={"Weapon.Ranged.Ammo", "Origin.Militia", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.Bullets9mmCarton",    basePrice=1750, tags={"Weapon.Ranged.Ammo", "Origin.Militia", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.ShotgunShellsCarton", basePrice=1750, tags={"Weapon.Ranged.Ammo", "Origin.Militia", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.Bullets45Carton",     basePrice=2450, tags={"Weapon.Ranged.Ammo", "Origin.Militia", "Rarity.Legendary"}, stockRange={min=0, max=1} },
 
 -- Military Cartons (Extremely expensive, usually only via "Surplus" Event or high tier traders)
 
@@ -44,7 +44,7 @@ DynamicTrading.RegisterBatch({
 -- Magazines are currently missing in vanilla or renamed (e.g., 9mmClip, 45Clip, 44Clip, 556Clip)
 
 -- Rifles (High value because the guns are paperweights without them)
-{ item="Base.M14Clip",  basePrice=250, tags={"Weapon.Part.Magazine", "Origin.Military", "Rarity.Rare"},   stockRange={min=1, max=3} }, -- 20 rounds
+{ item="Base.M14Clip",  basePrice=250, tags={"Weapon.Part.Magazine", "Origin.Militia", "Rarity.Rare"},   stockRange={min=1, max=3} }, -- 20 rounds
 })
 
 print("[DynamicTrading] Ammo Registry Complete \n.")

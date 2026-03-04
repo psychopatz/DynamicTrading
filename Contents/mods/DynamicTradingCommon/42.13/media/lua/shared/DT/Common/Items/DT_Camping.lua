@@ -21,7 +21,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.InsectRepellent",         basePrice=35,  tags={"Medical.Utility.Protection", "Rarity.Common"}, stockRange={min=2, max=8} },
 
 -- Junk
-{ item="Base.Spork",                   basePrice=5,   tags={"Tool.Cooking.Utensil", "Quality.Junk", "Rarity.Common"}, stockRange={min=1, max=5} },
+{ item="Base.Spork",                   basePrice=5,   tags={"Tool.Cooking.Utensil", "Quality.Waste", "Rarity.Common"}, stockRange={min=1, max=5} },
 
 -- =============================================================================
 -- 2. SLEEPING BAGS (Fatigue Management)
@@ -67,8 +67,8 @@ DynamicTrading.RegisterBatch({
 -- Primitive
 { item="Base.HideTent",                 basePrice=25, tags={"Tool.Camping.Shelter", "Theme.Winter"}, stockRange={min=1, max=2} },
 { item="Base.HideTent_Packed",          basePrice=25, tags={"Tool.Camping.Shelter", "Theme.Winter"}, stockRange={min=1, max=2} },
-{ item="Base.ImprovisedTentKit",        basePrice=15, tags={"Tool.Camping.Shelter", "Quality.Junk"},   stockRange={min=1, max=5} },
-{ item="Base.ImprovisedTentKit_Packed", basePrice=15, tags={"Tool.Camping.Shelter", "Quality.Junk"},   stockRange={min=1, max=5} },
+{ item="Base.ImprovisedTentKit",        basePrice=15, tags={"Tool.Camping.Shelter", "Quality.Waste"},   stockRange={min=1, max=5} },
+{ item="Base.ImprovisedTentKit_Packed", basePrice=15, tags={"Tool.Camping.Shelter", "Quality.Waste"},   stockRange={min=1, max=5} },
 
 -- Manufactured (Modern)
 -- Standard Kit

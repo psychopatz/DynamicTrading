@@ -8,14 +8,14 @@ DynamicTrading.RegisterArchetype("RoadWarrior", {
         { tags={"Quality.Primitive"}, count = 6 },
         { tags={"Vehicle.Part"}, count = 5 },
         { tags={"Resource.Fuel"}, count = 5 },
-        { tags={"Clothing.Armor"}, count = 3 }
+        { tags={"Clothing.Protection"}, count = 3 }
     },
     wants = {
         ["Tool.Crafting.Mechanic"] = 1.4,
         ["Weapon.Ranged.Firearm"] = 1.3,
-        ["Food.Perishable.Canned"] = 1.2
+        ["Food.NonPerishable.Canned"] = 1.2
     },
-    forbid = { "Luxury.Decor", "Junk.Toy", "Fragile" }
+    forbid = { "Misc.Decor", "Misc.General", "Fragile" }
 })
 
 end

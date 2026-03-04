@@ -35,10 +35,9 @@ DynamicTrading.RegisterTag("Drink",     { priceMult = 1.0, weight = 80 })
 DynamicTrading.RegisterTag("Clothing",  { priceMult = 0.8, weight = 60 })
 DynamicTrading.RegisterTag("Literature",{ priceMult = 1.2, weight = 50 }) -- Books are valuable
 
--- RESOURCES
-DynamicTrading.RegisterTag("Material",  { priceMult = 1.0, weight = 70 }) -- Planks, Nails
-DynamicTrading.RegisterTag("Junk",      { priceMult = 0.5, weight = 100 }) -- Scrap
-DynamicTrading.RegisterTag("Fuel",      { priceMult = 1.5, weight = 20 }) -- Gas is gold
+DynamicTrading.RegisterTag("Resource.Material", { priceMult = 1.0, weight = 70 }) -- Planks, Nails
+DynamicTrading.RegisterTag("Quality.Waste",    { priceMult = 0.5, weight = 100 }) -- Scrap
+DynamicTrading.RegisterTag("Resource.Fuel",    { priceMult = 1.5, weight = 20 }) -- Gas is gold
 
 -- SPECIALIZED
 DynamicTrading.RegisterTag("Medical",   { priceMult = 1.5, weight = 25 })
@@ -48,9 +47,8 @@ DynamicTrading.RegisterTag("Tool",      { priceMult = 1.2, weight = 30 })
 DynamicTrading.RegisterTag("Seed",      { priceMult = 0.8, weight = 40 })
 
 -- LUXURY / SPECIFIC
-DynamicTrading.RegisterTag("Jewelry",   { priceMult = 3.0, weight = 5 })  -- High value
-DynamicTrading.RegisterTag("Electronics",{ priceMult = 1.4, weight = 20 })
-DynamicTrading.RegisterTag("Luxury",     { priceMult = 4.0, weight = 2 })  -- Premium status
+DynamicTrading.RegisterTag("Misc.Cosmetic",   { priceMult = 3.0, weight = 5 })  -- High value
+DynamicTrading.RegisterTag("Quality.Luxury",  { priceMult = 4.0, weight = 2 })  -- Premium status
 
 -- =============================================================================
 -- 3. CONDITIONAL / SEASONAL
