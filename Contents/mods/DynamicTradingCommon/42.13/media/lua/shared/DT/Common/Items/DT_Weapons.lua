@@ -19,7 +19,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.HandAxe",            tags={"Weapon", "Tool", "Common"},      basePrice=75,  stockRange={min=1, max=4} },
     { item="Base.HandAxe_Old",        tags={"Weapon", "Tool", "Junk"},        basePrice=55,  stockRange={min=1, max=3} },
     { item="Base.HandAxeForged",      tags={"Weapon", "Tool", "Rare"},        basePrice=90,  stockRange={min=0, max=2} },
-    { item="Base.Hatchet",            tags={"Weapon", "Tool", "Common"},      basePrice=70,  stockRange={min=1, max=4} },
     { item="Base.IceAxe",             tags={"Weapon", "Tool", "Rare"},        basePrice=100, stockRange={min=0, max=1} },
     { item="Base.MeatCleaver",        tags={"Weapon", "Butcher", "Common"},   basePrice=45,  stockRange={min=1, max=3} },
     { item="Base.MeatCleaverForged",  tags={"Weapon", "Butcher", "Rare"},     basePrice=60,  stockRange={min=0, max=2} },

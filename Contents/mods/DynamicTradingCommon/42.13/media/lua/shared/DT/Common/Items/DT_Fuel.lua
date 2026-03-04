@@ -7,14 +7,8 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 -- The Gas Can is the standard unit of trade for energy.
 { item="Base.PetrolCan", basePrice=120, tags={"Fuel", "Generator", "Essential"}, stockRange={min=1, max=3} },
-{ item="Base.EmptyPetrolCan", basePrice=40, tags={"Fuel", "Tool", "Essential"}, stockRange={min=1, max=5} },
 -- Improvised Fuel Containers (Molotov components / Small transport)
 -- Prices vary slightly by container size/utility
-{ item="Base.PetrolBleachBottle",   basePrice=45,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=1, max=5} },
-{ item="Base.WhiskeyPetrol",        basePrice=35,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=1, max=5} },
-{ item="Base.WinePetrol",           basePrice=35,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=1, max=6} },
-{ item="Base.PetrolPopBottle",      basePrice=20,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=2, max=10} },
-{ item="Base.WaterBottlePetrol",    basePrice=30,  tags={"Fuel", "Flammable", "Weapon"}, stockRange={min=1, max=8} },
 
 -- =============================================================================
 -- 2. FIRE STARTERS (Ignition)

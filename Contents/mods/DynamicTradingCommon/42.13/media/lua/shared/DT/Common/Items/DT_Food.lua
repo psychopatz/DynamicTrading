@@ -48,14 +48,6 @@ DynamicTrading.RegisterBatch({
 -- Prices vary by size/utility
 { item="Base.FishFillet",       basePrice=10, tags={"Food", "Meat", "Fish"}, stockRange={min=2, max=10} },
 { item="Base.Salmon",           basePrice=12, tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
-{ item="Base.Trout",            basePrice=10, tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
-{ item="Base.Bass",             basePrice=10, tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
-{ item="Base.Catfish",          basePrice=10, tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
-{ item="Base.Perch",            basePrice=8,  tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
-{ item="Base.Crappie",          basePrice=8,  tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
-{ item="Base.Panfish",          basePrice=6,  tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
-{ item="Base.Pike",             basePrice=14, tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
-{ item="Base.Sunfish",          basePrice=6,  tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
 { item="Base.AligatorGar",      basePrice=15, tags={"Food", "Meat", "Fish"}, stockRange={min=0, max=2} },
 { item="Base.BlackCrappie",     basePrice=8,  tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
 { item="Base.BlueCatfish",      basePrice=10, tags={"Food", "Meat", "Fish"}, stockRange={min=1, max=5} },
@@ -147,7 +139,6 @@ DynamicTrading.RegisterBatch({
 { item="Base.RedRadish",        basePrice=3,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=5, max=15} },
 { item="Base.Tomato",           basePrice=4,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=5, max=15} },
 { item="Base.Zucchini",         basePrice=4,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=2, max=10} },
-{ item="Base.Mushrooms",        basePrice=5,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=2, max=10} },
 { item="Base.GingerRoot",       basePrice=6,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=1, max=5} },
 { item="Base.Garlic",           basePrice=5,  tags={"Food", "Vegetable", "Fresh"}, stockRange={min=1, max=5} },
 
@@ -176,7 +167,6 @@ DynamicTrading.RegisterBatch({
 { item="Base.Peach",            basePrice=6,  tags={"Food", "Fruit", "Fresh"}, stockRange={min=2, max=8} },
 { item="Base.Pear",             basePrice=6,  tags={"Food", "Fruit", "Fresh"}, stockRange={min=2, max=8} },
 { item="Base.Pineapple",        basePrice=12, tags={"Food", "Fruit", "Fresh", "Luxury"}, stockRange={min=1, max=3} },
-{ item="Base.Strawberries",     basePrice=4,  tags={"Food", "Fruit", "Fresh"}, stockRange={min=5, max=15} },
 { item="Base.Watermelon",       basePrice=15, tags={"Food", "Fruit", "Fresh"}, stockRange={min=1, max=3} },
 { item="Base.DriedApricots",    basePrice=12, tags={"Food", "Fruit", "Luxury"}, stockRange={min=2, max=8} }, -- Long life
 
@@ -217,9 +207,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.Mustard",          basePrice=6,  tags={"Food", "Spice"}, stockRange={min=2, max=8} },
 { item="Base.Marinara",         basePrice=8,  tags={"Food", "Spice"}, stockRange={min=2, max=8} },
 { item="Base.Hotsauce",         basePrice=6,  tags={"Food", "Spice"}, stockRange={min=2, max=8} },
-{ item="Base.SoySauce",         basePrice=8,  tags={"Food", "Spice"}, stockRange={min=2, max=8} },
 { item="Base.Coffee2",          basePrice=20, tags={"Food", "Drink", "Luxury"}, stockRange={min=2, max=10} },
-{ item="Base.TeaBag2",          basePrice=15, tags={"Food", "Drink", "Luxury"}, stockRange={min=2, max=10} },
 { item="Base.CocoaPowder",      basePrice=15, tags={"Food", "Drink", "Luxury"}, stockRange={min=2, max=10} },
 
 -- =============================================================================
@@ -255,7 +243,6 @@ DynamicTrading.RegisterBatch({
 { item="Base.Sandwich",         basePrice=5,  tags={"Food", "Fresh"}, stockRange={min=0, max=5} },
 { item="Base.CookieChocolateChip",basePrice=3,tags={"Food", "Sweets"}, stockRange={min=5, max=20} },
 { item="Base.Cupcake",          basePrice=4,  tags={"Food", "Sweets"}, stockRange={min=2, max=10} },
-{ item="Base.DonutPlain",       basePrice=3,  tags={"Food", "Sweets"}, stockRange={min=2, max=10} },
 { item="Base.Croissant",        basePrice=4,  tags={"Food", "Sweets"}, stockRange={min=2, max=8} },
 
 -- Frozen/Packaged

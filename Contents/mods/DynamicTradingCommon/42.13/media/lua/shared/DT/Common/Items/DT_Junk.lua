@@ -74,7 +74,6 @@ DynamicTrading.RegisterBatch({
 { item="Base.Bell",                 basePrice=5,   tags={"Luxury", "Metal"}, stockRange={min=0, max=2} },
 { item="Base.BrassNameplate",       basePrice=5,   tags={"Luxury", "Metal"}, stockRange={min=0, max=2} },
 { item="Base.Pinecone",             basePrice=0.5, tags={"Decor", "Fuel"}, stockRange={min=5, max=20} },
-{ item="Base.Glitter",              basePrice=2,   tags={"Decor", "Junk"}, stockRange={min=1, max=3} },
 { item="Base.Book_Prop",            basePrice=5,   tags={"Decor", "Fuel"}, stockRange={min=0, max=2} },
 { item="Base.BookFancy_Prop",       basePrice=10,  tags={"Decor", "Luxury"}, stockRange={min=0, max=2} },
 

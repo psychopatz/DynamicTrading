@@ -13,14 +13,8 @@ DynamicTrading.RegisterBatch({
     
     -- FUEL CONTAINERS
     { item="Base.PetrolCan",         tags={"Tool", "Fuel", "Mechanic", "Common"}, basePrice=100, stockRange={min=1, max=4} },
-    { item="Base.EmptyPetrolCan",    tags={"Tool", "Fuel", "Mechanic", "Common"}, basePrice=40,  stockRange={min=1, max=3} },
     
-    -- IMPROVISED FUEL (Bottles)
-    { item="Base.PetrolBleachBottle",tags={"Fuel", "Improvised", "Common"},  basePrice=18,  stockRange={min=0, max=5} },
-    { item="Base.WhiskeyPetrol",     tags={"Fuel", "Improvised", "Common"},  basePrice=20,  stockRange={min=0, max=5} },
-    { item="Base.PetrolPopBottle",   tags={"Fuel", "Improvised", "Common"},  basePrice=15,  stockRange={min=0, max=5} },
-    { item="Base.WinePetrol",        tags={"Fuel", "Improvised", "Common"},  basePrice=18,  stockRange={min=0, max=5} },
-    { item="Base.WaterBottlePetrol", tags={"Fuel", "Improvised", "Common"},  basePrice=15,  stockRange={min=0, max=5} },
+    -- =============================================================================
 
     -- =============================================================================
     -- 2. BRAKING SYSTEMS

@@ -120,7 +120,6 @@ DynamicTrading.RegisterBatch({
 -- BANDOLIERS (Ammo Efficiency)
 { item="Base.AmmoStrap_Bullets",            basePrice=50,  tags={"Container", "Wearable", "Tactical"}, stockRange={min=1, max=3} },
 { item="Base.AmmoStrap_Brown_Bullets",      basePrice=50,  tags={"Container", "Wearable", "Tactical"}, stockRange={min=1, max=3} },
-{ item="Base.AmmoStrap_Bullets_223",        basePrice=50,  tags={"Container", "Wearable", "Tactical"}, stockRange={min=1, max=3} },
 { item="Base.AmmoStrap_Bullets_308",        basePrice=50,  tags={"Container", "Wearable", "Tactical"}, stockRange={min=1, max=3} },
 { item="Base.AmmoStrap_Shells",             basePrice=50,  tags={"Container", "Wearable", "Tactical"}, stockRange={min=1, max=3} },
 { item="Base.AmmoStrap_Brown_Shells",       basePrice=50,  tags={"Container", "Wearable", "Tactical"}, stockRange={min=1, max=3} },
@@ -169,7 +168,6 @@ DynamicTrading.RegisterBatch({
 
 -- BULKY AMMO CASES
 { item="Base.Bag_ProtectiveCaseBulkyAmmo",  basePrice=30,  tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=3} },
-{ item="Base.Bag_ProtectiveCaseBulkyAmmo_223",basePrice=30, tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseBulkyAmmo_308",basePrice=30, tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseBulkyAmmo_38",basePrice=30,  tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=3} },
 { item="Base.Bag_ProtectiveCaseBulkyAmmo_44",basePrice=30,  tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=3} },
@@ -212,7 +210,6 @@ DynamicTrading.RegisterBatch({
 
 -- AMMO BOXES (Organization)
 { item="Base.Bag_AmmoBox",                  basePrice=10,  tags={"Container", "Organizer", "Weapon"}, stockRange={min=5, max=15} },
-{ item="Base.Bag_AmmoBox_223",              basePrice=10,  tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=5} },
 { item="Base.Bag_AmmoBox_308",              basePrice=10,  tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=5} },
 { item="Base.Bag_AmmoBox_38",               basePrice=10,  tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=5} },
 { item="Base.Bag_AmmoBox_44",               basePrice=10,  tags={"Container", "Organizer", "Weapon"}, stockRange={min=1, max=5} },
