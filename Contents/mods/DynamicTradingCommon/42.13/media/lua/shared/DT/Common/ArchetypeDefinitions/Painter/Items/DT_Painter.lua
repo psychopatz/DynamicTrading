@@ -5,10 +5,10 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Painter", {
     name = "Renovator",
     allocations = {
-        ["Painter"] = 8,
-        ["Decor"] = 5,
-        ["Material"] = 4,
-        ["Tool"] = 3
+        { tags = {"Painter"}, count = 8 },
+        { tags = {"Decor"}, count = 5 },
+        { tags = {"Material"}, count = 4 },
+        { tags = {"Tool"}, count = 3 }
     },
     wants = {
         ["Water"] = 1.2,

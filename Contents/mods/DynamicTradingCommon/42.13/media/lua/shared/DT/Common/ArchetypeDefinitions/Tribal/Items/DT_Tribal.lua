@@ -6,10 +6,10 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Tribal", {
     name = "Primitive Survivor",
     allocations = {
-        ["Primitive"] = 8,
-        ["Spear"] = 6,
-        ["Bone"] = 4,
-        ["Leather"] = 3
+        { tags = {"Primitive"}, count = 8 },
+        { tags = {"Spear"}, count = 6 },
+        { tags = {"Bone"}, count = 4 },
+        { tags = {"Leather"}, count = 3 }
     },
     wants = {
         ["Blade"] = 1.3,

@@ -5,12 +5,12 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("General", {
     name = "General Trader",
     allocations = {
-        ["Food"] = 4,
-        ["Drink"] = 3,
-        ["Material"] = 3,
-        ["Junk"] = 4,
-        ["Clothing"] = 2,
-        ["General"] = 2
+        { tags = {"Food"}, count = 4 },
+        { tags = {"Drink"}, count = 3 },
+        { tags = {"Material"}, count = 3 },
+        { tags = {"Junk"}, count = 4 },
+        { tags = {"Clothing"}, count = 2 },
+        { tags = {"General"}, count = 2 }
     },
     wants = {
         ["Luxury"] = 1.1,

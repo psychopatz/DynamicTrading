@@ -61,6 +61,27 @@ end
 -- 2. DRAINABLE & CHARGE HELPERS (B42 Compatible)
 -- =============================================================================
 
+--- Checks if an item's tags satisfy all requirements.
+-- @param itemTags (Table) The item's tags array.
+-- @param requiredTags (Table) The tags that MUST be present (supports hierarchy).
+-- @return (Boolean)
+function Common.MatchesAllTags(itemTags, requiredTags)
+    if not requiredTags or #requiredTags == 0 then return false end
+    for _, req in ipairs(requiredTags) do
+        local matched = false
+        for _, itemT in ipairs(itemTags) do
+            -- Matches literal or parent.child (hierarchy)
+            if itemT == req or string.find(itemT, req .. "%.") == 1 then
+                matched = true
+                break
+            end
+        end
+        if not matched then return false end
+    end
+    return true
+end
+
+-- =============================================================================
 function Common.GetItemCharge(itemObj)
     if not itemObj then return 0 end
     
@@ -134,54 +155,64 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
     -- ---------------------------------------------------------
     local priorityList = {}
     
-    -- Add Archetype defaults
+    -- Add Archetype defaults (Standardized Table Format Only)
     if archetype.allocations then
-        for criteria, count in pairs(archetype.allocations) do
-            priorityList[criteria] = count
+        for _, entry in ipairs(archetype.allocations) do
+            table.insert(priorityList, entry)
         end
     end
     
-    -- Add Event Injections
+    -- Add Event Injections (Normalize to Table Format)
     for tag, count in pairs(eventInjections) do
-        priorityList[tag] = (priorityList[tag] or 0) + count
+        table.insert(priorityList, { tags = {tag}, count = count })
     end
 
     -- Process the merged list
-    for criteria, count in pairs(priorityList) do
+    for _, entry in ipairs(priorityList) do
         local validItems = {}
+        local count = entry.count or 0
         
-        for key, itemData in pairs(masterList) do
-            local hasTag = false
-            local isForbidden = false
+        -- Logic: If it's a specific ItemID
+        if entry.item then
+            if masterList[entry.item] then
+                table.insert(validItems, entry.item)
+            end
+        else
+            -- Logic: It's a Tag Intersection list
+            local requiredTags = entry.tags or {}
             
-            -- Check Tags
-            -- Check Tags (Supports Hierarchical Dot-Notation)
-            for _, t in ipairs(itemData.tags) do
-                if t == criteria or string.find(t, criteria .. "%.") == 1 then 
-                    hasTag = true 
-                end
-
-                -- Check Forbidden (Archetype + Event Banned)
+            for key, itemData in pairs(masterList) do
+                local isForbidden = false
+                
+                -- Check Labels / Forbidden (Archetype + Event Banned)
                 if archetype.forbid then
-                    for _, f in ipairs(archetype.forbid) do 
-                        if t == f or string.find(t, f .. "%.") == 1 then 
-                            isForbidden = true 
-                        end 
+                    for _, t in ipairs(itemData.tags) do
+                        for _, f in ipairs(archetype.forbid) do 
+                            if t == f or string.find(t, f .. "%.") == 1 then 
+                                isForbidden = true 
+                                break
+                            end 
+                        end
+                        if isForbidden then break end
                     end
                 end
                 
-                if modifiers.forbidTags then
-                    for fTag, _ in pairs(modifiers.forbidTags) do
-                        if t == fTag or string.find(t, fTag .. "%.") == 1 then
-                            isForbidden = true
-                            break
+                if not isForbidden and modifiers.forbidTags then
+                    for _, t in ipairs(itemData.tags) do
+                        for fTag, _ in pairs(modifiers.forbidTags) do
+                            if t == fTag or string.find(t, fTag .. "%.") == 1 then
+                                isForbidden = true
+                                break
+                            end
                         end
+                        if isForbidden then break end
                     end
                 end
-            end
-            
-            if hasTag and not isForbidden then
-                table.insert(validItems, key)
+                
+                -- Check matching ALL required tags
+                if not isForbidden and Common.MatchesAllTags(itemData.tags, requiredTags) then
+                    table.insert(validItems, key)
+                end
             end
         end
         

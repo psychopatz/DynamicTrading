@@ -5,9 +5,9 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Butcher", {
     name = "Butcher",
     allocations = {
-        ["Meat"] = 8,
-        ["Butcher"] = 4,
-        ["Container"] = 2
+        { tags = {"Meat"}, count = 8 },
+        { tags = {"Butcher"}, count = 4 },
+        { tags = {"Container"}, count = 2 }
     },
     wants = {
         ["Ammo"] = 1.4,

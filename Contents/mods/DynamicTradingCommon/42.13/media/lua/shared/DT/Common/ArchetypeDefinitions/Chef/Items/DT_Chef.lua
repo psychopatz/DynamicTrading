@@ -5,11 +5,11 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Chef", {
     name = "Chef",
     allocations = {
-        ["Cooking"] = 6,
-        ["Food"] = 6,
-        ["Fresh"] = 4,
-        ["Spice"] = 3,
-        ["Ingredient"] = 3
+        { tags = {"Cooking"}, count = 6 },
+        { tags = {"Food"}, count = 6 },
+        { tags = {"Fresh"}, count = 4 },
+        { tags = {"Spice"}, count = 3 },
+        { tags = {"Ingredient"}, count = 3 }
     },
     expertTags = { "Food", "Spice" },
     wants = {

@@ -6,11 +6,11 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Pawnbroker", {
     name = "Pawnbroker",
     allocations = {
-        ["Jewelry"] = 6,
-        ["Gold"] = 4,
-        ["Silver"] = 4,
-        ["Luxury"] = 5,
-        ["Rare"] = 3
+        { tags = {"Jewelry"}, count = 6 },
+        { tags = {"Gold"}, count = 4 },
+        { tags = {"Silver"}, count = 4 },
+        { tags = {"Luxury"}, count = 5 },
+        { tags = {"Rare"}, count = 3 }
     },
     wants = {
         ["Electronics"] = 1.2,
