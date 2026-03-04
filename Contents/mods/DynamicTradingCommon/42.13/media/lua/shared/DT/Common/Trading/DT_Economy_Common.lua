@@ -155,16 +155,28 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             local isForbidden = false
             
             -- Check Tags
+            -- Check Tags (Supports Hierarchical Dot-Notation)
             for _, t in ipairs(itemData.tags) do
-                if t == criteria then hasTag = true end
+                if t == criteria or string.find(t, criteria .. "%.") == 1 then 
+                    hasTag = true 
+                end
+
                 -- Check Forbidden (Archetype + Event Banned)
                 if archetype.forbid then
                     for _, f in ipairs(archetype.forbid) do 
-                        if t == f then isForbidden = true end 
+                        if t == f or string.find(t, f .. "%.") == 1 then 
+                            isForbidden = true 
+                        end 
                     end
                 end
-                if modifiers.forbidTags and modifiers.forbidTags[t] then
-                    isForbidden = true
+                
+                if modifiers.forbidTags then
+                    for fTag, _ in pairs(modifiers.forbidTags) do
+                        if t == fTag or string.find(t, fTag .. "%.") == 1 then
+                            isForbidden = true
+                            break
+                        end
+                    end
                 end
             end
             
@@ -197,7 +209,10 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             if archetype.forbid then
                 for _, t in ipairs(itemData.tags) do
                     for _, f in ipairs(archetype.forbid) do
-                        if t == f then isForbidden = true break end
+                        if t == f or string.find(t, f .. "%.") == 1 then 
+                            isForbidden = true 
+                            break 
+                        end
                     end
                     if isForbidden then break end
                 end
@@ -206,10 +221,13 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             -- Check Event Forbidden Tags
             if not isForbidden and modifiers.forbidTags then
                 for _, t in ipairs(itemData.tags) do
-                    if modifiers.forbidTags[t] then
-                        isForbidden = true
-                        break
+                    for fTag, _ in pairs(modifiers.forbidTags) do
+                        if t == fTag or string.find(t, fTag .. "%.") == 1 then
+                            isForbidden = true
+                            break
+                        end
                     end
+                    if isForbidden then break end
                 end
             end
                 
@@ -424,8 +442,10 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
     price = price * maxTagMult
     if verbose and maxTagMult ~= 1.0 then print("[DT TRACE] | TagMult: " .. maxTagMult) end
 
-    -- 2. Event Modifiers
+    -- 2. Event Modifiers (Supports Hierarchy)
     if getPriceMod then
+        -- The Event Manager usually expects tags to match, we pass the raw table.
+        -- We assume the caller (Event Manager) handles its own matching logic or we do it here.
         local eventMult = getPriceMod(itemData.tags)
         price = price * eventMult
         if verbose and eventMult ~= 1.0 then print("[DT TRACE] | EventMult: " .. eventMult) end
@@ -746,11 +766,13 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
 
     -- 6. Archetype Bonus ("Wants")
     if archetype and archetype.wants then
-        for _, tag in ipairs(itemData.tags) do
-            if archetype.wants[tag] then
-                price = price * archetype.wants[tag]
-                if verbose then print("[DT TRACE] | Want(" .. tag .. "): " .. archetype.wants[tag]) end
-                break 
+        for _, t in ipairs(itemData.tags) do
+            for wantTag, bonus in pairs(archetype.wants) do
+                if t == wantTag or string.find(t, wantTag .. "%.") == 1 then
+                    price = price * bonus
+                    if verbose then print("[DT TRACE] | Want(" .. wantTag .. "): " .. bonus) end
+                    return math.floor(price) -- Stop at first match for bonuses
+                end
             end
         end
     end
