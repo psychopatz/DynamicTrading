@@ -10,22 +10,19 @@ if not DynamicTrading then return end
 
 DynamicTrading.Fluids = {
     -- FUEL
-    ["Base.Petrol"]     = { basePrice = 180.0, tags = {"Fuel", "Common"} },
-    ["Base.Petrol"]     = { basePrice = 180.0, tags = {"Fuel", "Common"} },
+    ["Base.Petrol"]     = { basePrice = 250.0, tags = {"Resource.Fuel", "Rarity.Common"} },
     
     -- BEVERAGES
-    ["Base.Water"]      = { basePrice = 80.0, tags = {"Water", "Common"} },
-    ["Base.Beer"]       = { basePrice = 95.0, tags = {"Alcohol", "Drink"} },
-    ["Base.Wine"]       = { basePrice = 70.0, tags = {"Alcohol", "Drink"} },
-    ["Base.Milk"]       = { basePrice = 94.0, tags = {"Food", "Drink"} },
-    ["Base.Milk"]       = { basePrice = 94.0, tags = {"Food", "Drink"} },
+    ["Base.Water"]      = { basePrice = 45.0,  tags = {"Food.Drink", "Rarity.Common"} },
+    ["Base.Beer"]       = { basePrice = 35.0,  tags = {"Food.Drink.Alcohol", "Rarity.Common"} },
+    ["Base.Wine"]       = { basePrice = 120.0, tags = {"Food.Drink.Alcohol", "Rarity.Uncommon"} },
+    ["Base.Milk"]       = { basePrice = 85.0,  tags = {"Food.Drink", "Rarity.Common"} },
+    ["Base.Coffee"]     = { basePrice = 150.0, tags = {"Food.Drink", "Rarity.Uncommon"} },
     
     -- CHEMICALS
-    ["Base.Bleach"]           = { basePrice = 3.0, tags = {"Clean", "Poison"} },
-    ["Base.CleaningLiquid"]  = { basePrice = 2.5, tags = {"Clean"} },
-    ["Base.Disinfectant"]   = { basePrice = 15.0, tags = {"Medical", "Clean"} },
-    ["Base.Disinfectant"]   = { basePrice = 15.0, tags = {"Medical", "Clean"} },
-    ["Base.Coffee"]          = { basePrice = 172.0, tags = {"Drink", "Food"} },
+    ["Base.Bleach"]           = { basePrice = 3.0,  tags = {"Medical.Utility.Clean", "Quality.Junk"} },
+    ["Base.CleaningLiquid"]  = { basePrice = 2.0,  tags = {"Medical.Utility.Clean"} },
+    ["Base.Disinfectant"]   = { basePrice = 45.0, tags = {"Medical.Utility.Disinfectant", "Rarity.Uncommon"} },
 }
 
 print("[DynamicTrading] Fluid Registry Complete.")

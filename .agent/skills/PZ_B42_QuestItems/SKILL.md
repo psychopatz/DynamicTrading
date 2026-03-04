@@ -89,11 +89,10 @@ Use a data-driven approach based on item stats (Weight, Nutrition, Damage) to es
 
 #### 1. Pricing (Base Price)
 
-Sync `basePrice` with the `worth` calculated in the `compare_ids.py` script. The script accounts for:
+Sync `basePrice` with the stats, always using **math.floor**:
 
-- **Food**: Hunger/Thirst reduction, Calories, and Stability (Canned/Packaged).
-- **Weapons**: Damage, Range, Hit Count, Durability, and Swing Time.
-- **Clothing**: Bite/Scratch defense and Insulation.
+- **General**: `basePrice = math.floor(Worth * CategoryMultiplier)`
+- **Food**: `basePrice = math.floor(Hunger * 2.5)` (Primary basis).
 - **Opened Items**: Apply a **30% discount** (0.7x multiplier) for items with `Opened = true` or `_Open` suffix.
 
 #### 2. Stock Range Logic (Min/Max)
@@ -124,6 +123,11 @@ Stock levels are primarily driven by **Weight**, then modified by **Category**.
 - **High Demand (Material, Ammo)**: `Floor(Max * 0.4)`
 - **Currency**: `Floor(Max * 0.8)`
 - **Rare / Fresh**: `0`
+- **Clothing**:
+  - Heavy Armor (Bullet > 70): 1000 - 2000
+  - Tactical/Riot (Bite/Scratch > 50): 500 - 1000
+  - Winter/Hazard (Ins/Wind > 0.5): 250 - 500
+  - Specialized Gear: 100 - 300
 
 ### Standardized Property Tagging (Dot-Notation)
 
@@ -137,14 +141,27 @@ To ensure consistency and modularity, follow the `Category.SubCategory.Detail` h
 
 #### **Taxonomy Roots**
 
-- `Food`, `Weapon`, `Clothing`, `Medical`, `Resource`, `Container`, `Tool`, `Junk`.
+- `Food` (`.Perishable`, `.NonPerishable`, `.Cooking`)
+- `Weapon`, `Clothing`, `Medical`, `Resource`, `Container`, `Tool`, `Junk`.
 
 #### **Descriptor Roots (Secondary)**
 
-- `Rarity.*`: `Common`, `Uncommon`, `Rare`, `Legendary`.
-- `Theme.*`: `Winter`, `Camping`, `Survival`, `Hazard`.
-- `Quality.*`: `Luxury`, `Primitive`, `Sterile`.
+- `Rarity.*`: `Common` (Default), `Uncommon`, `Rare`, `Legendary`.
+- `Theme.*`: `Winter`, `Camping`, `Survival` (Default for general tools/gear), `Hazard`.
+- `Quality.*`: `Luxury`, `Primitive`, `Junk`, `Sterile`.
 - `Origin.*`: `Military`, `Police`, `Industrial`, `Medical`, `Mod`.
+
+### **Standardized Execution Guidelines**
+
+1. **Descriptor Inference**:
+    - **Infer from Name/Context**: "Canteen" -> `Origin.Military`, "Propane Tank" -> `Origin.Industrial`.
+    - **Safe Defaults**: If an item is common gear, use `Theme.Survival`. If it's ordinary junk, use `Rarity.Common`.
+2. **Rarity Flagging**:
+    - **Manual Calibration**: Use game knowledge to elevate rare items. (e.g., Caviar or Spices -> `Rarity.Rare`).
+3. **Pricing (Weapon & Material)**:
+    - Use `Potential Worth` as the base stat for the Category Multiplier.
+4. **Scaling Pricing (Medical & Clothing)**:
+    - **Logic**: Do not use "fixed" prices for a whole tier. SCALE the item within its assigned range (e.g., 200-500) based on its `Potential Worth` or `Weight`. A heavier or more durable armor piece should be at the top of the range.
 
 ### **Archetype Compatibility (Dual-Tagging)**
 

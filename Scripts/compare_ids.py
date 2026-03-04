@@ -22,7 +22,6 @@ def get_opening_maps(vanilla_path):
     print("[*] Building Opening Map from Recipes...")
     recipe_dir = os.path.join(vanilla_path, "generated/recipes/")
     if not os.path.exists(recipe_dir):
-        # Fallback for different path structures
         recipe_dir = os.path.join(os.path.dirname(vanilla_path), "generated/recipes/")
     
     if not os.path.exists(recipe_dir): return mapping
@@ -50,52 +49,75 @@ def calculate_worth(item_id, props, category, subcat):
     weight = get_stat("Weight", 0.1)
     worth = 1.0
     
-    if category == "Food":
+    cap = get_stat("Capacity", 0.0)
+    wr = get_stat("WeightReduction", 0.0)
+    res_val = get_stat("MetalValue") + get_stat("FuelValue")
+    fuel_ratio = get_stat("FireFuelRatio", 0.0)
+    
+    # Calculate Total Uses from UseDelta
+    use_delta = get_stat("UseDelta", 0.0)
+    total_uses = int(round(1.0 / use_delta)) if use_delta > 0 else 1
+    
+    # Extract LearnedRecipes count
+    recipes = len(re.findall(r"LearnedRecipes\s*=\s*([^,\n\s;]+)", props))
+
+    if cap > 0:
+        # Boosted base multiplier for containers/storage items
+        worth = (cap * (wr / 10 + 1)) / (weight + 0.1) * 2.5
+    elif category == "Food":
         hunger = abs(get_stat("HungerChange"))
         thirst = abs(get_stat("ThirstChange"))
         calories = get_stat("Calories") / 100.0
         # Penalties: positive Unhappy/Boredom/Stress are BAD stats in PZ
         penalties = (max(0, get_stat("UnhappyChange")) + max(0, get_stat("BoredomChange")) + max(0, get_stat("StressChange"))) * 2
         
+        # Shelf-life factor
+        fresh = get_stat("DaysFresh")
+        rotten = get_stat("DaysTotallyRotten")
+        shelf_life = (fresh + rotten) / 2.0
+        
         stability = 0
         if "cannedfood = true" in p_lower: stability += 50
         elif "packaged = true" in p_lower: stability += 10
         
-        worth = (hunger + (thirst/2) + calories - penalties + stability) / (weight * 1.5 + 0.1)
+        worth = (hunger + (thirst/2) + calories - penalties + stability + shelf_life) / (weight * 1.5 + 0.1)
     elif "Weapon" in category:
         avg_dmg = (get_stat("MinDamage") + get_stat("MaxDamage")) / 2
         max_range = get_stat("MaxRange", 1.0)
         max_hit = get_stat("MaxHitcount", 1.0)
-        if max_hit == 1.0: max_hit = get_stat("MaxHitCount", 1.0)
         condition = get_stat("ConditionMax", 5)
         reliability = get_stat("ConditionLowerChanceOneIn", 5)
         swing_time = get_stat("MinimumSwingtime", 1.0)
-        
         worth = ((avg_dmg * max_range * max_hit) + (condition * reliability / 5)) / (weight * 2 + swing_time * 10 + 0.1)
     elif category in ["Clothing", "ProtectiveGear"]:
         bite = get_stat("BiteDefense")
         scratch = get_stat("ScratchDefense")
+        bullet = get_stat("BulletDefense")
         insulation = get_stat("Insulation")
+        wind_res = get_stat("WindResistance")
         run_mod = get_stat("RunSpeedModifier", 1.0)
         combat_mod = get_stat("CombatSpeedModifier", 1.0)
         penalty = (1.0 - run_mod) * 100 + (1.0 - combat_mod) * 50
         
-        worth = ((bite * 2.5) + scratch + (insulation * 20)) / (weight * 3 + penalty + 1)
+        worth = ((bite * 3) + scratch + (bullet * 2) + (insulation * 20) + (wind_res * 10)) / (weight * 3 + penalty + 1)
+    elif recipes > 0 or category == "Literature":
+        worth = (recipes * 25 + 5) / (weight + 0.1)
+    elif fuel_ratio > 0:
+        worth = (fuel_ratio * 15) / (weight + 0.1)
     else:
-        res_val = get_stat("MetalValue") + get_stat("FuelValue")
         worth = (res_val / 10 + 1) / (weight + 0.1)
     
-    # 30% Discount for already opened items (Case-insensitive ID or Opened property)
+    # Scale worth by total uses for drainables
+    if total_uses > 1:
+        worth *= (total_uses * 0.8) # Slight diminishing returns per use
+        
+    # 30% Discount for already opened items
     id_lower = item_id.lower()
     is_opened = "opened = true" in p_lower or "open = true" in p_lower or "open" in id_lower or "opened" in id_lower
     if is_opened:
         worth *= 0.7
         
     return round(max(0.1, worth), 2)
-
-def calculate_stock(weight):
-    """Calculates max stock based on weight."""
-    return max(1, int(20 / (weight + 0.1)))
 
 def get_vanilla_data(vanilla_path):
     item_data, fluid_data = {}, {}
@@ -136,23 +158,42 @@ def get_vanilla_data(vanilla_path):
                         "tags": "N/A", "eat_type": "N/A", "props": props, "worth": 1.0
                     }
     
-    # Second pass for inheritance and final worth
     for item_id, data in item_data.items():
-        original_props = data["props"]
-        inherited_props = ""
-        opened_id = data.get("opened_variant")
+        oprops = data["props"]
+        inherited = ""
+        oid = data.get("opened_variant")
+        if oid and oid in item_data: inherited = item_data[oid]["props"]
+        combined_props = oprops + "\n" + inherited
         
-        if opened_id and opened_id in item_data:
-            inherited_props = item_data[opened_id]["props"]
-            
-        # We want original props to take priority (be first in search), but also check inherited.
-        # So we put original props at the front.
-        combined_props = original_props + "\n" + inherited_props
-            
+        def gsl(key, default=0.0, p=combined_props):
+            m = re.search(fr"{key}\s*=\s*(-?\d+\.?\d*)", p, re.IGNORECASE)
+            return float(m.group(1)) if m else default
+
         data["worth"] = calculate_worth(item_id, combined_props, data["category"], data["subcat"])
+        item_weight = gsl("Weight", 0.1)
+        data["weight"] = item_weight
         
-        m = re.search(r"Weight\s*=\s*(-?\d+\.?\d*)", combined_props, re.IGNORECASE)
-        data["max_stock"] = calculate_stock(float(m.group(1)) if m else 0.1)
+        # Advanced Stats for display
+        data["capacity"] = gsl("Capacity", 0.0)
+        data["weight_reduction"] = gsl("WeightReduction", 0.0)
+        use_delta = gsl("UseDelta", 0.0)
+        data["total_uses"] = int(round(1.0 / use_delta)) if use_delta > 0 else 1
+        data["fire_fuel"] = gsl("FireFuelRatio", 0.0)
+        data["unhappy"] = gsl("UnhappyChange", 0.0)
+        data["recipes"] = len(re.findall(r"LearnedRecipes\s*=\s*([^,\n\s;]+)", combined_props))
+        
+        # Food Specific
+        data["fresh"] = gsl("DaysFresh", 0.0)
+        data["rotten"] = gsl("DaysTotallyRotten", 0.0)
+        data["hunger"] = abs(gsl("HungerChange", 0.0))
+        
+        # Clothing Specific
+        data["insulation"] = gsl("Insulation", 0.0)
+        data["wind_res"] = gsl("WindResistance", 0.0)
+        data["bite_def"] = gsl("BiteDefense", 0.0)
+        data["scratch_def"] = gsl("ScratchDefense", 0.0)
+        data["bullet_def"] = gsl("BulletDefense", 0.0)
+        data["condition_max"] = gsl("ConditionMax", 0.0)
                     
     return item_data, fluid_data
 
@@ -176,14 +217,12 @@ def write_hierarchical_files(output_dir, status_folder, ids_subset, vanilla_data
         
         if not meta:
             meta = mod_data.get(obj_id, {"origin": "Unknown.txt"})
-            category, subcat, worth, stock = "Invalid", "General", 0.0, 1
+            category, subcat, worth, weight = "Invalid", "General", 0.0, 0.1
         else:
             category = meta.get("category", "Uncategorized")
             subcat = meta.get("subcat", "General")
             worth = meta.get("worth", 1.0)
-            stock = meta.get("max_stock", 10)
-            
-            # Identify Dev/Junk/Unsure items (no tags and potentially junk metadata)
+            weight = meta.get("weight", 0.1)
             if meta.get("tags") == "None" and status_folder != "Invalid":
                 current_root = "UnsureItems"
             
@@ -192,7 +231,33 @@ def write_hierarchical_files(output_dir, status_folder, ids_subset, vanilla_data
         os.makedirs(target_dir, exist_ok=True)
         file_path = os.path.join(target_dir, f"{subcat}.txt")
         with open(file_path, "a") as f:
-            f.write(f"{obj_id:<45} | Worth: {worth:<8} | MaxStock: {stock:<6} | Tags: {meta.get('tags','N/A')}\n")
+            extra = []
+            if meta.get("capacity", 0) > 0:
+                extra.append(f"Cap: {meta.get('capacity'):<4} WR: {meta.get('weight_reduction'):<3}")
+            if meta.get("total_uses", 1) > 1:
+                extra.append(f"Uses: {meta.get('total_uses'):<3}")
+            if meta.get("recipes", 0) > 0:
+                extra.append(f"Recipes: {meta.get('recipes'):<2}")
+            if meta.get("fire_fuel", 0) > 0:
+                extra.append(f"Fuel: {meta.get('fire_fuel'):<4}")
+            if meta.get("unhappy", 0) != 0:
+                extra.append(f"Unhappy: {meta.get('unhappy'):<3}")
+            
+            # Food Stats
+            if meta.get("hunger", 0) != 0:
+                extra.append(f"Hung: {meta.get('hunger'):<3}")
+            if meta.get("fresh", 0) > 0:
+                extra.append(f"Fresh: {meta.get('fresh'):<3} Rot: {meta.get('rotten'):<3}")
+            
+            # Clothing Stats
+            if meta.get("category") in ["Clothing", "ProtectiveGear"]:
+                extra.append(f"Ins: {meta.get('insulation'):<3} Wind: {meta.get('wind_res'):<3}")
+                extra.append(f"Def(B/S/P): {meta.get('bite_def'):.0f}/{meta.get('scratch_def'):.0f}/{meta.get('bullet_def'):.0f}")
+                if meta.get("condition_max", 0) > 0:
+                    extra.append(f"Cond: {meta.get('condition_max'):<3}")
+                
+            extra_str = " | " + " | ".join(extra) if extra else ""
+            f.write(f"{obj_id:<45} | Potential Worth: {worth:<8} | Weight: {weight:<6}{extra_str} | Tags: {meta.get('tags','N/A')}\n")
 
 def main():
     parser = argparse.ArgumentParser(description="Compare Vanilla PZ Items/Fluids with Mod Registries")

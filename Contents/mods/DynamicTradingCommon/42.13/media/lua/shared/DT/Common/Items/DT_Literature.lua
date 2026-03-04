@@ -6,134 +6,134 @@ DynamicTrading.RegisterBatch({
 -- 1. SKILL BOOKS (Progression Multipliers)
 -- =============================================================================
 -- TIER 1 (Levels 1-2): Essential basics.
-{ item="Base.BookFarming1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookAiming1", basePrice=50, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookHusbandry1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookBlacksmith1", basePrice=60, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookButchering1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookCarpentry1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookCarving1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookCooking1", basePrice=30, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookElectrician1", basePrice=50, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookFirstAid1", basePrice=30, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookFishing1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookForaging1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookGlassmaking1", basePrice=60, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookFlintKnapping1", basePrice=50, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookLongBlade1", basePrice=50, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookMaintenance1", basePrice=60, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} }, -- Very useful
-{ item="Base.BookMasonry1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookMechanic1", basePrice=50, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookPottery1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookReloading1", basePrice=50, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookTailoring1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookTracking1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookTrapping1", basePrice=40, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
-{ item="Base.BookMetalWelding1", basePrice=50, tags={"Literature", "SkillBook", "Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookFarming1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookAiming1", basePrice=100, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookHusbandry1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookBlacksmith1", basePrice=120, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookButchering1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookCarpentry1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookCarving1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookCooking1", basePrice=60, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookElectrician1", basePrice=100, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookFirstAid1", basePrice=60, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookFishing1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookForaging1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookGlassmaking1", basePrice=120, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookFlintKnapping1", basePrice=100, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookLongBlade1", basePrice=100, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookMaintenance1", basePrice=120, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} }, -- Very useful
+{ item="Base.BookMasonry1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookMechanic1", basePrice=100, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookPottery1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookReloading1", basePrice=100, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookTailoring1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookTracking1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookTrapping1", basePrice=80, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
+{ item="Base.BookMetalWelding1", basePrice=100, tags={"Literature.SkillBook", "Rarity.Common"}, stockRange={min=2, max=5} },
 
 -- TIER 2 (Levels 3-4): Getting serious.
-{ item="Base.BookFarming2",       basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookAiming2",        basePrice=100,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookHusbandry2",     basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookBlacksmith2",    basePrice=120,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookButchering2",    basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookCarpentry2",     basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookCarving2",       basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookCooking2",       basePrice=60, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookElectrician2",   basePrice=100,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookFirstAid2",      basePrice=60, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookFishing2",       basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookForaging2",      basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookGlassmaking2",   basePrice=120,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookFlintKnapping2", basePrice=100,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookLongBlade2",     basePrice=100,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookMaintenance2",   basePrice=120,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookMasonry2",       basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookMechanic2",      basePrice=100,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookPottery2",       basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookReloading2",     basePrice=100,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookTailoring2",     basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookTracking2",      basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookTrapping2",      basePrice=80, tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.BookMetalWelding2",  basePrice=100,tags={"Literature", "SkillBook", "Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookFarming2",       basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookAiming2",        basePrice=100,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookHusbandry2",     basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookBlacksmith2",    basePrice=120,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookButchering2",    basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookCarpentry2",     basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookCarving2",       basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookCooking2",       basePrice=60, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookElectrician2",   basePrice=100,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookFirstAid2",      basePrice=60, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookFishing2",       basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookForaging2",      basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookGlassmaking2",   basePrice=120,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookFlintKnapping2", basePrice=100,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookLongBlade2",     basePrice=100,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookMaintenance2",   basePrice=120,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookMasonry2",       basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookMechanic2",      basePrice=100,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookPottery2",       basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookReloading2",     basePrice=100,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookTailoring2",     basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookTracking2",      basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookTrapping2",      basePrice=80, tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
+{ item="Base.BookMetalWelding2",  basePrice=100,tags={"Literature.SkillBook", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
 
 -- TIER 3 (Levels 5-6): The Grind Breakers. High demand.
-{ item="Base.BookFarming3",       basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookAiming3",        basePrice=180, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookHusbandry3",     basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookBlacksmith3",    basePrice=200, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookButchering3",    basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookCarpentry3",     basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookCarving3",       basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookCooking3",       basePrice=120, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookElectrician3",   basePrice=180, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookFirstAid3",      basePrice=120, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookFishing3",       basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookForaging3",      basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookGlassmaking3",   basePrice=200, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookFlintKnapping3", basePrice=180, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookLongBlade3",     basePrice=180, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookMaintenance3",   basePrice=200, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookMasonry3",       basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookMechanic3",      basePrice=180, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookPottery3",       basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookReloading3",     basePrice=180, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookTailoring3",     basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookTracking3",      basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookTrapping3",      basePrice=150, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
-{ item="Base.BookMetalWelding3",  basePrice=180, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookFarming3",       basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookAiming3",        basePrice=180, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookHusbandry3",     basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookBlacksmith3",    basePrice=200, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookButchering3",    basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookCarpentry3",     basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookCarving3",       basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookCooking3",       basePrice=120, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookElectrician3",   basePrice=180, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookFirstAid3",      basePrice=120, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookFishing3",       basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookForaging3",      basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookGlassmaking3",   basePrice=200, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookFlintKnapping3", basePrice=180, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookLongBlade3",     basePrice=180, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookMaintenance3",   basePrice=200, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookMasonry3",       basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookMechanic3",      basePrice=180, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookPottery3",       basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookReloading3",     basePrice=180, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookTailoring3",     basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookTracking3",      basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookTrapping3",      basePrice=150, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
+{ item="Base.BookMetalWelding3",  basePrice=180, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=2} },
 
 -- TIER 4 (Levels 7-8): Master Class.
-{ item="Base.BookFarming4",       basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookAiming4",        basePrice=350, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookHusbandry4",     basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookBlacksmith4",    basePrice=400, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookButchering4",    basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookCarpentry4",     basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookCarving4",       basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookCooking4",       basePrice=200, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookElectrician4",   basePrice=350, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookFirstAid4",      basePrice=200, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookFishing4",       basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookForaging4",      basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookGlassmaking4",   basePrice=400, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookFlintKnapping4", basePrice=350, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookLongBlade4",     basePrice=350, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookMaintenance4",   basePrice=400, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookMasonry4",       basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookMechanic4",      basePrice=350, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookPottery4",       basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookReloading4",     basePrice=350, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookTailoring4",     basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookTracking4",      basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookTrapping4",      basePrice=300, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
-{ item="Base.BookMetalWelding4",  basePrice=350, tags={"Literature", "SkillBook", "Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookFarming4",       basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookAiming4",        basePrice=350, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookHusbandry4",     basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookBlacksmith4",    basePrice=400, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookButchering4",    basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookCarpentry4",     basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookCarving4",       basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookCooking4",       basePrice=200, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookElectrician4",   basePrice=350, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookFirstAid4",      basePrice=200, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookFishing4",       basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookForaging4",      basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookGlassmaking4",   basePrice=400, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookFlintKnapping4", basePrice=350, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookLongBlade4",     basePrice=350, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookMaintenance4",   basePrice=400, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookMasonry4",       basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookMechanic4",      basePrice=350, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookPottery4",       basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookReloading4",     basePrice=350, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookTailoring4",     basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookTracking4",      basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookTrapping4",      basePrice=300, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
+{ item="Base.BookMetalWelding4",  basePrice=350, tags={"Literature.SkillBook", "Rarity.Rare"}, stockRange={min=1, max=1} },
 
 -- TIER 5 (Levels 9-10): Legend Status.
-{ item="Base.BookFarming5",       basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookAiming5",        basePrice=600, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookHusbandry5",     basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookBlacksmith5",    basePrice=700, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookButchering5",    basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookCarpentry5",     basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookCarving5",       basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookCooking5",       basePrice=400, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookElectrician5",   basePrice=600, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookFirstAid5",      basePrice=400, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookFishing5",       basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookForaging5",      basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookGlassmaking5",   basePrice=700, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookFlintKnapping5", basePrice=600, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookLongBlade5",     basePrice=600, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookMaintenance5",   basePrice=700, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookMasonry5",       basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookMechanic5",      basePrice=600, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookPottery5",       basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookReloading5",     basePrice=600, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookTailoring5",     basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookTracking5",      basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookTrapping5",      basePrice=500, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
-{ item="Base.BookMetalWelding5",  basePrice=600, tags={"Literature", "SkillBook", "Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookFarming5",       basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookAiming5",        basePrice=600, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookHusbandry5",     basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookBlacksmith5",    basePrice=700, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookButchering5",    basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookCarpentry5",     basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookCarving5",       basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookCooking5",       basePrice=400, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookElectrician5",   basePrice=600, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookFirstAid5",      basePrice=400, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookFishing5",       basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookForaging5",      basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookGlassmaking5",   basePrice=700, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookFlintKnapping5", basePrice=600, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookLongBlade5",     basePrice=600, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookMaintenance5",   basePrice=700, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookMasonry5",       basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookMechanic5",      basePrice=600, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookPottery5",       basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookReloading5",     basePrice=600, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookTailoring5",     basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookTracking5",      basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookTrapping5",      basePrice=500, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.BookMetalWelding5",  basePrice=600, tags={"Literature.SkillBook", "Rarity.Legendary"}, stockRange={min=0, max=1} },
 
 -- =============================================================================
 -- 2. RECIPE MAGAZINES (The Knowledge Economy)
@@ -141,82 +141,82 @@ DynamicTrading.RegisterBatch({
 -- These are one-time reads that unlock mechanics. Extremely valuable.
 
 -- THE HOLY GRAIL (Essentials)
-{ item="Base.ElectronicsMag4",    basePrice=1000, tags={"Literature", "Recipe", "Legendary"}, stockRange={min=0, max=1} }, -- Generator
-{ item="Base.HerbalistMag",       basePrice=800,  tags={"Literature", "Recipe", "Legendary"}, stockRange={min=0, max=1} }, -- Herbalist (Poison detection)
+{ item="Base.ElectronicsMag4",    basePrice=1500, tags={"Literature.Recipe", "Rarity.Legendary"}, stockRange={min=0, max=1} }, -- Generator
+{ item="Base.HerbalistMag",       basePrice=1200, tags={"Literature.Recipe", "Rarity.Legendary"}, stockRange={min=0, max=1} }, -- Herbalist
 
 -- B42 CRAFTING & SMITHING (High Value Meta)
-{ item="Base.SmithingMag1",       basePrice=250, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Tools
-{ item="Base.SmithingMag2",       basePrice=250, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Cookware
-{ item="Base.SmithingMag3",       basePrice=250, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Farming Tools
-{ item="Base.SmithingMag4",       basePrice=250, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Small Tools
-{ item="Base.SmithingMag5",       basePrice=300, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Blunt Weapons
-{ item="Base.SmithingMag6",       basePrice=500, tags={"Literature", "Recipe", "Legendary"}, stockRange={min=0, max=1} }, -- Advanced Forge (Crucial)
-{ item="Base.SmithingMag7",       basePrice=350, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Blades
-{ item="Base.SmithingMag8",       basePrice=350, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Knives
-{ item="Base.SmithingMag9",       basePrice=400, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Furnaces
-{ item="Base.SmithingMag10",      basePrice=450, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Smelting
-{ item="Base.SmithingMag11",      basePrice=300, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Maces
-{ item="Base.MetalworkMag1",      basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Walls
-{ item="Base.MetalworkMag2",      basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Furniture
-{ item="Base.MetalworkMag3",      basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Fences
-{ item="Base.MetalworkMag4",      basePrice=150, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Sheets
+{ item="Base.SmithingMag1",       basePrice=350, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag2",       basePrice=350, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag3",       basePrice=350, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag4",       basePrice=350, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag5",       basePrice=450, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag6",       basePrice=750, tags={"Literature.Recipe", "Rarity.Legendary"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag7",       basePrice=500, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag8",       basePrice=500, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag9",       basePrice=600, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag10",      basePrice=650, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.SmithingMag11",      basePrice=450, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.MetalworkMag1",      basePrice=300, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.MetalworkMag2",      basePrice=300, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.MetalworkMag3",      basePrice=300, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.MetalworkMag4",      basePrice=250, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=1} },
 
 -- ARMOR & WEAPON MODS (Survival Combat)
-{ item="Base.ArmorMag1",          basePrice=300, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Tire Armor
-{ item="Base.ArmorMag2",          basePrice=250, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Bone/Wood
-{ item="Base.ArmorMag3",          basePrice=350, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Scrap Metal
-{ item="Base.ArmorMag4",          basePrice=400, tags={"Literature", "Recipe", "Legendary"}, stockRange={min=0, max=1} }, -- Plate Armor
-{ item="Base.ArmorMag5",          basePrice=350, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Iron Age
-{ item="Base.ArmorMag6",          basePrice=300, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Spiked
-{ item="Base.ArmorMag7",          basePrice=500, tags={"Literature", "Recipe", "Legendary"}, stockRange={min=0, max=1} }, -- Bulletproof
-{ item="Base.WeaponMag1",         basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Bone Weapons
-{ item="Base.WeaponMag2",         basePrice=300, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Gas Masks/Filters
-{ item="Base.WeaponMag3",         basePrice=200, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Prison
-{ item="Base.WeaponMag4",         basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Barbed Wire
-{ item="Base.WeaponMag5",         basePrice=200, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Street
-{ item="Base.WeaponMag6",         basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Peasants
-{ item="Base.WeaponMag7",         basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Bat Carving
+{ item="Base.ArmorMag1",          basePrice=300, tags={"Literature.Recipe.Armor", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Tire Armor
+{ item="Base.ArmorMag2",          basePrice=250, tags={"Literature.Recipe.Armor", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Bone/Wood
+{ item="Base.ArmorMag3",          basePrice=350, tags={"Literature.Recipe.Armor", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Scrap Metal
+{ item="Base.ArmorMag4",          basePrice=400, tags={"Literature.Recipe.Armor", "Rarity.Legendary"}, stockRange={min=0, max=1} }, -- Plate Armor
+{ item="Base.ArmorMag5",          basePrice=350, tags={"Literature.Recipe.Armor", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Iron Age
+{ item="Base.ArmorMag6",          basePrice=300, tags={"Literature.Recipe.Armor", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Spiked
+{ item="Base.ArmorMag7",          basePrice=500, tags={"Literature.Recipe.Armor", "Rarity.Legendary"}, stockRange={min=0, max=1} }, -- Bulletproof
+{ item="Base.WeaponMag1",         basePrice=150, tags={"Literature.Recipe.Weapon", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Bone Weapons
+{ item="Base.WeaponMag2",         basePrice=300, tags={"Literature.Recipe.Utility", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Gas Masks/Filters
+{ item="Base.WeaponMag3",         basePrice=200, tags={"Literature.Recipe.Weapon", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Prison
+{ item="Base.WeaponMag4",         basePrice=150, tags={"Literature.Recipe.Weapon", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Barbed Wire
+{ item="Base.WeaponMag5",         basePrice=200, tags={"Literature.Recipe.Weapon", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Street
+{ item="Base.WeaponMag6",         basePrice=150, tags={"Literature.Recipe.Weapon", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Peasants
+{ item="Base.WeaponMag7",         basePrice=150, tags={"Literature.Recipe.Weapon", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Bat Carving
 
 -- SPECIALIZED CRAFTING (Glass/Primitive/Explosives)
-{ item="Base.GlassmakingMag1",    basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} },
-{ item="Base.GlassmakingMag2",    basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} },
-{ item="Base.GlassmakingMag3",    basePrice=250, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Bottles/Jars
-{ item="Base.PrimitiveToolMag1",  basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.PrimitiveToolMag2",  basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.PrimitiveToolMag3",  basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.EngineerMagazine1",  basePrice=300, tags={"Literature", "Recipe", "Rare", "Illegal"}, stockRange={min=0, max=1} }, -- Noise Makers
-{ item="Base.EngineerMagazine2",  basePrice=350, tags={"Literature", "Recipe", "Rare", "Illegal"}, stockRange={min=0, max=1} }, -- Smoke/Gas
-{ item="Base.EngineerMagazine3",  basePrice=500, tags={"Literature", "Recipe", "Legendary", "Illegal"}, stockRange={min=0, max=1} }, -- Pipe Bombs
+{ item="Base.GlassmakingMag1",    basePrice=200, tags={"Literature.Recipe.Industrial", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.GlassmakingMag2",    basePrice=200, tags={"Literature.Recipe.Industrial", "Rarity.Rare"}, stockRange={min=0, max=1} },
+{ item="Base.GlassmakingMag3",    basePrice=250, tags={"Literature.Recipe.Industrial", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Bottles/Jars
+{ item="Base.PrimitiveToolMag1",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Primitive", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.PrimitiveToolMag2",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Primitive", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.PrimitiveToolMag3",  basePrice=150, tags={"Literature.Recipe.Tool", "Origin.Primitive", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.EngineerMagazine1",  basePrice=300, tags={"Literature.Recipe.Engineer", "Quality.Illegal", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Noise Makers
+{ item="Base.EngineerMagazine2",  basePrice=350, tags={"Literature.Recipe.Engineer", "Quality.Illegal", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Smoke/Gas
+{ item="Base.EngineerMagazine3",  basePrice=500, tags={"Literature.Recipe.Engineer", "Quality.Illegal", "Rarity.Legendary"}, stockRange={min=0, max=1} }, -- Pipe Bombs
 
 -- MECHANICS & ELECTRONICS
-{ item="Base.MechanicMag1",       basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Standard
-{ item="Base.MechanicMag2",       basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Commercial
-{ item="Base.MechanicMag3",       basePrice=250, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Performance
-{ item="Base.ElectronicsMag1",    basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Remote
-{ item="Base.ElectronicsMag2",    basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Timer
-{ item="Base.ElectronicsMag3",    basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Sensors
-{ item="Base.ElectronicsMag5",    basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Lights
-{ item="Base.RadioMag1",          basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.RadioMag2",          basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.RadioMag3",          basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.MechanicMag1",       basePrice=150, tags={"Literature.Recipe.Mechanic", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Standard
+{ item="Base.MechanicMag2",       basePrice=200, tags={"Literature.Recipe.Mechanic", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Commercial
+{ item="Base.MechanicMag3",       basePrice=250, tags={"Literature.Recipe.Mechanic", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Performance
+{ item="Base.ElectronicsMag1",    basePrice=200, tags={"Literature.Recipe.Electronics", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Remote
+{ item="Base.ElectronicsMag2",    basePrice=200, tags={"Literature.Recipe.Electronics", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Timer
+{ item="Base.ElectronicsMag3",    basePrice=200, tags={"Literature.Recipe.Electronics", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Sensors
+{ item="Base.ElectronicsMag5",    basePrice=150, tags={"Literature.Recipe.Electronics", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Lights
+{ item="Base.RadioMag1",          basePrice=150, tags={"Literature.Recipe.Radio", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.RadioMag2",          basePrice=150, tags={"Literature.Recipe.Radio", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
+{ item="Base.RadioMag3",          basePrice=150, tags={"Literature.Recipe.Radio", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
 
 -- FARMING, FISHING & TRAPPING
-{ item="Base.FarmingMag1",        basePrice=100, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Mildew
-{ item="Base.FarmingMag2",        basePrice=100, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Cure
-{ item="Base.FarmingMag3",        basePrice=120, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Flowers
-{ item="Base.FarmingMag4",        basePrice=120, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Scarecrow
-{ item="Base.FarmingMag5",        basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Jarring (Food Preservation)
-{ item="Base.FarmingMag6",        basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Crops
-{ item="Base.FarmingMag7",        basePrice=150, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Veggies
-{ item="Base.FarmingMag8",        basePrice=120, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Herbs
-{ item="Base.FarmingMag9",        basePrice=150, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Medicinal
-{ item="Base.HempMag1",           basePrice=200, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Hemp
-{ item="Base.FishingMag1",        basePrice=120, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Rods
-{ item="Base.FishingMag2",        basePrice=150, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Nets
-{ item="Base.HuntingMag1",        basePrice=120, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Snare
-{ item="Base.HuntingMag2",        basePrice=150, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Crate/Stick
-{ item="Base.HuntingMag3",        basePrice=150, tags={"Literature", "Recipe", "Rare"}, stockRange={min=0, max=1} }, -- Cage/Box
-{ item="Base.HuntingMag4",        basePrice=100, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} }, -- Trophy
+{ item="Base.FarmingMag1",        basePrice=100, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Mildew
+{ item="Base.FarmingMag2",        basePrice=100, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Cure
+{ item="Base.FarmingMag3",        basePrice=120, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Flowers
+{ item="Base.FarmingMag4",        basePrice=120, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Scarecrow
+{ item="Base.FarmingMag5",        basePrice=200, tags={"Literature.Recipe.Cooking", "Theme.Storage", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Jarring (Food Preservation)
+{ item="Base.FarmingMag6",        basePrice=150, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Crops
+{ item="Base.FarmingMag7",        basePrice=150, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Veggies
+{ item="Base.FarmingMag8",        basePrice=120, tags={"Literature.Recipe.Farming", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Herbs
+{ item="Base.FarmingMag9",        basePrice=150, tags={"Literature.Recipe.Medicine", "Origin.Botanical", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Medicinal
+{ item="Base.HempMag1",           basePrice=200, tags={"Literature.Recipe.Farming", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Hemp
+{ item="Base.FishingMag1",        basePrice=120, tags={"Literature.Recipe.Fishing", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Rods
+{ item="Base.FishingMag2",        basePrice=150, tags={"Literature.Recipe.Fishing", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Nets
+{ item="Base.HuntingMag1",        basePrice=120, tags={"Literature.Recipe.Trapping", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Snare
+{ item="Base.HuntingMag2",        basePrice=150, tags={"Literature.Recipe.Trapping", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Crate/Stick
+{ item="Base.HuntingMag3",        basePrice=150, tags={"Literature.Recipe.Trapping", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Cage/Box
+{ item="Base.HuntingMag4",        basePrice=100, tags={"Literature.Recipe.Trapping", "Rarity.Uncommon"}, stockRange={min=0, max=1} }, -- Trophy
 
 -- TAILORING & COOKING
 { item="Base.TailoringMag1",      basePrice=120, tags={"Literature", "Recipe", "Uncommon"}, stockRange={min=0, max=1} },
@@ -256,12 +256,12 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 
 -- THE LEGEND
-{ item="Base.HottieZ",            basePrice=60,  tags={"Literature", "Leisure", "Luxury"}, stockRange={min=1, max=5} }, -- Peak boredom reduction
-{ item="Base.HottieZ_New",        basePrice=60,  tags={"Literature", "Leisure", "Luxury"}, stockRange={min=1, max=5} },
+{ item="Base.HottieZ",            basePrice=120, tags={"Literature.Leisure", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
+{ item="Base.HottieZ_New",        basePrice=150, tags={"Literature.Leisure", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
 
--- HARDCOVERS / LEATHERBOUND (Durable, High Boredom Reduction)
-{ item="Base.Book",               basePrice=20, tags={"Literature", "Leisure"}, stockRange={min=2, max=10} },
-{ item="Base.Book_Bible",         basePrice=25, tags={"Literature", "Leisure"}, stockRange={min=1, max=3} },
+-- HARDCOVERS
+{ item="Base.Book",               basePrice=40, tags={"Literature.Leisure", "Rarity.Common"}, stockRange={min=2, max=10} },
+{ item="Base.Book_Bible",         basePrice=50, tags={"Literature.Leisure", "Rarity.Common"}, stockRange={min=1, max=3} },
 -- Note: Grouping all genre hardcovers under generic Leisure price/tags to save space
 -- but explicitly listing IDs as requested.
 { item="Base.Book_AdventureNonFiction", basePrice=20, tags={"Literature", "Leisure"}, stockRange={min=1, max=3} },
