@@ -1,0 +1,14 @@
+Title: Example Document Title
+Tags: [example, tutorial, docs]
+
+# Example Heading
+
+This is how the body of a documentation file should look. 
+- The first line MUST be 'Title: ...'
+- The second line MUST be 'Tags: [tag1, tag2]'
+- There should be a blank line before the body.
+
+## Discovery Tips
+- Use @slug to link to another documented system.
+- Use [path/to/file] to link to a raw workspace path.
+- Run `python3 docs.py --verify` to check this file's syntax.

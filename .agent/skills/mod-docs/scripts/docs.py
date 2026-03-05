@@ -2,6 +2,8 @@ import argparse
 import os
 import json
 import re
+import random
+import string
 from pathlib import Path
 
 # Paths
@@ -10,6 +12,7 @@ SKILL_DIR = SCRIPT_DIR.parent
 RESOURCES_DIR = SKILL_DIR / "resources"
 DOCS_DIR = RESOURCES_DIR / "docs"
 WORKSPACE_ROOT = SKILL_DIR.parent.parent.parent
+SHORTCODES_FILE = RESOURCES_DIR / "shortcodes.json"
 
 SUGGESTION_TEMPLATE = """
 [Standard Format Tutorial]
@@ -31,32 +34,54 @@ def get_all_txt_files(path):
 
 def do_verify():
     print(f"Verifying documentation in: {DOCS_DIR}\n" + "="*40)
+    registry = load_registry()
     files = get_all_txt_files(DOCS_DIR)
     errors = 0
     successes = 0
+    collisions = []
+    virtuals = []
+    orphaned_codes = []
     
+    # Analyze registry for collisions and virtuals
+    shortcodes = load_shortcodes()
+    for code, path_str in shortcodes.items():
+        doc_path = DOCS_DIR / (path_str + ".txt")
+        if not doc_path.exists():
+            orphaned_codes.append(code)
+
+    for slug, entry in registry.items():
+        if entry.get('collision'): collisions.append(slug)
+        elif entry.get('virtual') and not entry.get('collision'): virtuals.append(slug)
+
     for f in sorted(files):
         rel = f.relative_to(DOCS_DIR)
         title, tags, content = parse_doc(f)
         issues = []
         
-        if not title:
-            issues.append("Missing or invalid 'Title:' header")
-        if not tags:
-            issues.append("Missing or invalid 'Tags:' header (must be [tag1, tag2, ...])")
-        if not content.strip():
-            issues.append("Empty body content")
+        if not title: issues.append("Missing or invalid 'Title:' header")
+        if not tags: issues.append("Missing or invalid 'Tags:' header (must be [tag1, tag2, ...])")
+        if not content.strip(): issues.append("Empty body content")
             
         if issues:
             print(f"[ERROR] {rel}")
-            for iss in issues:
-                print(f"  - {iss}")
+            for iss in issues: print(f"  - {iss}")
             errors += 1
         else:
             successes += 1
             
+    if orphaned_codes:
+        print("\n" + "="*40 + "\nOrphaned Shortcodes (Points to deleted files):")
+        for code in orphaned_codes:
+            print(f"  [{code}] -> {shortcodes[code]} (FILE MISSING)")
+        print("Tip: Manually remove these from shortcodes.json if they are no longer needed.")
+
+    if collisions:
+        print("\n" + "="*40 + "\nSlug Collisions (Qualified Slugs Generated):")
+        for c in sorted(list(set(collisions))): print(f"  - {c}")
+
     print("="*40)
     print(f"Verification Complete: {successes} Passed, {errors} Failed.")
+    if virtuals: print(f"Note: {len(virtuals)} files are currently using Virtual Slugs.")
     return errors == 0
 
 def get_nearby_docs(start_path, max_depth=5):
@@ -76,14 +101,105 @@ def get_nearby_docs(start_path, max_depth=5):
                 found_docs.append(str(doc_rel_path))
     return sorted(found_docs)
 
-def load_registry():
-    path = RESOURCES_DIR / "registry.json"
-    if path.exists():
+def load_shortcodes():
+    if SHORTCODES_FILE.exists():
         try:
-            return json.loads(path.read_text())
+            return json.loads(SHORTCODES_FILE.read_text())
         except:
             pass
     return {}
+
+def save_shortcodes(data):
+    RESOURCES_DIR.mkdir(parents=True, exist_ok=True)
+    SHORTCODES_FILE.write_text(json.dumps(data, indent=4))
+
+def get_or_create_shortcode(path_str, shortcodes):
+    path_str = path_str.replace("\\", "/").strip("/")
+    # Check if path already has a code
+    for code, p in shortcodes.items():
+        if p == path_str:
+            return code
+    
+    # Create new code
+    chars = string.ascii_lowercase + string.digits
+    while True:
+        code = ''.join(random.choice(chars) for _ in range(4))
+        if code not in shortcodes:
+            shortcodes[code] = path_str
+            save_shortcodes(shortcodes)
+            return code
+
+def load_registry():
+    path = RESOURCES_DIR / "registry.json"
+    registry = {}
+    if path.exists():
+        try:
+            registry = json.loads(path.read_text())
+        except:
+            pass
+            
+    # Load shortcodes
+    shortcodes = load_shortcodes()
+    
+    # Auto-Indexing: Scan DOCS_DIR
+    known_paths = {entry["path"].replace("\\", "/").strip("/").lower() for entry in registry.values()}
+    stem_map = {} 
+    
+    all_files = get_all_txt_files(DOCS_DIR)
+    for f_path in all_files:
+        if f_path.name == "index.txt": continue
+        rel_path = f_path.relative_to(DOCS_DIR).with_suffix('')
+        rel_str = str(rel_path).replace("\\", "/").strip("/")
+        
+        # Ensure every .txt has a shortcode
+        get_or_create_shortcode(rel_str, shortcodes)
+
+        if rel_str.lower() not in known_paths:
+            stem = f_path.stem.lower()
+            if stem not in stem_map: stem_map[stem] = []
+            stem_map[stem].append(rel_str)
+            
+    # Apply unique slugs
+    for stem, paths in stem_map.items():
+        if len(paths) == 1:
+            rel_str = paths[0]
+            if stem not in registry:
+                title, tags, _ = parse_doc(DOCS_DIR / (rel_str + ".txt"))
+                if title:
+                    registry[stem] = {"path": rel_str, "desc": title, "tags": tags, "virtual": True}
+        else:
+            for rel_str in paths:
+                parts = rel_str.split("/")
+                qualified_slug = ""
+                if len(parts) >= 2:
+                    parent = parts[-2]
+                    prefix_map = {"DynamicTradingV1": "v1", "DynamicTradingV2": "v2", "DynamicTradingCommon": "common"}
+                    prefix = prefix_map.get(parent, parent.lower())
+                    qualified_slug = f"{prefix}/{stem}"
+                final_slug = qualified_slug if qualified_slug else rel_str
+                title, tags, _ = parse_doc(DOCS_DIR / (rel_str + ".txt"))
+                if title:
+                    if final_slug not in registry:
+                        registry[final_slug] = {"path": rel_str, "desc": title, "tags": tags, "virtual": True, "collision": True}
+                    if rel_str not in registry:
+                        registry[rel_str] = registry[final_slug]
+
+    # Inject shortcodes into registry for fast lookup
+    for code, path_str in shortcodes.items():
+        # Find matching entry to inherit metadata
+        matched_entry = None
+        for alias, entry in registry.items():
+            if entry["path"].replace("\\", "/").strip("/") == path_str:
+                matched_entry = entry
+                break
+        
+        if matched_entry:
+            registry[code] = {**matched_entry, "is_shortcode": True}
+        else:
+            # Maybe it's a folder or index? 
+            registry[code] = {"path": path_str, "desc": "Shortcode Link", "tags": [], "is_shortcode": True}
+
+    return registry
 
 def parse_doc(file_path):
     if not file_path.exists():
@@ -112,12 +228,18 @@ def parse_doc(file_path):
     return title, tags, "\n".join(lines[body_start:])
 
 def find_in_registry(query, registry):
-    if query in registry:
-        return registry[query]["path"], registry[query]
-    query_norm = query.replace("\\", "/").strip("/")
+    # Direct slug match (case-insensitive)
+    query_l = query.lower()
     for alias, entry in registry.items():
-        if entry["path"].replace("\\", "/").strip("/") == query_norm:
+        if alias.lower() == query_l:
             return entry["path"], entry
+            
+    # Path match (case-insensitive)
+    query_norm = query.replace("\\", "/").strip("/").lower()
+    for alias, entry in registry.items():
+        if entry["path"].replace("\\", "/").strip("/").lower() == query_norm:
+            return entry["path"], entry
+            
     return query, None
 
 def get_embedded_refs(content):
@@ -151,14 +273,28 @@ def do_docs(doc_path_str):
         if reg_metadata: all_tags.update(reg_metadata.get('tags', []))
         
         # Discovery B: Semantic Tags (Registry)
-        for alias, entry in registry.items():
-            if any(t in entry.get('tags', []) for t in all_tags) and entry['path'] != resolved_path:
-                related.add((alias, entry.get('desc', 'Related system')))
+        print("\n" + "="*40 + "\nRelated Topics (Registry Tags):")
+        processed_paths = {resolved_path.lower()}
+        best_aliases = {} # path -> (alias, desc)
         
-        if related:
-            print("\n" + "="*40 + "\nRelated Topics (Registry Tags):")
-            for r_path, r_desc in sorted(list(related)):
-                print(f"  [{r_path}] - {r_desc}")
+        shortcodes = load_shortcodes()
+        path_to_code = {v.lower(): k for k, v in shortcodes.items()}
+
+        for alias, entry in registry.items():
+            if any(t in entry.get('tags', []) for t in all_tags) and entry['path'].lower() != resolved_path.lower():
+                p = entry['path'].lower()
+                if p not in processed_paths:
+                    # Prefer shortcode if available
+                    display_alias = path_to_code.get(p, alias)
+                    if p not in best_aliases or len(display_alias) < len(best_aliases[p][0]):
+                        best_aliases[p] = (display_alias, entry.get('desc', 'Related system'))
+
+        if best_aliases:
+            for p in sorted(best_aliases.keys()):
+                alias, desc = best_aliases[p]
+                print(f"  [{alias}] - {desc}")
+        else:
+            print("  None found.")
         return
 
     # 2. Directory Search
@@ -197,21 +333,35 @@ def do_docs(doc_path_str):
         if fs_topics or tag_topics or embedded_refs:
             if has_index: print("="*40)
             print("Related Topics (Contextual Discovery):")
-            processed = set()
-            # 1. FS Topics
-            for t in sorted(fs_topics):
-                _, meta = find_in_registry(t, registry)
-                print(f"  [{t}] - {meta.get('desc', 'Local') if meta else 'Local'}")
-                processed.add(t)
-            # 2. Tag Topics
-            for t_alias, t_desc in sorted(tag_topics):
-                if t_alias not in processed:
-                    print(f"  [{t_alias}] - {t_desc}")
-                    processed.add(t_alias)
-            # 3. Embedded Refs
-            for r_path, r_desc in sorted(embedded_refs):
-                if r_path not in processed:
-                    print(f"  [{r_path}] - {r_desc}")
+            processed_paths = {resolved_path.lower()}
+            best_aliases = {} # path -> (alias, desc)
+            
+            shortcodes = load_shortcodes()
+            path_to_code = {v.lower(): k for k, v in shortcodes.items()}
+
+            # Aggregate from all 3 sources
+            all_potential = []
+            for t in fs_topics: all_potential.append(t)
+            for t_alias, _ in tag_topics: all_potential.append(t_alias)
+            for r_path, _ in embedded_refs: all_potential.append(r_path)
+            
+            for alias in all_potential:
+                _, meta = find_in_registry(alias, registry)
+                if meta:
+                    p = meta['path'].lower()
+                    if p != resolved_path.lower() and p not in processed_paths:
+                        # Find shortest alias (prefer shortcode)
+                        best_a = path_to_code.get(p, alias)
+                        for a, e in registry.items():
+                            if e['path'].lower() == p and len(a) < len(best_a):
+                                best_a = a
+                        
+                        if p not in best_aliases or len(best_a) < len(best_aliases[p][0]):
+                            best_aliases[p] = (best_a, meta.get('desc', 'Link'))
+
+            for p in sorted(best_aliases.keys()):
+                alias, desc = best_aliases[p]
+                print(f"  [{alias}] - {desc}")
             return
 
         # Discovery A: Recursive Exploration (if no items found)
@@ -240,10 +390,26 @@ def do_docs(doc_path_str):
     print(f"Invalid Path / Not Found: {doc_path_str}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Mod Docs: Efficient documentation retrieval tool.")
-    parser.add_argument("--overview", action="store_true", help="Overview.")
-    parser.add_argument("--docs", type=str, metavar="PATH", help="Print manual.")
-    parser.add_argument("--verify", action="store_true", help="Verify all documentation syntax.")
+    parser = argparse.ArgumentParser(
+        description="Mod Docs: High-efficiency documentation retrieval system for Dynamic Trading.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Usage Examples:
+  python3 docs.py --docs economy          # Query by Slug (Alias)
+  python3 docs.py --docs wk4b             # Query by Shortcode (High Efficiency)
+  python3 docs.py --docs Contents/mods/.. # Query by Workspace Path
+  python3 docs.py --verify                # Check syntax and index health
+
+Key Features:
+  - Auto-Indexing: Any .txt with 'Title:' header is automatically discoverable.
+  - Shortcodes: Unique 4-character IDs (e.g. wk4b) for minimum token usage.
+  - Smart Discovery: Shows Related Topics via Tag Matching and @references.
+  - Minimalist: Outputs only document body to conserve agent context tokens.
+        """
+    )
+    parser.add_argument("--overview", action="store_true", help="Display project-level architectural overview.")
+    parser.add_argument("--docs", type=str, metavar="ID", help="Print manual for a slug, shortcode, or path.")
+    parser.add_argument("--verify", action="store_true", help="Verify documentation syntax and report collisions/orphans.")
     args = parser.parse_args()
     if args.overview:
         overview_path = RESOURCES_DIR / "overview.txt"
