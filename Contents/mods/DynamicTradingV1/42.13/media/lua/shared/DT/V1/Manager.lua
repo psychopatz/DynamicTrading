@@ -165,8 +165,8 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
     local stockData = DynamicTrading_Stock and DynamicTrading_Stock.GetStock(traderID)
     local radioData = DynamicTrading.Manager.GetData().RadioTraders[traderID]
     
-    -- If soul doesn't exist and this isn't a Radio_ prefixed ID, skip
-    if not soul and not radioData then return nil end
+    -- Require a valid soul in the roster
+    if not soul then return nil end
     
     -- Get faction data for wealth (acts as "budget")
     local factionWealth = 0
@@ -261,11 +261,21 @@ function DynamicTrading.Manager.DiscoverTrader(traderID, player)
     -- If not in V1 registry, create entry (Discovery Bridge)
     if not data.RadioTraders[traderID] then
         local gt = GameTime:getInstance()
+        local currentHours = gt:getWorldAgeHours()
+        
+        -- Give the bridged trader a standard V1 radio lifetime. 
+        -- The first player to discover them sets this expiry for everyone.
+        local minHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6
+        local maxHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMax) or 24
+        if minHours > maxHours then minHours = maxHours end
+        local duration = ZombRand(minHours, maxHours + 1)
+        local expireTime = currentHours + duration
+
         data.RadioTraders[traderID] = {
             id = traderID,
-            returnTime = nil, -- V2 NPCs usually stay forever or handle their own expiration
+            returnTime = expireTime,
             discoveredBy = {},
-            createdHour = gt:getWorldAgeHours()
+            createdHour = currentHours
         }
     end
     
@@ -316,14 +326,26 @@ function DynamicTrading.Manager.GetUndiscoveredTraders(player)
     -- We search all Souls in the Roster that are in "Trading" state
     if DynamicTrading_Roster and ModData.exists("DynamicTrading_Roster") then
         local rosterData = ModData.get("DynamicTrading_Roster")
+        local data = DynamicTrading.Manager.GetData()
+        local gt = GameTime:getInstance()
+        local currentHours = gt:getWorldAgeHours()
+
         if rosterData and rosterData.Souls then
             for uuid, registry in pairs(rosterData.Souls) do
                 if registry.status == "Trading" then
-                    local discovered = isPublic or DynamicTrading.Manager.HasDiscovered(uuid, player)
-                    if not discovered then
-                        local trader = DynamicTrading.Manager.GetTrader(uuid)
-                        if trader then
-                            table.insert(undiscovered, trader)
+                    local radioData = data.RadioTraders and data.RadioTraders[uuid]
+                    local expired = false
+                    if radioData and radioData.returnTime and currentHours > radioData.returnTime then
+                        expired = true
+                    end
+                    
+                    if not expired then
+                        local discovered = isPublic or DynamicTrading.Manager.HasDiscovered(uuid, player)
+                        if not discovered then
+                            local trader = DynamicTrading.Manager.GetTrader(uuid)
+                            if trader then
+                                table.insert(undiscovered, trader)
+                            end
                         end
                     end
                 end
@@ -338,10 +360,22 @@ function DynamicTrading.Manager.GetTotalTradingSignals()
     local count = 0
     if DynamicTrading_Roster and ModData.exists("DynamicTrading_Roster") then
         local rosterData = ModData.get("DynamicTrading_Roster")
+        local data = DynamicTrading.Manager.GetData()
+        local gt = GameTime:getInstance()
+        local currentHours = gt:getWorldAgeHours()
+
         if rosterData and rosterData.Souls then
-            for _, registry in pairs(rosterData.Souls) do
+            for uuid, registry in pairs(rosterData.Souls) do
                 if registry.status == "Trading" then
-                    count = count + 1
+                    local radioData = data.RadioTraders and data.RadioTraders[uuid]
+                    local expired = false
+                    if radioData and radioData.returnTime and currentHours > radioData.returnTime then
+                        expired = true
+                    end
+                    
+                    if not expired then
+                        count = count + 1
+                    end
                 end
             end
         end
@@ -350,29 +384,27 @@ function DynamicTrading.Manager.GetTotalTradingSignals()
 end
 
 function DynamicTrading.Manager.GetFoundSignalsCount(player)
-    if not player then return 0 end
-    local username = player:getUsername()
-    local count = 0
-    
-    local data = DynamicTrading.Manager.GetData()
-    if data.RadioTraders then
-        for _, radioData in pairs(data.RadioTraders) do
-            if radioData.discoveredBy and radioData.discoveredBy[username] then
-                count = count + 1
-            end
-        end
-    end
-    
-    return count
+    return DynamicTrading.Manager.GetDiscoveredCount(player)
 end
 
 function DynamicTrading.Manager.GetDiscoveredCount(player)
     if not player then return 0 end
     local data = DynamicTrading.Manager.GetData()
+    local gt = GameTime:getInstance()
+    local currentHours = gt:getWorldAgeHours()
+    
+    local function isValidSignal(id, radioData)
+        if radioData.returnTime and currentHours > radioData.returnTime then return false end
+        local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(id)
+        if not soul or soul.status ~= "Trading" then return false end
+        return true
+    end
     
     if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork then
         local count = 0
-        for _ in pairs(data.RadioTraders) do count = count + 1 end
+        for id, radioData in pairs(data.RadioTraders) do 
+            if isValidSignal(id, radioData) then count = count + 1 end
+        end
         return count
     end
 
@@ -381,7 +413,9 @@ function DynamicTrading.Manager.GetDiscoveredCount(player)
     
     for id, radioData in pairs(data.RadioTraders) do
         if radioData.discoveredBy and radioData.discoveredBy[username] then
-            count = count + 1
+            if isValidSignal(id, radioData) then
+                count = count + 1
+            end
         end
     end
     return count

@@ -15,8 +15,11 @@ end
 function DT_TraderListPanel:createChildren()
     ISPanel.createChildren(self)
     
-    self.lblTraders = ISLabel:new(10, 0, 16, "Active Signals: 0/0", 0.8, 0.8, 1, 1, UIFont.Small, true)
+    self.lblTraders = ISLabel:new(32, 0, 16, "Active Signals: 0/0", 0.8, 0.8, 1, 1, UIFont.Small, true)
     self:addChild(self.lblTraders)
+    
+    self.lblAvailable = ISLabel:new(self.width - 50, 0, 16, "0", 0.8, 0.8, 1, 1, UIFont.Small, true)
+    self:addChild(self.lblAvailable)
 
     self.listbox = ISScrollingListBox:new(10, 20, self.width - 20, self.height - 25)
     self.listbox:initialise()
@@ -87,7 +90,22 @@ function DT_TraderListPanel:prerender()
         end
         self:populateList()
         self.lastDiscoveredCount = currentDiscovered
-        self.lastTradersVersion = currentVersion
+    end
+end
+
+function DT_TraderListPanel:render()
+    ISPanel.render(self)
+    
+    local texName = self.signalIconTex or "media/ui/emotes/group.png"
+    local tex = getTexture(texName)
+    if tex then
+        -- Draw icon at X=10, matching the original text start
+        self:drawTextureScaled(tex, 10, self.lblTraders:getY(), 16, 16, 1, 1, 1, 1)
+    end
+    
+    local texTotal = getTexture("media/ui/emotes/group.png")
+    if texTotal and self.lblAvailable then
+        self:drawTextureScaled(texTotal, self.lblAvailable:getX() - 20, self.lblAvailable:getY(), 16, 16, 1, 1, 1, 1)
     end
 end
 
@@ -150,6 +168,12 @@ function DT_TraderListPanel:populateList()
     local capacity = radioData and radioData.capacity or 1
     local currentCount = DynamicTrading.Manager.GetFoundSignalsCount(player) or 0
     
+    if currentCount >= capacity then
+        self.signalIconTex = "media/ui/emotes/group_red.png"
+    else
+        self.signalIconTex = "media/ui/emotes/group_green.png"
+    end
+    
     if self.lblTraders then
         self.lblTraders:setName(string.format("Active Signals: %d/%d", currentCount, capacity))
         if currentCount >= capacity then
@@ -157,6 +181,16 @@ function DT_TraderListPanel:populateList()
         else
             self.lblTraders:setColor(0.8, 0.8, 1.0, 1.0) -- Normal
         end
+    end
+    
+    local totalTrading = DynamicTrading.Manager.GetTotalTradingSignals() or 0
+    if self.lblAvailable then
+        local availableText = tostring(totalTrading)
+        self.lblAvailable:setName(availableText)
+        local tWidth = getTextManager():MeasureStringX(UIFont.Small, availableText)
+        -- Position firmly on the right side of the listbox, minus some padding, text width, and icon spacing
+        self.lblAvailable:setX(self.width - 20 - tWidth)
+        self.lblAvailable:setColor(0.8, 0.8, 0.8, 1.0)
     end
 
     if #sortedList == 0 then

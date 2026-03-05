@@ -198,18 +198,6 @@ function DT_SignalPanel:render()
         
         self:drawText(label, textX, textY, r, g, b, 1.0, font)
 
-        -- [NEW] Signals: X/Y Display
-        local foundSignals = DynamicTrading.Manager.GetFoundSignalsCount(getSpecificPlayer(0)) or 0
-        local capacity = radioData and radioData.capacity or 1
-        local signalsLabel = string.format("Signals: %d/%d", foundSignals, capacity)
-        local sigTextWidth = getTextManager():MeasureStringX(font, signalsLabel)
-        local sigTextX = centerX - (sigTextWidth / 2)
-        local sigTextY = textY + (font == UIFont.Medium and 20 or 15)
-        
-        local sr, sg, sb = 0.8, 0.8, 1.0
-        if foundSignals >= capacity then sr, sg, sb = 1.0, 0.5, 0.5 end
-        
-        self:drawText(signalsLabel, sigTextX, sigTextY, sr, sg, sb, 1.0, font)
     end
 end
 
