@@ -1,4 +1,3 @@
-
 require "DT/Common/Config"
 if not DynamicTrading then return end
 
@@ -20,9 +19,7 @@ DynamicTrading.Fluids = {
     ["Base.Coffee"]     = { basePrice = 150.0, tags = {"Food.Drink", "Rarity.Uncommon"} },
     
     -- CHEMICALS
-    ["Base.Bleach"]           = { basePrice = 3.0,  tags = {"Medical.Utility.Clean", "Quality.Waste"} },
     ["Base.CleaningLiquid"]  = { basePrice = 2.0,  tags = {"Medical.Utility.Clean"} },
-    ["Base.Disinfectant"]   = { basePrice = 45.0, tags = {"Medical.Utility.Disinfectant", "Rarity.Uncommon"} },
 }
 
 print("[DynamicTrading] Fluid Registry Complete.")

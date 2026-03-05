@@ -1,0 +1,77 @@
+-- =============================================================================
+-- DYNAMIC TRADING: CLOTHING - ARMOR
+-- =============================================================================
+-- Root Category: Clothing
+-- Sub Category: Armor
+-- =============================================================================
+
+require "DT/Common/Config" 
+if not DynamicTrading then return end
+
+DynamicTrading.RegisterBatch({
+    { item="Base.Cuirass_Bone",        tags={"Clothing.Armor.Torso", "Theme.Survival", "Rarity.Common"}, basePrice=150, stockRange={min=1, max=5} },
+    { item="Base.Cuirass_Magazine",       tags={"Clothing.Armor.Torso", "Quality.Waste", "Rarity.Common"}, basePrice=40, stockRange={min=2, max=10} },
+    { item="Base.Cuirass_Metal",                  tags={"Clothing.Armor.Torso", "Origin.Industrial", "Rarity.Rare"}, basePrice=650, stockRange={min=0, max=2} },
+    { item="Base.Cuirass_Tire",        tags={"Clothing.Armor.Torso", "Quality.Waste", "Rarity.Uncommon"}, basePrice=180, stockRange={min=0, max=3} },
+    { item="Base.Cuirass_Wood",        tags={"Clothing.Armor.Torso", "Theme.Survival", "Origin.Industrial", "Rarity.Common"}, basePrice=110, stockRange={min=1, max=5} },
+    { item="Base.GreaveBodyArmour_Left_Army",     tags={"Clothing.Armor.Legs", "Origin.Military", "Rarity.Rare"}, basePrice=300, stockRange={min=0, max=2} },
+    { item="Base.GreaveBodyArmour_Left_Police",    tags={"Clothing.Armor.Legs", "Origin.Police", "Rarity.Uncommon"}, basePrice=220, stockRange={min=0, max=3} },
+    { item="Base.GreaveBodyArmour_Right_Army",    tags={"Clothing.Armor.Legs", "Origin.Military", "Rarity.Rare"}, basePrice=300, stockRange={min=0, max=2} },
+    { item="Base.GreaveBodyArmour_Right_Police",   tags={"Clothing.Armor.Legs", "Origin.Police", "Rarity.Uncommon"}, basePrice=220, stockRange={min=0, max=3} },
+    { item="Base.GreaveBone_Left",     tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=75,  stockRange={min=1, max=7} },
+    { item="Base.GreaveBone_Right",    tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=75,  stockRange={min=1, max=7} },
+    { item="Base.GreaveMagazine_Left",    tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
+    { item="Base.GreaveMagazine_Right",   tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
+    { item="Base.GreaveTire_Left",     tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Uncommon"}, basePrice=90, stockRange={min=0, max=4} },
+    { item="Base.GreaveTire_Right",    tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Uncommon"}, basePrice=90, stockRange={min=0, max=4} },
+    { item="Base.GreaveWood_Left",     tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=55, stockRange={min=1, max=7} },
+    { item="Base.GreaveWood_Right",    tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=55, stockRange={min=1, max=7} },
+    { item="Base.ShinKneeGuardSpike_L_Metal",     tags={"Clothing.Armor.Legs", "Quality.Luxury", "Rarity.Rare"},      basePrice=450, stockRange={min=0, max=1} },
+    { item="Base.ShinKneeGuardSpike_R_Metal",     tags={"Clothing.Armor.Legs", "Quality.Luxury", "Rarity.Rare"},      basePrice=450, stockRange={min=0, max=1} },
+    { item="Base.ShinKneeGuard_L_Baseball",  tags={"Clothing.Armor.Legs", "Rarity.Common"},      basePrice=120, stockRange={min=2, max=10} },
+    { item="Base.ShinKneeGuard_L_Metal",          tags={"Clothing.Armor.Legs", "Origin.Industrial", "Rarity.Uncommon"}, basePrice=280, stockRange={min=0, max=4} },
+    { item="Base.ShinKneeGuard_R_Baseball",  tags={"Clothing.Armor.Legs", "Rarity.Common"},      basePrice=120, stockRange={min=2, max=10} },
+    { item="Base.ShinKneeGuard_R_Metal",          tags={"Clothing.Armor.Legs", "Origin.Industrial", "Rarity.Uncommon"}, basePrice=280, stockRange={min=0, max=4} },
+    { item="Base.Shoulderpad_Articulated_L_Metal",tags={"Clothing.Armor.Shoulders", "Origin.Industrial", "Rarity.Uncommon"}, basePrice=220, stockRange={min=0, max=4} },
+    { item="Base.Shoulderpad_Articulated_R_Metal",tags={"Clothing.Armor.Shoulders", "Origin.Industrial", "Rarity.Uncommon"}, basePrice=220, stockRange={min=0, max=4} },
+    { item="Base.Shoulderpad_Bone_L",  tags={"Clothing.Armor.Shoulders", "Theme.Survival", "Rarity.Common"}, basePrice=60,  stockRange={min=1, max=7} },
+    { item="Base.Shoulderpad_Bone_R",  tags={"Clothing.Armor.Shoulders", "Theme.Survival", "Rarity.Common"}, basePrice=60,  stockRange={min=1, max=7} },
+    { item="Base.Shoulderpad_Tire_L",  tags={"Clothing.Armor.Shoulders", "Quality.Waste", "Rarity.Uncommon"}, basePrice=70, stockRange={min=0, max=4} },
+    { item="Base.Shoulderpad_Tire_R",  tags={"Clothing.Armor.Shoulders", "Quality.Waste", "Rarity.Uncommon"}, basePrice=70, stockRange={min=0, max=4} },
+    { item="Base.Shoulderpad_Wood_L",  tags={"Clothing.Armor.Shoulders", "Theme.Survival", "Rarity.Common"}, basePrice=45, stockRange={min=1, max=7} },
+    { item="Base.Shoulderpad_Wood_R",  tags={"Clothing.Armor.Shoulders", "Theme.Survival", "Rarity.Common"}, basePrice=45, stockRange={min=1, max=7} },
+    { item="Base.Shoulderpads_Football",     tags={"Clothing.Armor.Shoulders", "Rarity.Common"}, basePrice=300, stockRange={min=1, max=5} },
+    { item="Base.Shoulderpads_IceHockey",    tags={"Clothing.Armor.Shoulders", "Rarity.Common"}, basePrice=330, stockRange={min=1, max=5} },
+    { item="Base.ThighBodyArmour_L_Army",         tags={"Clothing.Armor.Legs", "Origin.Military", "Rarity.Rare"}, basePrice=350, stockRange={min=0, max=2} },
+    { item="Base.ThighBodyArmour_R_Army",         tags={"Clothing.Armor.Legs", "Origin.Military", "Rarity.Rare"}, basePrice=350, stockRange={min=0, max=2} },
+    { item="Base.ThighBone_L",         tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=80,  stockRange={min=1, max=7} },
+    { item="Base.ThighBone_R",         tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=80,  stockRange={min=1, max=7} },
+    { item="Base.ThighMagazine_L",        tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Common"}, basePrice=25, stockRange={min=2, max=10} },
+    { item="Base.ThighMagazine_R",        tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Common"}, basePrice=25, stockRange={min=2, max=10} },
+    { item="Base.ThighTire_L",         tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Uncommon"}, basePrice=100, stockRange={min=0, max=4} },
+    { item="Base.ThighTire_R",         tags={"Clothing.Armor.Legs", "Quality.Waste", "Rarity.Uncommon"}, basePrice=100, stockRange={min=0, max=4} },
+    { item="Base.ThighWood_L",         tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=60, stockRange={min=1, max=7} },
+    { item="Base.ThighWood_R",         tags={"Clothing.Armor.Legs", "Theme.Survival", "Rarity.Common"}, basePrice=60, stockRange={min=1, max=7} },
+    { item="Base.VambraceBone_Left",   tags={"Clothing.Armor.Arms", "Theme.Survival", "Rarity.Common"}, basePrice=60,  stockRange={min=1, max=7} },
+    { item="Base.VambraceBone_Right",  tags={"Clothing.Armor.Arms", "Theme.Survival", "Rarity.Common"}, basePrice=60,  stockRange={min=1, max=7} },
+    { item="Base.VambraceMagazine_Left",  tags={"Clothing.Armor.Arms", "Quality.Waste", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
+    { item="Base.VambraceMagazine_Right", tags={"Clothing.Armor.Arms", "Quality.Waste", "Rarity.Common"}, basePrice=20, stockRange={min=2, max=10} },
+    { item="Base.VambraceTire_Left",   tags={"Clothing.Armor.Arms", "Quality.Waste", "Rarity.Uncommon"}, basePrice=75, stockRange={min=0, max=4} },
+    { item="Base.VambraceTire_Right",  tags={"Clothing.Armor.Arms", "Quality.Waste", "Rarity.Uncommon"}, basePrice=75, stockRange={min=0, max=4} },
+    { item="Base.VambraceWood_Left",   tags={"Clothing.Armor.Arms", "Theme.Survival", "Rarity.Common"}, basePrice=45, stockRange={min=1, max=7} },
+    { item="Base.VambraceWood_Right",  tags={"Clothing.Armor.Arms", "Theme.Survival", "Rarity.Common"}, basePrice=45, stockRange={min=1, max=7} },
+    { item="Base.Vambrace_BodyArmour_Left_Army",  tags={"Clothing.Armor.Arms", "Origin.Military", "Rarity.Rare"}, basePrice=250, stockRange={min=0, max=2} },
+    { item="Base.Vambrace_BodyArmour_Left_Police", tags={"Clothing.Armor.Arms", "Origin.Police", "Rarity.Uncommon"}, basePrice=180, stockRange={min=0, max=3} },
+    { item="Base.Vambrace_BodyArmour_Right_Army", tags={"Clothing.Armor.Arms", "Origin.Military", "Rarity.Rare"}, basePrice=250, stockRange={min=0, max=2} },
+    { item="Base.Vambrace_BodyArmour_Right_Police",tags={"Clothing.Armor.Arms", "Origin.Police", "Rarity.Uncommon"}, basePrice=180, stockRange={min=0, max=3} },
+    { item="Base.Vest_BulletArmy",        tags={"Clothing.Armor.Vest", "Origin.Military", "Rarity.Rare"},   basePrice=1200, stockRange={min=0, max=2} }, -- Heavy Armor Tier,
+    { item="Base.Vest_BulletCivilian",    tags={"Clothing.Armor.Vest", "Origin.Police", "Rarity.Uncommon"}, basePrice=450, stockRange={min=1, max=3} }, -- Tactical/Riot Tier,
+    { item="Base.Vest_BulletDesert",      tags={"Clothing.Armor.Vest", "Origin.Military", "Rarity.Rare"},   basePrice=1200, stockRange={min=0, max=2} },
+    { item="Base.Vest_BulletDesertNew",   tags={"Clothing.Armor.Vest", "Origin.Military", "Rarity.Rare"},   basePrice=1200, stockRange={min=0, max=2} },
+    { item="Base.Vest_BulletOliveDrab",   tags={"Clothing.Armor.Vest", "Origin.Military", "Rarity.Rare"},   basePrice=1200, stockRange={min=0, max=2} },
+    { item="Base.Vest_BulletPolice",      tags={"Clothing.Armor.Vest", "Origin.Police", "Rarity.Rare"},     basePrice=750, stockRange={min=0, max=2} },
+    { item="Base.Vest_BulletSWAT",        tags={"Clothing.Armor.Vest", "Origin.Police", "Rarity.Legendary"}, basePrice=1800, stockRange={min=0, max=1} },
+    { item="Base.Vest_CatcherVest",          tags={"Clothing.Armor.Torso", "Rarity.Common"},     basePrice=380, stockRange={min=1, max=5} },
+})
+
+print("[DynamicTrading] Clothing/Armor Registry Loaded.")

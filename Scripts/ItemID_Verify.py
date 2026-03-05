@@ -207,18 +207,21 @@ def get_mod_data(mod_path):
     mod_data, mod_duplicates = {}, {}
     print(f"[*] Scanning Mod Registries: {mod_path}")
     if not os.path.exists(mod_path): return mod_data, mod_duplicates
-    for file in sorted(os.listdir(mod_path)):
-        if not file.endswith(".lua"): continue
-        with open(os.path.join(mod_path, file), "r", errors="ignore") as f:
-            content = f.read()
-            # Handle both item = "Base.X" and ["Base.X"] patterns
-            found = re.findall(r'(?:item\s*=\s*|\[)"Base\.(\w+)"', content)
-            for m in found:
-                if m in mod_data:
-                    if m not in mod_duplicates:
-                        mod_duplicates[m] = [mod_data[m]["origin"]]
-                    mod_duplicates[m].append(file)
-                mod_data[m] = {"origin": file}
+    
+    for root, dirs, files in os.walk(mod_path):
+        for file in sorted(files):
+            if not file.endswith(".lua"): continue
+            file_rel = os.path.relpath(os.path.join(root, file), mod_path)
+            with open(os.path.join(root, file), "r", errors="ignore") as f:
+                content = f.read()
+                # Handle both item = "Base.X" and ["Base.X"] patterns
+                found = re.findall(r'(?:item\s*=\s*|\[)"Base\.(\w+)"', content)
+                for m in found:
+                    if m in mod_data:
+                        if m not in mod_duplicates:
+                            mod_duplicates[m] = [mod_data[m]["origin"]]
+                        mod_duplicates[m].append(file_rel)
+                    mod_data[m] = {"origin": file_rel}
     return mod_data, mod_duplicates
 
 def write_mod_duplicates(output_dir, mod_dupes):
