@@ -1,5 +1,6 @@
 require "DT/Common/UI/Trading/DT_TradingItemUtils"
 require "DT/Common/UI/Trading/DT_TradingWindow"
+require "Utils/DT_StringUtils"
 
 function DT_TradingWindow.drawItem(listbox, y, item, alt)
     local height = listbox.itemheight
@@ -15,7 +16,8 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
         local isCol = ui and ui.collapsed[d.categoryName]
         local prefix = isCol and "[+] " or "[-] "
 
-        listbox:drawText(prefix .. d.text, 10, y + (height/2) - 7, 1, 0.8, 0.3, 1, UIFont.Medium)
+        local formattedText = DynamicTrading.Utils.FormatCategoryString(d.text)
+        listbox:drawText(prefix .. formattedText, 10, y + (height/2) - 7, 1, 0.8, 0.3, 1, UIFont.Medium)
         return y + height
     end
 
@@ -80,7 +82,11 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
 
     -- [NEW] DRAW TAGS ON HIGHLIGHT
     if listbox.selected == item.index and d.data and d.data.tags then
-        local tagsStr = table.concat(d.data.tags, ", ")
+        local formattedTags = {}
+        for _, tag in ipairs(d.data.tags) do
+            table.insert(formattedTags, DynamicTrading.Utils.FormatTagDialogue(tag))
+        end
+        local tagsStr = table.concat(formattedTags, ", ")
         local maxTagWidth = width - 180
         local displayTags = DT_TradingWindow.TruncateString(tagsStr, UIFont.Small, maxTagWidth)
         listbox:drawText(displayTags, 45, y + 24, 0.4, 0.7, 0.9, 1, UIFont.Small)

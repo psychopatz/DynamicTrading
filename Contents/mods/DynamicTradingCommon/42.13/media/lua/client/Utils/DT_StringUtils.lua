@@ -90,4 +90,79 @@ function DynamicTrading.Utils.TruncateString(text, font, maxWidth)
     
     return "..."
 end
+-- =============================================================================
+-- 3. TAG FORMATTING
+-- =============================================================================
+--- Formats a tag string like "Misc.Decor" or "Resource.Material.Wood"
+--- to a more human-readable format like "Misc Decor" or "Resource Material Wood".
+--- @param tag string: The raw tag string.
+--- @return string: The formatted tag string.
+function DynamicTrading.Utils.FormatTag(tag)
+    if not tag or type(tag) ~= "string" then return tostring(tag) end
+    local result = string.gsub(tag, "%.", " ")
+    return result
+end
+
+--- Formats a tag string for Category UI, replacing dots with slashes
+--- "Electronics.Component.Light" -> "Electronics/Component/Light"
+function DynamicTrading.Utils.FormatCategoryString(tag)
+    if not tag or type(tag) ~= "string" then return tostring(tag) end
+    local result = string.gsub(tag, "%.", "/")
+    return result
+end
+
+--- Basic English pluralizer helper
+function DynamicTrading.Utils.Pluralize(word)
+    if not word or word == "" then return "" end
+    local lower = string.lower(word)
+    
+    -- Special/Non-Count Words
+    if lower == "general" then return "General items" end
+    if lower == "food" then return "Food" end
+    if lower == "meat" then return "Meat" end
+    if lower == "water" then return "Water" end
+    if lower == "medical" then return "Medical supplies" end
+    if lower == "armor" then return "Armor" end
+    if lower == "clothing" then return "Clothing" end
+    if lower == "jewelry" then return "Jewelry" end
+    if lower == "cash" then return "Cash" end
+    if lower == "ammo" then return "Ammo" end
+
+    local lastChar = string.sub(word, -1):lower()
+    local lastTwo = string.sub(word, -2):lower()
+    
+    if lastChar == "y" and not (lastTwo == "oy" or lastTwo == "ay" or lastTwo == "ey") then
+        return string.sub(word, 1, -2) .. "ies"
+    elseif lastChar == "s" or lastTwo == "sh" or lastTwo == "ch" or lastChar == "x" then
+        return word .. "es"
+    else
+        return word .. "s"
+    end
+end
+
+--- Formats a tag specifically for conversational dialogue
+--- Omits root, swaps sub & detail, and pluralizes the subcategory.
+--- "Electronics.Component.Light" -> "Light Components"
+function DynamicTrading.Utils.FormatTagDialogue(tag)
+    if not tag or type(tag) ~= "string" then return tostring(tag) end
+    
+    local parts = {}
+    for p in string.gmatch(tag, "[^%.]+") do
+        table.insert(parts, p)
+    end
+    
+    if #parts == 3 then
+        local subCat = parts[2]
+        local details = parts[3]
+        return details .. " " .. DynamicTrading.Utils.Pluralize(subCat)
+    elseif #parts == 2 then
+        return DynamicTrading.Utils.Pluralize(parts[2])
+    elseif #parts == 1 then
+        return DynamicTrading.Utils.Pluralize(parts[1])
+    else
+        local result = string.gsub(tag, "%.", " ")
+        return result
+    end
+end
+
 print("[DynamicTrading] Registered string utilities.")

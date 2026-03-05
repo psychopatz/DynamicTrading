@@ -142,7 +142,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Thyme",            basePrice=5, tags={"Food.Perishable.Spice", "Origin.Healthcare"}, stockRange={min=2, max=12} },
     { item="Base.Tomato",           basePrice=30, tags={"Food.Perishable.Vegetable", "Rarity.Common"}, stockRange={min=2, max=12} }, -- Hung: 12,
     { item="Base.TunaTinOpen",          basePrice=5,  tags={"Food.Perishable.Canned", "Quality.Waste"}, stockRange={min=0, max=2} },
-    { item="Base.TurkeyEgg",        basePrice=25, tags={"Food.Perishable.Protein", "Rarity.Common"}, stockRange={min=2, max=12} } -- Hung: 10,
+    { item="Base.TurkeyEgg",        basePrice=25, tags={"Food.Perishable.Protein", "Rarity.Common"}, stockRange={min=2, max=12} }, -- Hung: 10,
     { item="Base.TurkeyFillet", basePrice=30, tags={"Food.Perishable.Meat", "Rarity.Common"}, stockRange={min=0, max=2} }, -- Hung: 12,
     { item="Base.TurkeyLegs", basePrice=25, tags={"Food.Perishable.Meat", "Rarity.Common"}, stockRange={min=0, max=2} }, -- Hung: 10,
     { item="Base.TurkeyWhole", basePrice=75, tags={"Food.Perishable.Meat", "Rarity.Common"}, stockRange={min=0, max=1} }, -- Hung: 30,

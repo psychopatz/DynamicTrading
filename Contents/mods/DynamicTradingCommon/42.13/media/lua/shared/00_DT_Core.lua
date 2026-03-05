@@ -84,7 +84,7 @@ function DynamicTrading.AddItem(uniqueID, data)
     if not data.stockRange then data.stockRange = {min=1, max=5} end
     DynamicTrading.Config.MasterList[uniqueID] = data
     if isDebugEnabled() then
-        -- print("[DynamicTrading] Registered Item: " .. tostring(uniqueID))
+        print("[DynamicTrading] Registered Item: " .. tostring(uniqueID))
     end
 end
 

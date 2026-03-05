@@ -157,13 +157,17 @@ function DynamicTrading.Dialogue.Trader.GenerateSellAskDialogue(trader)
     local wantsList = {}
     if archData and archData.wants then
         for tag, mult in pairs(archData.wants) do
-            table.insert(wantsList, tag)
+            table.insert(wantsList, DynamicTrading.Utils.FormatTagDialogue(tag))
         end
     end
     local wantsStr = FormatNaturalList(wantsList)
 
     -- 4. Format Forbid
-    local forbidList = archData and archData.forbid or {}
+    local rawForbidList = archData and archData.forbid or {}
+    local forbidList = {}
+    for _, tag in ipairs(rawForbidList) do
+        table.insert(forbidList, DynamicTrading.Utils.FormatTagDialogue(tag))
+    end
     local forbidStr = FormatNaturalList(forbidList)
 
     -- 5. Determine Message Pool (Priority: Archetype > General)
