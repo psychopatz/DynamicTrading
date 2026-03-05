@@ -88,10 +88,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.CrudeWhetstone",       tags={"Tool.Crafting.Survival", "Rarity.Common"},    basePrice=40,  stockRange={min=2, max=6} },
 
     -- PHARMACY
-    { item="Base.Tweezers",             tags={"Medical.Surgical.Tool", "Rarity.Common"},     basePrice=25,  stockRange={min=2, max=6} },
-    { item="Base.SutureNeedleHolder",   tags={"Medical.Tool.Surgical", "Origin.Healthcare", "Rarity.Rare"}, basePrice=125,  stockRange={min=0, max=2} },
-    { item="Base.MortarPestle",         tags={"Medical.Herb.Tool", "Theme.Survival", "Rarity.Common"}, basePrice=55,  stockRange={min=1, max=3} },
-    { item="Base.CeramicMortarandPestle",tags={"Medical.Herb.Tool", "Quality.Luxury", "Rarity.Uncommon"}, basePrice=75,  stockRange={min=1, max=3} },
+    -- (Consolidated in DT_Medical.lua)
 
     -- BUTCHERY & FARMING
     { item="Base.Fleshing_Tool",        tags={"Tool.Resource.Butcher", "Rarity.Common"},     basePrice=45,  stockRange={min=1, max=4} },

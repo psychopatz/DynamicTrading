@@ -94,8 +94,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.Bag_ShotgunSawnoffBag",        basePrice=35,  tags={"Container.Backpack.Duffel", "Theme.Combat"}, stockRange={min=1, max=3} },
 
 -- HYDRATION
-{ item="Base.Bag_HydrationBackpack",        basePrice=50,  tags={"Container.Backpack.Hydration", "Theme.Survival"}, stockRange={min=0, max=2} },
-{ item="Base.Bag_HydrationBackpack_Camo",   basePrice=55,  tags={"Container.Backpack.Hydration", "Theme.Survival"}, stockRange={min=0, max=2} },
+-- (Consolidated in DT_ContainersFluid.lua)
 
 -- =============================================================================
 -- 2. WEARABLE STORAGE (Belt/Webbing/Fanny)
@@ -230,7 +229,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.SewingKit",                    basePrice=10,  tags={"Container.Organizer", "Theme.Utility"}, stockRange={min=2, max=10} },
 { item="Base.Tacklebox",                    basePrice=12,  tags={"Container.Organizer", "Theme.Utility"}, stockRange={min=2, max=10} },
 { item="Base.Bag_DoctorBag",                basePrice=20,  tags={"Container.Organizer", "Theme.Clinical"}, stockRange={min=1, max=5} },
-{ item="Base.FirstAidKit",                  basePrice=10,  tags={"Container.Organizer", "Theme.Clinical"}, stockRange={min=5, max=15} },
+-- (Consolidated in DT_Medical.lua)
 { item="Base.FirstAidKit_New",              basePrice=10,  tags={"Container.Organizer", "Theme.Clinical"}, stockRange={min=5, max=15} },
 { item="Base.FirstAidKit_NewPro",           basePrice=12,  tags={"Container.Organizer", "Theme.Clinical"}, stockRange={min=5, max=15} },
 { item="Base.FirstAidKit_Camping",          basePrice=10,  tags={"Container.Organizer", "Theme.Clinical"}, stockRange={min=2, max=8} },

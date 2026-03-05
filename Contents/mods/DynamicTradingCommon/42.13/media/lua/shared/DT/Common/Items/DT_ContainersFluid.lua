@@ -15,7 +15,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.WaterDispenserBottle",    tags={"Container.Fluid", "Quality.Heavy", "Rarity.Uncommon"}, basePrice=220, stockRange={min=1, max=2} },
     
     -- FUEL CONTAINERS (Taxonomy Identity: Fluid)
-    { item="Base.PetrolCan",               tags={"Container.Fluid", "Theme.Survival", "Rarity.Uncommon"}, basePrice=250, stockRange={min=1, max=3} },
+    -- (Consolidated in DT_Fuel.lua)
     { item="Base.JerryCan",                tags={"Container.Fluid", "Theme.Survival", "Rarity.Uncommon"}, basePrice=350, stockRange={min=1, max=2} },
 
     -- =============================================================================
@@ -88,7 +88,7 @@ DynamicTrading.RegisterBatch({
     -- 5. CONSUMABLES & UTILITY FLUIDS
     -- =============================================================================
 
-    { item="Base.Disinfectant",     tags={"Medical.Utility.Clinical", "Rarity.Uncommon"}, basePrice=35, stockRange={min=2, max=6} },
+    -- (Consolidated in DT_Medical.lua)
     { item="Base.Bleach",           tags={"Medical.Utility.Clinical", "Quality.Waste", "Rarity.Common"},   basePrice=15, stockRange={min=2, max=8} },
     { item="Base.CleaningLiquid2",  tags={"Medical.Utility.Clinical", "Rarity.Common"},              basePrice=12,  stockRange={min=2, max=6} },
     { item="Base.IndustrialDye",    tags={"Resource.Material.Dye", "Rarity.Uncommon"},        basePrice=25, stockRange={min=1, max=5} },

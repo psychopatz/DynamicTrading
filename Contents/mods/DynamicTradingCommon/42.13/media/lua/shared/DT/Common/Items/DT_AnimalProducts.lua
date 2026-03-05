@@ -6,18 +6,8 @@ DynamicTrading.RegisterBatch({
 -- 1. RAW MEAT (Butchery Results)
 -- =============================================================================
 -- Note: Prime/Average/Poor cuts share IDs. Price is averaged.
-{ item="Base.Beef", basePrice=75, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.Steak", basePrice=85, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Common"}, stockRange={min=1, max=4} },
-{ item="Base.Pork", basePrice=65, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.PorkChop", basePrice=55, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.MuttonChop", basePrice=55, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.Venison", basePrice=90, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.ChickenWhole", basePrice=100, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.TurkeyWhole", basePrice=150, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Uncommon"}, stockRange={min=0, max=1} },
-{ item="Base.Rabbitmeat", basePrice=45, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.Smallanimalmeat", basePrice=25, tags={"Food.Meat.Perishable", "Theme.Survival", "Rarity.Common"}, stockRange={min=2, max=10} },
+-- (Consolidated in DT_Food.lua)
 
--- Skinned Carcasses (Gross but edible)
 -- Skinned Carcasses (Gross but edible)
 { item="Base.DeadMouseSkinned",     basePrice=2, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Waste"}, stockRange={min=1, max=5} },
 { item="Base.DeadMousePupsSkinned", basePrice=1, tags={"Food.Meat.Perishable", "Theme.Survival", "Quality.Waste"}, stockRange={min=1, max=5} },
@@ -41,7 +31,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.SheepLeather_Full",          basePrice=100, tags={"Resource.Material.Leather", "Origin.Industrial", "Rarity.Uncommon"}, stockRange={min=1, max=2} },
 
 -- Small Hides
-{ item="Base.RabbitLeather_Full",         basePrice=45,  tags={"Resource.Material.Leather", "Theme.Survival", "Rarity.Common"}, stockRange={min=2, max=5} },
+-- (Consolidated in DT_Materials.lua)
 { item="Base.RaccoonLeather_Grey_Full",   basePrice=45,  tags={"Resource.Material.Leather", "Theme.Survival", "Rarity.Common"}, stockRange={min=2, max=5} },
 
 -- =============================================================================
@@ -49,7 +39,6 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 -- Rotting heads are cheap unless taxidermy is involved (assumed fresh here)
 
--- Livestock
 -- Livestock
 { item="Base.Bull_Head_Angus",          basePrice=10, tags={"Resource.Material.Trophy", "Rarity.Common"}, stockRange={min=0, max=1} },
 { item="Base.Bull_Head_Simmental",      basePrice=10, tags={"Resource.Material.Trophy", "Rarity.Common"}, stockRange={min=0, max=1} },
@@ -136,7 +125,6 @@ DynamicTrading.RegisterBatch({
 { item="Base.BoneClub",             basePrice=60,  tags={"Weapon.Melee.Primitive", "Quality.Primitive", "Rarity.Common"}, stockRange={min=1, max=2} },
 { item="Base.BoneClub_Spiked",      basePrice=85,  tags={"Weapon.Melee.Primitive", "Quality.Primitive", "Rarity.Uncommon"}, stockRange={min=1, max=2} },
 { item="Base.LargeBoneClub",        basePrice=85,  tags={"Weapon.Melee.Primitive", "Quality.Primitive", "Rarity.Uncommon"}, stockRange={min=1, max=2} },
-{ item="Base.LargeBoneClub_Spiked", basePrice=120, tags={"Weapon.Melee.Primitive", "Quality.Primitive", "Rarity.Uncommon"}, stockRange={min=1, max=2} },
 })
 
 print("[DynamicTrading] Animal Products Registry Complete \n.")

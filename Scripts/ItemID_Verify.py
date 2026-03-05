@@ -120,17 +120,21 @@ def calculate_worth(item_id, props, category, subcat):
     return round(max(0.1, worth), 2)
 
 def get_vanilla_data(vanilla_path):
-    item_data, fluid_data = {}, {}
+    item_data, fluid_data, duplicates = {}, {}, {}
     opening_map = get_opening_maps(vanilla_path)
     
     print(f"[*] Scanning Vanilla Scripts: {vanilla_path}")
     for root, dirs, files in os.walk(vanilla_path):
         for file in sorted(files):
             if not file.endswith(".txt"): continue
+            file_rel = os.path.relpath(os.path.join(root, file), vanilla_path)
             with open(os.path.join(root, file), "r", errors="ignore") as f:
                 content = f.read()
+                
+                # Items
                 item_blocks = re.findall(r"item\s+([a-zA-Z_]\w*)\s*\{([^}]*)\}", content, re.DOTALL)
                 for item_id, props in item_blocks:
+
                     cat_match = re.search(r"DisplayCategory\s*=\s*([^,\n\s;]+)", props)
                     eat_match = re.search(r"EatType\s*=\s*([^,\n\s;]+)", props)
                     tag_match = re.search(r"Tags\s*=\s*([^,\n\s;]+)", props)
@@ -146,15 +150,17 @@ def get_vanilla_data(vanilla_path):
                         subcat = sanitize_path(first_tag)
                     
                     item_data[item_id] = {
-                        "origin": file, "category": category, "subcat": subcat,
+                        "origin": file_rel, "category": category, "subcat": subcat,
                         "tags": raw_tags, "eat_type": raw_eat, "props": props,
                         "opened_variant": opening_map.get(item_id)
                     }
                 
+                # Fluids
                 fluid_blocks = re.findall(r"fluid\s+([a-zA-Z_]\w*)\s*\{([^}]*)\}", content, re.DOTALL)
                 for fluid_id, props in fluid_blocks:
+
                     fluid_data[fluid_id] = {
-                        "origin": file, "category": "Fluids", "subcat": "General",
+                        "origin": file_rel, "category": "Fluids", "subcat": "General",
                         "tags": "N/A", "eat_type": "N/A", "props": props, "worth": 1.0
                     }
     
@@ -198,18 +204,52 @@ def get_vanilla_data(vanilla_path):
     return item_data, fluid_data
 
 def get_mod_data(mod_path):
-    mod_data = {}
+    mod_data, mod_duplicates = {}, {}
     print(f"[*] Scanning Mod Registries: {mod_path}")
-    if not os.path.exists(mod_path): return mod_data
+    if not os.path.exists(mod_path): return mod_data, mod_duplicates
     for file in sorted(os.listdir(mod_path)):
         if not file.endswith(".lua"): continue
         with open(os.path.join(mod_path, file), "r", errors="ignore") as f:
             content = f.read()
-            for m in re.findall(r'item\s*=\s*"Base\.(\w+)"', content): mod_data[m] = {"origin": file}
-            for m in re.findall(r'\["Base\.(\w+)"\]', content): mod_data[m] = {"origin": file}
-    return mod_data
+            # Handle both item = "Base.X" and ["Base.X"] patterns
+            found = re.findall(r'(?:item\s*=\s*|\[)"Base\.(\w+)"', content)
+            for m in found:
+                if m in mod_data:
+                    if m not in mod_duplicates:
+                        mod_duplicates[m] = [mod_data[m]["origin"]]
+                    mod_duplicates[m].append(file)
+                mod_data[m] = {"origin": file}
+    return mod_data, mod_duplicates
+
+def write_mod_duplicates(output_dir, mod_dupes):
+    if not mod_dupes: return
+    print(f"[*] Writing Mod Duplicates results...")
+    target_dir = os.path.join(output_dir, "Duplicates")
+    os.makedirs(target_dir, exist_ok=True)
+    
+    # Organize dupes by source file (a dupe can belong to multiple files)
+    file_reports = {}
+    for obj_id, locations in mod_dupes.items():
+        loc_str = "[" + ", ".join(f'"{loc}"' for loc in sorted(locations)) + "]"
+        count = len(locations)
+        line = f"{obj_id:<45} Count: {count:<2} Location: {loc_str}\n"
+        
+        for loc in locations:
+            report_name = loc.replace(".lua", ".txt")
+            if report_name not in file_reports:
+                file_reports[report_name] = []
+            file_reports[report_name].append(line)
+            
+    for report_name, lines in file_reports.items():
+        report_path = os.path.join(target_dir, report_name)
+        os.makedirs(os.path.dirname(report_path), exist_ok=True)
+        with open(report_path, "w") as f:
+            f.write(f"--- Duplicates found in or conflicting with {report_name.replace('.txt', '.lua')} ---\n")
+            f.writelines(sorted(lines))
+
 
 def write_hierarchical_files(output_dir, status_folder, ids_subset, vanilla_data, mod_data):
+    if not ids_subset: return
     print(f"[*] Writing {status_folder} results...")
     for obj_id in ids_subset:
         meta = vanilla_data.get(obj_id)
@@ -223,11 +263,14 @@ def write_hierarchical_files(output_dir, status_folder, ids_subset, vanilla_data
             subcat = meta.get("subcat", "General")
             worth = meta.get("worth", 1.0)
             weight = meta.get("weight", 0.1)
-            if meta.get("tags") == "None" and status_folder != "Invalid":
+            # Only redirect to UnsureItems for the main categories, not for Duplicates/Invalid
+            if meta.get("tags") == "None" and status_folder in ["VanillaOnly", "AlreadyHas"]:
                 current_root = "UnsureItems"
             
         origin = meta.get("origin", "Unknown.txt").replace(".lua", "").replace(".txt", "")
-        target_dir = os.path.join(output_dir, current_root, sanitize_path(origin), category)
+        # Handle nested status folders (e.g., Duplicates/Vanilla)
+        path_parts = current_root.split('/')
+        target_dir = os.path.join(output_dir, *path_parts, sanitize_path(origin), category)
         os.makedirs(target_dir, exist_ok=True)
         file_path = os.path.join(target_dir, f"{subcat}.txt")
         with open(file_path, "a") as f:
@@ -272,7 +315,7 @@ def main():
     os.makedirs(args.output, exist_ok=True)
 
     v_items, v_fluids = get_vanilla_data(args.vanilla)
-    m_data = get_mod_data(args.mod)
+    m_data, m_dupes = get_mod_data(args.mod)
     v_combined = {**v_items, **v_fluids}
     
     vanilla_only = sorted(list(set(v_combined.keys()) - set(m_data.keys())))
@@ -282,13 +325,15 @@ def main():
     write_hierarchical_files(args.output, "VanillaOnly", vanilla_only, v_combined, m_data)
     write_hierarchical_files(args.output, "AlreadyHas", already_has, v_combined, m_data)
     write_hierarchical_files(args.output, "Invalid", mod_invalid, v_combined, m_data)
+    write_mod_duplicates(args.output, m_dupes)
     
     print("\n--- Summary ---")
-    print(f"Total Vanilla:          {len(v_combined)}")
+    print(f"Total Vanilla Unique:   {len(v_combined)}")
     print(f"Total Mod Registered:   {len(m_data)}")
     print(f"Missing (Vanilla Only): {len(vanilla_only)}")
     print(f"Correctly Registered:   {len(already_has)}")
     print(f"Invalid Mod IDs:        {len(mod_invalid)}")
+    print(f"Mod Duplicates:         {len(m_dupes)}")
 
 if __name__ == "__main__":
     main()

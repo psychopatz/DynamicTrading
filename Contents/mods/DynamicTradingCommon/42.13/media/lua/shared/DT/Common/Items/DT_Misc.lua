@@ -29,8 +29,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.Toothpaste",           basePrice=25,  tags={"Misc.Hygiene", "Rarity.Common"}, stockRange={min=1, max=5} },
 { item="Base.Comb",                 basePrice=5,   tags={"Misc.Hygiene", "Rarity.Common"}, stockRange={min=1, max=5} },
 { item="Base.PaperNapkins2",        basePrice=5,   tags={"Resource.Material.Paper", "Misc.Hygiene", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.Perfume",              basePrice=350,  tags={"Misc.Hygiene", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
-{ item="Base.Cologne",              basePrice=350,  tags={"Misc.Hygiene", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
+-- (Consolidated in DT_ContainersFluid.lua)
 
 -- =============================================================================
 -- 3. LEISURE & GAMES
@@ -39,9 +38,9 @@ DynamicTrading.RegisterBatch({
 { item="Base.Dice",                 basePrice=5,   tags={"Misc.General", "Theme.Leisure", "Rarity.Common"}, stockRange={min=2, max=8} },
 { item="Base.Dice_Bone",            basePrice=15,  tags={"Misc.General", "Theme.Leisure", "Origin.Nomad", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
 { item="Base.Dice_Wood",            basePrice=10,  tags={"Misc.General", "Theme.Leisure", "Origin.Nomad", "Rarity.Common"}, stockRange={min=1, max=3} },
-
-{ item="Base.ChessWhite",           basePrice=15,  tags={"Misc.General", "Theme.Leisure", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.ChessBlack",           basePrice=15,  tags={"Misc.General", "Theme.Leisure", "Rarity.Common"}, stockRange={min=1, max=5} },
+-- Small Hides
+-- (Consolidated in DT_Materials.lua)
+-- (Consolidated in DT_Materials.lua)
 { item="Base.CheckerBoard",         basePrice=85,  tags={"Misc.General", "Theme.Leisure", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
 { item="Base.BackgammonBoard",      basePrice=85,  tags={"Misc.General", "Theme.Leisure", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
 { item="Base.GamePieceBlack",       basePrice=2,   tags={"Misc.General", "Theme.Leisure", "Rarity.Common"}, stockRange={min=5, max=10} },
@@ -57,9 +56,9 @@ DynamicTrading.RegisterBatch({
 -- 4. RELICS & ARTIFACTS
 -- =============================================================================
 { item="Base.StockCertificate",     basePrice=150,  tags={"Misc.Artifact", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=1} },
-{ item="Base.CreditCard",           basePrice=5,    tags={"Misc.Artifact", "Quality.Waste"}, stockRange={min=1, max=5} },
-{ item="Base.CreditCard_Stolen",    basePrice=5,    tags={"Misc.Artifact", "Quality.Waste"}, stockRange={min=1, max=5} },
-{ item="Base.DogTag_Pet_Blank",     basePrice=15,   tags={"Misc.Artifact", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
+-- Rags (Craftable Trash)
+-- (Consolidated in DT_Medical.lua)
+-- (Consolidated in DT_Household.lua)
 
 -- Decor
 { item="Base.Bell",                 basePrice=5,   tags={"Misc.Decor", "Resource.Material.Metal", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
@@ -106,9 +105,6 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 { item="Base.UnusableMetal",        basePrice=5,   tags={"Resource.Material.Metal", "Quality.Waste"}, stockRange={min=5, max=20} },
 { item="Base.UnusableWood",         basePrice=2,   tags={"Resource.Material.Wood", "Quality.Waste"}, stockRange={min=5, max=20} },
-{ item="Base.SpadeHead",            basePrice=25,  tags={"Resource.Material.Metal", "Quality.Waste"}, stockRange={min=1, max=3} },
-{ item="Base.PopEmpty",             basePrice=2,   tags={"Resource.Material.Metal", "Quality.Waste"}, stockRange={min=5, max=20} },
-{ item="Base.TinCanEmpty",          basePrice=2,   tags={"Resource.Material.Metal", "Quality.Waste"}, stockRange={min=5, max=20} },
 { item="Base.PlasticTray",          basePrice=5,   tags={"Resource.Material.Plastic", "Quality.Waste"}, stockRange={min=1, max=5} },
 { item="Base.RubberBand",           basePrice=2,   tags={"Resource.Material.Plastic", "Quality.Waste"}, stockRange={min=5, max=20} },
 { item="Base.ScratchTicket",        basePrice=2,   tags={"Misc.General", "Quality.Waste"}, stockRange={min=5, max=20} },

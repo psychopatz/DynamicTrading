@@ -11,10 +11,6 @@ DynamicTrading.RegisterBatch({
 { item="Base.MagnesiumShavings", basePrice=5, tags={"Resource.Fuel.Organic", "Rarity.Common"}, stockRange={min=5, max=10} },
 { item="Base.DryFirestarterBlock", basePrice=15, tags={"Resource.Fuel.Organic", "Rarity.Common"}, stockRange={min=2, max=10} },
  
--- Notched plank is craftable, but usable.
-{ item="Base.PercedWood",              basePrice=45,  tags={"Tool.Camping.Fire", "Origin.Primitive", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.TwigsBundle",             basePrice=5,   tags={"Resource.Fuel.Organic", "Resource.Material.Wood", "Rarity.Common"}, stockRange={min=5, max=15} },
-
 -- Survival Utilities
 { item="Base.CompassDirectional",      basePrice=45,  tags={"Tool.Navigation", "Theme.Survival", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
 { item="Base.WaterPurificationTablets",basePrice=180, tags={"Medical.Utility.Purification", "Theme.Survival", "Rarity.Rare"}, stockRange={min=1, max=3} }, -- High value life-saver
@@ -85,16 +81,6 @@ DynamicTrading.RegisterBatch({
 { item="Base.TentBrown_Packed",         basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
 { item="Base.TentGreen_Packed",         basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
 { item="Base.TentYellow_Packed",        basePrice=65, tags={"Tool.Camping.Shelter", "Theme.Winter", "Rarity.Rare"}, stockRange={min=0, max=2} },
-
--- Lighters (High Convenience)
-{ item="Base.Lighter",           basePrice=80, tags={"Tool.Camping.Fire", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.LighterBBQ",        basePrice=60, tags={"Tool.Camping.Fire", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.LighterDisposable", basePrice=45, tags={"Tool.Camping.Fire", "Rarity.Common"}, stockRange={min=2, max=5} },
-{ item="Base.Lighter_Battery",   basePrice=35, tags={"Tool.Camping.Fire", "Quality.Primitive", "Rarity.Common"}, stockRange={min=0, max=2} },
-
--- Matches
-{ item="Base.Matchbox",          basePrice=25, tags={"Tool.Camping.Fire", "Rarity.Common"}, stockRange={min=2, max=8} },
-{ item="Base.Matches",           basePrice=10, tags={"Tool.Camping.Fire", "Rarity.Common"}, stockRange={min=3, max=12} },
 })
 
 print("[DynamicTrading] Camping Registry Complete \n.")

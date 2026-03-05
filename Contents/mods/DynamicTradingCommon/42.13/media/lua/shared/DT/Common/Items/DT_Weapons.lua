@@ -10,8 +10,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Axe_Old",            tags={"Weapon.Melee.Axe", "Tool.Resource.Wood", "Quality.Waste"},  basePrice=120, stockRange={min=1, max=3} }, 
     { item="Base.WoodAxe",            tags={"Weapon.Melee.Axe", "Tool.Resource.Wood", "Rarity.Uncommon"}, basePrice=300, stockRange={min=1, max=3} }, 
     { item="Base.WoodAxeForged",      tags={"Weapon.Melee.Axe", "Tool.Resource.Wood", "Rarity.Rare"},     basePrice=420, stockRange={min=0, max=2} }, 
-    { item="Base.PickAxe",            tags={"Weapon.Melee.Axe", "Tool.Mining", "Rarity.Uncommon"},        basePrice=240, stockRange={min=1, max=3} }, 
-    { item="Base.PickAxeForged",      tags={"Weapon.Melee.Axe", "Tool.Mining", "Rarity.Rare"},            basePrice=360, stockRange={min=0, max=2} }, 
 
     -- ==========================================================
     -- 2. AXES (Small / One-Handed)
@@ -20,8 +18,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.HandAxe_Old",        tags={"Weapon.Melee.Axe", "Tool.Resource.Wood", "Quality.Waste"},  basePrice=60,  stockRange={min=2, max=6} },
     { item="Base.HandAxeForged",      tags={"Weapon.Melee.Axe", "Tool.Resource.Wood", "Rarity.Rare"},    basePrice=150, stockRange={min=0, max=3} },  -- Worth: 12.5
     { item="Base.IceAxe",             tags={"Weapon.Melee.Axe", "Theme.Survival", "Rarity.Rare"},        basePrice=180, stockRange={min=0, max=2} },  -- Worth: 15.0
-    { item="Base.MeatCleaver",        tags={"Weapon.Melee.Axe", "Tool.Kitchen", "Rarity.Common"},       basePrice=60,  stockRange={min=1, max=5} },  -- Worth: 5.0
-    { item="Base.MeatCleaverForged",  tags={"Weapon.Melee.Axe", "Tool.Kitchen", "Rarity.Rare"},         basePrice=120, stockRange={min=0, max=2} },  -- Worth: 10.0
     { item="Base.HandScythe",         tags={"Weapon.Melee.Axe", "Tool.Farmer", "Rarity.Common"},        basePrice=72,  stockRange={min=1, max=5} },  -- Worth: 6.0
     { item="Base.HandScytheForged",   tags={"Weapon.Melee.Axe", "Tool.Farmer", "Rarity.Rare"},          basePrice=144, stockRange={min=0, max=2} },  -- Worth: 12.0
 
@@ -30,11 +26,9 @@ DynamicTrading.RegisterBatch({
     -- ==========================================================
     { item="Base.Hatchet_Bone",         tags={"Weapon.Melee.Axe", "Theme.Survival", "Rarity.Common"}, basePrice=36, stockRange={min=2, max=10} }, -- Worth: 3.0
     { item="Base.JawboneBovide_Axe",    tags={"Weapon.Melee.Axe", "Theme.Survival", "Rarity.Common"}, basePrice=48, stockRange={min=2, max=10} }, -- Worth: 4.0
-    { item="Base.Saw_Flint",            tags={"Weapon.Melee.SmallAxe", "Theme.Survival", "Rarity.Common"}, basePrice=24, stockRange={min=2, max=10} }, -- Worth: 2.0
     { item="Base.PrimitiveScythe",      tags={"Weapon.Melee.Axe", "Theme.Survival", "Rarity.Common"}, basePrice=36, stockRange={min=1, max=5} }, -- Worth: 3.0
     { item="Base.LargeBoneClub_Spiked", tags={"Weapon.Melee.Blunt", "Theme.Survival", "Rarity.Common"}, basePrice=60, stockRange={min=1, max=5} }, -- Worth: 5.0
     { item="Base.Cudgel_Bone",          tags={"Weapon.Melee.ShortBlunt", "Theme.Survival", "Rarity.Common"}, basePrice=120, stockRange={min=1, max=5} }, -- Worth: 10.0
-    { item="Base.Fleshing_Tool_Bone",   tags={"Tool.Survival", "Theme.Survival", "Rarity.Common"},   basePrice=12, stockRange={min=5, max=15} }, -- Worth: 1.0
 
     -- ==========================================================
     -- 4. SCRAP WEAPONS (The "Sawblade" & "RailSpike" Series)
@@ -74,15 +68,11 @@ DynamicTrading.RegisterBatch({
     -- ==========================================================
     -- 5. HEAVY TOOLS & BLUNTS (Sledgehammers & Crowbars)
     -- ==========================================================
-    { item="Base.Sledgehammer",       tags={"Weapon.Melee.HeavyBlunt", "Tool.Demolition", "Rarity.Rare"}, basePrice=600, stockRange={min=0, max=2} }, -- Worth: 50.0
-    { item="Base.Sledgehammer2",      tags={"Weapon.Melee.HeavyBlunt", "Tool.Demolition", "Rarity.Rare"}, basePrice=600, stockRange={min=0, max=2} },
-    { item="Base.SledgehammerForged", tags={"Weapon.Melee.HeavyBlunt", "Tool.Demolition", "Rarity.Legendary"}, basePrice=960, stockRange={min=0, max=1} }, -- Worth: 80.0
     { item="Base.Crowbar",            tags={"Weapon.Melee.Blunt", "Tool.General", "Rarity.Common"},        basePrice=180, stockRange={min=2, max=10} }, -- Worth: 15.0
     { item="Base.CrowbarForged",      tags={"Weapon.Melee.Blunt", "Tool.General", "Rarity.Rare"},          basePrice=360, stockRange={min=0, max=3} }, -- Worth: 30.0
     
     -- Mauls & Heavy Blunts
     { item="Base.BlockMaul",          tags={"Weapon.Melee.HeavyBlunt", "Rarity.Uncommon"},     basePrice=300, stockRange={min=0, max=3} }, -- Worth: 25.0
-    { item="Base.RailroadSpikePuller",tags={"Weapon.Melee.HeavyBlunt", "Tool.Industrial", "Rarity.Uncommon"}, basePrice=240, stockRange={min=0, max=2} }, -- Worth: 20.0
     { item="Base.LongMace",           tags={"Weapon.Melee.HeavyBlunt", "Theme.Survival"},      basePrice=180, stockRange={min=0, max=3} }, -- Worth: 15.0
     { item="Base.LongMace_Stone",     tags={"Weapon.Melee.HeavyBlunt", "Theme.Survival"},      basePrice=60,  stockRange={min=1, max=5} }, -- Worth: 5.0
     { item="Base.EngineMaul",         tags={"Weapon.Melee.HeavyBlunt", "Origin.Industrial"},   basePrice=240, stockRange={min=0, max=1} }, -- Worth: 20.0
@@ -167,7 +157,6 @@ DynamicTrading.RegisterBatch({
     -- Basic Spears
     { item="Base.SpearCrafted",           tags={"Weapon.Melee.Spear", "Rarity.Common"},        basePrice=15,  stockRange={min=2, max=6} },
     { item="Base.SpearCraftedFireHardened", tags={"Weapon.Melee.Spear", "Rarity.Common"},      basePrice=25,  stockRange={min=1, max=5} },
-    { item="Base.ClosedUmbrellaBlack",    tags={"Weapon.Melee.Spear", "Quality.Waste"},          basePrice=10,  stockRange={min=1, max=3} },
 
     -- ==========================================================
     -- 10. FIREARMS
@@ -224,26 +213,13 @@ DynamicTrading.RegisterBatch({
     -- ==========================================================
     -- 13. MUSICAL & IMPROVISED JUNK
     -- ==========================================================
-    { item="Base.GuitarAcoustic",     tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Uncommon"}, basePrice=150, stockRange={min=0, max=2} },
-    { item="Base.GuitarElectric",     tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"},     basePrice=250, stockRange={min=0, max=1} },
-    { item="Base.GuitarElectricBass", tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"},     basePrice=260, stockRange={min=0, max=1} },
-    { item="Base.Banjo",              tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Uncommon"}, basePrice=130, stockRange={min=0, max=2} },
-    { item="Base.Saxophone",          tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"},     basePrice=300, stockRange={min=0, max=1} },
-    { item="Base.Trumpet",            tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Rare"},     basePrice=220, stockRange={min=0, max=1} },
-    { item="Base.Keytar",             tags={"Weapon.Melee.Blunt", "Literature.Music.Instrument", "Rarity.Legendary"},basePrice=450, stockRange={min=0, max=1} },
-    
     { item="Base.Plank",              tags={"Resource.Material.Wood", "Rarity.Common"}, basePrice=15,  stockRange={min=5, max=20} },
     { item="Base.Plank_Nails",        tags={"Weapon.Melee.LongBlunt", "Theme.Survival", "Quality.Waste"}, basePrice=25, stockRange={min=2, max=10} },
     { item="Base.Plank_Saw",          tags={"Weapon.Melee.LongBlunt", "Theme.Survival", "Quality.Waste"}, basePrice=35, stockRange={min=1, max=5} },
     { item="Base.LongStick",          tags={"Weapon.Melee.LongBlunt", "Origin.Nomad"}, basePrice=12, stockRange={min=2, max=10} },
     { item="Base.LargeBranch",        tags={"Weapon.Melee.LongBlunt", "Origin.Nomad"}, basePrice=25, stockRange={min=2, max=8} },
-    { item="Base.Broom",              tags={"Weapon.Melee.LongBlunt", "Theme.Survival", "Rarity.Common"}, basePrice=25, stockRange={min=1, max=5} },
-    { item="Base.Mop",                tags={"Weapon.Melee.LongBlunt", "Theme.Survival", "Rarity.Common"}, basePrice=30, stockRange={min=1, max=5} },
     { item="Base.Stone2",             tags={"Resource.Material.Raw", "Origin.Nomad"},  basePrice=5,  stockRange={min=5, max=15} },
     { item="Base.FlintNodule",        tags={"Resource.Material.Raw", "Theme.Survival"},      basePrice=15, stockRange={min=2, max=8} },
-    { item="Base.Pen",                tags={"Misc.Scholastic", "Rarity.Common"},        basePrice=2,  stockRange={min=5, max=10} },
-    { item="Base.Pencil",             tags={"Misc.Scholastic", "Rarity.Common"},        basePrice=2,  stockRange={min=5, max=10} },
-    { item="Base.CompassGeometry",    tags={"Misc.Scholastic", "Rarity.Uncommon"},      basePrice=15, stockRange={min=1, max=3} },
 
 })
 

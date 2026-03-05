@@ -104,29 +104,6 @@ DynamicTrading.RegisterBatch({
     -- UTILITY, BELTS & BACKPACKS
     -- =============================================================================
     
-    -- TACTICAL RIGS
-    { item="Base.Bag_ALICE_BeltSus", tags={"Clothing.Utility.Belt", "Origin.Military", "Rarity.Uncommon"}, basePrice=250, stockRange={min=1, max=5} },
-    { item="Base.Bag_ChestRig",      tags={"Clothing.Utility.Vest", "Origin.Military", "Rarity.Uncommon"}, basePrice=300, stockRange={min=1, max=5} },
-    { item="Base.AmmoStrap_Bullets", tags={"Clothing.Utility.Accessory", "Theme.Survival", "Rarity.Common"}, basePrice=150, stockRange={min=2, max=10} },
-    { item="Base.AmmoStrap_Shells",  tags={"Clothing.Utility.Accessory", "Theme.Survival", "Rarity.Common"}, basePrice=150, stockRange={min=2, max=10} },
-    { item="Base.HolsterDouble",     tags={"Clothing.Utility.Accessory", "Origin.Police", "Rarity.Rare"},     basePrice=350, stockRange={min=0, max=3} },
-    { item="Base.HolsterShoulder",   tags={"Clothing.Utility.Accessory", "Origin.Police", "Rarity.Uncommon"}, basePrice=220, stockRange={min=1, max=5} },
-    { item="Base.Belt2",             tags={"Clothing.Utility.Belt", "Rarity.Common"},                      basePrice=50,  stockRange={min=5, max=25} },
-    { item="Base.SCBA",              tags={"Clothing.Utility.Mask", "Theme.Hazard", "Rarity.Rare"},        basePrice=850, stockRange={min=0, max=1} },
-
-    -- CONTAINER / BACKPACKS
-    -- Military Grade
-    { item="Base.Bag_ALICEpack",     tags={"Container.Backpack", "Origin.Military", "Rarity.Rare"}, basePrice=1200, stockRange={min=0, max=2} },
-    { item="Base.Bag_SurvivorBag",   tags={"Container.Backpack", "Theme.Survival", "Rarity.Rare"},   basePrice=1100, stockRange={min=0, max=2} },
-    { item="Base.ManPackRadio",      tags={"Container.Backpack", "Origin.Military", "Rarity.Rare"}, basePrice=850,  stockRange={min=0, max=2} },
-    
-    -- Civilian Grade
-    { item="Base.Bag_BigHikingBag",    tags={"Container.Backpack", "Theme.Survival", "Rarity.Uncommon"}, basePrice=750, stockRange={min=1, max=4} },
-    { item="Base.Bag_NormalHikingBag", tags={"Container.Backpack", "Theme.Survival", "Rarity.Common"},   basePrice=450, stockRange={min=2, max=6} },
-    { item="Base.Bag_DuffelBag",       tags={"Container.Backpack", "Rarity.Common"},                  basePrice=250, stockRange={min=5, max=15} },
-    { item="Base.Bag_Schoolbag",       tags={"Container.Backpack", "Rarity.Common"},                  basePrice=150, stockRange={min=5, max=15} },
-    { item="Base.Bag_GolfBag",         tags={"Container.Backpack", "Rarity.Common"},                  basePrice=180, stockRange={min=1, max=5} },
-    
     -- Specialized
     { item="Base.Bag_MedicalBag",      tags={"Container.Backpack", "Origin.Medical", "Rarity.Uncommon"}, basePrice=350, stockRange={min=1, max=5} },
 

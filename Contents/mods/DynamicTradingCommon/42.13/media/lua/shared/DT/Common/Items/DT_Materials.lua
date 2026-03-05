@@ -71,7 +71,7 @@ DynamicTrading.RegisterBatch({
     -- FABRICS
     { item="Base.FabricRoll_Cotton", tags={"Resource.Material.Textile", "Rarity.Uncommon"}, basePrice=240, stockRange={min=1, max=3} }, -- Worth: 120.0
     { item="Base.Sheet",             tags={"Resource.Material.Textile", "Rarity.Common"},   basePrice=30,  stockRange={min=5, max=20} }, -- Worth: 15.0
-    { item="Base.RippedSheets",      tags={"Resource.Material.Textile", "Quality.Waste"},    basePrice=4,   stockRange={min=20, max=100} },
+    -- (Consolidated in DT_Medical.lua)
     
     -- CORDAGE
     { item="Base.Rope",              tags={"Resource.Material.Cordage", "Rarity.Common"}, basePrice=70,  stockRange={min=2, max=10} }, -- Worth: 35.0
@@ -79,7 +79,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Thread",            tags={"Resource.Material.Cordage", "Rarity.Common"}, basePrice=24,  stockRange={min=5, max=20} }, -- Worth: 12.0
     
     -- LEATHER (Crucial for Armor)
-    { item="Base.LeatherStrips",     tags={"Resource.Material.Bio", "Rarity.Common"},  basePrice=10,  stockRange={min=10, max=50} }, -- Worth: 5.0
+    -- (Consolidated in DT_Medical.lua)
     { item="Base.Leather_Crude_Large",tags={"Resource.Material.Bio", "Theme.Survival"}, basePrice=120, stockRange={min=1, max=4} }, -- Worth: 60.0
     { item="Base.CowHide",           tags={"Resource.Material.Bio", "Rarity.Rare"},    basePrice=240, stockRange={min=1, max=3} }, -- Worth: 120.0
     { item="Base.RabbitLeather_Full",tags={"Resource.Material.Bio", "Rarity.Common"},  basePrice=50,  stockRange={min=2, max=8} }, -- Worth: 25.0

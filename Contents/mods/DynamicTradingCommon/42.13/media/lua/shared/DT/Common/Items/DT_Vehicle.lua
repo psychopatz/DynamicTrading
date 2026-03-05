@@ -12,7 +12,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.EngineParts",       tags={"Vehicle.Part.Engine", "Theme.Industrial", "Rarity.Common"}, basePrice=120, stockRange={min=5, max=15} },
     
     -- FUEL CONTAINERS
-    { item="Base.PetrolCan",         tags={"Tool.Fuel.Container", "Theme.Survival", "Rarity.Uncommon"}, basePrice=250, stockRange={min=1, max=3} },
+    -- (Consolidated in DT_Fuel.lua)
     
     -- =============================================================================
 

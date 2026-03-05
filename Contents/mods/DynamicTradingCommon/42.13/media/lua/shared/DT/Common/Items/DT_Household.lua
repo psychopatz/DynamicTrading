@@ -7,8 +7,7 @@ DynamicTrading.RegisterBatch({
 -- =============================================================================
 -- Cleaning
 { item="Base.Soap2", basePrice=25, tags={"Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.Bleach", basePrice=45, tags={"Tool.Cleaning.Hazard", "Quality.Waste", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.CleaningLiquid2", basePrice=20, tags={"Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=1, max=5} },
+-- (Consolidated in DT_ContainersFluid.lua)
 { item="Base.BathTowel", basePrice=25, tags={"Clothing.Accessory.Towel", "Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
 { item="Base.DishCloth", basePrice=10, tags={"Resource.Material.Cloth", "Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
 { item="Base.Sponge", basePrice=8, tags={"Tool.Cleaning.Hygiene", "Rarity.Common"}, stockRange={min=2, max=8} },
@@ -77,8 +76,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.ClosedUmbrellaBlack",  basePrice=45, tags={"Weapon.Melee.Spear", "Quality.Waste"}, stockRange={min=1, max=5} },
 
 -- Rags (Craftable Trash)
-{ item="Base.RippedSheets",     basePrice=5,  tags={"Medical.Utility.Bandage", "Quality.Waste"}, stockRange={min=10, max=100} },
-{ item="Base.RippedSheetsDirty",basePrice=0,   tags={"Misc.General", "Medical", "Quality.Waste"}, stockRange={min=0, max=0} },
+-- (Consolidated in DT_Medical.lua)
 { item="Base.Doily",            basePrice=2,   tags={"Misc.Decor", "Rarity.Common"}, stockRange={min=1, max=5} },
 
 -- =============================================================================

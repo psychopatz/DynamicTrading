@@ -140,7 +140,6 @@ DynamicTrading.RegisterBatch({
 { item="Base.Tomato",           basePrice=30, tags={"Food.Perishable.Vegetable", "Rarity.Common"}, stockRange={min=2, max=12} }, -- Hung: 12
 { item="Base.Zucchini",         basePrice=25, tags={"Food.Perishable.Vegetable", "Rarity.Common"}, stockRange={min=1, max=7} }, -- Hung: 10
 { item="Base.GingerRoot",       basePrice=12, tags={"Food.Perishable.Vegetable", "Rarity.Common"}, stockRange={min=1, max=7} }, -- Hung: 5
-{ item="Base.Garlic",           basePrice=12, tags={"Food.Perishable.Vegetable", "Rarity.Common"}, stockRange={min=1, max=7} }, -- Hung: 5
 
 -- Dried/Preserved Veg
 { item="Base.DriedBlackBeans",  basePrice=150, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=8, max=20} }, -- Hung: 60
@@ -278,8 +277,7 @@ DynamicTrading.RegisterBatch({
 { item="Base.Rosemary",         basePrice=5, tags={"Food.Perishable.Spice", "Origin.Healthcare"}, stockRange={min=2, max=12} },
 { item="Base.Sage",             basePrice=5, tags={"Food.Perishable.Spice", "Origin.Healthcare"}, stockRange={min=2, max=12} },
 { item="Base.Thyme",            basePrice=5, tags={"Food.Perishable.Spice", "Origin.Healthcare"}, stockRange={min=2, max=12} },
-{ item="Base.Ginseng",          basePrice=25, tags={"Food.Perishable.Medical", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 10
-{ item="Base.LemonGrass",       basePrice=20, tags={"Food.Perishable.Medical", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 8
+-- (Consolidated in DT_Medical.lua)
 
 -- Dried Herbs (Better Value/Life)
 { item="Base.BasilDried",       basePrice=12, tags={"Food.NonPerishable.Spice", "Rarity.Common"}, stockRange={min=4, max=10} }, -- Hung: 5

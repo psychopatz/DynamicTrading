@@ -17,25 +17,7 @@ DynamicTrading.RegisterBatch({
 -- 2. POTS & PANS (Water & Evolved Recipes)
 -- =============================================================================
 -- Tier 1: High Capacity (Soup/Stew/Roast)
-{ item="Base.Pot",                  basePrice=75, tags={"Container.Cooking", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.PotForged",            basePrice=120, tags={"Container.Cooking", "Quality.Luxury", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
-{ item="Base.RoastingPan",          basePrice=75, tags={"Container.Cooking", "Rarity.Common"}, stockRange={min=1, max=3} },
-
--- Tier 2: Mid Capacity (Stir Fry)
-{ item="Base.Pan",                  basePrice=55, tags={"Container.Cooking", "Rarity.Common"}, stockRange={min=1, max=4} },
-{ item="Base.PanForged",            basePrice=95, tags={"Container.Cooking", "Quality.Luxury", "Rarity.Uncommon"}, stockRange={min=0, max=2} },
-{ item="Base.GridlePan",            basePrice=55, tags={"Container.Cooking", "Rarity.Common"}, stockRange={min=1, max=3} },
-{ item="Base.Saucepan",             basePrice=45, tags={"Container.Cooking", "Rarity.Common"}, stockRange={min=1, max=4} },
-{ item="Base.SaucepanCopper",       basePrice=150, tags={"Container.Cooking", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=1} },
-
--- Tier 3: Baking
-{ item="Base.BakingPan",            basePrice=10, tags={"Container.Cooking.Baking", "Resource.Material.Metal", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.BakingTray",           basePrice=10, tags={"Container.Cooking.Baking", "Resource.Material.Metal", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.MuffinTray",           basePrice=10, tags={"Container.Cooking.Baking", "Resource.Material.Metal", "Rarity.Common"}, stockRange={min=1, max=5} },
-
--- Tier 4: Boiling Water / Beverage
-{ item="Base.Kettle",               basePrice=15, tags={"Container.Cooking.Boiling", "Resource.Material.Metal", "Rarity.Common"}, stockRange={min=1, max=5} },
-{ item="Base.Kettle_Copper",        basePrice=20, tags={"Container.Cooking.Boiling", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=1, max=3} },
+-- (Consolidated in DT_ContainersFluid.lua)
 
 -- =============================================================================
 -- 3. CUTLERY & KNIVES (Tools & Weapons)
@@ -101,29 +83,10 @@ DynamicTrading.RegisterBatch({
 -- 5. SERVING & STORAGE (Preservation)
 -- =============================================================================
 -- Preservation (Critical for Winter)
-{ item="Base.BoxOfJars",            basePrice=40, tags={"Resource.Storage.Preservation", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
-{ item="Base.EmptyJar",             basePrice=5,  tags={"Resource.Storage.Preservation", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.JarCrafted",           basePrice=5,  tags={"Resource.Storage.Preservation", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.JarLid",               basePrice=2,  tags={"Resource.Storage.Preservation", "Rarity.Common"}, stockRange={min=5, max=20} },
+-- (Consolidated in DT_ContainersFluid.lua)
 
 -- Serving
-{ item="Base.Bowl",                 basePrice=2,  tags={"Container.Cooking.Serving", "Rarity.Common"}, stockRange={min=5, max=20} },
-{ item="Base.ClayBowl",             basePrice=2,  tags={"Container.Cooking.Serving", "Origin.Nomad", "Rarity.Common"}, stockRange={min=5, max=20} },
-{ item="Base.Plate",                basePrice=2,  tags={"Container.Cooking.Serving", "Rarity.Common"}, stockRange={min=5, max=20} },
-{ item="Base.ClayPlate",            basePrice=2,  tags={"Container.Cooking.Serving", "Origin.Nomad", "Rarity.Common"}, stockRange={min=5, max=20} },
-
--- Cups & Mugs
-{ item="Base.MugWhite",             basePrice=2,  tags={"Container.Cooking.Serving", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.Mugl",                 basePrice=2,  tags={"Container.Cooking.Serving", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.ClayMug",              basePrice=2,  tags={"Container.Cooking.Serving", "Origin.Nomad", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.Teacup",               basePrice=2,  tags={"Container.Cooking.Serving", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.CeramicTeacup",        basePrice=2,  tags={"Container.Cooking.Serving", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.MetalCup",             basePrice=2,  tags={"Container.Cooking.Serving", "Rarity.Common"}, stockRange={min=2, max=10} },
-
--- Luxury Cups
-{ item="Base.CopperCup",            basePrice=10, tags={"Container.Cooking.Serving", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=2} },
-{ item="Base.SilverCup",            basePrice=15, tags={"Container.Cooking.Serving", "Quality.Luxury", "Rarity.Legendary"}, stockRange={min=0, max=2} },
-{ item="Base.GoldCup",              basePrice=25, tags={"Container.Cooking.Serving", "Quality.Luxury", "Rarity.Legendary"}, stockRange={min=0, max=2} },
+-- (Consolidated in DT_ContainersFluid.lua)
 
 -- Boards
 { item="Base.CuttingBoardPlastic",  basePrice=3,  tags={"Tool.Cooking", "Rarity.Common"}, stockRange={min=1, max=5} },
@@ -133,7 +96,7 @@ DynamicTrading.RegisterBatch({
 -- 6. CONSUMABLE INGREDIENTS
 -- =============================================================================
 { item="Base.BakingSoda",           basePrice=5,  tags={"Food.Cooking.Ingredient", "Rarity.Common"}, stockRange={min=2, max=10} },
-{ item="Base.Timer",                basePrice=8,  tags={"Electronics.Gadget.Utility", "Rarity.Common"}, stockRange={min=1, max=5} }, -- Component for bombs too
+-- (Consolidated in DT_Electronics.lua)
 
 })
 
