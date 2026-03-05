@@ -1,0 +1,20 @@
+# V1: Radio Interaction Module
+
+The V1 module provides the Radio interface for the Dynamic Trading world. It is functionally equal to V2 in terms of background systems but differs in the delivery method.
+
+## Feature Parity
+V1 is fully integrated with:
+- **Economy & Factions:** Prices and trader stock vary based on faction state and global events.
+- **Quests & Events:** Players can receive quests or participate in events via radio broadcasts.
+- **Dynamic State:** Traders cycle through states (Trading, Away, Resting) just like they do for physical spawns.
+
+## Core Flow
+1. **Radio Interaction:** Players interact with specific radio frequencies (found in `DT_RadioInteraction.lua`).
+2. **Trader List:** Displays available traders based on game time and simulation state.
+3. **Dialogue:** Handled by `DT_DialogueManager.lua`.
+4. **Trading Window:** A UI wrapper (`DT_TradingWindow_Wrapper.lua`) that handles the exchange of items for currency.
+
+## Background Systems
+- Shares the same `Soul` (ModData) as V2.
+- Data is updated via the unified simulation engine at 05:00 AM.
+- Mutual Exclusivity: An NPC cannot be on the Radio while physically spawned in the world.

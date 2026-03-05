@@ -1,0 +1,25 @@
+# Dynamic Trading Architecture Overview
+
+## Core Philosophy: Unified Economy, Multiple Interfaces
+The project aims for a living, persistent world where NPCs are persistent data ("Souls"). V1 and V2 provide different ways to interact with these same systemic features.
+
+### Feature Parity
+Both V1 and V2 share the same core features:
+- **Economy:** Dynamic pricing and stock logic.
+- **Factions:** Relationship systems and macro-resource management.
+- **Quests & Events:** Time-driven and world-driven scenarios.
+- **Unified Engine:** Handles daily simulations and state cycling.
+
+## Module Breakdown
+1. **DynamicTradingCommon:** The foundation. Contains the "No-Collision" taxonomy, shared utilities, and base data schemas used by both V1 and V2.
+2. **DynamicTradingV1 (Radio Interaction):** Focuses on remote, long-distance communication and trading via radio frequencies.
+3. **DynamicTradingV2 (NPC Interaction):** Focuses on physical world presence using the Soul/Puppet architecture.
+
+## Interaction Philosophies
+- **V1 (Radio):** Interaction is UI and Dialogue driven through the Radio interface.
+- **V2 (NPC):** Interaction is physical, involving character spawning (`IsoZombie` puppets) and world-space dialogue.
+
+## Key Systems
+- **No-Collision Taxonomy:** A strict hierarchical tagging system for items.
+- **Engine V2:** Handles the daily simulation (05:00 AM), time, events, and global state for both modules.
+- **Server Authority:** All critical ModData writes are handled by the server. Clients use `DT_ClientCommands` to request actions.

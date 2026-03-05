@@ -1,0 +1,11 @@
+# Faction System (V1/V2)
+
+Factions represent organized groups in the world with their own resources and reputations.
+
+## Key Concepts
+- **Soul Persistence:** Faction state (Stable, Starving, Booming) is persistent.
+- **Reputation:** Players gain or lose favor with factions through trading and quests.
+- **Resource Consumption:** Factions consume their stockpiles daily, driving the need for trade.
+
+## Synergy
+Whether you interact with a faction representative via the radio or in person, your reputation and the faction's economic state remain consistent.
