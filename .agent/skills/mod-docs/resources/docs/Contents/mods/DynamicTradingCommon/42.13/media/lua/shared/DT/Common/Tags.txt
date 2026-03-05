@@ -1,0 +1,451 @@
+Title: Tags - Tag Registry with Price and Weight Modifiers
+Tags: [tags, registry, pricing, rarity, categories, spawning]
+
+Comprehensive tag registry system that controls item pricing and spawn weights. Defines rarity tiers, item categories, quality modifiers, and conditional/seasonal tags.
+
+## Purpose
+
+Centralizes tag definitions for the entire trading system. Tags affect:
+- **Item pricing** (priceMult modifier)
+- **Spawn likelihood** (weight for random selection)
+- **Archetype targeting** (items matched by tag)
+- **Event interactions** (events modify tag prices)
+
+## Tag Structure
+
+Each tag registered with two key properties:
+
+```lua
+DynamicTrading.RegisterTag("TagName", {
+    priceMult = 1.0,  -- Price multiplier (0.1-10.0+)
+    weight = 50       -- Spawn weight (0-100)
+})
+```
+
+### Price Multiplier (priceMult)
+
+Modifies item base price when calculating final cost:
+- `1.0` = No change (baseline)
+- `0.5` = 50% cheaper (waste items)
+- `1.5` = 50% more expensive (medical supplies)
+- `5.0` = 5x more expensive (legendary items)
+
+**Stacking:** Items with multiple tags multiply all priceMult values together.
+
+Example:
+```
+Item: "GoldWatch"
+Tags: ["Misc.Cosmetic", "Legendary"]
+Base Price: 100
+Final Price: 100 × 3.0 (Cosmetic) × 5.0 (Legendary) = 1500
+```
+
+### Spawn Weight
+
+Controls likelihood of appearing in random item pools:
+- `100` = Very common (always considered)
+- `50` = Medium (baseline)
+- `10` = Rare (10% as likely as common)
+- `1` = Extremely rare (1% as likely as common)
+- `0` = **NEVER spawns randomly** (event/conditional only)
+
+**Usage:** When generating stock, system builds weighted pool. Higher weight = higher chance.
+
+## Rarity Tiers
+
+Global rarity system affecting both price and availability:
+
+### Common (Baseline)
+```lua
+DynamicTrading.RegisterTag("Common", {
+    priceMult = 1.0,
+    weight = 100
+})
+```
+- **Standard items** - Canned food, basic tools, common clothing
+- **Always available** in appropriate trader stocks
+
+### Uncommon (+25% Price)
+```lua
+DynamicTrading.RegisterTag("Uncommon", {
+    priceMult = 1.25,
+    weight = 40
+})
+```
+- **Moderately rare** - Quality tools, some medical supplies
+- **40% spawn rate** compared to common
+
+### Rare (+100% Price)
+```lua
+DynamicTrading.RegisterTag("Rare", {
+    priceMult = 2.0,
+    weight = 10
+})
+```
+- **Rare items** - Advanced medical, quality weapons, specialty tools
+- **10% spawn rate** compared to common
+- Doubles base price
+
+### Legendary (5x Price)
+```lua
+DynamicTrading.RegisterTag("Legendary", {
+    priceMult = 5.0,
+    weight = 1
+})
+```
+- **Ultra-rare** - Gold bars, military equipment, luxury items
+- **1% spawn rate** compared to common
+- Quintuples base price
+
+## Item Categories
+
+Standard category system for basic item types:
+
+### Food & Drink
+
+```lua
+DynamicTrading.RegisterTag("Food", { priceMult = 1.0, weight = 80 })
+DynamicTrading.RegisterTag("Drink", { priceMult = 1.0, weight = 80 })
+```
+- **High availability** (weight 80)
+- **Standard pricing**
+- Used by: Farmer, Chef, Bartender, General Store
+
+### Clothing
+
+```lua
+DynamicTrading.RegisterTag("Clothing", { priceMult = 0.8, weight = 60 })
+```
+- **Slightly cheaper** than baseline (0.8x)
+- **Moderate availability** (weight 60)
+- Used by: Tailor, General Store
+
+### Literature
+
+```lua
+DynamicTrading.RegisterTag("Literature", { priceMult = 1.2, weight = 50 })
+```
+- **20% premium** (skill books are valuable)
+- **Standard availability** (weight 50)
+- Used by: Librarian, Teacher, General Store
+
+### Resources
+
+```lua
+-- General materials (planks, nails, etc.)
+DynamicTrading.RegisterTag("Resource.Material", { priceMult = 1.0, weight = 70 })
+
+-- Scrap/waste items
+DynamicTrading.RegisterTag("Quality.Waste", { priceMult = 0.5, weight = 100 })
+
+-- Fuel (gas, propane)
+DynamicTrading.RegisterTag("Resource.Fuel", { priceMult = 1.5, weight = 20 })
+```
+
+**Resource.Fuel:**
+- **50% premium** (fuel is extremely valuable in apocalypse)
+- **Low availability** (weight 20)
+- High demand from all traders (wants multiplier)
+
+**Quality.Waste:**
+- **50% discount** (junk items)
+- **Very common** (weight 100)
+- Used by: Junk traders, scavengers
+
+## Specialized Categories
+
+High-value or restricted item types:
+
+### Medical
+
+```lua
+DynamicTrading.RegisterTag("Medical", { priceMult = 1.5, weight = 25 })
+```
+- **50% premium**
+- **Limited availability** (weight 25)
+- Used by: Doctor, Pharmacist, Herbalist
+
+### Weapons
+
+```lua
+DynamicTrading.RegisterTag("Weapon", { priceMult = 1.3, weight = 15 })
+```
+- **30% premium**
+- **Rare** (weight 15)
+- Used by: Gunrunner, Sheriff, Smuggler
+
+### Ammunition
+
+```lua
+DynamicTrading.RegisterTag("Ammo", { priceMult = 2.0, weight = 10 })
+```
+- **Double price** (extremely valuable)
+- **Very rare** (weight 10)
+- Used by: Gunrunner, Quartermaster
+
+### Tools
+
+```lua
+DynamicTrading.RegisterTag("Tool", { priceMult = 1.2, weight = 30 })
+```
+- **20% premium**
+- **Moderate availability** (weight 30)
+- Used by: Mechanic, Carpenter, Electrician, General
+
+### Seeds
+
+```lua
+DynamicTrading.RegisterTag("Seed", { priceMult = 0.8, weight = 40 })
+```
+- **20% discount** (agricultural abundance)
+- **Moderate availability** (weight 40)
+- Used by: Farmer, Herbalist
+
+## Luxury & Quality Modifiers
+
+Special quality tiers for premium items:
+
+### Misc.Cosmetic
+
+```lua
+DynamicTrading.RegisterTag("Misc.Cosmetic", { priceMult = 3.0, weight = 5 })
+```
+- **3x price** (jewelry, makeup, accessories)
+- **Very rare** (weight 5)
+- Luxury non-essential items
+
+### Quality.Luxury
+
+```lua
+DynamicTrading.RegisterTag("Quality.Luxury", { priceMult = 4.0, weight = 2 })
+```
+- **4x price** (premium brands, rare items)
+- **Extremely rare** (weight 2)
+- Top-tier quality items
+
+## Conditional/Seasonal Tags
+
+**Weight 0** tags never spawn randomly. Only appear via:
+- **Event injection** (events add these items temporarily)
+- **Specific trader allocations** (forced spawn by archetype)
+
+### Winter
+
+```lua
+DynamicTrading.RegisterTag("Winter", { priceMult = 1.5, weight = 0 })
+```
+- **50% premium during winter events**
+- **Never spawns randomly** (weight 0)
+- Injected by: Winter seasonal event
+- Examples: Parkas, heaters, insulated gear
+
+### Harvest
+
+```lua
+DynamicTrading.RegisterTag("Harvest", { priceMult = 0.5, weight = 0 })
+```
+- **50% discount during harvest events**
+- **Never spawns randomly** (weight 0)
+- Injected by: Harvest seasonal event
+- Examples: Crops, vegetables, farming goods
+
+### Illegal
+
+```lua
+DynamicTrading.RegisterTag("Illegal", { priceMult = 3.0, weight = 0 })
+```
+- **3x price (contraband premium)**
+- **Never spawns randomly** (weight 0)
+- Stocked by: Smuggler archetype only
+- Examples: Drugs, stolen goods, black market items
+
+### Quest
+
+```lua
+DynamicTrading.RegisterTag("Quest", { priceMult = 1.0, weight = 0 })
+```
+- **Standard pricing**
+- **Never spawns in trader stock** (weight 0)
+- Used for: Quest-specific items that shouldn't be tradeable
+- Prevents quest items from cluttering inventories
+
+## Tag Hierarchy Convention
+
+Uses dot notation for categorization:
+
+**Format:** `Category.SubCategory.Detail`
+
+**Examples:**
+- `Food.Fresh.Meat`
+- `Weapon.Firearm.Rifle`
+- `Medical.Supply.Bandage`
+- `Resource.Material.Wood`
+- `Clothing.Head.Hat`
+
+**Benefits:**
+- Clear item classification
+- Flexible archetype targeting (can target broad or specific)
+- Event modifications can affect entire categories
+
+## Tag Stacking Rules
+
+Items can have multiple tags. **All priceMult values multiply together:**
+
+**Example 1: Common Medical Supply**
+```lua
+item = {
+    tags = { "Medical", "Common" },
+    basePrice = 20
+}
+-- Final multiplier: 1.5 (Medical) × 1.0 (Common) = 1.5
+-- Final price: 20 × 1.5 = 30
+```
+
+**Example 2: Rare Luxury Item**
+```lua
+item = {
+    tags = { "Misc.Cosmetic", "Rare" },
+    basePrice = 50
+}
+-- Final multiplier: 3.0 (Cosmetic) × 2.0 (Rare) = 6.0
+-- Final price: 50 × 6.0 = 300
+```
+
+**Example 3: Legendary Weapon**
+```lua
+item = {
+    tags = { "Weapon", "Ammo", "Legendary" },
+    basePrice = 100
+}
+-- Final multiplier: 1.3 (Weapon) × 2.0 (Ammo) × 5.0 (Legendary) = 13.0
+-- Final price: 100 × 13.0 = 1300
+```
+
+## Weight Selection Algorithm
+
+When generating stock with tag `"Food"`:
+
+1. **Collect all items** with "Food" tag
+2. **Build weighted pool:**
+   - Apple (Common, weight 100) → 100 tickets
+   - Caviar (Rare, weight 10) → 10 tickets
+   - Stale Bread (Waste, weight 100) → 100 tickets
+3. **Random selection** from total tickets (210 total)
+   - 100/210 chance = Apple
+   - 10/210 chance = Caviar
+   - 100/210 chance = Stale Bread
+
+**Result:** Common items appear ~10x more often than rare items.
+
+## Integration with Systems
+
+### Archetype Allocations
+
+Archetypes use tags to define stock:
+
+```lua
+allocations = {
+    { tags = {"Food", "Drink"}, count = 10 }  -- ANY item with Food OR Drink tag
+}
+```
+
+### Event System
+
+Events modify tag prices:
+
+```lua
+eventData = {
+    priceModifier = {
+        ["Food"] = 1.5,      -- All food 50% more expensive
+        ["Medical"] = 2.0    -- All medical doubles in price
+    }
+}
+```
+
+### Economy Math
+
+@DT_Economy_Common.lua applies tag multipliers:
+
+```lua
+local finalPrice = basePrice
+for _, tag in ipairs(item.tags) do
+    local tagData = DynamicTrading.Config.Tags[tag]
+    if tagData then
+        finalPrice = finalPrice * tagData.priceMult
+    end
+end
+```
+
+## Adding Custom Tags
+
+```lua
+-- Step 1: Register the tag
+DynamicTrading.RegisterTag("Custom.MyCategory", {
+    priceMult = 1.3,
+    weight = 40
+})
+
+-- Step 2: Assign to items
+DynamicTrading.AddItem("MyMod.CustomItem", {
+    tags = { "Custom.MyCategory", "Uncommon" },
+    basePrice = 50
+})
+
+-- Step 3: Use in archetype
+DynamicTrading.RegisterArchetype("CustomTrader", {
+    allocations = {
+        { tags = {"Custom.MyCategory"}, count = 5 }
+    }
+})
+```
+
+## Best Practices
+
+1. **Use existing tags first** - Don't create new tags unnecessarily
+2. **Follow hierarchy convention** - Use dot notation (Category.SubCategory)
+3. **Stack tags logically** - Combine rarity + category + quality
+4. **Set weight 0 for conditional** - Prevents unwanted random spawns
+5. **Test multiplier stacking** - Ensure pricing isn't absurd
+6. **Document custom tags** - If adding new categories, explain purpose
+7. **Consider event interaction** - Events may modify your tag prices
+
+## Common Tag Combinations
+
+**Standard Item:**
+```lua
+tags = { "Food.Canned", "Common" }  -- priceMult = 1.0 × 1.0 = 1.0
+```
+
+**Valuable Supply:**
+```lua
+tags = { "Medical.Supply", "Uncommon" }  -- priceMult = 1.5 × 1.25 = 1.875
+```
+
+**Specialty Equipment:**
+```lua
+tags = { "Tool.Specialized", "Rare" }  -- priceMult = 1.2 × 2.0 = 2.4
+```
+
+**Ultra-Premium:**
+```lua
+tags = { "Weapon.Firearm", "Quality.Luxury", "Legendary" }
+-- priceMult = 1.3 × 4.0 × 5.0 = 26.0 (26x base price!)
+```
+
+**Seasonal Item:**
+```lua
+tags = { "Clothing.Winter", "Winter" }  -- Weight 0, event-only
+```
+
+**Black Market:**
+```lua
+tags = { "Weapon.Ammo", "Illegal" }  -- Weight 0, smuggler-only
+```
+
+## See Also
+
+- @00_DT_Core.lua - RegisterTag() function definition
+- @Config.lua - Tag loading and management
+- @DT_Economy_Common.lua - Tag pricing calculations
+- @DT_EventManager.lua - Tag price modifications via events
+- @DynamicTrading_Factions.lua - Tag-based stock generation

@@ -1,0 +1,694 @@
+Title: DT_Economy_Common - Core Pricing Mathematics and Stock Generation
+Tags: [economy, pricing, stock, generation, math, drainable, fluids, condition]
+
+Shared economy logic for all trading versions. Contains multi-factor pricing algorithms, weighted stock generation, and Build 42-compatible drainable/fluid/condition handling.
+
+## Purpose
+
+Provides version-agnostic core trading mechanics. V1 and V2 wrappers gather data and pass to these functions. Handles:
+- **Stock generation** with weighted pools and allocations
+- **Buy pricing** (trader selling to player)
+- **Sell pricing** (player selling to trader)
+- **Item condition** scaling (durability, charge, fluids, food)
+- **Drainable items** (Build 42 API compatibility)
+
+## Utilities
+
+### Common.GetNormalizedHunger(scriptItem)
+
+Handles Build 42 hunger value discrepancy (script vs instance).
+
+**Parameters:**
+- `scriptItem` (ScriptItem) - Item script object
+
+**Returns:** (number) Normalized hunger value as float
+
+**Behavior:**
+- Script values often integers (-15) while instance values floats (-0.15)
+- If `abs(val) > 1.0`, divides by 100 to normalize
+- Returns 0 if no hunger change
+
+**Usage:**
+```lua
+local baseHunger = Common.GetNormalizedHunger(scriptItem)
+-- Input: -15 (script) → Output: -0.15 (normalized)
+```
+
+---
+
+### Common.PickFromWeightedPool(pool)
+
+Weighted random selection from item pool.
+
+**Parameters:**
+- `pool` (array) - Array of entries: `{ {key="Base.Apple", weight=100}, ... }`
+
+**Returns:** (string) Selected item key, or nil if pool empty
+
+**Algorithm:**
+1. Calculate total weight sum
+2. Roll random float [0, totalWeight]
+3. Iterate entries, accumulate weights until roll <= current
+4. Return key of winner
+
+**Fallback:** If total weight ≤ 0, uses uniform random
+
+**Usage:**
+```lua
+local pool = {
+    { key = "Base.Apple", weight = 100 },
+    { key = "Base.Caviar", weight = 10 },
+    { key = "Base.Bread", weight = 50 }
+}
+local pick = Common.PickFromWeightedPool(pool)
+-- Apple has 100/160 = 62.5% chance
+-- Caviar has 10/160 = 6.25% chance  
+-- Bread has 50/160 = 31.25% chance
+```
+
+---
+
+### Common.MatchesAllTags(itemTags, requiredTags)
+
+Checks if item satisfies ALL required tags (supports hierarchy).
+
+**Parameters:**
+- `itemTags` (array) - Item's tag list
+- `requiredTags` (array) - Tags that MUST be present
+
+**Returns:** (boolean) True if all required tags matched
+
+**Matching Logic:**
+- Literal match: `"Food"` matches `"Food"`
+- Hierarchy match: `"Food.Canned"` matches requirement `"Food"`
+- Uses `string.find(itemTag, requiredTag .. "%.") == 1` for hierarchy
+
+**Usage:**
+```lua
+local itemTags = { "Food.Canned", "Rarity.Common" }
+local required = { "Food" }
+local matches = Common.MatchesAllTags(itemTags, required)
+-- Returns: true (Food.Canned contains "Food")
+```
+
+---
+
+### Common.GetItemCharge(itemObj)
+
+Retrieves item charge/usage percentage (Build 42 compatible).
+
+**Parameters:**
+- `itemObj` (InventoryItem) - Actual item instance
+
+**Returns:** (number) Charge ratio (0.0-1.0) or 0 if not drainable
+
+**Detection Priority:**
+1. `getCurrentUses() / getMaxUses()` (B42 specific)
+2. `getDrainableUsesFloat()` (standard float)
+3. `getDelta()` / `getUsedDelta()` (legacy)
+4. `getDrainableUsesInt() / getMaxUses()` (integer variant)
+5. If maxUses > 0 but no usage data detected, returns 1.0 (assume full)
+
+**Fallback:** Returns 0 if not drainable
+
+**Usage:**
+```lua
+local charge = Common.GetItemCharge(batteryItem)
+-- 0.75 = 75% charged
+-- 0.0 = empty
+-- 1.0 = full
+```
+
+## Stock Generation
+
+### Common.GenerateStock(archetype, masterList, diffData, modifiers)
+
+Generates trader inventory based on archetype allocations and weighted pools.
+
+**Parameters:**
+- `archetype` (table) - Archetype definition with allocations, forbid, expertTags
+- `masterList` (table) - Full item registry (DynamicTrading.Config.MasterList)
+- `diffData` (table) - Difficulty settings: `{ stockMult, rarityBonus }`
+- `modifiers` (table) - Optional modifiers:
+  - `globalStockMult` (number, default 1.0) - Global stock multiplier
+  - `eventInjections` (table) - Event-forced items: `{ [tag] = count }`
+  - `tagsConfig` (table) - Tag registry
+  - `forbidTags` (table) - Tags to exclude
+  - `expertTags` (table) - Additional expert tags
+  - `getVolumeModifier` (function) - Volume modifier func(tags) → float
+
+**Returns:** (table) Stock: `{ [itemFullType] = { qty=N, customData={...} } }`
+
+**Generation Process:**
+
+#### **Phase 1: Allocations & Injections (Guaranteed Items)**
+
+1. Merge archetype allocations + event injections
+2. For each allocation:
+   - If `allocation.item` specified, add that specific item
+   - If `allocation.tags` specified, find all items matching ALL tags
+   - Exclude forbidden items (archetype.forbid + modifiers.forbidTags)
+   - Randomly pick `count` items from valid pool
+3. Fill slots until totalSlots reached
+
+**Allocation Format:**
+```lua
+{ tags = {"Food", "Drink"}, count = 5 }  -- Pick 5 random items with Food OR Drink
+{ item = "Base.Apple", count = 3 }        -- Force 3 Apples
+```
+
+#### **Phase 2: Wildcards (Weighted Lottery)**
+
+After allocations, remaining slots filled via weighted random:
+
+1. Build lottery pool of ALL non-forbidden items
+2. Calculate weight per item:
+   - Use `itemData.chance` if specified
+   - Otherwise, use primary tag's weight from tagsConfig
+   - Add `diffData.rarityBonus` (difficulty adjustment)
+3. Fill remaining slots using `PickFromWeightedPool()`
+
+**Weight Calculation:**
+```lua
+finalWeight = baseWeight + diffData.rarityBonus
+```
+
+#### **Phase 3: Quantity & Custom Data**
+
+For each selected item:
+
+1. **Base Quantity:** Random(stockRange.min, stockRange.max)
+2. **Apply Multipliers:**
+   - `diffData.stockMult` (difficulty)
+   - `volumeMult` (from event volume modifier)
+   - `globalStockMult` (global events)
+3. **Expert Check:**
+   - If item tags match archetype.expertTags → `isExpert = true`
+   - If item tags match modifiers.expertTags → `isExpert = true`
+4. **Generate Condition:** Call `GenerateItemCondition(itemData, isExpert)`
+5. **Store Result:**
+```lua
+resultStock[itemKey] = {
+    qty = calculatedQty,
+    customData = { usedDelta=0.8, fluidAmount=5, ... } or nil
+}
+```
+
+**Expert Bonus:**
+- Expert items get perfect condition (100% charge, full fluids, max durability)
+- Non-expert items get random condition (20%-100% depending on type)
+
+**Total Slots Calculation:**
+```lua
+minSlots = floor(15 × diffData.stockMult × globalStockMult)
+maxSlots = floor(25 × diffData.stockMult × globalStockMult)
+totalSlots = Random(minSlots, maxSlots)
+```
+
+**Usage Example:**
+```lua
+local stock = Common.GenerateStock(
+    DynamicTrading.Archetypes["Farmer"],
+    DynamicTrading.Config.MasterList,
+    { stockMult = 1.2, rarityBonus = 5 },
+    {
+        globalStockMult = 1.0,
+        eventInjections = { ["Winter"] = 3 },  -- Force 3 winter items
+        tagsConfig = DynamicTrading.Config.Tags,
+        forbidTags = { ["Weapon"] = true },
+        getVolumeModifier = function(tags)
+            -- Drought event: reduce food by 50%
+            for _, tag in ipairs(tags) do
+                if tag == "Food" then return 0.5 end
+            end
+            return 1.0
+        end
+    }
+)
+
+-- Result:
+-- stock = {
+--     ["Base.Apple"] = { qty=10, customData={hungerChange=-0.15} },
+--     ["Base.GasCan"] = { qty=2, customData={fluidAmount=10, fluidType="Petrol"} }
+-- }
+```
+
+---
+
+### Common.GenerateItemCondition(itemData, isExpert)
+
+Generates random condition/fluid data for item based on type.
+
+**Parameters:**
+- `itemData` (table) - MasterList entry
+- `isExpert` (boolean) - If true, returns perfect values
+
+**Returns:** (table|nil) Custom data or nil if not applicable
+
+**Detection Priority:**
+
+1. **Fluid Container** (Gas Can, Water Bottle)
+   - Gets capacity from FluidContainer
+   - Expert: 100% full | Non-expert: 10%-100% random
+   - Returns: `{ fluidAmount=N, fluidType="Petrol" }`
+
+2. **Drainable** (Bleach, Vitamins, Batteries)
+   - Expert: usedDelta=1.0 | Non-expert: 1%-100% random
+   - Returns: `{ usedDelta=0.75 }`
+
+3. **Food** (Apple, Steak)
+   - Affected by hunger value
+   - Expert: 100% | Non-expert: 10%-100% random
+   - Returns: `{ hungerChange=-0.12 }`
+
+4. **Condition/Durability** (Weapons, Tools)
+   - Has conditionMax > 0
+   - Expert: 100% | Non-expert: 20%-100% random
+   - Returns: `{ condition=8 }` (out of max)
+
+**Usage:**
+```lua
+local itemData = DynamicTrading.Config.MasterList["Base.GasCan"]
+local customData = Common.GenerateItemCondition(itemData, false)
+-- Result: { fluidAmount=7.5, fluidType="Petrol" }
+
+local expertData = Common.GenerateItemCondition(itemData, true)
+-- Result: { fluidAmount=10.0, fluidType="Petrol" }
+```
+
+## Pricing Logic
+
+### Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
+
+Calculates price when TRADER SELLS TO PLAYER.
+
+**Parameters:**
+- `itemKey` (string) - Item full type
+- `itemData` (table) - MasterList entry
+- `diffData` (table) - `{ buyMult }`
+- `modifiers` (table) - Various modifiers:
+  - `tagsConfig` - Tag registry
+  - `getPriceModifier` - Event price modifier func(tags) → float
+  - `globalHeat` - Inflation table: `{ [tag] = heatValue }`
+  - `customData` - Condition data from stock: `{ usedDelta, fluidAmount, etc }`
+- `verbose` (boolean) - Enable debug tracing
+
+**Returns:** (number) Final buy price (rounded up)
+
+**Calculation Formula:**
+
+```
+STANDARD ITEMS:
+price = basePrice
+      × maxTagMult          (highest priceMult from item tags)
+      × eventMult           (event modifier for matching tags)
+      × (1 + globalHeat)    (inflation per tag)
+      × diffData.buyMult    (difficulty)
+      × conditionScale      (0.2-1.0 based on customData)
+
+FLUID CONTAINERS:
+price = (containerBase × containerMults) + (fluidBase × amount × fluidMults)
+```
+
+**Multi-Factor Breakdown:**
+
+**1. Tag Multipliers (Highest Wins)**
+
+Items can have multiple tags. System picks HIGHEST `priceMult`:
+
+```lua
+Item tags: ["Food", "Rare"]
+Food.priceMult = 1.0
+Rare.priceMult = 2.0
+→ Uses 2.0 (highest)
+```
+
+**2. Event Modifiers**
+
+Events modify prices by tag (supports hierarchy):
+
+```lua
+Event: Plague → Medical × 2.0
+Item: "Base.Bandage" with tag "Medical.Wound"
+→ Applies 2.0x multiplier
+```
+
+Caller provides `getPriceModifier` function that scans item tags and returns cumulative modifier.
+
+**3. Global Heat (Inflation)**
+
+Global inflation affects specific categories:
+
+```lua
+globalHeat = {
+    ["Food"] = 0.5,    -- +50% inflation on food
+    ["Ammo"] = 0.3     -- +30% on ammo
+}
+→ price *= (1.0 + heat)
+```
+
+**4. Difficulty Multiplier**
+
+Sandbox setting: `diffData.buyMult` (default 1.0)
+- 0.5 = Everything 50% cheaper (easy mode)
+- 2.0 = Everything 200% more expensive (hard mode)
+
+**5. Condition Scaling (Dynamic Items)**
+
+**Fluid Containers (Advanced):**
+
+Separates container value from fluid value:
+
+```lua
+-- Container part (empty container price)
+containerBase = (from empty item or 20% of full price)
+containerMults = (tag + event + difficulty mults from container tags)
+
+-- Fluid part (per-liter fluid price)
+fluidBase = DynamicTrading.Fluids[fluidType].basePrice
+fluidMults = (tag + event + difficulty + heat mults from FLUID tags)
+
+price = (containerBase × containerMults) + (fluidBase × amount × fluidMults)
+```
+
+**Example:**
+```
+Gas Can (10L capacity, 7L Petrol)
+Container: Base.EmptyGasCan = $5
+Petrol: $3/L
+
+containerBase = $5, containerMults = 1.2 (difficulty)
+fluidBase = $3, fluidMults = 2.0 (event: fuel shortage)
+amount = 7L
+
+price = ($5 × 1.2) + ($3 × 7 × 2.0)
+      = $6 + $42
+      = $48
+```
+
+**Other Dynamic Items:**
+- **Drainable:** `price × usedDelta` (min 0.2 for container value)
+- **Food:** `price × (currentHunger / baseHunger)` (min 0.2)
+- **Condition:** `price × (condition / conditionMax)` (min 0.2)
+
+Minimum 20% value ensures container itself has worth even if empty.
+
+**Usage:**
+```lua
+local price = Common.GetBuyPrice(
+    "Base.Bandage",
+    DynamicTrading.Config.MasterList["Base.Bandage"],
+    { buyMult = 1.0 },
+    {
+        tagsConfig = DynamicTrading.Config.Tags,
+        getPriceModifier = function(tags)
+            -- Plague event: Medical × 2.0
+            for _, tag in ipairs(tags) do
+                if tag:find("Medical") then return 2.0 end
+            end
+            return 1.0
+        end,
+        globalHeat = { ["Medical"] = 0.3 },
+        customData = nil  -- Full/perfect condition
+    },
+    true  -- verbose
+)
+
+-- Debug output:
+-- [DT TRACE] Buy Price Calc: Base.Bandage | Base: 20
+-- [DT TRACE] | TagMult: 1.5 (Medical tag)
+-- [DT TRACE] | EventMult: 2.0 (Plague)
+-- [DT TRACE] | Heat(Medical): 0.3
+-- [DT TRACE] | DiffMult: 1.0
+-- [DT TRACE] | FINAL: 78
+-- Returns: 78
+```
+
+---
+
+### Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, modifiers, verbose)
+
+Calculates price when PLAYER SELLS TO TRADER.
+
+**Parameters:**
+- `itemKey` (string) - Item full type
+- `itemData` (table) - MasterList entry
+- `itemObj` (InventoryItem) - Actual item instance (for condition)
+- `diffData` (table) - `{ sellMult }` (default 0.5)
+- `archetype` (table) - Trader archetype (for wants bonus)
+- `modifiers` (table) - Various modifiers:
+  - `tagsConfig` - Tag registry
+  - `getPriceModifier` - Event price modifier func
+  - `globalHeat` - Inflation table
+  - `localDeflationCount` - Number of same items trader already has
+- `verbose` (boolean) - Debug tracing
+
+**Returns:** (number) Final sell price (rounded up)
+
+**Calculation Formula:**
+
+```
+price = basePrice
+      × diffData.sellMult       (default 0.5 = 50% of base)
+      × conditionRatio          (actual item condition)
+      × fluidChargeRatio        (if drainable/fluid)
+      × eventMult               (event modifiers)
+      × (1 + globalHeat)        (inflation)
+      × localDeflation          (trader saturation penalty)
+      × archetypeWants          (trader specialty bonus)
+```
+
+**Multi-Factor Breakdown:**
+
+**1. Base & Difficulty**
+
+```lua
+price = basePrice × diffData.sellMult
+-- Default sellMult = 0.5 (player gets 50% of base value)
+```
+
+**2. Condition & State Penalties**
+
+**Rotten Check:**
+```lua
+if itemObj:isRotten() then
+    return 1  -- Rotten items worth only $1
+end
+```
+
+Adds virtual "Rotten" tag so archetypes can target spoiled food separately.
+
+**Durability:**
+```lua
+conditionRatio = itemObj:getCondition() / itemObj:getConditionMax()
+price = price × conditionRatio
+-- 50% durability = 50% price
+```
+
+**3. Drainable/Fluid Handling (Detailed)**
+
+**A. Fluid Containers:**
+
+Recalculates value as container + fluid separately:
+
+```lua
+-- Get fluid type (robust B42 detection)
+fluidType = getPrimaryFluid():getFluidType()  -- or fallbacks
+
+-- Lookup fluid data
+fluidData = DynamicTrading.Fluids[fluidType]
+
+-- Calculate fluid multipliers (events, heat, archetype wants)
+fluidMults = sellMult × eventMult × (1+heat) × wants
+
+-- Calculate fluid value
+fluidValue = fluidData.basePrice × currentAmount × fluidMults
+
+-- Calculate container value (empty container or 20% of full)
+containerValue = emptyContainerPrice × sellMult
+
+-- Final price
+price = containerValue + fluidValue
+```
+
+**Example:**
+```
+Player sells Gas Can with 3L Petrol
+Container: $5, Petrol: $3/L
+Trader wants fuel (archetype.wants["Resource.Fuel"] = 1.5)
+
+containerValue = $5 × 0.5 (sellMult) = $2.50
+fluidValue = $3 × 3L × 0.5 (sellMult) × 1.5 (wants) = $6.75
+
+price = $2.50 + $6.75 = $9.25
+```
+
+**B. Food (Partially Eaten):**
+```lua
+currentHunger = itemObj:getHungerChange()
+baseHunger = scriptItem:getHungerChange()
+ratio = currentHunger / baseHunger
+price = price × ratio
+-- 50% eaten = 50% price
+```
+
+**C. Standard Drainable:**
+```lua
+delta = GetItemCharge(itemObj)
+price = price × delta
+-- 75% battery = 75% price
+```
+
+**4. Event Modifiers**
+
+Same as buy price - events modify based on tags.
+
+**5. Global Heat (Inflation)**
+
+Same as buy price - increases value by tag.
+
+**6. Local Deflation (Trader Saturation)**
+
+Prevents exploit of flooding trader with same item:
+
+```lua
+penalty = 0.05 per duplicate item
+localMult = 1.0 - (localDeflationCount × 0.05)
+if localMult < 0.2 then localMult = 0.2 end  -- Min 20%
+
+price = price × localMult
+```
+
+**Example:**
+```
+Player sells 10th apple to trader
+localDeflationCount = 9
+localMult = 1.0 - (9 × 0.05) = 0.55 (55%)
+price = basePrice × 0.55
+```
+
+Prevents infinite money from single item type.
+
+**7. Archetype Bonus ("Wants")**
+
+Traders pay premium for items they want:
+
+```lua
+archetype.wants = {
+    ["Resource.Fuel"] = 1.5,    -- Pays 50% more
+    ["Tool.Mechanical"] = 1.3   -- Pays 30% more
+}
+
+For each item tag matching wants:
+    price = price × wants[tag]
+```
+
+**Usage:**
+```lua
+local gasCanItem = player:getInventory():getItemFromType("Base.PetrolCan")
+local price = Common.GetSellPrice(
+    "Base.PetrolCan",
+    DynamicTrading.Config.MasterList["Base.PetrolCan"],
+    gasCanItem,
+    { sellMult = 0.5 },
+    DynamicTrading.Archetypes["Mechanic"],  -- wants fuel
+    {
+        tagsConfig = DynamicTrading.Config.Tags,
+        getPriceModifier = function(tags) return 1.0 end,
+        globalHeat = { ["Resource.Fuel"] = 0.5 },  -- fuel shortage
+        localDeflationCount = 0
+    },
+    true  -- verbose
+)
+
+-- Mechanic wants fuel × 1.5, player gets better price
+```
+
+## Integration Points
+
+**Used by:**
+- @DynamicTrading_Economy.lua - V2 economy wrapper
+- @DynamicTrading_Stock.lua - Stock generation and restocking
+- @DynamicTrading_Network_Server.lua - Trade transaction validation
+- V1 economy modules (legacy)
+
+**Depends on:**
+- @00_DT_Core.lua - Global tables and MasterList
+- @Config.lua - Tag registry and configuration
+- @DT_Fluids.lua - Fluid pricing database
+- @Tags.lua - Tag multipliers
+
+## Performance Considerations
+
+- **Weighted pools cached** - Build once per stock generation
+- **Tag matching optimized** - Early break on forbid check
+- **Condition checks conditional** - Only checks if itemObj provided
+- **Fluid detection cascading** - Multiple fallback APIs tried once
+- **Debug prints gated** - Only logs if verbose=true
+
+## Best Practices
+
+1. **Always provide tagsConfig** - Enables proper tag multipliers
+2. **Use getPriceModifier callback** - For event-driven pricing
+3. **Include customData for buy prices** - Enables dynamic condition pricing
+4. **Pass itemObj for sell prices** - Gets actual item condition
+5. **Set localDeflationCount** - Prevents exploit flooding
+6. **Enable verbose for debugging** - Traces each calculation step
+7. **Handle nil returns gracefully** - Invalid items return max/min values
+
+## Common Patterns
+
+### Stock Generation with Events
+```lua
+local stock = Common.GenerateStock(
+    archetype,
+    masterList,
+    { stockMult = 1.2, rarityBonus = 0 },
+    {
+        eventInjections = GetActiveEventInjections(),
+        forbidTags = GetEventForbiddenTags(),
+        getVolumeModifier = function(tags)
+            return GetEventVolumeModifier(tags)
+        end
+    }
+)
+```
+
+### Dynamic Buy Price with Condition
+```lua
+local price = Common.GetBuyPrice(
+    itemKey,
+    itemData,
+    diffData,
+    {
+        tagsConfig = DynamicTrading.Config.Tags,
+        getPriceModifier = DynamicTrading.Events.GetPriceModifier,
+        globalHeat = GetGlobalInflation(),
+        customData = stockEntry.customData  -- From generated stock
+    }
+)
+```
+
+### Sell Price with All Factors
+```lua
+local sellPrice = Common.GetSellPrice(
+    itemKey,
+    itemData,
+    itemObj,
+    diffData,
+    traderArchetype,
+    {
+        getPriceModifier = DynamicTrading.Events.GetPriceModifier,
+        globalHeat = GetGlobalInflation(),
+        localDeflationCount = GetTraderItemCount(traderID, itemKey)
+    }
+)
+```
+
+## See Also
+
+- @DynamicTrading_Economy.lua - V2 wrapper using these functions
+- @DT_Fluids.lua - Fluid pricing database
+- @Tags.lua - Tag multiplier definitions
+- @DT_EventManager.lua - Event price modifications
+- @DynamicTrading_Stock.lua - Stock management using generation

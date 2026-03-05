@@ -4,5 +4,13 @@
     "orv3": "Contents/mods/DynamicTradingCommon/Faction System",
     "ks10": "Contents/mods/DynamicTradingCommon/DT_Taxonomy",
     "9ux6": "Contents/mods/DynamicTradingCommon/Economy System",
-    "u453": "Contents/mods/DynamicTradingV1/42.13/media/lua/client/DT/V1/DT_RadioInteraction"
+    "u453": "Contents/mods/DynamicTradingV1/42.13/media/lua/client/DT/V1/DT_RadioInteraction",
+    "dz2p": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/00_DT_Core",
+    "9eym": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Tags",
+    "5nse": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Systems-Overview-NPC-Quest-Stock",
+    "qu09": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Config",
+    "d7qe": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Events/DT_EventManager",
+    "v9if": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Trading/DT_Economy_Common",
+    "4ks9": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Faction/TradingSys/Network-Layer",
+    "3jrx": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Faction/TradingSys/Factions/Lifecycle-and-Simulation"
 }

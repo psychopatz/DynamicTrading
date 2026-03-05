@@ -1,0 +1,368 @@
+Title: Config - Configuration System and Data Loading
+Tags: [config, configuration, archetypes, dialogue, loading, sandbox]
+
+Central configuration system that handles archetype loading, dialogue registration, item batching, and sandbox settings. Provides dynamic loading of 40+ archetypes with multilingual dialogue support.
+
+## Purpose
+
+Manages bulk data loading and configuration APIs. Loads archetype definitions, dialogue files across 27 languages, and provides gameplay helpers for radio tiers and difficulty settings.
+
+## Core Registration Functions
+
+### DynamicTrading.AddItem(id, data)
+
+Single item registration (also defined in @00_DT_Core.lua for early availability).
+
+**Parameters:**
+- `id` (string) - Full item type (e.g., "Base.Apple")
+- `data` (table) - Item configuration
+
+**Usage:**
+```lua
+DynamicTrading.AddItem("Base.Apple", {
+    basePrice = 5,
+    tags = { "Food.Fruit" },
+    stockRange = { min = 3, max = 15 }
+})
+```
+
+---
+
+### DynamicTrading.RegisterBatch(list)
+
+Batch item registration for efficient loading of multiple items at once.
+
+**Parameters:**
+- `list` (array) - Array of item data tables, each containing `item` field + standard item data
+
+**Usage:**
+```lua
+DynamicTrading.RegisterBatch({
+    { item = "Base.Apple", basePrice = 5, tags = {"Food.Fruit"}, stockRange = {min=3, max=15} },
+    { item = "Base.Bread", basePrice = 10, tags = {"Food.Baked"}, stockRange = {min=5, max=20} },
+    { item = "Base.Water", basePrice = 3, tags = {"Drink.Water"}, stockRange = {min=10, max=30} }
+})
+```
+
+**Output:**
+- Prints batch total only (reduced console spam)
+- Example: `[DynamicTrading] Item Batch Loaded: 150 entries.`
+
+---
+
+### DynamicTrading.RegisterArchetype(id, data)
+
+Registers trader archetype with stock allocations and behavior.
+
+**Parameters:**
+- `id` (string) - Unique archetype ID (becomes table key)
+- `data` (table) - Archetype configuration
+
+**Behavior:**
+- Automatically adds `id` field to data table
+- Stores in `DynamicTrading.Archetypes[id]`
+- Prints confirmation: `[DynamicTrading] Registered Archetype: [id]`
+
+**Usage:**
+```lua
+DynamicTrading.RegisterArchetype("Farmer", {
+    name = "Farmer",
+    allocations = {
+        { tags = {"Food.Fresh"}, count = 10 },
+        { tags = {"Tool.Farming"}, count = 5 }
+    },
+    expertTags = { "Food.Fresh" },
+    wants = { ["Resource.Fuel"] = 1.5 },
+    forbid = { "Weapon" }
+})
+```
+
+---
+
+### DynamicTrading.RegisterDialogue(archetypeID, dialogueType, data)
+
+Registers dialogue for specific archetype and dialogue type with multi-language support.
+
+**Parameters:**
+- `archetypeID` (string) - Archetype ID (e.g., "Farmer", "Doctor")
+- `dialogueType` (string) - Type: "Greetings", "Buying", "Selling", "Sell_ask", "Idle", "Request"
+- `data` (table) - Language-keyed dialogue: `{ [lang] = {lines...} }`
+
+**Usage:**
+```lua
+DynamicTrading.RegisterDialogue("Farmer", "Greetings", {
+    ["EN"] = { "Howdy!", "Good day!", "Welcome to the farm!" },
+    ["FR"] = { "Bonjour!", "Bienvenue à la ferme!" },
+    ["ES"] = { "¡Hola!", "¡Bienvenido!" }
+})
+```
+
+**Storage Structure:**
+```lua
+DynamicTrading.Dialogue.Archetypes[archetypeID][dialogueType][language] = { line1, line2, ... }
+```
+
+**Features:**
+- Supports cross-file loading (merge translations)
+- Overrides previous entries if re-registered
+- Debug logging for "Player" archetype dialogue
+
+---
+
+### DynamicTrading.GetLanguage()
+
+Detects current game language code.
+
+**Returns:** (string) Language code ("EN", "ES", "FR", etc.)
+
+**Fallback:** Returns "EN" if Translator API unavailable
+
+**Usage:**
+```lua
+local lang = DynamicTrading.GetLanguage()
+-- Use to select appropriate dialogue
+local lines = DynamicTrading.Dialogue.Archetypes["Farmer"]["Greetings"][lang]
+```
+
+## Dynamic Archetype Loading
+
+### Archetype List (40+ Predefined)
+
+```lua
+DynamicTrading.Config.ArchetypeList = {
+    "Angler", "Athlete", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
+    "Carpenter", "Chef", "Demo", "Designer", "Doctor", "Electrician", "Farmer", "Foreman",
+    "Geek", "Gunrunner", "Herbalist", "Hiker", "Hunter", "Janitor", "Librarian", "Mechanic",
+    "Musician", "Office", "Painter", "Pawnbroker", "Pharmacist", "Pyro",
+    "Quartermaster", "RoadWarrior", "Scavenger", "Sheriff", "Smuggler",
+    "Survivalist", "Tailor", "Teacher", "Tribal", "Welder",
+    "General", "Player"  -- Meta archetypes
+}
+```
+
+### Supported Languages (27 Total)
+
+AR, CA, CH, CN, CS, DA, DE, EN, ES, FI, FR, HU, ID, IT, JP, KO, NL, NO, PH, PL, PT, PTBR, RO, RU, TH, TR, UA
+
+### Dialogue Types (6 Standard)
+
+1. **Greetings** - First interaction, trade window open
+2. **Buying** - Player purchases from trader
+3. **Selling** - Player sells to trader
+4. **Sell_ask** - Player asks "What are you buying?"
+5. **Idle** - Ambient/random dialogue
+6. **Request** - Quest or favor requests
+
+### DynamicTrading.LoadArchetypes()
+
+Loads all archetype definitions and dialogues dynamically.
+
+**Process:**
+1. Iterates through `ArchetypeList`
+2. For each archetype:
+   - Loads item definition: `DT/Common/ArchetypeDefinitions/[id]/Items/DT_[id].lua`
+   - Loads base dialogue for each type: `DT/Common/ArchetypeDefinitions/[id]/Dialogue/DT_[id]_[type].lua`
+   - Loads translations: `.../Dialogue/Translations/[lang]/DT_[id]_[type]_[lang].lua`
+3. Uses `FileExists()` helper to avoid console spam from missing files
+4. Prints summary: `[DynamicTrading] Dynamic Loading Complete. Total Modules: X | Errors: Y`
+
+**File Structure Example:**
+```
+DT/Common/ArchetypeDefinitions/
+├── Farmer/
+│   ├── Items/
+│   │   └── DT_Farmer.lua                    [Item allocations]
+│   └── Dialogue/
+│       ├── DT_Farmer_Greetings.lua          [Base English]
+│       ├── DT_Farmer_Buying.lua
+│       ├── DT_Farmer_Selling.lua
+│       ├── DT_Farmer_Sell_ask.lua
+│       ├── DT_Farmer_Idle.lua
+│       ├── DT_Farmer_Request.lua
+│       └── Translations/
+│           ├── ES/
+│           │   ├── DT_Farmer_Greetings_ES.lua
+│           │   └── ... [other types]
+│           ├── FR/
+│           ├── DE/
+│           └── ... [25 more languages]
+```
+
+**Error Handling:**
+- Missing item definitions trigger warning (may be critical)
+- Missing dialogues silently skip (optional)
+- Missing translations silently skip (fallback to base)
+- Uses `pcall()` to catch require errors
+
+**Debug Mode:**
+```lua
+DynamicTrading.Debug = true  -- Enable verbose logging
+```
+
+When enabled:
+- Prints each archetype being processed
+- Logs successful dialogue loads
+- Shows file existence checks
+
+### FileExists(path) [Internal Helper]
+
+Checks if Lua file exists before requiring to prevent console spam.
+
+**Parameters:**
+- `path` (string) - Relative path without "media/lua/shared/" prefix or ".lua" extension
+
+**Returns:** (boolean) True if file exists or check unavailable (safe fallback)
+
+**API Detection Order:**
+1. `getZomboidFileSystem()` - Standard API
+2. `ZomboidFileSystem.instance` - Legacy API
+3. `fileExists()` - Global fallback
+4. If none available, returns `true` (attempt load anyway)
+
+## Gameplay Helpers
+
+### DynamicTrading.Config.GetRadioData(itemFullType)
+
+Retrieves radio tier data for given radio item.
+
+**Parameters:**
+- `itemFullType` (string) - Full item type (e.g., "Base.WalkieTalkie3")
+
+**Returns:** (table) Radio data: `{ power, capacity, desc }` or fallback `{ power=0.5, desc="Unknown Device" }`
+
+**Usage:**
+```lua
+local radio = DynamicTrading.Config.GetRadioData("Base.WalkieTalkie5")
+print("Power: " .. radio.power .. ", Capacity: " .. radio.capacity)
+-- Output: Power: 1.5, Capacity: 5
+```
+
+**Radio Tier Table:**
+See @00_DT_Core.lua for complete `DynamicTrading.Config.RadioTiers` table.
+
+---
+
+### DynamicTrading.Config.GetDifficultyData()
+
+Retrieves current sandbox difficulty settings.
+
+**Returns:** (table) Difficulty data:
+```lua
+{
+    name = "Custom Sandbox",
+    buyMult = number,    -- Player buy price multiplier (default 1.0)
+    sellMult = number,   -- Player sell price multiplier (default 0.5)
+    stockMult = number,  -- Stock quantity multiplier (default 1.0)
+    -- Additional sandbox vars...
+}
+```
+
+**Usage:**
+```lua
+local diff = DynamicTrading.Config.GetDifficultyData()
+local finalPrice = basePrice * diff.buyMult
+```
+
+**Sandbox Variable Sources:**
+- `SandboxVars.DynamicTrading.PriceBuyMult` (0.1-10.0, default 1.0)
+- `SandboxVars.DynamicTrading.PriceSellMult` (0.0-5.0, default 0.5)
+- `SandboxVars.DynamicTrading.StockMult` (0.1-5.0, default 1.0)
+
+**Fallbacks:**
+All values default to standard settings if sandbox var missing.
+
+## Global Flags
+
+### DynamicTrading.Debug
+
+Boolean flag for verbose logging. Set `true` for development/troubleshooting.
+
+**Default:** `false`
+
+**Effects when true:**
+- Archetype loading prints each archetype name
+- Dialogue loading prints successful loads
+- File checks logged
+- Player dialogue registration logged specially
+
+**Usage:**
+```lua
+DynamicTrading.Debug = true
+DynamicTrading.LoadArchetypes()  -- Now prints detailed progress
+```
+
+## Integration Points
+
+**Used by:**
+- @00_DT_Core.lua - Calls Config functions after table initialization
+- @DT_DialogueManager.lua - Uses dialogue registry and GetLanguage()
+- @DT_Economy_Common.lua - Uses GetDifficultyData() for pricing
+- All archetype definition files - Call RegisterArchetype/RegisterDialogue
+
+**Depends on:**
+- @00_DT_Core.lua - Must load first to establish global tables
+- @Tags.lua - Tag definitions should load before item registration
+- Archetype definition files in ArchetypeDefinitions/ folder
+
+## Performance Considerations
+
+- **Batch loading reduces spam** - RegisterBatch prints totals only
+- **File existence checks** - Prevents failed require attempts
+- **Lazy dialogue loading** - Only loads translations for installed languages
+- **pcall wrapping** - Prevents single file error from breaking entire load
+- **Merge support** - Dialogues can load incrementally without conflicts
+
+## Best Practices
+
+1. **Load tags first** - Register tags before items that use them
+2. **Use RegisterBatch** - For 10+ items, batch loading is cleaner
+3. **Provide all dialogue types** - Missing dialogue falls back to generic
+4. **Test with debug enabled** - Verify file paths and loading order
+5. **Structure translations consistently** - Follow standard folder layout
+6. **Handle missing translations** - Always provide EN fallback
+7. **Document custom archetypes** - If adding new to ArchetypeList
+
+## Common Patterns
+
+### Adding New Archetype
+
+```lua
+-- 1. Add to ArchetypeList
+table.insert(DynamicTrading.Config.ArchetypeList, "CustomTrader")
+
+-- 2. Create folder structure
+-- DT/Common/ArchetypeDefinitions/CustomTrader/
+--   Items/DT_CustomTrader.lua
+--   Dialogue/DT_CustomTrader_Greetings.lua
+--   Dialogue/DT_CustomTrader_Buying.lua
+--   etc.
+
+-- 3. Call LoadArchetypes() after game init
+Events.OnGameBoot.Add(function()
+    DynamicTrading.LoadArchetypes()
+end)
+```
+
+### Cross-Language Support
+
+```lua
+-- Base English dialogue (mandatory)
+DynamicTrading.RegisterDialogue("Farmer", "Greetings", {
+    ["EN"] = { "Hello!", "Hi there!" }
+})
+
+-- Add Spanish later (merges automatically)
+DynamicTrading.RegisterDialogue("Farmer", "Greetings", {
+    ["ES"] = { "¡Hola!", "¡Buenas!" }
+})
+
+-- Both languages now available in same archetype
+```
+
+## See Also
+
+- @00_DT_Core.lua - Core initialization and registration APIs
+- @Tags.lua - Tag registry definitions
+- @DT_DialogueManager.lua - Dialogue rendering and selection
+- @DT_Economy_Common.lua - Uses difficulty data for pricing
+- @sandbox-options.txt - Sandbox configuration options
