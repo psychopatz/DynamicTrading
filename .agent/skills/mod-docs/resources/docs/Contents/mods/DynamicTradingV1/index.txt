@@ -1,10 +1,13 @@
-# V1: Radio Interaction Module
+Title: V1: Radio Interaction Module
+Tags: [v1, radio, interface]
 
 The V1 module provides the Radio interface for the Dynamic Trading world. It is functionally equal to V2 in terms of background systems but differs in the delivery method.
 
 ## Feature Parity
-V1 is fully integrated with:
-- **Economy & Factions:** Prices and trader stock vary based on faction state and global events.
+V1 is fully integrated with the global systems:
+- **Economy & Factions:** The macro-economy and faction reputation systems are shared.
+  - See @economy
+  - See @factions
 - **Quests & Events:** Players can receive quests or participate in events via radio broadcasts.
 - **Dynamic State:** Traders cycle through states (Trading, Away, Resting) just like they do for physical spawns.
 

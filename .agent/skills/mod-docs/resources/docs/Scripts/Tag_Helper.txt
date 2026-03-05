@@ -1,13 +1,8 @@
-# Tag Helper Script
+Title: Tag Helper CLI Tool
+Tags: [tool, cli, tags]
 
-`Scripts/Tag_Helper.py` is a CLI tool designed to help LLMs and users query the hierarchical tag taxonomy efficiently.
-
-## Usage
-Run the script with `python3 Scripts/Tag_Helper.py`.
-
-## Features
-- **Query Roots:** See all top-level taxonomy categories.
-- **Traverse Tree:** Explore sub-tags and descriptors.
-- **Save Context:** Provides a minimal text representation to save tokens in LLM prompts.
-
-This script is essential for assigning correct tags to new items during the indexing process.
+An interactive command-line tool for querying the Dynamic Trading item tagging hierarchy.
+- Explore the taxomony tree.
+- Search for specific tags.
+- Use for consistent tagging during item registration.
+- Refer to @taxonomy for the master hierarchy.

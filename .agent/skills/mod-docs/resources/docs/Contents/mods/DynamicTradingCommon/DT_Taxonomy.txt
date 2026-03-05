@@ -1,4 +1,5 @@
-# No-Collision Taxonomy
+Title: Master Taxonomy for "No-Collision" Tagging
+Tags: [taxonomy, tags, identification]
 
 The Dynamic Trading project uses a strict hierarchical tagging system to categorize items without conflicts.
 
@@ -19,4 +20,4 @@ Descriptors are appended to provide additional filtering:
 2. **Pluralization:** In UI/Dialogue, tags are often transposed and pluralized (e.g., `Electronics.Component.Light` -> "Light Components").
 3. **Blacklisting:** If a tag like `Luxury` appears as a root, it is a bug and should be moved to `Quality.Luxury`.
 
-Refer to `Docs/Tags_Reference.md` for the full list of tags.
+Refer to [tag-helper] for the interactive query tool.

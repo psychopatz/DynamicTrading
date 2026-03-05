@@ -1,0 +1,86 @@
+{
+    "v1": {
+        "path": "Contents/mods/DynamicTradingV1",
+        "desc": "Radio interaction module (Unified Economy Interface)",
+        "tags": [
+            "v1",
+            "radio",
+            "interface"
+        ]
+    },
+    "v2": {
+        "path": "Contents/mods/DynamicTradingV2",
+        "desc": "Physical NPC interaction module (Soul/Puppet Architecture)",
+        "tags": [
+            "v2",
+            "npc",
+            "physical"
+        ]
+    },
+    "common": {
+        "path": "Contents/mods/DynamicTradingCommon",
+        "desc": "Shared core logic, taxonomy, and base systems",
+        "tags": [
+            "common",
+            "foundation",
+            "shared"
+        ]
+    },
+    "economy": {
+        "path": "Contents/mods/DynamicTradingCommon/Economy System",
+        "desc": "Dynamic pricing and stock simulated globally",
+        "tags": [
+            "economy",
+            "logic",
+            "pricing",
+            "core"
+        ]
+    },
+    "factions": {
+        "path": "Contents/mods/DynamicTradingCommon/Faction System",
+        "desc": "Persistent faction reputation and resource states",
+        "tags": [
+            "factions",
+            "reputation",
+            "politics",
+            "core"
+        ]
+    },
+    "taxonomy": {
+        "path": "Contents/mods/DynamicTradingCommon/DT_Taxonomy",
+        "desc": "Master hierarchy for 'No-Collision' item tagging",
+        "tags": [
+            "taxonomy",
+            "tags",
+            "identification",
+            "core"
+        ]
+    },
+    "tag-helper": {
+        "path": "Scripts/Tag_Helper",
+        "desc": "CLI tool for interactive taxonomy querying",
+        "tags": [
+            "tool",
+            "cli",
+            "tags"
+        ]
+    },
+    "item-verify": {
+        "path": "Scripts/ItemID_Verify",
+        "desc": "Standardized workflow for item indexing and verification",
+        "tags": [
+            "tool",
+            "workflow",
+            "indexing"
+        ]
+    },
+    "radio-logic": {
+        "path": "Contents/mods/DynamicTradingV1/42.13/media/lua/client/DT/V1/DT_RadioInteraction",
+        "desc": "Core Lua logic for V1 radio communication",
+        "tags": [
+            "v1",
+            "lua",
+            "radio"
+        ]
+    }
+}

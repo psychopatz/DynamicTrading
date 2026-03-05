@@ -1,16 +1,7 @@
-# Item Indexing & Verification Workflow
+Title: Item ID Verification Tool
+Tags: [tool, workflow, indexing]
 
-Indexing new items is a critical repetitive task in Dynamic Trading.
-
-## Standard Workflow
-1. **Discover:** Find the item ID from vanilla PZ or other mods.
-2. **Tag:** Use `Tag_Helper.py` to find the correct hierarchical tags.
-3. **Price:** Assign pricing logic based on weight and scarcity (using `pz-item-indexing` skill).
-4. **Register:** Add the item to the appropriate registry Lua file in `DynamicTradingCommon`.
-5. **Verify:** Run `python3 Scripts/ItemID_Verify.py` to ensure the item is correctly registered and tagged.
-
-## No-Collision Tagging
-Ensure the item follows the "No-Collision" taxonomy. If an item has multiple possible tags, select the one that best defines its primary identity. Use descriptors for secondary context.
-
-## Stock Logic
-Pricing and initial stock levels should be balanced based on the item's `Rarity` and `Theme`. Use the `pz-item-indexing` skill for math formulas.
+This script provides a standardized workflow for indexing and verifying vanilla Project Zomboid items into the Dynamic Trading mod.
+- Validates item existence in vanilla PZ modules.
+- Checks for "No-Collision" tagging standards.
+- Ensures consistent pricing and stock logic.

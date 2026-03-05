@@ -1,4 +1,5 @@
-# Economy System (V1/V2)
+Title: Economy System (V1/V2)
+Tags: [economy, logic, pricing]
 
 The Dynamic Trading economy is a shared system across all interaction modules.
 

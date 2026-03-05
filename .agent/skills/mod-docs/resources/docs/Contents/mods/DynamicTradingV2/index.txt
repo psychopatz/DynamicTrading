@@ -1,10 +1,13 @@
-# V2: Physical NPC Interaction Module
+Title: V2: Physical NPC Interaction Module
+Tags: [v2, npc, physical]
 
 The V2 module provides the physical world interface for the Dynamic Trading system using the "Soul/Puppet" architecture.
 
 ## Feature Parity
 V2 shares the exact same core logic as V1:
 - **Economy & Factions:** The macro-economy and faction reputation systems are shared.
+  - See @economy
+  - See @factions
 - **Quests & Events:** Quests can be initiated physically and monitored via the radio (V1) or vice versa.
 
 ## The Soul & The Puppet
