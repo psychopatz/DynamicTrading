@@ -61,6 +61,11 @@ def do_verify():
         if not title: issues.append("Missing or invalid 'Title:' header")
         if not tags: issues.append("Missing or invalid 'Tags:' header (must be [tag1, tag2, ...])")
         if not content.strip(): issues.append("Empty body content")
+        
+        # Check Token Strictness
+        if f.name == "index.txt" and len(content.splitlines()) > 40:
+            issues.append(f"Token Strictness Violation: Directory Index body is {len(content.splitlines())} lines long (Max 40 allowed).")
+            issues.append("  Please segregate detailed implementation logic into standalone file docs and use @shortcodes to reference them.")
             
         if issues:
             print(f"[ERROR] {rel}")
@@ -258,6 +263,13 @@ def do_docs(doc_path_str):
     doc_file_path = DOCS_DIR / target_rel.with_suffix('.txt')
     doc_dir_path = DOCS_DIR / target_rel
     index_file = doc_dir_path / "index.txt"
+    
+    # Fallback for "File-as-Directory" padding (massive files spoofed as dirs)
+    if not doc_file_path.exists() and target_rel.suffix:
+        fallback_dir_path = DOCS_DIR / target_rel.parent / target_rel.stem
+        if fallback_dir_path.exists() and fallback_dir_path.is_dir() and (fallback_dir_path / "index.txt").exists():
+            doc_dir_path = fallback_dir_path
+            index_file = fallback_dir_path / "index.txt"
     
     path_exists_in_workspace = workspace_path.exists()
     is_directory = workspace_path.is_dir() if path_exists_in_workspace else False
