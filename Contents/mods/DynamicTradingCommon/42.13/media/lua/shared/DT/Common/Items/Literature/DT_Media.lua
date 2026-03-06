@@ -1,12 +1,82 @@
 -- ============================================================================
--- DT_Media.lua
 -- Literature Items Registry for Dynamic Trading
--- Auto-generated item list with pricing and stock ranges
+-- If you want some suggestions or have balancing issues, please report them to
+-- my discussion page. Happy to adjust prices and stock based on your feedback! :)
+-- https://steamcommunity.com/sharedfiles/filedetails/?id=3635333613
 -- ============================================================================
 
-DT_Media = DT_Media or {}
-DT_Media.items = {
+require "DT/Common/Config"
+if not DynamicTrading then return end
 
-}
+DynamicTrading.RegisterBatch({
+    -- The items are grouped by Primary tag and Rarity
 
-return DT_Media.items
+    -- [Literature.Media] [Rarity.Common] (2 items)
+    { item="Base.MagazineCrossword", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
+    { item="Base.MagazineWordsearch", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
+
+    -- [Literature.Media] [Rarity.Rare] (61 items)
+    { item="Base.ComicBook", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.ComicBook_Retail", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Cuirass_Magazine", basePrice=23, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=2} },
+    { item="Base.GreaveMagazine_Left", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.GreaveMagazine_Right", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.Magazine", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Art", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Art_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Business", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Business_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Car", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Car_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Childs", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Childs_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Cinema", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Cinema_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Crime", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Crime_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Fashion", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Fashion_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Firearm", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Firearm_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Gaming", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Gaming_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Golf", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Golf_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Health", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Health_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Hobby", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Hobby_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Horror", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Horror_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Humor", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Humor_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Military", basePrice=17, tags={"Literature.Media", "Rarity.Rare", "Origin.Militia"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Military_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare", "Origin.Militia"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Music", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Music_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Outdoors", basePrice=17, tags={"Literature.Media", "Rarity.Rare", "Theme.Survival"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Outdoors_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare", "Theme.Survival"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Police", basePrice=17, tags={"Literature.Media", "Rarity.Rare", "Origin.Police"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Police_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare", "Origin.Police"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Popular", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Popular_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Rich", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Rich_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Science", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Science_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Sports", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Sports_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Tech", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Tech_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Teens", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Magazine_Teens_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.ThighMagazine_L", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.ThighMagazine_R", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.TVMagazine", basePrice=28, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.TVMagazine_New", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.VambraceMagazine_Left", basePrice=134, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.VambraceMagazine_Right", basePrice=109, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+})
+
+print("[DynamicTrading] Media Registry Complete")

@@ -1,12 +1,14 @@
 -- ============================================================================
--- DT_Part.lua
 -- Weapon Items Registry for Dynamic Trading
--- Auto-generated item list with pricing and stock ranges
+-- If you want some suggestions or have balancing issues, please report them to
+-- my discussion page. Happy to adjust prices and stock based on your feedback! :)
+-- https://steamcommunity.com/sharedfiles/filedetails/?id=3635333613
 -- ============================================================================
 
-DT_Part = DT_Part or {}
-DT_Part.items = {
+require "DT/Common/Config"
+if not DynamicTrading then return end
 
-}
+DynamicTrading.RegisterBatch({
+})
 
-return DT_Part.items
+print("[DynamicTrading] Part Registry Complete")
