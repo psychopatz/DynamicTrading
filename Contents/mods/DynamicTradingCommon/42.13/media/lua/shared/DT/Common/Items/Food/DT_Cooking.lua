@@ -6,9 +6,6 @@
 
 DT_Cooking = DT_Cooking or {}
 DT_Cooking.items = {
-    -- Added by ItemGenerator
-    { item="Base.Chum", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare"}, stockRange={min=0, max=6} },
-
 
 }
 

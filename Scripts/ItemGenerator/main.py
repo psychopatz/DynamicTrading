@@ -1,65 +1,176 @@
 #!/usr/bin/env python3
-"""
-ItemGenerator - Automated Item Registration System
-Modular architecture for generating and managing trading items with intelligent tagging
-
-MODES:
-- update: Update prices/stock for existing registered items
-- add: Add new unregistered vanilla items with intelligent tagging
-
-USAGE:
-    python main.py                    # Interactive menu
-    python main.py update             # Update existing items
-    python main.py add 100            # Add 100 new items
-    python main.py add --all          # Add all remaining items
-"""
+"""ItemGenerator - Automated Item Registration System with modular architecture"""
 import sys
 from pathlib import Path
+from contextlib import contextmanager
+from datetime import datetime
 
-# Handle imports for both module and direct execution
 try:
-    from .Utils import (
-        load_vanilla_items,
-        process_lua_file,
-        add_new_items,
-        MOD_ITEMS_DIR,
-        get_registered_items,
-        collect_unregistered_items
+    from .Utils import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
+    from .Utils.commands import (
+        find_property, list_properties, dump_property, analyze_properties,
+        find_rarity, rarity_stats, analyze_spawns,
+        update, add, show_stats,
     )
 except ImportError:
-    # Running as direct script, not as module
     sys.path.insert(0, str(Path(__file__).parent))
-    from Utils import (
-        load_vanilla_items,
-        process_lua_file,
-        add_new_items,
-        MOD_ITEMS_DIR,
-        get_registered_items,
-        collect_unregistered_items
+    from Utils import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
+    from Utils.commands import (
+        find_property, list_properties, dump_property, analyze_properties,
+        find_rarity, rarity_stats, analyze_spawns,
+        update, add, show_stats,
     )
+
+
+def generate_output_filename(cmd_name):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = Path(__file__).parent / "Output"
+    output_dir.mkdir(exist_ok=True)
+    return str(output_dir / f"{cmd_name}_{timestamp}.md")
+
+
+def save_to_markdown_file(text_content, filename):
+    lines = text_content.strip().split('\n')
+    md_parts = ['# Analysis Results\n']
+    current_section = None
+    section_lines = []
+    
+    for line in lines:
+        if line.strip() and any(line.strip().startswith(e) for e in ['🔍', '📊', '📁', '📝', '✅', '❌']):
+            if section_lines and current_section:
+                md_parts.append('<details>')
+                md_parts.append(f'<summary><strong>{current_section}</strong></summary>\n')
+                md_parts.append('```')
+                md_parts.extend(section_lines)
+                md_parts.append('```')
+                md_parts.append('</details>\n')
+            current_section = line.strip()
+            section_lines = []
+        else:
+            section_lines.append(line)
+    
+    if section_lines and current_section:
+        md_parts.append('<details>')
+        md_parts.append(f'<summary><strong>{current_section}</strong></summary>\n')
+        md_parts.append('```')
+        md_parts.extend(section_lines)
+        md_parts.append('```')
+        md_parts.append('</details>\n')
+    
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(md_parts))
+
+
+@contextmanager
+def capture_and_save_output(output_file):
+    original_stdout = sys.stdout
+    captured = []
+    
+    class Capture:
+        def write(self, text):
+            original_stdout.write(text)
+            captured.append(text)
+        def flush(self):
+            original_stdout.flush()
+    
+    try:
+        sys.stdout = Capture()
+        yield
+    finally:
+        sys.stdout = original_stdout
+        if captured:
+            save_to_markdown_file(''.join(captured), output_file)
+
+
+def should_save_to_file():
+    if '--txt' in sys.argv:
+        sys.argv.remove('--txt')
+        return True
+    return False
+
+
+def show_help():
+    """Display help information"""
+    print("""
+╔═══════════════════════════════════════════════════════════╗
+║          ItemGenerator - Command Reference                ║
+╚═══════════════════════════════════════════════════════════╝
+
+INTERACTIVE MODE:
+  python main.py                    # Launch interactive menu
+
+ITEM MANAGEMENT:
+  python main.py update             # Update prices/stock for existing items
+  python main.py add [count]        # Add new items (default: 50)
+  python main.py add --all          # Add all remaining items
+
+PROPERTY ANALYSIS:
+  python main.py --find-property <name> [value] [--txt]
+      Search items by property name (e.g., StressChange, Alcoholic)
+      Optional: filter by value
+      
+  python main.py --list-properties [min_usage] [--txt]
+      List all properties with usage counts (default: 1)
+      
+  python main.py --dump-property <name> [format] [--txt]
+      Dump all values for a property (formats: table, csv, dict)
+      
+  python main.py --analyze-properties [--txt]
+      Generate comprehensive property documentation
+
+SPAWN ANALYSIS:
+  python main.py --find-rarity <tier> [--txt]
+      Find items by rarity (UltraRare, Legendary, Rare, Uncommon, Common)
+      
+  python main.py --rarity-stats [--txt]
+      Show spawn rarity distribution statistics
+      
+  python main.py --analyze-spawns [--txt]
+      Generate comprehensive spawn rate documentation
+
+FLAGS:
+  --txt                Save output to markdown file in Output/ folder
+                       (Shows full results, not truncated)
+  --help               Display this help message
+
+EXAMPLES:
+  python main.py --find-property StressChange
+  python main.py --find-rarity Rare --txt
+  python main.py --list-properties 100 --txt
+  python main.py add 200
+""")
 
 
 def display_menu():
-    """Display interactive menu"""
     print("\n" + "=" * 60)
     print("ItemGenerator - Interactive Menu")
     print("=" * 60)
     print("\nSelect an operation:")
+    print("\n📦 ITEM MANAGEMENT:")
     print("  1. Update prices & stock (existing items)")
     print("  2. Add items (custom batch size)")
     print("  3. Add all remaining items")
-    print("  4. Exit")
+    print("\n🔍 PROPERTY ANALYSIS:")
+    print("  4. Find items by property")
+    print("  5. List all properties")
+    print("  6. Analyze properties (generate docs)")
+    print("\n📊 SPAWN ANALYSIS:")
+    print("  7. Find items by rarity")
+    print("  8. Show rarity statistics")
+    print("  9. Analyze spawns (generate docs)")
+    print("\n❓ OTHER:")
+    print("  h. Show help")
+    print("  0. Exit")
     print()
     
     while True:
-        choice = input("Enter choice (1-4): ").strip()
-        if choice in ['1', '2', '3', '4']:
+        choice = input("Enter choice: ").strip().lower()
+        if choice in ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'h', '0']:
             return choice
-        print("❌ Invalid choice. Please enter 1-4.")
+        print("❌ Invalid choice. Please enter 1-9, h, or 0.")
 
 
 def get_batch_size():
-    """Prompt user for batch size"""
     while True:
         try:
             size = int(input("Enter number of items to add (default 50): ").strip() or "50")
@@ -70,133 +181,263 @@ def get_batch_size():
             print("❌ Please enter a valid number.")
 
 
-def update_mode(vanilla_items):
-    """Update prices and stock ranges for existing items"""
-    print("=" * 60)
-    print("ItemGenerator - UPDATE MODE")
-    print("Recalculating prices and stock ranges")
-    print("=" * 60)
-    
-    items_dir = Path(MOD_ITEMS_DIR)
-    lua_files = list(items_dir.rglob("*.lua"))
-    print(f"\n🔍 Found {len(lua_files)} Lua files to process")
-    
-    total_updates = 0
-    for lua_file in lua_files:
-        updates = process_lua_file(lua_file, vanilla_items, dry_run=False)
-        total_updates += updates
-    
-    print("\n" + "=" * 60)
-    print(f"✅ COMPLETE: Updated {total_updates} items across {len(lua_files)} files")
-    print("=" * 60)
-    
-    return total_updates
-
-
-def add_mode(vanilla_items, batch_size):
-    """Add new unregistered items with intelligent tagging"""
-    print("=" * 60)
-    print("ItemGenerator - ADD MODE")
-    print(f"Adding {'all remaining' if batch_size == 'all' else batch_size} vanilla items with intelligent tagging")
-    print("=" * 60)
-    
-    total_added = add_new_items(vanilla_items, batch_size if batch_size != 'all' else None)
-    
-    print("\n" + "=" * 60)
-    print(f"✅ COMPLETE: Added {total_added} new items")
-    print("=" * 60)
-    
-    return total_added
-
-
-def show_stats(vanilla_items):
-    """Show registration stats"""
-    print("\n📊 Registration Statistics:")
-    registered = get_registered_items()
-    unregistered = collect_unregistered_items(vanilla_items, registered)
-    
-    print(f"   Total vanilla items:     {len(vanilla_items)}")
-    print(f"   Registered items:        {len(registered)}")
-    print(f"   Unregistered items:      {len(unregistered)}")
-    print(f"   Coverage:                {len(registered)/len(vanilla_items)*100:.1f}%")
-    print()
-
-
 def main():
-    """Main entry point with interactive and CLI modes"""
+    save_to_file = should_save_to_file()
     
-    # Determine mode from command line arguments
-    if len(sys.argv) == 1:
-        # No arguments - interactive mode
-        choice = display_menu()
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1]
         
-        # Load vanilla database
-        print("\n📦 Loading vanilla item database...")
-        vanilla_items = load_vanilla_items()
+        # Show help
+        if cmd in ['--help', '-h', 'help']:
+            show_help()
+            return
         
-        if not vanilla_items:
-            print("❌ Failed to load vanilla items. Exiting.")
-            sys.exit(1)
-        
-        show_stats(vanilla_items)
-        
-        if choice == '1':
-            update_mode(vanilla_items)
-        elif choice == '2':
-            batch_size = get_batch_size()
-            add_mode(vanilla_items, batch_size)
-        elif choice == '3':
-            if input("Add ALL remaining items? (yes/no): ").lower().startswith('y'):
-                add_mode(vanilla_items, 'all')
+        if cmd == '--find-property':
+            if len(sys.argv) < 3:
+                print("Error: Usage: python main.py --find-property <property_name> [value_filter] [--txt]")
+                sys.exit(1)
+            property_name = sys.argv[2]
+            value_filter = sys.argv[3] if len(sys.argv) > 3 else None
+            if save_to_file:
+                output_file = generate_output_filename(f"find_property_{property_name}")
+                with capture_and_save_output(output_file):
+                    find_property(VANILLA_SCRIPTS_DIR, property_name, value_filter)
+                print(f"Output saved to: {output_file}")
             else:
-                print("Cancelled.")
-        else:  # choice == '4'
-            print("Exiting.")
-            sys.exit(0)
+                find_property(VANILLA_SCRIPTS_DIR, property_name, value_filter)
+            return
+        
+        elif cmd == '--list-properties':
+            min_usage = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            if save_to_file:
+                output_file = generate_output_filename("list_properties")
+                with capture_and_save_output(output_file):
+                    list_properties(VANILLA_SCRIPTS_DIR, min_usage)
+                print(f"Output saved to: {output_file}")
+            else:
+                list_properties(VANILLA_SCRIPTS_DIR, min_usage)
+            return
+        
+        elif cmd == '--dump-property':
+            if len(sys.argv) < 3:
+                print("Error: Usage: python main.py --dump-property <property_name> [format] [--txt]")
+                sys.exit(1)
+            property_name = sys.argv[2]
+            output_format = sys.argv[3] if len(sys.argv) > 3 else 'table'
+            if save_to_file:
+                output_file = generate_output_filename(f"dump_property_{property_name}")
+                with capture_and_save_output(output_file):
+                    dump_property(VANILLA_SCRIPTS_DIR, property_name, output_format)
+                print(f"Output saved to: {output_file}")
+            else:
+                dump_property(VANILLA_SCRIPTS_DIR, property_name, output_format)
+            return
+        
+        elif cmd == '--analyze-properties':
+            if save_to_file:
+                output_file = generate_output_filename("analyze_properties")
+                with capture_and_save_output(output_file):
+                    analyze_properties(VANILLA_SCRIPTS_DIR)
+                print(f"Output saved to: {output_file}")
+            else:
+                analyze_properties(VANILLA_SCRIPTS_DIR)
+            return
+        
+        elif cmd == '--find-rarity':
+            if len(sys.argv) < 3:
+                print("Error: Usage: python main.py --find-rarity <tier> [--txt]")
+                sys.exit(1)
+            tier = sys.argv[2]
+            if save_to_file:
+                output_file = generate_output_filename(f"find_rarity_{tier}")
+                with capture_and_save_output(output_file):
+                    find_rarity(DISTRIBUTIONS_DIR, tier, full_output=True)
+                print(f"Output saved to: {output_file}")
+            else:
+                find_rarity(DISTRIBUTIONS_DIR, tier, full_output=False)
+            return
+        
+        elif cmd == '--rarity-stats':
+            if save_to_file:
+                output_file = generate_output_filename("rarity_stats")
+                with capture_and_save_output(output_file):
+                    rarity_stats(DISTRIBUTIONS_DIR)
+                print(f"Output saved to: {output_file}")
+            else:
+                rarity_stats(DISTRIBUTIONS_DIR)
+            return
+        
+        elif cmd == '--analyze-spawns':
+            if save_to_file:
+                output_file = generate_output_filename("analyze_spawns")
+                with capture_and_save_output(output_file):
+                    analyze_spawns(DISTRIBUTIONS_DIR, full_output=True)
+                print(f"Output saved to: {output_file}")
+            else:
+                analyze_spawns(DISTRIBUTIONS_DIR, full_output=False)
+            return
+    
+    print("\n📦 Loading vanilla item database...")
+    vanilla_items = load_vanilla_items()
+    
+    if not vanilla_items:
+        print("❌ Failed to load vanilla items. Exiting.")
+        sys.exit(1)
+    
+    if len(sys.argv) == 1:
+        while True:
+            choice = display_menu()
+            
+            if choice == 'h':
+                show_help()
+                input("\nPress Enter to continue...")
+                continue
+            elif choice == '0':
+                print("Exiting.")
+                sys.exit(0)
+            
+            # Item management options need vanilla items loaded
+            if choice in ['1', '2', '3']:
+                show_stats(vanilla_items)
+                
+                if choice == '1':
+                    regen = input("Regenerate tags using new tagging system? (y/n): ").lower().startswith('y')
+                    update(vanilla_items, regenerate_tags=regen)
+                    break
+                elif choice == '2':
+                    batch_size = get_batch_size()
+                    add(vanilla_items, batch_size)
+                    break
+                elif choice == '3':
+                    if input("Add ALL remaining items? (yes/no): ").lower().startswith('y'):
+                        add(vanilla_items, 'all')
+                    else:
+                        print("Cancelled.")
+                    break
+            
+            # Property analysis options
+            elif choice == '4':
+                prop_name = input("Enter property name (e.g., StressChange): ").strip()
+                if prop_name:
+                    value_filter = input("Enter value filter (optional, press Enter to skip): ").strip() or None
+                    save_opt = input("Save to file? (y/n): ").lower().startswith('y')
+                    
+                    if save_opt:
+                        output_file = generate_output_filename(f"find_property_{prop_name}")
+                        with capture_and_save_output(output_file):
+                            find_property(VANILLA_SCRIPTS_DIR, prop_name, value_filter)
+                        print(f"\n✅ Output saved to: {output_file}")
+                    else:
+                        find_property(VANILLA_SCRIPTS_DIR, prop_name, value_filter)
+                    
+                    input("\nPress Enter to continue...")
+            
+            elif choice == '5':
+                min_usage = input("Minimum usage count (default 1): ").strip()
+                min_usage = int(min_usage) if min_usage.isdigit() else 1
+                save_opt = input("Save to file? (y/n): ").lower().startswith('y')
+                
+                if save_opt:
+                    output_file = generate_output_filename("list_properties")
+                    with capture_and_save_output(output_file):
+                        list_properties(VANILLA_SCRIPTS_DIR, min_usage)
+                    print(f"\n✅ Output saved to: {output_file}")
+                else:
+                    list_properties(VANILLA_SCRIPTS_DIR, min_usage)
+                
+                input("\nPress Enter to continue...")
+            
+            elif choice == '6':
+                save_opt = input("Save to file? (y/n): ").lower().startswith('y')
+                
+                if save_opt:
+                    output_file = generate_output_filename("analyze_properties")
+                    with capture_and_save_output(output_file):
+                        analyze_properties(VANILLA_SCRIPTS_DIR)
+                    print(f"\n✅ Output saved to: {output_file}")
+                else:
+                    analyze_properties(VANILLA_SCRIPTS_DIR)
+                
+                input("\nPress Enter to continue...")
+            
+            # Spawn analysis options
+            elif choice == '7':
+                print("\nRarity tiers: UltraRare, Legendary, Rare, Uncommon, Common")
+                tier = input("Enter rarity tier: ").strip()
+                
+                if tier in ['UltraRare', 'Legendary', 'Rare', 'Uncommon', 'Common']:
+                    save_opt = input("Save to file? (y/n): ").lower().startswith('y')
+                    
+                    if save_opt:
+                        output_file = generate_output_filename(f"find_rarity_{tier}")
+                        with capture_and_save_output(output_file):
+                            find_rarity(DISTRIBUTIONS_DIR, tier, full_output=True)
+                        print(f"\n✅ Output saved to: {output_file}")
+                    else:
+                        find_rarity(DISTRIBUTIONS_DIR, tier, full_output=False)
+                else:
+                    print("❌ Invalid tier name")
+                
+                input("\nPress Enter to continue...")
+            
+            elif choice == '8':
+                save_opt = input("Save to file? (y/n): ").lower().startswith('y')
+                
+                if save_opt:
+                    output_file = generate_output_filename("rarity_stats")
+                    with capture_and_save_output(output_file):
+                        rarity_stats(DISTRIBUTIONS_DIR)
+                    print(f"\n✅ Output saved to: {output_file}")
+                else:
+                    rarity_stats(DISTRIBUTIONS_DIR)
+                
+                input("\nPress Enter to continue...")
+            
+            elif choice == '9':
+                save_opt = input("Save to file? (y/n): ").lower().startswith('y')
+                
+                if save_opt:
+                    output_file = generate_output_filename("analyze_spawns")
+                    with capture_and_save_output(output_file):
+                        analyze_spawns(DISTRIBUTIONS_DIR, full_output=True)
+                    print(f"\n✅ Output saved to: {output_file}")
+                else:
+                    analyze_spawns(DISTRIBUTIONS_DIR, full_output=False)
+                
+                input("\nPress Enter to continue...")
+    
     else:
-        # CLI mode with arguments
+        # Check for --regenerate-tags flag
+        regenerate_tags = '--regenerate-tags' in sys.argv
+        if regenerate_tags:
+            sys.argv.remove('--regenerate-tags')
+        
         mode = sys.argv[1].lower()
         
-        # Validate mode
         if mode not in ['update', 'add']:
             print(f"❌ Invalid mode: {mode}")
-            print("Usage: python main.py [update|add] [batch_size|--all]")
-            sys.exit(1)
-        
-        # Load vanilla database
-        print("\n📦 Loading vanilla item database...")
-        vanilla_items = load_vanilla_items()
-        
-        if not vanilla_items:
-            print("❌ Failed to load vanilla items. Exiting.")
+            print("Usage: python main.py [update|add] [batch_size|--all] [--regenerate-tags]")
             sys.exit(1)
         
         show_stats(vanilla_items)
         
-        # Handle add mode with batch size or --all
         if mode == 'add':
             if len(sys.argv) > 2:
                 arg = sys.argv[2]
                 if arg == '--all':
-                    add_mode(vanilla_items, 'all')
+                    add(vanilla_items, 'all')
                 else:
                     try:
                         batch_size = int(arg)
-                        add_mode(vanilla_items, batch_size)
+                        add(vanilla_items, batch_size)
                     except ValueError:
                         print(f"❌ Invalid argument: {arg}")
-                        print("Usage: python main.py add [number|--all]")
                         sys.exit(1)
             else:
-                # Default batch size for add if not specified
-                add_mode(vanilla_items, 50)
+                add(vanilla_items, 50)
         else:
-            update_mode(vanilla_items)
+            update(vanilla_items, regenerate_tags=regenerate_tags)
 
 
 if __name__ == '__main__':
-    main()
-
-
-if __name__ == "__main__":
     main()

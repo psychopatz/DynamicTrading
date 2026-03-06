@@ -7,6 +7,12 @@ VANILLA_DIR = "/home/psychopatz/.steam/steamapps/common/ProjectZomboid/projectzo
 if not os.path.exists(VANILLA_DIR):
     VANILLA_DIR = "/home/psychopatz/.steam/steam/steamapps/common/ProjectZomboid/projectzomboid/media/scripts/"
 
+VANILLA_SCRIPTS_DIR = os.path.join(VANILLA_DIR, "generated/items/")
+
+# Distribution files for spawn rate analysis
+_DISTRIB_BASE = VANILLA_DIR.replace("/media/scripts/", "/media/lua/server/")
+DISTRIBUTIONS_DIR = os.path.join(_DISTRIB_BASE, "Items/")
+
 MOD_ITEMS_DIR = str(SCRIPT_DIR / "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Items")
 OUTPUT_DIR = str(SCRIPT_DIR / "Scripts/Output")
 

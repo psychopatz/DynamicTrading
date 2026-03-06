@@ -55,8 +55,15 @@ return {filename}.items
     return created_count
 
 
-def process_lua_file(filepath, vanilla_items, dry_run=False):
-    """Process a single Lua file and update prices/stock"""
+def process_lua_file(filepath, vanilla_items, dry_run=False, regenerate_tags=False):
+    """Process a single Lua file and update prices/stock
+    
+    Args:
+        filepath: Path to Lua file
+        vanilla_items: Dictionary of vanilla item properties
+        dry_run: If True, don't write changes
+        regenerate_tags: If True, regenerate tags using new tagging system
+    """
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
     
@@ -75,7 +82,26 @@ def process_lua_file(filepath, vanilla_items, dry_run=False):
         stock_str = match.group(4)
         
         props = vanilla_items.get(item_id, "")
-        tags_dict = parse_tags(tags_str)
+        
+        # Regenerate tags if requested, otherwise use existing tags
+        if regenerate_tags and props:
+            tags = generate_tags(item_id, props)
+            tags_dict = {
+                'primary': tags[0],
+                'rarity': 'Common',
+                'quality': None,
+                'origin': None,
+                'theme': []
+            }
+            for tag in tags:
+                if tag.startswith('Rarity.'):
+                    tags_dict['rarity'] = tag.split('.')[1]
+                elif tag.startswith('Quality.'):
+                    tags_dict['quality'] = tag.split('.')[1]
+            tags_str = '{' + ', '.join([f'"{tag}"' for tag in tags]) + '}'
+        else:
+            tags_dict = parse_tags(tags_str)
+        
         new_price = calculate_price(item_id, props, tags_dict)
         
         weight = get_stat(props, "Weight", 0.5) if props else 0.5
@@ -87,7 +113,7 @@ def process_lua_file(filepath, vanilla_items, dry_run=False):
         new_stock_str = f"{{min={final_min}, max={final_max}}}"
         new_entry = f'{{ item="Base.{item_id}", basePrice={new_price}, tags={tags_str}, stockRange={new_stock_str} }}'
         
-        if new_price != old_price or new_stock_str != stock_str:
+        if new_price != old_price or new_stock_str != stock_str or (regenerate_tags and tags_str != match.group(3)):
             updates.append({
                 'old': match.group(0),
                 'new': new_entry,
@@ -95,7 +121,9 @@ def process_lua_file(filepath, vanilla_items, dry_run=False):
                 'old_price': old_price,
                 'new_price': new_price,
                 'old_stock': stock_str,
-                'new_stock': new_stock_str
+                'new_stock': new_stock_str,
+                'old_tags': match.group(3),
+                'new_tags': tags_str
             })
     
     if updates and not dry_run:
@@ -106,7 +134,8 @@ def process_lua_file(filepath, vanilla_items, dry_run=False):
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
         
-        print(f"   ✅ Updated {len(updates)} items")
+        tags_updated = sum(1 for u in updates if u['old_tags'] != u['new_tags'])
+        print(f"   ✅ Updated {len(updates)} items" + (f" ({tags_updated} tags regenerated)" if regenerate_tags else ""))
     elif updates:
         print(f"   🔍 [DRY RUN] Would update {len(updates)} items:")
         for u in updates[:3]:
