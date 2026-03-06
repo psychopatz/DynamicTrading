@@ -12,8 +12,14 @@ DynamicTrading.Events.Register("debugMetaSeason", {
     description = "A debug event that activates if it is July (starting month) and raining.",
     condition = function() 
         local gt = getGameTime()
+        if not gt then return false end
+        
         local isJuly = gt:getMonth() == 6
-        local isRaining = getClimateManager():getIsRaining()
+        
+        local cm = getClimateManager()
+        if not cm then return false end
+        
+        local isRaining = cm:getIsRaining()
         return isJuly and isRaining
     end,
     effects = {
