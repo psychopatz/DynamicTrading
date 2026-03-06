@@ -133,14 +133,14 @@ function DTNPCManager.OnTick()
                         
                         zombie:resetModelNextFrame()
                         
-                        if DTNPCSpawn and DTNPCSpawn.SyncToAllClients then
-                            DTNPCSpawn.SyncToAllClients(zombie, savedBrain)
+                        if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
+                            DTNPCServerCore.SyncToAllClients(zombie, savedBrain)
                         end
                     end
                     
                     -- Periodic position broadcast
-                    if shouldBroadcast and DTNPCSpawn and DTNPCSpawn.BroadcastPosition then
-                        DTNPCSpawn.BroadcastPosition(zombie, savedBrain)
+                    if shouldBroadcast and DTNPCServerCore and DTNPCServerCore.BroadcastPosition then
+                        DTNPCServerCore.BroadcastPosition(zombie, savedBrain)
                     end
                 end
             end

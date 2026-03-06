@@ -93,8 +93,8 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
         print("[DTNPC] Removed NPC data from world tracker: " .. (brain.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
         
         -- Broadcast removal to all clients
-        if DTNPCSpawn and DTNPCSpawn.NotifyRemoval then
-            DTNPCSpawn.NotifyRemoval(uuid, brain.currentOutfitID, brain.name)
+        if DTNPCServerCore and DTNPCServerCore.NotifyRemoval then
+            DTNPCServerCore.NotifyRemoval(uuid, brain.currentOutfitID, brain.name)
         end
     end
 end
@@ -113,8 +113,8 @@ function DTNPCManager.SetNPCStatus(uuid, status, returnTime, returnStatus)
         end
         
         -- Clean up physical zombie if it exists
-        if DTNPCSpawn and DTNPCSpawn.FindZombieByUUID then
-            local zombie = DTNPCSpawn.FindZombieByUUID(uuid)
+        if DTNPCServerCore and DTNPCServerCore.FindZombieByUUID then
+            local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
             if zombie then
                 zombie:removeFromWorld()
                 zombie:removeFromSquare()

@@ -24,11 +24,11 @@ function DTNPCManager.CheckForRespawn(brain, uuid)
             
             if math.abs(dz) == 0 and math.sqrt(dx*dx + dy*dy) < RESPAWN_RANGE then
                 -- Check if zombie exists by UUID
-                local zombie = DTNPCSpawn.FindZombieByUUID(uuid)
+                local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
                 
                 if not zombie then
                     print("[DTNPC] Respawning NPC: " .. (brain.name or uuid) .. " near player " .. player:getUsername())
-                    DTNPCSpawn.RespawnNPC(brain, uuid)
+                    DTNPCServerCore.RespawnNPC(brain, uuid)
                     return true
                 end
         end
@@ -87,7 +87,7 @@ function DTNPCManager.CheckRosterSpawns()
                                 fullBrain.lastZ = targetZ
                                 fullBrain.status = status -- Sync status to brain
                                 
-                                local zombie = DTNPCSpawn.RespawnNPC(fullBrain, uuid)
+                                local zombie = DTNPCServerCore.RespawnNPC(fullBrain, uuid)
                                 if zombie then
                                         print("[DTNPC] | Spawn SUCCESS for " .. uuid)
                                         registry.spawnRetryTime = nil -- Reset on success
