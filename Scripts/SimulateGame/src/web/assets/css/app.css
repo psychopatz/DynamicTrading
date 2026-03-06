@@ -1,0 +1,276 @@
+:root {
+  --bg: #f1f2e9;
+  --card: #fdfcf8;
+  --ink: #1f2421;
+  --muted: #5f665f;
+  --line: #c7ccbf;
+  --accent: #2f6f3e;
+  --accent-soft: #e2f0dd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 20% 10%, #e8efdb 0%, transparent 45%),
+    linear-gradient(180deg, #f3f4ea 0%, #ebede2 100%);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(253, 252, 248, 0.9);
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(4px);
+}
+
+h1, h2 {
+  margin: 0;
+  font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+}
+
+.topbar h1 {
+  font-size: 1.25rem;
+}
+
+.topbar nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.topbar a {
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.45rem;
+}
+
+.topbar a.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.muted {
+  color: var(--muted);
+  margin: 0.2rem 0 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.9rem;
+  box-shadow: 0 4px 18px rgba(40, 48, 40, 0.04);
+}
+
+.card.full {
+  grid-column: 1 / -1;
+}
+
+.row, .row3 {
+  margin-top: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.row3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+label.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: #fff;
+  padding: 0.45rem 0.6rem;
+  color: var(--ink);
+}
+
+label.toggle input {
+  width: auto;
+  margin: 0;
+}
+
+input, select, textarea, button {
+  width: 100%;
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  padding: 0.5rem;
+  background: #fff;
+}
+
+textarea {
+  min-height: 5.8rem;
+  resize: vertical;
+}
+
+button {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+.output {
+  background: #f7f8f4;
+  border: 1px dashed var(--line);
+  padding: 0.65rem;
+  border-radius: 0.45rem;
+  white-space: pre-wrap;
+}
+
+.list {
+  margin-top: 0.6rem;
+  max-height: 18rem;
+  overflow: auto;
+  border: 1px dashed var(--line);
+  border-radius: 0.45rem;
+  padding: 0.6rem;
+  background: #fafbf8;
+}
+
+.list.tall {
+  max-height: 28rem;
+}
+
+.split2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 0.7rem;
+}
+
+.line-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dotted #d9ddd2;
+}
+
+.line-actions:last-child {
+  border-bottom: 0;
+}
+
+.line-actions > .row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+button.mini,
+.tag-chip {
+  width: auto;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.83rem;
+}
+
+.tree {
+  margin-top: 0.6rem;
+  max-height: 28rem;
+  overflow: auto;
+  border: 1px dashed var(--line);
+  border-radius: 0.45rem;
+  padding: 0.5rem;
+  background: #fafbf8;
+}
+
+.tree-node {
+  margin: 0.12rem 0;
+}
+
+.tree-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tree-leaf {
+  padding: 0.15rem 0;
+}
+
+.tree-children {
+  margin-left: 1rem;
+}
+
+.list .item {
+  padding: 0.25rem 0;
+  border-bottom: 1px dotted #d9ddd2;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.item-text {
+  min-width: 0;
+}
+
+.copy-btn {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease-in-out;
+}
+
+.item-row:hover .copy-btn,
+.line-actions:hover .copy-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.list .item:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 920px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card.full {
+    grid-column: 1;
+  }
+
+  .row3 {
+    grid-template-columns: 1fr;
+  }
+
+  .split2 {
+    grid-template-columns: 1fr;
+  }
+}

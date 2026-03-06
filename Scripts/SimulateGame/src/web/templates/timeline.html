@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SimulateGame - Timeline Lab</title>
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>SimulateGame</h1>
+      <p class="muted">Day progression and event accumulation</p>
+    </div>
+    <nav>
+      <a href="index.html">Trading Lab</a>
+      <a href="timeline.html" class="active">Timeline Lab</a>
+      <a href="simulator.html">Simulator</a>
+      <a href="items.html">Items Pool</a>
+    </nav>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Clock</h2>
+      <p>Day: <strong id="dayCounter">0</strong></p>
+      <p>Season: <strong id="seasonCounter">Spring</strong></p>
+      <div class="row3">
+        <button id="advance1">+1 Day</button>
+        <button id="advance5">+5 Days</button>
+        <button id="resetTimeline">Reset</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Active Events</h2>
+      <div id="activeEvents" class="list"></div>
+    </section>
+
+    <section class="card full">
+      <h2>Daily Simulation Probe</h2>
+      <div class="row3">
+        <select id="timelineArchetype"></select>
+        <input id="timelineTag" list="timelineTagList" placeholder="Tag to monitor (e.g. Medical)" value="Medical" />
+        <datalist id="timelineTagList"></datalist>
+        <button id="runProbe">Run Probe</button>
+      </div>
+      <pre id="probeOutput" class="output"></pre>
+    </section>
+
+    <section class="card full">
+      <h2>Display Settings</h2>
+      <p class="muted">Readable names and source locations are derived from parsed game item files.</p>
+      <div class="row3">
+        <label class="toggle"><input id="sanitizeToggle" type="checkbox" checked /> Sanitize item display</label>
+        <label class="toggle"><input id="sourceToggle" type="checkbox" checked /> Show source Lua file</label>
+      </div>
+    </section>
+
+    <section class="card full">
+      <details>
+        <summary>Variable Dump</summary>
+        <pre id="timelineDump" class="output"></pre>
+      </details>
+    </section>
+  </main>
+
+  <script src="assets/data/sim_data.js"></script>
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/timeline.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SimulateGame - Items Pool</title>
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>SimulateGame</h1>
+      <p class="muted">Item registry, live pool, and tag hierarchy</p>
+    </div>
+    <nav>
+      <a href="index.html">Trading Lab</a>
+      <a href="timeline.html">Timeline Lab</a>
+      <a href="simulator.html">Simulator</a>
+      <a href="items.html" class="active">Items Pool</a>
+    </nav>
+  </header>
+
+  <main class="grid">
+    <section class="card full">
+      <h2>Item Registry Search</h2>
+      <div class="row3">
+        <input id="itemSearch" placeholder="Search item name..." />
+        <input id="itemTagSearch" list="itemsTagList" placeholder="Tag filter (hierarchical)" />
+        <datalist id="itemsTagList"></datalist>
+      </div>
+      <div id="itemsRegistryList" class="list tall"></div>
+    </section>
+
+    <section class="card">
+      <h2>Current Faction Pool</h2>
+      <div class="row">
+        <label>Archetype</label>
+        <select id="poolArchetype"></select>
+      </div>
+      <div id="poolList" class="list tall"></div>
+    </section>
+
+    <section class="card">
+      <h2>Tag Hierarchy (From Items)</h2>
+      <p class="muted">Auto-built from item tags in parsed Lua item definitions.</p>
+      <div id="tagTree" class="tree"></div>
+    </section>
+
+    <section class="card full">
+      <h2>Display Settings</h2>
+      <p class="muted">Readable names and source file paths can be toggled anytime.</p>
+      <div class="row3">
+        <label class="toggle"><input id="sanitizeToggle" type="checkbox" checked /> Sanitize item display</label>
+        <label class="toggle"><input id="sourceToggle" type="checkbox" checked /> Show source Lua file</label>
+      </div>
+    </section>
+
+    <section class="card full">
+      <details>
+        <summary>Variable Dump</summary>
+        <pre id="itemsDump" class="output"></pre>
+      </details>
+    </section>
+  </main>
+
+  <script src="assets/data/sim_data.js"></script>
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/items.js"></script>
+</body>
+</html>
