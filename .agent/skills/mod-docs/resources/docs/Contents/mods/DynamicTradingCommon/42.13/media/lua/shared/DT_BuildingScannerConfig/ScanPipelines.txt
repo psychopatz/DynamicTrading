@@ -1,0 +1,23 @@
+Title: Building, Wilderness, and Road Scan Pipelines
+Tags: [chunk, internal]
+
+LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT_BuildingScannerConfig.lua
+PURPOSE: Describe the three shared scanning pipelines and their output record shape.
+
+BUILDING SCAN:
+- `DTM.ScanForBuildings()` iterates MetaGrid buildings and filters by min area.
+- It computes center coordinates, building details, town, and county.
+- Output includes dimensions, area, primary room label, and detail metadata.
+
+WILDERNESS SCAN:
+- `DTM.ScanForWilderness()` samples a wide grid and checks natural zone types.
+- It only keeps points where `GetTownName` returns `Wilderness`.
+- Output records include zone-derived area and synthetic detail fields.
+
+ROAD SCAN:
+- `DTM.ScanForRoads()` performs tighter grid sampling for narrow road-like zones.
+- It matches known road types plus string-based road/street detection.
+- Optional debug mode logs newly discovered zone types.
+
+OUTPUT CONVENTION:
+- Common keys: `x`, `y`, `cx`, `cy`, `name`, `town`, `county`, `area`, `details`.

@@ -1,4 +1,8 @@
-Title: 00_DT_Core Overview
-Tags: [core, index]
+Title: 00_DT_Core Initialization System
+Tags: [script, core-init]
 
-Testing the fallback.
+LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/00_DT_Core.lua
+PURPOSE: Bootstrap the global DynamicTrading state and expose the base registration and event interfaces used by downstream modules.
+OVERVIEW: This entrypoint runs early, builds shared tables, defines core config APIs, and registers custom LuaEvents consumed by simulation, stock, and UI/network layers.
+DEPENDENCIES: Project load order priority, DT/Common modules, quest module preloads, LuaEvents runtime.
+REMARKS: Preserve initialization order and global keys for backward compatibility across V1 and V2 integrations.

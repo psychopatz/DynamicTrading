@@ -1,0 +1,60 @@
+Title: Price Calculation Algorithm (Economy Chunk)
+Tags: [chunk, internal]
+
+PRICE CALCULATION FORMULA:
+
+SELL TO NPC:
+npcBuyPrice = basePrice * rarityMult * categoryMult * expertMult * eventMult * PriceSellMult
+
+DETAILED EXAMPLE (Fish item to Angler NPC):
+Base: Base.Catfish = $25
+Rarity: Common → rarityMult = 1.0
+Category: Food.Perishable → categoryMult = 1.0
+Expert: Angler expert in Fish → expertMult = 1.25
+Event: No active events → eventMult = 1.0
+Sandbox: PriceSellMult = 0.5 (players get 50% of sell value)
+
+Result: 25 * 1.0 * 1.0 * 1.25 * 1.0 * 0.5 = $15.625
+
+BUY FROM NPC:
+npcSellPrice = basePrice * rarityMult * categoryMult * eventMult * PriceBuyMult * 1.2 (NPC markup)
+
+DETAILED EXAMPLE (Fish item from Angler NPC):
+Base: Base.Catfish = $25
+Rarity: Common → rarityMult = 1.0
+Category: Food.Perishable → categoryMult = 1.0
+Event: No active events → eventMult = 1.0
+Sandbox: PriceBuyMult = 1.0 (default)
+NPC Markup: 1.2x profit
+
+Result: 25 * 1.0 * 1.0 * 1.0 * 1.0 * 1.2 = $30
+
+MULTI-EVENT COMPOUNDING:
+Active Events:
+- Price Spike (food): eventMult = 1.5
+- Winter Supplies: eventMult = 0.8
+Result: 1.5 * 0.8 = 1.2x multiplier applied to price
+
+EXPERT vs WANTS DIFFERENCE:
+expertTags (NPC buys these well):
+  ✓ Player sells Fish to Angler → 25% bonus (1.25x)
+  ✗ Player buys Fish from Angler → Normal price
+
+wants {tag: priceMult}:
+  ✗ Player sells Tool to Angler → Normal price
+  ✓ Player buys Tool from Angler → 20% markup (1.2x)
+  └─ Angler wants tools, so willing to pay more
+
+FORBID IMPACT:
+forbid = {"Weapon.Ranged", "Electronics"}
+  ✓ Player tries to sell firearm to Angler
+  ✗ Angler refuses, trade blocked
+  └─ Price calculation never executed for refused items
+
+CONDITION & CHARGE:
+For drainable/conditional items:
+- Condition (0-100%): Affects final value
+  ✓ Gun 100% condition: full price
+  ✓ Gun 50% condition: 50% price
+- Charge (0-100%): For batteries, fuel
+  ✓ Radio 80% battery: 80% of base value

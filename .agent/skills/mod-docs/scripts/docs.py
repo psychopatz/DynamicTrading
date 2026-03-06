@@ -75,10 +75,38 @@ def do_verify():
             successes += 1
             
     if orphaned_codes:
-        print("\n" + "="*40 + "\nOrphaned Shortcodes (Points to deleted files):")
+        print("\n" + "="*40 + "\nAuto-Cleaning Orphaned Shortcodes (Points to deleted files):")
         for code in orphaned_codes:
-            print(f"  [{code}] -> {shortcodes[code]} (FILE MISSING)")
-        print("Tip: Manually remove these from shortcodes.json if they are no longer needed.")
+            print(f"  - Removed [{code}] -> {shortcodes[code]}")
+            del shortcodes[code]
+        # Persist cleanup
+        save_shortcodes(shortcodes)
+        print("  ✓ Cleanup persisted to shortcodes.json")
+
+    # Prune manual registry
+    registry_path = RESOURCES_DIR / "registry.json"
+    if registry_path.exists():
+        try:
+            raw_reg = json.loads(registry_path.read_text())
+            orphaned_manual = []
+            for slug, entry in raw_reg.items():
+                p = entry.get('path', '')
+                if not p: continue
+                # Must exist as either file.txt or folder/index.txt
+                doc_file = DOCS_DIR / (p + ".txt")
+                doc_idx = DOCS_DIR / p / "index.txt"
+                if not doc_file.exists() and not doc_idx.exists():
+                    orphaned_manual.append(slug)
+            
+            if orphaned_manual:
+                print("\n" + "="*40 + "\nAuto-Cleaning Orphaned Registry Entries (Registry.json):")
+                for slug in orphaned_manual:
+                    print(f"  - Removed [{slug}] -> {raw_reg[slug].get('path')}")
+                    del raw_reg[slug]
+                save_registry(raw_reg)
+                print("  ✓ Cleanup persisted to registry.json")
+        except:
+            pass
 
     if collisions:
         print("\n" + "="*40 + "\nSlug Collisions (Qualified Slugs Generated):")
@@ -117,6 +145,13 @@ def load_shortcodes():
 def save_shortcodes(data):
     RESOURCES_DIR.mkdir(parents=True, exist_ok=True)
     SHORTCODES_FILE.write_text(json.dumps(data, indent=4))
+
+def save_registry(data):
+    path = RESOURCES_DIR / "registry.json"
+    RESOURCES_DIR.mkdir(parents=True, exist_ok=True)
+    # Filter out virtual/shortcode entries before saving
+    manual_data = {k: v for k, v in data.items() if not v.get('virtual') and not v.get('is_shortcode')}
+    path.write_text(json.dumps(manual_data, indent=4))
 
 def get_or_create_shortcode(path_str, shortcodes):
     path_str = path_str.replace("\\", "/").strip("/")

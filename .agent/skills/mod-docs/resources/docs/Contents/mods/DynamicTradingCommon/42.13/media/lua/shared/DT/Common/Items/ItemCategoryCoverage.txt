@@ -1,0 +1,34 @@
+Title: Item Category Coverage and File Mapping
+Tags: [chunk, internal]
+
+LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Items/
+PURPOSE: Map item category files and explain how category parts should be documented.
+
+CATEGORY STRUCTURE:
+- `Food/`: perishable, non-perishable, cooking, meat, drink groups.
+- `Medical/`: utility, surgical, herbal, tool, tobacco groups.
+- `Tool/`: crafting, smithing, cleaning, heavy, trap, camping, farming, navigation.
+- `Weapon/`: melee, ranged, parts.
+- `Clothing/`: head, hands, accessory, armor.
+- `Vehicle/`: parts and body components.
+- `Electronics/`: components, utility, communication, entertainment, battery.
+- `Container/`: backpack, organizer, sack, secret, wearable, fluid, general.
+- `Resource/`: fuel and material groups.
+- `Literature/`: books, recipes, media, music, audio, skillbooks.
+- `Misc/`: cosmetic, hygiene, decor, scholastic, artifact, general.
+- `DT_Fluids.lua`: central drainable and fluid-linked item registrations.
+
+ENTRY FORMAT EXPECTATION:
+- `{ item = "Base.ItemID", basePrice = N, tags = {...}, stockRange = {min, max} }`
+- Fluids may include capacity/fill metadata and require fill-aware pricing.
+
+DOCUMENTATION RULE FOR NEW ITEM PARTS:
+- Keep `Items/index.txt` as system blueprint only.
+- Add deep explanations as chunk files in the same folder.
+- When adding a new category family, create a dedicated chunk describing tag standards and price bands.
+
+VALIDATION CHECKLIST:
+- All items have valid `Base.*` id and at least one primary category tag.
+- Rarity tag exists and matches intended stock range.
+- `basePrice` and `stockRange` are non-negative and gameplay-consistent.
+- Special tags (`Illegal`, `Winter`, `Harvest`) are intentional and event-aware.

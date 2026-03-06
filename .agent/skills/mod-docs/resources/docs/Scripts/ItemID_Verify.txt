@@ -1,7 +1,0 @@
-Title: Item ID Verification Tool
-Tags: [tool, workflow, indexing]
-
-This script provides a standardized workflow for indexing and verifying vanilla Project Zomboid items into the Dynamic Trading mod.
-- Validates item existence in vanilla PZ modules.
-- Checks for "No-Collision" tagging standards.
-- Ensures consistent pricing and stock logic.

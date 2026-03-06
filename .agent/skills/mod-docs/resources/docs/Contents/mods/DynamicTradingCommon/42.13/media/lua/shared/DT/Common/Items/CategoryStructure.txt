@@ -1,0 +1,68 @@
+Title: Item Category Structure & Organization
+Tags: [chunk, internal, items, categories, organization]
+
+FILE HIERARCHY & NAMING:
+
+DT/Common/Items/
+├── [Food/]
+│   ├── DT_Cooking.lua     (16 items: condiments, spices, baking)
+│   ├── DT_Drink.lua       (12 items: juices, beverages, wine)
+│   ├── DT_Meat.lua        (10 items: butcher items)
+│   ├── DT_Perishable.lua  (14 items: fresh produce, dairy, eggs)
+│   └── DT_NonPerishable.lua (22 items: canned, preserved, dry goods)
+├── DT_Appliance.lua       (8 items: stoves, fridges, microwaves)
+├── DT_Clothing.lua        (24 items: shirts, pants, jackets, accessories)
+├── DT_Container.lua       (16 items: bags, boxes, coolers, storage)
+├── DT_Electronics.lua     (18 items: radios, lights, batteries, timers)
+├── DT_Fluids.lua          (20 items: fuel, oil, chemicals, cleaning)
+├── DT_Literature.lua      (12 items: books, magazines, maps, guides)
+├── DT_Medical.lua         (18 items: bandages, pills, surgical tools)
+├── DT_Misc.lua            (14 items: toys, decorations, miscellaneous)
+├── DT_Resource.lua        (24 items: materials, wood, rope, nails)
+├── DT_Tool.lua            (20 items: tools by profession)
+├── DT_Vehicle.lua         (16 items: car parts, engines, tires)
+└── DT_Weapon.lua          (18 items: melee + ranged weapons)
+
+REGISTRATION PATTERN:
+Each file follows identical structure:
+```
+-- File: DT_Cooking.lua
+local items = {
+  {item="Base.Sugar", basePrice=8, tags={"Food.Cooking", "Rarity.Common"}, stockRange={min=3, max=8}},
+  {item="Base.Salt", basePrice=6, tags={"Food.Cooking", "Rarity.Common"}, stockRange={min=2, max=6}},
+  ...
+}
+DynamicTrading.RegisterBatch(items)
+```
+
+NAMING CONVENTIONS:
+- File names: DT_[Category].lua (PascalCase with DT prefix)
+- Food subcategories: DT_[Type].lua (DT_Cooking, DT_Perishable, etc)
+- Item IDs: Always use Base.[ItemName] format (Base.Sugar, Base.FarmersLunbox)
+
+TAG ASSIGNMENT RULES:
+Primary tag must be: Category.Subcategory (Food.Cooking, Electronics.Radio)
+Secondary tag for rarity: Rarity.Common|Uncommon|Rare|Epic|Legendary
+Optional seasonal tags: Winter, Summer, Spring, Fall
+Optional flags: Illegal (drugs, alcohol), Quest, Restricted, Seasonal
+
+STOCK RANGE SEMANTICS:
+- Common items: {min=2, max=6} (frequently available)
+- Uncommon items: {min=1, max=4} (limited availability)
+- Rare items: {min=0, max=2} (rarely stocked)
+- Epic/Legendary: {min=0, max=1} (extremely limited)
+
+REGISTRATION ORDER:
+Files are loaded in dependency order:
+1. Food/* (base staples)
+2. DT_Appliance, DT_Medical (crafting inputs)
+3. DT_Tool, DT_Resource (craftables)
+4. DT_Weapon, DT_Equipment (combat items)
+5. DT_Misc, DT_Electronics (specialty items)
+
+PRICE TIER RANGES:
+- Common (Food, Resources): 4-25
+- Uncommon (Tools, Electronics): 25-75
+- Rare (Weapons, Appliances): 75-200
+- Epic (Vehicles, Special): 200-500
+- Legendary (Unique items): 500+

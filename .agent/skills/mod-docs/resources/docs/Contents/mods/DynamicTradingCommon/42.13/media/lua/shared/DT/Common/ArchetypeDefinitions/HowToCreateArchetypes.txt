@@ -1,0 +1,343 @@
+Title: How to Create & Register New Archetypes
+Tags: [guide, archetypes, creation, tutorial, npc-definition]
+
+QUICK START (5-minute guide):
+
+Step 1: Choose Archetype Name
+- Descriptive, one-two words
+- Examples: Chef, Mechanic, Banker, Smuggler, Scholar
+- Avoid names that conflict with existing archetypes
+
+Step 2: Define Core Properties
+```lua
+{
+  archetypeID = "chef",              -- unique identifier
+  name = "Chef/Cook",                -- display name
+  faction = "merchants",             -- faction alignment
+  description = "Professional cook specializing in food trade",
+  icon = "chef_hat.png",             -- optional visual
+}
+```
+
+Step 3: Assign Primary Tags
+- Tags define NPC specialization & NPC dialogue context
+- Use 1-3 primary tags from Tag registry
+- Examples:
+  - Chef: {"Food.Cooking", "Food.NonPerishable"}
+  - Mechanic: {"Tool.Maintenance", "Vehicle"}
+  - Smuggler: {"Illegal", "Restricted"}
+
+Step 4: Build Item Allocation Table
+- List items this archetype specializes in
+- Assign weight (0.5-1.5) to control spawn frequency
+- More items = wider selection pool, less stock per item
+
+Example allocation:
+```lua
+items = {
+  {itemID="Base.Sugar", basePrice=8, weight=1.0},      -- always spawns
+  {itemID="Base.Salt", basePrice=6, weight=0.9},
+  {itemID="Base.Fishing_Rod", basePrice=35, weight=0.3},  -- rare for chef
+}
+```
+
+Step 5: Assign Dialogue Context
+- Dialogue generation uses archetype context
+- Different archetypes get different conversation styles
+- Examples:
+  - Chef: friendly, food-focused dialogue
+  - Mechanic: technical, direct communication
+  - Banker: formal, business-like
+
+Dialogue property:
+```lua
+dialogueContext = "food_merchant"  -- triggers food-related dialogue
+```
+
+Step 6: Define NPC Generation Rules
+- How many NPCs of this type spawn in world
+- Limits by faction/region
+
+Generation rules:
+```lua
+generationRules = {
+  spawnRate = "moderate",    -- common|moderate|rare|very_rare
+  maxPerFaction = 5,         -- max 5 per merchant guild
+  requiresLocation = "GeneralStore|Restaurant|Kitchen",
+  preferredCounties = {"Muldraugh", "West Point"},
+}
+```
+
+Step 7: Add to ArchetypeDefinitions
+```lua
+-- File: ArchetypeDefinitions/DT_Archetypes.lua
+local archetypes = {
+  -- existing archetypes...
+  {
+    archetypeID = "chef",
+    name = "Chef/Cook",
+    faction = "merchants",
+    tags = {"Food.Cooking", "Food.NonPerishable"},
+    items = {...},
+    dialogueContext = "food_merchant",
+    generationRules = {...},
+  },
+}
+DynamicTrading.Config.RegisterArchetypes(archetypes)
+```
+
+Step 8: Test
+- Load game
+- Spawn merchant (admin command: /dtm spawn chef 1)
+- Check inventory, tags, dialogue
+
+DETAILED ARCHETYPE STRUCTURE:
+
+Required Fields:
+```lua
+{
+  archetypeID = "unique_id",              -- string, must be unique
+  name = "Display Name",                  -- string, shown in UI
+  faction = "faction_name",               -- string, must exist in faction registry
+  tags = {"Tag1", "Tag2", ...},           -- array, from Tag registry
+  items = {...},                          -- array of item allocations
+}
+```
+
+Optional Fields:
+```lua
+{
+  description = "Flavor description",     -- shown in NPC info
+  icon = "path/to/icon.png",              -- visual identifier
+  dialogueContext = "dialogue_category",  -- influences dialogue generation
+  generationRules = {...},                -- spawn rate & location rules
+  baseReputation = 0,                     -- starting reputation modifier
+  skills = {...},                         -- proficiency skills
+  specialties = {"specialty1", ...},      -- NPC expertise areas
+  wealth = "moderate",                    -- income level (poor|moderate|wealthy)
+}
+```
+
+ITEM ALLOCATION RULES:
+
+Weight System (0.5-2.0):
+- Weight 1.0 = baseline (always tries to spawn)
+- Weight 0.5 = 50% chance relative to 1.0 items
+- Weight 2.0 = 200% chance (double likelihood)
+- Total items selected: min 3, max 15 per archetype
+
+Allocation algorithm:
+```
+1. For each item in allocation
+2. Roll: random() <= weight ? include : skip
+3. Build final item list (min 3 items guaranteed)
+4. For each selected item, roll stockRange
+5. Store in NPC inventory
+```
+
+Example allocation:
+```lua
+items = {
+  -- Core items (high weight = guaranteed)
+  {itemID="Base.Bread", basePrice=8, weight=1.5},       -- very common
+  {itemID="Base.CakeMix", basePrice=12, weight=1.2},    -- common
+  {itemID="Base.Sugar", basePrice=8, weight=1.0},       -- baseline
+  
+  -- Secondary items (medium weight = frequent)
+  {itemID="Base.Flour", basePrice=10, weight=0.8},
+  {itemID="Base.CornMeal", basePrice=9, weight=0.7},
+  
+  -- Specialty items (low weight = rare)
+  {itemID="Base.Truffle", basePrice=50, weight=0.3},    -- exotic
+  {itemID="Base.VanillaExtract", basePrice=35, weight=0.4},
+}
+```
+
+Result: Every chef has Bread, 80% have Flour, 30% have Truffle
+
+DIALOGUE CONTEXT OPTIONS:
+
+food_merchant (Chef, Bartender, Farmer)
+  - Topics: food quality, cooking, recipes
+  - Tone: friendly, knowledgeable
+  - Sample lines: "Fresh bread this morning", "Try the new vintage"
+
+tool_merchant (Mechanic, Toolsmith, Blacksmith)
+  - Topics: tool quality, crafting, maintenance
+  - Tone: technical, direct
+  - Sample lines: "Perfect wrench for that job", "This blade never dulls"
+
+weapons_merchant (Gunsmith, Blade Merchant)
+  - Topics: weapon effectiveness, combat
+  - Tone: confident, matter-of-fact
+  - Sample lines: "This rifle's accurate at range", "Sharp edge for close combat"
+
+luxury_merchant (Jeweler, Antique dealer)
+  - Topics: rarity, value, prestige
+  - Tone: refined, exclusive
+  - Sample lines: "Only three of these exist", "Collector's item"
+
+survival_merchant (Scavenger, Outdoorsman)
+  - Topics: resource scarcity, survival gear
+  - Tone: practical, experienced
+  - Sample lines: "Found this in the ruins", "Essential for survival"
+
+black_market (Smuggler, Thief, Underground)
+  - Topics: illegality, danger, risk
+  - Tone: cautious, secretive
+  - Sample lines: "This doesn't exist officially", "Watch your back"
+
+FACTION ASSIGNMENT:
+
+Factions group archetypes by alignment:
+
+merchants (neutral, profit-driven)
+  - Chef, Bartender, Farmer, Banker, Merchant
+  - Focus: Food, tools, trade goods
+  - Reputation reward: Trading, restocking
+
+military (disciplined, authority)
+  - Gunsmith, Soldier, Commander, Scout
+  - Focus: Weapons, ammunition, vehicles
+  - Reputation reward: Combat, protection
+
+survivors (independent, pragmatic)
+  - Scavenger, Outdoorsman, Engineer, Doctor
+  - Focus: Survival gear, medical, tools
+  - Reputation reward: Quests, aid
+
+cultists (ideological, mysterious)
+  - Cult Leader, Occultist, Believer
+  - Focus: Rare items, restricted goods
+  - Reputation reward: Mysteries, forbidden knowledge
+
+GENERATION RULES:
+
+spawnRate controls how often archetype appears:
+- common: 20+ NPCs per faction (butchers, cooks, generic merchants)
+- moderate: 5-10 NPCs per faction (specialists like mechanics)
+- rare: 1-3 NPCs per faction (unique traders, smiths)
+- very_rare: <1 NPC per faction (legendary traders)
+
+maxPerFaction limits total count:
+- Common archetype: 5-10
+- Specialist: 2-5
+- Unique: 0-1
+
+requiresLocation ensures archetype spawns in appropriate building:
+- Chef: "GeneralStore|Restaurant|Kitchen|Farm"
+- Mechanic: "Garage|Factory|Gas Station"
+- Banker: "Bank|Office|Town Hall"
+- Smuggler: "Warehouse|RuinedHouse|UndergroundBase"
+
+preferredCounties influences spawn location:
+```lua
+preferredCounties = {"Muldraugh", "West Point"}
+-- Chef more likely to spawn in these counties
+```
+
+WEALTH LEVELS & PRICING IMPACT:
+
+NPC wealth affects their personal profit margin:
+
+poor (wealth<1000)
+  - Desperate to sell, lower prices (0.8x baseline)
+  - Eager to buy, will overpay (1.2x)
+  
+moderate (wealth 1000-5000)
+  - Fair pricing (1.0x baseline)
+  - Neutral buying/selling attitude
+  
+wealthy (wealth>5000)
+  - Higher profit margins, charges more (1.2x baseline)
+  - Selective about purchases, lower offers (0.8x)
+  - Will only stock premium items
+
+Wealth property:
+```lua
+wealth = "moderate"  -- poor|moderate|wealthy
+```
+
+Initial wealth stored in ModData, changes based on:
+- Successful trades (gains from profitable sales)
+- Failed trades (loses from bad deals)
+- Faction redistribution (wealth sharing events)
+
+SPECIALTY SKILLS SYSTEM:
+
+Skills grant bonus dialogues & reputation gains:
+
+```lua
+skills = {
+  "cooking_mastery",      -- Chef expertise
+  "mechanical_expertise",
+  "combat_training",
+  "bartering",
+  "appraisal",
+}
+```
+
+Skill bonuses:
+- cooking_mastery: +30% food item weight, food-focused dialogue
+- mechanical_expertise: +50% tool/vehicle allocation
+- combat_training: +2 archetype reputation per successful martial trade
+- bartering: +10% profit margin in negotiations
+- appraisal: Can identify quest items correctly
+
+ADVANCED ARCHETYPE VARIANTS:
+
+Create archetype variants for depth:
+
+Base: "Merchant"
+Variants:
+- "Wandering Merchant" (rare, high wealth, exotic items)
+- "Desperate Merchant" (common, low wealth, basic items)
+- "Black Market Merchant" (rare, illegal items)
+
+Implementation:
+```lua
+-- Base archetype
+{archetypeID="merchant", name="Merchant", ...}
+
+-- Variant 1
+{
+  archetypeID="merchant_wandering",
+  name="Wandering Merchant",
+  baseArchetype="merchant",
+  overrides = {
+    spawnRate="very_rare",
+    wealth="wealthy",
+    items={... expanded luxury items ...}
+  }
+}
+```
+
+ARCHETYPE BALANCING:
+
+Total NPC Distribution across factions:
+- Merchants: 40% (most common)
+- Survivors: 30%
+- Military: 20%
+- Cultists: 10%
+
+Within Merchants:
+- Common (Chef, Farmer, Bartender): 60%
+- Specialist (Banker, Jeweler, Broker): 30%
+- Rare (Black Market, Underground): 10%
+
+Verify balance with:
+```
+/dtm stats archetypes
+```
+
+Output:
+- Total NPCs: 150
+- Chef: 24 (16%)
+- Mechanic: 12 (8%)
+- Smuggler: 3 (2%)
+
+RELATED CHUNKS:
+- [AllocationPatterns]: Detailed allocation examples
+- [Tags/TagHierarchy]: Tag registry & hierarchy
+- [Dialogue/DialogueWorkflow]: How dialogue generation works
+- [Quests/DT_QuestManager/DifficultyScaling]: How archetypes receive quests

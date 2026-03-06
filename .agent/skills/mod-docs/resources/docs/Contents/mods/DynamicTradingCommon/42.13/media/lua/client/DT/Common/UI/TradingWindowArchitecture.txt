@@ -1,0 +1,156 @@
+Title: Trading Window Architecture & Modular Components
+Tags: [chunk, internal, ui, trading, architecture, windows]
+
+MODULAR FILE STRUCTURE:
+
+DT/Common/UI/
+├── TradingWindow/
+│   ├── DT_TradingWindow.lua          (main container, inheritance)
+│   ├── DT_TradingWindowInitialize.lua (initialization & setup)
+│   ├── DT_TradingWindowRender.lua     (layout grid algorithm)
+│   ├── DT_TradingWindowList.lua       (item list generation)
+│   ├── DT_TradingWindowActions.lua    (buy/sell handlers)
+│   ├── DT_TradingWindowUtils.lua      (helpers, formatting)
+│   ├── DT_DebugOverlay.lua            (debug mode UI)
+│   └── DT_SellConfirmationModal.lua   (pre-transaction modal)
+
+MAIN WINDOW HIERARCHY:
+
+TradingWindow extends ISCollapsableWindow
+  ├── Header (NPC name, faction badge)
+  ├── Tabs Container
+  │   ├── BuyTab (blue background)
+  │   ├── SellTab (red background)
+  │   └── InfoTab (neutral, reputation/quest display)
+  └── ItemGrid (scrollable list)
+
+EVENT HANDLERS:
+- onMouseDown: Item selection, interaction start
+- onMouseUp: Release, cancel selection
+- onMouseWheel: Scroll item list up/down
+- onKeyDown: hotkeys (B=buy, S=sell, Esc=close)
+
+INITIALIZATION FLOW:
+
+Create window:
+```
+TradingWindow.Create(npcObject, player)
+  -- Set size/position (ISCollapsableWindow defaults)
+  -- Create item list (DT_TradingWindowList.lua)
+  -- Register event handlers
+  -- Bind modal for sell confirmation
+```
+
+List population:
+```
+PopulateItemList(npcInventory)
+  -- Iterate NPC MasterList allocation
+  -- Filter by tab (buy tab shows NPC items)
+  -- Build ISGridLayout with price/quantity display
+  -- Enable selection highlighting
+```
+
+RENDERING LOGIC:
+
+Layout grid algorithm (DT_TradingWindowRender.lua):
+- Grid width: 5 items per row (configurable)
+- Item height: 45 pixels
+- Spacing: 5 pixels between items
+- Scrollable region: handles overflow automatically
+
+Item display format:
+```
+[Item Icon + Name]
+Price: 50  Qty: 3
+[BUY] button
+```
+
+Price color coding:
+- Green: Price below NPC basePrice (bargain)
+- White: Price equals basePrice (fair)
+- Red: Price above basePrice (markup/inflation)
+- Gray: Out of stock (zero quantity)
+
+ACTION HANDLERS (DT_TradingWindowActions.lua):
+
+Buy action:
+1. Check player money ≥ item price
+2. Check NPC has item (qty > 0)
+3. Create item in player inventory
+4. Reduce NPC qty by 1
+5. Transfer money from player → NPC wallet
+6. Send network command (MP sync)
+7. Refresh UI display
+
+Sell action:
+1. Check player has selected item
+2. Show SellConfirmationModal (accept/cancel)
+3. On accept: Create item in NPC inventory
+4. Reduce player qty by 1
+5. Transfer money from NPC → player wallet
+6. Refresh UI display
+
+UTILITY FUNCTIONS (DT_TradingWindowUtils.lua):
+
+FormatPrice(price, basePrice)
+  -> Returns color-coded price string with comparison
+
+GetItemIcon(itemID)
+  -> Returns TextureInfo or fallback icon
+
+CalculateAffiliation(npcFaction)
+  -> Returns reputation text + color
+
+CalculateTotalValue(itemList)
+  -> Sums current NPC inventory value
+
+DEBUG MODE (DT_DebugOverlay.lua):
+
+Enabled: /dtm debug toggle command
+Shows overlay with:
+- Price multipliers (economy events)
+- Item tags (for debugging allocation)
+- NPC stats (wealth, satisfaction)
+- Faction info (reputation, active quests)
+
+Example overlay:
+```
+===== DEBUG INFO =====
+NPC: John Baker [Faction: Traders Union]
+Wealth: 5000 (0.8x baseline)
+Active Events: Supply Shortage (1.4x price)
+Items (3 affected):
+  Base.Bread: 25 (normal 18) +40% [Food.Cooking]
+  Base.Salt: 12 (normal 6) +100% [Food.Cooking]
+```
+
+SELL CONFIRMATION MODAL:
+
+Modal type: ISModalDialog
+Title: "Confirm Sale"
+Message: "Sell [Item] for $[price]?"
+Buttons: [Confirm] [Cancel]
+
+On confirm:
+- Execute sell action (see action handlers)
+- Close modal & refresh main window
+- Display transaction log entry
+
+On cancel:
+- Close modal without changes
+- Return to main window
+
+RESPONSIVE SIZING:
+
+Window default: 400x600 pixels
+Min size: 300x400 (prevent unreadable UI)
+Max size: 800x900 (full-screen reasonable limit)
+Resizable: ISCollapsableWindow allows drag corner
+Position saved: ModData:UIWindowStates.TradingWindowPos
+
+ACCESSIBILITY:
+
+Font size: 12pt (readable on 1024x768 minimum)
+Contrast: High (white text on dark background)
+Button size: Min 32x32 pixels (easy clicking)
+Scrollbar width: 20 pixels (easy scrolling)

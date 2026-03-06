@@ -1,0 +1,8 @@
+Title: Client UI & Configuration Systems
+Tags: [script, ui-client]
+
+LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/client/DT/Common/UI/
+PURPOSE: Provide trading UI, client configuration persistence, and presentation logic for audio and marker feedback.
+OVERVIEW: UI modules compose windows, options, and interaction handlers while reading synchronized stock/economy data and persisting local client preferences.
+DEPENDENCIES: Client ISUI framework, dialogue output, server sync payloads, config manager storage, audio asset routing.
+REMARKS: Keep per-window behavior, control layout details, and debug tooling notes in sidecar chunks.

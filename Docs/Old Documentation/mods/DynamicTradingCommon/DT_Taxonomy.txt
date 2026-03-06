@@ -1,0 +1,23 @@
+Title: Master Taxonomy for "No-Collision" Tagging
+Tags: [taxonomy, tags, identification]
+
+The Dynamic Trading project uses a strict hierarchical tagging system to categorize items without conflicts.
+
+## Hierarchy Structure
+- **Root (Identity):** Defines what the item IS (e.g., `Food`, `Weapon`, `Clothing`).
+- **Sub-category:** Refines the identity (e.g., `Food.NonPerishable`).
+- **Detail:** Specific type (e.g., `Food.NonPerishable.Canned`).
+
+## Global Descriptors (Context)
+Descriptors are appended to provide additional filtering:
+- **Origin:** Where it comes from (`Origin.Militia`).
+- **Quality:** Condition or tier (`Quality.Luxury`).
+- **Rarity:** Scarcity (`Rarity.Rare`).
+- **Theme:** Use case (`Theme.Survival`).
+
+## Rules
+1. **No-Collision:** Tags must follow the defined tree to ensure unique identification.
+2. **Pluralization:** In UI/Dialogue, tags are often transposed and pluralized (e.g., `Electronics.Component.Light` -> "Light Components").
+3. **Blacklisting:** If a tag like `Luxury` appears as a root, it is a bug and should be moved to `Quality.Luxury`.
+
+Refer to [tag-helper] for the interactive query tool.

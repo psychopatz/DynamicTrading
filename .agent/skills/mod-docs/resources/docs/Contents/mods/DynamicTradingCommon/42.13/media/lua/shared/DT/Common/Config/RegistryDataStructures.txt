@@ -1,0 +1,68 @@
+Title: Registry Data Structures (Config Chunk)
+Tags: [chunk, internal]
+
+MASTERLIST STRUCTURE:
+DynamicTrading.Config.MasterList = {
+  ["Base.ItemID"] = {
+    item = "Base.ItemID",
+    basePrice = <number>,
+    tags = {tag1, tag2, ...},
+    stockRange = {min=<n>, max=<n>},
+    category = "Food|Weapon|Tool|..." (derived)
+  },
+  ["Base.AnotherItem"] = {...},
+  ...
+}
+Fast O(1) lookup by item ID. All 500+ items indexed here. Used by economy calculations and archetype allocation generators.
+
+ARCHETYPES STRUCTURE:
+DynamicTrading.Archetypes = {
+  ["Angler"] = {
+    name = "River Trader",
+    allocations = {
+      { tags={"Food.Perishable.Fish"}, count=6, min=1, max=3 },
+      { tags={"Tool.Resource.Angler"}, count=4, min=1, max=2 }
+    },
+    expertTags = {"Food.Perishable.Fish", "Tool.Resource.Angler"},
+    wants = {["Tool.General"]=1.2},
+    forbid = {"Weapon.Ranged.Firearm"},
+    stock = {} (populated at runtime by allocation generator)
+  },
+  ["Chef"] = {...},
+  ...
+}
+44 archetypes total. Each archetype specifies its trading personality via wants/forbid/expert tags.
+
+DIALOGUE STRUCTURE:
+DynamicTrading.Dialogue.Archetypes = {
+  ["Angler"] = {
+    ["Greetings"] = {
+      ["EN"] = {
+        ["Default"] = {
+          {weight=1, text="Hello, {player}!"},
+          {weight=2, text="Greetings, friend."}
+        },
+        ["Morning"] = {
+          {weight=1, text="Early catch today?"}
+        },
+        ...
+      },
+      ["RU"] = {...},
+      ["PH"] = {...}
+    },
+    ["Buying"] = {["EN"] = {...}, ...},
+    ["Selling"] = {["EN"] = {...}, ...}
+  },
+  ["Chef"] = {...},
+  ...
+}
+Nested lookup: Archetypes[archetypeID][dialogueType][language][context][randomIndex]
+Each pool entry has weight for weighted random selection.
+
+ITEMLOOKUP REVERSE INDEX:
+DynamicTrading.ItemLookup = {
+  ["Base.Money"] = "Base.Money",
+  ["Base.Fish"] = "Base.Fish",
+  ...
+}
+Fast reverse-lookup by item full type. Used for validation before registration.

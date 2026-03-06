@@ -1,0 +1,110 @@
+Title: Wallet Loot Generation Logic (Server Chunk)
+Tags: [chunk, internal]
+
+WALLET DROP SYSTEM:
+Triggered when zombie dies. Server calculates currency loot for inventory.
+
+PROBABILITY FLOW:
+
+function CalculateWalletContents(player)
+  
+  -- Step 1: Check if wallet is empty
+  if random(0, 100) <= WalletEmptyChance (default 35%) then
+    return {} -- No money drop
+  end
+  
+  -- Step 2: Check for jackpot
+  if random(0, 100) <= WalletJackpotChance (default 5%) then
+    -- Zombies very rarely drop lucky amounts
+    amount = random(WalletMaxCash * 0.8, WalletMaxCash * 1.5)
+    return CreateMoneyBundles(amount)  -- 80-150% of max
+  end
+  
+  -- Step 3: Tiered distribution (normal case)
+  roll = random(0, 100)
+  if roll < 60 then
+    -- 60% low tier
+    amount = random(WalletMinCash, WalletMaxCash * 0.3)
+  elseif roll < 90 then
+    -- 30% mid tier
+    amount = random(WalletMaxCash * 0.3, WalletMaxCash * 0.6)
+  else
+    -- 10% high tier
+    amount = random(WalletMaxCash * 0.6, WalletMaxCash)
+  end
+  
+  return CreateMoneyBundles(amount)
+end
+
+SANDBOX OPTIONS (Default Values):
+- WalletMinCash = 1 (minimum loose coin)
+- WalletMaxCash = 100 (maximum single wallet)
+- WalletEmptyChance = 35 (% chance zombie has no wallet)
+- WalletJackpotChance = 5 (% chance of bonus drop)
+
+MONEY BUNDLE CREATION:
+function CreateMoneyBundles(totalAmount)
+  result = {}
+  
+  -- Create MoneyBundle items (100 each)
+  bundles = std.floor(totalAmount / 100)
+  for i = 1, bundles do
+    table.insert(result, {item="Base.MoneyBundle", quantity=1})
+  end
+  
+  -- Create loose Money for remainder
+  remainder = totalAmount % 100
+  if remainder > 0 then
+    table.insert(result, {item="Base.Money", quantity=remainder})
+  end
+  
+  return result
+end
+
+EXAMPLE DROP CALCULATIONS:
+
+Example 1: Empty wallet
+- Roll: 42 (passes 35% threshold)
+- Result: {} (no money)
+- Explanation: Zombie had no cash
+
+Example 2: Jackpot
+- Roll: 3 (hits 5% jackpot chance)
+- Amount: random(100 * 0.8, 100 * 1.5) = 115
+- Result: 1x MoneyBundle (100) + 15 loose Money
+- Explanation: Lucky zombie had significant cash
+
+Example 3: Low tier (60% chance)
+- Roll: 25 (in 0-60 range)
+- Amount: random(1, 30) = 17
+- Result: 17 loose Money
+- Explanation: Poor zombie
+
+Example 4: Mid tier (30% chance, rolls 61-90)
+- Roll: 78 (in 60-90 range)
+- Amount: random(30, 60) = 42
+- Result: 42 loose Money
+- Explanation: Average wallet
+
+Example 5: High tier (10% chance, rolls 91-100)
+- Roll: 94 (in 90-100 range)
+- Amount: random(60, 100) = 87
+- Result: 0x MoneyBundle + 87 loose Money
+- Explanation: Wealthy zombie (near max)
+
+INVENTORY IMPACT:
+MoneyBundle items take 1 slot (100 units)
+Loose Money stacks (up to defined stack size)
+
+Efficient packing:
+- 345 total: 3x MoneyBundle (300) + 45 loose = 4 inventory slots
+- Better than: 345 loose Money items = 4+ slots (depends on stack size)
+
+NETWORK SYNC:
+SP: CreateMoneyBundles result added directly to inventory
+MP: SendResponse() → server calculates → AddItem() called → network-synced to all clients
+
+MODDATA PERSISTENCE:
+Wallet amounts NOT persisted (calculated on each zombie death)
+Different zombies = different chances each time
+Allows farm-able but not exploitable currency generation

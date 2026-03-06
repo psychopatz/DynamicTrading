@@ -1,22 +1,4 @@
 {
-    "v1": {
-        "path": "Contents/mods/DynamicTradingV1",
-        "desc": "Radio interaction module (Unified Economy Interface)",
-        "tags": [
-            "v1",
-            "radio",
-            "interface"
-        ]
-    },
-    "v2": {
-        "path": "Contents/mods/DynamicTradingV2",
-        "desc": "Physical NPC interaction module (Soul/Puppet Architecture)",
-        "tags": [
-            "v2",
-            "npc",
-            "physical"
-        ]
-    },
     "common": {
         "path": "Contents/mods/DynamicTradingCommon",
         "desc": "Shared core logic, taxonomy, and base systems",
@@ -24,63 +6,6 @@
             "common",
             "foundation",
             "shared"
-        ]
-    },
-    "economy": {
-        "path": "Contents/mods/DynamicTradingCommon/Economy System",
-        "desc": "Dynamic pricing and stock simulated globally",
-        "tags": [
-            "economy",
-            "logic",
-            "pricing",
-            "core"
-        ]
-    },
-    "factions": {
-        "path": "Contents/mods/DynamicTradingCommon/Faction System",
-        "desc": "Persistent faction reputation and resource states",
-        "tags": [
-            "factions",
-            "reputation",
-            "politics",
-            "core"
-        ]
-    },
-    "taxonomy": {
-        "path": "Contents/mods/DynamicTradingCommon/DT_Taxonomy",
-        "desc": "Master hierarchy for 'No-Collision' item tagging",
-        "tags": [
-            "taxonomy",
-            "tags",
-            "identification",
-            "core"
-        ]
-    },
-    "tag-helper": {
-        "path": "Scripts/Tag_Helper",
-        "desc": "CLI tool for interactive taxonomy querying",
-        "tags": [
-            "tool",
-            "cli",
-            "tags"
-        ]
-    },
-    "item-verify": {
-        "path": "Scripts/ItemID_Verify",
-        "desc": "Standardized workflow for item indexing and verification",
-        "tags": [
-            "tool",
-            "workflow",
-            "indexing"
-        ]
-    },
-    "radio-logic": {
-        "path": "Contents/mods/DynamicTradingV1/42.13/media/lua/client/DT/V1/DT_RadioInteraction",
-        "desc": "Core Lua logic for V1 radio communication",
-        "tags": [
-            "v1",
-            "lua",
-            "radio"
         ]
     },
     "dt-core": {
@@ -121,44 +46,93 @@
             "stock"
         ]
     },
-    "dt-lifecycle": {
-        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Faction/TradingSys/Factions/Lifecycle-and-Simulation",
-        "desc": "Faction creation, roster generation, and daily simulation cycle",
+    "dt-common-docs": {
+        "path": "Contents/mods/DynamicTradingCommon",
+        "desc": "Complete documentation suite for DynamicTradingCommon (index point)",
         "tags": [
             "common",
-            "factions",
-            "simulation",
-            "lifecycle"
+            "docs",
+            "index"
         ]
     },
-    "dt-events": {
-        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Events/DT_EventManager",
-        "desc": "Event system with registration, hourly processing, and faction integration",
+    "dt-init": {
+        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/00_DT_Core",
+        "desc": "Global initialization, custom events, and startup procedures",
         "tags": [
             "common",
-            "events",
-            "manager"
+            "init",
+            "startup",
+            "events"
         ]
     },
-    "dt-network": {
-        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Faction/TradingSys/Network-Layer",
-        "desc": "Client-server command system for trades, data sync, and admin commands",
+    "dt-items": {
+        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Items",
+        "desc": "Item registration system with category organization and pricing",
         "tags": [
             "common",
-            "network",
-            "multiplayer",
-            "commands"
+            "items",
+            "registry",
+            "pricing"
         ]
     },
-    "dt-systems": {
-        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Systems-Overview-NPC-Quest-Stock",
-        "desc": "NPC/Roster management, Quest items, and Stock operations overview",
+    "dt-archetypes": {
+        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/ArchetypeDefinitions",
+        "desc": "44 NPC archetype definitions with specialized inventory and dialogue",
         "tags": [
             "common",
             "npc",
-            "quest",
-            "stock",
-            "overview"
+            "archetypes",
+            "traders"
+        ]
+    },
+    "dt-dialogue": {
+        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/client/DT/Common/Dialogue",
+        "desc": "Context-aware NPC conversations with variable substitution and localization",
+        "tags": [
+            "common",
+            "dialogue",
+            "localization",
+            "conversations"
+        ]
+    },
+    "dt-quests": {
+        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Quests/DT_QuestManager",
+        "desc": "Quest item spawning with difficulty scaling and persistent metadata",
+        "tags": [
+            "common",
+            "quests",
+            "items",
+            "spawning"
+        ]
+    },
+    "dt-server": {
+        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/server/DT/Common",
+        "desc": "Server-side operations: wallet drops, loot injection, building scanner",
+        "tags": [
+            "common",
+            "server",
+            "network",
+            "backend"
+        ]
+    },
+    "dt-ui": {
+        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/client/DT/Common/UI",
+        "desc": "Client-side UI framework: trading windows, settings, event markers, audio",
+        "tags": [
+            "common",
+            "client",
+            "ui",
+            "interface"
+        ]
+    },
+    "dt-events-sys": {
+        "path": "Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Events",
+        "desc": "Dynamic economic events with price/stock effects and seasonal mechanics",
+        "tags": [
+            "common",
+            "events",
+            "economy",
+            "dynamic"
         ]
     }
 }

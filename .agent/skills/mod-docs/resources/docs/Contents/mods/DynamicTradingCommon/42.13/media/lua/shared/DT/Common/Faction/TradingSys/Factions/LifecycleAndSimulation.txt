@@ -1,0 +1,42 @@
+Title: Faction Lifecycle and Daily Simulation Details
+Tags: [chunk, internal]
+
+LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Faction/TradingSys/Factions/
+PURPOSE: Record detailed lifecycle and daily update logic from legacy documentation.
+
+LIFECYCLE INITIALIZATION:
+- Ensure faction ModData exists and has required defaults.
+- Create/maintain a failsafe independent faction for system stability.
+- Repopulate configured towns when no valid local factions exist.
+- Normalize missing fields (wealth, reputation, flash-event fields).
+
+FACTION CREATION:
+- Generate unique faction ID and display name.
+- Assign home coordinates (or nomadic mode) via location manager.
+- Seed stockpile resources, member count, and initial wealth.
+- Generate roster souls for each member with archetype-driven profiles.
+
+DAILY SIMULATION LOOP:
+1. Update active event impact state for each faction.
+2. Calculate production from member archetype allocations.
+3. Apply distributed event casualties and attrition resource checks.
+4. Burn daily consumption (food/meds/fuel as configured).
+5. Evaluate state transitions (`Stable`, `Vulnerable`, `Starving`).
+6. Apply recruitment/growth chance for prosperous factions.
+7. Handle collapse/death and possible respawn workflows.
+
+EVENT INTERACTIONS:
+- Flash events can assign target casualties distributed over remaining duration.
+- Attrition definitions consume resources first, then apply casualties on shortages.
+- Consumption modifiers from events stack into daily burn rates.
+
+BALANCE KNOBS (SANDBOX-DRIVEN):
+- Consumption multiplier.
+- Death threshold / starvation tolerance.
+- Growth chance and respawn chance.
+- Initial population and max factions per town.
+
+MP SAFETY NOTES:
+- All simulation writes remain server-side.
+- Client receives synchronized snapshots only.
+- Use atomic updates when changing member counts and roster records together.

@@ -1,8 +1,0 @@
-Title: Tag Helper CLI Tool
-Tags: [tool, cli, tags]
-
-An interactive command-line tool for querying the Dynamic Trading item tagging hierarchy.
-- Explore the taxomony tree.
-- Search for specific tags.
-- Use for consistent tagging during item registration.
-- Refer to @taxonomy for the master hierarchy.

@@ -1,0 +1,8 @@
+Title: Server-Side Systems & Operations
+Tags: [script, server-common]
+
+LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/server/DT/Common/
+PURPOSE: Run authoritative server workflows for stock mutation, loot generation, building data, quest handling, and multiplayer synchronization.
+OVERVIEW: This layer coordinates helper modules and persistence writes, then broadcasts validated state changes to connected clients.
+DEPENDENCIES: Shared config and economy modules, ModData stores, client command channels, quest and faction systems.
+REMARKS: Maintain server authority boundaries; never shift critical economy or stock mutations to client-side execution.

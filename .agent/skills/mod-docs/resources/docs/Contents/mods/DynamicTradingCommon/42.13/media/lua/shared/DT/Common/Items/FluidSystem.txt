@@ -1,0 +1,72 @@
+Title: Fluid System & Drainable Item Handling
+Tags: [chunk, internal, items, fluids, drainable]
+
+DRAINABLE ITEM CLASSIFICATION:
+
+Fluids are items with DrainableItem base class. DT treats them specially:
+
+ITEM DEFINITION (DT_Fluids.lua):
+{
+  item = "Base.Diesel",
+  basePrice = 15,
+  tags = {"Fluid.Fuel", "Rarity.Common"},
+  stockRange = {min=2, max=5},
+  fluidType = "fuel",
+  fluidCapacity = 1.0,
+  fluidInitial = 0.8  -- Spawns 80% full
+}
+
+FLUID TYPES:
+- fuel: Diesel, Gasoline, BioFuel (vehicle fuel, cooking)
+- oil: CookingOil, MotorOil, LubricatingOil (friction reduction, cooking)
+- chemical: Bleach, Acetone, Kerosene (cleaning, crafting, lighting)
+- beverage: Water, Juice, Milk, Alcohol (consumables)
+- medicine: Disinfectant, Syrup, Antiseptic (medical supplies)
+
+FLUID ALLOCATION RULES:
+When allocating fluids to NPCs:
+- Reduce stack size (max 3 per archetype unless fuel-heavy)
+- Randomize fluid fill: 0.2 to 0.95 (never completely empty/full)
+- Fuel trucks stock 5-8 canisters at 90-100% capacity
+- Mechanics stock 3-5 oil bottles at varying levels
+- Cooks stock 2-4 cooking oil/water at variable fill
+
+NPC-SPECIFIC FLUID ALLOCATION:
+- Mechanic: +40% oil items, full capacity
+- Gas Station Attendant: +60% fuel, randomized fills
+- Chef/Bartender: +50% beverage/cooking oil
+- Survival Expert: +70% water/purification supplies
+- Apocalypse Survivor: +40% fuel/oil mix
+
+FLUID INTERACTION MECHANICS:
+Transfer between containers:
+- OnTransfer: Update fluid levels in destination container
+- CheckCapacity: Ensure receiving container can hold fluid amount
+- SplitStack: If splitting drainable item, divide fluid proportionally
+
+Example:
+item1 = Gasoline container with 50% fill
+Transfer 25% to item2:
+  item2.fluidLevel = 25%
+  item1.fluidLevel = 25% (reduced proportionally)
+
+PRICING ADJUSTMENT:
+Base price applies to FULL container.
+Partial fill price = basePrice * (currentLevel / maxLevel)
+
+Example:
+- DT_Diesel (basePrice=15) at 100% = 15
+- DT_Diesel at 50% = 7.50
+- DT_Diesel at 30% = 4.50
+
+SPAWN GENERATION:
+When archetype spawns items, for each fluid in allocation:
+- Create item instance
+- Roll random fill level: 20-95%
+- Apply NPC modifier (fuel trucks get 90%+)
+- Store fluidLevel in ModData
+
+PERSISTENCE & SYNC:
+- ModData: item:ModData.fluidLevel (0-1.0 range)
+- Network sync: MP clients receive full item state with fluid level
+- Save/Load: Fluid level preserved in character save files

@@ -1,0 +1,8 @@
+Title: Faction Trading Subsystem
+Tags: [script, faction-trading]
+
+LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Faction/TradingSys/
+PURPOSE: Provide shared faction trading infrastructure for simulation, roster coupling, and synchronized economy-state updates.
+OVERVIEW: This subsystem coordinates faction lifecycle modules with trade-side network/state handling to keep stock, wealth, and membership coherent.
+DEPENDENCIES: Faction ModData, roster records, economy calculators, event manager, multiplayer command handlers.
+REMARKS: Maintain server-only mutation rules for faction resources and member state.

@@ -1,0 +1,19 @@
+Title: Geo Lookup and Region Detection
+Tags: [chunk, internal]
+
+LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT_BuildingScannerConfig.lua
+PURPOSE: Document county and town resolution logic from world coordinates.
+
+KEY TABLES:
+- `DTM.Counties`: county names with rectangular bounds and attached town labels.
+- `DTM.Towns`: finer-grained town rectangles for primary name resolution.
+
+LOOKUP FLOW:
+1. `DTM.GetTownName(x, y)` checks explicit town bounds first.
+2. If not matched, it queries MetaGrid zones for `TownZone` metadata.
+3. Fallback is `Wilderness` when no zone naming is available.
+4. `DTM.GetCountyName(x, y)` returns matching county bounds or `Unknown County`.
+
+NOTES:
+- Town lookup is intentionally more precise than county lookup.
+- County and town names are attached to scan results for later grouping/filtering.

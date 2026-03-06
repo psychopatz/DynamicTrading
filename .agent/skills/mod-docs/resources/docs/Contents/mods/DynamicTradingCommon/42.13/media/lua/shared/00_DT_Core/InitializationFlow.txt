@@ -1,0 +1,38 @@
+Title: Initialization Flow (00_DT_Core Chunk)
+Tags: [chunk, internal]
+
+CRITICAL SEQUENCE:
+This file executes BEFORE all others due to 00_ prefix forcing pre-load.
+
+function InitializeDynamicTrading()
+├─ Create global DynamicTrading = {} table
+├─ Sub-tables:
+│  ├─ Config = {} (registry functions)
+│  ├─ Archetypes = {} (archetype definitions)
+│  ├─ Dialogue = {Archetypes={}} (localized dialogue trees)
+│  ├─ Events = {} (active event list)
+│  ├─ ModData = {} (persistent world data reference)
+│  ├─ Items = {} (item definitions)
+│  ├─ Tags = {} (tag registry)
+│  ├─ PriceOverrides = {} (temporary price modifications)
+│  ├─ ItemLookup = {} (fast reverse-lookups)
+│  └─ Log = {} (network log entries)
+│
+└─ Register global functions in DynamicTrading.Config:
+   ├─ AddItem(itemData)
+   ├─ RegisterBatch(list)
+   ├─ RegisterArchetype(id, data)
+   ├─ RegisterDialogue(id, type, data)
+   └─ GetLanguage()
+
+Why Pre-Load (00_ prefix):
+- All subsequent Lua files depend on DynamicTrading global existing
+- Allows Config.AddItem() calls from item definition files (alphabetical load)
+- Allows RegisterArchetype() calls from archetype files
+- Allows RegisterDialogue() calls from dialogue files
+- No ordering issues: global guaranteed ready for all
+
+Module Dependencies Loaded Here:
+- require("DT/Common/Quests/DT_QuestManager")
+- require("DT/Common/Items/DT_QuestItems")
+These load SYNCHRONOUSLY before 00_DT_Core finishes, preventing undefined global errors.

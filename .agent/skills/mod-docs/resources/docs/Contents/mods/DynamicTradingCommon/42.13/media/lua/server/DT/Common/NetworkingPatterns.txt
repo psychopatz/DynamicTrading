@@ -1,0 +1,105 @@
+Title: Networking Patterns - Single-Player vs Multiplayer
+Tags: [chunk, internal, server, network, synchronization]
+
+MP DETECTION & BRANCHING:
+
+Function: ShouldSendNetworkPackets()
+Returns: true if world is multiplayer, false if single-player
+Used by: Every operation that modifies item state, money, or inventory
+
+SINGLE-PLAYER FLOW:
+Player trades with NPC → Direct function call
+  → Inventory updated in memory
+  → MoneyQueue updated
+  → No network packet sent
+  → Changes persist to save file
+
+MULTIPLAYER FLOW:
+Player trades with NPC → Network command queued
+  → sendClientCommand("DT_Trade", {args})
+  → Server receives DT_Trade message
+  → Server executes trade logic
+  → Server broadcasts update to ALL clients
+  → All players see inventory changes
+
+COMMAND TYPES & HANDLERS:
+
+DT_Trade (player buys/sells)
+  - Args: playerID, itemID, quantity, price, action(buy|sell)
+  - Server validates: player has money/items
+  - Server creates item/removes from NPC inventory
+  - Broadcast: UpdateInventory message to all clients
+
+DT_MoneyDrop (wallet spawned on zombie death)
+  - Args: zombieX, zombieY, zombieZ, amount
+  - Server validates: amount > 0
+  - Server creates MoneyBundle item on ground
+  - Broadcast: CreateItem message with position
+
+DT_SetObjectMod (add ModData to item)
+  - Args: itemID, modDataKey, modDataValue
+  - Server validates: item exists in world
+  - Server sets item:ModData[key] = value
+  - Broadcast: UpdateModData message
+
+INVENTORY SYNCHRONIZATION:
+
+Single-Player:
+- Player takes item → local inventory updated immediately
+- Player drops item → item removed from memory, placed on ground
+- Save file updated automatically
+
+Multiplayer:
+- Player takes item → sendClientCommand("DT_TakeItem", {itemID})
+- Server validates: item not taken by another player
+- Server removes item from world
+- Server sends "ItemRemoved" to all clients
+- All clients update their worldstate
+
+TRANSACTION SAFETY:
+
+Race condition example:
+- Player A & B see NPC with 1 item
+- Both try to buy simultaneously
+- Server receives both requests
+
+Resolution:
+- NPC inventory check: quantity check before trade
+- If insufficient: deny transaction to Player B
+- Send "InsufficientStock" error to Player B
+- Only Player A's transaction succeeds
+
+FACTION STATE SYNC:
+
+Single-Player:
+- Reputation change → stored in ModData:DTFactions[factionID].reputation
+- Immediately visible to player
+
+Multiplayer:
+- Player gains reputation → sendClientCommand("DT_AddReputation", {factionID, amount})
+- Server updates faction state
+- Server broadcasts UpdateFaction to all players
+- All players see reputation change
+
+BANDWIDTH OPTIMIZATION:
+
+Full updates (changed state):
+- Sent once per state change (trade, event, quest completion)
+- Contains: player ID, NPC ID, action, success/failure
+
+Partial updates (status queries):
+- Client requests inventory state: sendClientCommand("DT_QueryInventory")
+- Server responds with JSON delta (only changed items)
+- Reduces network traffic on slow connections
+
+OFFLINE PERSISTENCE:
+
+Single-Player:
+- Changes saved directly to .sav file
+- Load game → restore exact state from last save
+
+Multiplayer:
+- Changes saved to server-side faction storage
+- ModData persisted in player character save
+- Load character → sync with server-side faction state
+- Server resolves conflicts (newer timestamp wins)

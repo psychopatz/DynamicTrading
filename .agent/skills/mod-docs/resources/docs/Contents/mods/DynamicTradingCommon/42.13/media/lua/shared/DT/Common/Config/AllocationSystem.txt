@@ -1,0 +1,53 @@
+Title: Allocation System & Tag Matching (Config Chunk)
+Tags: [chunk, internal]
+
+ARCHETYPE ALLOCATION ALGORITHM:
+Each archetype defines allocations specifying what items it stocks.
+
+allocation = {
+  tags = {"Category.Subcategory"},
+  count = 6,                    -- Pick 6 items from matched pool
+  min = 1,                      -- Each item qty: 1-3 units
+  max = 3
+}
+
+EXECUTION FLOW:
+1. Loop through all allocations for archetype
+2. For each allocation:
+   a. Find all MasterList items matching tags
+      - Tag match: use MatchesAllTags(itemTags, requiredTags)
+      - Supports hierarchical: "Food" matches "Food.Perishable.Fish"
+   b. Apply weight filter (from Tags.lua)
+      - Rarity weights: Common(40%) > Uncommon(30%) > Rare(20%) > Legendary(10%)
+      - Exclude weight=0 tags (Illegal, Quest) unless event-active
+   c. Apply forbid filter
+      - Skip items matching any forbid tag
+   d. Create weighted pool from filtered items
+   e. Call PickFromWeightedPool(pool) count times
+   f. For each picked item: quantity = random(min, max)
+   g. Add to archetype.stock
+
+MATCHING EXAMPLES:
+Allocation: {tags={"Food.Perishable"}, count=6}
+MasterList items matching:
+  ✓ "Base.Catfish" - tags: ["Food.Perishable.Fish", "Rarity.Common"]
+  ✓ "Base.Salmon" - tags: ["Food.Perishable.Fish", "Rarity.Uncommon"]
+  ✓ "Base.Potato" - tags: ["Food.Perishable.Vegetable", "Rarity.Common"]
+  ✗ "Base.Bread" - tags: ["Food.NonPerishable"] (no match)
+
+Pool after weighting (respects rarity):
+- Common items: 40% spawn chance each
+- Uncommon items: 30% spawn chance each
+- Result: 6 random picks from matching pool
+
+VALIDATION RULES:
+- tags must exist in Tags.lua registry
+- count must be <= total matching items (or allocation fails)
+- min <= max (quantity range sanity)
+- expertTags must be subset of possible tags
+- forbid tags applied after allocation (item-level blocking)
+
+ERROR HANDLING:
+- Missing tags: Logged, item skipped
+- Circular references: Prevented by registration validator
+- Quota impossible: Logged, allocates what's available (count *= 0.9)

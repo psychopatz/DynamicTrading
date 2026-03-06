@@ -18,71 +18,52 @@ This skill provides step-by-step guidance on how to create and properly file doc
 
 Identify if you are documenting a single file or an entire directory:
 
-- **File**: Requires detailed documentation of its core purpose, public functions/exports, dependencies, and design patterns. This should be concise but it is the most detailed part of the documentation tree.
-- **Directory**: Requires an `index.txt` file acting as an overview. It should provide a high-level summary of the directory. You MUST include slightly detailed overviews per sub-system/script and heavily use `@alias` or `[path]` references so that future LLMs can easily find the specific shortcodes for the deepest details.
+### 2. Drafting the Documentation
 
-### 2. Formulate the Content
+**CRITICAL RULE - RELATIVE PATH MIRRORING:** You MUST mirror the exact relative path of the target file inside the `docs/` directory. If you are documenting `/Contents/mods/DynamicTradingCommon/.../00_DT_Core.lua`, you MUST create the documentation inside `docs/Contents/mods/DynamicTradingCommon/.../00_DT_Core/`.
 
-Draft the document ensuring it adheres to the strict `mod-docs` formatting rules. You MUST include a `Title:` and `Tags:` header at the very top of the text file.
+**UNIVERSAL STANDARD: The "Folder-First-Index-Blueprint" Pattern**
+To maintain token efficiency and ensure accurate discovery, **every code file MUST be documented as a folder** containing an `index.txt` and separate subordinate files for implementation details.
 
-**For a Directory Overview (`index.txt`):**
-**CRITICAL RULE: An `index.txt` must NEVER exceed 40 lines of body text.** It is simply a gateway to find specific code. If you find yourself writing more than 40 lines, you are dumping too much detail. Segregate the detail into individual file documentation and link to it.
+1. **Create the Folder**: Name it after the file (without extension): `docs/.../TargetFileName/`
+2. **Create the Blueprint Index**: Create `docs/.../TargetFileName/index.txt`. Its body MUST strictly follow this blueprint:
 
-```text
-Title: <Directory Module Name> Overview
-Tags: [tag1, tag2, overview, index]
+   ```text
+   Title: <Case-sensitive title>
+   Tags: [script, <system-name>]
 
-<High-level summary of the directory's purpose and architecture. MAXIMUM 40 LINES.>
+   LOCATION: <Relative Workspace Path of the code file>
+   PURPOSE: <1-2 sentences explaining the core intent of this script>
+   OVERVIEW: <High-level architecture, key data structures, and the main logical workflow>
+   DEPENDENCIES: <List of upstream systems or required modules>
+   REMARKS: <Critical notes, performance warnings, or MP-safety caveats>
+   ```
 
-### Sub-Systems / Scripts
-- **System A**: Brief 1-sentence detail. See: [Contents/mods/.../SystemA]
-- **System B**: Brief 1-sentence detail. See: [Contents/mods/.../SystemB]
-```
+3. **Segregate Subordinates (Sidecar Files)**: Move ALL detailed implementation logic, function descriptions, and sub-systems into separate `.txt` files in the SAME directory (e.g., `RecursionLogic.txt`).
+   - Use the tags `[chunk, internal]` for these files.
+   - **CRITICAL RULE**: DO NOT manually list or link these sub-files in the `index.txt`. The `docs.py` system automatically detects nearby files and presents them to the user in the "Related Topics" section.
 
-*Note: Since shortcodes are generated AFTER you save the file, you must link to sub-systems using their `[Relative/Workspace/Path]`. The `docs.py` system will automatically resolve these paths and present the corresponding shortcodes to the user.*
-
-**For a Specific File (`FileName.txt`):**
-
-```text
-Title: <A brief 3-7 word case-sensitive title or short summary>
-Tags: [tag1, tag2, tag3]
-
-<Your concise summary and generated documentation goes here.
- The most detailed implementation specifics go here.>
-```
-
-**For a Massive File (File-as-Directory Pattern):**
-If a single file (e.g., `00_DT_Core.lua`) contains hundreds of lines and multiple major systems, DO NOT document it as a single `.txt` file, as this bloats token usage. Treat the file itself as a directory.
-
-1. Create a directory named after the file: `docs/Contents/mods/.../00_DT_Core/`
-2. Create an `index.txt` inside that directory serving as the 40-line maximum overview, just like a normal directory overview.
-3. Extract specific systems into chunk files: `docs/Contents/mods/.../00_DT_Core/EconomyManager.txt`.
-
-**CRITICAL RULE FOR MASSIVE FILE CHUNKS:** To prevent tag search contamination, chunk files MUST explicitly use the tags `[chunk, internal]` and MUST NOT use broad global tags (like `core` or `v1`). The `index.txt` will naturally list them, so they do not need global tags to be discovered.
-
-```text
-Title: Economy Manager (00_DT_Core Chunk)
-Tags: [chunk, internal]
-
-<Detailed implementation specifics of this specific system>
-```
-
-*Note: The `Tags:` header must be enclosed in square brackets `[]` and be comma-separated.*
+*Note: Shortcodes are generated AFTER you save. If you need to cross-reference a DIFFERENT system, use its `[Relative/Workspace/Path]`. `docs.py` will resolve it.*
 
 ### 3. Save the Documentation
 
-Save the formatted content as a `.txt` file inside `.agent/skills/mod-docs/resources/docs/`.
-The path of the `.txt` file inside the `docs/` folder MUST mirror the relative path of the file you are documenting within the workspace (ending in `.txt`).
+**CRITICAL RULE: EXACT PATH MIRRORING**
+If you fail to mirror the exact path, the agent documentation search system will break and the shortcodes will be orphaned.
+The path inside `.agent/skills/mod-docs/resources/docs/` MUST precisely match the directory structure of the original file.
 
-**Example for a File:**
+**Example: Documenting a File (Universal Folder Standard):**
 
-- Target workspace path: `Contents/mods/DynamicTradingV1/media/lua/client/UI.lua`
-- Output doc path: `.agent/skills/mod-docs/resources/docs/Contents/mods/DynamicTradingV1/media/lua/client/UI.txt`
+- Original File Path: `Contents/mods/DynamicTradingV1/media/lua/client/UI.lua`
+- ✅ CORRECT Action: Create a folder named `UI/` mirroring that exact path.
+  - Create Overview File: `.agent/skills/mod-docs/resources/docs/Contents/mods/DynamicTradingV1/media/lua/client/UI/index.txt`
+  - Create Logic Chunk: `.agent/skills/mod-docs/resources/docs/Contents/mods/DynamicTradingV1/media/lua/client/UI/ButtonLogic.txt`
+- ❌ INCORRECT Action (Dumping flat files): Creating `.agent/skills/mod-docs/resources/docs/UI.txt`
+- ❌ INCORRECT Action (Old single-file format): Creating `.agent/skills/mod-docs/resources/docs/Contents/mods/DynamicTradingV1/media/lua/client/UI.txt`
 
-**Example for a Directory Overview:**
+**Example: Documenting a Main Directory Overview:**
 
 - Target workspace path: `Contents/mods/DynamicTradingV1/`
-- Output doc path: `.agent/skills/mod-docs/resources/docs/Contents/mods/DynamicTradingV1/index.txt`
+- ✅ CORRECT Action: `.agent/skills/mod-docs/resources/docs/Contents/mods/DynamicTradingV1/index.txt`
 
 ### 4. Verify Syntax
 

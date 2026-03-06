@@ -1,0 +1,49 @@
+Title: Custom Events Registration (00_DT_Core Chunk)
+Tags: [chunk, internal]
+
+CUSTOM LUALEVENTS REGISTERED:
+
+function RegisterCustomEvents()
+├─ OnDynamicTradingDailySimulation
+│  └─ Fired daily by server simulation
+│     Arguments: (none)
+│     Usage: Subscribe for daily economy resets
+│
+├─ OnDynamicTradingHourlyTick
+│  └─ Fired hourly by game tick
+│     Arguments: (none)
+│     Usage: Hourly economy updates, event expiration checks
+│
+├─ OnDynamicTradingTraderUpdated
+│  └─ Fired when any trader's inventory changes
+│     Arguments: (trader object, change reason string)
+│     Usage: Update player UI when NPC stock changes
+│
+├─ OnDynamicTradingFactionUpdated
+│  └─ Fired when faction state changes
+│     Arguments: (faction id, change reason string)
+│     Usage: Dynamic faction reputation updates
+│
+├─ OnDynamicTradingStockUpdated
+│  └─ Fired when global stock multipliers change (events)
+│     Arguments: (affected tag, new multiplier)
+│     Usage: UI price/availability updates
+│
+└─ OnDynamicTradingTradeCompleted
+   └─ Fired after successful trade transaction
+      Arguments: (trader, player, item, price, quantity)
+      Usage: Log trades, apply quest rewards, update faction relations
+
+IMPLEMENTATION PATTERN:
+Events.OnDynamicTradingHourlyTick:subscribe(function()
+  -- Handler code
+end)
+
+-- Elsewhere in codebase:
+triggerEvent("OnDynamicTradingHourlyTick")
+
+WHY CUSTOM EVENTS:
+- Loose coupling: V1/V2 don't need direct dependencies
+- Extensible: Other mods subscribe without modifying core
+- Event-driven: Enables reactive architecture
+- Network-safe: Events fire on both client and server
