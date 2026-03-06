@@ -2,7 +2,14 @@
 Item registration and management commands
 """
 from pathlib import Path
-from ...commons.lua_handler import process_lua_file, add_new_items, get_registered_items, collect_unregistered_items, add_items_to_file
+from ...commons.lua_handler import (
+    process_lua_file,
+    add_new_items,
+    get_registered_items,
+    collect_unregistered_items,
+    add_items_to_file,
+    build_lua_file_content,
+)
 from ...commons.vanilla_loader import load_vanilla_items
 from ...config import MOD_ITEMS_DIR
 
@@ -111,18 +118,8 @@ def delete_all_items():
             filename = lua_file.stem
             category = lua_file.parent.name if lua_file.parent.name != MOD_ITEMS_DIR.split('/')[-1] else 'Misc'
             
-            # Create empty Lua file with header
-            new_content = f"""-- ============================================================================
--- {filename}.lua
--- {category} Items Registry for Dynamic Trading
--- Auto-generated item list with pricing and stock ranges
--- ============================================================================
-
-{filename} = {filename} or {{}}
-{filename}.items = {{
-
-}}
-"""
+            # Create empty Lua file in DynamicTrading.RegisterBatch format
+            new_content = build_lua_file_content(filename, category)
             
             lua_file.write_text(new_content, encoding='utf-8')
             
