@@ -17,7 +17,18 @@ function DT_CheckFactionEvents()
     
     print("--- Faction Event Status ---")
     for id, f in pairs(data) do
-        local event = f.ActiveFlashEvent and f.ActiveFlashEvent.id or "None"
+        local flashEvents = f.ActiveFlashEvents or {}
+        if #flashEvents == 0 and f.ActiveFlashEvent and f.ActiveFlashEvent.id then
+            flashEvents = { { id = f.ActiveFlashEvent.id } }
+        end
+        local event = "None"
+        if #flashEvents > 0 then
+            local ids = {}
+            for _, entry in ipairs(flashEvents) do
+                if entry and entry.id then table.insert(ids, tostring(entry.id)) end
+            end
+            event = table.concat(ids, ", ")
+        end
         local stable = f.consecutiveStableDays or 0
         print(string.format("[%s] State: %s | Active Event: %s | Stable Days: %d", id, f.state, event, stable))
     end

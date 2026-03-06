@@ -21,6 +21,7 @@ Root inconsistencies discovered:
 2. UI panels do not use a single normalized global event source (Meta and Seasonal paths differ).
 3. Event loading/registration is spread across common and version files.
 4. Legacy global flash logic still exists in global tick path and conflicts with faction-only flash target architecture.
+5. Faction flash currently assumes a single active event object, blocking configured multi-flash stacking.
 
 
 ## 3. Non-Negotiable Design Rules
@@ -35,7 +36,7 @@ These rules define the new baseline for both V1 and V2.
 - `Seasonal`: global-scoped only.
 
 3. Stacking model:
-- Multipliers are multiplicative and stack across all active global events + active faction flash event.
+- Multipliers are multiplicative and stack across all active global events + all active faction flash events.
 - No duplicate same-event instances in active sets.
 
 4. Version role boundaries:
@@ -49,6 +50,11 @@ These rules define the new baseline for both V1 and V2.
   - `DynamicTrading_Roster`
   - `DynamicTrading_Stock`
 - V1-specific key `DynamicTrading_V1_Radio` remains interaction metadata only.
+
+6. Sandbox-driven control:
+- Add `AllowMetaEvents` to toggle all Meta activation globally.
+- Keep `AllowSeasonalEvents` for Seasonal activation globally.
+- Add `FactionFlashMinActive` and `FactionFlashMaxActive` to control per-faction concurrent flash event bounds.
 
 
 ## 4. Target Runtime Architecture
@@ -88,14 +94,31 @@ Semantics:
 
 ### 5.2 Faction flash contract
 Storage:
-- `DynamicTrading_Factions[factionID].ActiveFlashEvent`
+- `DynamicTrading_Factions[factionID].ActiveFlashEvents`
 
 Shape:
-- `{ id = string|nil, expires = hourNumber|0, targetCasualties = number|0 }`
+- `{{ id = string, expires = hourNumber, targetCasualties = number|0 }, ...}`
 
 Semantics:
 - `flash` only.
-- One active flash event per faction at a time (by current design).
+- Multiple concurrent flash events allowed.
+- Active count must stay within sandbox bounds (`FactionFlashMinActive` to `FactionFlashMaxActive`).
+
+Migration rule:
+- If legacy `ActiveFlashEvent` exists, convert it into a single-entry `ActiveFlashEvents` list during load/migration.
+
+### 5.4 Sandbox Options Contract
+New/updated shared options:
+- `AllowMetaEvents` (bool): enables/disables all Meta event activation.
+- `AllowSeasonalEvents` (bool): enables/disables all Seasonal event activation.
+- `FactionFlashMinActive` (int): minimum maintained concurrent flash events per faction.
+- `FactionFlashMaxActive` (int): maximum allowed concurrent flash events per faction.
+
+Rules:
+- If `AllowMetaEvents == false`, all active Meta events are force-cleared from global active events.
+- If `AllowSeasonalEvents == false`, all active Seasonal events are force-cleared from global active events.
+- `FactionFlashMinActive` is clamped to `>= 0`.
+- `FactionFlashMaxActive` is clamped to `>= FactionFlashMinActive`.
 
 ### 5.3 Registry contract
 Storage:
@@ -125,16 +148,17 @@ Optional fields:
 
 ### 6.2 Daily Faction simulation
 For each faction:
-1. Process flash expiry or continuation.
-2. Roll/select faction flash events.
-3. Apply immediate faction impacts.
-4. Apply distributed casualties/attrition during simulation updates.
-5. Persist faction state and transmit faction ModData.
+1. Process expiry for each active flash event instance.
+2. Ensure active flash count respects configured min/max bounds.
+3. Roll/select additional faction flash events if below min/target and constraints allow.
+4. Apply immediate impacts for newly activated events.
+5. Apply distributed casualties/attrition per active flash event during simulation updates.
+6. Persist faction state and transmit faction ModData.
 
 ### 6.3 Economy pricing/stock generation
 When pricing/volume is computed:
 1. Apply global event modifiers from active global list.
-2. Apply faction flash modifiers from selected faction event.
+2. Apply stacked faction flash modifiers from all active faction flash events.
 3. Apply inflation/heat and other existing modifiers.
 4. Return final multiplier/product.
 
@@ -143,24 +167,33 @@ When pricing/volume is computed:
 
 ### 7.1 Flash tab
 Data source:
-- selected faction `ActiveFlashEvent` + registry lookup.
+- selected faction `ActiveFlashEvents` + registry lookup for each entry.
+- show all active flash events, each with independent expiry.
 
 ### 7.2 Meta tab
 Data source:
 - normalized list built from `DynamicTrading_Engine_v2.EventSystem.activeEvents` + registry filter `type == meta`.
+- if `AllowMetaEvents == false`, show `Disabled by Sandbox` state.
 
 ### 7.3 Seasonal tab
 Data source:
 - same normalized global list + registry filter `type == seasonal`.
 - Must not read a separate stale local list path.
+- if `AllowSeasonalEvents == false`, show `Disabled by Sandbox` state.
 
 ### 7.4 Market tab
 Data source:
-- global normalized list + selected faction flash event.
+- global normalized list + selected faction flash events.
 - Display breakdown:
   - global event contribution
-  - faction flash contribution
+  - faction flash contribution (summed/stacked across active flash entries)
   - heat contribution
+
+### 7.5 Performance Contract
+- Engine ModData is the primary source for global events.
+- Client cache is fallback only when engine data is temporarily unavailable.
+- Build normalized active lists only on data-change events (sync/tick), not every frame.
+- Pre-index by event type (`meta`, `seasonal`, `flash`) for O(1)-style tab filtering.
 
 
 ## 8. Version-Agnostic Bootstrap Strategy
@@ -182,28 +215,32 @@ Result:
 
 ## 9. Migration and Cleanup Plan
 
-### Phase A: Correctness and key normalization
+### Phase A: Schema + sandbox + key normalization
 1. Replace all legacy key references to canonical key:
 - replace `DynamicTrading_Engine_v1.3` usages in shared/client listeners with `DynamicTrading_Engine_v2`.
 2. Ensure all event-change transmissions use `DynamicTrading_Engine_v2`.
-3. Add one helper to retrieve normalized global event defs from engine active events.
+3. Add new sandbox options and clamps (`AllowMetaEvents`, `FactionFlashMinActive`, `FactionFlashMaxActive`).
+4. Add migration from `ActiveFlashEvent` to `ActiveFlashEvents`.
+5. Add one helper to retrieve normalized global event defs from engine active events.
 
-### Phase B: Scope enforcement
+### Phase B: Scope + logic enforcement
 1. Remove/disable global flash generation from global tick path.
 2. Keep faction flash generation in `UpdateFaction(faction)` only.
-3. Keep Meta/Seasonal activation in global tick only.
+3. Upgrade faction logic to concurrent flash list with min/max enforcement.
+4. Keep Meta/Seasonal activation in global tick only.
+5. Force-clear Meta/Seasonal when their sandbox toggles are disabled.
 
-### Phase C: UI consistency
+### Phase C: UI + bootstrap + switch hygiene
 1. Refactor `DT_FactionEconomics_EventList` to use one source helper for Meta and Seasonal.
 2. Ensure all tabs repaint on engine key updates.
 3. Add explicit text states:
 - no active events
-- seasonal disabled by sandbox (if applicable)
-
-### Phase D: Bootstrap unification
-1. Add shared bootstrap module.
-2. Make V1 and V2 manifests call bootstrap first.
-3. Remove duplicate requires/hook registrations in version modules.
+- meta disabled by sandbox
+- seasonal disabled by sandbox
+4. Add shared bootstrap module.
+5. Make V1 and V2 manifests call bootstrap first.
+6. Remove duplicate requires/hook registrations in version modules.
+7. Add V1 -> V2 transition cleanup for V1-only radio metadata (`DynamicTrading_V1_Radio`) while preserving shared simulation keys.
 
 
 ## 10. Exact File Touchpoint Plan
@@ -247,14 +284,19 @@ Expected:
 2. Meta events activate when thresholds pass.
 3. Seasonal events activate based on season when sandbox allows.
 4. Multiple global events stack correctly.
-5. Global + faction flash stack correctly.
+5. Multiple faction flash events stack correctly per faction.
+6. Global + faction flash stack correctly.
+7. Meta/Seasonal force-clear correctly when toggles are disabled.
 
 ### 11.4 UI checks
-1. Flash tab shows selected faction flash only.
+1. Flash tab shows all selected faction flash events.
 2. Meta tab shows global meta only.
 3. Seasonal tab shows global seasonal only.
-4. Market tab reflects stacked modifiers and heat breakdown.
-5. Tabs refresh after ModData receive for engine key.
+4. Meta tab shows `Disabled by Sandbox` when disabled.
+5. Seasonal tab shows `Disabled by Sandbox` when disabled.
+6. Market tab reflects stacked modifiers and heat breakdown.
+7. Engine-first source remains stable; cache fallback only appears during brief sync gaps.
+8. Tabs refresh after ModData receive for engine key.
 
 
 ## 12. Logging and Diagnostics
@@ -283,12 +325,18 @@ Risk 3: Seasonal never appears due to sandbox setting
 Risk 4: UI inconsistency in MP due to partial sync timing
 - Mitigation: always derive UI global event list from latest engine ModData, not local stale copies.
 
+Risk 5: Performance regression from rebuilding event lists every UI render
+- Mitigation: event list normalization and type indexing are recomputed only on update signals.
+
+Risk 6: Transition artifacts when switching V1 to V2
+- Mitigation: clean V1-only radio metadata on V2 transition while preserving shared economy/faction/engine data.
+
 
 ## 14. Rollback Plan
 If regression appears:
 1. Keep backup branch before Phase A changes.
 2. Revert in reverse order:
-- Phase D (bootstrap) -> C (UI) -> B (scope) -> A (key normalization).
+- Phase C (UI/bootstrap/cleanup) -> B (scope/logic) -> A (schema/sandbox/key normalization).
 3. Preserve schema compatibility (do not rename ModData structures) to avoid save corruption.
 
 
@@ -298,24 +346,29 @@ All of the following must be true:
 2. No compatibility fallback code paths for event ownership.
 3. `Flash` is faction-only, `Meta/Seasonal` are global-only.
 4. Global event sync uses only `DynamicTrading_Engine_v2` key.
-5. User can switch V1/V2 between loads with no data conflict.
-6. Faction Intelligence tabs and market breakdown reflect real stacked states.
+5. Concurrent faction flash events function within configurable min/max bounds.
+6. User can switch V1/V2 between loads with no data conflict.
+7. Faction Intelligence tabs and market breakdown reflect real stacked states.
+8. Meta/Seasonal sandbox toggles correctly disable, clear, and display state.
 
 
 ## 16. Implementation Checklist (Execution-Ready)
-1. Key normalization patch.
-2. Global flash removal from engine global tick.
-3. UI global source normalization helper.
-4. Seasonal tab source correction.
-5. Bootstrap module introduction and manifest cleanup.
-6. Listener guards audit.
-7. SP validation.
-8. MP validation.
-9. V1 <-> V2 switch validation.
-10. Final documentation update and release notes.
+1. Schema migration (`ActiveFlashEvent` -> `ActiveFlashEvents`).
+2. Sandbox options patch (`AllowMetaEvents`, `FactionFlashMinActive`, `FactionFlashMaxActive`).
+3. Key normalization patch.
+4. Global flash removal from engine global tick.
+5. Concurrent faction flash logic implementation.
+6. UI global source normalization helper.
+7. Seasonal and Meta tab sandbox-disabled states.
+8. Bootstrap module introduction and manifest cleanup.
+9. V1 -> V2 radio metadata cleanup.
+10. Listener guards audit.
+11. SP validation.
+12. MP validation.
+13. V1 <-> V2 switch validation.
+14. Final documentation update and release notes.
 
 
 ## 17. Notes for Future Extensions
-- If multi-flash per faction is desired later, evolve `ActiveFlashEvent` to an array while keeping getter API stable.
 - If per-region global events are introduced, add `scope = global|region` in schema and preserve current global semantics as default.
 - Keep V1/V2 adapter boundaries strict to avoid reintroducing split simulation logic.

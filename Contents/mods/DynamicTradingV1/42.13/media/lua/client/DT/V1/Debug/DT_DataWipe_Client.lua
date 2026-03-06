@@ -109,11 +109,11 @@ local function OnFillWorldObjectContextMenu(player, context, worldObjects, test)
     toolTipRoster.description = "Delete all stored NPC data (Soul & Puppet data)."
     wipeRoster.toolTip = toolTipRoster
 
-    -- E. Wipe ENGINE (Legacy)
-    local wipeEngine = subMenu:addOption("Wipe Engine Data (Legacy)", playerObj, RequestServerWipe, "ENGINE")
+    -- E. Wipe ENGINE
+    local wipeEngine = subMenu:addOption("Wipe Engine Data", playerObj, RequestServerWipe, "ENGINE")
     local toolTipEngine = ISWorldObjectContextMenu.addToolTip()
     toolTipEngine:setName("Wipe Engine Data")
-    toolTipEngine.description = "Delete legacy engine data (DynamicTrading_Engine_v1.3)."
+    toolTipEngine.description = "Delete engine data (DynamicTrading_Engine_v2) and legacy key cleanup (DynamicTrading_Engine_v1.3)."
     wipeEngine.toolTip = toolTipEngine
 end
 

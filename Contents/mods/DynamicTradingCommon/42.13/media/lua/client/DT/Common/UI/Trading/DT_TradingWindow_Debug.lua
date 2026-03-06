@@ -56,8 +56,19 @@ function DT_TradingWindow:DebugTracePrice(listItem)
             print("  > " .. tostring(e.id))
         end
     end
-    if trader and trader.ActiveFlashEvent and trader.ActiveFlashEvent.id then
-         print("[DT DEBUG] ACTIVE FACTION EVENT: " .. tostring(trader.ActiveFlashEvent.id))
+    if trader then
+        local flashEvents = trader.ActiveFlashEvents or {}
+        if #flashEvents == 0 and trader.ActiveFlashEvent and trader.ActiveFlashEvent.id then
+            flashEvents = { { id = trader.ActiveFlashEvent.id } }
+        end
+        if #flashEvents > 0 then
+            print("[DT DEBUG] ACTIVE FACTION FLASH EVENTS: " .. tostring(#flashEvents))
+            for _, entry in ipairs(flashEvents) do
+                if entry and entry.id then
+                    print("  > " .. tostring(entry.id))
+                end
+            end
+        end
     end
 
     if d.isBuy then

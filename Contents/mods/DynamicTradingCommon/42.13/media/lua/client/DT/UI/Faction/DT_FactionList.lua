@@ -58,9 +58,12 @@ function DT_FactionList:doDrawItem(y, item, alt)
         r, g, b = 0.4, 0.8, 1 -- Light Blue
     end
 
-    -- Event Indicator
-    local eventStr = f.ActiveFlashEvent and f.ActiveFlashEvent.id or ""
-    local hasEvent = eventStr ~= "" and eventStr ~= "None"
+    -- Event Indicator (multi-flash aware with legacy fallback)
+    local flashEvents = f.ActiveFlashEvents or {}
+    if #flashEvents == 0 and f.ActiveFlashEvent and f.ActiveFlashEvent.id then
+        flashEvents = { { id = f.ActiveFlashEvent.id } }
+    end
+    local eventCount = #flashEvents
 
     -- Text Rendering
     -- Name
@@ -85,7 +88,7 @@ function DT_FactionList:doDrawItem(y, item, alt)
     if f.isV1 and DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetDiscoveredCount then
         popCount = DynamicTrading.Manager.GetDiscoveredCount(getSpecificPlayer(0))
     end
-    local statusText = "State: " .. tostring(state) .. " | Pop: " .. tostring(popCount)
+    local statusText = "State: " .. tostring(state) .. " | Pop: " .. tostring(popCount) .. " | Flash: " .. tostring(eventCount)
     self:drawText(statusText, 10, y + statusY, 0.6, 0.6, 0.6, 0.8, statusFont)
 
     -- Borders between items

@@ -56,9 +56,27 @@ function Lifecycle.Init()
             f.wealth = 1000
         end
 
-        if not f.ActiveFlashEvent then
-            f.ActiveFlashEvent = { id = nil, expires = 0 }
+        -- Phase-A schema prep: support new list format while keeping legacy field for compatibility.
+        if type(f.ActiveFlashEvents) ~= "table" then
+            f.ActiveFlashEvents = {}
         end
+
+        -- Migrate legacy single-event field into list once.
+        if f.ActiveFlashEvent and f.ActiveFlashEvent.id and #f.ActiveFlashEvents == 0 then
+            table.insert(f.ActiveFlashEvents, {
+                id = f.ActiveFlashEvent.id,
+                expires = f.ActiveFlashEvent.expires or 0,
+                targetCasualties = f.ActiveFlashEvent.targetCasualties or 0
+            })
+        end
+
+        -- Keep legacy field in sync for existing systems until full multi-flash runtime is merged.
+        local first = f.ActiveFlashEvents[1]
+        f.ActiveFlashEvent = {
+            id = first and first.id or nil,
+            expires = first and (first.expires or 0) or 0,
+            targetCasualties = first and (first.targetCasualties or 0) or 0
+        }
 
         if not f.consecutiveStableDays then
             f.consecutiveStableDays = 0
@@ -122,7 +140,8 @@ function Lifecycle.CreateFaction(factionID, initialData)
             reputation = initialData.reputation or {}, -- [Username] = Integer
             starvationDays = 0, -- Track days without food
             consecutiveStableDays = 0, -- Track how long they've been stable (for wildcard triggers)
-            ActiveFlashEvent = { id = nil, expires = 0 } -- id = event string, expires = world age hour
+            ActiveFlashEvents = {}, -- list of faction flash events (Phase-A schema)
+            ActiveFlashEvent = { id = nil, expires = 0, targetCasualties = 0 } -- legacy compatibility mirror
         }
         
         -- Generate Initial Roster in DynamicTrading_Roster

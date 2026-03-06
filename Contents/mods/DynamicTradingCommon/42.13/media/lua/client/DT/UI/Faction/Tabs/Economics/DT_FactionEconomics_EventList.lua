@@ -80,43 +80,67 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
     local bodySize = (scale == "Large" and "Medium") or "Small"
 
     local text = ""
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or {}
+    local metaEnabled = sandbox.AllowMetaEvents ~= false
+    local seasonalEnabled = sandbox.AllowSeasonalEvents ~= false
 
     if self.mode == "Flash" then
         text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> FACTION FLASH EVENTS <SIZE:" .. bodySize .. "> <LINE> <LINE> "
-        if f.ActiveFlashEvent and f.ActiveFlashEvent.id then
-            local def = DynamicTrading.Events.Registry[f.ActiveFlashEvent.id]
+        local flashEvents = f.ActiveFlashEvents or {}
+        if #flashEvents == 0 and f.ActiveFlashEvent and f.ActiveFlashEvent.id then
+            flashEvents = {
+                {
+                    id = f.ActiveFlashEvent.id,
+                    expires = f.ActiveFlashEvent.expires or 0
+                }
+            }
+        end
+
+        if #flashEvents > 0 then
             local currentHours = getGameTime():getWorldAgeHours()
-            local diff = math.max(0, f.ActiveFlashEvent.expires - currentHours)
-            
-            text = text .. self:formatEventDetails(def, diff, bodySize)
+            for _, entry in ipairs(flashEvents) do
+                if entry and entry.id then
+                    local def = DynamicTrading.Events.Registry[entry.id]
+                    local diff = math.max(0, (entry.expires or 0) - currentHours)
+                    text = text .. self:formatEventDetails(def, diff, bodySize)
+                end
+            end
         else
             text = text .. " <RGB:0.6,0.6,0.6> No specific faction alerts active. <LINE> "
         end
 
     elseif self.mode == "Meta" then
         text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> GLOBAL MEGA-TRENDS <SIZE:" .. bodySize .. "> <LINE> <LINE> "
-        local count = 0
-        for _, eventDef in ipairs(activeEventsList) do
-            if eventDef.type == "meta" then
-                text = text .. self:formatEventDetails(eventDef, -1, bodySize) .. " <LINE> "
-                count = count + 1
+        if not metaEnabled then
+            text = text .. " <RGB:1,0.7,0.2> Meta events are disabled by sandbox settings. <LINE> "
+        else
+            local count = 0
+            for _, eventDef in ipairs(activeEventsList) do
+                if eventDef.type == "meta" then
+                    text = text .. self:formatEventDetails(eventDef, -1, bodySize) .. " <LINE> "
+                    count = count + 1
+                end
             end
-        end
-        if count == 0 then
-            text = text .. " <RGB:0.6,0.6,0.6> No major global trends affecting the world. <LINE> "
+            if count == 0 then
+                text = text .. " <RGB:0.6,0.6,0.6> No major global trends affecting the world. <LINE> "
+            end
         end
 
     elseif self.mode == "Seasonal" then
         text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> SEASONAL SHIFTS <SIZE:" .. bodySize .. "> <LINE> <LINE> "
-        local count = 0
-        for _, eventDef in ipairs(DynamicTrading.Events.ActiveEvents or {}) do
-            if eventDef.type == "seasonal" then
-                text = text .. self:formatEventDetails(eventDef, -1, bodySize) .. " <LINE> "
-                count = count + 1
+        if not seasonalEnabled then
+            text = text .. " <RGB:1,0.7,0.2> Seasonal events are disabled by sandbox settings. <LINE> "
+        else
+            local count = 0
+            for _, eventDef in ipairs(activeEventsList) do
+                if eventDef.type == "seasonal" then
+                    text = text .. self:formatEventDetails(eventDef, -1, bodySize) .. " <LINE> "
+                    count = count + 1
+                end
             end
-        end
-        if count == 0 then
-            text = text .. " <RGB:0.6,0.6,0.6> Seasonal conditions are currently stable. <LINE> "
+            if count == 0 then
+                text = text .. " <RGB:0.6,0.6,0.6> Seasonal conditions are currently stable. <LINE> "
+            end
         end
     end
 

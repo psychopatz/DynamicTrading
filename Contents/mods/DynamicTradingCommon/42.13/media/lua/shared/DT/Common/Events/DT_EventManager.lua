@@ -16,10 +16,23 @@ DynamicTrading.Events.ActiveEvents = DynamicTrading.Events.ActiveEvents or {}
 function DynamicTrading.Events.Register(id, data)
     if not id or not data then return end
     data.type = data.type or "flash"
+    data.id = data.id or id
     DynamicTrading.Events.Registry[id] = data
     
     local sentiment = data.sentiment or "Neutral"
     print("[DynamicTrading] [Events] Registered: " .. tostring(id) .. " | Type: " .. tostring(data.type) .. " | Sentiment: " .. sentiment)
+end
+
+-- Phase-A helper: shared clamp logic for faction flash slot bounds.
+function DynamicTrading.Events.GetFactionFlashSlotBounds()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or {}
+    local minActive = tonumber(sandbox.FactionFlashMinActive) or 1
+    local maxActive = tonumber(sandbox.FactionFlashMaxActive) or 1
+
+    if minActive < 0 then minActive = 0 end
+    if maxActive < minActive then maxActive = minActive end
+
+    return minActive, maxActive
 end
 
 -- =============================================================================
@@ -61,11 +74,29 @@ function DynamicTrading.Events.Tick(data)
         end
     end
 
-    -- B: META & SEASONAL EVENTS (Always Active if Conditions Met)
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or {}
+    local allowMeta = sandbox.AllowMetaEvents ~= false
+    local allowSeasonal = sandbox.AllowSeasonalEvents ~= false
+
+    -- B: FORCE-CLEAR META/SEASONAL WHEN DISABLED BY SANDBOX
+    for id, _ in pairs(es.activeEvents) do
+        local def = DynamicTrading.Events.Registry[id]
+        if def then
+            local disableMeta = def.type == "meta" and not allowMeta
+            local disableSeasonal = def.type == "seasonal" and not allowSeasonal
+            if disableMeta or disableSeasonal then
+                es.activeEvents[id] = nil
+                changed = true
+            end
+        end
+    end
+
+    -- C: META & SEASONAL EVENTS (Always Active if Conditions Met)
     for id, def in pairs(DynamicTrading.Events.Registry) do
         if (def.type == "meta" or def.type == "seasonal") and def.condition then
             local isActive = es.activeEvents[id] ~= nil
-            local shouldBeActive = def.condition()
+            local isEnabled = (def.type == "meta" and allowMeta) or (def.type == "seasonal" and allowSeasonal)
+            local shouldBeActive = isEnabled and def.condition()
             
             if shouldBeActive and not isActive then
                 es.activeEvents[id] = { expires = -1 }
@@ -96,93 +127,12 @@ function DynamicTrading.Events.Tick(data)
         end
     end
 
-    -- C: FLASH EVENTS (Random Lottery)
-    local activeFlashCount = 0
-    for id, _ in pairs(es.activeEvents) do
-        local def = DynamicTrading.Events.Registry[id]
-        if def and def.type == "flash" then activeFlashCount = activeFlashCount + 1 end
-    end
-
-    local maxFlashEvents = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.MaxEvents) or 3
-
-    if activeFlashCount < maxFlashEvents then
-        local daysSinceLast = currentDay - (es.lastEventDay or -10)
-        local interval = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.EventFrequency) or 5
-        
-        if daysSinceLast >= interval then
-            local chance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.EventChance) or 50
-            local roll = ZombRand(100) + 1
-            
-            if roll <= chance then
-                if DynamicTrading.Debug then
-                    print("[DynamicTrading] [Events] Flash lottery won! (Roll: " .. roll .. " <= Chance: " .. chance .. ") - Selecting candidate...")
-                end
-                local candidates = DynamicTrading.Events.GetFlashCandidates()
-                
-                -- SMART FILTERING
-                local validPool = {}    -- Fresh events ready to fire
-                local cooldownPool = {} -- Events recently fired (Backup)
-
-                for _, id in ipairs(candidates) do
-                    -- 1. Must not be currently active
-                    if not es.activeEvents[id] then
-                        -- 2. Check Cooldown
-                        local unlockDay = 0
-                        if DynamicTrading.CooldownManager and DynamicTrading.CooldownManager.GetEventCooldown then
-                            unlockDay = DynamicTrading.CooldownManager.GetEventCooldown(id)
-                        end
-                        
-                        if currentDay >= unlockDay then
-                            table.insert(validPool, id)
-                        else
-                            table.insert(cooldownPool, id)
-                        end
-                    end
-                end
-
-                -- SELECTION LOGIC
-                local finalPickID = nil
-
-                if #validPool > 0 then
-                    finalPickID = validPool[ZombRand(#validPool) + 1]
-                elseif #cooldownPool > 0 then
-                    finalPickID = cooldownPool[ZombRand(#cooldownPool) + 1]
-                end
-
-                if finalPickID then
-                    local def = DynamicTrading.Events.Registry[finalPickID]
-                    if def then
-                        local duration = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.EventDuration) or 3
-                        es.activeEvents[finalPickID] = { expires = currentDay + duration }
-                        es.lastEventDay = currentDay
-                        
-                        if DynamicTrading.Debug then
-                            print("[DynamicTrading] [Events] New Flash Event: " .. tostring(def.name) .. " (Duration: " .. duration .. " days)")
-                        end
-
-                        if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddLog then
-                            DynamicTrading.NetworkLogs.AddLog("BREAKING NEWS: " .. def.name, "event")
-                        end
-                        changed = true
-                    end
-                else
-                    if DynamicTrading.Debug then
-                        print("[DynamicTrading] [Events] Flash lottery won, but no valid candidates found.")
-                    end
-                    es.lastEventDay = currentDay
-                end
-            else
-                if DynamicTrading.Debug then
-                    print("[DynamicTrading] [Events] Flash lottery failed (Roll: " .. roll .. " > Chance: " .. chance .. ")")
-                end
-                es.lastEventDay = currentDay - (interval - 1)
-                changed = true
-            end
-        end
-    end
+    -- D: FLASH EVENTS
+    -- Intentionally disabled at global-engine scope.
+    -- Flash events are faction-scoped and managed by DynamicTrading.Events.UpdateFaction.
 
     if changed then
-        if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v1.3") end
+        if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v2") end
         DynamicTrading.Events.RebuildActiveCache(data)
     end
 end
@@ -205,131 +155,222 @@ function DynamicTrading.Events.RebuildActiveCache(data)
     end
 end
 
+-- Returns normalized global active event definitions (meta/seasonal only) from engine state.
+function DynamicTrading.Events.GetActiveGlobalEventDefs(engineData)
+    local list = {}
+
+    if not engineData and DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData then
+        engineData = DynamicTrading_Engine.GetEngineData()
+    end
+
+    local activeMap = engineData and engineData.EventSystem and engineData.EventSystem.activeEvents
+    if type(activeMap) ~= "table" then return list end
+
+    for id, _ in pairs(activeMap) do
+        local def = DynamicTrading.Events.Registry[id]
+        if def and def.type ~= "flash" then
+            table.insert(list, def)
+        end
+    end
+
+    return list
+end
+
 
 -- =============================================================================
 -- 4. FACTION EVENT PROCESSING (Unified V2 Director Logic)
 -- =============================================================================
+local function ensureFactionFlashSchema(faction)
+    faction.ActiveFlashEvents = faction.ActiveFlashEvents or {}
+
+    -- Migrate legacy single-event field if needed.
+    if faction.ActiveFlashEvent and faction.ActiveFlashEvent.id and #faction.ActiveFlashEvents == 0 then
+        table.insert(faction.ActiveFlashEvents, {
+            id = faction.ActiveFlashEvent.id,
+            expires = faction.ActiveFlashEvent.expires or 0,
+            targetCasualties = faction.ActiveFlashEvent.targetCasualties or 0
+        })
+    end
+
+    return faction.ActiveFlashEvents
+end
+
+local function syncLegacyActiveFlashMirror(faction)
+    local first = faction.ActiveFlashEvents and faction.ActiveFlashEvents[1]
+    faction.ActiveFlashEvent = {
+        id = first and first.id or nil,
+        expires = first and (first.expires or 0) or 0,
+        targetCasualties = first and (first.targetCasualties or 0) or 0
+    }
+end
+
+function DynamicTrading.Events.GetFactionFlashEventDefs(faction)
+    local defs = {}
+    if not faction then return defs end
+
+    local entries = ensureFactionFlashSchema(faction)
+    for _, entry in ipairs(entries) do
+        if entry and entry.id then
+            local def = DynamicTrading.Events.Registry[entry.id]
+            if def then table.insert(defs, def) end
+        end
+    end
+    return defs
+end
+
 function DynamicTrading.Events.UpdateFaction(faction)
     if isClient() and not isServer() then return end
     if not faction then return end
-    
+
     local currentHour = math.floor(getGameTime():getWorldAgeHours())
-    local Sandbox = SandboxVars.DynamicTrading
-    
-    -- A. EXPIRY CHECK
-    if faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-        if currentHour >= faction.ActiveFlashEvent.expires then
-            print("[DynamicTrading] [Events] Event [" .. faction.ActiveFlashEvent.id .. "] expired for faction " .. faction.id)
-            faction.ActiveFlashEvent.id = nil
-            faction.ActiveFlashEvent.expires = 0
-            faction.ActiveFlashEvent.targetCasualties = 0 
-        else
-            -- Event still active, skip new triggers
-            return
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or {}
+    local active = ensureFactionFlashSchema(faction)
+
+    -- A. EXPIRE OLD EVENTS
+    for i = #active, 1, -1 do
+        local entry = active[i]
+        if not entry or not entry.id then
+            table.remove(active, i)
+        elseif currentHour >= (entry.expires or 0) then
+            if DynamicTrading.Debug then
+                print("[DynamicTrading] [Events] Event [" .. tostring(entry.id) .. "] expired for faction " .. tostring(faction.id))
+            end
+            table.remove(active, i)
         end
     end
 
-    -- B. STABILITY TRACKING (Ensure key exists)
+    -- B. STABILITY TRACKING
     if faction.state == "Stable" then
         faction.consecutiveStableDays = (faction.consecutiveStableDays or 0) + 1
     else
         faction.consecutiveStableDays = 0
     end
 
-    -- C. TRIGGER ROLL
-    local baseChance = (Sandbox and Sandbox.EventChance) or 50
-    local stabilityBonus = math.floor((faction.consecutiveStableDays or 0) / 7) * 10 
-    local roll = ZombRand(100) + 1
-    
-    if roll > (baseChance + stabilityBonus) then
-        return -- No event today
-    end
+    local minSlots, maxSlots = DynamicTrading.Events.GetFactionFlashSlotBounds()
+    local baseChance = tonumber(sandbox.EventChance) or 50
+    local stabilityBonus = math.floor((faction.consecutiveStableDays or 0) / 7) * 10
 
-    -- D. CANDIDATE DISCOVERY
-    local candidates = {}
-    local wildcardPool = {}
-    
-    for id, def in pairs(DynamicTrading.Events.Registry) do
-        if def.type == "flash" then
-            -- Context-Aware Spawn Check
-            local canSpawn = true
-            if def.canSpawn then
-                local ok, result = pcall(def.canSpawn, faction)
-                canSpawn = ok and result
-            end
-            
-            if canSpawn then
-                table.insert(candidates, id)
-                
-                -- Wildcard Pool (Negative events or 5% chaos chance)
-                if def.sentiment == "Negative" or roll <= 5 then
-                    table.insert(wildcardPool, id)
-                end
-            end
+    local function isAlreadyActive(id)
+        for _, e in ipairs(active) do
+            if e and e.id == id then return true end
         end
+        return false
     end
 
-    -- E. SELECTION
-    local finalID = nil
-    -- Prolonged stability increases risk of "Wildcard" crisis
-    local isWildcard = (faction.consecutiveStableDays or 0) > 14 and ZombRand(100) < (faction.consecutiveStableDays) 
-    
-    if isWildcard and #wildcardPool > 0 then
-        finalID = wildcardPool[ZombRand(#wildcardPool) + 1]
-        print("[DynamicTrading] [Events] WILDCARD selected for faction " .. faction.id .. " (Stability: " .. faction.consecutiveStableDays .. ")")
-    elseif #candidates > 0 then
-        finalID = candidates[ZombRand(#candidates) + 1]
-    end
+    local function buildCandidatePools(roll)
+        local candidates = {}
+        local wildcardPool = {}
 
-    -- F. ACTIVATION & IMMEDIATE IMPACTS
-    if finalID then
-        local minDur = (Sandbox and Sandbox.V2_FlashEventMinDuration) or 24
-        local maxDur = (Sandbox and Sandbox.V2_FlashEventMaxDuration) or 72
-        local duration = minDur + ZombRand(maxDur - minDur + 1)
-        
-        -- Init Event Instance
-        if not faction.ActiveFlashEvent then faction.ActiveFlashEvent = {} end
-        faction.ActiveFlashEvent.id = finalID
-        faction.ActiveFlashEvent.expires = currentHour + duration
-        
-        local def = DynamicTrading.Events.Registry[finalID]
-        print("[DynamicTrading] [Events] Faction [" .. faction.id .. "] triggered: " .. tostring(def and def.name or finalID))
-        
-        if def then
-            -- 1. Casualty Calculation (Target for Simulation)
-            if def.factionImpact and def.factionImpact.memberCountPct then
-                local pct = def.factionImpact.memberCountPct
-                local totalToKill = math.floor(math.abs(faction.memberCount * pct))
-                if totalToKill == 1 and pct < 0 then totalToKill = 1 end 
-                faction.ActiveFlashEvent.targetCasualties = totalToKill
-            else
-                faction.ActiveFlashEvent.targetCasualties = 0
-            end
-
-            -- 2. Immediate Impacts
-            if def.factionImpact then
-                if def.factionImpact.wealthAdd then
-                    faction.wealth = (faction.wealth or 0) + def.factionImpact.wealthAdd
+        for id, def in pairs(DynamicTrading.Events.Registry) do
+            if def.type == "flash" and not isAlreadyActive(id) then
+                local canSpawn = true
+                if def.canSpawn then
+                    local ok, result = pcall(def.canSpawn, faction)
+                    canSpawn = ok and result
                 end
-                
-                if def.factionImpact.stockpileAdd then
-                    if not faction.stockpile then faction.stockpile = {} end
-                    for res, amt in pairs(def.factionImpact.stockpileAdd) do
-                        faction.stockpile[res] = (faction.stockpile[res] or 0) + amt
+
+                if canSpawn then
+                    table.insert(candidates, id)
+                    if def.sentiment == "Negative" or (roll and roll <= 5) then
+                        table.insert(wildcardPool, id)
                     end
                 end
-                
-                if def.factionImpact.stabilityAdd then
-                    faction.consecutiveStableDays = math.max(0, (faction.consecutiveStableDays or 0) + def.factionImpact.stabilityAdd)
+            end
+        end
+
+        return candidates, wildcardPool
+    end
+
+    local function activateEvent(finalID)
+        local minDur = tonumber(sandbox.V2_FlashEventMinDuration) or 24
+        local maxDur = tonumber(sandbox.V2_FlashEventMaxDuration) or 72
+        if maxDur < minDur then maxDur = minDur end
+
+        local duration = minDur + ZombRand(maxDur - minDur + 1)
+        local entry = {
+            id = finalID,
+            expires = currentHour + duration,
+            targetCasualties = 0
+        }
+
+        local def = DynamicTrading.Events.Registry[finalID]
+        if def and def.factionImpact and def.factionImpact.memberCountPct then
+            local pct = def.factionImpact.memberCountPct
+            local totalToKill = math.floor(math.abs((faction.memberCount or 0) * pct))
+            if totalToKill == 1 and pct < 0 then totalToKill = 1 end
+            entry.targetCasualties = totalToKill
+        end
+
+        table.insert(active, entry)
+
+        if DynamicTrading.Debug then
+            print("[DynamicTrading] [Events] Faction [" .. tostring(faction.id) .. "] triggered: " .. tostring(def and def.name or finalID))
+        end
+
+        if def and def.factionImpact then
+            if def.factionImpact.wealthAdd then
+                faction.wealth = (faction.wealth or 0) + def.factionImpact.wealthAdd
+            end
+
+            if def.factionImpact.stockpileAdd then
+                faction.stockpile = faction.stockpile or {}
+                for res, amt in pairs(def.factionImpact.stockpileAdd) do
+                    faction.stockpile[res] = (faction.stockpile[res] or 0) + amt
                 end
             end
 
-            -- 3. Reset stability on Crisis
-            if def.sentiment == "Negative" then
-                faction.consecutiveStableDays = 0
+            if def.factionImpact.stabilityAdd then
+                faction.consecutiveStableDays = math.max(0, (faction.consecutiveStableDays or 0) + def.factionImpact.stabilityAdd)
             end
         end
+
+        if def and def.sentiment == "Negative" then
+            faction.consecutiveStableDays = 0
+        end
     end
+
+    local function trySpawn(force)
+        if #active >= maxSlots then return false end
+
+        local roll = ZombRand(100) + 1
+        local threshold = baseChance + stabilityBonus
+        if not force and roll > threshold then
+            return false
+        end
+
+        local candidates, wildcardPool = buildCandidatePools(roll)
+        if #candidates == 0 and #wildcardPool == 0 then
+            return false
+        end
+
+        local isWildcard = (not force) and ((faction.consecutiveStableDays or 0) > 14)
+            and (ZombRand(100) < (faction.consecutiveStableDays or 0))
+
+        local finalID = nil
+        if isWildcard and #wildcardPool > 0 then
+            finalID = wildcardPool[ZombRand(#wildcardPool) + 1]
+        elseif #candidates > 0 then
+            finalID = candidates[ZombRand(#candidates) + 1]
+        end
+
+        if finalID then
+            activateEvent(finalID)
+            return true
+        end
+        return false
+    end
+
+    -- C. GUARANTEE MIN SLOTS
+    while #active < minSlots do
+        if not trySpawn(true) then break end
+    end
+
+    -- D. OPTIONAL EXTRA SPAWN UP TO MAX SLOTS
+    if #active < maxSlots then
+        trySpawn(false)
+    end
+
+    syncLegacyActiveFlashMirror(faction)
 end
 
 -- 2. ECONOMY HOOKS (GETTERS)
@@ -394,10 +435,9 @@ function DynamicTrading.Events.GetFactionSystemModifier(faction, key)
         multiplier = multiplier * DynamicTrading.Events.GetSystemModifier(key)
     end
     
-    -- 2. Faction
-    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
-        if def and def.system and def.system[key] then
+    -- 2. Faction (all active flash events)
+    for _, def in ipairs(DynamicTrading.Events.GetFactionFlashEventDefs(faction)) do
+        if def.system and def.system[key] then
             multiplier = multiplier * def.system[key]
         end
     end
@@ -419,15 +459,14 @@ function DynamicTrading.Events.GetFactionPriceModifier(faction, itemTags, verbos
         multiplier = multiplier * DynamicTrading.Events.GetPriceModifier(itemTags, verbose)
     end
 
-    -- 2. Apply Faction Specific Logic
-    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
-        if def and def.effects then
+    -- 2. Apply Faction Specific Logic (all active flash events)
+    for _, def in ipairs(DynamicTrading.Events.GetFactionFlashEventDefs(faction)) do
+        if def.effects then
             for _, tag in ipairs(itemTags or {}) do
                 if def.effects[tag] and def.effects[tag].price then
                     local fMult = def.effects[tag].price
                     if verbose and fMult ~= 1.0 then
-                        print("[DynamicTrading] [Events] Faction Event [" .. faction.ActiveFlashEvent.id .. "] Multiplier for tag [" .. tag .. "] for faction [" .. (faction.id or "unknown") .. "]: " .. fMult)
+                        print("[DynamicTrading] [Events] Faction Event [" .. tostring(def.id or "event") .. "] Multiplier for tag [" .. tag .. "] for faction [" .. (faction.id or "unknown") .. "]: " .. fMult)
                     end
                     multiplier = multiplier * fMult
                 end
@@ -505,10 +544,9 @@ function DynamicTrading.Events.GetFactionVolumeModifier(faction, itemTags)
         multiplier = multiplier * DynamicTrading.Events.GetVolumeModifier(itemTags)
     end
     
-    -- 2. Faction
-    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
-        if def and def.stock and def.stock.volumeMult then
+    -- 2. Faction (all active flash events)
+    for _, def in ipairs(DynamicTrading.Events.GetFactionFlashEventDefs(faction)) do
+        if def.stock and def.stock.volumeMult then
             multiplier = multiplier * def.stock.volumeMult
         end
     end
@@ -525,10 +563,9 @@ function DynamicTrading.Events.GetFactionInjections(faction)
          for k,v in pairs(global) do injections[k] = v end
     end
     
-    -- 2. Faction
-    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
-        if def and def.stock and def.stock.injections then
+    -- 2. Faction (all active flash events)
+    for _, def in ipairs(DynamicTrading.Events.GetFactionFlashEventDefs(faction)) do
+        if def.stock and def.stock.injections then
             for tag, count in pairs(def.stock.injections) do
                 injections[tag] = (injections[tag] or 0) + count
             end
@@ -540,9 +577,8 @@ end
 
 function DynamicTrading.Events.GetFactionExpertTags(faction)
     local tags = {}
-    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
-        if def and def.stock and def.stock.expertTags then
+    for _, def in ipairs(DynamicTrading.Events.GetFactionFlashEventDefs(faction)) do
+        if def.stock and def.stock.expertTags then
             for _, tag in ipairs(def.stock.expertTags) do tags[tag] = true end
         end
     end
@@ -551,9 +587,8 @@ end
 
 function DynamicTrading.Events.GetFactionForbidTags(faction)
     local tags = {}
-    if faction and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-        local def = DynamicTrading.Events.Registry[faction.ActiveFlashEvent.id]
-        if def and def.stock and def.stock.forbidTags then
+    for _, def in ipairs(DynamicTrading.Events.GetFactionFlashEventDefs(faction)) do
+        if def.stock and def.stock.forbidTags then
             for _, tag in ipairs(def.stock.forbidTags) do tags[tag] = true end
         end
     end

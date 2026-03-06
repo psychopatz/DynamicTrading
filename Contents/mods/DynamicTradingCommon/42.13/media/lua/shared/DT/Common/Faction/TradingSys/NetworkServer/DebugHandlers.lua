@@ -182,9 +182,24 @@ Handlers.DebugCommand = function(player, args)
         
         if faction then
             local currentHour = math.floor(getGameTime():getWorldAgeHours())
-            faction.ActiveFlashEvent = faction.ActiveFlashEvent or {}
-            faction.ActiveFlashEvent.id = eventID
-            faction.ActiveFlashEvent.expires = eventID and (currentHour + hours) or 0
+            faction.ActiveFlashEvents = faction.ActiveFlashEvents or {}
+
+            if eventID then
+                table.insert(faction.ActiveFlashEvents, {
+                    id = eventID,
+                    expires = currentHour + hours,
+                    targetCasualties = 0
+                })
+            else
+                faction.ActiveFlashEvents = {}
+            end
+
+            local first = faction.ActiveFlashEvents[1]
+            faction.ActiveFlashEvent = {
+                id = first and first.id or nil,
+                expires = first and (first.expires or 0) or 0,
+                targetCasualties = first and (first.targetCasualties or 0) or 0
+            }
             
             ModData.transmit("DynamicTrading_Factions")
             local msg = eventID and ("Event Injected: " .. eventID) or "Event Cleared"

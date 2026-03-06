@@ -148,6 +148,14 @@ option DynamicTrading.AllowSeasonalEvents
     translation = DynamicTrading_AllowSeasonalEvents,
 }
 
+option DynamicTrading.AllowMetaEvents
+{
+    type = boolean,
+    default = true,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_AllowMetaEvents,
+}
+
 option DynamicTrading.AllowHardcoreEvents
 {
     type = boolean,
@@ -214,4 +222,24 @@ option DynamicTrading.V2_FlashEventMaxDuration
     max = 336,
     page = DynamicTradingEvents,
     translation = DynamicTrading_V2_FlashEventMaxDuration,
+}
+
+option DynamicTrading.FactionFlashMinActive
+{
+    type = integer,
+    default = 1,
+    min = 0,
+    max = 10,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_FactionFlashMinActive,
+}
+
+option DynamicTrading.FactionFlashMaxActive
+{
+    type = integer,
+    default = 1,
+    min = 0,
+    max = 10,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_FactionFlashMaxActive,
 }

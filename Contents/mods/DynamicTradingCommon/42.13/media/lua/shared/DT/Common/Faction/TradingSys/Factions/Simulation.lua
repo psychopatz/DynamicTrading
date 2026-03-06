@@ -69,58 +69,69 @@ function Simulation.UpdateDaily()
         -- [EVENT IMPACTS] V2 Revamp
         -- ==========================================================
         
-        -- A. DISTRIBUTED CASUALTIES
-        if faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-            local afe = faction.ActiveFlashEvent
-            if afe.targetCasualties and afe.targetCasualties > 0 then
-                -- Calculate days remaining in event
-                local hoursLeft = afe.expires - currentHour
-                local daysLeft = math.ceil(hoursLeft / 24)
-                if daysLeft < 1 then daysLeft = 1 end
-                
-                -- Determine how many die today
-                local killToday = math.ceil(afe.targetCasualties / daysLeft)
-                -- Add some RNG spice
-                if killToday > 1 and ZombRand(100) < 30 then killToday = killToday - 1 end
-                
-                if killToday > afe.targetCasualties then killToday = afe.targetCasualties end
-                
-                if killToday > 0 then
-                    faction.memberCount = math.max(0, faction.memberCount - killToday)
-                    afe.targetCasualties = afe.targetCasualties - killToday
-                    DynamicTrading_Roster.RemoveSoul(id, killToday)
-                    print("DT Director: Event casualty hit for faction [" .. faction.name .. "] | Killed: " .. killToday .. " | Remaining Targets: " .. afe.targetCasualties)
+        -- A. DISTRIBUTED CASUALTIES + ATTRITION (all active faction flash events)
+        faction.ActiveFlashEvents = faction.ActiveFlashEvents or {}
+        if #faction.ActiveFlashEvents == 0 and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
+            table.insert(faction.ActiveFlashEvents, {
+                id = faction.ActiveFlashEvent.id,
+                expires = faction.ActiveFlashEvent.expires or 0,
+                targetCasualties = faction.ActiveFlashEvent.targetCasualties or 0
+            })
+        end
+
+        for _, afe in ipairs(faction.ActiveFlashEvents) do
+            if afe and afe.id then
+                if afe.targetCasualties and afe.targetCasualties > 0 then
+                    local hoursLeft = (afe.expires or currentHour) - currentHour
+                    local daysLeft = math.ceil(hoursLeft / 24)
+                    if daysLeft < 1 then daysLeft = 1 end
+
+                    local killToday = math.ceil(afe.targetCasualties / daysLeft)
+                    if killToday > 1 and ZombRand(100) < 30 then killToday = killToday - 1 end
+                    if killToday > afe.targetCasualties then killToday = afe.targetCasualties end
+
+                    if killToday > 0 then
+                        faction.memberCount = math.max(0, faction.memberCount - killToday)
+                        afe.targetCasualties = afe.targetCasualties - killToday
+                        DynamicTrading_Roster.RemoveSoul(id, killToday)
+                        print("DT Director: Event casualty hit for faction [" .. faction.name .. "] [" .. tostring(afe.id) .. "] | Killed: " .. killToday .. " | Remaining Targets: " .. tostring(afe.targetCasualties))
+                    end
                 end
-            end
-            
-            -- B. ATTRITION (Resource Dependent)
-            local def = DynamicTrading.Events.Registry[afe.id]
-            if def and def.attrition then
-                local attr = def.attrition
-                local resource = attr.resource or "meds" -- Default to meds for backward compatibility
-                local affectedPct = attr.pct or attr.sickPct or 0
-                local costPerHead = attr.cost or attr.medsPerSick or 1.0
-                
-                local affectedCount = math.floor(faction.memberCount * affectedPct)
-                if affectedCount > 0 then
-                    local totalNeeded = affectedCount * costPerHead
-                    local stockpile = (faction.stockpile[resource] or 0)
-                    
-                    if stockpile >= totalNeeded then
-                        -- Requirement met!
-                        faction.stockpile[resource] = stockpile - totalNeeded
-                        print("DT Simulation: Faction [" .. faction.name .. "] met " .. resource .. " requirements for " .. affectedCount .. " souls.")
-                    else
-                        -- SHORTAGE! 20% of affected members die
-                        local casualties = math.ceil(affectedCount * 0.2)
-                        faction.memberCount = math.max(0, faction.memberCount - casualties)
-                        DynamicTrading_Roster.RemoveSoul(id, casualties)
-                        print("DT Simulation: Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
-                        faction.state = "Starving"
+
+                local def = DynamicTrading.Events.Registry[afe.id]
+                if def and def.attrition then
+                    local attr = def.attrition
+                    local resource = attr.resource or "meds"
+                    local affectedPct = attr.pct or attr.sickPct or 0
+                    local costPerHead = attr.cost or attr.medsPerSick or 1.0
+
+                    local affectedCount = math.floor(faction.memberCount * affectedPct)
+                    if affectedCount > 0 then
+                        local totalNeeded = affectedCount * costPerHead
+                        local stockpile = (faction.stockpile[resource] or 0)
+
+                        if stockpile >= totalNeeded then
+                            faction.stockpile[resource] = stockpile - totalNeeded
+                            print("DT Simulation: Faction [" .. faction.name .. "] met " .. resource .. " requirements for " .. affectedCount .. " souls.")
+                        else
+                            local casualties = math.ceil(affectedCount * 0.2)
+                            faction.memberCount = math.max(0, faction.memberCount - casualties)
+                            DynamicTrading_Roster.RemoveSoul(id, casualties)
+                            print("DT Simulation: Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
+                            faction.state = "Starving"
+                        end
                     end
                 end
             end
         end
+
+        -- Keep legacy mirror synchronized for existing UI/network consumers.
+        local firstFlash = faction.ActiveFlashEvents[1]
+        faction.ActiveFlashEvent = {
+            id = firstFlash and firstFlash.id or nil,
+            expires = firstFlash and (firstFlash.expires or 0) or 0,
+            targetCasualties = firstFlash and (firstFlash.targetCasualties or 0) or 0
+        }
 
         -- 1. CONSUMPTION
         local consumes = DynamicTrading.Config.Sim.BaseConsumption

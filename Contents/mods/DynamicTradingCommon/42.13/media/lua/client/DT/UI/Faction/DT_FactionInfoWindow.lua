@@ -330,7 +330,7 @@ if not DT_FactionInfoWindow.EventsAdded then
         
         if DT_FactionInfoWindow.instance:getIsVisible() then
             -- Faction/Roster Data -> Update List
-            if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster" or key == "DynamicTrading_Engine_v1.3") then
+            if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster" or key == "DynamicTrading_Engine_v2") then
                 DT_FactionInfoWindow.instance:refreshList()
             
             -- Engine Data (Inflation/Events) -> Update Active Tab Details

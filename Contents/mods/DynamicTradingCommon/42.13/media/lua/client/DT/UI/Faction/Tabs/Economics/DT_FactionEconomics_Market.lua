@@ -94,10 +94,20 @@ function DT_FactionEconomics_Market:updateData(f, fontScale)
         table.insert(activeDefs, def)
     end
 
-    -- Faction Specific Event (V2)
-    if f.ActiveFlashEvent and f.ActiveFlashEvent.id then
-        if DynamicTrading.Events and DynamicTrading.Events.Registry then
-            local def = DynamicTrading.Events.Registry[f.ActiveFlashEvent.id]
+    -- Faction Specific Events (V2)
+    local flashEvents = f.ActiveFlashEvents or {}
+    if #flashEvents == 0 and f.ActiveFlashEvent and f.ActiveFlashEvent.id then
+        flashEvents = {
+            {
+                id = f.ActiveFlashEvent.id,
+                expires = f.ActiveFlashEvent.expires or 0
+            }
+        }
+    end
+
+    for _, entry in ipairs(flashEvents) do
+        if entry and entry.id and DynamicTrading.Events and DynamicTrading.Events.Registry then
+            local def = DynamicTrading.Events.Registry[entry.id]
             if def then table.insert(activeDefs, def) end
         end
     end
