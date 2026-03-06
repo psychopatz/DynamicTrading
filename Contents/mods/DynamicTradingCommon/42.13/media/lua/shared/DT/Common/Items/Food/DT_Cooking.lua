@@ -1,15 +1,15 @@
--- =============================================================================
--- DYNAMIC TRADING: FOOD - COOKING
--- =============================================================================
--- Root Category: Food
--- Sub Category: Cooking
--- =============================================================================
+-- ============================================================================
+-- DT_Cooking.lua
+-- Food Items Registry for Dynamic Trading
+-- Auto-generated item list with pricing and stock ranges
+-- ============================================================================
 
-require "DT/Common/Config" 
-if not DynamicTrading then return end
+DT_Cooking = DT_Cooking or {}
+DT_Cooking.items = {
+    -- Added by ItemGenerator
+    { item="Base.Chum", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare"}, stockRange={min=0, max=6} },
 
-DynamicTrading.RegisterBatch({
-    { item="Base.BakingSoda",           basePrice=5,  tags={"Food.Cooking.Ingredient", "Rarity.Common"}, stockRange={min=2, max=10} },
-})
 
-print("[DynamicTrading] Food/Cooking Registry Loaded.")
+}
+
+return DT_Cooking.items

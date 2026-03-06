@@ -89,10 +89,10 @@ def calculate_worth(item_id, props, category, subcat):
         # Penalties: positive Unhappy/Boredom/Stress are BAD stats in PZ
         penalties = (max(0, get_stat("UnhappyChange")) + max(0, get_stat("BoredomChange")) + max(0, get_stat("StressChange"))) * 2
         
-        # Shelf-life factor
+        # Shelf-life factor (Capped to prevent price inflation for nuts/seeds)
         fresh = get_stat("DaysFresh")
         rotten = get_stat("DaysTotallyRotten")
-        shelf_life = (fresh + rotten) / 2.0
+        shelf_life = min(50, (fresh + rotten) / 5.0)
         
         stability = 0
         if "cannedfood = true" in p_lower: stability += 50
@@ -233,7 +233,8 @@ def get_vanilla_data(vanilla_path, silent=False):
 
         # --- Lua Snippet Generation ---
         tag_str = ', '.join([f'"{t}"' for t in data["dt_tags"]])
-        data["lua"] = f'{{ item="Base.{item_id}", tags={{{tag_str}}}, basePrice={int(worth)}, stockRange={{min={min_stock}, max={max_stock}}} }},'
+        price = max(1, int(round(worth)))
+        data["lua"] = f'{{ item="Base.{item_id}", tags={{{tag_str}}}, basePrice={price}, stockRange={{min={min_stock}, max={max_stock}}} }},'
 
         # Advanced Stats for display
         data["capacity"] = gsl("Capacity", 0.0)
@@ -438,7 +439,7 @@ def main():
                     return m.group(1) if m else None
 
                 stats = {
-                    "Potencial Worth": meta.get("worth"), "Weight": fnd("Weight"), "Category": meta.get("category"), 
+                    "Weight": fnd("Weight"), "Category": meta.get("category"), 
                     "Subcat": meta.get("subcat"),
                     "Hunger": fnd("HungerChange"), "Thirst": fnd("ThirstChange"), "Cal": fnd("Calories"),
                     "Fresh": fnd("DaysFresh"), "Rotten": fnd("DaysTotallyRotten"),

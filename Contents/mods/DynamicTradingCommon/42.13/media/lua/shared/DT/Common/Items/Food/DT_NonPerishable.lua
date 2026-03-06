@@ -1,100 +1,12 @@
--- =============================================================================
--- DYNAMIC TRADING: FOOD - NONPERISHABLE
--- =============================================================================
--- Root Category: Food
--- Sub Category: NonPerishable
--- =============================================================================
+-- ============================================================================
+-- DT_NonPerishable.lua
+-- Food Items Registry for Dynamic Trading
+-- Auto-generated item list with pricing and stock ranges
+-- ============================================================================
 
-require "DT/Common/Config" 
-if not DynamicTrading then return end
+DT_NonPerishable = DT_NonPerishable or {}
+DT_NonPerishable.items = {
 
-DynamicTrading.RegisterBatch({
-    { item="Base.BasilDried",       basePrice=12, tags={"Food.NonPerishable.Spice", "Rarity.Common"}, stockRange={min=4, max=10} }, -- Hung: 5,
-    { item="Base.BeefJerky",                basePrice=25, tags={"Food.NonPerishable.Meat", "Theme.Survival"}, stockRange={min=4, max=10} }, -- Hung: 10,
-    { item="Base.CandyPackage",             basePrice=25, tags={"Food.NonPerishable.Sweets", "Quality.Luxury"}, stockRange={min=1, max=7} }, -- Hung: 10,
-    { item="Base.CannedBellPepper",     basePrice=120, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 48, Large Jar,
-    { item="Base.CannedBolognese",      basePrice=35, tags={"Food.NonPerishable.Meat", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 14,
-    { item="Base.CannedBroccoli",       basePrice=112, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 45,
-    { item="Base.CannedCabbage",        basePrice=120, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 48,
-    { item="Base.CannedCarrots",        basePrice=100, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 40,
-    { item="Base.CannedCarrots2",       basePrice=20, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 8,
-    { item="Base.CannedChili",          basePrice=30, tags={"Food.NonPerishable.Meat", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 12,
-    { item="Base.CannedCorn",           basePrice=20, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 8,
-    { item="Base.CannedCornedBeef",     basePrice=37, tags={"Food.NonPerishable.Meat", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 15,
-    { item="Base.CannedEggplant",       basePrice=120, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 48,
-    { item="Base.CannedFruitBeverage",  basePrice=15, tags={"Food.NonPerishable.Fruit", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 6,
-    { item="Base.CannedFruitCocktail",  basePrice=25, tags={"Food.NonPerishable.Fruit", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 10,
-    { item="Base.CannedLeek",           basePrice=120, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 48,
-    { item="Base.CannedMilk",           basePrice=30, tags={"Food.NonPerishable.Drink", "Rarity.Common"}, stockRange={min=5, max=25} },
-    { item="Base.CannedMushroomSoup",   basePrice=25, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 10,
-    { item="Base.CannedPeaches",        basePrice=25, tags={"Food.NonPerishable.Fruit", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 10,
-    { item="Base.CannedPeas",           basePrice=20, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 8,
-    { item="Base.CannedPineapple",      basePrice=25, tags={"Food.NonPerishable.Fruit", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 10,
-    { item="Base.CannedPotato",         basePrice=120, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 48,
-    { item="Base.CannedPotato2",        basePrice=20, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 8,
-    { item="Base.CannedRedRadish",      basePrice=112, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 45,
-    { item="Base.CannedSardines",       basePrice=20, tags={"Food.NonPerishable.Meat", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 8,
-    { item="Base.CannedTomato",         basePrice=120, tags={"Food.NonPerishable.Vegetable", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 48,
-    { item="Base.CannedTomato2",        basePrice=20, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 8,
-    { item="Base.Caviar",           basePrice=125, tags={"Food.NonPerishable.Meat", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=0, max=1} }, -- Hung: 25, Manual Rare upgrade,
-    { item="Base.Cereal",           basePrice=25, tags={"Food.NonPerishable.Grain", "Rarity.Common"}, stockRange={min=4, max=10} }, -- Hung: 10,
-    { item="Base.Chocolate",                basePrice=20, tags={"Food.NonPerishable.Sweets", "Quality.Luxury"}, stockRange={min=5, max=25} }, -- Hung: 8,
-    { item="Base.Chocolate_Butterchunkers", basePrice=20, tags={"Food.NonPerishable.Sweets", "Quality.Luxury"}, stockRange={min=2, max=12} }, -- Hung: 8,
-    { item="Base.Chocolate_Crackle",        basePrice=20, tags={"Food.NonPerishable.Sweets", "Quality.Luxury"}, stockRange={min=2, max=12} }, -- Hung: 8,
-    { item="Base.CocoaPowder",      basePrice=37, tags={"Food.NonPerishable.Drink", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=1, max=4} }, -- Hung: 15,
-    { item="Base.Coffee2",          basePrice=50, tags={"Food.NonPerishable.Drink", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=1, max=4} }, -- Hung: 20,
-    { item="Base.CookieChocolateChip",basePrice=7,tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 3,
-    { item="Base.CornFrozen",       basePrice=15, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=0, max=5} }, -- Hung: 6,
-    { item="Base.Cornmeal2",        basePrice=20, tags={"Food.NonPerishable.Grain", "Theme.Survival"}, stockRange={min=4, max=10} }, -- Hung: 8,
-    { item="Base.Crisps",                   basePrice=12, tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=5, max=15} },
-    { item="Base.Crisps2",                  basePrice=12, tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=2, max=12} },
-    { item="Base.Crisps3",                  basePrice=12, tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=2, max=12} },
-    { item="Base.Crisps4",                  basePrice=12, tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=2, max=12} },
-    { item="Base.DentedCan",            basePrice=7,  tags={"Food.NonPerishable.Unknown", "Quality.Waste"}, stockRange={min=2, max=12} },
-    { item="Base.Dogfood",              basePrice=12, tags={"Food.NonPerishable.Meat", "Quality.Waste"}, stockRange={min=5, max=25} },
-    { item="Base.DriedApricots",    basePrice=30, tags={"Food.NonPerishable.Fruit", "Quality.Luxury", "Rarity.Uncommon"}, stockRange={min=1, max=5} }, -- Hung: 12, Long life,
-    { item="Base.DriedBlackBeans",  basePrice=150, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=8, max=20} }, -- Hung: 60,
-    { item="Base.DriedChickpeas",   basePrice=150, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=8, max=20} }, -- Hung: 60,
-    { item="Base.DriedKidneyBeans", basePrice=150, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=8, max=20} }, -- Hung: 60,
-    { item="Base.DriedLentils",     basePrice=150, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=8, max=20} }, -- Hung: 60,
-    { item="Base.DriedSplitPeas",   basePrice=150, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=8, max=20} }, -- Hung: 60,
-    { item="Base.DriedWhiteBeans",  basePrice=150, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=8, max=20} }, -- Hung: 60,
-    { item="Base.Flour2",           basePrice=25, tags={"Food.NonPerishable.Grain", "Resource.Cooking"}, stockRange={min=4, max=10} }, -- Hung: 10,
-    { item="Base.GummyBears",               basePrice=10, tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 4,
-    { item="Base.HardCandies",              basePrice=7,  tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 3,
-    { item="Base.Honey",            basePrice=50, tags={"Food.NonPerishable.Spice", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 20,
-    { item="Base.Hotsauce",         basePrice=15, tags={"Food.NonPerishable.Spice", "Rarity.Common"}, stockRange={min=2, max=12} }, -- Hung: 6,
-    { item="Base.JellyBeans",               basePrice=10, tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 4,
-    { item="Base.Ketchup",          basePrice=20, tags={"Food.NonPerishable.Spice", "Rarity.Common"}, stockRange={min=2, max=12} }, -- Hung: 8,
-    { item="Base.Lollipop",                 basePrice=5,  tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=10, max=50} }, -- Hung: 2,
-    { item="Base.Macaroni",         basePrice=30, tags={"Food.NonPerishable.Grain", "Rarity.Common"}, stockRange={min=4, max=10} }, -- Hung: 12,
-    { item="Base.MapleSyrup",       basePrice=37, tags={"Food.NonPerishable.Spice", "Quality.Luxury", "Rarity.Rare"}, stockRange={min=1, max=5} }, -- Hung: 15,
-    { item="Base.Marinara",         basePrice=20, tags={"Food.NonPerishable.Cooking", "Rarity.Common"}, stockRange={min=2, max=12} }, -- Hung: 8,
-    { item="Base.MintCandy",                basePrice=5,  tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=10, max=50} }, -- Hung: 2,
-    { item="Base.MixedVegetables",  basePrice=15, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=0, max=5} }, -- Hung: 6,
-    { item="Base.Modjeska",                 basePrice=15, tags={"Food.NonPerishable.Sweets", "Quality.Luxury"}, stockRange={min=2, max=12} }, -- Hung: 6,
-    { item="Base.Mustard",          basePrice=15, tags={"Food.NonPerishable.Spice", "Rarity.Common"}, stockRange={min=2, max=12} }, -- Hung: 6,
-    { item="Base.MysteryCan",           basePrice=12, tags={"Food.NonPerishable.Unknown", "Rarity.Common"}, stockRange={min=2, max=12} },
-    { item="Base.OatsRaw",          basePrice=20, tags={"Food.NonPerishable.Grain", "Rarity.Common"}, stockRange={min=4, max=10} }, -- Hung: 8,
-    { item="Base.OilOlive",         basePrice=37, tags={"Food.NonPerishable.Cooking", "Quality.Luxury"}, stockRange={min=2, max=6} }, -- Hung: 15,
-    { item="Base.OilVegetable",     basePrice=37, tags={"Food.NonPerishable.Cooking", "Rarity.Common"}, stockRange={min=2, max=6} }, -- Hung: 15,
-    { item="Base.OreganoDried",     basePrice=12, tags={"Food.NonPerishable.Spice", "Rarity.Common"}, stockRange={min=4, max=10} }, -- Hung: 5,
-    { item="Base.Pasta",            basePrice=30, tags={"Food.NonPerishable.Grain", "Rarity.Common"}, stockRange={min=4, max=10} }, -- Hung: 12,
-    { item="Base.PeanutButter",     basePrice=62, tags={"Food.NonPerishable.Cooking", "Theme.Survival"}, stockRange={min=2, max=8} }, -- Hung: 25, Survival Gold,
-    { item="Base.Peas",             basePrice=15, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=0, max=5} }, -- Hung: 6,
-    { item="Base.Pepper",           basePrice=12, tags={"Food.NonPerishable.Spice", "Rarity.Rare"}, stockRange={min=4, max=10} }, -- Hung: 5, Rare,
-    { item="Base.Peppermint",               basePrice=5,  tags={"Food.NonPerishable.Sweets", "Rarity.Common"}, stockRange={min=10, max=50} }, -- Hung: 2,
-    { item="Base.Pickles",              basePrice=20, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=2, max=12} }, -- Hung: 8,
-    { item="Base.Ramen",            basePrice=25, tags={"Food.NonPerishable.Grain", "Rarity.Common"}, stockRange={min=20, max=50} }, -- Hung: 10,
-    { item="Base.Rice",             basePrice=30, tags={"Food.NonPerishable.Grain", "Rarity.Common"}, stockRange={min=4, max=10} }, -- Hung: 12,
-    { item="Base.Salt",             basePrice=12, tags={"Food.NonPerishable.Spice", "Rarity.Rare"}, stockRange={min=4, max=10} }, -- Hung: 5, Rare,
-    { item="Base.Sugar",            basePrice=20, tags={"Food.NonPerishable.Spice", "Rarity.Rare"}, stockRange={min=4, max=10} }, -- Hung: 8, Rare,
-    { item="Base.SugarBrown",       basePrice=20, tags={"Food.NonPerishable.Spice", "Rarity.Rare"}, stockRange={min=2, max=8} }, -- Hung: 8, Rare,
-    { item="Base.TVDinner",         basePrice=20, tags={"Food.NonPerishable.Cooking", "Rarity.Common"}, stockRange={min=0, max=5} }, -- Hung: 8,
-    { item="Base.TinnedBeans",          basePrice=25, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 10,
-    { item="Base.TinnedSoup",           basePrice=25, tags={"Food.NonPerishable.Vegetable", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 10,
-    { item="Base.TunaTin",              basePrice=22, tags={"Food.NonPerishable.Meat", "Rarity.Common"}, stockRange={min=5, max=25} }, -- Hung: 9,
-    { item="Base.Yeast",            basePrice=12, tags={"Food.NonPerishable.Grain", "Resource.Cooking"}, stockRange={min=2, max=12} }, -- Hung: 5,
-})
+}
 
-print("[DynamicTrading] Food/NonPerishable Registry Loaded.")
+return DT_NonPerishable.items

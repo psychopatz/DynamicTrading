@@ -1,16 +1,16 @@
--- =============================================================================
--- DYNAMIC TRADING: ELECTRONICS - BATTERY
--- =============================================================================
--- Root Category: Electronics
--- Sub Category: Battery
--- =============================================================================
+-- ============================================================================
+-- DT_Battery.lua
+-- Electronics Items Registry for Dynamic Trading
+-- Auto-generated item list with pricing and stock ranges
+-- ============================================================================
 
-require "DT/Common/Config" 
-if not DynamicTrading then return end
+DT_Battery = DT_Battery or {}
+DT_Battery.items = {
+    -- Added by ItemGenerator
+    { item="Base.BatteryBox", basePrice=80, tags={"Electronics.Battery", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.CarBatteryCharger", basePrice=80, tags={"Electronics.Battery", "Rarity.Rare"}, stockRange={min=0, max=2} },
 
-DynamicTrading.RegisterBatch({
-    { item="Base.Battery",             basePrice=12,  tags={"Electronics.Battery", "Rarity.Common"}, stockRange={min=5, max=15} },
-    { item="Base.BatteryBox",          basePrice=120, tags={"Electronics.Battery", "Origin.Industrial", "Rarity.Uncommon"}, stockRange={min=1, max=3} },
-})
 
-print("[DynamicTrading] Electronics/Battery Registry Loaded.")
+}
+
+return DT_Battery.items
