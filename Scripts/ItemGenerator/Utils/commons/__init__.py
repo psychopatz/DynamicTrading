@@ -3,9 +3,6 @@ Commons subsystem - Reusable utilities and infrastructure
 """
 # pyright: reportMissingImports=false
 
-import importlib.util
-from pathlib import Path
-
 # Vanilla loader utilities
 from .vanilla_loader import (
     load_vanilla_items,
@@ -15,17 +12,13 @@ from .vanilla_loader import (
 )
 
 # Tagging
-from ..tagging import parse_tags, generate_tags, is_excluded, get_category_from_tags
+from ..tag.tagging import parse_tags, generate_tags, is_excluded, get_category_from_tags
 
-# Pricing (load legacy pricing.py directly to avoid package name collision)
-_utils_dir = Path(__file__).parent.parent
-_pricing_spec = importlib.util.spec_from_file_location("_dt_pricing", _utils_dir / "pricing.py")
-_pricing_module = importlib.util.module_from_spec(_pricing_spec)
-_pricing_spec.loader.exec_module(_pricing_module)
-calculate_price = _pricing_module.calculate_price
+# Pricing
+from ..pricing.pricing import calculate_price
 
 # Stock
-from ..stock import calculate_base_max_stock, apply_category_multiplier, calculate_min_stock
+from ..pricing.stock import calculate_base_max_stock, apply_category_multiplier, calculate_min_stock
 
 # Lua file handling
 from .lua_handler import (

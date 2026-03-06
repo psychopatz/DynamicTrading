@@ -38,15 +38,8 @@ def calculate_price_breakdown(item_id: str, base_props: Dict, tags_dict: Dict) -
     Calculate price with detailed breakdown
     Returns PriceBreakdown with all multipliers
     """
-    import importlib.util
-    from pathlib import Path
-    from ..vanilla_loader import get_stat
-    
-    utils_dir = Path(__file__).parent.parent
-    pricing_spec = importlib.util.spec_from_file_location("_dt_pricing", utils_dir / "pricing.py")
-    pricing_module = importlib.util.module_from_spec(pricing_spec)
-    pricing_spec.loader.exec_module(pricing_module)
-    calculate_price = pricing_module.calculate_price
+    from .vanilla_loader import get_stat
+    from ..pricing.pricing import calculate_price
     
     final = calculate_price(item_id, base_props, tags_dict)
     base = get_stat(base_props, "BasePrice", 0) if base_props else 0

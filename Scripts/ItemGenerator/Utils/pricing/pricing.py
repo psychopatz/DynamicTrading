@@ -4,7 +4,7 @@ Category-specific pricing logic with enhanced accuracy
 """
 import math
 import re
-from .vanilla_loader import get_stat, has_property, count_learned_recipes
+from ..commons.vanilla_loader import get_stat, has_property, count_learned_recipes
 
 
 def calculate_price(item_id, props, tags_dict):

@@ -3,8 +3,8 @@ Tagging system for intelligent item categorization
 Generates nested tags based on item properties and ID patterns
 """
 import re
-from .vanilla_loader import get_stat, has_property, count_learned_recipes
-from .config import EXCLUDED_PATTERNS
+from ..commons.vanilla_loader import get_stat, has_property, count_learned_recipes
+from ..config import EXCLUDED_PATTERNS
 
 
 def is_excluded(item_id):

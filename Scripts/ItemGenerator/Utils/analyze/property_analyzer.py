@@ -41,12 +41,10 @@ def parse_item_file(filepath):
                 properties[prop_name]['count'] += 1
                 properties[prop_name]['items'].append(item_name)
                 
-                # Store example if we don't have many yet
-                if len(properties[prop_name]['examples']) < 5:
-                    properties[prop_name]['examples'].append({
-                        'value': prop_value,
-                        'item': item_name
-                    })
+                properties[prop_name]['examples'].append({
+                    'value': prop_value,
+                    'item': item_name
+                })
     
     return properties
 
@@ -75,9 +73,7 @@ def merge_properties(all_props, file_props):
         all_props[prop]['type'].update(data['type'])
         all_props[prop]['count'] += data['count']
         all_props[prop]['items'].extend(data['items'])
-        all_props[prop]['examples'].extend(data['examples'][:3])
-        # Keep only first 10 examples
-        all_props[prop]['examples'] = all_props[prop]['examples'][:10]
+        all_props[prop]['examples'].extend(data['examples'])
 
 
 def analyze_all_properties(vanilla_dir):

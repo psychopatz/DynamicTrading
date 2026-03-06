@@ -2,7 +2,7 @@
 Spawn analysis and rarity calculation commands
 """
 from pathlib import Path
-from ..spawn_analyzer import (
+from ..analyze.spawn_analyzer import (
     get_rarity_statistics,
     get_items_by_rarity,
     find_distribution_files

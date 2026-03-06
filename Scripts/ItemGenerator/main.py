@@ -89,6 +89,28 @@ def should_save_to_file():
     return False
 
 
+def parse_chunk_limit():
+    """Parse optional --chunk [size] flag. Returns None when not set."""
+    if '--chunk' not in sys.argv:
+        return None
+
+    idx = sys.argv.index('--chunk')
+    sys.argv.pop(idx)
+
+    # Default chunk size when flag is present without a value.
+    chunk_limit = 20
+    if idx < len(sys.argv):
+        try:
+            parsed = int(sys.argv[idx])
+            if parsed > 0:
+                chunk_limit = parsed
+                sys.argv.pop(idx)
+        except ValueError:
+            pass
+
+    return chunk_limit
+
+
 def show_help():
     """Display help information"""
     print("""
@@ -105,17 +127,17 @@ ITEM MANAGEMENT:
   python main.py add --all          # Add all remaining items
 
 PROPERTY ANALYSIS:
-  python main.py --find-property <name> [value] [--txt]
+  python main.py --find-property <name> [value] [--txt] [--chunk [size]]
       Search items by property name (e.g., StressChange, Alcoholic)
       Optional: filter by value
       
-  python main.py --list-properties [min_usage] [--txt]
+  python main.py --list-properties [min_usage] [--txt] [--chunk [size]]
       List all properties with usage counts (default: 1)
       
-  python main.py --dump-property <name> [format] [--txt]
+  python main.py --dump-property <name> [format] [--txt] [--chunk [size]]
       Dump all values for a property (formats: table, csv, dict)
       
-  python main.py --analyze-properties [--txt]
+  python main.py --analyze-properties [--txt] [--chunk [size]]
       Generate comprehensive property documentation
 
 SPAWN ANALYSIS:
@@ -130,7 +152,7 @@ SPAWN ANALYSIS:
 
 FLAGS:
   --txt                Save output to markdown file in Output/ folder
-                       (Shows full results, not truncated)
+    --chunk [size]       Truncate long outputs (default when omitted: full output)
   --help               Display this help message
 
 EXAMPLES:
@@ -183,6 +205,7 @@ def get_batch_size():
 
 def main():
     save_to_file = should_save_to_file()
+    chunk_limit = parse_chunk_limit()
     
     if len(sys.argv) > 1:
         cmd = sys.argv[1]
@@ -201,10 +224,10 @@ def main():
             if save_to_file:
                 output_file = generate_output_filename(f"find_property_{property_name}")
                 with capture_and_save_output(output_file):
-                    find_property(VANILLA_SCRIPTS_DIR, property_name, value_filter)
+                    find_property(VANILLA_SCRIPTS_DIR, property_name, value_filter, chunk_limit=chunk_limit)
                 print(f"Output saved to: {output_file}")
             else:
-                find_property(VANILLA_SCRIPTS_DIR, property_name, value_filter)
+                find_property(VANILLA_SCRIPTS_DIR, property_name, value_filter, chunk_limit=chunk_limit)
             return
         
         elif cmd == '--list-properties':
@@ -212,10 +235,10 @@ def main():
             if save_to_file:
                 output_file = generate_output_filename("list_properties")
                 with capture_and_save_output(output_file):
-                    list_properties(VANILLA_SCRIPTS_DIR, min_usage)
+                    list_properties(VANILLA_SCRIPTS_DIR, min_usage, chunk_limit=chunk_limit)
                 print(f"Output saved to: {output_file}")
             else:
-                list_properties(VANILLA_SCRIPTS_DIR, min_usage)
+                list_properties(VANILLA_SCRIPTS_DIR, min_usage, chunk_limit=chunk_limit)
             return
         
         elif cmd == '--dump-property':
@@ -237,10 +260,10 @@ def main():
             if save_to_file:
                 output_file = generate_output_filename("analyze_properties")
                 with capture_and_save_output(output_file):
-                    analyze_properties(VANILLA_SCRIPTS_DIR)
+                    analyze_properties(VANILLA_SCRIPTS_DIR, chunk_limit=chunk_limit)
                 print(f"Output saved to: {output_file}")
             else:
-                analyze_properties(VANILLA_SCRIPTS_DIR)
+                analyze_properties(VANILLA_SCRIPTS_DIR, chunk_limit=chunk_limit)
             return
         
         elif cmd == '--find-rarity':
@@ -325,10 +348,10 @@ def main():
                     if save_opt:
                         output_file = generate_output_filename(f"find_property_{prop_name}")
                         with capture_and_save_output(output_file):
-                            find_property(VANILLA_SCRIPTS_DIR, prop_name, value_filter)
+                            find_property(VANILLA_SCRIPTS_DIR, prop_name, value_filter, chunk_limit=chunk_limit)
                         print(f"\n✅ Output saved to: {output_file}")
                     else:
-                        find_property(VANILLA_SCRIPTS_DIR, prop_name, value_filter)
+                        find_property(VANILLA_SCRIPTS_DIR, prop_name, value_filter, chunk_limit=chunk_limit)
                     
                     input("\nPress Enter to continue...")
             
@@ -340,10 +363,10 @@ def main():
                 if save_opt:
                     output_file = generate_output_filename("list_properties")
                     with capture_and_save_output(output_file):
-                        list_properties(VANILLA_SCRIPTS_DIR, min_usage)
+                        list_properties(VANILLA_SCRIPTS_DIR, min_usage, chunk_limit=chunk_limit)
                     print(f"\n✅ Output saved to: {output_file}")
                 else:
-                    list_properties(VANILLA_SCRIPTS_DIR, min_usage)
+                    list_properties(VANILLA_SCRIPTS_DIR, min_usage, chunk_limit=chunk_limit)
                 
                 input("\nPress Enter to continue...")
             
@@ -353,10 +376,10 @@ def main():
                 if save_opt:
                     output_file = generate_output_filename("analyze_properties")
                     with capture_and_save_output(output_file):
-                        analyze_properties(VANILLA_SCRIPTS_DIR)
+                        analyze_properties(VANILLA_SCRIPTS_DIR, chunk_limit=chunk_limit)
                     print(f"\n✅ Output saved to: {output_file}")
                 else:
-                    analyze_properties(VANILLA_SCRIPTS_DIR)
+                    analyze_properties(VANILLA_SCRIPTS_DIR, chunk_limit=chunk_limit)
                 
                 input("\nPress Enter to continue...")
             

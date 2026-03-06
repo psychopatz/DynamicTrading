@@ -6,18 +6,11 @@ Lua file handler for reading and writing item registrations
 import re
 from pathlib import Path
 from collections import defaultdict
-import importlib.util
 from ..config import MOD_ITEMS_DIR, CATEGORY_FILE_MAP
-from ..tagging import parse_tags, generate_tags, is_excluded, get_category_from_tags
-from ..stock import calculate_base_max_stock, apply_category_multiplier, calculate_min_stock
+from ..tag.tagging import parse_tags, generate_tags, is_excluded, get_category_from_tags
+from ..pricing.stock import calculate_base_max_stock, apply_category_multiplier, calculate_min_stock
+from ..pricing.pricing import calculate_price
 from .vanilla_loader import get_stat
-
-# Load legacy pricing.py directly to avoid conflict with Utils/pricing package.
-_utils_dir = Path(__file__).parent.parent
-_pricing_spec = importlib.util.spec_from_file_location("_dt_pricing", _utils_dir / "pricing.py")
-_pricing_module = importlib.util.module_from_spec(_pricing_spec)
-_pricing_spec.loader.exec_module(_pricing_module)
-calculate_price = _pricing_module.calculate_price
 
 
 def ensure_lua_files_exist():
@@ -64,7 +57,7 @@ return {filename}.items
     return created_count
 
 
-def process_lua_file(filepath, vanilla_items, dry_run=False):
+def process_lua_file(filepath, vanilla_items, dry_run=False, regenerate_tags=False):
     """Process a single Lua file and update prices/stock"""
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -85,6 +78,12 @@ def process_lua_file(filepath, vanilla_items, dry_run=False):
         
         props = vanilla_items.get(item_id, "")
         tags_dict = parse_tags(tags_str)
+        
+        # Regenerate tags if requested
+        if regenerate_tags:
+            tags_dict = generate_tags(item_id, props)
+            tags_str = str(tags_dict).replace("'", '"')
+        
         new_price = calculate_price(item_id, props, tags_dict)
         
         weight = get_stat(props, "Weight", 0.5) if props else 0.5
@@ -185,12 +184,108 @@ def group_items_by_category(items_dict):
     return grouped
 
 
-def create_item_entry(item_data, vanilla_items):
-    """Create a Lua entry for an item"""
+def _find_items_block_bounds(content):
+    """Return (brace_start, brace_end) indices for the .items block."""
+    items_start = content.find('.items = {')
+    if items_start == -1:
+        return None, None
+
+    brace_start = content.find('{', items_start)
+    if brace_start == -1:
+        return None, None
+
+    depth = 0
+    for i in range(brace_start, len(content)):
+        ch = content[i]
+        if ch == '{':
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0:
+                return brace_start, i
+
+    return None, None
+
+
+def _extract_item_records(items_block):
+    """Parse normalized and legacy item rows from an items block."""
+    pattern = (
+        r'\{\s*item="Base\.(\w+)"\s*,'
+        r'\s*basePrice=(\d+)\s*,'
+        r'\s*tags=\{([^}]*)\}\s*,'
+        r'\s*stockRange=\{\s*min=(\d+)\s*,\s*max=(\d+)\s*\}\s*\}'
+    )
+
+    records = []
+    for match in re.finditer(pattern, items_block):
+        item_id, base_price, tags_raw, stock_min, stock_max = match.groups()
+        tags = re.findall(r'"([^"]+)"', tags_raw)
+        records.append({
+            'item_id': item_id,
+            'base_price': int(base_price),
+            'tags': tags,
+            'stock_min': int(stock_min),
+            'stock_max': int(stock_max)
+        })
+
+    return records
+
+
+def _get_primary_tag(tags):
+    for tag in tags:
+        if not tag.startswith(('Rarity.', 'Quality.', 'Origin.', 'Theme.')):
+            return tag
+    return 'Misc.General'
+
+
+def _get_rarity_tag(tags):
+    for tag in tags:
+        if tag.startswith('Rarity.'):
+            return tag
+    return 'Rarity.Common'
+
+
+def _format_item_record(record):
+    tags_str = ', '.join(f'"{tag}"' for tag in record['tags'])
+    return (
+        f'    {{ item="Base.{record["item_id"]}", basePrice={record["base_price"]}, '
+        f'tags={{{tags_str}}}, stockRange={{min={record["stock_min"]}, max={record["stock_max"]}}} }},'
+    )
+
+
+def _build_grouped_items_text(records):
+    grouped = defaultdict(list)
+
+    for record in sorted(
+        records,
+        key=lambda r: (_get_primary_tag(r['tags']), _get_rarity_tag(r['tags']), r['item_id'].lower())
+    ):
+        grouped[(_get_primary_tag(record['tags']), _get_rarity_tag(record['tags']))].append(record)
+
+    lines = [
+        '    -- Added by ItemGenerator: grouped by primary tag and rarity',
+        ''
+    ]
+
+    for (primary_tag, rarity_tag) in sorted(grouped.keys()):
+        items_in_group = grouped[(primary_tag, rarity_tag)]
+        item_word = 'item' if len(items_in_group) == 1 else 'items'
+        lines.append(f'    -- [{primary_tag}] [{rarity_tag}] ({len(items_in_group)} {item_word})')
+
+        for record in items_in_group:
+            lines.append(_format_item_record(record))
+
+        lines.append('')
+
+    return '\n'.join(lines).rstrip() + '\n'
+
+
+def create_item_record(item_data, vanilla_items):
+    """Create a structured record for an item row."""
     item_id = item_data['item_id']
     props = item_data['props']
     tags = item_data['tags']
-    
+
     tags_dict = {
         'primary': tags[0],
         'rarity': 'Common',
@@ -198,7 +293,7 @@ def create_item_entry(item_data, vanilla_items):
         'origin': None,
         'theme': []
     }
-    
+
     for tag in tags:
         if tag.startswith('Rarity.'):
             tags_dict['rarity'] = tag.split('.')[1]
@@ -208,50 +303,62 @@ def create_item_entry(item_data, vanilla_items):
             tags_dict['origin'] = tag.split('.')[1]
         elif tag.startswith('Theme.'):
             tags_dict['theme'].append(tag)
-    
+
     price = calculate_price(item_id, props, tags_dict)
-    
+
     weight = get_stat(props, "Weight", 0.5) if props else 0.5
     category, subcategories = get_category_from_tags(tags_dict)
     base_max = calculate_base_max_stock(weight)
     final_max = apply_category_multiplier(base_max, tags_dict, subcategories)
     final_min = calculate_min_stock(final_max, tags_dict, subcategories)
-    
-    tags_str = ', '.join([f'"{tag}"' for tag in tags])
-    entry = f'    {{ item="Base.{item_id}", basePrice={price}, tags={{{tags_str}}}, stockRange={{min={final_min}, max={final_max}}} }},'
-    
-    return entry
+
+    return {
+        'item_id': item_id,
+        'base_price': price,
+        'tags': tags,
+        'stock_min': final_min,
+        'stock_max': final_max
+    }
+
+
+def create_item_entry(item_data, vanilla_items):
+    """Create a Lua entry for an item"""
+    record = create_item_record(item_data, vanilla_items)
+    return _format_item_record(record)
 
 
 def add_items_to_file(filepath, new_items):
-    """Add new items to existing Lua file"""
+    """Add new items and fully normalize existing + new items in the file."""
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
-    insertion_point = None
-    items_start = content.find('.items = {')
-    if items_start != -1:
-        newline_pos = content.find('\n', items_start)
-        if newline_pos != -1:
-            insertion_point = newline_pos + 1
-    
-    if insertion_point is None:
+
+    brace_start, brace_end = _find_items_block_bounds(content)
+    if brace_start is None or brace_end is None:
         print(f"  ⚠️  Cannot find insertion point in {filepath.name}")
         return 0
-    
-    new_items_text = '    -- Added by ItemGenerator\n'
-    for item_data in new_items:
-        entry = create_item_entry(item_data, {})
-        new_items_text += entry + '\n'
-    
-    new_items_text += '\n'
-    
-    new_content = content[:insertion_point] + new_items_text + content[insertion_point:]
-    
+
+    items_block = content[brace_start + 1:brace_end]
+    existing_records = _extract_item_records(items_block)
+    existing_ids = {record['item_id'] for record in existing_records}
+
+    new_records = [create_item_record(item_data, {}) for item_data in new_items]
+    added_count = sum(1 for record in new_records if record['item_id'] not in existing_ids)
+
+    merged = {record['item_id']: record for record in existing_records}
+    for record in new_records:
+        merged[record['item_id']] = record
+
+    normalized_items_text = _build_grouped_items_text(list(merged.values()))
+    new_content = (
+        content[:brace_start + 1] +
+        '\n' + normalized_items_text +
+        content[brace_end:]
+    )
+
     with open(filepath, 'w', encoding='utf-8') as f:
         f.write(new_content)
-    
-    return len(new_items)
+
+    return added_count
 
 
 def determine_target_file(category, subcategory):

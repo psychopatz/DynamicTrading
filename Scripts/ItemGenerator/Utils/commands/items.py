@@ -2,10 +2,9 @@
 Item registration and management commands
 """
 from pathlib import Path
-from ..lua_handler import process_lua_file, add_new_items, get_registered_items
-from ..vanilla_loader import load_vanilla_items
+from ..commons.lua_handler import process_lua_file, add_new_items, get_registered_items, collect_unregistered_items, add_items_to_file
+from ..commons.vanilla_loader import load_vanilla_items
 from ..config import MOD_ITEMS_DIR
-from ..lua_handler import collect_unregistered_items, add_items_to_file, add_new_items, get_registered_items
 
 
 def update(vanilla_items, regenerate_tags=False):
