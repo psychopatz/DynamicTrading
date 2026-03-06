@@ -13,7 +13,7 @@ A **production-grade, modular system** for item verification, analysis, and pric
 
 ## System Architecture
 
-### Verify System (`Utils/verify/`)
+### Verify System (`src/verify/`)
 
 **Purpose:** Load, analyze, and score item data
 
@@ -36,7 +36,7 @@ Mod Files        ──→ mod_loader        │
                                         └──→ reporters     ──→ Output Files
 ```
 
-### Pricing System (`Utils/pricing/`)
+### Pricing System (`src/pricing/`)
 
 **Purpose:** Calculate item prices and stock levels
 
@@ -151,7 +151,7 @@ def write_reports(...):
 Scripts/
 ├── ItemID_Verify.py          ← Entry point (now delegating to modules)
 │
-└── ItemGenerator/Utils/
+└── ItemGenerator/src/
     ├── verify/               ← ALL verification logic here
     │   ├── __init__.py
     │   ├── helpers.py
@@ -191,7 +191,7 @@ Scripts/
 
 ### Tweaking Without Code
 
-1. **Open** `Utils/pricing/config.json`
+1. **Open** `src/pricing/config.json`
 2. **Modify** multiplier values
 3. **Reload** next run - no code compilation needed!
 
@@ -250,9 +250,9 @@ Easily scalable to 5000+ items without performance issues.
 
 ## Documentation Files
 
-- 📖 [Utils/verify/README.md](Utils/verify/README.md) - Detailed module documentation
-- 📖 [Utils/pricing/README.md](Utils/pricing/README.md) - Pricing system guide
-- 💾 [Utils/pricing/config.json](Utils/pricing/config.json) - Configuration example
+- 📖 [src/verify/README.md](src/verify/README.md) - Detailed module documentation
+- 📖 [src/pricing/README.md](src/pricing/README.md) - Pricing system guide
+- 💾 [src/pricing/config.json](src/pricing/config.json) - Configuration example
 
 ---
 

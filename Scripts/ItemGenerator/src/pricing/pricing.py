@@ -32,6 +32,16 @@ def calculate_price(item_id, props, tags_dict):
     # Count learned recipes
     recipes = count_learned_recipes(props)
     
+    # Backward/defensive compatibility: some call sites may pass generated tag lists.
+    if isinstance(tags_dict, list):
+        primary_from_list = next(
+            (t for t in tags_dict if isinstance(t, str) and not t.startswith(('Rarity.', 'Quality.', 'Origin.', 'Theme.'))),
+            'Misc.General'
+        )
+        tags_dict = {'primary': primary_from_list}
+    elif not isinstance(tags_dict, dict):
+        tags_dict = {'primary': 'Misc.General'}
+
     worth = 1.0
     primary = tags_dict.get('primary', '') or 'Misc.General'
     category = primary.split('.')[0] if '.' in primary else primary

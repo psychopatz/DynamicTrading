@@ -7,7 +7,7 @@ Main entry points:
 - TagConfidenceScorer - Score tag quality
 
 Example usage:
-    from Utils.tag import auto_tag, AutoTagger, TagConfidenceScorer
+    from src.tag import auto_tag, AutoTagger, TagConfidenceScorer
     
     # Quick tagging
     result = auto_tag('Katana', props_string)

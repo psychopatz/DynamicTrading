@@ -7,7 +7,7 @@ Automated item registration and pricing system for Dynamic Trading mod with inte
 ```
 Scripts/
 ├── ItemGenerator.py          # Main entry point (2.6 KB)
-└── Utils/                    # Modular components
+└── src/                    # Modular components
     ├── __init__.py           # Package exports
     ├── config.py             # Configuration & mappings (2.7 KB)
     ├── vanilla_loader.py     # Vanilla item database (1.9 KB)
@@ -124,7 +124,7 @@ python Scripts/ItemGenerator.py add 500    # Add 500 items
 
 ## 🔧 Configuration
 
-Edit `Scripts/Utils/config.py` to:
+Edit `Scripts/src/config.py` to:
 - Modify exclusion patterns
 - Update category-to-file mappings
 - Change path configurations

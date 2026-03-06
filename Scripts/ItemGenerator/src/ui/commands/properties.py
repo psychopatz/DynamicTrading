@@ -2,7 +2,7 @@
 Property analysis and querying commands
 """
 from collections import defaultdict
-from ..analyze.property_analyzer import (
+from ...analyze.property_analyzer import (
     analyze_all_properties,
     find_items_with_property,
     dump_items_by_property

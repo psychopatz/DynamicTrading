@@ -2,7 +2,7 @@
 
 **Status:** ✅ Complete - Modular, production-ready property-based auto-tagging system
 
-**Location:** `Scripts/ItemGenerator/Utils/tag/`
+**Location:** `Scripts/ItemGenerator/src/tag/`
 
 **Date Created:** Phase 4 of DynamicTrading ItemGenerator modernization
 
@@ -13,7 +13,7 @@
 ### Directory Structure
 
 ```
-Utils/tag/
+src/tag/
 ├── __init__.py              ← Public API exports
 ├── helpers.py               ← Property extraction utilities (PropertyAnalyzer)
 ├── matcher.py              ← Signature matching coordinator
@@ -293,7 +293,7 @@ Bottleneck: Regex property extraction (can be optimized with caching)
 
 ```
 Scripts/ItemGenerator/
-├── Utils/
+├── src/
 │   ├── verify/              (8 modules - verification system)
 │   │   ├── helpers.py
 │   │   ├── vanilla_loader.py

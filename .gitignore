@@ -7,3 +7,6 @@ MCP/
 # Python cache
 __pycache__/
 *.py[cod]
+
+# Output files
+Output/

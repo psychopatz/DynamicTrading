@@ -6,20 +6,26 @@ from contextlib import contextmanager
 from datetime import datetime
 
 try:
-    from .Utils import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
-    from .Utils.commands import (
+    from .src import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
+    from .src.ui.commands import (
         find_property, list_properties, dump_property, analyze_properties,
         find_rarity, rarity_stats, analyze_spawns,
         update, add, show_stats,
+        show_blacklist_stats, show_blacklist, add_to_blacklist, remove_from_blacklist,
+        cleanup_blacklist,
     )
+    from .src.ui import display_mod_stats, display_interactive_menu, handle_menu_choice
 except ImportError:
     sys.path.insert(0, str(Path(__file__).parent))
-    from Utils import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
-    from Utils.commands import (
+    from src import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
+    from src.ui.commands import (
         find_property, list_properties, dump_property, analyze_properties,
         find_rarity, rarity_stats, analyze_spawns,
         update, add, show_stats,
+        show_blacklist_stats, show_blacklist, add_to_blacklist, remove_from_blacklist,
+        cleanup_blacklist,
     )
+    from src.ui import display_mod_stats, display_interactive_menu, handle_menu_choice
 
 
 def generate_output_filename(cmd_name):
@@ -111,96 +117,7 @@ def parse_chunk_limit():
     return chunk_limit
 
 
-def show_help():
-    """Display help information"""
-    print("""
-╔═══════════════════════════════════════════════════════════╗
-║          ItemGenerator - Command Reference                ║
-╚═══════════════════════════════════════════════════════════╝
 
-INTERACTIVE MODE:
-  python main.py                    # Launch interactive menu
-
-ITEM MANAGEMENT:
-  python main.py update             # Update prices/stock for existing items
-  python main.py add [count]        # Add new items (default: 50)
-  python main.py add --all          # Add all remaining items
-
-PROPERTY ANALYSIS:
-  python main.py --find-property <name> [value] [--txt] [--chunk [size]]
-      Search items by property name (e.g., StressChange, Alcoholic)
-      Optional: filter by value
-      
-  python main.py --list-properties [min_usage] [--txt] [--chunk [size]]
-      List all properties with usage counts (default: 1)
-      
-  python main.py --dump-property <name> [format] [--txt] [--chunk [size]]
-      Dump all values for a property (formats: table, csv, dict)
-      
-  python main.py --analyze-properties [--txt] [--chunk [size]]
-      Generate comprehensive property documentation
-
-SPAWN ANALYSIS:
-  python main.py --find-rarity <tier> [--txt]
-      Find items by rarity (UltraRare, Legendary, Rare, Uncommon, Common)
-      
-  python main.py --rarity-stats [--txt]
-      Show spawn rarity distribution statistics
-      
-  python main.py --analyze-spawns [--txt]
-      Generate comprehensive spawn rate documentation
-
-FLAGS:
-  --txt                Save output to markdown file in Output/ folder
-    --chunk [size]       Truncate long outputs (default when omitted: full output)
-  --help               Display this help message
-
-EXAMPLES:
-  python main.py --find-property StressChange
-  python main.py --find-rarity Rare --txt
-  python main.py --list-properties 100 --txt
-  python main.py add 200
-""")
-
-
-def display_menu():
-    print("\n" + "=" * 60)
-    print("ItemGenerator - Interactive Menu")
-    print("=" * 60)
-    print("\nSelect an operation:")
-    print("\n📦 ITEM MANAGEMENT:")
-    print("  1. Update prices & stock (existing items)")
-    print("  2. Add items (custom batch size)")
-    print("  3. Add all remaining items")
-    print("\n🔍 PROPERTY ANALYSIS:")
-    print("  4. Find items by property")
-    print("  5. List all properties")
-    print("  6. Analyze properties (generate docs)")
-    print("\n📊 SPAWN ANALYSIS:")
-    print("  7. Find items by rarity")
-    print("  8. Show rarity statistics")
-    print("  9. Analyze spawns (generate docs)")
-    print("\n❓ OTHER:")
-    print("  h. Show help")
-    print("  0. Exit")
-    print()
-    
-    while True:
-        choice = input("Enter choice: ").strip().lower()
-        if choice in ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'h', '0']:
-            return choice
-        print("❌ Invalid choice. Please enter 1-9, h, or 0.")
-
-
-def get_batch_size():
-    while True:
-        try:
-            size = int(input("Enter number of items to add (default 50): ").strip() or "50")
-            if size > 0:
-                return size
-            print("❌ Must be a positive number.")
-        except ValueError:
-            print("❌ Please enter a valid number.")
 
 
 def main():
@@ -212,6 +129,10 @@ def main():
         
         # Show help
         if cmd in ['--help', '-h', 'help']:
+            try:
+                from .src.ui.menu import show_help
+            except ImportError:
+                from src.ui.menu import show_help
             show_help()
             return
         
@@ -299,6 +220,64 @@ def main():
             else:
                 analyze_spawns(DISTRIBUTIONS_DIR, full_output=False)
             return
+        
+        # Blacklist management commands
+        elif cmd == '--blacklist-show':
+            show_blacklist()
+            return
+        
+        elif cmd == '--blacklist-stats':
+            show_blacklist_stats()
+            return
+        
+        elif cmd == '--blacklist-add-id':
+            if len(sys.argv) < 3:
+                print("Error: Usage: python main.py --blacklist-add-id <item_id>")
+                sys.exit(1)
+            item_id = sys.argv[2]
+            add_to_blacklist(item_id=item_id)
+            return
+        
+        elif cmd == '--blacklist-add-prop':
+            if len(sys.argv) < 3:
+                print("Error: Usage: python main.py --blacklist-add-prop <property_name>")
+                sys.exit(1)
+            prop_name = sys.argv[2]
+            add_to_blacklist(property_name=prop_name)
+            return
+        
+        elif cmd == '--blacklist-add-value':
+            if len(sys.argv) < 4:
+                print("Error: Usage: python main.py --blacklist-add-value <property_name> <value>")
+                sys.exit(1)
+            prop_name = sys.argv[2]
+            value = sys.argv[3]
+            # Try to convert to number
+            try:
+                if '.' in value:
+                    value = float(value)
+                else:
+                    value = int(value)
+            except ValueError:
+                pass  # Keep as string
+            add_to_blacklist(property_value=(prop_name, value))
+            return
+        
+        # Blacklist cleanup
+        elif cmd == '--blacklist-cleanup':
+            dry_run = '--dry-run' in sys.argv
+            if dry_run:
+                sys.argv.remove('--dry-run')
+            
+            print("\n📦 Loading vanilla item database...")
+            vanilla_items = load_vanilla_items(apply_blacklist=False)
+            
+            if not vanilla_items:
+                print("❌ Failed to load vanilla items. Exiting.")
+                sys.exit(1)
+            
+            cleanup_blacklist(vanilla_items, dry_run=dry_run)
+            return
     
     print("\n📦 Loading vanilla item database...")
     vanilla_items = load_vanilla_items()
@@ -307,128 +286,28 @@ def main():
         print("❌ Failed to load vanilla items. Exiting.")
         sys.exit(1)
     
-    if len(sys.argv) == 1:
+    # Interactive mode - no command-line arguments
+    if len(sys.argv) == 1:        
         while True:
-            choice = display_menu()
+            # Display mod statistics before the menu
+            display_mod_stats(vanilla_items)
             
-            if choice == 'h':
-                show_help()
-                input("\nPress Enter to continue...")
-                continue
-            elif choice == '0':
-                print("Exiting.")
-                sys.exit(0)
+            # Display menu and get choice
+            choice = display_interactive_menu()
             
-            # Item management options need vanilla items loaded
-            if choice in ['1', '2', '3']:
-                show_stats(vanilla_items)
-                
-                if choice == '1':
-                    regen = input("Regenerate tags using new tagging system? (y/n): ").lower().startswith('y')
-                    update(vanilla_items, regenerate_tags=regen)
-                    break
-                elif choice == '2':
-                    batch_size = get_batch_size()
-                    add(vanilla_items, batch_size)
-                    break
-                elif choice == '3':
-                    if input("Add ALL remaining items? (yes/no): ").lower().startswith('y'):
-                        add(vanilla_items, 'all')
-                    else:
-                        print("Cancelled.")
-                    break
+            # Handle the menu choice
+            should_exit = handle_menu_choice(
+                choice, 
+                vanilla_items, 
+                chunk_limit, 
+                VANILLA_SCRIPTS_DIR, 
+                DISTRIBUTIONS_DIR
+            )
             
-            # Property analysis options
-            elif choice == '4':
-                prop_name = input("Enter property name (e.g., StressChange): ").strip()
-                if prop_name:
-                    value_filter = input("Enter value filter (optional, press Enter to skip): ").strip() or None
-                    save_opt = input("Save to file? (y/n): ").lower().startswith('y')
-                    
-                    if save_opt:
-                        output_file = generate_output_filename(f"find_property_{prop_name}")
-                        with capture_and_save_output(output_file):
-                            find_property(VANILLA_SCRIPTS_DIR, prop_name, value_filter, chunk_limit=chunk_limit)
-                        print(f"\n✅ Output saved to: {output_file}")
-                    else:
-                        find_property(VANILLA_SCRIPTS_DIR, prop_name, value_filter, chunk_limit=chunk_limit)
-                    
-                    input("\nPress Enter to continue...")
-            
-            elif choice == '5':
-                min_usage = input("Minimum usage count (default 1): ").strip()
-                min_usage = int(min_usage) if min_usage.isdigit() else 1
-                save_opt = input("Save to file? (y/n): ").lower().startswith('y')
-                
-                if save_opt:
-                    output_file = generate_output_filename("list_properties")
-                    with capture_and_save_output(output_file):
-                        list_properties(VANILLA_SCRIPTS_DIR, min_usage, chunk_limit=chunk_limit)
-                    print(f"\n✅ Output saved to: {output_file}")
-                else:
-                    list_properties(VANILLA_SCRIPTS_DIR, min_usage, chunk_limit=chunk_limit)
-                
-                input("\nPress Enter to continue...")
-            
-            elif choice == '6':
-                save_opt = input("Save to file? (y/n): ").lower().startswith('y')
-                
-                if save_opt:
-                    output_file = generate_output_filename("analyze_properties")
-                    with capture_and_save_output(output_file):
-                        analyze_properties(VANILLA_SCRIPTS_DIR, chunk_limit=chunk_limit)
-                    print(f"\n✅ Output saved to: {output_file}")
-                else:
-                    analyze_properties(VANILLA_SCRIPTS_DIR, chunk_limit=chunk_limit)
-                
-                input("\nPress Enter to continue...")
-            
-            # Spawn analysis options
-            elif choice == '7':
-                print("\nRarity tiers: UltraRare, Legendary, Rare, Uncommon, Common")
-                tier = input("Enter rarity tier: ").strip()
-                
-                if tier in ['UltraRare', 'Legendary', 'Rare', 'Uncommon', 'Common']:
-                    save_opt = input("Save to file? (y/n): ").lower().startswith('y')
-                    
-                    if save_opt:
-                        output_file = generate_output_filename(f"find_rarity_{tier}")
-                        with capture_and_save_output(output_file):
-                            find_rarity(DISTRIBUTIONS_DIR, tier, full_output=True)
-                        print(f"\n✅ Output saved to: {output_file}")
-                    else:
-                        find_rarity(DISTRIBUTIONS_DIR, tier, full_output=False)
-                else:
-                    print("❌ Invalid tier name")
-                
-                input("\nPress Enter to continue...")
-            
-            elif choice == '8':
-                save_opt = input("Save to file? (y/n): ").lower().startswith('y')
-                
-                if save_opt:
-                    output_file = generate_output_filename("rarity_stats")
-                    with capture_and_save_output(output_file):
-                        rarity_stats(DISTRIBUTIONS_DIR)
-                    print(f"\n✅ Output saved to: {output_file}")
-                else:
-                    rarity_stats(DISTRIBUTIONS_DIR)
-                
-                input("\nPress Enter to continue...")
-            
-            elif choice == '9':
-                save_opt = input("Save to file? (y/n): ").lower().startswith('y')
-                
-                if save_opt:
-                    output_file = generate_output_filename("analyze_spawns")
-                    with capture_and_save_output(output_file):
-                        analyze_spawns(DISTRIBUTIONS_DIR, full_output=True)
-                    print(f"\n✅ Output saved to: {output_file}")
-                else:
-                    analyze_spawns(DISTRIBUTIONS_DIR, full_output=False)
-                
-                input("\nPress Enter to continue...")
+            if should_exit:
+                break
     
+    # CLI command mode - update or add
     else:
         # Check for --regenerate-tags flag
         regenerate_tags = '--regenerate-tags' in sys.argv

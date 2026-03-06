@@ -125,7 +125,7 @@ print(tagger.get_stats())  # {processed: 3, matched: 3, matched_rate: 1.0}
 ## Architecture
 
 ```
-Utils/tag/
+src/tag/
 ├── helpers.py              - Property extraction utilities
 ├── matcher.py             - Signature matching coordinator
 ├── analyzer.py            - Main AutoTagger class

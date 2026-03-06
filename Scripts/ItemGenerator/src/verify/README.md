@@ -5,7 +5,7 @@ Modular architecture for item verification, analysis, confidence scoring, and pr
 ## Directory Structure
 
 ```
-Utils/
+src/
 ├── verify/                          # Verification and analysis modules
 │   ├── __init__.py                 # Package init + module exports
 │   ├── helpers.py                  # Common utility functions

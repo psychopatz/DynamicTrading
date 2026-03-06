@@ -6,7 +6,7 @@
 Scripts/
 ├── ItemID_Verify.py                          ← Run this (main entry point)
 │
-└── ItemGenerator/Utils/
+└── ItemGenerator/src/
     ├── verify/                               ← Verification modules
     │   ├── helpers.py
     │   ├── vanilla_loader.py
@@ -73,7 +73,7 @@ Outputs 50 items in Lua format for review.
 
 ### Edit Pricing Config
 
-File: `ItemGenerator/Utils/pricing/config.json`
+File: `ItemGenerator/src/pricing/config.json`
 
 **Change weapon prices:**
 ```json
@@ -244,7 +244,7 @@ self.config = {
 
 ### Want different pricing?
 
-**Solution:** Edit `Utils/pricing/config.json` directly - no code changes needed!
+**Solution:** Edit `src/pricing/config.json` directly - no code changes needed!
 
 ### Want more verbose output?
 
@@ -291,8 +291,8 @@ Process in smaller batches rather than all at once.
 
 ## Documentation Links
 
-- **Full Verify Module Docs:** `ItemGenerator/Utils/verify/README.md`
-- **Full Pricing Docs:** `ItemGenerator/Utils/pricing/README.md`
+- **Full Verify Module Docs:** `ItemGenerator/src/verify/README.md`
+- **Full Pricing Docs:** `ItemGenerator/src/pricing/README.md`
 - **System Architecture:** `ItemGenerator/SYSTEM_SUMMARY.md` (this file)
 
 ---

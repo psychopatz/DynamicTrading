@@ -1,12 +1,12 @@
 """
 Auto-tagging usage examples and quick tests.
-Run from Scripts/ directory: python -c "from ItemGenerator.Utils.tag.examples import *"
+Run from Scripts/ directory: python -c "from ItemGenerator.src.tag.examples import *"
 """
 
 # Example 1: Quick tag a single item
 def example_single_item():
     """Tag a single item."""
-    from ItemGenerator.Utils.tag import auto_tag
+    from ItemGenerator.src.tag import auto_tag
     
     katana_props = """
     item Katana {
@@ -34,7 +34,7 @@ def example_single_item():
 # Example 2: Batch tagging with statistics
 def example_batch_tagging():
     """Tag multiple items and show statistics."""
-    from ItemGenerator.Utils.tag import AutoTagger
+    from ItemGenerator.src.tag import AutoTagger
     
     items_dict = {
         'Katana': """
@@ -86,7 +86,7 @@ def example_batch_tagging():
 # Example 3: Quality scoring
 def example_confidence_scoring():
     """Score the quality of tags."""
-    from ItemGenerator.Utils.tag import AutoTagger, TagConfidenceScorer
+    from ItemGenerator.src.tag import AutoTagger, TagConfidenceScorer
     
     items_dict = {
         'Katana': """
@@ -135,7 +135,7 @@ def example_confidence_scoring():
 # Example 4: Find items below threshold
 def example_below_threshold():
     """Find items that need manual review."""
-    from ItemGenerator.Utils.tag import AutoTagger, TagConfidenceScorer
+    from ItemGenerator.src.tag import AutoTagger, TagConfidenceScorer
     
     items_dict = {
         'GoodItem': """
@@ -185,7 +185,7 @@ def example_below_threshold():
 # Example 5: Multi-category items
 def example_multi_category():
     """Find items that could fit multiple categories."""
-    from ItemGenerator.Utils.tag import AutoTagger
+    from ItemGenerator.src.tag import AutoTagger
     
     # Item that could be Food or Container or Resource
     ambiguous_item = """
@@ -217,7 +217,7 @@ def example_multi_category():
 # Example 6: Signature debugging
 def example_signature_debug():
     """See how item matches all 8 signatures."""
-    from ItemGenerator.Utils.tag.matcher import compare_signatures
+    from ItemGenerator.src.tag.matcher import compare_signatures
     
     katana_props = """
         item Katana {

@@ -11,6 +11,40 @@ from ..tag.tagging import parse_tags, generate_tags, is_excluded, get_category_f
 from ..pricing.stock import calculate_base_max_stock, apply_category_multiplier, calculate_min_stock
 from ..pricing.pricing import calculate_price
 from .vanilla_loader import get_stat
+from ..parse.blacklist import is_item_blacklisted
+from ..parse.overrides import load_overrides, apply_override
+
+
+def _tags_list_to_dict(tags_list):
+    """Convert generated tag list into legacy dict schema used by pricing/stock logic."""
+    tag_dict = {
+        'primary': 'Misc.General',
+        'rarity': 'Common',
+        'quality': None,
+        'origin': None,
+        'theme': []
+    }
+
+    for tag in tags_list or []:
+        if not isinstance(tag, str):
+            continue
+        if tag.startswith('Rarity.'):
+            tag_dict['rarity'] = tag.split('.', 1)[1] if '.' in tag else 'Common'
+        elif tag.startswith('Quality.'):
+            tag_dict['quality'] = tag.split('.', 1)[1] if '.' in tag else None
+        elif tag.startswith('Origin.'):
+            tag_dict['origin'] = tag.split('.', 1)[1] if '.' in tag else None
+        elif tag.startswith('Theme.'):
+            tag_dict['theme'].append(tag.split('.', 1)[1] if '.' in tag else 'General')
+        elif tag_dict['primary'] == 'Misc.General':
+            tag_dict['primary'] = tag
+
+    return tag_dict
+
+
+def _tags_list_to_lua(tags_list):
+    """Serialize Python tag list into Lua array literal body: \"a\", \"b\"."""
+    return ', '.join(f'"{tag}"' for tag in (tags_list or []) if isinstance(tag, str))
 
 
 def ensure_lua_files_exist():
@@ -81,8 +115,9 @@ def process_lua_file(filepath, vanilla_items, dry_run=False, regenerate_tags=Fal
         
         # Regenerate tags if requested
         if regenerate_tags:
-            tags_dict = generate_tags(item_id, props)
-            tags_str = str(tags_dict).replace("'", '"')
+            generated_tags = generate_tags(item_id, props)
+            tags_dict = _tags_list_to_dict(generated_tags)
+            tags_str = _tags_list_to_lua(generated_tags)
         
         new_price = calculate_price(item_id, props, tags_dict)
         
@@ -263,7 +298,7 @@ def _build_grouped_items_text(records):
         grouped[(_get_primary_tag(record['tags']), _get_rarity_tag(record['tags']))].append(record)
 
     lines = [
-        '    -- Added by ItemGenerator: grouped by primary tag and rarity',
+        '    -- The items are grouped by Primary tag and Rarity',
         ''
     ]
 
@@ -312,12 +347,21 @@ def create_item_record(item_data, vanilla_items):
     final_max = apply_category_multiplier(base_max, tags_dict, subcategories)
     final_min = calculate_min_stock(final_max, tags_dict, subcategories)
 
+    # Apply overrides if they exist
+    overrides = load_overrides()
+    final_price, final_tags, final_min_override, final_max_override, was_overridden = apply_override(
+        item_id, price, tags, final_min, final_max, overrides
+    )
+    
+    if was_overridden:
+        print(f"  🔧 Applied override to: {item_id}")
+
     return {
         'item_id': item_id,
-        'base_price': price,
-        'tags': tags,
-        'stock_min': final_min,
-        'stock_max': final_max
+        'base_price': int(final_price),
+        'tags': final_tags,
+        'stock_min': int(final_min_override),
+        'stock_max': int(final_max_override)
     }
 
 
@@ -327,8 +371,16 @@ def create_item_entry(item_data, vanilla_items):
     return _format_item_record(record)
 
 
-def add_items_to_file(filepath, new_items):
-    """Add new items and fully normalize existing + new items in the file."""
+def add_items_to_file(filepath, new_items, vanilla_items=None):
+    """
+    Add new items and fully normalize existing + new items in the file.
+    Also removes any blacklisted items automatically.
+    
+    Args:
+        filepath: Path to the Lua file
+        new_items: List of new items to add
+        vanilla_items: Vanilla item data for blacklist checking (optional)
+    """
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
 
@@ -341,11 +393,47 @@ def add_items_to_file(filepath, new_items):
     existing_records = _extract_item_records(items_block)
     existing_ids = {record['item_id'] for record in existing_records}
 
-    new_records = [create_item_record(item_data, {}) for item_data in new_items]
+    # Filter out blacklisted items from existing records
+    if vanilla_items is not None:
+        from .vanilla_loader import _parse_properties_for_blacklist
+        filtered_existing = []
+        removed_count = 0
+        
+        for record in existing_records:
+            item_id = record['item_id']
+            props = vanilla_items.get(item_id, "")
+            properties_dict = _parse_properties_for_blacklist(props) if props else {}
+            is_blacklisted, reason = is_item_blacklisted(item_id, properties_dict)
+            
+            if is_blacklisted:
+                removed_count += 1
+                print(f"  🚫 Removing blacklisted item: {item_id} ({reason})")
+            else:
+                filtered_existing.append(record)
+        
+        existing_records = filtered_existing
+        if removed_count > 0:
+            print(f"  ✅ Removed {removed_count} blacklisted item(s)")
+
+    new_records = [create_item_record(item_data, vanilla_items or {}) for item_data in new_items]
     added_count = sum(1 for record in new_records if record['item_id'] not in existing_ids)
 
     merged = {record['item_id']: record for record in existing_records}
     for record in new_records:
+        # Skip adding if it's blacklisted
+        if vanilla_items is not None:
+            from .vanilla_loader import _parse_properties_for_blacklist
+            item_id = record['item_id']
+            item_data = next((item for item in new_items if item.get('item_id') == item_id), None)
+            if item_data:
+                props = vanilla_items.get(item_id, "")
+                properties_dict = _parse_properties_for_blacklist(props) if props else {}
+                is_blacklisted, reason = is_item_blacklisted(item_id, properties_dict)
+                
+                if is_blacklisted:
+                    print(f"  🚫 Skipping blacklisted item: {item_id} ({reason})")
+                    continue
+        
         merged[record['item_id']] = record
 
     normalized_items_text = _build_grouped_items_text(list(merged.values()))
@@ -421,10 +509,103 @@ def add_new_items(vanilla_items, batch_size=50):
                 continue
             
             try:
-                added = add_items_to_file(target_file, subcat_items)
+                added = add_items_to_file(target_file, subcat_items, vanilla_items)
                 total_added += added
                 print(f"  ✅ Added {added} items to {target_file.name}")
             except Exception as e:
                 print(f"  ❌ Error adding to {target_file.name}: {e}")
     
     return total_added
+
+
+def cleanup_blacklisted_items(vanilla_items, dry_run=False):
+    """
+    Remove all blacklisted items from existing Lua files.
+    This scans all Lua files and removes items matching the blacklist.
+    
+    Args:
+        vanilla_items: Dict of vanilla item data for blacklist checking
+        dry_run: If True, only report what would be removed without making changes
+    
+    Returns:
+        int: Total number of items removed
+    """
+    from .vanilla_loader import _parse_properties_for_blacklist
+    
+    print("\n" + "=" * 60)
+    print("🧹 Cleaning Up Blacklisted Items" + (" (DRY RUN)" if dry_run else ""))
+    print("=" * 60)
+    
+    items_dir = Path(MOD_ITEMS_DIR)
+    lua_files = list(items_dir.rglob("*.lua"))
+    
+    total_removed = 0
+    files_modified = 0
+    
+    for lua_file in lua_files:
+        try:
+            with open(lua_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            brace_start, brace_end = _find_items_block_bounds(content)
+            if brace_start is None or brace_end is None:
+                continue
+            
+            items_block = content[brace_start + 1:brace_end]
+            existing_records = _extract_item_records(items_block)
+            
+            if not existing_records:
+                continue
+            
+            filtered_records = []
+            removed_items = []
+            
+            for record in existing_records:
+                item_id = record['item_id']
+                props = vanilla_items.get(item_id, "")
+                properties_dict = _parse_properties_for_blacklist(props) if props else {}
+                is_blacklisted, reason = is_item_blacklisted(item_id, properties_dict)
+                
+                if is_blacklisted:
+                    removed_items.append((item_id, reason))
+                else:
+                    filtered_records.append(record)
+            
+            if removed_items:
+                print(f"\n📄 {lua_file.name}")
+                print(f"   Found {len(existing_records)} items, removing {len(removed_items)}:")
+                
+                for item_id, reason in removed_items[:5]:
+                    print(f"     🚫 {item_id}: {reason}")
+                    total_removed += 1
+                
+                if len(removed_items) > 5:
+                    print(f"     ... and {len(removed_items) - 5} more")
+                    total_removed += len(removed_items) - 5
+                
+                if not dry_run:
+                    # Rebuild file with filtered items
+                    normalized_items_text = _build_grouped_items_text(filtered_records)
+                    new_content = (
+                        content[:brace_start + 1] +
+                        '\n' + normalized_items_text +
+                        content[brace_end:]
+                    )
+                    
+                    with open(lua_file, 'w', encoding='utf-8') as f:
+                        f.write(new_content)
+                    
+                    files_modified += 1
+                    print(f"   ✅ File updated")
+        
+        except Exception as e:
+            print(f"   ❌ Error processing {lua_file.name}: {e}")
+    
+    print("\n" + "=" * 60)
+    if dry_run:
+        print(f"📊 Would remove {total_removed} blacklisted items from {files_modified} files")
+    else:
+        print(f"✅ Removed {total_removed} blacklisted items from {files_modified} files")
+    print("=" * 60 + "\n")
+    
+    return total_removed
