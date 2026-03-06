@@ -16,10 +16,28 @@ def sanitize_path(name):
     clean = re.sub(r'[<>:"/\\|?*;]', '_', name)
     return clean[:50].strip()
 
-def get_opening_maps(vanilla_path):
+def get_dynamic_tags():
+    """Extracts the FULL tag library from Docs/Tags_Reference.md."""
+    tag_ref_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../Docs/Tags_Reference.md")
+    all_tags = []
+    if os.path.exists(tag_ref_path):
+        with open(tag_ref_path, "r") as f:
+            content = f.read()
+            # Find everything inside backticks that looks like a tag (Root.Sub or Global.*)
+            # This captures full hierarchies like Food.NonPerishable.Canned
+            all_tags = re.findall(r"`([A-Z][a-zA-Z]+\.[^`]+)`", content)
+    
+    # Sort and unique
+    all_tags = sorted(list(set(all_tags)))
+    
+    # Simple split for the LLM to see roots vs others
+    roots = sorted(list(set([t.split('.')[0] for t in all_tags if '.' in t])))
+    return all_tags, roots
+
+def get_opening_maps(vanilla_path, silent=False):
     """Maps UnopenedID -> OpenedID using recipe itemMappers."""
     mapping = {}
-    print("[*] Building Opening Map from Recipes...")
+    if not silent: print("[*] Building Opening Map from Recipes...")
     recipe_dir = os.path.join(vanilla_path, "generated/recipes/")
     if not os.path.exists(recipe_dir):
         recipe_dir = os.path.join(os.path.dirname(vanilla_path), "generated/recipes/")
@@ -119,11 +137,11 @@ def calculate_worth(item_id, props, category, subcat):
         
     return round(max(0.1, worth), 2)
 
-def get_vanilla_data(vanilla_path):
+def get_vanilla_data(vanilla_path, silent=False):
     item_data, fluid_data, duplicates = {}, {}, {}
-    opening_map = get_opening_maps(vanilla_path)
+    opening_map = get_opening_maps(vanilla_path, silent=silent)
     
-    print(f"[*] Scanning Vanilla Scripts: {vanilla_path}")
+    if not silent: print(f"[*] Scanning Vanilla Scripts: {vanilla_path}")
     for root, dirs, files in os.walk(vanilla_path):
         for file in sorted(files):
             if not file.endswith(".txt"): continue
@@ -164,7 +182,8 @@ def get_vanilla_data(vanilla_path):
                         "tags": "N/A", "eat_type": "N/A", "props": props, "worth": 1.0
                     }
     
-    for item_id, data in item_data.items():
+    combined_data = {**item_data, **fluid_data}
+    for item_id, data in combined_data.items():
         oprops = data["props"]
         inherited = ""
         oid = data.get("opened_variant")
@@ -175,10 +194,47 @@ def get_vanilla_data(vanilla_path):
             m = re.search(fr"{key}\s*=\s*(-?\d+\.?\d*)", p, re.IGNORECASE)
             return float(m.group(1)) if m else default
 
-        data["worth"] = calculate_worth(item_id, combined_props, data["category"], data["subcat"])
-        item_weight = gsl("Weight", 0.1)
-        data["weight"] = item_weight
+        worth = calculate_worth(item_id, combined_props, data["category"], data["subcat"])
+        weight = gsl("Weight", 0.1)
+        data["worth"] = worth
+        data["weight"] = weight
         
+        # --- Automated Stock Logic (BMS) ---
+        if weight <= 0.05: bms = 50
+        elif weight <= 0.2: bms = 25
+        elif weight <= 0.5: bms = 15
+        elif weight <= 1.5: bms = 10
+        elif weight <= 5.0: bms = 5
+        else: bms = 2
+        
+        # Multipliers
+        mult = 1.0
+        p_lower = combined_props.lower()
+        if data["category"] == "Food" and ("fresh = true" in p_lower or "perishable = true" in p_lower):
+            mult *= 0.5
+        if data["category"] in ["Weapon", "Resource"] and ("ammo" in item_id.lower() or "nail" in item_id.lower()):
+            mult *= 2.0
+        
+        max_stock = max(1, int(bms * mult))
+        min_stock = int(max_stock * 0.2)
+        data["stock"] = {"min": min_stock, "max": max_stock}
+
+        # --- Automated Tag Guessing (No-Collision) ---
+        root_map = {
+            "Food": "Food", "Clothing": "Clothing", "Literature": "Literature",
+            "Medical": "Medical", "Weapon": "Weapon", "WeaponPart": "Weapon.Part",
+            "Container": "Container", "Electronics": "Electronics", "Tool": "Tool",
+            "Resource": "Resource", "Appliance": "Appliance", "Fluids": "Food",
+            "ProtectiveGear": "Clothing"
+        }
+        root = root_map.get(data["category"], "Misc")
+        sub = data["subcat"]
+        data["dt_tags"] = [f"{root}.{sub}", "Rarity.Common"]
+
+        # --- Lua Snippet Generation ---
+        tag_str = ', '.join([f'"{t}"' for t in data["dt_tags"]])
+        data["lua"] = f'{{ item="Base.{item_id}", tags={{{tag_str}}}, basePrice={int(worth)}, stockRange={{min={min_stock}, max={max_stock}}} }},'
+
         # Advanced Stats for display
         data["capacity"] = gsl("Capacity", 0.0)
         data["weight_reduction"] = gsl("WeightReduction", 0.0)
@@ -194,18 +250,19 @@ def get_vanilla_data(vanilla_path):
         data["hunger"] = abs(gsl("HungerChange", 0.0))
         
         # Clothing Specific
-        data["insulation"] = gsl("Insulation", 0.0)
-        data["wind_res"] = gsl("WindResistance", 0.0)
-        data["bite_def"] = gsl("BiteDefense", 0.0)
-        data["scratch_def"] = gsl("ScratchDefense", 0.0)
-        data["bullet_def"] = gsl("BulletDefense", 0.0)
-        data["condition_max"] = gsl("ConditionMax", 0.0)
+        if data["category"] in ["Clothing", "ProtectiveGear"]:
+            data["insulation"] = gsl("Insulation", 0.0)
+            data["wind_res"] = gsl("WindResistance", 0.0)
+            data["bite_def"] = gsl("BiteDefense", 0.0)
+            data["scratch_def"] = gsl("ScratchDefense", 0.0)
+            data["bullet_def"] = gsl("BulletDefense", 0.0)
+            data["condition_max"] = gsl("ConditionMax", 0.0)
                     
     return item_data, fluid_data
 
-def get_mod_data(mod_path):
+def get_mod_data(mod_path, silent=False):
     mod_data, mod_duplicates = {}, {}
-    print(f"[*] Scanning Mod Registries: {mod_path}")
+    if not silent: print(f"[*] Scanning Mod Registries: {mod_path}")
     if not os.path.exists(mod_path): return mod_data, mod_duplicates
     
     for root, dirs, files in os.walk(mod_path):
@@ -304,26 +361,120 @@ def write_hierarchical_files(output_dir, status_folder, ids_subset, vanilla_data
                 
             extra_str = " | " + " | ".join(extra) if extra else ""
             f.write(f"{obj_id:<45} | Potential Worth: {worth:<8} | Weight: {weight:<6}{extra_str} | Tags: {meta.get('tags','N/A')}\n")
+            if "lua" in meta:
+                f.write(f"  LUA: {meta['lua']}\n")
 
 def main():
     parser = argparse.ArgumentParser(description="Compare Vanilla PZ Items/Fluids with Mod Registries")
     parser.add_argument("--vanilla", default=VANILLA_DIR, help="Path to vanilla scripts")
     parser.add_argument("--mod", default=MOD_ITEMS_DIR, help="Path to mod item Lua files")
     parser.add_argument("--output", default=OUTPUT_DIR, help="Path for output")
+    parser.add_argument("--chunk", type=int, default=0, help="Number of items to output to console for indexing")
+    parser.add_argument("--category", help="Filter chunk by category (e.g., Beverages, Food)")
+    parser.add_argument("--status", default="VanillaOnly", choices=["VanillaOnly", "AlreadyHas", "Invalid", "UnsureItems"], help="Source list for chunking")
+    parser.add_argument("--llm", action="store_true", help="Output in LLM-optimized format (concise stats, tag ref)")
+    parser.add_argument("--getTags", nargs='?', const='all', help="On-demand tag lookup. Use 'all' or a root category (e.g., Food)")
     args = parser.parse_args()
 
-    if os.path.exists(args.output):
-        import shutil
-        shutil.rmtree(args.output)
-    os.makedirs(args.output, exist_ok=True)
+    if args.getTags:
+        all_tags, roots = get_dynamic_tags()
+        if args.getTags.lower() == 'all':
+            print(f"--- FULL TAG LIBRARY ---\n{', '.join(all_tags)}")
+        else:
+            branch = args.getTags.capitalize()
+            filtered = [t for t in all_tags if t.startswith(branch + ".")]
+            if filtered:
+                print(f"--- TAG BRANCH: {branch} ---\n{', '.join(filtered)}")
+            else:
+                print(f"No tags found for branch: {branch}")
+        return
 
-    v_items, v_fluids = get_vanilla_data(args.vanilla)
-    m_data, m_dupes = get_mod_data(args.mod)
+    v_items, v_fluids = get_vanilla_data(args.vanilla, silent=args.llm) if not args.llm else (get_vanilla_data(args.vanilla, silent=True), {})[0] 
+    m_data, m_dupes = get_mod_data(args.mod, silent=args.llm)
     v_combined = {**v_items, **v_fluids}
     
     vanilla_only = sorted(list(set(v_combined.keys()) - set(m_data.keys())))
     already_has = sorted(list(set(v_combined.keys()) & set(m_data.keys())))
     mod_invalid = sorted(list(set(m_data.keys()) - set(v_combined.keys())))
+
+    unsure_items = [obj_id for obj_id in vanilla_only if v_combined[obj_id].get("tags") == "None"]
+
+    if args.chunk > 0:
+        source_map = {
+            "VanillaOnly": vanilla_only,
+            "AlreadyHas": already_has,
+            "Invalid": mod_invalid,
+            "UnsureItems": unsure_items
+        }
+        target_list = source_map.get(args.status, vanilla_only)
+        
+        if args.llm:
+            # Pre-collect chunk items to keep output clean
+            chunk_items = []
+            count = 0
+            for obj_id in target_list:
+                meta = v_combined.get(obj_id)
+                if not meta: meta = m_data.get(obj_id, {})
+                if args.category:
+                    cat_match = args.category.lower() in meta.get("origin", "").lower() or args.category.lower() in meta.get("category", "").lower()
+                    if not cat_match: continue
+                
+                chunk_items.append((obj_id, meta))
+                count += 1
+                if count >= args.chunk: break
+
+            if count == 0:
+                print(f"No items found matching category: {args.category or 'Any'} with status: {args.status}")
+                return
+
+            print(f"--- CHUNK: {args.status} | Filter: {args.category or 'Any'} ---")
+            for obj_id, meta in chunk_items:
+                p = meta.get("props", "")
+                print(f"[{obj_id}] (Origin: {meta.get('origin', 'Unknown')})")
+                
+                # Stats Extraction
+                def fnd(key):
+                    m = re.search(fr"{key}\s*=\s*(-?\d+\.?\d*)", p, re.IGNORECASE)
+                    return m.group(1) if m else None
+
+                stats = {
+                    "Potencial Worth": meta.get("worth"), "Weight": fnd("Weight"), "Category": meta.get("category"), 
+                    "Subcat": meta.get("subcat"),
+                    "Hunger": fnd("HungerChange"), "Thirst": fnd("ThirstChange"), "Cal": fnd("Calories"),
+                    "Fresh": fnd("DaysFresh"), "Rotten": fnd("DaysTotallyRotten"),
+                    "Cap": fnd("Capacity"), "WR": fnd("WeightReduction"),
+                    "Uses": int(round(1.0 / float(fnd("UseDelta")))) if fnd("UseDelta") and float(fnd("UseDelta")) > 0 else 1,
+                    "Condition": fnd("ConditionMax"), "Tags": meta.get("tags")
+                }
+                
+                active_stats = [f"{k}: {v}" for k, v in stats.items() if v and v != "0.0" and v != "None"]
+                print(f"  {' | '.join(active_stats)}")
+            return
+
+        print(f"\n--- CHUNK OUTPUT (Size: {args.chunk}, Status: {args.status}, Category: {args.category or 'Any'}) ---")
+        count = 0
+        for obj_id in target_list:
+            meta = v_combined.get(obj_id)
+            if not meta: # Handle Invalid IDs not in Vanilla
+                meta = m_data.get(obj_id, {})
+            
+            # Category filter
+            if args.category:
+                cat_match = args.category.lower() in meta.get("origin", "").lower() or args.category.lower() in meta.get("category", "").lower()
+                if not cat_match: continue
+            
+            if "lua" in meta:
+                print(meta["lua"])
+                count += 1
+            else:
+                # Fallback for items with no automated LUA (mainly Invalid)
+                print(f"-- [NO LUA GEN] {obj_id} (Origin: {meta.get('origin', 'Unknown')})")
+                count += 1
+
+            if count >= args.chunk:
+                break
+        print(f"--- END CHUNK ({count} items found) ---\n")
+        return
     
     write_hierarchical_files(args.output, "VanillaOnly", vanilla_only, v_combined, m_data)
     write_hierarchical_files(args.output, "AlreadyHas", already_has, v_combined, m_data)
