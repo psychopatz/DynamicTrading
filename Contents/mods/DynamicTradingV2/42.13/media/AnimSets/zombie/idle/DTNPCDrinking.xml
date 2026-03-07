@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode class="Condition">
+	<m_Conditions>
+		<m_Condition class="Variable">
+			<m_VariableName>DTNPC</m_VariableName>
+			<m_Type>BOOL</m_Type>
+			<m_Val>true</m_Val>
+		</m_Condition>
+		<m_Condition class="Variable">
+			<m_VariableName>bMoving</m_VariableName>
+			<m_Type>BOOL</m_Type>
+			<m_Val>false</m_Val>
+		</m_Condition>
+		<m_Condition class="Variable">
+			<m_VariableName>DTIdleState</m_VariableName>
+			<m_Type>STRING</m_Type>
+			<m_Val>9</m_Val>
+		</m_Condition>
+	</m_Conditions>
+	<m_ChildNode>
+		<m_node class="Anim">
+			<m_AnimName>Bob_IdleApplyAlcohol</m_AnimName>
+			<m_BlendTime>0.20</m_BlendTime>
+			<m_SpeedScale>1.0</m_SpeedScale>
+		</m_node>
+	</m_ChildNode>
+</animNode>

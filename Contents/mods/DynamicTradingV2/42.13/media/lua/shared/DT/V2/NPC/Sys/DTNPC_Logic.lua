@@ -11,7 +11,7 @@ DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 -- In SP, zombie movement jitter can cause repeated tiny drift corrections.
 local ANCHOR_DRIFT_TOLERANCE = 1.5
 local ANCHOR_SNAP_COOLDOWN_HOURS = 2 / 3600
-local DTNPC_IDLE_STATE_COUNT = 3
+local DTNPC_IDLE_STATE_COUNT = 10
 local DTNPC_IDLE_CYCLE_TICKS = 240
 
 -- Forward declarations used by ProcessNPC.
