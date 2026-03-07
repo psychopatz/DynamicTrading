@@ -1263,7 +1263,7 @@ end
 
 #### Step 3.3.1: Spatial Partitioning for Proximity Checks
 
-**File**: `Contents/mods/DynamicTradingV2/42.13/media/lua/server/DT/V2/NPC/Manager/DTNPC_Manager_Respawn.lua`
+**File**: `Contents/mods/DynamicTradingV2/42.13/media/lua/server/DT/V2/NPC/Manager/DTNPC_ManagerRespawn.lua`
 
 **Before CheckRosterSpawns, add helper**:
 

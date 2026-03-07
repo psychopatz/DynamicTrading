@@ -1,0 +1,212 @@
+-- ==============================================================================
+-- DTNPC_ManagerRespawn_SpawnLogic.lua
+-- Respawn checking and spawning logic for NPCs.
+-- ==============================================================================
+
+-- GUARD: Ensure DTNPCManager table exists
+DTNPCManager = DTNPCManager or {}
+
+-- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
+if isClient() and not isServer() then return end
+
+local RESPAWN_RANGE = 120 -- Maximum distance for respawn + buffer zone
+
+function DTNPCManager.CheckForRespawn(brain, uuid)
+    if not brain or not brain.lastX or not brain.lastY then return end
+    
+    local players = DTNPCManager.GetActivePlayers()
+    for _, player in ipairs(players) do
+        local dx = player:getX() - brain.lastX
+        local dy = player:getY() - brain.lastY
+        local dz = player:getZ() - (brain.lastZ or 0)
+        
+        local dist = math.sqrt(dx*dx + dy*dy)
+        if math.abs(dz) <= 1 and dist < RESPAWN_RANGE then
+            -- Check if zombie exists by UUID
+            local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
+            
+            if not zombie then
+                print("[DTNPC] Respawning NPC: " .. (brain.name or uuid) .. " near player " .. player:getUsername() .. " (dist: " .. string.format("%.1f", dist) .. ")")
+                DTNPCServerCore.RespawnNPC(brain, uuid)
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+
+function DTNPCManager.CheckRosterSpawns()
+    if not DynamicTrading_Roster then return end
+    
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    if not rosterData or not rosterData.Souls then return end
+    
+    local players = DTNPCManager.GetActivePlayers()
+    if #players == 0 then return end
+
+    local soulCount = 0
+    for _ in pairs(rosterData.Souls) do
+        soulCount = soulCount + 1
+    end
+
+    DTNPCManager.RespawnDebug.Log(
+        "cycle_start",
+        "Process=start players=" .. tostring(#players) ..
+            " souls=" .. tostring(soulCount) ..
+            " hashInitialized=" .. tostring(DTNPC_SpatialHash.IsInitialized)
+    )
+    
+    -- Initialize spatial hash if needed
+    if not DTNPC_SpatialHash.IsInitialized then
+        DTNPCManager.RespawnDebug.Log("hash_rebuild_start", "Process=spatial_hash_rebuild_start", true)
+        DTNPC_SpatialHash.RebuildFromRoster(rosterData)
+        local stats = DTNPC_SpatialHash.GetGridStats and DTNPC_SpatialHash.GetGridStats() or {}
+        DTNPCManager.RespawnDebug.Log(
+            "hash_rebuild_done",
+            "Process=spatial_hash_rebuild_done cells=" .. tostring(stats.cellCount or 0) ..
+                " indexedNPCs=" .. tostring(stats.totalNPCs or 0),
+            true
+        )
+    end
+    
+    -- Cleanup empty cells periodically (dirty flag optimization)
+    DTNPC_SpatialHash.CleanupEmptyCells()
+    
+    local currentHours = getGameTime():getWorldAgeHours()
+    local spawnedCount = 0
+    local hashSpawnAttempts = 0
+    
+    -- Query NPCs near each player using spatial hash (O(n) instead of O(n²))
+    local hashCandidates = 0
+    for _, player in ipairs(players) do
+        local playerX = player:getX()
+        local playerY = player:getY()
+        local playerZ = player:getZ()
+        
+        -- Get NPCs in spawn range + buffer
+        local nearbySpawns = DTNPC_SpatialHash.GetNPCsInRadius(playerX, playerY, RESPAWN_RANGE)
+        
+        for uuid, npcData in pairs(nearbySpawns) do
+            hashCandidates = hashCandidates + 1
+            -- Skip if already active
+            if not DTNPCManager.Data[uuid] then
+                local registry = rosterData.Souls[uuid]
+                
+                if registry then
+                    local status = registry.status or "Resting"
+                    
+                    -- Skip if spawn backoff active
+                    if not (registry.spawnRetryTime and currentHours < registry.spawnRetryTime) then
+                        -- Only spawn spawnnable statuses
+                        if status == "Resting" or status == "Working" or status == "Trading" then
+                            local targetX = npcData.x or (registry.lastX or (registry.homeCoords and registry.homeCoords.x))
+                            local targetY = npcData.y or (registry.lastY or (registry.homeCoords and registry.homeCoords.y))
+                            local targetZ = npcData.z or (registry.lastZ or (registry.homeCoords and registry.homeCoords.z) or 0)
+                            
+                            if targetX and targetY then
+                                -- Final Z-check before spawn
+                                local dz = playerZ - targetZ
+                                if math.abs(dz) <= 1 then
+                                    hashSpawnAttempts = hashSpawnAttempts + 1
+                                    
+                                    local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
+                                    if fullBrain then
+                                        fullBrain.lastX = targetX
+                                        fullBrain.lastY = targetY
+                                        fullBrain.lastZ = targetZ
+                                        fullBrain.status = status
+                                        
+                                        local zombie = DTNPCServerCore.RespawnNPC(fullBrain, uuid)
+                                        if zombie then
+                                            registry.spawnRetryTime = nil
+                                            
+                                            -- Initialize distance frequency tracking
+                                            DTNPC_DistanceFrequency.InitializeNPC(uuid)
+                                            
+                                            spawnedCount = spawnedCount + 1
+                                        else
+                                            registry.spawnRetryTime = currentHours + 0.1
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- FALLBACK: If spatial hash yielded nothing, scan roster directly for nearby NPCs
+    -- This ensures spawning works even if hash is stale or uninitialized
+    local usedFallback = false
+    local fallbackSpawnAttempts = 0
+    if hashCandidates == 0 and #players > 0 then
+        usedFallback = true
+        DTNPCManager.RespawnDebug.Log("fallback_start", "Process=fallback_roster_scan_start reason=hash_empty", true)
+        for uuid, registry in pairs(rosterData.Souls) do
+            -- Skip if already active (Live)
+            if not DTNPCManager.Data[uuid] then
+                local status = registry.status or "Resting"
+                
+                -- Skip if spawn backoff active
+                if not (registry.spawnRetryTime and currentHours < registry.spawnRetryTime) then
+                    if status == "Resting" or status == "Working" or status == "Trading" then
+                        local npcX = registry.lastX or (registry.homeCoords and registry.homeCoords.x)
+                        local npcY = registry.lastY or (registry.homeCoords and registry.homeCoords.y)
+                        local npcZ = registry.lastZ or (registry.homeCoords and registry.homeCoords.z) or 0
+                        
+                        if npcX and npcY then
+                            -- Check if any player is within range
+                            for _, player in ipairs(players) do
+                                local playerX = player:getX()
+                                local playerY = player:getY()
+                                local playerZ = player:getZ()
+                                
+                                local dx = playerX - npcX
+                                local dy = playerY - npcY
+                                local dz = playerZ - npcZ
+                                local dist = math.sqrt(dx * dx + dy * dy)
+                                
+                                if math.abs(dz) <= 1 and dist < RESPAWN_RANGE then
+                                    fallbackSpawnAttempts = fallbackSpawnAttempts + 1
+                                    
+                                    local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
+                                    if fullBrain then
+                                        fullBrain.lastX = npcX
+                                        fullBrain.lastY = npcY
+                                        fullBrain.lastZ = npcZ
+                                        fullBrain.status = status
+                                        
+                                        local zombie = DTNPCServerCore.RespawnNPC(fullBrain, uuid)
+                                        if zombie then
+                                            registry.spawnRetryTime = nil
+                                            DTNPC_DistanceFrequency.InitializeNPC(uuid)
+                                            spawnedCount = spawnedCount + 1
+                                        else
+                                            registry.spawnRetryTime = currentHours + 0.1
+                                        end
+                                    end
+                                    break  -- Spawned for this player, move to next NPC
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    local resultMessage =
+        "Process=check_complete spawned=" .. tostring(spawnedCount) ..
+        " hashCandidates=" .. tostring(hashCandidates) ..
+        " hashAttempts=" .. tostring(hashSpawnAttempts) ..
+        " fallbackUsed=" .. tostring(usedFallback) ..
+        " fallbackAttempts=" .. tostring(fallbackSpawnAttempts)
+
+    -- Always print if we did useful work; otherwise print periodically.
+    DTNPCManager.RespawnDebug.Log("cycle_result", resultMessage, spawnedCount > 0 or usedFallback)
+end
+
+print("[DTNPC_ManagerRespawn_SpawnLogic] Loaded successfully")

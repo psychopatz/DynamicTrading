@@ -15,7 +15,7 @@ DynamicTrading V2 implements a dual-layer NPC management system with:
 | File | Purpose |
 |------|---------|
 | [DTNPC_Spawn.lua](Contents/mods/DynamicTradingV2/42.13/media/lua/server/DT/V2/NPC/DTNPC_Spawn.lua) | Main spawning, sync, and network functions |
-| [DTNPC_Manager_Respawn.lua](Contents/mods/DynamicTradingV2/42.13/media/lua/server/DT/V2/NPC/Manager/DTNPC_Manager_Respawn.lua) | Proximity-based respawn checks |
+| [DTNPC_ManagerRespawn.lua](Contents/mods/DynamicTradingV2/42.13/media/lua/server/DT/V2/NPC/Manager/DTNPC_ManagerRespawn.lua) | Proximity-based respawn checks |
 | [DTNPC_ServerCore_Spawn.lua](Contents/mods/DynamicTradingV2/42.13/media/lua/server/DT/V2/NPC/ServerCore/DTNPC_ServerCore_Spawn.lua) | Core spawn implementation |
 | [DTNPC_Manager_Tick.lua](Contents/mods/DynamicTradingV2/42.13/media/lua/server/DT/V2/NPC/Manager/DTNPC_Manager_Tick.lua) | Main game loop that drives respawn/broadcast |
 
@@ -82,7 +82,7 @@ DynamicTrading_Roster.Souls = {
 
 ### Respawn Range
 ```lua
--- File: DTNPC_Manager_Respawn.lua, Line 12
+-- File: DTNPC_ManagerRespawn.lua, Line 12
 local RESPAWN_RANGE = 100  -- Distance in tiles at which NPCs hydrate/spawn near players
 ```
 
@@ -487,7 +487,7 @@ end
 ### Trade Cycle Automation
 
 ```lua
--- File: DTNPC_Manager_Respawn.lua, Lines 235-290
+-- File: DTNPC_ManagerRespawn.lua, Lines 235-290
 function DTNPCManager.ProcessTradeCycles()
     -- Called every 30 seconds
     -- For each Resting NPC:
@@ -510,7 +510,7 @@ end
 
 | Constant | Value | Purpose | File |
 |----------|-------|---------|------|
-| `RESPAWN_RANGE` | 100 tiles | Proximity trigger for NPC spawning | Manager_Respawn.lua:12 |
+| `RESPAWN_RANGE` | 100 tiles | Proximity trigger for NPC spawning | ManagerRespawn.lua:12 |
 | `TICK_RATE` | 20 ticks | Update frequency for position tracking | Manager_Tick.lua:6 |
 | `POSITION_BROADCAST_RATE` | 120 ticks | Position update frequency (~6 sec) | Manager_Tick.lua:8 |
 | `RESPAWN_CHECK_RATE` | 60 ticks | Proximity check frequency (~3 sec) | Manager_Tick.lua:10 |
@@ -518,7 +518,7 @@ end
 | `SPAWN_SEARCH_RADIUS` | 15 tiles | Max distance to search for safe spawn square | Spawn.lua:240 |
 | `NPCTradingStayHours` | 4.0 (default) | How long NPC stays at trading location | Sandbox vars |
 | `NPCTradingWalkHours` | 1.0 (default) | How long walk-home takes | Sandbox vars |
-| `NPCTradePopPercent` | 40% (default) | % of faction that can trade simultaneously | Manager_Respawn.lua:245 |
+| `NPCTradePopPercent` | 40% (default) | % of faction that can trade simultaneously | ManagerRespawn.lua:245 |
 
 ---
 
@@ -530,7 +530,7 @@ DT/V2/NPC/
 ├── Manager/
 │   ├── DTNPC_Manager.lua              # Bootstrap, Tables, Helpers
 │   ├── DTNPC_Manager_Registration.lua # NPC Registration/Removal
-│   ├── DTNPC_Manager_Respawn.lua      # Proximity checks, transitions
+│   ├── DTNPC_ManagerRespawn.lua      # Proximity checks, transitions
 │   ├── DTNPC_Manager_Tick.lua         # Main tick loop
 │   ├── DTNPC_Manager_SaveLoad.lua     # Persistence
 │   └── DTNPC_Manager_UUID.lua         # UUID helpers
