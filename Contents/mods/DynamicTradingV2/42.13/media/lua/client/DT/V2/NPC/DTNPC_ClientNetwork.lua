@@ -5,6 +5,8 @@
 
 DTNPCClient = DTNPCClient or {}
 
+require "DT/V2/NPC/DTNPC_ClientInterpolation"
+
 function DTNPCClient.OnServerCommand(module, command, args)
     if module ~= "DTNPC" then return end
 
@@ -17,6 +19,11 @@ function DTNPCClient.OnServerCommand(module, command, args)
         print("[DTNPC-Client] Received SyncNPC for: " .. (args.brain.name or uuid))
         
         DTNPCClient.CacheBrain(uuid, outfitID, args.brain)
+        
+        -- Track position for interpolation
+        if args.x and args.y then
+            DTNPC_ClientInterpolation.RecordUpdate(uuid, args.x, args.y, args.z or 0)
+        end
         
         local zombie = DTNPCClient.FindZombieByUUID(uuid)
         
@@ -50,6 +57,11 @@ function DTNPCClient.OnServerCommand(module, command, args)
         
         local uuid = args.uuid
         local cached = DTNPCClient.NPCCache[uuid]
+        
+        -- Track position for interpolation
+        if args.x and args.y then
+            DTNPC_ClientInterpolation.RecordUpdate(uuid, args.x, args.y, args.z or 0)
+        end
         
         if cached and cached.brain then
             cached.brain.lastX = math.floor(args.x)
@@ -94,6 +106,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
         end
         
         print("[DTNPC-Client] Received RemoveNPC for: " .. name .. " (" .. uuid .. ")")
+        
+        -- Clear interpolation data
+        DTNPC_ClientInterpolation.ClearNPC(uuid)
         
         -- World Removal: Physically remove the zombie if it exists locally
         local zombie = DTNPCClient.FindZombieByUUID(uuid)
@@ -154,6 +169,14 @@ function DTNPCClient.OnServerCommand(module, command, args)
                 local outfitID = npcData.outfitID
                 DTNPCClient.CacheBrain(uuid, outfitID, npcData.brain)
 
+                -- Track position for interpolation
+                local x = npcData.x or npcData.brain.lastX
+                local y = npcData.y or npcData.brain.lastY
+                local z = npcData.z or npcData.brain.lastZ or 0
+                if x and y then
+                    DTNPC_ClientInterpolation.RecordUpdate(uuid, x, y, z)
+                end
+
                 local zombie = DTNPCClient.FindZombieByUUID(uuid)
                 if not zombie and outfitID then
                     zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
@@ -161,7 +184,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
 
                 if zombie then
                     DTNPCClient.ApplyVisualsToNPC(zombie, npcData.brain)
-                    DTNPCClient.ReconcilePosition(zombie, npcData.x or npcData.brain.lastX, npcData.y or npcData.brain.lastY, npcData.z or npcData.brain.lastZ or 0)
+                    DTNPCClient.ReconcilePosition(zombie, x, y, z)
                     DTNPCClient.ProcessedZombies[uuid] = true
                 end
 

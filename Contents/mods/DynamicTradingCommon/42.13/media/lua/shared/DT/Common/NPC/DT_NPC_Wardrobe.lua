@@ -128,35 +128,46 @@ function DT_NPC_Wardrobe.GetHairStyleBySeed(category, isFemaleOrGender, seed)
     local cat = category or "General"
     local gender = normalizeGender(isFemaleOrGender)
     
+    -- 1. Try archetype-specific pool first
     local archetype = looks[cat]
-    if not archetype or not archetype.HairStyles then
-        ensureGeneralLooksLoaded()
-        looks = getLooksTable()
-        archetype = looks["General"]
-    end
-    
-    if not archetype or not archetype.HairStyles then
-        -- Fallback to game's hair styles if no archetype definition
-        local gameStyles = getAllHairStyles(gender == "Female")
-        if gameStyles and gameStyles:size() > 0 then
+    if archetype and archetype.HairStyles then
+        local pool = archetype.HairStyles[gender]
+        if pool and #pool > 0 then
             local normalizedSeed = tonumber(seed) or 1
             if normalizedSeed < 1 then normalizedSeed = 1 end
-            local idx = ((normalizedSeed - 1) % gameStyles:size())
-            return gameStyles:get(idx)
+            local idx = ((normalizedSeed - 1) % #pool) + 1
+            local style = pool[idx]
+            if style then return style end
         end
-        return "Bald"
     end
     
-    local pool = archetype.HairStyles[gender]
-    if not pool or #pool == 0 then
-        return "Bald"
+    -- 2. Try General archetype fallback
+    if cat ~= "General" then
+        archetype = looks["General"]
+        if archetype and archetype.HairStyles then
+            local pool = archetype.HairStyles[gender]
+            if pool and #pool > 0 then
+                local normalizedSeed = tonumber(seed) or 1
+                if normalizedSeed < 1 then normalizedSeed = 1 end
+                local idx = ((normalizedSeed - 1) % #pool) + 1
+                local style = pool[idx]
+                if style then return style end
+            end
+        end
     end
     
-    local normalizedSeed = tonumber(seed) or 1
-    if normalizedSeed < 1 then normalizedSeed = 1 end
-    local idx = ((normalizedSeed - 1) % #pool) + 1
+    -- 3. Default to game API (catches modded hair styles)
+    local gameStyles = getAllHairStyles(gender == "Female")
+    if gameStyles and gameStyles:size() > 0 then
+        local normalizedSeed = tonumber(seed) or 1
+        if normalizedSeed < 1 then normalizedSeed = 1 end
+        local idx = ((normalizedSeed - 1) % gameStyles:size())
+        local style = gameStyles:get(idx)
+        if style then return style end
+    end
     
-    return pool[idx] or "Bald"
+    -- 4. Absolute fallback
+    return gender == "Female" and "Long" or "Short"
 end
 
 -- ==============================================================================
@@ -167,38 +178,48 @@ function DT_NPC_Wardrobe.GetBeardStyleBySeed(category, seed)
     local looks = getLooksTable()
     local cat = category or "General"
     
+    -- 1. Try archetype-specific pool first
     local archetype = looks[cat]
-    if not archetype or not archetype.BeardStyles then
-        ensureGeneralLooksLoaded()
-        looks = getLooksTable()
-        archetype = looks["General"]
-    end
-    
-    if not archetype or not archetype.BeardStyles then
-        -- Fallback to game's beard styles if no archetype definition
-        local gameStyles = getAllBeardStyles()
-        if gameStyles and gameStyles:size() > 0 then
+    if archetype and archetype.BeardStyles then
+        local pool = archetype.BeardStyles
+        if pool and #pool > 0 then
             local normalizedSeed = tonumber(seed) or 1
             if normalizedSeed < 1 then normalizedSeed = 1 end
-            local idx = ((normalizedSeed - 1) % (gameStyles:size() + 2)) -- +2 for nil entries
-            if idx >= gameStyles:size() then
-                return nil -- Clean-shaven
-            end
-            return gameStyles:get(idx)
+            local idx = ((normalizedSeed - 1) % #pool) + 1
+            local style = pool[idx]
+            return style -- Can be nil for clean-shaven
         end
-        return nil
     end
     
-    local pool = archetype.BeardStyles
-    if not pool or #pool == 0 then
-        return nil
+    -- 2. Try General archetype fallback
+    if cat ~= "General" then
+        archetype = looks["General"]
+        if archetype and archetype.BeardStyles then
+            local pool = archetype.BeardStyles
+            if pool and #pool > 0 then
+                local normalizedSeed = tonumber(seed) or 1
+                if normalizedSeed < 1 then normalizedSeed = 1 end
+                local idx = ((normalizedSeed - 1) % #pool) + 1
+                local style = pool[idx]
+                return style -- Can be nil for clean-shaven
+            end
+        end
     end
     
-    local normalizedSeed = tonumber(seed) or 1
-    if normalizedSeed < 1 then normalizedSeed = 1 end
-    local idx = ((normalizedSeed - 1) % #pool) + 1
+    -- 3. Default to game API (catches modded beard styles)
+    local gameStyles = getAllBeardStyles()
+    if gameStyles and gameStyles:size() > 0 then
+        local normalizedSeed = tonumber(seed) or 1
+        if normalizedSeed < 1 then normalizedSeed = 1 end
+        local idx = ((normalizedSeed - 1) % (gameStyles:size() + 3)) -- +3 for clean-shaven variety
+        if idx >= gameStyles:size() then
+            return nil -- Clean-shaven
+        end
+        return gameStyles:get(idx)
+    end
     
-    return pool[idx] -- Can be nil for clean-shaven
+    -- 4. Default to clean-shaven
+    return nil
 end
 
 -- ==============================================================================
