@@ -29,6 +29,7 @@ end
 -- 2. ARCHETYPE REGISTRY
 -- =============================================================================
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
+DynamicTrading.ArchetypeLooks = DynamicTrading.ArchetypeLooks or {}
 
 -- The Core Function: Preserves your ID schema
 function DynamicTrading.RegisterArchetype(id, data)
@@ -153,6 +154,16 @@ function DynamicTrading.LoadArchetypes()
         else
              -- Warn if definition is missing entirely, as this might be critical
              if DynamicTrading.Debug then print("[DynamicTrading] [WARN] Missing Item Definition for: " .. id) end
+        end
+
+        -- 1b. Load Archetype Looks (optional, shared by server/client for deterministic wardrobe mapping)
+        local looksPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Definitions/DT_" .. id .. "_Looks"
+        if FileExists(looksPath) then
+            local looksOk, looksErr = pcall(require, looksPath)
+            if not looksOk then
+                print("[DynamicTrading] [ERROR] Failed to load Looks Definition for " .. id .. ": " .. tostring(looksErr))
+                errors = errors + 1
+            end
         end
         
         -- 2. Load Dialogues and Translations

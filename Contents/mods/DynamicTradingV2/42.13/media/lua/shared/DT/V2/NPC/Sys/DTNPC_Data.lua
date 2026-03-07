@@ -108,7 +108,12 @@ function DTNPC.ApplyVisuals(zombie, brain)
     end
 
     -- 6. Apply Clothing
+    -- Prefer explicit outfit override (MVP/custom NPC), otherwise derive deterministic look from seed.
     local outfit = brain.outfit
+    if (not outfit or type(outfit) ~= "table") and DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetOutfitBySeed then
+        outfit = DT_NPC_Wardrobe.GetOutfitBySeed(brain.archetypeID or "General", brain.isFemale, brain.lookSeed or 1)
+    end
+
     if outfit and type(outfit) == "table" then
         local itemVisuals = zombie:getItemVisuals()
         for _, itemType in ipairs(outfit) do

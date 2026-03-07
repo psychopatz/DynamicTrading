@@ -67,10 +67,23 @@ function DTNPC_DetailsPanel:setData(item)
         end
     end
 
-    -- 4. OUTFIT
-    if brain.outfit and #brain.outfit > 0 then
+    -- 4. OUTFIT / LOOKS
+    local debugOutfit = brain.outfit
+    local mappedLookIndex = nil
+    if (not debugOutfit or #debugOutfit == 0) and DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetOutfitBySeed then
+        debugOutfit, mappedLookIndex = DT_NPC_Wardrobe.GetOutfitBySeed(brain.archetypeID or "General", brain.isFemale, brain.lookSeed or 1)
+    end
+
+    if brain.lookSeed then
+        addProp("Look Seed", brain.lookSeed, {r=0.7, g=0.9, b=1, a=1})
+    end
+    if mappedLookIndex then
+        addProp("Look Index", mappedLookIndex, {r=0.7, g=0.9, b=1, a=1})
+    end
+
+    if debugOutfit and #debugOutfit > 0 then
         addHeader("OUTFIT", {r=0.7, g=0.7, b=1, a=1})
-        for i, itm in ipairs(brain.outfit) do
+        for _, itm in ipairs(debugOutfit) do
             addProp("  Item", itm, {r=0.8, g=0.8, b=0.9, a=1})
         end
     end

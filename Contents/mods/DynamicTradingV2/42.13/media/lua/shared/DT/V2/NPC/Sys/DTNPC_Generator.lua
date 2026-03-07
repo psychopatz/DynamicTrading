@@ -43,10 +43,16 @@ end
 -- ==============================================================================
 
 function DTNPCGenerator.CreateMVPBrain(mvpData, options)
+    local lookSeed = mvpData.lookSeed
+    if (not lookSeed) and DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollLookSeed then
+        lookSeed = DT_NPC_Wardrobe.RollLookSeed()
+    end
+
     local brain = {
         name = mvpData.name,
         isFemale = mvpData.isFemale,
         outfit = mvpData.outfit,
+        lookSeed = lookSeed,
         hairStyle = mvpData.hairStyle,
         beardStyle = mvpData.beardStyle,
         
@@ -88,9 +94,12 @@ function DTNPCGenerator.CreateStandardBrain(options)
        name = DTNPCGenerator.GenerateRandomName(isFemale)
     end
     
-    -- 2. Pick Costume
+    -- 2. Pick deterministic look seed
     local occupation = options.occupation or "General"
-    local outfit = DT_NPC_Wardrobe.GetRandomOutfit(occupation, isFemale)
+    local lookSeed = 1
+    if DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollLookSeed then
+        lookSeed = DT_NPC_Wardrobe.RollLookSeed()
+    end
     
     -- 3. Visuals Persistence (Fixes MP Reshuffling)
     local hairStyle = nil
@@ -112,7 +121,7 @@ function DTNPCGenerator.CreateStandardBrain(options)
     local brain = {
         name = name,
         isFemale = isFemale,
-        outfit = outfit,
+        lookSeed = lookSeed,
         
         -- Saved Visuals
         hairStyle = hairStyle, 

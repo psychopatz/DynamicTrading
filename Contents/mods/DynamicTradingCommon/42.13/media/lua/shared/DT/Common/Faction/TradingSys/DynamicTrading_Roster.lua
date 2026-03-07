@@ -207,16 +207,14 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
             end
         end
         
-        -- Try wardrobe if available (it's in Common)
-        local outfit = nil
-        if DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetRandomOutfit then
-            outfit = DT_NPC_Wardrobe.GetRandomOutfit(archetypeID or "General", isFemale)
-        end
+        -- Use deterministic look seed so all clients derive the same outfit locally.
+        local lookSeed = (DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollLookSeed)
+            and DT_NPC_Wardrobe.RollLookSeed() or (ZombRand(1000) + 1)
         
         brain = {
             name = name,
             isFemale = isFemale,
-            outfit = outfit,
+            lookSeed = lookSeed,
             state = "Stay",
             tasks = {},
             walkSpeed = 0.06,
