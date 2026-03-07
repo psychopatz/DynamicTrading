@@ -13,6 +13,38 @@ if isClient() and not isServer() then return end
 -- CLIENT COMMAND HANDLER
 -- ==============================================================================
 
+local function countTable(t)
+    local count = 0
+    for _ in pairs(t or {}) do count = count + 1 end
+    return count
+end
+
+local function resolveFactionName(factionID)
+    if not factionID then return "Independent" end
+    local factions = ModData.get("DynamicTrading_Factions")
+    if factions and factions.Factions and factions.Factions[factionID] then
+        local f = factions.Factions[factionID]
+        return f.name or f.displayName or factionID
+    end
+    return factionID
+end
+
+local function buildMetadataEntry(uuid, soul)
+    return {
+        uuid = uuid,
+        name = soul.name,
+        archetypeID = soul.archetypeID or "General",
+        factionID = soul.factionID or "Independent",
+        factionName = resolveFactionName(soul.factionID),
+        isFemale = soul.isFemale,
+        portraitID = soul.portraitID or 1,
+        status = soul.status or "Unknown",
+        lastX = soul.lastX or (soul.homeCoords and soul.homeCoords.x),
+        lastY = soul.lastY or (soul.homeCoords and soul.homeCoords.y),
+        lastZ = soul.lastZ or (soul.homeCoords and soul.homeCoords.z) or 0,
+    }
+end
+
 local function onClientCommand(module, command, player, args)
     if module ~= "DTNPC" then return end
 
@@ -100,6 +132,64 @@ local function onClientCommand(module, command, player, args)
         
         sendServerCommand(player, "DTNPC", "SyncAllNPCs", { npcs = DTNPCManager.Data })
         print("[DTNPC] Sent full database (" .. DTNPCManager.GetTableSize(DTNPCManager.Data) .. " NPCs) to: " .. player:getUsername())
+    end
+
+    if command == "RequestNearbySync" then
+        if not player then return end
+
+        local px = args and args.x or player:getX()
+        local py = args and args.y or player:getY()
+        local pz = args and args.z or player:getZ()
+        local nearRadius = args and args.nearRadius or 200
+        local metadataRadius = args and args.metadataRadius or 1000
+
+        local nearby = {}
+        local metadata = {}
+
+        local roster = ModData.get("DynamicTrading_Roster")
+        local souls = roster and roster.Souls or nil
+
+        if souls then
+            for uuid, soul in pairs(souls) do
+                local sx = soul.lastX or (soul.homeCoords and soul.homeCoords.x)
+                local sy = soul.lastY or (soul.homeCoords and soul.homeCoords.y)
+                local sz = soul.lastZ or (soul.homeCoords and soul.homeCoords.z) or 0
+
+                if sx and sy and math.abs((pz or 0) - sz) <= 1 then
+                    local dx = px - sx
+                    local dy = py - sy
+                    local dist = math.sqrt(dx * dx + dy * dy)
+
+                    if dist <= nearRadius then
+                        local brain = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] or nil
+                        local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
+                        if brain and zombie then
+                            nearby[uuid] = {
+                                uuid = uuid,
+                                outfitID = zombie:getPersistentOutfitID(),
+                                x = zombie:getX(),
+                                y = zombie:getY(),
+                                z = zombie:getZ(),
+                                brain = brain,
+                            }
+                        else
+                            metadata[uuid] = buildMetadataEntry(uuid, soul)
+                        end
+                    elseif dist <= metadataRadius then
+                        metadata[uuid] = buildMetadataEntry(uuid, soul)
+                    end
+                end
+            end
+        end
+
+        sendServerCommand(player, "DTNPC", "SyncNearbyNPCs", {
+            nearby = nearby,
+            metadata = metadata,
+            nearRadius = nearRadius,
+            metadataRadius = metadataRadius,
+        })
+
+        print("[DTNPC] Sent tiered sync to " .. player:getUsername() .. ": nearby=" .. countTable(nearby) .. ", metadata=" .. countTable(metadata))
     end
 
     if command == "UpdateNPC" then

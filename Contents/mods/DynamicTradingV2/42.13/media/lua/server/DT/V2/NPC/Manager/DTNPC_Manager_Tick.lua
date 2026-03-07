@@ -12,7 +12,8 @@ if isClient() and not isServer() then return end
 local TICK_RATE = 20
 local tickCounter = 0
 
-local POSITION_BROADCAST_RATE = 120
+-- Bandwidth-first tuning: 12s position cadence at 20 ticks/sec.
+local POSITION_BROADCAST_RATE = 240
 local positionBroadcastCounter = 0
 
 local RESPAWN_CHECK_RATE = 60 -- Check every 3 seconds (was 300/15s) for responsiveness

@@ -8,6 +8,7 @@ DTNPCClient.NPCCache = {} -- Keyed by UUID
 DTNPCClient.OutfitIDToUUID = {} -- Maps outfit IDs to UUIDs
 DTNPCClient.ProcessedZombies = {} -- Tracks visual application
 DTNPCClient.LocalControlled = {} -- Tracks locally controlled NPCs
+DTNPCClient.MetadataCache = {} -- Far NPC metadata for radar/faction intel
 DTNPCClient.VISUAL_CHECK_RATE = 60 -- Ticks between visual checks
 
 function DTNPCClient.GetBrain(zombie)
@@ -56,6 +57,7 @@ function DTNPCClient.RemoveFromCache(uuid, outfitID)
         DTNPCClient.NPCCache[uuid] = nil
         DTNPCClient.ProcessedZombies[uuid] = nil
         DTNPCClient.LocalControlled[uuid] = nil
+        DTNPCClient.MetadataCache[uuid] = nil
         print("[DTNPC-Client] Removed from cache: " .. uuid)
     end
     
@@ -69,4 +71,17 @@ function DTNPCClient.GetTableSize(t)
     local count = 0
     for _, __ in pairs(t) do count = count + 1 end
     return count
+end
+
+function DTNPCClient.CacheMetadata(uuid, metadata)
+    if not uuid or not metadata then return end
+    DTNPCClient.MetadataCache[uuid] = metadata
+end
+
+function DTNPCClient.GetMetadata(uuid)
+    return DTNPCClient.MetadataCache[uuid]
+end
+
+function DTNPCClient.GetAllMetadata()
+    return DTNPCClient.MetadataCache
 end

@@ -66,6 +66,27 @@ local function OnServerCommand(module, command, arguments)
 end
 Events.OnServerCommand.Add(OnServerCommand)
 
+-- Accept lightweight NPC metadata (from DTNPC SyncNearbyNPCs) and hydrate radar caches.
+function DT_V2_RadarManager.OnMetadataReceived(uuid, meta)
+    if not uuid or not meta then return end
+
+    DT_V2_RadarManager.ClientRoster = DT_V2_RadarManager.ClientRoster or { Souls = {} }
+    DT_V2_RadarManager.ClientRoster.Souls = DT_V2_RadarManager.ClientRoster.Souls or {}
+
+    local soul = DT_V2_RadarManager.ClientRoster.Souls[uuid] or {}
+    soul.name = meta.name or soul.name
+    soul.factionID = meta.factionID or soul.factionID
+    soul.archetypeID = meta.archetypeID or soul.archetypeID
+    soul.isFemale = meta.isFemale ~= nil and meta.isFemale or soul.isFemale
+    soul.portraitID = meta.portraitID or soul.portraitID
+    soul.status = meta.status or soul.status or "Unknown"
+    soul.lastX = meta.lastX or soul.lastX
+    soul.lastY = meta.lastY or soul.lastY
+    soul.lastZ = meta.lastZ or soul.lastZ or 0
+
+    DT_V2_RadarManager.ClientRoster.Souls[uuid] = soul
+end
+
 function DT_V2_RadarManager.GetCount()
     local count = 0
     for _ in pairs(DT_V2_RadarManager.FoundTraders) do count = count + 1 end

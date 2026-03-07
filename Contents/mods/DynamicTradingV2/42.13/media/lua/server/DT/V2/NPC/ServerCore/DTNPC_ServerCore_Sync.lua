@@ -9,6 +9,48 @@ DTNPCServerCore = DTNPCServerCore or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
+DTNPCServerCore.BROADCAST_RANGES = DTNPCServerCore.BROADCAST_RANGES or {
+    CLOSE = 200,
+    MEDIUM = 350,
+    FAR = 500,
+}
+
+local function getActivePlayers()
+    if DTNPCManager and DTNPCManager.GetActivePlayers then
+        return DTNPCManager.GetActivePlayers()
+    end
+
+    local players = {}
+    local online = getOnlinePlayers()
+    if online then
+        for i = 0, online:size() - 1 do
+            local p = online:get(i)
+            if p then table.insert(players, p) end
+        end
+    end
+    return players
+end
+
+local function sendToNearbyPlayers(command, data, x, y, z, range)
+    local players = getActivePlayers()
+    local sent = 0
+
+    for _, player in ipairs(players) do
+        local dx = player:getX() - x
+        local dy = player:getY() - y
+        local dz = player:getZ() - z
+        local dist = math.sqrt(dx * dx + dy * dy)
+
+        -- Strict visibility: only nearby players get world-sync data.
+        if math.abs(dz) <= 1 and dist <= range then
+            sendServerCommand(player, "DTNPC", command, data)
+            sent = sent + 1
+        end
+    end
+
+    return sent, #players
+end
+
 -- ==============================================================================
 -- MULTIPLAYER SYNC FUNCTIONS
 -- ==============================================================================
@@ -34,13 +76,20 @@ function DTNPCServerCore.SyncToAllClients(zombie, brain)
     }
     
     if isServer() then
-        sendServerCommand("DTNPC", "SyncNPC", syncData)
+        local sent, total = sendToNearbyPlayers(
+            "SyncNPC",
+            syncData,
+            syncData.x,
+            syncData.y,
+            syncData.z,
+            DTNPCServerCore.BROADCAST_RANGES.MEDIUM
+        )
+        print("[DTNPC] Synced NPC: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y .. " [" .. sent .. "/" .. total .. " players]")
     else
         -- Single Player fallback
         triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
+        print("[DTNPC] Synced NPC: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
     end
-    
-    print("[DTNPC] Synced NPC: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
 end
 
 function DTNPCServerCore.SyncToPlayer(player, zombie, brain)
@@ -88,7 +137,14 @@ function DTNPCServerCore.BroadcastPosition(zombie, brain)
     }
     
     if isServer() then
-        sendServerCommand("DTNPC", "UpdatePosition", posData)
+        sendToNearbyPlayers(
+            "UpdatePosition",
+            posData,
+            posData.x,
+            posData.y,
+            posData.z,
+            DTNPCServerCore.BROADCAST_RANGES.CLOSE
+        )
     else
         -- Single Player fallback
         triggerEvent("OnServerCommand", "DTNPC", "UpdatePosition", posData)

@@ -142,6 +142,41 @@ function DTNPCClient.OnServerCommand(module, command, args)
         end
         return
     end
+
+    if command == "SyncNearbyNPCs" then
+        if not args then return end
+
+        local nearbyCount = 0
+        local metadataCount = 0
+
+        for uuid, npcData in pairs(args.nearby or {}) do
+            if npcData and npcData.brain then
+                local outfitID = npcData.outfitID
+                DTNPCClient.CacheBrain(uuid, outfitID, npcData.brain)
+
+                local zombie = DTNPCClient.FindZombieByUUID(uuid)
+                if not zombie and outfitID then
+                    zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
+                end
+
+                if zombie then
+                    DTNPCClient.ApplyVisualsToNPC(zombie, npcData.brain)
+                    DTNPCClient.ReconcilePosition(zombie, npcData.x or npcData.brain.lastX, npcData.y or npcData.brain.lastY, npcData.z or npcData.brain.lastZ or 0)
+                    DTNPCClient.ProcessedZombies[uuid] = true
+                end
+
+                nearbyCount = nearbyCount + 1
+            end
+        end
+
+        for uuid, meta in pairs(args.metadata or {}) do
+            DTNPCClient.CacheMetadata(uuid, meta)
+            metadataCount = metadataCount + 1
+        end
+
+        print("[DTNPC-Client] Received SyncNearbyNPCs: nearby=" .. nearbyCount .. ", metadata=" .. metadataCount)
+        return
+    end
 end
 
 function DTNPCClient.RequestInitialSync(playerNum)
@@ -152,7 +187,13 @@ function DTNPCClient.RequestInitialSync(playerNum)
     if not player then return end
     
     print("[DTNPC-Client] Requesting initial sync for player: " .. player:getUsername())
-    sendClientCommand(player, "DTNPC", "RequestFullSync", {})
+    sendClientCommand(player, "DTNPC", "RequestNearbySync", {
+        x = player:getX(),
+        y = player:getY(),
+        z = player:getZ(),
+        nearRadius = 200,
+        metadataRadius = 1000,
+    })
     DTNPCClient.hasSyncedOnce = true
 end
 
