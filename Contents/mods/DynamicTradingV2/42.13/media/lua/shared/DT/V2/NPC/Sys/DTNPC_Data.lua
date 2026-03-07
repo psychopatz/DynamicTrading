@@ -59,17 +59,18 @@ function DTNPC.ApplyVisuals(zombie, brain)
     humanVisual:setSkinTextureName(skinTexture)
     
     -- 3. Apply Hair
+    -- Resolve from archetype + lookSeed, fallback to saved hairStyle (backward compat)
     local hairModel = nil
     if brain.hairStyle and type(brain.hairStyle) == "string" then
+        -- Backward compatibility: old brains with explicit hairStyle
         hairModel = brain.hairStyle
-    else
-        local hairStyles = getAllHairStyles(brain.isFemale)
-        if hairStyles and hairStyles:size() > 0 then
-            local hairIndex = brain.hairStyle or ZombRand(hairStyles:size()) -- brain.hairStyle here should be number if used
-            if type(hairIndex) == "number" then
-                hairModel = hairStyles:get(hairIndex)
-            end
-        end
+    elseif DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetHairStyleBySeed then
+        -- New system: resolve deterministically from archetype + lookSeed
+        hairModel = DT_NPC_Wardrobe.GetHairStyleBySeed(
+            brain.archetypeID or "General",
+            brain.isFemale,
+            brain.lookSeed or 1
+        )
     end
 
     if hairModel and hairModel ~= "" then
@@ -80,15 +81,14 @@ function DTNPC.ApplyVisuals(zombie, brain)
     if not brain.isFemale then
         local beardModel = nil
         if brain.beardStyle and type(brain.beardStyle) == "string" then
+            -- Backward compatibility: old brains with explicit beardStyle
             beardModel = brain.beardStyle
-        else
-            local beardStyles = getAllBeardStyles()
-            if beardStyles and beardStyles:size() > 0 then
-                local beardIndex = brain.beardStyle or ZombRand(beardStyles:size())
-                if type(beardIndex) == "number" then
-                    beardModel = beardStyles:get(beardIndex)
-                end
-            end
+        elseif DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetBeardStyleBySeed then
+            -- New system: resolve deterministically from archetype + lookSeed
+            beardModel = DT_NPC_Wardrobe.GetBeardStyleBySeed(
+                brain.archetypeID or "General",
+                brain.lookSeed or 1
+            )
         end
         
         if beardModel and beardModel ~= "" then
@@ -97,9 +97,25 @@ function DTNPC.ApplyVisuals(zombie, brain)
     end
 
     -- 5. Set Hair/Beard Color
-    local r = brain.hairColorR or 0.2
-    local g = brain.hairColorG or 0.1
-    local b = brain.hairColorB or 0.1
+    -- Resolve from archetype + lookSeed, fallback to saved RGB (backward compat)
+    local r, g, b = 0.2, 0.1, 0.1
+    if brain.hairColorR and brain.hairColorG and brain.hairColorB then
+        -- Backward compatibility: old brains with explicit RGB
+        r = brain.hairColorR
+        g = brain.hairColorG
+        b = brain.hairColorB
+    elseif DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetHairColorBySeed then
+        -- New system: resolve deterministically from archetype + lookSeed
+        local color = DT_NPC_Wardrobe.GetHairColorBySeed(
+            brain.archetypeID or "General",
+            brain.lookSeed or 1
+        )
+        if color then
+            r = color.r or 0.2
+            g = color.g or 0.1
+            b = color.b or 0.1
+        end
+    end
     
     if ImmutableColor then
         local color = ImmutableColor.new(r, g, b, 1)

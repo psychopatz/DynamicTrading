@@ -118,3 +118,127 @@ function DT_NPC_Wardrobe.GetRandomOutfit(category, isFemale)
     local outfit = DT_NPC_Wardrobe.GetOutfitBySeed(category, isFemale, seed)
     return outfit
 end
+
+-- ==============================================================================
+-- Hair Style Resolution
+-- ==============================================================================
+
+function DT_NPC_Wardrobe.GetHairStyleBySeed(category, isFemaleOrGender, seed)
+    local looks = getLooksTable()
+    local cat = category or "General"
+    local gender = normalizeGender(isFemaleOrGender)
+    
+    local archetype = looks[cat]
+    if not archetype or not archetype.HairStyles then
+        ensureGeneralLooksLoaded()
+        looks = getLooksTable()
+        archetype = looks["General"]
+    end
+    
+    if not archetype or not archetype.HairStyles then
+        -- Fallback to game's hair styles if no archetype definition
+        local gameStyles = getAllHairStyles(gender == "Female")
+        if gameStyles and gameStyles:size() > 0 then
+            local normalizedSeed = tonumber(seed) or 1
+            if normalizedSeed < 1 then normalizedSeed = 1 end
+            local idx = ((normalizedSeed - 1) % gameStyles:size())
+            return gameStyles:get(idx)
+        end
+        return "Bald"
+    end
+    
+    local pool = archetype.HairStyles[gender]
+    if not pool or #pool == 0 then
+        return "Bald"
+    end
+    
+    local normalizedSeed = tonumber(seed) or 1
+    if normalizedSeed < 1 then normalizedSeed = 1 end
+    local idx = ((normalizedSeed - 1) % #pool) + 1
+    
+    return pool[idx] or "Bald"
+end
+
+-- ==============================================================================
+-- Beard Style Resolution (Male Only)
+-- ==============================================================================
+
+function DT_NPC_Wardrobe.GetBeardStyleBySeed(category, seed)
+    local looks = getLooksTable()
+    local cat = category or "General"
+    
+    local archetype = looks[cat]
+    if not archetype or not archetype.BeardStyles then
+        ensureGeneralLooksLoaded()
+        looks = getLooksTable()
+        archetype = looks["General"]
+    end
+    
+    if not archetype or not archetype.BeardStyles then
+        -- Fallback to game's beard styles if no archetype definition
+        local gameStyles = getAllBeardStyles()
+        if gameStyles and gameStyles:size() > 0 then
+            local normalizedSeed = tonumber(seed) or 1
+            if normalizedSeed < 1 then normalizedSeed = 1 end
+            local idx = ((normalizedSeed - 1) % (gameStyles:size() + 2)) -- +2 for nil entries
+            if idx >= gameStyles:size() then
+                return nil -- Clean-shaven
+            end
+            return gameStyles:get(idx)
+        end
+        return nil
+    end
+    
+    local pool = archetype.BeardStyles
+    if not pool or #pool == 0 then
+        return nil
+    end
+    
+    local normalizedSeed = tonumber(seed) or 1
+    if normalizedSeed < 1 then normalizedSeed = 1 end
+    local idx = ((normalizedSeed - 1) % #pool) + 1
+    
+    return pool[idx] -- Can be nil for clean-shaven
+end
+
+-- ==============================================================================
+-- Hair Color Resolution (Returns RGB table)
+-- ==============================================================================
+
+function DT_NPC_Wardrobe.GetHairColorBySeed(category, seed)
+    local looks = getLooksTable()
+    local cat = category or "General"
+    
+    local archetype = looks[cat]
+    if not archetype or not archetype.HairColors then
+        ensureGeneralLooksLoaded()
+        looks = getLooksTable()
+        archetype = looks["General"]
+    end
+    
+    if not archetype or not archetype.HairColors then
+        -- Fallback to dark brown
+        return { r = 0.2, g = 0.1, b = 0.1 }
+    end
+    
+    local pool = archetype.HairColors
+    if not pool or #pool == 0 then
+        return { r = 0.2, g = 0.1, b = 0.1 }
+    end
+    
+    local normalizedSeed = tonumber(seed) or 1
+    if normalizedSeed < 1 then normalizedSeed = 1 end
+    local idx = ((normalizedSeed - 1) % #pool) + 1
+    
+    local color = pool[idx]
+    if not color then
+        return { r = 0.2, g = 0.1, b = 0.1 }
+    end
+    
+    -- Return a copy to prevent modifications
+    return {
+        r = color.r or 0.2,
+        g = color.g or 0.1,
+        b = color.b or 0.1
+    }
+end

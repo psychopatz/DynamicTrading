@@ -101,31 +101,12 @@ function DTNPCGenerator.CreateStandardBrain(options)
         lookSeed = DT_NPC_Wardrobe.RollLookSeed()
     end
     
-    -- 3. Visuals Persistence (Fixes MP Reshuffling)
-    local hairStyle = nil
-    local hairStyles = getAllHairStyles(isFemale)
-    if hairStyles and hairStyles:size() > 0 then
-        local idx = ZombRand(hairStyles:size())
-        hairStyle = hairStyles:get(idx) -- Save the STRING ID
-    end
-    
-    local beardStyle = nil
-    if not isFemale then
-        local beardStyles = getAllBeardStyles()
-        if beardStyles and beardStyles:size() > 0 then
-             local idx = ZombRand(beardStyles:size())
-             beardStyle = beardStyles:get(idx) -- Save the STRING ID
-        end
-    end
-    
+    -- 3. Build brain with minimal visual data
+    -- Hair/beard styles and colors are resolved from lookSeed + archetype in ApplyVisuals
     local brain = {
         name = name,
         isFemale = isFemale,
         lookSeed = lookSeed,
-        
-        -- Saved Visuals
-        hairStyle = hairStyle, 
-        beardStyle = beardStyle,
         
         -- Logic
         state = "Stay",
