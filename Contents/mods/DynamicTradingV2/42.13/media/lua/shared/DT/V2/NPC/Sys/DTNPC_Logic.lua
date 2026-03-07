@@ -7,6 +7,11 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 
+-- Anchor stabilization tuning.
+-- In SP, zombie movement jitter can cause repeated tiny drift corrections.
+local ANCHOR_DRIFT_TOLERANCE = 1.5
+local ANCHOR_SNAP_COOLDOWN_HOURS = 2 / 3600
+
 require "DT/V2/NPC/Behaviors/Behavior_GoTo"
 require "DT/V2/NPC/Behaviors/Behavior_Attack"
 require "DT/V2/NPC/Behaviors/Behavior_AttackRange"
@@ -95,25 +100,34 @@ function DTNPCLogic.ProcessNPC(zombie)
             brain.anchorX = zombie:getX()
             brain.anchorY = zombie:getY()
             brain.anchorZ = zombie:getZ()
-            print("[DTNPC] Set anchor for " .. (brain.name or "NPC") .. " at " .. math.floor(brain.anchorX) .. "," .. math.floor(brain.anchorY))
+            if DTNPC_DEBUG_ANCHOR then
+                print("[DTNPC] Set anchor for " .. (brain.name or "NPC") .. " at " .. math.floor(brain.anchorX) .. "," .. math.floor(brain.anchorY))
+            end
         end
         
         -- Check if they've drifted from anchor
         local dx = math.abs(zombie:getX() - brain.anchorX)
         local dy = math.abs(zombie:getY() - brain.anchorY)
+        local nowHours = getGameTime() and getGameTime():getWorldAgeHours() or 0
+        local lastSnap = brain.anchorLastSnapTime or 0
         
-        if dx > 1 or dy > 1 then
+        if (dx > ANCHOR_DRIFT_TOLERANCE or dy > ANCHOR_DRIFT_TOLERANCE)
+            and ((nowHours - lastSnap) >= ANCHOR_SNAP_COOLDOWN_HOURS) then
             -- Snap back to anchor
-            print("[DTNPC] NPC " .. (brain.name or "Unknown") .. " drifted from anchor. Snapping back.")
+            if DTNPC_DEBUG_ANCHOR then
+                print("[DTNPC] NPC " .. (brain.name or "Unknown") .. " drifted from anchor. Snapping back.")
+            end
             zombie:setX(brain.anchorX)
             zombie:setY(brain.anchorY)
             zombie:setZ(brain.anchorZ)
+            brain.anchorLastSnapTime = nowHours
         end
     else
         -- Clear anchor when moving
         brain.anchorX = nil
         brain.anchorY = nil
         brain.anchorZ = nil
+        brain.anchorLastSnapTime = nil
     end
     
     -- Track health for betrayal detection (ignores pushes/non-damaging hits)
