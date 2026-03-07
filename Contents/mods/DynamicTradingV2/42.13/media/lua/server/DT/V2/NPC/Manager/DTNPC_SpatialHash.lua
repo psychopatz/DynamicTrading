@@ -264,13 +264,6 @@ function DTNPC_SpatialHash.CleanupEmptyCells()
         print("[DTNPC_SpatialHash] Cleaned up " .. cleaned .. " empty cells")
     end
 end
-        if corruptCleaned > 0 then
-            print("[DTNPC_SpatialHash] Cleaned up " .. cleaned .. " cells (" .. corruptCleaned .. " corrupt)")
-        else
-            print("[DTNPC_SpatialHash] Cleaned up " .. cleaned .. " empty cells")
-        end
-    end
-end
 
 function DTNPC_SpatialHash.ClearDirtyFlags()
     DTNPC_SpatialHash.DirtyFlags = {}
@@ -369,9 +362,5 @@ function DTNPC_SpatialHash.DebugRadius(x, y, radius)
     
     if isEmpty then
         print("  (none)")
-    end
-end
-        local dist = math.sqrt(dx * dx + dy * dy)
-        print("  - " .. uuid .. " at distance " .. string.format("%.1f", dist))
     end
 end
