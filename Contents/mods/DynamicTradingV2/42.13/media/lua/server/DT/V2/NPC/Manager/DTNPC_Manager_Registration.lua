@@ -80,6 +80,16 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
             DTNPCManager.OutfitIDToUUID[brain.currentOutfitID] = nil
         end
         
+        -- Remove from spatial hash
+        if DTNPC_SpatialHash and DTNPC_SpatialHash.RemoveNPC then
+            DTNPC_SpatialHash.RemoveNPC(uuid)
+        end
+        
+        -- Remove from distance frequency tracker
+        if DTNPC_DistanceFrequency and DTNPC_DistanceFrequency.RemoveNPC then
+            DTNPC_DistanceFrequency.RemoveNPC(uuid)
+        end
+        
         -- Update persistent status in Roster
         if DynamicTrading_Roster and status then
             DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)

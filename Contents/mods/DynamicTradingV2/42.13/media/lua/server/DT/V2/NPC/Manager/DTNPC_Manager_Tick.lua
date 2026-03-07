@@ -9,6 +9,51 @@ DTNPCManager = DTNPCManager or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
+print("[DTNPC_Manager_Tick] Loading optimization modules...")
+
+require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
+print("[DTNPC_Manager_Tick] DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
+
+require "DT/V2/NPC/Manager/DTNPC_SpatialHash"
+print("[DTNPC_Manager_Tick] DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
+
+-- Guard: Create fallback tables with stub functions if modules didn't load
+if not DTNPC_SpatialHash then
+    print("[DTNPC_Manager_Tick] WARNING: DTNPC_SpatialHash is nil, creating fallback")
+    DTNPC_SpatialHash = {
+        Grid = {},
+        NPCToCell = {},
+        IsInitialized = false,
+        RebuildFromRoster = function() end,
+        InsertNPC = function() end,
+        RemoveNPC = function() end,
+        GetNPCsInRadius = function() return {} end,
+        GetNearestNPCs = function() return {} end,
+        CleanupEmptyCells = function() end,
+        Clear = function() end,
+        GetGridStats = function() return {} end,
+        ClearDirtyFlags = function() end,
+        GetDirtyCells = function() return {} end
+    }
+end
+
+if not DTNPC_DistanceFrequency then
+    print("[DTNPC_Manager_Tick] WARNING: DTNPC_DistanceFrequency is nil, creating fallback")
+    DTNPC_DistanceFrequency = {
+        NPCTimers = {},
+        GetTierForDistance = function() return 4 end,
+        GetUpdateFrequencyForDistance = function() return 6 end,
+        InitializeNPC = function() end,
+        ShouldUpdateNPC = function() return true end,
+        UpdateNPC = function() end,
+        RemoveNPC = function() end,
+        Clear = function() end,
+        GetUpdateStats = function() return {} end
+    }
+end
+
+print("[DTNPC_Manager_Tick] Module loading complete")
+
 local TICK_RATE = 20
 local tickCounter = 0
 
@@ -67,6 +112,9 @@ function DTNPCManager.OnTick()
     local zombieList = cell:getZombieList()
     if not zombieList then return end
     
+    -- Get active players for distance-based frequency updates
+    local players = DTNPCManager.GetActivePlayers()
+    
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
         if zombie then
@@ -97,6 +145,14 @@ function DTNPCManager.OnTick()
                     savedBrain.lastY = newY
                     savedBrain.lastZ = newZ
                     savedBrain.health = zombie:getHealth()
+                    
+                    -- Update spatial hash with current position
+                    DTNPC_SpatialHash.InsertNPC(uuid, newX, newY, newZ, nil)
+                    
+                    -- Update distance-based frequency for this NPC (Phase 2.2)
+                    if #players > 0 then
+                        DTNPC_DistanceFrequency.UpdateNPC(uuid, newX, newY, players)
+                    end
                     
                     -- Prevent wandering
                     if zombie:isUseless() and (savedBrain.state == "Stay" or savedBrain.state == "Guard") then

@@ -5,7 +5,30 @@
 
 DTNPCClient = DTNPCClient or {}
 
+print("[DTNPC_ClientNetwork] Loading client interpolation module...")
+
 require "DT/V2/NPC/DTNPC_ClientInterpolation"
+print("[DTNPC_ClientNetwork] DTNPC_ClientInterpolation loaded: " .. tostring(DTNPC_ClientInterpolation ~= nil))
+
+-- Guard: Create fallback table with stub functions if module didn't load
+if not DTNPC_ClientInterpolation then
+    print("[DTNPC_ClientNetwork] WARNING: DTNPC_ClientInterpolation is nil, creating fallback")
+    DTNPC_ClientInterpolation = { 
+        LastPositions = {},
+        UpdateTimes = {},
+        RecordUpdate = function(uuid, x, y, z, updateFreq) end,
+        GetInterpolatedPosition = function(uuid, zombie) 
+            if zombie then return zombie:getX(), zombie:getY(), zombie:getZ() end
+            return 0, 0, 0
+        end,
+        ClearNPC = function(uuid) end,
+        ClearAll = function() end,
+        GetTrackedCount = function() return 0 end,
+        DebugPrint = function() end
+    }
+end
+
+print("[DTNPC_ClientNetwork] Module loading complete")
 
 function DTNPCClient.OnServerCommand(module, command, args)
     if module ~= "DTNPC" then return end

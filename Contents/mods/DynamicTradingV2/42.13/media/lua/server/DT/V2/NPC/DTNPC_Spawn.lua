@@ -6,6 +6,51 @@
 
 require "DT/V2/NPC/Sys/DTNPC_Generator"
 
+print("[DTNPC_Spawn] Loading optimization modules...")
+
+require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
+print("[DTNPC_Spawn] DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
+
+require "DT/V2/NPC/Manager/DTNPC_SpatialHash"
+print("[DTNPC_Spawn] DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
+
+-- Guard: Create fallback tables with stub functions if modules didn't load
+if not DTNPC_DistanceFrequency then
+    print("[DTNPC_Spawn] WARNING: DTNPC_DistanceFrequency is nil, creating fallback")
+    DTNPC_DistanceFrequency = {
+        NPCTimers = {},
+        GetTierForDistance = function() return 4 end,
+        GetUpdateFrequencyForDistance = function() return 6 end,
+        InitializeNPC = function() end,
+        ShouldUpdateNPC = function() return true end,
+        UpdateNPC = function() end,
+        RemoveNPC = function() end,
+        Clear = function() end,
+        GetUpdateStats = function() return {} end
+    }
+end
+
+if not DTNPC_SpatialHash then
+    print("[DTNPC_Spawn] WARNING: DTNPC_SpatialHash is nil, creating fallback")
+    DTNPC_SpatialHash = {
+        Grid = {},
+        NPCToCell = {},
+        IsInitialized = false,
+        RebuildFromRoster = function() end,
+        InsertNPC = function() end,
+        RemoveNPC = function() end,
+        GetNPCsInRadius = function() return {} end,
+        GetNearestNPCs = function() return {} end,
+        CleanupEmptyCells = function() end,
+        Clear = function() end,
+        GetGridStats = function() return {} end,
+        ClearDirtyFlags = function() end,
+        GetDirtyCells = function() return {} end
+    }
+end
+
+print("[DTNPC_Spawn] Module loading complete")
+
     DTNPCSpawn = DTNPCSpawn or {}
     
     -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
@@ -127,6 +172,13 @@ function DTNPCSpawn.BroadcastPosition(zombie, brain)
     if not zombie or not brain then return end
     
     local uuid = brain.uuid
+    
+    -- Check if this NPC should update based on distance-based frequency (Phase 2.2)
+    local shouldUpdate, tier = DTNPC_DistanceFrequency.ShouldUpdateNPC(uuid)
+    if not shouldUpdate then
+        return  -- Skip update this tick, will send next tick based on frequency
+    end
+    
     local posData = {
         uuid = uuid,
         outfitID = zombie:getPersistentOutfitID(),
@@ -134,7 +186,8 @@ function DTNPCSpawn.BroadcastPosition(zombie, brain)
         y = zombie:getY(),
         z = zombie:getZ(),
         health = zombie:getHealth(),
-        state = brain.state
+        state = brain.state,
+        tier = tier  -- Include tier info for client interpolation tuning
     }
     
     if isServer() then
