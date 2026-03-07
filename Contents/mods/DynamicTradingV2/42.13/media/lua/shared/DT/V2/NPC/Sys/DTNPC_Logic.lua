@@ -11,6 +11,13 @@ DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 -- In SP, zombie movement jitter can cause repeated tiny drift corrections.
 local ANCHOR_DRIFT_TOLERANCE = 1.5
 local ANCHOR_SNAP_COOLDOWN_HOURS = 2 / 3600
+local DTNPC_IDLE_STATE_COUNT = 3
+local DTNPC_IDLE_CYCLE_TICKS = 240
+
+-- Forward declarations used by ProcessNPC.
+local isIdleCycleState
+local resetIdleCycle
+local updateIdleCycle
 
 require "DT/V2/NPC/Behaviors/Behavior_GoTo"
 require "DT/V2/NPC/Behaviors/Behavior_Attack"
@@ -87,7 +94,14 @@ function DTNPCLogic.ProcessNPC(zombie)
     local brain = DTNPC.GetBrain(zombie)
     if not brain then return end
 
+    -- Tag DynamicTrading NPCs for AnimSet-based posture overrides.
+    zombie:setVariable("DTNPC", true)
+    if zombie:getVariableString("DTIdleState") == "" then
+        zombie:setVariable("DTIdleState", "0")
+    end
+
     local state = brain.state or "Stay"
+    updateIdleCycle(zombie, brain, state)
     
     -- AGGRESSIVE WANDER PREVENTION
     -- Lock down zombies that should be stationary
@@ -247,5 +261,38 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, brain, master, wasDamaged)
             zombie:setTarget(attacker)
             zombie:setAttackedBy(nil)
         end
+    end
+end
+
+isIdleCycleState = function(state)
+    return state == "Stay" or state == "Guard" or state == "Trading"
+end
+
+resetIdleCycle = function(zombie, brain)
+    brain.idleCycleCounter = 0
+    brain.idleCycleIndex = 0
+    zombie:setVariable("DTIdleState", "0")
+end
+
+updateIdleCycle = function(zombie, brain, state)
+    if not isIdleCycleState(state) then
+        resetIdleCycle(zombie, brain)
+        return
+    end
+
+    if brain.idleCycleIndex == nil then brain.idleCycleIndex = 0 end
+    if not brain.idleCycleCounter then brain.idleCycleCounter = 0 end
+
+    local moving = zombie:isMoving() or (brain.isMovingState == true)
+    if moving then
+        resetIdleCycle(zombie, brain)
+        return
+    end
+
+    brain.idleCycleCounter = brain.idleCycleCounter + 1
+    if brain.idleCycleCounter >= DTNPC_IDLE_CYCLE_TICKS then
+        brain.idleCycleCounter = 0
+        brain.idleCycleIndex = (brain.idleCycleIndex + 1) % DTNPC_IDLE_STATE_COUNT
+        zombie:setVariable("DTIdleState", tostring(brain.idleCycleIndex))
     end
 end
