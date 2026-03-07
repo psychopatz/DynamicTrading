@@ -2,19 +2,17 @@
 
 DTNPC_SpatialHash = DTNPC_SpatialHash or {}
 
-local SH = DTNPC_SpatialHash
-
-function SH.CleanupEmptyCells()
+function DTNPC_SpatialHash.CleanupEmptyCells()
     local currentTime = getGameTime():getWorldAgeHours()
 
-    if currentTime < SH.NextCleanup then
+    if currentTime < DTNPC_SpatialHash.NextCleanup then
         return
     end
 
     local cleaned = 0
     local toRemove = {}
 
-    for gridKey, cell in pairs(SH.Grid) do
+    for gridKey, cell in pairs(DTNPC_SpatialHash.Grid) do
         if type(cell) ~= "table" then
             print("[SpatialHash] Corrupt cell detected at " .. gridKey .. ", type: " .. type(cell))
             table.insert(toRemove, gridKey)
@@ -34,24 +32,24 @@ function SH.CleanupEmptyCells()
     end
 
     for _, gridKey in ipairs(toRemove) do
-        SH.Grid[gridKey] = nil
-        SH.DirtyFlags[gridKey] = nil
+        DTNPC_SpatialHash.Grid[gridKey] = nil
+        DTNPC_SpatialHash.DirtyFlags[gridKey] = nil
     end
 
-    SH.NextCleanup = currentTime + SH.CLEANUP_INTERVAL
+    DTNPC_SpatialHash.NextCleanup = currentTime + DTNPC_SpatialHash.CLEANUP_INTERVAL
 
     if cleaned > 0 then
         print("[DTNPC_SpatialHash] Cleaned up " .. cleaned .. " empty cells")
     end
 end
 
-function SH.ClearDirtyFlags()
-    SH.DirtyFlags = {}
+function DTNPC_SpatialHash.ClearDirtyFlags()
+    DTNPC_SpatialHash.DirtyFlags = {}
 end
 
-function SH.GetDirtyCells()
+function DTNPC_SpatialHash.GetDirtyCells()
     local result = {}
-    for gridKey, _ in pairs(SH.DirtyFlags) do
+    for gridKey, _ in pairs(DTNPC_SpatialHash.DirtyFlags) do
         table.insert(result, gridKey)
     end
     return result

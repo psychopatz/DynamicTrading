@@ -14,7 +14,7 @@ print("[DTNPC_Manager_Tick] Loading optimization modules...")
 require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
 print("[DTNPC_Manager_Tick] DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
 
-require "DT/V2/NPC/Manager/DTNPC_SpatialHash"
+require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"
 print("[DTNPC_Manager_Tick] DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
 
 -- Guard: Create fallback tables with stub functions if modules didn't load

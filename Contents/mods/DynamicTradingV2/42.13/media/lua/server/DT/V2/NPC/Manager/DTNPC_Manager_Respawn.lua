@@ -12,7 +12,7 @@ if isClient() and not isServer() then return end
 print("[DTNPC_Manager_Respawn] Loading optimization modules...")
 
 -- Load spatial hash and distance frequency modules
-require "DT/V2/NPC/Manager/DTNPC_SpatialHash"
+require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"
 print("[DTNPC_Manager_Respawn] DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
 
 require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"

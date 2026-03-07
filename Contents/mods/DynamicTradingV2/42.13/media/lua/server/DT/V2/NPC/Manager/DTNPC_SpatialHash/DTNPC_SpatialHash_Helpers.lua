@@ -3,19 +3,18 @@
 DTNPC_SpatialHash = DTNPC_SpatialHash or {}
 DTNPC_SpatialHash._internal = DTNPC_SpatialHash._internal or {}
 
-local SH = DTNPC_SpatialHash
-local I = SH._internal
+local I = DTNPC_SpatialHash._internal
 
 function I.getGridKey(x, y)
-    local gridX = math.floor(x / SH.CELL_SIZE)
-    local gridY = math.floor(y / SH.CELL_SIZE)
+    local gridX = math.floor(x / DTNPC_SpatialHash.CELL_SIZE)
+    local gridY = math.floor(y / DTNPC_SpatialHash.CELL_SIZE)
     return gridX .. "_" .. gridY
 end
 
 function I.getCellsInRadius(x, y, radius)
-    local cellRadius = math.ceil(radius / SH.CELL_SIZE)
-    local centerGridX = math.floor(x / SH.CELL_SIZE)
-    local centerGridY = math.floor(y / SH.CELL_SIZE)
+    local cellRadius = math.ceil(radius / DTNPC_SpatialHash.CELL_SIZE)
+    local centerGridX = math.floor(x / DTNPC_SpatialHash.CELL_SIZE)
+    local centerGridY = math.floor(y / DTNPC_SpatialHash.CELL_SIZE)
 
     local cells = {}
     for gx = centerGridX - cellRadius, centerGridX + cellRadius do

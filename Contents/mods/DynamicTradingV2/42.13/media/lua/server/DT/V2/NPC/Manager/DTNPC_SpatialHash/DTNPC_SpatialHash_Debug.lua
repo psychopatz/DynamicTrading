@@ -3,12 +3,11 @@
 DTNPC_SpatialHash = DTNPC_SpatialHash or {}
 DTNPC_SpatialHash._internal = DTNPC_SpatialHash._internal or {}
 
-local SH = DTNPC_SpatialHash
-local I = SH._internal
+local I = DTNPC_SpatialHash._internal
 
-function SH.DebugCell(x, y)
+function DTNPC_SpatialHash.DebugCell(x, y)
     local gridKey = I.getGridKey(x, y)
-    local cell = SH.Grid[gridKey]
+    local cell = DTNPC_SpatialHash.Grid[gridKey]
 
     print("[DTNPC_SpatialHash] Cell at (" .. x .. ", " .. y .. ") = " .. gridKey)
 
@@ -28,8 +27,8 @@ function SH.DebugCell(x, y)
     end
 end
 
-function SH.DebugRadius(x, y, radius)
-    local npcs = SH.GetNPCsInRadius(x, y, radius)
+function DTNPC_SpatialHash.DebugRadius(x, y, radius)
+    local npcs = DTNPC_SpatialHash.GetNPCsInRadius(x, y, radius)
 
     print("[DTNPC_SpatialHash] NPCs within " .. radius .. " tiles of (" .. x .. ", " .. y .. "):")
 
