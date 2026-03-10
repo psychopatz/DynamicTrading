@@ -117,6 +117,32 @@ local function onPsychopatzCommand(module, command, player, args)
                 end
             end
         end
+
+        -- =================================================
+        -- ACTION 4: SHORTCUT SPAWNS (Money / Walkie)
+        -- =================================================
+        local inv = player:getInventory()
+        if inv then
+            if args.doMoney then
+                local qty = tonumber(args.qtyMoney) or 100
+                local items = inv:AddItems("Base.MoneyBundle", qty)
+                if isServer() and items then
+                    for i=0, items:size()-1 do
+                        sendAddItemToContainer(inv, items:get(i))
+                    end
+                end
+            end
+
+            if args.doWalkie then
+                local qty = tonumber(args.qtyWalkie) or 1
+                local items = inv:AddItems("Base.WalkieTalkie5", qty)
+                if isServer() and items then
+                    for i=0, items:size()-1 do
+                        sendAddItemToContainer(inv, items:get(i))
+                    end
+                end
+            end
+        end
     end
 end
 

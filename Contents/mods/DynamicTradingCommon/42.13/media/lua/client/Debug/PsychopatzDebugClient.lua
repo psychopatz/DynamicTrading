@@ -64,6 +64,47 @@ function PsychopatzDebugWindow:createChildren()
     currentY = currentY + lineHeight
 
     -- ==========================================
+    -- 1.5 QUICK SHORTCUTS
+    -- ==========================================
+    
+    -- Option D: Money
+    self.chkMoney = ISTickBox:new(padX, currentY, 150, 20, "", self, nil)
+    self.chkMoney:initialise(); self.chkMoney:instantiate()
+    self.chkMoney:addOption("Add Money")
+    self.chkMoney:setSelected(1, false)
+    self.chkMoney:setFont(UIFont.Small)
+    self:addChild(self.chkMoney)
+    
+    self.qtyMoney = ISTextEntryBox:new("100", padX + 160, currentY, 50, 20)
+    self.qtyMoney:initialise(); self.qtyMoney:instantiate()
+    self.qtyMoney:setOnlyNumbers(true)
+    self:addChild(self.qtyMoney)
+    currentY = currentY + lineHeight
+
+    -- Option E: Walkie
+    self.chkWalkie = ISTickBox:new(padX, currentY, 150, 20, "", self, nil)
+    self.chkWalkie:initialise(); self.chkWalkie:instantiate()
+    self.chkWalkie:addOption("Add Walkie Talkie")
+    self.chkWalkie:setSelected(1, false)
+    self.chkWalkie:setFont(UIFont.Small)
+    self:addChild(self.chkWalkie)
+    
+    self.qtyWalkie = ISTextEntryBox:new("1", padX + 160, currentY, 50, 20)
+    self.qtyWalkie:initialise(); self.qtyWalkie:instantiate()
+    self.qtyWalkie:setOnlyNumbers(true)
+    self:addChild(self.qtyWalkie)
+    currentY = currentY + lineHeight
+
+    -- Option F: Night Vision
+    self.chkNight = ISTickBox:new(padX, currentY, elementWidth, 20, "", self, nil)
+    self.chkNight:initialise(); self.chkNight:instantiate()
+    self.chkNight:addOption("Night Vision")
+    self.chkNight:setSelected(1, _G.PsychopatzNightVisionActive or false)
+    self.chkNight:setFont(UIFont.Small)
+    self:addChild(self.chkNight)
+    currentY = currentY + lineHeight
+
+    -- ==========================================
     -- 2. LABELS ROW
     -- ==========================================
     local qtyWidth = 40
@@ -115,24 +156,37 @@ function PsychopatzDebugWindow:createChildren()
 end
 
 function PsychopatzDebugWindow:onExecute()
-    local doSpawn = self.chkSpawn:isSelected(1)
-    local doHeal  = self.chkHeal:isSelected(1)
-    local doStats = self.chkStats:isSelected(1)
+    local doSpawn  = self.chkSpawn:isSelected(1)
+    local doHeal   = self.chkHeal:isSelected(1)
+    local doStats  = self.chkStats:isSelected(1)
+    local doMoney  = self.chkMoney:isSelected(1)
+    local doWalkie = self.chkWalkie:isSelected(1)
+    local doNight  = self.chkNight:isSelected(1)
     
-    local itemID  = self.itemEntry:getText()
+    local itemID   = self.itemEntry:getText()
     local quantity = tonumber(self.qtyEntry:getText()) or 1
+    
+    local qtyMoney  = tonumber(self.qtyMoney:getText()) or 100
+    local qtyWalkie = tonumber(self.qtyWalkie:getText()) or 1
 
     local player = getPlayer()
     if player then
         local args = {
-            itemID   = itemID,
-            quantity = quantity,
-            doSpawn  = doSpawn,
-            doHeal   = doHeal,
-            doStats  = doStats
+            itemID    = itemID,
+            quantity  = quantity,
+            doSpawn   = doSpawn,
+            doHeal    = doHeal,
+            doStats   = doStats,
+            doMoney   = doMoney,
+            qtyMoney  = qtyMoney,
+            doWalkie  = doWalkie,
+            qtyWalkie = qtyWalkie
         }
         
         sendClientCommand(player, "DynamicTrading", "GrantPowers", args)
+        
+        -- Handle Night Vision Toggle Locally
+        _G.PsychopatzNightVisionActive = doNight
         
         if HaloTextHelper then
              HaloTextHelper.addTextWithArrow(player, "COMMAND SENT", true, HaloTextHelper.getColorGreen())
@@ -191,3 +245,46 @@ local function onPsychopatzKey(key)
 end
 
 Events.OnKeyPressed.Add(onPsychopatzKey)
+
+-- =============================================================================
+-- 3. NIGHT VISION EFFECT (LIGHT SOURCE)
+-- =============================================================================
+
+local NightVisionLight = nil
+_G.PsychopatzNightVisionActive = _G.PsychopatzNightVisionActive or false
+
+-- Throttled update to be more performant
+local updateTick = 0
+
+local function updateNightVision()
+    local player = getPlayer()
+    if not player then return end
+
+    if _G.PsychopatzNightVisionActive then
+        updateTick = updateTick + 1
+        -- Re-add every 5 seconds or if it vanishes
+        if not NightVisionLight or updateTick % 300 == 0 then
+            if NightVisionLight then getCell():removeLamppost(NightVisionLight) end
+            
+            NightVisionLight = IsoLightSource.new(
+                math.floor(player:getX()), 
+                math.floor(player:getY()), 
+                math.floor(player:getZ()), 
+                1.0, 1.0, 1.0, 20
+            )
+            getCell():addLamppost(NightVisionLight)
+        else
+            -- Ensure it stays on player every frame for visual consistency
+            NightVisionLight:setX(math.floor(player:getX()))
+            NightVisionLight:setY(math.floor(player:getY()))
+            NightVisionLight:setZ(math.floor(player:getZ()))
+        end
+    else
+        if NightVisionLight then
+            getCell():removeLamppost(NightVisionLight)
+            NightVisionLight = nil
+        end
+    end
+end
+
+Events.OnTick.Add(updateNightVision)
