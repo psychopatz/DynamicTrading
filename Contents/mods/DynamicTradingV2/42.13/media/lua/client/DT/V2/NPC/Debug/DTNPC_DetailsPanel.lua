@@ -71,11 +71,11 @@ function DTNPC_DetailsPanel:setData(item)
     local debugOutfit = npcData.outfit
     local mappedLookIndex = nil
     if (not debugOutfit or #debugOutfit == 0) and DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetOutfitBySeed then
-        debugOutfit, mappedLookIndex = DT_NPC_Wardrobe.GetOutfitBySeed(npcData.archetypeID or "General", npcData.isFemale, npcData.lookSeed or 1)
+        debugOutfit, mappedLookIndex = DT_NPC_Wardrobe.GetOutfitBySeed(npcData.archetypeID or "General", npcData.isFemale, npcData.identitySeed or 1)
     end
 
-    if npcData.lookSeed then
-        addProp("Look Seed", npcData.lookSeed, {r=0.7, g=0.9, b=1, a=1})
+    if npcData.identitySeed then
+        addProp("Identity Seed", npcData.identitySeed, {r=0.7, g=0.9, b=1, a=1})
     end
     if mappedLookIndex then
         addProp("Look Index", mappedLookIndex, {r=0.7, g=0.9, b=1, a=1})

@@ -126,9 +126,9 @@ function DT_TradingWindow:getTraderTexture(trader)
     if not trader then return getTexture("Item_Radio") end
     local arch = trader.archetype or "General"
     local gender = trader.gender or "Male"
-    local seed = trader.portraitID or 1
+    local seed = trader.identitySeed or 1
 
-    -- CRITICAL FIX: The portraitID is a persistent seed (1-1000).
+    -- CRITICAL FIX: The identitySeed is a persistent seed (1-1000).
     -- It MUST be mapped to the actual file count using GetMappedID.
     local mappedID = 1
     if self.dataProvider and self.dataProvider.getPortraitID then

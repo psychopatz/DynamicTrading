@@ -48,7 +48,7 @@ function DataHandlers.SendSyncStockToPlayer(player, traderID)
         activeFlashEvents = faction and faction.ActiveFlashEvents or {},
         activeFlashEvent = faction and faction.ActiveFlashEvent or { id = nil, expires = 0 },
         name = soul and soul.name or "Trader",
-        portraitID = soul and soul.portraitID,
+        identitySeed = soul and soul.identitySeed,
         gender = soul and soul.isFemale and "Female" or "Male"
     })
 end
@@ -153,7 +153,7 @@ Handlers.RequestStock = function(player, args)
             archetype = archetype,
             factionWealth = factionWealth,
             name = soul and soul.name or "Trader",
-            portraitID = soul and soul.portraitID,
+            identitySeed = soul and soul.identitySeed,
             gender = soul and soul.isFemale and "Female" or "Male"
         })
     end
@@ -193,7 +193,7 @@ Handlers.GenerateStock = function(player, args)
                 activeFlashEvents = faction and faction.ActiveFlashEvents or {},
                 activeFlashEvent = faction and faction.ActiveFlashEvent or { id = nil, expires = 0 },
                 name = soul and soul.name or "Trader",
-                portraitID = soul and soul.portraitID,
+                identitySeed = soul and soul.identitySeed,
                 gender = soul and soul.isFemale and "Female" or "Male"
             })
             

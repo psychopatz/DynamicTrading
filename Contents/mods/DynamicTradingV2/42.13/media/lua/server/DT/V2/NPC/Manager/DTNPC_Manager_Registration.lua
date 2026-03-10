@@ -27,8 +27,8 @@ function DTNPCManager.Register(zombie, npcData)
             
             if not uuid then
                 -- Brand new NPC, generate UUID
-                uuid = DTNPCManager.GenerateUUID()
-                print("[DTNPC] Generated new UUID for NPC: " .. (npcData.name or "Unknown") .. " - " .. uuid)
+                uuid = DTNPCManager.GenerateSoulID(npcData.name)
+                print("[DTNPC] Generated new Soul ID for NPC: " .. (npcData.name or "Unknown") .. " - " .. uuid)
             else
                 print("[DTNPC] Found existing UUID from outfit mapping: " .. uuid)
             end

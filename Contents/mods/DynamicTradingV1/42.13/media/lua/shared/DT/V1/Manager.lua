@@ -185,7 +185,7 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
         traderID = traderID,
         name = (soul and soul.name) or "Unknown Trader",
         gender = (soul and soul.isFemale) and "Female" or "Male",
-        portraitID = (soul and soul.portraitID) or 1,
+        identitySeed = (soul and soul.identitySeed) or 1,
         archetype = (soul and soul.archetypeID) or archetype or "General",
         
         -- Stock (from shared Stock system)

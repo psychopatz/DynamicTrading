@@ -227,7 +227,7 @@ function DT_TraderListPanel.drawItem(this, y, item, alt)
     if trader and DynamicTrading.Portraits then
         local archetype = trader.archetype or "General"
         local gender = trader.gender or "Male"
-        local seed = trader.portraitID or 1
+        local seed = trader.identitySeed or 1
         
         local mappedID = 1
         if DynamicTrading.Portraits.GetMappedID then

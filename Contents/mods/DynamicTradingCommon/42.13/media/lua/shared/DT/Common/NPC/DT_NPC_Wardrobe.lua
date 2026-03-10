@@ -48,9 +48,12 @@ local function ensureGeneralLooksLoaded()
     end
 end
 
-function DT_NPC_Wardrobe.RollLookSeed()
+function DT_NPC_Wardrobe.RollIdentitySeed()
     return ZombRand(DT_NPC_Wardrobe.SEED_MAX) + 1
 end
+
+-- Alias for backward/future compatibility
+DT_NPC_Wardrobe.RollLookSeed = DT_NPC_Wardrobe.RollIdentitySeed
 
 function DT_NPC_Wardrobe.GetLookPool(category, isFemaleOrGender)
     local looks = getLooksTable()

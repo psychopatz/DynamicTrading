@@ -114,7 +114,7 @@ function V1_Radio_DataProvider:getTrader(traderID, archetype)
         stocks = processedStocks,
         deflation = stock.deflation or {},
         factionID = stock.factionID,
-        portraitID = stock.portraitID,
+        identitySeed = stock.identitySeed,
         gender = stock.gender or "Male",
         returnTime = stock.returnTime,
         radioObj = self.radioObj

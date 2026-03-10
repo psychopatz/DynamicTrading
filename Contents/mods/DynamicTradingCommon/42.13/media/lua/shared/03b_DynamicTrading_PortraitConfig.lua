@@ -54,7 +54,11 @@ end
 --- Returns a random portrait seed (1-1000).
 --- This is used by generators to store a persistent variety key.
 --- @return number
+-- Legacy alias: use identitySeed instead
 function DynamicTrading.Portraits.RollPortraitSeed()
+    if DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollIdentitySeed then
+        return DT_NPC_Wardrobe.RollIdentitySeed()
+    end
     return ZombRand(1000) + 1
 end
 

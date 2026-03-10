@@ -96,7 +96,7 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                     local soul = {
                         name = trader.name,
                         archetypeID = trader.archetype,
-                        portraitID = trader.portraitID,
+                        identitySeed = trader.identitySeed,
                         status = "Active",
                         isFemale = (trader.gender == "Female")
                     }

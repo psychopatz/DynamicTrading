@@ -43,16 +43,16 @@ end
 -- ==============================================================================
 
 function DTNPCGenerator.CreateMVPData(mvpData, options)
-    local lookSeed = mvpData.lookSeed
-    if (not lookSeed) and DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollLookSeed then
-        lookSeed = DT_NPC_Wardrobe.RollLookSeed()
+    local identitySeed = mvpData.identitySeed
+    if (not identitySeed) and DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollIdentitySeed then
+        identitySeed = DT_NPC_Wardrobe.RollIdentitySeed()
     end
 
     local npcData = {
         name = mvpData.name,
         isFemale = mvpData.isFemale,
         outfit = mvpData.outfit,
-        lookSeed = lookSeed,
+        identitySeed = identitySeed,
         hairStyle = mvpData.hairStyle,
         beardStyle = mvpData.beardStyle,
         
@@ -66,7 +66,6 @@ function DTNPCGenerator.CreateMVPData(mvpData, options)
         isMVP = true,
         visualID = ZombRand(1000000),
         archetypeID = mvpData.archetypeID or options.occupation or "General",
-        portraitID = mvpData.portraitID or 1
     }
 
     
@@ -94,19 +93,19 @@ function DTNPCGenerator.CreateStandardData(options)
        name = DTNPCGenerator.GenerateRandomName(isFemale)
     end
     
-    -- 2. Pick deterministic look seed
+    -- 2. Pick deterministic identity seed
     local occupation = options.occupation or "General"
-    local lookSeed = 1
-    if DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollLookSeed then
-        lookSeed = DT_NPC_Wardrobe.RollLookSeed()
+    local identitySeed = 1
+    if DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollIdentitySeed then
+        identitySeed = DT_NPC_Wardrobe.RollIdentitySeed()
     end
     
     -- 3. Build npcData with minimal visual data
-    -- Hair/beard styles and colors are resolved from lookSeed + archetype in ApplyVisuals
+    -- Hair/beard styles and colors are resolved from identitySeed + archetype in ApplyVisuals
     local npcData = {
         name = name,
         isFemale = isFemale,
-        lookSeed = lookSeed,
+        identitySeed = identitySeed,
         
         -- Logic
         state = "Stay",
@@ -117,12 +116,7 @@ function DTNPCGenerator.CreateStandardData(options)
         runSpeed = options.runSpeed or 0.09,
         visualID = ZombRand(1000000),
         archetypeID = occupation,
-        portraitID = 1 -- Default fallback
     }
-
-        -- We use a seed between 1 and 1000 from the unified system.
-        -- The client will modulo this against their local texture count.
-        npcData.portraitID = DynamicTrading.Portraits.RollPortraitSeed()
 
     
     return npcData

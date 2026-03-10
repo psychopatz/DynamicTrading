@@ -173,7 +173,7 @@ function DT_ConversationUI:resolvePortrait(trader)
     
     local arch = trader.archetype or trader.role or "General"
     local gender = trader.gender or "Male"
-    local seed = trader.portraitID or 1
+    local seed = trader.identitySeed or 1
     
     local mappedID = 1
     if DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.GetMappedID then

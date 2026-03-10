@@ -49,7 +49,7 @@ function DT_NPCProfilePanel:setNPC(soul, uuid)
     -- Portrait Logic
     self.portraitTex = nil
     if DynamicTrading and DynamicTrading.Portraits then
-        local seed = soul.portraitID or 1
+        local seed = soul.identitySeed or 1
         local gender = soul.isFemale and "Female" or "Male"
         local mappedID = DynamicTrading.Portraits.GetMappedID(archID, gender, seed)
         local pathFolder = DynamicTrading.Portraits.GetPathFolder(archID, gender)

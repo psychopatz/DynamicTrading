@@ -295,7 +295,7 @@ function DT_V2_RadarWindow:refresh()
         local soul = DT_V2_RadarManager.GetSoul(uuid)
         local archetypeID = soul and soul.archetypeID or "General"
         local gender = (soul and soul.isFemale) and "Female" or "Male"
-        local portraitID = soul and soul.portraitID or 1
+        local identitySeed = soul and soul.identitySeed or 1
         
         local factionData = DT_V2_RadarManager.GetFaction(data.faction)
         local factionName = factionData and factionData.name or data.faction or "Independent"
@@ -314,7 +314,7 @@ function DT_V2_RadarWindow:refresh()
             factionName = factionName,
             archetype = archetypeID,
             gender = gender,
-            portraitID = portraitID,
+            identitySeed = identitySeed,
             distText = entry.distText,
             expireText = expireText,
             isLive = entry.isLive,

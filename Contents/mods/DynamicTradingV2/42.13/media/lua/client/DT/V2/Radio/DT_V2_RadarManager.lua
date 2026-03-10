@@ -78,7 +78,7 @@ function DT_V2_RadarManager.OnMetadataReceived(uuid, meta)
     soul.factionID = meta.factionID or soul.factionID
     soul.archetypeID = meta.archetypeID or soul.archetypeID
     soul.isFemale = meta.isFemale ~= nil and meta.isFemale or soul.isFemale
-    soul.portraitID = meta.portraitID or soul.portraitID
+    soul.identitySeed = meta.identitySeed or soul.identitySeed
     soul.status = meta.status or soul.status or "Unknown"
     soul.lastX = meta.lastX or soul.lastX
     soul.lastY = meta.lastY or soul.lastY

@@ -56,7 +56,7 @@ end
 function DT_V2_RadarListPanel:drawPortrait(ctx, y, itemData)
     local tex = nil
     if DynamicTrading and DynamicTrading.Portraits then
-        local seed = itemData.portraitID or 1
+        local seed = itemData.identitySeed or 1
         local mappedID = 1
         if DynamicTrading.Portraits.GetMappedID then
             mappedID = DynamicTrading.Portraits.GetMappedID(itemData.archetype, itemData.gender, seed)

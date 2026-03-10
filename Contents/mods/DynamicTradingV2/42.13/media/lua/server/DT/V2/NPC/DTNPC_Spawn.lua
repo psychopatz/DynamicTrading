@@ -296,7 +296,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     
     -- Ensure UUID exists
     if not npcData.uuid then
-        npcData.uuid = DTNPCManager.GenerateUUID()
+        npcData.uuid = DTNPCManager.GenerateSoulID(npcData.name)
     end
     
     modData.DTNPC_UUID = npcData.uuid
@@ -570,7 +570,7 @@ local function onClientCommand(module, command, player, args)
             factionID = soul.factionID or "Independent",
             factionName = resolveFactionName(soul.factionID),
             isFemale = soul.isFemale,
-            portraitID = soul.portraitID or 1,
+            identitySeed = soul.identitySeed or 1,
             status = soul.status or "Unknown",
             lastX = soul.lastX or (soul.homeCoords and soul.homeCoords.x),
             lastY = soul.lastY or (soul.homeCoords and soul.homeCoords.y),

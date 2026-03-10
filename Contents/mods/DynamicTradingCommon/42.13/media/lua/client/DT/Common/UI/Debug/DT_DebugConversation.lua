@@ -34,14 +34,15 @@ function NPCGenerator.Create()
     local lastName = NPCGenerator.Surnames[ZombRand(#NPCGenerator.Surnames) + 1]
     
     local archetype = NPCGenerator.Archetypes[ZombRand(#NPCGenerator.Archetypes) + 1]
-    local portraitID = ZombRand(5) + 1 
+    local identitySeed = ZombRand(1000) + 1 
     
-    return {
-        name = firstName .. " " .. lastName,
-        gender = gender,
+    local trader = {
+        name = firstName .. " " .. lastName, -- Reverted to original name construction
         archetype = archetype,
-        portraitID = portraitID,
+        gender = gender,
+        identitySeed = identitySeed,
     }
+    return trader
 end
 
 -- =============================================================================
@@ -116,7 +117,7 @@ end
 
 -- STATE: IDENTITY
 function DebugDialogue.Node_Identity(ui, data)
-    local info = "Name: " .. ui.target.name .. "\nGender: " .. ui.target.gender .. "\nPortrait ID: " .. ui.target.portraitID
+    local info = "Name: " .. ui.target.name .. "\nGender: " .. ui.target.gender .. "\nIdentity Seed: " .. ui.target.identitySeed
     
     ui:speak("Here is my generated data:\n" .. info)
     
@@ -125,7 +126,21 @@ function DebugDialogue.Node_Identity(ui, data)
             text = "Tell me about portraits.", 
             message = "How does the portrait system work?",
             onSelect = function(ui) 
-                ui:speak("If my portrait is white, check: media/ui/Portraits/" .. ui.target.archetype .. "/" .. ui.target.gender .. "/" .. ui.target.portraitID .. ".png") 
+                local identitySeed = ui.target.identitySeed or (ZombRand(1000) + 1)
+                local archetype = ui.target.archetype or "General"
+                local gender = ui.target.gender or "Male"
+                
+                local mappedID = 1
+                if DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.GetMappedID then
+                    mappedID = DynamicTrading.Portraits.GetMappedID(archetype, gender, identitySeed)
+                end
+
+                local info = "Name: " .. ui.target.name .. "\nGender: " .. ui.target.gender .. "\nIdentity Seed: " .. identitySeed
+                ui:log(info)
+                
+                if ui.target.identitySeed then
+                    ui:speak("If my portrait is white, check: media/ui/Portraits/" .. archetype .. "/" .. gender .. "/" .. mappedID .. ".png") 
+                end
                 -- Nested return
                 ui:updateOptions({
                     { text = "< Back", message = "", onSelect = DebugDialogue.Node_Intro }

@@ -85,7 +85,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     
     -- Ensure UUID exists
     if not npcData.uuid then
-        npcData.uuid = DTNPCManager.GenerateUUID()
+        npcData.uuid = DTNPCManager.GenerateSoulID(npcData.name)
     end
     
     modData.DTNPC_UUID = npcData.uuid

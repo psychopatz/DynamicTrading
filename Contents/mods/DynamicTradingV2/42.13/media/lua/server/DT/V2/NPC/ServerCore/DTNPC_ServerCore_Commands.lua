@@ -37,7 +37,7 @@ local function buildMetadataEntry(uuid, soul)
         factionID = soul.factionID or "Independent",
         factionName = resolveFactionName(soul.factionID),
         isFemale = soul.isFemale,
-        portraitID = soul.portraitID or 1,
+        identitySeed = soul.identitySeed or 1,
         status = soul.status or "Unknown",
         lastX = soul.lastX or (soul.homeCoords and soul.homeCoords.x),
         lastY = soul.lastY or (soul.homeCoords and soul.homeCoords.y),

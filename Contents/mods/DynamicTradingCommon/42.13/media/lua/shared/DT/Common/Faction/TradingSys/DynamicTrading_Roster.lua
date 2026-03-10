@@ -137,7 +137,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         returnStatus = npcData.returnStatus,
         master = npcData.master,
         isFemale = npcData.isFemale,
-        portraitID = npcData.portraitID
+        identitySeed = npcData.identitySeed or 1
     }
 
     -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
@@ -180,14 +180,10 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
     
     print("[DTNPC-Roster] Updated status for " .. uuid .. " to " .. (status or "nil") .. " (Return in: " .. tostring(returnTime) .. " as " .. tostring(returnStatus) .. ")")
 end
-
 function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     local data = ModData.get(MOD_DATA_KEY)
     
-    -- Generate UUID
-    local uuid = (DTNPCManager and DTNPCManager.GenerateUUID) and DTNPCManager.GenerateUUID() or string.format("soul_%d_%d", ZombRand(1000000), os.time())
-    
-    -- Generate npcData (Visuals/Identity)
+    -- 1. Generate npcData (Visuals/Identity)
     local npcData = nil
     if DTNPCGenerator and DTNPCGenerator.Generate then
         -- V2 path: full NPC generator with MVPs, wardrobe, portraits
@@ -207,26 +203,28 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
             end
         end
         
-        -- Use deterministic look seed so all clients derive the same outfit locally.
-        local lookSeed = (DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollLookSeed)
-            and DT_NPC_Wardrobe.RollLookSeed() or (ZombRand(1000) + 1)
+        -- Use deterministic identity seed so all clients derive the same outfit locally.
+        local identitySeed = (DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollIdentitySeed)
+            and DT_NPC_Wardrobe.RollIdentitySeed() or (ZombRand(1000) + 1)
         
         npcData = {
             name = name,
             isFemale = isFemale,
-            lookSeed = lookSeed,
+            identitySeed = identitySeed,
             state = "Stay",
             tasks = {},
             walkSpeed = 0.06,
             runSpeed = 0.09,
             visualID = ZombRand(1000000),
             archetypeID = archetypeID or "General",
-            portraitID = (DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.RollPortraitSeed) 
-                and DynamicTrading.Portraits.RollPortraitSeed() or ZombRand(1000) + 1
         }
     end
     
-    -- Merge Soul Metadata into npcData
+    -- 2. Generate UUID using the established name
+    local name = npcData.name or "Unknown"
+    local uuid = (DTNPCManager and DTNPCManager.GenerateSoulID) and DTNPCManager.GenerateSoulID(name) or string.format("soul_%s_%d", name:gsub("%s+", ""), os.time())
+    
+    -- 3. Merge Soul Metadata into npcData
     npcData.uuid = uuid
     npcData.factionID = factionID
     npcData.archetypeID = archetypeID

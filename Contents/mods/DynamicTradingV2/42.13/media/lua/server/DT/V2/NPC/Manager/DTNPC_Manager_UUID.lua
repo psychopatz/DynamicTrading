@@ -9,14 +9,28 @@ DTNPCManager = DTNPCManager or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
-function DTNPCManager.GenerateUUID()
-    -- Simple UUID generation
-    local template = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
-    return string.gsub(template, '[xy]', function(c)
-        local v = (c == 'x') and ZombRand(0, 16) or ZombRand(8, 12)
-        return string.format('%x', v)
-    end)
+function DTNPCManager.GenerateSoulID(name)
+    -- Sanitize name: remove spaces and non-alphanumeric characters
+    local sanitizedName = "Unknown"
+    if name then
+        sanitizedName = name:gsub("%s+", ""):gsub("[^%a%d]", "")
+    end
+    
+    -- Generate 4-character hex suffix
+    local suffix = ""
+    local hexChars = "0123456789abcdef"
+    for i = 1, 4 do
+        local rand = ZombRand(1, 17)
+        suffix = suffix .. hexChars:sub(rand, rand)
+    end
+    
+    -- We return just the ID part. 
+    -- The Roster system prepends "DTSOUL_" for ModData keying.
+    return sanitizedName .. "_" .. suffix
 end
+
+-- Backward compatibility alias
+DTNPCManager.GenerateUUID = DTNPCManager.GenerateSoulID
 
 function DTNPCManager.GetUUIDFromOutfitID(outfitID)
     return DTNPCManager.OutfitIDToUUID[outfitID]

@@ -22,7 +22,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 name = npcData and npcData.name or "Survivor",
                 archetype = npcData and npcData.archetypeID or npcData.occupation or "Survivor",
                 gender = npc:isFemale() and "Female" or "Male",
-                portraitID = npcData and npcData.portraitID or 1,
+                identitySeed = npcData and npcData.identitySeed or 1,
                 factionID = npcData and npcData.factionID,
                 returnTime = npcData and npcData.returnTime
             }
@@ -32,7 +32,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
             print("Trader Name: " .. tostring(traderProxy.name))
             print("Trader Archetype: " .. tostring(traderProxy.archetype))
             print("Trader Gender: " .. tostring(traderProxy.gender))
-            print("Trader Portrait ID: " .. tostring(traderProxy.portraitID))
+            print("Trader Identity Seed: " .. tostring(traderProxy.identitySeed))
             
             if traderProxy.factionID then
                 print("Trader Faction ID: " .. traderProxy.factionID)

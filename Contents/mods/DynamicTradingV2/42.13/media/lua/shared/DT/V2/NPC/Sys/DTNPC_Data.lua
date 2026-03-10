@@ -76,75 +76,60 @@ function DTNPC.ApplyVisuals(zombie, npcData)
     humanVisual:setSkinTextureName(skinTexture)
     
     -- 3. Apply Hair
-    -- Resolve from archetype + lookSeed, fallback to saved hairStyle (backward compat)
-    local hairModel = nil
-    if npcData.hairStyle and type(npcData.hairStyle) == "string" then
-        -- Backward compatibility: old npcDatas with explicit hairStyle
-        hairModel = npcData.hairStyle
-    elseif DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetHairStyleBySeed then
-        -- New system: resolve deterministically from archetype + lookSeed
-        hairModel = DT_NPC_Wardrobe.GetHairStyleBySeed(
+    -- Resolve from archetype + identitySeed, fallback to saved hairStyle (backward compat)
+    local style = npcData.hairStyle
+    if not style then
+        -- New system: resolve deterministically from archetype + identitySeed
+        style = DT_NPC_Wardrobe.GetHairStyleBySeed(
             npcData.archetypeID or "General",
             npcData.isFemale,
-            npcData.lookSeed or 1
+            npcData.identitySeed or 1
         )
-    end
-
-    if hairModel and hairModel ~= "" then
-        humanVisual:setHairModel(hairModel)
-    end
-
-    -- 4. Apply Beard (Males only)
-    if not npcData.isFemale then
-        local beardModel = nil
-        if npcData.beardStyle and type(npcData.beardStyle) == "string" then
-            -- Backward compatibility: old npcDatas with explicit beardStyle
-            beardModel = npcData.beardStyle
-        elseif DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetBeardStyleBySeed then
-            -- New system: resolve deterministically from archetype + lookSeed
-            beardModel = DT_NPC_Wardrobe.GetBeardStyleBySeed(
-                npcData.archetypeID or "General",
-                npcData.lookSeed or 1
-            )
-        end
-        
-        if beardModel and beardModel ~= "" then
-            humanVisual:setBeardModel(beardModel)
-        end
-    end
-
-    -- 5. Set Hair/Beard Color
-    -- Resolve from archetype + lookSeed, fallback to saved RGB (backward compat)
-    local r, g, b = 0.2, 0.1, 0.1
-    if npcData.hairColorR and npcData.hairColorG and npcData.hairColorB then
-        -- Backward compatibility: old npcDatas with explicit RGB
-        r = npcData.hairColorR
-        g = npcData.hairColorG
-        b = npcData.hairColorB
-    elseif DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetHairColorBySeed then
-        -- New system: resolve deterministically from archetype + lookSeed
-        local color = DT_NPC_Wardrobe.GetHairColorBySeed(
-            npcData.archetypeID or "General",
-            npcData.lookSeed or 1
-        )
-        if color then
-            r = color.r or 0.2
-            g = color.g or 0.1
-            b = color.b or 0.1
-        end
     end
     
-    if ImmutableColor then
-        local color = ImmutableColor.new(r, g, b, 1)
-        humanVisual:setHairColor(color)
-        humanVisual:setBeardColor(color)
+    if style then
+        humanVisual:setHairModel(style)
     end
 
-    -- 6. Apply Clothing
+    -- Resolve from archetype + identitySeed, fallback to saved beard (backward compat)
+    local beard = npcData.beardStyle
+    if (not beard) and (not npcData.isFemale) then
+        if not npcData.beardStyleResolved then -- Only if not explicitly clean-shaven
+            -- New system: resolve deterministically from archetype + identitySeed
+            beard = DT_NPC_Wardrobe.GetBeardStyleBySeed(
+                npcData.archetypeID or "General",
+                npcData.identitySeed or 1
+            )
+        end
+    end
+
+    if beard then
+        humanVisual:setBeardModel(beard)
+    elseif not npcData.isFemale then
+        humanVisual:setBeardModel("")
+    end
+
+    -- Resolve from archetype + identitySeed, fallback to saved RGB (backward compat)
+    local color = npcData.hairColor
+    if not color then
+        -- New system: resolve deterministically from archetype + identitySeed
+        color = DT_NPC_Wardrobe.GetHairColorBySeed(
+            npcData.archetypeID or "General",
+            npcData.identitySeed or 1
+        )
+    end
+
+    if color and ImmutableColor then
+        local immutableColor = ImmutableColor.new(color.r or 0.2, color.g or 0.1, color.b or 0.1, 1)
+        humanVisual:setHairColor(immutableColor)
+        humanVisual:setBeardColor(immutableColor)
+    end
+    
+    -- 4. Apply Clothing
     -- Prefer explicit outfit override (MVP/custom NPC), otherwise derive deterministic look from seed.
     local outfit = npcData.outfit
     if (not outfit or type(outfit) ~= "table") and DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetOutfitBySeed then
-        outfit = DT_NPC_Wardrobe.GetOutfitBySeed(npcData.archetypeID or "General", npcData.isFemale, npcData.lookSeed or 1)
+        outfit = DT_NPC_Wardrobe.GetOutfitBySeed(npcData.archetypeID or "General", npcData.isFemale, npcData.identitySeed or 1)
     end
 
     if outfit and type(outfit) == "table" then

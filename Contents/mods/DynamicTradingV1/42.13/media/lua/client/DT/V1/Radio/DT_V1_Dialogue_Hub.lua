@@ -38,7 +38,7 @@ function DT_V1_Dialogue_Hub.Init(ui, radioObj, traderID, player)
             name = trader.name or "Survivor",
             archetype = trader.archetype or "Survivor",
             gender = trader.gender or "Male",
-            portraitID = trader.portraitID or 1,
+            identitySeed = trader.identitySeed or 1,
             factionID = trader.factionID,
             returnTime = trader.returnTime
         }

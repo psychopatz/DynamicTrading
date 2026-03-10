@@ -139,7 +139,7 @@ function V2_DataProvider:getTrader(traderID, archetype)
         stocks = processedStocks,  -- TradingWindow expects 'stocks', not 'items'
         deflation = stock.deflation or {},
         factionID = stock.factionID,
-        portraitID = stock.portraitID,
+        identitySeed = stock.identitySeed,
         gender = stock.gender or "Male",
         -- V2-specific: reference to NPC for distance checks
         npcRef = self._currentNPC
