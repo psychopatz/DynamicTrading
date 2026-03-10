@@ -93,7 +93,7 @@ Full "Brain" data for an NPC. This is the source of truth for an NPC's identity,
 
 **Location:** `media/lua/shared/DT/V2/NPC/Sys/DTNPC_Generator.lua` (Schema) | `DynamicTrading_Roster.lua` (Storage)
 
-* `uuid`: String (Unique ID, e.g., "soul_123456_1712345678")
+* `uuid`: String (Unique ID, e.g., "NormaRadford_1773")
 * `name`: String (Full name)
 * `factionID`: String (ID of the parent faction)
 * `archetypeID`: String (The trader's profession, e.g., "Gunrunner")

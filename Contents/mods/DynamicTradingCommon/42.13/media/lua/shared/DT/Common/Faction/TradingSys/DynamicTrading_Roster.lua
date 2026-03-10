@@ -183,6 +183,23 @@ end
 function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     local data = ModData.get(MOD_DATA_KEY)
     
+    -- [PARITY FIX] Auto-generate scattered homeCoords based on faction if not explicitly provided
+    if not homeCoords and factionID and factionID ~= "Independent" then
+        if DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
+            local faction = DynamicTrading_Factions.GetFaction(factionID)
+            if faction and faction.homeCoords and faction.homeCoords.x then
+                local home = faction.homeCoords
+                local scatterRange = 10 -- +/- 10 tiles roughly near base
+                homeCoords = {
+                    x = home.x + (ZombRand(scatterRange * 2 + 1) - scatterRange),
+                    y = home.y + (ZombRand(scatterRange * 2 + 1) - scatterRange),
+                    z = home.z or 0,
+                    zone = home.name or "Unknown"
+                }
+            end
+        end
+    end
+    
     -- 1. Generate npcData (Visuals/Identity)
     local npcData = nil
     if DTNPCGenerator and DTNPCGenerator.Generate then
@@ -222,7 +239,20 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     
     -- 2. Generate UUID using the established name
     local name = npcData.name or "Unknown"
-    local uuid = (DTNPCManager and DTNPCManager.GenerateSoulID) and DTNPCManager.GenerateSoulID(name) or string.format("soul_%s_%d", name:gsub("%s+", ""), os.time())
+    local uuid = ""
+    if DTNPCManager and DTNPCManager.GenerateSoulID then
+        uuid = DTNPCManager.GenerateSoulID(name)
+    else
+        -- Fallback: Manual generation matching V2 standards
+        local sanitizedName = name:gsub("%s+", ""):gsub("[^%a%d]", "")
+        local suffix = ""
+        local hexChars = "0123456789abcdef"
+        for i = 1, 4 do
+            local rand = ZombRand(1, 17)
+            suffix = suffix .. hexChars:sub(rand, rand)
+        end
+        uuid = sanitizedName .. "_" .. suffix
+    end
     
     -- 3. Merge Soul Metadata into npcData
     npcData.uuid = uuid

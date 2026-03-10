@@ -43,7 +43,7 @@ end
 -- =============================================================================
 local function OnReceiveLogs(key, data)
     -- Verify the key starts with DynamicTrading_Logs to allow multiple versions
-    if key and string.find(key, "DynamicTrading_Logs") then
+    if key and string.find(key, "DynamicTrading_Logs") and type(data) == "table" then
        -- If we have a local UI that needs refreshing, it reads from ModData directly via getOrCreate
        -- so we just accept the data here.
        ModData.add(key, data)

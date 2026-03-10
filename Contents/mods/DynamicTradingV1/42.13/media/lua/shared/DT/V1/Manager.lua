@@ -69,7 +69,7 @@ end
 -- 5. DATA SYNC (CLIENT RECEPTION)
 -- =============================================================================
 local function OnReceiveGlobalModData(key, data)
-    if key == V1_DATA_KEY then
+    if key == V1_DATA_KEY and type(data) == "table" then
         ModData.add(key, data)
     end
 end
@@ -79,6 +79,15 @@ Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
 -- 6. TRADER CREATION (Creates Soul in shared Roster + Stock)
 -- =============================================================================
 function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
+    if isClient() and not isServer() then
+        -- Route to Server via Command in MP
+        sendClientCommand(finder, "DynamicTrading_V1", "GenerateContact", { archetype = targetArchetype })
+        return nil
+    end
+    return DynamicTrading.Manager.GenerateRandomContact_ServerCommand(targetArchetype, finder)
+end
+
+function DynamicTrading.Manager.GenerateRandomContact_ServerCommand(targetArchetype, finder)
     local data = DynamicTrading.Manager.GetData()
     
     -- 1. Pick Archetype
@@ -137,7 +146,6 @@ function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
     local expireTime = currentHours + duration
 
     -- 7. Store radio-specific metadata (keyed by Soul UUID)
-    local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
     data.RadioTraders[uuid] = {
         id = uuid,
         returnTime = expireTime,
@@ -256,6 +264,18 @@ end
 -- =============================================================================
 function DynamicTrading.Manager.DiscoverTrader(traderID, player)
     if not traderID or not player then return false end
+
+    if isClient() and not isServer() then
+        -- Route to Server in MP
+        sendClientCommand(player, "DynamicTrading_V1", "DiscoverTrader", { traderID = traderID })
+        -- Eagerly return true on client to allow UI to proceed if needed, but the actual save happens on server
+        return true
+    end
+
+    return DynamicTrading.Manager.DiscoverTrader_ServerCommand(traderID, player)
+end
+
+function DynamicTrading.Manager.DiscoverTrader_ServerCommand(traderID, player)
     local data = DynamicTrading.Manager.GetData()
     
     -- If not in V1 registry, create entry (Discovery Bridge)
@@ -286,7 +306,7 @@ function DynamicTrading.Manager.DiscoverTrader(traderID, player)
     if not radioData.discoveredBy[username] then
         radioData.discoveredBy[username] = true
         
-        -- [FIX] Trigger Network Log on Discovery
+        -- Trigger Network Log on Discovery
         local soul = DynamicTrading_Roster.GetSoulRegistry(traderID)
         local traderName = (soul and soul.name) or ("Trader " .. tostring(ZombRand(1000)))
         local factionName = "Independent"
@@ -298,7 +318,7 @@ function DynamicTrading.Manager.DiscoverTrader(traderID, player)
         
         DynamicTrading.NetworkLogs.AddLog("Signal Acquired by " .. username .. ": " .. traderName .. " (" .. factionName .. ")", "good")
         
-        DynamicTrading.Manager.BumpTradersVersion()
+        DynamicTrading.Manager.BumpTradersVersion_ServerCommand()
         return true
     end
     return false
@@ -425,6 +445,14 @@ end
 -- 11. VERSION BUMPING (Signals UI refreshes)
 -- =============================================================================
 function DynamicTrading.Manager.BumpTradersVersion()
+    if isClient() and not isServer() then
+        sendClientCommand(getPlayer(), "DynamicTrading_V1", "BumpTradersVersion", {})
+        return
+    end
+    DynamicTrading.Manager.BumpTradersVersion_ServerCommand()
+end
+
+function DynamicTrading.Manager.BumpTradersVersion_ServerCommand()
     local data = DynamicTrading.Manager.GetData()
     data.tradersVersion = (data.tradersVersion or 0) + 1
     if isServer() or not isClient() then ModData.transmit(V1_DATA_KEY) end
