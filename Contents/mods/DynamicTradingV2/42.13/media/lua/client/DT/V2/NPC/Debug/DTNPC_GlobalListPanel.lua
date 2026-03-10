@@ -73,7 +73,39 @@ function DTNPC_DatabaseListPanel:refresh()
         end
     end
 
-    -- 2. Manager Data (Singleplayer Fallback)
+    -- 2. Metadata Cache (Discovered/Far NPCs)
+    if DTNPCClient and DTNPCClient.MetadataCache then
+        for id, npcData in pairs(DTNPCClient.MetadataCache) do
+            if not globalAdded[id] then
+                local name = npcData.name or "Unknown"
+                
+                -- Distance calculation
+                local player = getSpecificPlayer(0)
+                local distText = ""
+                if player and npcData.lastX then
+                    local dx = npcData.lastX - player:getX()
+                    local dy = npcData.lastY - player:getY()
+                    local dist = math.sqrt(dx*dx + dy*dy)
+                    distText = string.format(" [%.0fm]", dist)
+                end
+                
+                local stateText = " [DISCOVERED]"
+                if npcData.status == "Trading" then
+                    stateText = " [TRADER]"
+                end
+
+                self.npcList:addItem(name .. stateText .. distText, {id = id, npcData = npcData})
+                
+                local item = self.npcList.items[#self.npcList.items]
+                item.color = {r=0.6, g=0.9, b=0.6, a=1} -- Light green for metadata
+                
+                globalAdded[id] = true
+                databaseCount = databaseCount + 1
+            end
+        end
+    end
+
+    -- 3. Manager Data (Singleplayer Fallback)
     if not isClient() and DTNPCManager and DTNPCManager.Data then
         for id, npcData in pairs(DTNPCManager.Data) do
             if not globalAdded[id] then

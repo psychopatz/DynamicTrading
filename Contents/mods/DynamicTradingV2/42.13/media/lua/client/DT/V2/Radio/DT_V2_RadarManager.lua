@@ -85,6 +85,22 @@ function DT_V2_RadarManager.OnMetadataReceived(uuid, meta)
     soul.lastZ = meta.lastZ or soul.lastZ or 0
 
     DT_V2_RadarManager.ClientRoster.Souls[uuid] = soul
+
+    -- [NEW] Inform DTNPCClient Metadata Cache
+    if DTNPCClient and DTNPCClient.CacheMetadata then
+        DTNPCClient.CacheMetadata(uuid, {
+            uuid = uuid,
+            name = soul.name,
+            factionID = soul.factionID,
+            archetypeID = soul.archetypeID,
+            isFemale = soul.isFemale,
+            identitySeed = soul.identitySeed,
+            status = soul.status,
+            lastX = soul.lastX,
+            lastY = soul.lastY,
+            lastZ = soul.lastZ
+        })
+    end
 end
 
 function DT_V2_RadarManager.GetCount()
@@ -281,6 +297,22 @@ function DT_V2_RadarManager.Scan(player, device)
                             }
                             foundNew = true
                             print("[DT_RADAR] Discovered trader: " .. soul.name .. " (UUID: " .. uuid .. ")")
+
+                            -- [NEW] Sync with DTNPC Global Cache
+                            if DTNPCClient and DTNPCClient.CacheMetadata then
+                                DTNPCClient.CacheMetadata(uuid, {
+                                    uuid = uuid,
+                                    name = soul.name,
+                                    factionID = soul.factionID,
+                                    archetypeID = soul.archetypeID,
+                                    isFemale = soul.isFemale,
+                                    identitySeed = soul.identitySeed,
+                                    status = soul.status,
+                                    lastX = tx,
+                                    lastY = ty,
+                                    lastZ = soul.lastZ or 0
+                                })
+                            end
                         end
                     end
                 end
