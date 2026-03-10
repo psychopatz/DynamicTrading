@@ -37,7 +37,7 @@ DynamicTrading_Factions.ModifyReputation  = Interaction.ModifyReputation
 -- 4. MP SYNC LISTENER
 -- ==========================================================
 local function OnReceiveGlobalModData(key, data)
-    if key == "DynamicTrading_Factions" then
+    if key == "DynamicTrading_Factions" and type(data) == "table" then
         ModData.add(key, data)
     end
 end

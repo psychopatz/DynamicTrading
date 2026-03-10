@@ -63,8 +63,8 @@ function DTNPCClient.CacheData(uuid, outfitID, npcData)
 end
 
 -- Deprecated: Use DTNPCClient.CacheData
-function DTNPCClient.CacheBrain(uuid, outfitID, npcDataData)
-    DTNPCClient.CacheData(uuid, outfitID, npcDataData)
+function DTNPCClient.CacheBrain(uuid, outfitID, npcData)
+    DTNPCClient.CacheData(uuid, outfitID, npcData)
 end
 
 function DTNPCClient.RemoveFromCache(uuid, outfitID)

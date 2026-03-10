@@ -154,7 +154,7 @@ end
 -- 4. MP SYNC LISTENER
 -- ==========================================================
 local function OnReceiveGlobalModData(key, data)
-    if key == MOD_DATA_KEY then
+    if key == MOD_DATA_KEY and type(data) == "table" then
         ModData.add(key, data)
     end
 end

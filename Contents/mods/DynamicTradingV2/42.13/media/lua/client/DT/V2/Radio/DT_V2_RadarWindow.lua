@@ -96,7 +96,7 @@ function DT_V2_RadarWindow:stopTracking()
     if EventMarkerHandler then
         EventMarkerHandler.remove(self.MARKER_ID)
     end
-    getSpecificPlayer(0):Say("Signal tracking stopped.")
+    -- getSpecificPlayer(0):Say("Signal tracking stopped.")
     
     -- Update button if visible
     if self.listPanel and self.listPanel.listbox then
