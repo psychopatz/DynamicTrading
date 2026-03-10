@@ -55,15 +55,15 @@ end
 -- MULTIPLAYER SYNC FUNCTIONS
 -- ==============================================================================
 
-function DTNPCServerCore.SyncToAllClients(zombie, brain)
-    if not zombie or not brain then return end
+function DTNPCServerCore.SyncToAllClients(zombie, npcData)
+    if not zombie or not npcData then return end
     
     local outfitID = zombie:getPersistentOutfitID()
-    local uuid = brain.uuid
+    local uuid = npcData.uuid
     
     local modData = zombie:getModData()
     modData.IsDTNPC = true
-    modData.DTNPCVisualID = brain.visualID
+    modData.DTNPCVisualID = npcData.visualID
     modData.DTNPC_UUID = uuid
     
     local syncData = {
@@ -72,7 +72,7 @@ function DTNPCServerCore.SyncToAllClients(zombie, brain)
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
-        brain = brain
+        npcData = npcData
     }
     
     if isServer() then
@@ -84,23 +84,23 @@ function DTNPCServerCore.SyncToAllClients(zombie, brain)
             syncData.z,
             DTNPCServerCore.BROADCAST_RANGES.MEDIUM
         )
-        print("[DTNPC] Synced NPC: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y .. " [" .. sent .. "/" .. total .. " players]")
+        print("[DTNPC] Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y .. " [" .. sent .. "/" .. total .. " players]")
     else
         -- Single Player fallback
         triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
-        print("[DTNPC] Synced NPC: " .. (brain.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
+        print("[DTNPC] Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
     end
 end
 
-function DTNPCServerCore.SyncToPlayer(player, zombie, brain)
-    if not player or not zombie or not brain then return end
+function DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
+    if not player or not zombie or not npcData then return end
     
     local outfitID = zombie:getPersistentOutfitID()
-    local uuid = brain.uuid
+    local uuid = npcData.uuid
     
     local modData = zombie:getModData()
     modData.IsDTNPC = true
-    modData.DTNPCVisualID = brain.visualID
+    modData.DTNPCVisualID = npcData.visualID
     modData.DTNPC_UUID = uuid
     
     local syncData = {
@@ -109,7 +109,7 @@ function DTNPCServerCore.SyncToPlayer(player, zombie, brain)
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
-        brain = brain
+        npcData = npcData
     }
     
     if isServer() or isClient() then
@@ -119,13 +119,13 @@ function DTNPCServerCore.SyncToPlayer(player, zombie, brain)
         triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
     end
     
-    print("[DTNPC] Synced NPC to player: " .. (brain.name or uuid))
+    print("[DTNPC] Synced NPC to player: " .. (npcData.name or uuid))
 end
 
-function DTNPCServerCore.BroadcastPosition(zombie, brain)
-    if not zombie or not brain then return end
+function DTNPCServerCore.BroadcastPosition(zombie, npcData)
+    if not zombie or not npcData then return end
     
-    local uuid = brain.uuid
+    local uuid = npcData.uuid
     local posData = {
         uuid = uuid,
         outfitID = zombie:getPersistentOutfitID(),
@@ -133,7 +133,7 @@ function DTNPCServerCore.BroadcastPosition(zombie, brain)
         y = zombie:getY(),
         z = zombie:getZ(),
         health = zombie:getHealth(),
-        state = brain.state
+        state = npcData.state
     }
     
     if isServer() then

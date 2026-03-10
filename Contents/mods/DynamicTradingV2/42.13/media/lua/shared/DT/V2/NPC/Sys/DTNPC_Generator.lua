@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- DTNPC_Generator.lua
--- The Factory: Manages the creation of NPC Brains.
+-- The Factory: Manages the creation of NPC Data structures.
 -- Decoupled from spawning logic to allow flexible generation strategies.
 -- ==============================================================================
 
@@ -31,24 +31,24 @@ function DTNPCGenerator.Generate(options)
     end
     
     if mvp then
-        return DTNPCGenerator.CreateMVPBrain(mvp, options)
+        return DTNPCGenerator.CreateMVPData(mvp, options)
     end
     
     -- 2. Standard Generation
-    return DTNPCGenerator.CreateStandardBrain(options)
+    return DTNPCGenerator.CreateStandardData(options)
 end
 
 -- ==============================================================================
 -- 3. SPECIFIC BUILDERS
 -- ==============================================================================
 
-function DTNPCGenerator.CreateMVPBrain(mvpData, options)
+function DTNPCGenerator.CreateMVPData(mvpData, options)
     local lookSeed = mvpData.lookSeed
     if (not lookSeed) and DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollLookSeed then
         lookSeed = DT_NPC_Wardrobe.RollLookSeed()
     end
 
-    local brain = {
+    local npcData = {
         name = mvpData.name,
         isFemale = mvpData.isFemale,
         outfit = mvpData.outfit,
@@ -70,11 +70,11 @@ function DTNPCGenerator.CreateMVPBrain(mvpData, options)
     }
 
     
-    return brain
+    return npcData
 end
 
 
-function DTNPCGenerator.CreateStandardBrain(options)
+function DTNPCGenerator.CreateStandardData(options)
     local isFemale = (ZombRand(2) == 0)
     
     -- 1. Generate Base Survivor info using Game Engine if possible
@@ -101,9 +101,9 @@ function DTNPCGenerator.CreateStandardBrain(options)
         lookSeed = DT_NPC_Wardrobe.RollLookSeed()
     end
     
-    -- 3. Build brain with minimal visual data
+    -- 3. Build npcData with minimal visual data
     -- Hair/beard styles and colors are resolved from lookSeed + archetype in ApplyVisuals
-    local brain = {
+    local npcData = {
         name = name,
         isFemale = isFemale,
         lookSeed = lookSeed,
@@ -122,10 +122,10 @@ function DTNPCGenerator.CreateStandardBrain(options)
 
         -- We use a seed between 1 and 1000 from the unified system.
         -- The client will modulo this against their local texture count.
-        brain.portraitID = DynamicTrading.Portraits.RollPortraitSeed()
+        npcData.portraitID = DynamicTrading.Portraits.RollPortraitSeed()
 
     
-    return brain
+    return npcData
 end
 
 -- ==============================================================================

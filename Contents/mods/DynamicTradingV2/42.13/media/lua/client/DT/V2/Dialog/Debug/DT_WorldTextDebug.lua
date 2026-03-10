@@ -24,8 +24,8 @@ local function getBrain(zombie)
     if not zombie then return nil end
     
     if DTNPCClient and DTNPCClient.GetBrain then
-        local brain = DTNPCClient.GetBrain(zombie)
-        if brain then return brain end
+        local npcData = DTNPCClient.GetBrain(zombie)
+        if npcData then return npcData end
     end
     
     if DTNPC and DTNPC.GetBrain then
@@ -46,8 +46,8 @@ end
 -- TEXT DISPLAY FUNCTIONS
 -- ==============================================================================
 
-function WorldTextDisplayDebug.createNPCText(npc, brain)
-    if not npc or not brain then return nil end
+function WorldTextDisplayDebug.createNPCText(npc, npcData)
+    if not npc or not npcData then return nil end
     if not WorldTextDisplay then 
         print("[WorldTextDisplay] Module not loaded!")
         return nil 
@@ -58,29 +58,29 @@ function WorldTextDisplayDebug.createNPCText(npc, brain)
     -- Remove old text if exists
     WorldTextDisplayDebug.removeNPCText(id)
     
-    local displayText = brain.name or "Unknown"
+    local displayText = npcData.name or "Unknown"
     local color = "WHITE"
     
     -- Determine color based on state
-    if brain.isHostile then
+    if npcData.isHostile then
         color = "RED"
-    elseif brain.state == "Follow" then
+    elseif npcData.state == "Follow" then
         color = "CYAN"
-    elseif brain.state == "Stay" or brain.state == "Guard" then
+    elseif npcData.state == "Stay" or npcData.state == "Guard" then
         color = "YELLOW"
-    elseif brain.state == "GoTo" then
+    elseif npcData.state == "GoTo" then
         color = "ORANGE"
-    elseif brain.state == "Flee" then
+    elseif npcData.state == "Flee" then
         color = "PINK"
-    elseif brain.state == "Attack" or brain.state == "AttackRange" then
+    elseif npcData.state == "Attack" or npcData.state == "AttackRange" then
         color = "DARK_RED"
     else
         color = "GREEN"
     end
     
     -- Add state to text
-    if brain.state then
-        displayText = displayText .. " [" .. brain.state .. "]"
+    if npcData.state then
+        displayText = displayText .. " [" .. npcData.state .. "]"
     end
     
     local textId = WorldTextDisplay.addText(

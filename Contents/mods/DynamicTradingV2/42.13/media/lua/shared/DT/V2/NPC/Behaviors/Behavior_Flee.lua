@@ -35,26 +35,26 @@ local function forceRunAnimation(zombie)
     zombie:setVariable("BanditWalkType", "Run")
 end
 
-DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
+DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
     
     -- 1. DESPAWN CHECK (Merchant Exit)
     -- Only despawn if we have a valid target and are actually far away.
     -- dist == 9999 means target not found, so we should NOT despawn yet.
     if target and dist > DESPAWN_DIST and dist < 1000 then
-        if brain.removalRequested then return end -- Prevent flooding!
+        if npcData.removalRequested then return end -- Prevent flooding!
         
-        local uuid = brain.uuid
+        local uuid = npcData.uuid
         local returnTime = getGameTime():getWorldAgeHours() + ZombRand(2, 5) -- Returns in 2-4 hours
         
         if isClient() then
-             print("[DTNPC-Flee] TARGET REACHED: Requesting removal for fleeing NPC: " .. (brain.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
-             local nextStatus = brain.requestedReturnStatus or "Resting"
+             print("[DTNPC-Flee] TARGET REACHED: Requesting removal for fleeing NPC: " .. (npcData.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
+             local nextStatus = npcData.requestedReturnStatus or "Resting"
              sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { uuid = uuid, status = "Away", returnTime = returnTime, returnStatus = nextStatus })
-             brain.removalRequested = true -- Prevent further requests
+             npcData.removalRequested = true -- Prevent further requests
              -- We stop processing locally but let the server handle removeFromWorld to avoid sync issues
         elseif DTNPCManager then 
-             print("[DTNPC-Flee] TARGET REACHED: Server-side removal for fleeing NPC: " .. (brain.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
-             local nextStatus = brain.requestedReturnStatus or "Resting"
+             print("[DTNPC-Flee] TARGET REACHED: Server-side removal for fleeing NPC: " .. (npcData.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
+             local nextStatus = npcData.requestedReturnStatus or "Resting"
              DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
              zombie:removeFromWorld()
              zombie:removeFromSquare()
@@ -63,11 +63,11 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
     end
 
     -- Periodic Fleeing Update
-    if not brain.fleePrintTimer then brain.fleePrintTimer = 0 end
-    brain.fleePrintTimer = brain.fleePrintTimer + 1
-    if brain.fleePrintTimer >= 60 then
-        brain.fleePrintTimer = 0
-        print("[DTNPC-Flee] NPC " .. (brain.name or "NPC") .. " is running away. Dist: " .. math.floor(dist) .. "/" .. DESPAWN_DIST)
+    if not npcData.fleePrintTimer then npcData.fleePrintTimer = 0 end
+    npcData.fleePrintTimer = npcData.fleePrintTimer + 1
+    if npcData.fleePrintTimer >= 60 then
+        npcData.fleePrintTimer = 0
+        print("[DTNPC-Flee] NPC " .. (npcData.name or "NPC") .. " is running away. Dist: " .. math.floor(dist) .. "/" .. DESPAWN_DIST)
     end
 
     -- 2. DETERMINE MOVEMENT VECTOR
@@ -87,33 +87,33 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
         end
         
         -- Store direction in case target vanishes/dies so we keep running
-        brain.lastFleeX = dx
-        brain.lastFleeY = dy
+        npcData.lastFleeX = dx
+        npcData.lastFleeY = dy
         hasDestination = true
-    elseif brain.lastFleeX then
+    elseif npcData.lastFleeX then
         -- Keep running in last known direction
-        dx = brain.lastFleeX
-        dy = brain.lastFleeY
+        dx = npcData.lastFleeX
+        dy = npcData.lastFleeY
         hasDestination = true
     else
         -- No target, no memory. Stand still.
         if not zombie:isUseless() then zombie:setUseless(true) end
-        brain.isMovingState = false
+        npcData.isMovingState = false
         zombie:setVariable("bMoving", false)
         zombie:setVariable("Speed", 0.0)
         return
     end
 
     -- 3. WAKE UP CALL (The Fix)
-    if not brain.isMovingState then brain.isMovingState = false end
+    if not npcData.isMovingState then npcData.isMovingState = false end
     
-    local wasMoving = brain.isMovingState
-    brain.isMovingState = hasDestination -- Fleeing is binary: we run or we don't.
+    local wasMoving = npcData.isMovingState
+    npcData.isMovingState = hasDestination -- Fleeing is binary: we run or we don't.
 
-    if brain.isMovingState and not wasMoving then
+    if npcData.isMovingState and not wasMoving then
         -- Trigger Attack logic for 1 tick to reset skeleton
         if DTNPCLogic.Behaviors["Attack"] then
-            DTNPCLogic.Behaviors["Attack"](zombie, brain, target, dist)
+            DTNPCLogic.Behaviors["Attack"](zombie, npcData, target, dist)
         end
         return -- Let engine process the animation update
     end
@@ -126,7 +126,7 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, brain, target, dist)
         zombie:setRunning(false)
     end
 
-    local speed = brain.runSpeed or DTNPC.DefaultRunSpeed
+    local speed = npcData.runSpeed or DTNPC.DefaultRunSpeed
     local nextX = zx + (dx * speed)
     local nextY = zy + (dy * speed)
     local z = zombie:getZ()

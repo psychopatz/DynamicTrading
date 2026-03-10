@@ -96,7 +96,7 @@ function DynamicTrading_Roster.GetSoulRegistry(uuid)
     return data.Souls[uuid]
 end
 
--- Fetch full brain data (Lazy Load)
+-- Fetch full npcData data (Lazy Load)
 function DynamicTrading_Roster.GetSoul(uuid)
     local soulKey = "DTSOUL_" .. uuid
     if ModData.exists(soulKey) then
@@ -108,14 +108,14 @@ function DynamicTrading_Roster.GetSoul(uuid)
     return nil
 end
 
-function DynamicTrading_Roster.SaveSoul(uuid, brain)
+function DynamicTrading_Roster.SaveSoul(uuid, npcData)
     local soulKey = "DTSOUL_" .. uuid
     if not ModData.exists(soulKey) then
-        ModData.add(soulKey, brain)
+        ModData.add(soulKey, npcData)
     else
         -- Direct assignment to ModData entry
         local entry = ModData.get(soulKey)
-        for k, v in pairs(brain) do entry[k] = v end
+        for k, v in pairs(npcData) do entry[k] = v end
     end
     -- ModData.transmit(soulKey) -- Disabled global broadcast
     
@@ -123,41 +123,41 @@ function DynamicTrading_Roster.SaveSoul(uuid, brain)
     local data = ModData.get(MOD_DATA_KEY)
     data.Souls[uuid] = {
         uuid = uuid,
-        name = brain.name or "Unknown",
-        factionID = brain.factionID,
-        archetypeID = brain.archetypeID,
-        homeCoords = brain.homeCoords,
-        workCoords = brain.workCoords or { x=0, y=0, z=0 },
-        lastX = brain.lastX,
-        lastY = brain.lastY,
-        lastZ = brain.lastZ,
-        health = brain.health or 1.0,
-        status = brain.status or "Resting",
-        returnTime = brain.returnTime,
-        returnStatus = brain.returnStatus,
-        master = brain.master,
-        isFemale = brain.isFemale,
-        portraitID = brain.portraitID
+        name = npcData.name or "Unknown",
+        factionID = npcData.factionID,
+        archetypeID = npcData.archetypeID,
+        homeCoords = npcData.homeCoords,
+        workCoords = npcData.workCoords or { x=0, y=0, z=0 },
+        lastX = npcData.lastX,
+        lastY = npcData.lastY,
+        lastZ = npcData.lastZ,
+        health = npcData.health or 1.0,
+        status = npcData.status or "Resting",
+        returnTime = npcData.returnTime,
+        returnStatus = npcData.returnStatus,
+        master = npcData.master,
+        isFemale = npcData.isFemale,
+        portraitID = npcData.portraitID
     }
 
     -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
 end
 
 function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)
-    -- Update full brain
-    local brain = DynamicTrading_Roster.GetSoul(uuid)
-    if brain then
+    -- Update full npcData
+    local npcData = DynamicTrading_Roster.GetSoul(uuid)
+    if npcData then
         -- If we are returning from "Away", reset their state to "Stay" to avoid flee-loop
-        if brain.status == "Away" and status ~= "Away" then
-            print("[DTNPC-Roster] Resetting state and master for " .. (brain.name or uuid) .. " on return.")
-            brain.state = "Stay"
-            brain.master = nil
-            brain.masterID = nil
+        if npcData.status == "Away" and status ~= "Away" then
+            print("[DTNPC-Roster] Resetting state and master for " .. (npcData.name or uuid) .. " on return.")
+            npcData.state = "Stay"
+            npcData.master = nil
+            npcData.masterID = nil
         end
 
-        brain.status = status
-        brain.returnTime = returnTime
-        brain.returnStatus = returnStatus
+        npcData.status = status
+        npcData.returnTime = returnTime
+        npcData.returnStatus = returnStatus
         local soulKey = "DTSOUL_" .. uuid
         -- ModData.transmit(soulKey) -- Disabled global broadcast
 
@@ -187,15 +187,15 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     -- Generate UUID
     local uuid = (DTNPCManager and DTNPCManager.GenerateUUID) and DTNPCManager.GenerateUUID() or string.format("soul_%d_%d", ZombRand(1000000), os.time())
     
-    -- Generate Brain (Visuals/Identity)
-    local brain = nil
+    -- Generate npcData (Visuals/Identity)
+    local npcData = nil
     if DTNPCGenerator and DTNPCGenerator.Generate then
         -- V2 path: full NPC generator with MVPs, wardrobe, portraits
-        brain = DTNPCGenerator.Generate({
+        npcData = DTNPCGenerator.Generate({
             occupation = archetypeID or "General"
         })
     else
-        -- V1 fallback: minimal brain (no V2 NPC generator available)
+        -- V1 fallback: minimal npcData (no V2 NPC generator available)
         local isFemale = (ZombRand(2) == 0)
         local name = "Unknown Trader"
         
@@ -211,7 +211,7 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
         local lookSeed = (DT_NPC_Wardrobe and DT_NPC_Wardrobe.RollLookSeed)
             and DT_NPC_Wardrobe.RollLookSeed() or (ZombRand(1000) + 1)
         
-        brain = {
+        npcData = {
             name = name,
             isFemale = isFemale,
             lookSeed = lookSeed,
@@ -226,17 +226,17 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
         }
     end
     
-    -- Merge Soul Metadata into Brain
-    brain.uuid = uuid
-    brain.factionID = factionID
-    brain.archetypeID = archetypeID
-    brain.homeCoords = homeCoords or { x=0, y=0, z=0 }
-    brain.workCoords = { x=0, y=0, z=0 }
-    brain.status = "Resting" -- Resting, Away, Trading, Working
-    brain.memory = {}
+    -- Merge Soul Metadata into npcData
+    npcData.uuid = uuid
+    npcData.factionID = factionID
+    npcData.archetypeID = archetypeID
+    npcData.homeCoords = homeCoords or { x=0, y=0, z=0 }
+    npcData.workCoords = { x=0, y=0, z=0 }
+    npcData.status = "Resting" -- Resting, Away, Trading, Working
+    npcData.memory = {}
     
-    -- Save full brain to individual key
-    DynamicTrading_Roster.SaveSoul(uuid, brain)
+    -- Save full npcData to individual key
+    DynamicTrading_Roster.SaveSoul(uuid, npcData)
     
     if not data.FactionMembers[factionID] then
         data.FactionMembers[factionID] = {}

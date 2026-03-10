@@ -59,9 +59,9 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     local modData = zombie:getModData()
     modData.IsDTNPC = true
     
-    local brain = existingBrain
+    local npcData = existingBrain
     
-    if not brain then
+    if not npcData then
         local genOptions = {
             masterName = player:getUsername(),
             masterID = player:getOnlineID(),
@@ -70,30 +70,30 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
             runSpeed = options.runSpeed
         }
         
-        brain = DTNPCGenerator.Generate(genOptions)
-        print("[DTNPC] Generated new brain for: " .. brain.name)
+        npcData = DTNPCGenerator.Generate(genOptions)
+        print("[DTNPC] Generated new npcData for: " .. npcData.name)
     else
-        if not brain.tasks then brain.tasks = {} end
-        if not brain.walkSpeed then brain.walkSpeed = DTNPC.DefaultWalkSpeed end
-        if not brain.runSpeed then brain.runSpeed = DTNPC.DefaultRunSpeed end
-        if not brain.visualID then brain.visualID = ZombRand(1000000) end
+        if not npcData.tasks then npcData.tasks = {} end
+        if not npcData.walkSpeed then npcData.walkSpeed = DTNPC.DefaultWalkSpeed end
+        if not npcData.runSpeed then npcData.runSpeed = DTNPC.DefaultRunSpeed end
+        if not npcData.visualID then npcData.visualID = ZombRand(1000000) end
         
-        brain.state = "Stay"
-        brain.isHostile = false
-        print("[DTNPC] Rehydrated brain for: " .. brain.name)
+        npcData.state = "Stay"
+        npcData.isHostile = false
+        print("[DTNPC] Rehydrated npcData for: " .. npcData.name)
     end
     
     -- Ensure UUID exists
-    if not brain.uuid then
-        brain.uuid = DTNPCManager.GenerateUUID()
+    if not npcData.uuid then
+        npcData.uuid = DTNPCManager.GenerateUUID()
     end
     
-    modData.DTNPC_UUID = brain.uuid
+    modData.DTNPC_UUID = npcData.uuid
 
-    DTNPC.AttachBrain(zombie, brain)
-    DTNPC.ApplyVisuals(zombie, brain)
+    DTNPC.AttachBrain(zombie, npcData)
+    DTNPC.ApplyVisuals(zombie, npcData)
     
-    modData.DTNPCVisualID = brain.visualID
+    modData.DTNPCVisualID = npcData.visualID
 
     zombie:setUseless(true) 
     zombie:DoZombieStats()   
@@ -102,12 +102,12 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     zombie:resetModelNextFrame()
 
     if DTNPCManager then
-        DTNPCManager.Register(zombie, brain)
+        DTNPCManager.Register(zombie, npcData)
     end
 
-    DTNPCServerCore.SyncToAllClients(zombie, brain)
+    DTNPCServerCore.SyncToAllClients(zombie, npcData)
 
-    print("[DTNPC] Spawned/Summoned: " .. brain.name .. " | UUID: " .. brain.uuid .. " | OutfitID: " .. outfitID)
+    print("[DTNPC] Spawned/Summoned: " .. npcData.name .. " | UUID: " .. npcData.uuid .. " | OutfitID: " .. outfitID)
     
-    return zombie, brain
+    return zombie, npcData
 end

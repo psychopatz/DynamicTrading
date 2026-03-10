@@ -77,7 +77,7 @@ end
 -- 3. BEHAVIOR LOGIC
 -- ==============================================================================
 
-DTNPCLogic.Behaviors["AttackRange"] = function(zombie, brain, target, dist)
+DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
 
     -- 1. Force safety
     if not zombie:isUseless() then
@@ -86,7 +86,7 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, brain, target, dist)
     end
 
     if not target or target:isDead() then
-        brain.state = "Stay"
+        npcData.state = "Stay"
         print("[DTNPC] Target dead. Standing down.")
         -- Reset anim
         zombie:setVariable("bMoving", false)
@@ -115,15 +115,15 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, brain, target, dist)
     end
 
     -- 4. Kiting Logic (Movement Decision)
-    if not brain.reactionTimer then brain.reactionTimer = 0 end
+    if not npcData.reactionTimer then npcData.reactionTimer = 0 end
 
     local moveDir = 0 -- 0=Stop, 1=Forward, -1=Backward
     local currentSpeed = 0
     
     if len < KITE_DIST_MIN then
         -- Too close! Back up.
-        brain.reactionTimer = brain.reactionTimer + 1
-        if brain.reactionTimer > REACTION_DELAY then
+        npcData.reactionTimer = npcData.reactionTimer + 1
+        if npcData.reactionTimer > REACTION_DELAY then
             moveDir = -1
             currentSpeed = SPEED_BCK
         else
@@ -132,12 +132,12 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, brain, target, dist)
         
     elseif len > KITE_DIST_MAX then
         -- Too far! Advance.
-        brain.reactionTimer = 0
+        npcData.reactionTimer = 0
         moveDir = 1
         currentSpeed = SPEED_FWD
     else
         -- Sweet spot. Stand ground and aim.
-        brain.reactionTimer = 0
+        npcData.reactionTimer = 0
         moveDir = 0
     end
 
@@ -167,11 +167,11 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, brain, target, dist)
     end
 
     -- 7. Firing Logic
-    if not brain.attackTimer then brain.attackTimer = 0 end
-    brain.attackTimer = brain.attackTimer + 1
+    if not npcData.attackTimer then npcData.attackTimer = 0 end
+    npcData.attackTimer = npcData.attackTimer + 1
 
-    if brain.attackTimer >= FIRE_RATE then
-        brain.attackTimer = 0 
+    if npcData.attackTimer >= FIRE_RATE then
+        npcData.attackTimer = 0 
         
         -- Use pcall to prevent crashes during combat calcs
         pcall(function()

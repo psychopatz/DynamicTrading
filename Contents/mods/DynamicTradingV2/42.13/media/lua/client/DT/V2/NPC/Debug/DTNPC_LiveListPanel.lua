@@ -1,15 +1,15 @@
 -- ==============================================================================
--- DTNPC_LiveListPanel.lua
+-- DTNPC_ActiveNearbyListPanel.lua
 -- Decoupled component for the "Live NPCs" view.
 -- ==============================================================================
 
-DTNPC_LiveListPanel = ISPanel:derive("DTNPC_LiveListPanel")
+DTNPC_ActiveNearbyListPanel = ISPanel:derive("DTNPC_ActiveNearbyListPanel")
 
-function DTNPC_LiveListPanel:initialise()
+function DTNPC_ActiveNearbyListPanel:initialise()
     ISPanel.initialise(self)
 end
 
-function DTNPC_LiveListPanel:createChildren()
+function DTNPC_ActiveNearbyListPanel:createChildren()
     self.npcList = ISScrollingListBox:new(0, 0, self.width, self.height)
     self.npcList:initialise()
     self.npcList:instantiate()
@@ -19,13 +19,13 @@ function DTNPC_LiveListPanel:createChildren()
     self:addChild(self.npcList)
 end
 
-function DTNPC_LiveListPanel:onSelectNPC(item)
+function DTNPC_ActiveNearbyListPanel:onSelectNPC(item)
     if self.parentWindow then
         self.parentWindow:onSelectNPC(item, self)
     end
 end
 
-function DTNPC_LiveListPanel:refresh()
+function DTNPC_ActiveNearbyListPanel:refresh()
     self.npcList:clear()
     
     local cell = getCell()
@@ -34,14 +34,14 @@ function DTNPC_LiveListPanel:refresh()
     local zombieList = cell:getZombieList()
     if not zombieList then return end
     
-    local liveCount = 0
+    local activeCount = 0
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
         if zombie then
             local modData = zombie:getModData()
-            if modData and modData.IsDTNPC and modData.DTNPCBrain then
+            local npcData = DTNPC.GetData(zombie)
+            if modData and modData.IsDTNPC and npcData then
                 local id = zombie:getPersistentOutfitID()
-                local brain = modData.DTNPCBrain
                 
                 -- Distance check
                 local player = getSpecificPlayer(0)
@@ -53,25 +53,25 @@ function DTNPC_LiveListPanel:refresh()
                     distText = string.format(" [%.0fm]", dist)
                 end
                 
-                local stateText = " [" .. (brain.state or "Idle") .. "]"
-                self.npcList:addItem(brain.name .. stateText .. distText, {id = id, brain = brain, zombie = zombie})
+                local stateText = " [" .. (npcData.state or "Idle") .. "]"
+                self.npcList:addItem(npcData.name .. stateText .. distText, {id = id, npcData = npcData, zombie = zombie})
                 
                 local item = self.npcList.items[#self.npcList.items]
                 local color = {r=1, g=1, b=1, a=1}
-                if brain.state == "Follow" then color = {r=0, g=0.8, b=1, a=1}
-                elseif brain.state == "Stay" or brain.state == "Guard" then color = {r=1, g=1, b=0, a=1}
-                elseif brain.isHostile then color = {r=1, g=0.2, b=0.2, a=1}
+                if npcData.state == "Follow" then color = {r=0, g=0.8, b=1, a=1}
+                elseif npcData.state == "Stay" or npcData.state == "Guard" then color = {r=1, g=1, b=0, a=1}
+                elseif npcData.isHostile then color = {r=1, g=0.2, b=0.2, a=1}
                 end
                 item.color = color
                 
-                liveCount = liveCount + 1
+                activeCount = activeCount + 1
             end
         end
     end
-    return liveCount
+    return activeCount
 end
 
-function DTNPC_LiveListPanel:new(x, y, width, height, parentWindow)
+function DTNPC_ActiveNearbyListPanel:new(x, y, width, height, parentWindow)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self

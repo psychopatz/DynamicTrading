@@ -3,10 +3,14 @@
 -- Dedicated context menu for NPC interactions (Production).
 -- ==============================================================================
 
-local function getBrain(zombie)
+local function getNPCData(zombie)
     if not zombie then return nil end
+    if DTNPC and DTNPC.GetData then
+        return DTNPC.GetData(zombie)
+    end
+    -- Fallback for safety
     local modData = zombie:getModData()
-    return modData and modData.DTNPCBrain
+    return modData and (modData.DTNPC_Data or modData.DTNPCBrain)
 end
 
 local function calculateDistance(obj1, obj2)
@@ -35,8 +39,8 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
         for i = 0, movingObjects:size() - 1 do
             local obj = movingObjects:get(i)
             if instanceof(obj, "IsoZombie") then
-                local brain = getBrain(obj)
-                if brain then
+                local npcData = getNPCData(obj)
+                if npcData then
                     local id = obj:getPersistentOutfitID() or obj:getID()
                     if not processedIDs[id] then
                         -- Check distance (e.g., within 3 meters)
@@ -63,8 +67,8 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
 
     if #npcList > 0 then
         for _, npc in ipairs(npcList) do
-            local brain = getBrain(npc)
-            local name = brain and brain.name or "Survivor"
+            local npcData = getNPCData(npc)
+            local name = npcData and npcData.name or "Survivor"
             
             context:addOption("Talk to " .. name, npc, function(n)
                 local id = n:getPersistentOutfitID() or n:getID()

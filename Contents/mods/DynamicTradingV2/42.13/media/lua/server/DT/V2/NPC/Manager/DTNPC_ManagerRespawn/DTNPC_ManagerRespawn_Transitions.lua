@@ -81,11 +81,11 @@ function DTNPCManager.ProcessAwayTransitions()
                         print("[DTNPC] NPC " .. (registry.name or uuid) .. " SUCCESS! Trading spot found in " .. town .. " at " .. targetBuilding.cx .. "," .. targetBuilding.cy)
                         
                         -- Update Roster Soul with new temporary coordinates
-                        local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
-                        if fullBrain then
-                            fullBrain.lastX = targetBuilding.cx
-                            fullBrain.lastY = targetBuilding.cy
-                            fullBrain.lastZ = 0
+                        local npcData = DynamicTrading_Roster.GetSoul(uuid)
+                        if npcData then
+                            npcData.lastX = targetBuilding.cx
+                            npcData.lastY = targetBuilding.cy
+                            npcData.lastZ = 0
                             
                             -- Set Return Time for Trading Session
                             local stayHours = SandboxVars.DynamicTrading.NPCTradingStayHours or 4.0
@@ -93,7 +93,7 @@ function DTNPCManager.ProcessAwayTransitions()
                             newReturnStatus = "Away" -- Walk back home after trading
                             
                             print("[DTNPC] Session duration: " .. stayHours .. "h. Return Time: " .. newReturnTime)
-                            DynamicTrading_Roster.SaveSoul(uuid, fullBrain)
+                            DynamicTrading_Roster.SaveSoul(uuid, npcData)
                         end
                     else
                         print("[DTNPC] WARNING: No buildings found for town " .. town .. ". Returning NPC to base.")
@@ -102,28 +102,28 @@ function DTNPCManager.ProcessAwayTransitions()
                 elseif nextStatus == "Resting" then
                     print("[DTNPC] NPC " .. (registry.name or uuid) .. " transitioning to Home (Resting).")
                     -- Returning Home from Away
-                    local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
-                    if fullBrain and fullBrain.homeCoords then
-                        fullBrain.lastX = fullBrain.homeCoords.x
-                        fullBrain.lastY = fullBrain.homeCoords.y
-                        fullBrain.lastZ = fullBrain.homeCoords.z or 0
+                    local npcData = DynamicTrading_Roster.GetSoul(uuid)
+                    if npcData and npcData.homeCoords then
+                        npcData.lastX = npcData.homeCoords.x
+                        npcData.lastY = npcData.homeCoords.y
+                        npcData.lastZ = npcData.homeCoords.z or 0
                         
                         -- Reset transition info
                         newReturnTime = 0
                         newReturnStatus = nil
                         
-                        DynamicTrading_Roster.SaveSoul(uuid, fullBrain)
+                        DynamicTrading_Roster.SaveSoul(uuid, npcData)
                     end
                 elseif nextStatus == "Away" then
                     print("[DTNPC] NPC " .. (registry.name or uuid) .. " mission ended. Transitioning to Away (Walking Home).")
                     -- Return walk initiated (Trading -> Away -> Resting)
-                    local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
-                    if fullBrain then
+                    local npcData = DynamicTrading_Roster.GetSoul(uuid)
+                    if npcData then
                         local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
                         newReturnTime = currentHours + walkHours
                         newReturnStatus = "Resting"
                         
-                        DynamicTrading_Roster.SaveSoul(uuid, fullBrain)
+                        DynamicTrading_Roster.SaveSoul(uuid, npcData)
                     end
                 end
 

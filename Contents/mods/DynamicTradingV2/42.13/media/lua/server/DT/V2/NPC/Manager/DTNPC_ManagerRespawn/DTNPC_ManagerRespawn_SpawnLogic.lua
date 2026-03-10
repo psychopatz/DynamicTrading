@@ -11,14 +11,14 @@ if isClient() and not isServer() then return end
 
 local RESPAWN_RANGE = 120 -- Maximum distance for respawn + buffer zone
 
-function DTNPCManager.CheckForRespawn(brain, uuid)
-    if not brain or not brain.lastX or not brain.lastY then return end
+function DTNPCManager.CheckForRespawn(npcData, uuid)
+    if not npcData or not npcData.lastX or not npcData.lastY then return end
     
     local players = DTNPCManager.GetActivePlayers()
     for _, player in ipairs(players) do
-        local dx = player:getX() - brain.lastX
-        local dy = player:getY() - brain.lastY
-        local dz = player:getZ() - (brain.lastZ or 0)
+        local dx = player:getX() - npcData.lastX
+        local dy = player:getY() - npcData.lastY
+        local dz = player:getZ() - (npcData.lastZ or 0)
         
         local dist = math.sqrt(dx*dx + dy*dy)
         if math.abs(dz) <= 1 and dist < RESPAWN_RANGE then
@@ -26,8 +26,8 @@ function DTNPCManager.CheckForRespawn(brain, uuid)
             local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
             
             if not zombie then
-                print("[DTNPC] Respawning NPC: " .. (brain.name or uuid) .. " near player " .. player:getUsername() .. " (dist: " .. string.format("%.1f", dist) .. ")")
-                DTNPCServerCore.RespawnNPC(brain, uuid)
+                print("[DTNPC] Respawning NPC: " .. (npcData.name or uuid) .. " near player " .. player:getUsername() .. " (dist: " .. string.format("%.1f", dist) .. ")")
+                DTNPCServerCore.RespawnNPC(npcData, uuid)
                 return true
             end
         end
@@ -110,14 +110,14 @@ function DTNPCManager.CheckRosterSpawns()
                                 if math.abs(dz) <= 1 then
                                     hashSpawnAttempts = hashSpawnAttempts + 1
                                     
-                                    local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
-                                    if fullBrain then
-                                        fullBrain.lastX = targetX
-                                        fullBrain.lastY = targetY
-                                        fullBrain.lastZ = targetZ
-                                        fullBrain.status = status
+                                    local npcData = DynamicTrading_Roster.GetSoul(uuid)
+                                    if npcData then
+                                        npcData.lastX = targetX
+                                        npcData.lastY = targetY
+                                        npcData.lastZ = targetZ
+                                        npcData.status = status
                                         
-                                        local zombie = DTNPCServerCore.RespawnNPC(fullBrain, uuid)
+                                        local zombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
                                         if zombie then
                                             registry.spawnRetryTime = nil
                                             
@@ -172,14 +172,14 @@ function DTNPCManager.CheckRosterSpawns()
                                 if math.abs(dz) <= 1 and dist < RESPAWN_RANGE then
                                     fallbackSpawnAttempts = fallbackSpawnAttempts + 1
                                     
-                                    local fullBrain = DynamicTrading_Roster.GetSoul(uuid)
-                                    if fullBrain then
-                                        fullBrain.lastX = npcX
-                                        fullBrain.lastY = npcY
-                                        fullBrain.lastZ = npcZ
-                                        fullBrain.status = status
+                                    local npcData = DynamicTrading_Roster.GetSoul(uuid)
+                                    if npcData then
+                                        npcData.lastX = npcX
+                                        npcData.lastY = npcY
+                                        npcData.lastZ = npcZ
+                                        npcData.status = status
                                         
-                                        local zombie = DTNPCServerCore.RespawnNPC(fullBrain, uuid)
+                                        local zombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
                                         if zombie then
                                             registry.spawnRetryTime = nil
                                             DTNPC_DistanceFrequency.InitializeNPC(uuid)

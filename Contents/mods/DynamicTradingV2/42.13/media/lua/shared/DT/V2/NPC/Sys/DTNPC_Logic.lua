@@ -14,7 +14,6 @@ local ANCHOR_SNAP_COOLDOWN_HOURS = 2 / 3600
 local DTNPC_IDLE_STATE_COUNT = 10
 local DTNPC_IDLE_CYCLE_TICKS = 240
 
--- Forward declarations used by ProcessNPC.
 local isIdleCycleState
 local resetIdleCycle
 local updateIdleCycle
@@ -86,8 +85,8 @@ Events.OnTick.Add(DTNPCLogic.OnTick)
 -- ==============================================================================
 
 function DTNPCLogic.ProcessNPC(zombie)
-    local brain = DTNPC.GetBrain(zombie)
-    if not brain then return end
+    local npcData = DTNPC.GetData(zombie)
+    if not npcData then return end
 
     -- Suppress zombie sounds (shouting, groaning, etc.)
     suppressSound(zombie)
@@ -98,8 +97,8 @@ function DTNPCLogic.ProcessNPC(zombie)
         zombie:setVariable("DTIdleState", "0")
     end
 
-    local state = brain.state or "Stay"
-    updateIdleCycle(zombie, brain, state)
+    local state = npcData.state or "Stay"
+    updateIdleCycle(zombie, npcData, state)
     
     -- AGGRESSIVE WANDER PREVENTION
     -- Lock down zombies that should be stationary
@@ -108,78 +107,78 @@ function DTNPCLogic.ProcessNPC(zombie)
         zombie:setTarget(nil)
         
         -- Store anchor position if not set
-        if not brain.anchorX then
-            brain.anchorX = zombie:getX()
-            brain.anchorY = zombie:getY()
-            brain.anchorZ = zombie:getZ()
+        if not npcData.anchorX then
+            npcData.anchorX = zombie:getX()
+            npcData.anchorY = zombie:getY()
+            npcData.anchorZ = zombie:getZ()
             if DTNPC_DEBUG_ANCHOR then
-                print("[DTNPC] Set anchor for " .. (brain.name or "NPC") .. " at " .. math.floor(brain.anchorX) .. "," .. math.floor(brain.anchorY))
+                print("[DTNPC] Set anchor for " .. (npcData.name or "NPC") .. " at " .. math.floor(npcData.anchorX) .. "," .. math.floor(npcData.anchorY))
             end
         end
         
         -- Check if they've drifted from anchor
-        local dx = math.abs(zombie:getX() - brain.anchorX)
-        local dy = math.abs(zombie:getY() - brain.anchorY)
+        local dx = math.abs(zombie:getX() - npcData.anchorX)
+        local dy = math.abs(zombie:getY() - npcData.anchorY)
         local nowHours = getGameTime() and getGameTime():getWorldAgeHours() or 0
-        local lastSnap = brain.anchorLastSnapTime or 0
+        local lastSnap = npcData.anchorLastSnapTime or 0
         
         if (dx > ANCHOR_DRIFT_TOLERANCE or dy > ANCHOR_DRIFT_TOLERANCE)
             and ((nowHours - lastSnap) >= ANCHOR_SNAP_COOLDOWN_HOURS) then
             -- Snap back to anchor
             if DTNPC_DEBUG_ANCHOR then
-                print("[DTNPC] NPC " .. (brain.name or "Unknown") .. " drifted from anchor. Snapping back.")
+                print("[DTNPC] NPC " .. (npcData.name or "Unknown") .. " drifted from anchor. Snapping back.")
             end
-            zombie:setX(brain.anchorX)
-            zombie:setY(brain.anchorY)
-            zombie:setZ(brain.anchorZ)
-            brain.anchorLastSnapTime = nowHours
+            zombie:setX(npcData.anchorX)
+            zombie:setY(npcData.anchorY)
+            zombie:setZ(npcData.anchorZ)
+            npcData.anchorLastSnapTime = nowHours
         end
     else
         -- Clear anchor when moving
-        brain.anchorX = nil
-        brain.anchorY = nil
-        brain.anchorZ = nil
-        brain.anchorLastSnapTime = nil
+        npcData.anchorX = nil
+        npcData.anchorY = nil
+        npcData.anchorZ = nil
+        npcData.anchorLastSnapTime = nil
     end
     
     -- Track health for betrayal detection (ignores pushes/non-damaging hits)
     local currentHealth = zombie:getHealth()
-    if not brain.lastHealth then brain.lastHealth = currentHealth end
-    local wasDamaged = currentHealth < brain.lastHealth
-    brain.lastHealth = currentHealth
+    if not npcData.lastHealth then npcData.lastHealth = currentHealth end
+    local wasDamaged = currentHealth < npcData.lastHealth
+    npcData.lastHealth = currentHealth
 
     -- HIGH SPEED BEHAVIORS (Every Frame)
     if state == "GoTo" or state == "Flee" or state == "AttackRange" or state == "Follow" then
-        DTNPCLogic.ExecuteBehavior(zombie, brain, state, wasDamaged)
+        DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
         return
     end
 
     -- THROTTLED BEHAVIORS (Every 10 ticks)
-    if not brain.tickTimer then brain.tickTimer = 0 end
-    brain.tickTimer = brain.tickTimer + 1
+    if not npcData.tickTimer then npcData.tickTimer = 0 end
+    npcData.tickTimer = npcData.tickTimer + 1
     
-    if brain.tickTimer >= 10 then
-        brain.tickTimer = 0
-        DTNPCLogic.ExecuteBehavior(zombie, brain, state, wasDamaged)
+    if npcData.tickTimer >= 10 then
+        npcData.tickTimer = 0
+        DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
     end
 end
 
-function DTNPCLogic.ExecuteBehavior(zombie, brain, state, wasDamaged)
+function DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
     local master, dist = DTNPCLogic.GetClosestTarget(zombie)
 
-    DTNPCLogic.CheckForCombatInitiation(zombie, brain, master, wasDamaged)
+    DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged)
     
-    if brain.state ~= state then
-        state = brain.state
+    if npcData.state ~= state then
+        state = npcData.state
     end
 
     local behaviorFunc = DTNPCLogic.Behaviors[state]
 
     if behaviorFunc then
-        behaviorFunc(zombie, brain, master, dist)
+        behaviorFunc(zombie, npcData, master, dist)
     else
         if DTNPCLogic.Behaviors["Stay"] then
-            DTNPCLogic.Behaviors["Stay"](zombie, brain, master, dist)
+            DTNPCLogic.Behaviors["Stay"](zombie, npcData, master, dist)
         end
     end
 end
@@ -189,58 +188,58 @@ end
 -- ==============================================================================
 
 function DTNPCLogic.GetClosestTarget(zombie)
-    local brain = DTNPC.GetBrain(zombie)
-    if not brain then return nil, 9999 end
+    local npcData = DTNPC.GetData(zombie)
+    if not npcData then return nil, 9999 end
 
     -- 1. Hostile Targeting
-    if brain.isHostile then
+    if npcData.isHostile then
         local player = zombie:getTarget()
         
         if player and instanceof(player, "IsoPlayer") then
             return player, calculateDistance(zombie, player)
         end
         
-        if brain.masterID then
+        if npcData.masterID then
             local onlinePlayers = getOnlinePlayers()
             if onlinePlayers then
                 for i = 0, onlinePlayers:size() - 1 do
                     local p = onlinePlayers:get(i)
-                    if p and p:getOnlineID() == brain.masterID then
+                    if p and p:getOnlineID() == npcData.masterID then
                          return p, calculateDistance(zombie, p)
                     end
                 end
             end
             local p = getSpecificPlayer(0)
-            if p and p:getUsername() == brain.master then
+            if p and p:getUsername() == npcData.master then
                  return p, calculateDistance(zombie, p)
             end
         end
     end
 
     -- 2. Master Targeting (Friendly)
-    if brain.masterID or brain.master then
+    if npcData.masterID or npcData.master then
         local onlinePlayers = getOnlinePlayers()
         if onlinePlayers then
             for i = 0, onlinePlayers:size() - 1 do
                 local p = onlinePlayers:get(i)
-                if p and ((brain.masterID and p:getOnlineID() == brain.masterID) or (brain.master and p:getUsername() == brain.master)) then
+                if p and ((npcData.masterID and p:getOnlineID() == npcData.masterID) or (npcData.master and p:getUsername() == npcData.master)) then
                     return p, calculateDistance(zombie, p)
                 end
             end
         end
         
         local p = getSpecificPlayer(0)
-        if p and p:getUsername() == brain.master then
+        if p and p:getUsername() == npcData.master then
              return p, calculateDistance(zombie, p)
         end
         
-        -- print("[DTNPC-Logic] Master not found for: " .. (brain.name or "NPC") .. " (Master: " .. tostring(brain.master) .. ")")
+        -- print("[DTNPC-Logic] Master not found for: " .. (npcData.name or "NPC") .. " (Master: " .. tostring(npcData.master) .. ")")
     end
 
     return nil, 9999
 end
 
-function DTNPCLogic.CheckForCombatInitiation(zombie, brain, master, wasDamaged)
+function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged)
     local attacker = zombie:getAttackedBy()
     
     -- Only initiate combat if damaged by a PLAYER (ignores pushes)
@@ -248,13 +247,13 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, brain, master, wasDamaged)
         local isMaster = (master and attacker == master)
         
         -- If master betrayed us OR any other player attacked us
-        if isMaster or not brain.isHostile then
-            brain.state = "AttackRange" 
-            brain.isHostile = true
-            brain.tasks = {}
+        if isMaster or not npcData.isHostile then
+            npcData.state = "AttackRange" 
+            npcData.isHostile = true
+            npcData.tasks = {}
             
             local attackerName = attacker:getUsername() or "Unknown Player"
-            print("[DTNPC] Combat Initiated! " .. brain.name .. " is attacking " .. attackerName)
+            print("[DTNPC] Combat Initiated! " .. npcData.name .. " is attacking " .. attackerName)
             
             zombie:setTarget(attacker)
             zombie:setAttackedBy(nil)
@@ -266,31 +265,31 @@ isIdleCycleState = function(state)
     return state == "Stay" or state == "Guard" or state == "Trading"
 end
 
-resetIdleCycle = function(zombie, brain)
-    brain.idleCycleCounter = 0
-    brain.idleCycleIndex = 0
+resetIdleCycle = function(zombie, npcData)
+    npcData.idleCycleCounter = 0
+    npcData.idleCycleIndex = 0
     zombie:setVariable("DTIdleState", "0")
 end
 
-updateIdleCycle = function(zombie, brain, state)
+updateIdleCycle = function(zombie, npcData, state)
     if not isIdleCycleState(state) then
-        resetIdleCycle(zombie, brain)
+        resetIdleCycle(zombie, npcData)
         return
     end
 
-    if brain.idleCycleIndex == nil then brain.idleCycleIndex = 0 end
-    if not brain.idleCycleCounter then brain.idleCycleCounter = 0 end
+    if npcData.idleCycleIndex == nil then npcData.idleCycleIndex = 0 end
+    if not npcData.idleCycleCounter then npcData.idleCycleCounter = 0 end
 
-    local moving = zombie:isMoving() or (brain.isMovingState == true)
+    local moving = zombie:isMoving() or (npcData.isMovingState == true)
     if moving then
-        resetIdleCycle(zombie, brain)
+        resetIdleCycle(zombie, npcData)
         return
     end
 
-    brain.idleCycleCounter = brain.idleCycleCounter + 1
-    if brain.idleCycleCounter >= DTNPC_IDLE_CYCLE_TICKS then
-        brain.idleCycleCounter = 0
-        brain.idleCycleIndex = (brain.idleCycleIndex + 1) % DTNPC_IDLE_STATE_COUNT
-        zombie:setVariable("DTIdleState", tostring(brain.idleCycleIndex))
+    npcData.idleCycleCounter = npcData.idleCycleCounter + 1
+    if npcData.idleCycleCounter >= DTNPC_IDLE_CYCLE_TICKS then
+        npcData.idleCycleCounter = 0
+        npcData.idleCycleIndex = (npcData.idleCycleIndex + 1) % DTNPC_IDLE_STATE_COUNT
+        zombie:setVariable("DTIdleState", tostring(npcData.idleCycleIndex))
     end
 end

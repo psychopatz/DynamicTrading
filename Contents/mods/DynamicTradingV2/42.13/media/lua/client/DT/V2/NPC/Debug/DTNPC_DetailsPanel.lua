@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- DTNPC_DetailsPanel.lua
--- Decoupled component for viewing NPC brain data and zombie methods.
+-- Decoupled component for viewing NPC npcData data and zombie methods.
 -- ==============================================================================
 
 DTNPC_DetailsPanel = ISPanel:derive("DTNPC_DetailsPanel")
@@ -22,7 +22,7 @@ function DTNPC_DetailsPanel:setData(item)
     self.propertyList:clear()
     if not item then return end
     
-    local brain = item.brain
+    local npcData = item.npcData
     local id = item.id
     local zombie = item.zombie
     
@@ -42,16 +42,16 @@ function DTNPC_DetailsPanel:setData(item)
 
     -- 1. IDENTIFICATION
     addHeader("IDENTIFICATION", {r=0, g=0.8, b=1, a=1})
-    addProp("Name", brain.name, {r=1, g=1, b=1, a=1})
+    addProp("Name", npcData.name, {r=1, g=1, b=1, a=1})
     addProp("Outfit ID", id, {r=0.6, g=0.6, b=0.6, a=1})
-    addProp("Brain ID", brain.brainID or "N/A", {r=0.4, g=0.9, b=0.4, a=1})
+    addProp("Data ID", npcData.npcDataID or "N/A", {r=0.4, g=0.9, b=0.4, a=1})
     
     -- 2. STATE
     addHeader("STATE & POSITION", {r=1, g=0.9, b=0, a=1})
-    addProp("State", brain.state, {r=1, g=0.8, b=0.2, a=1})
-    addProp("Hostile", brain.isHostile, brain.isHostile and {r=1, g=0.2, b=0.2, a=1} or {r=0.2, g=1, b=0.2, a=1})
-    addProp("Master", brain.master or "None", {r=0.8, g=0.8, b=1, a=1})
-    addProp("Last Pos", (brain.lastX or "?") .. "," .. (brain.lastY or "?") .. "," .. (brain.lastZ or "?"), {r=0, g=1, b=1, a=1})
+    addProp("State", npcData.state, {r=1, g=0.8, b=0.2, a=1})
+    addProp("Hostile", npcData.isHostile, npcData.isHostile and {r=1, g=0.2, b=0.2, a=1} or {r=0.2, g=1, b=0.2, a=1})
+    addProp("Master", npcData.master or "None", {r=0.8, g=0.8, b=1, a=1})
+    addProp("Last Pos", (npcData.lastX or "?") .. "," .. (npcData.lastY or "?") .. "," .. (npcData.lastZ or "?"), {r=0, g=1, b=1, a=1})
 
     -- 3. ZOMBIE DATA (LIVE)
     if zombie then
@@ -68,14 +68,14 @@ function DTNPC_DetailsPanel:setData(item)
     end
 
     -- 4. OUTFIT / LOOKS
-    local debugOutfit = brain.outfit
+    local debugOutfit = npcData.outfit
     local mappedLookIndex = nil
     if (not debugOutfit or #debugOutfit == 0) and DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetOutfitBySeed then
-        debugOutfit, mappedLookIndex = DT_NPC_Wardrobe.GetOutfitBySeed(brain.archetypeID or "General", brain.isFemale, brain.lookSeed or 1)
+        debugOutfit, mappedLookIndex = DT_NPC_Wardrobe.GetOutfitBySeed(npcData.archetypeID or "General", npcData.isFemale, npcData.lookSeed or 1)
     end
 
-    if brain.lookSeed then
-        addProp("Look Seed", brain.lookSeed, {r=0.7, g=0.9, b=1, a=1})
+    if npcData.lookSeed then
+        addProp("Look Seed", npcData.lookSeed, {r=0.7, g=0.9, b=1, a=1})
     end
     if mappedLookIndex then
         addProp("Look Index", mappedLookIndex, {r=0.7, g=0.9, b=1, a=1})
@@ -89,21 +89,21 @@ function DTNPC_DetailsPanel:setData(item)
     end
 
     -- 5. TASKS
-    if brain.tasks and #brain.tasks > 0 then
+    if npcData.tasks and #npcData.tasks > 0 then
         addHeader("ACTIVE TASKS", {r=1, g=0.5, b=1, a=1})
-        for i, t in ipairs(brain.tasks) do
+        for i, t in ipairs(npcData.tasks) do
             addProp("  GoTo", (t.x or "?") .. "," .. (t.y or "?") .. "," .. (t.z or "?"), {r=0.9, g=0.7, b=1, a=1})
         end
     end
 
-    -- 6. RAW BRAIN
+    -- 6. RAW DATA
     addHeader("RAW DATA DUMP", {r=0.5, g=0.5, b=0.5, a=1})
     local keys = {}
-    for k in pairs(brain) do table.insert(keys, k) end
+    for k in pairs(npcData) do table.insert(keys, k) end
     table.sort(keys)
     for _, k in ipairs(keys) do
-        if type(brain[k]) ~= "table" then
-            addProp(k, brain[k], {r=0.7, g=0.7, b=0.7, a=1})
+        if type(npcData[k]) ~= "table" then
+            addProp(k, npcData[k], {r=0.7, g=0.7, b=0.7, a=1})
         end
     end
 end

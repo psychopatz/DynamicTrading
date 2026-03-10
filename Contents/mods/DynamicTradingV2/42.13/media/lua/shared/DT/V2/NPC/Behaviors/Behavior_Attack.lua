@@ -7,7 +7,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 
-DTNPCLogic.Behaviors["Attack"] = function(zombie, brain, target, dist)
+DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     
     if zombie:isUseless() then
         zombie:setUseless(false)

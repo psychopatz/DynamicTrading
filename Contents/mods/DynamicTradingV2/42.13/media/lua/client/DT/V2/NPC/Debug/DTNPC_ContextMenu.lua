@@ -13,16 +13,16 @@ require "DT/V2/NPC/Debug/DTNPC_Debugger"
 -- 1. HELPER FUNCTIONS
 -- ==============================================================================
 
-local function getBrain(zombie)
+local function getNPCData(zombie)
     if not zombie then return nil end
     
-    if DTNPCClient and DTNPCClient.GetBrain then
-        local brain = DTNPCClient.GetBrain(zombie)
-        if brain then return brain end
+    if DTNPCClient and DTNPCClient.GetNPCData then
+        local npcData = DTNPCClient.GetNPCData(zombie)
+        if npcData then return npcData end
     end
     
-    if DTNPC and DTNPC.GetBrain then
-        return DTNPC.GetBrain(zombie)
+    if DTNPC and DTNPC.GetData then
+        return DTNPC.GetData(zombie)
     end
     
     return nil
@@ -58,24 +58,24 @@ local function onOrder(npc, state, player, returnStatus)
 
     sendClientCommand(player, "DTNPC", "Order", args)
     
-    local brain = getBrain(npc)
-    if brain then
-        brain.state = state
+    local npcData = getNPCData(npc)
+    if npcData then
+        npcData.state = state
         if state == "Follow" then
-            brain.master = player:getUsername()
-            brain.masterID = isClient() and player:getOnlineID() or 0
-            brain.tasks = {}
+            npcData.master = player:getUsername()
+            npcData.masterID = isClient() and player:getOnlineID() or 0
+            npcData.tasks = {}
         elseif state == "GoTo" then
-            brain.tasks = {{x = args.targetX, y = args.targetY, z = args.targetZ}}
+            npcData.tasks = {{x = args.targetX, y = args.targetY, z = args.targetZ}}
         else
-            brain.tasks = {}
+            npcData.tasks = {}
         end
         
-        if DTNPC and DTNPC.AttachBrain then
-             DTNPC.AttachBrain(npc, brain)
+        if DTNPC and DTNPC.AttachData then
+             DTNPC.AttachData(npc, npcData)
         end
         
-        player:Say("Order (" .. brain.name .. "): " .. state)
+        player:Say("Order (" .. npcData.name .. "): " .. state)
     end
 end
 
@@ -111,13 +111,13 @@ local function onCoordInput(target, button, player, npc)
             print("[DTNPC] Sending GoTo command with coords: " .. tx .. "," .. ty .. "," .. tz)
             sendClientCommand(player, "DTNPC", "Order", args)
             
-            -- Update local brain immediately
-            local brain = getBrain(npc)
-            if brain then
-                brain.state = "GoTo"
-                brain.tasks = {{x = tx, y = ty, z = tz}}
-                if DTNPC and DTNPC.AttachBrain then
-                    DTNPC.AttachBrain(npc, brain)
+            -- Update local npcData immediately
+            local npcData = getNPCData(npc)
+            if npcData then
+                npcData.state = "GoTo"
+                npcData.tasks = {{x = tx, y = ty, z = tz}}
+                if DTNPC and DTNPC.AttachData then
+                    DTNPC.AttachData(npc, npcData)
                 end
             end
             
@@ -145,9 +145,9 @@ end
 local function onMarkNPC(player, npc)
     if not npc or not player then return end
     
-    local brain = getBrain(npc)
-    if not brain then
-        player:Say("Cannot mark: No brain data")
+    local npcData = getNPCData(npc)
+    if not npcData then
+        player:Say("Cannot mark: No NPC data")
         return
     end
     
@@ -163,23 +163,23 @@ local function onMarkNPC(player, npc)
     local color = {r=0.2, g=1, b=0.2}
     local icon = "friend.png"
     
-    if brain.state == "Follow" then
+    if npcData.state == "Follow" then
         color = {r=0.2, g=0.8, b=1}
         icon = "crew.png"
-    elseif brain.state == "Stay" or brain.state == "Guard" then
+    elseif npcData.state == "Stay" or npcData.state == "Guard" then
         color = {r=1, g=1, b=0.2}
         icon = "defend.png"
-    elseif brain.state == "GoTo" then
+    elseif npcData.state == "GoTo" then
         color = {r=1, g=0.5, b=0.2}
         icon = "loot.png"
-    elseif brain.isHostile then
+    elseif npcData.isHostile then
         color = {r=1, g=0.2, b=0.2}
         icon = "raid.png"
     end
     
     local distance = calculateDistance(player, npc)
     local distText = string.format("%.0fm away", distance)
-    local description = brain.name .. " - " .. (brain.state or "Idle") .. " - " .. distText
+    local description = npcData.name .. " - " .. (npcData.state or "Idle") .. " - " .. distText
     
     EventMarkerHandler.set(
         "npc_" .. id,
@@ -191,7 +191,7 @@ local function onMarkNPC(player, npc)
         description
     )
     
-    player:Say("Marked NPC: " .. brain.name)
+    player:Say("Marked NPC: " .. npcData.name)
 end
 
 local function onMarkAllNPCs(player)
@@ -204,38 +204,38 @@ local function onMarkAllNPCs(player)
     
     if DTNPCClient and DTNPCClient.NPCCache then
         for id, entry in pairs(DTNPCClient.NPCCache) do
-            local brain = entry.brain
-            if brain and brain.lastX and brain.lastY then
+            local npcData = entry.npcData
+            if npcData and npcData.lastX and npcData.lastY then
                 local color = {r=0.2, g=1, b=0.2}
                 local icon = "friend.png"
                 
-                if brain.state == "Follow" then
+                if npcData.state == "Follow" then
                     color = {r=0.2, g=0.8, b=1}
                     icon = "crew.png"
-                elseif brain.state == "Stay" or brain.state == "Guard" then
+                elseif npcData.state == "Stay" or npcData.state == "Guard" then
                     color = {r=1, g=1, b=0.2}
                     icon = "defend.png"
-                elseif brain.state == "GoTo" then
+                elseif npcData.state == "GoTo" then
                     color = {r=1, g=0.5, b=0.2}
                     icon = "loot.png"
-                elseif brain.isHostile then
+                elseif npcData.isHostile then
                     color = {r=1, g=0.2, b=0.2}
                     icon = "raid.png"
                 end
                 
-                local dx = player:getX() - brain.lastX
-                local dy = player:getY() - brain.lastY
+                local dx = player:getX() - npcData.lastX
+                local dy = player:getY() - npcData.lastY
                 local distance = math.sqrt(dx * dx + dy * dy)
                 local distText = string.format("%.0fm away", distance)
                 
-                local description = brain.name .. " - " .. (brain.state or "Idle") .. " - " .. distText
+                local description = npcData.name .. " - " .. (npcData.state or "Idle") .. " - " .. distText
                 
                 EventMarkerHandler.set(
                     "npc_" .. id,
                     icon,
                     1800,
-                    brain.lastX,
-                    brain.lastY,
+                    npcData.lastX,
+                    npcData.lastY,
                     color,
                     description
                 )
@@ -288,8 +288,8 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
         for i = 0, movingObjects:size() - 1 do
             local obj = movingObjects:get(i)
             if instanceof(obj, "IsoZombie") then
-                local brain = getBrain(obj)
-                if brain then
+                local npcData = getNPCData(obj)
+                if npcData then
                     local id = obj:getPersistentOutfitID() or obj:getID()
                     if not processedIDs[id] then
                         table.insert(npcList, obj)
@@ -316,11 +316,11 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
 
     if #npcList > 0 then
         for _, npc in ipairs(npcList) do
-            local brain = getBrain(npc)
-            if not brain then brain = { name = "Unknown", state = "Unknown" } end
-            local status = " [" .. (brain.state or "Idle") .. "]"
+            local npcData = getNPCData(npc)
+            if not npcData then npcData = { name = "Unknown", state = "Unknown" } end
+            local status = " [" .. (npcData.state or "Idle") .. "]"
             
-            local option = context:addOption("NPC: " .. brain.name .. status)
+            local option = context:addOption("NPC: " .. npcData.name .. status)
             local subMenu = context:getNew(context)
             context:addSubMenu(option, subMenu)
 

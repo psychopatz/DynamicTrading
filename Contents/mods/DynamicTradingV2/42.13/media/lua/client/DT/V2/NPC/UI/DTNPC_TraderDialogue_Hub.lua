@@ -16,15 +16,15 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
         -- Open if not already open
         if DT_ConversationUI then
             -- We create a "fake" trader object from the NPC for the UI
-            local brain = npc:getModData().DTNPCBrain
+            local npcData = DTNPC.GetData(npc)
             local traderProxy = {
-                id = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID(),
-                name = brain and brain.name or "Survivor",
-                archetype = brain and brain.archetypeID or brain.occupation or "Survivor",
+                id = (npcData and npcData.uuid) or npc:getPersistentOutfitID() or npc:getID(),
+                name = npcData and npcData.name or "Survivor",
+                archetype = npcData and npcData.archetypeID or npcData.occupation or "Survivor",
                 gender = npc:isFemale() and "Female" or "Male",
-                portraitID = brain and brain.portraitID or 1,
-                factionID = brain and brain.factionID,
-                returnTime = brain and brain.returnTime
+                portraitID = npcData and npcData.portraitID or 1,
+                factionID = npcData and npcData.factionID,
+                returnTime = npcData and npcData.returnTime
             }
             
             -- [FIX] Safety checks for debug prints to prevent "concatenation with nil" crashes
@@ -86,17 +86,17 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     })
 
     -- OPTION 2: TRADE (Always Visible)
-    local brain = npc:getModData().DTNPCBrain
+    local npcData = DTNPC.GetData(npc)
     local isTrading = false
     
-    if brain and brain.status == "Trading" then
+    if npcData and (npcData.status == "Trading" or npcData.state == "Trading") then
         isTrading = true
     else
-        -- Fallback to Roster ModData if brain is missing or unsynced
-        local id = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
+        -- Fallback to Roster ModData if npcData is missing or unsynced
+        local id = (npcData and npcData.uuid) or npc:getPersistentOutfitID() or npc:getID()
         local rosterData = ModData.get("DynamicTrading_Roster")
         if rosterData and rosterData.Souls and rosterData.Souls[id] then
-            if rosterData.Souls[id].status == "Trading" then
+            if rosterData.Souls[id].status == "Trading" or rosterData.Souls[id].state == "Trading" then
                 isTrading = true
             end
         end
@@ -112,8 +112,8 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
                 -- SUCCESS: Open Trade Window
                 print(DEBUG_PREFIX .. " Trade option selected")
                 
-                local traderID = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
-                local archetype = brain and brain.archetypeID or "General"
+                local traderID = (npcData and npcData.uuid) or npc:getPersistentOutfitID() or npc:getID()
+                local archetype = npcData and npcData.archetypeID or "General"
                 
                 -- Check if stock is already cached
                 local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 

@@ -16,9 +16,9 @@ function DTNPCManager.Load()
     
     -- Rebuild outfit ID mapping
     DTNPCManager.OutfitIDToUUID = {}
-    for uuid, brain in pairs(DTNPCManager.Data) do
-        if brain.currentOutfitID then
-            DTNPCManager.OutfitIDToUUID[brain.currentOutfitID] = uuid
+    for uuid, npcData in pairs(DTNPCManager.Data) do
+        if npcData.currentOutfitID then
+            DTNPCManager.OutfitIDToUUID[npcData.currentOutfitID] = uuid
         end
     end
     

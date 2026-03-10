@@ -95,8 +95,8 @@ function DTNPCManager.OnTick()
     -- Respawn check
     if shouldCheckRespawn then
         -- 1. Check existing tracked NPCs
-        for uuid, brain in pairs(DTNPCManager.Data) do
-            DTNPCManager.CheckForRespawn(brain, uuid)
+        for uuid, npcData in pairs(DTNPCManager.Data) do
+            DTNPCManager.CheckForRespawn(npcData, uuid)
         end
         
         -- 2. Check for new spawns from Roster (Bridge)
@@ -121,30 +121,28 @@ function DTNPCManager.OnTick()
             local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
             
             if uuid then
-                local savedBrain = DTNPCManager.Data[uuid]
+                local savedData = DTNPCManager.Data[uuid]
                 
-                if savedBrain then
-                    -- Update outfit ID mapping in case it changed
+                if savedData then
+                    -- 1. Sync Outfit ID (for outfitID-to-uuid mapping)
                     local currentOutfitID = zombie:getPersistentOutfitID()
-                    if savedBrain.currentOutfitID ~= currentOutfitID then
-                        -- Outfit ID changed (respawn), update mapping
-                        if savedBrain.currentOutfitID then
-                            DTNPCManager.OutfitIDToUUID[savedBrain.currentOutfitID] = nil
+                    if savedData.currentOutfitID ~= currentOutfitID then
+                        -- Clear old mapping
+                        if savedData.currentOutfitID then
+                            DTNPCManager.OutfitIDToUUID[savedData.currentOutfitID] = nil
                         end
+                        -- Set new mapping
+                        savedData.currentOutfitID = currentOutfitID
+                        -- print("[DTNPC] Updated outfit ID for " .. (savedData.name or uuid) .. ": " .. currentOutfitID)
                         DTNPCManager.OutfitIDToUUID[currentOutfitID] = uuid
-                        savedBrain.currentOutfitID = currentOutfitID
-                        -- print("[DTNPC] Updated outfit ID for " .. (savedBrain.name or uuid) .. ": " .. currentOutfitID)
                     end
                     
-                    -- Update position
-                    local newX = math.floor(zombie:getX())
-                    local newY = math.floor(zombie:getY())
-                    local newZ = math.floor(zombie:getZ())
-                    
-                    savedBrain.lastX = newX
-                    savedBrain.lastY = newY
-                    savedBrain.lastZ = newZ
-                    savedBrain.health = zombie:getHealth()
+                    -- 2. Update Position History (used for respawn/teleport)
+                    local newX, newY, newZ = math.floor(zombie:getX()), math.floor(zombie:getY()), math.floor(zombie:getZ())
+                    savedData.lastX = newX
+                    savedData.lastY = newY
+                    savedData.lastZ = newZ
+                    savedData.health = zombie:getHealth()
                     
                     -- Update spatial hash with current position
                     DTNPC_SpatialHash.InsertNPC(uuid, newX, newY, newZ, nil)
@@ -155,31 +153,22 @@ function DTNPCManager.OnTick()
                     end
                     
                     -- Prevent wandering
-                    if zombie:isUseless() and (savedBrain.state == "Stay" or savedBrain.state == "Guard") then
+                    if zombie:isUseless() and (savedData.state == "Stay" or savedData.state == "Guard") then
                         zombie:setPath2(nil)
                         zombie:setTarget(nil)
                     end
                     
-                    -- Check if visuals need fixing
-                    local needsFix = true
-                    local visuals = zombie:getHumanVisual()
-                    if visuals then
-                        local skin = visuals:getSkinTexture()
-                        if skin then
-                            skin = tostring(skin)
-                            if string.find(skin, "MaleBody01") or string.find(skin, "FemaleBody01") then
-                                needsFix = false
-                            end
-                        end
-                    end
-                    
-                    if needsFix then
-                        print("[DTNPC] Fixing visuals for NPC: " .. (savedBrain.name or uuid))
-                        DTNPC.ApplyVisuals(zombie, savedBrain)
-                        DTNPC.AttachBrain(zombie, savedBrain)
+                    -- 3. Visual & Data Sanity Check (Multiplayer Jitter fix)
+                    -- If zombie exists but has lost its DTNPC modData (e.g. after weird cell transition or server lag)
+                    local modData = zombie:getModData()
+                    if modData.IsDTNPC and (not modData.DTNPCVisualID or modData.DTNPCVisualID == 0) then
+                        -- This zombie is a DTNPC but visual ID is missing. Re-apply.
+                        print("[DTNPC] Fixing visuals for NPC: " .. (savedData.name or uuid))
+                        DTNPC.ApplyVisuals(zombie, savedData)
+                        DTNPC.AttachData(zombie, savedData)
                         
                         local modData = zombie:getModData()
-                        modData.DTNPCVisualID = savedBrain.visualID
+                        modData.DTNPCVisualID = savedData.visualID
                         modData.DTNPC_UUID = uuid
                         
                         if not zombie:isUseless() then

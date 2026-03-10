@@ -38,7 +38,7 @@ function DTNPCClient.OnTick()
             
             local cached = DTNPCClient.NPCCache[uuid]
             
-            if cached and cached.brain then
+            if cached and cached.npcData then
                 local needsVisuals = false
                 
                 if not DTNPCClient.ProcessedZombies[uuid] then
@@ -60,50 +60,50 @@ function DTNPCClient.OnTick()
                         needsVisuals = true
                     end
                     
-                    if modData.DTNPCVisualID ~= cached.brain.visualID then
+                    if modData.DTNPCVisualID ~= cached.npcData.visualID then
                         needsVisuals = true
                     end
                 end
                 
                 if needsVisuals then
-                    DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
+                    DTNPCClient.ApplyVisualsToNPC(zombie, cached.npcData)
                     DTNPCClient.ProcessedZombies[uuid] = true
                     reappliedCount = reappliedCount + 1
                     attachedCount = attachedCount + 1
                 else
                     -- Brain might not be in modData yet if ApplyVisualsToNPC returned early
-                    if not modData.DTNPCBrain then
-                        DTNPCClient.ApplyVisualsToNPC(zombie, cached.brain)
+                    if not DTNPC.GetData(zombie) then
+                        DTNPCClient.ApplyVisualsToNPC(zombie, cached.npcData)
                     end
 
                     if zombie:isLocal() and modData.IsDTNPC then
                         DTNPCClient.SetLocalControl(uuid, true)
                         
-                        local localBrain = modData.DTNPCBrain
+                        local localData = DTNPC.GetData(zombie)
                         
-                        if localBrain then
+                        if localData then
                             local changed = false
                             local updates = {}
                             
                             -- Initialize last reported state if missing
                             if not cached.lastReportedState then 
                                 cached.lastReportedState = {
-                                    state = localBrain.state,
-                                    tasksCount = (localBrain.tasks and #localBrain.tasks or 0)
+                                    state = localData.state,
+                                    tasksCount = (localData.tasks and #localData.tasks or 0)
                                 }
                             end
                             
                             -- Detect state change
-                            if localBrain.state ~= cached.lastReportedState.state then
-                                updates.state = localBrain.state
-                                cached.lastReportedState.state = localBrain.state
+                            if localData.state ~= cached.lastReportedState.state then
+                                updates.state = localData.state
+                                cached.lastReportedState.state = localData.state
                                 changed = true
                             end
                             
                             -- Detect tasks change
-                            local currentTasksCount = (localBrain.tasks and #localBrain.tasks or 0)
+                            local currentTasksCount = (localData.tasks and #localData.tasks or 0)
                             if currentTasksCount ~= cached.lastReportedState.tasksCount then
-                                updates.tasks = localBrain.tasks
+                                updates.tasks = localData.tasks
                                 cached.lastReportedState.tasksCount = currentTasksCount
                                 changed = true
                             end
@@ -114,7 +114,7 @@ function DTNPCClient.OnTick()
                                 
                                 sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { uuid = uuid, updates = updates })
                                 updatedCount = updatedCount + 1
-                                print("[DTNPC-Client] Syncing behavioral change for " .. (localBrain.name or uuid) .. ": " .. (updates.state or "tasks updated"))
+                                print("[DTNPC-Client] Syncing behavioral change for " .. (localData.name or uuid) .. ": " .. (updates.state or "tasks updated"))
                             end
                         end
                     else
@@ -128,7 +128,7 @@ function DTNPCClient.OnTick()
     end
     
     if attachedCount > 0 then
-        print("[DTNPC-Client] Attached brains to " .. attachedCount .. " new NPCs")
+        print("[DTNPC-Client] Attached npcDatas to " .. attachedCount .. " new NPCs")
     end
     if reappliedCount > 0 then
         print("[DTNPC-Client] Reapplied visuals to " .. reappliedCount .. " NPCs")

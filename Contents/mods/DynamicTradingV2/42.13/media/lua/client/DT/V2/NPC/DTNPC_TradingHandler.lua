@@ -32,10 +32,10 @@ end
 function DTNPC_TradingHandler.InitiateTrade(ui, npc, player)
     if not npc or not player then return end
     
-    local brain = npc:getModData().DTNPCBrain
-    -- Build 42: Prioritize persistent ID from brain
-    local id = (brain and brain.uuid) or npc:getPersistentOutfitID() or npc:getID()
-    local name = brain and brain.name or "Survivor"
+    local npcData = npc:getModData().DTNPC_Data
+    -- Build 42: Prioritize persistent ID from npcData
+    local id = (npcData and npcData.uuid) or npc:getPersistentOutfitID() or npc:getID()
+    local name = npcData and npcData.name or "Survivor"
 
     -- Check if we already have stock cached
     -- In MP, use the client network cache. In SP, fall back to global ModData.

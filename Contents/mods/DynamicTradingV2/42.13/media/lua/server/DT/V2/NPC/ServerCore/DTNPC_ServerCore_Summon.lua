@@ -22,23 +22,23 @@ function DTNPCServerCore.SummonAll(player)
     
     print("[DTNPC] Summoning NPCs for player: " .. username)
     
-    for uuid, brain in pairs(DTNPCManager.Data) do
-        if brain.master == username then
+    for uuid, npcData in pairs(DTNPCManager.Data) do
+        if npcData.master == username then
             local foundObj = DTNPCServerCore.FindZombieByUUID(uuid)
             
             if foundObj then
-                table.insert(toTeleport, {zombie = foundObj, brain = brain})
-                print("[DTNPC] Found existing NPC to teleport: " .. (brain.name or uuid))
+                table.insert(toTeleport, {zombie = foundObj, npcData = npcData})
+                print("[DTNPC] Found existing NPC to teleport: " .. (npcData.name or uuid))
             else
-                table.insert(toRecreate, {uuid = uuid, brain = brain})
-                print("[DTNPC] NPC not found in world, will recreate: " .. (brain.name or uuid))
+                table.insert(toRecreate, {uuid = uuid, npcData = npcData})
+                print("[DTNPC] NPC not found in world, will recreate: " .. (npcData.name or uuid))
             end
         end
     end
     
     for _, data in ipairs(toTeleport) do
         local npc = data.zombie
-        local brain = data.brain
+        local npcData = data.npcData
         
         npc:setX(player:getX() + 1)
         npc:setY(player:getY() + 1)
@@ -46,14 +46,14 @@ function DTNPCServerCore.SummonAll(player)
         npc:setLastX(player:getX())
         npc:setLastY(player:getY())
         
-        brain.lastX = math.floor(npc:getX())
-        brain.lastY = math.floor(npc:getY())
-        brain.lastZ = math.floor(npc:getZ())
-        DTNPCServerCore.SyncToAllClients(npc, brain)
+        npcData.lastX = math.floor(npc:getX())
+        npcData.lastY = math.floor(npc:getY())
+        npcData.lastZ = math.floor(npc:getZ())
+        DTNPCServerCore.SyncToAllClients(npc, npcData)
     end
     
     for _, data in ipairs(toRecreate) do
-        DTNPCServerCore.RespawnNPC(data.brain, data.uuid)
+        DTNPCServerCore.RespawnNPC(data.npcData, data.uuid)
     end
     
     print("[DTNPC] Summon complete. Teleported: " .. #toTeleport .. ", Recreated: " .. #toRecreate)

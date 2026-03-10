@@ -9,13 +9,13 @@ DTNPCManager = DTNPCManager or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
-function DTNPCManager.Register(zombie, brain)
-    if not zombie or not brain then return end
+function DTNPCManager.Register(zombie, npcData)
+    if not zombie or not npcData then return end
     
     local outfitID = zombie:getPersistentOutfitID()
     
     -- Get or create UUID
-    local uuid = brain.uuid
+    local uuid = npcData.uuid
     if not uuid then
         -- Check if this zombie already has a UUID in modData
         local modData = zombie:getModData()
@@ -28,7 +28,7 @@ function DTNPCManager.Register(zombie, brain)
             if not uuid then
                 -- Brand new NPC, generate UUID
                 uuid = DTNPCManager.GenerateUUID()
-                print("[DTNPC] Generated new UUID for NPC: " .. (brain.name or "Unknown") .. " - " .. uuid)
+                print("[DTNPC] Generated new UUID for NPC: " .. (npcData.name or "Unknown") .. " - " .. uuid)
             else
                 print("[DTNPC] Found existing UUID from outfit mapping: " .. uuid)
             end
@@ -36,7 +36,7 @@ function DTNPCManager.Register(zombie, brain)
             print("[DTNPC] Found UUID in zombie modData: " .. uuid)
         end
         
-        brain.uuid = uuid
+        npcData.uuid = uuid
     end
     
     -- Store UUID in zombie modData for future lookups
@@ -54,30 +54,30 @@ function DTNPCManager.Register(zombie, brain)
     
     DTNPCManager.PendingRegistrations[uuid] = true
     
-    -- Update brain data
-    brain.currentOutfitID = outfitID
-    brain.lastX = math.floor(zombie:getX())
-    brain.lastY = math.floor(zombie:getY())
-    brain.lastZ = math.floor(zombie:getZ())
-    brain.health = zombie:getHealth()
-    brain.registeredTime = os.time()
+    -- Update npcData data
+    npcData.currentOutfitID = outfitID
+    npcData.lastX = math.floor(zombie:getX())
+    npcData.lastY = math.floor(zombie:getY())
+    npcData.lastZ = math.floor(zombie:getZ())
+    npcData.health = zombie:getHealth()
+    npcData.registeredTime = os.time()
     
     -- Store in database by UUID
-    DTNPCManager.Data[uuid] = brain
+    DTNPCManager.Data[uuid] = npcData
     DTNPCManager.Save()
     
     DTNPCManager.PendingRegistrations[uuid] = nil
     
-    print("[DTNPC] Registered NPC: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ", OutfitID: " .. outfitID .. ") at " .. brain.lastX .. "," .. brain.lastY .. "," .. brain.lastZ)
+    print("[DTNPC] Registered NPC: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ", OutfitID: " .. outfitID .. ") at " .. npcData.lastX .. "," .. npcData.lastY .. "," .. npcData.lastZ)
 end
 
 function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
     if DTNPCManager.Data[uuid] then
-        local brain = DTNPCManager.Data[uuid]
+        local npcData = DTNPCManager.Data[uuid]
         
         -- Remove from outfit mapping
-        if brain.currentOutfitID then
-            DTNPCManager.OutfitIDToUUID[brain.currentOutfitID] = nil
+        if npcData.currentOutfitID then
+            DTNPCManager.OutfitIDToUUID[npcData.currentOutfitID] = nil
         end
         
         -- Remove from spatial hash
@@ -100,11 +100,11 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
         DTNPCManager.PendingRegistrations[uuid] = nil
         DTNPCManager.Save()
         
-        print("[DTNPC] Removed NPC data from world tracker: " .. (brain.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
+        print("[DTNPC] Removed NPC data from world tracker: " .. (npcData.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
         
         -- Broadcast removal to all clients
         if DTNPCServerCore and DTNPCServerCore.NotifyRemoval then
-            DTNPCServerCore.NotifyRemoval(uuid, brain.currentOutfitID, brain.name)
+            DTNPCServerCore.NotifyRemoval(uuid, npcData.currentOutfitID, npcData.name)
         end
     end
 end
@@ -138,16 +138,16 @@ function DTNPCManager.Unregister(zombie)
     local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
     
     if uuid and DTNPCManager.Data[uuid] then
-        local brain = DTNPCManager.Data[uuid]
-        print("[DTNPC] NPC Died: " .. (brain.name or uuid))
+        local npcData = DTNPCManager.Data[uuid]
+        print("[DTNPC] NPC Died: " .. (npcData.name or uuid))
         DTNPCManager.RemoveData(uuid, "Dead")
     else
         -- Fallback: try outfit ID
         local outfitID = zombie:getPersistentOutfitID()
         local fallbackUUID = DTNPCManager.GetUUIDFromOutfitID(outfitID)
         if fallbackUUID and DTNPCManager.Data[fallbackUUID] then
-            local brain = DTNPCManager.Data[fallbackUUID]
-            print("[DTNPC] NPC Died (fallback lookup): " .. (brain.name or fallbackUUID))
+            local npcData = DTNPCManager.Data[fallbackUUID]
+            print("[DTNPC] NPC Died (fallback lookup): " .. (npcData.name or fallbackUUID))
             DTNPCManager.RemoveData(fallbackUUID, "Dead")
         end
     end

@@ -66,31 +66,31 @@ local function onClientCommand(module, command, player, args)
             for i=0, movingObjects:size()-1 do
                 local obj = movingObjects:get(i)
                 if instanceof(obj, "IsoZombie") then
-                    local brain = DTNPC.GetBrain(obj)
-                    if brain then
-                        brain.state = args.state
-                        brain.tasks = {} 
+                    local npcData = DTNPC.GetBrain(obj)
+                    if npcData then
+                        npcData.state = args.state
+                        npcData.tasks = {} 
                         
-                        brain.anchorX = nil
-                        brain.anchorY = nil
-                        brain.anchorZ = nil
+                        npcData.anchorX = nil
+                        npcData.anchorY = nil
+                        npcData.anchorZ = nil
                         
-                        brain.requestedReturnStatus = args.returnStatus
+                        npcData.requestedReturnStatus = args.returnStatus
                         
                         if args.state == "Follow" or args.state == "Flee" then
-                            brain.master = player:getUsername()
-                            brain.masterID = isClient() and player:getOnlineID() or 0
-                            print("[DTNPC] Master assigned for " .. args.state .. " order: " .. brain.master)
+                            npcData.master = player:getUsername()
+                            npcData.masterID = isClient() and player:getOnlineID() or 0
+                            print("[DTNPC] Master assigned for " .. args.state .. " order: " .. npcData.master)
                         elseif args.state == "GoTo" then
-                           table.insert(brain.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
+                           table.insert(npcData.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
                            print("[DTNPC] GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
                         end
 
-                        DTNPC.AttachBrain(obj, brain)
-                        if DTNPCManager then DTNPCManager.Register(obj, brain) end
+                        DTNPC.AttachBrain(obj, npcData)
+                        if DTNPCManager then DTNPCManager.Register(obj, npcData) end
                         
-                        DTNPCServerCore.SyncToAllClients(obj, brain)
-                        DTNPCServerCore.BroadcastPosition(obj, brain)
+                        DTNPCServerCore.SyncToAllClients(obj, npcData)
+                        DTNPCServerCore.BroadcastPosition(obj, npcData)
                         break
                     end
                 end
@@ -114,9 +114,9 @@ local function onClientCommand(module, command, player, args)
             if zombie then
                 local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
                 if uuid then
-                    local brain = DTNPCManager.Data[uuid]
-                    if brain then
-                        DTNPCServerCore.SyncToPlayer(player, zombie, brain)
+                    local npcData = DTNPCManager.Data[uuid]
+                    if npcData then
+                        DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
                         syncCount = syncCount + 1
                     end
                 end
@@ -161,16 +161,16 @@ local function onClientCommand(module, command, player, args)
                     local dist = math.sqrt(dx * dx + dy * dy)
 
                     if dist <= nearRadius then
-                        local brain = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] or nil
+                        local npcData = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] or nil
                         local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
-                        if brain and zombie then
+                        if npcData and zombie then
                             nearby[uuid] = {
                                 uuid = uuid,
                                 outfitID = zombie:getPersistentOutfitID(),
                                 x = zombie:getX(),
                                 y = zombie:getY(),
                                 z = zombie:getZ(),
-                                brain = brain,
+                                npcData = npcData,
                             }
                         else
                             metadata[uuid] = buildMetadataEntry(uuid, soul)

@@ -13,12 +13,12 @@ if isClient() and not isServer() then return end
 -- RESPAWN FUNCTION
 -- ==============================================================================
 
-function DTNPCServerCore.RespawnNPC(brain, uuid)
-    if not brain or not brain.lastX or not brain.lastY then return end
+function DTNPCServerCore.RespawnNPC(npcData, uuid)
+    if not npcData or not npcData.lastX or not npcData.lastY then return end
     
-    local x = brain.lastX
-    local y = brain.lastY
-    local z = brain.lastZ or 0
+    local x = npcData.lastX
+    local y = npcData.lastY
+    local z = npcData.lastZ or 0
     
     print("[DTNPC] | Targeted Square: " .. x .. "," .. y .. "," .. z)
     
@@ -77,7 +77,7 @@ function DTNPCServerCore.RespawnNPC(brain, uuid)
         return nil
     end
     
-    local femaleChance = brain.isFemale and 100 or 0
+    local femaleChance = npcData.isFemale and 100 or 0
     local zombieList = addZombiesInOutfit(x, y, z, 1, "Naked", femaleChance, false, false, false, false, false, false, 1)
     
     if not zombieList or zombieList:size() == 0 then 
@@ -95,30 +95,30 @@ function DTNPCServerCore.RespawnNPC(brain, uuid)
     modData.DTNPC_UUID = uuid
     
     -- Keep the same UUID
-    brain.uuid = uuid
+    npcData.uuid = uuid
     
     -- CRITICAL: Generate new visual ID to force clients to reapply visuals
-    brain.visualID = ZombRand(1000000)
+    npcData.visualID = ZombRand(1000000)
     
     -- CRITICAL: Determine state based on status
-    local status = brain.status or "Resting"
+    local status = npcData.status or "Resting"
     if status == "Trading" then
-        brain.state = "Trading"
+        npcData.state = "Trading"
     elseif status == "Working" then
-        brain.state = "Guard"
+        npcData.state = "Guard"
     else
-        brain.state = "Stay"
+        npcData.state = "Stay"
     end
     
-    print("[DTNPC] | Mapped Status [" .. status .. "] to Behavior State [" .. brain.state .. "]")
+    print("[DTNPC] | Mapped Status [" .. status .. "] to Behavior State [" .. npcData.state .. "]")
     
-    brain.master = nil
-    brain.masterID = nil
+    npcData.master = nil
+    npcData.masterID = nil
     
-    DTNPC.AttachBrain(zombie, brain)
-    DTNPC.ApplyVisuals(zombie, brain)
+    DTNPC.AttachBrain(zombie, npcData)
+    DTNPC.ApplyVisuals(zombie, npcData)
     
-    modData.DTNPCVisualID = brain.visualID
+    modData.DTNPCVisualID = npcData.visualID
 
     zombie:setUseless(true) 
     zombie:DoZombieStats()   
@@ -127,13 +127,13 @@ function DTNPCServerCore.RespawnNPC(brain, uuid)
     zombie:resetModelNextFrame()
 
     if DTNPCManager then
-        DTNPCManager.Register(zombie, brain)
+        DTNPCManager.Register(zombie, npcData)
     end
 
     -- Force sync to all clients with new visual ID
-    DTNPCServerCore.SyncToAllClients(zombie, brain)
+    DTNPCServerCore.SyncToAllClients(zombie, npcData)
 
-    print("[DTNPC] Respawned: " .. brain.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID .. " | New VisualID: " .. brain.visualID)
+    print("[DTNPC] Respawned: " .. npcData.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID .. " | New VisualID: " .. npcData.visualID)
     
-    return zombie, brain
+    return zombie, npcData
 end

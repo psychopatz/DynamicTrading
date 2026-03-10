@@ -5,15 +5,15 @@
 
 DTNPCClient = DTNPCClient or {}
 
-function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
-    if not zombie or not brain then return end
+function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
+    if not zombie or not npcData then return end
     if isServer() and isDedicatedServer() then return end
     
     local modData = zombie:getModData()
-    local uuid = brain.uuid
+    local uuid = npcData.uuid
     
     local needsVisuals = true
-    if brain.visualID and modData.DTNPCVisualID == brain.visualID then
+    if npcData.visualID and modData.DTNPCVisualID == npcData.visualID then
         local visuals = zombie:getHumanVisual()
         if visuals then
             local skin = visuals:getSkinTexture()
@@ -29,22 +29,22 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, brain)
     modData.IsDTNPC = true
     modData.DTNPC_UUID = uuid
     
-    -- Ensure brain is attached even if we don't need to reapply visuals
-    if DTNPC and DTNPC.AttachBrain then
-        DTNPC.AttachBrain(zombie, brain)
+    -- Ensure npcData is attached even if we don't need to reapply visuals
+    if DTNPC and DTNPC.AttachData then
+        DTNPC.AttachData(zombie, npcData)
     end
 
     if not needsVisuals then
         return
     end
 
-    print("[DTNPC-Client] Applying visuals for: " .. (brain.name or "Unknown") .. " (UUID: " .. uuid .. ")")
+    print("[DTNPC-Client] Applying visuals for: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ")")
     
     if DTNPC and DTNPC.ApplyVisuals then
-        DTNPC.ApplyVisuals(zombie, brain)
+        DTNPC.ApplyVisuals(zombie, npcData)
     end
     
-    modData.DTNPCVisualID = brain.visualID
+    modData.DTNPCVisualID = npcData.visualID
     
     if not zombie:isUseless() then
         zombie:setUseless(true)

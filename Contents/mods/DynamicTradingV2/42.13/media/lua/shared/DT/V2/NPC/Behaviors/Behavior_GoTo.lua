@@ -35,12 +35,12 @@ local function forceRunAnimation(zombie)
     zombie:setVariable("BanditWalkType", "Run") -- Hint for Bandit layer if present
 end
 
-DTNPCLogic.Behaviors["GoTo"] = function(zombie, brain, target, dist)
+DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
     
     -- 1. Check if we have anywhere to go
-    if not brain.tasks or #brain.tasks == 0 then
-        brain.state = "Stay"
-        brain.isMovingState = false
+    if not npcData.tasks or #npcData.tasks == 0 then
+        npcData.state = "Stay"
+        npcData.isMovingState = false
         zombie:setVariable("bMoving", false)
         zombie:setVariable("Speed", 0.0)
         
@@ -51,12 +51,12 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, brain, target, dist)
 
     -- 2. WAKE UP CALL (The Fix)
     -- If we haven't started moving yet, kickstart the engine
-    if not brain.isMovingState then
-        brain.isMovingState = true
+    if not npcData.isMovingState then
+        npcData.isMovingState = true
         
         -- Run Attack Logic for 1 tick to reset skeleton
         if DTNPCLogic.Behaviors["Attack"] then
-            DTNPCLogic.Behaviors["Attack"](zombie, brain, target, dist)
+            DTNPCLogic.Behaviors["Attack"](zombie, npcData, target, dist)
         end
         return -- Exit and let the engine process the frame
     end
@@ -69,19 +69,19 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, brain, target, dist)
         zombie:setRunning(false)
     end
 
-    local task = brain.tasks[1]
+    local task = npcData.tasks[1]
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     
     -- Check arrival
     local distToGoal = getDist(zx, zy, task.x, task.y)
     
     if distToGoal <= STOP_DIST then
-        table.remove(brain.tasks, 1)
+        table.remove(npcData.tasks, 1)
         
-        if #brain.tasks == 0 then
+        if #npcData.tasks == 0 then
             -- All done
-            brain.state = "Stay"
-            brain.isMovingState = false
+            npcData.state = "Stay"
+            npcData.isMovingState = false
             
             -- Face final direction
             local fd = zombie:getForwardDirection()
@@ -106,7 +106,7 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, brain, target, dist)
         dy = dy / len
     end
 
-    local speed = brain.runSpeed or DTNPC.DefaultRunSpeed
+    local speed = npcData.runSpeed or DTNPC.DefaultRunSpeed
     local nextX = zx + (dx * speed)
     local nextY = zy + (dy * speed)
 
@@ -139,9 +139,9 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, brain, target, dist)
     else
         -- Stuck/Blocked logic
         print("[DTNPC] GoTo: Path blocked. Aborting.")
-        brain.state = "Stay"
-        brain.isMovingState = false
-        brain.tasks = {}
+        npcData.state = "Stay"
+        npcData.isMovingState = false
+        npcData.tasks = {}
         zombie:setVariable("bMoving", false)
     end
 end

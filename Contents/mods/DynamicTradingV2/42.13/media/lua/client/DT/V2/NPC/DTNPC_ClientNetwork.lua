@@ -34,14 +34,14 @@ function DTNPCClient.OnServerCommand(module, command, args)
     if module ~= "DTNPC" then return end
 
     if command == "SyncNPC" then
-        if not args or not args.uuid or not args.brain then return end
+        if not args or not args.uuid or not args.npcData then return end
         
         local uuid = args.uuid
         local outfitID = args.outfitID
         
-        print("[DTNPC-Client] Received SyncNPC for: " .. (args.brain.name or uuid))
+        print("[DTNPC-Client] Received SyncNPC for: " .. (args.npcData.name or uuid))
         
-        DTNPCClient.CacheBrain(uuid, outfitID, args.brain)
+        DTNPCClient.CacheData(uuid, outfitID, args.npcData)
         
         -- Track position for interpolation
         if args.x and args.y then
@@ -55,7 +55,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
         end
         
         if zombie then
-            DTNPCClient.ApplyVisualsToNPC(zombie, args.brain)
+            DTNPCClient.ApplyVisualsToNPC(zombie, args.npcData)
             DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
             DTNPCClient.ProcessedZombies[uuid] = true
             
@@ -63,8 +63,8 @@ function DTNPCClient.OnServerCommand(module, command, args)
             local cached = DTNPCClient.NPCCache[uuid]
             if cached then
                 cached.lastReportedState = {
-                    state = args.brain.state,
-                    tasksCount = (args.brain.tasks and #args.brain.tasks or 0)
+                    state = args.npcData.state,
+                    tasksCount = (args.npcData.tasks and #args.npcData.tasks or 0)
                 }
             end
             
@@ -86,16 +86,16 @@ function DTNPCClient.OnServerCommand(module, command, args)
             DTNPC_ClientInterpolation.RecordUpdate(uuid, args.x, args.y, args.z or 0)
         end
         
-        if cached and cached.brain then
-            cached.brain.lastX = math.floor(args.x)
-            cached.brain.lastY = math.floor(args.y)
-            cached.brain.lastZ = math.floor(args.z)
+        if cached and cached.npcData then
+            cached.npcData.lastX = math.floor(args.x)
+            cached.npcData.lastY = math.floor(args.y)
+            cached.npcData.lastZ = math.floor(args.z)
             
-            if args.health then cached.brain.health = args.health end
-            if args.state then cached.brain.state = args.state end
+            if args.health then cached.npcData.health = args.health end
+            if args.state then cached.npcData.state = args.state end
             if args.outfitID then
                 DTNPCClient.OutfitIDToUUID[args.outfitID] = uuid
-                cached.brain.currentOutfitID = args.outfitID
+                cached.npcData.currentOutfitID = args.outfitID
             end
             
             local zombie = DTNPCClient.FindZombieByUUID(uuid)
@@ -104,8 +104,17 @@ function DTNPCClient.OnServerCommand(module, command, args)
                 zombie = DTNPCClient.FindZombieByOutfitID(args.outfitID)
             end
             
-            if zombie and not DTNPCClient.LocalControlled[uuid] then
-                DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
+            if zombie then
+                -- CRITICAL: Update the modData directly so interaction menus see the change
+                local zombieData = DTNPC.GetData(zombie)
+                if zombieData then
+                    if args.state then zombieData.state = args.state end
+                    if args.health then zombieData.health = args.health end
+                end
+
+                if not DTNPCClient.LocalControlled[uuid] then
+                    DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
+                end
             end
             
             -- Sync reported state if state was provided
@@ -125,7 +134,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
         local outfitID = args.outfitID
         
         if name == "Unknown" and DTNPCClient.NPCCache[uuid] then
-            name = DTNPCClient.NPCCache[uuid].brain.name or "Unknown"
+            name = DTNPCClient.NPCCache[uuid].npcData.name or "Unknown"
         end
         
         print("[DTNPC-Client] Received RemoveNPC for: " .. name .. " (" .. uuid .. ")")
@@ -154,9 +163,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
         
         print("[DTNPC-Client] Received SyncAllNPCs. Count: " .. DTNPCClient.GetTableSize(args.npcs))
         
-        for uuid, brain in pairs(args.npcs) do
-            local outfitID = brain.currentOutfitID
-            DTNPCClient.CacheBrain(uuid, outfitID, brain)
+        for uuid, npcData in pairs(args.npcs) do
+            local outfitID = npcData.currentOutfitID
+            DTNPCClient.CacheData(uuid, outfitID, npcData)
             
             local zombie = DTNPCClient.FindZombieByUUID(uuid)
             
@@ -165,15 +174,15 @@ function DTNPCClient.OnServerCommand(module, command, args)
             end
             
             if zombie then
-                DTNPCClient.ApplyVisualsToNPC(zombie, brain)
+                DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
                 DTNPCClient.ProcessedZombies[uuid] = true
                 
                 -- Sync reported state
                 local cached = DTNPCClient.NPCCache[uuid]
                 if cached then
                     cached.lastReportedState = {
-                        state = brain.state,
-                        tasksCount = (brain.tasks and #brain.tasks or 0)
+                        state = npcData.state,
+                        tasksCount = (npcData.tasks and #npcData.tasks or 0)
                     }
                 end
             end
@@ -188,14 +197,14 @@ function DTNPCClient.OnServerCommand(module, command, args)
         local metadataCount = 0
 
         for uuid, npcData in pairs(args.nearby or {}) do
-            if npcData and npcData.brain then
+            if npcData and npcData.npcData then
                 local outfitID = npcData.outfitID
-                DTNPCClient.CacheBrain(uuid, outfitID, npcData.brain)
+                DTNPCClient.CacheData(uuid, outfitID, npcData.npcData)
 
                 -- Track position for interpolation
-                local x = npcData.x or npcData.brain.lastX
-                local y = npcData.y or npcData.brain.lastY
-                local z = npcData.z or npcData.brain.lastZ or 0
+                local x = npcData.x or npcData.npcData.lastX
+                local y = npcData.y or npcData.npcData.lastY
+                local z = npcData.z or npcData.npcData.lastZ or 0
                 if x and y then
                     DTNPC_ClientInterpolation.RecordUpdate(uuid, x, y, z)
                 end
@@ -206,7 +215,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
                 end
 
                 if zombie then
-                    DTNPCClient.ApplyVisualsToNPC(zombie, npcData.brain)
+                    DTNPCClient.ApplyVisualsToNPC(zombie, npcData.npcData)
                     DTNPCClient.ReconcilePosition(zombie, x, y, z)
                     DTNPCClient.ProcessedZombies[uuid] = true
                 end

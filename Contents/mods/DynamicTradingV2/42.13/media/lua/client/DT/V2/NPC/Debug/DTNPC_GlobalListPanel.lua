@@ -3,13 +3,13 @@
 -- Decoupled component for the "Global Database" view.
 -- ==============================================================================
 
-DTNPC_GlobalListPanel = ISPanel:derive("DTNPC_GlobalListPanel")
+DTNPC_DatabaseListPanel = ISPanel:derive("DTNPC_DatabaseListPanel")
 
-function DTNPC_GlobalListPanel:initialise()
+function DTNPC_DatabaseListPanel:initialise()
     ISPanel.initialise(self)
 end
 
-function DTNPC_GlobalListPanel:createChildren()
+function DTNPC_DatabaseListPanel:createChildren()
     self.npcList = ISScrollingListBox:new(0, 0, self.width, self.height)
     self.npcList:initialise()
     self.npcList:instantiate()
@@ -19,84 +19,84 @@ function DTNPC_GlobalListPanel:createChildren()
     self:addChild(self.npcList)
 end
 
-function DTNPC_GlobalListPanel:onSelectNPC(item)
+function DTNPC_DatabaseListPanel:onSelectNPC(item)
     if self.parentWindow then
         self.parentWindow:onSelectNPC(item, self)
     end
 end
 
-function DTNPC_GlobalListPanel:refresh()
+function DTNPC_DatabaseListPanel:refresh()
     self.npcList:clear()
     
-    local globalCount = 0
+    local databaseCount = 0
     local globalAdded = {}
     
     -- 1. Cache (Multiplayer)
     if DTNPCClient and DTNPCClient.NPCCache then
         for id, entry in pairs(DTNPCClient.NPCCache) do
-            local brain = entry.brain
-            local name = brain.name or "Unknown"
+            local npcData = entry.npcData
+            local name = npcData.name or "Unknown"
             
             -- Distance calculation
             local player = getSpecificPlayer(0)
             local distText = ""
-            if player and brain.lastX then
-                local dx = brain.lastX - player:getX()
-                local dy = brain.lastY - player:getY()
+            if player and npcData.lastX then
+                local dx = npcData.lastX - player:getX()
+                local dy = npcData.lastY - player:getY()
                 local dist = math.sqrt(dx*dx + dy*dy)
                 distText = string.format(" [%.0fm]", dist)
             end
             
-            local stateText = " [" .. (brain.state or "??") .. "]"
+            local stateText = " [" .. (npcData.state or "??") .. "]"
             
             -- Display remaining trading time
-            if brain.status == "Trading" and brain.returnTime then
+            if npcData.status == "Trading" and npcData.returnTime then
                 local currentHours = getGameTime():getWorldAgeHours()
-                local remaining = brain.returnTime - currentHours
+                local remaining = npcData.returnTime - currentHours
                 if remaining > 0 then
                     stateText = stateText .. string.format(" (%.1fh)", remaining)
                 end
             end
 
-            self.npcList:addItem(name .. stateText .. distText, {id = id, brain = brain})
+            self.npcList:addItem(name .. stateText .. distText, {id = id, npcData = npcData})
             
             local item = self.npcList.items[#self.npcList.items]
             local color = {r=1, g=1, b=1, a=1}
-            if brain.state == "Follow" then color = {r=0, g=0.8, b=1, a=1}
-            elseif brain.state == "Stay" or brain.state == "Guard" or brain.status == "Trading" then color = {r=1, g=1, b=0, a=1}
-            elseif brain.isHostile then color = {r=1, g=0.2, b=0.2, a=1}
+            if npcData.state == "Follow" then color = {r=0, g=0.8, b=1, a=1}
+            elseif npcData.state == "Stay" or npcData.state == "Guard" or npcData.status == "Trading" then color = {r=1, g=1, b=0, a=1}
+            elseif npcData.isHostile then color = {r=1, g=0.2, b=0.2, a=1}
             end
             item.color = color
             
             globalAdded[id] = true
-            globalCount = globalCount + 1
+            databaseCount = databaseCount + 1
         end
     end
 
     -- 2. Manager Data (Singleplayer Fallback)
     if not isClient() and DTNPCManager and DTNPCManager.Data then
-        for id, brain in pairs(DTNPCManager.Data) do
+        for id, npcData in pairs(DTNPCManager.Data) do
             if not globalAdded[id] then
-                local name = brain.name or "Unknown"
+                local name = npcData.name or "Unknown"
                 local player = getSpecificPlayer(0)
                 local distText = ""
-                if player and brain.lastX then
-                    local dx = brain.lastX - player:getX()
-                    local dy = brain.lastY - player:getY()
+                if player and npcData.lastX then
+                    local dx = npcData.lastX - player:getX()
+                    local dy = npcData.lastY - player:getY()
                     local dist = math.sqrt(dx*dx + dy*dy)
                     distText = string.format(" [%.0fm]", dist)
                 end
                 
-                self.npcList:addItem(name .. " [DB]" .. distText, {id = id, brain = brain})
-                globalCount = globalCount + 1
+                self.npcList:addItem(name .. " [DB]" .. distText, {id = id, npcData = npcData})
+                databaseCount = databaseCount + 1
             end
         end
     end
     
-    return globalCount
+    return databaseCount
 end
 
-function DTNPC_GlobalListPanel:new(x, y, width, height, parentWindow)
+function DTNPC_DatabaseListPanel:new(x, y, width, height, parentWindow)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self

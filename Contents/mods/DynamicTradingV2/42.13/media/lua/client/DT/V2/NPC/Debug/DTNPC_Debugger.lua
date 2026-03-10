@@ -35,12 +35,12 @@ function DTNPC_Debugger:update()
             -- Preserve selection IDs
             local selectedID = self.selectedNPC and self.selectedNPC.id
             
-            self.livePanel:refresh()
-            self.globalPanel:refresh()
+            self.activeNearbyPanel:refresh()
+            self.databasePanel:refresh()
             
             -- Restore selection
             if selectedID then
-                local list = self.livePanel.npcList
+                local list = self.activeNearbyPanel.npcList
                 for i, item in ipairs(list.items) do
                     if item.item.id == selectedID then
                         list.selected = i
@@ -49,7 +49,7 @@ function DTNPC_Debugger:update()
                     end
                 end
                 
-                list = self.globalPanel.npcList
+                list = self.databasePanel.npcList
                 for i, item in ipairs(list.items) do
                     if item.item.id == selectedID then
                         list.selected = i
@@ -76,15 +76,15 @@ function DTNPC_Debugger:createChildren()
     self.tabPanel.onTabToggled = self.onTabToggled
     self:addChild(self.tabPanel)
 
-    -- 1. LIVE NPCs TAB
-    self.livePanel = DTNPC_LiveListPanel:new(0, 0, listW, self.tabPanel.height - self.tabPanel.tabHeight, self)
-    self.livePanel:initialise()
-    self.tabPanel:addView("Live", self.livePanel)
+    -- 1. ACTIVE NPCs TAB
+    self.activeNearbyPanel = DTNPC_ActiveNearbyListPanel:new(0, 0, listW, self.tabPanel.height - self.tabPanel.tabHeight, self)
+    self.activeNearbyPanel:initialise()
+    self.tabPanel:addView("Nearby NPCs", self.activeNearbyPanel)
 
-    -- 2. GLOBAL DATABASE TAB
-    self.globalPanel = DTNPC_GlobalListPanel:new(0, 0, listW, self.tabPanel.height - self.tabPanel.tabHeight, self)
-    self.globalPanel:initialise()
-    self.tabPanel:addView("Global", self.globalPanel)
+    -- 2. DATABASE TAB
+    self.databasePanel = DTNPC_DatabaseListPanel:new(0, 0, listW, self.tabPanel.height - self.tabPanel.tabHeight, self)
+    self.databasePanel:initialise()
+    self.tabPanel:addView("All NPCs (DB)", self.databasePanel)
 
     -- 3. DETAILS PANEL (Right side)
     self.detailsPanel = DTNPC_DetailsPanel:new(listW, 20, self.width - listW, self.height - 20 - footerH)
@@ -129,8 +129,8 @@ function DTNPC_Debugger:onTabToggled()
 end
 
 function DTNPC_Debugger:refresh()
-    self.livePanel:refresh()
-    self.globalPanel:refresh()
+    self.activeNearbyPanel:refresh()
+    self.databasePanel:refresh()
     self.detailsPanel.propertyList:clear()
     self.selectedNPC = nil
     self.teleportBtn.enable = false
@@ -143,10 +143,10 @@ function DTNPC_Debugger:onSelectNPC(item, sourcePanel)
     self.markerBtn.enable = true
     
     -- Deselect other panel logic
-    if sourcePanel == self.livePanel then
-        self.globalPanel.npcList.selected = -1
+    if sourcePanel == self.activeNearbyPanel then
+        self.databasePanel.npcList.selected = -1
     else
-        self.livePanel.npcList.selected = -1
+        self.activeNearbyPanel.npcList.selected = -1
     end
     
     self.detailsPanel:setData(item)
@@ -154,12 +154,12 @@ end
 
 function DTNPC_Debugger:onTeleport()
     if not self.selectedNPC then return end
-    local brain = self.selectedNPC.brain
-    if brain and (brain.lastX or self.selectedNPC.zombie) then
+    local npcData = self.selectedNPC.npcData
+    if npcData and (npcData.lastX or self.selectedNPC.zombie) then
         local p = getPlayer()
-        local tx = brain.lastX
-        local ty = brain.lastY
-        local tz = brain.lastZ or 0
+        local tx = npcData.lastX
+        local ty = npcData.lastY
+        local tz = npcData.lastZ or 0
         
         if self.selectedNPC.zombie then
             tx = self.selectedNPC.zombie:getX()
@@ -176,10 +176,10 @@ end
 function DTNPC_Debugger:onMarkNPC()
     if not self.selectedNPC then return end
     
-    local brain = self.selectedNPC.brain
+    local npcData = self.selectedNPC.npcData
     local id = self.selectedNPC.id
-    local x = brain.lastX
-    local y = brain.lastY
+    local x = npcData.lastX
+    local y = npcData.lastY
     
     if self.selectedNPC.zombie then
         x = self.selectedNPC.zombie:getX()
@@ -192,10 +192,10 @@ function DTNPC_Debugger:onMarkNPC()
     local color = {r=0.2, g=1, b=0.2} 
     local icon = "friend.png"
     
-    EventMarkerHandler.set("npc_" .. id, icon, 1800, x, y, color, brain.name)
+    EventMarkerHandler.set("npc_" .. id, icon, 1800, x, y, color, npcData.name)
     
     local player = getSpecificPlayer(0)
-    if player then player:Say("Marked NPC: " .. brain.name) end
+    if player then player:Say("Marked NPC: " .. npcData.name) end
 end
 
 function DTNPC_Debugger:onClearMarkers()

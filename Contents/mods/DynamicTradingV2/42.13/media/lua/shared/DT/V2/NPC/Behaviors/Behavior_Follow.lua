@@ -64,16 +64,16 @@ end
 -- 3. BEHAVIOR LOGIC
 -- ==============================================================================
 
-DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
+DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
     
     -- CRITICAL FIX: Clear anchor when following
     -- This prevents rubber banding when switching from Stay to Follow
-    brain.anchorX = nil
-    brain.anchorY = nil
-    brain.anchorZ = nil
+    npcData.anchorX = nil
+    npcData.anchorY = nil
+    npcData.anchorZ = nil
     
     if not target then 
-        -- print("[DTNPC-Follow] No target for " .. (brain.name or "NPC"))
+        -- print("[DTNPC-Follow] No target for " .. (npcData.name or "NPC"))
         if not zombie:isUseless() then zombie:setUseless(true) end
         stopAnimation(zombie)
         return 
@@ -91,12 +91,12 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
     end
 
     -- 2. HYSTERESIS CHECK
-    if not brain.isMovingState then brain.isMovingState = false end
+    if not npcData.isMovingState then npcData.isMovingState = false end
     
-    local wasMoving = brain.isMovingState
-    local shouldMove = brain.isMovingState
+    local wasMoving = npcData.isMovingState
+    local shouldMove = npcData.isMovingState
 
-    if brain.isMovingState then
+    if npcData.isMovingState then
         if dist <= STOP_THRESHOLD_END then
             shouldMove = false
         end
@@ -106,12 +106,12 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
         end
     end
     
-    brain.isMovingState = shouldMove
+    npcData.isMovingState = shouldMove
 
     -- 3. WAKE UP CALL
     if shouldMove and not wasMoving then
         if DTNPCLogic.Behaviors["Attack"] then
-            DTNPCLogic.Behaviors["Attack"](zombie, brain, target, dist)
+            DTNPCLogic.Behaviors["Attack"](zombie, npcData, target, dist)
         end
         return 
     end
@@ -121,7 +121,7 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
         if not zombie:isUseless() then zombie:setUseless(true) end
         stopAnimation(zombie)
         zombie:faceLocation(target:getX(), target:getY())
-        brain.tasks = {}
+        npcData.tasks = {}
         return
     end
 
@@ -179,5 +179,5 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, brain, target, dist)
         stopAnimation(zombie)
     end
     
-    brain.tasks = {}
+    npcData.tasks = {}
 end
