@@ -11,12 +11,17 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Weapon.Firearm.Ranged] [Rarity.Common] (16 items)
+    -- [Weapon.Firearm.Ranged] [Rarity.Common] (22 items)
     { item="Base.AssaultRifle", basePrice=36, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
     { item="Base.AssaultRifle2", basePrice=33, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
     { item="Base.DoubleBarrelShotgun", basePrice=36, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
     { item="Base.DoubleBarrelShotgunSawnoff", basePrice=30, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
     { item="Base.HuntingRifle", basePrice=35, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.JS14_Rifle", basePrice=40, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.JS3T_Shotgun", basePrice=31, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.L92_Carbine", basePrice=36, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.L94_Rifle", basePrice=37, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.MSR7T_Rifle", basePrice=33, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
     { item="Base.Pistol", basePrice=51, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=2, max=10} },
     { item="Base.Pistol2", basePrice=51, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=2, max=10} },
     { item="Base.Pistol3", basePrice=46, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
@@ -27,6 +32,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Rifle_CapGun", basePrice=44, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
     { item="Base.Shotgun", basePrice=33, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
     { item="Base.ShotgunSawnoff", basePrice=20, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.TrapperCarbine", basePrice=33, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
     { item="Base.VarmintRifle", basePrice=34, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
 })
 

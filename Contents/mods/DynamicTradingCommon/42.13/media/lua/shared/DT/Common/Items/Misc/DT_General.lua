@@ -402,7 +402,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.TrapStick", basePrice=1, tags={"Misc.General", "Rarity.Common"}, stockRange={min=2, max=10} },
     { item="Base.WaterDrop", basePrice=10, tags={"Misc.General", "Rarity.Common"}, stockRange={min=5, max=25} },
 
-    -- [Misc.General] [Rarity.Rare] (1892 items)
+    -- [Misc.General] [Rarity.Rare] (1893 items)
     { item="Base.3030Box", basePrice=14, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.3030Bullets", basePrice=19, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.3030Carton", basePrice=12, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=1} },
@@ -1300,6 +1300,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.JellyRoll", basePrice=17, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.JigLure", basePrice=17, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Journal", basePrice=2, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.JS14_Clip", basePrice=8, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Jujubes", basePrice=17, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Kale", basePrice=8, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.KaleBagSeed", basePrice=510, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },

@@ -4,8 +4,85 @@ Extracts item definitions from Project Zomboid scripts
 """
 import os
 import re
+import json
 from ..config import VANILLA_DIR
 from ..parse.blacklist import is_item_blacklisted
+
+
+_translation_cache = None
+
+def load_translations():
+    """Load item name translations from the game's JSON files."""
+    global _translation_cache
+    if _translation_cache is not None:
+        return _translation_cache
+        
+    _translation_cache = {}
+    
+    # Try to find the Translate/EN directory relative to VANILLA_DIR
+    translation_dir = VANILLA_DIR.replace("/scripts/", "/lua/shared/Translate/EN/")
+    if not os.path.exists(translation_dir):
+        # Fallback
+        translation_dir = VANILLA_DIR.replace("scripts", "lua/shared/Translate/EN")
+        
+    item_name_path = os.path.join(translation_dir, "ItemName.json")
+    
+    if os.path.exists(item_name_path):
+        try:
+            with open(item_name_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                # Clean out any potential trailing commas or comments if needed
+                _translation_cache = json.loads(content)
+        except Exception as e:
+            print(f"⚠️ Failed to load translations from {item_name_path}: {e}")
+            
+    return _translation_cache
+
+
+def get_translated_name(item_id, props, default_module="Base"):
+    """
+    Attempt to get the properly formatted display name by checking props
+    and translating via the game's JSON files.
+    """
+    translations = load_translations()
+    
+    # Extract DisplayName property if present
+    display_name_prop = get_property_value(props, "DisplayName", "")
+    
+    # Fallback to item_id if no DisplayName is defined
+    base_name = display_name_prop if display_name_prop else item_id
+    
+    if translations:
+        # Exact match with module (e.g., Base.Axe)
+        module_item = f"{default_module}.{item_id}"
+        if module_item in translations:
+            return translations[module_item]
+            
+        # If it has a DisplayName property, sometimes the translation key is ItemName_Base_X
+        # Since build 42, JSON keys are typically Module.ItemID or ItemName_Module_ItemID
+        # Let's check common patterns
+        patterns = [
+            f"ItemName_{default_module}_{base_name}",
+            f"{default_module}_{base_name}",
+            f"{default_module}.{base_name}",
+            base_name,
+            f"ItemName_{base_name}"
+        ]
+        
+        for p in patterns:
+            if p in translations:
+                return translations[p]
+                
+    # If translation fails, provide a cleaned up version of the raw name
+    if display_name_prop and " " in display_name_prop:
+        return display_name_prop # Was already a pretty string
+        
+    # Clean up something like "ItemName_Base_Axe" -> "Axe"
+    if display_name_prop.startswith("ItemName_"):
+        parts = display_name_prop.split("_")
+        return parts[-1] if len(parts) > 1 else display_name_prop
+        
+    return base_name
 
 
 def load_vanilla_items(apply_blacklist=True, verbose_blacklist=False):

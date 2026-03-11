@@ -10,7 +10,6 @@ import {
   createTheme,
   CssBaseline
 } from '@mui/material';
-import ItemTable from './ItemTable';
 import Actions from './Actions';
 import TaskConsole from './TaskConsole';
 import { getStats } from '../services/api';
@@ -97,14 +96,6 @@ const Dashboard = () => {
               </Paper>
             </Grid>
 
-            {/* Item Table */}
-            <Grid item xs={12}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>Vanilla Items</Typography>
-                <Divider sx={{ mb: 2 }} />
-                <ItemTable />
-              </Paper>
-            </Grid>
           </Grid>
         </Container>
 

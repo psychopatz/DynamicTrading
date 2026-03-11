@@ -1,7 +1,7 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 import sys
 import os
 from pathlib import Path
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Import from local ItemManagement package
 try:
     from ItemManagement import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR, generate_tags, calculate_price, get_stat
-    from ItemManagement.commons.vanilla_loader import get_property_value
+    from ItemManagement.commons.vanilla_loader import get_property_value, get_translated_name
     from ItemManagement.commons.lua_handler.records import tags_list_to_dict
     from ItemManagement.ui.commands import (
         update as run_update, 
@@ -61,7 +61,7 @@ class StatsResponse(BaseModel):
     notifications: List[str]
 
 class AddRequest(BaseModel):
-    batch_size: int = 50
+    batch_size: Union[int, str] = 50
 
 class FindPropertyRequest(BaseModel):
     property_name: str
@@ -103,20 +103,25 @@ async def get_stats():
     }
 
 @app.get("/api/items")
-async def list_items(search: Optional[str] = None, limit: int = 100, offset: int = 0):
+async def list_items(
+    search: Optional[str] = None, 
+    status: Optional[str] = None,
+    tag: Optional[str] = None,
+    min_weight: Optional[float] = None,
+    max_weight: Optional[float] = None,
+    min_price: Optional[int] = None,
+    max_price: Optional[int] = None,
+    limit: int = 100, 
+    offset: int = 0
+):
     try:
         items = get_items()
         registered_ids = get_registered_items() # Full set from Lua files
         
-        results = []
+        filtered_results = []
         item_keys = list(items.keys())
         
-        # Simple search
-        if search:
-            search = search.lower()
-            item_keys = [k for k in item_keys if search in k.lower()]
-            
-        for item_id in item_keys[offset:offset+limit]:
+        for item_id in item_keys:
             props = items[item_id]
             is_bl, _ = is_item_blacklisted(item_id, {})
             
@@ -126,23 +131,72 @@ async def list_items(search: Optional[str] = None, limit: int = 100, offset: int
             price = calculate_price(item_id, props, tags_dict)
             weight = get_stat(props, "Weight", 0.5)
             
-            results.append({
+            item_name = get_translated_name(item_id, props)
+            
+            # Application of filters
+            if search and search.lower() not in item_name.lower() and search.lower() not in item_id.lower():
+                continue
+                
+            if status:
+                if status == "registered" and item_id not in registered_ids:
+                    continue
+                elif status == "unregistered" and (item_id in registered_ids or is_bl):
+                    continue
+                elif status == "blacklisted" and not is_bl:
+                    continue
+                    
+            if tag:
+                # Match if tag exists within any tag string in the array
+                if not any(tag.lower() in t.lower() for t in tags_list):
+                    continue
+                    
+            if min_weight is not None and weight < min_weight:
+                continue
+            if max_weight is not None and weight > max_weight:
+                continue
+            if min_price is not None and price < min_price:
+                continue
+            if max_price is not None and price > max_price:
+                continue
+            
+            filtered_results.append({
                 "id": item_id,
-                "name": get_property_value(props, "DisplayName", item_id) or item_id,
+                "name": item_name,
                 "is_blacklisted": bool(is_bl),
                 "is_registered": item_id in registered_ids,
                 "price": int(price),
                 "tags": tags_list,
                 "weight": float(weight)
             })
+            
+        total = len(filtered_results)
+        
+        # Paginate correctly after slicing
+        paginated_results = filtered_results[offset:offset+limit]
         
         return {
-            "total": len(item_keys),
-            "items": results
+            "total": total,
+            "items": paginated_results
         }
     except Exception as e:
         logger.error(f"Error in list_items: {e}")
         return {"total": 0, "items": [], "error": str(e)}
+
+@app.get("/api/tags")
+async def list_unique_tags():
+    try:
+        items = get_items()
+        unique_tags = set()
+        
+        for item_id, props in items.items():
+            tags_list = generate_tags(item_id, props)
+            for tag in tags_list:
+                unique_tags.add(tag)
+                
+        return {"tags": sorted(list(unique_tags))}
+    except Exception as e:
+        logger.error(f"Error fetching tags: {e}")
+        return {"tags": [], "error": str(e)}
 
 # --- Task Routes ---
 

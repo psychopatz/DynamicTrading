@@ -6,17 +6,23 @@ import {
     TableContainer, 
     TableHead, 
     TableRow, 
-    Paper, 
+    Paper,
     TablePagination, 
     Link, 
     Chip, 
     TextField, 
     InputAdornment, 
     Box,
-    Typography
+    Typography,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    Grid,
+    Autocomplete
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { getItems } from '../services/api';
+import { getItems, getTags } from '../services/api';
 
 const ItemTable = () => {
     const [items, setItems] = useState([]);
@@ -24,13 +30,26 @@ const ItemTable = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [tagFilter, setTagFilter] = useState(null);
+    const [availableTags, setAvailableTags] = useState([]);
+    const [minWeight, setMinWeight] = useState('');
+    const [maxWeight, setMaxWeight] = useState('');
+    const [minPrice, setMinPrice] = useState('');
+    const [maxPrice, setMaxPrice] = useState('');
 
     const fetchItems = async () => {
         try {
             const response = await getItems({
                 limit: rowsPerPage,
                 offset: page * rowsPerPage,
-                search: search
+                search: search || undefined,
+                status: statusFilter || undefined,
+                tag: tagFilter || undefined,
+                min_weight: minWeight !== '' ? Number(minWeight) : undefined,
+                max_weight: maxWeight !== '' ? Number(maxWeight) : undefined,
+                min_price: minPrice !== '' ? Number(minPrice) : undefined,
+                max_price: maxPrice !== '' ? Number(maxPrice) : undefined,
             });
             if (response.data && response.data.items) {
                 setItems(response.data.items);
@@ -46,12 +65,27 @@ const ItemTable = () => {
         }
     };
 
+    const fetchTags = async () => {
+        try {
+            const response = await getTags();
+            if (response.data && response.data.tags) {
+                setAvailableTags(response.data.tags);
+            }
+        } catch (err) {
+            console.error('Failed to fetch tags:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchTags();
+    }, []);
+
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchItems();
         }, 300); // Debounce search
         return () => clearTimeout(timer);
-    }, [page, rowsPerPage, search]);
+    }, [page, rowsPerPage, search, statusFilter, tagFilter, minWeight, maxWeight, minPrice, maxPrice]);
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -77,25 +111,98 @@ const ItemTable = () => {
     };
 
     return (
-        <Box>
-            <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                <TextField
-                    size="small"
-                    variant="outlined"
-                    placeholder="Search items..."
-                    value={search}
-                    onChange={handleSearchChange}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon />
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{ width: 300 }}
-                />
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6} md={3} lg={2} xl={2}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            variant="outlined"
+                            placeholder="Search names/IDs..."
+                            value={search}
+                            onChange={handleSearchChange}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={6} md={2} lg={2} xl={2}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={statusFilter}
+                                label="Status"
+                                onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+                            >
+                                <MenuItem value="">All Statuses</MenuItem>
+                                <MenuItem value="registered">Registered</MenuItem>
+                                <MenuItem value="unregistered">Unregistered</MenuItem>
+                                <MenuItem value="blacklisted">Blacklisted</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                    <Grid item xs={6} sm={12} md={3} lg={3} xl={4}>
+                        <Autocomplete
+                            fullWidth
+                            freeSolo
+                            size="small"
+                            options={availableTags}
+                            value={tagFilter}
+                            onChange={(event, newValue) => { setTagFilter(newValue); setPage(0); }}
+                            onInputChange={(event, newInputValue) => { setTagFilter(newInputValue); setPage(0); }}
+                            renderInput={(params) => (
+                                <TextField {...params} label="Filter by Tag" variant="outlined" />
+                            )}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={3} md={1} lg={1} xl={1}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Min Wt(kg)"
+                            type="number"
+                            value={minWeight}
+                            onChange={(e) => { setMinWeight(e.target.value); setPage(0); }}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={3} md={1} lg={1} xl={1}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Max Wt(kg)"
+                            type="number"
+                            value={maxWeight}
+                            onChange={(e) => { setMaxWeight(e.target.value); setPage(0); }}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={3} md={1} lg={1} xl={1}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Min Price($)"
+                            type="number"
+                            value={minPrice}
+                            onChange={(e) => { setMinPrice(e.target.value); setPage(0); }}
+                        />
+                    </Grid>
+                    <Grid item xs={6} sm={3} md={1} lg={1} xl={1}>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Max Price($)"
+                            type="number"
+                            value={maxPrice}
+                            onChange={(e) => { setMaxPrice(e.target.value); setPage(0); }}
+                        />
+                    </Grid>
+                </Grid>
             </Box>
-            <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+            <TableContainer component={Paper} sx={{ flexGrow: 1, overflow: 'auto', boxShadow: 'none' }}>
                 <Table size="small" stickyHeader>
                     <TableHead>
                         <TableRow>

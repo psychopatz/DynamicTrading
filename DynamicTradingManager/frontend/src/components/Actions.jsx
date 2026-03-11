@@ -81,9 +81,17 @@ const Actions = ({ onTaskStarted }) => {
                                     startIcon={<AddIcon />}
                                     onClick={() => handleAction(api.triggerAdd, batchSize)}
                                 >
-                                    Add Items
+                                    Add Items Batch
                                 </Button>
                             </Box>
+
+                            <Button 
+                                variant="contained" 
+                                color="secondary" 
+                                onClick={() => handleAction(api.triggerAdd, 'all')}
+                            >
+                                Generate All Items
+                            </Button>
 
                             <Button 
                                 variant="outlined" 
@@ -91,7 +99,7 @@ const Actions = ({ onTaskStarted }) => {
                                 startIcon={<DeleteIcon />}
                                 onClick={() => setResetDialogOpen(true)}
                             >
-                                Reset Registry
+                                Delete All Items
                             </Button>
                         </Stack>
                     </Paper>
@@ -175,9 +183,9 @@ const Actions = ({ onTaskStarted }) => {
                 </Grid>
             </Grid>
 
-            {/* Reset Confirmation Dialog */}
+            {/* Delete All Confirmation Dialog */}
             <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)}>
-                <DialogTitle sx={{ color: 'error.main' }}>Confirm registry reset?</DialogTitle>
+                <DialogTitle sx={{ color: 'error.main' }}>Confirm Delete All Items?</DialogTitle>
                 <DialogContent>
                     <Typography>
                         This will permanently delete all registered items from their respective categories. 

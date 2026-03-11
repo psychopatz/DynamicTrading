@@ -7,6 +7,7 @@ const api = axios.create({
 // Stats & Items
 export const getStats = () => api.get('/stats');
 export const getItems = (params) => api.get('/items', { params });
+export const getTags = () => api.get('/tags');
 
 // Actions
 export const triggerUpdate = () => api.post('/actions/update');
