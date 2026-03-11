@@ -36,12 +36,14 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
         for radius = 1, 15 do
             for _x = -radius, radius do
                 for _y = -radius, radius do
-                    local tSq = cell:getGridSquare(x + _x, y + _y, z)
-                    if tSq and tSq:isFree(false) and not tSq:isSolid() and not tSq:isSolidTrans() then
-                        x = x + _x
-                        y = y + _y
-                        foundSq = tSq
-                        break
+                    if math.abs(_x) == radius or math.abs(_y) == radius then
+                        local tSq = cell:getGridSquare(x + _x, y + _y, z)
+                        if tSq and tSq:isFree(false) and not tSq:isSolid() and not tSq:isSolidTrans() then
+                            x = x + _x
+                            y = y + _y
+                            foundSq = tSq
+                            break
+                        end
                     end
                 end
                 if foundSq then break end
@@ -56,12 +58,14 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
         for radius = 1, 15 do
             for _x = -radius, radius do
                 for _y = -radius, radius do
-                    local tSq = cell:getGridSquare(x + _x, y + _y, z)
-                    if tSq and not tSq:isSolid() and not tSq:isSolidTrans() then
-                        x = x + _x
-                        y = y + _y
-                        foundSq = tSq
-                        break
+                    if math.abs(_x) == radius or math.abs(_y) == radius then
+                        local tSq = cell:getGridSquare(x + _x, y + _y, z)
+                        if tSq and not tSq:isSolid() and not tSq:isSolidTrans() then
+                            x = x + _x
+                            y = y + _y
+                            foundSq = tSq
+                            break
+                        end
                     end
                 end
                 if foundSq then break end
