@@ -34,9 +34,14 @@ try:
     from ItemManagement.ui.stats import count_registered_items, find_invalid_blacklist_ids
     from ItemManagement.parse import load_blacklist, is_item_blacklisted
     from ItemManagement.task_manager import manager
+    from DebugManagement import LogParser
 except ImportError as e:
-    logger.error(f"Error importing ItemManagement modules: {e}")
+    logger.error(f"Error importing ItemManagement or DebugManagement modules: {e}")
     sys.exit(1)
+
+# Initialize Debug Parser
+CONSOLE_PATH = os.getenv("CONSOLE_PATH", "/home/psychopatz/Zomboid/console.txt")
+debug_parser = LogParser(CONSOLE_PATH)
 
 app = FastAPI(title="Dynamic Trading Manager API")
 
@@ -277,6 +282,18 @@ async def trigger_generate_docs():
 @app.get("/api/blacklist")
 async def get_blacklist():
     return load_blacklist()
+
+# --- Debug / Logs ---
+
+@app.get("/api/debug/logs")
+async def get_debug_logs(limit: int = 500, only_dt: bool = False, offset: Optional[int] = None):
+    try:
+        if offset is not None:
+            return debug_parser.get_new_lines(offset, only_dt=only_dt)
+        return debug_parser.get_last_n_lines(lines=limit, only_dt=only_dt)
+    except Exception as e:
+        logger.error(f"Error fetching debug logs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Simulation ---
 
