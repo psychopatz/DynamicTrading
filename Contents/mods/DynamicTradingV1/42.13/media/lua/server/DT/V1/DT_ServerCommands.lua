@@ -63,7 +63,6 @@ function Commands.RequestFullState(player, args)
     -- Sync V1 Radio state (scanning limits, discovery data)
     local data = DynamicTrading.Manager.GetData()
     if data then
-        ModData.transmit("DynamicTrading_V1_Radio")
         
         -- Targeted Sync: Transmit individual soul brains for active radio traders
         -- This ensures clients get visuals and full identity for found traders

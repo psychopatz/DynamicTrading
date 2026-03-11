@@ -61,4 +61,13 @@ Sandbox_EN = {
 
     Sandbox_DynamicTrading_FactionFlashMaxActive = "Faction Flash Max Active",
     Sandbox_DynamicTrading_FactionFlashMaxActive_tooltip = "Maximum number of concurrent faction flash-event slots per faction.",
+
+    Sandbox_DynamicTrading_NPCTradePopPercent = "NPC: Max Trading Population (%)",
+    Sandbox_DynamicTrading_NPCTradePopPercent_tooltip = "The maximum percentage of a faction's population allowed to be on a trading mission (Away or Trading status) at once.",
+
+    Sandbox_DynamicTrading_NPCTradingWalkHours = "NPC: Trade Travel Time (Hours)",
+    Sandbox_DynamicTrading_NPCTradingWalkHours_tooltip = "How many hours of travel time (Away state) the NPC takes to reach or return from a trading location.",
+
+    Sandbox_DynamicTrading_NPCTradingStayHours = "NPC: Trade Stay Time (Hours)",
+    Sandbox_DynamicTrading_NPCTradingStayHours_tooltip = "How many hours the NPC stays at the trading location (Trading state).",
 }

@@ -121,9 +121,12 @@ function V1_Radio_DataProvider:getTrader(traderID, archetype)
     }
     
     -- Fallback: Fetch from Radio Manager if missing in stock
-        if soul then
-            trader.returnTime = trader.returnTime or soul.returnTime
+    if DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetTrader then
+        local fallbackTrader = DynamicTrading.Manager.GetTrader(traderID)
+        if fallbackTrader then
+            trader.returnTime = trader.returnTime or fallbackTrader.returnTime
         end
+    end
     
     return trader
 end
@@ -279,10 +282,22 @@ function V1_Radio_DataProvider:getWindowTitle(trader)
 end
 
 function V1_Radio_DataProvider:isConnectionValid(radioObj)
-    if not radioObj then return false end
-    if DT_TradingWindow and DT_TradingWindow.instance then
-        if not DT_TradingWindow.instance:getIsVisible() then return false end
+    -- [OPTIMIZATION]
+    -- 1. Check if we have a radio obj.
+    if not radioObj then
+        return self.radioObj ~= nil
     end
+
+    -- 2. VISIBILITY CHECK (The "Kill Switch")
+    if DT_TradingWindow and DT_TradingWindow.instance then
+        if not DT_TradingWindow.instance:getIsVisible() then
+            print("[DynamicTrading] Window is NOT visible, returning false")
+            return false
+        end
+    end
+
+    -- 3. DISTANCE CHECK
+    -- Delegate to core util, which handles nil objects safely by returning true
     return DynamicTrading.Utils.IsInteractionValid(radioObj, nil, nil)
 end
 

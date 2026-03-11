@@ -19,7 +19,8 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
 
-local V1_DATA_KEY = "DynamicTrading_V1_Radio"
+local V1_DATA_KEY = "DynamicTrading_V1_Radio" -- Deprecated, kept only for legacy saves
+local V2_RADAR_KEY = "DT_V2_RadarFound"
 
 -- =============================================================================
 -- 1. HELPER: CALCULATE "TRADING DAY" (5 AM START)
@@ -31,49 +32,22 @@ function DynamicTrading.Manager.GetTradingDay()
 end
 
 -- =============================================================================
--- 2. V1 RADIO DATA (Lightweight — scanning state + discovery only)
+-- 2. DISCOVERY CACHE INIT (V1/V2 Shared)
 -- =============================================================================
-function DynamicTrading.Manager.GetData()
-    local data = ModData.getOrCreate(V1_DATA_KEY)
-    
-    -- Radio Traders Registry: maps traderID (Soul UUID) → radio-specific metadata
-    if not data.RadioTraders then data.RadioTraders = {} end
-    
-    -- Global version for UI refreshes
-    if not data.tradersVersion then data.tradersVersion = 0 end
-    
-    return data
+-- We now use V2's exact ModData key for cross-parity so finding them on V2 Radar
+-- makes them appear on V1 Radio, and vice versa.
+local function GetRadarData()
+    return ModData.getOrCreate(V2_RADAR_KEY)
 end
 
 -- =============================================================================
--- 3. DAILY STATUS (Radio scanning limits)
+-- 3. LEGACY DATA CLEANUP
 -- =============================================================================
--- DEPRECATED: Daily Status no longer exists (legacy cleanup)
-function DynamicTrading.Manager.GetDailyStatus()
-    return 0, 999 
-end
-
--- DEPRECATED: IncrementDailyCounter no longer exists (legacy cleanup)
-function DynamicTrading.Manager.IncrementDailyCounter()
-    DynamicTrading.Manager.BumpTradersVersion()
-end
-
--- =============================================================================
--- 4. DAILY RESET (Radio-specific — scanning limits only)
--- =============================================================================
-function DynamicTrading.Manager.CheckDailyReset()
-    -- Legacy logic removed.
-end
-
--- =============================================================================
--- 5. DATA SYNC (CLIENT RECEPTION)
--- =============================================================================
-local function OnReceiveGlobalModData(key, data)
-    if key == V1_DATA_KEY and type(data) == "table" then
-        ModData.add(key, data)
-    end
-end
-Events.OnReceiveGlobalModData.Add(OnReceiveGlobalModData)
+-- Kept empty to catch old calls safely
+function DynamicTrading.Manager.GetData() return {} end
+function DynamicTrading.Manager.GetDailyStatus() return 0, 999 end
+function DynamicTrading.Manager.IncrementDailyCounter() end
+function DynamicTrading.Manager.CheckDailyReset() end
 
 -- =============================================================================
 -- 6. TRADER CREATION (Creates Soul in shared Roster + Stock)
@@ -137,6 +111,7 @@ function DynamicTrading.Manager.GenerateRandomContact_ServerCommand(targetArchet
     end
 
     -- 6. Expiration (Radio specific — traders leave after X hours)
+    -- V1 now dictates returnTime instantly upon generation rather than relying on RadioTraders table
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
     local minHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6
@@ -145,18 +120,16 @@ function DynamicTrading.Manager.GenerateRandomContact_ServerCommand(targetArchet
     local duration = ZombRand(minHours, maxHours + 1)
     local expireTime = currentHours + duration
 
-    -- 7. Store radio-specific metadata (keyed by Soul UUID)
-    data.RadioTraders[uuid] = {
-        id = uuid,
-        returnTime = expireTime,
-        discoveredBy = {},
-        createdHour = currentHours
-    }
+    -- Apply expiration to Common Roster
+    if DynamicTrading_Roster.UpdateSoulStatus then
+        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", expireTime, "Away")
+    end
 
-    -- Auto-discover for the creating player
-    DynamicTrading.Manager.IncrementDailyCounter()
-    
-    if isServer() or not isClient() then ModData.transmit(V1_DATA_KEY) end
+    -- Server syncs Common Faction/Roster instead of legacy Radio data
+    if isServer() or not isClient() then 
+        ModData.transmit("DynamicTrading_Roster") 
+        ModData.transmit("DynamicTrading_Factions")
+    end
     
     -- Return a V1-compatible trader object for the caller
     return DynamicTrading.Manager.GetTrader(uuid)
@@ -171,22 +144,7 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
     -- Fetch from shared systems
     local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(traderID)
     local stockData = DynamicTrading_Stock and DynamicTrading_Stock.GetStock(traderID)
-    local radioData = DynamicTrading.Manager.GetData().RadioTraders[traderID]
-    
-    -- Require a valid soul in the roster
-    if not soul then return nil end
-    
-    -- Get faction data for wealth (acts as "budget")
-    local factionWealth = 0
-    local factionID = soul and soul.factionID
-    if factionID and DynamicTrading_Factions then
-        local faction = DynamicTrading_Factions.GetFaction(factionID)
-        if faction then
-            factionWealth = faction.wealth or 0
-        end
-    end
-
-    -- Build V1-compatible trader object
+    -- Build V1-compatible trader object directly from Common Data
     local trader = {
         -- Identity
         id = traderID,
@@ -203,15 +161,14 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
         budget = factionWealth,
         factionID = factionID,
         
-        -- Radio-specific
-        returnTime = (radioData and radioData.returnTime) or (soul and soul.returnTime),
-        discoveredBy = radioData and radioData.discoveredBy or {},
+        -- Shared common
+        returnTime = (soul and soul.returnTime),
         
         -- Deflation (from Stock system)
         localDeflation = (stockData and stockData.deflation) or {},
         
-        -- Status (from Roster) [NEW]
-        status = (soul and soul.status) or (radioData and "Trading") or "Away",
+        -- Status (from Roster)
+        status = (soul and soul.status) or "Away",
         
         -- Restock
         lastRestockDay = -1
@@ -233,112 +190,101 @@ end
 -- =============================================================================
 -- 9. RADIO TRADER EXPIRATION (Cleanup Soul + Stock)
 -- =============================================================================
+-- Handled by Common Lifecycle naturally, but preserved for explicit UI calls.
 function DynamicTrading.Manager.ExpireRadioTrader(traderID)
-    local data = DynamicTrading.Manager.GetData()
-    local radioData = data.RadioTraders[traderID]
-    if not radioData then return end
-    
     local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(traderID)
-    local traderName = (soul and soul.name) or "Unknown"
+    if not soul then return end
+    
+    local traderName = soul.name or "Unknown"
     
     -- Clear stock
     if DynamicTrading_Stock and DynamicTrading_Stock.ClearStock then
         DynamicTrading_Stock.ClearStock(traderID)
     end
     
-    -- Update soul status to "Away" (or remove)
+    -- Update soul status to "Away"
     if DynamicTrading_Roster and DynamicTrading_Roster.UpdateSoulStatus then
         DynamicTrading_Roster.UpdateSoulStatus(traderID, "Away", nil, nil)
     end
     
-    -- Remove from V1 radio registry
-    data.RadioTraders[traderID] = nil
-    
     DynamicTrading.NetworkLogs.AddLog("Signal Lost: " .. traderName, "bad")
     
-    if isServer() or not isClient() then ModData.transmit(V1_DATA_KEY) end
+    if isServer() or not isClient() then ModData.transmit("DynamicTrading_Roster") end
 end
 
 -- =============================================================================
--- 10. DISCOVERY SYSTEM (Radio-specific per-player visibility)
+-- 10. DISCOVERY SYSTEM (V2 Client Cache Parity)
 -- =============================================================================
 function DynamicTrading.Manager.DiscoverTrader(traderID, player)
+    -- V1 now mirrors V2 Radar exactly. Discovery is completely local-client side.
     if not traderID or not player then return false end
-
-    if isClient() and not isServer() then
-        -- Route to Server in MP
-        sendClientCommand(player, "DynamicTrading_V1", "DiscoverTrader", { traderID = traderID })
-        -- Eagerly return true on client to allow UI to proceed if needed, but the actual save happens on server
-        return true
-    end
-
-    return DynamicTrading.Manager.DiscoverTrader_ServerCommand(traderID, player)
-end
-
-function DynamicTrading.Manager.DiscoverTrader_ServerCommand(traderID, player)
-    local data = DynamicTrading.Manager.GetData()
     
-    -- If not in V1 registry, create entry (Discovery Bridge)
-    if not data.RadioTraders[traderID] then
+    local username = player:getUsername()
+    local radarData = GetRadarData()
+    
+    -- Found in local Cache? Then we already know them.
+    if radarData[traderID] then return false end
+    
+    local soul = DynamicTrading_Roster.GetSoulRegistry(traderID)
+    if not soul then return false end
+    
+    -- Ensure trader has an expiration time if they are somehow missing one
+    if not soul.returnTime or soul.returnTime == 0 then
         local gt = GameTime:getInstance()
         local currentHours = gt:getWorldAgeHours()
-        
-        -- Give the bridged trader a standard V1 radio lifetime. 
-        -- The first player to discover them sets this expiry for everyone.
         local minHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6
         local maxHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMax) or 24
         if minHours > maxHours then minHours = maxHours end
         local duration = ZombRand(minHours, maxHours + 1)
-        local expireTime = currentHours + duration
-
-        data.RadioTraders[traderID] = {
-            id = traderID,
-            returnTime = expireTime,
-            discoveredBy = {},
-            createdHour = currentHours
-        }
-    end
-    
-    local radioData = data.RadioTraders[traderID]
-    local username = player:getUsername()
-    if not radioData.discoveredBy then radioData.discoveredBy = {} end
-    
-    if not radioData.discoveredBy[username] then
-        radioData.discoveredBy[username] = true
         
-        -- Trigger Network Log on Discovery
-        local soul = DynamicTrading_Roster.GetSoulRegistry(traderID)
-        local traderName = (soul and soul.name) or ("Trader " .. tostring(ZombRand(1000)))
-        local factionName = "Independent"
-        local factionID = soul and soul.factionID
-        if factionID and DynamicTrading_Factions then
-            local faction = DynamicTrading_Factions.GetFaction(factionID)
-            if faction then factionName = faction.name or factionID end
+        if isClient() and not isServer() then
+             -- (Ideally this doesn't happen, but if it does, server commands would be needed. 
+             -- For now, just assume server handles generation correctly)
+        else
+            if DynamicTrading_Roster.UpdateSoulStatus then
+                DynamicTrading_Roster.UpdateSoulStatus(traderID, "Trading", currentHours + duration, "Away")
+                ModData.transmit("DynamicTrading_Roster")
+            end
         end
-        
-        DynamicTrading.NetworkLogs.AddLog("Signal Acquired by " .. username .. ": " .. traderName .. " (" .. factionName .. ")", "good")
-        
-        DynamicTrading.Manager.BumpTradersVersion_ServerCommand()
-        return true
     end
-    return false
+    
+    local factionName = "Independent"
+    local factionID = soul.factionID
+    if factionID and DynamicTrading_Factions then
+        local faction = DynamicTrading_Factions.GetFaction(factionID)
+        if faction then factionName = faction.name or factionID end
+    end
+        
+    -- Save to completely local Cache exactly like V2 does
+    radarData[traderID] = {
+        name = soul.name or "Unknown Trader",
+        faction = factionName,
+        discoveredAt = getGameTime():getWorldAgeHours()
+    }
+    
+    DynamicTrading.NetworkLogs.AddLog("Signal Acquired by " .. username .. ": " .. (soul.name or "Trader") .. " (" .. factionName .. ")", "good")
+    
+    -- Trigger local UI update
+    local triggerBump
+    triggerBump = function()
+        DynamicTrading.Manager.BumpTradersVersion()
+        Events.OnTick.Remove(triggerBump)
+    end
+    Events.OnTick.Add(triggerBump)
+    
+    return true
 end
 
 function DynamicTrading.Manager.HasDiscovered(traderID, player)
     if not traderID or not player then return false end
-    local data = DynamicTrading.Manager.GetData()
-    local radioData = data.RadioTraders[traderID]
-    if not radioData then return false end
-    
     if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork then return true end
     
-    local username = player:getUsername()
-    return radioData.discoveredBy and radioData.discoveredBy[username] == true
+    local radarData = GetRadarData()
+    return radarData[traderID] ~= nil
 end
 
 function DynamicTrading.Manager.GetUndiscoveredTraders(player)
     if not player then return {} end
-    local username = player:getUsername()
     local isPublic = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork
     
     local undiscovered = {}
@@ -346,16 +292,14 @@ function DynamicTrading.Manager.GetUndiscoveredTraders(player)
     -- We search all Souls in the Roster that are in "Trading" state
     if DynamicTrading_Roster and ModData.exists("DynamicTrading_Roster") then
         local rosterData = ModData.get("DynamicTrading_Roster")
-        local data = DynamicTrading.Manager.GetData()
         local gt = GameTime:getInstance()
         local currentHours = gt:getWorldAgeHours()
 
         if rosterData and rosterData.Souls then
             for uuid, registry in pairs(rosterData.Souls) do
                 if registry.status == "Trading" then
-                    local radioData = data.RadioTraders and data.RadioTraders[uuid]
                     local expired = false
-                    if radioData and radioData.returnTime and currentHours > radioData.returnTime then
+                    if registry.returnTime and currentHours > registry.returnTime then
                         expired = true
                     end
                     
@@ -380,16 +324,14 @@ function DynamicTrading.Manager.GetTotalTradingSignals()
     local count = 0
     if DynamicTrading_Roster and ModData.exists("DynamicTrading_Roster") then
         local rosterData = ModData.get("DynamicTrading_Roster")
-        local data = DynamicTrading.Manager.GetData()
         local gt = GameTime:getInstance()
         local currentHours = gt:getWorldAgeHours()
 
         if rosterData and rosterData.Souls then
             for uuid, registry in pairs(rosterData.Souls) do
                 if registry.status == "Trading" then
-                    local radioData = data.RadioTraders and data.RadioTraders[uuid]
                     local expired = false
-                    if radioData and radioData.returnTime and currentHours > radioData.returnTime then
+                    if registry.returnTime and currentHours > registry.returnTime then
                         expired = true
                     end
                     
@@ -409,33 +351,40 @@ end
 
 function DynamicTrading.Manager.GetDiscoveredCount(player)
     if not player then return 0 end
-    local data = DynamicTrading.Manager.GetData()
+    local radarData = GetRadarData()
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
     
-    local function isValidSignal(id, radioData)
-        if radioData.returnTime and currentHours > radioData.returnTime then return false end
+    local function isValidSignal(id)
         local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(id)
         if not soul or soul.status ~= "Trading" then return false end
+        if soul.returnTime and currentHours > soul.returnTime then return false end
         return true
     end
     
     if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork then
         local count = 0
-        for id, radioData in pairs(data.RadioTraders) do 
-            if isValidSignal(id, radioData) then count = count + 1 end
+        if DynamicTrading_Roster and ModData.exists("DynamicTrading_Roster") then
+            local rosterData = ModData.get("DynamicTrading_Roster")
+            if rosterData and rosterData.Souls then
+                for uuid, registry in pairs(rosterData.Souls) do
+                    if registry.status == "Trading" and isValidSignal(uuid) then
+                        count = count + 1
+                    end
+                end
+            end
         end
         return count
     end
 
     local count = 0
-    local username = player:getUsername()
-    
-    for id, radioData in pairs(data.RadioTraders) do
-        if radioData.discoveredBy and radioData.discoveredBy[username] then
-            if isValidSignal(id, radioData) then
-                count = count + 1
-            end
+    -- Map over the local client cache
+    for id, _ in pairs(radarData) do
+        if isValidSignal(id) then
+            count = count + 1
+        else
+            -- Cleanup expired from local radar
+            radarData[id] = nil
         end
     end
     return count
@@ -445,41 +394,42 @@ end
 -- 11. VERSION BUMPING (Signals UI refreshes)
 -- =============================================================================
 function DynamicTrading.Manager.BumpTradersVersion()
-    if isClient() and not isServer() then
-        sendClientCommand(getPlayer(), "DynamicTrading_V1", "BumpTradersVersion", {})
-        return
-    end
-    DynamicTrading.Manager.BumpTradersVersion_ServerCommand()
+    -- Local UI refresh only needed now since data is purely local
+    local data = DynamicTrading.Manager.GetData()
+    data.tradersVersion = (data.tradersVersion or 0) + 1
 end
 
 function DynamicTrading.Manager.BumpTradersVersion_ServerCommand()
-    local data = DynamicTrading.Manager.GetData()
-    data.tradersVersion = (data.tradersVersion or 0) + 1
-    if isServer() or not isClient() then ModData.transmit(V1_DATA_KEY) end
+    -- Deprecated, unneeded
 end
 
 -- =============================================================================
 -- 12. ACTIVE RADIO TRADERS LIST (For UI)
 -- =============================================================================
 function DynamicTrading.Manager.GetActiveRadioTraders(player)
-    local data = DynamicTrading.Manager.GetData()
+    local radarData = GetRadarData()
     local traders = {}
-    local username = player and player:getUsername()
     local isPublic = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork
     
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
+    
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    if not rosterData or not rosterData.Souls then return traders end
 
-    for id, radioData in pairs(data.RadioTraders) do
-        local visible = isPublic or (radioData.discoveredBy and username and radioData.discoveredBy[username])
-        if visible then
-            -- [NEW] Local Expiration Filter
-            local expired = radioData.returnTime and currentHours > radioData.returnTime
+    for id, registry in pairs(rosterData.Souls) do
+        local visible = isPublic or radarData[id] ~= nil
+        if visible and registry.status == "Trading" then
+            local expired = registry.returnTime and currentHours > registry.returnTime
             if not expired then
                 local trader = DynamicTrading.Manager.GetTrader(id)
                 if trader and trader.status == "Trading" then
                     table.insert(traders, trader)
+                else
+                    radarData[id] = nil -- cleanup
                 end
+            else
+                radarData[id] = nil -- cleanup
             end
         end
     end

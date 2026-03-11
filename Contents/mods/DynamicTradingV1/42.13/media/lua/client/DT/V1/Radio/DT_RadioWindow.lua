@@ -126,28 +126,8 @@ end
 function DT_RadioWindow:CheckConnectionValidity()
     local player = getSpecificPlayer(0)
     if not player or not self.radioObj then return false end
-    
-    local data = self.radioObj:getDeviceData()
-    if not data then return false end
 
-    if not data:getIsTurnedOn() then return false end
-
-    if self.isHam then
-        local sq = self.radioObj:getSquare()
-        if not sq then return false end 
-        if IsoUtils.DistanceTo(player:getX(), player:getY(), self.radioObj:getX(), self.radioObj:getY()) > 2.5 then return false end 
-        
-        local hasPower = false
-        if data:getIsBatteryPowered() then
-            if data:getPower() > 0 then hasPower = true end
-        elseif sq:haveElectricity() then hasPower = true end
-        if not hasPower then return false end
-    else
-        if self.radioObj:getContainer() ~= player:getInventory() then return false end
-        if data:getPower() <= 0.001 then return false end
-    end
-
-    return true
+    return DynamicTrading.Utils.IsInteractionValid(self.radioObj, player, nil)
 end
 
 function DT_RadioWindow:close()
