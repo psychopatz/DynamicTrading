@@ -38,7 +38,7 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
         return
     end
 
-    print("[DTNPC-Client] Applying visuals for: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ")")
+    DynamicTrading.Log("DTV2", "NPC", "Visuals", "Applying visuals for: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ")")
     
     if DTNPC and DTNPC.ApplyVisuals then
         DTNPC.ApplyVisuals(zombie, npcData)

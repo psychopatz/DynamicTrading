@@ -7,7 +7,7 @@
 function DynamicTrading.Events.Register(id, data)
     if not id or not data then 
         if DynamicTrading.Debug then
-            print("[DynamicTrading] [Events] [Registry] WARN: Register called with invalid id or data")
+            DynamicTrading.Log("DTCommons", "Events", "Registry", "WARN: Register called with invalid id or data")
         end
         return 
     end
@@ -16,7 +16,7 @@ function DynamicTrading.Events.Register(id, data)
     DynamicTrading.Events.Registry[id] = data
     
     local sentiment = data.sentiment or "Neutral"
-    print("[DynamicTrading] [Events] [Registry] Registered event: " .. tostring(id) .. " | Type: " .. tostring(data.type) .. " | Sentiment: " .. sentiment)
+    DynamicTrading.Log("DTCommons", "Events", "Registry", "Registered event: " .. tostring(id) .. " | Type: " .. tostring(data.type) .. " | Sentiment: " .. sentiment)
 end
 
 function DynamicTrading.Events.GetFactionFlashSlotBounds()
@@ -28,7 +28,7 @@ function DynamicTrading.Events.GetFactionFlashSlotBounds()
     if maxActive < minActive then maxActive = minActive end
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [Registry] Flash slot bounds: min=" .. minActive .. " max=" .. maxActive)
+        DynamicTrading.Log("DTCommons", "Events", "Registry", "Flash slot bounds: min=" .. minActive .. " max=" .. maxActive)
     end
 
     return minActive, maxActive
@@ -50,10 +50,10 @@ function DynamicTrading.Events.GetFlashCandidates()
     end
     
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [Registry] Found " .. #candidates .. " flash event candidates")
+        DynamicTrading.Log("DTCommons", "Events", "Registry", "Found " .. #candidates .. " flash event candidates")
     end
     
     return candidates
 end
 
-print("[DynamicTrading] [Events] [Registry] Module Loaded.")
+DynamicTrading.Log("DTCommons", "Events", "Registry", "Module Loaded.")

@@ -69,4 +69,4 @@ function DynamicTrading.DialogueManager.GetDialogue(trader, category, subContext
     return Core.FormatMessage(rawText, safeArgs)
 end
 
-print("[DynamicTrading] Dialogue Manager (Common) Loaded.")
+DynamicTrading.Log("DTCommons", "Init", "Dialogue", "Dialogue Manager (Common) Loaded")

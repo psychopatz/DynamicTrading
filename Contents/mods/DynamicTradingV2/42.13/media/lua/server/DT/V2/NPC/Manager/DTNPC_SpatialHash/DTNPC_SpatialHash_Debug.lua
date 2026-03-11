@@ -9,28 +9,28 @@ function DTNPC_SpatialHash.DebugCell(x, y)
     local gridKey = I.getGridKey(x, y)
     local cell = DTNPC_SpatialHash.Grid[gridKey]
 
-    print("[DTNPC_SpatialHash] Cell at (" .. x .. ", " .. y .. ") = " .. gridKey)
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "[DTNPC_SpatialHash] Cell at (" .. x .. ", " .. y .. ") = " .. gridKey)
 
     if not cell or type(cell) ~= "table" then
-        print("  (empty or invalid)")
+        DynamicTrading.Log("DTV2", "NPC", "Debug", "  (empty or invalid)")
         return
     end
 
     local isEmpty = true
     for uuid, npcData in pairs(cell) do
         isEmpty = false
-        print("  - " .. uuid .. " at (" .. npcData.x .. ", " .. npcData.y .. ")")
+        DynamicTrading.Log("DTV2", "NPC", "Debug", "  - " .. uuid .. " at (" .. npcData.x .. ", " .. npcData.y .. ")")
     end
 
     if isEmpty then
-        print("  (empty)")
+        DynamicTrading.Log("DTV2", "NPC", "Debug", "  (empty)")
     end
 end
 
 function DTNPC_SpatialHash.DebugRadius(x, y, radius)
     local npcs = DTNPC_SpatialHash.GetNPCsInRadius(x, y, radius)
 
-    print("[DTNPC_SpatialHash] NPCs within " .. radius .. " tiles of (" .. x .. ", " .. y .. "):")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "[DTNPC_SpatialHash] NPCs within " .. radius .. " tiles of (" .. x .. ", " .. y .. "):")
 
     local isEmpty = true
     for uuid, npcData in pairs(npcs) do
@@ -38,10 +38,10 @@ function DTNPC_SpatialHash.DebugRadius(x, y, radius)
         local dx = npcData.x - x
         local dy = npcData.y - y
         local dist = math.sqrt(dx * dx + dy * dy)
-        print("  - " .. uuid .. " at (" .. npcData.x .. ", " .. npcData.y .. "), dist=" .. string.format("%.1f", dist))
+        DynamicTrading.Log("DTV2", "NPC", "Debug", "  - " .. uuid .. " at (" .. npcData.x .. ", " .. npcData.y .. "), dist=" .. string.format("%.1f", dist))
     end
 
     if isEmpty then
-        print("  (none)")
+        DynamicTrading.Log("DTV2", "NPC", "Debug", "  (none)")
     end
 end

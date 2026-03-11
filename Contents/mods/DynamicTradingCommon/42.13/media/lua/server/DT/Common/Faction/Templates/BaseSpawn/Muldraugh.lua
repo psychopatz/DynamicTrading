@@ -88,4 +88,4 @@ DT_FactionLocations.Muldraugh = {
     }
 }
 
-print("[Dynamic Trading] Loaded Muldraugh Spawn Locations: " .. #DT_FactionLocations.Muldraugh .. " spots registered.")
+DynamicTrading.Log("DTCommons", "Init", "Faction", "Loaded Muldraugh Spawn Locations: " .. #DT_FactionLocations.Muldraugh .. " spots registered")

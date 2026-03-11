@@ -306,7 +306,7 @@ function DT_SignalPanel:onOptionsClick()
     if DT_OptionsManager then
         DT_OptionsManager.ToggleWindow()
     else
-        print("[DT_SignalPanel] ERROR: DT_OptionsManager failed to load.")
+        DynamicTrading.Log("DTV1", "Radio", "Error", "DT_OptionsManager failed to load.")
     end
 end
 

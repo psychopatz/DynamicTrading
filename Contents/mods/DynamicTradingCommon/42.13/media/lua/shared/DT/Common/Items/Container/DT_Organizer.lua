@@ -300,4 +300,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.CanteenMilitaryFull", basePrice=8, tags={"Container.General", "Rarity.Uncommon", "Origin.Militia"}, stockRange={min=5, max=25} },
 })
 
-print("[DynamicTrading] Organizer Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Organizer Registry Complete")

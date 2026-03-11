@@ -38,7 +38,7 @@ end
 
 function DT_FactionDebugData.refreshRosterForFaction(factionID, callback)
     if isClient() and not isServer() then
-        print("[DT-Debug] Requesting detailed roster for faction: " .. tostring(factionID))
+        DynamicTrading.Log("DTCommons", "Debug", "UI", "Requesting detailed roster for faction: " .. tostring(factionID))
         DT_DebugNetworkAdapter.requestFactionRoster(factionID)
         if callback then
             DT_FactionDebugData.pendingRosterCallback = callback
@@ -207,4 +207,4 @@ DT_DebugNetworkAdapter.registerServerCommandHandler(function(command, args)
     DT_FactionDebugData.handleServerResponse(command, args)
 end)
 
-print("[DT-Debug] Faction Debug Data Layer Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Faction Debug Data Layer Loaded")

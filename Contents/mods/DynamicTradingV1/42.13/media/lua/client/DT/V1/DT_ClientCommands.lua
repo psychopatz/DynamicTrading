@@ -176,7 +176,7 @@ local function RequestInitialSync(playerIndex)
     -- Only run for the local player client
     if player and player:isLocalPlayer() then
         sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
-        print("[DynamicTrading] Client: Connected. Requesting full server state sync.")
+        DynamicTrading.Log("DTV1", "Network", "Init", "Client: Connected. Requesting full server state sync.")
     end
 end
 

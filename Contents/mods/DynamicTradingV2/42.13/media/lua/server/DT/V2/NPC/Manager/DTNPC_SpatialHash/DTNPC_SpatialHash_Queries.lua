@@ -19,7 +19,7 @@ function DTNPC_SpatialHash.GetNPCsInRadius(x, y, radius)
             else
                 for uuid, npcData in pairs(cell) do
                     if not I.isTable(npcData) or type(npcData.x) ~= "number" or type(npcData.y) ~= "number" then
-                        print("[DTNPC_SpatialHash] Invalid NPC payload in " .. tostring(gridKey) .. " for " .. tostring(uuid) .. ", skipping")
+                        DynamicTrading.Log("DTV2", "NPC", "Warn", "[DTNPC_SpatialHash] Invalid NPC payload in " .. tostring(gridKey) .. " for " .. tostring(uuid) .. ", skipping")
                     else
                         local dx = npcData.x - x
                         local dy = npcData.y - y
@@ -69,7 +69,7 @@ function DTNPC_SpatialHash.GetGridStats()
 
     for gridKey, cell in pairs(DTNPC_SpatialHash.Grid) do
         if type(cell) ~= "table" then
-            print("[SpatialHash] Corrupt cell in GetGridStats at " .. gridKey)
+            DynamicTrading.Log("DTV2", "NPC", "Error", "[SpatialHash] Corrupt cell in GetGridStats at " .. gridKey)
             table.insert(toRemove, gridKey)
         else
             local hasEntries = false

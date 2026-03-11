@@ -73,7 +73,7 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
     npcData.anchorZ = nil
     
     if not target then 
-        -- print("[DTNPC-Follow] No target for " .. (npcData.name or "NPC"))
+        DynamicTrading.Log("DTV2", "NPC", "Follow", "Master not found (Target is nil)")
         if not zombie:isUseless() then zombie:setUseless(true) end
         stopAnimation(zombie)
         return 

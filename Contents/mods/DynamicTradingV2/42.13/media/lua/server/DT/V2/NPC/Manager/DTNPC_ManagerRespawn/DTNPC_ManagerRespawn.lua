@@ -10,23 +10,23 @@ DTNPCManager = DTNPCManager or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
-print("[DTNPC_ManagerRespawn] Loading optimization modules...")
+DynamicTrading.Log("DTV2", "Init", NPC", "Loading optimization modules...")
 
 -- Load spatial hash and distance frequency modules
 require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"
-print("[DTNPC_ManagerRespawn] DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
+DynamicTrading.Log("DTV2", "Init", NPC", "DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
 
 require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
-print("[DTNPC_ManagerRespawn] DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
+DynamicTrading.Log("DTV2", "Init", NPC", "DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
 
 -- Guard: Create fallback tables with stub functions if modules didn't load
 if not DTNPC_SpatialHash then
-    print("[DTNPC_ManagerRespawn] WARNING: DTNPC_SpatialHash is nil, creating fallback")
+    DynamicTrading.Log("DTV2", "Init", NPC", "WARNING: DTNPC_SpatialHash is nil, creating fallback")
     DTNPC_SpatialHash = {
         Grid = {},
         NPCToCell = {},
         IsInitialized = false,
-        RebuildFromRoster = function() print("[Fallback] RebuildFromRoster called") end,
+        RebuildFromRoster = function() DynamicTrading.Log("DTV2", "Error", "NPC", "Fallback RebuildFromRoster called") end,
         InsertNPC = function() end,
         RemoveNPC = function() end,
         GetNPCsInRadius = function() return {} end,
@@ -40,7 +40,7 @@ if not DTNPC_SpatialHash then
 end
 
 if not DTNPC_DistanceFrequency then
-    print("[DTNPC_ManagerRespawn] WARNING: DTNPC_DistanceFrequency is nil, creating fallback")
+    DynamicTrading.Log("DTV2", "Init", NPC", "WARNING: DTNPC_DistanceFrequency is nil, creating fallback")
     DTNPC_DistanceFrequency = {
         NPCTimers = {},
         GetTierForDistance = function() return 4 end,
@@ -54,8 +54,8 @@ if not DTNPC_DistanceFrequency then
     }
 end
 
-print("[DTNPC_ManagerRespawn] Module loading complete")
-print("[DTNPC_ManagerRespawn] Loading respawn modules...")
+DynamicTrading.Log("DTV2", "Init", NPC", "Module loading complete")
+DynamicTrading.Log("DTV2", "Init", NPC", "Loading respawn modules...")
 
 -- Load all respawn modules in alphabetical order (PZ requirement)
 -- Debug module must load first as other modules depend on it
@@ -65,4 +65,4 @@ require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn_SpawnLogic"
 require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn_TradeCycles"
 require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn_Transitions"
 
-print("[DTNPC_ManagerRespawn] All modules loaded successfully")
+DynamicTrading.Log("DTV2", "Init", NPC", "All modules loaded successfully")

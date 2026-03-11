@@ -25,13 +25,13 @@ function DTNPCManager.ProcessAwayTransitions()
                 local newReturnTime = 0
                 local newReturnStatus = nil
 
-                print("[DTNPC] Away Transition TIMER EXPIRED for " .. (registry.name or uuid) .. ". Target: " .. nextStatus)
+                DynamicTrading.Log("DTV2", "NPC", "Logic", Away Transition TIMER EXPIRED for " .. (registry.name or uuid) .. ". Target: " .. nextStatus)
                 
                 -- IF WE ARE TRANSITIONING TO TRADING, WE NEED TO FIND A LOCATION
                 if nextStatus == "Trading" then
                     -- 0. Ensure Building Data is Loaded
                     if not DTM or not DTM.Buildings then
-                        print("[DTNPC] Building data missing. Attempting lazy load...")
+                        DynamicTrading.Log("DTV2", "NPC", "Logic", Building data missing. Attempting lazy load...")
                         if DTM and DTM.LoadBuildings then DTM.LoadBuildings() end
                     end
 
@@ -43,7 +43,7 @@ function DTNPCManager.ProcessAwayTransitions()
                         local faction = DynamicTrading_Factions.GetFaction(registry.factionID)
                         if faction and faction.town then
                             town = faction.town
-                            print("[DTNPC] | Faction [" .. registry.factionID .. "] town identified: " .. town)
+                            DynamicTrading.Log("DTV2", "NPC", "Logic", | Faction [" .. registry.factionID .. "] town identified: " .. town)
                         end
                     end
                     
@@ -57,7 +57,7 @@ function DTNPCManager.ProcessAwayTransitions()
                         end
                     end
                     
-                    print("[DTNPC] | Mission town locked to: " .. town)
+                    DynamicTrading.Log("DTV2", "NPC", "Logic", | Mission town locked to: " .. town)
                     
                     -- 2. Find random building in that town
                     local targetBuilding = nil
@@ -68,17 +68,17 @@ function DTNPCManager.ProcessAwayTransitions()
                                 table.insert(townBuildings, b)
                             end
                         end
-                        print("[DTNPC] Found " .. #townBuildings .. " potential buildings in " .. town)
+                        DynamicTrading.Log("DTV2", "NPC", "Logic", Found " .. #townBuildings .. " potential buildings in " .. town)
                         
                         if #townBuildings > 0 then
                             targetBuilding = townBuildings[ZombRand(#townBuildings) + 1]
                         end
                     else
-                        print("[DTNPC] ERROR: DTM.Buildings is still NIL/Empty after load attempt.")
+                        DynamicTrading.Log("DTV2", "NPC", "Logic", ERROR: DTM.Buildings is still NIL/Empty after load attempt.")
                     end
                     
                     if targetBuilding then
-                        print("[DTNPC] NPC " .. (registry.name or uuid) .. " SUCCESS! Trading spot found in " .. town .. " at " .. targetBuilding.cx .. "," .. targetBuilding.cy)
+                        DynamicTrading.Log("DTV2", "NPC", "Logic", NPC " .. (registry.name or uuid) .. " SUCCESS! Trading spot found in " .. town .. " at " .. targetBuilding.cx .. "," .. targetBuilding.cy)
                         
                         -- Update Roster Soul with new temporary coordinates
                         local npcData = DynamicTrading_Roster.GetSoul(uuid)
@@ -92,15 +92,15 @@ function DTNPCManager.ProcessAwayTransitions()
                             newReturnTime = currentHours + stayHours
                             newReturnStatus = "Away" -- Walk back home after trading
                             
-                            print("[DTNPC] Session duration: " .. stayHours .. "h. Return Time: " .. newReturnTime)
+                            DynamicTrading.Log("DTV2", "NPC", "Logic", Session duration: " .. stayHours .. "h. Return Time: " .. newReturnTime)
                             DynamicTrading_Roster.SaveSoul(uuid, npcData)
                         end
                     else
-                        print("[DTNPC] WARNING: No buildings found for town " .. town .. ". Returning NPC to base.")
+                        DynamicTrading.Log("DTV2", "NPC", "Logic", WARNING: No buildings found for town " .. town .. ". Returning NPC to base.")
                         nextStatus = "Resting" -- Failsafe
                     end
                 elseif nextStatus == "Resting" then
-                    print("[DTNPC] NPC " .. (registry.name or uuid) .. " transitioning to Home (Resting).")
+                    DynamicTrading.Log("DTV2", "NPC", "Logic", NPC " .. (registry.name or uuid) .. " transitioning to Home (Resting).")
                     -- Returning Home from Away
                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                     if npcData and npcData.homeCoords then
@@ -115,7 +115,7 @@ function DTNPCManager.ProcessAwayTransitions()
                         DynamicTrading_Roster.SaveSoul(uuid, npcData)
                     end
                 elseif nextStatus == "Away" then
-                    print("[DTNPC] NPC " .. (registry.name or uuid) .. " mission ended. Transitioning to Away (Walking Home).")
+                    DynamicTrading.Log("DTV2", "NPC", "Logic", NPC " .. (registry.name or uuid) .. " mission ended. Transitioning to Away (Walking Home).")
                     -- Return walk initiated (Trading -> Away -> Resting)
                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                     if npcData then
@@ -134,4 +134,4 @@ function DTNPCManager.ProcessAwayTransitions()
     end
 end
 
-print("[DTNPC_ManagerRespawn_Transitions] Loaded successfully")
+DynamicTrading.Log("DTV2", "Init", NPC", "Loaded successfully")

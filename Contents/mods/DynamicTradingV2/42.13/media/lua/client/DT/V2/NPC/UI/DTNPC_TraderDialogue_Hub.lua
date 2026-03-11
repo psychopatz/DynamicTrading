@@ -28,14 +28,14 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
             }
             
             -- [FIX] Safety checks for debug prints to prevent "concatenation with nil" crashes
-            print("Trader ID: " .. tostring(traderProxy.id))
-            print("Trader Name: " .. tostring(traderProxy.name))
-            print("Trader Archetype: " .. tostring(traderProxy.archetype))
-            print("Trader Gender: " .. tostring(traderProxy.gender))
-            print("Trader Identity Seed: " .. tostring(traderProxy.identitySeed))
+            DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader ID: " .. tostring(traderProxy.id))
+            DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Name: " .. tostring(traderProxy.name))
+            DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Archetype: " .. tostring(traderProxy.archetype))
+            DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Gender: " .. tostring(traderProxy.gender))
+            DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Identity Seed: " .. tostring(traderProxy.identitySeed))
             
             if traderProxy.factionID then
-                print("Trader Faction ID: " .. traderProxy.factionID)
+                DynamicTrading.Log("DTV2", "Dialogue", "Admin", "Trader Faction ID: " .. traderProxy.factionID)
                 
                 -- [NEW] Request roster if faction data is not in cache
                 local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions) 
@@ -43,18 +43,18 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 
                 if not factionData or not factionData[traderProxy.factionID] then
                     if DT_V2_RadarManager and DT_V2_RadarManager.RequestRoster then
-                        print("[DT-V2-Hub] Faction data missing in cache, requesting Roster sync...")
+                        DynamicTrading.Log("DTV2", "Dialog", "Sync", "Faction data missing in cache, requesting Roster sync...")
                         DT_V2_RadarManager.RequestRoster()
                     end
                 end
             else
-                print("Trader Faction ID: nil")
+                DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Faction ID: nil")
             end
 
             if traderProxy.returnTime then
-                print("Trader Return Time: " .. traderProxy.returnTime)
+                DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Return Time: " .. traderProxy.returnTime)
             else
-                print("Trader Return Time: nil")
+                DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Return Time: nil")
             end
 
             ui = DT_ConversationUI.Open(traderProxy, nil, nil, false, npc) -- isRadio = false
@@ -110,7 +110,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             -- [CHANGE] Logic check happens here instead
             if isTrading then
                 -- SUCCESS: Open Trade Window
-                print(DEBUG_PREFIX .. " Trade option selected")
+                DynamicTrading.Log("DTV2", "Dialog", "Trade", "Trade option selected")
                 
                 local traderID = (npcData and npcData.uuid) or npc:getPersistentOutfitID() or npc:getID()
                 local archetype = npcData and npcData.archetypeID or "General"
@@ -121,12 +121,12 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
                 
                 if stockData and stockData[traderID] then
                     -- Stock ready - close conversation UI and open trading window
-                    print(DEBUG_PREFIX .. " Stock cached, opening TradingWindow")
+                    DynamicTrading.Log("DTV2", "Dialog", "Trade", "Stock cached, opening TradingWindow")
                     ui:close()
                     DT_TradingWindow.ToggleWindowV2(traderID, archetype, npc)
                 else
                     -- Request stock generation, then open window
-                    print(DEBUG_PREFIX .. " Requesting stock generation...")
+                    DynamicTrading.Log("DTV2", "Dialog", "Trade", "Requesting stock generation...")
                     ui:speak("Let me check what I have in stock...")
                     
                     -- Request stock from server
@@ -204,7 +204,7 @@ local function OnTick()
     -- Check if UI is still valid
     local uiValid = pending.ui and pending.ui:getIsVisible()
     if not uiValid then
-        print(DEBUG_PREFIX .. " Pending trade cancelled - UI closed")
+        DynamicTrading.Log("DTV2", "Dialog", "Trade", "Pending trade cancelled - UI closed")
         DTNPC_TraderDialogue_Hub.PendingTrade = nil
         return
     end
@@ -214,7 +214,7 @@ local function OnTick()
                       or ModData.get("DynamicTrading_Stock")
     
     if stockData and stockData[pending.traderID] then
-        print(DEBUG_PREFIX .. " Stock arrived! Opening TradingWindow")
+        DynamicTrading.Log("DTV2", "Dialog", "Trade", "Stock arrived! Opening TradingWindow")
         
         -- Close conversation UI
         pending.ui:close()
@@ -238,7 +238,7 @@ local function OnTick()
     end
 
     if gt and elapsed > 0.02 then
-        print(DEBUG_PREFIX .. " Stock arrived! Opening TradingWindow")
+        DynamicTrading.Log("DTV2", "Dialog", "Trade", "Stock request timed out")
         if uiValid then
             pending.ui:speak("Sorry, I'm having trouble with my inventory right now.")
         end
@@ -250,4 +250,4 @@ end
 Events.OnTick.Remove(OnTick)
 Events.OnTick.Add(OnTick)
 
-print(DEBUG_PREFIX .. " NPC Trader Dialogue Hub loaded")
+DynamicTrading.Log("DTV2", "Init", "Dialog", "NPC Trader Dialogue Hub loaded")

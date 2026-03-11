@@ -35,25 +35,25 @@ function DT_TradingWindow:DebugTracePrice(listItem)
     
     local ui = DT_TradingWindow.instance
     if not ui or not ui.dataProvider then 
-        print("[DT ERROR] UI or DataProvider missing")
+        DynamicTrading.Log("DTCommons", "Error", "UI", "UI or DataProvider missing")
         return 
     end
     
-    print(" DT DEBUG TRACE: " .. tostring(listItem.text or "Unknown"))
-    print("========================================================")
+    DynamicTrading.Log("DTCommons", "Trade", "Debug", " DT DEBUG TRACE: " .. tostring(listItem.text or "Unknown"))
+    DynamicTrading.Log("DTCommons", "Trade", "Debug", "========================================================")
 
     local trader = ui.dataProvider:getTrader(ui.traderID, ui.archetype)
     local d = listItem.item
     if not d then 
-        print("[DT ERROR] List item data missing")
+        DynamicTrading.Log("DTCommons", "Error", "UI", "List item data missing")
         return 
     end
 
     -- 1. Check Events First for the User
     if DynamicTrading.Events and DynamicTrading.Events.ActiveEvents then
-        print("[DT DEBUG] ACTIVE GLOBAL EVENTS: " .. #DynamicTrading.Events.ActiveEvents)
+        DynamicTrading.Log("DTCommons", "Event", "Debug", "ACTIVE GLOBAL EVENTS: " .. #DynamicTrading.Events.ActiveEvents)
         for _, e in ipairs(DynamicTrading.Events.ActiveEvents) do
-            print("  > " .. tostring(e.id))
+            DynamicTrading.Log("DTCommons", "Event", "Debug", "  > " .. tostring(e.id))
         end
     end
     if trader then
@@ -62,10 +62,10 @@ function DT_TradingWindow:DebugTracePrice(listItem)
             flashEvents = { { id = trader.ActiveFlashEvent.id } }
         end
         if #flashEvents > 0 then
-            print("[DT DEBUG] ACTIVE FACTION FLASH EVENTS: " .. tostring(#flashEvents))
+            DynamicTrading.Log("DTCommons", "Event", "Debug", "ACTIVE FACTION FLASH EVENTS: " .. tostring(#flashEvents))
             for _, entry in ipairs(flashEvents) do
                 if entry and entry.id then
-                    print("  > " .. tostring(entry.id))
+                    DynamicTrading.Log("DTCommons", "Event", "Debug", "  > " .. tostring(entry.id))
                 end
             end
         end
@@ -95,24 +95,21 @@ function DT_TradingWindow:DebugTracePrice(listItem)
         if invItem then
             ui.dataProvider:getSellPrice(invItem, d.key, trader, true) -- true = verbose
         else
-            print("[DT ERROR] Inventory Item Object not found for trace.")
+            DynamicTrading.Log("DTCommons", "Error", "Inventory", "Inventory Item Object not found for trace.")
         end
     end
     
-    print("========================================================")
-end
-function DT_TradingWindow:DebugDumpRejections()
-    print("========================================================")
-    print(" DT DEBUG: SCAN REJECTIONS DUMP")
-    print("========================================================")
+    DynamicTrading.Log("DTCommons", "Trade", "Debug", "========================================================")
+    DynamicTrading.Log("DTCommons", "Trade", "Debug", " DT DEBUG: SCAN REJECTIONS DUMP")
+    DynamicTrading.Log("DTCommons", "Trade", "Debug", "========================================================")
     
     if not self.scanRejections or #self.scanRejections == 0 then
-        print(" No rejections found in last scan.")
+        DynamicTrading.Log("DTCommons", "Trade", "Debug", " No rejections found in last scan.")
     else
         for i, msg in ipairs(self.scanRejections) do
-            print(string.format("[%d] %s", i, msg))
+            DynamicTrading.Log("DTCommons", "Trade", "Debug", string.format("[%d] %s", i, msg))
         end
     end
     
-    print("========================================================")
+    DynamicTrading.Log("DTCommons", "Trade", "Debug", "========================================================")
 end

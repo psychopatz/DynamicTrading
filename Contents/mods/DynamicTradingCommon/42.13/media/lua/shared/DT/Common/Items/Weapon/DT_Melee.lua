@@ -412,4 +412,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Stone2", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
 })
 
-print("[DynamicTrading] Melee Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Melee Registry Complete")

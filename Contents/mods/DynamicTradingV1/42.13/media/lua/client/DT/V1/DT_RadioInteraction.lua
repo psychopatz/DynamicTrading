@@ -186,7 +186,7 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
         if DynamicTrading.ServerCommands and DynamicTrading.ServerCommands.AttemptScan then
             DynamicTrading.ServerCommands.AttemptScan(player, args)
         else
-            print("[DynamicTrading] Error: ServerCommands table missing in Singleplayer!")
+            DynamicTrading.Log("DTV1", "Radio", "Error", "ServerCommands table missing in Singleplayer!")
             player:Say("Error: Mod logic not loaded.")
         end
     end

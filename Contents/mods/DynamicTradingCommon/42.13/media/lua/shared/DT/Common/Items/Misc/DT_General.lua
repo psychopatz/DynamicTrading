@@ -2304,4 +2304,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Mov_SignArmy", basePrice=3, tags={"Misc.General", "Rarity.Uncommon", "Origin.Militia"}, stockRange={min=3, max=15} },
 })
 
-print("[DynamicTrading] General Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "General Registry Complete")

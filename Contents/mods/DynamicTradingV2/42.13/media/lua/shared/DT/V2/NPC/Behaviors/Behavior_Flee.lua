@@ -47,13 +47,13 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
         local returnTime = getGameTime():getWorldAgeHours() + ZombRand(2, 5) -- Returns in 2-4 hours
         
         if isClient() then
-             print("[DTNPC-Flee] TARGET REACHED: Requesting removal for fleeing NPC: " .. (npcData.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
+             DynamicTrading.Log("DTV2", "NPC", "Despawn", "TARGET REACHED: Requesting removal for fleeing NPC: " .. (npcData.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
              local nextStatus = npcData.requestedReturnStatus or "Resting"
              sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { uuid = uuid, status = "Away", returnTime = returnTime, returnStatus = nextStatus })
              npcData.removalRequested = true -- Prevent further requests
              -- We stop processing locally but let the server handle removeFromWorld to avoid sync issues
         elseif DTNPCManager then 
-             print("[DTNPC-Flee] TARGET REACHED: Server-side removal for fleeing NPC: " .. (npcData.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
+             DynamicTrading.Log("DTV2", "NPC", "Despawn", "TARGET REACHED: Server-side removal for fleeing NPC: " .. (npcData.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
              local nextStatus = npcData.requestedReturnStatus or "Resting"
              DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
              zombie:removeFromWorld()
@@ -67,7 +67,7 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
     npcData.fleePrintTimer = npcData.fleePrintTimer + 1
     if npcData.fleePrintTimer >= 60 then
         npcData.fleePrintTimer = 0
-        print("[DTNPC-Flee] NPC " .. (npcData.name or "NPC") .. " is running away. Dist: " .. math.floor(dist) .. "/" .. DESPAWN_DIST)
+        DynamicTrading.Log("DTV2", "NPC", "Flee", "NPC " .. (npcData.name or "NPC") .. " is running away. Dist: " .. math.floor(dist) .. "/" .. DESPAWN_DIST)
     end
 
     -- 2. DETERMINE MOVEMENT VECTOR

@@ -185,4 +185,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Tote_Bags", basePrice=76, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=6} },
 })
 
-print("[DynamicTrading] Backpack Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Backpack Registry Complete")

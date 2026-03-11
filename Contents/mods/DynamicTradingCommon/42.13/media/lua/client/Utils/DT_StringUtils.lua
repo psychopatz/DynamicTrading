@@ -165,4 +165,4 @@ function DynamicTrading.Utils.FormatTagDialogue(tag)
     end
 end
 
-print("[DynamicTrading] Registered string utilities.")
+DynamicTrading.Log("DTCommons", "Init", "Utils", "Registered string utilities")

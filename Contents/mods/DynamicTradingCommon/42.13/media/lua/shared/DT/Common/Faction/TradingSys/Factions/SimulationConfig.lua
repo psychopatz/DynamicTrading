@@ -66,4 +66,4 @@ DynamicTrading.FactionConfig.Events = {
     }
 }
 
-print("DynamicTrading: Faction Simulation Config Initialized.")
+DynamicTrading.Log("DTCommons", "Init", "Faction", "Faction Simulation Config Initialized")

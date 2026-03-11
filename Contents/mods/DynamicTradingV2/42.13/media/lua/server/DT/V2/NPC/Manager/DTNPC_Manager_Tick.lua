@@ -9,17 +9,17 @@ DTNPCManager = DTNPCManager or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
-print("[DTNPC_Manager_Tick] Loading optimization modules...")
+DynamicTrading.Log("DTV2", "NPC", "Init", "Loading optimization modules...")
 
 require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
-print("[DTNPC_Manager_Tick] DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
+DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
 
 require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"
-print("[DTNPC_Manager_Tick] DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
+DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
 
 -- Guard: Create fallback tables with stub functions if modules didn't load
 if not DTNPC_SpatialHash then
-    print("[DTNPC_Manager_Tick] WARNING: DTNPC_SpatialHash is nil, creating fallback")
+    DynamicTrading.Log("DTV2", "NPC", "Warn", "DTNPC_SpatialHash is nil, creating fallback")
     DTNPC_SpatialHash = {
         Grid = {},
         NPCToCell = {},
@@ -38,7 +38,7 @@ if not DTNPC_SpatialHash then
 end
 
 if not DTNPC_DistanceFrequency then
-    print("[DTNPC_Manager_Tick] WARNING: DTNPC_DistanceFrequency is nil, creating fallback")
+    DynamicTrading.Log("DTV2", "NPC", "Warn", "DTNPC_DistanceFrequency is nil, creating fallback")
     DTNPC_DistanceFrequency = {
         NPCTimers = {},
         GetTierForDistance = function() return 4 end,
@@ -52,7 +52,7 @@ if not DTNPC_DistanceFrequency then
     }
 end
 
-print("[DTNPC_Manager_Tick] Module loading complete")
+DynamicTrading.Log("DTV2", "NPC", "Init", "Module loading complete")
 
 local TICK_RATE = 20
 local tickCounter = 0
@@ -163,7 +163,7 @@ function DTNPCManager.OnTick()
                     local modData = zombie:getModData()
                     if modData.IsDTNPC and (not modData.DTNPCVisualID or modData.DTNPCVisualID == 0) then
                         -- This zombie is a DTNPC but visual ID is missing. Re-apply.
-                        print("[DTNPC] Fixing visuals for NPC: " .. (savedData.name or uuid))
+                        DynamicTrading.Log("DTV2", "NPC", "Fix", "Fixing visuals for NPC: " .. (savedData.name or uuid))
                         DTNPC.ApplyVisuals(zombie, savedData)
                         DTNPC.AttachData(zombie, savedData)
                         

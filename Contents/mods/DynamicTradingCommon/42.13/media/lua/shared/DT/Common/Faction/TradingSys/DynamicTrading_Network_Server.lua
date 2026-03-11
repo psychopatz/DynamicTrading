@@ -45,4 +45,4 @@ end
 
 Events.OnClientCommand.Add(OnClientCommand)
 
-print("DynamicTrading: Server Network Layer (Factions Update + Trade) Initialized.")
+DynamicTrading.Log("DTCommons", "Init", "Network", "Server Network Layer Initialized")

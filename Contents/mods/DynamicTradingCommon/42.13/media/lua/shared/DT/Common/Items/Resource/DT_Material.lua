@@ -146,4 +146,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Yeast", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
 })
 
-print("[DynamicTrading] Material Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Material Registry Complete")

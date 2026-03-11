@@ -6,17 +6,17 @@
 
 require "DT/V2/NPC/Sys/DTNPC_Generator"
 
-print("[DTNPC_Spawn] Loading optimization modules...")
+DynamicTrading.Log("DTV2", "NPC", "Init", "Loading optimization modules...")
 
 require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
-print("[DTNPC_Spawn] DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
+DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
 
 require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"
-print("[DTNPC_Spawn] DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
+DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
 
 -- Guard: Create fallback tables with stub functions if modules didn't load
 if not DTNPC_DistanceFrequency then
-    print("[DTNPC_Spawn] WARNING: DTNPC_DistanceFrequency is nil, creating fallback")
+    DynamicTrading.Log("DTV2", "NPC", "Warn", "DTNPC_DistanceFrequency is nil, creating fallback")
     DTNPC_DistanceFrequency = {
         NPCTimers = {},
         GetTierForDistance = function() return 4 end,
@@ -31,7 +31,7 @@ if not DTNPC_DistanceFrequency then
 end
 
 if not DTNPC_SpatialHash then
-    print("[DTNPC_Spawn] WARNING: DTNPC_SpatialHash is nil, creating fallback")
+    DynamicTrading.Log("DTV2", "NPC", "Warn", "DTNPC_SpatialHash is nil, creating fallback")
     DTNPC_SpatialHash = {
         Grid = {},
         NPCToCell = {},
@@ -49,7 +49,7 @@ if not DTNPC_SpatialHash then
     }
 end
 
-print("[DTNPC_Spawn] Module loading complete")
+DynamicTrading.Log("DTV2", "NPC", "Init", "Module loading complete")
 
     DTNPCSpawn = DTNPCSpawn or {}
     
@@ -130,11 +130,11 @@ function DTNPCSpawn.SyncToAllClients(zombie, npcData)
             syncData.z,
             DTNPCSpawn.BROADCAST_RANGES.MEDIUM
         )
-        print("[DTNPC] Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y .. " [" .. sent .. "/" .. total .. " players]")
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y .. " [" .. sent .. "/" .. total .. " players]")
     else
         -- Single Player fallback
         triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
-        print("[DTNPC] Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
     end
 end
 
@@ -165,7 +165,7 @@ function DTNPCSpawn.SyncToPlayer(player, zombie, npcData)
         triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
     end
     
-    print("[DTNPC] Synced NPC to player: " .. (npcData.name or uuid))
+    DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC to player: " .. (npcData.name or uuid))
 end
 
 function DTNPCSpawn.BroadcastPosition(zombie, npcData)
@@ -217,7 +217,7 @@ function DTNPCSpawn.NotifyRemoval(uuid, outfitID, name)
         triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", data)
     end
     
-    print("[DTNPC] Notified removal: " .. (name or uuid))
+    DynamicTrading.Log("DTV2", "NPC", "Remove", "Notified removal: " .. (name or uuid))
 end
 
 -- ==============================================================================
@@ -248,7 +248,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         if foundSafe then break end
     end
     
-    print("[DTNPC] Spawning NPC at: " .. spawnX .. "," .. spawnY .. "," .. z)
+    DynamicTrading.Log("DTV2", "NPC", "Spawn", "Spawning NPC at: " .. spawnX .. "," .. spawnY .. "," .. z)
     
     local outfitStr = "Naked"
     local femaleChance = 50 
@@ -260,7 +260,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
     local zombieList = addZombiesInOutfit(spawnX, spawnY, z, 1, outfitStr, femaleChance, false, false, false, false, false, false, 1)
     
     if not zombieList or zombieList:size() == 0 then 
-        print("[DTNPC] ERROR: Failed to spawn zombie at " .. spawnX .. "," .. spawnY)
+        DynamicTrading.Log("DTV2", "NPC", "Error", "Failed to spawn zombie at " .. spawnX .. "," .. spawnY)
         return 
     end
 
@@ -282,7 +282,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         }
         
         npcData = DTNPCGenerator.Generate(genOptions)
-        print("[DTNPC] Generated new npcData for: " .. npcData.name)
+        DynamicTrading.Log("DTV2", "NPC", "Spawn", "Generated new npcData for: " .. npcData.name)
     else
         if not npcData.tasks then npcData.tasks = {} end
         if not npcData.walkSpeed then npcData.walkSpeed = DTNPC.DefaultWalkSpeed end
@@ -291,7 +291,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         
         npcData.state = "Stay"
         npcData.isHostile = false
-        print("[DTNPC] Rehydrated npcData for: " .. npcData.name)
+        DynamicTrading.Log("DTV2", "NPC", "Spawn", "Rehydrated npcData for: " .. npcData.name)
     end
     
     -- Ensure UUID exists
@@ -318,7 +318,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
 
     DTNPCSpawn.SyncToAllClients(zombie, npcData)
 
-    print("[DTNPC] Spawned/Summoned: " .. npcData.name .. " | UUID: " .. npcData.uuid .. " | OutfitID: " .. outfitID)
+    DynamicTrading.Log("DTV2", "NPC", "Spawn", "Spawned/Summoned: " .. npcData.name .. " | UUID: " .. npcData.uuid .. " | OutfitID: " .. outfitID)
     
     return zombie, npcData
 end
@@ -334,7 +334,7 @@ function DTNPCSpawn.RespawnNPC(npcData, uuid)
     local y = npcData.lastY
     local z = npcData.lastZ or 0
     
-    print("[DTNPC] | Targeted Square: " .. x .. "," .. y .. "," .. z)
+    DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Targeted Square: " .. x .. "," .. y .. "," .. z)
     
     local cell = getCell()
     local sq = cell:getGridSquare(x, y, z)
@@ -346,7 +346,7 @@ function DTNPCSpawn.RespawnNPC(npcData, uuid)
     if sq and sq:isFree(false) and not sq:isSolid() and not sq:isSolidTrans() then
         foundSq = sq
     else
-        if not sq then print("[DTNPC] | Target chunk not fully loaded (sq is nil). Searching wider...") end
+        if not sq then DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Target chunk not fully loaded (sq is nil). Searching wider...") end
         for radius = 1, 15 do
             for _x = -radius, radius do
                 for _y = -radius, radius do
@@ -366,7 +366,7 @@ function DTNPCSpawn.RespawnNPC(npcData, uuid)
     
     -- Pass 2: Tolerable Square (Not Solid, but maybe has objects/blocked)
     if not foundSq then
-        print("[DTNPC] | No perfect square found. Searching for any non-solid square...")
+        DynamicTrading.Log("DTV2", "NPC", "Respawn", "| No perfect square found. Searching for any non-solid square...")
         for radius = 1, 15 do
             for _x = -radius, radius do
                 for _y = -radius, radius do
@@ -385,9 +385,9 @@ function DTNPCSpawn.RespawnNPC(npcData, uuid)
     end
     
     if foundSq then
-        print("[DTNPC] | SUCCESS: Found suitable square at " .. x .. "," .. y)
+        DynamicTrading.Log("DTV2", "NPC", "Respawn", "| SUCCESS: Found suitable square at " .. x .. "," .. y)
     else
-        print("[DTNPC] | ERROR: Extreme search failed. Chunk likely UNLOADED or area is blocked. Skipping spawn attempt.")
+        DynamicTrading.Log("DTV2", "NPC", "Error", "| ERROR: Extreme search failed. Chunk likely UNLOADED or area is blocked. Skipping spawn attempt.")
         return nil
     end
     
@@ -395,14 +395,14 @@ function DTNPCSpawn.RespawnNPC(npcData, uuid)
     local zombieList = addZombiesInOutfit(x, y, z, 1, "Naked", femaleChance, false, false, false, false, false, false, 1)
     
     if not zombieList or zombieList:size() == 0 then 
-        print("[DTNPC] | ERROR: addZombiesInOutfit returned 0 even on found square!")
+        DynamicTrading.Log("DTV2", "NPC", "Error", "| ERROR: addZombiesInOutfit returned 0 even on found square!")
         return nil
     end
 
     local zombie = zombieList:get(0)
     local newOutfitID = zombie:getPersistentOutfitID()
     
-    print("[DTNPC] Respawned with new OutfitID: " .. newOutfitID)
+    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned with new OutfitID: " .. newOutfitID)
     
     local modData = zombie:getModData()
     modData.IsDTNPC = true
@@ -424,7 +424,7 @@ function DTNPCSpawn.RespawnNPC(npcData, uuid)
         npcData.state = "Stay"
     end
     
-    print("[DTNPC] | Mapped Status [" .. status .. "] to Behavior State [" .. npcData.state .. "]")
+    DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Mapped Status [" .. status .. "] to Behavior State [" .. npcData.state .. "]")
     
     npcData.master = nil
     npcData.masterID = nil
@@ -447,7 +447,7 @@ function DTNPCSpawn.RespawnNPC(npcData, uuid)
     -- Force sync to all clients with new visual ID
     DTNPCSpawn.SyncToAllClients(zombie, npcData)
 
-    print("[DTNPC] Respawned: " .. npcData.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID .. " | New VisualID: " .. npcData.visualID)
+    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned: " .. npcData.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID .. " | New VisualID: " .. npcData.visualID)
     
     return zombie, npcData
 end
@@ -500,7 +500,7 @@ function DTNPCSpawn.SummonAll(player)
     local toTeleport = {}
     local toRecreate = {}
     
-    print("[DTNPC] Summoning NPCs for player: " .. username)
+    DynamicTrading.Log("DTV2", "NPC", "Summon", "Summoning NPCs for player: " .. username)
     
     for uuid, npcData in pairs(DTNPCManager.Data) do
         if npcData.master == username then
@@ -508,10 +508,10 @@ function DTNPCSpawn.SummonAll(player)
             
             if foundObj then
                 table.insert(toTeleport, {zombie = foundObj, npcData = npcData})
-                print("[DTNPC] Found existing NPC to teleport: " .. (npcData.name or uuid))
+                DynamicTrading.Log("DTV2", "NPC", "Summon", "Found existing NPC to teleport: " .. (npcData.name or uuid))
             else
                 table.insert(toRecreate, {uuid = uuid, npcData = npcData})
-                print("[DTNPC] NPC not found in world, will recreate: " .. (npcData.name or uuid))
+                DynamicTrading.Log("DTV2", "NPC", "Summon", "NPC not found in world, will recreate: " .. (npcData.name or uuid))
             end
         end
     end
@@ -536,7 +536,7 @@ function DTNPCSpawn.SummonAll(player)
         DTNPCSpawn.RespawnNPC(data.npcData, data.uuid)
     end
     
-    print("[DTNPC] Summon complete. Teleported: " .. #toTeleport .. ", Recreated: " .. #toRecreate)
+    DynamicTrading.Log("DTV2", "NPC", "Summon", "Summon complete. Teleported: " .. #toTeleport .. ", Recreated: " .. #toRecreate)
 end
 
 -- ==============================================================================
@@ -579,17 +579,17 @@ local function onClientCommand(module, command, player, args)
     end
 
     if command == "Spawn" then
-        print("[DTNPC] Received Spawn command from: " .. player:getUsername())
+        DynamicTrading.Log("DTV2", "NPC", "Command", "Received Spawn command from: " .. player:getUsername())
         DTNPCSpawn.SpawnNPC(player, nil, args)
     end
 
     if command == "Summon" then
-        print("[DTNPC] Received Summon command from: " .. player:getUsername())
+        DynamicTrading.Log("DTV2", "NPC", "Command", "Received Summon command from: " .. player:getUsername())
         DTNPCSpawn.SummonAll(player)
     end
 
     if command == "Order" then
-        print("[DTNPC] Received Order command from: " .. player:getUsername() .. " | State: " .. (args.state or "Unknown"))
+        DynamicTrading.Log("DTV2", "NPC", "Command", "Received Order command from: " .. player:getUsername() .. " | State: " .. (args.state or "Unknown"))
         local square = getCell():getGridSquare(args.x, args.y, args.z)
         if square then
             local movingObjects = square:getMovingObjects()
@@ -610,10 +610,10 @@ local function onClientCommand(module, command, player, args)
                         if args.state == "Follow" or args.state == "Flee" then
                             npcData.master = player:getUsername()
                             npcData.masterID = isClient() and player:getOnlineID() or 0
-                            print("[DTNPC] Master assigned for " .. args.state .. " order: " .. npcData.master)
+                            DynamicTrading.Log("DTV2", "NPC", "Order", "Master assigned for " .. args.state .. " order: " .. npcData.master)
                         elseif args.state == "GoTo" then
                            table.insert(npcData.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
-                           print("[DTNPC] GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
+                           DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
                         end
 
                         DTNPC.AttachData(obj, npcData)
@@ -629,7 +629,7 @@ local function onClientCommand(module, command, player, args)
     end
     
     if command == "RequestSync" then
-        print("[DTNPC] Received RequestSync from: " .. player:getUsername())
+        DynamicTrading.Log("DTV2", "NPC", "Command", "Received RequestSync from: " .. player:getUsername())
         if not DTNPCManager then return end
         
         local cell = getCell()
@@ -653,15 +653,15 @@ local function onClientCommand(module, command, player, args)
             end
         end
         
-        print("[DTNPC] Sent " .. syncCount .. " nearby NPCs to: " .. player:getUsername())
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Sent " .. syncCount .. " nearby NPCs to: " .. player:getUsername())
     end
 
     if command == "RequestFullSync" then
-        print("[DTNPC] Received RequestFullSync from: " .. player:getUsername())
+        DynamicTrading.Log("DTV2", "NPC", "Command", "Received RequestFullSync from: " .. player:getUsername())
         if not DTNPCManager or not DTNPCManager.Data then return end
         
         sendServerCommand(player, "DTNPC", "SyncAllNPCs", { npcs = DTNPCManager.Data })
-        print("[DTNPC] Sent full database (" .. DTNPCManager.GetTableSize(DTNPCManager.Data) .. " NPCs) to: " .. player:getUsername())
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Sent full database (" .. DTNPCManager.GetTableSize(DTNPCManager.Data) .. " NPCs) to: " .. player:getUsername())
     end
 
     if command == "RequestNearbySync" then
@@ -719,13 +719,13 @@ local function onClientCommand(module, command, player, args)
             metadataRadius = metadataRadius,
         })
 
-        print("[DTNPC] Sent tiered sync to " .. player:getUsername() .. ": nearby=" .. countTable(nearby) .. ", metadata=" .. countTable(metadata))
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Sent tiered sync to " .. player:getUsername() .. ": nearby=" .. countTable(nearby) .. ", metadata=" .. countTable(metadata))
     end
 
     if command == "UpdateNPC" then
         if not args.uuid or not args.updates then return end
         
-        print("[DTNPC] Received UpdateNPC for UUID: " .. args.uuid)
+        DynamicTrading.Log("DTV2", "NPC", "Command", "Received UpdateNPC for UUID: " .. args.uuid)
         
         local uuid = args.uuid
         local serverBrain = DTNPCManager.Data[uuid]
@@ -735,7 +735,7 @@ local function onClientCommand(module, command, player, args)
             
             for k, v in pairs(args.updates) do
                 if k ~= "broadcastPosition" then
-                    print("[DTNPC]   Updating " .. k .. " to " .. tostring(v))
+                    DynamicTrading.Log("DTV2", "NPC", "Update", "  Updating " .. k .. " to " .. tostring(v))
                     serverBrain[k] = v
                 end
             end
@@ -748,33 +748,33 @@ local function onClientCommand(module, command, player, args)
                 DTNPCSpawn.SyncToAllClients(zombie, serverBrain)
                 
                 if shouldBroadcast then
-                    print("[DTNPC] Broadcasting position due to state change")
+                    DynamicTrading.Log("DTV2", "NPC", "Update", "Broadcasting position due to state change")
                     DTNPCSpawn.BroadcastPosition(zombie, serverBrain)
                 end
                 
-                print("[DTNPC] Updated and synced NPC to all clients")
+                DynamicTrading.Log("DTV2", "NPC", "Update", "Updated and synced NPC to all clients")
             end
         else
-            print("[DTNPC] WARNING: UpdateNPC for unknown UUID: " .. uuid)
+            DynamicTrading.Log("DTV2", "NPC", "Warn", "UpdateNPC for unknown UUID: " .. uuid)
         end
     end
 
     if command == "RemoveNPC" then
         if not args.uuid then 
-            print("[DTNPC] ERROR: RemoveNPC received with no UUID!")
+            DynamicTrading.Log("DTV2", "NPC", "Error", "RemoveNPC received with no UUID!")
             return 
         end
         
-        print("[DTNPC] Received RemoveNPC request for UUID: " .. args.uuid .. " (Status: " .. (args.status or "nil") .. ")")
+        DynamicTrading.Log("DTV2", "NPC", "Remove", "Received RemoveNPC request for UUID: " .. args.uuid .. " (Status: " .. (args.status or "nil") .. ")")
         
         if DTNPCManager then
             local name = "Unknown"
             if DTNPCManager.Data[args.uuid] then
                 name = DTNPCManager.Data[args.uuid].name or "Unknown"
                 DTNPCManager.RemoveData(args.uuid, args.status, args.returnTime, args.returnStatus)
-                print("[DTNPC] SUCCESS: Removed NPC data from database: " .. name .. " (" .. args.uuid .. ")")
+                DynamicTrading.Log("DTV2", "NPC", "Remove", "SUCCESS: Removed NPC data from database: " .. name .. " (" .. args.uuid .. ")")
             else
-                print("[DTNPC] WARNING: UUID " .. args.uuid .. " not found in database for removal.")
+                DynamicTrading.Log("DTV2", "NPC", "Warn", "UUID " .. args.uuid .. " not found in database for removal.")
                 -- Even if not in Manager, we might want to update Roster status if provided
                 if DynamicTrading_Roster and args.status then
                     DynamicTrading_Roster.UpdateSoulStatus(args.uuid, args.status, args.returnTime, args.returnStatus)
@@ -785,12 +785,12 @@ local function onClientCommand(module, command, player, args)
             if zombie then
                 zombie:removeFromWorld()
                 zombie:removeFromSquare()
-                print("[DTNPC] SUCCESS: Removed NPC from world: " .. args.uuid)
+                DynamicTrading.Log("DTV2", "NPC", "Remove", "SUCCESS: Removed NPC from world: " .. args.uuid)
             else
-                print("[DTNPC] INFO: NPC " .. args.uuid .. " not found in local world (may already be unloaded).")
+                DynamicTrading.Log("DTV2", "NPC", "Remove", "INFO: NPC " .. args.uuid .. " not found in local world (may already be unloaded).")
             end
         else
-            print("[DTNPC] ERROR: DTNPCManager not available for removal!")
+            DynamicTrading.Log("DTV2", "NPC", "Error", "DTNPCManager not available for removal!")
         end
     end
 end

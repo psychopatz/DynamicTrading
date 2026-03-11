@@ -7,7 +7,7 @@
 function DynamicTrading.Events.Tick(data)
     if not data or not data.EventSystem then 
         if DynamicTrading.Debug then
-            print("[DynamicTrading] [Events] [GlobalEvents] Tick: invalid engine data")
+            DynamicTrading.Log("DTCommons", "Events", "Global", "Tick: invalid engine data")
         end
         return 
     end
@@ -17,7 +17,7 @@ function DynamicTrading.Events.Tick(data)
     local changed = false
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [GlobalEvents] === GLOBAL TICK START === (Day: " .. currentDay .. ")")
+        DynamicTrading.Log("DTCommons", "Events", "Global", "=== GLOBAL TICK START === (Day: " .. currentDay .. ")")
     end
 
     -- A: CLEANUP & COOLDOWN SETTING
@@ -28,7 +28,7 @@ function DynamicTrading.Events.Tick(data)
             local name = def and def.name or id
             
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [GlobalEvents] Event expired: " .. tostring(name) .. " (day " .. currentDay .. ")")
+                DynamicTrading.Log("DTCommons", "Events", "Global", "Event expired: " .. tostring(name) .. " (day " .. currentDay .. ")")
             end
             
             if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddLog then
@@ -47,7 +47,7 @@ function DynamicTrading.Events.Tick(data)
     end
 
     if DynamicTrading.Debug and expiredCount > 0 then
-        print("[DynamicTrading] [Events] [GlobalEvents] Cleanup: Removed " .. expiredCount .. " expired events")
+        DynamicTrading.Log("DTCommons", "Events", "Global", "Cleanup: Removed " .. expiredCount .. " expired events")
     end
 
     local sandbox = SandboxVars and SandboxVars.DynamicTrading or {}
@@ -55,7 +55,7 @@ function DynamicTrading.Events.Tick(data)
     local allowSeasonal = sandbox.AllowSeasonalEvents ~= false
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [GlobalEvents] Sandbox state: AllowMeta=" .. tostring(allowMeta) .. " AllowSeasonal=" .. tostring(allowSeasonal))
+        DynamicTrading.Log("DTCommons", "Events", "Global", "Sandbox state: AllowMeta=" .. tostring(allowMeta) .. " AllowSeasonal=" .. tostring(allowSeasonal))
     end
 
     -- B: FORCE-CLEAR META/SEASONAL WHEN DISABLED BY SANDBOX
@@ -67,7 +67,7 @@ function DynamicTrading.Events.Tick(data)
             local disableSeasonal = def.type == "seasonal" and not allowSeasonal
             if disableMeta or disableSeasonal then
                 if DynamicTrading.Debug then
-                    print("[DynamicTrading] [Events] [GlobalEvents] Force-clearing disabled event: " .. tostring(def.name) .. " (type=" .. def.type .. ")")
+                    DynamicTrading.Log("DTCommons", "Events", "Global", "Force-clearing disabled event: " .. tostring(def.name) .. " (type=" .. def.type .. ")")
                 end
                 es.activeEvents[id] = nil
                 changed = true
@@ -77,7 +77,7 @@ function DynamicTrading.Events.Tick(data)
     end
 
     if DynamicTrading.Debug and forceClearedCount > 0 then
-        print("[DynamicTrading] [Events] [GlobalEvents] Force-cleared " .. forceClearedCount .. " sandbox-disabled events")
+        DynamicTrading.Log("DTCommons", "Events", "Global", "Force-cleared " .. forceClearedCount .. " sandbox-disabled events")
     end
 
     -- C: META & SEASONAL EVENTS (Always Active if Conditions Met)
@@ -93,7 +93,7 @@ function DynamicTrading.Events.Tick(data)
                 
                 if DynamicTrading.Debug then
                     local prefix = def.type == "seasonal" and "Seasonal" or "Meta"
-                    print("[DynamicTrading] [Events] [GlobalEvents] " .. prefix .. " event ACTIVATED: " .. tostring(def.name))
+                    DynamicTrading.Log("DTCommons", "Events", "Global", prefix .. " event ACTIVATED: " .. tostring(def.name))
                 end
 
                 if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddLog then
@@ -107,7 +107,7 @@ function DynamicTrading.Events.Tick(data)
                 
                 if DynamicTrading.Debug then
                     local prefix = def.type == "seasonal" and "Seasonal" or "Meta"
-                    print("[DynamicTrading] [Events] [GlobalEvents] " .. prefix .. " event CLEARED: " .. tostring(def.name) .. " (condition no longer met)")
+                    DynamicTrading.Log("DTCommons", "Events", "Global", prefix .. " event CLEARED: " .. tostring(def.name) .. " (condition no longer met)")
                 end
 
                 if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddLog then
@@ -120,7 +120,7 @@ function DynamicTrading.Events.Tick(data)
     end
 
     if DynamicTrading.Debug and metaSeasonalChanged > 0 then
-        print("[DynamicTrading] [Events] [GlobalEvents] Meta/Seasonal changes: " .. metaSeasonalChanged)
+        DynamicTrading.Log("DTCommons", "Events", "Global", "Meta/Seasonal changes: " .. metaSeasonalChanged)
     end
 
     -- D: FLASH EVENTS
@@ -129,14 +129,14 @@ function DynamicTrading.Events.Tick(data)
 
     if changed then
         if DynamicTrading.Debug then
-            print("[DynamicTrading] [Events] [GlobalEvents] Change detected, transmitting engine data and rebuilding cache")
+            DynamicTrading.Log("DTCommons", "Events", "Global", "Change detected, transmitting engine data and rebuilding cache")
         end
         if isServer() or not isClient() then ModData.transmit("DynamicTrading_Engine_v2") end
         DynamicTrading.Events.RebuildActiveCache(data)
     end
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [GlobalEvents] === GLOBAL TICK END ===")
+        DynamicTrading.Log("DTCommons", "Events", "Global", "=== GLOBAL TICK END ===")
     end
 end
 
@@ -154,9 +154,9 @@ function DynamicTrading.Events.RebuildActiveCache(data)
     end
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [GlobalEvents] Cache rebuilt: " .. count .. " active global events")
+        DynamicTrading.Log("DTCommons", "Events", "Global", "Cache rebuilt: " .. count .. " active global events")
         for i, def in ipairs(DynamicTrading.Events.ActiveEvents) do
-            print("  [" .. i .. "] " .. tostring(def.name) .. " (type=" .. tostring(def.type) .. ")")
+            DynamicTrading.Log("DTCommons", "Events", "Global", "  [" .. i .. "] " .. tostring(def.name) .. " (type=" .. tostring(def.type) .. ")")
         end
     end
 end
@@ -180,7 +180,7 @@ function DynamicTrading.Events.GetActiveGlobalEventDefs(engineData)
     end
 
     if DynamicTrading.Debug and #list > 0 then
-        print("[DynamicTrading] [Events] [GlobalEvents] GetActiveGlobalEventDefs returned " .. #list .. " events")
+        DynamicTrading.Log("DTCommons", "Events", "Global", "GetActiveGlobalEventDefs returned " .. #list .. " events")
     end
 
     return list
@@ -201,7 +201,7 @@ function DynamicTrading.Events.GetPriceModifier(itemTags, verbose)
                 if event.effects[tag] and event.effects[tag].price then
                     local mult = event.effects[tag].price
                     if verbose and mult ~= 1.0 then
-                        print("[DynamicTrading] [Events] [GlobalEvents] Price modifier [" .. tostring(event.id or "event") .. "] tag=" .. tag .. " mult=" .. mult)
+                        DynamicTrading.Log("DTCommons", "Events", "Global", "Price modifier [" .. tostring(event.id or "event") .. "] tag=" .. tag .. " mult=" .. mult)
                     end
                     multiplier = multiplier * mult
                 end
@@ -233,7 +233,7 @@ function DynamicTrading.Events.GetSystemModifier(key)
         if event.system and event.system[key] then
             local mult = event.system[key]
             if DynamicTrading.Debug and mult ~= 1.0 then
-                print("[DynamicTrading] [Events] [GlobalEvents] System modifier [" .. tostring(event.id or "event") .. "] key=" .. key .. " mult=" .. mult)
+                DynamicTrading.Log("DTCommons", "Events", "Global", "System modifier [" .. tostring(event.id or "event") .. "] key=" .. key .. " mult=" .. mult)
             end
             multiplier = multiplier * mult
         end
@@ -295,4 +295,4 @@ function DynamicTrading.Events.GetInjections()
     return injections
 end
 
-print("[DynamicTrading] [Events] [GlobalEvents] Module Loaded.")
+DynamicTrading.Log("DTCommons", "Events", "Global", "Module Loaded.")

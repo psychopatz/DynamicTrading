@@ -36,14 +36,14 @@ local function OnClientCommand(module, command, player, args)
         if isServer() then
             local access = player:getAccessLevel()
             if access == "None" then
-                print("[DynamicTrading] Security Warning: Unauthorized Wipe attempt by " .. player:getUsername())
+                DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized Wipe attempt by " .. player:getUsername())
                 sendServerCommand(player, "DynamicTrading", "WipeResult", { success = false, msg = "Unauthorized: Admin access required." })
                 return
             end
         end
 
         local target = args.target or "REFRESH"
-        print("[DynamicTrading] Server: Received Data Wipe Request (" .. target .. ") from " .. player:getUsername())
+        DynamicTrading.Log("DTCommons", "Debug", "Server", "Received Data Wipe Request (" .. target .. ") from " .. player:getUsername())
         
         -- 2. DETERMINE TARGET KEYS
         local keysToWipe = {}
@@ -118,7 +118,7 @@ local function OnClientCommand(module, command, player, args)
         for _, key in ipairs(keysToWipe) do
             if ModData.exists(key) then
                 ModData.remove(key)
-                print("[DynamicTrading] Server: Deleted Global ModData -> " .. key)
+                DynamicTrading.Log("DTCommons", "Debug", "Server", "Deleted Global ModData -> " .. key)
                 count = count + 1
             end
         end
@@ -138,4 +138,4 @@ end
 -- REGISTRATION
 -- =============================================================================
 Events.OnClientCommand.Add(OnClientCommand)
-print("[DynamicTrading] Centralized Server Wipe Module Loaded.")
+DynamicTrading.Log("DTCommons", "Init", "Server", "Centralized Server Wipe Module Loaded")

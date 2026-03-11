@@ -43,7 +43,7 @@ function DT_V2_RadarManager.Init()
         DT_V2_RadarManager.ClientFactions = ModData.get("DynamicTrading_Factions")
     end
 
-    print("[DT_RADAR] Manager Initialized. Traders in cache: " .. DT_V2_RadarManager.GetCount())
+    DynamicTrading.Log("DTV2", "Radio", "Init", "Manager Initialized. Traders in cache: " .. DT_V2_RadarManager.GetCount())
 end
 
 -- ==============================================================================
@@ -52,14 +52,14 @@ end
 -- Request fresh roster data from server (MP Only)
 function DT_V2_RadarManager.RequestRoster()
     if isServer() then return end
-    print("[DT_RADAR] Requesting fresh Roster from Server...")
+    DynamicTrading.Log("DTV2", "Radio", "Sync", "Requesting fresh Roster from Server...")
     sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestRoster", {})
 end
 
 -- Handle incoming roster/faction data from Server
 local function OnServerCommand(module, command, arguments)
     if module == "DynamicTrading_V2" and command == "SyncRoster" then
-        print("[DT_RADAR] Received Roster & Faction Sync from Server.")
+        DynamicTrading.Log("DTV2", "Radio", "Sync", "Received Roster & Faction Sync from Server.")
         DT_V2_RadarManager.ClientRoster = arguments.roster
         DT_V2_RadarManager.ClientFactions = arguments.factions
     end
@@ -224,7 +224,7 @@ function DT_V2_RadarManager.Scan(player, device)
     
     local deviceName, range = DT_V2_RadarManager.GetDeviceInfo(device)
     
-    print("[DT_RADAR] [V3.0] Starting scan with " .. tostring(deviceName) .. " (Range: " .. tostring(range) .. ")")
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "Starting scan with " .. tostring(deviceName) .. " (Range: " .. tostring(range) .. ")")
     
     -- ==========================================================
     -- DELEGATE LOCATION DEBUG TO HANDLER
@@ -296,7 +296,7 @@ function DT_V2_RadarManager.Scan(player, device)
                                 discoveredAt = getGameTime():getWorldAgeHours()
                             }
                             foundNew = true
-                            print("[DT_RADAR] Discovered trader: " .. soul.name .. " (UUID: " .. uuid .. ")")
+                            DynamicTrading.Log("DTV2", "Radio", "Scan", "Discovered trader: " .. soul.name .. " (UUID: " .. uuid .. ")")
 
                             -- [NEW] Sync with DTNPC Global Cache
                             if DTNPCClient and DTNPCClient.CacheMetadata then
@@ -357,7 +357,7 @@ function DT_V2_RadarManager.Cleanup()
     end
     
     for _, uuid in ipairs(toRemove) do
-        print("[DT_RADAR] Removing expired/inactive trader from radar: " .. uuid)
+        DynamicTrading.Log("DTV2", "Radio", "Cleanup", "Removing expired/inactive trader from radar: " .. uuid)
         DT_V2_RadarManager.FoundTraders[uuid] = nil
     end
 end

@@ -127,23 +127,23 @@ function DTNPC_DistanceFrequency.DebugNPC(uuid)
     local timer = DTNPC_DistanceFrequency.NPCTimers[uuid]
     
     if not timer then
-        print("[DTNPC_DistFreq] No timer for UUID: " .. uuid)
+        DynamicTrading.Log("DTV2", "NPC", "Debug", "No timer for UUID: " .. uuid)
         return
     end
     
-    print("[DTNPC_DistFreq] UUID: " .. uuid)
-    print("  Tier: " .. timer.currentTier)
-    print("  Update Freq: " .. timer.updateFreq .. " hours")
-    print("  Distance to Nearest: " .. string.format("%.1f", timer.distanceToNearest) .. " tiles")
-    print("  Last Updated: " .. string.format("%.2f", getGameTime():getWorldAgeHours() - timer.lastUpdateTime) .. " hours ago")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "UUID: " .. uuid)
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Tier: " .. timer.currentTier)
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Update Freq: " .. timer.updateFreq .. " hours")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Distance to Nearest: " .. string.format("%.1f", timer.distanceToNearest) .. " tiles")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Last Updated: " .. string.format("%.2f", getGameTime():getWorldAgeHours() - timer.lastUpdateTime) .. " hours ago")
 end
 
 function DTNPC_DistanceFrequency.DebugStats()
     local stats = DTNPC_DistanceFrequency.GetUpdateStats()
     
-    print("[DTNPC_DistFreq] Update Distribution:")
-    print("  Very Close (<50 tiles):   " .. stats.VERY_CLOSE .. " NPCs")
-    print("  Close (50-100 tiles):     " .. stats.CLOSE .. " NPCs")
-    print("  Medium (100-150 tiles):   " .. stats.MEDIUM .. " NPCs")
-    print("  Far (>150 tiles):         " .. stats.FAR .. " NPCs")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "Update Distribution:")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Very Close (<50 tiles):   " .. stats.VERY_CLOSE .. " NPCs")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Close (50-100 tiles):     " .. stats.CLOSE .. " NPCs")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Medium (100-150 tiles):   " .. stats.MEDIUM .. " NPCs")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Far (>150 tiles):         " .. stats.FAR .. " NPCs")
 end

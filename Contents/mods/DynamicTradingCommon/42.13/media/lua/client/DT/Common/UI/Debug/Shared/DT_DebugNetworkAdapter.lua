@@ -60,7 +60,7 @@ function DT_DebugNetworkAdapter.sendCommand(command, args)
     local player = getPlayer()
     
     if not player then
-        print("[DT-Debug] ERROR: No player found for command: " .. tostring(command))
+        DynamicTrading.Log("DTCommons", "Debug", "UI", "ERROR: No player found for command: " .. tostring(command))
         return false
     end
     
@@ -106,4 +106,4 @@ function DT_DebugNetworkAdapter.registerServerCommandHandler(callback)
     end)
 end
 
-print("[DT-Debug] Network Adapter Loaded. Detected Version: " .. DT_DebugNetworkAdapter.getVersion())
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Network Adapter Loaded. Detected Version: " .. DT_DebugNetworkAdapter.getVersion())

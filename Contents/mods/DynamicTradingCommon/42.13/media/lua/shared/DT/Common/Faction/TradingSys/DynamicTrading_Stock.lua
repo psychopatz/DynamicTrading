@@ -110,7 +110,7 @@ end
 function DynamicTrading_Stock.ClearStock(traderUUID)
     local data = ModData.get(MOD_DATA_KEY)
     if data[traderUUID] then
-        print("[DT-Stock] Clearing stock for " .. traderUUID)
+        DynamicTrading.Log("DTCommons", "Trade", "Stock", "Clearing stock for " .. traderUUID)
         data[traderUUID] = nil
         -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
     end
@@ -126,7 +126,7 @@ function DynamicTrading_Stock.CheckAndGenerateStock(traderUUID)
     
     local data = ModData.get(MOD_DATA_KEY)
     if not data[traderUUID] then
-        print("[DT-Stock] Generating fresh stock for " .. traderUUID)
+        DynamicTrading.Log("DTCommons", "Trade", "Stock", "Generating fresh stock for " .. traderUUID)
         local newItems = DynamicTrading.Economy.V2.GenerateStock(traderUUID)
         DynamicTrading_Stock.InitializeInventory(traderUUID, newItems)
         return true, "Stock Generated"
@@ -141,7 +141,7 @@ function DynamicTrading_Stock.OnSoulStatusChanged(uuid, status)
     if status ~= "Trading" then
         local data = ModData.get(MOD_DATA_KEY)
         if data[uuid] then
-            print("[DT-Stock] Soul " .. uuid .. " left Trading state (now: " .. tostring(status) .. "). Clearing stock.")
+            DynamicTrading.Log("DTCommons", "Trade", "Stock", "Soul " .. uuid .. " left Trading state (now: " .. tostring(status) .. "). Clearing stock.")
             DynamicTrading_Stock.ClearStock(uuid)
         end
     end

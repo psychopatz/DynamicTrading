@@ -16,4 +16,4 @@ local function OnClientCommand(module, command, player, args)
 end
 
 Events.OnClientCommand.Add(OnClientCommand)
-print("[DynamicTrading] Quest Server Commands Loaded.")
+DynamicTrading.Log("DTCommons", "Init", "Quest", "Quest Server Commands Loaded")

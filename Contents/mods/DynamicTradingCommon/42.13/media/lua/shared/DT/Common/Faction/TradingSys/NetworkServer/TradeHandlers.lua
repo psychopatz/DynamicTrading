@@ -21,8 +21,8 @@ local Handlers = {}
 -- =============================================================================
 Handlers.TradeTransaction = function(player, args)
     local DEBUG_PREFIX = "[DT-V2-Trade]"
-    print(DEBUG_PREFIX .. " TradeTransaction received")
-    print(DEBUG_PREFIX .. " Type: " .. tostring(args.type) .. ", TraderID: " .. tostring(args.traderID))
+    DynamicTrading.Log("DTCommons", "Trade", "Logic", "TradeTransaction received")
+    DynamicTrading.Log("DTCommons", "Trade", "Logic", "Type: " .. tostring(args.type) .. ", TraderID: " .. tostring(args.traderID))
     
     local txType = args.type
     local traderID = args.traderID
@@ -32,14 +32,14 @@ Handlers.TradeTransaction = function(player, args)
     -- Get stock and item data
     local stockData = DynamicTrading_Stock.GetStock(traderID)
     if not stockData then
-        print(DEBUG_PREFIX .. " ERROR: No stock data for trader")
+        DynamicTrading.Log("DTCommons", "Trade", "Logic", "ERROR: No stock data for trader")
         DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Trader unavailable" })
         return
     end
     
     local itemData = DynamicTrading.Config.MasterList[key]
     if not itemData then
-        print(DEBUG_PREFIX .. " ERROR: Item not in MasterList: " .. tostring(key))
+        DynamicTrading.Log("DTCommons", "Trade", "Logic", "ERROR: Item not in MasterList: " .. tostring(key))
         DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item not found" })
         return
     end
@@ -53,7 +53,7 @@ Handlers.TradeTransaction = function(player, args)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderID) or DynamicTrading_Roster.GetTrader(traderID)
     local factionID = soul and soul.factionID or nil
     local factionData = factionID and DynamicTrading_Factions.GetFaction(factionID) or nil
-    print(DEBUG_PREFIX .. " FactionID: " .. tostring(factionID) .. ", Faction wealth: $" .. tostring(factionData and factionData.wealth or 0))
+    DynamicTrading.Log("DTCommons", "Trade", "Logic", "FactionID: " .. tostring(factionID) .. ", Faction wealth: $" .. tostring(factionData and factionData.wealth or 0))
     
     if txType == "buy" then
         -- 1. Get price from stock
@@ -74,7 +74,7 @@ Handlers.TradeTransaction = function(player, args)
         local baseUnitPrice = DynamicTrading.Economy.V2.GetBuyPrice(traderID, key, customData, false, true)
         local totalBaseCost = baseUnitPrice * clientQty
         
-        print(DEBUG_PREFIX .. " Buy: " .. key .. " x" .. clientQty .. " @ $" .. unitPrice .. " (Base: $" .. baseUnitPrice .. ")")
+        DynamicTrading.Log("DTCommons", "Trade", "Logic", "Buy: " .. key .. " x" .. clientQty .. " @ $" .. unitPrice .. " (Base: $" .. baseUnitPrice .. ")")
         
         -- 2. Check Stock
         if currentQty < clientQty then
@@ -118,8 +118,8 @@ Handlers.TradeTransaction = function(player, args)
             local change = sensitivity * clientQty
             DynamicTrading_Engine.UpdateHeat(category, change)
             
-            print(DEBUG_PREFIX .. " Buy Inflation: Category=[" .. tostring(category) .. "] | Adding Heat: " .. tostring(change))
-            print(DEBUG_PREFIX .. " SUCCESS: Bought " .. safeDisplayName)
+            DynamicTrading.Log("DTCommons", "Trade", "Logic", "Buy Inflation: Category=[" .. tostring(category) .. "] | Adding Heat: " .. tostring(change))
+            DynamicTrading.Log("DTCommons", "Trade", "Logic", "SUCCESS: Bought " .. safeDisplayName)
             
             -- Send updated stock to client cache (fixes UI not refreshing)
             DataHandlers.SendSyncStockToPlayer(player, traderID)
@@ -156,7 +156,7 @@ Handlers.TradeTransaction = function(player, args)
         local baseUnitPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, itemObj, key, false, true)
         local totalBaseGain = baseUnitPrice * clientQty
 
-        print(DEBUG_PREFIX .. " Sell: " .. key .. " @ $" .. totalGain .. " (Base: $" .. totalBaseGain .. ")")
+        DynamicTrading.Log("DTCommons", "Trade", "Logic", "Sell: " .. key .. " @ $" .. totalGain .. " (Base: $" .. totalBaseGain .. ")")
         
         -- 3. Check faction can afford
         local factionWealth = factionData and factionData.wealth or 999999
@@ -214,16 +214,16 @@ Handlers.TradeTransaction = function(player, args)
                     -- Invert heat (Selling reduces inflation/heat)
                     DynamicTrading_Engine.UpdateHeat(category, -sensitivity)
                     engineData.WorldEconomy.DeflatedGlobal[key] = true
-                    print(DEBUG_PREFIX .. " GLOBAL DEFLATION triggered for category: " .. tostring(category) .. " ( - " .. sensitivity .. ")")
+                    DynamicTrading.Log("DTCommons", "Trade", "Logic", "GLOBAL DEFLATION triggered for category: " .. tostring(category) .. " ( - " .. sensitivity .. ")")
                 else
-                    print(DEBUG_PREFIX .. " Deflation Roll Failed: " .. roll .. "/" .. chance)
+                    DynamicTrading.Log("DTCommons", "Trade", "Logic", "Deflation Roll Failed: " .. roll .. "/" .. chance)
                 end
             else
-                print(DEBUG_PREFIX .. " Deflation Skipped: Already deflated this item type today.")
+                DynamicTrading.Log("DTCommons", "Trade", "Logic", "Deflation Skipped: Already deflated this item type today.")
             end
         end
         
-        print(DEBUG_PREFIX .. " SUCCESS: Sold " .. itemObj:getDisplayName())
+        DynamicTrading.Log("DTCommons", "Trade", "Logic", "SUCCESS: Sold " .. itemObj:getDisplayName())
         
         -- Send updated stock to client cache (fixes UI not refreshing)
         DataHandlers.SendSyncStockToPlayer(player, traderID)

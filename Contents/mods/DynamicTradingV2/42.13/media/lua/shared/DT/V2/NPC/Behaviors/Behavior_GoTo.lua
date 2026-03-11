@@ -92,7 +92,7 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
             
             zombie:setVariable("bMoving", false)
             zombie:setVariable("Speed", 0.0)
-            print("[DTNPC] GoTo: Destination Reached.")
+            DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo: Destination Reached.")
         end
         return
     end
@@ -138,7 +138,7 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
         end
     else
         -- Stuck/Blocked logic
-        print("[DTNPC] GoTo: Path blocked. Aborting.")
+        DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo: Path blocked. Aborting.")
         npcData.state = "Stay"
         npcData.isMovingState = false
         npcData.tasks = {}

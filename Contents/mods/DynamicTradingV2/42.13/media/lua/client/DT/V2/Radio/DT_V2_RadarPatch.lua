@@ -112,7 +112,7 @@ function ISRadioWindow:prerender()
                     if currentH > 80 then currentH = currentH - 45 end
                     element.dt_baseHeight = currentH
                     local devName = self.device and self.device:getName() or "Unknown"
-                    print("[DT_RADAR] [V2.3] Base Height captured for " .. tostring(devName) .. ": " .. tostring(element.dt_baseHeight))
+                    DynamicTrading.Log("DTV2", "Radio", "Debug", "Base Height captured for " .. tostring(devName) .. ": " .. tostring(element.dt_baseHeight))
                 end
 
                 -- Force persistent expanded height (Only +25 for buttons now)

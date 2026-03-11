@@ -12,7 +12,7 @@ DynamicTrading.Events.Registry = DynamicTrading.Events.Registry or {}
 DynamicTrading.Events.ActiveEvents = DynamicTrading.Events.ActiveEvents or {}
 
 if DynamicTrading.Debug then
-    print("[DynamicTrading] [Events] [Main] Initializing Event Manager...")
+    DynamicTrading.Log("DTCommons", "Events", "Main", "Initializing Event Manager...")
 end
 
 -- Load sub-modules in order
@@ -20,4 +20,4 @@ require "DT/Common/Events/DT_EventManager_Registry"
 require "DT/Common/Events/DT_EventManager_GlobalEvents"
 require "DT/Common/Events/DT_EventManager_FactionEvents"
 
-print("[DynamicTrading] [Events] [Main] Event Manager Fully Initialized.")
+DynamicTrading.Log("DTCommons", "Events", "Main", "Event Manager Fully Initialized.")

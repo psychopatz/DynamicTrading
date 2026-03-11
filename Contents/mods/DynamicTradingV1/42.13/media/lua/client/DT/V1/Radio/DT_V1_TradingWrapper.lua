@@ -60,7 +60,7 @@ local function OnPreUIDraw()
     
     -- Check if version changed
     if _currentTraderID == traderID and _lastStockVersion and _lastStockVersion ~= version then
-        print(DEBUG_PREFIX .. " Stock version changed, refreshing UI")
+        DynamicTrading.Log("DTV1", "Trading", "Refresh", "Stock version changed, refreshing UI")
         _lastStockVersion = version
         ui:populateList()
     elseif _currentTraderID ~= traderID then
@@ -298,7 +298,7 @@ function V1_Radio_DataProvider:isConnectionValid(radioObj)
     -- 2. VISIBILITY CHECK (The "Kill Switch")
     if DT_TradingWindow and DT_TradingWindow.instance then
         if not DT_TradingWindow.instance:getIsVisible() then
-            print("[DynamicTrading] Window is NOT visible, returning false")
+            DynamicTrading.Log("DTV1", "Trading", "Debug", "Window is NOT visible, returning false")
             return false
         end
     end
@@ -336,11 +336,11 @@ end
 -- TOGGLE WINDOW HELPER
 -- =============================================================================
 function V1_Radio_DataProvider.Open(traderID, archetype, radioObj)
-    print(DEBUG_PREFIX .. " Opening Radio Trading Window for " .. tostring(traderID))
+    DynamicTrading.Log("DTV1", "Trading", "Init", "Opening Radio Trading Window for " .. tostring(traderID))
     V1_Radio_DataProvider._currentTraderID = traderID
     V1_Radio_DataProvider.radioObj = radioObj
     DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, V1_Radio_DataProvider)
 end
 
-print(DEBUG_PREFIX .. " V1 Radio Trading Wrapper loaded")
+DynamicTrading.Log("DTV1", "Trading", "Init", "V1 Radio Trading Wrapper loaded")
 return V1_Radio_DataProvider

@@ -46,14 +46,13 @@ function DynamicTrading_Engine.Init()
         -- Client: Request data to ensure sync
         if ModData.request then 
             ModData.request(MOD_DATA_KEY)
-            -- print("DT Engine: Client requested ModData sync.")
+            DynamicTrading.Log("DTCommons", "Engine", "Sync", "Client requested ModData sync")
         end
         return 
     end
 
-    local data = ModData.get(MOD_DATA_KEY)
     if not data then
-        print("DynamicTrading: Initializing Engine Data...")
+        DynamicTrading.Log("DTCommons", "Init", "Engine", "Initializing Global Engine Data")
         data = defaultData
         ModData.add(MOD_DATA_KEY, data)
         ModData.transmit(MOD_DATA_KEY)
@@ -67,7 +66,7 @@ function DynamicTrading_Engine.Init()
                 for subK, subV in pairs(v) do
                     if data[k][subK] == nil then
                         data[k][subK] = subV
-                        print("DT Engine: Migrating missing field [" .. k .. "." .. subK .. "]")
+                        DynamicTrading.Log("DTCommons", "Engine", "Migration", "Migrating missing field [" .. k .. "." .. subK .. "]")
                     end
                 end
             end
@@ -112,12 +111,12 @@ function DynamicTrading_Engine.OnTick()
             if mult ~= 1.0 then
                 local old = recruitCount
                 recruitCount = math.floor(recruitCount * mult)
-                -- print("DT Engine: Recruit Count modified by events: " .. old .. " -> " .. recruitCount)
+                DynamicTrading.Log("DTCommons", "Engine", "Recruits", "Recruit Count modified by events: " .. old .. " -> " .. recruitCount)
             end
         end
 
         data.Demographics.availableRecruits = recruitCount
-        print("DT Engine: generated " .. recruitCount .. " global recruits for Day " .. currentDay)
+        DynamicTrading.Log("DTCommons", "Engine", "Recruits", "Generated " .. recruitCount .. " global recruits for Day " .. currentDay)
         
         -- Trigger Daily Economy Simulation
         DynamicTrading_Engine.RunDailySimulation()
@@ -129,7 +128,7 @@ function DynamicTrading_Engine.RunDailySimulation()
     -- Server/Authority Logic Only
     if isClient() and not isServer() then return end
 
-    print("DynamicTrading: Running Daily Simulation Signals...")
+    DynamicTrading.Log("DTCommons", "Engine", "Sim", "Running Daily Simulation Signals")
     
     local data = DynamicTrading_Engine.GetEngineData()
     if data then
@@ -139,7 +138,7 @@ function DynamicTrading_Engine.RunDailySimulation()
         if retention < 0 then retention = 0 end
 
         if data.WorldEconomy.GlobalHeat then
-            print("[DT Engine] Daily Heat Decay Starting (Rate: " .. tostring(decayRate) .. ")")
+            DynamicTrading.Log("DTCommons", "Engine", "Economy", "Daily Heat Decay Starting (Rate: " .. tostring(decayRate) .. ")")
             for cat, val in pairs(data.WorldEconomy.GlobalHeat) do
                 if val ~= 0 then
                     local oldVal = val
@@ -149,7 +148,7 @@ function DynamicTrading_Engine.RunDailySimulation()
                         data.WorldEconomy.GlobalHeat[cat] = 0 
                     end
                     if oldVal ~= data.WorldEconomy.GlobalHeat[cat] then
-                        print("  > Category: " .. tostring(cat) .. " | Heat: " .. tostring(oldVal) .. " -> " .. tostring(data.WorldEconomy.GlobalHeat[cat]))
+                        DynamicTrading.Log("DTCommons", "Engine", "Economy", "Category: " .. tostring(cat) .. " | Heat: " .. tostring(oldVal) .. " -> " .. tostring(data.WorldEconomy.GlobalHeat[cat]))
                     end
                 end
             end
@@ -188,7 +187,7 @@ function DynamicTrading_Engine.UpdateHeat(category, amount)
     if data.WorldEconomy.GlobalHeat[category] < -0.8 then data.WorldEconomy.GlobalHeat[category] = -0.8 end
     
     if DynamicTrading.Debug or amount ~= 0 then
-        print("[DT Engine] UpdateHeat: " .. tostring(category) .. " | Change: " .. tostring(amount) .. " | New: " .. tostring(data.WorldEconomy.GlobalHeat[category]))
+        DynamicTrading.Log("DTCommons", "Engine", "Economy", "UpdateHeat: " .. tostring(category) .. " | Change: " .. tostring(amount) .. " | New: " .. tostring(data.WorldEconomy.GlobalHeat[category]))
         -- Debug: Log Sync Trigger
         -- print("[DT Engine] Transmitting ModData...")
     end

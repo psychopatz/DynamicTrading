@@ -54,11 +54,11 @@ end
 -- ==========================================================
 -- This allows you to test names in the console without spawning anything
 function DT_FactionNames.TestPrint(count)
-    print("DT DEBUG: Generating " .. tostring(count) .. " test names...")
+    DynamicTrading.Log("DTCommons", "Debug", "Faction", "Generating " .. tostring(count) .. " test names...")
     for i=1, count do
-        print("  - " .. DT_FactionNames.Generate())
+        DynamicTrading.Log("DTCommons", "Debug", "Faction", "  - " .. DT_FactionNames.Generate())
     end
 end
 
 -- Print to console so we know the naming module is ready
-print("[Dynamic Trading] Faction Name Generator Initialized.")
+DynamicTrading.Log("DTCommons", "Init", "Faction", "Faction Name Generator Initialized.")

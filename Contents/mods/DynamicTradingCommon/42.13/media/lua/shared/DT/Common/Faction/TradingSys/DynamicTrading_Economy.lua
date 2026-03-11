@@ -10,7 +10,7 @@ DynamicTrading.Economy = DynamicTrading.Economy or {}
 DynamicTrading.Economy.V2 = {}
 
 local Common = DynamicTrading.Economy.Common
-print("[DynamicTrading] V2 Economy Module (Shared Wrapper) loaded.")
+DynamicTrading.Log("DTCommons", "Init", "Economy", "V2 Economy Module (Shared Wrapper) loaded")
 
 -- =============================================================================
 -- 1. V2 STOCK GENERATOR (Wrapper) - SERVER ONLY

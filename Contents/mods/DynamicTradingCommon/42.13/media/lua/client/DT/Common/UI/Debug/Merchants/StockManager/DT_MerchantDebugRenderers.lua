@@ -44,7 +44,7 @@ function DT_MerchantDebugRenderers.drawMerchantItem(listbox, y, item, alt)
         return nextY
     end
 
-    print("[DT-Debug] drawMerchantItem failed: " .. tostring(nextY))
+    DynamicTrading.Log("DTCommons", "Debug", "UI", "drawMerchantItem failed: " .. tostring(nextY))
     return y + (listbox and listbox.itemheight or 45)
 end
 
@@ -66,4 +66,4 @@ function DT_MerchantDebugRenderers.drawStockItem(listbox, y, item, alt)
     return y + listbox.itemheight
 end
 
-print("[DT-Debug] Merchant Debug Renderers Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Merchant Debug Renderers Loaded")

@@ -89,9 +89,9 @@ local function OnServerCommand(module, command, args)
 
     elseif command == "TradeResult" then
         if args.success then
-            print("DT: Trade Successful")
+            DynamicTrading.Log("DTV2", "Trade", "Result", "Successful")
         else
-            print("DT: Trade Failed: " .. tostring(args.reason))
+            DynamicTrading.Log("DTV2", "Trade", "Result", "Failed: " .. tostring(args.reason))
         end
         triggerEvent("OnDynamicTradingTradeCompleted", args)
     end
@@ -108,9 +108,9 @@ local function OnSharedServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
     
     if command == "TransactionResult" then
-        print("[DT-V2-Client] >>> OnSharedServerCommand RECEIVED TransactionResult")
-        print("[DT-V2-Client]   success=" .. tostring(args.success) .. ", isBuy=" .. tostring(args.isBuy) .. ", item=" .. tostring(args.itemName))
-        print("[DT-V2-Client]   DT_TradingWindow=" .. tostring(DT_TradingWindow) .. ", instance=" .. tostring(DT_TradingWindow and DT_TradingWindow.instance))
+        DynamicTrading.Log("DTV2", "Network", "Client", >>> OnSharedServerCommand RECEIVED TransactionResult")
+        DynamicTrading.Log("DTV2", "Network", "Client",   success=" .. tostring(args.success) .. ", isBuy=" .. tostring(args.isBuy) .. ", item=" .. tostring(args.itemName))
+        DynamicTrading.Log("DTV2", "Network", "Client",   DT_TradingWindow=" .. tostring(DT_TradingWindow) .. ", instance=" .. tostring(DT_TradingWindow and DT_TradingWindow.instance))
         
         if DT_TradingWindow and DT_TradingWindow.instance then
             local ui = DT_TradingWindow.instance
@@ -146,10 +146,10 @@ local function OnSharedServerCommand(module, command, args)
                     local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, diagArgs)
                     
                     if DynamicTrading.Debug then
-                        print("[DT-V2-Client] Dialogue Debug:")
-                        print("  - Trader Archetype: " .. tostring(trader.archetype))
-                        print("  - isBuy: " .. tostring(isBuy))
-                        print("  - Generated Msg: " .. tostring(npcMsg))
+                        DynamicTrading.Log("DTV2", "Network", "Client", Dialogue Debug:")
+                        DynamicTrading.Log("DTV2", "Network", "Debug", "  - Trader Archetype: " .. tostring(trader.archetype))
+                        DynamicTrading.Log("DTV2", "Network", "Debug", "  - isBuy: " .. tostring(isBuy))
+                        DynamicTrading.Log("DTV2", "Network", "Debug", "  - Generated Msg: " .. tostring(npcMsg))
                     end
                     
                     ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier", "transaction")
@@ -186,7 +186,7 @@ local function OnStockUpdated(traderID)
         local ui = DT_TradingWindow.instance
         -- Only refresh if this update is for our current trader
         if ui.traderID == traderID then
-            print("[DT-V2-Client] Stock updated for current trader, refreshing UI")
+            DynamicTrading.Log("DTV2", "Network", "Client", Stock updated for current trader, refreshing UI")
             ui:populateList()
         end
     end
@@ -198,4 +198,4 @@ if LuaEventManager then
 end
 Events.OnDynamicTradingStockUpdated.Add(OnStockUpdated)
 
-print("DynamicTrading: Client Network Layer V2 Initialized")
+DynamicTrading.Log("DTV2", "Init", "Network", "Client Network Layer V2 Initialized")

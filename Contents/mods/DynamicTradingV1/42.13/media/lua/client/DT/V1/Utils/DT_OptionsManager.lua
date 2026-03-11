@@ -14,7 +14,7 @@ DT_OptionsManager = {}
 -- =============================================================================
 function DT_OptionsManager.RegisterAudio()
     if not DT_AudioManager then
-        print("[DT_OptionsManager] ERROR: Common DT_AudioManager not found!")
+        DynamicTrading.Log("DTV1", "Options", "Error", "Common DT_AudioManager not found!")
         return
     end
 
@@ -23,7 +23,7 @@ function DT_OptionsManager.RegisterAudio()
     DT_AudioManager.RegisterCategory("DT_Casino", "Wallet")
     DT_AudioManager.RegisterCategory("DT_Cashier", "Trade")
 
-    print("[DT_OptionsManager] V1 Audio Categories Registered.")
+    DynamicTrading.Log("DTV1", "Options", "Init", "V1 Audio Categories Registered.")
 end
 
 -- =============================================================================
@@ -47,7 +47,7 @@ function DT_OptionsManager.RegisterUI()
     
     DT_OptionsUI.RegisterGeneralSetting("Enable Sounds", "enableSound", nil)
 
-    print("[DT_OptionsManager] V1 UI Registered.")
+    DynamicTrading.Log("DTV1", "Options", "Init", "V1 UI Registered.")
 end
 
 -- =============================================================================

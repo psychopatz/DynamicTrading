@@ -34,7 +34,7 @@ end
 -- ==========================================================
 function DT_NPCLocator.locateNPC(uuid, soul, options)
     if not soul then
-        print("[DT-NPCLocator] ERROR: No soul data provided for UUID: " .. tostring(uuid))
+        DynamicTrading.Log("DTCommons", "Debug", "NPC", "ERROR: No soul data provided for UUID: " .. tostring(uuid))
         return false
     end
     
@@ -45,13 +45,13 @@ function DT_NPCLocator.locateNPC(uuid, soul, options)
         if player then
             player:Say("No coordinates found for NPC: " .. (soul.name or "Unknown"))
         end
-        print("[DT-NPCLocator] No coordinates for NPC: " .. (soul.name or "Unknown"))
+        DynamicTrading.Log("DTCommons", "Debug", "NPC", "No coordinates for NPC: " .. (soul.name or "Unknown"))
         return false
     end
     
     -- Check if EventMarkerHandler is available
     if not EventMarkerHandler then
-        print("[DT-NPCLocator] ERROR: EventMarkerHandler not available!")
+        DynamicTrading.Log("DTCommons", "Debug", "NPC","ERROR: EventMarkerHandler not available!")
         local player = getPlayer()
         if player then
             player:Say("EventMarkerHandler not loaded!")
@@ -83,7 +83,7 @@ function DT_NPCLocator.locateNPC(uuid, soul, options)
         player:Say("Marked NPC location on map: " .. (soul.name or "Unknown"))
     end
     
-    print("[DT-NPCLocator] Marked NPC: " .. (soul.name or "Unknown") .. " at " .. targetX .. "," .. targetY)
+    DynamicTrading.Log("DTCommons", "Debug", "NPC", "Marked NPC: " .. (soul.name or "Unknown") .. " at " .. targetX .. "," .. targetY)
     return true
 end
 
@@ -92,7 +92,7 @@ end
 -- ==========================================================
 function DT_NPCLocator.locateFactionNPCs(factionRoster, factionName)
     if not factionRoster or #factionRoster == 0 then
-        print("[DT-NPCLocator] No NPCs in faction roster")
+        DynamicTrading.Log("DTCommons", "Debug", "NPC", "No NPCs in faction roster")
         return 0
     end
     
@@ -135,4 +135,4 @@ function DT_NPCLocator.removeAllNPCMarkers()
     return count
 end
 
-print("[DT-NPCLocator] NPC Locator Utility Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "NPC", "NPC Locator Utility Loaded")

@@ -32,7 +32,7 @@ DT_FactionDebugMenu.OnFillWorldObjectContextMenu = function(playerNum, context, 
         if DT_MerchantDebugWindow and DT_MerchantDebugWindow.Open then
             DT_MerchantDebugWindow.Open()
         else
-            print("[DT-Debug] Merchant Debug Window not loaded!")
+            DynamicTrading.Log("DTCommons", "Debug", "UI", "Merchant Debug Window not loaded!")
         end
     end)
 
@@ -59,4 +59,4 @@ end
 
 Events.OnFillWorldObjectContextMenu.Add(DT_FactionDebugMenu.OnFillWorldObjectContextMenu)
 
-print("[DT-Debug] Faction Debug Menu Loaded (Version: " .. DT_DebugNetworkAdapter.getVersion() .. ")")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Faction Debug Menu Loaded (Version: " .. DT_DebugNetworkAdapter.getVersion() .. ")")

@@ -21,7 +21,7 @@ function DT_FactionLocationManager.GetAllPotentialBases()
     local allBases = {}
     
     if not DT_FactionLocations then 
-        print("DT ERROR: No Faction Locations registered in DT_FactionLocations!")
+        DynamicTrading.Log("DTCommons", "Error", "Faction", "No Faction Locations registered in DT_FactionLocations!")
         return allBases 
     end
 
@@ -47,7 +47,7 @@ function DT_FactionLocationManager.AssignHome(factionID, targetTown)
     -- FAILSAFE: If the faction is the "Independent" faction, they are nomads.
     -- They get no home coordinates.
     if factionID == "Independent" or factionID == "Factionless" then
-        print("DT: Faction [" .. factionID .. "] is nomadic. Skipping home assignment.")
+        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction [" .. factionID .. "] is nomadic. Skipping home assignment.")
         return nil
     end
 
@@ -76,14 +76,14 @@ function DT_FactionLocationManager.AssignHome(factionID, targetTown)
     -- If no spots are left in this town, this faction becomes nomadic by default
     if #available == 0 then
         local townLog = targetTown and (" in " .. targetTown) or ""
-        print("DT WARNING: All registered faction bases" .. townLog .. " are occupied! Faction [" .. factionID .. "] is now nomadic.")
+        DynamicTrading.Log("DTCommons", "Faction", "Warn", "All registered faction bases" .. townLog .. " are occupied! Faction [" .. factionID .. "] is now nomadic.")
         return nil
     end
 
     -- Pick a random available spot
     local choice = available[ZombRand(#available) + 1]
     
-    print("DT: Faction [" .. factionID .. "] has claimed " .. choice.name .. " in " .. choice.town)
+    DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction [" .. factionID .. "] has claimed " .. choice.name .. " in " .. choice.town)
     
     return {
         name = choice.name,
@@ -108,4 +108,4 @@ function DT_FactionLocationManager.GetOwnerOfLocation(locationName)
     return nil
 end
 
-print("[Dynamic Trading] Faction Location Manager Initialized.")
+DynamicTrading.Log("DTCommons", "Init", "Faction", "Faction Location Manager Initialized")

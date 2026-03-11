@@ -35,7 +35,7 @@ function Helpers.SendResponse(player, module, command, args)
     if isServer() then
         -- MULTIPLAYER: Send packet over network
         if isDebugEnabled() then
-            print("[DynamicTradingCommon] Sending MP: " .. module .. ":" .. command .. " to player: " .. player:getUsername())
+            DynamicTrading.Log("DTCommons", "Network", "Server", "Sending MP: " .. module .. ":" .. command .. " to player: " .. player:getUsername())
         end
         sendServerCommand(player, module, command, args)
     else
@@ -316,4 +316,4 @@ function Helpers.BurnMoney(player, amount)
     end
 end
 
-print("[DynamicTradingCommon] DT/Common/ServerHelpers loaded.")
+DynamicTrading.Log("DTCommons", "Init", "Server", "DT/Common/ServerHelpers loaded")

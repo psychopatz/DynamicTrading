@@ -140,7 +140,7 @@ function DT_MerchantDebugWindow:onMerchantSelected(item)
         -- Enable ONLY if Trading AND No Stock
         self.btnGenerate.enable = data.isTrading and not hasStock
         
-        print("DT DEBUG: Selected " .. tostring(data.name) .. " | Trading: " .. tostring(data.isTrading) .. " | HasStock: " .. tostring(hasStock))
+        DynamicTrading.Log("DTCommons", "Debug", "UI", "Selected " .. tostring(data.name) .. " | Trading: " .. tostring(data.isTrading) .. " | HasStock: " .. tostring(hasStock))
     end
 end
 
@@ -223,4 +223,4 @@ function DT_MerchantDebugWindow:new(x, y, width, height)
     return o
 end
 
-print("[DT-Debug] Merchant Debug Window Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Merchant Debug Window Loaded")

@@ -12,7 +12,7 @@ DynamicTrading.Economy.Common = DynamicTrading.Economy.Common or {}
 require "DT/Common/Items/DT_Fluids"
 
 local Common = DynamicTrading.Economy.Common
-print("[DynamicTrading] Common Economy Module initialized.")
+DynamicTrading.Log("DTCommons", "Init", "Economy", "Common Economy Module initialized")
 
 -- =============================================================================
 -- 1. UTILITIES
@@ -346,7 +346,7 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             -- [NEW] Unified Table Structure {qty=X, customData=Y}
             local conditionData = Common.GenerateItemCondition(itemData, isExpert)
             
-            print("[DT DEBUG] GenerateStock: " .. key .. " | Qty: " .. qty .. " | CustomData: " .. (conditionData and "YES" or "NO") .. " | IsExpert: " .. tostring(isExpert))
+            DynamicTrading.Log("DTCommons", "Trade", "Debug", "GenerateStock: " .. key .. " | Qty: " .. qty .. " | CustomData: " .. (conditionData and "YES" or "NO") .. " | IsExpert: " .. tostring(isExpert))
             
             resultStock[key] = {
                 qty = qty,
@@ -357,7 +357,7 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
 
     -- [DEBUG FINAL STRUCTURE]
     for k, v in pairs(resultStock) do
-        print("[DT DEBUG] GenerateStock Result Sample: " .. tostring(k) .. " -> type is " .. type(v))
+        DynamicTrading.Log("DTCommons", "Trade", "Debug", "GenerateStock Result Sample: " .. tostring(k) .. " -> type is " .. type(v))
         break
     end
 
@@ -378,7 +378,7 @@ function Common.GenerateItemCondition(itemData, isExpert)
     local hasData = false
     
     -- [DEBUG]
-    print("[DT DEBUG] GenerateItemCondition for: " .. tostring(itemData.item) .. " | IsExpert: " .. tostring(isExpert))
+    DynamicTrading.Log("DTCommons", "Trade", "Debug", "GenerateItemCondition for: " .. tostring(itemData.item) .. " | IsExpert: " .. tostring(isExpert))
     
     -- 1. Fluid Container (e.g. Gas Can, Water Bottle)
     local fc = scriptItem.getFluidContainer and scriptItem:getFluidContainer()
@@ -388,12 +388,12 @@ function Common.GenerateItemCondition(itemData, isExpert)
         local mult = isExpert and 1.0 or (ZombRand(10, 101) / 100.0) 
         data.fluidAmount = capacity * mult
         
-        print("  - FLUID detected. Capacity: " .. capacity .. " | Amount: " .. data.fluidAmount)
+        DynamicTrading.Log("DTCommons", "Trade", "Trace", "  - FLUID detected. Capacity: " .. capacity .. " | Amount: " .. data.fluidAmount)
 
         -- Store default fluid type
         if fc.getFluidType then
             data.fluidType = fc:getFluidType()
-            print("  - Fluid Type: " .. tostring(data.fluidType))
+            DynamicTrading.Log("DTCommons", "Trade", "Trace", "  - Fluid Type: " .. tostring(data.fluidType))
         end
 
         hasData = true
@@ -403,7 +403,7 @@ function Common.GenerateItemCondition(itemData, isExpert)
     if not hasData and scriptItem.IsDrainable and scriptItem:IsDrainable() then
         local mult = isExpert and 1.0 or (ZombRand(1, 101) / 100.0)
         data.usedDelta = mult
-        print("  - DRAINABLE detected. usedDelta: " .. mult)
+        DynamicTrading.Log("DTCommons", "Trade", "Trace", "  - DRAINABLE detected. usedDelta: " .. mult)
         hasData = true
     end
     
@@ -413,7 +413,7 @@ function Common.GenerateItemCondition(itemData, isExpert)
         if baseHunger and baseHunger < 0 then
             local mult = isExpert and 1.0 or (ZombRand(1, 11) / 10.0)
             data.hungerChange = baseHunger * mult
-            print("  - FOOD detected. baseHunger: " .. baseHunger .. " | hungerChange: " .. data.hungerChange)
+            DynamicTrading.Log("DTCommons", "Trade", "Trace", "  - FOOD detected. baseHunger: " .. baseHunger .. " | hungerChange: " .. data.hungerChange)
             hasData = true
         end
     end
@@ -424,12 +424,12 @@ function Common.GenerateItemCondition(itemData, isExpert)
         local mult = isExpert and 1.0 or (ZombRand(2, 11) / 10.0) -- 20% to 100%
         data.condition = math.floor(max * mult)
         if data.condition < 1 then data.condition = 1 end
-        print("  - CONDITION detected. Value: " .. data.condition .. "/" .. max)
+        DynamicTrading.Log("DTCommons", "Trade", "Trace", "  - CONDITION detected. Value: " .. data.condition .. "/" .. max)
         hasData = true
     end
     
     if not hasData then
-        print("  - NO dynamic data generated for this item.")
+        DynamicTrading.Log("DTCommons", "Trade", "Trace", "  - NO dynamic data generated for this item.")
     end
     
     if hasData then return data end
@@ -457,7 +457,7 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
     local price = itemData.basePrice
     
     if verbose then
-        print("[DT TRACE] Buy Price Calc: " .. itemKey .. " | Base: " .. price)
+        DynamicTrading.Log("DTCommons", "Trade", "Trace", "Buy Price Calc: " .. itemKey .. " | Base: " .. price)
     end
 
     -- 1. Tag Multipliers (Highest Wins)
@@ -471,7 +471,7 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
         end
     end
     price = price * maxTagMult
-    if verbose and maxTagMult ~= 1.0 then print("[DT TRACE] | TagMult: " .. maxTagMult) end
+    if verbose and maxTagMult ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| TagMult: " .. maxTagMult) end
 
     -- 2. Event Modifiers (Supports Hierarchy)
     if getPriceMod then
@@ -479,7 +479,7 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
         -- We assume the caller (Event Manager) handles its own matching logic or we do it here.
         local eventMult = getPriceMod(itemData.tags)
         price = price * eventMult
-        if verbose and eventMult ~= 1.0 then print("[DT TRACE] | EventMult: " .. eventMult) end
+        if verbose and eventMult ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| EventMult: " .. eventMult) end
     end
 
     -- 3. Global Inflation (Heat)
@@ -487,13 +487,13 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
         local heat = globalHeat[tag]
         if heat and heat ~= 0 then
             price = price * (1.0 + heat)
-            if verbose then print("[DT TRACE] | Heat(" .. tag .. "): " .. heat) end
+            if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| Heat(" .. tag .. "): " .. heat) end
         end
     end
 
     -- 4. Difficulty
     price = price * diffData.buyMult
-    if verbose and diffData.buyMult ~= 1.0 then print("[DT TRACE] | DiffMult: " .. diffData.buyMult) end
+    if verbose and diffData.buyMult ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| DiffMult: " .. diffData.buyMult) end
 
     -- [NEW] Condition/Charge Scaler (Dynamic Buying Variation)
     if modifiers.customData then
@@ -569,7 +569,7 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
                     local heat = globalHeat[tag]
                     if heat and heat ~= 0 then
                         fluidMults = fluidMults * (1.0 + heat)
-                        if verbose then print("[DT TRACE] | FluidHeat(" .. tag .. "): " .. heat) end
+                        if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FluidHeat(" .. tag .. "): " .. heat) end
                     end
                 end
             end
@@ -577,9 +577,9 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
             price = (containerBase * containerMults) + (fluidTotal * fluidMults)
             
             if verbose then
-                 print("[DT TRACE] | DYNAMIC CONTENT DETECTED")
-                 print("[DT TRACE] |   Container Price: " .. math.floor(containerBase * containerMults))
-                 print("[DT TRACE] |   FluidTotal: " .. math.floor(fluidTotal * fluidMults) .. " (" .. tostring(fType) .. ")")
+                 DynamicTrading.Log("DTCommons", "Trade", "Trace", "| DYNAMIC CONTENT DETECTED")
+                 DynamicTrading.Log("DTCommons", "Trade", "Trace", "|   Container Price: " .. math.floor(containerBase * containerMults))
+                 DynamicTrading.Log("DTCommons", "Trade", "Trace", "|   FluidTotal: " .. math.floor(fluidTotal * fluidMults) .. " (" .. tostring(fType) .. ")")
             end
 
             return math.ceil(price)
@@ -606,12 +606,12 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
 
         -- Scaled price (minimum 20% value even if near empty, for the container)
         price = price * math.max(0.2, scale)
-        if verbose and scale ~= 1.0 then print("[DT TRACE] | ItemScale: " .. scale) end
+        if verbose and scale ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| ItemScale: " .. scale) end
     end
 
     if price < 1 then price = 1 end
     
-    if verbose then print("[DT TRACE] | FINAL: " .. math.floor(price)) end
+    if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FINAL: " .. math.floor(price)) end
 
     return math.ceil(price)
 end
@@ -637,7 +637,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
     local price = itemData.basePrice * diffData.sellMult
     
     if verbose then
-        print("[DT TRACE] Sell Price Calc: " .. itemKey .. " | Base: " .. price)
+        DynamicTrading.Log("DTCommons", "Trade", "Trace", "Sell Price Calc: " .. itemKey .. " | Base: " .. price)
     end
 
     -- 2. Condition & State Penalty
@@ -647,7 +647,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         if itemObj.isRotten and itemObj:isRotten() then
             -- [NEW] Add a virtual tag for Rotten items so archetypes can target them
             table.insert(itemData.tags, "Rotten")
-            if verbose then print("[DT TRACE] | STATE: ROTTEN (PRICE = 1)") end
+            if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| STATE: ROTTEN (PRICE = 1)") end
             return 1
         end
 
@@ -655,7 +655,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         if maxCond > 0 then
              local condRatio = itemObj:getCondition() / maxCond
              price = price * condRatio
-             if verbose then print("[DT TRACE] | Condition: " .. math.floor(condRatio * 100) .. "%") end
+             if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| Condition: " .. math.floor(condRatio * 100) .. "%") end
         end
         
         -- DRAINABLE / FLUID PRICING
@@ -728,7 +728,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
                             end
                         end
                     end
-                    if verbose then print("[DT TRACE] | FLUID_MULTS: " .. fluidMults) end
+                    if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FLUID_MULTS: " .. fluidMults) end
                 end
                 
                 fluidValue = (fluidData.basePrice * currentAmount) * fluidMults
@@ -748,7 +748,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
 
             price = containerValue + fluidValue
             if verbose then 
-                print("[DT TRACE] | FLUID: " .. tostring(fluidType) .. " (" .. math.floor(ratio*100) .. "%) | NewPrice: " .. price) 
+                DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FLUID: " .. tostring(fluidType) .. " (" .. math.floor(ratio*100) .. "%) | NewPrice: " .. price) 
             end
 
         -- B. Food Consumption (Partially eaten)
@@ -759,14 +759,14 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             if baseHunger < 0 then
                 local ratio = currentHunger / baseHunger
                 price = price * math.max(0, math.min(1, ratio))
-                if verbose then print("[DT TRACE] | FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price) end
+                if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price) end
             end
 
         -- C. Standard Drainable (Pills, Batteries, Flashlights, etc.)
         elseif itemObj.IsDrainable and itemObj:IsDrainable() then
             local delta = Common.GetItemCharge(itemObj)
             price = price * delta
-            if verbose then print("[DT TRACE] | DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price) end
+            if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price) end
         end
     end
 
@@ -774,7 +774,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
     if getPriceMod then
         local eventMult = getPriceMod(itemData.tags)
         price = price * eventMult
-        if verbose and eventMult ~= 1.0 then print("[DT TRACE] | EventMult: " .. eventMult) end
+        if verbose and eventMult ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| EventMult: " .. eventMult) end
     end
 
     -- 4. Global Inflation (Heat)
@@ -782,7 +782,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         local heat = globalHeat[tag]
         if heat and heat ~= 0 then
             price = price * (1.0 + heat)
-            if verbose then print("[DT TRACE] | Heat(" .. tag .. "): " .. heat) end
+            if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| Heat(" .. tag .. "): " .. heat) end
         end
     end
 
@@ -792,7 +792,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
         local localMult = 1.0 - (localDeflationCount * penaltyPerItem)
         if localMult < 0.2 then localMult = 0.2 end
         price = price * localMult
-        if verbose then print("[DT TRACE] | Deflation: " .. localMult) end
+        if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| Deflation: " .. localMult) end
     end
 
     -- 6. Archetype Bonus ("Wants")
@@ -801,7 +801,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
             for wantTag, bonus in pairs(archetype.wants) do
                 if t == wantTag or string.find(t, wantTag .. "%.") == 1 then
                     price = price * bonus
-                    if verbose then print("[DT TRACE] | Want(" .. wantTag .. "): " .. bonus) end
+                    if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "Want(" .. wantTag .. "): " .. bonus) end
                     return math.floor(price) -- Stop at first match for bonuses
                 end
             end
@@ -810,7 +810,7 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
 
     if price < 0 then price = 0 end
     
-    if verbose then print("[DT TRACE] | FINAL: " .. math.floor(price)) end
+    if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FINAL: " .. math.floor(price)) end
     
     return math.floor(price)
 end

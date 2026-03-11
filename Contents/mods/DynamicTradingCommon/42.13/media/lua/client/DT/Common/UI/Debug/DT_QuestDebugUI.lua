@@ -85,9 +85,9 @@ function DT_QuestDebugUI:onSpawn()
     local player = getSpecificPlayer(0)
     
     -- Anti-cheese check (Client-side warning)
-    if DynamicTrading.Quests.HasActiveQuestItem(player) then
+    if player:getInventory():contains("QuestItem") then
         player:Say("I'm already carrying a quest item!")
-        print("[DT DEBUG] Anti-cheese triggered but bypassed in Debug UI")
+        DynamicTrading.Log("DTCommons", "Quest", "Debug", "Anti-cheese triggered but bypassed in Debug UI")
     end
     
     DynamicTrading.Quests.RequestSpawnQuestItem(player, itemID, diff)
@@ -97,25 +97,25 @@ function DT_QuestDebugUI:onDump()
     local player = getSpecificPlayer(0)
     local items = player:getInventory():getItems()
     
-    print("========================================================")
-    print(" DT QUEST DEBUG: MOD DATA DUMP")
-    print("========================================================")
+    DynamicTrading.Log("DTCommons", "Quest", "Debug", "========================================================")
+    DynamicTrading.Log("DTCommons", "Quest", "Debug", " DT QUEST DEBUG: MOD DATA DUMP")
+    DynamicTrading.Log("DTCommons", "Quest", "Debug", "========================================================")
     
     local found = false
     for i=0, items:size()-1 do
         local item = items:get(i)
         local md = item:getModData()
         if md.IsQuestItem then
-            print("Item: " .. item:getFullType())
-            print("  - QuestID: " .. tostring(md.QuestID))
-            print("  - Timestamp: " .. tostring(md.Timestamp))
-            print("  - ActualWeight: " .. tostring(item:getActualWeight()))
+            DynamicTrading.Log("DTCommons", "Quest", "Debug", "Item: " .. item:getFullType())
+            DynamicTrading.Log("DTCommons", "Quest", "Debug", "  - QuestID: " .. tostring(md.QuestID))
+            DynamicTrading.Log("DTCommons", "Quest", "Debug", "  - Timestamp: " .. tostring(md.Timestamp))
+            DynamicTrading.Log("DTCommons", "Quest", "Debug", "  - ActualWeight: " .. tostring(item:getActualWeight()))
             found = true
         end
     end
     
-    if not found then print(" No quest items found in inventory.") end
-    print("========================================================")
+    if not found then DynamicTrading.Log("DTCommons", "Quest", "Debug", " No quest items found in inventory.") end
+    DynamicTrading.Log("DTCommons", "Quest", "Debug", "========================================================")
 end
 
 function DT_QuestDebugUI:onClear()
@@ -176,4 +176,4 @@ end
 
 Events.OnFillWorldObjectContextMenu.Add(OnFillWorldObjectContextMenu)
 
-print("[DynamicTrading] Quest Debug UI Loaded.")
+DynamicTrading.Log("DTCommons", "Init", "Quest", "Quest Debug UI Loaded")

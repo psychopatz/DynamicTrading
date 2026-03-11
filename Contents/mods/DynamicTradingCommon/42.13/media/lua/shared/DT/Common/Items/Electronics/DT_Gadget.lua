@@ -26,4 +26,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.ElectronicsScrap", basePrice=85, tags={"Electronics.Gadget", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=10} },
 })
 
-print("[DynamicTrading] Gadget Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Gadget Registry Complete")

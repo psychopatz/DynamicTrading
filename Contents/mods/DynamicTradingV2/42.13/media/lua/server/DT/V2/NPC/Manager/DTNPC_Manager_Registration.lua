@@ -28,12 +28,12 @@ function DTNPCManager.Register(zombie, npcData)
             if not uuid then
                 -- Brand new NPC, generate UUID
                 uuid = DTNPCManager.GenerateSoulID(npcData.name)
-                print("[DTNPC] Generated new Soul ID for NPC: " .. (npcData.name or "Unknown") .. " - " .. uuid)
+                DynamicTrading.Log("DTV2", "NPC", "Soul", "Generated new Soul ID for NPC: " .. (npcData.name or "Unknown") .. " - " .. uuid)
             else
-                print("[DTNPC] Found existing UUID from outfit mapping: " .. uuid)
+                DynamicTrading.Log("DTV2", "NPC", "Soul", "Found existing UUID from outfit mapping: " .. uuid)
             end
         else
-            print("[DTNPC] Found UUID in zombie modData: " .. uuid)
+            DynamicTrading.Log("DTV2", "NPC", "Soul", "Found UUID in zombie modData: " .. uuid)
         end
         
         npcData.uuid = uuid
@@ -45,7 +45,7 @@ function DTNPCManager.Register(zombie, npcData)
     
     -- Check for duplicate registration
     if DTNPCManager.PendingRegistrations[uuid] then
-        print("[DTNPC] WARNING: Registration for UUID " .. uuid .. " already in progress. Skipping duplicate.")
+        DynamicTrading.Log("DTV2", "NPC", "Warn", "Registration for UUID " .. uuid .. " already in progress. Skipping duplicate.")
         return
     end
     
@@ -68,7 +68,7 @@ function DTNPCManager.Register(zombie, npcData)
     
     DTNPCManager.PendingRegistrations[uuid] = nil
     
-    print("[DTNPC] Registered NPC: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ", OutfitID: " .. outfitID .. ") at " .. npcData.lastX .. "," .. npcData.lastY .. "," .. npcData.lastZ)
+    DynamicTrading.Log("DTV2", "NPC", "Register", "Registered NPC: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ", OutfitID: " .. outfitID .. ") at " .. npcData.lastX .. "," .. npcData.lastY .. "," .. npcData.lastZ)
 end
 
 function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
@@ -100,7 +100,7 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
         DTNPCManager.PendingRegistrations[uuid] = nil
         DTNPCManager.Save()
         
-        print("[DTNPC] Removed NPC data from world tracker: " .. (npcData.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
+        DynamicTrading.Log("DTV2", "NPC", "Remove", "Removed NPC data from world tracker: " .. (npcData.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
         
         -- Broadcast removal to all clients
         if DTNPCServerCore and DTNPCServerCore.NotifyRemoval then
@@ -118,7 +118,7 @@ function DTNPCManager.SetNPCStatus(uuid, status, returnTime, returnStatus)
     -- 2. If the status implies they are "Away" or "Dead", clean up physical presence
     if status == "Away" or status == "Dead" then
         if DTNPCManager.Data[uuid] then
-            print("[DTNPC] Status change to " .. status .. " requires world removal.")
+            DynamicTrading.Log("DTV2", "NPC", "Status", "Status change to " .. status .. " requires world removal.")
             DTNPCManager.RemoveData(uuid) -- No arguments to avoid recursion loop
         end
         
@@ -128,7 +128,7 @@ function DTNPCManager.SetNPCStatus(uuid, status, returnTime, returnStatus)
             if zombie then
                 zombie:removeFromWorld()
                 zombie:removeFromSquare()
-                print("[DTNPC] Forcefully removed physical zombie for Away/Dead state: " .. uuid)
+                DynamicTrading.Log("DTV2", "NPC", "Remove", "Forcefully removed physical zombie for Away/Dead state: " .. uuid)
             end
         end
     end
@@ -139,7 +139,7 @@ function DTNPCManager.Unregister(zombie)
     
     if uuid and DTNPCManager.Data[uuid] then
         local npcData = DTNPCManager.Data[uuid]
-        print("[DTNPC] NPC Died: " .. (npcData.name or uuid))
+        DynamicTrading.Log("DTV2", "NPC", "Death", "NPC Died: " .. (npcData.name or uuid))
         DTNPCManager.RemoveData(uuid, "Dead")
     else
         -- Fallback: try outfit ID
@@ -147,7 +147,7 @@ function DTNPCManager.Unregister(zombie)
         local fallbackUUID = DTNPCManager.GetUUIDFromOutfitID(outfitID)
         if fallbackUUID and DTNPCManager.Data[fallbackUUID] then
             local npcData = DTNPCManager.Data[fallbackUUID]
-            print("[DTNPC] NPC Died (fallback lookup): " .. (npcData.name or fallbackUUID))
+            DynamicTrading.Log("DTV2", "NPC", "Death", "NPC Died (fallback lookup): " .. (npcData.name or fallbackUUID))
             DTNPCManager.RemoveData(fallbackUUID, "Dead")
         end
     end

@@ -300,7 +300,7 @@ function DT_FactionInfoWindow:onListMouseDown(item)
 
     -- [MP OPTIMIZATION] Request detailed soul data for this faction on-demand
     if isClient() and not isServer() and not f.isV1 then
-        print("[DT] Requesting detailed roster for faction: " .. tostring(f.id))
+        DynamicTrading.Log("DTCommons", "Faction", "Sync", "Requesting detailed roster for faction: " .. tostring(f.id))
         sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestFactionRoster", { factionID = f.id })
     end
 end

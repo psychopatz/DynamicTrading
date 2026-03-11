@@ -72,7 +72,7 @@ function DTNPCLogic.OnTick()
             end)
             
             if not success then 
-                print("[DTNPC] Error processing NPC: " .. tostring(err))
+                DynamicTrading.Log("DTV2", "NPC", "Error", "Error processing NPC: " .. tostring(err))
             end
         end
     end
@@ -112,7 +112,7 @@ function DTNPCLogic.ProcessNPC(zombie)
             npcData.anchorY = zombie:getY()
             npcData.anchorZ = zombie:getZ()
             if DTNPC_DEBUG_ANCHOR then
-                print("[DTNPC] Set anchor for " .. (npcData.name or "NPC") .. " at " .. math.floor(npcData.anchorX) .. "," .. math.floor(npcData.anchorY))
+                DynamicTrading.Log("DTV2", "NPC", "Anchor", "Set anchor for " .. (npcData.name or "NPC") .. " at " .. math.floor(npcData.anchorX) .. "," .. math.floor(npcData.anchorY))
             end
         end
         
@@ -126,7 +126,7 @@ function DTNPCLogic.ProcessNPC(zombie)
             and ((nowHours - lastSnap) >= ANCHOR_SNAP_COOLDOWN_HOURS) then
             -- Snap back to anchor
             if DTNPC_DEBUG_ANCHOR then
-                print("[DTNPC] NPC " .. (npcData.name or "Unknown") .. " drifted from anchor. Snapping back.")
+                DynamicTrading.Log("DTV2", "NPC", "Anchor", "NPC " .. (npcData.name or "Unknown") .. " drifted from anchor. Snapping back.")
             end
             zombie:setX(npcData.anchorX)
             zombie:setY(npcData.anchorY)
@@ -233,7 +233,7 @@ function DTNPCLogic.GetClosestTarget(zombie)
              return p, calculateDistance(zombie, p)
         end
         
-        -- print("[DTNPC-Logic] Master not found for: " .. (npcData.name or "NPC") .. " (Master: " .. tostring(npcData.master) .. ")")
+        DynamicTrading.Log("DTV2", "NPC", "Logic", "Master not found for: " .. (npcData.name or "NPC") .. " (Master: " .. tostring(npcData.master) .. ")")
     end
 
     return nil, 9999
@@ -253,7 +253,7 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             npcData.tasks = {}
             
             local attackerName = attacker:getUsername() or "Unknown Player"
-            print("[DTNPC] Combat Initiated! " .. npcData.name .. " is attacking " .. attackerName)
+            DynamicTrading.Log("DTV2", "NPC", "Combat", "Combat Initiated! " .. npcData.name .. " is attacking " .. attackerName)
             
             zombie:setTarget(attacker)
             zombie:setAttackedBy(nil)

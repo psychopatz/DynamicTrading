@@ -74,12 +74,12 @@ end
 Handlers.DebugCommand = function(player, args)
     -- Security Check: Only allow if Debug is on OR player is an Admin
     if not (isAdmin() or isDebugEnabled()) then 
-        print("DT SECURITY: Unauthorized DebugCommand attempt by " .. player:getUsername())
+        DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized DebugCommand attempt by " .. player:getUsername())
         return 
     end
     
     local action = args.action
-    print("DT DEBUG: Server received action [" .. tostring(action) .. "] from " .. player:getUsername())
+    DynamicTrading.Log("DTCommons", "Debug", "Server", "Server received action [" .. tostring(action) .. "] from " .. player:getUsername())
 
     if action == "SimulateDay" then
         -- Force the daily update for all factions

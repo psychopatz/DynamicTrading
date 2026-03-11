@@ -19,7 +19,7 @@ function DT_V2_OptionsManager.RegisterUI()
     -- V2 specific general settings (none yet, but Enable Sounds is shared)
     DT_OptionsUI.RegisterGeneralSetting("Enable Sounds", "enableSound", nil)
 
-    print("[DT_V2_OptionsManager] V2 UI Registered.")
+    DynamicTrading.Log("DTV2", "Init", "Config", "V2 UI Registered.")
 end
 
 function DT_V2_OptionsManager.ToggleWindow()

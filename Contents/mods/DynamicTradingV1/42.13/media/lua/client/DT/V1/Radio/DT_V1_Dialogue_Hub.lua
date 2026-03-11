@@ -17,7 +17,7 @@ DT_V1_Dialogue_Hub.PendingTrade = nil
 -- 1. INITIALIZATION
 -- =============================================================================
 function DT_V1_Dialogue_Hub.Init(ui, radioObj, traderID, player)
-    print(DEBUG_PREFIX .. " Initializing dialogue for " .. tostring(traderID))
+    DynamicTrading.Log("DTV1", "Dialogue", "Init", "Initializing dialogue for " .. tostring(traderID))
     
     if not ui then
         if not DT_ConversationUI then return end
@@ -29,7 +29,7 @@ function DT_V1_Dialogue_Hub.Init(ui, radioObj, traderID, player)
         end
         
         if not trader then
-            print(DEBUG_PREFIX .. " ERROR: Trader data not found for " .. tostring(traderID))
+            DynamicTrading.Log("DTV1", "Dialogue", "Error", "Trader data not found for " .. tostring(traderID))
             return
         end
 
@@ -81,18 +81,18 @@ function DT_V1_Dialogue_Hub.GenerateOptions(ui, radioObj, traderID, player)
         message = "I'm looking to do some business.",
         onSelect = function(ui)
             if isTrading then
-                print(DEBUG_PREFIX .. " Trade option selected")
+                DynamicTrading.Log("DTV1", "Dialogue", "Option", "Trade option selected")
                 
                 -- Check for cached stock
                 local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
                                   or ModData.get("DynamicTrading_Stock")
                 
                 if stockData and stockData[traderID] then
-                    print(DEBUG_PREFIX .. " Stock cached, opening TradingWindow")
+                    DynamicTrading.Log("DTV1", "Dialogue", "Stock", "Stock cached, opening TradingWindow")
                     ui:close()
                     V1_Radio_DataProvider.Open(traderID, trader.archetype, radioObj)
                 else
-                    print(DEBUG_PREFIX .. " Requesting stock generation...")
+                    DynamicTrading.Log("DTV1", "Dialogue", "Stock", "Requesting stock generation...")
                     ui:speak("Let me check my inventory list... one moment.")
                     
                     -- Request stock from server (Uses "DynamicTrading" module handled by Common Network)
@@ -142,7 +142,7 @@ function DT_V1_Dialogue_Hub.OnServerCommand(module, command, args)
         if command == "SyncStock" then
             local id = args.id
             if id then
-                print(DEBUG_PREFIX .. " Received SyncStock for " .. tostring(id))
+                DynamicTrading.Log("DTV1", "Dialogue", "Sync", "Received SyncStock for " .. tostring(id))
                 DynamicTrading_Client.Cache.Stocks[id] = args
                 
                 -- Update ModData for fallback/persistence
@@ -157,7 +157,7 @@ function DT_V1_Dialogue_Hub.OnServerCommand(module, command, args)
                 end
             end
         elseif command == "TradeResult" then
-            print(DEBUG_PREFIX .. " Received TradeResult: " .. tostring(args.success) .. " (" .. tostring(args.reason) .. ")")
+            DynamicTrading.Log("DTV1", "Dialogue", "Trade", "Received TradeResult: " .. tostring(args.success) .. " (" .. tostring(args.reason) .. ")")
         end
     end
 end
@@ -180,7 +180,7 @@ local function OnTick()
     local stockData = DynamicTrading_Client.Cache.Stocks
     
     if stockData and stockData[pending.traderID] then
-        print(DEBUG_PREFIX .. " Stock arrived! Opening TradingWindow")
+        DynamicTrading.Log("DTV1", "Dialogue", "Stock", "Stock arrived! Opening TradingWindow")
         pending.ui:close()
         V1_Radio_DataProvider.Open(pending.traderID, pending.archetype, pending.radioObj)
         DT_V1_Dialogue_Hub.PendingTrade = nil
@@ -196,7 +196,7 @@ local function OnTick()
     end
 
     if gt and elapsed > 0.02 then
-        print(DEBUG_PREFIX .. " Stock request timeout")
+        DynamicTrading.Log("DTV1", "Dialogue", "Timeout", "Stock request timeout")
         if uiValid then
             pending.ui:speak("Sorry, I'm having trouble with the connection. Try again.")
         end
@@ -210,5 +210,5 @@ Events.OnTick.Add(OnTick)
 Events.OnServerCommand.Remove(DT_V1_Dialogue_Hub.OnServerCommand)
 Events.OnServerCommand.Add(DT_V1_Dialogue_Hub.OnServerCommand)
 
-print(DEBUG_PREFIX .. " V1 Radio Dialogue Hub loaded")
+DynamicTrading.Log("DTV1", "Dialogue", "Init", "V1 Radio Dialogue Hub loaded")
 return DT_V1_Dialogue_Hub

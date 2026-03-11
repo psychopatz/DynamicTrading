@@ -79,4 +79,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.VambraceMagazine_Right", basePrice=109, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
 })
 
-print("[DynamicTrading] Media Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Media Registry Complete")

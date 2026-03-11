@@ -13,11 +13,11 @@ DT_MerchantDebugActions = DT_MerchantDebugActions or {}
 -- ==========================================================
 function DT_MerchantDebugActions.generateStock(traderID, traderName)
     if not traderID then 
-        print("[DT-Debug] Cannot generate stock: no trader ID")
+        DynamicTrading.Log("DTCommons", "Debug", "UI", "Cannot generate stock: no trader ID")
         return false 
     end
     
-    print("DT DEBUG: Requesting Stock for " .. tostring(traderID))
+    DynamicTrading.Log("DTCommons", "Debug", "UI", "Requesting Stock for " .. tostring(traderID))
     DT_DebugNetworkAdapter.generateStock(traderID)
     return true
 end
@@ -31,4 +31,4 @@ function DT_MerchantDebugActions.onStockUpdated(traderID, callback)
     end
 end
 
-print("[DT-Debug] Merchant Debug Actions Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Merchant Debug Actions Loaded")

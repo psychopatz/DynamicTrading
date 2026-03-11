@@ -20,4 +20,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.SmokingPipe_Tobacco", basePrice=1, tags={"Food.NonPerishable", "Rarity.Rare"}, stockRange={min=0, max=7} },
 })
 
-print("[DynamicTrading] Perishable Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Perishable Registry Complete")

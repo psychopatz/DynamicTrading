@@ -19,7 +19,7 @@ function DynamicTrading.NetworkLogs.AddLog(text, category)
         if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.Append then
             DynamicTrading.NetworkLogManager.Append(LOGS_KEY, text, category)
         else
-            print("[DynamicTrading] Error: Shared DT_NetworkLogManager module missing.")
+            DynamicTrading.Log("DTV1", "Network", "Error", "Shared DT_NetworkLogManager module missing.")
         end
     end
 end

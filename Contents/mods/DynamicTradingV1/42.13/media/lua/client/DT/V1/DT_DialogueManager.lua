@@ -7,4 +7,4 @@
 
 require "DT/Common/DT_DialogueManager"
 
-print("[DynamicTrading] V1 Dialogue Manager Shim Loaded (Redirecting to Common)")
+DynamicTrading.Log("DTV1", "Dialogue", "Init", "V1 Dialogue Manager Shim Loaded (Redirecting to Common)")

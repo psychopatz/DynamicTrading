@@ -87,7 +87,7 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
 
     if not target or target:isDead() then
         npcData.state = "Stay"
-        print("[DTNPC] Target dead. Standing down.")
+        DynamicTrading.Log("DTV2", "NPC", "Combat", "Target dead. Standing down.")
         -- Reset anim
         zombie:setVariable("bMoving", false)
         return

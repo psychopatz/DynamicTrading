@@ -18,7 +18,7 @@ function DT_SidebarButton:createChildren()
     -- Fallback for testing: uses vanilla hammer icon (very visible)
     if not btnIcon then
         btnIcon = getTexture("Item_Hammer")
-        print("DT_SidebarButton: Custom icon failed to load, using fallback hammer")
+        DynamicTrading.Log("DTV1", "UI", "Warn", "SidebarButton: Custom icon failed to load, using fallback hammer")
     end
     
     -- 2. CREATE BUTTON (dynamic size to match container)

@@ -38,4 +38,4 @@ end
 -- 5. TRAITS
 -- require "DT/V1/TraitItems"
 
-print("[DynamicTrading] Radio Trading System (Faction Parity) Fully Loaded.")
+DynamicTrading.Log("DTV1", "Init", "Manifest", "Radio Trading System Fully Loaded")

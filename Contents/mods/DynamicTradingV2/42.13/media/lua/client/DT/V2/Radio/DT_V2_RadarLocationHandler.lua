@@ -168,24 +168,24 @@ end
 function DT_V2_RadarLocationHandler.PrintDebug(player)
     local loc = DT_V2_RadarLocationHandler.GetLocationData(player)
     
-    print("==================================================")
-    print("[DT_SCAN_DEBUG] PLAYER LOCATION REPORT")
-    print("--------------------------------------------------")
-    print(string.format("COORDS    : %d, %d, %d", loc.x, loc.y, loc.z))
-    print(string.format("COUNTY    : %s", loc.county))
-    print(string.format("TOWN      : %s", loc.town))
-    print(string.format("TOWN POP  : %d", loc.townPop))
-    print(string.format("ACTIVE    : %d", loc.activeTraders))
-    print(string.format("ZONE      : %s", loc.zone))
-    print("--------------------------------------------------")
-    print(string.format("ROOM      : %s", loc.room))
-    print(string.format("BUILDING  : %s", loc.building))
-    print(string.format("SAFEHOUSE : %s", loc.safehouse))
-    print("--------------------------------------------------")
-    print(string.format("POWER     : %s", loc.power))
-    print(string.format("LIGHT     : %s", loc.light))
-    print(string.format("TEMP      : %s", loc.temp))
-    print("==================================================")
+    DynamicTrading.Log("DTV2", "Radio", "Debug", "==================================================")
+    DynamicTrading.Log("DTV2", "Radio", "Debug", "PLAYER LOCATION REPORT")
+    DynamicTrading.Log("DTV2", "Radio", "Debug", "--------------------------------------------------")
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("COORDS    : %d, %d, %d", loc.x, loc.y, loc.z))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("COUNTY    : %s", loc.county))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("TOWN      : %s", loc.town))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("TOWN POP  : %d", loc.townPop))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("ACTIVE    : %d", loc.activeTraders))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("ZONE      : %s", loc.zone))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", "--------------------------------------------------")
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("ROOM      : %s", loc.room))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("BUILDING  : %s", loc.building))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("SAFEHOUSE : %s", loc.safehouse))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", "--------------------------------------------------")
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("POWER     : %s", loc.power))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("LIGHT     : %s", loc.light))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", string.format("TEMP      : %s", loc.temp))
+    DynamicTrading.Log("DTV2", "Radio", "Debug", "==================================================")
 end
 
 -- ==============================================================================
@@ -199,7 +199,7 @@ function DT_V2_RadarLocationHandler.PopulateList(listbox, player)
     
     if not status then
         listbox:addItem("Error Reading Location Data", { isLocationInfo=true, label="Error", value="See Console" })
-        print("[DT_ERROR] Location Handler Failed: " .. tostring(loc))
+        DynamicTrading.Log("DTV2", "Radio", "Error", "Location Handler Failed: " .. tostring(loc))
         return
     end
     

@@ -32,10 +32,10 @@ local function cleanupV1RadioMetadata()
 	end
 
 	if DynamicTrading.Debug then
-		print("[DynamicTrading] V2 cleanup applied: cleared DynamicTrading_V1_Radio metadata.")
+		DynamicTrading.Log("DTV2", "Config", "System", "V2 cleanup applied: cleared DynamicTrading_V1_Radio metadata.")
 	end
 end
 
 Events.OnInitGlobalModData.Add(cleanupV1RadioMetadata)
 
-print("DynamicTrading: V2 Config Initialized.")
+DynamicTrading.Log("DTV2", "Init", "System", "V2 Config Initialized.")

@@ -259,7 +259,7 @@ function DTM_DebugUI:onScanClick()
     -- Update filter dropdown with new data
     self:updateFilterDropdown()
     
-    print("[DTM UI] Listed " .. count .. " buildings with county grouping.")
+    DynamicTrading.Log("DTCommons", "Debug", "Building", "Listed " .. count .. " buildings with county grouping.")
     
     -- Display all results initially
     for _, data in ipairs(self.allLocations) do
@@ -425,11 +425,11 @@ function DTM_DebugUI:doTeleport(x, y, z)
     local tz = math.floor(tonumber(z) or 0)
 
     if tx == 0 and ty == 0 then 
-        print("[DTM UI] Teleport failed: Invalid coordinates (0,0).")
+        DynamicTrading.Log("DTCommons", "Error", "Teleport", "Teleport failed: Invalid coordinates (0,0)")
         return 
     end
 
-    print("[DTM UI] Teleporting to: " .. tx .. ", " .. ty .. ", " .. tz)
+    DynamicTrading.Log("DTCommons", "Debug", "Teleport", "Teleporting to: " .. tx .. ", " .. ty .. ", " .. tz)
 
     -- Use standard coordinate setters verified for Build 42.13
     player:setX(tx)

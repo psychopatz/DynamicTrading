@@ -101,4 +101,4 @@ function DT_FactionDebugRenderers.drawRosterItem(listbox, y, item, alt)
     return y + listbox.itemheight
 end
 
-print("[DT-Debug] Faction Debug Renderers Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Faction Debug Renderers Loaded")

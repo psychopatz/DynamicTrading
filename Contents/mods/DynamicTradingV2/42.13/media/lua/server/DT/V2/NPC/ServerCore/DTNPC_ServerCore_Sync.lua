@@ -84,11 +84,11 @@ function DTNPCServerCore.SyncToAllClients(zombie, npcData)
             syncData.z,
             DTNPCServerCore.BROADCAST_RANGES.MEDIUM
         )
-        print("[DTNPC] Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y .. " [" .. sent .. "/" .. total .. " players]")
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y .. " [" .. sent .. "/" .. total .. " players]")
     else
         -- Single Player fallback
         triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
-        print("[DTNPC] Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
     end
 end
 
@@ -119,7 +119,7 @@ function DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
         triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
     end
     
-    print("[DTNPC] Synced NPC to player: " .. (npcData.name or uuid))
+    DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC to player: " .. (npcData.name or uuid))
 end
 
 function DTNPCServerCore.BroadcastPosition(zombie, npcData)
@@ -163,5 +163,5 @@ function DTNPCServerCore.NotifyRemoval(uuid, outfitID, name)
         triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", data)
     end
     
-    print("[DTNPC] Notified removal: " .. (name or uuid))
+    DynamicTrading.Log("DTV2", "NPC", "Remove", "Notified removal: " .. (name or uuid))
 end

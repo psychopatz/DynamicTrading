@@ -44,7 +44,7 @@ local function ensureGeneralLooksLoaded()
     local ok = pcall(require, "DT/Common/ArchetypeDefinitions/General/Definitions/DT_General_Looks")
     if (not ok) and (not DT_NPC_Wardrobe._warnedGeneralLooksLoad) then
         DT_NPC_Wardrobe._warnedGeneralLooksLoad = true
-        print("[DTNPC] Warning: Failed to load DT_General_Looks.lua. Using hardcoded failsafe outfit.")
+        DynamicTrading.Log("DTCommons", "NPC", "Warn", "Failed to load DT_General_Looks.lua. Using hardcoded failsafe outfit.")
     end
 end
 

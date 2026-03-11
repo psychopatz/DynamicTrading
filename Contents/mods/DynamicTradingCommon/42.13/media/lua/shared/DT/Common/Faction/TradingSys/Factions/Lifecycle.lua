@@ -41,7 +41,7 @@ function Lifecycle.Init()
     end
 
     if townFactionCount == 0 then
-        print("DT: No town factions found, triggering initial population...")
+        DynamicTrading.Log("DTCommons", "Init", "Faction", "No town factions found, triggering initial population")
         DynamicTrading_Factions.RepopulateTowns()
     end
 
@@ -150,9 +150,9 @@ function Lifecycle.CreateFaction(factionID, initialData)
         ModData.transmit(MOD_DATA_KEY)
         
         local homeLog = assignedHome and ("at " .. assignedHome.name) or "Nomadic"
-        print("DT: Created Faction [" .. factionID .. "] Known as '" .. displayName .. "' " .. homeLog)
+        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Created Faction [" .. factionID .. "] Known as '" .. displayName .. "' " .. homeLog)
     else
-        print("DT: Faction ID [" .. factionID .. "] already exists in database.")
+        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction ID [" .. factionID .. "] already exists in database.")
     end
 end
 

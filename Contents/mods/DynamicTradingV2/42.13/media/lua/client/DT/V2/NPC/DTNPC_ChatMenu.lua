@@ -77,7 +77,7 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
                 if DTNPC_TraderDialogue_Hub and DTNPC_TraderDialogue_Hub.Init then
                     DTNPC_TraderDialogue_Hub.Init(nil, npc, player)
                 else
-                    print("Error: DTNPC_TraderDialogue_Hub not found")
+                    DynamicTrading.Log("DTV2", "NPC", "Error", "DTNPC_TraderDialogue_Hub not found")
                 end
             end)
         end

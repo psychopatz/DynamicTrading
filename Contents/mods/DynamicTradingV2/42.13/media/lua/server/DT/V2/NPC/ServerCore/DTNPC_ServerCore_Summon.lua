@@ -20,7 +20,7 @@ function DTNPCServerCore.SummonAll(player)
     local toTeleport = {}
     local toRecreate = {}
     
-    print("[DTNPC] Summoning NPCs for player: " .. username)
+    DynamicTrading.Log("DTV2", "NPC", "Summon", "Summoning NPCs for player: " .. username)
     
     for uuid, npcData in pairs(DTNPCManager.Data) do
         if npcData.master == username then
@@ -28,10 +28,10 @@ function DTNPCServerCore.SummonAll(player)
             
             if foundObj then
                 table.insert(toTeleport, {zombie = foundObj, npcData = npcData})
-                print("[DTNPC] Found existing NPC to teleport: " .. (npcData.name or uuid))
+                DynamicTrading.Log("DTV2", "NPC", "Summon", "Found existing NPC to teleport: " .. (npcData.name or uuid))
             else
                 table.insert(toRecreate, {uuid = uuid, npcData = npcData})
-                print("[DTNPC] NPC not found in world, will recreate: " .. (npcData.name or uuid))
+                DynamicTrading.Log("DTV2", "NPC", "Summon", "NPC not found in world, will recreate: " .. (npcData.name or uuid))
             end
         end
     end
@@ -56,5 +56,5 @@ function DTNPCServerCore.SummonAll(player)
         DTNPCServerCore.RespawnNPC(data.npcData, data.uuid)
     end
     
-    print("[DTNPC] Summon complete. Teleported: " .. #toTeleport .. ", Recreated: " .. #toRecreate)
+    DynamicTrading.Log("DTV2", "NPC", "Summon", "Summon complete. Teleported: " .. #toTeleport .. ", Recreated: " .. #toRecreate)
 end

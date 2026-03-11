@@ -34,4 +34,4 @@ require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Summon"
 -- 6. Commands - Client command handler (needs all of the above)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Commands"
 
-print("[DTNPC] ServerCore initialized successfully")
+DynamicTrading.Log("DTV2", "NPC", "Init", "ServerCore initialized successfully")

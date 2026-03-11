@@ -63,7 +63,7 @@ local function OnPreUIDraw()
     
     -- Check if version changed
     if _currentTraderID == traderID and _lastStockVersion and _lastStockVersion ~= version then
-        print(DEBUG_PREFIX .. " Stock version changed: " .. _lastStockVersion .. " -> " .. version .. ", refreshing UI")
+        DynamicTrading.Log("DTV2", "Trade", "Sync", "Stock version changed for " .. tostring(traderID) .. ", refreshing UI")
         _lastStockVersion = version
         ui:populateList()
     elseif _currentTraderID ~= traderID then
@@ -86,7 +86,7 @@ V2_DataProvider = {}
 -- TRADER DATA
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:getTrader(traderID, archetype)
-    -- print(DEBUG_PREFIX .. " getTrader called for ID: " .. tostring(traderID))
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  getTrader called for ID: " .. tostring(traderID))
     
     -- Get stock data from synced ModData (prefer client cache)
     local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
@@ -97,7 +97,7 @@ function V2_DataProvider:getTrader(traderID, archetype)
     end
     
     local stock = stockData[traderID]
-    -- print(DEBUG_PREFIX .. " Stock found. Items: " .. tostring(V2_DataProvider:countTable(stock.items or {})))
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Stock found. Items: " .. tostring(V2_DataProvider:countTable(stock.items or {})))
     
     -- [FIX] Do NOT flatten the stock. Pass the full object so CustomData persists.
     local processedStocks = {}
@@ -115,7 +115,7 @@ function V2_DataProvider:getTrader(traderID, archetype)
     local factionWealth = stock.factionWealth or 0
     
     -- DEBUG: Log what value came from server
-    -- print(DEBUG_PREFIX .. " Stock factionWealth from server: " .. tostring(stock.factionWealth) .. ", factionID: " .. tostring(stock.factionID))
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Stock factionWealth from server: " .. tostring(stock.factionWealth) .. ", factionID: " .. tostring(stock.factionID))
     
     -- PRIORITY 2: Fallback to ModData lookup if factionID is available
     if factionWealth == 0 and stock.factionID then
@@ -123,11 +123,11 @@ function V2_DataProvider:getTrader(traderID, archetype)
                             or ModData.get("DynamicTrading_Factions")
         if factionData and factionData[stock.factionID] then
             factionWealth = factionData[stock.factionID].wealth or 0
-            -- print(DEBUG_PREFIX .. " Fallback wealth from Factions cache: " .. tostring(factionWealth))
+            -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Fallback wealth from Factions cache: " .. tostring(factionWealth))
         end
     end
     
-    -- print(DEBUG_PREFIX .. " Final faction wealth resolved: $" .. tostring(factionWealth))
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Final faction wealth resolved: $" .. tostring(factionWealth))
     
     -- Build merged trader proxy (using 'stocks' and 'budget' as expected by TradingWindow)
     local trader = {
@@ -145,9 +145,9 @@ function V2_DataProvider:getTrader(traderID, archetype)
         npcRef = self._currentNPC
     }
     
-    -- print(DEBUG_PREFIX .. " Trader proxy built: " .. trader.name .. " (" .. trader.archetype .. ")")
-    -- print(DEBUG_PREFIX .. " Stocks count: " .. tostring(V2_DataProvider:countTable(flattenedStocks)))
-    -- print(DEBUG_PREFIX .. " Budget: $" .. tostring(trader.budget))
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Trader proxy built: " .. trader.name .. " (" .. trader.archetype .. ")")
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Stocks count: " .. tostring(V2_DataProvider:countTable(flattenedStocks)))
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Budget: $" .. tostring(trader.budget))
     return trader
 end
 
@@ -225,13 +225,13 @@ function V2_DataProvider:getBuyPrice(key, customData, verbose)
         if DynamicTrading.Economy.Common.GetBuyPrice then
             return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
         else
-            print(DEBUG_PREFIX .. " ERROR: DynamicTrading.Economy.Common exists but GetBuyPrice is missing!")
+            DynamicTrading.Log("DTV2", "Trade", "Error", "DynamicTrading.Economy.Common exists but GetBuyPrice is missing!")
         end
     else
-        print(DEBUG_PREFIX .. " ERROR: DynamicTrading.Economy.Common is nil! Attempting emergency require...")
+        DynamicTrading.Log("DTV2", "Trade", "Error", "DynamicTrading.Economy.Common is nil! Attempting emergency require...")
         require "DT/Common/Trading/DT_Economy_Common"
         if DynamicTrading.Economy and DynamicTrading.Economy.Common and DynamicTrading.Economy.Common.GetBuyPrice then
-            print(DEBUG_PREFIX .. " Emergency require successful.")
+            DynamicTrading.Log("DTV2", "Trade", "Init", "Emergency require successful.")
             return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
         end
     end
@@ -265,10 +265,10 @@ function V2_DataProvider:getSellPrice(invItem, masterKey, trader, verbose)
         if DynamicTrading.Economy.Common.GetSellPrice then
             return DynamicTrading.Economy.Common.GetSellPrice(masterKey, itemData, invItem, diff, archetype, modifiers, verbose)
         else
-            print(DEBUG_PREFIX .. " ERROR: DynamicTrading.Economy.Common exists but GetSellPrice is missing!")
+            DynamicTrading.Log("DTV2", "Trade", "Error", "DynamicTrading.Economy.Common exists but GetSellPrice is missing!")
         end
     else
-        print(DEBUG_PREFIX .. " ERROR: DynamicTrading.Economy.Common is nil during Sell Price calc!")
+        DynamicTrading.Log("DTV2", "Trade", "Error", "DynamicTrading.Economy.Common is nil during Sell Price calc!")
     end
     
     return 0
@@ -302,7 +302,7 @@ end
 -- ITEM LOCKING
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:lockItem(itemID)
-    -- print(DEBUG_PREFIX .. " Locking item: " .. tostring(itemID))
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Locking item: " .. tostring(itemID))
     local player = getSpecificPlayer(0)
     if not player then return end -- Crash fix
     local modData = player:getModData()
@@ -321,7 +321,7 @@ end
 -- HUB / ASK BUTTON (Agnostic - returns to parent)
 -- -----------------------------------------------------------------------------
 function V2_DataProvider:openHub(trader, parentUI)
-    -- print(DEBUG_PREFIX .. " openHub called - returning to dialogue hub")
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  openHub called - returning to dialogue hub")
     if parentUI then parentUI:close() end
     
     if trader.npcRef and DTNPC_TraderDialogue_Hub then
@@ -403,7 +403,6 @@ function V2_DataProvider:isConnectionValid(npc)
     -- This ensures we don't run checks in the background if the window got stuck hidden.
     if DT_TradingWindow and DT_TradingWindow.instance then
         if not DT_TradingWindow.instance:getIsVisible() then
-            print("[DynamicTrading] Window is NOT visible, returning false")
             return false
         end
     end
@@ -426,7 +425,7 @@ function V2_DataProvider:getPlayerWealth(player)
     local looseCount = loose and loose:size() or 0
     local bundleCount = bundles and bundles:size() or 0
     local total = looseCount + (bundleCount * 100)
-    -- print(DEBUG_PREFIX .. " Player wealth: $" .. tostring(total))
+    -- DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Player wealth: $" .. tostring(total))
     return total
 end
 
@@ -443,9 +442,9 @@ end
 local originalToggle = DT_TradingWindow.ToggleWindow
 
 function DT_TradingWindow.ToggleWindowV2(traderID, archetype, npcRef)
-    print(DEBUG_PREFIX .. " ToggleWindowV2 called")
-    print(DEBUG_PREFIX .. " TraderID: " .. tostring(traderID))
-    print(DEBUG_PREFIX .. " Archetype: " .. tostring(archetype))
+    DynamicTrading.Log("DTV2", "Trade", "Wrapper",  ToggleWindowV2 called")
+    DynamicTrading.Log("DTV2", "Trade", "Wrapper",  TraderID: " .. tostring(traderID))
+    DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Archetype: " .. tostring(archetype))
     
     -- Store context for provider methods
     V2_DataProvider._currentTraderID = traderID
@@ -455,4 +454,4 @@ function DT_TradingWindow.ToggleWindowV2(traderID, archetype, npcRef)
     originalToggle(traderID, archetype, npcRef, V2_DataProvider)
 end
 
-print(DEBUG_PREFIX .. " V2 Trading Window Wrapper loaded successfully")
+DynamicTrading.Log("DTV2", "Init", "System", "V2 Trading Window Wrapper loaded successfully")

@@ -227,4 +227,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.PhotoBook", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
 })
 
-print("[DynamicTrading] Book Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Book Registry Complete")

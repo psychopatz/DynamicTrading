@@ -102,7 +102,7 @@ function DynamicTrading.Manager.GenerateRandomContact_ServerCommand(targetArchet
     end
     
     if not uuid then
-        print("[DynamicTrading] V1 Radio: Failed to create Soul in Roster!")
+        DynamicTrading.Log("DTV1", "Radio", "Error", "Failed to create Soul in Roster!")
         return nil
     end
 
@@ -114,7 +114,7 @@ function DynamicTrading.Manager.GenerateRandomContact_ServerCommand(targetArchet
     -- 5. Generate Stock via shared economy
     if DynamicTrading_Stock and DynamicTrading_Stock.CheckAndGenerateStock then
         local success, reason = DynamicTrading_Stock.CheckAndGenerateStock(uuid)
-        print("[DynamicTrading] V1 Radio: Stock for " .. uuid .. " => " .. tostring(reason))
+        DynamicTrading.Log("DTV1", "Radio", "Stock", "Stock for " .. uuid .. " => " .. tostring(reason))
     end
 
     -- 6. Expiration (Radio specific — traders leave after X hours)
@@ -205,7 +205,7 @@ end
 function DynamicTrading.Manager.RestockTrader(traderID)
     if DynamicTrading_Stock and DynamicTrading_Stock.CheckAndGenerateStock then
         local success, reason = DynamicTrading_Stock.CheckAndGenerateStock(traderID)
-        print("[DynamicTrading] V1 RestockTrader: " .. tostring(traderID) .. " => " .. tostring(reason))
+        DynamicTrading.Log("DTV1", "Radio", "Stock", "RestockTrader: " .. tostring(traderID) .. " => " .. tostring(reason))
     end
 end
 
@@ -458,4 +458,4 @@ function DynamicTrading.Manager.GetActiveRadioTraders(player)
     return traders
 end
 
-print("[DynamicTrading] V1 Manager (Faction Parity) Loaded.")
+DynamicTrading.Log("DTV1", "Radio", "Init", "Manager (Faction Parity) Loaded.")

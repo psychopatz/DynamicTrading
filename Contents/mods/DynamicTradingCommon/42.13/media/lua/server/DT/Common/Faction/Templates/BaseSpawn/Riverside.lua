@@ -73,4 +73,4 @@ DT_FactionLocations.Riverside = {
     }
 }
 
-print("[Dynamic Trading] Loaded Riverside Spawn Locations: " .. #DT_FactionLocations.Riverside .. " spots registered.")
+DynamicTrading.Log("DTCommons", "Init", "Faction", "Loaded Riverside Spawn Locations: " .. #DT_FactionLocations.Riverside .. " spots registered")

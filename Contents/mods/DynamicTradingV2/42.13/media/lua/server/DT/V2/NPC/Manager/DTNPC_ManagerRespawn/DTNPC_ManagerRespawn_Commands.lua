@@ -15,7 +15,7 @@ local function onClientCommand(module, command, player, args)
     if command == "ForceTradeMission" then
         local uuid = args.uuid
         if uuid then
-            print("[DTNPC] Admin/Debug Force Trade Mission for: " .. uuid)
+            DynamicTrading.Log("DTV2", "NPC", "Admin", "Admin/Debug Force Trade Mission for: " .. uuid)
             DTNPCManager.StartTradeMission(uuid, true)
         end
     end
@@ -23,4 +23,4 @@ end
 
 Events.OnClientCommand.Add(onClientCommand)
 
-print("[DTNPC_ManagerRespawn_Commands] Loaded successfully")
+DynamicTrading.Log("DTV2", "Init", NPC", "DTNPC_ManagerRespawn_Commands Loaded successfully")

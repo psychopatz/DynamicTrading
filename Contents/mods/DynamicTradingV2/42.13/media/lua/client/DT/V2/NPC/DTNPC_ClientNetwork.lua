@@ -5,14 +5,14 @@
 
 DTNPCClient = DTNPCClient or {}
 
-print("[DTNPC_ClientNetwork] Loading client interpolation module...")
+DynamicTrading.Log("DTV2", "NPC", "Init", "Loading client interpolation module...")
 
 require "DT/V2/NPC/DTNPC_ClientInterpolation"
-print("[DTNPC_ClientNetwork] DTNPC_ClientInterpolation loaded: " .. tostring(DTNPC_ClientInterpolation ~= nil))
+DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_ClientInterpolation loaded: " .. tostring(DTNPC_ClientInterpolation ~= nil))
 
 -- Guard: Create fallback table with stub functions if module didn't load
 if not DTNPC_ClientInterpolation then
-    print("[DTNPC_ClientNetwork] WARNING: DTNPC_ClientInterpolation is nil, creating fallback")
+    DynamicTrading.Log("DTV2", "NPC", "Warn", "DTNPC_ClientInterpolation is nil, creating fallback")
     DTNPC_ClientInterpolation = { 
         LastPositions = {},
         UpdateTimes = {},
@@ -28,7 +28,7 @@ if not DTNPC_ClientInterpolation then
     }
 end
 
-print("[DTNPC_ClientNetwork] Module loading complete")
+DynamicTrading.Log("DTV2", "NPC", "Init", "Module loading complete")
 
 function DTNPCClient.OnServerCommand(module, command, args)
     if module ~= "DTNPC" then return end
@@ -39,7 +39,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
         local uuid = args.uuid
         local outfitID = args.outfitID
         
-        print("[DTNPC-Client] Received SyncNPC for: " .. (args.npcData.name or uuid))
+        DynamicTrading.Log("DTV2", "NPC", "Sync", Received SyncNPC for: " .. (args.npcData.name or uuid))
         
         DTNPCClient.CacheData(uuid, outfitID, args.npcData)
         
@@ -68,9 +68,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
                 }
             end
             
-            print("[DTNPC-Client] Applied visuals to zombie: " .. uuid)
+            DynamicTrading.Log("DTV2", "NPC", "Sync", Applied visuals to zombie: " .. uuid)
         else
-            print("[DTNPC-Client] Zombie not in world yet, cached for later: " .. uuid)
+            DynamicTrading.Log("DTV2", "NPC", "Sync", Zombie not in world yet, cached for later: " .. uuid)
         end
         return
     end
@@ -137,7 +137,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
             name = DTNPCClient.NPCCache[uuid].npcData.name or "Unknown"
         end
         
-        print("[DTNPC-Client] Received RemoveNPC for: " .. name .. " (" .. uuid .. ")")
+        DynamicTrading.Log("DTV2", "NPC", "Remove", "Received RemoveNPC for: " .. name .. " (" .. uuid .. ")")
         
         -- Clear interpolation data
         DTNPC_ClientInterpolation.ClearNPC(uuid)
@@ -151,7 +151,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
         if zombie then
             zombie:removeFromWorld()
             zombie:removeFromSquare()
-            print("[DTNPC-Client] SUCCESS: Removed zombie from local world: " .. name)
+            DynamicTrading.Log("DTV2", "NPC", "Remove", "SUCCESS: Removed zombie from local world: " .. name)
         end
         
         DTNPCClient.RemoveFromCache(uuid, outfitID)
@@ -161,7 +161,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
     if command == "SyncAllNPCs" then
         if not args or not args.npcs then return end
         
-        print("[DTNPC-Client] Received SyncAllNPCs. Count: " .. DTNPCClient.GetTableSize(args.npcs))
+        DynamicTrading.Log("DTV2", "NPC", "Sync", Received SyncAllNPCs. Count: " .. DTNPCClient.GetTableSize(args.npcs))
         
         for uuid, npcData in pairs(args.npcs) do
             local outfitID = npcData.currentOutfitID
@@ -229,7 +229,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
             metadataCount = metadataCount + 1
         end
 
-        print("[DTNPC-Client] Received SyncNearbyNPCs: nearby=" .. nearbyCount .. ", metadata=" .. metadataCount)
+        DynamicTrading.Log("DTV2", "NPC", "Sync", Received SyncNearbyNPCs: nearby=" .. nearbyCount .. ", metadata=" .. metadataCount)
         return
     end
 end
@@ -241,7 +241,7 @@ function DTNPCClient.RequestInitialSync(playerNum)
     local player = getSpecificPlayer(playerNum)
     if not player then return end
     
-    print("[DTNPC-Client] Requesting initial sync for player: " .. player:getUsername())
+    DynamicTrading.Log("DTV2", "NPC", "Sync", Requesting initial sync for player: " .. player:getUsername())
     sendClientCommand(player, "DTNPC", "RequestNearbySync", {
         x = player:getX(),
         y = player:getY(),

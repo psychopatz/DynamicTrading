@@ -49,4 +49,4 @@ DT_FactionLocations.Louisville = {
     }
 }
 
-print("[Dynamic Trading] Loaded Louisville Spawn Locations: " .. #DT_FactionLocations.Louisville .. " spots registered.")
+DynamicTrading.Log("DTCommons", "Init", "Faction", "Loaded Louisville Spawn Locations: " .. #DT_FactionLocations.Louisville .. " spots registered")

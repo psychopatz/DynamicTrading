@@ -144,7 +144,7 @@ function DynamicTrading.Dialogue.Trader.GenerateSellAskDialogue(trader)
     if archetype ~= "General" then
         -- Check if table already has data, if not try to load
         if not db.Archetypes[archetype] or not db.Archetypes[archetype].SellAskResponse then
-            if DynamicTrading.Debug then print("[DynamicTrading] Dialogue: Attempting to load archetype file: DT/Common/ArchetypeDefinitions/" .. archetype .. "/Dialogue/Sell_ask") end
+            if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Dialogue", "Trader", "Attempting to load archetype file: DT/Common/ArchetypeDefinitions/" .. archetype .. "/Dialogue/Sell_ask") end
             
             pcall(require, "DT/Common/ArchetypeDefinitions/" .. archetype .. "/Dialogue/Sell_ask")
         end

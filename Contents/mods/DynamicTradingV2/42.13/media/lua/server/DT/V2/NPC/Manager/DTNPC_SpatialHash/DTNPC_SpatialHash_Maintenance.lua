@@ -14,7 +14,7 @@ function DTNPC_SpatialHash.CleanupEmptyCells()
 
     for gridKey, cell in pairs(DTNPC_SpatialHash.Grid) do
         if type(cell) ~= "table" then
-            print("[SpatialHash] Corrupt cell detected at " .. gridKey .. ", type: " .. type(cell))
+            DynamicTrading.Log("DTV2", "NPC", "Error", "[SpatialHash] Corrupt cell detected at " .. gridKey .. ", type: " .. type(cell))
             table.insert(toRemove, gridKey)
             cleaned = cleaned + 1
         else
@@ -39,7 +39,7 @@ function DTNPC_SpatialHash.CleanupEmptyCells()
     DTNPC_SpatialHash.NextCleanup = currentTime + DTNPC_SpatialHash.CLEANUP_INTERVAL
 
     if cleaned > 0 then
-        print("[DTNPC_SpatialHash] Cleaned up " .. cleaned .. " empty cells")
+        DynamicTrading.Log("DTV2", "NPC", "SpatialHash", "Cleaned up " .. cleaned .. " empty cells")
     end
 end
 

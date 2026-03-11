@@ -73,4 +73,4 @@ DT_FactionLocations.WestPoint = {
     }
 }
 
-print("[Dynamic Trading] Loaded West Point Spawn Locations: " .. #DT_FactionLocations.WestPoint .. " spots registered.")
+DynamicTrading.Log("DTCommons", "Init", "Faction", "Loaded West Point Spawn Locations: " .. #DT_FactionLocations.WestPoint .. " spots registered")

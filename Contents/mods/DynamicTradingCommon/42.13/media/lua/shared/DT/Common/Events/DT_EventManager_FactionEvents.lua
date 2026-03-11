@@ -14,7 +14,7 @@ local function ensureFactionFlashSchema(faction)
     -- Migrate legacy single-event field if needed.
     if faction.ActiveFlashEvent and faction.ActiveFlashEvent.id and #faction.ActiveFlashEvents == 0 then
         if DynamicTrading.Debug then
-            print("[DynamicTrading] [Events] [FactionEvents] Migrating legacy ActiveFlashEvent into list for faction " .. tostring(faction.id))
+            DynamicTrading.Log("DTCommons", "Event", "Logic", "Migrating legacy ActiveFlashEvent into list for faction " .. tostring(faction.id))
         end
         table.insert(faction.ActiveFlashEvents, {
             id = faction.ActiveFlashEvent.id,
@@ -58,7 +58,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
     if not faction then return end
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [FactionEvents] === FACTION UPDATE START === [" .. tostring(faction.id) .. "]")
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "=== FACTION UPDATE START === [" .. tostring(faction.id) .. "]")
     end
 
     local currentHour = math.floor(getGameTime():getWorldAgeHours())
@@ -73,7 +73,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
             table.remove(active, i)
         elseif currentHour >= (entry.expires or 0) then
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [FactionEvents] Event expired: " .. tostring(entry.id) .. " for faction " .. tostring(faction.id))
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "Event expired: " .. tostring(entry.id) .. " for faction " .. tostring(faction.id))
             end
             table.remove(active, i)
             expiredCount = expiredCount + 1
@@ -81,7 +81,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
     end
 
     if DynamicTrading.Debug and expiredCount > 0 then
-        print("[DynamicTrading] [Events] [FactionEvents] Removed " .. expiredCount .. " expired events from faction " .. tostring(faction.id))
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "Removed " .. expiredCount .. " expired events from faction " .. tostring(faction.id))
     end
 
     -- B. STABILITY TRACKING
@@ -92,7 +92,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
     end
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [FactionEvents] Faction " .. tostring(faction.id) .. " state=" .. (faction.state or "unknown") .. " stableDays=" .. (faction.consecutiveStableDays or 0))
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "Faction " .. tostring(faction.id) .. " state=" .. (faction.state or "unknown") .. " stableDays=" .. (faction.consecutiveStableDays or 0))
     end
 
     local minSlots, maxSlots = DynamicTrading.Events.GetFactionFlashSlotBounds()
@@ -100,8 +100,8 @@ function DynamicTrading.Events.UpdateFaction(faction)
     local stabilityBonus = math.floor((faction.consecutiveStableDays or 0) / 7) * 10
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [FactionEvents] Slot bounds: min=" .. minSlots .. " max=" .. maxSlots .. " | Current active: " .. #active)
-        print("[DynamicTrading] [Events] [FactionEvents] Spawn chance: base=" .. baseChance .. " stability_bonus=" .. stabilityBonus .. " total=" .. (baseChance + stabilityBonus))
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "Slot bounds: min=" .. minSlots .. " max=" .. maxSlots .. " | Current active: " .. #active)
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "Spawn chance: base=" .. baseChance .. " stability_bonus=" .. stabilityBonus .. " total=" .. (baseChance + stabilityBonus))
     end
 
     local function isAlreadyActive(id)
@@ -133,7 +133,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
         end
 
         if DynamicTrading.Debug then
-            print("[DynamicTrading] [Events] [FactionEvents] Candidate pools: candidates=" .. #candidates .. " wildcard=" .. #wildcardPool)
+            DynamicTrading.Log("DTCommons", "Event", "Logic", "Candidate pools: candidates=" .. #candidates .. " wildcard=" .. #wildcardPool)
         end
 
         return candidates, wildcardPool
@@ -162,14 +162,14 @@ function DynamicTrading.Events.UpdateFaction(faction)
         table.insert(active, entry)
 
         if DynamicTrading.Debug then
-            print("[DynamicTrading] [Events] [FactionEvents] Faction [" .. tostring(faction.id) .. "] flash event ACTIVATED: " .. tostring(def and def.name or finalID) .. " duration=" .. duration .. "h targetCasulties=" .. entry.targetCasualties)
+            DynamicTrading.Log("DTCommons", "Event", "Logic", "Faction [" .. tostring(faction.id) .. "] flash event ACTIVATED: " .. tostring(def and def.name or finalID) .. " duration=" .. duration .. "h targetCasulties=" .. entry.targetCasualties)
         end
 
         if def and def.factionImpact then
             if def.factionImpact.wealthAdd then
                 faction.wealth = (faction.wealth or 0) + def.factionImpact.wealthAdd
                 if DynamicTrading.Debug then
-                    print("[DynamicTrading] [Events] [FactionEvents] Wealth applied: +" .. def.factionImpact.wealthAdd)
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Wealth applied: +" .. def.factionImpact.wealthAdd)
                 end
             end
 
@@ -178,7 +178,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
                 for res, amt in pairs(def.factionImpact.stockpileAdd) do
                     faction.stockpile[res] = (faction.stockpile[res] or 0) + amt
                     if DynamicTrading.Debug then
-                        print("[DynamicTrading] [Events] [FactionEvents] Stockpile: " .. res .. " +" .. amt)
+                        DynamicTrading.Log("DTCommons", "Event", "Logic", "Stockpile: " .. res .. " +" .. amt)
                     end
                 end
             end
@@ -187,7 +187,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
                 local oldStability = faction.consecutiveStableDays or 0
                 faction.consecutiveStableDays = math.max(0, oldStability + def.factionImpact.stabilityAdd)
                 if DynamicTrading.Debug then
-                    print("[DynamicTrading] [Events] [FactionEvents] Stability: " .. oldStability .. " -> " .. faction.consecutiveStableDays)
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Stability: " .. oldStability .. " -> " .. faction.consecutiveStableDays)
                 end
             end
         end
@@ -195,7 +195,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
         if def and def.sentiment == "Negative" then
             faction.consecutiveStableDays = 0
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [FactionEvents] Negative event: stability reset to 0")
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "Negative event: stability reset to 0")
             end
         end
     end
@@ -203,7 +203,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
     local function trySpawn(force)
         if #active >= maxSlots then 
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [FactionEvents] trySpawn: already at max slots (" .. maxSlots .. ")")
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "trySpawn: already at max slots (" .. maxSlots .. ")")
             end
             return false 
         end
@@ -212,19 +212,19 @@ function DynamicTrading.Events.UpdateFaction(faction)
         local threshold = baseChance + stabilityBonus
         if not force and roll > threshold then
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [FactionEvents] trySpawn: roll " .. roll .. " > threshold " .. threshold .. " (no spawn)")
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "trySpawn: roll " .. roll .. " > threshold " .. threshold .. " (no spawn)")
             end
             return false
         end
 
         if DynamicTrading.Debug then
-            print("[DynamicTrading] [Events] [FactionEvents] trySpawn: roll " .. roll .. " <= threshold " .. threshold .. " (attempting spawn)")
+            DynamicTrading.Log("DTCommons", "Event", "Logic", "trySpawn: roll " .. roll .. " <= threshold " .. threshold .. " (attempting spawn)")
         end
 
         local candidates, wildcardPool = buildCandidatePools(roll)
         if #candidates == 0 and #wildcardPool == 0 then
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [FactionEvents] trySpawn: no valid candidates")
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "trySpawn: no valid candidates")
             end
             return false
         end
@@ -236,7 +236,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
         if isWildcard and #wildcardPool > 0 then
             finalID = wildcardPool[ZombRand(#wildcardPool) + 1]
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [FactionEvents] WILDCARD selected: " .. tostring(finalID) .. " (stableDays=" .. (faction.consecutiveStableDays or 0) .. ")")
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "WILDCARD selected: " .. tostring(finalID) .. " (stableDays=" .. (faction.consecutiveStableDays or 0) .. ")")
             end
         elseif #candidates > 0 then
             finalID = candidates[ZombRand(#candidates) + 1]
@@ -251,7 +251,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
 
     -- C. GUARANTEE MIN SLOTS
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [FactionEvents] Enforcing minimum slots: " .. minSlots)
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "Enforcing minimum slots: " .. minSlots)
     end
     while #active < minSlots do
         if not trySpawn(true) then break end
@@ -260,7 +260,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
     -- D. OPTIONAL EXTRA SPAWN UP TO MAX SLOTS
     if #active < maxSlots then
         if DynamicTrading.Debug then
-            print("[DynamicTrading] [Events] [FactionEvents] Attempting optional spawn up to max")
+            DynamicTrading.Log("DTCommons", "Event", "Logic", "Attempting optional spawn up to max")
         end
         trySpawn(false)
     end
@@ -268,7 +268,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
     syncLegacyActiveFlashMirror(faction)
 
     if DynamicTrading.Debug then
-        print("[DynamicTrading] [Events] [FactionEvents] === FACTION UPDATE END === [" .. tostring(faction.id) .. "] active_events=" .. #active)
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "=== FACTION UPDATE END === [" .. tostring(faction.id) .. "] active_events=" .. #active)
     end
 end
 
@@ -290,7 +290,7 @@ function DynamicTrading.Events.GetFactionSystemModifier(faction, key)
         if def.system and def.system[key] then
             multiplier = multiplier * def.system[key]
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [FactionEvents] System modifier from flash: " .. tostring(def.name) .. " key=" .. key .. " mult=" .. def.system[key])
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "System modifier from flash: " .. tostring(def.name) .. " key=" .. key .. " mult=" .. def.system[key])
             end
         end
     end
@@ -315,7 +315,7 @@ function DynamicTrading.Events.GetFactionPriceModifier(faction, itemTags, verbos
                 if def.effects[tag] and def.effects[tag].price then
                     local fMult = def.effects[tag].price
                     if verbose and fMult ~= 1.0 then
-                        print("[DynamicTrading] [Events] [FactionEvents] Flash price mult from " .. tostring(def.name) .. " tag=" .. tag .. " for faction=" .. (faction.id or "unknown") .. " mult=" .. fMult)
+                        DynamicTrading.Log("DTCommons", "Event", "Logic", "Flash price mult from " .. tostring(def.name) .. " tag=" .. tag .. " for faction=" .. (faction.id or "unknown") .. " mult=" .. fMult)
                     end
                     multiplier = multiplier * fMult
                 end
@@ -324,7 +324,7 @@ function DynamicTrading.Events.GetFactionPriceModifier(faction, itemTags, verbos
     end
     
     if verbose and multiplier ~= 1.0 then
-        print("[DynamicTrading] [Events] [FactionEvents] Final faction price multiplier: " .. multiplier)
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "Final faction price multiplier: " .. multiplier)
     end
 
     return multiplier
@@ -344,7 +344,7 @@ function DynamicTrading.Events.GetFactionVolumeModifier(faction, itemTags)
         if def.stock and def.stock.volumeMult then
             multiplier = multiplier * def.stock.volumeMult
             if DynamicTrading.Debug then
-                print("[DynamicTrading] [Events] [FactionEvents] Volume mult from flash: " .. tostring(def.name) .. " mult=" .. def.stock.volumeMult)
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "Volume mult from flash: " .. tostring(def.name) .. " mult=" .. def.stock.volumeMult)
             end
         end
     end
@@ -368,7 +368,7 @@ function DynamicTrading.Events.GetFactionInjections(faction)
             for tag, count in pairs(def.stock.injections) do
                 injections[tag] = (injections[tag] or 0) + count
                 if DynamicTrading.Debug then
-                    print("[DynamicTrading] [Events] [FactionEvents] Injection from flash: " .. tostring(def.name) .. " tag=" .. tag .. " count=" .. count)
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Injection from flash: " .. tostring(def.name) .. " tag=" .. tag .. " count=" .. count)
                 end
             end
         end
@@ -385,7 +385,7 @@ function DynamicTrading.Events.GetFactionExpertTags(faction)
             for _, tag in ipairs(def.stock.expertTags) do 
                 tags[tag] = true
                 if DynamicTrading.Debug then
-                    print("[DynamicTrading] [Events] [FactionEvents] Expert tag from flash: " .. tostring(def.name) .. " tag=" .. tag)
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Expert tag from flash: " .. tostring(def.name) .. " tag=" .. tag)
                 end
             end
         end
@@ -401,7 +401,7 @@ function DynamicTrading.Events.GetFactionForbidTags(faction)
             for _, tag in ipairs(def.stock.forbidTags) do 
                 tags[tag] = true
                 if DynamicTrading.Debug then
-                    print("[DynamicTrading] [Events] [FactionEvents] Forbid tag from flash: " .. tostring(def.name) .. " tag=" .. tag)
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Forbid tag from flash: " .. tostring(def.name) .. " tag=" .. tag)
                 end
             end
         end
@@ -409,4 +409,4 @@ function DynamicTrading.Events.GetFactionForbidTags(faction)
     return tags
 end
 
-print("[DynamicTrading] [Events] [FactionEvents] Module Loaded.")
+DynamicTrading.Log("DTCommons", "Event", "Logic", "Module Loaded.")

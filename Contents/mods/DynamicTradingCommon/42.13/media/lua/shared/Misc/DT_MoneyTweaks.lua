@@ -19,7 +19,7 @@ local function SetMoneyWeight()
         scriptBundle:setActualWeight(0.0) 
     end
     
-    print("[DT-Money] Currency weight set to 0.0")
+    DynamicTrading.Log("DTCommons", "Economy", "Setup", "Currency weight set to 0.0")
 end
 
 -- =============================================================================
@@ -127,4 +127,4 @@ else
     Events.OnFillInventoryObjectContextMenu.Add(OnFillInventoryObjectContextMenu)
 end
 
-print("[DynamicTrading] Money Tweaks Registered.")
+DynamicTrading.Log("DTCommons", "Economy", "Init", "Money Tweaks Registered.")

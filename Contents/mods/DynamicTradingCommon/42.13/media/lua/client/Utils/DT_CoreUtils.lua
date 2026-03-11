@@ -67,4 +67,4 @@ function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
     return true
 end
 
-print("[DynamicTrading] Core utility functions registered.")
+DynamicTrading.Log("DTCommons", "Init", "Utils", "Core utility functions registered")

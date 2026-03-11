@@ -51,7 +51,7 @@ function DTNPCClient.OnTick()
                             local skinStr = tostring(skin)
                             if not (string.find(skinStr, "MaleBody01") or string.find(skinStr, "FemaleBody01")) then
                                 needsVisuals = true
-                                print("[DTNPC-Client] Zombie " .. uuid .. " lost visuals, reapplying...")
+                                DynamicTrading.Log("DTV2", "NPC", "Visuals", "Zombie " .. uuid .. " lost visuals, reapplying...")
                             end
                         else
                             needsVisuals = true
@@ -114,7 +114,7 @@ function DTNPCClient.OnTick()
                                 
                                 sendClientCommand(getPlayer(), "DTNPC", "UpdateNPC", { uuid = uuid, updates = updates })
                                 updatedCount = updatedCount + 1
-                                print("[DTNPC-Client] Syncing behavioral change for " .. (localData.name or uuid) .. ": " .. (updates.state or "tasks updated"))
+                                DynamicTrading.Log("DTV2", "NPC", "Sync", "Syncing behavioral change for " .. (localData.name or uuid) .. ": " .. (updates.state or "tasks updated"))
                             end
                         end
                     else
@@ -128,13 +128,13 @@ function DTNPCClient.OnTick()
     end
     
     if attachedCount > 0 then
-        print("[DTNPC-Client] Attached npcDatas to " .. attachedCount .. " new NPCs")
+        DynamicTrading.Log("DTV2", "NPC", "Client", "Attached npcDatas to " .. attachedCount .. " new NPCs")
     end
     if reappliedCount > 0 then
-        print("[DTNPC-Client] Reapplied visuals to " .. reappliedCount .. " NPCs")
+        DynamicTrading.Log("DTV2", "NPC", "Visuals", "Reapplied visuals to " .. reappliedCount .. " NPCs")
     end
     if updatedCount > 0 then
-        print("[DTNPC-Client] Sent " .. updatedCount .. " state updates to server")
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Sent " .. updatedCount .. " state updates to server")
     end
 end
 
@@ -145,7 +145,7 @@ function DTNPCClient.OnZombieRemoved(zombie)
     local uuid = modData.DTNPC_UUID
     
     if uuid and DTNPCClient.ProcessedZombies[uuid] then
-        print("[DTNPC-Client] Zombie removed from world: " .. uuid)
+        DynamicTrading.Log("DTV2", "NPC", "Client", "Zombie removed from world: " .. uuid)
         DTNPCClient.ProcessedZombies[uuid] = nil
         DTNPCClient.LocalControlled[uuid] = nil
     end

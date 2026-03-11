@@ -156,5 +156,9 @@ end
 -- 4. UTILITIES
 -- ==============================================================================
 
+Events.OnGameStart.Add(function()
+    DynamicTrading.Log("DTV2", "Init", "NPC", "NPC Data System Loaded")
+end)
+
 
 

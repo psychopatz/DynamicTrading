@@ -37,7 +37,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         if foundSafe then break end
     end
     
-    print("[DTNPC] Spawning NPC at: " .. spawnX .. "," .. spawnY .. "," .. z)
+    DynamicTrading.Log("DTV2", "NPC", "Logic", Spawning NPC at: " .. spawnX .. "," .. spawnY .. "," .. z)
     
     local outfitStr = "Naked"
     local femaleChance = 50 
@@ -49,7 +49,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     local zombieList = addZombiesInOutfit(spawnX, spawnY, z, 1, outfitStr, femaleChance, false, false, false, false, false, false, 1)
     
     if not zombieList or zombieList:size() == 0 then 
-        print("[DTNPC] ERROR: Failed to spawn zombie at " .. spawnX .. "," .. spawnY)
+        DynamicTrading.Log("DTV2", "NPC", "Logic", ERROR: Failed to spawn zombie at " .. spawnX .. "," .. spawnY)
         return 
     end
 
@@ -71,7 +71,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         }
         
         npcData = DTNPCGenerator.Generate(genOptions)
-        print("[DTNPC] Generated new npcData for: " .. npcData.name)
+        DynamicTrading.Log("DTV2", "NPC", "Logic", Generated new npcData for: " .. npcData.name)
     else
         if not npcData.tasks then npcData.tasks = {} end
         if not npcData.walkSpeed then npcData.walkSpeed = DTNPC.DefaultWalkSpeed end
@@ -80,7 +80,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         
         npcData.state = "Stay"
         npcData.isHostile = false
-        print("[DTNPC] Rehydrated npcData for: " .. npcData.name)
+        DynamicTrading.Log("DTV2", "NPC", "Logic", Rehydrated npcData for: " .. npcData.name)
     end
     
     -- Ensure UUID exists
@@ -107,7 +107,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
 
     DTNPCServerCore.SyncToAllClients(zombie, npcData)
 
-    print("[DTNPC] Spawned/Summoned: " .. npcData.name .. " | UUID: " .. npcData.uuid .. " | OutfitID: " .. outfitID)
+    DynamicTrading.Log("DTV2", "NPC", "Logic", Spawned/Summoned: " .. npcData.name .. " | UUID: " .. npcData.uuid .. " | OutfitID: " .. outfitID)
     
     return zombie, npcData
 end

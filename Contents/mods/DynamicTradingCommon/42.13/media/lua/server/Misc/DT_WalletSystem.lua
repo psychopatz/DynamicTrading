@@ -57,7 +57,7 @@ function Commands.OpenWallet(player, args)
     local serverItem = inv:getItemById(walletItem:getID())
     
     if not serverItem then 
-        print("[DynamicTrading] Warning: Wallet item not found on server.")
+        DynamicTrading.Log("DTCommons", "Error", "Wallet", "Wallet item not found on server")
         return 
     end
 
@@ -99,4 +99,4 @@ end
 
 Events.OnClientCommand.Add(OnClientCommand)
 
-print("[DynamicTradingCommon] Registered wallet system.")
+DynamicTrading.Log("DTCommons", "Init", "Wallet", "Registered wallet system")

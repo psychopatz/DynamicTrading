@@ -12,6 +12,7 @@ DynamicTrading.Config.Tags = DynamicTrading.Config.Tags or {}
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
 -- CORE MODULES
+require "DT/Common/DT_Logger"
 require "DT/Common/Quests/DT_QuestManager"
 require "DT/Common/Items/DT_QuestItems"
 
@@ -84,7 +85,7 @@ function DynamicTrading.AddItem(uniqueID, data)
     if not data.stockRange then data.stockRange = {min=1, max=5} end
     DynamicTrading.Config.MasterList[uniqueID] = data
     if isDebugEnabled() then
-        print("[DynamicTrading] Registered Item: " .. tostring(uniqueID))
+        DynamicTrading.Log("DTCommons", "Init", "Item", "Registered Item: " .. tostring(uniqueID))
     end
 end
 
@@ -96,4 +97,4 @@ function DynamicTrading.GetMasterListCount()
     return count
 end
 
-print("[DynamicTrading] Core initialized. Items Registered so far: " .. DynamicTrading.GetMasterListCount())
+DynamicTrading.Log("DTCommons", "Init", "Core", "Core initialized. Items Registered so far: " .. DynamicTrading.GetMasterListCount())

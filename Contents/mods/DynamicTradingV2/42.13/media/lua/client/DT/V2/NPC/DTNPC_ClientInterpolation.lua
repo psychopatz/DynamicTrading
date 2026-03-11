@@ -122,13 +122,13 @@ end
 function DTNPC_ClientInterpolation.DebugPrint(uuid)
     local state = DTNPC_ClientInterpolation.NPCState[uuid]
     if not state then
-        print("[DTNPC_Interp] No state for UUID: " .. uuid)
+        DynamicTrading.Log("DTV2", "NPC", "Debug", "No state for UUID: " .. uuid)
         return
     end
     
-    print("[DTNPC_Interp] UUID: " .. uuid)
-    print("  Last Pos: " .. string.format("(%.1f, %.1f, %.1f)", state.lastX, state.lastY, state.lastZ))
-    print("  Target Pos: " .. string.format("(%.1f, %.1f, %.1f)", state.targetX, state.targetY, state.targetZ))
-    print("  Update Freq: " .. state.updateFreq .. "h")
-    print("  Last Update: " .. string.format("%.2f", getGameTime():getWorldAgeHours() - state.lastUpdateTime) .. " hours ago")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "UUID: " .. uuid)
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Last Pos: " .. string.format("(%.1f, %.1f, %.1f)", state.lastX, state.lastY, state.lastZ))
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Target Pos: " .. string.format("(%.1f, %.1f, %.1f)", state.targetX, state.targetY, state.targetZ))
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Update Freq: " .. state.updateFreq .. "h")
+    DynamicTrading.Log("DTV2", "NPC", "Debug", "  Last Update: " .. string.format("%.2f", getGameTime():getWorldAgeHours() - state.lastUpdateTime) .. " hours ago")
 end

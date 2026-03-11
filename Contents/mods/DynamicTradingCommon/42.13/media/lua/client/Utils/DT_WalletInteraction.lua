@@ -508,4 +508,4 @@ local function WalletContextMenu(player, context, items)
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(WalletContextMenu)
-print("[DynamicTrading] Registered wallet interaction with Smart Flavor Text.")
+DynamicTrading.Log("DTCommons", "Init", "Wallet", "Registered wallet interaction with Smart Flavor Text")

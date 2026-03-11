@@ -12,7 +12,7 @@ DTM = DTM or {}
 -- =============================================================================
 
 local function onServerStart()
-    print("[DTM Server] Initializing building database...")
+    DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Initializing building database...")
     
     -- Try to load from ModData or Scan if first time
     if DTM.LoadBuildings() then
@@ -20,16 +20,16 @@ local function onServerStart()
         
         -- If this is the server and we have no locations in ModData yet, save them
         if not modData.locations or #modData.locations == 0 then
-            print("[DTM Server] No cached building data found. Performing initial scan...")
+            DynamicTrading.Log("DTCommons", "Debug", "Scanner", "No cached building data found. Performing initial scan...")
             DTM.Buildings = DTM.ScanForBuildings()
             
             -- Save to ModData for persistence
             modData.locations = DTM.Buildings
             ModData.transmit("DT_Buildings")
             
-            print("[DTM Server] Initial scan complete. Saved " .. #DTM.Buildings .. " buildings to ModData.")
+            DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Initial scan complete. Saved " .. #DTM.Buildings .. " buildings to ModData.")
         else
-            print("[DTM Server] Loaded " .. #modData.locations .. " buildings from ModData cache.")
+            DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Loaded " .. #modData.locations .. " buildings from ModData cache.")
         end
     end
 end
@@ -44,7 +44,7 @@ Events.OnServerStarted.Add(onServerStart)
 local function onRescanBuildings(module, command, player, args)
     if module == "dtm" and command == "rescan" then
         if player:getAccessLevel() == "admin" or player:getAccessLevel() == "moderator" then
-            print("[DTM Server] Admin " .. player:getUsername() .. " initiated building rescan.")
+            DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Admin " .. player:getUsername() .. " initiated building rescan.")
             
             -- Perform new scan
             DTM.Buildings = DTM.ScanForBuildings()

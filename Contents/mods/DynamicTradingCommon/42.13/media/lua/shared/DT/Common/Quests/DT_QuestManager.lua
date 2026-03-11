@@ -46,7 +46,7 @@ function Quests.CreateQuestItem(player, itemFullType, questID, difficulty)
     local item = inventory:AddItem(itemFullType)
     
     if not item then
-        print("[DynamicTrading] [ERROR] Failed to spawn item: " .. tostring(itemFullType))
+        DynamicTrading.Log("DTCommons", "Error", "Quest", "Failed to spawn item: " .. tostring(itemFullType))
         return nil
     end
 
@@ -83,8 +83,8 @@ function Quests.CreateQuestItem(player, itemFullType, questID, difficulty)
     end
     
     if isDebugEnabled() then
-        print("[DynamicTrading] Dynamic Heavy Quest Item Generated: " .. itemFullType)
-        print("  - Base Weight: " .. tostring(targetWeight))
+        DynamicTrading.Log("DTCommons", "Quest", "Logic", "Dynamic Heavy Quest Item Generated: " .. itemFullType)
+        DynamicTrading.Log("DTCommons", "Quest", "Logic", "  - Base Weight: " .. tostring(targetWeight))
     end
     
     return item
@@ -166,7 +166,7 @@ function Quests.UpdateItemWeight(item, isOnPlayer)
         item:setActualWeight(targetWeight)
         item:setCustomWeight(true)
         if isDebugEnabled() then
-            print("[DynamicTrading] Weight Sync: " .. item:getName() .. " -> " .. tostring(targetWeight) .. " (Equipped: " .. tostring(isEquipped) .. ", Carried: " .. tostring(isOnPlayer) .. ")")
+            DynamicTrading.Log("DTCommons", "Quest", "Logic", "Weight Sync: " .. item:getName() .. " -> " .. tostring(targetWeight) .. " (Equipped: " .. tostring(isEquipped) .. ", Carried: " .. tostring(isOnPlayer) .. ")")
         end
     end
 end
@@ -243,4 +243,4 @@ function Quests.ValidateDelivery(item, requiredQuestID)
     return false
 end
 
-print("[DynamicTrading] Quest Manager initialized.")
+DynamicTrading.Log("DTCommons", "Quest", "Logic", "Quest Manager initialized.")

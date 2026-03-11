@@ -127,7 +127,7 @@ function DT_MerchantDebugData.handleServerResponse(command, args)
         -- Show feedback for operations
         local success = args.success
         local reason = args.reason or "Unknown"
-        print("DT: " .. tostring(reason))
+        DynamicTrading.Log("DTCommons", "Debug", "UI", "Merchant Debug: " .. tostring(reason))
         return true
     end
     
@@ -139,4 +139,4 @@ DT_DebugNetworkAdapter.registerServerCommandHandler(function(command, args)
     DT_MerchantDebugData.handleServerResponse(command, args)
 end)
 
-print("[DT-Debug] Merchant Debug Data Layer Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Merchant Debug Data Layer Loaded")

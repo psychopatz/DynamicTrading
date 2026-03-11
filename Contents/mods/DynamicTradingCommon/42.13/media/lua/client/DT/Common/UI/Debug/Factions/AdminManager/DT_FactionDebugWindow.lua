@@ -309,4 +309,4 @@ function DT_FactionDebugWindow:new(x, y, width, height)
     return o
 end
 
-print("[DT-Debug] Faction Debug Window Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Faction Debug Window Loaded")

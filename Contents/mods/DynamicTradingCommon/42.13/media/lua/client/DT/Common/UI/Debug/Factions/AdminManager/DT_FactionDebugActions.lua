@@ -52,7 +52,7 @@ end
 -- ==========================================================
 function DT_FactionDebugActions.locateNPC(uuid, soul)
     if not uuid or not soul then 
-        print("[DT-Debug] Cannot locate NPC: missing data")
+        DynamicTrading.Log("DTCommons", "Debug", "UI", "Cannot locate NPC: missing data")
         return false
     end
     
@@ -124,4 +124,4 @@ function DT_FactionDebugActions.showEventSelection(factionID, mouseX, mouseY)
     end
 end
 
-print("[DT-Debug] Faction Debug Actions Loaded")
+DynamicTrading.Log("DTCommons", "Debug", "UI", "Faction Debug Actions Loaded")

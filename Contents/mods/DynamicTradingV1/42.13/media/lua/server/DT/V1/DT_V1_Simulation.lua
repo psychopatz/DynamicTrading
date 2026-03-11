@@ -44,7 +44,7 @@ local function ProcessSimulation()
                     newReturnStatus = "Resting"
                 end
 
-                print("[DynamicTrading] V1 Sim: " .. (registry.name or uuid) .. " transitioning to " .. nextStatus)
+                DynamicTrading.Log("DTV1", "Sim", "Transition", (registry.name or uuid) .. " transitioning to " .. nextStatus)
                 DynamicTrading_Roster.UpdateSoulStatus(uuid, nextStatus, newReturnTime, newReturnStatus)
             end
         end
@@ -73,7 +73,7 @@ local function ProcessSimulation()
                 -- Approx 10% chance per hour to start a mission
                 if ZombRand(100) < 10 then
                     local walkHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingWalkHours) or 2.0
-                    print("[DynamicTrading] V1 Sim: " .. (registry.name or uuid) .. " starting trade mission.")
+                    DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " starting trade mission.")
                     DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", currentHours + walkHours, "Trading")
                     factionTradingCounts[factionID] = currentTrading + 1
                 end
@@ -85,4 +85,4 @@ end
 -- Hook into hourly tick for efficiency
 Events.EveryHours.Add(ProcessSimulation)
 
-print("[DynamicTrading] V1 Simulation Module Loaded (Parity Mode).")
+DynamicTrading.Log("DTV1", "Sim", "Init", "V1 Simulation Module Loaded (Parity Mode).")

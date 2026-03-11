@@ -10,7 +10,7 @@
 local MY_STEAM_ID = "76561198137190990" 
 local MY_SP_NAME  = "Psychopatz"
 
-print("[PsychopatzDebug] Server Script Loaded.")
+DynamicTrading.Log("DTCommons", "Init", "Debug", "PsychopatzDebug Server Script Loaded")
 
 
 local function getSafeSteamID(player)

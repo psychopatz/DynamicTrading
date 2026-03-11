@@ -43,7 +43,7 @@ function DTNPC_TradingHandler.InitiateTrade(ui, npc, player)
     
     if stockData and stockData[id] then
         DTNPC_TradingHandler.DisplayStock(ui, id, stockData)
-        print("DTNPC_TradingHandler: Stock cached for " .. tostring(id))
+        DynamicTrading.Log("DTV2", "Trading", "Stock", "Stock cached for " .. tostring(id))
     else
         -- No stock, request generation
         if ui then
@@ -60,7 +60,7 @@ function DTNPC_TradingHandler.InitiateTrade(ui, npc, player)
         
         local args = { traderID = id }
         sendClientCommand(player, "DynamicTrading_V2", "GenerateStock", args)
-        print("DTNPC_TradingHandler: Requesting stock for " .. name)
+        DynamicTrading.Log("DTV2", "Trading", "Stock", "Requesting stock for " .. name)
     end
 end
 
@@ -96,7 +96,7 @@ local function OnTick()
             DTNPC_TradingHandler.PendingTrades[id] = nil
             if uiValid then
                 DTNPC_TradingHandler.DisplayStock(data.ui, id, stockData)
-                print("DTNPC_TradingHandler: Stock arrived for " .. tostring(id))
+                DynamicTrading.Log("DTV2", "Trading", "Stock", "Stock arrived for " .. tostring(id))
             end
         
         -- Timeout logic (roughly 5-10 seconds real time depending on day length)
@@ -105,12 +105,12 @@ local function OnTick()
             if uiValid then
                 data.ui:speak("Sorry, I'm having trouble checking my inventory right now.")
             end
-            print("DTNPC_TradingHandler: Timeout for " .. tostring(id))
+            DynamicTrading.Log("DTV2", "Trading", "Timeout", "Timeout for " .. tostring(id))
         
         -- If UI is closed, stop tracking this trade
         elseif not uiValid then
             DTNPC_TradingHandler.PendingTrades[id] = nil
-            print("DTNPC_TradingHandler: UI closed, cancelling pending trade for " .. tostring(id))
+            DynamicTrading.Log("DTV2", "Trading", "Cancel", "UI closed, cancelling pending trade for " .. tostring(id))
         end
     end
 end

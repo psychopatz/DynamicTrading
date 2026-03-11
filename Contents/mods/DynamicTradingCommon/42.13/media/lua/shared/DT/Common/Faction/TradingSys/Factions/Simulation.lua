@@ -94,7 +94,7 @@ function Simulation.UpdateDaily()
                         faction.memberCount = math.max(0, faction.memberCount - killToday)
                         afe.targetCasualties = afe.targetCasualties - killToday
                         DynamicTrading_Roster.RemoveSoul(id, killToday)
-                        print("DT Director: Event casualty hit for faction [" .. faction.name .. "] [" .. tostring(afe.id) .. "] | Killed: " .. killToday .. " | Remaining Targets: " .. tostring(afe.targetCasualties))
+                        DynamicTrading.Log("DTCommons", "Faction", "Sim", "Event casualty hit for faction [" .. faction.name .. "] [" .. tostring(afe.id) .. "] | Killed: " .. killToday .. " | Remaining Targets: " .. tostring(afe.targetCasualties))
                     end
                 end
 
@@ -112,12 +112,12 @@ function Simulation.UpdateDaily()
 
                         if stockpile >= totalNeeded then
                             faction.stockpile[resource] = stockpile - totalNeeded
-                            print("DT Simulation: Faction [" .. faction.name .. "] met " .. resource .. " requirements for " .. affectedCount .. " souls.")
+                            DynamicTrading.Log("DTCommons", "Faction", "Sim", "Faction [" .. faction.name .. "] met " .. resource .. " requirements for " .. affectedCount .. " souls.")
                         else
                             local casualties = math.ceil(affectedCount * 0.2)
                             faction.memberCount = math.max(0, faction.memberCount - casualties)
                             DynamicTrading_Roster.RemoveSoul(id, casualties)
-                            print("DT Simulation: Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
+                            DynamicTrading.Log("DTCommons", "Faction", "Sim", "Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
                             faction.state = "Starving"
                         end
                     end
@@ -165,7 +165,7 @@ function Simulation.UpdateDaily()
                     -- Remove from roster in Roster module
                     DynamicTrading_Roster.RemoveSoul(id, deaths)
                     
-                    print("DT Faction ["..faction.name.."] is STARVING! Lost " .. deaths .. " souls.")
+                    DynamicTrading.Log("DTCommons", "Faction", "Starving", "Faction " .. faction.name .. " is STARVING! Lost " .. deaths .. " souls.")
                 end
             else
                 faction.starvationDays = 0 -- Reset if they have food
@@ -173,7 +173,7 @@ function Simulation.UpdateDaily()
             
             -- CHECK FACTION DEATH
             if faction.memberCount <= 0 then
-                print("DT Faction ["..faction.name.."] has DIED OUT.")
+                DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction ["..faction.name.."] has DIED OUT")
                 table.insert(factionsToRemove, id)
             else
                 -- 3. GROWTH (If not starving and has surplus)
@@ -205,7 +205,7 @@ function Simulation.UpdateDaily()
                         -- Growth Cost (Initial Setup)
                         faction.stockpile.food = faction.stockpile.food - DynamicTrading.Config.Sim.RecruitCost.food
                         
-                        print("DT Faction ["..faction.name.."] RECRUITED a new " .. tostring(newRecruit))
+                        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction ["..faction.name.."] RECRUITED a new " .. tostring(newRecruit))
                     end
                 end
                 
@@ -234,7 +234,7 @@ function Simulation.UpdateDaily()
                         if passiveDeaths > 0 then
                             faction.memberCount = math.max(0, faction.memberCount - passiveDeaths)
                             DynamicTrading_Roster.RemoveSoul(id, passiveDeaths)
-                            print("DT Simulation: Global Attrition hit faction [" .. faction.name .. "] | Casualties: " .. passiveDeaths)
+                            DynamicTrading.Log("DTCommons", "Faction", "Sim", "Global Attrition hit faction [" .. faction.name .. "] | Casualties: " .. passiveDeaths)
                         end
                     end
                 end
@@ -245,7 +245,7 @@ function Simulation.UpdateDaily()
                 faction.wealth = (faction.wealth or 0) + dailyEarn
             end
         else
-            print("DT ERROR: BaseConsumption not found in config for simulation!")
+            DynamicTrading.Log("DTCommons", "Error", "Faction", "BaseConsumption not found in config for simulation!")
         end
     end
     
@@ -274,13 +274,13 @@ function Simulation.UpdateDaily()
                     town = townName,
                     memberCount = SandboxVars.DynamicTrading.FactionStartPop or 10
                 })
-                print("DT: A new faction has moved into " .. townName)
+                DynamicTrading.Log("DTCommons", "Faction", "Sim", "A new faction has moved into " .. townName)
             end
         end
     end
     
     ModData.transmit(MOD_DATA_KEY)
-    print("DT: Daily Faction Simulation Updated.")
+    DynamicTrading.Log("DTCommons", "Faction", "Sim", "Daily Faction Simulation Updated.")
 end
 
 return Simulation

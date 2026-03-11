@@ -193,7 +193,7 @@ function Commands.AttemptScan(player, args)
     
     -- BLOCK: Capacity Check
     if foundSignals >= capacity then
-        print("  - FAILED: Radio Capacity Full (" .. foundSignals .. "/" .. capacity .. ")")
+        DynamicTrading.Log("DTV1", "Radio", "Scan", "FAILED: Radio Capacity Full (" .. foundSignals .. "/" .. capacity .. ")")
         SendResponse(player, "ScanResult", { status = "CAPACITY_FULL", targetUser = targetUser, currentCount = foundSignals, capacity = capacity })
         return
     end
@@ -210,17 +210,17 @@ function Commands.AttemptScan(player, args)
     if finalChance < 1 then finalChance = 1 end
     
     -- [DEBUG PRINTS]
-    print("[DynamicTrading] Scanning for undiscovered traders...")
-    print("  - Base Chance: " .. baseChance)
-    print("  - Radio Tier: " .. radioTier)
-    print("  - Skill Bonus: " .. skillBonus)
-    print("  - Radio Capacity: " .. foundSignals .. "/" .. capacity .. " (Ratio: " .. string.format("%.2f", progressRatio) .. ")")
-    print("  - Penalty Factor: " .. string.format("%.2f", penaltyFactor))
-    print("  - Final Calculated Chance: " .. string.format("%.2f", finalChance) .. "%")
-    print("  - Undiscovered Traders Pool: " .. #undiscovered)
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "Scanning for undiscovered traders...")
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "  - Base Chance: " .. baseChance)
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "  - Radio Tier: " .. radioTier)
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "  - Skill Bonus: " .. skillBonus)
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "  - Radio Capacity: " .. foundSignals .. "/" .. capacity .. " (Ratio: " .. string.format("%.2f", progressRatio) .. ")")
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "  - Penalty Factor: " .. string.format("%.2f", penaltyFactor))
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "  - Final Calculated Chance: " .. string.format("%.2f", finalChance) .. "%")
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "  - Undiscovered Traders Pool: " .. #undiscovered)
     
     local roll = ZombRand(100) + 1
-    print("  - Roll: " .. roll)
+    DynamicTrading.Log("DTV1", "Radio", "Scan", "  - Roll: " .. roll)
 
     -- 5. Roll Dice
     local isSuccess = roll <= finalChance
@@ -230,7 +230,7 @@ function Commands.AttemptScan(player, args)
         local trader = undiscovered[ZombRand(#undiscovered) + 1]
         
         if trader then
-            print("  - SUCCESS! Found: " .. trader.name .. " (" .. trader.archetype .. ")")
+            DynamicTrading.Log("DTV1", "Radio", "Scan", "  - SUCCESS! Found: " .. trader.name .. " (" .. trader.archetype .. ")")
             
             SendResponse(player, "ScanResult", { 
                 status = "SUCCESS", 
@@ -244,7 +244,7 @@ function Commands.AttemptScan(player, args)
             SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
         end
     else
-        print("  - FAILED: Roll > Final Chance")
+        DynamicTrading.Log("DTV1", "Radio", "Scan", "  - FAILED: Roll > Final Chance")
         SendResponse(player, "ScanResult", { status = "FAILED_RNG", targetUser = targetUser })
     end
 end
@@ -301,4 +301,4 @@ end
 
 Events.EveryHours.Add(Server_OnHourlyTick)
 
-print("[DynamicTrading] V1 Server Commands (Faction Parity) Loaded.")
+DynamicTrading.Log("DTV1", "Init", "System", "V1 Server Commands (Faction Parity) Loaded.")

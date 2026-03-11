@@ -43,7 +43,7 @@ function Commands.CompressMoney(player, args)
         Helpers.AddItem(inv, "Base.MoneyBundle", bundlesToMake)
         
         player:setHaloNote("Bundled $" .. countToRemove .. " into " .. bundlesToMake .. " Rolls", 0, 255, 0, 300)
-        print("[DT-Money] Player " .. tostring(player:getUsername()) .. " compressed " .. countToRemove .. " cash.")
+        DynamicTrading.Log("DTCommons", "Money", "Server", "Player " .. tostring(player:getUsername()) .. " compressed " .. countToRemove .. " cash.")
     else
         player:setHaloNote("Not enough cash to bundle (Need 100)", 255, 0, 0, 300)
     end
@@ -79,7 +79,7 @@ function Commands.UncompressMoney(player, args)
         Helpers.AddItem(inv, "Base.Money", cashToAdd)
 
         player:setHaloNote("Unwrapped " .. bundleCount .. " Rolls into $" .. cashToAdd, 0, 255, 0, 300)
-        print("[DT-Money] Player " .. tostring(player:getUsername()) .. " uncompressed " .. bundleCount .. " bundles.")
+        DynamicTrading.Log("DTCommons", "Money", "Server", "Player " .. tostring(player:getUsername()) .. " uncompressed " .. bundleCount .. " bundles.")
     end
 end
 
@@ -95,6 +95,6 @@ local function OnClientCommand(module, command, player, args)
 end
 
 Events.OnClientCommand.Add(OnClientCommand)
-print("[DynamicTradingCommon] Registered server command: CompressMoney")
-print("[DynamicTradingCommon] Registered server command: UncompressMoney")
+DynamicTrading.Log("DTCommons", "Init", "Server", "Registered server command: CompressMoney")
+DynamicTrading.Log("DTCommons", "Init", "Server", "Registered server command: UncompressMoney")
 

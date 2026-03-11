@@ -108,7 +108,7 @@ local function onCoordInput(target, button, player, npc)
                 targetZ = tz
             }
             
-            print("[DTNPC] Sending GoTo command with coords: " .. tx .. "," .. ty .. "," .. tz)
+            DynamicTrading.Log("DTV2", "NPC", "Admin", "Sending GoTo command with coords: " .. tx .. "," .. ty .. "," .. tz)
             sendClientCommand(player, "DTNPC", "Order", args)
             
             -- Update local npcData immediately

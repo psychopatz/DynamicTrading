@@ -3,16 +3,16 @@
 DTNPC_SpatialHash = DTNPC_SpatialHash or {}
 
 function DTNPC_SpatialHash.RebuildFromRoster(rosterData)
-    print("[SpatialHash] RebuildFromRoster called")
+    DynamicTrading.Log("DTV2", "NPC", "SpatialHash", "RebuildFromRoster called")
     if not rosterData or not rosterData.Souls then
-        print("[SpatialHash] No roster data available")
+        DynamicTrading.Log("DTV2", "NPC", "SpatialHash", "No roster data available")
         return
     end
 
     DTNPC_SpatialHash.Grid = {}
     DTNPC_SpatialHash.NPCToCell = {}
     DTNPC_SpatialHash.DirtyFlags = {}
-    print("[SpatialHash] Cleared existing grid")
+    DynamicTrading.Log("DTV2", "NPC", "SpatialHash", "Cleared existing grid")
 
     local inserted = 0
     for uuid, soul in pairs(rosterData.Souls) do
@@ -27,11 +27,11 @@ function DTNPC_SpatialHash.RebuildFromRoster(rosterData)
     end
 
     DTNPC_SpatialHash.IsInitialized = true
-    print("[DTNPC_SpatialHash] Rebuilt grid with " .. inserted .. " NPCs")
+    DynamicTrading.Log("DTV2", "NPC", "SpatialHash", "Rebuilt grid with " .. inserted .. " NPCs")
 end
 
 function DTNPC_SpatialHash.Clear()
-    print("[SpatialHash] Clear called")
+    DynamicTrading.Log("DTV2", "NPC", "SpatialHash", "Clear called")
     DTNPC_SpatialHash.Grid = {}
     DTNPC_SpatialHash.NPCToCell = {}
     DTNPC_SpatialHash.DirtyFlags = {}

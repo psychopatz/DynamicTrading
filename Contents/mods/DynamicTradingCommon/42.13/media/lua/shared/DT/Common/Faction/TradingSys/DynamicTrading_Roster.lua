@@ -38,7 +38,7 @@ function DynamicTrading_Roster.CreateTrader(traderID, config)
             memory = {} -- [Username] = { trust, lastSeen, tradeVolume }
         }
         -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
-        print("DynamicTrading: Registered Trader " .. traderID)
+        DynamicTrading.Log("DTCommons", "Roster", "Init", "Registered Trader " .. traderID)
     end
 end
 
@@ -147,9 +147,8 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
     -- Update full npcData
     local npcData = DynamicTrading_Roster.GetSoul(uuid)
     if npcData then
-        -- If we are returning from "Away", reset their state to "Stay" to avoid flee-loop
         if npcData.status == "Away" and status ~= "Away" then
-            print("[DTNPC-Roster] Resetting state and master for " .. (npcData.name or uuid) .. " on return.")
+            DynamicTrading.Log("DTCommons", "Roster", "Sync", "Resetting state and master for " .. (npcData.name or uuid) .. " on return.")
             npcData.state = "Stay"
             npcData.master = nil
             npcData.masterID = nil
@@ -178,7 +177,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
     end
     
-    print("[DTNPC-Roster] Updated status for " .. uuid .. " to " .. (status or "nil") .. " (Return in: " .. tostring(returnTime) .. " as " .. tostring(returnStatus) .. ")")
+    DynamicTrading.Log("DTCommons", "Roster", "Status", "Updated status for " .. uuid .. " to " .. (status or "nil") .. " (Return in: " .. tostring(returnTime) .. " as " .. tostring(returnStatus) .. ")")
 end
 function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
     local data = ModData.get(MOD_DATA_KEY)

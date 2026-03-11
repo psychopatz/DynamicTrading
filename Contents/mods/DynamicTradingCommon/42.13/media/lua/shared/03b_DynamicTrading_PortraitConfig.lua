@@ -15,7 +15,7 @@ DynamicTrading.Portraits.Counts = DynamicTrading.Portraits.Counts or {}
 function DynamicTrading.Portraits.ScanTextures()
     if isServer() then return end
     
-    print("[DynamicTrading] Beginning Portrait Texture Scan...")
+    DynamicTrading.Log("DTCommons", "Portraits", "Scan", "Beginning Portrait Texture Scan...")
     local archetypes = {
         "General", "Farmer", "Butcher", "Doctor", "Mechanic",
         "Survivalist", "Gunrunner", "Foreman", "Scavenger", "Tailor",
@@ -43,12 +43,12 @@ function DynamicTrading.Portraits.ScanTextures()
             end
             DynamicTrading.Portraits.Counts[arch][gender] = count
             if count > 0 then
-                print("[DynamicTrading] Portrait Scan: [" .. arch .. "][" .. gender .. "] Found " .. count)
+                DynamicTrading.Log("DTCommons", "Portraits", "Scan", "Portrait Scan: [" .. arch .. "][" .. gender .. "] Found " .. count)
                 totalFound = totalFound + count
             end
         end
     end
-    print("[DynamicTrading] Portrait Scan Complete. Total unique textures found: " .. totalFound)
+    DynamicTrading.Log("DTCommons", "Portraits", "Scan", "Portrait Scan Complete. Total unique textures found: " .. totalFound)
 end
 
 --- Returns a random portrait seed (1-1000).

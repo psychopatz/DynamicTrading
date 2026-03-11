@@ -30,10 +30,10 @@ end
 
 local function OnClientCommand(module, command, player, args)
     if module == COMMAND_MODULE and Handlers[command] then
-        print("[DynamicTrading] V1 Server Command Received: " .. command .. " from " .. tostring(player:getUsername()))
+        DynamicTrading.Log("DTV1", "Network", "Command", "V1 Server Command Received: " .. command .. " from " .. tostring(player:getUsername()))
         Handlers[command](player, args)
     end
 end
 Events.OnClientCommand.Add(OnClientCommand)
 
-print("[DynamicTrading] V1 Server Network Layer Initialized.")
+DynamicTrading.Log("DTV1", "Network", "Init", "V1 Server Network Layer Initialized.")

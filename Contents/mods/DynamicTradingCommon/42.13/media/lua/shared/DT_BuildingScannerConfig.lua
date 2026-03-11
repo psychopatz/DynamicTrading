@@ -210,7 +210,7 @@ end
 -- =============================================================================
 
 function DTM.ScanForBuildings()
-    print("[DTM] STARTING DETAILED BUILDING SCAN WITH COUNTY MAPPING...")
+    DynamicTrading.Log("DTCommons", "Mapping", "Scanner", "STARTING DETAILED BUILDING SCAN WITH COUNTY MAPPING...")
     local metaGrid = getWorld():getMetaGrid()
     if not metaGrid then return {} end
 
@@ -242,7 +242,7 @@ function DTM.ScanForBuildings()
         end
     end
     
-    print("[DTM] SCAN COMPLETE. Found " .. #potentialTradingPosts .. " buildings across multiple counties.")
+    DynamicTrading.Log("DTCommons", "Mapping", "Scanner", "SCAN COMPLETE. Found " .. #potentialTradingPosts .. " buildings across multiple counties.")
     return potentialTradingPosts
 end
 
@@ -276,7 +276,7 @@ end
 -- =============================================================================
 
 function DTM.ScanForWilderness()
-    print("[DTM] SCANNING FOR WILDERNESS (GRID SAMPLING)...")
+    DynamicTrading.Log("DTCommons", "Mapping", "Scanner", "SCANNING FOR WILDERNESS (GRID SAMPLING)...")
     local metaGrid = getWorld():getMetaGrid()
     if not metaGrid then return {} end
 
@@ -328,7 +328,7 @@ function DTM.ScanForWilderness()
         end
     end
     
-    print("[DTM] WILDERNESS SCAN COMPLETE. Found " .. zonesFound .. " natural locations.")
+    DynamicTrading.Log("DTCommons", "Mapping", "Scanner", "WILDERNESS SCAN COMPLETE. Found " .. zonesFound .. " natural locations.")
     return wildernessPoints
 end
 
@@ -337,7 +337,7 @@ end
 -- =============================================================================
 
 function DTM.ScanForRoads()
-    print("[DTM] SCANNING FOR ROADS (GRID SAMPLING)...")
+    DynamicTrading.Log("DTCommons", "Mapping", "Scanner", "SCANNING FOR ROADS (GRID SAMPLING)...")
     local metaGrid = getWorld():getMetaGrid()
     if not metaGrid then return {} end
 
@@ -376,7 +376,7 @@ function DTM.ScanForRoads()
                     if not uniqueZoneTypes[type] then
                          uniqueZoneTypes[type] = true
                          if DTM.Config.Debug then
-                             print("[DTM DEBUG] Found new zone type: " .. tostring(type))
+                             DynamicTrading.Log("DTCommons", "Mapping", "Debug", "Found new zone type: " .. tostring(type))
                          end
                     end
                     
@@ -409,7 +409,7 @@ function DTM.ScanForRoads()
         end
     end
     
-    print("[DTM] ROAD SCAN COMPLETE. Found " .. zonesFound .. " road locations.")
+    DynamicTrading.Log("DTCommons", "Mapping", "Scanner", "ROAD SCAN COMPLETE. Found " .. zonesFound .. " road locations.")
     return roadPoints
 end
 
@@ -424,7 +424,7 @@ function DTM.LoadBuildings()
     local modData = ModData.getOrCreate("DT_Buildings")
     if modData and modData.locations then
         DTM.Buildings = modData.locations
-        print("[DTM] Loaded " .. #DTM.Buildings .. " buildings from ModData.")
+        DynamicTrading.Log("DTCommons", "Mapping", "Init", "Loaded " .. #DTM.Buildings .. " buildings from ModData.")
     else
         -- Fallback for clients/new worlds: scan locally
         DTM.Buildings = DTM.ScanForBuildings()
@@ -445,6 +445,6 @@ end
 
 function DTM.Log(message)
     if DTM.Config.Debug then
-        print("[DTM DEBUG] " .. tostring(message))
+        DynamicTrading.Log("DTCommons", "Mapping", "Debug", message)
     end
 end

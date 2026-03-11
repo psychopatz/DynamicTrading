@@ -35,7 +35,7 @@ function DataHandlers.SendSyncStockToPlayer(player, traderID)
         end
     end
     
-    print("[DT-V2-Server] Sending SyncStock: traderID=" .. tostring(traderID) .. ", factionID=" .. tostring(factionID) .. ", factionWealth=" .. tostring(factionWealth))
+    DynamicTrading.Log("DTV2", "Network", "Server", "Sending SyncStock: traderID=" .. tostring(traderID) .. ", factionID=" .. tostring(factionID) .. ", factionWealth=" .. tostring(factionWealth))
     
     DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncStock", { 
         id = traderID, 

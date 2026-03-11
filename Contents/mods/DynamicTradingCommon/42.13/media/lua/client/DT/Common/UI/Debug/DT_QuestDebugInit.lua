@@ -14,4 +14,4 @@ end
 
 Events.OnFillWorldObjectContextMenu.Add(OnFillWorldObjectContextMenu)
 
-print("[DynamicTrading] Quest Debug System Hooked.")
+DynamicTrading.Log("DTCommons", "Init", "Quest", "Quest Debug System Hooked")

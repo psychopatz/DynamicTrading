@@ -63,7 +63,7 @@ function DT_ConfigManager.save()
         
         fileWriter:close()
     else
-        print("[DT_ConfigManager] ERROR: Could not create file writer.")
+        DynamicTrading.Log("DTCommons", "Error", "Config", "Could not create file writer for " .. DT_ConfigManager.fileName)
     end
 end
 
@@ -72,12 +72,12 @@ function DT_ConfigManager.load()
     local fileReader = getFileReader(DT_ConfigManager.fileName, false)
     
     if not fileReader then
-        print("[DT_ConfigManager] No config file found. Using defaults.")
+        DynamicTrading.Log("DTCommons", "Config", "Init", "No config file found. Using defaults.")
         DT_ConfigManager.save() -- Create the file for next time
         return
     end
 
-    print("[DT_ConfigManager] Loading config...")
+    DynamicTrading.Log("DTCommons", "Config", "Init", "Loading config...")
     
     -- Reset windows table on load to avoid stale data if we were to re-read
     DT_ConfigManager.settings.windows = {} 
@@ -141,7 +141,7 @@ function DT_ConfigManager.load()
     end
     
     fileReader:close()
-    print("[DT_ConfigManager] Loaded.")
+    DynamicTrading.Log("DTCommons", "Config", "Init", "Config Loaded successfully")
 end
 
 -- =============================================================================
@@ -212,4 +212,4 @@ end
 
 -- Load settings as soon as the game boots up
 Events.OnGameBoot.Add(DT_ConfigManager.load)
-print("[DynamicTrading] Registered config manager.")
+DynamicTrading.Log("DTCommons", "Init", "Config", "Registered config manager")

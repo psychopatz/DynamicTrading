@@ -59,7 +59,7 @@ function DTNPCClient.CacheData(uuid, outfitID, npcData)
         DTNPCClient.OutfitIDToUUID[outfitID] = uuid
     end
     
-    print("[DTNPC-Client] Cached NPC data for: " .. (npcData.name or uuid) .. " (UUID: " .. uuid .. ")")
+    DynamicTrading.Log("DTV2", "NPC", "Cache", "Cached NPC data for: " .. (npcData.name or uuid) .. " (UUID: " .. uuid .. ")")
 end
 
 -- Deprecated: Use DTNPCClient.CacheData
@@ -73,7 +73,7 @@ function DTNPCClient.RemoveFromCache(uuid, outfitID)
         DTNPCClient.ProcessedZombies[uuid] = nil
         DTNPCClient.LocalControlled[uuid] = nil
         DTNPCClient.MetadataCache[uuid] = nil
-        print("[DTNPC-Client] Removed from cache: " .. uuid)
+        DynamicTrading.Log("DTV2", "NPC", "Cache", "Removed from cache: " .. uuid)
     end
     
     if outfitID then

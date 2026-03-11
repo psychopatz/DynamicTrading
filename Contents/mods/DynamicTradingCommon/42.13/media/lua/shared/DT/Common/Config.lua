@@ -1,4 +1,5 @@
 DynamicTrading = DynamicTrading or {}
+require "DT/Common/DT_Logger"
 DynamicTrading.Config = DynamicTrading.Config or {}
 
 -- =============================================================================
@@ -9,7 +10,7 @@ DynamicTrading.Config.MasterList = DynamicTrading.Config.MasterList or {}
 -- Single Item Adder
 function DynamicTrading.AddItem(id, data)
     if not id or not data then 
-        print("[DynamicTrading] Error: Invalid item data passed to AddItem")
+        DynamicTrading.Log("DTCommons", "Core", "Error", "Invalid item data passed to AddItem")
         return 
     end
     DynamicTrading.Config.MasterList[id] = data
@@ -22,7 +23,7 @@ function DynamicTrading.RegisterBatch(list)
         DynamicTrading.AddItem(data.item, data)
     end
     -- Reduced spam: only print batch totals
-    print("[DynamicTrading] Item Batch Loaded: " .. #list .. " entries.")
+    DynamicTrading.Log("DTCommons", "Core", "Info", "Item Batch Loaded: " .. #list .. " entries.")
 end
 
 -- =============================================================================
@@ -34,7 +35,7 @@ DynamicTrading.ArchetypeLooks = DynamicTrading.ArchetypeLooks or {}
 -- The Core Function: Preserves your ID schema
 function DynamicTrading.RegisterArchetype(id, data)
     if not id then 
-        print("[DynamicTrading] Error: Archetype registered without ID.")
+        DynamicTrading.Log("DTCommons", "Core", "Error", "Archetype registered without ID.")
         return 
     end
     if not data then return end
@@ -44,7 +45,7 @@ function DynamicTrading.RegisterArchetype(id, data)
     data.id = id 
     DynamicTrading.Archetypes[id] = data
     
-    print("[DynamicTrading] Registered Archetype: " .. id)
+    DynamicTrading.Log("DTCommons", "Core", "Info", "Registered Archetype: " .. id)
 end
 
 -- =============================================================================
@@ -68,7 +69,7 @@ function DynamicTrading.RegisterDialogue(archetypeID, dialogueType, data)
     end
 
     if archetypeID == "Player" and DynamicTrading.Debug then
-         print("[DynamicTrading] Debug: Registered Player Dialogue: " .. dialogueType)
+         DynamicTrading.Log("DTCommons", "Dialogue", "Debug", "Registered Player Dialogue: " .. dialogueType)
     end
 end
 
@@ -135,12 +136,12 @@ local function FileExists(path)
 end
 
 function DynamicTrading.LoadArchetypes()
-    print("[DynamicTrading] Starting Dynamic Archetype Loading...")
+    DynamicTrading.Log("DTCommons", "Core", "Init", "Starting Dynamic Archetype Loading...")
     local totalLoaded = 0
     local errors = 0
     
     for _, id in ipairs(DynamicTrading.Config.ArchetypeList) do
-        if DynamicTrading.Debug then print("[DynamicTrading] Processing Archetype: " .. id) end
+        if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "Processing Archetype: " .. id) end
 
         -- 1. Load Archetype Definition (Item Data)
         local itemPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Items/DT_" .. id
@@ -148,12 +149,12 @@ function DynamicTrading.LoadArchetypes()
         if FileExists(itemPath) then
              local itemOk, err = pcall(require, itemPath)
              if not itemOk then
-                  print("[DynamicTrading] [ERROR] Failed to load Item Definition for " .. id .. ": " .. tostring(err))
+                  DynamicTrading.Log("DTCommons", "Core", "Error", "Failed to load Item Definition for " .. id .. ": " .. tostring(err))
                   errors = errors + 1
              end
         else
              -- Warn if definition is missing entirely, as this might be critical
-             if DynamicTrading.Debug then print("[DynamicTrading] [WARN] Missing Item Definition for: " .. id) end
+             if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Warn", "Missing Item Definition for: " .. id) end
         end
 
         -- 1b. Load Archetype Looks (optional, shared by server/client for deterministic wardrobe mapping)
@@ -161,7 +162,7 @@ function DynamicTrading.LoadArchetypes()
         if FileExists(looksPath) then
             local looksOk, looksErr = pcall(require, looksPath)
             if not looksOk then
-                print("[DynamicTrading] [ERROR] Failed to load Looks Definition for " .. id .. ": " .. tostring(looksErr))
+                DynamicTrading.Log("DTCommons", "Core", "Error", "Failed to load Looks Definition for " .. id .. ": " .. tostring(looksErr))
                 errors = errors + 1
             end
         end
@@ -174,7 +175,7 @@ function DynamicTrading.LoadArchetypes()
             if FileExists(baseDialoguePath) then
                 local success, dErr = pcall(require, baseDialoguePath)
                 if success then
-                    if DynamicTrading.Debug then print("[DynamicTrading]   >> Loaded " .. dType .. " (Base)") end
+                    if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded " .. dType .. " (Base)") end
                     totalLoaded = totalLoaded + 1
                 end
             end
@@ -186,14 +187,14 @@ function DynamicTrading.LoadArchetypes()
                 if FileExists(transPath) then
                     local tSuccess, _ = pcall(require, transPath)
                     if tSuccess then
-                        if DynamicTrading.Debug then print("[DynamicTrading]   >> Loaded " .. dType .. " (" .. lang .. ")") end
+                        if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded " .. dType .. " (" .. lang .. ")") end
                     end
                 end
             end
         end
     end
     
-    print("[DynamicTrading] Dynamic Loading Complete. Total Modules: " .. totalLoaded .. " | Errors: " .. errors)
+    DynamicTrading.Log("DTCommons", "Core", "Init", "Dynamic Loading Complete. Total Modules: " .. totalLoaded .. " | Errors: " .. errors)
 end
 
 -- =============================================================================
@@ -249,7 +250,7 @@ DynamicTrading.Config.FactionEvents = {
     Meta = { "Inflation", "EconomicCollapse", "Recession" }
 }
 
-print("[DynamicTrading] Config & Registry Core Loaded.")
+DynamicTrading.Log("DTCommons", "Core", "Init", "Config & Registry Core Loaded.")
  
 -- Trigger the loading process LATER to avoid recursive require loops
 Events.OnGameBoot.Add(DynamicTrading.LoadArchetypes)

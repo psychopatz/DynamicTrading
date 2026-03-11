@@ -12,7 +12,7 @@ local Core = DynamicTrading.Dialogue.Core
 function DynamicTrading.Dialogue.Player.GeneratePlayerMessage(action, args)
     if not action then action = "Buy" end
     
-    if DynamicTrading.Debug then print("[DynamicTrading] GeneratePlayerMessage called for: " .. tostring(action)) end
+    if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Dialogue", "Player", "GeneratePlayerMessage called for: " .. tostring(action)) end
     -- LOGIC: Check failure reasons FIRST to override success logic
     if (action == "Buy" or action == "Sell") and args then
         if args.failReason == "NoCash" then
@@ -25,7 +25,7 @@ function DynamicTrading.Dialogue.Player.GeneratePlayerMessage(action, args)
     -- 1. Ensure Player Data is Loaded (Boot-load fallback)
     -- If things are missing, it's likely a load order issue or missing file
     if not Core.GetDialoguePool("Player", "Greetings", "Default")[1] or Core.GetDialoguePool("Player", "Greetings", "Default")[1] == "..." then
-        if DynamicTrading.Debug then print("[DynamicTrading] Dialogue: Player Greeting pool missing. Attempting force load...") end
+        if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Dialogue", "Player", "Dialogue: Player Greeting pool missing. Attempting force load...") end
         pcall(require, "DT/Common/ArchetypeDefinitions/Player/Dialogue/DT_Player_Greetings")
         pcall(require, "DT/Common/ArchetypeDefinitions/Player/Dialogue/DT_Player_Buying")
         pcall(require, "DT/Common/ArchetypeDefinitions/Player/Dialogue/DT_Player_Selling")
@@ -59,17 +59,17 @@ function DynamicTrading.Dialogue.Player.GeneratePlayerMessage(action, args)
     end
 
     if DynamicTrading.Debug then 
-        print("[DynamicTrading] Dialogue: Resolving Player Pool for Category: " .. category .. " | Context: " .. subContext) 
+        DynamicTrading.Log("DTCommons", "Dialogue", "Player", "Resolving Player Pool for Category: " .. category .. " | Context: " .. subContext) 
         if not pool or pool[1] == "..." then
-            print("[DynamicTrading] [WARN] Pool resolved to empty or fallback '...'")
+            DynamicTrading.Log("DTCommons", "Dialogue", "Warn", "Pool resolved to empty or fallback '...'")
         else
-            print("[DynamicTrading] Pool resolved with " .. #pool .. " lines.")
+            DynamicTrading.Log("DTCommons", "Dialogue", "Player", "Pool resolved with " .. #pool .. " lines.")
         end
     end
     
     local rawText = Core.PickRandom(pool)
     if not rawText and DynamicTrading.Debug then
-        print("[DynamicTrading] Debug: Core.PickRandom returned NIL for action: " .. tostring(action))
+        DynamicTrading.Log("DTCommons", "Dialogue", "Debug", "Core.PickRandom returned NIL for action: " .. tostring(action))
     end
     rawText = rawText or "..."
     return Core.FormatMessage(rawText, args)

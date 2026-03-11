@@ -15,4 +15,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Chum", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare"}, stockRange={min=0, max=6} },
 })
 
-print("[DynamicTrading] Cooking Registry Complete")
+DynamicTrading.Log("DTCommons", "Init", "Item", "Cooking Registry Complete")

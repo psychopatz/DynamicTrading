@@ -49,7 +49,7 @@ end
 function WorldTextDisplayDebug.createNPCText(npc, npcData)
     if not npc or not npcData then return nil end
     if not WorldTextDisplay then 
-        print("[WorldTextDisplay] Module not loaded!")
+        DynamicTrading.Log("DTV2", "Debug", "Error", "WorldTextDisplay Module not loaded!")
         return nil 
     end
     
@@ -537,5 +537,4 @@ end
 
 Events.OnFillWorldObjectContextMenu.Add(WorldTextDisplayDebug.OnFillWorldObjectContextMenu)
 
-print("WorldTextDisplay Debug Menu loaded!")
-print("Right-click anywhere for WorldTextDisplay options")
+DynamicTrading.Log("DTV2", "Init", "Debug", "WorldTextDisplay Debug Menu loaded")

@@ -63,7 +63,7 @@ end
 function DT_FactionInfoTab_Population:onOpenDetails()
     -- Reserved for future use or expanded view
     if self.selectedSoul then
-        print("[DT] Opening details for " .. tostring(self.selectedSoul.name))
+        DynamicTrading.Log("DTCommons", "Faction", "UI", "Opening details for " .. tostring(self.selectedSoul.name))
     end
 end
 

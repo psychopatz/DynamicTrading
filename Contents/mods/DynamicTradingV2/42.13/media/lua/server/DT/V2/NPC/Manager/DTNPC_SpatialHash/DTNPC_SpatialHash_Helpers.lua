@@ -31,5 +31,5 @@ function I.isTable(value)
 end
 
 function I.logCorruptCell(context, gridKey, value)
-    print("[DTNPC_SpatialHash] Corrupt cell detected in " .. context .. " at " .. tostring(gridKey) .. " (type=" .. type(value) .. "), removing")
+    DynamicTrading.Log("DTV2", "NPC", "Error", "[DTNPC_SpatialHash] Corrupt cell detected in " .. context .. " at " .. tostring(gridKey) .. " (type=" .. type(value) .. "), removing")
 end

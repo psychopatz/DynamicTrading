@@ -78,4 +78,4 @@ DT_FactionLocations.Rosewood = {
 }
 
 -- Debug Log to confirm the file was loaded during server startup
-print("[Dynamic Trading] Loaded Rosewood Spawn Locations: " .. #DT_FactionLocations.Rosewood .. " spots registered.")
+DynamicTrading.Log("DTCommons", "Init", "Faction", "Loaded Rosewood Spawn Locations: " .. #DT_FactionLocations.Rosewood .. " spots registered")
