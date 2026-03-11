@@ -303,8 +303,20 @@ function V1_Radio_DataProvider:isConnectionValid(radioObj)
         end
     end
 
-    -- 3. DISTANCE CHECK
-    -- Delegate to core util, which handles nil objects safely by returning true
+    -- 3. SIGNAL EXPIRATION / STATUS CHECK (Roster is authoritative)
+    if self._currentTraderID and DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry then
+        local soul = DynamicTrading_Roster.GetSoulRegistry(self._currentTraderID)
+        if not soul then return false end
+        if soul.status ~= "Trading" then return false end
+        if soul.returnTime then
+            local gt = GameTime:getInstance()
+            if soul.returnTime <= gt:getWorldAgeHours() then
+                return false
+            end
+        end
+    end
+
+    -- 4. DISTANCE CHECK
     return DynamicTrading.Utils.IsInteractionValid(radioObj, nil, nil)
 end
 

@@ -217,22 +217,22 @@ function DT_TradingWindow:updateIdentityDisplay(trader)
     end
     if self.lblSignal then
         local gt = GameTime:getInstance()
-        local text = "Signal: Permanent"
+        local text = "Status: Permanent"
         local r, g, b = 0.5, 0.8, 1.0
         local expireTime = trader.returnTime
         if expireTime then
             local diff = expireTime - gt:getWorldAgeHours()
-            if diff <= 0 then 
-                text = "Signal: Disconnection Imminent!"
+            if diff <= 0.5 then 
+                text = "Status: Departing Now..."
                 r, g, b = 1, 0, 0
             elseif diff < 1 then 
-                text = string.format("Signal: Fading (%dm)", math.floor(diff * 60))
+                text = string.format("Status: Leaving in (%dm)", math.floor(diff * 60))
                 r, g, b = 1, 0.4, 0
             elseif diff < 8 then 
-                text = string.format("Signal: Stable (%dh)", math.ceil(diff))
+                text = string.format("Status: Leaving in (%dh)", math.ceil(diff))
                 r, g, b = 1, 0.8, 0.2
             else 
-                text = string.format("Signal: Optimal (%dh)", math.ceil(diff))
+                text = string.format("Status: Leaving in (%dh)", math.ceil(diff))
                 r, g, b = 0.2, 1, 0.2 
             end
         end
