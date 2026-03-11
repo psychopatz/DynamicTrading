@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme, CssBaseline, Container, Typography, Box, Ap
 import { BrowserRouter, Routes, Route, Link as RouterLink } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import ItemsPage from './components/ItemsPage';
+import SimulationDashboard from './components/Simulation/SimulationDashboard';
 
 const darkTheme = createTheme({
   palette: {
@@ -29,12 +30,14 @@ function App() {
                 </Typography>
                 <Button color="inherit" component={RouterLink} to="/">Dashboard</Button>
                 <Button color="inherit" component={RouterLink} to="/items">Vanilla Items</Button>
+                <Button color="inherit" component={RouterLink} to="/simulation">Economy Simulation</Button>
               </Toolbar>
             </AppBar>
             <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/items" element={<ItemsPage />} />
+                <Route path="/simulation" element={<SimulationDashboard />} />
               </Routes>
             </Container>
           </Box>

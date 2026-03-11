@@ -278,6 +278,25 @@ async def trigger_generate_docs():
 async def get_blacklist():
     return load_blacklist()
 
+# --- Simulation ---
+
+try:
+    from Simulation.config import BuildConfig, default_paths
+    from Simulation.export.database_builder import build_database
+except ImportError as e:
+    logger.error(f"Error importing Simulation modules: {e}")
+
+@app.get("/api/simulation/data")
+async def get_simulation_data():
+    try:
+        paths = default_paths()
+        config = BuildConfig()
+        payload = build_database(paths, config)
+        return payload
+    except Exception as e:
+        logger.error(f"Error generating simulation data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

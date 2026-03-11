@@ -27,4 +27,6 @@ export const getTaskLogs = (id, since = 0) => api.get(`/tasks/${id}/logs`, { par
 // Misc
 export const getBlacklist = () => api.get('/blacklist');
 
+export const getSimulationData = () => api.get('/simulation/data');
+
 export default api;
