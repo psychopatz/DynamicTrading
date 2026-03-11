@@ -41,6 +41,13 @@ local function GetRadarData()
 end
 
 -- =============================================================================
+-- 3. HELPER: GET FRESH ROSTER DATA
+-- =============================================================================
+local function GetRosterData()
+    return ModData.getOrCreate("DynamicTrading_Roster")
+end
+
+-- =============================================================================
 -- 3. LEGACY DATA CLEANUP
 -- =============================================================================
 -- Kept empty to catch old calls safely
@@ -144,6 +151,20 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
     -- Fetch from shared systems
     local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry(traderID)
     local stockData = DynamicTrading_Stock and DynamicTrading_Stock.GetStock(traderID)
+    
+    -- Resolve Faction Info for wealth/budget
+    local factionID = soul and soul.factionID or "Independent"
+    local factionName = "Independent Traders"
+    local factionWealth = 0
+    
+    if DynamicTrading_Factions then
+        local faction = DynamicTrading_Factions.GetFaction(factionID)
+        if faction then
+            factionName = faction.name or factionID
+            factionWealth = faction.wealth or 0
+        end
+    end
+
     -- Build V1-compatible trader object directly from Common Data
     local trader = {
         -- Identity
@@ -160,6 +181,7 @@ function DynamicTrading.Manager.GetTrader(traderID, archetype)
         -- Economy (from faction)
         budget = factionWealth,
         factionID = factionID,
+        factionName = factionName,
         
         -- Shared common
         returnTime = (soul and soul.returnTime),
@@ -290,8 +312,8 @@ function DynamicTrading.Manager.GetUndiscoveredTraders(player)
     local undiscovered = {}
     
     -- We search all Souls in the Roster that are in "Trading" state
-    if DynamicTrading_Roster and ModData.exists("DynamicTrading_Roster") then
-        local rosterData = ModData.get("DynamicTrading_Roster")
+    if ModData.exists("DynamicTrading_Roster") then
+        local rosterData = GetRosterData()
         local gt = GameTime:getInstance()
         local currentHours = gt:getWorldAgeHours()
 
@@ -322,8 +344,8 @@ end
 
 function DynamicTrading.Manager.GetTotalTradingSignals()
     local count = 0
-    if DynamicTrading_Roster and ModData.exists("DynamicTrading_Roster") then
-        local rosterData = ModData.get("DynamicTrading_Roster")
+    if ModData.exists("DynamicTrading_Roster") then
+        local rosterData = GetRosterData()
         local gt = GameTime:getInstance()
         local currentHours = gt:getWorldAgeHours()
 
@@ -364,8 +386,8 @@ function DynamicTrading.Manager.GetDiscoveredCount(player)
     
     if SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.PublicNetwork then
         local count = 0
-        if DynamicTrading_Roster and ModData.exists("DynamicTrading_Roster") then
-            local rosterData = ModData.get("DynamicTrading_Roster")
+        if ModData.exists("DynamicTrading_Roster") then
+            local rosterData = GetRosterData()
             if rosterData and rosterData.Souls then
                 for uuid, registry in pairs(rosterData.Souls) do
                     if registry.status == "Trading" and isValidSignal(uuid) then
@@ -414,7 +436,7 @@ function DynamicTrading.Manager.GetActiveRadioTraders(player)
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
     
-    local rosterData = ModData.get("DynamicTrading_Roster")
+    local rosterData = GetRosterData()
     if not rosterData or not rosterData.Souls then return traders end
 
     for id, registry in pairs(rosterData.Souls) do

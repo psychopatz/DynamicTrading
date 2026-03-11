@@ -230,11 +230,11 @@ function Commands.AttemptScan(player, args)
         local trader = undiscovered[ZombRand(#undiscovered) + 1]
         
         if trader then
-            DynamicTrading.Manager.DiscoverTrader(trader.id, player)
             print("  - SUCCESS! Found: " .. trader.name .. " (" .. trader.archetype .. ")")
             
             SendResponse(player, "ScanResult", { 
                 status = "SUCCESS", 
+                id = trader.id, -- [NEW] Send ID so client can discover locally
                 name = trader.name,
                 archetype = trader.archetype,
                 targetUser = targetUser,

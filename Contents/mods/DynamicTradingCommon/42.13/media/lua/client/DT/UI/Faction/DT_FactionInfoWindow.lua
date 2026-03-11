@@ -319,6 +319,15 @@ local function onServerCommand(module, command, args)
             DT_FactionInfoWindow.cachedFactionData = args.factions
             DT_FactionInfoWindow.cachedRosterData = args.roster
             
+            -- [V1 PARITY] Sink roster souls into ModData for legacy V1 logic (Signal Panel, etc)
+            if args.roster and args.roster.Souls then
+                local localRoster = ModData.getOrCreate("DynamicTrading_Roster")
+                localRoster.Souls = localRoster.Souls or {}
+                for uuid, soul in pairs(args.roster.Souls) do
+                    localRoster.Souls[uuid] = soul
+                end
+            end
+
             -- Populate
             DT_FactionInfoWindow.instance:populateList(args.factions, args.roster)
         end

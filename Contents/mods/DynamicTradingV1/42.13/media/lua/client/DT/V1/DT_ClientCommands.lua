@@ -24,8 +24,13 @@ local function OnServerCommand(module, command, args)
                 if DT_AudioManager then DT_AudioManager.PlaySound("DT_RadioRandom", false, 0.1) end
                 player:Say("Connected: " .. (args.name or "Unknown"))
                 
+                -- [NEW] Discover trader locally so it updates the client cache immediately
+                if args.id then
+                    DynamicTrading.Manager.DiscoverTrader(args.id, player)
+                end
+
                 -- [FIX] Force UI Animation and List Refresh immediately
-                if DT_RadioWindow and DT_RadioWindow.instance and DT_RadioWindow.instance:isVisible() then
+                if DT_RadioWindow and DT_RadioWindow.instance and DT_RadioWindow.instance:getIsVisible() then
                     -- Access panel via children
                     if DT_RadioWindow.instance.signalPanel then DT_RadioWindow.instance.signalPanel.signalFoundPersist = true end
                     if DT_RadioWindow.instance.refreshList then DT_RadioWindow.instance.refreshList() end
