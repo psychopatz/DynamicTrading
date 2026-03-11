@@ -17,8 +17,9 @@ logger = logging.getLogger(__name__)
 
 # Import from local ItemManagement package
 try:
-    from ItemManagement import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
+    from ItemManagement import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR, generate_tags, calculate_price, get_stat
     from ItemManagement.commons.vanilla_loader import get_property_value
+    from ItemManagement.commons.lua_handler.records import tags_list_to_dict
     from ItemManagement.ui.commands import (
         update as run_update, 
         add as run_add,
@@ -116,13 +117,23 @@ async def list_items(search: Optional[str] = None, limit: int = 100, offset: int
             item_keys = [k for k in item_keys if search in k.lower()]
             
         for item_id in item_keys[offset:offset+limit]:
-            item_props = items[item_id]
+            props = items[item_id]
             is_bl, _ = is_item_blacklisted(item_id, {})
+            
+            # Extract metadata
+            tags_list = generate_tags(item_id, props)
+            tags_dict = tags_list_to_dict(tags_list)
+            price = calculate_price(item_id, props, tags_dict)
+            weight = get_stat(props, "Weight", 0.5)
+            
             results.append({
                 "id": item_id,
-                "name": get_property_value(item_props, "DisplayName", item_id) or item_id,
+                "name": get_property_value(props, "DisplayName", item_id) or item_id,
                 "is_blacklisted": bool(is_bl),
-                "is_registered": item_id in registered_ids
+                "is_registered": item_id in registered_ids,
+                "price": int(price),
+                "tags": tags_list,
+                "weight": float(weight)
             })
         
         return {

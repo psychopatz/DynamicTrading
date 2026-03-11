@@ -100,7 +100,7 @@ const Dashboard = () => {
             {/* Item Table */}
             <Grid item xs={12}>
               <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>Vanilla Item Database</Typography>
+                <Typography variant="h6" gutterBottom>Vanilla Items</Typography>
                 <Divider sx={{ mb: 2 }} />
                 <ItemTable />
               </Paper>

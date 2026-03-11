@@ -1,8 +1,6 @@
 import React from 'react';
 import { ThemeProvider, createTheme, CssBaseline, Container, Typography, Box, AppBar, Toolbar } from '@mui/material';
 import Dashboard from './components/Dashboard';
-import Actions from './components/Actions';
-import ItemTable from './components/ItemTable';
 
 const darkTheme = createTheme({
   palette: {
@@ -28,13 +26,8 @@ function App() {
             </Typography>
           </Toolbar>
         </AppBar>
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
+        <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1 }}>
           <Dashboard />
-          <Box sx={{ my: 4 }}>
-            <Actions />
-          </Box>
-          <Typography variant="h5" sx={{ mb: 2 }}>Vanilla Items</Typography>
-          <ItemTable />
         </Container>
       </Box>
     </ThemeProvider>
