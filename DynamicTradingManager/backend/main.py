@@ -5,28 +5,25 @@ from typing import List, Optional, Dict, Any
 import sys
 import os
 from pathlib import Path
-import io
-from contextlib import redirect_stdout
-
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Add ItemGenerator to path
-ITEM_GENERATOR_DIR = Path(__file__).parent.parent.parent / "Scripts" / "ItemGenerator"
-sys.path.append(str(ITEM_GENERATOR_DIR))
-
+# Import from local ItemManagement package
 try:
-    from src import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
-    from src.commons.vanilla_loader import get_property_value
-    from src.ui.commands import update as run_update, add as run_add
-    from src.ui.stats import count_registered_items, find_invalid_blacklist_ids, find_duplicate_blacklist_ids
-    from src.parse import load_blacklist, is_item_blacklisted, get_blacklist_stats
+    from ItemManagement import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
+    from ItemManagement.commons.vanilla_loader import get_property_value
+    from ItemManagement.ui.commands import update as run_update, add as run_add
+    from ItemManagement.ui.stats import count_registered_items, find_invalid_blacklist_ids
+    from ItemManagement.parse import load_blacklist, is_item_blacklisted
 except ImportError as e:
-    logger.error(f"Error importing ItemGenerator modules: {e}")
-    # Fallback or exit
+    logger.error(f"Error importing ItemManagement modules: {e}")
     sys.exit(1)
 
 app = FastAPI(title="Dynamic Trading Manager API")
@@ -79,6 +76,8 @@ async def get_stats():
     coverage = (registered / total_vanilla * 100) if total_vanilla > 0 else 0
     
     notifications = []
+    # Note: stats.py names might vary, using what was in original main.py
+    # or what is discovered in the new src
     invalid_blacklist = find_invalid_blacklist_ids()
     if invalid_blacklist:
         notifications.append(f"{len(invalid_blacklist)} invalid item ID(s) in blacklist")
@@ -98,11 +97,10 @@ async def list_items(search: Optional[str] = None, limit: int = 100, offset: int
         items = get_items()
         
         results = []
-        # Simplified list for UI
         item_keys = list(items.keys())
         for item_id in item_keys[offset:offset+limit]:
             item_props = items[item_id]
-            is_bl, _ = is_item_blacklisted(item_id)
+            is_bl, _ = is_item_blacklisted(item_id, {}) # Empty dict for props if not parsed yet
             results.append({
                 "id": item_id,
                 "name": get_property_value(item_props, "DisplayName", item_id) or item_id,

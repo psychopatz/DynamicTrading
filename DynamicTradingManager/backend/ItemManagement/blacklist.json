@@ -1,0 +1,17 @@
+{
+  "comment": "Blacklist configuration for ItemGenerator - items matching these criteria will be excluded",
+  "itemIds": [
+    "Money",
+    "MoneyBundle"
+  ],
+  "properties": {
+    "names": [
+      "hidden"
+    ],
+    "values": {
+      "Weight": [
+        10
+      ]
+    }
+  }
+}
