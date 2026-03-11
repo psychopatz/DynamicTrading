@@ -60,14 +60,14 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
 
     -- Fetch Active Events (with MP Fallback)
     local activeEventsList = {}
-    local rawList = (DynamicTrading.Events and DynamicTrading.Events.ActiveEvents) or {}
+    local rawList = (DynamicTrading and DynamicTrading.Events and DynamicTrading.Events.ActiveEvents) or {}
     for _, v in ipairs(rawList) do table.insert(activeEventsList, v) end
 
     if #activeEventsList == 0 then
         local engine = DynamicTrading_Engine and DynamicTrading_Engine.GetEngineData()
         if engine and engine.EventSystem and engine.EventSystem.activeEvents then
             for id, _ in pairs(engine.EventSystem.activeEvents) do
-                if DynamicTrading.Events and DynamicTrading.Events.Registry then
+                if DynamicTrading and DynamicTrading.Events and DynamicTrading.Events.Registry then
                     local def = DynamicTrading.Events.Registry[id]
                     if def then table.insert(activeEventsList, def) end
                 end
@@ -99,7 +99,7 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
         if #flashEvents > 0 then
             local currentHours = getGameTime():getWorldAgeHours()
             for _, entry in ipairs(flashEvents) do
-                if entry and entry.id then
+                if entry and entry.id and DynamicTrading and DynamicTrading.Events and DynamicTrading.Events.Registry then
                     local def = DynamicTrading.Events.Registry[entry.id]
                     local diff = math.max(0, (entry.expires or 0) - currentHours)
                     text = text .. self:formatEventDetails(def, diff, bodySize)

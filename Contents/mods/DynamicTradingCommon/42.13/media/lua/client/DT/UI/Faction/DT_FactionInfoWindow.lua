@@ -168,9 +168,6 @@ function DT_FactionInfoWindow:refreshList()
 
     -- Request Data
     if isClient() and not isServer() then
-        if isV1 then
-            sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
-        end
         sendClientCommand(player, "DynamicTrading_V2", "RequestFactionData", {})
         return
     end
@@ -179,26 +176,41 @@ function DT_FactionInfoWindow:refreshList()
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
     
-    -- Virtual V1 Faction Injection
+    self:populateList(factionData, rosterData)
+end
+
+-- =============================================================================
+-- HELPER: INJECT V1 VIRTUAL FACTION
+-- =============================================================================
+function DT_FactionInfoWindow.InjectV1VirtualFaction(factionData)
+    local isV1 = (DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetData) ~= nil
+    if not isV1 then return factionData end
+
+    -- Only inject if there aren't *real* V2 factions taking precedence
     local hasFactions = false
-    if factionData then
+    if type(factionData) == "table" then
         for _ in pairs(factionData) do hasFactions = true break end
     end
+    
+    local newFactionData = {}
+    if type(factionData) == "table" then
+        for k,v in pairs(factionData) do newFactionData[k] = v end
+    end
 
-    if isV1 and not hasFactions then
-        factionData = factionData or {}
-        
+    if not hasFactions then
         local wealth = 0
-        if DynamicTrading.Manager.GetGlobalWealth then
-            wealth = DynamicTrading.Manager.GetGlobalWealth()
-        end
-        
-        local count = 0
-        if DynamicTrading.Manager.GetDiscoveredCount then
-            count = DynamicTrading.Manager.GetDiscoveredCount(player)
+        -- Use the correct V1 wealth accessor (from ModData)
+        if ModData.exists("DynamicTrading_Engine") then
+            local engine = ModData.get("DynamicTrading_Engine")
+            wealth = engine and engine.globalWealth or 0
         end
 
-        factionData["V1_RADIO"] = {
+        local count = 0
+        if DynamicTrading.Manager.GetDiscoveredCount then 
+            count = DynamicTrading.Manager.GetDiscoveredCount(getSpecificPlayer(0)) 
+        end
+        
+        newFactionData["V1_RADIO"] = {
             id = "V1_RADIO",
             name = "Radio Network",
             state = "Stable",
@@ -207,11 +219,12 @@ function DT_FactionInfoWindow:refreshList()
             isV1 = true
         }
     end
-
-    self:populateList(factionData, rosterData)
+    return newFactionData
 end
 
 function DT_FactionInfoWindow:populateList(factionData, rosterData)
+    factionData = DT_FactionInfoWindow.InjectV1VirtualFaction(factionData)
+
     if not factionData then return end
     if not self.listbox then return end
     self.listbox:clear()
@@ -250,6 +263,14 @@ function DT_FactionInfoWindow:populateList(factionData, rosterData)
         -- Always show if we have no reason to hide it (prevents UI flicker during sync)
         if isAlive then
             self.listbox:addItem(f.name or id, f)
+        end
+    end
+    
+    -- If we have a selected faction that is no longer in the list (or we have none), pick first
+    if self.listbox.items and #self.listbox.items > 0 then
+        if not self.selectedFaction then
+            self.listbox.selected = 1
+            self:onListMouseDown(self.listbox.items[1].item)
         end
     end
 end
@@ -330,8 +351,12 @@ if not DT_FactionInfoWindow.EventsAdded then
         
         if DT_FactionInfoWindow.instance:getIsVisible() then
             -- Faction/Roster Data -> Update List
+            -- [FIX] Do NOT call refreshList() here, it sends another network command!
+            -- Call populateList() with local data instead.
             if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster" or key == "DynamicTrading_Engine_v2") then
-                DT_FactionInfoWindow.instance:refreshList()
+                local factionData = ModData.get("DynamicTrading_Factions") or {}
+                local rosterData = ModData.get("DynamicTrading_Roster") or {}
+                DT_FactionInfoWindow.instance:populateList(factionData, rosterData)
             
             -- Engine Data (Inflation/Events) -> Update Active Tab Details
             elseif key == "DynamicTrading_Engine_v2" then

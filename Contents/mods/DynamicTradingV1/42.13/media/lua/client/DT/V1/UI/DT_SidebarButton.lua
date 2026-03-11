@@ -1,6 +1,5 @@
 require "ISUI/ISUIElement"
 require "ISUI/ISButton"
-require "DT/V1/DynamicTradingInfoUI"
 require "Utils/DT_ConfigManager"
 require "DT/UI/Faction/DT_FactionInfoWindow"
 
