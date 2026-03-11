@@ -26,7 +26,7 @@ function DTNPCManager.CheckForRespawn(npcData, uuid)
             local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
             
             if not zombie then
-                DynamicTrading.Log("DTV2", "NPC", "Logic", Respawning NPC: " .. (npcData.name or uuid) .. " near player " .. player:getUsername() .. " (dist: " .. string.format("%.1f", dist) .. ")")
+                DynamicTrading.Log("DTV2", "NPC", "Logic", "Respawning NPC: " .. (npcData.name or uuid) .. " near player " .. player:getUsername() .. " (dist: " .. string.format("%.1f", dist) .. ")")
                 DTNPCServerCore.RespawnNPC(npcData, uuid)
                 return true
             end
@@ -209,4 +209,4 @@ function DTNPCManager.CheckRosterSpawns()
     DTNPCManager.RespawnDebug.Log("cycle_result", resultMessage, spawnedCount > 0 or usedFallback)
 end
 
-DynamicTrading.Log("DTV2", "Init", NPC", "Loaded successfully")
+DynamicTrading.Log("DTV2", "Init", "NPC", "Loaded successfully")

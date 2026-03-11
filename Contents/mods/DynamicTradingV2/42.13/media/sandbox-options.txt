@@ -182,4 +182,33 @@ option DynamicTrading.FactionRespawnChance
     translation = DynamicTrading_FactionRespawnChance,
 }
 
+option DynamicTrading.IndependentSpawnRadiusMin
+{
+    type = integer,
+    default = 500,
+    min = 50,
+    max = 5000,
+    page = DynamicTrading,
+    translation = DynamicTrading_IndependentSpawnRadiusMin,
+}
+
+option DynamicTrading.IndependentSpawnRadiusMax
+{
+    type = integer,
+    default = 1000,
+    min = 100,
+    max = 10000,
+    page = DynamicTrading,
+    translation = DynamicTrading_IndependentSpawnRadiusMax,
+}
+
+option DynamicTrading.TownTraderWanderChance
+{
+    type = double,
+    default = 5.0,
+    min = 0.0,
+    max = 100.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_TownTraderWanderChance,
+}
 

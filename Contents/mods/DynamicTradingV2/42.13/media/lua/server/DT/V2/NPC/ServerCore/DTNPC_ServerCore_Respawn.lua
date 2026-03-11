@@ -16,6 +16,8 @@ if isClient() and not isServer() then return end
 function DTNPCServerCore.RespawnNPC(npcData, uuid)
     if not npcData or not npcData.lastX or not npcData.lastY then return end
     
+    local x = npcData.lastX
+    local y = npcData.lastY
     local z = npcData.lastZ or 0
     
     DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Targeted Square: " .. x .. "," .. y .. "," .. z)

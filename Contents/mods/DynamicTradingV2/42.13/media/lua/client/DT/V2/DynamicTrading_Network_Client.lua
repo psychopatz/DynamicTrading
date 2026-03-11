@@ -108,9 +108,9 @@ local function OnSharedServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
     
     if command == "TransactionResult" then
-        DynamicTrading.Log("DTV2", "Network", "Client", >>> OnSharedServerCommand RECEIVED TransactionResult")
-        DynamicTrading.Log("DTV2", "Network", "Client",   success=" .. tostring(args.success) .. ", isBuy=" .. tostring(args.isBuy) .. ", item=" .. tostring(args.itemName))
-        DynamicTrading.Log("DTV2", "Network", "Client",   DT_TradingWindow=" .. tostring(DT_TradingWindow) .. ", instance=" .. tostring(DT_TradingWindow and DT_TradingWindow.instance))
+        DynamicTrading.Log("DTV2", "Network", "Client", ">>> OnSharedServerCommand RECEIVED TransactionResult")
+        DynamicTrading.Log("DTV2", "Network", "Client", "  success=" .. tostring(args.success) .. ", isBuy=" .. tostring(args.isBuy) .. ", item=" .. tostring(args.itemName))
+        DynamicTrading.Log("DTV2", "Network", "Client", "  DT_TradingWindow=" .. tostring(DT_TradingWindow) .. ", instance=" .. tostring(DT_TradingWindow and DT_TradingWindow.instance))
         
         if DT_TradingWindow and DT_TradingWindow.instance then
             local ui = DT_TradingWindow.instance
@@ -146,7 +146,7 @@ local function OnSharedServerCommand(module, command, args)
                     local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, diagArgs)
                     
                     if DynamicTrading.Debug then
-                        DynamicTrading.Log("DTV2", "Network", "Client", Dialogue Debug:")
+                        DynamicTrading.Log("DTV2", "Network", "Client", "Dialogue Debug:")
                         DynamicTrading.Log("DTV2", "Network", "Debug", "  - Trader Archetype: " .. tostring(trader.archetype))
                         DynamicTrading.Log("DTV2", "Network", "Debug", "  - isBuy: " .. tostring(isBuy))
                         DynamicTrading.Log("DTV2", "Network", "Debug", "  - Generated Msg: " .. tostring(npcMsg))
@@ -186,7 +186,7 @@ local function OnStockUpdated(traderID)
         local ui = DT_TradingWindow.instance
         -- Only refresh if this update is for our current trader
         if ui.traderID == traderID then
-            DynamicTrading.Log("DTV2", "Network", "Client", Stock updated for current trader, refreshing UI")
+            DynamicTrading.Log("DTV2", "Network", "Client", "Stock updated for current trader, refreshing UI")
             ui:populateList()
         end
     end

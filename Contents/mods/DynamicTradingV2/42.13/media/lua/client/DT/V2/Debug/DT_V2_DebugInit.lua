@@ -14,8 +14,8 @@ require "DT/Common/UI/Debug/Shared/DT_NPCLocator"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugMenu"
 require "DT/Common/UI/Debug/Merchants/StockManager/DT_MerchantDebugWindow"
 
-DynamicTrading.Log("DTV2", "Init", "Debug", Debug Tools Initialized (Version: V2)")
-DynamicTrading.Log("DTV2", "Init", "Debug", Network Module: " .. DT_DebugNetworkAdapter.getModuleName())
-DynamicTrading.Log("DTV2", "Init", "Debug", - Faction Debug: Available via context menu")
-DynamicTrading.Log("DTV2", "Init", "Debug", - Merchant Debug: Available via context menu")
-DynamicTrading.Log("DTV2", "Init", "Debug", - NPC Locator: Integrated into Faction Debug")
+DynamicTrading.Log("DTV2", "Init", "Debug", "Debug Tools Initialized (Version: V2)")
+DynamicTrading.Log("DTV2", "Init", "Debug", "Network Module: " .. DT_DebugNetworkAdapter.getModuleName())
+DynamicTrading.Log("DTV2", "Init", "Debug", "- Faction Debug: Available via context menu")
+DynamicTrading.Log("DTV2", "Init", "Debug", "- Merchant Debug: Available via context menu")
+DynamicTrading.Log("DTV2", "Init", "Debug", "- NPC Locator: Integrated into Faction Debug")

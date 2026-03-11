@@ -39,7 +39,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
         local uuid = args.uuid
         local outfitID = args.outfitID
         
-        DynamicTrading.Log("DTV2", "NPC", "Sync", Received SyncNPC for: " .. (args.npcData.name or uuid))
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncNPC for: " .. (args.npcData.name or uuid))
         
         DTNPCClient.CacheData(uuid, outfitID, args.npcData)
         
@@ -68,9 +68,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
                 }
             end
             
-            DynamicTrading.Log("DTV2", "NPC", "Sync", Applied visuals to zombie: " .. uuid)
+            DynamicTrading.Log("DTV2", "NPC", "Sync", "Applied visuals to zombie: " .. uuid)
         else
-            DynamicTrading.Log("DTV2", "NPC", "Sync", Zombie not in world yet, cached for later: " .. uuid)
+            DynamicTrading.Log("DTV2", "NPC", "Sync", "Zombie not in world yet, cached for later: " .. uuid)
         end
         return
     end
@@ -161,7 +161,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
     if command == "SyncAllNPCs" then
         if not args or not args.npcs then return end
         
-        DynamicTrading.Log("DTV2", "NPC", "Sync", Received SyncAllNPCs. Count: " .. DTNPCClient.GetTableSize(args.npcs))
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncAllNPCs. Count: " .. DTNPCClient.GetTableSize(args.npcs))
         
         for uuid, npcData in pairs(args.npcs) do
             local outfitID = npcData.currentOutfitID
@@ -229,7 +229,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
             metadataCount = metadataCount + 1
         end
 
-        DynamicTrading.Log("DTV2", "NPC", "Sync", Received SyncNearbyNPCs: nearby=" .. nearbyCount .. ", metadata=" .. metadataCount)
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncNearbyNPCs: nearby=" .. nearbyCount .. ", metadata=" .. metadataCount)
         return
     end
 end
@@ -241,7 +241,7 @@ function DTNPCClient.RequestInitialSync(playerNum)
     local player = getSpecificPlayer(playerNum)
     if not player then return end
     
-    DynamicTrading.Log("DTV2", "NPC", "Sync", Requesting initial sync for player: " .. player:getUsername())
+    DynamicTrading.Log("DTV2", "NPC", "Sync", "Requesting initial sync for player: " .. player:getUsername())
     sendClientCommand(player, "DTNPC", "RequestNearbySync", {
         x = player:getX(),
         y = player:getY(),

@@ -24,7 +24,7 @@ function DTNPCManager.RespawnDebug.Log(key, message, force)
     local now = getGameTime():getWorldAgeHours()
     local last = RESP_DEBUG.lastByKey[key] or -math.huge
     if force or (now - last) >= RESP_DEBUG.intervalHours then
-        DynamicTrading.Log("DTV2", "NPC", "Debug", " .. message)
+        DynamicTrading.Log("DTV2", "NPC", "Debug", "" .. message)
         RESP_DEBUG.lastByKey[key] = now
     end
 end
@@ -41,4 +41,4 @@ function DTNPCManager.RespawnDebug.ClearHistory()
     RESP_DEBUG.lastByKey = {}
 end
 
-DynamicTrading.Log("DTV2", "Init", NPC", "Loaded successfully")
+DynamicTrading.Log("DTV2", "Init", "NPC", "Loaded successfully")

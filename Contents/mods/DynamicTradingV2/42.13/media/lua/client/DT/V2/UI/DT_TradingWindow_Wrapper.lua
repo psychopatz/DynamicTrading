@@ -442,9 +442,9 @@ end
 local originalToggle = DT_TradingWindow.ToggleWindow
 
 function DT_TradingWindow.ToggleWindowV2(traderID, archetype, npcRef)
-    DynamicTrading.Log("DTV2", "Trade", "Wrapper",  ToggleWindowV2 called")
-    DynamicTrading.Log("DTV2", "Trade", "Wrapper",  TraderID: " .. tostring(traderID))
-    DynamicTrading.Log("DTV2", "Trade", "Wrapper",  Archetype: " .. tostring(archetype))
+    DynamicTrading.Log("DTV2", "Trade", "Wrapper", "ToggleWindowV2 called")
+    DynamicTrading.Log("DTV2", "Trade", "Wrapper", "TraderID: " .. tostring(traderID))
+    DynamicTrading.Log("DTV2", "Trade", "Wrapper", "Archetype: " .. tostring(archetype))
     
     -- Store context for provider methods
     V2_DataProvider._currentTraderID = traderID

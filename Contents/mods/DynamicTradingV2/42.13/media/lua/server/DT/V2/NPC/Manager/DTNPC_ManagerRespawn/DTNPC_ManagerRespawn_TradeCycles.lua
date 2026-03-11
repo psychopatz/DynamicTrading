@@ -65,7 +65,7 @@ end
 function DTNPCManager.StartTradeMission(uuid, forceImmediate)
     local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
     if not soul then 
-        DynamicTrading.Log("DTV2", "NPC", "Logic", ERROR: StartTradeMission failed - Soul not found for " .. tostring(uuid))
+        DynamicTrading.Log("DTV2", "NPC", "Logic", "ERROR: StartTradeMission failed - Soul not found for " .. tostring(uuid))
         return 
     end
     
@@ -76,11 +76,11 @@ function DTNPCManager.StartTradeMission(uuid, forceImmediate)
         walkHours = 0.02 -- Force Trade still simulates travel (approx 1.2 mins) but at a priority speed
     end
     
-    DynamicTrading.Log("DTV2", "NPC", "Logic", STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)
-    DynamicTrading.Log("DTV2", "NPC", "Logic", | Travel Time: " .. walkHours .. "h. Status: Away. Target: Trading")
+    DynamicTrading.Log("DTV2", "NPC", "Logic", "STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)
+    DynamicTrading.Log("DTV2", "NPC", "Logic", "| Travel Time: " .. walkHours .. "h. Status: Away. Target: Trading")
     
     -- Centralized transition
     DTNPCManager.SetNPCStatus(uuid, "Away", currentHours + walkHours, "Trading")
 end
 
-DynamicTrading.Log("DTV2", "Init", NPC", "Loaded successfully")
+DynamicTrading.Log("DTV2", "Init", "NPC", "Loaded successfully")

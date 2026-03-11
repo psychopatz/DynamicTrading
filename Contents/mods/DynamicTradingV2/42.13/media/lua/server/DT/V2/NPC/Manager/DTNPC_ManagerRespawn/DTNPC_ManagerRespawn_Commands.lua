@@ -23,4 +23,4 @@ end
 
 Events.OnClientCommand.Add(onClientCommand)
 
-DynamicTrading.Log("DTV2", "Init", NPC", "DTNPC_ManagerRespawn_Commands Loaded successfully")
+DynamicTrading.Log("DTV2", "Init", "NPC", "DTNPC_ManagerRespawn_Commands Loaded successfully")
