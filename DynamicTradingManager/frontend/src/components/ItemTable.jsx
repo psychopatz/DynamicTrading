@@ -58,7 +58,13 @@ const ItemTable = () => {
                                 <TableCell>{item.id}</TableCell>
                                 <TableCell>{item.name}</TableCell>
                                 <TableCell>
-                                    {item.is_blacklisted ? '🚫 Blacklisted' : '✅ Active'}
+                                    {item.is_blacklisted ? (
+                                        <span style={{ color: '#f44336' }}>🚫 Blacklisted</span>
+                                    ) : item.is_registered ? (
+                                        <span style={{ color: '#4caf50' }}>✅ Registered</span>
+                                    ) : (
+                                        <span style={{ color: '#ff9800' }}>⏳ Unregistered</span>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         ))}

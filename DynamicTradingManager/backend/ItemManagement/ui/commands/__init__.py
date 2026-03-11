@@ -21,6 +21,7 @@ from .items import (
     add,
     show_stats,
     delete_all_items,
+    get_registered_items,
 )
 
 from .blacklist import (
@@ -58,6 +59,7 @@ __all__ = [
     'add',
     'show_stats',
     'delete_all_items',
+    'get_registered_items',
     
     # Blacklist commands
     'show_blacklist_stats',

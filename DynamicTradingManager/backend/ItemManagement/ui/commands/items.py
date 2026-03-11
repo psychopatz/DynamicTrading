@@ -73,7 +73,7 @@ def show_stats(vanilla_items):
     print()
 
 
-def delete_all_items():
+def delete_all_items(force=False):
     """Delete all registered items from Lua files (reset item registries)"""
     print("\n" + "=" * 60)
     print("🗑️  DELETE ALL ITEMS - Reset Item Registries")
@@ -99,7 +99,11 @@ def delete_all_items():
     print("\n⚠️  WARNING: This will permanently delete all registered items!")
     print("   All Lua files will be reset to empty state.")
     
-    confirm = input("\n❓ Type 'DELETE' to confirm: ").strip()
+    if force:
+        print("\n⚡ Force mode enabled. Skipping confirmation.")
+        confirm = "DELETE"
+    else:
+        confirm = input("\n❓ Type 'DELETE' to confirm: ").strip()
     
     if confirm != "DELETE":
         print("\n❌ Deletion cancelled.")

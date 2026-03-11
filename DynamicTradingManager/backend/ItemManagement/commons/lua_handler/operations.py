@@ -95,12 +95,15 @@ def get_registered_items():
     items_dir = Path(MOD_ITEMS_DIR)
     lua_files = list(items_dir.rglob('*.lua'))
 
-    pattern = r'item="Base\.(\w+)"'
+    # Filter out lines starting with -- (comments)
+    pattern = r'^\s*\{\s*item="Base\.(\w+)"'
     for lua_file in lua_files:
         try:
             with open(lua_file, 'r', encoding='utf-8') as handle:
-                content = handle.read()
-                registered.update(re.findall(pattern, content))
+                for line in handle:
+                    match = re.search(pattern, line)
+                    if match:
+                        registered.add(match.group(1))
         except Exception as error:
             print(f'⚠️  Error reading {lua_file.name}: {error}')
 

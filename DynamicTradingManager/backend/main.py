@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -19,9 +19,20 @@ logger = logging.getLogger(__name__)
 try:
     from ItemManagement import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR
     from ItemManagement.commons.vanilla_loader import get_property_value
-    from ItemManagement.ui.commands import update as run_update, add as run_add
+    from ItemManagement.ui.commands import (
+        update as run_update, 
+        add as run_add,
+        delete_all_items,
+        list_properties,
+        find_property,
+        analyze_properties,
+        analyze_spawns,
+        rarity_stats,
+        get_registered_items
+    )
     from ItemManagement.ui.stats import count_registered_items, find_invalid_blacklist_ids
     from ItemManagement.parse import load_blacklist, is_item_blacklisted
+    from ItemManagement.task_manager import manager
 except ImportError as e:
     logger.error(f"Error importing ItemManagement modules: {e}")
     sys.exit(1)
@@ -48,15 +59,17 @@ class StatsResponse(BaseModel):
     coverage: float
     notifications: List[str]
 
-class ItemBrief(BaseModel):
-    id: str
-    name: str
-    category: Optional[str]
-    is_registered: bool
-    is_blacklisted: bool
-
 class AddRequest(BaseModel):
     batch_size: int = 50
+
+class FindPropertyRequest(BaseModel):
+    property_name: str
+    value_filter: Optional[str] = None
+    chunk_limit: Optional[int] = 20
+
+class ListPropertiesRequest(BaseModel):
+    min_usage: int = 1
+    chunk_limit: Optional[int] = 20
 
 # Global state (cache items)
 cached_vanilla_items = None
@@ -76,8 +89,6 @@ async def get_stats():
     coverage = (registered / total_vanilla * 100) if total_vanilla > 0 else 0
     
     notifications = []
-    # Note: stats.py names might vary, using what was in original main.py
-    # or what is discovered in the new src
     invalid_blacklist = find_invalid_blacklist_ids()
     if invalid_blacklist:
         notifications.append(f"{len(invalid_blacklist)} invalid item ID(s) in blacklist")
@@ -92,46 +103,111 @@ async def get_stats():
 
 @app.get("/api/items")
 async def list_items(search: Optional[str] = None, limit: int = 100, offset: int = 0):
-    logger.info(f"Fetching items: search={search}, limit={limit}, offset={offset}")
     try:
         items = get_items()
+        registered_ids = get_registered_items() # Full set from Lua files
         
         results = []
         item_keys = list(items.keys())
+        
+        # Simple search
+        if search:
+            search = search.lower()
+            item_keys = [k for k in item_keys if search in k.lower()]
+            
         for item_id in item_keys[offset:offset+limit]:
             item_props = items[item_id]
-            is_bl, _ = is_item_blacklisted(item_id, {}) # Empty dict for props if not parsed yet
+            is_bl, _ = is_item_blacklisted(item_id, {})
             results.append({
                 "id": item_id,
                 "name": get_property_value(item_props, "DisplayName", item_id) or item_id,
-                "is_blacklisted": bool(is_bl)
+                "is_blacklisted": bool(is_bl),
+                "is_registered": item_id in registered_ids
             })
         
         return {
-            "total": len(items),
+            "total": len(item_keys),
             "items": results
         }
     except Exception as e:
         logger.error(f"Error in list_items: {e}")
         return {"total": 0, "items": [], "error": str(e)}
 
+# --- Task Routes ---
+
+@app.get("/api/tasks")
+async def list_tasks():
+    return manager.list_tasks()
+
+@app.get("/api/tasks/{task_id}")
+async def get_task_status(task_id: str):
+    task = manager.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return task
+
+@app.get("/api/tasks/{task_id}/logs")
+async def get_task_logs(task_id: str, since: int = 0):
+    return manager.get_logs(task_id, since)
+
+# --- Action Routes (now using TaskManager) ---
+
 @app.post("/api/actions/update")
-async def trigger_update(background_tasks: BackgroundTasks):
-    def update_task():
-        items = get_items()
-        run_update(items)
-        
-    background_tasks.add_task(update_task)
-    return {"status": "update_started"}
+async def trigger_update():
+    items = get_items()
+    task_id = manager.create_task("Update Items", run_update, items)
+    return {"task_id": task_id}
 
 @app.post("/api/actions/add")
-async def trigger_add(request: AddRequest, background_tasks: BackgroundTasks):
-    def add_task():
-        items = get_items()
-        run_add(items, request.batch_size)
-        
-    background_tasks.add_task(add_task)
-    return {"status": "add_started", "batch_size": request.batch_size}
+async def trigger_add(request: AddRequest):
+    items = get_items()
+    task_id = manager.create_task(f"Add Items (Batch: {request.batch_size})", run_add, items, request.batch_size)
+    return {"task_id": task_id}
+
+@app.post("/api/actions/reset")
+async def trigger_reset():
+    task_id = manager.create_task("Reset Item Registry", delete_all_items, force=True)
+    return {"task_id": task_id}
+
+@app.post("/api/actions/list-properties")
+async def trigger_list_properties(request: ListPropertiesRequest):
+    task_id = manager.create_task(
+        "List Properties", 
+        list_properties, 
+        VANILLA_SCRIPTS_DIR, 
+        request.min_usage, 
+        request.chunk_limit
+    )
+    return {"task_id": task_id}
+
+@app.post("/api/actions/find-property")
+async def trigger_find_property(request: FindPropertyRequest):
+    task_id = manager.create_task(
+        f"Find Property: {request.property_name}", 
+        find_property, 
+        VANILLA_SCRIPTS_DIR, 
+        request.property_name, 
+        request.value_filter, 
+        request.chunk_limit
+    )
+    return {"task_id": task_id}
+
+@app.post("/api/actions/analyze-spawns")
+async def trigger_analyze_spawns():
+    task_id = manager.create_task("Analyze Spawns", analyze_spawns, DISTRIBUTIONS_DIR, full_output=True)
+    return {"task_id": task_id}
+
+@app.post("/api/actions/rarity-stats")
+async def trigger_rarity_stats():
+    task_id = manager.create_task("Rarity Statistics", rarity_stats, DISTRIBUTIONS_DIR)
+    return {"task_id": task_id}
+
+@app.post("/api/actions/generate-docs")
+async def trigger_generate_docs():
+    task_id = manager.create_task("Generate Property Docs", analyze_properties, VANILLA_SCRIPTS_DIR)
+    return {"task_id": task_id}
+
+# --- Blacklist ---
 
 @app.get("/api/blacklist")
 async def get_blacklist():

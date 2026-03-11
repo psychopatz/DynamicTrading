@@ -9,22 +9,8 @@ import re
 
 def count_registered_items():
     """Count items currently registered in Lua files"""
-    mod_dir = Path(MOD_ITEMS_DIR)
-    if not mod_dir.exists():
-        return 0
-    
-    total_items = 0
-    pattern = re.compile(r'\["([^"]+)"\]\s*=\s*\{')
-    
-    for lua_file in mod_dir.rglob("*.lua"):
-        try:
-            content = lua_file.read_text(encoding='utf-8')
-            matches = pattern.findall(content)
-            total_items += len(matches)
-        except Exception:
-            continue
-    
-    return total_items
+    from ..commons.lua_handler import get_registered_items
+    return len(get_registered_items())
 
 
 def display_notifications():

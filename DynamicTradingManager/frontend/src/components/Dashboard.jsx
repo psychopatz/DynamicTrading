@@ -1,65 +1,124 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Paper, Typography, Box, Alert } from '@mui/material';
+import { 
+  Box, 
+  Container, 
+  Grid, 
+  Paper, 
+  Typography, 
+  Divider,
+  ThemeProvider,
+  createTheme,
+  CssBaseline
+} from '@mui/material';
+import ItemTable from './ItemTable';
+import Actions from './Actions';
+import TaskConsole from './TaskConsole';
 import { getStats } from '../services/api';
 
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: { main: '#007acc' },
+    secondary: { main: '#6a1b9a' },
+    background: { default: '#0a0a0a', paper: '#121212' },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h4: { fontWeight: 800, letterSpacing: '-0.02em' },
+  }
+});
+
 const Dashboard = () => {
-    const [stats, setStats] = useState(null);
-    const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    total_vanilla: 0,
+    registered: 0,
+    unregistered: 0,
+    coverage: 0,
+    notifications: []
+  });
+  const [activeTaskId, setActiveTaskId] = useState(null);
 
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await getStats();
-                setStats(response.data);
-            } catch (err) {
-                setError("Failed to connect to backend");
-            }
-        };
-        fetchStats();
-        const interval = setInterval(fetchStats, 5000);
-        return () => clearInterval(interval);
-    }, []);
+  const fetchStats = async () => {
+    try {
+      const res = await getStats();
+      setStats(res.data);
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  };
 
-    if (error) return <Alert severity="error">{error}</Alert>;
-    if (!stats) return <Typography>Loading stats...</Typography>;
+  useEffect(() => {
+    fetchStats();
+    const interval = setInterval(fetchStats, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-    return (
-        <Box sx={{ flexGrow: 1, mt: 3 }}>
-            <Grid container spacing={3}>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Typography variant="h6">Total Vanilla</Typography>
-                        <Typography variant="h4">{stats.total_vanilla}</Typography>
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: 'success.light' }}>
-                        <Typography variant="h6">Registered</Typography>
-                        <Typography variant="h4">{stats.registered}</Typography>
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: 'warning.light' }}>
-                        <Typography variant="h6">Unregistered</Typography>
-                        <Typography variant="h4">{stats.unregistered}</Typography>
-                    </Paper>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                    <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Typography variant="h6">Coverage</Typography>
-                        <Typography variant="h4">{stats.coverage}%</Typography>
-                    </Paper>
-                </Grid>
-                {stats.notifications && stats.notifications.length > 0 && (
-                    <Grid item xs={12}>
-                        {stats.notifications.map((note, idx) => (
-                            <Alert key={idx} severity="warning" sx={{ mb: 1 }}>{note}</Alert>
-                        ))}
-                    </Grid>
-                )}
+  return (
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <Box sx={{ minHeight: '100vh', py: 4, px: 2 }}>
+        <Container maxWidth="xl">
+          <Typography variant="h4" gutterBottom sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ width: 40, height: 40, bgcolor: 'primary.main', borderRadius: 1 }} />
+            Dynamic Trading Manager
+          </Typography>
+
+          <Grid container spacing={3}>
+            {/* Stats Cards */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 3, textAlign: 'center', borderTop: '4px solid #007acc' }}>
+                <Typography color="textSecondary" variant="overline">Total Vanilla</Typography>
+                <Typography variant="h3">{stats.total_vanilla.toLocaleString()}</Typography>
+              </Paper>
             </Grid>
-        </Box>
-    );
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 3, textAlign: 'center', borderTop: '4px solid #4caf50' }}>
+                <Typography color="textSecondary" variant="overline">Registered</Typography>
+                <Typography variant="h3" sx={{ color: '#4caf50' }}>{stats.registered.toLocaleString()}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 3, textAlign: 'center', borderTop: '4px solid #ff9800' }}>
+                <Typography color="textSecondary" variant="overline">Unregistered</Typography>
+                <Typography variant="h3" sx={{ color: '#ff9800' }}>{stats.unregistered.toLocaleString()}</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 3, textAlign: 'center', borderTop: '4px solid #9c27b0' }}>
+                <Typography color="textSecondary" variant="overline">Coverage</Typography>
+                <Typography variant="h3" sx={{ color: '#9c27b0' }}>{stats.coverage}%</Typography>
+              </Paper>
+            </Grid>
+
+            {/* Actions & Tools */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 0, overflow: 'hidden' }}>
+                <Actions onTaskStarted={setActiveTaskId} />
+              </Paper>
+            </Grid>
+
+            {/* Item Table */}
+            <Grid item xs={12}>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>Vanilla Item Database</Typography>
+                <Divider sx={{ mb: 2 }} />
+                <ItemTable />
+              </Paper>
+            </Grid>
+          </Grid>
+        </Container>
+
+        {/* Real-time Task Console */}
+        <TaskConsole 
+            taskId={activeTaskId} 
+            onClose={() => {
+                setActiveTaskId(null);
+                fetchStats(); // Update stats when console closes (task likely finished)
+            }} 
+        />
+      </Box>
+    </ThemeProvider>
+  );
 };
 
 export default Dashboard;
