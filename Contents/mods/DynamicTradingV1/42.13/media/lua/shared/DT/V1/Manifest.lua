@@ -31,7 +31,7 @@ if isClient() then
     require "DT/V1/RadioInteraction"  -- Radio Scanning Logic
 
     -- USER INTERFACE
-    require "DT/V1/UI/DT_TradingWindow_Wrapper"     -- The Shop Window (Wrapper)
+    require "DT/V1/Radio/DT_V1_TradingWrapper"      -- Radio Trading Window (Wrapper)
     require "DT/V1/DynamicTradingInfoUI"            -- The Market Info Window
     require "DT/V1/UI/DT_SidebarButton"     -- The Sidebar Button
 end

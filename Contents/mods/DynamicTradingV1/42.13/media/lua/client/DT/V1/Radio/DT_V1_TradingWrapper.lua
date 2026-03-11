@@ -231,6 +231,13 @@ function V1_Radio_DataProvider:lockItem(itemID)
     modData.DT_LockedItems[itemID] = true
 end
 
+function V1_Radio_DataProvider:getMasterKey(fullType)
+    for k, v in pairs(DynamicTrading.Config.MasterList) do
+        if v.item == fullType then return k end
+    end
+    return nil
+end
+
 function V1_Radio_DataProvider:openHub(trader, parentUI)
     if parentUI then parentUI:close() end
     if DT_V1_Dialogue_Hub then
