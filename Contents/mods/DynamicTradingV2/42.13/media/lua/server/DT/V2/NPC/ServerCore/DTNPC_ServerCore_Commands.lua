@@ -87,7 +87,7 @@ local function onClientCommand(module, command, player, args)
                            DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
                         end
 
-                        DTNPC.AttachBrain(obj, npcData)
+                        DTNPC.AttachData(obj, npcData)
                         if DTNPCManager then DTNPCManager.Register(obj, npcData) end
                         
                         DTNPCServerCore.SyncToAllClients(obj, npcData)
@@ -215,7 +215,7 @@ local function onClientCommand(module, command, player, args)
             
             local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
             if zombie then
-                DTNPC.AttachBrain(zombie, serverBrain)
+                DTNPC.AttachData(zombie, serverBrain)
                 DTNPCServerCore.SyncToAllClients(zombie, serverBrain)
                 
                 if shouldBroadcast then

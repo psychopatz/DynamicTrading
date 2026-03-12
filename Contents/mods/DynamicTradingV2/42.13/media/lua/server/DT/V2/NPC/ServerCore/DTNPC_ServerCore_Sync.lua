@@ -126,6 +126,11 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData)
     if not zombie or not npcData then return end
     
     local uuid = npcData.uuid
+    local shouldUpdate, tier = DTNPC_DistanceFrequency.ShouldUpdateNPC(uuid)
+    if not shouldUpdate then
+        return
+    end
+
     local posData = {
         uuid = uuid,
         outfitID = zombie:getPersistentOutfitID(),
@@ -133,7 +138,8 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData)
         y = zombie:getY(),
         z = zombie:getZ(),
         health = zombie:getHealth(),
-        state = npcData.state
+        state = npcData.state,
+        tier = tier
     }
     
     if isServer() then

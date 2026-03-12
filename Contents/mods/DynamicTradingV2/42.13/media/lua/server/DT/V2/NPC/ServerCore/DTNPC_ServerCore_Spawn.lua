@@ -90,7 +90,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     
     modData.DTNPC_UUID = npcData.uuid
 
-    DTNPC.AttachBrain(zombie, npcData)
+    DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)
     
     modData.DTNPCVisualID = npcData.visualID

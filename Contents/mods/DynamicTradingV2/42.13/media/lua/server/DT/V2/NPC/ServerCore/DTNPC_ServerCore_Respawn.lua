@@ -119,7 +119,7 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     npcData.master = nil
     npcData.masterID = nil
     
-    DTNPC.AttachBrain(zombie, npcData)
+    DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)
     
     modData.DTNPCVisualID = npcData.visualID

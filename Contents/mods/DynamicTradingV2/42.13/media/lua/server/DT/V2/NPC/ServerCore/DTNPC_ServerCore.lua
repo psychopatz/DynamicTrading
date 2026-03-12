@@ -8,6 +8,42 @@ DTNPCServerCore = DTNPCServerCore or {}
 
 -- Required external dependencies
 require "DT/V2/NPC/Sys/DTNPC_Generator"
+require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
+require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"
+
+if not DTNPC_DistanceFrequency then
+    DynamicTrading.Log("DTV2", "NPC", "Warn", "DTNPC_DistanceFrequency is nil, creating fallback")
+    DTNPC_DistanceFrequency = {
+        NPCTimers = {},
+        GetTierForDistance = function() return 4 end,
+        GetUpdateFrequencyForDistance = function() return 6 end,
+        InitializeNPC = function() end,
+        ShouldUpdateNPC = function() return true end,
+        UpdateNPC = function() end,
+        RemoveNPC = function() end,
+        Clear = function() end,
+        GetUpdateStats = function() return {} end
+    }
+end
+
+if not DTNPC_SpatialHash then
+    DynamicTrading.Log("DTV2", "NPC", "Warn", "DTNPC_SpatialHash is nil, creating fallback")
+    DTNPC_SpatialHash = {
+        Grid = {},
+        NPCToCell = {},
+        IsInitialized = false,
+        RebuildFromRoster = function() end,
+        InsertNPC = function() end,
+        RemoveNPC = function() end,
+        GetNPCsInRadius = function() return {} end,
+        GetNearestNPCs = function() return {} end,
+        CleanupEmptyCells = function() end,
+        Clear = function() end,
+        GetGridStats = function() return {} end,
+        ClearDirtyFlags = function() end,
+        GetDirtyCells = function() return {} end
+    }
+end
 
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
