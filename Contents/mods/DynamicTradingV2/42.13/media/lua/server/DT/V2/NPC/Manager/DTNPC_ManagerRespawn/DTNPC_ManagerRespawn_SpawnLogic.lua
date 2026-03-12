@@ -112,21 +112,30 @@ function DTNPCManager.CheckRosterSpawns()
                                     
                                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                                     if npcData then
-                                        npcData.lastX = targetX
-                                        npcData.lastY = targetY
-                                        npcData.lastZ = targetZ
-                                        npcData.status = status
-                                        
-                                        local zombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
-                                        if zombie then
+                                        -- [NEW] Safety Check: Check if already physically in world before spawning clone
+                                        local existingZombie = DTNPCServerCore.FindZombieByUUID(uuid)
+                                        if existingZombie then
+                                            DynamicTrading.Log("DTV2", "NPC", "Logic", "NPC " .. (npcData.name or uuid) .. " already found in world. Reclaiming instead of spawning duplicate.")
+                                            DTNPCManager.Register(existingZombie, npcData)
                                             registry.spawnRetryTime = nil
-                                            
-                                            -- Initialize distance frequency tracking
-                                            DTNPC_DistanceFrequency.InitializeNPC(uuid)
-                                            
                                             spawnedCount = spawnedCount + 1
                                         else
-                                            registry.spawnRetryTime = currentHours + 0.1
+                                            npcData.lastX = targetX
+                                            npcData.lastY = targetY
+                                            npcData.lastZ = targetZ
+                                            npcData.status = status
+                                            
+                                            local zombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
+                                            if zombie then
+                                                registry.spawnRetryTime = nil
+                                                
+                                                -- Initialize distance frequency tracking
+                                                DTNPC_DistanceFrequency.InitializeNPC(uuid)
+                                                
+                                                spawnedCount = spawnedCount + 1
+                                            else
+                                                registry.spawnRetryTime = currentHours + 0.1
+                                            end
                                         end
                                     end
                                 end

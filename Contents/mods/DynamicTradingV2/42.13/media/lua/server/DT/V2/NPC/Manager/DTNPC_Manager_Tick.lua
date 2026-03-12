@@ -123,6 +123,16 @@ function DTNPCManager.OnTick()
             if uuid then
                 local savedData = DTNPCManager.Data[uuid]
                 
+                -- [NEW] Active Adoption: If physical NPC exists but is NOT in runtime Data (e.g. after restart)
+                if not savedData and DynamicTrading_Roster then
+                    local rosterData = DynamicTrading_Roster.GetSoul(uuid)
+                    if rosterData then
+                        DynamicTrading.Log("DTV2", "NPC", "Adopt", "Active Adoption: Found existing NPC in world, reclaiming: " .. (rosterData.name or uuid))
+                        DTNPCManager.Register(zombie, rosterData)
+                        savedData = DTNPCManager.Data[uuid] -- Refresh local reference
+                    end
+                end
+
                 if savedData then
                     -- 1. Sync Outfit ID (for outfitID-to-uuid mapping)
                     local currentOutfitID = zombie:getPersistentOutfitID()
