@@ -3,7 +3,7 @@
 -- =============================================================================
 require "UI/DT_ConversationUI"
 require "DT/V2/NPC/DTNPC_TradingHandler"
-require "DT/V2/UI/DT_TradingWindow_Wrapper"
+require "DT/V2/UI/TradingWindowWrapper/TradingWindowWrapper"
 require "DT/V2/Utils/DT_V2_OptionsManager"
 
 local DEBUG_PREFIX = "[DT-V2-Hub]"

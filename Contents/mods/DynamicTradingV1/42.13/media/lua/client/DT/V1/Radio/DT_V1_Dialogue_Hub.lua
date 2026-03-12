@@ -6,7 +6,7 @@
 -- =============================================================================
 
 require "UI/DT_ConversationUI"
-require "DT/V1/Radio/DT_V1_TradingWrapper"
+require "DT/V1/Radio/RadioTradingWrapper/RadioTradingWrapper"
 
 local DEBUG_PREFIX = "[DT-V1-Hub]"
 
