@@ -286,11 +286,20 @@ async def get_blacklist():
 # --- Debug / Logs ---
 
 @app.get("/api/debug/logs")
-async def get_debug_logs(limit: int = 500, only_dt: bool = False, offset: Optional[int] = None):
+async def get_debug_logs(
+    limit: int = 500, 
+    only_dt: bool = False, 
+    offset: Optional[int] = None,
+    levels: Optional[str] = None,
+    systems: Optional[str] = None
+):
     try:
+        level_list = levels.split(",") if levels else None
+        system_list = systems.split(",") if systems else None
+        
         if offset is not None:
-            return debug_parser.get_new_lines(offset, only_dt=only_dt)
-        return debug_parser.get_last_n_lines(lines=limit, only_dt=only_dt)
+            return debug_parser.get_new_lines(offset, only_dt=only_dt, levels=level_list, systems=system_list)
+        return debug_parser.get_last_n_lines(lines=limit, only_dt=only_dt, levels=level_list, systems=system_list)
     except Exception as e:
         logger.error(f"Error fetching debug logs: {e}")
         raise HTTPException(status_code=500, detail=str(e))

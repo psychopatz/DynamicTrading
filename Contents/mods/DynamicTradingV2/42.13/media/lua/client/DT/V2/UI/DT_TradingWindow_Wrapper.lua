@@ -141,6 +141,7 @@ function V2_DataProvider:getTrader(traderID, archetype)
         factionID = stock.factionID,
         identitySeed = stock.identitySeed,
         gender = stock.gender or "Male",
+        returnTime = stock.returnTime,
         -- V2-specific: reference to NPC for distance checks
         npcRef = self._currentNPC
     }

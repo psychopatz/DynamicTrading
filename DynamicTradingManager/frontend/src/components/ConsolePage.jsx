@@ -22,11 +22,16 @@ const ConsolePage = () => {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [onlyDT, setOnlyDT] = useState(false);
+  const [selectedLevels, setSelectedLevels] = useState(['Error', 'Warning', 'Lua', 'General']);
+  const [selectedSystems, setSelectedSystems] = useState([]); // Empty means all if onlyDT is false, but we'll manage it
   const [autoScroll, setAutoScroll] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedIndices, setSelectedIndices] = useState(new Set());
   const [isDragging, setIsDragging] = useState(false);
   const [dragAction, setDragAction] = useState(null); // 'select' or 'deselect'
+  
+  const levels_options = ['Error', 'Warning', 'Lua', 'General'];
+  const systems_options = ['NPC', 'Trade', 'Economy', 'Events', 'Network', 'Core', 'UI'];
   
   const listRef = useRef(null);
   const nextOffsetRef = useRef(null);
@@ -37,7 +42,9 @@ const ConsolePage = () => {
       const params = {
         limit: isInitial ? 1000 : 500,
         only_dt: onlyDT,
-        offset: isInitial ? null : nextOffsetRef.current
+        offset: isInitial ? null : nextOffsetRef.current,
+        levels: selectedLevels.join(','),
+        systems: selectedSystems.join(',')
       };
 
       const response = await getDebugLogs(params);
@@ -68,7 +75,7 @@ const ConsolePage = () => {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [onlyDT, isPaused]);
+  }, [onlyDT, isPaused, selectedLevels, selectedSystems]);
 
   // Handle auto-scroll
   useEffect(() => {
@@ -145,8 +152,10 @@ const ConsolePage = () => {
     if (!type) return '#e0e0e0';
     switch (type.toLowerCase()) {
       case 'error': return '#ff5252';
-      case 'warning': return '#ffb142';
-      case 'lua': return '#4ade80';
+      case 'warning': 
+      case 'warn': return '#ffb142';
+      case 'lua': 
+      case 'log': return '#4ade80';
       default: return '#e0e0e0';
     }
   };
@@ -218,13 +227,32 @@ const ConsolePage = () => {
           >
             {(log.type || 'General').toUpperCase()}:
           </Typography>
+          {log.dt_meta && (
+            <Typography 
+              component="span" 
+              sx={{ 
+                color: '#60a5fa', 
+                fontSize: '0.75rem', 
+                mr: 1,
+                fontFamily: 'inherit',
+                flexShrink: 0,
+                bgcolor: 'rgba(96, 165, 250, 0.1)',
+                px: 0.5,
+                borderRadius: '2px',
+                border: '1px solid rgba(96, 165, 250, 0.2)'
+              }}
+            >
+              {log.dt_meta.system}/{log.dt_meta.specific}
+            </Typography>
+          )}
           <Typography 
             component="span" 
             sx={{ 
               color: '#d4d4d4',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              fontFamily: 'inherit'
+              fontFamily: 'inherit',
+              whiteSpace: 'pre-wrap'
             }}
           >
             {log.message}
@@ -236,12 +264,15 @@ const ConsolePage = () => {
 
   return (
     <Box sx={{ height: 'calc(100vh - 160px)', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
         <Typography variant="h4">System Console ({logs.length})</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#2d2d2d', p: 1, borderRadius: 2 }}>
           <FormControlLabel
+            sx={{ m: 0, mr: 1 }}
             control={
               <Checkbox 
+                size="small"
                 checked={onlyDT} 
                 onChange={(e) => {
                   setOnlyDT(e.target.checked);
@@ -251,16 +282,82 @@ const ConsolePage = () => {
                 }} 
               />
             }
-            label="DT Only"
+            label={<Typography fontSize="0.8rem">DT Only</Typography>}
           />
+          <Box sx={{ height: '24px', width: '1px', bgcolor: '#444', mx: 1 }} />
+          
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            {levels_options.map(level => (
+              <IconButton
+                key={level}
+                size="small"
+                onClick={() => {
+                  setSelectedLevels(prev => 
+                    prev.includes(level) ? prev.filter(l => l !== level) : [...prev, level]
+                  );
+                  nextOffsetRef.current = null;
+                  setLogs([]);
+                  setLoading(true);
+                }}
+                sx={{ 
+                  fontSize: '0.7rem', 
+                  borderRadius: 1,
+                  px: 1,
+                  color: selectedLevels.includes(level) ? getLogColor(level) : '#666',
+                  bgcolor: selectedLevels.includes(level) ? 'rgba(255,255,255,0.05)' : 'transparent',
+                  border: `1px solid ${selectedLevels.includes(level) ? getLogColor(level) : '#444'}`,
+                  '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+                }}
+              >
+                {level.toUpperCase()}
+              </IconButton>
+            ))}
+          </Box>
+          
+          {onlyDT && (
+            <>
+              <Box sx={{ height: '24px', width: '1px', bgcolor: '#444', mx: 1 }} />
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxWidth: '300px' }}>
+                {systems_options.map(system => (
+                  <IconButton
+                    key={system}
+                    size="small"
+                    onClick={() => {
+                      setSelectedSystems(prev => 
+                        prev.includes(system) ? prev.filter(s => s !== system) : [...prev, system]
+                      );
+                      nextOffsetRef.current = null;
+                      setLogs([]);
+                      setLoading(true);
+                    }}
+                    sx={{ 
+                      fontSize: '0.65rem', 
+                      borderRadius: 1,
+                      px: 0.8,
+                      color: selectedSystems.includes(system) ? '#60a5fa' : '#666',
+                      bgcolor: selectedSystems.includes(system) ? 'rgba(96, 165, 250, 0.1)' : 'transparent',
+                      border: `1px solid ${selectedSystems.includes(system) ? '#60a5fa' : '#444'}`,
+                      '&:hover': { bgcolor: 'rgba(96, 165, 250, 0.2)' }
+                    }}
+                  >
+                    {system}
+                  </IconButton>
+                ))}
+              </Box>
+            </>
+          )}
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <FormControlLabel
             control={
               <Checkbox 
+                size="small"
                 checked={autoScroll} 
                 onChange={(e) => setAutoScroll(e.target.checked)} 
               />
             }
-            label="Auto-scroll"
+            label={<Typography fontSize="0.8rem">Auto-scroll</Typography>}
           />
           <IconButton 
             onClick={copySelected} 
@@ -268,7 +365,7 @@ const ConsolePage = () => {
             disabled={selectedIndices.size === 0}
             title={`Copy ${selectedIndices.size} selected lines`}
           >
-            <ContentCopyIcon />
+            <ContentCopyIcon fontSize="small" />
           </IconButton>
           <IconButton 
             onClick={clearSelection} 
@@ -276,16 +373,16 @@ const ConsolePage = () => {
             disabled={selectedIndices.size === 0}
             title="Clear Selection"
           >
-            <ClearIcon sx={{ fontSize: '1.2rem' }} />
+            <ClearIcon sx={{ fontSize: '1rem' }} />
           </IconButton>
-          <IconButton onClick={() => setIsPaused(!isPaused)} color={isPaused ? "warning" : "primary"}>
-            {isPaused ? <PlayArrowIcon /> : <PauseIcon />}
+          <IconButton onClick={() => setIsPaused(!isPaused)} color={isPaused ? "warning" : "primary"} size="small">
+            {isPaused ? <PlayArrowIcon fontSize="small" /> : <PauseIcon fontSize="small" />}
           </IconButton>
-          <IconButton onClick={() => fetchLogs(true)} color="primary">
-            <RefreshIcon />
+          <IconButton onClick={() => fetchLogs(true)} color="primary" size="small">
+            <RefreshIcon fontSize="small" />
           </IconButton>
-          <IconButton onClick={clearLogs} color="error">
-            <DeleteIcon />
+          <IconButton onClick={clearLogs} color="error" size="small">
+            <DeleteIcon fontSize="small" />
           </IconButton>
         </Box>
       </Box>

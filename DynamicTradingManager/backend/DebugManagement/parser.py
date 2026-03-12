@@ -7,8 +7,10 @@ class LogParser:
         self.console_path = console_path
         # Regex to parse PZ log lines: LOG  : Lua          f:0, t:1773241665869> [DynamicTrading] ...
         self.log_pattern = re.compile(r"LOG\s+:\s+(?P<type>\w+)\s+f:\d+, t:(?P<timestamp>\d+)>\s+(?P<message>.*)")
+        # Regex for DT standardized logs: [Version/System/Specific] message
+        self.dt_pattern = re.compile(r"^\[(?P<version>[^/\]]+)/(?P<system>[^/\]]+)/(?P<specific>[^/\]]+)\]\s+(?P<msg>.*)")
 
-    def get_last_n_lines(self, lines: int = 500, only_dt: bool = False) -> Dict[str, Any]:
+    def get_last_n_lines(self, lines: int = 500, only_dt: bool = False, levels: Optional[List[str]] = None, systems: Optional[List[str]] = None) -> Dict[str, Any]:
         """Reads the last N lines from console.txt and returns them with the next byte offset."""
         if not os.path.exists(self.console_path):
             return {
@@ -48,9 +50,21 @@ class LogParser:
                         if not line.strip(): continue
                         parsed = self._parse_line(line) or {"type": "General", "message": line, "timestamp": "0"}
                         
-                        if only_dt and "[DynamicTrading]" not in parsed["message"]:
+                        # Apply DT filter
+                        is_dt = "dt_meta" in parsed or "[DynamicTrading]" in parsed["message"]
+                        if only_dt and not is_dt:
                             continue
                             
+                        # Apply Level filter
+                        if levels and parsed["type"] not in levels:
+                            continue
+                            
+                        # Apply DT System filter
+                        if systems:
+                            dt_system = parsed.get("dt_meta", {}).get("system")
+                            if dt_system not in systems:
+                                continue
+                                
                         results.append(parsed)
                         if len(results) >= lines: break
 
@@ -69,14 +83,25 @@ class LogParser:
         match = self.log_pattern.match(line)
         if match:
             data = match.groupdict()
-            return {
+            message = data["message"].strip()
+            
+            result = {
                 "type": data["type"],
                 "timestamp": data["timestamp"],
-                "message": data["message"].strip()
+                "message": message
             }
+            
+            # Check if it's a standardized DT log
+            dt_match = self.dt_pattern.match(message)
+            if dt_match:
+                result["dt_meta"] = dt_match.groupdict()
+                # If it's standardized, we can extract the base message
+                result["message"] = result["dt_meta"].pop("msg").strip()
+                
+            return result
         return None
 
-    def get_new_lines(self, from_offset: int, only_dt: bool = False) -> Dict[str, Any]:
+    def get_new_lines(self, from_offset: int, only_dt: bool = False, levels: Optional[List[str]] = None, systems: Optional[List[str]] = None) -> Dict[str, Any]:
         """Reads new lines starting from a specific byte offset."""
         if not os.path.exists(self.console_path):
             return {"logs": [], "next_offset": from_offset}
@@ -97,8 +122,20 @@ class LogParser:
                     if not line.strip(): continue
                     parsed = self._parse_line(line) or {"type": "General", "message": line, "timestamp": "0"}
                     
-                    if only_dt and "[DynamicTrading]" not in parsed["message"]:
+                    # Apply DT filter
+                    is_dt = "dt_meta" in parsed or "[DynamicTrading]" in parsed["message"]
+                    if only_dt and not is_dt:
                         continue
+                    
+                    # Apply Level filter
+                    if levels and parsed["type"] not in levels:
+                        continue
+                        
+                    # Apply DT System filter
+                    if systems:
+                        dt_system = parsed.get("dt_meta", {}).get("system")
+                        if dt_system not in systems:
+                            continue
                     
                     results.append(parsed)
 

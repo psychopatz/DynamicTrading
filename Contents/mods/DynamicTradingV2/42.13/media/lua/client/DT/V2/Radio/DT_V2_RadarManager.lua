@@ -80,6 +80,7 @@ function DT_V2_RadarManager.OnMetadataReceived(uuid, meta)
     soul.isFemale = meta.isFemale ~= nil and meta.isFemale or soul.isFemale
     soul.identitySeed = meta.identitySeed or soul.identitySeed
     soul.status = meta.status or soul.status or "Unknown"
+    soul.returnTime = meta.returnTime or soul.returnTime
     soul.lastX = meta.lastX or soul.lastX
     soul.lastY = meta.lastY or soul.lastY
     soul.lastZ = meta.lastZ or soul.lastZ or 0
@@ -96,6 +97,7 @@ function DT_V2_RadarManager.OnMetadataReceived(uuid, meta)
             isFemale = soul.isFemale,
             identitySeed = soul.identitySeed,
             status = soul.status,
+            returnTime = soul.returnTime,
             lastX = soul.lastX,
             lastY = soul.lastY,
             lastZ = soul.lastZ
@@ -308,6 +310,7 @@ function DT_V2_RadarManager.Scan(player, device)
                                     isFemale = soul.isFemale,
                                     identitySeed = soul.identitySeed,
                                     status = soul.status,
+                                    returnTime = soul.returnTime,
                                     lastX = tx,
                                     lastY = ty,
                                     lastZ = soul.lastZ or 0

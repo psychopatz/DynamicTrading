@@ -49,7 +49,8 @@ function DataHandlers.SendSyncStockToPlayer(player, traderID)
         activeFlashEvent = faction and faction.ActiveFlashEvent or { id = nil, expires = 0 },
         name = soul and soul.name or "Trader",
         identitySeed = soul and soul.identitySeed,
-        gender = soul and soul.isFemale and "Female" or "Male"
+        gender = soul and soul.isFemale and "Female" or "Male",
+        returnTime = soul and soul.returnTime
     })
 end
 
@@ -154,7 +155,8 @@ Handlers.RequestStock = function(player, args)
             factionWealth = factionWealth,
             name = soul and soul.name or "Trader",
             identitySeed = soul and soul.identitySeed,
-            gender = soul and soul.isFemale and "Female" or "Male"
+            gender = soul and soul.isFemale and "Female" or "Male",
+            returnTime = soul and soul.returnTime
         })
     end
 end
@@ -194,7 +196,8 @@ Handlers.GenerateStock = function(player, args)
                 activeFlashEvent = faction and faction.ActiveFlashEvent or { id = nil, expires = 0 },
                 name = soul and soul.name or "Trader",
                 identitySeed = soul and soul.identitySeed,
-                gender = soul and soul.isFemale and "Female" or "Male"
+                gender = soul and soul.isFemale and "Female" or "Male",
+                returnTime = soul and soul.returnTime
             })
             
             DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Stock Generated" })
