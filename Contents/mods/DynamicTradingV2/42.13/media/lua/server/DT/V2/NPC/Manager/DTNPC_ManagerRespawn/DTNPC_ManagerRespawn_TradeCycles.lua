@@ -50,9 +50,10 @@ function DTNPCManager.ProcessTradeCycles()
             local currentPercent = (currentTrading / totalMembers) * 100
             
             if currentPercent < effectivePopLimit then
-                -- Small random chance to trigger (simulating daily chance spread over ticks)
-                -- 1 in 2000 chance per check (~1 min real time if check is every 30s)
-                if ZombRand(2000) < 10 then 
+                -- Much higher chance if NO ONE is trading for this faction
+                local baseChance = (currentTrading == 0) and 200 or 50
+                -- Adjusted for check frequency (every 30s)
+                if ZombRand(1000) < baseChance then 
                     DTNPCManager.StartTradeMission(uuid)
                     -- Update count so we don't over-spawn in the same tick
                     factionTradingCounts[factionID] = currentTrading + 1

@@ -154,9 +154,9 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
             npcData.masterID = nil
         end
 
-        npcData.status = status
-        npcData.returnTime = returnTime
-        npcData.returnStatus = returnStatus
+        if status ~= nil then npcData.status = status end
+        if returnTime ~= nil then npcData.returnTime = returnTime end
+        if returnStatus ~= nil then npcData.returnStatus = returnStatus end
         local soulKey = "DTSOUL_" .. uuid
         -- ModData.transmit(soulKey) -- Disabled global broadcast
 

@@ -91,7 +91,7 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
         end
         
         -- Update persistent status in Roster
-        if DynamicTrading_Roster and status then
+        if DynamicTrading_Roster and status ~= nil then
             DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)
         end
 
@@ -119,7 +119,7 @@ function DTNPCManager.SetNPCStatus(uuid, status, returnTime, returnStatus)
     if status == "Away" or status == "Dead" then
         if DTNPCManager.Data[uuid] then
             DynamicTrading.Log("DTV2", "NPC", "Status", "Status change to " .. status .. " requires world removal.")
-            DTNPCManager.RemoveData(uuid) -- No arguments to avoid recursion loop
+            DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus) -- PASS ALL DATA
         end
         
         -- Clean up physical zombie if it exists
