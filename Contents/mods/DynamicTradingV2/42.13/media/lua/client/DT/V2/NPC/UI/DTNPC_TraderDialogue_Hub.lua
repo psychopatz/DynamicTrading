@@ -89,7 +89,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     local npcData = DTNPC.GetData(npc)
     local isTrading = false
     
-    if npcData and (npcData.status == "Trading" or npcData.state == "Trading") then
+    if npcData and npcData.state ~= "Departure" and (npcData.status == "Trading" or npcData.state == "Trading") then
         isTrading = true
     else
         -- Fallback to Roster ModData if npcData is missing or unsynced

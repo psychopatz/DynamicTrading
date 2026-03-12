@@ -34,7 +34,9 @@ function DTNPCManager.ProcessTradeCycles()
     
     -- Second pass: Trigger missions based on limits
     for uuid, registry in pairs(rosterData.Souls) do
-        if registry.status == "Resting" then
+        local liveSoul = DynamicTrading_Roster.GetSoul(uuid)
+        local isDeparting = liveSoul and liveSoul.state == "Departure"
+        if registry.status == "Resting" and not isDeparting then
             local factionID = registry.factionID or "Independent"
             local currentTrading = factionTradingCounts[factionID] or 0
             local totalMembers = factionTotalCounts[factionID] or 1
@@ -79,6 +81,18 @@ function DTNPCManager.StartTradeMission(uuid, forceImmediate)
     
     DynamicTrading.Log("DTV2", "NPC", "Logic", "STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)
     DynamicTrading.Log("DTV2", "NPC", "Logic", "| Travel Time: " .. walkHours .. "h. Status: Away. Target: Trading")
+
+    local targetX = nil
+    local targetY = nil
+    local targetZ = nil
+    if DTNPCManager.PlanTradingDestination then
+        targetX, targetY, targetZ = DTNPCManager.PlanTradingDestination(uuid, soul)
+    end
+
+    if targetX and targetY and DTNPCManager.TryStartLiveDeparture
+        and DTNPCManager.TryStartLiveDeparture(uuid, "Trading", walkHours, targetX, targetY, targetZ or 0) then
+        return
+    end
     
     -- Centralized transition
     DTNPCManager.SetNPCStatus(uuid, "Away", currentHours + walkHours, "Trading")

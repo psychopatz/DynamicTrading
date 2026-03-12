@@ -1,0 +1,280 @@
+-- ==============================================================================
+-- Behavior_Departure.lua
+-- Handles visible NPC departures before they switch back to an off-screen Away state.
+-- ==============================================================================
+
+DTNPCLogic = DTNPCLogic or {}
+DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+
+local DESPAWN_DIST = 35
+local TARGET_REACHED_DIST = 2
+local STUCK_TICKS = 15
+local STUCK_ABORT_TICKS = 60
+
+local function getDist(x1, y1, x2, y2)
+    local dx = x1 - x2
+    local dy = y1 - y2
+    return math.sqrt(dx * dx + dy * dy)
+end
+
+local function isTileSafe(x, y, z)
+    local cell = getCell()
+    local sq = cell:getGridSquare(x, y, z)
+    if not sq then return true end
+    if not sq:isFree(false) then return false end
+    if sq:isSolid() or sq:isSolidTrans() then return false end
+    return true
+end
+
+local function forceRunAnimation(zombie)
+    zombie:setVariable("bMoving", true)
+    zombie:setVariable("isMoving", true)
+    zombie:setVariable("Speed", 1.2)
+    zombie:setVariable("BanditWalkType", "Run")
+end
+
+local function clearDepartureRuntime(npcData)
+    npcData.removalRequested = nil
+    npcData.isMovingState = nil
+    npcData.departureTargetX = nil
+    npcData.departureTargetY = nil
+    npcData.departureTargetZ = nil
+    npcData.departureTravelHours = nil
+    npcData.departureBlockedTicks = nil
+    npcData.departureStuckLastX = nil
+    npcData.departureStuckLastY = nil
+    npcData.departureLastDirX = nil
+    npcData.departureLastDirY = nil
+end
+
+local function getActivePlayers()
+    local players = {}
+    local online = getOnlinePlayers()
+    if online then
+        for i = 0, online:size() - 1 do
+            local player = online:get(i)
+            if player then
+                table.insert(players, player)
+            end
+        end
+    else
+        local player = getSpecificPlayer(0)
+        if player then
+            table.insert(players, player)
+        end
+    end
+    return players
+end
+
+local function getNearestPlayer(zombie)
+    if not zombie then return nil, 9999 end
+
+    local nearestPlayer = nil
+    local nearestDist = 9999
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local zz = zombie:getZ()
+
+    for _, player in ipairs(getActivePlayers()) do
+        local dz = math.abs((player:getZ() or 0) - zz)
+        if dz <= 1 then
+            local dist = getDist(zx, zy, player:getX(), player:getY())
+            if dist < nearestDist then
+                nearestPlayer = player
+                nearestDist = dist
+            end
+        end
+    end
+
+    return nearestPlayer, nearestDist
+end
+
+local function tryUnstick(zombie, z, dirX, dirY)
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local candidates = {
+        { x = zx + (dirX * 1.5), y = zy + (dirY * 1.5) },
+        { x = zx + (dirX * 1.5) - dirY, y = zy + (dirY * 1.5) + dirX },
+        { x = zx + (dirX * 1.5) + dirY, y = zy + (dirY * 1.5) - dirX },
+        { x = zx - dirY, y = zy + dirX },
+        { x = zx + dirY, y = zy - dirX },
+    }
+
+    for _, candidate in ipairs(candidates) do
+        if isTileSafe(candidate.x, candidate.y, z) then
+            zombie:setX(candidate.x)
+            zombie:setY(candidate.y)
+            zombie:setZ(z)
+            return true
+        end
+    end
+
+    return false
+end
+
+DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
+    local observer, observerDist = getNearestPlayer(zombie)
+
+    if observer and observerDist > DESPAWN_DIST and observerDist < 1000 then
+        if npcData.removalRequested then return end
+
+        local uuid = npcData.uuid
+        local travelHours = npcData.departureTravelHours or 0
+        local returnTime = getGameTime():getWorldAgeHours() + travelHours
+        local nextStatus = npcData.requestedReturnStatus or "Resting"
+        clearDepartureRuntime(npcData)
+        if DynamicTrading_Roster and uuid then
+            DynamicTrading_Roster.SaveSoul(uuid, npcData)
+        end
+
+        if isClient() then
+            sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", {
+                uuid = uuid,
+                status = "Away",
+                returnTime = returnTime,
+                returnStatus = nextStatus
+            })
+            npcData.removalRequested = true
+        elseif DTNPCManager then
+            DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
+            zombie:removeFromWorld()
+            zombie:removeFromSquare()
+        end
+        return
+    end
+
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local z = zombie:getZ()
+    local dx = 0
+    local dy = 0
+    local hasDestination = false
+
+    if npcData.departureTargetX and npcData.departureTargetY then
+        dx = npcData.departureTargetX - zx
+        dy = npcData.departureTargetY - zy
+        local len = math.sqrt(dx * dx + dy * dy)
+        if len > TARGET_REACHED_DIST then
+            dx = dx / len
+            dy = dy / len
+            npcData.departureLastDirX = dx
+            npcData.departureLastDirY = dy
+            hasDestination = true
+        elseif npcData.departureLastDirX then
+            dx = npcData.departureLastDirX
+            dy = npcData.departureLastDirY
+            hasDestination = true
+        elseif observer then
+            dx = zx - observer:getX()
+            dy = zy - observer:getY()
+            len = math.sqrt(dx * dx + dy * dy)
+            if len > 0 then
+                dx = dx / len
+                dy = dy / len
+                npcData.departureLastDirX = dx
+                npcData.departureLastDirY = dy
+                hasDestination = true
+            end
+        end
+    elseif npcData.departureLastDirX then
+        dx = npcData.departureLastDirX
+        dy = npcData.departureLastDirY
+        hasDestination = true
+    elseif observer then
+        dx = zx - observer:getX()
+        dy = zy - observer:getY()
+        local len = math.sqrt(dx * dx + dy * dy)
+        if len > 0 then
+            dx = dx / len
+            dy = dy / len
+            npcData.departureLastDirX = dx
+            npcData.departureLastDirY = dy
+            hasDestination = true
+        end
+    end
+
+    if not hasDestination then
+        if not zombie:isUseless() then zombie:setUseless(true) end
+        zombie:setVariable("bMoving", false)
+        zombie:setVariable("Speed", 0.0)
+        return
+    end
+
+    if not npcData.isMovingState then npcData.isMovingState = false end
+    if not npcData.isMovingState then
+        npcData.isMovingState = true
+        if DTNPCLogic.Behaviors["Attack"] then
+            DTNPCLogic.Behaviors["Attack"](zombie, npcData, target, dist)
+        end
+        return
+    end
+
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+        zombie:setPath2(nil)
+        zombie:setRunning(false)
+    end
+
+    local speed = npcData.runSpeed or DTNPC.DefaultRunSpeed
+    local nextX = zx + (dx * speed)
+    local nextY = zy + (dy * speed)
+    local canMove = isTileSafe(nextX, nextY, z)
+
+    if not canMove then
+        if isTileSafe(nextX, zy, z) then
+            nextY = zy
+            canMove = true
+        elseif isTileSafe(zx, nextY, z) then
+            nextX = zx
+            canMove = true
+        end
+    end
+
+    if canMove then
+        zombie:setX(nextX)
+        zombie:setY(nextY)
+        forceRunAnimation(zombie)
+
+        local dirVector = zombie:getForwardDirection()
+        if dirVector then
+            dirVector:set(dx, dy)
+            dirVector:normalize()
+        end
+
+        if npcData.departureStuckLastX then
+            local moved = getDist(nextX, nextY, npcData.departureStuckLastX, npcData.departureStuckLastY)
+            if moved < 0.05 then
+                npcData.departureBlockedTicks = (npcData.departureBlockedTicks or 0) + 1
+            else
+                npcData.departureBlockedTicks = 0
+            end
+        else
+            npcData.departureBlockedTicks = 0
+        end
+
+        npcData.departureStuckLastX = nextX
+        npcData.departureStuckLastY = nextY
+    else
+        npcData.departureBlockedTicks = (npcData.departureBlockedTicks or 0) + 1
+        if npcData.departureBlockedTicks >= STUCK_TICKS and tryUnstick(zombie, z, dx, dy) then
+            npcData.departureBlockedTicks = 0
+            npcData.departureStuckLastX = zombie:getX()
+            npcData.departureStuckLastY = zombie:getY()
+            forceRunAnimation(zombie)
+            return
+        end
+
+        if npcData.departureBlockedTicks >= STUCK_ABORT_TICKS then
+            npcData.departureBlockedTicks = 0
+            if observer then
+                zombie:setX(observer:getX() + (dx * (DESPAWN_DIST + 2)))
+                zombie:setY(observer:getY() + (dy * (DESPAWN_DIST + 2)))
+            end
+            forceRunAnimation(zombie)
+            return
+        end
+
+        zombie:setVariable("bMoving", false)
+        zombie:setVariable("Speed", 0.0)
+    end
+end

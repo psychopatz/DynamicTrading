@@ -289,7 +289,7 @@ function DTNPCSpawn.SpawnNPC(player, existingBrain, options)
         if not npcData.runSpeed then npcData.runSpeed = DTNPC.DefaultRunSpeed end
         if not npcData.visualID then npcData.visualID = ZombRand(1000000) end
         
-        npcData.state = "Stay"
+        npcData.state = "Idle"
         npcData.isHostile = false
         DynamicTrading.Log("DTV2", "NPC", "Spawn", "Rehydrated npcData for: " .. npcData.name)
     end
@@ -421,7 +421,7 @@ function DTNPCSpawn.RespawnNPC(npcData, uuid)
     elseif status == "Working" then
         npcData.state = "Guard"
     else
-        npcData.state = "Stay"
+        npcData.state = "Idle"
     end
     
     DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Mapped Status [" .. status .. "] to Behavior State [" .. npcData.state .. "]")

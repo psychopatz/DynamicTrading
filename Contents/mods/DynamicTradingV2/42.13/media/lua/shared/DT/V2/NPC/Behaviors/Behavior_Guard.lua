@@ -7,8 +7,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 
-DTNPCLogic.Behaviors["Stay"] = function(zombie, npcData, target, dist)
-    
+local function stationaryGuardBehavior(zombie, npcData, target, dist)
     if not zombie:isUseless() then
         zombie:setUseless(true)
         zombie:setPath2(nil)
@@ -28,3 +27,6 @@ DTNPCLogic.Behaviors["Stay"] = function(zombie, npcData, target, dist)
         zombie:setY(zombie:getY())
     end
 end
+
+DTNPCLogic.Behaviors["Stay"] = stationaryGuardBehavior
+DTNPCLogic.Behaviors["Guard"] = stationaryGuardBehavior

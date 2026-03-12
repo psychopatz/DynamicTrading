@@ -149,9 +149,20 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
     if npcData then
         if npcData.status == "Away" and status ~= "Away" then
             DynamicTrading.Log("DTCommons", "Roster", "Sync", "Resetting state and master for " .. (npcData.name or uuid) .. " on return.")
-            npcData.state = "Stay"
+            if status == "Trading" then
+                npcData.state = "Trading"
+            elseif status == "Working" then
+                npcData.state = "Guard"
+            else
+                npcData.state = "Idle"
+            end
             npcData.master = nil
             npcData.masterID = nil
+            npcData.requestedReturnStatus = nil
+            npcData.departureTargetX = nil
+            npcData.departureTargetY = nil
+            npcData.departureTargetZ = nil
+            npcData.departureTravelHours = nil
         end
 
         if status ~= nil then npcData.status = status end
@@ -227,7 +238,7 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
             name = name,
             isFemale = isFemale,
             identitySeed = identitySeed,
-            state = "Stay",
+            state = "Idle",
             tasks = {},
             walkSpeed = 0.06,
             runSpeed = 0.09,

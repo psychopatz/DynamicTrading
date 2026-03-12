@@ -23,8 +23,10 @@ require "DT/V2/NPC/Behaviors/Behavior_Attack"
 require "DT/V2/NPC/Behaviors/Behavior_AttackRange"
 require "DT/V2/NPC/Behaviors/Behavior_Flee"
 require "DT/V2/NPC/Behaviors/Behavior_Follow"
+require "DT/V2/NPC/Behaviors/Behavior_Idle"
 require "DT/V2/NPC/Behaviors/Behavior_Guard" 
-require "DT/V2/NPC/Behaviors/Behavior_Trade"
+require "DT/V2/NPC/Behaviors/Behavior_Trading"
+require "DT/V2/NPC/Behaviors/Behavior_Departure"
 
 -- ==============================================================================
 -- 2. HELPER UTILITIES
@@ -102,7 +104,7 @@ function DTNPCLogic.ProcessNPC(zombie)
     
     -- AGGRESSIVE WANDER PREVENTION
     -- Lock down zombies that should be stationary
-    if state == "Stay" or state == "Guard" then
+    if state == "Stay" or state == "Guard" or state == "Idle" then
         zombie:setPath2(nil)
         zombie:setTarget(nil)
         
@@ -148,7 +150,7 @@ function DTNPCLogic.ProcessNPC(zombie)
     npcData.lastHealth = currentHealth
 
     -- HIGH SPEED BEHAVIORS (Every Frame)
-    if state == "GoTo" or state == "Flee" or state == "AttackRange" or state == "Follow" then
+    if state == "GoTo" or state == "Flee" or state == "AttackRange" or state == "Follow" or state == "Departure" then
         DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
         return
     end
@@ -262,7 +264,7 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
 end
 
 isIdleCycleState = function(state)
-    return state == "Stay" or state == "Guard" or state == "Trading"
+    return state == "Idle" or state == "Stay" or state == "Guard" or state == "Trading"
 end
 
 resetIdleCycle = function(zombie, npcData)

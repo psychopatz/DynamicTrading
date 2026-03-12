@@ -111,7 +111,7 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     elseif status == "Working" then
         npcData.state = "Guard"
     else
-        npcData.state = "Stay"
+        npcData.state = "Idle"
     end
     
     DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Mapped Status [" .. status .. "] to Behavior State [" .. npcData.state .. "]")

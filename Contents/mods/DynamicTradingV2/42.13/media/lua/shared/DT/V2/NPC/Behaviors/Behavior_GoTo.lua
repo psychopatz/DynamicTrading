@@ -9,6 +9,8 @@ DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 
 local STOP_DIST = 0.5 -- Stricter stopping distance for precise GoTo
+local STUCK_TICKS = 15
+local STUCK_ABORT_TICKS = 60
 
 local function getDist(x1, y1, x2, y2)
     local dx = x1 - x2
@@ -35,12 +37,40 @@ local function forceRunAnimation(zombie)
     zombie:setVariable("BanditWalkType", "Run") -- Hint for Bandit layer if present
 end
 
+local function resetGoToStuck(npcData)
+    npcData.goToBlockedTicks = 0
+end
+
+local function tryUnstick(zombie, z, dirX, dirY)
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local candidates = {
+        { x = zx + (dirX * 1.5), y = zy + (dirY * 1.5) },
+        { x = zx + (dirX * 1.5) - dirY, y = zy + (dirY * 1.5) + dirX },
+        { x = zx + (dirX * 1.5) + dirY, y = zy + (dirY * 1.5) - dirX },
+        { x = zx - dirY, y = zy + dirX },
+        { x = zx + dirY, y = zy - dirX },
+    }
+
+    for _, candidate in ipairs(candidates) do
+        if isTileSafe(candidate.x, candidate.y, z) then
+            zombie:setX(candidate.x)
+            zombie:setY(candidate.y)
+            zombie:setZ(z)
+            return true
+        end
+    end
+
+    return false
+end
+
 DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
     
     -- 1. Check if we have anywhere to go
     if not npcData.tasks or #npcData.tasks == 0 then
         npcData.state = "Stay"
         npcData.isMovingState = false
+        resetGoToStuck(npcData)
         zombie:setVariable("bMoving", false)
         zombie:setVariable("Speed", 0.0)
         
@@ -82,6 +112,7 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
             -- All done
             npcData.state = "Stay"
             npcData.isMovingState = false
+            resetGoToStuck(npcData)
             
             -- Face final direction
             local fd = zombie:getForwardDirection()
@@ -125,6 +156,7 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
 
     -- Apply
     if canMove then
+        resetGoToStuck(npcData)
         zombie:setX(nextX)
         zombie:setY(nextY)
         zombie:setZ(task.z or 0)
@@ -137,11 +169,25 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
             dirVector:normalize()
         end
     else
-        -- Stuck/Blocked logic
-        DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo: Path blocked. Aborting.")
-        npcData.state = "Stay"
-        npcData.isMovingState = false
-        npcData.tasks = {}
-        zombie:setVariable("bMoving", false)
+        npcData.goToBlockedTicks = (npcData.goToBlockedTicks or 0) + 1
+
+        if npcData.goToBlockedTicks >= STUCK_TICKS and tryUnstick(zombie, zz, dx, dy) then
+            resetGoToStuck(npcData)
+            forceRunAnimation(zombie)
+            return
+        end
+
+        if npcData.goToBlockedTicks >= STUCK_ABORT_TICKS then
+            DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo: Path blocked too long. Aborting.")
+            npcData.state = "Stay"
+            npcData.isMovingState = false
+            npcData.tasks = {}
+            resetGoToStuck(npcData)
+            zombie:setVariable("bMoving", false)
+            zombie:setVariable("Speed", 0.0)
+        else
+            zombie:setVariable("bMoving", false)
+            zombie:setVariable("Speed", 0.0)
+        end
     end
 end

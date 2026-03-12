@@ -57,7 +57,7 @@ function DTNPCGenerator.CreateMVPData(mvpData, options)
         beardStyle = mvpData.beardStyle,
         
         -- Default stats
-        state = "Stay",
+        state = "Idle",
         master = options.masterName,
         masterID = options.masterID,
         tasks = {},
@@ -108,7 +108,7 @@ function DTNPCGenerator.CreateStandardData(options)
         identitySeed = identitySeed,
         
         -- Logic
-        state = "Stay",
+        state = "Idle",
         master = options.masterName,
         masterID = options.masterID,
         tasks = {},
