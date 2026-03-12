@@ -30,7 +30,18 @@ local function forceRunAnimation(zombie)
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
     zombie:setVariable("Speed", 1.2)
-    zombie:setVariable("BanditWalkType", "Run")
+    zombie:setVariable("DTWalkType", "Run")
+    zombie:setVariable("WalkType", "1")
+    zombie:setRunning(true)
+end
+
+local function stopDepartureAnimation(zombie)
+    zombie:setVariable("bMoving", false)
+    zombie:setVariable("isMoving", false)
+    zombie:setVariable("Speed", 0.0)
+    zombie:setVariable("DTWalkType", "")
+    zombie:setVariable("WalkType", "")
+    zombie:setRunning(false)
 end
 
 local function clearDepartureRuntime(npcData)
@@ -112,34 +123,43 @@ local function tryUnstick(zombie, z, dirX, dirY)
     return false
 end
 
+local function completeDeparture(zombie, npcData)
+    if npcData.removalRequested then return true end
+
+    local uuid = npcData.uuid
+    local travelHours = npcData.departureTravelHours or 0
+    local returnTime = getGameTime():getWorldAgeHours() + travelHours
+    local nextStatus = npcData.requestedReturnStatus or "Resting"
+
+    stopDepartureAnimation(zombie)
+    clearDepartureRuntime(npcData)
+
+    if DynamicTrading_Roster and uuid then
+        DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    end
+
+    if isClient() then
+        sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", {
+            uuid = uuid,
+            status = "Away",
+            returnTime = returnTime,
+            returnStatus = nextStatus
+        })
+        npcData.removalRequested = true
+    elseif DTNPCManager then
+        DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
+        zombie:removeFromWorld()
+        zombie:removeFromSquare()
+    end
+
+    return true
+end
+
 DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
     local observer, observerDist = getNearestPlayer(zombie)
 
     if observer and observerDist > DESPAWN_DIST and observerDist < 1000 then
-        if npcData.removalRequested then return end
-
-        local uuid = npcData.uuid
-        local travelHours = npcData.departureTravelHours or 0
-        local returnTime = getGameTime():getWorldAgeHours() + travelHours
-        local nextStatus = npcData.requestedReturnStatus or "Resting"
-        clearDepartureRuntime(npcData)
-        if DynamicTrading_Roster and uuid then
-            DynamicTrading_Roster.SaveSoul(uuid, npcData)
-        end
-
-        if isClient() then
-            sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", {
-                uuid = uuid,
-                status = "Away",
-                returnTime = returnTime,
-                returnStatus = nextStatus
-            })
-            npcData.removalRequested = true
-        elseif DTNPCManager then
-            DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
-            zombie:removeFromWorld()
-            zombie:removeFromSquare()
-        end
+        completeDeparture(zombie, npcData)
         return
     end
 
@@ -195,8 +215,7 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
 
     if not hasDestination then
         if not zombie:isUseless() then zombie:setUseless(true) end
-        zombie:setVariable("bMoving", false)
-        zombie:setVariable("Speed", 0.0)
+        stopDepartureAnimation(zombie)
         return
     end
 
@@ -235,10 +254,8 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         zombie:setY(nextY)
         forceRunAnimation(zombie)
 
-        local dirVector = zombie:getForwardDirection()
-        if dirVector then
-            dirVector:set(dx, dy)
-            dirVector:normalize()
+        if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
+            zombie:faceLocation(nextX + dx, nextY + dy)
         end
 
         if npcData.departureStuckLastX then
@@ -254,6 +271,11 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
 
         npcData.departureStuckLastX = nextX
         npcData.departureStuckLastY = nextY
+
+        if (npcData.departureBlockedTicks or 0) >= STUCK_ABORT_TICKS then
+            completeDeparture(zombie, npcData)
+            return
+        end
     else
         npcData.departureBlockedTicks = (npcData.departureBlockedTicks or 0) + 1
         if npcData.departureBlockedTicks >= STUCK_TICKS and tryUnstick(zombie, z, dx, dy) then
@@ -265,16 +287,10 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         end
 
         if npcData.departureBlockedTicks >= STUCK_ABORT_TICKS then
-            npcData.departureBlockedTicks = 0
-            if observer then
-                zombie:setX(observer:getX() + (dx * (DESPAWN_DIST + 2)))
-                zombie:setY(observer:getY() + (dy * (DESPAWN_DIST + 2)))
-            end
-            forceRunAnimation(zombie)
+            completeDeparture(zombie, npcData)
             return
         end
 
-        zombie:setVariable("bMoving", false)
-        zombie:setVariable("Speed", 0.0)
+        stopDepartureAnimation(zombie)
     end
 end

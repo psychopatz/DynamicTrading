@@ -30,11 +30,10 @@ end
 local function forceRunAnimation(zombie)
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
-    
-    -- Rely on engine for WalkType to avoid read-only errors
-    
     zombie:setVariable("Speed", 1.2) -- Force run speed for GoTo
-    zombie:setVariable("BanditWalkType", "Run") -- Hint for Bandit layer if present
+    zombie:setVariable("DTWalkType", "Run")
+    zombie:setVariable("WalkType", "1")
+    zombie:setRunning(true)
 end
 
 local function resetGoToStuck(npcData)
@@ -115,10 +114,8 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
             resetGoToStuck(npcData)
             
             -- Face final direction
-            local fd = zombie:getForwardDirection()
-            if fd then
-                fd:set(task.x - zx, task.y - zy)
-                fd:normalize()
+            if math.abs(task.x - zx) > 0.001 or math.abs(task.y - zy) > 0.001 then
+                zombie:faceLocation(task.x, task.y)
             end
             
             zombie:setVariable("bMoving", false)
@@ -163,10 +160,8 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
         forceRunAnimation(zombie)
         
         -- Rotation
-        local dirVector = zombie:getForwardDirection()
-        if dirVector then
-            dirVector:set(dx, dy)
-            dirVector:normalize()
+        if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
+            zombie:faceLocation(nextX + dx, nextY + dy)
         end
     else
         npcData.goToBlockedTicks = (npcData.goToBlockedTicks or 0) + 1

@@ -176,10 +176,8 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
     end
 
     -- Rotation
-    local dirVector = zombie:getForwardDirection()
-    if dirVector then
-        dirVector:set(dx, dy)
-        dirVector:normalize()
+    if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
+        zombie:faceLocation(zx + dx, zy + dy)
     end
 
     -- Speed & Collision

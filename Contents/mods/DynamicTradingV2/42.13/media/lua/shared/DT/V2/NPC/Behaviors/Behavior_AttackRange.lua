@@ -108,10 +108,8 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
 
     -- 3. ROTATION (Apply FIRST)
     -- In combat, we ALWAYS face the target, even if backing up.
-    local dirVector = zombie:getForwardDirection()
-    if dirVector then
-        dirVector:set(dx, dy)
-        dirVector:normalize()
+    if len > 0.001 then
+        zombie:faceLocation(tx, ty)
     end
 
     -- 4. Kiting Logic (Movement Decision)

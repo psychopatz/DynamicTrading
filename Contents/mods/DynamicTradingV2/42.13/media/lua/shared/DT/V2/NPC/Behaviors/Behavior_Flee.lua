@@ -28,11 +28,10 @@ end
 local function forceRunAnimation(zombie)
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
-    
-    -- Let engine handle WalkType
-    
     zombie:setVariable("Speed", 1.2) -- Force run speed
-    zombie:setVariable("BanditWalkType", "Run")
+    zombie:setVariable("DTWalkType", "Run")
+    zombie:setVariable("WalkType", "1")
+    zombie:setRunning(true)
 end
 
 DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
@@ -150,10 +149,8 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
         forceRunAnimation(zombie)
         
         -- Rotation
-        local dirVector = zombie:getForwardDirection()
-        if dirVector then
-            dirVector:set(dx, dy)
-            dirVector:normalize()
+        if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
+            zombie:faceLocation(nextX + dx, nextY + dy)
         end
     else
         -- Blocked completely
