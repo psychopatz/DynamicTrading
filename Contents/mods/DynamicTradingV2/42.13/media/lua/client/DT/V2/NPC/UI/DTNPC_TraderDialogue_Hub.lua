@@ -125,6 +125,12 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
                     ui:close()
                     DT_TradingWindow.ToggleWindowV2(traderID, archetype, npc)
                 else
+                    -- [FIX] Guard against double-clicking if we already have a pending request
+                    if DTNPC_TraderDialogue_Hub.PendingTrade and DTNPC_TraderDialogue_Hub.PendingTrade.traderID == traderID then
+                        DynamicTrading.Log("DTV2", "Dialog", "Trade", "Ignoring redundant trade request - already pending for " .. traderID)
+                        return
+                    end
+
                     -- Request stock generation, then open window
                     DynamicTrading.Log("DTV2", "Dialog", "Trade", "Requesting stock generation...")
                     ui:speak("Let me check what I have in stock...")
@@ -237,7 +243,7 @@ local function OnTick()
         pending.hasSpokenShortWait = true
     end
 
-    if gt and elapsed > 0.02 then
+    if gt and elapsed > 0.08 then
         DynamicTrading.Log("DTV2", "Dialog", "Trade", "Stock request timed out")
         if uiValid then
             pending.ui:speak("Sorry, I'm having trouble with my inventory right now.")
