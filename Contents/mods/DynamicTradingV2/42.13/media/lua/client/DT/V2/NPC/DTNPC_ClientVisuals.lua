@@ -5,6 +5,8 @@
 
 DTNPCClient = DTNPCClient or {}
 
+require "DT/V2/NPC/DTNPC_HealthBars"
+
 function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     if not zombie or not npcData then return end
     if isServer() and isDedicatedServer() then return end
