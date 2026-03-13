@@ -30,6 +30,10 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     
     modData.IsDTNPC = true
     modData.DTNPC_UUID = uuid
+
+    if DTNPCClient.TrackNPCForHealthBars then
+        DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, zombie:getPersistentOutfitID())
+    end
     
     -- Ensure npcData is attached even if we don't need to reapply visuals
     if DTNPC and DTNPC.AttachData then
@@ -98,6 +102,10 @@ function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
     
     local modData = zombie:getModData()
     local uuid = modData.DTNPC_UUID
+
+    if uuid and DTNPCClient.TrackNPCForHealthBars then
+        DTNPCClient.TrackNPCForHealthBars(zombie, DTNPC.GetData(zombie), uuid, zombie:getPersistentOutfitID())
+    end
     
     if DTNPCClient.LocalControlled[uuid] then
         return false

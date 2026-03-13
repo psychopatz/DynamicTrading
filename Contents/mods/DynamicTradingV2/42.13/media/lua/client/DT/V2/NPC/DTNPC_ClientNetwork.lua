@@ -42,6 +42,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
         DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncNPC for: " .. (args.npcData.name or uuid))
         
         DTNPCClient.CacheData(uuid, outfitID, args.npcData)
+        if DTNPCClient.TrackNPCForHealthBars then
+            DTNPCClient.TrackNPCForHealthBars(nil, args.npcData, uuid, outfitID)
+        end
         
         -- Track position for interpolation
         if args.x and args.y then
@@ -123,6 +126,13 @@ function DTNPCClient.OnServerCommand(module, command, args)
                 cached.lastReportedState.state = args.state
             end
         end
+
+        if DTNPCClient.TrackNPCForHealthBars then
+            DTNPCClient.TrackNPCForHealthBars(nil, cached and cached.npcData or nil, uuid, args.outfitID)
+        end
+        if args.health and DTNPCClient.MarkNPCCombatForHealthBars then
+            DTNPCClient.MarkNPCCombatForHealthBars(uuid, nil, cached and cached.npcData or nil, args.outfitID)
+        end
         return
     end
 
@@ -166,6 +176,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
         for uuid, npcData in pairs(args.npcs) do
             local outfitID = npcData.currentOutfitID
             DTNPCClient.CacheData(uuid, outfitID, npcData)
+            if DTNPCClient.TrackNPCForHealthBars then
+                DTNPCClient.TrackNPCForHealthBars(nil, npcData, uuid, outfitID)
+            end
             
             local zombie = DTNPCClient.FindZombieByUUID(uuid)
             
@@ -200,6 +213,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
             if npcData and npcData.npcData then
                 local outfitID = npcData.outfitID
                 DTNPCClient.CacheData(uuid, outfitID, npcData.npcData)
+                if DTNPCClient.TrackNPCForHealthBars then
+                    DTNPCClient.TrackNPCForHealthBars(nil, npcData.npcData, uuid, outfitID)
+                end
 
                 -- Track position for interpolation
                 local x = npcData.x or npcData.npcData.lastX

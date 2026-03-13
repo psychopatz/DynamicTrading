@@ -73,6 +73,9 @@ function DTNPCClient.RemoveFromCache(uuid, outfitID)
         DTNPCClient.ProcessedZombies[uuid] = nil
         DTNPCClient.LocalControlled[uuid] = nil
         DTNPCClient.MetadataCache[uuid] = nil
+        if DTNPCClient.UntrackNPCForHealthBars then
+            DTNPCClient.UntrackNPCForHealthBars(uuid, outfitID)
+        end
         DynamicTrading.Log("DTV2", "NPC", "Cache", "Removed from cache: " .. uuid)
     end
     

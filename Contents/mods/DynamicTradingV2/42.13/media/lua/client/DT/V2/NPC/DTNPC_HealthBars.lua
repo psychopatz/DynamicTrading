@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- DTNPC_HealthBars.lua
--- Old-style overhead UI overlay for Dynamic Trading NPCs.
+-- Optimized overhead UI overlay for Dynamic Trading NPCs.
 -- Name is always visible, health bar appears on damage/combat.
 -- ==============================================================================
 
@@ -21,6 +21,16 @@ local DAMAGE_TEXT_SPEED = 50
 local MAX_DRAW_DISTANCE = 22
 local COMBAT_SHOW_DURATION = 5000
 local FLOOR_TOLERANCE = 1
+local ZOMBIE_RESOLVE_RETRY_MS = 1000
+local STALE_TRACK_MS = 15000
+
+local FONT_NAME = UIFont.Small
+local FONT_DAMAGE = UIFont.Medium
+
+local textManager = getTextManager()
+
+DTNPCClient.HealthBarManagers = DTNPCClient.HealthBarManagers or {}
+DTNPCClient.HealthBarTracked = DTNPCClient.HealthBarTracked or {}
 
 local function clamp(v, lo, hi)
     if v < lo then return lo end
@@ -81,12 +91,17 @@ local function getNPCData(zombie)
     return nil
 end
 
+local function getCachedNPCData(uuid)
+    local cacheEntry = DTNPCClient.NPCCache and DTNPCClient.NPCCache[uuid]
+    return cacheEntry and cacheEntry.npcData or nil
+end
+
 local function resolveHealth(npcData, zombie, existingMax)
     local currentHp = tonumber(zombie and zombie:getHealth())
-        or tonumber(npcData.health)
+        or tonumber(npcData and npcData.health)
         or 0
 
-    -- V2 only syncs current health. For Build 42 NPC-zombies, health is normalized,
+    -- V2 only syncs current health. Build 42 zombie health is normalized,
     -- so default to 1 unless we've already observed a higher value.
     local maxHp = tonumber(existingMax) or 1
 
@@ -98,6 +113,177 @@ local function resolveHealth(npcData, zombie, existingMax)
     end
 
     return currentHp, maxHp
+end
+
+local function deriveUUID(zombie, npcData, uuid)
+    if uuid then return uuid end
+    if npcData and npcData.uuid then return npcData.uuid end
+    if zombie then
+        local modData = zombie:getModData()
+        if modData and modData.DTNPC_UUID then
+            return modData.DTNPC_UUID
+        end
+        return tostring(zombie:getPersistentOutfitID())
+    end
+    return nil
+end
+
+local function cacheNameMetrics(entry, name)
+    local safeName = name or "Unknown"
+    if entry.name ~= safeName then
+        entry.name = safeName
+        entry.nameWidth = textManager:MeasureStringX(FONT_NAME, safeName)
+    elseif not entry.nameWidth then
+        entry.nameWidth = textManager:MeasureStringX(FONT_NAME, safeName)
+    end
+end
+
+local function touchTrackedEntry(entry, zombie, npcData, outfitID, currentTime)
+    if zombie then
+        entry.zombie = zombie
+        entry.worldX = zombie:getX()
+        entry.worldY = zombie:getY()
+        entry.worldZ = zombie:getZ()
+    end
+
+    if outfitID then
+        entry.outfitID = outfitID
+    end
+
+    if npcData then
+        entry.npcData = npcData
+        cacheNameMetrics(entry, npcData.name)
+        entry.currentHp, entry.maxHp = resolveHealth(npcData, zombie or entry.zombie, entry.maxHp)
+
+        if isCombatState(npcData) then
+            entry.visibleUntil = currentTime + COMBAT_SHOW_DURATION
+        end
+    elseif zombie then
+        entry.currentHp, entry.maxHp = resolveHealth(nil, zombie, entry.maxHp)
+    end
+
+    entry.lastSeenAt = currentTime
+end
+
+local function getTrackedEntry(uuid)
+    local entry = DTNPCClient.HealthBarTracked[uuid]
+    if entry then
+        return entry
+    end
+
+    entry = {
+        uuid = uuid,
+        name = "Unknown",
+        nameWidth = textManager:MeasureStringX(FONT_NAME, "Unknown"),
+        currentHp = 1,
+        maxHp = 1,
+        visibleUntil = 0,
+        lastSeenAt = getTimeInMillis(),
+        nextResolveAt = 0,
+    }
+    DTNPCClient.HealthBarTracked[uuid] = entry
+    return entry
+end
+
+function DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, outfitID)
+    local resolvedUUID = deriveUUID(zombie, npcData, uuid)
+    if not resolvedUUID then return nil end
+
+    local entry = getTrackedEntry(resolvedUUID)
+    touchTrackedEntry(entry, zombie, npcData, outfitID, getTimeInMillis())
+    return entry
+end
+
+function DTNPCClient.MarkNPCCombatForHealthBars(uuid, zombie, npcData, outfitID)
+    local entry = DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, outfitID)
+    if entry then
+        entry.visibleUntil = getTimeInMillis() + COMBAT_SHOW_DURATION
+    end
+    return entry
+end
+
+function DTNPCClient.UntrackNPCForHealthBars(uuid, outfitID)
+    local resolvedUUID = uuid
+
+    if not resolvedUUID and outfitID and DTNPCClient.OutfitIDToUUID then
+        resolvedUUID = DTNPCClient.OutfitIDToUUID[outfitID]
+    end
+    if not resolvedUUID then return end
+
+    DTNPCClient.HealthBarTracked[resolvedUUID] = nil
+
+    for _, manager in pairs(DTNPCClient.HealthBarManagers or {}) do
+        if manager then
+            manager.barList[resolvedUUID] = nil
+            manager.damageTexts[resolvedUUID] = nil
+        end
+    end
+end
+
+local function resolveTrackedZombie(uuid, entry, currentTime)
+    local zombie = entry.zombie
+
+    if zombie and not zombie:isDead() then
+        local modData = zombie:getModData()
+        if modData and (modData.DTNPC_UUID == uuid or modData.IsDTNPC) then
+            return zombie
+        end
+    end
+
+    if currentTime < (entry.nextResolveAt or 0) then
+        return nil
+    end
+
+    zombie = nil
+    if DTNPCClient.FindZombieByUUID then
+        zombie = DTNPCClient.FindZombieByUUID(uuid)
+    end
+
+    if not zombie and entry.outfitID and DTNPCClient.FindZombieByOutfitID then
+        zombie = DTNPCClient.FindZombieByOutfitID(entry.outfitID)
+    end
+
+    entry.zombie = zombie
+    if zombie then
+        entry.nextResolveAt = currentTime
+        entry.worldX = zombie:getX()
+        entry.worldY = zombie:getY()
+        entry.worldZ = zombie:getZ()
+    else
+        entry.nextResolveAt = currentTime + ZOMBIE_RESOLVE_RETRY_MS
+    end
+
+    return zombie
+end
+
+local function isTrackedEntryStale(entry, currentTime)
+    local hasCache = entry.uuid and getCachedNPCData(entry.uuid) ~= nil
+    local hasZombie = entry.zombie and not entry.zombie:isDead()
+    return not hasCache and not hasZombie and (currentTime - (entry.lastSeenAt or 0)) > STALE_TRACK_MS
+end
+
+local function buildDamageText(delta)
+    local amount = math.abs(delta)
+    local prefix = delta > 0 and "-" or "+"
+    local color = delta > 0
+        and { r = 1, g = 0.45, b = 0.45, a = 1 }
+        or { r = 0.6, g = 1, b = 0.6, a = 1 }
+    local rounded
+
+    if amount >= 10 then
+        rounded = round(amount, 0)
+    elseif amount >= 5 then
+        rounded = round(amount, 1)
+    else
+        rounded = round(amount, 2)
+    end
+
+    local text = prefix .. tostring(rounded)
+    return {
+        text = text,
+        width = textManager:MeasureStringX(FONT_DAMAGE, text),
+        color = color,
+    }
 end
 
 function ISDTNPCHealthBarManager:initialize()
@@ -130,6 +316,7 @@ function ISDTNPCHealthBarManager:render()
     local barHeight = BAR_HEIGHT / scaleDivisor
     local nameYOffset = NAME_Y_OFFSET / zoom
     local barYOffset = BAR_Y_OFFSET / zoom
+    local damageTextOffset = barYOffset + 26
     local currentTime = getTimeInMillis()
 
     for _, barData in pairs(self.barList) do
@@ -143,10 +330,17 @@ function ISDTNPCHealthBarManager:render()
             if alpha > 0 then
                 local screenX = isoToScreenX(self.playerIndex, zombie:getX(), zombie:getY(), zombie:getZ()) - self.x
                 local screenY = isoToScreenY(self.playerIndex, zombie:getX(), zombie:getY(), zombie:getZ()) - self.y
-                local label = barData.name or "Unknown"
-                local textWidth = getTextManager():MeasureStringX(UIFont.Small, label)
 
-                self:drawText(label, screenX - (textWidth / 2), screenY - nameYOffset, 1, 1, 1, alpha, UIFont.Small)
+                self:drawText(
+                    barData.name,
+                    screenX - (barData.nameWidth / 2),
+                    screenY - nameYOffset,
+                    1,
+                    1,
+                    1,
+                    alpha,
+                    FONT_NAME
+                )
 
                 if barData.visibleUntil and currentTime <= barData.visibleUntil then
                     local hpRatio = getHealthRatio(barData.currentHp, barData.maxHp)
@@ -189,7 +383,6 @@ function ISDTNPCHealthBarManager:render()
         end
     end
 
-    local damageTextOffset = barYOffset + 26
     for uuid, damageList in pairs(self.damageTexts) do
         for i = #damageList, 1, -1 do
             local dmg = damageList[i]
@@ -199,17 +392,16 @@ function ISDTNPCHealthBarManager:render()
                 local timeOffset = (currentTime - dmg.timestamp) / DAMAGE_TEXT_SPEED
                 local screenX = isoToScreenX(self.playerIndex, dmg.x, dmg.y, dmg.z) - self.x
                 local screenY = isoToScreenY(self.playerIndex, dmg.x, dmg.y, dmg.z) - self.y - damageTextOffset - timeOffset
-                local textWidth = getTextManager():MeasureStringX(UIFont.Medium, dmg.text)
 
                 self:drawText(
                     dmg.text,
-                    screenX - (textWidth / 2),
+                    screenX - (dmg.width / 2),
                     screenY,
                     dmg.color.r,
                     dmg.color.g,
                     dmg.color.b,
                     dmg.color.a,
-                    UIFont.Medium
+                    FONT_DAMAGE
                 )
             end
         end
@@ -242,92 +434,85 @@ function ISDTNPCHealthBarManager:update()
     end
     self.updateCounter = 0
 
-    local cell = getCell()
-    if not cell then return end
-
-    local zombieList = cell:getZombieList()
-    if not zombieList then return end
-
     local activeUUIDs = {}
     local currentTime = getTimeInMillis()
+    local staleUUIDs = {}
 
-    for i = 0, zombieList:size() - 1 do
-        local zombie = zombieList:get(i)
-        if zombie then
-            local modData = zombie:getModData()
-            if modData and modData.IsDTNPC then
-                local npcData = getNPCData(zombie)
-                local uuid = modData.DTNPC_UUID or tostring(zombie:getPersistentOutfitID())
+    for uuid, tracked in pairs(DTNPCClient.HealthBarTracked or {}) do
+        if tracked then
+            local zombie = resolveTrackedZombie(uuid, tracked, currentTime)
+            local npcData = tracked.npcData or getCachedNPCData(uuid)
 
-                if npcData
-                    and uuid
-                    and math.abs(self.player:getZ() - zombie:getZ()) <= FLOOR_TOLERANCE
-                    and calculateDistance(self.player, zombie) <= MAX_DRAW_DISTANCE
-                then
-                    activeUUIDs[uuid] = true
+            if zombie then
+                npcData = getNPCData(zombie) or npcData
+            end
 
-                    local currentHp, maxHp
-                    local barData = self.barList[uuid]
+            if npcData or zombie then
+                touchTrackedEntry(tracked, zombie, npcData, tracked.outfitID, currentTime)
+            end
 
-                    if not barData then
-                        currentHp, maxHp = resolveHealth(npcData, zombie, nil)
-                        barData = {
-                            zombie = zombie,
-                            currentHp = currentHp,
-                            maxHp = maxHp,
-                            previousHp = currentHp,
-                            name = npcData.name or "Unknown",
-                            visibleUntil = isCombatState(npcData) and (currentTime + COMBAT_SHOW_DURATION) or 0,
-                        }
-                        self.barList[uuid] = barData
-                    else
-                        currentHp, maxHp = resolveHealth(npcData, zombie, barData.maxHp)
-                        barData.zombie = zombie
-                        barData.currentHp = currentHp
-                        barData.maxHp = maxHp
-                        barData.name = npcData.name or barData.name or "Unknown"
+            if zombie
+                and not zombie:isDead()
+                and math.abs(self.player:getZ() - zombie:getZ()) <= FLOOR_TOLERANCE
+                and calculateDistance(self.player, zombie) <= MAX_DRAW_DISTANCE
+            then
+                activeUUIDs[uuid] = true
 
-                        if isCombatState(npcData) then
+                local barData = self.barList[uuid]
+                if not barData then
+                    barData = {
+                        zombie = zombie,
+                        currentHp = tracked.currentHp,
+                        maxHp = tracked.maxHp,
+                        previousHp = tracked.currentHp,
+                        name = tracked.name or "Unknown",
+                        nameWidth = tracked.nameWidth or textManager:MeasureStringX(FONT_NAME, tracked.name or "Unknown"),
+                        visibleUntil = tracked.visibleUntil or 0,
+                    }
+                    self.barList[uuid] = barData
+                else
+                    barData.zombie = zombie
+                    barData.currentHp = tracked.currentHp
+                    barData.maxHp = tracked.maxHp
+                    barData.name = tracked.name or barData.name or "Unknown"
+                    barData.nameWidth = tracked.nameWidth or barData.nameWidth
+                    barData.visibleUntil = math.max(barData.visibleUntil or 0, tracked.visibleUntil or 0)
+
+                    if tracked.currentHp ~= barData.previousHp then
+                        local delta = barData.previousHp - tracked.currentHp
+                        if math.abs(delta) > 0.01 then
+                            local damageData = buildDamageText(delta)
                             barData.visibleUntil = currentTime + COMBAT_SHOW_DURATION
+                            self.damageTexts[uuid] = self.damageTexts[uuid] or {}
+                            table.insert(self.damageTexts[uuid], {
+                                text = damageData.text,
+                                width = damageData.width,
+                                x = zombie:getX(),
+                                y = zombie:getY(),
+                                z = zombie:getZ(),
+                                color = damageData.color,
+                                timestamp = currentTime,
+                                expireTime = currentTime + DAMAGE_TEXT_TTL,
+                            })
                         end
-
-                        if currentHp ~= barData.previousHp then
-                            local delta = barData.previousHp - currentHp
-                            if math.abs(delta) > 0.01 then
-                                local amount = math.abs(delta)
-                                local prefix = delta > 0 and "-" or "+"
-                                local color = delta > 0
-                                    and { r = 1, g = 0.45, b = 0.45, a = 1 }
-                                    or { r = 0.6, g = 1, b = 0.6, a = 1 }
-                                local rounded
-
-                                if amount >= 10 then
-                                    rounded = round(amount, 0)
-                                elseif amount >= 5 then
-                                    rounded = round(amount, 1)
-                                else
-                                    rounded = round(amount, 2)
-                                end
-
-                                barData.visibleUntil = currentTime + COMBAT_SHOW_DURATION
-                                self.damageTexts[uuid] = self.damageTexts[uuid] or {}
-                                table.insert(self.damageTexts[uuid], {
-                                    text = prefix .. tostring(rounded),
-                                    x = zombie:getX(),
-                                    y = zombie:getY(),
-                                    z = zombie:getZ(),
-                                    color = color,
-                                    timestamp = currentTime,
-                                    expireTime = currentTime + DAMAGE_TEXT_TTL,
-                                })
-                            end
-                        end
-
-                        barData.previousHp = currentHp
                     end
                 end
+
+                barData.previousHp = tracked.currentHp
+            elseif self.barList[uuid] then
+                self.barList[uuid] = nil
+                self.damageTexts[uuid] = nil
+            end
+
+            if isTrackedEntryStale(tracked, currentTime) then
+                table.insert(staleUUIDs, { uuid = uuid, outfitID = tracked.outfitID })
             end
         end
+    end
+
+    for i = 1, #staleUUIDs do
+        local stale = staleUUIDs[i]
+        DTNPCClient.UntrackNPCForHealthBars(stale.uuid, stale.outfitID)
     end
 
     for uuid, _ in pairs(self.barList) do
@@ -358,14 +543,10 @@ function ISDTNPCHealthBarManager:new(playerIndex, player)
     return o
 end
 
-DTNPCClient.HealthBarManagers = DTNPCClient.HealthBarManagers or {}
-
 local function initForPlayer(playerIndex)
     local player = getSpecificPlayer(playerIndex)
     if not player then return end
-    if DTNPCClient.HealthBarManagers[playerIndex] then
-        return
-    end
+    if DTNPCClient.HealthBarManagers[playerIndex] then return end
 
     local manager = ISDTNPCHealthBarManager:new(playerIndex, player)
     manager:initialise()
@@ -392,6 +573,22 @@ local function onPreUIDraw()
     end
 end
 
+local function onWeaponHitCharacter(attacker, target, weapon, damage)
+    if not attacker or not target then return end
+    if attacker:getObjectName() ~= "Player" then return end
+
+    local modData = target:getModData()
+    if not modData or not modData.IsDTNPC then return end
+
+    DTNPCClient.MarkNPCCombatForHealthBars(
+        modData.DTNPC_UUID,
+        target,
+        getNPCData(target),
+        target:getPersistentOutfitID()
+    )
+end
+
 Events.OnCreatePlayer.Add(onCreatePlayer)
 Events.OnGameStart.Add(onGameStart)
 Events.OnPreUIDraw.Add(onPreUIDraw)
+Events.OnWeaponHitCharacter.Add(onWeaponHitCharacter)
