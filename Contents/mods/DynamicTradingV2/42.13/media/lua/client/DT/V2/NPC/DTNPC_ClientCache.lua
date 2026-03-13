@@ -76,6 +76,9 @@ function DTNPCClient.RemoveFromCache(uuid, outfitID)
         if DTNPCClient.UntrackNPCForHealthBars then
             DTNPCClient.UntrackNPCForHealthBars(uuid, outfitID)
         end
+        if DTNPCClient.UntrackNPCAmbientDialogue then
+            DTNPCClient.UntrackNPCAmbientDialogue(uuid, outfitID)
+        end
         DynamicTrading.Log("DTV2", "NPC", "Cache", "Removed from cache: " .. uuid)
     end
     

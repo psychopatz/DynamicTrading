@@ -6,6 +6,7 @@
 DTNPCClient = DTNPCClient or {}
 
 require "DT/V2/NPC/DTNPC_HealthBars"
+require "DT/V2/NPC/DTNPC_AmbientDialogue"
 
 function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     if not zombie or not npcData then return end
@@ -33,6 +34,9 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
 
     if DTNPCClient.TrackNPCForHealthBars then
         DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, zombie:getPersistentOutfitID())
+    end
+    if DTNPCClient.TrackNPCForAmbientDialogue then
+        DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, uuid, zombie:getPersistentOutfitID())
     end
     
     -- Ensure npcData is attached even if we don't need to reapply visuals
@@ -105,6 +109,9 @@ function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
 
     if uuid and DTNPCClient.TrackNPCForHealthBars then
         DTNPCClient.TrackNPCForHealthBars(zombie, DTNPC.GetData(zombie), uuid, zombie:getPersistentOutfitID())
+    end
+    if uuid and DTNPCClient.TrackNPCForAmbientDialogue then
+        DTNPCClient.TrackNPCForAmbientDialogue(zombie, DTNPC.GetData(zombie), uuid, zombie:getPersistentOutfitID())
     end
     
     if DTNPCClient.LocalControlled[uuid] then

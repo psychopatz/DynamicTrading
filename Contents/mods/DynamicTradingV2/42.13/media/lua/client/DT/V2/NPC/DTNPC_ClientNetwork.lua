@@ -45,6 +45,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
         if DTNPCClient.TrackNPCForHealthBars then
             DTNPCClient.TrackNPCForHealthBars(nil, args.npcData, uuid, outfitID)
         end
+        if DTNPCClient.TrackNPCForAmbientDialogue then
+            DTNPCClient.TrackNPCForAmbientDialogue(nil, args.npcData, uuid, outfitID)
+        end
         
         -- Track position for interpolation
         if args.x and args.y then
@@ -96,6 +99,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
             
             if args.health then cached.npcData.health = args.health end
             if args.state then cached.npcData.state = args.state end
+            if args.status then cached.npcData.status = args.status end
             if args.outfitID then
                 DTNPCClient.OutfitIDToUUID[args.outfitID] = uuid
                 cached.npcData.currentOutfitID = args.outfitID
@@ -113,6 +117,7 @@ function DTNPCClient.OnServerCommand(module, command, args)
                 if zombieData then
                     if args.state then zombieData.state = args.state end
                     if args.health then zombieData.health = args.health end
+                    if args.status then zombieData.status = args.status end
                 end
 
                 if not DTNPCClient.LocalControlled[uuid] then
@@ -129,6 +134,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
 
         if DTNPCClient.TrackNPCForHealthBars then
             DTNPCClient.TrackNPCForHealthBars(nil, cached and cached.npcData or nil, uuid, args.outfitID)
+        end
+        if DTNPCClient.TrackNPCForAmbientDialogue then
+            DTNPCClient.TrackNPCForAmbientDialogue(nil, cached and cached.npcData or nil, uuid, args.outfitID)
         end
         if args.health and DTNPCClient.MarkNPCCombatForHealthBars then
             DTNPCClient.MarkNPCCombatForHealthBars(uuid, nil, cached and cached.npcData or nil, args.outfitID)
@@ -179,6 +187,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
             if DTNPCClient.TrackNPCForHealthBars then
                 DTNPCClient.TrackNPCForHealthBars(nil, npcData, uuid, outfitID)
             end
+            if DTNPCClient.TrackNPCForAmbientDialogue then
+                DTNPCClient.TrackNPCForAmbientDialogue(nil, npcData, uuid, outfitID)
+            end
             
             local zombie = DTNPCClient.FindZombieByUUID(uuid)
             
@@ -215,6 +226,9 @@ function DTNPCClient.OnServerCommand(module, command, args)
                 DTNPCClient.CacheData(uuid, outfitID, npcData.npcData)
                 if DTNPCClient.TrackNPCForHealthBars then
                     DTNPCClient.TrackNPCForHealthBars(nil, npcData.npcData, uuid, outfitID)
+                end
+                if DTNPCClient.TrackNPCForAmbientDialogue then
+                    DTNPCClient.TrackNPCForAmbientDialogue(nil, npcData.npcData, uuid, outfitID)
                 end
 
                 -- Track position for interpolation
