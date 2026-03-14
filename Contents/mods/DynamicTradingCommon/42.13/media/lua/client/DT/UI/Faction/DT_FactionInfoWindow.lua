@@ -18,6 +18,63 @@ require "DT/UI/Faction/DT_NPCProfilePanel"
 DT_FactionInfoWindow = ISCollapsableWindow:derive("DT_FactionInfoWindow")
 DT_FactionInfoWindow.instance = nil
 
+local function shallowCopy(source)
+    local copy = {}
+    if type(source) ~= "table" then
+        return copy
+    end
+
+    for key, value in pairs(source) do
+        copy[key] = value
+    end
+
+    return copy
+end
+
+local function resolveFactionData()
+    local merged = shallowCopy(DT_FactionInfoWindow.cachedFactionData)
+    local factionData = ModData.get("DynamicTrading_Factions")
+
+    if type(factionData) == "table" then
+        for key, value in pairs(factionData) do
+            merged[key] = value
+        end
+    end
+
+    return merged
+end
+
+local function resolveRosterData()
+    local merged = shallowCopy(DT_FactionInfoWindow.cachedRosterData)
+    local rosterData = ModData.get("DynamicTrading_Roster")
+
+    if type(rosterData) == "table" then
+        for key, value in pairs(rosterData) do
+            merged[key] = value
+        end
+
+        if type(DT_FactionInfoWindow.cachedRosterData) == "table" or type(rosterData.Souls) == "table" then
+            merged.Souls = shallowCopy(DT_FactionInfoWindow.cachedRosterData and DT_FactionInfoWindow.cachedRosterData.Souls)
+            if type(rosterData.Souls) == "table" then
+                for key, value in pairs(rosterData.Souls) do
+                    merged.Souls[key] = value
+                end
+            end
+        end
+
+        if type(DT_FactionInfoWindow.cachedRosterData) == "table" or type(rosterData.FactionMembers) == "table" then
+            merged.FactionMembers = shallowCopy(DT_FactionInfoWindow.cachedRosterData and DT_FactionInfoWindow.cachedRosterData.FactionMembers)
+            if type(rosterData.FactionMembers) == "table" then
+                for key, value in pairs(rosterData.FactionMembers) do
+                    merged.FactionMembers[key] = value
+                end
+            end
+        end
+    end
+
+    return merged
+end
+
 function DT_FactionInfoWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
@@ -178,8 +235,8 @@ function DT_FactionInfoWindow:refreshList()
     end
     
     -- Singleplayer Direct Access
-    local factionData = ModData.get("DynamicTrading_Factions") or {}
-    local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    local factionData = resolveFactionData()
+    local rosterData = resolveRosterData()
     
     self:populateList(factionData, rosterData)
 end
@@ -388,9 +445,9 @@ if not DT_FactionInfoWindow.EventsAdded then
             -- Faction/Roster Data -> Update List
             -- [FIX] Do NOT call refreshList() here, it sends another network command!
             -- Call populateList() with local data instead.
-            if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster" or key == "DynamicTrading_Engine_v2") then
-                local factionData = ModData.get("DynamicTrading_Factions") or {}
-                local rosterData = ModData.get("DynamicTrading_Roster") or {}
+            if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster") then
+                local factionData = resolveFactionData()
+                local rosterData = resolveRosterData()
                 DT_FactionInfoWindow.instance:populateList(factionData, rosterData)
             
             -- Engine Data (Inflation/Events) -> Update Active Tab Details
@@ -400,7 +457,7 @@ if not DT_FactionInfoWindow.EventsAdded then
                      local activeView = panel:getActiveView()
                      if activeView and activeView.updateData then
                          -- data is already in ModData, just re-render
-                         local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster") or {}
+                         local rosterData = resolveRosterData()
                          activeView:updateData(DT_FactionInfoWindow.selectedFaction, rosterData)
                      end
                  end
