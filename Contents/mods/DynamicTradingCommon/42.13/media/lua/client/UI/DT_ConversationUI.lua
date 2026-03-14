@@ -577,6 +577,13 @@ function DT_ConversationUI:close()
         DT_ConfigManager.setWindowState("ConversationUI", self:getX(), self:getY(), self:getWidth(), self:getHeight())
     end
 
+    if self.onCloseCallback then
+        local success, err = pcall(self.onCloseCallback, self)
+        if not success and DynamicTrading and DynamicTrading.Log then
+            DynamicTrading.Log("DTV2", "Dialog", "Error", "Conversation close callback failed: " .. tostring(err))
+        end
+    end
+
     self:setVisible(false)
     self:removeFromUIManager()
     DT_ConversationUI.instance = nil

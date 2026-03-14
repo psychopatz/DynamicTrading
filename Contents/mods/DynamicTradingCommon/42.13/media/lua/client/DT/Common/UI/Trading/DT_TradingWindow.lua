@@ -247,6 +247,12 @@ function DT_TradingWindow:close()
     if DT_ConfigManager and DT_ConfigManager.setWindowState then
         DT_ConfigManager.setWindowState("TradingWindow", self:getX(), self:getY(), self:getWidth(), self:getHeight())
     end
+    if self.onCloseCallback then
+        local success, err = pcall(self.onCloseCallback, self)
+        if not success and DynamicTrading and DynamicTrading.Log then
+            DynamicTrading.Log("DTV2", "Trade", "Error", "Trading close callback failed: " .. tostring(err))
+        end
+    end
     ISCollapsableWindow.close(self)
     DT_TradingWindow.instance = nil
 end

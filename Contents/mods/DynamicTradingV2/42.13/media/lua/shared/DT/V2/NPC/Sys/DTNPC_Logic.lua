@@ -18,11 +18,14 @@ local isIdleCycleState
 local resetIdleCycle
 local updateIdleCycle
 
+DTNPCLogic.ActivePlayersSnapshot = DTNPCLogic.ActivePlayersSnapshot or {}
+
 require "DT/V2/NPC/Behaviors/Behavior_GoTo"
 require "DT/V2/NPC/Behaviors/Behavior_Attack"
 require "DT/V2/NPC/Behaviors/Behavior_AttackRange"
 require "DT/V2/NPC/Behaviors/Behavior_Flee"
 require "DT/V2/NPC/Behaviors/Behavior_Follow"
+require "DT/V2/NPC/Behaviors/Behavior_Stationary"
 require "DT/V2/NPC/Behaviors/Behavior_Idle"
 require "DT/V2/NPC/Behaviors/Behavior_Guard" 
 require "DT/V2/NPC/Behaviors/Behavior_Trading"
@@ -37,6 +40,49 @@ local function calculateDistance(obj1, obj2)
     local dx = obj1:getX() - obj2:getX()
     local dy = obj1:getY() - obj2:getY()
     return math.sqrt(dx * dx + dy * dy)
+end
+
+function DTNPCLogic.RefreshActivePlayers()
+    local players = {}
+
+    if DTNPCManager and DTNPCManager.GetActivePlayers then
+        local activePlayers = DTNPCManager.GetActivePlayers()
+        if activePlayers then
+            for i = 1, #activePlayers do
+                local player = activePlayers[i]
+                if player then
+                    players[#players + 1] = player
+                end
+            end
+        end
+    else
+        local onlinePlayers = getOnlinePlayers()
+        if onlinePlayers then
+            for i = 0, onlinePlayers:size() - 1 do
+                local player = onlinePlayers:get(i)
+                if player then
+                    players[#players + 1] = player
+                end
+            end
+        else
+            local player = nil
+            if getPlayer then
+                player = getPlayer()
+            end
+            if not player then
+                player = getSpecificPlayer(0)
+            end
+            if player then
+                players[1] = player
+            end
+        end
+    end
+
+    DTNPCLogic.ActivePlayersSnapshot = players
+end
+
+function DTNPCLogic.GetActivePlayers()
+    return DTNPCLogic.ActivePlayersSnapshot or {}
 end
 
 local function suppressSound(zombie)
@@ -56,10 +102,12 @@ end
 
 function DTNPCLogic.OnTick()
     -- Run on both Client and Server, but only for Local (Owned) zombies
-    
+
     local cell = getCell()
     if not cell then return end
-    
+
+    DTNPCLogic.RefreshActivePlayers()
+
     local zombieList = cell:getZombieList()
     if not zombieList then return end
     
@@ -104,7 +152,7 @@ function DTNPCLogic.ProcessNPC(zombie)
     
     -- AGGRESSIVE WANDER PREVENTION
     -- Lock down zombies that should be stationary
-    if state == "Stay" or state == "Guard" or state == "Idle" then
+    if state == "Stay" or state == "Guard" or state == "Idle" or state == "Trading" then
         zombie:setPath2(nil)
         zombie:setTarget(nil)
         
@@ -202,13 +250,11 @@ function DTNPCLogic.GetClosestTarget(zombie)
         end
         
         if npcData.masterID then
-            local onlinePlayers = getOnlinePlayers()
-            if onlinePlayers then
-                for i = 0, onlinePlayers:size() - 1 do
-                    local p = onlinePlayers:get(i)
-                    if p and p:getOnlineID() == npcData.masterID then
-                         return p, calculateDistance(zombie, p)
-                    end
+            local activePlayers = DTNPCLogic.GetActivePlayers()
+            for i = 1, #activePlayers do
+                local p = activePlayers[i]
+                if p and p:getOnlineID() == npcData.masterID then
+                     return p, calculateDistance(zombie, p)
                 end
             end
             local p = getSpecificPlayer(0)
@@ -220,16 +266,14 @@ function DTNPCLogic.GetClosestTarget(zombie)
 
     -- 2. Master Targeting (Friendly)
     if npcData.masterID or npcData.master then
-        local onlinePlayers = getOnlinePlayers()
-        if onlinePlayers then
-            for i = 0, onlinePlayers:size() - 1 do
-                local p = onlinePlayers:get(i)
-                if p and ((npcData.masterID and p:getOnlineID() == npcData.masterID) or (npcData.master and p:getUsername() == npcData.master)) then
-                    return p, calculateDistance(zombie, p)
-                end
+        local activePlayers = DTNPCLogic.GetActivePlayers()
+        for i = 1, #activePlayers do
+            local p = activePlayers[i]
+            if p and ((npcData.masterID and p:getOnlineID() == npcData.masterID) or (npcData.master and p:getUsername() == npcData.master)) then
+                return p, calculateDistance(zombie, p)
             end
         end
-        
+
         local p = getSpecificPlayer(0)
         if p and p:getUsername() == npcData.master then
              return p, calculateDistance(zombie, p)
@@ -276,6 +320,14 @@ end
 updateIdleCycle = function(zombie, npcData, state)
     if not isIdleCycleState(state) then
         resetIdleCycle(zombie, npcData)
+        return
+    end
+
+    local forcedIdleState = DTNPCLogic.Stationary.GetDesiredIdleState(zombie, npcData)
+    if forcedIdleState then
+        npcData.idleCycleCounter = 0
+        npcData.idleCycleIndex = 0
+        zombie:setVariable("DTIdleState", forcedIdleState)
         return
     end
 

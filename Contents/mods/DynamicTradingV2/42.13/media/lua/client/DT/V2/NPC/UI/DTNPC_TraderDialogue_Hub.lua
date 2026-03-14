@@ -3,12 +3,29 @@
 -- =============================================================================
 require "UI/DT_ConversationUI"
 require "DT/V2/NPC/DTNPC_TradingHandler"
+require "DT/V2/NPC/DTNPC_InteractionPose"
 require "DT/V2/UI/TradingWindowWrapper/TradingWindowWrapper"
 require "DT/V2/Utils/DT_V2_OptionsManager"
 
 local DEBUG_PREFIX = "[DT-V2-Hub]"
 
 DTNPC_TraderDialogue_Hub = {}
+
+local function clearInteractionPose(npc)
+    if DTNPC_InteractionPose and DTNPC_InteractionPose.Deactivate then
+        DTNPC_InteractionPose.Deactivate(npc)
+    end
+end
+
+local function applyInteractionPose(npc, player)
+    if DTNPC_InteractionPose and DTNPC_InteractionPose.Activate then
+        DTNPC_InteractionPose.Activate(
+            npc,
+            DTNPCLogic and DTNPCLogic.Stationary and DTNPCLogic.Stationary.INTERACTION_IDLE_STATE or "3",
+            player
+        )
+    end
+end
 
 
 function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
@@ -64,6 +81,11 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
     end
     
     if not npc or not player then return end
+
+    applyInteractionPose(npc, player)
+    ui.onCloseCallback = function()
+        clearInteractionPose(npc)
+    end
     
     -- 1. Intro Speech
     ui:speak("Hello. What can I do for you?")
@@ -211,6 +233,7 @@ local function OnTick()
     local uiValid = pending.ui and pending.ui:getIsVisible()
     if not uiValid then
         DynamicTrading.Log("DTV2", "Dialog", "Trade", "Pending trade cancelled - UI closed")
+        clearInteractionPose(pending.npc)
         DTNPC_TraderDialogue_Hub.PendingTrade = nil
         return
     end
@@ -248,6 +271,7 @@ local function OnTick()
         if uiValid then
             pending.ui:speak("Sorry, I'm having trouble with my inventory right now.")
         end
+        clearInteractionPose(pending.npc)
         DTNPC_TraderDialogue_Hub.PendingTrade = nil
     end
 end

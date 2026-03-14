@@ -182,7 +182,7 @@ function DTNPCManager.OnTick()
                     end
                     
                     -- Prevent wandering
-                    if zombie:isUseless() and (savedData.state == "Stay" or savedData.state == "Guard") then
+                    if zombie:isUseless() and (savedData.state == "Stay" or savedData.state == "Guard" or savedData.state == "Idle" or savedData.state == "Trading") then
                         zombie:setPath2(nil)
                         zombie:setTarget(nil)
                     end

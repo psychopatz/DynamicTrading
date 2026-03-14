@@ -285,6 +285,13 @@ function DT_TradingWindow:close()
         end
     end
 
+    if self.onCloseCallback then
+        local success, err = pcall(self.onCloseCallback, self)
+        if not success and DynamicTrading and DynamicTrading.Log then
+            DynamicTrading.Log("DTV2", "Trade", "Error", "Trading close callback failed: " .. tostring(err))
+        end
+    end
+
     self:setVisible(false)
     self:removeFromUIManager()
     DT_TradingWindow.instance = nil
