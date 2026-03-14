@@ -53,6 +53,25 @@ end
 -- =============================================================================
 DynamicTrading.Dialogue = DynamicTrading.Dialogue or {}
 DynamicTrading.Dialogue.Archetypes = DynamicTrading.Dialogue.Archetypes or {}
+DynamicTrading.AmbientDialogue = DynamicTrading.AmbientDialogue or {}
+DynamicTrading.AmbientDialogue.Archetypes = DynamicTrading.AmbientDialogue.Archetypes or {}
+
+local function MergeNestedTables(target, source)
+    if type(target) ~= "table" or type(source) ~= "table" then
+        return source
+    end
+
+    for key, value in pairs(source) do
+        local existing = target[key]
+        if type(existing) == "table" and type(value) == "table" and not existing[1] and not value[1] then
+            MergeNestedTables(existing, value)
+        else
+            target[key] = value
+        end
+    end
+
+    return target
+end
 
 -- New RegisterDialogue for In-Code Translations
 function DynamicTrading.RegisterDialogue(archetypeID, dialogueType, data)
@@ -62,14 +81,33 @@ function DynamicTrading.RegisterDialogue(archetypeID, dialogueType, data)
     local archTable = DynamicTrading.Dialogue.Archetypes[archetypeID]
     
     archTable[dialogueType] = archTable[dialogueType] or {}
-    
+
     -- Merge translations (supports overrides and cross-file loading)
     for lang, lines in pairs(data) do
-        archTable[dialogueType][lang] = lines
+        if type(archTable[dialogueType][lang]) == "table" and type(lines) == "table" then
+            archTable[dialogueType][lang] = MergeNestedTables(archTable[dialogueType][lang], lines)
+        else
+            archTable[dialogueType][lang] = lines
+        end
     end
 
     if archetypeID == "Player" and DynamicTrading.Debug then
          DynamicTrading.Log("DTCommons", "Dialogue", "Debug", "Registered Player Dialogue: " .. dialogueType)
+    end
+end
+
+function DynamicTrading.RegisterAmbientDialogue(archetypeID, data)
+    if not archetypeID or not data then return end
+
+    DynamicTrading.AmbientDialogue.Archetypes[archetypeID] = DynamicTrading.AmbientDialogue.Archetypes[archetypeID] or {}
+    local archTable = DynamicTrading.AmbientDialogue.Archetypes[archetypeID]
+
+    for lang, lines in pairs(data) do
+        if type(archTable[lang]) == "table" and type(lines) == "table" then
+            archTable[lang] = MergeNestedTables(archTable[lang], lines)
+        else
+            archTable[lang] = lines
+        end
     end
 end
 
@@ -94,12 +132,13 @@ DynamicTrading.Config.ArchetypeList = {
     "General", "Player" -- Meta archetypes
 }
 
-local languages = { 
-    "AR", "CA", "CH", "CN", "CS", "DA", "DE", "EN", "ES", "FI", 
-    "FR", "HU", "ID", "IT", "JP", "KO", "NL", "NO", "PH", "PL", 
-    "PT", "PTBR", "RO", "RU", "TH", "TR", "UA" 
+local languages = {
+    "AR", "CA", "CH", "CN", "CS", "DA", "DE", "EN", "ES", "FI",
+    "FR", "HU", "ID", "IT", "JP", "KO", "NL", "NO", "PH", "PL",
+    "PT", "PTBR", "RO", "RU", "TH", "TR", "UA"
 }
 local dialogueTypes = { "Greetings", "Buying", "Selling", "Sell_ask", "Idle", "Request" }
+local ambientDialogueStatuses = { "Default", "Trading", "Resting", "Working", "Away" }
 
 -- Debug Flag
 DynamicTrading.Debug = false
@@ -188,6 +227,30 @@ function DynamicTrading.LoadArchetypes()
                     local tSuccess, _ = pcall(require, transPath)
                     if tSuccess then
                         if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded " .. dType .. " (" .. lang .. ")") end
+                    end
+                end
+            end
+        end
+
+        -- 2b. Load Ambient Dialogues
+        for _, statusType in ipairs(ambientDialogueStatuses) do
+            local baseAmbientPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/Ambient/DT_" .. id .. "_Ambient_" .. statusType
+
+            if FileExists(baseAmbientPath) then
+                local success, _ = pcall(require, baseAmbientPath)
+                if success then
+                    if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded Ambient " .. statusType .. " (Base)") end
+                    totalLoaded = totalLoaded + 1
+                end
+            end
+
+            for _, lang in ipairs(languages) do
+                local transPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/Ambient/Translations/" .. lang .. "/DT_" .. id .. "_Ambient_" .. statusType .. "_" .. lang
+
+                if FileExists(transPath) then
+                    local tSuccess, _ = pcall(require, transPath)
+                    if tSuccess then
+                        if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded Ambient " .. statusType .. " (" .. lang .. ")") end
                     end
                 end
             end

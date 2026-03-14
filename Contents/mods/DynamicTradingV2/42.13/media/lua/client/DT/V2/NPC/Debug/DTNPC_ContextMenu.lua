@@ -248,6 +248,28 @@ local function onMarkAllNPCs(player)
     player:Say("Marked " .. count .. " NPCs")
 end
 
+local function onForceAmbientDialogue(player, npc)
+    if not npc or not player then return end
+
+    if DTNPCClient and DTNPCClient.ForceAmbientDialogueForNPC then
+        local ok = DTNPCClient.ForceAmbientDialogueForNPC(npc, player:getPlayerNum())
+        player:Say(ok and "Forced ambient dialogue." or "Ambient force failed. Check logs.")
+    else
+        player:Say("Ambient dialogue tester not available.")
+    end
+end
+
+local function onDebugAmbientDialogue(player, npc)
+    if not npc or not player then return end
+
+    if DTNPCClient and DTNPCClient.DebugPrintAmbientDialogue then
+        local ok = DTNPCClient.DebugPrintAmbientDialogue(npc)
+        player:Say(ok and "Ambient dialogue info printed." or "Ambient dialogue lookup failed. Check logs.")
+    else
+        player:Say("Ambient dialogue debug not available.")
+    end
+end
+
 local function onClearNPCMarkers(player)
     if not EventMarkerHandler then
         player:Say("EventMarkerHandler not available!")
@@ -343,7 +365,9 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             debugSub:addOption("TEST: Flee (Return as Trading)", npc, onOrder, "Flee", player, "Trading")
             debugSub:addOption("TEST: Attack Me (Melee)", npc, onOrder, "Attack", player)
             debugSub:addOption("TEST: Attack Me (Gun)", npc, onOrder, "AttackRange", player)
-            
+            debugSub:addOption("TEST: Force Ambient Speech", player, onForceAmbientDialogue, npc)
+            debugSub:addOption("DEBUG: Print Ambient Dialogue Info", player, onDebugAmbientDialogue, npc)
+
             debugSub:addOption("DEBUG: Inspect Data", nil, function()
                 DTNPC_Debugger.OnOpenWindow()
                 if DTNPC_Debugger.instance then

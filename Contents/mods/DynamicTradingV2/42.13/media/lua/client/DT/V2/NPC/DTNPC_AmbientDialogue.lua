@@ -5,6 +5,7 @@
 -- ==============================================================================
 
 require "ISUI/ISUIElement"
+require "DT/Common/Ambient/DT_AmbientDialogue"
 require "DT/V2/NPC/DTNPC_AmbientDialogueConfig"
 
 DTNPCClient = DTNPCClient or {}
@@ -97,11 +98,35 @@ local function getTrackedEntry(uuid)
         name = "Unknown",
         lastSeenAt = getTimeInMillis(),
         nextResolveAt = 0,
-        nextSpeakAt = 0,
+        nextSpeakAt = nil,
         wasInRange = false,
     }
     DTNPCClient.AmbientDialogueTracked[uuid] = entry
     return entry
+end
+
+local function getRandomDelay(minMs, maxMs)
+    local safeMin = math.max(0, tonumber(minMs) or 0)
+    local safeMax = math.max(safeMin, tonumber(maxMs) or safeMin)
+    if safeMax <= safeMin then
+        return safeMin
+    end
+
+    return safeMin + ZombRand((safeMax - safeMin) + 1)
+end
+
+local function scheduleInitialSpeak(entry, currentTime)
+    entry.nextSpeakAt = currentTime + getRandomDelay(
+        Config.InitialDelayMinMs,
+        Config.InitialDelayMaxMs
+    )
+end
+
+local function scheduleRepeatSpeak(entry, currentTime)
+    entry.nextSpeakAt = currentTime + getRandomDelay(
+        Config.RepeatDelayMinMs,
+        Config.RepeatDelayMaxMs
+    )
 end
 
 function DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, uuid, outfitID)
@@ -172,28 +197,26 @@ local function isTrackedEntryStale(entry, currentTime)
     return not hasCache and not hasZombie and (currentTime - (entry.lastSeenAt or 0)) > Config.StaleTrackMs
 end
 
-local function formatDialogue(entry)
-    if not entry or not entry.dialogue then
-        return nil
-    end
-
-    if DynamicTrading and DynamicTrading.Dialogue and DynamicTrading.Dialogue.Core and DynamicTrading.Dialogue.Core.FormatMessage then
-        return DynamicTrading.Dialogue.Core.FormatMessage(entry.dialogue, {
-            traderName = entry.traderName
-        })
-    end
-
-    return entry.dialogue
-end
-
 local function buildSpeechData(npcData, zombie, currentTime)
-    local dialogueEntry = Config.GetDialogueForNPC(npcData)
+    local dialogueEntry = nil
+    if DynamicTrading and DynamicTrading.AmbientDialogue and DynamicTrading.AmbientDialogue.GetEntry then
+        dialogueEntry = DynamicTrading.AmbientDialogue.GetEntry(
+            {
+                archetype = npcData and (npcData.archetypeID or npcData.occupation) or "General",
+                name = npcData and npcData.name or "Trader"
+            },
+            npcData and npcData.status or "Default",
+            npcData and npcData.state or "Default",
+            {
+                traderName = npcData and npcData.name or "Trader"
+            }
+        )
+    end
     if not dialogueEntry then
         return nil
     end
 
-    dialogueEntry.traderName = npcData and npcData.name or "Trader"
-    local text = formatDialogue(dialogueEntry)
+    local text = dialogueEntry.dialogue
     if not text or text == "" or text == "..." then
         return nil
     end
@@ -209,6 +232,105 @@ local function buildSpeechData(npcData, zombie, currentTime)
         timestamp = currentTime,
         expireTime = currentTime + Config.DisplayTimeMs,
     }
+end
+
+local function getAmbientDebugInfo(npcData)
+    local archetype = npcData and (npcData.archetypeID or npcData.occupation) or "General"
+    local status = npcData and npcData.status or "Default"
+    local state = npcData and npcData.state or "Default"
+    local dialogueDB = DynamicTrading and DynamicTrading.Dialogue and DynamicTrading.Dialogue.Archetypes or nil
+    local ambientDB = DynamicTrading and DynamicTrading.AmbientDialogue and DynamicTrading.AmbientDialogue.Archetypes or nil
+    local archetypeTable = ambientDB and ambientDB[archetype] or nil
+    local generalTable = ambientDB and ambientDB.General or nil
+    local entry = nil
+
+    if DynamicTrading and DynamicTrading.AmbientDialogue and DynamicTrading.AmbientDialogue.GetEntry then
+        entry = DynamicTrading.AmbientDialogue.GetEntry(
+            {
+                archetype = archetype,
+                name = npcData and npcData.name or "Trader"
+            },
+            status,
+            state,
+            {
+                traderName = npcData and npcData.name or "Trader"
+            }
+        )
+    end
+
+    return {
+        archetype = archetype,
+        status = status,
+        state = state,
+        hasArchetype = archetypeTable ~= nil,
+        hasArchetypeAmbient = archetypeTable ~= nil,
+        hasGeneralAmbient = generalTable ~= nil,
+        entry = entry,
+    }
+end
+
+function DTNPCClient.DebugPrintAmbientDialogue(zombie)
+    local npcData = getNPCData(zombie)
+    if not npcData then
+        DynamicTrading.Log("DTV2", "NPC", "Ambient", "DEBUG Ambient: no npcData on target zombie")
+        return false
+    end
+
+    local info = getAmbientDebugInfo(npcData)
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "DEBUG Ambient NPC: " .. tostring(npcData.name or "Unknown"))
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "  UUID: " .. tostring(npcData.uuid))
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "  Archetype: " .. tostring(info.archetype))
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "  Status: " .. tostring(info.status))
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "  State: " .. tostring(info.state))
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "  Has Archetype Table: " .. tostring(info.hasArchetype))
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "  Has Archetype Ambient: " .. tostring(info.hasArchetypeAmbient))
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "  Has General Ambient: " .. tostring(info.hasGeneralAmbient))
+
+    if info.entry then
+        DynamicTrading.Log("DTV2", "NPC", "Ambient", "  Picked Sentiment: " .. tostring(info.entry.sentiment))
+        DynamicTrading.Log("DTV2", "NPC", "Ambient", "  Picked Dialogue: " .. tostring(info.entry.dialogue))
+        return true
+    end
+
+    DynamicTrading.Log("DTV2", "NPC", "Ambient", "  Picked Dialogue: nil")
+    return false
+end
+
+function DTNPCClient.ForceAmbientDialogueForNPC(zombie, playerIndex)
+    if not zombie then
+        return false
+    end
+
+    local npcData = getNPCData(zombie)
+    if not npcData then
+        DynamicTrading.Log("DTV2", "NPC", "Ambient", "Force Ambient failed: no npcData on target zombie")
+        return false
+    end
+
+    local manager = DTNPCClient.AmbientDialogueManagers and DTNPCClient.AmbientDialogueManagers[playerIndex or 0]
+    if not manager then
+        DynamicTrading.Log("DTV2", "NPC", "Ambient", "Force Ambient failed: no dialogue manager for player index " .. tostring(playerIndex or 0))
+        return false
+    end
+
+    local speechData = buildSpeechData(npcData, zombie, getTimeInMillis())
+    if not speechData then
+        DynamicTrading.Log("DTV2", "NPC", "Ambient", "Force Ambient failed: no speech data generated")
+        DTNPCClient.DebugPrintAmbientDialogue(zombie)
+        return false
+    end
+
+    speechData.zombie = zombie
+    manager.speechList[npcData.uuid or tostring(zombie:getPersistentOutfitID())] = speechData
+    DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, npcData.uuid, zombie:getPersistentOutfitID())
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Ambient",
+        "Force Ambient queued for " .. tostring(npcData.name or "Unknown") .. ": " .. tostring(speechData.text)
+    )
+    return true
 end
 
 function ISDTNPCAmbientDialogueManager:initialize()
@@ -325,20 +447,48 @@ function ISDTNPCAmbientDialogueManager:update()
                 and calculateDistance(self.player, zombie) <= Config.TriggerDistance
 
             if inRange then
-                local shouldSpeak = (not tracked.wasInRange)
-                    and currentTime >= (tracked.nextSpeakAt or 0)
+                if not tracked.wasInRange or not tracked.nextSpeakAt then
+                    scheduleInitialSpeak(tracked, currentTime)
+                end
+
+                local shouldSpeak = currentTime >= (tracked.nextSpeakAt or math.huge)
                 if shouldSpeak and npcData then
                     local speechData = buildSpeechData(npcData, zombie, currentTime)
                     if speechData then
                         speechData.zombie = zombie
                         self.speechList[uuid] = speechData
-                        tracked.nextSpeakAt = currentTime + Config.CooldownMs
+                        if isDebugEnabled() then
+                            DynamicTrading.Log(
+                                "DTV2",
+                                "NPC",
+                                "Ambient",
+                                "Queued Ambient for " .. tostring(npcData.name or uuid)
+                                    .. " [" .. tostring(npcData.status or "Default")
+                                    .. "/" .. tostring(npcData.state or "Default")
+                                    .. "] -> " .. tostring(speechData.text)
+                            )
+                        end
+                        scheduleRepeatSpeak(tracked, currentTime)
+                    else
+                        if isDebugEnabled() then
+                            DynamicTrading.Log(
+                                "DTV2",
+                                "NPC",
+                                "Ambient",
+                                "Ambient lookup returned no speech for "
+                                    .. tostring(npcData.name or uuid)
+                                    .. " [" .. tostring(npcData.status or "Default")
+                                    .. "/" .. tostring(npcData.state or "Default") .. "]"
+                            )
+                        end
+                        scheduleRepeatSpeak(tracked, currentTime)
                     end
                 end
 
                 tracked.wasInRange = true
             else
                 tracked.wasInRange = false
+                tracked.nextSpeakAt = nil
             end
 
             if self.speechList[uuid] and zombie then
