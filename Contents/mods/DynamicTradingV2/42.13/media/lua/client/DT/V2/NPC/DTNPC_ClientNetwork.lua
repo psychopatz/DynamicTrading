@@ -171,7 +171,13 @@ function DTNPCClient.OnServerCommand(module, command, args)
         end
 
         if DT_ReputationManager and factionID then
-            DT_ReputationManager.TryApplyKillPenalty(uuid, factionID, zombie)
+            DT_ReputationManager.TryApplyKillPenalty(
+                uuid,
+                factionID,
+                zombie,
+                args.killerUsername,
+                args.killerOnlineID
+            )
         end
         
         if zombie then

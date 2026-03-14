@@ -13,17 +13,21 @@ DT_ReputationManager.KILL_PENALTY = -35
 DT_ReputationManager.RECRUIT_PENALTY = -15
 DT_ReputationManager.HIT_ATTRIBUTION_MS = 15000
 DT_ReputationManager.FAST_KILL_CONFIRM_MS = 2500
-DT_ReputationManager.SHOW_HALO_DEBUG = true
+DT_ReputationManager.SAVE_DEBOUNCE_MS = 1500
+DT_ReputationManager.SHOW_HALO_DEBUG = false
+DT_ReputationManager.AUTO_DEBUG = false
 
 DT_ReputationManager.state = DT_ReputationManager.state or {
     characterKey = nil,
     loaded = false,
     dirty = false,
+    saveDueAt = nil,
     personalRep = {},
     factionBias = {},
     tradeProgress = {},
     totalBought = {},
     totalSold = {},
+    factionRepCache = {},
     recentHits = {},
 }
 
@@ -62,15 +66,57 @@ local function sanitizeKey(text)
     return tostring(text or "unknown"):gsub("[^%w_%-]", "_")
 end
 
+local function getSafeSteamID(player)
+    if not player or not player.getSteamID then
+        return "0"
+    end
+
+    local rawID = player:getSteamID()
+    if not rawID or rawID == 0 or rawID == "0" then
+        return "0"
+    end
+
+    if type(rawID) == "number" then
+        return string.format("%.0f", rawID)
+    end
+
+    return tostring(rawID)
+end
+
+local function invalidateFactionCache(factionID)
+    if not factionID then return end
+    DT_ReputationManager.state.factionRepCache[factionID] = nil
+end
+
+local function invalidateAllFactionCache()
+    DT_ReputationManager.state.factionRepCache = {}
+end
+
+local function queueSave(delayMs)
+    local state = DT_ReputationManager.state
+    state.dirty = true
+    state.saveDueAt = getTimeInMillis() + (delayMs or DT_ReputationManager.SAVE_DEBOUNCE_MS)
+end
+
+local function isSoulAlive(soul)
+    if not soul then
+        return true
+    end
+
+    return soul.status ~= "Dead"
+end
+
 local function resetState(characterKey)
     DT_ReputationManager.state.characterKey = characterKey
     DT_ReputationManager.state.loaded = true
     DT_ReputationManager.state.dirty = false
+    DT_ReputationManager.state.saveDueAt = nil
     DT_ReputationManager.state.personalRep = {}
     DT_ReputationManager.state.factionBias = {}
     DT_ReputationManager.state.tradeProgress = {}
     DT_ReputationManager.state.totalBought = {}
     DT_ReputationManager.state.totalSold = {}
+    DT_ReputationManager.state.factionRepCache = {}
     DT_ReputationManager.state.recentHits = {}
 end
 
@@ -109,9 +155,16 @@ local function generateCharacterKey(player)
     local desc = player and player:getDescriptor()
     local first = desc and desc:getForename() or "Survivor"
     local last = desc and desc:getSurname() or "Unknown"
-    local stamp = tostring(os.time() or 0)
-    local randomBits = tostring(ZombRand(100000, 999999))
-    return sanitizeKey(first) .. "_" .. sanitizeKey(last) .. "_" .. stamp .. "_" .. randomBits
+    local username = (player and player.getUsername and player:getUsername()) or "local"
+    local steamID = getSafeSteamID(player)
+    local mode = (isClient() and not isServer()) and "MP" or "SP"
+    return table.concat({
+        mode,
+        sanitizeKey(username),
+        sanitizeKey(steamID),
+        sanitizeKey(first),
+        sanitizeKey(last),
+    }, "_")
 end
 
 local function getTraderDebugName(traderUUID)
@@ -150,9 +203,27 @@ function DT_ReputationManager.EnsureCharacterKey(player)
     if not modData then return nil end
 
     local keyName = DT_ReputationManager.CHARACTER_KEY_MODDATA
-    if not modData[keyName] or modData[keyName] == "" then
-        modData[keyName] = generateCharacterKey(player)
-        log("Init", "Assigned new reputation character key: " .. tostring(modData[keyName]))
+    local stableKey = generateCharacterKey(player)
+    local oldKey = modData[keyName]
+    if oldKey and oldKey ~= "" and oldKey ~= stableKey then
+        local legacyReader = getFileReader(DT_ReputationManager.GetFileName(oldKey), false)
+        local stableReader = getFileReader(DT_ReputationManager.GetFileName(stableKey), false)
+        if legacyReader then legacyReader:close() end
+        if stableReader then stableReader:close() end
+
+        if legacyReader and not stableReader and DT_ReputationManager.LoadForCharacter(oldKey) then
+            DT_ReputationManager.state.characterKey = stableKey
+            DT_ReputationManager.Save()
+            log("Init", "Migrated reputation data from legacy key " .. tostring(oldKey) .. " to " .. tostring(stableKey))
+        end
+    end
+
+    if oldKey ~= stableKey then
+        modData[keyName] = stableKey
+        log("Init", "Assigned stable reputation character key: " .. tostring(modData[keyName]))
+        if isClient() and player.transmitModData then
+            player:transmitModData()
+        end
     end
 
     return modData[keyName]
@@ -196,6 +267,7 @@ function DT_ReputationManager.Save()
 
     writer:close()
     state.dirty = false
+    state.saveDueAt = nil
     return true
 end
 
@@ -294,30 +366,64 @@ function DT_ReputationManager.GetEffectiveRep(traderUUID, factionID)
     return DT_ReputationManager.Clamp(personal + bias)
 end
 
-function DT_ReputationManager.GetFactionRep(factionID)
+function DT_ReputationManager.GetFactionRep(factionID, rosterData)
     if not factionID then return 0 end
     if not DT_ReputationManager.EnsureLoaded() then return 0 end
 
-    local roster = ModData.get("DynamicTrading_Roster") or {}
+    local useCache = (rosterData == nil)
+    if useCache then
+        local cached = DT_ReputationManager.state.factionRepCache[factionID]
+        if cached ~= nil then
+            return cached
+        end
+    end
+
+    local roster = rosterData or ModData.get("DynamicTrading_Roster") or {}
     local members = roster.FactionMembers and roster.FactionMembers[factionID]
+    if (not members or #members == 0) and roster.Souls then
+        members = {}
+        for uuid, soul in pairs(roster.Souls) do
+            if soul and soul.factionID == factionID then
+                table.insert(members, uuid)
+            end
+        end
+    end
+
+    local souls = roster.Souls or {}
     local bias = DT_ReputationManager.state.factionBias[factionID] or 0
 
     if not members or #members == 0 then
-        return DT_ReputationManager.Clamp(bias)
+        local result = DT_ReputationManager.Clamp(bias)
+        if useCache then
+            DT_ReputationManager.state.factionRepCache[factionID] = result
+        end
+        return result
     end
 
+    local state = DT_ReputationManager.state
     local total = 0
     local count = 0
     for _, uuid in ipairs(members) do
-        total = total + DT_ReputationManager.GetEffectiveRep(uuid, factionID)
-        count = count + 1
+        if isSoulAlive(souls[uuid]) then
+            local personal = state.personalRep[uuid] or 0
+            total = total + DT_ReputationManager.Clamp(personal + bias)
+            count = count + 1
+        end
     end
 
     if count <= 0 then
-        return DT_ReputationManager.Clamp(bias)
+        local result = DT_ReputationManager.Clamp(bias)
+        if useCache then
+            DT_ReputationManager.state.factionRepCache[factionID] = result
+        end
+        return result
     end
 
-    return DT_ReputationManager.Clamp(total / count)
+    local result = DT_ReputationManager.Clamp(total / count)
+    if useCache then
+        DT_ReputationManager.state.factionRepCache[factionID] = result
+    end
+    return result
 end
 
 function DT_ReputationManager.AddTradeValue(traderUUID, factionID, amount, isBuy)
@@ -343,8 +449,8 @@ function DT_ReputationManager.AddTradeValue(traderUUID, factionID, amount, isBuy
     end
 
     state.tradeProgress[traderUUID] = progress
-    state.dirty = true
-    DT_ReputationManager.Save()
+    invalidateFactionCache(factionID)
+    queueSave()
 
     if gained > 0 then
         log(
@@ -355,7 +461,9 @@ function DT_ReputationManager.AddTradeValue(traderUUID, factionID, amount, isBuy
         showHalo("Rep +" .. tostring(gained), true)
     end
 
-    DT_ReputationManager.DebugDump(traderUUID, factionID, "trade")
+    if DT_ReputationManager.AUTO_DEBUG then
+        DT_ReputationManager.DebugDump(traderUUID, factionID, "trade")
+    end
 
     return gained
 end
@@ -367,15 +475,17 @@ function DT_ReputationManager.ModifyFactionBias(factionID, amount, reason)
     local state = DT_ReputationManager.state
     local newValue = DT_ReputationManager.Clamp((state.factionBias[factionID] or 0) + (tonumber(amount) or 0))
     state.factionBias[factionID] = newValue
-    state.dirty = true
-    DT_ReputationManager.Save()
+    invalidateFactionCache(factionID)
+    queueSave()
 
     log("Faction", "Faction [" .. tostring(factionID) .. "] bias changed to " .. tostring(newValue) .. " reason=" .. tostring(reason or "n/a"))
     if (tonumber(amount) or 0) ~= 0 then
         local prefix = (tonumber(amount) or 0) > 0 and "+" or ""
         showHalo("Faction Rep " .. prefix .. tostring(amount), (tonumber(amount) or 0) > 0)
     end
-    DT_ReputationManager.DebugDump(nil, factionID, "faction_" .. tostring(reason or "change"))
+    if DT_ReputationManager.AUTO_DEBUG then
+        DT_ReputationManager.DebugDump(nil, factionID, "faction_" .. tostring(reason or "change"))
+    end
     return newValue
 end
 
@@ -397,12 +507,47 @@ function DT_ReputationManager.RecordNPCHit(uuid, factionID)
     }
 end
 
-function DT_ReputationManager.TryApplyKillPenalty(uuid, factionID, zombie)
+local function isLocalPlayerKiller(killerUsername, killerOnlineID)
+    local player = getLocalPlayer()
+    if not player then return false end
+
+    if killerOnlineID ~= nil and player.getOnlineID and player:getOnlineID() == killerOnlineID then
+        return true
+    end
+
+    if killerUsername and player.getUsername and player:getUsername() == killerUsername then
+        return true
+    end
+
+    return false
+end
+
+function DT_ReputationManager.TryApplyKillPenalty(uuid, factionID, zombie, killerUsername, killerOnlineID)
     if not uuid then return false end
     if not DT_ReputationManager.EnsureLoaded() then return false end
 
     local hit = DT_ReputationManager.state.recentHits[uuid]
     DT_ReputationManager.state.recentHits[uuid] = nil
+
+    local confirmedDead = false
+    if zombie and (zombie:isDead() or zombie:getHealth() <= 0) then
+        confirmedDead = true
+    elseif hit and (getTimeInMillis() - (hit.at or 0)) <= DT_ReputationManager.FAST_KILL_CONFIRM_MS then
+        confirmedDead = true
+    end
+
+    if killerUsername ~= nil or killerOnlineID ~= nil then
+        local resolvedFactionID = factionID or (hit and hit.factionID) or nil
+        if resolvedFactionID and isLocalPlayerKiller(killerUsername, killerOnlineID) then
+            DT_ReputationManager.ApplyKillPenalty(resolvedFactionID)
+            if DT_ReputationManager.AUTO_DEBUG then
+                DT_ReputationManager.DebugDump(uuid, resolvedFactionID, "kill_confirmed_server")
+            end
+            return true
+        end
+        return false
+    end
+
     if not hit then
         return false
     end
@@ -410,13 +555,6 @@ function DT_ReputationManager.TryApplyKillPenalty(uuid, factionID, zombie)
     local elapsed = getTimeInMillis() - (hit.at or 0)
     if elapsed > DT_ReputationManager.HIT_ATTRIBUTION_MS then
         return false
-    end
-
-    local confirmedDead = false
-    if zombie and (zombie:isDead() or zombie:getHealth() <= 0) then
-        confirmedDead = true
-    elseif elapsed <= DT_ReputationManager.FAST_KILL_CONFIRM_MS then
-        confirmedDead = true
     end
 
     if not confirmedDead then
@@ -429,7 +567,9 @@ function DT_ReputationManager.TryApplyKillPenalty(uuid, factionID, zombie)
     end
 
     DT_ReputationManager.ApplyKillPenalty(resolvedFactionID)
-    DT_ReputationManager.DebugDump(uuid, resolvedFactionID, "kill_confirmed")
+    if DT_ReputationManager.AUTO_DEBUG then
+        DT_ReputationManager.DebugDump(uuid, resolvedFactionID, "kill_confirmed")
+    end
     return true
 end
 
@@ -521,5 +661,21 @@ local function onGameStart()
     DT_ReputationManager.EnsureLoaded()
 end
 
+local function onReceiveGlobalModData(key, data)
+    if key == "DynamicTrading_Roster" then
+        invalidateAllFactionCache()
+    end
+end
+
+local function onTick()
+    local state = DT_ReputationManager.state
+    if not state.dirty or not state.saveDueAt then return end
+    if getTimeInMillis() >= state.saveDueAt then
+        DT_ReputationManager.Save()
+    end
+end
+
 Events.OnCreatePlayer.Add(onCreatePlayer)
 Events.OnGameStart.Add(onGameStart)
+Events.OnReceiveGlobalModData.Add(onReceiveGlobalModData)
+Events.OnTick.Add(onTick)

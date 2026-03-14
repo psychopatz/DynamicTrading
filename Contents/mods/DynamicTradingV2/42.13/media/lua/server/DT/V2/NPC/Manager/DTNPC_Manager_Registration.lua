@@ -126,7 +126,7 @@ function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
     return zombie
 end
 
-function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
+function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removalContext)
     if DTNPCManager.Data[uuid] then
         local npcData = DTNPCManager.Data[uuid]
         
@@ -159,7 +159,7 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
         
         -- Broadcast removal to all clients
         if DTNPCServerCore and DTNPCServerCore.NotifyRemoval then
-            DTNPCServerCore.NotifyRemoval(uuid, npcData.currentOutfitID, npcData.name)
+            DTNPCServerCore.NotifyRemoval(uuid, npcData.currentOutfitID, npcData.name, removalContext)
         end
     end
 end
@@ -191,19 +191,45 @@ end
 
 function DTNPCManager.Unregister(zombie)
     local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
+    local removalContext = nil
+    local attacker = zombie and zombie:getAttackedBy() or nil
+    if attacker and instanceof(attacker, "IsoPlayer") then
+        removalContext = {
+            killerUsername = attacker.getUsername and attacker:getUsername() or nil,
+            killerOnlineID = attacker.getOnlineID and attacker:getOnlineID() or nil,
+        }
+    end
     
     if uuid and DTNPCManager.Data[uuid] then
         local npcData = DTNPCManager.Data[uuid]
+        if not removalContext and npcData.lastPlayerAttackerUsername then
+            local elapsed = npcData.lastPlayerAttackedAt and (getTimeInMillis() - npcData.lastPlayerAttackedAt) or nil
+            if not elapsed or elapsed <= 15000 then
+                removalContext = {
+                    killerUsername = npcData.lastPlayerAttackerUsername,
+                    killerOnlineID = npcData.lastPlayerAttackerOnlineID,
+                }
+            end
+        end
         DynamicTrading.Log("DTV2", "NPC", "Death", "NPC Died: " .. (npcData.name or uuid))
-        DTNPCManager.RemoveData(uuid, "Dead")
+        DTNPCManager.RemoveData(uuid, "Dead", nil, nil, removalContext)
     else
         -- Fallback: try outfit ID
         local outfitID = zombie:getPersistentOutfitID()
         local fallbackUUID = DTNPCManager.GetUUIDFromOutfitID(outfitID)
         if fallbackUUID and DTNPCManager.Data[fallbackUUID] then
             local npcData = DTNPCManager.Data[fallbackUUID]
+            if not removalContext and npcData.lastPlayerAttackerUsername then
+                local elapsed = npcData.lastPlayerAttackedAt and (getTimeInMillis() - npcData.lastPlayerAttackedAt) or nil
+                if not elapsed or elapsed <= 15000 then
+                    removalContext = {
+                        killerUsername = npcData.lastPlayerAttackerUsername,
+                        killerOnlineID = npcData.lastPlayerAttackerOnlineID,
+                    }
+                end
+            end
             DynamicTrading.Log("DTV2", "NPC", "Death", "NPC Died (fallback lookup): " .. (npcData.name or fallbackUUID))
-            DTNPCManager.RemoveData(fallbackUUID, "Dead")
+            DTNPCManager.RemoveData(fallbackUUID, "Dead", nil, nil, removalContext)
         end
     end
 end

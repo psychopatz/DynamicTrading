@@ -58,6 +58,7 @@ function DT_FactionInfoWindow:createChildren()
     self.listbox = DT_FactionList:new(10, listY, listWidth, contentHeight)
     self.listbox:initialise()
     self.listbox:instantiate()
+    self.listbox.target = self
     self.listbox.onmousedown = DT_FactionInfoWindow.onListMouseDown
     -- Anchors
     self.listbox:setAnchorLeft(true)
@@ -154,7 +155,8 @@ function DT_FactionInfoWindow:onResize()
             activeView:setHeight(self.panel:getHeight() - self.panel.tabHeight)
             if activeView.onResize then activeView:onResize() end
             if activeView.updateData then
-                 activeView:updateData(self.selectedFaction)
+                 local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster") or {}
+                 activeView:updateData(DT_FactionInfoWindow.selectedFaction, rosterData)
             end
         end
     end
@@ -168,6 +170,9 @@ function DT_FactionInfoWindow:refreshList()
 
     -- Request Data
     if isClient() and not isServer() then
+        if DT_FactionInfoWindow.cachedFactionData then
+            self:populateList(DT_FactionInfoWindow.cachedFactionData, DT_FactionInfoWindow.cachedRosterData)
+        end
         sendClientCommand(player, "DynamicTrading_V2", "RequestFactionData", {})
         return
     end
@@ -237,6 +242,8 @@ function DT_FactionInfoWindow:populateList(factionData, rosterData)
     local keys = {}
     for id in pairs(factionData) do table.insert(keys, id) end
     table.sort(keys)
+    local preferredFactionID = (DT_FactionInfoWindow.selectedFaction and DT_FactionInfoWindow.selectedFaction.id)
+    local selectedIndex = nil
 
     for _, id in ipairs(keys) do
         local f = factionData[id]
@@ -263,46 +270,60 @@ function DT_FactionInfoWindow:populateList(factionData, rosterData)
         -- Always show if we have no reason to hide it (prevents UI flicker during sync)
         if isAlive then
             self.listbox:addItem(f.name or id, f)
+            if preferredFactionID and preferredFactionID == id then
+                selectedIndex = #self.listbox.items
+            end
         end
     end
     
-    -- If we have a selected faction that is no longer in the list (or we have none), pick first
+    -- Preserve existing selection when possible, otherwise select the first row.
     if self.listbox.items and #self.listbox.items > 0 then
-        if not self.selectedFaction then
-            self.listbox.selected = 1
-            self:onListMouseDown(self.listbox.items[1].item)
-        end
+        local targetIndex = selectedIndex or 1
+        self.listbox.selected = targetIndex
+        self:applyFactionSelection(self.listbox.items[targetIndex].item, false)
+    else
+        DT_FactionInfoWindow.selectedFaction = nil
     end
 end
 
 -- =============================================================================
 -- INTERACTION HANDLERS
 -- =============================================================================
-function DT_FactionInfoWindow:onListMouseDown(item)
-    local f = item
+function DT_FactionInfoWindow:applyFactionSelection(f, requestRoster)
     if not f then return end
-    
+
+    requestRoster = (requestRoster ~= false)
+
     -- Cache selected faction for updates (if needed)
     DT_FactionInfoWindow.selectedFaction = f
+    self.selectedFaction = f
 
     -- Update All Tabs
     if DT_FactionInfoWindow.instance then
         local win = DT_FactionInfoWindow.instance
         if win.tabInfo then win.tabInfo:updateData(f) end
-        if win.tabReputation then win.tabReputation:updateData(f) end
+        local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster")
+        if win.tabReputation then win.tabReputation:updateData(f, rosterData) end
         if win.tabEconomics then win.tabEconomics:updateData(f) end
         if win.tabStockpiles then win.tabStockpiles:updateData(f) end
-        
+
         -- Population Tab needs roster data too
-        local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster")
         if win.tabPopulation then win.tabPopulation:updateData(f, rosterData) end
     end
 
     -- [MP OPTIMIZATION] Request detailed soul data for this faction on-demand
-    if isClient() and not isServer() and not f.isV1 then
+    if requestRoster and isClient() and not isServer() and not f.isV1 then
         DynamicTrading.Log("DTCommons", "Faction", "Sync", "Requesting detailed roster for faction: " .. tostring(f.id))
         sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestFactionRoster", { factionID = f.id })
     end
+end
+
+function DT_FactionInfoWindow.onListMouseDown(target, item)
+    local f = item
+    if not f then return end
+    local win = target or DT_FactionInfoWindow.instance
+    if not win or not win.applyFactionSelection then return end
+    win:applyFactionSelection(f, true)
 end
 
 -- =============================================================================
@@ -346,8 +367,13 @@ local function onServerCommand(module, command, args)
         
         -- If this is the currently selected faction, refresh the population tab
         if DT_FactionInfoWindow.selectedFaction and DT_FactionInfoWindow.selectedFaction.id == factionID then
-            if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.tabPopulation then
-                DT_FactionInfoWindow.instance.tabPopulation:updateData(DT_FactionInfoWindow.selectedFaction, DT_FactionInfoWindow.cachedRosterData)
+            if DT_FactionInfoWindow.instance then
+                if DT_FactionInfoWindow.instance.tabPopulation then
+                    DT_FactionInfoWindow.instance.tabPopulation:updateData(DT_FactionInfoWindow.selectedFaction, DT_FactionInfoWindow.cachedRosterData)
+                end
+                if DT_FactionInfoWindow.instance.tabReputation then
+                    DT_FactionInfoWindow.instance.tabReputation:updateData(DT_FactionInfoWindow.selectedFaction, DT_FactionInfoWindow.cachedRosterData)
+                end
             end
         end
     end
@@ -374,7 +400,8 @@ if not DT_FactionInfoWindow.EventsAdded then
                      local activeView = panel:getActiveView()
                      if activeView and activeView.updateData then
                          -- data is already in ModData, just re-render
-                         activeView:updateData(DT_FactionInfoWindow.selectedFaction)
+                         local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster") or {}
+                         activeView:updateData(DT_FactionInfoWindow.selectedFaction, rosterData)
                      end
                  end
             end

@@ -41,7 +41,28 @@ function DT_FactionInfoTab_Reputation:onResize()
     end
 end
 
-function DT_FactionInfoTab_Reputation:updateData(f)
+local function collectFactionMembers(factionID, rosterData)
+    if not rosterData then
+        return {}
+    end
+
+    if rosterData.FactionMembers and rosterData.FactionMembers[factionID] then
+        return rosterData.FactionMembers[factionID]
+    end
+
+    local members = {}
+    local souls = rosterData.Souls or {}
+    for uuid, soul in pairs(souls) do
+        if soul and soul.factionID == factionID and soul.status ~= "Dead" then
+            table.insert(members, uuid)
+        end
+    end
+
+    table.sort(members)
+    return members
+end
+
+function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
     self.currentFaction = f
     if not f then 
         self.richText:setText("")
@@ -76,7 +97,11 @@ function DT_FactionInfoTab_Reputation:updateData(f)
         return
     end
 
-    local factionRep = DT_ReputationManager.GetFactionRep(f.id)
+    rosterData = rosterData
+        or (DT_FactionInfoWindow and DT_FactionInfoWindow.cachedRosterData)
+        or ModData.get("DynamicTrading_Roster")
+        or {}
+    local factionRep = DT_ReputationManager.GetFactionRep(f.id, rosterData)
     local stageData = DT_ReputationManager.GetStageData(factionRep)
     text = text ..
         " <RGB:0.8,0.8,0.8> Overall faction standing: " ..
@@ -85,31 +110,32 @@ function DT_FactionInfoTab_Reputation:updateData(f)
         " <RGB:0.6,0.6,0.6> Combined buy + sell volume grants +2 personal reputation every $" ..
         tostring(DT_ReputationManager.TRADE_THRESHOLD) .. ". <LINE> <LINE> "
 
-    local rosterData = ModData.get("DynamicTrading_Roster") or {}
-    local members = rosterData.FactionMembers and rosterData.FactionMembers[f.id] or {}
+    local members = collectFactionMembers(f.id, rosterData)
     local souls = rosterData.Souls or {}
 
     if members and #members > 0 then
         text = text .. " <RGB:0.7,0.9,1> Member reactions <LINE> "
         for _, uuid in ipairs(members) do
             local soul = souls[uuid]
-            local name = soul and soul.name or uuid
-            local effectiveRep = DT_ReputationManager.GetEffectiveRep(uuid, f.id)
-            local effectiveStage = DT_ReputationManager.GetStageData(effectiveRep)
-            local personalRep = DT_ReputationManager.GetPersonalRep(uuid)
-            local totalBought = DT_ReputationManager.GetTotalBought(uuid)
-            local totalSold = DT_ReputationManager.GetTotalSold(uuid)
-            local tradeProgress = DT_ReputationManager.GetTradeProgress(uuid)
+            if not soul or soul.status ~= "Dead" then
+                local name = soul and soul.name or uuid
+                local effectiveRep = DT_ReputationManager.GetEffectiveRep(uuid, f.id)
+                local effectiveStage = DT_ReputationManager.GetStageData(effectiveRep)
+                local personalRep = DT_ReputationManager.GetPersonalRep(uuid)
+                local totalBought = DT_ReputationManager.GetTotalBought(uuid)
+                local totalSold = DT_ReputationManager.GetTotalSold(uuid)
+                local tradeProgress = DT_ReputationManager.GetTradeProgress(uuid)
 
-            text = text ..
-                " <RGB:0.8,0.8,0.8> " .. tostring(name) .. ": " ..
-                " <RGB:" .. tostring(effectiveStage.color.r) .. "," .. tostring(effectiveStage.color.g) .. "," .. tostring(effectiveStage.color.b) .. "> " ..
-                tostring(effectiveRep) .. " (" .. effectiveStage.label .. ") " ..
-                " <RGB:0.6,0.6,0.6> personal " .. tostring(personalRep) ..
-                " | bought $" .. tostring(totalBought) ..
-                " | sold $" .. tostring(totalSold) ..
-                " | next +2 in $" .. tostring(math.max(0, DT_ReputationManager.TRADE_THRESHOLD - tradeProgress)) ..
-                " <LINE> "
+                text = text ..
+                    " <RGB:0.8,0.8,0.8> " .. tostring(name) .. ": " ..
+                    " <RGB:" .. tostring(effectiveStage.color.r) .. "," .. tostring(effectiveStage.color.g) .. "," .. tostring(effectiveStage.color.b) .. "> " ..
+                    tostring(effectiveRep) .. " (" .. effectiveStage.label .. ") " ..
+                    " <RGB:0.6,0.6,0.6> personal " .. tostring(personalRep) ..
+                    " | bought $" .. tostring(totalBought) ..
+                    " | sold $" .. tostring(totalSold) ..
+                    " | next +2 in $" .. tostring(math.max(0, DT_ReputationManager.TRADE_THRESHOLD - tradeProgress)) ..
+                    " <LINE> "
+            end
         end
     else
         text = text .. " <RGB:0.6,0.6,0.6> No faction roster available yet. <LINE> "

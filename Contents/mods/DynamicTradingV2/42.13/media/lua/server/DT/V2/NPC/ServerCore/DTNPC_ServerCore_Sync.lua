@@ -157,10 +157,14 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData)
     end
 end
 
-function DTNPCServerCore.NotifyRemoval(uuid, outfitID, name)
+function DTNPCServerCore.NotifyRemoval(uuid, outfitID, name, removalContext)
     if not uuid then return end
     
     local data = { uuid = uuid, outfitID = outfitID, name = name }
+    if removalContext then
+        data.killerUsername = removalContext.killerUsername
+        data.killerOnlineID = removalContext.killerOnlineID
+    end
     
     if isServer() then
         sendServerCommand("DTNPC", "RemoveNPC", data)

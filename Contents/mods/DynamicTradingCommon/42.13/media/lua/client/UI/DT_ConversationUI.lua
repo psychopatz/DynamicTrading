@@ -514,7 +514,9 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
         if DT_ReputationManager and traderUUID then
             rep = DT_ReputationManager.GetEffectiveRep(traderUUID, traderObj.factionID)
             stageData = DT_ReputationManager.GetStageData(rep)
-            DT_ReputationManager.DebugDump(traderUUID, traderObj.factionID, "conversation_open")
+            if DT_ReputationManager.AUTO_DEBUG then
+                DT_ReputationManager.DebugDump(traderUUID, traderObj.factionID, "conversation_open")
+            end
         end
 
         ui.lblReputation:setName(string.format("Reputation: %d (%s)", rep, stageData.label))

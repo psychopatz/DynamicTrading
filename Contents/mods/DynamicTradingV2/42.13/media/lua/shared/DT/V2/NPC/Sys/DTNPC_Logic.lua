@@ -290,6 +290,9 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
     
     -- Only initiate combat if damaged by a PLAYER (ignores pushes)
     if wasDamaged and attacker and instanceof(attacker, "IsoPlayer") then
+        npcData.lastPlayerAttackerUsername = attacker.getUsername and attacker:getUsername() or nil
+        npcData.lastPlayerAttackerOnlineID = attacker.getOnlineID and attacker:getOnlineID() or nil
+        npcData.lastPlayerAttackedAt = getTimeInMillis and getTimeInMillis() or nil
         local isMaster = (master and attacker == master)
         
         -- If master betrayed us OR any other player attacked us
