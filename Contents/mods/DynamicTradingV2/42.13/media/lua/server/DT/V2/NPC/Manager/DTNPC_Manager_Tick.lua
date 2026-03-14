@@ -61,8 +61,11 @@ local tickCounter = 0
 local POSITION_BROADCAST_RATE = 240
 local positionBroadcastCounter = 0
 
-local RESPAWN_CHECK_RATE = 60 -- Check every 3 seconds (was 300/15s) for responsiveness
-local respawnCheckCounter = 0
+local ACTIVE_RESPAWN_CHECK_RATE = 240 -- Validate already-active NPC bodies every ~12 seconds
+local activeRespawnCheckCounter = 0
+
+local ROSTER_RESPAWN_CHECK_RATE = 60 -- Discover/spawn nearby roster NPCs every ~3 seconds
+local rosterRespawnCheckCounter = 0
 
 local TRANSITION_CHECK_RATE = 600 -- Check transitions every 30 seconds
 local transitionCheckCounter = 0
@@ -72,7 +75,8 @@ function DTNPCManager.OnTick()
 
     tickCounter = tickCounter + 1
     positionBroadcastCounter = positionBroadcastCounter + 1
-    respawnCheckCounter = respawnCheckCounter + 1
+    activeRespawnCheckCounter = activeRespawnCheckCounter + 1
+    rosterRespawnCheckCounter = rosterRespawnCheckCounter + 1
     transitionCheckCounter = transitionCheckCounter + 1
     
     local shouldBroadcast = (positionBroadcastCounter >= POSITION_BROADCAST_RATE)
@@ -80,9 +84,14 @@ function DTNPCManager.OnTick()
         positionBroadcastCounter = 0
     end
     
-    local shouldCheckRespawn = (respawnCheckCounter >= RESPAWN_CHECK_RATE)
-    if shouldCheckRespawn then
-        respawnCheckCounter = 0
+    local shouldCheckActiveRespawn = (activeRespawnCheckCounter >= ACTIVE_RESPAWN_CHECK_RATE)
+    if shouldCheckActiveRespawn then
+        activeRespawnCheckCounter = 0
+    end
+
+    local shouldCheckRosterRespawn = (rosterRespawnCheckCounter >= ROSTER_RESPAWN_CHECK_RATE)
+    if shouldCheckRosterRespawn then
+        rosterRespawnCheckCounter = 0
     end
 
     local shouldCheckTransitions = (transitionCheckCounter >= TRANSITION_CHECK_RATE)
@@ -93,13 +102,15 @@ function DTNPCManager.OnTick()
     end
     
     -- Respawn check
-    if shouldCheckRespawn then
-        -- 1. Check existing tracked NPCs
+    if shouldCheckActiveRespawn then
+        -- 1. Validate existing tracked NPCs at a slower cadence.
         for uuid, npcData in pairs(DTNPCManager.Data) do
             DTNPCManager.CheckForRespawn(npcData, uuid)
         end
-        
-        -- 2. Check for new spawns from Roster (Bridge)
+    end
+
+    if shouldCheckRosterRespawn then
+        -- 2. Check for new spawns from Roster (Bridge) more frequently for responsiveness.
         DTNPCManager.CheckRosterSpawns()
     end
     
@@ -169,29 +180,16 @@ function DTNPCManager.OnTick()
                     end
                     
                     -- 3. Visual & Data Sanity Check (Multiplayer Jitter fix)
-                    -- If zombie exists but has lost its DTNPC modData (e.g. after weird cell transition or server lag)
                     local modData = zombie:getModData()
-                    if modData.IsDTNPC and (not modData.DTNPCVisualID or modData.DTNPCVisualID == 0) then
-                        -- This zombie is a DTNPC but visual ID is missing. Re-apply.
-                        DynamicTrading.Log("DTV2", "NPC", "Fix", "Fixing visuals for NPC: " .. (savedData.name or uuid))
-                        DTNPC.ApplyVisuals(zombie, savedData)
-                        DTNPC.AttachData(zombie, savedData)
-                        
-                        local modData = zombie:getModData()
-                        modData.DTNPCVisualID = savedData.visualID
-                        modData.DTNPC_UUID = uuid
-                        
-                        if not zombie:isUseless() then
-                            zombie:setUseless(true)
-                            zombie:DoZombieStats()
-                            zombie:setHealth(2)
-                        end
-                        
-                        zombie:resetModelNextFrame()
-                        
-                        if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
-                            DTNPCServerCore.SyncToAllClients(zombie, savedData)
-                        end
+                    local needsRepair = (not modData.IsDTNPC)
+                        or (modData.DTNPC_UUID ~= uuid)
+                        or (not modData.DTNPC_Data)
+                        or (not modData.DTNPCVisualID)
+                        or (modData.DTNPCVisualID == 0)
+                        or (savedData.visualID and modData.DTNPCVisualID ~= savedData.visualID)
+
+                    if needsRepair and DTNPCManager.ReclaimZombie then
+                        DTNPCManager.ReclaimZombie(zombie, savedData, "tick-repair")
                     end
                     
                     -- Periodic position broadcast

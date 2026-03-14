@@ -71,6 +71,61 @@ function DTNPCManager.Register(zombie, npcData)
     DynamicTrading.Log("DTV2", "NPC", "Register", "Registered NPC: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ", OutfitID: " .. outfitID .. ") at " .. npcData.lastX .. "," .. npcData.lastY .. "," .. npcData.lastZ)
 end
 
+function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
+    if not zombie or not npcData then return nil end
+
+    local modData = zombie:getModData()
+    local uuid = npcData.uuid or modData.DTNPC_UUID or DTNPCManager.GetUUIDFromOutfitID(zombie:getPersistentOutfitID())
+    if not uuid then return nil end
+
+    npcData.uuid = uuid
+    if not npcData.visualID then
+        npcData.visualID = ZombRand(1000000)
+    end
+
+    DTNPC.AttachData(zombie, npcData)
+    DTNPC.ApplyVisuals(zombie, npcData)
+
+    modData.IsDTNPC = true
+    modData.DTNPC_UUID = uuid
+    modData.DTNPCVisualID = npcData.visualID
+
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+        zombie:DoZombieStats()
+        zombie:setHealth(2)
+    end
+
+    zombie:resetModelNextFrame()
+
+    DTNPCManager.Register(zombie, npcData)
+
+    if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
+        DTNPCServerCore.SyncToAllClients(zombie, npcData)
+    end
+
+    if DTNPCManager.RespawnDebug and DTNPCManager.RespawnDebug.Log then
+        DTNPCManager.RespawnDebug.Log(
+            "reclaim_" .. tostring(uuid),
+            "Process=reclaim_existing_zombie uuid=" .. tostring(uuid) ..
+                " name=" .. tostring(npcData.name or "Unknown") ..
+                " reason=" .. tostring(reason or "repair") ..
+                " outfitID=" .. tostring(zombie:getPersistentOutfitID()) ..
+                " visualID=" .. tostring(npcData.visualID),
+            true
+        )
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Adopt",
+        "Reclaimed existing world zombie for " .. (npcData.name or uuid) .. " (" .. (reason or "repair") .. ")"
+    )
+
+    return zombie
+end
+
 function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
     if DTNPCManager.Data[uuid] then
         local npcData = DTNPCManager.Data[uuid]

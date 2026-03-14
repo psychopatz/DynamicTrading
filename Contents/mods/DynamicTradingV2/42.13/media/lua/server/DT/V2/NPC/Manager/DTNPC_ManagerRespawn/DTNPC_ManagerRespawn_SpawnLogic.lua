@@ -26,9 +26,41 @@ function DTNPCManager.CheckForRespawn(npcData, uuid)
             local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
             
             if not zombie then
+                DTNPCManager.RespawnDebug.Log(
+                    "respawn_missing_" .. tostring(uuid),
+                    "Process=respawn_check decision=spawn_missing uuid=" .. tostring(uuid) ..
+                        " name=" .. tostring(npcData.name or uuid) ..
+                        " player=" .. tostring(player:getUsername()) ..
+                        " dist=" .. string.format("%.1f", dist),
+                    true
+                )
                 DynamicTrading.Log("DTV2", "NPC", "Logic", "Respawning NPC: " .. (npcData.name or uuid) .. " near player " .. player:getUsername() .. " (dist: " .. string.format("%.1f", dist) .. ")")
                 DTNPCServerCore.RespawnNPC(npcData, uuid)
                 return true
+            elseif DTNPCManager.ReclaimZombie then
+                local modData = zombie:getModData()
+                local needsRepair = (not modData.IsDTNPC)
+                    or (modData.DTNPC_UUID ~= uuid)
+                    or (not modData.DTNPC_Data)
+                    or (not modData.DTNPCVisualID)
+                    or (modData.DTNPCVisualID == 0)
+                    or (npcData.visualID and modData.DTNPCVisualID ~= npcData.visualID)
+
+                if needsRepair then
+                    DTNPCManager.RespawnDebug.Log(
+                        "respawn_repair_" .. tostring(uuid),
+                        "Process=respawn_check decision=reclaim_repair uuid=" .. tostring(uuid) ..
+                            " name=" .. tostring(npcData.name or uuid) ..
+                            " player=" .. tostring(player:getUsername()) ..
+                            " outfitID=" .. tostring(zombie:getPersistentOutfitID()) ..
+                            " hasIsDTNPC=" .. tostring(modData.IsDTNPC == true) ..
+                            " modUUID=" .. tostring(modData.DTNPC_UUID) ..
+                            " visualID=" .. tostring(modData.DTNPCVisualID),
+                        true
+                    )
+                    DTNPCManager.ReclaimZombie(zombie, npcData, "respawn-check")
+                    return true
+                end
             end
         end
     end
@@ -115,8 +147,19 @@ function DTNPCManager.CheckRosterSpawns()
                                         -- [NEW] Safety Check: Check if already physically in world before spawning clone
                                         local existingZombie = DTNPCServerCore.FindZombieByUUID(uuid)
                                         if existingZombie then
+                                            DTNPCManager.RespawnDebug.Log(
+                                                "roster_hash_reclaim_" .. tostring(uuid),
+                                                "Process=roster_hash decision=reclaim_existing uuid=" .. tostring(uuid) ..
+                                                    " name=" .. tostring(npcData.name or uuid) ..
+                                                    " outfitID=" .. tostring(existingZombie:getPersistentOutfitID()),
+                                                true
+                                            )
                                             DynamicTrading.Log("DTV2", "NPC", "Logic", "NPC " .. (npcData.name or uuid) .. " already found in world. Reclaiming instead of spawning duplicate.")
-                                            DTNPCManager.Register(existingZombie, npcData)
+                                            if DTNPCManager.ReclaimZombie then
+                                                DTNPCManager.ReclaimZombie(existingZombie, npcData, "roster-hash")
+                                            else
+                                                DTNPCManager.Register(existingZombie, npcData)
+                                            end
                                             registry.spawnRetryTime = nil
                                             spawnedCount = spawnedCount + 1
                                         else
@@ -124,6 +167,13 @@ function DTNPCManager.CheckRosterSpawns()
                                             npcData.lastY = targetY
                                             npcData.lastZ = targetZ
                                             npcData.status = status
+                                            DTNPCManager.RespawnDebug.Log(
+                                                "roster_hash_spawn_" .. tostring(uuid),
+                                                "Process=roster_hash decision=spawn_new uuid=" .. tostring(uuid) ..
+                                                    " name=" .. tostring(npcData.name or uuid) ..
+                                                    " target=" .. tostring(targetX) .. "," .. tostring(targetY) .. "," .. tostring(targetZ),
+                                                true
+                                            )
                                             
                                             local zombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
                                             if zombie then
@@ -183,18 +233,44 @@ function DTNPCManager.CheckRosterSpawns()
                                     
                                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                                     if npcData then
-                                        npcData.lastX = npcX
-                                        npcData.lastY = npcY
-                                        npcData.lastZ = npcZ
-                                        npcData.status = status
-                                        
-                                        local zombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
-                                        if zombie then
+                                        local existingZombie = DTNPCServerCore.FindZombieByUUID(uuid)
+                                        if existingZombie then
+                                            DTNPCManager.RespawnDebug.Log(
+                                                "roster_fallback_reclaim_" .. tostring(uuid),
+                                                "Process=roster_fallback decision=reclaim_existing uuid=" .. tostring(uuid) ..
+                                                    " name=" .. tostring(npcData.name or uuid) ..
+                                                    " outfitID=" .. tostring(existingZombie:getPersistentOutfitID()),
+                                                true
+                                            )
+                                            DynamicTrading.Log("DTV2", "NPC", "Logic", "NPC " .. (npcData.name or uuid) .. " already found during fallback scan. Reclaiming instead of spawning duplicate.")
+                                            if DTNPCManager.ReclaimZombie then
+                                                DTNPCManager.ReclaimZombie(existingZombie, npcData, "roster-fallback")
+                                            else
+                                                DTNPCManager.Register(existingZombie, npcData)
+                                            end
                                             registry.spawnRetryTime = nil
-                                            DTNPC_DistanceFrequency.InitializeNPC(uuid)
                                             spawnedCount = spawnedCount + 1
                                         else
-                                            registry.spawnRetryTime = currentHours + 0.1
+                                            npcData.lastX = npcX
+                                            npcData.lastY = npcY
+                                            npcData.lastZ = npcZ
+                                            npcData.status = status
+                                            DTNPCManager.RespawnDebug.Log(
+                                                "roster_fallback_spawn_" .. tostring(uuid),
+                                                "Process=roster_fallback decision=spawn_new uuid=" .. tostring(uuid) ..
+                                                    " name=" .. tostring(npcData.name or uuid) ..
+                                                    " target=" .. tostring(npcX) .. "," .. tostring(npcY) .. "," .. tostring(npcZ),
+                                                true
+                                            )
+                                            
+                                            local zombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
+                                            if zombie then
+                                                registry.spawnRetryTime = nil
+                                                DTNPC_DistanceFrequency.InitializeNPC(uuid)
+                                                spawnedCount = spawnedCount + 1
+                                            else
+                                                registry.spawnRetryTime = currentHours + 0.1
+                                            end
                                         end
                                     end
                                     break  -- Spawned for this player, move to next NPC
