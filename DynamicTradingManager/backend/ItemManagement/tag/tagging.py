@@ -5,6 +5,7 @@ Generates nested tags based on item properties and ID patterns
 import re
 from ..commons.vanilla_loader import get_stat, has_property, count_learned_recipes
 from ..config import EXCLUDED_PATTERNS
+from .signatures.food import get_food_tags
 
 
 def is_excluded(item_id):
@@ -92,30 +93,9 @@ def categorize_item(item_id, props):
     Intelligently categorize item and generate nested tags
     Returns: (primary_tag, additional_tags[])
     """
-    props_lower = props.lower()
-    
-    # === FOOD ===
-    if has_property(props, "HungerChange"):
-        if has_property(props, "AlcoholPower"):
-            subcat = "Drink.Alcohol"
-        elif has_property(props, "ThirstChange") and not has_property(props, "HungerChange"):
-            subcat = "Drink.Beverage"
-        elif any(x in item_id.lower() for x in ['meat', 'steak', 'chicken', 'pork', 'beef', 'fish']):
-            days_fresh = get_stat(props, "DaysFresh", 0)
-            subcat = "Meat.Perishable" if (days_fresh > 0 and days_fresh < 30) else "Meat.Preserved"
-        elif any(x in item_id.lower() for x in ['fruit', 'apple', 'banana', 'orange', 'berry']):
-            subcat = "Fruit.Fresh"
-        elif any(x in item_id.lower() for x in ['vegetable', 'carrot', 'potato', 'lettuce', 'tomato']):
-            subcat = "Vegetable.Fresh"
-        elif has_property(props, "Spice"):
-            subcat = "Cooking.Spice"
-        elif has_property(props, "IsCookable"):
-            subcat = "Cooking.Ingredient"
-        else:
-            days_fresh = get_stat(props, "DaysFresh", 0)
-            subcat = "Perishable" if (days_fresh > 0 and days_fresh < 30) else "NonPerishable"
-        
-        return f"Food.{subcat}", []
+    food_tags = get_food_tags(item_id, props)
+    if food_tags:
+        return food_tags[0], food_tags[1:]
     
     # === LITERATURE ===
     if 'Type = Literature' in props or 'SkillBook' in item_id or 'Book' in item_id or 'Magazine' in item_id:
@@ -202,7 +182,7 @@ def categorize_item(item_id, props):
 
 def generate_tags(item_id, props):
     """Generate complete tag set for an item"""
-    primary, themes = categorize_item(item_id, props)
+    primary, additional_tags = categorize_item(item_id, props)
     
     tags = [primary]
     tags.append(f"Rarity.{determine_rarity(item_id, props)}")
@@ -216,7 +196,7 @@ def generate_tags(item_id, props):
         tags.append(origin)
     
     tags.extend(determine_theme(item_id, props))
-    tags.extend(themes)
+    tags.extend(additional_tags)
     
     return tags
 
@@ -236,10 +216,8 @@ def parse_tags(tags_str):
     for tag in tags:
         parts = tag.split('.')
         root = parts[0]
-        
-        if root in ['Food', 'Weapon', 'Tool', 'Medical', 'Container', 'Resource', 'Literature', 'Electronics', 'Appliance', 'Clothing']:
-            tag_dict['primary'] = tag
-        elif root == 'Rarity' and len(parts) > 1:
+
+        if root == 'Rarity' and len(parts) > 1:
             tag_dict['rarity'] = parts[1]
         elif root == 'Quality' and len(parts) > 1:
             tag_dict['quality'] = parts[1]
@@ -247,6 +225,9 @@ def parse_tags(tags_str):
             tag_dict['origin'] = parts[1]
         elif root == 'Theme':
             tag_dict['theme'].append('.'.join(parts[1:]) if len(parts) > 1 else 'General')
+        elif '.' in tag and tag_dict['primary'] is None:
+            # Any non-descriptor dotted tag is considered primary.
+            tag_dict['primary'] = tag
     
     return tag_dict
 

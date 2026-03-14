@@ -36,18 +36,18 @@ SUBCATEGORY_MAPPING = {
     # Food subcategories
     "Food": {
         "Meat": "DT_Meat.lua",
-        "Fruit": "DT_Perishable.lua",
-        "Vegetable": "DT_Perishable.lua",
-        "Grain": "DT_Perishable.lua",
-        "Spice": "DT_Cooking.lua",
+        "Fruit": "DT_Fruit.lua",
+        "Vegetable": "DT_Vegetable.lua",
+        "Grain": "DT_Grain.lua",
+        "Spice": "DT_Spice.lua",
         "Cooking": "DT_Cooking.lua",
-        "Canned": "DT_NonPerishable.lua",
-        "Bait": "DT_Perishable.lua",
-        "Sweets": "DT_Perishable.lua",
-        "Baked": "DT_Perishable.lua",
-        "Crustacean": "DT_Perishable.lua",
+        "Canned": "DT_Canned.lua",
+        "Bait": "DT_Bait.lua",
+        "Sweets": "DT_Sweets.lua",
+        "Baked": "DT_General.lua",
+        "Crustacean": "DT_General.lua",
         "Beverage": "DT_Drink.lua",
-        "Alcohol": "DT_Drink.lua",
+        "Alcohol": "DT_Alcohol.lua",
         "NonAlcoholic": "DT_Drink.lua",
         "Drink": "DT_Drink.lua",
     },
@@ -242,13 +242,13 @@ def add_items_to_registry(items):
         target_file = None
         if category == 'Food':
             if 'Canned' in tags[0]:
-                target_file = target_dir / 'DT_NonPerishable.lua'
+                target_file = target_dir / 'DT_Canned.lua'
             elif 'Drink' in tags[0]:
                 target_file = target_dir / 'DT_Drink.lua'
             elif 'Spice' in tags[0]:
-                target_file = target_dir / 'DT_Cooking.lua'
+                target_file = target_dir / 'DT_Spice.lua'
             else:
-                target_file = target_dir / 'DT_Perishable.lua'
+                target_file = target_dir / 'DT_General.lua'
         elif category == 'Weapon':
             if 'Explosives' in tags[0]:
                 target_file = target_dir / 'Weapons.lua'

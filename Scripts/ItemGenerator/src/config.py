@@ -31,12 +31,19 @@ EXCLUDED_PATTERNS = [
 CATEGORY_FILE_MAP = {
     'Food': {
         'Meat': 'Food/DT_Meat.lua',
-        'Fruit': 'Food/DT_Perishable.lua',
-        'Vegetable': 'Food/DT_Perishable.lua',
+        'Fruit': 'Food/DT_Fruit.lua',
+        'Vegetable': 'Food/DT_Vegetable.lua',
+        'Alcohol': 'Food/DT_Alcohol.lua',
         'Drink': 'Food/DT_Drink.lua',
+        'Canned': 'Food/DT_Canned.lua',
+        'Grain': 'Food/DT_Grain.lua',
+        'Sweets': 'Food/DT_Sweets.lua',
+        'Bait': 'Food/DT_Bait.lua',
+        'Spice': 'Food/DT_Spice.lua',
         'Cooking': 'Food/DT_Cooking.lua',
-        'Perishable': 'Food/DT_Perishable.lua',
-        'NonPerishable': 'Food/DT_NonPerishable.lua',
+        'Perishable': 'Food/DT_General.lua',
+        'NonPerishable': 'Food/DT_General.lua',
+        'General': 'Food/DT_General.lua',
     },
     'Literature': {
         'SkillBook': 'Literature/DT_SkillBook.lua',

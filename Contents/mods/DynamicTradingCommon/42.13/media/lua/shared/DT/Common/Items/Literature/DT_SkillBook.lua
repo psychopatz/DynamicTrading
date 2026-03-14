@@ -11,4 +11,4 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "SkillBook Registry Complete")
+print("[DynamicTrading] SkillBook Registry Complete")

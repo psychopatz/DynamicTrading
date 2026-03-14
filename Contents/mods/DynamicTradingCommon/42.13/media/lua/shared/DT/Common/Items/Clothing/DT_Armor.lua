@@ -1040,4 +1040,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.WristWatch_Right_Expensive", basePrice=1, tags={"Clothing.General", "Rarity.Rare", "Quality.Luxury"}, stockRange={min=0, max=10} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "Armor Registry Complete")
+print("[DynamicTrading] Armor Registry Complete")

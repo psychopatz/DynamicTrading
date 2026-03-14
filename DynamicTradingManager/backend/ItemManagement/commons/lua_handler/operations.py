@@ -16,6 +16,30 @@ from .parsing import find_register_batch_bounds, extract_item_records, build_gro
 from .records import tags_list_to_dict, tags_list_to_lua, parse_lua_tags, create_item_record
 
 
+FOOD_SUBCATEGORY_RULES = [
+    ('Alcohol', ['Food.Drink.Alcohol', '.Alcohol']),
+    ('Drink', ['Food.Drink.', '.Drink']),
+    ('Meat', ['.Meat', '.Fish']),
+    ('Vegetable', ['.Vegetable']),
+    ('Fruit', ['.Fruit']),
+    ('Spice', ['.Spice']),
+    ('Bait', ['.Bait']),
+    ('Sweets', ['.Sweets']),
+    ('Grain', ['.Grain']),
+    ('Canned', ['.Canned']),
+    ('Cooking', ['Food.Cooking', '.Cooking']),
+]
+
+
+def determine_food_subcategory(tags):
+    """Determine specific food subcategory from the full tag list."""
+    for subcategory, patterns in FOOD_SUBCATEGORY_RULES:
+        for tag in tags:
+            if any(pattern in tag for pattern in patterns):
+                return subcategory
+    return 'General'
+
+
 def process_lua_file(filepath, vanilla_items, dry_run=False, regenerate_tags=False):
     """Process a single Lua file and update prices/stock for RegisterBatch rows."""
     with open(filepath, 'r', encoding='utf-8') as handle:
@@ -215,8 +239,13 @@ def determine_target_file(category, subcategory):
     """Determine which Lua file should receive items for a subcategory."""
     if category in CATEGORY_FILE_MAP:
         subcat_map = CATEGORY_FILE_MAP[category]
+
+        if subcategory in subcat_map:
+            return Path(MOD_ITEMS_DIR) / subcat_map[subcategory]
+
+        subcategory_lower = subcategory.lower()
         for key in subcat_map:
-            if key in subcategory:
+            if key.lower() in subcategory_lower:
                 return Path(MOD_ITEMS_DIR) / subcat_map[key]
 
         return Path(MOD_ITEMS_DIR) / list(subcat_map.values())[0]
@@ -258,9 +287,12 @@ def add_new_items(vanilla_items, batch_size=50):
 
         by_subcat = defaultdict(list)
         for item_data in items:
-            primary = item_data['primary_tag']
-            parts = primary.split('.')
-            subcat = parts[1] if len(parts) > 1 else 'General'
+            if category == 'Food':
+                subcat = determine_food_subcategory(item_data['tags'])
+            else:
+                primary = item_data['primary_tag']
+                parts = primary.split('.')
+                subcat = parts[1] if len(parts) > 1 else 'General'
             by_subcat[subcat].append(item_data)
 
         for subcat, subcat_items in by_subcat.items():

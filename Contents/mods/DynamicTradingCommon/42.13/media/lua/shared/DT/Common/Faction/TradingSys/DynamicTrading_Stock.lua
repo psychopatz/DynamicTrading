@@ -72,12 +72,10 @@ function DynamicTrading_Stock.UpdateItemQty(traderUUID, itemFullType, delta, pla
                 local resourceType = "misc"
                 local itemData = DynamicTrading.Config.MasterList[itemFullType]
                 if itemData and itemData.tags then
-                    for _, tag in ipairs(itemData.tags) do
-                        if DynamicTrading.V2.Config.ResourceMap[tag] then
-                            resourceType = DynamicTrading.V2.Config.ResourceMap[tag]
-                            break
-                        end
-                    end
+                    resourceType = DynamicTrading.Economy.Common.ResolveMappedValue(
+                        itemData.tags,
+                        DynamicTrading.V2.Config.ResourceMap
+                    ) or resourceType
                 end
                 DynamicTrading_Factions.ModifyStockpile(soul.factionID, resourceType, delta)
             elseif delta > 0 then -- Player SELLS to NPC
@@ -86,12 +84,10 @@ function DynamicTrading_Stock.UpdateItemQty(traderUUID, itemFullType, delta, pla
                 local resourceType = "misc"
                 local itemData = DynamicTrading.Config.MasterList[itemFullType]
                 if itemData and itemData.tags then
-                    for _, tag in ipairs(itemData.tags) do
-                        if DynamicTrading.V2.Config.ResourceMap[tag] then
-                            resourceType = DynamicTrading.V2.Config.ResourceMap[tag]
-                            break
-                        end
-                    end
+                    resourceType = DynamicTrading.Economy.Common.ResolveMappedValue(
+                        itemData.tags,
+                        DynamicTrading.V2.Config.ResourceMap
+                    ) or resourceType
                 end
                 DynamicTrading_Factions.ModifyStockpile(soul.factionID, resourceType, delta)
             end

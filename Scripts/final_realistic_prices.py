@@ -10,8 +10,8 @@ ITEMS_DIR = Path("/home/psychopatz/Zomboid/Workshop/DynamicTrading/Contents/mods
 # File-specific default prices (realistic PZ economy)
 FILE_PRICES = {
     # FOOD
-    'Food/DT_Perishable.lua': 12,  # Fish, meat, veggies = $12-25
-    'Food/DT_NonPerishable.lua': 15,  # Canned goods, preserved = $15-20
+    'Food/DT_General.lua': 12,  # General food fallback
+    'Food/DT_Canned.lua': 15,  # Canned goods, preserved
     'Food/DT_Meat.lua': 22,  # Raw meat/fish
     'Food/DT_Drink.lua': 10,  # Beverages  
     'Food/DT_Cooking.lua': 8,  # Cooking ingredients

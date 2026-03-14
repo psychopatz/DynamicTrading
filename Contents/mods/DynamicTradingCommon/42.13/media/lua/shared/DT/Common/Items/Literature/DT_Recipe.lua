@@ -17,4 +17,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.EngineerMagazine3", basePrice=102, tags={"Literature.Recipe", "Rarity.Rare"}, stockRange={min=0, max=6} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "Recipe Registry Complete")
+print("[DynamicTrading] Recipe Registry Complete")

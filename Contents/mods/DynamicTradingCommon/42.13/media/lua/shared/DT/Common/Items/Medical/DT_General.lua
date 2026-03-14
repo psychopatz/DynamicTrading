@@ -24,4 +24,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.PillsVitamins", basePrice=340, tags={"Medical.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "General Registry Complete")
+print("[DynamicTrading] General Registry Complete")

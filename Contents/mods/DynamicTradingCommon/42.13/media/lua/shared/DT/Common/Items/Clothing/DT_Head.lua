@@ -214,4 +214,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Hat_Police_Grey", basePrice=1, tags={"Clothing.Head", "Rarity.Uncommon", "Origin.Police"}, stockRange={min=3, max=15} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "Head Registry Complete")
+print("[DynamicTrading] Head Registry Complete")

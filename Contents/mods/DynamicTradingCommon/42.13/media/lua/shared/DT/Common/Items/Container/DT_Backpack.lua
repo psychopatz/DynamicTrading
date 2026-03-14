@@ -11,7 +11,7 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Container.Backpack] [Rarity.Rare] (171 items)
+    -- [Container.Backpack] [Rarity.Rare] (170 items)
     { item="Base.Bag_ALICEpack", basePrice=110, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.Bag_ALICEpack_Army", basePrice=110, tags={"Container.Backpack", "Rarity.Rare", "Origin.Militia"}, stockRange={min=0, max=2} },
     { item="Base.Bag_ALICEpack_DesertCamo", basePrice=110, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=2} },
@@ -51,7 +51,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Bag_DuffelBagTINT", basePrice=126, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_FishingBasket", basePrice=26, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_FluteCase", basePrice=6, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.Bag_FoodCanned", basePrice=126, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_FoodSnacks", basePrice=126, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_GardenBasket", basePrice=26, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_GolfBag", basePrice=105, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
@@ -185,4 +184,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Tote_Bags", basePrice=76, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=6} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "Backpack Registry Complete")
+print("[DynamicTrading] Backpack Registry Complete")

@@ -2,7 +2,8 @@
   "comment": "Blacklist configuration for ItemGenerator - items matching these criteria will be excluded",
   "itemIds": [
     "Money",
-    "MoneyBundle"
+    "MoneyBundle",
+    "TestHotDrink"
   ],
   "properties": {
     "names": [

@@ -14,6 +14,11 @@ require "DT/Common/Items/DT_Fluids"
 local Common = DynamicTrading.Economy.Common
 DynamicTrading.Log("DTCommons", "Init", "Economy", "Common Economy Module initialized")
 
+local LEGACY_TAG_ALIASES = {
+    ["Food.General"] = { prefix = "Food.", suffix = ".General" },
+    ["Food.Spice"] = { prefix = "Food.", suffix = ".Spice" }
+}
+
 -- =============================================================================
 -- 1. UTILITIES
 -- =============================================================================
@@ -61,6 +66,48 @@ end
 -- 2. DRAINABLE & CHARGE HELPERS (B42 Compatible)
 -- =============================================================================
 
+function Common.TagMatches(itemTag, queryTag)
+    if not itemTag or not queryTag then return false end
+    if itemTag == queryTag or string.find(itemTag, queryTag .. "%.") == 1 then
+        return true
+    end
+
+    local alias = LEGACY_TAG_ALIASES[queryTag]
+    if alias
+        and string.find(itemTag, alias.prefix, 1, true) == 1
+        and string.sub(itemTag, -string.len(alias.suffix)) == alias.suffix then
+        return true
+    end
+
+    return false
+end
+
+function Common.HasMatchingTag(itemTags, queryTag)
+    if not itemTags or not queryTag then return false end
+    for _, itemTag in ipairs(itemTags) do
+        if Common.TagMatches(itemTag, queryTag) then
+            return true
+        end
+    end
+    return false
+end
+
+function Common.ResolveMappedValue(itemTags, mapping)
+    if not itemTags or not mapping then return nil end
+
+    for _, itemTag in ipairs(itemTags) do
+        local probe = itemTag
+        while probe do
+            if mapping[probe] then
+                return mapping[probe]
+            end
+            probe = string.match(probe, "^(.*)%.")
+        end
+    end
+
+    return nil
+end
+
 --- Checks if an item's tags satisfy all requirements.
 -- @param itemTags (Table) The item's tags array.
 -- @param requiredTags (Table) The tags that MUST be present (supports hierarchy).
@@ -68,15 +115,7 @@ end
 function Common.MatchesAllTags(itemTags, requiredTags)
     if not requiredTags or #requiredTags == 0 then return false end
     for _, req in ipairs(requiredTags) do
-        local matched = false
-        for _, itemT in ipairs(itemTags) do
-            -- Matches literal or parent.child (hierarchy)
-            if itemT == req or string.find(itemT, req .. "%.") == 1 then
-                matched = true
-                break
-            end
-        end
-        if not matched then return false end
+        if not Common.HasMatchingTag(itemTags, req) then return false end
     end
     return true
 end
@@ -188,7 +227,7 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
                 if archetype.forbid then
                     for _, t in ipairs(itemData.tags) do
                         for _, f in ipairs(archetype.forbid) do 
-                            if t == f or string.find(t, f .. "%.") == 1 then 
+                            if Common.TagMatches(t, f) then 
                                 isForbidden = true 
                                 break
                             end 
@@ -200,7 +239,7 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
                 if not isForbidden and modifiers.forbidTags then
                     for _, t in ipairs(itemData.tags) do
                         for fTag, _ in pairs(modifiers.forbidTags) do
-                            if t == fTag or string.find(t, fTag .. "%.") == 1 then
+                            if Common.TagMatches(t, fTag) then
                                 isForbidden = true
                                 break
                             end
@@ -240,7 +279,7 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             if archetype.forbid then
                 for _, t in ipairs(itemData.tags) do
                     for _, f in ipairs(archetype.forbid) do
-                        if t == f or string.find(t, f .. "%.") == 1 then 
+                        if Common.TagMatches(t, f) then 
                             isForbidden = true 
                             break 
                         end
@@ -253,7 +292,7 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             if not isForbidden and modifiers.forbidTags then
                 for _, t in ipairs(itemData.tags) do
                     for fTag, _ in pairs(modifiers.forbidTags) do
-                        if t == fTag or string.find(t, fTag .. "%.") == 1 then
+                        if Common.TagMatches(t, fTag) then
                             isForbidden = true
                             break
                         end
@@ -330,16 +369,14 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             -- [NEW] EXPERT TAG CHECK (Agnostic variation system: Archetype + Events)
             local isExpert = false
             if archetype and archetype.expertTags then
-                for _, tag in ipairs(itemData.tags) do
-                    for _, eTag in ipairs(archetype.expertTags) do
-                        if tag == eTag then isExpert = true break end
-                    end
+                for _, eTag in ipairs(archetype.expertTags) do
+                    if Common.HasMatchingTag(itemData.tags, eTag) then isExpert = true break end
                     if isExpert then break end
                 end
             end
             if not isExpert and modifiers.expertTags then
-                 for _, tag in ipairs(itemData.tags) do
-                    if modifiers.expertTags[tag] then isExpert = true break end
+                for eTag, _ in pairs(modifiers.expertTags) do
+                    if Common.HasMatchingTag(itemData.tags, eTag) then isExpert = true break end
                 end
             end
 

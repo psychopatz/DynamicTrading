@@ -11,4 +11,4 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "General Registry Complete")
+print("[DynamicTrading] General Registry Complete")

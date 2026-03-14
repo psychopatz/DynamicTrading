@@ -13,7 +13,7 @@ ITEMS_DIR = Path("/home/psychopatz/Zomboid/Workshop/DynamicTrading/Contents/mods
 # Based on realistic values for each category and tier
 PRICING_RULES = {
     # FOOD items - Price based on hunger value
-    'Food/DT_Perishable.lua': {
+    'Food/DT_General.lua': {
         'Fish': 18,
         'Meat': 20,
         'Fruit': 8,
@@ -25,7 +25,7 @@ PRICING_RULES = {
         'Crustacean': 22,
         'default': 10,
     },
-    'Food/DT_NonPerishable.lua': {
+    'Food/DT_Canned.lua': {
         'Canned': 14,
         'default': 12,
     },

@@ -16,4 +16,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.CarBatteryCharger", basePrice=4, tags={"Electronics.Battery", "Rarity.Rare"}, stockRange={min=0, max=2} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "Battery Registry Complete")
+print("[DynamicTrading] Battery Registry Complete")

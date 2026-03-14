@@ -18,4 +18,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Propane_Refill", basePrice=14, tags={"Resource.Fuel.Liquid", "Rarity.Rare"}, stockRange={min=0, max=4} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "Fuel Registry Complete")
+print("[DynamicTrading] Fuel Registry Complete")

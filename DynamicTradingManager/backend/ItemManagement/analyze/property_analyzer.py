@@ -86,7 +86,7 @@ def analyze_all_properties(vanilla_dir):
     all_properties = defaultdict(lambda: {'type': set(), 'examples': [], 'count': 0, 'items': []})
     
     # Process all item files
-    item_files = Path(vanilla_dir).glob("*.txt")
+    item_files = Path(vanilla_dir).rglob("*.txt")
     for item_file in item_files:
         file_props = parse_item_file(item_file)
         merge_properties(all_properties, file_props)
@@ -108,7 +108,7 @@ def find_items_with_property(vanilla_dir, property_name, value_filter=None):
     """
     results = []
     
-    item_files = Path(vanilla_dir).glob("*.txt")
+    item_files = Path(vanilla_dir).rglob("*.txt")
     for item_file in item_files:
         with open(item_file, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -148,7 +148,7 @@ def find_items_by_multiple_properties(vanilla_dir, property_filters):
     """
     results = []
     
-    item_files = Path(vanilla_dir).glob("*.txt")
+    item_files = Path(vanilla_dir).rglob("*.txt")
     for item_file in item_files:
         with open(item_file, 'r', encoding='utf-8') as f:
             content = f.read()

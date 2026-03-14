@@ -36,4 +36,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.VarmintRifle", basePrice=34, tags={"Weapon.Firearm.Ranged", "Rarity.Common"}, stockRange={min=1, max=5} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "Ranged Registry Complete")
+print("[DynamicTrading] Ranged Registry Complete")

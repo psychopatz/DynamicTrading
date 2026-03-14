@@ -16,11 +16,10 @@ DynamicTrading.RegisterBatch({
     { item="Base.HamRadio2", basePrice=1, tags={"Resource.Material", "Rarity.Common"}, stockRange={min=1, max=4} },
     { item="Base.HamRadioMakeShift", basePrice=1, tags={"Resource.Material", "Rarity.Common"}, stockRange={min=1, max=4} },
 
-    -- [Resource.Material] [Rarity.Rare] (127 items)
+    -- [Resource.Material] [Rarity.Rare] (122 items)
     { item="Base.AlcoholedCottonBalls", basePrice=170, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.AlcoholWipes", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.AnimalFeedBag", basePrice=3, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=10} },
-    { item="Base.AnimalMilkPowder", basePrice=10, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.BakingSoda", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.BathTowel", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.Battery", basePrice=136, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
@@ -112,7 +111,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.PenLight", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.PremiumFishingLine", basePrice=136, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.RatPoison", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
-    { item="Base.RemouladeFull", basePrice=26, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.RespiratorFilters", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.RespiratorFiltersRecharged", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.Sandbag", basePrice=7, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=10} },
@@ -121,7 +119,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Soap2", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.SprayPaint", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.SteelWool", basePrice=85, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
-    { item="Base.Sugar", basePrice=22, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.TestWaterMug", basePrice=21, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.Thread", basePrice=136, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.Thread_Aramid", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
@@ -131,8 +128,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.TobaccoLoose", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.Torch", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.Twine", basePrice=27, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
-    { item="Base.Vinegar2", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
-    { item="Base.Vinegar_Jug", basePrice=7, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.WalkieTalkie1", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.WalkieTalkie2", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.WalkieTalkie3", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
@@ -146,4 +141,4 @@ DynamicTrading.RegisterBatch({
     { item="Base.Yeast", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
 })
 
-DynamicTrading.Log("DTCommons", "Init", "Item", "Material Registry Complete")
+print("[DynamicTrading] Material Registry Complete")

@@ -140,7 +140,7 @@ Edit `Scripts/src/config.py` to:
   ✅ Added 9 items to DT_Ranged.lua
 
 📁 Food: 45 items
-  ✅ Added 30 items to DT_Perishable.lua
+  ✅ Added 30 items to DT_General.lua
   ✅ Added 15 items to DT_Meat.lua
 
 ✅ COMPLETE: Added 143 new items

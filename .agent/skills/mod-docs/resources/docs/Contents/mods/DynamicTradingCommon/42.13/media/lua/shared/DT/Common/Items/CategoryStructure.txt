@@ -8,8 +8,8 @@ DT/Common/Items/
 │   ├── DT_Cooking.lua     (16 items: condiments, spices, baking)
 │   ├── DT_Drink.lua       (12 items: juices, beverages, wine)
 │   ├── DT_Meat.lua        (10 items: butcher items)
-│   ├── DT_Perishable.lua  (14 items: fresh produce, dairy, eggs)
-│   └── DT_NonPerishable.lua (22 items: canned, preserved, dry goods)
+│   ├── DT_General.lua     (fallback/general food items)
+│   └── DT_Canned.lua      (canned and preserved goods)
 ├── DT_Appliance.lua       (8 items: stoves, fridges, microwaves)
 ├── DT_Clothing.lua        (24 items: shirts, pants, jackets, accessories)
 ├── DT_Container.lua       (16 items: bags, boxes, coolers, storage)
@@ -37,7 +37,7 @@ DynamicTrading.RegisterBatch(items)
 
 NAMING CONVENTIONS:
 - File names: DT_[Category].lua (PascalCase with DT prefix)
-- Food subcategories: DT_[Type].lua (DT_Cooking, DT_Perishable, etc)
+- Food subcategories: DT_[Type].lua (DT_Cooking, DT_Canned, DT_General, etc)
 - Item IDs: Always use Base.[ItemName] format (Base.Sugar, Base.FarmersLunbox)
 
 TAG ASSIGNMENT RULES:

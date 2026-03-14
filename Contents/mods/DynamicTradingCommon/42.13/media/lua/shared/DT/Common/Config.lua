@@ -270,6 +270,7 @@ require "DT/Common/Events/DT_EventManager"
 -- 7. FACTION SYSTEM CONFIGURATION (SHARED PARITY)
 -- =============================================================================
 DynamicTrading.Config.ResourceMap = {
+    ["Food"] = "food",
     ["Food.Perishable.Vegetable"] = "food", ["Food.Perishable.Fruit"] = "food", ["Food.Perishable.Grain"] = "food", ["Food.Perishable.Meat"] = "food",
     ["Food.Perishable"] = "food", ["Food.NonPerishable"] = "food", ["Food.Perishable.Fish"] = "food", ["Tool.Resource.Farming"] = "food",
     ["Weapon.Ranged.Ammo"] = "ammo", ["Weapon.Ranged.Firearm"] = "ammo", ["Weapon.Melee"] = "ammo",
