@@ -15,6 +15,7 @@ require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "Utils/DT_StringUtils" 
 require "Utils/DT_CoreUtils"
+require "Utils/DT_ReputationManager"
 
 DT_ConversationUI = DT_ConversationUI or ISCollapsableWindow:derive("DT_ConversationUI")
 DT_ConversationUI.instance = nil
@@ -497,62 +498,37 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
     
     -- FACTION & REPUTATION (Optional)
     if traderObj.factionID then
-        local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions) 
+        local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions)
                             or (DT_V2_RadarManager and DT_V2_RadarManager.ClientFactions)
-                            or ModData.get("DynamicTrading_Factions") 
+                            or ModData.get("DynamicTrading_Factions")
                             or {}
-                            
-        local f = factionData[traderObj.factionID]
-        if f then
-            ui.lblFactionTitle:setVisible(true)
-            ui.lblFactionName:setName(f.name or traderObj.factionID)
-            ui.lblFactionName:setVisible(true)
-            
-            local player = getPlayer()
-            local username = player:getUsername()
-            local rep = (f.reputation and f.reputation[username]) or 0
-            
-            -- REPUTATION STAGES & COLORS
-            local stage = "Neutral"
-            local r, g, b = 0.8, 0.8, 0.8 -- Silver (Neutral)
-            
-            if rep >= 81 then
-                stage = "Exalted"
-                r, g, b = 1.0, 0.8, 0.0 -- Gold
-            elseif rep >= 41 then
-                stage = "Honored"
-                r, g, b = 0.2, 1.0, 0.2 -- Green
-            elseif rep >= 11 then
-                stage = "Friendly"
-                r, g, b = 0.5, 1.0, 0.5 -- Light Green
-            elseif rep >= -10 then
-                stage = "Neutral"
-                r, g, b = 0.8, 0.8, 0.8
-            elseif rep >= -39 then
-                stage = "Unfriendly"
-                r, g, b = 1.0, 0.5, 0.2 -- Orange
-            elseif rep >= -79 then
-                stage = "Hostile"
-                r, g, b = 1.0, 0.2, 0.2 -- Red
-            else
-                stage = "Nemesis"
-                r, g, b = 0.8, 0.0, 0.0 -- Dark Red
-            end
-            
-            ui.lblReputation:setName(string.format("Reputation: %d (%s)", rep, stage))
-            ui.lblReputation:setColor(r, g, b)
-            ui.lblReputation:setVisible(true)
+        local faction = factionData[traderObj.factionID]
+        local traderUUID = traderObj.uuid or traderObj.traderID or traderObj.id
 
-            -- WEALTH & STATE (New in V2)
-            if f.wealth ~= nil then
-                ui.lblWealth:setName(string.format("Wealth: %d$", f.wealth))
-                ui.lblWealth:setVisible(true)
-            end
+        ui.lblFactionTitle:setVisible(true)
+        ui.lblFactionName:setName((faction and faction.name) or traderObj.factionID)
+        ui.lblFactionName:setVisible(true)
 
-            if f.state then
-                ui.lblState:setName(string.format("Status: %s", f.state))
-                ui.lblState:setVisible(true)
-            end
+        local rep = 0
+        local stageData = { label = "Neutral", color = { r = 0.8, g = 0.8, b = 0.8 } }
+        if DT_ReputationManager and traderUUID then
+            rep = DT_ReputationManager.GetEffectiveRep(traderUUID, traderObj.factionID)
+            stageData = DT_ReputationManager.GetStageData(rep)
+            DT_ReputationManager.DebugDump(traderUUID, traderObj.factionID, "conversation_open")
+        end
+
+        ui.lblReputation:setName(string.format("Reputation: %d (%s)", rep, stageData.label))
+        ui.lblReputation:setColor(stageData.color.r, stageData.color.g, stageData.color.b)
+        ui.lblReputation:setVisible(true)
+
+        if faction and faction.wealth ~= nil then
+            ui.lblWealth:setName(string.format("Wealth: %d$", faction.wealth))
+            ui.lblWealth:setVisible(true)
+        end
+
+        if faction and faction.state then
+            ui.lblState:setName(string.format("Status: %s", faction.state))
+            ui.lblState:setVisible(true)
         end
     end
     

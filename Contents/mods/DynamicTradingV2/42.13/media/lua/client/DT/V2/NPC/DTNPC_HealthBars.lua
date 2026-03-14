@@ -5,6 +5,7 @@
 -- ==============================================================================
 
 require "ISUI/ISUIElement"
+require "Utils/DT_ReputationManager"
 
 DTNPCClient = DTNPCClient or {}
 
@@ -586,6 +587,11 @@ local function onWeaponHitCharacter(attacker, target, weapon, damage)
         getNPCData(target),
         target:getPersistentOutfitID()
     )
+
+    if DT_ReputationManager then
+        local npcData = getNPCData(target)
+        DT_ReputationManager.RecordNPCHit(modData.DTNPC_UUID, npcData and npcData.factionID)
+    end
 end
 
 Events.OnCreatePlayer.Add(onCreatePlayer)

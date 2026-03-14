@@ -3,6 +3,8 @@
 -- Client-side network command handlers for NPC synchronization.
 -- ==============================================================================
 
+require "Utils/DT_ReputationManager"
+
 DTNPCClient = DTNPCClient or {}
 
 DynamicTrading.Log("DTV2", "NPC", "Init", "Loading client interpolation module...")
@@ -150,6 +152,8 @@ function DTNPCClient.OnServerCommand(module, command, args)
         local uuid = args.uuid
         local name = args.name or "Unknown"
         local outfitID = args.outfitID
+        local cachedEntry = DTNPCClient.NPCCache[uuid]
+        local factionID = cachedEntry and cachedEntry.npcData and cachedEntry.npcData.factionID or nil
         
         if name == "Unknown" and DTNPCClient.NPCCache[uuid] then
             name = DTNPCClient.NPCCache[uuid].npcData.name or "Unknown"
@@ -164,6 +168,10 @@ function DTNPCClient.OnServerCommand(module, command, args)
         local zombie = DTNPCClient.FindZombieByUUID(uuid)
         if not zombie and outfitID then
             zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
+        end
+
+        if DT_ReputationManager and factionID then
+            DT_ReputationManager.TryApplyKillPenalty(uuid, factionID, zombie)
         end
         
         if zombie then

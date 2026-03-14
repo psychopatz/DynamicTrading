@@ -2,6 +2,7 @@
 -- DYNAMIC TRADING V2: NPC TRADER DIALOGUE HUB
 -- =============================================================================
 require "UI/DT_ConversationUI"
+require "Utils/DT_ReputationManager"
 require "DT/V2/NPC/DTNPC_TradingHandler"
 require "DT/V2/NPC/DTNPC_InteractionPose"
 require "DT/V2/UI/TradingWindowWrapper/TradingWindowWrapper"
@@ -43,6 +44,13 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 factionID = npcData and npcData.factionID,
                 returnTime = npcData and npcData.returnTime
             }
+
+            if DT_ReputationManager then
+                traderProxy.personalRep = DT_ReputationManager.GetPersonalRep(traderProxy.id)
+                traderProxy.factionRep = DT_ReputationManager.GetFactionRep(traderProxy.factionID)
+                traderProxy.reputation = DT_ReputationManager.GetEffectiveRep(traderProxy.id, traderProxy.factionID)
+                traderProxy.reputationStage = DT_ReputationManager.GetStageData(traderProxy.reputation).label
+            end
             
             -- [FIX] Safety checks for debug prints to prevent "concatenation with nil" crashes
             DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader ID: " .. tostring(traderProxy.id))
@@ -88,7 +96,11 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
     end
     
     -- 1. Intro Speech
-    ui:speak("Hello. What can I do for you?")
+    local greeting = "Hello. What can I do for you?"
+    if DynamicTrading and DynamicTrading.DialogueManager and ui.target then
+        greeting = DynamicTrading.DialogueManager.GenerateGreeting(ui.target)
+    end
+    ui:speak(greeting)
 
     -- 2. Generate Options
     DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)

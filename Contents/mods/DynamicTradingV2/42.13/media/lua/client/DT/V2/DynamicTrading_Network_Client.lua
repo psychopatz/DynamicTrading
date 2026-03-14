@@ -1,5 +1,7 @@
 if isServer() then return end
 
+require "Utils/DT_ReputationManager"
+
 DynamicTrading_Client = {}
 DynamicTrading_Client.Cache = {
     Traders = {},
@@ -131,6 +133,17 @@ local function OnSharedServerCommand(module, command, args)
                         archetype = ui.archetype or "General",
                         name = "Trader"
                     }
+                end
+
+                args.traderID = trader.traderID or ui.traderID
+                args.factionID = trader.factionID
+
+                if DT_ReputationManager then
+                    DT_ReputationManager.AddTradeValue(args.traderID, args.factionID, args.price or 0, isBuy)
+                    trader.personalRep = DT_ReputationManager.GetPersonalRep(args.traderID)
+                    trader.factionRep = DT_ReputationManager.GetFactionRep(args.factionID)
+                    trader.reputation = DT_ReputationManager.GetEffectiveRep(args.traderID, args.factionID)
+                    trader.reputationStage = DT_ReputationManager.GetStageData(trader.reputation).label
                 end
                 
                 -- 3. Trigger Dialogue & SFX

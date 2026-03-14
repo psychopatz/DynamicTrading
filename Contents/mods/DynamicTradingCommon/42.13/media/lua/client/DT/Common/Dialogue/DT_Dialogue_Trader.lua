@@ -7,11 +7,64 @@ DynamicTrading.Dialogue.Trader = {}
 local Core = DynamicTrading.Dialogue.Core
 local DEBUG_PREFIX = "[DT-Common-Dialogue]"
 
+local function getRepAwareGreeting(trader)
+    local rep = trader and trader.reputation or 0
+
+    if rep >= 40 then
+        return {
+            "Good to hear from you again, {player.firstname}.",
+            "You're one of the few I trust around here, {player}.",
+            "Signal's clear. For you, I've got time."
+        }
+    elseif rep >= 10 then
+        return {
+            "You again, {player.firstname}? That's fine by me.",
+            "I've dealt with worse than you. Go on.",
+            "You're alright. Let's hear it."
+        }
+    elseif rep <= -40 then
+        return {
+            "Make this quick, {player}. I haven't forgotten.",
+            "You have a lot of nerve calling me.",
+            "Say what you need and be done with it."
+        }
+    elseif rep <= -10 then
+        return {
+            "What do you want this time?",
+            "I'm listening, but don't test me.",
+            "Keep it brief, {player.firstname}."
+        }
+    end
+
+    return nil
+end
+
+local function getRepAwareIdle(trader)
+    local rep = trader and trader.reputation or 0
+    if rep >= 40 then
+        return {
+            "If it's you, I can spare a minute.",
+            "Business is easier when I know who's calling."
+        }
+    elseif rep <= -40 then
+        return {
+            "Bad blood doesn't just vanish.",
+            "Some debts aren't paid in cash."
+        }
+    end
+    return nil
+end
+
 -- =============================================================================
 -- 2. GREETING GENERATOR
 -- =============================================================================
 function DynamicTrading.Dialogue.Trader.GenerateGreeting(trader)
     if not trader then return "..." end
+
+    local repPool = getRepAwareGreeting(trader)
+    if repPool then
+        return Core.FormatMessage(Core.PickRandom(repPool), { traderName = trader.name })
+    end
     
     local cm = ClimateManager:getInstance()
     local gt = GameTime:getInstance()
@@ -39,6 +92,10 @@ end
 -- =============================================================================
 function DynamicTrading.Dialogue.Trader.GenerateIdleMessage(trader)
     if not trader then return "..." end
+    local repPool = getRepAwareIdle(trader)
+    if repPool then
+        return Core.FormatMessage(Core.PickRandom(repPool), { traderName = trader.name })
+    end
     local pool = Core.GetDialoguePool(trader.archetype, "Idle", "Default")
     return Core.FormatMessage(Core.PickRandom(pool), {})
 end
