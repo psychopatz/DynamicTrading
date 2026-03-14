@@ -125,7 +125,7 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
         zombie:setRunning(false)
     end
 
-    local speed = npcData.runSpeed or DTNPC.DefaultRunSpeed
+    local speed = DynamicTrading.GetNPCRunSpeed()
     local nextX = zx + (dx * speed)
     local nextY = zy + (dy * speed)
     local z = zombie:getZ()

@@ -4,6 +4,13 @@ local hasGenerator = pcall(require, "DT/V2/NPC/Sys/DTNPC_Generator")
 DynamicTrading_Roster = {}
 local MOD_DATA_KEY = "DynamicTrading_Roster"
 
+local function stripMovementSpeed(npcData)
+    if type(npcData) ~= "table" then return npcData end
+    npcData.walkSpeed = nil
+    npcData.runSpeed = nil
+    return npcData
+end
+
 -- ==========================================================
 -- 1. INITIALIZATION
 -- ==========================================================
@@ -100,15 +107,16 @@ end
 function DynamicTrading_Roster.GetSoul(uuid)
     local soulKey = "DTSOUL_" .. uuid
     if ModData.exists(soulKey) then
-        return ModData.get(soulKey)
+        return stripMovementSpeed(ModData.get(soulKey))
     end
     -- Fallback/Migration: check registry in case it's still there
     local registry = DynamicTrading_Roster.GetSoulRegistry(uuid)
-    if registry and registry.name then return registry end 
+    if registry and registry.name then return stripMovementSpeed(registry) end 
     return nil
 end
 
 function DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    npcData = stripMovementSpeed(npcData)
     local soulKey = "DTSOUL_" .. uuid
     if not ModData.exists(soulKey) then
         ModData.add(soulKey, npcData)
@@ -116,6 +124,8 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         -- Direct assignment to ModData entry
         local entry = ModData.get(soulKey)
         for k, v in pairs(npcData) do entry[k] = v end
+        entry.walkSpeed = nil
+        entry.runSpeed = nil
     end
     -- ModData.transmit(soulKey) -- Disabled global broadcast
     
@@ -240,8 +250,6 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
             identitySeed = identitySeed,
             state = "Idle",
             tasks = {},
-            walkSpeed = 0.06,
-            runSpeed = 0.09,
             visualID = ZombRand(1000000),
             archetypeID = archetypeID or "General",
         }

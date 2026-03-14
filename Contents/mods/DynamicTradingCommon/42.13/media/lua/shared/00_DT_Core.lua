@@ -9,6 +9,10 @@ DynamicTrading = DynamicTrading or {}
 DynamicTrading.Config = DynamicTrading.Config or {}
 DynamicTrading.Config.MasterList = DynamicTrading.Config.MasterList or {} 
 DynamicTrading.Config.Tags = DynamicTrading.Config.Tags or {}
+DynamicTrading.Config.NPCMovement = DynamicTrading.Config.NPCMovement or {
+    walkSpeed = 0.06,
+    runSpeed = 0.09
+}
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
 -- CORE MODULES
@@ -56,6 +60,16 @@ DynamicTrading.Config.RadioTiers = {
     ["Base.HamRadio2"]              = { power = 2.0, capacity = 20, desc = "Stationary (Military)" },
     ["Base.ManPackRadio"]           = { power = 1.5, capacity = 10, desc = "Military Manpack" }
 }
+
+function DynamicTrading.GetNPCWalkSpeed()
+    local movement = DynamicTrading.Config and DynamicTrading.Config.NPCMovement
+    return (movement and movement.walkSpeed) or 0.06
+end
+
+function DynamicTrading.GetNPCRunSpeed()
+    local movement = DynamicTrading.Config and DynamicTrading.Config.NPCMovement
+    return (movement and movement.runSpeed) or 0.09
+end
 
 -- 2. REGISTRATION API
 

@@ -65,17 +65,15 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         local genOptions = {
             masterName = player:getUsername(),
             masterID = player:getOnlineID(),
-            forceMVP = options.forceMVP,
-            walkSpeed = options.walkSpeed,
-            runSpeed = options.runSpeed
+            forceMVP = options.forceMVP
         }
         
         npcData = DTNPCGenerator.Generate(genOptions)
         DynamicTrading.Log("DTV2", "NPC", "Logic", "Generated new npcData for: " .. npcData.name)
     else
         if not npcData.tasks then npcData.tasks = {} end
-        if not npcData.walkSpeed then npcData.walkSpeed = DTNPC.DefaultWalkSpeed end
-        if not npcData.runSpeed then npcData.runSpeed = DTNPC.DefaultRunSpeed end
+        npcData.walkSpeed = nil
+        npcData.runSpeed = nil
         if not npcData.visualID then npcData.visualID = ZombRand(1000000) end
         
         npcData.state = "Idle"

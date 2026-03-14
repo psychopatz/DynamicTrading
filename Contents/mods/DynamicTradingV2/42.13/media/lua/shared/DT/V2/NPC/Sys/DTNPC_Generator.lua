@@ -61,8 +61,6 @@ function DTNPCGenerator.CreateMVPData(mvpData, options)
         master = options.masterName,
         masterID = options.masterID,
         tasks = {},
-        walkSpeed = options.walkSpeed or 0.06,
-        runSpeed = options.runSpeed or 0.09,
         isMVP = true,
         visualID = ZombRand(1000000),
         archetypeID = mvpData.archetypeID or options.occupation or "General",
@@ -112,8 +110,6 @@ function DTNPCGenerator.CreateStandardData(options)
         master = options.masterName,
         masterID = options.masterID,
         tasks = {},
-        walkSpeed = options.walkSpeed or 0.06,
-        runSpeed = options.runSpeed or 0.09,
         visualID = ZombRand(1000000),
         archetypeID = occupation,
     }

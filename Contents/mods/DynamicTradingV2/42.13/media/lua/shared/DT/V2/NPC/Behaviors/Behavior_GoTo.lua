@@ -134,7 +134,7 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
         dy = dy / len
     end
 
-    local speed = npcData.runSpeed or DTNPC.DefaultRunSpeed
+    local speed = DynamicTrading.GetNPCRunSpeed()
     local nextX = zx + (dx * speed)
     local nextY = zy + (dy * speed)
 

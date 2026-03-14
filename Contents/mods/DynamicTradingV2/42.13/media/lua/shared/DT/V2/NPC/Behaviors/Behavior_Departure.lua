@@ -234,7 +234,7 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         zombie:setRunning(false)
     end
 
-    local speed = npcData.runSpeed or DTNPC.DefaultRunSpeed
+    local speed = DynamicTrading.GetNPCRunSpeed()
     local nextX = zx + (dx * speed)
     local nextY = zy + (dy * speed)
     local canMove = isTileSafe(nextX, nextY, z)

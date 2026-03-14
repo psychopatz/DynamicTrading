@@ -6,17 +6,9 @@
 
 DTNPC = DTNPC or {}
 
--- ==============================================================================
--- 1. WARDROBE DATABASE (Deprecated / Moved to DTNPC_Presets.lua)
--- ==============================================================================
-
--- Default walking speeds
-DTNPC.DefaultWalkSpeed = 0.06
-DTNPC.DefaultRunSpeed = 0.09
-
 
 -- ==============================================================================
--- 2. DATA MANAGEMENT
+-- 1. DATA MANAGEMENT
 -- ==============================================================================
 
 function DTNPC.GetData(zombie)
@@ -58,7 +50,7 @@ function DTNPC.IsNPC(zombie)
 end
 
 -- ==============================================================================
--- 3. VISUALS (THE COSTUME)
+-- 2. VISUALS (THE COSTUME)
 -- ==============================================================================
 
 function DTNPC.ApplyVisuals(zombie, npcData)
@@ -153,7 +145,7 @@ function DTNPC.ApplyVisuals(zombie, npcData)
 end
 
 -- ==============================================================================
--- 4. UTILITIES
+-- 3. UTILITIES
 -- ==============================================================================
 
 Events.OnGameStart.Add(function()
