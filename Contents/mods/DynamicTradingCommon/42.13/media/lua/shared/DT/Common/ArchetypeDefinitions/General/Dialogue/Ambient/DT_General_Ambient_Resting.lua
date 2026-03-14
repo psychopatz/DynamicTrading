@@ -1,6 +1,6 @@
 require "DT/Common/Config"
 
-DynamicTrading.RegisterAmbientDialogue("General", {
+DynamicTrading.RegisterDialogue("General", "Ambient", {
     EN = {
         Resting = {
             Default = {

@@ -53,8 +53,6 @@ end
 -- =============================================================================
 DynamicTrading.Dialogue = DynamicTrading.Dialogue or {}
 DynamicTrading.Dialogue.Archetypes = DynamicTrading.Dialogue.Archetypes or {}
-DynamicTrading.AmbientDialogue = DynamicTrading.AmbientDialogue or {}
-DynamicTrading.AmbientDialogue.Archetypes = DynamicTrading.AmbientDialogue.Archetypes or {}
 
 local function MergeNestedTables(target, source)
     if type(target) ~= "table" or type(source) ~= "table" then
@@ -93,21 +91,6 @@ function DynamicTrading.RegisterDialogue(archetypeID, dialogueType, data)
 
     if archetypeID == "Player" and DynamicTrading.Debug then
          DynamicTrading.Log("DTCommons", "Dialogue", "Debug", "Registered Player Dialogue: " .. dialogueType)
-    end
-end
-
-function DynamicTrading.RegisterAmbientDialogue(archetypeID, data)
-    if not archetypeID or not data then return end
-
-    DynamicTrading.AmbientDialogue.Archetypes[archetypeID] = DynamicTrading.AmbientDialogue.Archetypes[archetypeID] or {}
-    local archTable = DynamicTrading.AmbientDialogue.Archetypes[archetypeID]
-
-    for lang, lines in pairs(data) do
-        if type(archTable[lang]) == "table" and type(lines) == "table" then
-            archTable[lang] = MergeNestedTables(archTable[lang], lines)
-        else
-            archTable[lang] = lines
-        end
     end
 end
 

@@ -2,7 +2,6 @@ require "DT/Common/Dialogue/DT_Dialogue_Core"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.AmbientDialogue = DynamicTrading.AmbientDialogue or {}
-DynamicTrading.AmbientDialogue.Archetypes = DynamicTrading.AmbientDialogue.Archetypes or {}
 
 local Core = DynamicTrading.Dialogue.Core
 
@@ -55,21 +54,26 @@ local function getAmbientPoolFromTarget(target, status, state, lang)
         return nil
     end
 
-    if target[lang] then
-        local pool = getAmbientPoolFromLanguageTable(target[lang], status, state)
+    local ambientTarget = target.Ambient or target
+    if not ambientTarget then
+        return nil
+    end
+
+    if ambientTarget[lang] then
+        local pool = getAmbientPoolFromLanguageTable(ambientTarget[lang], status, state)
         if pool then
             return pool
         end
     end
 
-    if target.EN then
-        local pool = getAmbientPoolFromLanguageTable(target.EN, status, state)
+    if ambientTarget.EN then
+        local pool = getAmbientPoolFromLanguageTable(ambientTarget.EN, status, state)
         if pool then
             return pool
         end
     end
 
-    local statusTable = target[status]
+    local statusTable = ambientTarget[status]
     if not statusTable then
         return nil
     end
@@ -91,7 +95,7 @@ local function getAmbientPoolFromTarget(target, status, state, lang)
 end
 
 local function getAmbientPool(archetype, status, state)
-    local db = DynamicTrading.AmbientDialogue and DynamicTrading.AmbientDialogue.Archetypes or nil
+    local db = DynamicTrading.Dialogue and DynamicTrading.Dialogue.Archetypes or nil
     if not db then
         return nil
     end

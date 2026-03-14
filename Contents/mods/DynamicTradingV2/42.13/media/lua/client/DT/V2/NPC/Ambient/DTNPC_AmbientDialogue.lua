@@ -6,7 +6,7 @@
 
 require "ISUI/ISUIElement"
 require "DT/Common/Ambient/DT_AmbientDialogue"
-require "DT/V2/NPC/DTNPC_AmbientDialogueConfig"
+require "DT/V2/NPC/Ambient/DTNPC_AmbientDialogueConfig"
 
 DTNPCClient = DTNPCClient or {}
 
@@ -239,9 +239,8 @@ local function getAmbientDebugInfo(npcData)
     local status = npcData and npcData.status or "Default"
     local state = npcData and npcData.state or "Default"
     local dialogueDB = DynamicTrading and DynamicTrading.Dialogue and DynamicTrading.Dialogue.Archetypes or nil
-    local ambientDB = DynamicTrading and DynamicTrading.AmbientDialogue and DynamicTrading.AmbientDialogue.Archetypes or nil
-    local archetypeTable = ambientDB and ambientDB[archetype] or nil
-    local generalTable = ambientDB and ambientDB.General or nil
+    local archetypeTable = dialogueDB and dialogueDB[archetype] or nil
+    local generalTable = dialogueDB and dialogueDB.General or nil
     local entry = nil
 
     if DynamicTrading and DynamicTrading.AmbientDialogue and DynamicTrading.AmbientDialogue.GetEntry then
@@ -263,8 +262,8 @@ local function getAmbientDebugInfo(npcData)
         status = status,
         state = state,
         hasArchetype = archetypeTable ~= nil,
-        hasArchetypeAmbient = archetypeTable ~= nil,
-        hasGeneralAmbient = generalTable ~= nil,
+        hasArchetypeAmbient = archetypeTable and archetypeTable.Ambient ~= nil or false,
+        hasGeneralAmbient = generalTable and generalTable.Ambient ~= nil or false,
         entry = entry,
     }
 end
