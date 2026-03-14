@@ -67,8 +67,10 @@ local activeRespawnCheckCounter = 0
 local ROSTER_RESPAWN_CHECK_RATE = 60 -- Discover/spawn nearby roster NPCs every ~3 seconds
 local rosterRespawnCheckCounter = 0
 
-local TRANSITION_CHECK_RATE = 600 -- Check transitions every 30 seconds
-local transitionCheckCounter = 0
+local AWAY_TRANSITION_CHECK_RATE = 60 -- Resolve expired traders/departures every ~3 seconds
+local awayTransitionCheckCounter = 0
+local TRADE_CYCLE_CHECK_RATE = 600 -- Start new trade missions every ~30 seconds
+local tradeCycleCheckCounter = 0
 
 function DTNPCManager.OnTick()
     -- Run on Server or Single Player
@@ -77,7 +79,8 @@ function DTNPCManager.OnTick()
     positionBroadcastCounter = positionBroadcastCounter + 1
     activeRespawnCheckCounter = activeRespawnCheckCounter + 1
     rosterRespawnCheckCounter = rosterRespawnCheckCounter + 1
-    transitionCheckCounter = transitionCheckCounter + 1
+    awayTransitionCheckCounter = awayTransitionCheckCounter + 1
+    tradeCycleCheckCounter = tradeCycleCheckCounter + 1
     
     local shouldBroadcast = (positionBroadcastCounter >= POSITION_BROADCAST_RATE)
     if shouldBroadcast then
@@ -94,10 +97,15 @@ function DTNPCManager.OnTick()
         rosterRespawnCheckCounter = 0
     end
 
-    local shouldCheckTransitions = (transitionCheckCounter >= TRANSITION_CHECK_RATE)
-    if shouldCheckTransitions then
-        transitionCheckCounter = 0
+    local shouldCheckAwayTransitions = (awayTransitionCheckCounter >= AWAY_TRANSITION_CHECK_RATE)
+    if shouldCheckAwayTransitions then
+        awayTransitionCheckCounter = 0
         DTNPCManager.ProcessAwayTransitions()
+    end
+
+    local shouldCheckTradeCycles = (tradeCycleCheckCounter >= TRADE_CYCLE_CHECK_RATE)
+    if shouldCheckTradeCycles then
+        tradeCycleCheckCounter = 0
         DTNPCManager.ProcessTradeCycles()
     end
     

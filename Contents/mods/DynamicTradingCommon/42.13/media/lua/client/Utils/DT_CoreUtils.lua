@@ -12,10 +12,24 @@ DynamicTrading.Utils = DynamicTrading.Utils or {}
 --- @param trader any: Optional. The trader data object.
 --- @return boolean: True if valid, false otherwise.
 function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
+    local liveNpcData = nil
+    if obj and instanceof(obj, "IsoGameCharacter") and DTNPC and DTNPC.GetData then
+        liveNpcData = DTNPC.GetData(obj)
+    end
+
     -- 0. SIGNAL EXPIRATION CHECK
-    if trader and trader.returnTime then
+    local traderForTimer = trader
+    if liveNpcData then
+        if liveNpcData.status == "Trading" then
+            traderForTimer = liveNpcData
+        else
+            traderForTimer = nil
+        end
+    end
+
+    if traderForTimer and traderForTimer.returnTime then
         local gt = GameTime:getInstance()
-        if trader.returnTime <= gt:getWorldAgeHours() then
+        if traderForTimer.returnTime <= gt:getWorldAgeHours() then
             return false
         end
     end
@@ -28,6 +42,7 @@ function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
     -- 1. NPC CHARACTER
     if instanceof(obj, "IsoGameCharacter") then
         if obj:isDead() then return false end
+        if liveNpcData and liveNpcData.state == "Departure" then return false end
         -- Distance check for NPCs (4 tiles)
         local dist = IsoUtils.DistanceTo(player:getX(), player:getY(), obj:getX(), obj:getY())
         if dist > 4.0 then return false end

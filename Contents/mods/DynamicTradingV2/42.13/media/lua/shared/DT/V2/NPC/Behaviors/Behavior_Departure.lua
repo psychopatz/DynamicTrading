@@ -6,7 +6,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 
-local DESPAWN_DIST = 35
+local DESPAWN_DIST = 45
 local TARGET_REACHED_DIST = 2
 local STUCK_TICKS = 15
 local STUCK_ABORT_TICKS = 60
@@ -56,6 +56,9 @@ local function clearDepartureRuntime(npcData)
     npcData.departureStuckLastY = nil
     npcData.departureLastDirX = nil
     npcData.departureLastDirY = nil
+    npcData.departureStartedAt = nil
+    npcData.departureForceDespawnAt = nil
+    npcData.departureTimeoutVisibleLogged = nil
 end
 
 local function getActivePlayers()
@@ -123,16 +126,29 @@ local function tryUnstick(zombie, z, dirX, dirY)
     return false
 end
 
-local function completeDeparture(zombie, npcData)
+local function completeDeparture(zombie, npcData, reason)
     if npcData.removalRequested then return true end
 
     local uuid = npcData.uuid
     local travelHours = npcData.departureTravelHours or 0
-    local returnTime = getGameTime():getWorldAgeHours() + travelHours
-    local nextStatus = npcData.requestedReturnStatus or "Resting"
+    local returnTime = npcData.returnTime
+    local nextStatus = npcData.returnStatus or npcData.requestedReturnStatus or "Resting"
+
+    if returnTime == nil or returnTime <= 0 then
+        returnTime = getGameTime():getWorldAgeHours() + travelHours
+    end
 
     stopDepartureAnimation(zombie)
+
+    if not isClient() and DTNPCManager and DTNPCManager.CompleteLiveDeparture then
+        return DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
+    end
+
     clearDepartureRuntime(npcData)
+    npcData.status = "Away"
+    npcData.returnTime = returnTime
+    npcData.returnStatus = nextStatus
+    npcData.state = "Idle"
 
     if DynamicTrading_Roster and uuid then
         DynamicTrading_Roster.SaveSoul(uuid, npcData)
@@ -157,9 +173,32 @@ end
 
 DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
     local observer, observerDist = getNearestPlayer(zombie)
+    local currentHours = getGameTime():getWorldAgeHours()
+
+    if npcData.departureForceDespawnAt and currentHours >= npcData.departureForceDespawnAt then
+        if (not observer) or observerDist > DESPAWN_DIST then
+            completeDeparture(zombie, npcData, "force_timeout")
+            return
+        end
+
+        if not npcData.departureTimeoutVisibleLogged
+            and DTNPCManager
+            and DTNPCManager.RespawnDebug
+            and DTNPCManager.RespawnDebug.Log then
+            DTNPCManager.RespawnDebug.Log(
+                "departure_wait_visible_" .. tostring(npcData.uuid),
+                "Process=departure_timeout_wait_visible uuid=" .. tostring(npcData.uuid) ..
+                    " name=" .. tostring(npcData.name or npcData.uuid) ..
+                    " observerDist=" .. string.format("%.2f", observerDist) ..
+                    " despawnDist=" .. tostring(DESPAWN_DIST),
+                true
+            )
+            npcData.departureTimeoutVisibleLogged = true
+        end
+    end
 
     if observer and observerDist > DESPAWN_DIST and observerDist < 1000 then
-        completeDeparture(zombie, npcData)
+        completeDeparture(zombie, npcData, "observer_distance")
         return
     end
 
@@ -180,7 +219,7 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
             npcData.departureLastDirX = dx
             npcData.departureLastDirY = dy
             hasDestination = true
-        elseif npcData.departureLastDirX then
+        elseif npcData.departureLastDirX and npcData.departureLastDirY then
             dx = npcData.departureLastDirX
             dy = npcData.departureLastDirY
             hasDestination = true
@@ -194,7 +233,13 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
                 npcData.departureLastDirX = dx
                 npcData.departureLastDirY = dy
                 hasDestination = true
+            else
+                completeDeparture(zombie, npcData, "target_reached_visible_zero_dir")
+                return
             end
+        else
+            completeDeparture(zombie, npcData, "target_reached_unseen")
+            return
         end
     elseif npcData.departureLastDirX then
         dx = npcData.departureLastDirX
@@ -273,7 +318,7 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         npcData.departureStuckLastY = nextY
 
         if (npcData.departureBlockedTicks or 0) >= STUCK_ABORT_TICKS then
-            completeDeparture(zombie, npcData)
+            completeDeparture(zombie, npcData, "stuck_abort_move")
             return
         end
     else
@@ -287,7 +332,7 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         end
 
         if npcData.departureBlockedTicks >= STUCK_ABORT_TICKS then
-            completeDeparture(zombie, npcData)
+            completeDeparture(zombie, npcData, "stuck_abort_blocked")
             return
         end
 

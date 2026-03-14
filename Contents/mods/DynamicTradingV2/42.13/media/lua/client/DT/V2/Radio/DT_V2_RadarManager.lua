@@ -74,16 +74,19 @@ function DT_V2_RadarManager.OnMetadataReceived(uuid, meta)
     DT_V2_RadarManager.ClientRoster.Souls = DT_V2_RadarManager.ClientRoster.Souls or {}
 
     local soul = DT_V2_RadarManager.ClientRoster.Souls[uuid] or {}
-    soul.name = meta.name or soul.name
-    soul.factionID = meta.factionID or soul.factionID
-    soul.archetypeID = meta.archetypeID or soul.archetypeID
-    soul.isFemale = meta.isFemale ~= nil and meta.isFemale or soul.isFemale
-    soul.identitySeed = meta.identitySeed or soul.identitySeed
-    soul.status = meta.status or soul.status or "Unknown"
-    soul.returnTime = meta.returnTime or soul.returnTime
-    soul.lastX = meta.lastX or soul.lastX
-    soul.lastY = meta.lastY or soul.lastY
-    soul.lastZ = meta.lastZ or soul.lastZ or 0
+    if meta.name ~= nil then soul.name = meta.name end
+    if meta.factionID ~= nil then soul.factionID = meta.factionID end
+    if meta.archetypeID ~= nil then soul.archetypeID = meta.archetypeID end
+    if meta.isFemale ~= nil then soul.isFemale = meta.isFemale end
+    if meta.identitySeed ~= nil then soul.identitySeed = meta.identitySeed end
+    if meta.status ~= nil then soul.status = meta.status end
+    if meta.state ~= nil then soul.state = meta.state end
+    if meta.returnTime ~= nil then soul.returnTime = meta.returnTime end
+    if meta.lastX ~= nil then soul.lastX = meta.lastX end
+    if meta.lastY ~= nil then soul.lastY = meta.lastY end
+    if meta.lastZ ~= nil then soul.lastZ = meta.lastZ end
+    soul.status = soul.status or "Unknown"
+    soul.lastZ = soul.lastZ or 0
 
     DT_V2_RadarManager.ClientRoster.Souls[uuid] = soul
 
@@ -97,6 +100,7 @@ function DT_V2_RadarManager.OnMetadataReceived(uuid, meta)
             isFemale = soul.isFemale,
             identitySeed = soul.identitySeed,
             status = soul.status,
+            state = soul.state,
             returnTime = soul.returnTime,
             lastX = soul.lastX,
             lastY = soul.lastY,
@@ -257,6 +261,7 @@ function DT_V2_RadarManager.Scan(player, device)
 
     local foundNew = false
     local px, py = player:getX(), player:getY()
+    local currentHours = getGameTime():getWorldAgeHours()
     
     -- [UNIFIED] Get Event Modifiers
     local globalRangeMult = 1.0
@@ -270,7 +275,8 @@ function DT_V2_RadarManager.Scan(player, device)
     
     -- Filter Roster for "Trading" souls within range
     for uuid, soul in pairs(rosterData.Souls) do
-        if soul.status == "Trading" then
+        local isExpiredTrading = soul.returnTime and soul.returnTime <= currentHours
+        if soul.status == "Trading" and not isExpiredTrading then
             local tx, ty = soul.lastX, soul.lastY
             if tx and ty then
                 local dx = tx - px
@@ -350,11 +356,14 @@ function DT_V2_RadarManager.Cleanup()
     if not isClient() and not rosterData then rosterData = ModData.get("DynamicTrading_Roster") end
 
     if not rosterData or not rosterData.Souls then return end
-    
+    local currentHours = getGameTime():getWorldAgeHours()
+
     local toRemove = {}
     for uuid, _ in pairs(DT_V2_RadarManager.FoundTraders) do
         local soul = rosterData.Souls[uuid]
-        if not soul or soul.status ~= "Trading" then
+        local isExpiredTrading = soul and soul.status == "Trading" and soul.returnTime and soul.returnTime <= currentHours
+        local isDeparting = soul and soul.state == "Departure"
+        if not soul or soul.status ~= "Trading" or isExpiredTrading or isDeparting then
             table.insert(toRemove, uuid)
         end
     end

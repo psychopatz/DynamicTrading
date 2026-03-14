@@ -8,6 +8,8 @@ DTNPCManager = DTNPCManager or {}
 if isClient() and not isServer() then return end
 
 local LIVE_DEPARTURE_RADIUS = 120
+local DEFAULT_DEPARTURE_VISIBLE_HOURS = 0.25
+local STALE_TRADING_RECOVERY_GRACE_HOURS = 0.02
 
 local function isVisibleToActivePlayer(zombie, radius)
     if not zombie or not DTNPCManager.GetActivePlayers then return false end
@@ -29,6 +31,111 @@ local function isVisibleToActivePlayer(zombie, radius)
     end
 
     return false
+end
+
+local function clearDepartureRuntime(npcData, keepStatusData)
+    if not npcData then return end
+
+    npcData.removalRequested = nil
+    npcData.isMovingState = nil
+    npcData.departureTargetX = nil
+    npcData.departureTargetY = nil
+    npcData.departureTargetZ = nil
+    npcData.departureTravelHours = nil
+    npcData.departureBlockedTicks = nil
+    npcData.departureStuckLastX = nil
+    npcData.departureStuckLastY = nil
+    npcData.departureLastDirX = nil
+    npcData.departureLastDirY = nil
+    npcData.departureStartedAt = nil
+    npcData.departureForceDespawnAt = nil
+    npcData.departureTimeoutVisibleLogged = nil
+
+    if not keepStatusData then
+        npcData.requestedReturnStatus = nil
+    end
+end
+
+function DTNPCManager.GetDepartureVisibleHours(travelHours)
+    local configured = SandboxVars
+        and SandboxVars.DynamicTrading
+        and SandboxVars.DynamicTrading.NPCDepartureVisibleHours
+
+    if configured and configured > 0 then
+        return configured
+    end
+
+    local requested = tonumber(travelHours) or DEFAULT_DEPARTURE_VISIBLE_HOURS
+    if requested <= 0 then
+        requested = DEFAULT_DEPARTURE_VISIBLE_HOURS
+    end
+
+    return math.max(0.01, math.min(requested, DEFAULT_DEPARTURE_VISIBLE_HOURS))
+end
+
+function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
+    if not uuid then return false end
+
+    npcData = npcData
+        or (DTNPCManager.Data and DTNPCManager.Data[uuid])
+        or (DynamicTrading_Roster and DynamicTrading_Roster.GetSoul(uuid))
+    if not npcData then return false end
+
+    local currentHours = getGameTime():getWorldAgeHours()
+    local nextStatus = npcData.returnStatus or npcData.requestedReturnStatus or "Resting"
+    local returnTime = npcData.returnTime
+
+    if returnTime == nil or returnTime <= 0 then
+        local travelHours = npcData.departureTravelHours or 0
+        returnTime = currentHours + travelHours
+    end
+
+    npcData.status = "Away"
+    npcData.returnTime = returnTime
+    npcData.returnStatus = nextStatus
+    npcData.state = "Idle"
+
+    clearDepartureRuntime(npcData)
+
+    if DynamicTrading_Roster then
+        DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    end
+
+    if DTNPCManager.RespawnDebug and DTNPCManager.RespawnDebug.Log then
+        DTNPCManager.RespawnDebug.Log(
+            "departure_complete_" .. tostring(uuid),
+            "Process=departure_complete uuid=" .. tostring(uuid) ..
+                " name=" .. tostring(npcData.name or uuid) ..
+                " reason=" .. tostring(reason or "unknown") ..
+                " status=Away returnTime=" .. tostring(returnTime) ..
+                " returnStatus=" .. tostring(nextStatus),
+            true
+        )
+    end
+
+    if DTNPCManager.RemoveData then
+        DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
+    end
+
+    zombie = zombie
+        or (DTNPCServerCore
+            and DTNPCServerCore.FindZombieByUUID
+            and DTNPCServerCore.FindZombieByUUID(uuid))
+
+    if zombie then
+        zombie:removeFromWorld()
+        zombie:removeFromSquare()
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Departure",
+        "Completed live departure for " .. (npcData.name or uuid) ..
+            " (" .. tostring(reason or "unknown") .. ")"
+    )
+
+    return true
 end
 
 function DTNPCManager.PlanTradingDestination(uuid, registry)
@@ -155,8 +262,16 @@ function DTNPCManager.TryStartLiveDeparture(uuid, requestedReturnStatus, travelH
     local npcData = (DTNPCManager.Data and DTNPCManager.Data[uuid]) or DynamicTrading_Roster.GetSoul(uuid)
     if not npcData then return false end
 
+    local currentHours = getGameTime():getWorldAgeHours()
+    local awayReturnTime = currentHours + (travelHours or 0)
+    local nextStatus = requestedReturnStatus or "Resting"
+    local departureForceDespawnAt = currentHours + DTNPCManager.GetDepartureVisibleHours(travelHours)
+
+    npcData.status = "Away"
+    npcData.returnTime = awayReturnTime
+    npcData.returnStatus = nextStatus
     npcData.state = "Departure"
-    npcData.requestedReturnStatus = requestedReturnStatus or "Resting"
+    npcData.requestedReturnStatus = nextStatus
     npcData.departureTravelHours = travelHours or 0
     npcData.departureTargetX = targetX
     npcData.departureTargetY = targetY
@@ -169,6 +284,9 @@ function DTNPCManager.TryStartLiveDeparture(uuid, requestedReturnStatus, travelH
     npcData.anchorX = nil
     npcData.anchorY = nil
     npcData.anchorZ = nil
+    npcData.departureStartedAt = currentHours
+    npcData.departureForceDespawnAt = departureForceDespawnAt
+    npcData.departureTimeoutVisibleLogged = nil
 
     DTNPCManager.Data[uuid] = npcData
     DTNPC.AttachData(zombie, npcData)
@@ -184,11 +302,26 @@ function DTNPCManager.TryStartLiveDeparture(uuid, requestedReturnStatus, travelH
         DTNPCServerCore.BroadcastPosition(zombie, npcData)
     end
 
+    if DTNPCManager.RespawnDebug and DTNPCManager.RespawnDebug.Log then
+        DTNPCManager.RespawnDebug.Log(
+            "departure_start_" .. tostring(uuid),
+            "Process=departure_start uuid=" .. tostring(uuid) ..
+                " name=" .. tostring(npcData.name or uuid) ..
+                " nextStatus=" .. tostring(nextStatus) ..
+                " awayReturnTime=" .. tostring(awayReturnTime) ..
+                " forceDespawnAt=" .. tostring(departureForceDespawnAt) ..
+                " target=" .. tostring(targetX) .. "," .. tostring(targetY) .. "," .. tostring(targetZ or 0),
+            true
+        )
+    end
+
     DynamicTrading.Log(
         "DTV2",
         "NPC",
         "Departure",
-        "Started live departure for " .. (npcData.name or uuid) .. " toward " .. tostring(requestedReturnStatus)
+        "Started live departure for " .. (npcData.name or uuid) ..
+            " toward " .. tostring(nextStatus) ..
+            " (logical status now Away)"
     )
     return true
 end
@@ -204,8 +337,43 @@ function DTNPCManager.ProcessAwayTransitions()
     for uuid, registry in pairs(rosterData.Souls) do
         local liveSoul = DynamicTrading_Roster.GetSoul(uuid)
         local isDeparting = liveSoul and liveSoul.state == "Departure"
+        local handledDepartureRecovery = false
 
-        if not isDeparting and (registry.status == "Away" or registry.status == "Trading") and registry.returnTime then
+        if isDeparting and liveSoul then
+            local departureForceDespawnAt = liveSoul.departureForceDespawnAt
+            local shouldForceDeparture = departureForceDespawnAt and currentHours >= departureForceDespawnAt
+            local shouldRecoverLegacyTrading = registry.status == "Trading"
+                and registry.returnTime
+                and currentHours >= (registry.returnTime + STALE_TRADING_RECOVERY_GRACE_HOURS)
+
+            if shouldForceDeparture or shouldRecoverLegacyTrading then
+                local zombie = DTNPCServerCore and DTNPCServerCore.FindZombieByUUID
+                    and DTNPCServerCore.FindZombieByUUID(uuid) or nil
+                local reason = shouldForceDeparture and "timeout_backstop" or "legacy_trading_recovery"
+
+                if DTNPCManager.RespawnDebug and DTNPCManager.RespawnDebug.Log then
+                    DTNPCManager.RespawnDebug.Log(
+                        "departure_force_" .. tostring(uuid),
+                        "Process=departure_force uuid=" .. tostring(uuid) ..
+                            " name=" .. tostring(liveSoul.name or registry.name or uuid) ..
+                            " reason=" .. tostring(reason) ..
+                            " currentHours=" .. tostring(currentHours) ..
+                            " forceDespawnAt=" .. tostring(departureForceDespawnAt) ..
+                            " registryStatus=" .. tostring(registry.status) ..
+                            " registryReturnTime=" .. tostring(registry.returnTime),
+                        true
+                    )
+                end
+
+                DTNPCManager.CompleteLiveDeparture(uuid, liveSoul, zombie, reason)
+                handledDepartureRecovery = true
+            end
+        end
+
+        if not handledDepartureRecovery
+            and not isDeparting
+            and (registry.status == "Away" or registry.status == "Trading")
+            and registry.returnTime then
             if currentHours >= registry.returnTime then
                 local nextStatus = registry.returnStatus or "Resting"
                 local newReturnTime = 0

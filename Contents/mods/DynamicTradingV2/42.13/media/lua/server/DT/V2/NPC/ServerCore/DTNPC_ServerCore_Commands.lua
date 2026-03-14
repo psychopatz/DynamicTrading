@@ -39,6 +39,7 @@ local function buildMetadataEntry(uuid, soul)
         isFemale = soul.isFemale,
         identitySeed = soul.identitySeed or 1,
         status = soul.status or "Unknown",
+        state = soul.state,
         returnTime = soul.returnTime,
         lastX = soul.lastX or (soul.homeCoords and soul.homeCoords.x),
         lastY = soul.lastY or (soul.homeCoords and soul.homeCoords.y),

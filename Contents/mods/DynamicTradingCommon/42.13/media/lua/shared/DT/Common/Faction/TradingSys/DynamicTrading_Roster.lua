@@ -143,6 +143,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         lastZ = npcData.lastZ,
         health = npcData.health or 1.0,
         status = npcData.status or "Resting",
+        state = npcData.state,
         returnTime = npcData.returnTime,
         returnStatus = npcData.returnStatus,
         master = npcData.master,
@@ -175,6 +176,24 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
             npcData.departureTravelHours = nil
         end
 
+        if status == "Away" then
+            npcData.state = "Idle"
+            npcData.master = nil
+            npcData.masterID = nil
+            npcData.requestedReturnStatus = nil
+            npcData.departureTargetX = nil
+            npcData.departureTargetY = nil
+            npcData.departureTargetZ = nil
+            npcData.departureTravelHours = nil
+            npcData.departureBlockedTicks = nil
+            npcData.departureStuckLastX = nil
+            npcData.departureStuckLastY = nil
+            npcData.departureLastDirX = nil
+            npcData.departureLastDirY = nil
+            npcData.departureStartedAt = nil
+            npcData.departureForceDespawnAt = nil
+        end
+
         if status ~= nil then npcData.status = status end
         if returnTime ~= nil then npcData.returnTime = returnTime end
         if returnStatus ~= nil then npcData.returnStatus = returnStatus end
@@ -193,6 +212,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         local registry = data.Souls[uuid]
         -- Registry doesn't store state/master usually, but it stores status/timers
         registry.status = status
+        registry.state = npcData and npcData.state or registry.state
         registry.returnTime = returnTime
         registry.returnStatus = returnStatus
         -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
