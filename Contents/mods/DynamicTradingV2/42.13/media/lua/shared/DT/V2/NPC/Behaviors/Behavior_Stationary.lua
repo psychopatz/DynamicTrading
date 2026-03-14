@@ -12,7 +12,7 @@ local Stationary = DTNPCLogic.Stationary
 Stationary.DEFAULT_REACTION_RADIUS = Stationary.DEFAULT_REACTION_RADIUS or 10
 Stationary.REACT_IDLE_STATE = "0"
 Stationary.INTERACTION_IDLE_STATE = "3"
-Stationary.TRADE_INTERACTION_IDLE_STATE = "1"
+Stationary.TRADE_INTERACTION_IDLE_STATE = "10"
 Stationary.TARGET_STICKY_BONUS = 1.5
 
 local function getPlayerRuntimeID(player)
@@ -44,10 +44,6 @@ function Stationary.GetDesiredIdleState(zombie, npcData)
     local forcedState = Stationary.GetClientForcedIdleState(zombie)
     if forcedState ~= nil and forcedState ~= "" then
         return tostring(forcedState)
-    end
-
-    if npcData and npcData._dtPresenceActive then
-        return Stationary.REACT_IDLE_STATE
     end
 
     return nil

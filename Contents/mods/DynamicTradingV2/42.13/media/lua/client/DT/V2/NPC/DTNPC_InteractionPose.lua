@@ -113,6 +113,12 @@ local function applyInteractionPose(entry)
     local modData = npc:getModData()
     if modData then
         modData.DTNPCClientForcedIdleState = tostring(entry.idleState or DTNPC_InteractionPose.DEFAULT_IDLE_STATE)
+        local npcData = modData.DTNPC_Data
+        local forcedIndex = tonumber(entry.idleState or DTNPC_InteractionPose.DEFAULT_IDLE_STATE) or 0
+        if npcData then
+            npcData.idleCycleIndex = forcedIndex
+            npcData.idleCycleCounter = 0
+        end
     end
 
     npc:setVariable("bMoving", false)

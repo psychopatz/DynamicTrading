@@ -326,7 +326,7 @@ updateIdleCycle = function(zombie, npcData, state)
     local forcedIdleState = DTNPCLogic.Stationary.GetDesiredIdleState(zombie, npcData)
     if forcedIdleState then
         npcData.idleCycleCounter = 0
-        npcData.idleCycleIndex = 0
+        npcData.idleCycleIndex = tonumber(forcedIdleState) or 0
         zombie:setVariable("DTIdleState", forcedIdleState)
         return
     end
