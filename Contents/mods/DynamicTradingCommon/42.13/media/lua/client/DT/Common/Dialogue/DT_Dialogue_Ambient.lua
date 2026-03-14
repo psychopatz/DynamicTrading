@@ -1,7 +1,8 @@
 require "DT/Common/Dialogue/DT_Dialogue_Core"
 
 DynamicTrading = DynamicTrading or {}
-DynamicTrading.AmbientDialogue = DynamicTrading.AmbientDialogue or {}
+DynamicTrading.DialogueAmbient = DynamicTrading.DialogueAmbient or DynamicTrading.AmbientDialogue or {}
+DynamicTrading.AmbientDialogue = DynamicTrading.DialogueAmbient
 
 local Core = DynamicTrading.Dialogue.Core
 
@@ -125,7 +126,7 @@ local function getAmbientPool(archetype, status, state)
     return nil
 end
 
-function DynamicTrading.AmbientDialogue.GetEntry(trader, status, state, args)
+function DynamicTrading.DialogueAmbient.GetEntry(trader, status, state, args)
     local safeTrader = trader or {}
     local pool = getAmbientPool(
         safeTrader.archetype or safeTrader.archetypeID or "General",
@@ -150,3 +151,5 @@ function DynamicTrading.AmbientDialogue.GetEntry(trader, status, state, args)
     entry.dialogue = Core.FormatMessage(entry.dialogue, safeArgs)
     return entry
 end
+
+DynamicTrading.AmbientDialogue = DynamicTrading.DialogueAmbient

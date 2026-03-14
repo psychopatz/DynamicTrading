@@ -6,7 +6,7 @@
 DTNPCClient = DTNPCClient or {}
 
 require "DT/V2/NPC/DTNPC_HealthBars"
-require "DT/V2/NPC/Ambient/DTNPC_AmbientDialogue"
+require "DT/V2/NPC/Dialogue/Ambient/DT_Dialogue_Ambient"
 
 function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     if not zombie or not npcData then return end

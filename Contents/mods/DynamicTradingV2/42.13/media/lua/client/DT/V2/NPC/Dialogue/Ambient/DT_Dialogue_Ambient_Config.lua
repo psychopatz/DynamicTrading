@@ -1,13 +1,14 @@
 -- ==============================================================================
--- DTNPC_AmbientDialogueConfig.lua
+-- DT_Dialogue_Ambient_Config.lua
 -- Client-side display settings for overhead NPC ambient dialogue.
 -- Dialogue content is loaded from DynamicTradingCommon archetype files.
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
-DTNPCClient.AmbientDialogueConfig = DTNPCClient.AmbientDialogueConfig or {}
+DTNPCClient.DialogueAmbientConfig = DTNPCClient.DialogueAmbientConfig or DTNPCClient.AmbientDialogueConfig or {}
+DTNPCClient.AmbientDialogueConfig = DTNPCClient.DialogueAmbientConfig
 
-local Config = DTNPCClient.AmbientDialogueConfig
+local Config = DTNPCClient.DialogueAmbientConfig
 
 Config.TriggerDistance = Config.TriggerDistance or 4.0
 Config.MaxDrawDistance = Config.MaxDrawDistance or 18.0
