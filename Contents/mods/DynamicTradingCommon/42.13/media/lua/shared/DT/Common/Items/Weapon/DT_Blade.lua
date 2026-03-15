@@ -11,7 +11,7 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Weapon.Melee.Blade] [Rarity.Common] (59 items)
+    -- [Weapon.Melee.Blade] [Rarity.Common] (58 items)
     { item="Base.BaseballBat_Metal_Sawblade", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },
     { item="Base.BaseballBat_Sawblade", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },
     { item="Base.BreadKnife", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
@@ -52,7 +52,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.MeatCleaverForged", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
     { item="Base.Plank_Sawblade", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },
     { item="Base.RailroadSpikeKnife", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=3, max=15} },
-    { item="Base.Scalpel", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=3, max=15} },
     { item="Base.ShortBat_Sawblade", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },
     { item="Base.ShortSword", basePrice=2, tags={"Weapon.Melee.Blade", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
     { item="Base.ShortSword_Scrap", basePrice=1, tags={"Weapon.Melee.Blade", "Rarity.Common", "Quality.Waste", "Weapon.Melee"}, stockRange={min=1, max=5} },

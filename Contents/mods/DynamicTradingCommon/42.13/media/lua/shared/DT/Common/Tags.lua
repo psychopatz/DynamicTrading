@@ -36,6 +36,7 @@ DynamicTrading.RegisterTag("Clothing",  { priceMult = 0.8, weight = 60 })
 DynamicTrading.RegisterTag("Literature",{ priceMult = 1.2, weight = 50 }) -- Books are valuable
 
 DynamicTrading.RegisterTag("Resource.Material", { priceMult = 1.0, weight = 70 }) -- Planks, Nails
+DynamicTrading.RegisterTag("Resource.Fishing",  { priceMult = 1.1, weight = 45 }) -- Hooks, line, bait, tackle
 DynamicTrading.RegisterTag("Quality.Waste",    { priceMult = 0.5, weight = 100 }) -- Scrap
 DynamicTrading.RegisterTag("Resource.Fuel",    { priceMult = 1.5, weight = 20 }) -- Gas is gold
 
@@ -44,6 +45,7 @@ DynamicTrading.RegisterTag("Medical",   { priceMult = 1.5, weight = 25 })
 DynamicTrading.RegisterTag("Weapon",    { priceMult = 1.3, weight = 15 })
 DynamicTrading.RegisterTag("Ammo",      { priceMult = 2.0, weight = 10 })
 DynamicTrading.RegisterTag("Tool",      { priceMult = 1.2, weight = 30 })
+DynamicTrading.RegisterTag("Tool.Fishing", { priceMult = 1.25, weight = 20 }) -- Rods, gaffs, angling gear
 DynamicTrading.RegisterTag("Seed",      { priceMult = 0.8, weight = 40 })
 
 -- LUXURY / SPECIFIC

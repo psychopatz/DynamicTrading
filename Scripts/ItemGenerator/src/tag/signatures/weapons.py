@@ -2,7 +2,7 @@
 Weapon property-based signatures.
 Detects weapons through damage, durability, and handling properties.
 """
-from .helpers import get_stat, has_property, id_matches_pattern, PropertyAnalyzer
+from .helpers import get_display_category, id_matches_pattern, PropertyAnalyzer
 
 
 WEAPON_ID_PATTERNS = [
@@ -33,8 +33,11 @@ def matches_weapon_signature(item_id, props):
         tuple: (matches: bool, confidence: float, details: dict)
     """
     analyzer = PropertyAnalyzer(props)
-    
-    # Hard requirement: has damage stats
+    display_category = (get_display_category(props) or '').lower()
+
+    if display_category == 'firstaidweapon':
+        return False, 0.0, {'display_category': display_category, 'excluded_medical_weapon': True}
+
     min_dmg = analyzer.get_stat('MinDamage')
     max_dmg = analyzer.get_stat('MaxDamage')
     

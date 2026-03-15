@@ -14,7 +14,7 @@ DynamicTrading.RegisterBatch({
     -- [Food.NonPerishable.Sweets] [Rarity.Common] (1 item)
     { item="Base.HardCandies", basePrice=22, tags={"Food.NonPerishable.Sweets", "Rarity.Common", "Food.LowNutrition"}, stockRange={min=2, max=12} },
 
-    -- [Food.NonPerishable.Sweets] [Rarity.Rare] (28 items)
+    -- [Food.NonPerishable.Sweets] [Rarity.Rare] (30 items)
     { item="Base.CakeBatter", basePrice=25, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=7} },
     { item="Base.CandyCaramels", basePrice=46, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.CandyCorn", basePrice=44, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
@@ -39,6 +39,8 @@ DynamicTrading.RegisterBatch({
     { item="Base.CookiesOatmeal", basePrice=41, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.CookiesShortbread", basePrice=42, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.CookiesSugar", basePrice=42, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
+    { item="Base.GummyBears", basePrice=37, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
+    { item="Base.GummyWorms", basePrice=37, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.MintCandy", basePrice=18, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.QuaggaCakes", basePrice=51, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.RockCandy", basePrice=37, tags={"Food.NonPerishable.Sweets", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },

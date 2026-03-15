@@ -11,9 +11,7 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Resource.Material] [Rarity.Rare] (55 items)
-    { item="Base.AlcoholedCottonBalls", basePrice=170, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
-    { item="Base.AlcoholWipes", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
+    -- [Resource.Material] [Rarity.Rare] (50 items)
     { item="Base.BakingSoda", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.BathTowel", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.BlowTorch", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
@@ -23,7 +21,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.CigaretteRollingPapers", basePrice=136, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.CorrectionFluid", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.DishCloth", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
-    { item="Base.FishingLine", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.Garbagebag_box", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.GravyMix", basePrice=136, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.Hairgel", basePrice=27, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
@@ -55,14 +52,12 @@ DynamicTrading.RegisterBatch({
     { item="Base.PaintYellow", basePrice=3, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.PancakeMix", basePrice=136, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.PaperNapkins2", basePrice=64, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
-    { item="Base.PremiumFishingLine", basePrice=136, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.RatPoison", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.RespiratorFilters", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.RespiratorFiltersRecharged", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.Soap2", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.SprayPaint", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.TestWaterMug", basePrice=21, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
-    { item="Base.TissueBox", basePrice=102, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.TobaccoChewing", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.TobaccoLoose", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.WaterPurificationTablets", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },

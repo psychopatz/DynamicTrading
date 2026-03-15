@@ -5,7 +5,10 @@
     "MoneyBundle",
     "TestHotDrink",
     "YardstickDEBUG",
-    "FISH_DEV_ITEM"
+    "FISH_DEV_ITEM",
+    "Animal",
+    "Moveable",
+    "TestMug"
   ],
   "properties": {
     "names": [

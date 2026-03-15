@@ -4,6 +4,7 @@ Runs items against all 8 signature patterns and selects best match.
 """
 from .signatures import (
     matches_weapon_signature, get_weapon_tags,
+    matches_fishing_signature, get_fishing_tags,
     matches_clothing_signature, get_clothing_tags,
     matches_food_signature, get_food_tags,
     matches_tool_signature, get_tool_tags,
@@ -19,6 +20,7 @@ from .signatures import (
 # Building is placed before Resource/Tool/Electronics because Mov_* and
 # DisplayCategory-matched items should be routed unambiguously.
 SIGNATURES = [
+    ('Fishing', matches_fishing_signature, get_fishing_tags),
     ('Weapon', matches_weapon_signature, get_weapon_tags),
     ('Food', matches_food_signature, get_food_tags),
     ('Clothing', matches_clothing_signature, get_clothing_tags),
@@ -80,7 +82,7 @@ def match_item(item_id, props):
     
     best_match = max(
         valid_matches,
-        key=lambda x: (x['confidence'], SIGNATURE_ORDER[x['category']])
+        key=lambda x: (x['confidence'], -SIGNATURE_ORDER[x['category']])
     )
     
     return {

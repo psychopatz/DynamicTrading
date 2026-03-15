@@ -11,11 +11,12 @@ DynamicTrading.Events.Register("FishingTourney", {
     description = "Fish are biting like crazy!",
     canSpawn = function() return true end,
     effects = {
-        ["Fish"] = { price = 0.5, vol = 3.0 },
-        ["Bait"] = { price = 1.5, vol = 0.5 },
+        ["Food.Perishable.Fish"] = { price = 0.5, vol = 3.0 },
+        ["Resource.Fishing"] = { price = 1.5, vol = 0.5 },
+        ["Tool.Fishing"] = { price = 1.2, vol = 1.0 },
         ["Food"] = { price = 0.9 }
     },
-    inject = { ["Fish"] = 5 },
+    inject = { ["Food.Perishable.Fish"] = 5, ["Resource.Fishing"] = 3, ["Tool.Fishing"] = 2 },
     factionImpact = {
         stockpileAdd = { food = 300 },
         stabilityAdd = 3

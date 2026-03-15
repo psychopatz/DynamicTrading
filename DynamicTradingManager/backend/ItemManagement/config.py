@@ -54,7 +54,6 @@ CATEGORY_FILE_MAP = {
         'Canned': 'Food/DT_Canned.lua',
         'Grain': 'Food/DT_Grain.lua',
         'Sweets': 'Food/DT_Sweets.lua',
-        'Bait': 'Food/DT_Bait.lua',
         'Spice': 'Food/DT_Spice.lua',
         'Cooking': 'Food/DT_Cooking.lua',
         'Perishable': 'Food/DT_General.lua',
@@ -90,7 +89,13 @@ CATEGORY_FILE_MAP = {
         'General': 'Clothing/DT_Armor.lua',
     },
     'Medical': {
+        'General.Pills': 'Medical/DT_Pills.lua',
+        'General.Vitamin': 'Medical/DT_Vitamin.lua',
+        'General.Clinical': 'Medical/DT_Clinical.lua',
+        'General.Poison': 'Medical/DT_Poison.lua',
+        'Healthcare.Botanical': 'Medical/DT_Botanical.lua',
         'Surgical': 'Medical/DT_Surgical.lua',
+        'Healthcare': 'Medical/DT_Healthcare.lua',
         'General': 'Medical/DT_General.lua',
     },
     'Container': {
@@ -99,11 +104,15 @@ CATEGORY_FILE_MAP = {
         'General': 'Container/DT_Organizer.lua',
     },
     'Tool': {
+        'Medical.Surgical': 'Tool/DT_Medical_Surgical.lua',
+        'Medical': 'Tool/DT_Medical.lua',
         'Crafting': 'Tool/DT_Crafting.lua',
         'Farming': 'Tool/DT_Farming.lua',
+        'Fishing': 'Tool/DT_Fishing.lua',
         'General': 'Tool/DT_General.lua',
     },
     'Resource': {
+        'Fishing': 'Resource/DT_Fishing.lua',
         'Fuel': 'Resource/DT_Fuel.lua',
         'Material': 'Resource/DT_Material.lua',
         'Parts': 'Resource/DT_Parts.lua',
@@ -132,7 +141,8 @@ CATEGORY_FILE_MAP = {
         'Furniture':  'Building/DT_Furniture.lua',
         'Fixture':    'Building/DT_Fixture.lua',
         'Vehicle':    'Building/DT_Vehicle.lua',
-        'Garden':    'Building/DT_Garden.lua',
+        'Garden':     'Building/DT_Garden.lua',
+        'Survival':   'Building/DT_Survival.lua',
     },
     'Misc': {
         'General': 'Misc/DT_General.lua',

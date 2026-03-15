@@ -15,6 +15,18 @@ def matches_weapon_signature(item_id, props):
     analyzer = PropertyAnalyzer(props)
     item_lower = item_id.lower()
     display_category = (get_display_category(props) or '').lower()
+
+    if display_category == 'firstaidweapon':
+        return False, 0.0, {
+            'display_category': display_category,
+            'excluded_medical_weapon': True,
+            'is_firearm': False,
+            'is_explosive': False,
+            'is_melee': False,
+            'is_magazine': False,
+            'is_part_accessory': False,
+        }
+
     has_damage = analyzer.get_stat('MinDamage') > 0 or analyzer.get_stat('MaxDamage') > 0
     is_weapon_type = analyzer.has_property('Type', 'Weapon') or analyzer.has_property('Type', 'Base:Weapon')
     has_ammo_type = analyzer.has_property('AmmoType')

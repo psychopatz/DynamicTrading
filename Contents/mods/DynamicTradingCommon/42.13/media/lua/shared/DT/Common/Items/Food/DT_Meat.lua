@@ -19,14 +19,13 @@ DynamicTrading.RegisterBatch({
     { item="Base.DehydratedMeatStick", basePrice=75, tags={"Food.NonPerishable.Meat", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.PorkRinds", basePrice=118, tags={"Food.NonPerishable.Meat", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
 
-    -- [Food.Perishable.Fish] [Rarity.Rare] (14 items)
+    -- [Food.Perishable.Fish] [Rarity.Rare] (13 items)
     { item="Base.BlueCatfish", basePrice=1, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.LowNutrition", "Food.LowQuality"}, stockRange={min=0, max=7} },
     { item="Base.ChannelCatfish", basePrice=1, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.LowNutrition", "Food.LowQuality"}, stockRange={min=0, max=7} },
     { item="Base.Crayfish", basePrice=49, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.FishFillet", basePrice=120, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=12} },
     { item="Base.FishFingers", basePrice=59, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.FishFried", basePrice=146, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=12} },
-    { item="Base.FishGuts", basePrice=1, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.LowNutrition", "Food.LowQuality"}, stockRange={min=0, max=12} },
     { item="Base.FishRoeSac", basePrice=1, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.LowNutrition", "Food.LowQuality"}, stockRange={min=0, max=12} },
     { item="Base.FlatheadCatfish", basePrice=1, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.LowNutrition", "Food.LowQuality"}, stockRange={min=0, max=7} },
     { item="Base.Frozen_FishFingers", basePrice=2, tags={"Food.Perishable.Fish", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=5} },

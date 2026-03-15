@@ -6,11 +6,11 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
         name = "River Trader",
         allocations = {
         { tags={"Food.Perishable.Fish"}, count = 6 },
-        { tags={"Food.Perishable.Bait"}, count = 5 },
-        { tags={"Tool.Resource.Angler"}, count = 4 },
+        { tags={"Resource.Fishing"}, count = 5 },
+        { tags={"Tool.Fishing"}, count = 4 },
         { tags={"Container.Fluid"}, count = 4 }
     },
-        expertTags = { "Food.Perishable.Fish", "Tool.Resource.Angler", "Food.Perishable.Bait" },
+        expertTags = { "Food.Perishable.Fish", "Tool.Fishing", "Resource.Fishing" },
         wants = {
             ["Tool.General"] = 1.2,
             ["Resource.Textile"] = 1.4,

@@ -66,7 +66,13 @@ CATEGORY_FILE_MAP = {
         'General': 'Clothing/DT_Armor.lua',
     },
     'Medical': {
+        'General.Pills': 'Medical/DT_Pills.lua',
+        'General.Vitamin': 'Medical/DT_Vitamin.lua',
+        'General.Clinical': 'Medical/DT_Clinical.lua',
+        'General.Poison': 'Medical/DT_Poison.lua',
+        'Healthcare.Botanical': 'Medical/DT_Botanical.lua',
         'Surgical': 'Medical/DT_Surgical.lua',
+        'Healthcare': 'Medical/DT_Healthcare.lua',
         'General': 'Medical/DT_General.lua',
     },
     'Container': {
@@ -75,6 +81,8 @@ CATEGORY_FILE_MAP = {
         'General': 'Container/DT_Organizer.lua',
     },
     'Tool': {
+        'Medical.Surgical': 'Tool/DT_Medical_Surgical.lua',
+        'Medical': 'Tool/DT_Medical.lua',
         'Crafting': 'Tool/DT_Crafting.lua',
         'Farming': 'Tool/DT_Farming.lua',
         'General': 'Tool/DT_General.lua',

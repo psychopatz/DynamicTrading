@@ -13,7 +13,7 @@ FOOD_ID_PATTERNS = [
     'Tea', 'Milk', 'Soda', 'Pop', 'Spice', 'Condiment', 'Seasoning',
     'Dessert', 'Candy', 'Chocolate', 'Cereal', 'Soup', 'Stew', 'Snack',
     'Bitters',
-    'Bait', 'Dough', 'Batter', 'Canned', 'Bouillon', 'Mushroom', 'Berry',
+    'Dough', 'Batter', 'Canned', 'Bouillon', 'Mushroom', 'Berry',
     'RationCan', 'DentedCan', 'MysteryCan'
 ]
 
@@ -28,10 +28,9 @@ FRUIT_ID_PATTERNS = ['Fruit', 'Apple', 'Banana', 'Orange', 'Berry', 'Avocado', '
 VEGETABLE_ID_PATTERNS = ['Vegetable', 'Carrot', 'Potato', 'Lettuce', 'Tomato', 'Broccoli', 'Cabbage', 'Pepper', 'Leek', 'Onion']
 SPICE_ID_PATTERNS = ['Spice', 'Condiment', 'Seasoning', 'Salt', 'Pepper', 'Basil', 'Thyme', 'Oregano', 'Rosemary', 'Sage', 'Bouillon']
 GRAIN_ID_PATTERNS = ['Bread', 'Grain', 'Cereal', 'Rice', 'Pasta', 'Noodle', 'Oat', 'Flour', 'Bun', 'Barley', 'Corn', 'Bagel', 'Baguette']
-SWEET_ID_PATTERNS = ['Candy', 'Chocolate', 'Cookie', 'Cake', 'Cupcake', 'Dessert', 'Sweet', 'Donut', 'HardCandies', 'Muffin']
+SWEET_ID_PATTERNS = ['Candy', 'Chocolate', 'Cookie', 'Cake', 'Cupcake', 'Dessert', 'Sweet', 'Donut', 'HardCandies', 'Muffin', 'Gummy']
 NON_PERISHABLE_ID_PATTERNS = ['Canned', 'Tin', 'Tinned', 'Jar', 'Pack', 'Package', 'Dried', 'Dehydrated', 'Powdered']
 COOKING_ID_PATTERNS = ['Dough', 'Batter', 'Mix', 'Soup', 'Stew', 'Chili', 'Bouillon', 'Sauce']
-BAIT_ID_PATTERNS = ['Bait', 'Chum', 'Caterpillar', 'Cricket', 'Grasshopper', 'Worm', 'Maggot']
 FOOD_TYPE_MARKERS = {'eat', 'eatsmall', 'food'}
 COOKING_PROPERTIES = (
     'IsCookable', 'DangerousUncooked', 'ReplaceOnCooked', 'ReplaceOnRotten',
@@ -143,9 +142,6 @@ def _classify_food(item_id, analyzer, is_drink, is_perishable, has_animal_head_t
     if has_animal_head_tag:
         return ('Perishable' if is_perishable else 'NonPerishable'), 'Meat'
 
-    if id_matches_pattern(item_id, BAIT_ID_PATTERNS):
-        return ('Perishable' if is_perishable else 'NonPerishable'), 'Bait'
-
     if id_matches_pattern(item_id, MEAT_ID_PATTERNS):
         if 'fish' in item_id.lower():
             return ('Perishable' if is_perishable else 'NonPerishable'), 'Fish'
@@ -190,6 +186,14 @@ def matches_food_signature(item_id, props):
         tuple: (matches: bool, confidence: float, details: dict)
     """
     analyzer = PropertyAnalyzer(props)
+    first_display_category = _get_property_value(props, 'DisplayCategory').lower()
+
+    # First-aid consumables can expose food-like metadata but should be
+    # handled by the dedicated medical signature.
+    if first_display_category in {'firstaid', 'firstaidweapon', 'bandage'}:
+        return False, 0.0, {}
+    if analyzer.has_property('Medical', 'true') or analyzer.has_property('Medical'):
+        return False, 0.0, {}
     
     hunger_change = analyzer.get_stat('HungerChange')
     thirst_change = analyzer.get_stat('ThirstChange')

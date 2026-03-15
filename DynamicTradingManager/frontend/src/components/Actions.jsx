@@ -188,7 +188,7 @@ const Actions = ({ onTaskStarted }) => {
                 <DialogTitle sx={{ color: 'error.main' }}>Confirm Delete All Items?</DialogTitle>
                 <DialogContent>
                     <Typography>
-                        This will permanently delete all registered items from their respective categories. 
+                        This will permanently delete the entire Items folder and all registered item files. 
                         This action cannot be undone.
                     </Typography>
                 </DialogContent>

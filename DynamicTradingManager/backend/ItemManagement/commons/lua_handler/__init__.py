@@ -1,7 +1,7 @@
 """Lua handler package for item registry read/write operations."""
 # pyright: reportMissingImports=false
 
-from .builders import build_lua_file_content, ensure_lua_files_exist
+from .builders import build_lua_file_content, cleanup_empty_lua_files, ensure_lua_file_exists, ensure_lua_files_exist
 from .records import create_item_entry
 from .operations import (
     process_lua_file,
@@ -14,6 +14,8 @@ from .operations import (
 
 __all__ = [
     'build_lua_file_content',
+    'cleanup_empty_lua_files',
+    'ensure_lua_file_exists',
     'ensure_lua_files_exist',
     'process_lua_file',
     'get_registered_items',

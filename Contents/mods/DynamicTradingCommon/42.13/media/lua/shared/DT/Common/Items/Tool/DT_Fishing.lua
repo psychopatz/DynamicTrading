@@ -1,5 +1,5 @@
 -- ============================================================================
--- Electronics Items Registry for Dynamic Trading
+-- Tool Items Registry for Dynamic Trading
 -- If you want some suggestions or have balancing issues, please report them to
 -- my discussion page. Happy to adjust prices and stock based on your feedback! :)
 -- https://steamcommunity.com/sharedfiles/filedetails/?id=3635333613
@@ -11,8 +11,10 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Electronics.Gadget.Radio.Broadcast] [Rarity.Rare] (1 item)
-    { item="Base.CDplayer", basePrice=944, tags={"Electronics.Gadget.Radio.Broadcast", "Rarity.Rare", "Electronics.Communicator", "Electronics.Radio.Broadcast", "Electronics.Portable"}, stockRange={min=0, max=4} },
+    -- [Tool.Fishing] [Rarity.Common] (3 items)
+    { item="Base.FishingRod", basePrice=6, tags={"Tool.Fishing", "Rarity.Common"}, stockRange={min=2, max=10} },
+    { item="Base.FishingRodBreak", basePrice=6, tags={"Tool.Fishing", "Rarity.Common"}, stockRange={min=2, max=10} },
+    { item="Base.Gaffhook", basePrice=5, tags={"Tool.Fishing", "Rarity.Common"}, stockRange={min=2, max=10} },
 })
 
-print("[DynamicTrading] Radio Registry Complete")
+print("[DynamicTrading] Fishing Registry Complete")

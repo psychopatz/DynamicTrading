@@ -11,7 +11,20 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Building.Garden] [Rarity.Rare] (14 items)
+    -- [Building.Garden] [Rarity.Common] (11 items)
+    { item="Base.Mov_BonsaiTree", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_BrickPlanter", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_Cactus", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_CastIronPlant", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_ChineseEvergreen", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_DragonTree", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_Fern", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_Ficus", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_RaisedPlantbed", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_SnakePlant", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.Mov_VioletFlowers", basePrice=1, tags={"Building.Garden", "Rarity.Common"}, stockRange={min=1, max=5} },
+
+    -- [Building.Garden] [Rarity.Rare] (12 items)
     { item="Base.AnimalFeedBag", basePrice=34, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.CompostBag", basePrice=1, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.Fertilizer", basePrice=2, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=2} },
@@ -21,8 +34,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.GardeningSprayMilk", basePrice=14, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.GrassBag", basePrice=3, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.HerbivoreTeeth", basePrice=17, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=10} },
-    { item="Base.Scythe", basePrice=1, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=2} },
-    { item="Base.ScytheForged", basePrice=1, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.SlugRepellent", basePrice=14, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.SunflowerHead", basePrice=8, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.SunflowerHeadDried", basePrice=8, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=10} },

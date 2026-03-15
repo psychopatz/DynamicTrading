@@ -11,7 +11,7 @@ from ...pricing.stock import calculate_base_max_stock, apply_category_multiplier
 from ...pricing.pricing import calculate_price
 from ..vanilla_loader import get_stat
 from ...parse.blacklist import is_item_blacklisted
-from .builders import ensure_lua_files_exist
+from .builders import cleanup_empty_lua_files, ensure_lua_file_exists
 from .parsing import find_register_batch_bounds, extract_item_records, build_grouped_items_text
 from .records import tags_list_to_dict, tags_list_to_lua, parse_lua_tags, create_item_record
 
@@ -213,7 +213,7 @@ def determine_target_file(category, subcategory):
     if category in CATEGORY_FILE_MAP:
         subcat_map = CATEGORY_FILE_MAP[category]
         for key in subcat_map:
-            if key in subcategory:
+            if subcategory == key or subcategory.startswith(f'{key}.'):
                 return Path(MOD_ITEMS_DIR) / subcat_map[key]
 
         return Path(MOD_ITEMS_DIR) / list(subcat_map.values())[0]
@@ -227,8 +227,8 @@ def add_new_items(vanilla_items, batch_size=50):
     print('Adding New Unregistered Items')
     print('=' * 60)
 
-    print('\n✓ Initializing Lua file structure...')
-    ensure_lua_files_exist()
+    print('\n✓ Preparing Lua file structure...')
+    Path(MOD_ITEMS_DIR).mkdir(parents=True, exist_ok=True)
 
     print('\n📋 Collecting registered items...')
     registered = get_registered_items()
@@ -257,15 +257,15 @@ def add_new_items(vanilla_items, batch_size=50):
         for item_data in items:
             primary = item_data['primary_tag']
             parts = primary.split('.')
-            subcat = parts[1] if len(parts) > 1 else 'General'
+            subcat = '.'.join(parts[1:]) if len(parts) > 1 else 'General'
             by_subcat[subcat].append(item_data)
 
         for subcat, subcat_items in by_subcat.items():
             target_file = determine_target_file(category, subcat)
 
             if not target_file.exists():
-                print(f'  ⚠️  File not found: {target_file.name}, skipping {len(subcat_items)} items')
-                continue
+                relative_path = target_file.relative_to(Path(MOD_ITEMS_DIR))
+                ensure_lua_file_exists(str(relative_path))
 
             try:
                 added = add_items_to_file(target_file, subcat_items, vanilla_items)
@@ -273,6 +273,10 @@ def add_new_items(vanilla_items, batch_size=50):
                 print(f'  ✅ Added {added} items to {target_file.name}')
             except Exception as error:
                 print(f'  ❌ Error adding to {target_file.name}: {error}')
+
+    removed_count = cleanup_empty_lua_files()
+    if removed_count:
+        print(f'\n🧹 Removed {removed_count} empty Lua file(s)')
 
     return total_added
 

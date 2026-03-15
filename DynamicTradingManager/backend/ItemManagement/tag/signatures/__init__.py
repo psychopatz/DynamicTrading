@@ -3,6 +3,7 @@ Signature module exports.
 Makes all property-based signatures available.
 """
 from .weapons import matches_weapon_signature, get_weapon_tags
+from .fishing import matches_fishing_signature, get_fishing_tags
 from .clothing import matches_clothing_signature, get_clothing_tags
 from .food import matches_food_signature, get_food_tags
 from .tools import matches_tool_signature, get_tool_tags
@@ -14,6 +15,7 @@ from .building import matches_building_signature, get_building_tags
 
 __all__ = [
     'matches_weapon_signature', 'get_weapon_tags',
+    'matches_fishing_signature', 'get_fishing_tags',
     'matches_clothing_signature', 'get_clothing_tags',
     'matches_food_signature', 'get_food_tags',
     'matches_tool_signature', 'get_tool_tags',

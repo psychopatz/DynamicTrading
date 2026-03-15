@@ -56,7 +56,6 @@ This document lists all available hierarchical tags used in item registries and 
 - `Food.NonPerishable.Grain`
 - `Food.NonPerishable.Meat`
 - `Food.NonPerishable.Sweets`
-- `Food.Perishable.Bait`
 - `Food.Perishable.Fish`
 - `Food.Perishable.Fruit`
 - `Food.Perishable.Meat`
@@ -94,6 +93,7 @@ This document lists all available hierarchical tags used in item registries and 
 ### Resource
 
 - `Resource.Fuel` (Gasoline, Propane)
+- `Resource.Fishing`
 - `Resource.Fuel.Solid` (Log, Coal)
 - `Resource.Material.Bio` (Bone, Leather)
 - `Resource.Material.Build` (Cement, Plaster)
@@ -115,8 +115,8 @@ This document lists all available hierarchical tags used in item registries and 
 - `Tool.Crafting.Mechanic`
 - `Tool.Crafting.Metal`
 - `Tool.Crafting.Tailor`
+- `Tool.Fishing`
 - `Tool.General` (Utility tools)
-- `Tool.Resource.Angler`
 - `Tool.Resource.Butcher`
 - `Tool.Resource.Farming`
 - `Tool.Resource.Smithing`

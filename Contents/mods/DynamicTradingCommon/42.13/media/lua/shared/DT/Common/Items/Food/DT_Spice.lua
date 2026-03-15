@@ -11,15 +11,13 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Food.Cooking.Spice] [Rarity.Rare] (115 items)
+    -- [Food.Cooking.Spice] [Rarity.Rare] (108 items)
     { item="Base.BaconBits", basePrice=33, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=20} },
     { item="Base.BalsamicVinegar", basePrice=1, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.HighNutrition", "Food.LowQuality"}, stockRange={min=0, max=10} },
     { item="Base.Basil", basePrice=29, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.BasilDried", basePrice=34, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.BBQSauce", basePrice=1, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.MediumNutrition", "Food.LowQuality"}, stockRange={min=0, max=10} },
     { item="Base.BellPepper", basePrice=51, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.BlackSage", basePrice=29, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.BlackSageDried", basePrice=7, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.BouillonCube", basePrice=38, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.Butter", basePrice=80, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.HighNutrition", "Food.LowQuality"}, stockRange={min=0, max=6} },
     { item="Base.Candycane", basePrice=43, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
@@ -32,8 +30,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.CilantroDried", basePrice=34, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.CilantroSeed", basePrice=13, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=20} },
     { item="Base.Cinnamon", basePrice=34, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.CommonMallow", basePrice=29, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.CommonMallowDried", basePrice=7, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.Cornflour2", basePrice=33, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.HighNutrition"}, stockRange={min=0, max=2} },
     { item="Base.Cornmeal2", basePrice=11, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=2} },
     { item="Base.Dip_NachoCheese", basePrice=252, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=10} },
@@ -46,7 +42,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Garlic", basePrice=58, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.GingerPickled", basePrice=83, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.GingerRoot", basePrice=59, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.Ginseng", basePrice=64, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.Gravy", basePrice=47, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.GreenOnions", basePrice=31, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.Guacamole", basePrice=83, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
@@ -125,8 +120,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Vinegar_Jug", basePrice=1, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.HighNutrition", "Food.LowQuality"}, stockRange={min=0, max=2} },
     { item="Base.Violets", basePrice=37, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.Wasabi", basePrice=95, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.WildGarlic2", basePrice=29, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.WildGarlicDried", basePrice=7, tags={"Food.Cooking.Spice", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
 })
 
 print("[DynamicTrading] Spice Registry Complete")

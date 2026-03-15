@@ -6,11 +6,12 @@ structural fasteners, and building-support tools.
 Tag taxonomy produced:
   Building.Moveable     – moveable world objects (Mov_* prefix in vanilla/mods)
   Building.Material     – raw construction materials (timber, metal, nails, screws …)
-  Building.Furniture    – static/decorative furniture not prefixed Mov_
-  Building.Fixture      – plumbing, wiring, fixtures (pipes, valves, doorknobs …)
+  Building.Furniture.*  – seating, surfaces, storage, beds, decor
+  Building.Fixture.*    – plumbing, appliances, wiring, hardware, comms fixtures
   Building.Vehicle      – vehicle maintenance parts (engine parts, windows …)
   Building.Garden       – gardening supplies, planting pots, compost, tools
   Building.Garden.Seed  – seeds, bulbs, saplings, and cuttings (plantable items)
+  Building.Survival     – placeable camping shelter/sleep systems (tents, sleeping bags)
 """
 import re
 
@@ -88,6 +89,9 @@ VEHICLE_DISPLAY_CATS = {
 GARDEN_DISPLAY_CATS = {
     'gardening',
 }
+SURVIVAL_DISPLAY_CATS = {
+    'camping',
+}
 FIXTURE_DISPLAY_CATS = {
     'household',
 }
@@ -103,6 +107,46 @@ BUILDING_SCRIPT_TAGS = {
     'base:toolhead',
     'base:glass',
 }
+SURVIVAL_SCRIPT_TAGS = {
+    'base:tentbed',
+}
+SURVIVAL_ID = [
+    'SleepingBag', 'Tent', 'Bedroll',
+]
+MOVEABLE_FIXTURE_ID = [
+    'Sink', 'Shower', 'Toilet', 'Urinal',
+    'WaterDispenser', 'TowelDispenser', 'NapkinDispenser',
+    'Fridge', 'Freezer', 'Oven', 'Stove', 'Microwave',
+    'Washer', 'Dryer', 'Dishwasher',
+    'RotaryPhone', 'ModernPhone', 'PayPhones',
+    'Locker', 'VendingMachine', 'SodaMachine', 'Toaster',
+]
+PLUMBING_FIXTURE_ID = [
+    'Sink', 'Shower', 'Toilet', 'Urinal',
+    'Pipe', 'Valve', 'PlumbingPipe', 'WaterDispenser',
+]
+APPLIANCE_FIXTURE_ID = [
+    'Fridge', 'Freezer', 'Oven', 'Stove', 'Microwave',
+    'Washer', 'Dryer', 'Dishwasher', 'Toaster',
+    'VendingMachine', 'SodaMachine',
+]
+COMMUNICATION_FIXTURE_ID = [
+    'RotaryPhone', 'ModernPhone', 'PayPhones', 'Phone',
+]
+ELECTRICAL_FIXTURE_ID = [
+    'LightBulb', 'LightBulbBox', 'LightSwitch',
+    'ElectricWire', 'ElectricBox', 'PowerBoxPart',
+]
+HARDWARE_FIXTURE_ID = [
+    'Doorknob', 'DoorHinge', 'Hinge', 'Hasp', 'Padlock',
+    'CabinetHandle', 'Drawer',
+]
+STORAGE_FIXTURE_ID = [
+    'Locker',
+]
+UTILITY_FIXTURE_ID = [
+    'TowelDispenser', 'NapkinDispenser', 'HomeAlarm',
+]
 
 
 # --------------------------------------------------------------------------
@@ -119,6 +163,160 @@ def _script_tags(props):
     return {t.lower() for t in extract_tags_from_props(props)}
 
 
+def _is_moveable_item(props):
+    """Return True for vanilla/mod items marked as moveable world objects."""
+    return has_property('ItemType', props, 'base:moveable')
+
+
+def _is_bedroll_attachment(props):
+    """Return True for packed survival placeables that equip as bedrolls."""
+    return has_property('AttachmentType', props, 'Bedroll')
+
+
+def _has_world_placement_model(props):
+    """Return True when an item exposes world-placement sprite/model data."""
+    return (
+        has_property('WorldObjectSprite', props)
+        or has_property('StaticModel', props)
+        or has_property('WorldStaticModel', props)
+    )
+
+
+def _matches_survival_building(item_id, props, disp_cat, script_tags):
+    """
+    Detect placeable camping shelter/sleep items without catching generic
+    camping supplies like repellents, tablets, or firestarters.
+    """
+    if disp_cat not in SURVIVAL_DISPLAY_CATS:
+        return False, 0.0, {}
+
+    has_moveable_item_type = _is_moveable_item(props)
+    has_bedroll_attachment = _is_bedroll_attachment(props)
+    has_survival_script_tag = bool(script_tags & SURVIVAL_SCRIPT_TAGS)
+    has_world_placement = _has_world_placement_model(props)
+    looks_like_survival_placeable = id_matches_pattern(item_id, SURVIVAL_ID)
+    is_drainable = get_stat('UseDelta', props) > 0
+    is_survival_gear = has_property('SurvivalGear', props)
+
+    if is_drainable and not (has_moveable_item_type or has_bedroll_attachment):
+        return False, 0.0, {}
+
+    if is_survival_gear and not (has_moveable_item_type or has_bedroll_attachment or has_survival_script_tag):
+        return False, 0.0, {}
+
+    evidence = []
+    if has_moveable_item_type:
+        evidence.append('item_type_moveable')
+    if has_bedroll_attachment:
+        evidence.append('attachment_bedroll')
+    if has_survival_script_tag:
+        evidence.append('script_tag_tentbed')
+    if looks_like_survival_placeable:
+        evidence.append('survival_id')
+    if has_world_placement:
+        evidence.append('world_placement_model')
+
+    if has_moveable_item_type or has_bedroll_attachment or has_survival_script_tag:
+        return True, 0.92, {'survival_evidence': evidence}
+
+    if looks_like_survival_placeable and has_world_placement:
+        return True, 0.86, {'survival_evidence': evidence}
+
+    return False, 0.0, {}
+
+
+def _get_fixture_subtype(item_id, props):
+    """Return nested subtype for Building.Fixture.* tags."""
+    if id_matches_pattern(item_id, PLUMBING_FIXTURE_ID):
+        return 'Plumbing'
+    if id_matches_pattern(item_id, APPLIANCE_FIXTURE_ID):
+        return 'Appliance'
+    if id_matches_pattern(item_id, COMMUNICATION_FIXTURE_ID):
+        return 'Communication'
+    if id_matches_pattern(item_id, ELECTRICAL_FIXTURE_ID):
+        return 'Electrical'
+    if id_matches_pattern(item_id, HARDWARE_FIXTURE_ID):
+        return 'Hardware'
+    if id_matches_pattern(item_id, STORAGE_FIXTURE_ID):
+        return 'Storage'
+    if id_matches_pattern(item_id, UTILITY_FIXTURE_ID):
+        return 'Utility'
+
+    if has_property('RequiresElectricity', props) or has_property('BatteryMod', props):
+        return 'Electrical'
+
+    return 'General'
+
+
+def _get_furniture_subtype(item_id):
+    """Return nested subtype for Building.Furniture.* tags."""
+    item_lower = item_id.lower()
+
+    if 'benchgrinder' not in item_lower and 'bench' in item_lower:
+        return 'Bench'
+    if 'chair' in item_lower or 'stool' in item_lower:
+        return 'Chair'
+    if 'counter' in item_lower:
+        return 'Counter'
+    if 'table' in item_lower:
+        return 'Table'
+    if any(token in item_lower for token in (
+        'cabinet', 'drawers', 'dresser', 'shelf', 'shelves',
+        'bookcase', 'wardrobe', 'crate', 'mailbox',
+    )):
+        return 'Storage'
+    if any(token in item_lower for token in ('mattress', 'bed', 'futon', 'coffin')):
+        return 'Bed'
+    if any(token in item_lower for token in (
+        'curtain', 'lamp', 'clock', 'mirror', 'poster',
+        'painting', 'sign', 'flag', 'frame', 'skull',
+        'antlers', 'vase', 'neon',
+    )):
+        return 'Decor'
+
+    return 'General'
+
+
+def _matches_moveable_subtype(item_id, props, disp_cat):
+    """
+    Refine Mov_* items into more specific building subtypes when the ID clearly
+    describes a fixture or a gardening object.
+    """
+    is_named_moveable = item_id.startswith('Mov_') or id_matches_pattern(item_id, MOV_PREFIX)
+    if not is_named_moveable:
+        return False, 0.0, {}
+
+    if disp_cat in GARDEN_DISPLAY_CATS:
+        return True, 0.90, {
+            'building_type': 'Garden',
+            'is_moveable': True,
+            'moveable_subtype': 'garden',
+        }
+
+    if id_matches_pattern(item_id, MOVEABLE_FIXTURE_ID):
+        return True, 0.91, {
+            'building_type': 'Fixture',
+            'fixture_subtype': _get_fixture_subtype(item_id, props),
+            'is_moveable': True,
+            'moveable_subtype': 'fixture',
+        }
+
+    furniture_subtype = _get_furniture_subtype(item_id)
+    if furniture_subtype != 'General':
+        return True, 0.90, {
+            'building_type': 'Furniture',
+            'furniture_subtype': furniture_subtype,
+            'is_moveable': True,
+            'moveable_subtype': 'furniture',
+        }
+
+    return True, 0.95, {
+        'building_type': 'Moveable',
+        'is_moveable': True,
+        'moveable_subtype': 'generic',
+    }
+
+
 # --------------------------------------------------------------------------
 # Signature
 # --------------------------------------------------------------------------
@@ -128,10 +326,11 @@ def matches_building_signature(item_id, props):
     Detect building-related items.
 
     Evaluation order (stops at first positive sub-type):
-      1. Mov_* prefix           → Building.Moveable
-      2. DisplayCategory        → direct map
-      3. ID token lists         → material / fixture / vehicle / garden / furniture
-      4. Script-tag overlap     → general building material
+      1. Mov_* subtype override → Building.Moveable / Fixture / Garden
+      2. Camping placeables     → Building.Survival
+      3. DisplayCategory        → direct map
+      4. ID token lists         → material / fixture / vehicle / garden / furniture
+      5. Script-tag overlap     → general building material
 
     Returns:
         tuple: (matches: bool, confidence: float, details: dict)
@@ -177,19 +376,31 @@ def matches_building_signature(item_id, props):
         if re.search(r"(skillbook|book\d*$|mag\d*$|magazine|comic|schematic|manual|guide|journal|recipeclipping)", item_id, re.IGNORECASE):
             return False, 0.0, details
 
-    # ── 1. Mov_* prefix: always a moveable building object ───────────────
-    if item_id.startswith('Mov_') or id_matches_pattern(item_id, MOV_PREFIX):
-        details['building_type'] = 'Moveable'
-        details['is_moveable'] = True
-        return True, 0.95, details
+    # ── 1. Explicit named moveables with subtype refinement ───────────────
+    moveable_matches, moveable_confidence, moveable_details = _matches_moveable_subtype(
+        item_id, props, disp_cat
+    )
+    if moveable_matches:
+        details.update(moveable_details)
+        return True, moveable_confidence, details
 
-    # ── 2. DisplayCategory direct map ────────────────────────────────────
+    # ── 2. Dedicated survival placeables inside Camping ──────────────────
+    survival_matches, survival_confidence, survival_details = _matches_survival_building(
+        item_id, props, disp_cat, script_tags
+    )
+    if survival_matches:
+        details['building_type'] = 'Survival'
+        details.update(survival_details)
+        return True, survival_confidence, details
+
+    # ── 3. DisplayCategory direct map ────────────────────────────────────
     if disp_cat in MATERIAL_DISPLAY_CATS:
         details['building_type'] = 'Material'
         return True, 0.90, details
 
     if disp_cat in FURNITURE_DISPLAY_CATS:
         details['building_type'] = 'Furniture'
+        details['furniture_subtype'] = _get_furniture_subtype(item_id)
         return True, 0.85, details
 
     if disp_cat in VEHICLE_DISPLAY_CATS:
@@ -211,15 +422,17 @@ def matches_building_signature(item_id, props):
         is_drainable = get_stat('UseDelta', props) > 0
         if not has_battery and not has_ammo and not is_drainable:
             details['building_type'] = 'Fixture'
+            details['fixture_subtype'] = _get_fixture_subtype(item_id, props)
             return True, 0.80, details
 
-    # ── 3. ID token matching ──────────────────────────────────────────────
+    # ── 4. ID token matching ──────────────────────────────────────────────
     if id_matches_pattern(item_id, MATERIAL_ID):
         details['building_type'] = 'Material'
         return True, 0.80, details
 
     if id_matches_pattern(item_id, FIXTURE_ID):
         details['building_type'] = 'Fixture'
+        details['fixture_subtype'] = _get_fixture_subtype(item_id, props)
         return True, 0.78, details
 
     if id_matches_pattern(item_id, VEHICLE_PART_ID):
@@ -236,9 +449,10 @@ def matches_building_signature(item_id, props):
 
     if id_matches_pattern(item_id, FURNITURE_ID):
         details['building_type'] = 'Furniture'
+        details['furniture_subtype'] = _get_furniture_subtype(item_id)
         return True, 0.72, details
 
-    # ── 4. Script-tag overlap ─────────────────────────────────────────────
+    # ── 5. Script-tag overlap ─────────────────────────────────────────────
     # Only use script-tag evidence when the display category isn't clearly
     # non-building (mementos, junk, jewellery, etc.).
     NON_BUILDING_DISPLAY_CATS = {'memento', 'junk', 'jewelry', 'ammo', 'camping',
@@ -263,8 +477,9 @@ def get_building_tags(item_id, props):
     Generate Building.* tags from the signature match.
 
     Primary tag hierarchy:
-      Building.Moveable   | Building.Material   | Building.Furniture
-      Building.Fixture    | Building.Vehicle    | Building.Garden
+      Building.Moveable   | Building.Material   | Building.Furniture.*
+      Building.Fixture.*  | Building.Vehicle    | Building.Garden
+      Building.Survival
 
     Additional quality descriptors:
       Quality.Waste   when item name contains "broken"/"scrap"/"damaged"
@@ -275,7 +490,17 @@ def get_building_tags(item_id, props):
         return []
 
     building_type = details.get('building_type', 'Material')
-    tags = [f"Building.{building_type}"]
+    primary_tag = f"Building.{building_type}"
+
+    if building_type == 'Furniture':
+        furniture_subtype = details.get('furniture_subtype', 'General')
+        primary_tag = f"{primary_tag}.{furniture_subtype}"
+
+    if building_type == 'Fixture':
+        fixture_subtype = details.get('fixture_subtype', 'General')
+        primary_tag = f"{primary_tag}.{fixture_subtype}"
+
+    tags = [primary_tag]
 
     # Quality descriptor
     lower_id = item_id.lower()

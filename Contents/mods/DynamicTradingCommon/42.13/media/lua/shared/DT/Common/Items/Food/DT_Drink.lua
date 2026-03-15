@@ -14,7 +14,7 @@ DynamicTrading.RegisterBatch({
     -- [Food.Drink.NonAlcoholic] [Rarity.Common] (1 item)
     { item="Base.HotDrink", basePrice=12, tags={"Food.Drink.NonAlcoholic", "Rarity.Common", "Food.LowNutrition"}, stockRange={min=3, max=15} },
 
-    -- [Food.Drink.NonAlcoholic] [Rarity.Rare] (40 items)
+    -- [Food.Drink.NonAlcoholic] [Rarity.Rare] (19 items)
     { item="Base.AnimalMilkPowder", basePrice=1, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=4} },
     { item="Base.CannedFruitBeverage_Box", basePrice=1, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=2} },
     { item="Base.CannedFruitBeverageOpen", basePrice=147, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=4} },
@@ -32,29 +32,8 @@ DynamicTrading.RegisterBatch({
     { item="Base.HotDrinkTeaCeramic", basePrice=20, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
     { item="Base.HotDrinkTumbler", basePrice=20, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
     { item="Base.HotDrinkWhite", basePrice=20, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
-    { item="Base.JuiceBox", basePrice=8, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceBoxApple", basePrice=8, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceBoxFruitpunch", basePrice=8, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceBoxOrange", basePrice=8, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceCranberry", basePrice=42, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceFruitpunch", basePrice=42, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceGrape", basePrice=42, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceLemon", basePrice=42, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceOrange", basePrice=42, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.JuiceTomato", basePrice=42, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.Milk", basePrice=21, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.Milk_Personalsized", basePrice=5, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.MilkBottle", basePrice=42, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.MilkChocolate_Personalsized", basePrice=5, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.Pop", basePrice=4, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
-    { item="Base.Pop2", basePrice=4, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
-    { item="Base.Pop3", basePrice=4, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
-    { item="Base.PopBottle", basePrice=85, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.PopBottleRare", basePrice=85, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.SodaCan", basePrice=4, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
     { item="Base.WaterRationCan_Box", basePrice=1, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=2} },
     { item="Base.WaterRationCan_Open", basePrice=1, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.WaterRationCanEmpty", basePrice=6, tags={"Food.Drink.NonAlcoholic", "Rarity.Rare", "Quality.Waste", "Food.LowNutrition"}, stockRange={min=0, max=10} },
 })
 
 print("[DynamicTrading] Drink Registry Complete")

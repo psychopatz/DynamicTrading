@@ -11,8 +11,7 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Food.NonPerishable.Canned] [Rarity.Rare] (92 items)
-    { item="Base.Bag_FoodCanned", basePrice=126, tags={"Food.NonPerishable.Canned", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=5} },
+    -- [Food.NonPerishable.Canned] [Rarity.Rare] (91 items)
     { item="Base.CannedBellPepper", basePrice=89, tags={"Food.NonPerishable.Canned", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=5} },
     { item="Base.CannedBellPepper_Open", basePrice=47, tags={"Food.NonPerishable.Canned", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=5} },
     { item="Base.CannedBolognese", basePrice=72, tags={"Food.NonPerishable.Canned", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=5} },

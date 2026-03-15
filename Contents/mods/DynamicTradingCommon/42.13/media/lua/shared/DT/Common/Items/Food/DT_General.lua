@@ -11,7 +11,7 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Food.NonPerishable.General] [Rarity.Rare] (26 items)
+    -- [Food.NonPerishable.General] [Rarity.Rare] (25 items)
     { item="Base.Allsorts", basePrice=43, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.CinnamonRoll", basePrice=105, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.CocoaPowder", basePrice=70, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=5} },
@@ -22,7 +22,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.GrassTuft", basePrice=48, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.GreenpeasSeed", basePrice=15, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=25} },
     { item="Base.Gum", basePrice=9, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
-    { item="Base.GummyBears", basePrice=37, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.HayTuft", basePrice=82, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.HiHis", basePrice=51, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=12} },
     { item="Base.JamMarmalade", basePrice=151, tags={"Food.NonPerishable.General", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=12} },

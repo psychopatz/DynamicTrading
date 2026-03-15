@@ -5,8 +5,11 @@ Generates nested tags based on item properties and ID patterns
 import re
 from ..commons.vanilla_loader import get_stat, has_property, count_learned_recipes
 from ..config import EXCLUDED_PATTERNS
+from .signatures.fishing import get_fishing_tags
 from .signatures.food import get_food_tags
+from .signatures.medical import get_medical_tags
 from .signatures.building import matches_building_signature, get_building_tags
+from .signatures.tools import matches_tool_signature, get_tool_tags
 from .signatures.weapons import get_weapon_tags
 from .signatures.electronics import get_electronics_tags
 
@@ -185,14 +188,22 @@ def determine_theme(item_id, props):
     return themes
 
 
+def _get_medical_tool_tags(item_id, props):
+    """Return tool tags only for medical instruments."""
+    matches, _confidence, details = matches_tool_signature(item_id, props)
+    if matches and details.get('tool_type', '').startswith('Medical'):
+        return get_tool_tags(item_id, props)
+    return []
+
+
 def categorize_item(item_id, props):
     """
     Intelligently categorize item and generate nested tags
     Returns: (primary_tag, additional_tags[])
     """
-    food_tags = get_food_tags(item_id, props)
-    if food_tags:
-        return food_tags[0], food_tags[1:]
+    fishing_tags = get_fishing_tags(item_id, props)
+    if fishing_tags:
+        return fishing_tags[0], fishing_tags[1:]
 
     # === LITERATURE ===
     if _is_literature_item(item_id, props):
@@ -216,12 +227,7 @@ def categorize_item(item_id, props):
             return "Literature.Media", []
         else:
             return "Literature.Book", []
-    
-    # === WEAPON ===
-    weapon_tags = get_weapon_tags(item_id, props)
-    if weapon_tags:
-        return weapon_tags[0], weapon_tags[1:]
-    
+
     # === CLOTHING ===
     if 'Type = Clothing' in props or has_property(props, "BodyLocation"):
         bite = get_stat(props, "BiteDefense", 0)
@@ -239,11 +245,17 @@ def categorize_item(item_id, props):
             return "Clothing.Feet", []
         else:
             return "Clothing.General", []
-    
-    # === MEDICAL ===
-    if 'Type = Medical' in props or any(x in item_id for x in ['Bandage', 'Pills', 'Medicine', 'Syringe']):
-        return "Medical.Surgical" if has_property(props, "Sterile") else "Medical.General", []
-    
+
+    # === MEDICAL TOOLS ===
+    medical_tool_tags = _get_medical_tool_tags(item_id, props)
+    if medical_tool_tags:
+        return medical_tool_tags[0], medical_tool_tags[1:]
+
+    # === MEDICAL SUPPLIES ===
+    medical_tags = get_medical_tags(item_id, props)
+    if medical_tags:
+        return medical_tags[0], medical_tags[1:]
+
     # === CONTAINER ===
     capacity = get_stat(props, "Capacity", 0)
     if capacity > 0:
@@ -253,15 +265,21 @@ def categorize_item(item_id, props):
             return "Container.Accessory", []
         else:
             return "Container.General", []
-    
+
+    # === FOOD ===
+    food_tags = get_food_tags(item_id, props)
+    if food_tags:
+        return food_tags[0], food_tags[1:]
+
+    # === WEAPON ===
+    weapon_tags = get_weapon_tags(item_id, props)
+    if weapon_tags:
+        return weapon_tags[0], weapon_tags[1:]
+
     # === TOOL ===
-    if 'Type = Normal' in props:
-        if any(x in item_id.lower() for x in ['hammer', 'saw', 'drill', 'wrench', 'screwdriver']):
-            return "Tool.Crafting", []
-        elif any(x in item_id.lower() for x in ['shovel', 'rake', 'hoe', 'trowel']):
-            return "Tool.Farming", []
-        else:
-            return "Tool.General", []
+    tool_tags = get_tool_tags(item_id, props)
+    if tool_tags:
+        return tool_tags[0], tool_tags[1:]
 
     # === BUILDING / CONSTRUCTION ===
     # Let moveables and fixtures route out before electronics heuristics run.

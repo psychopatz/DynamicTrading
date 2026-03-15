@@ -1,128 +1,187 @@
 """
 Medical property-based signatures.
-Detects medical items through healing, cure, and sanitation properties.
+Detects medical supplies and consumables through first-aid, healing, and
+healthcare-specific properties.
 """
-from .helpers import has_property, id_matches_pattern, PropertyAnalyzer
+from .helpers import (
+    extract_tags_from_props,
+    get_display_category,
+    id_matches_pattern,
+    PropertyAnalyzer,
+)
 
 
-MEDICAL_ID_PATTERNS = [
-    'Bandage', 'Pills', 'Medicine', 'Syringe', 'Medic', 'Medical',
-    'Ointment', 'Suture', 'Antibiotics', 'Painkiller', 'Antacid',
-    'Alcohol', 'Disinfectant', 'Gauze', 'Cream', 'Salve'
+MEDICAL_SUPPLY_ID_PATTERNS = [
+    'Bandage', 'Bandaid', 'Pills', 'Antibiotics', 'Disinfectant',
+    'Cotton', 'Coldpack', 'Cataplasm', 'Comfrey', 'Plantain',
+    'Garlic', 'Mallow', 'Ginseng', 'BlackSage', 'AlcoholWipes',
+    'AlcoholBandage', 'Splint',
 ]
-
-STERILE_PATTERNS = ['Sterile', 'Surgical', 'Clean', 'Sealed']
-SURGICAL_PATTERNS = ['Needle', 'Syringe', 'Suture', 'Surgical']
+PILLS_PATTERNS = ['Pills', 'Antibiotics', 'Tablet', 'Capsule']
+VITAMIN_PATTERNS = ['Vitamin']
+BOTANICAL_PATTERNS = ['Comfrey', 'Plantain', 'Garlic', 'Mallow', 'Ginseng', 'BlackSage', 'Cataplasm']
+MEDICAL_SUPPLY_TAGS = {
+    'base:consumable', 'base:comfrey', 'base:plantain',
+    'base:wildgarlic', 'base:commonmallow', 'base:herbaltea',
+}
+MEDICAL_TOOL_PATTERNS = ['Tweezers', 'Forceps', 'Suture', 'Scalpel', 'Stethoscope', 'TongueDepressor']
 
 
 def matches_medical_signature(item_id, props):
     """
-    Check if item matches medical signature.
-    
-    Medical items have:
-    - Type = Medical field
-    - Healing/curing properties (properties that affect health)
-    - Sterile/sanitation keywords
-    
+    Check if item matches the medical supply signature.
+
+    Medical supplies have:
+    - First-aid display categories or explicit medical flags
+    - Health-treatment properties like bandaging or infection reduction
+    - Pill/herbal/healthcare item patterns
+
     Args:
         item_id: Item identifier
         props: Properties string
-    
+
     Returns:
         tuple: (matches: bool, confidence: float, details: dict)
     """
     analyzer = PropertyAnalyzer(props)
-    
-    # Check for medical indicators
-    is_type_medical = analyzer.has_property('Type', 'Medical')
-    is_medical_id = id_matches_pattern(item_id, MEDICAL_ID_PATTERNS)
-    is_sterile = analyzer.has_property('Sterile') or id_matches_pattern(item_id, STERILE_PATTERNS)
-    
-    if not (is_type_medical or is_medical_id or is_sterile):
+
+    display_category = (get_display_category(props) or '').lower()
+    script_tags = {tag.lower() for tag in extract_tags_from_props(props)}
+    item_lower = item_id.lower()
+    bandage_power = analyzer.get_stat('BandagePower')
+    reduce_infection = analyzer.get_stat('ReduceInfectionPower')
+    alcohol_power = analyzer.get_stat('AlcoholPower')
+
+    is_first_aid = display_category in {'firstaid', 'bandage'}
+    is_medical_flag = analyzer.has_property('Medical', 'true') or analyzer.has_property('Medical')
+    is_container = analyzer.has_property('ItemType', 'base:container') or item_lower.startswith('firstaidkit')
+    is_clothing = analyzer.has_property('BodyLocation')
+    is_medical_tool = (
+        display_category == 'firstaidweapon' or
+        id_matches_pattern(item_id, MEDICAL_TOOL_PATTERNS) or
+        'base:removeglass' in script_tags or
+        'base:removebullet' in script_tags or
+        'base:tweezers' in script_tags
+    )
+
+    if is_container or is_clothing or is_medical_tool or item_lower.startswith('bandage_'):
         return False, 0.0, {}
-    
-    # Collect evidence
+
+    if not (is_first_aid or is_medical_flag or id_matches_pattern(item_id, MEDICAL_SUPPLY_ID_PATTERNS)):
+        return False, 0.0, {}
+
     evidence = []
     details = {
         'medical_type': 'General',
-        'is_sterile': is_sterile,
-        'is_surgical': False,
-        'is_consumable': False
+        'display_category': display_category or None,
+        'is_first_aid': is_first_aid,
+        'is_medical_flag': is_medical_flag,
+        'is_consumable': False,
     }
-    
-    # Evidence 1: Type field says Medical
-    if is_type_medical:
+
+    if is_first_aid:
         evidence.append(0.35)
-    
-    # Evidence 2: ID pattern matches medical
-    if is_medical_id:
+
+    if is_medical_flag:
+        evidence.append(0.35)
+
+    if id_matches_pattern(item_id, MEDICAL_SUPPLY_ID_PATTERNS):
+        evidence.append(0.2)
+
+    if bandage_power > 0:
         evidence.append(0.25)
-    
-    # Evidence 3: Is sterile (sanitary)
-    if is_sterile:
-        evidence.append(0.15)
-        details['is_sterile'] = True
-    
-    # Evidence 4: Classify by medical type
-    if id_matches_pattern(item_id, ['Bandage', 'Gauze', 'Wrap']):
-        details['medical_type'] = 'Bandage'
-        evidence.append(0.1)
-    elif id_matches_pattern(item_id, SURGICAL_PATTERNS):
-        details['medical_type'] = 'Surgical'
-        details['is_surgical'] = True
-        evidence.append(0.15)
-    elif id_matches_pattern(item_id, ['Pills', 'Medicine', 'Tablet', 'Capsule']):
-        details['medical_type'] = 'Medicine'
+        details['bandage_power'] = bandage_power
+
+    if analyzer.has_property('CanBandage', 'true'):
+        evidence.append(0.3)
+        details['can_bandage'] = True
+
+    if reduce_infection > 0:
+        evidence.append(0.3)
+        details['reduce_infection_power'] = reduce_infection
+
+    if alcohol_power > 0:
+        evidence.append(0.25)
+        details['alcohol_power'] = alcohol_power
+
+    if analyzer.has_property('Alcoholic', 'true') and is_first_aid:
+        evidence.append(0.2)
+
+    if analyzer.has_property('ItemType', 'base:drainable') and (is_first_aid or is_medical_flag):
+        evidence.append(0.2)
         details['is_consumable'] = True
+
+    if analyzer.has_property('ItemType', 'base:food') and (is_first_aid or is_medical_flag):
+        evidence.append(0.2)
+        details['is_consumable'] = True
+
+    if analyzer.has_property('CantEat', 'true') and is_first_aid:
+        evidence.append(0.15)
+
+    if script_tags.intersection(MEDICAL_SUPPLY_TAGS):
         evidence.append(0.1)
-    elif id_matches_pattern(item_id, ['Cream', 'Ointment', 'Salve']):
-        details['medical_type'] = 'Topical'
-        evidence.append(0.1)
-    else:
-        details['medical_type'] = 'General'
-        evidence.append(0.05)
-    
-    # Calculate confidence
+
+    if id_matches_pattern(item_id, VITAMIN_PATTERNS):
+        details['medical_type'] = 'General.Vitamin'
+        details['is_consumable'] = True
+    elif (
+        id_matches_pattern(item_id, PILLS_PATTERNS) or
+        (
+            analyzer.has_property('ItemType', 'base:drainable') and
+            (is_first_aid or is_medical_flag)
+        )
+    ):
+        details['medical_type'] = 'General.Pills'
+        details['is_consumable'] = True
+    elif (
+        id_matches_pattern(item_id, BOTANICAL_PATTERNS) or
+        script_tags.intersection({'base:comfrey', 'base:plantain', 'base:wildgarlic', 'base:commonmallow', 'base:herbaltea'}) or
+        analyzer.has_property('FoodType', 'Herb') or
+        (analyzer.has_property('CantEat', 'true') and is_first_aid)
+    ):
+        details['medical_type'] = 'Healthcare.Botanical'
+    elif (
+        analyzer.has_property('CanBandage', 'true') or
+        bandage_power > 0 or
+        reduce_infection > 0 or
+        alcohol_power > 0 or
+        id_matches_pattern(item_id, ['Bandage', 'Bandaid', 'Disinfectant', 'Cotton', 'Coldpack', 'Splint'])
+    ):
+        details['medical_type'] = 'Healthcare'
+
     confidence = min(1.0, sum(evidence)) if evidence else 0.0
-    
-    # Match if confidence > 0.35
-    matches = confidence > 0.35
-    
+    matches = confidence >= 0.45
+
     return matches, confidence, details
 
 
 def get_medical_tags(item_id, props):
     """
     Generate medical tags based on signature match.
-    
+
     Args:
         item_id: Item identifier
         props: Properties string
-    
+
     Returns:
         list: Tag list for this medical item
     """
     matches, confidence, details = matches_medical_signature(item_id, props)
-    
+
     if not matches:
         return []
-    
-    tags = []
-    
-    # Primary tag
+
     med_type = details.get('medical_type', 'General')
-    tags.append(f"Medical.{med_type}")
-    
-    # Sanitation
-    if details.get('is_sterile'):
-        tags.append("Medical.Sterile")
-    else:
-        tags.append("Medical.NonSterile")
-    
-    # Specialization
-    if details.get('is_surgical'):
-        tags.append("Medical.Surgical")
-    if details.get('is_consumable'):
-        tags.append("Medical.Consumable")
-    
+    primary_tag = f"Medical.{med_type}"
+    tags = [primary_tag]
+
+    parts = primary_tag.split('.')
+    for index in range(2, len(parts)):
+        parent = '.'.join(parts[:index])
+        if parent not in tags:
+            tags.append(parent)
+
+    if details.get('is_consumable') and 'Medical.Consumable' not in tags:
+        tags.append('Medical.Consumable')
+
     return tags
