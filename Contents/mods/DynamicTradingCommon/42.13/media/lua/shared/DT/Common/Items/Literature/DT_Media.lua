@@ -11,9 +11,10 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Literature.Media] [Rarity.Common] (2 items)
+    -- [Literature.Media] [Rarity.Common] (3 items)
     { item="Base.MagazineCrossword", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
     { item="Base.MagazineWordsearch", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
+    { item="Base.Mov_ComicsShopShelves", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
 
     -- [Literature.Media] [Rarity.Rare] (61 items)
     { item="Base.ComicBook", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },

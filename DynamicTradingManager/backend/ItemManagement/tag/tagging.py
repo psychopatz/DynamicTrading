@@ -6,6 +6,77 @@ import re
 from ..commons.vanilla_loader import get_stat, has_property, count_learned_recipes
 from ..config import EXCLUDED_PATTERNS
 from .signatures.food import get_food_tags
+from .signatures.building import matches_building_signature, get_building_tags
+
+
+LITERATURE_DISPLAY_CATS = {'literature', 'skillbook', 'book'}
+RESOURCE_PART_PATTERNS = [
+    'AxeHead', 'HatchetHead', 'HammerHead', 'MaceHead', 'SpearHead',
+    'Blade', 'SwordBlade', 'KnifeBlade', 'MacheteBlade',
+    'NoTang', 'Shard', 'Mold', 'Unfired',
+]
+
+
+def _get_display_category(props):
+    """Extract lowercase DisplayCategory from raw item properties."""
+    m = re.search(r"DisplayCategory\s*=\s*([^,\n\s;]+)", props, re.IGNORECASE)
+    return m.group(1).lower() if m else ''
+
+
+def _is_literature_item(item_id, props):
+    """Heuristic detector for books/magazines/recipe-learning items."""
+    item_lower = item_id.lower()
+    disp_cat = _get_display_category(props)
+
+    has_type_literature = bool(re.search(r"Type\s*=\s*Literature\b", props, re.IGNORECASE))
+    has_recipe_learning = bool(re.search(r"(LearnedRecipes|TeachedRecipes)\s*=", props, re.IGNORECASE))
+    has_skill_learning = bool(re.search(r"(SkillTrained|LvlSkillTrained|NumLevelsTrained)\s*=", props, re.IGNORECASE))
+    has_reading_meta = bool(re.search(r"(NumberOfPages|PageToWrite|CanBeWrite|LiteratureOnRead)\s*=", props, re.IGNORECASE))
+
+    # Covers vanilla + many modded naming conventions.
+    looks_like_literature_id = bool(re.search(
+        r"(skillbook|book\d*$|mag\d*$|magazine|comic|schematic|manual|guide|journal|recipeclipping)",
+        item_lower,
+        re.IGNORECASE,
+    ))
+
+    # Prevent plantables/seed sacks that also expose recipe-like fields.
+    is_garden_seed_like = ('bagseed' in item_lower or item_lower.endswith('seed') or '_seed' in item_lower)
+    if is_garden_seed_like:
+        return False
+
+    # Never treat explicit ammo/weapon payloads as reading material.
+    if has_property(props, "AmmoType") or has_property(props, "ProjectileCount"):
+        return False
+    if re.search(r"Type\s*=\s*Weapon\b", props, re.IGNORECASE):
+        return False
+
+    if has_type_literature:
+        return True
+    if disp_cat in LITERATURE_DISPLAY_CATS:
+        return True
+    if looks_like_literature_id:
+        return True
+    if (has_recipe_learning or has_skill_learning or has_reading_meta) and (looks_like_literature_id or disp_cat == 'reciperesource'):
+        return True
+
+    return looks_like_literature_id and (has_recipe_learning or has_skill_learning or has_reading_meta)
+
+
+def _is_resource_part_item(item_id, props):
+    """Detect salvage/crafting components that should be Resource.Parts."""
+    item_lower = item_id.lower()
+    if any(p.lower() in item_lower for p in RESOURCE_PART_PATTERNS):
+        # Avoid matching common seed names that include "seed" in IDs.
+        if 'bagseed' in item_lower or item_lower.endswith('seed') or '_seed' in item_lower:
+            return False
+        return True
+
+    # Script-tag evidence for component/tool-head items.
+    if re.search(r"Tags\s*=\s*[^\n]*base:toolhead", props, re.IGNORECASE):
+        return True
+
+    return False
 
 
 def is_excluded(item_id):
@@ -96,15 +167,19 @@ def categorize_item(item_id, props):
     food_tags = get_food_tags(item_id, props)
     if food_tags:
         return food_tags[0], food_tags[1:]
-    
+
     # === LITERATURE ===
-    if 'Type = Literature' in props or 'SkillBook' in item_id or 'Book' in item_id or 'Magazine' in item_id:
+    if _is_literature_item(item_id, props):
         recipes = count_learned_recipes(props)
-        if recipes > 0:
+        has_teached = bool(re.search(r"TeachedRecipes\s*=", props, re.IGNORECASE))
+        has_skill_learning = bool(re.search(r"(SkillTrained|LvlSkillTrained|NumLevelsTrained)\s*=", props, re.IGNORECASE))
+        item_lower = item_id.lower()
+
+        if recipes > 0 or has_teached or 'schematic' in item_lower or 'recipe' in item_lower:
             return "Literature.Recipe", []
-        elif 'SkillBook' in item_id:
+        elif has_skill_learning or 'skillbook' in item_lower:
             return "Literature.SkillBook", []
-        elif 'Magazine' in item_id or 'Comic' in item_id:
+        elif any(x in item_lower for x in ['mag', 'magazine', 'comic']):
             return "Literature.Media", []
         else:
             return "Literature.Book", []
@@ -166,16 +241,29 @@ def categorize_item(item_id, props):
             return "Tool.General", []
     
     # === RESOURCE ===
+    if _is_resource_part_item(item_id, props):
+        return "Resource.Parts", []
+
     if has_property(props, "UseDelta"):
         if any(x in item_id.lower() for x in ['petrol', 'gas', 'fuel', 'propane']):
             return "Resource.Fuel.Liquid", []
         else:
             return "Resource.Material", []
-    
+
     # === ELECTRONICS ===
     if any(x in item_id for x in ['Radio', 'Walkie', 'Generator', 'Battery', 'Electronic']):
         return "Electronics.Battery" if 'Battery' in item_id else "Electronics.Gadget", []
-    
+
+    # === BUILDING / CONSTRUCTION ===
+    # Placed after all strictly-typed categories (Weapon, Literature, Clothing,
+    # Medical, Container, Tool, Resource, Electronics) so those take priority.
+    # Building.* catches everything that has a building DisplayCategory, Mov_*
+    # prefix, or building-material script-tags and wasn't already routed above.
+    building_matches, _building_conf, _building_details = matches_building_signature(item_id, props)
+    if building_matches:
+        building_tags = get_building_tags(item_id, props)
+        return building_tags[0], building_tags[1:]
+
     # === MISC (fallback) ===
     return "Misc.General", []
 

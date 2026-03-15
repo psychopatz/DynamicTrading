@@ -11,16 +11,20 @@ from .signatures import (
     matches_medical_signature, get_medical_tags,
     matches_container_signature, get_container_tags,
     matches_resource_signature, get_resource_tags,
+    matches_building_signature, get_building_tags,
 )
 
 
 # Signature definitions in evaluation order (priority)
+# Building is placed before Resource/Tool/Electronics because Mov_* and
+# DisplayCategory-matched items should be routed unambiguously.
 SIGNATURES = [
     ('Weapon', matches_weapon_signature, get_weapon_tags),
     ('Food', matches_food_signature, get_food_tags),
     ('Clothing', matches_clothing_signature, get_clothing_tags),
     ('Container', matches_container_signature, get_container_tags),
     ('Medical', matches_medical_signature, get_medical_tags),
+    ('Building', matches_building_signature, get_building_tags),
     ('Tool', matches_tool_signature, get_tool_tags),
     ('Electronics', matches_electronics_signature, get_electronics_tags),
     ('Resource', matches_resource_signature, get_resource_tags),

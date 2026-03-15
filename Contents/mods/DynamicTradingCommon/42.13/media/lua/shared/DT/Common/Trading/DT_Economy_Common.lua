@@ -19,6 +19,13 @@ local LEGACY_TAG_ALIASES = {
     ["Food.Spice"] = { prefix = "Food.", suffix = ".Spice" }
 }
 
+-- Building sub-type hierarchy (used by TagMatches hierarchy walk).
+-- Querying "Building" matches Building.Moveable, Building.Material, etc.
+-- Querying "Building.Material" matches only material items.
+-- No legacy alias needed – the hierarchy walk in TagMatches handles prefix
+-- matching automatically via the "queryTag .. '%.')" check.
+-- Sub-types: Moveable | Material | Parts | Furniture | Fixture | Vehicle | Garden
+
 -- =============================================================================
 -- 1. UTILITIES
 -- =============================================================================

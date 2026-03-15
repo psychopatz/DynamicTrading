@@ -10,6 +10,7 @@ from .electronics import matches_electronics_signature, get_electronics_tags
 from .medical import matches_medical_signature, get_medical_tags
 from .containers import matches_container_signature, get_container_tags
 from .resources import matches_resource_signature, get_resource_tags
+from .building import matches_building_signature, get_building_tags
 
 __all__ = [
     'matches_weapon_signature', 'get_weapon_tags',
@@ -20,4 +21,5 @@ __all__ = [
     'matches_medical_signature', 'get_medical_tags',
     'matches_container_signature', 'get_container_tags',
     'matches_resource_signature', 'get_resource_tags',
+    'matches_building_signature', 'get_building_tags',
 ]

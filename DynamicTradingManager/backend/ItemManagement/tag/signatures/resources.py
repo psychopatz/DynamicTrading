@@ -12,6 +12,12 @@ RESOURCE_ID_PATTERNS = [
     'Component', 'Part', 'Wire', 'Cable', 'Rope', 'Sheet'
 ]
 
+PART_PATTERNS = [
+    'AxeHead', 'HatchetHead', 'HammerHead', 'MaceHead', 'SpearHead',
+    'Blade', 'SwordBlade', 'KnifeBlade', 'MacheteBlade',
+    'NoTang', 'Shard', 'Mold', 'Unfired',
+]
+
 FUEL_PATTERNS = ['Fuel', 'Oil', 'Gas', 'Gasoline', 'Propane', 'Diesel', 'Petrol']
 METAL_PATTERNS = ['Metal', 'Steel', 'Iron', 'Copper', 'Aluminum', 'Scrap']
 WOOD_PATTERNS = ['Wood', 'Plank', 'Log', 'Lumber', 'Timber']
@@ -67,7 +73,10 @@ def matches_resource_signature(item_id, props):
         evidence.append(0.25)
     
     # Evidence 4: Classify by resource type
-    if id_matches_pattern(item_id, FUEL_PATTERNS):
+    if id_matches_pattern(item_id, PART_PATTERNS):
+        details['resource_type'] = 'Parts'
+        evidence.append(0.2)
+    elif id_matches_pattern(item_id, FUEL_PATTERNS):
         details['resource_type'] = 'Fuel'
         details['is_fuel'] = True
         evidence.append(0.2)

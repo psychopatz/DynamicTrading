@@ -17,12 +17,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Generator_Old", basePrice=1, tags={"Electronics.Gadget", "Rarity.Common"}, stockRange={min=0, max=2} },
     { item="Base.Generator_Yellow", basePrice=1, tags={"Electronics.Gadget", "Rarity.Common"}, stockRange={min=0, max=2} },
 
-    -- [Electronics.Gadget] [Rarity.Rare] (6 items)
-    { item="Base.ElectronicsMag1", basePrice=102, tags={"Electronics.Gadget", "Rarity.Rare"}, stockRange={min=0, max=6} },
-    { item="Base.ElectronicsMag2", basePrice=102, tags={"Electronics.Gadget", "Rarity.Rare"}, stockRange={min=0, max=6} },
-    { item="Base.ElectronicsMag3", basePrice=102, tags={"Electronics.Gadget", "Rarity.Rare"}, stockRange={min=0, max=6} },
-    { item="Base.ElectronicsMag4", basePrice=102, tags={"Electronics.Gadget", "Rarity.Rare"}, stockRange={min=0, max=6} },
-    { item="Base.ElectronicsMag5", basePrice=102, tags={"Electronics.Gadget", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    -- [Electronics.Gadget] [Rarity.Rare] (1 item)
     { item="Base.ElectronicsScrap", basePrice=85, tags={"Electronics.Gadget", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=10} },
 })
 

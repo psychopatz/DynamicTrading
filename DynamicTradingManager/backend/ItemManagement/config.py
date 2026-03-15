@@ -98,10 +98,19 @@ CATEGORY_FILE_MAP = {
     'Resource': {
         'Fuel': 'Resource/DT_Fuel.lua',
         'Material': 'Resource/DT_Material.lua',
+        'Parts': 'Resource/DT_Parts.lua',
     },
     'Electronics': {
         'Battery': 'Electronics/DT_Battery.lua',
         'Gadget': 'Electronics/DT_Gadget.lua',
+    },
+    'Building': {
+        'Moveable':   'Building/DT_Moveable.lua',
+        'Material':   'Building/DT_Material.lua',
+        'Furniture':  'Building/DT_Furniture.lua',
+        'Fixture':    'Building/DT_Fixture.lua',
+        'Vehicle':    'Building/DT_Vehicle.lua',
+        'Garden':    'Building/DT_Garden.lua',
     },
     'Misc': {
         'General': 'Misc/DT_General.lua',
