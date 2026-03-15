@@ -8,6 +8,7 @@ from ..config import EXCLUDED_PATTERNS
 from .signatures.fishing import get_fishing_tags
 from .signatures.food import get_food_tags
 from .signatures.medical import get_medical_tags
+from .signatures.containers import get_container_tags
 from .signatures.clothing import get_clothing_tags
 from .signatures.building import matches_building_signature, get_building_tags
 from .signatures.tools import matches_tool_signature, get_tool_tags
@@ -56,6 +57,8 @@ def _is_literature_item(item_id, props):
 
     has_type_literature = type_token in {'literature', 'base:literature'}
     has_type_map = type_token == 'base:map'
+    if type_token == 'base:container':
+        return False
     has_map_property = bool(re.search(r"\bMap\s*=\s*", props, re.IGNORECASE))
     has_media_category = bool(re.search(r"\bMediaCategory\s*=\s*", props, re.IGNORECASE))
     has_recipe_learning = bool(re.search(r"(LearnedRecipes|TeachedRecipes)\s*=", props, re.IGNORECASE))
@@ -251,11 +254,6 @@ def categorize_item(item_id, props):
         else:
             return "Literature.Book", []
 
-    # === CLOTHING ===
-    clothing_tags = get_clothing_tags(item_id, props)
-    if clothing_tags:
-        return clothing_tags[0], clothing_tags[1:]
-
     # === MEDICAL TOOLS ===
     medical_tool_tags = _get_medical_tool_tags(item_id, props)
     if medical_tool_tags:
@@ -271,20 +269,20 @@ def categorize_item(item_id, props):
     if food_tags:
         return food_tags[0], food_tags[1:]
 
+    # === CONTAINER ===
+    container_tags = get_container_tags(item_id, props)
+    if container_tags:
+        return container_tags[0], container_tags[1:]
+
+    # === CLOTHING ===
+    clothing_tags = get_clothing_tags(item_id, props)
+    if clothing_tags:
+        return clothing_tags[0], clothing_tags[1:]
+
     # === COOKWARE TOOLS ===
     cookware_tool_tags = _get_cookware_tool_tags(item_id, props)
     if cookware_tool_tags:
         return cookware_tool_tags[0], cookware_tool_tags[1:]
-
-    # === CONTAINER ===
-    capacity = get_stat(props, "Capacity", 0)
-    if capacity > 0:
-        if any(x in item_id.lower() for x in ['backpack', 'bag', 'pack', 'rucksack']):
-            return "Container.Backpack", []
-        elif any(x in item_id.lower() for x in ['pouch', 'holster', 'belt']):
-            return "Container.Accessory", []
-        else:
-            return "Container.General", []
 
     # === WEAPON ===
     weapon_tags = get_weapon_tags(item_id, props)

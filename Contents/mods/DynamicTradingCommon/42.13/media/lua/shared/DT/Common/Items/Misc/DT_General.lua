@@ -27,7 +27,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.ToyBadge", basePrice=5, tags={"Misc.General", "Rarity.Common"}, stockRange={min=5, max=25} },
     { item="Base.WaterDrop", basePrice=10, tags={"Misc.General", "Rarity.Common"}, stockRange={min=5, max=25} },
 
-    -- [Misc.General] [Rarity.Rare] (235 items)
+    -- [Misc.General] [Rarity.Rare] (232 items)
     { item="Base.Amethyst", basePrice=17, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.Animal_Brain", basePrice=17, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Animal_Brain_Small", basePrice=17, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
@@ -81,7 +81,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.ChristmasOrnament_Red2", basePrice=3, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.ChristmasOrnament_Red3", basePrice=3, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.ChristmasWreath", basePrice=1, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=2} },
-    { item="Base.CigaretteCarton", basePrice=1, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.ClayPlate", basePrice=8, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.ClayTool_Carved", basePrice=6, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Comb", basePrice=8, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
@@ -238,8 +237,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Straw2", basePrice=17, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.SuspiciousPackage", basePrice=2, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.TennisBall", basePrice=6, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
-    { item="Base.Tobacco", basePrice=8, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
-    { item="Base.TobaccoDried", basePrice=8, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.ToiletPaper", basePrice=13, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Tongs", basePrice=7, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Toothbrush", basePrice=8, tags={"Misc.General", "Rarity.Rare"}, stockRange={min=0, max=10} },

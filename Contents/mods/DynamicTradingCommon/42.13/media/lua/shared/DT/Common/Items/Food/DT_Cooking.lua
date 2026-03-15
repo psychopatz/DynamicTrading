@@ -11,7 +11,7 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Food.Cooking.Ingredient] [Rarity.Rare] (127 items)
+    -- [Food.Cooking.Ingredient] [Rarity.Rare] (121 items)
     { item="Base.AligatorGar", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition", "Food.LowQuality"}, stockRange={min=0, max=6} },
     { item="Base.BaloneySlice", basePrice=69, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=20} },
     { item="Base.BeanBowl", basePrice=5, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.MediumNutrition", "Food.LowQuality"}, stockRange={min=0, max=4} },
@@ -20,12 +20,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.BrusselSprouts", basePrice=9, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition", "Food.LowQuality"}, stockRange={min=0, max=4} },
     { item="Base.BucketOfSoup", basePrice=24, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=2} },
     { item="Base.BucketOfStew", basePrice=24, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=2} },
-    { item="Base.CanPipe_Tobacco", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
     { item="Base.Cauliflower", basePrice=56, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.Cigar", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
-    { item="Base.CigaretteRolled", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=20} },
-    { item="Base.CigaretteSingle", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=20} },
-    { item="Base.Cigarillo", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=20} },
     { item="Base.ConeIcecream", basePrice=86, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=10} },
     { item="Base.ConeIcecreamToppings", basePrice=86, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.MediumNutrition"}, stockRange={min=0, max=10} },
     { item="Base.Creamocle", basePrice=113, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
@@ -104,7 +99,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Shrimp", basePrice=82, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.ShrimpFriedCraft", basePrice=121, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.SmallmouthBass", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition", "Food.LowQuality"}, stockRange={min=0, max=6} },
-    { item="Base.SmokingPipe_Tobacco", basePrice=1, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=6} },
     { item="Base.Smore", basePrice=116, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=10} },
     { item="Base.SoupBowl", basePrice=26, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=4} },
     { item="Base.SoupBowlClay", basePrice=26, tags={"Food.Cooking.Ingredient", "Rarity.Rare", "Food.LowNutrition"}, stockRange={min=0, max=4} },

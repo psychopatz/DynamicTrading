@@ -17,7 +17,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Photo", basePrice=50, tags={"Literature.Book", "Rarity.Common"}, stockRange={min=5, max=25} },
     { item="Base.Photo_VeryOld", basePrice=50, tags={"Literature.Book", "Rarity.Common"}, stockRange={min=5, max=25} },
 
-    -- [Literature.Book] [Rarity.Rare] (189 items)
+    -- [Literature.Book] [Rarity.Rare] (182 items)
     { item="Base.Book", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Book_AdventureNonFiction", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Book_Art", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
@@ -111,13 +111,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Flier_Nolans", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.GenericMail", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.GraphPaper", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
-    { item="Base.HollowBook", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.HollowBook_Handgun", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.HollowBook_Kids", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.HollowBook_Prison", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.HollowBook_Valuables", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.HollowBook_Whiskey", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.HollowFancyBook", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.HottieZ", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.HottieZ_New", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.IDcard", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },

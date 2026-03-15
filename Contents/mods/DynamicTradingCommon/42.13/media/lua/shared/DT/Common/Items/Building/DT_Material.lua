@@ -20,7 +20,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Malachite", basePrice=1, tags={"Building.Material", "Rarity.Common"}, stockRange={min=4, max=10} },
     { item="Base.MalachiteLarge", basePrice=1, tags={"Building.Material", "Rarity.Common"}, stockRange={min=4, max=10} },
 
-    -- [Building.Material] [Rarity.Rare] (447 items)
+    -- [Building.Material] [Rarity.Rare] (453 items)
     { item="Base.AdhesiveTapeBox", basePrice=1, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Aluminum", basePrice=26, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.AluminumFragments", basePrice=26, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
@@ -92,6 +92,9 @@ DynamicTrading.RegisterBatch({
     { item="Base.CheeseCloth", basePrice=17, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.ChivesBagSeed_Empty", basePrice=510, tags={"Building.Material", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=100} },
     { item="Base.CilantroBagSeed_Empty", basePrice=510, tags={"Building.Material", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=100} },
+    { item="Base.CircularSawblade", basePrice=17, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.CircularSawblade_Half", basePrice=17, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
+    { item="Base.ClawhammerHead", basePrice=68, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.Clay", basePrice=6, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.Claybag", basePrice=5, tags={"Building.Material", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=10} },
     { item="Base.ClayBarMold", basePrice=6, tags={"Building.Material", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=30} },
@@ -214,6 +217,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.GreenpeasBagSeed_Empty", basePrice=510, tags={"Building.Material", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=100} },
     { item="Base.GunPowder", basePrice=27, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.HabaneroBagSeed_Empty", basePrice=510, tags={"Building.Material", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=100} },
+    { item="Base.HacksawBlade", basePrice=68, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.HandAxeHead", basePrice=3, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.HatchetHead_Bone", basePrice=3, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.HeadingTool", basePrice=3, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
@@ -380,9 +384,11 @@ DynamicTrading.RegisterBatch({
     { item="Base.SilverBar", basePrice=1, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.SilverScrap", basePrice=17, tags={"Building.Material", "Rarity.Rare", "Quality.Waste", "Quality.Waste"}, stockRange={min=0, max=100} },
     { item="Base.SilverSheet", basePrice=10, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
+    { item="Base.SledgehammerHead", basePrice=6, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.SmallCopperSheet", basePrice=10, tags={"Building.Material", "Rarity.Rare", "Origin.Police"}, stockRange={min=0, max=30} },
     { item="Base.SmallGoldBar", basePrice=1, tags={"Building.Material", "Rarity.Rare", "Quality.Luxury", "Quality.Waste"}, stockRange={min=0, max=10} },
     { item="Base.SmallHandle", basePrice=3, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
+    { item="Base.SmallSawblade", basePrice=68, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.SmallSheetMetal", basePrice=10, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.SmallSilverBar", basePrice=2, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.SmokingPipe", basePrice=6, tags={"Building.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },

@@ -81,6 +81,9 @@ def matches_food_signature(item_id, props):
     if is_drink and abs(thirst_change) >= MIN_DRINK_THIRST:
         evidence.append(0.25)
         details['thirst_change'] = thirst_change
+
+    if is_drink:
+        evidence.append(0.15)
     
     # Evidence 5: Has calories
     if calories > 0:

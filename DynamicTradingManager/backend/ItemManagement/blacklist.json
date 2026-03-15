@@ -11,7 +11,8 @@
     "TestMug",
     "Wallet_Male",
     "Wallet_Female",
-    "Wallet"
+    "Wallet",
+    "TestWaterMug"
   ],
   "properties": {
     "names": [

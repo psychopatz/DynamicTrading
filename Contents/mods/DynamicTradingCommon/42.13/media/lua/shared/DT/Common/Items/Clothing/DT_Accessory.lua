@@ -33,21 +33,16 @@ DynamicTrading.RegisterBatch({
     { item="Base.Tie_Worn", basePrice=1, tags={"Clothing.Accessory.Neck", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
     { item="Base.Tie_Worn_Spiffo", basePrice=1, tags={"Clothing.Accessory.Neck", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
 
-    -- [Clothing.Accessory.Utility] [Rarity.Rare] (15 items)
-    { item="Base.Bag_LeatherWaterBag", basePrice=14, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=6} },
+    -- [Clothing.Accessory.Utility] [Rarity.Rare] (10 items)
     { item="Base.Belt2", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
-    { item="Base.CanteenCowboy", basePrice=14, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=6} },
     { item="Base.Holster_DuctTape", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
     { item="Base.Holster_Hide", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
     { item="Base.HolsterAnkle", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
     { item="Base.HolsterDouble", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=6} },
-    { item="Base.HolsterShoulder", basePrice=20, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=6} },
     { item="Base.HolsterSimple", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
     { item="Base.HolsterSimple_Black", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
     { item="Base.HolsterSimple_Brown", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
     { item="Base.HolsterSimple_Green", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=10} },
-    { item="Base.KnapsackSprayer", basePrice=14, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=2} },
-    { item="Base.KnapsackSprayer_Stowed", basePrice=14, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=2} },
     { item="Base.RopeBelt", basePrice=1, tags={"Clothing.Accessory.Utility", "Rarity.Rare", "Clothing.Accessory"}, stockRange={min=0, max=4} },
 
     -- [Clothing.Accessory.Wrist.Watch] [Rarity.Rare] (16 items)

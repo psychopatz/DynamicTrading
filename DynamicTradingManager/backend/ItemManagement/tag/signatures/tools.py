@@ -2,6 +2,8 @@
 Tools property-based signatures.
 Detects tools through usage delta, condition, and ID patterns.
 """
+import re
+
 from .helpers import (
     extract_tags_from_props,
     get_display_category,
@@ -55,6 +57,33 @@ COOKWARE_FOODSAFE_CONTAINER_TAGS = {'base:sealedbeveragecan', 'base:emptycan', '
 MIN_TOOL_CONDITION = 3.0
 
 
+def _tokenize_identifier(value):
+    normalized = re.sub(r'[^A-Za-z0-9]+', ' ', value)
+    spaced = re.sub(r'(?<=[a-z0-9])(?=[A-Z])', ' ', normalized)
+    return [token.lower() for token in spaced.split() if token]
+
+
+def _token_spans(value):
+    tokens = [re.sub(r'\d+$', '', token) for token in _tokenize_identifier(value)]
+    tokens = [token for token in tokens if token]
+    spans = set()
+    for start in range(len(tokens)):
+        combined = ''
+        for end in range(start, min(len(tokens), start + 3)):
+            combined += tokens[end]
+            spans.add(combined)
+    return spans
+
+
+def _matches_tool_patterns(item_id, patterns):
+    item_spans = _token_spans(item_id)
+    for pattern in patterns:
+        pattern_key = ''.join(_tokenize_identifier(pattern))
+        if pattern_key and pattern_key in item_spans:
+            return True
+    return False
+
+
 def matches_tool_signature(item_id, props):
     """
     Check if item matches tool signature.
@@ -80,7 +109,7 @@ def matches_tool_signature(item_id, props):
     max_damage = analyzer.get_stat('MaxDamage')
     has_cookware_tag = bool(script_tags.intersection(COOKWARE_SCRIPT_TAGS))
     has_weak_cookware_tag = bool(script_tags.intersection(COOKWARE_WEAK_SCRIPT_TAGS))
-    is_cookware_id = id_matches_pattern(item_id, COOKWARE_TOOL_PATTERNS)
+    is_cookware_id = _matches_tool_patterns(item_id, COOKWARE_TOOL_PATTERNS)
     has_cooking_properties = any(
         analyzer.has_property(prop)
         for prop in ('IsCookable', 'PourType', 'EatType')
@@ -152,10 +181,10 @@ def matches_tool_signature(item_id, props):
     is_medical_display = display_category in {'firstaid', 'firstaidweapon'}
     is_medical_flag = analyzer.has_property('Medical', 'true') or analyzer.has_property('Medical')
     has_medical_tool_tags = bool(script_tags.intersection(MEDICAL_TOOL_TAGS))
-    is_medical_tool_id = id_matches_pattern(item_id, MEDICAL_TOOL_PATTERNS)
+    is_medical_tool_id = _matches_tool_patterns(item_id, MEDICAL_TOOL_PATTERNS)
     is_surgical_tool = (
         display_category == 'firstaidweapon' or
-        id_matches_pattern(item_id, SURGICAL_TOOL_PATTERNS)
+        _matches_tool_patterns(item_id, SURGICAL_TOOL_PATTERNS)
     )
 
     medical_tool_context = (
@@ -224,19 +253,19 @@ def matches_tool_signature(item_id, props):
     if analyzer.has_property('Type', 'Normal'):
         evidence.append(0.15)
 
-    if id_matches_pattern(item_id, TOOL_ID_PATTERNS):
+    if _matches_tool_patterns(item_id, TOOL_ID_PATTERNS):
         evidence.append(0.2)
 
-    if id_matches_pattern(item_id, CRAFTING_TOOL_PATTERNS):
+    if _matches_tool_patterns(item_id, CRAFTING_TOOL_PATTERNS):
         details['tool_type'] = 'Crafting'
         evidence.append(0.15)
-    elif id_matches_pattern(item_id, FARMING_TOOL_PATTERNS):
+    elif _matches_tool_patterns(item_id, FARMING_TOOL_PATTERNS):
         details['tool_type'] = 'Farming'
         evidence.append(0.15)
-    elif id_matches_pattern(item_id, ['Crowbar', 'Lock', 'Key']):
+    elif _matches_tool_patterns(item_id, ['Crowbar', 'Lock', 'Key']):
         details['tool_type'] = 'Utility'
         evidence.append(0.1)
-    elif id_matches_pattern(item_id, ['Flashlight', 'Lens', 'Light']):
+    elif _matches_tool_patterns(item_id, ['Flashlight', 'Lens', 'Light']):
         details['tool_type'] = 'Light'
         evidence.append(0.1)
 

@@ -11,13 +11,12 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Resource.Material] [Rarity.Rare] (50 items)
+    -- [Resource.Material] [Rarity.Rare] (46 items)
     { item="Base.BakingSoda", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.BathTowel", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.BlowTorch", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.Candle", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.CandleLit", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
-    { item="Base.CigarettePack", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.CigaretteRollingPapers", basePrice=136, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.CorrectionFluid", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.DishCloth", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
@@ -57,9 +56,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.RespiratorFiltersRecharged", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.Soap2", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.SprayPaint", basePrice=14, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
-    { item="Base.TestWaterMug", basePrice=21, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=20} },
-    { item="Base.TobaccoChewing", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
-    { item="Base.TobaccoLoose", basePrice=45, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=30} },
     { item="Base.WaterPurificationTablets", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
     { item="Base.Yeast", basePrice=68, tags={"Resource.Material", "Rarity.Rare"}, stockRange={min=0, max=50} },
 })

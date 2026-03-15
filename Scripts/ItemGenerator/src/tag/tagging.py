@@ -7,6 +7,7 @@ import re
 from ..commons.vanilla_loader import get_stat, has_property, count_learned_recipes
 from ..config import EXCLUDED_PATTERNS
 from .signatures.electronics import get_electronics_tags
+from .signatures.containers import get_container_tags
 from .signatures.clothing import get_clothing_tags
 from .signatures.food import get_food_tags
 from .signatures.medical import get_medical_tags
@@ -120,6 +121,8 @@ def _get_display_category(props):
 def _is_literature_item(item_id, props):
     item_lower = item_id.lower()
     disp_cat = _get_display_category(props)
+    if 'ItemType = base:container' in props:
+        return False
     has_media_category = bool(re.search(r"\bMediaCategory\s*=\s*", props, re.IGNORECASE))
     looks_like_media_id = bool(re.search(r"(vhs|cassette|disc_|dvd)", item_lower, re.IGNORECASE))
 
@@ -149,10 +152,6 @@ def categorize_item(item_id, props):
             return "Literature.Media", []
         return "Literature.Book", []
 
-    clothing_tags = get_clothing_tags(item_id, props)
-    if clothing_tags:
-        return clothing_tags[0], clothing_tags[1:]
-
     medical_tool_tags = _get_medical_tool_tags(item_id, props)
     if medical_tool_tags:
         return medical_tool_tags[0], medical_tool_tags[1:]
@@ -165,17 +164,17 @@ def categorize_item(item_id, props):
     if food_tags:
         return food_tags[0], food_tags[1:]
 
+    container_tags = get_container_tags(item_id, props)
+    if container_tags:
+        return container_tags[0], container_tags[1:]
+
+    clothing_tags = get_clothing_tags(item_id, props)
+    if clothing_tags:
+        return clothing_tags[0], clothing_tags[1:]
+
     cookware_tool_tags = _get_cookware_tool_tags(item_id, props)
     if cookware_tool_tags:
         return cookware_tool_tags[0], cookware_tool_tags[1:]
-
-    capacity = get_stat(props, "Capacity", 0)
-    if capacity > 0:
-        if any(x in item_id.lower() for x in ['backpack', 'bag', 'pack', 'rucksack']):
-            return "Container.Backpack", []
-        if any(x in item_id.lower() for x in ['pouch', 'holster', 'belt']):
-            return "Container.Accessory", []
-        return "Container.General", []
 
     weapon_tags = get_weapon_tags(item_id, props)
     if weapon_tags:
