@@ -50,6 +50,14 @@ DynamicTrading.RegisterBatch({
     { item="Base.TentBrown_Packed", basePrice=1, tags={"Building.Survival", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.TentGreen_Packed", basePrice=1, tags={"Building.Survival", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.TentYellow_Packed", basePrice=1, tags={"Building.Survival", "Rarity.Rare"}, stockRange={min=0, max=2} },
+
+    -- [Building.Survival.Trap] [Rarity.Common] (6 items)
+    { item="Base.TrapBox", basePrice=1, tags={"Building.Survival.Trap", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.TrapCage", basePrice=1, tags={"Building.Survival.Trap", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.TrapCrate", basePrice=1, tags={"Building.Survival.Trap", "Rarity.Common"}, stockRange={min=1, max=5} },
+    { item="Base.TrapMouse", basePrice=4, tags={"Building.Survival.Trap", "Rarity.Common"}, stockRange={min=3, max=15} },
+    { item="Base.TrapSnare", basePrice=2, tags={"Building.Survival.Trap", "Rarity.Common"}, stockRange={min=3, max=15} },
+    { item="Base.TrapStick", basePrice=1, tags={"Building.Survival.Trap", "Rarity.Common"}, stockRange={min=2, max=10} },
 })
 
 print("[DynamicTrading] Survival Registry Complete")

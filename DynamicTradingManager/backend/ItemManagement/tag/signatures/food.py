@@ -119,16 +119,38 @@ def _has_consumption_metadata(analyzer):
     )
 
 
+def _is_beverage_bundle(item_id, props, analyzer):
+    item_lower = item_id.lower()
+    recipe_value = _get_property_value(props, 'DoubleClickRecipe').lower()
+    opening_recipe = _get_property_value(props, 'OpeningRecipe').lower()
+
+    looks_like_beverage = (
+        _id_matches_tokens(item_id, DRINK_ID_PATTERNS)
+        or _id_matches_tokens(item_id, ALCOHOL_ID_PATTERNS)
+    )
+    opens_beverage_pack = 'openpackofbeer' in recipe_value or 'openpackof' in recipe_value
+    opens_single_beverage = opening_recipe.startswith('openbottleof') or opening_recipe.startswith('opencanof')
+
+    return (
+        looks_like_beverage and (
+            opens_beverage_pack or
+            opens_single_beverage or
+            ('pack' in item_lower and analyzer.has_property('DoubleClickRecipe'))
+        )
+    )
+
+
 def _is_perishable(days_fresh, days_rotten):
     return days_fresh > 0 and (days_fresh < PERISHABLE_FRESH_DAYS or days_rotten > 0)
 
 
-def _classify_food(item_id, analyzer, is_drink, is_perishable, has_animal_head_tag=False):
+def _classify_food(item_id, analyzer, is_drink, is_perishable, has_animal_head_tag=False, is_beverage_bundle=False):
     if is_drink:
         if (
             analyzer.has_property('AlcoholPower')
             or analyzer.has_property('Alcoholic')
             or _id_matches_tokens(item_id, ALCOHOL_ID_PATTERNS)
+            or (is_beverage_bundle and _id_matches_tokens(item_id, ALCOHOL_ID_PATTERNS))
         ):
             return 'Drink', 'Alcohol'
         return 'Drink', 'NonAlcoholic'
@@ -218,6 +240,7 @@ def matches_food_signature(item_id, props):
     is_can_item = _is_can_item(item_id)
     is_drink_like_item = _is_drink_like_item(item_id, analyzer)
     is_alcoholic = analyzer.has_property('AlcoholPower') or analyzer.has_property('Alcoholic')
+    is_beverage_bundle = _is_beverage_bundle(item_id, props, analyzer)
     has_food_script_tag = 'base:food' in script_tags
     has_animal_head_tag = 'base:animalhead' in script_tags
     has_animal_skull_tag = 'base:animalskull' in script_tags
@@ -236,6 +259,7 @@ def matches_food_signature(item_id, props):
     is_drink = (
         (is_drink_like_item and (non_food_type or thirst_change < 0))
         or (is_alcoholic and (is_display_food or is_type_food or is_drink_like_item))
+        or is_beverage_bundle
         or (thirst_change < 0 and hunger_change == 0 and calories == 0 and (is_display_food or is_type_food))
     )
     is_food_like_id = id_matches_pattern(item_id, FOOD_ID_PATTERNS)
@@ -247,6 +271,7 @@ def matches_food_signature(item_id, props):
         or (has_animal_head_tag and (has_freshness or is_display_animal_part or has_food_script_tag))
         or (has_animal_skull_tag and (hunger_change != 0 or has_nutrition or has_freshness or has_food_script_tag))
         or (is_food_like_id and is_can_item)
+        or is_beverage_bundle
         or (is_display_food and (is_can_item or is_drink_like_item))
         or ((is_display_food or is_type_food) and (has_nutrition or has_freshness or has_cooking_metadata or has_consumption_metadata or is_food_like_id))
         or (has_nutrition and (has_freshness or has_cooking_metadata or is_food_like_id))
@@ -264,6 +289,7 @@ def matches_food_signature(item_id, props):
         is_drink,
         is_perishable,
         has_animal_head_tag=has_animal_head_tag,
+        is_beverage_bundle=is_beverage_bundle,
     )
     details = {
         'is_food': is_food,
@@ -274,6 +300,7 @@ def matches_food_signature(item_id, props):
         'display_category': display_category,
         'type_value': type_value,
         'script_tags': script_tags,
+        'is_beverage_bundle': is_beverage_bundle,
     }
 
     if is_display_food:
@@ -319,6 +346,9 @@ def matches_food_signature(item_id, props):
 
     if has_consumption_metadata:
         evidence.append(0.1)
+
+    if is_beverage_bundle:
+        evidence.append(0.25)
 
     if analyzer.has_property('HerbalistType'):
         details['herbalist_type'] = _get_property_value(props, 'HerbalistType')

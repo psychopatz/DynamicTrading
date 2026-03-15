@@ -11,7 +11,7 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Weapon.Melee.General] [Rarity.Common] (204 items)
+    -- [Weapon.Melee.General] [Rarity.Common] (202 items)
     { item="Base.AnimalBone", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
     { item="Base.BadmintonRacket", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
     { item="Base.Banjo", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },
@@ -78,7 +78,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.Gavel", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=3, max=15} },
     { item="Base.GlassShiv", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=3, max=15} },
     { item="Base.GreenPen", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=5, max=25} },
-    { item="Base.GridlePan", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
     { item="Base.GuitarAcoustic", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },
     { item="Base.GuitarAcousticNeck_Broken", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Quality.Waste", "Weapon.Melee"}, stockRange={min=2, max=10} },
     { item="Base.GuitarElectric", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },
@@ -201,7 +200,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.TableLeg_Chain", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=0, max=2} },
     { item="Base.TableLeg_Nails", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },
     { item="Base.TennisRacket", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
-    { item="Base.TinOpener_Old", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
     { item="Base.TireIron", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=2, max=10} },
     { item="Base.Toothbrush_Shiv", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=3, max=15} },
     { item="Base.TreeBranch2", basePrice=1, tags={"Weapon.Melee.General", "Rarity.Common", "Weapon.Melee"}, stockRange={min=1, max=5} },

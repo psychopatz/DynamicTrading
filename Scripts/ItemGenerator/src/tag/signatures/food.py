@@ -34,14 +34,20 @@ def matches_food_signature(item_id, props):
         tuple: (matches: bool, confidence: float, details: dict)
     """
     analyzer = PropertyAnalyzer(props)
+    item_lower = item_id.lower()
     
     # Hard requirement: affects hunger or thirst
     hunger_change = analyzer.get_stat('HungerChange')
     thirst_change = analyzer.get_stat('ThirstChange')
     calories = analyzer.get_stat('Calories')
+    is_beverage_bundle = (
+        id_matches_pattern(item_id, ['Beer', 'Wine', 'Pop', 'Soda', 'Juice'])
+        and has_property(props, 'DoubleClickRecipe')
+        and 'pack' in item_lower
+    )
     
     is_food = hunger_change != 0
-    is_drink = thirst_change != 0 and hunger_change == 0
+    is_drink = (thirst_change != 0 and hunger_change == 0) or is_beverage_bundle
     
     if not (is_food or is_drink):
         return False, 0.0, {}
@@ -62,6 +68,9 @@ def matches_food_signature(item_id, props):
     # Evidence 2: ID pattern matches food
     if id_matches_pattern(item_id, FOOD_ID_PATTERNS):
         evidence.append(0.2)
+
+    if is_beverage_bundle:
+        evidence.append(0.25)
     
     # Evidence 3: Has hunger change (for food)
     if is_food and abs(hunger_change) >= MIN_FOOD_HUNGER:

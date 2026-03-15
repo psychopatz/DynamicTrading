@@ -1,5 +1,5 @@
 """Weapon property-based signatures used by live item categorization."""
-from .helpers import get_display_category, id_matches_pattern, PropertyAnalyzer
+from .helpers import extract_tags_from_props, get_display_category, id_matches_pattern, PropertyAnalyzer
 
 
 EXPLOSIVE_ID_PATTERNS = ['Aerosol', 'Grenade', 'Explosive', 'Bomb', 'Molotov', 'PipeBomb', 'SmokeBomb']
@@ -8,6 +8,11 @@ AXE_ID_PATTERNS = ['Axe', 'Hatchet', 'PickAxe']
 BLADE_ID_PATTERNS = ['Blade', 'Knife', 'Machete', 'Sword', 'Katana', 'Scalpel', 'Cleaver']
 BLUNT_ID_PATTERNS = ['Bat', 'Club', 'Hammer', 'Pipe', 'Wrench', 'Crowbar', 'Mallet', 'Nightstick', 'Mace']
 MAGAZINE_ID_PATTERNS = ['clip', 'magazine', 'drum']
+COOKWARE_WEAPON_PATTERNS = [
+    'BakingPan', 'BakingTray', 'FryingPan', 'GridlePan', 'GriddlePan',
+    'Saucepan', 'CookingPot', 'RoastingPan', 'Kettle',
+]
+COOKWARE_SCRIPT_TAGS = {'base:cookable', 'base:canopener'}
 
 
 def matches_weapon_signature(item_id, props):
@@ -15,11 +20,23 @@ def matches_weapon_signature(item_id, props):
     analyzer = PropertyAnalyzer(props)
     item_lower = item_id.lower()
     display_category = (get_display_category(props) or '').lower()
+    script_tags = {tag.lower() for tag in extract_tags_from_props(props)}
 
-    if display_category == 'firstaidweapon':
+    cookware_context = (
+        display_category in {'cooking', 'cookingweapon'} and (
+            id_matches_pattern(item_id, COOKWARE_WEAPON_PATTERNS) or
+            bool(script_tags.intersection(COOKWARE_SCRIPT_TAGS)) or
+            analyzer.has_property('IsCookable') or
+            analyzer.has_property('PourType') or
+            analyzer.has_property('EatType')
+        )
+    )
+
+    if display_category == 'firstaidweapon' or cookware_context:
         return False, 0.0, {
             'display_category': display_category,
-            'excluded_medical_weapon': True,
+            'excluded_medical_weapon': display_category == 'firstaidweapon',
+            'excluded_cookware_weapon': cookware_context,
             'is_firearm': False,
             'is_explosive': False,
             'is_melee': False,

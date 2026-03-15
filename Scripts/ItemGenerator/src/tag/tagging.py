@@ -54,7 +54,10 @@ def determine_quality(item_id, props):
     if any(x in item_id.lower() for x in ['gold', 'diamond', 'designer', 'expensive']):
         return "Quality.Luxury"
 
+    has_empty_hint = bool(re.search(r"Tooltip_item_empty_", props, re.IGNORECASE))
     if any(x in item_id.lower() for x in ['empty', 'dirty', 'broken', 'scrap']):
+        return "Quality.Waste"
+    if has_empty_hint:
         return "Quality.Waste"
 
     return None
@@ -100,15 +103,45 @@ def _get_medical_tool_tags(item_id, props):
     return []
 
 
+def _get_cookware_tool_tags(item_id, props):
+    """Return tool tags only for cookware-adjacent items."""
+    matches, _confidence, details = matches_tool_signature(item_id, props)
+    if matches and details.get('tool_type') == 'Cookware':
+        return get_tool_tags(item_id, props)
+    return []
+
+
+def _get_display_category(props):
+    m = re.search(r"DisplayCategory\s*=\s*([^,\n\s;]+)", props, re.IGNORECASE)
+    return m.group(1).lower() if m else ''
+
+
+def _is_literature_item(item_id, props):
+    item_lower = item_id.lower()
+    disp_cat = _get_display_category(props)
+    has_media_category = bool(re.search(r"\bMediaCategory\s*=\s*", props, re.IGNORECASE))
+    looks_like_media_id = bool(re.search(r"(vhs|cassette|disc_|dvd)", item_lower, re.IGNORECASE))
+
+    if 'Type = Literature' in props or 'SkillBook' in item_id or 'Book' in item_id or 'Magazine' in item_id:
+        return True
+    if has_media_category:
+        return True
+    if disp_cat == 'entertainment' and looks_like_media_id:
+        return True
+    return False
+
+
 def categorize_item(item_id, props):
     """
     Intelligently categorize item and generate nested tags
     Returns: (primary_tag, additional_tags[])
     """
-    if 'Type = Literature' in props or 'SkillBook' in item_id or 'Book' in item_id or 'Magazine' in item_id:
+    if _is_literature_item(item_id, props):
         recipes = count_learned_recipes(props)
         if recipes > 0:
             return "Literature.Recipe", []
+        if re.search(r"\bMediaCategory\s*=\s*", props, re.IGNORECASE) or any(x in item_id.lower() for x in ['vhs', 'cassette', 'disc_', 'dvd']):
+            return "Literature.Media", []
         if 'SkillBook' in item_id:
             return "Literature.SkillBook", []
         if 'Magazine' in item_id or 'Comic' in item_id:
@@ -139,6 +172,14 @@ def categorize_item(item_id, props):
     if medical_tags:
         return medical_tags[0], medical_tags[1:]
 
+    food_tags = get_food_tags(item_id, props)
+    if food_tags:
+        return food_tags[0], food_tags[1:]
+
+    cookware_tool_tags = _get_cookware_tool_tags(item_id, props)
+    if cookware_tool_tags:
+        return cookware_tool_tags[0], cookware_tool_tags[1:]
+
     capacity = get_stat(props, "Capacity", 0)
     if capacity > 0:
         if any(x in item_id.lower() for x in ['backpack', 'bag', 'pack', 'rucksack']):
@@ -147,21 +188,17 @@ def categorize_item(item_id, props):
             return "Container.Accessory", []
         return "Container.General", []
 
-    food_tags = get_food_tags(item_id, props)
-    if food_tags:
-        return food_tags[0], food_tags[1:]
-
     weapon_tags = get_weapon_tags(item_id, props)
     if weapon_tags:
         return weapon_tags[0], weapon_tags[1:]
 
-    tool_tags = get_tool_tags(item_id, props)
-    if tool_tags:
-        return tool_tags[0], tool_tags[1:]
-
     electronics_tags = get_electronics_tags(item_id, props)
     if electronics_tags:
         return electronics_tags[0], electronics_tags[1:]
+
+    tool_tags = get_tool_tags(item_id, props)
+    if tool_tags:
+        return tool_tags[0], tool_tags[1:]
 
     if has_property(props, "UseDelta"):
         if any(x in item_id.lower() for x in ['petrol', 'gas', 'fuel', 'propane']):

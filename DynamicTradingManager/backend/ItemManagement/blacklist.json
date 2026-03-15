@@ -8,7 +8,10 @@
     "FISH_DEV_ITEM",
     "Animal",
     "Moveable",
-    "TestMug"
+    "TestMug",
+    "Wallet_Male",
+    "Wallet_Female",
+    "Wallet"
   ],
   "properties": {
     "names": [

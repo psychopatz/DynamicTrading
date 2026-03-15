@@ -56,6 +56,7 @@ def _is_literature_item(item_id, props):
     has_type_literature = type_token in {'literature', 'base:literature'}
     has_type_map = type_token == 'base:map'
     has_map_property = bool(re.search(r"\bMap\s*=\s*", props, re.IGNORECASE))
+    has_media_category = bool(re.search(r"\bMediaCategory\s*=\s*", props, re.IGNORECASE))
     has_recipe_learning = bool(re.search(r"(LearnedRecipes|TeachedRecipes)\s*=", props, re.IGNORECASE))
     has_skill_learning = bool(re.search(r"(SkillTrained|LvlSkillTrained|NumLevelsTrained)\s*=", props, re.IGNORECASE))
     has_reading_meta = bool(re.search(r"(NumberOfPages|PageToWrite|CanBeWrite|LiteratureOnRead)\s*=", props, re.IGNORECASE))
@@ -66,6 +67,7 @@ def _is_literature_item(item_id, props):
         item_lower,
         re.IGNORECASE,
     ))
+    looks_like_media_id = bool(re.search(r"(vhs|cassette|disc_|dvd|cdplayer|cd$)", item_lower, re.IGNORECASE))
 
     # Prevent plantables/seed sacks that also expose recipe-like fields.
     is_garden_seed_like = ('bagseed' in item_lower or item_lower.endswith('seed') or '_seed' in item_lower)
@@ -82,14 +84,20 @@ def _is_literature_item(item_id, props):
         return True
     if has_map_property:
         return True
+    if has_media_category:
+        return True
     if disp_cat in LITERATURE_DISPLAY_CATS:
         return True
     if looks_like_literature_id:
         return True
+    if disp_cat == 'entertainment' and looks_like_media_id:
+        return True
     if (has_recipe_learning or has_skill_learning or has_reading_meta) and (looks_like_literature_id or disp_cat == 'reciperesource'):
         return True
 
-    return looks_like_literature_id and (has_recipe_learning or has_skill_learning or has_reading_meta)
+    return (
+        looks_like_literature_id and (has_recipe_learning or has_skill_learning or has_reading_meta)
+    ) or (looks_like_media_id and has_media_category)
 
 
 def _is_resource_part_item(item_id, props):
@@ -150,7 +158,10 @@ def determine_quality(item_id, props):
     if any(x in item_id.lower() for x in ['gold', 'diamond', 'designer', 'expensive']):
         return "Quality.Luxury"
     
+    has_empty_hint = bool(re.search(r"Tooltip_item_empty_", props, re.IGNORECASE))
     if any(x in item_id.lower() for x in ['empty', 'dirty', 'broken', 'scrap']):
+        return "Quality.Waste"
+    if has_empty_hint:
         return "Quality.Waste"
     
     return None
@@ -196,6 +207,14 @@ def _get_medical_tool_tags(item_id, props):
     return []
 
 
+def _get_cookware_tool_tags(item_id, props):
+    """Return tool tags only for cookware-adjacent items."""
+    matches, _confidence, details = matches_tool_signature(item_id, props)
+    if matches and details.get('tool_type') == 'Cookware':
+        return get_tool_tags(item_id, props)
+    return []
+
+
 def categorize_item(item_id, props):
     """
     Intelligently categorize item and generate nested tags
@@ -214,9 +233,12 @@ def categorize_item(item_id, props):
         disp_cat = _get_display_category(props)
         type_token = _get_type_token(props)
         has_map_property = bool(re.search(r"\bMap\s*=\s*", props, re.IGNORECASE))
+        has_media_category = bool(re.search(r"\bMediaCategory\s*=\s*", props, re.IGNORECASE))
 
         if recipes > 0 or has_teached or 'schematic' in item_lower or 'recipe' in item_lower:
             return "Literature.Recipe", []
+        elif has_media_category or any(x in item_lower for x in ['vhs', 'cassette', 'disc_', 'dvd']):
+            return "Literature.Media", []
         elif has_skill_learning or 'skillbook' in item_lower:
             return "Literature.SkillBook", []
         elif _is_card_item(item_lower):
@@ -256,6 +278,16 @@ def categorize_item(item_id, props):
     if medical_tags:
         return medical_tags[0], medical_tags[1:]
 
+    # === FOOD ===
+    food_tags = get_food_tags(item_id, props)
+    if food_tags:
+        return food_tags[0], food_tags[1:]
+
+    # === COOKWARE TOOLS ===
+    cookware_tool_tags = _get_cookware_tool_tags(item_id, props)
+    if cookware_tool_tags:
+        return cookware_tool_tags[0], cookware_tool_tags[1:]
+
     # === CONTAINER ===
     capacity = get_stat(props, "Capacity", 0)
     if capacity > 0:
@@ -266,15 +298,15 @@ def categorize_item(item_id, props):
         else:
             return "Container.General", []
 
-    # === FOOD ===
-    food_tags = get_food_tags(item_id, props)
-    if food_tags:
-        return food_tags[0], food_tags[1:]
-
     # === WEAPON ===
     weapon_tags = get_weapon_tags(item_id, props)
     if weapon_tags:
         return weapon_tags[0], weapon_tags[1:]
+
+    # === ELECTRONICS ===
+    electronics_tags = get_electronics_tags(item_id, props)
+    if electronics_tags:
+        return electronics_tags[0], electronics_tags[1:]
 
     # === TOOL ===
     tool_tags = get_tool_tags(item_id, props)
@@ -282,16 +314,11 @@ def categorize_item(item_id, props):
         return tool_tags[0], tool_tags[1:]
 
     # === BUILDING / CONSTRUCTION ===
-    # Let moveables and fixtures route out before electronics heuristics run.
+    # Let moveables and fixtures route out before generic resource fallback.
     building_matches, _building_conf, _building_details = matches_building_signature(item_id, props)
     if building_matches:
         building_tags = get_building_tags(item_id, props)
         return building_tags[0], building_tags[1:]
-    
-    # === ELECTRONICS ===
-    electronics_tags = get_electronics_tags(item_id, props)
-    if electronics_tags:
-        return electronics_tags[0], electronics_tags[1:]
 
     # === RESOURCE ===
     if _is_resource_part_item(item_id, props):

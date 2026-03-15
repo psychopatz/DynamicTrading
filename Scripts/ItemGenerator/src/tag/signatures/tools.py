@@ -30,6 +30,27 @@ MEDICAL_TOOL_PATTERNS = [
 ]
 SURGICAL_TOOL_PATTERNS = ['Scalpel', 'Suture', 'Forceps']
 MEDICAL_TOOL_TAGS = {'base:removeglass', 'base:removebullet', 'base:tweezers'}
+COOKWARE_TOOL_PATTERNS = [
+    'BakingPan', 'BakingTray', 'FryingPan', 'GridlePan', 'GriddlePan',
+    'Saucepan', 'CookingPot', 'RoastingPan', 'Kettle',
+    'TinOpener', 'CanOpener',
+    'BastingBrush', 'BottleOpener', 'CheeseGrater', 'GrillBrush',
+    'KitchenTongs', 'Ladle', 'MuffinTray', 'OvenMitt',
+    'PizzaCutter', 'SkewersWooden', 'Spatula', 'Strainer', 'Whisk',
+    'WoodenSpoon',
+]
+COOKWARE_SCRIPT_TAGS = {
+    'base:canopener', 'base:mixingutensil', 'base:grater', 'base:bottleopener',
+}
+COOKWARE_WEAK_SCRIPT_TAGS = {'base:cookable'}
+COOKWARE_DISPLAY_CATEGORIES = {'cooking', 'cookingweapon'}
+COOKWARE_EXCLUDE_PATTERNS = [
+    'BeerCanPack', 'BeerPack', 'BoxOfJars', 'JarLid',
+    'EmptyJar', 'JarCrafted', 'Teacup', 'Plate',
+    'PlasticFork', 'PlasticKnife', 'PlasticSpoon', 'CocktailUmbrella',
+    'Chopsticks',
+]
+COOKWARE_FOODSAFE_CONTAINER_TAGS = {'base:sealedbeveragecan', 'base:emptycan', 'base:cookablemicrowave'}
 
 MIN_TOOL_CONDITION = 3.0
 
@@ -57,6 +78,76 @@ def matches_tool_signature(item_id, props):
     script_tags = {tag.lower() for tag in extract_tags_from_props(props)}
     min_damage = analyzer.get_stat('MinDamage')
     max_damage = analyzer.get_stat('MaxDamage')
+    has_cookware_tag = bool(script_tags.intersection(COOKWARE_SCRIPT_TAGS))
+    has_weak_cookware_tag = bool(script_tags.intersection(COOKWARE_WEAK_SCRIPT_TAGS))
+    is_cookware_id = id_matches_pattern(item_id, COOKWARE_TOOL_PATTERNS)
+    has_cooking_properties = any(
+        analyzer.has_property(prop)
+        for prop in ('IsCookable', 'PourType', 'EatType')
+    )
+    is_normal_item = analyzer.has_property('ItemType', 'base:normal') or analyzer.has_property('Type', 'Normal')
+    has_world_model = analyzer.has_property('WorldStaticModel') or analyzer.has_property('StaticModel')
+    has_fluid_container = 'component fluidcontainer' in analyzer.props_lower
+    is_survival_storage = analyzer.has_property('SurvivalGear', 'true')
+    is_cookware_exclusion = id_matches_pattern(item_id, COOKWARE_EXCLUDE_PATTERNS)
+    is_foodsafe_container = bool(script_tags.intersection(COOKWARE_FOODSAFE_CONTAINER_TAGS))
+    is_food_or_junk_drink_container = (
+        display_category in {'food', 'junk'} and
+        has_fluid_container and
+        (is_foodsafe_container or analyzer.has_property('CustomDrinkSound'))
+    )
+    is_cooking_normal_tool = (
+        display_category == 'cooking' and
+        is_normal_item and
+        not has_fluid_container and
+        not is_survival_storage and
+        not is_cookware_exclusion
+    )
+    cookware_context = (
+        has_cookware_tag or
+        has_cooking_properties or
+        is_cooking_normal_tool or
+        (
+            display_category in COOKWARE_DISPLAY_CATEGORIES and
+            (is_cookware_id or has_weak_cookware_tag)
+        )
+    )
+
+    if cookware_context and not is_food_or_junk_drink_container:
+        evidence = []
+        details = {
+            'is_drainable': use_delta > 0,
+            'condition_max': condition_max,
+            'tool_type': 'Cookware',
+            'display_category': display_category or None,
+            'total_uses': 0,
+        }
+
+        if display_category in COOKWARE_DISPLAY_CATEGORIES:
+            evidence.append(0.35 if display_category == 'cookingweapon' else 0.3)
+        if has_cookware_tag:
+            evidence.append(0.35)
+        if has_weak_cookware_tag and display_category in COOKWARE_DISPLAY_CATEGORIES:
+            evidence.append(0.15)
+        if is_cookware_id:
+            evidence.append(0.25)
+        if has_cooking_properties:
+            evidence.append(0.2)
+        if is_cooking_normal_tool:
+            evidence.append(0.2)
+        if has_world_model:
+            evidence.append(0.1)
+        if condition_max >= 1:
+            evidence.append(0.1)
+        if use_delta > 0:
+            evidence.append(0.1)
+            total_uses = int(1.0 / use_delta) if use_delta > 0 else 1
+            details['total_uses'] = total_uses
+            details['use_delta'] = use_delta
+
+        confidence = min(1.0, sum(evidence)) if evidence else 0.0
+        matches = confidence >= 0.45
+        return matches, confidence, details
 
     is_medical_display = display_category in {'firstaid', 'firstaidweapon'}
     is_medical_flag = analyzer.has_property('Medical', 'true') or analyzer.has_property('Medical')

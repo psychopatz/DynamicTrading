@@ -38,7 +38,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.SunflowerHead", basePrice=8, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.SunflowerHeadDried", basePrice=8, tags={"Building.Garden", "Rarity.Rare"}, stockRange={min=0, max=10} },
 
-    -- [Building.Garden.Seed] [Rarity.Rare] (102 items)
+    -- [Building.Garden.Seed] [Rarity.Rare] (100 items)
     { item="Base.BarleyBagSeed", basePrice=510, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.BasilBagSeed", basePrice=510, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.BasilSeed", basePrice=17, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=20} },
@@ -69,8 +69,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.CornBagSeed_Empty", basePrice=510, tags={"Building.Garden.Seed", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=20} },
     { item="Base.CucumberBagSeed", basePrice=510, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.CucumberSeed", basePrice=17, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=20} },
-    { item="Base.CuttingBoardPlastic", basePrice=2, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.CuttingBoardWooden", basePrice=2, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.FlaxBagSeed", basePrice=510, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.GarlicBagSeed", basePrice=510, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.GarlicSeed", basePrice=17, tags={"Building.Garden.Seed", "Rarity.Rare"}, stockRange={min=0, max=20} },

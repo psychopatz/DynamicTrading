@@ -11,7 +11,7 @@ Tag taxonomy produced:
   Building.Vehicle      – vehicle maintenance parts (engine parts, windows …)
   Building.Garden       – gardening supplies, planting pots, compost, tools
   Building.Garden.Seed  – seeds, bulbs, saplings, and cuttings (plantable items)
-  Building.Survival     – placeable camping shelter/sleep systems (tents, sleeping bags)
+  Building.Survival.*   – placeable camping shelter/sleep systems and traps
 """
 import re
 
@@ -91,6 +91,9 @@ GARDEN_DISPLAY_CATS = {
 }
 SURVIVAL_DISPLAY_CATS = {
     'camping',
+}
+TRAPPING_DISPLAY_CATS = {
+    'trapping',
 }
 FIXTURE_DISPLAY_CATS = {
     'household',
@@ -187,6 +190,15 @@ def _matches_survival_building(item_id, props, disp_cat, script_tags):
     Detect placeable camping shelter/sleep items without catching generic
     camping supplies like repellents, tablets, or firestarters.
     """
+    is_trap_item = has_property('Trap', props, 'true')
+    if disp_cat in TRAPPING_DISPLAY_CATS or is_trap_item:
+        evidence = []
+        if disp_cat in TRAPPING_DISPLAY_CATS:
+            evidence.append('display_cat_trapping')
+        if is_trap_item:
+            evidence.append('trap_property')
+        return True, 0.88, {'survival_evidence': evidence, 'survival_subtype': 'Trap'}
+
     if disp_cat not in SURVIVAL_DISPLAY_CATS:
         return False, 0.0, {}
 
@@ -479,7 +491,7 @@ def get_building_tags(item_id, props):
     Primary tag hierarchy:
       Building.Moveable   | Building.Material   | Building.Furniture.*
       Building.Fixture.*  | Building.Vehicle    | Building.Garden
-      Building.Survival
+      Building.Survival.*
 
     Additional quality descriptors:
       Quality.Waste   when item name contains "broken"/"scrap"/"damaged"
@@ -499,6 +511,11 @@ def get_building_tags(item_id, props):
     if building_type == 'Fixture':
         fixture_subtype = details.get('fixture_subtype', 'General')
         primary_tag = f"{primary_tag}.{fixture_subtype}"
+
+    if building_type == 'Survival':
+        survival_subtype = details.get('survival_subtype')
+        if survival_subtype:
+            primary_tag = f"{primary_tag}.{survival_subtype}"
 
     tags = [primary_tag]
 

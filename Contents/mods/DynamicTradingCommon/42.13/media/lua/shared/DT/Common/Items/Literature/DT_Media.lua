@@ -16,10 +16,11 @@ DynamicTrading.RegisterBatch({
     { item="Base.MagazineWordsearch", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
     { item="Base.Mov_ComicsShopShelves", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
 
-    -- [Literature.Media] [Rarity.Rare] (76 items)
+    -- [Literature.Media] [Rarity.Rare] (79 items)
     { item="Base.ComicBook", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.ComicBook_Retail", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Cuirass_Magazine", basePrice=23, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=2} },
+    { item="Base.Disc_Retail", basePrice=28, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.GreaveMagazine_Left", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.GreaveMagazine_Right", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.LouisvilleMap1", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
@@ -92,6 +93,8 @@ DynamicTrading.RegisterBatch({
     { item="Base.TVMagazine_New", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.VambraceMagazine_Left", basePrice=134, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.VambraceMagazine_Right", basePrice=109, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.VHS_Home", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.VHS_Retail", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.WestpointMap", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
 })
 

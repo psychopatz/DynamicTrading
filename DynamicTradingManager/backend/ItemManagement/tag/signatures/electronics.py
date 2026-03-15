@@ -150,6 +150,9 @@ def matches_electronics_signature(item_id, props):
     if context['is_excluded_light_item']:
         return False, 0.0, {}
 
+    if has_property('Trap', props, 'true') or context['display_category_lower'] == 'trapping':
+        return False, 0.0, {}
+
     if not (
         context['is_radio_item'] or
         context['is_general_electronics'] or
@@ -179,18 +182,18 @@ def matches_electronics_signature(item_id, props):
         details['mic_range'] = context['mic_range']
 
         if context['is_television']:
-            details['electronics_type'] = 'Gadget.Television'
+            details['electronics_type'] = 'Television'
             evidence.append(0.15)
         elif context['is_two_way']:
             if id_matches_pattern(item_id, ['Walkie']):
-                details['electronics_type'] = 'Gadget.Radio.TwoWay.Walkie'
-            elif id_matches_pattern(item_id, ['Ham']) or not context['is_portable']:
-                details['electronics_type'] = 'Gadget.Radio.TwoWay.Ham'
+                details['electronics_type'] = 'Radio.TwoWay.Walkie'
+            elif id_matches_pattern(item_id, ['Ham', 'ManPack']) or not context['is_portable']:
+                details['electronics_type'] = 'Radio.TwoWay.Ham'
             else:
-                details['electronics_type'] = 'Gadget.Radio.TwoWay.Portable'
+                details['electronics_type'] = 'Radio.TwoWay.Portable'
             evidence.append(0.25)
         else:
-            details['electronics_type'] = 'Gadget.Radio.Broadcast'
+            details['electronics_type'] = 'Radio.Broadcast'
             evidence.append(0.2)
 
         if context['uses_battery']:
@@ -217,10 +220,10 @@ def matches_electronics_signature(item_id, props):
             'base:unlitlantern' in context['tags']
         )
         if is_lantern:
-            details['electronics_type'] = 'Gadget.Light.Lantern'
+            details['electronics_type'] = 'Light.Lantern'
             evidence.append(0.2)
         else:
-            details['electronics_type'] = 'Gadget.Light.Flashlight'
+            details['electronics_type'] = 'Light.Flashlight'
             evidence.append(0.2)
 
         if details['torch_cone']:
@@ -287,7 +290,7 @@ def matches_electronics_signature(item_id, props):
         id_matches_pattern(item_id, ['Flashlight', 'PenLight', 'HandTorch', 'LightBulb']) or
         any(tag in context['tags'] for tag in LIGHT_TAG_PATTERNS)
     ):
-        details['electronics_type'] = 'Gadget.Light.Flashlight'
+        details['electronics_type'] = 'Light.Flashlight'
         evidence.append(0.55)
     else:
         details['electronics_type'] = 'Gadget'
@@ -337,7 +340,7 @@ def get_electronics_tags(item_id, props):
         tags.append("Electronics.Communicator")
     if details.get('is_two_way'):
         tags.append("Electronics.Radio.TwoWay")
-    elif details.get('electronics_type') == 'Gadget.Radio.Broadcast':
+    elif details.get('electronics_type') == 'Radio.Broadcast':
         tags.append("Electronics.Radio.Broadcast")
     if details.get('is_portable'):
         tags.append("Electronics.Portable")

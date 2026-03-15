@@ -106,6 +106,7 @@ CATEGORY_FILE_MAP = {
     'Tool': {
         'Medical.Surgical': 'Tool/DT_Medical_Surgical.lua',
         'Medical': 'Tool/DT_Medical.lua',
+        'Cookware': 'Tool/DT_Cookware.lua',
         'Crafting': 'Tool/DT_Crafting.lua',
         'Farming': 'Tool/DT_Farming.lua',
         'Fishing': 'Tool/DT_Fishing.lua',

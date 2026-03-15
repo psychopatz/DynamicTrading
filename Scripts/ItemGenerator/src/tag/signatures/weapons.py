@@ -2,7 +2,7 @@
 Weapon property-based signatures.
 Detects weapons through damage, durability, and handling properties.
 """
-from .helpers import get_display_category, id_matches_pattern, PropertyAnalyzer
+from .helpers import extract_tags_from_props, get_display_category, id_matches_pattern, PropertyAnalyzer
 
 
 WEAPON_ID_PATTERNS = [
@@ -10,6 +10,11 @@ WEAPON_ID_PATTERNS = [
     'Knife', 'Machete', 'Sword', 'Gun', 'Pistol', 'Rifle',
     'Shotgun', 'Explosive', 'Grenade', 'Bomb', 'Molotov'
 ]
+COOKWARE_WEAPON_PATTERNS = [
+    'BakingPan', 'BakingTray', 'FryingPan', 'GridlePan', 'GriddlePan',
+    'Saucepan', 'CookingPot', 'RoastingPan', 'Kettle',
+]
+COOKWARE_SCRIPT_TAGS = {'base:cookable', 'base:canopener'}
 
 # Thresholds for weapon classification
 MIN_DAMAGE_THRESHOLD = 0.5
@@ -34,9 +39,24 @@ def matches_weapon_signature(item_id, props):
     """
     analyzer = PropertyAnalyzer(props)
     display_category = (get_display_category(props) or '').lower()
+    script_tags = {tag.lower() for tag in extract_tags_from_props(props)}
 
-    if display_category == 'firstaidweapon':
-        return False, 0.0, {'display_category': display_category, 'excluded_medical_weapon': True}
+    cookware_context = (
+        display_category in {'cooking', 'cookingweapon'} and (
+            id_matches_pattern(item_id, COOKWARE_WEAPON_PATTERNS) or
+            bool(script_tags.intersection(COOKWARE_SCRIPT_TAGS)) or
+            analyzer.has_property('IsCookable') or
+            analyzer.has_property('PourType') or
+            analyzer.has_property('EatType')
+        )
+    )
+
+    if display_category == 'firstaidweapon' or cookware_context:
+        return False, 0.0, {
+            'display_category': display_category,
+            'excluded_medical_weapon': display_category == 'firstaidweapon',
+            'excluded_cookware_weapon': cookware_context,
+        }
 
     min_dmg = analyzer.get_stat('MinDamage')
     max_dmg = analyzer.get_stat('MaxDamage')
