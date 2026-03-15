@@ -292,7 +292,7 @@ def add_new_items(vanilla_items, batch_size=50):
             else:
                 primary = item_data['primary_tag']
                 parts = primary.split('.')
-                subcat = parts[1] if len(parts) > 1 else 'General'
+                subcat = '.'.join(parts[1:]) if len(parts) > 1 else 'General'
             by_subcat[subcat].append(item_data)
 
         for subcat, subcat_items in by_subcat.items():

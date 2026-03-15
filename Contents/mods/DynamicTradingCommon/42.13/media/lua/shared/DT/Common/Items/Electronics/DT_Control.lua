@@ -1,0 +1,29 @@
+-- ============================================================================
+-- Electronics Items Registry for Dynamic Trading
+-- If you want some suggestions or have balancing issues, please report them to
+-- my discussion page. Happy to adjust prices and stock based on your feedback! :)
+-- https://steamcommunity.com/sharedfiles/filedetails/?id=3635333613
+-- ============================================================================
+
+require "DT/Common/Config"
+if not DynamicTrading then return end
+
+DynamicTrading.RegisterBatch({
+    -- The items are grouped by Primary tag and Rarity
+
+    -- [Electronics.Gadget.Control] [Rarity.Common] (1 item)
+    { item="Base.ScannerModule", basePrice=50, tags={"Electronics.Gadget.Control", "Rarity.Common"}, stockRange={min=5, max=25} },
+
+    -- [Electronics.Gadget.Control] [Rarity.Rare] (9 items)
+    { item="Base.HomeAlarm", basePrice=8, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.MotionSensor", basePrice=28, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.PowerBar", basePrice=4, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=2} },
+    { item="Base.Remote", basePrice=17, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.RemoteCraftedV1", basePrice=21, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.RemoteCraftedV2", basePrice=21, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.RemoteCraftedV3", basePrice=21, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.TimerCrafted", basePrice=17, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.TriggerCrafted", basePrice=42, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=10} },
+})
+
+print("[DynamicTrading] Control Registry Complete")

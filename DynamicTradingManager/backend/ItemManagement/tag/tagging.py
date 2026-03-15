@@ -7,13 +7,23 @@ from ..commons.vanilla_loader import get_stat, has_property, count_learned_recip
 from ..config import EXCLUDED_PATTERNS
 from .signatures.food import get_food_tags
 from .signatures.building import matches_building_signature, get_building_tags
+from .signatures.weapons import get_weapon_tags
+from .signatures.electronics import get_electronics_tags
 
 
-LITERATURE_DISPLAY_CATS = {'literature', 'skillbook', 'book'}
+LITERATURE_DISPLAY_CATS = {'literature', 'skillbook', 'book', 'reciperesource', 'cartography'}
 RESOURCE_PART_PATTERNS = [
     'AxeHead', 'HatchetHead', 'HammerHead', 'MaceHead', 'SpearHead',
     'Blade', 'SwordBlade', 'KnifeBlade', 'MacheteBlade',
     'NoTang', 'Shard', 'Mold', 'Unfired',
+]
+
+
+CARD_ID_PATTERNS = [
+    'card_',
+    'postcard',
+    'carddeck',
+    'tarotcarddeck',
 ]
 
 
@@ -23,19 +33,33 @@ def _get_display_category(props):
     return m.group(1).lower() if m else ''
 
 
+def _get_type_token(props):
+    """Extract normalized lowercase Type token from raw item properties."""
+    m = re.search(r"Type\s*=\s*([^,\n\s;]+)", props, re.IGNORECASE)
+    return m.group(1).lower() if m else ''
+
+
+def _is_card_item(item_lower):
+    """Detect greeting/deck/post cards for Literature.Cards subcategory."""
+    return any(pattern in item_lower for pattern in CARD_ID_PATTERNS)
+
+
 def _is_literature_item(item_id, props):
     """Heuristic detector for books/magazines/recipe-learning items."""
     item_lower = item_id.lower()
     disp_cat = _get_display_category(props)
+    type_token = _get_type_token(props)
 
-    has_type_literature = bool(re.search(r"Type\s*=\s*Literature\b", props, re.IGNORECASE))
+    has_type_literature = type_token in {'literature', 'base:literature'}
+    has_type_map = type_token == 'base:map'
+    has_map_property = bool(re.search(r"\bMap\s*=\s*", props, re.IGNORECASE))
     has_recipe_learning = bool(re.search(r"(LearnedRecipes|TeachedRecipes)\s*=", props, re.IGNORECASE))
     has_skill_learning = bool(re.search(r"(SkillTrained|LvlSkillTrained|NumLevelsTrained)\s*=", props, re.IGNORECASE))
     has_reading_meta = bool(re.search(r"(NumberOfPages|PageToWrite|CanBeWrite|LiteratureOnRead)\s*=", props, re.IGNORECASE))
 
     # Covers vanilla + many modded naming conventions.
     looks_like_literature_id = bool(re.search(
-        r"(skillbook|book\d*$|mag\d*$|magazine|comic|schematic|manual|guide|journal|recipeclipping)",
+        r"(skillbook|book\d*$|mag\d*$|magazine|comic|schematic|manual|guide|journal|recipeclipping|tarotcarddeck|carddeck|card_|postcard)",
         item_lower,
         re.IGNORECASE,
     ))
@@ -48,10 +72,12 @@ def _is_literature_item(item_id, props):
     # Never treat explicit ammo/weapon payloads as reading material.
     if has_property(props, "AmmoType") or has_property(props, "ProjectileCount"):
         return False
-    if re.search(r"Type\s*=\s*Weapon\b", props, re.IGNORECASE):
+    if type_token in {'weapon', 'base:weapon'}:
         return False
 
-    if has_type_literature:
+    if has_type_literature or has_type_map:
+        return True
+    if has_map_property:
         return True
     if disp_cat in LITERATURE_DISPLAY_CATS:
         return True
@@ -174,30 +200,27 @@ def categorize_item(item_id, props):
         has_teached = bool(re.search(r"TeachedRecipes\s*=", props, re.IGNORECASE))
         has_skill_learning = bool(re.search(r"(SkillTrained|LvlSkillTrained|NumLevelsTrained)\s*=", props, re.IGNORECASE))
         item_lower = item_id.lower()
+        disp_cat = _get_display_category(props)
+        type_token = _get_type_token(props)
+        has_map_property = bool(re.search(r"\bMap\s*=\s*", props, re.IGNORECASE))
 
         if recipes > 0 or has_teached or 'schematic' in item_lower or 'recipe' in item_lower:
             return "Literature.Recipe", []
         elif has_skill_learning or 'skillbook' in item_lower:
             return "Literature.SkillBook", []
+        elif _is_card_item(item_lower):
+            return "Literature.Cards", []
+        elif type_token == 'base:map' or has_map_property or disp_cat == 'cartography':
+            return "Literature.Media", []
         elif any(x in item_lower for x in ['mag', 'magazine', 'comic']):
             return "Literature.Media", []
         else:
             return "Literature.Book", []
     
     # === WEAPON ===
-    if 'Type = Weapon' in props or has_property(props, "MinDamage"):
-        if any(x in item_id for x in ['Aerosol', 'Grenade', 'Explosive', 'Bomb', 'Molotov']):
-            return "Weapon.Explosive", []
-        elif has_property(props, "AmmoType"):
-            return "Weapon.Firearm.Ranged", []
-        elif 'Axe' in item_id:
-            return "Weapon.Melee.Axe", []
-        elif any(x in item_id for x in ['Knife', 'Blade', 'Machete']):
-            return "Weapon.Melee.Blade", []
-        elif any(x in item_id for x in ['Bat', 'Club', 'Hammer', 'Pipe']):
-            return "Weapon.Melee.Blunt", []
-        else:
-            return "Weapon.Melee.General", []
+    weapon_tags = get_weapon_tags(item_id, props)
+    if weapon_tags:
+        return weapon_tags[0], weapon_tags[1:]
     
     # === CLOTHING ===
     if 'Type = Clothing' in props or has_property(props, "BodyLocation"):
@@ -239,7 +262,19 @@ def categorize_item(item_id, props):
             return "Tool.Farming", []
         else:
             return "Tool.General", []
+
+    # === BUILDING / CONSTRUCTION ===
+    # Let moveables and fixtures route out before electronics heuristics run.
+    building_matches, _building_conf, _building_details = matches_building_signature(item_id, props)
+    if building_matches:
+        building_tags = get_building_tags(item_id, props)
+        return building_tags[0], building_tags[1:]
     
+    # === ELECTRONICS ===
+    electronics_tags = get_electronics_tags(item_id, props)
+    if electronics_tags:
+        return electronics_tags[0], electronics_tags[1:]
+
     # === RESOURCE ===
     if _is_resource_part_item(item_id, props):
         return "Resource.Parts", []
@@ -249,20 +284,6 @@ def categorize_item(item_id, props):
             return "Resource.Fuel.Liquid", []
         else:
             return "Resource.Material", []
-
-    # === ELECTRONICS ===
-    if any(x in item_id for x in ['Radio', 'Walkie', 'Generator', 'Battery', 'Electronic']):
-        return "Electronics.Battery" if 'Battery' in item_id else "Electronics.Gadget", []
-
-    # === BUILDING / CONSTRUCTION ===
-    # Placed after all strictly-typed categories (Weapon, Literature, Clothing,
-    # Medical, Container, Tool, Resource, Electronics) so those take priority.
-    # Building.* catches everything that has a building DisplayCategory, Mov_*
-    # prefix, or building-material script-tags and wasn't already routed above.
-    building_matches, _building_conf, _building_details = matches_building_signature(item_id, props)
-    if building_matches:
-        building_tags = get_building_tags(item_id, props)
-        return building_tags[0], building_tags[1:]
 
     # === MISC (fallback) ===
     return "Misc.General", []

@@ -37,7 +37,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Wallet_Female", basePrice=12, tags={"Container.General", "Rarity.Common"}, stockRange={min=5, max=25} },
     { item="Base.Wallet_Male", basePrice=12, tags={"Container.General", "Rarity.Common"}, stockRange={min=5, max=25} },
 
-    -- [Container.General] [Rarity.Rare] (224 items)
+    -- [Container.General] [Rarity.Rare] (226 items)
     { item="Base.BeerCanEmpty", basePrice=13, tags={"Container.General", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=10} },
     { item="Base.BeerEmpty", basePrice=42, tags={"Container.General", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=10} },
     { item="Base.BigGasTank1", basePrice=17, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=1} },
@@ -53,6 +53,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.BucketCarved", basePrice=21, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.BucketEmpty", basePrice=42, tags={"Container.General", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=4} },
     { item="Base.BucketForged", basePrice=42, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.BucketLargeWood", basePrice=8, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.BucketWaterDebug", basePrice=42, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.BucketWood", basePrice=42, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.CanteenClay", basePrice=11, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
@@ -231,6 +232,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.SimpleSyrup", basePrice=42, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.SmallGasTank1", basePrice=15, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.SmallGasTank2", basePrice=17, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=1} },
+    { item="Base.SmallGasTank3", basePrice=15, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.Sportsbottle", basePrice=42, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Suitcase", basePrice=34, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.Tacklebox", basePrice=26, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=4} },

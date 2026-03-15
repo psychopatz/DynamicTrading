@@ -89,7 +89,6 @@ GARDEN_DISPLAY_CATS = {
     'gardening',
 }
 FIXTURE_DISPLAY_CATS = {
-    'electronics',        # low-voltage fixture electronics (not gadgets)
     'household',
 }
 
@@ -158,6 +157,17 @@ def matches_building_signature(item_id, props):
         return False, 0.0, details
     # Food / drink
     if has_property('HungerChange', props) or has_property('ThirstChange', props):
+        return False, 0.0, details
+    # Active / consumable light sources should be routed by non-building
+    # signatures instead of furniture/fixture heuristics.
+    if disp_cat in {'lightsource', 'firesource'}:
+        return False, 0.0, details
+    # Pure electronics display categories belong to the electronics pipeline.
+    if disp_cat == 'electronics':
+        return False, 0.0, details
+    # Battery-branded items should be handled by electronics even when they are
+    # used in vehicle maintenance.
+    if id_matches_pattern(item_id, ['Battery']):
         return False, 0.0, details
     # Ammunition
     if has_property('AmmoType', props) or has_property('ProjectileCount', props):

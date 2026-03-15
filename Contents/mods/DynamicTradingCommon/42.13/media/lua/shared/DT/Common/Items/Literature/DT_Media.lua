@@ -16,12 +16,21 @@ DynamicTrading.RegisterBatch({
     { item="Base.MagazineWordsearch", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
     { item="Base.Mov_ComicsShopShelves", basePrice=10, tags={"Literature.Media", "Rarity.Common"}, stockRange={min=3, max=15} },
 
-    -- [Literature.Media] [Rarity.Rare] (61 items)
+    -- [Literature.Media] [Rarity.Rare] (76 items)
     { item="Base.ComicBook", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.ComicBook_Retail", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Cuirass_Magazine", basePrice=23, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.GreaveMagazine_Left", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.GreaveMagazine_Right", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.LouisvilleMap1", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.LouisvilleMap2", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.LouisvilleMap3", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.LouisvilleMap4", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.LouisvilleMap5", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.LouisvilleMap6", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.LouisvilleMap7", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.LouisvilleMap8", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.LouisvilleMap9", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Magazine", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Magazine_Art", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Magazine_Art_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
@@ -72,12 +81,18 @@ DynamicTrading.RegisterBatch({
     { item="Base.Magazine_Tech_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Magazine_Teens", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Magazine_Teens_New", basePrice=17, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Map", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.MarchRidgeMap", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.MuldraughMap", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.RiversideMap", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.RosewoodMap", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.ThighMagazine_L", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.ThighMagazine_R", basePrice=45, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.TVMagazine", basePrice=28, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.TVMagazine_New", basePrice=21, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.VambraceMagazine_Left", basePrice=134, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.VambraceMagazine_Right", basePrice=109, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.WestpointMap", basePrice=42, tags={"Literature.Media", "Rarity.Rare"}, stockRange={min=0, max=10} },
 })
 
 print("[DynamicTrading] Media Registry Complete")

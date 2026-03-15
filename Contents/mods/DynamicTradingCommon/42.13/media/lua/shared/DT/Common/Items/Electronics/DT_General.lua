@@ -1,5 +1,5 @@
 -- ============================================================================
--- Resource Items Registry for Dynamic Trading
+-- Electronics Items Registry for Dynamic Trading
 -- If you want some suggestions or have balancing issues, please report them to
 -- my discussion page. Happy to adjust prices and stock based on your feedback! :)
 -- https://steamcommunity.com/sharedfiles/filedetails/?id=3635333613
@@ -11,4 +11,4 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
 })
 
-print("[DynamicTrading] Parts Registry Complete")
+print("[DynamicTrading] General Registry Complete")

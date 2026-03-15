@@ -1,166 +1,100 @@
-"""
-Weapon property-based signatures.
-Detects weapons through damage, durability, and handling properties.
-"""
-from .helpers import get_stat, has_property, id_matches_pattern, PropertyAnalyzer
+"""Weapon property-based signatures used by live item categorization."""
+from .helpers import get_display_category, id_matches_pattern, PropertyAnalyzer
 
 
-WEAPON_ID_PATTERNS = [
-    'Weapon', 'Blade', 'Axe', 'Hammer', 'Bat', 'Club', 'Pipe',
-    'Knife', 'Machete', 'Sword', 'Gun', 'Pistol', 'Rifle',
-    'Shotgun', 'Explosive', 'Grenade', 'Bomb', 'Molotov'
-]
-
-# Thresholds for weapon classification
-MIN_DAMAGE_THRESHOLD = 0.5
-MELEE_CONDITION_THRESHOLD = 3.0
+EXPLOSIVE_ID_PATTERNS = ['Aerosol', 'Grenade', 'Explosive', 'Bomb', 'Molotov', 'PipeBomb', 'SmokeBomb']
+FIREARM_ID_PATTERNS = ['Gun', 'Pistol', 'Rifle', 'Shotgun', 'Revolver', 'Carbine']
+AXE_ID_PATTERNS = ['Axe', 'Hatchet', 'PickAxe']
+BLADE_ID_PATTERNS = ['Blade', 'Knife', 'Machete', 'Sword', 'Katana', 'Scalpel', 'Cleaver']
+BLUNT_ID_PATTERNS = ['Bat', 'Club', 'Hammer', 'Pipe', 'Wrench', 'Crowbar', 'Mallet', 'Nightstick', 'Mace']
+MAGAZINE_ID_PATTERNS = ['clip', 'magazine', 'drum']
 
 
 def matches_weapon_signature(item_id, props):
-    """
-    Check if item matches weapon signature.
-    
-    Weapons have:
-    - MinDamage and MaxDamage properties (damage output)
-    - ConditionMax (durability)
-    - Weapon-related ID patterns
-    
-    Args:
-        item_id: Item identifier
-        props: Properties string
-    
-    Returns:
-        tuple: (matches: bool, confidence: float, details: dict)
-    """
+    """Check whether an item belongs to the weapon taxonomy."""
     analyzer = PropertyAnalyzer(props)
-    
-    # Hard requirement: has damage stats
-    min_dmg = analyzer.get_stat('MinDamage')
-    max_dmg = analyzer.get_stat('MaxDamage')
-    
-    if min_dmg < MIN_DAMAGE_THRESHOLD and max_dmg < MIN_DAMAGE_THRESHOLD:
-        return False, 0.0, {}
-    
-    # Collect evidence
-    evidence = []
-    confidence = 0.0
+    item_lower = item_id.lower()
+    display_category = (get_display_category(props) or '').lower()
+    has_damage = analyzer.get_stat('MinDamage') > 0 or analyzer.get_stat('MaxDamage') > 0
+    is_weapon_type = analyzer.has_property('Type', 'Weapon') or analyzer.has_property('Type', 'Base:Weapon')
+    has_ammo_type = analyzer.has_property('AmmoType')
+    has_magazine_type = analyzer.has_property('MagazineType')
+    has_part_mount = analyzer.has_property('MountOn') or analyzer.has_property('PartType')
+    is_magazine_name = any(pattern in item_lower for pattern in MAGAZINE_ID_PATTERNS) and 'magnesium' not in item_lower
+
     details = {
-        'min_damage': min_dmg,
-        'max_damage': max_dmg,
-        'is_melee': False,
+        'display_category': display_category,
         'is_firearm': False,
-        'is_explosive': False
+        'is_explosive': False,
+        'is_melee': False,
+        'is_magazine': False,
+        'is_part_accessory': False,
     }
-    
-    # Evidence 1: Type field says Weapon
-    if analyzer.has_property('Type', 'Weapon'):
-        evidence.append(0.3)  # Strong evidence
-        details['type_field'] = 'Weapon'
-    
-    # Evidence 2: ID pattern matches weapon
-    if id_matches_pattern(item_id, WEAPON_ID_PATTERNS):
-        evidence.append(0.2)
-    
-    # Evidence 3: Has condition (durability)
-    condition_max = analyzer.get_stat('ConditionMax')
-    if condition_max > MELEE_CONDITION_THRESHOLD:
-        evidence.append(0.2)
-        details['condition_max'] = condition_max
-        details['is_melee'] = True
-    
-    # Evidence 4: Has ammo type (firearm)
-    if analyzer.has_property('AmmoType'):
-        evidence.append(0.3)
-        details['ammo_type'] = True
-        details['is_firearm'] = True
-    
-    # Evidence 5: Has range and hit count (ranged weapon)
-    max_range = analyzer.get_stat('MaxRange')
-    hit_count = analyzer.get_stat('MaxHitcount')
-    if max_range > 1.5 or hit_count > 1:
-        evidence.append(0.15)
-        details['max_range'] = max_range
-        details['hit_count'] = hit_count
-    
-    # Evidence 6: Is explosive
-    if id_matches_pattern(item_id, ['Grenade', 'Bomb', 'Explosive', 'Molotov']):
-        evidence.append(0.25)
+
+    if display_category == 'weaponpart' or has_part_mount:
+        details['is_part_accessory'] = True
+        details['subtype'] = 'Part.Accessory'
+        return True, 0.95, details
+
+    if display_category == 'ammo':
+        if has_magazine_type or (has_ammo_type and (analyzer.has_property('CanStack', 'false') or is_magazine_name)):
+            details['is_magazine'] = True
+            details['subtype'] = 'Part.Ammo'
+            return True, 0.95, details
+
+        details['subtype'] = 'Ranged.Ammo'
+        return True, 0.9, details
+
+    # Some ammo scripts omit DisplayCategory, so fall back to ammo properties.
+    if has_ammo_type and not is_weapon_type and not has_damage:
+        if has_magazine_type or analyzer.has_property('CanStack', 'false') or is_magazine_name:
+            details['is_magazine'] = True
+            details['subtype'] = 'Part.Ammo'
+            return True, 0.92, details
+
+        details['subtype'] = 'Ranged.Ammo'
+        return True, 0.88, details
+
+    if id_matches_pattern(item_id, EXPLOSIVE_ID_PATTERNS):
         details['is_explosive'] = True
-    
-    # Classify subtype
-    if details['is_explosive']:
         details['subtype'] = 'Explosive'
-    elif details['is_firearm']:
-        details['subtype'] = 'Firearm'
-    elif details['is_melee']:
-        # Further classify melee
-        if id_matches_pattern(item_id, ['Axe']):
+        return True, 0.95, details
+
+    # Only use name-pattern subtype routing after we already know the item is a weapon.
+    if is_weapon_type or has_damage:
+        if has_ammo_type or analyzer.has_property('Ranged', 'true') or analyzer.has_property('IsAimedFirearm', 'true'):
+            details['is_firearm'] = True
+            details['subtype'] = 'Ranged.Firearm'
+            return True, 0.9, details
+
+        details['is_melee'] = True
+        if id_matches_pattern(item_id, AXE_ID_PATTERNS):
             details['subtype'] = 'Melee.Axe'
-        elif id_matches_pattern(item_id, ['Blade', 'Knife', 'Machete', 'Sword']):
+        elif id_matches_pattern(item_id, BLADE_ID_PATTERNS):
             details['subtype'] = 'Melee.Blade'
-        elif id_matches_pattern(item_id, ['Hammer', 'Bat', 'Club', 'Pipe']):
+        elif id_matches_pattern(item_id, BLUNT_ID_PATTERNS):
             details['subtype'] = 'Melee.Blunt'
         else:
             details['subtype'] = 'Melee.General'
-    else:
-        details['subtype'] = 'Unknown'
-    
-    # Calculate confidence
-    if evidence:
-        confidence = min(1.0, sum(evidence))
-    else:
-        confidence = 0.0
-    
-    # Match if confidence > 0.4
-    matches = confidence > 0.4
-    
-    return matches, confidence, details
+        return True, 0.8, details
+
+    return False, 0.0, details
 
 
 def get_weapon_tags(item_id, props):
-    """
-    Generate weapon tags based on signature match.
-    
-    Args:
-        item_id: Item identifier
-        props: Properties string
-    
-    Returns:
-        list: Tag list for this weapon
-    """
+    """Generate weapon tags based on the resolved weapon subtype."""
     matches, confidence, details = matches_weapon_signature(item_id, props)
-    
+
     if not matches:
         return []
-    
-    tags = []
-    
-    # Primary tag
-    subtype = details.get('subtype', 'General')
-    tags.append(f"Weapon.{subtype}")
-    
-    # Damage rating
-    avg_damage = (details.get('min_damage', 0) + details.get('max_damage', 0)) / 2
-    if avg_damage > 30:
-        tags.append("Weapon.HighDamage")
-    elif avg_damage > 15:
-        tags.append("Weapon.MediumDamage")
-    else:
-        tags.append("Weapon.LowDamage")
-    
-    # Reliability (condition)
-    condition = details.get('condition_max', 0)
-    if condition > 50:
-        tags.append("Weapon.Durable")
-    elif condition < 10:
-        tags.append("Weapon.Fragile")
-    
-    # Specialized tags
-    if details.get('is_firearm'):
-        tags.append("Weapon.Ranged")
-    if details.get('is_explosive'):
-        tags.append("Weapon.Area")
-    if details.get('is_melee'):
-        tags.append("Weapon.Melee")
-    
+
+    subtype = details.get('subtype', 'Melee.General')
+    tags = [f"Weapon.{subtype}"]
+
+    parents = []
+    parts = subtype.split('.')
+    for index in range(1, len(parts)):
+        parents.append(f"Weapon.{'.'.join(parts[:index])}")
+
+    tags.extend(parent for parent in parents if parent not in tags)
     return tags

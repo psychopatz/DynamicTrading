@@ -23,8 +23,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Pig_Skull_Wall", basePrice=2, tags={"Building.Furniture", "Rarity.Common"}, stockRange={min=3, max=15} },
     { item="Base.Sheep_Skull_Wall", basePrice=2, tags={"Building.Furniture", "Rarity.Common"}, stockRange={min=3, max=15} },
 
-    -- [Building.Furniture] [Rarity.Rare] (2 items)
-    { item="Base.CandleBox", basePrice=2, tags={"Building.Furniture", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    -- [Building.Furniture] [Rarity.Rare] (1 item)
     { item="Base.Frame", basePrice=2, tags={"Building.Furniture", "Rarity.Rare"}, stockRange={min=0, max=4} },
 })
 

@@ -3,16 +3,14 @@
   "itemIds": [
     "Money",
     "MoneyBundle",
-    "TestHotDrink"
+    "TestHotDrink",
+    "YardstickDEBUG",
+    "FISH_DEV_ITEM"
   ],
   "properties": {
     "names": [
       "hidden"
     ],
-    "values": {
-      "Weight": [
-        10
-      ]
-    }
+    "values": {}
   }
 }

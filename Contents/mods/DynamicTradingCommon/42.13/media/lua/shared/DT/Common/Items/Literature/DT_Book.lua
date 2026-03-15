@@ -11,7 +11,13 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Literature.Book] [Rarity.Rare] (166 items)
+    -- [Literature.Book] [Rarity.Common] (4 items)
+    { item="Base.LetterHandwritten", basePrice=50, tags={"Literature.Book", "Rarity.Common"}, stockRange={min=5, max=25} },
+    { item="Base.Note", basePrice=50, tags={"Literature.Book", "Rarity.Common"}, stockRange={min=5, max=25} },
+    { item="Base.Photo", basePrice=50, tags={"Literature.Book", "Rarity.Common"}, stockRange={min=5, max=25} },
+    { item="Base.Photo_VeryOld", basePrice=50, tags={"Literature.Book", "Rarity.Common"}, stockRange={min=5, max=25} },
+
+    -- [Literature.Book] [Rarity.Rare] (189 items)
     { item="Base.Book", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Book_AdventureNonFiction", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Book_Art", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
@@ -94,10 +100,16 @@ DynamicTrading.RegisterBatch({
     { item="Base.BookTailoringSet", basePrice=2, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.BookTrackingSet", basePrice=2, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.BookTrappingSet", basePrice=2, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=2} },
+    { item="Base.Brochure", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Catalog", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.ChildsPictureBook", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Diary1", basePrice=28, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Diary2", basePrice=28, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Doodle", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.DoodleKids", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Flier", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Flier_Nolans", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.GenericMail", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.GraphPaper", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.HollowBook", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.HollowBook_Handgun", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
@@ -108,6 +120,8 @@ DynamicTrading.RegisterBatch({
     { item="Base.HollowFancyBook", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.HottieZ", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.HottieZ_New", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.IDcard", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.IndexCard", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Journal", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.MenuCard", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Newspaper", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
@@ -119,6 +133,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Newspaper_Times_New", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Notebook", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Notepad", basePrice=42, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.OfficialDocument", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Paperback", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Paperback_AdventureNonFiction", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Paperback_Art", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
@@ -174,10 +189,24 @@ DynamicTrading.RegisterBatch({
     { item="Base.Paperback_Travel", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Paperback_TrueCrime", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Paperback_Western", basePrice=17, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Paperwork", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.ParkingTicket", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Passport", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Phonebook", basePrice=4, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=2} },
+    { item="Base.Photo_Hass", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Photo_Racy", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Photo_Secret", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.PhotoBook", basePrice=8, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.PressID", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Receipt", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.RPGmanual", basePrice=11, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.ScratchTicket", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.ScratchTicket_Loser", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.ScratchTicket_Winner", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.SewingPattern", basePrice=28, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.SheetPaper2", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.SpeedingTicket", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.StockCertificate", basePrice=85, tags={"Literature.Book", "Rarity.Rare"}, stockRange={min=0, max=10} },
 })
 
 print("[DynamicTrading] Book Registry Complete")

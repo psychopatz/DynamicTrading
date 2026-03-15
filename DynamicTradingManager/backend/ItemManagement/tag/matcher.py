@@ -29,6 +29,7 @@ SIGNATURES = [
     ('Electronics', matches_electronics_signature, get_electronics_tags),
     ('Resource', matches_resource_signature, get_resource_tags),
 ]
+SIGNATURE_ORDER = {name: index for index, (name, _, _) in enumerate(SIGNATURES)}
 
 
 def match_item(item_id, props):
@@ -61,9 +62,11 @@ def match_item(item_id, props):
             'tags': tag_func(item_id, props) if matches else []
         })
     
-    # Find best match (highest confidence, must be > 0)
-    valid_matches = [m for m in all_matches if m['confidence'] > 0]
-    
+    # Prefer signatures that explicitly matched. If none matched, keep the
+    # highest-confidence candidate for debugging/fallback visibility.
+    matched_candidates = [m for m in all_matches if m['matches']]
+    valid_matches = matched_candidates or [m for m in all_matches if m['confidence'] > 0]
+
     if not valid_matches:
         # No match found - return generic result
         return {
@@ -75,7 +78,10 @@ def match_item(item_id, props):
             'matched': False
         }
     
-    best_match = max(valid_matches, key=lambda x: x['confidence'])
+    best_match = max(
+        valid_matches,
+        key=lambda x: (x['confidence'], SIGNATURE_ORDER[x['category']])
+    )
     
     return {
         'category': best_match['category'],

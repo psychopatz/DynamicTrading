@@ -5,6 +5,7 @@ Generates nested tags based on item properties and ID patterns
 import re
 from ..commons.vanilla_loader import get_stat, has_property, count_learned_recipes
 from ..config import EXCLUDED_PATTERNS
+from .signatures.electronics import get_electronics_tags
 
 
 def is_excluded(item_id):
@@ -185,16 +186,17 @@ def categorize_item(item_id, props):
         else:
             return "Tool.General", []
     
+    # === ELECTRONICS ===
+    electronics_tags = get_electronics_tags(item_id, props)
+    if electronics_tags:
+        return electronics_tags[0], electronics_tags[1:]
+
     # === RESOURCE ===
     if has_property(props, "UseDelta"):
         if any(x in item_id.lower() for x in ['petrol', 'gas', 'fuel', 'propane']):
             return "Resource.Fuel.Liquid", []
         else:
             return "Resource.Material", []
-    
-    # === ELECTRONICS ===
-    if any(x in item_id for x in ['Radio', 'Walkie', 'Generator', 'Battery', 'Electronic']):
-        return "Electronics.Battery" if 'Battery' in item_id else "Electronics.Gadget", []
     
     # === MISC (fallback) ===
     return "Misc.General", []

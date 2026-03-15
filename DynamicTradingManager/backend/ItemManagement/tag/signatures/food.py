@@ -49,6 +49,16 @@ def _get_property_value(props, key):
     return match.group(1).strip() if match else ""
 
 
+def _extract_script_tags(props):
+    """Extract script tags from the raw `Tags = ...` property as lowercase tokens."""
+    raw = _get_property_value(props, 'Tags')
+    if not raw:
+        return []
+
+    tokens = re.split(r'[;|]', raw)
+    return [token.strip().lower() for token in tokens if token.strip()]
+
+
 def _item_tokens(item_id):
     """Split IDs like CannedMilkOpen or Water_RationCan into lowercase tokens."""
     normalized = re.sub(r'[^A-Za-z0-9]+', ' ', item_id)
@@ -114,7 +124,7 @@ def _is_perishable(days_fresh, days_rotten):
     return days_fresh > 0 and (days_fresh < PERISHABLE_FRESH_DAYS or days_rotten > 0)
 
 
-def _classify_food(item_id, analyzer, is_drink, is_perishable):
+def _classify_food(item_id, analyzer, is_drink, is_perishable, has_animal_head_tag=False):
     if is_drink:
         if (
             analyzer.has_property('AlcoholPower')
@@ -129,6 +139,9 @@ def _classify_food(item_id, analyzer, is_drink, is_perishable):
 
     if analyzer.has_property('Spice') or id_matches_pattern(item_id, SPICE_ID_PATTERNS):
         return 'Cooking', 'Spice'
+
+    if has_animal_head_tag:
+        return ('Perishable' if is_perishable else 'NonPerishable'), 'Meat'
 
     if id_matches_pattern(item_id, BAIT_ID_PATTERNS):
         return ('Perishable' if is_perishable else 'NonPerishable'), 'Bait'
@@ -189,16 +202,31 @@ def matches_food_signature(item_id, props):
     days_rotten = analyzer.get_stat('DaysTotallyRotten')
     type_value = _get_property_value(props, 'Type')
     display_category = _get_property_value(props, 'DisplayCategory')
+    script_tags = _extract_script_tags(props)
 
     has_nutrition = any(value > 0 for value in (calories, carbs, lipids, proteins))
     has_freshness = days_fresh > 0 or days_rotten > 0
     has_cooking_metadata = _has_cooking_metadata(analyzer)
     has_consumption_metadata = _has_consumption_metadata(analyzer)
     is_display_food = display_category.lower() == 'food'
+    is_display_animal_part = display_category.lower() == 'animalpart'
     is_type_food = _is_food_type(type_value)
     is_can_item = _is_can_item(item_id)
     is_drink_like_item = _is_drink_like_item(item_id, analyzer)
     is_alcoholic = analyzer.has_property('AlcoholPower') or analyzer.has_property('Alcoholic')
+    has_food_script_tag = 'base:food' in script_tags
+    has_animal_head_tag = 'base:animalhead' in script_tags
+    has_animal_skull_tag = 'base:animalskull' in script_tags
+    is_wall_or_moveable = (
+        item_id.lower().startswith('mov_')
+        or '_wall' in item_id.lower()
+        or 'base:moveable' in script_tags
+    )
+
+    # Decorative/moveable skulls should never become food from weak context.
+    if is_wall_or_moveable and not (hunger_change != 0 or thirst_change != 0 or has_nutrition or has_freshness):
+        return False, 0.0, {}
+
     is_food = hunger_change != 0 or has_nutrition or has_freshness or has_cooking_metadata
     non_food_type = not is_type_food
     is_drink = (
@@ -211,6 +239,9 @@ def matches_food_signature(item_id, props):
     has_food_context = (
         hunger_change != 0
         or thirst_change != 0
+        or has_food_script_tag
+        or (has_animal_head_tag and (has_freshness or is_display_animal_part or has_food_script_tag))
+        or (has_animal_skull_tag and (hunger_change != 0 or has_nutrition or has_freshness or has_food_script_tag))
         or (is_food_like_id and is_can_item)
         or (is_display_food and (is_can_item or is_drink_like_item))
         or ((is_display_food or is_type_food) and (has_nutrition or has_freshness or has_cooking_metadata or has_consumption_metadata or is_food_like_id))
@@ -223,7 +254,13 @@ def matches_food_signature(item_id, props):
 
     evidence = []
     is_perishable = _is_perishable(days_fresh, days_rotten)
-    food_category, food_subcategory = _classify_food(item_id, analyzer, is_drink, is_perishable)
+    food_category, food_subcategory = _classify_food(
+        item_id,
+        analyzer,
+        is_drink,
+        is_perishable,
+        has_animal_head_tag=has_animal_head_tag,
+    )
     details = {
         'is_food': is_food,
         'is_drink': is_drink,
@@ -232,6 +269,7 @@ def matches_food_signature(item_id, props):
         'food_subcategory': food_subcategory,
         'display_category': display_category,
         'type_value': type_value,
+        'script_tags': script_tags,
     }
 
     if is_display_food:
@@ -242,6 +280,15 @@ def matches_food_signature(item_id, props):
 
     if is_food_like_id:
         evidence.append(0.15)
+
+    if has_food_script_tag:
+        evidence.append(0.2)
+
+    if has_animal_head_tag:
+        evidence.append(0.25)
+
+    if has_animal_skull_tag and (hunger_change != 0 or has_nutrition or has_freshness or has_food_script_tag):
+        evidence.append(0.1)
 
     if is_can_item:
         evidence.append(0.2)
