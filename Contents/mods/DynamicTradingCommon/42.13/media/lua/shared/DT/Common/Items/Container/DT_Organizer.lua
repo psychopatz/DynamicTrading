@@ -11,7 +11,7 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Container.General] [Rarity.Common] (23 items)
+    -- [Container.General] [Rarity.Common] (20 items)
     { item="Base.BigTrunk1", basePrice=4, tags={"Container.General", "Rarity.Common"}, stockRange={min=0, max=2} },
     { item="Base.BigTrunk2", basePrice=8, tags={"Container.General", "Rarity.Common"}, stockRange={min=0, max=2} },
     { item="Base.BigTrunk3", basePrice=4, tags={"Container.General", "Rarity.Common"}, stockRange={min=0, max=2} },
@@ -32,11 +32,13 @@ DynamicTrading.RegisterBatch({
     { item="Base.TrailerTrunk2", basePrice=8, tags={"Container.General", "Rarity.Common"}, stockRange={min=0, max=2} },
     { item="Base.TrailerTrunk3", basePrice=8, tags={"Container.General", "Rarity.Common"}, stockRange={min=0, max=2} },
     { item="Base.VanSeatsTrunk2", basePrice=6, tags={"Container.General", "Rarity.Common"}, stockRange={min=0, max=2} },
-    { item="Base.Wallet", basePrice=12, tags={"Container.General", "Rarity.Common"}, stockRange={min=5, max=25} },
-    { item="Base.Wallet_Female", basePrice=12, tags={"Container.General", "Rarity.Common"}, stockRange={min=5, max=25} },
-    { item="Base.Wallet_Male", basePrice=12, tags={"Container.General", "Rarity.Common"}, stockRange={min=5, max=25} },
 
-    -- [Container.General] [Rarity.Rare] (213 items)
+    -- [Container.General] [Rarity.Rare] (218 items)
+    { item="Base.AmmoStrap_Brown_Bullets", basePrice=79, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.AmmoStrap_Brown_Shells", basePrice=79, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.AmmoStrap_Bullets", basePrice=79, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.AmmoStrap_Bullets_308", basePrice=79, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.AmmoStrap_Shells", basePrice=79, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.BeerCanEmpty", basePrice=13, tags={"Container.General", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=10} },
     { item="Base.BeerEmpty", basePrice=42, tags={"Container.General", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=10} },
     { item="Base.BigGasTank1", basePrice=17, tags={"Container.General", "Rarity.Rare"}, stockRange={min=0, max=1} },

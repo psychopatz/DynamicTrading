@@ -8,6 +8,7 @@ from ..config import EXCLUDED_PATTERNS
 from .signatures.fishing import get_fishing_tags
 from .signatures.food import get_food_tags
 from .signatures.medical import get_medical_tags
+from .signatures.clothing import get_clothing_tags
 from .signatures.building import matches_building_signature, get_building_tags
 from .signatures.tools import matches_tool_signature, get_tool_tags
 from .signatures.weapons import get_weapon_tags
@@ -251,22 +252,9 @@ def categorize_item(item_id, props):
             return "Literature.Book", []
 
     # === CLOTHING ===
-    if 'Type = Clothing' in props or has_property(props, "BodyLocation"):
-        bite = get_stat(props, "BiteDefense", 0)
-        bullet = get_stat(props, "BluntDefense", 0)
-        
-        if bullet > 70 or bite > 70:
-            return "Clothing.Armor.Heavy", []
-        elif bullet > 30 or bite > 30:
-            return "Clothing.Armor.Medium", []
-        elif any(x in item_id.lower() for x in ['hat', 'helm', 'mask', 'bandana']):
-            return "Clothing.Head", []
-        elif any(x in item_id.lower() for x in ['glove', 'mitt']):
-            return "Clothing.Hands", []
-        elif any(x in item_id.lower() for x in ['shoe', 'boot', 'sneaker']):
-            return "Clothing.Feet", []
-        else:
-            return "Clothing.General", []
+    clothing_tags = get_clothing_tags(item_id, props)
+    if clothing_tags:
+        return clothing_tags[0], clothing_tags[1:]
 
     # === MEDICAL TOOLS ===
     medical_tool_tags = _get_medical_tool_tags(item_id, props)

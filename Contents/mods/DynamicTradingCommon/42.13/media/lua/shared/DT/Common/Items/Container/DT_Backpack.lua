@@ -11,7 +11,10 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
-    -- [Container.Backpack] [Rarity.Rare] (170 items)
+    -- [Container.Backpack] [Rarity.Rare] (181 items)
+    { item="Base.Bag_ALICE_BeltSus", basePrice=459, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Bag_ALICE_BeltSus_Camo", basePrice=459, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Bag_ALICE_BeltSus_Green", basePrice=459, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Bag_ALICEpack", basePrice=110, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.Bag_ALICEpack_Army", basePrice=110, tags={"Container.Backpack", "Rarity.Rare", "Origin.Militia"}, stockRange={min=0, max=2} },
     { item="Base.Bag_ALICEpack_DesertCamo", basePrice=110, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=2} },
@@ -31,6 +34,8 @@ DynamicTrading.RegisterBatch({
     { item="Base.Bag_BowlingBallBag", basePrice=38, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_BreakdownBag", basePrice=126, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_BurglarBag", basePrice=126, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.Bag_ChestRig", basePrice=393, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Bag_ChestRig_Tarp", basePrice=393, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=6} },
     { item="Base.Bag_ClothSatchel_Burlap", basePrice=84, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_ClothSatchel_Cotton", basePrice=84, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_ClothSatchel_Denim", basePrice=84, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
@@ -49,6 +54,12 @@ DynamicTrading.RegisterBatch({
     { item="Base.Bag_DoctorBag", basePrice=51, tags={"Container.Backpack", "Rarity.Rare", "Origin.Clinical"}, stockRange={min=0, max=4} },
     { item="Base.Bag_DuffelBag", basePrice=126, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_DuffelBagTINT", basePrice=126, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.Bag_FannyPackBack", basePrice=39, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Bag_FannyPackBack_Hide", basePrice=35, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Bag_FannyPackBack_Tarp", basePrice=34, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Bag_FannyPackFront", basePrice=39, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Bag_FannyPackFront_Hide", basePrice=35, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Bag_FannyPackFront_Tarp", basePrice=34, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=10} },
     { item="Base.Bag_FishingBasket", basePrice=26, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_FluteCase", basePrice=6, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.Bag_FoodSnacks", basePrice=126, tags={"Container.Backpack", "Rarity.Rare"}, stockRange={min=0, max=4} },
