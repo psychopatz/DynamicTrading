@@ -12,16 +12,16 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Medical.General.Pills] [Rarity.Rare] (10 items)
-    { item="Base.AlcoholedCottonBalls", basePrice=1756, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=13} },
-    { item="Base.AlcoholWipes", basePrice=2294, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=6} },
-    { item="Base.Antibiotics", basePrice=1683, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
-    { item="Base.AntibioticsBox", basePrice=1717, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=3} },
-    { item="Base.Pills", basePrice=3030, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
-    { item="Base.PillsAntiDep", basePrice=3067, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
-    { item="Base.PillsBeta", basePrice=3070, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
-    { item="Base.PillsSleepingTablets", basePrice=3065, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
-    { item="Base.Tissue", basePrice=1675, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
-    { item="Base.TissueBox", basePrice=1678, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=3} },
+    { item="Base.AlcoholedCottonBalls", basePrice=181, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=13} },
+    { item="Base.AlcoholWipes", basePrice=216, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=6} },
+    { item="Base.Antibiotics", basePrice=109, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
+    { item="Base.AntibioticsBox", basePrice=142, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=3} },
+    { item="Base.Pills", basePrice=321, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
+    { item="Base.PillsAntiDep", basePrice=359, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
+    { item="Base.PillsBeta", basePrice=361, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
+    { item="Base.PillsSleepingTablets", basePrice=356, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
+    { item="Base.Tissue", basePrice=100, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=9} },
+    { item="Base.TissueBox", basePrice=104, tags={"Medical.General.Pills", "Rarity.Rare", "Origin.Vanilla", "Medical.Consumable"}, stockRange={min=0, max=3} },
 })
 
 print("[DynamicTrading] Pills Registry Complete")

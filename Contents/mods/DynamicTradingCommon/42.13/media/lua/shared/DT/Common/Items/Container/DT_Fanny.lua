@@ -12,12 +12,12 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Container.Bag.Fanny] [Rarity.Rare] (6 items)
-    { item="Base.Bag_FannyPackBack", basePrice=2374, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
-    { item="Base.Bag_FannyPackBack_Hide", basePrice=2355, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=11} },
-    { item="Base.Bag_FannyPackBack_Tarp", basePrice=2350, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=11} },
-    { item="Base.Bag_FannyPackFront", basePrice=2374, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
-    { item="Base.Bag_FannyPackFront_Hide", basePrice=2355, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=11} },
-    { item="Base.Bag_FannyPackFront_Tarp", basePrice=2350, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_FannyPackBack", basePrice=219, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_FannyPackBack_Hide", basePrice=200, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_FannyPackBack_Tarp", basePrice=195, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_FannyPackFront", basePrice=219, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_FannyPackFront_Hide", basePrice=200, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_FannyPackFront_Tarp", basePrice=195, tags={"Container.Bag.Fanny", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Tiny", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=11} },
 })
 
 print("[DynamicTrading] Fanny Registry Complete")

@@ -12,10 +12,10 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Gadget.Audio] [Rarity.Rare] (4 items)
-    { item="Base.Amplifier", basePrice=610, tags={"Electronics.Gadget.Audio", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.Earbuds", basePrice=518, tags={"Electronics.Gadget.Audio", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=7} },
-    { item="Base.Speaker", basePrice=691, tags={"Electronics.Gadget.Audio", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=2} },
-    { item="Base.VideoGame", basePrice=598, tags={"Electronics.Gadget.Audio", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=2} },
+    { item="Base.Amplifier", basePrice=138, tags={"Electronics.Gadget.Audio", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.Earbuds", basePrice=45, tags={"Electronics.Gadget.Audio", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=7} },
+    { item="Base.Speaker", basePrice=218, tags={"Electronics.Gadget.Audio", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=2} },
+    { item="Base.VideoGame", basePrice=126, tags={"Electronics.Gadget.Audio", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=2} },
 })
 
 print("[DynamicTrading] Audio Registry Complete")

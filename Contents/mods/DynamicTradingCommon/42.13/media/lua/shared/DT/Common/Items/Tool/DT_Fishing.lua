@@ -12,9 +12,9 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Tool.Fishing] [Rarity.Common] (3 items)
-    { item="Base.FishingRod", basePrice=244, tags={"Tool.Fishing", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
-    { item="Base.FishingRodBreak", basePrice=244, tags={"Tool.Fishing", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
-    { item="Base.Gaffhook", basePrice=245, tags={"Tool.Fishing", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
+    { item="Base.FishingRod", basePrice=42, tags={"Tool.Fishing", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
+    { item="Base.FishingRodBreak", basePrice=42, tags={"Tool.Fishing", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
+    { item="Base.Gaffhook", basePrice=43, tags={"Tool.Fishing", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
 })
 
 print("[DynamicTrading] Fishing Registry Complete")

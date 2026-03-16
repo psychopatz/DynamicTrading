@@ -12,10 +12,10 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Tool.General] [Rarity.Rare] (4 items)
-    { item="Base.Fleshing_Tool", basePrice=549, tags={"Tool.General", "Rarity.Rare", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=4} },
-    { item="Base.Fleshing_Tool_Bone", basePrice=530, tags={"Tool.General", "Rarity.Rare", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=4} },
-    { item="Base.KnappingTool", basePrice=570, tags={"Tool.General", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=6} },
-    { item="Base.SheepElectricShears", basePrice=688, tags={"Tool.General", "Rarity.Rare", "Origin.Vanilla", "Tool.HighUse"}, stockRange={min=0, max=4} },
+    { item="Base.Fleshing_Tool", basePrice=76, tags={"Tool.General", "Rarity.Rare", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=4} },
+    { item="Base.Fleshing_Tool_Bone", basePrice=57, tags={"Tool.General", "Rarity.Rare", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=4} },
+    { item="Base.KnappingTool", basePrice=97, tags={"Tool.General", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=6} },
+    { item="Base.SheepElectricShears", basePrice=216, tags={"Tool.General", "Rarity.Rare", "Origin.Vanilla", "Tool.HighUse"}, stockRange={min=0, max=4} },
 })
 
 print("[DynamicTrading] General Registry Complete")

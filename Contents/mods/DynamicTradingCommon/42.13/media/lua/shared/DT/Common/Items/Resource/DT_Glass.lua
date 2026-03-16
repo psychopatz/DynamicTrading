@@ -12,12 +12,12 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Resource.Material.Glass] [Rarity.Rare] (6 items)
-    { item="Base.CrudeSword_Shard", basePrice=968, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=8} },
-    { item="Base.GlassPanel", basePrice=963, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=14} },
-    { item="Base.Katana_Shard", basePrice=983, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=6} },
-    { item="Base.LanternGlass", basePrice=963, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=6} },
-    { item="Base.Sword_Scrap_Shard", basePrice=291, tags={"Resource.Material.Glass", "Rarity.Rare", "Quality.Waste", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=9} },
-    { item="Base.Sword_Shard", basePrice=983, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=6} },
+    { item="Base.CrudeSword_Shard", basePrice=64, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=8} },
+    { item="Base.GlassPanel", basePrice=58, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=14} },
+    { item="Base.Katana_Shard", basePrice=78, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=6} },
+    { item="Base.LanternGlass", basePrice=58, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=6} },
+    { item="Base.Sword_Scrap_Shard", basePrice=19, tags={"Resource.Material.Glass", "Rarity.Rare", "Quality.Waste", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=9} },
+    { item="Base.Sword_Shard", basePrice=78, tags={"Resource.Material.Glass", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=6} },
 })
 
 print("[DynamicTrading] Glass Registry Complete")

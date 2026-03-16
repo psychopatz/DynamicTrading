@@ -12,18 +12,18 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Clothing.FullBody] [Rarity.Rare] (12 items)
-    { item="Base.Boilersuit", basePrice=612, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated"}, stockRange={min=0, max=12} },
-    { item="Base.Boilersuit_BlueRed", basePrice=612, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated"}, stockRange={min=0, max=12} },
-    { item="Base.Boilersuit_Flying", basePrice=614, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=12} },
-    { item="Base.Boilersuit_Prisoner", basePrice=608, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.Boilersuit_PrisonerKhaki", basePrice=606, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.Boilersuit_SWAT", basePrice=1067, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.Tactical"}, stockRange={min=0, max=12} },
-    { item="Base.Boilersuit_Yellow", basePrice=612, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated"}, stockRange={min=0, max=12} },
-    { item="Base.LongJohns", basePrice=602, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.LongJohns_Crafted_Burlap", basePrice=604, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.LongJohns_Crafted_Cotton", basePrice=602, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.SpiffoSuit", basePrice=610, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=12} },
-    { item="Base.WeddingDress", basePrice=599, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.Boilersuit", basePrice=51, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated"}, stockRange={min=0, max=12} },
+    { item="Base.Boilersuit_BlueRed", basePrice=51, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated"}, stockRange={min=0, max=12} },
+    { item="Base.Boilersuit_Flying", basePrice=53, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=12} },
+    { item="Base.Boilersuit_Prisoner", basePrice=46, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.Boilersuit_PrisonerKhaki", basePrice=45, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.Boilersuit_SWAT", basePrice=74, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.Tactical"}, stockRange={min=0, max=12} },
+    { item="Base.Boilersuit_Yellow", basePrice=51, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated"}, stockRange={min=0, max=12} },
+    { item="Base.LongJohns", basePrice=41, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.LongJohns_Crafted_Burlap", basePrice=43, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.LongJohns_Crafted_Cotton", basePrice=41, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.SpiffoSuit", basePrice=49, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=12} },
+    { item="Base.WeddingDress", basePrice=38, tags={"Clothing.FullBody", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
 })
 
 print("[DynamicTrading] FullBody Registry Complete")

@@ -12,21 +12,21 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Weapon.Melee.Axe] [Rarity.Common] (15 items)
-    { item="Base.Axe", basePrice=584, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.Axe_Old", basePrice=584, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.Axe_Sawblade", basePrice=548, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.Axe_Sawblade_Hatchet", basePrice=533, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.Axe_ScrapCleaver", basePrice=177, tags={"Weapon.Melee.Axe", "Rarity.Common", "Quality.Waste", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.AxeStone", basePrice=549, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.HandAxe", basePrice=547, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
-    { item="Base.HandAxe_Old", basePrice=546, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.HandAxeForged", basePrice=547, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
-    { item="Base.Hatchet_Bone", basePrice=543, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
-    { item="Base.IceAxe", basePrice=547, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.JawboneBovide_Axe", basePrice=549, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.StoneAxeLarge", basePrice=595, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.WoodAxe", basePrice=646, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.WoodAxeForged", basePrice=637, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.Axe", basePrice=136, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.Axe_Old", basePrice=136, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.Axe_Sawblade", basePrice=100, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.Axe_Sawblade_Hatchet", basePrice=85, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.Axe_ScrapCleaver", basePrice=42, tags={"Weapon.Melee.Axe", "Rarity.Common", "Quality.Waste", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.AxeStone", basePrice=101, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.HandAxe", basePrice=99, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
+    { item="Base.HandAxe_Old", basePrice=98, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.HandAxeForged", basePrice=99, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
+    { item="Base.Hatchet_Bone", basePrice=95, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=6} },
+    { item="Base.IceAxe", basePrice=99, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.JawboneBovide_Axe", basePrice=101, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.StoneAxeLarge", basePrice=147, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.WoodAxe", basePrice=198, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.WoodAxeForged", basePrice=189, tags={"Weapon.Melee.Axe", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
 })
 
 print("[DynamicTrading] Axe Registry Complete")

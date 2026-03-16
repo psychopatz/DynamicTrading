@@ -12,24 +12,24 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Clothing.Face] [Rarity.Common] (12 items)
-    { item="Base.Hat_BandanaMask", basePrice=283, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=23} },
-    { item="Base.Hat_BandanaMask_Green", basePrice=283, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=23} },
-    { item="Base.Hat_BandanaMaskTINT", basePrice=283, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=23} },
-    { item="Base.Hat_HalloweenMaskDevil", basePrice=289, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
-    { item="Base.Hat_HalloweenMaskMonster", basePrice=289, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
-    { item="Base.Hat_HalloweenMaskPumpkin", basePrice=289, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
-    { item="Base.Hat_HalloweenMaskSkeleton", basePrice=289, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
-    { item="Base.Hat_HalloweenMaskVampire", basePrice=289, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
-    { item="Base.Hat_HalloweenMaskWitch", basePrice=289, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
-    { item="Base.Hat_RagBandanaMask", basePrice=283, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=23} },
-    { item="Base.Hat_SurgicalMask", basePrice=316, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Theme.Clinical"}, stockRange={min=3, max=17} },
-    { item="Base.WeldingMask", basePrice=696, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.Protective", "Clothing.BiteResistant", "Clothing.ScratchResistant", "Clothing.WindResistant"}, stockRange={min=4, max=23} },
+    { item="Base.Hat_BandanaMask", basePrice=20, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=23} },
+    { item="Base.Hat_BandanaMask_Green", basePrice=20, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=23} },
+    { item="Base.Hat_BandanaMaskTINT", basePrice=20, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=23} },
+    { item="Base.Hat_HalloweenMaskDevil", basePrice=26, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
+    { item="Base.Hat_HalloweenMaskMonster", basePrice=26, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
+    { item="Base.Hat_HalloweenMaskPumpkin", basePrice=26, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
+    { item="Base.Hat_HalloweenMaskSkeleton", basePrice=26, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
+    { item="Base.Hat_HalloweenMaskVampire", basePrice=26, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
+    { item="Base.Hat_HalloweenMaskWitch", basePrice=26, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.WindResistant"}, stockRange={min=2, max=14} },
+    { item="Base.Hat_RagBandanaMask", basePrice=20, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=23} },
+    { item="Base.Hat_SurgicalMask", basePrice=22, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Theme.Clinical"}, stockRange={min=3, max=17} },
+    { item="Base.WeldingMask", basePrice=86, tags={"Clothing.Face", "Rarity.Common", "Origin.Vanilla", "Clothing.Protective", "Clothing.BiteResistant", "Clothing.ScratchResistant", "Clothing.WindResistant"}, stockRange={min=4, max=23} },
 
     -- [Clothing.Face] [Rarity.Rare] (4 items)
-    { item="Base.Hat_BalaclavaFace", basePrice=618, tags={"Clothing.Face", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=7} },
-    { item="Base.Hat_BalaclavaFull", basePrice=624, tags={"Clothing.Face", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=7} },
-    { item="Base.ShemaghScarfFace", basePrice=623, tags={"Clothing.Face", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=7} },
-    { item="Base.ShemaghScarfFace_Green", basePrice=623, tags={"Clothing.Face", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=7} },
+    { item="Base.Hat_BalaclavaFace", basePrice=57, tags={"Clothing.Face", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=7} },
+    { item="Base.Hat_BalaclavaFull", basePrice=62, tags={"Clothing.Face", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=7} },
+    { item="Base.ShemaghScarfFace", basePrice=62, tags={"Clothing.Face", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=7} },
+    { item="Base.ShemaghScarfFace_Green", basePrice=62, tags={"Clothing.Face", "Rarity.Rare", "Origin.Vanilla", "Clothing.Insulated", "Clothing.WindResistant"}, stockRange={min=0, max=7} },
 })
 
 print("[DynamicTrading] Face Registry Complete")
