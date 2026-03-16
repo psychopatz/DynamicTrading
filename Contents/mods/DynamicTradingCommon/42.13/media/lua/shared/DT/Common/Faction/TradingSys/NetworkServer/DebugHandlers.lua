@@ -15,10 +15,24 @@ require "DT/Common/ServerHelpers"
 local DebugHandlers = {}
 local Handlers = {}
 
+local function hasAdminAccess(player)
+    if not player or not player.getAccessLevel then
+        return false
+    end
+
+    local accessLevel = player:getAccessLevel()
+    return accessLevel and string.lower(tostring(accessLevel)) == "admin"
+end
+
 -- =============================================================================
 -- FACTION DATA REQUEST
 -- =============================================================================
 Handlers.RequestFactionData = function(player, args)
+    if not hasAdminAccess(player) then
+        DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized RequestFactionData attempt by " .. tostring(player and player:getUsername() or "unknown"))
+        return
+    end
+
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
     local stockData = ModData.get("DynamicTrading_Stock") or {}
@@ -47,6 +61,11 @@ end
 
 -- [ON-DEMAND ROSTER REQUEST]
 Handlers.RequestFactionRoster = function(player, args)
+    if not hasAdminAccess(player) then
+        DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized RequestFactionRoster attempt by " .. tostring(player and player:getUsername() or "unknown"))
+        return
+    end
+
     local factionID = args.factionID
     if not factionID then return end
     
@@ -72,9 +91,8 @@ end
 -- DEBUG & ADMIN COMMANDS
 -- =============================================================================
 Handlers.DebugCommand = function(player, args)
-    -- Security Check: Only allow if Debug is on OR player is an Admin
-    if not (isAdmin() or isDebugEnabled()) then 
-        DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized DebugCommand attempt by " .. player:getUsername())
+    if not hasAdminAccess(player) then 
+        DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized DebugCommand attempt by " .. tostring(player and player:getUsername() or "unknown"))
         return 
     end
     

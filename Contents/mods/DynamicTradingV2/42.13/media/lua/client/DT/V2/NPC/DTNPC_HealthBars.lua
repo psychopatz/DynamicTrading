@@ -67,6 +67,20 @@ local function getColorForRatio(ratio)
     return { r = 0.8, g = 0.15, b = 0.15, a = 1 }
 end
 
+local function isIncapacitatedState(npcData)
+    return npcData and npcData.state == "Incapacitated"
+end
+
+local function getIncapacitatedBarColor(currentTime)
+    local pulse = (math.sin(currentTime / 140) + 1) * 0.5
+    return {
+        r = 0.35 + (0.2 * pulse),
+        g = 0.03 + (0.04 * pulse),
+        b = 0.03 + (0.04 * pulse),
+        a = 0.8 + (0.2 * pulse),
+    }
+end
+
 local function isCombatState(npcData)
     if not npcData then return false end
 
@@ -154,6 +168,7 @@ local function touchTrackedEntry(entry, zombie, npcData, outfitID, currentTime)
 
     if npcData then
         entry.npcData = npcData
+        entry.isIncapacitated = isIncapacitatedState(npcData) or false
         cacheNameMetrics(entry, npcData.name)
         entry.currentHp, entry.maxHp = resolveHealth(npcData, zombie or entry.zombie, entry.maxHp)
 
@@ -179,6 +194,7 @@ local function getTrackedEntry(uuid)
         nameWidth = textManager:MeasureStringX(FONT_NAME, "Unknown"),
         currentHp = 1,
         maxHp = 1,
+        isIncapacitated = false,
         visibleUntil = 0,
         lastSeenAt = getTimeInMillis(),
         nextResolveAt = 0,
@@ -346,7 +362,9 @@ function ISDTNPCHealthBarManager:render()
 
                 if barData.visibleUntil and currentTime <= barData.visibleUntil then
                     local hpRatio = getHealthRatio(barData.currentHp, barData.maxHp)
-                    local hpColor = getColorForRatio(hpRatio)
+                    local hpColor = barData.isIncapacitated
+                        and getIncapacitatedBarColor(currentTime)
+                        or getColorForRatio(hpRatio)
                     local barLeft = screenX - (barWidth / 2)
                     local barTop = screenY - barYOffset
 
@@ -376,9 +394,9 @@ function ISDTNPCHealthBarManager:render()
                         barWidth + (PADDING * 2),
                         barHeight + (PADDING * 2),
                         alpha,
-                        0.4,
-                        0.4,
-                        0.4
+                        barData.isIncapacitated and math.min(1, hpColor.r + 0.08) or 0.4,
+                        barData.isIncapacitated and hpColor.g or 0.4,
+                        barData.isIncapacitated and hpColor.b or 0.4
                     )
                 end
             end
@@ -466,6 +484,7 @@ function ISDTNPCHealthBarManager:update()
                         zombie = zombie,
                         currentHp = tracked.currentHp,
                         maxHp = tracked.maxHp,
+                        isIncapacitated = tracked.isIncapacitated,
                         previousHp = tracked.currentHp,
                         name = tracked.name or "Unknown",
                         nameWidth = tracked.nameWidth or textManager:MeasureStringX(FONT_NAME, tracked.name or "Unknown"),
@@ -476,6 +495,7 @@ function ISDTNPCHealthBarManager:update()
                     barData.zombie = zombie
                     barData.currentHp = tracked.currentHp
                     barData.maxHp = tracked.maxHp
+                    barData.isIncapacitated = tracked.isIncapacitated
                     barData.name = tracked.name or barData.name or "Unknown"
                     barData.nameWidth = tracked.nameWidth or barData.nameWidth
                     barData.visibleUntil = math.max(barData.visibleUntil or 0, tracked.visibleUntil or 0)

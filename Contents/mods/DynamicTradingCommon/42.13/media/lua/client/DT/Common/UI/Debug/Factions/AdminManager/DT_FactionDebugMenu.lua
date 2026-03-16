@@ -10,13 +10,21 @@ require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugWindow"
 
 DT_FactionDebugMenu = DT_FactionDebugMenu or {}
 
+local function hasAdminAccess(playerObj)
+    if not playerObj or not playerObj.getAccessLevel then
+        return false
+    end
+
+    local accessLevel = playerObj:getAccessLevel()
+    return accessLevel and string.lower(tostring(accessLevel)) == "admin"
+end
+
 -- ==========================================================
 -- CONTEXT MENU BUILDER
 -- ==========================================================
 DT_FactionDebugMenu.OnFillWorldObjectContextMenu = function(playerNum, context, worldobjects, test)
     local playerObj = getSpecificPlayer(playerNum)
-    -- Only allow Admin access
-    if playerObj:getAccessLevel() == "None" then return end
+    if not hasAdminAccess(playerObj) then return end
 
     -- Main Debug Entry
     local mainOption = context:addOption("[Admin] Dynamic Trading", worldobjects, nil)
