@@ -8,7 +8,11 @@ DynamicTrading.RegisterArchetype("Designer", {
         { tags={"Misc.Decor"}, count = 10 },
         { tags={"Resource.Material.Build"}, count = 4 },
         { tags={"Appliance.General"}, count = 4 },
-        { tags={"Container.Organizer"}, count = 3 }
+        { tags={"Container.Organizer"}, count = 3 },
+        { tags={"Building.Fixture.Appliance"}, count = 1 },
+        { tags={"Building.Furniture.Counter"}, count = 4 },
+        { tags={"Building.Furniture.Bed"}, count = 1 },
+        { tags={"Building.Furniture.General"}, count = 1 }
     },
     wants = {
         ["Tool.Cleaning"] = 1.3,

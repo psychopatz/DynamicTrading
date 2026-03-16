@@ -1,5 +1,6 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any, Union
 import sys
@@ -62,6 +63,10 @@ CONSOLE_PATH = os.getenv("CONSOLE_PATH", "/home/psychopatz/Zomboid/console.txt")
 debug_parser = LogParser(CONSOLE_PATH)
 
 app = FastAPI(title="Dynamic Trading Manager API")
+
+PORTRAITS_ROOT = Path(__file__).resolve().parents[2] / "Contents/mods/DynamicTradingCommon/42.13/media/ui/Portraits"
+if PORTRAITS_ROOT.exists():
+    app.mount("/static/portraits", StaticFiles(directory=str(PORTRAITS_ROOT)), name="dt-portraits")
 
 # Enable CORS for frontend
 app.add_middleware(
@@ -156,8 +161,17 @@ class ArchetypeAllocationEntryRequest(BaseModel):
     item_id: Optional[str] = None
 
 
+class ArchetypeWantEntryRequest(BaseModel):
+    tag: str
+    multiplier: float
+
+
 class ArchetypeSaveRequest(BaseModel):
+    name: str
     allocations: List[ArchetypeAllocationEntryRequest]
+    expert_tags: List[str] = []
+    wants: List[ArchetypeWantEntryRequest] = []
+    forbid: List[str] = []
 
 # Global state (cache items)
 cached_vanilla_items = None
@@ -554,14 +568,14 @@ async def get_archetype_editor_data():
 @app.put("/api/archetypes/{archetype_id}/allocations")
 async def update_archetype_allocations(archetype_id: str, request: ArchetypeSaveRequest):
     try:
-        payload = save_archetype_allocations(
+        payload = save_archetype_definition(
             archetype_id,
-            [entry.model_dump() for entry in request.allocations],
+            request.model_dump(),
         )
         return {
             "success": True,
             "archetype_id": archetype_id,
-            "data": payload,
+            "archetype": payload,
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -594,7 +608,7 @@ async def get_debug_logs(
 
 try:
     from Simulation.config import BuildConfig, default_paths
-    from Simulation.archetype_editor import load_archetype_editor_data, save_archetype_allocations
+    from Simulation.archetype_editor import load_archetype_editor_data, save_archetype_definition
     from Simulation.export.database_builder import build_database
 except ImportError as e:
     logger.error(f"Error importing Simulation modules: {e}")

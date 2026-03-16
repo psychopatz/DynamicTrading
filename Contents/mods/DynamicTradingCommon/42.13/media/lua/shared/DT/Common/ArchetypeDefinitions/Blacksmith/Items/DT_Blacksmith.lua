@@ -4,17 +4,19 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Blacksmith", {
     name = "Blacksmith",
     allocations = {
-        { tags={"Tool.Smithing"}, count = 8 },
-        { tags={"Resource.Material.Metal"}, count = 6 },
-        { tags={"Quality.Heavy"}, count = 4 },
-        { tags={"Resource.Fuel.Solid"}, count = 3 }
+        { tags={"Resource.Material.Metal"}, count = 8 },
+        { tags={"Resource.Material.MetalForm"}, count = 4 },
+        { tags={"Resource.Fuel.Solid"}, count = 3 },
+        { tags={"Resource.Material.Glass"}, count = 1 },
+        { tags={"Resource.Material.Hardware"}, count = 1 },
+        { tags={"Resource.Material.MetalFamily"}, count = 1 }
     },
     wants = {
         ["Resource.Fuel"] = 1.4,
-        ["Container.Fluid"] = 1.2,
+        ["Container.Liquid"] = 1.2,
         ["Resource.Material.Textile"] = 1.2
     },
-    forbid = { "Plastic", "Electronics.General", "Resource.Material.Paper" }
+    forbid = { "Building.Furniture.Bed", "Tool.Fishing", "Resource.Material.Paper" }
 })
 
 end

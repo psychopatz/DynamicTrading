@@ -7,15 +7,16 @@ DynamicTrading.RegisterArchetype("Librarian", {
     allocations = {
         { tags={"Literature.Book"}, count = 10 },
         { tags={"Literature.SkillBook"}, count = 6 },
-        { tags={"Literature.Map"}, count = 4 },
-        { tags={"Container.General"}, count = 3 }
+        { tags={"Literature.Book"}, count = 4 },
+        { tags={"Container"}, count = 3 }
     },
+    expertTags = { "Literature.Book" },
     wants = {
-        ["Electronics.General"] = 1.3,
-        ["Electronics.Component.Light"] = 1.2,
+        ["Electronics"] = 1.3,
+        ["Electronics.Light.Component"] = 1.2,
         ["Literature.Media"] = 1.2
     },
-    forbid = { "Weapon.General", "Food.Drink.Alcohol" }
+    forbid = { "Weapon", "Food.Drink.Alcohol" }
 })
 
 end

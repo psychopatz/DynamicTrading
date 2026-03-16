@@ -6,13 +6,14 @@ DynamicTrading.RegisterArchetype("Butcher", {
     name = "Butcher",
     allocations = {
         { tags={"Food.Perishable.Meat"}, count = 8 },
-        { tags={"Tool.Resource.Butcher"}, count = 4 },
-        { tags={"Container.General"}, count = 2 }
+        { tags={"Tool.Cookware"}, count = 4 },
+        { tags={"Container.Bag.Cooler"}, count = 2 },
+        { tags={"Weapon.Melee.Blade"}, count = 1 }
     },
     wants = {
         ["Weapon.Ranged.Ammo"] = 1.4,
         ["Weapon.Melee.Blade"] = 1.3,
-        ["Food.Spice"] = 1.2
+        ["Food.Cooking.Spice"] = 1.2
     },
     forbid = { "Food.Perishable.Vegetable", "Food.Perishable.Fruit", "Literature.Book" }
 })
