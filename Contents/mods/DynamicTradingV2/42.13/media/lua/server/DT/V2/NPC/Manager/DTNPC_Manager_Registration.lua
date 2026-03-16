@@ -189,6 +189,49 @@ function DTNPCManager.SetNPCStatus(uuid, status, returnTime, returnStatus)
     end
 end
 
+local function saveSoulIfAvailable(uuid, npcData)
+    if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul and uuid and npcData then
+        DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    end
+end
+
+function DTNPCManager.ConvertDeathToIncapacitated(zombie, uuid, npcData, removalContext)
+    if not zombie or not uuid or not npcData then return false end
+
+    npcData.lastX = math.floor(zombie:getX())
+    npcData.lastY = math.floor(zombie:getY())
+    npcData.lastZ = math.floor(zombie:getZ())
+    npcData.health = 2
+    npcData.state = "Incapacitated"
+    npcData.incapState = "Active"
+    npcData.preIncapStatus = npcData.status or "Resting"
+    npcData.isHostile = false
+    npcData.master = nil
+    npcData.masterID = nil
+    npcData.tasks = {}
+    npcData.requestedReturnStatus = "Resting"
+    npcData.removalRequested = nil
+    npcData.incapStrugglePauseUntil = nil
+    npcData.incapNextPauseAt = nil
+    npcData.lastFleeX = nil
+    npcData.lastFleeY = nil
+
+    saveSoulIfAvailable(uuid, npcData)
+    DTNPCManager.RemoveData(uuid, nil, nil, nil, removalContext)
+
+    local newZombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, uuid) or nil
+    if newZombie then
+        DynamicTrading.Log("DTV2", "NPC", "Death", "NPC incapacitated instead of dying: " .. (npcData.name or uuid))
+        return true
+    end
+
+    DynamicTrading.Log("DTV2", "NPC", "Error", "Failed to respawn incapacitated NPC, falling back to death: " .. tostring(uuid))
+    if DynamicTrading_Roster and DynamicTrading_Roster.UpdateSoulStatus then
+        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Dead", nil, nil)
+    end
+    return false
+end
+
 function DTNPCManager.Unregister(zombie)
     local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
     local removalContext = nil
@@ -211,6 +254,16 @@ function DTNPCManager.Unregister(zombie)
                 }
             end
         end
+        if npcData.incapState == "Active" then
+            DynamicTrading.Log("DTV2", "NPC", "Death", "Incapacitated NPC killed for good: " .. (npcData.name or uuid))
+            DTNPCManager.RemoveData(uuid, "Dead", nil, nil, removalContext)
+            return
+        end
+
+        if DTNPCManager.ConvertDeathToIncapacitated(zombie, uuid, npcData, removalContext) then
+            return
+        end
+
         DynamicTrading.Log("DTV2", "NPC", "Death", "NPC Died: " .. (npcData.name or uuid))
         DTNPCManager.RemoveData(uuid, "Dead", nil, nil, removalContext)
     else
@@ -228,6 +281,16 @@ function DTNPCManager.Unregister(zombie)
                     }
                 end
             end
+            if npcData.incapState == "Active" then
+                DynamicTrading.Log("DTV2", "NPC", "Death", "Incapacitated NPC killed for good (fallback lookup): " .. (npcData.name or fallbackUUID))
+                DTNPCManager.RemoveData(fallbackUUID, "Dead", nil, nil, removalContext)
+                return
+            end
+
+            if DTNPCManager.ConvertDeathToIncapacitated(zombie, fallbackUUID, npcData, removalContext) then
+                return
+            end
+
             DynamicTrading.Log("DTV2", "NPC", "Death", "NPC Died (fallback lookup): " .. (npcData.name or fallbackUUID))
             DTNPCManager.RemoveData(fallbackUUID, "Dead", nil, nil, removalContext)
         end

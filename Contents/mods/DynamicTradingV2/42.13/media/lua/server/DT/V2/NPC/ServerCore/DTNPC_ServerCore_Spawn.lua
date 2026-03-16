@@ -46,7 +46,24 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         femaleChance = existingBrain.isFemale and 100 or 0
     end
     
-    local zombieList = addZombiesInOutfit(spawnX, spawnY, z, 1, outfitStr, femaleChance, false, false, false, false, false, false, 1)
+    local spawnAsCrawler = existingBrain and existingBrain.incapState == "Active" or false
+    local fallOnFront = spawnAsCrawler
+    local knockedDown = spawnAsCrawler
+    local zombieList = addZombiesInOutfit(
+        spawnX,
+        spawnY,
+        z,
+        1,
+        outfitStr,
+        femaleChance,
+        spawnAsCrawler,
+        fallOnFront,
+        false,
+        knockedDown,
+        false,
+        false,
+        1
+    )
     
     if not zombieList or zombieList:size() == 0 then 
         DynamicTrading.Log("DTV2", "NPC", "Logic", "ERROR: Failed to spawn zombie at " .. spawnX .. "," .. spawnY)

@@ -75,6 +75,7 @@ local function isCombatState(npcData)
         or state == "Attack"
         or state == "AttackRange"
         or state == "Flee"
+        or state == "Incapacitated"
 end
 
 local function getNPCData(zombie)

@@ -58,6 +58,8 @@ function DTNPCGenerator.CreateMVPData(mvpData, options)
         
         -- Default stats
         state = "Idle",
+        incapState = nil,
+        preIncapStatus = nil,
         master = options.masterName,
         masterID = options.masterID,
         tasks = {},
@@ -107,6 +109,8 @@ function DTNPCGenerator.CreateStandardData(options)
         
         -- Logic
         state = "Idle",
+        incapState = nil,
+        preIncapStatus = nil,
         master = options.masterName,
         masterID = options.masterID,
         tasks = {},

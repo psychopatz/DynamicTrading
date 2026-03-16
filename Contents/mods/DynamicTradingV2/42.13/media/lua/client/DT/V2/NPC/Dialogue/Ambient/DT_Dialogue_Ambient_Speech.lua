@@ -36,14 +36,22 @@ end
 
 function Ambient.BuildSpeechData(npcData, zombie, currentTime)
     local dialogueEntry = nil
+    local ambientState = npcData and npcData.state or "Default"
+    local ambientStatus = npcData and npcData.status or "Default"
+
+    if ambientState == "Incapacitated" then
+        -- Incapacitated pleas should override duty chatter like Trading/Working.
+        ambientStatus = "Default"
+    end
+
     if DynamicTrading and DynamicTrading.DialogueAmbient and DynamicTrading.DialogueAmbient.GetEntry then
         dialogueEntry = DynamicTrading.DialogueAmbient.GetEntry(
             {
                 archetype = npcData and (npcData.archetypeID or npcData.occupation) or "General",
                 name = npcData and npcData.name or "Trader"
             },
-            npcData and npcData.status or "Default",
-            npcData and npcData.state or "Default",
+            ambientStatus,
+            ambientState,
             {
                 traderName = npcData and npcData.name or "Trader"
             }

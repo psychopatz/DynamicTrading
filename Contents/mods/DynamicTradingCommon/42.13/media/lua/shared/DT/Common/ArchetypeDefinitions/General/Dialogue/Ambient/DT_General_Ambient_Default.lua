@@ -19,6 +19,13 @@ DynamicTrading.RegisterDialogue("General", "Ambient", {
             },
             Flee = {
                 { dialogue = "Move now, talk later.", sentiment = "warning" },
+            },
+            Incapacitated = {
+                { dialogue = "Please... don't finish me off...", sentiment = "warning" },
+                { dialogue = "I can't keep moving... just let me go...", sentiment = "warning" },
+                { dialogue = "Help me... please, I don't want to die here...", sentiment = "warning" },
+                { dialogue = "Enough... please... I surrender...", sentiment = "warning" },
+                { dialogue = "Don't kill me... I'm done fighting...", sentiment = "warning" },
             }
         }
     }

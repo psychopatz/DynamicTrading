@@ -63,6 +63,7 @@ function DTNPC_DatabaseListPanel:refresh()
             local item = self.npcList.items[#self.npcList.items]
             local color = {r=1, g=1, b=1, a=1}
             if npcData.state == "Follow" then color = {r=0, g=0.8, b=1, a=1}
+            elseif npcData.state == "Incapacitated" then color = {r=1, g=0.55, b=0.15, a=1}
             elseif npcData.state == "Stay" or npcData.state == "Guard" or npcData.status == "Trading" then color = {r=1, g=1, b=0, a=1}
             elseif npcData.isHostile then color = {r=1, g=0.2, b=0.2, a=1}
             end

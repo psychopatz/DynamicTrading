@@ -30,6 +30,7 @@ require "DT/V2/NPC/Behaviors/Behavior_Idle"
 require "DT/V2/NPC/Behaviors/Behavior_Guard" 
 require "DT/V2/NPC/Behaviors/Behavior_Trading"
 require "DT/V2/NPC/Behaviors/Behavior_Departure"
+require "DT/V2/NPC/Behaviors/Behavior_Incapacitated"
 
 -- ==============================================================================
 -- 2. HELPER UTILITIES
@@ -198,7 +199,7 @@ function DTNPCLogic.ProcessNPC(zombie)
     npcData.lastHealth = currentHealth
 
     -- HIGH SPEED BEHAVIORS (Every Frame)
-    if state == "GoTo" or state == "Flee" or state == "AttackRange" or state == "Follow" or state == "Departure" then
+    if state == "GoTo" or state == "Flee" or state == "AttackRange" or state == "Follow" or state == "Departure" or state == "Incapacitated" then
         DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
         return
     end

@@ -82,7 +82,24 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     end
     
     local femaleChance = npcData.isFemale and 100 or 0
-    local zombieList = addZombiesInOutfit(x, y, z, 1, "Naked", femaleChance, false, false, false, false, false, false, 1)
+    local spawnAsCrawler = npcData.incapState == "Active"
+    local fallOnFront = spawnAsCrawler
+    local knockedDown = spawnAsCrawler
+    local zombieList = addZombiesInOutfit(
+        x,
+        y,
+        z,
+        1,
+        "Naked",
+        femaleChance,
+        spawnAsCrawler,
+        fallOnFront,
+        false,
+        knockedDown,
+        false,
+        false,
+        1
+    )
     
     if not zombieList or zombieList:size() == 0 then 
         DynamicTrading.Log("DTV2", "NPC", "Error", "| ERROR: addZombiesInOutfit returned 0 even on found square!")
@@ -106,7 +123,9 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     
     -- CRITICAL: Determine state based on status
     local status = npcData.status or "Resting"
-    if status == "Trading" then
+    if npcData.incapState == "Active" then
+        npcData.state = "Incapacitated"
+    elseif status == "Trading" then
         npcData.state = "Trading"
     elseif status == "Working" then
         npcData.state = "Guard"
@@ -121,6 +140,11 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     
     DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)
+
+    if spawnAsCrawler then
+        zombie:setVariable("bBecomeCrawler", true)
+        zombie:setVariable("bCrawling", true)
+    end
     
     modData.DTNPCVisualID = npcData.visualID
 

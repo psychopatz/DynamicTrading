@@ -144,6 +144,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         health = npcData.health or 1.0,
         status = npcData.status or "Resting",
         state = npcData.state,
+        incapState = npcData.incapState,
         returnTime = npcData.returnTime,
         returnStatus = npcData.returnStatus,
         master = npcData.master,
@@ -158,6 +159,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
     -- Update full npcData
     local npcData = DynamicTrading_Roster.GetSoul(uuid)
     if npcData then
+        local wasIncapacitated = npcData.incapState == "Active"
         if npcData.status == "Away" and status ~= "Away" then
             DynamicTrading.Log("DTCommons", "Roster", "Sync", "Resetting state and master for " .. (npcData.name or uuid) .. " on return.")
             if status == "Trading" then
@@ -174,6 +176,15 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
             npcData.departureTargetY = nil
             npcData.departureTargetZ = nil
             npcData.departureTravelHours = nil
+
+            if wasIncapacitated then
+                npcData.incapState = nil
+                npcData.preIncapStatus = nil
+                npcData.incapStrugglePauseUntil = nil
+                npcData.incapNextPauseAt = nil
+                npcData.lastFleeX = nil
+                npcData.lastFleeY = nil
+            end
         end
 
         if status == "Away" then
@@ -194,9 +205,17 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
             npcData.departureForceDespawnAt = nil
         end
 
+        if status == "Dead" then
+            npcData.incapState = nil
+            npcData.preIncapStatus = nil
+            npcData.incapStrugglePauseUntil = nil
+            npcData.incapNextPauseAt = nil
+        end
+
         if status ~= nil then npcData.status = status end
         if returnTime ~= nil then npcData.returnTime = returnTime end
         if returnStatus ~= nil then npcData.returnStatus = returnStatus end
+        DynamicTrading_Roster.SaveSoul(uuid, npcData)
         local soulKey = "DTSOUL_" .. uuid
         -- ModData.transmit(soulKey) -- Disabled global broadcast
 
@@ -213,6 +232,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         -- Registry doesn't store state/master usually, but it stores status/timers
         registry.status = status
         registry.state = npcData and npcData.state or registry.state
+        registry.incapState = npcData and npcData.incapState or registry.incapState
         registry.returnTime = returnTime
         registry.returnStatus = returnStatus
         -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
