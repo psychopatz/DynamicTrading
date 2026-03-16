@@ -1,0 +1,339 @@
+from __future__ import annotations
+
+import copy
+import json
+from pathlib import Path
+from typing import Any, Dict
+
+
+CONFIG_PATH = Path(__file__).with_name("config.json")
+
+DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
+    "version": 1,
+    "global": {
+        "min_price": 1,
+        "max_price": 3500,
+        "base_multiplier": 1.0,
+        "opened_penalty": 0.72,
+        "extra_use_bonus": 0.08,
+        "max_use_multiplier": 2.0,
+    },
+    "rarity_multipliers": {
+        "Common": 1.0,
+        "Uncommon": 1.18,
+        "Rare": 1.45,
+        "Legendary": 2.1,
+        "UltraRare": 2.75,
+    },
+    "quality_multipliers": {
+        "Waste": 0.3,
+        "Sterile": 1.18,
+        "Luxury": 1.6,
+    },
+    "origin_multipliers": {
+        "Police": 1.08,
+        "Militia": 1.15,
+        "Clinical": 1.12,
+        "Industrial": 1.06,
+    },
+    "item_overrides": {},
+    "categories": {
+        "Food": {
+            "price_floor": 6,
+            "price_ceiling": 220,
+            "base": 7.0,
+            "hunger_weight": 160.0,
+            "thirst_weight": 90.0,
+            "calorie_weight": 0.025,
+            "shelf_life_weight": 1.35,
+            "max_shelf_life_days": 90.0,
+            "fresh_unpacked_shelf_cap": 21.0,
+            "canned_bonus": 24.0,
+            "packaged_bonus": 10.0,
+            "drink_bonus": 8.0,
+            "hydration_bonus": 6.0,
+            "alcohol_bonus": 12.0,
+            "fluid_capacity_weight": 10.0,
+            "large_food_hunger_threshold": 0.45,
+            "large_food_thirst_threshold": 0.5,
+            "large_food_weight_threshold": 0.9,
+            "large_food_calorie_threshold": 1200.0,
+            "large_food_hunger_overflow": 0.15,
+            "large_food_thirst_overflow": 0.15,
+            "large_food_calorie_overflow": 0.1,
+            "dry_staple_multiplier": 0.42,
+            "prepared_food_multiplier": 0.55,
+            "preserved_ingredient_multiplier": 0.45,
+            "fresh_penalty": 7.0,
+            "weight_penalty": 1.2,
+            "mood_penalty_weight": 40.0,
+            "spice_multiplier": 0.45,
+        },
+        "Medical": {
+            "price_floor": 12,
+            "price_ceiling": 520,
+            "base": 18.0,
+            "sterile_bonus": 14.0,
+            "dose_weight": 4.0,
+            "dose_cap": 6.0,
+            "pill_dose_cap": 9.0,
+            "tobacco_dose_cap": 8.0,
+            "bandage_bonus": 28.0,
+            "bandaid_bonus": 10.0,
+            "disinfectant_bonus": 22.0,
+            "painkiller_bonus": 18.0,
+            "sleep_bonus": 14.0,
+            "beta_blocker_bonus": 16.0,
+            "antidepressant_bonus": 15.0,
+            "vitamin_bonus": 10.0,
+            "surgical_bonus": 34.0,
+            "splint_bonus": 20.0,
+            "box_bundle_bonus": 24.0,
+            "carton_bundle_bonus": 48.0,
+            "tobacco_stress_weight": 2.0,
+            "tobacco_morale_weight": 0.35,
+            "tobacco_pack_bonus": 18.0,
+            "tobacco_carton_bonus": 80.0,
+            "weight_penalty": 0.8,
+            "tobacco_multiplier": 0.5,
+            "hygiene_multiplier": 0.35,
+        },
+        "Weapon": {
+            "price_floor": 8,
+            "price_ceiling": 1400,
+            "base": 18.0,
+            "damage_weight": 28.0,
+            "range_weight": 4.0,
+            "multi_hit_weight": 10.0,
+            "durability_weight": 2.2,
+            "reliability_weight": 0.6,
+            "ammo_base": 10.0,
+            "ammo_weight": 40.0,
+            "ammo_carton_multiplier": 0.62,
+            "explosive_bonus": 45.0,
+            "firearm_bonus": 65.0,
+            "two_handed_bonus": 12.0,
+            "swing_penalty": 9.0,
+            "weight_penalty": 1.4,
+        },
+        "Tool": {
+            "price_floor": 8,
+            "price_ceiling": 600,
+            "base": 14.0,
+            "durability_weight": 1.8,
+            "capacity_weight": 1.2,
+            "weight_reduction_weight": 0.2,
+            "multi_use_bonus": 4.0,
+            "powered_bonus": 10.0,
+            "medical_bonus": 12.0,
+            "farming_bonus": 12.0,
+            "fishing_bonus": 12.0,
+            "crafting_bonus": 20.0,
+            "pry_bonus": 24.0,
+            "salvage_weight": 0.2,
+            "salvage_cap": 80.0,
+            "repeat_use_cap": 18.0,
+            "weight_penalty": 0.7,
+        },
+        "Container": {
+            "price_floor": 10,
+            "price_ceiling": 700,
+            "base": 14.0,
+            "capacity_weight": 4.0,
+            "weight_reduction_weight": 0.65,
+            "debug_multiplier": 0.12,
+            "weight_penalty": 1.0,
+        },
+        "Clothing": {
+            "price_floor": 2,
+            "price_ceiling": 280,
+            "base": 4.0,
+            "defense_weight": 0.35,
+            "warmth_weight": 10.0,
+            "wind_weight": 8.0,
+            "speed_penalty_weight": 20.0,
+            "weight_penalty": 0.7,
+        },
+        "Electronics": {
+            "price_floor": 8,
+            "price_ceiling": 1800,
+            "base": 14.0,
+            "power_bonus": 8.0,
+            "light_bonus": 14.0,
+            "radio_bonus": 36.0,
+            "portable_bonus": 12.0,
+            "battery_bonus": 10.0,
+            "car_battery_bonus": 40.0,
+            "generator_bonus": 240.0,
+            "lantern_power_cap": 6.0,
+            "power_value_cap": 15.0,
+            "weight_penalty": 0.5,
+        },
+        "Literature": {
+            "price_floor": 3,
+            "price_ceiling": 220,
+            "base": 5.0,
+            "recipe_weight": 18.0,
+            "skill_book_bonus": 16.0,
+            "skill_level_weight": 11.0,
+            "magazine_bonus": 4.0,
+            "map_bonus": 8.0,
+            "weight_penalty": 0.6,
+        },
+        "Resource": {
+            "price_floor": 3,
+            "price_ceiling": 420,
+            "base": 6.0,
+            "metal_weight": 0.8,
+            "carton_metal_multiplier": 0.3,
+            "fuel_weight": 1.2,
+            "fire_fuel_weight": 15.0,
+            "crafting_bonus": 8.0,
+            "propane_bonus": 24.0,
+            "fuel_container_bonus": 28.0,
+            "weight_penalty": 0.25,
+        },
+        "Building": {
+            "price_floor": 1,
+            "price_ceiling": 350,
+            "base": 3.0,
+            "survival_bonus": 12.0,
+            "fixture_bonus": 4.0,
+            "vehicle_bonus": 8.0,
+            "weight_penalty": 0.5,
+        },
+        "Misc": {
+            "price_floor": 1,
+            "price_ceiling": 200,
+            "base": 2.0,
+            "value_weight": 0.75,
+            "utility_bonus": 5.0,
+            "material_cap": 20.0,
+            "trinket_material_cap": 6.0,
+            "firestarter_bonus": 12.0,
+            "water_purifier_bonus": 26.0,
+            "filter_bonus": 18.0,
+            "hygiene_bonus": 8.0,
+            "cosmetic_bonus": 4.0,
+            "morale_bonus": 6.0,
+            "crafting_bonus": 16.0,
+            "jar_box_bonus": 18.0,
+            "key_bonus": 8.0,
+            "camera_bonus": 10.0,
+            "weight_penalty": 0.5,
+        },
+    },
+}
+
+_CONFIG_CACHE: Dict[str, Any] | None = None
+_CONFIG_MTIME: float | None = None
+
+
+def _deep_merge(base: dict, override: dict) -> dict:
+    merged = copy.deepcopy(base)
+    for key, value in (override or {}).items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _ensure_number(value: Any, path: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{path} must be numeric")
+    return float(value)
+
+
+def _normalize_named_numeric_map(data: Any, path: str) -> dict[str, float]:
+    if not isinstance(data, dict):
+        raise ValueError(f"{path} must be an object")
+    out: dict[str, float] = {}
+    for key, value in data.items():
+        out[str(key)] = _ensure_number(value, f"{path}.{key}")
+    return out
+
+
+def _normalize_category_map(data: Any) -> dict[str, dict[str, float]]:
+    if not isinstance(data, dict):
+        raise ValueError("categories must be an object")
+    out: dict[str, dict[str, float]] = {}
+    for category, values in data.items():
+        if not isinstance(values, dict):
+            raise ValueError(f"categories.{category} must be an object")
+        out[str(category)] = {
+            str(key): _ensure_number(value, f"categories.{category}.{key}")
+            for key, value in values.items()
+        }
+    return out
+
+
+def validate_pricing_config(candidate: Dict[str, Any] | None) -> Dict[str, Any]:
+    merged = _deep_merge(DEFAULT_PRICING_CONFIG, candidate or {})
+    normalized: Dict[str, Any] = {
+        "version": int(merged.get("version", 1)),
+        "global": _normalize_named_numeric_map(merged.get("global", {}), "global"),
+        "rarity_multipliers": _normalize_named_numeric_map(
+            merged.get("rarity_multipliers", {}),
+            "rarity_multipliers",
+        ),
+        "quality_multipliers": _normalize_named_numeric_map(
+            merged.get("quality_multipliers", {}),
+            "quality_multipliers",
+        ),
+        "origin_multipliers": _normalize_named_numeric_map(
+            merged.get("origin_multipliers", {}),
+            "origin_multipliers",
+        ),
+        "categories": _normalize_category_map(merged.get("categories", {})),
+        "item_overrides": _normalize_named_numeric_map(
+            merged.get("item_overrides", {}),
+            "item_overrides",
+        ),
+    }
+
+    if normalized["global"]["min_price"] < 0:
+        raise ValueError("global.min_price must be >= 0")
+    if normalized["global"]["max_price"] < normalized["global"]["min_price"]:
+        raise ValueError("global.max_price must be >= global.min_price")
+
+    return normalized
+
+
+def _write_config(config: Dict[str, Any]) -> None:
+    CONFIG_PATH.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+
+def get_pricing_config(force_reload: bool = False, return_copy: bool = False) -> Dict[str, Any]:
+    global _CONFIG_CACHE, _CONFIG_MTIME
+
+    if not CONFIG_PATH.exists():
+        _write_config(DEFAULT_PRICING_CONFIG)
+
+    mtime = CONFIG_PATH.stat().st_mtime
+    if not force_reload and _CONFIG_CACHE is not None and _CONFIG_MTIME == mtime:
+        return copy.deepcopy(_CONFIG_CACHE) if return_copy else _CONFIG_CACHE
+
+    try:
+        raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        raw = copy.deepcopy(DEFAULT_PRICING_CONFIG)
+
+    normalized = validate_pricing_config(raw)
+    _CONFIG_CACHE = normalized
+    _CONFIG_MTIME = mtime
+    return copy.deepcopy(normalized) if return_copy else normalized
+
+
+def load_pricing_config(force_reload: bool = False) -> Dict[str, Any]:
+    return get_pricing_config(force_reload=force_reload, return_copy=True)
+
+
+def save_pricing_config(config: Dict[str, Any]) -> Dict[str, Any]:
+    global _CONFIG_CACHE, _CONFIG_MTIME
+
+    normalized = validate_pricing_config(config)
+    _write_config(normalized)
+    _CONFIG_CACHE = normalized
+    _CONFIG_MTIME = CONFIG_PATH.stat().st_mtime
+    return copy.deepcopy(normalized)

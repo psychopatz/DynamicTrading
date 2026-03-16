@@ -19,12 +19,29 @@ from ..sim.economy import (
 )
 from ..sim.event_timeline import TimelineState, compute_active_events
 
+try:
+    from ItemManagement import calculate_price, load_vanilla_items
+    from ItemManagement.commons.lua_handler.records import tags_list_to_dict
+except ImportError:
+    calculate_price = None
+    load_vanilla_items = None
+    tags_list_to_dict = None
+
 
 def build_database(paths: Paths, config: BuildConfig) -> dict:
     items = parse_items(paths.mod_common / "Items")
     tags = parse_tags(paths.mod_common / "Tags.lua")
     archetypes = parse_archetypes(paths.mod_common / "ArchetypeDefinitions")
     events = parse_events(paths.mod_common / "Events")
+
+    if calculate_price and load_vanilla_items and tags_list_to_dict:
+        vanilla_items = load_vanilla_items()
+        for item_def in items.values():
+            bare_id = item_def.item_id.split(".", 1)[1] if "." in item_def.item_id else item_def.item_id
+            props = vanilla_items.get(bare_id)
+            if not props:
+                continue
+            item_def.base_price = float(calculate_price(bare_id, props, tags_list_to_dict(item_def.tags)))
 
     rng = random.Random(config.seed)
     timeline_state = TimelineState(day=0)

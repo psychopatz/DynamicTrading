@@ -12,8 +12,8 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Container.Bag.Handbag] [Rarity.Rare] (2 items)
-    { item="Base.Handbag", basePrice=38, tags={"Container.Bag.Handbag", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
-    { item="Base.Purse", basePrice=40, tags={"Container.Bag.Handbag", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.Handbag", basePrice=101, tags={"Container.Bag.Handbag", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.Purse", basePrice=105, tags={"Container.Bag.Handbag", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
 })
 
 print("[DynamicTrading] Handbag Registry Complete")

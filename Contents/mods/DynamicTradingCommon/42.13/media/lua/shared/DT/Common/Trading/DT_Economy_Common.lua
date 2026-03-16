@@ -110,6 +110,12 @@ function Common.ResolveMappedValue(itemTags, mapping)
             end
             probe = string.match(probe, "^(.*)%.")
         end
+
+        for segment in string.gmatch(itemTag, "([^.]+)") do
+            if mapping[segment] then
+                return mapping[segment]
+            end
+        end
     end
 
     return nil
@@ -507,7 +513,7 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
     -- 1. Tag Multipliers (Highest Wins)
     local maxTagMult = 1.0
     for _, tag in ipairs(itemData.tags) do
-        local tagConfig = tagsConfig[tag]
+        local tagConfig = Common.ResolveMappedValue({ tag }, tagsConfig)
         if tagConfig and tagConfig.priceMult then
             if tagConfig.priceMult > maxTagMult then
                 maxTagMult = tagConfig.priceMult
@@ -593,7 +599,7 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
                 -- 1. Tags Config
                 local maxFluidTagMult = 1.0
                 for _, tag in ipairs(fData.tags) do
-                    local tagConfig = tagsConfig[tag]
+                    local tagConfig = Common.ResolveMappedValue({ tag }, tagsConfig)
                     if tagConfig and tagConfig.priceMult then
                         if tagConfig.priceMult > maxFluidTagMult then
                             maxFluidTagMult = tagConfig.priceMult

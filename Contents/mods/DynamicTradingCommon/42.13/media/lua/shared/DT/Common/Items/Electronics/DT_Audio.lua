@@ -12,10 +12,10 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Gadget.Audio] [Rarity.Rare] (4 items)
-    { item="Base.Amplifier", basePrice=28, tags={"Electronics.Gadget.Audio", "Rarity.Rare"}, stockRange={min=0, max=6} },
-    { item="Base.Earbuds", basePrice=85, tags={"Electronics.Gadget.Audio", "Rarity.Rare"}, stockRange={min=0, max=10} },
-    { item="Base.Speaker", basePrice=6, tags={"Electronics.Gadget.Audio", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.VideoGame", basePrice=11, tags={"Electronics.Gadget.Audio", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.Amplifier", basePrice=113, tags={"Electronics.Gadget.Audio", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Earbuds", basePrice=20, tags={"Electronics.Gadget.Audio", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.Speaker", basePrice=193, tags={"Electronics.Gadget.Audio", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.VideoGame", basePrice=101, tags={"Electronics.Gadget.Audio", "Rarity.Rare"}, stockRange={min=0, max=4} },
 })
 
 print("[DynamicTrading] Audio Registry Complete")

@@ -12,18 +12,18 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Resource.Material.Wood] [Rarity.Rare] (12 items)
-    { item="Base.LargePlank", basePrice=1, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
-    { item="Base.Log", basePrice=1, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
-    { item="Base.LogStacks2", basePrice=1, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
-    { item="Base.LogStacks3", basePrice=1, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
-    { item="Base.LogStacks4", basePrice=1, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
-    { item="Base.Twigs", basePrice=8, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=50} },
-    { item="Base.WoodenBarCastMold", basePrice=6, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
-    { item="Base.WoodenBenchAnvilMold", basePrice=6, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
-    { item="Base.WoodenBlacksmithAnvilMold", basePrice=6, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
-    { item="Base.WoodenBlockAnvilMold", basePrice=6, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
-    { item="Base.WoodenShingleMold", basePrice=6, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
-    { item="Base.WoodenTileMold", basePrice=6, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
+    { item="Base.LargePlank", basePrice=5, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
+    { item="Base.Log", basePrice=5, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
+    { item="Base.LogStacks2", basePrice=7, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
+    { item="Base.LogStacks3", basePrice=5, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
+    { item="Base.LogStacks4", basePrice=4, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=4} },
+    { item="Base.Twigs", basePrice=9, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=50} },
+    { item="Base.WoodenBarCastMold", basePrice=9, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
+    { item="Base.WoodenBenchAnvilMold", basePrice=9, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
+    { item="Base.WoodenBlacksmithAnvilMold", basePrice=9, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
+    { item="Base.WoodenBlockAnvilMold", basePrice=9, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
+    { item="Base.WoodenShingleMold", basePrice=9, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
+    { item="Base.WoodenTileMold", basePrice=9, tags={"Resource.Material.Wood", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
 })
 
 print("[DynamicTrading] Wood Registry Complete")

@@ -17,7 +17,18 @@ logger = logging.getLogger(__name__)
 
 # Import from local ItemManagement package
 try:
-    from ItemManagement import load_vanilla_items, VANILLA_SCRIPTS_DIR, DISTRIBUTIONS_DIR, generate_tags, calculate_price, get_stat
+    from ItemManagement import (
+        load_vanilla_items,
+        VANILLA_SCRIPTS_DIR,
+        DISTRIBUTIONS_DIR,
+        generate_tags,
+        calculate_price,
+        calculate_price_details,
+        build_pricing_audit,
+        load_pricing_config,
+        save_pricing_config,
+        get_stat,
+    )
     from ItemManagement.commons.vanilla_loader import get_property_value, get_translated_name
     from ItemManagement.commons.lua_handler.records import tags_list_to_dict
     from ItemManagement.ui.commands import (
@@ -76,6 +87,16 @@ class FindPropertyRequest(BaseModel):
 class ListPropertiesRequest(BaseModel):
     min_usage: int = 1
     chunk_limit: Optional[int] = 20
+
+
+class PricingConfigRequest(BaseModel):
+    config: Dict[str, Any]
+
+
+class PricingPreviewRequest(BaseModel):
+    item_id: str
+    props: Optional[str] = None
+    tags: Optional[List[str]] = None
 
 # Global state (cache items)
 cached_vanilla_items = None
@@ -202,6 +223,61 @@ async def list_unique_tags():
     except Exception as e:
         logger.error(f"Error fetching tags: {e}")
         return {"tags": [], "error": str(e)}
+
+
+@app.get("/api/pricing/config")
+async def get_pricing_config():
+    try:
+        return load_pricing_config()
+    except Exception as e:
+        logger.error(f"Error loading pricing config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/pricing/config")
+async def update_pricing_config(request: PricingConfigRequest):
+    try:
+        return save_pricing_config(request.config)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error saving pricing config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/pricing/preview")
+async def preview_pricing(request: PricingPreviewRequest):
+    try:
+        items = get_items()
+        props = request.props or items.get(request.item_id)
+        if not props:
+            raise HTTPException(status_code=404, detail=f"Unknown item: {request.item_id}")
+
+        tags_list = request.tags or generate_tags(request.item_id, props)
+        tags_dict = tags_list_to_dict(tags_list)
+        details = calculate_price_details(request.item_id, props, tags_dict)
+
+        return {
+            "item_id": request.item_id,
+            "name": get_translated_name(request.item_id, props),
+            "tags": tags_list,
+            "price": details["price"],
+            "details": details,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error previewing pricing for {request.item_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/pricing/audit")
+async def get_pricing_audit(limit: int = 20):
+    try:
+        return build_pricing_audit(get_items(), outlier_limit=limit)
+    except Exception as e:
+        logger.error(f"Error building pricing audit: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Task Routes ---
 

@@ -29,5 +29,9 @@ export const getBlacklist = () => api.get('/blacklist');
 
 export const getSimulationData = () => api.get('/simulation/data');
 export const getDebugLogs = (params) => api.get('/debug/logs', { params });
+export const getPricingConfig = () => api.get('/pricing/config');
+export const savePricingConfig = (config) => api.put('/pricing/config', { config });
+export const previewPricing = (payload) => api.post('/pricing/preview', payload);
+export const getPricingAudit = (params) => api.get('/pricing/audit', { params });
 
 export default api;

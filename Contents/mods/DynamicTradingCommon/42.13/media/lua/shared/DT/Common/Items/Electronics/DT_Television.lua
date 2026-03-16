@@ -12,9 +12,9 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Television] [Rarity.Common] (3 items)
-    { item="Base.TvAntique", basePrice=28, tags={"Electronics.Television", "Rarity.Common", "Electronics.Communicator"}, stockRange={min=0, max=2} },
-    { item="Base.TvBlack", basePrice=44, tags={"Electronics.Television", "Rarity.Common", "Electronics.Communicator"}, stockRange={min=0, max=2} },
-    { item="Base.TvWideScreen", basePrice=57, tags={"Electronics.Television", "Rarity.Common", "Electronics.Communicator"}, stockRange={min=0, max=2} },
+    { item="Base.TvAntique", basePrice=9, tags={"Electronics.Television", "Rarity.Common", "Electronics.Communicator"}, stockRange={min=0, max=2} },
+    { item="Base.TvBlack", basePrice=9, tags={"Electronics.Television", "Rarity.Common", "Electronics.Communicator"}, stockRange={min=0, max=2} },
+    { item="Base.TvWideScreen", basePrice=9, tags={"Electronics.Television", "Rarity.Common", "Electronics.Communicator"}, stockRange={min=0, max=2} },
 })
 
 print("[DynamicTrading] Television Registry Complete")

@@ -12,7 +12,7 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Resource.Material.Ammo] [Rarity.Rare] (1 item)
-    { item="Base.GunPowder", basePrice=27, tags={"Resource.Material.Ammo", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
+    { item="Base.GunPowder", basePrice=20, tags={"Resource.Material.Ammo", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=30} },
 })
 
 print("[DynamicTrading] AmmoMaterial Registry Complete")

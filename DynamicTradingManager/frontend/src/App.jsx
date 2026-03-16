@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme, CssBaseline, Container, Typography, Box, Ap
 import { BrowserRouter, Routes, Route, Link as RouterLink } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import ItemsPage from './components/ItemsPage';
+import PricingPage from './components/PricingPage';
 import SimulationDashboard from './components/Simulation/SimulationDashboard';
 import ConsolePage from './components/ConsolePage';
 
@@ -31,6 +32,7 @@ function App() {
                 </Typography>
                 <Button color="inherit" component={RouterLink} to="/">Dashboard</Button>
                 <Button color="inherit" component={RouterLink} to="/items">Vanilla Items</Button>
+                <Button color="inherit" component={RouterLink} to="/pricing">Pricing Model</Button>
                 <Button color="inherit" component={RouterLink} to="/simulation">Economy Simulation</Button>
                 <Button color="inherit" component={RouterLink} to="/console">Console</Button>
               </Toolbar>
@@ -39,6 +41,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/items" element={<ItemsPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/simulation" element={<SimulationDashboard />} />
                 <Route path="/console" element={<ConsolePage />} />
               </Routes>
