@@ -11,12 +11,12 @@ DynamicTrading.Events.Register("SchoolStart", {
     description = "Communities are rebuilding schools.",
     canSpawn = function() return true end,
     effects = {
-        ["Scholastic"] = { price = 2.5, vol = 0.2 },
+        ["Literature.Book"] = { price = 2.5, vol = 0.2 },
         ["Literature"] = { price = 1.5 },
-        ["SkillBook"] = { price = 1.5 },
-        ["Paper"] = { price = 2.0 }
+        ["Literature.SkillBook"] = { price = 1.5 },
+        ["Resource.Material.Paper"] = { price = 2.0 }
     },
-    inject = { ["Scholastic"] = 4 },
+    inject = { ["Literature.SkillBook"] = 4 },
     factionImpact = {
         stabilityAdd = 5
     }

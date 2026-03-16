@@ -13,7 +13,7 @@ DynamicTrading.Events.Register("SalvageOp", {
     effects = {
         ["Resource.Material"] = { price = 0.5, vol = 4.0 },
         ["Quality.Waste"] = { price = 0.1, vol = 5.0 },
-        ["Electronics.General"] = { price = 0.8 },
+        ["Electronics"] = { price = 0.8 },
         ["Resource.Material.Metal"] = { price = 0.6 }
     },
     inject = { ["Resource.Material"] = 5 },

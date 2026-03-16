@@ -11,10 +11,10 @@ DynamicTrading.Events.Register("Smugglers", {
     description = "The underground market is active.",
     canSpawn = function() return true end,
     effects = {
-        ["Alcohol"] = { price = 0.6, vol = 2.0 },
-        ["Tobacco"] = { price = 0.6, vol = 2.0 },
-        ["Jewelry"] = { price = 0.5 },
-        ["Illegal"] = { price = 0.5, vol = 2.0 }
+        ["Food.Drink.Alcohol"] = { price = 0.6, vol = 2.0 },
+        ["Medical.General.Drug"] = { price = 0.6, vol = 2.0 },
+        ["Clothing.Accessory.Jewelry"] = { price = 0.5 },
+        ["Quality.Luxury"] = { price = 0.5, vol = 2.0 }
     },
     factionImpact = {
         wealthAdd = 300,

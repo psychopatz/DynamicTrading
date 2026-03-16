@@ -12,8 +12,8 @@ DynamicTrading.Events.Register("TechBoom", {
     canSpawn = function() return true end,
     effects = {
         ["Electronics"] = { price = 0.4, vol = 3.0 },
-        ["Common"] = { price = 0.5, vol = 2.0 }, -- Generic parts
-        ["Communication"] = { price = 0.5, vol = 2.0 }
+        ["Resource.Material.General"] = { price = 0.5, vol = 2.0 }, -- Generic parts
+        ["Electronics.Communicator"] = { price = 0.5, vol = 2.0 }
     },
     inject = { ["Electronics"] = 4 },
     factionImpact = {

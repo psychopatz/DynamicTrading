@@ -14,13 +14,13 @@ DynamicTrading.Events.Register("Winter", {
         return ClimateManager:getInstance():getSeasonName() == "Winter" 
     end,
     effects = {
-        ["Fresh"] = { price = 3.0, vol = 0.1 },
-        ["Fuel"] = { price = 1.5 }, 
-        ["Winter"] = { price = 2.5, vol = 1.0 },
-        ["Material"] = { price = 1.5 },
-        ["Camping"] = { price = 1.2 }
+        ["Food.Perishable"] = { price = 3.0, vol = 0.1 },
+        ["Resource.Fuel"] = { price = 1.5 }, 
+        ["Theme.Winter"] = { price = 2.5, vol = 1.0 },
+        ["Resource.Material"] = { price = 1.5 },
+        ["Theme.Survival"] = { price = 1.2 }
     },
-    inject = { ["Winter"] = 3, ["Survival"] = 2 },
+    inject = { ["Theme.Winter"] = 3, ["Theme.Survival"] = 2 },
     factionImpact = {
         stockpileAdd = { food = -200, fuel = -200 }
     }

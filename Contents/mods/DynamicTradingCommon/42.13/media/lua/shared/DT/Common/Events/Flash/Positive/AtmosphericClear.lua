@@ -14,7 +14,7 @@ DynamicTrading.Events.Register("AtmosphericClear", {
         scanChance = 2.0, -- Double scan chance (Easy mode)
     },
     effects = {
-        ["Communication"] = { price = 1.2 }, -- Good radios in demand to use the clear air
+        ["Electronics.Communicator"] = { price = 1.2 }, -- Good radios in demand to use the clear air
         ["Electronics"] = { price = 1.1 }
     },
     factionImpact = {

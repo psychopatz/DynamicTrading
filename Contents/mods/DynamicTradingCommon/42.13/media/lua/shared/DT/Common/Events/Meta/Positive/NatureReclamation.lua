@@ -13,10 +13,10 @@ DynamicTrading.Events.Register("NatureReclamation", {
         return GameTime:getInstance():getNightsSurvived() > 100
     end,
     effects = {
-        ["Wood"] = { price = 0.2, vol = 5.0 },      -- Trees are everywhere
-        ["Blade"] = { price = 1.5 },                -- Machetes needed to clear vines
-        ["Herb"] = { price = 0.5, vol = 3.0 },      -- Foraging is easier
-        ["Game"] = { vol = 1.5 }                    -- Animals entering cities
+        ["Resource.Material.Wood"] = { price = 0.2, vol = 5.0 },      -- Trees are everywhere
+        ["Weapon.Melee.Blade"] = { price = 1.5 },                -- Machetes needed to clear vines
+        ["Medical.Healthcare.Botanical"] = { price = 0.5, vol = 3.0 },      -- Foraging is easier
+        ["Food.Perishable.Meat"] = { vol = 1.5 }                    -- Animals entering cities
     },
     factionImpact = {
         stockpileAdd = { food = 200 }

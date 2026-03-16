@@ -14,12 +14,12 @@ DynamicTrading.Events.Register("Spring", {
         return ClimateManager:getInstance():getSeasonName() == "Spring" 
     end,
     effects = {
-        ["Farming"] = { price = 2.0, vol = 0.5 },   -- Everyone needs seeds NOW
-        ["Water"] = { price = 0.2, vol = 3.0 },     -- Rain collectors are full
-        ["Fish"] = { price = 0.8, vol = 2.0 },      -- Rivers are active
+        ["Building.Garden"] = { price = 2.0, vol = 0.5 },   -- Everyone needs seeds NOW
+        ["Container.Liquid"] = { price = 0.2, vol = 3.0 },     -- Rain collectors are full
+        ["Food.Perishable.Fish"] = { price = 0.8, vol = 2.0 },      -- Rivers are active
         ["Clothing"] = { price = 1.2 }              -- Waterproof gear needed
     },
-    inject = { ["Farming"] = 5 },
+    inject = { ["Building.Garden"] = 5 },
     factionImpact = {
         stabilityAdd = 5,
         stockpileAdd = { food = 100 }

@@ -14,8 +14,8 @@ DynamicTrading.Events.Register("ElectricalStorm", {
         scanChance = 0.5
     },
     effects = {
-        ["Battery"] = { price = 2.0 },
-        ["Light"] = { price = 1.5 },
+        ["Electronics.Battery"] = { price = 2.0 },
+        ["Electronics.Light"] = { price = 1.5 },
         ["Electronics"] = { price = 1.5 }
     },
     factionImpact = {

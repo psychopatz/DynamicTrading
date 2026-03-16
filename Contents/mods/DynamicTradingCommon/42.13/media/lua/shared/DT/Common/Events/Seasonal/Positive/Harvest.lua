@@ -14,12 +14,12 @@ DynamicTrading.Events.Register("Harvest", {
         return ClimateManager:getInstance():getSeasonName() == "Autumn" 
     end,
     effects = {
-        ["Vegetable"] = { price = 0.4, vol = 3.0 },
-        ["Fruit"] = { price = 0.5, vol = 2.0 },
-        ["Farming"] = { price = 1.5, vol = 0.5 },
-        ["Pickle"] = { price = 0.8, vol = 2.0 }
+        ["Food.Perishable.Vegetable"] = { price = 0.4, vol = 3.0 },
+        ["Food.Perishable.Fruit"] = { price = 0.5, vol = 2.0 },
+        ["Building.Garden"] = { price = 1.5, vol = 0.5 },
+        ["Resource.Material.Packaging"] = { price = 0.8, vol = 2.0 }
     },
-    inject = { ["Vegetable"] = 5, ["Pickle"] = 2 },
+    inject = { ["Food.Perishable.Vegetable"] = 5, ["Resource.Material.Packaging"] = 2 },
     factionImpact = {
         stockpileAdd = { food = 1000 }
     }

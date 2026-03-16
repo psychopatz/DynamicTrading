@@ -18,7 +18,7 @@ DynamicTrading.Events.Register("SignalDecay", {
         globalStock = 1.5   -- But the traders you find have +50% loot (Veterans)
     },
     effects = {
-        ["Communication"] = { price = 2.0 },        -- High quality radios needed
+        ["Electronics.Communicator"] = { price = 2.0 },        -- High quality radios needed
         ["Quality.Luxury"] = { price = 1.5 }                -- Veterans trade in high value items
     },
     factionImpact = {

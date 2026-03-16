@@ -12,9 +12,9 @@ DynamicTrading.Events.Register("Famine", {
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
     effects = {
         ["Food"] = { price = 2.5, vol = 0.3 },
-        ["Farming"] = { price = 3.0 },
-        ["Canned"] = { price = 2.0 },
-        ["Fresh"] = { price = 4.0, vol = 0.1 }
+        ["Building.Garden"] = { price = 3.0 },
+        ["Food.NonPerishable.Canned"] = { price = 2.0 },
+        ["Food.Perishable"] = { price = 4.0, vol = 0.1 }
     },
     factionImpact = {
         stockpileAdd = { food = -500 },

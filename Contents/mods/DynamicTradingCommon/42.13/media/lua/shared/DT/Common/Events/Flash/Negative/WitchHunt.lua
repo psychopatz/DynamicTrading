@@ -16,8 +16,8 @@ DynamicTrading.Events.Register("WitchHunt", {
     },
     effects = {
         ["Weapon"] = { price = 1.5 },
-        ["Security"] = { price = 2.0 },
-        ["Communication"] = { price = 0.5, vol = 0.2 } -- Dumping gear to hide
+        ["Theme.Police"] = { price = 2.0 },
+        ["Electronics.Communicator"] = { price = 0.5, vol = 0.2 } -- Dumping gear to hide
     },
     factionImpact = {
         memberCountPct = -0.02,

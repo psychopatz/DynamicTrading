@@ -12,12 +12,12 @@ DynamicTrading.Events.Register("MilitarySurplus", {
     canSpawn = function() return true end,
     system = { globalStock = 1.5 },
     effects = {
-        ["Gun"] = { price = 0.6, vol = 2.0 },
-        ["Ammo"] = { price = 0.5, vol = 3.0 },
-        ["Military"] = { price = 0.7, vol = 2.0 },
-        ["Tactical"] = { price = 0.7 }
+        ["Weapon.Ranged.Firearm"] = { price = 0.6, vol = 2.0 },
+        ["Weapon.Ranged.Ammo"] = { price = 0.5, vol = 3.0 },
+        ["Theme.Militia"] = { price = 0.7, vol = 2.0 },
+        ["Clothing.Tactical"] = { price = 0.7 }
     },
-    inject = { ["Ammo"] = 5, ["Military"] = 3 },
+    inject = { ["Weapon.Ranged.Ammo"] = 5, ["Theme.Militia"] = 3 },
     factionImpact = {
         stockpileAdd = { food = 200, ammo = 50, meds = 50 }
     }

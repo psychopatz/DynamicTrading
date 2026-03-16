@@ -14,9 +14,9 @@ DynamicTrading.Events.Register("IronAge", {
     end,
     effects = {
         ["Tool"] = { price = 2.0, vol = 0.6 },      -- Hard to find good tools
-        ["Quality.Heavy"] = { price = 3.0, vol = 0.2 },     -- Sledgehammers are mythical
-        ["Theme.Repair"] = { price = 3.0, vol = 1.5 },    -- Glue, Duct Tape
-        ["Theme.Smithing"] = { price = 1.5, vol = 2.0 },  -- Blacksmithing rises
+        ["Clothing.Armor.Heavy"] = { price = 3.0, vol = 0.2 },     -- Sledgehammers are mythical
+        ["Resource.Material.Adhesive"] = { price = 3.0, vol = 1.5 },    -- Glue, Duct Tape
+        ["Resource.Material.Metal"] = { price = 1.5, vol = 2.0 },  -- Blacksmithing rises
         ["Quality.Waste"] = { price = 0.5 }                  -- Scrap is everywhere, but useless without skill
     },
     factionImpact = {

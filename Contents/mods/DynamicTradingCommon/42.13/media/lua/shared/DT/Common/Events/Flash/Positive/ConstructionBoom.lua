@@ -11,11 +11,11 @@ DynamicTrading.Events.Register("ConstructionBoom", {
     description = "Everyone is reinforcing their bases.",
     canSpawn = function() return true end,
     effects = {
-        ["Material"] = { price = 2.0, vol = 0.5 },
-        ["Wood"] = { price = 1.8 },
-        ["Build"] = { price = 1.8 },
+        ["Resource.Material"] = { price = 2.0, vol = 0.5 },
+        ["Resource.Material.Wood"] = { price = 1.8 },
+        ["Resource.Material.Hardware"] = { price = 1.8 },
         ["Tool"] = { price = 1.5 },
-        ["Heavy"] = { price = 1.5 }
+        ["Clothing.Armor.Heavy"] = { price = 1.5 }
     },
     factionImpact = {
         wealthAdd = 200,

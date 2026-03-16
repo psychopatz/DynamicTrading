@@ -11,12 +11,12 @@ DynamicTrading.Events.Register("HuntingSeason", {
     description = "Wild game is migrating through the area.",
     canSpawn = function() return true end,
     effects = {
-        ["Game"] = { price = 0.5, vol = 3.0 },
-        ["Meat"] = { price = 0.6, vol = 2.0 },
-        ["Trapping"] = { price = 1.5 },
-        ["Leather"] = { price = 0.5 }
+        ["Food.Perishable.Meat"] = { price = 0.5, vol = 3.0 },
+        ["Food.Perishable"] = { price = 0.6, vol = 2.0 },
+        ["Building.Survival.Trap"] = { price = 1.5 },
+        ["Resource.Material.Leather"] = { price = 0.5 }
     },
-    inject = { ["Game"] = 4, ["Trapping"] = 2 },
+    inject = { ["Food.Perishable.Meat"] = 4, ["Building.Survival.Trap"] = 2 },
     factionImpact = {
         stockpileAdd = { food = 400, ammo = -50 }
     }

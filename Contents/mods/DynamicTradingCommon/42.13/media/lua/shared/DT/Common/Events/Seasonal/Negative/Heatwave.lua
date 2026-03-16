@@ -14,10 +14,10 @@ DynamicTrading.Events.Register("Heatwave", {
         return ClimateManager:getInstance():getSeasonName() == "Summer"
     end,
     effects = {
-        ["Water"] = { price = 2.0 }, 
-        ["Drink"] = { price = 1.5 },
+        ["Container.Liquid"] = { price = 2.0 }, 
+        ["Food.Drink.NonAlcoholic"] = { price = 1.5 },
         ["Clothing"] = { price = 0.5 },
-        ["Winter"] = { price = 0.1, vol = 0.0 }
+        ["Theme.Winter"] = { price = 0.1, vol = 0.0 }
     },
     factionImpact = {
         stabilityAdd = -2,

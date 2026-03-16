@@ -13,9 +13,9 @@ DynamicTrading.Events.Register("WaterFail", {
         return GameTime:getInstance():getNightsSurvived() > (SandboxVars.WaterShutModifier or 14)
     end,
     effects = {
-        ["Water"] = { price = 5.0, vol = 0.2 },
-        ["Drink"] = { price = 2.0 },
-        ["Hygiene"] = { price = 1.5 }
+        ["Container.Liquid"] = { price = 5.0, vol = 0.2 },
+        ["Food.Drink.NonAlcoholic"] = { price = 2.0 },
+        ["Medical.Healthcare"] = { price = 1.5 }
     },
     factionImpact = {
         stabilityAdd = -3

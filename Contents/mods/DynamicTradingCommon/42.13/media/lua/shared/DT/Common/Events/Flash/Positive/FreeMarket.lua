@@ -15,8 +15,8 @@ DynamicTrading.Events.Register("FreeMarket", {
     },
     effects = {
         ["Quality.Luxury"] = { price = 1.2, vol = 1.5 },
-        ["Money"] = { price = 1.5 }, -- If currency items exist
-        ["General"] = { price = 0.9, vol = 1.5 }
+        ["Resource.Material.MetalForm.Coin"] = { price = 1.5 }, -- If currency items exist
+        ["Misc.General"] = { price = 0.9, vol = 1.5 }
     },
     factionImpact = {
         wealthAdd = 1000

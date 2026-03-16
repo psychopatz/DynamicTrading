@@ -15,9 +15,9 @@ DynamicTrading.Events.Register("CaravanArrival", {
         scanChance = 1.2   -- +20% Scan chance
     },
     effects = {
-        ["General"] = { price = 0.8, vol = 2.0 },
+        ["Misc.General"] = { price = 0.8, vol = 2.0 },
         ["Food"] = { vol = 1.5 },
-        ["Material"] = { vol = 1.5 }
+        ["Resource.Material"] = { vol = 1.5 }
     },
     factionImpact = {
         wealthAdd = 500,

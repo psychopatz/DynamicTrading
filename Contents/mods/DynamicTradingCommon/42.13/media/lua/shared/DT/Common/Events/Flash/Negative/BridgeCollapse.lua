@@ -15,9 +15,9 @@ DynamicTrading.Events.Register("BridgeCollapse", {
         globalStock = 0.7 -- Less items overall too
     },
     effects = {
-        ["Fuel"] = { price = 2.5 },
-        ["Heavy"] = { price = 2.0 },
-        ["CarPart"] = { price = 2.0 }
+        ["Resource.Fuel"] = { price = 2.5 },
+        ["Clothing.Armor.Heavy"] = { price = 2.0 },
+        ["Resource.Parts"] = { price = 2.0 }
     },
     factionImpact = {
         stockpileAdd = { fuel = -50 },

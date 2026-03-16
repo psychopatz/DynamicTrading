@@ -11,9 +11,9 @@ DynamicTrading.Events.Register("GoldRush", {
     description = "Survivors are hoarding precious metals.",
     canSpawn = function() return true end,
     effects = {
-        ["Gold"] = { price = 3.0 },
-        ["Silver"] = { price = 2.5 },
-        ["Jewelry"] = { price = 2.0 },
+        ["Resource.Material.MetalFamily.Gold"] = { price = 3.0 },
+        ["Resource.Material.MetalFamily.Silver"] = { price = 2.5 },
+        ["Clothing.Accessory.Jewelry"] = { price = 2.0 },
         ["Quality.Luxury"] = { price = 1.5 }
     },
     factionImpact = {

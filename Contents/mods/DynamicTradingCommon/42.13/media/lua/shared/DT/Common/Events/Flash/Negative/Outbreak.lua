@@ -12,8 +12,8 @@ DynamicTrading.Events.Register("Outbreak", {
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
     effects = {
         ["Medical"] = { price = 3.5, vol = 0.2 },
-        ["Pill"] = { price = 3.0 },
-        ["Hygiene"] = { price = 2.5 },
+        ["Medical.General.Pills"] = { price = 3.0 },
+        ["Medical.Healthcare"] = { price = 2.5 },
         ["Food"] = { price = 1.2 }
     },
     factionImpact = {

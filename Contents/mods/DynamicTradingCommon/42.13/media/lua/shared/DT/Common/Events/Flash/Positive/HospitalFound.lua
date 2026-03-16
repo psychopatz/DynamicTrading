@@ -12,8 +12,8 @@ DynamicTrading.Events.Register("HospitalFound", {
     canSpawn = function() return true end,
     effects = {
         ["Medical"] = { price = 0.3, vol = 5.0 },
-        ["Pill"] = { price = 0.4, vol = 4.0 },
-        ["Sterile"] = { price = 0.5 }
+        ["Medical.General.Pills"] = { price = 0.4, vol = 4.0 },
+        ["Theme.Clinical"] = { price = 0.5 }
     },
     inject = { ["Medical"] = 8 },
     factionImpact = {

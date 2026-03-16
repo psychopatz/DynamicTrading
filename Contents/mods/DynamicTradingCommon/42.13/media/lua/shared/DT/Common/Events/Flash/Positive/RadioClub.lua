@@ -15,11 +15,11 @@ DynamicTrading.Events.Register("RadioClub", {
         traderLimit = 1.5
     },
     effects = {
-        ["Communication"] = { price = 0.5, vol = 3.0 }, -- Radios are cheap
-        ["Component"] = { vol = 2.0 },
-        ["Battery"] = { vol = 2.0 }
+        ["Electronics.Communicator"] = { price = 0.5, vol = 3.0 }, -- Radios are cheap
+        ["Resource.Parts"] = { vol = 2.0 },
+        ["Electronics.Battery"] = { vol = 2.0 }
     },
-    inject = { ["Communication"] = 3 },
+    inject = { ["Electronics.Communicator"] = 3 },
     factionImpact = {
         stabilityAdd = 5
     }

@@ -13,10 +13,10 @@ DynamicTrading.Events.Register("KnowledgeGap", {
         return GameTime:getInstance():getNightsSurvived() > 180
     end,
     effects = {
-        ["SkillBook"] = { price = 3.5, vol = 0.2 }, -- Extremely rare/expensive
+        ["Literature.SkillBook"] = { price = 3.5, vol = 0.2 }, -- Extremely rare/expensive
         ["Literature"] = { price = 2.0 },           -- Entertainment is precious
-        ["Paper"] = { price = 1.5 },                -- For writing new notes
-        ["Scholastic"] = { price = 2.5 }
+        ["Resource.Material.Paper"] = { price = 1.5 },                -- For writing new notes
+        ["Literature.Book"] = { price = 2.5 }
     },
     factionImpact = {
         stabilityAdd = -3

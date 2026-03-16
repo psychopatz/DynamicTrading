@@ -13,10 +13,10 @@ DynamicTrading.Events.Register("FuelCrisis", {
         return GameTime:getInstance():getNightsSurvived() > 365
     end,
     effects = {
-        ["Fuel"] = { price = 5.0, vol = 0.1 },      -- Liquid Gold
-        ["CarPart"] = { price = 0.5 },              -- Useless without gas
-        ["Generator"] = { price = 0.5 },            -- Useless without gas
-        ["Battery"] = { price = 2.5, vol = 1.5 },   -- Solar/Electric becomes king
+        ["Resource.Fuel"] = { price = 5.0, vol = 0.1 },      -- Liquid Gold
+        ["Resource.Parts"] = { price = 0.5 },              -- Useless without gas
+        ["Electronics.Generator"] = { price = 0.5 },            -- Useless without gas
+        ["Electronics.Battery"] = { price = 2.5, vol = 1.5 },   -- Solar/Electric becomes king
         ["Electronics"] = { price = 1.5 }           -- For repairing batteries/solar
     },
     factionImpact = {

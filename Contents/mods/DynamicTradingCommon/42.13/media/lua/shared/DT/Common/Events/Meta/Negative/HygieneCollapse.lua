@@ -13,10 +13,10 @@ DynamicTrading.Events.Register("HygieneCollapse", {
         return GameTime:getInstance():getNightsSurvived() > 60
     end,
     effects = {
-        ["Hygiene"] = { price = 4.0, vol = 0.1 },   -- Soap is incredibly expensive
-        ["Clean"] = { price = 3.0 },                -- Bleach
+        ["Medical.Healthcare"] = { price = 4.0, vol = 0.1 },   -- Soap is incredibly expensive
+        ["Container.Liquid"] = { price = 3.0 },                -- Bleach
         ["Medical"] = { price = 1.2 },              -- Antibiotics demand up
-        ["Chemical"] = { price = 2.0 }              -- To make homemade soap
+        ["Resource.Material.Adhesive"] = { price = 2.0 }              -- To make homemade soap
     },
     factionImpact = {
         stockpileAdd = { meds = -200 },
