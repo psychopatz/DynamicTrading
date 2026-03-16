@@ -16,7 +16,7 @@ def tags_list_to_dict(tags_list):
         'primary': 'Misc.General',
         'rarity': 'Common',
         'quality': None,
-        'origin': None,
+        'origin': 'Vanilla',
         'theme': [],
         'all_tags': [tag for tag in (tags_list or []) if isinstance(tag, str)],
     }

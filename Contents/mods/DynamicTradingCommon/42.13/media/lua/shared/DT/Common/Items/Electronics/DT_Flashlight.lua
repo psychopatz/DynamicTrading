@@ -12,13 +12,13 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Light.Flashlight] [Rarity.Rare] (7 items)
-    { item="Base.CandleBox", basePrice=40, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Electronics.LightSource"}, stockRange={min=0, max=2} },
-    { item="Base.FlashLight_AngleHead", basePrice=174, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Electronics.LightSource"}, stockRange={min=0, max=4} },
-    { item="Base.FlashLight_AngleHead_Army", basePrice=200, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Origin.Militia", "Electronics.LightSource"}, stockRange={min=0, max=3} },
-    { item="Base.Flashlight_Crafted", basePrice=173, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Electronics.LightSource"}, stockRange={min=0, max=2} },
-    { item="Base.HandTorch", basePrice=174, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Electronics.LightSource"}, stockRange={min=0, max=4} },
-    { item="Base.PenLight", basePrice=78, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Electronics.LightSource"}, stockRange={min=0, max=7} },
-    { item="Base.Torch", basePrice=173, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Electronics.LightSource"}, stockRange={min=0, max=2} },
+    { item="Base.CandleBox", basePrice=40, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Origin.Vanilla", "Electronics.LightSource"}, stockRange={min=0, max=2} },
+    { item="Base.FlashLight_AngleHead", basePrice=174, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Origin.Vanilla", "Electronics.LightSource"}, stockRange={min=0, max=4} },
+    { item="Base.FlashLight_AngleHead_Army", basePrice=200, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Origin.Vanilla", "Theme.Militia", "Electronics.LightSource"}, stockRange={min=0, max=3} },
+    { item="Base.Flashlight_Crafted", basePrice=173, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Origin.Vanilla", "Electronics.LightSource"}, stockRange={min=0, max=2} },
+    { item="Base.HandTorch", basePrice=174, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Origin.Vanilla", "Electronics.LightSource"}, stockRange={min=0, max=4} },
+    { item="Base.PenLight", basePrice=78, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Origin.Vanilla", "Electronics.LightSource"}, stockRange={min=0, max=7} },
+    { item="Base.Torch", basePrice=173, tags={"Electronics.Light.Flashlight", "Rarity.Rare", "Origin.Vanilla", "Electronics.LightSource"}, stockRange={min=0, max=2} },
 })
 
 print("[DynamicTrading] Flashlight Registry Complete")

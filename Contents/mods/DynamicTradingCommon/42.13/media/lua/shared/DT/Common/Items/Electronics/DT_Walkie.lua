@@ -12,12 +12,12 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Radio.TwoWay.Walkie] [Rarity.Rare] (6 items)
-    { item="Base.WalkieTalkie1", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
-    { item="Base.WalkieTalkie2", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
-    { item="Base.WalkieTalkie3", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
-    { item="Base.WalkieTalkie4", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
-    { item="Base.WalkieTalkie5", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
-    { item="Base.WalkieTalkieMakeShift", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
+    { item="Base.WalkieTalkie1", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
+    { item="Base.WalkieTalkie2", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
+    { item="Base.WalkieTalkie3", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
+    { item="Base.WalkieTalkie4", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
+    { item="Base.WalkieTalkie5", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
+    { item="Base.WalkieTalkieMakeShift", basePrice=89, tags={"Electronics.Radio.TwoWay.Walkie", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=2} },
 })
 
 print("[DynamicTrading] Walkie Registry Complete")

@@ -53,6 +53,13 @@ def _apply_shared_multipliers(raw_score: float, context: Dict[str, Any], config:
         if origin_mult != 1.0:
             adjustments.append(make_component(f"Origin: {origin}", origin_mult, "multiplier"))
 
+    for theme in tags_dict.get("theme", []):
+        theme_name = theme.split(".", 1)[1] if theme.startswith("Theme.") else theme
+        theme_mult = config.get("theme_multipliers", {}).get(theme_name, 1.0)
+        price *= theme_mult
+        if theme_mult != 1.0:
+            adjustments.append(make_component(f"Theme: {theme_name}", theme_mult, "multiplier"))
+
     if (
         context["total_uses"] > 1
         and not context.get("is_hygiene_item")

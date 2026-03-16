@@ -1,19 +1,19 @@
 {
   "version": 1,
   "global": {
-    "min_price": 1,
-    "max_price": 3500,
+    "min_price": 1.0,
+    "max_price": 3500.0,
     "base_multiplier": 1.0,
     "opened_penalty": 0.72,
     "extra_use_bonus": 0.08,
     "max_use_multiplier": 2.0,
-    "stock_ultralight_max": 50,
-    "stock_light_max": 25,
-    "stock_small_max": 15,
-    "stock_medium_max": 10,
-    "stock_heavy_max": 5,
-    "stock_massive_max": 2,
-    "stock_max_cap": 100,
+    "stock_ultralight_max": 50.0,
+    "stock_light_max": 25.0,
+    "stock_small_max": 15.0,
+    "stock_medium_max": 10.0,
+    "stock_heavy_max": 5.0,
+    "stock_massive_max": 2.0,
+    "stock_max_cap": 100.0,
     "stock_default_min_ratio": 0.2,
     "stock_common_multiplier": 1.0,
     "stock_uncommon_multiplier": 0.85,
@@ -22,10 +22,11 @@
     "stock_ultrarare_multiplier": 0.1,
     "stock_waste_multiplier": 1.2,
     "stock_luxury_multiplier": 0.7,
-    "stock_origin_police_multiplier": 0.8,
-    "stock_origin_militia_multiplier": 0.75,
-    "stock_origin_clinical_multiplier": 0.75,
-    "stock_origin_industrial_multiplier": 0.9,
+    "stock_theme_police_multiplier": 0.8,
+    "stock_theme_militia_multiplier": 0.75,
+    "stock_theme_clinical_multiplier": 0.75,
+    "stock_theme_industrial_multiplier": 0.9,
+    "stock_theme_primitive_multiplier": 0.8,
     "stock_rare_min_ratio": 0.0,
     "stock_opened_multiplier": 0.7
   },
@@ -42,17 +43,28 @@
     "Luxury": 1.6
   },
   "origin_multipliers": {
+    "Vanilla": 1.0
+  },
+  "theme_multipliers": {
     "Police": 1.08,
     "Militia": 1.15,
     "Clinical": 1.12,
-    "Industrial": 1.06
+    "Industrial": 1.06,
+    "Primitive": 1.05
   },
-  "tag_price_additions": {},
-  "item_overrides": {},
+  "tag_price_additions": {
+    "Building": 288.0,
+    "Building.Fixture": 141.0,
+    "Building.Fixture.Appliance": 100.0,
+    "Building.Fixture.Plumbing": 117.0,
+    "Building.Furniture": 155.0,
+    "Building.Furniture.Bed": 333.0,
+    "Building.Furniture.Chair": 79.0
+  },
   "categories": {
     "Food": {
-      "price_floor": 6,
-      "price_ceiling": 220,
+      "price_floor": 6.0,
+      "price_ceiling": 220.0,
       "base": 7.0,
       "hunger_weight": 160.0,
       "thirst_weight": 90.0,
@@ -92,8 +104,8 @@
       "dried_staple_min_ratio": 0.22
     },
     "Medical": {
-      "price_floor": 12,
-      "price_ceiling": 520,
+      "price_floor": 12.0,
+      "price_ceiling": 520.0,
       "base": 18.0,
       "sterile_bonus": 14.0,
       "dose_weight": 4.0,
@@ -129,8 +141,8 @@
       "tobacco_stock_multiplier": 1.1
     },
     "Weapon": {
-      "price_floor": 8,
-      "price_ceiling": 1400,
+      "price_floor": 8.0,
+      "price_ceiling": 1400.0,
       "base": 18.0,
       "damage_weight": 28.0,
       "range_weight": 4.0,
@@ -156,8 +168,8 @@
       "tool_weapon_stock_multiplier": 1.0
     },
     "Tool": {
-      "price_floor": 8,
-      "price_ceiling": 600,
+      "price_floor": 8.0,
+      "price_ceiling": 600.0,
       "base": 14.0,
       "durability_weight": 1.8,
       "capacity_weight": 1.2,
@@ -181,8 +193,8 @@
       "specialized_stock_multiplier": 0.8
     },
     "Container": {
-      "price_floor": 10,
-      "price_ceiling": 700,
+      "price_floor": 10.0,
+      "price_ceiling": 700.0,
       "base": 14.0,
       "capacity_weight": 4.0,
       "weight_reduction_weight": 0.65,
@@ -194,8 +206,8 @@
       "wearable_stock_multiplier": 0.9
     },
     "Clothing": {
-      "price_floor": 2,
-      "price_ceiling": 280,
+      "price_floor": 2.0,
+      "price_ceiling": 280.0,
       "base": 4.0,
       "defense_weight": 0.35,
       "warmth_weight": 10.0,
@@ -206,8 +218,8 @@
       "stock_min_ratio": 0.18
     },
     "Electronics": {
-      "price_floor": 8,
-      "price_ceiling": 1800,
+      "price_floor": 8.0,
+      "price_ceiling": 1800.0,
       "base": 14.0,
       "power_bonus": 8.0,
       "light_bonus": 14.0,
@@ -223,8 +235,8 @@
       "stock_min_ratio": 0.05
     },
     "Literature": {
-      "price_floor": 3,
-      "price_ceiling": 220,
+      "price_floor": 3.0,
+      "price_ceiling": 220.0,
       "base": 5.0,
       "recipe_weight": 18.0,
       "skill_book_bonus": 16.0,
@@ -236,15 +248,44 @@
       "stock_min_ratio": 0.16
     },
     "Resource": {
-      "price_floor": 3,
-      "price_ceiling": 420,
+      "price_floor": 3.0,
+      "price_ceiling": 420.0,
       "base": 7.0,
       "metal_weight": 0.8,
       "carton_metal_multiplier": 0.3,
+      "metal_family_generic_bonus": 4.0,
+      "metal_family_gold_bonus": 60.0,
+      "metal_family_silver_bonus": 34.0,
+      "metal_family_copper_bonus": 22.0,
+      "metal_family_brass_bonus": 18.0,
+      "metal_family_bronze_bonus": 16.0,
+      "metal_family_steel_bonus": 18.0,
+      "metal_family_iron_bonus": 12.0,
+      "metal_family_aluminum_bonus": 14.0,
+      "metal_family_lead_bonus": 10.0,
+      "metal_family_tin_bonus": 9.0,
+      "metal_form_raw_bonus": 4.0,
+      "metal_form_mold_bonus": -6.0,
+      "metal_form_ore_bonus": -8.0,
+      "metal_form_scrap_bonus": -7.0,
+      "metal_form_coin_bonus": 6.0,
+      "metal_form_sheet_bonus": 28.0,
+      "metal_form_ingot_bonus": 20.0,
+      "metal_form_bloom_bonus": 6.0,
+      "metal_form_block_bonus": 18.0,
+      "metal_form_chunk_bonus": 12.0,
+      "metal_form_piece_bonus": 7.0,
+      "metal_form_rod_bonus": 8.0,
+      "metal_form_band_bonus": 9.0,
+      "metal_form_slug_bonus": 8.0,
+      "metal_form_bar_bonus": 16.0,
+      "metal_form_fragment_bonus": 5.0,
       "fuel_weight": 1.2,
       "fire_fuel_weight": 15.0,
       "crafting_bonus": 8.0,
       "survival_bonus": 4.0,
+      "noble_metal_bonus": 6.0,
+      "ingot_role_bonus": 4.0,
       "gas_fuel_bonus": 18.0,
       "solid_fuel_bonus": 8.0,
       "propane_bonus": 30.0,
@@ -267,6 +308,15 @@
       "weight_penalty": 0.18,
       "stock_multiplier": 1.1,
       "stock_min_ratio": 0.18,
+      "metal_stock_multiplier": 0.95,
+      "metal_noble_stock_multiplier": 0.35,
+      "metal_noble_min_ratio": 0.0,
+      "metal_ingot_stock_multiplier": 0.5,
+      "metal_ingot_min_ratio": 0.0,
+      "metal_coin_stock_multiplier": 0.8,
+      "metal_scrap_stock_multiplier": 1.2,
+      "metal_ore_stock_multiplier": 0.6,
+      "metal_ore_min_ratio": 0.0,
       "hardware_stock_multiplier": 1.35,
       "hardware_min_ratio": 0.2,
       "hardware_carton_stock_multiplier": 0.35,
@@ -284,8 +334,8 @@
       "parts_stock_multiplier": 0.65
     },
     "Building": {
-      "price_floor": 1,
-      "price_ceiling": 520,
+      "price_floor": 1.0,
+      "price_ceiling": 520.0,
       "base": 5.0,
       "survival_bonus": 8.0,
       "shelter_bonus": 12.0,
@@ -340,8 +390,8 @@
       "packed_stock_multiplier": 0.8
     },
     "Misc": {
-      "price_floor": 1,
-      "price_ceiling": 200,
+      "price_floor": 1.0,
+      "price_ceiling": 200.0,
       "base": 2.0,
       "value_weight": 0.75,
       "utility_bonus": 5.0,
@@ -361,5 +411,6 @@
       "stock_multiplier": 1.0,
       "stock_min_ratio": 0.16
     }
-  }
+  },
+  "item_overrides": {}
 }

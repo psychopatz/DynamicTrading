@@ -12,18 +12,18 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Gadget.Control] [Rarity.Common] (1 item)
-    { item="Base.ScannerModule", basePrice=14, tags={"Electronics.Gadget.Control", "Rarity.Common"}, stockRange={min=0, max=13} },
+    { item="Base.ScannerModule", basePrice=14, tags={"Electronics.Gadget.Control", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=13} },
 
     -- [Electronics.Gadget.Control] [Rarity.Rare] (9 items)
-    { item="Base.HomeAlarm", basePrice=20, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=2} },
-    { item="Base.MotionSensor", basePrice=101, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.PowerBar", basePrice=112, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.Remote", basePrice=113, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.RemoteCraftedV1", basePrice=194, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.RemoteCraftedV2", basePrice=194, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.RemoteCraftedV3", basePrice=194, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.TimerCrafted", basePrice=136, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.TriggerCrafted", basePrice=101, tags={"Electronics.Gadget.Control", "Rarity.Rare"}, stockRange={min=0, max=7} },
+    { item="Base.HomeAlarm", basePrice=20, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=2} },
+    { item="Base.MotionSensor", basePrice=101, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.PowerBar", basePrice=112, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=1} },
+    { item="Base.Remote", basePrice=113, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.RemoteCraftedV1", basePrice=194, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.RemoteCraftedV2", basePrice=194, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.RemoteCraftedV3", basePrice=194, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.TimerCrafted", basePrice=136, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.TriggerCrafted", basePrice=101, tags={"Electronics.Gadget.Control", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=7} },
 })
 
 print("[DynamicTrading] Control Registry Complete")

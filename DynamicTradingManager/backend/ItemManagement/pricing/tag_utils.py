@@ -7,7 +7,7 @@ DEFAULT_TAGS_DICT = {
     "primary": "Misc.General",
     "rarity": "Common",
     "quality": None,
-    "origin": None,
+    "origin": "Vanilla",
     "theme": [],
     "all_tags": [],
 }
@@ -49,7 +49,7 @@ def normalize_tags_dict(tags_dict: Any) -> Dict[str, Any]:
     normalized["quality"] = str(quality) if quality else None
 
     origin = tags_dict.get("origin")
-    normalized["origin"] = str(origin) if origin else None
+    normalized["origin"] = str(origin) if origin else "Vanilla"
 
     theme = tags_dict.get("theme") or []
     if isinstance(theme, list):

@@ -2,6 +2,8 @@
 Auto-tagging analyzer - Main entry point for property-based tagging.
 Integrates signature matching with descriptor generation.
 """
+import re
+
 from .matcher import match_item, match_batch, get_multi_category_matches
 from .helpers import PropertyAnalyzer
 
@@ -189,23 +191,16 @@ class AutoTagger:
     
     @staticmethod
     def _determine_origin(item_id, props):
-        """Determine origin descriptor."""
-        if any(x in item_id for x in ['Police', 'Sheriff', 'Cop']):
-            return 'Police'
-        elif any(x in item_id for x in ['Military', 'Army', 'Tactical']):
-            return 'Militia'
-        elif any(x in item_id for x in ['Doctor', 'Medic', 'Surgical', 'Hospital']):
-            return 'Clinical'
-        elif any(x in item_id for x in ['Industrial', 'Factory', 'Warehouse']):
-            return 'Industrial'
-        
-        return None
+        """Determine source-of-item origin descriptor."""
+        return 'Vanilla'
     
     @staticmethod
     def _determine_themes(item_id, props):
         """Determine theme descriptors."""
         themes = []
         item_id_lower = item_id.lower()
+        normalized = re.sub(r'([a-z])([A-Z])', r'\1 \2', item_id or '').replace('_', ' ')
+        item_tokens = set(token.lower() for token in re.findall(r'[A-Za-z]+', normalized))
         analyzer = PropertyAnalyzer(props)
         
         if any(x in item_id_lower for x in ['camp', 'outdoor', 'wilderness', 'survival']):
@@ -218,8 +213,19 @@ class AutoTagger:
             insulation = analyzer.get_stat('Insulation')
             if insulation > 0.5:
                 themes.append('Winter')
-        
-        return themes
+
+        if item_tokens.intersection({'police', 'sheriff', 'cop'}):
+            themes.append('Police')
+        if item_tokens.intersection({'military', 'army', 'tactical'}):
+            themes.append('Militia')
+        if item_tokens.intersection({'doctor', 'medic', 'medical', 'surgical', 'hospital'}):
+            themes.append('Clinical')
+        if item_tokens.intersection({'industrial', 'factory', 'warehouse'}):
+            themes.append('Industrial')
+        if item_tokens.intersection({'primitive', 'tribal', 'stoneage', 'ancestral'}):
+            themes.append('Primitive')
+
+        return list(dict.fromkeys(themes))
     
     @staticmethod
     def _get_default_tags(item_id, props):
@@ -232,7 +238,7 @@ class AutoTagger:
             'tags': ['Misc.General'],
             'rarity': 'Common',
             'quality': None,
-            'origin': None,
+            'origin': 'Vanilla',
             'themes': [],
             'details': {}
         }

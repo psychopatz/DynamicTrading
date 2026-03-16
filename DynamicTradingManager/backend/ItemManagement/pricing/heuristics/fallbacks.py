@@ -115,6 +115,17 @@ def _evaluate_resource(context, config):
     metal_score = context["metal_value"] * config["metal_weight"]
     if context["is_carton"]:
         metal_score *= config["carton_metal_multiplier"]
+    metal_family_bonus = 0.0
+    metal_form_bonus = 0.0
+    if context.get("is_metal_resource"):
+        metal_family_bonus = config.get(
+            f"metal_family_{context.get('metal_family', 'generic')}_bonus",
+            config.get("metal_family_generic_bonus", 0.0),
+        )
+        metal_form_bonus = config.get(
+            f"metal_form_{context.get('metal_form', 'raw')}_bonus",
+            config.get("metal_form_raw_bonus", 0.0),
+        )
     fuel_score = context["fuel_value"] * config["fuel_weight"]
     burn_score = context["fire_fuel_ratio"] * config["fire_fuel_weight"]
     crafting_bonus = config["crafting_bonus"] if context["use_delta"] > 0 else 0.0
@@ -160,12 +171,28 @@ def _evaluate_resource(context, config):
         role_bonus += config["depleting_supply_bonus"]
     if context["is_bulk_resource_bundle"] and not context["is_hardware_resource"]:
         role_bonus += config["bulk_bundle_bonus"]
+    if context.get("is_noble_metal_resource"):
+        role_bonus += config.get("noble_metal_bonus", 0.0)
+    if context.get("is_metal_ingot_resource"):
+        role_bonus += config.get("ingot_role_bonus", 0.0)
 
     weight_penalty = context["weight"] * config["weight_penalty"]
-    score = config["base"] + metal_score + fuel_score + burn_score + crafting_bonus + role_bonus - weight_penalty
+    score = (
+        config["base"]
+        + metal_score
+        + metal_family_bonus
+        + metal_form_bonus
+        + fuel_score
+        + burn_score
+        + crafting_bonus
+        + role_bonus
+        - weight_penalty
+    )
     components = [
         make_component("Base", config["base"]),
         make_component("Metal value", metal_score),
+        make_component("Metal family", metal_family_bonus),
+        make_component("Metal form", metal_form_bonus),
         make_component("Fuel value", fuel_score),
         make_component("Burn value", burn_score),
         make_component("Crafting bonus", crafting_bonus),

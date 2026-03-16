@@ -74,13 +74,15 @@ def process_lua_file(filepath, vanilla_items, dry_run=False, regenerate_tags=Fal
         new_stock = f'{{min={final_min}, max={final_max}}}'
         new_entry = f'{{ item="Base.{item_id}", basePrice={new_price}, tags={{{tags_body}}}, stockRange={new_stock} }}'
 
-        if new_price != old_price or new_stock != old_stock:
+        if new_price != old_price or new_stock != old_stock or match.group(3) != f'{{{tags_body}}}':
             updates.append({
                 'old': match.group(0),
                 'new': new_entry,
                 'item_id': item_id,
                 'old_price': old_price,
                 'new_price': new_price,
+                'old_tags': match.group(3),
+                'new_tags': f'{{{tags_body}}}',
                 'old_stock': old_stock,
                 'new_stock': new_stock,
             })

@@ -12,10 +12,10 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Generator] [Rarity.Common] (4 items)
-    { item="Base.Generator", basePrice=1800, tags={"Electronics.Generator", "Rarity.Common", "Electronics.PowerGenerator"}, stockRange={min=0, max=1} },
-    { item="Base.Generator_Blue", basePrice=1800, tags={"Electronics.Generator", "Rarity.Common", "Electronics.PowerGenerator"}, stockRange={min=0, max=1} },
-    { item="Base.Generator_Old", basePrice=1800, tags={"Electronics.Generator", "Rarity.Common", "Electronics.PowerGenerator"}, stockRange={min=0, max=1} },
-    { item="Base.Generator_Yellow", basePrice=1800, tags={"Electronics.Generator", "Rarity.Common", "Electronics.PowerGenerator"}, stockRange={min=0, max=1} },
+    { item="Base.Generator", basePrice=1800, tags={"Electronics.Generator", "Rarity.Common", "Origin.Vanilla", "Electronics.PowerGenerator"}, stockRange={min=0, max=1} },
+    { item="Base.Generator_Blue", basePrice=1800, tags={"Electronics.Generator", "Rarity.Common", "Origin.Vanilla", "Electronics.PowerGenerator"}, stockRange={min=0, max=1} },
+    { item="Base.Generator_Old", basePrice=1800, tags={"Electronics.Generator", "Rarity.Common", "Origin.Vanilla", "Electronics.PowerGenerator"}, stockRange={min=0, max=1} },
+    { item="Base.Generator_Yellow", basePrice=1800, tags={"Electronics.Generator", "Rarity.Common", "Origin.Vanilla", "Electronics.PowerGenerator"}, stockRange={min=0, max=1} },
 })
 
 print("[DynamicTrading] Generator Registry Complete")

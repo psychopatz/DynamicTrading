@@ -132,6 +132,21 @@ def _stock_role_values(context: Dict[str, Any], category_cfg: Dict[str, float]) 
             max_mult *= category_cfg.get("wearable_stock_multiplier", 1.0)
 
     elif category == "Resource":
+        if context.get("is_metal_resource"):
+            max_mult *= category_cfg.get("metal_stock_multiplier", 1.0)
+        if context.get("is_noble_metal_resource"):
+            max_mult *= category_cfg.get("metal_noble_stock_multiplier", 1.0)
+            min_ratio = min(min_ratio, category_cfg.get("metal_noble_min_ratio", min_ratio))
+        if context.get("is_metal_ingot_resource"):
+            max_mult *= category_cfg.get("metal_ingot_stock_multiplier", 1.0)
+            min_ratio = min(min_ratio, category_cfg.get("metal_ingot_min_ratio", min_ratio))
+        if context.get("is_metal_coin_resource"):
+            max_mult *= category_cfg.get("metal_coin_stock_multiplier", 1.0)
+        if context.get("is_metal_scrap_resource"):
+            max_mult *= category_cfg.get("metal_scrap_stock_multiplier", 1.0)
+        if context.get("is_metal_ore_resource"):
+            max_mult *= category_cfg.get("metal_ore_stock_multiplier", 1.0)
+            min_ratio = min(min_ratio, category_cfg.get("metal_ore_min_ratio", min_ratio))
         if context["is_hardware_resource"]:
             max_mult *= category_cfg.get("hardware_stock_multiplier", 1.0)
             min_ratio = max(min_ratio, category_cfg.get("hardware_min_ratio", min_ratio))
@@ -190,7 +205,7 @@ def _apply_global_stock_modifiers(
 ) -> tuple[int, float]:
     rarity = context["tags_dict"].get("rarity") or "Common"
     quality = context["tags_dict"].get("quality")
-    origin = context["tags_dict"].get("origin")
+    themes = context["tags_dict"].get("theme") or []
 
     rarity_mult = {
         "Common": global_cfg.get("stock_common_multiplier", 1.0),
@@ -206,14 +221,18 @@ def _apply_global_stock_modifiers(
     elif quality == "Luxury":
         max_stock = max(1, math.floor(max_stock * global_cfg.get("stock_luxury_multiplier", 0.7)))
 
-    if origin == "Police":
-        max_stock = max(1, math.floor(max_stock * global_cfg.get("stock_origin_police_multiplier", 0.8)))
-    elif origin == "Militia":
-        max_stock = max(1, math.floor(max_stock * global_cfg.get("stock_origin_militia_multiplier", 0.75)))
-    elif origin == "Clinical":
-        max_stock = max(1, math.floor(max_stock * global_cfg.get("stock_origin_clinical_multiplier", 0.75)))
-    elif origin == "Industrial":
-        max_stock = max(1, math.floor(max_stock * global_cfg.get("stock_origin_industrial_multiplier", 0.9)))
+    theme_stock_keys = {
+        "Police": "stock_theme_police_multiplier",
+        "Militia": "stock_theme_militia_multiplier",
+        "Clinical": "stock_theme_clinical_multiplier",
+        "Industrial": "stock_theme_industrial_multiplier",
+        "Primitive": "stock_theme_primitive_multiplier",
+    }
+    for theme in themes:
+        theme_name = theme.split(".", 1)[1] if isinstance(theme, str) and theme.startswith("Theme.") else str(theme)
+        stock_key = theme_stock_keys.get(theme_name)
+        if stock_key:
+            max_stock = max(1, math.floor(max_stock * global_cfg.get(stock_key, 1.0)))
 
     if rarity in ("Rare", "Legendary", "UltraRare"):
         min_ratio = min(min_ratio, global_cfg.get("stock_rare_min_ratio", 0.0))

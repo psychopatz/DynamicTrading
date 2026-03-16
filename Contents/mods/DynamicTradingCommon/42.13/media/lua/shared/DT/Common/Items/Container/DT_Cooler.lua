@@ -12,11 +12,11 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Container.Bag.Cooler] [Rarity.Rare] (5 items)
-    { item="Base.Cooler", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
-    { item="Base.Cooler_Beer", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
-    { item="Base.Cooler_Meat", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
-    { item="Base.Cooler_Seafood", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
-    { item="Base.Cooler_Soda", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.Cooler", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.Cooler_Beer", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.Cooler_Meat", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.Cooler_Seafood", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.Cooler_Soda", basePrice=135, tags={"Container.Bag.Cooler", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
 })
 
 print("[DynamicTrading] Cooler Registry Complete")

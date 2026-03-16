@@ -7,6 +7,38 @@ from ...commons.vanilla_loader import count_learned_recipes, get_stat
 from ..tag_utils import category_parts, infer_category
 
 
+METAL_FAMILY_TOKENS = {
+    "gold": ("gold",),
+    "silver": ("silver",),
+    "copper": ("copper",),
+    "brass": ("brass",),
+    "bronze": ("bronze",),
+    "steel": ("steel",),
+    "iron": ("iron",),
+    "aluminum": ("aluminum", "aluminium"),
+    "lead": ("lead",),
+    "tin": ("tin",),
+}
+
+METAL_FORM_TOKENS = [
+    ("mold", ("mold", "cast")),
+    ("ore", ("ore",)),
+    ("scrap", ("scrap",)),
+    ("coin", ("coin",)),
+    ("sheet", ("sheet",)),
+    ("ingot", ("ingot",)),
+    ("bloom", ("bloom",)),
+    ("block", ("block",)),
+    ("chunk", ("chunk",)),
+    ("piece", ("piece",)),
+    ("rod", ("rod",)),
+    ("band", ("band",)),
+    ("slug", ("slug",)),
+    ("bar", ("bar",)),
+    ("fragment", ("fragment",)),
+]
+
+
 def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
 
@@ -26,6 +58,36 @@ def make_component(label: str, value: float, detail: str | None = None) -> Dict[
     if detail:
         component["detail"] = detail
     return component
+
+
+def _item_tokens(item_id: str) -> list[str]:
+    normalized = re.sub(r"([a-z])([A-Z])", r"\1 \2", item_id or "")
+    normalized = normalized.replace("_", " ")
+    return [token.lower() for token in re.findall(r"[A-Za-z]+", normalized)]
+
+
+def _detect_metal_family(item_id: str, all_tags: list[str]) -> str:
+    for tag in all_tags or []:
+        if isinstance(tag, str) and tag.startswith("Resource.Material.MetalFamily."):
+            return tag.rsplit(".", 1)[-1].lower()
+
+    item_tokens = _item_tokens(item_id)
+    for family, tokens in METAL_FAMILY_TOKENS.items():
+        if any(token in item_tokens for token in tokens):
+            return family
+    return "generic"
+
+
+def _detect_metal_form(item_id: str, all_tags: list[str]) -> str:
+    for tag in all_tags or []:
+        if isinstance(tag, str) and tag.startswith("Resource.Material.MetalForm."):
+            return tag.rsplit(".", 1)[-1].lower()
+
+    item_tokens = _item_tokens(item_id)
+    for form, tokens in METAL_FORM_TOKENS:
+        if any(token in item_tokens for token in tokens):
+            return form
+    return "raw"
 
 
 def build_item_context(item_id: str, props: str, tags_dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -72,11 +134,16 @@ def build_item_context(item_id: str, props: str, tags_dict: Dict[str, Any]) -> D
         )
     )
     has_survival_gear = "survivalgear = true" in props_lower
+    all_tags = [tag for tag in (tags_dict.get("all_tags") or []) if isinstance(tag, str)]
     skill_level = get_stat(props, "LvlSkillTrained", 0.0)
     if skill_level <= 0:
         level_match = re.search(r"(\d+)$", item_id or "")
         if level_match:
             skill_level = float(level_match.group(1))
+
+    is_metal_resource = category == "Resource" and ".metal" in primary_lower
+    metal_family = _detect_metal_family(item_id, all_tags) if is_metal_resource else "generic"
+    metal_form = _detect_metal_form(item_id, all_tags) if is_metal_resource else "raw"
 
     return {
         "item_id": item_id,
@@ -86,6 +153,7 @@ def build_item_context(item_id: str, props: str, tags_dict: Dict[str, Any]) -> D
         "display_category": display_category,
         "raw_tags": raw_tags,
         "tags_dict": tags_dict,
+        "all_tags": all_tags,
         "primary_tag": primary,
         "category": infer_category(tags_dict) or category,
         "subcategories": subcategories,
@@ -323,6 +391,14 @@ def build_item_context(item_id: str, props: str, tags_dict: Dict[str, Any]) -> D
             or "smallsheetmetal" in raw_tags
             or "smeltablesteel" in raw_tags
         ),
+        "is_metal_resource": is_metal_resource,
+        "metal_family": metal_family,
+        "metal_form": metal_form,
+        "is_noble_metal_resource": is_metal_resource and metal_family in ("gold", "silver"),
+        "is_metal_ingot_resource": is_metal_resource and metal_form == "ingot",
+        "is_metal_coin_resource": is_metal_resource and metal_form == "coin",
+        "is_metal_scrap_resource": is_metal_resource and metal_form == "scrap",
+        "is_metal_ore_resource": is_metal_resource and metal_form == "ore",
         "is_masonry_resource": category == "Resource"
         and (
             ".mineral" in primary_lower

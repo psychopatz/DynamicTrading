@@ -15,7 +15,7 @@ DynamicTrading.RegisterArchetype("Brewer", {
         ["Food.NonPerishable.Grain"] = 1.4,
         ["Resource.Fuel"] = 1.3
     },
-    forbid = { "Origin.Police", "Literature.Book", "Literature.Book" }
+    forbid = { "Theme.Police", "Literature.Book", "Literature.Book" }
 })
 
 end

@@ -5,7 +5,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Sheriff", {
     name = "Constable",
     allocations = {
-        { tags={"Origin.Police"}, count = 5 },
+        { tags={"Theme.Police"}, count = 5 },
         { tags={"Weapon.Ranged.Firearm"}, count = 4 },
         { tags={"Weapon.Ranged.Ammo"}, count = 4 },
         { tags={"Weapon.General"}, count = 3 }

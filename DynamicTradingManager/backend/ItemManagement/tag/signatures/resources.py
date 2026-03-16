@@ -75,6 +75,37 @@ RESOURCE_TAG_HINTS = {
     'base:ingot',
 }
 
+METAL_FAMILY_PATTERNS = {
+    'Gold': ('gold',),
+    'Silver': ('silver',),
+    'Copper': ('copper',),
+    'Brass': ('brass',),
+    'Bronze': ('bronze',),
+    'Steel': ('steel',),
+    'Iron': ('iron',),
+    'Aluminum': ('aluminum', 'aluminium'),
+    'Lead': ('lead',),
+    'Tin': ('tin',),
+}
+
+METAL_FORM_PATTERNS = [
+    ('Mold', ('mold', 'cast')),
+    ('Ore', ('ore',)),
+    ('Scrap', ('scrap',)),
+    ('Coin', ('coin',)),
+    ('Sheet', ('sheet',)),
+    ('Ingot', ('ingot',)),
+    ('Bloom', ('bloom',)),
+    ('Block', ('block',)),
+    ('Chunk', ('chunk',)),
+    ('Piece', ('piece',)),
+    ('Rod', ('rod',)),
+    ('Band', ('band',)),
+    ('Slug', ('slug',)),
+    ('Bar', ('bar',)),
+    ('Fragment', ('fragment',)),
+]
+
 
 def _has_prop_value(props, key, value):
     return re.search(rf"\b{re.escape(key)}\s*=\s*{re.escape(value)}\b", props, re.IGNORECASE) is not None
@@ -100,8 +131,31 @@ def _matches_gas_fuel(item_id, display_category, analyzer):
     return False
 
 
+def _item_tokens(item_id):
+    normalized = re.sub(r'([a-z])([A-Z])', r'\1 \2', item_id or "")
+    normalized = normalized.replace('_', ' ')
+    return [token.lower() for token in re.findall(r'[A-Za-z]+', normalized)]
+
+
+def _get_metal_family(item_id):
+    item_tokens = _item_tokens(item_id)
+    for family, family_tokens in METAL_FAMILY_PATTERNS.items():
+        if any(token in item_tokens for token in family_tokens):
+            return family
+    return None
+
+
+def _get_metal_form(item_id):
+    item_tokens = _item_tokens(item_id)
+    for form, tokens in METAL_FORM_PATTERNS:
+        if any(token in item_tokens for token in tokens):
+            return form
+    return None
+
+
 def _get_resource_subtype(item_id, display_category, script_tags, analyzer):
     item_lower = item_id.lower()
+    item_tokens = _item_tokens(item_id)
 
     if id_matches_pattern(item_id, PART_PATTERNS) or 'base:toolhead' in script_tags:
         return 'Parts'
@@ -144,7 +198,7 @@ def _get_resource_subtype(item_id, display_category, script_tags, analyzer):
     if id_matches_pattern(item_id, GLASS_PATTERNS) or 'base:glass' in script_tags:
         return 'Material.Glass'
 
-    if id_matches_pattern(item_id, METAL_PATTERNS) or script_tags.intersection({'base:hasmetal', 'base:ingot', 'base:steelmaterial'}):
+    if any(pattern.lower() in item_tokens for pattern in METAL_PATTERNS) or script_tags.intersection({'base:hasmetal', 'base:ingot', 'base:steelmaterial'}):
         return 'Material.Metal'
 
     if id_matches_pattern(item_id, WOOD_PATTERNS):
@@ -265,6 +319,14 @@ def get_resource_tags(item_id, props):
 
     primary_tag = f"Resource.{details.get('resource_type', 'Material.General')}"
     tags = [primary_tag]
+
+    if primary_tag == 'Resource.Material.Metal':
+        metal_family = _get_metal_family(item_id)
+        metal_form = _get_metal_form(item_id)
+        if metal_family:
+            tags.append(f'Resource.Material.MetalFamily.{metal_family}')
+        if metal_form:
+            tags.append(f'Resource.Material.MetalForm.{metal_form}')
 
     if details.get('is_craftable') and 'Resource.Craftable' not in tags:
         tags.append('Resource.Craftable')

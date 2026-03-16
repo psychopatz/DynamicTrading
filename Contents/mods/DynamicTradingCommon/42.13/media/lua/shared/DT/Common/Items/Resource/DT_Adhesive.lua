@@ -12,17 +12,17 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Resource.Material.Adhesive] [Rarity.Rare] (11 items)
-    { item="Base.AdhesiveTapeBox", basePrice=9, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=2} },
-    { item="Base.BucketCarvedWallpaperPaste", basePrice=28, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=1} },
-    { item="Base.BucketWallpaperPaste", basePrice=28, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=1} },
-    { item="Base.DuctTape", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=8} },
-    { item="Base.DuctTapeBox", basePrice=9, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=2} },
-    { item="Base.Epoxy", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=8} },
-    { item="Base.FiberglassTape", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=6} },
-    { item="Base.Glue", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=8} },
-    { item="Base.Scotchtape", basePrice=16, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=8} },
-    { item="Base.WallpaperPastePowder", basePrice=26, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=2} },
-    { item="Base.Woodglue", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Resource.Craftable"}, stockRange={min=0, max=6} },
+    { item="Base.AdhesiveTapeBox", basePrice=9, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=2} },
+    { item="Base.BucketCarvedWallpaperPaste", basePrice=28, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=1} },
+    { item="Base.BucketWallpaperPaste", basePrice=28, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=1} },
+    { item="Base.DuctTape", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=8} },
+    { item="Base.DuctTapeBox", basePrice=9, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=2} },
+    { item="Base.Epoxy", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=8} },
+    { item="Base.FiberglassTape", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=6} },
+    { item="Base.Glue", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=8} },
+    { item="Base.Scotchtape", basePrice=16, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=8} },
+    { item="Base.WallpaperPastePowder", basePrice=26, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=2} },
+    { item="Base.Woodglue", basePrice=36, tags={"Resource.Material.Adhesive", "Rarity.Rare", "Origin.Vanilla", "Resource.Craftable"}, stockRange={min=0, max=6} },
 })
 
 print("[DynamicTrading] Adhesive Registry Complete")

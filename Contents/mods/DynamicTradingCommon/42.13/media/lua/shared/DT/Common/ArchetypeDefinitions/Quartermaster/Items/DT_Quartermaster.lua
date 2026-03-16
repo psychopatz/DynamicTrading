@@ -5,7 +5,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Quartermaster", {
     name = "Deserter",
     allocations = {
-        { tags={"Origin.Militia"}, count = 8 },
+        { tags={"Theme.Militia"}, count = 8 },
         { tags={"Clothing.Accessory.Belt"}, count = 5 },
         { tags={"Container.Backpack"}, count = 4 },
         { tags={"Food.NonPerishable.Meat"}, count = 3 },

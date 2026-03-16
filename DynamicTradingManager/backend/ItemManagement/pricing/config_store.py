@@ -32,10 +32,11 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         "stock_ultrarare_multiplier": 0.1,
         "stock_waste_multiplier": 1.2,
         "stock_luxury_multiplier": 0.7,
-        "stock_origin_police_multiplier": 0.8,
-        "stock_origin_militia_multiplier": 0.75,
-        "stock_origin_clinical_multiplier": 0.75,
-        "stock_origin_industrial_multiplier": 0.9,
+        "stock_theme_police_multiplier": 0.8,
+        "stock_theme_militia_multiplier": 0.75,
+        "stock_theme_clinical_multiplier": 0.75,
+        "stock_theme_industrial_multiplier": 0.9,
+        "stock_theme_primitive_multiplier": 0.8,
         "stock_rare_min_ratio": 0.0,
         "stock_opened_multiplier": 0.7,
     },
@@ -52,10 +53,14 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         "Luxury": 1.6,
     },
     "origin_multipliers": {
+        "Vanilla": 1.0,
+    },
+    "theme_multipliers": {
         "Police": 1.08,
         "Militia": 1.15,
         "Clinical": 1.12,
         "Industrial": 1.06,
+        "Primitive": 1.05,
     },
     "tag_price_additions": {},
     "item_overrides": {},
@@ -251,10 +256,39 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
             "base": 7.0,
             "metal_weight": 0.8,
             "carton_metal_multiplier": 0.3,
+            "metal_family_generic_bonus": 4.0,
+            "metal_family_gold_bonus": 60.0,
+            "metal_family_silver_bonus": 34.0,
+            "metal_family_copper_bonus": 22.0,
+            "metal_family_brass_bonus": 18.0,
+            "metal_family_bronze_bonus": 16.0,
+            "metal_family_steel_bonus": 18.0,
+            "metal_family_iron_bonus": 12.0,
+            "metal_family_aluminum_bonus": 14.0,
+            "metal_family_lead_bonus": 10.0,
+            "metal_family_tin_bonus": 9.0,
+            "metal_form_raw_bonus": 4.0,
+            "metal_form_mold_bonus": -6.0,
+            "metal_form_ore_bonus": -8.0,
+            "metal_form_scrap_bonus": -7.0,
+            "metal_form_coin_bonus": 6.0,
+            "metal_form_sheet_bonus": 28.0,
+            "metal_form_ingot_bonus": 20.0,
+            "metal_form_bloom_bonus": 6.0,
+            "metal_form_block_bonus": 18.0,
+            "metal_form_chunk_bonus": 12.0,
+            "metal_form_piece_bonus": 7.0,
+            "metal_form_rod_bonus": 8.0,
+            "metal_form_band_bonus": 9.0,
+            "metal_form_slug_bonus": 8.0,
+            "metal_form_bar_bonus": 16.0,
+            "metal_form_fragment_bonus": 5.0,
             "fuel_weight": 1.2,
             "fire_fuel_weight": 15.0,
             "crafting_bonus": 8.0,
             "survival_bonus": 4.0,
+            "noble_metal_bonus": 6.0,
+            "ingot_role_bonus": 4.0,
             "gas_fuel_bonus": 18.0,
             "solid_fuel_bonus": 8.0,
             "propane_bonus": 30.0,
@@ -277,6 +311,15 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
             "weight_penalty": 0.18,
             "stock_multiplier": 1.1,
             "stock_min_ratio": 0.18,
+            "metal_stock_multiplier": 0.95,
+            "metal_noble_stock_multiplier": 0.35,
+            "metal_noble_min_ratio": 0.0,
+            "metal_ingot_stock_multiplier": 0.5,
+            "metal_ingot_min_ratio": 0.0,
+            "metal_coin_stock_multiplier": 0.8,
+            "metal_scrap_stock_multiplier": 1.2,
+            "metal_ore_stock_multiplier": 0.6,
+            "metal_ore_min_ratio": 0.0,
             "hardware_stock_multiplier": 1.35,
             "hardware_min_ratio": 0.2,
             "hardware_carton_stock_multiplier": 0.35,
@@ -417,8 +460,32 @@ def _normalize_category_map(data: Any) -> dict[str, dict[str, float]]:
     return out
 
 
+def _migrate_legacy_theme_pricing(merged: Dict[str, Any]) -> None:
+    global_cfg = merged.setdefault("global", {})
+    legacy_origin_stock_keys = {
+        "stock_origin_police_multiplier": "stock_theme_police_multiplier",
+        "stock_origin_militia_multiplier": "stock_theme_militia_multiplier",
+        "stock_origin_clinical_multiplier": "stock_theme_clinical_multiplier",
+        "stock_origin_industrial_multiplier": "stock_theme_industrial_multiplier",
+    }
+    for legacy_key, theme_key in legacy_origin_stock_keys.items():
+        if legacy_key in global_cfg and theme_key not in global_cfg:
+            global_cfg[theme_key] = global_cfg[legacy_key]
+
+    origin_multipliers = dict(merged.get("origin_multipliers", {}) or {})
+    theme_multipliers = dict(merged.get("theme_multipliers", {}) or {})
+    for legacy_name in ("Police", "Militia", "Clinical", "Industrial", "Primitive"):
+        if legacy_name in origin_multipliers and legacy_name not in theme_multipliers:
+            theme_multipliers[legacy_name] = origin_multipliers[legacy_name]
+
+    vanilla_multiplier = origin_multipliers.get("Vanilla", 1.0)
+    merged["origin_multipliers"] = {"Vanilla": vanilla_multiplier}
+    merged["theme_multipliers"] = theme_multipliers
+
+
 def validate_pricing_config(candidate: Dict[str, Any] | None) -> Dict[str, Any]:
     merged = _deep_merge(DEFAULT_PRICING_CONFIG, candidate or {})
+    _migrate_legacy_theme_pricing(merged)
     normalized: Dict[str, Any] = {
         "version": int(merged.get("version", 1)),
         "global": _normalize_named_numeric_map(merged.get("global", {}), "global"),
@@ -433,6 +500,10 @@ def validate_pricing_config(candidate: Dict[str, Any] | None) -> Dict[str, Any]:
         "origin_multipliers": _normalize_named_numeric_map(
             merged.get("origin_multipliers", {}),
             "origin_multipliers",
+        ),
+        "theme_multipliers": _normalize_named_numeric_map(
+            merged.get("theme_multipliers", {}),
+            "theme_multipliers",
         ),
         "tag_price_additions": _normalize_named_numeric_map(
             merged.get("tag_price_additions", {}),

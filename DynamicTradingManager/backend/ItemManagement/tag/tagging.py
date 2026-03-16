@@ -45,6 +45,12 @@ def _get_type_token(props):
     return m.group(1).lower() if m else ''
 
 
+def _item_tokens(item_id):
+    normalized = re.sub(r'([a-z])([A-Z])', r'\1 \2', item_id or '')
+    normalized = normalized.replace('_', ' ')
+    return [token.lower() for token in re.findall(r'[A-Za-z]+', normalized)]
+
+
 def _is_card_item(item_lower):
     """Detect greeting/deck/post cards for Literature.Cards subcategory."""
     return any(pattern in item_lower for pattern in CARD_ID_PATTERNS)
@@ -157,10 +163,11 @@ def determine_rarity(item_id, props):
 
 def determine_quality(item_id, props):
     """Determine quality descriptor"""
+    item_tokens = _item_tokens(item_id)
     if has_property(props, "Sterile"):
         return "Quality.Sterile"
     
-    if any(x in item_id.lower() for x in ['gold', 'diamond', 'designer', 'expensive']):
+    if any(token in item_tokens for token in ['gold', 'diamond', 'designer', 'expensive']):
         return "Quality.Luxury"
     
     has_empty_hint = bool(re.search(r"Tooltip_item_empty_", props, re.IGNORECASE))
@@ -173,35 +180,47 @@ def determine_quality(item_id, props):
 
 
 def determine_origin(item_id, props):
-    """Determine origin descriptor"""
-    if any(x in item_id for x in ['Police', 'Sheriff', 'Cop']):
-        return "Origin.Police"
-    elif any(x in item_id for x in ['Military', 'Army', 'Tactical']):
-        return "Origin.Militia"
-    elif any(x in item_id for x in ['Doctor', 'Medic', 'Surgical', 'Hospital']):
-        return "Origin.Clinical"
-    elif any(x in item_id for x in ['Industrial', 'Factory', 'Warehouse']):
-        return "Origin.Industrial"
-    
-    return None
+    """Determine source-of-item origin descriptor."""
+    return "Origin.Vanilla"
 
 
 def determine_theme(item_id, props):
     """Determine theme descriptors"""
     themes = []
-    
-    if any(x in item_id.lower() for x in ['camp', 'outdoor', 'wilderness', 'survival']):
+
+    item_lower = item_id.lower()
+    item_tokens = set(_item_tokens(item_id))
+
+    if any(x in item_lower for x in ['camp', 'outdoor', 'wilderness', 'survival']):
         themes.append("Theme.Survival")
-    
-    if any(x in item_id.lower() for x in ['weapon', 'combat', 'tactical', 'armor']):
+
+    if any(x in item_lower for x in ['weapon', 'combat', 'tactical', 'armor']):
         themes.append("Theme.Combat")
-    
-    if any(x in item_id.lower() for x in ['winter', 'warm', 'insulated', 'thermal']):
+
+    if any(x in item_lower for x in ['winter', 'warm', 'insulated', 'thermal']):
         insulation = get_stat(props, "Insulation", 0)
         if insulation > 0.5:
             themes.append("Theme.Winter")
-    
-    return themes
+
+    if item_tokens.intersection({'police', 'sheriff', 'cop'}):
+        themes.append("Theme.Police")
+    if item_tokens.intersection({'military', 'army', 'tactical'}):
+        themes.append("Theme.Militia")
+    if item_tokens.intersection({'doctor', 'medic', 'medical', 'surgical', 'hospital'}):
+        themes.append("Theme.Clinical")
+    if item_tokens.intersection({'industrial', 'factory', 'warehouse'}):
+        themes.append("Theme.Industrial")
+    if item_tokens.intersection({'primitive', 'tribal', 'stoneage', 'ancestral'}):
+        themes.append("Theme.Primitive")
+
+    deduped = []
+    seen = set()
+    for theme in themes:
+        if theme not in seen:
+            deduped.append(theme)
+            seen.add(theme)
+
+    return deduped
 
 
 def _get_medical_tool_tags(item_id, props):
@@ -375,7 +394,7 @@ def parse_tags(tags_str):
         'primary': None,
         'rarity': 'Common',
         'quality': None,
-        'origin': None,
+        'origin': 'Vanilla',
         'theme': []
     }
     
