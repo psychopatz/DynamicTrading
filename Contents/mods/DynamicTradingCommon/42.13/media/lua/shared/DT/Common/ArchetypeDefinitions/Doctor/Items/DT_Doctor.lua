@@ -8,16 +8,16 @@ DynamicTrading.RegisterArchetype("Doctor", {
     allocations = {
         { tags={"Medical.General"}, count = 8 },
         { tags={"Medical.General.Pills"}, count = 4 },
-        { tags={"Quality.Sterile"}, count = 3 },
-        { tags={"Medical.Tool"}, count = 2 }
+        { tags={"Theme.Clinical"}, count = 3 },
+        { tags={"Tool.Medical"}, count = 2 }
     },
     expertTags = { "Medical.General", "Medical.Healthcare" },
     wants = {
-        ["Tool.Cleaning"] = 1.5,
+        ["Medical.Healthcare"] = 1.5,
         ["Food.Drink.Alcohol"] = 1.3,
         ["Quality.Luxury"] = 1.2
     },
-    forbid = { "Quality.Waste", "Resource.Material.Build", "Vehicle.Part" }
+    forbid = { "Quality.Waste", "Resource.Material.Hardware", "Resource.Parts" }
 })
 
 end

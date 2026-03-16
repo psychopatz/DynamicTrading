@@ -12,7 +12,7 @@ DynamicTrading.RegisterArchetype("Bartender", {
     },
     wants = {
         ["Food.Perishable.Fruit"] = 1.3,
-        ["Tool.Cookware"] = 1.2,
+        ["Food.Cooking"] = 1.2,
         ["Quality.Waste"] = 1.1
     },
     forbid = { "Weapon", "Weapon.Ranged.Ammo" }

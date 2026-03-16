@@ -7,7 +7,7 @@ DynamicTrading.RegisterArchetype("Brewer", {
     allocations = {
         { tags={"Food.Drink.Alcohol"}, count = 8 },
         { tags={"Food.NonPerishable.Sweets"}, count = 4 },
-        { tags={"Container.Fluid"}, count = 4 },
+        { tags={"Container.Liquid"}, count = 4 },
         { tags={"Resource.Material.Glass"}, count = 3 }
     },
     wants = {
@@ -15,7 +15,7 @@ DynamicTrading.RegisterArchetype("Brewer", {
         ["Food.NonPerishable.Grain"] = 1.4,
         ["Resource.Fuel"] = 1.3
     },
-    forbid = { "Theme.Police", "Literature.Book", "Literature.Book" }
+    forbid = { "Theme.Combat", "Literature.Book", "Literature.Book" }
 })
 
 end

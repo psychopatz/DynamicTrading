@@ -8,12 +8,12 @@ DynamicTrading.RegisterArchetype("Survivalist", {
         { tags={"Food.NonPerishable.Canned"}, count = 6 },
         { tags={"Theme.Survival"}, count = 5 },
         { tags={"Weapon.Ranged.Ammo"}, count = 4 },
-        { tags={"Resource.Material.Utility"}, count = 2 }
+        { tags={"Resource.Craftable"}, count = 2 }
     },
     wants = {
-        ["Weapon.General"] = 1.3,
+        ["Weapon"] = 1.3,
         ["Resource.Fuel"] = 1.5,
-        ["Appliance.Generator"] = 1.4
+        ["Electronics.PowerGenerator"] = 1.4
     },
     forbid = { "Food.Perishable", "Quality.Luxury", "Misc.General" }
 })

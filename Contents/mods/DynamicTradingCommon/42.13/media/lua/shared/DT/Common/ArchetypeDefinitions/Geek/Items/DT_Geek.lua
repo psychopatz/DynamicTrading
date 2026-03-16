@@ -7,15 +7,15 @@ DynamicTrading.RegisterArchetype("Geek", {
     allocations = {
         { tags={"Misc.General"}, count = 6 },
         { tags={"Misc.General"}, count = 5 },
-        { tags={"Electronics.General"}, count = 5 },
+        { tags={"Electronics"}, count = 5 },
         { tags={"Literature.Book"}, count = 4 }
     },
     wants = {
-        ["Resource.Material.Utility"] = 1.5,
+        ["Resource.Craftable"] = 1.5,
         ["Food.NonPerishable.Sweets"] = 1.4,
         ["Food.Drink"] = 1.2
     },
-    forbid = { "Food.Drink.Alcohol", "Theme.Farming", "Tool.General" }
+    forbid = { "Food.Drink.Alcohol", "Building.Garden", "Tool.General" }
 })
 
 end

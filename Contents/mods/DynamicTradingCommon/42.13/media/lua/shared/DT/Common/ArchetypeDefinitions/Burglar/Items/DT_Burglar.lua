@@ -4,17 +4,17 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Burglar", {
     name = "The Fence",
     allocations = {
-        { tags={"Quality.Illegal"}, count = 5 },
+        { tags={"Rarity.Rare"}, count = 5 },
         { tags={"Quality.Luxury"}, count = 4 },
-        { tags={"Misc.Cosmetic"}, count = 4 },
-        { tags={"Quality.Illegal"}, count = 2 },
-        { tags={"Weapon.General"}, count = 2 }
+        { tags={"Clothing.Accessory.Jewelry"}, count = 4 },
+        { tags={"Rarity.Rare"}, count = 2 },
+        { tags={"Weapon"}, count = 2 }
     },
     wants = {
-        ["Electronics.General"] = 1.3,
-        ["Resource.Money"] = 1.5,
-        ["Container.Backpack"] = 1.2
+        ["Electronics"] = 1.3,
+        ["Quality.Luxury"] = 1.5,
+        ["Container.Bag.Backpack"] = 1.2
     },
-    forbid = { "Quality.Heavy", "Resource.Material.Build", "Theme.Business" }
+    forbid = { "Clothing.Armor.Heavy", "Resource.Material.Hardware", "Resource.Material.Paper" }
 })
 end

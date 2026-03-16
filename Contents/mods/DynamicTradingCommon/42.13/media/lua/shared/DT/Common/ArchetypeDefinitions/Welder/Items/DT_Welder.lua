@@ -6,15 +6,15 @@ DynamicTrading.RegisterArchetype("Welder", {
     name = "Metalworker",
     allocations = {
         { tags={"Resource.Material.Metal"}, count = 8 },
-        { tags={"Tool.Smithing"}, count = 6 },
+        { tags={"Tool.General"}, count = 6 },
         { tags={"Tool.General"}, count = 4 }
     },
     wants = {
         ["Resource.Fuel"] = 2.0,
-        ["Electronics.General"] = 1.2,
-        ["Quality.Heavy"] = 1.3
+        ["Electronics"] = 1.2,
+        ["Clothing.Armor.Heavy"] = 1.3
     },
-    forbid = { "Theme.Farming", "Bedding" }
+    forbid = { "Building.Garden", "Building.Furniture.Bed" }
 })
 
 end
