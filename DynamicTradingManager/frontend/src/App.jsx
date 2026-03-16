@@ -6,6 +6,7 @@ const Dashboard = lazy(() => import('./components/Dashboard'));
 const ItemsPage = lazy(() => import('./components/ItemsPage'));
 const PricingPage = lazy(() => import('./components/PricingPage'));
 const TagPricingPage = lazy(() => import('./components/TagPricingPage'));
+const ArchetypeEditorPage = lazy(() => import('./components/ArchetypeEditorPage'));
 const SimulationDashboard = lazy(() => import('./components/Simulation/SimulationDashboard'));
 const ConsolePage = lazy(() => import('./components/ConsolePage'));
 
@@ -36,6 +37,7 @@ function App() {
                 <Button color="inherit" component={RouterLink} to="/items">Vanilla Items</Button>
                 <Button color="inherit" component={RouterLink} to="/pricing">Pricing Model</Button>
                 <Button color="inherit" component={RouterLink} to="/pricing/tags">Tag Pricing</Button>
+                <Button color="inherit" component={RouterLink} to="/archetypes">Archetype Editor</Button>
                 <Button color="inherit" component={RouterLink} to="/simulation">Economy Simulation</Button>
                 <Button color="inherit" component={RouterLink} to="/console">Console</Button>
               </Toolbar>
@@ -52,6 +54,7 @@ function App() {
                   <Route path="/items" element={<ItemsPage />} />
                   <Route path="/pricing" element={<PricingPage />} />
                   <Route path="/pricing/tags" element={<TagPricingPage />} />
+                  <Route path="/archetypes" element={<ArchetypeEditorPage />} />
                   <Route path="/simulation" element={<SimulationDashboard />} />
                   <Route path="/console" element={<ConsolePage />} />
                 </Routes>

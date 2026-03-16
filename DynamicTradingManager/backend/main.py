@@ -148,6 +148,17 @@ class ItemOverrideRequest(BaseModel):
     stock_max: Optional[int] = None
     description: Optional[str] = None
 
+
+class ArchetypeAllocationEntryRequest(BaseModel):
+    kind: str
+    count: int
+    tags: Optional[List[str]] = None
+    item_id: Optional[str] = None
+
+
+class ArchetypeSaveRequest(BaseModel):
+    allocations: List[ArchetypeAllocationEntryRequest]
+
 # Global state (cache items)
 cached_vanilla_items = None
 
@@ -529,6 +540,35 @@ async def delete_item_override(item_id: str):
         logger.error(f"Error deleting override for {item_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- Archetype Editor ---
+
+@app.get("/api/archetypes/editor")
+async def get_archetype_editor_data():
+    try:
+        return load_archetype_editor_data()
+    except Exception as e:
+        logger.error(f"Error loading archetype editor data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/archetypes/{archetype_id}/allocations")
+async def update_archetype_allocations(archetype_id: str, request: ArchetypeSaveRequest):
+    try:
+        payload = save_archetype_allocations(
+            archetype_id,
+            [entry.model_dump() for entry in request.allocations],
+        )
+        return {
+            "success": True,
+            "archetype_id": archetype_id,
+            "data": payload,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error saving allocations for {archetype_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # --- Debug / Logs ---
 
 @app.get("/api/debug/logs")
@@ -554,6 +594,7 @@ async def get_debug_logs(
 
 try:
     from Simulation.config import BuildConfig, default_paths
+    from Simulation.archetype_editor import load_archetype_editor_data, save_archetype_allocations
     from Simulation.export.database_builder import build_database
 except ImportError as e:
     logger.error(f"Error importing Simulation modules: {e}")

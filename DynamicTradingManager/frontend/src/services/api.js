@@ -39,5 +39,7 @@ export const previewPricing = (payload) => api.post('/pricing/preview', payload)
 export const getPricingAudit = (params) => api.get('/pricing/audit', { params });
 export const getPricingTags = () => api.get('/pricing/tags');
 export const previewPricingTag = (payload) => api.post('/pricing/tags/preview', payload);
+export const getArchetypeEditorData = () => api.get('/archetypes/editor');
+export const saveArchetypeAllocations = (archetypeId, allocations) => api.put(`/archetypes/${archetypeId}/allocations`, { allocations });
 
 export default api;
