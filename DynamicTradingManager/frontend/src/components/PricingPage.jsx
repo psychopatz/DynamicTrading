@@ -185,6 +185,11 @@ const PricingPage = () => {
               <Box>
                 <Typography variant="overline" color="text.secondary">Final Price</Typography>
                 <Typography variant="h3">${previewData.price}</Typography>
+                {previewData.details?.global_price_clamped && previewData.details?.global_price_clamp === 'max' ? (
+                  <Typography variant="body2" color="warning.main">
+                    Uncapped result was ${prettyValue(previewData.details.pre_global_clamp_price)} but the global {previewData.details.global_price_clamp} price clamp forced it to ${previewData.price}.
+                  </Typography>
+                ) : null}
                 <Typography variant="body2" color="text.secondary">
                   Category: {previewData.details?.category || 'Unknown'}
                 </Typography>

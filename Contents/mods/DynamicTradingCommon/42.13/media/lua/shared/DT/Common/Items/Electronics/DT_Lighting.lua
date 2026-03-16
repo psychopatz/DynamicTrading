@@ -12,17 +12,17 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Light.Component] [Rarity.Rare] (11 items)
-    { item="Base.LightBulb", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbBlue", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbBox", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=2} },
-    { item="Base.LightBulbCyan", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbGreen", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbMagenta", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbOrange", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbPink", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbPurple", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbRed", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.LightBulbYellow", basePrice=20, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulb", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbBlue", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbBox", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=2} },
+    { item="Base.LightBulbCyan", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbGreen", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbMagenta", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbOrange", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbPink", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbPurple", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbRed", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.LightBulbYellow", basePrice=517, tags={"Electronics.Light.Component", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
 })
 
 print("[DynamicTrading] Lighting Registry Complete")

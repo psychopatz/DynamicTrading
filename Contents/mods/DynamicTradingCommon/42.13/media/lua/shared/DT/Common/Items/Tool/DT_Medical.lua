@@ -12,12 +12,12 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Tool.Medical] [Rarity.Rare] (6 items)
-    { item="Base.ScissorsBluntMedical", basePrice=73, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla", "Theme.Clinical", "Tool.Fragile"}, stockRange={min=0, max=3} },
-    { item="Base.Stethoscope", basePrice=37, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.TongueDepressor", basePrice=38, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=8} },
-    { item="Base.TongueDepressorBox", basePrice=37, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=3} },
-    { item="Base.Tweezers", basePrice=38, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=8} },
-    { item="Base.Tweezers_Forged", basePrice=38, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=8} },
+    { item="Base.ScissorsBluntMedical", basePrice=630, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla", "Theme.Clinical", "Tool.Fragile"}, stockRange={min=0, max=3} },
+    { item="Base.Stethoscope", basePrice=535, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
+    { item="Base.TongueDepressor", basePrice=535, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=8} },
+    { item="Base.TongueDepressorBox", basePrice=534, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=3} },
+    { item="Base.Tweezers", basePrice=535, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=8} },
+    { item="Base.Tweezers_Forged", basePrice=535, tags={"Tool.Medical", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=8} },
 })
 
 print("[DynamicTrading] Medical Registry Complete")

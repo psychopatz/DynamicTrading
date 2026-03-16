@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any, Union
 import sys
 import os
+import threading
 from pathlib import Path
 import logging
 from dotenv import load_dotenv
@@ -27,6 +28,7 @@ try:
         build_pricing_audit,
         build_pricing_tag_catalog,
         preview_pricing_tag,
+        warm_pricing_tag_cache,
         load_pricing_config,
         save_pricing_config,
         get_stat,
@@ -72,6 +74,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _finish_pricing_page_warm():
+    try:
+        warmed = warm_pricing_tag_cache(get_items())
+        logger.info(
+            "Warmed tag pricing cache for %s items across %s tags",
+            warmed["items"],
+            warmed["tags"],
+        )
+    except Exception as exc:
+        logger.warning("Unable to warm tag pricing cache on startup: %s", exc)
+
+
+@app.on_event("startup")
+async def warm_pricing_page_cache():
+    try:
+        catalog = build_pricing_tag_catalog(get_items())
+        logger.info("Warmed tag pricing catalog for %s tags", len(catalog.get("tags", [])))
+    except Exception as exc:
+        logger.warning("Unable to warm tag pricing catalog on startup: %s", exc)
+        return
+
+    threading.Thread(target=_finish_pricing_page_warm, daemon=True).start()
 
 # Models
 class StatsResponse(BaseModel):

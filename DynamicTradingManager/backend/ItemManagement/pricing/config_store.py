@@ -12,7 +12,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
     "version": 1,
     "global": {
         "min_price": 1,
-        "max_price": 3500,
+        "max_price": 1e30,
         "base_multiplier": 1.0,
         "opened_penalty": 0.72,
         "extra_use_bonus": 0.08,
@@ -67,7 +67,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
     "categories": {
         "Food": {
             "price_floor": 6,
-            "price_ceiling": 220,
+            "price_ceiling": 1e30,
             "base": 7.0,
             "hunger_weight": 160.0,
             "thirst_weight": 90.0,
@@ -108,7 +108,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Medical": {
             "price_floor": 12,
-            "price_ceiling": 520,
+            "price_ceiling": 1e30,
             "base": 18.0,
             "sterile_bonus": 14.0,
             "dose_weight": 4.0,
@@ -145,7 +145,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Weapon": {
             "price_floor": 8,
-            "price_ceiling": 1400,
+            "price_ceiling": 1e30,
             "base": 18.0,
             "damage_weight": 28.0,
             "range_weight": 4.0,
@@ -172,7 +172,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Tool": {
             "price_floor": 8,
-            "price_ceiling": 600,
+            "price_ceiling": 1e30,
             "base": 14.0,
             "durability_weight": 1.8,
             "capacity_weight": 1.2,
@@ -197,7 +197,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Container": {
             "price_floor": 10,
-            "price_ceiling": 700,
+            "price_ceiling": 1e30,
             "base": 14.0,
             "capacity_weight": 4.0,
             "weight_reduction_weight": 0.65,
@@ -210,7 +210,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Clothing": {
             "price_floor": 2,
-            "price_ceiling": 280,
+            "price_ceiling": 1e30,
             "base": 4.0,
             "defense_weight": 0.35,
             "warmth_weight": 10.0,
@@ -222,7 +222,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Electronics": {
             "price_floor": 8,
-            "price_ceiling": 1800,
+            "price_ceiling": 1e30,
             "base": 14.0,
             "power_bonus": 8.0,
             "light_bonus": 14.0,
@@ -239,7 +239,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Literature": {
             "price_floor": 3,
-            "price_ceiling": 220,
+            "price_ceiling": 1e30,
             "base": 5.0,
             "recipe_weight": 18.0,
             "skill_book_bonus": 16.0,
@@ -252,7 +252,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Resource": {
             "price_floor": 3,
-            "price_ceiling": 420,
+            "price_ceiling": 1e30,
             "base": 7.0,
             "metal_weight": 0.8,
             "carton_metal_multiplier": 0.3,
@@ -338,7 +338,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Building": {
             "price_floor": 1,
-            "price_ceiling": 520,
+            "price_ceiling": 1e30,
             "base": 5.0,
             "survival_bonus": 8.0,
             "shelter_bonus": 12.0,
@@ -394,7 +394,7 @@ DEFAULT_PRICING_CONFIG: Dict[str, Any] = {
         },
         "Misc": {
             "price_floor": 1,
-            "price_ceiling": 200,
+            "price_ceiling": 1e30,
             "base": 2.0,
             "value_weight": 0.75,
             "utility_bonus": 5.0,

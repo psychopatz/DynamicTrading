@@ -24,7 +24,11 @@ def _category_config(config: Dict[str, Any], category: str) -> Dict[str, float]:
     return categories.get(category, categories.get("Misc", {}))
 
 
-def _apply_shared_multipliers(raw_score: float, context: Dict[str, Any], config: Dict[str, Any]) -> tuple[float, list[dict[str, Any]]]:
+def _apply_shared_multipliers(
+    raw_score: float,
+    context: Dict[str, Any],
+    config: Dict[str, Any],
+) -> tuple[float, list[dict[str, Any]], dict[str, Any]]:
     global_cfg = config["global"]
     tags_dict = context["tags_dict"]
     adjustments: list[dict[str, Any]] = []
@@ -81,14 +85,28 @@ def _apply_shared_multipliers(raw_score: float, context: Dict[str, Any], config:
     override = config.get("item_overrides", {}).get(context["item_id"])
     if override is not None:
         adjustments.append(make_component("Item override", override))
-        return float(override), adjustments
+        return float(override), adjustments, {
+            "pre_global_clamp_price": float(override),
+            "global_price_clamped": False,
+            "global_price_clamp": None,
+            "global_min_price": float(global_cfg.get("min_price", 1.0)),
+            "global_max_price": None,
+        }
 
-    price = clamp(
-        price,
-        global_cfg.get("min_price", 1.0),
-        global_cfg.get("max_price", price),
-    )
-    return price, adjustments
+    unclamped_price = float(price)
+    min_price = float(global_cfg.get("min_price", 1.0))
+    price = max(price, min_price)
+    clamp_direction = None
+    if price != unclamped_price:
+        clamp_direction = "min"
+
+    return price, adjustments, {
+        "pre_global_clamp_price": round(unclamped_price, 3),
+        "global_price_clamped": price != unclamped_price,
+        "global_price_clamp": clamp_direction,
+        "global_min_price": min_price,
+        "global_max_price": None,
+    }
 
 
 def _apply_tag_base_additions(
@@ -165,12 +183,8 @@ def calculate_price_details(item_id: str, props: str, tags_dict: Any, pricing_co
 
     result = _apply_tag_base_additions(result, context, config)
 
-    raw_score = clamp(
-        result["score"],
-        category_cfg.get("price_floor", 1.0),
-        category_cfg.get("price_ceiling", result["score"]),
-    )
-    price, adjustments = _apply_shared_multipliers(raw_score, context, config)
+    raw_score = max(float(result["score"]), float(category_cfg.get("price_floor", 1.0)))
+    price, adjustments, clamp_meta = _apply_shared_multipliers(raw_score, context, config)
 
     return {
         "item_id": item_id,
@@ -182,6 +196,7 @@ def calculate_price_details(item_id: str, props: str, tags_dict: Any, pricing_co
         "components": result["components"],
         "adjustments": adjustments,
         "tags_dict": normalized_tags,
+        **clamp_meta,
     }
 
 

@@ -12,12 +12,12 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Radio.TwoWay.Ham] [Rarity.Common] (3 items)
-    { item="Base.HamRadio1", basePrice=54, tags={"Electronics.Radio.TwoWay.Ham", "Rarity.Common", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Transmitter"}, stockRange={min=0, max=1} },
-    { item="Base.HamRadio2", basePrice=54, tags={"Electronics.Radio.TwoWay.Ham", "Rarity.Common", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Transmitter"}, stockRange={min=0, max=1} },
-    { item="Base.HamRadioMakeShift", basePrice=54, tags={"Electronics.Radio.TwoWay.Ham", "Rarity.Common", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Transmitter"}, stockRange={min=0, max=1} },
+    { item="Base.HamRadio1", basePrice=2656, tags={"Electronics.Radio.TwoWay.Ham", "Rarity.Common", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Transmitter"}, stockRange={min=0, max=1} },
+    { item="Base.HamRadio2", basePrice=2656, tags={"Electronics.Radio.TwoWay.Ham", "Rarity.Common", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Transmitter"}, stockRange={min=0, max=1} },
+    { item="Base.HamRadioMakeShift", basePrice=2656, tags={"Electronics.Radio.TwoWay.Ham", "Rarity.Common", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Transmitter"}, stockRange={min=0, max=1} },
 
     -- [Electronics.Radio.TwoWay.Ham] [Rarity.Rare] (1 item)
-    { item="Base.ManPackRadio", basePrice=79, tags={"Electronics.Radio.TwoWay.Ham", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=1} },
+    { item="Base.ManPackRadio", basePrice=4040, tags={"Electronics.Radio.TwoWay.Ham", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.TwoWay", "Electronics.Portable", "Electronics.Transmitter"}, stockRange={min=0, max=1} },
 })
 
 print("[DynamicTrading] HamRadio Registry Complete")

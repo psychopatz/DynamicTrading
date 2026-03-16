@@ -1,12 +1,13 @@
-import React from 'react';
-import { ThemeProvider, createTheme, CssBaseline, Container, Typography, Box, AppBar, Toolbar, Button } from '@mui/material';
+import React, { Suspense, lazy } from 'react';
+import { ThemeProvider, createTheme, CssBaseline, Container, Typography, Box, AppBar, Toolbar, Button, CircularProgress } from '@mui/material';
 import { BrowserRouter, Routes, Route, Link as RouterLink } from 'react-router-dom';
-import Dashboard from './components/Dashboard';
-import ItemsPage from './components/ItemsPage';
-import PricingPage from './components/PricingPage';
-import TagPricingPage from './components/TagPricingPage';
-import SimulationDashboard from './components/Simulation/SimulationDashboard';
-import ConsolePage from './components/ConsolePage';
+
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const ItemsPage = lazy(() => import('./components/ItemsPage'));
+const PricingPage = lazy(() => import('./components/PricingPage'));
+const TagPricingPage = lazy(() => import('./components/TagPricingPage'));
+const SimulationDashboard = lazy(() => import('./components/Simulation/SimulationDashboard'));
+const ConsolePage = lazy(() => import('./components/ConsolePage'));
 
 const darkTheme = createTheme({
   palette: {
@@ -40,14 +41,21 @@ function App() {
               </Toolbar>
             </AppBar>
             <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/items" element={<ItemsPage />} />
-                <Route path="/pricing" element={<PricingPage />} />
-                <Route path="/pricing/tags" element={<TagPricingPage />} />
-                <Route path="/simulation" element={<SimulationDashboard />} />
-                <Route path="/console" element={<ConsolePage />} />
-              </Routes>
+              <Suspense fallback={(
+                <Box sx={{ minHeight: 320, display: 'grid', placeItems: 'center' }}>
+                  <CircularProgress />
+                </Box>
+              )}
+              >
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/items" element={<ItemsPage />} />
+                  <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="/pricing/tags" element={<TagPricingPage />} />
+                  <Route path="/simulation" element={<SimulationDashboard />} />
+                  <Route path="/console" element={<ConsolePage />} />
+                </Routes>
+              </Suspense>
             </Container>
           </Box>
       </BrowserRouter>

@@ -12,11 +12,11 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Container.Bag.Sack] [Rarity.Rare] (5 items)
-    { item="Base.Bag_HideSack", basePrice=183, tags={"Container.Bag.Sack", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.High", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
-    { item="Base.Bag_TarpSack", basePrice=183, tags={"Container.Bag.Sack", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.High", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
-    { item="Base.EmptySandbag", basePrice=46, tags={"Container.Bag.Sack", "Rarity.Rare", "Quality.Waste", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=7} },
-    { item="Base.WheatSack", basePrice=154, tags={"Container.Bag.Sack", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=6} },
-    { item="Base.WheatSeedSack", basePrice=154, tags={"Container.Bag.Sack", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=6} },
+    { item="Base.Bag_HideSack", basePrice=2023, tags={"Container.Bag.Sack", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.High", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.Bag_TarpSack", basePrice=2023, tags={"Container.Bag.Sack", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.High", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
+    { item="Base.EmptySandbag", basePrice=598, tags={"Container.Bag.Sack", "Rarity.Rare", "Quality.Waste", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=7} },
+    { item="Base.WheatSack", basePrice=1994, tags={"Container.Bag.Sack", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=6} },
+    { item="Base.WheatSeedSack", basePrice=1994, tags={"Container.Bag.Sack", "Rarity.Rare", "Origin.Vanilla", "Container.Capacity.Medium", "Container.WeightReduction.Medium"}, stockRange={min=0, max=6} },
 })
 
 print("[DynamicTrading] Sack Registry Complete")

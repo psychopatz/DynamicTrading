@@ -12,7 +12,7 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Radio.Broadcast] [Rarity.Rare] (1 item)
-    { item="Base.CDplayer", basePrice=20, tags={"Electronics.Radio.Broadcast", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.Broadcast", "Electronics.Portable"}, stockRange={min=0, max=2} },
+    { item="Base.CDplayer", basePrice=1226, tags={"Electronics.Radio.Broadcast", "Rarity.Rare", "Origin.Vanilla", "Electronics.Communicator", "Electronics.Radio.Broadcast", "Electronics.Portable"}, stockRange={min=0, max=2} },
 })
 
 print("[DynamicTrading] Radio Registry Complete")

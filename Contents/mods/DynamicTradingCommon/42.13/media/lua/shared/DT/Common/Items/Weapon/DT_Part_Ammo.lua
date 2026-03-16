@@ -12,12 +12,12 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Weapon.Part.Ammo] [Rarity.Rare] (6 items)
-    { item="Base.44Clip", basePrice=26, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.45Clip", basePrice=26, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.556Clip", basePrice=26, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.9mmClip", basePrice=26, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.JS14_Clip", basePrice=26, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
-    { item="Base.M14Clip", basePrice=26, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.44Clip", basePrice=899, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.45Clip", basePrice=899, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.556Clip", basePrice=899, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.9mmClip", basePrice=899, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.JS14_Clip", basePrice=899, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
+    { item="Base.M14Clip", basePrice=899, tags={"Weapon.Part.Ammo", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=12} },
 })
 
 print("[DynamicTrading] Part Ammo Registry Complete")

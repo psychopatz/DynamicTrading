@@ -1,13 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Autocomplete,
   Box,
   Button,
   Chip,
-  Collapse,
   Divider,
-  List,
   ListItemButton,
   Paper,
   Slider,
@@ -15,6 +13,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { List as VirtualList } from 'react-window';
 import {
   addBlacklistItem,
   deleteItemOverride,
@@ -28,6 +27,7 @@ import {
 
 const SLIDER_MIN = -500;
 const SLIDER_MAX = 500;
+const TREE_ROW_HEIGHT = 60;
 const CATEGORY_HUES = {
   Building: 28,
   Clothing: 218,
@@ -48,6 +48,27 @@ const formatPrice = (value) => {
     return String(value ?? '');
   }
   return `${num > 0 ? '+' : ''}${num}`;
+};
+
+const formatPreviewNumber = (value) => {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) {
+    return String(value ?? '');
+  }
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: Math.abs(num) >= 1000 ? 0 : 2,
+  }).format(num);
+};
+
+const formatCompactDelta = (value) => {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) {
+    return String(value ?? '');
+  }
+  return `${num > 0 ? '+' : ''}${new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(Math.abs(num))}`;
 };
 
 const buildTagTree = (catalog) => {
@@ -139,11 +160,6 @@ const filterTree = (nodes, query) => {
   }, []);
 };
 
-const countNodes = (nodes) => nodes.reduce(
-  (total, node) => total + 1 + countNodes(node.children || []),
-  0,
-);
-
 const lineageForTag = (tag) => {
   if (!tag) {
     return [];
@@ -180,6 +196,152 @@ const makeOverrideDraft = (row, existingOverride) => ({
   currentTags: row.tags || [],
 });
 
+const flattenVisibleNodes = (nodes, expandedTags, forceExpand = false, depth = 0) => nodes.flatMap((node) => {
+  const row = { node, depth };
+  const expanded = forceExpand || Boolean(expandedTags[node.tag] ?? depth === 0);
+
+  if (!node.children?.length || !expanded) {
+    return [row];
+  }
+
+  return [row, ...flattenVisibleNodes(node.children, expandedTags, forceExpand, depth + 1)];
+});
+
+const TagTreeRow = memo(({ index, style, visibleRows, selectedTag, onSelectTag, onToggleExpanded }) => {
+  const { node, depth } = visibleRows[index];
+  const hasChildren = (node.children || []).length > 0;
+  const isRoot = depth === 0;
+  const currentRoot = (node.tag || '').split('.')[0];
+  const previousRoot = index > 0 ? (visibleRows[index - 1]?.node?.tag || '').split('.')[0] : '';
+  const startsNewCategory = index === 0 || currentRoot !== previousRoot;
+  const tone = getTagTone(node.tag);
+
+  return (
+    <Box
+      style={style}
+      sx={{
+        px: 0.75,
+        pt: startsNewCategory ? 0.45 : 0,
+        pb: 0,
+      }}
+    >
+      <ListItemButton
+        selected={node.tag === selectedTag}
+        onClick={() => onSelectTag(node.tag)}
+        sx={{
+          minHeight: isRoot ? 56 : 46,
+          py: isRoot ? 0.45 : 0.2,
+          pl: 1.5 + (depth * 2),
+          borderLeft: depth > 0 ? `1px solid ${tone.border}` : `3px solid ${tone.border}`,
+          borderRadius: 2,
+          bgcolor: node.tag === selectedTag ? tone.bgStrong : tone.bg,
+          boxShadow: isRoot ? `inset 0 0 0 1px ${tone.border}` : 'none',
+          '&:hover': {
+            bgcolor: tone.bgStrong,
+          },
+        }}
+      >
+        <Stack direction="row" spacing={1.25} alignItems="flex-start" sx={{ width: '100%' }}>
+          {hasChildren ? (
+            <Button
+              size="small"
+              variant="text"
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleExpanded(node.tag);
+              }}
+              sx={{ minWidth: 28, px: 0.5, color: tone.text }}
+            >
+              {node.isExpanded ? '-' : '+'}
+            </Button>
+          ) : (
+            <Box sx={{ width: 28, pt: 0.6, textAlign: 'center', color: tone.muted }}>
+              .
+            </Box>
+          )}
+
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  noWrap
+                  sx={{
+                    color: tone.text,
+                    fontSize: isRoot ? '1.08rem' : '0.95rem',
+                    fontWeight: isRoot ? 800 : 500,
+                    letterSpacing: isRoot ? '0.01em' : 'normal',
+                    lineHeight: 1.05,
+                  }}
+                >
+                  {node.label}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: tone.muted,
+                    fontSize: isRoot ? '0.69rem' : '0.68rem',
+                    fontWeight: isRoot ? 700 : 400,
+                    letterSpacing: isRoot ? '0.08em' : 'normal',
+                    textTransform: isRoot ? 'uppercase' : 'none',
+                    lineHeight: 1.05,
+                  }}
+                >
+                  {isRoot ? `General Category • ${node.tag}` : node.tag}
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap justifyContent="flex-end">
+                <Chip
+                  label={`${node.item_count || 0} items`}
+                  size="small"
+                  variant="outlined"
+                  sx={{ bgcolor: tone.bg, borderColor: tone.border, color: tone.text }}
+                />
+                {!!node.current_addition && (
+                  <Chip
+                    label={`Saved ${formatPrice(node.current_addition)}`}
+                    size="small"
+                    sx={{ bgcolor: tone.bgStrong, borderColor: tone.border, color: tone.text }}
+                  />
+                )}
+              </Stack>
+            </Stack>
+          </Box>
+        </Stack>
+      </ListItemButton>
+    </Box>
+  );
+});
+
+const AutoSizer = ({ children }) => {
+  const [size, setSize] = useState({ height: 0, width: 0 });
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setSize({
+          height: entry.contentRect.height,
+          width: entry.contentRect.width,
+        });
+      }
+    });
+
+    if (ref.current) {
+      observer.observe(ref.current);
+      const rect = ref.current.getBoundingClientRect();
+      setSize({ height: rect.height, width: rect.width });
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} style={{ height: '100%', width: '100%' }}>
+      {children(size)}
+    </div>
+  );
+};
+
 const TagPricingPage = () => {
   const [config, setConfig] = useState(null);
   const [catalog, setCatalog] = useState([]);
@@ -191,6 +353,7 @@ const TagPricingPage = () => {
   const [status, setStatus] = useState({ type: '', message: '' });
   const [loadingCatalog, setLoadingCatalog] = useState(true);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [previewStale, setPreviewStale] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedTags, setExpandedTags] = useState({});
   const [blacklistingItemId, setBlacklistingItemId] = useState('');
@@ -235,37 +398,6 @@ const TagPricingPage = () => {
 
   useEffect(() => {
     if (!selectedTag || !config) {
-      return undefined;
-    }
-
-    const saved = Number(config?.tag_price_additions?.[selectedTag] || 0);
-    const nextAddition = Number.isFinite(pendingAddition) ? pendingAddition : saved;
-    const timer = window.setTimeout(async () => {
-      setLoadingPreview(true);
-      try {
-        const res = await previewPricingTag({
-          tag: selectedTag,
-          addition: nextAddition,
-          limit: 40,
-        });
-        setPreviewData(res.data);
-      } catch (err) {
-        setPreviewData(null);
-        setStatus((current) => ({
-          ...current,
-          type: 'error',
-          message: err?.response?.data?.detail || 'Failed to preview tag pricing.',
-        }));
-      } finally {
-        setLoadingPreview(false);
-      }
-    }, 250);
-
-    return () => window.clearTimeout(timer);
-  }, [selectedTag, pendingAddition, config]);
-
-  useEffect(() => {
-    if (!selectedTag || !config) {
       return;
     }
     setPendingAddition(Number(config?.tag_price_additions?.[selectedTag] || 0));
@@ -278,9 +410,17 @@ const TagPricingPage = () => {
     });
   }, [selectedTag, config]);
 
+  useEffect(() => {
+    setPreviewStale(Boolean(selectedTag));
+  }, [selectedTag, pendingAddition, config]);
+
+  useEffect(() => {
+    setPreviewData((current) => (current?.tag === selectedTag ? current : null));
+  }, [selectedTag]);
+
   const tree = useMemo(() => buildTagTree(catalog), [catalog]);
-  const filteredTree = useMemo(() => filterTree(tree, search.trim()), [tree, search]);
-  const visibleNodeCount = useMemo(() => countNodes(filteredTree), [filteredTree]);
+  const deferredSearch = useDeferredValue(search.trim());
+  const filteredTree = useMemo(() => filterTree(tree, deferredSearch), [tree, deferredSearch]);
   const catalogByTag = useMemo(() => {
     const map = new Map();
     catalog.forEach((row) => {
@@ -290,6 +430,18 @@ const TagPricingPage = () => {
   }, [catalog]);
   const selectedCatalogRow = catalogByTag.get(selectedTag) || null;
   const tagOptions = useMemo(() => catalog.map((row) => row.tag), [catalog]);
+  const visibleRows = useMemo(() => flattenVisibleNodes(
+    filteredTree,
+    expandedTags,
+    Boolean(deferredSearch),
+  ).map((row) => ({
+    ...row,
+    node: {
+      ...row.node,
+      isExpanded: Boolean(deferredSearch) || Boolean(expandedTags[row.node.tag] ?? row.depth === 0),
+    },
+  })), [deferredSearch, expandedTags, filteredTree]);
+  const visibleNodeCount = visibleRows.length;
 
   const lineage = useMemo(() => lineageForTag(selectedTag), [selectedTag]);
   const compoundRows = useMemo(() => lineage.map((tag) => {
@@ -305,12 +457,16 @@ const TagPricingPage = () => {
   const pendingCompoundTotal = compoundRows.reduce((total, row) => total + row.pendingValue, 0);
   const hasUnsavedChange = Number(pendingAddition || 0) !== Number(config?.tag_price_additions?.[selectedTag] || 0);
 
-  const toggleExpanded = (tag) => {
+  const toggleExpanded = useCallback((tag) => {
     setExpandedTags((current) => ({
       ...current,
       [tag]: !current[tag],
     }));
-  };
+  }, []);
+
+  const handleSelectTag = useCallback((tag) => {
+    setSelectedTag(tag);
+  }, []);
 
   const handleSave = async () => {
     if (!config || !selectedTag) {
@@ -336,8 +492,12 @@ const TagPricingPage = () => {
 
       const res = await savePricingConfig(nextConfig);
       setConfig(res.data);
+      setCatalog((current) => current.map((row) => (
+        row.tag === selectedTag
+          ? { ...row, current_addition: nextValue }
+          : row
+      )));
       setStatus({ type: 'success', message: `Saved ${selectedTag} to the backend config. Parent values still compound into child tags.` });
-      await loadPage(true);
     } catch (err) {
       setStatus({ type: 'error', message: err?.response?.data?.detail || 'Failed to save tag pricing.' });
     } finally {
@@ -362,6 +522,36 @@ const TagPricingPage = () => {
 
   const handleCollapseAll = () => {
     setExpandedTags({});
+  };
+
+  const handleGeneratePreview = async () => {
+    if (!selectedTag || !config) {
+      return;
+    }
+
+    const saved = Number(config?.tag_price_additions?.[selectedTag] || 0);
+    const nextAddition = Number.isFinite(pendingAddition) ? pendingAddition : saved;
+
+    setLoadingPreview(true);
+    setStatus({ type: '', message: '' });
+    try {
+      const res = await previewPricingTag({
+        tag: selectedTag,
+        addition: nextAddition,
+        limit: 40,
+      });
+      setPreviewData(res.data);
+      setPreviewStale(false);
+    } catch (err) {
+      setPreviewData(null);
+      setStatus((current) => ({
+        ...current,
+        type: 'error',
+        message: err?.response?.data?.detail || 'Failed to preview tag pricing.',
+      }));
+    } finally {
+      setLoadingPreview(false);
+    }
   };
 
   const openOverrideEditor = (row) => {
@@ -499,84 +689,6 @@ const TagPricingPage = () => {
     }
   };
 
-  const renderNodes = (nodes, depth = 0) => nodes.map((node) => {
-    const hasChildren = (node.children || []).length > 0;
-    const expanded = search.trim() ? true : Boolean(expandedTags[node.tag] ?? depth === 0);
-    const tone = getTagTone(node.tag);
-
-    return (
-      <Box key={node.tag}>
-        <ListItemButton
-          selected={node.tag === selectedTag}
-          onClick={() => setSelectedTag(node.tag)}
-          sx={{
-            py: 1.1,
-            pl: 1.5 + (depth * 2),
-            borderLeft: depth > 0 ? `1px solid ${tone.border}` : 'none',
-            bgcolor: node.tag === selectedTag ? tone.bgStrong : tone.bg,
-            '&:hover': {
-              bgcolor: tone.bgStrong,
-            },
-          }}
-        >
-          <Stack direction="row" spacing={1.25} alignItems="flex-start" sx={{ width: '100%' }}>
-            {hasChildren ? (
-              <Button
-                size="small"
-                variant="text"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleExpanded(node.tag);
-                }}
-                sx={{ minWidth: 28, px: 0.5, color: tone.text }}
-              >
-                {expanded ? '-' : '+'}
-              </Button>
-            ) : (
-              <Box sx={{ width: 28, pt: 0.6, textAlign: 'center', color: tone.muted }}>
-                .
-              </Box>
-            )}
-
-            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1}>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body1" noWrap sx={{ color: tone.text }}>
-                    {node.label}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: tone.muted }}>
-                    {node.tag}
-                  </Typography>
-                </Box>
-                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap justifyContent="flex-end">
-                  <Chip
-                    label={`${node.item_count || 0} items`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ bgcolor: tone.bg, borderColor: tone.border, color: tone.text }}
-                  />
-                  {!!node.current_addition && (
-                    <Chip
-                      label={`Saved ${formatPrice(node.current_addition)}`}
-                      size="small"
-                      sx={{ bgcolor: tone.bgStrong, borderColor: tone.border, color: tone.text }}
-                    />
-                  )}
-                </Stack>
-              </Stack>
-            </Box>
-          </Stack>
-        </ListItemButton>
-
-        {hasChildren ? (
-          <Collapse in={expanded} timeout="auto" unmountOnExit>
-            {renderNodes(node.children, depth + 1)}
-          </Collapse>
-        ) : null}
-      </Box>
-    );
-  });
-
   const selectedTone = getTagTone(selectedTag);
 
   return (
@@ -623,9 +735,26 @@ const TagPricingPage = () => {
           </Stack>
         </Stack>
 
-        <List dense sx={{ mt: 2, overflow: 'auto', borderRadius: 2, bgcolor: 'rgba(255,255,255,0.03)' }}>
-          {renderNodes(filteredTree)}
-        </List>
+        <Box sx={{ mt: 2, flexGrow: 1, minHeight: 520, borderRadius: 2, overflow: 'hidden', bgcolor: 'rgba(255,255,255,0.03)' }}>
+          <AutoSizer>
+            {({ height, width }) => (
+              height > 0 && width > 0 ? (
+                <VirtualList
+                  style={{ height, width }}
+                  rowCount={visibleRows.length}
+                  rowHeight={TREE_ROW_HEIGHT}
+                  rowComponent={TagTreeRow}
+                  rowProps={{
+                    visibleRows,
+                    selectedTag,
+                    onSelectTag: handleSelectTag,
+                    onToggleExpanded: toggleExpanded,
+                  }}
+                />
+              ) : null
+            )}
+          </AutoSizer>
+        </Box>
       </Paper>
 
       <Stack spacing={3}>
@@ -754,22 +883,55 @@ const TagPricingPage = () => {
         </Paper>
 
         <Paper elevation={3} sx={{ p: 3, minHeight: 420 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Stack
+            direction={{ xs: 'column', lg: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', lg: 'center' }}
+            spacing={1.5}
+            sx={{ mb: 2 }}
+          >
             <Box>
               <Typography variant="h5">Preview</Typography>
               <Typography variant="body2" color="text.secondary">
-                Live comparison for the selected category branch and the current slider value.
+                Generate on demand to compare the selected branch against the current slider value.
               </Typography>
             </Box>
-            <Chip
-              label={loadingPreview ? 'Refreshing preview...' : `Avg ${previewData?.stats?.avg_current_price || 0} -> ${previewData?.stats?.avg_preview_price || 0}`}
-              color={loadingPreview ? 'warning' : 'default'}
-              variant="outlined"
-            />
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              sx={{ width: { xs: '100%', lg: 'auto' } }}
+            >
+              <Chip
+                label={
+                  loadingPreview
+                    ? 'Generating preview...'
+                    : previewData
+                      ? `Avg ${previewData?.stats?.avg_current_price || 0} -> ${previewData?.stats?.avg_preview_price || 0}`
+                      : 'No preview yet'
+                }
+                color={loadingPreview ? 'warning' : previewStale ? 'warning' : 'default'}
+                variant="outlined"
+                sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}
+              />
+              <Button
+                variant="contained"
+                onClick={handleGeneratePreview}
+                disabled={!selectedTag || !config || loadingPreview}
+                sx={{ whiteSpace: 'nowrap', minWidth: 172, alignSelf: { xs: 'stretch', sm: 'center' } }}
+              >
+                {loadingPreview ? 'Generating...' : 'Generate Preview'}
+              </Button>
+            </Stack>
           </Stack>
 
           {previewData ? (
             <Stack spacing={1.25}>
+              {previewStale ? (
+                <Alert severity="warning">
+                  The preview is stale. Generate it again to reflect the latest tag value.
+                </Alert>
+              ) : null}
               {(previewData.items || []).map((row) => {
                 const tone = getTagTone(row.primary_tag);
                 const existingOverride = overridesByItem[row.item_id];
@@ -826,17 +988,46 @@ const TagPricingPage = () => {
                           <Typography variant="body2" sx={{ color: tone.muted }}>
                             Price {row.current_price} {'->'} {row.preview_price}
                           </Typography>
+                          {(row.current_global_price_clamp === 'max' || row.preview_global_price_clamp === 'max') ? (
+                            <Typography variant="caption" sx={{ color: 'warning.light', display: 'block' }}>
+                              Uncapped {formatPreviewNumber(row.current_pre_clamp_price)} {'->'} {formatPreviewNumber(row.preview_pre_clamp_price)} (max {formatPreviewNumber(row.global_max_price)})
+                            </Typography>
+                          ) : null}
                           <Typography variant="caption" sx={{ color: tone.muted }}>
                             Stock {row.stock_min}-{row.stock_max}
                           </Typography>
                         </Box>
                         <Typography
                           variant="body2"
-                          sx={{ color: row.delta > 0 ? 'warning.light' : row.delta < 0 ? 'success.light' : tone.muted }}
+                          sx={{
+                            color: row.delta > 0
+                              ? 'warning.light'
+                              : row.delta < 0
+                                ? 'success.light'
+                                : row.raw_delta !== 0
+                                  ? 'info.light'
+                                  : tone.muted,
+                          }}
                         >
                           {formatPrice(row.delta)}
                         </Typography>
                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                          {row.raw_delta !== 0 && row.delta === 0 && (row.current_global_price_clamp === 'max' || row.preview_global_price_clamp === 'max') ? (
+                            <Chip
+                              size="small"
+                              color="warning"
+                              variant="outlined"
+                              label={`Cap hides ${formatCompactDelta(row.raw_delta)}`}
+                            />
+                          ) : null}
+                          {row.current_global_price_clamp === 'max' || row.preview_global_price_clamp === 'max' ? (
+                            <Chip
+                              size="small"
+                              color="warning"
+                              variant="outlined"
+                              label="Max capped"
+                            />
+                          ) : null}
                           <Button
                             variant="outlined"
                             size="small"
@@ -961,9 +1152,16 @@ const TagPricingPage = () => {
               })}
             </Stack>
           ) : (
-            <Typography color="text.secondary">
-              Preview data will appear here once a tag is selected.
-            </Typography>
+            <Stack spacing={1.25}>
+              {previewStale ? (
+                <Alert severity="info">
+                  Preview is manual now. Click `Generate Preview` when you want to inspect the current tag value.
+                </Alert>
+              ) : null}
+              <Typography color="text.secondary">
+                Preview data will appear here once you generate it for the selected tag.
+              </Typography>
+            </Stack>
           )}
         </Paper>
       </Stack>
