@@ -12,11 +12,11 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Container.Bag.Bandolier] [Rarity.Rare] (23 items)
-    { item="Base.AmmoStrap_Brown_Bullets", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
-    { item="Base.AmmoStrap_Brown_Shells", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
-    { item="Base.AmmoStrap_Bullets", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
-    { item="Base.AmmoStrap_Bullets_308", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
-    { item="Base.AmmoStrap_Shells", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
+    { item="Base.AmmoStrap_Brown_Bullets", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.AmmoStrap_Brown_Shells", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.AmmoStrap_Bullets", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.AmmoStrap_Bullets_308", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.AmmoStrap_Shells", basePrice=106, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
     { item="Base.Bag_AmmoBox", basePrice=101, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
     { item="Base.Bag_AmmoBox_308", basePrice=101, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
     { item="Base.Bag_AmmoBox_38", basePrice=101, tags={"Container.Bag.Bandolier", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.Medium"}, stockRange={min=0, max=4} },
@@ -40,11 +40,11 @@ DynamicTrading.RegisterBatch({
     { item="Base.HolsterShoulder", basePrice=106, tags={"Container.Bag.Holster", "Rarity.Rare", "Container.Capacity.Tiny", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
 
     -- [Container.Bag.Rig] [Rarity.Rare] (5 items)
-    { item="Base.Bag_ALICE_BeltSus", basePrice=130, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
-    { item="Base.Bag_ALICE_BeltSus_Camo", basePrice=130, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
-    { item="Base.Bag_ALICE_BeltSus_Green", basePrice=130, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
-    { item="Base.Bag_ChestRig", basePrice=129, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
-    { item="Base.Bag_ChestRig_Tarp", basePrice=129, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=6} },
+    { item="Base.Bag_ALICE_BeltSus", basePrice=130, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_ALICE_BeltSus_Camo", basePrice=130, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_ALICE_BeltSus_Green", basePrice=130, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_ChestRig", basePrice=129, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
+    { item="Base.Bag_ChestRig_Tarp", basePrice=129, tags={"Container.Bag.Rig", "Rarity.Rare", "Container.Capacity.Low", "Container.WeightReduction.High", "Container.Wearable"}, stockRange={min=0, max=11} },
 })
 
 print("[DynamicTrading] Wearable Registry Complete")

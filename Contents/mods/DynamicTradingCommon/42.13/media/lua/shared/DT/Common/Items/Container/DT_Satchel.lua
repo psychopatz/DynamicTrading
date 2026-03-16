@@ -22,8 +22,8 @@ DynamicTrading.RegisterBatch({
     { item="Base.Bag_Satchel_Fishing", basePrice=150, tags={"Container.Bag.Satchel", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=4} },
     { item="Base.Bag_Satchel_Leather", basePrice=156, tags={"Container.Bag.Satchel", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=4} },
     { item="Base.Bag_Satchel_Mail", basePrice=150, tags={"Container.Bag.Satchel", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=4} },
-    { item="Base.Bag_Satchel_Medical", basePrice=168, tags={"Container.Bag.Satchel", "Rarity.Rare", "Origin.Clinical", "Container.Capacity.Medium", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=4} },
-    { item="Base.Bag_Satchel_Military", basePrice=172, tags={"Container.Bag.Satchel", "Rarity.Rare", "Origin.Militia", "Container.Capacity.Medium", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=4} },
+    { item="Base.Bag_Satchel_Medical", basePrice=168, tags={"Container.Bag.Satchel", "Rarity.Rare", "Origin.Clinical", "Container.Capacity.Medium", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=3} },
+    { item="Base.Bag_Satchel_Military", basePrice=172, tags={"Container.Bag.Satchel", "Rarity.Rare", "Origin.Militia", "Container.Capacity.Medium", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=3} },
     { item="Base.Bag_SatchelPhoto", basePrice=150, tags={"Container.Bag.Satchel", "Rarity.Rare", "Container.Capacity.Medium", "Container.WeightReduction.Medium", "Container.Wearable"}, stockRange={min=0, max=4} },
 })
 

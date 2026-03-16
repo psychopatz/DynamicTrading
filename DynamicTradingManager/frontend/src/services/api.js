@@ -26,6 +26,10 @@ export const getTaskLogs = (id, since = 0) => api.get(`/tasks/${id}/logs`, { par
 
 // Misc
 export const getBlacklist = () => api.get('/blacklist');
+export const addBlacklistItem = (itemId) => api.post('/blacklist/item', { item_id: itemId });
+export const getOverrides = () => api.get('/overrides');
+export const saveItemOverride = (payload) => api.put('/overrides/item', payload);
+export const deleteItemOverride = (itemId) => api.delete(`/overrides/item/${itemId}`);
 
 export const getSimulationData = () => api.get('/simulation/data');
 export const getDebugLogs = (params) => api.get('/debug/logs', { params });
@@ -33,5 +37,7 @@ export const getPricingConfig = () => api.get('/pricing/config');
 export const savePricingConfig = (config) => api.put('/pricing/config', { config });
 export const previewPricing = (payload) => api.post('/pricing/preview', payload);
 export const getPricingAudit = (params) => api.get('/pricing/audit', { params });
+export const getPricingTags = () => api.get('/pricing/tags');
+export const previewPricingTag = (payload) => api.post('/pricing/tags/preview', payload);
 
 export default api;

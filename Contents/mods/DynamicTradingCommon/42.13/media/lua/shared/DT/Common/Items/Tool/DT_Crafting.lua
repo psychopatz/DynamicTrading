@@ -12,14 +12,14 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Tool.Crafting] [Rarity.Rare] (8 items)
-    { item="Base.BallPeenHammerHead", basePrice=75, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=6} },
+    { item="Base.BallPeenHammerHead", basePrice=75, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=7} },
     { item="Base.ClubHammerHead", basePrice=73, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=2} },
-    { item="Base.CrudeSaw", basePrice=86, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=4} },
-    { item="Base.GardenSaw", basePrice=99, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=4} },
-    { item="Base.OldDrill", basePrice=76, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=4} },
-    { item="Base.Saw", basePrice=99, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=4} },
-    { item="Base.SmallSaw", basePrice=94, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=4} },
-    { item="Base.SmithingHammerHead", basePrice=75, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=6} },
+    { item="Base.CrudeSaw", basePrice=86, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=3} },
+    { item="Base.GardenSaw", basePrice=99, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=3} },
+    { item="Base.OldDrill", basePrice=76, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=2} },
+    { item="Base.Saw", basePrice=99, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=3} },
+    { item="Base.SmallSaw", basePrice=94, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=3} },
+    { item="Base.SmithingHammerHead", basePrice=75, tags={"Tool.Crafting", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=7} },
 })
 
 print("[DynamicTrading] Crafting Registry Complete")

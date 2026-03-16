@@ -9,12 +9,14 @@ DEFAULT_TAGS_DICT = {
     "quality": None,
     "origin": None,
     "theme": [],
+    "all_tags": [],
 }
 
 
 def normalize_tags_dict(tags_dict: Any) -> Dict[str, Any]:
     if isinstance(tags_dict, list):
         normalized = dict(DEFAULT_TAGS_DICT)
+        normalized["all_tags"] = [str(tag) for tag in tags_dict if isinstance(tag, str) and tag]
         normalized["primary"] = next(
             (
                 tag for tag in tags_dict
@@ -54,6 +56,21 @@ def normalize_tags_dict(tags_dict: Any) -> Dict[str, Any]:
         normalized["theme"] = [str(value) for value in theme if value]
     elif theme:
         normalized["theme"] = [str(theme)]
+
+    all_tags = tags_dict.get("all_tags") or []
+    if isinstance(all_tags, list) and all_tags:
+        normalized["all_tags"] = [str(tag) for tag in all_tags if tag]
+    else:
+        rebuilt = [normalized["primary"]]
+        if normalized["rarity"]:
+            rebuilt.append(f"Rarity.{normalized['rarity']}")
+        if normalized["quality"]:
+            rebuilt.append(f"Quality.{normalized['quality']}")
+        if normalized["origin"]:
+            rebuilt.append(f"Origin.{normalized['origin']}")
+        for theme_tag in normalized["theme"]:
+            rebuilt.append(theme_tag if theme_tag.startswith("Theme.") else f"Theme.{theme_tag}")
+        normalized["all_tags"] = rebuilt
 
     return normalized
 

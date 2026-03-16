@@ -182,3 +182,28 @@ def reload_blacklist():
     global _blacklist_cache
     _blacklist_cache = None
     return load_blacklist()
+
+
+def add_item_to_blacklist(item_id):
+    """Add an item ID to blacklist.json if it is not already present"""
+    if not item_id or not isinstance(item_id, str):
+        raise ValueError("item_id must be a non-empty string")
+
+    blacklist_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "blacklist.json")
+    blacklist = reload_blacklist()
+    item_ids = list(blacklist.get("itemIds", []))
+
+    if item_id not in item_ids:
+        item_ids.append(item_id)
+        item_ids.sort()
+
+    next_blacklist = {
+        "itemIds": item_ids,
+        "properties": blacklist.get("properties", {"names": [], "values": {}}),
+    }
+
+    with open(blacklist_path, "w") as file_handle:
+        json.dump(next_blacklist, file_handle, indent=2)
+
+    reload_blacklist()
+    return next_blacklist

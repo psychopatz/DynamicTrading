@@ -8,6 +8,7 @@ from typing import Any, Dict
 from .config_store import get_pricing_config
 from .heuristics import (
     build_item_context,
+    evaluate_building,
     evaluate_fallback,
     evaluate_food,
     evaluate_medical,
@@ -15,7 +16,7 @@ from .heuristics import (
     evaluate_weapon,
 )
 from .heuristics.common import clamp, make_component
-from .tag_utils import category_parts, normalize_tags_dict
+from .tag_utils import category_parts, expand_hierarchy, normalize_tags_dict
 
 
 def _category_config(config: Dict[str, Any], category: str) -> Dict[str, float]:
@@ -83,6 +84,35 @@ def _apply_shared_multipliers(raw_score: float, context: Dict[str, Any], config:
     return price, adjustments
 
 
+def _apply_tag_base_additions(
+    result: Dict[str, Any],
+    context: Dict[str, Any],
+    config: Dict[str, Any],
+) -> Dict[str, Any]:
+    additions = config.get("tag_price_additions", {})
+    if not additions:
+        return result
+
+    all_tags = context["tags_dict"].get("all_tags") or [context["primary_tag"]]
+    matched_tags = expand_hierarchy(all_tags)
+
+    total_addition = 0.0
+    components = list(result.get("components", []))
+    for tag in matched_tags:
+        value = additions.get(tag)
+        if value:
+            total_addition += float(value)
+            components.append(make_component(f"Tag base: {tag}", float(value)))
+
+    if not total_addition:
+        return result
+
+    updated = dict(result)
+    updated["score"] = float(result["score"]) + total_addition
+    updated["components"] = components
+    return updated
+
+
 def calculate_price_details(item_id: str, props: str, tags_dict: Any, pricing_config: Dict[str, Any] | None = None) -> Dict[str, Any]:
     if not props or len((props or "").strip()) < 10:
         return {
@@ -121,8 +151,12 @@ def calculate_price_details(item_id: str, props: str, tags_dict: Any, pricing_co
         result = evaluate_weapon(context, category_cfg)
     elif effective_category == "Tool":
         result = evaluate_tool(context, category_cfg)
+    elif effective_category == "Building":
+        result = evaluate_building(context, category_cfg)
     else:
         result = evaluate_fallback(context, category_cfg)
+
+    result = _apply_tag_base_additions(result, context, config)
 
     raw_score = clamp(
         result["score"],

@@ -118,18 +118,58 @@ def _evaluate_resource(context, config):
     fuel_score = context["fuel_value"] * config["fuel_weight"]
     burn_score = context["fire_fuel_ratio"] * config["fire_fuel_weight"]
     crafting_bonus = config["crafting_bonus"] if context["use_delta"] > 0 else 0.0
-    propane_bonus = config["propane_bonus"] if context["is_propane_tank"] else 0.0
-    fuel_container_bonus = config["fuel_container_bonus"] if context["is_fuel_container"] else 0.0
+
+    role_bonus = 0.0
+    if context["has_survival_gear"]:
+        role_bonus += config["survival_bonus"]
+    if context["is_gas_fuel_resource"]:
+        role_bonus += config["gas_fuel_bonus"]
+    elif context["is_solid_fuel_resource"]:
+        role_bonus += config["solid_fuel_bonus"]
+    if context["is_propane_tank"]:
+        role_bonus += config["propane_bonus"]
+    if context["is_fuel_container"]:
+        role_bonus += config["fuel_container_bonus"]
+    if context["is_hardware_resource"] and not context["is_carton"]:
+        role_bonus += config["hardware_bonus"]
+    if context["is_hardware_resource"] and context["is_box_bundle"]:
+        role_bonus += config["hardware_box_bonus"]
+    if context["is_hardware_resource"] and context["is_carton"]:
+        role_bonus += config["hardware_carton_bonus"]
+    if context["is_sheet_material_resource"]:
+        role_bonus += config["sheet_material_bonus"]
+    if context["is_masonry_resource"]:
+        role_bonus += config["masonry_bonus"]
+    if context["is_powder_resource"]:
+        role_bonus += config["powder_bonus"]
+    if context["is_textile_resource"]:
+        role_bonus += config["textile_bonus"]
+    if context["is_binding_resource"]:
+        role_bonus += config["binding_bonus"]
+    if context["is_stack_resource"]:
+        role_bonus += config["stack_bonus"]
+    if context["is_bag_fill_resource"]:
+        role_bonus += config["bag_fill_bonus"]
+    if context["is_smeltable_resource"]:
+        role_bonus += config["smeltable_bonus"]
+    if context["is_fire_tinder_resource"]:
+        role_bonus += config["fire_tinder_bonus"]
+    if context["is_log_resource"]:
+        role_bonus += config["log_bonus"]
+    if context["use_delta"] > 0 or context["is_replaceable_bag_supply"]:
+        role_bonus += config["depleting_supply_bonus"]
+    if context["is_bulk_resource_bundle"] and not context["is_hardware_resource"]:
+        role_bonus += config["bulk_bundle_bonus"]
+
     weight_penalty = context["weight"] * config["weight_penalty"]
-    score = config["base"] + metal_score + fuel_score + burn_score + crafting_bonus + propane_bonus + fuel_container_bonus - weight_penalty
+    score = config["base"] + metal_score + fuel_score + burn_score + crafting_bonus + role_bonus - weight_penalty
     components = [
         make_component("Base", config["base"]),
         make_component("Metal value", metal_score),
         make_component("Fuel value", fuel_score),
         make_component("Burn value", burn_score),
         make_component("Crafting bonus", crafting_bonus),
-        make_component("Propane utility", propane_bonus),
-        make_component("Fuel container utility", fuel_container_bonus),
+        make_component("Role bonus", role_bonus),
         make_component("Bulk penalty", -weight_penalty),
         make_component("Carton discount", config["carton_metal_multiplier"], "multiplier") if context["is_carton"] else None,
     ]
@@ -140,18 +180,46 @@ def _evaluate_resource(context, config):
 
 
 def _evaluate_building(context, config):
-    survival_bonus = config["survival_bonus"] if "survival" in context["primary_tag"].lower() else 0.0
-    fixture_bonus = config["fixture_bonus"] if "fixture" in context["primary_tag"].lower() else 0.0
-    vehicle_bonus = config["vehicle_bonus"] if "vehicle" in context["primary_tag"].lower() else 0.0
+    role_bonus = 0.0
+    if context["is_survival_building"]:
+        role_bonus += config["survival_bonus"]
+    if context["is_trap_building"]:
+        role_bonus += config["trap_bonus"]
+    if context["is_fixture_building"]:
+        role_bonus += config["fixture_bonus"]
+    if context["is_vehicle_building"]:
+        role_bonus += config["vehicle_bonus"]
+    if context["is_moveable_building"]:
+        role_bonus += config["moveable_bonus"]
+    if context["is_garden_building"]:
+        role_bonus += config["garden_bonus"]
+    if context["is_garden_supply_building"]:
+        role_bonus += config["garden_supply_bonus"]
+    if context["is_crop_treatment_building"]:
+        role_bonus += config["crop_treatment_bonus"]
+    if context["is_farm_bulk_building"]:
+        role_bonus += config["farm_bulk_bonus"]
+    if context["is_seed_building"]:
+        role_bonus += config["seed_bonus"]
+    if context["is_packed_building"]:
+        role_bonus += config["packed_bonus"]
+    if context["has_survival_gear"]:
+        role_bonus += config["survival_gear_bonus"]
+    if context["is_replaceable_bag_supply"]:
+        role_bonus += config["replaceable_bag_bonus"]
+
+    use_utility = 0.0
+    if context["use_delta"] > 0:
+        use_utility = min(context["total_uses"], config["utility_use_cap"]) * config["utility_use_weight"]
+
     weight_penalty = context["weight"] * config["weight_penalty"]
-    score = config["base"] + survival_bonus + fixture_bonus + vehicle_bonus - weight_penalty
+    score = config["base"] + role_bonus + use_utility - weight_penalty
     return {
         "score": clamp(score, config["price_floor"], config["price_ceiling"]),
         "components": [
             make_component("Base", config["base"]),
-            make_component("Survival utility", survival_bonus),
-            make_component("Fixture utility", fixture_bonus),
-            make_component("Vehicle utility", vehicle_bonus),
+            make_component("Role bonus", role_bonus),
+            make_component("Use utility", use_utility),
             make_component("Bulk penalty", -weight_penalty),
         ],
     }

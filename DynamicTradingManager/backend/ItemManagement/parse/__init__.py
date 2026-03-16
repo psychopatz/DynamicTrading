@@ -12,7 +12,8 @@ from .blacklist import (
     is_item_blacklisted,
     filter_items,
     get_blacklist_stats,
-    reload_blacklist
+    reload_blacklist,
+    add_item_to_blacklist
 )
 
 __all__ = [
@@ -22,5 +23,6 @@ __all__ = [
     'is_item_blacklisted',
     'filter_items',
     'get_blacklist_stats',
-    'reload_blacklist'
+    'reload_blacklist',
+    'add_item_to_blacklist'
 ]

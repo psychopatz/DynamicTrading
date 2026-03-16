@@ -12,10 +12,10 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Electronics.Gadget.General] [Rarity.Rare] (4 items)
-    { item="Base.ElectricWire", basePrice=20, tags={"Electronics.Gadget.General", "Rarity.Rare"}, stockRange={min=0, max=10} },
-    { item="Base.ElectronicsScrap", basePrice=23, tags={"Electronics.Gadget.General", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=10} },
-    { item="Base.HairDryer", basePrice=112, tags={"Electronics.Gadget.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.HairIron", basePrice=112, tags={"Electronics.Gadget.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
+    { item="Base.ElectricWire", basePrice=20, tags={"Electronics.Gadget.General", "Rarity.Rare"}, stockRange={min=0, max=7} },
+    { item="Base.ElectronicsScrap", basePrice=23, tags={"Electronics.Gadget.General", "Rarity.Rare", "Quality.Waste"}, stockRange={min=0, max=8} },
+    { item="Base.HairDryer", basePrice=112, tags={"Electronics.Gadget.General", "Rarity.Rare"}, stockRange={min=0, max=2} },
+    { item="Base.HairIron", basePrice=112, tags={"Electronics.Gadget.General", "Rarity.Rare"}, stockRange={min=0, max=2} },
 })
 
 print("[DynamicTrading] Gadget Registry Complete")

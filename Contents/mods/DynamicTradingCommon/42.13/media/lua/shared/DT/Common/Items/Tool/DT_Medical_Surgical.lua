@@ -12,13 +12,13 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Tool.Medical.Surgical] [Rarity.Common] (1 item)
-    { item="Base.Scalpel", basePrice=36, tags={"Tool.Medical.Surgical", "Rarity.Common", "Tool.Fragile"}, stockRange={min=3, max=15} },
+    { item="Base.Scalpel", basePrice=36, tags={"Tool.Medical.Surgical", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=9} },
 
     -- [Tool.Medical.Surgical] [Rarity.Rare] (4 items)
-    { item="Base.Forceps_Forged", basePrice=40, tags={"Tool.Medical.Surgical", "Rarity.Rare"}, stockRange={min=0, max=10} },
-    { item="Base.SutureNeedle", basePrice=39, tags={"Tool.Medical.Surgical", "Rarity.Rare"}, stockRange={min=0, max=10} },
-    { item="Base.SutureNeedleBox", basePrice=37, tags={"Tool.Medical.Surgical", "Rarity.Rare"}, stockRange={min=0, max=4} },
-    { item="Base.SutureNeedleHolder", basePrice=40, tags={"Tool.Medical.Surgical", "Rarity.Rare"}, stockRange={min=0, max=6} },
+    { item="Base.Forceps_Forged", basePrice=40, tags={"Tool.Medical.Surgical", "Rarity.Rare"}, stockRange={min=0, max=8} },
+    { item="Base.SutureNeedle", basePrice=39, tags={"Tool.Medical.Surgical", "Rarity.Rare"}, stockRange={min=0, max=8} },
+    { item="Base.SutureNeedleBox", basePrice=37, tags={"Tool.Medical.Surgical", "Rarity.Rare"}, stockRange={min=0, max=3} },
+    { item="Base.SutureNeedleHolder", basePrice=40, tags={"Tool.Medical.Surgical", "Rarity.Rare"}, stockRange={min=0, max=4} },
 })
 
 print("[DynamicTrading] Medical Surgical Registry Complete")

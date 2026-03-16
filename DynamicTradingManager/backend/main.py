@@ -25,12 +25,17 @@ try:
         calculate_price,
         calculate_price_details,
         build_pricing_audit,
+        build_pricing_tag_catalog,
+        preview_pricing_tag,
         load_pricing_config,
         save_pricing_config,
         get_stat,
+        add_item_to_blacklist,
+        reload_blacklist,
     )
     from ItemManagement.commons.vanilla_loader import get_property_value, get_translated_name
     from ItemManagement.commons.lua_handler.records import tags_list_to_dict
+    from ItemManagement.parse.overrides import load_overrides, save_overrides, validate_override
     from ItemManagement.ui.commands import (
         update as run_update, 
         add as run_add,
@@ -97,6 +102,25 @@ class PricingPreviewRequest(BaseModel):
     item_id: str
     props: Optional[str] = None
     tags: Optional[List[str]] = None
+
+
+class PricingTagPreviewRequest(BaseModel):
+    tag: str
+    addition: float = 0.0
+    limit: int = 40
+
+
+class BlacklistItemRequest(BaseModel):
+    item_id: str
+
+
+class ItemOverrideRequest(BaseModel):
+    item_id: str
+    base_price: Optional[float] = None
+    tags: Optional[List[str]] = None
+    stock_min: Optional[int] = None
+    stock_max: Optional[int] = None
+    description: Optional[str] = None
 
 # Global state (cache items)
 cached_vanilla_items = None
@@ -279,6 +303,29 @@ async def get_pricing_audit(limit: int = 20):
         logger.error(f"Error building pricing audit: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/api/pricing/tags")
+async def get_pricing_tags():
+    try:
+        return build_pricing_tag_catalog(get_items())
+    except Exception as e:
+        logger.error(f"Error building pricing tag catalog: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/pricing/tags/preview")
+async def preview_pricing_tags(request: PricingTagPreviewRequest):
+    try:
+        return preview_pricing_tag(
+            get_items(),
+            request.tag,
+            addition=request.addition,
+            limit=request.limit,
+        )
+    except Exception as e:
+        logger.error(f"Error previewing pricing tag {request.tag}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # --- Task Routes ---
 
 @app.get("/api/tasks")
@@ -358,6 +405,103 @@ async def trigger_generate_docs():
 @app.get("/api/blacklist")
 async def get_blacklist():
     return load_blacklist()
+
+
+@app.post("/api/blacklist/item")
+async def add_blacklist_item(request: BlacklistItemRequest):
+    global cached_vanilla_items
+
+    try:
+        blacklist = add_item_to_blacklist(request.item_id)
+        reload_blacklist()
+        cached_vanilla_items = None
+        return {
+            "success": True,
+            "item_id": request.item_id,
+            "blacklist": blacklist,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error adding {request.item_id} to blacklist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/overrides")
+async def get_overrides():
+    try:
+        overrides = load_overrides()
+        return {
+            "overrides": overrides,
+            "by_item": {
+                override.get("item"): override
+                for override in overrides
+                if override.get("item")
+            },
+        }
+    except Exception as e:
+        logger.error(f"Error loading overrides: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/overrides/item")
+async def save_item_override(request: ItemOverrideRequest):
+    try:
+        override = {"item": request.item_id}
+        if request.base_price is not None:
+            override["basePrice"] = request.base_price
+        if request.tags:
+            override["tags"] = request.tags
+        if request.stock_min is not None or request.stock_max is not None:
+            override["stockRange"] = {}
+            if request.stock_min is not None:
+                override["stockRange"]["min"] = request.stock_min
+            if request.stock_max is not None:
+                override["stockRange"]["max"] = request.stock_max
+        if request.description:
+            override["description"] = request.description
+
+        if len(override) == 1:
+            raise HTTPException(status_code=400, detail="Override must include at least one field to save.")
+
+        is_valid, error = validate_override(override)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error or "Invalid override")
+
+        overrides = [entry for entry in load_overrides() if entry.get("item") != request.item_id]
+        overrides.append(override)
+        save_overrides(overrides)
+        return {
+            "success": True,
+            "override": override,
+            "overrides": overrides,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error saving override for {request.item_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/overrides/item/{item_id}")
+async def delete_item_override(item_id: str):
+    try:
+        overrides = load_overrides()
+        next_overrides = [entry for entry in overrides if entry.get("item") != item_id]
+        if len(next_overrides) == len(overrides):
+            raise HTTPException(status_code=404, detail="Override not found")
+
+        save_overrides(next_overrides)
+        return {
+            "success": True,
+            "item_id": item_id,
+            "overrides": next_overrides,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting override for {item_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Debug / Logs ---
 

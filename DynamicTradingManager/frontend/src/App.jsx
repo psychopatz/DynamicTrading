@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Link as RouterLink } from 'react-router-d
 import Dashboard from './components/Dashboard';
 import ItemsPage from './components/ItemsPage';
 import PricingPage from './components/PricingPage';
+import TagPricingPage from './components/TagPricingPage';
 import SimulationDashboard from './components/Simulation/SimulationDashboard';
 import ConsolePage from './components/ConsolePage';
 
@@ -33,6 +34,7 @@ function App() {
                 <Button color="inherit" component={RouterLink} to="/">Dashboard</Button>
                 <Button color="inherit" component={RouterLink} to="/items">Vanilla Items</Button>
                 <Button color="inherit" component={RouterLink} to="/pricing">Pricing Model</Button>
+                <Button color="inherit" component={RouterLink} to="/pricing/tags">Tag Pricing</Button>
                 <Button color="inherit" component={RouterLink} to="/simulation">Economy Simulation</Button>
                 <Button color="inherit" component={RouterLink} to="/console">Console</Button>
               </Toolbar>
@@ -42,6 +44,7 @@ function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/items" element={<ItemsPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/pricing/tags" element={<TagPricingPage />} />
                 <Route path="/simulation" element={<SimulationDashboard />} />
                 <Route path="/console" element={<ConsolePage />} />
               </Routes>

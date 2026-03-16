@@ -3,10 +3,9 @@
 
 import re
 
-from ...tag.tagging import parse_tags, get_category_from_tags
-from ...pricing.stock import calculate_base_max_stock, apply_category_multiplier, calculate_min_stock
+from ...tag.tagging import parse_tags
+from ...pricing.stock import calculate_stock_range
 from ...pricing.pricing import calculate_price
-from ..vanilla_loader import get_stat
 from ...parse.overrides import load_overrides, apply_override
 from .parsing import format_item_record
 
@@ -19,6 +18,7 @@ def tags_list_to_dict(tags_list):
         'quality': None,
         'origin': None,
         'theme': [],
+        'all_tags': [tag for tag in (tags_list or []) if isinstance(tag, str)],
     }
 
     for tag in tags_list or []:
@@ -45,8 +45,10 @@ def tags_list_to_lua(tags_list):
 
 def parse_lua_tags(tags_str):
     """Convert Lua tags string body into parsed tags dict."""
-    tags_body = ', '.join(f'"{tag}"' for tag in re.findall(r'"([^"]+)"', tags_str))
+    tags_list = re.findall(r'"([^"]+)"', tags_str)
+    tags_body = ', '.join(f'"{tag}"' for tag in tags_list)
     tags_dict = parse_tags('{' + tags_body + '}')
+    tags_dict['all_tags'] = tags_list
     return tags_body, tags_dict
 
 
@@ -56,31 +58,13 @@ def create_item_record(item_data, vanilla_items):
     props = item_data['props']
     tags = item_data['tags']
 
-    tags_dict = {
-        'primary': tags[0],
-        'rarity': 'Common',
-        'quality': None,
-        'origin': None,
-        'theme': [],
-    }
-
-    for tag in tags:
-        if tag.startswith('Rarity.'):
-            tags_dict['rarity'] = tag.split('.')[1]
-        elif tag.startswith('Quality.'):
-            tags_dict['quality'] = tag.split('.')[1]
-        elif tag.startswith('Origin.'):
-            tags_dict['origin'] = tag.split('.')[1]
-        elif tag.startswith('Theme.'):
-            tags_dict['theme'].append(tag)
+    tags_dict = tags_list_to_dict(tags)
 
     price = calculate_price(item_id, props, tags_dict)
 
-    weight = get_stat(props, 'Weight', 0.5) if props else 0.5
-    _, subcategories = get_category_from_tags(tags_dict)
-    base_max = calculate_base_max_stock(weight)
-    final_max = apply_category_multiplier(base_max, tags_dict, subcategories)
-    final_min = calculate_min_stock(final_max, tags_dict, subcategories)
+    stock_range = calculate_stock_range(item_id, props, tags_dict)
+    final_min = stock_range['min']
+    final_max = stock_range['max']
 
     overrides = load_overrides()
     final_price, final_tags, final_min_override, final_max_override, was_overridden = apply_override(

@@ -15,7 +15,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Fleshing_Tool", basePrice=51, tags={"Tool.General", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=4} },
     { item="Base.Fleshing_Tool_Bone", basePrice=32, tags={"Tool.General", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=4} },
     { item="Base.KnappingTool", basePrice=72, tags={"Tool.General", "Rarity.Rare"}, stockRange={min=0, max=6} },
-    { item="Base.SheepElectricShears", basePrice=191, tags={"Tool.General", "Rarity.Rare", "Tool.HighUse"}, stockRange={min=0, max=6} },
+    { item="Base.SheepElectricShears", basePrice=191, tags={"Tool.General", "Rarity.Rare", "Tool.HighUse"}, stockRange={min=0, max=4} },
 })
 
 print("[DynamicTrading] General Registry Complete")

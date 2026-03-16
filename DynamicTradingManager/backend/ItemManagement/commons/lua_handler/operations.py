@@ -6,10 +6,9 @@ from pathlib import Path
 from collections import defaultdict
 
 from ...config import MOD_ITEMS_DIR, CATEGORY_FILE_MAP
-from ...tag.tagging import generate_tags, is_excluded, get_category_from_tags
-from ...pricing.stock import calculate_base_max_stock, apply_category_multiplier, calculate_min_stock
+from ...tag.tagging import generate_tags, is_excluded
+from ...pricing.stock import calculate_stock_range
 from ...pricing.pricing import calculate_price
-from ..vanilla_loader import get_stat
 from ...parse.blacklist import is_item_blacklisted
 from .builders import cleanup_empty_lua_files, ensure_lua_file_exists
 from .parsing import find_register_batch_bounds, extract_item_records, build_grouped_items_text
@@ -68,11 +67,9 @@ def process_lua_file(filepath, vanilla_items, dry_run=False, regenerate_tags=Fal
 
         new_price = calculate_price(item_id, props, tags_dict)
 
-        weight = get_stat(props, 'Weight', 0.5) if props else 0.5
-        _, subcategories = get_category_from_tags(tags_dict)
-        base_max = calculate_base_max_stock(weight)
-        final_max = apply_category_multiplier(base_max, tags_dict, subcategories)
-        final_min = calculate_min_stock(final_max, tags_dict, subcategories)
+        stock_range = calculate_stock_range(item_id, props, tags_dict)
+        final_min = stock_range['min']
+        final_max = stock_range['max']
 
         new_stock = f'{{min={final_min}, max={final_max}}}'
         new_entry = f'{{ item="Base.{item_id}", basePrice={new_price}, tags={{{tags_body}}}, stockRange={new_stock} }}'
