@@ -29,10 +29,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.TrailerTrunk3", basePrice=8, tags={"Building.Vehicle", "Rarity.Common"}, stockRange={min=0, max=2} },
     { item="Base.VanSeatsTrunk2", basePrice=6, tags={"Building.Vehicle", "Rarity.Common"}, stockRange={min=0, max=2} },
 
-    -- [Building.Vehicle] [Rarity.Rare] (83 items)
-    { item="Base.BigGasTank1", basePrice=17, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.BigGasTank2", basePrice=14, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.BigGasTank3", basePrice=17, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
+    -- [Building.Vehicle] [Rarity.Rare] (74 items)
     { item="Base.EngineDoor1", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.EngineDoor2", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.EngineDoor3", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
@@ -73,9 +70,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.NormalCarSeat1", basePrice=6, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.NormalCarSeat2", basePrice=6, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.NormalCarSeat3", basePrice=6, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.NormalGasTank1", basePrice=16, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.NormalGasTank2", basePrice=16, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.NormalGasTank3", basePrice=16, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.NormalSuspension1", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.NormalSuspension2", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.NormalSuspension3", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=2} },
@@ -103,9 +97,6 @@ DynamicTrading.RegisterBatch({
     { item="Base.RearWindshield1", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.RearWindshield2", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.RearWindshield3", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.SmallGasTank1", basePrice=15, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.SmallGasTank2", basePrice=17, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
-    { item="Base.SmallGasTank3", basePrice=15, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.TirePump", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=2} },
     { item="Base.TrunkDoor1", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },
     { item="Base.TrunkDoor2", basePrice=1, tags={"Building.Vehicle", "Rarity.Rare"}, stockRange={min=0, max=1} },

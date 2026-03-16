@@ -3,7 +3,7 @@
 
 from pathlib import Path
 
-from ...config import MOD_ITEMS_DIR, CATEGORY_FILE_MAP
+from ...config import MOD_ITEMS_DIR
 
 
 def build_lua_file_content(filename, category, items_body_text=''):
@@ -52,20 +52,10 @@ def ensure_lua_file_exists(file_path):
 
 
 def ensure_lua_files_exist():
-    """Create initial Lua files if they don't exist."""
+    """Ensure the Lua base directory exists without pre-creating empty files."""
     base_dir = Path(MOD_ITEMS_DIR)
     base_dir.mkdir(parents=True, exist_ok=True)
-
-    files_needed = set()
-    for _, subcat_map in CATEGORY_FILE_MAP.items():
-        for file_path in subcat_map.values():
-            files_needed.add(file_path)
-
-    created_count = 0
-    for file_path in sorted(files_needed):
-        created_count += int(ensure_lua_file_exists(file_path))
-
-    return created_count
+    return 0
 
 
 def cleanup_empty_lua_files():

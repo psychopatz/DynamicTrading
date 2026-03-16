@@ -11,6 +11,24 @@ if not DynamicTrading then return end
 DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
+    -- [Tool.Farming] [Rarity.Common] (16 items)
+    { item="Base.GardenFork", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.GardenFork_Forged", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.GardenHoe", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.GardenHoeForged", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.HandFork", basePrice=12, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=2, max=10} },
+    { item="Base.HandScythe", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=2, max=10} },
+    { item="Base.HandScytheForged", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=2, max=10} },
+    { item="Base.HandShovel", basePrice=12, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=2, max=10} },
+    { item="Base.LeafRake", basePrice=5, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=2, max=10} },
+    { item="Base.PickAxe", basePrice=9, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.PickAxeForged", basePrice=9, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.PrimitiveScythe", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=2, max=10} },
+    { item="Base.Rake", basePrice=4, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.Shovel", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.Shovel2", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+    { item="Base.SnowShovel", basePrice=10, tags={"Tool.Farming", "Rarity.Common", "Tool.Fragile"}, stockRange={min=1, max=5} },
+
     -- [Tool.Farming] [Rarity.Rare] (6 items)
     { item="Base.GardenHoeHead", basePrice=34, tags={"Tool.Farming", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=4} },
     { item="Base.HandScytheBlade", basePrice=57, tags={"Tool.Farming", "Rarity.Rare", "Tool.Fragile"}, stockRange={min=0, max=6} },

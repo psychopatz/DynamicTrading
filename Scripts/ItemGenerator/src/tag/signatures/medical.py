@@ -246,12 +246,6 @@ def get_medical_tags(item_id, props):
     primary_tag = f"Medical.{med_type}"
     tags = [primary_tag]
 
-    parts = primary_tag.split('.')
-    for index in range(2, len(parts)):
-        parent = '.'.join(parts[:index])
-        if parent not in tags:
-            tags.append(parent)
-
     if details.get('is_consumable') and 'Medical.Consumable' not in tags:
         tags.append('Medical.Consumable')
 

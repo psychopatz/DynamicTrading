@@ -119,11 +119,4 @@ def get_weapon_tags(item_id, props):
 
     subtype = details.get('subtype', 'Melee.General')
     tags = [f"Weapon.{subtype}"]
-
-    parents = []
-    parts = subtype.split('.')
-    for index in range(1, len(parts)):
-        parents.append(f"Weapon.{'.'.join(parts[:index])}")
-
-    tags.extend(parent for parent in parents if parent not in tags)
     return tags

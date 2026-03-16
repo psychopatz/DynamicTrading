@@ -195,12 +195,6 @@ def get_container_tags(item_id, props):
     primary_tag = f"Container.{details.get('container_type', 'General')}"
     tags = [primary_tag]
 
-    parts = primary_tag.split('.')
-    for index in range(2, len(parts)):
-        parent = '.'.join(parts[:index])
-        if parent not in tags:
-            tags.append(parent)
-
     capacity_band = details.get('capacity_band', 'Low')
     tags.append(f"Container.Capacity.{capacity_band}")
 

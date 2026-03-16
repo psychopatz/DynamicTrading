@@ -12,7 +12,7 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Medical.General.Vitamin] [Rarity.Rare] (1 item)
-    { item="Base.PillsVitamins", basePrice=340, tags={"Medical.General.Vitamin", "Rarity.Rare", "Medical.General", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.PillsVitamins", basePrice=340, tags={"Medical.General.Vitamin", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
 })
 
 print("[DynamicTrading] Vitamin Registry Complete")

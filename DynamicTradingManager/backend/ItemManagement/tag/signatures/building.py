@@ -369,6 +369,8 @@ def matches_building_signature(item_id, props):
     # Food / drink
     if has_property('HungerChange', props) or has_property('ThirstChange', props):
         return False, 0.0, details
+    if disp_cat in {'corpse', 'memento'}:
+        return False, 0.0, details
     # Active / consumable light sources should be routed by non-building
     # signatures instead of furniture/fixture heuristics.
     if disp_cat in {'lightsource', 'firesource'}:
@@ -438,7 +440,8 @@ def matches_building_signature(item_id, props):
             return True, 0.80, details
 
     # ── 4. ID token matching ──────────────────────────────────────────────
-    if id_matches_pattern(item_id, MATERIAL_ID):
+    NON_BUILDING_MATERIAL_ID_CATS = {'food', 'memento', 'corpse', 'tool', 'household', 'accessory'}
+    if id_matches_pattern(item_id, MATERIAL_ID) and disp_cat not in NON_BUILDING_MATERIAL_ID_CATS:
         details['building_type'] = 'Material'
         return True, 0.80, details
 
@@ -469,7 +472,8 @@ def matches_building_signature(item_id, props):
     # non-building (mementos, junk, jewellery, etc.).
     NON_BUILDING_DISPLAY_CATS = {'memento', 'junk', 'jewelry', 'ammo', 'camping',
                                   'fishing', 'cartography', 'firstaid', 'sports',
-                                  'animalpart', 'cooking', 'literature', 'skillbook'}
+                                  'animalpart', 'cooking', 'literature', 'skillbook',
+                                  'food', 'tool', 'household', 'accessory', 'corpse'}
     if disp_cat not in NON_BUILDING_DISPLAY_CATS:
         overlap = script_tags & BUILDING_SCRIPT_TAGS
         if len(overlap) >= 1:

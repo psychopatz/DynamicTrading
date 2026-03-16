@@ -275,17 +275,7 @@ def get_clothing_tags(item_id, props):
     primary_tag = f"Clothing.{details.get('clothing_type', 'General')}"
     tags = [primary_tag]
 
-    parts = primary_tag.split('.')
-    for index in range(2, len(parts)):
-        parent = '.'.join(parts[:index])
-        if parent not in tags:
-            tags.append(parent)
-
     if details.get('is_armor'):
-        armor_parent = 'Clothing.Armor'
-        if armor_parent not in tags:
-            tags.append(armor_parent)
-
         armor_tier = details.get('armor_tier')
         if armor_tier:
             tier_tag = f"Clothing.Armor.{armor_tier}"

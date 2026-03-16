@@ -10,6 +10,7 @@ from .signatures.food import get_food_tags
 from .signatures.medical import get_medical_tags
 from .signatures.containers import get_container_tags
 from .signatures.clothing import get_clothing_tags
+from .signatures.resources import get_resource_tags
 from .signatures.building import matches_building_signature, get_building_tags
 from .signatures.tools import matches_tool_signature, get_tool_tags
 from .signatures.weapons import get_weapon_tags
@@ -219,6 +220,33 @@ def _get_cookware_tool_tags(item_id, props):
     return []
 
 
+def _get_farming_tool_tags(item_id, props):
+    """Return tool tags only for farming/gardening implements."""
+    matches, _confidence, details = matches_tool_signature(item_id, props)
+    if not matches or details.get('tool_type') != 'Farming':
+        return []
+
+    item_lower = item_id.lower()
+    disp_cat = _get_display_category(props)
+    strong_farming_id = any(token in item_lower for token in [
+        'shovel', 'rake', 'gardenfork', 'handfork', 'gardenhoe',
+        'pickaxe', 'scythe', 'handscythe', 'primitivescythe', 'sickle',
+    ])
+    strong_farming_tag = bool(re.search(
+        r"Tags\s*=\s*[^\n]*(base:digplow|base:digworms|base:cutplant|base:scythe|base:pickaxe|base:clearashes|base:takedirt|base:takedung|base:removestump)",
+        props,
+        re.IGNORECASE,
+    ))
+    crafted_weapon_like = (
+        disp_cat in {'weaponcrafted', 'materialweapon'} or
+        any(token in item_lower for token in ['baseballbat_', 'cudgel_', 'spear', 'scrapweapon', 'longhandle_', 'head'])
+    )
+
+    if not crafted_weapon_like and (disp_cat == 'gardeningweapon' or strong_farming_id or strong_farming_tag):
+        return get_tool_tags(item_id, props)
+    return []
+
+
 def categorize_item(item_id, props):
     """
     Intelligently categorize item and generate nested tags
@@ -284,6 +312,11 @@ def categorize_item(item_id, props):
     if cookware_tool_tags:
         return cookware_tool_tags[0], cookware_tool_tags[1:]
 
+    # === FARMING / GARDEN TOOLS ===
+    farming_tool_tags = _get_farming_tool_tags(item_id, props)
+    if farming_tool_tags:
+        return farming_tool_tags[0], farming_tool_tags[1:]
+
     # === WEAPON ===
     weapon_tags = get_weapon_tags(item_id, props)
     if weapon_tags:
@@ -299,22 +332,17 @@ def categorize_item(item_id, props):
     if tool_tags:
         return tool_tags[0], tool_tags[1:]
 
+    # === RESOURCE ===
+    resource_tags = get_resource_tags(item_id, props)
+    if resource_tags:
+        return resource_tags[0], resource_tags[1:]
+
     # === BUILDING / CONSTRUCTION ===
-    # Let moveables and fixtures route out before generic resource fallback.
+    # Let moveables and fixtures route out after explicit resource matching.
     building_matches, _building_conf, _building_details = matches_building_signature(item_id, props)
     if building_matches:
         building_tags = get_building_tags(item_id, props)
         return building_tags[0], building_tags[1:]
-
-    # === RESOURCE ===
-    if _is_resource_part_item(item_id, props):
-        return "Resource.Parts", []
-
-    if has_property(props, "UseDelta"):
-        if any(x in item_id.lower() for x in ['petrol', 'gas', 'fuel', 'propane']):
-            return "Resource.Fuel.Liquid", []
-        else:
-            return "Resource.Material", []
 
     # === MISC (fallback) ===
     return "Misc.General", []

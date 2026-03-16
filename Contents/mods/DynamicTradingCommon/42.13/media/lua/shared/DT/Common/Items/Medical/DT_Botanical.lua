@@ -12,20 +12,20 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Medical.Healthcare.Botanical] [Rarity.Rare] (14 items)
-    { item="Base.BlackSage", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.BlackSageDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.Comfrey", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.ComfreyCataplasm", basePrice=85, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare"}, stockRange={min=0, max=10} },
-    { item="Base.ComfreyDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.CommonMallow", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.CommonMallowDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.Ginseng", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.Plantain", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.PlantainCataplasm", basePrice=85, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare"}, stockRange={min=0, max=10} },
-    { item="Base.PlantainDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.WildGarlic2", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
-    { item="Base.WildGarlicCataplasm", basePrice=85, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare"}, stockRange={min=0, max=10} },
-    { item="Base.WildGarlicDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Healthcare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.BlackSage", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.BlackSageDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.Comfrey", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.ComfreyCataplasm", basePrice=85, tags={"Medical.Healthcare.Botanical", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.ComfreyDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.CommonMallow", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.CommonMallowDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.Ginseng", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.Plantain", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.PlantainCataplasm", basePrice=85, tags={"Medical.Healthcare.Botanical", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.PlantainDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.WildGarlic2", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
+    { item="Base.WildGarlicCataplasm", basePrice=85, tags={"Medical.Healthcare.Botanical", "Rarity.Rare"}, stockRange={min=0, max=10} },
+    { item="Base.WildGarlicDried", basePrice=170, tags={"Medical.Healthcare.Botanical", "Rarity.Rare", "Medical.Consumable"}, stockRange={min=0, max=10} },
 })
 
 print("[DynamicTrading] Botanical Registry Complete")

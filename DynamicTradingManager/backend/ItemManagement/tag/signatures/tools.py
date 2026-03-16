@@ -23,7 +23,9 @@ CRAFTING_TOOL_PATTERNS = [
 ]
 
 FARMING_TOOL_PATTERNS = [
-    'Shovel', 'Rake', 'Hoe', 'Trowel', 'Pickaxe', 'Scythe'
+    'Shovel', 'Rake', 'LeafRake', 'Hoe', 'GardenHoe',
+    'HandShovel', 'HandFork', 'GardenFork', 'Pitchfork',
+    'Pickaxe', 'Scythe', 'HandScythe', 'PrimitiveScythe', 'Sickle'
 ]
 
 MEDICAL_TOOL_PATTERNS = [
@@ -294,12 +296,6 @@ def get_tool_tags(item_id, props):
     tool_type = details.get('tool_type', 'General')
     primary_tag = f"Tool.{tool_type}"
     tags = [primary_tag]
-
-    parts = primary_tag.split('.')
-    for index in range(2, len(parts)):
-        parent = '.'.join(parts[:index])
-        if parent not in tags:
-            tags.append(parent)
 
     condition = details.get('condition_max', 0)
     if condition > 50:

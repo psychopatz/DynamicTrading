@@ -73,9 +73,8 @@ DynamicTrading.RegisterBatch({
     { item="Base.UmbrellaTINTED", basePrice=2, tags={"Building.Fixture.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
     { item="Base.UmbrellaWhite", basePrice=2, tags={"Building.Fixture.General", "Rarity.Rare"}, stockRange={min=0, max=4} },
 
-    -- [Building.Fixture.Hardware] [Rarity.Rare] (3 items)
+    -- [Building.Fixture.Hardware] [Rarity.Rare] (2 items)
     { item="Base.CombinationPadlock", basePrice=14, tags={"Building.Fixture.Hardware", "Rarity.Rare"}, stockRange={min=0, max=6} },
-    { item="Base.KeyPadlock", basePrice=26, tags={"Building.Fixture.Hardware", "Rarity.Rare"}, stockRange={min=0, max=20} },
     { item="Base.Padlock", basePrice=14, tags={"Building.Fixture.Hardware", "Rarity.Rare"}, stockRange={min=0, max=6} },
 
     -- [Building.Fixture.Plumbing] [Rarity.Common] (13 items)
