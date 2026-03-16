@@ -49,7 +49,10 @@ local function OnPreUIDraw()
         and DT_TradingWindowWrapper_State.lastStockVersion ~= version then
         DynamicTrading.Log("DTV2", "Trade", "Sync", "Stock version changed for " .. tostring(traderID) .. ", refreshing UI")
         DT_TradingWindowWrapper_State.lastStockVersion = version
-        ui:populateList()
+        -- Defer rebuild into the window update loop so we don't mutate list rows
+        -- while the UI is handling mouse input for the current frame.
+        ui.inventoryDirty = true
+        ui.refreshCooldown = 0
     elseif DT_TradingWindowWrapper_State.currentTraderID ~= traderID then
         DT_TradingWindowWrapper_State.currentTraderID = traderID
         DT_TradingWindowWrapper_State.lastStockVersion = version

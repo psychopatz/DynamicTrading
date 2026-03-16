@@ -13,6 +13,7 @@ DT_ConfigManager.fileName = "DynamicTrading_Config.txt"
 DT_ConfigManager.defaultSettings = {
     enableSound = true,
     showSidebar = true,
+    debugLogs = false,
     volMaster = 0.6,
     volRadio = 0.6,
     volWallet = 0.5,
@@ -45,6 +46,7 @@ function DT_ConfigManager.save()
         -- print("[DT_ConfigManager] Saving config to " .. DT_ConfigManager.fileName)
         fileWriter:write("enableSound=" .. tostring(DT_ConfigManager.settings.enableSound) .. "\r\n")
         fileWriter:write("showSidebar=" .. tostring(DT_ConfigManager.settings.showSidebar) .. "\r\n")
+        fileWriter:write("debugLogs=" .. tostring(DT_ConfigManager.settings.debugLogs) .. "\r\n")
         fileWriter:write("volMaster=" .. tostring(DT_ConfigManager.settings.volMaster) .. "\r\n")
         fileWriter:write("volRadio=" .. tostring(DT_ConfigManager.settings.volRadio) .. "\r\n")
         fileWriter:write("volWallet=" .. tostring(DT_ConfigManager.settings.volWallet) .. "\r\n")
@@ -89,6 +91,9 @@ function DT_ConfigManager.load()
         end
         if string.find(line, "showSidebar=") then
             DT_ConfigManager.settings.showSidebar = (string.sub(line, 13) == "true")
+        end
+        if string.find(line, "debugLogs=") then
+            DT_ConfigManager.settings.debugLogs = (string.sub(line, 11) == "true")
         end
         if string.find(line, "volMaster=") then
             local n = tonumber(string.sub(line, 11))
@@ -141,6 +146,7 @@ function DT_ConfigManager.load()
     end
     
     fileReader:close()
+    DynamicTrading.Debug = DT_ConfigManager.settings.debugLogs == true
     DynamicTrading.Log("DTCommons", "Config", "Init", "Config Loaded successfully")
 end
 
@@ -156,6 +162,12 @@ end
 
 function DT_ConfigManager.setShowSidebar(isVisible)
     DT_ConfigManager.settings.showSidebar = isVisible
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.setDebugLogs(enabled)
+    DT_ConfigManager.settings.debugLogs = enabled == true
+    DynamicTrading.Debug = DT_ConfigManager.settings.debugLogs
     DT_ConfigManager.save()
 end
 

@@ -18,6 +18,13 @@ function DT_V2_OptionsManager.RegisterUI()
 
     -- V2 specific general settings (none yet, but Enable Sounds is shared)
     DT_OptionsUI.RegisterGeneralSetting("Enable Sounds", "enableSound", nil)
+    DT_OptionsUI.RegisterGeneralSetting("Enable Debug Logs", "debugLogs", function(selected)
+        if DT_ConfigManager and DT_ConfigManager.setDebugLogs then
+            DT_ConfigManager.setDebugLogs(selected)
+        else
+            DynamicTrading.Debug = selected == true
+        end
+    end)
 
     DynamicTrading.Log("DTV2", "Init", "Config", "V2 UI Registered.")
 end

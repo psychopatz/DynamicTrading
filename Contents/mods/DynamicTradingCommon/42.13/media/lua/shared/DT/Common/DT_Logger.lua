@@ -20,14 +20,22 @@ DynamicTrading.LogConfig = DynamicTrading.LogConfig or {
 function DynamicTrading.Log(version, system, specific, message)
     -- Global enable/disable check
     if not DynamicTrading.LogConfig.Enabled then return end
+
+    local systemTag = tostring(system or "General")
+    local specificTag = tostring(specific or "None")
+
+    -- Hide debug-tagged logs unless the debug option is enabled.
+    if not DynamicTrading.Debug and (systemTag == "Debug" or specificTag == "Debug") then
+        return
+    end
     
     -- Future expansion: check SandboxVars for specific system/version toggles
     -- Example: if SandboxVars.DynamicTrading.DebugFactions == false and system == "Factions" then return end
 
     local formatted = string.format("[%s/%s/%s] %s", 
         tostring(version or "Unknown"), 
-        tostring(system or "General"), 
-        tostring(specific or "None"), 
+        systemTag, 
+        specificTag, 
         tostring(message or ""))
         
     print(formatted)

@@ -292,6 +292,15 @@ function DT_TradingWindow:close()
         end
     end
 
+    if DT_ConfigManager and DT_ConfigManager.setWindowState then
+        DT_ConfigManager.setWindowState("TradingWindow", self:getX(), self:getY(), self:getWidth(), self:getHeight())
+    end
+
+    if DT_TradingWindowWrapper_State then
+        DT_TradingWindowWrapper_State.currentTraderID = nil
+        DT_TradingWindowWrapper_State.lastStockVersion = nil
+    end
+
     self:setVisible(false)
     self:removeFromUIManager()
     DT_TradingWindow.instance = nil
