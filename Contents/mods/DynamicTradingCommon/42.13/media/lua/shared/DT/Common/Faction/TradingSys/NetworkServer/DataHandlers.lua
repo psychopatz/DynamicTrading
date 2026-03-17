@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- NetworkServer/DataHandlers.lua
--- Logic: Data synchronization handlers (Roster, Trader, Stock)
+-- Logic: Data synchronization handlers (Faction, Roster, Trader, Stock)
 -- Build 42 Compatible.
 -- ==============================================================================
 
@@ -58,6 +58,35 @@ end
 -- COMMAND HANDLERS
 -- =============================================================================
 
+-- [FACTION DATA REQUEST]
+-- Shared by the player-facing Faction Intelligence window and the admin debug UI.
+Handlers.RequestFactionData = function(player, args)
+    local factionData = ModData.get("DynamicTrading_Factions") or {}
+    local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    local stockData = ModData.get("DynamicTrading_Stock") or {}
+
+    -- Keep the initial payload light: member registries plus only actively trading souls.
+    local filteredSouls = {}
+    if rosterData.Souls then
+        for uuid, soul in pairs(rosterData.Souls) do
+            if soul.status == "Trading" then
+                filteredSouls[uuid] = soul
+            end
+        end
+    end
+
+    local minimalRoster = {
+        FactionMembers = rosterData.FactionMembers or {},
+        Souls = filteredSouls
+    }
+
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionDebugData", {
+        factions = factionData,
+        roster = minimalRoster,
+        stock = stockData
+    })
+end
+
 -- [TRADER DATA REQUEST]
 Handlers.RequestTrader = function(player, args)
     local traderID = args.traderID
@@ -104,7 +133,7 @@ Handlers.RequestRoster = function(player, args)
 end
 
 -- [ON-DEMAND ROSTER REQUEST]
--- Duplicated here for general mod data sync (Radar/Common UIs)
+-- Shared by Radar/Common UIs when they need a faction's full soul list.
 Handlers.RequestFactionRoster = function(player, args)
     local factionID = args.factionID
     if not factionID then return end

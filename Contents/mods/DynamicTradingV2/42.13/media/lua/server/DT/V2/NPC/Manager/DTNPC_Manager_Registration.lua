@@ -159,7 +159,7 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removal
         
         -- Broadcast removal to all clients
         if DTNPCServerCore and DTNPCServerCore.NotifyRemoval then
-            DTNPCServerCore.NotifyRemoval(uuid, npcData.currentOutfitID, npcData.name, removalContext)
+            DTNPCServerCore.NotifyRemoval(uuid, npcData.currentOutfitID, npcData.name, status, removalContext)
         end
     end
 end
@@ -217,7 +217,7 @@ function DTNPCManager.ConvertDeathToIncapacitated(zombie, uuid, npcData, removal
     npcData.lastFleeY = nil
 
     saveSoulIfAvailable(uuid, npcData)
-    DTNPCManager.RemoveData(uuid, nil, nil, nil, removalContext)
+    DTNPCManager.RemoveData(uuid, "Incapacitated", nil, nil, removalContext)
 
     local newZombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, uuid) or nil
     if newZombie then

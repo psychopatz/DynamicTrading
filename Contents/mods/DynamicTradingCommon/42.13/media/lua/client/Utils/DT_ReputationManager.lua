@@ -3,13 +3,14 @@ if isServer() then return end
 DT_ReputationManager = DT_ReputationManager or {}
 
 DT_ReputationManager.VERSION = 1
-DT_ReputationManager.FILE_PREFIX = "DynamicTrading_Reputation_"
 DT_ReputationManager.CHARACTER_KEY_MODDATA = "DT_ReputationCharacterKey"
+DT_ReputationManager.REP_MODDATA_KEY = "DT_ReputationState"
 DT_ReputationManager.REP_MIN = -100
 DT_ReputationManager.REP_MAX = 100
 DT_ReputationManager.TRADE_THRESHOLD = 500
 DT_ReputationManager.TRADE_REP_GAIN = 2
-DT_ReputationManager.KILL_PENALTY = -35
+DT_ReputationManager.KILL_PENALTY = -30
+DT_ReputationManager.INCAP_PENALTY = -25
 DT_ReputationManager.RECRUIT_PENALTY = -15
 DT_ReputationManager.HIT_ATTRIBUTION_MS = 15000
 DT_ReputationManager.FAST_KILL_CONFIRM_MS = 2500
@@ -81,6 +82,22 @@ local function getSafeSteamID(player)
     end
 
     return tostring(rawID)
+end
+
+local function getReputationStore(modData)
+    if not modData then return nil end
+    if type(modData[DT_ReputationManager.REP_MODDATA_KEY]) ~= "table" then
+        modData[DT_ReputationManager.REP_MODDATA_KEY] = {}
+    end
+    return modData[DT_ReputationManager.REP_MODDATA_KEY]
+end
+
+local function cloneTable(src)
+    local out = {}
+    for k, v in pairs(src or {}) do
+        out[k] = v
+    end
+    return out
 end
 
 local function invalidateFactionCache(factionID)
@@ -206,14 +223,10 @@ function DT_ReputationManager.EnsureCharacterKey(player)
     local stableKey = generateCharacterKey(player)
     local oldKey = modData[keyName]
     if oldKey and oldKey ~= "" and oldKey ~= stableKey then
-        local legacyReader = getFileReader(DT_ReputationManager.GetFileName(oldKey), false)
-        local stableReader = getFileReader(DT_ReputationManager.GetFileName(stableKey), false)
-        if legacyReader then legacyReader:close() end
-        if stableReader then stableReader:close() end
-
-        if legacyReader and not stableReader and DT_ReputationManager.LoadForCharacter(oldKey) then
-            DT_ReputationManager.state.characterKey = stableKey
-            DT_ReputationManager.Save()
+        local store = getReputationStore(modData)
+        if store and store[oldKey] and not store[stableKey] then
+            store[stableKey] = store[oldKey]
+            store[oldKey] = nil
             log("Init", "Migrated reputation data from legacy key " .. tostring(oldKey) .. " to " .. tostring(stableKey))
         end
     end
@@ -229,43 +242,31 @@ function DT_ReputationManager.EnsureCharacterKey(player)
     return modData[keyName]
 end
 
-function DT_ReputationManager.GetFileName(characterKey)
-    return DT_ReputationManager.FILE_PREFIX .. sanitizeKey(characterKey) .. ".txt"
-end
-
 function DT_ReputationManager.Save()
     local state = DT_ReputationManager.state
     if not state.loaded or not state.characterKey then return false end
 
-    local writer = getFileWriter(DT_ReputationManager.GetFileName(state.characterKey), true, false)
-    if not writer then
-        log("Error", "Could not open reputation file for write")
-        return false
+    local player = getLocalPlayer()
+    if not player then return false end
+    local modData = player:getModData()
+    if not modData then return false end
+
+    local store = getReputationStore(modData)
+    if not store then return false end
+
+    store[state.characterKey] = {
+        version = DT_ReputationManager.VERSION,
+        personalRep = cloneTable(state.personalRep),
+        factionBias = cloneTable(state.factionBias),
+        tradeProgress = cloneTable(state.tradeProgress),
+        totalBought = cloneTable(state.totalBought),
+        totalSold = cloneTable(state.totalSold),
+    }
+
+    if isClient() and player.transmitModData then
+        player:transmitModData()
     end
 
-    writer:write("version=" .. tostring(DT_ReputationManager.VERSION) .. "\r\n")
-
-    for uuid, value in pairs(state.personalRep) do
-        writer:write("personal|" .. tostring(uuid) .. "=" .. tostring(value) .. "\r\n")
-    end
-
-    for factionID, value in pairs(state.factionBias) do
-        writer:write("faction|" .. tostring(factionID) .. "=" .. tostring(value) .. "\r\n")
-    end
-
-    for uuid, value in pairs(state.tradeProgress) do
-        writer:write("progress|" .. tostring(uuid) .. "=" .. tostring(value) .. "\r\n")
-    end
-
-    for uuid, value in pairs(state.totalBought) do
-        writer:write("bought|" .. tostring(uuid) .. "=" .. tostring(value) .. "\r\n")
-    end
-
-    for uuid, value in pairs(state.totalSold) do
-        writer:write("sold|" .. tostring(uuid) .. "=" .. tostring(value) .. "\r\n")
-    end
-
-    writer:close()
     state.dirty = false
     state.saveDueAt = nil
     return true
@@ -274,60 +275,36 @@ end
 function DT_ReputationManager.LoadForCharacter(characterKey)
     resetState(characterKey)
 
-    local reader = getFileReader(DT_ReputationManager.GetFileName(characterKey), false)
-    if not reader then
+    local player = getLocalPlayer()
+    if not player then return false end
+    local modData = player:getModData()
+    if not modData then return false end
+
+    local store = getReputationStore(modData)
+    if not store then return false end
+
+    local entry = store[characterKey]
+    if not entry then
         DT_ReputationManager.Save()
         return true
     end
 
-    local line = reader:readLine()
-    while line do
-        local left, right = string.match(line, "^(.-)=(.*)$")
-        if left and right then
-            local bucket, key = string.match(left, "^(personal)%|(.*)$")
-            if bucket == "personal" and key and key ~= "" then
-                local value = tonumber(right)
-                if value ~= nil then
-                    DT_ReputationManager.state.personalRep[key] = DT_ReputationManager.Clamp(value)
-                end
-            else
-                bucket, key = string.match(left, "^(faction)%|(.*)$")
-                if bucket == "faction" and key and key ~= "" then
-                    local value = tonumber(right)
-                    if value ~= nil then
-                        DT_ReputationManager.state.factionBias[key] = DT_ReputationManager.Clamp(value)
-                    end
-                else
-                    bucket, key = string.match(left, "^(progress)%|(.*)$")
-                    if bucket == "progress" and key and key ~= "" then
-                        local value = tonumber(right)
-                        if value ~= nil then
-                            DT_ReputationManager.state.tradeProgress[key] = math.max(0, math.floor(value + 0.5))
-                        end
-                    else
-                        bucket, key = string.match(left, "^(bought)%|(.*)$")
-                        if bucket == "bought" and key and key ~= "" then
-                            local value = tonumber(right)
-                            if value ~= nil then
-                                DT_ReputationManager.state.totalBought[key] = math.max(0, math.floor(value + 0.5))
-                            end
-                        else
-                            bucket, key = string.match(left, "^(sold)%|(.*)$")
-                            if bucket == "sold" and key and key ~= "" then
-                                local value = tonumber(right)
-                                if value ~= nil then
-                                    DT_ReputationManager.state.totalSold[key] = math.max(0, math.floor(value + 0.5))
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-        line = reader:readLine()
+    for key, value in pairs(entry.personalRep or {}) do
+        DT_ReputationManager.state.personalRep[key] = DT_ReputationManager.Clamp(value)
+    end
+    for key, value in pairs(entry.factionBias or {}) do
+        DT_ReputationManager.state.factionBias[key] = DT_ReputationManager.Clamp(value)
+    end
+    for key, value in pairs(entry.tradeProgress or {}) do
+        DT_ReputationManager.state.tradeProgress[key] = math.max(0, math.floor((tonumber(value) or 0) + 0.5))
+    end
+    for key, value in pairs(entry.totalBought or {}) do
+        DT_ReputationManager.state.totalBought[key] = math.max(0, math.floor((tonumber(value) or 0) + 0.5))
+    end
+    for key, value in pairs(entry.totalSold or {}) do
+        DT_ReputationManager.state.totalSold[key] = math.max(0, math.floor((tonumber(value) or 0) + 0.5))
     end
 
-    reader:close()
     DT_ReputationManager.state.dirty = false
     return true
 end
@@ -468,6 +445,32 @@ function DT_ReputationManager.AddTradeValue(traderUUID, factionID, amount, isBuy
     return gained
 end
 
+-- Shared V1/V2 helper: apply trade result to reputation and optionally update trader fields.
+function DT_ReputationManager.ApplyTradeResult(args, trader, isBuy)
+    if not DT_ReputationManager then return end
+
+    local traderID = nil
+    if args and args.traderID then
+        traderID = args.traderID
+    elseif trader then
+        traderID = trader.traderID or trader.uuid or trader.id
+    end
+
+    if not traderID then return end
+
+    local factionID = (args and args.factionID) or (trader and trader.factionID) or nil
+    local price = (args and args.price) or 0
+
+    DT_ReputationManager.AddTradeValue(traderID, factionID, price, isBuy == true)
+
+    if trader then
+        trader.personalRep = DT_ReputationManager.GetPersonalRep(traderID)
+        trader.factionRep = DT_ReputationManager.GetFactionRep(factionID)
+        trader.reputation = DT_ReputationManager.GetEffectiveRep(traderID, factionID)
+        trader.reputationStage = DT_ReputationManager.GetStageData(trader.reputation).label
+    end
+end
+
 function DT_ReputationManager.ModifyFactionBias(factionID, amount, reason)
     if not factionID then return 0 end
     if not DT_ReputationManager.EnsureLoaded() then return 0 end
@@ -489,8 +492,33 @@ function DT_ReputationManager.ModifyFactionBias(factionID, amount, reason)
     return newValue
 end
 
+function DT_ReputationManager.ModifyPersonalRep(traderUUID, factionID, amount, reason)
+    if not traderUUID then return 0 end
+    if not DT_ReputationManager.EnsureLoaded() then return 0 end
+
+    local state = DT_ReputationManager.state
+    local newValue = DT_ReputationManager.Clamp((state.personalRep[traderUUID] or 0) + (tonumber(amount) or 0))
+    state.personalRep[traderUUID] = newValue
+    invalidateFactionCache(factionID)
+    queueSave()
+
+    log("Personal", "Trader [" .. tostring(traderUUID) .. "] personal rep changed to " .. tostring(newValue) .. " reason=" .. tostring(reason or "n/a"))
+    if (tonumber(amount) or 0) ~= 0 then
+        local prefix = (tonumber(amount) or 0) > 0 and "+" or ""
+        showHalo("Rep " .. prefix .. tostring(amount), (tonumber(amount) or 0) > 0)
+    end
+    if DT_ReputationManager.AUTO_DEBUG then
+        DT_ReputationManager.DebugDump(traderUUID, factionID, "personal_" .. tostring(reason or "change"))
+    end
+    return newValue
+end
+
 function DT_ReputationManager.ApplyKillPenalty(factionID)
     return DT_ReputationManager.ModifyFactionBias(factionID, DT_ReputationManager.KILL_PENALTY, "kill")
+end
+
+function DT_ReputationManager.ApplyIncapPenalty(traderUUID, factionID)
+    return DT_ReputationManager.ModifyPersonalRep(traderUUID, factionID, DT_ReputationManager.INCAP_PENALTY, "incap")
 end
 
 function DT_ReputationManager.ApplyRecruitPenalty(factionID)

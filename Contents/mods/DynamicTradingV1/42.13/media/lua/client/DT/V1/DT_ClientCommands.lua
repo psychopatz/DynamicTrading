@@ -1,5 +1,6 @@
 require "ISUI/ISUIHandler"
 require "DT/V1/Utils/DT_OptionsManager"
+require "Utils/DT_ReputationManager"
 
 -- =============================================================================
 -- 1. HANDLE SERVER RESPONSES (SCAN RESULTS)
@@ -133,10 +134,26 @@ local function OnServerCommand(module, command, args)
         if DT_TradingWindow and DT_TradingWindow.instance then
             local ui = DT_TradingWindow.instance
             if args.success then
-                local trader = DynamicTrading.Manager.GetTrader(ui.traderID, ui.archetype)
+                local isBuy = (args.isBuy == true)
+                if args.isBuy == nil then isBuy = ui.isBuying end
+
+                local trader = nil
+                if ui.dataProvider and ui.dataProvider.getTrader then
+                    trader = ui.dataProvider:getTrader(ui.traderID, ui.archetype)
+                end
+                if not trader and DynamicTrading.Manager and DynamicTrading.Manager.GetTrader then
+                    trader = DynamicTrading.Manager.GetTrader(ui.traderID, ui.archetype)
+                end
+
+                args.traderID = args.traderID or (trader and (trader.traderID or trader.uuid or trader.id)) or ui.traderID
+                args.factionID = args.factionID or (trader and trader.factionID)
+
+                if DT_ReputationManager then
+                    DT_ReputationManager.ApplyTradeResult(args, trader, isBuy)
+                end
                 
                 -- 1. NPC Response Dialogue
-                local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, ui.isBuying, args)
+                local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, args)
                 ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier", "transaction")
              
                 -- 2. FIX: Immediate UI Refresh (Fixes sell list not updating)

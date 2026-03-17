@@ -6,6 +6,8 @@
 
 V1_RadioTradingWrapper_TraderData_logic = {}
 
+require "Utils/DT_ReputationManager"
+
 function V1_Radio_DataProvider:getTrader(traderID, archetype)
     local stockData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Stocks) 
                       or ModData.get("DynamicTrading_Stock")
@@ -47,6 +49,16 @@ function V1_Radio_DataProvider:getTrader(traderID, archetype)
         returnTime = stock.returnTime,
         radioObj = self.radioObj
     }
+
+    if DT_ReputationManager then
+        trader.personalRep = DT_ReputationManager.GetPersonalRep(traderID)
+        trader.factionRep = DT_ReputationManager.GetFactionRep(stock.factionID)
+        trader.reputation = DT_ReputationManager.GetEffectiveRep(traderID, stock.factionID)
+        trader.reputationStage = DT_ReputationManager.GetStageData(trader.reputation).label
+        trader.tradeProgress = DT_ReputationManager.GetTradeProgress(traderID)
+        trader.totalBought = DT_ReputationManager.GetTotalBought(traderID)
+        trader.totalSold = DT_ReputationManager.GetTotalSold(traderID)
+    end
     
     -- Fallback: Fetch from Radio Manager if missing in stock
     if DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetTrader then

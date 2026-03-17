@@ -170,14 +170,21 @@ function DTNPCClient.OnServerCommand(module, command, args)
             zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
         end
 
-        if DT_ReputationManager and factionID then
-            DT_ReputationManager.TryApplyKillPenalty(
-                uuid,
-                factionID,
-                zombie,
-                args.killerUsername,
-                args.killerOnlineID
-            )
+        if DT_ReputationManager then
+            local reason = args.removalReason
+            if reason == "Incapacitated" then
+                DT_ReputationManager.ApplyIncapPenalty(uuid, factionID)
+            elseif reason == "Dead" then
+                if factionID and factionID ~= "Independent" then
+                    DT_ReputationManager.TryApplyKillPenalty(
+                        uuid,
+                        factionID,
+                        zombie,
+                        args.killerUsername,
+                        args.killerOnlineID
+                    )
+                end
+            end
         end
         
         if zombie then

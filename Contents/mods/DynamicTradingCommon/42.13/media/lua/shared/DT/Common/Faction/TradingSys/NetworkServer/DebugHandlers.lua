@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- NetworkServer/DebugHandlers.lua
--- Logic: Debug/Admin commands and Faction data requests
+-- Logic: Admin-only debug commands
 -- Build 42 Compatible.
 -- ==============================================================================
 
@@ -22,69 +22,6 @@ local function hasAdminAccess(player)
 
     local accessLevel = player:getAccessLevel()
     return accessLevel and string.lower(tostring(accessLevel)) == "admin"
-end
-
--- =============================================================================
--- FACTION DATA REQUEST
--- =============================================================================
-Handlers.RequestFactionData = function(player, args)
-    if not hasAdminAccess(player) then
-        DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized RequestFactionData attempt by " .. tostring(player and player:getUsername() or "unknown"))
-        return
-    end
-
-    local factionData = ModData.get("DynamicTrading_Factions") or {}
-    local rosterData = ModData.get("DynamicTrading_Roster") or {}
-    local stockData = ModData.get("DynamicTrading_Stock") or {}
-    
-    -- Optimize: Send metadata + Souls that are currently Trading (for Merchant debug)
-    local filteredSouls = {}
-    if rosterData.Souls then
-        for uuid, soul in pairs(rosterData.Souls) do
-            if soul.status == "Trading" then
-                filteredSouls[uuid] = soul
-            end
-        end
-    end
-
-    local minimalRoster = {
-        FactionMembers = rosterData.FactionMembers or {},
-        Souls = filteredSouls
-    }
-    
-    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionDebugData", {
-        factions = factionData,
-        roster = minimalRoster,
-        stock = stockData
-    })
-end
-
--- [ON-DEMAND ROSTER REQUEST]
-Handlers.RequestFactionRoster = function(player, args)
-    if not hasAdminAccess(player) then
-        DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized RequestFactionRoster attempt by " .. tostring(player and player:getUsername() or "unknown"))
-        return
-    end
-
-    local factionID = args.factionID
-    if not factionID then return end
-    
-    local rosterData = ModData.get("DynamicTrading_Roster") or {}
-    local members = rosterData.FactionMembers and rosterData.FactionMembers[factionID] or {}
-    
-    local factionSouls = {}
-    if rosterData.Souls then
-        for _, uuid in ipairs(members) do
-            if rosterData.Souls[uuid] then
-                factionSouls[uuid] = rosterData.Souls[uuid]
-            end
-        end
-    end
-    
-    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionRoster", {
-        factionID = factionID,
-        souls = factionSouls
-    })
 end
 
 -- =============================================================================

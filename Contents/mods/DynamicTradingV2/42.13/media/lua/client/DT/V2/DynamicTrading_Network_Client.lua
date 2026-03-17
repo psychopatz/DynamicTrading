@@ -139,11 +139,7 @@ local function OnSharedServerCommand(module, command, args)
                 args.factionID = trader.factionID
 
                 if DT_ReputationManager then
-                    DT_ReputationManager.AddTradeValue(args.traderID, args.factionID, args.price or 0, isBuy)
-                    trader.personalRep = DT_ReputationManager.GetPersonalRep(args.traderID)
-                    trader.factionRep = DT_ReputationManager.GetFactionRep(args.factionID)
-                    trader.reputation = DT_ReputationManager.GetEffectiveRep(args.traderID, args.factionID)
-                    trader.reputationStage = DT_ReputationManager.GetStageData(trader.reputation).label
+                    DT_ReputationManager.ApplyTradeResult(args, trader, isBuy)
                 end
                 
                 -- 3. Trigger Dialogue & SFX
