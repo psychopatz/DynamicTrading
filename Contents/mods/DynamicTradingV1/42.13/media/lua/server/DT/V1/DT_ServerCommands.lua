@@ -14,7 +14,6 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 
-local TradeHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/TradeHandlers"
 local DataHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers"
 
 -- 1. GLOBAL TABLE REGISTRATION
@@ -75,12 +74,6 @@ function Commands.RequestFullState(player, args)
             end
         end
     end
-end
-
--- COMMAND: TradeTransaction
--- Description: Delegates to the shared TradeHandlers (same logic as V2)
-function Commands.TradeTransaction(player, args)
-    TradeHandlers.Handlers.TradeTransaction(player, args)
 end
 
 -- COMMAND: RequestTrader
@@ -254,6 +247,11 @@ end
 -- 3. EVENT LISTENER (MULTIPLAYER BRIDGE)
 -- =============================================================================
 local function OnClientCommand(module, command, player, args)
+    if module == "DynamicTrading" and command == "TradeTransaction" then
+        if DynamicTrading and DynamicTrading.NetworkServer and DynamicTrading.NetworkServer.HandlesSharedCommands then
+            return
+        end
+    end
     if module == "DynamicTrading" and Commands[command] then
         Commands[command](player, args)
     end

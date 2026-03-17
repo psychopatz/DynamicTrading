@@ -45,4 +45,8 @@ end
 
 Events.OnClientCommand.Add(OnClientCommand)
 
+DynamicTrading = DynamicTrading or {}
+DynamicTrading.NetworkServer = DynamicTrading.NetworkServer or {}
+DynamicTrading.NetworkServer.HandlesSharedCommands = true
+
 DynamicTrading.Log("DTCommons", "Init", "Network", "Server Network Layer Initialized")
