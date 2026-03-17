@@ -1,4 +1,4 @@
-require "DT/Common/UI/Trading/DT_Trading_ItemUtils"
+require "DT/Common/UI/Trading/TradingItemUtils/DT_TradingItemUtils"
 require "DT/Common/UI/Trading/DT_Trading"
 require "Utils/DT_StringUtils"
 
