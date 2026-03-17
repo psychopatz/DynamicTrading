@@ -6,6 +6,7 @@
 
 require "DT/Common/UI/Debug/Shared/DT_DebugNetworkAdapter"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugWindow"
+require "DT/Common/UI/Debug/DT_PlayerModDataDebugWindow"
 -- Merchant window will be loaded when available
 
 DT_FactionDebugMenu = DT_FactionDebugMenu or {}
@@ -19,15 +20,29 @@ local function hasAdminAccess(playerObj)
     return accessLevel and string.lower(tostring(accessLevel)) == "admin"
 end
 
+local function isSinglePlayerSession()
+    return not isClient() and not isServer()
+end
+
+local function canOpenDynamicTradingDebugMenu(playerObj)
+    if isSinglePlayerSession() then
+        return isDebugEnabled()
+    end
+
+    return hasAdminAccess(playerObj)
+end
+
 -- ==========================================================
 -- CONTEXT MENU BUILDER
 -- ==========================================================
 DT_FactionDebugMenu.OnFillWorldObjectContextMenu = function(playerNum, context, worldobjects, test)
     local playerObj = getSpecificPlayer(playerNum)
-    if not hasAdminAccess(playerObj) then return end
+    if not canOpenDynamicTradingDebugMenu(playerObj) then return end
+
+    local menuLabel = isSinglePlayerSession() and "[Debug] Dynamic Trading" or "[Admin] Dynamic Trading"
 
     -- Main Debug Entry
-    local mainOption = context:addOption("[Admin] Dynamic Trading", worldobjects, nil)
+    local mainOption = context:addOption(menuLabel, worldobjects, nil)
     local debugMenu = context:getNew(context)
     context:addSubMenu(mainOption, debugMenu)
 
@@ -42,6 +57,10 @@ DT_FactionDebugMenu.OnFillWorldObjectContextMenu = function(playerNum, context, 
         else
             DynamicTrading.Log("DTCommons", "Debug", "UI", "Merchant Debug Window not loaded!")
         end
+    end)
+
+    debugMenu:addOption("Player ModData Browser", worldobjects, function()
+        DT_PlayerModDataDebugWindow.Open()
     end)
 
     -- Separator
