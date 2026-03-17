@@ -12,6 +12,7 @@ local DEBUG_PREFIX = "[DT-V1-Hub]"
 
 DT_V1_Dialogue_Hub = {}
 DT_V1_Dialogue_Hub.PendingTrade = nil
+DT_V1_Dialogue_Hub.LastTradeRequest = nil
 
 -- =============================================================================
 -- 1. INITIALIZATION
@@ -35,11 +36,13 @@ function DT_V1_Dialogue_Hub.Init(ui, radioObj, traderID, player)
 
         local traderProxy = {
             id = traderID,
+            uuid = traderID,
             name = trader.name or "Survivor",
             archetype = trader.archetype or "Survivor",
             gender = trader.gender or "Male",
             identitySeed = trader.identitySeed or 1,
             factionID = trader.factionID,
+            factionName = trader.factionName,
             returnTime = trader.returnTime
         }
         
@@ -107,6 +110,12 @@ function DT_V1_Dialogue_Hub.GenerateOptions(ui, radioObj, traderID, player)
                         ui = ui,
                         startTime = getGameTime():getWorldAgeHours()
                     }
+                    DT_V1_Dialogue_Hub.LastTradeRequest = {
+                        traderID = traderID,
+                        archetype = trader.archetype,
+                        radioObj = radioObj,
+                        ui = ui
+                    }
                 end
             else
                 ui:speak("Signal is cutting out... call me back later.")
@@ -137,6 +146,31 @@ DynamicTrading_Client = DynamicTrading_Client or {}
 DynamicTrading_Client.Cache = DynamicTrading_Client.Cache or {}
 DynamicTrading_Client.Cache.Stocks = DynamicTrading_Client.Cache.Stocks or {}
 
+function DT_V1_Dialogue_Hub.TryOpenTrade(traderID)
+    local pending = DT_V1_Dialogue_Hub.PendingTrade
+    if pending and pending.traderID == traderID then
+        if pending.ui and pending.ui:getIsVisible() then
+            pending.ui:close()
+            V1_Radio_DataProvider.Open(pending.traderID, pending.archetype, pending.radioObj)
+        end
+        DT_V1_Dialogue_Hub.PendingTrade = nil
+        DT_V1_Dialogue_Hub.LastTradeRequest = nil
+        return true
+    end
+
+    local last = DT_V1_Dialogue_Hub.LastTradeRequest
+    if last and last.traderID == traderID then
+        if last.ui and last.ui:getIsVisible() then
+            last.ui:close()
+            V1_Radio_DataProvider.Open(last.traderID, last.archetype, last.radioObj)
+        end
+        DT_V1_Dialogue_Hub.LastTradeRequest = nil
+        return true
+    end
+
+    return false
+end
+
 function DT_V1_Dialogue_Hub.OnServerCommand(module, command, args)
     if (module == "DynamicTrading_V2" or module == "DynamicTrading") then
         if command == "SyncStock" then
@@ -155,6 +189,9 @@ function DT_V1_Dialogue_Hub.OnServerCommand(module, command, args)
                 if LuaEventManager and LuaEventManager.triggerEvent then
                     triggerEvent("OnDynamicTradingStockUpdated", id)
                 end
+
+                -- If a trade was requested earlier, open immediately on stock arrival.
+                DT_V1_Dialogue_Hub.TryOpenTrade(id)
             end
         elseif command == "TradeResult" then
             DynamicTrading.Log("DTV1", "Dialogue", "Trade", "Received TradeResult: " .. tostring(args.success) .. " (" .. tostring(args.reason) .. ")")
@@ -173,6 +210,9 @@ local function OnTick()
     
     if not uiValid then
         DT_V1_Dialogue_Hub.PendingTrade = nil
+        if DT_V1_Dialogue_Hub.LastTradeRequest and DT_V1_Dialogue_Hub.LastTradeRequest.ui == pending.ui then
+            DT_V1_Dialogue_Hub.LastTradeRequest = nil
+        end
         return
     end
     
@@ -184,6 +224,7 @@ local function OnTick()
         pending.ui:close()
         V1_Radio_DataProvider.Open(pending.traderID, pending.archetype, pending.radioObj)
         DT_V1_Dialogue_Hub.PendingTrade = nil
+        DT_V1_Dialogue_Hub.LastTradeRequest = nil
         return
     end
     
