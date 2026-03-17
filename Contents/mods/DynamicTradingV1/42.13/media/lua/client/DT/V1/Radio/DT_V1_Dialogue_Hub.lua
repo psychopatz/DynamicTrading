@@ -5,7 +5,7 @@
 -- Uses Common DT_ConversationUI for the interface.
 -- =============================================================================
 
-require "UI/DT_ConversationUI"
+require "DT/Common/UI/ConversationUI/ConversationUI"
 require "DT/V1/Radio/RadioTradingWrapper/RadioTradingWrapper"
 
 local DEBUG_PREFIX = "[DT-V1-Hub]"

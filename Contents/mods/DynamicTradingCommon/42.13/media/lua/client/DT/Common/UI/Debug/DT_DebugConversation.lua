@@ -5,7 +5,7 @@
 -- =============================================================================
 if not isDebugEnabled() then return end
 
-require "UI/DT_ConversationUI"
+require "DT/Common/UI/ConversationUI/ConversationUI"
 
 local DebugDialogue = {}
 local NPCGenerator = {}

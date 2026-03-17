@@ -1,7 +1,7 @@
 -- =============================================================================
 -- DYNAMIC TRADING V2: NPC TRADER DIALOGUE HUB
 -- =============================================================================
-require "UI/DT_ConversationUI"
+require "DT/Common/UI/ConversationUI/ConversationUI"
 require "Utils/DT_ReputationManager"
 require "DT/V2/NPC/DTNPC_TradingHandler"
 require "DT/V2/NPC/DTNPC_InteractionPose"
