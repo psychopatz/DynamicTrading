@@ -1,5 +1,5 @@
 -- require "DT_DialogueManager" -- REMOVED: Data Agnostic
-require "DT/Common/UI/Trading/DT_TradingWindow"
+require "DT/Common/UI/Trading/DT_Trading"
 
 -- =============================================================================
 -- 1. TRANSACTION ACTION (BUY/SELL)
@@ -107,8 +107,8 @@ function DT_TradingWindow:onAction()
                 if container and container:getItems() and not container:getItems():isEmpty() then
                     -- IT IS POPULATED!
                     -- Show Modal Interception
-                    if DT_SellConfirmationModal then
-                        DT_SellConfirmationModal.Show(invItem, self, self.onConfirmSell, d, self.onUnpackContainer)
+                    if DT_Trading_Modal then
+                        DT_Trading_Modal.Show(invItem, self, self.onConfirmSell, d, self.onUnpackContainer)
                         return -- HALT execution here.
                     end
                 end

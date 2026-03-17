@@ -4,7 +4,7 @@
 -- Economy and price calculation logic, delegated to Common Economy.
 -- =============================================================================
 
-require "DT/Common/UI/Trading/DT_TradingProvider_Pricing"
+require "DT/Common/UI/Trading/DT_Trading_ProviderPricing"
 
 V1_RadioTradingWrapper_Pricing_logic = {}
 

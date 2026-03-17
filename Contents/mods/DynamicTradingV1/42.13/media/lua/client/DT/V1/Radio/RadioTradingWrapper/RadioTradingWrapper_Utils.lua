@@ -4,7 +4,7 @@
 -- Utility functions for audio, connection validation, and window toggling.
 -- =============================================================================
 
-require "DT/Common/UI/Trading/DT_TradingProvider_Core"
+require "DT/Common/UI/Trading/DT_Trading_ProviderCore"
 
 V1_RadioTradingWrapper_Utils_logic = {}
 

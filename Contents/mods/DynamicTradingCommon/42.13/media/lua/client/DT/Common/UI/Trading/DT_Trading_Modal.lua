@@ -4,14 +4,14 @@ require "ISUI/ISLabel"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISImage"
 
-DT_SellConfirmationModal = ISCollapsableWindow:derive("DT_SellConfirmationModal")
+DT_Trading_Modal = ISCollapsableWindow:derive("DT_Trading_Modal")
 
-function DT_SellConfirmationModal:initialise()
+function DT_Trading_Modal:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(false)
 end
 
-function DT_SellConfirmationModal:createChildren()
+function DT_Trading_Modal:createChildren()
     ISCollapsableWindow.createChildren(self)
 
     -- 1. TITLE / WARNING
@@ -74,7 +74,7 @@ function DT_SellConfirmationModal:createChildren()
     self:populateList()
 end
 
-function DT_SellConfirmationModal:onLockContainer()
+function DT_Trading_Modal:onLockContainer()
     if not self.item then return end
     
     local player = getSpecificPlayer(0)
@@ -94,7 +94,7 @@ function DT_SellConfirmationModal:onLockContainer()
     self:close()
 end
 
-function DT_SellConfirmationModal:populateList()
+function DT_Trading_Modal:populateList()
     self.listbox:clear()
     
     if not self.item then return end
@@ -108,7 +108,7 @@ function DT_SellConfirmationModal:populateList()
     end
 end
 
-function DT_SellConfirmationModal.drawItem(list, y, item, alt)
+function DT_Trading_Modal.drawItem(list, y, item, alt)
     local height = list.itemheight
     local width = list:getWidth()
     local it = item.item
@@ -130,7 +130,7 @@ function DT_SellConfirmationModal.drawItem(list, y, item, alt)
     return y + height
 end
 
-function DT_SellConfirmationModal:onConfirm()
+function DT_Trading_Modal:onConfirm()
     if self.callbackTarget and self.callbackFunc then
         -- Execute the sale logic
         self.callbackFunc(self.callbackTarget, self.item, self.data)
@@ -138,7 +138,7 @@ function DT_SellConfirmationModal:onConfirm()
     self:close()
 end
 
-function DT_SellConfirmationModal:onUnpack()
+function DT_Trading_Modal:onUnpack()
     if self.callbackTarget and self.callbackUnpackFunc then
         -- Execute the unpack logic
         self.callbackUnpackFunc(self.callbackTarget, self.item)
@@ -146,14 +146,14 @@ function DT_SellConfirmationModal:onUnpack()
     self:close()
 end
 
-function DT_SellConfirmationModal:close()
+function DT_Trading_Modal:close()
     self:setVisible(false)
     self:removeFromUIManager()
 end
 
 -- STATIC SHOW HELPER
-function DT_SellConfirmationModal.Show(item, target, func, data, unpackFunc)
-    local modal = DT_SellConfirmationModal:new(0, 0, 450, 300) -- Wider for 4 buttons
+function DT_Trading_Modal.Show(item, target, func, data, unpackFunc)
+    local modal = DT_Trading_Modal:new(0, 0, 450, 300) -- Wider for 4 buttons
     modal:initialise()
     modal.item = item
     modal.callbackTarget = target

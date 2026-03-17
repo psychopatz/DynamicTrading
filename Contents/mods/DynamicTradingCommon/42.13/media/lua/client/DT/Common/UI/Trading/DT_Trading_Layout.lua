@@ -1,4 +1,4 @@
-require "DT/Common/UI/Trading/DT_TradingWindow"
+require "DT/Common/UI/Trading/DT_Trading"
 
 local LEFT_COL_W = 250
 local RIGHT_MARGIN = 10

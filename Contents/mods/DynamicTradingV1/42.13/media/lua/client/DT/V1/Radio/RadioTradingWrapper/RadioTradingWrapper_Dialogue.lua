@@ -4,7 +4,7 @@
 -- Delegates dialogue generation to the Common Trading Provider helper.
 -- =============================================================================
 
-require "DT/Common/UI/Trading/DT_TradingProvider_Dialogue"
+require "DT/Common/UI/Trading/DT_Trading_ProviderDialogue"
 
 V1_RadioTradingWrapper_Dialogue_logic = {}
 

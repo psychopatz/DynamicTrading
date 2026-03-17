@@ -1,9 +1,9 @@
 -- =============================================================================
--- DT_TradingWindow_Debug: Context Menu & Debug Tools
+-- DT_Trading_Debug: Context Menu & Debug Tools
 -- =============================================================================
 -- Separated logic for debugging trading items via UI Context Menu.
 
-require "DT/Common/UI/Trading/DT_TradingWindow"
+require "DT/Common/UI/Trading/DT_Trading"
 
 function DT_TradingWindow:onListRightMouseUp(x, y)
     if not isDebugEnabled() then return end

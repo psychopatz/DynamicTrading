@@ -5,7 +5,7 @@
 -- Provides V1_Radio_DataProvider for DT_TradingWindow integration.
 -- =============================================================================
 
-require "DT/Common/UI/Trading/DT_TradingWindow"
+require "DT/Common/UI/Trading/DT_Trading"
 require "DT/Common/Config"
 require "Utils/DT_CoreUtils"
 require "DT/Common/Utils/DT_AudioManager"

@@ -4,7 +4,7 @@
 -- Entry point for the V2 trading window wrapper modules.
 -- =============================================================================
 
-require "DT/Common/UI/Trading/DT_TradingWindow"
+require "DT/Common/UI/Trading/DT_Trading"
 require "DT/Common/Config"
 require "Utils/DT_CoreUtils"
 require "Utils/DT_ReputationManager"

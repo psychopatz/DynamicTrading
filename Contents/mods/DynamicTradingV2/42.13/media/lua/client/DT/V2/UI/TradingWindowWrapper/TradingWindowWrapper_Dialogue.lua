@@ -3,7 +3,7 @@
 -- Dialogue integration methods for the trading provider.
 -- =============================================================================
 
-require "DT/Common/UI/Trading/DT_TradingProvider_Dialogue"
+require "DT/Common/UI/Trading/DT_Trading_ProviderDialogue"
 
 V2_DataProvider = V2_DataProvider or {}
 
