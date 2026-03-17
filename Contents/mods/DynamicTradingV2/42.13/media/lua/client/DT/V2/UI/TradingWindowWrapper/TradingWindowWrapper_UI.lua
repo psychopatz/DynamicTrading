@@ -3,7 +3,7 @@
 -- UI-facing configuration methods for the trading provider.
 -- =============================================================================
 
-require "DT/Common/UI/Trading/DT_Trading_ProviderCore"
+require "DT/Common/UI/Trading/Provider/DT_TradingProvider_Core"
 
 V2_DataProvider = V2_DataProvider or {}
 

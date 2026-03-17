@@ -101,4 +101,3 @@ function DynamicTrading.TradingProvider.AttachPricing(provider)
         end
     end
 end
-

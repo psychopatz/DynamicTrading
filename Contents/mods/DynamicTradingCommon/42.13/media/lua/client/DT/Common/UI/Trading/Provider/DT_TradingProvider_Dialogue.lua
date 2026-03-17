@@ -54,4 +54,3 @@ function DynamicTrading.TradingProvider.AttachDialogue(provider)
         end
     end
 end
-

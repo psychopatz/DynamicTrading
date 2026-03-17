@@ -109,4 +109,3 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
         end
     end
 end
-
