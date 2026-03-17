@@ -9,7 +9,7 @@ require "DT/Common/Config"
 -- Keep explicit load order so late modules can override methods exactly as before.
 require "DT/Common/UI/Trading/DT_Trading_Core"
 require "DT/Common/UI/Trading/DT_Trading_Modal"
-require "DT/Common/UI/Trading/DT_Trading_Helpers"
+require "DT/Common/UI/Trading/TradingHelpers/DT_TradingHelpers"
 require "DT/Common/UI/Trading/DT_Trading_Layout"
 require "DT/Common/UI/Trading/DT_Trading_List"
 require "DT/Common/UI/Trading/DT_Trading_Update"
