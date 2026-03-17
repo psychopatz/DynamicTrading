@@ -12,8 +12,5 @@ function V2_DataProvider:countTable(t)
 end
 
 function V2_DataProvider:getMasterKey(fullType)
-    for k, v in pairs(DynamicTrading.Config.MasterList) do
-        if v.item == fullType then return k end
-    end
-    return nil
+    return DynamicTrading.Utils.GetMasterKey(fullType)
 end

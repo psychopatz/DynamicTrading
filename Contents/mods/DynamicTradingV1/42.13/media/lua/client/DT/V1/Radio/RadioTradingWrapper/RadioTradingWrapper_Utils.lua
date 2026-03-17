@@ -14,6 +14,10 @@ function V1_Radio_DataProvider:lockItem(itemID)
     modData.DT_LockedItems[itemID] = true
 end
 
+function V1_Radio_DataProvider:getMasterKey(fullType)
+    return DynamicTrading.Utils.GetMasterKey(fullType)
+end
+
 function V1_Radio_DataProvider:openHub(trader, parentUI)
     if parentUI then parentUI:close() end
     if DT_V1_Dialogue_Hub then

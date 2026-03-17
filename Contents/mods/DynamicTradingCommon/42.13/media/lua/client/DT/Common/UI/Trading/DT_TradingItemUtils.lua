@@ -261,6 +261,7 @@ end
 function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, categorized, categories, activeRadioID, rejections)
     local inv = player:getInventory()
     local itemList = {}
+    local getMasterKeyFn = dataProvider and dataProvider.getMasterKey
     
     -- Truly recursive container scanning
     local function collectItems(container)
@@ -287,7 +288,12 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
 
             local fullType = invItem:getFullType()
             if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" and invItem:getID() ~= activeRadioID then
-                local masterKey = dataProvider:getMasterKey(fullType)
+                local masterKey = nil
+                if type(getMasterKeyFn) == "function" then
+                    masterKey = dataProvider:getMasterKey(fullType)
+                else
+                    masterKey = DynamicTrading.Utils.GetMasterKey(fullType)
+                end
                 if masterKey then
                     -- Prevent reselling trader's own stock items
                     local isInTraderStock = trader.stocks and trader.stocks[masterKey] ~= nil

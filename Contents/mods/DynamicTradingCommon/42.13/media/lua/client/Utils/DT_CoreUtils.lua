@@ -82,4 +82,37 @@ function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
     return true
 end
 
+--- Resolves a MasterList key from an item's fullType.
+--- Caches lookups for speed; safe to use across V1/V2 data providers.
+--- @param fullType string
+--- @return string|nil
+function DynamicTrading.Utils.GetMasterKey(fullType)
+    if not fullType then return nil end
+    local masterList = DynamicTrading and DynamicTrading.Config and DynamicTrading.Config.MasterList
+    if not masterList then return nil end
+
+    DynamicTrading.Utils._MasterKeyByItem = DynamicTrading.Utils._MasterKeyByItem or {}
+    local cache = DynamicTrading.Utils._MasterKeyByItem
+    local cached = cache[fullType]
+    if cached ~= nil then
+        if cached == false then return nil end
+        return cached
+    end
+
+    if masterList[fullType] then
+        cache[fullType] = fullType
+        return fullType
+    end
+
+    for k, v in pairs(masterList) do
+        if v and v.item == fullType then
+            cache[fullType] = k
+            return k
+        end
+    end
+
+    cache[fullType] = false
+    return nil
+end
+
 DynamicTrading.Log("DTCommons", "Init", "Utils", "Core utility functions registered")
