@@ -10,8 +10,8 @@ DT_Reputation.CHARACTER_KEY_MODDATA = "DT_ReputationCharacterKey"
 DT_Reputation.REP_MODDATA_KEY = "DT_ReputationState"
 DT_Reputation.REP_MIN = -100
 DT_Reputation.REP_MAX = 100
-DT_Reputation.TRADE_THRESHOLD = 500
-DT_Reputation.TRADE_REP_GAIN = 2
+DT_Reputation.TRADE_THRESHOLD = 1000
+DT_Reputation.TRADE_REP_GAIN = 1
 DT_Reputation.KILL_PENALTY = -30
 DT_Reputation.INCAP_PENALTY = -25
 DT_Reputation.RECRUIT_PENALTY = -15
@@ -58,12 +58,18 @@ end
 
 function Internal.ShowHalo(text, isPositive, target, alwaysShow)
     if not HaloTextHelper then return end
+    local player = nil
 
-    target = target or Internal.GetLocalPlayer()
-    if not target then return end
+    if target and target.getObjectName and target:getObjectName() == "Player" then
+        player = target
+    else
+        player = Internal.GetLocalPlayer()
+    end
+
+    if not player then return end
 
     local color = isPositive and HaloTextHelper.getColorGreen() or HaloTextHelper.getColorRed()
-    HaloTextHelper.addTextWithArrow(target, text, isPositive, color)
+    HaloTextHelper.addTextWithArrow(player, text, isPositive, color)
 end
 
 function Internal.ResolveTraderCharacter(traderUUID)
@@ -97,8 +103,40 @@ function Internal.ResolveTraderCharacter(traderUUID)
 end
 
 function Internal.ShowTraderHalo(traderUUID, text, isPositive, alwaysShow)
-    local traderCharacter = Internal.ResolveTraderCharacter(traderUUID)
-    Internal.ShowHalo(text, isPositive, traderCharacter, alwaysShow)
+    Internal.ShowHalo(text, isPositive, Internal.GetLocalPlayer(), alwaysShow)
+end
+
+function Internal.GetFactionDisplayName(factionID)
+    if not factionID then
+        return nil
+    end
+
+    local factionData = ModData.get("DynamicTrading_Factions") or {}
+    local faction = factionData[factionID]
+    if faction and faction.name and faction.name ~= "" then
+        return faction.name
+    end
+
+    return tostring(factionID)
+end
+
+function Internal.BuildRepHaloText(baseText, factionID, oldRepValue, newRepValue)
+    local parts = { tostring(baseText or "") }
+    local factionName = Internal.GetFactionDisplayName(factionID)
+
+    if factionName then
+        parts[#parts + 1] = factionName
+    end
+
+    if oldRepValue ~= nil and newRepValue ~= nil then
+        local oldStage = DT_Reputation.GetStageData(oldRepValue).label
+        local newStage = DT_Reputation.GetStageData(newRepValue).label
+        if oldStage ~= newStage then
+            parts[#parts + 1] = newStage
+        end
+    end
+
+    return table.concat(parts, " | ")
 end
 
 function Internal.SanitizeKey(text)

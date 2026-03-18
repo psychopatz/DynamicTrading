@@ -13,6 +13,13 @@ function DT_Reputation.AddTradeValue(traderUUID, factionID, amount, isBuy)
     if tradeValue <= 0 then return 0 end
 
     local state = DT_Reputation.state
+    local oldEffectiveRep = nil
+    if factionID then
+        oldEffectiveRep = DT_Reputation.GetEffectiveRep(traderUUID, factionID)
+    else
+        oldEffectiveRep = state.personalRep[traderUUID] or 0
+    end
+
     if isBuy == true then
         state.totalBought[traderUUID] = (state.totalBought[traderUUID] or 0) + tradeValue
     elseif isBuy == false then
@@ -38,7 +45,19 @@ function DT_Reputation.AddTradeValue(traderUUID, factionID, amount, isBuy)
             "Trader [" .. tostring(traderUUID) .. "] gained +" .. tostring(gained) ..
                 " personal rep from combined trade volume. Faction=" .. tostring(factionID or "None")
         )
-        Internal.ShowTraderHalo(traderUUID, "Rep +" .. tostring(gained), true, true)
+        local newEffectiveRep = nil
+        if factionID then
+            newEffectiveRep = DT_Reputation.GetEffectiveRep(traderUUID, factionID)
+        else
+            newEffectiveRep = state.personalRep[traderUUID] or 0
+        end
+
+        Internal.ShowTraderHalo(
+            traderUUID,
+            Internal.BuildRepHaloText("Rep +" .. tostring(gained), factionID, oldEffectiveRep, newEffectiveRep),
+            true,
+            true
+        )
     end
 
     if DT_Reputation.AUTO_DEBUG then

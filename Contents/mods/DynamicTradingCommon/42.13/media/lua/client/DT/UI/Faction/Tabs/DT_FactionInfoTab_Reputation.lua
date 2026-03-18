@@ -107,7 +107,8 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
         " <RGB:0.8,0.8,0.8> Overall faction standing: " ..
         " <RGB:" .. tostring(stageData.color.r) .. "," .. tostring(stageData.color.g) .. "," .. tostring(stageData.color.b) .. "> " ..
         tostring(factionRep) .. " (" .. stageData.label .. ") <LINE> " ..
-        " <RGB:0.6,0.6,0.6> Combined buy + sell volume grants +2 personal reputation every $" ..
+        " <RGB:0.6,0.6,0.6> Combined buy + sell volume grants +" .. tostring(DT_Reputation.TRADE_REP_GAIN) ..
+        " personal reputation every $" ..
         tostring(DT_Reputation.TRADE_THRESHOLD) .. ". <LINE> <LINE> "
 
     local members = collectFactionMembers(f.id, rosterData)
@@ -133,7 +134,8 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
                     " <RGB:0.6,0.6,0.6> personal " .. tostring(personalRep) ..
                     " | bought $" .. tostring(totalBought) ..
                     " | sold $" .. tostring(totalSold) ..
-                    " | next +2 in $" .. tostring(math.max(0, DT_Reputation.TRADE_THRESHOLD - tradeProgress)) ..
+                    " | next +" .. tostring(DT_Reputation.TRADE_REP_GAIN) .. " in $" ..
+                    tostring(math.max(0, DT_Reputation.TRADE_THRESHOLD - tradeProgress)) ..
                     " <LINE> "
             end
         end
