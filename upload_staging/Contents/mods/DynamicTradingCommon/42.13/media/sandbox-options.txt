@@ -1,0 +1,275 @@
+VERSION = 1,
+
+option DynamicTrading.PriceBuyMult
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 10.0,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_PriceBuyMult,
+}
+
+option DynamicTrading.PriceSellMult
+{
+    type = double,
+    default = 0.5,
+    min = 0.0,
+    max = 5.0,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_PriceSellMult,
+}
+
+option DynamicTrading.StockMult
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 5.0,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_StockMult,
+}
+
+option DynamicTrading.MaxLogs
+{
+    type = integer,
+    default = 12,
+    min = 5,
+    max = 50,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_MaxLogs,
+}
+
+option DynamicTrading.WalkieDropChance
+{
+    type = double,
+    default = 2.0,
+    min = 0.0,
+    max = 100.0,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_WalkieDropChance,
+}
+
+option DynamicTrading.WalletMinCash
+{
+    type = integer,
+    default = 1,
+    min = 1,
+    max = 100,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_WalletMinCash,
+}
+
+option DynamicTrading.WalletMaxCash
+{
+    type = integer,
+    default = 100,
+    min = 10,
+    max = 2000,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_WalletMaxCash,
+}
+
+option DynamicTrading.WalletEmptyChance
+{
+    type = integer,
+    default = 35,
+    min = 0,
+    max = 100,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_WalletEmptyChance,
+}
+
+option DynamicTrading.WalletJackpotChance
+{
+    type = double,
+    default = 5.0,
+    min = 0.0,
+    max = 100.0,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_WalletJackpotChance,
+}
+
+option DynamicTrading.GlobalWealthStart
+{
+    type = integer,
+    default = 10000,
+    min = 0,
+    max = 10000000,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_GlobalWealthStart,
+}
+
+option DynamicTrading.GlobalWealthStimulus
+{
+    type = integer,
+    default = 500,
+    min = 0,
+    max = 50000,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_GlobalWealthStimulus,
+}
+
+option DynamicTrading.EventFrequency
+{
+    type = integer,
+    default = 2,
+    min = 1,
+    max = 30,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_EventFrequency,
+}
+
+option DynamicTrading.EventChance
+{
+    type = integer,
+    default = 80,
+    min = 1,
+    max = 100,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_EventChance,
+}
+
+option DynamicTrading.EventDuration
+{
+    type = integer,
+    default = 3,
+    min = 1,
+    max = 14,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_EventDuration,
+}
+
+option DynamicTrading.AllowSeasonalEvents
+{
+    type = boolean,
+    default = true,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_AllowSeasonalEvents,
+}
+
+option DynamicTrading.AllowMetaEvents
+{
+    type = boolean,
+    default = true,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_AllowMetaEvents,
+}
+
+option DynamicTrading.AllowHardcoreEvents
+{
+    type = boolean,
+    default = true,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_AllowHardcoreEvents,
+}
+
+option DynamicTrading.MaxEvents
+{
+    type = integer,
+    default = 8,
+    min = 1,
+    max = 10,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_MaxEvents,
+}
+
+option DynamicTrading.V2_FlashEventThreshold_Food
+{
+    type = double,
+    default = 50.0,
+    min = 0.0,
+    max = 500.0,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_FlashEventThreshold_Food,
+}
+
+option DynamicTrading.V2_FlashEventThreshold_Ammo
+{
+    type = double,
+    default = 10.0,
+    min = 0.0,
+    max = 200.0,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_FlashEventThreshold_Ammo,
+}
+
+option DynamicTrading.V2_MetaEventChance
+{
+    type = integer,
+    default = 5,
+    min = 0,
+    max = 100,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_MetaEventChance,
+}
+
+option DynamicTrading.V2_FlashEventMinDuration
+{
+    type = integer,
+    default = 24,
+    min = 1,
+    max = 168,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_FlashEventMinDuration,
+}
+
+option DynamicTrading.V2_FlashEventMaxDuration
+{
+    type = integer,
+    default = 72,
+    min = 1,
+    max = 336,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_V2_FlashEventMaxDuration,
+}
+
+option DynamicTrading.FactionFlashMinActive
+{
+    type = integer,
+    default = 1,
+    min = 0,
+    max = 10,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_FactionFlashMinActive,
+}
+
+option DynamicTrading.FactionFlashMaxActive
+{
+    type = integer,
+    default = 1,
+    min = 0,
+    max = 10,
+    page = DynamicTradingEvents,
+    translation = DynamicTrading_FactionFlashMaxActive,
+}
+
+option DynamicTrading.NPCTradePopPercent
+{
+    type = integer,
+    default = 40,
+    min = 0,
+    max = 100,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_NPCTradePopPercent,
+}
+
+option DynamicTrading.NPCTradingWalkHours
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 24.0,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_NPCTradingWalkHours,
+}
+
+option DynamicTrading.NPCTradingStayHours
+{
+    type = double,
+    default = 24.0,
+    min = 0.5,
+    max = 72.0,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading_NPCTradingStayHours,
+}

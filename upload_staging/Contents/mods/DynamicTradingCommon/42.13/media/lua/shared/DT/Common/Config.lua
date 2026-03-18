@@ -1,0 +1,303 @@
+DynamicTrading = DynamicTrading or {}
+require "DT/Common/DT_Logger"
+DynamicTrading.Config = DynamicTrading.Config or {}
+
+-- =============================================================================
+-- 1. ITEM REGISTRY
+-- =============================================================================
+DynamicTrading.Config.MasterList = DynamicTrading.Config.MasterList or {}
+
+-- Single Item Adder
+function DynamicTrading.AddItem(id, data)
+    if not id or not data then 
+        DynamicTrading.Log("DTCommons", "Core", "Error", "Invalid item data passed to AddItem")
+        return 
+    end
+    DynamicTrading.Config.MasterList[id] = data
+end
+
+-- Batch Item Loader 
+function DynamicTrading.RegisterBatch(list)
+    if not list then return end
+    for _, data in ipairs(list) do
+        DynamicTrading.AddItem(data.item, data)
+    end
+    -- Reduced spam: only print batch totals
+    DynamicTrading.Log("DTCommons", "Core", "Info", "Item Batch Loaded: " .. #list .. " entries.")
+end
+
+-- =============================================================================
+-- 2. ARCHETYPE REGISTRY
+-- =============================================================================
+DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
+DynamicTrading.ArchetypeLooks = DynamicTrading.ArchetypeLooks or {}
+
+-- The Core Function: Preserves your ID schema
+function DynamicTrading.RegisterArchetype(id, data)
+    if not id then 
+        DynamicTrading.Log("DTCommons", "Core", "Error", "Archetype registered without ID.")
+        return 
+    end
+    if not data then return end
+    
+    -- Ensure the ID is inside the data table too, just in case, 
+    -- but primarily use it as the Table Key for lookups.
+    data.id = id 
+    DynamicTrading.Archetypes[id] = data
+    
+    DynamicTrading.Log("DTCommons", "Core", "Info", "Registered Archetype: " .. id)
+end
+
+-- =============================================================================
+-- 3. DIALOGUE REGISTRY
+-- =============================================================================
+DynamicTrading.Dialogue = DynamicTrading.Dialogue or {}
+DynamicTrading.Dialogue.Archetypes = DynamicTrading.Dialogue.Archetypes or {}
+
+local function MergeNestedTables(target, source)
+    if type(target) ~= "table" or type(source) ~= "table" then
+        return source
+    end
+
+    for key, value in pairs(source) do
+        local existing = target[key]
+        if type(existing) == "table" and type(value) == "table" and not existing[1] and not value[1] then
+            MergeNestedTables(existing, value)
+        else
+            target[key] = value
+        end
+    end
+
+    return target
+end
+
+-- New RegisterDialogue for In-Code Translations
+function DynamicTrading.RegisterDialogue(archetypeID, dialogueType, data)
+    if not archetypeID or not dialogueType or not data then return end
+    
+    DynamicTrading.Dialogue.Archetypes[archetypeID] = DynamicTrading.Dialogue.Archetypes[archetypeID] or {}
+    local archTable = DynamicTrading.Dialogue.Archetypes[archetypeID]
+    
+    archTable[dialogueType] = archTable[dialogueType] or {}
+
+    -- Merge translations (supports overrides and cross-file loading)
+    for lang, lines in pairs(data) do
+        if type(archTable[dialogueType][lang]) == "table" and type(lines) == "table" then
+            archTable[dialogueType][lang] = MergeNestedTables(archTable[dialogueType][lang], lines)
+        else
+            archTable[dialogueType][lang] = lines
+        end
+    end
+
+    if archetypeID == "Player" and DynamicTrading.Debug then
+         DynamicTrading.Log("DTCommons", "Dialogue", "Debug", "Registered Player Dialogue: " .. dialogueType)
+    end
+end
+
+-- Detection Helper: Returns the current game language code (e.g., "EN", "PH", "RU")
+function DynamicTrading.GetLanguage()
+    if Translator and Translator.getLanguage() then
+        return Translator.getLanguage():toString()
+    end
+    return "EN" -- Default fallback
+end
+
+-- =============================================================================
+-- 4. DYNAMIC LOADER
+-- =============================================================================
+DynamicTrading.Config.ArchetypeList = {
+    "Angler", "Athlete", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
+    "Carpenter", "Chef", "Demo", "Designer", "Doctor", "Electrician", "Farmer", "Foreman",
+    "Geek", "Gunrunner", "Herbalist", "Hiker", "Hunter", "Janitor", "Librarian", "Mechanic",
+    "Musician", "Office", "Painter", "Pawnbroker", "Pharmacist", "Pyro",
+    "Quartermaster", "RoadWarrior", "Scavenger", "Sheriff", "Smuggler",
+    "Survivalist", "Tailor", "Teacher", "Tribal", "Welder",
+    "General", "Player" -- Meta archetypes
+}
+
+local languages = {
+    "AR", "CA", "CH", "CN", "CS", "DA", "DE", "EN", "ES", "FI",
+    "FR", "HU", "ID", "IT", "JP", "KO", "NL", "NO", "PH", "PL",
+    "PT", "PTBR", "RO", "RU", "TH", "TR", "UA"
+}
+local dialogueTypes = { "Greetings", "Buying", "Selling", "Sell_ask", "Idle", "Request" }
+local ambientDialogueStatuses = { "Default", "Trading", "Resting", "Working", "Away" }
+
+-- Debug Flag
+DynamicTrading.Debug = false
+
+-- Helper to check file existence to avoid console spam
+local function FileExists(path)
+    local fullPath = "media/lua/shared/" .. path .. ".lua"
+    local exists = false
+    local checked = false
+    
+    if getZomboidFileSystem then
+        local fs = getZomboidFileSystem()
+        if fs then
+            local file = fs:getFile(fullPath)
+            if file and file:exists() then exists = true end
+            checked = true
+        end
+    elseif ZomboidFileSystem and ZomboidFileSystem.instance then
+            local file = ZomboidFileSystem.instance:getFile(fullPath)
+            if file and file:exists() then exists = true end
+            checked = true
+    elseif fileExists then
+            -- Some environments have this global
+            if fileExists(fullPath) then exists = true end
+            checked = true
+    end
+    
+    -- Fallback: If we couldn't check (API missing), try to load anyway to be safe
+    if not checked then 
+        exists = true 
+    end
+    
+    return exists
+end
+
+function DynamicTrading.LoadArchetypes()
+    DynamicTrading.Log("DTCommons", "Core", "Init", "Starting Dynamic Archetype Loading...")
+    local totalLoaded = 0
+    local errors = 0
+    
+    for _, id in ipairs(DynamicTrading.Config.ArchetypeList) do
+        if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "Processing Archetype: " .. id) end
+
+        -- 1. Load Archetype Definition (Item Data)
+        local itemPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Items/DT_" .. id
+        -- Items are mandatory, so we still want to know if they fail, but checking existence first is cleaner
+        if FileExists(itemPath) then
+             local itemOk, err = pcall(require, itemPath)
+             if not itemOk then
+                  DynamicTrading.Log("DTCommons", "Core", "Error", "Failed to load Item Definition for " .. id .. ": " .. tostring(err))
+                  errors = errors + 1
+             end
+        else
+             -- Warn if definition is missing entirely, as this might be critical
+             if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Warn", "Missing Item Definition for: " .. id) end
+        end
+
+        -- 1b. Load Archetype Looks (optional, shared by server/client for deterministic wardrobe mapping)
+        local looksPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Definitions/DT_" .. id .. "_Looks"
+        if FileExists(looksPath) then
+            local looksOk, looksErr = pcall(require, looksPath)
+            if not looksOk then
+                DynamicTrading.Log("DTCommons", "Core", "Error", "Failed to load Looks Definition for " .. id .. ": " .. tostring(looksErr))
+                errors = errors + 1
+            end
+        end
+        
+        -- 2. Load Dialogues and Translations
+        for _, dType in ipairs(dialogueTypes) do
+            local baseDialoguePath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/DT_" .. id .. "_" .. dType
+            
+            -- Attempt base require (English/Default)
+            if FileExists(baseDialoguePath) then
+                local success, dErr = pcall(require, baseDialoguePath)
+                if success then
+                    if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded " .. dType .. " (Base)") end
+                    totalLoaded = totalLoaded + 1
+                end
+            end
+            
+            -- Attempt Translation loading
+            for _, lang in ipairs(languages) do
+                local transPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/Translations/" .. lang .. "/DT_" .. id .. "_" .. dType .. "_" .. lang
+                
+                if FileExists(transPath) then
+                    local tSuccess, _ = pcall(require, transPath)
+                    if tSuccess then
+                        if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded " .. dType .. " (" .. lang .. ")") end
+                    end
+                end
+            end
+        end
+
+        -- 2b. Load Ambient Dialogues
+        for _, statusType in ipairs(ambientDialogueStatuses) do
+            local baseAmbientPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/Ambient/DT_" .. id .. "_Ambient_" .. statusType
+
+            if FileExists(baseAmbientPath) then
+                local success, _ = pcall(require, baseAmbientPath)
+                if success then
+                    if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded Ambient " .. statusType .. " (Base)") end
+                    totalLoaded = totalLoaded + 1
+                end
+            end
+
+            for _, lang in ipairs(languages) do
+                local transPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Dialogue/Ambient/Translations/" .. lang .. "/DT_" .. id .. "_Ambient_" .. statusType .. "_" .. lang
+
+                if FileExists(transPath) then
+                    local tSuccess, _ = pcall(require, transPath)
+                    if tSuccess then
+                        if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Core", "Debug", "   >> Loaded Ambient " .. statusType .. " (" .. lang .. ")") end
+                    end
+                end
+            end
+        end
+    end
+    
+    DynamicTrading.Log("DTCommons", "Core", "Init", "Dynamic Loading Complete. Total Modules: " .. totalLoaded .. " | Errors: " .. errors)
+end
+
+-- =============================================================================
+-- 5. GAMEPLAY HELPERS
+-- =============================================================================
+function DynamicTrading.Config.GetRadioData(itemFullType)
+    return DynamicTrading.Config.RadioTiers[itemFullType] or { power = 0.5, desc = "Unknown Device" }
+end
+
+function DynamicTrading.Config.GetDifficultyData()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or {}
+    return {
+        name        = "Custom Sandbox",
+        buyMult     = sandbox.PriceBuyMult or 1.0,
+        sellMult    = sandbox.PriceSellMult or 0.5,
+        stockMult   = sandbox.StockMult or 1.0,
+        rarityBonus = sandbox.RarityBonus or 0
+    }
+end
+
+-- =============================================================================
+-- 6. EVENT SYSTEM
+-- =============================================================================
+require "DT/Common/Events/DT_EventManager"
+
+-- =============================================================================
+-- 7. FACTION SYSTEM CONFIGURATION (SHARED PARITY)
+-- =============================================================================
+DynamicTrading.Config.ResourceMap = {
+    ["Food"] = "food",
+    ["Food.Perishable.Vegetable"] = "food", ["Food.Perishable.Fruit"] = "food", ["Food.Perishable.Grain"] = "food", ["Food.Perishable.Meat"] = "food",
+    ["Food.Perishable"] = "food", ["Food.NonPerishable"] = "food", ["Food.Perishable.Fish"] = "food", ["Tool.Resource.Farming"] = "food",
+    ["Weapon.Ranged.Ammo"] = "ammo", ["Weapon.Ranged.Firearm"] = "ammo", ["Weapon.Melee"] = "ammo",
+    ["Medical.General"] = "meds", ["Medical.General.Pills"] = "meds", ["Medical.Healthcare"] = "meds",
+    ["Resource.Fuel"] = "fuel", ["Electronics.General"] = "fuel"
+}
+
+DynamicTrading.Config.Sim = {
+    BaseConsumption = { food = 1.0, meds = 0.1, ammo = 0.2, fuel = 0.5 },
+    ProductionMultiplier = 2.0,
+    StarvationThreshold = 3,
+    DeathRate = 0.1,
+    RecruitCost = { food = 50, meds = 10 },
+    MaxDailyGrowth = 2
+}
+
+DynamicTrading.Config.FactionEvents = {
+    Thresholds = {
+        FoodHigh = 50.0,
+        FoodLow = 5.0,
+        AmmoLow = 10.0,
+        WealthHigh = 5000
+    },
+    Meta = { "Inflation", "EconomicCollapse", "Recession" }
+}
+
+DynamicTrading.Log("DTCommons", "Core", "Init", "Config & Registry Core Loaded.")
+ 
+-- Trigger the loading process LATER to avoid recursive require loops
+Events.OnGameBoot.Add(DynamicTrading.LoadArchetypes)

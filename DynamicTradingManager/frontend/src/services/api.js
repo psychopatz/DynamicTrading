@@ -42,4 +42,12 @@ export const previewPricingTag = (payload) => api.post('/pricing/tags/preview', 
 export const getArchetypeEditorData = () => api.get('/archetypes/editor');
 export const saveArchetypeDefinition = (archetypeId, payload) => api.put(`/archetypes/${archetypeId}/allocations`, payload);
 
+// Workshop
+export const triggerWorkshopPrepare = () => api.post('/workshop/prepare');
+export const triggerWorkshopPush = (payload) => api.post('/workshop/push', payload);
+export const getWorkshopMetadata = () => api.get('/workshop/metadata');
+export const uploadWorkshopImage = (formData) => api.post('/workshop/image', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+
 export default api;

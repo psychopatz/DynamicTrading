@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import FastAPI, BackgroundTasks, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -54,6 +54,7 @@ try:
     from ItemManagement.parse import load_blacklist, is_item_blacklisted
     from ItemManagement.task_manager import manager
     from DebugManagement import LogParser
+    from WorkshopManagement.workshop import prepare_staging, generate_vdf, run_steamcmd_upload, parse_workshop_txt
 except ImportError as e:
     logger.error(f"Error importing ItemManagement or DebugManagement modules: {e}")
     sys.exit(1)
@@ -67,6 +68,10 @@ app = FastAPI(title="Dynamic Trading Manager API")
 PORTRAITS_ROOT = Path(__file__).resolve().parents[2] / "Contents/mods/DynamicTradingCommon/42.13/media/ui/Portraits"
 if PORTRAITS_ROOT.exists():
     app.mount("/static/portraits", StaticFiles(directory=str(PORTRAITS_ROOT)), name="dt-portraits")
+
+MOD_ROOT = Path(os.getenv("DYNAMIC_TRADING_PATH", "/home/psychopatz/Zomboid/Workshop/DynamicTrading/"))
+if MOD_ROOT.exists():
+    app.mount("/static/workshop", StaticFiles(directory=str(MOD_ROOT)), name="workshop-static")
 
 # Enable CORS for frontend
 app.add_middleware(
@@ -172,6 +177,18 @@ class ArchetypeSaveRequest(BaseModel):
     expert_tags: List[str] = []
     wants: List[ArchetypeWantEntryRequest] = []
     forbid: List[str] = []
+
+class WorkshopPushRequest(BaseModel):
+    username: str
+    password: Optional[str] = None
+    changenote: Optional[str] = "Update pushed via SteamCMD"
+    title: Optional[str] = None
+    description: Optional[str] = None
+    visibility: Optional[int] = None
+    tags: Optional[str] = None
+    update_files: bool = True
+    update_metadata: bool = False
+    update_preview: bool = False
 
 # Global state (cache items)
 cached_vanilla_items = None
@@ -603,6 +620,74 @@ async def get_debug_logs(
     except Exception as e:
         logger.error(f"Error fetching debug logs: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- Workshop Management ---
+
+@app.post("/api/workshop/prepare")
+async def trigger_workshop_prepare():
+    mod_root = Path(os.getenv("DYNAMIC_TRADING_PATH", "/home/psychopatz/Zomboid/Workshop/DynamicTrading/"))
+    staging_dir = mod_root / "upload_staging"
+    
+    # Run synchronously since it's just local file copy
+    success = prepare_staging(mod_root, staging_dir)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to prepare staging directory")
+    
+    return {"success": True, "staging_dir": str(staging_dir)}
+
+@app.get("/api/workshop/metadata")
+async def get_workshop_metadata():
+    mod_root = Path(os.getenv("DYNAMIC_TRADING_PATH", "/home/psychopatz/Zomboid/Workshop/DynamicTrading/"))
+    workshop_txt_path = mod_root / "workshop.txt"
+    return parse_workshop_txt(workshop_txt_path)
+
+@app.post("/api/workshop/image")
+async def upload_workshop_image(file: UploadFile = File(...)):
+    mod_root = Path(os.getenv("DYNAMIC_TRADING_PATH", "/home/psychopatz/Zomboid/Workshop/DynamicTrading/"))
+    preview_path = mod_root / "preview.png"
+    
+    try:
+        with open(preview_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        return {"success": True, "filename": "preview.png"}
+    except Exception as e:
+        logger.error(f"Error uploading image: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/workshop/push")
+async def trigger_workshop_push(request: WorkshopPushRequest):
+    mod_root = Path(os.getenv("DYNAMIC_TRADING_PATH", "/home/psychopatz/Zomboid/Workshop/DynamicTrading/"))
+    staging_dir = mod_root / "upload_staging"
+    vdf_path = mod_root / "workshop_update.vdf"
+    steamcmd_path = os.getenv("STEAM_CMD_PATH", os.getenv("STEAMCMD_PATH", "/home/psychopatz/Desktop/Apps/SteamCMD/steamcmd.sh"))
+    
+    # We always need the staging dir if we are updating files
+    if request.update_files and not staging_dir.exists():
+        raise HTTPException(status_code=400, detail="Staging directory not found. Please run prepare first.")
+    
+    # Prepare VDF with metadata if requested
+    generate_vdf(
+        staging_dir=staging_dir, 
+        vdf_path=vdf_path, 
+        changenote=request.changenote,
+        title=request.title if request.update_metadata else None,
+        description=request.description if request.update_metadata else None,
+        previewfile=str((mod_root / "preview.png").absolute()) if request.update_preview else None,
+        visibility=request.visibility if request.update_metadata else None,
+        tags=request.tags if request.update_metadata else None
+    )
+    
+    # Run push in background task
+    task_id = manager.create_task(
+        "SteamCMD Workshop Push", 
+        run_steamcmd_upload, 
+        steamcmd_path, 
+        vdf_path, 
+        request.username, 
+        request.password
+    )
+    
+    return {"task_id": task_id}
 
 # --- Simulation ---
 
