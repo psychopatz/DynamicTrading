@@ -15,6 +15,7 @@ if isClient() and not isServer() then return end
 local DataHandlers  = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers"
 local TradeHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/TradeHandlers"
 local DebugHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DebugHandlers"
+local LabourNetwork = require "DT/Common/Labour/DT_Labour_Network"
 
 -- =============================================================================
 -- 2. MERGE HANDLERS INTO A SINGLE DISPATCH TABLE
@@ -23,6 +24,7 @@ local Handlers = {}
 for k, v in pairs(DataHandlers.Handlers)  do Handlers[k] = v end
 for k, v in pairs(TradeHandlers.Handlers) do Handlers[k] = v end
 for k, v in pairs(DebugHandlers.Handlers) do Handlers[k] = v end
+for k, v in pairs((LabourNetwork and LabourNetwork.Handlers) or {}) do Handlers[k] = v end
 
 -- =============================================================================
 -- 3. MAIN EVENT LISTENER

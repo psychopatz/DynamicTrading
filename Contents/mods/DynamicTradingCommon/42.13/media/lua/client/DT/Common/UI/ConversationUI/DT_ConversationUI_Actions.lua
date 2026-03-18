@@ -48,6 +48,7 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
     end
 
     ui.target = traderObj
+    ui.interactionObj = interactionObj
     local name = traderObj.name or "Unknown"
     ui.lblName:setName(name)
 
@@ -72,8 +73,6 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
     if initialOptions then
         ui:updateOptions(initialOptions)
     end
-
-    ui.interactionObj = interactionObj
 
     DT_ConversationUI.instance = ui
     return ui

@@ -5,16 +5,24 @@
 -- =============================================================================
 
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
+require "DT/UI/Labour/DT_LabourUI"
 
 function DT_ConversationUI:updateOptions(options)
+    self.baseOptions = options or {}
     self.optionList:clear()
-    if not options or #options == 0 then
+    local resolvedOptions = self.baseOptions
+
+    if DT_LabourUI and DT_LabourUI.BuildConversationOptions then
+        resolvedOptions = DT_LabourUI.BuildConversationOptions(self, self.baseOptions)
+    end
+
+    if not resolvedOptions or #resolvedOptions == 0 then
         return
     end
 
     local btnWidth = self.optionList:getWidth() - 25
 
-    for _, opt in ipairs(options) do
+    for _, opt in ipairs(resolvedOptions) do
         local lines = DynamicTrading.Utils.WrapText(opt.text, btnWidth, self.optionList.font)
         local lineHeight = 20
         local totalHeight = (#lines * lineHeight) + 16
