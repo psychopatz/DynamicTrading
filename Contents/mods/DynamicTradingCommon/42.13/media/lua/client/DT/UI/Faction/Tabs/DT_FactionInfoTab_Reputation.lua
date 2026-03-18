@@ -5,7 +5,7 @@
 
 require "ISUI/ISPanel"
 require "ISUI/ISRichTextPanel"
-require "Utils/DT_ReputationManager"
+require "DT/Common/Reputation/DT_Reputation"
 
 DT_FactionInfoTab_Reputation = ISPanel:derive("DT_FactionInfoTab_Reputation")
 
@@ -90,8 +90,8 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
 
     local text = " <RGB:0.4,0.8,1> <SIZE:" .. titleTag .. "> REPUTATION STATUS <SIZE:" .. bodyTag .. "> <LINE> <LINE> "
 
-    if not DT_ReputationManager then
-        text = text .. " <RGB:0.6,0.6,0.6> Reputation manager unavailable. <LINE> "
+    if not DT_Reputation then
+        text = text .. " <RGB:0.6,0.6,0.6> Reputation system unavailable. <LINE> "
         self.richText:setText(text)
         self.richText:paginate()
         return
@@ -101,14 +101,14 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
         or (DT_FactionInfoWindow and DT_FactionInfoWindow.cachedRosterData)
         or ModData.get("DynamicTrading_Roster")
         or {}
-    local factionRep = DT_ReputationManager.GetFactionRep(f.id, rosterData)
-    local stageData = DT_ReputationManager.GetStageData(factionRep)
+    local factionRep = DT_Reputation.GetFactionRep(f.id, rosterData)
+    local stageData = DT_Reputation.GetStageData(factionRep)
     text = text ..
         " <RGB:0.8,0.8,0.8> Overall faction standing: " ..
         " <RGB:" .. tostring(stageData.color.r) .. "," .. tostring(stageData.color.g) .. "," .. tostring(stageData.color.b) .. "> " ..
         tostring(factionRep) .. " (" .. stageData.label .. ") <LINE> " ..
         " <RGB:0.6,0.6,0.6> Combined buy + sell volume grants +2 personal reputation every $" ..
-        tostring(DT_ReputationManager.TRADE_THRESHOLD) .. ". <LINE> <LINE> "
+        tostring(DT_Reputation.TRADE_THRESHOLD) .. ". <LINE> <LINE> "
 
     local members = collectFactionMembers(f.id, rosterData)
     local souls = rosterData.Souls or {}
@@ -119,12 +119,12 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
             local soul = souls[uuid]
             if not soul or soul.status ~= "Dead" then
                 local name = soul and soul.name or uuid
-                local effectiveRep = DT_ReputationManager.GetEffectiveRep(uuid, f.id)
-                local effectiveStage = DT_ReputationManager.GetStageData(effectiveRep)
-                local personalRep = DT_ReputationManager.GetPersonalRep(uuid)
-                local totalBought = DT_ReputationManager.GetTotalBought(uuid)
-                local totalSold = DT_ReputationManager.GetTotalSold(uuid)
-                local tradeProgress = DT_ReputationManager.GetTradeProgress(uuid)
+                local effectiveRep = DT_Reputation.GetEffectiveRep(uuid, f.id)
+                local effectiveStage = DT_Reputation.GetStageData(effectiveRep)
+                local personalRep = DT_Reputation.GetPersonalRep(uuid)
+                local totalBought = DT_Reputation.GetTotalBought(uuid)
+                local totalSold = DT_Reputation.GetTotalSold(uuid)
+                local tradeProgress = DT_Reputation.GetTradeProgress(uuid)
 
                 text = text ..
                     " <RGB:0.8,0.8,0.8> " .. tostring(name) .. ": " ..
@@ -133,7 +133,7 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
                     " <RGB:0.6,0.6,0.6> personal " .. tostring(personalRep) ..
                     " | bought $" .. tostring(totalBought) ..
                     " | sold $" .. tostring(totalSold) ..
-                    " | next +2 in $" .. tostring(math.max(0, DT_ReputationManager.TRADE_THRESHOLD - tradeProgress)) ..
+                    " | next +2 in $" .. tostring(math.max(0, DT_Reputation.TRADE_THRESHOLD - tradeProgress)) ..
                     " <LINE> "
             end
         end

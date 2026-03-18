@@ -10,7 +10,7 @@ require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "Utils/DT_StringUtils"
 require "Utils/DT_CoreUtils"
-require "Utils/DT_ReputationManager"
+require "DT/Common/Reputation/DT_Reputation"
 
 DT_ConversationUI = DT_ConversationUI or ISCollapsableWindow:derive("DT_ConversationUI")
 DT_ConversationUI.instance = nil

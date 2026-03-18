@@ -1,6 +1,6 @@
 require "ISUI/ISUIHandler"
 require "DT/V1/Utils/DT_OptionsManager"
-require "Utils/DT_ReputationManager"
+require "DT/Common/Reputation/DT_Reputation"
 
 -- =============================================================================
 -- 1. HANDLE SERVER RESPONSES (SCAN RESULTS)
@@ -148,8 +148,8 @@ local function OnServerCommand(module, command, args)
                 args.traderID = args.traderID or (trader and (trader.traderID or trader.uuid or trader.id)) or ui.traderID
                 args.factionID = args.factionID or (trader and trader.factionID)
 
-                if DT_ReputationManager then
-                    DT_ReputationManager.ApplyTradeResult(args, trader, isBuy)
+                if DT_Reputation then
+                    DT_Reputation.ApplyTradeResult(args, trader, isBuy)
                 end
                 
                 -- 1. NPC Response Dialogue

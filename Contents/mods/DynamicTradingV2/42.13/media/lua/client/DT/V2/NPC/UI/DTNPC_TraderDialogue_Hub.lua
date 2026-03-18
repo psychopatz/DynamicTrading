@@ -2,7 +2,7 @@
 -- DYNAMIC TRADING V2: NPC TRADER DIALOGUE HUB
 -- =============================================================================
 require "DT/Common/UI/ConversationUI/ConversationUI"
-require "Utils/DT_ReputationManager"
+require "DT/Common/Reputation/DT_Reputation"
 require "DT/V2/NPC/DTNPC_TradingHandler"
 require "DT/V2/NPC/DTNPC_InteractionPose"
 require "DT/V2/UI/TradingWindowWrapper/TradingWindowWrapper"
@@ -45,11 +45,11 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 returnTime = npcData and npcData.returnTime
             }
 
-            if DT_ReputationManager then
-                traderProxy.personalRep = DT_ReputationManager.GetPersonalRep(traderProxy.id)
-                traderProxy.factionRep = DT_ReputationManager.GetFactionRep(traderProxy.factionID)
-                traderProxy.reputation = DT_ReputationManager.GetEffectiveRep(traderProxy.id, traderProxy.factionID)
-                traderProxy.reputationStage = DT_ReputationManager.GetStageData(traderProxy.reputation).label
+            if DT_Reputation then
+                traderProxy.personalRep = DT_Reputation.GetPersonalRep(traderProxy.id)
+                traderProxy.factionRep = DT_Reputation.GetFactionRep(traderProxy.factionID)
+                traderProxy.reputation = DT_Reputation.GetEffectiveRep(traderProxy.id, traderProxy.factionID)
+                traderProxy.reputationStage = DT_Reputation.GetStageData(traderProxy.reputation).label
             end
             
             -- [FIX] Safety checks for debug prints to prevent "concatenation with nil" crashes

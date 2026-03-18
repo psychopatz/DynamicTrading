@@ -3,7 +3,7 @@
 -- Client-side network command handlers for NPC synchronization.
 -- ==============================================================================
 
-require "Utils/DT_ReputationManager"
+require "DT/Common/Reputation/DT_Reputation"
 
 DTNPCClient = DTNPCClient or {}
 
@@ -170,13 +170,13 @@ function DTNPCClient.OnServerCommand(module, command, args)
             zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
         end
 
-        if DT_ReputationManager then
+        if DT_Reputation then
             local reason = args.removalReason
             if reason == "Incapacitated" then
-                DT_ReputationManager.ApplyIncapPenalty(uuid, factionID)
+                DT_Reputation.ApplyIncapPenalty(uuid, factionID)
             elseif reason == "Dead" then
                 if factionID and factionID ~= "Independent" then
-                    DT_ReputationManager.TryApplyKillPenalty(
+                    DT_Reputation.TryApplyKillPenalty(
                         uuid,
                         factionID,
                         zombie,

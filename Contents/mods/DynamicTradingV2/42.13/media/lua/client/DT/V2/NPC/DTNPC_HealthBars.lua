@@ -5,7 +5,7 @@
 -- ==============================================================================
 
 require "ISUI/ISUIElement"
-require "Utils/DT_ReputationManager"
+require "DT/Common/Reputation/DT_Reputation"
 
 DTNPCClient = DTNPCClient or {}
 
@@ -609,9 +609,9 @@ local function onWeaponHitCharacter(attacker, target, weapon, damage)
         target:getPersistentOutfitID()
     )
 
-    if DT_ReputationManager then
+    if DT_Reputation then
         local npcData = getNPCData(target)
-        DT_ReputationManager.RecordNPCHit(modData.DTNPC_UUID, npcData and npcData.factionID)
+        DT_Reputation.RecordNPCHit(modData.DTNPC_UUID, npcData and npcData.factionID)
     end
 end
 

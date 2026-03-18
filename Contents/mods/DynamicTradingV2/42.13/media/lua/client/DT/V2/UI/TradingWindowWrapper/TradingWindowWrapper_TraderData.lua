@@ -48,14 +48,14 @@ function V2_DataProvider:getTrader(traderID, archetype)
         npcRef = self._currentNPC
     }
 
-    if DT_ReputationManager then
-        trader.personalRep = DT_ReputationManager.GetPersonalRep(traderID)
-        trader.factionRep = DT_ReputationManager.GetFactionRep(stock.factionID)
-        trader.reputation = DT_ReputationManager.GetEffectiveRep(traderID, stock.factionID)
-        trader.reputationStage = DT_ReputationManager.GetStageData(trader.reputation).label
-        trader.tradeProgress = DT_ReputationManager.GetTradeProgress(traderID)
-        trader.totalBought = DT_ReputationManager.GetTotalBought(traderID)
-        trader.totalSold = DT_ReputationManager.GetTotalSold(traderID)
+    if DT_Reputation then
+        trader.personalRep = DT_Reputation.GetPersonalRep(traderID)
+        trader.factionRep = DT_Reputation.GetFactionRep(stock.factionID)
+        trader.reputation = DT_Reputation.GetEffectiveRep(traderID, stock.factionID)
+        trader.reputationStage = DT_Reputation.GetStageData(trader.reputation).label
+        trader.tradeProgress = DT_Reputation.GetTradeProgress(traderID)
+        trader.totalBought = DT_Reputation.GetTotalBought(traderID)
+        trader.totalSold = DT_Reputation.GetTotalSold(traderID)
     end
 
     return trader

@@ -7,7 +7,7 @@
 require "DT/Common/UI/Trading/DT_Trading"
 require "DT/Common/Config"
 require "Utils/DT_CoreUtils"
-require "Utils/DT_ReputationManager"
+require "DT/Common/Reputation/DT_Reputation"
 require "DT/V2/Dialog/DT_DialogueManager"
 require "DT/V2/NPC/DTNPC_ClientCache"
 require "DT/Common/Utils/DT_AudioManager"

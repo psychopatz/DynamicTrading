@@ -61,11 +61,11 @@ function DT_ConversationUI:refreshFactionInfo()
 
     local rep = 0
     local stageData = { label = "Neutral", color = { r = 0.8, g = 0.8, b = 0.8 } }
-    if DT_ReputationManager and traderUUID then
-        rep = DT_ReputationManager.GetEffectiveRep(traderUUID, traderObj.factionID)
-        stageData = DT_ReputationManager.GetStageData(rep)
-        if DT_ReputationManager.AUTO_DEBUG then
-            DT_ReputationManager.DebugDump(traderUUID, traderObj.factionID, "conversation_open")
+    if DT_Reputation and traderUUID then
+        rep = DT_Reputation.GetEffectiveRep(traderUUID, traderObj.factionID)
+        stageData = DT_Reputation.GetStageData(rep)
+        if DT_Reputation.AUTO_DEBUG then
+            DT_Reputation.DebugDump(traderUUID, traderObj.factionID, "conversation_open")
         end
     end
 
