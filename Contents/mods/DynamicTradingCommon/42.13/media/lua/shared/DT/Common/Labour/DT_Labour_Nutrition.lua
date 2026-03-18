@@ -12,6 +12,42 @@ local function getScriptItem(invItem)
     return getScriptManager():getItem(invItem:getFullType())
 end
 
+local function containsText(haystack, needle)
+    if not haystack or not needle then
+        return false
+    end
+    return string.find(string.lower(tostring(haystack)), string.lower(tostring(needle)), 1, true) ~= nil
+end
+
+local function isWaterHydrationSource(invItem, scriptItem)
+    if not invItem then
+        return false
+    end
+
+    if invItem.isWaterSource and invItem:isWaterSource() then
+        return true
+    end
+
+    local fullType = invItem.getFullType and invItem:getFullType() or nil
+    local displayName = invItem.getDisplayName and invItem:getDisplayName() or nil
+    local scriptName = scriptItem and scriptItem.getDisplayName and scriptItem:getDisplayName() or nil
+
+    if containsText(fullType, "water") or containsText(displayName, "water") or containsText(scriptName, "water") then
+        return true
+    end
+
+    return false
+end
+
+local function normalizeHydrationPoints(rawValue)
+    local normalized = math.abs(Config.NormalizeUnitValue(rawValue))
+    if normalized <= 0 then
+        return 0
+    end
+
+    return normalized * (Config.HYDRATION_POINTS_PER_THIRST or 1000)
+end
+
 function Nutrition.GetItemNutrition(invItem)
     if not invItem then
         return 0, 0
@@ -35,12 +71,15 @@ function Nutrition.GetItemNutrition(invItem)
         thirstChange = tonumber(scriptItem:getThirstChange()) or 0
     end
 
-    local hydration = math.abs(Config.NormalizeUnitValue(thirstChange))
+    local hydration = normalizeHydrationPoints(thirstChange)
 
-    if hydration <= 0 and invItem.getFluidContainer and invItem:getFluidContainer() then
+    if hydration <= 0 and isWaterHydrationSource(invItem, scriptItem) and invItem.getFluidContainer and invItem:getFluidContainer() then
         local fluidContainer = invItem:getFluidContainer()
         if fluidContainer and fluidContainer.getAmount then
-            hydration = tonumber(fluidContainer:getAmount()) or 0
+            local amount = tonumber(fluidContainer:getAmount()) or 0
+            if amount > 0 then
+                hydration = amount > 10 and amount or (amount * 100)
+            end
         end
     end
 
@@ -68,6 +107,15 @@ function Nutrition.BuildEntryFromItem(invItem)
         itemID = invItem.getID and invItem:getID() or nil,
         caloriesRemaining = calories,
         hydrationRemaining = hydration
+    }
+end
+
+function Nutrition.BuildStarterReserveEntry(calories, hydration)
+    return {
+        fullType = "DT.LabourStarterReserve",
+        displayName = "Starter Reserve",
+        caloriesRemaining = math.max(0, tonumber(calories) or 0),
+        hydrationRemaining = math.max(0, tonumber(hydration) or 0)
     }
 end
 

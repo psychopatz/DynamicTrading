@@ -15,7 +15,12 @@ Config.PRESENTATION_TICK_RATE = 120
 Config.PROJECTION_RANGE = 100
 Config.DEFAULT_SITE_RADIUS = 8
 Config.DEFAULT_STARVATION_DEATH_HOURS = 72
-Config.DEFAULT_DEHYDRATION_DEATH_HOURS = 48
+Config.DEFAULT_DEHYDRATION_DEATH_HOURS = 72
+Config.HYDRATION_POINTS_PER_THIRST = 1000
+Config.RECRUIT_START_CALORIES_MIN = 500
+Config.RECRUIT_START_CALORIES_MAX = 800
+Config.RECRUIT_START_HYDRATION_MIN = 500
+Config.RECRUIT_START_HYDRATION_MAX = 800
 Config.RECRUIT_REQUIRED_REPUTATION = 100
 Config.RECRUIT_DAILY_CHANCE = 50
 
@@ -49,7 +54,7 @@ Config.JobProfiles = {
         requiredToolTags = { "Tool.Farming" },
         cycleHours = 24,
         dailyCaloriesNeed = 2200,
-        dailyHydrationNeed = 1.8,
+        dailyHydrationNeed = 1800,
         outputRules = {
             { tags = { "Food.Perishable.Vegetable" }, picks = 2, minQty = 1, maxQty = 2 },
             { tags = { "Food.Perishable.Fruit" }, picks = 1, minQty = 1, maxQty = 1 }
@@ -62,7 +67,7 @@ Config.JobProfiles = {
         requiredToolTags = { "Tool.Fishing" },
         cycleHours = 18,
         dailyCaloriesNeed = 2100,
-        dailyHydrationNeed = 1.7,
+        dailyHydrationNeed = 1700,
         outputRules = {
             { tags = { "Food.Perishable.Fish" }, picks = 2, minQty = 1, maxQty = 2 },
             { tags = { "Resource.Fishing" }, picks = 1, minQty = 1, maxQty = 1 }
@@ -75,7 +80,7 @@ Config.JobProfiles = {
         requiredToolTags = { "Tool.General" },
         cycleHours = 16,
         dailyCaloriesNeed = 2300,
-        dailyHydrationNeed = 1.9,
+        dailyHydrationNeed = 1900,
         outputRules = {
             { tags = { "Quality.Waste" }, picks = 1, minQty = 1, maxQty = 2 },
             { tags = { "Resource.Material.General" }, picks = 1, minQty = 1, maxQty = 2 },
@@ -204,6 +209,21 @@ function Config.NormalizeUnitValue(value)
         return value / 100.0
     end
     return value
+end
+
+function Config.RandomRangeInclusive(minValue, maxValue)
+    local minNumber = math.floor(tonumber(minValue) or 0)
+    local maxNumber = math.floor(tonumber(maxValue) or minNumber)
+    if maxNumber < minNumber then
+        minNumber, maxNumber = maxNumber, minNumber
+    end
+
+    local span = (maxNumber - minNumber) + 1
+    if span <= 1 then
+        return minNumber
+    end
+
+    return minNumber + ZombRand(span)
 end
 
 function Config.TagMatches(itemTag, queryTag)

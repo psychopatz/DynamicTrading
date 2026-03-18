@@ -1,9 +1,11 @@
 require "DT/Common/Labour/DT_Labour_Config"
+require "DT/Common/Labour/DT_Labour_Nutrition"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Registry = DT_Labour.Registry or {}
 
 local Config = DT_Labour.Config
+local Nutrition = DT_Labour.Nutrition
 local Registry = DT_Labour.Registry
 
 local function ensureArray(value)
@@ -16,6 +18,31 @@ local function copyShallow(source)
         copy[key] = value
     end
     return copy
+end
+
+local function buildStarterNutritionLedger(template)
+    local existing = copyShallow(template and template.nutritionLedger or nil)
+    if #existing > 0 then
+        return existing
+    end
+
+    local templateCalories = tonumber(template and template.caloriesCached) or 0
+    local templateHydration = tonumber(template and template.hydrationCached) or 0
+    if templateCalories > 0 or templateHydration > 0 then
+        return existing
+    end
+
+    local starterCalories = Config.RandomRangeInclusive(
+        Config.RECRUIT_START_CALORIES_MIN,
+        Config.RECRUIT_START_CALORIES_MAX
+    )
+    local starterHydration = Config.RandomRangeInclusive(
+        Config.RECRUIT_START_HYDRATION_MIN,
+        Config.RECRUIT_START_HYDRATION_MAX
+    )
+
+    existing[#existing + 1] = Nutrition.BuildStarterReserveEntry(starterCalories, starterHydration)
+    return existing
 end
 
 function Registry.Init()
@@ -74,9 +101,13 @@ function Registry.RecalculateWorker(worker)
     worker.nutritionLedger = ensureArray(worker.nutritionLedger)
     worker.toolLedger = ensureArray(worker.toolLedger)
     worker.outputLedger = ensureArray(worker.outputLedger)
+    worker.moneyStored = math.max(0, math.floor(tonumber(worker.moneyStored) or 0))
     worker.jobType = Config.NormalizeJobType(worker.jobType or worker.profession)
     worker.archetypeID = Config.NormalizeArchetypeID(worker.archetypeID or worker.profession)
     worker.profession = worker.profession or worker.jobType
+    if (tonumber(worker.dailyHydrationNeed) or 0) > 0 and (tonumber(worker.dailyHydrationNeed) or 0) < 25 then
+        worker.dailyHydrationNeed = (tonumber(worker.dailyHydrationNeed) or 0) * (Config.HYDRATION_POINTS_PER_THIRST or 1000)
+    end
 
     local calories = 0
     local hydration = 0
@@ -87,6 +118,10 @@ function Registry.RecalculateWorker(worker)
         local entry = worker.nutritionLedger[i]
         local entryCalories = tonumber(entry and entry.caloriesRemaining) or 0
         local entryHydration = tonumber(entry and entry.hydrationRemaining) or 0
+        if entryHydration > 0 and entryHydration < 25 then
+            entryHydration = entryHydration * (Config.HYDRATION_POINTS_PER_THIRST or 1000)
+            entry.hydrationRemaining = entryHydration
+        end
 
         if entryCalories <= 0 and entryHydration <= 0 then
             table.remove(worker.nutritionLedger, i)
@@ -173,9 +208,10 @@ function Registry.CreateWorker(ownerUsername, template)
         dailyHydrationNeed = tonumber(template.dailyHydrationNeed) or profile.dailyHydrationNeed,
         starvationHours = tonumber(template.starvationHours) or 0,
         dehydrationHours = tonumber(template.dehydrationHours) or 0,
-        nutritionLedger = copyShallow(template.nutritionLedger),
+        nutritionLedger = buildStarterNutritionLedger(template),
         toolLedger = copyShallow(template.toolLedger),
         outputLedger = copyShallow(template.outputLedger),
+        moneyStored = math.max(0, math.floor(tonumber(template.moneyStored) or 0)),
         statusFlags = copyShallow(template.statusFlags),
         isFemale = template.isFemale,
         identitySeed = template.identitySeed,
@@ -301,6 +337,7 @@ function Registry.GetWorkerSummary(worker)
         caloriesCached = worker.caloriesCached or 0,
         hydrationCached = worker.hydrationCached or 0,
         outputCount = worker.outputCount or 0,
+        moneyStored = worker.moneyStored or 0,
         isFemale = worker.isFemale,
         identitySeed = worker.identitySeed
     }
@@ -351,6 +388,12 @@ function Registry.AddOutputEntry(worker, entry)
         fullType = entry.fullType,
         qty = entry.qty or 1
     }
+    Registry.RecalculateWorker(worker)
+end
+
+function Registry.AddMoney(worker, amount)
+    if not worker then return end
+    worker.moneyStored = math.max(0, math.floor(tonumber(worker.moneyStored) or 0) + math.floor(tonumber(amount) or 0))
     Registry.RecalculateWorker(worker)
 end
 

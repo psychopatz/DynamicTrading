@@ -2,9 +2,12 @@ require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISRichTextPanel"
 require "ISUI/ISButton"
+require "DT/UI/Labour/DT_LabourQuantityModal"
+require "DT/UI/Labour/DT_LabourSupplyWindow"
 require "DT/Common/Labour/DT_Labour_Config"
 require "DT/Common/Labour/DT_Labour_Registry"
 require "DT/Common/Labour/DT_Labour_Network"
+require "DT/Common/UI/Trading/Provider/DT_TradingProvider_Core"
 
 DT_LabourWindow = ISCollapsableWindow:derive("DT_LabourWindow")
 DT_LabourWindow.instance = nil
@@ -12,6 +15,23 @@ DT_LabourWindow.cachedWorkers = DT_LabourWindow.cachedWorkers or {}
 DT_LabourWindow.cachedDetails = DT_LabourWindow.cachedDetails or {}
 
 local Config = DT_Labour.Config
+local MoneyProvider = DT_LabourWindow.MoneyProvider or {}
+DynamicTrading.TradingProvider.AttachCore(MoneyProvider)
+DT_LabourWindow.MoneyProvider = MoneyProvider
+
+local function formatReserveValue(value)
+    return string.format("%.0f", tonumber(value) or 0)
+end
+
+local function getReserveDaysLeft(storedAmount, dailyNeed)
+    local perDay = tonumber(dailyNeed) or 0
+    if perDay <= 0 then
+        return "n/a"
+    end
+
+    local days = (tonumber(storedAmount) or 0) / perDay
+    return string.format("%.2f", math.max(0, days))
+end
 
 local function formatWorkerListSubtitle(worker)
     local archetype = tostring(worker.archetypeID or "General")
@@ -37,8 +57,8 @@ local function buildSupplyInputText(worker)
     local parts = {}
     for _, entry in ipairs(worker.nutritionLedger or {}) do
         local name = tostring(entry.displayName or entry.fullType or "Supply")
-        local calories = string.format("%.0f", tonumber(entry.caloriesRemaining) or 0)
-        local hydration = string.format("%.2f", tonumber(entry.hydrationRemaining) or 0)
+        local calories = formatReserveValue(entry.caloriesRemaining)
+        local hydration = formatReserveValue(entry.hydrationRemaining)
         parts[#parts + 1] = name .. " [" .. calories .. " cal, " .. hydration .. " hyd]"
     end
 
@@ -47,6 +67,13 @@ local function buildSupplyInputText(worker)
     end
 
     return table.concat(parts, ", ")
+end
+
+local function getPlayerWealth(player)
+    if DT_LabourWindow.MoneyProvider and DT_LabourWindow.MoneyProvider.getPlayerWealth then
+        return DT_LabourWindow.MoneyProvider:getPlayerWealth(player)
+    end
+    return 0
 end
 
 local function getOwnerUsername()
@@ -192,9 +219,13 @@ function DT_LabourWindow:createChildren()
     self.btnAssignHeldTool:initialise()
     self:addChild(self.btnAssignHeldTool)
 
-    self.btnDepositHeldSupply = ISButton:new(610, buttonY, 160, 28, "Deposit Held Supply", self, self.onDepositHeldSupply)
-    self.btnDepositHeldSupply:initialise()
-    self:addChild(self.btnDepositHeldSupply)
+    self.btnGiveMoney = ISButton:new(610, buttonY, 110, 28, "Give Money", self, self.onGiveMoney)
+    self.btnGiveMoney:initialise()
+    self:addChild(self.btnGiveMoney)
+
+    self.btnManageSupplies = ISButton:new(730, buttonY, 150, 28, "Manage Supplies", self, self.onManageSupplies)
+    self.btnManageSupplies:initialise()
+    self:addChild(self.btnManageSupplies)
 
     self.workerList = LabourWorkerList:new(10, listY, listWidth, contentHeight)
     self.workerList:initialise()
@@ -316,6 +347,8 @@ function DT_LabourWindow:updateWorkerDetail(worker)
     local profile = Config.GetJobProfile(worker.jobType)
     local toolTags = profile.requiredToolTags or {}
     local bonusMultiplier = Config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType)
+    local caloriesDays = getReserveDaysLeft(worker.caloriesCached, worker.dailyCaloriesNeed)
+    local hydrationDays = getReserveDaysLeft(worker.hydrationCached, worker.dailyHydrationNeed)
 
     local text = ""
     text = text .. " <RGB:1,1,1> <SIZE:Large> " .. tostring(worker.name or "Worker") .. " <LINE> <LINE> "
@@ -329,14 +362,19 @@ function DT_LabourWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.8,0.8,0.8> Work Coordinates: <RGB:1,1,1> " .. tostring(worker.workX or "-") .. ", " .. tostring(worker.workY or "-") .. ", " .. tostring(worker.workZ or 0) .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Site State: <RGB:1,1,1> " .. tostring(worker.siteState or "Deferred") .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Tool State: <RGB:1,1,1> " .. tostring(worker.toolState or "Missing") .. " <LINE> <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Calories Stored: <RGB:1,1,1> " .. string.format("%.1f", tonumber(worker.caloriesCached) or 0) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Hydration Stored: <RGB:1,1,1> " .. string.format("%.2f", tonumber(worker.hydrationCached) or 0) .. " <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> Calories Stored: <RGB:1,1,1> " .. formatReserveValue(worker.caloriesCached) .. " <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> Hydration Stored: <RGB:1,1,1> " .. formatReserveValue(worker.hydrationCached) .. " <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> Calories Days Left: <RGB:1,1,1> " .. caloriesDays .. " <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> Hydration Days Left: <RGB:1,1,1> " .. hydrationDays .. " <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> Fatal Threshold: <RGB:1,1,1> 3 days at zero calories or hydration <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Nutrition Entries: <RGB:1,1,1> " .. tostring(#(worker.nutritionLedger or {})) .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Assigned Tools: <RGB:1,1,1> " .. tostring(#(worker.toolLedger or {})) .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> Stored Money: <RGB:1,1,1> $" .. tostring(math.floor(tonumber(worker.moneyStored) or 0)) .. " <LINE> "
     text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Foundation Inputs <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Tool Inputs: <RGB:1,1,1> " .. buildToolInputText(worker) .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Food / Water Inputs: <RGB:1,1,1> " .. buildSupplyInputText(worker) .. " <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> Money Reserve: <RGB:1,1,1> $" .. tostring(math.floor(tonumber(worker.moneyStored) or 0)) .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Productive Consumables: <RGB:1,1,1> TODO after foundation polish <LINE> "
 
     self.detailText:setText(text)
@@ -419,29 +457,43 @@ function DT_LabourWindow:onAssignHeldTool()
     self:updateStatus("Hold a tool in your primary or secondary hand first.")
 end
 
-function DT_LabourWindow:onDepositHeldSupply()
+function DT_LabourWindow:onManageSupplies()
     if not self.selectedWorkerSummary then
         self:updateStatus("Select a worker first.")
         return
     end
 
-    local itemIDs = {}
-    for _, itemObj in ipairs(getHeldItems()) do
-        if Config.IsFoodOrDrinkItem and Config.IsFoodOrDrinkItem(itemObj) then
-            itemIDs[#itemIDs + 1] = itemObj:getID()
-        end
-    end
+    DT_LabourSupplyWindow.Open(self.selectedWorker or self.selectedWorkerSummary)
+    self:updateStatus("Opening supply manager...")
+end
 
-    if #itemIDs == 0 then
-        self:updateStatus("Hold a food or drink item first.")
+function DT_LabourWindow:onGiveMoney()
+    if not self.selectedWorkerSummary then
+        self:updateStatus("Select a worker first.")
         return
     end
 
-    self:sendLabourCommand("DepositWorkerSupplies", {
-        workerID = self.selectedWorkerSummary.workerID,
-        itemIDs = itemIDs
+    local player = Config.GetPlayerObject and Config.GetPlayerObject() or getSpecificPlayer(0)
+    local wealth = getPlayerWealth(player)
+    if wealth <= 0 then
+        self:updateStatus("You do not have any money to give.")
+        return
+    end
+
+    local workerName = tostring((self.selectedWorker and self.selectedWorker.name) or self.selectedWorkerSummary.name or self.selectedWorkerSummary.workerID)
+    DT_LabourQuantityModal.Open({
+        title = "Give Money",
+        promptText = "How much money do you want to give to " .. workerName .. "?",
+        maxValue = wealth,
+        defaultValue = wealth,
+        onConfirm = function(quantity)
+            self:sendLabourCommand("GiveWorkerMoney", {
+                workerID = self.selectedWorkerSummary.workerID,
+                amount = quantity
+            })
+            self:updateStatus("Giving $" .. tostring(quantity) .. " to " .. workerName .. "...")
+        end
     })
-    self:updateStatus("Depositing held supplies...")
 end
 
 function DT_LabourWindow.onWorkerListMouseDown(target, item)
@@ -471,6 +523,10 @@ local function onServerCommand(module, command, args)
                 DT_LabourWindow.instance:updateWorkerDetail(args.worker)
                 DT_LabourWindow.instance:updateStatus("Worker details synced.")
             end
+        end
+    elseif command == "LabourNotice" then
+        if DT_LabourWindow.instance and DT_LabourWindow.instance:getIsVisible() then
+            DT_LabourWindow.instance:updateStatus(args and args.message or "Labour update received.")
         end
     end
 end
