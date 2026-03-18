@@ -50,9 +50,13 @@ import TaskConsole from './TaskConsole';
 
 const WorkshopPage = () => {
   // Credentials
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(() => localStorage.getItem('dt_steam_username') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('dt_steam_username', username);
+  }, [username]);
   
   // Metadata
   const [metadata, setMetadata] = useState({
@@ -286,10 +290,6 @@ Only return the change note content.`;
   };
 
   const handlePush = async () => {
-    if (!username) {
-      setSnackbar({ open: true, message: 'Steam Username required', severity: 'warning' });
-      return;
-    }
     try {
       const payload = {
         username,
@@ -312,6 +312,11 @@ Only return the change note content.`;
     } catch (err) {
         setSnackbar({ open: true, message: err.response?.data?.detail || 'Push failed', severity: 'error' });
     }
+  };
+
+  const onPushSubmit = (e) => {
+    e.preventDefault();
+    handlePush();
   };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><CircularProgress /></Box>;
@@ -507,15 +512,42 @@ Only return the change note content.`;
                   </Stack>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Stack spacing={3}>
-                    <TextField label="Steam User" fullWidth value={username} onChange={(e) => setUsername(e.target.value)} variant="outlined" />
-                    <TextField label="Steam Password" type={showPassword ? 'text' : 'password'} fullWidth value={password} onChange={(e) => setPassword(e.target.value)} 
-                      InputProps={{ endAdornment: <IconButton onClick={()=>setShowPassword(!showPassword)}>{showPassword ? <VisibilityOff /> : <VisibilityIcon />}</IconButton> }}
-                    />
-                    <Button variant="contained" color="primary" fullWidth size="large" onClick={handlePush} disabled={!updateFiles && !updateMetadata && !updatePreview} sx={{ py: 2.5, borderRadius: 4, fontWeight: 900 }}>
-                       PUSH UPDATE TO STEAM
-                    </Button>
-                  </Stack>
+                  <form onSubmit={onPushSubmit}>
+                    <Stack spacing={3}>
+                      <TextField 
+                        label="Steam User" 
+                        fullWidth 
+                        name="username"
+                        id="steam-username"
+                        autoComplete="username" 
+                        value={username} 
+                        onChange={(e) => setUsername(e.target.value)} 
+                        variant="outlined" 
+                      />
+                      <TextField 
+                        label="Steam Password" 
+                        type={showPassword ? 'text' : 'password'} 
+                        fullWidth 
+                        name="password"
+                        id="steam-password"
+                        autoComplete="current-password"
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        InputProps={{ endAdornment: <IconButton onClick={()=>setShowPassword(!showPassword)}>{showPassword ? <VisibilityOff /> : <VisibilityIcon />}</IconButton> }}
+                      />
+                      <Button 
+                        variant="contained" 
+                        color="primary" 
+                        fullWidth 
+                        size="large" 
+                        type="submit"
+                        disabled={!username || (!updateFiles && !updateMetadata && !updatePreview)} 
+                        sx={{ py: 2.5, borderRadius: 4, fontWeight: 900 }}
+                      >
+                         PUSH UPDATE TO STEAM
+                      </Button>
+                    </Stack>
+                  </form>
                 </Grid>
              </Grid>
           </Collapse>

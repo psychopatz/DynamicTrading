@@ -26,16 +26,20 @@ def prepare_staging(mod_root: Path, staging_dir: Path):
         # Copy the contents OF the Contents/ directory into the staging root
         contents_src = mod_root / "Contents"
         if contents_src.exists():
+            print(f"Staging files from {contents_src}...") # Visible in TaskConsole
             logger.info(f"Flattening Contents from {contents_src} to staging root")
             for item in contents_src.iterdir():
                 s = item
                 d = staging_dir / item.name
                 if s.is_dir():
+                    print(f"  [DIR] {item.name}/")
                     shutil.copytree(s, d, dirs_exist_ok=True)
                 else:
+                    print(f"  [FILE] {item.name}")
                     shutil.copy2(s, d)
         else:
             logger.warning(f"Contents directory not found at {contents_src}")
+            print(f"[WARNING] Contents directory not found at {contents_src}")
             
         # Copy workshop.txt
         workshop_txt = mod_root / "workshop.txt"
@@ -185,6 +189,14 @@ def run_steamcmd_upload(steamcmd_path: str, vdf_path: Path, username: str, passw
     Note: This is intended to be run within the TaskManager to capture output.
     """
     try:
+        # Pre-step: Kill any running Steam client to avoid conflicts
+        try:
+            print("Checking for running Steam processes...")
+            subprocess.run(["pkill", "steam"], check=False)
+            logger.info("Attempted to terminate Steam client.")
+        except Exception as e:
+            logger.debug(f"Pkill steam failed (maybe already closed): {e}")
+
         cmd = [steamcmd_path]
         if password:
             # Note: Passing password via CLI is generally insecure but requested here for basic GUI integration.
@@ -224,3 +236,47 @@ def run_steamcmd_upload(steamcmd_path: str, vdf_path: Path, username: str, passw
         logger.error(f"Error running SteamCMD: {e}")
         print(f"\n[ERROR] Internal error running SteamCMD: {e}")
         return False
+
+def run_full_workshop_push(
+    mod_root: Path, 
+    staging_dir: Path, 
+    vdf_path: Path, 
+    steamcmd_path: str,
+    username: str, 
+    password: str,
+    request_data: dict
+):
+    """
+    Unified task to prepare files, generate VDF, and upload to Steam.
+    Provides full visibility in the TaskConsole.
+    """
+    print("=== STARTING WORKSHOP PUSH WORKFLOW ===")
+    
+    # 1. Prepare Staging
+    if request_data.get("update_files"):
+        print("\n[STEP 1/3] Preparing staging directory...")
+        if not prepare_staging(mod_root, staging_dir):
+            print("[ERROR] Staging preparation failed.")
+            return False
+    else:
+        print("\n[STEP 1/3] Skipping file update as requested.")
+
+    # 2. Generate VDF
+    print("\n[STEP 2/3] Generating VDF script...")
+    success = generate_vdf(
+        staging_dir=staging_dir, 
+        vdf_path=vdf_path, 
+        changenote=request_data.get("changenote", ""),
+        title=request_data.get("title") if request_data.get("update_metadata") else None,
+        description=request_data.get("description") if request_data.get("update_metadata") else None,
+        previewfile=str((mod_root / "preview.png").absolute()) if request_data.get("update_preview") else None,
+        visibility=request_data.get("visibility") if request_data.get("update_metadata") else None,
+        tags=request_data.get("tags") if request_data.get("update_metadata") else None
+    )
+    if not success:
+        print("[ERROR] VDF generation failed.")
+        return False
+
+    # 3. Upload
+    print("\n[STEP 3/3] Running SteamCMD upload...")
+    return run_steamcmd_upload(steamcmd_path, vdf_path, username, password)

@@ -54,7 +54,7 @@ try:
     from ItemManagement.parse import load_blacklist, is_item_blacklisted
     from ItemManagement.task_manager import manager
     from DebugManagement import LogParser
-    from WorkshopManagement.workshop import prepare_staging, generate_vdf, run_steamcmd_upload, parse_workshop_txt, fetch_steam_metadata
+    from WorkshopManagement.workshop import prepare_staging, generate_vdf, run_steamcmd_upload, parse_workshop_txt, fetch_steam_metadata, run_full_workshop_push
     from GitManagement.diff_handler import get_git_changes, get_git_branches
 except ImportError as e:
     logger.error(f"Error importing ItemManagement or DebugManagement modules: {e}")
@@ -673,31 +673,18 @@ async def trigger_workshop_push(request: WorkshopPushRequest):
     staging_dir = mod_root / "upload_staging"
     vdf_path = mod_root / "workshop_update.vdf"
     steamcmd_path = os.getenv("STEAM_CMD_PATH", os.getenv("STEAMCMD_PATH", "/home/psychopatz/Desktop/Apps/SteamCMD/steamcmd.sh"))
-    
-    # We always need the staging dir if we are updating files
-    if request.update_files and not staging_dir.exists():
-        raise HTTPException(status_code=400, detail="Staging directory not found. Please run prepare first.")
-    
-    # Prepare VDF with metadata if requested
-    generate_vdf(
-        staging_dir=staging_dir, 
-        vdf_path=vdf_path, 
-        changenote=request.changenote,
-        title=request.title if request.update_metadata else None,
-        description=request.description if request.update_metadata else None,
-        previewfile=str((mod_root / "preview.png").absolute()) if request.update_preview else None,
-        visibility=request.visibility if request.update_metadata else None,
-        tags=request.tags if request.update_metadata else None
-    )
-    
-    # Run push in background task
+
+    # Run full push workflow in background task
     task_id = manager.create_task(
-        "SteamCMD Workshop Push", 
-        run_steamcmd_upload, 
+        "Internal Workshop Sync & Push", 
+        run_full_workshop_push, 
+        mod_root,
+        staging_dir,
+        vdf_path,
         steamcmd_path, 
-        vdf_path, 
         request.username, 
-        request.password
+        request.password,
+        request.dict()
     )
     
     return {"task_id": task_id}
