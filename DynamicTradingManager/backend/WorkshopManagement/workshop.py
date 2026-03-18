@@ -4,6 +4,7 @@ import logging
 import urllib.request
 import json
 import urllib.parse
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +23,17 @@ def prepare_staging(mod_root: Path, staging_dir: Path):
         
         staging_dir.mkdir(parents=True, exist_ok=True)
         
-        # Copy Contents/
+        # Copy the contents OF the Contents/ directory into the staging root
         contents_src = mod_root / "Contents"
-        contents_dst = staging_dir / "Contents"
         if contents_src.exists():
-            logger.info(f"Copying Contents from {contents_src} to {contents_dst}")
-            shutil.copytree(contents_src, contents_dst)
+            logger.info(f"Flattening Contents from {contents_src} to staging root")
+            for item in contents_src.iterdir():
+                s = item
+                d = staging_dir / item.name
+                if s.is_dir():
+                    shutil.copytree(s, d, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(s, d)
         else:
             logger.warning(f"Contents directory not found at {contents_src}")
             
