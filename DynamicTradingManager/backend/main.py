@@ -54,7 +54,8 @@ try:
     from ItemManagement.parse import load_blacklist, is_item_blacklisted
     from ItemManagement.task_manager import manager
     from DebugManagement import LogParser
-    from WorkshopManagement.workshop import prepare_staging, generate_vdf, run_steamcmd_upload, parse_workshop_txt
+    from WorkshopManagement.workshop import prepare_staging, generate_vdf, run_steamcmd_upload, parse_workshop_txt, fetch_steam_metadata
+    from GitManagement.diff_handler import get_git_changes, get_git_branches
 except ImportError as e:
     logger.error(f"Error importing ItemManagement or DebugManagement modules: {e}")
     sys.exit(1)
@@ -641,6 +642,18 @@ async def get_workshop_metadata():
     workshop_txt_path = mod_root / "workshop.txt"
     return parse_workshop_txt(workshop_txt_path)
 
+@app.get("/api/workshop/sync")
+async def sync_workshop_metadata():
+    # Use the hardcoded ID for now or fetch from workshop.txt
+    mod_root = Path(os.getenv("DYNAMIC_TRADING_PATH", "/home/psychopatz/Zomboid/Workshop/DynamicTrading/"))
+    local_meta = parse_workshop_txt(mod_root / "workshop.txt")
+    item_id = local_meta.get("id", "3635333613")
+    
+    steam_meta = fetch_steam_metadata(item_id)
+    if not steam_meta:
+        raise HTTPException(status_code=500, detail="Failed to fetch data from Steam Web API")
+    return steam_meta
+
 @app.post("/api/workshop/image")
 async def upload_workshop_image(file: UploadFile = File(...)):
     mod_root = Path(os.getenv("DYNAMIC_TRADING_PATH", "/home/psychopatz/Zomboid/Workshop/DynamicTrading/"))
@@ -688,6 +701,14 @@ async def trigger_workshop_push(request: WorkshopPushRequest):
     )
     
     return {"task_id": task_id}
+
+@app.get("/api/git/changes")
+async def get_project_changes(branch: Optional[str] = None):
+    return get_git_changes(branch)
+
+@app.get("/api/git/branches")
+async def get_project_branches():
+    return get_git_branches()
 
 # --- Simulation ---
 

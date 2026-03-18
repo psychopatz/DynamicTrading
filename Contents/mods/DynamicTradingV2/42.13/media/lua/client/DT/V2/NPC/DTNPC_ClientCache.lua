@@ -94,6 +94,21 @@ function DTNPCClient.GetTableSize(t)
     return count
 end
 
+function DTNPCClient.ResetSessionState(reason)
+    DTNPCClient.NPCCache = {}
+    DTNPCClient.OutfitIDToUUID = {}
+    DTNPCClient.ProcessedZombies = {}
+    DTNPCClient.LocalControlled = {}
+    DTNPCClient.MetadataCache = {}
+    DTNPCClient.hasSyncedOnce = false
+
+    if DTNPC_ClientInterpolation and DTNPC_ClientInterpolation.ClearAll then
+        DTNPC_ClientInterpolation.ClearAll()
+    end
+
+    DynamicTrading.Log("DTV2", "NPC", "Cache", "Reset client NPC session state (" .. tostring(reason or "unknown") .. ")")
+end
+
 function DTNPCClient.CacheMetadata(uuid, metadata)
     if not uuid or not metadata then return end
     DTNPCClient.MetadataCache[uuid] = metadata

@@ -287,10 +287,15 @@ end
 
 function DTNPCClient.RequestInitialSync(playerNum)
     if isServer() and isDedicatedServer() then return end
-    if DTNPCClient.hasSyncedOnce then return end
     
     local player = getSpecificPlayer(playerNum)
     if not player then return end
+
+    if DTNPCClient.ResetSessionState then
+        DTNPCClient.ResetSessionState("initial-sync")
+    else
+        DTNPCClient.hasSyncedOnce = false
+    end
     
     DynamicTrading.Log("DTV2", "NPC", "Sync", "Requesting initial sync for player: " .. player:getUsername())
     sendClientCommand(player, "DTNPC", "RequestNearbySync", {

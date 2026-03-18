@@ -1,8 +1,9 @@
-import os
-import shutil
 import subprocess
 from pathlib import Path
 import logging
+import urllib.request
+import json
+import urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +139,39 @@ def parse_workshop_txt(workshop_txt_path: Path):
     except Exception as e:
         logger.error(f"Error parsing workshop.txt: {e}")
         return metadata
+
+def fetch_steam_metadata(item_id: str):
+    """
+    Fetches live metadata from the Steam Web API for the given workshop item.
+    """
+    url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/"
+    data = urllib.parse.urlencode({
+        "itemcount": 1,
+        "publishedfileids[0]": item_id
+    }).encode("utf-8")
+    
+    try:
+        req = urllib.request.Request(url, data=data, method="POST")
+        with urllib.request.urlopen(req) as response:
+            res_data = json.loads(response.read().decode("utf-8"))
+            
+            if "publishedfiledetails" in res_data.get("response", {}):
+                details = res_data["response"]["publishedfiledetails"][0]
+                if details.get("result") == 1: # Success
+                    return {
+                        "title": details.get("title", ""),
+                        "description": details.get("description", ""),
+                        "tags": ";".join([t["tag"] for t in details.get("tags", [])]),
+                        "visibility": details.get("visibility", 0),
+                        "id": item_id,
+                        "preview_url": details.get("preview_url", ""),
+                        "views": details.get("views", 0),
+                        "subscriptions": details.get("subscriptions", 0)
+                    }
+        return None
+    except Exception as e:
+        logger.error(f"Error fetching Steam metadata: {e}")
+        return None
 
 def run_steamcmd_upload(steamcmd_path: str, vdf_path: Path, username: str, password: str = None):
     """

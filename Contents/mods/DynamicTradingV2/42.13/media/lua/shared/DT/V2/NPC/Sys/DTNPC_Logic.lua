@@ -149,6 +149,9 @@ function DTNPCLogic.ProcessNPC(zombie)
     end
 
     local state = npcData.state or "Stay"
+    if DTNPC and DTNPC.ApplyCharacterFlags then
+        DTNPC.ApplyCharacterFlags(zombie, npcData)
+    end
     updateIdleCycle(zombie, npcData, state)
     
     -- AGGRESSIVE WANDER PREVENTION

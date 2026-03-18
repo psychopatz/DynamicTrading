@@ -49,12 +49,31 @@ function DTNPC.IsNPC(zombie)
     return modData and modData.IsDTNPC == true
 end
 
+function DTNPC.ApplyCharacterFlags(zombie, npcData)
+    if not zombie then return end
+
+    local state = npcData and npcData.state or nil
+    local allowZombieMelee = state == "Attack"
+
+    zombie:setNoTeeth(not allowZombieMelee)
+    zombie:setVariable("NoLungeAttack", not allowZombieMelee)
+    zombie:setVariable("NoLungeTarget", true)
+    zombie:setVariable("ZombieHitReaction", "Chainsaw")
+
+    local desc = zombie:getDescriptor()
+    if desc then
+        desc:setVoicePrefix("NotAZombie")
+    end
+end
+
 -- ==============================================================================
 -- 2. VISUALS (THE COSTUME)
 -- ==============================================================================
 
 function DTNPC.ApplyVisuals(zombie, npcData)
     if not zombie or not npcData then return end
+
+    DTNPC.ApplyCharacterFlags(zombie, npcData)
 
     local humanVisual = zombie:getHumanVisual()
     if not humanVisual then return end 

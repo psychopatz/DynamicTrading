@@ -46,8 +46,13 @@ export const saveArchetypeDefinition = (archetypeId, payload) => api.put(`/arche
 export const triggerWorkshopPrepare = () => api.post('/workshop/prepare');
 export const triggerWorkshopPush = (payload) => api.post('/workshop/push', payload);
 export const getWorkshopMetadata = () => api.get('/workshop/metadata');
+export const getWorkshopSync = () => api.get('/workshop/sync');
 export const uploadWorkshopImage = (formData) => api.post('/workshop/image', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 });
+
+// Git
+export const getGitChanges = (branch) => api.get(`/git/changes${branch ? `?branch=${branch}` : ''}`);
+export const getGitBranches = () => api.get('/git/branches');
 
 export default api;
