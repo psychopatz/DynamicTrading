@@ -1,0 +1,61 @@
+require "DT/Common/Labour/DT_Labour_Config"
+require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
+
+DT_Labour = DT_Labour or {}
+DT_Labour.Network = DT_Labour.Network or {}
+
+local Config = DT_Labour.Config
+local Registry = DT_Labour.Registry
+local Network = DT_Labour.Network
+local Internal = Network.Internal or {}
+
+Network.Internal = Internal
+Network.Handlers = Network.Handlers or {}
+
+function Internal.sendResponse(player, module, command, args)
+    if DynamicTrading and DynamicTrading.ServerHelpers and DynamicTrading.ServerHelpers.SendResponse then
+        DynamicTrading.ServerHelpers.SendResponse(player, module, command, args)
+        return
+    end
+
+    if isServer() then
+        sendServerCommand(player, module, command, args)
+    else
+        triggerEvent("OnServerCommand", module, command, args)
+    end
+end
+
+function Internal.syncNotice(player, message, severity)
+    Internal.sendResponse(player, Config.COMMAND_MODULE, "LabourNotice", {
+        message = tostring(message or ""),
+        severity = severity or "info"
+    })
+end
+
+function Internal.syncWorkerList(player)
+    local owner = Config.GetOwnerUsername(player)
+    Internal.sendResponse(player, Config.COMMAND_MODULE, "SyncPlayerWorkers", {
+        workers = Registry.GetWorkerSummariesForOwner(owner)
+    })
+end
+
+function Internal.syncWorkerDetail(player, workerID)
+    local owner = Config.GetOwnerUsername(player)
+    local worker = Registry.GetWorkerDetailsForOwner(owner, workerID)
+    Internal.sendResponse(player, Config.COMMAND_MODULE, "SyncWorkerDetails", {
+        worker = worker
+    })
+end
+
+function Internal.syncRecruitAttemptResult(player, result)
+    Internal.sendResponse(player, Config.COMMAND_MODULE, "SyncRecruitAttemptResult", result or {})
+end
+
+function Network.HandleCommand(player, command, args)
+    local handler = Network.Handlers[command]
+    if handler then
+        return handler(player, args or {})
+    end
+end
+
+return Network

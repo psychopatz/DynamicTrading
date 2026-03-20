@@ -1,5 +1,5 @@
 require "DT/Common/Labour/DT_Labour_Config"
-require "DT/Common/Labour/DT_Labour_Registry"
+require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Presentation = DT_Labour.Presentation or {}

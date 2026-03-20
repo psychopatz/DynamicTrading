@@ -4,7 +4,7 @@ require "ISUI/ISRichTextPanel"
 require "ISUI/ISButton"
 require "DT/Common/Labour/DT_Labour_Config"
 require "DT/Common/Labour/DT_Labour_Nutrition"
-require "DT/Common/Labour/DT_Labour_Network"
+require "DT/Common/Labour/LabourNetwork/DT_Labour_Network"
 
 DT_SupplyWindow = ISCollapsableWindow:derive("DT_SupplyWindow")
 DT_SupplyWindow.instance = nil

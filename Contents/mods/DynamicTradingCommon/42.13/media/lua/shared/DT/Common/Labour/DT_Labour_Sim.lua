@@ -1,5 +1,5 @@
 require "DT/Common/Labour/DT_Labour_Config"
-require "DT/Common/Labour/DT_Labour_Registry"
+require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
 require "DT/Common/Labour/DT_Labour_Sites"
 require "DT/Common/Labour/DT_Labour_Nutrition"
 require "DT/Common/Labour/DT_Labour_Output"

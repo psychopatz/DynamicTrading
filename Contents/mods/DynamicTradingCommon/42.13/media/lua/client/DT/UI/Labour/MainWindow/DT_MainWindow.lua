@@ -5,8 +5,8 @@ require "ISUI/ISButton"
 require "DT/UI/Labour/DT_LabourQuantityModal"
 require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow"
 require "DT/Common/Labour/DT_Labour_Config"
-require "DT/Common/Labour/DT_Labour_Registry"
-require "DT/Common/Labour/DT_Labour_Network"
+require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
+require "DT/Common/Labour/LabourNetwork/DT_Labour_Network"
 require "DT/Common/UI/Trading/Provider/DT_TradingProvider_Core"
 
 DT_MainWindow = ISCollapsableWindow:derive("DT_MainWindow")
