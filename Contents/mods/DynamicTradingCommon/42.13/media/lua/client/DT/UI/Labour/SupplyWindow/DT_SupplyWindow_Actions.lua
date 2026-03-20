@@ -1,13 +1,13 @@
-DT_LabourSupplyWindow = DT_LabourSupplyWindow or {}
-DT_LabourSupplyWindow.Internal = DT_LabourSupplyWindow.Internal or {}
+DT_SupplyWindow = DT_SupplyWindow or {}
+DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
-local Internal = DT_LabourSupplyWindow.Internal
+local Internal = DT_SupplyWindow.Internal
 
-function DT_LabourSupplyWindow:onRefresh()
+function DT_SupplyWindow:onRefresh()
     self:startInventoryScan()
 end
 
-function DT_LabourSupplyWindow:onDepositSelected()
+function DT_SupplyWindow:onDepositSelected()
     local selectedEntry = self.selectedEntry
 
     if not self.workerID then
@@ -48,7 +48,7 @@ function DT_LabourSupplyWindow:onDepositSelected()
     self:updateStatus("Depositing " .. tostring(selectedEntry.displayName or selectedEntry.fullType or "selected item") .. "...")
 end
 
-function DT_LabourSupplyWindow.onItemListMouseDown(target, item)
+function DT_SupplyWindow.onItemListMouseDown(target, item)
     if not target or not item then
         return
     end

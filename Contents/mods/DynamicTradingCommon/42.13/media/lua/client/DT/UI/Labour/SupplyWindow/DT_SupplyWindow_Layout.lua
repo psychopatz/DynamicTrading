@@ -1,16 +1,16 @@
-DT_LabourSupplyWindow = DT_LabourSupplyWindow or {}
-DT_LabourSupplyWindow.Internal = DT_LabourSupplyWindow.Internal or {}
+DT_SupplyWindow = DT_SupplyWindow or {}
+DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
-local Internal = DT_LabourSupplyWindow.Internal
+local Internal = DT_SupplyWindow.Internal
 
-function DT_LabourSupplyWindow:initialise()
+function DT_SupplyWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
     self.minimumWidth = 760
     self.minimumHeight = 460
 end
 
-function DT_LabourSupplyWindow:createChildren()
+function DT_SupplyWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
 
     local th = self:titleBarHeight()
@@ -35,7 +35,7 @@ function DT_LabourSupplyWindow:createChildren()
     self.itemList:initialise()
     self.itemList:instantiate()
     self.itemList.target = self
-    self.itemList.onmousedown = DT_LabourSupplyWindow.onItemListMouseDown
+    self.itemList.onmousedown = DT_SupplyWindow.onItemListMouseDown
     self.itemList:setAnchorBottom(true)
     self:addChild(self.itemList)
 
@@ -60,7 +60,7 @@ function DT_LabourSupplyWindow:createChildren()
     self:updateItemDetail(nil)
 end
 
-function DT_LabourSupplyWindow:updateStatus(text)
+function DT_SupplyWindow:updateStatus(text)
     if not self.statusText then
         return
     end
@@ -68,7 +68,7 @@ function DT_LabourSupplyWindow:updateStatus(text)
     self.statusText:paginate()
 end
 
-function DT_LabourSupplyWindow:updateItemDetail(entry)
+function DT_SupplyWindow:updateItemDetail(entry)
     if not self.detailText then
         return
     end

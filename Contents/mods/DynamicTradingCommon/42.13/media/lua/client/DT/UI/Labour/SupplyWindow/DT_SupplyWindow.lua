@@ -1,0 +1,22 @@
+require "ISUI/ISCollapsableWindow"
+require "ISUI/ISScrollingListBox"
+require "ISUI/ISRichTextPanel"
+require "ISUI/ISButton"
+require "DT/Common/Labour/DT_Labour_Config"
+require "DT/Common/Labour/DT_Labour_Nutrition"
+require "DT/Common/Labour/DT_Labour_Network"
+
+DT_SupplyWindow = ISCollapsableWindow:derive("DT_SupplyWindow")
+DT_SupplyWindow.instance = nil
+DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
+
+-- Keep explicit load order so shared helpers are available before dependent modules.
+require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Shared"
+require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_List"
+require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Layout"
+require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Scan"
+require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Actions"
+require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Lifecycle"
+require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Events"
+
+return DT_SupplyWindow

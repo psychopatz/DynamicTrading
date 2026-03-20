@@ -1,7 +1,7 @@
-DT_LabourSupplyWindow = DT_LabourSupplyWindow or {}
-DT_LabourSupplyWindow.Internal = DT_LabourSupplyWindow.Internal or {}
+DT_SupplyWindow = DT_SupplyWindow or {}
+DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
-local Internal = DT_LabourSupplyWindow.Internal
+local Internal = DT_SupplyWindow.Internal
 local LabourSupplyList = ISScrollingListBox:derive("LabourSupplyList")
 
 function LabourSupplyList:new(x, y, width, height)

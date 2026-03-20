@@ -1,22 +1,22 @@
-DT_LabourSupplyWindow = DT_LabourSupplyWindow or {}
-DT_LabourSupplyWindow.Internal = DT_LabourSupplyWindow.Internal or {}
+DT_SupplyWindow = DT_SupplyWindow or {}
+DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
-function DT_LabourSupplyWindow.Open(worker)
+function DT_SupplyWindow.Open(worker)
     if not worker or not worker.workerID then
         return
     end
 
-    local window = DT_LabourSupplyWindow.instance
+    local window = DT_SupplyWindow.instance
     if not window then
         local width = 820
         local height = 520
         local x = (getCore():getScreenWidth() - width) / 2
         local y = (getCore():getScreenHeight() - height) / 2
 
-        window = DT_LabourSupplyWindow:new(x, y, width, height)
+        window = DT_SupplyWindow:new(x, y, width, height)
         window:initialise()
         window:instantiate()
-        DT_LabourSupplyWindow.instance = window
+        DT_SupplyWindow.instance = window
     end
 
     window.workerID = worker.workerID
@@ -29,12 +29,12 @@ function DT_LabourSupplyWindow.Open(worker)
     window:updateStatus("Supplying " .. tostring(window.workerName) .. ".")
 end
 
-function DT_LabourSupplyWindow:close()
+function DT_SupplyWindow:close()
     self:setVisible(false)
     self:removeFromUIManager()
 end
 
-function DT_LabourSupplyWindow:new(x, y, width, height)
+function DT_SupplyWindow:new(x, y, width, height)
     local o = ISCollapsableWindow:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self

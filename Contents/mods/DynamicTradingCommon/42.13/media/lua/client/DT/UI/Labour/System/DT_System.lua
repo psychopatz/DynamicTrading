@@ -1,4 +1,4 @@
-require "DT/UI/Labour/DT_LabourWindow"
+require "DT/UI/Labour/MainWindow/DT_MainWindow"
 require "DT/Common/Labour/DT_Labour_Config"
 require "DT/Common/Labour/DT_Labour_Network"
 

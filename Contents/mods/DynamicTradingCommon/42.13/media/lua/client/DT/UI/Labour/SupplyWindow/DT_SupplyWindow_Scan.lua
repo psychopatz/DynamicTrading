@@ -1,9 +1,9 @@
-DT_LabourSupplyWindow = DT_LabourSupplyWindow or {}
-DT_LabourSupplyWindow.Internal = DT_LabourSupplyWindow.Internal or {}
+DT_SupplyWindow = DT_SupplyWindow or {}
+DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
-local Internal = DT_LabourSupplyWindow.Internal
+local Internal = DT_SupplyWindow.Internal
 
-function DT_LabourSupplyWindow:registerVisibleEntry(entry)
+function DT_SupplyWindow:registerVisibleEntry(entry)
     if not self.itemList or not entry then
         return
     end
@@ -18,7 +18,7 @@ function DT_LabourSupplyWindow:registerVisibleEntry(entry)
     end
 end
 
-function DT_LabourSupplyWindow:addScannedItem(invItem)
+function DT_SupplyWindow:addScannedItem(invItem)
     if not invItem then
         return false
     end
@@ -34,7 +34,7 @@ function DT_LabourSupplyWindow:addScannedItem(invItem)
     return true
 end
 
-function DT_LabourSupplyWindow:startInventoryScan()
+function DT_SupplyWindow:startInventoryScan()
     local player = Internal.getLocalPlayer()
     local rootContainer = player and player.getInventory and player:getInventory() or nil
 
@@ -64,7 +64,7 @@ function DT_LabourSupplyWindow:startInventoryScan()
     self:updateStatus("Scanning inventory for labour supplies...")
 end
 
-function DT_LabourSupplyWindow:finishInventoryScan()
+function DT_SupplyWindow:finishInventoryScan()
     self.scanning = false
 
     if self.itemList and self.itemList.items and #self.itemList.items > 0 then
@@ -87,7 +87,7 @@ function DT_LabourSupplyWindow:finishInventoryScan()
     )
 end
 
-function DT_LabourSupplyWindow:processInventoryScan(batchSize)
+function DT_SupplyWindow:processInventoryScan(batchSize)
     if not self.scanning then
         return
     end
@@ -143,7 +143,7 @@ function DT_LabourSupplyWindow:processInventoryScan(batchSize)
     end
 end
 
-function DT_LabourSupplyWindow:update()
+function DT_SupplyWindow:update()
     ISCollapsableWindow.update(self)
 
     if self.scanning then

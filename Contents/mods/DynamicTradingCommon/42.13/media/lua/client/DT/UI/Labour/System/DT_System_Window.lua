@@ -23,16 +23,16 @@ function System.CanUseDebug(player)
 end
 
 function System.ToggleWindow()
-    if DT_LabourWindow and DT_LabourWindow.ToggleWindow then
-        DT_LabourWindow.ToggleWindow()
+    if DT_MainWindow and DT_MainWindow.ToggleWindow then
+        DT_MainWindow.ToggleWindow()
     end
 end
 
 function System.OpenWindow()
-    if DT_LabourWindow and DT_LabourWindow.Open then
-        DT_LabourWindow.Open()
-    elseif DT_LabourWindow and DT_LabourWindow.ToggleWindow then
-        DT_LabourWindow.ToggleWindow()
+    if DT_MainWindow and DT_MainWindow.Open then
+        DT_MainWindow.Open()
+    elseif DT_MainWindow and DT_MainWindow.ToggleWindow then
+        DT_MainWindow.ToggleWindow()
     end
 end
 
