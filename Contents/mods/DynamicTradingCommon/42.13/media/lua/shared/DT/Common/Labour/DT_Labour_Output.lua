@@ -36,9 +36,164 @@ local function getCandidates(requiredTags)
     return pool
 end
 
-function Output.GenerateForJob(profile)
+local function buildWeightedScavengeEntries(loadout)
+    local entries = {}
+    local totalWeight = 0
+
+    local failureWeight = math.max(0, tonumber(loadout and loadout.failureWeight) or 0)
+    if failureWeight > 0 then
+        totalWeight = totalWeight + failureWeight
+        entries[#entries + 1] = {
+            failure = true,
+            weight = failureWeight
+        }
+    end
+
+    for _, rule in ipairs(Config.ScavengeLootRules or {}) do
+        local minTier = math.max(0, tonumber(rule.minTier) or 0)
+        if minTier <= math.max(0, tonumber(loadout and loadout.tier) or 0) then
+            local isEligible = true
+
+            if rule.requiresAllCapabilities then
+                for _, capability in ipairs(rule.requiresAllCapabilities) do
+                    if not (loadout and loadout.capabilityMap and loadout.capabilityMap[capability]) then
+                        isEligible = false
+                        break
+                    end
+                end
+            end
+
+            if isEligible and rule.requiresAnyCapabilities and #rule.requiresAnyCapabilities > 0 then
+                isEligible = false
+                for _, capability in ipairs(rule.requiresAnyCapabilities) do
+                    if loadout and loadout.capabilityMap and loadout.capabilityMap[capability] then
+                        isEligible = true
+                        break
+                    end
+                end
+            end
+
+            if isEligible then
+                local pool = getCandidates(rule.tags)
+                if #pool > 0 then
+                    local weight = math.max(0, tonumber(rule.weight) or 0)
+                    if weight > 0 then
+                        totalWeight = totalWeight + weight
+                        entries[#entries + 1] = {
+                            rule = rule,
+                            pool = pool,
+                            weight = weight
+                        }
+                    end
+                end
+            end
+        end
+    end
+
+    return entries, totalWeight
+end
+
+local function rollWeightedEntry(entries, totalWeight)
+    if not entries or #entries <= 0 or totalWeight <= 0 then
+        return nil
+    end
+
+    local roll = ZombRand(totalWeight) + 1
+    local cursor = 0
+    for _, entry in ipairs(entries) do
+        cursor = cursor + math.max(0, tonumber(entry.weight) or 0)
+        if roll <= cursor then
+            return entry
+        end
+    end
+
+    return entries[#entries]
+end
+
+local function getRuleQuantity(rule, loadout)
+    local minQty = math.max(1, tonumber(rule and rule.minQty) or 1)
+    local maxQty = math.max(minQty, tonumber(rule and rule.maxQty) or minQty)
+
+    if loadout and loadout.bulkLoot then
+        local bulkBonus = math.max(0, tonumber(rule and rule.bulkBonus) or 0)
+        minQty = minQty + bulkBonus
+        maxQty = maxQty + bulkBonus
+    end
+
+    if loadout and loadout.bundleLoot then
+        local bundleBonus = math.max(0, tonumber(rule and rule.bundleBonus) or 0)
+        minQty = minQty + bundleBonus
+        maxQty = maxQty + bundleBonus
+    end
+
+    return Config.RandomRangeInclusive(minQty, maxQty)
+end
+
+function Output.GenerateScavengeLoot(worker)
+    local results = {}
+    local loadout = Config.GetScavengeLoadout and Config.GetScavengeLoadout(worker) or {}
+    local poolRolls = math.max(1, tonumber(loadout and loadout.poolRolls) or 1)
+    local avoidDuplicates = loadout and loadout.hasRoutePlan == true
+    local usedRuleIDs = {}
+    local usedFullTypes = {}
+
+    for _ = 1, poolRolls do
+        local weightedEntries, totalWeight = buildWeightedScavengeEntries(loadout)
+        if avoidDuplicates and next(usedRuleIDs) ~= nil then
+            local filteredEntries = {}
+            local filteredWeight = 0
+            for _, entry in ipairs(weightedEntries) do
+                if entry.failure or not usedRuleIDs[entry.rule.id] then
+                    filteredEntries[#filteredEntries + 1] = entry
+                    filteredWeight = filteredWeight + math.max(0, tonumber(entry.weight) or 0)
+                end
+            end
+            if #filteredEntries > 0 then
+                weightedEntries = filteredEntries
+                totalWeight = filteredWeight
+            end
+        end
+
+        local selected = rollWeightedEntry(weightedEntries, totalWeight)
+        if selected and not selected.failure and selected.pool then
+            local pool = selected.pool
+            local fullType = nil
+
+            if avoidDuplicates and #pool > 1 then
+                for _ = 1, #pool do
+                    local candidate = pool[ZombRand(#pool) + 1]
+                    if not usedFullTypes[candidate] then
+                        fullType = candidate
+                        break
+                    end
+                end
+            end
+
+            fullType = fullType or pool[ZombRand(#pool) + 1]
+            if fullType then
+                results[#results + 1] = {
+                    fullType = fullType,
+                    qty = getRuleQuantity(selected.rule, loadout)
+                }
+                if selected.rule and selected.rule.id then
+                    usedRuleIDs[selected.rule.id] = true
+                end
+                usedFullTypes[fullType] = true
+            end
+        end
+    end
+
+    return results
+end
+
+function Output.GenerateForJob(profile, worker)
     local results = {}
     if not profile then return results end
+
+    local normalizedJobType = Config.NormalizeJobType and Config.NormalizeJobType(profile.jobType) or profile.jobType
+    if normalizedJobType == Config.JobTypes.Scavenge then
+        return Output.GenerateScavengeLoot(worker)
+    end
 
     for _, rule in ipairs(profile.outputRules or {}) do
         local pool = getCandidates(rule.tags)
@@ -57,8 +212,8 @@ function Output.GenerateForJob(profile)
     return results
 end
 
-function Output.GenerateForProfile(profile)
-    return Output.GenerateForJob(profile)
+function Output.GenerateForProfile(profile, worker)
+    return Output.GenerateForJob(profile, worker)
 end
 
 return Output

@@ -250,6 +250,8 @@ function Sim.ProcessWorker(worker, currentHour)
 
     local profile = Config.GetJobProfile(worker.jobType)
     local speedMultiplier = Config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType)
+    local normalizedJobType = Config.NormalizeJobType(worker.jobType)
+    local scavengeLoadout = nil
     local lastHour = tonumber(worker.lastSimHour) or tonumber(currentHour) or 0
     local deltaHours = math.max(0, currentHour - lastHour)
 
@@ -265,6 +267,24 @@ function Sim.ProcessWorker(worker, currentHour)
 
     Sites.RefreshWorkerSite(worker)
     local toolsReady = Registry.WorkerHasRequiredTools(worker)
+
+    if normalizedJobType == Config.JobTypes.Scavenge and Config.GetScavengeLoadout then
+        scavengeLoadout = Config.GetScavengeLoadout(worker)
+        worker.scavengeTier = scavengeLoadout.tier or 0
+        worker.scavengeTierLabel = Config.GetScavengeTierLabel and Config.GetScavengeTierLabel(scavengeLoadout.tier) or nil
+        worker.scavengePoolRolls = scavengeLoadout.poolRolls or 0
+        worker.scavengeFailureWeight = scavengeLoadout.failureWeight or 0
+        worker.scavengeSearchSpeedMultiplier = scavengeLoadout.searchSpeedMultiplier or 1
+        worker.scavengeCapabilities = scavengeLoadout.capabilityList or {}
+        speedMultiplier = speedMultiplier * (tonumber(scavengeLoadout.searchSpeedMultiplier) or 1)
+    else
+        worker.scavengeTier = nil
+        worker.scavengeTierLabel = nil
+        worker.scavengePoolRolls = nil
+        worker.scavengeFailureWeight = nil
+        worker.scavengeSearchSpeedMultiplier = nil
+        worker.scavengeCapabilities = nil
+    end
 
     worker.siteState = worker.siteState or "Deferred"
     worker.toolState = toolsReady and "Ready" or "Missing"
@@ -299,7 +319,7 @@ function Sim.ProcessWorker(worker, currentHour)
         worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
         while worker.workProgress >= (profile.cycleHours or 24) do
             worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
-            for _, entry in ipairs(Output.GenerateForJob(profile)) do
+            for _, entry in ipairs(Output.GenerateForJob(profile, worker)) do
                 Registry.AddOutputEntry(worker, entry)
                 logOutputEntry(worker, entry, currentHour)
             end

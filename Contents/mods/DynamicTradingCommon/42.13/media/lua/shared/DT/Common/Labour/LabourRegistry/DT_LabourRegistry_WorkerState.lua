@@ -149,6 +149,7 @@ function Registry.RecalculateWorker(worker)
             if not entry or not entry.fullType then
                 table.remove(worker.toolLedger, i)
             else
+                entry.tags = (Config.GetItemCombinedTags and Config.GetItemCombinedTags(entry.fullType)) or entry.tags or {}
                 for _, tag in ipairs(entry.tags or {}) do
                     tags[tag] = true
                 end

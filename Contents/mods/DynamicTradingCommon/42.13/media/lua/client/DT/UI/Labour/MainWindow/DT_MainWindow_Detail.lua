@@ -4,6 +4,42 @@ DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 local Internal = DT_MainWindow.Internal
 local MainWindowLayout = Internal.MainWindowLayout or {}
 
+local SCAVENGE_CAPABILITY_LABELS = {
+    ["Scavenge.Access.LockedHome"] = "Locked homes",
+    ["Scavenge.Access.ElectronicStore"] = "Electronics stores",
+    ["Scavenge.Access.HeavyEntry"] = "Secure shutters and vaults",
+    ["Scavenge.Extraction.CarpentryHammer"] = "Carpentry hammer",
+    ["Scavenge.Extraction.CarpentrySaw"] = "Carpentry saw",
+    ["Scavenge.Extraction.Plumbing"] = "Plumbing salvage",
+    ["Scavenge.Extraction.MetalTorch"] = "Metal torch",
+    ["Scavenge.Extraction.MetalMask"] = "Welding mask",
+    ["Scavenge.Haul.Bag"] = "Hauling bag",
+    ["Scavenge.Haul.Bulk"] = "Bulk loose loot",
+    ["Scavenge.Haul.Bundle"] = "Bundle heavy items",
+    ["Scavenge.Utility.Light"] = "Interior lighting",
+    ["Scavenge.Utility.Map"] = "Route map",
+    ["Scavenge.Utility.Pen"] = "Route notes"
+}
+
+local function getScavengeCapabilitySummary(worker)
+    local names = {}
+    local seen = {}
+
+    for _, capability in ipairs(worker and worker.scavengeCapabilities or {}) do
+        local label = SCAVENGE_CAPABILITY_LABELS[capability] or tostring(capability)
+        if not seen[label] then
+            seen[label] = true
+            names[#names + 1] = label
+        end
+    end
+
+    if #names <= 0 then
+        return "Open containers only"
+    end
+
+    return table.concat(names, ", ")
+end
+
 local function buildActivityLogText(worker)
     local entries = worker and worker.activityLog or {}
     if not entries or #entries <= 0 then
@@ -99,7 +135,9 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local profile = (config.GetJobProfile and config.GetJobProfile(worker.jobType)) or {}
     local toolTags = profile.requiredToolTags or {}
     local bonusMultiplier = config.GetJobSpeedMultiplier and config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1
-    local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ") or "None"
+    local normalizedJobType = config.NormalizeJobType and config.NormalizeJobType(worker.jobType) or worker.jobType
+    local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ")
+        or ((normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge)) and "Optional scavenger kit" or "Optional")
     local text = ""
     text = text .. " <RGB:1,1,1> <SIZE:Medium> Overview <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Job Enabled: <RGB:1,1,1> " .. Internal.formatBool(worker.jobEnabled == true) .. " <LINE> "
@@ -113,6 +151,15 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.72,0.72,0.72> Required Tools: <RGB:1,1,1> " .. toolSummary .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Work Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.workX, worker.workY, worker.workZ) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> "
+
+    if normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge) then
+        text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Scavenge Profile <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Tier: <RGB:1,1,1> " .. tostring(worker.scavengeTierLabel or "Tier 0 - Open Containers") .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Loot Rolls: <RGB:1,1,1> " .. tostring(worker.scavengePoolRolls or 0) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Failure Weight: <RGB:1,1,1> " .. tostring(worker.scavengeFailureWeight or 0) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Search Speed: <RGB:1,1,1> x" .. Internal.formatDecimal(worker.scavengeSearchSpeedMultiplier or 1, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Unlocked Pools: <RGB:1,1,1> " .. getScavengeCapabilitySummary(worker) .. " <LINE> "
+    end
 
     self.detailText:setText(text)
     MainWindowLayout.refreshRichTextPanel(self.detailText)

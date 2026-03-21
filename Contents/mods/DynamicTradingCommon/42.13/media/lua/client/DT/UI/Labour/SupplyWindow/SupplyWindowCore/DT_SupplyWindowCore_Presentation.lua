@@ -41,6 +41,11 @@ function Internal.getRequiredToolSummary(worker)
     local profile = config.GetJobProfile and config.GetJobProfile(worker and worker.jobType) or {}
     local requiredTags = profile and profile.requiredToolTags or {}
     if not requiredTags or #requiredTags <= 0 then
+        local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
+        local jobTypes = config.JobTypes or {}
+        if normalizedJob == jobTypes.Scavenge then
+            return "Optional scavenger kit"
+        end
         return "Any labour tool"
     end
     return table.concat(requiredTags, ", ")
@@ -174,4 +179,3 @@ function Internal.getWorkerEntryPresentation(entry, activeTab)
         badgeText = "",
     }
 end
-

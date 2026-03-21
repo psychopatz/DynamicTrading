@@ -44,11 +44,12 @@ Network.Handlers.AssignWorkerToolset = function(player, args)
     local invItem = Internal.getInventoryItemByID(player, args.itemID)
     if not worker or not invItem then return end
 
-    local tags = Config.FindItemTags(invItem:getFullType())
-    if not Config.HasMatchingTag(tags, "Tool") then return end
+    local fullType = invItem:getFullType()
+    local tags = Config.GetItemCombinedTags and Config.GetItemCombinedTags(fullType) or Config.FindItemTags(fullType)
+    if not Config.IsLabourToolFullType or not Config.IsLabourToolFullType(fullType) then return end
 
     Registry.AddToolEntry(worker, {
-        fullType = invItem:getFullType(),
+        fullType = fullType,
         displayName = invItem:getDisplayName(),
         tags = tags
     })

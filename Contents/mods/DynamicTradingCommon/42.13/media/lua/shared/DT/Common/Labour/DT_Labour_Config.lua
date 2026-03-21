@@ -90,7 +90,7 @@ Config.JobProfiles = {
         jobType = Config.JobTypes.Scavenge,
         displayName = "Scavenging",
         siteType = Config.SiteTypes.ScavengeSite,
-        requiredToolTags = { "Tool.General" },
+        requiredToolTags = {},
         cycleHours = 16,
         dailyCaloriesNeed = 2300,
         dailyHydrationNeed = 1900,
@@ -119,6 +119,329 @@ Config.ArchetypeJobBonuses = {
         [Config.JobTypes.Scavenge] = 1.35
     }
 }
+
+Config.ScavengeLootDefaults = {
+    basePoolRolls = 2,
+    maxPoolRolls = 5,
+    darkSearchSpeedMultiplier = 0.5,
+    litSearchSpeedMultiplier = 1.0,
+    tierFailureWeights = {
+        [0] = 7,
+        [1] = 5,
+        [2] = 3,
+        [3] = 1
+    }
+}
+
+Config.ScavengeItemProfiles = {
+    ["Base.Crowbar"] = {
+        tier = 1,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Access.LockedHome" },
+        capabilities = { "Scavenge.Access.LockedHome" }
+    },
+    ["Base.CrowbarForged"] = {
+        tier = 1,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Access.LockedHome" },
+        capabilities = { "Scavenge.Access.LockedHome" }
+    },
+    ["Base.Screwdriver"] = {
+        tier = 1,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Access.LockedHome", "Scavenge.Access.ElectronicStore" },
+        capabilities = { "Scavenge.Access.LockedHome", "Scavenge.Access.ElectronicStore" }
+    },
+    ["Base.Screwdriver_Old"] = {
+        tier = 1,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Access.LockedHome", "Scavenge.Access.ElectronicStore" },
+        capabilities = { "Scavenge.Access.LockedHome", "Scavenge.Access.ElectronicStore" }
+    },
+    ["Base.Screwdriver_Improvised"] = {
+        tier = 1,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Access.LockedHome", "Scavenge.Access.ElectronicStore" },
+        capabilities = { "Scavenge.Access.LockedHome", "Scavenge.Access.ElectronicStore" }
+    },
+    ["Base.Sledgehammer"] = {
+        tier = 3,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Access.HeavyEntry" },
+        capabilities = { "Scavenge.Access.HeavyEntry" }
+    },
+    ["Base.Sledgehammer2"] = {
+        tier = 3,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Access.HeavyEntry" },
+        capabilities = { "Scavenge.Access.HeavyEntry" }
+    },
+    ["Base.SledgehammerForged"] = {
+        tier = 3,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Access.HeavyEntry" },
+        capabilities = { "Scavenge.Access.HeavyEntry" }
+    },
+    ["Base.Hammer"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentryHammer" },
+        capabilities = { "Scavenge.Extraction.CarpentryHammer" }
+    },
+    ["Base.HammerForged"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentryHammer" },
+        capabilities = { "Scavenge.Extraction.CarpentryHammer" }
+    },
+    ["Base.HammerStone"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentryHammer" },
+        capabilities = { "Scavenge.Extraction.CarpentryHammer" }
+    },
+    ["Base.BallPeenHammer"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentryHammer" },
+        capabilities = { "Scavenge.Extraction.CarpentryHammer" }
+    },
+    ["Base.BallPeenHammerForged"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentryHammer" },
+        capabilities = { "Scavenge.Extraction.CarpentryHammer" }
+    },
+    ["Base.ClubHammer"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentryHammer" },
+        capabilities = { "Scavenge.Extraction.CarpentryHammer" }
+    },
+    ["Base.ClubHammerForged"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentryHammer" },
+        capabilities = { "Scavenge.Extraction.CarpentryHammer" }
+    },
+    ["Base.Saw"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentrySaw" },
+        capabilities = { "Scavenge.Extraction.CarpentrySaw" }
+    },
+    ["Base.SmallSaw"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentrySaw" },
+        capabilities = { "Scavenge.Extraction.CarpentrySaw" }
+    },
+    ["Base.GardenSaw"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentrySaw" },
+        capabilities = { "Scavenge.Extraction.CarpentrySaw" }
+    },
+    ["Base.CrudeSaw"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.CarpentrySaw" },
+        capabilities = { "Scavenge.Extraction.CarpentrySaw" }
+    },
+    ["Base.PipeWrench"] = {
+        tier = 2,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.Plumbing" },
+        capabilities = { "Scavenge.Extraction.Plumbing" }
+    },
+    ["Base.BlowTorch"] = {
+        tier = 3,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.MetalTorch" },
+        capabilities = { "Scavenge.Extraction.MetalTorch" }
+    },
+    ["Base.WeldingMask"] = {
+        tier = 3,
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Extraction.MetalMask" },
+        capabilities = { "Scavenge.Extraction.MetalMask" }
+    },
+    ["Base.EmptySandbag"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Haul.Bulk" },
+        capabilities = { "Scavenge.Haul.Bulk" }
+    },
+    ["Base.Garbagebag"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Haul.Bulk" },
+        capabilities = { "Scavenge.Haul.Bulk" }
+    },
+    ["Base.SheetRope"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Haul.Bundle" },
+        capabilities = { "Scavenge.Haul.Bundle" }
+    },
+    ["Base.SheetRopeBundle"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Haul.Bundle" },
+        capabilities = { "Scavenge.Haul.Bundle" }
+    },
+    ["Base.Pen"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Pen" },
+        capabilities = { "Scavenge.Utility.Pen" },
+        routePlanning = 1
+    },
+    ["Base.BluePen"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Pen" },
+        capabilities = { "Scavenge.Utility.Pen" },
+        routePlanning = 1
+    },
+    ["Base.GreenPen"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Pen" },
+        capabilities = { "Scavenge.Utility.Pen" },
+        routePlanning = 1
+    },
+    ["Base.RedPen"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Pen" },
+        capabilities = { "Scavenge.Utility.Pen" },
+        routePlanning = 1
+    },
+    ["Base.PenFancy"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Pen" },
+        capabilities = { "Scavenge.Utility.Pen" },
+        routePlanning = 1
+    },
+    ["Base.PenMultiColor"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Pen" },
+        capabilities = { "Scavenge.Utility.Pen" },
+        routePlanning = 1
+    },
+    ["Base.PenSpiffo"] = {
+        labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Pen" },
+        capabilities = { "Scavenge.Utility.Pen" },
+        routePlanning = 1
+    }
+}
+
+Config.ScavengeLootRules = {
+    { id = "open_food", tags = { "Food" }, weight = 18, minQty = 1, maxQty = 2 },
+    { id = "open_clothing", tags = { "Clothing" }, weight = 10, minQty = 1, maxQty = 1 },
+    { id = "open_media", tags = { "Literature" }, weight = 4, minQty = 1, maxQty = 1 },
+    { id = "waste_scrap", tags = { "Quality.Waste" }, weight = 16, minQty = 1, maxQty = 2, bulkBonus = 1, bundleBonus = 1 },
+    { id = "general_material", tags = { "Resource.Material.General" }, weight = 9, minQty = 1, maxQty = 2, bulkBonus = 1, bundleBonus = 1 },
+    {
+        id = "locked_house_tools",
+        tags = { "Resource.Material.Hardware" },
+        weight = 8,
+        minTier = 1,
+        minQty = 1,
+        maxQty = 2,
+        bulkBonus = 1,
+        requiresAnyCapabilities = { "Scavenge.Access.LockedHome", "Scavenge.Access.ElectronicStore" }
+    },
+    {
+        id = "electronics_components",
+        tags = { "Electronics.Gadget" },
+        weight = 7,
+        minTier = 1,
+        minQty = 1,
+        maxQty = 2,
+        requiresAnyCapabilities = { "Scavenge.Access.ElectronicStore" }
+    },
+    {
+        id = "carpentry_strip",
+        tags = { "Resource.Material.Hardware" },
+        weight = 11,
+        minTier = 2,
+        minQty = 2,
+        maxQty = 4,
+        bulkBonus = 1,
+        requiresAllCapabilities = { "Scavenge.Extraction.CarpentryHammer", "Scavenge.Extraction.CarpentrySaw" }
+    },
+    {
+        id = "plumbing_parts",
+        tags = { "Resource.Parts" },
+        weight = 7,
+        minTier = 2,
+        minQty = 1,
+        maxQty = 2,
+        requiresAnyCapabilities = { "Scavenge.Extraction.Plumbing" }
+    },
+    {
+        id = "metal_salvage",
+        tags = { "Resource.Material.Metal" },
+        weight = 10,
+        minTier = 3,
+        minQty = 2,
+        maxQty = 4,
+        bulkBonus = 1,
+        bundleBonus = 1,
+        requiresAllCapabilities = { "Scavenge.Extraction.MetalTorch", "Scavenge.Extraction.MetalMask" }
+    },
+    {
+        id = "industrial_hardware",
+        tags = { "Resource.Material.Hardware" },
+        weight = 8,
+        minTier = 3,
+        minQty = 2,
+        maxQty = 3,
+        bulkBonus = 1,
+        requiresAnyCapabilities = { "Scavenge.Extraction.MetalTorch", "Scavenge.Access.HeavyEntry" }
+    },
+    {
+        id = "medical_cache",
+        tags = { "Medical" },
+        weight = 6,
+        minTier = 3,
+        minQty = 1,
+        maxQty = 2,
+        requiresAnyCapabilities = { "Scavenge.Access.HeavyEntry", "Scavenge.Access.ElectronicStore" }
+    },
+    {
+        id = "firearms_cache",
+        tags = { "Weapon.Ranged.Firearm" },
+        weight = 3,
+        minTier = 3,
+        minQty = 1,
+        maxQty = 1,
+        requiresAnyCapabilities = { "Scavenge.Access.HeavyEntry" }
+    },
+    {
+        id = "ammo_cache",
+        tags = { "Weapon.Ranged.Ammo" },
+        weight = 5,
+        minTier = 3,
+        minQty = 1,
+        maxQty = 2,
+        requiresAnyCapabilities = { "Scavenge.Access.HeavyEntry" }
+    }
+}
+
+local function appendUniqueValues(target, values)
+    target = type(target) == "table" and target or {}
+    local seen = {}
+    for _, existing in ipairs(target) do
+        seen[existing] = true
+    end
+
+    for _, value in ipairs(values or {}) do
+        if value and not seen[value] then
+            target[#target + 1] = value
+            seen[value] = true
+        end
+    end
+
+    return target
+end
+
+local function cloneProfileTable(source)
+    local copy = {}
+    for key, value in pairs(source or {}) do
+        if type(value) == "table" then
+            local child = {}
+            for index, childValue in ipairs(value) do
+                child[index] = childValue
+            end
+            copy[key] = child
+        else
+            copy[key] = value
+        end
+    end
+    return copy
+end
+
+local function extendScavengeProfile(profile, values)
+    if not values then
+        return profile
+    end
+
+    profile.labourTags = appendUniqueValues(profile.labourTags, values.labourTags)
+    profile.capabilities = appendUniqueValues(profile.capabilities, values.capabilities)
+    profile.tier = math.max(tonumber(profile.tier) or 0, tonumber(values.tier) or 0)
+    profile.haulBonus = math.max(tonumber(profile.haulBonus) or 0, tonumber(values.haulBonus) or 0)
+    profile.routePlanning = math.max(tonumber(profile.routePlanning) or 0, tonumber(values.routePlanning) or 0)
+
+    local speed = tonumber(values.searchSpeedMultiplier)
+    if speed and speed > 0 then
+        profile.searchSpeedMultiplier = math.max(tonumber(profile.searchSpeedMultiplier) or 0, speed)
+    end
+
+    return profile
+end
 
 function Config.NormalizeArchetypeID(archetypeID)
     local value = tostring(archetypeID or "")
@@ -388,6 +711,170 @@ function Config.FindItemTags(fullType)
     return {}
 end
 
+function Config.GetScavengeItemProfile(fullType)
+    if not fullType or fullType == "" then
+        return nil
+    end
+
+    local profile = cloneProfileTable(Config.ScavengeItemProfiles[fullType])
+    local tags = Config.FindItemTags(fullType)
+    local defaults = Config.ScavengeLootDefaults or {}
+
+    if Config.HasMatchingTag(tags, "Container.Bag.Backpack") then
+        extendScavengeProfile(profile, {
+            labourTags = { "Labour.Tool.Scavenge", "Scavenge.Haul.Bag" },
+            capabilities = { "Scavenge.Haul.Bag" },
+            haulBonus = Config.HasMatchingTag(tags, "Container.WeightReduction.High") and 2 or 1
+        })
+    elseif Config.HasMatchingTag(tags, "Container.Bag.Duffel") then
+        extendScavengeProfile(profile, {
+            labourTags = { "Labour.Tool.Scavenge", "Scavenge.Haul.Bag" },
+            capabilities = { "Scavenge.Haul.Bag" },
+            haulBonus = 1
+        })
+    end
+
+    if Config.HasMatchingTag(tags, "Electronics.Light") or Config.HasMatchingTag(tags, "Electronics.LightSource") then
+        extendScavengeProfile(profile, {
+            labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Light" },
+            capabilities = { "Scavenge.Utility.Light" },
+            searchSpeedMultiplier = defaults.litSearchSpeedMultiplier or 1.0
+        })
+    end
+
+    if Config.HasMatchingTag(tags, "Literature.Media") then
+        extendScavengeProfile(profile, {
+            labourTags = { "Labour.Tool.Scavenge", "Scavenge.Utility.Map" },
+            capabilities = { "Scavenge.Utility.Map" },
+            routePlanning = 1
+        })
+    end
+
+    if next(profile) == nil then
+        return nil
+    end
+
+    return profile
+end
+
+function Config.GetItemCombinedTags(fullType)
+    local tags = appendUniqueValues({}, Config.FindItemTags(fullType))
+    local scavengeProfile = Config.GetScavengeItemProfile(fullType)
+    if scavengeProfile and scavengeProfile.labourTags then
+        appendUniqueValues(tags, scavengeProfile.labourTags)
+    end
+    return tags
+end
+
+function Config.IsLabourToolFullType(fullType)
+    if not fullType or fullType == "" then
+        return false
+    end
+
+    local tags = Config.FindItemTags(fullType)
+    if Config.HasMatchingTag(tags, "Tool") then
+        return true
+    end
+
+    return Config.GetScavengeItemProfile(fullType) ~= nil
+end
+
+function Config.GetScavengeTierLabel(tier)
+    local safeTier = math.max(0, math.floor(tonumber(tier) or 0))
+    if safeTier <= 0 then
+        return "Tier 0 - Open Containers"
+    end
+    if safeTier == 1 then
+        return "Tier 1 - Locked Entry"
+    end
+    if safeTier == 2 then
+        return "Tier 2 - Salvage and Strip"
+    end
+    return "Tier 3 - Secure and Industrial"
+end
+
+function Config.GetScavengeLoadout(worker)
+    local defaults = Config.ScavengeLootDefaults or {}
+    local loadout = {
+        tier = 0,
+        capabilityList = {},
+        capabilityMap = {},
+        searchSpeedMultiplier = defaults.darkSearchSpeedMultiplier or 0.5,
+        poolRolls = defaults.basePoolRolls or 2,
+        haulBonus = 0,
+        routePlanning = 0,
+        failureWeight = (defaults.tierFailureWeights and defaults.tierFailureWeights[0]) or 7,
+        hasCarpentryKit = false,
+        hasMetalKit = false,
+        hasRoutePlan = false,
+        bulkLoot = false,
+        bundleLoot = false
+    }
+
+    local capabilitySeen = {}
+    for _, entry in ipairs(worker and worker.toolLedger or {}) do
+        local fullType = entry and entry.fullType or nil
+        local profile = Config.GetScavengeItemProfile(fullType)
+        if profile then
+            loadout.tier = math.max(loadout.tier, tonumber(profile.tier) or 0)
+            loadout.haulBonus = loadout.haulBonus + math.max(0, tonumber(profile.haulBonus) or 0)
+            loadout.routePlanning = loadout.routePlanning + math.max(0, tonumber(profile.routePlanning) or 0)
+
+            local speed = tonumber(profile.searchSpeedMultiplier)
+            if speed and speed > 0 then
+                loadout.searchSpeedMultiplier = math.max(loadout.searchSpeedMultiplier, speed)
+            end
+
+            for _, capability in ipairs(profile.capabilities or {}) do
+                if not capabilitySeen[capability] then
+                    capabilitySeen[capability] = true
+                    loadout.capabilityMap[capability] = true
+                    loadout.capabilityList[#loadout.capabilityList + 1] = capability
+                end
+            end
+        end
+    end
+
+    loadout.hasCarpentryKit = loadout.capabilityMap["Scavenge.Extraction.CarpentryHammer"] == true
+        and loadout.capabilityMap["Scavenge.Extraction.CarpentrySaw"] == true
+    loadout.hasMetalKit = loadout.capabilityMap["Scavenge.Extraction.MetalTorch"] == true
+        and loadout.capabilityMap["Scavenge.Extraction.MetalMask"] == true
+    loadout.hasRoutePlan = loadout.capabilityMap["Scavenge.Utility.Map"] == true
+        and loadout.capabilityMap["Scavenge.Utility.Pen"] == true
+    loadout.bulkLoot = loadout.capabilityMap["Scavenge.Haul.Bulk"] == true
+    loadout.bundleLoot = loadout.capabilityMap["Scavenge.Haul.Bundle"] == true
+
+    if loadout.capabilityMap["Scavenge.Access.LockedHome"] or loadout.capabilityMap["Scavenge.Access.ElectronicStore"] then
+        loadout.tier = math.max(loadout.tier, 1)
+    end
+    if loadout.hasCarpentryKit or loadout.capabilityMap["Scavenge.Extraction.Plumbing"] then
+        loadout.tier = math.max(loadout.tier, 2)
+    end
+    if loadout.hasMetalKit or loadout.capabilityMap["Scavenge.Access.HeavyEntry"] then
+        loadout.tier = math.max(loadout.tier, 3)
+    end
+
+    loadout.poolRolls = loadout.poolRolls + loadout.haulBonus
+    if loadout.bulkLoot then
+        loadout.poolRolls = loadout.poolRolls + 1
+    end
+    if loadout.hasRoutePlan then
+        loadout.poolRolls = loadout.poolRolls + 1
+    end
+    loadout.poolRolls = math.max(1, math.min(defaults.maxPoolRolls or 5, loadout.poolRolls))
+
+    local failureWeights = defaults.tierFailureWeights or {}
+    loadout.failureWeight = failureWeights[loadout.tier] or failureWeights[0] or 7
+    if loadout.capabilityMap["Scavenge.Utility.Light"] then
+        loadout.failureWeight = math.max(0, loadout.failureWeight - 1)
+    end
+    if loadout.hasRoutePlan then
+        loadout.failureWeight = math.max(0, loadout.failureWeight - 1)
+    end
+
+    return loadout
+end
+
 function Config.IsFoodOrDrinkItem(itemObj)
     if not itemObj then return false end
     local fullType = itemObj.getFullType and itemObj:getFullType() or nil
@@ -400,8 +887,7 @@ end
 function Config.IsToolItem(itemObj)
     if not itemObj then return false end
     local fullType = itemObj.getFullType and itemObj:getFullType() or nil
-    local tags = Config.FindItemTags(fullType)
-    return Config.HasMatchingTag(tags, "Tool")
+    return Config.IsLabourToolFullType(fullType)
 end
 
 function Config.GetPlayerObject()

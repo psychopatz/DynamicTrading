@@ -34,7 +34,9 @@ end
 function Internal.buildInventoryEntry(invItem)
     local calories, hydration = Internal.getCachedNutritionPreview(invItem)
     local fullType = invItem:getFullType()
-    local tags = Internal.Config.FindItemTags and Internal.Config.FindItemTags(fullType) or {}
+    local tags = Internal.Config.GetItemCombinedTags and Internal.Config.GetItemCombinedTags(fullType)
+        or (Internal.Config.FindItemTags and Internal.Config.FindItemTags(fullType))
+        or {}
     return {
         kind = "player",
         invItem = invItem,
@@ -44,7 +46,7 @@ function Internal.buildInventoryEntry(invItem)
         calories = calories,
         hydration = hydration,
         canDeposit = calories > 0 or hydration > 0,
-        canAssignTool = Internal.Config.HasMatchingTag and Internal.Config.HasMatchingTag(tags, "Tool") or false,
+        canAssignTool = Internal.Config.IsLabourToolFullType and Internal.Config.IsLabourToolFullType(fullType) or false,
         tags = tags,
         texture = invItem.getTex and invItem:getTex() or nil,
     }
@@ -73,12 +75,17 @@ function Internal.buildWorkerToolEntry(entry, index)
         return nil
     end
 
+    local tags = entry.tags or {}
+    if Internal.Config.GetItemCombinedTags and entry.fullType then
+        tags = Internal.Config.GetItemCombinedTags(entry.fullType)
+    end
+
     return {
         kind = "tool",
         ledgerIndex = index,
         displayName = entry.displayName,
         fullType = entry.fullType,
-        tags = entry.tags or {},
+        tags = tags,
         texture = entry.texture or Internal.getTextureForFullType(entry.fullType),
         pending = entry.pending == true,
     }
@@ -130,4 +137,3 @@ function Internal.buildWorkerToolEntryFromPlayerEntry(entry)
         pending = true,
     }
 end
-
