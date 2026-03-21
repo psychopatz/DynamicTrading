@@ -40,6 +40,47 @@ local function getScavengeCapabilitySummary(worker)
     return table.concat(names, ", ")
 end
 
+local function getScavengePresenceDetailLabel(worker)
+    local config = Internal.Config or {}
+    local presenceState = tostring(worker and worker.presenceState or (config.PresenceStates and config.PresenceStates.Home) or "Home")
+    local states = config.PresenceStates or {}
+    if presenceState == states.AwayToSite then
+        return "Away To Site"
+    end
+    if presenceState == states.AwayToHome then
+        return "Away To Home"
+    end
+    if presenceState == states.Scavenging then
+        return "Scavenging"
+    end
+    return "Home"
+end
+
+local function getReturnReasonLabel(worker)
+    local config = Internal.Config or {}
+    local reason = tostring(worker and worker.returnReason or "")
+    local reasons = config.ReturnReasons or {}
+    if reason == reasons.FullHaul then
+        return "Backpack Full"
+    end
+    if reason == reasons.LowFood then
+        return "Low Food"
+    end
+    if reason == reasons.LowDrink then
+        return "Low Drink"
+    end
+    if reason == reasons.MissingTool then
+        return "Missing Tool"
+    end
+    if reason == reasons.MissingSite then
+        return "Missing Site"
+    end
+    if reason == reasons.Manual then
+        return "Manual Recall"
+    end
+    return "None"
+end
+
 local function buildActivityLogText(worker)
     local entries = worker and worker.activityLog or {}
     if not entries or #entries <= 0 then
@@ -91,6 +132,10 @@ function DT_MainWindow:populateWorkerList(workers)
 end
 
 function DT_MainWindow:updateWorkerDetail(worker)
+    local previousWorkerID = self.selectedWorker and self.selectedWorker.workerID or nil
+    local nextWorkerID = worker and worker.workerID or nil
+    local shouldResetScroll = previousWorkerID ~= nextWorkerID
+
     self.selectedWorker = worker
 
     if self.reservePanel and self.reservePanel.setWorker then
@@ -107,26 +152,23 @@ function DT_MainWindow:updateWorkerDetail(worker)
 
     if not worker then
         self.detailText:setText(" <RGB:0.6,0.6,0.6> No worker selected. Recruit one from ConversationUI or pick an existing labour worker from the list. ")
-        MainWindowLayout.refreshRichTextPanel(self.detailText)
+        MainWindowLayout.refreshRichTextPanel(self.detailText, 0)
         self.activityLogText:setText(" <RGB:0.62,0.62,0.62> No recent worker activity yet. ")
-        MainWindowLayout.refreshRichTextPanel(self.activityLogText)
+        MainWindowLayout.refreshRichTextPanel(self.activityLogText, 0)
         if self.applyDynamicLayout then
             self:applyDynamicLayout()
         end
-        if self.detailText.vscroll then
-            self.detailText.vscroll:setHeight(self.detailText:getHeight())
-        end
-        if self.detailText.setYScroll then
-            self.detailText:setYScroll(0)
-        end
-        if self.activityLogText.vscroll then
-            self.activityLogText.vscroll:setHeight(self.activityLogText:getHeight())
-        end
-        if self.activityLogText.setYScroll then
-            self.activityLogText:setYScroll(0)
-        end
         if self.btnToggleJob then
             self.btnToggleJob:setTitle("Start Job")
+            if MainWindowLayout.applyToggleButtonStyle then
+                MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
+            end
+        end
+        if self.btnCycleJob then
+            self.btnCycleJob:setEnable(false)
+        end
+        if self.btnManageSupplies then
+            self.btnManageSupplies:setEnable(false)
         end
         return
     end
@@ -136,6 +178,8 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local toolTags = profile.requiredToolTags or {}
     local bonusMultiplier = config.GetJobSpeedMultiplier and config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1
     local normalizedJobType = config.NormalizeJobType and config.NormalizeJobType(worker.jobType) or worker.jobType
+    local stateLabel = tostring(worker.state or "")
+    local deadState = tostring((config.States or {}).Dead or "Dead")
     local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ")
         or ((normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge)) and "Optional scavenger kit" or "Optional")
     local text = ""
@@ -144,8 +188,18 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.72,0.72,0.72> Specialist Bonus: <RGB:1,1,1> x" .. Internal.formatDecimal(bonusMultiplier, 2) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Stored Money: <RGB:1,1,1> $" .. Internal.formatReserveValue(worker.moneyStored) .. " <LINE> <LINE> "
 
+    if stateLabel == deadState and tostring(worker.deathCause or "") ~= "" then
+        text = text .. " <RGB:0.88,0.52,0.52> Cause Of Death: <RGB:1,1,1> " .. tostring(worker.deathCause) .. " <LINE> <LINE> "
+    end
+
     text = text .. " <RGB:1,1,1> <SIZE:Medium> Work Status <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Current Job: <RGB:1,1,1> " .. Internal.getJobDisplayName(worker, profile) .. " <LINE> "
+    if normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge) then
+        text = text .. " <RGB:0.72,0.72,0.72> Location State: <RGB:1,1,1> " .. getScavengePresenceDetailLabel(worker) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Travel ETA: <RGB:1,1,1> " .. Internal.formatDecimal(worker.travelHoursRemaining or 0, 2) .. "h <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Return Reason: <RGB:1,1,1> " .. getReturnReasonLabel(worker) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Home Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.homeX, worker.homeY, worker.homeZ) .. " <LINE> "
+    end
     text = text .. " <RGB:0.72,0.72,0.72> Site State: <RGB:1,1,1> " .. tostring(worker.siteState or "Deferred") .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Tool State: <RGB:1,1,1> " .. tostring(worker.toolState or "Missing") .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Required Tools: <RGB:1,1,1> " .. toolSummary .. " <LINE> "
@@ -161,43 +215,65 @@ function DT_MainWindow:updateWorkerDetail(worker)
         text = text .. " <RGB:0.72,0.72,0.72> Loot Rolls: <RGB:1,1,1> " .. tostring(worker.scavengePoolRolls or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Failure Weight: <RGB:1,1,1> " .. tostring(worker.scavengeFailureWeight or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Search Speed: <RGB:1,1,1> x" .. Internal.formatDecimal(worker.scavengeSearchSpeedMultiplier or 1, 2) .. " <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Carry Load: <RGB:1,1,1> "
-            .. Internal.formatDecimal(worker.haulEffectiveWeight or 0, 2)
+        text = text .. " <RGB:0.72,0.72,0.72> Carry Load (Raw): <RGB:1,1,1> "
+            .. Internal.formatDecimal(worker.haulRawWeight or 0, 2)
             .. " / "
             .. Internal.formatDecimal(worker.maxCarryWeight or 0, 2)
             .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Base Carry Limit: <RGB:1,1,1> " .. Internal.formatDecimal(worker.baseCarryWeight or worker.maxCarryWeight or 0, 2) .. " <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Raw Haul Weight: <RGB:1,1,1> " .. Internal.formatDecimal(worker.haulRawWeight or 0, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Effective Burden: <RGB:1,1,1> "
+            .. Internal.formatDecimal(worker.haulEffectiveWeight or 0, 2)
+            .. " / "
+            .. Internal.formatDecimal(worker.effectiveCarryLimit or worker.baseCarryWeight or 0, 2)
+            .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Raw Carry Allowance: <RGB:1,1,1> " .. Internal.formatDecimal(worker.rawCarryAllowance or worker.maxCarryWeight or 0, 2) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Carry Containers: <RGB:1,1,1> " .. tostring(worker.carryContainerCount or 0) .. " <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Dump Trips: <RGB:1,1,1> " .. tostring(worker.dumpTrips or 0) .. " <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Dump Cooldown: <RGB:1,1,1> " .. Internal.formatDecimal(worker.dumpCooldownHours or 0, 2) .. "h <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Stored Output Weight: <RGB:1,1,1> " .. Internal.formatDecimal(worker.outputWeight or 0, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Completed Runs: <RGB:1,1,1> " .. tostring(worker.dumpTrips or 0) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Stored Haul Weight: <RGB:1,1,1> " .. Internal.formatDecimal(worker.outputWeight or 0, 2) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Unlocked Pools: <RGB:1,1,1> " .. getScavengeCapabilitySummary(worker) .. " <LINE> "
     end
 
     self.detailText:setText(text)
-    MainWindowLayout.refreshRichTextPanel(self.detailText)
+    MainWindowLayout.refreshRichTextPanel(self.detailText, shouldResetScroll and 0 or nil)
     self.activityLogText:setText(buildActivityLogText(worker))
-    MainWindowLayout.refreshRichTextPanel(self.activityLogText)
+    MainWindowLayout.refreshRichTextPanel(self.activityLogText, shouldResetScroll and 0 or nil)
     if self.applyDynamicLayout then
         self:applyDynamicLayout()
     end
-    if self.detailText.vscroll then
-        self.detailText.vscroll:setHeight(self.detailText:getHeight())
-    end
-    if self.detailText.setYScroll then
-        self.detailText:setYScroll(0)
-    end
-    if self.activityLogText.vscroll then
-        self.activityLogText.vscroll:setHeight(self.activityLogText:getHeight())
-    end
-    if self.activityLogText.setYScroll then
-        self.activityLogText:setYScroll(0)
-    end
 
     if self.btnToggleJob then
-        self.btnToggleJob:setTitle(worker.jobEnabled and "Stop Job" or "Start Job")
+        if stateLabel == deadState then
+            self.btnToggleJob:setTitle("Bury Person")
+            if MainWindowLayout.applyToggleButtonStyle then
+                MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, true)
+            end
+        elseif normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge) then
+            if MainWindowLayout.applyToggleButtonStyle then
+                MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
+            end
+            local presenceState = tostring(worker.presenceState or "")
+            local homeState = tostring((config.PresenceStates or {}).Home or "Home")
+            if worker.jobEnabled and presenceState ~= homeState then
+                self.btnToggleJob:setTitle("Return Home")
+            elseif worker.jobEnabled then
+                self.btnToggleJob:setTitle("Cancel Job")
+            else
+                self.btnToggleJob:setTitle("Start Job")
+            end
+        else
+            if MainWindowLayout.applyToggleButtonStyle then
+                MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
+            end
+            self.btnToggleJob:setTitle(worker.jobEnabled and "Stop Job" or "Start Job")
+        end
+    end
+
+    if self.btnCycleJob then
+        self.btnCycleJob:setEnable(stateLabel ~= deadState)
+    end
+
+    if self.btnManageSupplies then
+        self.btnManageSupplies:setEnable(true)
     end
 end
 

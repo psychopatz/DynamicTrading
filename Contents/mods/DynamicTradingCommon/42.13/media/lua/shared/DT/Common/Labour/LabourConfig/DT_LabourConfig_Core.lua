@@ -30,6 +30,7 @@ Config.WORKER_ACTIVITY_LOG_LIMIT = 40
 Config.NUTRITION_MODEL_VERSION = 3
 Config.DEFAULT_WORKER_CARRY_WEIGHT = 8
 Config.DEFAULT_SCAVENGE_DUMP_HOURS = 1.0
+Config.DEFAULT_SCAVENGE_TRAVEL_HOURS = 2.0
 
 Config.CONTAINER_CAPACITY_BY_TAG = {
     Tiny = 4,
@@ -58,6 +59,22 @@ Config.States = {
     Starving = "Starving",
     Dehydrated = "Dehydrated",
     Dead = "Dead"
+}
+
+Config.PresenceStates = {
+    Home = "Home",
+    AwayToSite = "AwayToSite",
+    Scavenging = "Scavenging",
+    AwayToHome = "AwayToHome"
+}
+
+Config.ReturnReasons = {
+    Manual = "ManualRecall",
+    FullHaul = "FullHaul",
+    LowFood = "LowFood",
+    LowDrink = "LowDrink",
+    MissingTool = "MissingTool",
+    MissingSite = "MissingSite"
 }
 
 Config.SiteTypes = {

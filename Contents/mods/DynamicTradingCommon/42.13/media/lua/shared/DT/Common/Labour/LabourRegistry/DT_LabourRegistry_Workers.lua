@@ -27,12 +27,18 @@ function Registry.CreateWorker(ownerUsername, template)
         archetypeID = archetypeID,
         state = template.state or Config.States.Idle,
         assignedSiteID = template.assignedSiteID,
+        homeX = template.homeX,
+        homeY = template.homeY,
+        homeZ = template.homeZ or 0,
         workX = template.workX,
         workY = template.workY,
         workZ = template.workZ or 0,
         radius = template.radius or Config.DEFAULT_SITE_RADIUS,
         toolState = template.toolState or "Missing",
         siteState = template.siteState or "Deferred",
+        presenceState = template.presenceState or Config.PresenceStates.Home,
+        travelHoursRemaining = tonumber(template.travelHoursRemaining) or 0,
+        returnReason = template.returnReason,
         jobEnabled = template.jobEnabled ~= false,
         nutritionModelVersion = tonumber(template.nutritionModelVersion) or Config.NUTRITION_MODEL_VERSION,
         lastSimHour = template.lastSimHour or currentHour,
@@ -56,6 +62,7 @@ function Registry.CreateWorker(ownerUsername, template)
         dumpCooldownHours = tonumber(template.dumpCooldownHours) or 0,
         dumpTrips = tonumber(template.dumpTrips) or 0,
         moneyStored = math.max(0, math.floor(tonumber(template.moneyStored) or 0)),
+        deathCause = template.deathCause,
         statusFlags = Internal.CopyShallow(template.statusFlags),
         activityLog = Internal.CopyShallow(template.activityLog),
         isFemale = template.isFemale,
@@ -132,6 +139,31 @@ function Registry.GetWorkersForOwner(ownerUsername)
     end)
 
     return workers
+end
+
+function Registry.RemoveWorkerForOwner(ownerUsername, workerID)
+    if not workerID then
+        return false
+    end
+
+    local owner = Config.GetOwnerUsername(ownerUsername)
+    local ownerData = Registry.EnsureOwner(owner)
+    local data = Registry.GetData()
+    local worker = data.Workers[workerID]
+    if not worker or worker.ownerUsername ~= owner then
+        return false
+    end
+
+    data.Workers[workerID] = nil
+
+    for index = #ownerData.workerIDs, 1, -1 do
+        if ownerData.workerIDs[index] == workerID then
+            table.remove(ownerData.workerIDs, index)
+        end
+    end
+
+    Registry.Save()
+    return true
 end
 
 return Registry

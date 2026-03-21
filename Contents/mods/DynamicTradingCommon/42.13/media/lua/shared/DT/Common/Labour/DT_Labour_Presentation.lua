@@ -90,7 +90,7 @@ function Presentation.BuildProjectionData(worker)
         lastY = worker.workY,
         lastZ = worker.workZ or 0,
         workCoords = { x = worker.workX, y = worker.workY, z = worker.workZ or 0 },
-        homeCoords = { x = worker.workX, y = worker.workY, z = worker.workZ or 0 },
+        homeCoords = { x = worker.homeX or worker.workX, y = worker.homeY or worker.workY, z = worker.homeZ or worker.workZ or 0 },
         status = "Working",
         state = "Guard",
         tasks = {},
@@ -123,6 +123,7 @@ local function canProjectWorker(worker)
         and Config.IsOwnerOnline(worker.ownerUsername)
         and worker.jobEnabled
         and worker.state == Config.States.Working
+        and worker.presenceState == Config.PresenceStates.Scavenging
         and worker.workX and worker.workY
 end
 

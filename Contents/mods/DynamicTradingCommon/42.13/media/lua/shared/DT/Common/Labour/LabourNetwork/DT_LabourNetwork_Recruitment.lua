@@ -31,6 +31,9 @@ local function createWorkerFromRecruitArgs(owner, args)
         name = args.name,
         isFemale = args.isFemale,
         identitySeed = args.identitySeed,
+        homeX = args.homeX or args.spawnX or args.x,
+        homeY = args.homeY or args.spawnY or args.y,
+        homeZ = args.homeZ or args.spawnZ or args.z or 0,
         sourceNPCID = args.sourceNPCID and tostring(args.sourceNPCID) or nil,
         sourceNPCType = args.sourceNPCType or "ConversationUI"
     })

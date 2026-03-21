@@ -4,6 +4,42 @@ DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 local Internal = DT_MainWindow.Internal
 local MainWindowLayout = Internal.MainWindowLayout or {}
 
+local DEFAULT_ACTION_BUTTON_COLOR = { r = 0, g = 0, b = 0, a = 1 }
+local DEFAULT_ACTION_BUTTON_HOVER_COLOR = { r = 0.18, g = 0.18, b = 0.18, a = 1 }
+local DEFAULT_ACTION_BUTTON_BORDER = { r = 1, g = 1, b = 1, a = 0.1 }
+
+function MainWindowLayout.applyToggleButtonStyle(button, isDanger)
+    if not button then
+        return
+    end
+
+    if isDanger then
+        button.backgroundColor = { r = 0.45, g = 0.08, b = 0.08, a = 1 }
+        button.backgroundColorMouseOver = { r = 0.62, g = 0.12, b = 0.12, a = 1 }
+        button.borderColor = { r = 1, g = 0.35, b = 0.35, a = 0.35 }
+        return
+    end
+
+    button.backgroundColor = {
+        r = DEFAULT_ACTION_BUTTON_COLOR.r,
+        g = DEFAULT_ACTION_BUTTON_COLOR.g,
+        b = DEFAULT_ACTION_BUTTON_COLOR.b,
+        a = DEFAULT_ACTION_BUTTON_COLOR.a
+    }
+    button.backgroundColorMouseOver = {
+        r = DEFAULT_ACTION_BUTTON_HOVER_COLOR.r,
+        g = DEFAULT_ACTION_BUTTON_HOVER_COLOR.g,
+        b = DEFAULT_ACTION_BUTTON_HOVER_COLOR.b,
+        a = DEFAULT_ACTION_BUTTON_HOVER_COLOR.a
+    }
+    button.borderColor = {
+        r = DEFAULT_ACTION_BUTTON_BORDER.r,
+        g = DEFAULT_ACTION_BUTTON_BORDER.g,
+        b = DEFAULT_ACTION_BUTTON_BORDER.b,
+        a = DEFAULT_ACTION_BUTTON_BORDER.a
+    }
+end
+
 function DT_MainWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
@@ -37,31 +73,22 @@ function DT_MainWindow:createChildren()
     self.btnRefresh:initialise()
     self:addChild(self.btnRefresh)
 
-    self.btnCollect = ISButton:new(110, buttonY, 120, 28, "Collect Output", self, self.onCollectOutput)
-    self.btnCollect:initialise()
-    self:addChild(self.btnCollect)
-
-    self.btnToggleJob = ISButton:new(240, buttonY, 100, 28, "Start Job", self, self.onToggleJob)
+    self.btnToggleJob = ISButton:new(110, buttonY, 120, 28, "Start Job", self, self.onToggleJob)
     self.btnToggleJob:initialise()
+    MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
     self:addChild(self.btnToggleJob)
 
-    self.btnCycleJob = ISButton:new(350, buttonY, 100, 28, "Change Job", self, self.onCycleJob)
+    self.btnCycleJob = ISButton:new(240, buttonY, 110, 28, "Change Job", self, self.onCycleJob)
     self.btnCycleJob:initialise()
+    self.btnCycleJob:setEnable(false)
     self:addChild(self.btnCycleJob)
 
-    self.btnAssignHeldTool = ISButton:new(460, buttonY, 140, 28, "Assign Held Tool", self, self.onAssignHeldTool)
-    self.btnAssignHeldTool:initialise()
-    self:addChild(self.btnAssignHeldTool)
-
-    self.btnGiveMoney = ISButton:new(610, buttonY, 110, 28, "Give Money", self, self.onGiveMoney)
-    self.btnGiveMoney:initialise()
-    self:addChild(self.btnGiveMoney)
-
-    self.btnManageSupplies = ISButton:new(730, buttonY, 150, 28, "Manage Supplies", self, self.onManageSupplies)
+    self.btnManageSupplies = ISButton:new(360, buttonY, 150, 28, "Manage Supplies", self, self.onManageSupplies)
     self.btnManageSupplies:initialise()
+    self.btnManageSupplies:setEnable(false)
     self:addChild(self.btnManageSupplies)
 
-    self.btnHelp = ISButton:new(890, buttonY, 80, 28, "Help", self, self.onOpenHelp)
+    self.btnHelp = ISButton:new(520, buttonY, 80, 28, "Help", self, self.onOpenHelp)
     self.btnHelp:initialise()
     self:addChild(self.btnHelp)
 

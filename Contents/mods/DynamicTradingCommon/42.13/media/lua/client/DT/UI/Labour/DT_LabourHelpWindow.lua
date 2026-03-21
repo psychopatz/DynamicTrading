@@ -32,9 +32,13 @@ local function buildHelpText()
         " <RGB:0.78,0.78,0.78> Flashlights improve dark-site search speed. Maps and pens help avoid duplicate pool picks. ",
         "Bags and bulk tools increase how much can be brought back, but they do not make loot magically better. <LINE> <LINE> ",
 
-        " <RGB:1,1,1> <SIZE:Medium> 5. Carry Weight and Dump Trips <LINE> ",
-        " <RGB:0.78,0.78,0.78> Scavengers no longer store infinite haul. Found loot first goes into the worker's carried haul. ",
-        "When effective carry weight reaches the worker's carry limit, they return to base, dump the haul, and then continue later. <LINE> ",
+        " <RGB:1,1,1> <SIZE:Medium> 5. Trip Flow and Carry Weight <LINE> ",
+        " <RGB:0.78,0.78,0.78> Scavengers now run finite trips. They leave ",
+        "<RGB:1,1,1> Home <RGB:0.78,0.78,0.78> go ",
+        "<RGB:1,1,1> Away <RGB:0.78,0.78,0.78> to the site, spend time ",
+        "<RGB:1,1,1> Scavenging <RGB:0.78,0.78,0.78> there, then travel ",
+        "<RGB:1,1,1> Away <RGB:0.78,0.78,0.78> back home to store the haul. <LINE> ",
+        " <RGB:0.78,0.78,0.78> Found loot first goes into the worker's carried haul. When the pack is full, supplies run low, or you call them back, the trip ends and they head home with what they found. <LINE> ",
         " <RGB:0.88,0.88,0.88> Important: <RGB:0.78,0.78,0.78> only the active haul is weight-limited. Provisions and equipment are not counted toward haul weight. <LINE> ",
         " <RGB:0.88,0.88,0.88> Body carry limit: <RGB:0.78,0.78,0.78> controlled by worker archetype and the Labour sandbox carry-weight setting. <LINE> ",
         " <RGB:0.88,0.88,0.88> Container reduction: <RGB:0.78,0.78,0.78> bags apply their capacity and weight reduction before leftover weight hits the body limit. <LINE> <LINE> ",
@@ -43,7 +47,7 @@ local function buildHelpText()
         " <RGB:0.78,0.78,0.78> Pair crowbar plus flashlight for reliable house runs. <LINE> ",
         " <RGB:0.78,0.78,0.78> Use hammer plus saw when you want building materials. <LINE> ",
         " <RGB:0.78,0.78,0.78> Use torch plus welding mask for warehouse and industrial salvage. <LINE> ",
-        " <RGB:0.78,0.78,0.78> Give scavengers backpacks or duffels if you want fewer dump trips. <LINE> ",
+        " <RGB:0.78,0.78,0.78> Give scavengers backpacks or duffels if you want longer runs before they have to come home. <LINE> ",
         " <RGB:0.78,0.78,0.78> If you want all workers to carry more before returning, raise the Labour sandbox carry-weight setting. <LINE> <LINE> ",
 
         " <RGB:1,1,1> UI Reading Tips <LINE> ",
@@ -51,7 +55,7 @@ local function buildHelpText()
         "<RGB:1,1,1> Carry Load <RGB:0.78,0.78,0.78> against ",
         "<RGB:1,1,1> Base Carry Limit <RGB:0.78,0.78,0.78> and ",
         "<RGB:1,1,1> Raw Carry Allowance <RGB:0.78,0.78,0.78> to see how much the worker is benefiting from bags. <LINE> ",
-        " <RGB:0.78,0.78,0.78> In the supply window, the Haul tab header shows current carry weight for scavengers. <LINE> "
+        " <RGB:0.78,0.78,0.78> In the supply window, the Haul tab shows what has already been stored at home and is ready to collect. <LINE> "
     }, "")
 end
 

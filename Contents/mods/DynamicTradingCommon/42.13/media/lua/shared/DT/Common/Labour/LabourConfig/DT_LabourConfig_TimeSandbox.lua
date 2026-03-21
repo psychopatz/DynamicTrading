@@ -38,6 +38,10 @@ function Config.GetDefaultWorkerCarryWeight()
     return math.max(0, Config.GetSandboxNumber("LabourBaseCarryWeight", Config.DEFAULT_WORKER_CARRY_WEIGHT) or Config.DEFAULT_WORKER_CARRY_WEIGHT)
 end
 
+function Config.GetScavengeTravelHours()
+    return math.max(0, Config.GetSandboxNumber("NPCTradingWalkHours", Config.DEFAULT_SCAVENGE_TRAVEL_HOURS) or Config.DEFAULT_SCAVENGE_TRAVEL_HOURS)
+end
+
 function Config.GetEffectiveDailyCaloriesNeed(worker, profile)
     return Config.GetLabourDailyCaloriesUse()
 end

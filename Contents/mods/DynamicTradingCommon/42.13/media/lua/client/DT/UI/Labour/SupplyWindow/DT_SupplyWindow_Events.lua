@@ -19,6 +19,9 @@ local function onServerCommand(module, command, args)
             else
                 DT_SupplyWindow.instance:updateStatus("Supply reserves refreshed for " .. tostring(worker.name or worker.workerID) .. ".")
             end
+        elseif args and args.workerID and args.workerID == DT_SupplyWindow.instance.workerID then
+            DT_SupplyWindow.instance:updateStatus("This worker record was removed.")
+            DT_SupplyWindow.instance:close()
         end
     elseif command == "LabourNotice" then
         if args and args.message then

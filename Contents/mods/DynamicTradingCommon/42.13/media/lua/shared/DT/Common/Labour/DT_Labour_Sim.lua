@@ -315,75 +315,231 @@ local function processNutrition(worker, currentHour, dailyCaloriesNeed, dailyHyd
     return workableHours, hasCalories, hasHydration, hp
 end
 
-local function applyDumpTravel(worker, workableHours)
-    local pendingDumpHours = math.max(0, tonumber(worker and worker.dumpCooldownHours) or 0)
-    if pendingDumpHours <= 0 or workableHours <= 0 then
-        return workableHours, 0
+local function getScavengePresenceState(worker)
+    local presenceState = worker and worker.presenceState or nil
+    local states = Config.PresenceStates or {}
+    if presenceState == states.AwayToSite
+        or presenceState == states.Scavenging
+        or presenceState == states.AwayToHome then
+        return presenceState
     end
-
-    local spentHours = math.min(workableHours, pendingDumpHours)
-    worker.dumpCooldownHours = math.max(0, pendingDumpHours - spentHours)
-    return math.max(0, workableHours - spentHours), spentHours
+    return states.Home
 end
 
-local function queueImmediateDumpTravel(worker, dumpHours, speedMultiplier)
-    local remainingDumpHours = math.max(0, tonumber(dumpHours) or 0)
-    if not worker or remainingDumpHours <= 0 then
-        return 0, 0
-    end
-
-    local safeSpeedMultiplier = math.max(0.001, tonumber(speedMultiplier) or 1)
-    local availableProgress = clampHours(worker.workProgress)
-    local availableHours = availableProgress / safeSpeedMultiplier
-    local spentHours = math.min(availableHours, remainingDumpHours)
-
-    if spentHours > 0 then
-        worker.workProgress = math.max(0, availableProgress - (spentHours * safeSpeedMultiplier))
-        remainingDumpHours = math.max(0, remainingDumpHours - spentHours)
-    end
-
-    if remainingDumpHours > 0 then
-        worker.dumpCooldownHours = math.max(0, tonumber(worker.dumpCooldownHours) or 0) + remainingDumpHours
-    end
-
-    return spentHours, remainingDumpHours
+local function getScavengeTravelHours()
+    return math.max(
+        0,
+        tonumber(Config.GetScavengeTravelHours and Config.GetScavengeTravelHours())
+            or tonumber(Config.DEFAULT_SCAVENGE_TRAVEL_HOURS)
+            or 0
+    )
 end
 
-local function maybeDumpScavengeHaul(worker, currentHour, loadout)
-    if not worker or Config.NormalizeJobType(worker.jobType) ~= Config.JobTypes.Scavenge then
-        return 0
+local function ensureWorkerHome(worker)
+    if not worker then
+        return
+    end
+
+    if worker.homeX == nil or worker.homeY == nil then
+        if worker.workX ~= nil and worker.workY ~= nil then
+            worker.homeX = math.floor(tonumber(worker.workX) or 0)
+            worker.homeY = math.floor(tonumber(worker.workY) or 0)
+            worker.homeZ = math.floor(tonumber(worker.workZ) or 0)
+        end
+    end
+end
+
+local function getAvailableProvisionTotals(worker)
+    local activeCalories, activeHydration = Nutrition.GetOnBodyTotals(worker)
+    return math.max(0, tonumber(activeCalories) or 0) + math.max(0, tonumber(worker and worker.storedCalories) or 0),
+        math.max(0, tonumber(activeHydration) or 0) + math.max(0, tonumber(worker and worker.storedHydration) or 0)
+end
+
+local function getRequiredTravelReserve(worker, profile, multiplier)
+    local factor = math.max(0, tonumber(multiplier) or 1)
+    local travelHours = getScavengeTravelHours()
+    return math.max(0, tonumber(Config.GetEffectiveHourlyCaloriesNeed(worker, profile)) or 0) * travelHours * factor,
+        math.max(0, tonumber(Config.GetEffectiveHourlyHydrationNeed(worker, profile)) or 0) * travelHours * factor
+end
+
+local function getReturnHomeMessage(reason)
+    local reasons = Config.ReturnReasons or {}
+    if reason == reasons.FullHaul then
+        return "Pack is full, heading home to unload."
+    end
+    if reason == reasons.LowFood then
+        return "Running low on food and heading home."
+    end
+    if reason == reasons.LowDrink then
+        return "Running low on water and heading home."
+    end
+    if reason == reasons.MissingTool then
+        return "Missing the right tool and heading home."
+    end
+    if reason == reasons.MissingSite then
+        return "Work site was lost, heading home."
+    end
+    return "Heading home on command."
+end
+
+local function getDeathFlavorText(worker, normalizedJobType, presenceState, hasCalories, hasHydration)
+    local isScavenge = normalizedJobType == Config.JobTypes.Scavenge
+    local away = presenceState == Config.PresenceStates.AwayToSite
+        or presenceState == Config.PresenceStates.Scavenging
+        or presenceState == Config.PresenceStates.AwayToHome
+
+    if not hasCalories and not hasHydration then
+        if isScavenge and away then
+            return "Never made it back from the run. Hunger and thirst finally took them."
+        end
+        return "Succumbed to starvation and dehydration."
+    end
+
+    if not hasHydration then
+        if isScavenge and away then
+            return "Collapsed on the road, dried out and delirious."
+        end
+        return "Collapsed from severe dehydration."
+    end
+
+    if not hasCalories then
+        if isScavenge and away then
+            return "Ran themselves hollow on the job and never made it home."
+        end
+        return "Succumbed to starvation."
+    end
+
+    if isScavenge and away then
+        return "Never made it back from the run. Their injuries finally caught up."
+    end
+
+    return "Succumbed to their injuries."
+end
+
+local function markWorkerDead(worker, currentHour, normalizedJobType, presenceState, hasCalories, hasHydration)
+    if not worker then
+        return
+    end
+
+    local deathCause = tostring(worker.deathCause or "")
+    if deathCause == "" then
+        deathCause = getDeathFlavorText(worker, normalizedJobType, presenceState, hasCalories, hasHydration)
+        worker.deathCause = deathCause
+        appendWorkerLog(worker, deathCause, currentHour, "death")
+    end
+
+    worker.state = Config.States.Dead
+    worker.jobEnabled = false
+    worker.presenceState = Config.PresenceStates.Home
+    worker.travelHoursRemaining = 0
+    worker.returnReason = nil
+end
+
+local function startScavengeOutbound(worker, currentHour)
+    if not worker then
+        return
+    end
+
+    worker.presenceState = Config.PresenceStates.AwayToSite
+    worker.travelHoursRemaining = getScavengeTravelHours()
+    worker.returnReason = nil
+    appendWorkerLog(
+        worker,
+        "Left home and is travelling to " .. getScavengeLocationLabel(worker) .. ".",
+        currentHour,
+        "travel"
+    )
+end
+
+local function beginScavengeReturnHome(worker, currentHour, reason, travelHours)
+    if not worker then
+        return false
+    end
+
+    local presenceState = getScavengePresenceState(worker)
+    if presenceState == Config.PresenceStates.Home or presenceState == Config.PresenceStates.AwayToHome then
+        return false
+    end
+
+    worker.jobEnabled = false
+    worker.presenceState = Config.PresenceStates.AwayToHome
+    worker.travelHoursRemaining = math.max(0, tonumber(travelHours) or getScavengeTravelHours())
+    worker.returnReason = reason or Config.ReturnReasons.Manual
+    appendWorkerLog(worker, getReturnHomeMessage(worker.returnReason), currentHour, "travel")
+    return true
+end
+
+local function completeScavengeReturnHome(worker, currentHour)
+    if not worker then
+        return
+    end
+
+    worker.presenceState = Config.PresenceStates.Home
+    worker.travelHoursRemaining = 0
+    worker.dumpCooldownHours = 0
+
+    local movedStacks, movedCount, movedRawWeight = Registry.DumpCarriedHaul(worker)
+    if movedStacks > 0 then
+        worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0) + 1
+        appendWorkerLog(
+            worker,
+            "Returned home and stowed the haul: "
+                .. tostring(movedCount)
+                .. " items, "
+                .. string.format("%.2f", movedRawWeight)
+                .. " weight.",
+            currentHour,
+            "haul"
+        )
+        return
+    end
+
+    appendWorkerLog(worker, "Returned home.", currentHour, "travel")
+end
+
+local function progressScavengeTravel(worker, currentHour, deltaHours)
+    if not worker or deltaHours <= 0 then
+        return
+    end
+
+    local presenceState = getScavengePresenceState(worker)
+    if presenceState ~= Config.PresenceStates.AwayToSite and presenceState ~= Config.PresenceStates.AwayToHome then
+        return
+    end
+
+    worker.travelHoursRemaining = math.max(0, clampHours(worker.travelHoursRemaining) - deltaHours)
+    if worker.travelHoursRemaining > 0 then
+        return
+    end
+
+    if presenceState == Config.PresenceStates.AwayToSite then
+        worker.presenceState = Config.PresenceStates.Scavenging
+        appendWorkerLog(
+            worker,
+            "Arrived at " .. getScavengeLocationLabel(worker) .. " and started scavenging.",
+            currentHour,
+            "travel"
+        )
+        return
+    end
+
+    completeScavengeReturnHome(worker, currentHour)
+end
+
+local function shouldReturnForFullHaul(worker, loadout)
+    if not worker then
+        return false
     end
 
     local haulMetrics = Registry.GetHaulMetrics and Registry.GetHaulMetrics(worker) or nil
-    local maxCarryWeight = tonumber(loadout and loadout.maxCarryWeight)
-        or tonumber(worker.maxCarryWeight)
+    local effectiveCarryLimit = tonumber(loadout and loadout.effectiveCarryLimit)
+        or tonumber((haulMetrics and haulMetrics.effectiveCarryLimit))
+        or tonumber(worker.effectiveCarryLimit)
         or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
         or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
         or tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT)
         or 8
-    if not haulMetrics or (tonumber(haulMetrics.effectiveWeight) or 0) < maxCarryWeight then
-        return 0
-    end
-
-    local movedStacks, movedCount, movedRawWeight = Registry.DumpCarriedHaul(worker)
-    if movedStacks <= 0 then
-        return 0
-    end
-
-    worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0) + 1
-    local dumpHours = math.max(0, tonumber(Config.DEFAULT_SCAVENGE_DUMP_HOURS) or 1)
-
-    appendWorkerLog(
-        worker,
-        "Returned to base and unpacked the haul: "
-            .. tostring(movedCount)
-            .. " items, "
-            .. string.format("%.2f", movedRawWeight)
-            .. " weight.",
-        currentHour,
-        "haul"
-    )
-    return dumpHours
+    return haulMetrics ~= nil and (tonumber(haulMetrics.effectiveWeight) or 0) >= effectiveCarryLimit
 end
 
 function Sim.ProcessWorker(worker, currentHour)
@@ -429,28 +585,23 @@ function Sim.ProcessWorker(worker, currentHour)
         worker.scavengeCapabilities = nil
     end
 
-    if normalizedJobType == Config.JobTypes.Scavenge and worker.jobEnabled == false and worker.haulLedger and #worker.haulLedger > 0 then
-        local movedStacks, movedCount, movedRawWeight = Registry.DumpCarriedHaul(worker)
-        if movedStacks > 0 then
-            appendWorkerLog(
-                worker,
-                "Broke off the scavenging run and stowed away: "
-                    .. tostring(movedCount)
-                    .. " items, "
-                    .. string.format("%.2f", movedRawWeight)
-                    .. " weight.",
-                currentHour,
-                "haul"
-            )
-        end
-    end
-
     worker.siteState = worker.siteState or "Deferred"
     worker.toolState = toolsReady and "Ready" or "Missing"
+    if normalizedJobType == Config.JobTypes.Scavenge then
+        ensureWorkerHome(worker)
+        worker.presenceState = getScavengePresenceState(worker)
+        if worker.presenceState == Config.PresenceStates.Home and worker.haulLedger and #worker.haulLedger > 0 then
+            completeScavengeReturnHome(worker, currentHour)
+        end
+        worker.dumpCooldownHours = math.max(0, tonumber(worker.travelHoursRemaining) or 0)
+    end
 
     local dailyCaloriesNeed = Config.GetEffectiveDailyCaloriesNeed(worker, profile)
     local dailyHydrationNeed = Config.GetEffectiveDailyHydrationNeed(worker, profile)
     local canWork = worker.jobEnabled and toolsReady
+    if normalizedJobType == Config.JobTypes.Scavenge then
+        canWork = canWork and worker.presenceState == Config.PresenceStates.Scavenging
+    end
     local workableHours, hasCalories, hasHydration, hp = processNutrition(
         worker,
         currentHour,
@@ -458,16 +609,105 @@ function Sim.ProcessWorker(worker, currentHour)
         dailyHydrationNeed,
         canWork
     )
-    if normalizedJobType == Config.JobTypes.Scavenge then
-        workableHours = select(1, applyDumpTravel(worker, workableHours))
-    end
 
     worker.starvationHours = 0
     worker.dehydrationHours = 0
 
-    if hp <= 0 then
-        worker.state = Config.States.Dead
-        worker.jobEnabled = false
+    if normalizedJobType == Config.JobTypes.Scavenge then
+        local totalCaloriesAvailable, totalHydrationAvailable = getAvailableProvisionTotals(worker)
+        local returnCaloriesThreshold, returnHydrationThreshold = getRequiredTravelReserve(worker, profile, 1)
+        local outboundCaloriesThreshold, outboundHydrationThreshold = getRequiredTravelReserve(worker, profile, 2)
+        local presenceState = getScavengePresenceState(worker)
+
+        if hp <= 0 then
+            markWorkerDead(worker, currentHour, normalizedJobType, presenceState, hasCalories, hasHydration)
+        else
+            if not worker.assignedSiteID and presenceState ~= Config.PresenceStates.Home then
+                beginScavengeReturnHome(worker, currentHour, Config.ReturnReasons.MissingSite, worker.travelHoursRemaining)
+                presenceState = getScavengePresenceState(worker)
+            elseif not toolsReady and presenceState ~= Config.PresenceStates.Home then
+                beginScavengeReturnHome(worker, currentHour, Config.ReturnReasons.MissingTool, worker.travelHoursRemaining)
+                presenceState = getScavengePresenceState(worker)
+            end
+
+            if presenceState ~= Config.PresenceStates.Home and presenceState ~= Config.PresenceStates.AwayToHome then
+                if totalHydrationAvailable < returnHydrationThreshold then
+                    beginScavengeReturnHome(worker, currentHour, Config.ReturnReasons.LowDrink)
+                    presenceState = getScavengePresenceState(worker)
+                elseif totalCaloriesAvailable < returnCaloriesThreshold then
+                    beginScavengeReturnHome(worker, currentHour, Config.ReturnReasons.LowFood)
+                    presenceState = getScavengePresenceState(worker)
+                end
+            end
+
+            if not worker.jobEnabled and presenceState ~= Config.PresenceStates.Home and presenceState ~= Config.PresenceStates.AwayToHome then
+                beginScavengeReturnHome(
+                    worker,
+                    currentHour,
+                    Config.ReturnReasons.Manual,
+                    presenceState == Config.PresenceStates.AwayToSite and worker.travelHoursRemaining or nil
+                )
+                presenceState = getScavengePresenceState(worker)
+            end
+
+            if worker.jobEnabled
+                and presenceState == Config.PresenceStates.Home
+                and worker.assignedSiteID
+                and toolsReady
+                and hasCalories
+                and hasHydration
+                and totalCaloriesAvailable >= outboundCaloriesThreshold
+                and totalHydrationAvailable >= outboundHydrationThreshold then
+                startScavengeOutbound(worker, currentHour)
+                presenceState = getScavengePresenceState(worker)
+            end
+
+            if presenceState == Config.PresenceStates.AwayToSite or presenceState == Config.PresenceStates.AwayToHome then
+                progressScavengeTravel(worker, currentHour, deltaHours)
+                presenceState = getScavengePresenceState(worker)
+            end
+
+            if presenceState == Config.PresenceStates.Scavenging and worker.jobEnabled and toolsReady and hasCalories and hasHydration then
+                worker.state = Config.States.Working
+                worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
+                while worker.workProgress >= (profile.cycleHours or 24) do
+                    worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
+
+                    local scavengeRun = Output.GenerateScavengeRun and Output.GenerateScavengeRun(worker) or { entries = {} }
+                    logScavengeRun(worker, scavengeRun, currentHour)
+                    for _, entry in ipairs(scavengeRun.entries or {}) do
+                        Registry.AddHaulEntry(worker, entry)
+                        logOutputEntry(worker, entry, currentHour)
+                    end
+
+                    if shouldReturnForFullHaul(worker, scavengeLoadout) then
+                        beginScavengeReturnHome(worker, currentHour, Config.ReturnReasons.FullHaul)
+                        break
+                    end
+                end
+            end
+
+            presenceState = getScavengePresenceState(worker)
+            worker.dumpCooldownHours = math.max(0, tonumber(worker.travelHoursRemaining) or 0)
+
+            if hp <= 0 then
+                markWorkerDead(worker, currentHour, normalizedJobType, presenceState, hasCalories, hasHydration)
+            elseif not hasHydration then
+                worker.state = Config.States.Dehydrated
+            elseif not hasCalories then
+                worker.state = Config.States.Starving
+            elseif presenceState == Config.PresenceStates.Scavenging and worker.jobEnabled and toolsReady then
+                worker.state = Config.States.Working
+            elseif presenceState == Config.PresenceStates.Home and worker.jobEnabled and not worker.assignedSiteID then
+                worker.state = Config.States.MissingSite
+            elseif presenceState == Config.PresenceStates.Home and worker.jobEnabled and not toolsReady then
+                worker.state = Config.States.MissingTool
+            else
+                worker.state = Config.States.Idle
+            end
+        end
+    elseif hp <= 0 then
+        markWorkerDead(worker, currentHour, normalizedJobType, Config.PresenceStates.Home, hasCalories, hasHydration)
     elseif not worker.jobEnabled then
         worker.state = Config.States.Idle
     elseif not toolsReady then
@@ -481,22 +721,9 @@ function Sim.ProcessWorker(worker, currentHour)
         worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
         while worker.workProgress >= (profile.cycleHours or 24) do
             worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
-            if normalizedJobType == Config.JobTypes.Scavenge then
-                local scavengeRun = Output.GenerateScavengeRun and Output.GenerateScavengeRun(worker) or { entries = {} }
-                logScavengeRun(worker, scavengeRun, currentHour)
-                for _, entry in ipairs(scavengeRun.entries or {}) do
-                    Registry.AddHaulEntry(worker, entry)
-                    logOutputEntry(worker, entry, currentHour)
-                end
-                local dumpHours = maybeDumpScavengeHaul(worker, currentHour, scavengeLoadout)
-                if dumpHours > 0 then
-                    queueImmediateDumpTravel(worker, dumpHours, speedMultiplier)
-                end
-            else
-                for _, entry in ipairs(Output.GenerateForJob(profile, worker)) do
-                    Registry.AddOutputEntry(worker, entry)
-                    logOutputEntry(worker, entry, currentHour)
-                end
+            for _, entry in ipairs(Output.GenerateForJob(profile, worker)) do
+                Registry.AddOutputEntry(worker, entry)
+                logOutputEntry(worker, entry, currentHour)
             end
         end
     end

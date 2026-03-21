@@ -11,9 +11,50 @@ function Registry.SetWorkerState(worker, state)
     end
 end
 
+function Registry.SetWorkerHome(worker, x, y, z)
+    if not worker then
+        return
+    end
+
+    worker.homeX = math.floor(tonumber(x) or tonumber(worker.homeX) or 0)
+    worker.homeY = math.floor(tonumber(y) or tonumber(worker.homeY) or 0)
+    worker.homeZ = math.floor(tonumber(z) or tonumber(worker.homeZ) or 0)
+end
+
+function Registry.SetWorkerPresenceState(worker, presenceState, travelHoursRemaining)
+    if not worker then
+        return
+    end
+
+    worker.presenceState = presenceState or worker.presenceState or Config.PresenceStates.Home
+    worker.travelHoursRemaining = math.max(0, tonumber(travelHoursRemaining) or 0)
+end
+
+function Registry.SendWorkerHome(worker, reason, travelHours)
+    if not worker then
+        return
+    end
+
+    worker.jobEnabled = false
+    worker.returnReason = reason or worker.returnReason or Config.ReturnReasons.Manual
+    worker.presenceState = Config.PresenceStates.AwayToHome
+    worker.travelHoursRemaining = math.max(0, tonumber(travelHours) or 0)
+end
+
 function Registry.SetWorkerJobEnabled(worker, enabled)
     if worker then
-        worker.jobEnabled = enabled == true
+        local shouldEnable = enabled == true
+        if shouldEnable then
+            worker.jobEnabled = true
+            worker.returnReason = nil
+            if Config.NormalizeJobType(worker.jobType) == Config.JobTypes.Scavenge
+                and (worker.presenceState == nil or worker.presenceState == Config.PresenceStates.Home) then
+                worker.travelHoursRemaining = 0
+            end
+            return
+        end
+
+        worker.jobEnabled = false
     end
 end
 
@@ -22,6 +63,10 @@ function Registry.SetWorkerJobType(worker, jobType)
     worker.jobType = Config.NormalizeJobType(jobType)
     worker.profession = worker.jobType
     worker.workProgress = 0
+    worker.returnReason = nil
+    if worker.presenceState == nil then
+        worker.presenceState = Config.PresenceStates.Home
+    end
 end
 
 return Registry

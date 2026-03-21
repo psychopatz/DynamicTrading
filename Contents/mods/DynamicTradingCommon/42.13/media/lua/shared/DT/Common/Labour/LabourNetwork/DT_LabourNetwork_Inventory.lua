@@ -100,6 +100,28 @@ local function removePlayerMoney(player, amount)
     return true
 end
 
+local function addPlayerMoney(player, amount)
+    local normalized = math.max(0, math.floor(tonumber(amount) or 0))
+    if normalized <= 0 or not player then
+        return false
+    end
+
+    local inventory = player:getInventory()
+    if not inventory then
+        return false
+    end
+
+    local bundles = math.floor(normalized / 100)
+    local loose = normalized % 100
+    if bundles > 0 then
+        addInventoryItem(inventory, "Base.MoneyBundle", bundles)
+    end
+    if loose > 0 then
+        addInventoryItem(inventory, "Base.Money", loose)
+    end
+    return true
+end
+
 local function findInventoryItemRecursive(container, itemID)
     if not container or not itemID then return nil end
     local items = container:getItems()
@@ -128,6 +150,7 @@ end
 Internal.removeInventoryItem = removeInventoryItem
 Internal.addInventoryItem = addInventoryItem
 Internal.removePlayerMoney = removePlayerMoney
+Internal.addPlayerMoney = addPlayerMoney
 Internal.getInventoryItemByID = getInventoryItemByID
 
 return Network

@@ -31,11 +31,19 @@ function DT_SupplyWindow:createChildren()
     self.btnRefresh:initialise()
     self:addChild(self.btnRefresh)
 
-    self.btnDepositSelected = ISButton:new(layout.controlX, layout.centerButtonsY, layout.controlWidth, 32, ">", self, self.onDepositSelected)
+    self.btnWithdrawSelected = ISButton:new(layout.controlX, layout.centerButtonsY, layout.controlWidth, 32, "<", self, self.onWithdrawSelected)
+    self.btnWithdrawSelected:initialise()
+    self:addChild(self.btnWithdrawSelected)
+
+    self.btnWithdrawVisible = ISButton:new(layout.controlX, layout.centerButtonsY + 40, layout.controlWidth, 32, "<<", self, self.onWithdrawVisible)
+    self.btnWithdrawVisible:initialise()
+    self:addChild(self.btnWithdrawVisible)
+
+    self.btnDepositSelected = ISButton:new(layout.controlX, layout.centerButtonsY + 80, layout.controlWidth, 32, ">", self, self.onDepositSelected)
     self.btnDepositSelected:initialise()
     self:addChild(self.btnDepositSelected)
 
-    self.btnDepositVisible = ISButton:new(layout.controlX, layout.centerButtonsY + 40, layout.controlWidth, 32, ">>", self, self.onDepositVisible)
+    self.btnDepositVisible = ISButton:new(layout.controlX, layout.centerButtonsY + 120, layout.controlWidth, 32, ">>", self, self.onDepositVisible)
     self.btnDepositVisible:initialise()
     self:addChild(self.btnDepositVisible)
 

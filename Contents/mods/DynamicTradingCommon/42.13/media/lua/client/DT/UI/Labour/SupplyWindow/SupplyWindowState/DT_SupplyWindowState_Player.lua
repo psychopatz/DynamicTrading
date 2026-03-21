@@ -59,6 +59,19 @@ function DT_SupplyWindow:rebuildPlayerList()
     self.selectedPlayerEntry = nil
 
     local selectedIndex = nil
+    if (self.activeTab or Internal.Tabs.Provisions) == Internal.Tabs.Provisions then
+        local moneyEntry = Internal.buildPlayerMoneyEntry(Internal.getLocalPlayer and Internal.getLocalPlayer() or nil)
+        if Internal.shouldShowPlayerEntry(moneyEntry, self.activeTab or Internal.Tabs.Provisions)
+            and Internal.matchesFilter(moneyEntry, filterText) then
+            self.playerList:addItem(Internal.formatEntryLabel(moneyEntry), moneyEntry)
+            local rowIndex = #self.playerList.items
+            moneyEntry.rowIndex = rowIndex
+            if selectedID and moneyEntry.itemID == selectedID then
+                selectedIndex = rowIndex
+            end
+        end
+    end
+
     for _, entry in ipairs(self.playerEntries or {}) do
         if Internal.shouldShowPlayerEntry(entry, self.activeTab or Internal.Tabs.Provisions)
             and Internal.matchesFilter(entry, filterText) then
@@ -95,4 +108,3 @@ function DT_SupplyWindow:removePlayerEntryByID(itemID)
 
     return nil
 end
-

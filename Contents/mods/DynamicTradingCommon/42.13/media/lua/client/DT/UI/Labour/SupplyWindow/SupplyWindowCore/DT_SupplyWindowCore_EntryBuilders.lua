@@ -52,6 +52,19 @@ function Internal.buildInventoryEntry(invItem)
     }
 end
 
+function Internal.buildPlayerMoneyEntry(player)
+    local wealth = Internal.getPlayerWealth and Internal.getPlayerWealth(player) or 0
+    return {
+        kind = "money",
+        itemID = "player_money",
+        displayName = "Cash On Hand",
+        fullType = "Base.Money",
+        amount = wealth,
+        canDeposit = wealth > 0,
+        texture = Internal.getTextureForFullType("Base.MoneyBundle") or Internal.getTextureForFullType("Base.Money"),
+    }
+end
+
 function Internal.buildWorkerSupplyEntry(entry, index)
     if not entry then
         return nil
@@ -67,6 +80,17 @@ function Internal.buildWorkerSupplyEntry(entry, index)
         hydration = math.max(0, tonumber(entry.hydrationRemaining) or 0),
         texture = entry.texture or Internal.getTextureForFullType(entry.fullType),
         pending = entry.pending == true,
+    }
+end
+
+function Internal.buildWorkerMoneyEntry(worker)
+    return {
+        kind = "money",
+        ledgerIndex = "worker_money",
+        displayName = "Stored Cash",
+        fullType = "Base.Money",
+        amount = math.max(0, math.floor(tonumber(worker and worker.moneyStored) or 0)),
+        texture = Internal.getTextureForFullType("Base.MoneyBundle") or Internal.getTextureForFullType("Base.Money"),
     }
 end
 

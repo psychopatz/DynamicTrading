@@ -93,6 +93,8 @@ function LabourSupplyList:doDrawItem(y, item, alt)
         badgeR, badgeG, badgeB = 0.56, 0.82, 0.98
     elseif badgeText == "Read Only" then
         badgeR, badgeG, badgeB = 0.78, 0.78, 0.78
+    elseif badgeText == "Cash" then
+        badgeR, badgeG, badgeB = 0.92, 0.82, 0.38
     else
         badgeR, badgeG, badgeB = 0.55, 0.76, 0.98
     end

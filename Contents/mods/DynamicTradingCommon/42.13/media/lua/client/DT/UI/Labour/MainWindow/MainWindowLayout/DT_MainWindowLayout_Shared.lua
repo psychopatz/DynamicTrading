@@ -13,21 +13,19 @@ MainWindowLayout.PANEL_INNER_PAD = 6
 MainWindowLayout.PANEL_HEADER_HEIGHT = 24
 MainWindowLayout.WINDOW_HEADER_CLEARANCE = 24
 
-function MainWindowLayout.refreshRichTextPanel(panel)
+function MainWindowLayout.getRichTextPanelScroll(panel)
     if not panel then
-        return
+        return 0
     end
 
-    panel.textDirty = true
-    panel:paginate()
-    if panel.recalcSize then
-        panel:recalcSize()
+    if panel.getYScroll then
+        local ok, value = pcall(panel.getYScroll, panel)
+        if ok and tonumber(value) then
+            return tonumber(value)
+        end
     end
-    if panel.vscroll then
-        panel.vscroll:setX(panel:getWidth() - 16)
-        panel.vscroll:setY(0)
-        panel.vscroll:setHeight(panel:getHeight())
-    end
+
+    return tonumber(panel.yScroll) or 0
 end
 
 function MainWindowLayout.getRichTextContentHeight(panel)
@@ -49,4 +47,45 @@ function MainWindowLayout.getRichTextContentHeight(panel)
     end
 
     return 0
+end
+
+function MainWindowLayout.setRichTextPanelScroll(panel, scrollY)
+    if not panel then
+        return
+    end
+
+    local contentHeight = MainWindowLayout.getRichTextContentHeight(panel)
+    local viewportHeight = math.max(0, tonumber(panel.getHeight and panel:getHeight()) or tonumber(panel.height) or 0)
+    local maxScroll = math.max(0, contentHeight - viewportHeight)
+    local minScroll = -maxScroll
+    local clampedScroll = math.max(minScroll, math.min(0, tonumber(scrollY) or 0))
+
+    if panel.setYScroll then
+        panel:setYScroll(clampedScroll)
+    else
+        panel.yScroll = clampedScroll
+    end
+end
+
+function MainWindowLayout.refreshRichTextPanel(panel, scrollY)
+    if not panel then
+        return
+    end
+
+    local targetScroll = scrollY
+    if targetScroll == nil then
+        targetScroll = MainWindowLayout.getRichTextPanelScroll(panel)
+    end
+
+    panel.textDirty = true
+    panel:paginate()
+    if panel.recalcSize then
+        panel:recalcSize()
+    end
+    if panel.vscroll then
+        panel.vscroll:setX(panel:getWidth() - 16)
+        panel.vscroll:setY(0)
+        panel.vscroll:setHeight(panel:getHeight())
+    end
+    MainWindowLayout.setRichTextPanelScroll(panel, targetScroll)
 end

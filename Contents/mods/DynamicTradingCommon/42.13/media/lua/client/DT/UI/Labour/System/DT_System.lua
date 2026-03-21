@@ -1,4 +1,5 @@
 require "DT/UI/Labour/MainWindow/DT_MainWindow"
+require "DT/UI/Labour/DT_LabourMapProvider"
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourNetwork/DT_Labour_Network"
 

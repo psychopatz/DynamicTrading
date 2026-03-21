@@ -38,12 +38,20 @@ function DT_SupplyWindow:relayout()
     self.btnRefresh:setWidth(layout.controlWidth)
     self.btnRefresh:setHeight(layout.searchH)
 
+    self.btnWithdrawSelected:setX(layout.controlX)
+    self.btnWithdrawSelected:setY(layout.centerButtonsY)
+    self.btnWithdrawSelected:setWidth(layout.controlWidth)
+
+    self.btnWithdrawVisible:setX(layout.controlX)
+    self.btnWithdrawVisible:setY(layout.centerButtonsY + 40)
+    self.btnWithdrawVisible:setWidth(layout.controlWidth)
+
     self.btnDepositSelected:setX(layout.controlX)
-    self.btnDepositSelected:setY(layout.centerButtonsY)
+    self.btnDepositSelected:setY(layout.centerButtonsY + 80)
     self.btnDepositSelected:setWidth(layout.controlWidth)
 
     self.btnDepositVisible:setX(layout.controlX)
-    self.btnDepositVisible:setY(layout.centerButtonsY + 40)
+    self.btnDepositVisible:setY(layout.centerButtonsY + 120)
     self.btnDepositVisible:setWidth(layout.controlWidth)
 
     self.playerList:setX(layout.leftX)

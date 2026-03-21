@@ -22,6 +22,20 @@ function Internal.getLocalPlayer()
     return getPlayer and getPlayer() or nil
 end
 
+function Internal.getPlayerWealth(player)
+    local targetPlayer = player or Internal.getLocalPlayer()
+    local inventory = targetPlayer and targetPlayer.getInventory and targetPlayer:getInventory() or nil
+    if not inventory then
+        return 0
+    end
+
+    local loose = inventory:getItemsFromType("Base.Money", true)
+    local bundles = inventory:getItemsFromType("Base.MoneyBundle", true)
+    local looseCount = loose and loose:size() or 0
+    local bundleCount = bundles and bundles:size() or 0
+    return looseCount + (bundleCount * 100)
+end
+
 function Internal.resolveWorkerDetail(workerID)
     if not workerID then
         return nil
@@ -43,4 +57,3 @@ function Internal.resolveWorkerDetail(workerID)
 
     return nil
 end
-

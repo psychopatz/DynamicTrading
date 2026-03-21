@@ -81,14 +81,24 @@ function System.BuildRecruitArgs(ui, archetypeID)
     local x = nil
     local y = nil
     local z = 0
+    local homeX = nil
+    local homeY = nil
+    local homeZ = 0
     if npc.getX and npc.getY then
         x = math.floor(npc:getX())
         y = math.floor(npc:getY())
         z = math.floor((npc.getZ and npc:getZ()) or 0)
-    elseif player then
+    end
+
+    if player then
+        homeX = math.floor(player:getX())
+        homeY = math.floor(player:getY())
+        homeZ = math.floor(player:getZ())
+        if x == nil or y == nil then
         x = math.floor(player:getX())
         y = math.floor(player:getY())
         z = math.floor(player:getZ())
+        end
     end
 
     local normalizedArchetype = config.NormalizeArchetypeID(
@@ -107,6 +117,9 @@ function System.BuildRecruitArgs(ui, archetypeID)
         isFemale = (npc.isFemale and npc:isFemale()) or target.gender == "Female",
         sourceNPCID = tostring(sourceNPCID),
         sourceNPCType = "ConversationUI",
+        homeX = homeX,
+        homeY = homeY,
+        homeZ = homeZ,
         x = x,
         y = y,
         z = z

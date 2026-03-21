@@ -73,10 +73,12 @@ function Config.GetScavengeLoadout(worker)
     loadout.bulkLoot = loadout.capabilityMap["Scavenge.Haul.Bulk"] == true
     loadout.bundleLoot = loadout.capabilityMap["Scavenge.Haul.Bundle"] == true
     loadout.carryProfile = Config.GetScavengeCarryProfile(worker)
-    loadout.maxCarryWeight = loadout.carryProfile and loadout.carryProfile.maxCarryWeight
+    loadout.effectiveCarryLimit = loadout.carryProfile and loadout.carryProfile.effectiveCarryLimit
         or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
         or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
         or (tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
+    loadout.maxCarryWeight = loadout.carryProfile and loadout.carryProfile.maxCarryWeight
+        or loadout.effectiveCarryLimit
     loadout.rawCarryAllowance = loadout.carryProfile and loadout.carryProfile.rawAllowance or loadout.maxCarryWeight
     loadout.carryContainerCount = #(loadout.carryProfile and loadout.carryProfile.containers or {})
 

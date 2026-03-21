@@ -101,6 +101,13 @@ function Registry.RecalculateWorker(worker)
     worker.archetypeID = Config.NormalizeArchetypeID(worker.archetypeID or worker.profession)
     worker.profession = worker.profession or worker.jobType
     worker.baseCarryWeightOverride = tonumber(worker.baseCarryWeightOverride) or nil
+    worker.homeX = tonumber(worker.homeX) and math.floor(worker.homeX) or nil
+    worker.homeY = tonumber(worker.homeY) and math.floor(worker.homeY) or nil
+    worker.homeZ = math.floor(tonumber(worker.homeZ) or 0)
+    worker.presenceState = worker.presenceState or Config.PresenceStates.Home
+    worker.travelHoursRemaining = math.max(0, tonumber(worker.travelHoursRemaining) or 0)
+    worker.returnReason = worker.returnReason or nil
+    worker.deathCause = tostring(worker.deathCause or "")
     worker.baseCarryWeight = Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker)
         or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
         or math.max(0, tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
@@ -217,6 +224,7 @@ function Registry.RecalculateWorker(worker)
     worker.haulCount = haulCount
     worker.haulRawWeight = haulRawWeight
     worker.haulEffectiveWeight = haulEffectiveWeight
+    worker.effectiveCarryLimit = carryProfile and carryProfile.effectiveCarryLimit or worker.baseCarryWeight
     worker.maxCarryWeight = carryProfile and carryProfile.maxCarryWeight or worker.baseCarryWeight
     worker.rawCarryAllowance = carryProfile and carryProfile.rawAllowance or worker.maxCarryWeight
     worker.carryContainerCount = #(carryProfile and carryProfile.containers or {})

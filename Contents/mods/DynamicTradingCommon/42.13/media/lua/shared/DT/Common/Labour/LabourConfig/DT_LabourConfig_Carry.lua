@@ -125,7 +125,8 @@ function Config.GetScavengeCarryProfile(worker)
 
     return {
         bodyCapacity = bodyCapacity,
-        maxCarryWeight = bodyCapacity,
+        effectiveCarryLimit = bodyCapacity,
+        maxCarryWeight = rawAllowance,
         rawAllowance = rawAllowance,
         containers = containers
     }

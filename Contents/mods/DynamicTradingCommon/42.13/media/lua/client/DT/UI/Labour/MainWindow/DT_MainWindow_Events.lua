@@ -29,6 +29,17 @@ local function onServerCommand(module, command, args)
                     DT_MainWindow.instance:updateStatus("Worker details synced.")
                 end
             end
+        elseif args and args.workerID then
+            DT_MainWindow.cachedDetails = DT_MainWindow.cachedDetails or {}
+            DT_MainWindow.cachedDetails[args.workerID] = nil
+            if DT_MainWindow.instance
+                and DT_MainWindow.instance:getIsVisible()
+                and DT_MainWindow.instance.selectedWorkerSummary
+                and DT_MainWindow.instance.selectedWorkerSummary.workerID == args.workerID then
+                DT_MainWindow.instance.selectedWorkerSummary = nil
+                DT_MainWindow.instance.selectedWorker = nil
+                DT_MainWindow.instance:updateWorkerDetail(nil)
+            end
         end
     elseif command == "LabourNotice" then
         if DT_MainWindow.instance and DT_MainWindow.instance:getIsVisible() then

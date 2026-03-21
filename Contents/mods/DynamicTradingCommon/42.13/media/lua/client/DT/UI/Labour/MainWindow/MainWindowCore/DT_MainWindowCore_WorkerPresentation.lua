@@ -54,11 +54,29 @@ function Internal.getNpcConditionLabel(worker)
     return "Stable"
 end
 
+function Internal.getWorkerPresenceLabel(worker)
+    local config = Internal.Config or {}
+    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
+    if normalizedJob ~= ((config.JobTypes or {}).Scavenge) then
+        return tostring(worker and worker.state or "Idle")
+    end
+
+    local presenceState = tostring(worker and worker.presenceState or (config.PresenceStates and config.PresenceStates.Home) or "Home")
+    local states = config.PresenceStates or {}
+    if presenceState == states.Scavenging then
+        return "Scavenging"
+    end
+    if presenceState == states.AwayToSite or presenceState == states.AwayToHome then
+        return "Away"
+    end
+    return "Home"
+end
+
 function Internal.formatWorkerListSubtitle(worker)
     local npcCondition = Internal.getNpcConditionLabel(worker)
     local jobType = Internal.getJobDisplayName(worker)
-    local state = tostring(worker.state or "Idle")
-    return npcCondition .. " | " .. jobType .. " | " .. state
+    local presenceLabel = Internal.getWorkerPresenceLabel(worker)
+    return npcCondition .. " | " .. jobType .. " | " .. presenceLabel
 end
 
 function Internal.buildToolInputText(worker)
@@ -89,4 +107,3 @@ function Internal.buildSupplyInputText(worker)
 
     return table.concat(parts, ", ")
 end
-

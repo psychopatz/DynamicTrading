@@ -79,6 +79,10 @@ function Registry.GetHaulMetrics(worker)
         count = count,
         rawWeight = rawWeight,
         effectiveWeight = effectiveWeight,
+        effectiveCarryLimit = carryProfile and carryProfile.effectiveCarryLimit
+            or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
+            or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
+            or (tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8),
         maxCarryWeight = carryProfile and carryProfile.maxCarryWeight
             or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
             or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
@@ -106,6 +110,18 @@ end
 function Registry.AddMoney(worker, amount)
     if not worker then return end
     worker.moneyStored = math.max(0, math.floor(tonumber(worker.moneyStored) or 0) + math.floor(tonumber(amount) or 0))
+end
+
+function Registry.RemoveMoney(worker, amount)
+    if not worker then
+        return 0
+    end
+
+    local available = math.max(0, math.floor(tonumber(worker.moneyStored) or 0))
+    local requested = math.max(0, math.floor(tonumber(amount) or 0))
+    local removed = math.min(available, requested)
+    worker.moneyStored = available - removed
+    return removed
 end
 
 function Registry.CollectOutput(worker)

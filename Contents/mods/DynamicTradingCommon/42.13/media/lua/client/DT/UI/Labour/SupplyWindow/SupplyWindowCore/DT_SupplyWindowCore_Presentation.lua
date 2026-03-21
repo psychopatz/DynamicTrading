@@ -44,16 +44,63 @@ function Internal.getWorkerHeaderTitle(window)
     local workerName = tostring(window and window.workerName or "Worker")
     local activeTab = window and window.activeTab or Internal.Tabs.Provisions
     local worker = window and window.workerData or nil
-    local config = Internal.Config or {}
-    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
 
-    if activeTab == Internal.Tabs.Output and normalizedJob == ((config.JobTypes or {}).Scavenge) then
+    if activeTab == Internal.Tabs.Output then
+        local haulIsStored = Internal.canTransferWithWorker(worker)
         local carryWeight = Internal.formatWeightValue(worker and worker.haulRawWeight)
-        local carryLimit = Internal.formatWeightValue(worker and worker.rawCarryAllowance or worker and worker.maxCarryWeight)
-        return workerName .. " (Carry " .. carryWeight .. " / " .. carryLimit .. ") Inventory"
+        local carryCapacity = Internal.formatWeightValue(worker and worker.maxCarryWeight)
+
+        if haulIsStored then
+            local storedWeight = Internal.formatWeightValue(worker and worker.outputWeight)
+            return workerName
+                .. " (Stored "
+                .. storedWeight
+                .. " | Carry "
+                .. carryWeight
+                .. " / "
+                .. carryCapacity
+                .. ") Inventory"
+        end
+
+        return workerName
+            .. " (Carry "
+            .. carryWeight
+            .. " / "
+            .. carryCapacity
+            .. ") Inventory"
     end
 
     return workerName .. " Inventory"
+end
+
+function Internal.canTransferWithWorker(worker)
+    if not worker then
+        return false
+    end
+
+    local config = Internal.Config or {}
+    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker.jobType) or tostring(worker.jobType or "")
+    if normalizedJob == ((config.JobTypes or {}).Scavenge) then
+        local homeState = tostring((config.PresenceStates or {}).Home or "Home")
+        local presenceState = tostring(worker.presenceState or homeState)
+        return presenceState == homeState
+    end
+
+    return true
+end
+
+function Internal.getTransferBlockedReason(worker)
+    if not worker then
+        return "No worker selected."
+    end
+
+    local config = Internal.Config or {}
+    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker.jobType) or tostring(worker.jobType or "")
+    if normalizedJob == ((config.JobTypes or {}).Scavenge) and not Internal.canTransferWithWorker(worker) then
+        return tostring(worker.name or "This worker") .. " is away from home. Transfers are disabled until they return."
+    end
+
+    return "Transfers are currently unavailable."
 end
 
 function Internal.getRequiredToolSummary(worker)
@@ -76,12 +123,17 @@ function Internal.getWorkerSupplyTotals(entries)
         count = 0,
         calories = 0,
         hydration = 0,
+        money = 0,
     }
 
     for _, entry in ipairs(entries or {}) do
-        totals.count = totals.count + 1
-        totals.calories = totals.calories + math.max(0, tonumber(entry.calories) or 0)
-        totals.hydration = totals.hydration + math.max(0, tonumber(entry.hydration) or 0)
+        if entry.kind == "money" then
+            totals.money = totals.money + math.max(0, math.floor(tonumber(entry.amount) or 0))
+        else
+            totals.count = totals.count + 1
+            totals.calories = totals.calories + math.max(0, tonumber(entry.calories) or 0)
+            totals.hydration = totals.hydration + math.max(0, tonumber(entry.hydration) or 0)
+        end
     end
 
     return totals
@@ -105,21 +157,25 @@ function Internal.getWorkerTabSummary(window, entries)
         local config = Internal.Config or {}
         local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
         if normalizedJob == ((config.JobTypes or {}).Scavenge) then
+            local haulIsStored = Internal.canTransferWithWorker(worker)
             return tostring(stacks)
                 .. " stacks | "
                 .. tostring(totalQty)
-                .. " total | Eff "
-                .. Internal.formatWeightValue(worker and worker.haulEffectiveWeight)
-                .. " / "
-                .. Internal.formatWeightValue(worker and worker.maxCarryWeight)
+                .. " total | Weight "
+                .. Internal.formatWeightValue((haulIsStored and worker and worker.outputWeight) or (worker and worker.haulRawWeight))
+                .. (haulIsStored and " stored" or " carried")
         end
         return tostring(stacks) .. " stacks | " .. tostring(totalQty) .. " total"
     end
 
     local totals = Internal.getWorkerSupplyTotals(entries)
-    return tostring(totals.count) .. " entries | "
+    local summary = tostring(totals.count) .. " entries | "
         .. string.format("%.0f cal", totals.calories) .. " | "
         .. string.format("%.0f hyd", totals.hydration)
+    if totals.money > 0 then
+        summary = summary .. " | $" .. tostring(totals.money)
+    end
+    return summary
 end
 
 function Internal.shouldShowPlayerEntry(entry, activeTab)
@@ -135,6 +191,10 @@ function Internal.shouldShowPlayerEntry(entry, activeTab)
         return false
     end
 
+    if entry.kind == "money" then
+        return true
+    end
+
     return entry.canDeposit == true
 end
 
@@ -147,10 +207,22 @@ function Internal.shouldShowWorkerEntry(entry, activeTab)
         return true
     end
 
+    if entry.kind == "money" then
+        return true
+    end
+
     return (tonumber(entry.calories) or 0) > 0 or (tonumber(entry.hydration) or 0) > 0
 end
 
 function Internal.getPlayerEntryPresentation(entry, activeTab, worker)
+    if entry.kind == "money" then
+        return {
+            statText = "$" .. tostring(math.max(0, math.floor(tonumber(entry.amount) or 0))) .. " available to deposit",
+            badgeText = "Cash",
+            dimmed = false,
+        }
+    end
+
     if activeTab == Internal.Tabs.Equipment then
         if entry.canAssignTool then
             return {
@@ -190,6 +262,13 @@ function Internal.getPlayerEntryPresentation(entry, activeTab, worker)
 end
 
 function Internal.getWorkerEntryPresentation(entry, activeTab)
+    if entry.kind == "money" then
+        return {
+            statText = "$" .. tostring(math.max(0, math.floor(tonumber(entry.amount) or 0))) .. " stored with the worker",
+            badgeText = "Cash",
+        }
+    end
+
     if activeTab == Internal.Tabs.Equipment then
         local tags = entry.tags or {}
         local tagText = (#tags > 0) and table.concat(tags, ", ") or "Assigned labour tool"
