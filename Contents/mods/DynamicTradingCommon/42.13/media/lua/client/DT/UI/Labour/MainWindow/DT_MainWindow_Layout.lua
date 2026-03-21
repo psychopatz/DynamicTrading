@@ -6,8 +6,8 @@ local Internal = DT_MainWindow.Internal
 function DT_MainWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
-    self.minimumWidth = 860
-    self.minimumHeight = 540
+    self.minimumWidth = 980
+    self.minimumHeight = 620
 end
 
 function DT_MainWindow:createChildren()
@@ -20,9 +20,12 @@ function DT_MainWindow:createChildren()
     local listY = headerY + 38
     local footerH = 38
     local listWidth = 280
+    local reserveH = 160
     local contentHeight = self.height - listY - footerH - pad
     local rightX = listWidth + (pad * 2)
     local rightWidth = self.width - rightX - pad
+    local detailY = listY + reserveH + pad
+    local detailHeight = self.height - detailY - footerH - pad
 
     self.btnRefresh = ISButton:new(10, buttonY, 90, 28, "Refresh", self, self.onRefresh)
     self.btnRefresh:initialise()
@@ -62,13 +65,21 @@ function DT_MainWindow:createChildren()
     self.workerList:setAnchorBottom(true)
     self:addChild(self.workerList)
 
-    self.detailText = ISRichTextPanel:new(rightX, listY, rightWidth, contentHeight)
+    self.reservePanel = Internal.LabourReservePanel:new(rightX, listY, rightWidth, reserveH)
+    self.reservePanel:initialise()
+    self.reservePanel:setAnchorRight(true)
+    self:addChild(self.reservePanel)
+
+    self.detailText = ISRichTextPanel:new(rightX, detailY, rightWidth, detailHeight)
     self.detailText:initialise()
     self.detailText.backgroundColor = { r = 0, g = 0, b = 0, a = 0.2 }
     self.detailText.borderColor = { r = 1, g = 1, b = 1, a = 0.1 }
     self.detailText:setAnchorRight(true)
     self.detailText:setAnchorBottom(true)
     self.detailText:addScrollBars()
+    if self.detailText.vscroll then
+        self.detailText.vscroll:setHeight(self.detailText:getHeight())
+    end
     self:addChild(self.detailText)
 
     self.statusText = ISRichTextPanel:new(rightX, self.height - footerH - 4, rightWidth, 28)
@@ -100,4 +111,12 @@ function DT_MainWindow:updateStatus(text)
 
     self.statusText:setText(" <RGB:0.75,0.75,0.75> " .. tostring(text or "") .. " ")
     self.statusText:paginate()
+end
+
+function DT_MainWindow:onResize()
+    ISCollapsableWindow.onResize(self)
+
+    if self.detailText and self.detailText.vscroll then
+        self.detailText.vscroll:setHeight(self.detailText:getHeight())
+    end
 end

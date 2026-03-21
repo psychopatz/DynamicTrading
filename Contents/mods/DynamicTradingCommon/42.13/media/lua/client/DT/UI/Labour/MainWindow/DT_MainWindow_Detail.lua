@@ -34,12 +34,16 @@ end
 function DT_MainWindow:updateWorkerDetail(worker)
     self.selectedWorker = worker
 
+    if self.reservePanel and self.reservePanel.setWorker then
+        self.reservePanel:setWorker(worker)
+    end
+
     if not self.detailText then
         return
     end
 
     if not worker then
-        self.detailText:setText(" <RGB:0.6,0.6,0.6> No worker selected. Recruit one from ConversationUI or load an existing worker. ")
+        self.detailText:setText(" <RGB:0.6,0.6,0.6> No worker selected. Recruit one from ConversationUI or pick an existing labour worker from the list. ")
         self.detailText:paginate()
         if self.btnToggleJob then
             self.btnToggleJob:setTitle("Start Job")
@@ -51,38 +55,73 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local profile = (config.GetJobProfile and config.GetJobProfile(worker.jobType)) or {}
     local toolTags = profile.requiredToolTags or {}
     local bonusMultiplier = config.GetJobSpeedMultiplier and config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1
-    local caloriesDays = Internal.getReserveDaysLeft(worker.caloriesCached, worker.dailyCaloriesNeed)
-    local hydrationDays = Internal.getReserveDaysLeft(worker.hydrationCached, worker.dailyHydrationNeed)
+    local dailyCaloriesNeed = config.GetEffectiveDailyCaloriesNeed and config.GetEffectiveDailyCaloriesNeed(worker, profile)
+        or tonumber(worker.dailyCaloriesNeed)
+        or tonumber(profile.dailyCaloriesNeed)
+        or 0
+    local dailyHydrationNeed = config.GetEffectiveDailyHydrationNeed and config.GetEffectiveDailyHydrationNeed(worker, profile)
+        or tonumber(worker.dailyHydrationNeed)
+        or tonumber(profile.dailyHydrationNeed)
+        or 0
+    local caloriesDays = Internal.getReserveDaysLeft(worker.caloriesCached, dailyCaloriesNeed)
+    local hydrationDays = Internal.getReserveDaysLeft(worker.hydrationCached, dailyHydrationNeed)
+    local caloriesHoursLeft = Internal.getReserveHoursLeft(worker.caloriesCached, (dailyCaloriesNeed / (config.HOURS_PER_DAY or 24)))
+    local hydrationHoursLeft = Internal.getReserveHoursLeft(worker.hydrationCached, (dailyHydrationNeed / (config.HOURS_PER_DAY or 24)))
+    local refillHoursLeft = Internal.getNextRefillHours(caloriesHoursLeft, hydrationHoursLeft)
+    local caloriesBarData = Internal.getReserveBarData(worker.caloriesCached, dailyCaloriesNeed)
+    local hydrationBarData = Internal.getReserveBarData(worker.hydrationCached, dailyHydrationNeed)
+    local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ") or "None"
+    local caloriesForecast = (worker.state == config.States.Dead) and "Already dead" or Internal.formatDaysAndEta(caloriesDays, caloriesHoursLeft)
+    local hydrationForecast = (worker.state == config.States.Dead) and "Already dead" or Internal.formatDaysAndEta(hydrationDays, hydrationHoursLeft)
+    local refillForecast = (worker.state == config.States.Dead) and "Already dead" or Internal.formatDurationHours(refillHoursLeft)
 
     local text = ""
-    text = text .. " <RGB:1,1,1> <SIZE:Large> " .. tostring(worker.name or "Worker") .. " <LINE> <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Archetype: <RGB:0.4,0.8,1> " .. tostring(worker.archetypeID or "Unknown") .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Current Job: <RGB:1,1,1> " .. tostring(worker.jobType or worker.profession or "Unknown") .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> State: <RGB:1,1,1> " .. tostring(worker.state or "Idle") .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Job Enabled: <RGB:1,1,1> " .. tostring(worker.jobEnabled == true) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Specialist Bonus: <RGB:1,1,1> x" .. string.format("%.2f", bonusMultiplier) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Workplace: <RGB:1,1,1> TODO / deferred <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Required Tools: <RGB:1,1,1> " .. table.concat(toolTags, ", ") .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Work Coordinates: <RGB:1,1,1> " .. tostring(worker.workX or "-") .. ", " .. tostring(worker.workY or "-") .. ", " .. tostring(worker.workZ or 0) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Site State: <RGB:1,1,1> " .. tostring(worker.siteState or "Deferred") .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Tool State: <RGB:1,1,1> " .. tostring(worker.toolState or "Missing") .. " <LINE> <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Calories Stored: <RGB:1,1,1> " .. Internal.formatReserveValue(worker.caloriesCached) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Hydration Stored: <RGB:1,1,1> " .. Internal.formatReserveValue(worker.hydrationCached) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Calories Days Left: <RGB:1,1,1> " .. caloriesDays .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Hydration Days Left: <RGB:1,1,1> " .. hydrationDays .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Fatal Threshold: <RGB:1,1,1> 3 days at zero calories or hydration <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Nutrition Entries: <RGB:1,1,1> " .. tostring(#(worker.nutritionLedger or {})) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Assigned Tools: <RGB:1,1,1> " .. tostring(#(worker.toolLedger or {})) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Stored Money: <RGB:1,1,1> $" .. tostring(math.floor(tonumber(worker.moneyStored) or 0)) .. " <LINE> "
-    text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Foundation Inputs <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Tool Inputs: <RGB:1,1,1> " .. Internal.buildToolInputText(worker) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Food / Water Inputs: <RGB:1,1,1> " .. Internal.buildSupplyInputText(worker) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Money Reserve: <RGB:1,1,1> $" .. tostring(math.floor(tonumber(worker.moneyStored) or 0)) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Productive Consumables: <RGB:1,1,1> TODO after foundation polish <LINE> "
+    text = text .. " <RGB:1,1,1> <SIZE:Medium> Overview <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Job Enabled: <RGB:1,1,1> " .. Internal.formatBool(worker.jobEnabled == true) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Specialist Bonus: <RGB:1,1,1> x" .. Internal.formatDecimal(bonusMultiplier, 2) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Stored Money: <RGB:1,1,1> $" .. Internal.formatReserveValue(worker.moneyStored) .. " <LINE> <LINE> "
+
+    text = text .. " <RGB:1,1,1> <SIZE:Medium> Work Status <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Current Job: <RGB:1,1,1> " .. Internal.getJobDisplayName(worker, profile) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Site State: <RGB:1,1,1> " .. tostring(worker.siteState or "Deferred") .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Tool State: <RGB:1,1,1> " .. tostring(worker.toolState or "Missing") .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Required Tools: <RGB:1,1,1> " .. toolSummary .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Work Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.workX, worker.workY, worker.workZ) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> <LINE> "
+
+    text = text .. " <RGB:1,1,1> <SIZE:Medium> Survival Forecast <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Calories Stored: <RGB:1,1,1> " .. Internal.formatReserveValue(worker.caloriesCached) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Daily Hunger Use: <RGB:1,1,1> " .. Internal.formatReserveValue(dailyCaloriesNeed) .. "/day <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Calories Overflow: <RGB:1,1,1> " .. Internal.formatReserveValue(caloriesBarData.overflow) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Days Until Starving: <RGB:1,1,1> " .. caloriesForecast .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Hydration Stored: <RGB:1,1,1> " .. Internal.formatReserveValue(worker.hydrationCached) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Daily Hydration Use: <RGB:1,1,1> " .. Internal.formatReserveValue(dailyHydrationNeed) .. "/day <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Hydration Overflow: <RGB:1,1,1> " .. Internal.formatReserveValue(hydrationBarData.overflow) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Days Until Dehydrated: <RGB:1,1,1> " .. hydrationForecast .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Suggested Refill In: <RGB:1,1,1> " .. refillForecast .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Consumption Cadence: <RGB:1,1,1> Every in-game hour <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Fatal Threshold: <RGB:1,1,1> 3 days at zero calories or hydration <LINE> "
+    if (tonumber(worker.starvationHours) or 0) > 0 then
+        text = text .. " <RGB:0.72,0.72,0.72> Starvation Counter: <RGB:1,1,1> " .. Internal.formatDurationHours(worker.starvationHours) .. " <LINE> "
+    end
+    if (tonumber(worker.dehydrationHours) or 0) > 0 then
+        text = text .. " <RGB:0.72,0.72,0.72> Dehydration Counter: <RGB:1,1,1> " .. Internal.formatDurationHours(worker.dehydrationHours) .. " <LINE> "
+    end
+    text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Inputs And Storage <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Nutrition Entries: <RGB:1,1,1> " .. tostring(#(worker.nutritionLedger or {})) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Assigned Tools: <RGB:1,1,1> " .. tostring(#(worker.toolLedger or {})) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Tool Inputs: <RGB:1,1,1> " .. Internal.buildToolInputText(worker) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Food / Water Inputs: <RGB:1,1,1> " .. Internal.buildSupplyInputText(worker) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Productive Consumables: <RGB:1,1,1> TODO after foundation polish <LINE> "
 
     self.detailText:setText(text)
     self.detailText:paginate()
+    if self.detailText.vscroll then
+        self.detailText.vscroll:setHeight(self.detailText:getHeight())
+    end
+    if self.detailText.setYScroll then
+        self.detailText:setYScroll(0)
+    end
 
     if self.btnToggleJob then
         self.btnToggleJob:setTitle(worker.jobEnabled and "Stop Job" or "Start Job")

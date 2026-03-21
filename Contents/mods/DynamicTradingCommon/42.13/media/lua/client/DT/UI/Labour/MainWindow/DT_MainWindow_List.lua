@@ -8,7 +8,7 @@ function LabourWorkerList:new(x, y, width, height)
     local o = ISScrollingListBox:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.itemheight = 56
+    o.itemheight = 60
     o.selected = 1
     o.drawBorder = true
     o.font = UIFont.Medium
@@ -29,14 +29,14 @@ function LabourWorkerList:doDrawItem(y, item, alt)
         self:drawRect(0, y, self.width, self.itemheight, 0.08, 0, 0, 0)
     end
 
-    self:drawText(tostring(worker.name or worker.workerID), 10, y + 6, 0.85, 0.9, 1, 1, UIFont.Medium)
+    self:drawText(tostring(worker.name or worker.workerID), 10, y + 7, 0.88, 0.92, 1, 1, UIFont.Medium)
     self:drawText(
         Internal.formatWorkerListSubtitle(worker),
         10,
-        y + 30,
-        0.7,
-        0.7,
-        0.7,
+        y + 33,
+        0.72,
+        0.72,
+        0.72,
         0.95,
         UIFont.Small
     )

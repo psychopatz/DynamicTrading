@@ -28,8 +28,8 @@ function DT_MainWindow.Open()
         return
     end
 
-    local width = 920
-    local height = 600
+    local width = 1080
+    local height = 680
     local x = (getCore():getScreenWidth() - width) / 2
     local y = (getCore():getScreenHeight() - height) / 2
 

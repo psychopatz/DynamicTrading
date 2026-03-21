@@ -23,6 +23,8 @@ Config.RECRUIT_START_HYDRATION_MIN = 500
 Config.RECRUIT_START_HYDRATION_MAX = 800
 Config.RECRUIT_REQUIRED_REPUTATION = 100
 Config.RECRUIT_DAILY_CHANCE = 50
+Config.DEFAULT_LABOUR_DAILY_CALORIES_USE = 500
+Config.DEFAULT_LABOUR_DAILY_HYDRATION_USE = 500
 
 Config.States = {
     Idle = "Idle",
@@ -200,6 +202,51 @@ function Config.GetCurrentHour()
     local gt = getGameTime()
     if not gt then return 0 end
     return math.floor(gt:getWorldAgeHours() or 0)
+end
+
+function Config.GetSandboxTable()
+    return SandboxVars and SandboxVars.DynamicTrading or {}
+end
+
+function Config.GetSandboxNumber(key, fallback)
+    local sandbox = Config.GetSandboxTable()
+    local value = tonumber(sandbox and sandbox[key])
+    if value == nil then
+        return fallback
+    end
+    return value
+end
+
+function Config.GetLabourDailyCaloriesUse()
+    return math.max(0, Config.GetSandboxNumber("LabourDailyCaloriesUse", Config.DEFAULT_LABOUR_DAILY_CALORIES_USE) or Config.DEFAULT_LABOUR_DAILY_CALORIES_USE)
+end
+
+function Config.GetLabourDailyHydrationUse()
+    return math.max(0, Config.GetSandboxNumber("LabourDailyHydrationUse", Config.DEFAULT_LABOUR_DAILY_HYDRATION_USE) or Config.DEFAULT_LABOUR_DAILY_HYDRATION_USE)
+end
+
+function Config.GetEffectiveDailyCaloriesNeed(worker, profile)
+    return Config.GetLabourDailyCaloriesUse()
+end
+
+function Config.GetEffectiveDailyHydrationNeed(worker, profile)
+    return Config.GetLabourDailyHydrationUse()
+end
+
+function Config.GetEffectiveHourlyCaloriesNeed(worker, profile)
+    local hoursPerDay = tonumber(Config.HOURS_PER_DAY) or 24
+    if hoursPerDay <= 0 then
+        return 0
+    end
+    return Config.GetEffectiveDailyCaloriesNeed(worker, profile) / hoursPerDay
+end
+
+function Config.GetEffectiveHourlyHydrationNeed(worker, profile)
+    local hoursPerDay = tonumber(Config.HOURS_PER_DAY) or 24
+    if hoursPerDay <= 0 then
+        return 0
+    end
+    return Config.GetEffectiveDailyHydrationNeed(worker, profile) / hoursPerDay
 end
 
 function Config.NormalizeUnitValue(value)

@@ -43,8 +43,8 @@ function Sim.ProcessWorker(worker, currentHour)
     worker.siteState = worker.siteState or "Deferred"
     worker.toolState = toolsReady and "Ready" or "Missing"
 
-    local caloriesPerHour = (worker.dailyCaloriesNeed or profile.dailyCaloriesNeed) / Config.HOURS_PER_DAY
-    local hydrationPerHour = (worker.dailyHydrationNeed or profile.dailyHydrationNeed) / Config.HOURS_PER_DAY
+    local caloriesPerHour = Config.GetEffectiveHourlyCaloriesNeed(worker, profile)
+    local hydrationPerHour = Config.GetEffectiveHourlyHydrationNeed(worker, profile)
     local hasCalories = (tonumber(worker.caloriesCached) or 0) > 0
     local hasHydration = (tonumber(worker.hydrationCached) or 0) > 0
     if deltaHours > 0 then
