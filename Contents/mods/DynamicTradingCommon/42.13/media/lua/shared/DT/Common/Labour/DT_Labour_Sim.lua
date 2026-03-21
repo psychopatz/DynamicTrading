@@ -1,7 +1,7 @@
-require "DT/Common/Labour/DT_Labour_Config"
+require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
 require "DT/Common/Labour/DT_Labour_Sites"
-require "DT/Common/Labour/DT_Labour_Nutrition"
+require "DT/Common/Labour/LabourNutrition/DT_LabourNutrition"
 require "DT/Common/Labour/DT_Labour_Output"
 require "DT/Common/Labour/DT_Labour_Presentation"
 

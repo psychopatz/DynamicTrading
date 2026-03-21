@@ -1,4 +1,4 @@
-require "DT/Common/Labour/DT_Labour_Config"
+require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Network = DT_Labour.Network or {}

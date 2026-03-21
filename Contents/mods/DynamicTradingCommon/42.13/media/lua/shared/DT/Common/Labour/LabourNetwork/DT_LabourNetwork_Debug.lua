@@ -1,4 +1,4 @@
-require "DT/Common/Labour/DT_Labour_Config"
+require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
 require "DT/Common/Labour/DT_Labour_Sim"
 require "DT/Common/Labour/DT_Labour_Presentation"

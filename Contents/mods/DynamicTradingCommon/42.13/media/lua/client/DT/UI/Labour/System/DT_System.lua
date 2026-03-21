@@ -1,5 +1,5 @@
 require "DT/UI/Labour/MainWindow/DT_MainWindow"
-require "DT/Common/Labour/DT_Labour_Config"
+require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourNetwork/DT_Labour_Network"
 
 -- Keep explicit load order so helpers are registered before dependent modules.

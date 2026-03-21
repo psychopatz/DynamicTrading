@@ -3,8 +3,8 @@ require "ISUI/ISScrollingListBox"
 require "ISUI/ISRichTextPanel"
 require "ISUI/ISButton"
 require "ISUI/ISTextEntryBox"
-require "DT/Common/Labour/DT_Labour_Config"
-require "DT/Common/Labour/DT_Labour_Nutrition"
+require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
+require "DT/Common/Labour/LabourNutrition/DT_LabourNutrition"
 require "DT/Common/Labour/LabourNetwork/DT_Labour_Network"
 
 DT_SupplyWindow = ISCollapsableWindow:derive("DT_SupplyWindow")
