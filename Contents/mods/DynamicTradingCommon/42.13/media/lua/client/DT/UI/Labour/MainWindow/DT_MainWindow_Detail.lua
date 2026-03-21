@@ -180,6 +180,7 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local normalizedJobType = config.NormalizeJobType and config.NormalizeJobType(worker.jobType) or worker.jobType
     local stateLabel = tostring(worker.state or "")
     local deadState = tostring((config.States or {}).Dead or "Dead")
+    local searchProgressData = Internal.getScavengeSearchProgressData and Internal.getScavengeSearchProgressData(worker, profile) or nil
     local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ")
         or ((normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge)) and "Optional scavenger kit" or "Optional")
     local text = ""
@@ -214,7 +215,26 @@ function DT_MainWindow:updateWorkerDetail(worker)
         text = text .. " <RGB:0.72,0.72,0.72> Zone Context: <RGB:1,1,1> " .. tostring(worker.scavengeSiteZoneType or "Unknown") .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Loot Rolls: <RGB:1,1,1> " .. tostring(worker.scavengePoolRolls or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Failure Weight: <RGB:1,1,1> " .. tostring(worker.scavengeFailureWeight or 0) .. " <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Search Speed: <RGB:1,1,1> x" .. Internal.formatDecimal(worker.scavengeSearchSpeedMultiplier or 1, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Gear Search Speed: <RGB:1,1,1> x" .. Internal.formatDecimal(worker.scavengeSearchSpeedMultiplier or 1, 2) .. " <LINE> "
+        if searchProgressData then
+            text = text .. " <RGB:0.72,0.72,0.72> Search Progress: <RGB:1,1,1> "
+                .. Internal.formatDecimal(searchProgressData.progressHours or 0, 1)
+                .. " / "
+                .. Internal.formatDecimal(searchProgressData.cycleHours or 0, 1)
+                .. "h <LINE> "
+            text = text .. " <RGB:0.72,0.72,0.72> Next Loot Roll ETA: <RGB:1,1,1> "
+                .. Internal.formatDurationHours(searchProgressData.remainingWorldHours)
+                .. " <LINE> "
+            text = text .. " <RGB:0.72,0.72,0.72> Speed Breakdown: <RGB:1,1,1> Base x"
+                .. Internal.formatDecimal(searchProgressData.baseSpeedMultiplier or 1, 2)
+                .. " | Archetype x"
+                .. Internal.formatDecimal(searchProgressData.archetypeSpeedMultiplier or 1, 2)
+                .. " | Gear x"
+                .. Internal.formatDecimal(searchProgressData.equipmentSpeedMultiplier or 1, 2)
+                .. " | Effective x"
+                .. Internal.formatDecimal(searchProgressData.effectiveSpeedMultiplier or 1, 2)
+                .. " <LINE> "
+        end
         text = text .. " <RGB:0.72,0.72,0.72> Carry Load (Raw): <RGB:1,1,1> "
             .. Internal.formatDecimal(worker.haulRawWeight or 0, 2)
             .. " / "
@@ -248,9 +268,6 @@ function DT_MainWindow:updateWorkerDetail(worker)
                 MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, true)
             end
         elseif normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge) then
-            if MainWindowLayout.applyToggleButtonStyle then
-                MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
-            end
             local presenceState = tostring(worker.presenceState or "")
             local homeState = tostring((config.PresenceStates or {}).Home or "Home")
             if worker.jobEnabled and presenceState ~= homeState then
@@ -260,11 +277,14 @@ function DT_MainWindow:updateWorkerDetail(worker)
             else
                 self.btnToggleJob:setTitle("Start Job")
             end
-        else
             if MainWindowLayout.applyToggleButtonStyle then
-                MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
+                MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, worker.jobEnabled == true)
             end
+        else
             self.btnToggleJob:setTitle(worker.jobEnabled and "Stop Job" or "Start Job")
+            if MainWindowLayout.applyToggleButtonStyle then
+                MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, worker.jobEnabled == true)
+            end
         end
     end
 

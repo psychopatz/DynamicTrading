@@ -75,6 +75,12 @@ Sandbox_EN = {
     Sandbox_DynamicTrading_LabourBaseCarryWeight = "Labour: Base Carry Weight",
     Sandbox_DynamicTrading_LabourBaseCarryWeight_tooltip = "Sets the default body carry limit for labour workers before bag weight reduction is applied. Higher values let scavengers haul more before returning to base.",
 
+    Sandbox_DynamicTrading_LabourBaseWorkCycleHours = "Labour: Scavenge Roll Time (Hours)",
+    Sandbox_DynamicTrading_LabourBaseWorkCycleHours_tooltip = "Sets how many work-progress hours a scavenger needs to fill the search bar and trigger the next loot roll. Lower values make loot rolls happen more often.",
+
+    Sandbox_DynamicTrading_LabourBaseWorkMultiplier = "Labour: Scavenge Base Speed Multiplier",
+    Sandbox_DynamicTrading_LabourBaseWorkMultiplier_tooltip = "Sets the base scavenging speed multiplier before archetype bonuses and equipment bonuses are applied. Higher values make the search bar fill faster.",
+
     Sandbox_DynamicTrading_NPCTradingWalkHours = "NPC: Trade Travel Time (Hours)",
     Sandbox_DynamicTrading_NPCTradingWalkHours_tooltip = "How many hours of travel time (Away state) the NPC takes to reach or return from a trading location.",
 

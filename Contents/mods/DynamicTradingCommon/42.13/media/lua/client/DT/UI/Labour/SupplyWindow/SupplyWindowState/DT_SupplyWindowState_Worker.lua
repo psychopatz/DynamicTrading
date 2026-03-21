@@ -16,6 +16,10 @@ function DT_SupplyWindow:refreshWorkerEntries()
                 self.workerEntries[#self.workerEntries + 1] = entry
             end
         end
+
+        for _, placeholderEntry in ipairs(Internal.getMissingEquipmentPlaceholderEntries(worker)) do
+            self.workerEntries[#self.workerEntries + 1] = placeholderEntry
+        end
     elseif activeTab == Internal.Tabs.Output then
         local ledger = nil
         if Internal.canTransferWithWorker(worker) then

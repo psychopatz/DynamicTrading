@@ -7,6 +7,9 @@ local Registry = DT_Labour.Registry
 
 function Registry.GetWorkerSummary(worker)
     Registry.RecalculateWorker(worker)
+    local profile = Config.GetJobProfile(worker.jobType)
+    local cycleHours = Config.GetEffectiveCycleHours and Config.GetEffectiveCycleHours(worker, profile) or (profile and profile.cycleHours) or 0
+    local baseWorkSpeedMultiplier = Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile) or 1.0
     return {
         ownerUsername = worker.ownerUsername,
         workerID = worker.workerID,
@@ -49,6 +52,9 @@ function Registry.GetWorkerSummary(worker)
         storedHydration = worker.storedHydration or 0,
         totalCaloriesAvailable = worker.totalCaloriesAvailable or (worker.caloriesCached or 0),
         totalHydrationAvailable = worker.totalHydrationAvailable or (worker.hydrationCached or 0),
+        workProgress = worker.workProgress or 0,
+        workCycleHours = worker.workCycleHours or cycleHours,
+        baseWorkSpeedMultiplier = worker.baseWorkSpeedMultiplier or baseWorkSpeedMultiplier,
         hp = worker.hp or worker.maxHp or 0,
         maxHp = worker.maxHp or Config.DEFAULT_WORKER_MAX_HP or 100,
         outputCount = worker.outputCount or 0,

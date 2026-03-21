@@ -3,9 +3,59 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
+local DetailSupportIconPanel = ISPanel:derive("DT_SupplyWindowDetailSupportIconPanel")
+
+function DetailSupportIconPanel:prerender()
+    ISPanel.prerender(self)
+end
+
+function DetailSupportIconPanel:render()
+    local title = tostring(self.title or "")
+    local entries = self.entries or {}
+    if title == "" and #entries <= 0 then
+        return
+    end
+
+    self:drawText(title, 0, 0, 0.82, 0.82, 0.82, 1, UIFont.Small)
+
+    local size = Internal.DETAIL_SUPPORT_ICON_SIZE or 24
+    local gap = 6
+    local x = 0
+    local y = 18
+    local maxX = self.width - size
+
+    for _, entry in ipairs(entries) do
+        local tex = entry and entry.texture or nil
+        if x > maxX then
+            break
+        end
+
+        self:drawRectBorder(x - 1, y - 1, size + 2, size + 2, 0.2, 1, 1, 1)
+        if tex then
+            self:drawTextureScaled(tex, x, y, size, size, 1, 1, 1, 1)
+        else
+            self:drawTextCentre("?", x + (size / 2), y + 4, 0.85, 0.85, 0.85, 1, UIFont.Small)
+        end
+
+        x = x + size + gap
+    end
+end
+
+function DetailSupportIconPanel:new(x, y, width, height)
+    local o = ISPanel:new(x, y, width, height)
+    setmetatable(o, self)
+    self.__index = self
+    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    o.borderColor = { r = 0, g = 0, b = 0, a = 0 }
+    o.entries = {}
+    o.title = ""
+    return o
+end
+
 function DT_SupplyWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
     local layout = Internal.getSupplyWindowLayoutMetrics(self)
+    local supportPanelHeight = Internal.DETAIL_SUPPORT_PANEL_HEIGHT or 56
 
     self.playerSearch = ISTextEntryBox:new("", layout.leftX, layout.searchY, layout.leftWidth, layout.searchH)
     self.playerSearch:initialise()
@@ -63,12 +113,22 @@ function DT_SupplyWindow:createChildren()
     self.workerList.drawBorder = true
     self:addChild(self.workerList)
 
-    self.detailText = ISRichTextPanel:new(layout.pad, layout.detailY, self.width - (layout.pad * 2), layout.detailH)
+    self.detailText = ISRichTextPanel:new(layout.pad, layout.detailY, self.width - (layout.pad * 2), layout.detailH - supportPanelHeight)
     self.detailText:initialise()
     self.detailText.backgroundColor = { r = 0, g = 0, b = 0, a = 0.26 }
     self.detailText.borderColor = { r = 1, g = 1, b = 1, a = 0.12 }
     self.detailText:addScrollBars()
     self:addChild(self.detailText)
+
+    self.detailSupportPanel = DetailSupportIconPanel:new(
+        layout.pad + 4,
+        layout.detailY + layout.detailH - supportPanelHeight + 4,
+        self.width - (layout.pad * 2) - 8,
+        supportPanelHeight - 8
+    )
+    self.detailSupportPanel:initialise()
+    self.detailSupportPanel:setVisible(false)
+    self:addChild(self.detailSupportPanel)
 
     self:relayout()
     self:refreshTabButtons()

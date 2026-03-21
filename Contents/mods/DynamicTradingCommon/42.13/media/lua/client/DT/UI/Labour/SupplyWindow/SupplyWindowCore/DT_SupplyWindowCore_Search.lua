@@ -27,6 +27,8 @@ function Internal.matchesFilter(entry, filterText)
     local haystacks = {
         string.lower(tostring(entry.displayName or "")),
         string.lower(tostring(entry.fullType or "")),
+        string.lower(tostring(entry.hintText or "")),
+        string.lower(tostring(entry.searchText or "")),
     }
 
     for _, haystack in ipairs(haystacks) do
@@ -39,6 +41,19 @@ function Internal.matchesFilter(entry, filterText)
 end
 
 function Internal.compareEntries(a, b)
+    local kindOrder = {
+        money = 0,
+        tool = 1,
+        worker = 1,
+        output = 1,
+        placeholder = 2,
+    }
+    local aOrder = kindOrder[tostring(a and a.kind or "")] or 1
+    local bOrder = kindOrder[tostring(b and b.kind or "")] or 1
+    if aOrder ~= bOrder then
+        return aOrder < bOrder
+    end
+
     local aName = string.lower(Internal.formatEntryLabel(a))
     local bName = string.lower(Internal.formatEntryLabel(b))
     if aName == bName then
@@ -59,4 +74,3 @@ function Internal.getSearchText(box)
     end
     return ""
 end
-

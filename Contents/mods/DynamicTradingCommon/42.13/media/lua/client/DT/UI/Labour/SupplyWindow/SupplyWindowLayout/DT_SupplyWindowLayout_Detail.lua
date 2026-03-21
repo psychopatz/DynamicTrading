@@ -3,12 +3,23 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
+local function setDetailSupportPanel(window, title, entries)
+    if not window or not window.detailSupportPanel then
+        return
+    end
+
+    window.detailSupportPanel.title = tostring(title or "")
+    window.detailSupportPanel.entries = entries or {}
+    window.detailSupportPanel:setVisible(window.detailSupportPanel.title ~= "" or #(window.detailSupportPanel.entries or {}) > 0)
+end
+
 function DT_SupplyWindow:updateItemDetail(entry, side)
     if not self.detailText then
         return
     end
 
     if not entry then
+        setDetailSupportPanel(self, "", {})
         local workerTabLabel = Internal.getActiveWorkerTabLabel(self)
         local workerStorageLabel = "stored in "
         local transferAllowed = Internal.canTransferWithWorker(self.workerData)
@@ -56,10 +67,31 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
     if side == "worker" then
         text = text .. " <RGB:1,1,1> <SIZE:Large> " .. Internal.getActiveWorkerTabLabel(self) .. " <LINE> <LINE> "
         text = text .. " <RGB:0.82,0.82,0.82> Item: <RGB:1,1,1> " .. tostring(Internal.formatEntryLabel(entry)) .. " <LINE> "
-        text = text .. " <RGB:0.82,0.82,0.82> Full Type: <RGB:1,1,1> " .. tostring(entry.fullType or "Unknown") .. " <LINE> "
+        if entry.kind == "placeholder" then
+            local supportDisplay = Internal.getPlaceholderSupportDisplay(self, entry)
+            text = text .. " <RGB:0.82,0.82,0.82> Slot Type: <RGB:1,1,1> Missing Requirement <LINE> "
+            text = text .. " <RGB:0.82,0.82,0.82> Why It Matters: <RGB:1,1,1> " .. tostring(entry.reasonText or "This tool unlocks scavenging capability for the worker.") .. " <LINE> "
+            text = text .. " <RGB:0.82,0.82,0.82> Suggested Match: <RGB:1,1,1> " .. tostring(entry.hintText or "Assign a matching tool from the player inventory") .. " <LINE> "
+            if supportDisplay.hasMatches then
+                text = text .. " <RGB:0.82,0.82,0.82> Available Match Count: <RGB:1,1,1> " .. tostring(#(supportDisplay.entries or {})) .. " <LINE> "
+                text = text .. " <RGB:0.82,0.82,0.82> Icons Below: <RGB:1,1,1> Matching items currently in your inventory. <LINE> "
+            else
+                text = text .. " <RGB:0.82,0.82,0.82> Icons Below: <RGB:1,1,1> Supported examples for this requirement. <LINE> "
+            end
+            text = text .. " <RGB:0.82,0.82,0.82> Action: <RGB:1,1,1> Select a matching item on the left side and use > to assign it. <LINE> "
+            setDetailSupportPanel(self, supportDisplay.title, supportDisplay.entries)
+        else
+            setDetailSupportPanel(self, "", {})
+            text = text .. " <RGB:0.82,0.82,0.82> Full Type: <RGB:1,1,1> " .. tostring(entry.fullType or "Unknown") .. " <LINE> "
+        end
         if entry.kind == "money" then
             text = text .. " <RGB:0.82,0.82,0.82> Stored Dollars: <RGB:1,1,1> $" .. tostring(math.max(0, math.floor(tonumber(entry.amount) or 0))) .. " <LINE> "
             text = text .. " <RGB:0.82,0.82,0.82> Action: <RGB:1,1,1> Use < to withdraw a chosen amount. <LINE> "
+        elseif entry.kind == "placeholder" then
+            local tags = entry.tags or {}
+            text = text .. " <RGB:0.82,0.82,0.82> Requirement Tags: <RGB:1,1,1> "
+                .. ((#tags > 0 and table.concat(tags, ", ")) or "None")
+                .. " <LINE> "
         elseif self.activeTab == Internal.Tabs.Equipment then
             local tags = entry.tags or {}
             text = text .. " <RGB:0.82,0.82,0.82> Tool Tags: <RGB:1,1,1> "
@@ -72,6 +104,7 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
             text = text .. " <RGB:0.82,0.82,0.82> Remaining Hydration: <RGB:1,1,1> " .. string.format("%.0f", entry.hydration or 0) .. " <LINE> "
         end
     else
+        setDetailSupportPanel(self, "", {})
         text = text .. " <RGB:1,1,1> <SIZE:Large> Player Item <LINE> <LINE> "
         text = text .. " <RGB:0.82,0.82,0.82> Item: <RGB:1,1,1> " .. tostring(Internal.formatEntryLabel(entry)) .. " <LINE> "
         text = text .. " <RGB:0.82,0.82,0.82> Full Type: <RGB:1,1,1> " .. tostring(entry.fullType or "Unknown") .. " <LINE> "
@@ -83,7 +116,7 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
             text = text .. " <RGB:0.82,0.82,0.82> Tool Tags: <RGB:1,1,1> "
                 .. ((#tags > 0 and table.concat(tags, ", ")) or "None")
                 .. " <LINE> "
-            text = text .. " <RGB:0.82,0.82,0.82> Required For Worker: <RGB:1,1,1> " .. Internal.getRequiredToolSummary(self.workerData) .. " <LINE> "
+            text = text .. " <RGB:0.82,0.82,0.82> Worker Still Needs: <RGB:1,1,1> " .. Internal.getMissingEquipmentSummary(self.workerData, 99) .. " <LINE> "
         else
             text = text .. " <RGB:0.82,0.82,0.82> Adds Calories: <RGB:1,1,1> " .. string.format("%.0f", entry.calories or 0) .. " <LINE> "
             text = text .. " <RGB:0.82,0.82,0.82> Adds Hydration: <RGB:1,1,1> " .. string.format("%.0f", entry.hydration or 0) .. " <LINE> "

@@ -78,6 +78,11 @@ function DT_SupplyWindow:onWithdrawSelected()
         return
     end
 
+    if selectedEntry.kind == "placeholder" then
+        self:updateStatus("That row is a missing equipment placeholder. Assign a matching tool from the left side.")
+        return
+    end
+
     self:withdrawWorkerEntries({ selectedEntry })
 end
 
@@ -85,7 +90,7 @@ function DT_SupplyWindow:onWithdrawVisible()
     local visibleEntries = {}
     for _, row in ipairs(self.workerList and self.workerList.items or {}) do
         local entry = row and row.item or nil
-        if entry and entry.kind ~= "money" then
+        if entry and entry.kind ~= "money" and entry.kind ~= "placeholder" then
             visibleEntries[#visibleEntries + 1] = entry
         end
     end

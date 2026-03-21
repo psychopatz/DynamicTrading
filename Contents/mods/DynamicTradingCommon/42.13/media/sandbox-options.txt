@@ -284,6 +284,26 @@ option DynamicTrading.LabourBaseCarryWeight
     translation = DynamicTrading_LabourBaseCarryWeight,
 }
 
+option DynamicTrading.LabourBaseWorkCycleHours
+{
+    type = double,
+    default = 16.0,
+    min = 1.0,
+    max = 72.0,
+    page = DynamicTradingLabour,
+    translation = DynamicTrading_LabourBaseWorkCycleHours,
+}
+
+option DynamicTrading.LabourBaseWorkMultiplier
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 5.0,
+    page = DynamicTradingLabour,
+    translation = DynamicTrading_LabourBaseWorkMultiplier,
+}
+
 option DynamicTrading.NPCTradingWalkHours
 {
     type = double,

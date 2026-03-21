@@ -115,6 +115,27 @@ function Internal.buildWorkerToolEntry(entry, index)
     }
 end
 
+function Internal.buildWorkerToolPlaceholderEntry(definition)
+    if not definition then
+        return nil
+    end
+
+    return {
+        kind = "placeholder",
+        ledgerIndex = definition.ledgerIndex,
+        displayName = definition.displayName or "Required Tool",
+        fullType = definition.fullType or "DT.RequiredTool",
+        tags = definition.requirementTags or {},
+        hintText = definition.hintText,
+        reasonText = definition.reasonText,
+        searchText = definition.searchText,
+        requirementKey = definition.requirementKey,
+        requirementTags = definition.requirementTags or {},
+        supportedFullTypes = definition.supportedFullTypes or {},
+        texture = definition.texture or Internal.getTextureForFullType(definition.iconFullType),
+    }
+end
+
 function Internal.buildWorkerOutputEntry(entry, index)
     if not entry then
         return nil

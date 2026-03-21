@@ -5,6 +5,7 @@ local Internal = DT_SupplyWindow.Internal
 
 function DT_SupplyWindow:relayout()
     local layout = Internal.getSupplyWindowLayoutMetrics(self)
+    local supportPanelHeight = Internal.DETAIL_SUPPORT_PANEL_HEIGHT or 56
     self.layout = layout
 
     self.playerSearch:setX(layout.leftX)
@@ -71,7 +72,14 @@ function DT_SupplyWindow:relayout()
     self.detailText:setX(layout.pad)
     self.detailText:setY(layout.detailY)
     self.detailText:setWidth(self.width - (layout.pad * 2))
-    self.detailText:setHeight(layout.detailH)
+    self.detailText:setHeight(layout.detailH - supportPanelHeight)
+
+    if self.detailSupportPanel then
+        self.detailSupportPanel:setX(layout.pad + 4)
+        self.detailSupportPanel:setY(layout.detailY + layout.detailH - supportPanelHeight + 4)
+        self.detailSupportPanel:setWidth(self.width - (layout.pad * 2) - 8)
+        self.detailSupportPanel:setHeight(supportPanelHeight - 8)
+    end
 
     if self.detailText.vscroll then
         self.detailText.vscroll:setHeight(self.detailText:getHeight())

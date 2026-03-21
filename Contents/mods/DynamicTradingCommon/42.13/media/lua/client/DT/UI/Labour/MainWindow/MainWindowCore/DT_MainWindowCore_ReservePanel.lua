@@ -13,6 +13,7 @@ function LabourProfileCard:new(x, y, width, height)
     o.caloriesDisplayRatio = 0
     o.hydrationDisplayRatio = 0
     o.healthDisplayRatio = 0
+    o.searchDisplayRatio = 0
     return o
 end
 
@@ -28,9 +29,11 @@ function LabourProfileCard:setWorker(worker)
         self.caloriesData = nil
         self.hydrationData = nil
         self.healthData = nil
+        self.searchData = nil
         self.caloriesTargetRatio = 0
         self.hydrationTargetRatio = 0
         self.healthTargetRatio = 0
+        self.searchTargetRatio = 0
         return
     end
 
@@ -54,9 +57,11 @@ function LabourProfileCard:setWorker(worker)
     self.caloriesData = Internal.getNutritionBarData("Calories", currentCaloriesBuffer, carryoverCalories, provisionCalories, dailyCaloriesNeed)
     self.hydrationData = Internal.getNutritionBarData("Hydration", currentHydrationBuffer, carryoverHydration, provisionHydration, dailyHydrationNeed)
     self.healthData = Internal.getHealthBarData(worker.hp, worker.maxHp)
+    self.searchData = Internal.getScavengeSearchProgressData(worker, profile)
     self.caloriesTargetRatio = self.caloriesData.fillRatio
     self.hydrationTargetRatio = self.hydrationData.fillRatio
     self.healthTargetRatio = self.healthData.fillRatio
+    self.searchTargetRatio = self.searchData and self.searchData.fillRatio or 0
     self.portraitTex = Internal.getWorkerPortraitTexture(worker)
 end
 
@@ -103,6 +108,7 @@ function LabourProfileCard:prerender()
     self.caloriesDisplayRatio = animateRatio(self.caloriesDisplayRatio, self.caloriesTargetRatio)
     self.hydrationDisplayRatio = animateRatio(self.hydrationDisplayRatio, self.hydrationTargetRatio)
     self.healthDisplayRatio = animateRatio(self.healthDisplayRatio, self.healthTargetRatio)
+    self.searchDisplayRatio = animateRatio(self.searchDisplayRatio, self.searchTargetRatio)
 
     local portraitSize = math.min(104, self.height - (pad * 2))
     local portraitX = pad
@@ -170,7 +176,21 @@ function LabourProfileCard:prerender()
         self.hydrationData,
         self.hydrationDisplayRatio
     )
+
+    topY = topY + 44
+
+    if self.searchData then
+        self:drawReserveBar(
+            barsX,
+            topY,
+            barsWidth,
+            barHeight,
+            "Search Roll",
+            { r = 0.94, g = 0.72, b = 0.18 },
+            self.searchData,
+            self.searchDisplayRatio
+        )
+    end
 end
 
 Internal.LabourReservePanel = LabourProfileCard
-

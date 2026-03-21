@@ -57,7 +57,7 @@ function DT_MainWindow:createChildren()
     local listY = headerY + 38
     local footerH = 38
     local listWidth = 280
-    local reserveH = 206
+    local reserveH = 250
     local contentHeight = self.height - listY - footerH - pad
     local rightX = listWidth + (pad * 2)
     local rightWidth = self.width - rightX - pad

@@ -551,6 +551,8 @@ function Sim.ProcessWorker(worker, currentHour)
     local speedMultiplier = Config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType)
     local normalizedJobType = Config.NormalizeJobType(worker.jobType)
     local scavengeLoadout = nil
+    local cycleHours = Config.GetEffectiveCycleHours and Config.GetEffectiveCycleHours(worker, profile) or (profile.cycleHours or 24)
+    local baseWorkSpeedMultiplier = Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile) or 1.0
     local lastHour = tonumber(worker.lastSimHour) or tonumber(currentHour) or 0
     local deltaHours = math.max(0, currentHour - lastHour)
 
@@ -566,6 +568,10 @@ function Sim.ProcessWorker(worker, currentHour)
 
     Sites.RefreshWorkerSite(worker)
     local toolsReady = Registry.WorkerHasRequiredTools(worker)
+
+    speedMultiplier = speedMultiplier * (tonumber(baseWorkSpeedMultiplier) or 1)
+    worker.workCycleHours = cycleHours
+    worker.baseWorkSpeedMultiplier = baseWorkSpeedMultiplier
 
     if normalizedJobType == Config.JobTypes.Scavenge and Config.GetScavengeLoadout then
         scavengeLoadout = Config.GetScavengeLoadout(worker)
@@ -670,8 +676,8 @@ function Sim.ProcessWorker(worker, currentHour)
             if presenceState == Config.PresenceStates.Scavenging and worker.jobEnabled and toolsReady and hasCalories and hasHydration then
                 worker.state = Config.States.Working
                 worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
-                while worker.workProgress >= (profile.cycleHours or 24) do
-                    worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
+                while worker.workProgress >= cycleHours do
+                    worker.workProgress = worker.workProgress - cycleHours
 
                     local scavengeRun = Output.GenerateScavengeRun and Output.GenerateScavengeRun(worker) or { entries = {} }
                     logScavengeRun(worker, scavengeRun, currentHour)
@@ -719,8 +725,8 @@ function Sim.ProcessWorker(worker, currentHour)
     else
         worker.state = Config.States.Working
         worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
-        while worker.workProgress >= (profile.cycleHours or 24) do
-            worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
+        while worker.workProgress >= cycleHours do
+            worker.workProgress = worker.workProgress - cycleHours
             for _, entry in ipairs(Output.GenerateForJob(profile, worker)) do
                 Registry.AddOutputEntry(worker, entry)
                 logOutputEntry(worker, entry, currentHour)

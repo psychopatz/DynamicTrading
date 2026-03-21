@@ -42,6 +42,34 @@ function Config.GetScavengeTravelHours()
     return math.max(0, Config.GetSandboxNumber("NPCTradingWalkHours", Config.DEFAULT_SCAVENGE_TRAVEL_HOURS) or Config.DEFAULT_SCAVENGE_TRAVEL_HOURS)
 end
 
+function Config.GetScavengeBaseWorkCycleHours()
+    return math.max(0.1, Config.GetSandboxNumber("LabourBaseWorkCycleHours", Config.DEFAULT_SCAVENGE_WORK_CYCLE_HOURS) or Config.DEFAULT_SCAVENGE_WORK_CYCLE_HOURS)
+end
+
+function Config.GetScavengeBaseWorkMultiplier()
+    return math.max(0.01, Config.GetSandboxNumber("LabourBaseWorkMultiplier", Config.DEFAULT_SCAVENGE_BASE_WORK_MULTIPLIER) or Config.DEFAULT_SCAVENGE_BASE_WORK_MULTIPLIER)
+end
+
+function Config.GetEffectiveCycleHours(worker, profile)
+    local safeProfile = profile or Config.GetJobProfile(worker and worker.jobType)
+    local normalizedJob = Config.NormalizeJobType((worker and worker.jobType) or (safeProfile and safeProfile.jobType))
+    if normalizedJob == (Config.JobTypes and Config.JobTypes.Scavenge) then
+        return Config.GetScavengeBaseWorkCycleHours()
+    end
+
+    return math.max(0.1, tonumber(safeProfile and safeProfile.cycleHours) or 24)
+end
+
+function Config.GetBaseWorkSpeedMultiplier(worker, profile)
+    local safeProfile = profile or Config.GetJobProfile(worker and worker.jobType)
+    local normalizedJob = Config.NormalizeJobType((worker and worker.jobType) or (safeProfile and safeProfile.jobType))
+    if normalizedJob == (Config.JobTypes and Config.JobTypes.Scavenge) then
+        return Config.GetScavengeBaseWorkMultiplier()
+    end
+
+    return 1.0
+end
+
 function Config.GetEffectiveDailyCaloriesNeed(worker, profile)
     return Config.GetLabourDailyCaloriesUse()
 end

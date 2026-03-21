@@ -3,6 +3,130 @@ DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
 local Internal = DT_MainWindow.Internal
 
+local function getSelectedWorkerForAction(window)
+    return window.selectedWorker or window.selectedWorkerSummary or nil
+end
+
+local function updateToggleJobStatus(window, enabled, normalizedJob, presenceState)
+    local config = Internal.Config or {}
+
+    if normalizedJob == ((config.JobTypes or {}).Scavenge) then
+        window:updateStatus(
+            enabled and "Sending worker out from home..."
+                or ((presenceState and presenceState ~= ((config.PresenceStates or {}).Home))
+                    and "Calling worker home..."
+                    or "Cancelling the scavenging trip...")
+        )
+        return
+    end
+
+    window:updateStatus(enabled and "Starting job..." or "Stopping job...")
+end
+
+local function sendToggleJobCommand(window, enabled, normalizedJob, presenceState)
+    window:sendLabourCommand("SetWorkerJobEnabled", {
+        workerID = window.selectedWorkerSummary.workerID,
+        enabled = enabled
+    })
+
+    updateToggleJobStatus(window, enabled, normalizedJob, presenceState)
+end
+
+local function getScavengeProvisionWarningText(window)
+    local worker = getSelectedWorkerForAction(window)
+    local config = Internal.Config or {}
+    local profile = config.GetJobProfile and config.GetJobProfile(worker and worker.jobType) or {}
+    local workerName = tostring((worker and worker.name) or (window.selectedWorkerSummary and window.selectedWorkerSummary.name) or "this worker")
+    local provisionCalories = math.max(0, tonumber(worker and (worker.provisionCaloriesReserve or worker.storedCalories)) or 0)
+    local provisionHydration = math.max(0, tonumber(worker and (worker.provisionHydrationReserve or worker.storedHydration)) or 0)
+    local totalCalories = math.max(0, tonumber(worker and (worker.combinedCaloriesTotal or worker.totalCaloriesAvailable or worker.storedCalories)) or 0)
+    local totalHydration = math.max(0, tonumber(worker and (worker.combinedHydrationTotal or worker.totalHydrationAvailable or worker.storedHydration)) or 0)
+    local dailyCaloriesNeed = math.max(0, tonumber(profile and profile.dailyCaloriesNeed) or 0)
+    local dailyHydrationNeed = math.max(0, tonumber(profile and profile.dailyHydrationNeed) or 0)
+    local calorieDays = Internal.getReserveDaysLeft and Internal.getReserveDaysLeft(totalCalories, dailyCaloriesNeed) or nil
+    local hydrationDays = Internal.getReserveDaysLeft and Internal.getReserveDaysLeft(totalHydration, dailyHydrationNeed) or nil
+    local lowestDays = nil
+
+    if calorieDays and hydrationDays then
+        lowestDays = math.min(calorieDays, hydrationDays)
+    else
+        lowestDays = calorieDays or hydrationDays
+    end
+
+    local warningLine = "Make sure they have enough food and water before leaving."
+    if provisionCalories <= 0 and provisionHydration <= 0 then
+        warningLine = "This worker has no stored provisions and may turn back quickly."
+    elseif lowestDays and lowestDays < 1 then
+        warningLine = "This worker has less than one day of total reserves and may return early."
+    end
+
+    return "Start scavenging run for " .. workerName .. "?\n\n"
+        .. "Be sure to give the NPC provisions first. Scavengers can head back home when calories or hydration run low.\n\n"
+        .. "Stored provisions:\n"
+        .. "Calories: " .. Internal.formatReserveValue(provisionCalories)
+        .. "\nHydration: " .. Internal.formatReserveValue(provisionHydration)
+        .. "\n\nTotal reserve:\n"
+        .. "Calories: " .. Internal.formatReserveValue(totalCalories)
+        .. "\nHydration: " .. Internal.formatReserveValue(totalHydration)
+        .. "\n\n"
+        .. warningLine
+        .. "\n\nPress Yes to start anyway, or No to provision them first."
+end
+
+local function openScavengeStartConfirmation(window, enabled, normalizedJob, presenceState)
+    local text = getScavengeProvisionWarningText(window)
+
+    local function onConfirm(_, button)
+        if button and button.internal == "YES" then
+            sendToggleJobCommand(window, enabled, normalizedJob, presenceState)
+        else
+            window:updateStatus("Scavenging start cancelled. Add provisions first if needed.")
+        end
+    end
+
+    local modal = ISModalDialog:new(0, 0, 420, 260, text, true, nil, onConfirm, nil)
+    modal:initialise()
+    modal:addToUIManager()
+end
+
+local function getStopJobConfirmationText(window, normalizedJob, presenceState)
+    local worker = getSelectedWorkerForAction(window)
+    local config = Internal.Config or {}
+    local workerName = tostring((worker and worker.name) or (window.selectedWorkerSummary and window.selectedWorkerSummary.name) or "this worker")
+    local homeState = tostring((config.PresenceStates or {}).Home or "Home")
+
+    if normalizedJob == ((config.JobTypes or {}).Scavenge) then
+        if tostring(presenceState or "") ~= homeState then
+            return "Call " .. workerName .. " back home?\n\n"
+                .. "They will stop the current scavenging trip and return instead of continuing the run.\n\n"
+                .. "Press Yes to recall them, or No to keep them scavenging."
+        end
+
+        return "Cancel the scavenging job for " .. workerName .. "?\n\n"
+            .. "This prevents them from heading out until you start the job again.\n\n"
+            .. "Press Yes to cancel, or No to keep the job active."
+    end
+
+    return "Stop the current job for " .. workerName .. "?\n\n"
+        .. "Press Yes to stop working, or No to leave the job running."
+end
+
+local function openStopJobConfirmation(window, enabled, normalizedJob, presenceState)
+    local text = getStopJobConfirmationText(window, normalizedJob, presenceState)
+
+    local function onConfirm(_, button)
+        if button and button.internal == "YES" then
+            sendToggleJobCommand(window, enabled, normalizedJob, presenceState)
+        else
+            window:updateStatus("Job stop cancelled.")
+        end
+    end
+
+    local modal = ISModalDialog:new(0, 0, 400, 200, text, true, nil, onConfirm, nil)
+    modal:initialise()
+    modal:addToUIManager()
+end
+
 function DT_MainWindow:onRefresh()
     self:updateStatus("Refreshing labour roster...")
 
@@ -40,20 +164,18 @@ function DT_MainWindow:onToggleJob()
         currentEnabled = self.selectedWorkerSummary.jobEnabled == true
     end
     local enabled = not currentEnabled
-    self:sendLabourCommand("SetWorkerJobEnabled", {
-        workerID = self.selectedWorkerSummary.workerID,
-        enabled = enabled
-    })
-    if normalizedJob == ((config.JobTypes or {}).Scavenge) then
-        self:updateStatus(
-            enabled and "Sending worker out from home..."
-                or ((presenceState and presenceState ~= ((config.PresenceStates or {}).Home))
-                    and "Calling worker home..."
-                    or "Cancelling the scavenging trip...")
-        )
+
+    if enabled and normalizedJob == ((config.JobTypes or {}).Scavenge) then
+        openScavengeStartConfirmation(self, enabled, normalizedJob, presenceState)
         return
     end
-    self:updateStatus(enabled and "Starting job..." or "Stopping job...")
+
+    if not enabled then
+        openStopJobConfirmation(self, enabled, normalizedJob, presenceState)
+        return
+    end
+
+    sendToggleJobCommand(self, enabled, normalizedJob, presenceState)
 end
 
 function DT_MainWindow:onCycleJob()

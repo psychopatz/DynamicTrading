@@ -9,9 +9,10 @@ Internal.ENTRY_SCAN_BATCH_SIZE = 40
 Internal.RAW_SCAN_STEP_LIMIT = 600
 Internal.NutritionPreviewCache = Internal.NutritionPreviewCache or {}
 Internal.TextureCache = Internal.TextureCache or {}
+Internal.DETAIL_SUPPORT_PANEL_HEIGHT = 56
+Internal.DETAIL_SUPPORT_ICON_SIZE = 24
 Internal.Tabs = {
     Provisions = "provisions",
     Output = "output",
     Equipment = "equipment",
 }
-
