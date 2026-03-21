@@ -63,13 +63,34 @@ function DT_MainWindow:onCycleJob()
     end
 
     local config = Internal.Config
-    local currentJobType = self.selectedWorker and self.selectedWorker.jobType or self.selectedWorkerSummary.jobType
-    local nextJobType = config.GetNextJobType and config.GetNextJobType(currentJobType) or currentJobType
-    self:sendLabourCommand("SetWorkerJobType", {
-        workerID = self.selectedWorkerSummary.workerID,
-        jobType = nextJobType
+    local worker = self.selectedWorker or self.selectedWorkerSummary
+    local workerID = self.selectedWorkerSummary.workerID
+    local currentJobType = worker and worker.jobType or self.selectedWorkerSummary.jobType
+    local normalizedJobType = config.NormalizeJobType and config.NormalizeJobType(currentJobType) or tostring(currentJobType or "")
+    local workerName = tostring((worker and worker.name) or self.selectedWorkerSummary.name or self.selectedWorkerSummary.workerID)
+
+    local modal = DT_LabourJobModal.Open({
+        title = "Change Job",
+        promptText = "Choose a new job for " .. workerName .. ".",
+        selectedJobType = normalizedJobType,
+        onConfirm = function(jobType, option)
+            local selectedJobType = config.NormalizeJobType and config.NormalizeJobType(jobType) or tostring(jobType or "")
+            if selectedJobType == normalizedJobType then
+                self:updateStatus(workerName .. " is already assigned to " .. tostring(option and option.label or selectedJobType) .. ".")
+                return
+            end
+
+            self:sendLabourCommand("SetWorkerJobType", {
+                workerID = workerID,
+                jobType = selectedJobType
+            })
+            self:updateStatus("Changing worker job to " .. tostring(option and option.label or selectedJobType) .. "...")
+        end
     })
-    self:updateStatus("Changing worker job to " .. tostring(nextJobType) .. "...")
+
+    if not modal then
+        self:updateStatus("No labour jobs are currently available.")
+    end
 end
 
 function DT_MainWindow:onManageSupplies()
