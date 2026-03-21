@@ -16,7 +16,7 @@ function DT_MainWindow:createChildren()
 
     local th = self:titleBarHeight()
     local pad = 10
-    local headerY = th + pad
+    local headerY = th + pad + MainWindowLayout.WINDOW_HEADER_CLEARANCE
     local buttonY = headerY
     local listY = headerY + 38
     local footerH = 38
@@ -147,4 +147,3 @@ function DT_MainWindow:createChildren()
     self:updateStatus("Labour Management ready. Jobs are tool-gated, workplaces are deferred, and food/water remain upkeep.")
     self:populateWorkerList(DT_MainWindow.cachedWorkers or {})
 end
-

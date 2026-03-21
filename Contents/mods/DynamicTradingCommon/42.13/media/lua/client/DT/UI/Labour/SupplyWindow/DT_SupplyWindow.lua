@@ -14,8 +14,8 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 -- Keep explicit load order so shared helpers are available before dependent modules.
 require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/DT_SupplyWindowCore"
 require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_List"
-require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Layout"
-require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Scan"
+require "DT/UI/Labour/SupplyWindow/SupplyWindowLayout/DT_SupplyWindowLayout"
+require "DT/UI/Labour/SupplyWindow/SupplyWindowState/DT_SupplyWindowState"
 require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Actions"
 require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Lifecycle"
 require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Events"

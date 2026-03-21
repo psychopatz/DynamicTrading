@@ -11,7 +11,7 @@ local function applyWindowLayout(window)
 
     local th = window:titleBarHeight()
     local pad = 10
-    local headerY = th + pad
+    local headerY = th + pad + MainWindowLayout.WINDOW_HEADER_CLEARANCE
     local listY = headerY + 38
     local footerH = 38
     local listWidth = 280
@@ -19,6 +19,7 @@ local function applyWindowLayout(window)
     local contentHeight = window.height - listY - footerH - pad
     local rightX = listWidth + (pad * 2)
     local rightWidth = window.width - rightX - pad
+    local textPanelWidth = math.max(0, rightWidth - (MainWindowLayout.PANEL_INNER_PAD * 2))
     local detailY = listY + reserveH + pad
     local detailsAreaHeight = window.height - detailY - footerH - pad
     local splitGap = 8
@@ -32,7 +33,7 @@ local function applyWindowLayout(window)
     )
 
     if window.detailText then
-        window.detailText:setWidth(math.max(0, rightWidth - (MainWindowLayout.PANEL_INNER_PAD * 2)))
+        window.detailText:setWidth(textPanelWidth)
         MainWindowLayout.refreshRichTextPanel(window.detailText)
         local detailContentHeight = MainWindowLayout.getRichTextContentHeight(window.detailText)
         if detailContentHeight > 0 then
@@ -68,7 +69,7 @@ local function applyWindowLayout(window)
     if window.detailText then
         window.detailText:setX(MainWindowLayout.PANEL_INNER_PAD)
         window.detailText:setY(MainWindowLayout.PANEL_HEADER_HEIGHT)
-        window.detailText:setWidth(math.max(0, rightWidth - (MainWindowLayout.PANEL_INNER_PAD * 2)))
+        window.detailText:setWidth(textPanelWidth)
         window.detailText:setHeight(math.max(0, detailHeight - MainWindowLayout.PANEL_HEADER_HEIGHT - MainWindowLayout.PANEL_INNER_PAD))
         MainWindowLayout.refreshRichTextPanel(window.detailText)
         if window.detailText.vscroll then
@@ -86,7 +87,7 @@ local function applyWindowLayout(window)
     if window.activityLogText then
         window.activityLogText:setX(MainWindowLayout.PANEL_INNER_PAD)
         window.activityLogText:setY(MainWindowLayout.PANEL_HEADER_HEIGHT)
-        window.activityLogText:setWidth(math.max(0, rightWidth - (MainWindowLayout.PANEL_INNER_PAD * 2)))
+        window.activityLogText:setWidth(textPanelWidth)
         window.activityLogText:setHeight(math.max(0, activityHeight - MainWindowLayout.PANEL_HEADER_HEIGHT - MainWindowLayout.PANEL_INNER_PAD))
         MainWindowLayout.refreshRichTextPanel(window.activityLogText)
         if window.activityLogText.vscroll then
@@ -110,4 +111,3 @@ function DT_MainWindow:onResize()
     ISCollapsableWindow.onResize(self)
     applyWindowLayout(self)
 end
-

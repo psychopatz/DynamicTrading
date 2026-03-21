@@ -2,6 +2,7 @@ DT_MainWindow = DT_MainWindow or {}
 DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
 local Internal = DT_MainWindow.Internal
+local MainWindowLayout = Internal.MainWindowLayout or {}
 
 local function buildActivityLogText(worker)
     local entries = worker and worker.activityLog or {}
@@ -64,13 +65,23 @@ function DT_MainWindow:updateWorkerDetail(worker)
         return
     end
 
+    if self.applyDynamicLayout then
+        self:applyDynamicLayout()
+    end
+
     if not worker then
         self.detailText:setText(" <RGB:0.6,0.6,0.6> No worker selected. Recruit one from ConversationUI or pick an existing labour worker from the list. ")
-        self.detailText:paginate()
+        MainWindowLayout.refreshRichTextPanel(self.detailText)
         self.activityLogText:setText(" <RGB:0.62,0.62,0.62> No recent worker activity yet. ")
-        self.activityLogText:paginate()
+        MainWindowLayout.refreshRichTextPanel(self.activityLogText)
         if self.applyDynamicLayout then
             self:applyDynamicLayout()
+        end
+        if self.detailText.vscroll then
+            self.detailText.vscroll:setHeight(self.detailText:getHeight())
+        end
+        if self.detailText.setYScroll then
+            self.detailText:setYScroll(0)
         end
         if self.activityLogText.vscroll then
             self.activityLogText.vscroll:setHeight(self.activityLogText:getHeight())
@@ -104,11 +115,17 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> "
 
     self.detailText:setText(text)
-    self.detailText:paginate()
+    MainWindowLayout.refreshRichTextPanel(self.detailText)
     self.activityLogText:setText(buildActivityLogText(worker))
-    self.activityLogText:paginate()
+    MainWindowLayout.refreshRichTextPanel(self.activityLogText)
     if self.applyDynamicLayout then
         self:applyDynamicLayout()
+    end
+    if self.detailText.vscroll then
+        self.detailText.vscroll:setHeight(self.detailText:getHeight())
+    end
+    if self.detailText.setYScroll then
+        self.detailText:setYScroll(0)
     end
     if self.activityLogText.vscroll then
         self.activityLogText.vscroll:setHeight(self.activityLogText:getHeight())

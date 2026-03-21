@@ -11,14 +11,21 @@ MainWindowLayout.DETAIL_PANEL_MIN_HEIGHT = 120
 MainWindowLayout.ACTIVITY_PANEL_MIN_HEIGHT = 150
 MainWindowLayout.PANEL_INNER_PAD = 6
 MainWindowLayout.PANEL_HEADER_HEIGHT = 24
+MainWindowLayout.WINDOW_HEADER_CLEARANCE = 24
 
 function MainWindowLayout.refreshRichTextPanel(panel)
     if not panel then
         return
     end
 
+    panel.textDirty = true
     panel:paginate()
+    if panel.recalcSize then
+        panel:recalcSize()
+    end
     if panel.vscroll then
+        panel.vscroll:setX(panel:getWidth() - 16)
+        panel.vscroll:setY(0)
         panel.vscroll:setHeight(panel:getHeight())
     end
 end
@@ -43,4 +50,3 @@ function MainWindowLayout.getRichTextContentHeight(panel)
 
     return 0
 end
-
