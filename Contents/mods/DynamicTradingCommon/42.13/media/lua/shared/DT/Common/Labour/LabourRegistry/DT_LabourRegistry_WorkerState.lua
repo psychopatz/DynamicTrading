@@ -84,6 +84,7 @@ local function migrateLegacyNutritionModel(worker)
         worker.hydrationCached = onBodyHydration
     end
     worker.nutritionModelVersion = targetVersion
+    worker.nutritionCacheDirty = true
 end
 
 function Registry.RecalculateWorker(worker)
@@ -93,6 +94,7 @@ function Registry.RecalculateWorker(worker)
     worker.toolLedger = Internal.EnsureArray(worker.toolLedger)
     worker.outputLedger = Internal.EnsureArray(worker.outputLedger)
     Internal.EnsureActivityLog(worker)
+    Internal.EnsureWorkerCacheState(worker)
     worker.moneyStored = math.max(0, math.floor(tonumber(worker.moneyStored) or 0))
     worker.jobType = Config.NormalizeJobType(worker.jobType or worker.profession)
     worker.archetypeID = Config.NormalizeArchetypeID(worker.archetypeID or worker.profession)
@@ -116,36 +118,53 @@ function Registry.RecalculateWorker(worker)
         DT_Labour.Nutrition.NormalizeOnBodyReserve(worker, caloriesCap, hydrationCap)
     end
 
-    local storedCalories = 0
-    local storedHydration = 0
-    local outputCount = 0
-    local tags = {}
+    local storedCalories = clampAmount(worker.storedCalories)
+    local storedHydration = clampAmount(worker.storedHydration)
+    local outputCount = math.max(0, tonumber(worker.outputCount) or 0)
+    local tags = type(worker.assignedToolTags) == "table" and worker.assignedToolTags or {}
 
-    for i = #worker.nutritionLedger, 1, -1 do
-        local entry = worker.nutritionLedger[i]
-        local entryCalories, entryHydration = normalizeLedgerEntry(entry)
+    if worker.nutritionCacheDirty then
+        storedCalories = 0
+        storedHydration = 0
+        for i = #worker.nutritionLedger, 1, -1 do
+            local entry = worker.nutritionLedger[i]
+            local entryCalories, entryHydration = normalizeLedgerEntry(entry)
 
-        if entryCalories <= 0 and entryHydration <= 0 then
-            table.remove(worker.nutritionLedger, i)
-        else
-            storedCalories = storedCalories + entryCalories
-            storedHydration = storedHydration + entryHydration
-        end
-    end
-
-    for i = #worker.toolLedger, 1, -1 do
-        local entry = worker.toolLedger[i]
-        if not entry or not entry.fullType then
-            table.remove(worker.toolLedger, i)
-        else
-            for _, tag in ipairs(entry.tags or {}) do
-                tags[tag] = true
+            if entryCalories <= 0 and entryHydration <= 0 then
+                table.remove(worker.nutritionLedger, i)
+            else
+                storedCalories = storedCalories + entryCalories
+                storedHydration = storedHydration + entryHydration
             end
         end
+        worker.storedCalories = storedCalories
+        worker.storedHydration = storedHydration
+        worker.nutritionCacheDirty = false
     end
 
-    for _, entry in ipairs(worker.outputLedger) do
-        outputCount = outputCount + (tonumber(entry.qty) or 0)
+    if worker.toolCacheDirty then
+        tags = {}
+        for i = #worker.toolLedger, 1, -1 do
+            local entry = worker.toolLedger[i]
+            if not entry or not entry.fullType then
+                table.remove(worker.toolLedger, i)
+            else
+                for _, tag in ipairs(entry.tags or {}) do
+                    tags[tag] = true
+                end
+            end
+        end
+        worker.assignedToolTags = tags
+        worker.toolCacheDirty = false
+    end
+
+    if worker.outputCacheDirty then
+        outputCount = 0
+        for _, entry in ipairs(worker.outputLedger) do
+            outputCount = outputCount + (tonumber(entry.qty) or 0)
+        end
+        worker.outputCount = outputCount
+        worker.outputCacheDirty = false
     end
 
     worker.storedCalories = storedCalories

@@ -60,13 +60,24 @@ function DT_MainWindow:updateWorkerDetail(worker)
         self.reservePanel:setWorker(worker)
     end
 
-    if not self.detailText then
+    if not self.detailText or not self.activityLogText then
         return
     end
 
     if not worker then
         self.detailText:setText(" <RGB:0.6,0.6,0.6> No worker selected. Recruit one from ConversationUI or pick an existing labour worker from the list. ")
         self.detailText:paginate()
+        self.activityLogText:setText(" <RGB:0.62,0.62,0.62> No recent worker activity yet. ")
+        self.activityLogText:paginate()
+        if self.applyDynamicLayout then
+            self:applyDynamicLayout()
+        end
+        if self.activityLogText.vscroll then
+            self.activityLogText.vscroll:setHeight(self.activityLogText:getHeight())
+        end
+        if self.activityLogText.setYScroll then
+            self.activityLogText:setYScroll(0)
+        end
         if self.btnToggleJob then
             self.btnToggleJob:setTitle("Start Job")
         end
@@ -78,9 +89,6 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local toolTags = profile.requiredToolTags or {}
     local bonusMultiplier = config.GetJobSpeedMultiplier and config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1
     local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ") or "None"
-    local maxHp = math.max(1, tonumber(worker.maxHp) or 100)
-    local hp = math.max(0, math.min(maxHp, tonumber(worker.hp) or maxHp))
-
     local text = ""
     text = text .. " <RGB:1,1,1> <SIZE:Medium> Overview <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Job Enabled: <RGB:1,1,1> " .. Internal.formatBool(worker.jobEnabled == true) .. " <LINE> "
@@ -93,20 +101,20 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.72,0.72,0.72> Tool State: <RGB:1,1,1> " .. tostring(worker.toolState or "Missing") .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Required Tools: <RGB:1,1,1> " .. toolSummary .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Work Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.workX, worker.workY, worker.workZ) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> <LINE> "
-
-    text = text .. " <RGB:1,1,1> <SIZE:Medium> Upkeep Summary <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Health: <RGB:1,1,1> " .. Internal.formatReserveValue(hp) .. " / " .. Internal.formatReserveValue(maxHp) .. " <LINE> "
-    text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Activity Log <LINE> "
-    text = text .. buildActivityLogText(worker)
+    text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> "
 
     self.detailText:setText(text)
     self.detailText:paginate()
-    if self.detailText.vscroll then
-        self.detailText.vscroll:setHeight(self.detailText:getHeight())
+    self.activityLogText:setText(buildActivityLogText(worker))
+    self.activityLogText:paginate()
+    if self.applyDynamicLayout then
+        self:applyDynamicLayout()
     end
-    if self.detailText.setYScroll then
-        self.detailText:setYScroll(0)
+    if self.activityLogText.vscroll then
+        self.activityLogText.vscroll:setHeight(self.activityLogText:getHeight())
+    end
+    if self.activityLogText.setYScroll then
+        self.activityLogText:setYScroll(0)
     end
 
     if self.btnToggleJob then

@@ -37,6 +37,23 @@ local function clampHp(value, maxHp)
     return math.max(0, math.min(safeMax, tonumber(value) or safeMax))
 end
 
+local function freezeWorkerForOfflineOwner(worker, currentHour)
+    if not worker then
+        return false
+    end
+
+    if not Config.IsOwnerOnline or Config.IsOwnerOnline(worker.ownerUsername) then
+        return false
+    end
+
+    worker.lastSimHour = tonumber(currentHour) or tonumber(worker.lastSimHour) or 0
+    worker.lastNutritionCheckpoint = Config.GetMealCheckpointCountAtHour(worker.lastSimHour)
+    if Presentation and Presentation.RemoveProjection then
+        Presentation.RemoveProjection(worker)
+    end
+    return true
+end
+
 local function appendWorkerLog(worker, message, worldHour, category)
     local registryInternal = DT_Labour and DT_Labour.Registry and DT_Labour.Registry.Internal or nil
     if registryInternal and registryInternal.AppendActivityLog then
@@ -299,7 +316,11 @@ function Sim.ProcessAllWorkers(currentHour)
     currentHour = currentHour or (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour()
     local data = Registry.GetData()
     for _, worker in pairs(data.Workers or {}) do
-        Sim.ProcessWorker(worker, currentHour)
+        if freezeWorkerForOfflineOwner(worker, currentHour) then
+            Registry.RecalculateWorker(worker)
+        else
+            Sim.ProcessWorker(worker, currentHour)
+        end
     end
     Registry.Save()
 end

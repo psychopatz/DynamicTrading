@@ -63,6 +63,95 @@ function Internal.AppendActivityLog(worker, message, worldHour, category)
     end
 end
 
+function Internal.EnsureWorkerCacheState(worker)
+    if not worker then
+        return
+    end
+
+    if worker.nutritionCacheDirty == nil then
+        worker.nutritionCacheDirty = worker.storedCalories == nil or worker.storedHydration == nil
+    end
+    if worker.toolCacheDirty == nil then
+        worker.toolCacheDirty = worker.assignedToolTags == nil
+    end
+    if worker.outputCacheDirty == nil then
+        worker.outputCacheDirty = worker.outputCount == nil
+    end
+end
+
+function Internal.MarkNutritionCacheDirty(worker)
+    if worker then
+        worker.nutritionCacheDirty = true
+    end
+end
+
+function Internal.MarkToolCacheDirty(worker)
+    if worker then
+        worker.toolCacheDirty = true
+    end
+end
+
+function Internal.MarkOutputCacheDirty(worker)
+    if worker then
+        worker.outputCacheDirty = true
+    end
+end
+
+function Internal.ApplyNutritionCacheDelta(worker, caloriesDelta, hydrationDelta)
+    if not worker then
+        return false
+    end
+
+    Internal.EnsureWorkerCacheState(worker)
+    if worker.nutritionCacheDirty then
+        return false
+    end
+
+    worker.storedCalories = math.max(0, (tonumber(worker.storedCalories) or 0) + (tonumber(caloriesDelta) or 0))
+    worker.storedHydration = math.max(0, (tonumber(worker.storedHydration) or 0) + (tonumber(hydrationDelta) or 0))
+    return true
+end
+
+function Internal.ApplyToolTags(worker, tags)
+    if not worker then
+        return false
+    end
+
+    Internal.EnsureWorkerCacheState(worker)
+    if worker.toolCacheDirty then
+        return false
+    end
+
+    worker.assignedToolTags = type(worker.assignedToolTags) == "table" and worker.assignedToolTags or {}
+    for _, tag in ipairs(tags or {}) do
+        worker.assignedToolTags[tag] = true
+    end
+    return true
+end
+
+function Internal.ApplyOutputCountDelta(worker, qtyDelta)
+    if not worker then
+        return false
+    end
+
+    Internal.EnsureWorkerCacheState(worker)
+    if worker.outputCacheDirty then
+        return false
+    end
+
+    worker.outputCount = math.max(0, (tonumber(worker.outputCount) or 0) + (tonumber(qtyDelta) or 0))
+    return true
+end
+
+function Internal.ResetOutputCount(worker)
+    if not worker then
+        return
+    end
+
+    worker.outputCount = 0
+    worker.outputCacheDirty = false
+end
+
 function Internal.BuildStarterNutritionLedger(template)
     local existing = Internal.CopyShallow(template and template.nutritionLedger or nil)
     if #existing > 0 then

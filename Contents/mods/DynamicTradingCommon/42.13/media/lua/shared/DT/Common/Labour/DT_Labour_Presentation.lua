@@ -119,6 +119,8 @@ end
 
 local function canProjectWorker(worker)
     return worker
+        and Config.IsOwnerOnline
+        and Config.IsOwnerOnline(worker.ownerUsername)
         and worker.jobEnabled
         and worker.state == Config.States.Working
         and worker.workX and worker.workY

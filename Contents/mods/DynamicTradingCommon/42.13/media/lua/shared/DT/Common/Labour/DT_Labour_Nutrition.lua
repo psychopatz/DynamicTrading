@@ -15,6 +15,15 @@ local function appendWorkerLog(worker, message, worldHour, category)
     end
 end
 
+local function markNutritionDirty(worker)
+    local registryInternal = DT_Labour and DT_Labour.Registry and DT_Labour.Registry.Internal or nil
+    if registryInternal and registryInternal.MarkNutritionCacheDirty then
+        registryInternal.MarkNutritionCacheDirty(worker)
+    elseif worker then
+        worker.nutritionCacheDirty = true
+    end
+end
+
 local function clampAmount(value)
     return math.max(0, tonumber(value) or 0)
 end
@@ -228,11 +237,13 @@ end
 
 function Nutrition.SanitizeLedgerEntry(entry)
     if not entry then
-        return 0, 0
+        return 0, 0, false
     end
 
-    local calories = clampAmount(entry.caloriesRemaining)
-    local hydration = clampAmount(entry.hydrationRemaining)
+    local originalCalories = clampAmount(entry.caloriesRemaining)
+    local originalHydration = clampAmount(entry.hydrationRemaining)
+    local calories = originalCalories
+    local hydration = originalHydration
     if hydration > 0 and hydration < 25 then
         hydration = hydration * (Config.HYDRATION_POINTS_PER_THIRST or 1000)
     end
@@ -257,7 +268,7 @@ function Nutrition.SanitizeLedgerEntry(entry)
 
     entry.caloriesRemaining = calories
     entry.hydrationRemaining = hydration
-    return calories, hydration
+    return calories, hydration, originalCalories ~= calories or originalHydration ~= hydration
 end
 
 local function normalizeLedgerEntry(entry)
@@ -270,11 +281,18 @@ local function pruneEmptyEntries(worker)
     end
 
     worker.nutritionLedger = worker.nutritionLedger or {}
+    local removedAny = false
+    local changedAny = false
     for i = #worker.nutritionLedger, 1, -1 do
-        local calories, hydration = normalizeLedgerEntry(worker.nutritionLedger[i])
+        local calories, hydration, changed = normalizeLedgerEntry(worker.nutritionLedger[i])
+        changedAny = changedAny or changed == true
         if calories <= 0.0001 and hydration <= 0.0001 then
             table.remove(worker.nutritionLedger, i)
+            removedAny = true
         end
+    end
+    if removedAny or changedAny then
+        markNutritionDirty(worker)
     end
 end
 
@@ -334,6 +352,10 @@ function Nutrition.PruneEmptyEntries(worker)
 end
 
 function Nutrition.GetLedgerTotals(worker)
+    if worker and worker.nutritionCacheDirty == false then
+        return clampAmount(worker.storedCalories), clampAmount(worker.storedHydration)
+    end
+
     local calories = 0
     local hydration = 0
     for _, entry in ipairs(worker and worker.nutritionLedger or {}) do
@@ -417,9 +439,17 @@ function Nutrition.ConsumeProvisionItem(worker, ledgerIndex, caloriesCap, hydrat
         return 0, 0, nil
     end
 
-    local calories, hydration = normalizeLedgerEntry(entry)
+    local calories, hydration, changed = normalizeLedgerEntry(entry)
     table.remove(worker.nutritionLedger, index)
     Nutrition.AddReserveAmounts(worker, calories, hydration, caloriesCap, hydrationCap)
+    if not changed then
+        local registryInternal = DT_Labour and DT_Labour.Registry and DT_Labour.Registry.Internal or nil
+        if not (registryInternal and registryInternal.ApplyNutritionCacheDelta and registryInternal.ApplyNutritionCacheDelta(worker, -calories, -hydration)) then
+            markNutritionDirty(worker)
+        end
+    else
+        markNutritionDirty(worker)
+    end
     local displayName = tostring(entry.displayName or entry.fullType or "Provision")
     local actionVerb = (hydration > 0 and calories <= 0) and "Drank" or "Ate"
     appendWorkerLog(

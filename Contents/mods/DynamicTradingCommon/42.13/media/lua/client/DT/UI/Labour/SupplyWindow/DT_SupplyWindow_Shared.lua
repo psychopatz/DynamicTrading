@@ -8,6 +8,7 @@ Internal.Nutrition = DT_Labour and DT_Labour.Nutrition or Internal.Nutrition or 
 Internal.ENTRY_SCAN_BATCH_SIZE = 40
 Internal.RAW_SCAN_STEP_LIMIT = 600
 Internal.NutritionPreviewCache = Internal.NutritionPreviewCache or {}
+Internal.TextureCache = Internal.TextureCache or {}
 Internal.Tabs = {
     Provisions = "provisions",
     Output = "output",
@@ -140,6 +141,29 @@ function Internal.getDisplayNameForFullType(fullType)
     return tostring(fullType or "Unknown Item")
 end
 
+function Internal.getTextureForFullType(fullType)
+    if not fullType then
+        return nil
+    end
+
+    local cache = Internal.TextureCache or {}
+    Internal.TextureCache = cache
+    if cache[fullType] ~= nil then
+        return cache[fullType]
+    end
+
+    local texture = nil
+    if InventoryItemFactory and InventoryItemFactory.CreateItem then
+        local item = InventoryItemFactory.CreateItem(fullType)
+        if item and item.getTex then
+            texture = item:getTex()
+        end
+    end
+
+    cache[fullType] = texture
+    return texture
+end
+
 function Internal.getOutputTabLabel(worker)
     if not worker or not worker.jobType then
         return "Merchandise"
@@ -215,7 +239,7 @@ function Internal.buildWorkerSupplyEntry(entry, index)
         fullType = entry.fullType,
         calories = math.max(0, tonumber(entry.caloriesRemaining) or 0),
         hydration = math.max(0, tonumber(entry.hydrationRemaining) or 0),
-        texture = entry.texture,
+        texture = entry.texture or Internal.getTextureForFullType(entry.fullType),
         pending = entry.pending == true,
     }
 end
@@ -231,7 +255,7 @@ function Internal.buildWorkerToolEntry(entry, index)
         displayName = entry.displayName,
         fullType = entry.fullType,
         tags = entry.tags or {},
-        texture = entry.texture,
+        texture = entry.texture or Internal.getTextureForFullType(entry.fullType),
         pending = entry.pending == true,
     }
 end
@@ -247,6 +271,7 @@ function Internal.buildWorkerOutputEntry(entry, index)
         displayName = Internal.getDisplayNameForFullType(entry.fullType),
         fullType = entry.fullType,
         qty = math.max(1, tonumber(entry.qty) or 1),
+        texture = entry.texture or Internal.getTextureForFullType(entry.fullType),
     }
 end
 
