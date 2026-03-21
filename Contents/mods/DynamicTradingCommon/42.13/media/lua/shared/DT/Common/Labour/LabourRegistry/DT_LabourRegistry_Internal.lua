@@ -149,6 +149,7 @@ function Internal.ResetOutputCount(worker)
     end
 
     worker.outputCount = 0
+    worker.outputWeight = 0
     worker.outputCacheDirty = false
 end
 

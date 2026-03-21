@@ -161,6 +161,18 @@ function DT_MainWindow:updateWorkerDetail(worker)
         text = text .. " <RGB:0.72,0.72,0.72> Loot Rolls: <RGB:1,1,1> " .. tostring(worker.scavengePoolRolls or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Failure Weight: <RGB:1,1,1> " .. tostring(worker.scavengeFailureWeight or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Search Speed: <RGB:1,1,1> x" .. Internal.formatDecimal(worker.scavengeSearchSpeedMultiplier or 1, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Carry Load: <RGB:1,1,1> "
+            .. Internal.formatDecimal(worker.haulEffectiveWeight or 0, 2)
+            .. " / "
+            .. Internal.formatDecimal(worker.maxCarryWeight or 0, 2)
+            .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Base Carry Limit: <RGB:1,1,1> " .. Internal.formatDecimal(worker.baseCarryWeight or worker.maxCarryWeight or 0, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Raw Haul Weight: <RGB:1,1,1> " .. Internal.formatDecimal(worker.haulRawWeight or 0, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Raw Carry Allowance: <RGB:1,1,1> " .. Internal.formatDecimal(worker.rawCarryAllowance or worker.maxCarryWeight or 0, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Carry Containers: <RGB:1,1,1> " .. tostring(worker.carryContainerCount or 0) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Dump Trips: <RGB:1,1,1> " .. tostring(worker.dumpTrips or 0) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Dump Cooldown: <RGB:1,1,1> " .. Internal.formatDecimal(worker.dumpCooldownHours or 0, 2) .. "h <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Stored Output Weight: <RGB:1,1,1> " .. Internal.formatDecimal(worker.outputWeight or 0, 2) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Unlocked Pools: <RGB:1,1,1> " .. getScavengeCapabilitySummary(worker) .. " <LINE> "
     end
 

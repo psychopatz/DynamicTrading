@@ -56,6 +56,16 @@ function Registry.GetWorkerSummary(worker)
         scavengeSiteProfileLabel = worker.scavengeSiteProfileLabel,
         scavengeSiteRoomName = worker.scavengeSiteRoomName,
         scavengeSiteZoneType = worker.scavengeSiteZoneType,
+        haulCount = worker.haulCount,
+        haulRawWeight = worker.haulRawWeight,
+        haulEffectiveWeight = worker.haulEffectiveWeight,
+        baseCarryWeight = worker.baseCarryWeight,
+        maxCarryWeight = worker.maxCarryWeight,
+        rawCarryAllowance = worker.rawCarryAllowance,
+        carryContainerCount = worker.carryContainerCount,
+        dumpCooldownHours = worker.dumpCooldownHours,
+        dumpTrips = worker.dumpTrips,
+        outputWeight = worker.outputWeight,
         isFemale = worker.isFemale,
         identitySeed = worker.identitySeed
     }

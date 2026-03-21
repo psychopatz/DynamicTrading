@@ -5,6 +5,27 @@ DT_Labour.Registry.Internal = DT_Labour.Registry.Internal or {}
 local Registry = DT_Labour.Registry
 local Internal = Registry.Internal
 local Nutrition = DT_Labour.Nutrition
+local Config = DT_Labour.Config
+
+local function mergeOutputLikeEntry(targetLedger, entry)
+    if not targetLedger or not entry or not entry.fullType then
+        return false
+    end
+
+    local qtyDelta = math.max(1, tonumber(entry.qty) or 1)
+    for _, existing in ipairs(targetLedger) do
+        if existing.fullType == entry.fullType then
+            existing.qty = (existing.qty or 0) + qtyDelta
+            return true
+        end
+    end
+
+    targetLedger[#targetLedger + 1] = {
+        fullType = entry.fullType,
+        qty = qtyDelta
+    }
+    return true
+end
 
 function Registry.AddNutritionEntry(worker, entry)
     if not worker or not entry then return end
@@ -32,25 +53,53 @@ end
 function Registry.AddOutputEntry(worker, entry)
     if not worker or not entry or not entry.fullType then return end
     worker.outputLedger = worker.outputLedger or {}
-    local qtyDelta = tonumber(entry.qty) or 1
-
-    for _, existing in ipairs(worker.outputLedger) do
-        if existing.fullType == entry.fullType then
-            existing.qty = (existing.qty or 0) + qtyDelta
-            if not Internal.ApplyOutputCountDelta(worker, qtyDelta) then
-                Internal.MarkOutputCacheDirty(worker)
-            end
-            return
-        end
-    end
-
-    worker.outputLedger[#worker.outputLedger + 1] = {
-        fullType = entry.fullType,
-        qty = qtyDelta
-    }
-    if not Internal.ApplyOutputCountDelta(worker, qtyDelta) then
+    if mergeOutputLikeEntry(worker.outputLedger, entry) then
         Internal.MarkOutputCacheDirty(worker)
     end
+end
+
+function Registry.AddHaulEntry(worker, entry)
+    if not worker or not entry or not entry.fullType then return end
+    worker.haulLedger = worker.haulLedger or {}
+    mergeOutputLikeEntry(worker.haulLedger, entry)
+end
+
+function Registry.GetHaulMetrics(worker)
+    local rawWeight = 0
+    local count = 0
+    for _, entry in ipairs(worker and worker.haulLedger or {}) do
+        local qty = math.max(1, tonumber(entry.qty) or 1)
+        count = count + qty
+        rawWeight = rawWeight + (Config.GetItemWeight(entry.fullType) * qty)
+    end
+
+    local carryProfile = Config.GetScavengeCarryProfile and Config.GetScavengeCarryProfile(worker) or nil
+    local effectiveWeight = Config.CalculateEffectiveCarryWeight and Config.CalculateEffectiveCarryWeight(rawWeight, carryProfile) or rawWeight
+    return {
+        count = count,
+        rawWeight = rawWeight,
+        effectiveWeight = effectiveWeight,
+        maxCarryWeight = carryProfile and carryProfile.maxCarryWeight
+            or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
+            or (tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
+    }
+end
+
+function Registry.DumpCarriedHaul(worker)
+    if not worker then
+        return 0, 0, 0
+    end
+
+    local metrics = Registry.GetHaulMetrics(worker)
+    local haulEntries = worker.haulLedger or {}
+    local movedStacks = 0
+    for _, entry in ipairs(haulEntries) do
+        Registry.AddOutputEntry(worker, entry)
+        movedStacks = movedStacks + 1
+    end
+
+    worker.haulLedger = {}
+    return movedStacks, metrics.count, metrics.rawWeight
 end
 
 function Registry.AddMoney(worker, amount)
@@ -65,6 +114,7 @@ function Registry.CollectOutput(worker)
     end
     worker.outputLedger = {}
     Internal.ResetOutputCount(worker)
+    worker.outputWeight = 0
     return output
 end
 

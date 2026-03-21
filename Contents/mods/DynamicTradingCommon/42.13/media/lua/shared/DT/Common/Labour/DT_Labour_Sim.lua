@@ -243,6 +243,76 @@ local function processNutrition(worker, currentHour, dailyCaloriesNeed, dailyHyd
     return workableHours, hasCalories, hasHydration, hp
 end
 
+local function applyDumpTravel(worker, workableHours)
+    local pendingDumpHours = math.max(0, tonumber(worker and worker.dumpCooldownHours) or 0)
+    if pendingDumpHours <= 0 or workableHours <= 0 then
+        return workableHours, 0
+    end
+
+    local spentHours = math.min(workableHours, pendingDumpHours)
+    worker.dumpCooldownHours = math.max(0, pendingDumpHours - spentHours)
+    return math.max(0, workableHours - spentHours), spentHours
+end
+
+local function queueImmediateDumpTravel(worker, dumpHours, speedMultiplier)
+    local remainingDumpHours = math.max(0, tonumber(dumpHours) or 0)
+    if not worker or remainingDumpHours <= 0 then
+        return 0, 0
+    end
+
+    local safeSpeedMultiplier = math.max(0.001, tonumber(speedMultiplier) or 1)
+    local availableProgress = clampHours(worker.workProgress)
+    local availableHours = availableProgress / safeSpeedMultiplier
+    local spentHours = math.min(availableHours, remainingDumpHours)
+
+    if spentHours > 0 then
+        worker.workProgress = math.max(0, availableProgress - (spentHours * safeSpeedMultiplier))
+        remainingDumpHours = math.max(0, remainingDumpHours - spentHours)
+    end
+
+    if remainingDumpHours > 0 then
+        worker.dumpCooldownHours = math.max(0, tonumber(worker.dumpCooldownHours) or 0) + remainingDumpHours
+    end
+
+    return spentHours, remainingDumpHours
+end
+
+local function maybeDumpScavengeHaul(worker, currentHour, loadout)
+    if not worker or Config.NormalizeJobType(worker.jobType) ~= Config.JobTypes.Scavenge then
+        return 0
+    end
+
+    local haulMetrics = Registry.GetHaulMetrics and Registry.GetHaulMetrics(worker) or nil
+    local maxCarryWeight = tonumber(loadout and loadout.maxCarryWeight)
+        or tonumber(worker.maxCarryWeight)
+        or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
+        or tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT)
+        or 8
+    if not haulMetrics or (tonumber(haulMetrics.effectiveWeight) or 0) < maxCarryWeight then
+        return 0
+    end
+
+    local movedStacks, movedCount, movedRawWeight = Registry.DumpCarriedHaul(worker)
+    if movedStacks <= 0 then
+        return 0
+    end
+
+    worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0) + 1
+    local dumpHours = math.max(0, tonumber(Config.DEFAULT_SCAVENGE_DUMP_HOURS) or 1)
+
+    appendWorkerLog(
+        worker,
+        "Returned to base and dumped haul: "
+            .. tostring(movedCount)
+            .. " items, "
+            .. string.format("%.2f", movedRawWeight)
+            .. " weight.",
+        currentHour,
+        "haul"
+    )
+    return dumpHours
+end
+
 function Sim.ProcessWorker(worker, currentHour)
     if not worker then return end
 
@@ -286,6 +356,22 @@ function Sim.ProcessWorker(worker, currentHour)
         worker.scavengeCapabilities = nil
     end
 
+    if normalizedJobType == Config.JobTypes.Scavenge and worker.jobEnabled == false and worker.haulLedger and #worker.haulLedger > 0 then
+        local movedStacks, movedCount, movedRawWeight = Registry.DumpCarriedHaul(worker)
+        if movedStacks > 0 then
+            appendWorkerLog(
+                worker,
+                "Stopped scavenging and unloaded haul: "
+                    .. tostring(movedCount)
+                    .. " items, "
+                    .. string.format("%.2f", movedRawWeight)
+                    .. " weight.",
+                currentHour,
+                "haul"
+            )
+        end
+    end
+
     worker.siteState = worker.siteState or "Deferred"
     worker.toolState = toolsReady and "Ready" or "Missing"
 
@@ -299,6 +385,9 @@ function Sim.ProcessWorker(worker, currentHour)
         dailyHydrationNeed,
         canWork
     )
+    if normalizedJobType == Config.JobTypes.Scavenge then
+        workableHours = select(1, applyDumpTravel(worker, workableHours))
+    end
 
     worker.starvationHours = 0
     worker.dehydrationHours = 0
@@ -320,8 +409,19 @@ function Sim.ProcessWorker(worker, currentHour)
         while worker.workProgress >= (profile.cycleHours or 24) do
             worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
             for _, entry in ipairs(Output.GenerateForJob(profile, worker)) do
-                Registry.AddOutputEntry(worker, entry)
+                if normalizedJobType == Config.JobTypes.Scavenge then
+                    Registry.AddHaulEntry(worker, entry)
+                else
+                    Registry.AddOutputEntry(worker, entry)
+                end
                 logOutputEntry(worker, entry, currentHour)
+            end
+
+            if normalizedJobType == Config.JobTypes.Scavenge then
+                local dumpHours = maybeDumpScavengeHaul(worker, currentHour, scavengeLoadout)
+                if dumpHours > 0 then
+                    queueImmediateDumpTravel(worker, dumpHours, speedMultiplier)
+                end
             end
         end
     end

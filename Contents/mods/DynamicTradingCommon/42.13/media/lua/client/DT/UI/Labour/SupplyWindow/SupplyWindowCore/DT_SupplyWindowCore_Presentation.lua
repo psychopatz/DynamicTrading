@@ -36,6 +36,26 @@ function Internal.getActiveWorkerTabLabel(window)
     return "Provisions"
 end
 
+function Internal.formatWeightValue(value)
+    return string.format("%.2f", math.max(0, tonumber(value) or 0))
+end
+
+function Internal.getWorkerHeaderTitle(window)
+    local workerName = tostring(window and window.workerName or "Worker")
+    local activeTab = window and window.activeTab or Internal.Tabs.Provisions
+    local worker = window and window.workerData or nil
+    local config = Internal.Config or {}
+    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
+
+    if activeTab == Internal.Tabs.Output and normalizedJob == ((config.JobTypes or {}).Scavenge) then
+        local carryWeight = Internal.formatWeightValue(worker and worker.haulEffectiveWeight)
+        local carryLimit = Internal.formatWeightValue(worker and worker.maxCarryWeight)
+        return workerName .. " (Carry " .. carryWeight .. " / " .. carryLimit .. ") Inventory"
+    end
+
+    return workerName .. " Inventory"
+end
+
 function Internal.getRequiredToolSummary(worker)
     local config = Internal.Config or {}
     local profile = config.GetJobProfile and config.GetJobProfile(worker and worker.jobType) or {}

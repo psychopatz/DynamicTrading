@@ -30,7 +30,7 @@ function DT_SupplyWindow:render()
 
     self:drawText("Transfer", (layout.controlX or 0) + 16, layout.headerY or 36, 0.9, 0.9, 0.9, 1, UIFont.Small)
 
-    self:drawText(tostring(self.workerName or "Worker") .. " Inventory", layout.rightX or 12, layout.headerY or 36, 0.94, 0.96, 1, 1, UIFont.Medium)
+    self:drawText(Internal.getWorkerHeaderTitle(self), layout.rightX or 12, layout.headerY or 36, 0.94, 0.96, 1, 1, UIFont.Medium)
     self:drawText(
         Internal.getActiveWorkerTabLabel(self) .. " | " .. Internal.getWorkerTabSummary(self, self.workerEntries),
         layout.rightX or 12,

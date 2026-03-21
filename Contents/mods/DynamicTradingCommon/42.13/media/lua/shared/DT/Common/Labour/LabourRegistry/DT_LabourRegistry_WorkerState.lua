@@ -92,6 +92,7 @@ function Registry.RecalculateWorker(worker)
 
     worker.nutritionLedger = Internal.EnsureArray(worker.nutritionLedger)
     worker.toolLedger = Internal.EnsureArray(worker.toolLedger)
+    worker.haulLedger = Internal.EnsureArray(worker.haulLedger)
     worker.outputLedger = Internal.EnsureArray(worker.outputLedger)
     Internal.EnsureActivityLog(worker)
     Internal.EnsureWorkerCacheState(worker)
@@ -99,6 +100,8 @@ function Registry.RecalculateWorker(worker)
     worker.jobType = Config.NormalizeJobType(worker.jobType or worker.profession)
     worker.archetypeID = Config.NormalizeArchetypeID(worker.archetypeID or worker.profession)
     worker.profession = worker.profession or worker.jobType
+    worker.baseCarryWeight = Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker)
+        or math.max(0, tonumber(worker.baseCarryWeight) or tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
     if (tonumber(worker.dailyHydrationNeed) or 0) > 0 and (tonumber(worker.dailyHydrationNeed) or 0) < 25 then
         worker.dailyHydrationNeed = (tonumber(worker.dailyHydrationNeed) or 0) * (Config.HYDRATION_POINTS_PER_THIRST or 1000)
     end
@@ -121,6 +124,7 @@ function Registry.RecalculateWorker(worker)
     local storedCalories = clampAmount(worker.storedCalories)
     local storedHydration = clampAmount(worker.storedHydration)
     local outputCount = math.max(0, tonumber(worker.outputCount) or 0)
+    local outputWeight = math.max(0, tonumber(worker.outputWeight) or 0)
     local tags = type(worker.assignedToolTags) == "table" and worker.assignedToolTags or {}
 
     if worker.nutritionCacheDirty then
@@ -161,12 +165,31 @@ function Registry.RecalculateWorker(worker)
 
     if worker.outputCacheDirty then
         outputCount = 0
+        outputWeight = 0
         for _, entry in ipairs(worker.outputLedger) do
             outputCount = outputCount + (tonumber(entry.qty) or 0)
+            outputWeight = outputWeight + (Config.GetItemWeight(entry.fullType) * math.max(1, tonumber(entry.qty) or 1))
         end
         worker.outputCount = outputCount
+        worker.outputWeight = outputWeight
         worker.outputCacheDirty = false
     end
+
+    local haulCount = 0
+    local haulRawWeight = 0
+    for i = #worker.haulLedger, 1, -1 do
+        local entry = worker.haulLedger[i]
+        if not entry or not entry.fullType then
+            table.remove(worker.haulLedger, i)
+        else
+            local qty = math.max(1, tonumber(entry.qty) or 1)
+            haulCount = haulCount + qty
+            haulRawWeight = haulRawWeight + (Config.GetItemWeight(entry.fullType) * qty)
+        end
+    end
+
+    local carryProfile = Config.GetScavengeCarryProfile and Config.GetScavengeCarryProfile(worker) or nil
+    local haulEffectiveWeight = Config.CalculateEffectiveCarryWeight and Config.CalculateEffectiveCarryWeight(haulRawWeight, carryProfile) or haulRawWeight
 
     worker.storedCalories = storedCalories
     worker.storedHydration = storedHydration
@@ -188,6 +211,15 @@ function Registry.RecalculateWorker(worker)
     worker.totalCaloriesAvailable = worker.combinedCaloriesTotal
     worker.totalHydrationAvailable = worker.combinedHydrationTotal
     worker.outputCount = outputCount
+    worker.outputWeight = outputWeight
+    worker.haulCount = haulCount
+    worker.haulRawWeight = haulRawWeight
+    worker.haulEffectiveWeight = haulEffectiveWeight
+    worker.maxCarryWeight = carryProfile and carryProfile.maxCarryWeight or worker.baseCarryWeight
+    worker.rawCarryAllowance = carryProfile and carryProfile.rawAllowance or worker.maxCarryWeight
+    worker.carryContainerCount = #(carryProfile and carryProfile.containers or {})
+    worker.dumpCooldownHours = math.max(0, tonumber(worker.dumpCooldownHours) or 0)
+    worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0)
     worker.assignedToolTags = tags
 end
 
