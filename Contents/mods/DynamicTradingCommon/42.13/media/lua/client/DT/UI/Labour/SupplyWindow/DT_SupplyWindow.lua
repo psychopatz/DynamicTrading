@@ -16,7 +16,7 @@ require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/DT_SupplyWindowCore"
 require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_List"
 require "DT/UI/Labour/SupplyWindow/SupplyWindowLayout/DT_SupplyWindowLayout"
 require "DT/UI/Labour/SupplyWindow/SupplyWindowState/DT_SupplyWindowState"
-require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Actions"
+require "DT/UI/Labour/SupplyWindow/SupplyWindowActions/DT_SupplyWindowActions"
 require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Lifecycle"
 require "DT/UI/Labour/SupplyWindow/DT_SupplyWindow_Events"
 
