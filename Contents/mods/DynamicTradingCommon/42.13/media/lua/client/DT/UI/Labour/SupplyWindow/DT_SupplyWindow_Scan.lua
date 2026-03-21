@@ -3,18 +3,52 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
-function DT_SupplyWindow:registerVisibleEntry(entry)
-    if not self.itemList or not entry then
+function DT_SupplyWindow:refreshDetailSelection()
+    local entry = nil
+    local side = self.activeSelectionSide
+
+    if side == "worker" then
+        entry = self.selectedWorkerEntry
+    else
+        side = "player"
+        entry = self.selectedPlayerEntry
+    end
+
+    if not entry then
+        if self.selectedPlayerEntry then
+            side = "player"
+            entry = self.selectedPlayerEntry
+        elseif self.selectedWorkerEntry then
+            side = "worker"
+            entry = self.selectedWorkerEntry
+        else
+            side = nil
+        end
+    end
+
+    self.activeSelectionSide = side
+    self:updateItemDetail(entry, side)
+end
+
+function DT_SupplyWindow:registerVisiblePlayerEntry(entry)
+    if not self.playerList or not entry then
         return
     end
 
-    self.itemList:addItem(Internal.formatEntryLabel(entry), entry)
-    entry.rowIndex = #self.itemList.items
+    if not Internal.matchesFilter(entry, Internal.getSearchText(self.playerSearch)) then
+        return
+    end
 
-    if not self.selectedEntry then
-        self.itemList.selected = entry.rowIndex
-        self.selectedEntry = entry
-        self:updateItemDetail(entry)
+    self.playerList:addItem(Internal.formatEntryLabel(entry), entry)
+    entry.rowIndex = #self.playerList.items
+
+    if not self.selectedPlayerEntry then
+        self.playerList.selected = entry.rowIndex
+        self.selectedPlayerEntry = entry
+        if self.activeSelectionSide ~= "worker" then
+            self.activeSelectionSide = "player"
+            self:updateItemDetail(entry, "player")
+        end
     end
 end
 
@@ -29,28 +63,161 @@ function DT_SupplyWindow:addScannedItem(invItem)
     end
 
     local entry = Internal.buildInventoryEntry(invItem)
-    self.entries[#self.entries + 1] = entry
-    self:registerVisibleEntry(entry)
+    self.playerEntries[#self.playerEntries + 1] = entry
+    self.playerEntriesByID[entry.itemID] = entry
+    self:registerVisiblePlayerEntry(entry)
     return true
+end
+
+function DT_SupplyWindow:rebuildPlayerList()
+    if not self.playerList then
+        return
+    end
+
+    local selectedID = self.selectedPlayerEntry and self.selectedPlayerEntry.itemID or nil
+    local filterText = Internal.getSearchText(self.playerSearch)
+
+    self.playerList:clear()
+    self.playerList.selected = -1
+    self.selectedPlayerEntry = nil
+
+    local selectedIndex = nil
+    for _, entry in ipairs(self.playerEntries or {}) do
+        if Internal.matchesFilter(entry, filterText) then
+            self.playerList:addItem(Internal.formatEntryLabel(entry), entry)
+            local rowIndex = #self.playerList.items
+            entry.rowIndex = rowIndex
+            if selectedID and entry.itemID == selectedID then
+                selectedIndex = rowIndex
+            end
+        end
+    end
+
+    if self.playerList.items and #self.playerList.items > 0 then
+        local targetIndex = selectedIndex or 1
+        self.playerList.selected = targetIndex
+        self.selectedPlayerEntry = self.playerList.items[targetIndex].item
+    end
+
+    self:refreshDetailSelection()
+end
+
+function DT_SupplyWindow:rebuildWorkerList()
+    if not self.workerList then
+        return
+    end
+
+    local selectedKey = self.selectedWorkerEntry and (self.selectedWorkerEntry.itemID or self.selectedWorkerEntry.ledgerIndex) or nil
+    local filterText = Internal.getSearchText(self.workerSearch)
+
+    self.workerList:clear()
+    self.workerList.selected = -1
+    self.selectedWorkerEntry = nil
+
+    local selectedIndex = nil
+    for _, entry in ipairs(self.workerEntries or {}) do
+        if Internal.matchesFilter(entry, filterText) then
+            self.workerList:addItem(Internal.formatEntryLabel(entry), entry)
+            local rowIndex = #self.workerList.items
+            entry.rowIndex = rowIndex
+            local entryKey = entry.itemID or entry.ledgerIndex
+            if selectedKey and entryKey == selectedKey then
+                selectedIndex = rowIndex
+            end
+        end
+    end
+
+    if self.workerList.items and #self.workerList.items > 0 then
+        local targetIndex = selectedIndex or 1
+        self.workerList.selected = targetIndex
+        self.selectedWorkerEntry = self.workerList.items[targetIndex].item
+    end
+
+    self:refreshDetailSelection()
+end
+
+function DT_SupplyWindow:syncSearchFilters()
+    local playerFilter = Internal.normalizeFilterText(Internal.getSearchText(self.playerSearch))
+    if playerFilter ~= (self.lastPlayerFilter or "") then
+        self.lastPlayerFilter = playerFilter
+        self:rebuildPlayerList()
+    end
+
+    local workerFilter = Internal.normalizeFilterText(Internal.getSearchText(self.workerSearch))
+    if workerFilter ~= (self.lastWorkerFilter or "") then
+        self.lastWorkerFilter = workerFilter
+        self:rebuildWorkerList()
+    end
+end
+
+function DT_SupplyWindow:setWorkerData(worker)
+    self.workerData = worker
+    self.workerEntries = {}
+
+    for index, ledgerEntry in ipairs(worker and worker.nutritionLedger or {}) do
+        local entry = Internal.buildWorkerSupplyEntry(ledgerEntry, index)
+        if entry then
+            self.workerEntries[#self.workerEntries + 1] = entry
+        end
+    end
+
+    table.sort(self.workerEntries, Internal.compareEntries)
+    self:rebuildWorkerList()
+end
+
+function DT_SupplyWindow:removePlayerEntryByID(itemID)
+    if not itemID then
+        return nil
+    end
+
+    self.playerEntriesByID[itemID] = nil
+    for index = #self.playerEntries, 1, -1 do
+        local entry = self.playerEntries[index]
+        if entry and entry.itemID == itemID then
+            return table.remove(self.playerEntries, index)
+        end
+    end
+
+    return nil
+end
+
+function DT_SupplyWindow:applyOptimisticDeposit(entries)
+    local changed = false
+
+    for _, entry in ipairs(entries or {}) do
+        local removed = self:removePlayerEntryByID(entry.itemID)
+        if removed then
+            local workerEntry = Internal.buildWorkerEntryFromPlayerEntry(removed)
+            self.workerEntries[#self.workerEntries + 1] = workerEntry
+            changed = true
+        end
+    end
+
+    if changed then
+        table.sort(self.workerEntries, Internal.compareEntries)
+        self:rebuildPlayerList()
+        self:rebuildWorkerList()
+    end
 end
 
 function DT_SupplyWindow:startInventoryScan()
     local player = Internal.getLocalPlayer()
     local rootContainer = player and player.getInventory and player:getInventory() or nil
 
-    self.entries = {}
-    self.selectedEntry = nil
+    self.playerEntries = {}
+    self.playerEntriesByID = {}
+    self.selectedPlayerEntry = nil
     self.scanStack = {}
     self.scanProcessed = 0
     self.scanning = false
 
-    if self.itemList then
-        self.itemList:clear()
-        self.itemList.selected = -1
+    if self.playerList then
+        self.playerList:clear()
+        self.playerList.selected = -1
     end
 
     if not rootContainer then
-        self:updateItemDetail(nil)
+        self:refreshDetailSelection()
         self:updateStatus("No player inventory found.")
         return
     end
@@ -60,27 +227,17 @@ function DT_SupplyWindow:startInventoryScan()
         index = 0
     }
     self.scanning = true
-    self:updateItemDetail(nil)
     self:updateStatus("Scanning inventory for labour supplies...")
 end
 
 function DT_SupplyWindow:finishInventoryScan()
     self.scanning = false
-
-    if self.itemList and self.itemList.items and #self.itemList.items > 0 then
-        if not self.selectedEntry then
-            self.itemList.selected = 1
-            self.selectedEntry = self.itemList.items[1].item
-        end
-        self:updateItemDetail(self.selectedEntry)
-    else
-        self.selectedEntry = nil
-        self:updateItemDetail(nil)
-    end
+    table.sort(self.playerEntries, Internal.compareEntries)
+    self:rebuildPlayerList()
 
     self:updateStatus(
         "Loaded "
-        .. tostring(#(self.entries or {}))
+        .. tostring(#(self.playerEntries or {}))
         .. " visible entries from "
         .. tostring(self.scanProcessed or 0)
         .. " inventory items."
@@ -137,7 +294,7 @@ function DT_SupplyWindow:processInventoryScan(batchSize)
             "Scanning inventory... "
             .. tostring(self.scanProcessed)
             .. " items checked, "
-            .. tostring(#(self.entries or {}))
+            .. tostring(#(self.playerEntries or {}))
             .. " visible entries."
         )
     end
@@ -145,6 +302,7 @@ end
 
 function DT_SupplyWindow:update()
     ISCollapsableWindow.update(self)
+    self:syncSearchFilters()
 
     if self.scanning then
         self:processInventoryScan(Internal.ENTRY_SCAN_BATCH_SIZE)

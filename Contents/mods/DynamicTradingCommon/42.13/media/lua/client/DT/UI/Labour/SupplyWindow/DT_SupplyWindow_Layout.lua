@@ -3,92 +3,251 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
+local function getLayoutMetrics(window)
+    local th = window:titleBarHeight()
+    local pad = 12
+    local gap = 12
+    local controlWidth = 88
+    local headerTextH = 34
+    local searchH = 24
+    local detailH = math.max(120, math.min(184, math.floor(window.height * 0.24)))
+
+    local headerY = th + pad
+    local searchY = headerY + headerTextH
+    local contentY = searchY + searchH + 10
+    local footerY = window.height - pad - detailH
+    local listH = math.max(180, footerY - contentY - 10)
+    local listAreaWidth = window.width - (pad * 2) - controlWidth - (gap * 2)
+    local leftWidth = math.floor(listAreaWidth / 2)
+    local rightWidth = listAreaWidth - leftWidth
+    local leftX = pad
+    local controlX = leftX + leftWidth + gap
+    local rightX = controlX + controlWidth + gap
+    local centerButtonsY = contentY + math.floor(math.max(0, listH - 108) / 2)
+    local detailY = contentY + listH + 10
+
+    return {
+        pad = pad,
+        gap = gap,
+        headerY = headerY,
+        searchY = searchY,
+        contentY = contentY,
+        detailY = detailY,
+        leftX = leftX,
+        leftWidth = leftWidth,
+        rightX = rightX,
+        rightWidth = rightWidth,
+        controlX = controlX,
+        controlWidth = controlWidth,
+        searchH = searchH,
+        detailH = detailH,
+        listH = listH,
+        centerButtonsY = centerButtonsY,
+    }
+end
+
 function DT_SupplyWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
-    self.minimumWidth = 760
-    self.minimumHeight = 460
+    self.minimumWidth = 920
+    self.minimumHeight = 560
 end
 
 function DT_SupplyWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
+    local layout = getLayoutMetrics(self)
 
-    local th = self:titleBarHeight()
-    local pad = 10
-    local headerY = th + pad
-    local listY = headerY + 36
-    local footerH = 38
-    local leftWidth = math.floor(self.width * 0.58)
-    local contentHeight = self.height - listY - footerH - pad
-    local rightX = leftWidth + (pad * 2)
-    local rightWidth = self.width - rightX - pad
+    self.playerSearch = ISTextEntryBox:new("", layout.leftX, layout.searchY, layout.leftWidth, layout.searchH)
+    self.playerSearch:initialise()
+    self:addChild(self.playerSearch)
 
-    self.btnRefresh = ISButton:new(10, headerY, 90, 28, "Refresh", self, self.onRefresh)
+    self.workerSearch = ISTextEntryBox:new("", layout.rightX, layout.searchY, layout.rightWidth, layout.searchH)
+    self.workerSearch:initialise()
+    self:addChild(self.workerSearch)
+
+    self.btnRefresh = ISButton:new(layout.controlX, layout.searchY, layout.controlWidth, layout.searchH, "Sync", self, self.onRefresh)
     self.btnRefresh:initialise()
     self:addChild(self.btnRefresh)
 
-    self.btnDeposit = ISButton:new(110, headerY, 140, 28, "Deposit Selected", self, self.onDepositSelected)
-    self.btnDeposit:initialise()
-    self:addChild(self.btnDeposit)
+    self.btnDepositSelected = ISButton:new(layout.controlX, layout.centerButtonsY, layout.controlWidth, 32, ">", self, self.onDepositSelected)
+    self.btnDepositSelected:initialise()
+    self:addChild(self.btnDepositSelected)
 
-    self.itemList = Internal.LabourSupplyList:new(10, listY, leftWidth, contentHeight)
-    self.itemList:initialise()
-    self.itemList:instantiate()
-    self.itemList.target = self
-    self.itemList.onmousedown = DT_SupplyWindow.onItemListMouseDown
-    self.itemList:setAnchorBottom(true)
-    self:addChild(self.itemList)
+    self.btnDepositVisible = ISButton:new(layout.controlX, layout.centerButtonsY + 40, layout.controlWidth, 32, ">>", self, self.onDepositVisible)
+    self.btnDepositVisible:initialise()
+    self:addChild(self.btnDepositVisible)
 
-    self.detailText = ISRichTextPanel:new(rightX, listY, rightWidth, contentHeight)
+    self.playerList = Internal.LabourSupplyList:new(layout.leftX, layout.contentY, layout.leftWidth, layout.listH, "player")
+    self.playerList:initialise()
+    self.playerList:instantiate()
+    self.playerList.target = self
+    self.playerList.onmousedown = DT_SupplyWindow.onPlayerListMouseDown
+    self.playerList.drawBorder = true
+    self:addChild(self.playerList)
+
+    self.workerList = Internal.LabourSupplyList:new(layout.rightX, layout.contentY, layout.rightWidth, layout.listH, "worker")
+    self.workerList:initialise()
+    self.workerList:instantiate()
+    self.workerList.target = self
+    self.workerList.onmousedown = DT_SupplyWindow.onWorkerListMouseDown
+    self.workerList.drawBorder = true
+    self:addChild(self.workerList)
+
+    self.detailText = ISRichTextPanel:new(layout.pad, layout.detailY, self.width - (layout.pad * 2), layout.detailH)
     self.detailText:initialise()
-    self.detailText.backgroundColor = { r = 0, g = 0, b = 0, a = 0.2 }
-    self.detailText.borderColor = { r = 1, g = 1, b = 1, a = 0.1 }
+    self.detailText.backgroundColor = { r = 0, g = 0, b = 0, a = 0.26 }
+    self.detailText.borderColor = { r = 1, g = 1, b = 1, a = 0.12 }
     self.detailText:addScrollBars()
-    self.detailText:setAnchorRight(true)
-    self.detailText:setAnchorBottom(true)
     self:addChild(self.detailText)
 
-    self.statusText = ISRichTextPanel:new(rightX, self.height - footerH - 4, rightWidth, 28)
-    self.statusText:initialise()
-    self.statusText.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
-    self.statusText.borderColor = { r = 0, g = 0, b = 0, a = 0 }
-    self.statusText:setAnchorRight(true)
-    self.statusText:setAnchorBottom(true)
-    self:addChild(self.statusText)
+    self:relayout()
+    self:updateItemDetail(nil, nil)
+end
 
-    self:updateStatus("Browse your inventory and deposit food or drinks into the selected worker.")
-    self:updateItemDetail(nil)
+function DT_SupplyWindow:relayout()
+    local layout = getLayoutMetrics(self)
+    self.layout = layout
+
+    self.playerSearch:setX(layout.leftX)
+    self.playerSearch:setY(layout.searchY)
+    self.playerSearch:setWidth(layout.leftWidth)
+    self.playerSearch:setHeight(layout.searchH)
+
+    self.workerSearch:setX(layout.rightX)
+    self.workerSearch:setY(layout.searchY)
+    self.workerSearch:setWidth(layout.rightWidth)
+    self.workerSearch:setHeight(layout.searchH)
+
+    self.btnRefresh:setX(layout.controlX)
+    self.btnRefresh:setY(layout.searchY)
+    self.btnRefresh:setWidth(layout.controlWidth)
+    self.btnRefresh:setHeight(layout.searchH)
+
+    self.btnDepositSelected:setX(layout.controlX)
+    self.btnDepositSelected:setY(layout.centerButtonsY)
+    self.btnDepositSelected:setWidth(layout.controlWidth)
+
+    self.btnDepositVisible:setX(layout.controlX)
+    self.btnDepositVisible:setY(layout.centerButtonsY + 40)
+    self.btnDepositVisible:setWidth(layout.controlWidth)
+
+    self.playerList:setX(layout.leftX)
+    self.playerList:setY(layout.contentY)
+    self.playerList:setWidth(layout.leftWidth)
+    self.playerList:setHeight(layout.listH)
+    self.playerList.width = layout.leftWidth
+    self.playerList.height = layout.listH
+
+    self.workerList:setX(layout.rightX)
+    self.workerList:setY(layout.contentY)
+    self.workerList:setWidth(layout.rightWidth)
+    self.workerList:setHeight(layout.listH)
+    self.workerList.width = layout.rightWidth
+    self.workerList.height = layout.listH
+
+    self.detailText:setX(layout.pad)
+    self.detailText:setY(layout.detailY)
+    self.detailText:setWidth(self.width - (layout.pad * 2))
+    self.detailText:setHeight(layout.detailH)
+
+    if self.detailText.vscroll then
+        self.detailText.vscroll:setHeight(self.detailText:getHeight())
+    end
+    if self.refreshDetailSelection then
+        self:refreshDetailSelection()
+    end
+end
+
+function DT_SupplyWindow:onResize()
+    ISCollapsableWindow.onResize(self)
+    self:relayout()
+end
+
+function DT_SupplyWindow:render()
+    ISCollapsableWindow.render(self)
+
+    local layout = self.layout or {}
+    local playerVisible = self.playerList and self.playerList.items and #self.playerList.items or 0
+    local playerTotal = #(self.playerEntries or {})
+    local workerTotals = Internal.getWorkerSupplyTotals(self.workerEntries)
+
+    self:drawRectBorder(layout.leftX, layout.contentY, layout.leftWidth, layout.listH, 0.25, 1, 1, 1)
+    self:drawRectBorder(layout.rightX, layout.contentY, layout.rightWidth, layout.listH, 0.25, 1, 1, 1)
+    self:drawRectBorder(layout.pad, layout.detailY, self.width - (layout.pad * 2), layout.detailH, 0.22, 1, 1, 1)
+
+    self:drawText("Player Supplies", layout.leftX or 12, layout.headerY or 36, 0.94, 0.96, 1, 1, UIFont.Medium)
+    self:drawText(
+        self.scanning and ("Scanning " .. tostring(self.scanProcessed or 0) .. " items...")
+            or (tostring(playerVisible) .. " visible / " .. tostring(playerTotal) .. " cached"),
+        layout.leftX or 12,
+        (layout.headerY or 36) + 18,
+        0.7,
+        0.7,
+        0.7,
+        1,
+        UIFont.Small
+    )
+
+    self:drawText("Transfer", (layout.controlX or 0) + 16, layout.headerY or 36, 0.9, 0.9, 0.9, 1, UIFont.Small)
+
+    self:drawText(tostring(self.workerName or "Worker") .. " Stores", layout.rightX or 12, layout.headerY or 36, 0.94, 0.96, 1, 1, UIFont.Medium)
+    self:drawText(
+        tostring(workerTotals.count) .. " entries | "
+            .. string.format("%.0f cal", workerTotals.calories) .. " | "
+            .. string.format("%.0f hyd", workerTotals.hydration),
+        layout.rightX or 12,
+        (layout.headerY or 36) + 18,
+        0.7,
+        0.7,
+        0.7,
+        1,
+        UIFont.Small
+    )
 end
 
 function DT_SupplyWindow:updateStatus(text)
-    if not self.statusText then
-        return
-    end
-    self.statusText:setText(" <RGB:0.75,0.75,0.75> " .. tostring(text or "") .. " ")
-    self.statusText:paginate()
+    self.lastStatusMessage = tostring(text or "")
 end
 
-function DT_SupplyWindow:updateItemDetail(entry)
+function DT_SupplyWindow:updateItemDetail(entry, side)
     if not self.detailText then
         return
     end
 
     if not entry then
-        self.detailText:setText(" <RGB:0.6,0.6,0.6> Select an inventory item to preview its labour upkeep value. Money is handled through the dedicated Give Money button. ")
+        local workerTotals = Internal.getWorkerSupplyTotals(self.workerEntries)
+        self.detailText:setText(
+            " <RGB:0.78,0.78,0.78> Left side shows your inventory cache, right side shows what "
+                .. tostring(self.workerName or "the worker")
+                .. " currently has stored. "
+                .. "<LINE> <RGB:0.62,0.62,0.62> Use "
+                .. "<RGB:1,1,1> > <RGB:0.62,0.62,0.62> for one selected item or "
+                .. "<RGB:1,1,1> >> <RGB:0.62,0.62,0.62> to send every visible filtered supply at once. "
+                .. "<LINE> <RGB:0.62,0.62,0.62> Worker reserve snapshot: <RGB:1,1,1> "
+                .. tostring(workerTotals.count)
+                .. " entries, "
+                .. string.format("%.0f", workerTotals.calories)
+                .. " calories, "
+                .. string.format("%.0f", workerTotals.hydration)
+                .. " hydration."
+        )
         self.detailText:paginate()
         return
     end
 
     local text = ""
-    text = text .. " <RGB:1,1,1> <SIZE:Large> " .. tostring(Internal.formatEntryLabel(entry)) .. " <LINE> <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Full Type: <RGB:1,1,1> " .. tostring(entry.fullType or "Unknown") .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Adds Calories: <RGB:1,1,1> " .. string.format("%.0f", entry.calories or 0) .. " <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Adds Hydration: <RGB:1,1,1> " .. string.format("%.0f", entry.hydration or 0) .. " <LINE> <LINE> "
-
-    if entry.canDeposit then
-        text = text .. " <RGB:0.7,1,0.7> This item can be deposited into worker upkeep. "
+    if side == "worker" then
+        text = text .. " <RGB:1,1,1> <SIZE:Large> Stored Supply <LINE> <LINE> "
+        text = text .. " <RGB:0.82,0.82,0.82> Item: <RGB:1,1,1> " .. tostring(Internal.formatEntryLabel(entry)) .. " <LINE> "
+        text = text .. " <RGB:0.82,0.82,0.82> Full Type: <RGB:1,1,1> " .. tostring(entry.fullType or "Unknown") .. " <LINE> "
+        text = text .. " <RGB:0.82,0.82,0.82> Remaining Calories: <RGB:1,1,1> " .. string.format("%.0f", entry.calories or 0) .. " <LINE> "
+        text = text .. " <RGB:0.82,0.82,0.82> Remaining Hydration: <RGB:1,1,1> " .. string.format("%.0f", entry.hydration or 0) .. " <LINE> "
     else
-        text = text .. " <RGB:1,0.6,0.6> This item is visible for future labour item transfer, but upkeep only reads food and water right now. "
+        text = text .. " <RGB:1,1,1> <SIZE:Large> Player Supply <LINE> <LINE> "
+        text = text .. " <RGB:0.82,0.82,0.82> Item: <RGB:1,1,1> " .. tostring(Internal.formatEntryLabel(entry)) .. " <LINE> "
+        text = text .. " <RGB:0.82,0.82,0.82> Full Type: <RGB:1,1,1> " .. tostring(entry.fullType or "Unknown") .. " <LINE> "
+        text = text .. " <RGB:0.82,0.82,0.82> Adds Calories: <RGB:1,1,1> " .. string.format("%.0f", entry.calories or 0) .. " <LINE> "
+        text = text .. " <RGB:0.82,0.82,0.82> Adds Hydration: <RGB:1,1,1> " .. string.format("%.0f", entry.hydration or 0) .. " <LINE> "
     end
 
     self.detailText:setText(text)

@@ -8,8 +8,8 @@ function DT_SupplyWindow.Open(worker)
 
     local window = DT_SupplyWindow.instance
     if not window then
-        local width = 820
-        local height = 520
+        local width = 980
+        local height = 620
         local x = (getCore():getScreenWidth() - width) / 2
         local y = (getCore():getScreenHeight() - height) / 2
 
@@ -25,7 +25,9 @@ function DT_SupplyWindow.Open(worker)
     window:setVisible(true)
     window:addToUIManager()
     window:bringToTop()
+    window:setWorkerData(DT_SupplyWindow.Internal.resolveWorkerDetail(worker.workerID) or worker)
     window:startInventoryScan()
+    window:requestWorkerDetails()
     window:updateStatus("Supplying " .. tostring(window.workerName) .. ".")
 end
 
@@ -40,9 +42,15 @@ function DT_SupplyWindow:new(x, y, width, height)
     self.__index = self
     o.title = "Labour Supplies"
     o.resizable = true
-    o.entries = {}
-    o.selectedEntry = nil
+    o.playerEntries = {}
+    o.playerEntriesByID = {}
+    o.workerEntries = {}
+    o.selectedPlayerEntry = nil
+    o.selectedWorkerEntry = nil
+    o.activeSelectionSide = "player"
     o.workerID = nil
     o.workerName = nil
+    o.lastPlayerFilter = ""
+    o.lastWorkerFilter = ""
     return o
 end

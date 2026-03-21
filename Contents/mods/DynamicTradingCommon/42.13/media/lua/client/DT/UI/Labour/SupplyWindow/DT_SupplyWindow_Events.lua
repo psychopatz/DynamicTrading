@@ -10,8 +10,16 @@ local function onServerCommand(module, command, args)
     if not DT_SupplyWindow.instance or not DT_SupplyWindow.instance:getIsVisible() then
         return
     end
-    if command == "SyncWorkerDetails" or command == "SyncPlayerWorkers" then
-        DT_SupplyWindow.instance:startInventoryScan()
+    if command == "SyncWorkerDetails" then
+        local worker = args and args.worker or nil
+        if worker and worker.workerID == DT_SupplyWindow.instance.workerID then
+            DT_SupplyWindow.instance:setWorkerData(worker)
+            DT_SupplyWindow.instance:updateStatus("Supply reserves refreshed for " .. tostring(worker.name or worker.workerID) .. ".")
+        end
+    elseif command == "LabourNotice" then
+        if args and args.message then
+            DT_SupplyWindow.instance:updateStatus(args.message)
+        end
     end
 end
 
