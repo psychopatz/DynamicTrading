@@ -321,6 +321,34 @@ function Internal.getWorkerTabSummary(window, entries)
         .. string.format("%.0f hyd", totals.hydration)
 end
 
+function Internal.shouldShowPlayerEntry(entry, activeTab)
+    if not entry then
+        return false
+    end
+
+    if activeTab == Internal.Tabs.Equipment then
+        return true
+    end
+
+    if activeTab == Internal.Tabs.Output then
+        return false
+    end
+
+    return entry.canDeposit == true
+end
+
+function Internal.shouldShowWorkerEntry(entry, activeTab)
+    if not entry then
+        return false
+    end
+
+    if activeTab == Internal.Tabs.Equipment or activeTab == Internal.Tabs.Output then
+        return true
+    end
+
+    return (tonumber(entry.calories) or 0) > 0 or (tonumber(entry.hydration) or 0) > 0
+end
+
 function Internal.getPlayerEntryPresentation(entry, activeTab, worker)
     if activeTab == Internal.Tabs.Equipment then
         if entry.canAssignTool then
@@ -366,20 +394,20 @@ function Internal.getWorkerEntryPresentation(entry, activeTab)
         local tagText = (#tags > 0) and table.concat(tags, ", ") or "Assigned labour tool"
         return {
             statText = tagText,
-            badgeText = entry.pending and "Pending" or "Equipped",
+            badgeText = "",
         }
     end
 
     if activeTab == Internal.Tabs.Output then
         return {
             statText = "Qty " .. tostring(entry.qty or 1),
-            badgeText = "Stored",
+            badgeText = "",
         }
     end
 
     return {
         statText = string.format("%.0f cal left | %.0f hyd left", entry.calories or 0, entry.hydration or 0),
-        badgeText = entry.pending and "Pending" or "Stored",
+        badgeText = "",
     }
 end
 

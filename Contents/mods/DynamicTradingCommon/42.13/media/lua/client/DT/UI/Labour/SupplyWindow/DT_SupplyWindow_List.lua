@@ -4,6 +4,35 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 local Internal = DT_SupplyWindow.Internal
 local LabourSupplyList = ISScrollingListBox:derive("LabourSupplyList")
 
+local function fitTextToWidth(font, text, maxWidth)
+    local value = tostring(text or "")
+    if value == "" or maxWidth <= 0 then
+        return ""
+    end
+
+    local textManager = getTextManager()
+    if textManager:MeasureStringX(font, value) <= maxWidth then
+        return value
+    end
+
+    local ellipsis = "..."
+    local ellipsisWidth = textManager:MeasureStringX(font, ellipsis)
+    if ellipsisWidth >= maxWidth then
+        return ellipsis
+    end
+
+    local trimmedLength = #value
+    while trimmedLength > 0 do
+        local candidate = string.sub(value, 1, trimmedLength) .. ellipsis
+        if textManager:MeasureStringX(font, candidate) <= maxWidth then
+            return candidate
+        end
+        trimmedLength = trimmedLength - 1
+    end
+
+    return ellipsis
+end
+
 function LabourSupplyList:new(x, y, width, height, mode)
     local o = ISScrollingListBox:new(x, y, width, height)
     setmetatable(o, self)
@@ -50,9 +79,6 @@ function LabourSupplyList:doDrawItem(y, item, alt)
         textR, textG, textB = 0.45, 0.45, 0.45
     end
 
-    self:drawText(Internal.formatEntryLabel(entry), 42, y + 5, textR, textG, textB, 1, UIFont.Small)
-    self:drawText(presentation.statText or "", 42, y + 23, 0.65, 0.8, 0.95, 1, UIFont.Small)
-
     local badgeText = presentation.badgeText or "Stored"
     local badgeR, badgeG, badgeB = 0.72, 0.72, 0.72
     if badgeText == "Ready" then
@@ -71,7 +97,17 @@ function LabourSupplyList:doDrawItem(y, item, alt)
         badgeR, badgeG, badgeB = 0.55, 0.76, 0.98
     end
 
-    self:drawTextRight(badgeText, width - 8, y + 5, badgeR, badgeG, badgeB, 1, UIFont.Small)
+    local rightPadding = 20
+    local badgeWidth = (badgeText ~= "") and getTextManager():MeasureStringX(UIFont.Small, badgeText) or 0
+    local textMaxWidth = math.max(60, width - 42 - badgeWidth - rightPadding - 12)
+    local titleText = fitTextToWidth(UIFont.Small, Internal.formatEntryLabel(entry), textMaxWidth)
+    local statText = fitTextToWidth(UIFont.Small, presentation.statText or "", textMaxWidth)
+
+    self:drawText(titleText, 42, y + 5, textR, textG, textB, 1, UIFont.Small)
+    self:drawText(statText, 42, y + 23, 0.65, 0.8, 0.95, 1, UIFont.Small)
+    if badgeText ~= "" then
+        self:drawTextRight(badgeText, width - rightPadding, y + 5, badgeR, badgeG, badgeB, 1, UIFont.Small)
+    end
 
     return y + self.itemheight
 end

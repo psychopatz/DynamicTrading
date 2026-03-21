@@ -14,7 +14,11 @@ local function onServerCommand(module, command, args)
         local worker = args and args.worker or nil
         if worker and worker.workerID == DT_SupplyWindow.instance.workerID then
             DT_SupplyWindow.instance:setWorkerData(worker)
-            DT_SupplyWindow.instance:updateStatus("Supply reserves refreshed for " .. tostring(worker.name or worker.workerID) .. ".")
+            if DT_SupplyWindow.instance.autoRefreshPending then
+                DT_SupplyWindow.instance.autoRefreshPending = nil
+            else
+                DT_SupplyWindow.instance:updateStatus("Supply reserves refreshed for " .. tostring(worker.name or worker.workerID) .. ".")
+            end
         end
     elseif command == "LabourNotice" then
         if args and args.message then

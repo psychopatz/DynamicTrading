@@ -15,7 +15,8 @@ function Registry.CreateWorker(ownerUsername, template)
     local profile = Config.GetJobProfile(jobType)
     local data = Registry.GetData()
     local workerID = template.workerID or ("worker_" .. tostring(Registry.NextID("worker")))
-    local currentHour = Config.GetCurrentHour()
+    local currentHour = (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour()
+    local starterCalories, starterHydration = Internal.GetStarterReserveTotals(template)
 
     local worker = {
         ownerUsername = owner,
@@ -33,11 +34,14 @@ function Registry.CreateWorker(ownerUsername, template)
         toolState = template.toolState or "Missing",
         siteState = template.siteState or "Deferred",
         jobEnabled = template.jobEnabled ~= false,
+        nutritionModelVersion = tonumber(template.nutritionModelVersion) or Config.NUTRITION_MODEL_VERSION,
         lastSimHour = template.lastSimHour or currentHour,
         lastNutritionCheckpoint = tonumber(template.lastNutritionCheckpoint) or Config.GetMealCheckpointCountAtHour(template.lastSimHour or currentHour),
         workProgress = tonumber(template.workProgress) or 0,
-        caloriesCached = tonumber(template.caloriesCached) or 0,
-        hydrationCached = tonumber(template.hydrationCached) or 0,
+        caloriesCached = starterCalories,
+        hydrationCached = starterHydration,
+        caloriesOverflow = tonumber(template.caloriesOverflow) or 0,
+        hydrationOverflow = tonumber(template.hydrationOverflow) or 0,
         dailyCaloriesNeed = tonumber(template.dailyCaloriesNeed) or profile.dailyCaloriesNeed,
         dailyHydrationNeed = tonumber(template.dailyHydrationNeed) or profile.dailyHydrationNeed,
         maxHp = math.max(1, tonumber(template.maxHp) or tonumber(template.healthMax) or Config.DEFAULT_WORKER_MAX_HP or 100),
@@ -49,6 +53,7 @@ function Registry.CreateWorker(ownerUsername, template)
         outputLedger = Internal.CopyShallow(template.outputLedger),
         moneyStored = math.max(0, math.floor(tonumber(template.moneyStored) or 0)),
         statusFlags = Internal.CopyShallow(template.statusFlags),
+        activityLog = Internal.CopyShallow(template.activityLog),
         isFemale = template.isFemale,
         identitySeed = template.identitySeed,
         visualID = template.visualID,
@@ -68,6 +73,7 @@ function Registry.CreateWorker(ownerUsername, template)
     if worker.hp == nil then
         worker.hp = worker.maxHp
     end
+    Internal.EnsureActivityLog(worker)
 
     Registry.RecalculateWorker(worker)
     data.Workers[workerID] = worker

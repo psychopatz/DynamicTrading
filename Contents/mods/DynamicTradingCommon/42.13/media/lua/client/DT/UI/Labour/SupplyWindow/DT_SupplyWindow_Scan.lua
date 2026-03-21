@@ -19,6 +19,7 @@ function DT_SupplyWindow:setActiveTab(tabID)
         self:updateTransferControls()
     end
 
+    self:rebuildPlayerList()
     self:refreshWorkerEntries()
 end
 
@@ -87,6 +88,10 @@ function DT_SupplyWindow:registerVisiblePlayerEntry(entry)
         return
     end
 
+    if not Internal.shouldShowPlayerEntry(entry, self.activeTab or Internal.Tabs.Provisions) then
+        return
+    end
+
     if not Internal.matchesFilter(entry, Internal.getSearchText(self.playerSearch)) then
         return
     end
@@ -135,7 +140,8 @@ function DT_SupplyWindow:rebuildPlayerList()
 
     local selectedIndex = nil
     for _, entry in ipairs(self.playerEntries or {}) do
-        if Internal.matchesFilter(entry, filterText) then
+        if Internal.shouldShowPlayerEntry(entry, self.activeTab or Internal.Tabs.Provisions)
+            and Internal.matchesFilter(entry, filterText) then
             self.playerList:addItem(Internal.formatEntryLabel(entry), entry)
             local rowIndex = #self.playerList.items
             entry.rowIndex = rowIndex
@@ -168,7 +174,8 @@ function DT_SupplyWindow:rebuildWorkerList()
 
     local selectedIndex = nil
     for _, entry in ipairs(self.workerEntries or {}) do
-        if Internal.matchesFilter(entry, filterText) then
+        if Internal.shouldShowWorkerEntry(entry, self.activeTab or Internal.Tabs.Provisions)
+            and Internal.matchesFilter(entry, filterText) then
             self.workerList:addItem(Internal.formatEntryLabel(entry), entry)
             local rowIndex = #self.workerList.items
             entry.rowIndex = rowIndex
@@ -231,20 +238,10 @@ end
 
 function DT_SupplyWindow:applyOptimisticDeposit(entries)
     local changed = false
-    self.workerData = self.workerData or {}
-    self.workerData.nutritionLedger = self.workerData.nutritionLedger or {}
 
     for _, entry in ipairs(entries or {}) do
         local removed = self:removePlayerEntryByID(entry.itemID)
         if removed then
-            self.workerData.nutritionLedger[#self.workerData.nutritionLedger + 1] = {
-                fullType = removed.fullType,
-                displayName = removed.displayName,
-                itemID = removed.itemID,
-                caloriesRemaining = removed.calories,
-                hydrationRemaining = removed.hydration,
-                pending = true,
-            }
             changed = true
         end
     end
@@ -257,18 +254,10 @@ end
 
 function DT_SupplyWindow:applyOptimisticToolAssign(entries)
     local changed = false
-    self.workerData = self.workerData or {}
-    self.workerData.toolLedger = self.workerData.toolLedger or {}
 
     for _, entry in ipairs(entries or {}) do
         local removed = self:removePlayerEntryByID(entry.itemID)
         if removed then
-            self.workerData.toolLedger[#self.workerData.toolLedger + 1] = {
-                fullType = removed.fullType,
-                displayName = removed.displayName,
-                tags = removed.tags or {},
-                pending = true,
-            }
             changed = true
         end
     end
@@ -382,8 +371,17 @@ end
 function DT_SupplyWindow:update()
     ISCollapsableWindow.update(self)
     self:syncSearchFilters()
+    self.detailRefreshTicks = (tonumber(self.detailRefreshTicks) or 0) + 1
 
     if self.scanning then
         self:processInventoryScan(Internal.ENTRY_SCAN_BATCH_SIZE)
+    end
+
+    if self.workerID
+        and (self.detailRefreshTicks % 180) == 0
+        and not self.scanning
+        and self.requestWorkerDetails then
+        self.autoRefreshPending = true
+        self:requestWorkerDetails()
     end
 end

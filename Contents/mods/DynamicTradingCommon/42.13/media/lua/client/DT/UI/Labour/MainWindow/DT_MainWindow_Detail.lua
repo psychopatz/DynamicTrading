@@ -3,6 +3,28 @@ DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
 local Internal = DT_MainWindow.Internal
 
+local function buildActivityLogText(worker)
+    local entries = worker and worker.activityLog or {}
+    if not entries or #entries <= 0 then
+        return " <RGB:0.62,0.62,0.62> No recent worker activity yet. <LINE> "
+    end
+
+    local text = ""
+    for index = #entries, 1, -1 do
+        local entry = entries[index]
+        local timestamp = Internal.formatActivityTimestamp(entry and entry.hour)
+        local message = tostring((entry and (entry.text or entry.message)) or "Activity recorded.")
+        text = text
+            .. " <RGB:0.62,0.62,0.62> ["
+            .. timestamp
+            .. "] <RGB:0.9,0.9,0.9> "
+            .. message
+            .. " <LINE> "
+    end
+
+    return text
+end
+
 function DT_MainWindow:populateWorkerList(workers)
     if not self.workerList then
         return
@@ -55,19 +77,7 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local profile = (config.GetJobProfile and config.GetJobProfile(worker.jobType)) or {}
     local toolTags = profile.requiredToolTags or {}
     local bonusMultiplier = config.GetJobSpeedMultiplier and config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1
-    local dailyCaloriesNeed = config.GetEffectiveDailyCaloriesNeed and config.GetEffectiveDailyCaloriesNeed(worker, profile)
-        or tonumber(worker.dailyCaloriesNeed)
-        or tonumber(profile.dailyCaloriesNeed)
-        or 0
-    local dailyHydrationNeed = config.GetEffectiveDailyHydrationNeed and config.GetEffectiveDailyHydrationNeed(worker, profile)
-        or tonumber(worker.dailyHydrationNeed)
-        or tonumber(profile.dailyHydrationNeed)
-        or 0
-    local caloriesHoursLeft = Internal.getReserveHoursLeft(worker.caloriesCached, (dailyCaloriesNeed / (config.HOURS_PER_DAY or 24)))
-    local hydrationHoursLeft = Internal.getReserveHoursLeft(worker.hydrationCached, (dailyHydrationNeed / (config.HOURS_PER_DAY or 24)))
-    local refillHoursLeft = Internal.getNextRefillHours(caloriesHoursLeft, hydrationHoursLeft)
     local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ") or "None"
-    local refillForecast = (worker.state == config.States.Dead) and "Already dead" or Internal.formatDurationHours(refillHoursLeft)
     local maxHp = math.max(1, tonumber(worker.maxHp) or 100)
     local hp = math.max(0, math.min(maxHp, tonumber(worker.hp) or maxHp))
 
@@ -87,17 +97,8 @@ function DT_MainWindow:updateWorkerDetail(worker)
 
     text = text .. " <RGB:1,1,1> <SIZE:Medium> Upkeep Summary <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Health: <RGB:1,1,1> " .. Internal.formatReserveValue(hp) .. " / " .. Internal.formatReserveValue(maxHp) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Suggested Refill In: <RGB:1,1,1> " .. refillForecast .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Consumption Cadence: <RGB:1,1,1> Breakfast, lunch, dinner <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> HP Loss: <RGB:1,1,1> 1 per in-game hour when calories or hydration is empty <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> HP Recovery: <RGB:1,1,1> 1 per in-game hour while calories and hydration are available <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Death Condition: <RGB:1,1,1> 0 HP <LINE> "
-    text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Inputs And Storage <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Nutrition Entries: <RGB:1,1,1> " .. tostring(#(worker.nutritionLedger or {})) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Assigned Tools: <RGB:1,1,1> " .. tostring(#(worker.toolLedger or {})) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Tool Inputs: <RGB:1,1,1> " .. Internal.buildToolInputText(worker) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Food / Water Inputs: <RGB:1,1,1> " .. Internal.buildSupplyInputText(worker) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Productive Consumables: <RGB:1,1,1> TODO after foundation polish <LINE> "
+    text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Activity Log <LINE> "
+    text = text .. buildActivityLogText(worker)
 
     self.detailText:setText(text)
     self.detailText:paginate()

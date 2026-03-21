@@ -51,6 +51,7 @@ function DT_SupplyWindow:new(x, y, width, height)
     o.activeSelectionSide = "player"
     o.workerID = nil
     o.workerName = nil
+    o.detailRefreshTicks = 0
     o.lastPlayerFilter = ""
     o.lastWorkerFilter = ""
     return o

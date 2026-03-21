@@ -35,6 +35,26 @@ function Internal.formatCoords(x, y, z)
         .. ")"
 end
 
+function Internal.formatActivityTimestamp(worldHour)
+    local safeHour = math.max(0, tonumber(worldHour) or 0)
+    local hoursPerDay = math.max(1, tonumber(Internal.Config and Internal.Config.HOURS_PER_DAY) or 24)
+    local day = math.floor(safeHour / hoursPerDay) + 1
+    local hourOfDayFloat = safeHour % hoursPerDay
+    local hourOfDay = math.floor(hourOfDayFloat)
+    local minutes = math.floor(((hourOfDayFloat - hourOfDay) * 60) + 0.5)
+
+    if minutes >= 60 then
+        minutes = minutes - 60
+        hourOfDay = hourOfDay + 1
+        if hourOfDay >= hoursPerDay then
+            hourOfDay = hourOfDay - hoursPerDay
+            day = day + 1
+        end
+    end
+
+    return string.format("D%d %02d:%02d", day, hourOfDay, minutes)
+end
+
 function Internal.getReserveDaysLeft(storedAmount, dailyNeed)
     local perDay = tonumber(dailyNeed) or 0
     if perDay <= 0 then
@@ -115,6 +135,21 @@ function Internal.getReserveBarData(storedAmount, dailyNeed)
         overflow = math.max(0, stored - usage),
         daysLeft = math.max(0, rawRatio)
     }
+end
+
+function Internal.getNutritionBarData(unitLabel, currentBufferAmount, carryoverAmount, provisionReserveAmount, dailyNeed)
+    local unitName = tostring(unitLabel or "Nutrition")
+    local currentBuffer = math.max(0, tonumber(currentBufferAmount) or 0)
+    local carryover = math.max(0, tonumber(carryoverAmount) or 0)
+    local provisionReserve = math.max(0, tonumber(provisionReserveAmount) or 0)
+    local data = Internal.getReserveBarData(currentBuffer, dailyNeed)
+    data.carryover = carryover
+    data.provisionReserve = provisionReserve
+    data.currentBuffer = currentBuffer
+    data.daysLeft = Internal.getReserveDaysLeft(currentBuffer + carryover + provisionReserve, dailyNeed)
+    data.summaryText = unitName .. " Reserve " .. Internal.formatReserveValue(provisionReserve)
+        .. " | Carryover " .. Internal.formatReserveValue(carryover)
+    return data
 end
 
 function Internal.getHealthBarData(currentHp, maxHp)
@@ -353,9 +388,15 @@ function LabourProfileCard:setWorker(worker)
         or tonumber(worker.dailyHydrationNeed)
         or tonumber(profile.dailyHydrationNeed)
         or 0
+    local carryoverCalories = math.max(0, tonumber(worker.carryoverCalories) or tonumber(worker.caloriesOverflow) or 0)
+    local carryoverHydration = math.max(0, tonumber(worker.carryoverHydration) or tonumber(worker.hydrationOverflow) or 0)
+    local provisionCalories = math.max(0, tonumber(worker.provisionCaloriesReserve) or tonumber(worker.storedCalories) or 0)
+    local provisionHydration = math.max(0, tonumber(worker.provisionHydrationReserve) or tonumber(worker.storedHydration) or 0)
+    local currentCaloriesBuffer = math.max(0, tonumber(worker.currentCaloriesBuffer) or tonumber(worker.caloriesCached) or 0)
+    local currentHydrationBuffer = math.max(0, tonumber(worker.currentHydrationBuffer) or tonumber(worker.hydrationCached) or 0)
 
-    self.caloriesData = Internal.getReserveBarData(worker.caloriesCached, dailyCaloriesNeed)
-    self.hydrationData = Internal.getReserveBarData(worker.hydrationCached, dailyHydrationNeed)
+    self.caloriesData = Internal.getNutritionBarData("Calories", currentCaloriesBuffer, carryoverCalories, provisionCalories, dailyCaloriesNeed)
+    self.hydrationData = Internal.getNutritionBarData("Hydration", currentHydrationBuffer, carryoverHydration, provisionHydration, dailyHydrationNeed)
     self.healthData = Internal.getHealthBarData(worker.hp, worker.maxHp)
     self.caloriesTargetRatio = self.caloriesData.fillRatio
     self.hydrationTargetRatio = self.hydrationData.fillRatio
@@ -374,7 +415,7 @@ local function animateRatio(currentValue, targetValue)
 end
 
 function LabourProfileCard:drawReserveBar(x, y, width, height, label, color, data, displayRatio)
-    local safeData = data or { stored = 0, usage = 0, overflow = 0, daysLeft = nil }
+    local safeData = data or { stored = 0, usage = 0, carryover = 0, provisionReserve = 0, daysLeft = nil }
     self:drawRect(x, y, width, height, 0.35, 0.08, 0.08, 0.08)
     self:drawRectBorder(x, y, width, height, 0.2, 1, 1, 1)
 
@@ -387,7 +428,9 @@ function LabourProfileCard:drawReserveBar(x, y, width, height, label, color, dat
     self:drawText(label, x + math.max(8, (width - labelWidth) / 2), y + 2, 0.95, 0.95, 0.95, 1, UIFont.Small)
 
     local daysText = safeData.captionText or Internal.formatDaysAndEta(safeData.daysLeft, safeData.daysLeft and (safeData.daysLeft * 24) or nil)
-    local totalsText = safeData.summaryText or (Internal.formatReserveValue(safeData.stored) .. " stored | Overflow " .. Internal.formatReserveValue(safeData.overflow))
+    local totalsText = safeData.summaryText
+        or ("Reserve " .. Internal.formatReserveValue(safeData.provisionReserve or safeData.stored)
+            .. " | Carryover " .. Internal.formatReserveValue(safeData.carryover or safeData.overflow or 0))
     self:drawText(daysText, x, y + height + 4, 0.86, 0.86, 0.86, 1, UIFont.Small)
     self:drawTextRight(totalsText, x + width, y + height + 4, 0.66, 0.66, 0.66, 1, UIFont.Small)
 end

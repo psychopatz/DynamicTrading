@@ -11,6 +11,7 @@ Config.COMMAND_MODULE = "DynamicTrading_V2"
 Config.PROJECTION_PREFIX = "DTLAB_"
 Config.HOURS_PER_DAY = 24
 Config.SIM_TICK_RATE = 60
+Config.SIM_TIME_STEP_HOURS = 0.25
 Config.PRESENTATION_TICK_RATE = 120
 Config.PROJECTION_RANGE = 100
 Config.DEFAULT_SITE_RADIUS = 8
@@ -28,6 +29,8 @@ Config.DEFAULT_LABOUR_DAILY_HYDRATION_USE = 500
 Config.DEFAULT_WORKER_MAX_HP = 100
 Config.WORKER_HP_LOSS_PER_HOUR = 1
 Config.WORKER_HP_REGEN_PER_HOUR = 1
+Config.WORKER_ACTIVITY_LOG_LIMIT = 40
+Config.NUTRITION_MODEL_VERSION = 3
 Config.MEAL_SCHEDULE = {
     { id = "breakfast", label = "Breakfast", hour = 7, caloriesShare = 0.28, hydrationShare = 0.24 },
     { id = "lunch", label = "Lunch", hour = 13, caloriesShare = 0.34, hydrationShare = 0.36 },
@@ -206,10 +209,14 @@ function Config.GetOwnerUsername(playerOrUsername)
     return "local"
 end
 
-function Config.GetCurrentHour()
+function Config.GetCurrentWorldHours()
     local gt = getGameTime()
     if not gt then return 0 end
-    return math.floor(gt:getWorldAgeHours() or 0)
+    return tonumber(gt:getWorldAgeHours()) or 0
+end
+
+function Config.GetCurrentHour()
+    return math.floor(Config.GetCurrentWorldHours())
 end
 
 function Config.GetSandboxTable()
@@ -298,6 +305,17 @@ function Config.GetMealProfileByCheckpoint(checkpointCount)
 
     local slotIndex = ((safeCount - 1) % mealsPerDay) + 1
     return Config.GetMealSchedule()[slotIndex]
+end
+
+function Config.GetNextMealProfile(checkpointCount)
+    local safeCount = math.max(0, math.floor(tonumber(checkpointCount) or 0))
+    return Config.GetMealProfileByCheckpoint(safeCount + 1)
+end
+
+function Config.GetMealNeeds(dailyCaloriesNeed, dailyHydrationNeed, mealProfile)
+    local meal = mealProfile or {}
+    return math.max(0, (tonumber(dailyCaloriesNeed) or 0) * (tonumber(meal.caloriesShare) or 0)),
+        math.max(0, (tonumber(dailyHydrationNeed) or 0) * (tonumber(meal.hydrationShare) or 0))
 end
 
 function Config.GetMealCheckpointHourByCount(checkpointCount)

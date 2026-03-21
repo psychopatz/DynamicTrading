@@ -131,7 +131,7 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
 
     local worker = createWorkerFromRecruitArgs(owner, args)
     Registry.Save()
-    Sim.ProcessWorker(worker, Config.GetCurrentHour())
+    Sim.ProcessWorker(worker, (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour())
     Presentation.SyncWorker(worker, { player })
     Internal.syncRecruitAttemptResult(player, {
         success = true,

@@ -19,17 +19,68 @@ function Internal.CopyShallow(source)
     return copy
 end
 
+function Internal.GetDisplayNameForFullType(fullType)
+    if not fullType or not getScriptManager then
+        return tostring(fullType or "Unknown Item")
+    end
+
+    local item = getScriptManager():getItem(fullType)
+    if item and item.getDisplayName then
+        return item:getDisplayName()
+    end
+
+    return tostring(fullType or "Unknown Item")
+end
+
+function Internal.EnsureActivityLog(worker)
+    if not worker then
+        return {}
+    end
+
+    worker.activityLog = Internal.EnsureArray(worker.activityLog)
+    local limit = math.max(1, tonumber(Config.WORKER_ACTIVITY_LOG_LIMIT) or 40)
+    while #worker.activityLog > limit do
+        table.remove(worker.activityLog, 1)
+    end
+    return worker.activityLog
+end
+
+function Internal.AppendActivityLog(worker, message, worldHour, category)
+    if not worker or not message or tostring(message) == "" then
+        return
+    end
+
+    local activityLog = Internal.EnsureActivityLog(worker)
+    activityLog[#activityLog + 1] = {
+        hour = tonumber(worldHour) or ((Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour()),
+        text = tostring(message),
+        category = tostring(category or "general")
+    }
+
+    local limit = math.max(1, tonumber(Config.WORKER_ACTIVITY_LOG_LIMIT) or 40)
+    while #activityLog > limit do
+        table.remove(activityLog, 1)
+    end
+end
+
 function Internal.BuildStarterNutritionLedger(template)
     local existing = Internal.CopyShallow(template and template.nutritionLedger or nil)
     if #existing > 0 then
         return existing
     end
 
+    return existing
+end
+
+function Internal.GetStarterReserveTotals(template)
+    local existing = Internal.CopyShallow(template and template.nutritionLedger or nil)
     local templateCalories = tonumber(template and template.caloriesCached) or 0
     local templateHydration = tonumber(template and template.hydrationCached) or 0
+    if #existing > 0 then
+        return templateCalories, templateHydration
+    end
     if templateCalories > 0 or templateHydration > 0 then
-        existing[#existing + 1] = Nutrition.BuildStarterReserveEntry(templateCalories, templateHydration)
-        return existing
+        return templateCalories, templateHydration
     end
 
     local starterCalories = Config.RandomRangeInclusive(
@@ -41,8 +92,7 @@ function Internal.BuildStarterNutritionLedger(template)
         Config.RECRUIT_START_HYDRATION_MAX
     )
 
-    existing[#existing + 1] = Nutrition.BuildStarterReserveEntry(starterCalories, starterHydration)
-    return existing
+    return starterCalories, starterHydration
 end
 
 return Internal

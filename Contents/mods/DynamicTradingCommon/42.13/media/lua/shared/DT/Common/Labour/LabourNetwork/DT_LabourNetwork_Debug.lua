@@ -48,7 +48,7 @@ Network.Handlers.DebugRecruitWorker = function(player, args)
     end
 
     Registry.Save()
-    Sim.ProcessWorker(worker, Config.GetCurrentHour())
+    Sim.ProcessWorker(worker, (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour())
     Presentation.SyncWorker(worker, { player })
     Internal.syncWorkerDetail(player, worker.workerID)
     Internal.syncWorkerList(player)
