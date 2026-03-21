@@ -117,6 +117,20 @@ function Internal.getReserveBarData(storedAmount, dailyNeed)
     }
 end
 
+function Internal.getHealthBarData(currentHp, maxHp)
+    local safeMax = math.max(1, tonumber(maxHp) or 100)
+    local safeCurrent = math.max(0, math.min(safeMax, tonumber(currentHp) or safeMax))
+    return {
+        stored = safeCurrent,
+        usage = safeMax,
+        fillRatio = safeCurrent / safeMax,
+        overflow = 0,
+        daysLeft = nil,
+        captionText = safeCurrent <= 0 and "dead" or "current hp",
+        summaryText = Internal.formatReserveValue(safeCurrent) .. " / " .. Internal.formatReserveValue(safeMax)
+    }
+end
+
 function Internal.getWorkerGender(worker)
     return worker and worker.isFemale and "Female" or "Male"
 end
@@ -154,11 +168,25 @@ function Internal.getJobDisplayName(worker, profile)
     return tostring(sourceProfile.displayName or worker.jobType or worker.profession or "Unknown")
 end
 
+function Internal.getNpcConditionLabel(worker)
+    local state = tostring(worker and worker.state or "Idle")
+    if state == "Dehydrated" then
+        return "Dehydrated"
+    end
+    if state == "Starving" then
+        return "Starving"
+    end
+    if state == "Dead" then
+        return "Dead"
+    end
+    return "Stable"
+end
+
 function Internal.formatWorkerListSubtitle(worker)
-    local archetype = tostring(worker.archetypeID or "General")
+    local npcCondition = Internal.getNpcConditionLabel(worker)
     local jobType = Internal.getJobDisplayName(worker)
     local state = tostring(worker.state or "Idle")
-    return archetype .. " | " .. jobType .. " | " .. state
+    return npcCondition .. " | " .. jobType .. " | " .. state
 end
 
 function Internal.buildToolInputText(worker)
@@ -293,6 +321,7 @@ function LabourProfileCard:new(x, y, width, height)
     o.borderColor = { r = 1, g = 1, b = 1, a = 0.08 }
     o.caloriesDisplayRatio = 0
     o.hydrationDisplayRatio = 0
+    o.healthDisplayRatio = 0
     return o
 end
 
@@ -307,8 +336,10 @@ function LabourProfileCard:setWorker(worker)
         self.portraitTex = nil
         self.caloriesData = nil
         self.hydrationData = nil
+        self.healthData = nil
         self.caloriesTargetRatio = 0
         self.hydrationTargetRatio = 0
+        self.healthTargetRatio = 0
         return
     end
 
@@ -325,8 +356,10 @@ function LabourProfileCard:setWorker(worker)
 
     self.caloriesData = Internal.getReserveBarData(worker.caloriesCached, dailyCaloriesNeed)
     self.hydrationData = Internal.getReserveBarData(worker.hydrationCached, dailyHydrationNeed)
+    self.healthData = Internal.getHealthBarData(worker.hp, worker.maxHp)
     self.caloriesTargetRatio = self.caloriesData.fillRatio
     self.hydrationTargetRatio = self.hydrationData.fillRatio
+    self.healthTargetRatio = self.healthData.fillRatio
     self.portraitTex = Internal.getWorkerPortraitTexture(worker)
 end
 
@@ -353,8 +386,8 @@ function LabourProfileCard:drawReserveBar(x, y, width, height, label, color, dat
     local labelWidth = getTextManager():MeasureStringX(UIFont.Small, label)
     self:drawText(label, x + math.max(8, (width - labelWidth) / 2), y + 2, 0.95, 0.95, 0.95, 1, UIFont.Small)
 
-    local daysText = Internal.formatDaysAndEta(safeData.daysLeft, safeData.daysLeft and (safeData.daysLeft * 24) or nil)
-    local totalsText = Internal.formatReserveValue(safeData.stored) .. " stored | Overflow " .. Internal.formatReserveValue(safeData.overflow)
+    local daysText = safeData.captionText or Internal.formatDaysAndEta(safeData.daysLeft, safeData.daysLeft and (safeData.daysLeft * 24) or nil)
+    local totalsText = safeData.summaryText or (Internal.formatReserveValue(safeData.stored) .. " stored | Overflow " .. Internal.formatReserveValue(safeData.overflow))
     self:drawText(daysText, x, y + height + 4, 0.86, 0.86, 0.86, 1, UIFont.Small)
     self:drawTextRight(totalsText, x + width, y + height + 4, 0.66, 0.66, 0.66, 1, UIFont.Small)
 end
@@ -370,13 +403,14 @@ function LabourProfileCard:prerender()
 
     self.caloriesDisplayRatio = animateRatio(self.caloriesDisplayRatio, self.caloriesTargetRatio)
     self.hydrationDisplayRatio = animateRatio(self.hydrationDisplayRatio, self.hydrationTargetRatio)
+    self.healthDisplayRatio = animateRatio(self.healthDisplayRatio, self.healthTargetRatio)
 
     local portraitSize = math.min(104, self.height - (pad * 2))
     local portraitX = pad
     local portraitY = pad + 10
     local barsX = portraitX + portraitSize + 18
     local barsWidth = self.width - barsX - pad
-    local barHeight = 28
+    local barHeight = 24
     local topY = pad
     local worker = self.worker
     local profile = self.profile or {}
@@ -406,13 +440,26 @@ function LabourProfileCard:prerender()
         topY,
         barsWidth,
         barHeight,
+        "Health",
+        { r = 0.74, g = 0.24, b = 0.24 },
+        self.healthData,
+        self.healthDisplayRatio
+    )
+
+    topY = topY + 44
+
+    self:drawReserveBar(
+        barsX,
+        topY,
+        barsWidth,
+        barHeight,
         "Hunger",
         { r = 0.48, g = 0.30, b = 0.14 },
         self.caloriesData,
         self.caloriesDisplayRatio
     )
 
-    topY = topY + 52
+    topY = topY + 44
 
     self:drawReserveBar(
         barsX,

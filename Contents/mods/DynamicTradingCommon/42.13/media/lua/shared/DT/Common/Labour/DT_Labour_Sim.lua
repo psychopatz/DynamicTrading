@@ -27,6 +27,92 @@ local function clampHours(value)
     return math.max(0, tonumber(value) or 0)
 end
 
+local function clampCheckpoint(value, fallback)
+    local safeValue = math.floor(tonumber(value) or tonumber(fallback) or 0)
+    return math.max(0, safeValue)
+end
+
+local function clampHp(value, maxHp)
+    local safeMax = math.max(1, tonumber(maxHp) or Config.DEFAULT_WORKER_MAX_HP or 100)
+    return math.max(0, math.min(safeMax, tonumber(value) or safeMax))
+end
+
+local function applyInterval(workableHours, hp, maxHp, intervalHours, hasCalories, hasHydration, canWork)
+    if intervalHours <= 0 then
+        return workableHours, hp
+    end
+
+    if canWork and hasCalories and hasHydration then
+        workableHours = workableHours + intervalHours
+    end
+
+    if hasCalories and hasHydration then
+        hp = clampHp(hp + (intervalHours * (Config.WORKER_HP_REGEN_PER_HOUR or 1)), maxHp)
+    else
+        hp = clampHp(hp - (intervalHours * (Config.WORKER_HP_LOSS_PER_HOUR or 1)), maxHp)
+    end
+
+    return workableHours, hp
+end
+
+local function processNutrition(worker, currentHour, dailyCaloriesNeed, dailyHydrationNeed, canWork)
+    local lastHour = math.floor(worker.lastSimHour or currentHour)
+    local currentCheckpoint = Config.GetMealCheckpointCountAtHour(currentHour)
+    local previousCheckpoint = clampCheckpoint(
+        worker.lastNutritionCheckpoint,
+        Config.GetMealCheckpointCountAtHour(lastHour)
+    )
+
+    if previousCheckpoint > currentCheckpoint then
+        previousCheckpoint = currentCheckpoint
+    end
+
+    local hasCalories = (tonumber(worker.caloriesCached) or 0) > 0
+    local hasHydration = (tonumber(worker.hydrationCached) or 0) > 0
+    local maxHp = math.max(1, tonumber(worker.maxHp) or Config.DEFAULT_WORKER_MAX_HP or 100)
+    local hp = clampHp(worker.hp, maxHp)
+    local workableHours = 0
+    local segmentStart = lastHour
+
+    for checkpoint = previousCheckpoint + 1, currentCheckpoint do
+        local checkpointHour = Config.GetMealCheckpointHourByCount(checkpoint)
+        local intervalHours = math.max(0, math.min(currentHour, checkpointHour) - segmentStart)
+        workableHours, hp = applyInterval(
+            workableHours,
+            hp,
+            maxHp,
+            intervalHours,
+            hasCalories,
+            hasHydration,
+            canWork
+        )
+        segmentStart = math.max(segmentStart, checkpointHour)
+
+        local meal = Config.GetMealProfileByCheckpoint(checkpoint) or {}
+        hasCalories, hasHydration = Nutrition.ConsumeAmounts(
+            worker,
+            (tonumber(dailyCaloriesNeed) or 0) * (tonumber(meal.caloriesShare) or 0),
+            (tonumber(dailyHydrationNeed) or 0) * (tonumber(meal.hydrationShare) or 0)
+        )
+    end
+
+    local tailHours = math.max(0, currentHour - segmentStart)
+    workableHours, hp = applyInterval(
+        workableHours,
+        hp,
+        maxHp,
+        tailHours,
+        hasCalories,
+        hasHydration,
+        canWork
+    )
+
+    worker.lastNutritionCheckpoint = currentCheckpoint
+    worker.hp = hp
+
+    return workableHours, hasCalories, hasHydration, hp
+end
+
 function Sim.ProcessWorker(worker, currentHour)
     if not worker then return end
 
@@ -37,44 +123,54 @@ function Sim.ProcessWorker(worker, currentHour)
     local lastHour = math.floor(worker.lastSimHour or currentHour)
     local deltaHours = math.max(0, currentHour - lastHour)
 
+    if worker.state == Config.States.Dead then
+        worker.jobEnabled = false
+        worker.lastNutritionCheckpoint = Config.GetMealCheckpointCountAtHour(currentHour)
+        if deltaHours > 0 then
+            worker.lastSimHour = currentHour
+        end
+        Registry.RecalculateWorker(worker)
+        return
+    end
+
     Sites.RefreshWorkerSite(worker)
     local toolsReady = Registry.WorkerHasRequiredTools(worker)
 
     worker.siteState = worker.siteState or "Deferred"
     worker.toolState = toolsReady and "Ready" or "Missing"
 
-    local caloriesPerHour = Config.GetEffectiveHourlyCaloriesNeed(worker, profile)
-    local hydrationPerHour = Config.GetEffectiveHourlyHydrationNeed(worker, profile)
-    local hasCalories = (tonumber(worker.caloriesCached) or 0) > 0
-    local hasHydration = (tonumber(worker.hydrationCached) or 0) > 0
-    if deltaHours > 0 then
-        hasCalories, hasHydration = Nutrition.ConsumeForHours(worker, caloriesPerHour, hydrationPerHour, deltaHours)
-    end
+    local dailyCaloriesNeed = Config.GetEffectiveDailyCaloriesNeed(worker, profile)
+    local dailyHydrationNeed = Config.GetEffectiveDailyHydrationNeed(worker, profile)
+    local canWork = worker.jobEnabled and toolsReady
+    local workableHours, hasCalories, hasHydration, hp = processNutrition(
+        worker,
+        currentHour,
+        dailyCaloriesNeed,
+        dailyHydrationNeed,
+        canWork
+    )
 
-    worker.starvationHours = hasCalories and 0 or (clampHours(worker.starvationHours) + deltaHours)
-    worker.dehydrationHours = hasHydration and 0 or (clampHours(worker.dehydrationHours) + deltaHours)
+    worker.starvationHours = 0
+    worker.dehydrationHours = 0
 
-    if worker.state ~= Config.States.Dead then
-        if worker.dehydrationHours >= Config.DEFAULT_DEHYDRATION_DEATH_HOURS
-            or worker.starvationHours >= Config.DEFAULT_STARVATION_DEATH_HOURS then
-            worker.state = Config.States.Dead
-            worker.jobEnabled = false
-        elseif not worker.jobEnabled then
-            worker.state = Config.States.Idle
-        elseif not toolsReady then
-            worker.state = Config.States.MissingTool
-        elseif not hasHydration then
-            worker.state = Config.States.Dehydrated
-        elseif not hasCalories then
-            worker.state = Config.States.Starving
-        else
-            worker.state = Config.States.Working
-            worker.workProgress = clampHours(worker.workProgress) + (deltaHours * speedMultiplier)
-            while worker.workProgress >= (profile.cycleHours or 24) do
-                worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
-                for _, entry in ipairs(Output.GenerateForJob(profile)) do
-                    Registry.AddOutputEntry(worker, entry)
-                end
+    if hp <= 0 then
+        worker.state = Config.States.Dead
+        worker.jobEnabled = false
+    elseif not worker.jobEnabled then
+        worker.state = Config.States.Idle
+    elseif not toolsReady then
+        worker.state = Config.States.MissingTool
+    elseif not hasHydration then
+        worker.state = Config.States.Dehydrated
+    elseif not hasCalories then
+        worker.state = Config.States.Starving
+    else
+        worker.state = Config.States.Working
+        worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
+        while worker.workProgress >= (profile.cycleHours or 24) do
+            worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
+            for _, entry in ipairs(Output.GenerateForJob(profile)) do
+                Registry.AddOutputEntry(worker, entry)
             end
         end
     end

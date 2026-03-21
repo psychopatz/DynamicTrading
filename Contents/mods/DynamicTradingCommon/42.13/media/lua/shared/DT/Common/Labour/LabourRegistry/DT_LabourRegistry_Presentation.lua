@@ -24,6 +24,8 @@ function Registry.GetWorkerSummary(worker)
         siteState = worker.siteState,
         caloriesCached = worker.caloriesCached or 0,
         hydrationCached = worker.hydrationCached or 0,
+        hp = worker.hp or worker.maxHp or 0,
+        maxHp = worker.maxHp or Config.DEFAULT_WORKER_MAX_HP or 100,
         outputCount = worker.outputCount or 0,
         moneyStored = worker.moneyStored or 0,
         isFemale = worker.isFemale,

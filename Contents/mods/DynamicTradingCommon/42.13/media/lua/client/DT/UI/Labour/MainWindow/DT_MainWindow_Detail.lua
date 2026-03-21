@@ -63,17 +63,13 @@ function DT_MainWindow:updateWorkerDetail(worker)
         or tonumber(worker.dailyHydrationNeed)
         or tonumber(profile.dailyHydrationNeed)
         or 0
-    local caloriesDays = Internal.getReserveDaysLeft(worker.caloriesCached, dailyCaloriesNeed)
-    local hydrationDays = Internal.getReserveDaysLeft(worker.hydrationCached, dailyHydrationNeed)
     local caloriesHoursLeft = Internal.getReserveHoursLeft(worker.caloriesCached, (dailyCaloriesNeed / (config.HOURS_PER_DAY or 24)))
     local hydrationHoursLeft = Internal.getReserveHoursLeft(worker.hydrationCached, (dailyHydrationNeed / (config.HOURS_PER_DAY or 24)))
     local refillHoursLeft = Internal.getNextRefillHours(caloriesHoursLeft, hydrationHoursLeft)
-    local caloriesBarData = Internal.getReserveBarData(worker.caloriesCached, dailyCaloriesNeed)
-    local hydrationBarData = Internal.getReserveBarData(worker.hydrationCached, dailyHydrationNeed)
     local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ") or "None"
-    local caloriesForecast = (worker.state == config.States.Dead) and "Already dead" or Internal.formatDaysAndEta(caloriesDays, caloriesHoursLeft)
-    local hydrationForecast = (worker.state == config.States.Dead) and "Already dead" or Internal.formatDaysAndEta(hydrationDays, hydrationHoursLeft)
     local refillForecast = (worker.state == config.States.Dead) and "Already dead" or Internal.formatDurationHours(refillHoursLeft)
+    local maxHp = math.max(1, tonumber(worker.maxHp) or 100)
+    local hp = math.max(0, math.min(maxHp, tonumber(worker.hp) or maxHp))
 
     local text = ""
     text = text .. " <RGB:1,1,1> <SIZE:Medium> Overview <LINE> "
@@ -89,24 +85,13 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.72,0.72,0.72> Work Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.workX, worker.workY, worker.workZ) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> <LINE> "
 
-    text = text .. " <RGB:1,1,1> <SIZE:Medium> Survival Forecast <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Calories Stored: <RGB:1,1,1> " .. Internal.formatReserveValue(worker.caloriesCached) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Daily Hunger Use: <RGB:1,1,1> " .. Internal.formatReserveValue(dailyCaloriesNeed) .. "/day <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Calories Overflow: <RGB:1,1,1> " .. Internal.formatReserveValue(caloriesBarData.overflow) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Days Until Starving: <RGB:1,1,1> " .. caloriesForecast .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Hydration Stored: <RGB:1,1,1> " .. Internal.formatReserveValue(worker.hydrationCached) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Daily Hydration Use: <RGB:1,1,1> " .. Internal.formatReserveValue(dailyHydrationNeed) .. "/day <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Hydration Overflow: <RGB:1,1,1> " .. Internal.formatReserveValue(hydrationBarData.overflow) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Days Until Dehydrated: <RGB:1,1,1> " .. hydrationForecast .. " <LINE> "
+    text = text .. " <RGB:1,1,1> <SIZE:Medium> Upkeep Summary <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Health: <RGB:1,1,1> " .. Internal.formatReserveValue(hp) .. " / " .. Internal.formatReserveValue(maxHp) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Suggested Refill In: <RGB:1,1,1> " .. refillForecast .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Consumption Cadence: <RGB:1,1,1> Every in-game hour <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Fatal Threshold: <RGB:1,1,1> 3 days at zero calories or hydration <LINE> "
-    if (tonumber(worker.starvationHours) or 0) > 0 then
-        text = text .. " <RGB:0.72,0.72,0.72> Starvation Counter: <RGB:1,1,1> " .. Internal.formatDurationHours(worker.starvationHours) .. " <LINE> "
-    end
-    if (tonumber(worker.dehydrationHours) or 0) > 0 then
-        text = text .. " <RGB:0.72,0.72,0.72> Dehydration Counter: <RGB:1,1,1> " .. Internal.formatDurationHours(worker.dehydrationHours) .. " <LINE> "
-    end
+    text = text .. " <RGB:0.72,0.72,0.72> Consumption Cadence: <RGB:1,1,1> Breakfast, lunch, dinner <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> HP Loss: <RGB:1,1,1> 1 per in-game hour when calories or hydration is empty <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> HP Recovery: <RGB:1,1,1> 1 per in-game hour while calories and hydration are available <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Death Condition: <RGB:1,1,1> 0 HP <LINE> "
     text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Inputs And Storage <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Nutrition Entries: <RGB:1,1,1> " .. tostring(#(worker.nutritionLedger or {})) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Assigned Tools: <RGB:1,1,1> " .. tostring(#(worker.toolLedger or {})) .. " <LINE> "

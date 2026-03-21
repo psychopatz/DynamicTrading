@@ -140,6 +140,16 @@ local function consumeField(worker, fieldName, amount)
     return remaining <= 0.0001
 end
 
+function Nutrition.ConsumeAmounts(worker, caloriesNeeded, hydrationNeeded)
+    if not worker then
+        return true, true
+    end
+
+    local enoughCalories = consumeField(worker, "caloriesRemaining", math.max(0, tonumber(caloriesNeeded) or 0))
+    local enoughHydration = consumeField(worker, "hydrationRemaining", math.max(0, tonumber(hydrationNeeded) or 0))
+    return enoughCalories, enoughHydration
+end
+
 function Nutrition.ConsumeForHours(worker, caloriesPerHour, hydrationPerHour, hours)
     if not worker or hours <= 0 then
         return true, true
@@ -147,11 +157,7 @@ function Nutrition.ConsumeForHours(worker, caloriesPerHour, hydrationPerHour, ho
 
     local caloriesNeeded = math.max(0, caloriesPerHour * hours)
     local hydrationNeeded = math.max(0, hydrationPerHour * hours)
-
-    local enoughCalories = consumeField(worker, "caloriesRemaining", caloriesNeeded)
-    local enoughHydration = consumeField(worker, "hydrationRemaining", hydrationNeeded)
-
-    return enoughCalories, enoughHydration
+    return Nutrition.ConsumeAmounts(worker, caloriesNeeded, hydrationNeeded)
 end
 
 return Nutrition

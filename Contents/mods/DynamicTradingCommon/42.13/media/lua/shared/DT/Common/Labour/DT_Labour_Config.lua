@@ -25,6 +25,14 @@ Config.RECRUIT_REQUIRED_REPUTATION = 100
 Config.RECRUIT_DAILY_CHANCE = 50
 Config.DEFAULT_LABOUR_DAILY_CALORIES_USE = 500
 Config.DEFAULT_LABOUR_DAILY_HYDRATION_USE = 500
+Config.DEFAULT_WORKER_MAX_HP = 100
+Config.WORKER_HP_LOSS_PER_HOUR = 1
+Config.WORKER_HP_REGEN_PER_HOUR = 1
+Config.MEAL_SCHEDULE = {
+    { id = "breakfast", label = "Breakfast", hour = 7, caloriesShare = 0.28, hydrationShare = 0.24 },
+    { id = "lunch", label = "Lunch", hour = 13, caloriesShare = 0.34, hydrationShare = 0.36 },
+    { id = "dinner", label = "Dinner", hour = 19, caloriesShare = 0.38, hydrationShare = 0.40 }
+}
 
 Config.States = {
     Idle = "Idle",
@@ -247,6 +255,66 @@ function Config.GetEffectiveHourlyHydrationNeed(worker, profile)
         return 0
     end
     return Config.GetEffectiveDailyHydrationNeed(worker, profile) / hoursPerDay
+end
+
+function Config.GetMealSchedule()
+    return Config.MEAL_SCHEDULE or {}
+end
+
+function Config.GetMealsPerDay()
+    return #Config.GetMealSchedule()
+end
+
+function Config.GetMealCheckpointCountAtHour(worldHour)
+    local safeHour = math.max(0, math.floor(tonumber(worldHour) or 0))
+    local hoursPerDay = tonumber(Config.HOURS_PER_DAY) or 24
+    if hoursPerDay <= 0 then
+        return 0
+    end
+
+    local day = math.floor(safeHour / hoursPerDay)
+    local hourOfDay = safeHour % hoursPerDay
+    local count = day * Config.GetMealsPerDay()
+
+    for _, meal in ipairs(Config.GetMealSchedule()) do
+        if hourOfDay >= (tonumber(meal.hour) or 0) then
+            count = count + 1
+        end
+    end
+
+    return count
+end
+
+function Config.GetMealProfileByCheckpoint(checkpointCount)
+    local mealsPerDay = Config.GetMealsPerDay()
+    if mealsPerDay <= 0 then
+        return nil
+    end
+
+    local safeCount = math.floor(tonumber(checkpointCount) or 0)
+    if safeCount <= 0 then
+        return nil
+    end
+
+    local slotIndex = ((safeCount - 1) % mealsPerDay) + 1
+    return Config.GetMealSchedule()[slotIndex]
+end
+
+function Config.GetMealCheckpointHourByCount(checkpointCount)
+    local mealsPerDay = Config.GetMealsPerDay()
+    local hoursPerDay = tonumber(Config.HOURS_PER_DAY) or 24
+    if mealsPerDay <= 0 or hoursPerDay <= 0 then
+        return 0
+    end
+
+    local safeCount = math.floor(tonumber(checkpointCount) or 0)
+    if safeCount <= 0 then
+        return 0
+    end
+
+    local day = math.floor((safeCount - 1) / mealsPerDay)
+    local meal = Config.GetMealProfileByCheckpoint(safeCount) or {}
+    return (day * hoursPerDay) + math.floor(tonumber(meal.hour) or 0)
 end
 
 function Config.NormalizeUnitValue(value)

@@ -34,11 +34,14 @@ function Registry.CreateWorker(ownerUsername, template)
         siteState = template.siteState or "Deferred",
         jobEnabled = template.jobEnabled ~= false,
         lastSimHour = template.lastSimHour or currentHour,
+        lastNutritionCheckpoint = tonumber(template.lastNutritionCheckpoint) or Config.GetMealCheckpointCountAtHour(template.lastSimHour or currentHour),
         workProgress = tonumber(template.workProgress) or 0,
         caloriesCached = tonumber(template.caloriesCached) or 0,
         hydrationCached = tonumber(template.hydrationCached) or 0,
         dailyCaloriesNeed = tonumber(template.dailyCaloriesNeed) or profile.dailyCaloriesNeed,
         dailyHydrationNeed = tonumber(template.dailyHydrationNeed) or profile.dailyHydrationNeed,
+        maxHp = math.max(1, tonumber(template.maxHp) or tonumber(template.healthMax) or Config.DEFAULT_WORKER_MAX_HP or 100),
+        hp = tonumber(template.hp) or tonumber(template.health),
         starvationHours = tonumber(template.starvationHours) or 0,
         dehydrationHours = tonumber(template.dehydrationHours) or 0,
         nutritionLedger = Internal.BuildStarterNutritionLedger(template),
@@ -61,6 +64,9 @@ function Registry.CreateWorker(ownerUsername, template)
     end
     if not worker.visualID then
         worker.visualID = ZombRand(1000000)
+    end
+    if worker.hp == nil then
+        worker.hp = worker.maxHp
     end
 
     Registry.RecalculateWorker(worker)

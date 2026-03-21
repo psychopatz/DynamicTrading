@@ -28,6 +28,7 @@ function Internal.BuildStarterNutritionLedger(template)
     local templateCalories = tonumber(template and template.caloriesCached) or 0
     local templateHydration = tonumber(template and template.hydrationCached) or 0
     if templateCalories > 0 or templateHydration > 0 then
+        existing[#existing + 1] = Nutrition.BuildStarterReserveEntry(templateCalories, templateHydration)
         return existing
     end
 

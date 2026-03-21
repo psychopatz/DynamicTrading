@@ -19,6 +19,25 @@ function Registry.RecalculateWorker(worker)
     if (tonumber(worker.dailyHydrationNeed) or 0) > 0 and (tonumber(worker.dailyHydrationNeed) or 0) < 25 then
         worker.dailyHydrationNeed = (tonumber(worker.dailyHydrationNeed) or 0) * (Config.HYDRATION_POINTS_PER_THIRST or 1000)
     end
+    worker.maxHp = math.max(1, tonumber(worker.maxHp) or tonumber(worker.healthMax) or Config.DEFAULT_WORKER_MAX_HP or 100)
+    worker.hp = math.max(0, math.min(worker.maxHp, tonumber(worker.hp) or tonumber(worker.health) or worker.maxHp))
+    worker.lastNutritionCheckpoint = math.max(
+        0,
+        math.floor(tonumber(worker.lastNutritionCheckpoint) or Config.GetMealCheckpointCountAtHour(worker.lastSimHour or 0))
+    )
+
+    if #worker.nutritionLedger == 0 then
+        local cachedCalories = math.max(0, tonumber(worker.caloriesCached) or 0)
+        local cachedHydration = math.max(0, tonumber(worker.hydrationCached) or 0)
+        if cachedCalories > 0 or cachedHydration > 0 then
+            worker.nutritionLedger[1] = {
+                fullType = "DT.LabourMigratedReserve",
+                displayName = "Migrated Reserve",
+                caloriesRemaining = cachedCalories,
+                hydrationRemaining = cachedHydration
+            }
+        end
+    end
 
     local calories = 0
     local hydration = 0

@@ -12,7 +12,9 @@ local function onServerCommand(module, command, args)
         DT_MainWindow.cachedWorkers = args and args.workers or {}
         if DT_MainWindow.instance and DT_MainWindow.instance:getIsVisible() then
             DT_MainWindow.instance:populateWorkerList(DT_MainWindow.cachedWorkers)
-            DT_MainWindow.instance:updateStatus("Worker list synced.")
+            if (tonumber(DT_MainWindow.instance.syncStatusMutedFrames) or 0) <= 0 then
+                DT_MainWindow.instance:updateStatus("Worker list synced.")
+            end
         end
     elseif command == "SyncWorkerDetails" then
         if args and args.worker and args.worker.workerID then
@@ -23,7 +25,9 @@ local function onServerCommand(module, command, args)
                 and DT_MainWindow.instance.selectedWorkerSummary
                 and DT_MainWindow.instance.selectedWorkerSummary.workerID == args.worker.workerID then
                 DT_MainWindow.instance:updateWorkerDetail(args.worker)
-                DT_MainWindow.instance:updateStatus("Worker details synced.")
+                if (tonumber(DT_MainWindow.instance.syncStatusMutedFrames) or 0) <= 0 then
+                    DT_MainWindow.instance:updateStatus("Worker details synced.")
+                end
             end
         end
     elseif command == "LabourNotice" then
@@ -42,7 +46,9 @@ if not DT_MainWindow.EventsAdded then
 
         if key == (Internal.Config.MOD_DATA_KEY or "DynamicTrading_Labour") then
             DT_MainWindow.instance:populateWorkerList(Internal.resolveWorkerSummaries())
-            DT_MainWindow.instance:updateStatus("Labour data refreshed from ModData.")
+            if (tonumber(DT_MainWindow.instance.syncStatusMutedFrames) or 0) <= 0 then
+                DT_MainWindow.instance:updateStatus("Labour data refreshed from ModData.")
+            end
         end
     end)
     DT_MainWindow.EventsAdded = true
