@@ -46,6 +46,16 @@ function Registry.GetWorkerSummary(worker)
         maxHp = worker.maxHp or Config.DEFAULT_WORKER_MAX_HP or 100,
         outputCount = worker.outputCount or 0,
         moneyStored = worker.moneyStored or 0,
+        scavengeTier = worker.scavengeTier,
+        scavengeTierLabel = worker.scavengeTierLabel,
+        scavengePoolRolls = worker.scavengePoolRolls,
+        scavengeFailureWeight = worker.scavengeFailureWeight,
+        scavengeSearchSpeedMultiplier = worker.scavengeSearchSpeedMultiplier,
+        scavengeCapabilities = worker.scavengeCapabilities,
+        scavengeSiteProfileID = worker.scavengeSiteProfileID,
+        scavengeSiteProfileLabel = worker.scavengeSiteProfileLabel,
+        scavengeSiteRoomName = worker.scavengeSiteRoomName,
+        scavengeSiteZoneType = worker.scavengeSiteZoneType,
         isFemale = worker.isFemale,
         identitySeed = worker.identitySeed
     }

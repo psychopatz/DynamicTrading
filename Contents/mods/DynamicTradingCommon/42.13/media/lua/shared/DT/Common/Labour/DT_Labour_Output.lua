@@ -36,11 +36,27 @@ local function getCandidates(requiredTags)
     return pool
 end
 
-local function buildWeightedScavengeEntries(loadout)
+local function applyWeightMultiplier(baseWeight, multiplier)
+    local safeWeight = math.max(0, tonumber(baseWeight) or 0)
+    local safeMultiplier = tonumber(multiplier)
+    if safeWeight <= 0 then
+        return 0
+    end
+    if safeMultiplier == nil then
+        return safeWeight
+    end
+    if safeMultiplier <= 0 then
+        return 0
+    end
+    return math.max(1, math.floor((safeWeight * safeMultiplier) + 0.5))
+end
+
+local function buildWeightedScavengeEntries(loadout, siteProfile)
     local entries = {}
     local totalWeight = 0
 
-    local failureWeight = math.max(0, tonumber(loadout and loadout.failureWeight) or 0)
+    local failureWeight = math.max(0, (tonumber(loadout and loadout.failureWeight) or 0)
+        + (tonumber(siteProfile and siteProfile.failureWeightDelta) or 0))
     if failureWeight > 0 then
         totalWeight = totalWeight + failureWeight
         entries[#entries + 1] = {
@@ -76,7 +92,9 @@ local function buildWeightedScavengeEntries(loadout)
             if isEligible then
                 local pool = getCandidates(rule.tags)
                 if #pool > 0 then
-                    local weight = math.max(0, tonumber(rule.weight) or 0)
+                    local ruleWeights = siteProfile and siteProfile.ruleWeights or nil
+                    local weightMultiplier = ruleWeights and ruleWeights[rule.id] or nil
+                    local weight = applyWeightMultiplier(rule.weight, weightMultiplier)
                     if weight > 0 then
                         totalWeight = totalWeight + weight
                         entries[#entries + 1] = {
@@ -129,17 +147,33 @@ local function getRuleQuantity(rule, loadout)
     return Config.RandomRangeInclusive(minQty, maxQty)
 end
 
+local function hasKeys(value)
+    if type(value) ~= "table" then
+        return false
+    end
+
+    for _, _ in pairs(value) do
+        return true
+    end
+
+    return false
+end
+
 function Output.GenerateScavengeLoot(worker)
     local results = {}
     local loadout = Config.GetScavengeLoadout and Config.GetScavengeLoadout(worker) or {}
+    local siteProfile = Config.GetScavengeSiteProfile and Config.GetScavengeSiteProfile(worker and worker.scavengeSiteProfileID) or nil
     local poolRolls = math.max(1, tonumber(loadout and loadout.poolRolls) or 1)
+        + math.max(0, tonumber(siteProfile and siteProfile.poolRollBonus) or 0)
+    local maxPoolRolls = (Config.ScavengeLootDefaults and Config.ScavengeLootDefaults.maxPoolRolls) or poolRolls
+    poolRolls = math.max(1, math.min(maxPoolRolls, poolRolls))
     local avoidDuplicates = loadout and loadout.hasRoutePlan == true
     local usedRuleIDs = {}
     local usedFullTypes = {}
 
     for _ = 1, poolRolls do
-        local weightedEntries, totalWeight = buildWeightedScavengeEntries(loadout)
-        if avoidDuplicates and next(usedRuleIDs) ~= nil then
+        local weightedEntries, totalWeight = buildWeightedScavengeEntries(loadout, siteProfile)
+        if avoidDuplicates and hasKeys(usedRuleIDs) then
             local filteredEntries = {}
             local filteredWeight = 0
             for _, entry in ipairs(weightedEntries) do

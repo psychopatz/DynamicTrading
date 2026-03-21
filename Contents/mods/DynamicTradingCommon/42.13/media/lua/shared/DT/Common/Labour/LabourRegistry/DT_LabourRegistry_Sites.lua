@@ -37,6 +37,10 @@ function Registry.ClearWorkerSite(worker)
     worker.workY = nil
     worker.workZ = nil
     worker.siteState = "Deferred"
+    worker.scavengeSiteProfileID = nil
+    worker.scavengeSiteProfileLabel = nil
+    worker.scavengeSiteRoomName = nil
+    worker.scavengeSiteZoneType = nil
 end
 
 return Registry

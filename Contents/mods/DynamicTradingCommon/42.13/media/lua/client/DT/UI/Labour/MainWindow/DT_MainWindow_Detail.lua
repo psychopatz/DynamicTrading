@@ -155,6 +155,9 @@ function DT_MainWindow:updateWorkerDetail(worker)
     if normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge) then
         text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Scavenge Profile <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Tier: <RGB:1,1,1> " .. tostring(worker.scavengeTierLabel or "Tier 0 - Open Containers") .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Site Profile: <RGB:1,1,1> " .. tostring(worker.scavengeSiteProfileLabel or "Unsorted Location") .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Room Context: <RGB:1,1,1> " .. tostring(worker.scavengeSiteRoomName or "Unknown") .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Zone Context: <RGB:1,1,1> " .. tostring(worker.scavengeSiteZoneType or "Unknown") .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Loot Rolls: <RGB:1,1,1> " .. tostring(worker.scavengePoolRolls or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Failure Weight: <RGB:1,1,1> " .. tostring(worker.scavengeFailureWeight or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Search Speed: <RGB:1,1,1> x" .. Internal.formatDecimal(worker.scavengeSearchSpeedMultiplier or 1, 2) .. " <LINE> "
