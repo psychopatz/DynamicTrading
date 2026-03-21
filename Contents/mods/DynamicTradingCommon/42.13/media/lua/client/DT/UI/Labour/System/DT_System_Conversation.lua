@@ -2,7 +2,7 @@ local System = DT_System
 local Internal = System.Internal
 
 function System.GetConversationSourceNPCID(ui)
-    if not ui or ui.isRadio or not ui.interactionObj then
+    if not ui or not ui.interactionObj then
         return nil
     end
 
@@ -63,7 +63,7 @@ function System.ResolveArchetype(trader)
 end
 
 function System.BuildRecruitArgs(ui, archetypeID)
-    if not ui or ui.isRadio or not ui.interactionObj then
+    if not ui or not ui.interactionObj then
         return nil
     end
 

@@ -118,7 +118,11 @@ function DT_FactionDebugWindow:createChildren()
     self.btnRepAdd = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 2, ctrlY, ctrlBtnWidth, 20, "+ REP", self, function()
         local f = self.listbox.items[self.listbox.selected]
         if f then
-            DT_FactionDebugActions.modifyReputation(f.item.id, 10)
+            if self.selectedMemberUUID then
+                DT_FactionDebugActions.modifyPersonalReputation(self.selectedMemberUUID, f.item.id, 10)
+            else
+                DT_FactionDebugActions.modifyReputation(f.item.id, 10)
+            end
         end
     end)
     self.btnRepAdd:initialise()
@@ -127,7 +131,11 @@ function DT_FactionDebugWindow:createChildren()
     self.btnRepSub = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 3, ctrlY, ctrlBtnWidth, 20, "- REP", self, function()
         local f = self.listbox.items[self.listbox.selected]
         if f then
-            DT_FactionDebugActions.modifyReputation(f.item.id, -10)
+            if self.selectedMemberUUID then
+                DT_FactionDebugActions.modifyPersonalReputation(self.selectedMemberUUID, f.item.id, -10)
+            else
+                DT_FactionDebugActions.modifyReputation(f.item.id, -10)
+            end
         end
     end)
     self.btnRepSub:initialise()
@@ -207,6 +215,8 @@ function DT_FactionDebugWindow:onFactionSelected(item)
 
     -- Repopulate Roster List
     self.rosterlist:clear()
+    self.selectedMemberUUID = nil
+    self.selectedMemberSoul = nil
     self.btnLocate.enable = false
     self.btnForceTrade.enable = false
     
@@ -235,6 +245,8 @@ function DT_FactionDebugWindow:onFactionSelected(item)
 end
 
 function DT_FactionDebugWindow:onRosterSelected(item)
+    self.selectedMemberUUID = item.uuid
+    self.selectedMemberSoul = item.soul
     self.btnLocate.enable = true
     self.btnForceTrade.enable = true
 end

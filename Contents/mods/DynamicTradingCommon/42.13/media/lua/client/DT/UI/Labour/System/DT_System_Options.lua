@@ -12,7 +12,7 @@ function System.BuildConversationOptions(ui, options)
         merged[#merged + 1] = recruitOption
     end
 
-    if not ui or ui.isRadio or not ui.interactionObj or not System.CanUseDebug() then
+    if not ui or not ui.interactionObj or not System.CanUseDebug() then
         return merged
     end
 

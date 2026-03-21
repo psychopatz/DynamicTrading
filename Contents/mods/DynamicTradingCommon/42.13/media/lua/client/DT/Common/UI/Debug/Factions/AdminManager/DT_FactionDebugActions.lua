@@ -6,6 +6,7 @@
 
 require "DT/Common/UI/Debug/Shared/DT_DebugNetworkAdapter"
 require "DT/Common/UI/Debug/Shared/DT_NPCLocator"
+require "DT/Common/Reputation/DT_Reputation"
 
 DT_FactionDebugActions = DT_FactionDebugActions or {}
 
@@ -22,10 +23,26 @@ end
 
 function DT_FactionDebugActions.modifyReputation(factionID, amount)
     if not factionID then return end
+    
+    -- [NEW LOGIC] Use the current reputation system for local player testing
+    if DT_Reputation and DT_Reputation.ModifyFactionBias then
+        DT_Reputation.ModifyFactionBias(factionID, amount, "admin_debug")
+    end
+
+    -- [OLD LOGIC] Keep for backend faction state continuity
     DT_DebugNetworkAdapter.sendDebugAction("ModifyReputation", { 
         factionID = factionID, 
         amount = amount 
     })
+end
+
+function DT_FactionDebugActions.modifyPersonalReputation(traderUUID, factionID, amount)
+    if not traderUUID then return end
+    
+    -- [NEW LOGIC] Direct modification of personal relationship
+    if DT_Reputation and DT_Reputation.ModifyPersonalRep then
+        DT_Reputation.ModifyPersonalRep(traderUUID, factionID, amount, "admin_debug")
+    end
 end
 
 -- ==========================================================

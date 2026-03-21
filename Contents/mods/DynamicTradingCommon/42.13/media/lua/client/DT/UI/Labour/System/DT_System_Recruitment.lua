@@ -35,7 +35,7 @@ function System.AttemptRecruitFromConversation(ui)
 end
 
 local function buildRecruitOption(ui)
-    if not ui or ui.isRadio or not ui.interactionObj then
+    if not ui or not ui.interactionObj then
         return nil
     end
 
