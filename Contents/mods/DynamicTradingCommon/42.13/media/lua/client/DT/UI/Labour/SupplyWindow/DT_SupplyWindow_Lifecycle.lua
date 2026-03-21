@@ -45,6 +45,7 @@ function DT_SupplyWindow:new(x, y, width, height)
     o.playerEntries = {}
     o.playerEntriesByID = {}
     o.workerEntries = {}
+    o.activeTab = DT_SupplyWindow.Internal and DT_SupplyWindow.Internal.Tabs and DT_SupplyWindow.Internal.Tabs.Provisions or "provisions"
     o.selectedPlayerEntry = nil
     o.selectedWorkerEntry = nil
     o.activeSelectionSide = "player"

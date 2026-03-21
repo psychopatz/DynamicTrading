@@ -3,6 +3,25 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
+function DT_SupplyWindow:setActiveTab(tabID)
+    local targetTab = tabID or Internal.Tabs.Provisions
+    if self.activeTab == targetTab then
+        return
+    end
+
+    self.activeTab = targetTab
+    self.selectedWorkerEntry = nil
+
+    if self.refreshTabButtons then
+        self:refreshTabButtons()
+    end
+    if self.updateTransferControls then
+        self:updateTransferControls()
+    end
+
+    self:refreshWorkerEntries()
+end
+
 function DT_SupplyWindow:refreshDetailSelection()
     local entry = nil
     local side = self.activeSelectionSide
@@ -28,6 +47,39 @@ function DT_SupplyWindow:refreshDetailSelection()
 
     self.activeSelectionSide = side
     self:updateItemDetail(entry, side)
+end
+
+function DT_SupplyWindow:refreshWorkerEntries()
+    self.workerEntries = {}
+
+    local worker = self.workerData
+    local activeTab = self.activeTab or Internal.Tabs.Provisions
+
+    if activeTab == Internal.Tabs.Equipment then
+        for index, ledgerEntry in ipairs(worker and worker.toolLedger or {}) do
+            local entry = Internal.buildWorkerToolEntry(ledgerEntry, index)
+            if entry then
+                self.workerEntries[#self.workerEntries + 1] = entry
+            end
+        end
+    elseif activeTab == Internal.Tabs.Output then
+        for index, ledgerEntry in ipairs(worker and worker.outputLedger or {}) do
+            local entry = Internal.buildWorkerOutputEntry(ledgerEntry, index)
+            if entry then
+                self.workerEntries[#self.workerEntries + 1] = entry
+            end
+        end
+    else
+        for index, ledgerEntry in ipairs(worker and worker.nutritionLedger or {}) do
+            local entry = Internal.buildWorkerSupplyEntry(ledgerEntry, index)
+            if entry then
+                self.workerEntries[#self.workerEntries + 1] = entry
+            end
+        end
+    end
+
+    table.sort(self.workerEntries, Internal.compareEntries)
+    self:rebuildWorkerList()
 end
 
 function DT_SupplyWindow:registerVisiblePlayerEntry(entry)
@@ -152,17 +204,13 @@ end
 
 function DT_SupplyWindow:setWorkerData(worker)
     self.workerData = worker
-    self.workerEntries = {}
-
-    for index, ledgerEntry in ipairs(worker and worker.nutritionLedger or {}) do
-        local entry = Internal.buildWorkerSupplyEntry(ledgerEntry, index)
-        if entry then
-            self.workerEntries[#self.workerEntries + 1] = entry
-        end
+    if self.refreshTabButtons then
+        self:refreshTabButtons()
     end
-
-    table.sort(self.workerEntries, Internal.compareEntries)
-    self:rebuildWorkerList()
+    if self.updateTransferControls then
+        self:updateTransferControls()
+    end
+    self:refreshWorkerEntries()
 end
 
 function DT_SupplyWindow:removePlayerEntryByID(itemID)
@@ -183,20 +231,51 @@ end
 
 function DT_SupplyWindow:applyOptimisticDeposit(entries)
     local changed = false
+    self.workerData = self.workerData or {}
+    self.workerData.nutritionLedger = self.workerData.nutritionLedger or {}
 
     for _, entry in ipairs(entries or {}) do
         local removed = self:removePlayerEntryByID(entry.itemID)
         if removed then
-            local workerEntry = Internal.buildWorkerEntryFromPlayerEntry(removed)
-            self.workerEntries[#self.workerEntries + 1] = workerEntry
+            self.workerData.nutritionLedger[#self.workerData.nutritionLedger + 1] = {
+                fullType = removed.fullType,
+                displayName = removed.displayName,
+                itemID = removed.itemID,
+                caloriesRemaining = removed.calories,
+                hydrationRemaining = removed.hydration,
+                pending = true,
+            }
             changed = true
         end
     end
 
     if changed then
-        table.sort(self.workerEntries, Internal.compareEntries)
         self:rebuildPlayerList()
-        self:rebuildWorkerList()
+        self:refreshWorkerEntries()
+    end
+end
+
+function DT_SupplyWindow:applyOptimisticToolAssign(entries)
+    local changed = false
+    self.workerData = self.workerData or {}
+    self.workerData.toolLedger = self.workerData.toolLedger or {}
+
+    for _, entry in ipairs(entries or {}) do
+        local removed = self:removePlayerEntryByID(entry.itemID)
+        if removed then
+            self.workerData.toolLedger[#self.workerData.toolLedger + 1] = {
+                fullType = removed.fullType,
+                displayName = removed.displayName,
+                tags = removed.tags or {},
+                pending = true,
+            }
+            changed = true
+        end
+    end
+
+    if changed then
+        self:rebuildPlayerList()
+        self:refreshWorkerEntries()
     end
 end
 
