@@ -8,6 +8,8 @@ function DT_SupplyWindow:refreshWorkerEntries()
 
     local worker = self.workerData
     local activeTab = self.activeTab or Internal.Tabs.Provisions
+    local config = Internal.Config or {}
+    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
 
     if activeTab == Internal.Tabs.Equipment then
         for index, ledgerEntry in ipairs(worker and worker.toolLedger or {}) do
@@ -17,7 +19,12 @@ function DT_SupplyWindow:refreshWorkerEntries()
             end
         end
     elseif activeTab == Internal.Tabs.Output then
-        for index, ledgerEntry in ipairs(worker and worker.outputLedger or {}) do
+        local ledger = worker and worker.outputLedger or {}
+        if normalizedJob == ((config.JobTypes or {}).Scavenge) then
+            ledger = worker and worker.haulLedger or {}
+        end
+
+        for index, ledgerEntry in ipairs(ledger) do
             local entry = Internal.buildWorkerOutputEntry(ledgerEntry, index)
             if entry then
                 self.workerEntries[#self.workerEntries + 1] = entry
@@ -81,4 +88,3 @@ function DT_SupplyWindow:setWorkerData(worker)
     end
     self:refreshWorkerEntries()
 end
-

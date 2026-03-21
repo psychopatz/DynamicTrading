@@ -81,6 +81,7 @@ function Registry.GetHaulMetrics(worker)
         effectiveWeight = effectiveWeight,
         maxCarryWeight = carryProfile and carryProfile.maxCarryWeight
             or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
+            or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
             or (tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
     }
 end

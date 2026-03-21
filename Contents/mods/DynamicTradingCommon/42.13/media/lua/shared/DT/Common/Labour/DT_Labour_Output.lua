@@ -159,7 +159,7 @@ local function hasKeys(value)
     return false
 end
 
-function Output.GenerateScavengeLoot(worker)
+function Output.GenerateScavengeRun(worker)
     local results = {}
     local loadout = Config.GetScavengeLoadout and Config.GetScavengeLoadout(worker) or {}
     local siteProfile = Config.GetScavengeSiteProfile and Config.GetScavengeSiteProfile(worker and worker.scavengeSiteProfileID) or nil
@@ -170,6 +170,9 @@ function Output.GenerateScavengeLoot(worker)
     local avoidDuplicates = loadout and loadout.hasRoutePlan == true
     local usedRuleIDs = {}
     local usedFullTypes = {}
+    local failedRolls = 0
+    local successfulRolls = 0
+    local totalQuantity = 0
 
     for _ = 1, poolRolls do
         local weightedEntries, totalWeight = buildWeightedScavengeEntries(loadout, siteProfile)
@@ -205,19 +208,37 @@ function Output.GenerateScavengeLoot(worker)
 
             fullType = fullType or pool[ZombRand(#pool) + 1]
             if fullType then
+                local qty = getRuleQuantity(selected.rule, loadout)
                 results[#results + 1] = {
                     fullType = fullType,
-                    qty = getRuleQuantity(selected.rule, loadout)
+                    qty = qty
                 }
+                successfulRolls = successfulRolls + 1
+                totalQuantity = totalQuantity + qty
                 if selected.rule and selected.rule.id then
                     usedRuleIDs[selected.rule.id] = true
                 end
                 usedFullTypes[fullType] = true
             end
+        else
+            failedRolls = failedRolls + 1
         end
     end
 
-    return results
+    return {
+        entries = results,
+        loadout = loadout,
+        siteProfile = siteProfile,
+        poolRolls = poolRolls,
+        failedRolls = failedRolls,
+        successfulRolls = successfulRolls,
+        totalQuantity = totalQuantity
+    }
+end
+
+function Output.GenerateScavengeLoot(worker)
+    local run = Output.GenerateScavengeRun(worker)
+    return run.entries or {}
 end
 
 function Output.GenerateForJob(profile, worker)

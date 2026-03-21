@@ -72,6 +72,9 @@ Sandbox_EN = {
     Sandbox_DynamicTrading_LabourDailyHydrationUse = "Labour: Hydration Use Per Day",
     Sandbox_DynamicTrading_LabourDailyHydrationUse_tooltip = "Sets the fixed daily hydration reserve consumed by labour workers. This value is also used as the hydration bar's full-day target.",
 
+    Sandbox_DynamicTrading_LabourBaseCarryWeight = "Labour: Base Carry Weight",
+    Sandbox_DynamicTrading_LabourBaseCarryWeight_tooltip = "Sets the default body carry limit for labour workers before bag weight reduction is applied. Higher values let scavengers haul more before returning to base.",
+
     Sandbox_DynamicTrading_NPCTradingWalkHours = "NPC: Trade Travel Time (Hours)",
     Sandbox_DynamicTrading_NPCTradingWalkHours_tooltip = "How many hours of travel time (Away state) the NPC takes to reach or return from a trading location.",
 

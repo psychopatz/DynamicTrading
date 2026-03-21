@@ -61,6 +61,10 @@ function DT_MainWindow:createChildren()
     self.btnManageSupplies:initialise()
     self:addChild(self.btnManageSupplies)
 
+    self.btnHelp = ISButton:new(890, buttonY, 80, 28, "Help", self, self.onOpenHelp)
+    self.btnHelp:initialise()
+    self:addChild(self.btnHelp)
+
     self.workerList = Internal.LabourWorkerList:new(10, listY, listWidth, contentHeight)
     self.workerList:initialise()
     self.workerList:instantiate()
@@ -144,6 +148,6 @@ function DT_MainWindow:createChildren()
     self:addChild(self.statusText)
 
     MainWindowLayout.applyWindowLayout(self)
-    self:updateStatus("Labour Management ready. Jobs are tool-gated, workplaces are deferred, and food/water remain upkeep.")
+    self:updateStatus("Labour Management ready. Jobs are tool-gated, workplaces are deferred, and Help explains the scavenging system.")
     self:populateWorkerList(DT_MainWindow.cachedWorkers or {})
 end

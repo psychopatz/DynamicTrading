@@ -48,8 +48,8 @@ function Internal.getWorkerHeaderTitle(window)
     local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
 
     if activeTab == Internal.Tabs.Output and normalizedJob == ((config.JobTypes or {}).Scavenge) then
-        local carryWeight = Internal.formatWeightValue(worker and worker.haulEffectiveWeight)
-        local carryLimit = Internal.formatWeightValue(worker and worker.maxCarryWeight)
+        local carryWeight = Internal.formatWeightValue(worker and worker.haulRawWeight)
+        local carryLimit = Internal.formatWeightValue(worker and worker.rawCarryAllowance or worker and worker.maxCarryWeight)
         return workerName .. " (Carry " .. carryWeight .. " / " .. carryLimit .. ") Inventory"
     end
 
@@ -100,6 +100,18 @@ function Internal.getWorkerTabSummary(window, entries)
         for _, entry in ipairs(entries or {}) do
             stacks = stacks + 1
             totalQty = totalQty + math.max(1, tonumber(entry.qty) or 1)
+        end
+        local worker = window and window.workerData or nil
+        local config = Internal.Config or {}
+        local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
+        if normalizedJob == ((config.JobTypes or {}).Scavenge) then
+            return tostring(stacks)
+                .. " stacks | "
+                .. tostring(totalQty)
+                .. " total | Eff "
+                .. Internal.formatWeightValue(worker and worker.haulEffectiveWeight)
+                .. " / "
+                .. Internal.formatWeightValue(worker and worker.maxCarryWeight)
         end
         return tostring(stacks) .. " stacks | " .. tostring(totalQty) .. " total"
     end

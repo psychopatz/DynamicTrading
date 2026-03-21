@@ -50,7 +50,7 @@ function Registry.CreateWorker(ownerUsername, template)
         dehydrationHours = tonumber(template.dehydrationHours) or 0,
         nutritionLedger = Internal.BuildStarterNutritionLedger(template),
         toolLedger = Internal.CopyShallow(template.toolLedger),
-        baseCarryWeight = tonumber(template.baseCarryWeight) or tonumber(template.maxCarryWeight) or nil,
+        baseCarryWeightOverride = tonumber(template.baseCarryWeightOverride) or tonumber(template.baseCarryWeight) or tonumber(template.maxCarryWeight) or nil,
         haulLedger = Internal.CopyShallow(template.haulLedger),
         outputLedger = Internal.CopyShallow(template.outputLedger),
         dumpCooldownHours = tonumber(template.dumpCooldownHours) or 0,

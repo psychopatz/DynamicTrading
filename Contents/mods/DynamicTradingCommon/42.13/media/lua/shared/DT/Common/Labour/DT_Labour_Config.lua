@@ -721,7 +721,7 @@ function Config.GetJobSpeedMultiplier(archetypeID, jobType)
 end
 
 function Config.GetWorkerBaseCarryWeight(worker)
-    local explicitCarryWeight = tonumber(worker and worker.baseCarryWeight)
+    local explicitCarryWeight = tonumber(worker and worker.baseCarryWeightOverride)
     if explicitCarryWeight and explicitCarryWeight > 0 then
         return explicitCarryWeight
     end
@@ -732,7 +732,8 @@ function Config.GetWorkerBaseCarryWeight(worker)
         return archetypeCarryWeight
     end
 
-    return math.max(0, tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
+    return Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight()
+        or math.max(0, tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
 end
 
 function Config.GetNextJobType(jobType)
@@ -799,6 +800,10 @@ end
 
 function Config.GetLabourDailyHydrationUse()
     return math.max(0, Config.GetSandboxNumber("LabourDailyHydrationUse", Config.DEFAULT_LABOUR_DAILY_HYDRATION_USE) or Config.DEFAULT_LABOUR_DAILY_HYDRATION_USE)
+end
+
+function Config.GetDefaultWorkerCarryWeight()
+    return math.max(0, Config.GetSandboxNumber("LabourBaseCarryWeight", Config.DEFAULT_WORKER_CARRY_WEIGHT) or Config.DEFAULT_WORKER_CARRY_WEIGHT)
 end
 
 function Config.GetEffectiveDailyCaloriesNeed(worker, profile)
@@ -1130,6 +1135,7 @@ function Config.GetScavengeCarryProfile(worker)
     end)
 
     local bodyCapacity = Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker)
+        or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
         or math.max(0, tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
     local rawAllowance = bodyCapacity
     for _, container in ipairs(containers) do
@@ -1216,6 +1222,7 @@ function Config.GetScavengeLoadout(worker)
     loadout.carryProfile = Config.GetScavengeCarryProfile(worker)
     loadout.maxCarryWeight = loadout.carryProfile and loadout.carryProfile.maxCarryWeight
         or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
+        or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
         or (tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
     loadout.rawCarryAllowance = loadout.carryProfile and loadout.carryProfile.rawAllowance or loadout.maxCarryWeight
     loadout.carryContainerCount = #(loadout.carryProfile and loadout.carryProfile.containers or {})

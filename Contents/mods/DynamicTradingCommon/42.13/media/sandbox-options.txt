@@ -274,6 +274,16 @@ option DynamicTrading.LabourDailyHydrationUse
     translation = DynamicTrading_LabourDailyHydrationUse,
 }
 
+option DynamicTrading.LabourBaseCarryWeight
+{
+    type = double,
+    default = 8.0,
+    min = 1.0,
+    max = 50.0,
+    page = DynamicTradingLabour,
+    translation = DynamicTrading_LabourBaseCarryWeight,
+}
+
 option DynamicTrading.NPCTradingWalkHours
 {
     type = double,

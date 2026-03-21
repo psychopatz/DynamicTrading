@@ -117,3 +117,8 @@ function DT_MainWindow:onGiveMoney()
         end
     })
 end
+
+function DT_MainWindow:onOpenHelp()
+    DT_LabourHelpWindow.Open()
+    self:updateStatus("Opened scavenging help.")
+end

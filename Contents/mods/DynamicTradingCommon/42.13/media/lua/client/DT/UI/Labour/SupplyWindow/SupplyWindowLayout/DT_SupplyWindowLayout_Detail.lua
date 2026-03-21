@@ -10,10 +10,17 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
 
     if not entry then
         local workerTabLabel = Internal.getActiveWorkerTabLabel(self)
+        local workerStorageLabel = "stored in "
+        local config = Internal.Config or {}
+        local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(self.workerData and self.workerData.jobType) or tostring(self.workerData and self.workerData.jobType or "")
+        if self.activeTab == Internal.Tabs.Output and normalizedJob == ((config.JobTypes or {}).Scavenge) then
+            workerStorageLabel = "currently carrying in "
+        end
         self.detailText:setText(
             " <RGB:0.78,0.78,0.78> Left side shows your inventory cache, right side shows what "
                 .. tostring(self.workerName or "the worker")
-                .. " currently has stored in "
+                .. " is "
+                .. workerStorageLabel
                 .. workerTabLabel
                 .. ". "
                 .. "<LINE> <RGB:0.62,0.62,0.62> Use "

@@ -69,6 +69,78 @@ local function getOutputDisplayName(fullType)
     return tostring(fullType or "Unknown Item")
 end
 
+local function formatNaturalList(values)
+    local count = #(values or {})
+    if count <= 0 then
+        return ""
+    end
+    if count == 1 then
+        return tostring(values[1])
+    end
+    if count == 2 then
+        return tostring(values[1]) .. " and " .. tostring(values[2])
+    end
+    return tostring(values[1]) .. ", " .. tostring(values[2]) .. ", and " .. tostring(count - 2) .. " more"
+end
+
+local function getScavengeToolSummary(worker)
+    local names = {}
+    local seen = {}
+    for _, entry in ipairs(worker and worker.toolLedger or {}) do
+        local name = tostring(entry and entry.displayName or entry and entry.fullType or "")
+        if name ~= "" and not seen[name] then
+            seen[name] = true
+            names[#names + 1] = name
+        end
+    end
+
+    if #names <= 0 then
+        return "bare hands"
+    end
+
+    return formatNaturalList(names)
+end
+
+local function getScavengeLocationLabel(worker, run)
+    local siteProfile = run and run.siteProfile or nil
+    local displayName = siteProfile and siteProfile.displayName or worker and worker.scavengeSiteProfileLabel or worker and worker.scavengeSiteRoomName or nil
+    if displayName and tostring(displayName) ~= "" then
+        return tostring(displayName)
+    end
+    return "the outskirts"
+end
+
+local function logScavengeRun(worker, run, currentHour)
+    if not worker or not run then
+        return
+    end
+
+    local entries = run.entries or {}
+    local foundStacks = #entries
+    local foundQuantity = math.max(0, tonumber(run.totalQuantity) or 0)
+    local failedRolls = math.max(0, tonumber(run.failedRolls) or 0)
+    local placeLabel = getScavengeLocationLabel(worker, run)
+    local toolSummary = getScavengeToolSummary(worker)
+    local message = nil
+
+    if foundStacks > 0 then
+        message = "Searched " .. placeLabel .. " with " .. toolSummary .. " and returned with "
+            .. tostring(foundQuantity) .. " items across " .. tostring(foundStacks) .. " finds"
+        if failedRolls > 0 then
+            message = message .. " after " .. tostring(failedRolls) .. " false leads"
+        end
+        message = message .. "."
+    else
+        message = "Searched " .. placeLabel .. " with " .. toolSummary .. ", but came back empty-handed"
+        if failedRolls > 0 then
+            message = message .. " after " .. tostring(failedRolls) .. " dead ends"
+        end
+        message = message .. "."
+    end
+
+    appendWorkerLog(worker, message, currentHour, "scavenge")
+end
+
 local function logOutputEntry(worker, entry, currentHour)
     if not worker or not entry or not entry.fullType then
         return
@@ -80,7 +152,7 @@ local function logOutputEntry(worker, entry, currentHour)
     local message = "Produced " .. itemName .. " x" .. tostring(qty) .. "."
 
     if jobType == Config.JobTypes.Scavenge then
-        message = "Found " .. itemName .. " x" .. tostring(qty) .. " while scavenging."
+        message = "Recovered " .. itemName .. " x" .. tostring(qty) .. " from the run."
     elseif jobType == Config.JobTypes.Farm then
         message = "Harvested " .. itemName .. " x" .. tostring(qty) .. "."
     elseif jobType == Config.JobTypes.Fish then
@@ -286,6 +358,7 @@ local function maybeDumpScavengeHaul(worker, currentHour, loadout)
     local maxCarryWeight = tonumber(loadout and loadout.maxCarryWeight)
         or tonumber(worker.maxCarryWeight)
         or (Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker))
+        or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
         or tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT)
         or 8
     if not haulMetrics or (tonumber(haulMetrics.effectiveWeight) or 0) < maxCarryWeight then
@@ -302,7 +375,7 @@ local function maybeDumpScavengeHaul(worker, currentHour, loadout)
 
     appendWorkerLog(
         worker,
-        "Returned to base and dumped haul: "
+        "Returned to base and unpacked the haul: "
             .. tostring(movedCount)
             .. " items, "
             .. string.format("%.2f", movedRawWeight)
@@ -361,7 +434,7 @@ function Sim.ProcessWorker(worker, currentHour)
         if movedStacks > 0 then
             appendWorkerLog(
                 worker,
-                "Stopped scavenging and unloaded haul: "
+                "Broke off the scavenging run and stowed away: "
                     .. tostring(movedCount)
                     .. " items, "
                     .. string.format("%.2f", movedRawWeight)
@@ -408,19 +481,21 @@ function Sim.ProcessWorker(worker, currentHour)
         worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
         while worker.workProgress >= (profile.cycleHours or 24) do
             worker.workProgress = worker.workProgress - (profile.cycleHours or 24)
-            for _, entry in ipairs(Output.GenerateForJob(profile, worker)) do
-                if normalizedJobType == Config.JobTypes.Scavenge then
-                    Registry.AddHaulEntry(worker, entry)
-                else
-                    Registry.AddOutputEntry(worker, entry)
-                end
-                logOutputEntry(worker, entry, currentHour)
-            end
-
             if normalizedJobType == Config.JobTypes.Scavenge then
+                local scavengeRun = Output.GenerateScavengeRun and Output.GenerateScavengeRun(worker) or { entries = {} }
+                logScavengeRun(worker, scavengeRun, currentHour)
+                for _, entry in ipairs(scavengeRun.entries or {}) do
+                    Registry.AddHaulEntry(worker, entry)
+                    logOutputEntry(worker, entry, currentHour)
+                end
                 local dumpHours = maybeDumpScavengeHaul(worker, currentHour, scavengeLoadout)
                 if dumpHours > 0 then
                     queueImmediateDumpTravel(worker, dumpHours, speedMultiplier)
+                end
+            else
+                for _, entry in ipairs(Output.GenerateForJob(profile, worker)) do
+                    Registry.AddOutputEntry(worker, entry)
+                    logOutputEntry(worker, entry, currentHour)
                 end
             end
         end

@@ -100,8 +100,10 @@ function Registry.RecalculateWorker(worker)
     worker.jobType = Config.NormalizeJobType(worker.jobType or worker.profession)
     worker.archetypeID = Config.NormalizeArchetypeID(worker.archetypeID or worker.profession)
     worker.profession = worker.profession or worker.jobType
+    worker.baseCarryWeightOverride = tonumber(worker.baseCarryWeightOverride) or nil
     worker.baseCarryWeight = Config.GetWorkerBaseCarryWeight and Config.GetWorkerBaseCarryWeight(worker)
-        or math.max(0, tonumber(worker.baseCarryWeight) or tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
+        or (Config.GetDefaultWorkerCarryWeight and Config.GetDefaultWorkerCarryWeight())
+        or math.max(0, tonumber(Config.DEFAULT_WORKER_CARRY_WEIGHT) or 8)
     if (tonumber(worker.dailyHydrationNeed) or 0) > 0 and (tonumber(worker.dailyHydrationNeed) or 0) < 25 then
         worker.dailyHydrationNeed = (tonumber(worker.dailyHydrationNeed) or 0) * (Config.HYDRATION_POINTS_PER_THIRST or 1000)
     end
