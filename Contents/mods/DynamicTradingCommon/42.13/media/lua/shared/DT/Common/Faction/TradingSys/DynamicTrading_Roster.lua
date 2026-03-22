@@ -54,6 +54,16 @@ function DynamicTrading_Roster.GetTrader(traderID)
     return data.Traders[traderID]
 end
 
+function DynamicTrading_Roster.RemoveTrader(traderID)
+    local data = ModData.get(MOD_DATA_KEY)
+    if not data or not data.Traders or not data.Traders[traderID] then
+        return false
+    end
+
+    data.Traders[traderID] = nil
+    return true
+end
+
 function DynamicTrading_Roster.SetSpawnStatus(traderID, isSpawned)
     local data = ModData.get(MOD_DATA_KEY)
     if data.Traders[traderID] then

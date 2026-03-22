@@ -450,6 +450,11 @@ local function onServerCommand(module, command, args)
         end
     elseif command == "SyncOwnedFactionStatus" then
         DT_FactionInfoWindow.cachedOwnedFactionStatus = args and args.status or nil
+        local factionData = resolveFactionData()
+        local rosterData = resolveRosterData()
+        if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.populateList then
+            DT_FactionInfoWindow.instance:populateList(factionData, rosterData)
+        end
         if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.headerPanel and DT_FactionInfoWindow.instance.headerPanel.updateOwnedFactionStatus then
             DT_FactionInfoWindow.instance.headerPanel:updateOwnedFactionStatus(
                 DT_FactionInfoWindow.cachedOwnedFactionStatus,
@@ -462,7 +467,16 @@ local function onServerCommand(module, command, args)
             and DT_FactionInfoWindow.instance.tabPopulation then
             DT_FactionInfoWindow.instance.tabPopulation:updateData(
                 DT_FactionInfoWindow.selectedFaction,
-                DT_FactionInfoWindow.cachedRosterData
+                rosterData
+            )
+        end
+        if DT_FactionInfoWindow.selectedFaction
+            and DT_FactionInfoWindow.selectedFaction.playerOwned
+            and DT_FactionInfoWindow.instance
+            and DT_FactionInfoWindow.instance.tabInfo then
+            DT_FactionInfoWindow.instance.tabInfo:updateData(
+                DT_FactionInfoWindow.selectedFaction,
+                rosterData
             )
         end
     elseif command == "OwnedFactionActionResult" then

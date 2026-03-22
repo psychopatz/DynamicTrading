@@ -3,6 +3,9 @@ require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
 require "DT/Common/Labour/DT_Labour_Sites"
 require "DT/Common/Labour/DT_Labour_Sim"
 require "DT/Common/Labour/DT_Labour_Presentation"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Network = DT_Labour.Network or {}
@@ -20,6 +23,64 @@ Network.Handlers = Network.Handlers or {}
 
 local function getCurrentDay()
     return math.floor((Config.GetCurrentHour() or 0) / Config.HOURS_PER_DAY)
+end
+
+local function resolveRecruitSourceUUID(args)
+    if type(args) ~= "table" then
+        return nil
+    end
+
+    if args.traderUUID and tostring(args.traderUUID) ~= "" then
+        return tostring(args.traderUUID)
+    end
+    if args.sourceNPCID and tostring(args.sourceNPCID) ~= "" then
+        return tostring(args.sourceNPCID)
+    end
+    return nil
+end
+
+local function detachRecruitedSourceNPC(args)
+    local traderUUID = resolveRecruitSourceUUID(args)
+    if not traderUUID then
+        return nil
+    end
+
+    local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry and DynamicTrading_Roster.GetSoulRegistry(traderUUID) or nil
+    local factionID = soul and soul.factionID or (args and args.factionID) or nil
+    local removed = false
+
+    if DTNPCManager and DTNPCManager.SetNPCStatus then
+        DTNPCManager.SetNPCStatus(traderUUID, "Away", nil, nil)
+    end
+
+    if DynamicTrading_Stock and DynamicTrading_Stock.ClearStock then
+        DynamicTrading_Stock.ClearStock(traderUUID)
+    end
+
+    if DynamicTrading_Roster and DynamicTrading_Roster.RemoveSpecificSoul and DynamicTrading_Roster.RemoveSpecificSoul(traderUUID) then
+        removed = true
+    end
+
+    if DynamicTrading_Roster and DynamicTrading_Roster.RemoveTrader and DynamicTrading_Roster.RemoveTrader(traderUUID) then
+        removed = true
+    end
+
+    if removed and factionID and DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
+        local faction = DynamicTrading_Factions.GetFaction(factionID)
+        if faction and not faction.playerOwned then
+            faction.memberCount = math.max(0, (tonumber(faction.memberCount) or 0) - 1)
+        end
+    end
+
+    if removed then
+        ModData.transmit("DynamicTrading_Roster")
+        ModData.transmit("DynamicTrading_Stock")
+        if factionID then
+            ModData.transmit("DynamicTrading_Factions")
+        end
+    end
+
+    return traderUUID
 end
 
 local function createWorkerFromRecruitArgs(owner, args)
@@ -134,6 +195,8 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
         })
         return
     end
+
+    detachRecruitedSourceNPC(args)
 
     local worker = createWorkerFromRecruitArgs(owner, args)
     if DynamicTrading_Factions and DynamicTrading_Factions.OnLabourWorkerCreated then

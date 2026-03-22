@@ -204,6 +204,18 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                     uuid = liveWorker.tradeSoulUUID or liveWorker.workerID
                 })
             end
+        elseif tonumber(f.memberCount or 0) > 0 then
+            self.rosterlist:addItem("Known Recruits: " .. tostring(f.memberCount or 0), {
+                worker = nil,
+                soul = {
+                    name = "Public Intel",
+                    archetypeID = "Player Faction",
+                    identitySeed = 1,
+                    isFemale = false,
+                    status = tostring(f.memberCount or 0) .. " linked labour recruits"
+                },
+                uuid = "public_count"
+            })
         else
             self.rosterlist:addItem("Syncing player faction members...", nil)
         end

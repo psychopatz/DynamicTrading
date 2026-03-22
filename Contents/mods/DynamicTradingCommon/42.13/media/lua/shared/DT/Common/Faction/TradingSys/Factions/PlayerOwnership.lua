@@ -88,6 +88,21 @@ local function appendUnique(array, value)
     table.insert(array, value)
 end
 
+local function syncLinkedWorkersFromOwner(faction, owner)
+    if not faction then
+        return
+    end
+
+    faction.linkedWorkerIDs = faction.linkedWorkerIDs or {}
+    local ownerWorkers = getWorkersForOwner(owner)
+
+    for _, worker in ipairs(ownerWorkers) do
+        if worker and worker.workerID and isWorkerLiving(worker) then
+            appendUnique(faction.linkedWorkerIDs, worker.workerID)
+        end
+    end
+end
+
 local function removeValue(array, value)
     if type(array) ~= "table" then
         return false
@@ -380,6 +395,7 @@ function PlayerOwnership.RefreshPlayerFaction(factionID)
     faction.tradeWorkerSouls = faction.tradeWorkerSouls or {}
     faction.controlMode = faction.controlMode or "HybridManual"
     faction.leadershipState = faction.leadershipState or "Active"
+    syncLinkedWorkersFromOwner(faction, owner)
 
     local livingCount = 0
     local staleIDs = {}

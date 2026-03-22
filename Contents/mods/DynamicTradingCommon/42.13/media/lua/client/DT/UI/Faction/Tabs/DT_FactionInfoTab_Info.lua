@@ -90,6 +90,7 @@ function DT_FactionInfoTab_Info:updateData(f)
             text = text .. " <RGB:0.8,0.8,0.8> Leader: " .. tostring(f.leaderUsername or "Unknown") .. " <LINE> "
             text = text .. " Control Mode: " .. tostring(f.controlMode or "HybridManual") .. " <LINE> "
             text = text .. " Leadership State: " .. tostring(f.leadershipState or "Active") .. " <LINE> "
+            text = text .. " Linked Recruits: " .. tostring(f.memberCount or 0) .. " <LINE> "
         end
     end
     

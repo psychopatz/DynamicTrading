@@ -62,63 +62,67 @@ local function ProcessSimulation()
     for uuid, registry in pairs(rosterData.Souls) do
         local factionID = registry.factionID or "Independent"
         local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
+        local includeSoul = true
 
         if faction and faction.playerOwned and faction.leadershipState ~= "Regency" then
-            goto continue_count
+            includeSoul = false
         end
 
-        if faction and faction.playerOwned then
+        if includeSoul and faction and faction.playerOwned then
             local workerID = registry.linkedWorkerID
             if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
-                goto continue_count
+                includeSoul = false
             end
         end
 
-        factionTotalCounts[factionID] = (factionTotalCounts[factionID] or 0) + 1
-        if registry.status == "Away" or registry.status == "Trading" then
-            factionTradingCounts[factionID] = (factionTradingCounts[factionID] or 0) + 1
+        if includeSoul then
+            factionTotalCounts[factionID] = (factionTotalCounts[factionID] or 0) + 1
+            if registry.status == "Away" or registry.status == "Trading" then
+                factionTradingCounts[factionID] = (factionTradingCounts[factionID] or 0) + 1
+            end
         end
-
-        ::continue_count::
     end
 
     for uuid, registry in pairs(rosterData.Souls) do
         if registry.status == "Resting" then
             local factionID = registry.factionID or "Independent"
             local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
+            local canDispatch = true
 
             if faction and faction.playerOwned then
                 if faction.leadershipState ~= "Regency" then
-                    goto continue_dispatch
+                    canDispatch = false
                 end
 
-                local workerID = registry.linkedWorkerID
-                if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
-                    goto continue_dispatch
+                if canDispatch then
+                    local workerID = registry.linkedWorkerID
+                    if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
+                        canDispatch = false
+                    end
                 end
             end
 
-            local currentTrading = factionTradingCounts[factionID] or 0
-            local totalMembers = factionTotalCounts[factionID] or 1
-            
-            local currentPercent = (currentTrading / totalMembers) * 100
-            if currentPercent < popLimitPercent then
-                -- Approx 10% chance per hour to start a mission
-                if ZombRand(100) < 10 then
-                    if faction and faction.playerOwned then
-                        local duration = ZombRand(minTradeHours, maxTradeHours + 1)
-                        DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " entering regency trade rotation.")
-                        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", currentHours + duration, "Away")
-                    else
-                        local walkHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingWalkHours) or 2.0
-                        DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " starting trade mission.")
-                        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", currentHours + walkHours, "Trading")
+            if canDispatch then
+                local currentTrading = factionTradingCounts[factionID] or 0
+                local totalMembers = factionTotalCounts[factionID] or 1
+
+                local currentPercent = (currentTrading / totalMembers) * 100
+                if currentPercent < popLimitPercent then
+                    if ZombRand(100) < 10 then
+                        if faction and faction.playerOwned then
+                            local duration = ZombRand(minTradeHours, maxTradeHours + 1)
+                            DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " entering regency trade rotation.")
+                            DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", currentHours + duration, "Away")
+                        else
+                            local walkHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingWalkHours) or 2.0
+                            DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " starting trade mission.")
+                            DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", currentHours + walkHours, "Trading")
+                        end
+                        factionTradingCounts[factionID] = currentTrading + 1
                     end
-                    factionTradingCounts[factionID] = currentTrading + 1
                 end
             end
         end
-        ::continue_dispatch::
     end
 end
 
