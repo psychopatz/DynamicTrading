@@ -1,5 +1,5 @@
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
-require "DT/Common/Trading/DT_Economy_Common"
+require "DT/Common/Trading/EconomyCommon/DT_EconomyCommon"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Nutrition = DT_Labour.Nutrition or {}

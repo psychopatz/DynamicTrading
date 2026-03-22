@@ -2,7 +2,7 @@
 -- Handles currency conversion (Bundling/Unbundling) securely on the Server.
 -- Compatible with Singleplayer (Internal Server) and Multiplayer.
 
-require "DT/Common/ServerHelpers"
+require "DT/Common/ServerHelpers/ServerHelpers"
 
 local Commands = {}
 local Helpers = DynamicTrading.ServerHelpers

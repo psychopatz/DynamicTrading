@@ -8,7 +8,7 @@
 
 require "DT/V1/Manager"
 require "DT/Common/Config"
-require "DT/Common/ServerHelpers"
+require "DT/Common/ServerHelpers/ServerHelpers"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"

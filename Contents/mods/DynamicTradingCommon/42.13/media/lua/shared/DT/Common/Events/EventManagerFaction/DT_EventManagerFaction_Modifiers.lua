@@ -1,0 +1,138 @@
+-- =============================================================================
+-- DT_EventManagerFaction_Modifiers.lua
+-- =============================================================================
+-- Modifiers and getters logic for Faction events.
+-- =============================================================================
+
+function DynamicTrading.Events.GetFactionSystemModifier(faction, key)
+    local multiplier = 1.0
+    
+    -- 1. Global
+    if DynamicTrading.Events.GetSystemModifier then
+        multiplier = multiplier * DynamicTrading.Events.GetSystemModifier(key)
+    end
+    
+    -- 2. Faction (all active flash events)
+    local flashDefs = DynamicTrading.Events.GetFactionFlashEventDefs(faction)
+    for _, def in ipairs(flashDefs) do
+        if def.system and def.system[key] then
+            multiplier = multiplier * def.system[key]
+            if DynamicTrading.Debug then
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "System modifier from flash: " .. tostring(def.name) .. " key=" .. key .. " mult=" .. def.system[key])
+            end
+        end
+    end
+    
+    return multiplier
+end
+
+function DynamicTrading.Events.GetFactionPriceModifier(faction, itemTags, verbose)
+    local multiplier = 1.0
+    verbose = verbose or DynamicTrading.Debug
+
+    -- 1. Apply Global Modifiers First
+    if DynamicTrading.Events.GetPriceModifier then
+        multiplier = multiplier * DynamicTrading.Events.GetPriceModifier(itemTags, verbose)
+    end
+
+    -- 2. Apply Faction Specific Logic (all active flash events)
+    local flashDefs = DynamicTrading.Events.GetFactionFlashEventDefs(faction)
+    for _, def in ipairs(flashDefs) do
+        if def.effects then
+            for _, tag in ipairs(itemTags or {}) do
+                if def.effects[tag] and def.effects[tag].price then
+                    local fMult = def.effects[tag].price
+                    if verbose and fMult ~= 1.0 then
+                        DynamicTrading.Log("DTCommons", "Event", "Logic", "Flash price mult from " .. tostring(def.name) .. " tag=" .. tag .. " for faction=" .. (faction.id or "unknown") .. " mult=" .. fMult)
+                    end
+                    multiplier = multiplier * fMult
+                end
+            end
+        end
+    end
+    
+    if verbose and multiplier ~= 1.0 then
+        DynamicTrading.Log("DTCommons", "Event", "Logic", "Final faction price multiplier: " .. multiplier)
+    end
+
+    return multiplier
+end
+
+function DynamicTrading.Events.GetFactionVolumeModifier(faction, itemTags)
+    local multiplier = 1.0
+    
+    -- 1. Global
+    if DynamicTrading.Events.GetVolumeModifier then
+        multiplier = multiplier * DynamicTrading.Events.GetVolumeModifier(itemTags)
+    end
+    
+    -- 2. Faction (all active flash events)
+    local flashDefs = DynamicTrading.Events.GetFactionFlashEventDefs(faction)
+    for _, def in ipairs(flashDefs) do
+        if def.stock and def.stock.volumeMult then
+            multiplier = multiplier * def.stock.volumeMult
+            if DynamicTrading.Debug then
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "Volume mult from flash: " .. tostring(def.name) .. " mult=" .. def.stock.volumeMult)
+            end
+        end
+    end
+    
+    return multiplier
+end
+
+function DynamicTrading.Events.GetFactionInjections(faction)
+    local injections = {}
+    
+    -- 1. Global
+    if DynamicTrading.Events.GetInjections then
+         local global = DynamicTrading.Events.GetInjections()
+         for k,v in pairs(global) do injections[k] = v end
+    end
+    
+    -- 2. Faction (all active flash events)
+    local flashDefs = DynamicTrading.Events.GetFactionFlashEventDefs(faction)
+    for _, def in ipairs(flashDefs) do
+        if def.stock and def.stock.injections then
+            for tag, count in pairs(def.stock.injections) do
+                injections[tag] = (injections[tag] or 0) + count
+                if DynamicTrading.Debug then
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Injection from flash: " .. tostring(def.name) .. " tag=" .. tag .. " count=" .. count)
+                end
+            end
+        end
+    end
+    
+    return injections
+end
+
+function DynamicTrading.Events.GetFactionExpertTags(faction)
+    local tags = {}
+    local flashDefs = DynamicTrading.Events.GetFactionFlashEventDefs(faction)
+    for _, def in ipairs(flashDefs) do
+        if def.stock and def.stock.expertTags then
+            for _, tag in ipairs(def.stock.expertTags) do 
+                tags[tag] = true
+                if DynamicTrading.Debug then
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Expert tag from flash: " .. tostring(def.name) .. " tag=" .. tag)
+                end
+            end
+        end
+    end
+    return tags
+end
+
+function DynamicTrading.Events.GetFactionForbidTags(faction)
+    local tags = {}
+    local flashDefs = DynamicTrading.Events.GetFactionFlashEventDefs(faction)
+    for _, def in ipairs(flashDefs) do
+        if def.stock and def.stock.forbidTags then
+            for _, tag in ipairs(def.stock.forbidTags) do 
+                tags[tag] = true
+                if DynamicTrading.Debug then
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Forbid tag from flash: " .. tostring(def.name) .. " tag=" .. tag)
+                end
+            end
+        end
+    end
+    return tags
+end

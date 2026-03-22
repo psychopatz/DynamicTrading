@@ -1,9 +1,9 @@
 -- if isClient() and not isServer() then return end
 
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
-require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
-require "DT/Common/Faction/TradingSys/Factions/SimulationConfig"
-require "DT/Common/Trading/DT_Economy_Common"
+require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
+require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_Config"
+require "DT/Common/Trading/EconomyCommon/DT_EconomyCommon"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Economy = DynamicTrading.Economy or {}

@@ -10,9 +10,9 @@
 -- 1. LOAD SUB-MODULES
 -- =============================================================================
 local Lifecycle   = require "DT/Common/Faction/TradingSys/Factions/Lifecycle"
-local Simulation  = require "DT/Common/Faction/TradingSys/Factions/Simulation"
+local DT_SimulationLogic  = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic"
 local Interaction = require "DT/Common/Faction/TradingSys/Factions/Interaction"
-local PlayerOwnership = require "DT/Common/Faction/TradingSys/Factions/PlayerOwnership"
+local PlayerOwnership = require "DT/Common/Faction/TradingSys/Factions/PlayerOwnership/PlayerOwnership"
 
 -- =============================================================================
 -- 2. MERGE INTO GLOBAL API
@@ -26,7 +26,7 @@ DynamicTrading_Factions.CreateFaction     = Lifecycle.CreateFaction
 DynamicTrading_Factions.GenerateRoster    = Lifecycle.GenerateRoster
 
 -- Simulation
-DynamicTrading_Factions.UpdateDaily       = Simulation.UpdateDaily
+DynamicTrading_Factions.UpdateDaily       = DT_SimulationLogic.UpdateDaily
 
 -- Interaction
 DynamicTrading_Factions.GetFaction        = Interaction.GetFaction

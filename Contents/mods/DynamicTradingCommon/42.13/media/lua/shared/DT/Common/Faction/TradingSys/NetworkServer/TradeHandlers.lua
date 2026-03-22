@@ -5,11 +5,11 @@
 -- ==============================================================================
 
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
-require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Economy"
 require "DT/Common/Config"
-require "DT/Common/ServerHelpers"
+require "DT/Common/ServerHelpers/ServerHelpers"
 
 local DataHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers"
 

@@ -1,0 +1,380 @@
+-- =============================================================================
+-- 4. PRICING LOGIC
+-- =============================================================================
+
+local Common = DynamicTrading.Economy.Common
+
+--- Calculates the BUY price (Trader selling to Player)
+-- @param itemKey (String) Item FullType
+-- @param itemData (Table) MasterList entry
+-- @param diffData (Table) Difficulty settings
+-- @param modifiers (Table) { tagsConfig={}, getPriceModifier=func, globalHeat={} }
+function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
+    if not itemData then return 99999 end
+    diffData = diffData or { buyMult = 1.0 }
+    modifiers = modifiers or {}
+    
+    local tagsConfig = modifiers.tagsConfig or {}
+    local globalHeat = modifiers.globalHeat or {}
+    local getPriceMod = modifiers.getPriceModifier
+    
+    local price = itemData.basePrice
+    
+    if verbose then
+        DynamicTrading.Log("DTCommons", "Trade", "Trace", "Buy Price Calc: " .. itemKey .. " | Base: " .. price)
+    end
+
+    -- 1. Tag Multipliers (Highest Wins)
+    local maxTagMult = 1.0
+    for _, tag in ipairs(itemData.tags) do
+        local tagConfig = Common.ResolveMappedValue({ tag }, tagsConfig)
+        if tagConfig and tagConfig.priceMult then
+            if tagConfig.priceMult > maxTagMult then
+                maxTagMult = tagConfig.priceMult
+            end
+        end
+    end
+    price = price * maxTagMult
+    if verbose and maxTagMult ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| TagMult: " .. maxTagMult) end
+
+    -- 2. Event Modifiers (Supports Hierarchy)
+    if getPriceMod then
+        -- The Event Manager usually expects tags to match, we pass the raw table.
+        -- We assume the caller (Event Manager) handles its own matching logic or we do it here.
+        local eventMult = getPriceMod(itemData.tags)
+        price = price * eventMult
+        if verbose and eventMult ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| EventMult: " .. eventMult) end
+    end
+
+    -- 3. Global Inflation (Heat)
+    for _, tag in ipairs(itemData.tags) do
+        local heat = globalHeat[tag]
+        if heat and heat ~= 0 then
+            price = price * (1.0 + heat)
+            if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| Heat(" .. tag .. "): " .. heat) end
+        end
+    end
+
+    -- 4. Difficulty
+    price = price * diffData.buyMult
+    if verbose and diffData.buyMult ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| DiffMult: " .. diffData.buyMult) end
+
+    -- [NEW] Condition/Charge Scaler (Dynamic Buying Variation)
+    if modifiers.customData then
+        local cd = modifiers.customData
+        local scale = 1.0
+        
+        -- A. Fluid(Per-Liter Pricing)
+        if cd.fluidAmount and itemData.item then
+            -- [NEW] Calculate Price = Container + (FluidPrice * Amount)
+            local script = getScriptManager():getItem(itemData.item)
+            local containerBase = 0
+            local fluidTotal = 0
+            
+            -- 1. Determine Container Price
+            if script and script.getReplaceOnDeplete then
+                local emptyID = script:getReplaceOnDeplete()
+                if emptyID and DynamicTrading.Config and DynamicTrading.Config.MasterList then
+                    local emptyData = DynamicTrading.Config.MasterList[emptyID]
+                    if emptyData then containerBase = emptyData.basePrice end
+                end
+            end
+            -- Fallback: Assume container is ~20% of the filled item's base price if empty not found
+            if containerBase == 0 then
+                containerBase = itemData.basePrice * 0.2
+            end
+
+            -- 2. Determine Fluid Price
+            local fType = cd.fluidType
+            if fType and DynamicTrading.Fluids then
+                -- Try direct lookup or Base. lookup
+                local fTypeStr = tostring(fType)
+                local fData = DynamicTrading.Fluids[fTypeStr] or DynamicTrading.Fluids["Base." .. fTypeStr]
+                if fData then
+                    fluidTotal = fData.basePrice * cd.fluidAmount
+                end
+            end
+            
+            -- 3. Calculate separate multipliers for Container and Fluid
+            -- A. Container Multipliers (Base Logic)
+            -- 'price' currently holds value calculated from ITEM keys/tags.
+            -- This is effectively 'Container + Default Content' price.
+            -- We want pure Container price mults. Ideally we'd scan empty container tags.
+            -- Approximating: Use default item tags for container part.
+            local containerMults = 1.0
+            if itemData.basePrice > 0 then
+                 containerMults = price / itemData.basePrice
+            end
+            
+            -- B. Fluid Multipliers (Dynamic based on Fluid Tags)
+            local fluidMults = diffData.buyMult or 1.0
+            
+            if fData and fData.tags then
+                -- 1. Tags Config
+                local maxFluidTagMult = 1.0
+                for _, tag in ipairs(fData.tags) do
+                    local tagConfig = Common.ResolveMappedValue({ tag }, tagsConfig)
+                    if tagConfig and tagConfig.priceMult then
+                        if tagConfig.priceMult > maxFluidTagMult then
+                            maxFluidTagMult = tagConfig.priceMult
+                        end
+                    end
+                end
+                fluidMults = fluidMults * maxFluidTagMult
+                
+                -- 2. Event Modifiers
+                if getPriceMod then
+                    local eventMult = getPriceMod(fData.tags)
+                    fluidMults = fluidMults * eventMult
+                end
+                
+                -- 3. Global Heat
+                for _, tag in ipairs(fData.tags) do
+                    local heat = globalHeat[tag]
+                    if heat and heat ~= 0 then
+                        fluidMults = fluidMults * (1.0 + heat)
+                        if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FluidHeat(" .. tag .. "): " .. heat) end
+                    end
+                end
+            end
+            
+            price = (containerBase * containerMults) + (fluidTotal * fluidMults)
+            
+            if verbose then
+                 DynamicTrading.Log("DTCommons", "Trade", "Trace", "| DYNAMIC CONTENT DETECTED")
+                 DynamicTrading.Log("DTCommons", "Trade", "Trace", "|   Container Price: " .. math.floor(containerBase * containerMults))
+                 DynamicTrading.Log("DTCommons", "Trade", "Trace", "|   FluidTotal: " .. math.floor(fluidTotal * fluidMults) .. " (" .. tostring(fType) .. ")")
+            end
+
+            return math.ceil(price)
+
+        -- B. Drainable
+        elseif cd.usedDelta then
+            scale = cd.usedDelta
+        -- C. Food
+        elseif cd.hungerChange then
+            local script = getScriptManager():getItem(itemData.item)
+            if script then
+                local base = Common.GetNormalizedHunger(script)
+                if base < 0 then
+                    scale = cd.hungerChange / base
+                end
+            end
+        -- D. Condition
+        elseif cd.condition and itemData.item then
+            local script = getScriptManager():getItem(itemData.item)
+            if script and script.getConditionMax and script:getConditionMax() > 0 then
+                scale = cd.condition / script:getConditionMax()
+            end
+        end
+
+        -- Scaled price (minimum 20% value even if near empty, for the container)
+        price = price * math.max(0.2, scale)
+        if verbose and scale ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| ItemScale: " .. scale) end
+    end
+
+    if price < 1 then price = 1 end
+    
+    if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FINAL: " .. math.floor(price)) end
+
+    return math.ceil(price)
+end
+
+--- Calculates the SELL price (Player selling to Trader)
+-- @param itemKey (String) Item FullType
+-- @param itemData (Table) MasterList entry
+-- @param itemObj (InventoryItem) Actual item object (for condition)
+-- @param diffData (Table) Difficulty settings
+-- @param archetype (Table) Archetype def (for 'wants')
+-- @param modifiers (Table) { tagsConfig={}, getPriceModifier=func, globalHeat={}, localDeflationCount=int }
+function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, modifiers, verbose)
+    if not itemData then return 0 end
+    diffData = diffData or { sellMult = 0.5 }
+    modifiers = modifiers or {}
+    archetype = archetype or {}
+    
+    local globalHeat = modifiers.globalHeat or {}
+    local getPriceMod = modifiers.getPriceModifier
+    local localDeflationCount = modifiers.localDeflationCount or 0
+
+    -- 1. Base & Difficulty
+    local price = itemData.basePrice * diffData.sellMult
+    
+    if verbose then
+        DynamicTrading.Log("DTCommons", "Trade", "Trace", "Sell Price Calc: " .. itemKey .. " | Base: " .. price)
+    end
+
+    -- 2. Condition & State Penalty
+    if itemObj then
+        -- ROTTEN CHECK
+        -- Safety: isRotten might not exist on all item types or older API versions
+        if itemObj.isRotten and itemObj:isRotten() then
+            -- [NEW] Add a virtual tag for Rotten items so archetypes can target them
+            table.insert(itemData.tags, "Rotten")
+            if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| STATE: ROTTEN (PRICE = 1)") end
+            return 1
+        end
+
+        local maxCond = itemObj:getConditionMax()
+        if maxCond > 0 then
+             local condRatio = itemObj:getCondition() / maxCond
+             price = price * condRatio
+             if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| Condition: " .. math.floor(condRatio * 100) .. "%") end
+        end
+        
+        -- DRAINABLE / FLUID PRICING
+        local scriptItem = nil
+        if itemObj.getScriptItem then scriptItem = itemObj:getScriptItem() end
+        
+        -- A. Fluid Container
+        if itemObj.getFluidContainer and itemObj:getFluidContainer() then
+            local fluidContainer = itemObj:getFluidContainer()
+            local capacity = fluidContainer:getCapacity()
+            local currentAmount = fluidContainer:getAmount()
+            local ratio = 0
+            if capacity > 0 then ratio = currentAmount / capacity end
+
+            -- Identify the Fluid Type (B42 Robust Way)
+            local fluidType = nil
+            if fluidContainer.getPrimaryFluid then
+                local pFluid = fluidContainer:getPrimaryFluid()
+                if pFluid then
+                    if pFluid.getFluidType then fluidType = pFluid:getFluidType() end
+                    if (not fluidType or fluidType == "") and pFluid.getFluid then
+                        local fluidObj = pFluid:getFluid()
+                        if fluidObj and fluidObj.getName then
+                            fluidType = fluidObj:getName()
+                        end
+                    end
+                end
+            end
+
+            if (not fluidType or fluidType == "") and fluidContainer.getFluidType then
+                fluidType = fluidContainer:getFluidType()
+            end
+
+            local fluidValue = 0
+            local fluidData = nil
+            if fluidType and DynamicTrading.Fluids then
+                local typeStr = tostring(fluidType)
+                fluidData = DynamicTrading.Fluids[typeStr]
+                
+                if not fluidData and not typeStr:find("%.") then
+                    fluidData = DynamicTrading.Fluids["Base." .. typeStr]
+                end
+            end
+
+            if fluidData then
+                -- [NEW] Apply dynamic multipliers to FLUID portion based on FLUID TAGS
+                local fluidMults = diffData.sellMult or 0.5
+                
+                if fluidData.tags then
+                    -- 1. Event Modifiers
+                    if getPriceMod then
+                        local eventMult = getPriceMod(fluidData.tags)
+                        fluidMults = fluidMults * eventMult
+                    end
+                    
+                    -- 2. Global Heat
+                    for _, tag in ipairs(fluidData.tags) do
+                        local heat = globalHeat[tag]
+                        if heat and heat ~= 0 then
+                            fluidMults = fluidMults * (1.0 + heat)
+                        end
+                    end
+                    
+                    -- 3. Archetype 'Wants'
+                    if archetype and archetype.wants then
+                        for _, tag in ipairs(fluidData.tags) do
+                            if archetype.wants[tag] then
+                                fluidMults = fluidMults * archetype.wants[tag]
+                                break 
+                            end
+                        end
+                    end
+                    if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FLUID_MULTS: " .. fluidMults) end
+                end
+                
+                fluidValue = (fluidData.basePrice * currentAmount) * fluidMults
+            else
+                local unknownFluidBase = 1.0
+                fluidValue = (unknownFluidBase * currentAmount) * diffData.sellMult
+            end
+
+            local containerValue = price * 0.2
+            if scriptItem and scriptItem.getReplaceOnDeplete then
+                local emptyID = scriptItem:getReplaceOnDeplete()
+                if emptyID and DynamicTrading.Config.MasterList[emptyID] then
+                    local emptyData = DynamicTrading.Config.MasterList[emptyID]
+                    containerValue = emptyData.basePrice * diffData.sellMult
+                end
+            end
+
+            price = containerValue + fluidValue
+            if verbose then 
+                DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FLUID: " .. tostring(fluidType) .. " (" .. math.floor(ratio*100) .. "%) | NewPrice: " .. price) 
+            end
+
+        -- B. Food Consumption (Partially eaten)
+        elseif itemObj.getHungerChange and scriptItem and scriptItem.getHungerChange then
+            local currentHunger = itemObj:getHungerChange()
+            local baseHunger = Common.GetNormalizedHunger(scriptItem)
+            
+            if baseHunger < 0 then
+                local ratio = currentHunger / baseHunger
+                price = price * math.max(0, math.min(1, ratio))
+                if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FOOD: " .. math.floor(ratio*100) .. "% | NewPrice: " .. price) end
+            end
+
+        -- C. Standard Drainable (Pills, Batteries, Flashlights, etc.)
+        elseif itemObj.IsDrainable and itemObj:IsDrainable() then
+            local delta = Common.GetItemCharge(itemObj)
+            price = price * delta
+            if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| DRAINABLE: " .. math.floor(delta*100) .. "% | NewPrice: " .. price) end
+        end
+    end
+
+    -- 3. Event Modifiers
+    if getPriceMod then
+        local eventMult = getPriceMod(itemData.tags)
+        price = price * eventMult
+        if verbose and eventMult ~= 1.0 then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| EventMult: " .. eventMult) end
+    end
+
+    -- 4. Global Inflation (Heat)
+    for _, tag in ipairs(itemData.tags) do
+        local heat = globalHeat[tag]
+        if heat and heat ~= 0 then
+            price = price * (1.0 + heat)
+            if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| Heat(" .. tag .. "): " .. heat) end
+        end
+    end
+
+    -- 5. Local Deflation (Trader Saturation)
+    if localDeflationCount > 0 then
+        local penaltyPerItem = 0.05
+        local localMult = 1.0 - (localDeflationCount * penaltyPerItem)
+        if localMult < 0.2 then localMult = 0.2 end
+        price = price * localMult
+        if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| Deflation: " .. localMult) end
+    end
+
+    -- 6. Archetype Bonus ("Wants")
+    if archetype and archetype.wants then
+        for _, t in ipairs(itemData.tags) do
+            for wantTag, bonus in pairs(archetype.wants) do
+                if t == wantTag or string.find(t, wantTag .. "%.") == 1 then
+                    price = price * bonus
+                    if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "Want(" .. wantTag .. "): " .. bonus) end
+                    return math.floor(price) -- Stop at first match for bonuses
+                end
+            end
+        end
+    end
+
+    if price < 0 then price = 0 end
+    
+    if verbose then DynamicTrading.Log("DTCommons", "Trade", "Trace", "| FINAL: " .. math.floor(price)) end
+    
+    return math.floor(price)
+end

@@ -1,7 +1,7 @@
 if not DT_TradingItemUtils then DT_TradingItemUtils = {} end
 DT_TradingItemUtils.Internal = DT_TradingItemUtils.Internal or {}
 
-require "DT/Common/Trading/DT_Economy_Common"
+require "DT/Common/Trading/EconomyCommon/DT_EconomyCommon"
 require "Utils/DT_CoreUtils"
 
 -- Keep explicit load order so dependent helpers are registered before scanners.

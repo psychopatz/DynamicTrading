@@ -39,7 +39,7 @@ function DynamicTrading.TradingProvider.AttachPricing(provider)
                     return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
                 end
             else
-                require "DT/Common/Trading/DT_Economy_Common"
+                require "DT/Common/Trading/EconomyCommon/DT_EconomyCommon"
                 if DynamicTrading.Economy and DynamicTrading.Economy.Common and DynamicTrading.Economy.Common.GetBuyPrice then
                     return DynamicTrading.Economy.Common.GetBuyPrice(key, itemData, diff, modifiers, verbose)
                 end
