@@ -4,6 +4,7 @@
 -- ==============================================================================
 
 require "ISUI/ISPanel"
+require "ISUI/ISButton"
 
 DT_FactionInfoHeaderPanel = ISPanel:derive("DT_FactionInfoHeaderPanel")
 
@@ -23,6 +24,11 @@ function DT_FactionInfoHeaderPanel:createChildren()
     self.lblStatus = ISLabel:new(self.width/2, 40, 18, "Global Faction Overview", 0.7, 0.7, 0.7, 1, UIFont.Medium, true)
     self.lblStatus:initialise()
     self:addChild(self.lblStatus)
+
+    self.btnOwnedFaction = ISButton:new(self.width - 170, 10, 160, 24, "Open Labour", self, self.onOwnedFactionButton)
+    self.btnOwnedFaction:initialise()
+    self.btnOwnedFaction:instantiate()
+    self:addChild(self.btnOwnedFaction)
 end
 
 function DT_FactionInfoHeaderPanel:onResizeFont(scale)
@@ -41,6 +47,45 @@ function DT_FactionInfoHeaderPanel:onResizeFont(scale)
     end
 end
 
+function DT_FactionInfoHeaderPanel:updateOwnedFactionStatus(status, selectedFaction)
+    self.ownedStatus = status or nil
+    self.selectedFaction = selectedFaction or nil
+
+    if self.selectedFaction and self.selectedFaction.playerOwned then
+        local state = tostring(self.selectedFaction.leadershipState or "Active")
+        self.lblStatus:setName("Leader: " .. tostring(self.selectedFaction.leaderUsername or "Unknown") .. " | Control: " .. state)
+    elseif self.selectedFaction then
+        self.lblStatus:setName("Viewing " .. tostring(self.selectedFaction.name or self.selectedFaction.id or "Faction"))
+    elseif status and status.faction then
+        self.lblStatus:setName("Your faction: " .. tostring(status.faction.name or status.faction.id) .. " | " .. tostring(status.faction.leadershipState or "Active"))
+    elseif status and status.canCreate then
+        self.lblStatus:setName("Eligible to create a player-owned faction")
+    else
+        self.lblStatus:setName("Global Faction Overview")
+    end
+
+    if self.btnOwnedFaction then
+        if status and not status.faction and status.canCreate then
+            self.btnOwnedFaction:setTitle("Create Faction")
+            self.btnOwnedFaction:setEnable(true)
+        else
+            self.btnOwnedFaction:setTitle("Open Labour")
+            self.btnOwnedFaction:setEnable(true)
+        end
+    end
+end
+
+function DT_FactionInfoHeaderPanel:onOwnedFactionButton()
+    if self.ownedStatus and not self.ownedStatus.faction and self.ownedStatus.canCreate and DT_System and DT_System.PromptCreateFaction then
+        DT_System.PromptCreateFaction()
+        return
+    end
+
+    if DT_System and DT_System.OpenWindow then
+        DT_System.OpenWindow()
+    end
+end
+
 function DT_FactionInfoHeaderPanel:prerender()
     ISPanel.prerender(self)
     
@@ -54,6 +99,9 @@ function DT_FactionInfoHeaderPanel:prerender()
     -- Keep labels centered
     centerLabel(self.labelTitle, self.labelTitle.font)
     centerLabel(self.lblStatus, self.lblStatus.font)
+    if self.btnOwnedFaction then
+        self.btnOwnedFaction:setX(self.width - self.btnOwnedFaction:getWidth() - 10)
+    end
 end
 
 function DT_FactionInfoHeaderPanel:new(x, y, width, height)

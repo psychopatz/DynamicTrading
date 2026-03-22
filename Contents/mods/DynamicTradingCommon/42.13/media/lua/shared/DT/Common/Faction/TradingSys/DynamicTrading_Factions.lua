@@ -12,6 +12,7 @@
 local Lifecycle   = require "DT/Common/Faction/TradingSys/Factions/Lifecycle"
 local Simulation  = require "DT/Common/Faction/TradingSys/Factions/Simulation"
 local Interaction = require "DT/Common/Faction/TradingSys/Factions/Interaction"
+local PlayerOwnership = require "DT/Common/Faction/TradingSys/Factions/PlayerOwnership"
 
 -- =============================================================================
 -- 2. MERGE INTO GLOBAL API
@@ -32,6 +33,25 @@ DynamicTrading_Factions.GetFaction        = Interaction.GetFaction
 DynamicTrading_Factions.ModifyStockpile   = Interaction.ModifyStockpile
 DynamicTrading_Factions.ModifyWealth      = Interaction.ModifyWealth
 DynamicTrading_Factions.ModifyReputation  = Interaction.ModifyReputation
+
+-- Player-owned factions
+DynamicTrading_Factions.CreatePlayerFaction         = PlayerOwnership.CreatePlayerFaction
+DynamicTrading_Factions.GetPlayerFaction            = PlayerOwnership.GetPlayerFaction
+DynamicTrading_Factions.GetPlayerFactionID          = PlayerOwnership.GetPlayerFactionID
+DynamicTrading_Factions.GetOwnedFactionStatus       = PlayerOwnership.BuildOwnedFactionStatus
+DynamicTrading_Factions.RefreshPlayerFaction        = PlayerOwnership.RefreshPlayerFaction
+DynamicTrading_Factions.RefreshAllPlayerFactions    = PlayerOwnership.RefreshAllPlayerFactions
+DynamicTrading_Factions.GetPlayerFactionWorkers     = PlayerOwnership.GetLivingWorkersForFaction
+DynamicTrading_Factions.GetPlayerFactionWorkerData  = PlayerOwnership.BuildOwnedFactionStatus
+DynamicTrading_Factions.ApplyPlayerFactionCasualties = PlayerOwnership.ApplyCasualties
+DynamicTrading_Factions.OnLabourWorkerCreated       = PlayerOwnership.OnLabourWorkerCreated
+DynamicTrading_Factions.OnLabourWorkerRemoved       = PlayerOwnership.OnLabourWorkerRemoved
+DynamicTrading_Factions.SetWorkerTradeEligibility   = PlayerOwnership.SetWorkerTradeEligibility
+DynamicTrading_Factions.DispatchTrade               = PlayerOwnership.DispatchTrade
+DynamicTrading_Factions.RecallTrade                 = PlayerOwnership.RecallTrade
+DynamicTrading_Factions.EnterRegency                = PlayerOwnership.EnterRegency
+DynamicTrading_Factions.ResumeLeadership            = PlayerOwnership.ResumeLeadership
+DynamicTrading_Factions.IsPlayerFaction             = PlayerOwnership.IsPlayerFaction
 
 -- ==========================================================
 -- 4. MP SYNC LISTENER

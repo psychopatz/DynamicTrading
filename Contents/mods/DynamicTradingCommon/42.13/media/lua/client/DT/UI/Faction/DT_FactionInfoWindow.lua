@@ -8,6 +8,7 @@ require "ISUI/ISCollapsableWindow"
 require "ISUI/ISTabPanel"
 require "DT/UI/Faction/DT_FactionList"
 require "DT/UI/Faction/DT_FactionInfoHeaderPanel"
+require "DT/UI/Faction/DT_PlayerFactionNameModal"
 require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Info"
 require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Reputation"
 require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Economics"
@@ -230,6 +231,9 @@ function DT_FactionInfoWindow:refreshList()
         if DT_FactionInfoWindow.cachedFactionData then
             self:populateList(DT_FactionInfoWindow.cachedFactionData, DT_FactionInfoWindow.cachedRosterData)
         end
+        if self.headerPanel and self.headerPanel.updateOwnedFactionStatus then
+            self.headerPanel:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, DT_FactionInfoWindow.selectedFaction)
+        end
         sendClientCommand(player, "DynamicTrading_V2", "RequestFactionData", {})
         return
     end
@@ -237,6 +241,9 @@ function DT_FactionInfoWindow:refreshList()
     -- Singleplayer Direct Access
     local factionData = resolveFactionData()
     local rosterData = resolveRosterData()
+    if DynamicTrading_Factions and DynamicTrading_Factions.GetOwnedFactionStatus then
+        DT_FactionInfoWindow.cachedOwnedFactionStatus = DynamicTrading_Factions.GetOwnedFactionStatus(player)
+    end
     
     self:populateList(factionData, rosterData)
 end
@@ -358,6 +365,9 @@ function DT_FactionInfoWindow:applyFactionSelection(f, requestRoster)
     -- Update All Tabs
     if DT_FactionInfoWindow.instance then
         local win = DT_FactionInfoWindow.instance
+        if win.headerPanel and win.headerPanel.updateOwnedFactionStatus then
+            win.headerPanel:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, f)
+        end
         if win.tabInfo then win.tabInfo:updateData(f) end
         local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster")
         if win.tabReputation then win.tabReputation:updateData(f, rosterData) end
@@ -369,7 +379,7 @@ function DT_FactionInfoWindow:applyFactionSelection(f, requestRoster)
     end
 
     -- [MP OPTIMIZATION] Request detailed soul data for this faction on-demand
-    if requestRoster and isClient() and not isServer() and not f.isV1 then
+    if requestRoster and isClient() and not isServer() and not f.isV1 and not f.playerOwned then
         DynamicTrading.Log("DTCommons", "Faction", "Sync", "Requesting detailed roster for faction: " .. tostring(f.id))
         sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestFactionRoster", { factionID = f.id })
     end
@@ -396,6 +406,7 @@ local function onServerCommand(module, command, args)
             -- Cache data
             DT_FactionInfoWindow.cachedFactionData = args.factions
             DT_FactionInfoWindow.cachedRosterData = args.roster
+            DT_FactionInfoWindow.cachedOwnedFactionStatus = args.ownedStatus or DT_FactionInfoWindow.cachedOwnedFactionStatus
             
             -- [V1 PARITY] Sink roster souls into ModData for legacy V1 logic (Signal Panel, etc)
             if args.roster and args.roster.Souls then
@@ -423,6 +434,10 @@ local function onServerCommand(module, command, args)
         end
         
         -- If this is the currently selected faction, refresh the population tab
+        if args.ownedStatus then
+            DT_FactionInfoWindow.cachedOwnedFactionStatus = args.ownedStatus
+        end
+
         if DT_FactionInfoWindow.selectedFaction and DT_FactionInfoWindow.selectedFaction.id == factionID then
             if DT_FactionInfoWindow.instance then
                 if DT_FactionInfoWindow.instance.tabPopulation then
@@ -431,6 +446,31 @@ local function onServerCommand(module, command, args)
                 if DT_FactionInfoWindow.instance.tabReputation then
                     DT_FactionInfoWindow.instance.tabReputation:updateData(DT_FactionInfoWindow.selectedFaction, DT_FactionInfoWindow.cachedRosterData)
                 end
+            end
+        end
+    elseif command == "SyncOwnedFactionStatus" then
+        DT_FactionInfoWindow.cachedOwnedFactionStatus = args and args.status or nil
+        if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.headerPanel and DT_FactionInfoWindow.instance.headerPanel.updateOwnedFactionStatus then
+            DT_FactionInfoWindow.instance.headerPanel:updateOwnedFactionStatus(
+                DT_FactionInfoWindow.cachedOwnedFactionStatus,
+                DT_FactionInfoWindow.selectedFaction
+            )
+        end
+        if DT_FactionInfoWindow.selectedFaction
+            and DT_FactionInfoWindow.selectedFaction.playerOwned
+            and DT_FactionInfoWindow.instance
+            and DT_FactionInfoWindow.instance.tabPopulation then
+            DT_FactionInfoWindow.instance.tabPopulation:updateData(
+                DT_FactionInfoWindow.selectedFaction,
+                DT_FactionInfoWindow.cachedRosterData
+            )
+        end
+    elseif command == "OwnedFactionActionResult" then
+        if args and args.success and args.discoverTrader and args.traderID
+            and DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.DiscoverTrader then
+            local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
+            if player then
+                DynamicTrading.Manager.DiscoverTrader(args.traderID, player)
             end
         end
     end

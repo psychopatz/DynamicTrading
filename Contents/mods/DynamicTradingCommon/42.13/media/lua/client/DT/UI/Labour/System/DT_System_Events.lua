@@ -7,6 +7,33 @@ local function onServerCommand(module, command, args)
     end
 
     if command ~= "SyncRecruitAttemptResult" then
+        if command == "SyncOwnedFactionStatus" then
+            System.ownedFactionStatusCache = args and args.status or nil
+
+            local ui = DT_ConversationUI and DT_ConversationUI.instance or nil
+            if ui then
+                ui:updateOptions(ui.baseOptions or {})
+            end
+            return
+        end
+
+        if command == "OwnedFactionActionResult" then
+            if args and args.success and args.discoverTrader and args.traderID
+                and DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.DiscoverTrader then
+                local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
+                if player then
+                    DynamicTrading.Manager.DiscoverTrader(args.traderID, player)
+                end
+            end
+
+            local ui = DT_ConversationUI and DT_ConversationUI.instance or nil
+            if ui and args and args.message and args.message ~= "" then
+                ui:speak(args.message)
+                ui:updateOptions(ui.baseOptions or {})
+            end
+            return
+        end
+
         return
     end
 

@@ -26,6 +26,9 @@ Network.Handlers.DeleteDeadWorker = function(player, args)
 
     local workerID = worker.workerID
     local workerName = tostring(worker.name or worker.workerID)
+    if DynamicTrading_Factions and DynamicTrading_Factions.OnLabourWorkerRemoved then
+        DynamicTrading_Factions.OnLabourWorkerRemoved(owner, workerID)
+    end
     if Presentation and Presentation.RemoveProjection then
         Presentation.RemoveProjection(worker)
     end
@@ -36,6 +39,7 @@ Network.Handlers.DeleteDeadWorker = function(player, args)
     })
     Internal.syncNotice(player, "Removed deceased worker " .. workerName .. ".", "success")
     Internal.syncWorkerList(player)
+    Internal.syncOwnedFactionStatus(player)
 end
 
 return Network

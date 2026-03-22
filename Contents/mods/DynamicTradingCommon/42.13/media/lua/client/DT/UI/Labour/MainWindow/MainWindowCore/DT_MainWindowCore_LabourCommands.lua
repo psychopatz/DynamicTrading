@@ -15,6 +15,11 @@ function DT_MainWindow:sendLabourCommand(command, args)
         return true
     end
 
+    if triggerEvent and DynamicTrading and DynamicTrading.NetworkServer and DynamicTrading.NetworkServer.HandlesSharedCommands then
+        triggerEvent("OnClientCommand", "DynamicTrading_V2", command, player, args or {})
+        return true
+    end
+
     if DT_Labour and DT_Labour.Network and DT_Labour.Network.HandleCommand then
         DT_Labour.Network.HandleCommand(player, command, args or {})
         return true
@@ -22,4 +27,3 @@ function DT_MainWindow:sendLabourCommand(command, args)
 
     return false
 end
-

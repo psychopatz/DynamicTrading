@@ -7,6 +7,7 @@ Network.Handlers = Network.Handlers or {}
 
 Network.Handlers.RequestPlayerWorkers = function(player, args)
     Network.Internal.syncWorkerList(player)
+    Network.Internal.syncOwnedFactionStatus(player)
 end
 
 Network.Handlers.RequestWorkerDetails = function(player, args)

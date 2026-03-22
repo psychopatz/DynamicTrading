@@ -136,6 +136,9 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
     end
 
     local worker = createWorkerFromRecruitArgs(owner, args)
+    if DynamicTrading_Factions and DynamicTrading_Factions.OnLabourWorkerCreated then
+        DynamicTrading_Factions.OnLabourWorkerCreated(owner, worker)
+    end
     Registry.Save()
     Sim.ProcessWorker(worker, (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour())
     Presentation.SyncWorker(worker, { player })
@@ -152,6 +155,7 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
     })
     Internal.syncWorkerDetail(player, worker.workerID)
     Internal.syncWorkerList(player)
+    Internal.syncOwnedFactionStatus(player)
 end
 
 return Network

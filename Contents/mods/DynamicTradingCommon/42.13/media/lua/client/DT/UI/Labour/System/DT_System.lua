@@ -6,6 +6,7 @@ require "DT/Common/Labour/LabourNetwork/DT_Labour_Network"
 -- Keep explicit load order so helpers are registered before dependent modules.
 require "DT/UI/Labour/System/DT_System_Shared"
 require "DT/UI/Labour/System/DT_System_Window"
+require "DT/UI/Labour/System/DT_System_Factions"
 require "DT/UI/Labour/System/DT_System_Conversation"
 require "DT/UI/Labour/System/DT_System_Recruitment"
 require "DT/UI/Labour/System/DT_System_Options"

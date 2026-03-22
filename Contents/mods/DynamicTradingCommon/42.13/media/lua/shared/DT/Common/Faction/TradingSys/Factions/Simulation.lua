@@ -13,6 +13,20 @@ require "DT/Common/Events/DT_EventManager"
 local Simulation = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"
 
+local function buildProductionFromArchetype(production, archetypeID)
+    local archData = DynamicTrading.Archetypes and DynamicTrading.Archetypes[archetypeID] or nil
+    if not archData or not archData.allocations then
+        return
+    end
+
+    for tag, score in pairs(archData.allocations) do
+        local resourceType = DynamicTrading.Config.ResourceMap[tag]
+        if resourceType then
+            production[resourceType] = production[resourceType] + (score * DynamicTrading.Config.Sim.ProductionMultiplier)
+        end
+    end
+end
+
 -- ==========================================================
 -- DAILY SIMULATION
 -- ==========================================================
@@ -31,6 +45,13 @@ function Simulation.UpdateDaily()
     local factionsToRemove = {}
 
     for id, faction in pairs(data) do
+        if faction and faction.playerOwned and DynamicTrading_Factions.RefreshPlayerFaction then
+            faction = DynamicTrading_Factions.RefreshPlayerFaction(id)
+        end
+        if not faction then
+            goto continue
+        end
+
         -- 0. DIRECTORS CUT (Trigger Events & Wildcards)
         -- 0. DIRECTORS CUT (Trigger Events & Wildcards)
         -- [UNIFIED] Used Shared Event Manager
@@ -40,25 +61,23 @@ function Simulation.UpdateDaily()
 
         -- 0.1 CALCULATE PRODUCTION (Based on Roster)
         local production = { food=0, ammo=0, meds=0, fuel=0 }
-        local soulUUIDs = DynamicTrading_Roster.GetSouls(id)
-        
-        for _, uuid in ipairs(soulUUIDs) do
-            local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
-            if soul then
-                local archID = soul.archetypeID
-                local archData = DynamicTrading.Archetypes[archID]
-                if archData and archData.allocations then
-                    for tag, score in pairs(archData.allocations) do
-                        local resourceType = DynamicTrading.Config.ResourceMap[tag]
-                        if resourceType then
-                             -- Score * Multiplier (e.g., 6 * 2.0 = 12 units)
-                            production[resourceType] = production[resourceType] + (score * DynamicTrading.Config.Sim.ProductionMultiplier)
-                        end
-                    end
+        if faction.playerOwned and DynamicTrading_Factions.GetPlayerFactionWorkers then
+            local livingWorkers = DynamicTrading_Factions.GetPlayerFactionWorkers(id) or {}
+            faction.memberCount = #livingWorkers
+            for _, worker in ipairs(livingWorkers) do
+                buildProductionFromArchetype(production, worker.archetypeID or worker.profession or "General")
+            end
+        else
+            local soulUUIDs = DynamicTrading_Roster.GetSouls(id)
+
+            for _, uuid in ipairs(soulUUIDs) do
+                local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
+                if soul then
+                    buildProductionFromArchetype(production, soul.archetypeID)
                 end
             end
         end
-        
+
         -- Add Production to Stockpile
         if not faction.stockpile then faction.stockpile = { food=0, ammo=0, meds=0, fuel=0 } end
         for res, amt in pairs(production) do
@@ -91,9 +110,17 @@ function Simulation.UpdateDaily()
                     if killToday > afe.targetCasualties then killToday = afe.targetCasualties end
 
                     if killToday > 0 then
-                        faction.memberCount = math.max(0, faction.memberCount - killToday)
+                        if faction.playerOwned and DynamicTrading_Factions.ApplyPlayerFactionCasualties then
+                            killToday = DynamicTrading_Factions.ApplyPlayerFactionCasualties(id, killToday, "Faction event casualties")
+                            faction = data[id]
+                            if not faction then
+                                goto continue
+                            end
+                        else
+                            faction.memberCount = math.max(0, faction.memberCount - killToday)
+                            DynamicTrading_Roster.RemoveSoul(id, killToday)
+                        end
                         afe.targetCasualties = afe.targetCasualties - killToday
-                        DynamicTrading_Roster.RemoveSoul(id, killToday)
                         DynamicTrading.Log("DTCommons", "Faction", "Sim", "Event casualty hit for faction [" .. faction.name .. "] [" .. tostring(afe.id) .. "] | Killed: " .. killToday .. " | Remaining Targets: " .. tostring(afe.targetCasualties))
                     end
                 end
@@ -115,8 +142,16 @@ function Simulation.UpdateDaily()
                             DynamicTrading.Log("DTCommons", "Faction", "Sim", "Faction [" .. faction.name .. "] met " .. resource .. " requirements for " .. affectedCount .. " souls.")
                         else
                             local casualties = math.ceil(affectedCount * 0.2)
-                            faction.memberCount = math.max(0, faction.memberCount - casualties)
-                            DynamicTrading_Roster.RemoveSoul(id, casualties)
+                            if faction.playerOwned and DynamicTrading_Factions.ApplyPlayerFactionCasualties then
+                                casualties = DynamicTrading_Factions.ApplyPlayerFactionCasualties(id, casualties, "Faction attrition")
+                                faction = data[id]
+                                if not faction then
+                                    goto continue
+                                end
+                            else
+                                faction.memberCount = math.max(0, faction.memberCount - casualties)
+                                DynamicTrading_Roster.RemoveSoul(id, casualties)
+                            end
                             DynamicTrading.Log("DTCommons", "Faction", "Sim", "Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
                             faction.state = "Starving"
                         end
@@ -160,11 +195,19 @@ function Simulation.UpdateDaily()
                     -- Kill people
                     local deaths = math.ceil(faction.memberCount * DynamicTrading.Config.Sim.DeathRate)
                     deaths = math.max(1, deaths) -- At least 1 dies
-                    faction.memberCount = faction.memberCount - deaths
-                    
-                    -- Remove from roster in Roster module
-                    DynamicTrading_Roster.RemoveSoul(id, deaths)
-                    
+                    if faction.playerOwned and DynamicTrading_Factions.ApplyPlayerFactionCasualties then
+                        deaths = DynamicTrading_Factions.ApplyPlayerFactionCasualties(id, deaths, "Starvation")
+                        faction = data[id]
+                        if not faction then
+                            goto continue
+                        end
+                    else
+                        faction.memberCount = faction.memberCount - deaths
+
+                        -- Remove from roster in Roster module
+                        DynamicTrading_Roster.RemoveSoul(id, deaths)
+                    end
+
                     DynamicTrading.Log("DTCommons", "Faction", "Starving", "Faction " .. faction.name .. " is STARVING! Lost " .. deaths .. " souls.")
                 end
             else
@@ -179,8 +222,8 @@ function Simulation.UpdateDaily()
                 -- 3. GROWTH (If not starving and has surplus)
                 -- Surplus check: Enough food for X days?
                 local surplusFood = (faction.stockpile.food or 0) > (faction.memberCount * (consumes.food or 1) * 7) -- 1 Week buffer
-                
-                if surplusFood and ZombRand(100) < growthChance then
+
+                if not faction.playerOwned and surplusFood and ZombRand(100) < growthChance then
                     -- Assign random class
                     local archetypes = {}
                     for aid, _ in pairs(DynamicTrading.Archetypes) do table.insert(archetypes, aid) end
@@ -232,8 +275,16 @@ function Simulation.UpdateDaily()
                     if attritionAdd > 0 then
                         local passiveDeaths = math.floor(faction.memberCount * attritionAdd)
                         if passiveDeaths > 0 then
-                            faction.memberCount = math.max(0, faction.memberCount - passiveDeaths)
-                            DynamicTrading_Roster.RemoveSoul(id, passiveDeaths)
+                            if faction.playerOwned and DynamicTrading_Factions.ApplyPlayerFactionCasualties then
+                                passiveDeaths = DynamicTrading_Factions.ApplyPlayerFactionCasualties(id, passiveDeaths, "Global attrition")
+                                faction = data[id]
+                                if not faction then
+                                    goto continue
+                                end
+                            else
+                                faction.memberCount = math.max(0, faction.memberCount - passiveDeaths)
+                                DynamicTrading_Roster.RemoveSoul(id, passiveDeaths)
+                            end
                             DynamicTrading.Log("DTCommons", "Faction", "Sim", "Global Attrition hit faction [" .. faction.name .. "] | Casualties: " .. passiveDeaths)
                         end
                     end
@@ -247,6 +298,8 @@ function Simulation.UpdateDaily()
         else
             DynamicTrading.Log("DTCommons", "Error", "Faction", "BaseConsumption not found in config for simulation!")
         end
+
+        ::continue::
     end
     
     -- Cleanup Dead Factions

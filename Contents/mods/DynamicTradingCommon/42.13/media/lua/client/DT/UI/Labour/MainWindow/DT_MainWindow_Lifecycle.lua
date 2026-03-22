@@ -10,6 +10,9 @@ function DT_MainWindow.ToggleWindow()
             DT_MainWindow.instance:addToUIManager()
             DT_MainWindow.instance:bringToTop()
             DT_MainWindow.instance:populateWorkerList(DT_MainWindow.cachedWorkers or {})
+            if DT_MainWindow.instance.onRefresh then
+                DT_MainWindow.instance:onRefresh()
+            end
             DT_MainWindow.instance:updateStatus("Labour Management opened.")
         end
         return
@@ -24,6 +27,9 @@ function DT_MainWindow.Open()
         DT_MainWindow.instance:addToUIManager()
         DT_MainWindow.instance:bringToTop()
         DT_MainWindow.instance:populateWorkerList(DT_MainWindow.cachedWorkers or {})
+        if DT_MainWindow.instance.onRefresh then
+            DT_MainWindow.instance:onRefresh()
+        end
         DT_MainWindow.instance:updateStatus("Labour Management opened.")
         return
     end
@@ -40,6 +46,9 @@ function DT_MainWindow.Open()
     window:addToUIManager()
     window:bringToTop()
     DT_MainWindow.instance = window
+    if window.onRefresh then
+        window:onRefresh()
+    end
 end
 
 function DT_MainWindow:close()

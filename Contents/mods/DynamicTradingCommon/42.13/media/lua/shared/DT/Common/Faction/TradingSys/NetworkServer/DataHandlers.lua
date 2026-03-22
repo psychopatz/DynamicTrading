@@ -14,6 +14,17 @@ require "DT/Common/ServerHelpers"
 local DataHandlers = {}
 local Handlers = {}
 
+local function syncOwnedFactionStatus(player)
+    if not player or not DynamicTrading_Factions or not DynamicTrading_Factions.GetOwnedFactionStatus then
+        return
+    end
+
+    local status = DynamicTrading_Factions.GetOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncOwnedFactionStatus", {
+        status = status
+    })
+end
+
 -- =============================================================================
 -- HELPER: Send Complete SyncStock to Player
 -- Used after transactions to update client cache with latest stock and faction wealth
@@ -61,6 +72,10 @@ end
 -- [FACTION DATA REQUEST]
 -- Shared by the player-facing Faction Intelligence window and the admin debug UI.
 Handlers.RequestFactionData = function(player, args)
+    if DynamicTrading_Factions and DynamicTrading_Factions.ResumeLeadership then
+        DynamicTrading_Factions.ResumeLeadership(player)
+    end
+
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
     local stockData = ModData.get("DynamicTrading_Stock") or {}
@@ -83,7 +98,8 @@ Handlers.RequestFactionData = function(player, args)
     DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionDebugData", {
         factions = factionData,
         roster = minimalRoster,
-        stock = stockData
+        stock = stockData,
+        ownedStatus = DynamicTrading_Factions and DynamicTrading_Factions.GetOwnedFactionStatus and DynamicTrading_Factions.GetOwnedFactionStatus(player) or nil
     })
 end
 
@@ -137,7 +153,17 @@ end
 Handlers.RequestFactionRoster = function(player, args)
     local factionID = args.factionID
     if not factionID then return end
-    
+
+    local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
+    if faction and faction.playerOwned then
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionRoster", {
+            factionID = factionID,
+            souls = {},
+            ownedStatus = DynamicTrading_Factions.GetOwnedFactionStatus(player)
+        })
+        return
+    end
+
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
     local members = rosterData.FactionMembers and rosterData.FactionMembers[factionID] or {}
     
@@ -153,6 +179,59 @@ Handlers.RequestFactionRoster = function(player, args)
     DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionRoster", {
         factionID = factionID,
         souls = factionSouls
+    })
+end
+
+Handlers.RequestOwnedFactionStatus = function(player, args)
+    if DynamicTrading_Factions and DynamicTrading_Factions.ResumeLeadership then
+        DynamicTrading_Factions.ResumeLeadership(player)
+    end
+    syncOwnedFactionStatus(player)
+end
+
+Handlers.CreatePlayerFaction = function(player, args)
+    args = args or {}
+    local ok, message = DynamicTrading_Factions.CreatePlayerFaction(player, args.name)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or (ok and "Faction created." or "Faction creation failed.")
+    })
+end
+
+Handlers.SetFactionWorkerTradeEligibility = function(player, args)
+    args = args or {}
+    local ok, message = DynamicTrading_Factions.SetWorkerTradeEligibility(player, args.workerID, args.enabled == true)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or "Trade access updated."
+    })
+end
+
+Handlers.DispatchFactionTrade = function(player, args)
+    args = args or {}
+    local ok, message, _, details = DynamicTrading_Factions.DispatchTrade(player, args.workerID, false)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or "Dispatch complete.",
+        traderID = details and details.traderID or nil,
+        traderBackend = details and details.backend or nil,
+        discoverTrader = details and details.discoverTrader == true or false
+    })
+end
+
+Handlers.RecallFactionTrader = function(player, args)
+    args = args or {}
+    local ok, message, _, details = DynamicTrading_Factions.RecallTrade(player, args.workerID, false)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or "Trader recalled.",
+        traderID = details and details.traderID or nil,
+        traderBackend = details and details.backend or nil,
+        discoverTrader = false
     })
 end
 
@@ -237,4 +316,5 @@ Handlers.GenerateStock = function(player, args)
 end
 
 DataHandlers.Handlers = Handlers
+DataHandlers.SyncOwnedFactionStatus = syncOwnedFactionStatus
 return DataHandlers

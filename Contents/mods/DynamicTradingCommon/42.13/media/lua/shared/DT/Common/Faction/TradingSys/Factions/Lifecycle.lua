@@ -81,6 +81,22 @@ function Lifecycle.Init()
         if not f.consecutiveStableDays then
             f.consecutiveStableDays = 0
         end
+
+        if f.playerOwned then
+            f.leaderUsername = f.leaderUsername or "local"
+            f.leadershipState = f.leadershipState or "Active"
+            f.regencyReason = f.regencyReason or nil
+            f.controlMode = f.controlMode or "HybridManual"
+            f.linkedWorkerIDs = type(f.linkedWorkerIDs) == "table" and f.linkedWorkerIDs or {}
+            f.tradeEligibleWorkerIDs = type(f.tradeEligibleWorkerIDs) == "table" and f.tradeEligibleWorkerIDs or {}
+            f.activeTradeWorkerIDs = type(f.activeTradeWorkerIDs) == "table" and f.activeTradeWorkerIDs or {}
+            f.tradeWorkerSouls = type(f.tradeWorkerSouls) == "table" and f.tradeWorkerSouls or {}
+            f.createdDay = tonumber(f.createdDay) or 0
+        end
+    end
+
+    if DynamicTrading_Factions and DynamicTrading_Factions.RefreshAllPlayerFactions then
+        DynamicTrading_Factions.RefreshAllPlayerFactions()
     end
 
     ModData.transmit(MOD_DATA_KEY)
@@ -117,7 +133,10 @@ function Lifecycle.CreateFaction(factionID, initialData)
         local assignedHome = nil
 
         -- A. Handle Naming & Home Assignment
-        if factionID == "Independent" or initialData.isNomadic then
+        if initialData.playerOwned then
+            displayName = tostring(initialData.name or factionID)
+            assignedHome = initialData.homeCoords
+        elseif factionID == "Independent" or initialData.isNomadic then
             displayName = "Independent Traders"
             assignedHome = nil -- Nomads have no home base
         else
@@ -141,11 +160,23 @@ function Lifecycle.CreateFaction(factionID, initialData)
             starvationDays = 0, -- Track days without food
             consecutiveStableDays = 0, -- Track how long they've been stable (for wildcard triggers)
             ActiveFlashEvents = {}, -- list of faction flash events (Phase-A schema)
-            ActiveFlashEvent = { id = nil, expires = 0, targetCasualties = 0 } -- legacy compatibility mirror
+            ActiveFlashEvent = { id = nil, expires = 0, targetCasualties = 0 }, -- legacy compatibility mirror
+            playerOwned = initialData.playerOwned == true,
+            leaderUsername = initialData.leaderUsername,
+            leadershipState = initialData.leadershipState or "Active",
+            regencyReason = initialData.regencyReason,
+            controlMode = initialData.controlMode or (initialData.playerOwned and "HybridManual" or nil),
+            linkedWorkerIDs = initialData.linkedWorkerIDs or {},
+            tradeEligibleWorkerIDs = initialData.tradeEligibleWorkerIDs or {},
+            activeTradeWorkerIDs = initialData.activeTradeWorkerIDs or {},
+            tradeWorkerSouls = initialData.tradeWorkerSouls or {},
+            createdDay = tonumber(initialData.createdDay) or 0
         }
-        
+
         -- Generate Initial Roster in DynamicTrading_Roster
-        DynamicTrading_Factions.GenerateRoster(factionID)
+        if not initialData.playerOwned then
+            DynamicTrading_Factions.GenerateRoster(factionID)
+        end
 
         ModData.transmit(MOD_DATA_KEY)
         

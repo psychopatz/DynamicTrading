@@ -45,6 +45,25 @@ local function onServerCommand(module, command, args)
         if DT_MainWindow.instance and DT_MainWindow.instance:getIsVisible() then
             DT_MainWindow.instance:updateStatus(args and args.message or "Labour update received.")
         end
+    elseif command == "SyncOwnedFactionStatus" then
+        DT_MainWindow.cachedOwnedFactionStatus = args and args.status or nil
+        if DT_System then
+            DT_System.ownedFactionStatusCache = DT_MainWindow.cachedOwnedFactionStatus
+        end
+        if DT_MainWindow.instance and DT_MainWindow.instance.updateFactionButton then
+            DT_MainWindow.instance:updateFactionButton()
+        end
+    elseif command == "OwnedFactionActionResult" then
+        if args and args.success and args.discoverTrader and args.traderID
+            and DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.DiscoverTrader then
+            local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
+            if player then
+                DynamicTrading.Manager.DiscoverTrader(args.traderID, player)
+            end
+        end
+        if DT_MainWindow.instance and DT_MainWindow.instance:getIsVisible() then
+            DT_MainWindow.instance:updateStatus(args and args.message or "Faction update received.")
+        end
     end
 end
 

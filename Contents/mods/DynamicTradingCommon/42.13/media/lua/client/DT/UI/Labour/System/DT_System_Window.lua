@@ -47,6 +47,11 @@ function System.SendCommand(command, args)
         return true
     end
 
+    if triggerEvent and DynamicTrading and DynamicTrading.NetworkServer and DynamicTrading.NetworkServer.HandlesSharedCommands then
+        triggerEvent("OnClientCommand", Internal.GetCommandModule(), command, player, args or {})
+        return true
+    end
+
     if DT_Labour and DT_Labour.Network and DT_Labour.Network.HandleCommand then
         DT_Labour.Network.HandleCommand(player, command, args or {})
         return true

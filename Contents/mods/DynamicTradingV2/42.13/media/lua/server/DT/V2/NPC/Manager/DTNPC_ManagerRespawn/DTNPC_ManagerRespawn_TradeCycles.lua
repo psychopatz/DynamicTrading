@@ -25,11 +25,26 @@ function DTNPCManager.ProcessTradeCycles()
     -- First pass: Count trading/away and total population per faction
     for uuid, registry in pairs(rosterData.Souls) do
         local factionID = registry.factionID or "Independent"
+        local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
+
+        if faction and faction.playerOwned and faction.leadershipState ~= "Regency" then
+            goto continue_count
+        end
+
+        if faction and faction.playerOwned then
+            local workerID = registry.linkedWorkerID
+            if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
+                goto continue_count
+            end
+        end
+
         factionTotalCounts[factionID] = (factionTotalCounts[factionID] or 0) + 1
         
         if registry.status == "Away" or registry.status == "Trading" then
             factionTradingCounts[factionID] = (factionTradingCounts[factionID] or 0) + 1
         end
+
+        ::continue_count::
     end
     
     -- Second pass: Trigger missions based on limits
@@ -38,6 +53,17 @@ function DTNPCManager.ProcessTradeCycles()
         local isDeparting = liveSoul and liveSoul.state == "Departure"
         if registry.status == "Resting" and not isDeparting then
             local factionID = registry.factionID or "Independent"
+            local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
+            if faction and faction.playerOwned then
+                if faction.leadershipState ~= "Regency" then
+                    goto continue_dispatch
+                end
+
+                local workerID = registry.linkedWorkerID
+                if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
+                    goto continue_dispatch
+                end
+            end
             local currentTrading = factionTradingCounts[factionID] or 0
             local totalMembers = factionTotalCounts[factionID] or 1
             
@@ -62,6 +88,7 @@ function DTNPCManager.ProcessTradeCycles()
                 end
             end
         end
+        ::continue_dispatch::
     end
 end
 

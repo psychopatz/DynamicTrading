@@ -84,6 +84,13 @@ function DT_FactionInfoTab_Info:updateData(f)
         else
             text = text .. " Base: NOMADIC (Roaming) <LINE> "
         end
+
+        if f.playerOwned then
+            text = text .. " <LINE> <RGB:0.4,0.8,1> PLAYER CONTROL: <LINE> "
+            text = text .. " <RGB:0.8,0.8,0.8> Leader: " .. tostring(f.leaderUsername or "Unknown") .. " <LINE> "
+            text = text .. " Control Mode: " .. tostring(f.controlMode or "HybridManual") .. " <LINE> "
+            text = text .. " Leadership State: " .. tostring(f.leadershipState or "Active") .. " <LINE> "
+        end
     end
     
     -- Economy

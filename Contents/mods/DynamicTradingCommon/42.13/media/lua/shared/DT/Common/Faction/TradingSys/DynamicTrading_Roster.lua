@@ -149,7 +149,10 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         returnStatus = npcData.returnStatus,
         master = npcData.master,
         isFemale = npcData.isFemale,
-        identitySeed = npcData.identitySeed or 1
+        identitySeed = npcData.identitySeed or 1,
+        linkedWorkerID = npcData.linkedWorkerID,
+        ownerUsername = npcData.ownerUsername,
+        isPlayerFactionTrader = npcData.isPlayerFactionTrader == true
     }
 
     -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
@@ -235,7 +238,54 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         registry.incapState = npcData and npcData.incapState or registry.incapState
         registry.returnTime = returnTime
         registry.returnStatus = returnStatus
+        registry.linkedWorkerID = npcData and npcData.linkedWorkerID or registry.linkedWorkerID
+        registry.ownerUsername = npcData and npcData.ownerUsername or registry.ownerUsername
+        registry.isPlayerFactionTrader = npcData and (npcData.isPlayerFactionTrader == true) or registry.isPlayerFactionTrader
         -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
+    end
+
+    local linkedWorkerID = (npcData and npcData.linkedWorkerID) or (data.Souls[uuid] and data.Souls[uuid].linkedWorkerID) or nil
+    local factionID = (npcData and npcData.factionID) or (data.Souls[uuid] and data.Souls[uuid].factionID) or nil
+    if linkedWorkerID and factionID and DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
+        local faction = DynamicTrading_Factions.GetFaction(factionID)
+        if faction and faction.playerOwned then
+            local changed = false
+            faction.activeTradeWorkerIDs = type(faction.activeTradeWorkerIDs) == "table" and faction.activeTradeWorkerIDs or {}
+            faction.tradeEligibleWorkerIDs = type(faction.tradeEligibleWorkerIDs) == "table" and faction.tradeEligibleWorkerIDs or {}
+            faction.tradeWorkerSouls = type(faction.tradeWorkerSouls) == "table" and faction.tradeWorkerSouls or {}
+
+            local shouldBeActive = (status == "Away" or status == "Trading")
+            if shouldBeActive then
+                if faction.activeTradeWorkerIDs[linkedWorkerID] ~= true then
+                    changed = true
+                end
+                faction.activeTradeWorkerIDs[linkedWorkerID] = true
+                if faction.tradeWorkerSouls[linkedWorkerID] ~= uuid then
+                    faction.tradeWorkerSouls[linkedWorkerID] = uuid
+                    changed = true
+                end
+            else
+                if faction.activeTradeWorkerIDs[linkedWorkerID] ~= nil then
+                    faction.activeTradeWorkerIDs[linkedWorkerID] = nil
+                    changed = true
+                end
+            end
+
+            if status == "Dead" then
+                if faction.tradeEligibleWorkerIDs[linkedWorkerID] ~= nil then
+                    faction.tradeEligibleWorkerIDs[linkedWorkerID] = nil
+                    changed = true
+                end
+                if faction.tradeWorkerSouls[linkedWorkerID] == uuid then
+                    faction.tradeWorkerSouls[linkedWorkerID] = nil
+                    changed = true
+                end
+            end
+
+            if changed then
+                ModData.transmit("DynamicTrading_Factions")
+            end
+        end
     end
     
     DynamicTrading.Log("DTCommons", "Roster", "Status", "Updated status for " .. uuid .. " to " .. (status or "nil") .. " (Return in: " .. tostring(returnTime) .. " as " .. tostring(returnStatus) .. ")")
@@ -350,6 +400,28 @@ function DynamicTrading_Roster.RemoveSoul(factionID, count)
         end
     end
     -- ModData.transmit(MOD_DATA_KEY) -- Disabled global broadcast
+end
+
+function DynamicTrading_Roster.RemoveSpecificSoul(uuid)
+    if not uuid then return false end
+
+    local data = ModData.get(MOD_DATA_KEY)
+    if not data or not data.Souls or not data.Souls[uuid] then
+        return false
+    end
+
+    local factionID = data.Souls[uuid].factionID
+    if factionID and data.FactionMembers and data.FactionMembers[factionID] then
+        for index = #data.FactionMembers[factionID], 1, -1 do
+            if data.FactionMembers[factionID][index] == uuid then
+                table.remove(data.FactionMembers[factionID], index)
+            end
+        end
+    end
+
+    data.Souls[uuid] = nil
+    if ModData.remove then ModData.remove("DTSOUL_" .. uuid) end
+    return true
 end
 
 function DynamicTrading_Roster.ClearSouls(factionID)
