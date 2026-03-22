@@ -194,6 +194,21 @@ function DTNPCClient.OnServerCommand(module, command, args)
         end
         
         DTNPCClient.RemoveFromCache(uuid, outfitID)
+
+        if DT_V2_RadarManager then
+            if DT_V2_RadarManager.ClientRoster and DT_V2_RadarManager.ClientRoster.Souls then
+                DT_V2_RadarManager.ClientRoster.Souls[uuid] = nil
+            end
+            DT_V2_RadarManager.FoundTraders[uuid] = nil
+        end
+
+        if DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Traders then
+            DynamicTrading_Client.Cache.Traders[uuid] = nil
+        end
+
+        if DT_V2_RadarWindow and DT_V2_RadarWindow.instance and DT_V2_RadarWindow.instance.refresh then
+            DT_V2_RadarWindow.instance:refresh()
+        end
         return
     end
 

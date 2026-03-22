@@ -181,6 +181,10 @@ local function getTravelTotalHours()
     )
 end
 
+local function formatWholeAmount(value)
+    return string.format("%.0f", math.max(0, tonumber(value) or 0))
+end
+
 local function buildProgressTokens(worker, progressHours, cycleHours, remainingWorldHours)
     local place = Interaction.GetPlaceLabel(worker)
     return {
@@ -254,6 +258,83 @@ function Interaction.GetProgressDescriptor(worker, profile)
     local template = getInteractionEntry("Progress", jobKey .. ".Active")
     if type(template) ~= "table" then
         return nil
+    end
+
+    if jobKey == tostring((Config.JobTypes or {}).Scavenge or "Scavenge") then
+        local workTarget = math.max(
+            1,
+            tonumber(worker.workTarget)
+                or tonumber(Config.GetEffectiveWorkTarget and Config.GetEffectiveWorkTarget(worker, profile))
+                or tonumber(Config.GetEffectiveCycleHours and Config.GetEffectiveCycleHours(worker, profile))
+                or tonumber(profile and profile.cycleHours)
+                or 1
+        )
+        local progressAmount = math.max(0, tonumber(worker.workProgress) or 0)
+        if progressAmount > workTarget then
+            progressAmount = progressAmount % workTarget
+        end
+
+        local baseSpeed = math.max(
+            0.01,
+            tonumber(worker.baseWorkSpeedMultiplier)
+                or tonumber(Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile))
+                or 1
+        )
+        local archetypeSpeed = math.max(
+            0.01,
+            tonumber(Config.GetJobSpeedMultiplier and Config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1) or 1
+        )
+        local equipmentSpeed = math.max(0.01, tonumber(worker.scavengeSearchSpeedMultiplier) or 1)
+        local effectiveSpeed = baseSpeed * archetypeSpeed * equipmentSpeed
+        local baseWorkPerHour = math.max(
+            0.01,
+            tonumber(Config.GetScavengeBaseWorkPerHour and Config.GetScavengeBaseWorkPerHour())
+                or 1
+        )
+        local effectiveWorkPerHour = baseWorkPerHour * effectiveSpeed
+        local remainingWorkAmount = math.max(0, workTarget - progressAmount)
+        local remainingWorldHours = effectiveWorkPerHour > 0 and (remainingWorkAmount / effectiveWorkPerHour) or nil
+
+        return {
+            label = DynamicTrading.FormatInteractionString(template.activeText, {
+                place = Interaction.GetPlaceLabel(worker),
+                count = tostring(math.max(0, tonumber(worker and worker.outputCount) or 0)),
+                eta = formatDurationHours(remainingWorldHours),
+                progress = formatWholeAmount(progressAmount),
+                total = formatWholeAmount(workTarget)
+            }),
+            displayText = DynamicTrading.FormatInteractionString(template.activeText, {
+                place = Interaction.GetPlaceLabel(worker),
+                count = tostring(math.max(0, tonumber(worker and worker.outputCount) or 0)),
+                eta = formatDurationHours(remainingWorldHours),
+                progress = formatWholeAmount(progressAmount),
+                total = formatWholeAmount(workTarget)
+            }),
+            fillRatio = math.max(0, math.min(1, progressAmount / workTarget)),
+            captionText = DynamicTrading.FormatInteractionString(template.captionText, {
+                place = Interaction.GetPlaceLabel(worker),
+                count = tostring(math.max(0, tonumber(worker and worker.outputCount) or 0)),
+                eta = formatDurationHours(remainingWorldHours),
+                progress = formatWholeAmount(progressAmount),
+                total = formatWholeAmount(workTarget)
+            }),
+            summaryText = formatWholeAmount(progressAmount)
+                .. " / "
+                .. formatWholeAmount(workTarget)
+                .. " work | Speed x"
+                .. formatDecimal(effectiveSpeed, 2),
+            progressAmount = progressAmount,
+            workTarget = workTarget,
+            progressHours = progressAmount,
+            cycleHours = workTarget,
+            remainingWorldHours = remainingWorldHours,
+            baseSpeedMultiplier = baseSpeed,
+            archetypeSpeedMultiplier = archetypeSpeed,
+            equipmentSpeedMultiplier = equipmentSpeed,
+            effectiveSpeedMultiplier = effectiveSpeed,
+            effectiveWorkPerHour = effectiveWorkPerHour,
+            color = template.color
+        }
     end
 
     local cycleHours = math.max(

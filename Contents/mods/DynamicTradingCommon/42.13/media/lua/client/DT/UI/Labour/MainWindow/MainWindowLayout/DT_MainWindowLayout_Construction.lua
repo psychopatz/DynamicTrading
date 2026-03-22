@@ -78,21 +78,16 @@ function DT_MainWindow:createChildren()
     MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
     self:addChild(self.btnToggleJob)
 
-    self.btnCycleJob = ISButton:new(240, buttonY, 110, 28, "Change Job", self, self.onCycleJob)
-    self.btnCycleJob:initialise()
-    self.btnCycleJob:setEnable(false)
-    self:addChild(self.btnCycleJob)
-
-    self.btnWarehouse = ISButton:new(360, buttonY, 150, 28, "Warehouse", self, self.onOpenWarehouse)
+    self.btnWarehouse = ISButton:new(240, buttonY, 130, 28, "Warehouse", self, self.onOpenWarehouse)
     self.btnWarehouse:initialise()
     self.btnWarehouse:setEnable(false)
     self:addChild(self.btnWarehouse)
 
-    self.btnHelp = ISButton:new(520, buttonY, 80, 28, "Help", self, self.onOpenHelp)
+    self.btnHelp = ISButton:new(380, buttonY, 80, 28, "Help", self, self.onOpenHelp)
     self.btnHelp:initialise()
     self:addChild(self.btnHelp)
 
-    self.btnFaction = ISButton:new(610, buttonY, 160, 28, "Faction", self, self.onOpenFaction)
+    self.btnFaction = ISButton:new(470, buttonY, 160, 28, "Faction", self, self.onOpenFaction)
     self.btnFaction:initialise()
     self:addChild(self.btnFaction)
 
@@ -113,6 +108,11 @@ function DT_MainWindow:createChildren()
     end
     self.reservePanel:setAnchorRight(true)
     self:addChild(self.reservePanel)
+
+    self.btnCycleJob = ISButton:new(0, 0, 96, 24, "Change Job", self, self.onCycleJob)
+    self.btnCycleJob:initialise()
+    self.btnCycleJob:setEnable(false)
+    self.reservePanel:addChild(self.btnCycleJob)
 
     self.detailPanel = ISPanel:new(rightX, detailY, rightWidth, detailHeight)
     self.detailPanel:initialise()

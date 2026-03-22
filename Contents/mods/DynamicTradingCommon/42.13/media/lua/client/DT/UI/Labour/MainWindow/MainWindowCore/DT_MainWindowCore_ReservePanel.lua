@@ -207,6 +207,14 @@ function LabourProfileCard:prerender()
         self.btnInventory:setHeight(inventoryButtonHeight)
     end
 
+    local nextButtonY = portraitY + portraitSize + 8 + inventoryButtonHeight + 6
+    if self.ownerWindow and self.ownerWindow.btnCycleJob then
+        self.ownerWindow.btnCycleJob:setX(portraitX)
+        self.ownerWindow.btnCycleJob:setY(nextButtonY)
+        self.ownerWindow.btnCycleJob:setWidth(portraitSize)
+        self.ownerWindow.btnCycleJob:setHeight(inventoryButtonHeight)
+    end
+
     self:drawReserveBar(
         barsX,
         topY,

@@ -32,6 +32,21 @@ local function shallowCopy(source)
     return copy
 end
 
+local function clearFactionSoulCache(rosterData, factionID)
+    if type(rosterData) ~= "table" or type(rosterData.Souls) ~= "table" then
+        return
+    end
+
+    local members = rosterData.FactionMembers and rosterData.FactionMembers[factionID]
+    if type(members) ~= "table" then
+        return
+    end
+
+    for _, uuid in ipairs(members) do
+        rosterData.Souls[uuid] = nil
+    end
+end
+
 local function resolveFactionData()
     local merged = shallowCopy(DT_FactionInfoWindow.cachedFactionData)
     local factionData = ModData.get("DynamicTrading_Factions")
@@ -409,12 +424,11 @@ local function onServerCommand(module, command, args)
             DT_FactionInfoWindow.cachedOwnedFactionStatus = args.ownedStatus or DT_FactionInfoWindow.cachedOwnedFactionStatus
             
             -- [V1 PARITY] Sink roster souls into ModData for legacy V1 logic (Signal Panel, etc)
-            if args.roster and args.roster.Souls then
+            if args.roster then
                 local localRoster = ModData.getOrCreate("DynamicTrading_Roster")
-                localRoster.Souls = localRoster.Souls or {}
-                for uuid, soul in pairs(args.roster.Souls) do
-                    localRoster.Souls[uuid] = soul
-                end
+                localRoster.Souls = shallowCopy(args.roster.Souls)
+                localRoster.FactionMembers = shallowCopy(args.roster.FactionMembers)
+                localRoster.Traders = shallowCopy(args.roster.Traders)
             end
 
             -- Populate
@@ -423,15 +437,34 @@ local function onServerCommand(module, command, args)
     elseif command == "SyncFactionRoster" then
         -- Detailed souls for a specific faction arrived
         local factionID = args.factionID
-        local souls = args.souls
+        local souls = args.souls or {}
+        local members = args.members or {}
         
         DT_FactionInfoWindow.cachedRosterData = DT_FactionInfoWindow.cachedRosterData or {}
         DT_FactionInfoWindow.cachedRosterData.Souls = DT_FactionInfoWindow.cachedRosterData.Souls or {}
+        DT_FactionInfoWindow.cachedRosterData.FactionMembers = DT_FactionInfoWindow.cachedRosterData.FactionMembers or {}
+
+        clearFactionSoulCache(DT_FactionInfoWindow.cachedRosterData, factionID)
+        DT_FactionInfoWindow.cachedRosterData.FactionMembers[factionID] = members
         
-        -- Merge the new souls into our cache
+        -- Replace this faction's soul subset in our cache
         for uuid, soul in pairs(souls) do
             DT_FactionInfoWindow.cachedRosterData.Souls[uuid] = soul
         end
+
+        local localRoster = ModData.getOrCreate("DynamicTrading_Roster")
+        local localSouls = localRoster.Souls or {}
+        local localMembers = localRoster.FactionMembers or {}
+        clearFactionSoulCache({
+            Souls = localSouls,
+            FactionMembers = localMembers
+        }, factionID)
+        localMembers[factionID] = members
+        for uuid, soul in pairs(souls) do
+            localSouls[uuid] = soul
+        end
+        localRoster.Souls = localSouls
+        localRoster.FactionMembers = localMembers
         
         -- If this is the currently selected faction, refresh the population tab
         if args.ownedStatus then

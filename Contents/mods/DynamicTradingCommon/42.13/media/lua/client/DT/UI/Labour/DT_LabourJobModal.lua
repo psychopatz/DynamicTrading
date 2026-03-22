@@ -64,12 +64,11 @@ function DT_LabourJobModal:createChildren()
     local pad = 10
     local th = self:titleBarHeight()
     local contentY = th + pad
-    local contentWidth = self.width - (pad * 2)
     local optionCount = math.max(1, #(self.jobOptions or {}))
     local tickBoxY = contentY + 48
     local tickBoxSpacing = 20
     local tickBoxListHeight = (optionCount * tickBoxSpacing) + 20
-    local buttonY = tickBoxY + tickBoxListHeight + 10
+    local buttonY = tickBoxY + tickBoxListHeight + 14
 
     self.promptLabel = ISLabel:new(pad, contentY, 20, tostring(self.promptText or "Choose a job."), 1, 1, 1, 1, UIFont.Small, true)
     self.promptLabel:initialise()
@@ -111,6 +110,11 @@ function DT_LabourJobModal:createChildren()
     self.btnConfirm:initialise()
     self.btnConfirm:instantiate()
     self:addChild(self.btnConfirm)
+
+    self.btnAutoRepeat = ISButton:new(math.floor((self.width - 150) / 2), buttonY, 150, 24, "", self, self.onToggleAutoRepeat)
+    self.btnAutoRepeat:initialise()
+    self.btnAutoRepeat:instantiate()
+    self:addChild(self.btnAutoRepeat)
 
     self.btnCancel = ISButton:new(self.width - 100, buttonY, 90, 24, "Cancel", self, self.onCancel)
     self.btnCancel:initialise()
@@ -156,15 +160,24 @@ function DT_LabourJobModal:onJobSelected(index, selected)
 end
 
 function DT_LabourJobModal:updateConfirmState()
+    if self.btnAutoRepeat then
+        self.btnAutoRepeat:setTitle("Auto Repeat: " .. (self.autoRepeatJob == true and "On" or "Off"))
+    end
+
     if self.btnConfirm then
         self.btnConfirm:setEnable(self.selectedOptionIndex ~= nil and self.selectedJobType ~= nil)
     end
 end
 
+function DT_LabourJobModal:onToggleAutoRepeat()
+    self.autoRepeatJob = not (self.autoRepeatJob == true)
+    self:updateConfirmState()
+end
+
 function DT_LabourJobModal:onConfirm()
     local option = self.selectedOptionIndex and self.jobOptions[self.selectedOptionIndex] or nil
     if self.onConfirmCallback and option then
-        self.onConfirmCallback(option.jobType, option)
+        self.onConfirmCallback(option.jobType, option, self.autoRepeatJob == true)
     end
     self:close()
 end
@@ -207,7 +220,7 @@ function DT_LabourJobModal.Open(args)
         currentJobLabel = jobOptions[1].label
     end
 
-    local width = 300
+    local width = 420
     local height = 132 + (#jobOptions * 20)
     local x = (getCore():getScreenWidth() - width) / 2
     local y = (getCore():getScreenHeight() - height) / 2
@@ -218,6 +231,7 @@ function DT_LabourJobModal.Open(args)
     modal.currentJobLabel = tostring(currentJobLabel or "Unknown")
     modal.jobOptions = jobOptions
     modal.selectedJobType = selectedJobType
+    modal.autoRepeatJob = args.autoRepeatJob == true or args.autoRepeatScavenge == true
     modal.onConfirmCallback = args.onConfirm
     modal:initialise()
     modal:instantiate()
@@ -240,6 +254,7 @@ function DT_LabourJobModal:new(x, y, width, height)
     o.jobOptions = {}
     o.selectedJobType = nil
     o.selectedOptionIndex = nil
+    o.autoRepeatJob = false
     o.onConfirmCallback = nil
     o.updatingSelection = false
     return o

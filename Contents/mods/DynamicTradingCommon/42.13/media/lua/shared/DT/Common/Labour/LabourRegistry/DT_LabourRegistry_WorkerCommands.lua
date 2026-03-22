@@ -58,11 +58,21 @@ function Registry.SetWorkerJobEnabled(worker, enabled)
     end
 end
 
+function Registry.SetWorkerAutoRepeatScavenge(worker, enabled)
+    if not worker then
+        return
+    end
+
+    worker.autoRepeatJob = enabled == true
+    worker.autoRepeatScavenge = enabled == true
+end
+
 function Registry.SetWorkerJobType(worker, jobType)
     if not worker then return end
     worker.jobType = Config.NormalizeJobType(jobType)
     worker.profession = worker.jobType
     worker.workProgress = 0
+    worker.workTarget = nil
     worker.returnReason = nil
     if worker.presenceState == nil then
         worker.presenceState = Config.PresenceStates.Home

@@ -69,6 +69,8 @@ local function getScavengeProvisionWarningText(window)
         .. "Calories: " .. Internal.formatReserveValue(totalCalories)
         .. "\nHydration: " .. Internal.formatReserveValue(totalHydration)
         .. "\n\n"
+        .. "Auto repeat: " .. ((((worker and worker.autoRepeatJob == true) or (worker and worker.autoRepeatScavenge == true)) and "On") or "Off")
+        .. "\n\n"
         .. warningLine
         .. "\n\nPress Yes to start anyway, or No to provision them first."
 end
@@ -98,7 +100,7 @@ local function getStopJobConfirmationText(window, normalizedJob, presenceState)
     if normalizedJob == ((config.JobTypes or {}).Scavenge) then
         if tostring(presenceState or "") ~= homeState then
             return "Call " .. workerName .. " back home?\n\n"
-                .. "They will stop the current scavenging trip and return instead of continuing the run.\n\n"
+                .. "They will stop the current scavenging trip, return home, and stay there until you start them again.\n\n"
                 .. "Press Yes to recall them, or No to keep them scavenging."
         end
 
@@ -190,6 +192,29 @@ function DT_MainWindow:onToggleJob()
     sendToggleJobCommand(self, enabled, normalizedJob, presenceState)
 end
 
+function DT_MainWindow:onToggleAutoRepeat()
+    if not self.selectedWorkerSummary then
+        self:updateStatus("Select a worker first.")
+        return
+    end
+
+    local config = Internal.Config or {}
+    local worker = getSelectedWorkerForAction(self)
+    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType((worker and worker.jobType) or self.selectedWorkerSummary.jobType)
+        or tostring((worker and worker.jobType) or self.selectedWorkerSummary.jobType or "")
+    if normalizedJob ~= ((config.JobTypes or {}).Scavenge) then
+        self:updateStatus("Auto repeat is only available for scavengers.")
+        return
+    end
+
+    local enabled = not ((worker and worker.autoRepeatScavenge == true) or (self.selectedWorkerSummary.autoRepeatScavenge == true))
+    self:sendLabourCommand("SetWorkerAutoRepeatScavenge", {
+        workerID = self.selectedWorkerSummary.workerID,
+        enabled = enabled
+    })
+    self:updateStatus(enabled and "Auto repeat enabled for scavenging." or "Auto repeat disabled for scavenging.")
+end
+
 function DT_MainWindow:onCycleJob()
     if not self.selectedWorkerSummary then
         self:updateStatus("Select a worker first.")
@@ -201,24 +226,48 @@ function DT_MainWindow:onCycleJob()
     local workerID = self.selectedWorkerSummary.workerID
     local currentJobType = worker and worker.jobType or self.selectedWorkerSummary.jobType
     local normalizedJobType = config.NormalizeJobType and config.NormalizeJobType(currentJobType) or tostring(currentJobType or "")
+    local currentAutoRepeat = (worker and (worker.autoRepeatJob == true or worker.autoRepeatScavenge == true))
+        or (self.selectedWorkerSummary.autoRepeatJob == true)
+        or (self.selectedWorkerSummary.autoRepeatScavenge == true)
     local workerName = tostring((worker and worker.name) or self.selectedWorkerSummary.name or self.selectedWorkerSummary.workerID)
 
     local modal = DT_LabourJobModal.Open({
         title = "Change Job",
         promptText = "Choose a new job for " .. workerName .. ".",
         selectedJobType = normalizedJobType,
-        onConfirm = function(jobType, option)
+        autoRepeatJob = currentAutoRepeat,
+        onConfirm = function(jobType, option, autoRepeatJob)
             local selectedJobType = config.NormalizeJobType and config.NormalizeJobType(jobType) or tostring(jobType or "")
-            if selectedJobType == normalizedJobType then
-                self:updateStatus(workerName .. " is already assigned to " .. tostring(option and option.label or selectedJobType) .. ".")
+            local targetAutoRepeat = autoRepeatJob == true
+            local changedJob = selectedJobType ~= normalizedJobType
+            local changedAutoRepeat = targetAutoRepeat ~= currentAutoRepeat
+
+            if not changedJob and not changedAutoRepeat then
+                self:updateStatus(workerName .. " is already set to that job and auto-repeat state.")
                 return
             end
 
-            self:sendLabourCommand("SetWorkerJobType", {
-                workerID = workerID,
-                jobType = selectedJobType
-            })
-            self:updateStatus("Changing worker job to " .. tostring(option and option.label or selectedJobType) .. "...")
+            if changedJob then
+                self:sendLabourCommand("SetWorkerJobType", {
+                    workerID = workerID,
+                    jobType = selectedJobType
+                })
+            end
+
+            if changedAutoRepeat or changedJob then
+                self:sendLabourCommand("SetWorkerAutoRepeatScavenge", {
+                    workerID = workerID,
+                    enabled = targetAutoRepeat
+                })
+            end
+
+            if changedJob and changedAutoRepeat then
+                self:updateStatus("Changing worker job and auto-repeat settings...")
+            elseif changedJob then
+                self:updateStatus("Changing worker job to " .. tostring(option and option.label or selectedJobType) .. "...")
+            else
+                self:updateStatus(targetAutoRepeat and "Auto repeat enabled." or "Auto repeat disabled.")
+            end
         end
     })
 

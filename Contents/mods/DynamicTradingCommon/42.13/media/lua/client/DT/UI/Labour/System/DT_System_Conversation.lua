@@ -27,13 +27,22 @@ function System.GetConversationSourceNPCID(ui)
 end
 
 function System.GetConversationTraderID(ui)
+    local npc = ui and ui.interactionObj or nil
+    local npcData = npc and DTNPC and DTNPC.GetData and DTNPC.GetData(npc) or nil
+    if npcData and npcData.uuid then
+        return tostring(npcData.uuid)
+    end
+
     local target = ui and ui.target or nil
-    return target and (target.uuid or target.traderID or target.id) or nil
+    local traderID = target and (target.uuid or target.traderID or target.id) or nil
+    return traderID and tostring(traderID) or nil
 end
 
 function System.GetConversationEffectiveReputation(ui)
     local traderID = System.GetConversationTraderID(ui)
-    local factionID = ui and ui.target and ui.target.factionID or nil
+    local npc = ui and ui.interactionObj or nil
+    local npcData = npc and DTNPC and DTNPC.GetData and DTNPC.GetData(npc) or nil
+    local factionID = (npcData and npcData.factionID) or (ui and ui.target and ui.target.factionID) or nil
     if not traderID or not DT_Reputation or not DT_Reputation.GetEffectiveRep then
         return 0
     end
@@ -105,16 +114,27 @@ function System.BuildRecruitArgs(ui, archetypeID)
         archetypeID or target.archetype or (npcData and (npcData.archetypeID or npcData.occupation)) or System.ResolveArchetype(target)
     )
     local defaultJobType = config.GetDefaultJobForArchetype(normalizedArchetype)
+    local traderUUID = (npcData and npcData.uuid) or System.GetConversationTraderID(ui)
+    local factionID = (npcData and npcData.factionID) or target.factionID
+    local identitySeed = (npcData and npcData.identitySeed) or target.identitySeed or nil
+    local isFemale = nil
+    if npcData and npcData.isFemale ~= nil then
+        isFemale = npcData.isFemale
+    elseif npc and npc.isFemale then
+        isFemale = npc:isFemale()
+    else
+        isFemale = target.gender == "Female"
+    end
 
     return {
         jobType = defaultJobType,
         profession = defaultJobType,
-        name = target.name or (npcData and npcData.name) or "Worker",
+        name = (npcData and npcData.name) or target.name or "Worker",
         archetypeID = normalizedArchetype,
-        traderUUID = System.GetConversationTraderID(ui),
-        factionID = target.factionID,
-        identitySeed = target.identitySeed or (npcData and npcData.identitySeed) or nil,
-        isFemale = (npc.isFemale and npc:isFemale()) or target.gender == "Female",
+        traderUUID = traderUUID and tostring(traderUUID) or nil,
+        factionID = factionID,
+        identitySeed = identitySeed,
+        isFemale = isFemale,
         sourceNPCID = tostring(sourceNPCID),
         sourceNPCType = "ConversationUI",
         homeX = homeX,

@@ -57,6 +57,26 @@ local function onServerCommand(module, command, args)
         ui:speak(args.message)
     end
     if args.success then
+        local recruitedTraderUUID = args.recruitedTraderUUID and tostring(args.recruitedTraderUUID) or nil
+        if recruitedTraderUUID then
+            if DT_V2_RadarManager then
+                if DT_V2_RadarManager.ClientRoster and DT_V2_RadarManager.ClientRoster.Souls then
+                    DT_V2_RadarManager.ClientRoster.Souls[recruitedTraderUUID] = nil
+                end
+                DT_V2_RadarManager.FoundTraders[recruitedTraderUUID] = nil
+                if DT_V2_RadarManager.RequestRoster then
+                    DT_V2_RadarManager.RequestRoster()
+                end
+            end
+
+            if DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Traders then
+                DynamicTrading_Client.Cache.Traders[recruitedTraderUUID] = nil
+            end
+
+            if DT_V2_RadarWindow and DT_V2_RadarWindow.instance and DT_V2_RadarWindow.instance.refresh then
+                DT_V2_RadarWindow.instance:refresh()
+            end
+        end
         System.OpenWindow()
     end
     ui:updateOptions(ui.baseOptions or {})

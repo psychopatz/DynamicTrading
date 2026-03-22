@@ -25,27 +25,91 @@ local function getCurrentDay()
     return math.floor((Config.GetCurrentHour() or 0) / Config.HOURS_PER_DAY)
 end
 
+local function syncRadarRoster(player)
+    if not player or not Internal.sendResponse then
+        return
+    end
+
+    local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    local factionData = ModData.get("DynamicTrading_Factions") or {}
+    local minimalSouls = {}
+
+    if rosterData.Souls then
+        for uuid, soul in pairs(rosterData.Souls) do
+            if soul.status == "Trading" then
+                minimalSouls[uuid] = soul
+            end
+        end
+    end
+
+    Internal.sendResponse(player, "DynamicTrading_V2", "SyncRoster", {
+        roster = {
+            FactionMembers = rosterData.FactionMembers,
+            Souls = minimalSouls,
+            Traders = rosterData.Traders
+        },
+        factions = factionData
+    })
+end
+Internal.syncRadarRoster = syncRadarRoster
+
+local function normalizeRecruitID(value)
+    if value == nil then
+        return nil
+    end
+
+    local text = tostring(value)
+    if text == "" then
+        return nil
+    end
+
+    return text
+end
+
+local function getRecruitSourceSoul(uuid)
+    if not uuid or not DynamicTrading_Roster then
+        return nil
+    end
+
+    if DynamicTrading_Roster.GetSoul then
+        local soul = DynamicTrading_Roster.GetSoul(uuid)
+        if soul then
+            return soul
+        end
+    end
+
+    if DynamicTrading_Roster.GetSoulRegistry then
+        return DynamicTrading_Roster.GetSoulRegistry(uuid)
+    end
+
+    return nil
+end
+
 local function resolveRecruitSourceUUID(args)
     if type(args) ~= "table" then
         return nil
     end
 
-    if args.traderUUID and tostring(args.traderUUID) ~= "" then
-        return tostring(args.traderUUID)
+    local traderUUID = normalizeRecruitID(args.traderUUID)
+    local sourceNPCID = normalizeRecruitID(args.sourceNPCID)
+
+    if traderUUID and getRecruitSourceSoul(traderUUID) then
+        return traderUUID
     end
-    if args.sourceNPCID and tostring(args.sourceNPCID) ~= "" then
-        return tostring(args.sourceNPCID)
+    if sourceNPCID and getRecruitSourceSoul(sourceNPCID) then
+        return sourceNPCID
     end
-    return nil
+
+    return traderUUID or sourceNPCID
 end
 
 local function detachRecruitedSourceNPC(args)
     local traderUUID = resolveRecruitSourceUUID(args)
     if not traderUUID then
-        return nil
+        return nil, nil
     end
 
-    local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry and DynamicTrading_Roster.GetSoulRegistry(traderUUID) or nil
+    local soul = getRecruitSourceSoul(traderUUID)
     local factionID = soul and soul.factionID or (args and args.factionID) or nil
     local removed = false
 
@@ -80,18 +144,26 @@ local function detachRecruitedSourceNPC(args)
         end
     end
 
-    return traderUUID
+    return traderUUID, soul
 end
+Internal.detachRecruitedSourceNPC = detachRecruitedSourceNPC
 
-local function createWorkerFromRecruitArgs(owner, args)
-    local archetypeID = Config.NormalizeArchetypeID(args.archetypeID or args.profession)
+local function createWorkerFromRecruitArgs(owner, args, sourceSoul)
+    local recruitUUID = resolveRecruitSourceUUID(args)
+    sourceSoul = sourceSoul or getRecruitSourceSoul(recruitUUID)
+
+    local archetypeID = Config.NormalizeArchetypeID(args.archetypeID or args.profession or (sourceSoul and sourceSoul.archetypeID))
+    local isFemale = args.isFemale
+    if isFemale == nil and sourceSoul and sourceSoul.isFemale ~= nil then
+        isFemale = sourceSoul.isFemale
+    end
     local worker = Registry.CreateWorker(owner, {
         jobType = args.jobType or Config.GetDefaultJobForArchetype(archetypeID),
         profession = args.jobType or Config.GetDefaultJobForArchetype(archetypeID),
         archetypeID = archetypeID,
-        name = args.name,
-        isFemale = args.isFemale,
-        identitySeed = args.identitySeed,
+        name = args.name or (sourceSoul and sourceSoul.name),
+        isFemale = isFemale,
+        identitySeed = args.identitySeed or (sourceSoul and sourceSoul.identitySeed),
         homeX = args.homeX or args.spawnX or args.x,
         homeY = args.homeY or args.spawnY or args.y,
         homeZ = args.homeZ or args.spawnZ or args.z or 0,
@@ -141,7 +213,8 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
         return
     end
 
-    local reputation = Internal.getEffectiveRecruitReputation(player, args.traderUUID or sourceNPCID, args.factionID)
+    local recruitSourceUUID = resolveRecruitSourceUUID(args)
+    local reputation = Internal.getEffectiveRecruitReputation(player, recruitSourceUUID or sourceNPCID, args.factionID)
     if reputation < Config.RECRUIT_REQUIRED_REPUTATION then
         Internal.syncRecruitAttemptResult(player, {
             success = false,
@@ -196,9 +269,9 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
         return
     end
 
-    detachRecruitedSourceNPC(args)
+    local _, sourceSoul = detachRecruitedSourceNPC(args)
 
-    local worker = createWorkerFromRecruitArgs(owner, args)
+    local worker = createWorkerFromRecruitArgs(owner, args, sourceSoul)
     if DynamicTrading_Factions and DynamicTrading_Factions.OnLabourWorkerCreated then
         DynamicTrading_Factions.OnLabourWorkerCreated(owner, worker)
     end
@@ -208,6 +281,7 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
     Internal.syncRecruitAttemptResult(player, {
         success = true,
         sourceNPCID = sourceNPCID,
+        recruitedTraderUUID = recruitSourceUUID or sourceNPCID,
         workerID = worker.workerID,
         reasonCode = "recruited",
         reputation = reputation,
@@ -219,6 +293,7 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
     Internal.syncWorkerDetail(player, worker.workerID)
     Internal.syncWorkerList(player)
     Internal.syncOwnedFactionStatus(player)
+    syncRadarRoster(player)
 end
 
 return Network

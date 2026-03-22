@@ -94,8 +94,8 @@ function Internal.getWorkerProgressData(worker, profile)
         return nil
     end
 
-    data.stored = tonumber(data.progressHours) or 0
-    data.usage = tonumber(data.cycleHours) or 0
+    data.stored = tonumber(data.progressAmount) or tonumber(data.progressHours) or 0
+    data.usage = tonumber(data.workTarget) or tonumber(data.cycleHours) or 0
     data.overflow = 0
     data.daysLeft = nil
     return data

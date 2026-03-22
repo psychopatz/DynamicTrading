@@ -164,6 +164,10 @@ function DT_MainWindow:updateWorkerDetail(worker)
                 MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
             end
         end
+        if self.btnAutoRepeat then
+            self.btnAutoRepeat:setTitle("Auto Repeat: Off")
+            self.btnAutoRepeat:setEnable(false)
+        end
         if self.btnCycleJob then
             self.btnCycleJob:setEnable(false)
         end
@@ -199,6 +203,7 @@ function DT_MainWindow:updateWorkerDetail(worker)
         text = text .. " <RGB:0.72,0.72,0.72> Location State: <RGB:1,1,1> " .. getScavengePresenceDetailLabel(worker) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Travel ETA: <RGB:1,1,1> " .. Internal.formatDecimal(worker.travelHoursRemaining or 0, 2) .. "h <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Return Reason: <RGB:1,1,1> " .. getReturnReasonLabel(worker) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Auto Repeat: <RGB:1,1,1> " .. Internal.formatBool((worker.autoRepeatJob == true) or (worker.autoRepeatScavenge == true)) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Home Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.homeX, worker.homeY, worker.homeZ) .. " <LINE> "
     end
     text = text .. " <RGB:0.72,0.72,0.72> Site State: <RGB:1,1,1> " .. tostring(worker.siteState or "Deferred") .. " <LINE> "
@@ -209,10 +214,11 @@ function DT_MainWindow:updateWorkerDetail(worker)
     if workProgressData then
         text = text .. " <RGB:0.72,0.72,0.72> Current Activity: <RGB:1,1,1> " .. tostring(workProgressData.displayText or workProgressData.label or "Working") .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Activity Progress: <RGB:1,1,1> "
-            .. Internal.formatDecimal(workProgressData.progressHours or 0, 1)
+            .. Internal.formatReserveValue(workProgressData.progressAmount or workProgressData.progressHours or 0)
             .. " / "
-            .. Internal.formatDecimal(workProgressData.cycleHours or 0, 1)
-            .. "h <LINE> "
+            .. Internal.formatReserveValue(workProgressData.workTarget or workProgressData.cycleHours or 0)
+            .. ((normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge)) and " work" or "h")
+            .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Activity ETA: <RGB:1,1,1> "
             .. Internal.formatDurationHours(workProgressData.remainingWorldHours)
             .. " <LINE> "
@@ -293,6 +299,12 @@ function DT_MainWindow:updateWorkerDetail(worker)
                 MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, worker.jobEnabled == true)
             end
         end
+    end
+
+    if self.btnAutoRepeat then
+        local allowAutoRepeat = stateLabel ~= deadState and normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge)
+        self.btnAutoRepeat:setTitle("Auto Repeat: " .. ((((worker.autoRepeatJob == true) or (worker.autoRepeatScavenge == true)) and "On") or "Off"))
+        self.btnAutoRepeat:setEnable(allowAutoRepeat)
     end
 
     if self.btnCycleJob then

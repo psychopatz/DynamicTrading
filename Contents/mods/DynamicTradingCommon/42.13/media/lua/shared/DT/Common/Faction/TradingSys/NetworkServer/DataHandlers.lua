@@ -158,6 +158,7 @@ Handlers.RequestFactionRoster = function(player, args)
     if faction and faction.playerOwned then
         DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionRoster", {
             factionID = factionID,
+            members = {},
             souls = {},
             ownedStatus = DynamicTrading_Factions.GetOwnedFactionStatus(player)
         })
@@ -178,7 +179,9 @@ Handlers.RequestFactionRoster = function(player, args)
     
     DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionRoster", {
         factionID = factionID,
-        souls = factionSouls
+        members = members,
+        souls = factionSouls,
+        ownedStatus = DynamicTrading_Factions and DynamicTrading_Factions.GetOwnedFactionStatus and DynamicTrading_Factions.GetOwnedFactionStatus(player) or nil
     })
 end
 

@@ -30,7 +30,8 @@ local function buildHelpText()
 
         " <RGB:1,1,1> <SIZE:Medium> 4. Search Efficiency <LINE> ",
         " <RGB:0.78,0.78,0.78> Flashlights improve dark-site search speed. Maps and pens help avoid duplicate pool picks. ",
-        "Bags and bulk tools increase how much can be brought back, but they do not make loot magically better. <LINE> <LINE> ",
+        "Bags and bulk tools increase how much can be brought back, but they do not make loot magically better. ",
+        "The scavenge bar tracks total work needed for the next loot roll, while speed decides how quickly that work is completed. <LINE> <LINE> ",
 
         " <RGB:1,1,1> <SIZE:Medium> 5. Trip Flow and Carry Weight <LINE> ",
         " <RGB:0.78,0.78,0.78> Scavengers now run finite trips. They leave ",
@@ -39,6 +40,7 @@ local function buildHelpText()
         "<RGB:1,1,1> Scavenging <RGB:0.78,0.78,0.78> there, then travel ",
         "<RGB:1,1,1> Away <RGB:0.78,0.78,0.78> back home to store the haul. <LINE> ",
         " <RGB:0.78,0.78,0.78> Found loot first goes into the worker's carried haul. When the pack is full, supplies run low, or you call them back, the trip ends and they head home with what they found. <LINE> ",
+        " <RGB:0.88,0.88,0.88> Auto Repeat: <RGB:0.78,0.78,0.78> if enabled, the scavenger will head out again after unloading and restocking, but only when provisions, tools, and warehouse space are ready. <LINE> ",
         " <RGB:0.88,0.88,0.88> Important: <RGB:0.78,0.78,0.78> only the active haul is weight-limited. Provisions and equipment are not counted toward haul weight. <LINE> ",
         " <RGB:0.88,0.88,0.88> Body carry limit: <RGB:0.78,0.78,0.78> controlled by worker archetype and the Labour sandbox carry-weight setting. <LINE> ",
         " <RGB:0.88,0.88,0.88> Container reduction: <RGB:0.78,0.78,0.78> bags apply their capacity and weight reduction before leftover weight hits the body limit. <LINE> <LINE> ",

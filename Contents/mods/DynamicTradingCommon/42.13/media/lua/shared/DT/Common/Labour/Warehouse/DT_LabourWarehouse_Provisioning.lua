@@ -6,6 +6,9 @@ local Config = DT_Labour.Config
 local Nutrition = DT_Labour.Nutrition
 local Registry = DT_Labour.Registry
 local Warehouse = DT_Labour.Warehouse
+local AUTO_SCAVENGE_TOOL_TAGS = {
+    "Scavenge.Haul.Bag"
+}
 
 local function workerHasToolTag(worker, requiredTag)
     Registry.RecalculateWorker(worker)
@@ -30,6 +33,37 @@ local function takeFirstEquipmentEntry(ownerUsername, predicate)
     return nil
 end
 
+local function getEntryTags(entry)
+    if not entry then
+        return {}
+    end
+
+    if type(entry.tags) == "table" and #entry.tags > 0 then
+        return entry.tags
+    end
+
+    if Config.GetItemCombinedTags and entry.fullType then
+        return Config.GetItemCombinedTags(entry.fullType) or {}
+    end
+
+    return entry.tags or {}
+end
+
+local function entryHasToolTag(entry, requiredTag)
+    for _, itemTag in ipairs(getEntryTags(entry)) do
+        if Config.TagMatches and Config.TagMatches(itemTag, requiredTag) then
+            return true
+        end
+    end
+    return false
+end
+
+local function takeFirstEquipmentEntryByTag(ownerUsername, requiredTag)
+    return takeFirstEquipmentEntry(ownerUsername, function(candidate)
+        return entryHasToolTag(candidate, requiredTag)
+    end)
+end
+
 local function restockRequiredTools(worker)
     if not worker then
         return 0
@@ -40,14 +74,7 @@ local function restockRequiredTools(worker)
 
     for _, requiredTag in ipairs(profile.requiredToolTags or {}) do
         if not workerHasToolTag(worker, requiredTag) then
-            local entry = takeFirstEquipmentEntry(worker.ownerUsername, function(candidate)
-                for _, itemTag in ipairs(candidate.tags or {}) do
-                    if Config.TagMatches and Config.TagMatches(itemTag, requiredTag) then
-                        return true
-                    end
-                end
-                return false
-            end)
+            local entry = takeFirstEquipmentEntryByTag(worker.ownerUsername, requiredTag)
             if entry then
                 Registry.AddToolEntry(worker, entry)
                 added = added + 1
@@ -58,17 +85,20 @@ local function restockRequiredTools(worker)
     if Config.NormalizeJobType and Config.NormalizeJobType(worker.jobType) == ((Config.JobTypes or {}).Scavenge) then
         local hasScavengeTool = workerHasToolTag(worker, "Labour.Tool.Scavenge")
         if not hasScavengeTool then
-            local entry = takeFirstEquipmentEntry(worker.ownerUsername, function(candidate)
-                for _, itemTag in ipairs(candidate.tags or {}) do
-                    if Config.TagMatches and Config.TagMatches(itemTag, "Labour.Tool.Scavenge") then
-                        return true
-                    end
-                end
-                return false
-            end)
+            local entry = takeFirstEquipmentEntryByTag(worker.ownerUsername, "Labour.Tool.Scavenge")
             if entry then
                 Registry.AddToolEntry(worker, entry)
                 added = added + 1
+            end
+        end
+
+        for _, requiredTag in ipairs(AUTO_SCAVENGE_TOOL_TAGS) do
+            if not workerHasToolTag(worker, requiredTag) then
+                local entry = takeFirstEquipmentEntryByTag(worker.ownerUsername, requiredTag)
+                if entry then
+                    Registry.AddToolEntry(worker, entry)
+                    added = added + 1
+                end
             end
         end
     end

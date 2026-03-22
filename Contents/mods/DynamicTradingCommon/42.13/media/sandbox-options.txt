@@ -284,14 +284,14 @@ option DynamicTrading.LabourBaseCarryWeight
     translation = DynamicTrading_LabourBaseCarryWeight,
 }
 
-option DynamicTrading.LabourBaseWorkCycleHours
+option DynamicTrading.LabourBaseWorkAmount
 {
-    type = double,
-    default = 16.0,
-    min = 1.0,
-    max = 72.0,
+    type = integer,
+    default = 500,
+    min = 1,
+    max = 5000,
     page = DynamicTradingLabour,
-    translation = DynamicTrading_LabourBaseWorkCycleHours,
+    translation = DynamicTrading_LabourBaseWorkAmount,
 }
 
 option DynamicTrading.LabourBaseWorkMultiplier

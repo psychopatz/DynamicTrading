@@ -5,7 +5,7 @@ DynamicTrading.RegisterInteractionStrings("Labour", "Progress", {
         Active = {
             stateLabel = "Scavenging",
             activeText = "Searching in {place}",
-            captionText = "{eta} to finish search",
+            captionText = "{eta} to finish current work",
             color = { r = 0.94, g = 0.72, b = 0.18 }
         }
     }

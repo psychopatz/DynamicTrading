@@ -2,8 +2,7 @@ local System = DT_System
 local Internal = System.Internal
 
 function System.RecruitFromConversation(ui)
-    local archetypeID = System.ResolveArchetype(ui and ui.target)
-    local args = System.BuildRecruitArgs(ui, archetypeID)
+    local args = System.BuildRecruitArgs(ui)
     if not args then
         return false, "I can't add this NPC to labour from the current conversation."
     end
@@ -13,12 +12,11 @@ function System.RecruitFromConversation(ui)
     end
 
     System.OpenWindow()
-    return true, "For testing, I'll join your labour roster as a " .. tostring(archetypeID) .. "."
+    return true, "For testing, I'll join your labour roster as a " .. tostring(args.archetypeID or "General") .. "."
 end
 
 function System.AttemptRecruitFromConversation(ui)
-    local archetypeID = System.ResolveArchetype(ui and ui.target)
-    local args = System.BuildRecruitArgs(ui, archetypeID)
+    local args = System.BuildRecruitArgs(ui)
     if not args then
         return false, "I can't work out who you're trying to recruit right now."
     end

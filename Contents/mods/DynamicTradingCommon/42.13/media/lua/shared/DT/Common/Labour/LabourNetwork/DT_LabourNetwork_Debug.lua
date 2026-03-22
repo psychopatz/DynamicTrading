@@ -2,6 +2,7 @@ require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
 require "DT/Common/Labour/DT_Labour_Sim"
 require "DT/Common/Labour/DT_Labour_Presentation"
+require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Network = DT_Labour.Network or {}
@@ -42,16 +43,42 @@ Network.Handlers.DebugRecruitWorker = function(player, args)
     local owner = Config.GetOwnerUsername(player)
     local sourceNPCID = args.sourceNPCID and tostring(args.sourceNPCID) or nil
     local worker = sourceNPCID and Registry.FindWorkerBySourceID(owner, sourceNPCID) or nil
+    local recruitedTraderUUID = args.traderUUID or sourceNPCID or nil
 
     if not worker then
+        if Internal.detachRecruitedSourceNPC then
+            local resolvedUUID = Internal.detachRecruitedSourceNPC(args)
+            if resolvedUUID then
+                recruitedTraderUUID = resolvedUUID
+            end
+        end
         worker = Internal.createWorkerFromRecruitArgs(owner, args)
+        if DynamicTrading_Factions and DynamicTrading_Factions.OnLabourWorkerCreated then
+            DynamicTrading_Factions.OnLabourWorkerCreated(owner, worker)
+        end
     end
 
     Registry.Save()
     Sim.ProcessWorker(worker, (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour())
     Presentation.SyncWorker(worker, { player })
+    if Internal.syncRecruitAttemptResult then
+        Internal.syncRecruitAttemptResult(player, {
+            success = true,
+            sourceNPCID = sourceNPCID,
+            recruitedTraderUUID = recruitedTraderUUID and tostring(recruitedTraderUUID) or nil,
+            workerID = worker.workerID,
+            reasonCode = "recruited",
+            message = "For testing, I'll join your labour roster."
+        })
+    end
     Internal.syncWorkerDetail(player, worker.workerID)
     Internal.syncWorkerList(player)
+    if Internal.syncOwnedFactionStatus then
+        Internal.syncOwnedFactionStatus(player)
+    end
+    if Internal.syncRadarRoster then
+        Internal.syncRadarRoster(player)
+    end
 end
 
 return Network

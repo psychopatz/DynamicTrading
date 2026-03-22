@@ -31,6 +31,19 @@ local function clampHours(value)
     return math.max(0, tonumber(value) or 0)
 end
 
+local function hasWarehouseCapacityForScavenge(worker)
+    if not worker or not Warehouse or not Warehouse.GetRemainingCapacity or not Warehouse.GetWorkerWarehouse then
+        return true
+    end
+
+    local warehouse = Warehouse.GetWorkerWarehouse(worker)
+    return math.max(0, tonumber(Warehouse.GetRemainingCapacity(warehouse)) or 0) > 0
+end
+
+local function isAutoRepeatEnabled(worker)
+    return worker and (worker.autoRepeatJob == true or worker.autoRepeatScavenge == true)
+end
+
 local function clampCheckpoint(value, fallback)
     local safeValue = math.floor(tonumber(value) or tonumber(fallback) or 0)
     return math.max(0, safeValue)
@@ -497,6 +510,10 @@ local function completeScavengeReturnHome(worker, currentHour)
     worker.travelHoursRemaining = 0
     worker.dumpCooldownHours = 0
 
+    if not isAutoRepeatEnabled(worker) then
+        worker.jobEnabled = false
+    end
+
     local movedStacks, movedCount, movedRawWeight, leftoverCount = Warehouse.DepositWorkerHaul(worker)
     if movedStacks > 0 then
         worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0) + 1
@@ -598,8 +615,11 @@ function Sim.ProcessWorker(worker, currentHour)
     local speedMultiplier = Config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType)
     local normalizedJobType = Config.NormalizeJobType(worker.jobType)
     local scavengeLoadout = nil
-    local cycleHours = Config.GetEffectiveCycleHours and Config.GetEffectiveCycleHours(worker, profile) or (profile.cycleHours or 24)
+    local cycleHours = Config.GetEffectiveWorkTarget and Config.GetEffectiveWorkTarget(worker, profile)
+        or (Config.GetEffectiveCycleHours and Config.GetEffectiveCycleHours(worker, profile))
+        or (profile.cycleHours or 24)
     local baseWorkSpeedMultiplier = Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile) or 1.0
+    local scavengeBaseWorkPerHour = Config.GetScavengeBaseWorkPerHour and Config.GetScavengeBaseWorkPerHour() or 1.0
     local lastHour = tonumber(worker.lastSimHour) or tonumber(currentHour) or 0
     local deltaHours = math.max(0, currentHour - lastHour)
 
@@ -615,6 +635,7 @@ function Sim.ProcessWorker(worker, currentHour)
 
     Sites.RefreshWorkerSite(worker)
     speedMultiplier = speedMultiplier * (tonumber(baseWorkSpeedMultiplier) or 1)
+    worker.workTarget = cycleHours
     worker.workCycleHours = cycleHours
     worker.baseWorkSpeedMultiplier = baseWorkSpeedMultiplier
 
@@ -730,6 +751,7 @@ function Sim.ProcessWorker(worker, currentHour)
                 and worker.assignedSiteID
                 and toolsReady
                 and (tonumber(worker.haulCount) or 0) <= 0
+                and hasWarehouseCapacityForScavenge(worker)
                 and hasCalories
                 and hasHydration
                 and totalCaloriesAvailable >= outboundCaloriesThreshold
@@ -744,8 +766,9 @@ function Sim.ProcessWorker(worker, currentHour)
             end
 
             if presenceState == Config.PresenceStates.Scavenging and worker.jobEnabled and toolsReady and hasCalories and hasHydration then
+                local effectiveWorkPerHour = math.max(0.01, tonumber(scavengeBaseWorkPerHour) or 1) * math.max(0.01, tonumber(speedMultiplier) or 1)
                 worker.state = Config.States.Working
-                worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
+                worker.workProgress = clampHours(worker.workProgress) + (workableHours * effectiveWorkPerHour)
                 while worker.workProgress >= cycleHours do
                     worker.workProgress = worker.workProgress - cycleHours
 
@@ -776,8 +799,13 @@ function Sim.ProcessWorker(worker, currentHour)
             elseif presenceState == Config.PresenceStates.Home
                 and worker.jobEnabled
                 and worker.assignedSiteID
-                and toolsReady
-                and (totalCaloriesAvailable < outboundCaloriesThreshold or totalHydrationAvailable < outboundHydrationThreshold) then
+                and not hasWarehouseCapacityForScavenge(worker) then
+                worker.state = Config.States.StorageFull
+            elseif presenceState == Config.PresenceStates.Home
+                and worker.jobEnabled
+                and worker.assignedSiteID
+                and (totalCaloriesAvailable < outboundCaloriesThreshold
+                    or totalHydrationAvailable < outboundHydrationThreshold) then
                 worker.state = Config.States.WarehouseShortage
             elseif presenceState == Config.PresenceStates.Scavenging and worker.jobEnabled and toolsReady then
                 worker.state = Config.States.Working
