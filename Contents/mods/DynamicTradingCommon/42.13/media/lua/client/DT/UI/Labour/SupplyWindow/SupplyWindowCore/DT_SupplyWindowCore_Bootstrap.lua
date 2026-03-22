@@ -11,8 +11,20 @@ Internal.NutritionPreviewCache = Internal.NutritionPreviewCache or {}
 Internal.TextureCache = Internal.TextureCache or {}
 Internal.DETAIL_SUPPORT_PANEL_HEIGHT = 56
 Internal.DETAIL_SUPPORT_ICON_SIZE = 24
+Internal.ViewModes = {
+    Inventory = "inventory",
+    Warehouse = "warehouse",
+}
 Internal.Tabs = {
     Provisions = "provisions",
     Output = "output",
     Equipment = "equipment",
 }
+
+function Internal.isWarehouseView(window)
+    return window and window.viewMode == Internal.ViewModes.Warehouse
+end
+
+function Internal.isInventoryView(window)
+    return not Internal.isWarehouseView(window)
+end

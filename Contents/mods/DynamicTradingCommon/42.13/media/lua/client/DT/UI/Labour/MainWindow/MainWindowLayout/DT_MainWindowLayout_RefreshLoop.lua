@@ -14,7 +14,8 @@ local function autoRefreshWindow(window)
         window:sendLabourCommand("RequestPlayerWorkers", {})
         if window.selectedWorkerSummary and window.selectedWorkerSummary.workerID then
             window:sendLabourCommand("RequestWorkerDetails", {
-                workerID = window.selectedWorkerSummary.workerID
+                workerID = window.selectedWorkerSummary.workerID,
+                includeWarehouseLedgers = false
             })
         end
         return
@@ -48,4 +49,3 @@ function DT_MainWindow:prerender()
     self:drawRectBorder(10, listY, 280, contentHeight, 0.4, 1, 1, 1)
     self:drawTextCentre("LABOUR MANAGEMENT", self.width / 2, th + 6, 1, 1, 1, 1, UIFont.Large)
 end
-

@@ -29,6 +29,7 @@ Config.WORKER_HP_REGEN_PER_HOUR = 1
 Config.WORKER_ACTIVITY_LOG_LIMIT = 40
 Config.NUTRITION_MODEL_VERSION = 3
 Config.DEFAULT_WORKER_CARRY_WEIGHT = 8
+Config.DEFAULT_WAREHOUSE_CAPACITY = 100
 Config.DEFAULT_SCAVENGE_DUMP_HOURS = 1.0
 Config.DEFAULT_SCAVENGE_TRAVEL_HOURS = 2.0
 Config.DEFAULT_SCAVENGE_WORK_CYCLE_HOURS = 16.0
@@ -60,6 +61,8 @@ Config.States = {
     MissingSite = "MissingSite",
     Starving = "Starving",
     Dehydrated = "Dehydrated",
+    StorageFull = "StorageFull",
+    WarehouseShortage = "WarehouseShortage",
     Dead = "Dead"
 }
 

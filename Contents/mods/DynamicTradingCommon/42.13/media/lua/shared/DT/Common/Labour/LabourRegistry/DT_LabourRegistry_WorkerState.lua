@@ -132,8 +132,8 @@ function Registry.RecalculateWorker(worker)
 
     local storedCalories = clampAmount(worker.storedCalories)
     local storedHydration = clampAmount(worker.storedHydration)
-    local outputCount = math.max(0, tonumber(worker.outputCount) or 0)
-    local outputWeight = math.max(0, tonumber(worker.outputWeight) or 0)
+    local outputCount = 0
+    local outputWeight = 0
     local tags = type(worker.assignedToolTags) == "table" and worker.assignedToolTags or {}
 
     if worker.nutritionCacheDirty then
@@ -172,17 +172,19 @@ function Registry.RecalculateWorker(worker)
         worker.toolCacheDirty = false
     end
 
-    if worker.outputCacheDirty then
-        outputCount = 0
-        outputWeight = 0
-        for _, entry in ipairs(worker.outputLedger) do
-            outputCount = outputCount + (tonumber(entry.qty) or 0)
-            outputWeight = outputWeight + (Config.GetItemWeight(entry.fullType) * math.max(1, tonumber(entry.qty) or 1))
+    for i = #worker.outputLedger, 1, -1 do
+        local entry = worker.outputLedger[i]
+        if not entry or not entry.fullType then
+            table.remove(worker.outputLedger, i)
+        else
+            local qty = math.max(1, tonumber(entry.qty) or 1)
+            outputCount = outputCount + qty
+            outputWeight = outputWeight + (Config.GetItemWeight(entry.fullType) * qty)
         end
-        worker.outputCount = outputCount
-        worker.outputWeight = outputWeight
-        worker.outputCacheDirty = false
     end
+    worker.outputCount = outputCount
+    worker.outputWeight = outputWeight
+    worker.outputCacheDirty = false
 
     local haulCount = 0
     local haulRawWeight = 0

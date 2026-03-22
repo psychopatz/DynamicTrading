@@ -34,6 +34,9 @@ local function createWorkerFromRecruitArgs(owner, args)
         homeX = args.homeX or args.spawnX or args.x,
         homeY = args.homeY or args.spawnY or args.y,
         homeZ = args.homeZ or args.spawnZ or args.z or 0,
+        presenceState = Config.PresenceStates.Home,
+        state = Config.States.Idle,
+        jobEnabled = false,
         sourceNPCID = args.sourceNPCID and tostring(args.sourceNPCID) or nil,
         sourceNPCType = args.sourceNPCType or "ConversationUI"
     })

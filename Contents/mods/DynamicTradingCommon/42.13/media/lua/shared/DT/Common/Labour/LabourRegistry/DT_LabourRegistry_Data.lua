@@ -10,6 +10,7 @@ function Registry.Init()
         ModData.add(Config.MOD_DATA_KEY, {
             Workers = {},
             Owners = {},
+            Warehouses = {},
             Sites = {},
             Counters = { worker = 0, site = 0 }
         })
@@ -18,6 +19,7 @@ function Registry.Init()
     local data = ModData.get(Config.MOD_DATA_KEY)
     data.Workers = data.Workers or {}
     data.Owners = data.Owners or {}
+    data.Warehouses = data.Warehouses or {}
     data.Sites = data.Sites or {}
     data.Counters = data.Counters or { worker = 0, site = 0 }
 end

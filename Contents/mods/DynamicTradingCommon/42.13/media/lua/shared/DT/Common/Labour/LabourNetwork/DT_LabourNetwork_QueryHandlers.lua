@@ -11,7 +11,7 @@ end
 
 Network.Handlers.RequestWorkerDetails = function(player, args)
     if not args or not args.workerID then return end
-    Network.Internal.syncWorkerDetail(player, args.workerID)
+    Network.Internal.syncWorkerDetail(player, args.workerID, args.includeWarehouseLedgers == true)
 end
 
 return Network

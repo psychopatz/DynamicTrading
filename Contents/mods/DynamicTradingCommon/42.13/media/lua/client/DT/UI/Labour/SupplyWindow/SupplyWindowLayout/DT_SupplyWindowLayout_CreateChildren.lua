@@ -97,6 +97,10 @@ function DT_SupplyWindow:createChildren()
     self.btnDepositVisible:initialise()
     self:addChild(self.btnDepositVisible)
 
+    self.btnDropSelected = ISButton:new(layout.controlX, layout.centerButtonsY + 160, layout.controlWidth, 32, "Drop", self, self.onDropSelected)
+    self.btnDropSelected:initialise()
+    self:addChild(self.btnDropSelected)
+
     self.playerList = Internal.LabourSupplyList:new(layout.leftX, layout.contentY, layout.leftWidth, layout.listH, "player")
     self.playerList:initialise()
     self.playerList:instantiate()

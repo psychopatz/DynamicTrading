@@ -8,10 +8,9 @@ function DT_SupplyWindow:refreshTabButtons()
         return
     end
 
-    local outputTitle = Internal.getOutputTabLabel(self.workerData)
-    self.btnTabProvisions:setTitle("Provisions")
-    self.btnTabOutput:setTitle(outputTitle)
-    self.btnTabEquipment:setTitle("Equipment")
+    self.btnTabProvisions:setTitle(Internal.getTabButtonTitle(self, Internal.Tabs.Provisions))
+    self.btnTabOutput:setTitle(Internal.getTabButtonTitle(self, Internal.Tabs.Output))
+    self.btnTabEquipment:setTitle(Internal.getTabButtonTitle(self, Internal.Tabs.Equipment))
 
     local buttonEntries = {
         { id = Internal.Tabs.Provisions, button = self.btnTabProvisions },

@@ -4,8 +4,10 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 function DT_SupplyWindow:onRefresh()
     self:startInventoryScan()
     if self.workerID then
+        local includeWarehouseLedgers = self.viewMode == ((DT_SupplyWindow.Internal.ViewModes or {}).Warehouse)
         self:sendLabourCommand("RequestWorkerDetails", {
-            workerID = self.workerID
+            workerID = self.workerID,
+            includeWarehouseLedgers = includeWarehouseLedgers
         })
     end
 end
@@ -15,7 +17,9 @@ function DT_SupplyWindow:requestWorkerDetails()
         return
     end
 
+    local includeWarehouseLedgers = self.viewMode == ((DT_SupplyWindow.Internal.ViewModes or {}).Warehouse)
     self:sendLabourCommand("RequestWorkerDetails", {
-        workerID = self.workerID
+        workerID = self.workerID,
+        includeWarehouseLedgers = includeWarehouseLedgers
     })
 end

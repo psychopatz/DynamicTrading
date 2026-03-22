@@ -83,10 +83,10 @@ function DT_MainWindow:createChildren()
     self.btnCycleJob:setEnable(false)
     self:addChild(self.btnCycleJob)
 
-    self.btnManageSupplies = ISButton:new(360, buttonY, 150, 28, "Manage Supplies", self, self.onManageSupplies)
-    self.btnManageSupplies:initialise()
-    self.btnManageSupplies:setEnable(false)
-    self:addChild(self.btnManageSupplies)
+    self.btnWarehouse = ISButton:new(360, buttonY, 150, 28, "Warehouse", self, self.onOpenWarehouse)
+    self.btnWarehouse:initialise()
+    self.btnWarehouse:setEnable(false)
+    self:addChild(self.btnWarehouse)
 
     self.btnHelp = ISButton:new(520, buttonY, 80, 28, "Help", self, self.onOpenHelp)
     self.btnHelp:initialise()
@@ -104,6 +104,9 @@ function DT_MainWindow:createChildren()
 
     self.reservePanel = Internal.LabourReservePanel:new(rightX, listY, rightWidth, reserveH)
     self.reservePanel:initialise()
+    if self.reservePanel.setOwnerWindow then
+        self.reservePanel:setOwnerWindow(self)
+    end
     self.reservePanel:setAnchorRight(true)
     self:addChild(self.reservePanel)
 

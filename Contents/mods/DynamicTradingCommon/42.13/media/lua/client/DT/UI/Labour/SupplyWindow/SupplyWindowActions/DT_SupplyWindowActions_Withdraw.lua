@@ -3,6 +3,24 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
+local function getWithdrawCommand(window, activeTab)
+    local isWarehouseView = Internal.isWarehouseView and Internal.isWarehouseView(window)
+    if activeTab == Internal.Tabs.Equipment then
+        return isWarehouseView and "WithdrawWarehouseTools" or "WithdrawWorkerTools"
+    end
+    if activeTab == Internal.Tabs.Output then
+        return isWarehouseView and "WithdrawWarehouseOutput" or "WithdrawWorkerOutput"
+    end
+    return isWarehouseView and "WithdrawWarehouseSupplies" or "WithdrawWorkerSupplies"
+end
+
+local function getWithdrawSourceLabel(window)
+    if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+        return "warehouse"
+    end
+    return tostring(window and (window.workerName or window.workerID) or "worker")
+end
+
 function DT_SupplyWindow:withdrawWorkerEntries(entries)
     if not self.workerID then
         self:updateStatus("No worker selected.")
@@ -37,14 +55,7 @@ function DT_SupplyWindow:withdrawWorkerEntries(entries)
     end
 
     local activeTab = self.activeTab or Internal.Tabs.Provisions
-    local command = nil
-    if activeTab == Internal.Tabs.Equipment then
-        command = "WithdrawWorkerTools"
-    elseif activeTab == Internal.Tabs.Output then
-        command = "WithdrawWorkerOutput"
-    else
-        command = "WithdrawWorkerSupplies"
-    end
+    local command = getWithdrawCommand(self, activeTab)
 
     local payload = {}
     for _, entry in ipairs(selectedEntries) do
@@ -55,14 +66,16 @@ function DT_SupplyWindow:withdrawWorkerEntries(entries)
             workerID = self.workerID,
             ledgerIndexes = payload
         }) then
-        self:updateStatus("Unable to collect worker items.")
+        self:updateStatus("Unable to collect items from " .. getWithdrawSourceLabel(self) .. ".")
         return
     end
 
     if #selectedEntries == 1 then
-        self:updateStatus("Taking " .. tostring(selectedEntries[1].displayName or selectedEntries[1].fullType or "item") .. " from " .. tostring(self.workerName or self.workerID) .. "...")
+        self:updateStatus(
+            "Taking " .. tostring(selectedEntries[1].displayName or selectedEntries[1].fullType or "item") .. " from " .. getWithdrawSourceLabel(self) .. "..."
+        )
     else
-        self:updateStatus("Taking " .. tostring(#selectedEntries) .. " worker entries from " .. tostring(self.workerName or self.workerID) .. "...")
+        self:updateStatus("Taking " .. tostring(#selectedEntries) .. " entries from " .. getWithdrawSourceLabel(self) .. "...")
     end
 end
 
@@ -96,7 +109,11 @@ function DT_SupplyWindow:onWithdrawVisible()
     end
 
     if #visibleEntries <= 0 then
-        self:updateStatus("No visible worker items matched the current filter. Select the cash entry to transfer money.")
+        if Internal.isWarehouseView and Internal.isWarehouseView(self) then
+            self:updateStatus("No visible warehouse items matched the current filter.")
+        else
+            self:updateStatus("No visible NPC inventory items matched the current filter. Select the cash entry to transfer money.")
+        end
         return
     end
 

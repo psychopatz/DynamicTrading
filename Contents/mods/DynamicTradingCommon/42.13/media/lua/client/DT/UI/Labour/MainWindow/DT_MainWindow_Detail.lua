@@ -167,8 +167,8 @@ function DT_MainWindow:updateWorkerDetail(worker)
         if self.btnCycleJob then
             self.btnCycleJob:setEnable(false)
         end
-        if self.btnManageSupplies then
-            self.btnManageSupplies:setEnable(false)
+        if self.btnWarehouse then
+            self.btnWarehouse:setEnable(false)
         end
         return
     end
@@ -252,7 +252,11 @@ function DT_MainWindow:updateWorkerDetail(worker)
         text = text .. " <RGB:0.72,0.72,0.72> Raw Carry Allowance: <RGB:1,1,1> " .. Internal.formatDecimal(worker.rawCarryAllowance or worker.maxCarryWeight or 0, 2) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Carry Containers: <RGB:1,1,1> " .. tostring(worker.carryContainerCount or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Completed Runs: <RGB:1,1,1> " .. tostring(worker.dumpTrips or 0) .. " <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Stored Haul Weight: <RGB:1,1,1> " .. Internal.formatDecimal(worker.outputWeight or 0, 2) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Warehouse Weight Used: <RGB:1,1,1> "
+            .. Internal.formatDecimal(worker.warehouseUsedWeight or 0, 2)
+            .. " / "
+            .. Internal.formatDecimal(worker.warehouseMaxWeight or 0, 2)
+            .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Unlocked Pools: <RGB:1,1,1> " .. getScavengeCapabilitySummary(worker) .. " <LINE> "
     end
 
@@ -295,8 +299,8 @@ function DT_MainWindow:updateWorkerDetail(worker)
         self.btnCycleJob:setEnable(stateLabel ~= deadState)
     end
 
-    if self.btnManageSupplies then
-        self.btnManageSupplies:setEnable(true)
+    if self.btnWarehouse then
+        self.btnWarehouse:setEnable(true)
     end
 end
 
@@ -312,6 +316,9 @@ function DT_MainWindow:applyWorkerSelection(summary, requestDetail)
 
     if requestDetail and isClient() and not isServer() then
         self:updateStatus("Requesting worker details for " .. tostring(summary.name or summary.workerID) .. "...")
-        self:sendLabourCommand("RequestWorkerDetails", { workerID = summary.workerID })
+        self:sendLabourCommand("RequestWorkerDetails", {
+            workerID = summary.workerID,
+            includeWarehouseLedgers = false
+        })
     end
 end

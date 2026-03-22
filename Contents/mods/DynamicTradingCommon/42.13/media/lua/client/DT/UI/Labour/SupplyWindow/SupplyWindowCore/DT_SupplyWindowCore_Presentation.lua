@@ -373,7 +373,11 @@ function Internal.getPlaceholderSupportDisplay(window, entry)
     }
 end
 
-function Internal.getOutputTabLabel(worker)
+function Internal.getOutputTabLabel(worker, window)
+    if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+        return "Storage"
+    end
+
     if not worker or not worker.jobType then
         return "Merchandise"
     end
@@ -401,7 +405,7 @@ function Internal.getActiveWorkerTabLabel(window)
         return "Equipment"
     end
     if activeTab == Internal.Tabs.Output then
-        return Internal.getOutputTabLabel(window and window.workerData)
+        return Internal.getOutputTabLabel(window and window.workerData, window)
     end
     return "Provisions"
 end
@@ -410,17 +414,32 @@ function Internal.formatWeightValue(value)
     return string.format("%.2f", math.max(0, tonumber(value) or 0))
 end
 
+local function appendWeightText(baseText, entry)
+    local weight = math.max(0, tonumber(entry and entry.totalWeight) or tonumber(entry and entry.unitWeight) or 0)
+    local weightText = "W " .. Internal.formatWeightValue(weight)
+    if not baseText or baseText == "" then
+        return weightText
+    end
+    return tostring(baseText) .. " | " .. weightText
+end
+
 function Internal.getWorkerHeaderTitle(window)
+    if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+        local workerName = tostring(window and window.workerName or "Worker")
+        return workerName .. " Warehouse"
+    end
+
     local workerName = tostring(window and window.workerName or "Worker")
     local activeTab = window and window.activeTab or Internal.Tabs.Provisions
     local worker = window and window.workerData or nil
+    local config = Internal.Config or {}
 
     if activeTab == Internal.Tabs.Output then
-        local haulIsStored = Internal.canTransferWithWorker(worker)
+        local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
         local carryWeight = Internal.formatWeightValue(worker and worker.haulRawWeight)
         local carryCapacity = Internal.formatWeightValue(worker and worker.maxCarryWeight)
 
-        if haulIsStored then
+        if normalizedJob ~= ((config.JobTypes or {}).Scavenge) then
             local storedWeight = Internal.formatWeightValue(worker and worker.outputWeight)
             return workerName
                 .. " (Stored "
@@ -516,6 +535,73 @@ function Internal.getWorkerSupplyTotals(entries)
     return totals
 end
 
+function Internal.getEntryWeightTotal(entries)
+    local totalWeight = 0
+    for _, entry in ipairs(entries or {}) do
+        totalWeight = totalWeight + math.max(0, tonumber(entry and entry.totalWeight) or tonumber(entry and entry.unitWeight) or 0)
+    end
+    return totalWeight
+end
+
+function Internal.getWarehouseLedgerWeight(worker, tabID)
+    local warehouse = worker and worker.warehouse or nil
+    local ledgers = warehouse and warehouse.ledgers or {}
+    local config = Internal.Config or {}
+    local totalWeight = 0
+
+    if tabID == Internal.Tabs.Provisions then
+        for _, entry in ipairs(ledgers.provisions or {}) do
+            totalWeight = totalWeight + math.max(0, tonumber(config.GetItemWeight and config.GetItemWeight(entry and entry.fullType)) or 0)
+        end
+        return totalWeight
+    end
+
+    if tabID == Internal.Tabs.Equipment then
+        for _, entry in ipairs(ledgers.equipment or {}) do
+            totalWeight = totalWeight + math.max(0, tonumber(config.GetItemWeight and config.GetItemWeight(entry and entry.fullType)) or 0)
+        end
+        return totalWeight
+    end
+
+    for _, entry in ipairs(ledgers.output or {}) do
+        local qty = math.max(1, tonumber(entry and entry.qty) or 1)
+        totalWeight = totalWeight + (math.max(0, tonumber(config.GetItemWeight and config.GetItemWeight(entry and entry.fullType)) or 0) * qty)
+    end
+    return totalWeight
+end
+
+function Internal.getTabButtonTitle(window, tabID)
+    local baseTitle = "Provisions"
+    if tabID == Internal.Tabs.Output then
+        baseTitle = Internal.getOutputTabLabel(window and window.workerData, window)
+    elseif tabID == Internal.Tabs.Equipment then
+        baseTitle = "Equipment"
+    end
+
+    if not (Internal.isWarehouseView and Internal.isWarehouseView(window)) then
+        return baseTitle
+    end
+
+    if tabID == Internal.Tabs.Provisions then
+        baseTitle = "Provision"
+    end
+
+    return baseTitle .. " W" .. Internal.formatWeightValue(Internal.getWarehouseLedgerWeight(window and window.workerData, tabID))
+end
+
+function Internal.canStoreInWarehouseOutput(entry)
+    if not entry or entry.kind == "money" then
+        return false
+    end
+    if entry.canDeposit then
+        return false
+    end
+    if entry.canAssignTool then
+        return false
+    end
+    return true
+end
+
 function Internal.getWorkerTabSummary(window, entries)
     local activeTab = window and window.activeTab or Internal.Tabs.Provisions
 
@@ -531,6 +617,9 @@ function Internal.getWorkerTabSummary(window, entries)
         end
 
         local summary = tostring(equippedCount) .. " equipped"
+        if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+            summary = summary .. " | Weight " .. Internal.formatWeightValue(Internal.getWarehouseLedgerWeight(window and window.workerData, activeTab)) .. " total"
+        end
         if missingCount > 0 then
             summary = summary .. " | " .. tostring(missingCount) .. " missing"
         end
@@ -547,14 +636,25 @@ function Internal.getWorkerTabSummary(window, entries)
         local worker = window and window.workerData or nil
         local config = Internal.Config or {}
         local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
-        if normalizedJob == ((config.JobTypes or {}).Scavenge) then
-            local haulIsStored = Internal.canTransferWithWorker(worker)
+        if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+            local warehouse = worker and worker.warehouse or nil
+            local tabWeight = Internal.getEntryWeightTotal(entries)
+            return tostring(stacks)
+                .. " stacks | "
+                .. tostring(totalQty)
+                .. " total | Tab Weight "
+                .. Internal.formatWeightValue(tabWeight)
+                .. " | Warehouse "
+                .. Internal.formatWeightValue(warehouse and warehouse.usedWeight)
+                .. " / "
+                .. Internal.formatWeightValue(warehouse and warehouse.maxWeight)
+        elseif normalizedJob == ((config.JobTypes or {}).Scavenge) then
             return tostring(stacks)
                 .. " stacks | "
                 .. tostring(totalQty)
                 .. " total | Weight "
-                .. Internal.formatWeightValue((haulIsStored and worker and worker.outputWeight) or (worker and worker.haulRawWeight))
-                .. (haulIsStored and " stored" or " carried")
+                .. Internal.formatWeightValue(worker and worker.haulRawWeight)
+                .. " carried"
         end
         return tostring(stacks) .. " stacks | " .. tostring(totalQty) .. " total"
     end
@@ -563,13 +663,16 @@ function Internal.getWorkerTabSummary(window, entries)
     local summary = tostring(totals.count) .. " entries | "
         .. string.format("%.0f cal", totals.calories) .. " | "
         .. string.format("%.0f hyd", totals.hydration)
+    if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+        summary = summary .. " | Weight " .. Internal.formatWeightValue(Internal.getWarehouseLedgerWeight(window and window.workerData, activeTab)) .. " total"
+    end
     if totals.money > 0 then
         summary = summary .. " | $" .. tostring(totals.money)
     end
     return summary
 end
 
-function Internal.shouldShowPlayerEntry(entry, activeTab)
+function Internal.shouldShowPlayerEntry(entry, activeTab, window)
     if not entry then
         return false
     end
@@ -579,6 +682,9 @@ function Internal.shouldShowPlayerEntry(entry, activeTab)
     end
 
     if activeTab == Internal.Tabs.Output then
+        if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+            return Internal.canStoreInWarehouseOutput(entry)
+        end
         return false
     end
 
@@ -605,7 +711,7 @@ function Internal.shouldShowWorkerEntry(entry, activeTab)
     return (tonumber(entry.calories) or 0) > 0 or (tonumber(entry.hydration) or 0) > 0
 end
 
-function Internal.getPlayerEntryPresentation(entry, activeTab, worker)
+function Internal.getPlayerEntryPresentation(entry, activeTab, worker, window)
     if entry.kind == "money" then
         return {
             statText = "$" .. tostring(math.max(0, math.floor(tonumber(entry.amount) or 0))) .. " available to deposit",
@@ -617,21 +723,28 @@ function Internal.getPlayerEntryPresentation(entry, activeTab, worker)
     if activeTab == Internal.Tabs.Equipment then
         if entry.canAssignTool then
             return {
-                statText = Internal.getMissingEquipmentSummary(worker, 3),
+                statText = appendWeightText(Internal.getMissingEquipmentSummary(worker, 3), entry),
                 badgeText = "Tool",
                 dimmed = false,
             }
         end
         return {
-            statText = "Not a labour tool",
+            statText = appendWeightText("Not a labour tool", entry),
             badgeText = "Preview",
             dimmed = true,
         }
     end
 
     if activeTab == Internal.Tabs.Output then
+        if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+            return {
+                statText = appendWeightText("Store in warehouse storage", entry),
+                badgeText = "Ready",
+                dimmed = false,
+            }
+        end
         return {
-            statText = "Worker storage tab",
+            statText = appendWeightText("Worker storage tab", entry),
             badgeText = "Read Only",
             dimmed = true,
         }
@@ -639,14 +752,14 @@ function Internal.getPlayerEntryPresentation(entry, activeTab, worker)
 
     if entry.canDeposit then
         return {
-            statText = string.format("+%.0f cal | +%.0f hyd", entry.calories or 0, entry.hydration or 0),
+            statText = appendWeightText(string.format("+%.0f cal | +%.0f hyd", entry.calories or 0, entry.hydration or 0), entry),
             badgeText = "Ready",
             dimmed = false,
         }
     end
 
     return {
-        statText = "No calories or hydration",
+        statText = appendWeightText("No calories or hydration", entry),
         badgeText = "Preview",
         dimmed = true,
     }
@@ -672,20 +785,20 @@ function Internal.getWorkerEntryPresentation(entry, activeTab)
         local tags = entry.tags or {}
         local tagText = (#tags > 0) and table.concat(tags, ", ") or "Assigned labour tool"
         return {
-            statText = tagText,
+            statText = appendWeightText(tagText, entry),
             badgeText = "",
         }
     end
 
     if activeTab == Internal.Tabs.Output then
         return {
-            statText = "Qty " .. tostring(entry.qty or 1),
+            statText = appendWeightText("Qty " .. tostring(entry.qty or 1), entry),
             badgeText = "",
         }
     end
 
     return {
-        statText = string.format("%.0f cal left | %.0f hyd left", entry.calories or 0, entry.hydration or 0),
+        statText = appendWeightText(string.format("%.0f cal left | %.0f hyd left", entry.calories or 0, entry.hydration or 0), entry),
         badgeText = "",
     }
 end

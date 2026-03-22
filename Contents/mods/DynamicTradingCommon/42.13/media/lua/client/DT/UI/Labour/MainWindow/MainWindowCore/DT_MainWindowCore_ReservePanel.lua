@@ -20,6 +20,21 @@ end
 
 function LabourProfileCard:initialise()
     ISPanel.initialise(self)
+
+    self.btnInventory = ISButton:new(0, 0, 96, 24, "Inventory", self, self.onOpenInventory)
+    self.btnInventory:initialise()
+    self.btnInventory:setEnable(false)
+    self:addChild(self.btnInventory)
+end
+
+function LabourProfileCard:setOwnerWindow(window)
+    self.ownerWindow = window
+end
+
+function LabourProfileCard:onOpenInventory()
+    if self.ownerWindow and self.ownerWindow.onOpenInventory then
+        self.ownerWindow:onOpenInventory()
+    end
 end
 
 function LabourProfileCard:setWorker(worker)
@@ -35,7 +50,14 @@ function LabourProfileCard:setWorker(worker)
         self.hydrationTargetRatio = 0
         self.healthTargetRatio = 0
         self.activityTargetRatio = 0
+        if self.btnInventory then
+            self.btnInventory:setEnable(false)
+        end
         return
+    end
+
+    if self.btnInventory then
+        self.btnInventory:setEnable(true)
     end
 
     local profile = self.profile or {}
@@ -134,6 +156,8 @@ function LabourProfileCard:prerender()
     ISPanel.prerender(self)
 
     local pad = 12
+    local inventoryButtonHeight = (self.btnInventory and self.btnInventory:getHeight()) or 24
+    local inventoryButtonGap = self.btnInventory and 8 or 0
     if not self.worker then
         self:drawTextCentre("Select a worker to inspect labour reserves and daily upkeep.", self.width / 2, self.height / 2 - 8, 0.65, 0.65, 0.65, 0.9, UIFont.Medium)
         return
@@ -145,7 +169,8 @@ function LabourProfileCard:prerender()
     self.activityDisplayRatio = animateRatio(self.activityDisplayRatio, self.activityTargetRatio)
     self:storeDisplayState()
 
-    local portraitSize = math.min(104, self.height - (pad * 2))
+    local portraitSize = math.min(104, self.height - (pad * 2) - inventoryButtonHeight - inventoryButtonGap)
+    portraitSize = math.max(72, portraitSize)
     local portraitX = pad
     local portraitY = pad + 10
     local barsX = portraitX + portraitSize + 18
@@ -174,6 +199,13 @@ function LabourProfileCard:prerender()
         self:drawTextureScaled(self.portraitTex, portraitX + 3, portraitY + 3, portraitSize - 6, portraitSize - 6, 1, 1, 1, 1)
     end
     self:drawRectBorder(portraitX, portraitY, portraitSize, portraitSize, 0.25, 1, 1, 1)
+
+    if self.btnInventory then
+        self.btnInventory:setX(portraitX)
+        self.btnInventory:setY(portraitY + portraitSize + 8)
+        self.btnInventory:setWidth(portraitSize)
+        self.btnInventory:setHeight(inventoryButtonHeight)
+    end
 
     self:drawReserveBar(
         barsX,

@@ -3,6 +3,34 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
+local function getSupplyDepositCommand(window)
+    if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+        return "DepositWarehouseSupplies"
+    end
+    return "DepositWorkerSupplies"
+end
+
+local function getOutputDepositCommand(window)
+    if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+        return "DepositWarehouseOutput"
+    end
+    return nil
+end
+
+local function getEquipmentDepositCommand(window)
+    if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+        return "AssignWarehouseToolset"
+    end
+    return "AssignWorkerToolset"
+end
+
+local function getDepositTargetLabel(window)
+    if Internal.isWarehouseView and Internal.isWarehouseView(window) then
+        return "warehouse"
+    end
+    return "NPC inventory"
+end
+
 function DT_SupplyWindow:depositEntries(entries)
     if not self.workerID then
         self:updateStatus("No worker selected.")
@@ -12,6 +40,7 @@ function DT_SupplyWindow:depositEntries(entries)
         return
     end
 
+    local activeTab = self.activeTab or Internal.Tabs.Provisions
     local payload = {}
     local selectedEntries = {}
     local seenIDs = {}
@@ -20,7 +49,13 @@ function DT_SupplyWindow:depositEntries(entries)
         local itemID = entry and entry.itemID or nil
         if itemID and not seenIDs[itemID] and self.playerEntriesByID[itemID] then
             seenIDs[itemID] = true
-            if entry.canDeposit then
+            local validForTab = false
+            if activeTab == Internal.Tabs.Output then
+                validForTab = Internal.canStoreInWarehouseOutput and Internal.canStoreInWarehouseOutput(entry)
+            else
+                validForTab = entry.canDeposit
+            end
+            if validForTab then
                 payload[#payload + 1] = itemID
                 selectedEntries[#selectedEntries + 1] = entry
             end
@@ -28,15 +63,20 @@ function DT_SupplyWindow:depositEntries(entries)
     end
 
     if #selectedEntries <= 0 then
-        self:updateStatus("No valid food or water supplies selected.")
+        if activeTab == Internal.Tabs.Output then
+            self:updateStatus("No valid warehouse storage items selected.")
+        else
+            self:updateStatus("No valid food or water supplies selected.")
+        end
         return
     end
 
-    if not self:sendLabourCommand("DepositWorkerSupplies", {
+    local command = activeTab == Internal.Tabs.Output and getOutputDepositCommand(self) or getSupplyDepositCommand(self)
+    if not command or not self:sendLabourCommand(command, {
             workerID = self.workerID,
             itemIDs = payload
         }) then
-        self:updateStatus("Unable to send labour supply transfer.")
+        self:updateStatus("Unable to send transfer to " .. getDepositTargetLabel(self) .. ".")
         return
     end
 
@@ -44,9 +84,19 @@ function DT_SupplyWindow:depositEntries(entries)
 
     if #selectedEntries == 1 then
         local entry = selectedEntries[1]
-        self:updateStatus("Depositing " .. tostring(entry.displayName or entry.fullType or "selected item") .. "...")
+        if activeTab == Internal.Tabs.Output then
+            self:updateStatus("Storing " .. tostring(entry.displayName or entry.fullType or "selected item") .. " in warehouse storage...")
+        else
+            self:updateStatus(
+                "Depositing " .. tostring(entry.displayName or entry.fullType or "selected item") .. " into " .. getDepositTargetLabel(self) .. "..."
+            )
+        end
     else
-        self:updateStatus("Depositing " .. tostring(#selectedEntries) .. " visible supplies...")
+        if activeTab == Internal.Tabs.Output then
+            self:updateStatus("Storing " .. tostring(#selectedEntries) .. " visible items in warehouse storage...")
+        else
+            self:updateStatus("Depositing " .. tostring(#selectedEntries) .. " visible supplies into " .. getDepositTargetLabel(self) .. "...")
+        end
     end
 end
 
@@ -77,7 +127,7 @@ function DT_SupplyWindow:assignToolEntries(entries)
 
     local sentEntries = {}
     for _, entry in ipairs(selectedEntries) do
-        if self:sendLabourCommand("AssignWorkerToolset", {
+        if self:sendLabourCommand(getEquipmentDepositCommand(self), {
                 workerID = self.workerID,
                 itemID = entry.itemID
             }) then
@@ -86,16 +136,18 @@ function DT_SupplyWindow:assignToolEntries(entries)
     end
 
     if #sentEntries <= 0 then
-        self:updateStatus("Unable to send equipment assignment.")
+        self:updateStatus("Unable to send equipment assignment to " .. getDepositTargetLabel(self) .. ".")
         return
     end
 
     self:applyOptimisticToolAssign(sentEntries)
 
     if #sentEntries == 1 then
-        self:updateStatus("Assigning " .. tostring(sentEntries[1].displayName or sentEntries[1].fullType or "selected tool") .. "...")
+        self:updateStatus(
+            "Assigning " .. tostring(sentEntries[1].displayName or sentEntries[1].fullType or "selected tool") .. " to " .. getDepositTargetLabel(self) .. "..."
+        )
     else
-        self:updateStatus("Assigning " .. tostring(#sentEntries) .. " tools...")
+        self:updateStatus("Assigning " .. tostring(#sentEntries) .. " tools to " .. getDepositTargetLabel(self) .. "...")
     end
 end
 
@@ -103,8 +155,8 @@ function DT_SupplyWindow:onDepositSelected()
     local selectedEntry = self.selectedPlayerEntry
     local activeTab = self.activeTab or Internal.Tabs.Provisions
 
-    if activeTab == Internal.Tabs.Output then
-        self:updateStatus("This tab is worker-side storage only.")
+    if activeTab == Internal.Tabs.Output and not (Internal.isWarehouseView and Internal.isWarehouseView(self)) then
+        self:updateStatus("This tab is storage-only. Withdraw items from the right side instead.")
         return
     end
 
@@ -131,6 +183,15 @@ function DT_SupplyWindow:onDepositSelected()
         return
     end
 
+    if activeTab == Internal.Tabs.Output then
+        if not (Internal.canStoreInWarehouseOutput and Internal.canStoreInWarehouseOutput(selectedEntry)) then
+            self:updateStatus("That item belongs in Provisions or Equipment, not warehouse storage.")
+            return
+        end
+        self:depositEntries({ selectedEntry })
+        return
+    end
+
     if not selectedEntry.canDeposit then
         self:updateStatus("That item is visible for preview, but upkeep only accepts food and water.")
         return
@@ -142,8 +203,8 @@ end
 function DT_SupplyWindow:onDepositVisible()
     local activeTab = self.activeTab or Internal.Tabs.Provisions
 
-    if activeTab == Internal.Tabs.Output then
-        self:updateStatus("This tab is worker-side storage only.")
+    if activeTab == Internal.Tabs.Output and not (Internal.isWarehouseView and Internal.isWarehouseView(self)) then
+        self:updateStatus("This tab is storage-only. Withdraw items from the right side instead.")
         return
     end
 
@@ -157,7 +218,9 @@ function DT_SupplyWindow:onDepositVisible()
         local entry = row and row.item or nil
         if entry
             and entry.kind ~= "money"
-            and ((activeTab == Internal.Tabs.Equipment and entry.canAssignTool) or (activeTab ~= Internal.Tabs.Equipment and entry.canDeposit)) then
+            and ((activeTab == Internal.Tabs.Equipment and entry.canAssignTool)
+                or (activeTab == Internal.Tabs.Output and Internal.canStoreInWarehouseOutput and Internal.canStoreInWarehouseOutput(entry))
+                or (activeTab ~= Internal.Tabs.Equipment and activeTab ~= Internal.Tabs.Output and entry.canDeposit)) then
             visibleEntries[#visibleEntries + 1] = entry
         end
     end
@@ -165,6 +228,8 @@ function DT_SupplyWindow:onDepositVisible()
     if #visibleEntries <= 0 then
         if activeTab == Internal.Tabs.Equipment then
             self:updateStatus("No visible labour tools matched the current filter.")
+        elseif activeTab == Internal.Tabs.Output then
+            self:updateStatus("No visible warehouse storage items matched the current filter.")
         elseif activeTab == Internal.Tabs.Provisions then
             self:updateStatus("No visible food or water supplies matched the current filter. Select the cash entry to transfer money.")
         else

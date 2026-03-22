@@ -15,5 +15,6 @@ require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry_Presentation"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry_Ledgers"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry_WorkerCommands"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry_Sites"
+require "DT/Common/Labour/Warehouse/DT_LabourWarehouse"
 
 return DT_Labour.Registry

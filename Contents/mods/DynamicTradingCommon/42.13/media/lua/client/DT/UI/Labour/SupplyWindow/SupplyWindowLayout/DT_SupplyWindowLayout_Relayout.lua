@@ -55,6 +55,13 @@ function DT_SupplyWindow:relayout()
     self.btnDepositVisible:setY(layout.centerButtonsY + 120)
     self.btnDepositVisible:setWidth(layout.controlWidth)
 
+    if self.btnDropSelected then
+        self.btnDropSelected:setX(layout.controlX)
+        self.btnDropSelected:setY(layout.centerButtonsY + 160)
+        self.btnDropSelected:setWidth(layout.controlWidth)
+        self.btnDropSelected:setHeight(32)
+    end
+
     self.playerList:setX(layout.leftX)
     self.playerList:setY(layout.contentY)
     self.playerList:setWidth(layout.leftWidth)

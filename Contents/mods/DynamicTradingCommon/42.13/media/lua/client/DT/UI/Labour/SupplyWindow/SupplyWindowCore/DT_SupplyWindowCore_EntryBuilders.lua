@@ -3,6 +3,14 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
+local function getUnitWeight(fullType)
+    return math.max(0, tonumber(Internal.Config and Internal.Config.GetItemWeight and Internal.Config.GetItemWeight(fullType)) or 0)
+end
+
+local function getTotalWeight(fullType, qty)
+    return getUnitWeight(fullType) * math.max(1, tonumber(qty) or 1)
+end
+
 function Internal.getCachedNutritionPreview(invItem)
     if not invItem then
         return 0, 0
@@ -45,6 +53,8 @@ function Internal.buildInventoryEntry(invItem)
         fullType = fullType,
         calories = calories,
         hydration = hydration,
+        unitWeight = getUnitWeight(fullType),
+        totalWeight = getTotalWeight(fullType, 1),
         canDeposit = calories > 0 or hydration > 0,
         canAssignTool = Internal.Config.IsLabourToolFullType and Internal.Config.IsLabourToolFullType(fullType) or false,
         tags = tags,
@@ -78,6 +88,8 @@ function Internal.buildWorkerSupplyEntry(entry, index)
         fullType = entry.fullType,
         calories = math.max(0, tonumber(entry.caloriesRemaining) or 0),
         hydration = math.max(0, tonumber(entry.hydrationRemaining) or 0),
+        unitWeight = getUnitWeight(entry.fullType),
+        totalWeight = getTotalWeight(entry.fullType, 1),
         texture = entry.texture or Internal.getTextureForFullType(entry.fullType),
         pending = entry.pending == true,
     }
@@ -110,6 +122,8 @@ function Internal.buildWorkerToolEntry(entry, index)
         displayName = entry.displayName,
         fullType = entry.fullType,
         tags = tags,
+        unitWeight = getUnitWeight(entry.fullType),
+        totalWeight = getTotalWeight(entry.fullType, 1),
         texture = entry.texture or Internal.getTextureForFullType(entry.fullType),
         pending = entry.pending == true,
     }
@@ -147,6 +161,8 @@ function Internal.buildWorkerOutputEntry(entry, index)
         displayName = Internal.getDisplayNameForFullType(entry.fullType),
         fullType = entry.fullType,
         qty = math.max(1, tonumber(entry.qty) or 1),
+        unitWeight = getUnitWeight(entry.fullType),
+        totalWeight = getTotalWeight(entry.fullType, entry.qty),
         texture = entry.texture or Internal.getTextureForFullType(entry.fullType),
     }
 end
@@ -163,6 +179,8 @@ function Internal.buildWorkerEntryFromPlayerEntry(entry)
         fullType = entry.fullType,
         calories = math.max(0, tonumber(entry.calories) or 0),
         hydration = math.max(0, tonumber(entry.hydration) or 0),
+        unitWeight = tonumber(entry.unitWeight) or getUnitWeight(entry.fullType),
+        totalWeight = tonumber(entry.totalWeight) or getTotalWeight(entry.fullType, 1),
         texture = entry.texture,
         pending = true,
     }
@@ -178,6 +196,8 @@ function Internal.buildWorkerToolEntryFromPlayerEntry(entry)
         displayName = entry.displayName,
         fullType = entry.fullType,
         tags = entry.tags or {},
+        unitWeight = tonumber(entry.unitWeight) or getUnitWeight(entry.fullType),
+        totalWeight = tonumber(entry.totalWeight) or getTotalWeight(entry.fullType, 1),
         texture = entry.texture,
         pending = true,
     }

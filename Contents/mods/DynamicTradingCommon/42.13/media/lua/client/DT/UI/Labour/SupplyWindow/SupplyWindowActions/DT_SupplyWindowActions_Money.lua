@@ -8,6 +8,10 @@ function DT_SupplyWindow:openDepositMoneyModal()
         self:updateStatus("No worker selected.")
         return
     end
+    if Internal.isWarehouseView and Internal.isWarehouseView(self) then
+        self:updateStatus("Warehouse cash transfers are not available in this view.")
+        return
+    end
     if not self:canTransferWithWorker(true) then
         return
     end
@@ -37,6 +41,10 @@ end
 function DT_SupplyWindow:openWithdrawMoneyModal()
     if not self.workerID then
         self:updateStatus("No worker selected.")
+        return
+    end
+    if Internal.isWarehouseView and Internal.isWarehouseView(self) then
+        self:updateStatus("Warehouse cash transfers are not available in this view.")
         return
     end
     if not self:canTransferWithWorker(true) then

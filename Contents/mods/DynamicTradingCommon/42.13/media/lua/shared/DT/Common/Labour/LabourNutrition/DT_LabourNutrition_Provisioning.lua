@@ -6,6 +6,78 @@ local Config = DT_Labour.Config
 local Nutrition = DT_Labour.Nutrition
 local Internal = Nutrition.Internal
 
+local function buildConsumedProvisionSample(consumedEntries)
+    local countsByName = {}
+    local orderedNames = {}
+
+    for _, entry in ipairs(consumedEntries or {}) do
+        local displayName = tostring(entry and (entry.displayName or entry.fullType) or "Provision")
+        if not countsByName[displayName] then
+            countsByName[displayName] = 0
+            orderedNames[#orderedNames + 1] = displayName
+        end
+        countsByName[displayName] = countsByName[displayName] + math.max(1, tonumber(entry and entry.qty) or 1)
+    end
+
+    local parts = {}
+    for _, displayName in ipairs(orderedNames) do
+        local qty = countsByName[displayName] or 0
+        if qty > 1 then
+            parts[#parts + 1] = displayName .. " x" .. tostring(qty)
+        else
+            parts[#parts + 1] = displayName
+        end
+    end
+
+    local count = #parts
+    if count <= 0 then
+        return ""
+    end
+    if count == 1 then
+        return tostring(parts[1])
+    end
+    if count == 2 then
+        return tostring(parts[1]) .. " and " .. tostring(parts[2])
+    end
+    return tostring(parts[1]) .. ", " .. tostring(parts[2]) .. ", and " .. tostring(count - 2) .. " more"
+end
+
+local function appendProvisionConsumptionLog(worker, consumedEntries, totalCalories, totalHydration, worldHour)
+    local entryCount = #(consumedEntries or {})
+    if entryCount <= 0 then
+        return
+    end
+
+    if entryCount == 1 then
+        local entry = consumedEntries[1]
+        local displayName = tostring(entry.displayName or entry.fullType or "Provision")
+        local actionVerb = ((tonumber(totalHydration) or 0) > 0 and (tonumber(totalCalories) or 0) <= 0) and "Drank" or "Ate"
+        Internal.AppendWorkerLog(
+            worker,
+            actionVerb .. " " .. displayName .. " (" .. string.format("%.0f", totalCalories or 0) .. " cal, " .. string.format("%.0f", totalHydration or 0) .. " hyd).",
+            worldHour,
+            "nutrition"
+        )
+        return
+    end
+
+    local sampleText = buildConsumedProvisionSample(consumedEntries)
+    Internal.AppendWorkerLog(
+        worker,
+        "Consumed "
+            .. tostring(entryCount)
+            .. " provisions"
+            .. (sampleText ~= "" and (": " .. sampleText) or "")
+            .. " ("
+            .. string.format("%.0f", totalCalories or 0)
+            .. " cal, "
+            .. string.format("%.0f", totalHydration or 0)
+            .. " hyd).",
+        worldHour,
+        "nutrition"
+    )
+end
+
 function Internal.FindNextConsumableEntry(worker)
     if not worker then
         return nil, nil
@@ -16,11 +88,12 @@ function Internal.FindNextConsumableEntry(worker)
     return (#worker.nutritionLedger > 0) and 1 or nil, worker.nutritionLedger[1]
 end
 
-function Nutrition.ConsumeProvisionItem(worker, ledgerIndex, caloriesCap, hydrationCap)
+function Nutrition.ConsumeProvisionItem(worker, ledgerIndex, caloriesCap, hydrationCap, options)
     if not worker then
         return 0, 0, nil
     end
 
+    options = options or {}
     local index = tonumber(ledgerIndex) or nil
     local entry = nil
 
@@ -45,14 +118,15 @@ function Nutrition.ConsumeProvisionItem(worker, ledgerIndex, caloriesCap, hydrat
     else
         Internal.MarkNutritionDirty(worker)
     end
-    local displayName = tostring(entry.displayName or entry.fullType or "Provision")
-    local actionVerb = (hydration > 0 and calories <= 0) and "Drank" or "Ate"
-    Internal.AppendWorkerLog(
-        worker,
-        actionVerb .. " " .. displayName .. " (" .. string.format("%.0f", calories) .. " cal, " .. string.format("%.0f", hydration) .. " hyd).",
-        (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour(),
-        "nutrition"
-    )
+    if options.skipLog ~= true then
+        appendProvisionConsumptionLog(
+            worker,
+            { entry },
+            calories,
+            hydration,
+            (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour()
+        )
+    end
     Internal.PruneEmptyEntries(worker)
     return calories, hydration, entry
 end
@@ -67,6 +141,7 @@ function Nutrition.RefillReserveToTargets(worker, caloriesTarget, hydrationTarge
     local targetCalories = Internal.ClampAmount(caloriesTarget)
     local targetHydration = Internal.ClampAmount(hydrationTarget)
     local consumedCount = 0
+    local consumedEntries = {}
 
     while consumedCount < 512 do
         local totalCalories, totalHydration = Internal.GetOnBodyTotals(worker)
@@ -74,7 +149,9 @@ function Nutrition.RefillReserveToTargets(worker, caloriesTarget, hydrationTarge
             break
         end
 
-        local addedCalories, addedHydration = Nutrition.ConsumeProvisionItem(worker, nil, caloriesCap, hydrationCap)
+        local addedCalories, addedHydration, consumedEntry = Nutrition.ConsumeProvisionItem(worker, nil, caloriesCap, hydrationCap, {
+            skipLog = true
+        })
         if addedCalories <= 0 and addedHydration <= 0 then
             break
         end
@@ -82,7 +159,18 @@ function Nutrition.RefillReserveToTargets(worker, caloriesTarget, hydrationTarge
         caloriesMoved = caloriesMoved + addedCalories
         hydrationMoved = hydrationMoved + addedHydration
         consumedCount = consumedCount + 1
+        if consumedEntry then
+            consumedEntries[#consumedEntries + 1] = consumedEntry
+        end
     end
+
+    appendProvisionConsumptionLog(
+        worker,
+        consumedEntries,
+        caloriesMoved,
+        hydrationMoved,
+        (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour()
+    )
 
     return caloriesMoved, hydrationMoved
 end

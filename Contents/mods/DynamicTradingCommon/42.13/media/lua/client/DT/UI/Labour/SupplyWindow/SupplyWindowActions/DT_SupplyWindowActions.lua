@@ -9,6 +9,7 @@ require "DT/UI/Labour/SupplyWindow/SupplyWindowActions/DT_SupplyWindowActions_Tr
 require "DT/UI/Labour/SupplyWindow/SupplyWindowActions/DT_SupplyWindowActions_Money"
 require "DT/UI/Labour/SupplyWindow/SupplyWindowActions/DT_SupplyWindowActions_Deposit"
 require "DT/UI/Labour/SupplyWindow/SupplyWindowActions/DT_SupplyWindowActions_Withdraw"
+require "DT/UI/Labour/SupplyWindow/SupplyWindowActions/DT_SupplyWindowActions_Drop"
 require "DT/UI/Labour/SupplyWindow/SupplyWindowActions/DT_SupplyWindowActions_Selection"
 
 return DT_SupplyWindow

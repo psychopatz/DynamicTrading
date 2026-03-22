@@ -7,32 +7,35 @@ function DT_SupplyWindow:refreshWorkerEntries()
     self.workerEntries = {}
 
     local worker = self.workerData
-    if self.workerID and Internal.resolveWorkerDetail then
-        local resolvedWorker = Internal.resolveWorkerDetail(self.workerID)
-        if resolvedWorker then
-            worker = resolvedWorker
-            self.workerData = resolvedWorker
-        end
-    end
+    local isWarehouseView = Internal.isWarehouseView and Internal.isWarehouseView(self)
     local activeTab = self.activeTab or Internal.Tabs.Provisions
+    local warehouse = worker and worker.warehouse or nil
+    local warehouseLedgers = warehouse and warehouse.ledgers or {}
+    local config = Internal.Config or {}
+    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
 
     if activeTab == Internal.Tabs.Equipment then
-        for index, ledgerEntry in ipairs(worker and worker.toolLedger or {}) do
+        local ledger = isWarehouseView and (warehouseLedgers.equipment or {}) or (worker and worker.toolLedger or {})
+        for index, ledgerEntry in ipairs(ledger) do
             local entry = Internal.buildWorkerToolEntry(ledgerEntry, index)
             if entry then
                 self.workerEntries[#self.workerEntries + 1] = entry
             end
         end
 
-        for _, placeholderEntry in ipairs(Internal.getMissingEquipmentPlaceholderEntries(worker)) do
-            self.workerEntries[#self.workerEntries + 1] = placeholderEntry
+        if not isWarehouseView then
+            for _, placeholderEntry in ipairs(Internal.getMissingEquipmentPlaceholderEntries(worker)) do
+                self.workerEntries[#self.workerEntries + 1] = placeholderEntry
+            end
         end
     elseif activeTab == Internal.Tabs.Output then
         local ledger = nil
-        if Internal.canTransferWithWorker(worker) then
-            ledger = worker and worker.outputLedger or {}
-        else
+        if isWarehouseView then
+            ledger = warehouseLedgers.output or {}
+        elseif normalizedJob == ((config.JobTypes or {}).Scavenge) then
             ledger = worker and worker.haulLedger or {}
+        else
+            ledger = worker and worker.outputLedger or {}
         end
         for index, ledgerEntry in ipairs(ledger) do
             local entry = Internal.buildWorkerOutputEntry(ledgerEntry, index)
@@ -41,11 +44,12 @@ function DT_SupplyWindow:refreshWorkerEntries()
             end
         end
     else
-        local moneyEntry = Internal.buildWorkerMoneyEntry(worker)
+        local moneyEntry = (not isWarehouseView) and Internal.buildWorkerMoneyEntry(worker) or nil
         if moneyEntry then
             self.workerEntries[#self.workerEntries + 1] = moneyEntry
         end
-        for index, ledgerEntry in ipairs(worker and worker.nutritionLedger or {}) do
+        local ledger = isWarehouseView and (warehouseLedgers.provisions or {}) or (worker and worker.nutritionLedger or {})
+        for index, ledgerEntry in ipairs(ledger) do
             local entry = Internal.buildWorkerSupplyEntry(ledgerEntry, index)
             if entry then
                 self.workerEntries[#self.workerEntries + 1] = entry
@@ -55,6 +59,9 @@ function DT_SupplyWindow:refreshWorkerEntries()
 
     table.sort(self.workerEntries, Internal.compareEntries)
     self:rebuildWorkerList()
+    if self.updateTransferControls then
+        self:updateTransferControls()
+    end
 end
 
 function DT_SupplyWindow:rebuildWorkerList()
@@ -96,9 +103,6 @@ function DT_SupplyWindow:setWorkerData(worker)
     self.workerData = worker
     if self.refreshTabButtons then
         self:refreshTabButtons()
-    end
-    if self.updateTransferControls then
-        self:updateTransferControls()
     end
     self:refreshWorkerEntries()
 end

@@ -1,7 +1,7 @@
 DT_SupplyWindow = DT_SupplyWindow or {}
 DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
-function DT_SupplyWindow.Open(worker)
+function DT_SupplyWindow.Open(worker, viewMode)
     if not worker or not worker.workerID then
         return
     end
@@ -21,14 +21,22 @@ function DT_SupplyWindow.Open(worker)
 
     window.workerID = worker.workerID
     window.workerName = worker.name or worker.workerID
-    window.title = "Labour Supplies - " .. tostring(window.workerName)
+    window.viewMode = viewMode or (DT_SupplyWindow.Internal.ViewModes and DT_SupplyWindow.Internal.ViewModes.Inventory) or "inventory"
+    window.activeTab = DT_SupplyWindow.Internal and DT_SupplyWindow.Internal.Tabs and DT_SupplyWindow.Internal.Tabs.Provisions or "provisions"
+    window.selectedPlayerEntry = nil
+    window.selectedWorkerEntry = nil
+    window.title = (window.viewMode == ((DT_SupplyWindow.Internal.ViewModes or {}).Warehouse) and "Warehouse - " or "NPC Inventory - ")
+        .. tostring(window.workerName)
     window:setVisible(true)
     window:addToUIManager()
     window:bringToTop()
     window:setWorkerData(DT_SupplyWindow.Internal.resolveWorkerDetail(worker.workerID) or worker)
     window:startInventoryScan()
     window:requestWorkerDetails()
-    window:updateStatus("Supplying " .. tostring(window.workerName) .. ".")
+    window:updateStatus(
+        (window.viewMode == ((DT_SupplyWindow.Internal.ViewModes or {}).Warehouse) and "Opening warehouse for " or "Opening inventory for ")
+            .. tostring(window.workerName) .. "."
+    )
 end
 
 function DT_SupplyWindow:close()
@@ -51,6 +59,7 @@ function DT_SupplyWindow:new(x, y, width, height)
     o.activeSelectionSide = "player"
     o.workerID = nil
     o.workerName = nil
+    o.viewMode = DT_SupplyWindow.Internal and DT_SupplyWindow.Internal.ViewModes and DT_SupplyWindow.Internal.ViewModes.Inventory or "inventory"
     o.detailRefreshTicks = 0
     o.lastPlayerFilter = ""
     o.lastWorkerFilter = ""

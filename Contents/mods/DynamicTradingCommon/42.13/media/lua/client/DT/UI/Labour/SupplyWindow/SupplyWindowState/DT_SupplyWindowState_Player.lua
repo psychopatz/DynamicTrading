@@ -8,7 +8,7 @@ function DT_SupplyWindow:registerVisiblePlayerEntry(entry)
         return
     end
 
-    if not Internal.shouldShowPlayerEntry(entry, self.activeTab or Internal.Tabs.Provisions) then
+    if not Internal.shouldShowPlayerEntry(entry, self.activeTab or Internal.Tabs.Provisions, self) then
         return
     end
 
@@ -59,9 +59,11 @@ function DT_SupplyWindow:rebuildPlayerList()
     self.selectedPlayerEntry = nil
 
     local selectedIndex = nil
-    if (self.activeTab or Internal.Tabs.Provisions) == Internal.Tabs.Provisions then
+    if (self.activeTab or Internal.Tabs.Provisions) == Internal.Tabs.Provisions
+        and Internal.isInventoryView
+        and Internal.isInventoryView(self) then
         local moneyEntry = Internal.buildPlayerMoneyEntry(Internal.getLocalPlayer and Internal.getLocalPlayer() or nil)
-        if Internal.shouldShowPlayerEntry(moneyEntry, self.activeTab or Internal.Tabs.Provisions)
+        if Internal.shouldShowPlayerEntry(moneyEntry, self.activeTab or Internal.Tabs.Provisions, self)
             and Internal.matchesFilter(moneyEntry, filterText) then
             self.playerList:addItem(Internal.formatEntryLabel(moneyEntry), moneyEntry)
             local rowIndex = #self.playerList.items
@@ -73,7 +75,7 @@ function DT_SupplyWindow:rebuildPlayerList()
     end
 
     for _, entry in ipairs(self.playerEntries or {}) do
-        if Internal.shouldShowPlayerEntry(entry, self.activeTab or Internal.Tabs.Provisions)
+        if Internal.shouldShowPlayerEntry(entry, self.activeTab or Internal.Tabs.Provisions, self)
             and Internal.matchesFilter(entry, filterText) then
             self.playerList:addItem(Internal.formatEntryLabel(entry), entry)
             local rowIndex = #self.playerList.items

@@ -3,6 +3,14 @@ DT_SupplyWindow.Internal = DT_SupplyWindow.Internal or {}
 
 local Internal = DT_SupplyWindow.Internal
 
+local function appendWeightLine(text, entry)
+    local weight = math.max(0, tonumber(entry and entry.totalWeight) or tonumber(entry and entry.unitWeight) or 0)
+    if weight <= 0 then
+        return text
+    end
+    return text .. " <RGB:0.82,0.82,0.82> Weight: <RGB:1,1,1> " .. Internal.formatWeightValue(weight) .. " <LINE> "
+end
+
 local function setDetailSupportPanel(window, title, entries)
     if not window or not window.detailSupportPanel then
         return
@@ -39,12 +47,32 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
                 .. "<RGB:1,1,1> cash <RGB:0.62,0.62,0.62> entry on Provisions and use "
                 .. "<RGB:1,1,1> > <RGB:0.62,0.62,0.62> or "
                 .. "<RGB:1,1,1> < <RGB:0.62,0.62,0.62> to open the money transfer modal. "
+            local config = Internal.Config or {}
+            local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(self.workerData and self.workerData.jobType) or tostring(self.workerData and self.workerData.jobType or "")
+            if self.activeTab == Internal.Tabs.Output
+                and normalizedJob == ((config.JobTypes or {}).Scavenge)
+                and Internal.isInventoryView
+                and Internal.isInventoryView(self) then
+                transferGuidance = transferGuidance
+                    .. "<LINE> <RGB:0.62,0.62,0.62> Use "
+                    .. "<RGB:1,1,1> Drop <RGB:0.62,0.62,0.62> to throw away the selected hauled item and free carry weight. "
+            end
         else
             transferGuidance =
                 "<LINE> <RGB:0.85,0.72,0.38> "
                 .. Internal.getTransferBlockedReason(self.workerData)
                 .. " "
                 .. "<LINE> <RGB:0.62,0.62,0.62> This window is read-only while they are away, so you can inspect the haul but not move items. "
+            local config = Internal.Config or {}
+            local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(self.workerData and self.workerData.jobType) or tostring(self.workerData and self.workerData.jobType or "")
+            if self.activeTab == Internal.Tabs.Output
+                and normalizedJob == ((config.JobTypes or {}).Scavenge)
+                and Internal.isInventoryView
+                and Internal.isInventoryView(self) then
+                transferGuidance = transferGuidance
+                    .. "<LINE> <RGB:0.62,0.62,0.62> You can still use "
+                    .. "<RGB:1,1,1> Drop <RGB:0.62,0.62,0.62> to discard selected haul and reduce their carried weight. "
+            end
         end
         self.detailText:setText(
             " <RGB:0.78,0.78,0.78> Left side shows your inventory cache, right side shows what "
@@ -54,6 +82,9 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
                 .. workerTabLabel
                 .. ". "
                 .. transferGuidance
+                .. ((Internal.isWarehouseView and Internal.isWarehouseView(self) and self.activeTab == Internal.Tabs.Output)
+                        and "<LINE> <RGB:0.62,0.62,0.62> Warehouse weight shows total used capacity across Provisions, Storage, and Equipment, not just the currently visible storage rows. "
+                    or "")
                 .. "<LINE> <RGB:0.62,0.62,0.62> Active worker tab: <RGB:1,1,1> "
                 .. workerTabLabel
                 .. " <RGB:0.62,0.62,0.62> | "
@@ -93,13 +124,23 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
                 .. ((#tags > 0 and table.concat(tags, ", ")) or "None")
                 .. " <LINE> "
         elseif self.activeTab == Internal.Tabs.Equipment then
+            text = appendWeightLine(text, entry)
             local tags = entry.tags or {}
             text = text .. " <RGB:0.82,0.82,0.82> Tool Tags: <RGB:1,1,1> "
                 .. ((#tags > 0 and table.concat(tags, ", ")) or "None")
                 .. " <LINE> "
         elseif self.activeTab == Internal.Tabs.Output then
             text = text .. " <RGB:0.82,0.82,0.82> Quantity: <RGB:1,1,1> " .. tostring(entry.qty or 1) .. " <LINE> "
+            text = appendWeightLine(text, entry)
+            local config = Internal.Config or {}
+            local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(self.workerData and self.workerData.jobType) or tostring(self.workerData and self.workerData.jobType or "")
+            if normalizedJob == ((config.JobTypes or {}).Scavenge)
+                and Internal.isInventoryView
+                and Internal.isInventoryView(self) then
+                text = text .. " <RGB:0.82,0.82,0.82> Action: <RGB:1,1,1> Use Drop to discard this hauled item and free carry weight. <LINE> "
+            end
         else
+            text = appendWeightLine(text, entry)
             text = text .. " <RGB:0.82,0.82,0.82> Remaining Calories: <RGB:1,1,1> " .. string.format("%.0f", entry.calories or 0) .. " <LINE> "
             text = text .. " <RGB:0.82,0.82,0.82> Remaining Hydration: <RGB:1,1,1> " .. string.format("%.0f", entry.hydration or 0) .. " <LINE> "
         end
@@ -112,12 +153,17 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
             text = text .. " <RGB:0.82,0.82,0.82> Available Dollars: <RGB:1,1,1> $" .. tostring(math.max(0, math.floor(tonumber(entry.amount) or 0))) .. " <LINE> "
             text = text .. " <RGB:0.82,0.82,0.82> Action: <RGB:1,1,1> Use > to deposit a chosen amount. <LINE> "
         elseif self.activeTab == Internal.Tabs.Equipment then
+            text = appendWeightLine(text, entry)
             local tags = entry.tags or {}
             text = text .. " <RGB:0.82,0.82,0.82> Tool Tags: <RGB:1,1,1> "
                 .. ((#tags > 0 and table.concat(tags, ", ")) or "None")
                 .. " <LINE> "
             text = text .. " <RGB:0.82,0.82,0.82> Worker Still Needs: <RGB:1,1,1> " .. Internal.getMissingEquipmentSummary(self.workerData, 99) .. " <LINE> "
+        elseif self.activeTab == Internal.Tabs.Output and Internal.isWarehouseView and Internal.isWarehouseView(self) then
+            text = appendWeightLine(text, entry)
+            text = text .. " <RGB:0.82,0.82,0.82> Action: <RGB:1,1,1> Use > to store this item in warehouse storage. <LINE> "
         else
+            text = appendWeightLine(text, entry)
             text = text .. " <RGB:0.82,0.82,0.82> Adds Calories: <RGB:1,1,1> " .. string.format("%.0f", entry.calories or 0) .. " <LINE> "
             text = text .. " <RGB:0.82,0.82,0.82> Adds Hydration: <RGB:1,1,1> " .. string.format("%.0f", entry.hydration or 0) .. " <LINE> "
         end

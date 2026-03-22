@@ -10,6 +10,8 @@ function Registry.GetWorkerSummary(worker)
     local profile = Config.GetJobProfile(worker.jobType)
     local cycleHours = Config.GetEffectiveCycleHours and Config.GetEffectiveCycleHours(worker, profile) or (profile and profile.cycleHours) or 0
     local baseWorkSpeedMultiplier = Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile) or 1.0
+    local Warehouse = DT_Labour and DT_Labour.Warehouse or nil
+    local warehouseSummary = Warehouse and Warehouse.GetClientSummary and Warehouse.GetClientSummary(worker.ownerUsername) or nil
     return {
         ownerUsername = worker.ownerUsername,
         workerID = worker.workerID,
@@ -80,6 +82,9 @@ function Registry.GetWorkerSummary(worker)
         dumpCooldownHours = worker.dumpCooldownHours,
         dumpTrips = worker.dumpTrips,
         outputWeight = worker.outputWeight,
+        warehouseUsedWeight = warehouseSummary and warehouseSummary.usedWeight or 0,
+        warehouseMaxWeight = warehouseSummary and warehouseSummary.maxWeight or 0,
+        warehouseRemainingWeight = warehouseSummary and warehouseSummary.remainingWeight or 0,
         isFemale = worker.isFemale,
         identitySeed = worker.identitySeed
     }
@@ -93,11 +98,14 @@ function Registry.GetWorkerSummariesForOwner(ownerUsername)
     return summaries
 end
 
-function Registry.GetWorkerDetailsForOwner(ownerUsername, workerID)
+function Registry.GetWorkerDetailsForOwner(ownerUsername, workerID, includeWarehouseLedgers)
     local worker = Registry.GetWorkerForOwner(ownerUsername, workerID)
     if not worker then return nil end
     Registry.RecalculateWorker(worker)
-    return worker
+    local detail = Registry.Internal.CopyShallow(worker)
+    local Warehouse = DT_Labour and DT_Labour.Warehouse or nil
+    detail.warehouse = Warehouse and Warehouse.GetClientSnapshot and Warehouse.GetClientSnapshot(ownerUsername, includeWarehouseLedgers == true) or nil
+    return detail
 end
 
 return Registry

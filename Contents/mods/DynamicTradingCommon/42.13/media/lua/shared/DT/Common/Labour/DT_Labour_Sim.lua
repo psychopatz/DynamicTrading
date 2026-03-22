@@ -5,6 +5,7 @@ require "DT/Common/Labour/LabourNutrition/DT_LabourNutrition"
 require "DT/Common/Labour/DT_Labour_Output"
 require "DT/Common/Labour/DT_Labour_Presentation"
 require "DT/Common/Labour/DT_Labour_Interaction"
+require "DT/Common/Labour/Warehouse/DT_LabourWarehouse"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Sim = DT_Labour.Sim or {}
@@ -16,6 +17,7 @@ local Nutrition = DT_Labour.Nutrition
 local Output = DT_Labour.Output
 local Presentation = DT_Labour.Presentation
 local Interaction = DT_Labour.Interaction
+local Warehouse = DT_Labour.Warehouse
 local Sim = DT_Labour.Sim
 
 if isClient() and not isServer() then
@@ -115,6 +117,19 @@ local function buildFoundItemsClause(entries)
         end
     end
 
+    return text
+end
+
+local function buildWarehouseProvisionClause(sampleNames, hiddenCount)
+    local text = formatNaturalList(sampleNames or {})
+    local extras = math.max(0, tonumber(hiddenCount) or 0)
+    if extras > 0 then
+        if text ~= "" then
+            text = text .. ", and " .. tostring(extras) .. " more"
+        else
+            text = tostring(extras) .. " more"
+        end
+    end
     return text
 end
 
@@ -463,7 +478,9 @@ local function beginScavengeReturnHome(worker, currentHour, reason, travelHours)
         return false
     end
 
-    worker.jobEnabled = false
+    if reason == Config.ReturnReasons.Manual then
+        worker.jobEnabled = false
+    end
     worker.presenceState = Config.PresenceStates.AwayToHome
     worker.travelHoursRemaining = math.max(0, tonumber(travelHours) or getScavengeTravelHours())
     worker.returnReason = reason or Config.ReturnReasons.Manual
@@ -480,7 +497,7 @@ local function completeScavengeReturnHome(worker, currentHour)
     worker.travelHoursRemaining = 0
     worker.dumpCooldownHours = 0
 
-    local movedStacks, movedCount, movedRawWeight = Registry.DumpCarriedHaul(worker)
+    local movedStacks, movedCount, movedRawWeight, leftoverCount = Warehouse.DepositWorkerHaul(worker)
     if movedStacks > 0 then
         worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0) + 1
         appendWorkerLog(
@@ -492,6 +509,25 @@ local function completeScavengeReturnHome(worker, currentHour)
             }) or ("Returned home and stowed " .. tostring(movedCount) .. " items."),
             currentHour,
             "haul"
+        )
+        if leftoverCount <= 0 then
+            return
+        end
+        appendWorkerLog(
+            worker,
+            "Warehouse is full. " .. tostring(leftoverCount) .. " carried item" .. (leftoverCount == 1 and "" or "s") .. " could not be unloaded.",
+            currentHour,
+            "warehouse"
+        )
+        return
+    end
+
+    if leftoverCount > 0 then
+        appendWorkerLog(
+            worker,
+            "Warehouse is full. " .. tostring(leftoverCount) .. " carried item" .. (leftoverCount == 1 and "" or "s") .. " could not be unloaded.",
+            currentHour,
+            "warehouse"
         )
         return
     end
@@ -578,11 +614,43 @@ function Sim.ProcessWorker(worker, currentHour)
     end
 
     Sites.RefreshWorkerSite(worker)
-    local toolsReady = Registry.WorkerHasRequiredTools(worker)
-
     speedMultiplier = speedMultiplier * (tonumber(baseWorkSpeedMultiplier) or 1)
     worker.workCycleHours = cycleHours
     worker.baseWorkSpeedMultiplier = baseWorkSpeedMultiplier
+
+    if normalizedJobType == Config.JobTypes.Scavenge then
+        ensureWorkerHome(worker)
+        worker.presenceState = getScavengePresenceState(worker)
+        if worker.presenceState == Config.PresenceStates.Home and worker.haulLedger and #worker.haulLedger > 0 then
+            completeScavengeReturnHome(worker, currentHour)
+        end
+        worker.dumpCooldownHours = math.max(0, tonumber(worker.travelHoursRemaining) or 0)
+    end
+
+    local dailyCaloriesNeed = Config.GetEffectiveDailyCaloriesNeed(worker, profile)
+    local dailyHydrationNeed = Config.GetEffectiveDailyHydrationNeed(worker, profile)
+
+    if worker.presenceState == Config.PresenceStates.Home and Warehouse and Warehouse.RestockWorker then
+        local restock = Warehouse.RestockWorker(worker, dailyCaloriesNeed, dailyHydrationNeed)
+        if restock and (tonumber(restock.provisionCount) or 0) > 0 then
+            local provisionClause = buildWarehouseProvisionClause(
+                restock.provisionSampleNames,
+                restock.provisionHiddenCount
+            )
+            local message = "Restocked " .. tostring(restock.provisionCount) .. " provision"
+                .. ((tonumber(restock.provisionCount) or 0) == 1 and "" or "s")
+                .. " from warehouse"
+            if provisionClause ~= "" then
+                message = message .. ": " .. provisionClause .. "."
+            else
+                message = message .. "."
+            end
+            appendWorkerLog(worker, message, currentHour, "warehouse")
+        end
+    end
+
+    Registry.RecalculateWorker(worker)
+    local toolsReady = Registry.WorkerHasRequiredTools(worker)
 
     if normalizedJobType == Config.JobTypes.Scavenge and Config.GetScavengeLoadout then
         scavengeLoadout = Config.GetScavengeLoadout(worker)
@@ -604,17 +672,7 @@ function Sim.ProcessWorker(worker, currentHour)
 
     worker.siteState = worker.siteState or "Deferred"
     worker.toolState = toolsReady and "Ready" or "Missing"
-    if normalizedJobType == Config.JobTypes.Scavenge then
-        ensureWorkerHome(worker)
-        worker.presenceState = getScavengePresenceState(worker)
-        if worker.presenceState == Config.PresenceStates.Home and worker.haulLedger and #worker.haulLedger > 0 then
-            completeScavengeReturnHome(worker, currentHour)
-        end
-        worker.dumpCooldownHours = math.max(0, tonumber(worker.travelHoursRemaining) or 0)
-    end
 
-    local dailyCaloriesNeed = Config.GetEffectiveDailyCaloriesNeed(worker, profile)
-    local dailyHydrationNeed = Config.GetEffectiveDailyHydrationNeed(worker, profile)
     local canWork = worker.jobEnabled and toolsReady
     if normalizedJobType == Config.JobTypes.Scavenge then
         canWork = canWork and worker.presenceState == Config.PresenceStates.Scavenging
@@ -671,6 +729,7 @@ function Sim.ProcessWorker(worker, currentHour)
                 and presenceState == Config.PresenceStates.Home
                 and worker.assignedSiteID
                 and toolsReady
+                and (tonumber(worker.haulCount) or 0) <= 0
                 and hasCalories
                 and hasHydration
                 and totalCaloriesAvailable >= outboundCaloriesThreshold
@@ -712,6 +771,14 @@ function Sim.ProcessWorker(worker, currentHour)
                 worker.state = Config.States.Dehydrated
             elseif not hasCalories then
                 worker.state = Config.States.Starving
+            elseif presenceState == Config.PresenceStates.Home and (tonumber(worker.haulCount) or 0) > 0 then
+                worker.state = Config.States.StorageFull
+            elseif presenceState == Config.PresenceStates.Home
+                and worker.jobEnabled
+                and worker.assignedSiteID
+                and toolsReady
+                and (totalCaloriesAvailable < outboundCaloriesThreshold or totalHydrationAvailable < outboundHydrationThreshold) then
+                worker.state = Config.States.WarehouseShortage
             elseif presenceState == Config.PresenceStates.Scavenging and worker.jobEnabled and toolsReady then
                 worker.state = Config.States.Working
             elseif presenceState == Config.PresenceStates.Home and worker.jobEnabled and not worker.assignedSiteID then
@@ -739,11 +806,29 @@ function Sim.ProcessWorker(worker, currentHour)
             worker.workProgress = worker.workProgress - cycleHours
             local entries = Output.GenerateForJob(profile, worker)
             local totalQuantity = 0
+            local warehouseBlocked = 0
             for _, entry in ipairs(entries) do
-                Registry.AddOutputEntry(worker, entry)
-                totalQuantity = totalQuantity + math.max(1, tonumber(entry.qty) or 1)
+                local movedQty, leftoverQty = Warehouse.DepositHaulEntry(worker.ownerUsername, entry)
+                totalQuantity = totalQuantity + movedQty
+                warehouseBlocked = warehouseBlocked + leftoverQty
+                if leftoverQty > 0 then
+                    Registry.AddOutputEntry(worker, {
+                        fullType = entry.fullType,
+                        qty = leftoverQty
+                    })
+                end
             end
             logJobCycleOutcome(worker, currentHour, totalQuantity, Interaction.GetPlaceLabel(worker), entries)
+            if warehouseBlocked > 0 then
+                appendWorkerLog(
+                    worker,
+                    "Warehouse is full. " .. tostring(warehouseBlocked) .. " produced item" .. (warehouseBlocked == 1 and "" or "s") .. " could not be stored.",
+                    currentHour,
+                    "warehouse"
+                )
+                worker.state = Config.States.StorageFull
+                break
+            end
         end
     end
 

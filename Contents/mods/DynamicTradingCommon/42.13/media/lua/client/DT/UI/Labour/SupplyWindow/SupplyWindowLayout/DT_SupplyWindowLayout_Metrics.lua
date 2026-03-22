@@ -26,7 +26,7 @@ function Internal.getSupplyWindowLayoutMetrics(window)
     local leftX = pad
     local controlX = leftX + leftWidth + gap
     local rightX = controlX + controlWidth + gap
-    local centerButtonsY = contentY + math.floor(math.max(0, listH - 152) / 2)
+    local centerButtonsY = contentY + math.floor(math.max(0, listH - 192) / 2)
     local detailY = contentY + listH + 10
 
     return {

@@ -53,7 +53,7 @@ function LabourSupplyList:doDrawItem(y, item, alt)
     local activeTab = self.target and self.target.activeTab or Internal.Tabs.Provisions
     local presentation = self.mode == "worker"
         and Internal.getWorkerEntryPresentation(entry, activeTab)
-        or Internal.getPlayerEntryPresentation(entry, activeTab, self.target and self.target.workerData or nil)
+        or Internal.getPlayerEntryPresentation(entry, activeTab, self.target and self.target.workerData or nil, self.target)
     local width = self:getWidth()
     local isSelected = self.selected == item.index
     if isSelected then
