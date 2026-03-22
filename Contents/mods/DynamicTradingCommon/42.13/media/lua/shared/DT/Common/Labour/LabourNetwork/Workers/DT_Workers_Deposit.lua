@@ -49,17 +49,41 @@ Network.Handlers.DepositWarehouseSupplies = function(player, args)
         itemIDs[#itemIDs + 1] = args.itemID
     end
 
+    local eligibleCount = 0
+    local movedCount = 0
+    local blockedCount = 0
     for _, itemID in ipairs(itemIDs) do
         local invItem = Internal.getInventoryItemByID(player, itemID)
         if invItem then
             local entry = Nutrition.BuildEntryFromItem(invItem)
-            if entry and Warehouse.DepositProvisionEntry(owner, entry) then
-                Internal.removeInventoryItem(invItem)
+            if entry then
+                eligibleCount = eligibleCount + 1
+                if Warehouse.DepositProvisionEntry(owner, entry) then
+                    Internal.removeInventoryItem(invItem)
+                    movedCount = movedCount + 1
+                else
+                    blockedCount = blockedCount + 1
+                end
             end
         end
     end
 
-    Shared.saveAndRefreshProcessed(player, worker)
+    if movedCount <= 0 and eligibleCount > 0 then
+        Internal.syncNotice(player, "Warehouse is full. No supplies could be stored.", "error", true)
+        Shared.saveAndRefreshBasic(player, worker, true)
+        return
+    end
+
+    if blockedCount > 0 then
+        Internal.syncNotice(
+            player,
+            "Warehouse is nearly full. " .. tostring(blockedCount) .. " supply item" .. (blockedCount == 1 and "" or "s") .. " could not be stored.",
+            "error",
+            true
+        )
+    end
+
+    Shared.saveAndRefreshProcessed(player, worker, true)
 end
 
 Network.Handlers.DepositWarehouseOutput = function(player, args)
@@ -76,6 +100,7 @@ Network.Handlers.DepositWarehouseOutput = function(player, args)
 
     local eligibleCount = 0
     local movedCount = 0
+    local blockedCount = 0
     for _, itemID in ipairs(itemIDs) do
         local invItem = Internal.getInventoryItemByID(player, itemID)
         if invItem then
@@ -96,6 +121,8 @@ Network.Handlers.DepositWarehouseOutput = function(player, args)
                 if movedQty > 0 then
                     Internal.removeInventoryItem(invItem)
                     movedCount = movedCount + movedQty
+                else
+                    blockedCount = blockedCount + 1
                 end
             end
         end
@@ -105,12 +132,22 @@ Network.Handlers.DepositWarehouseOutput = function(player, args)
         if eligibleCount <= 0 then
             Internal.syncNotice(player, "No eligible storage items could be stored from that selection.", "error")
         else
-            Internal.syncNotice(player, "Warehouse storage is full. No items could be stored.", "error")
+            Internal.syncNotice(player, "Warehouse storage is full. No items could be stored.", "error", true)
         end
+        Shared.saveAndRefreshBasic(player, worker, true)
         return
     end
 
-    Shared.saveAndRefreshProcessed(player, worker)
+    if blockedCount > 0 then
+        Internal.syncNotice(
+            player,
+            "Warehouse is nearly full. " .. tostring(blockedCount) .. " storage item" .. (blockedCount == 1 and "" or "s") .. " could not be stored.",
+            "error",
+            true
+        )
+    end
+
+    Shared.saveAndRefreshProcessed(player, worker, true)
 end
 
 return Network

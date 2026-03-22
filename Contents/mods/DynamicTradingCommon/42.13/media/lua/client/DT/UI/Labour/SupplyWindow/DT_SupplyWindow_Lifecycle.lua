@@ -25,8 +25,14 @@ function DT_SupplyWindow.Open(worker, viewMode)
     window.activeTab = DT_SupplyWindow.Internal and DT_SupplyWindow.Internal.Tabs and DT_SupplyWindow.Internal.Tabs.Provisions or "provisions"
     window.selectedPlayerEntry = nil
     window.selectedWorkerEntry = nil
+    local subjectName = tostring(window.workerName)
+    if window.viewMode == ((DT_SupplyWindow.Internal.ViewModes or {}).Warehouse)
+        and DT_SupplyWindow.Internal
+        and DT_SupplyWindow.Internal.getWarehouseDisplayName then
+        subjectName = DT_SupplyWindow.Internal.getWarehouseDisplayName(window)
+    end
     window.title = (window.viewMode == ((DT_SupplyWindow.Internal.ViewModes or {}).Warehouse) and "Warehouse - " or "NPC Inventory - ")
-        .. tostring(window.workerName)
+        .. subjectName
     window:setVisible(true)
     window:addToUIManager()
     window:bringToTop()
@@ -35,7 +41,7 @@ function DT_SupplyWindow.Open(worker, viewMode)
     window:requestWorkerDetails()
     window:updateStatus(
         (window.viewMode == ((DT_SupplyWindow.Internal.ViewModes or {}).Warehouse) and "Opening warehouse for " or "Opening inventory for ")
-            .. tostring(window.workerName) .. "."
+            .. subjectName .. "."
     )
 end
 

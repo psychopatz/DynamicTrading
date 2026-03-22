@@ -13,10 +13,18 @@ local function autoRefreshWindow(window)
         window.syncStatusMutedFrames = 120
         window:sendLabourCommand("RequestPlayerWorkers", {})
         if window.selectedWorkerSummary and window.selectedWorkerSummary.workerID then
-            window:sendLabourCommand("RequestWorkerDetails", {
-                workerID = window.selectedWorkerSummary.workerID,
-                includeWarehouseLedgers = false
-            })
+            local supplyWindow = DT_SupplyWindow and DT_SupplyWindow.instance or nil
+            local supplyOwnsDetailSync = supplyWindow
+                and supplyWindow.getIsVisible
+                and supplyWindow:getIsVisible()
+                and supplyWindow.workerID == window.selectedWorkerSummary.workerID
+
+            if not supplyOwnsDetailSync then
+                window:sendLabourCommand("RequestWorkerDetails", {
+                    workerID = window.selectedWorkerSummary.workerID,
+                    includeWarehouseLedgers = false
+                })
+            end
         end
         return
     end
@@ -40,6 +48,16 @@ function DT_MainWindow:prerender()
     if self.autoRefreshFrames >= MainWindowLayout.AUTO_REFRESH_FRAMES then
         self.autoRefreshFrames = 0
         autoRefreshWindow(self)
+    end
+
+    if isClient() and not isServer() then
+        self.ownedFactionRefreshFrames = (tonumber(self.ownedFactionRefreshFrames) or 0) + 1
+        if self.ownedFactionRefreshFrames >= (MainWindowLayout.OWNED_FACTION_REFRESH_FRAMES or 300) then
+            self.ownedFactionRefreshFrames = 0
+            if DT_System and DT_System.RequestOwnedFactionStatus then
+                DT_System.RequestOwnedFactionStatus()
+            end
+        end
     end
 
     local th = self:titleBarHeight()

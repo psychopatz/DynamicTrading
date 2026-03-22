@@ -101,6 +101,12 @@ end
 
 function DT_SupplyWindow:setWorkerData(worker)
     self.workerData = worker
+    if Internal.isWarehouseView and Internal.isWarehouseView(self) then
+        local warehouseName = Internal.getWarehouseDisplayName and Internal.getWarehouseDisplayName(self) or tostring(self.workerName or self.workerID or "Warehouse")
+        self.title = "Warehouse - " .. warehouseName
+    elseif self.workerName then
+        self.title = "NPC Inventory - " .. tostring(self.workerName)
+    end
     if self.refreshTabButtons then
         self:refreshTabButtons()
     end

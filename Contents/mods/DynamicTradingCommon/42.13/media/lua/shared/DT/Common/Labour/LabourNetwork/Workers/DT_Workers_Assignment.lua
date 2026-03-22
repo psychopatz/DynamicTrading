@@ -67,12 +67,13 @@ Network.Handlers.AssignWarehouseToolset = function(player, args)
         tags = tags
     })
     if not stored then
-        Internal.syncNotice(player, "Warehouse is full. No space for that equipment.", "error")
+        Internal.syncNotice(player, "Warehouse is full. No space for that equipment.", "error", true)
+        Shared.saveAndRefreshBasic(player, worker, true)
         return
     end
 
     Internal.removeInventoryItem(invItem)
-    Shared.saveAndRefreshProcessed(player, worker)
+    Shared.saveAndRefreshProcessed(player, worker, true)
 end
 
 return Network

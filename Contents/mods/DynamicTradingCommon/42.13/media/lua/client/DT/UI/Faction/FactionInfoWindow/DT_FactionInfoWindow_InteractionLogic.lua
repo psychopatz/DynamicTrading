@@ -17,7 +17,7 @@ function DT_FactionInfoWindow:applyFactionSelection(f, requestRoster)
             win.headerPanel:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, f)
         end
         if win.tabInfo then win.tabInfo:updateData(f) end
-        local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster")
+        local rosterData = DT_FactionInfoWindow.resolveRosterData()
         if win.tabReputation then win.tabReputation:updateData(f, rosterData) end
         if win.tabEconomics then win.tabEconomics:updateData(f) end
         if win.tabStockpiles then win.tabStockpiles:updateData(f) end

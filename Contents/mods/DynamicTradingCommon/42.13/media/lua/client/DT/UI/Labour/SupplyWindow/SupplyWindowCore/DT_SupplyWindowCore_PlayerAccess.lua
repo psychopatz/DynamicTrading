@@ -36,6 +36,51 @@ function Internal.getPlayerWealth(player)
     return looseCount + (bundleCount * 100)
 end
 
+function Internal.getWarehouseOwnerUsername(window)
+    local worker = window and window.workerData or nil
+    local warehouse = worker and worker.warehouse or nil
+    local config = Internal.Config or {}
+
+    local ownerUsername = warehouse and warehouse.ownerUsername or worker and worker.ownerUsername or nil
+    if ownerUsername and ownerUsername ~= "" then
+        return config.GetOwnerUsername and config.GetOwnerUsername(ownerUsername) or tostring(ownerUsername)
+    end
+
+    local player = Internal.getLocalPlayer()
+    return config.GetOwnerUsername and config.GetOwnerUsername(player) or "local"
+end
+
+function Internal.getOwnedFactionStatus()
+    if DT_System and DT_System.GetOwnedFactionStatus then
+        return DT_System.GetOwnedFactionStatus()
+    end
+
+    if DT_MainWindow and DT_MainWindow.cachedOwnedFactionStatus then
+        return DT_MainWindow.cachedOwnedFactionStatus
+    end
+
+    return nil
+end
+
+function Internal.getWarehouseDisplayName(window)
+    local ownerUsername = tostring(Internal.getWarehouseOwnerUsername(window) or "local")
+    local status = Internal.getOwnedFactionStatus()
+    local config = Internal.Config or {}
+
+    if status and status.faction then
+        local factionOwner = status.ownerUsername or status.faction.leaderUsername or nil
+        local normalizedFactionOwner = config.GetOwnerUsername and config.GetOwnerUsername(factionOwner) or tostring(factionOwner or "")
+        if normalizedFactionOwner == ownerUsername then
+            local factionName = tostring(status.faction.name or "")
+            if factionName ~= "" then
+                return factionName
+            end
+        end
+    end
+
+    return ownerUsername .. "'s faction"
+end
+
 function Internal.resolveWorkerDetail(workerID)
     if not workerID then
         return nil

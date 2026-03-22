@@ -25,10 +25,11 @@ function Internal.sendResponse(player, module, command, args)
     end
 end
 
-function Internal.syncNotice(player, message, severity)
+function Internal.syncNotice(player, message, severity, popup)
     Internal.sendResponse(player, Config.COMMAND_MODULE, "LabourNotice", {
         message = tostring(message or ""),
-        severity = severity or "info"
+        severity = severity or "info",
+        popup = popup == true
     })
 end
 

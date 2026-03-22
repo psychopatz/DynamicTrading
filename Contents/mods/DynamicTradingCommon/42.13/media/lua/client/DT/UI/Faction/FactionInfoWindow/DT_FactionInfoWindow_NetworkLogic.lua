@@ -72,33 +72,48 @@ local function onServerCommand(module, command, args)
             end
         end
     elseif command == "SyncOwnedFactionStatus" then
+        local previousStatus = DT_FactionInfoWindow.cachedOwnedFactionStatus
+        local previousFactionID = previousStatus and previousStatus.faction and previousStatus.faction.id or nil
         DT_FactionInfoWindow.cachedOwnedFactionStatus = args and args.status or nil
+        local newStatus = DT_FactionInfoWindow.cachedOwnedFactionStatus
+        local newFactionID = newStatus and newStatus.faction and newStatus.faction.id or nil
         local factionData = DT_FactionInfoWindow.resolveFactionData()
         local rosterData = DT_FactionInfoWindow.resolveRosterData()
-        if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.populateList then
+        local selectedFaction = DT_FactionInfoWindow.selectedFaction
+        local selectedFactionID = selectedFaction and selectedFaction.id or nil
+
+        local shouldRefreshList = previousFactionID ~= newFactionID or selectedFaction == nil
+        if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.populateList and shouldRefreshList then
             DT_FactionInfoWindow.instance:populateList(factionData, rosterData)
+            selectedFaction = DT_FactionInfoWindow.selectedFaction
+            selectedFactionID = selectedFaction and selectedFaction.id or nil
+        elseif DT_FactionInfoWindow.instance and selectedFactionID and factionData and factionData[selectedFactionID] then
+            selectedFaction = factionData[selectedFactionID]
+            DT_FactionInfoWindow.selectedFaction = selectedFaction
+            DT_FactionInfoWindow.instance.selectedFaction = selectedFaction
         end
+
         if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.headerPanel and DT_FactionInfoWindow.instance.headerPanel.updateOwnedFactionStatus then
             DT_FactionInfoWindow.instance.headerPanel:updateOwnedFactionStatus(
                 DT_FactionInfoWindow.cachedOwnedFactionStatus,
-                DT_FactionInfoWindow.selectedFaction
+                selectedFaction
             )
         end
-        if DT_FactionInfoWindow.selectedFaction
-            and DT_FactionInfoWindow.selectedFaction.playerOwned
+        if selectedFaction
+            and selectedFaction.playerOwned
             and DT_FactionInfoWindow.instance
             and DT_FactionInfoWindow.instance.tabPopulation then
             DT_FactionInfoWindow.instance.tabPopulation:updateData(
-                DT_FactionInfoWindow.selectedFaction,
+                selectedFaction,
                 rosterData
             )
         end
-        if DT_FactionInfoWindow.selectedFaction
-            and DT_FactionInfoWindow.selectedFaction.playerOwned
+        if selectedFaction
+            and selectedFaction.playerOwned
             and DT_FactionInfoWindow.instance
             and DT_FactionInfoWindow.instance.tabInfo then
             DT_FactionInfoWindow.instance.tabInfo:updateData(
-                DT_FactionInfoWindow.selectedFaction,
+                selectedFaction,
                 rosterData
             )
         end

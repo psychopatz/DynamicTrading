@@ -46,8 +46,8 @@ end
 
 function Internal.getWorkerHeaderTitle(window)
     if Internal.isWarehouseView and Internal.isWarehouseView(window) then
-        local workerName = tostring(window and window.workerName or "Worker")
-        return workerName .. " Warehouse"
+        local warehouseName = Internal.getWarehouseDisplayName and Internal.getWarehouseDisplayName(window) or tostring(window and window.workerName or "Warehouse")
+        return warehouseName .. " Warehouse"
     end
 
     local workerName = tostring(window and window.workerName or "Worker")

@@ -164,17 +164,44 @@ function DT_FactionInfoTab_Population:onRecallTrade()
 end
 
 function DT_FactionInfoTab_Population:updateData(f, rosterData)
+    local previousWorkerID = self.selectedWorker and self.selectedWorker.workerID or nil
+    local previousUUID = self.selectedUUID or nil
+
     self.rosterlist:clear()
     self.currentFaction = f
     self.selectedWorker = nil
+    self.selectedSoul = nil
+    self.selectedUUID = nil
 
-    -- Reset selection
-    if self.profilePanel then
-        self.profilePanel:setNPC(nil)
+    local function rememberSelection(data)
+        if not data then
+            return
+        end
+
+        local workerID = data.worker and data.worker.workerID or nil
+        if previousWorkerID and workerID and previousWorkerID == workerID then
+            self.rosterlist.selected = #self.rosterlist.items
+            self.selectedWorker = data.worker
+            self.selectedSoul = data.soul
+            self.selectedUUID = data.uuid
+            return
+        end
+
+        if previousUUID and data.uuid and previousUUID == data.uuid then
+            self.rosterlist.selected = #self.rosterlist.items
+            self.selectedWorker = data.worker
+            self.selectedSoul = data.soul
+            self.selectedUUID = data.uuid
+        end
     end
-    self:updateActionButtons()
 
-    if not f then return end
+    if not f then
+        if self.profilePanel then
+            self.profilePanel:setNPC(nil)
+        end
+        self:updateActionButtons()
+        return
+    end
 
     if f.playerOwned then
         local ownedStatus = DT_FactionInfoWindow and DT_FactionInfoWindow.cachedOwnedFactionStatus or nil
@@ -203,6 +230,7 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                     soul = buildWorkerSoul(liveWorker),
                     uuid = liveWorker.tradeSoulUUID or liveWorker.workerID
                 })
+                rememberSelection(self.rosterlist.items[#self.rosterlist.items].item)
             end
         elseif tonumber(f.memberCount or 0) > 0 then
             self.rosterlist:addItem("Known Recruits: " .. tostring(f.memberCount or 0), {
@@ -216,9 +244,14 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                 },
                 uuid = "public_count"
             })
+            rememberSelection(self.rosterlist.items[#self.rosterlist.items].item)
         else
             self.rosterlist:addItem("Syncing player faction members...", nil)
         end
+        if self.profilePanel then
+            self.profilePanel:setNPC(self.selectedSoul, self.selectedUUID)
+        end
+        self:updateActionButtons()
         return
     end
 
@@ -242,9 +275,14 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                     }
                     local dataEntry = { soul = soul, uuid = trader.id, worker = nil }
                     self.rosterlist:addItem(trader.name, dataEntry)
+                    rememberSelection(dataEntry)
                 end
             end
         end
+        if self.profilePanel then
+            self.profilePanel:setNPC(self.selectedSoul, self.selectedUUID)
+        end
+        self:updateActionButtons()
         return
     end
     
@@ -258,6 +296,7 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                 if soul then
                     local dataEntry = { soul = soul, uuid = uuid, worker = nil }
                     self.rosterlist:addItem(soul.name or uuid, dataEntry)
+                    rememberSelection(dataEntry)
                     hasSouls = true
                 end
             end
@@ -268,6 +307,11 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
             end
         end
     end
+
+    if self.profilePanel then
+        self.profilePanel:setNPC(self.selectedSoul, self.selectedUUID)
+    end
+    self:updateActionButtons()
 end
 
 function DT_FactionInfoTab_Population:doDrawRosterItem(y, item, alt)
