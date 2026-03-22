@@ -14,7 +14,7 @@ require "DT/Common/Labour/LabourNetwork/DT_LabourNetwork_Inventory"
 require "DT/Common/Labour/LabourNetwork/DT_LabourNetwork_Reputation"
 require "DT/Common/Labour/LabourNetwork/DT_LabourNetwork_Recruitment"
 require "DT/Common/Labour/LabourNetwork/DT_LabourNetwork_QueryHandlers"
-require "DT/Common/Labour/LabourNetwork/DT_LabourNetwork_WorkerHandlers"
+require "DT/Common/Labour/LabourNetwork/Workers/DT_Workers"
 require "DT/Common/Labour/LabourNetwork/DT_LabourNetwork_Debug"
 
 return DT_Labour.Network
