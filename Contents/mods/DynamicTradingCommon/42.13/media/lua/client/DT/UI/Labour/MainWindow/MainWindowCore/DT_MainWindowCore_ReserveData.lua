@@ -1,6 +1,8 @@
 DT_MainWindow = DT_MainWindow or {}
 DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
+require "DT/Common/Labour/DT_Labour_Interaction"
+
 local Internal = DT_MainWindow.Internal
 
 function Internal.getReserveDaysLeft(storedAmount, dailyNeed)
@@ -81,64 +83,24 @@ function Internal.getHealthBarData(currentHp, maxHp)
     }
 end
 
-function Internal.getScavengeSearchProgressData(worker, profile)
-    local config = Internal.Config or {}
-    local normalizedJob = config.NormalizeJobType and config.NormalizeJobType(worker and worker.jobType) or tostring(worker and worker.jobType or "")
-    if normalizedJob ~= ((config.JobTypes or {}).Scavenge) then
+function Internal.getWorkerProgressData(worker, profile)
+    local interaction = DT_Labour and DT_Labour.Interaction or nil
+    if not interaction or not interaction.GetProgressDescriptor then
         return nil
     end
 
-    local cycleHours = math.max(
-        0.01,
-        tonumber(worker and worker.workCycleHours)
-            or tonumber(config.GetEffectiveCycleHours and config.GetEffectiveCycleHours(worker, profile))
-            or tonumber(profile and profile.cycleHours)
-            or 16
-    )
-    local progressHours = math.max(0, tonumber(worker and worker.workProgress) or 0)
-    if progressHours > cycleHours then
-        progressHours = progressHours % cycleHours
+    local data = interaction.GetProgressDescriptor(worker, profile)
+    if not data then
+        return nil
     end
 
-    local baseSpeed = math.max(
-        0.01,
-        tonumber(worker and worker.baseWorkSpeedMultiplier)
-            or tonumber(config.GetBaseWorkSpeedMultiplier and config.GetBaseWorkSpeedMultiplier(worker, profile))
-            or 1
-    )
-    local archetypeSpeed = math.max(0.01, tonumber(config.GetJobSpeedMultiplier and config.GetJobSpeedMultiplier(worker and worker.archetypeID, worker and worker.jobType) or 1) or 1)
-    local equipmentSpeed = math.max(0.01, tonumber(worker and worker.scavengeSearchSpeedMultiplier) or 1)
-    local effectiveSpeed = baseSpeed * archetypeSpeed * equipmentSpeed
-    local remainingProgressHours = math.max(0, cycleHours - progressHours)
-    local remainingWorldHours = effectiveSpeed > 0 and (remainingProgressHours / effectiveSpeed) or nil
-    local presenceState = tostring(worker and worker.presenceState or "")
-    local scavengeState = tostring((config.PresenceStates or {}).Scavenging or "Scavenging")
+    data.stored = tonumber(data.progressHours) or 0
+    data.usage = tonumber(data.cycleHours) or 0
+    data.overflow = 0
+    data.daysLeft = nil
+    return data
+end
 
-    local captionText = "Loot roll when full"
-    if presenceState == scavengeState and worker and worker.jobEnabled then
-        captionText = Internal.formatDurationHours(remainingWorldHours) .. " to next loot roll"
-    elseif worker and worker.jobEnabled then
-        captionText = "Progress pauses while travelling"
-    end
-
-    return {
-        stored = progressHours,
-        usage = cycleHours,
-        fillRatio = math.max(0, math.min(1, progressHours / cycleHours)),
-        overflow = 0,
-        daysLeft = nil,
-        captionText = captionText,
-        progressHours = progressHours,
-        cycleHours = cycleHours,
-        remainingWorldHours = remainingWorldHours,
-        baseSpeedMultiplier = baseSpeed,
-        archetypeSpeedMultiplier = archetypeSpeed,
-        equipmentSpeedMultiplier = equipmentSpeed,
-        effectiveSpeedMultiplier = effectiveSpeed,
-        summaryText = Internal.formatDecimal(progressHours, 1)
-            .. " / "
-            .. Internal.formatDecimal(cycleHours, 1)
-            .. "h | Speed x"
-            .. Internal.formatDecimal(effectiveSpeed, 2)
-    }
+function Internal.getScavengeSearchProgressData(worker, profile)
+    return Internal.getWorkerProgressData(worker, profile)
 end

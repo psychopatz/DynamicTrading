@@ -1,4 +1,5 @@
 require "DT/Common/Config"
+require "DT/Common/InteractionStrings/DT_InteractionStrings"
 
 DynamicTrading = DynamicTrading or {}
 DT_Labour = DT_Labour or {}

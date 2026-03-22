@@ -13,7 +13,8 @@ function LabourProfileCard:new(x, y, width, height)
     o.caloriesDisplayRatio = 0
     o.hydrationDisplayRatio = 0
     o.healthDisplayRatio = 0
-    o.searchDisplayRatio = 0
+    o.activityDisplayRatio = 0
+    o.workerDisplayCache = {}
     return o
 end
 
@@ -29,11 +30,11 @@ function LabourProfileCard:setWorker(worker)
         self.caloriesData = nil
         self.hydrationData = nil
         self.healthData = nil
-        self.searchData = nil
+        self.activityData = nil
         self.caloriesTargetRatio = 0
         self.hydrationTargetRatio = 0
         self.healthTargetRatio = 0
-        self.searchTargetRatio = 0
+        self.activityTargetRatio = 0
         return
     end
 
@@ -57,12 +58,27 @@ function LabourProfileCard:setWorker(worker)
     self.caloriesData = Internal.getNutritionBarData("Calories", currentCaloriesBuffer, carryoverCalories, provisionCalories, dailyCaloriesNeed)
     self.hydrationData = Internal.getNutritionBarData("Hydration", currentHydrationBuffer, carryoverHydration, provisionHydration, dailyHydrationNeed)
     self.healthData = Internal.getHealthBarData(worker.hp, worker.maxHp)
-    self.searchData = Internal.getScavengeSearchProgressData(worker, profile)
+    self.activityData = Internal.getWorkerProgressData and Internal.getWorkerProgressData(worker, profile) or nil
     self.caloriesTargetRatio = self.caloriesData.fillRatio
     self.hydrationTargetRatio = self.hydrationData.fillRatio
     self.healthTargetRatio = self.healthData.fillRatio
-    self.searchTargetRatio = self.searchData and self.searchData.fillRatio or 0
+    self.activityTargetRatio = self.activityData and self.activityData.fillRatio or 0
     self.portraitTex = Internal.getWorkerPortraitTexture(worker)
+
+    local workerID = tostring(worker.workerID or "")
+    local cachedRatios = self.workerDisplayCache[workerID]
+    if cachedRatios then
+        self.caloriesDisplayRatio = tonumber(cachedRatios.calories) or self.caloriesTargetRatio
+        self.hydrationDisplayRatio = tonumber(cachedRatios.hydration) or self.hydrationTargetRatio
+        self.healthDisplayRatio = tonumber(cachedRatios.health) or self.healthTargetRatio
+        self.activityDisplayRatio = tonumber(cachedRatios.activity) or self.activityTargetRatio
+        return
+    end
+
+    self.caloriesDisplayRatio = self.caloriesTargetRatio
+    self.hydrationDisplayRatio = self.hydrationTargetRatio
+    self.healthDisplayRatio = self.healthTargetRatio
+    self.activityDisplayRatio = self.activityTargetRatio
 end
 
 local function animateRatio(currentValue, targetValue)
@@ -96,6 +112,24 @@ function LabourProfileCard:drawReserveBar(x, y, width, height, label, color, dat
     self:drawTextRight(totalsText, x + width, y + height + 4, 0.66, 0.66, 0.66, 1, UIFont.Small)
 end
 
+function LabourProfileCard:storeDisplayState()
+    if not self.worker then
+        return
+    end
+
+    local workerID = tostring(self.worker.workerID or "")
+    if workerID == "" then
+        return
+    end
+
+    self.workerDisplayCache[workerID] = {
+        calories = self.caloriesDisplayRatio,
+        hydration = self.hydrationDisplayRatio,
+        health = self.healthDisplayRatio,
+        activity = self.activityDisplayRatio
+    }
+end
+
 function LabourProfileCard:prerender()
     ISPanel.prerender(self)
 
@@ -108,7 +142,8 @@ function LabourProfileCard:prerender()
     self.caloriesDisplayRatio = animateRatio(self.caloriesDisplayRatio, self.caloriesTargetRatio)
     self.hydrationDisplayRatio = animateRatio(self.hydrationDisplayRatio, self.hydrationTargetRatio)
     self.healthDisplayRatio = animateRatio(self.healthDisplayRatio, self.healthTargetRatio)
-    self.searchDisplayRatio = animateRatio(self.searchDisplayRatio, self.searchTargetRatio)
+    self.activityDisplayRatio = animateRatio(self.activityDisplayRatio, self.activityTargetRatio)
+    self:storeDisplayState()
 
     local portraitSize = math.min(104, self.height - (pad * 2))
     local portraitX = pad
@@ -123,7 +158,7 @@ function LabourProfileCard:prerender()
     self:drawText(tostring(worker.name or "Worker"), barsX, topY, 0.95, 0.97, 1, 1, UIFont.Large)
     topY = topY + 24
     self:drawText(
-        Internal.getJobDisplayName(worker, profile) .. " | " .. tostring(worker.state or "Idle"),
+        Internal.getJobDisplayName(worker, profile) .. " | " .. Internal.getWorkerStateLabel(worker),
         barsX,
         topY,
         0.68,
@@ -179,16 +214,16 @@ function LabourProfileCard:prerender()
 
     topY = topY + 44
 
-    if self.searchData then
+    if self.activityData then
         self:drawReserveBar(
             barsX,
             topY,
             barsWidth,
             barHeight,
-            "Search Roll",
-            { r = 0.94, g = 0.72, b = 0.18 },
-            self.searchData,
-            self.searchDisplayRatio
+            tostring(self.activityData.displayText or self.activityData.label or "Working"),
+            self.activityData.color or { r = 0.78, g = 0.78, b = 0.78 },
+            self.activityData,
+            self.activityDisplayRatio
         )
     end
 end

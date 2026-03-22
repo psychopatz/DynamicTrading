@@ -4,6 +4,7 @@ require "DT/Common/Labour/DT_Labour_Sites"
 require "DT/Common/Labour/LabourNutrition/DT_LabourNutrition"
 require "DT/Common/Labour/DT_Labour_Output"
 require "DT/Common/Labour/DT_Labour_Presentation"
+require "DT/Common/Labour/DT_Labour_Interaction"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Sim = DT_Labour.Sim or {}
@@ -14,6 +15,7 @@ local Sites = DT_Labour.Sites
 local Nutrition = DT_Labour.Nutrition
 local Output = DT_Labour.Output
 local Presentation = DT_Labour.Presentation
+local Interaction = DT_Labour.Interaction
 local Sim = DT_Labour.Sim
 
 if isClient() and not isServer() then
@@ -83,6 +85,39 @@ local function formatNaturalList(values)
     return tostring(values[1]) .. ", " .. tostring(values[2]) .. ", and " .. tostring(count - 2) .. " more"
 end
 
+local function buildFoundItemsClause(entries)
+    local names = {}
+    local hiddenCount = 0
+
+    for _, entry in ipairs(entries or {}) do
+        if entry and entry.fullType then
+            local qty = math.max(1, tonumber(entry.qty) or 1)
+            local itemName = getOutputDisplayName(entry.fullType)
+            local displayName = qty > 1 and (itemName .. " x" .. tostring(qty)) or itemName
+            if #names < 2 then
+                names[#names + 1] = displayName
+            else
+                hiddenCount = hiddenCount + 1
+            end
+        end
+    end
+
+    if #names <= 0 then
+        return ""
+    end
+
+    local text = formatNaturalList(names)
+    if hiddenCount > 0 then
+        if #names == 1 then
+            text = text .. " and " .. tostring(hiddenCount) .. " more"
+        else
+            text = text .. ", and " .. tostring(hiddenCount) .. " more"
+        end
+    end
+
+    return text
+end
+
 local function getScavengeToolSummary(worker)
     local names = {}
     local seen = {}
@@ -102,6 +137,11 @@ local function getScavengeToolSummary(worker)
 end
 
 local function getScavengeLocationLabel(worker, run)
+    local livePlace = Interaction and Interaction.GetPlaceLabel and Interaction.GetPlaceLabel(worker) or nil
+    if livePlace and tostring(livePlace) ~= "" then
+        return tostring(livePlace)
+    end
+
     local siteProfile = run and run.siteProfile or nil
     local displayName = siteProfile and siteProfile.displayName or worker and worker.scavengeSiteProfileLabel or worker and worker.scavengeSiteRoomName or nil
     if displayName and tostring(displayName) ~= "" then
@@ -110,56 +150,32 @@ local function getScavengeLocationLabel(worker, run)
     return "the outskirts"
 end
 
-local function logScavengeRun(worker, run, currentHour)
-    if not worker or not run then
-        return
-    end
-
-    local entries = run.entries or {}
-    local foundStacks = #entries
-    local foundQuantity = math.max(0, tonumber(run.totalQuantity) or 0)
-    local failedRolls = math.max(0, tonumber(run.failedRolls) or 0)
-    local placeLabel = getScavengeLocationLabel(worker, run)
-    local toolSummary = getScavengeToolSummary(worker)
-    local message = nil
-
-    if foundStacks > 0 then
-        message = "Searched " .. placeLabel .. " with " .. toolSummary .. " and returned with "
-            .. tostring(foundQuantity) .. " items across " .. tostring(foundStacks) .. " finds"
-        if failedRolls > 0 then
-            message = message .. " after " .. tostring(failedRolls) .. " false leads"
-        end
-        message = message .. "."
-    else
-        message = "Searched " .. placeLabel .. " with " .. toolSummary .. ", but came back empty-handed"
-        if failedRolls > 0 then
-            message = message .. " after " .. tostring(failedRolls) .. " dead ends"
-        end
-        message = message .. "."
-    end
-
-    appendWorkerLog(worker, message, currentHour, "scavenge")
+local function getOutcomeTokens(worker, count, placeLabel)
+    local safeCount = math.max(0, tonumber(count) or 0)
+    return {
+        count = tostring(safeCount),
+        item_word = safeCount == 1 and "item" or "items",
+        place = tostring(placeLabel or Interaction.GetPlaceLabel(worker) or "Work Site")
+    }
 end
 
-local function logOutputEntry(worker, entry, currentHour)
-    if not worker or not entry or not entry.fullType then
+local function logJobCycleOutcome(worker, currentHour, count, placeLabel, entries)
+    if not worker then
         return
     end
 
-    local qty = math.max(1, tonumber(entry.qty) or 1)
-    local itemName = getOutputDisplayName(entry.fullType)
     local jobType = Config.NormalizeJobType(worker.jobType)
-    local message = "Produced " .. itemName .. " x" .. tostring(qty) .. "."
+    local totalCount = math.max(0, tonumber(count) or 0)
+    local outcomeKey = totalCount > 0 and "Recovered" or "Empty"
+    local message = Interaction.BuildOutcomeMessage(worker, jobType, outcomeKey, getOutcomeTokens(worker, totalCount, placeLabel))
+    local foundItems = buildFoundItemsClause(entries)
 
-    if jobType == Config.JobTypes.Scavenge then
-        message = "Recovered " .. itemName .. " x" .. tostring(qty) .. " from the run."
-    elseif jobType == Config.JobTypes.Farm then
-        message = "Harvested " .. itemName .. " x" .. tostring(qty) .. "."
-    elseif jobType == Config.JobTypes.Fish then
-        message = "Caught " .. itemName .. " x" .. tostring(qty) .. "."
+    if message and message ~= "" then
+        if foundItems ~= "" and totalCount > 0 then
+            message = message .. " Found: " .. foundItems .. "."
+        end
+        appendWorkerLog(worker, message, currentHour, "output")
     end
-
-    appendWorkerLog(worker, message, currentHour, "output")
 end
 
 local function getHourlyNeed(dailyNeed)
@@ -363,23 +379,7 @@ local function getRequiredTravelReserve(worker, profile, multiplier)
 end
 
 local function getReturnHomeMessage(reason)
-    local reasons = Config.ReturnReasons or {}
-    if reason == reasons.FullHaul then
-        return "Pack is full, heading home to unload."
-    end
-    if reason == reasons.LowFood then
-        return "Running low on food and heading home."
-    end
-    if reason == reasons.LowDrink then
-        return "Running low on water and heading home."
-    end
-    if reason == reasons.MissingTool then
-        return "Missing the right tool and heading home."
-    end
-    if reason == reasons.MissingSite then
-        return "Work site was lost, heading home."
-    end
-    return "Heading home on command."
+    return Interaction.BuildReturnReasonMessage(reason)
 end
 
 local function getDeathFlavorText(worker, normalizedJobType, presenceState, hasCalories, hasHydration)
@@ -445,7 +445,9 @@ local function startScavengeOutbound(worker, currentHour)
     worker.returnReason = nil
     appendWorkerLog(
         worker,
-        "Left home and is travelling to " .. getScavengeLocationLabel(worker) .. ".",
+        Interaction.BuildOutcomeMessage(worker, Config.JobTypes.Scavenge, "TravelStarted", {
+            place = Interaction.GetPlaceLabel(worker)
+        }) or ("Set out for " .. getScavengeLocationLabel(worker) .. "."),
         currentHour,
         "travel"
     )
@@ -483,18 +485,25 @@ local function completeScavengeReturnHome(worker, currentHour)
         worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0) + 1
         appendWorkerLog(
             worker,
-            "Returned home and stowed the haul: "
-                .. tostring(movedCount)
-                .. " items, "
-                .. string.format("%.2f", movedRawWeight)
-                .. " weight.",
+            Interaction.BuildOutcomeMessage(worker, Config.JobTypes.Scavenge, "ReturnedHomeWithItems", {
+                count = tostring(movedCount),
+                item_word = movedCount == 1 and "item" or "items",
+                place = Interaction.GetPlaceLabel(worker)
+            }) or ("Returned home and stowed " .. tostring(movedCount) .. " items."),
             currentHour,
             "haul"
         )
         return
     end
 
-    appendWorkerLog(worker, "Returned home.", currentHour, "travel")
+    appendWorkerLog(
+        worker,
+        Interaction.BuildOutcomeMessage(worker, Config.JobTypes.Scavenge, "ReturnedHome", {
+            place = Interaction.GetPlaceLabel(worker)
+        }) or "Returned home.",
+        currentHour,
+        "travel"
+    )
 end
 
 local function progressScavengeTravel(worker, currentHour, deltaHours)
@@ -516,7 +525,9 @@ local function progressScavengeTravel(worker, currentHour, deltaHours)
         worker.presenceState = Config.PresenceStates.Scavenging
         appendWorkerLog(
             worker,
-            "Arrived at " .. getScavengeLocationLabel(worker) .. " and started scavenging.",
+            Interaction.BuildOutcomeMessage(worker, Config.JobTypes.Scavenge, "ArrivedAtSite", {
+                place = Interaction.GetPlaceLabel(worker)
+            }) or ("Arrived at " .. getScavengeLocationLabel(worker) .. "."),
             currentHour,
             "travel"
         )
@@ -680,11 +691,10 @@ function Sim.ProcessWorker(worker, currentHour)
                     worker.workProgress = worker.workProgress - cycleHours
 
                     local scavengeRun = Output.GenerateScavengeRun and Output.GenerateScavengeRun(worker) or { entries = {} }
-                    logScavengeRun(worker, scavengeRun, currentHour)
                     for _, entry in ipairs(scavengeRun.entries or {}) do
                         Registry.AddHaulEntry(worker, entry)
-                        logOutputEntry(worker, entry, currentHour)
                     end
+                    logJobCycleOutcome(worker, currentHour, scavengeRun.totalQuantity, getScavengeLocationLabel(worker, scavengeRun), scavengeRun.entries)
 
                     if shouldReturnForFullHaul(worker, scavengeLoadout) then
                         beginScavengeReturnHome(worker, currentHour, Config.ReturnReasons.FullHaul)
@@ -727,10 +737,13 @@ function Sim.ProcessWorker(worker, currentHour)
         worker.workProgress = clampHours(worker.workProgress) + (workableHours * speedMultiplier)
         while worker.workProgress >= cycleHours do
             worker.workProgress = worker.workProgress - cycleHours
-            for _, entry in ipairs(Output.GenerateForJob(profile, worker)) do
+            local entries = Output.GenerateForJob(profile, worker)
+            local totalQuantity = 0
+            for _, entry in ipairs(entries) do
                 Registry.AddOutputEntry(worker, entry)
-                logOutputEntry(worker, entry, currentHour)
+                totalQuantity = totalQuantity + math.max(1, tonumber(entry.qty) or 1)
             end
+            logJobCycleOutcome(worker, currentHour, totalQuantity, Interaction.GetPlaceLabel(worker), entries)
         end
     end
 

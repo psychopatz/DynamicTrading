@@ -7,6 +7,13 @@ function DT_SupplyWindow:refreshWorkerEntries()
     self.workerEntries = {}
 
     local worker = self.workerData
+    if self.workerID and Internal.resolveWorkerDetail then
+        local resolvedWorker = Internal.resolveWorkerDetail(self.workerID)
+        if resolvedWorker then
+            worker = resolvedWorker
+            self.workerData = resolvedWorker
+        end
+    end
     local activeTab = self.activeTab or Internal.Tabs.Provisions
 
     if activeTab == Internal.Tabs.Equipment then

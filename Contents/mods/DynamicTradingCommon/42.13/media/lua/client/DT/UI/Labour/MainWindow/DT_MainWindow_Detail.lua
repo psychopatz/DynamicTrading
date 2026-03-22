@@ -180,7 +180,7 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local normalizedJobType = config.NormalizeJobType and config.NormalizeJobType(worker.jobType) or worker.jobType
     local stateLabel = tostring(worker.state or "")
     local deadState = tostring((config.States or {}).Dead or "Dead")
-    local searchProgressData = Internal.getScavengeSearchProgressData and Internal.getScavengeSearchProgressData(worker, profile) or nil
+    local workProgressData = Internal.getWorkerProgressData and Internal.getWorkerProgressData(worker, profile) or nil
     local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ")
         or ((normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge)) and "Optional scavenger kit" or "Optional")
     local text = ""
@@ -206,6 +206,17 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.72,0.72,0.72> Required Tools: <RGB:1,1,1> " .. toolSummary .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Work Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.workX, worker.workY, worker.workZ) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> "
+    if workProgressData then
+        text = text .. " <RGB:0.72,0.72,0.72> Current Activity: <RGB:1,1,1> " .. tostring(workProgressData.displayText or workProgressData.label or "Working") .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Activity Progress: <RGB:1,1,1> "
+            .. Internal.formatDecimal(workProgressData.progressHours or 0, 1)
+            .. " / "
+            .. Internal.formatDecimal(workProgressData.cycleHours or 0, 1)
+            .. "h <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Activity ETA: <RGB:1,1,1> "
+            .. Internal.formatDurationHours(workProgressData.remainingWorldHours)
+            .. " <LINE> "
+    end
 
     if normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge) then
         text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Scavenge Profile <LINE> "
@@ -216,23 +227,15 @@ function DT_MainWindow:updateWorkerDetail(worker)
         text = text .. " <RGB:0.72,0.72,0.72> Loot Rolls: <RGB:1,1,1> " .. tostring(worker.scavengePoolRolls or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Failure Weight: <RGB:1,1,1> " .. tostring(worker.scavengeFailureWeight or 0) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Gear Search Speed: <RGB:1,1,1> x" .. Internal.formatDecimal(worker.scavengeSearchSpeedMultiplier or 1, 2) .. " <LINE> "
-        if searchProgressData then
-            text = text .. " <RGB:0.72,0.72,0.72> Search Progress: <RGB:1,1,1> "
-                .. Internal.formatDecimal(searchProgressData.progressHours or 0, 1)
-                .. " / "
-                .. Internal.formatDecimal(searchProgressData.cycleHours or 0, 1)
-                .. "h <LINE> "
-            text = text .. " <RGB:0.72,0.72,0.72> Next Loot Roll ETA: <RGB:1,1,1> "
-                .. Internal.formatDurationHours(searchProgressData.remainingWorldHours)
-                .. " <LINE> "
+        if workProgressData and workProgressData.effectiveSpeedMultiplier then
             text = text .. " <RGB:0.72,0.72,0.72> Speed Breakdown: <RGB:1,1,1> Base x"
-                .. Internal.formatDecimal(searchProgressData.baseSpeedMultiplier or 1, 2)
+                .. Internal.formatDecimal(workProgressData.baseSpeedMultiplier or 1, 2)
                 .. " | Archetype x"
-                .. Internal.formatDecimal(searchProgressData.archetypeSpeedMultiplier or 1, 2)
+                .. Internal.formatDecimal(workProgressData.archetypeSpeedMultiplier or 1, 2)
                 .. " | Gear x"
-                .. Internal.formatDecimal(searchProgressData.equipmentSpeedMultiplier or 1, 2)
+                .. Internal.formatDecimal(workProgressData.equipmentSpeedMultiplier or 1, 2)
                 .. " | Effective x"
-                .. Internal.formatDecimal(searchProgressData.effectiveSpeedMultiplier or 1, 2)
+                .. Internal.formatDecimal(workProgressData.effectiveSpeedMultiplier or 1, 2)
                 .. " <LINE> "
         end
         text = text .. " <RGB:0.72,0.72,0.72> Carry Load (Raw): <RGB:1,1,1> "

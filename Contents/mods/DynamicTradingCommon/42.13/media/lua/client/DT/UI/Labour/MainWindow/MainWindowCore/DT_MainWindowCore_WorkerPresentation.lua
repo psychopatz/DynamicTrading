@@ -1,6 +1,8 @@
 DT_MainWindow = DT_MainWindow or {}
 DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
+require "DT/Common/Labour/DT_Labour_Interaction"
+
 local Internal = DT_MainWindow.Internal
 
 function Internal.getWorkerGender(worker)
@@ -67,9 +69,17 @@ function Internal.getWorkerPresenceLabel(worker)
         return "Scavenging"
     end
     if presenceState == states.AwayToSite or presenceState == states.AwayToHome then
-        return "Away"
+        return "Walking"
     end
     return "Home"
+end
+
+function Internal.getWorkerStateLabel(worker)
+    local interaction = DT_Labour and DT_Labour.Interaction or nil
+    if interaction and interaction.GetDisplayStateLabel then
+        return tostring(interaction.GetDisplayStateLabel(worker))
+    end
+    return tostring(worker and worker.state or "Idle")
 end
 
 function Internal.formatWorkerListSubtitle(worker)

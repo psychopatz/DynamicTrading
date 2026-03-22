@@ -1,5 +1,6 @@
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
+require "DT/Common/Labour/DT_Labour_Interaction"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Sites = DT_Labour.Sites or {}
@@ -7,6 +8,7 @@ DT_Labour.Sites = DT_Labour.Sites or {}
 local Config = DT_Labour.Config
 local Registry = DT_Labour.Registry
 local Sites = DT_Labour.Sites
+local Interaction = DT_Labour.Interaction
 
 local function getSquare(x, y, z)
     local cell = getCell()
@@ -52,10 +54,26 @@ local function getRoomName(square)
     end
 
     if room.getName then
-        return room:getName()
+        local ok, value = pcall(room.getName, room)
+        if ok and value ~= nil then
+            local text = tostring(value)
+            if text ~= "" and not string.find(text, "^table:") and not string.find(text, "^table 0x") then
+                return text
+            end
+        end
     end
 
-    return room.name
+    local roomName = room.name
+    if type(roomName) == "string" then
+        return roomName
+    end
+
+    local fallbackText = tostring(roomName or "")
+    if fallbackText ~= "" and not string.find(fallbackText, "^table:") and not string.find(fallbackText, "^table 0x") then
+        return fallbackText
+    end
+
+    return nil
 end
 
 local function collectBuildingRoomNames(square, values, seen)
@@ -123,7 +141,11 @@ local function applyScavengeSiteProfile(site)
     end
 
     site.scavengeProfileID = bestProfile.id or "Unknown"
-    site.scavengeProfileLabel = bestProfile.displayName or site.scavengeProfileID
+    if site.scavengeProfileID == "Unknown" and Interaction and Interaction.GetScavengeFallbackProfileLabel then
+        site.scavengeProfileLabel = Interaction.GetScavengeFallbackProfileLabel(context.roomName, context.zoneType)
+    else
+        site.scavengeProfileLabel = bestProfile.displayName or site.scavengeProfileID
+    end
     site.scavengeRoomName = (context.roomName and context.roomName ~= "") and context.roomName or nil
     site.scavengeZoneType = (context.zoneType and context.zoneType ~= "") and context.zoneType or nil
     site.scavengeContext = context.contextText or ""
