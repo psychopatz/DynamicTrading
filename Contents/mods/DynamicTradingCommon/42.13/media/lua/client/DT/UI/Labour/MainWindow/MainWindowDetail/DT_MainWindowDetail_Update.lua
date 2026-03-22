@@ -4,133 +4,6 @@ DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 local Internal = DT_MainWindow.Internal
 local MainWindowLayout = Internal.MainWindowLayout or {}
 
-local SCAVENGE_CAPABILITY_LABELS = {
-    ["Scavenge.Access.LockedHome"] = "Locked homes",
-    ["Scavenge.Access.ElectronicStore"] = "Electronics stores",
-    ["Scavenge.Access.HeavyEntry"] = "Secure shutters and vaults",
-    ["Scavenge.Extraction.CarpentryHammer"] = "Carpentry hammer",
-    ["Scavenge.Extraction.CarpentrySaw"] = "Carpentry saw",
-    ["Scavenge.Extraction.Plumbing"] = "Plumbing salvage",
-    ["Scavenge.Extraction.MetalTorch"] = "Metal torch",
-    ["Scavenge.Extraction.MetalMask"] = "Welding mask",
-    ["Scavenge.Haul.Bag"] = "Hauling bag",
-    ["Scavenge.Haul.Bulk"] = "Bulk loose loot",
-    ["Scavenge.Haul.Bundle"] = "Bundle heavy items",
-    ["Scavenge.Utility.Light"] = "Interior lighting",
-    ["Scavenge.Utility.Map"] = "Route map",
-    ["Scavenge.Utility.Pen"] = "Route notes"
-}
-
-local function getScavengeCapabilitySummary(worker)
-    local names = {}
-    local seen = {}
-
-    for _, capability in ipairs(worker and worker.scavengeCapabilities or {}) do
-        local label = SCAVENGE_CAPABILITY_LABELS[capability] or tostring(capability)
-        if not seen[label] then
-            seen[label] = true
-            names[#names + 1] = label
-        end
-    end
-
-    if #names <= 0 then
-        return "Open containers only"
-    end
-
-    return table.concat(names, ", ")
-end
-
-local function getScavengePresenceDetailLabel(worker)
-    local config = Internal.Config or {}
-    local presenceState = tostring(worker and worker.presenceState or (config.PresenceStates and config.PresenceStates.Home) or "Home")
-    local states = config.PresenceStates or {}
-    if presenceState == states.AwayToSite then
-        return "Away To Site"
-    end
-    if presenceState == states.AwayToHome then
-        return "Away To Home"
-    end
-    if presenceState == states.Scavenging then
-        return "Scavenging"
-    end
-    return "Home"
-end
-
-local function getReturnReasonLabel(worker)
-    local config = Internal.Config or {}
-    local reason = tostring(worker and worker.returnReason or "")
-    local reasons = config.ReturnReasons or {}
-    if reason == reasons.FullHaul then
-        return "Backpack Full"
-    end
-    if reason == reasons.LowFood then
-        return "Low Food"
-    end
-    if reason == reasons.LowDrink then
-        return "Low Drink"
-    end
-    if reason == reasons.MissingTool then
-        return "Missing Tool"
-    end
-    if reason == reasons.MissingSite then
-        return "Missing Site"
-    end
-    if reason == reasons.Manual then
-        return "Manual Recall"
-    end
-    return "None"
-end
-
-local function buildActivityLogText(worker)
-    local entries = worker and worker.activityLog or {}
-    if not entries or #entries <= 0 then
-        return " <RGB:0.62,0.62,0.62> No recent worker activity yet. <LINE> "
-    end
-
-    local text = ""
-    for index = #entries, 1, -1 do
-        local entry = entries[index]
-        local timestamp = Internal.formatActivityTimestamp(entry and entry.hour)
-        local message = tostring((entry and (entry.text or entry.message)) or "Activity recorded.")
-        text = text
-            .. " <RGB:0.62,0.62,0.62> ["
-            .. timestamp
-            .. "] <RGB:0.9,0.9,0.9> "
-            .. message
-            .. " <LINE> "
-    end
-
-    return text
-end
-
-function DT_MainWindow:populateWorkerList(workers)
-    if not self.workerList then
-        return
-    end
-
-    self.workerList:clear()
-
-    local preferredID = self.selectedWorkerSummary and self.selectedWorkerSummary.workerID or nil
-    local selectedIndex = nil
-
-    for _, worker in ipairs(workers or {}) do
-        self.workerList:addItem(worker.name or worker.workerID, worker)
-        if preferredID and preferredID == worker.workerID then
-            selectedIndex = #self.workerList.items
-        end
-    end
-
-    if self.workerList.items and #self.workerList.items > 0 then
-        local targetIndex = selectedIndex or 1
-        self.workerList.selected = targetIndex
-        self:applyWorkerSelection(self.workerList.items[targetIndex].item, false)
-    else
-        self.selectedWorkerSummary = nil
-        self.selectedWorker = nil
-        self:updateWorkerDetail(nil)
-    end
-end
-
 function DT_MainWindow:updateWorkerDetail(worker)
     local previousWorkerID = self.selectedWorker and self.selectedWorker.workerID or nil
     local nextWorkerID = worker and worker.workerID or nil
@@ -200,9 +73,9 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:1,1,1> <SIZE:Medium> Work Status <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Current Job: <RGB:1,1,1> " .. Internal.getJobDisplayName(worker, profile) .. " <LINE> "
     if normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge) then
-        text = text .. " <RGB:0.72,0.72,0.72> Location State: <RGB:1,1,1> " .. getScavengePresenceDetailLabel(worker) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Location State: <RGB:1,1,1> " .. Internal.getScavengePresenceDetailLabel(worker) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Travel ETA: <RGB:1,1,1> " .. Internal.formatDecimal(worker.travelHoursRemaining or 0, 2) .. "h <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Return Reason: <RGB:1,1,1> " .. getReturnReasonLabel(worker) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Return Reason: <RGB:1,1,1> " .. Internal.getReturnReasonLabel(worker) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Auto Repeat: <RGB:1,1,1> " .. Internal.formatBool((worker.autoRepeatJob == true) or (worker.autoRepeatScavenge == true)) .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Home Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.homeX, worker.homeY, worker.homeZ) .. " <LINE> "
     end
@@ -263,12 +136,12 @@ function DT_MainWindow:updateWorkerDetail(worker)
             .. " / "
             .. Internal.formatDecimal(worker.warehouseMaxWeight or 0, 2)
             .. " <LINE> "
-        text = text .. " <RGB:0.72,0.72,0.72> Unlocked Pools: <RGB:1,1,1> " .. getScavengeCapabilitySummary(worker) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Unlocked Pools: <RGB:1,1,1> " .. Internal.getScavengeCapabilitySummary(worker) .. " <LINE> "
     end
 
     self.detailText:setText(text)
     MainWindowLayout.refreshRichTextPanel(self.detailText, shouldResetScroll and 0 or nil)
-    self.activityLogText:setText(buildActivityLogText(worker))
+    self.activityLogText:setText(Internal.buildActivityLogText(worker))
     MainWindowLayout.refreshRichTextPanel(self.activityLogText, shouldResetScroll and 0 or nil)
     if self.applyDynamicLayout then
         self:applyDynamicLayout()
@@ -313,24 +186,5 @@ function DT_MainWindow:updateWorkerDetail(worker)
 
     if self.btnWarehouse then
         self.btnWarehouse:setEnable(true)
-    end
-end
-
-function DT_MainWindow:applyWorkerSelection(summary, requestDetail)
-    if not summary then
-        return
-    end
-
-    self.selectedWorkerSummary = summary
-
-    local detail = Internal.resolveWorkerDetail(summary.workerID) or summary
-    self:updateWorkerDetail(detail)
-
-    if requestDetail and isClient() and not isServer() then
-        self:updateStatus("Requesting worker details for " .. tostring(summary.name or summary.workerID) .. "...")
-        self:sendLabourCommand("RequestWorkerDetails", {
-            workerID = summary.workerID,
-            includeWarehouseLedgers = false
-        })
     end
 end

@@ -25,8 +25,8 @@ DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore"
 require "DT/UI/Labour/MainWindow/DT_MainWindow_List"
 require "DT/UI/Labour/MainWindow/MainWindowLayout/DT_MainWindowLayout"
-require "DT/UI/Labour/MainWindow/DT_MainWindow_Detail"
-require "DT/UI/Labour/MainWindow/DT_MainWindow_Actions"
+require "DT/UI/Labour/MainWindow/MainWindowDetail/DT_MainWindowDetail"
+require "DT/UI/Labour/MainWindow/MainWindowActions/DT_MainWindowActions"
 require "DT/UI/Labour/MainWindow/DT_MainWindow_Lifecycle"
 require "DT/UI/Labour/MainWindow/DT_MainWindow_Events"
 

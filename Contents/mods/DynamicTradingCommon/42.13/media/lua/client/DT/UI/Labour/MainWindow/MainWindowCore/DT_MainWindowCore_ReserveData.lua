@@ -1,7 +1,7 @@
 DT_MainWindow = DT_MainWindow or {}
 DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
-require "DT/Common/Labour/DT_Labour_Interaction"
+require "DT/Common/Labour/LabourInteraction/DT_Labour_Interaction"
 
 local Internal = DT_MainWindow.Internal
 

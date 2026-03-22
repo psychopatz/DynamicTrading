@@ -129,32 +129,6 @@ local function openStopJobConfirmation(window, enabled, normalizedJob, presenceS
     modal:addToUIManager()
 end
 
-function DT_MainWindow:onRefresh()
-    self:updateStatus("Refreshing labour roster...")
-
-    if isClient() and not isServer() then
-        if not self:sendLabourCommand("RequestPlayerWorkers", {}) then
-            self:updateStatus("Unable to request worker data.")
-        end
-        if DT_System and DT_System.RequestOwnedFactionStatus then
-            DT_System.RequestOwnedFactionStatus()
-        end
-        return
-    end
-
-    self:populateWorkerList(Internal.resolveWorkerSummaries())
-    if DynamicTrading_Factions and DynamicTrading_Factions.GetOwnedFactionStatus then
-        DT_MainWindow.cachedOwnedFactionStatus = DynamicTrading_Factions.GetOwnedFactionStatus(Internal.getOwnerUsername())
-        if DT_System then
-            DT_System.ownedFactionStatusCache = DT_MainWindow.cachedOwnedFactionStatus
-        end
-    end
-    if self.updateFactionButton then
-        self:updateFactionButton()
-    end
-    self:updateStatus("Loaded local worker data.")
-end
-
 function DT_MainWindow:onToggleJob()
     if not self.selectedWorkerSummary then
         self:updateStatus("Select a worker first.")
@@ -273,66 +247,5 @@ function DT_MainWindow:onCycleJob()
 
     if not modal then
         self:updateStatus("No labour jobs are currently available.")
-    end
-end
-
-function DT_MainWindow:onOpenInventory()
-    if not self.selectedWorkerSummary then
-        self:updateStatus("Select a worker first.")
-        return
-    end
-
-    DT_SupplyWindow.Open(self.selectedWorker or self.selectedWorkerSummary, "inventory")
-    self:updateStatus("Opening NPC inventory...")
-end
-
-function DT_MainWindow:onOpenWarehouse()
-    if not self.selectedWorkerSummary then
-        self:updateStatus("Select a worker first.")
-        return
-    end
-
-    DT_SupplyWindow.Open(self.selectedWorker or self.selectedWorkerSummary, "warehouse")
-    self:updateStatus("Opening warehouse...")
-end
-
-function DT_MainWindow:onOpenHelp()
-    DT_LabourHelpWindow.Open()
-    self:updateStatus("Opened scavenging help.")
-end
-
-function DT_MainWindow:updateFactionButton()
-    if not self.btnFaction then
-        return
-    end
-
-    local status = (DT_System and DT_System.GetOwnedFactionStatus and DT_System.GetOwnedFactionStatus()) or DT_MainWindow.cachedOwnedFactionStatus
-    if status and status.faction then
-        self.btnFaction:setTitle("Open Faction")
-        self.btnFaction:setEnable(true)
-        return
-    end
-
-    if status and status.canCreate == true then
-        self.btnFaction:setTitle("Create Faction")
-        self.btnFaction:setEnable(true)
-        return
-    end
-
-    self.btnFaction:setTitle("Faction Locked")
-    self.btnFaction:setEnable(false)
-end
-
-function DT_MainWindow:onOpenFaction()
-    if not DT_System or not DT_System.OpenOwnedFactionManagement then
-        self:updateStatus("Faction management is unavailable.")
-        return
-    end
-
-    local ok, msg = DT_System.OpenOwnedFactionManagement()
-    if msg and msg ~= "" then
-        self:updateStatus(msg)
-    elseif ok then
-        self:updateStatus("Opening faction management...")
     end
 end
