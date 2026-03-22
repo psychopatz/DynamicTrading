@@ -12,7 +12,7 @@ require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
 require "DT/Common/Labour/LabourNetwork/DT_Labour_Network"
 require "DT/Common/UI/Trading/Provider/DT_TradingProvider_Core"
-require "DT/UI/Faction/DT_FactionInfoWindow"
+require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 require "DT/UI/Faction/DT_PlayerFactionNameModal"
 
 DT_MainWindow = ISCollapsableWindow:derive("DT_MainWindow")

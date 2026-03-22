@@ -7,6 +7,6 @@ require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/DT_SupplyWindowCore_PlayerAc
 require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/DT_SupplyWindowCore_Search"
 require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/DT_SupplyWindowCore_Textures"
 require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/DT_SupplyWindowCore_EntryBuilders"
-require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/DT_SupplyWindowCore_Presentation"
+require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/Presentation/DT_Presentation"
 require "DT/UI/Labour/SupplyWindow/SupplyWindowCore/DT_SupplyWindowCore_LabourCommands"
 

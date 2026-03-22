@@ -1,7 +1,7 @@
 require "ISUI/ISUIElement"
 require "ISUI/ISButton"
 require "Utils/DT_ConfigManager"
-require "DT/UI/Faction/DT_FactionInfoWindow"
+require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 
 
 DT_SidebarButton = ISUIElement:derive("DT_SidebarButton")

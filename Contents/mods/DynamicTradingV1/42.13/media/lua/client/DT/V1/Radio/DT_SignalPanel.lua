@@ -3,7 +3,7 @@ require "ISUI/ISButton"
 require "DT/V1/Manager"
 require "DT/Common/Config"
 require "DT/V1/Utils/DT_OptionsManager"
-require "DT/UI/Faction/DT_FactionInfoWindow"
+require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 
 
 DT_SignalPanel = ISPanel:derive("DT_SignalPanel")

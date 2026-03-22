@@ -1,5 +1,5 @@
 require "DT/UI/Faction/DT_PlayerFactionNameModal"
-require "DT/UI/Faction/DT_FactionInfoWindow"
+require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 
 local System = DT_System
 
