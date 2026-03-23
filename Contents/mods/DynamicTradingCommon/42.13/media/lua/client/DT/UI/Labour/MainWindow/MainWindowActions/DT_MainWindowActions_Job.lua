@@ -1,14 +1,48 @@
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_Bootstrap"
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_Formatters"
+
 DT_MainWindow = DT_MainWindow or {}
 DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
 local Internal = DT_MainWindow.Internal
+
+local function isFunction(value)
+    return type(value) == "function"
+end
+
+local function getConfig()
+    local config = Internal.Config
+    if type(config) ~= "table" then
+        config = (DT_Labour and DT_Labour.Config) or {}
+        Internal.Config = config
+    end
+    return config
+end
+
+local function formatReserveValue(value)
+    if isFunction(Internal.formatReserveValue) then
+        return Internal.formatReserveValue(value)
+    end
+    return tostring(math.floor((tonumber(value) or 0) + 0.5))
+end
+
+local function getReserveDaysLeft(storedAmount, dailyNeed)
+    if isFunction(Internal.getReserveDaysLeft) then
+        return Internal.getReserveDaysLeft(storedAmount, dailyNeed)
+    end
+    local perDay = tonumber(dailyNeed) or 0
+    if perDay <= 0 then
+        return nil
+    end
+    return math.max(0, (tonumber(storedAmount) or 0) / perDay)
+end
 
 local function getSelectedWorkerForAction(window)
     return window.selectedWorker or window.selectedWorkerSummary or nil
 end
 
 local function updateToggleJobStatus(window, enabled, normalizedJob, presenceState)
-    local config = Internal.Config or {}
+    local config = getConfig()
 
     if normalizedJob == ((config.JobTypes or {}).Scavenge) then
         window:updateStatus(
@@ -34,8 +68,8 @@ end
 
 local function getScavengeProvisionWarningText(window)
     local worker = getSelectedWorkerForAction(window)
-    local config = Internal.Config or {}
-    local profile = config.GetJobProfile and config.GetJobProfile(worker and worker.jobType) or {}
+    local config = getConfig()
+    local profile = isFunction(config.GetJobProfile) and config.GetJobProfile(worker and worker.jobType) or {}
     local workerName = tostring((worker and worker.name) or (window.selectedWorkerSummary and window.selectedWorkerSummary.name) or "this worker")
     local provisionCalories = math.max(0, tonumber(worker and (worker.provisionCaloriesReserve or worker.storedCalories)) or 0)
     local provisionHydration = math.max(0, tonumber(worker and (worker.provisionHydrationReserve or worker.storedHydration)) or 0)
@@ -43,8 +77,8 @@ local function getScavengeProvisionWarningText(window)
     local totalHydration = math.max(0, tonumber(worker and (worker.combinedHydrationTotal or worker.totalHydrationAvailable or worker.storedHydration)) or 0)
     local dailyCaloriesNeed = math.max(0, tonumber(profile and profile.dailyCaloriesNeed) or 0)
     local dailyHydrationNeed = math.max(0, tonumber(profile and profile.dailyHydrationNeed) or 0)
-    local calorieDays = Internal.getReserveDaysLeft and Internal.getReserveDaysLeft(totalCalories, dailyCaloriesNeed) or nil
-    local hydrationDays = Internal.getReserveDaysLeft and Internal.getReserveDaysLeft(totalHydration, dailyHydrationNeed) or nil
+    local calorieDays = getReserveDaysLeft(totalCalories, dailyCaloriesNeed)
+    local hydrationDays = getReserveDaysLeft(totalHydration, dailyHydrationNeed)
     local lowestDays = nil
 
     if calorieDays and hydrationDays then
@@ -63,11 +97,11 @@ local function getScavengeProvisionWarningText(window)
     return "Start scavenging run for " .. workerName .. "?\n\n"
         .. "Be sure to give the NPC provisions first. Scavengers can head back home when calories or hydration run low.\n\n"
         .. "Stored provisions:\n"
-        .. "Calories: " .. Internal.formatReserveValue(provisionCalories)
-        .. "\nHydration: " .. Internal.formatReserveValue(provisionHydration)
+        .. "Calories: " .. formatReserveValue(provisionCalories)
+        .. "\nHydration: " .. formatReserveValue(provisionHydration)
         .. "\n\nTotal reserve:\n"
-        .. "Calories: " .. Internal.formatReserveValue(totalCalories)
-        .. "\nHydration: " .. Internal.formatReserveValue(totalHydration)
+        .. "Calories: " .. formatReserveValue(totalCalories)
+        .. "\nHydration: " .. formatReserveValue(totalHydration)
         .. "\n\n"
         .. "Auto repeat: " .. ((((worker and worker.autoRepeatJob == true) or (worker and worker.autoRepeatScavenge == true)) and "On") or "Off")
         .. "\n\n"
@@ -93,7 +127,7 @@ end
 
 local function getStopJobConfirmationText(window, normalizedJob, presenceState)
     local worker = getSelectedWorkerForAction(window)
-    local config = Internal.Config or {}
+    local config = getConfig()
     local workerName = tostring((worker and worker.name) or (window.selectedWorkerSummary and window.selectedWorkerSummary.name) or "this worker")
     local homeState = tostring((config.PresenceStates or {}).Home or "Home")
 
@@ -135,7 +169,7 @@ function DT_MainWindow:onToggleJob()
         return
     end
 
-    local config = Internal.Config or {}
+    local config = getConfig()
     local state = tostring((self.selectedWorker and self.selectedWorker.state) or self.selectedWorkerSummary.state or "")
     if state == tostring((config.States or {}).Dead or "Dead") then
         self:sendLabourCommand("DeleteDeadWorker", {
@@ -172,7 +206,7 @@ function DT_MainWindow:onToggleAutoRepeat()
         return
     end
 
-    local config = Internal.Config or {}
+    local config = getConfig()
     local worker = getSelectedWorkerForAction(self)
     local normalizedJob = config.NormalizeJobType and config.NormalizeJobType((worker and worker.jobType) or self.selectedWorkerSummary.jobType)
         or tostring((worker and worker.jobType) or self.selectedWorkerSummary.jobType or "")
@@ -195,7 +229,7 @@ function DT_MainWindow:onCycleJob()
         return
     end
 
-    local config = Internal.Config
+    local config = getConfig()
     local worker = self.selectedWorker or self.selectedWorkerSummary
     local workerID = self.selectedWorkerSummary.workerID
     local currentJobType = worker and worker.jobType or self.selectedWorkerSummary.jobType

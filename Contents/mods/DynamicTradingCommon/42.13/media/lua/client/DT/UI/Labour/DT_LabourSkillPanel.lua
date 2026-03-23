@@ -1,8 +1,12 @@
 require "ISUI/ISPanel"
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourSkills/DT_LabourSkills"
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_Bootstrap"
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_WorkerPresentation"
 
 DT_LabourSkillPanel = ISPanel:derive("DT_LabourSkillPanel")
+
+local Internal = DT_MainWindow and DT_MainWindow.Internal or {}
 
 local DISPLAY_ORDER = {
     "Shooting",
@@ -40,6 +44,17 @@ local function getPortraitTexture(subject)
     end
 
     return getTexture(pathFolder .. tostring(portraitID) .. ".png") or getTexture("media/ui/Portraits/General/" .. gender .. "/1.png")
+end
+
+local function isFunction(value)
+    return type(value) == "function"
+end
+
+local function getJobDisplayName(worker)
+    if isFunction(Internal.getJobDisplayName) then
+        return Internal.getJobDisplayName(worker)
+    end
+    return tostring(worker and (worker.jobType or worker.profession) or "Unassigned")
 end
 
 local function getPrimarySkill(subject)
@@ -87,7 +102,7 @@ function DT_LabourSkillPanel:setWorkerData(worker)
         workerID = worker.workerID,
         name = worker.name or worker.workerID,
         archetypeID = worker.archetypeID or worker.profession or "General",
-        jobType = worker.jobType or worker.profession,
+        jobType = getJobDisplayName(worker),
         isFemale = worker.isFemale,
         identitySeed = worker.identitySeed,
         skills = worker.skills,

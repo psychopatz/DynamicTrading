@@ -3,6 +3,23 @@ DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
 local Internal = DT_MainWindow.Internal
 
+local function getConfig()
+    local config = Internal.Config
+    if type(config) ~= "table" then
+        config = (DT_Labour and DT_Labour.Config) or {}
+        Internal.Config = config
+    end
+    return config
+end
+
+local function getPlayerObject()
+    local config = getConfig()
+    if type(config.GetPlayerObject) == "function" then
+        return config.GetPlayerObject()
+    end
+    return nil
+end
+
 function Internal.getPlayerWealth(player)
     if DT_MainWindow.MoneyProvider and DT_MainWindow.MoneyProvider.getPlayerWealth then
         return DT_MainWindow.MoneyProvider:getPlayerWealth(player)
@@ -11,9 +28,9 @@ function Internal.getPlayerWealth(player)
 end
 
 function Internal.getOwnerUsername()
-    local config = Internal.Config
-    local player = config.GetPlayerObject and config.GetPlayerObject() or nil
-    if config.GetOwnerUsername then
+    local config = getConfig()
+    local player = getPlayerObject()
+    if type(config.GetOwnerUsername) == "function" then
         return config.GetOwnerUsername(player)
     end
     return "local"
@@ -34,8 +51,7 @@ function Internal.appendHeldItem(targetList, seenIDs, itemObj)
 end
 
 function Internal.getHeldItems()
-    local config = Internal.Config
-    local player = config.GetPlayerObject and config.GetPlayerObject() or nil
+    local player = getPlayerObject()
     if not player then
         return {}
     end
@@ -46,4 +62,3 @@ function Internal.getHeldItems()
     Internal.appendHeldItem(items, seenIDs, player.getSecondaryHandItem and player:getSecondaryHandItem() or nil)
     return items
 end
-

@@ -72,7 +72,7 @@ function Tiredness.GetRestingProgressDescriptor(worker)
         summaryText = formatReserveValue(currentValue)
             .. " / "
             .. formatReserveValue(maxValue)
-            .. " tiredness",
+            .. " energy",
         progressAmount = currentValue,
         workTarget = maxValue,
         remainingWorldHours = remainingWorldHours,

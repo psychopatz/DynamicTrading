@@ -226,6 +226,10 @@ function Sim.ProcessWorker(worker, currentHour)
                     worker.workProgress = worker.workProgress - cycleHours
 
                     local scavengeRun = Output.GenerateScavengeRun and Output.GenerateScavengeRun(worker) or { entries = {} }
+                    worker.scavengeBonusRareRolls = scavengeRun.bonusRareRolls or 0
+                    worker.scavengeRareFinds = scavengeRun.rareFinds or 0
+                    worker.scavengeBotchedRolls = scavengeRun.botchedRolls or 0
+                    worker.scavengeQualityCounts = scavengeRun.qualityCounts or nil
                     for _, entry in ipairs(scavengeRun.entries or {}) do
                         Registry.AddHaulEntry(worker, entry)
                     end
@@ -298,6 +302,10 @@ function Sim.ProcessWorker(worker, currentHour)
             end
         end
     else
+        worker.scavengeBonusRareRolls = nil
+        worker.scavengeRareFinds = nil
+        worker.scavengeBotchedRolls = nil
+        worker.scavengeQualityCounts = nil
         local didWorkThisTick = false
         if hp <= 0 then
             Internal.markWorkerDead(worker, currentHour, normalizedJobType, Config.PresenceStates.Home, hasCalories, hasHydration)

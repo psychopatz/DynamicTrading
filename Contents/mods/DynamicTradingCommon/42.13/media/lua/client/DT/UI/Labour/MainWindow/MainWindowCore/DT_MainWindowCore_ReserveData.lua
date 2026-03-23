@@ -5,6 +5,17 @@ require "DT/Common/Labour/LabourInteraction/DT_Labour_Interaction"
 
 local Internal = DT_MainWindow.Internal
 
+local function isFunction(value)
+    return type(value) == "function"
+end
+
+local function formatReserveValue(value)
+    if isFunction(Internal.formatReserveValue) then
+        return Internal.formatReserveValue(value)
+    end
+    return tostring(math.floor((tonumber(value) or 0) + 0.5))
+end
+
 function Internal.getReserveDaysLeft(storedAmount, dailyNeed)
     local perDay = tonumber(dailyNeed) or 0
     if perDay <= 0 then
@@ -64,8 +75,8 @@ function Internal.getNutritionBarData(unitLabel, currentBufferAmount, carryoverA
     data.provisionReserve = provisionReserve
     data.currentBuffer = currentBuffer
     data.daysLeft = Internal.getReserveDaysLeft(currentBuffer + carryover + provisionReserve, dailyNeed)
-    data.summaryText = unitName .. " Reserve " .. Internal.formatReserveValue(provisionReserve)
-        .. " | Carryover " .. Internal.formatReserveValue(carryover)
+    data.summaryText = unitName .. " Reserve " .. formatReserveValue(provisionReserve)
+        .. " | Carryover " .. formatReserveValue(carryover)
     return data
 end
 
@@ -79,7 +90,7 @@ function Internal.getHealthBarData(currentHp, maxHp)
         overflow = 0,
         daysLeft = nil,
         captionText = safeCurrent <= 0 and "dead" or "current hp",
-        summaryText = Internal.formatReserveValue(safeCurrent) .. " / " .. Internal.formatReserveValue(safeMax)
+        summaryText = formatReserveValue(safeCurrent) .. " / " .. formatReserveValue(safeMax)
     }
 end
 

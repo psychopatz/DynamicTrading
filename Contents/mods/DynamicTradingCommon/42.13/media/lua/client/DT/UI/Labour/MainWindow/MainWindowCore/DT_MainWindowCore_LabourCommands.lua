@@ -3,9 +3,18 @@ DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
 local Internal = DT_MainWindow.Internal
 
-function DT_MainWindow:sendLabourCommand(command, args)
+local function getConfig()
     local config = Internal.Config
-    local player = config.GetPlayerObject and config.GetPlayerObject() or nil
+    if type(config) ~= "table" then
+        config = (DT_Labour and DT_Labour.Config) or {}
+        Internal.Config = config
+    end
+    return config
+end
+
+function DT_MainWindow:sendLabourCommand(command, args)
+    local config = getConfig()
+    local player = type(config.GetPlayerObject) == "function" and config.GetPlayerObject() or nil
     if not player then
         return false
     end

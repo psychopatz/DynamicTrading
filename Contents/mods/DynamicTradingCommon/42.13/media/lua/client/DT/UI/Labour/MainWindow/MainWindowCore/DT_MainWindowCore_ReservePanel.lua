@@ -1,8 +1,182 @@
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_Bootstrap"
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_Formatters"
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_ReserveData"
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_WorkerPresentation"
+require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
+require "DT/Common/Labour/LabourTiredness/DT_LabourTiredness"
+
 DT_MainWindow = DT_MainWindow or {}
 DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
 local Internal = DT_MainWindow.Internal
 local LabourProfileCard = ISPanel:derive("LabourProfileCard")
+
+local function getConfig()
+    return Internal.Config or DT_Labour and DT_Labour.Config or {}
+end
+
+local function isFunction(value)
+    return type(value) == "function"
+end
+
+local function formatReserveValue(value)
+    if Internal.formatReserveValue then
+        return Internal.formatReserveValue(value)
+    end
+    return tostring(math.floor((tonumber(value) or 0) + 0.5))
+end
+
+local function getJobDisplayName(worker, profile)
+    if Internal.getJobDisplayName then
+        return Internal.getJobDisplayName(worker, profile)
+    end
+    return tostring(worker and worker.jobType or profile and profile.displayName or "Unassigned")
+end
+
+local function getWorkerStateLabel(worker)
+    if Internal.getWorkerStateLabel then
+        return Internal.getWorkerStateLabel(worker)
+    end
+    return tostring(worker and worker.state or "Idle")
+end
+
+local function formatDaysAndEta(daysValue, hoursValue)
+    if Internal.formatDaysAndEta then
+        return Internal.formatDaysAndEta(daysValue, hoursValue)
+    end
+    if daysValue == nil then
+        return "No estimate"
+    end
+    if hoursValue ~= nil then
+        return string.format("%.1f days | %.1fh", math.max(0, tonumber(daysValue) or 0), math.max(0, tonumber(hoursValue) or 0))
+    end
+    return string.format("%.1f days", math.max(0, tonumber(daysValue) or 0))
+end
+
+local function buildFallbackReserveData(currentAmount, maxAmount, summaryText, captionText)
+    local safeMax = math.max(1, tonumber(maxAmount) or 100)
+    local safeCurrent = math.max(0, math.min(safeMax, tonumber(currentAmount) or 0))
+    return {
+        stored = safeCurrent,
+        usage = safeMax,
+        fillRatio = safeCurrent / safeMax,
+        overflow = 0,
+        daysLeft = nil,
+        summaryText = tostring(summaryText or (tostring(math.floor(safeCurrent + 0.5)) .. " / " .. tostring(math.floor(safeMax + 0.5)))),
+        captionText = tostring(captionText or "")
+    }
+end
+
+local function buildReserveBarData(storedAmount, dailyNeed)
+    local stored = math.max(0, tonumber(storedAmount) or 0)
+    local usage = math.max(0, tonumber(dailyNeed) or 0)
+    if usage <= 0 then
+        return {
+            stored = stored,
+            usage = usage,
+            fillRatio = 0,
+            overflow = 0,
+            daysLeft = nil
+        }
+    end
+
+    local rawRatio = stored / usage
+    return {
+        stored = stored,
+        usage = usage,
+        fillRatio = math.max(0, math.min(1, rawRatio)),
+        overflow = math.max(0, stored - usage),
+        daysLeft = math.max(0, rawRatio)
+    }
+end
+
+local function buildNutritionBarData(unitLabel, currentBufferAmount, carryoverAmount, provisionReserveAmount, dailyNeed)
+    if isFunction(Internal.getNutritionBarData) then
+        return Internal.getNutritionBarData(unitLabel, currentBufferAmount, carryoverAmount, provisionReserveAmount, dailyNeed)
+    end
+
+    local unitName = tostring(unitLabel or "Nutrition")
+    local currentBuffer = math.max(0, tonumber(currentBufferAmount) or 0)
+    local carryover = math.max(0, tonumber(carryoverAmount) or 0)
+    local provisionReserve = math.max(0, tonumber(provisionReserveAmount) or 0)
+    local data = buildReserveBarData(currentBuffer, dailyNeed)
+    data.carryover = carryover
+    data.provisionReserve = provisionReserve
+    data.currentBuffer = currentBuffer
+    if tonumber(dailyNeed) and tonumber(dailyNeed) > 0 then
+        data.daysLeft = math.max(0, (currentBuffer + carryover + provisionReserve) / tonumber(dailyNeed))
+    end
+    data.summaryText = unitName .. " Reserve " .. formatReserveValue(provisionReserve)
+        .. " | Carryover " .. formatReserveValue(carryover)
+    return data
+end
+
+local function buildHealthBarData(currentHp, maxHp)
+    if isFunction(Internal.getHealthBarData) then
+        return Internal.getHealthBarData(currentHp, maxHp)
+    end
+
+    local safeMax = math.max(1, tonumber(maxHp) or 100)
+    local safeCurrent = math.max(0, math.min(safeMax, tonumber(currentHp) or safeMax))
+    return {
+        stored = safeCurrent,
+        usage = safeMax,
+        fillRatio = safeCurrent / safeMax,
+        overflow = 0,
+        daysLeft = nil,
+        captionText = safeCurrent <= 0 and "dead" or "current hp",
+        summaryText = formatReserveValue(safeCurrent) .. " / " .. formatReserveValue(safeMax)
+    }
+end
+
+local function buildWorkerProgressData(worker, profile)
+    if isFunction(Internal.getWorkerProgressData) then
+        return Internal.getWorkerProgressData(worker, profile)
+    end
+
+    local interaction = DT_Labour and DT_Labour.Interaction or nil
+    if not interaction or not isFunction(interaction.GetProgressDescriptor) then
+        return nil
+    end
+
+    local data = interaction.GetProgressDescriptor(worker, profile)
+    if not data then
+        return nil
+    end
+
+    data.stored = tonumber(data.progressAmount) or tonumber(data.progressHours) or 0
+    data.usage = tonumber(data.workTarget) or tonumber(data.cycleHours) or 0
+    data.overflow = 0
+    data.daysLeft = nil
+    return data
+end
+
+local function getWorkerPortraitTexture(worker)
+    if isFunction(Internal.getWorkerPortraitTexture) then
+        return Internal.getWorkerPortraitTexture(worker)
+    end
+    if not worker then
+        return nil
+    end
+
+    local archetype = tostring(worker.archetypeID or "General")
+    local gender = worker.isFemale and "Female" or "Male"
+    local seed = tonumber(worker.identitySeed) or 1
+    local portraitID = 1
+    local pathFolder = "media/ui/Portraits/" .. archetype .. "/" .. gender .. "/"
+
+    if DynamicTrading and DynamicTrading.Portraits then
+        if isFunction(DynamicTrading.Portraits.GetMappedID) then
+            portraitID = DynamicTrading.Portraits.GetMappedID(archetype, gender, seed)
+        end
+        if isFunction(DynamicTrading.Portraits.GetPathFolder) then
+            pathFolder = DynamicTrading.Portraits.GetPathFolder(archetype, gender)
+        end
+    end
+
+    return getTexture(pathFolder .. tostring(portraitID) .. ".png")
+        or getTexture("media/ui/Portraits/General/" .. gender .. "/1.png")
+end
 
 function LabourProfileCard:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
@@ -51,7 +225,8 @@ end
 
 function LabourProfileCard:setWorker(worker)
     self.worker = worker
-    self.profile = worker and Internal.Config.GetJobProfile and Internal.Config.GetJobProfile(worker.jobType) or nil
+    local config = getConfig()
+    self.profile = worker and isFunction(config.GetJobProfile) and config.GetJobProfile(worker.jobType) or nil
     if not worker then
         self.portraitTex = nil
         self.caloriesData = nil
@@ -81,12 +256,12 @@ function LabourProfileCard:setWorker(worker)
     end
 
     local profile = self.profile or {}
-    local config = Internal.Config
-    local dailyCaloriesNeed = config.GetEffectiveDailyCaloriesNeed and config.GetEffectiveDailyCaloriesNeed(worker, profile)
+    local config = getConfig()
+    local dailyCaloriesNeed = isFunction(config.GetEffectiveDailyCaloriesNeed) and config.GetEffectiveDailyCaloriesNeed(worker, profile)
         or tonumber(worker.dailyCaloriesNeed)
         or tonumber(profile.dailyCaloriesNeed)
         or 0
-    local dailyHydrationNeed = config.GetEffectiveDailyHydrationNeed and config.GetEffectiveDailyHydrationNeed(worker, profile)
+    local dailyHydrationNeed = isFunction(config.GetEffectiveDailyHydrationNeed) and config.GetEffectiveDailyHydrationNeed(worker, profile)
         or tonumber(worker.dailyHydrationNeed)
         or tonumber(profile.dailyHydrationNeed)
         or 0
@@ -97,17 +272,18 @@ function LabourProfileCard:setWorker(worker)
     local currentCaloriesBuffer = math.max(0, tonumber(worker.currentCaloriesBuffer) or tonumber(worker.caloriesCached) or 0)
     local currentHydrationBuffer = math.max(0, tonumber(worker.currentHydrationBuffer) or tonumber(worker.hydrationCached) or 0)
 
-    self.caloriesData = Internal.getNutritionBarData("Calories", currentCaloriesBuffer, carryoverCalories, provisionCalories, dailyCaloriesNeed)
-    self.hydrationData = Internal.getNutritionBarData("Hydration", currentHydrationBuffer, carryoverHydration, provisionHydration, dailyHydrationNeed)
-    self.healthData = Internal.getHealthBarData(worker.hp, worker.maxHp)
-    self.tirednessData = DT_Labour and DT_Labour.Tiredness and DT_Labour.Tiredness.GetBarData and DT_Labour.Tiredness.GetBarData(worker) or nil
-    self.activityData = Internal.getWorkerProgressData and Internal.getWorkerProgressData(worker, profile) or nil
+    self.caloriesData = buildNutritionBarData("Calories", currentCaloriesBuffer, carryoverCalories, provisionCalories, dailyCaloriesNeed)
+    self.hydrationData = buildNutritionBarData("Hydration", currentHydrationBuffer, carryoverHydration, provisionHydration, dailyHydrationNeed)
+    self.healthData = buildHealthBarData(worker.hp, worker.maxHp)
+    self.tirednessData = DT_Labour and DT_Labour.Tiredness and isFunction(DT_Labour.Tiredness.GetBarData)
+        and DT_Labour.Tiredness.GetBarData(worker) or nil
+    self.activityData = buildWorkerProgressData(worker, profile)
     self.caloriesTargetRatio = self.caloriesData.fillRatio
     self.hydrationTargetRatio = self.hydrationData.fillRatio
     self.healthTargetRatio = self.healthData.fillRatio
     self.tirednessTargetRatio = self.tirednessData and self.tirednessData.fillRatio or 0
     self.activityTargetRatio = self.activityData and self.activityData.fillRatio or 0
-    self.portraitTex = Internal.getWorkerPortraitTexture(worker)
+    self.portraitTex = getWorkerPortraitTexture(worker)
 
     local workerID = tostring(worker.workerID or "")
     local cachedRatios = self.workerDisplayCache[workerID]
@@ -150,10 +326,10 @@ function LabourProfileCard:drawReserveBar(x, y, width, height, label, color, dat
     local labelWidth = getTextManager():MeasureStringX(UIFont.Small, label)
     self:drawText(label, x + math.max(8, (width - labelWidth) / 2), y + 2, 0.95, 0.95, 0.95, 1, UIFont.Small)
 
-    local daysText = safeData.captionText or Internal.formatDaysAndEta(safeData.daysLeft, safeData.daysLeft and (safeData.daysLeft * 24) or nil)
+    local daysText = safeData.captionText or formatDaysAndEta(safeData.daysLeft, safeData.daysLeft and (safeData.daysLeft * 24) or nil)
     local totalsText = safeData.summaryText
-        or ("Reserve " .. Internal.formatReserveValue(safeData.provisionReserve or safeData.stored)
-            .. " | Carryover " .. Internal.formatReserveValue(safeData.carryover or safeData.overflow or 0))
+        or ("Reserve " .. formatReserveValue(safeData.provisionReserve or safeData.stored)
+            .. " | Carryover " .. formatReserveValue(safeData.carryover or safeData.overflow or 0))
     self:drawText(daysText, x, y + height + 4, 0.86, 0.86, 0.86, 1, UIFont.Small)
     self:drawTextRight(totalsText, x + width, y + height + 4, 0.66, 0.66, 0.66, 1, UIFont.Small)
 end
@@ -219,7 +395,7 @@ function LabourProfileCard:prerender()
     self:drawText(tostring(worker.name or "Worker"), barsX, topY, 0.95, 0.97, 1, 1, UIFont.Large)
     topY = topY + 24
     self:drawText(
-        Internal.getJobDisplayName(worker, profile) .. " | " .. Internal.getWorkerStateLabel(worker),
+        getJobDisplayName(worker, profile) .. " | " .. getWorkerStateLabel(worker),
         barsX,
         topY,
         0.68,
@@ -296,21 +472,6 @@ function LabourProfileCard:prerender()
     )
 
     topY = topY + 44
-
-    if self.tirednessData then
-        self:drawReserveBar(
-            barsX,
-            topY,
-            barsWidth,
-            barHeight,
-            "Tiredness",
-            { r = 0.69, g = 0.33, b = 0.86 },
-            self.tirednessData,
-            self.tirednessDisplayRatio
-        )
-
-        topY = topY + 44
-    end
 
     if self.activityData then
         self:drawReserveBar(

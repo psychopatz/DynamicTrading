@@ -1,8 +1,22 @@
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_Bootstrap"
+require "DT/UI/Labour/MainWindow/MainWindowCore/DT_MainWindowCore_WorkerPresentation"
+
 DT_MainWindow = DT_MainWindow or {}
 DT_MainWindow.Internal = DT_MainWindow.Internal or {}
 
 local Internal = DT_MainWindow.Internal
 local LabourWorkerList = ISScrollingListBox:derive("LabourWorkerList")
+
+local function formatWorkerListSubtitle(worker)
+    if type(Internal.formatWorkerListSubtitle) == "function" then
+        return Internal.formatWorkerListSubtitle(worker)
+    end
+    return tostring(worker and worker.state or "Idle")
+        .. " | "
+        .. tostring(worker and worker.jobType or "Unassigned")
+        .. " | "
+        .. tostring(worker and worker.presenceState or "Home")
+end
 
 function LabourWorkerList:new(x, y, width, height)
     local o = ISScrollingListBox:new(x, y, width, height)
@@ -31,7 +45,7 @@ function LabourWorkerList:doDrawItem(y, item, alt)
 
     self:drawText(tostring(worker.name or worker.workerID), 10, y + 7, 0.88, 0.92, 1, 1, UIFont.Medium)
     self:drawText(
-        Internal.formatWorkerListSubtitle(worker),
+        formatWorkerListSubtitle(worker),
         10,
         y + 33,
         0.72,
