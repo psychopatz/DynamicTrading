@@ -1,5 +1,6 @@
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
+require "DT/Common/Buildings/DT_Buildings"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 
 local PlayerOwnership = {}

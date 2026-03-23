@@ -75,6 +75,7 @@ end
 
 function Config.GetNextJobType(jobType)
     local order = {
+        Config.JobTypes.Builder,
         Config.JobTypes.Scavenge,
         Config.JobTypes.Farm,
         Config.JobTypes.Fish

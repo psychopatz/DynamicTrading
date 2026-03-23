@@ -37,13 +37,7 @@ function Internal.canStoreInWarehouseOutput(entry)
     if not entry or entry.kind == "money" then
         return false
     end
-    if entry.canDeposit then
-        return false
-    end
-    if entry.canAssignTool then
-        return false
-    end
-    return true
+    return tostring(entry.fullType or "") ~= ""
 end
 
 function Internal.shouldShowPlayerEntry(entry, activeTab, window)

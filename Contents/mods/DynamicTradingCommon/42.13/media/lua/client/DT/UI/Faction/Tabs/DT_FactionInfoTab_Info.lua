@@ -86,11 +86,24 @@ function DT_FactionInfoTab_Info:updateData(f)
         end
 
         if f.playerOwned then
+            local ownedStatus = DT_FactionInfoWindow and DT_FactionInfoWindow.cachedOwnedFactionStatus or nil
+            local buildingSummary = ownedStatus and ownedStatus.buildings or nil
             text = text .. " <LINE> <RGB:0.4,0.8,1> PLAYER CONTROL: <LINE> "
             text = text .. " <RGB:0.8,0.8,0.8> Leader: " .. tostring(f.leaderUsername or "Unknown") .. " <LINE> "
             text = text .. " Control Mode: " .. tostring(f.controlMode or "HybridManual") .. " <LINE> "
             text = text .. " Leadership State: " .. tostring(f.leadershipState or "Active") .. " <LINE> "
             text = text .. " Linked Recruits: " .. tostring(f.memberCount or 0) .. " <LINE> "
+            if buildingSummary and buildingSummary.housing then
+                text = text .. " <LINE> <RGB:0.4,0.8,1> BUILDINGS: <LINE> "
+                text = text .. " <RGB:0.8,0.8,0.8> Active Projects: " .. tostring(buildingSummary.activeProjectCount or 0) .. " <LINE> "
+                text = text .. " Housing: "
+                    .. tostring(buildingSummary.housing.housedCount or 0)
+                    .. " / "
+                    .. tostring(buildingSummary.housing.capacity or 0)
+                    .. " housed <LINE> "
+                text = text .. " Unhoused Recruits: " .. tostring(buildingSummary.housing.unhousedCount or 0) .. " <LINE> "
+                text = text .. " Barracks: " .. tostring((buildingSummary.buildingCounts and buildingSummary.buildingCounts.Barracks) or 0) .. " <LINE> "
+            end
         end
     end
     

@@ -167,6 +167,9 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local workProgressData = isFunction(Internal.getWorkerProgressData) and Internal.getWorkerProgressData(worker, profile) or nil
     local toolSummary = (#toolTags > 0) and table.concat(toolTags, ", ")
         or ((normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge)) and "Optional scavenger kit" or "Optional")
+    if normalizedJobType == (config.JobTypes and config.JobTypes.Builder) then
+        toolSummary = "Builder.Tool.Hammer, Builder.Tool.Saw"
+    end
     local text = ""
     text = text .. " <RGB:1,1,1> <SIZE:Medium> Overview <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Job Enabled: <RGB:1,1,1> " .. formatBool(worker.jobEnabled == true) .. " <LINE> "
@@ -179,6 +182,11 @@ function DT_MainWindow:updateWorkerDetail(worker)
             .. ") <LINE> "
     end
     text = text .. " <RGB:0.72,0.72,0.72> Stored Money: <RGB:1,1,1> $" .. formatReserveValue(worker.moneyStored) .. " <LINE> <LINE> "
+
+    text = text .. " <RGB:1,1,1> <SIZE:Medium> Housing <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Housing State: <RGB:1,1,1> " .. tostring(worker.housingState or "Unhoused") .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Housing Building: <RGB:1,1,1> " .. tostring(worker.housingBuildingType or "None") .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Recovery Multiplier: <RGB:1,1,1> x" .. formatDecimal(worker.housingRecoveryMultiplier or 0.33, 2) .. " <LINE> <LINE> "
 
     if stateLabel == deadState and tostring(worker.deathCause or "") ~= "" then
         text = text .. " <RGB:0.88,0.52,0.52> Cause Of Death: <RGB:1,1,1> " .. tostring(worker.deathCause) .. " <LINE> <LINE> "
@@ -198,13 +206,28 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.72,0.72,0.72> Required Tools: <RGB:1,1,1> " .. toolSummary .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Work Coordinates: <RGB:1,1,1> " .. formatCoords(worker.workX, worker.workY, worker.workZ) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> "
+    if worker.assignedProjectID then
+        text = text .. " <RGB:0.72,0.72,0.72> Building Project: <RGB:1,1,1> "
+            .. tostring(worker.assignedProjectBuildingType or "Project")
+            .. " L"
+            .. tostring(worker.assignedProjectTargetLevel or 1)
+            .. " <LINE> "
+    elseif normalizedJobType == (config.JobTypes and config.JobTypes.Builder) then
+        text = text .. " <RGB:0.72,0.72,0.72> Building Project: <RGB:1,1,1> No Project <LINE> "
+    end
     if workProgressData then
+        local progressUnit = "h"
+        if normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge) then
+            progressUnit = " work"
+        elseif normalizedJobType == (config.JobTypes and config.JobTypes.Builder) then
+            progressUnit = " work points"
+        end
         text = text .. " <RGB:0.72,0.72,0.72> Current Activity: <RGB:1,1,1> " .. tostring(workProgressData.displayText or workProgressData.label or "Working") .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Activity Progress: <RGB:1,1,1> "
             .. formatReserveValue(workProgressData.progressAmount or workProgressData.progressHours or 0)
             .. " / "
             .. formatReserveValue(workProgressData.workTarget or workProgressData.cycleHours or 0)
-            .. ((normalizedJobType == (config.JobTypes and config.JobTypes.Scavenge)) and " work" or "h")
+            .. progressUnit
             .. " <LINE> "
         text = text .. " <RGB:0.72,0.72,0.72> Activity ETA: <RGB:1,1,1> "
             .. formatDurationHours(workProgressData.remainingWorldHours)

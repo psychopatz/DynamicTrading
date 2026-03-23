@@ -62,6 +62,9 @@ end
 
 function PlayerOwnership_Utils.findWorkerByID(ownerUsername, workerID)
     local registry = PlayerOwnership_Utils.getWorkerRegistry()
+    if registry and registry.GetWorkerForOwnerRaw then
+        return registry.GetWorkerForOwnerRaw(ownerUsername, workerID)
+    end
     if registry and registry.GetWorkerForOwner then
         return registry.GetWorkerForOwner(ownerUsername, workerID)
     end
@@ -70,6 +73,9 @@ end
 
 function PlayerOwnership_Utils.getWorkersForOwner(ownerUsername)
     local registry = PlayerOwnership_Utils.getWorkerRegistry()
+    if registry and registry.GetWorkersForOwnerRaw then
+        return registry.GetWorkersForOwnerRaw(ownerUsername) or {}
+    end
     if registry and registry.GetWorkersForOwner then
         return registry.GetWorkersForOwner(ownerUsername) or {}
     end

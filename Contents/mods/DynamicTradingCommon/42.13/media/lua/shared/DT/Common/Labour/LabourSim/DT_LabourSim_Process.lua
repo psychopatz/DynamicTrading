@@ -43,6 +43,7 @@ function Sim.ProcessWorker(worker, currentHour)
 
     local profile = Config.GetJobProfile(worker.jobType)
     local normalizedJobType = Config.NormalizeJobType(worker.jobType)
+    local isBuilderJob = normalizedJobType == (Config.JobTypes and Config.JobTypes.Builder)
     local scavengeLoadout = nil
     local cycleHours = Config.GetEffectiveWorkTarget and Config.GetEffectiveWorkTarget(worker, profile)
         or (Config.GetEffectiveCycleHours and Config.GetEffectiveCycleHours(worker, profile))
@@ -84,6 +85,14 @@ function Sim.ProcessWorker(worker, currentHour)
     worker.jobSkillSpeedMultiplier = jobSkillEffects.speedMultiplier
     worker.jobSkillYieldMultiplier = jobSkillEffects.yieldMultiplier
     worker.jobSkillBotchMultiplier = jobSkillEffects.botchChanceMultiplier
+    if isBuilderJob and DT_Buildings and DT_Buildings.GetProjectForWorker then
+        local builderProject = DT_Buildings.GetProjectForWorker(worker)
+        if builderProject then
+            cycleHours = math.max(1, tonumber(builderProject.requiredWorkPoints) or cycleHours)
+            worker.workTarget = cycleHours
+            worker.workCycleHours = cycleHours
+        end
+    end
 
     if normalizedJobType == Config.JobTypes.Scavenge then
         Internal.ensureWorkerHome(worker)
@@ -300,6 +309,89 @@ function Sim.ProcessWorker(worker, currentHour)
             else
                 worker.state = Config.States.Idle
             end
+        end
+    elseif isBuilderJob then
+        worker.scavengeBonusRareRolls = nil
+        worker.scavengeRareFinds = nil
+        worker.scavengeBotchedRolls = nil
+        worker.scavengeQualityCounts = nil
+
+        local projectState = DT_Buildings and DT_Buildings.GetProjectDisplayState and DT_Buildings.GetProjectDisplayState(worker.ownerUsername, worker.workerID) or {
+            hasProject = false,
+            label = "No Project"
+        }
+        local didWorkThisTick = false
+        local buildResult = nil
+
+        if hp <= 0 then
+            Internal.markWorkerDead(worker, currentHour, normalizedJobType, Config.PresenceStates.Home, hasCalories, hasHydration)
+        elseif worker.jobEnabled and toolsReady and hasHydration and hasCalories and not forcedRest and projectState.hasProject then
+            worker.state = Config.States.Working
+            buildResult = DT_Buildings
+                and DT_Buildings.ProcessWorkerProject
+                and DT_Buildings.ProcessWorkerProject(worker, currentHour, workableHours, speedMultiplier)
+                or nil
+            didWorkThisTick = buildResult and buildResult.didWork == true or false
+            if buildResult and buildResult.completed and buildResult.project then
+                local xpResult = buildResult.xpResult or nil
+                local xpText = ""
+                if xpResult and (tonumber(xpResult.granted) or 0) > 0 then
+                    xpText = " Earned "
+                        .. tostring(math.floor((tonumber(xpResult.granted) or 0) + 0.5))
+                        .. " Construction XP."
+                    if (tonumber(xpResult.leveledUp) or 0) > 0 then
+                        xpText = xpText
+                            .. " Construction increased to level "
+                            .. tostring(xpResult.newLevel or 0)
+                            .. "."
+                    end
+                end
+                Internal.appendWorkerLog(
+                    worker,
+                    tostring(buildResult.project.buildingType or "Building")
+                        .. " reached level "
+                        .. tostring(buildResult.project.targetLevel or 1)
+                        .. "."
+                        .. xpText,
+                    currentHour,
+                    "buildings"
+                )
+            end
+        end
+
+        if Tiredness and deltaHours > 0 and hp > 0 then
+            if didWorkThisTick and workableHours > 0 then
+                Tiredness.ApplyWorkDrain(worker, workableHours, profile)
+            else
+                Tiredness.ApplyHomeRecovery(worker, deltaHours, profile)
+            end
+
+            forcedRest = Tiredness.IsForcedRest(worker)
+            if forcedRest then
+                Tiredness.CompleteForcedRest(worker, currentHour, "Fully rested again.")
+            elseif Tiredness.IsDepleted(worker) then
+                forcedRest = true
+                Tiredness.BeginForcedRest(worker, currentHour, lowTirednessReason, "Too tired to keep building. Resting at home.")
+            end
+            forcedRest = Tiredness.IsForcedRest(worker)
+        end
+
+        if hp <= 0 then
+            Internal.markWorkerDead(worker, currentHour, normalizedJobType, Config.PresenceStates.Home, hasCalories, hasHydration)
+        elseif not worker.jobEnabled then
+            worker.state = Config.States.Idle
+        elseif not toolsReady then
+            worker.state = Config.States.MissingTool
+        elseif not hasHydration then
+            worker.state = Config.States.Dehydrated
+        elseif not hasCalories then
+            worker.state = Config.States.Starving
+        elseif forcedRest then
+            worker.state = Config.States.Resting
+        elseif projectState.hasProject then
+            worker.state = Config.States.Working
+        else
+            worker.state = Config.States.Idle
         end
     else
         worker.scavengeBonusRareRolls = nil

@@ -156,7 +156,7 @@ function DT_SupplyWindow:onDepositSelected()
     local activeTab = self.activeTab or Internal.Tabs.Provisions
 
     if activeTab == Internal.Tabs.Output and not (Internal.isWarehouseView and Internal.isWarehouseView(self)) then
-        self:updateStatus("This tab is storage-only. Withdraw items from the right side instead.")
+        self:updateStatus("This tab is warehouse storage only. Open the Warehouse view to store general items.")
         return
     end
 
@@ -185,7 +185,7 @@ function DT_SupplyWindow:onDepositSelected()
 
     if activeTab == Internal.Tabs.Output then
         if not (Internal.canStoreInWarehouseOutput and Internal.canStoreInWarehouseOutput(selectedEntry)) then
-            self:updateStatus("That item belongs in Provisions or Equipment, not warehouse storage.")
+            self:updateStatus("That item cannot be stored in warehouse storage.")
             return
         end
         self:depositEntries({ selectedEntry })
@@ -204,7 +204,7 @@ function DT_SupplyWindow:onDepositVisible()
     local activeTab = self.activeTab or Internal.Tabs.Provisions
 
     if activeTab == Internal.Tabs.Output and not (Internal.isWarehouseView and Internal.isWarehouseView(self)) then
-        self:updateStatus("This tab is storage-only. Withdraw items from the right side instead.")
+        self:updateStatus("This tab is warehouse storage only. Open the Warehouse view to store general items.")
         return
     end
 

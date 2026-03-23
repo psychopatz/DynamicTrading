@@ -143,6 +143,70 @@ function Interaction.GetProgressDescriptor(worker, profile)
         }
     end
 
+    if jobKey == tostring((Config.JobTypes or {}).Builder or "Builder") then
+        local workTarget = math.max(
+            1,
+            tonumber(worker.assignedProjectRequired)
+                or tonumber(worker.workTarget)
+                or tonumber(worker.workCycleHours)
+                or 1
+        )
+        local progressAmount = math.max(
+            0,
+            tonumber(worker.assignedProjectProgress)
+                or tonumber(worker.workProgress)
+                or 0
+        )
+        if progressAmount > workTarget then
+            progressAmount = workTarget
+        end
+
+        local baseSpeed = math.max(
+            0.01,
+            tonumber(worker.baseWorkSpeedMultiplier)
+                or tonumber(Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile))
+                or 1
+        )
+        local skillEffects = Skills and Skills.GetWorkerJobEffects and Skills.GetWorkerJobEffects(worker, profile) or nil
+        local skillSpeed = math.max(0.01, tonumber(skillEffects and skillEffects.speedMultiplier or worker.jobSkillSpeedMultiplier or 1) or 1)
+        local effectiveSpeed = baseSpeed * skillSpeed
+        local baseWorkPerHour = math.max(
+            0.01,
+            tonumber(DT_Buildings and DT_Buildings.Config and DT_Buildings.Config.GetBuilderBaseWorkPointsPerHour
+                and DT_Buildings.Config.GetBuilderBaseWorkPointsPerHour())
+                or 1
+        )
+        local effectiveWorkPerHour = baseWorkPerHour * effectiveSpeed
+        local remainingWorkAmount = math.max(0, workTarget - progressAmount)
+        local remainingWorldHours = effectiveWorkPerHour > 0 and (remainingWorkAmount / effectiveWorkPerHour) or nil
+        local tokens = Interaction.buildProgressTokens(worker, progressAmount, workTarget, remainingWorldHours)
+        tokens.progress = Interaction.formatWholeAmount(progressAmount)
+        tokens.total = Interaction.formatWholeAmount(workTarget)
+
+        return {
+            label = DynamicTrading.FormatInteractionString(template.activeText, tokens),
+            displayText = DynamicTrading.FormatInteractionString(template.activeText, tokens),
+            fillRatio = math.max(0, math.min(1, progressAmount / workTarget)),
+            captionText = DynamicTrading.FormatInteractionString(template.captionText, tokens),
+            summaryText = Interaction.formatWholeAmount(progressAmount)
+                .. " / "
+                .. Interaction.formatWholeAmount(workTarget)
+                .. " WP | Speed x"
+                .. Interaction.formatDecimal(effectiveSpeed, 2),
+            progressAmount = progressAmount,
+            workTarget = workTarget,
+            progressHours = progressAmount,
+            cycleHours = workTarget,
+            remainingWorldHours = remainingWorldHours,
+            baseSpeedMultiplier = baseSpeed,
+            skillSpeedMultiplier = skillSpeed,
+            equipmentSpeedMultiplier = 1,
+            effectiveSpeedMultiplier = effectiveSpeed,
+            effectiveWorkPerHour = effectiveWorkPerHour,
+            color = template.color
+        }
+    end
+
     local cycleHours = math.max(
         0.01,
         tonumber(worker.workCycleHours)

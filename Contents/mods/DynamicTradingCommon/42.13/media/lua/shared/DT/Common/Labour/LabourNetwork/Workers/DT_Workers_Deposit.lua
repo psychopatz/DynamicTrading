@@ -105,14 +105,7 @@ Network.Handlers.DepositWarehouseOutput = function(player, args)
         local invItem = Internal.getInventoryItemByID(player, itemID)
         if invItem then
             local fullType = invItem:getFullType()
-            local nutritionInternal = Nutrition and Nutrition.Internal or nil
-            local calories, hydration = 0, 0
-            if nutritionInternal and nutritionInternal.GetExpectedStaticNutritionForFullType then
-                calories, hydration = nutritionInternal.GetExpectedStaticNutritionForFullType(fullType)
-            end
-            if math.max(0, tonumber(calories) or 0) <= 0
-                and math.max(0, tonumber(hydration) or 0) <= 0
-                and not (Config.IsLabourToolFullType and Config.IsLabourToolFullType(fullType)) then
+            if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
                 eligibleCount = eligibleCount + 1
                 local movedQty = Warehouse.DepositOutputEntry(owner, {
                     fullType = fullType,

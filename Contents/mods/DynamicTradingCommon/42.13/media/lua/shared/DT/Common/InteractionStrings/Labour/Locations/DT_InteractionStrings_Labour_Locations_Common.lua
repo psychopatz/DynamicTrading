@@ -24,6 +24,9 @@ DynamicTrading.RegisterInteractionStrings("Labour", "Locations", {
         warehouse = "Warehouse Floor"
     },
     JobPlaces = {
+        Builder = {
+            Default = "Base Workshop"
+        },
         Fish = {
             Default = "Fishing Spot"
         },

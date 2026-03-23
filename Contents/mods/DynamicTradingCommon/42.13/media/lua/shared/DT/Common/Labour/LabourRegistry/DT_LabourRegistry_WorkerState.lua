@@ -241,6 +241,9 @@ function Registry.RecalculateWorker(worker)
     worker.dumpCooldownHours = math.max(0, tonumber(worker.dumpCooldownHours) or 0)
     worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0)
     worker.assignedToolTags = tags
+    if DT_Buildings and DT_Buildings.ApplyWorkerState then
+        DT_Buildings.ApplyWorkerState(worker)
+    end
     if Tiredness and Tiredness.ApplyPresentationFields then
         Tiredness.ApplyPresentationFields(worker)
     end

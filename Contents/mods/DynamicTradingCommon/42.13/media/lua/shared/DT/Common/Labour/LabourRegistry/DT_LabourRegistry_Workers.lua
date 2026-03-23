@@ -110,11 +110,24 @@ function Registry.CreateWorker(ownerUsername, template)
     return worker
 end
 
-function Registry.GetWorker(workerID)
+function Registry.GetWorkerRaw(workerID)
     local data = Registry.GetData()
-    local worker = data.Workers[workerID]
+    return data.Workers[workerID]
+end
+
+function Registry.GetWorker(workerID)
+    local worker = Registry.GetWorkerRaw(workerID)
     if worker then
         Registry.RecalculateWorker(worker)
+    end
+    return worker
+end
+
+function Registry.GetWorkerForOwnerRaw(ownerUsername, workerID)
+    local worker = Registry.GetWorkerRaw(workerID)
+    if not worker then return nil end
+    if worker.ownerUsername ~= Config.GetOwnerUsername(ownerUsername) then
+        return nil
     end
     return worker
 end
@@ -128,13 +141,13 @@ function Registry.GetWorkerForOwner(ownerUsername, workerID)
     return worker
 end
 
-function Registry.GetWorkersForOwner(ownerUsername)
+function Registry.GetWorkersForOwnerRaw(ownerUsername)
     local owner = Config.GetOwnerUsername(ownerUsername)
     local ownerData = Registry.EnsureOwner(owner)
     local workers = {}
 
     for _, workerID in ipairs(ownerData.workerIDs or {}) do
-        local worker = Registry.GetWorker(workerID)
+        local worker = Registry.GetWorkerRaw(workerID)
         if worker then
             workers[#workers + 1] = worker
         end
@@ -143,6 +156,19 @@ function Registry.GetWorkersForOwner(ownerUsername)
     table.sort(workers, function(a, b)
         return tostring(a.name or a.workerID) < tostring(b.name or b.workerID)
     end)
+
+    return workers
+end
+
+function Registry.GetWorkersForOwner(ownerUsername)
+    local workers = {}
+
+    for _, worker in ipairs(Registry.GetWorkersForOwnerRaw(ownerUsername)) do
+        Registry.RecalculateWorker(worker)
+        if worker then
+            workers[#workers + 1] = worker
+        end
+    end
 
     return workers
 end

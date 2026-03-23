@@ -178,11 +178,13 @@ return function(Public, Internal)
         end
         local faction = Public.GetPlayerFaction(owner)
         if faction then faction = Public.RefreshPlayerFaction(faction.id) or nil end
+        local buildingsSummary = DT_Buildings and DT_Buildings.GetOwnerSummary and DT_Buildings.GetOwnerSummary(owner) or nil
         return {
             ownerUsername = owner,
             canCreate = faction == nil and #livingWorkers >= 1,
             workerCount = #livingWorkers,
             faction = faction,
+            buildings = buildingsSummary,
             linkedWorkers = faction and buildFactionWorkerSummaries(faction) or {},
             createBlockedReason = faction and "already_has_faction" or (#livingWorkers < 1 and "needs_recruit" or nil)
         }

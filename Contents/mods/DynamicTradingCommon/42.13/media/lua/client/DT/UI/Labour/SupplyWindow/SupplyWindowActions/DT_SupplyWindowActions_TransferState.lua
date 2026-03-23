@@ -45,7 +45,8 @@ function DT_SupplyWindow:updateTransferControls()
 
     local activeTab = self.activeTab or Internal.Tabs.Provisions
     local transferAllowed = self:canTransferWithWorker(false)
-    local depositEnabled = transferAllowed and activeTab ~= Internal.Tabs.Output
+    local isWarehouseOutputTab = activeTab == Internal.Tabs.Output and Internal.isWarehouseView and Internal.isWarehouseView(self)
+    local depositEnabled = transferAllowed and (activeTab ~= Internal.Tabs.Output or isWarehouseOutputTab)
     local hasWorkerEntries = #(self.workerEntries or {}) > 0
     local dropEnabled = canDropHaulEntries(self) and hasWorkerEntries
 
@@ -61,6 +62,9 @@ function DT_SupplyWindow:updateTransferControls()
     if activeTab == Internal.Tabs.Equipment then
         self.btnDepositSelected:setTitle("Use")
         self.btnDepositVisible:setTitle("All")
+    elseif isWarehouseOutputTab then
+        self.btnDepositSelected:setTitle("Store")
+        self.btnDepositVisible:setTitle("Store All")
     else
         self.btnDepositSelected:setTitle(">")
         self.btnDepositVisible:setTitle(">>")

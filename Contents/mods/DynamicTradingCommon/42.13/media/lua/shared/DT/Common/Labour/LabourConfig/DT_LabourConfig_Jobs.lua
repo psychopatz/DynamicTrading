@@ -4,12 +4,23 @@ DT_Labour.Config = DT_Labour.Config or {}
 local Config = DT_Labour.Config
 
 Config.JobTypes = {
+    Builder = "Builder",
     Farm = "Farm",
     Fish = "Fish",
     Scavenge = "Scavenge"
 }
 
 Config.JobProfiles = {
+    Builder = {
+        jobType = Config.JobTypes.Builder,
+        displayName = "Builder",
+        siteType = nil,
+        requiredToolTags = { "Builder.Tool.Hammer", "Builder.Tool.Saw" },
+        cycleHours = 36,
+        dailyCaloriesNeed = 2200,
+        dailyHydrationNeed = 1800,
+        outputRules = {}
+    },
     Farm = {
         jobType = Config.JobTypes.Farm,
         displayName = "Farming",
@@ -53,6 +64,7 @@ Config.JobProfiles = {
 }
 
 Config.LegacyProfessionToJob = {
+    Builder = Config.JobTypes.Builder,
     Farmer = Config.JobTypes.Farm,
     Angler = Config.JobTypes.Fish,
     Scavenger = Config.JobTypes.Scavenge

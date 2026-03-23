@@ -78,16 +78,20 @@ function DT_MainWindow:createChildren()
     MainWindowLayout.applyToggleButtonStyle(self.btnToggleJob, false)
     self:addChild(self.btnToggleJob)
 
-    self.btnWarehouse = ISButton:new(240, buttonY, 130, 28, "Warehouse", self, self.onOpenWarehouse)
+    self.btnWarehouse = ISButton:new(240, buttonY, 120, 28, "Warehouse", self, self.onOpenWarehouse)
     self.btnWarehouse:initialise()
     self.btnWarehouse:setEnable(false)
     self:addChild(self.btnWarehouse)
 
-    self.btnHelp = ISButton:new(380, buttonY, 80, 28, "Help", self, self.onOpenHelp)
+    self.btnBuildings = ISButton:new(370, buttonY, 120, 28, "Buildings", self, self.onOpenBuildings)
+    self.btnBuildings:initialise()
+    self:addChild(self.btnBuildings)
+
+    self.btnHelp = ISButton:new(500, buttonY, 80, 28, "Help", self, self.onOpenHelp)
     self.btnHelp:initialise()
     self:addChild(self.btnHelp)
 
-    self.btnFaction = ISButton:new(470, buttonY, 160, 28, "Faction", self, self.onOpenFaction)
+    self.btnFaction = ISButton:new(590, buttonY, 160, 28, "Faction", self, self.onOpenFaction)
     self.btnFaction:initialise()
     self:addChild(self.btnFaction)
 

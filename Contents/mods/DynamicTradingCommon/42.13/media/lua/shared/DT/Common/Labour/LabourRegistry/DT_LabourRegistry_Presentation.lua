@@ -106,6 +106,20 @@ function Registry.GetWorkerSummary(worker)
         warehouseRemainingWeight = warehouseSummary and warehouseSummary.remainingWeight or 0,
         primarySkillID = Skills and Skills.GetPrimarySkillID and Skills.GetPrimarySkillID(worker) or nil,
         jobSkillID = jobSkillEffects and jobSkillEffects.skillID or nil,
+        jobSkillLabel = jobSkillEffects and jobSkillEffects.skillLabel or nil,
+        jobSkillLevel = jobSkillEffects and jobSkillEffects.level or 0,
+        jobSkillSpeedMultiplier = jobSkillEffects and jobSkillEffects.speedMultiplier or 1,
+        housingState = worker.housingState,
+        housingBuildingID = worker.housingBuildingID,
+        housingBuildingType = worker.housingBuildingType,
+        housingBuildingLevel = worker.housingBuildingLevel,
+        housingRecoveryMultiplier = worker.housingRecoveryMultiplier,
+        assignedProjectID = worker.assignedProjectID,
+        assignedProjectBuildingType = worker.assignedProjectBuildingType,
+        assignedProjectBuildingID = worker.assignedProjectBuildingID,
+        assignedProjectTargetLevel = worker.assignedProjectTargetLevel,
+        assignedProjectProgress = worker.assignedProjectProgress,
+        assignedProjectRequired = worker.assignedProjectRequired,
         isFemale = worker.isFemale,
         identitySeed = worker.identitySeed
     }
@@ -131,6 +145,9 @@ function Registry.GetWorkerDetailsForOwner(ownerUsername, workerID, includeWareh
     end
     local Warehouse = DT_Labour and DT_Labour.Warehouse or nil
     detail.warehouse = Warehouse and Warehouse.GetClientSnapshot and Warehouse.GetClientSnapshot(ownerUsername, includeWarehouseLedgers == true) or nil
+    if DT_Buildings and DT_Buildings.BuildOwnerSnapshot then
+        detail.buildings = DT_Buildings.BuildOwnerSnapshot(ownerUsername)
+    end
     return detail
 end
 

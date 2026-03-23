@@ -57,6 +57,9 @@ function Config.GetItemCombinedTags(fullType)
     if scavengeProfile and scavengeProfile.labourTags then
         Internal.AppendUniqueValues(tags, scavengeProfile.labourTags)
     end
+    if DT_Buildings and DT_Buildings.Config and DT_Buildings.Config.GetBuilderToolTags then
+        Internal.AppendUniqueValues(tags, DT_Buildings.Config.GetBuilderToolTags(fullType))
+    end
     return tags
 end
 
@@ -67,6 +70,10 @@ function Config.IsLabourToolFullType(fullType)
 
     local tags = Config.FindItemTags(fullType)
     if Config.HasMatchingTag(tags, "Tool") then
+        return true
+    end
+    if DT_Buildings and DT_Buildings.Config and DT_Buildings.Config.IsBuilderToolFullType
+        and DT_Buildings.Config.IsBuilderToolFullType(fullType) then
         return true
     end
 

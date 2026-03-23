@@ -161,7 +161,7 @@ function DT_SupplyWindow:updateItemDetail(entry, side)
             text = text .. " <RGB:0.82,0.82,0.82> Worker Still Needs: <RGB:1,1,1> " .. Internal.getMissingEquipmentSummary(self.workerData, 99) .. " <LINE> "
         elseif self.activeTab == Internal.Tabs.Output and Internal.isWarehouseView and Internal.isWarehouseView(self) then
             text = appendWeightLine(text, entry)
-            text = text .. " <RGB:0.82,0.82,0.82> Action: <RGB:1,1,1> Use > to store this item in warehouse storage. <LINE> "
+            text = text .. " <RGB:0.82,0.82,0.82> Action: <RGB:1,1,1> Use Store to place this item in warehouse storage for construction and general item use. <LINE> "
         else
             text = appendWeightLine(text, entry)
             text = text .. " <RGB:0.82,0.82,0.82> Adds Calories: <RGB:1,1,1> " .. string.format("%.0f", entry.calories or 0) .. " <LINE> "
