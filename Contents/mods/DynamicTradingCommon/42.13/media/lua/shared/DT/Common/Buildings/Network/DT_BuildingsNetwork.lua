@@ -30,6 +30,12 @@ local function syncProjectPreview(player, ownerUsername, buildingType, mode, plo
     })
 end
 
+local function syncWorkerList(player)
+    if Internal.syncWorkerList then
+        Internal.syncWorkerList(player)
+    end
+end
+
 Network.Handlers.RequestOwnerBuildings = function(player, args)
     syncBuildingsSnapshot(player, player)
 end
@@ -82,6 +88,37 @@ Network.Handlers.StartBuildingProject = function(player, args)
         Internal.syncNotice(
             player,
             "Started " .. tostring(project.buildingType or "building") .. " level " .. tostring(project.targetLevel or 1) .. ".",
+            "info",
+            false
+        )
+    end
+    syncBuildingsSnapshot(player, owner)
+end
+
+Network.Handlers.DestroyBuilding = function(player, args)
+    if not args or args.plotX == nil or args.plotY == nil then
+        return
+    end
+
+    local owner = LabourConfig.GetOwnerUsername(player)
+    local ok, reason, building = Buildings.DestroyBuilding(owner, args.plotX, args.plotY, args.buildingID)
+
+    if not ok then
+        if Internal.syncNotice then
+            Internal.syncNotice(player, reason or "Unable to destroy building.", "error", true)
+        end
+        syncBuildingsSnapshot(player, owner)
+        return
+    end
+
+    syncWorkerList(player)
+    if Internal.syncOwnedFactionStatus then
+        Internal.syncOwnedFactionStatus(player)
+    end
+    if Internal.syncNotice then
+        Internal.syncNotice(
+            player,
+            "Destroyed " .. tostring(building and (building.buildingType or building.displayName) or "building") .. ".",
             "info",
             false
         )

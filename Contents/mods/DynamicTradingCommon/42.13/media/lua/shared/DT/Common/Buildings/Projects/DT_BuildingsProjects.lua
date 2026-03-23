@@ -157,4 +157,25 @@ function Buildings.GetOwnerProjectList(ownerUsername)
     return projects
 end
 
+function Buildings.DestroyBuilding(ownerUsername, plotX, plotY, buildingID)
+    local labourConfig = getLabourConfig()
+    local owner = labourConfig.GetOwnerUsername and labourConfig.GetOwnerUsername(ownerUsername) or tostring(ownerUsername or "local")
+    local ok, reason, building = Buildings.CanDestroyBuilding(owner, plotX, plotY, buildingID)
+    if not ok then
+        return false, reason, nil
+    end
+
+    local buildings = Buildings.GetBuildingsForOwner(owner)
+    for index = #buildings, 1, -1 do
+        local instance = buildings[index]
+        if tostring(instance.buildingID or "") == tostring(building.buildingID or "") then
+            table.remove(buildings, index)
+            Buildings.Save()
+            return true, nil, building
+        end
+    end
+
+    return false, "That building could not be found anymore.", nil
+end
+
 return Buildings

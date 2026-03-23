@@ -25,6 +25,11 @@ function DT_BuildingsDetailsPanel:createChildren()
     self.btnUpgrade:initialise()
     self.btnUpgrade:setAnchorBottom(true)
     self:addChild(self.btnUpgrade)
+
+    self.btnDestroy = ISButton:new(116, self.height - 34, 100, 24, "Destroy", self, self.onDestroyClicked)
+    self.btnDestroy:initialise()
+    self.btnDestroy:setAnchorBottom(true)
+    self:addChild(self.btnDestroy)
 end
 
 function DT_BuildingsDetailsPanel:setPlot(plot)
@@ -37,6 +42,10 @@ function DT_BuildingsDetailsPanel:setPlot(plot)
         local canUpgrade = plot and plot.building and plot.building.upgradePreview and plot.building.upgradePreview.available == true
         self.btnUpgrade:setEnable(canUpgrade == true)
     end
+    if self.btnDestroy then
+        local canDestroy = plot and plot.building and plot.building.canDestroy == true
+        self.btnDestroy:setEnable(canDestroy == true)
+    end
 end
 
 function DT_BuildingsDetailsPanel:onUpgradeClicked()
@@ -45,13 +54,20 @@ function DT_BuildingsDetailsPanel:onUpgradeClicked()
     end
 end
 
-function DT_BuildingsDetailsPanel:new(x, y, width, height, onUpgradeCallback)
+function DT_BuildingsDetailsPanel:onDestroyClicked()
+    if self.onDestroyCallback and self.plot and self.plot.building then
+        self.onDestroyCallback(self.plot)
+    end
+end
+
+function DT_BuildingsDetailsPanel:new(x, y, width, height, onUpgradeCallback, onDestroyCallback)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
     o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.2 }
     o.borderColor = { r = 1, g = 1, b = 1, a = 0.08 }
     o.onUpgradeCallback = onUpgradeCallback
+    o.onDestroyCallback = onDestroyCallback
     return o
 end
 

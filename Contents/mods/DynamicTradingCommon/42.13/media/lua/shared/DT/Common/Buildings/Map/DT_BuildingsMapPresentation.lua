@@ -94,7 +94,9 @@ function Buildings.BuildMapSnapshot(ownerUsername)
 
             if building then
                 local upgradePreview = Buildings.BuildProjectPreview(owner, building.buildingType, "upgrade", x, y, building.buildingID)
+                local canDestroy, destroyReason = Buildings.CanDestroyBuilding(owner, x, y, building.buildingID)
                 plotEntry.availableActions.canUpgrade = upgradePreview.available == true
+                plotEntry.availableActions.canDestroy = canDestroy == true
                 plotEntry.building = {
                     buildingID = building.buildingID,
                     buildingType = building.buildingType,
@@ -106,7 +108,9 @@ function Buildings.BuildMapSnapshot(ownerUsername)
                     isInfinite = definition and definition.isInfinite == true or false,
                     maxLevel = definition and definition.maxLevel or 0,
                     occupants = occupantsByBuildingID[tostring(building.buildingID or "")] or {},
-                    upgradePreview = upgradePreview
+                    upgradePreview = upgradePreview,
+                    canDestroy = canDestroy == true,
+                    destroyReason = destroyReason
                 }
             end
 

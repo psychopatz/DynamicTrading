@@ -394,6 +394,26 @@ function Buildings.CanWorkerBuild(worker)
     return true, nil
 end
 
+function Buildings.CanDestroyBuilding(ownerUsername, plotX, plotY, buildingID)
+    local owner = getOwnerUsername(ownerUsername)
+    local x = math.floor(tonumber(plotX) or 0)
+    local y = math.floor(tonumber(plotY) or 0)
+    local building = Buildings.FindBuildingAtPlot(owner, x, y)
+    if not building or math.floor(tonumber(building.level) or 0) <= 0 then
+        return false, "There is no completed building on that plot.", nil
+    end
+    if buildingID and tostring(building.buildingID or "") ~= tostring(buildingID) then
+        return false, "That building no longer matches the selected plot.", nil
+    end
+    if tostring(building.buildingType or "") == "Headquarters" then
+        return false, "Headquarters cannot be destroyed.", nil
+    end
+    if Buildings.GetActiveProjectAtPlot(owner, x, y) then
+        return false, "You cannot destroy a building while a project is active on that plot.", nil
+    end
+    return true, nil, building
+end
+
 Internal.BuildingsConsumeRecipe = consumeRecipe
 
 return Buildings

@@ -6,6 +6,7 @@ require "DT/UI/Labour/Buildings/Models/DT_BuildingsClientSelectors"
 require "DT/UI/Labour/Buildings/Map/DT_BuildingsMapPanel"
 require "DT/UI/Labour/Buildings/Details/DT_BuildingsDetailsPanel"
 require "DT/UI/Labour/Buildings/Modals/DT_BuildingActionModal"
+require "DT/UI/Labour/Buildings/Modals/DT_BuildingDestroyModal"
 require "DT/UI/Labour/Buildings/Modals/DT_BuildingPickerModal"
 require "DT/UI/Labour/Buildings/Modals/DT_BuildingProjectModal"
 
@@ -117,6 +118,28 @@ function DT_BuildingsWindow:onUpgradePlot(plot)
     )
 end
 
+function DT_BuildingsWindow:onDestroyPlot(plot)
+    if not plot or not plot.building then
+        return
+    end
+
+    DT_BuildingDestroyModal.Open({
+        plot = plot,
+        onConfirm = function(selectedPlot)
+            local ownerWindow = self:getOwnerWindow()
+            if not ownerWindow or not ownerWindow.sendLabourCommand or not selectedPlot or not selectedPlot.building then
+                return
+            end
+
+            ownerWindow:sendLabourCommand("DestroyBuilding", {
+                plotX = selectedPlot.x,
+                plotY = selectedPlot.y,
+                buildingID = selectedPlot.building.buildingID
+            })
+        end
+    })
+end
+
 function DT_BuildingsWindow:onRefresh()
     self:requestSnapshot()
 end
@@ -138,9 +161,18 @@ function DT_BuildingsWindow:createChildren()
     self.mapPanel:setAnchorBottom(true)
     self:addChild(self.mapPanel)
 
-    self.detailsPanel = DT_BuildingsDetailsPanel:new((pad * 2) + mapW, contentY, detailsW, contentH, function(plot)
-        self:onUpgradePlot(plot)
-    end)
+    self.detailsPanel = DT_BuildingsDetailsPanel:new(
+        (pad * 2) + mapW,
+        contentY,
+        detailsW,
+        contentH,
+        function(plot)
+            self:onUpgradePlot(plot)
+        end,
+        function(plot)
+            self:onDestroyPlot(plot)
+        end
+    )
     self.detailsPanel:initialise()
     self.detailsPanel:createChildren()
     self.detailsPanel:setAnchorRight(true)

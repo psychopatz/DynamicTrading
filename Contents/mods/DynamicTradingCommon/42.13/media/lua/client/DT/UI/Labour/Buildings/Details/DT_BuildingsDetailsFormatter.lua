@@ -47,6 +47,13 @@ function DT_BuildingsDetailsFormatter.BuildPlotText(plot)
                 text = text .. " " .. line .. " <LINE> "
             end
         end
+
+        text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Destroy <LINE> "
+        if building.canDestroy == true then
+            text = text .. " <RGB:0.88,0.72,0.72> This building can be destroyed after confirmation. <LINE> "
+        else
+            text = text .. " <RGB:0.72,0.62,0.62> " .. tostring(building.destroyReason or "This building cannot be destroyed.") .. " <LINE> "
+        end
     elseif plot.state == "Empty" then
         text = text .. " <LINE> <RGB:0.82,0.82,0.82> This plot is available for construction. <LINE> "
     elseif plot.state == "Locked" then
