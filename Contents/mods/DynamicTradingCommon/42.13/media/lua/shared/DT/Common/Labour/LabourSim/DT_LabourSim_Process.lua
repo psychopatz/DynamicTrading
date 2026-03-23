@@ -23,17 +23,21 @@ local function grantWorkerJobXP(worker, currentHour, skillEffects, totalQuantity
         return
     end
 
+    local message = "Earned " .. tostring(math.floor((tonumber(result.granted) or 0) + 0.5)) .. " " .. tostring(skillEffects.skillLabel or skillEffects.skillID or "Skill") .. " XP."
+
     if (tonumber(result.leveledUp) or 0) > 0 then
-        Internal.appendWorkerLog(
-            worker,
-            tostring(skillEffects.skillLabel or skillEffects.skillID or "Skill")
-                .. " increased to level "
-                .. tostring(result.newLevel)
-                .. ".",
-            currentHour,
-            "skills"
-        )
+        message = message .. " " .. tostring(skillEffects.skillLabel or skillEffects.skillID or "Skill")
+            .. " increased to level "
+            .. tostring(result.newLevel)
+            .. "."
     end
+
+    Internal.appendWorkerLog(
+        worker,
+        message,
+        currentHour,
+        "skills"
+    )
 end
 
 function Sim.ProcessWorker(worker, currentHour)
