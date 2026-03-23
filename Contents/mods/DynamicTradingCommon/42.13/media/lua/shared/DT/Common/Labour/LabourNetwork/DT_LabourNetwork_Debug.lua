@@ -7,15 +7,27 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 DT_Labour = DT_Labour or {}
 DT_Labour.Network = DT_Labour.Network or {}
 
-local Config = DT_Labour.Config
-local Registry = DT_Labour.Registry
-local Sim = DT_Labour.Sim
-local Presentation = DT_Labour.Presentation
 local Network = DT_Labour.Network
 local Internal = Network.Internal or {}
 
 Network.Internal = Internal
 Network.Handlers = Network.Handlers or {}
+
+local function getConfig()
+    return DT_Labour and DT_Labour.Config or nil
+end
+
+local function getRegistry()
+    return DT_Labour and DT_Labour.Registry or nil
+end
+
+local function getSim()
+    return DT_Labour and DT_Labour.Sim or nil
+end
+
+local function getPresentation()
+    return DT_Labour and DT_Labour.Presentation or nil
+end
 
 local function canUseDebugRecruit(player)
     if DynamicTrading and DynamicTrading.Debug then
@@ -40,6 +52,10 @@ Network.Handlers.DebugRecruitWorker = function(player, args)
     if not player or not canUseDebugRecruit(player) then return end
     args = args or {}
 
+    local Config = getConfig()
+    local Registry = getRegistry()
+    local Sim = getSim()
+    local Presentation = getPresentation()
     local owner = Config.GetOwnerUsername(player)
     local sourceNPCID = args.sourceNPCID and tostring(args.sourceNPCID) or nil
     local worker = sourceNPCID and Registry.FindWorkerBySourceID(owner, sourceNPCID) or nil
@@ -58,9 +74,15 @@ Network.Handlers.DebugRecruitWorker = function(player, args)
         end
     end
 
-    Registry.Save()
-    Sim.ProcessWorker(worker, (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour())
-    Presentation.SyncWorker(worker, { player })
+    if Registry and Registry.Save then
+        Registry.Save()
+    end
+    if Sim and Sim.ProcessWorker then
+        Sim.ProcessWorker(worker, (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour())
+    end
+    if Presentation and Presentation.SyncWorker then
+        Presentation.SyncWorker(worker, { player })
+    end
     if Internal.syncRecruitAttemptResult then
         Internal.syncRecruitAttemptResult(player, {
             success = true,

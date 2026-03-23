@@ -62,6 +62,9 @@ function Internal.getReturnReasonLabel(worker)
     if reason == reasons.FullHaul then
         return "Backpack Full"
     end
+    if reason == reasons.LowTiredness then
+        return "Low Tiredness"
+    end
     if reason == reasons.LowFood then
         return "Low Food"
     end

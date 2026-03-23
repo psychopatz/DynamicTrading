@@ -4,10 +4,6 @@ DT_Labour.Network = DT_Labour.Network or {}
 local Network = DT_Labour.Network
 local Workers = Network.Workers or {}
 local Internal = Network.Internal or {}
-local Registry = DT_Labour.Registry
-local Config = DT_Labour.Config
-local Sim = DT_Labour.Sim
-local Presentation = DT_Labour.Presentation
 
 Workers.Shared = Workers.Shared or {}
 Network.Workers = Workers
@@ -15,6 +11,22 @@ Network.Internal = Internal
 Network.Handlers = Network.Handlers or {}
 
 local Shared = Workers.Shared
+
+local function getRegistry()
+    return DT_Labour and DT_Labour.Registry or nil
+end
+
+local function getConfig()
+    return DT_Labour and DT_Labour.Config or nil
+end
+
+local function getSim()
+    return DT_Labour and DT_Labour.Sim or nil
+end
+
+local function getPresentation()
+    return DT_Labour and DT_Labour.Presentation or nil
+end
 
 function Shared.normalizeLedgerIndexes(args)
     local indexes = {}
@@ -43,19 +55,38 @@ function Shared.normalizeLedgerIndexes(args)
 end
 
 function Shared.getCurrentWorldHours()
+    local Config = getConfig()
+    if not Config then
+        return 0
+    end
+
     return (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour()
 end
 
 function Shared.saveAndRefreshProcessed(player, worker, syncProjection)
-    Registry.Save()
-    Sim.ProcessWorker(worker, Shared.getCurrentWorldHours())
-    Presentation.SyncWorker(worker, { player })
+    local Registry = getRegistry()
+    local Sim = getSim()
+    local Presentation = getPresentation()
+
+    if Registry and Registry.Save then
+        Registry.Save()
+    end
+    if Sim and Sim.ProcessWorker then
+        Sim.ProcessWorker(worker, Shared.getCurrentWorldHours())
+    end
+    if Presentation and Presentation.SyncWorker then
+        Presentation.SyncWorker(worker, { player })
+    end
     Internal.syncWorkerDetail(player, worker.workerID, syncProjection)
     Internal.syncWorkerList(player)
 end
 
 function Shared.saveAndRefreshBasic(player, worker, syncProjection)
-    Registry.Save()
+    local Registry = getRegistry()
+
+    if Registry and Registry.Save then
+        Registry.Save()
+    end
     Internal.syncWorkerDetail(player, worker.workerID, syncProjection)
     Internal.syncWorkerList(player)
 end

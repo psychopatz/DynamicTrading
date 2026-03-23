@@ -44,6 +44,9 @@ end
 
 function Internal.getNpcConditionLabel(worker)
     local state = tostring(worker and worker.state or "Idle")
+    if state == "Resting" then
+        return "Resting"
+    end
     if state == "Dehydrated" then
         return "Dehydrated"
     end

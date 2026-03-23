@@ -1,5 +1,6 @@
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
 require "DT/Common/Labour/LabourNutrition/DT_LabourNutrition"
+require "DT/Common/Labour/LabourTiredness/DT_LabourTiredness"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Registry = DT_Labour.Registry or {}

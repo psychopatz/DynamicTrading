@@ -23,6 +23,9 @@ function Interaction.BuildReturnReasonMessage(reason)
     if normalizedReason == tostring(reasons.FullHaul or "FullHaul") then
         return tostring(Interaction.getInteractionEntry("Outcome", "Common.ReturnReasons.FullHaul") or "Pack is full, heading home.")
     end
+    if normalizedReason == tostring(reasons.LowTiredness or "LowTiredness") then
+        return tostring(Interaction.getInteractionEntry("Outcome", "Common.ReturnReasons.LowTiredness") or "Too tired to keep going, heading home.")
+    end
     if normalizedReason == tostring(reasons.LowFood or "LowFood") then
         return tostring(Interaction.getInteractionEntry("Outcome", "Common.ReturnReasons.LowFood") or "Running low on food, heading home.")
     end

@@ -13,6 +13,7 @@ function LabourProfileCard:new(x, y, width, height)
     o.caloriesDisplayRatio = 0
     o.hydrationDisplayRatio = 0
     o.healthDisplayRatio = 0
+    o.tirednessDisplayRatio = 0
     o.activityDisplayRatio = 0
     o.workerDisplayCache = {}
     return o
@@ -45,10 +46,12 @@ function LabourProfileCard:setWorker(worker)
         self.caloriesData = nil
         self.hydrationData = nil
         self.healthData = nil
+        self.tirednessData = nil
         self.activityData = nil
         self.caloriesTargetRatio = 0
         self.hydrationTargetRatio = 0
         self.healthTargetRatio = 0
+        self.tirednessTargetRatio = 0
         self.activityTargetRatio = 0
         if self.btnInventory then
             self.btnInventory:setEnable(false)
@@ -80,10 +83,12 @@ function LabourProfileCard:setWorker(worker)
     self.caloriesData = Internal.getNutritionBarData("Calories", currentCaloriesBuffer, carryoverCalories, provisionCalories, dailyCaloriesNeed)
     self.hydrationData = Internal.getNutritionBarData("Hydration", currentHydrationBuffer, carryoverHydration, provisionHydration, dailyHydrationNeed)
     self.healthData = Internal.getHealthBarData(worker.hp, worker.maxHp)
+    self.tirednessData = DT_Labour and DT_Labour.Tiredness and DT_Labour.Tiredness.GetBarData and DT_Labour.Tiredness.GetBarData(worker) or nil
     self.activityData = Internal.getWorkerProgressData and Internal.getWorkerProgressData(worker, profile) or nil
     self.caloriesTargetRatio = self.caloriesData.fillRatio
     self.hydrationTargetRatio = self.hydrationData.fillRatio
     self.healthTargetRatio = self.healthData.fillRatio
+    self.tirednessTargetRatio = self.tirednessData and self.tirednessData.fillRatio or 0
     self.activityTargetRatio = self.activityData and self.activityData.fillRatio or 0
     self.portraitTex = Internal.getWorkerPortraitTexture(worker)
 
@@ -93,6 +98,7 @@ function LabourProfileCard:setWorker(worker)
         self.caloriesDisplayRatio = tonumber(cachedRatios.calories) or self.caloriesTargetRatio
         self.hydrationDisplayRatio = tonumber(cachedRatios.hydration) or self.hydrationTargetRatio
         self.healthDisplayRatio = tonumber(cachedRatios.health) or self.healthTargetRatio
+        self.tirednessDisplayRatio = tonumber(cachedRatios.tiredness) or self.tirednessTargetRatio
         self.activityDisplayRatio = tonumber(cachedRatios.activity) or self.activityTargetRatio
         return
     end
@@ -100,6 +106,7 @@ function LabourProfileCard:setWorker(worker)
     self.caloriesDisplayRatio = self.caloriesTargetRatio
     self.hydrationDisplayRatio = self.hydrationTargetRatio
     self.healthDisplayRatio = self.healthTargetRatio
+    self.tirednessDisplayRatio = self.tirednessTargetRatio
     self.activityDisplayRatio = self.activityTargetRatio
 end
 
@@ -148,6 +155,7 @@ function LabourProfileCard:storeDisplayState()
         calories = self.caloriesDisplayRatio,
         hydration = self.hydrationDisplayRatio,
         health = self.healthDisplayRatio,
+        tiredness = self.tirednessDisplayRatio,
         activity = self.activityDisplayRatio
     }
 end
@@ -166,6 +174,7 @@ function LabourProfileCard:prerender()
     self.caloriesDisplayRatio = animateRatio(self.caloriesDisplayRatio, self.caloriesTargetRatio)
     self.hydrationDisplayRatio = animateRatio(self.hydrationDisplayRatio, self.hydrationTargetRatio)
     self.healthDisplayRatio = animateRatio(self.healthDisplayRatio, self.healthTargetRatio)
+    self.tirednessDisplayRatio = animateRatio(self.tirednessDisplayRatio, self.tirednessTargetRatio)
     self.activityDisplayRatio = animateRatio(self.activityDisplayRatio, self.activityTargetRatio)
     self:storeDisplayState()
 
@@ -253,6 +262,21 @@ function LabourProfileCard:prerender()
     )
 
     topY = topY + 44
+
+    if self.tirednessData then
+        self:drawReserveBar(
+            barsX,
+            topY,
+            barsWidth,
+            barHeight,
+            "Tiredness",
+            { r = 0.69, g = 0.33, b = 0.86 },
+            self.tirednessData,
+            self.tirednessDisplayRatio
+        )
+
+        topY = topY + 44
+    end
 
     if self.activityData then
         self:drawReserveBar(

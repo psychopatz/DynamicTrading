@@ -66,6 +66,7 @@ function Registry.CreateWorker(ownerUsername, template)
         dumpTrips = tonumber(template.dumpTrips) or 0,
         moneyStored = math.max(0, math.floor(tonumber(template.moneyStored) or 0)),
         deathCause = template.deathCause,
+        tiredness = Internal.CopyShallow(template.tiredness),
         statusFlags = Internal.CopyShallow(template.statusFlags),
         activityLog = Internal.CopyShallow(template.activityLog),
         isFemale = template.isFemale,

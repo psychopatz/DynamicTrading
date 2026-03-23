@@ -10,18 +10,35 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 DT_Labour = DT_Labour or {}
 DT_Labour.Network = DT_Labour.Network or {}
 
-local Config = DT_Labour.Config
-local Registry = DT_Labour.Registry
 local Sites = DT_Labour.Sites
-local Sim = DT_Labour.Sim
-local Presentation = DT_Labour.Presentation
 local Network = DT_Labour.Network
 local Internal = Network.Internal or {}
 
 Network.Internal = Internal
 Network.Handlers = Network.Handlers or {}
 
+local function getConfig()
+    return DT_Labour and DT_Labour.Config or nil
+end
+
+local function getRegistry()
+    return DT_Labour and DT_Labour.Registry or nil
+end
+
+local function getSim()
+    return DT_Labour and DT_Labour.Sim or nil
+end
+
+local function getPresentation()
+    return DT_Labour and DT_Labour.Presentation or nil
+end
+
 local function getCurrentDay()
+    local Config = getConfig()
+    if not Config then
+        return 0
+    end
+
     return math.floor((Config.GetCurrentHour() or 0) / Config.HOURS_PER_DAY)
 end
 
@@ -152,6 +169,8 @@ local function createWorkerFromRecruitArgs(owner, args, sourceSoul)
     local recruitUUID = resolveRecruitSourceUUID(args)
     sourceSoul = sourceSoul or getRecruitSourceSoul(recruitUUID)
 
+    local Config = getConfig()
+    local Registry = getRegistry()
     local archetypeID = Config.NormalizeArchetypeID(args.archetypeID or args.profession or (sourceSoul and sourceSoul.archetypeID))
     local isFemale = args.isFemale
     if isFemale == nil and sourceSoul and sourceSoul.isFemale ~= nil then
@@ -187,6 +206,10 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
     if not player then return end
     args = args or {}
 
+    local Config = getConfig()
+    local Registry = getRegistry()
+    local Sim = getSim()
+    local Presentation = getPresentation()
     local owner = Config.GetOwnerUsername(player)
     local sourceNPCID = args.sourceNPCID and tostring(args.sourceNPCID) or nil
     if not sourceNPCID then
@@ -275,9 +298,15 @@ Network.Handlers.AttemptRecruitWorker = function(player, args)
     if DynamicTrading_Factions and DynamicTrading_Factions.OnLabourWorkerCreated then
         DynamicTrading_Factions.OnLabourWorkerCreated(owner, worker)
     end
-    Registry.Save()
-    Sim.ProcessWorker(worker, (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour())
-    Presentation.SyncWorker(worker, { player })
+    if Registry and Registry.Save then
+        Registry.Save()
+    end
+    if Sim and Sim.ProcessWorker then
+        Sim.ProcessWorker(worker, (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour())
+    end
+    if Presentation and Presentation.SyncWorker then
+        Presentation.SyncWorker(worker, { player })
+    end
     Internal.syncRecruitAttemptResult(player, {
         success = true,
         sourceNPCID = sourceNPCID,

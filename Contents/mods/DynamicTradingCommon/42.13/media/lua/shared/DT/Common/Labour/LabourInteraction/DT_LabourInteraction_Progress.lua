@@ -3,10 +3,26 @@ DT_Labour.Interaction = DT_Labour.Interaction or {}
 
 local Config = DT_Labour.Config
 local Interaction = DT_Labour.Interaction
+local Tiredness = DT_Labour.Tiredness
 
 function Interaction.GetProgressDescriptor(worker, profile)
     if not worker then
         return nil
+    end
+
+    local tirednessSystem = DT_Labour and DT_Labour.Tiredness or Tiredness
+    local restingState = tostring((Config.States or {}).Resting or "Resting")
+    if tostring(worker.state or "") == restingState and tirednessSystem and tirednessSystem.GetRestingProgressDescriptor then
+        local descriptor = tirednessSystem.GetRestingProgressDescriptor(worker)
+        if descriptor then
+            local template = Interaction.getInteractionEntry("Progress", "Common.Resting")
+            if type(template) == "table" then
+                descriptor.label = tostring(template.activeText or descriptor.label or "Resting")
+                descriptor.displayText = tostring(template.activeText or descriptor.displayText or "Resting")
+                descriptor.color = template.color or descriptor.color
+            end
+            return descriptor
+        end
     end
 
     local jobKey = Interaction.getJobKey(worker)

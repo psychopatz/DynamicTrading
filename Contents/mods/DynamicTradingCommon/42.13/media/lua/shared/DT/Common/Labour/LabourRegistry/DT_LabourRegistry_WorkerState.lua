@@ -5,6 +5,7 @@ DT_Labour.Registry.Internal = DT_Labour.Registry.Internal or {}
 local Config = DT_Labour.Config
 local Registry = DT_Labour.Registry
 local Internal = Registry.Internal
+local Tiredness = DT_Labour.Tiredness
 
 local function clampAmount(value)
     return math.max(0, tonumber(value) or 0)
@@ -116,6 +117,9 @@ function Registry.RecalculateWorker(worker)
     end
     worker.maxHp = math.max(1, tonumber(worker.maxHp) or tonumber(worker.healthMax) or Config.DEFAULT_WORKER_MAX_HP or 100)
     worker.hp = math.max(0, math.min(worker.maxHp, tonumber(worker.hp) or tonumber(worker.health) or worker.maxHp))
+    if Tiredness and Tiredness.EnsureWorkerTiredness then
+        Tiredness.EnsureWorkerTiredness(worker)
+    end
     worker.lastNutritionCheckpoint = math.max(
         0,
         math.floor(tonumber(worker.lastNutritionCheckpoint) or Config.GetMealCheckpointCountAtHour(worker.lastSimHour or 0))
@@ -233,6 +237,9 @@ function Registry.RecalculateWorker(worker)
     worker.dumpCooldownHours = math.max(0, tonumber(worker.dumpCooldownHours) or 0)
     worker.dumpTrips = math.max(0, tonumber(worker.dumpTrips) or 0)
     worker.assignedToolTags = tags
+    if Tiredness and Tiredness.ApplyPresentationFields then
+        Tiredness.ApplyPresentationFields(worker)
+    end
 end
 
 function Registry.WorkerHasRequiredTools(worker)

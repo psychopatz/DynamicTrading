@@ -81,6 +81,14 @@ function DT_MainWindow:updateWorkerDetail(worker)
     end
     text = text .. " <RGB:0.72,0.72,0.72> Site State: <RGB:1,1,1> " .. tostring(worker.siteState or "Deferred") .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Tool State: <RGB:1,1,1> " .. tostring(worker.toolState or "Missing") .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Tiredness: <RGB:1,1,1> "
+        .. Internal.formatReserveValue(worker.tirednessCurrent or 0)
+        .. " / "
+        .. Internal.formatReserveValue(worker.tirednessMax or 0)
+        .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Rest Threshold: <RGB:1,1,1> " .. Internal.formatReserveValue(worker.tirednessLowThreshold or 0) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Rest Recovery: <RGB:1,1,1> x" .. Internal.formatDecimal(worker.tirednessRecoveryMultiplier or 1, 2) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Forced Rest: <RGB:1,1,1> " .. Internal.formatBool(worker.isRestingForTiredness == true) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Required Tools: <RGB:1,1,1> " .. toolSummary .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Work Coordinates: <RGB:1,1,1> " .. Internal.formatCoords(worker.workX, worker.workY, worker.workZ) .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Pending Output: <RGB:1,1,1> " .. tostring(worker.outputCount or 0) .. " <LINE> "
