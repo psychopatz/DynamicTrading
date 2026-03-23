@@ -1,5 +1,5 @@
-require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
-require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
+pcall(require, "DC/Common/Colony/ColonyConfig/DC_ColonyConfig")
+pcall(require, "DC/Common/Colony/ColonyRegistry/DC_ColonyRegistry")
 
 local PlayerOwnership_Utils = {}
 
@@ -13,7 +13,7 @@ function PlayerOwnership_Utils.getFactionData()
 end
 
 function PlayerOwnership_Utils.getOwnerUsername(ownerUsername)
-    local config = DT_Labour and DT_Labour.Config
+    local config = DC_Colony and DC_Colony.Config
     if config and config.GetOwnerUsername then
         return config.GetOwnerUsername(ownerUsername)
     end
@@ -40,7 +40,7 @@ function PlayerOwnership_Utils.sanitizeID(value)
 end
 
 function PlayerOwnership_Utils.getWorkerRegistry()
-    return DT_Labour and DT_Labour.Registry or nil
+    return DC_Colony and DC_Colony.Registry or nil
 end
 
 function PlayerOwnership_Utils.getWorkerSummary(worker)
@@ -52,7 +52,7 @@ function PlayerOwnership_Utils.getWorkerSummary(worker)
 end
 
 function PlayerOwnership_Utils.getDeadState()
-    local config = DT_Labour and DT_Labour.Config
+    local config = DC_Colony and DC_Colony.Config
     return tostring(config and config.States and config.States.Dead or "Dead")
 end
 

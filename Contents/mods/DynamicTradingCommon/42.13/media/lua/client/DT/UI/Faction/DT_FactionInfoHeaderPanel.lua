@@ -25,10 +25,14 @@ function DT_FactionInfoHeaderPanel:createChildren()
     self.lblStatus:initialise()
     self:addChild(self.lblStatus)
 
-    self.btnOwnedFaction = ISButton:new(self.width - 170, 10, 160, 24, "Open Labour", self, self.onOwnedFactionButton)
+    self.btnOwnedFaction = ISButton:new(self.width - 170, 10, 160, 24, "Open Colony Management", self, self.onOwnedFactionButton)
     self.btnOwnedFaction:initialise()
     self.btnOwnedFaction:instantiate()
     self:addChild(self.btnOwnedFaction)
+    
+    if not getActivatedMods():contains("DynamicColonies") then
+        self.btnOwnedFaction:setVisible(false)
+    end
 end
 
 function DT_FactionInfoHeaderPanel:onResizeFont(scale)
@@ -65,24 +69,28 @@ function DT_FactionInfoHeaderPanel:updateOwnedFactionStatus(status, selectedFact
     end
 
     if self.btnOwnedFaction then
-        if status and not status.faction and status.canCreate then
+        if not getActivatedMods():contains("DynamicColonies") then
+            self.btnOwnedFaction:setVisible(false)
+        elseif status and not status.faction and status.canCreate then
             self.btnOwnedFaction:setTitle("Create Faction")
             self.btnOwnedFaction:setEnable(true)
+            self.btnOwnedFaction:setVisible(true)
         else
-            self.btnOwnedFaction:setTitle("Open Labour")
+            self.btnOwnedFaction:setTitle("Open Colony Management")
             self.btnOwnedFaction:setEnable(true)
+            self.btnOwnedFaction:setVisible(true)
         end
     end
 end
 
 function DT_FactionInfoHeaderPanel:onOwnedFactionButton()
-    if self.ownedStatus and not self.ownedStatus.faction and self.ownedStatus.canCreate and DT_System and DT_System.PromptCreateFaction then
-        DT_System.PromptCreateFaction()
+    if self.ownedStatus and not self.ownedStatus.faction and self.ownedStatus.canCreate and DC_System and DC_System.PromptCreateFaction then
+        DC_System.PromptCreateFaction()
         return
     end
 
-    if DT_System and DT_System.OpenWindow then
-        DT_System.OpenWindow()
+    if DC_System and DC_System.OpenWindow then
+        DC_System.OpenWindow()
     end
 end
 

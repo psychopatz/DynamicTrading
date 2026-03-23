@@ -1,6 +1,6 @@
-require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
-require "DT/Common/Labour/LabourRegistry/DT_LabourRegistry"
-require "DT/Common/Buildings/DT_Buildings"
+pcall(require, "DC/Common/Colony/ColonyConfig/DC_ColonyConfig")
+pcall(require, "DC/Common/Colony/ColonyRegistry/DC_ColonyRegistry")
+pcall(require, "DC/Common/Buildings/DC_Buildings")
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 
 local PlayerOwnership = {}

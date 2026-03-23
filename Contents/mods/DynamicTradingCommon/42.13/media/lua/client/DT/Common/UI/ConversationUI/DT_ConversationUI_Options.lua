@@ -5,15 +5,15 @@
 -- =============================================================================
 
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
-require "DT/UI/Labour/System/DT_System"
+pcall(require, "DC/UI/Colony/System/DC_System")
 
 function DT_ConversationUI:updateOptions(options)
     self.baseOptions = options or {}
     self.optionList:clear()
     local resolvedOptions = self.baseOptions
 
-    if DT_System and DT_System.BuildConversationOptions then
-        resolvedOptions = DT_System.BuildConversationOptions(self, self.baseOptions)
+    if DC_System and DC_System.BuildConversationOptions then
+        resolvedOptions = DC_System.BuildConversationOptions(self, self.baseOptions)
     end
 
     if not resolvedOptions or #resolvedOptions == 0 then
