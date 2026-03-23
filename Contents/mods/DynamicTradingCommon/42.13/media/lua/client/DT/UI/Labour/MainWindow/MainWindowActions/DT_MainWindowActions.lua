@@ -1,5 +1,6 @@
 require "DT/UI/Labour/MainWindow/MainWindowActions/DT_MainWindowActions_Job"
 require "DT/UI/Labour/MainWindow/MainWindowActions/DT_MainWindowActions_Refresh"
 require "DT/UI/Labour/MainWindow/MainWindowActions/DT_MainWindowActions_Supply"
+require "DT/UI/Labour/MainWindow/MainWindowActions/DT_MainWindowActions_Character"
 require "DT/UI/Labour/MainWindow/MainWindowActions/DT_MainWindowActions_Faction"
 require "DT/UI/Labour/MainWindow/MainWindowActions/DT_MainWindowActions_Help"

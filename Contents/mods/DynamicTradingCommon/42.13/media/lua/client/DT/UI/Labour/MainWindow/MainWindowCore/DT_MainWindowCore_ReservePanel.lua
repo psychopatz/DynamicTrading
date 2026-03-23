@@ -26,6 +26,11 @@ function LabourProfileCard:initialise()
     self.btnInventory:initialise()
     self.btnInventory:setEnable(false)
     self:addChild(self.btnInventory)
+
+    self.btnCharacter = ISButton:new(0, 0, 96, 24, "Character", self, self.onOpenCharacter)
+    self.btnCharacter:initialise()
+    self.btnCharacter:setEnable(false)
+    self:addChild(self.btnCharacter)
 end
 
 function LabourProfileCard:setOwnerWindow(window)
@@ -35,6 +40,12 @@ end
 function LabourProfileCard:onOpenInventory()
     if self.ownerWindow and self.ownerWindow.onOpenInventory then
         self.ownerWindow:onOpenInventory()
+    end
+end
+
+function LabourProfileCard:onOpenCharacter()
+    if self.ownerWindow and self.ownerWindow.onOpenCharacter then
+        self.ownerWindow:onOpenCharacter()
     end
 end
 
@@ -56,11 +67,17 @@ function LabourProfileCard:setWorker(worker)
         if self.btnInventory then
             self.btnInventory:setEnable(false)
         end
+        if self.btnCharacter then
+            self.btnCharacter:setEnable(false)
+        end
         return
     end
 
     if self.btnInventory then
         self.btnInventory:setEnable(true)
+    end
+    if self.btnCharacter then
+        self.btnCharacter:setEnable(true)
     end
 
     local profile = self.profile or {}
@@ -164,8 +181,15 @@ function LabourProfileCard:prerender()
     ISPanel.prerender(self)
 
     local pad = 12
-    local inventoryButtonHeight = (self.btnInventory and self.btnInventory:getHeight()) or 24
-    local inventoryButtonGap = self.btnInventory and 8 or 0
+    local actionButtonHeight = (self.btnInventory and self.btnInventory:getHeight()) or 24
+    local actionButtonGap = self.btnInventory and 8 or 0
+    local actionButtonCount = 0
+    if self.btnInventory then
+        actionButtonCount = actionButtonCount + 1
+    end
+    if self.btnCharacter then
+        actionButtonCount = actionButtonCount + 1
+    end
     if not self.worker then
         self:drawTextCentre("Select a worker to inspect labour reserves and daily upkeep.", self.width / 2, self.height / 2 - 8, 0.65, 0.65, 0.65, 0.9, UIFont.Medium)
         return
@@ -178,7 +202,10 @@ function LabourProfileCard:prerender()
     self.activityDisplayRatio = animateRatio(self.activityDisplayRatio, self.activityTargetRatio)
     self:storeDisplayState()
 
-    local portraitSize = math.min(104, self.height - (pad * 2) - inventoryButtonHeight - inventoryButtonGap)
+    local portraitSize = math.min(
+        104,
+        self.height - (pad * 2) - (actionButtonCount * actionButtonHeight) - (math.max(0, actionButtonCount - 1) * actionButtonGap) - 12
+    )
     portraitSize = math.max(72, portraitSize)
     local portraitX = pad
     local portraitY = pad + 10
@@ -213,15 +240,22 @@ function LabourProfileCard:prerender()
         self.btnInventory:setX(portraitX)
         self.btnInventory:setY(portraitY + portraitSize + 8)
         self.btnInventory:setWidth(portraitSize)
-        self.btnInventory:setHeight(inventoryButtonHeight)
+        self.btnInventory:setHeight(actionButtonHeight)
     end
 
-    local nextButtonY = portraitY + portraitSize + 8 + inventoryButtonHeight + 6
+    local nextButtonY = portraitY + portraitSize + 8 + actionButtonHeight + 6
+    if self.btnCharacter then
+        self.btnCharacter:setX(portraitX)
+        self.btnCharacter:setY(nextButtonY)
+        self.btnCharacter:setWidth(portraitSize)
+        self.btnCharacter:setHeight(actionButtonHeight)
+        nextButtonY = nextButtonY + actionButtonHeight + 6
+    end
     if self.ownerWindow and self.ownerWindow.btnCycleJob then
         self.ownerWindow.btnCycleJob:setX(portraitX)
         self.ownerWindow.btnCycleJob:setY(nextButtonY)
         self.ownerWindow.btnCycleJob:setWidth(portraitSize)
-        self.ownerWindow.btnCycleJob:setHeight(inventoryButtonHeight)
+        self.ownerWindow.btnCycleJob:setHeight(actionButtonHeight)
     end
 
     self:drawReserveBar(

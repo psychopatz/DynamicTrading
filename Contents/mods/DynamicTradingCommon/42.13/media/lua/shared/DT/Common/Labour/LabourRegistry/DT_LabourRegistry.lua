@@ -1,4 +1,5 @@
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
+require "DT/Common/Labour/LabourSkills/DT_LabourSkills"
 require "DT/Common/Labour/LabourNutrition/DT_LabourNutrition"
 require "DT/Common/Labour/LabourTiredness/DT_LabourTiredness"
 

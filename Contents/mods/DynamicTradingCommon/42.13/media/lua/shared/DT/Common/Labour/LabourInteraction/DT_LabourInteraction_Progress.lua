@@ -4,6 +4,7 @@ DT_Labour.Interaction = DT_Labour.Interaction or {}
 local Config = DT_Labour.Config
 local Interaction = DT_Labour.Interaction
 local Tiredness = DT_Labour.Tiredness
+local Skills = DT_Labour.Skills
 
 function Interaction.GetProgressDescriptor(worker, profile)
     if not worker then
@@ -87,12 +88,10 @@ function Interaction.GetProgressDescriptor(worker, profile)
                 or tonumber(Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile))
                 or 1
         )
-        local archetypeSpeed = math.max(
-            0.01,
-            tonumber(Config.GetJobSpeedMultiplier and Config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1) or 1
-        )
+        local skillEffects = Skills and Skills.GetWorkerJobEffects and Skills.GetWorkerJobEffects(worker, profile) or nil
+        local skillSpeed = math.max(0.01, tonumber(skillEffects and skillEffects.speedMultiplier or worker.jobSkillSpeedMultiplier or 1) or 1)
         local equipmentSpeed = math.max(0.01, tonumber(worker.scavengeSearchSpeedMultiplier) or 1)
-        local effectiveSpeed = baseSpeed * archetypeSpeed * equipmentSpeed
+        local effectiveSpeed = baseSpeed * skillSpeed * equipmentSpeed
         local baseWorkPerHour = math.max(
             0.01,
             tonumber(Config.GetScavengeBaseWorkPerHour and Config.GetScavengeBaseWorkPerHour())
@@ -136,7 +135,7 @@ function Interaction.GetProgressDescriptor(worker, profile)
             cycleHours = workTarget,
             remainingWorldHours = remainingWorldHours,
             baseSpeedMultiplier = baseSpeed,
-            archetypeSpeedMultiplier = archetypeSpeed,
+            skillSpeedMultiplier = skillSpeed,
             equipmentSpeedMultiplier = equipmentSpeed,
             effectiveSpeedMultiplier = effectiveSpeed,
             effectiveWorkPerHour = effectiveWorkPerHour,
@@ -162,16 +161,14 @@ function Interaction.GetProgressDescriptor(worker, profile)
             or tonumber(Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile))
             or 1
     )
-    local archetypeSpeed = math.max(
-        0.01,
-        tonumber(Config.GetJobSpeedMultiplier and Config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1) or 1
-    )
+    local skillEffects = Skills and Skills.GetWorkerJobEffects and Skills.GetWorkerJobEffects(worker, profile) or nil
+    local skillSpeed = math.max(0.01, tonumber(skillEffects and skillEffects.speedMultiplier or worker.jobSkillSpeedMultiplier or 1) or 1)
     local equipmentSpeed = math.max(0.01, tonumber(worker.scavengeSearchSpeedMultiplier) or 1)
     if jobKey ~= tostring((Config.JobTypes or {}).Scavenge or "Scavenge") then
         equipmentSpeed = 1
     end
 
-    local effectiveSpeed = baseSpeed * archetypeSpeed * equipmentSpeed
+    local effectiveSpeed = baseSpeed * skillSpeed * equipmentSpeed
     local remainingProgressHours = math.max(0, cycleHours - progressHours)
     local remainingWorldHours = effectiveSpeed > 0 and (remainingProgressHours / effectiveSpeed) or nil
 
@@ -191,7 +188,7 @@ function Interaction.GetProgressDescriptor(worker, profile)
         cycleHours = cycleHours,
         remainingWorldHours = remainingWorldHours,
         baseSpeedMultiplier = baseSpeed,
-        archetypeSpeedMultiplier = archetypeSpeed,
+        skillSpeedMultiplier = skillSpeed,
         equipmentSpeedMultiplier = equipmentSpeed,
         effectiveSpeedMultiplier = effectiveSpeed,
         color = template.color

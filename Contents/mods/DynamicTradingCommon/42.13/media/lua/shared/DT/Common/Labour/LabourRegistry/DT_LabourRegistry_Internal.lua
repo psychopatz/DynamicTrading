@@ -19,6 +19,18 @@ function Internal.CopyShallow(source)
     return copy
 end
 
+function Internal.CopyDeep(source)
+    if type(source) ~= "table" then
+        return source
+    end
+
+    local copy = {}
+    for key, value in pairs(source) do
+        copy[key] = Internal.CopyDeep(value)
+    end
+    return copy
+end
+
 function Internal.GetDisplayNameForFullType(fullType)
     if not fullType or not getScriptManager then
         return tostring(fullType or "Unknown Item")

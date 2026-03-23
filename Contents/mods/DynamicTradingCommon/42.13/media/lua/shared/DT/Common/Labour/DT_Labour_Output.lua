@@ -1,10 +1,12 @@
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig"
+require "DT/Common/Labour/LabourSkills/DT_LabourSkills"
 
 DT_Labour = DT_Labour or {}
 DT_Labour.Output = DT_Labour.Output or {}
 
 local Config = DT_Labour.Config
 local Output = DT_Labour.Output
+local Skills = DT_Labour.Skills
 
 Output.CandidateCache = Output.CandidateCache or {}
 
@@ -51,12 +53,46 @@ local function applyWeightMultiplier(baseWeight, multiplier)
     return math.max(1, math.floor((safeWeight * safeMultiplier) + 0.5))
 end
 
-local function buildWeightedScavengeEntries(loadout, siteProfile)
+local function rollChance(chance)
+    local safeChance = math.max(0, math.min(0.99, tonumber(chance) or 0))
+    if safeChance <= 0 then
+        return false
+    end
+
+    local scaled = math.max(1, math.floor((safeChance * 10000) + 0.5))
+    return (ZombRand(10000) + 1) <= scaled
+end
+
+local function applyQuantityMultiplier(baseQty, multiplier)
+    local safeQty = math.max(1, math.floor(tonumber(baseQty) or 1))
+    local scaled = math.max(1, safeQty * math.max(0.01, tonumber(multiplier) or 1))
+    local guaranteed = math.floor(scaled)
+    local remainder = scaled - guaranteed
+
+    if remainder > 0 and rollChance(remainder) then
+        guaranteed = guaranteed + 1
+    end
+
+    return math.max(1, guaranteed)
+end
+
+local function getJobFailureChance(jobType)
+    if jobType == Config.JobTypes.Farm then
+        return 0.18
+    end
+    if jobType == Config.JobTypes.Fish then
+        return 0.24
+    end
+    return 0
+end
+
+local function buildWeightedScavengeEntries(loadout, siteProfile, skillEffects)
     local entries = {}
     local totalWeight = 0
 
     local failureWeight = math.max(0, (tonumber(loadout and loadout.failureWeight) or 0)
         + (tonumber(siteProfile and siteProfile.failureWeightDelta) or 0))
+    failureWeight = applyWeightMultiplier(failureWeight, skillEffects and skillEffects.botchChanceMultiplier or 1)
     if failureWeight > 0 then
         totalWeight = totalWeight + failureWeight
         entries[#entries + 1] = {
@@ -163,6 +199,13 @@ function Output.GenerateScavengeRun(worker)
     local results = {}
     local loadout = Config.GetScavengeLoadout and Config.GetScavengeLoadout(worker) or {}
     local siteProfile = Config.GetScavengeSiteProfile and Config.GetScavengeSiteProfile(worker and worker.scavengeSiteProfileID) or nil
+    local skillEffects = Skills and Skills.GetWorkerJobEffects and Skills.GetWorkerJobEffects(worker) or {
+        skillID = Config.GetScavengeSiteSkillID and Config.GetScavengeSiteSkillID(worker and worker.scavengeSiteProfileID) or "Construction",
+        speedMultiplier = 1,
+        yieldMultiplier = 1,
+        botchChanceMultiplier = 1,
+        level = 0
+    }
     local poolRolls = math.max(1, tonumber(loadout and loadout.poolRolls) or 1)
         + math.max(0, tonumber(siteProfile and siteProfile.poolRollBonus) or 0)
     local maxPoolRolls = (Config.ScavengeLootDefaults and Config.ScavengeLootDefaults.maxPoolRolls) or poolRolls
@@ -175,7 +218,7 @@ function Output.GenerateScavengeRun(worker)
     local totalQuantity = 0
 
     for _ = 1, poolRolls do
-        local weightedEntries, totalWeight = buildWeightedScavengeEntries(loadout, siteProfile)
+        local weightedEntries, totalWeight = buildWeightedScavengeEntries(loadout, siteProfile, skillEffects)
         if avoidDuplicates and hasKeys(usedRuleIDs) then
             local filteredEntries = {}
             local filteredWeight = 0
@@ -208,7 +251,7 @@ function Output.GenerateScavengeRun(worker)
 
             fullType = fullType or pool[ZombRand(#pool) + 1]
             if fullType then
-                local qty = getRuleQuantity(selected.rule, loadout)
+                local qty = applyQuantityMultiplier(getRuleQuantity(selected.rule, loadout), skillEffects.yieldMultiplier)
                 results[#results + 1] = {
                     fullType = fullType,
                     qty = qty
@@ -232,7 +275,9 @@ function Output.GenerateScavengeRun(worker)
         poolRolls = poolRolls,
         failedRolls = failedRolls,
         successfulRolls = successfulRolls,
-        totalQuantity = totalQuantity
+        totalQuantity = totalQuantity,
+        success = successfulRolls > 0 and totalQuantity > 0,
+        skillEffects = skillEffects
     }
 end
 
@@ -242,12 +287,34 @@ function Output.GenerateScavengeLoot(worker)
 end
 
 function Output.GenerateForJob(profile, worker)
-    local results = {}
-    if not profile then return results end
+    local results = {
+        entries = {},
+        totalQuantity = 0,
+        success = false,
+        failed = false,
+        failureReason = nil
+    }
+    if not profile then
+        return results
+    end
 
     local normalizedJobType = Config.NormalizeJobType and Config.NormalizeJobType(profile.jobType) or profile.jobType
     if normalizedJobType == Config.JobTypes.Scavenge then
-        return Output.GenerateScavengeLoot(worker)
+        return Output.GenerateScavengeRun(worker)
+    end
+
+    local skillEffects = Skills and Skills.GetWorkerJobEffects and Skills.GetWorkerJobEffects(worker, profile) or {
+        speedMultiplier = 1,
+        yieldMultiplier = 1,
+        botchChanceMultiplier = 1,
+        level = 0
+    }
+    results.skillEffects = skillEffects
+
+    if rollChance(getJobFailureChance(normalizedJobType) * (skillEffects.botchChanceMultiplier or 1)) then
+        results.failed = true
+        results.failureReason = normalizedJobType == Config.JobTypes.Fish and "No catch this cycle." or "Botched cycle."
+        return results
     end
 
     for _, rule in ipairs(profile.outputRules or {}) do
@@ -256,14 +323,18 @@ function Output.GenerateForJob(profile, worker)
             local picks = math.max(1, rule.picks or 1)
             for _ = 1, picks do
                 local fullType = pool[ZombRand(#pool) + 1]
-                results[#results + 1] = {
+                local qty = ZombRand((rule.minQty or 1), (rule.maxQty or 1) + 1)
+                qty = applyQuantityMultiplier(qty, skillEffects.yieldMultiplier)
+                results.entries[#results.entries + 1] = {
                     fullType = fullType,
-                    qty = ZombRand((rule.minQty or 1), (rule.maxQty or 1) + 1)
+                    qty = qty
                 }
+                results.totalQuantity = results.totalQuantity + qty
             end
         end
     end
 
+    results.success = results.totalQuantity > 0
     return results
 end
 

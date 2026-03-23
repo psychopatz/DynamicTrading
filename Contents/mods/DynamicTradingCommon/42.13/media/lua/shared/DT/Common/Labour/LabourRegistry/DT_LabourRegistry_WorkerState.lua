@@ -6,6 +6,7 @@ local Config = DT_Labour.Config
 local Registry = DT_Labour.Registry
 local Internal = Registry.Internal
 local Tiredness = DT_Labour.Tiredness
+local Skills = DT_Labour.Skills
 
 local function clampAmount(value)
     return math.max(0, tonumber(value) or 0)
@@ -117,6 +118,9 @@ function Registry.RecalculateWorker(worker)
     end
     worker.maxHp = math.max(1, tonumber(worker.maxHp) or tonumber(worker.healthMax) or Config.DEFAULT_WORKER_MAX_HP or 100)
     worker.hp = math.max(0, math.min(worker.maxHp, tonumber(worker.hp) or tonumber(worker.health) or worker.maxHp))
+    if Skills and Skills.EnsureWorkerSkills then
+        Skills.EnsureWorkerSkills(worker)
+    end
     if Tiredness and Tiredness.EnsureWorkerTiredness then
         Tiredness.EnsureWorkerTiredness(worker)
     end

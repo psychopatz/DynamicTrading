@@ -4,6 +4,7 @@ DT_Labour.Registry.Internal = DT_Labour.Registry.Internal or {}
 
 local Config = DT_Labour.Config
 local Registry = DT_Labour.Registry
+local Skills = DT_Labour.Skills
 
 function Registry.GetWorkerSummary(worker)
     Registry.RecalculateWorker(worker)
@@ -13,6 +14,7 @@ function Registry.GetWorkerSummary(worker)
         or (profile and profile.cycleHours)
         or 0
     local baseWorkSpeedMultiplier = Config.GetBaseWorkSpeedMultiplier and Config.GetBaseWorkSpeedMultiplier(worker, profile) or 1.0
+    local jobSkillEffects = Skills and Skills.GetWorkerJobEffects and Skills.GetWorkerJobEffects(worker, profile) or nil
     local Warehouse = DT_Labour and DT_Labour.Warehouse or nil
     local warehouseSummary = Warehouse and Warehouse.GetClientSummary and Warehouse.GetClientSummary(worker.ownerUsername) or nil
     return {
@@ -98,6 +100,8 @@ function Registry.GetWorkerSummary(worker)
         warehouseUsedWeight = warehouseSummary and warehouseSummary.usedWeight or 0,
         warehouseMaxWeight = warehouseSummary and warehouseSummary.maxWeight or 0,
         warehouseRemainingWeight = warehouseSummary and warehouseSummary.remainingWeight or 0,
+        primarySkillID = Skills and Skills.GetPrimarySkillID and Skills.GetPrimarySkillID(worker) or nil,
+        jobSkillID = jobSkillEffects and jobSkillEffects.skillID or nil,
         isFemale = worker.isFemale,
         identitySeed = worker.identitySeed
     }
@@ -116,6 +120,11 @@ function Registry.GetWorkerDetailsForOwner(ownerUsername, workerID, includeWareh
     if not worker then return nil end
     Registry.RecalculateWorker(worker)
     local detail = Registry.Internal.CopyShallow(worker)
+    if Skills and Skills.BuildClientSkillSnapshotForWorker then
+        detail.skills = Skills.BuildClientSkillSnapshotForWorker(worker)
+        detail.primarySkillID = Skills.GetPrimarySkillID and Skills.GetPrimarySkillID(worker) or nil
+        detail.jobSkillEffects = Skills.GetWorkerJobEffects and Skills.GetWorkerJobEffects(worker) or nil
+    end
     local Warehouse = DT_Labour and DT_Labour.Warehouse or nil
     detail.warehouse = Warehouse and Warehouse.GetClientSnapshot and Warehouse.GetClientSnapshot(ownerUsername, includeWarehouseLedgers == true) or nil
     return detail

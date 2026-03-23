@@ -12,6 +12,7 @@ local Config = DT_Labour.Config
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig_Core"
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig_Jobs"
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig_ScavengeData"
+require "DT/Common/Labour/LabourConfig/DT_LabourConfig_Skills"
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig_Internal"
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig_JobsLogic"
 require "DT/Common/Labour/LabourConfig/DT_LabourConfig_TimeSandbox"

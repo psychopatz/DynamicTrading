@@ -84,6 +84,17 @@ function DynamicTrading.LoadArchetypes()
                 errors = errors + 1
             end
         end
+
+        local skillsPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Definitions/DT_" .. id .. "_Skills"
+        if FileExists(skillsPath) then
+            local skillsOk, skillsErr = pcall(require, skillsPath)
+            if not skillsOk then
+                DynamicTrading.Log("DTCommons", "Core", "Error", "Failed to load Skill Definition for " .. id .. ": " .. tostring(skillsErr))
+                errors = errors + 1
+            else
+                totalLoaded = totalLoaded + 1
+            end
+        end
         
         -- 2. Load Dialogues and Translations
         for _, dType in ipairs(dialogueTypes) do

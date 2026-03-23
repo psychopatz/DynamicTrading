@@ -4,6 +4,7 @@ DynamicTrading.Config = DynamicTrading.Config or {}
 
 require "DT/Common/Config/DT_Config_ItemRegistry"
 require "DT/Common/Config/DT_Config_ArchetypeRegistry"
+require "DT/Common/Config/DT_Config_ArchetypeSkillRegistry"
 require "DT/Common/Config/DT_Config_DialogueRegistry"
 require "DT/Common/Config/DT_Config_DynamicLoader"
 require "DT/Common/Config/DT_Config_GameplayHelpers"

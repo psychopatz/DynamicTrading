@@ -75,6 +75,9 @@ local function mergeWorkerDetail(previousWorker, incomingWorker)
     if incomingWorker.nutritionLedger == nil and type(previousWorker) == "table" then
         merged.nutritionLedger = previousWorker.nutritionLedger
     end
+    if incomingWorker.skills == nil and type(previousWorker) == "table" then
+        merged.skills = previousWorker.skills
+    end
     if incomingWorker.toolLedger == nil and type(previousWorker) == "table" then
         merged.toolLedger = previousWorker.toolLedger
     end
@@ -126,6 +129,12 @@ local function onServerCommand(module, command, args)
                     DT_MainWindow.instance:updateStatus("Worker details synced.")
                 end
             end
+            if DT_LabourCharacterWindow
+                and DT_LabourCharacterWindow.instance
+                and DT_LabourCharacterWindow.instance:getIsVisible()
+                and DT_LabourCharacterWindow.instance.workerID == workerID then
+                DT_LabourCharacterWindow.instance:setWorkerData(mergedWorker)
+            end
         elseif args and args.workerID then
             DT_MainWindow.cachedDetails = DT_MainWindow.cachedDetails or {}
             DT_MainWindow.cachedDetails[args.workerID] = nil
@@ -136,6 +145,12 @@ local function onServerCommand(module, command, args)
                 DT_MainWindow.instance.selectedWorkerSummary = nil
                 DT_MainWindow.instance.selectedWorker = nil
                 DT_MainWindow.instance:updateWorkerDetail(nil)
+            end
+            if DT_LabourCharacterWindow
+                and DT_LabourCharacterWindow.instance
+                and DT_LabourCharacterWindow.instance.workerID == args.workerID then
+                DT_LabourCharacterWindow.instance:setWorkerData(nil)
+                DT_LabourCharacterWindow.instance:close()
             end
         end
     elseif command == "LabourNotice" then

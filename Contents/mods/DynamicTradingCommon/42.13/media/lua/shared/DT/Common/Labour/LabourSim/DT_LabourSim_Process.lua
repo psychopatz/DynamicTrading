@@ -7,6 +7,34 @@ local Output = DT_Labour.Output
 local Sim = DT_Labour.Sim
 local Internal = Sim.Internal
 local Tiredness = DT_Labour.Tiredness
+local Skills = DT_Labour.Skills
+
+local function buildXPAmount(totalQuantity)
+    return math.max(10, 20 + math.min(20, math.floor(tonumber(totalQuantity) or 0) * 3))
+end
+
+local function grantWorkerJobXP(worker, currentHour, skillEffects, totalQuantity)
+    if not Skills or not Skills.GrantXP or not skillEffects or not skillEffects.skillID then
+        return
+    end
+
+    local result = Skills.GrantXP(worker, skillEffects.skillID, buildXPAmount(totalQuantity))
+    if not result or (tonumber(result.granted) or 0) <= 0 then
+        return
+    end
+
+    if (tonumber(result.leveledUp) or 0) > 0 then
+        Internal.appendWorkerLog(
+            worker,
+            tostring(skillEffects.skillLabel or skillEffects.skillID or "Skill")
+                .. " increased to level "
+                .. tostring(result.newLevel)
+                .. ".",
+            currentHour,
+            "skills"
+        )
+    end
+end
 
 function Sim.ProcessWorker(worker, currentHour)
     if not worker then return end
@@ -14,7 +42,6 @@ function Sim.ProcessWorker(worker, currentHour)
     Registry.RecalculateWorker(worker)
 
     local profile = Config.GetJobProfile(worker.jobType)
-    local speedMultiplier = Config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType)
     local normalizedJobType = Config.NormalizeJobType(worker.jobType)
     local scavengeLoadout = nil
     local cycleHours = Config.GetEffectiveWorkTarget and Config.GetEffectiveWorkTarget(worker, profile)
@@ -41,10 +68,22 @@ function Sim.ProcessWorker(worker, currentHour)
     end
 
     Sites.RefreshWorkerSite(worker)
-    speedMultiplier = speedMultiplier * (tonumber(baseWorkSpeedMultiplier) or 1)
+    local jobSkillEffects = Skills and Skills.GetWorkerJobEffects and Skills.GetWorkerJobEffects(worker, profile) or {
+        speedMultiplier = 1,
+        yieldMultiplier = 1,
+        botchChanceMultiplier = 1,
+        level = 0
+    }
+    local speedMultiplier = math.max(0.01, tonumber(jobSkillEffects.speedMultiplier) or 1) * (tonumber(baseWorkSpeedMultiplier) or 1)
     worker.workTarget = cycleHours
     worker.workCycleHours = cycleHours
     worker.baseWorkSpeedMultiplier = baseWorkSpeedMultiplier
+    worker.jobSkillID = jobSkillEffects.skillID
+    worker.jobSkillLabel = jobSkillEffects.skillLabel
+    worker.jobSkillLevel = jobSkillEffects.level
+    worker.jobSkillSpeedMultiplier = jobSkillEffects.speedMultiplier
+    worker.jobSkillYieldMultiplier = jobSkillEffects.yieldMultiplier
+    worker.jobSkillBotchMultiplier = jobSkillEffects.botchChanceMultiplier
 
     if normalizedJobType == Config.JobTypes.Scavenge then
         Internal.ensureWorkerHome(worker)
@@ -191,6 +230,9 @@ function Sim.ProcessWorker(worker, currentHour)
                         Registry.AddHaulEntry(worker, entry)
                     end
                     Internal.logJobCycleOutcome(worker, currentHour, scavengeRun.totalQuantity, Internal.getScavengeLocationLabel(worker, scavengeRun), scavengeRun.entries)
+                    if scavengeRun.success then
+                        grantWorkerJobXP(worker, currentHour, scavengeRun.skillEffects or jobSkillEffects, scavengeRun.totalQuantity)
+                    end
 
                     if Internal.shouldReturnForFullHaul(worker, scavengeLoadout) then
                         Internal.beginScavengeReturnHome(worker, currentHour, Config.ReturnReasons.FullHaul)
@@ -265,12 +307,10 @@ function Sim.ProcessWorker(worker, currentHour)
             didWorkThisTick = workableHours > 0
             while worker.workProgress >= cycleHours do
                 worker.workProgress = worker.workProgress - cycleHours
-                local entries = Output.GenerateForJob(profile, worker)
-                local totalQuantity = 0
+                local jobResult = Output.GenerateForJob(profile, worker)
                 local warehouseBlocked = 0
-                for _, entry in ipairs(entries) do
+                for _, entry in ipairs(jobResult.entries or {}) do
                     local movedQty, leftoverQty = Warehouse.DepositHaulEntry(worker.ownerUsername, entry)
-                    totalQuantity = totalQuantity + movedQty
                     warehouseBlocked = warehouseBlocked + leftoverQty
                     if leftoverQty > 0 then
                         Registry.AddOutputEntry(worker, {
@@ -279,7 +319,12 @@ function Sim.ProcessWorker(worker, currentHour)
                         })
                     end
                 end
-                Internal.logJobCycleOutcome(worker, currentHour, totalQuantity, Interaction.GetPlaceLabel(worker), entries)
+                Internal.logJobCycleOutcome(worker, currentHour, jobResult.totalQuantity, Interaction.GetPlaceLabel(worker), jobResult.entries)
+                if jobResult.success then
+                    grantWorkerJobXP(worker, currentHour, jobResult.skillEffects or jobSkillEffects, jobResult.totalQuantity)
+                elseif jobResult.failed and jobResult.failureReason then
+                    Internal.appendWorkerLog(worker, tostring(jobResult.failureReason), currentHour, "output")
+                end
                 if warehouseBlocked > 0 then
                     Internal.appendWorkerLog(
                         worker,

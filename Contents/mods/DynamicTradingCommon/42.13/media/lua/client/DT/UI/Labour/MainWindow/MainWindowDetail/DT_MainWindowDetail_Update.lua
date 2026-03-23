@@ -53,7 +53,13 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local config = Internal.Config
     local profile = (config.GetJobProfile and config.GetJobProfile(worker.jobType)) or {}
     local toolTags = profile.requiredToolTags or {}
-    local bonusMultiplier = config.GetJobSpeedMultiplier and config.GetJobSpeedMultiplier(worker.archetypeID, worker.jobType) or 1
+    local jobSkillEffects = worker.jobSkillEffects or {
+        skillID = worker.jobSkillID,
+        skillLabel = worker.jobSkillLabel,
+        level = worker.jobSkillLevel,
+        speedMultiplier = worker.jobSkillSpeedMultiplier or 1
+    }
+    local bonusMultiplier = tonumber(jobSkillEffects.speedMultiplier) or 1
     local normalizedJobType = config.NormalizeJobType and config.NormalizeJobType(worker.jobType) or worker.jobType
     local stateLabel = tostring(worker.state or "")
     local deadState = tostring((config.States or {}).Dead or "Dead")
@@ -63,7 +69,14 @@ function DT_MainWindow:updateWorkerDetail(worker)
     local text = ""
     text = text .. " <RGB:1,1,1> <SIZE:Medium> Overview <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Job Enabled: <RGB:1,1,1> " .. Internal.formatBool(worker.jobEnabled == true) .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Specialist Bonus: <RGB:1,1,1> x" .. Internal.formatDecimal(bonusMultiplier, 2) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Skill Speed Bonus: <RGB:1,1,1> x" .. Internal.formatDecimal(bonusMultiplier, 2) .. " <LINE> "
+    if jobSkillEffects and jobSkillEffects.skillID then
+        text = text .. " <RGB:0.72,0.72,0.72> Active Skill: <RGB:1,1,1> "
+            .. tostring(jobSkillEffects.skillLabel or jobSkillEffects.skillID)
+            .. " (Lv "
+            .. tostring(jobSkillEffects.level or 0)
+            .. ") <LINE> "
+    end
     text = text .. " <RGB:0.72,0.72,0.72> Stored Money: <RGB:1,1,1> $" .. Internal.formatReserveValue(worker.moneyStored) .. " <LINE> <LINE> "
 
     if stateLabel == deadState and tostring(worker.deathCause or "") ~= "" then
@@ -117,8 +130,8 @@ function DT_MainWindow:updateWorkerDetail(worker)
         if workProgressData and workProgressData.effectiveSpeedMultiplier then
             text = text .. " <RGB:0.72,0.72,0.72> Speed Breakdown: <RGB:1,1,1> Base x"
                 .. Internal.formatDecimal(workProgressData.baseSpeedMultiplier or 1, 2)
-                .. " | Archetype x"
-                .. Internal.formatDecimal(workProgressData.archetypeSpeedMultiplier or 1, 2)
+                .. " | Skill x"
+                .. Internal.formatDecimal(workProgressData.skillSpeedMultiplier or 1, 2)
                 .. " | Gear x"
                 .. Internal.formatDecimal(workProgressData.equipmentSpeedMultiplier or 1, 2)
                 .. " | Effective x"

@@ -69,6 +69,8 @@ function Registry.CreateWorker(ownerUsername, template)
         tiredness = Internal.CopyShallow(template.tiredness),
         statusFlags = Internal.CopyShallow(template.statusFlags),
         activityLog = Internal.CopyShallow(template.activityLog),
+        skills = Internal.CopyDeep(template.skills),
+        skillModelVersion = tonumber(template.skillModelVersion),
         isFemale = template.isFemale,
         identitySeed = template.identitySeed,
         visualID = template.visualID,
