@@ -27,6 +27,7 @@ function Buildings.BuildOwnerSnapshot(ownerUsername)
         and DT_Labour.Config.GetOwnerUsername(ownerUsername)
         or tostring(ownerUsername or "local")
     local ownerData = Buildings.CopyOwnerData(owner)
+    local warehouseApi = DT_Labour and DT_Labour.Warehouse or nil
     local housing = Buildings.BuildHousingAssignment(owner)
     local projectList = Buildings.GetOwnerProjectList(owner)
     local buildings = {}
@@ -42,7 +43,8 @@ function Buildings.BuildOwnerSnapshot(ownerUsername)
                     buildingType = instance.buildingType,
                     level = math.max(0, math.floor(tonumber(instance.level) or 0)),
                     plotX = math.floor(tonumber(instance.plotX) or 0),
-                    plotY = math.floor(tonumber(instance.plotY) or 0)
+                    plotY = math.floor(tonumber(instance.plotY) or 0),
+                    installs = Buildings.GetBuildingInstallCounts and Buildings.GetBuildingInstallCounts(instance) or {}
                 }
             end
         end
@@ -97,16 +99,31 @@ function Buildings.BuildOwnerSnapshot(ownerUsername)
 
     local activeProjects = {}
     for _, project in ipairs(projectList) do
+        local materialStatus = Buildings.GetProjectMaterialStatus and Buildings.GetProjectMaterialStatus(project) or {
+            hasAll = true,
+            entries = {},
+            progressRatio = 1
+        }
         local workerName = nil
         local registry = getRegistry()
         local worker = registry and registry.GetWorkerForOwnerRaw and registry.GetWorkerForOwnerRaw(owner, project.assignedBuilderID)
             or registry and registry.GetWorkerForOwner and registry.GetWorkerForOwner(owner, project.assignedBuilderID)
             or nil
         workerName = worker and worker.name or tostring(project.assignedBuilderID or "Unknown")
+        local projectDisplayName = nil
+        if tostring(project.mode or "") == "install" and Config.GetInstallDefinition then
+            local installDefinition = Config.GetInstallDefinition(project.buildingType, project.installKey)
+            projectDisplayName = installDefinition and installDefinition.displayName or project.installKey
+        else
+            local definition = Config.GetDefinition and Config.GetDefinition(project.buildingType) or nil
+            projectDisplayName = definition and definition.displayName or project.buildingType
+        end
         activeProjects[#activeProjects + 1] = {
             projectID = project.projectID,
             buildingType = project.buildingType,
+            displayName = projectDisplayName or project.buildingType,
             buildingID = project.buildingID,
+            installKey = project.installKey,
             currentLevel = project.currentLevel,
             targetLevel = project.targetLevel,
             assignedBuilderID = project.assignedBuilderID,
@@ -114,6 +131,10 @@ function Buildings.BuildOwnerSnapshot(ownerUsername)
             progressWorkPoints = project.progressWorkPoints,
             requiredWorkPoints = project.requiredWorkPoints,
             status = project.status,
+            mode = project.mode,
+            materialState = project.materialState,
+            materialProgressRatio = materialStatus.progressRatio,
+            materialEntries = materialStatus.entries,
             failureReason = project.failureReason,
             plotX = project.plotX,
             plotY = project.plotY
@@ -124,6 +145,7 @@ function Buildings.BuildOwnerSnapshot(ownerUsername)
         ownerUsername = owner,
         buildings = buildings,
         activeProjects = activeProjects,
+        warehouse = warehouseApi and warehouseApi.GetClientSummary and warehouseApi.GetClientSummary(owner) or nil,
         housing = {
             capacity = housing.capacity,
             housedCount = housing.housedCount,

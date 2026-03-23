@@ -89,9 +89,24 @@ end
 
 function DT_BuildingsWindow:openBuildPicker(plot)
     DT_BuildingPickerModal.Open({
+        title = "Choose Building",
+        carouselHeaderText = "Browse Buildings",
+        confirmLabel = "Build",
         options = plot and plot.buildOptions or {},
         onConfirm = function(option)
             self:openProjectModal(option.preview, "Build " .. tostring(option.displayName or option.buildingType or "Building"))
+        end
+    })
+end
+
+function DT_BuildingsWindow:openInstallPicker(plot)
+    DT_BuildingPickerModal.Open({
+        title = "Choose Installation",
+        carouselHeaderText = "Browse Installations",
+        confirmLabel = "Install",
+        options = plot and plot.building and plot.building.installOptions or {},
+        onConfirm = function(option)
+            self:openProjectModal(option.preview, "Install " .. tostring(option.displayName or option.installKey or "Upgrade"))
         end
     })
 end
@@ -116,6 +131,26 @@ function DT_BuildingsWindow:onUpgradePlot(plot)
         plot.building.upgradePreview,
         "Upgrade " .. tostring(plot.building.displayName or plot.building.buildingType or "Building")
     )
+end
+
+function DT_BuildingsWindow:onInstallPlot(plot)
+    if not plot or not plot.building then
+        return
+    end
+    self:openInstallPicker(plot)
+end
+
+function DT_BuildingsWindow:onSupplyProject(plot)
+    if not plot or not plot.project then
+        return
+    end
+
+    local ownerWindow = self:getOwnerWindow()
+    if ownerWindow and ownerWindow.sendLabourCommand then
+        ownerWindow:sendLabourCommand("SupplyBuildingProjectFromInventory", {
+            projectID = plot.project.projectID
+        })
+    end
 end
 
 function DT_BuildingsWindow:onDestroyPlot(plot)
@@ -168,6 +203,12 @@ function DT_BuildingsWindow:createChildren()
         contentH,
         function(plot)
             self:onUpgradePlot(plot)
+        end,
+        function(plot)
+            self:onInstallPlot(plot)
+        end,
+        function(plot)
+            self:onSupplyProject(plot)
         end,
         function(plot)
             self:onDestroyPlot(plot)

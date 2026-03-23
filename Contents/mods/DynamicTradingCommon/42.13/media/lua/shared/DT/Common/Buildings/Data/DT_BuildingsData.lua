@@ -21,6 +21,29 @@ local function ensureArray(value)
     return type(value) == "table" and value or {}
 end
 
+local function normalizeInstallCounts(instance)
+    instance.installs = type(instance.installs) == "table" and instance.installs or {}
+    for _, definition in ipairs(Config.GetInstallDefinitionList and Config.GetInstallDefinitionList(instance.buildingType) or {}) do
+        local installKey = tostring(definition and definition.installKey or "")
+        if installKey ~= "" then
+            instance.installs[installKey] = math.max(0, math.floor(tonumber(instance.installs[installKey]) or 0))
+        end
+    end
+end
+
+local function normalizeBuildingInstance(instance)
+    if type(instance) ~= "table" then
+        return instance
+    end
+
+    instance.buildingType = tostring(instance.buildingType or "")
+    instance.level = math.max(0, math.floor(tonumber(instance.level) or 0))
+    instance.plotX = math.floor(tonumber(instance.plotX) or 0)
+    instance.plotY = math.floor(tonumber(instance.plotY) or 0)
+    normalizeInstallCounts(instance)
+    return instance
+end
+
 local function findUsedPlotKeys(ownerData)
     local used = {}
     for _, instance in ipairs(ownerData.buildings or {}) do
@@ -95,6 +118,7 @@ end
 
 Internal.CopyDeep = copyDeep
 Internal.EnsureArray = ensureArray
+Internal.NormalizeBuildingInstance = normalizeBuildingInstance
 
 function Buildings.Init()
     if not ModData.exists(Config.MOD_DATA_KEY) then
@@ -148,6 +172,9 @@ function Buildings.EnsureOwner(ownerUsername)
     local ownerData = data.Owners[owner]
     ownerData.ownerUsername = owner
     ownerData.buildings = ensureArray(ownerData.buildings)
+    for _, instance in ipairs(ownerData.buildings) do
+        normalizeBuildingInstance(instance)
+    end
     ownerData.projects = type(ownerData.projects) == "table" and ownerData.projects or {}
     Buildings.EnsureMapData(ownerData)
     migrateLegacyPlots(ownerData)
@@ -169,8 +196,10 @@ function Buildings.CreateBuildingInstance(ownerUsername, buildingType, level, pl
         buildingType = tostring(buildingType or ""),
         level = math.max(0, math.floor(tonumber(level) or 0)),
         plotX = math.floor(tonumber(plotX) or 0),
-        plotY = math.floor(tonumber(plotY) or 0)
+        plotY = math.floor(tonumber(plotY) or 0),
+        installs = {}
     }
+    normalizeBuildingInstance(instance)
     ownerData.buildings[#ownerData.buildings + 1] = instance
     return instance
 end
@@ -197,6 +226,63 @@ end
 
 function Buildings.CopyOwnerData(ownerUsername)
     return copyDeep(Buildings.EnsureOwner(ownerUsername))
+end
+
+function Buildings.GetPlotRing(plotX, plotY)
+    local x = math.abs(math.floor(tonumber(plotX) or 0))
+    local y = math.abs(math.floor(tonumber(plotY) or 0))
+    return math.max(x, y)
+end
+
+function Buildings.GetBuildingInstallCount(instance, installKey)
+    if type(instance) ~= "table" then
+        return 0
+    end
+    normalizeInstallCounts(instance)
+    return math.max(0, math.floor(tonumber(instance.installs[tostring(installKey or "")]) or 0))
+end
+
+function Buildings.SetBuildingInstallCount(instance, installKey, count)
+    if type(instance) ~= "table" then
+        return 0
+    end
+    normalizeInstallCounts(instance)
+    local normalizedKey = tostring(installKey or "")
+    instance.installs[normalizedKey] = math.max(0, math.floor(tonumber(count) or 0))
+    return instance.installs[normalizedKey]
+end
+
+function Buildings.GetBuildingInstallCounts(instance)
+    local counts = {}
+    if type(instance) ~= "table" then
+        return counts
+    end
+    normalizeInstallCounts(instance)
+    for _, definition in ipairs(Config.GetInstallDefinitionList and Config.GetInstallDefinitionList(instance.buildingType) or {}) do
+        local installKey = tostring(definition and definition.installKey or "")
+        if installKey ~= "" then
+            counts[installKey] = Buildings.GetBuildingInstallCount(instance, installKey)
+        end
+    end
+    return counts
+end
+
+function Buildings.GetWarehouseBuildingCapacityContribution(instance)
+    if not instance or tostring(instance.buildingType or "") ~= "Warehouse" then
+        return 0
+    end
+
+    local total = 0
+    local levelDefinition = Config.GetLevelDefinition("Warehouse", instance.level)
+    total = total + math.max(0, math.floor(tonumber(levelDefinition and levelDefinition.effects and levelDefinition.effects.warehouseBaseBonus) or 0))
+
+    for _, definition in ipairs(Config.GetInstallDefinitionList and Config.GetInstallDefinitionList("Warehouse") or {}) do
+        local count = Buildings.GetBuildingInstallCount(instance, definition.installKey)
+        local perInstall = math.max(0, math.floor(tonumber(definition and definition.effects and definition.effects.warehouseCapacityBonus) or 0))
+        total = total + (count * perInstall)
+    end
+
+    return total
 end
 
 return Buildings

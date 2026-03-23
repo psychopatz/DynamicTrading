@@ -57,13 +57,26 @@ function DT_BuildingsUIUtils.BuildRecipeLines(recipeEntries)
     for _, entry in ipairs(recipeEntries or {}) do
         local ready = entry.satisfied == true
         local color = ready and "<RGB:0.76,0.92,0.76>" or "<RGB:0.95,0.62,0.62>"
-        lines[#lines + 1] = color
+        local line = color
             .. tostring(entry.count or 0)
             .. " x "
             .. tostring(entry.displayName or entry.fullType or "Item")
-            .. " <RGB:0.72,0.72,0.72>("
-            .. tostring(entry.available or 0)
-            .. " available)"
+        if entry.supplied ~= nil or entry.remaining ~= nil then
+            line = line
+                .. " <RGB:0.72,0.72,0.72>("
+                .. tostring(entry.supplied or 0)
+                .. " supplied, "
+                .. tostring(entry.available or 0)
+                .. " in warehouse, "
+                .. tostring(entry.remaining or 0)
+                .. " missing)"
+        else
+            line = line
+                .. " <RGB:0.72,0.72,0.72>("
+                .. tostring(entry.available or 0)
+                .. " available)"
+        end
+        lines[#lines + 1] = line
     end
     if #lines <= 0 then
         lines[1] = "<RGB:0.65,0.65,0.65>No materials required."
@@ -87,7 +100,16 @@ function DT_BuildingsUIUtils.BuildOptionDetailText(option)
     text = text .. " <RGB:0.72,0.72,0.72> Status: <RGB:1,1,1> "
         .. tostring(option.enabled == true and "Available" or "Unavailable")
         .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Target Level: <RGB:1,1,1> " .. tostring(preview.targetLevel or 0) .. " <LINE> "
+    if preview.mode == "install" then
+        text = text .. " <RGB:0.72,0.72,0.72> Building Level: <RGB:1,1,1> " .. tostring(preview.targetLevel or 0) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Installed: <RGB:1,1,1> "
+            .. tostring(option.currentCount or preview.currentInstallCount or 0)
+            .. " / "
+            .. tostring(option.maxCount or preview.maxInstallCount or 0)
+            .. " <LINE> "
+    else
+        text = text .. " <RGB:0.72,0.72,0.72> Target Level: <RGB:1,1,1> " .. tostring(preview.targetLevel or 0) .. " <LINE> "
+    end
     text = text .. " <RGB:0.72,0.72,0.72> Work Points: <RGB:1,1,1> " .. tostring(preview.workPoints or 0) .. " <LINE> "
 
     if option.description and option.description ~= "" then
@@ -105,6 +127,9 @@ function DT_BuildingsUIUtils.BuildOptionDetailText(option)
     text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Materials <LINE> "
     for _, line in ipairs(DT_BuildingsUIUtils.BuildRecipeLines(preview.recipeAvailability and preview.recipeAvailability.entries or {})) do
         text = text .. " " .. line .. " <LINE> "
+    end
+    if option.enabled == true and preview.canStart ~= true then
+        text = text .. " <RGB:0.92,0.84,0.45> Can be queued now, but it will stay stalled until all materials are supplied. <LINE> "
     end
 
     if option.enabled ~= true then

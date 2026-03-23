@@ -30,7 +30,10 @@ function DT_BuildingsPlotButton:render()
         self:drawTextureScaledAspect(texture, imageX, imageY, imageW, imageH, 0.85, 1, 1, 1)
     end
 
-    if self.plot.project then
+    if self.plot.project and tostring(self.plot.project.materialState or "") == "Stalled" then
+        self:drawRect(imageX, imageY, imageW, imageH, 0.42, 0.95, 0.78, 0.18)
+        self:drawRect(imageX, imageY + imageH - 12, imageW, 12, 0.58, 0.95, 0.72, 0.12)
+    elseif self.plot.project then
         local ratio = math.max(0, math.min(1, tonumber(self.plot.project.progressRatio) or 0))
         local remainingWidth = math.floor(imageW * (1 - ratio))
         if remainingWidth > 0 then
@@ -50,9 +53,13 @@ function DT_BuildingsPlotButton:render()
     end
 
     if self.plot.project then
-        local ratio = math.max(0, math.min(1, tonumber(self.plot.project.progressRatio) or 0))
-        local percent = math.floor((ratio * 100) + 0.5)
-        self:drawTextCentre(tostring(percent) .. "%", self.width / 2, self.height - 22, 0.2, 0.12, 0.05, 1, UIFont.Small)
+        if tostring(self.plot.project.materialState or "") == "Stalled" then
+            self:drawTextCentre("Stalled", self.width / 2, self.height - 22, 0.26, 0.18, 0.05, 1, UIFont.Small)
+        else
+            local ratio = math.max(0, math.min(1, tonumber(self.plot.project.progressRatio) or 0))
+            local percent = math.floor((ratio * 100) + 0.5)
+            self:drawTextCentre(tostring(percent) .. "%", self.width / 2, self.height - 22, 0.2, 0.12, 0.05, 1, UIFont.Small)
+        end
     elseif self.plot.building and self.plot.building.level then
         self:drawTextCentre("Lv " .. tostring(self.plot.building.level), self.width / 2, self.height - 22, 1, 1, 1, 1, UIFont.Small)
     end

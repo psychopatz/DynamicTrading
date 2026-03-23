@@ -324,8 +324,13 @@ function Sim.ProcessWorker(worker, currentHour)
             hasProject = false,
             label = "No Project"
         }
+        if projectState.hasProject and DT_Buildings and DT_Buildings.RefreshOwnerProjectMaterials then
+            DT_Buildings.RefreshOwnerProjectMaterials(worker.ownerUsername)
+            projectState = DT_Buildings.GetProjectDisplayState(worker.ownerUsername, worker.workerID) or projectState
+        end
         local didWorkThisTick = false
         local buildResult = nil
+        local waitingForProjectMaterials = false
 
         if hp <= 0 then
             Internal.markWorkerDead(worker, currentHour, normalizedJobType, Config.PresenceStates.Home, hasCalories, hasHydration)
@@ -336,6 +341,7 @@ function Sim.ProcessWorker(worker, currentHour)
                 and DT_Buildings.ProcessWorkerProject(worker, currentHour, workableHours, speedMultiplier)
                 or nil
             didWorkThisTick = buildResult and buildResult.didWork == true or false
+            waitingForProjectMaterials = buildResult and buildResult.waitingForMaterials == true or false
             if buildResult and buildResult.completed and buildResult.project then
                 local xpResult = buildResult.xpResult or nil
                 local xpText = ""
@@ -392,6 +398,8 @@ function Sim.ProcessWorker(worker, currentHour)
             worker.state = Config.States.Starving
         elseif forcedRest then
             worker.state = Config.States.Resting
+        elseif waitingForProjectMaterials then
+            worker.state = Config.States.WarehouseShortage
         elseif projectState.hasProject then
             worker.state = Config.States.Working
         else

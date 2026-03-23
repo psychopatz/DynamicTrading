@@ -17,7 +17,7 @@ local function getSkills()
     return DT_Labour and DT_Labour.Skills or nil
 end
 
-function Buildings.StartProject(ownerUsername, workerID, buildingType, mode, plotX, plotY, buildingID)
+function Buildings.StartProject(ownerUsername, workerID, buildingType, mode, plotX, plotY, buildingID, installKey)
     local labourConfig = getLabourConfig()
     local owner = labourConfig.GetOwnerUsername and labourConfig.GetOwnerUsername(ownerUsername) or tostring(ownerUsername or "local")
     local registry = getRegistry()
@@ -27,23 +27,16 @@ function Buildings.StartProject(ownerUsername, workerID, buildingType, mode, plo
         return false, workerReason, nil
     end
 
-    local target, targetReason = Buildings.ResolveProjectTarget(owner, buildingType, mode, plotX, plotY, buildingID)
+    local target, targetReason = Buildings.ResolveProjectTarget(owner, buildingType, mode, plotX, plotY, buildingID, installKey)
     if not target then
         return false, targetReason, nil
     end
 
-    local levelDefinition = Config.GetLevelDefinition(buildingType, target.targetLevel)
-    if not levelDefinition or levelDefinition.enabled ~= true then
+    local projectDefinition = target.mode == "install"
+        and Config.GetInstallDefinition(buildingType, target.installKey)
+        or Config.GetLevelDefinition(buildingType, target.targetLevel)
+    if not projectDefinition or projectDefinition.enabled == false then
         return false, "That level is not available yet.", nil
-    end
-
-    local recipeAvailability = Buildings.GetRecipeAvailability(owner, buildingType, target.targetLevel)
-    if recipeAvailability.hasAll ~= true then
-        return false, "Missing required materials.", nil
-    end
-
-    if not Internal.BuildingsConsumeRecipe or not Internal.BuildingsConsumeRecipe(owner, levelDefinition.recipe) then
-        return false, "Unable to reserve the required materials.", nil
     end
 
     local ownerProjects = Buildings.GetProjectsForOwner(owner)
@@ -52,21 +45,27 @@ function Buildings.StartProject(ownerUsername, workerID, buildingType, mode, plo
         ownerUsername = owner,
         buildingType = tostring(buildingType or ""),
         buildingID = target.instance and target.instance.buildingID or nil,
+        installKey = target.installKey,
         currentLevel = math.max(0, math.floor(tonumber(target.currentLevel) or 0)),
         targetLevel = math.max(1, math.floor(tonumber(target.targetLevel) or 1)),
         assignedBuilderID = worker.workerID,
         progressWorkPoints = 0,
-        requiredWorkPoints = math.max(1, math.floor(tonumber(levelDefinition.workPoints) or 1)),
-        recipe = Internal.CopyDeep(levelDefinition.recipe or {}),
-        xpReward = math.max(0, math.floor(tonumber(levelDefinition.xpReward) or 0)),
+        requiredWorkPoints = math.max(1, math.floor(tonumber(projectDefinition.workPoints) or 1)),
+        recipe = Internal.CopyDeep(projectDefinition.recipe or {}),
+        xpReward = math.max(0, math.floor(tonumber(projectDefinition.xpReward) or 0)),
         status = "Active",
         mode = tostring(target.mode or "build"),
+        materialTrackingVersion = 1,
+        materialCounts = {},
+        materialState = "Stalled",
+        materialProgressRatio = 0,
         plotX = math.floor(tonumber(target.plotX) or 0),
         plotY = math.floor(tonumber(target.plotY) or 0),
         startedWorldHours = (labourConfig.GetCurrentWorldHours and labourConfig.GetCurrentWorldHours()) or 0,
         failureReason = nil
     }
     ownerProjects[project.projectID] = project
+    Buildings.RefreshProjectMaterialState(project)
     Buildings.Save()
     return true, nil, project
 end
@@ -79,18 +78,30 @@ function Buildings.CompleteProject(project)
     local labourConfig = getLabourConfig()
     local owner = labourConfig.GetOwnerUsername and labourConfig.GetOwnerUsername(project.ownerUsername) or tostring(project.ownerUsername or "local")
     local instance = project.buildingID and Buildings.FindBuildingForOwner(owner, project.buildingID) or nil
-    if not instance then
-        instance = Buildings.CreateBuildingInstance(owner, project.buildingType, 0, project.plotX, project.plotY)
-        project.buildingID = instance.buildingID
-    end
+    if tostring(project.mode or "") == "install" then
+        if not instance then
+            project.status = "Failed"
+            project.failureReason = "The target building no longer exists."
+            Buildings.Save()
+            return nil
+        end
 
-    instance.level = math.max(0, math.floor(tonumber(project.targetLevel) or tonumber(instance.level) or 0))
-    instance.plotX = math.floor(tonumber(project.plotX) or 0)
-    instance.plotY = math.floor(tonumber(project.plotY) or 0)
-    Buildings.UnlockPlotForOwner(owner, instance.plotX, instance.plotY, instance.plotX == 0 and instance.plotY == 0 and Buildings.MapConstants.PlotKinds.HQOnly or Buildings.MapConstants.PlotKinds.Standard)
+        local installKey = tostring(project.installKey or "")
+        Buildings.SetBuildingInstallCount(instance, installKey, Buildings.GetBuildingInstallCount(instance, installKey) + 1)
+    else
+        if not instance then
+            instance = Buildings.CreateBuildingInstance(owner, project.buildingType, 0, project.plotX, project.plotY)
+            project.buildingID = instance.buildingID
+        end
 
-    if tostring(project.buildingType or "") == "Headquarters" and tostring(project.mode or "") == "upgrade" then
-        Buildings.ExpandMapForHeadquartersUpgrade(owner)
+        instance.level = math.max(0, math.floor(tonumber(project.targetLevel) or tonumber(instance.level) or 0))
+        instance.plotX = math.floor(tonumber(project.plotX) or 0)
+        instance.plotY = math.floor(tonumber(project.plotY) or 0)
+        Buildings.UnlockPlotForOwner(owner, instance.plotX, instance.plotY, instance.plotX == 0 and instance.plotY == 0 and Buildings.MapConstants.PlotKinds.HQOnly or Buildings.MapConstants.PlotKinds.Standard)
+
+        if tostring(project.buildingType or "") == "Headquarters" and tostring(project.mode or "") == "upgrade" then
+            Buildings.ExpandMapForHeadquartersUpgrade(owner)
+        end
     end
 
     project.status = "Completed"
@@ -114,6 +125,18 @@ function Buildings.ProcessWorkerProject(worker, currentHour, workableHours, spee
             hadProject = false,
             didWork = false,
             completed = false
+        }
+    end
+
+    local materialStatus = Buildings.RefreshProjectMaterialState and Buildings.RefreshProjectMaterialState(project) or nil
+    if materialStatus and materialStatus.hasAll ~= true then
+        return {
+            hadProject = true,
+            didWork = false,
+            completed = false,
+            waitingForMaterials = true,
+            materialStatus = materialStatus,
+            project = project
         }
     end
 
@@ -144,6 +167,10 @@ function Buildings.ProcessWorkerProject(worker, currentHour, workableHours, spee
 end
 
 function Buildings.GetOwnerProjectList(ownerUsername)
+    if Buildings.RefreshOwnerProjectMaterials then
+        Buildings.RefreshOwnerProjectMaterials(ownerUsername)
+    end
+
     local projects = {}
     for _, project in pairs(Buildings.GetProjectsForOwner(ownerUsername)) do
         if tostring(project.status or "") == "Active" then

@@ -27,6 +27,21 @@ local function getEntryWeight(fullType, qty)
     return math.max(0, tonumber(Config.GetItemWeight and Config.GetItemWeight(fullType)) or 0) * math.max(1, tonumber(qty) or 1)
 end
 
+local function getBuildingCapacityBonus(ownerUsername)
+    local buildings = DT_Buildings
+    if not buildings or not buildings.GetBuildingsForOwner or not buildings.GetWarehouseBuildingCapacityContribution then
+        return 0
+    end
+
+    local total = 0
+    for _, instance in ipairs(buildings.GetBuildingsForOwner(ownerUsername)) do
+        if tostring(instance and instance.buildingType or "") == "Warehouse" and math.floor(tonumber(instance and instance.level) or 0) > 0 then
+            total = total + math.max(0, tonumber(buildings.GetWarehouseBuildingCapacityContribution(instance)) or 0)
+        end
+    end
+    return math.max(0, math.floor(total))
+end
+
 function Warehouse.Recalculate(warehouse)
     if not warehouse then
         return nil
@@ -34,7 +49,12 @@ function Warehouse.Recalculate(warehouse)
 
     warehouse.ownerUsername = Config.GetOwnerUsername(warehouse.ownerUsername)
     warehouse.capacityBase = math.max(0, tonumber(warehouse.capacityBase) or tonumber(Config.DEFAULT_WAREHOUSE_CAPACITY) or 100)
-    warehouse.capacityBonus = math.max(0, tonumber(warehouse.capacityBonus) or 0)
+    warehouse.manualCapacityBonus = math.max(
+        0,
+        tonumber(warehouse.manualCapacityBonus) or tonumber(warehouse.capacityBonus) or 0
+    )
+    warehouse.buildingCapacityBonus = getBuildingCapacityBonus(warehouse.ownerUsername)
+    warehouse.capacityBonus = warehouse.manualCapacityBonus + warehouse.buildingCapacityBonus
     warehouse.upgradeLevel = math.max(0, math.floor(tonumber(warehouse.upgradeLevel) or 0))
     warehouse.ledgers = type(warehouse.ledgers) == "table" and warehouse.ledgers or {}
     warehouse.ledgers.provisions = ensureArray(warehouse.ledgers.provisions)
@@ -68,6 +88,8 @@ function Warehouse.GetOwnerWarehouse(ownerUsername)
             ownerUsername = owner,
             capacityBase = Config.DEFAULT_WAREHOUSE_CAPACITY,
             capacityBonus = 0,
+            manualCapacityBonus = 0,
+            buildingCapacityBonus = 0,
             upgradeLevel = 0,
             ledgers = {
                 provisions = {},
@@ -101,6 +123,8 @@ function Warehouse.GetClientSummary(ownerUsername)
     return {
         ownerUsername = warehouse.ownerUsername,
         capacityBase = warehouse.capacityBase,
+        manualCapacityBonus = warehouse.manualCapacityBonus,
+        buildingCapacityBonus = warehouse.buildingCapacityBonus,
         capacityBonus = warehouse.capacityBonus,
         maxWeight = warehouse.maxWeight,
         usedWeight = warehouse.usedWeight,

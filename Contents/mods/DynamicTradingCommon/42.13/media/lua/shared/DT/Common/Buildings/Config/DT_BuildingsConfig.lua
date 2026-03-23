@@ -28,6 +28,10 @@ local function buildBuildingDefinition(definition)
     return definition
 end
 
+local function buildInstallDefinition(definition)
+    return definition
+end
+
 Config.Definitions = {
     Barracks = buildBuildingDefinition({
         buildingType = "Barracks",
@@ -153,10 +157,41 @@ Config.Definitions = {
         buildingType = "Warehouse",
         displayName = "Warehouse",
         iconPath = "media/ui/Buildings/DT_Warehouse.png",
-        enabled = false,
-        maxLevel = 3,
+        enabled = true,
+        maxLevel = 2,
         isInfinite = false,
-        levels = {}
+        levels = {
+            [1] = {
+                enabled = true,
+                workPoints = 54,
+                xpReward = 120,
+                recipe = {
+                    { fullType = "Base.Log", count = 6 },
+                    { fullType = "Base.Nails", count = 24 },
+                    { fullType = "Base.Sheet", count = 4 },
+                    { fullType = "Base.Hinge", count = 2 },
+                    { fullType = "Base.Woodglue", count = 1 }
+                },
+                effects = {
+                    warehouseBaseBonus = 100
+                }
+            },
+            [2] = {
+                enabled = true,
+                workPoints = 78,
+                xpReward = 120,
+                recipe = {
+                    { fullType = "Base.Log", count = 8 },
+                    { fullType = "Base.Nails", count = 36 },
+                    { fullType = "Base.Sheet", count = 6 },
+                    { fullType = "Base.Hinge", count = 4 },
+                    { fullType = "Base.Woodglue", count = 2 }
+                },
+                effects = {
+                    warehouseBaseBonus = 100
+                }
+            }
+        }
     }),
     TradeStand = buildBuildingDefinition({
         buildingType = "TradeStand",
@@ -167,6 +202,50 @@ Config.Definitions = {
         isInfinite = false,
         levels = {}
     })
+}
+
+Config.InstallDefinitions = {
+    Warehouse = {
+        rack = buildInstallDefinition({
+            installKey = "rack",
+            displayName = "Rack",
+            iconPath = "media/ui/Buildings/DT_Warehouse.png",
+            requiredLevel = 1,
+            maxCount = 10,
+            workPoints = 18,
+            xpReward = 60,
+            recipe = {
+                { fullType = "Base.Log", count = 2 },
+                { fullType = "Base.Nails", count = 10 },
+                { fullType = "Base.Sheet", count = 1 },
+                { fullType = "Base.Hinge", count = 1 }
+            },
+            effects = {
+                warehouseCapacityBonus = 10
+            },
+            description = "Adds shelving racks to improve storage density inside this Warehouse."
+        }),
+        storage_boxes = buildInstallDefinition({
+            installKey = "storage_boxes",
+            displayName = "Storage Boxes",
+            iconPath = "media/ui/Buildings/DT_Warehouse.png",
+            requiredLevel = 2,
+            maxCount = 10,
+            workPoints = 30,
+            xpReward = 90,
+            recipe = {
+                { fullType = "Base.Log", count = 4 },
+                { fullType = "Base.Nails", count = 18 },
+                { fullType = "Base.Sheet", count = 2 },
+                { fullType = "Base.Hinge", count = 2 },
+                { fullType = "Base.Woodglue", count = 1 }
+            },
+            effects = {
+                warehouseCapacityBonus = 50
+            },
+            description = "Adds durable storage boxes for a larger storage jump once the Warehouse reaches level 2."
+        })
+    }
 }
 
 function Config.GetDefinition(buildingType)
@@ -208,6 +287,31 @@ function Config.GetMaxLevel(buildingType)
         return 0
     end
     return math.max(0, math.floor(tonumber(definition.maxLevel) or 0))
+end
+
+function Config.GetInstallDefinition(buildingType, installKey)
+    local buildingInstalls = Config.InstallDefinitions[tostring(buildingType or "")]
+    if not buildingInstalls then
+        return nil
+    end
+    return buildingInstalls[tostring(installKey or "")]
+end
+
+function Config.GetInstallDefinitionList(buildingType)
+    local definitions = {}
+    local buildingInstalls = Config.InstallDefinitions[tostring(buildingType or "")]
+    for installKey, _ in pairs(buildingInstalls or {}) do
+        definitions[#definitions + 1] = Config.GetInstallDefinition(buildingType, installKey)
+    end
+    table.sort(definitions, function(a, b)
+        local levelA = math.max(0, math.floor(tonumber(a and a.requiredLevel) or 0))
+        local levelB = math.max(0, math.floor(tonumber(b and b.requiredLevel) or 0))
+        if levelA == levelB then
+            return tostring(a and a.displayName or a and a.installKey or "") < tostring(b and b.displayName or b and b.installKey or "")
+        end
+        return levelA < levelB
+    end)
+    return definitions
 end
 
 function Config.GetBuilderToolTags(fullType)

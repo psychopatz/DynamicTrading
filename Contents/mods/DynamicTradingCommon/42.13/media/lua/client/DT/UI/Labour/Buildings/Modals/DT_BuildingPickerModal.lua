@@ -79,7 +79,7 @@ end
 
 function PickerCarousel:prerender()
     ISPanel.prerender(self)
-    self:drawText("Browse Buildings", 10, 6, 1, 1, 1, 1, UIFont.Medium)
+    self:drawText(tostring(self.headerText or "Browse Buildings"), 10, 6, 1, 1, 1, 1, UIFont.Medium)
     self:drawText("Mouse wheel or arrows to scroll", self.width - 190, 8, 0.72, 0.72, 0.72, 1, UIFont.Small)
 end
 
@@ -173,6 +173,7 @@ function DT_BuildingPickerModal:createChildren()
         self.selectedIndex = index
         self:updateDetailText()
     end
+    self.carousel.headerText = tostring(self.carouselHeaderText or "Browse Buildings")
     self.carousel:setOptions(self.options or {})
     self:addChild(self.carousel)
 
@@ -194,7 +195,7 @@ function DT_BuildingPickerModal:createChildren()
     self.detailText:addScrollBars()
     self:addChild(self.detailText)
 
-    self.btnConfirm = ISButton:new(10, self.height - 34, 90, 24, "Choose", self, self.onConfirmClicked)
+    self.btnConfirm = ISButton:new(10, self.height - 34, 90, 24, tostring(self.confirmLabel or "Choose"), self, self.onConfirmClicked)
     self.btnConfirm:initialise()
     self:addChild(self.btnConfirm)
 
@@ -253,9 +254,11 @@ function DT_BuildingPickerModal.Open(args)
     local x = (getCore():getScreenWidth() - width) / 2
     local y = (getCore():getScreenHeight() - height) / 2
     local modal = DT_BuildingPickerModal:new(x, y, width, height)
-    modal.title = "Choose Building"
+    modal.title = tostring(args.title or "Choose Building")
     modal.options = args.options or {}
     modal.selectedIndex = 1
+    modal.carouselHeaderText = tostring(args.carouselHeaderText or "Browse Buildings")
+    modal.confirmLabel = tostring(args.confirmLabel or "Choose")
     modal.onConfirmCallback = args.onConfirm
     modal:initialise()
     modal:instantiate()

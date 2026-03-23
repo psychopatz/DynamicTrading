@@ -20,18 +20,28 @@ local function summarizeProject(project)
         return nil
     end
     local registry = getRegistry()
-    local definition = Config.GetDefinition and Config.GetDefinition(project.buildingType) or nil
+    local projectDefinition = tostring(project.mode or "") == "install"
+        and Config.GetInstallDefinition and Config.GetInstallDefinition(project.buildingType, project.installKey)
+        or Config.GetDefinition and Config.GetDefinition(project.buildingType)
+        or nil
+    local buildingDefinition = Config.GetDefinition and Config.GetDefinition(project.buildingType) or nil
     local worker = registry and registry.GetWorkerForOwnerRaw and registry.GetWorkerForOwnerRaw(project.ownerUsername, project.assignedBuilderID)
         or registry and registry.GetWorkerForOwner and registry.GetWorkerForOwner(project.ownerUsername, project.assignedBuilderID)
         or nil
     local progress = math.max(0, tonumber(project.progressWorkPoints) or 0)
     local required = math.max(1, tonumber(project.requiredWorkPoints) or 1)
+    local materialStatus = Buildings.GetProjectMaterialStatus and Buildings.GetProjectMaterialStatus(project) or {
+        hasAll = true,
+        entries = {},
+        progressRatio = 1
+    }
     return {
         projectID = project.projectID,
         buildingType = project.buildingType,
-        displayName = definition and definition.displayName or tostring(project.buildingType or "Building"),
-        iconPath = definition and definition.iconPath or nil,
+        displayName = projectDefinition and projectDefinition.displayName or tostring(project.buildingType or "Building"),
+        iconPath = projectDefinition and projectDefinition.iconPath or buildingDefinition and buildingDefinition.iconPath or nil,
         buildingID = project.buildingID,
+        installKey = project.installKey,
         currentLevel = project.currentLevel,
         targetLevel = project.targetLevel,
         assignedBuilderID = project.assignedBuilderID,
@@ -39,7 +49,11 @@ local function summarizeProject(project)
         progressWorkPoints = progress,
         requiredWorkPoints = required,
         progressRatio = math.max(0, math.min(1, progress / required)),
+        materialState = project.materialState,
+        materialProgressRatio = materialStatus.progressRatio,
+        materialEntries = materialStatus.entries,
         status = project.status,
+        mode = project.mode,
         plotX = project.plotX,
         plotY = project.plotY,
         failureReason = project.failureReason
@@ -81,7 +95,8 @@ function Buildings.BuildMapSnapshot(ownerUsername)
                 availableActions = {
                     canBuild = state == Buildings.MapConstants.PlotStates.Empty and plot.unlocked == true,
                     canInspect = building ~= nil,
-                    canUpgrade = false
+                    canUpgrade = false,
+                    canInstall = false
                 },
                 buildOptions = {},
                 building = nil,
@@ -94,8 +109,10 @@ function Buildings.BuildMapSnapshot(ownerUsername)
 
             if building then
                 local upgradePreview = Buildings.BuildProjectPreview(owner, building.buildingType, "upgrade", x, y, building.buildingID)
+                local installOptions = Buildings.BuildBuildingInstallOptions and Buildings.BuildBuildingInstallOptions(owner, x, y, building.buildingID) or {}
                 local canDestroy, destroyReason = Buildings.CanDestroyBuilding(owner, x, y, building.buildingID)
                 plotEntry.availableActions.canUpgrade = upgradePreview.available == true
+                plotEntry.availableActions.canInstall = #installOptions > 0
                 plotEntry.availableActions.canDestroy = canDestroy == true
                 plotEntry.building = {
                     buildingID = building.buildingID,
@@ -107,6 +124,9 @@ function Buildings.BuildMapSnapshot(ownerUsername)
                     plotY = y,
                     isInfinite = definition and definition.isInfinite == true or false,
                     maxLevel = definition and definition.maxLevel or 0,
+                    installs = Buildings.GetBuildingInstallCounts and Buildings.GetBuildingInstallCounts(building) or {},
+                    installOptions = installOptions,
+                    warehouseCapacityContribution = Buildings.GetWarehouseBuildingCapacityContribution and Buildings.GetWarehouseBuildingCapacityContribution(building) or 0,
                     occupants = occupantsByBuildingID[tostring(building.buildingID or "")] or {},
                     upgradePreview = upgradePreview,
                     canDestroy = canDestroy == true,

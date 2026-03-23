@@ -37,11 +37,28 @@ function DT_BuildingProjectModal:updateText()
     local text = ""
     text = text .. " <RGB:1,1,1> <SIZE:Medium> " .. tostring(preview.displayName or preview.buildingType or "Project") .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Mode: <RGB:1,1,1> " .. tostring(preview.mode or "build") .. " <LINE> "
-    text = text .. " <RGB:0.72,0.72,0.72> Target Level: <RGB:1,1,1> " .. tostring(preview.targetLevel or 0) .. " <LINE> "
+    if preview.mode == "install" then
+        text = text .. " <RGB:0.72,0.72,0.72> Building Level: <RGB:1,1,1> " .. tostring(preview.targetLevel or 0) .. " <LINE> "
+        text = text .. " <RGB:0.72,0.72,0.72> Installed: <RGB:1,1,1> "
+            .. tostring(preview.currentInstallCount or 0)
+            .. " / "
+            .. tostring(preview.maxInstallCount or 0)
+            .. " <LINE> "
+        if tonumber(preview.capacityPerInstall) and tonumber(preview.capacityPerInstall) > 0 then
+            text = text .. " <RGB:0.72,0.72,0.72> Capacity Gain: <RGB:1,1,1> +" .. tostring(preview.capacityPerInstall or 0) .. " <LINE> "
+        end
+    else
+        text = text .. " <RGB:0.72,0.72,0.72> Target Level: <RGB:1,1,1> " .. tostring(preview.targetLevel or 0) .. " <LINE> "
+    end
     text = text .. " <RGB:0.72,0.72,0.72> Work Points: <RGB:1,1,1> " .. tostring(preview.workPoints or 0) .. " <LINE> "
     text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Materials <LINE> "
     for _, line in ipairs(DT_BuildingsUIUtils.BuildRecipeLines(preview.recipeAvailability and preview.recipeAvailability.entries or {})) do
         text = text .. " " .. line .. " <LINE> "
+    end
+    if preview.canStart == true then
+        text = text .. " <RGB:0.72,0.9,0.72> Materials ready. Construction can begin immediately. <LINE> "
+    else
+        text = text .. " <RGB:0.92,0.84,0.45> Missing materials will stall the project until supplies are added. <LINE> "
     end
     text = text .. " <LINE> <RGB:1,1,1> <SIZE:Medium> Builder <LINE> "
     if builder then
@@ -59,7 +76,8 @@ function DT_BuildingProjectModal:updateText()
 
     self.textPanel:setText(text)
     self.textPanel:paginate()
-    self.btnConfirm:setEnable(preview.available == true and preview.canStart == true and builderState.ready == true)
+    self.btnConfirm:setTitle(preview.canStart == true and "Start" or "Queue")
+    self.btnConfirm:setEnable(preview.available == true and builderState.ready == true)
 end
 
 function DT_BuildingProjectModal:createChildren()
@@ -107,7 +125,8 @@ function DT_BuildingProjectModal:onConfirmClicked()
         mode = self.preview.mode,
         plotX = self.preview.plotX,
         plotY = self.preview.plotY,
-        buildingID = self.preview.buildingID
+        buildingID = self.preview.buildingID,
+        installKey = self.preview.installKey
     })
     self:close()
 end
