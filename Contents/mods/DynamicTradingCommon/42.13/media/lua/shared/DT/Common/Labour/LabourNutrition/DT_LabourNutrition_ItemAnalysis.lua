@@ -53,15 +53,31 @@ function Nutrition.BuildEntryFromItem(invItem)
         return nil, "Missing item."
     end
 
+    local fullType = invItem:getFullType()
+    if DT_Labour
+        and DT_Labour.Config
+        and DT_Labour.Config.IsMedicalProvisionFullType
+        and DT_Labour.Config.IsMedicalProvisionFullType(fullType) then
+        return {
+            fullType = fullType,
+            displayName = invItem.getDisplayName and invItem:getDisplayName() or fullType,
+            itemID = invItem.getID and invItem:getID() or nil,
+            provisionType = "medical",
+            medicalUse = "bandage",
+            treatmentUnitsRemaining = DT_Labour.Config.GetMedicalProvisionUnits(fullType)
+        }
+    end
+
     local calories, hydration = Nutrition.GetItemNutrition(invItem)
     if calories <= 0 and hydration <= 0 then
         return nil, "Item does not provide calories or hydration."
     end
 
     return {
-        fullType = invItem:getFullType(),
-        displayName = invItem.getDisplayName and invItem:getDisplayName() or invItem:getFullType(),
+        fullType = fullType,
+        displayName = invItem.getDisplayName and invItem:getDisplayName() or fullType,
         itemID = invItem.getID and invItem:getID() or nil,
+        provisionType = "nutrition",
         caloriesRemaining = calories,
         hydrationRemaining = hydration
     }
@@ -71,6 +87,7 @@ function Nutrition.BuildStarterReserveEntry(calories, hydration)
     return {
         fullType = "DT.LabourStarterReserve",
         displayName = "Starter Reserve",
+        provisionType = "nutrition",
         caloriesRemaining = math.max(0, tonumber(calories) or 0),
         hydrationRemaining = math.max(0, tonumber(hydration) or 0)
     }

@@ -16,6 +16,20 @@ function Nutrition.SanitizeLedgerEntry(entry)
         return 0, 0, false
     end
 
+    if Config.IsMedicalProvisionEntry and Config.IsMedicalProvisionEntry(entry) then
+        local originalUnits = math.max(0, tonumber(entry.treatmentUnitsRemaining) or 0)
+        local units = originalUnits
+        if units <= 0 and Config.GetMedicalProvisionUnits then
+            units = Config.GetMedicalProvisionUnits(entry.fullType)
+        end
+        entry.provisionType = "medical"
+        entry.medicalUse = tostring(entry.medicalUse or "bandage")
+        entry.treatmentUnitsRemaining = math.max(0, units)
+        return 0, 0, originalUnits ~= entry.treatmentUnitsRemaining
+    end
+
+    entry.provisionType = "nutrition"
+
     local originalCalories = Internal.ClampAmount(entry.caloriesRemaining)
     local originalHydration = Internal.ClampAmount(entry.hydrationRemaining)
     local calories = originalCalories
@@ -60,9 +74,13 @@ function Internal.PruneEmptyEntries(worker)
     local removedAny = false
     local changedAny = false
     for i = #worker.nutritionLedger, 1, -1 do
-        local calories, hydration, changed = Internal.NormalizeLedgerEntry(worker.nutritionLedger[i])
+        local entry = worker.nutritionLedger[i]
+        local calories, hydration, changed = Internal.NormalizeLedgerEntry(entry)
         changedAny = changedAny or changed == true
-        if calories <= 0.0001 and hydration <= 0.0001 then
+        local hasMedicalUnits = Config.IsMedicalProvisionEntry
+            and Config.IsMedicalProvisionEntry(entry)
+            and math.max(0, tonumber(entry and entry.treatmentUnitsRemaining) or 0) > 0.0001
+        if not hasMedicalUnits and calories <= 0.0001 and hydration <= 0.0001 then
             table.remove(worker.nutritionLedger, i)
             removedAny = true
         end
@@ -84,9 +102,11 @@ function Nutrition.GetLedgerTotals(worker)
     local calories = 0
     local hydration = 0
     for _, entry in ipairs(worker and worker.nutritionLedger or {}) do
-        local entryCalories, entryHydration = Internal.NormalizeLedgerEntry(entry)
-        calories = calories + entryCalories
-        hydration = hydration + entryHydration
+        if not (Config.IsMedicalProvisionEntry and Config.IsMedicalProvisionEntry(entry)) then
+            local entryCalories, entryHydration = Internal.NormalizeLedgerEntry(entry)
+            calories = calories + entryCalories
+            hydration = hydration + entryHydration
+        end
     end
     return calories, hydration
 end

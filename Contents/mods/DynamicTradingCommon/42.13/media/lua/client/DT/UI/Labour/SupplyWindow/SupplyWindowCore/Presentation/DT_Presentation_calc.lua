@@ -8,6 +8,7 @@ function Internal.getWorkerSupplyTotals(entries)
         count = 0,
         calories = 0,
         hydration = 0,
+        medicalUnits = 0,
         money = 0,
     }
 
@@ -18,6 +19,7 @@ function Internal.getWorkerSupplyTotals(entries)
             totals.count = totals.count + 1
             totals.calories = totals.calories + math.max(0, tonumber(entry.calories) or 0)
             totals.hydration = totals.hydration + math.max(0, tonumber(entry.hydration) or 0)
+            totals.medicalUnits = totals.medicalUnits + math.max(0, tonumber(entry.treatmentUnits) or 0)
         end
     end
 

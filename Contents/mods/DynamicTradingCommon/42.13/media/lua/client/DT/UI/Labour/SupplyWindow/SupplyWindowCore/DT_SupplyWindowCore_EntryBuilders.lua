@@ -42,6 +42,8 @@ end
 function Internal.buildInventoryEntry(invItem)
     local calories, hydration = Internal.getCachedNutritionPreview(invItem)
     local fullType = invItem:getFullType()
+    local isMedicalProvision = Internal.Config.IsMedicalProvisionFullType and Internal.Config.IsMedicalProvisionFullType(fullType) or false
+    local treatmentUnits = isMedicalProvision and (Internal.Config.GetMedicalProvisionUnits and Internal.Config.GetMedicalProvisionUnits(fullType) or 0) or 0
     local tags = Internal.Config.GetItemCombinedTags and Internal.Config.GetItemCombinedTags(fullType)
         or (Internal.Config.FindItemTags and Internal.Config.FindItemTags(fullType))
         or {}
@@ -51,11 +53,13 @@ function Internal.buildInventoryEntry(invItem)
         itemID = invItem:getID(),
         displayName = invItem:getDisplayName(),
         fullType = fullType,
+        provisionType = isMedicalProvision and "medical" or "nutrition",
+        treatmentUnits = treatmentUnits,
         calories = calories,
         hydration = hydration,
         unitWeight = getUnitWeight(fullType),
         totalWeight = getTotalWeight(fullType, 1),
-        canDeposit = calories > 0 or hydration > 0,
+        canDeposit = isMedicalProvision or calories > 0 or hydration > 0,
         canAssignTool = Internal.Config.IsLabourToolFullType and Internal.Config.IsLabourToolFullType(fullType) or false,
         tags = tags,
         texture = invItem.getTex and invItem:getTex() or nil,
@@ -86,6 +90,9 @@ function Internal.buildWorkerSupplyEntry(entry, index)
         ledgerIndex = index,
         displayName = entry.displayName,
         fullType = entry.fullType,
+        provisionType = entry.provisionType or ((Internal.Config.IsMedicalProvisionEntry and Internal.Config.IsMedicalProvisionEntry(entry)) and "medical" or "nutrition"),
+        treatmentUnits = math.max(0, tonumber(entry.treatmentUnitsRemaining) or 0),
+        medicalUse = entry.medicalUse,
         calories = math.max(0, tonumber(entry.caloriesRemaining) or 0),
         hydration = math.max(0, tonumber(entry.hydrationRemaining) or 0),
         unitWeight = getUnitWeight(entry.fullType),
@@ -177,6 +184,8 @@ function Internal.buildWorkerEntryFromPlayerEntry(entry)
         itemID = entry.itemID,
         displayName = entry.displayName,
         fullType = entry.fullType,
+        provisionType = entry.provisionType or "nutrition",
+        treatmentUnits = math.max(0, tonumber(entry.treatmentUnits) or 0),
         calories = math.max(0, tonumber(entry.calories) or 0),
         hydration = math.max(0, tonumber(entry.hydration) or 0),
         unitWeight = tonumber(entry.unitWeight) or getUnitWeight(entry.fullType),

@@ -37,6 +37,9 @@ function Internal.canStoreInWarehouseOutput(entry)
     if not entry or entry.kind == "money" then
         return false
     end
+    if Internal.Config and Internal.Config.IsMedicalProvisionFullType and Internal.Config.IsMedicalProvisionFullType(entry.fullType) then
+        return false
+    end
     return tostring(entry.fullType or "") ~= ""
 end
 
@@ -76,5 +79,7 @@ function Internal.shouldShowWorkerEntry(entry, activeTab)
         return true
     end
 
-    return (tonumber(entry.calories) or 0) > 0 or (tonumber(entry.hydration) or 0) > 0
+    return (tonumber(entry.calories) or 0) > 0
+        or (tonumber(entry.hydration) or 0) > 0
+        or (tonumber(entry.treatmentUnits) or 0) > 0
 end

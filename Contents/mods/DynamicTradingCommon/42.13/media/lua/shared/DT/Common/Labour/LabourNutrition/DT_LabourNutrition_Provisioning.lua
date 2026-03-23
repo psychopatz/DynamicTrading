@@ -85,7 +85,12 @@ function Internal.FindNextConsumableEntry(worker)
 
     Internal.PruneEmptyEntries(worker)
     worker.nutritionLedger = worker.nutritionLedger or {}
-    return (#worker.nutritionLedger > 0) and 1 or nil, worker.nutritionLedger[1]
+    for index, entry in ipairs(worker.nutritionLedger) do
+        if not (Config.IsMedicalProvisionEntry and Config.IsMedicalProvisionEntry(entry)) then
+            return index, entry
+        end
+    end
+    return nil, nil
 end
 
 function Nutrition.ConsumeProvisionItem(worker, ledgerIndex, caloriesCap, hydrationCap, options)

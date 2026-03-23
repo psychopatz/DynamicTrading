@@ -40,14 +40,138 @@ local function grantWorkerJobXP(worker, currentHour, skillEffects, totalQuantity
     )
 end
 
+local function getBuildings()
+    return DT_Buildings or nil
+end
+
+local function getOwnerKey(ownerUsername)
+    return Config.GetOwnerUsername and Config.GetOwnerUsername(ownerUsername) or tostring(ownerUsername or "local")
+end
+
+local function isSleepEligible(worker, forcedRest)
+    return worker
+        and tostring(worker.presenceState or "") == tostring((Config.PresenceStates or {}).Home or "Home")
+        and forcedRest == true
+        and math.max(0, tonumber(worker.hp) or 0) > 0
+end
+
+local function getOwnerMedicalPlan(ownerUsername)
+    local plans = Internal.ownerMedicalPlans or {}
+    return plans[getOwnerKey(ownerUsername)]
+end
+
+local function buildOwnerMedicalPlan(ownerUsername)
+    local buildings = getBuildings()
+    local infirmary = buildings and buildings.BuildInfirmaryAssignment and buildings.BuildInfirmaryAssignment(ownerUsername) or nil
+    if not infirmary then
+        infirmary = {
+            assignments = {},
+            doctorCoveredWorkerIDs = {},
+            doctorCoveredCount = 0,
+            doctorCount = 0,
+            treatmentHourBudget = 0
+        }
+    end
+
+    local plan = {
+        ownerUsername = getOwnerKey(ownerUsername),
+        infirmary = infirmary,
+        priorityIndex = {},
+        remainingTreatmentHours = math.max(0, tonumber(infirmary.treatmentHourBudget) or 0),
+        initialTreatmentHours = math.max(0, tonumber(infirmary.treatmentHourBudget) or 0),
+        usedTreatmentHours = 0,
+        coveredPatientCount = math.max(0, tonumber(infirmary.doctorCoveredCount) or 0),
+        doctorCount = math.max(0, tonumber(infirmary.doctorCount) or 0),
+    }
+
+    for index, workerID in ipairs(infirmary.doctorCoveredWorkerIDs or {}) do
+        plan.priorityIndex[tostring(workerID or "")] = index
+    end
+
+    return plan
+end
+
+local function buildAllOwnerMedicalPlans(data)
+    local plans = {}
+    local seenOwners = {}
+
+    for _, worker in pairs(data.Workers or {}) do
+        local ownerKey = getOwnerKey(worker and worker.ownerUsername)
+        if ownerKey ~= "" and not seenOwners[ownerKey] then
+            seenOwners[ownerKey] = true
+            plans[ownerKey] = buildOwnerMedicalPlan(ownerKey)
+        end
+    end
+
+    return plans
+end
+
+local function getWorkerMedicalAssignment(worker)
+    local plan = getOwnerMedicalPlan(worker and worker.ownerUsername)
+    local infirmary = plan and plan.infirmary or nil
+    local assignments = infirmary and infirmary.assignments or {}
+    return assignments[tostring(worker and worker.workerID or "")]
+end
+
+local function applySleepHealing(worker, forcedRest, nutritionResult)
+    local baseRate = 0.25
+    local treatedRate = 1.00
+    local supportedHours = math.max(0, tonumber(nutritionResult and nutritionResult.supportedHours) or 0)
+    local maxHp = math.max(1, tonumber(worker and worker.maxHp) or Config.DEFAULT_WORKER_MAX_HP or 100)
+    local hp = Internal.clampHp(worker and worker.hp, maxHp)
+    local sleepEligible = isSleepEligible(worker, forcedRest)
+    local assignment = getWorkerMedicalAssignment(worker) or {}
+    local plan = getOwnerMedicalPlan(worker and worker.ownerUsername)
+    local boostedHours = 0
+    local healingAmount = 0
+
+    worker.sleepHealingRate = 0
+    worker.sleepHealingSource = "None"
+    worker.medicalSupplyBlocked = false
+
+    if not sleepEligible or supportedHours <= 0 or hp <= 0 then
+        return hp, 0, 0
+    end
+
+    healingAmount = supportedHours * baseRate
+    if assignment.assigned == true and assignment.doctorCovered == true and plan and (plan.remainingTreatmentHours or 0) > 0 then
+        boostedHours = math.min(supportedHours, math.max(0, tonumber(plan.remainingTreatmentHours) or 0))
+        plan.remainingTreatmentHours = math.max(0, (tonumber(plan.remainingTreatmentHours) or 0) - boostedHours)
+        plan.usedTreatmentHours = math.max(0, tonumber(plan.usedTreatmentHours) or 0) + boostedHours
+        healingAmount = healingAmount + (boostedHours * (treatedRate - baseRate))
+    end
+
+    hp = Internal.clampHp(hp + healingAmount, maxHp)
+    worker.hp = hp
+    worker.sleepHealingRate = supportedHours > 0 and (healingAmount / supportedHours) or 0
+
+    if boostedHours > 0 then
+        worker.sleepHealingSource = "InfirmaryDoctor"
+    elseif assignment.assigned == true then
+        worker.sleepHealingSource = "Infirmary"
+    else
+        worker.sleepHealingSource = "HomeSleep"
+    end
+
+    if assignment.assigned == true and assignment.doctorCovered == true and boostedHours < supportedHours then
+        worker.medicalSupplyBlocked = true
+    end
+
+    return hp, supportedHours, boostedHours
+end
+
 function Sim.ProcessWorker(worker, currentHour)
     if not worker then return end
 
     Registry.RecalculateWorker(worker)
+    worker.sleepHealingRate = 0
+    worker.sleepHealingSource = "None"
+    worker.medicalSupplyBlocked = false
 
     local profile = Config.GetJobProfile(worker.jobType)
     local normalizedJobType = Config.NormalizeJobType(worker.jobType)
     local isBuilderJob = normalizedJobType == (Config.JobTypes and Config.JobTypes.Builder)
+    local isDoctorJob = normalizedJobType == (Config.JobTypes and Config.JobTypes.Doctor)
     local scavengeLoadout = nil
     local cycleHours = Config.GetEffectiveWorkTarget and Config.GetEffectiveWorkTarget(worker, profile)
         or (Config.GetEffectiveCycleHours and Config.GetEffectiveCycleHours(worker, profile))
@@ -158,13 +282,20 @@ function Sim.ProcessWorker(worker, currentHour)
     if normalizedJobType == Config.JobTypes.Scavenge then
         canWork = canWork and worker.presenceState == Config.PresenceStates.Scavenging
     end
-    local workableHours, hasCalories, hasHydration, hp = Internal.processNutrition(
+    local nutritionResult = Internal.processNutrition(
         worker,
         currentHour,
         dailyCaloriesNeed,
         dailyHydrationNeed,
         canWork
     )
+    local workableHours = math.max(0, tonumber(nutritionResult and nutritionResult.workableHours) or 0)
+    local supportedHours = math.max(0, tonumber(nutritionResult and nutritionResult.supportedHours) or 0)
+    local hasCalories = nutritionResult and nutritionResult.hasCalories == true or false
+    local hasHydration = nutritionResult and nutritionResult.hasHydration == true or false
+    local hp = Internal.clampHp(nutritionResult and nutritionResult.hp, math.max(1, tonumber(worker.maxHp) or Config.DEFAULT_WORKER_MAX_HP or 100))
+
+    hp = select(1, applySleepHealing(worker, forcedRest, nutritionResult))
 
     worker.starvationHours = 0
     worker.dehydrationHours = 0
@@ -405,6 +536,68 @@ function Sim.ProcessWorker(worker, currentHour)
         else
             worker.state = Config.States.Idle
         end
+    elseif isDoctorJob then
+        worker.scavengeBonusRareRolls = nil
+        worker.scavengeRareFinds = nil
+        worker.scavengeBotchedRolls = nil
+        worker.scavengeQualityCounts = nil
+
+        local medicalPlan = getOwnerMedicalPlan(worker.ownerUsername)
+        local coveredPatientCount = medicalPlan and math.max(0, tonumber(medicalPlan.coveredPatientCount) or 0) or 0
+        local doctorCount = medicalPlan and math.max(1, tonumber(medicalPlan.doctorCount) or 1) or 1
+        local hasTreatmentDemand = coveredPatientCount > 0
+        local hasTreatmentSupplies = medicalPlan and (tonumber(medicalPlan.initialTreatmentHours) or 0) > 0 or false
+        local doctorLoadRatio = hasTreatmentDemand and math.min(1, coveredPatientCount / math.max(1, doctorCount * 5)) or 0
+        local doctorWorkHours = supportedHours * doctorLoadRatio
+        local didWorkThisTick = false
+
+        if hp <= 0 then
+            Internal.markWorkerDead(worker, currentHour, normalizedJobType, Config.PresenceStates.Home, hasCalories, hasHydration)
+        elseif worker.jobEnabled and toolsReady and hasHydration and hasCalories and not forcedRest and hasTreatmentDemand and hasTreatmentSupplies then
+            worker.state = Config.States.Working
+            worker.workProgress = Internal.clampHours(worker.workProgress) + (doctorWorkHours * speedMultiplier)
+            while worker.workProgress >= cycleHours do
+                worker.workProgress = worker.workProgress - cycleHours
+            end
+            didWorkThisTick = doctorWorkHours > 0
+        end
+
+        if Tiredness and deltaHours > 0 and hp > 0 then
+            if didWorkThisTick and doctorWorkHours > 0 then
+                Tiredness.ApplyWorkDrain(worker, doctorWorkHours, profile)
+            else
+                Tiredness.ApplyHomeRecovery(worker, deltaHours, profile)
+            end
+
+            forcedRest = Tiredness.IsForcedRest(worker)
+            if forcedRest then
+                Tiredness.CompleteForcedRest(worker, currentHour, "Fully rested again.")
+            elseif Tiredness.IsDepleted(worker) then
+                forcedRest = true
+                Tiredness.BeginForcedRest(worker, currentHour, lowTirednessReason, "Too tired to keep treating patients. Resting at home.")
+            end
+            forcedRest = Tiredness.IsForcedRest(worker)
+        end
+
+        if hp <= 0 then
+            Internal.markWorkerDead(worker, currentHour, normalizedJobType, Config.PresenceStates.Home, hasCalories, hasHydration)
+        elseif not worker.jobEnabled then
+            worker.state = Config.States.Idle
+        elseif not toolsReady then
+            worker.state = Config.States.MissingTool
+        elseif not hasHydration then
+            worker.state = Config.States.Dehydrated
+        elseif not hasCalories then
+            worker.state = Config.States.Starving
+        elseif forcedRest then
+            worker.state = Config.States.Resting
+        elseif not hasTreatmentDemand then
+            worker.state = Config.States.Idle
+        elseif not hasTreatmentSupplies then
+            worker.state = Config.States.WarehouseShortage
+        else
+            worker.state = Config.States.Working
+        end
     else
         worker.scavengeBonusRareRolls = nil
         worker.scavengeRareFinds = nil
@@ -493,13 +686,47 @@ end
 function Sim.ProcessAllWorkers(currentHour)
     currentHour = currentHour or (Config.GetCurrentWorldHours and Config.GetCurrentWorldHours()) or Config.GetCurrentHour()
     local data = Registry.GetData()
+    Internal.ownerMedicalPlans = buildAllOwnerMedicalPlans(data)
+
+    local orderedWorkers = {}
     for _, worker in pairs(data.Workers or {}) do
+        orderedWorkers[#orderedWorkers + 1] = worker
+    end
+
+    table.sort(orderedWorkers, function(a, b)
+        local ownerA = getOwnerKey(a and a.ownerUsername)
+        local ownerB = getOwnerKey(b and b.ownerUsername)
+        if ownerA ~= ownerB then
+            return ownerA < ownerB
+        end
+
+        local planA = Internal.ownerMedicalPlans and Internal.ownerMedicalPlans[ownerA] or nil
+        local planB = Internal.ownerMedicalPlans and Internal.ownerMedicalPlans[ownerB] or nil
+        local priorityA = planA and planA.priorityIndex and planA.priorityIndex[tostring(a and a.workerID or "")] or 1000000
+        local priorityB = planB and planB.priorityIndex and planB.priorityIndex[tostring(b and b.workerID or "")] or 1000000
+        if priorityA ~= priorityB then
+            return priorityA < priorityB
+        end
+
+        return tostring(a and a.workerID or "") < tostring(b and b.workerID or "")
+    end)
+
+    for _, worker in ipairs(orderedWorkers) do
         if Internal.freezeWorkerForOfflineOwner(worker, currentHour) then
             Registry.RecalculateWorker(worker)
         else
             Sim.ProcessWorker(worker, currentHour)
         end
     end
+
+    for ownerUsername, plan in pairs(Internal.ownerMedicalPlans or {}) do
+        local usedHours = math.max(0, tonumber(plan and plan.usedTreatmentHours) or 0)
+        if usedHours > 0 and Warehouse and Warehouse.ConsumeMedicalProvisionHours then
+            Warehouse.ConsumeMedicalProvisionHours(ownerUsername, usedHours)
+        end
+    end
+
+    Internal.ownerMedicalPlans = nil
     Registry.Save()
 end
 

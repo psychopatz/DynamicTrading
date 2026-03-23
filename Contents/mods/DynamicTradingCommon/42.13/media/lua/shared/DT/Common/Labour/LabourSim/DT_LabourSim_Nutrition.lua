@@ -53,9 +53,9 @@ Internal.maybeRefillReserve = function(worker, currentHour, checkpointCount, dai
     end
 end
 
-Internal.applyInterval = function(worker, workableHours, hp, maxHp, intervalHours, caloriesPerHour, hydrationPerHour, canWork)
+Internal.applyInterval = function(worker, workableHours, supportedHours, hp, maxHp, intervalHours, caloriesPerHour, hydrationPerHour, canWork)
     if intervalHours <= 0 then
-        return workableHours, hp
+        return workableHours, supportedHours, hp
     end
 
     local activeCalories, activeHydration = Nutrition.GetOnBodyTotals(worker)
@@ -77,15 +77,15 @@ Internal.applyInterval = function(worker, workableHours, hp, maxHp, intervalHour
     if canWork and fullyFedHours > 0 then
         workableHours = workableHours + fullyFedHours
     end
-
     if fullyFedHours > 0 then
-        hp = Internal.clampHp(hp + (fullyFedHours * (Config.WORKER_HP_REGEN_PER_HOUR or 1)), maxHp)
+        supportedHours = supportedHours + fullyFedHours
     end
+
     if deprivedHours > 0 then
         hp = Internal.clampHp(hp - (deprivedHours * (Config.WORKER_HP_LOSS_PER_HOUR or 1)), maxHp)
     end
 
-    return workableHours, hp
+    return workableHours, supportedHours, hp
 end
 
 Internal.processNutrition = function(worker, currentHour, dailyCaloriesNeed, dailyHydrationNeed, canWork)
@@ -109,14 +109,16 @@ Internal.processNutrition = function(worker, currentHour, dailyCaloriesNeed, dai
     local maxHp = math.max(1, tonumber(worker.maxHp) or Config.DEFAULT_WORKER_MAX_HP or 100)
     local hp = Internal.clampHp(worker.hp, maxHp)
     local workableHours = 0
+    local supportedHours = 0
     local segmentStart = lastHour
 
     for checkpoint = previousCheckpoint + 1, currentCheckpoint do
         local checkpointHour = Config.GetMealCheckpointHourByCount(checkpoint)
         local intervalHours = math.max(0, math.min(currentHour, checkpointHour) - segmentStart)
-        workableHours, hp = Internal.applyInterval(
+        workableHours, supportedHours, hp = Internal.applyInterval(
             worker,
             workableHours,
+            supportedHours,
             hp,
             maxHp,
             intervalHours,
@@ -133,9 +135,10 @@ Internal.processNutrition = function(worker, currentHour, dailyCaloriesNeed, dai
     end
 
     local tailHours = math.max(0, currentHour - segmentStart)
-    workableHours, hp = Internal.applyInterval(
+    workableHours, supportedHours, hp = Internal.applyInterval(
         worker,
         workableHours,
+        supportedHours,
         hp,
         maxHp,
         tailHours,
@@ -152,5 +155,11 @@ Internal.processNutrition = function(worker, currentHour, dailyCaloriesNeed, dai
     worker.lastNutritionCheckpoint = currentCheckpoint
     worker.hp = hp
 
-    return workableHours, hasCalories, hasHydration, hp
+    return {
+        workableHours = workableHours,
+        supportedHours = supportedHours,
+        hasCalories = hasCalories,
+        hasHydration = hasHydration,
+        hp = hp
+    }
 end

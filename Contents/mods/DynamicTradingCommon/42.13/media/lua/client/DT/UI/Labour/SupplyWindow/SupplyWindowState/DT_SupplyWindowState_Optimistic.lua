@@ -51,8 +51,11 @@ local function addOptimisticProvision(window, entry)
         warehouse.ledgers.provisions[#warehouse.ledgers.provisions + 1] = {
             fullType = entry.fullType,
             displayName = entry.displayName,
+            provisionType = entry.provisionType or "nutrition",
             caloriesRemaining = math.max(0, tonumber(entry.calories) or 0),
             hydrationRemaining = math.max(0, tonumber(entry.hydration) or 0),
+            treatmentUnitsRemaining = math.max(0, tonumber(entry.treatmentUnits) or 0),
+            medicalUse = entry.provisionType == "medical" and "bandage" or nil,
             pending = true,
         }
         applyWarehouseWeightDelta(window.workerData, getEntryUnitWeight(entry))
@@ -64,8 +67,11 @@ local function addOptimisticProvision(window, entry)
     window.workerData.nutritionLedger[#window.workerData.nutritionLedger + 1] = {
         fullType = entry.fullType,
         displayName = entry.displayName,
+        provisionType = entry.provisionType or "nutrition",
         caloriesRemaining = math.max(0, tonumber(entry.calories) or 0),
         hydrationRemaining = math.max(0, tonumber(entry.hydration) or 0),
+        treatmentUnitsRemaining = math.max(0, tonumber(entry.treatmentUnits) or 0),
+        medicalUse = entry.provisionType == "medical" and "bandage" or nil,
         pending = true,
     }
     return true

@@ -94,6 +94,10 @@ local function appendWeightText(baseText, entry)
     return tostring(baseText) .. " | " .. weightText
 end
 
+local function isMedicalProvisionEntry(entry)
+    return tostring(entry and entry.provisionType or "") == "medical" or (tonumber(entry and entry.treatmentUnits) or 0) > 0
+end
+
 function Internal.getWorkerTabSummary(window, entries)
     local activeTab = window and window.activeTab or Internal.Tabs.Provisions
 
@@ -155,6 +159,9 @@ function Internal.getWorkerTabSummary(window, entries)
     local summary = tostring(totals.count) .. " entries | "
         .. string.format("%.0f cal", totals.calories) .. " | "
         .. string.format("%.0f hyd", totals.hydration)
+    if totals.medicalUnits > 0 then
+        summary = summary .. " | " .. tostring(math.floor(totals.medicalUnits + 0.5)) .. " treatment"
+    end
     if Internal.isWarehouseView and Internal.isWarehouseView(window) then
         summary = summary .. " | Weight " .. Internal.formatWeightValue(Internal.getWarehouseLedgerWeight(window and window.workerData, activeTab)) .. " total"
     end
@@ -203,6 +210,14 @@ function Internal.getPlayerEntryPresentation(entry, activeTab, worker, window)
         }
     end
 
+    if entry.canDeposit and isMedicalProvisionEntry(entry) then
+        return {
+            statText = appendWeightText("+" .. tostring(math.floor((tonumber(entry.treatmentUnits) or 0) + 0.5)) .. " treatment units", entry),
+            badgeText = "Medical",
+            dimmed = false,
+        }
+    end
+
     if entry.canDeposit then
         return {
             statText = appendWeightText(string.format("+%.0f cal | +%.0f hyd", entry.calories or 0, entry.hydration or 0), entry),
@@ -212,7 +227,7 @@ function Internal.getPlayerEntryPresentation(entry, activeTab, worker, window)
     end
 
     return {
-        statText = appendWeightText("No calories or hydration", entry),
+        statText = appendWeightText("Not a valid provision item", entry),
         badgeText = "Preview",
         dimmed = true,
     }
@@ -247,6 +262,13 @@ function Internal.getWorkerEntryPresentation(entry, activeTab)
         return {
             statText = appendWeightText("Qty " .. tostring(entry.qty or 1), entry),
             badgeText = "",
+        }
+    end
+
+    if isMedicalProvisionEntry(entry) then
+        return {
+            statText = appendWeightText(tostring(math.floor((tonumber(entry.treatmentUnits) or 0) + 0.5)) .. " treatment units left", entry),
+            badgeText = "Medical",
         }
     end
 

@@ -5,6 +5,7 @@ local Config = DT_Labour.Config
 
 Config.JobTypes = {
     Builder = "Builder",
+    Doctor = "Doctor",
     Farm = "Farm",
     Fish = "Fish",
     Scavenge = "Scavenge"
@@ -19,6 +20,16 @@ Config.JobProfiles = {
         cycleHours = 36,
         dailyCaloriesNeed = 2200,
         dailyHydrationNeed = 1800,
+        outputRules = {}
+    },
+    Doctor = {
+        jobType = Config.JobTypes.Doctor,
+        displayName = "Doctor",
+        siteType = nil,
+        requiredToolTags = {},
+        cycleHours = 24,
+        dailyCaloriesNeed = 2100,
+        dailyHydrationNeed = 1700,
         outputRules = {}
     },
     Farm = {
@@ -65,6 +76,7 @@ Config.JobProfiles = {
 
 Config.LegacyProfessionToJob = {
     Builder = Config.JobTypes.Builder,
+    Doctor = Config.JobTypes.Doctor,
     Farmer = Config.JobTypes.Farm,
     Angler = Config.JobTypes.Fish,
     Scavenger = Config.JobTypes.Scavenge

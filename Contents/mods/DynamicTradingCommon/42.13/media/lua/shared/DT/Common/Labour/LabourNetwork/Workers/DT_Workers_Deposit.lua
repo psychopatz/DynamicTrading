@@ -106,16 +106,29 @@ Network.Handlers.DepositWarehouseOutput = function(player, args)
         if invItem then
             local fullType = invItem:getFullType()
             if fullType ~= "Base.Money" and fullType ~= "Base.MoneyBundle" then
-                eligibleCount = eligibleCount + 1
-                local movedQty = Warehouse.DepositOutputEntry(owner, {
-                    fullType = fullType,
-                    qty = 1
-                })
-                if movedQty > 0 then
-                    Internal.removeInventoryItem(invItem)
-                    movedCount = movedCount + movedQty
+                if Config.IsMedicalProvisionFullType and Config.IsMedicalProvisionFullType(fullType) then
+                    local provisionEntry = Nutrition.BuildEntryFromItem(invItem)
+                    if provisionEntry then
+                        eligibleCount = eligibleCount + 1
+                        if Warehouse.DepositProvisionEntry(owner, provisionEntry) then
+                            Internal.removeInventoryItem(invItem)
+                            movedCount = movedCount + 1
+                        else
+                            blockedCount = blockedCount + 1
+                        end
+                    end
                 else
-                    blockedCount = blockedCount + 1
+                    eligibleCount = eligibleCount + 1
+                    local movedQty = Warehouse.DepositOutputEntry(owner, {
+                        fullType = fullType,
+                        qty = 1
+                    })
+                    if movedQty > 0 then
+                        Internal.removeInventoryItem(invItem)
+                        movedCount = movedCount + movedQty
+                    else
+                        blockedCount = blockedCount + 1
+                    end
                 end
             end
         end

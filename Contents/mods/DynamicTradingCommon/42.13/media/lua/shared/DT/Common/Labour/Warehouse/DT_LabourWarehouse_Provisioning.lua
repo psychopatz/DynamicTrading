@@ -111,19 +111,21 @@ local function findBestProvisionIndex(warehouse, needCalories, needHydration)
     local bestScore = -1
 
     for index, entry in ipairs(warehouse and warehouse.ledgers and warehouse.ledgers.provisions or {}) do
-        local calories = math.max(0, tonumber(entry.caloriesRemaining) or 0)
-        local hydration = math.max(0, tonumber(entry.hydrationRemaining) or 0)
-        local score = 0
+        if not (Config.IsMedicalProvisionEntry and Config.IsMedicalProvisionEntry(entry)) then
+            local calories = math.max(0, tonumber(entry.caloriesRemaining) or 0)
+            local hydration = math.max(0, tonumber(entry.hydrationRemaining) or 0)
+            local score = 0
 
-        if needCalories > 0 then
-            score = score + math.min(needCalories, calories)
-        end
-        if needHydration > 0 then
-            score = score + math.min(needHydration, hydration)
-        end
-        if score > bestScore then
-            bestIndex = index
-            bestScore = score
+            if needCalories > 0 then
+                score = score + math.min(needCalories, calories)
+            end
+            if needHydration > 0 then
+                score = score + math.min(needHydration, hydration)
+            end
+            if score > bestScore then
+                bestIndex = index
+                bestScore = score
+            end
         end
     end
 

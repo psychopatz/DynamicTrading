@@ -26,7 +26,12 @@ local function normalizeInstallCounts(instance)
     for _, definition in ipairs(Config.GetInstallDefinitionList and Config.GetInstallDefinitionList(instance.buildingType) or {}) do
         local installKey = tostring(definition and definition.installKey or "")
         if installKey ~= "" then
-            instance.installs[installKey] = math.max(0, math.floor(tonumber(instance.installs[installKey]) or 0))
+            local maxCount = Config.GetInstallMaxCount and Config.GetInstallMaxCount(instance.buildingType, installKey, instance.level)
+                or math.floor(tonumber(definition and definition.maxCount) or 0)
+            instance.installs[installKey] = math.min(
+                math.max(0, math.floor(tonumber(instance.installs[installKey]) or 0)),
+                math.max(0, math.floor(tonumber(maxCount) or 0))
+            )
         end
     end
 end
@@ -248,7 +253,12 @@ function Buildings.SetBuildingInstallCount(instance, installKey, count)
     end
     normalizeInstallCounts(instance)
     local normalizedKey = tostring(installKey or "")
-    instance.installs[normalizedKey] = math.max(0, math.floor(tonumber(count) or 0))
+    local safeCount = math.max(0, math.floor(tonumber(count) or 0))
+    local maxCount = Config.GetInstallMaxCount and Config.GetInstallMaxCount(instance.buildingType, normalizedKey, instance.level) or nil
+    if maxCount ~= nil then
+        safeCount = math.min(safeCount, math.max(0, math.floor(tonumber(maxCount) or 0)))
+    end
+    instance.installs[normalizedKey] = safeCount
     return instance.installs[normalizedKey]
 end
 

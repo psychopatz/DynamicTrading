@@ -29,6 +29,7 @@ function Buildings.BuildOwnerSnapshot(ownerUsername)
     local ownerData = Buildings.CopyOwnerData(owner)
     local warehouseApi = DT_Labour and DT_Labour.Warehouse or nil
     local housing = Buildings.BuildHousingAssignment(owner)
+    local medical = Buildings.BuildInfirmaryAssignment and Buildings.BuildInfirmaryAssignment(owner) or nil
     local projectList = Buildings.GetOwnerProjectList(owner)
     local buildings = {}
 
@@ -153,6 +154,17 @@ function Buildings.BuildOwnerSnapshot(ownerUsername)
             livingWorkers = housing.livingWorkers,
             buildings = housing.buildings
         },
+        medical = medical and {
+            totalCapacity = medical.totalCapacity,
+            assignedCount = medical.assignedCount,
+            sleepingWorkers = medical.sleepingWorkers,
+            doctorCount = medical.doctorCount,
+            doctorCoverageSlots = medical.doctorCoverageSlots,
+            doctorCoveredCount = medical.doctorCoveredCount,
+            treatmentHourBudget = medical.treatmentHourBudget,
+            hasMedicalSupplies = medical.hasMedicalSupplies,
+            buildings = medical.buildings
+        } or nil,
         map = Buildings.BuildMapSnapshot(owner)
     }
 end
@@ -162,6 +174,7 @@ function Buildings.GetOwnerSummary(ownerUsername)
     return {
         ownerUsername = snapshot.ownerUsername,
         housing = shallowCopy(snapshot.housing),
+        medical = shallowCopy(snapshot.medical),
         activeProjectCount = #snapshot.activeProjects,
         buildingCounts = (function()
             local counts = {}
@@ -179,11 +192,17 @@ function Buildings.ApplyWorkerState(worker)
     end
 
     local housing = Buildings.GetWorkerHousing(worker.ownerUsername, worker.workerID)
+    local infirmary = Buildings.GetWorkerInfirmary and Buildings.GetWorkerInfirmary(worker.ownerUsername, worker.workerID) or nil
     worker.housingState = housing.housingState
     worker.housingBuildingID = housing.buildingID
     worker.housingBuildingType = housing.buildingType
     worker.housingBuildingLevel = housing.buildingLevel
     worker.housingRecoveryMultiplier = housing.recoveryMultiplier
+    worker.infirmaryBuildingID = infirmary and infirmary.buildingID or nil
+    worker.infirmaryBuildingType = infirmary and infirmary.buildingType or nil
+    worker.infirmaryBuildingLevel = infirmary and infirmary.buildingLevel or 0
+    worker.infirmaryBedAssigned = infirmary and infirmary.assigned == true or false
+    worker.doctorCovered = infirmary and infirmary.doctorCovered == true or false
 
     if DT_Labour and DT_Labour.Tiredness and DT_Labour.Tiredness.SetRecoverySources then
         DT_Labour.Tiredness.SetRecoverySources(worker, {

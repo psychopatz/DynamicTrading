@@ -59,6 +59,9 @@ function Config.GetWorkerJobSkillID(worker, profile)
     if normalizedJob == Config.JobTypes.Builder then
         return "Construction"
     end
+    if normalizedJob == Config.JobTypes.Doctor then
+        return "Medical"
+    end
     if normalizedJob == Config.JobTypes.Farm then
         return "Plants"
     end

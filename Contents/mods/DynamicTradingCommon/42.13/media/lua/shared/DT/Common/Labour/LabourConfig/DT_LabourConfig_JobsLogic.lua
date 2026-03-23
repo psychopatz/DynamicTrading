@@ -39,6 +39,9 @@ end
 
 function Config.GetDefaultJobForArchetype(archetypeID)
     local archetype = Config.NormalizeArchetypeID(archetypeID)
+    if archetype == "Doctor" then
+        return Config.JobTypes.Doctor
+    end
     if archetype == "Farmer" then
         return Config.JobTypes.Farm
     end
@@ -76,6 +79,7 @@ end
 function Config.GetNextJobType(jobType)
     local order = {
         Config.JobTypes.Builder,
+        Config.JobTypes.Doctor,
         Config.JobTypes.Scavenge,
         Config.JobTypes.Farm,
         Config.JobTypes.Fish

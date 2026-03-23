@@ -115,7 +115,8 @@ function PickerCarousel:render()
                 UIFont.Medium
             )
 
-            local subtitle = option.enabled == true and "Available" or tostring(option.disabledReason or "Unavailable")
+            local subtitle = DT_BuildingsUIUtils.GetOptionStatusLabel and DT_BuildingsUIUtils.GetOptionStatusLabel(option)
+                or (option.enabled == true and "Available" or "Unavailable")
             self:drawTextCentre(subtitle, cardX + (metrics.width / 2), cardY + 132, 0.72, 0.72, 0.72, 1, UIFont.Small)
         end
     end

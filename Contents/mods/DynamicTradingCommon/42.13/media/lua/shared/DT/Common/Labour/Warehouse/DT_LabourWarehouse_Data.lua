@@ -56,6 +56,7 @@ function Warehouse.Recalculate(warehouse)
     warehouse.buildingCapacityBonus = getBuildingCapacityBonus(warehouse.ownerUsername)
     warehouse.capacityBonus = warehouse.manualCapacityBonus + warehouse.buildingCapacityBonus
     warehouse.upgradeLevel = math.max(0, math.floor(tonumber(warehouse.upgradeLevel) or 0))
+    warehouse.medicalProvisionCarryoverHours = math.max(0, tonumber(warehouse.medicalProvisionCarryoverHours) or 0)
     warehouse.ledgers = type(warehouse.ledgers) == "table" and warehouse.ledgers or {}
     warehouse.ledgers.provisions = ensureArray(warehouse.ledgers.provisions)
     warehouse.ledgers.equipment = ensureArray(warehouse.ledgers.equipment)
@@ -91,6 +92,7 @@ function Warehouse.GetOwnerWarehouse(ownerUsername)
             manualCapacityBonus = 0,
             buildingCapacityBonus = 0,
             upgradeLevel = 0,
+            medicalProvisionCarryoverHours = 0,
             ledgers = {
                 provisions = {},
                 equipment = {},

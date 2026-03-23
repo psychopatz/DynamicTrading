@@ -316,6 +316,14 @@ local function getProjectIconPath(buildingType, mode, installKey)
     return definition and definition.iconPath or nil
 end
 
+local function getInstallCapacityGain(buildingType, definition)
+    local effects = definition and definition.effects or {}
+    if tostring(buildingType or "") == "Infirmary" then
+        return math.max(0, math.floor(tonumber(effects.infirmaryCapacityBonus) or 0))
+    end
+    return math.max(0, math.floor(tonumber(effects.warehouseCapacityBonus) or 0))
+end
+
 local function findWarehouseInRing(ownerUsername, ring, excludedBuildingID)
     for _, instance in ipairs(Buildings.GetBuildingsForOwner(ownerUsername)) do
         if tostring(instance.buildingType or "") == "Warehouse"
@@ -405,13 +413,22 @@ function Buildings.ResolveProjectTarget(ownerUsername, buildingType, mode, plotX
         local currentLevel = math.max(0, math.floor(tonumber(instance.level) or 0))
         local requiredLevel = math.max(1, math.floor(tonumber(installDefinition.requiredLevel) or 1))
         if currentLevel < requiredLevel then
-            return nil, tostring(installDefinition.displayName or "This installation") .. " requires Warehouse level " .. tostring(requiredLevel) .. "."
+            return nil, tostring(installDefinition.displayName or "This installation")
+                .. " requires "
+                .. tostring(definition.displayName or normalizedBuildingType or "this building")
+                .. " level "
+                .. tostring(requiredLevel)
+                .. "."
         end
 
         local currentInstallCount = Buildings.GetBuildingInstallCount(instance, installDefinition.installKey)
-        local maxInstallCount = math.max(0, math.floor(tonumber(installDefinition.maxCount) or 0))
+        local maxInstallCount = Config.GetInstallMaxCount and Config.GetInstallMaxCount(normalizedBuildingType, installDefinition.installKey, currentLevel)
+            or math.max(0, math.floor(tonumber(installDefinition.maxCount) or 0))
         if maxInstallCount > 0 and currentInstallCount >= maxInstallCount then
-            return nil, tostring(installDefinition.displayName or "This installation") .. " is already maxed for this Warehouse."
+            return nil, tostring(installDefinition.displayName or "This installation")
+                .. " is already maxed for this "
+                .. string.lower(tostring(definition.displayName or normalizedBuildingType or "building"))
+                .. "."
         end
 
         return {
@@ -488,7 +505,7 @@ function Buildings.ResolveProjectTarget(ownerUsername, buildingType, mode, plotX
             if findWarehouseBuildProjectInRing(owner, ring) then
                 return nil, "That ring already has a Warehouse project underway."
             end
-        elseif normalizedBuildingType ~= "Barracks" then
+        elseif normalizedBuildingType ~= "Barracks" and normalizedBuildingType ~= "Infirmary" then
             return nil, "That building is only a placeholder right now."
         end
     end
@@ -646,7 +663,7 @@ function Buildings.BuildProjectPreview(ownerUsername, buildingType, mode, plotX,
     preview.effects = Internal.CopyDeep(projectDefinition.effects or {})
     preview.currentInstallCount = math.max(0, math.floor(tonumber(target.currentInstallCount) or 0))
     preview.maxInstallCount = math.max(0, math.floor(tonumber(target.maxInstallCount) or 0))
-    preview.capacityPerInstall = math.max(0, math.floor(tonumber(projectDefinition.effects and projectDefinition.effects.warehouseCapacityBonus) or 0))
+    preview.capacityPerInstall = getInstallCapacityGain(buildingType, projectDefinition)
     preview.canStart = preview.recipeAvailability.hasAll == true
     preview.reason = preview.canStart and nil or "Missing materials. The project can still be queued and will stall until supplied."
     return preview
@@ -680,6 +697,14 @@ function Buildings.BuildPlotBuildOptions(ownerUsername, plotX, plotY)
                 effectLines[#effectLines + 1] = "Base Capacity Bonus: +" .. tostring(preview.effects.warehouseBaseBonus)
             end
             effectLines[#effectLines + 1] = "Only one Warehouse can exist in each ring band."
+        elseif definition.buildingType == "Infirmary" then
+            description = "Treats injured workers while they sleep. Beds expand capacity, and Doctors can use medical provisions to speed recovery."
+            if preview.effects and preview.effects.infirmaryBaseCapacity then
+                effectLines[#effectLines + 1] = "Base Medical Slots: +" .. tostring(preview.effects.infirmaryBaseCapacity)
+            end
+            if preview.effects and preview.effects.infirmaryCapacityCap then
+                effectLines[#effectLines + 1] = "Medical Slot Cap: " .. tostring(preview.effects.infirmaryCapacityCap)
+            end
         else
             description = "Planned for a future update. This building is shown as a placeholder for expansion."
             effectLines[#effectLines + 1] = "Currently unavailable in this build."
@@ -710,10 +735,12 @@ function Buildings.BuildBuildingInstallOptions(ownerUsername, plotX, plotY, buil
     for _, definition in ipairs(Config.GetInstallDefinitionList and Config.GetInstallDefinitionList(instance.buildingType) or {}) do
         local preview = Buildings.BuildProjectPreview(owner, instance.buildingType, "install", plotX, plotY, buildingID, definition.installKey)
         local currentCount = Buildings.GetBuildingInstallCount(instance, definition.installKey)
-        local maxCount = math.max(0, math.floor(tonumber(definition.maxCount) or 0))
-        local capacityGain = math.max(0, math.floor(tonumber(definition.effects and definition.effects.warehouseCapacityBonus) or 0))
+        local maxCount = Config.GetInstallMaxCount and Config.GetInstallMaxCount(instance.buildingType, definition.installKey, instance.level)
+            or math.max(0, math.floor(tonumber(definition.maxCount) or 0))
+        local capacityGain = getInstallCapacityGain(instance.buildingType, definition)
+        local effectLabel = tostring(instance.buildingType or "") == "Infirmary" and "Medical Slots Per Install" or "Capacity Per Install"
         local effectLines = {
-            "Capacity Per Install: +" .. tostring(capacityGain),
+            effectLabel .. ": +" .. tostring(capacityGain),
             "Installed: " .. tostring(currentCount) .. " / " .. tostring(maxCount)
         }
 

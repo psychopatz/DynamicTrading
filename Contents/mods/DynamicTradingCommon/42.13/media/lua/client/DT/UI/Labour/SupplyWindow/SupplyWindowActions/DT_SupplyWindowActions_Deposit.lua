@@ -66,7 +66,7 @@ function DT_SupplyWindow:depositEntries(entries)
         if activeTab == Internal.Tabs.Output then
             self:updateStatus("No valid warehouse storage items selected.")
         else
-            self:updateStatus("No valid food or water supplies selected.")
+            self:updateStatus("No valid provisions selected.")
         end
         return
     end
@@ -193,7 +193,7 @@ function DT_SupplyWindow:onDepositSelected()
     end
 
     if not selectedEntry.canDeposit then
-        self:updateStatus("That item is visible for preview, but upkeep only accepts food and water.")
+        self:updateStatus("That item is visible for preview, but it cannot be stored as provisions.")
         return
     end
 
@@ -231,9 +231,9 @@ function DT_SupplyWindow:onDepositVisible()
         elseif activeTab == Internal.Tabs.Output then
             self:updateStatus("No visible warehouse storage items matched the current filter.")
         elseif activeTab == Internal.Tabs.Provisions then
-            self:updateStatus("No visible food or water supplies matched the current filter. Select the cash entry to transfer money.")
+            self:updateStatus("No visible provisions matched the current filter. Select the cash entry to transfer money.")
         else
-            self:updateStatus("No visible food or water supplies matched the current filter.")
+            self:updateStatus("No visible provisions matched the current filter.")
         end
         return
     end

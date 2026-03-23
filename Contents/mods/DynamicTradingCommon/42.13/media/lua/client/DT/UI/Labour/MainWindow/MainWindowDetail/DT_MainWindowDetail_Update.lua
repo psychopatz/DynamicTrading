@@ -188,6 +188,14 @@ function DT_MainWindow:updateWorkerDetail(worker)
     text = text .. " <RGB:0.72,0.72,0.72> Housing Building: <RGB:1,1,1> " .. tostring(worker.housingBuildingType or "None") .. " <LINE> "
     text = text .. " <RGB:0.72,0.72,0.72> Recovery Multiplier: <RGB:1,1,1> x" .. formatDecimal(worker.housingRecoveryMultiplier or 0.33, 2) .. " <LINE> <LINE> "
 
+    text = text .. " <RGB:1,1,1> <SIZE:Medium> Medical Care <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Infirmary Bed: <RGB:1,1,1> " .. formatBool(worker.infirmaryBedAssigned == true) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Infirmary Building: <RGB:1,1,1> " .. tostring(worker.infirmaryBuildingType or "None") .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Doctor Coverage: <RGB:1,1,1> " .. formatBool(worker.doctorCovered == true) .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Sleep Healing: <RGB:1,1,1> " .. tostring(worker.sleepHealingSource or "None") .. " <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Healing Rate: <RGB:1,1,1> " .. formatDecimal(worker.sleepHealingRate or 0, 2) .. " HP/h <LINE> "
+    text = text .. " <RGB:0.72,0.72,0.72> Medical Supply Blocked: <RGB:1,1,1> " .. formatBool(worker.medicalSupplyBlocked == true) .. " <LINE> <LINE> "
+
     if stateLabel == deadState and tostring(worker.deathCause or "") ~= "" then
         text = text .. " <RGB:0.88,0.52,0.52> Cause Of Death: <RGB:1,1,1> " .. tostring(worker.deathCause) .. " <LINE> <LINE> "
     end

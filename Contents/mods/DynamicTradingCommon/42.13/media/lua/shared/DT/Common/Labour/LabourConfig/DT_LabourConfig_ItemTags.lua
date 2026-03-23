@@ -3,6 +3,18 @@ DT_Labour.Config = DT_Labour.Config or {}
 
 local Config = DT_Labour.Config
 
+Config.MedicalProvisionUnitValues = Config.MedicalProvisionUnitValues or {
+    ["Base.Bandage"] = 1,
+    ["Base.BandageBox"] = 4,
+    ["Base.AlcoholBandage"] = 1,
+    ["Base.Bandaid"] = 1,
+    ["Base.CottonBalls"] = 1,
+    ["Base.CottonBallsBox"] = 4,
+    ["Base.AlcoholWipes"] = 1,
+    ["Base.AlcoholedCottonBalls"] = 1,
+    ["Base.Disinfectant"] = 1,
+}
+
 function Config.NormalizeUnitValue(value)
     if not value then return 0 end
     value = tonumber(value) or 0
@@ -54,6 +66,22 @@ function Config.FindItemTags(fullType)
     end
 
     return {}
+end
+
+function Config.IsMedicalProvisionFullType(fullType)
+    return Config.MedicalProvisionUnitValues[tostring(fullType or "")] ~= nil
+end
+
+function Config.GetMedicalProvisionUnits(fullType)
+    return math.max(0, tonumber(Config.MedicalProvisionUnitValues[tostring(fullType or "")]) or 0)
+end
+
+function Config.IsNutritionProvisionEntry(entry)
+    return type(entry) == "table" and tostring(entry.provisionType or "nutrition") == "nutrition"
+end
+
+function Config.IsMedicalProvisionEntry(entry)
+    return type(entry) == "table" and tostring(entry.provisionType or "") == "medical"
 end
 
 return Config
