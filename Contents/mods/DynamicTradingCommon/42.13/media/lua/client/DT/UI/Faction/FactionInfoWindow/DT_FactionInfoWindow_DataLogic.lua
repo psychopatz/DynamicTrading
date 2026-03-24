@@ -38,10 +38,22 @@ function DT_FactionInfoWindow:populateList(factionData, rosterData)
         rosterData = DT_FactionInfoWindow.cachedRosterData or {}
     end
 
+    local ownedFactionID = DT_FactionInfoWindow.GetOwnedFactionID and DT_FactionInfoWindow.GetOwnedFactionID() or nil
     local keys = {}
     for id in pairs(factionData) do table.insert(keys, id) end
-    table.sort(keys)
-    local preferredFactionID = (DT_FactionInfoWindow.selectedFaction and DT_FactionInfoWindow.selectedFaction.id)
+    table.sort(keys, function(a, b)
+        local aID = tostring(a or "")
+        local bID = tostring(b or "")
+        if ownedFactionID then
+            local aOwned = aID == ownedFactionID
+            local bOwned = bID == ownedFactionID
+            if aOwned ~= bOwned then
+                return aOwned
+            end
+        end
+        return aID < bID
+    end)
+    local preferredFactionID = (DT_FactionInfoWindow.selectedFaction and DT_FactionInfoWindow.selectedFaction.id) or ownedFactionID
     local selectedIndex = nil
 
     for _, id in ipairs(keys) do

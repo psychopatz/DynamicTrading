@@ -70,6 +70,16 @@ function DT_FactionInfoWindow.resolveRosterData()
     return merged
 end
 
+function DT_FactionInfoWindow.GetOwnedFactionID()
+    local status = DT_FactionInfoWindow.cachedOwnedFactionStatus
+    local faction = status and status.faction or nil
+    local factionID = faction and faction.id or nil
+    if factionID and tostring(factionID) ~= "" then
+        return tostring(factionID)
+    end
+    return nil
+end
+
 -- =============================================================================
 -- HELPER: INJECT V1 VIRTUAL FACTION
 -- =============================================================================
