@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../DynamicColonies"
+		},
+		{
+			"path": "../../../Desktop/Projects/ModManager"
 		}
 	],
 	"settings": {}

@@ -1,9 +1,0 @@
-{
-  "overrides": [
-    {
-      "item": "Base.Battery",
-      "basePrice": 50,
-      "description": "Override battery price example"
-    }
-  ]
-}

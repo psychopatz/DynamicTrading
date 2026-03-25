@@ -1,1 +1,0 @@
-"""Simulation logic for SimulateGame."""
