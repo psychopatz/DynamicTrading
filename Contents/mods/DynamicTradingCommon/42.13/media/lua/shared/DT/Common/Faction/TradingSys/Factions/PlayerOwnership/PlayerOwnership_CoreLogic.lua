@@ -6,12 +6,48 @@ return function(Public, Internal)
     local findWorkerByID = Utils.findWorkerByID
     local isWorkerLiving = Utils.isWorkerLiving
     local removeValue = Utils.removeValue
+    local containsValue = Utils.containsValue
+    local copyArray = Utils.copyArray
+    local ensureUniqueUsernames = Utils.ensureUniqueUsernames
+    local getFactionRole = Utils.getFactionRole
     local trimName = Utils.trimName
     local sanitizeID = Utils.sanitizeID
     local getWorkersForOwner = Utils.getWorkersForOwner
     local buildFactionHome = Utils.buildFactionHome
     local appendUnique = Utils.appendUnique
     local getWorkerSummary = Utils.getWorkerSummary
+
+    local function normalizeMembershipState(faction)
+        if not faction then
+            return
+        end
+
+        faction.memberUsernames = ensureUniqueUsernames(faction.memberUsernames)
+        faction.inviteUsernames = ensureUniqueUsernames(faction.inviteUsernames)
+
+        local leader = getOwnerUsername(faction.leaderUsername)
+        faction.leaderUsername = leader
+        removeValue(faction.memberUsernames, leader)
+        removeValue(faction.inviteUsernames, leader)
+    end
+
+    local function buildPermissions(faction, username)
+        local role = getFactionRole(faction, username)
+        local isLeader = role == "leader"
+        local isMember = role == "member"
+        return {
+            role = role,
+            canViewFaction = isLeader or isMember,
+            canManageColony = isLeader or isMember,
+            canManageWorkers = isLeader or isMember,
+            canManageBuildings = isLeader or isMember,
+            canManageTrade = isLeader or isMember,
+            canInviteMembers = isLeader,
+            canRemoveMembers = isLeader,
+            canRenameFaction = isLeader,
+            canDisbandFaction = isLeader
+        }
+    end
 
     local function syncLinkedWorkersFromOwner(faction, owner)
         if not faction then return end
@@ -80,7 +116,13 @@ return function(Public, Internal)
         local owner = getOwnerUsername(ownerUsername)
         local data = getFactionData()
         for factionID, faction in pairs(data) do
-            if faction.playerOwned and getOwnerUsername(faction.leaderUsername) == owner then
+            if faction.playerOwned then
+                normalizeMembershipState(faction)
+            end
+            if faction.playerOwned and (
+                getOwnerUsername(faction.leaderUsername) == owner
+                or containsValue(faction.memberUsernames, owner)
+            ) then
                 return factionID
             end
         end
@@ -110,6 +152,7 @@ return function(Public, Internal)
         local data = getFactionData()
         local faction = data[factionID]
         if not Public.IsPlayerFaction(faction) then return faction end
+        normalizeMembershipState(faction)
         local owner = getOwnerUsername(faction.leaderUsername)
         faction.linkedWorkerIDs = faction.linkedWorkerIDs or {}
         faction.tradeEligibleWorkerIDs = faction.tradeEligibleWorkerIDs or {}
@@ -178,14 +221,25 @@ return function(Public, Internal)
         end
         local faction = Public.GetPlayerFaction(owner)
         if faction then faction = Public.RefreshPlayerFaction(faction.id) or nil end
-        local buildingsSummary = DT_Buildings and DT_Buildings.GetOwnerSummary and DT_Buildings.GetOwnerSummary(owner) or nil
+        local role = getFactionRole(faction, owner)
+        local permissions = buildPermissions(faction, owner)
+        local authorityOwner = faction and getOwnerUsername(faction.leaderUsername) or owner
+        local linkedWorkers = faction and buildFactionWorkerSummaries(faction) or {}
+        local buildingsSummary = DT_Buildings and DT_Buildings.GetOwnerSummary and DT_Buildings.GetOwnerSummary(authorityOwner) or nil
         return {
-            ownerUsername = owner,
+            ownerUsername = authorityOwner,
+            memberUsername = owner,
             canCreate = faction == nil and #livingWorkers >= 1,
             workerCount = #livingWorkers,
             faction = faction,
             buildings = buildingsSummary,
-            linkedWorkers = faction and buildFactionWorkerSummaries(faction) or {},
+            linkedWorkers = linkedWorkers,
+            role = role,
+            isLeader = role == "leader",
+            isMember = role == "member",
+            permissions = permissions,
+            memberUsernames = faction and copyArray(faction.memberUsernames) or {},
+            inviteUsernames = faction and copyArray(faction.inviteUsernames) or {},
             createBlockedReason = faction and "already_has_faction" or (#livingWorkers < 1 and "needs_recruit" or nil)
         }
     end
@@ -213,6 +267,8 @@ return function(Public, Internal)
             town = homeCoords.town,
             homeCoords = homeCoords,
             memberCount = #linkedWorkerIDs,
+            memberUsernames = {},
+            inviteUsernames = {},
             linkedWorkerIDs = linkedWorkerIDs,
             tradeEligibleWorkerIDs = {},
             activeTradeWorkerIDs = {},
@@ -221,5 +277,132 @@ return function(Public, Internal)
         })
         local faction = Public.RefreshPlayerFaction(factionID)
         return faction ~= nil, faction and "Faction founded." or "Faction creation failed.", faction
+    end
+
+    function Public.InvitePlayerToFaction(player, targetUsername)
+        local owner = getOwnerUsername(player)
+        if trimName(targetUsername) == "" then
+            return false, "A target username is required.", nil
+        end
+        local invitee = getOwnerUsername(targetUsername)
+        local faction = Public.GetPlayerFaction(owner)
+        if not Public.IsPlayerFaction(faction) then
+            return false, "Player faction not found.", nil
+        end
+
+        if getFactionRole(faction, owner) ~= "leader" then
+            return false, "Only the faction leader can invite members.", faction
+        end
+
+        if invitee == owner then
+            return false, "You already lead this faction.", faction
+        end
+
+        if Public.GetPlayerFaction(invitee) then
+            return false, "That player already belongs to a faction.", faction
+        end
+
+        normalizeMembershipState(faction)
+        if containsValue(faction.inviteUsernames, invitee) then
+            return false, "That player already has a pending invite.", faction
+        end
+
+        faction.inviteUsernames[#faction.inviteUsernames + 1] = invitee
+        normalizeMembershipState(faction)
+        ModData.transmit(Utils.MOD_DATA_KEY)
+        return true, "Invitation sent.", faction
+    end
+
+    function Public.AcceptFactionInvite(player, factionID)
+        local owner = getOwnerUsername(player)
+        local faction = factionID and getFactionData()[factionID] or nil
+        if not Public.IsPlayerFaction(faction) then
+            return false, "Faction not found.", nil
+        end
+
+        if Public.GetPlayerFaction(owner) then
+            return false, "You already belong to a faction.", faction
+        end
+
+        normalizeMembershipState(faction)
+        if not containsValue(faction.inviteUsernames, owner) then
+            return false, "No pending invite found.", faction
+        end
+
+        removeValue(faction.inviteUsernames, owner)
+        faction.memberUsernames[#faction.memberUsernames + 1] = owner
+        normalizeMembershipState(faction)
+        ModData.transmit(Utils.MOD_DATA_KEY)
+        return true, "Faction joined.", faction
+    end
+
+    function Public.DeclineFactionInvite(player, factionID)
+        local owner = getOwnerUsername(player)
+        local faction = factionID and getFactionData()[factionID] or nil
+        if not Public.IsPlayerFaction(faction) then
+            return false, "Faction not found.", nil
+        end
+
+        normalizeMembershipState(faction)
+        if not containsValue(faction.inviteUsernames, owner) then
+            return false, "No pending invite found.", faction
+        end
+
+        removeValue(faction.inviteUsernames, owner)
+        ModData.transmit(Utils.MOD_DATA_KEY)
+        return true, "Invitation declined.", faction
+    end
+
+    function Public.LeavePlayerFaction(player)
+        local owner = getOwnerUsername(player)
+        local faction = Public.GetPlayerFaction(owner)
+        if not Public.IsPlayerFaction(faction) then
+            return false, "Player faction not found.", nil
+        end
+
+        local role = getFactionRole(faction, owner)
+        if role == "leader" then
+            return false, "The faction leader cannot leave without disbanding the faction.", faction
+        end
+
+        if role ~= "member" then
+            return false, "You are not a member of this faction.", faction
+        end
+
+        removeValue(faction.memberUsernames, owner)
+        removeValue(faction.inviteUsernames, owner)
+        normalizeMembershipState(faction)
+        ModData.transmit(Utils.MOD_DATA_KEY)
+        return true, "You left the faction.", faction
+    end
+
+    function Public.KickFactionMember(player, targetUsername)
+        local owner = getOwnerUsername(player)
+        if trimName(targetUsername) == "" then
+            return false, "A target username is required.", nil
+        end
+        local target = getOwnerUsername(targetUsername)
+        local faction = Public.GetPlayerFaction(owner)
+        if not Public.IsPlayerFaction(faction) then
+            return false, "Player faction not found.", nil
+        end
+
+        if getFactionRole(faction, owner) ~= "leader" then
+            return false, "Only the faction leader can remove members.", faction
+        end
+
+        if target == getOwnerUsername(faction.leaderUsername) then
+            return false, "The faction leader cannot be removed.", faction
+        end
+
+        normalizeMembershipState(faction)
+        local removedMember = removeValue(faction.memberUsernames, target)
+        local removedInvite = removeValue(faction.inviteUsernames, target)
+        if not removedMember and not removedInvite then
+            return false, "That player is not part of this faction.", faction
+        end
+
+        ModData.transmit(Utils.MOD_DATA_KEY)
+        return true, removedMember and "Member removed." or "Invitation revoked.", faction
     end
 end

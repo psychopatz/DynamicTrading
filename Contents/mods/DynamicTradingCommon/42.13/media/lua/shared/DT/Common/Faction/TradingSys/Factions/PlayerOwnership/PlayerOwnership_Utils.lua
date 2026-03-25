@@ -13,10 +13,18 @@ function PlayerOwnership_Utils.getFactionData()
 end
 
 function PlayerOwnership_Utils.getOwnerUsername(ownerUsername)
-    local config = DC_Colony and DC_Colony.Config
-    if config and config.GetOwnerUsername then
-        return config.GetOwnerUsername(ownerUsername)
+    if type(ownerUsername) == "string" then
+        return ownerUsername
     end
+
+    local player = ownerUsername
+    if player and player.getUsername then
+        local username = player:getUsername()
+        if username and username ~= "" then
+            return username
+        end
+    end
+
     return tostring(ownerUsername or "local")
 end
 
@@ -107,6 +115,64 @@ function PlayerOwnership_Utils.removeValue(array, value)
         end
     end
     return removed
+end
+
+function PlayerOwnership_Utils.containsValue(array, value)
+    if type(array) ~= "table" then
+        return false
+    end
+
+    for _, existing in ipairs(array) do
+        if existing == value then
+            return true
+        end
+    end
+
+    return false
+end
+
+function PlayerOwnership_Utils.copyArray(source)
+    local copy = {}
+    for index, value in ipairs(source or {}) do
+        copy[index] = value
+    end
+    return copy
+end
+
+function PlayerOwnership_Utils.ensureUniqueUsernames(array)
+    local normalized = {}
+    local seen = {}
+
+    for _, value in ipairs(array or {}) do
+        local username = PlayerOwnership_Utils.getOwnerUsername(value)
+        if username ~= "" and not seen[username] then
+            seen[username] = true
+            normalized[#normalized + 1] = username
+        end
+    end
+
+    table.sort(normalized, function(a, b)
+        return tostring(a) < tostring(b)
+    end)
+
+    return normalized
+end
+
+function PlayerOwnership_Utils.getFactionRole(faction, username)
+    local owner = PlayerOwnership_Utils.getOwnerUsername(username)
+    if type(faction) ~= "table" or owner == "" then
+        return nil
+    end
+
+    if PlayerOwnership_Utils.getOwnerUsername(faction.leaderUsername) == owner then
+        return "leader"
+    end
+
+    if PlayerOwnership_Utils.containsValue(faction.memberUsernames, owner) then
+        return "member"
+    end
+
+    return nil
 end
 
 function PlayerOwnership_Utils.buildFactionHome(player, workers)

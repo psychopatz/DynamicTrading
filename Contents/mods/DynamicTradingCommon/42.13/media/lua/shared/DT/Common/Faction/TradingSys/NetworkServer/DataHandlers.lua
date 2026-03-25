@@ -78,7 +78,6 @@ Handlers.RequestFactionData = function(player, args)
 
     local factionData = ModData.get("DynamicTrading_Factions") or {}
     local rosterData = ModData.get("DynamicTrading_Roster") or {}
-    local stockData = ModData.get("DynamicTrading_Stock") or {}
 
     -- Keep the initial payload light: member registries plus only actively trading souls.
     local filteredSouls = {}
@@ -98,7 +97,6 @@ Handlers.RequestFactionData = function(player, args)
     DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "SyncFactionDebugData", {
         factions = factionData,
         roster = minimalRoster,
-        stock = stockData,
         ownedStatus = DynamicTrading_Factions and DynamicTrading_Factions.GetOwnedFactionStatus and DynamicTrading_Factions.GetOwnedFactionStatus(player) or nil
     })
 end
@@ -199,6 +197,56 @@ Handlers.CreatePlayerFaction = function(player, args)
     DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
         success = ok == true,
         message = message or (ok and "Faction created." or "Faction creation failed.")
+    })
+end
+
+Handlers.InvitePlayerToFaction = function(player, args)
+    args = args or {}
+    local ok, message = DynamicTrading_Factions.InvitePlayerToFaction(player, args.username)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or "Faction invite updated."
+    })
+end
+
+Handlers.AcceptFactionInvite = function(player, args)
+    args = args or {}
+    local ok, message = DynamicTrading_Factions.AcceptFactionInvite(player, args.factionID)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or "Faction invite handled."
+    })
+end
+
+Handlers.DeclineFactionInvite = function(player, args)
+    args = args or {}
+    local ok, message = DynamicTrading_Factions.DeclineFactionInvite(player, args.factionID)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or "Faction invite handled."
+    })
+end
+
+Handlers.LeavePlayerFaction = function(player, args)
+    args = args or {}
+    local ok, message = DynamicTrading_Factions.LeavePlayerFaction(player)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or "Faction membership updated."
+    })
+end
+
+Handlers.KickFactionMember = function(player, args)
+    args = args or {}
+    local ok, message = DynamicTrading_Factions.KickFactionMember(player, args.username)
+    syncOwnedFactionStatus(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "OwnedFactionActionResult", {
+        success = ok == true,
+        message = message or "Faction membership updated."
     })
 end
 

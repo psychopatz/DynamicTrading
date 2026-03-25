@@ -87,6 +87,8 @@ function Lifecycle.Init()
             f.leadershipState = f.leadershipState or "Active"
             f.regencyReason = f.regencyReason or nil
             f.controlMode = f.controlMode or "HybridManual"
+            f.memberUsernames = type(f.memberUsernames) == "table" and f.memberUsernames or {}
+            f.inviteUsernames = type(f.inviteUsernames) == "table" and f.inviteUsernames or {}
             f.linkedWorkerIDs = type(f.linkedWorkerIDs) == "table" and f.linkedWorkerIDs or {}
             f.tradeEligibleWorkerIDs = type(f.tradeEligibleWorkerIDs) == "table" and f.tradeEligibleWorkerIDs or {}
             f.activeTradeWorkerIDs = type(f.activeTradeWorkerIDs) == "table" and f.activeTradeWorkerIDs or {}
@@ -166,6 +168,8 @@ function Lifecycle.CreateFaction(factionID, initialData)
             leadershipState = initialData.leadershipState or "Active",
             regencyReason = initialData.regencyReason,
             controlMode = initialData.controlMode or (initialData.playerOwned and "HybridManual" or nil),
+            memberUsernames = initialData.memberUsernames or {},
+            inviteUsernames = initialData.inviteUsernames or {},
             linkedWorkerIDs = initialData.linkedWorkerIDs or {},
             tradeEligibleWorkerIDs = initialData.tradeEligibleWorkerIDs or {},
             activeTradeWorkerIDs = initialData.activeTradeWorkerIDs or {},
