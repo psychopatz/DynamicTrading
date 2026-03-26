@@ -254,56 +254,6 @@ option DynamicTrading.NPCTradePopPercent
     translation = DynamicTrading_NPCTradePopPercent,
 }
 
-option DynamicTrading.LabourDailyCaloriesUse
-{
-    type = integer,
-    default = 500,
-    min = 0,
-    max = 5000,
-    page = DynamicTradingLabour,
-    translation = DynamicTrading_LabourDailyCaloriesUse,
-}
-
-option DynamicTrading.LabourDailyHydrationUse
-{
-    type = integer,
-    default = 500,
-    min = 0,
-    max = 5000,
-    page = DynamicTradingLabour,
-    translation = DynamicTrading_LabourDailyHydrationUse,
-}
-
-option DynamicTrading.LabourBaseCarryWeight
-{
-    type = double,
-    default = 8.0,
-    min = 1.0,
-    max = 50.0,
-    page = DynamicTradingLabour,
-    translation = DynamicTrading_LabourBaseCarryWeight,
-}
-
-option DynamicTrading.LabourBaseWorkAmount
-{
-    type = integer,
-    default = 500,
-    min = 1,
-    max = 5000,
-    page = DynamicTradingLabour,
-    translation = DynamicTrading_LabourBaseWorkAmount,
-}
-
-option DynamicTrading.LabourBaseWorkMultiplier
-{
-    type = double,
-    default = 1.0,
-    min = 0.1,
-    max = 5.0,
-    page = DynamicTradingLabour,
-    translation = DynamicTrading_LabourBaseWorkMultiplier,
-}
-
 option DynamicTrading.NPCTradingWalkHours
 {
     type = double,

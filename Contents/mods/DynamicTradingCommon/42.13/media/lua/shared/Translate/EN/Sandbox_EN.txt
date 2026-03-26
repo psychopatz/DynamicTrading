@@ -1,7 +1,6 @@
 Sandbox_EN = {
     Sandbox_DynamicTradingEvents = "Dynamic Trading: Event Settings",
     Sandbox_DynamicTradingMisc = "Dynamic Trading: Miscellaneous Settings",
-    Sandbox_DynamicTradingLabour = "Dynamic Trading: Labour Settings",
 
     Sandbox_DynamicTrading_MaxLogs = "Network Log History Size",
     Sandbox_DynamicTrading_MaxLogs_tooltip = "The maximum number of recent network logs to keep in history.",
@@ -65,21 +64,6 @@ Sandbox_EN = {
 
     Sandbox_DynamicTrading_NPCTradePopPercent = "NPC: Max Trading Population (%)",
     Sandbox_DynamicTrading_NPCTradePopPercent_tooltip = "The maximum percentage of a faction's population allowed to be on a trading mission (Away or Trading status) at once.",
-
-    Sandbox_DynamicTrading_LabourDailyCaloriesUse = "Labour: Hunger Use Per Day",
-    Sandbox_DynamicTrading_LabourDailyCaloriesUse_tooltip = "Sets the fixed daily hunger reserve consumed by labour workers. This value is also used as the hunger bar's full-day target.",
-
-    Sandbox_DynamicTrading_LabourDailyHydrationUse = "Labour: Hydration Use Per Day",
-    Sandbox_DynamicTrading_LabourDailyHydrationUse_tooltip = "Sets the fixed daily hydration reserve consumed by labour workers. This value is also used as the hydration bar's full-day target.",
-
-    Sandbox_DynamicTrading_LabourBaseCarryWeight = "Labour: Base Carry Weight",
-    Sandbox_DynamicTrading_LabourBaseCarryWeight_tooltip = "Sets the default body carry limit for labour workers before bag weight reduction is applied. Higher values let scavengers haul more before returning to base.",
-
-    Sandbox_DynamicTrading_LabourBaseWorkAmount = "Labour: Scavenge Work Amount",
-    Sandbox_DynamicTrading_LabourBaseWorkAmount_tooltip = "Sets the total work required for a scavenger to finish one loot roll. Higher values make each scavenging roll take longer unless the worker has better speed multipliers.",
-
-    Sandbox_DynamicTrading_LabourBaseWorkMultiplier = "Labour: Scavenge Base Speed Multiplier",
-    Sandbox_DynamicTrading_LabourBaseWorkMultiplier_tooltip = "Sets the base scavenging speed multiplier before archetype bonuses and equipment bonuses are applied. Higher values make scavengers complete work faster.",
 
     Sandbox_DynamicTrading_NPCTradingWalkHours = "NPC: Trade Travel Time (Hours)",
     Sandbox_DynamicTrading_NPCTradingWalkHours_tooltip = "How many hours of travel time (Away state) the NPC takes to reach or return from a trading location.",
