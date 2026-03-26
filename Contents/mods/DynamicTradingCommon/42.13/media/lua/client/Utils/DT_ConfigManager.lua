@@ -18,7 +18,10 @@ DT_ConfigManager.defaultSettings = {
     volRadio = 0.6,
     volWallet = 0.5,
     volTrade = 0.5,
-    volGeneral = 0.5
+    volGeneral = 0.5,
+    lastManualId = "",
+    lastManualPageId = "",
+    lastManualSectionId = ""
 }
 
 -- This table holds the *active* settings
@@ -52,6 +55,9 @@ function DT_ConfigManager.save()
         fileWriter:write("volWallet=" .. tostring(DT_ConfigManager.settings.volWallet) .. "\r\n")
         fileWriter:write("volTrade=" .. tostring(DT_ConfigManager.settings.volTrade) .. "\r\n")
         fileWriter:write("volGeneral=" .. tostring(DT_ConfigManager.settings.volGeneral) .. "\r\n")
+        fileWriter:write("lastManualId=" .. tostring(DT_ConfigManager.settings.lastManualId or "") .. "\r\n")
+        fileWriter:write("lastManualPageId=" .. tostring(DT_ConfigManager.settings.lastManualPageId or "") .. "\r\n")
+        fileWriter:write("lastManualSectionId=" .. tostring(DT_ConfigManager.settings.lastManualSectionId or "") .. "\r\n")
         
         -- Save Window States
         if DT_ConfigManager.settings.windows then
@@ -114,6 +120,15 @@ function DT_ConfigManager.load()
         if string.find(line, "volGeneral=") then
             local n = tonumber(string.sub(line, 12))
             if n then DT_ConfigManager.settings.volGeneral = n end
+        end
+        if string.find(line, "lastManualId=") then
+            DT_ConfigManager.settings.lastManualId = string.sub(line, 14)
+        end
+        if string.find(line, "lastManualPageId=") then
+            DT_ConfigManager.settings.lastManualPageId = string.sub(line, 18)
+        end
+        if string.find(line, "lastManualSectionId=") then
+            DT_ConfigManager.settings.lastManualSectionId = string.sub(line, 21)
         end
         
         -- Window State Parsing: window_ID=x,y,w,h
@@ -215,6 +230,21 @@ end
 function DT_ConfigManager.getWindowState(winID)
     if not DT_ConfigManager.settings.windows then return nil end
     return DT_ConfigManager.settings.windows[winID]
+end
+
+function DT_ConfigManager.setLastManualLocation(manualId, pageId, sectionId)
+    DT_ConfigManager.settings.lastManualId = tostring(manualId or "")
+    DT_ConfigManager.settings.lastManualPageId = tostring(pageId or "")
+    DT_ConfigManager.settings.lastManualSectionId = tostring(sectionId or "")
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getLastManualLocation()
+    return {
+        manualId = DT_ConfigManager.settings.lastManualId or "",
+        pageId = DT_ConfigManager.settings.lastManualPageId or "",
+        sectionId = DT_ConfigManager.settings.lastManualSectionId or "",
+    }
 end
 
 

@@ -14,6 +14,10 @@ DynamicTrading.Config.NPCMovement = DynamicTrading.Config.NPCMovement or {
     runSpeed = 0.09
 }
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
+DynamicTrading.Manuals = DynamicTrading.Manuals or {
+    Registry = {},
+    Order = {}
+}
 
 -- CORE MODULES
 require "DT/Common/DT_Logger"
@@ -100,6 +104,62 @@ function DynamicTrading.AddItem(uniqueID, data)
     DynamicTrading.Config.MasterList[uniqueID] = data
     if isDebugEnabled() then
         DynamicTrading.Log("DTCommons", "Init", "Item", "Registered Item: " .. tostring(uniqueID))
+    end
+end
+
+function DynamicTrading.RegisterManual(id, data)
+    if not id or type(data) ~= "table" then
+        return
+    end
+
+    local chapters = {}
+    for _, chapter in ipairs(type(data.chapters) == "table" and data.chapters or {}) do
+        table.insert(chapters, {
+            id = chapter.id,
+            title = chapter.title,
+            description = chapter.description,
+        })
+    end
+
+    local pages = {}
+    for _, page in ipairs(type(data.pages) == "table" and data.pages or {}) do
+        local blocks = {}
+        for _, block in ipairs(type(page.blocks) == "table" and page.blocks or {}) do
+            table.insert(blocks, block)
+        end
+
+        table.insert(pages, {
+            id = page.id,
+            chapterId = page.chapterId or page.chapter_id,
+            title = page.title,
+            keywords = type(page.keywords) == "table" and page.keywords or {},
+            blocks = blocks,
+        })
+    end
+
+    local manual = {
+        id = tostring(id),
+        title = tostring(data.title or id),
+        description = tostring(data.description or ""),
+        icon = data.icon,
+        startPageId = data.startPageId or data.start_page_id,
+        chapters = chapters,
+        pages = pages,
+        source = data.source,
+    }
+
+    DynamicTrading.Manuals.Registry[id] = manual
+
+    local alreadyTracked = false
+    for _, existingId in ipairs(DynamicTrading.Manuals.Order) do
+        if existingId == id then
+            alreadyTracked = true
+            break
+        end
+    end
+
+    if not alreadyTracked then
+        table.insert(DynamicTrading.Manuals.Order, id)
     end
 end
 

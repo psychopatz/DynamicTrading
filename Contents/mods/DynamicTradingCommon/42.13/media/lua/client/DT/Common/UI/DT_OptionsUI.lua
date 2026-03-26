@@ -13,6 +13,7 @@ require "ISUI/ISTabPanel"
 require "ISUI/UserInterface/ISSliderPanel"
 require "Utils/DT_ConfigManager"
 require "DT/Common/Utils/DT_AudioManager"
+require "DT/Common/UI/ManualUI/ManualUI"
 
 DT_OptionsUI = ISCollapsableWindow:derive("DT_OptionsUI")
 DT_OptionsUI.instance = nil
@@ -60,13 +61,21 @@ function DT_OptionsUI:createChildren()
     self.panelAudio:setAnchorRight(true)
     self.panelAudio:setAnchorBottom(true)
 
+    self.panelManuals = ISPanel:new(0, 0, self.tabs.width, self.tabs.height)
+    self.panelManuals:initialise()
+    self.panelManuals.backgroundColor = {r=0,g=0,b=0,a=1.0}
+    self.panelManuals:setAnchorRight(true)
+    self.panelManuals:setAnchorBottom(true)
+
     -- 3. Populate Tabs
     self:createGeneralChildren(self.panelGeneral)
     self:createAudioChildren(self.panelAudio)
+    self:createManualChildren(self.panelManuals)
 
     -- 4. Add Panels to Tabs
     self.tabs:addView("General", self.panelGeneral)
     self.tabs:addView("Audio", self.panelAudio)
+    self.tabs:addView("Manuals", self.panelManuals)
     
     self.tabs:activateView("General")
 end
@@ -174,6 +183,48 @@ function DT_OptionsUI:createAudioChildren(panel)
     -- Show registered categories
     for _, cat in ipairs(DT_OptionsUI.config.audioCategories) do
         AddSlider(cat.label, cat.configKey, cat.exampleSound)
+    end
+end
+
+function DT_OptionsUI:createManualChildren(panel)
+    local pad = 20
+    local y = 20
+    local registry = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Registry or {}
+    local ordered = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Order or {}
+
+    local lbl = ISLabel:new(pad, y, 20, "Game Manuals", 1, 1, 1, 1, UIFont.Medium, true)
+    panel:addChild(lbl)
+    y = y + 35
+
+    local description = ISLabel:new(pad, y, 20, "Open the shared manual browser here, or use the Dynamic Trading Help right-click menu in-game.", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
+    panel:addChild(description)
+    y = y + 30
+
+    local openLibrary = ISButton:new(pad, y, 180, 28, "Open Manual Library", self, function()
+        DynamicTrading.Manuals.Open({ library = true })
+    end)
+    openLibrary:initialise()
+    panel:addChild(openLibrary)
+    y = y + 40
+
+    local hasManuals = false
+    for _, manualId in ipairs(ordered) do
+        local manual = registry[manualId]
+        if manual then
+            hasManuals = true
+            local manualData = manual
+            local btn = ISButton:new(pad, y, math.min(self.width - (pad * 3), 320), 26, manualData.title or manualData.id, self, function()
+                DynamicTrading.Manuals.Open({ manualId = manualData.id })
+            end)
+            btn:initialise()
+            panel:addChild(btn)
+            y = y + 32
+        end
+    end
+
+    if not hasManuals then
+        local emptyLabel = ISLabel:new(pad, y, 20, "No manuals registered yet.", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
+        panel:addChild(emptyLabel)
     end
 end
 
