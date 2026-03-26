@@ -103,6 +103,10 @@ function Helpers.AddItemWithCondition(container, fullType, count, customData)
             if customData.fluidAmount ~= nil and item:getFluidContainer() then
                 item:getFluidContainer():setAmount(customData.fluidAmount)
             end
+
+            if isServer() and item.syncItemFields then
+                item:syncItemFields()
+            end
         end
     end
     
