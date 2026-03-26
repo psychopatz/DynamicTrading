@@ -78,17 +78,17 @@ function Helpers.AddItemWithCondition(container, fullType, count, customData)
             local item = items:get(i)
             
             -- Apply Used Delta
-            if customData.usedDelta and item:IsDrainable() then
+            if customData.usedDelta ~= nil and item:IsDrainable() then
                 item:setUsedDelta(customData.usedDelta)
             end
             
             -- Apply Fluid Amount
-            if customData.fluidAmount and item:getFluidContainer() then
+            if customData.fluidAmount ~= nil and item:getFluidContainer() then
                 item:getFluidContainer():setAmount(customData.fluidAmount)
             end
             
             -- Apply Condition (Durability)
-            if customData.condition then
+            if customData.condition ~= nil then
                 item:setCondition(customData.condition)
             end
         end

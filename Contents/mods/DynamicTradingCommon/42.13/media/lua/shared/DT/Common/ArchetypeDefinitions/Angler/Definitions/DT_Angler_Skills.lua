@@ -16,7 +16,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetypeSkills then
             Animals = { min = 8, max = 18, mastery = 20 },
             Shooting = { min = 3, max = 12, mastery = 0 },
             Melee = { min = 0, max = 8, mastery = 0 },
-            Artistic = { min = 0, max = 8, mastery = 0 }
+            Maintenance = { min = 0, max = 8, mastery = 0 }
         }
     })
 end

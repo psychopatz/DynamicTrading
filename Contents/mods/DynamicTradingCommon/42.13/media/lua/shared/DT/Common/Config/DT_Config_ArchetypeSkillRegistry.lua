@@ -16,7 +16,7 @@ DynamicTrading.SkillDefinitions = DynamicTrading.SkillDefinitions or {
     { id = "Animals", label = "Animals" },
     { id = "Shooting", label = "Shooting" },
     { id = "Melee", label = "Melee" },
-    { id = "Artistic", label = "Artistic" }
+    { id = "Maintenance", label = "Maintenance" }
 }
 
 local DEFAULT_MIN_CAP = 0
@@ -104,7 +104,7 @@ local function buildImplicitGeneralDefinition()
             Animals = { min = 0, max = 6, mastery = 0 },
             Shooting = { min = 0, max = 6, mastery = 0 },
             Melee = { min = 0, max = 6, mastery = 0 },
-            Artistic = { min = 0, max = 6, mastery = 0 }
+            Maintenance = { min = 0, max = 6, mastery = 0 }
         }
     }
 end

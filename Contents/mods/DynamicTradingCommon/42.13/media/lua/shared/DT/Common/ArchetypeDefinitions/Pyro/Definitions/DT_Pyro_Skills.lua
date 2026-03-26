@@ -3,7 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetypeSkills then
     DynamicTrading.RegisterArchetypeSkills("Pyro", {
         primarySkill = "Construction",
-        secondarySkills = { "Shooting", "Artistic" },
+        secondarySkills = { "Shooting", "Maintenance" },
         skills = {
             Construction = { min = 8, max = 18, mastery = 20 },
             Crafting = { min = 0, max = 8, mastery = 0 },
@@ -16,7 +16,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetypeSkills then
             Animals = { min = 0, max = 8, mastery = 0 },
             Shooting = { min = 3, max = 12, mastery = 0 },
             Melee = { min = 0, max = 8, mastery = 0 },
-            Artistic = { min = 3, max = 12, mastery = 0 }
+            Maintenance = { min = 3, max = 12, mastery = 0 }
         }
     })
 end
