@@ -76,20 +76,32 @@ function Helpers.AddItemWithCondition(container, fullType, count, customData)
     if customData and items then
         for i = 0, items:size() - 1 do
             local item = items:get(i)
-            
-            -- Apply Used Delta
-            if customData.usedDelta ~= nil and item:IsDrainable() then
-                item:setUsedDelta(customData.usedDelta)
+
+            if DC_Colony and DC_Colony.Registry and DC_Colony.Registry.Internal and DC_Colony.Registry.Internal.ApplyEquipmentEntryState then
+                DC_Colony.Registry.Internal.ApplyEquipmentEntryState(item, customData)
+            else
+                -- Apply Used Delta
+                if customData.usedDelta ~= nil and item:IsDrainable() then
+                    item:setUsedDelta(customData.usedDelta)
+                end
+
+                -- Apply Condition (Durability)
+                if customData.condition ~= nil then
+                    item:setCondition(customData.condition)
+                end
+
+                if customData.headCondition ~= nil and item.setHeadCondition then
+                    item:setHeadCondition(customData.headCondition)
+                elseif customData.condition ~= nil and item.setHeadConditionFromCondition then
+                    pcall(function()
+                        item:setHeadConditionFromCondition(item)
+                    end)
+                end
             end
-            
+
             -- Apply Fluid Amount
             if customData.fluidAmount ~= nil and item:getFluidContainer() then
                 item:getFluidContainer():setAmount(customData.fluidAmount)
-            end
-            
-            -- Apply Condition (Durability)
-            if customData.condition ~= nil then
-                item:setCondition(customData.condition)
             end
         end
     end

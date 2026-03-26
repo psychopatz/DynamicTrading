@@ -24,6 +24,7 @@ local DEFAULT_MAX_CAP = 8
 local DEFAULT_XP_RATE = 1.0
 local PRIMARY_XP_RATE = 1.15
 local SECONDARY_XP_RATE = 1.05
+local MIN_MAINTENANCE_LEVEL = 1
 
 local function deepCopy(value)
     if type(value) ~= "table" then
@@ -123,9 +124,17 @@ local function normalizeSkillMap(rawSkills, fallbackSkills)
         local skillID = skillData.id
         local rawSkill = type(rawSkills) == "table" and rawSkills[skillID] or nil
         local fallbackSkill = type(fallbackSkills) == "table" and fallbackSkills[skillID] or nil
+        local minCap = rawSkill and rawSkill.min or fallbackSkill and fallbackSkill.min or DEFAULT_MIN_CAP
+        local maxCap = rawSkill and rawSkill.max or fallbackSkill and fallbackSkill.max or DEFAULT_MAX_CAP
+
+        if skillID == "Maintenance" then
+            minCap = math.max(MIN_MAINTENANCE_LEVEL, tonumber(minCap) or MIN_MAINTENANCE_LEVEL)
+            maxCap = math.max(minCap, tonumber(maxCap) or minCap)
+        end
+
         normalized[skillID] = buildSkillTemplate(
-            rawSkill and rawSkill.min or fallbackSkill and fallbackSkill.min or DEFAULT_MIN_CAP,
-            rawSkill and rawSkill.max or fallbackSkill and fallbackSkill.max or DEFAULT_MAX_CAP,
+            minCap,
+            maxCap,
             rawSkill and rawSkill.mastery or fallbackSkill and fallbackSkill.mastery or false,
             rawSkill and rawSkill.xpRate or fallbackSkill and fallbackSkill.xpRate or nil
         )
