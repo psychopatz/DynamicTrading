@@ -15,7 +15,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.GridlePan", basePrice=55, tags={"Tool.Cookware", "Rarity.Common", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=8} },
     { item="Base.TinOpener_Old", basePrice=54, tags={"Tool.Cookware", "Rarity.Common", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=8} },
 
-    -- [Tool.Cookware] [Rarity.Rare] (31 items)
+    -- [Tool.Cookware] [Rarity.Rare] (25 items)
     { item="Base.BakingPan", basePrice=74, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.BakingTray", basePrice=74, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.BastingBrush", basePrice=58, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=6} },
@@ -26,19 +26,13 @@ DynamicTrading.RegisterBatch({
     { item="Base.CuttingBoardPlastic", basePrice=57, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.CuttingBoardWooden", basePrice=57, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.GrillBrush", basePrice=63, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=6} },
-    { item="Base.Kettle", basePrice=68, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.Kettle_Copper", basePrice=68, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.KitchenTongs", basePrice=60, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=4} },
     { item="Base.Ladle", basePrice=63, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.MuffinTray", basePrice=74, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.OvenMitt", basePrice=58, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=6} },
     { item="Base.P38", basePrice=58, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=22} },
     { item="Base.PizzaCutter", basePrice=63, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=6} },
-    { item="Base.Pot", basePrice=71, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.PotForged", basePrice=71, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.RoastingPan", basePrice=74, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
-    { item="Base.Saucepan", basePrice=80, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=4} },
-    { item="Base.SaucepanCopper", basePrice=80, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla", "Tool.Fragile"}, stockRange={min=0, max=4} },
     { item="Base.SkewersWooden", basePrice=58, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=11} },
     { item="Base.Spatula", basePrice=57, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },
     { item="Base.Strainer", basePrice=63, tags={"Tool.Cookware", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=4} },

@@ -69,9 +69,10 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
     listbox:drawText(displayName, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
 
     -- [NEW] DRAW TAGS ON HIGHLIGHT
-    if listbox.selected == item.index and d.data and d.data.tags then
+    local displayTagsSource = d.effectiveTags or (d.data and d.data.tags) or nil
+    if listbox.selected == item.index and displayTagsSource then
         local formattedTags = {}
-        for _, tag in ipairs(d.data.tags) do
+        for _, tag in ipairs(displayTagsSource) do
             table.insert(formattedTags, DynamicTrading.Utils.FormatTagDialogue(tag))
         end
         local tagsStr = table.concat(formattedTags, ", ")

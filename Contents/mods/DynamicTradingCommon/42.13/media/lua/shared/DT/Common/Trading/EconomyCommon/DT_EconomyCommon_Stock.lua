@@ -4,6 +4,32 @@
 
 local Common = DynamicTrading.Economy.Common
 
+local function pickGeneratedStockFluid()
+    if not DynamicTrading or not DynamicTrading.Fluids then
+        return nil
+    end
+
+    local pool = {}
+    for fluidID, fluidData in pairs(DynamicTrading.Fluids) do
+        if type(fluidID) == "string" and string.sub(fluidID, 1, 5) ~= "Base." then
+            local primaryTag = fluidData and fluidData.tags and fluidData.tags[1] or ""
+            if primaryTag ~= "" and (
+                Common.TagMatches(primaryTag, "Fluid.Water")
+                or Common.TagMatches(primaryTag, "Fluid.Fuel")
+                or Common.TagMatches(primaryTag, "Fluid.Drink")
+            ) then
+                table.insert(pool, fluidID)
+            end
+        end
+    end
+
+    if #pool == 0 then
+        return nil
+    end
+
+    return pool[ZombRand(#pool) + 1]
+end
+
 --- Generates a stock list based on archetype and difficulty.
 -- @param archetype (Table) The fully resolved archetype definition (allocations, forbid, etc.)
 -- @param masterList (Table) The MasterList of items from Config.
@@ -271,7 +297,12 @@ function Common.GenerateItemCondition(itemData, isExpert)
 
         -- Store default fluid type
         if fc.getFluidType then
-            data.fluidType = fc:getFluidType()
+            data.fluidType = Common.NormalizeFluidType(fc:getFluidType())
+        end
+        if not data.fluidType then
+            data.fluidType = pickGeneratedStockFluid()
+        end
+        if data.fluidType then
             DynamicTrading.Log("DTCommons", "Trade", "Trace", "  - Fluid Type: " .. tostring(data.fluidType))
         end
 

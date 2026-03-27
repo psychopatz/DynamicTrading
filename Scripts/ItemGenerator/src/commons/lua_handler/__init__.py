@@ -11,6 +11,7 @@ from .operations import (
     add_new_items,
     cleanup_blacklisted_items,
 )
+from .liquid_generation import rebuild_liquid_registries
 
 __all__ = [
     'build_lua_file_content',
@@ -23,5 +24,6 @@ __all__ = [
     'add_items_to_file',
     'add_new_items',
     'cleanup_blacklisted_items',
+    'rebuild_liquid_registries',
     'create_item_entry',
 ]

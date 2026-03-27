@@ -76,6 +76,106 @@ function Common.MatchesAllTags(itemTags, requiredTags)
     return true
 end
 
+function Common.NormalizeFluidType(fluidType)
+    if fluidType == nil then return nil end
+
+    local value = fluidType
+    if type(value) ~= "string" then
+        if value.getFluidType then
+            local ok, result = pcall(function() return value:getFluidType() end)
+            if ok and result then
+                value = result
+            end
+        elseif value.getName then
+            local ok, result = pcall(function() return value:getName() end)
+            if ok and result then
+                value = result
+            end
+        end
+    end
+
+    value = tostring(value or "")
+    local colonPos = string.find(value, ":", 1, true)
+    if colonPos then
+        value = string.sub(value, 1, colonPos - 1)
+    end
+
+    value = value:gsub("^%s+", ""):gsub("%s+$", "")
+    if value == "" or string.lower(value) == "true" then
+        return nil
+    end
+
+    return value
+end
+
+function Common.GetFluidData(fluidType)
+    local normalized = Common.NormalizeFluidType(fluidType)
+    if not normalized or not DynamicTrading or not DynamicTrading.Fluids then
+        return nil, normalized
+    end
+
+    local direct = DynamicTrading.Fluids[normalized]
+    if direct then
+        return direct, normalized
+    end
+
+    if string.sub(normalized, 1, 5) == "Base." then
+        return DynamicTrading.Fluids[string.sub(normalized, 6)], normalized
+    end
+
+    return DynamicTrading.Fluids["Base." .. normalized], normalized
+end
+
+function Common.GetFluidTags(fluidType)
+    local fluidData = Common.GetFluidData(fluidType)
+    return fluidData and fluidData.tags or nil
+end
+
+function Common.GetFluidUnitPrice(fluidType)
+    local fluidData = Common.GetFluidData(fluidType)
+    if not fluidData then
+        return 0
+    end
+
+    return fluidData.basePricePerLiter or fluidData.basePrice or 0
+end
+
+function Common.ResolveContainerBasePrice(itemData, scriptItem)
+    if scriptItem and scriptItem.getReplaceOnDeplete then
+        local emptyID = scriptItem:getReplaceOnDeplete()
+        if emptyID and DynamicTrading and DynamicTrading.Config and DynamicTrading.Config.MasterList then
+            local emptyData = DynamicTrading.Config.MasterList[emptyID]
+            if emptyData and emptyData.basePrice then
+                return emptyData.basePrice, emptyID
+            end
+        end
+    end
+
+    return itemData and itemData.basePrice or 0, nil
+end
+
+function Common.GetPrimaryTradeTag(itemData, fluidType, fluidAmount)
+    if (tonumber(fluidAmount) or 0) > 0 then
+        local fluidData = Common.GetFluidData(fluidType)
+        if fluidData and fluidData.tags and fluidData.tags[1] then
+            return fluidData.tags[1]
+        end
+    end
+
+    return itemData and itemData.tags and itemData.tags[1] or "Misc"
+end
+
+function Common.GetTradeTags(itemData, fluidType, fluidAmount)
+    if (tonumber(fluidAmount) or 0) > 0 then
+        local fluidData = Common.GetFluidData(fluidType)
+        if fluidData and fluidData.tags then
+            return fluidData.tags
+        end
+    end
+
+    return itemData and itemData.tags or {}
+end
+
 -- =============================================================================
 function Common.GetItemCharge(itemObj)
     if not itemObj then return 0 end

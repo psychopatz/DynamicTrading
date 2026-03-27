@@ -11,11 +11,13 @@ function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized,
             local scriptItem = getScriptManager():getItem(itemData.item)
             local sortName = scriptItem and scriptItem:getDisplayName() or key
             local cat = itemData.tags[1] or "Misc"
+            local effectiveTags = itemData.tags
 
-            if type(qty) == "table" and qty.customData and qty.customData.fluidType then
+            if type(qty) == "table" and qty.customData and qty.customData.fluidType and (tonumber(qty.customData.fluidAmount) or 0) > 0 then
                 local fluidCategory = DT_TradingItemUtils.Internal.getFluidCategory(qty.customData.fluidType)
                 if fluidCategory then
                     cat = fluidCategory
+                    effectiveTags = DT_TradingItemUtils.Internal.getFluidTags(qty.customData.fluidType) or effectiveTags
                 end
             end
 
@@ -42,8 +44,10 @@ function DT_TradingItemUtils.scanBuyableItems(trader, dataProvider, categorized,
                 price = tonumber(price) or 0,
                 data = itemData,
                 isBuy = true,
-                priceMod = dataProvider:getPriceModifier(itemData.tags),
+                priceMod = dataProvider:getPriceModifier(effectiveTags or itemData.tags),
                 customData = customData,
+                effectiveCategory = cat,
+                effectiveTags = effectiveTags,
                 displayName = DT_TradingItemUtils.getItemDisplayName({isBuy=true, customData=customData, name=sortName}, nil, scriptItem),
                 statusSuffix = DT_TradingItemUtils.getStatusSuffix({isBuy=true, customData=customData}, nil, scriptItem),
                 isRotten = false

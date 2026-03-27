@@ -3,6 +3,132 @@
 -- =============================================================================
 local Helpers = DynamicTrading.ServerHelpers
 
+local function normalizeFluidType(fluidType)
+    if fluidType == nil then return nil end
+    local value = tostring(fluidType)
+    local colonPos = string.find(value, ":", 1, true)
+    if colonPos then
+        value = string.sub(value, 1, colonPos - 1)
+    end
+    value = value:gsub("^%s+", ""):gsub("%s+$", "")
+    if value == "" or string.lower(value) == "true" then
+        return nil
+    end
+    return value
+end
+
+local function resolveScriptFluid(fluidType)
+    local normalized = normalizeFluidType(fluidType)
+    if not normalized or not getScriptManager then
+        return nil, normalized
+    end
+
+    local scriptManager = getScriptManager()
+    if not scriptManager or not scriptManager.getFluid then
+        return nil, normalized
+    end
+
+    local scriptFluid = scriptManager:getFluid(normalized)
+    if not scriptFluid and string.sub(normalized, 1, 5) == "Base." then
+        scriptFluid = scriptManager:getFluid(string.sub(normalized, 6))
+    elseif not scriptFluid then
+        scriptFluid = scriptManager:getFluid("Base." .. normalized)
+    end
+
+    return scriptFluid, normalized
+end
+
+local function applyFluidState(item, customData)
+    if not item or not customData or not item.getFluidContainer or not item:getFluidContainer() then
+        return
+    end
+
+    local fluidContainer = item:getFluidContainer()
+    local fluidType = normalizeFluidType(customData.fluidType)
+    local amount = customData.fluidAmount
+    local scriptFluid = nil
+
+    if fluidType then
+        scriptFluid = select(1, resolveScriptFluid(fluidType))
+
+        local applied = false
+        local attempts = {
+            function()
+                if scriptFluid and fluidContainer.clear then
+                    fluidContainer:clear()
+                end
+            end,
+            function()
+                if scriptFluid and fluidContainer.setPrimaryFluid then
+                    fluidContainer:setPrimaryFluid(scriptFluid)
+                    applied = true
+                end
+            end,
+            function()
+                if scriptFluid and amount ~= nil and fluidContainer.setPrimaryFluid then
+                    fluidContainer:setPrimaryFluid(scriptFluid, amount)
+                    applied = true
+                end
+            end,
+            function()
+                if scriptFluid and fluidContainer.setFluid then
+                    fluidContainer:setFluid(scriptFluid)
+                    applied = true
+                end
+            end,
+            function()
+                if scriptFluid and amount ~= nil and fluidContainer.setFluid then
+                    fluidContainer:setFluid(scriptFluid, amount)
+                    applied = true
+                end
+            end,
+            function()
+                if scriptFluid and amount ~= nil and fluidContainer.addFluid then
+                    fluidContainer:addFluid(scriptFluid, amount)
+                    applied = true
+                end
+            end,
+            function()
+                if fluidType and fluidContainer.setFluidType then
+                    fluidContainer:setFluidType(fluidType)
+                    applied = true
+                end
+            end,
+            function()
+                if fluidType and amount ~= nil and fluidContainer.setFluidType then
+                    fluidContainer:setFluidType(fluidType, amount)
+                    applied = true
+                end
+            end,
+            function()
+                if fluidType and amount ~= nil and fluidContainer.addFluid then
+                    fluidContainer:addFluid(fluidType, amount)
+                    applied = true
+                end
+            end,
+            function()
+                if fluidType and amount ~= nil and fluidContainer.insertFluid then
+                    fluidContainer:insertFluid(fluidType, amount)
+                    applied = true
+                end
+            end,
+        }
+
+        for _, attempt in ipairs(attempts) do
+            pcall(attempt)
+            if applied then
+                break
+            end
+        end
+    end
+
+    if amount ~= nil and fluidContainer.setAmount then
+        pcall(function()
+            fluidContainer:setAmount(amount)
+        end)
+    end
+end
+
 -- =============================================================================
 -- 2. INVENTORY MANAGEMENT (ADD / REMOVE / FIND)
 -- =============================================================================
@@ -99,10 +225,7 @@ function Helpers.AddItemWithCondition(container, fullType, count, customData)
                 end
             end
 
-            -- Apply Fluid Amount
-            if customData.fluidAmount ~= nil and item:getFluidContainer() then
-                item:getFluidContainer():setAmount(customData.fluidAmount)
-            end
+            applyFluidState(item, customData)
 
             if isServer() and item.syncItemFields then
                 item:syncItemFields()

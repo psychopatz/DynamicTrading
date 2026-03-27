@@ -136,7 +136,7 @@ function DynamicTrading.Economy.V2.GetBulkBuyPreview(traderUUID, itemFullType, c
 
     local engineData = DynamicTrading_Engine.GetEngineData()
     local simulatedHeat = copyHeatTable(engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat or {})
-    local category = itemData.tags and itemData.tags[1] or "Misc"
+    local category = Common.GetPrimaryTradeTag(itemData, customData and customData.fluidType, customData and customData.fluidAmount)
     local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryInflation) or 0.05
 
     local totalPrice = 0
@@ -181,7 +181,7 @@ function DynamicTrading.Economy.V2.GetMaxAffordableBuyQuantity(traderUUID, itemF
 
     local engineData = DynamicTrading_Engine.GetEngineData()
     local simulatedHeat = copyHeatTable(engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat or {})
-    local category = itemData.tags and itemData.tags[1] or "Misc"
+    local category = Common.GetPrimaryTradeTag(itemData, customData and customData.fluidType, customData and customData.fluidAmount)
     local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryInflation) or 0.05
 
     local totalPrice = 0

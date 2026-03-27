@@ -47,7 +47,7 @@ def calculate_price(item_id, props, tags_dict):
     category = primary.split('.')[0] if '.' in primary else primary
     
     # Containers/Storage Items - High value per capacity
-    if capacity > 0:
+    if capacity > 0 and category != 'Fluid':
         utility = 1.0 + (weight_reduction / 100.0)
         worth = (capacity * utility) / max(weight, 0.1) * 2.5
     
@@ -122,7 +122,31 @@ def calculate_price(item_id, props, tags_dict):
         if has_property(props, "Sterile"):
             base_value *= 2.0
         worth = base_value / max(weight, 0.1)
-    
+
+    # Fluids
+    elif 'Fluid' in category:
+        capacity = max(get_stat(props, "Capacity", 0.0), 0.1)
+        if 'Fluid.Fuel' in primary:
+            per_liter = 18.0
+        elif 'Fluid.Water.Tainted' in primary:
+            per_liter = 3.0
+        elif 'Fluid.Water' in primary:
+            per_liter = 6.0
+        elif 'Fluid.Medical' in primary:
+            per_liter = 20.0
+        elif 'Fluid.Cleaning' in primary:
+            per_liter = 14.0
+        elif 'Fluid.Appearance' in primary:
+            per_liter = 24.0
+        elif 'Fluid.Drink.Alcohol' in primary:
+            per_liter = 16.0
+        elif 'Fluid.Drink.NonAlcoholic' in primary:
+            per_liter = 10.0
+        else:
+            per_liter = 8.0
+
+        worth = (capacity * per_liter) / max(weight, 0.15)
+
     # Fuel & Drainable Resources
     elif fire_fuel_ratio > 0 or ('Resource' in category and has_property(props, "UseDelta")):
         worth = (fire_fuel_ratio * 15 if fire_fuel_ratio > 0 else get_stat(props, "UseDelta", 0.1) * 10) / max(weight, 0.1)

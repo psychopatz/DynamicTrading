@@ -58,14 +58,15 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
         return scriptItem
     end
 
-    local function getCachedPriceModifier(masterKey, itemData)
-        local cached = priceModifierCache[masterKey]
+    local function getCachedPriceModifier(masterKey, tags)
+        local cacheKey = tostring(masterKey) .. "|" .. table.concat(tags or {}, ",")
+        local cached = priceModifierCache[cacheKey]
         if cached ~= nil then
             return cached
         end
 
-        local priceModifier = dataProvider:getPriceModifier(itemData.tags)
-        priceModifierCache[masterKey] = priceModifier
+        local priceModifier = dataProvider:getPriceModifier(tags or {})
+        priceModifierCache[cacheKey] = priceModifier
         return priceModifier
     end
 
@@ -115,15 +116,16 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
         end
 
         local cat = (itemData.tags and itemData.tags[1]) or "Misc"
+        local effectiveTags = itemData.tags
 
         if invItem.getFluidContainer and invItem:getFluidContainer() then
             local fc = invItem:getFluidContainer()
             if fc:getAmount() > 0 then
-                local fluidCategory = DT_TradingItemUtils.Internal.getFluidCategory(
-                    DT_TradingItemUtils.Internal.getFluidTypeID(fc)
-                )
+                local fluidType = DT_TradingItemUtils.Internal.getFluidTypeID(fc)
+                local fluidCategory = DT_TradingItemUtils.Internal.getFluidCategory(fluidType)
                 if fluidCategory then
                     cat = fluidCategory
+                    effectiveTags = DT_TradingItemUtils.Internal.getFluidTags(fluidType) or effectiveTags
                 end
             end
         end
@@ -149,9 +151,11 @@ function DT_TradingItemUtils.scanSellableItems(player, trader, dataProvider, cat
             invItem = invItem,
             qty = 1,
             itemIDs = { invItem:getID() },
+            effectiveCategory = cat,
+            effectiveTags = effectiveTags,
         }
 
-        listItem.priceMod = getCachedPriceModifier(masterKey, itemData)
+        listItem.priceMod = getCachedPriceModifier(masterKey, effectiveTags)
         listItem.displayName = DT_TradingItemUtils.getItemDisplayName(listItem, invItem, scriptItem)
         listItem.statusSuffix, listItem.isRotten = DT_TradingItemUtils.getStatusSuffix(listItem, invItem, scriptItem)
         listItem.isLocked = lockedItems and lockedItems[invItem:getID()] == true or false

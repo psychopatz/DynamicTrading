@@ -82,6 +82,37 @@ local function resolveSellItems(inv, args, traderID, key, requestedQty)
     return items, firstPrice, firstBasePrice
 end
 
+local function resolveInventoryFluidState(itemObj)
+    if not itemObj or not itemObj.getFluidContainer or not itemObj:getFluidContainer() then
+        return nil, 0
+    end
+
+    local fluidContainer = itemObj:getFluidContainer()
+    local amount = fluidContainer.getAmount and fluidContainer:getAmount() or 0
+    local fluidType = nil
+
+    if fluidContainer.getPrimaryFluid then
+        local pFluid = fluidContainer:getPrimaryFluid()
+        if pFluid then
+            if pFluid.getFluidType then
+                fluidType = pFluid:getFluidType()
+            end
+            if (not fluidType or fluidType == "") and pFluid.getFluid then
+                local fluidObj = pFluid:getFluid()
+                if fluidObj and fluidObj.getName then
+                    fluidType = fluidObj:getName()
+                end
+            end
+        end
+    end
+
+    if (not fluidType or fluidType == "") and fluidContainer.getFluidType then
+        fluidType = fluidContainer:getFluidType()
+    end
+
+    return fluidType, amount
+end
+
 -- =============================================================================
 -- TRADE TRANSACTION - BUY/SELL
 -- =============================================================================
@@ -179,7 +210,11 @@ Handlers.TradeTransaction = function(player, args)
             ModData.transmit("DynamicTrading_Stock")
             
             -- [NEW] HEAT / INFLATION (Supply & Demand)
-            local category = itemData.tags[1] or "Misc"
+            local category = DynamicTrading.Economy.Common.GetPrimaryTradeTag(
+                itemData,
+                customData and customData.fluidType,
+                customData and customData.fluidAmount
+            )
             local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryInflation) or 0.05
             local change = sensitivity * clientQty
             DynamicTrading_Engine.UpdateHeat(category, change)
@@ -258,7 +293,8 @@ Handlers.TradeTransaction = function(player, args)
         ModData.transmit("DynamicTrading_Stock")
         
         -- [NEW] HEAT / DEFLATION (Supply & Demand)
-        local category = itemData.tags[1] or "Misc"
+        local sellFluidType, sellFluidAmount = resolveInventoryFluidState(sellItems[1])
+        local category = DynamicTrading.Economy.Common.GetPrimaryTradeTag(itemData, sellFluidType, sellFluidAmount)
         local engineData = DynamicTrading_Engine.GetEngineData()
         
         -- V1 Logic: Global Deflation (Configurable Roll, Once per item kind per day)

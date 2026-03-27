@@ -87,7 +87,7 @@ function DT_TradingWindow:sendSellTransaction(data, qty, itemNameOverride)
         type = "sell",
         traderID = self.traderID,
         key = data.key,
-        category = data.data and data.data.tags[1] or "Misc",
+        category = data.effectiveCategory or (data.data and data.data.tags[1]) or "Misc",
         qty = amount,
         itemID = data.itemID or -1,
         itemIDs = itemIDs,
@@ -127,7 +127,7 @@ function DT_TradingWindow:onConfirmQuantityBuy(data, qty)
         type = "buy",
         traderID = self.traderID,
         key = data.key,
-        category = data.data.tags[1] or "Misc",
+        category = data.effectiveCategory or data.data.tags[1] or "Misc",
         qty = amount,
         itemID = -1
     })
@@ -296,7 +296,7 @@ function DT_TradingWindow:onAction()
         type = self.isBuying and "buy" or "sell",
         traderID = self.traderID,
         key = d.key,
-        category = d.data.tags[1] or "Misc",
+        category = d.effectiveCategory or d.data.tags[1] or "Misc",
         qty = 1,
         itemID = d.itemID or -1
     }
