@@ -7,11 +7,6 @@ function DT_TradingWindow:setTradingMode(isBuying)
     self.selectedItemID = -1
     self.lastSelectedIndex = -1
 
-    if not isBuying then
-        self.inventoryDirty = true
-        self.refreshCooldown = 0
-    end
-
     if self.btnTabBuy and self.btnTabSell then
         if self.isBuying then
             self.btnTabBuy.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1.0}

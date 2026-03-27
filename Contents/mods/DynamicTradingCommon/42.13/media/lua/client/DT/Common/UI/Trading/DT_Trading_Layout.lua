@@ -116,8 +116,8 @@ function DT_TradingWindow:createChildren()
 
         -- Update Selection State
         target.selected = row
-        ui.selectedKey = item.item.key
-        ui.selectedItemID = item.item.itemID or -1
+        ui.selectedKey = item.item.selectionKey or item.item.key
+        ui.selectedItemID = item.item.isGrouped and -1 or (item.item.itemID or -1)
         ui.lastSelectedIndex = row
         
         -- Default Button State
@@ -130,23 +130,30 @@ function DT_TradingWindow:createChildren()
             ui.btnAction:setEnable(item.item.qty > 0)
         else
             -- Selling Mode: Show Lock & Ask buttons
-            ui.btnAction:setTitle("SELL ($" .. item.item.price .. ")")
-            ui.btnLock:setVisible(true)
-            ui.btnLock:setEnable(true)
+            local sellQty = tonumber(item.item.qty) or 1
+            if sellQty > 1 then
+                ui.btnAction:setTitle("SELL x" .. sellQty .. " ($" .. item.item.price .. " EA)")
+            else
+                ui.btnAction:setTitle("SELL ($" .. item.item.price .. ")")
+            end
             if ui.btnAsk then ui.btnAsk:setVisible(true) end
             
-            -- [CRITICAL SAFETY CHECK]
-            -- Check if helper function exists before calling to prevent crash
-            local isLocked = false
-            if ui.isItemLocked then
-                isLocked = ui:isItemLocked(ui.selectedItemID)
-            end
+            local isLocked = item.item.isLocked == true
 
-            if isLocked then
+            if sellQty > 1 then
+                ui.btnLock:setTitle("LOCK ITEM")
+                ui.btnLock:setEnable(false)
+                ui.btnLock:setVisible(false)
+                ui.btnAction:setEnable(true)
+            elseif isLocked then
                 ui.btnLock:setTitle("UNLOCK ITEM")
+                ui.btnLock:setVisible(true)
+                ui.btnLock:setEnable(true)
                 ui.btnAction:setEnable(false) -- Cannot sell while locked
             else
                 ui.btnLock:setTitle("LOCK ITEM")
+                ui.btnLock:setVisible(true)
+                ui.btnLock:setEnable(true)
                 ui.btnAction:setEnable(true)
             end
         end

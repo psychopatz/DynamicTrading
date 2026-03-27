@@ -12,6 +12,54 @@ DynamicTrading.Economy.V2 = {}
 local Common = DynamicTrading.Economy.Common
 DynamicTrading.Log("DTCommons", "Init", "Economy", "V2 Economy Module (Shared Wrapper) loaded")
 
+local function clampHeatValue(value)
+    if value > 2.0 then return 2.0 end
+    if value < -0.8 then return -0.8 end
+    return value
+end
+
+local function copyHeatTable(source)
+    local clone = {}
+    for key, value in pairs(source or {}) do
+        clone[key] = value
+    end
+    return clone
+end
+
+local function buildBuyPriceModifiers(soul, customData, globalHeat, verbose, skipEvents)
+    return {
+        tagsConfig = DynamicTrading.Config.Tags,
+        customData = customData,
+        globalHeat = globalHeat or {},
+        getPriceModifier = function(tags)
+            if not skipEvents and DynamicTrading.Events and DynamicTrading.Events.GetFactionPriceModifier then
+                local faction = DynamicTrading_Factions.GetFaction(soul.factionID)
+                return DynamicTrading.Events.GetFactionPriceModifier(faction, tags, verbose)
+            end
+            return 1.0
+        end
+    }
+end
+
+local function resolveBuyPriceWithHeat(traderUUID, itemFullType, customData, globalHeat, verbose, skipEvents)
+    local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
+    local itemData = DynamicTrading.Config.MasterList[itemFullType]
+    if not itemData or not soul then return 99999 end
+
+    verbose = verbose or DynamicTrading.Debug
+
+    if not customData then
+        if soul.stocks and soul.stocks[itemFullType] then
+            customData = soul.stocks[itemFullType].customData
+        end
+    end
+
+    local diff = DynamicTrading.Config.GetDifficultyData()
+    local modifiers = buildBuyPriceModifiers(soul, customData, globalHeat, verbose, skipEvents)
+
+    return Common.GetBuyPrice(itemFullType, itemData, diff, modifiers, verbose)
+end
+
 -- =============================================================================
 -- 1. V2 STOCK GENERATOR (Wrapper) - SERVER ONLY
 -- =============================================================================
@@ -70,41 +118,98 @@ end
 -- =============================================================================
 
 function DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType, customData, verbose, skipEvents)
-    local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
-    local itemData = DynamicTrading.Config.MasterList[itemFullType]
-    if not itemData or not soul then return 99999 end
-    
-    -- Always verbose if DynamicTrading.Debug is true
-    verbose = verbose or DynamicTrading.Debug
+    local engineData = DynamicTrading_Engine.GetEngineData()
+    local globalHeat = engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat or {}
+    return resolveBuyPriceWithHeat(traderUUID, itemFullType, customData, globalHeat, verbose, skipEvents)
+end
 
-    -- Fetch customData from stock if not provided (e.g. for server-side verification)
-    if not customData then
-        if soul.stocks and soul.stocks[itemFullType] then
-            customData = soul.stocks[itemFullType].customData
-        end
+function DynamicTrading.Economy.V2.GetBulkBuyPreview(traderUUID, itemFullType, customData, qty, verbose)
+    local itemData = DynamicTrading.Config.MasterList[itemFullType]
+    if not itemData then
+        return { qty = 0, totalPrice = 0, totalBasePrice = 0, firstUnitPrice = 0, lastUnitPrice = 0 }
+    end
+
+    local requestedQty = math.max(0, math.floor(tonumber(qty) or 0))
+    if requestedQty <= 0 then
+        return { qty = 0, totalPrice = 0, totalBasePrice = 0, firstUnitPrice = 0, lastUnitPrice = 0 }
     end
 
     local engineData = DynamicTrading_Engine.GetEngineData()
-    local globalHeat = engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat or {}
+    local simulatedHeat = copyHeatTable(engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat or {})
+    local category = itemData.tags and itemData.tags[1] or "Misc"
+    local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryInflation) or 0.05
 
-    local diff = DynamicTrading.Config.GetDifficultyData()
-    local modifiers = {
-        tagsConfig = DynamicTrading.Config.Tags,
-        customData = customData,
-        globalHeat = globalHeat,
-        -- Event Modifiers (Unified Manager Integration)
-        getPriceModifier = function(tags)
-            if not skipEvents and DynamicTrading.Events and DynamicTrading.Events.GetFactionPriceModifier then
-                local faction = DynamicTrading_Factions.GetFaction(soul.factionID)
-                return DynamicTrading.Events.GetFactionPriceModifier(faction, tags, verbose)
-            end
-            return 1.0
+    local totalPrice = 0
+    local totalBasePrice = 0
+    local firstUnitPrice = 0
+    local lastUnitPrice = 0
+
+    for i = 1, requestedQty do
+        local unitPrice = resolveBuyPriceWithHeat(traderUUID, itemFullType, customData, simulatedHeat, verbose, false)
+        local baseUnitPrice = resolveBuyPriceWithHeat(traderUUID, itemFullType, customData, simulatedHeat, false, true)
+
+        if i == 1 then
+            firstUnitPrice = unitPrice
         end
+
+        lastUnitPrice = unitPrice
+        totalPrice = totalPrice + unitPrice
+        totalBasePrice = totalBasePrice + baseUnitPrice
+
+        if category and category ~= "Misc" then
+            simulatedHeat[category] = clampHeatValue((simulatedHeat[category] or 0) + sensitivity)
+        end
+    end
+
+    return {
+        qty = requestedQty,
+        totalPrice = totalPrice,
+        totalBasePrice = totalBasePrice,
+        firstUnitPrice = firstUnitPrice,
+        lastUnitPrice = lastUnitPrice
     }
-    
-    local price = Common.GetBuyPrice(itemFullType, itemData, diff, modifiers, verbose)
-    
-    return price
+end
+
+function DynamicTrading.Economy.V2.GetMaxAffordableBuyQuantity(traderUUID, itemFullType, customData, maxQty, budget)
+    local itemData = DynamicTrading.Config.MasterList[itemFullType]
+    local maxAllowed = math.max(0, math.floor(tonumber(maxQty) or 0))
+    local availableBudget = math.max(0, math.floor(tonumber(budget) or 0))
+
+    if not itemData or maxAllowed <= 0 or availableBudget <= 0 then
+        return { qty = 0, totalPrice = 0, totalBasePrice = 0 }
+    end
+
+    local engineData = DynamicTrading_Engine.GetEngineData()
+    local simulatedHeat = copyHeatTable(engineData and engineData.WorldEconomy and engineData.WorldEconomy.GlobalHeat or {})
+    local category = itemData.tags and itemData.tags[1] or "Misc"
+    local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryInflation) or 0.05
+
+    local totalPrice = 0
+    local totalBasePrice = 0
+    local quantity = 0
+
+    for _ = 1, maxAllowed do
+        local unitPrice = resolveBuyPriceWithHeat(traderUUID, itemFullType, customData, simulatedHeat, false, false)
+        local baseUnitPrice = resolveBuyPriceWithHeat(traderUUID, itemFullType, customData, simulatedHeat, false, true)
+
+        if totalPrice + unitPrice > availableBudget then
+            break
+        end
+
+        quantity = quantity + 1
+        totalPrice = totalPrice + unitPrice
+        totalBasePrice = totalBasePrice + baseUnitPrice
+
+        if category and category ~= "Misc" then
+            simulatedHeat[category] = clampHeatValue((simulatedHeat[category] or 0) + sensitivity)
+        end
+    end
+
+    return {
+        qty = quantity,
+        totalPrice = totalPrice,
+        totalBasePrice = totalBasePrice
+    }
 end
 
 function DynamicTrading.Economy.V2.GetSellPrice(traderUUID, itemObj, itemFullType, verbose, skipEvents)

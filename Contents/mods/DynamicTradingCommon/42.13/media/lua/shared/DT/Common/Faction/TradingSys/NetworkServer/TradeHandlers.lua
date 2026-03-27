@@ -16,6 +16,72 @@ local DataHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DataHan
 local TradeHandlers = {}
 local Handlers = {}
 
+local function findSellItem(inv, itemID)
+    if not inv or not itemID then
+        return nil
+    end
+
+    local itemObj = inv:getItemById(itemID)
+    if itemObj then
+        return itemObj
+    end
+
+    return DynamicTrading.ServerHelpers.FindItemByIDRecursive(inv, itemID)
+end
+
+local function resolveSellItems(inv, args, traderID, key, requestedQty)
+    local ids = args.itemIDs
+    local items = {}
+    local seenIDs = {}
+    local firstPrice = nil
+    local firstBasePrice = nil
+    local firstFullType = nil
+
+    if requestedQty <= 1 then
+        local singleItem = findSellItem(inv, args.itemID)
+        if not singleItem then
+            return nil, "Item missing!"
+        end
+
+        items[1] = singleItem
+        firstPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, singleItem, key)
+        firstBasePrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, singleItem, key, false, true)
+        return items, firstPrice, firstBasePrice
+    end
+
+    if type(ids) ~= "table" or #ids < requestedQty then
+        return nil, "Items missing!"
+    end
+
+    for i = 1, requestedQty do
+        local itemID = tonumber(ids[i])
+        if not itemID or seenIDs[itemID] then
+            return nil, "Invalid item selection"
+        end
+
+        local itemObj = findSellItem(inv, itemID)
+        if not itemObj then
+            return nil, "Items missing!"
+        end
+
+        local unitPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, itemObj, key)
+        local baseUnitPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, itemObj, key, false, true)
+
+        if i == 1 then
+            firstPrice = unitPrice
+            firstBasePrice = baseUnitPrice
+            firstFullType = itemObj:getFullType()
+        elseif itemObj:getFullType() ~= firstFullType or unitPrice ~= firstPrice or baseUnitPrice ~= firstBasePrice then
+            return nil, "Items no longer match"
+        end
+
+        seenIDs[itemID] = true
+        items[#items + 1] = itemObj
+    end
+
+    return items, firstPrice, firstBasePrice
+end
+
 -- =============================================================================
 -- TRADE TRANSACTION - BUY/SELL
 -- =============================================================================
@@ -66,13 +132,13 @@ Handlers.TradeTransaction = function(player, args)
         local currentQty = type(itemStock) == "table" and itemStock.qty or itemStock
         local customData = type(itemStock) == "table" and itemStock.customData or nil
         
-        -- Use Unified V2 Pricing (Correctly handles condition scaling)
-        local unitPrice = DynamicTrading.Economy.V2.GetBuyPrice(traderID, key, customData)
-        local totalCost = unitPrice * clientQty
+        local buyPreview = DynamicTrading.Economy.V2.GetBulkBuyPreview(traderID, key, customData, clientQty)
+        local unitPrice = buyPreview.lastUnitPrice or DynamicTrading.Economy.V2.GetBuyPrice(traderID, key, customData)
+        local totalCost = buyPreview.totalPrice or (unitPrice * clientQty)
         
         -- Get Base Price (Pre-event) for Dialogue markup checks
         local baseUnitPrice = DynamicTrading.Economy.V2.GetBuyPrice(traderID, key, customData, false, true)
-        local totalBaseCost = baseUnitPrice * clientQty
+        local totalBaseCost = buyPreview.totalBasePrice or (baseUnitPrice * clientQty)
         
         DynamicTrading.Log("DTCommons", "Trade", "Logic", "Buy: " .. key .. " x" .. clientQty .. " @ $" .. unitPrice .. " (Base: $" .. baseUnitPrice .. ")")
         
@@ -136,24 +202,17 @@ Handlers.TradeTransaction = function(player, args)
         end
         
     elseif txType == "sell" then
-        -- 1. Locate item by ID
-        local itemObj = inv:getItemById(args.itemID)
-        if not itemObj then
-            itemObj = DynamicTrading.ServerHelpers.FindItemByIDRecursive(inv, args.itemID)
-        end
-        
-        if not itemObj then
-            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg="Item missing!" })
+        -- 1. Locate and validate all selected items
+        local sellItems, unitPrice, baseUnitPrice = resolveSellItems(inv, args, traderID, key, clientQty)
+        if not sellItems or #sellItems ~= clientQty then
+            DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { success=false, msg=unitPrice or "Item missing!" })
             return
         end
         
         -- 2. Calculate sell price
-        -- Use Unified V2 Pricing Logic (which handles Decay, Fluid, etc.)
-        local unitPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, itemObj, key)
         local totalGain = unitPrice * clientQty
         
         -- Get Base Price (Pre-event)
-        local baseUnitPrice = DynamicTrading.Economy.V2.GetSellPrice(traderID, itemObj, key, false, true)
         local totalBaseGain = baseUnitPrice * clientQty
 
         DynamicTrading.Log("DTCommons", "Trade", "Logic", "Sell: " .. key .. " @ $" .. totalGain .. " (Base: $" .. totalBaseGain .. ")")
@@ -166,15 +225,19 @@ Handlers.TradeTransaction = function(player, args)
         end
         
         -- 4. Unequip if necessary
-        if player:getPrimaryHandItem() == itemObj then
-            player:setPrimaryHandItem(nil)
-        end
-        if player:getSecondaryHandItem() == itemObj then
-            player:setSecondaryHandItem(nil)
+        for _, itemObj in ipairs(sellItems) do
+            if player:getPrimaryHandItem() == itemObj then
+                player:setPrimaryHandItem(nil)
+            end
+            if player:getSecondaryHandItem() == itemObj then
+                player:setSecondaryHandItem(nil)
+            end
         end
         
         -- 5. Execute Trade
-        DynamicTrading.ServerHelpers.RemoveItem(itemObj)
+        for _, itemObj in ipairs(sellItems) do
+            DynamicTrading.ServerHelpers.RemoveItem(itemObj)
+        end
         
         -- Add money to player
         local bundles = math.floor(totalGain / 100)
@@ -189,7 +252,7 @@ Handlers.TradeTransaction = function(player, args)
         
         -- Update deflation (if tracked)
         if not stockData.deflation then stockData.deflation = {} end
-        stockData.deflation[key] = (stockData.deflation[key] or 0) + 1
+        stockData.deflation[key] = (stockData.deflation[key] or 0) + clientQty
         
         -- Sync stock
         ModData.transmit("DynamicTrading_Stock")
@@ -212,9 +275,9 @@ Handlers.TradeTransaction = function(player, args)
                 if roll == 1 then
                     local sensitivity = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.CategoryDeflation) or 0.02
                     -- Invert heat (Selling reduces inflation/heat)
-                    DynamicTrading_Engine.UpdateHeat(category, -sensitivity)
+                    DynamicTrading_Engine.UpdateHeat(category, -(sensitivity * clientQty))
                     engineData.WorldEconomy.DeflatedGlobal[key] = true
-                    DynamicTrading.Log("DTCommons", "Trade", "Logic", "GLOBAL DEFLATION triggered for category: " .. tostring(category) .. " ( - " .. sensitivity .. ")")
+                    DynamicTrading.Log("DTCommons", "Trade", "Logic", "GLOBAL DEFLATION triggered for category: " .. tostring(category) .. " ( - " .. tostring(sensitivity * clientQty) .. ")")
                 else
                     DynamicTrading.Log("DTCommons", "Trade", "Logic", "Deflation Roll Failed: " .. roll .. "/" .. chance)
                 end
@@ -223,17 +286,23 @@ Handlers.TradeTransaction = function(player, args)
             end
         end
         
-        DynamicTrading.Log("DTCommons", "Trade", "Logic", "SUCCESS: Sold " .. itemObj:getDisplayName())
+        local soldItemName = sellItems[1] and sellItems[1]:getDisplayName() or safeDisplayName
+        if clientQty > 1 then
+            soldItemName = soldItemName .. " x" .. tostring(clientQty)
+        end
+
+        DynamicTrading.Log("DTCommons", "Trade", "Logic", "SUCCESS: Sold " .. soldItemName)
         
         -- Send updated stock to client cache (fixes UI not refreshing)
         DataHandlers.SendSyncStockToPlayer(player, traderID)
         
         DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", { 
             success = true, 
-            itemName = itemObj:getDisplayName(),
+            itemName = soldItemName,
             price = totalGain,
             basePrice = totalBaseGain,
-            isBuy = false
+            isBuy = false,
+            qty = clientQty
         })
     end
 end

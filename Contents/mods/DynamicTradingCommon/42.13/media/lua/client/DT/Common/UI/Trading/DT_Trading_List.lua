@@ -6,13 +6,13 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
     local height = listbox.itemheight
     local d = item.item
     local width = listbox:getWidth()
-    local ui = DT_TradingWindow.instance
 
     -- 1. DRAW CATEGORY HEADER
     if d.isCategory then
         listbox:drawRect(0, y, width, height, 0.9, 0.1, 0.1, 0.1)
         listbox:drawRectBorder(0, y, width, height, 0.3, 0.5, 0.5, 0.5)
 
+        local ui = DT_TradingWindow.instance
         local isCol = ui and ui.collapsed[d.categoryName]
         local prefix = isCol and "[+] " or "[-] "
 
@@ -22,10 +22,7 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
     end
 
     -- 2. LOCK CHECK
-    local isLocked = false
-    if ui and ui.isItemLocked and d.itemID then
-        isLocked = ui:isItemLocked(d.itemID)
-    end
+    local isLocked = d.isLocked == true
 
     -- 3. DRAW LIST ITEM (BACKGROUND)
     if listbox.selected == item.index then
@@ -56,27 +53,18 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
         nameColor = {r=0.5, g=0.5, b=0.5}
     end
 
-    -- Use Pre-calculated values by default
+    -- Use values cached during list construction to keep rendering cheap.
     local statusSuffix = d.statusSuffix or ""
     local isRotten = d.isRotten or false
     local itemName = d.displayName or d.name or "Unknown Item"
-
-    -- [DYNAMIC UPDATE] Live Refresh for Owned Items
-    -- Allows liquids/durability to update instantly without full list rebuilds
-    if invItem then
-        local scriptItem = d.scriptItem or getScriptManager():getItem(d.data.item)
-        if scriptItem then
-            statusSuffix, isRotten = DT_TradingItemUtils.getStatusSuffix(d, invItem, scriptItem)
-            itemName = DT_TradingItemUtils.getItemDisplayName(d, invItem, scriptItem)
-        end
-    end
     
     if isRotten then
         nameColor = {r=0.8, g=0.3, b=0.3}
     end
 
     local finalName = itemName .. statusSuffix
-    local maxNameWidth = width - 210
+    local sellQty = (not d.isBuy) and (tonumber(d.qty) or 1) or 0
+    local maxNameWidth = width - ((sellQty > 1) and 250 or 210)
     local displayName = DT_TradingWindow.TruncateString(finalName, listbox.font, maxNameWidth)
     listbox:drawText(displayName, 45, y + 12, nameColor.r, nameColor.g, nameColor.b, 1, listbox.font)
 
@@ -108,16 +96,11 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
         else
             listbox:drawText("Stock: " .. qty, width - 140, y + 12, 0.7, 0.7, 0.7, 1, listbox.font)
         end
+    elseif sellQty > 1 then
+        listbox:drawText("x" .. sellQty, width - 120, y + 12, 0.7, 0.7, 0.7, 1, listbox.font)
     end
 
-    -- [DYNAMIC UPDATE] Live Price Recalculation
     local displayPrice = d.price
-    if invItem and ui and ui.dataProvider and ui.traderID then
-        local trader = ui.dataProvider:getTrader(ui.traderID, ui.archetype)
-        if trader then
-            displayPrice = ui.dataProvider:getSellPrice(invItem, d.key, trader)
-        end
-    end
 
     listbox:drawText("$" .. displayPrice, width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
 
@@ -180,7 +163,8 @@ function DT_TradingWindow:populateList()
         local targetIndex = -1
         for i = 1, #self.listbox.items do
             local listItem = self.listbox.items[i]
-            if listItem.item and not listItem.item.isCategory and listItem.item.key == self.selectedKey then
+            local selectionKey = listItem.item and (listItem.item.selectionKey or listItem.item.key)
+            if listItem.item and not listItem.item.isCategory and selectionKey == self.selectedKey then
                 targetIndex = i
                 break
             end
@@ -188,21 +172,20 @@ function DT_TradingWindow:populateList()
 
         if targetIndex ~= -1 then
             local checkItem = self.listbox.items[targetIndex].item
-            local isLocked = false
-            if self.isItemLocked then
-                isLocked = self:isItemLocked(checkItem.itemID)
-            end
+            local isLocked = checkItem.isLocked == true
 
             if not isLocked then
                 self.listbox.selected = targetIndex
+                self.selectedKey = checkItem.selectionKey or checkItem.key
+                self.selectedItemID = checkItem.isGrouped and -1 or (checkItem.itemID or -1)
                 foundValidSelection = true
             else
                 for i = targetIndex + 1, #self.listbox.items do
                     local nextItem = self.listbox.items[i].item
-                    if nextItem and not nextItem.isCategory and not self:isItemLocked(nextItem.itemID) then
+                    if nextItem and not nextItem.isCategory and not nextItem.isLocked then
                         self.listbox.selected = i
-                        self.selectedKey = nextItem.key
-                        self.selectedItemID = nextItem.itemID
+                        self.selectedKey = nextItem.selectionKey or nextItem.key
+                        self.selectedItemID = nextItem.isGrouped and -1 or (nextItem.itemID or -1)
                         foundValidSelection = true
                         break
                     end
@@ -220,14 +203,24 @@ function DT_TradingWindow:populateList()
         if self.isBuying then
             self.btnAction:setEnable(sel.qty > 0)
         else
-            local isCurrentlyLocked = false
-            if self.isItemLocked then isCurrentlyLocked = self:isItemLocked(sel.itemID) end
-            
-            if isCurrentlyLocked then
+            local isCurrentlyLocked = sel.isLocked == true
+            local sellQty = tonumber(sel.qty) or 1
+
+            if sellQty > 1 then
+                self.btnAction:setTitle("SELL x" .. sellQty .. " ($" .. sel.price .. " EA)")
+                self.btnAction:setEnable(true)
+                self.btnLock:setTitle("LOCK ITEM")
+                self.btnLock:setEnable(false)
+                self.btnLock:setVisible(false)
+            elseif isCurrentlyLocked then
                 self.btnLock:setTitle("UNLOCK ITEM")
+                self.btnLock:setVisible(true)
+                self.btnLock:setEnable(true)
                 self.btnAction:setEnable(false)
             else
                 self.btnLock:setTitle("LOCK ITEM")
+                self.btnLock:setVisible(true)
+                self.btnLock:setEnable(true)
                 self.btnAction:setEnable(true)
             end
         end
@@ -241,4 +234,5 @@ function DT_TradingWindow:populateList()
     end
 
     self.listbox:setYScroll(oldScroll)
+    self.inventoryDirty = false
 end
