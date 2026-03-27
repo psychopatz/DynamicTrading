@@ -73,20 +73,46 @@ function DT_ManualUI:drawNavItem(y, item, alt)
     local isSelected = row.selected == true
     local isHovered = self.mouseoverselected == item.index
 
-    local bgA, bgR, bgG, bgB = 0.25, 0.08, 0.08, 0.08
+    local bgA, bgR, bgG, bgB = 0.22, 0.07, 0.07, 0.07
+    local titleFont = UIFont.NewSmall
+    local titleR, titleG, titleB = 0.92, 0.92, 0.92
+    local subtitleR, subtitleG, subtitleB = 0.65, 0.65, 0.65
+    local titleY = y + 4
+
+    if row.kind == "manual" then
+        titleFont = UIFont.Medium
+        titleR, titleG, titleB = 0.96, 0.92, 0.76
+        subtitleR, subtitleG, subtitleB = 0.62, 0.72, 0.86
+        bgA, bgR, bgG, bgB = 0.34, 0.10, 0.12, 0.16
+        titleY = y + 6
+    elseif row.kind == "chapter" then
+        titleFont = UIFont.Small
+        titleR, titleG, titleB = 0.76, 0.86, 0.98
+        bgA, bgR, bgG, bgB = 0.16, 0.08, 0.11, 0.15
+        titleY = y + 5
+    end
+
     if isSelected then
         bgA, bgR, bgG, bgB = 0.55, 0.15, 0.28, 0.42
     elseif isHovered then
-        bgA, bgR, bgG, bgB = 0.4, 0.16, 0.16, 0.16
+        bgA, bgR, bgG, bgB = 0.35, 0.16, 0.16, 0.16
     end
 
     self:drawRect(0, y, width, height - 1, bgA, bgR, bgG, bgB)
-    local titleFont = row.kind == "manual" and UIFont.Medium or self.font
-    local titleY = row.kind == "manual" and (y + 6) or (y + 4)
-    self:drawText(tostring(row.title or ""), 8 + indent, titleY, 0.95, 0.95, 0.95, 1, titleFont)
+
+    local indicatorOffset = 0
+    if row.expandable then
+        local indicator = row.expanded and "▼" or "▶"
+        self:drawText(indicator, 8 + indent, titleY, 0.70, 0.70, 0.70, 1, UIFont.Small)
+        indicatorOffset = 14
+    end
+
+    self:drawText(tostring(row.title or ""), 8 + indent + indicatorOffset, titleY, titleR, titleG, titleB, 1, titleFont)
 
     if row.kind == "manual" and row.subtitle and row.subtitle ~= "" then
-        self:drawText(DynamicTrading.Utils.TruncateString(row.subtitle, UIFont.Small, width - 24 - indent), 8 + indent, y + 28, 0.65, 0.65, 0.65, 1, UIFont.Small)
+        self:drawText(DynamicTrading.Utils.TruncateString(row.subtitle, UIFont.Small, width - 24 - indent - indicatorOffset), 8 + indent + indicatorOffset, y + 28, subtitleR, subtitleG, subtitleB, 1, UIFont.Small)
+    elseif row.kind == "chapter" then
+        self:drawRect(8 + indent + indicatorOffset, y + height - 4, math.max(34, DT_ManualUI_Utils.safeMeasure(UIFont.Small, tostring(row.title or "")) + 4), 1, 0.55, 0.30, 0.52, 0.78)
     end
 
     return y + height
@@ -120,11 +146,12 @@ function DT_ManualUI:drawContentItem(y, item, alt)
 
     if block.kind == "heading" then
         local isHighlighted = block.id and block.id == DT_ManualUI.instance.highlightSectionId
-        self:drawRect(0, y, width, height - 1, isHighlighted and 0.45 or 0.12, isHighlighted and 0.25 or 0.08, isHighlighted and 0.22 or 0.08, isHighlighted and 0.10 or 0.08)
+        self:drawRect(0, y, width, height - 1, isHighlighted and 0.48 or 0.18, isHighlighted and 0.27 or 0.09, isHighlighted and 0.22 or 0.10, isHighlighted and 0.09 or 0.10)
+        self:drawRect(0, y, 4, height - 1, 0.85, isHighlighted and 0.90 or 0.74, isHighlighted and 0.73 or 0.58, isHighlighted and 0.22 or 0.16)
         local font = block.font or UIFont.Medium
         local lineY = y + 8
         for _, line in ipairs(block.lines or {}) do
-            self:drawText(line, padding, lineY, 1, 0.92, 0.70, 1, font)
+            self:drawText(line, padding + 6, lineY, 1, 0.88, 0.52, 1, font)
             lineY = lineY + 22
         end
         if block.id then
@@ -132,6 +159,7 @@ function DT_ManualUI:drawContentItem(y, item, alt)
             local anchorW = DT_ManualUI_Utils.safeMeasure(UIFont.Small, anchorText)
             self:drawText(anchorText, width - anchorW - 8, y + 6, 0.55, 0.55, 0.55, 1, UIFont.Small)
         end
+        self:drawRect(padding + 6, y + height - 5, math.max(42, math.min(width - (padding * 4), 120)), 1, 0.65, 0.74, 0.58, 0.16)
         return y + height
     end
 
@@ -176,10 +204,10 @@ function DT_ManualUI:drawContentItem(y, item, alt)
         return y + height
     end
 
-    self:drawRect(0, y, width, height - 1, 0.10, 0.06, 0.06, 0.06)
+    self:drawRect(0, y, width, height - 1, 0.10, 0.05, 0.05, 0.05)
     local lineY = y + 8
     for _, line in ipairs(block.lines or {}) do
-        self:drawText(line, padding, lineY, 0.92, 0.92, 0.92, 1, UIFont.NewSmall)
+        self:drawText(line, padding, lineY, 0.84, 0.86, 0.88, 1, UIFont.NewSmall)
         lineY = lineY + 18
     end
 

@@ -21,7 +21,11 @@ DT_ConfigManager.defaultSettings = {
     volGeneral = 0.5,
     lastManualId = "",
     lastManualPageId = "",
-    lastManualSectionId = ""
+    lastManualSectionId = "",
+    lastSeenReleaseVersion = "",
+    lastAutoOpenedReleaseVersion = "",
+    disabledAutoOpenReleaseVersion = "",
+    dismissedSupportBannerVersion = ""
 }
 
 -- This table holds the *active* settings
@@ -58,6 +62,10 @@ function DT_ConfigManager.save()
         fileWriter:write("lastManualId=" .. tostring(DT_ConfigManager.settings.lastManualId or "") .. "\r\n")
         fileWriter:write("lastManualPageId=" .. tostring(DT_ConfigManager.settings.lastManualPageId or "") .. "\r\n")
         fileWriter:write("lastManualSectionId=" .. tostring(DT_ConfigManager.settings.lastManualSectionId or "") .. "\r\n")
+        fileWriter:write("lastSeenReleaseVersion=" .. tostring(DT_ConfigManager.settings.lastSeenReleaseVersion or "") .. "\r\n")
+        fileWriter:write("lastAutoOpenedReleaseVersion=" .. tostring(DT_ConfigManager.settings.lastAutoOpenedReleaseVersion or "") .. "\r\n")
+        fileWriter:write("disabledAutoOpenReleaseVersion=" .. tostring(DT_ConfigManager.settings.disabledAutoOpenReleaseVersion or "") .. "\r\n")
+        fileWriter:write("dismissedSupportBannerVersion=" .. tostring(DT_ConfigManager.settings.dismissedSupportBannerVersion or "") .. "\r\n")
         
         -- Save Window States
         if DT_ConfigManager.settings.windows then
@@ -129,6 +137,18 @@ function DT_ConfigManager.load()
         end
         if string.find(line, "lastManualSectionId=") then
             DT_ConfigManager.settings.lastManualSectionId = string.sub(line, 21)
+        end
+        if string.find(line, "lastSeenReleaseVersion=") then
+            DT_ConfigManager.settings.lastSeenReleaseVersion = string.sub(line, 24)
+        end
+        if string.find(line, "lastAutoOpenedReleaseVersion=") then
+            DT_ConfigManager.settings.lastAutoOpenedReleaseVersion = string.sub(line, 30)
+        end
+        if string.find(line, "disabledAutoOpenReleaseVersion=") then
+            DT_ConfigManager.settings.disabledAutoOpenReleaseVersion = string.sub(line, 32)
+        end
+        if string.find(line, "dismissedSupportBannerVersion=") then
+            DT_ConfigManager.settings.dismissedSupportBannerVersion = string.sub(line, 31)
         end
         
         -- Window State Parsing: window_ID=x,y,w,h
@@ -245,6 +265,42 @@ function DT_ConfigManager.getLastManualLocation()
         pageId = DT_ConfigManager.settings.lastManualPageId or "",
         sectionId = DT_ConfigManager.settings.lastManualSectionId or "",
     }
+end
+
+function DT_ConfigManager.setLastSeenReleaseVersion(version)
+    DT_ConfigManager.settings.lastSeenReleaseVersion = tostring(version or "")
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getLastSeenReleaseVersion()
+    return tostring(DT_ConfigManager.settings.lastSeenReleaseVersion or "")
+end
+
+function DT_ConfigManager.setLastAutoOpenedReleaseVersion(version)
+    DT_ConfigManager.settings.lastAutoOpenedReleaseVersion = tostring(version or "")
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getLastAutoOpenedReleaseVersion()
+    return tostring(DT_ConfigManager.settings.lastAutoOpenedReleaseVersion or "")
+end
+
+function DT_ConfigManager.setDisabledAutoOpenReleaseVersion(version)
+    DT_ConfigManager.settings.disabledAutoOpenReleaseVersion = tostring(version or "")
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getDisabledAutoOpenReleaseVersion()
+    return tostring(DT_ConfigManager.settings.disabledAutoOpenReleaseVersion or "")
+end
+
+function DT_ConfigManager.setDismissedSupportBannerVersion(version)
+    DT_ConfigManager.settings.dismissedSupportBannerVersion = tostring(version or "")
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getDismissedSupportBannerVersion()
+    return tostring(DT_ConfigManager.settings.dismissedSupportBannerVersion or "")
 end
 
 

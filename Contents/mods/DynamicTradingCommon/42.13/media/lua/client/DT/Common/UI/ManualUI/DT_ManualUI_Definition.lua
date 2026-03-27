@@ -7,28 +7,63 @@ DynamicTrading.Manuals = DynamicTrading.Manuals or {}
 DT_ManualUI = DT_ManualUI or ISCollapsableWindow:derive("DT_ManualUI")
 DT_ManualUI.instance = DT_ManualUI.instance or nil
 
+local function dtEnsureManualUIModulesLoaded()
+    if DT_ManualUI._modulesLoading then
+        return
+    end
+
+    if DT_ManualUI.loadManualData and DT_ManualUI.refreshLayout and DT_ManualUI.drawContentItem and DT_ManualUI.onSearchButton then
+        return
+    end
+
+    DT_ManualUI._modulesLoading = true
+
+    -- Load the implementation files directly so Open() does not depend on
+    -- ManualUI.lua being fully evaluated first.
+    require "DT/Common/UI/ManualUI/DT_ManualUI_Utils"
+    require "DT/Common/UI/ManualUI/DT_ManualUI_Layout"
+    require "DT/Common/UI/ManualUI/DT_ManualUI_Data"
+    require "DT/Common/UI/ManualUI/DT_ManualUI_Search"
+    require "DT/Common/UI/ManualUI/DT_ManualUI_Render"
+    require "DT/Common/UI/ManualUI/DT_ManualUI_Interactions"
+
+    DT_ManualUI._modulesLoading = false
+end
+
 function DT_ManualUI:initialise()
     ISCollapsableWindow.initialise(self)
     self:setTitle("Dynamic Trading Manuals")
     self:setResizable(true)
 
+    self.viewMode = self.viewMode or "manuals"
     self.currentManualId = nil
     self.currentPageId = nil
+    self.currentReleaseVersion = nil
+    self.currentManualType = "manual"
+    self.currentPopupVersion = ""
     self.highlightSectionId = nil
     self.results = {}
     self.navRows = {}
     self.manuals = {}
+    self.allManuals = {}
     self.pageByManual = {}
     self.pageLookup = {}
     self.blockSectionIndex = {}
+    self.collapsedManuals = {}
+    self.collapsedChapters = {}
     self.resultsVisible = false
+    self.showUpdateToggle = false
+    self._refreshingUpdateToggle = false
+    self.showSupportBanner = false
+    self.supportBannerManual = nil
+    self.supportBannerVersion = ""
 end
 
 function DT_ManualUI:close()
     if DT_ConfigManager and DT_ConfigManager.setWindowState then
         DT_ConfigManager.setWindowState("ManualUI", self:getX(), self:getY(), self:getWidth(), self:getHeight())
     end
-    if DT_ConfigManager and DT_ConfigManager.setLastManualLocation then
+    if self.viewMode == "manuals" and DT_ConfigManager and DT_ConfigManager.setLastManualLocation then
         DT_ConfigManager.setLastManualLocation(self.currentManualId, self.currentPageId, self.highlightSectionId)
     end
 
@@ -38,6 +73,8 @@ function DT_ManualUI:close()
 end
 
 function DT_ManualUI.Open(args)
+    dtEnsureManualUIModulesLoaded()
+
     if DT_ManualUI.instance then
         DT_ManualUI.instance:close()
     end
@@ -58,6 +95,7 @@ function DT_ManualUI.Open(args)
     end
 
     local ui = DT_ManualUI:new(x, y, width, height)
+    ui.viewMode = args and args.viewMode or "manuals"
     ui:initialise()
     ui:addToUIManager()
     ui:loadManualData()
@@ -65,6 +103,12 @@ function DT_ManualUI.Open(args)
 
     DT_ManualUI.instance = ui
     return ui
+end
+
+function DT_ManualUI:refreshWindowTitle()
+    local title = self.viewMode == "updates" and "Dynamic Trading Updates" or "Dynamic Trading Manuals"
+    self:setTitle(title)
+    self.title = title
 end
 
 function DT_ManualUI:new(x, y, width, height)
@@ -78,4 +122,21 @@ end
 
 DynamicTrading.Manuals.Open = function(args)
     return DT_ManualUI.Open(args or {})
+end
+
+DynamicTrading.Manuals.OpenUpdates = function(args)
+    args = args or {}
+    args.viewMode = "updates"
+    return DT_ManualUI.Open(args)
+end
+
+DynamicTrading.Manuals.OpenSupport = function(args)
+    args = args or {}
+    local manual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("support") or nil
+    if manual then
+        args.viewMode = "manuals"
+        args.manualId = args.manualId or manual.id
+        args.pageId = args.pageId or manual.startPageId
+    end
+    return DT_ManualUI.Open(args)
 end

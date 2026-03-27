@@ -189,16 +189,25 @@ end
 function DT_OptionsUI:createManualChildren(panel)
     local pad = 20
     local y = 20
-    local registry = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Registry or {}
-    local ordered = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Order or {}
+    local manuals = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.GetOrderedLibraryManuals and DynamicTrading.Manuals.GetOrderedLibraryManuals() or {}
+    local whatsNew = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestWhatsNewManual and DynamicTrading.Manuals.GetLatestWhatsNewManual() or nil
 
     local lbl = ISLabel:new(pad, y, 20, "Game Manuals", 1, 1, 1, 1, UIFont.Medium, true)
     panel:addChild(lbl)
     y = y + 35
 
-    local description = ISLabel:new(pad, y, 20, "Open the shared manual browser here, or use the Dynamic Trading Help right-click menu in-game.", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
+    local description = ISLabel:new(pad, y, 20, "Open the manual browser, jump to the latest update notes, or browse the manuals that match your active DT modules.", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
     panel:addChild(description)
     y = y + 30
+
+    if whatsNew then
+        local openWhatsNew = ISButton:new(pad, y, 180, 28, "Open What's New", self, function()
+            DynamicTrading.Manuals.OpenUpdates({ manualId = whatsNew.id, pageId = whatsNew.startPageId })
+        end)
+        openWhatsNew:initialise()
+        panel:addChild(openWhatsNew)
+        y = y + 40
+    end
 
     local openLibrary = ISButton:new(pad, y, 180, 28, "Open Manual Library", self, function()
         DynamicTrading.Manuals.Open({ library = true })
@@ -208,9 +217,8 @@ function DT_OptionsUI:createManualChildren(panel)
     y = y + 40
 
     local hasManuals = false
-    for _, manualId in ipairs(ordered) do
-        local manual = registry[manualId]
-        if manual then
+    for _, manual in ipairs(manuals) do
+        if manual and manual.isWhatsNew ~= true then
             hasManuals = true
             local manualData = manual
             local btn = ISButton:new(pad, y, math.min(self.width - (pad * 3), 320), 26, manualData.title or manualData.id, self, function()

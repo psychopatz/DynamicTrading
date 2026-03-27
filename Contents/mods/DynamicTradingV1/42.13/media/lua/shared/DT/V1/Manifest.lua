@@ -7,6 +7,10 @@
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
+if DynamicTrading.Manuals and DynamicTrading.Manuals.MarkAudienceActive then
+    DynamicTrading.Manuals.MarkAudienceActive("v1", true)
+end
+
 -- 1. CONFIGURATION & RULES (Shared)
 require "DT/Common/Config"
 require "DT/Common/Tags"

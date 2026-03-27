@@ -3,6 +3,10 @@ DynamicTrading = DynamicTrading or {}
 DynamicTrading.V2 = {}
 DynamicTrading.V2.Config = {}
 
+if DynamicTrading.Manuals and DynamicTrading.Manuals.MarkAudienceActive then
+    DynamicTrading.Manuals.MarkAudienceActive("v2", true)
+end
+
 
 -- =============================================================================
 -- FACTION SYSTEM CONFIGURATION (LEGACY ALIAS)

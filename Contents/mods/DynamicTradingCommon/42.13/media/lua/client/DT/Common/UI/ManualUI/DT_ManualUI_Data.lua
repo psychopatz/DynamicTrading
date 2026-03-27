@@ -3,37 +3,28 @@ require "DT/Common/UI/ManualUI/DT_ManualUI_Utils"
 
 function DT_ManualUI:loadManualData()
     local registry = DynamicTrading.Manuals and DynamicTrading.Manuals.Registry or {}
-    local orderedIds = DynamicTrading.Manuals and DynamicTrading.Manuals.Order or {}
 
     self.manuals = {}
+    self.allManuals = {}
     self.pageByManual = {}
     self.pageLookup = {}
     self.blockSectionIndex = {}
 
-    for _, manualId in ipairs(orderedIds) do
-        if registry[manualId] then
-            table.insert(self.manuals, registry[manualId])
-        end
-    end
-
-    for manualId, manual in pairs(registry) do
-        local tracked = false
-        for _, existing in ipairs(self.manuals) do
-            if existing.id == manualId then
-                tracked = true
-                break
-            end
-        end
-        if not tracked then
+    if DynamicTrading.Manuals and self.viewMode == "updates" and DynamicTrading.Manuals.GetOrderedUpdateManuals then
+        self.manuals = DynamicTrading.Manuals.GetOrderedUpdateManuals()
+    elseif DynamicTrading.Manuals and DynamicTrading.Manuals.GetOrderedLibraryManuals then
+        self.manuals = DynamicTrading.Manuals.GetOrderedLibraryManuals()
+    else
+        for _, manual in pairs(registry) do
             table.insert(self.manuals, manual)
         end
     end
 
-    table.sort(self.manuals, function(a, b)
-        return DT_ManualUI_Utils.lowercase(a.title) < DT_ManualUI_Utils.lowercase(b.title)
-    end)
+    for _, manual in pairs(registry) do
+        self.allManuals[manual.id] = manual
+    end
 
-    for _, manual in ipairs(self.manuals) do
+    for _, manual in pairs(self.allManuals) do
         local pageMap = {}
         for _, page in ipairs(manual.pages or {}) do
             pageMap[page.id] = page
@@ -51,6 +42,46 @@ function DT_ManualUI:loadManualData()
             self.blockSectionIndex[manual.id .. "::" .. tostring(page.id)] = sectionMap
         end
         self.pageByManual[manual.id] = pageMap
+    end
+
+    self:refreshSupportBannerState()
+end
+
+function DT_ManualUI:refreshSupportBannerState()
+    local manual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("support") or nil
+    local version = manual and tostring(manual.popupVersion or manual.releaseVersion or manual.id or "") or ""
+    local dismissedVersion = DT_ConfigManager and DT_ConfigManager.getDismissedSupportBannerVersion and DT_ConfigManager.getDismissedSupportBannerVersion() or ""
+
+    self.supportBannerManual = manual
+    self.supportBannerVersion = version
+    self.showSupportBanner = manual ~= nil and version ~= "" and dismissedVersion ~= version and self.currentManualId ~= manual.id
+end
+
+function DT_ManualUI:isManualExpanded(manualId)
+    return self.collapsedManuals[tostring(manualId or "")] ~= true
+end
+
+function DT_ManualUI:isChapterExpanded(manualId, chapterId)
+    local key = tostring(manualId or "") .. "::" .. tostring(chapterId or "")
+    return self.collapsedChapters[key] ~= true
+end
+
+function DT_ManualUI:toggleManualExpanded(manualId)
+    local key = tostring(manualId or "")
+    self.collapsedManuals[key] = self:isManualExpanded(key)
+end
+
+function DT_ManualUI:toggleChapterExpanded(manualId, chapterId)
+    local key = tostring(manualId or "") .. "::" .. tostring(chapterId or "")
+    self.collapsedChapters[key] = self:isChapterExpanded(manualId, chapterId)
+end
+
+function DT_ManualUI:ensureExpandedPath(manualId, chapterId)
+    if manualId then
+        self.collapsedManuals[tostring(manualId)] = false
+    end
+    if manualId and chapterId then
+        self.collapsedChapters[tostring(manualId) .. "::" .. tostring(chapterId)] = false
     end
 end
 
@@ -79,7 +110,7 @@ end
 function DT_ManualUI:openLocation(args)
     args = args or {}
 
-    if not args.manualId and not args.pageId and not args.sectionId and args.library ~= true and not args.query then
+    if self.viewMode ~= "updates" and not args.manualId and not args.pageId and not args.sectionId and args.library ~= true and not args.query then
         local saved = DT_ManualUI_Utils.getSavedLocation()
         if saved then
             args = saved
@@ -92,7 +123,10 @@ function DT_ManualUI:openLocation(args)
     if args.library == true then
         self.currentManualId = nil
         self.currentPageId = nil
+        self.currentManualType = "manual"
+        self.currentPopupVersion = ""
         self.highlightSectionId = nil
+        self:refreshSupportBannerState()
         self:refreshNavigation()
         self:refreshContent()
         return
@@ -101,26 +135,35 @@ function DT_ManualUI:openLocation(args)
     if args.manualId and args.pageId then
         manual, page = self:resolvePage(args.manualId, args.pageId)
     elseif args.manualId then
-        for _, candidate in ipairs(self.manuals) do
-            if candidate.id == args.manualId then
-                manual = candidate
-                page = self:getStartPage(candidate)
-                break
-            end
+        local candidate = self.allManuals and self.allManuals[args.manualId] or nil
+        if candidate then
+            manual = candidate
+            page = self:getStartPage(candidate)
         end
     elseif self.currentManualId and self.currentPageId then
         manual, page = self:resolvePage(self.currentManualId, self.currentPageId)
     end
 
     if not manual and #self.manuals > 0 then
-        manual = self.manuals[1]
+        if DynamicTrading.Manuals and DynamicTrading.Manuals.GetDefaultManual then
+            manual = DynamicTrading.Manuals.GetDefaultManual(self.manuals)
+        end
+        manual = manual or self.manuals[1]
         page = self:getStartPage(manual)
     end
 
     self.currentManualId = manual and manual.id or nil
     self.currentPageId = page and page.id or nil
     self.highlightSectionId = args.sectionId
+    self.currentReleaseVersion = manual and manual.releaseVersion or nil
+    self.currentManualType = manual and tostring(manual.manualType or "manual") or "manual"
+    self.currentPopupVersion = manual and tostring(manual.popupVersion or manual.releaseVersion or "") or ""
 
+    if manual then
+        self:ensureExpandedPath(manual.id, page and page.chapterId or nil)
+    end
+
+    self:refreshSupportBannerState()
     self:refreshNavigation()
     self:refreshContent()
 
@@ -146,6 +189,8 @@ function DT_ManualUI:refreshNavigation()
     self.navRows = {}
 
     for _, manual in ipairs(self.manuals) do
+        local manualExpanded = self:isManualExpanded(manual.id)
+        local chapters = manual.chapters or {}
         local manualRow = {
             kind = "manual",
             manualId = manual.id,
@@ -153,41 +198,61 @@ function DT_ManualUI:refreshNavigation()
             subtitle = manual.description or "",
             depth = 0,
             selected = manual.id == self.currentManualId,
+            expandable = (#chapters > 0),
+            expanded = manualExpanded,
         }
         table.insert(self.navRows, manualRow)
         local manualItem = self.navList:addItem(manual.title, manualRow)
         manualItem.height = (manual.description and manual.description ~= "") and 54 or 30
 
-        local chapters = manual.chapters or {}
-        for _, chapter in ipairs(chapters) do
-            local chapterRow = {
-                kind = "chapter",
-                manualId = manual.id,
-                chapterId = chapter.id,
-                title = chapter.title,
-                subtitle = chapter.description or "",
-                depth = 1,
-                selected = false,
-            }
-            table.insert(self.navRows, chapterRow)
-            local chapterItem = self.navList:addItem(chapter.title, chapterRow)
-            chapterItem.height = 24
+        if manualExpanded then
+            for _, chapter in ipairs(chapters) do
+                local chapterExpanded = self:isChapterExpanded(manual.id, chapter.id)
+                local firstPageId = nil
+                local pageCount = 0
+                for _, page in ipairs(manual.pages or {}) do
+                    if page.chapterId == chapter.id then
+                        pageCount = pageCount + 1
+                        if not firstPageId then
+                            firstPageId = page.id
+                        end
+                    end
+                end
 
-            for _, page in ipairs(manual.pages or {}) do
-                if page.chapterId == chapter.id then
-                    local pageRow = {
-                        kind = "page",
-                        manualId = manual.id,
-                        pageId = page.id,
-                        chapterId = page.chapterId,
-                        title = page.title,
-                        subtitle = table.concat(page.keywords or {}, ", "),
-                        depth = 2,
-                        selected = page.id == self.currentPageId and manual.id == self.currentManualId,
-                    }
-                    table.insert(self.navRows, pageRow)
-                    local pageItem = self.navList:addItem(page.title, pageRow)
-                    pageItem.height = 24
+                local chapterRow = {
+                    kind = "chapter",
+                    manualId = manual.id,
+                    chapterId = chapter.id,
+                    title = chapter.title,
+                    subtitle = chapter.description or "",
+                    depth = 1,
+                    selected = false,
+                    expandable = pageCount > 0,
+                    expanded = chapterExpanded,
+                    firstPageId = firstPageId,
+                }
+                table.insert(self.navRows, chapterRow)
+                local chapterItem = self.navList:addItem(chapter.title, chapterRow)
+                chapterItem.height = 24
+
+                if chapterExpanded then
+                    for _, page in ipairs(manual.pages or {}) do
+                        if page.chapterId == chapter.id then
+                            local pageRow = {
+                                kind = "page",
+                                manualId = manual.id,
+                                pageId = page.id,
+                                chapterId = page.chapterId,
+                                title = page.title,
+                                subtitle = table.concat(page.keywords or {}, ", "),
+                                depth = 2,
+                                selected = page.id == self.currentPageId and manual.id == self.currentManualId,
+                            }
+                            table.insert(self.navRows, pageRow)
+                            local pageItem = self.navList:addItem(page.title, pageRow)
+                            pageItem.height = 24
+                        end
+                    end
                 end
             end
         end
@@ -220,7 +285,9 @@ function DT_ManualUI:refreshContent()
     self.contentList:clear()
 
     if not self.currentManualId or not self.currentPageId then
-        self.pageTitle:setName("Manual Library")
+        self.currentReleaseVersion = nil
+        self.pageTitle:setName(self.viewMode == "updates" and "Update History" or "Manual Library")
+        self:refreshUpdateControls()
         for _, manual in ipairs(self.manuals) do
             local item = self.contentList:addItem(manual.title, {
                 kind = "library",
@@ -235,11 +302,15 @@ function DT_ManualUI:refreshContent()
 
     local manual, page = self:resolvePage(self.currentManualId, self.currentPageId)
     if not manual or not page then
-        self.pageTitle:setName("Manual")
+        self.currentReleaseVersion = nil
+        self.pageTitle:setName(self.viewMode == "updates" and "Update" or "Manual")
+        self:refreshUpdateControls()
         return
     end
 
+    self.currentReleaseVersion = manual.releaseVersion or nil
     self.pageTitle:setName(manual.title .. " / " .. page.title)
+    self:refreshUpdateControls()
 
     for _, block in ipairs(page.blocks or {}) do
         local prepared = self:prepareBlock(block)

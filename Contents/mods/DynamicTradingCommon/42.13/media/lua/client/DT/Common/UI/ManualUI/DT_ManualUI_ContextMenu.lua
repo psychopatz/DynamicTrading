@@ -1,5 +1,3 @@
-require "DT/Common/UI/ManualUI/DT_ManualUI_Utils"
-
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manuals = DynamicTrading.Manuals or {}
 
@@ -17,36 +15,10 @@ local function hasAnyManuals(registry)
     return false
 end
 
-local function addManualEntries(context)
-    local registry = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Registry or {}
-    local ordered = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Order or {}
-
-    for _, manualId in ipairs(ordered) do
-        local manual = registry[manualId]
-        if manual then
-            context:addOption("Manual: " .. tostring(manual.title or manual.id), nil, function()
-                DynamicTrading.Manuals.Open({ manualId = manual.id })
-            end)
-        end
-    end
-end
-
 function DT_ManualContextMenu.populate(context)
     context:addOption("Dynamic Trading Help", nil, function()
         DynamicTrading.Manuals.Open({ library = true })
     end)
-
-    local saved = DT_ManualUI_Utils.getSavedLocation()
-    if saved and saved.manualId then
-        context:addOption("Resume Dynamic Trading Manual", nil, function()
-            DynamicTrading.Manuals.Open(saved)
-        end)
-    end
-
-    local registry = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Registry or {}
-    if hasAnyManuals(registry) then
-        addManualEntries(context)
-    end
 end
 
 function DT_ManualContextMenu.addRootMenu(context)

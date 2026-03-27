@@ -23,7 +23,63 @@ function DT_ManualUI:onHomeButton()
     self.currentManualId = nil
     self.currentPageId = nil
     self.highlightSectionId = nil
+    self.currentManualType = "manual"
+    self.currentPopupVersion = ""
+    if self.refreshSupportBannerState then
+        self:refreshSupportBannerState()
+    end
+    if self.refreshLayout then
+        self:refreshLayout()
+    end
     self:refreshNavigation()
+    self:refreshContent()
+end
+
+function DT_ManualUI:onUpdateAutoOpenTick(index, selected)
+    if self._refreshingUpdateToggle then
+        return
+    end
+
+    if index ~= 1 then
+        return
+    end
+
+    local version = tostring(self.currentPopupVersion or "")
+    if self.currentManualType ~= "whats_new" or version == "" or not DT_ConfigManager or not DT_ConfigManager.setDisabledAutoOpenReleaseVersion then
+        return
+    end
+
+    if selected then
+        DT_ConfigManager.setDisabledAutoOpenReleaseVersion(version)
+    else
+        local disabledVersion = DT_ConfigManager.getDisabledAutoOpenReleaseVersion and DT_ConfigManager.getDisabledAutoOpenReleaseVersion() or ""
+        if disabledVersion == version then
+            DT_ConfigManager.setDisabledAutoOpenReleaseVersion("")
+        end
+    end
+end
+
+function DT_ManualUI:onOpenSupportBanner()
+    local manual = self.supportBannerManual
+    if not manual then
+        return
+    end
+
+    DynamicTrading.Manuals.OpenSupport({
+        manualId = manual.id,
+        pageId = manual.startPageId,
+    })
+end
+
+function DT_ManualUI:onHideSupportBanner()
+    local version = tostring(self.supportBannerVersion or "")
+    if version == "" or not DT_ConfigManager or not DT_ConfigManager.setDismissedSupportBannerVersion then
+        return
+    end
+
+    DT_ConfigManager.setDismissedSupportBannerVersion(version)
+    self:refreshSupportBannerState()
+    self:refreshLayout()
     self:refreshContent()
 end
 
@@ -39,7 +95,22 @@ function DT_ManualUI:onNavMouseDown(x, y)
     end
 
     if entry.kind == "manual" then
+        if entry.expandable then
+            DT_ManualUI.instance:toggleManualExpanded(entry.manualId)
+        end
         DT_ManualUI.instance:openLocation({ manualId = entry.manualId })
+        return
+    end
+
+    if entry.kind == "chapter" then
+        if entry.expandable then
+            DT_ManualUI.instance:toggleChapterExpanded(entry.manualId, entry.chapterId)
+        end
+        if entry.firstPageId then
+            DT_ManualUI.instance:openLocation({ manualId = entry.manualId, pageId = entry.firstPageId })
+        else
+            DT_ManualUI.instance:openLocation({ manualId = entry.manualId })
+        end
         return
     end
 

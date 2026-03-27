@@ -1,0 +1,137 @@
+-- DT_MANUAL_EDITOR_BEGIN
+-- {
+--   "manual_id": "dt_intelligence",
+--   "title": "Faction Intelligence & Logistics",
+--   "description": "A commander's guide to monitoring faction wealth, survival, and economic trends.",
+--   "start_page_id": "intel_overview",
+--   "chapters": [
+--     { "id": "public_intel", "title": "Public Intelligence", "description": "Understanding reputations and basic faction info." },
+--     { "id": "deep_intel", "title": "Deep Logistics", "description": "Monitoring stockpiles, population, and market trends." }
+--   ],
+--   "pages": [
+--     {
+--       "id": "intel_overview",
+--       "chapter_id": "public_intel",
+--       "title": "The Intelligence Window",
+--       "keywords": ["intel", "intelligence", "ui", "window"],
+--       "blocks": [
+--         { "type": "heading", "id": "intel-intro", "level": 1, "text": "Gathering Intelligence" },
+--         { "type": "paragraph", "text": "Knowledge is as valuable as ammunition. The Faction Intelligence window is your tactical dashboard for the entire exclusion zone. It allows you to monitor the health, wealth, and stability of every group you've encountered." },
+--         { "type": "callout", "tone": "info", "title": "Field Tip", "text": "Access the Intelligence window through the main Dynamic Trading menu or use the designated hotkey in your options." }
+--       ]
+--     },
+--     {
+--       "id": "reputation_system",
+--       "chapter_id": "public_intel",
+--       "title": "Reputation & Trust",
+--       "keywords": ["reputation", "trust", "standing", "alignment"],
+--       "blocks": [
+--         { "type": "heading", "id": "trust-mechanics", "level": 1, "text": "Winning Hearts and Minds" },
+--         { "type": "paragraph", "text": "Traders don't trust strangers. Your 'Standing' with a faction determines the prices you get and the items they're willing to show you. Trust is earned through fair trades and fulfilling their needs, and it's lost through hostile actions or ignoring their pleas for help." },
+--         { "type": "image", "path": "media/ui/Icon_MarketInfo.png", "caption": "Your reputation precedes you in every town.", "width": 64, "height": 64 }
+--       ]
+--     },
+--     {
+--       "id": "economics_dashboard",
+--       "chapter_id": "deep_intel",
+--       "title": "Market Trends",
+--       "keywords": ["economics", "market", "trends", "inflation", "multipliers"],
+--       "blocks": [
+--         { "type": "heading", "id": "reading-the-market", "level": 1, "text": "Global Market Dashboard" },
+--         { "type": "paragraph", "text": "The Economics tab is the brain of the market. It shows you exactly how events and inflation are affecting prices across the world. Look for the 'Market Multipliers' to see which categories (like Food or Ammo) are currently volatile." },
+--         { "type": "paragraph", "text": "If you see a 2.50x multiplier on Medical supplies, it’s a sign of a global plague or a local raid. Savvy traders use these trends to decide when to sell their stockpiles for maximum profit." }
+--       ]
+--     },
+--     {
+--       "id": "stockpiles_logistics",
+--       "chapter_id": "deep_intel",
+--       "title": "Resource Management",
+--       "keywords": ["stockpiles", "resources", "food", "meds", "supply"],
+--       "blocks": [
+--         { "type": "heading", "id": "monitoring-supplies", "level": 1, "text": "Stockpiles & Attrition" },
+--         { "type": "paragraph", "text": "Every faction maintains a stockpile of essential resources. If their Food or Medical supplies drop to zero, they'll experience 'Attrition'—their members will begin to die from neglect." },
+--         { "type": "paragraph", "text": "By monitoring these levels, you can predict what a faction needs most. Selling them a crate of canned food when they're starving isn't just profitable; it keeps their market alive." }
+--       ]
+--     },
+--     {
+--       "id": "population_roster",
+--       "chapter_id": "deep_intel",
+--       "title": "The Human Cost",
+--       "keywords": ["population", "roster", "members", "survival", "dead"],
+--       "blocks": [
+--         { "type": "heading", "id": "roster-management", "level": 1, "text": "Faction Roster" },
+--         { "type": "paragraph", "text": "The Population tab shows every individual member of a faction. You can track their status—whether they're out trading, guarding a camp, or if they've met a grim end in the streets." },
+--         { "type": "paragraph", "text": "For factions you control, this interface allows you to dispatch workers to specific trade routes or recall them to safety when a storm hits." }
+--       ]
+--     }
+--   ]
+-- }
+-- DT_MANUAL_EDITOR_END
+if DynamicTrading and DynamicTrading.RegisterManual then
+    DynamicTrading.RegisterManual("dt_intelligence", {
+        title = "Faction Intelligence & Logistics",
+ Deborah        description = "A commander's guide to monitoring faction wealth, survival, and economic trends.",
+        startPageId = "intel_overview",
+        chapters = {
+            { id = "public_intel", title = "Public Intelligence", description = "Understanding reputations and basic faction info." },
+            { id = "deep_intel", title = "Deep Logistics", description = "Monitoring stockpiles, population, and market trends." },
+        },
+        pages = {
+            {
+                id = "intel_overview",
+                chapterId = "public_intel",
+                title = "The Intelligence Window",
+                keywords = { "intel", "intelligence", "ui", "window" },
+                blocks = {
+                    { type = "heading", id = "intel-intro", level = 1, text = "Gathering Intelligence" },
+                    { type = "paragraph", text = "Knowledge is as valuable as ammunition. The Faction Intelligence window is your tactical dashboard for the entire exclusion zone. It allows you to monitor the health, wealth, and stability of every group you've encountered." },
+                    { type = "callout", tone = "info", title = "Field Tip", text = "Access the Intelligence window through the main Dynamic Trading menu or use the designated hotkey in your options." },
+                },
+            },
+            {
+                id = "reputation_system",
+                chapterId = "public_intel",
+                title = "Reputation & Trust",
+                keywords = { "reputation", "trust", "standing", "alignment" },
+                blocks = {
+                    { type = "heading", id = "trust-mechanics", level = 1, text = "Winning Hearts and Minds" },
+                    { type = "paragraph", text = "Traders don't trust strangers. Your 'Standing' with a faction determines the prices you get and the items they're willing to show you. Trust is earned through fair trades and fulfilling their needs, and it's lost through hostile actions or ignoring their pleas for help." },
+                    { type = "image", path = "media/ui/Icon_MarketInfo.png", caption = "Your reputation precedes you in every town.", width = 64, height = 64 },
+                },
+            },
+            {
+                id = "economics_dashboard",
+                chapterId = "deep_intel",
+                title = "Market Trends",
+                keywords = { "economics", "market", "trends", "inflation", "multipliers" },
+                blocks = {
+                    { type = "heading", id = "reading-the-market", level = 1, text = "Global Market Dashboard" },
+                    { type = "paragraph", text = "The Economics tab is the brain of the market. It shows you exactly how events and inflation are affecting prices across the world. Look for the 'Market Multipliers' to see which categories (like Food or Ammo) are currently volatile." },
+                    { type = "paragraph", text = "If you see a 2.50x multiplier on Medical supplies, it’s a sign of a global plague or a local raid. Savvy traders use these trends to decide when to sell their stockpiles for maximum profit." },
+                },
+            },
+            {
+                id = "stockpiles_logistics",
+                chapterId = "deep_intel",
+                title = "Resource Management",
+                keywords = { "stockpiles", "resources", "food", "meds", "supply" },
+                blocks = {
+                    { type = "heading", id = "monitoring-supplies", level = 1, text = "Stockpiles & Attrition" },
+                    { type = "paragraph", text = "Every faction maintains a stockpile of essential resources. If their Food or Medical supplies drop to zero, they'll experience 'Attrition'—their members will begin to die from neglect." },
+                    { type = "paragraph", text = "By monitoring these levels, you can predict what a faction needs most. Selling them a crate of canned food when they're starving isn't just profitable; it keeps their market alive." },
+                },
+            },
+            {
+                id = "population_roster",
+                chapterId = "deep_intel",
+                title = "The Human Cost",
+                keywords = { "population", "roster", "members", "survival", "dead" },
+                blocks = {
+                    { type = "heading", id = "roster-management", level = 1, text = "Faction Roster" },
+                    { type = "paragraph", text = "The Population tab shows every individual member of a faction. You can track their status—whether they're out trading, guarding a camp, or if they've met a grim end in the streets." },
+                    { type = "paragraph", text = "For factions you control, this interface allows you to dispatch workers to specific trade routes or recall them to safety when a storm hits." },
+                },
+            },
+        },
+    })
+end
