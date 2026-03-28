@@ -6,18 +6,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Pawnbroker", {
     name = "Pawnbroker",
     allocations = {
-        { tags={"Clothing.Accessory.Jewelry"}, count = 6 },
-        { tags={"Resource.Material.MetalFamily"}, count = 4 },
-        { tags={"Resource.Material.MetalFamily"}, count = 4 },
-        { tags={"Quality.Luxury"}, count = 5 },
-        { tags={"Rarity.Rare"}, count = 3 }
+        { tags={"Clothing.Accessory.Jewelry"}, count = 10 },
+        { tags={"Quality.Luxury"}, count = 8 },
+        { tags={"Electronics"}, count = 5 },
+        { tags={"Rarity.Rare"}, count = 4 },
+        { tags={"Weapon.Melee.Blade"}, count = 3 },
+        { item = "Base.WristWatch_Left_ClassicGold", count = 1 }
     },
+    expertTags = { "Clothing.Accessory.Jewelry", "Quality.Luxury", "Electronics", "Rarity.Rare", "Weapon.Melee.Blade" },
     wants = {
-        ["Electronics"] = 1.2,
-        ["Weapon.Ranged.Firearm"] = 1.2,
-        ["Misc.General"] = 1.5
+        ["Electronics"] = 1.3,
+        ["Literature.Media"] = 1.25,
+        ["Medical.General.Drug"] = 1.2,
+        ["Weapon.Ranged.Ammo"] = 1.15,
+        ["Quality.Luxury"] = 1.1
     },
-    forbid = { "Quality.Waste", "Quality.Waste", "Quality.Waste" }
+    forbid = { "Quality.Waste", "Food.Perishable", "Resource.Material", "Building.Garden", "Building.Furniture.General" }
 })
 
 end

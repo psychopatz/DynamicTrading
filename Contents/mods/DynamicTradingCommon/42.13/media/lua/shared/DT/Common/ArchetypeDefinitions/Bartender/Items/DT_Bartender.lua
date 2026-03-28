@@ -5,17 +5,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Bartender", {
     name = "Barkeep",
     allocations = {
-        { tags={"Food.Drink.Alcohol"}, count = 8 },
-        { tags={"Food.Drink.NonAlcoholic"}, count = 6 },
-        { tags={"Resource.Material.Glass"}, count = 4 },
-        { tags={"Misc.General"}, count = 2 }
+        { tags={"Food.Drink.Alcohol"}, count = 10 },
+        { tags={"Food.NonPerishable.Sweets"}, count = 6 },
+        { tags={"Container.Liquid"}, count = 8 },
+        { tags={"Misc.General"}, count = 5 },
+        { tags={"Clothing.Accessory.Cosmetic"}, count = 2 },
+        { item = "Base.GlassWine", count = 2 }
     },
+    expertTags = { "Food.Drink.Alcohol", "Food.NonPerishable.Sweets", "Container.Liquid", "Misc.General", "Clothing.Accessory.Cosmetic" },
     wants = {
-        ["Food.Perishable.Fruit"] = 1.3,
-        ["Food.Cooking"] = 1.2,
-        ["Quality.Waste"] = 1.1
+        ["Food.Drink.NonAlcoholic"] = 1.3,
+        ["Literature.Book"] = 1.25,
+        ["Literature.Media"] = 1.2,
+        ["Misc.General"] = 1.15,
+        ["Weapon.Melee.Blunt"] = 1.1
     },
-    forbid = { "Weapon", "Weapon.Ranged.Ammo" }
+    forbid = { "Building.Garden", "Tool.General", "Resource.Material.Hardware", "Resource.Fuel", "Building.Survival" }
 })
 
 end

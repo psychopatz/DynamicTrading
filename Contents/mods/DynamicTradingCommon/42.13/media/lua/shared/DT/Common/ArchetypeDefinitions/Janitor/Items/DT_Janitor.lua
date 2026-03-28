@@ -5,18 +5,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Janitor", {
     name = "The Cleaner",
     allocations = {
+        { tags={"Misc.General"}, count = 10 },
+        { tags={"Tool.General"}, count = 6 },
+        { tags={"Resource.Material.Packaging"}, count = 5 },
+        { tags={"Clothing.Accessory.Utility"}, count = 4 },
         { tags={"Container.Liquid"}, count = 8 },
-        { tags={"Misc.General"}, count = 6 },
-        { tags={"Container.Liquid"}, count = 3 },
-        { tags={"Misc.General"}, count = 3 },
-        { tags={"Quality.Waste"}, count = 4 }
+        { item = "Base.Mop", count = 1 }
     },
+    expertTags = { "Misc.General", "Tool.General", "Resource.Material.Packaging", "Clothing.Accessory.Utility", "Misc.General" },
     wants = {
-        ["Clothing.Protective"] = 1.4,
-        ["Clothing"] = 1.2,
-        ["Container.Liquid"] = 1.2
+        ["Clothing"] = 1.3,
+        ["Container.Liquid"] = 1.25,
+        ["Medical.General.Pills"] = 1.2,
+        ["Resource.Fuel"] = 1.15,
+        ["Food.Drink"] = 1.1
     },
-    forbid = { "Food", "Food.Perishable", "Quality.Luxury" }
+    forbid = { "Quality.Luxury", "Weapon.Ranged", "Electronics", "Literature.Media", "Theme.Combat" }
 })
 
 end

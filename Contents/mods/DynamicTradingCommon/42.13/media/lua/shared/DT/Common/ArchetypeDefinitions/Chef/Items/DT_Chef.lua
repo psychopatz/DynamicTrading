@@ -5,19 +5,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Chef", {
     name = "Chef",
     allocations = {
-        { tags={"Food.Cooking"}, count = 6 },
-        { tags={"Food"}, count = 6 },
-        { tags={"Food.Perishable"}, count = 4 },
-        { tags={"Food.Cooking.Spice"}, count = 3 },
-        { tags={"Food.Cooking.Ingredient"}, count = 3 }
+        { tags={"Food.Perishable.Meat"}, count = 5 },
+        { tags={"Food.Perishable.Vegetable"}, count = 8 },
+        { tags={"Tool.Kitchen"}, count = 4 },
+        { tags={"Food.NonPerishable"}, count = 6 },
+        { tags={"Container.Liquid"}, count = 5 },
+        { item = "Base.Pan", count = 1 }
     },
-    expertTags = { "Food", "Food.Cooking.Spice", "Food.Cooking" },
+    expertTags = { "Food.Perishable.Meat", "Food.Perishable.Vegetable", "Tool.Kitchen", "Food.NonPerishable", "Container.Liquid" },
     wants = {
-        ["Resource.Material.Packaging"] = 1.5,
-        ["Resource.Fuel"] = 1.2,
-        ["Container.Liquid"] = 1.2
+        ["Spice.General"] = 1.3,
+        ["Resource.Fuel.Wood"] = 1.25,
+        ["Misc.General"] = 1.2,
+        ["Literature.SkillBook"] = 1.15,
+        ["Container.Liquid"] = 1.1
     },
-    forbid = { "Weapon", "Weapon.Ranged.Ammo", "Quality.Waste" }
+    forbid = { "Resource.Material.Hardware", "Weapon.Ranged.Firearm", "Clothing", "Electronics.Parts", "Quality.Waste" }
 })
 
 end

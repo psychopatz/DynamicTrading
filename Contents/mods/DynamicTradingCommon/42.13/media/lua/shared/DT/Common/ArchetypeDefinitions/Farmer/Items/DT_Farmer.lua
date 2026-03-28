@@ -5,19 +5,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Farmer", {
     name = "Farmer",
     allocations = {
-        { tags={"Food.Perishable.Vegetable"}, count = 6 },
-        { tags={"Food.Perishable.Fruit"}, count = 4 },
-        { tags={"Food.Perishable.Grain"}, count = 4 },
-        { tags={"Building.Garden"}, count = 3 },
-        { tags={"Tool.Farming"}, count = 2 }
+        { tags={"Building.Garden"}, count = 8 },
+        { tags={"Tool.Farming"}, count = 4 },
+        { tags={"Food.Perishable.Vegetable"}, count = 10 },
+        { tags={"Food.Perishable.Fruit"}, count = 6 },
+        { tags={"Resource.Material"}, count = 5 },
+        { item = "Base.HandShovel", count = 1 }
     },
-    expertTags = { "Food.Perishable.Vegetable", "Food.Perishable.Fruit", "Food.Perishable.Grain", "Tool.Farming" },
+    expertTags = { "Building.Garden", "Tool.Farming", "Food.Perishable.Vegetable", "Resource.Material.Wood", "Resource.Material" },
     wants = {
-        ["Tool.General"] = 1.3,
-        ["Container.Liquid"] = 1.2,
-        ["Resource.Fuel"] = 1.2
+        ["Container.Liquid"] = 1.3,
+        ["Tool.Farming"] = 1.3,
+        ["Resource.Fuel"] = 1.25,
+        ["Literature.SkillBook"] = 1.2,
+        ["Tool.General"] = 1.1
     },
-    forbid = { "Weapon.Ranged.Firearm", "Weapon.Ranged.Ammo", "Electronics" }
+    forbid = { "Electronics", "Quality.Luxury", "Weapon.Ranged.Firearm", "Clothing.Accessory.Jewelry", "Theme.Clinical" }
 })
 
 end

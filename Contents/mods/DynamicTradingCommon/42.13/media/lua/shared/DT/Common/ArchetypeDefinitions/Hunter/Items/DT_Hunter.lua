@@ -5,18 +5,21 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Hunter", {
     name = "Trapper",
     allocations = {
+        { tags={"Weapon.Ranged"}, count = 3 },
+        { tags={"Weapon.Ranged.Ammo"}, count = 10 },
+        { tags={"Food.Perishable.Meat"}, count = 8 },
+        { tags={"Clothing"}, count = 3 },
         { tags={"Building.Survival.Trap"}, count = 5 },
-        { tags={"Food.Perishable.Meat"}, count = 5 },
-        { tags={"Resource.Material.Textile"}, count = 4 },
-        { tags={"Theme.Survival"}, count = 3 },
-        { tags={"Resource.Material.Leather"}, count = 2 }
+        { item = "Base.TrapMouse", count = 2 }
     },
-    expertTags = { "Food.Perishable.Meat", "Building.Survival.Trap", "Resource.Material.Textile" },
+    expertTags = { "Weapon.Ranged", "Weapon.Ranged.Ammo", "Food.Perishable.Meat", "Clothing", "Tool.General" },
     wants = {
-        ["Food.Cooking.Spice"] = 1.3,
-        ["Theme.Survival"] = 1.4,
-        ["Weapon.Melee.Blade"] = 1.2
+        ["Container.Capacity"] = 1.3,
+        ["Weapon.Part"] = 1.25,
+        ["Literature.SkillBook"] = 1.2,
+        ["Medical.Consumable"] = 1.15,
+        ["Resource.Fuel"] = 1.1
     },
-    forbid = { "Electronics", "Resource.Material.Paper", "Misc.General" }
+    forbid = { "Building.Furniture.Decor", "Electronics", "Clothing.Accessory.Jewelry", "Building.Garden", "Theme.Clinical" }
 })
 end

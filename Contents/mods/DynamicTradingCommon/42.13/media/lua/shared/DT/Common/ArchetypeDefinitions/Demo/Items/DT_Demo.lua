@@ -5,17 +5,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Demo", {
     name = "Demo Expert",
     allocations = {
-        { tags={"Resource.Material.Metal"}, count = 6 },
-        { tags={"Weapon.Explosive"}, count = 4 },
-        { tags={"Resource.Fuel"}, count = 4 },
-        { tags={"Electronics"}, count = 3 }
+        { tags={"Weapon.Explosive"}, count = 5 },
+        { tags={"Resource.Fuel"}, count = 6 },
+        { tags={"Resource.Material.Metal"}, count = 8 },
+        { tags={"Electronics"}, count = 5 },
+        { tags={"Resource.Material.Adhesive"}, count = 10 },
+        { item = "Base.Lighter", count = 2 }
     },
+    expertTags = { "Weapon.Explosive", "Resource.Fuel", "Tool.General", "Resource.Material.Adhesive", "Theme.Combat" },
     wants = {
-        ["Resource.Material.General"] = 2.0,
-        ["Resource.Craftable"] = 1.5,
-        ["Medical.General"] = 1.2
+        ["Electronics.Battery"] = 1.4,
+        ["Electronics"] = 1.35,
+        ["Resource.Material.Adhesive"] = 1.3,
+        ["Clothing"] = 1.25,
+        ["Food.Drink"] = 1.15
     },
-    forbid = { "Tool.Fragile", "Resource.Material.Glass", "Building.Furniture.Decor" }
+    forbid = { "Literature.Book", "Building.Garden", "Medical.Healthcare.Botanical", "Clothing.Dress", "Building.Furniture.Decor" }
 })
 
 end

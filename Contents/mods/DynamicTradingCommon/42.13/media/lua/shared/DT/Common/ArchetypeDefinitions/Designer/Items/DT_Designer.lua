@@ -6,20 +6,21 @@ DynamicTrading.RegisterArchetype("Designer", {
     name = "Home Stager",
     allocations = {
         { tags={"Building.Furniture.Decor"}, count = 10 },
-        { tags={"Resource.Material.Hardware"}, count = 4 },
-        { tags={"Building.Fixture.Appliance"}, count = 4 },
-        { tags={"Container.Bag.General"}, count = 3 },
-        { tags={"Building.Fixture.Appliance"}, count = 1 },
+        { tags={"Building.Fixture.Appliance"}, count = 5 },
         { tags={"Building.Furniture.Counter"}, count = 4 },
-        { tags={"Building.Furniture.Bed"}, count = 1 },
-        { tags={"Building.Furniture.General"}, count = 1 }
+        { tags={"Resource.Material.Hardware"}, count = 6 },
+        { tags={"Clothing.Accessory.Cosmetic"}, count = 3 },
+        { item = "Base.Paintbrush", count = 1 }
     },
+    expertTags = { "Building.Furniture.Decor", "Clothing.Accessory.Cosmetic", "Misc.General", "Literature.Media", "Quality.Luxury" },
     wants = {
-        ["Container.Liquid"] = 1.3,
-        ["Resource.Material.Textile"] = 1.2,
-        ["Resource.Material.Textile"] = 1.1
+        ["Misc.General"] = 1.3,
+        ["Literature.Book"] = 1.25,
+        ["Electronics.LightSource"] = 1.2,
+        ["Resource.Material.Adhesive"] = 1.15,
+        ["Food.Drink.NonAlcoholic"] = 1.1
     },
-    forbid = { "Weapon", "Quality.Waste", "Quality.Waste" }
+    forbid = { "Weapon.Explosive", "Resource.Fuel", "Building.Survival.Trap", "Medical.General.Drug", "Tool.Farming" }
 })
 
 end

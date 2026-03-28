@@ -6,17 +6,20 @@ DynamicTrading.RegisterArchetype("Blacksmith", {
     allocations = {
         { tags={"Resource.Material.Metal"}, count = 8 },
         { tags={"Resource.Material.MetalForm"}, count = 4 },
-        { tags={"Resource.Fuel.Solid"}, count = 3 },
-        { tags={"Resource.Material.Glass"}, count = 1 },
-        { tags={"Resource.Material.Hardware"}, count = 1 },
-        { tags={"Resource.Material.MetalFamily"}, count = 1 }
+        { tags={"Resource.Fuel"}, count = 5 },
+        { tags={"Weapon.Melee.General"}, count = 2 },
+        { tags={"Tool.General"}, count = 3 },
+        { item = "Base.MeltingPot", count = 1 }
     },
+    expertTags = { "Resource.Material.Metal", "Tool.General", "Weapon.Melee.General", "Resource.Material.Hardware", "Building.Fixture.Hardware" },
     wants = {
         ["Resource.Fuel"] = 1.4,
-        ["Container.Liquid"] = 1.2,
-        ["Resource.Material.Textile"] = 1.2
+        ["Clothing"] = 1.3,
+        ["Tool.Cookware"] = 1.25,
+        ["Quality.Waste"] = 1.2,
+        ["Food.Drink"] = 1.1
     },
-    forbid = { "Building.Furniture.Bed", "Tool.Fishing", "Resource.Material.Paper" }
+    forbid = { "Clothing.Accessory.Jewelry", "Electronics", "Medical.General.Drug", "Literature.SkillBook", "Theme.Clinical" }
 })
 
 end

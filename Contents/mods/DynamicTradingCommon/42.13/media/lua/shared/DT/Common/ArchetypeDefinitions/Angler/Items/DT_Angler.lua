@@ -4,19 +4,23 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 
     DynamicTrading.RegisterArchetype("Angler", {
         name = "River Trader",
-        allocations = {
-        { tags={"Food.Perishable.Fish"}, count = 6 },
-        { tags={"Resource.Fishing"}, count = 5 },
-        { tags={"Tool.Fishing"}, count = 4 },
-        { tags={"Container.Liquid"}, count = 4 }
+    allocations = {
+        { tags={"Resource.Fishing"}, count = 8 },
+        { tags={"Tool.Fishing"}, count = 5 },
+        { tags={"Food.Perishable.Fish"}, count = 8 },
+        { tags={"Container.Utility"}, count = 4 },
+        { tags={"Clothing"}, count = 2 },
+        { item = "Base.FishingRod", count = 1 }
     },
-        expertTags = { "Food.Perishable.Fish", "Tool.Fishing", "Resource.Fishing" },
+        expertTags = { "Resource.Fishing", "Tool.Fishing", "Food.Perishable.Fish", "Container.Utility", "Clothing" },
         wants = {
-            ["Tool.General"] = 1.2,
-            ["Resource.Material.Textile"] = 1.4,
-            ["Food.Cooking.Spice"] = 1.3
+            ["Container.Liquid"] = 1.3,
+            ["Weapon.Melee.Blade"] = 1.25,
+            ["Misc.General"] = 1.2,
+            ["Literature.SkillBook"] = 1.15,
+            ["Food.Drink"] = 1.1
         },
-        forbid = { "Electronics", "Weapon.Ranged.Firearm", "Quality.Waste" }
+        forbid = { "Electronics.Generator", "Building.Garden", "Clothing.Dress", "Building.Furniture", "Weapon.Explosive" }
     })
 
 end

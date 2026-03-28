@@ -5,17 +5,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Gunrunner", {
     name = "Gunrunner",
     allocations = {
-        { tags={"Weapon.Ranged.Firearm"}, count = 5 },
-        { tags={"Weapon.Ranged.Ammo"}, count = 8 },
-        { tags={"Weapon.Part"}, count = 4 },
-        { tags={"Rarity.Rare"}, count = 3 }
+        { tags={"Weapon.Ranged"}, count = 5 },
+        { tags={"Weapon.Ranged.Ammo"}, count = 10 },
+        { tags={"Weapon.Part"}, count = 5 },
+        { tags={"Theme.Militia"}, count = 4 },
+        { tags={"Rarity.Rare"}, count = 3 },
+        { item = "Base.Bag_ALICEpack_Army", count = 1 }
     },
+    expertTags = { "Weapon.Ranged", "Weapon.Ranged.Ammo", "Weapon.Part", "Theme.Militia", "Theme.Combat" },
     wants = {
-        ["Clothing.Protective"] = 1.5,
-        ["Medical.General"] = 1.3,
-        ["Food.NonPerishable.Canned"] = 1.1
+        ["Quality.Luxury"] = 1.35,
+        ["Medical.General.Drug"] = 1.3,
+        ["Food.Drink.Alcohol"] = 1.25,
+        ["Resource.Fuel"] = 1.2,
+        ["Clothing"] = 1.15
     },
-    forbid = { "Tool.General", "Building.Garden", "Literature.Media" }
+    forbid = { "Building.Furniture.General", "Tool.Farming", "Clothing.Dress", "Literature.Book", "Food.Perishable" }
 })
 
 end

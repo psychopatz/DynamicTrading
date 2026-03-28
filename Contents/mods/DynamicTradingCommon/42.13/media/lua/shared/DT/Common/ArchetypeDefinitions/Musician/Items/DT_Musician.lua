@@ -5,17 +5,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Musician", {
     name = "DJ / Musician",
     allocations = {
-        { tags={"Literature.Media"}, count = 10 },
-        { tags={"Electronics"}, count = 4 },
-        { tags={"Misc.General"}, count = 4 },
-        { tags={"Electronics.Gadget.Audio"}, count = 2 }
+        { tags={"Literature.Media"}, count = 15 },
+        { tags={"Electronics"}, count = 5 },
+        { tags={"Literature.Book"}, count = 6 },
+        { tags={"Clothing.Accessory.Cosmetic"}, count = 4 },
+        { tags={"Electronics.Battery"}, count = 8 },
+        { item = "Base.CDplayer", count = 1 }
     },
+    expertTags = { "Literature.Media", "Electronics", "Misc.General", "Literature.Book", "Clothing.Accessory.Cosmetic" },
     wants = {
-        ["Resource.Craftable"] = 1.5,
-        ["Electronics.PowerGenerator"] = 1.2,
-        ["Food.Drink.Alcohol"] = 1.2
+        ["Food.Drink.Alcohol"] = 1.3,
+        ["Quality.Luxury"] = 1.25,
+        ["Electronics.Battery"] = 1.2,
+        ["Clothing.Accessory.Jewelry"] = 1.15,
+        ["Medical.General.Vitamin"] = 1.1
     },
-    forbid = { "Weapon", "Medical.General", "Building.Garden" }
+    forbid = { "Building.Furniture.General", "Resource.Material.Wood", "Tool.Farming", "Weapon.Explosive", "Resource.Parts" }
 })
 
 end

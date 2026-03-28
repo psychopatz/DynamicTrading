@@ -5,17 +5,22 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Survivalist", {
     name = "Prepper",
     allocations = {
-        { tags={"Food.NonPerishable.Canned"}, count = 6 },
-        { tags={"Theme.Survival"}, count = 5 },
-        { tags={"Weapon.Ranged.Ammo"}, count = 4 },
-        { tags={"Resource.Craftable"}, count = 2 }
+        { tags={"Food.NonPerishable"}, count = 10 },
+        { tags={"Theme.Survival"}, count = 8 },
+        { tags={"Weapon.Ranged.Ammo"}, count = 5 },
+        { tags={"Building.Survival"}, count = 4 },
+        { tags={"Medical.Healthcare.Botanical"}, count = 2 },
+        { item = "Base.TentGreen_Packed", count = 1 }
     },
+    expertTags = { "Building.Survival", "Theme.Survival", "Weapon.Melee.Axe", "Tool.General", "Food.NonPerishable" },
     wants = {
-        ["Weapon"] = 1.3,
-        ["Resource.Fuel"] = 1.5,
-        ["Electronics.PowerGenerator"] = 1.4
+        ["Container.Liquid"] = 1.35,
+        ["Building.Garden"] = 1.3,
+        ["Resource.Fuel"] = 1.25,
+        ["Medical.Healthcare.Botanical"] = 1.2,
+        ["Container"] = 1.15
     },
-    forbid = { "Food.Perishable", "Quality.Luxury", "Misc.General" }
+    forbid = { "Quality.Luxury", "Clothing.Accessory.Jewelry", "Electronics", "Theme.Clinical", "Food.Drink.Alcohol" }
 })
 
 end

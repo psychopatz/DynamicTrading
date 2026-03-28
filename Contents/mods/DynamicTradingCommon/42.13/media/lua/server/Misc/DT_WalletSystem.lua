@@ -3,69 +3,92 @@
 -- =============================================================================
 
 require "DT/Common/ServerHelpers/ServerHelpers"
+require "DT/Common/Wallet/DT_WalletLottery"
 
 local Commands = {}
 local Helpers = DynamicTrading.ServerHelpers
+local WALLET_SEARCHED_KEY = "DT_WalletSearched"
+local WALLET_ORIGINAL_NAME_KEY = "DT_WalletOriginalName"
+local WalletLottery = DynamicTrading.WalletLottery or {}
 
--- =============================================================================
--- 1. CALCULATION LOGIC
--- =============================================================================
-local function CalculateWalletContents(player)
-    local minCash = SandboxVars.DynamicTrading.WalletMinCash or 1
-    local maxCash = SandboxVars.DynamicTrading.WalletMaxCash or 300
-    local emptyChance = SandboxVars.DynamicTrading.WalletEmptyChance or 20
-    local jackpotChance = SandboxVars.DynamicTrading.WalletJackpotChance or 5.0
+local function getWalletBaseName(item)
+    if not item then return "Wallet" end
 
-    -- Roll for Empty
-    if ZombRand(100) < emptyChance then
-        return 0, "EMPTY"
-    end
+    local modData = item:getModData()
+    local originalName = modData and modData[WALLET_ORIGINAL_NAME_KEY] or nil
 
-    local amount = 0
-    local resultType = "NORMAL"
-
-    -- Roll for Jackpot
-    if ZombRandFloat(0.0, 100.0) <= jackpotChance then
-        local bonus = ZombRandFloat(0.8, 1.5)
-        amount = math.floor(maxCash * bonus)
-        resultType = "JACKPOT"
-    else
-        -- Weighted Roll
-        local roll = ZombRand(100)
-        if roll < 60 then
-            amount = ZombRand(minCash, math.floor(maxCash * 0.3))
-        elseif roll < 90 then
-            amount = ZombRand(math.floor(maxCash * 0.3), math.floor(maxCash * 0.7))
-        else
-            amount = ZombRand(math.floor(maxCash * 0.7), maxCash)
+    if not originalName or originalName == "" then
+        originalName = tostring(item:getName() or "Wallet")
+        if string.sub(originalName, 1, 6) == "Empty " then
+            originalName = string.sub(originalName, 7)
         end
-        resultType = "MONEY"
+        if modData then
+            modData[WALLET_ORIGINAL_NAME_KEY] = originalName
+        end
     end
 
-    if amount < 1 then amount = 1 end
-    return amount, resultType
+    return originalName
+end
+
+local function isWalletSearched(item)
+    if not item then return false end
+    local modData = item:getModData()
+    return modData and modData[WALLET_SEARCHED_KEY] == true
+end
+
+local function markWalletAsSearched(item)
+    if not item then return end
+
+    local modData = item:getModData()
+    if not modData then return end
+
+    modData[WALLET_SEARCHED_KEY] = true
+    item:setName("Empty " .. getWalletBaseName(item))
+
+    if item.syncItemFields then
+        item:syncItemFields()
+    end
 end
 
 -- =============================================================================
 -- 2. COMMAND HANDLER
 -- =============================================================================
 function Commands.OpenWallet(player, args)
-    local walletItem = args.item
     local inv = player:getInventory()
+    local requestedItemID = args and args.itemID or nil
+
+    if not requestedItemID and args and args.item and args.item.getID then
+        requestedItemID = args.item:getID()
+    end
     
     -- Find the true Server-side object
-    local serverItem = inv:getItemById(walletItem:getID())
+    local serverItem = requestedItemID and inv:getItemById(requestedItemID) or nil
     
     if not serverItem then 
         DynamicTrading.Log("DTCommons", "Error", "Wallet", "Wallet item not found on server")
         return 
     end
 
-    -- A. CALCULATE LOOT FIRST
-    local totalMoney, type = CalculateWalletContents(player)
+    if isWalletSearched(serverItem) then
+        local resultArgs = {
+            total = 0,
+            type = "ALREADY_SEARCHED",
+            itemID = serverItem:getID()
+        }
+        Helpers.SendResponse(player, "DynamicTrading", "WalletResult", resultArgs)
+        return
+    end
 
-    -- B. REMOVE WALLET (using shared helper)
-    Helpers.RemoveItem(serverItem)
+    -- A. CALCULATE LOOT FIRST
+    if not WalletLottery.Roll then
+        DynamicTrading.Log("DTCommons", "Error", "Wallet", "Wallet lottery module unavailable")
+        return
+    end
+
+    local totalMoney, type = WalletLottery.Roll(player)
+
+    -- B. MARK WALLET AS SEARCHED INSTEAD OF REMOVING IT
+    markWalletAsSearched(serverItem)
 
     -- C. ADD MONEY (using shared helper)
     if totalMoney > 0 then
@@ -83,7 +106,8 @@ function Commands.OpenWallet(player, args)
     -- D. SEND FEEDBACK TO CLIENT (using shared helper)
     local resultArgs = {
         total = totalMoney,
-        type = type
+        type = type,
+        itemID = serverItem:getID()
     }
     Helpers.SendResponse(player, "DynamicTrading", "WalletResult", resultArgs)
 end

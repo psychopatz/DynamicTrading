@@ -6,17 +6,21 @@ DynamicTrading.RegisterArchetype("Carpenter", {
     name = "Carpenter",
     allocations = {
         { tags={"Resource.Material.Wood"}, count = 10 },
-        { tags={"Building.Furniture"}, count = 5 },
-        { tags={"Tool"}, count = 5 },
-        { tags={"Resource"}, count = 3 }
+        { tags={"Building.Furniture.General"}, count = 5 },
+        { tags={"Building.Fixture.General"}, count = 3 },
+        { tags={"Resource.Material.Hardware"}, count = 5 },
+        { tags={"Tool.General"}, count = 4 },
+        { item = "Base.Hammer", count = 1 }
     },
-    expertTags = { "Resource.Material.Wood", "Resource.Material.Hardware" },
+    expertTags = { "Resource.Material.Wood", "Tool.General", "Resource.Material.Hardware", "Building.Furniture.General", "Building.Fixture.General" },
     wants = {
-        ["Tool.General"] = 1.3,
-        ["Food"] = 1.2,
-        ["Medical.General"] = 1.1
+        ["Resource.Material.Adhesive"] = 1.3,
+        ["Clothing"] = 1.25,
+        ["Misc.General"] = 1.15,
+        ["Literature.SkillBook.Carpentry"] = 1.1,
+        ["Food.Drink"] = 1.05
     },
-    forbid = { "Resource.Material.Metal", "Electronics", "Clothing.Accessory.Cosmetic" }
+    forbid = { "Electronics", "Building.Vehicle", "Medical.General.Drug", "Literature.SkillBook", "Theme.Combat" }
 })
 
 end

@@ -7,16 +7,20 @@ DynamicTrading.RegisterArchetype("Sheriff", {
     allocations = {
         { tags={"Theme.Police"}, count = 5 },
         { tags={"Weapon.Ranged.Firearm"}, count = 4 },
-        { tags={"Weapon.Ranged.Ammo"}, count = 4 },
-        { tags={"Weapon"}, count = 3 }
+        { tags={"Weapon.Ranged.Ammo"}, count = 8 },
+        { tags={"Clothing"}, count = 3 },
+        { tags={"Weapon.Melee.Blunt"}, count = 2 },
+        { item = "Base.PistolCase1", count = 1 }
     },
+    expertTags = { "Weapon.Ranged.Firearm", "Weapon.Ranged.Ammo", "Clothing", "Tool.Security", "Theme.Combat" },
     wants = {
-        ["Electronics.Radio"] = 1.5,
-        ["Food.NonPerishable.Sweets"] = 2.0,
-        ["Food.NonPerishable.Sweets"] = 1.5,
-        ["Food.Drink.NonAlcoholic"] = 1.5
+        ["Medical.Consumable"] = 1.35,
+        ["Food.NonPerishable"] = 1.3,
+        ["Clothing.Accessory.Utility"] = 1.25,
+        ["Literature.SkillBook"] = 1.2,
+        ["Resource.Fuel"] = 1.15
     },
-    forbid = { "Rarity.Rare", "Clothing.Armor.Heavy" }
+    forbid = { "Building.Furniture.Decor", "Misc.General", "Clothing.Accessory.Cosmetic", "Building.Garden", "Food.Drink.Alcohol" }
 })
 
 end
