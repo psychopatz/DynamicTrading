@@ -1,6 +1,3 @@
-pcall(require, "DC/Common/Colony/ColonyConfig/DC_ColonyConfig")
-pcall(require, "DC/Common/Colony/ColonyRegistry/DC_ColonyRegistry")
-
 local PlayerOwnership_Utils = {}
 
 PlayerOwnership_Utils.MOD_DATA_KEY = "DynamicTrading_Factions"

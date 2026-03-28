@@ -70,7 +70,7 @@
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_intelligence", {
         title = "Faction Intelligence & Logistics",
- Deborah        description = "A commander's guide to monitoring faction wealth, survival, and economic trends.",
+        description = "A commander's guide to monitoring faction wealth, survival, and economic trends.",
         startPageId = "intel_overview",
         chapters = {
             { id = "public_intel", title = "Public Intelligence", description = "Understanding reputations and basic faction info." },

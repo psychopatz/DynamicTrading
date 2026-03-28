@@ -1,6 +1,3 @@
--- Try to load DTNPCGenerator (V2 only) — graceful fallback if V2 not present
-local hasGenerator = pcall(require, "DT/V2/NPC/Sys/DTNPC_Generator")
-
 DynamicTrading_Roster = {}
 DynamicTrading_Roster.MOD_DATA_KEY = "DynamicTrading_Roster"
 

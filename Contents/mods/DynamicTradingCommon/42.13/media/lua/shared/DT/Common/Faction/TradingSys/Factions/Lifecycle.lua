@@ -5,18 +5,26 @@
 -- ==============================================================================
 
 require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
-require "DT/Common/Faction/Templates/BaseSpawn/DT_FactionLocationManager"
-require "DT/Common/Faction/Templates/FactionNames/DT_FactionNames"
 require "DT/Common/Config"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 
 local Lifecycle = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"
+local IS_SERVER_RUNTIME = (not isClient()) or isServer()
+
+if IS_SERVER_RUNTIME then
+    require "DT/Common/Faction/Templates/BaseSpawn/DT_FactionLocationManager"
+    require "DT/Common/Faction/Templates/FactionNames/DT_FactionNames"
+end
 
 -- ==========================================================
 -- 1. INITIALIZATION
 -- ==========================================================
 function Lifecycle.Init()
+    if not IS_SERVER_RUNTIME then
+        return
+    end
+
     if not ModData.exists(MOD_DATA_KEY) then
         ModData.add(MOD_DATA_KEY, {})
     end
@@ -105,6 +113,10 @@ function Lifecycle.Init()
 end
 
 function Lifecycle.RepopulateTowns()
+    if not IS_SERVER_RUNTIME then
+        return
+    end
+
      if DT_FactionLocations then
         for townName, _ in pairs(DT_FactionLocations) do
             local maxFactions = SandboxVars.DynamicTrading.MaxFactionsPerTown or 2
@@ -143,9 +155,15 @@ function Lifecycle.CreateFaction(factionID, initialData)
             assignedHome = nil -- Nomads have no home base
         else
             -- Use our new dynamic naming engine
-            displayName = DT_FactionNames.Generate()
+            if DT_FactionNames and DT_FactionNames.Generate then
+                displayName = DT_FactionNames.Generate()
+            else
+                displayName = tostring(initialData.name or factionID)
+            end
             -- Ask the location manager for a physical base
-            assignedHome = DT_FactionLocationManager.AssignHome(factionID, initialData.town)
+            if DT_FactionLocationManager and DT_FactionLocationManager.AssignHome then
+                assignedHome = DT_FactionLocationManager.AssignHome(factionID, initialData.town)
+            end
         end
 
         -- B. Construct the Faction Object

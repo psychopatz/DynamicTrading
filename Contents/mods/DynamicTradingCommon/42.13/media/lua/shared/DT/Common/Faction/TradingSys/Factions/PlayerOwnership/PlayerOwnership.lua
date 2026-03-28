@@ -1,6 +1,3 @@
-pcall(require, "DC/Common/Colony/ColonyConfig/DC_ColonyConfig")
-pcall(require, "DC/Common/Colony/ColonyRegistry/DC_ColonyRegistry")
-pcall(require, "DC/Common/Buildings/DC_Buildings")
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 
 local PlayerOwnership = {}
