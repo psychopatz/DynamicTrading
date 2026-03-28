@@ -145,10 +145,19 @@ function Common.ResolveContainerBasePrice(itemData, scriptItem)
         local emptyID = scriptItem:getReplaceOnDeplete()
         if emptyID and DynamicTrading and DynamicTrading.Config and DynamicTrading.Config.MasterList then
             local emptyData = DynamicTrading.Config.MasterList[emptyID]
-            if emptyData and emptyData.basePrice then
-                return emptyData.basePrice, emptyID
+            if emptyData then
+                if DynamicTrading.PriceConfig and DynamicTrading.PriceConfig.GetEffectiveBasePrice then
+                    return DynamicTrading.PriceConfig.GetEffectiveBasePrice(emptyID, emptyData), emptyID
+                end
+                if emptyData.basePrice then
+                    return emptyData.basePrice, emptyID
+                end
             end
         end
+    end
+
+    if itemData and DynamicTrading.PriceConfig and DynamicTrading.PriceConfig.GetEffectiveBasePrice then
+        return DynamicTrading.PriceConfig.GetEffectiveBasePrice(itemData.item, itemData), nil
     end
 
     return itemData and itemData.basePrice or 0, nil

@@ -81,3 +81,11 @@ end
 
 Events.OnContainerUpdate.Add(onInventoryChange)
 Events.OnRefreshInventoryWindowContainers.Add(onInventoryChange)
+
+local function onPriceConfigUpdated()
+    if DT_TradingWindow.instance and DT_TradingWindow.instance:getIsVisible() then
+        DT_TradingWindow.instance:populateList()
+    end
+end
+
+Events.OnDynamicTradingPriceConfigUpdated.Add(onPriceConfigUpdated)

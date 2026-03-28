@@ -195,6 +195,14 @@ end
 
 Events.OnDynamicTradingStockUpdated.Add(onStockUpdated)
 
+local function onPriceConfigUpdated()
+    if DT_MerchantDebugWindow.instance and DT_MerchantDebugWindow.instance:getIsVisible() then
+        DT_MerchantDebugWindow.instance:refreshList()
+    end
+end
+
+Events.OnDynamicTradingPriceConfigUpdated.Add(onPriceConfigUpdated)
+
 -- ==========================================================
 -- SINGLETON ACCESS
 -- ==========================================================

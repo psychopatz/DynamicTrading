@@ -95,10 +95,13 @@ function DT_TradingWindow:sendSellTransaction(data, qty, itemNameOverride)
     }
 
     local totalPrice = (tonumber(args.price) or 0) * amount
+    local effectiveBasePrice = self.dataProvider and self.dataProvider.getEffectiveBasePrice
+        and self.dataProvider:getEffectiveBasePrice(data.key, data.data)
+        or (data.data and data.data.basePrice or args.price or 0)
     local pMsg = self.dataProvider:getPlayerMessage("Sell", {
         itemName = itemNameOverride or self:getSellDisplayName(data, amount),
         price = totalPrice,
-        basePrice = (data.data and data.data.basePrice or args.price or 0) * amount
+        basePrice = effectiveBasePrice * amount
     })
     self:queueMessage(pMsg, false, true, 0, nil, "transaction")
 
@@ -111,7 +114,10 @@ function DT_TradingWindow:onConfirmQuantityBuy(data, qty)
     local amount = math.max(1, math.floor(tonumber(qty) or 1))
     local preview = self:getBulkBuyPreview(data, amount)
     local totalPrice = preview and preview.totalPrice or ((tonumber(data.price) or 0) * amount)
-    local totalBasePrice = preview and preview.totalBasePrice or ((data.data and data.data.basePrice or data.price or 0) * amount)
+    local fallbackBasePrice = self.dataProvider and self.dataProvider.getEffectiveBasePrice
+        and self.dataProvider:getEffectiveBasePrice(data.key, data.data)
+        or (data.data and data.data.basePrice or data.price or 0)
+    local totalBasePrice = preview and preview.totalBasePrice or (fallbackBasePrice * amount)
 
     local player = getSpecificPlayer(0)
     if not player then return end
@@ -151,7 +157,9 @@ function DT_TradingWindow:onAction()
     local diagArgs = {
         itemName = d.displayName or d.name,
         price = d.price,
-        basePrice = d.data and d.data.basePrice or d.price
+        basePrice = self.dataProvider and self.dataProvider.getEffectiveBasePrice
+            and self.dataProvider:getEffectiveBasePrice(d.key, d.data)
+            or (d.data and d.data.basePrice or d.price)
     }
 
     if self.isBuying then

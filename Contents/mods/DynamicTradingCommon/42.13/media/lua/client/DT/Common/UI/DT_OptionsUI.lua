@@ -14,6 +14,7 @@ require "ISUI/UserInterface/ISSliderPanel"
 require "Utils/DT_ConfigManager"
 require "DT/Common/Utils/DT_AudioManager"
 require "DT/Common/UI/ManualUI/ManualUI"
+require "DT/Common/UI/Pricing/DT_PricingOptionsTab"
 
 DT_OptionsUI = ISCollapsableWindow:derive("DT_OptionsUI")
 DT_OptionsUI.instance = nil
@@ -67,15 +68,35 @@ function DT_OptionsUI:createChildren()
     self.panelManuals:setAnchorRight(true)
     self.panelManuals:setAnchorBottom(true)
 
+    self.panelPricing = nil
+    self.canEditPricing = DynamicTrading
+        and DynamicTrading.PriceConfig
+        and DynamicTrading.PriceConfig.CanEditLocalPlayer
+        and DynamicTrading.PriceConfig.CanEditLocalPlayer()
+
+    if self.canEditPricing then
+        self.panelPricing = ISPanel:new(0, 0, self.tabs.width, self.tabs.height)
+        self.panelPricing:initialise()
+        self.panelPricing.backgroundColor = {r=0,g=0,b=0,a=1.0}
+        self.panelPricing:setAnchorRight(true)
+        self.panelPricing:setAnchorBottom(true)
+    end
+
     -- 3. Populate Tabs
     self:createGeneralChildren(self.panelGeneral)
     self:createAudioChildren(self.panelAudio)
     self:createManualChildren(self.panelManuals)
+    if self.panelPricing then
+        DT_PricingOptionsTab.Create(self, self.panelPricing)
+    end
 
     -- 4. Add Panels to Tabs
     self.tabs:addView("General", self.panelGeneral)
     self.tabs:addView("Audio", self.panelAudio)
     self.tabs:addView("Manuals", self.panelManuals)
+    if self.panelPricing then
+        self.tabs:addView("Pricing", self.panelPricing)
+    end
     
     self.tabs:activateView("General")
 end
@@ -252,9 +273,20 @@ function DT_OptionsUI:onResize()
         self.tabs:setWidth(w)
         self.tabs:setHeight(h - th)
     end
+
+    if self.pricingState then
+        local tabsWidth = self.tabs and self.tabs.getWidth and self.tabs:getWidth() or (self.tabs and self.tabs.width) or w
+        local tabsHeight = self.tabs and self.tabs.getHeight and self.tabs:getHeight() or (self.tabs and self.tabs.height) or (h - th)
+        self.pricingState.panel:setWidth(tabsWidth)
+        self.pricingState.panel:setHeight(tabsHeight)
+        DT_PricingOptionsTab.OnResize(self)
+    end
 end
 
 function DT_OptionsUI:close()
+    if self.pricingState then
+        DT_PricingOptionsTab.Destroy(self)
+    end
     self:setVisible(false)
     self:removeFromUIManager()
     DT_OptionsUI.instance = nil
@@ -290,8 +322,8 @@ function DT_OptionsUI.ToggleWindow()
         return
     end
 
-    local width = 450
-    local height = 350
+    local width = 980
+    local height = 680
     local x = (getCore():getScreenWidth() - width) / 2
     local y = (getCore():getScreenHeight() - height) / 2
 

@@ -25,7 +25,11 @@ DT_ConfigManager.defaultSettings = {
     lastSeenReleaseVersion = "",
     lastAutoOpenedReleaseVersion = "",
     disabledAutoOpenReleaseVersion = "",
-    dismissedSupportBannerVersion = ""
+    dismissedSupportBannerVersion = "",
+    lastPricePresetName = "default",
+    knownPricePresets = "default",
+    priceSelectedTag = "",
+    priceCollapsedTags = ""
 }
 
 -- This table holds the *active* settings
@@ -66,6 +70,10 @@ function DT_ConfigManager.save()
         fileWriter:write("lastAutoOpenedReleaseVersion=" .. tostring(DT_ConfigManager.settings.lastAutoOpenedReleaseVersion or "") .. "\r\n")
         fileWriter:write("disabledAutoOpenReleaseVersion=" .. tostring(DT_ConfigManager.settings.disabledAutoOpenReleaseVersion or "") .. "\r\n")
         fileWriter:write("dismissedSupportBannerVersion=" .. tostring(DT_ConfigManager.settings.dismissedSupportBannerVersion or "") .. "\r\n")
+        fileWriter:write("lastPricePresetName=" .. tostring(DT_ConfigManager.settings.lastPricePresetName or "default") .. "\r\n")
+        fileWriter:write("knownPricePresets=" .. tostring(DT_ConfigManager.settings.knownPricePresets or "default") .. "\r\n")
+        fileWriter:write("priceSelectedTag=" .. tostring(DT_ConfigManager.settings.priceSelectedTag or "") .. "\r\n")
+        fileWriter:write("priceCollapsedTags=" .. tostring(DT_ConfigManager.settings.priceCollapsedTags or "") .. "\r\n")
         
         -- Save Window States
         if DT_ConfigManager.settings.windows then
@@ -149,6 +157,18 @@ function DT_ConfigManager.load()
         end
         if string.find(line, "dismissedSupportBannerVersion=") then
             DT_ConfigManager.settings.dismissedSupportBannerVersion = string.sub(line, 31)
+        end
+        if string.find(line, "lastPricePresetName=") then
+            DT_ConfigManager.settings.lastPricePresetName = string.sub(line, 20)
+        end
+        if string.find(line, "knownPricePresets=") then
+            DT_ConfigManager.settings.knownPricePresets = string.sub(line, 18)
+        end
+        if string.find(line, "priceSelectedTag=") then
+            DT_ConfigManager.settings.priceSelectedTag = string.sub(line, 18)
+        end
+        if string.find(line, "priceCollapsedTags=") then
+            DT_ConfigManager.settings.priceCollapsedTags = string.sub(line, 19)
         end
         
         -- Window State Parsing: window_ID=x,y,w,h
@@ -301,6 +321,97 @@ end
 
 function DT_ConfigManager.getDismissedSupportBannerVersion()
     return tostring(DT_ConfigManager.settings.dismissedSupportBannerVersion or "")
+end
+
+function DT_ConfigManager.setLastPricePresetName(name)
+    DT_ConfigManager.settings.lastPricePresetName = tostring(name or "default")
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getLastPricePresetName()
+    return tostring(DT_ConfigManager.settings.lastPricePresetName or "default")
+end
+
+function DT_ConfigManager.setKnownPricePresets(values)
+    if type(values) == "table" then
+        DT_ConfigManager.settings.knownPricePresets = table.concat(values, "|")
+    else
+        DT_ConfigManager.settings.knownPricePresets = tostring(values or "default")
+    end
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getKnownPricePresets()
+    local raw = tostring(DT_ConfigManager.settings.knownPricePresets or "default")
+    local values = {}
+    if raw == "" then
+        return values
+    end
+
+    for value in string.gmatch(raw, "([^|]+)") do
+        values[#values + 1] = value
+    end
+
+    return values
+end
+
+function DT_ConfigManager.addKnownPricePreset(name)
+    local normalized = tostring(name or "")
+    if normalized == "" then
+        return
+    end
+
+    local values = DT_ConfigManager.getKnownPricePresets()
+    for _, existing in ipairs(values) do
+        if existing == normalized then
+            DT_ConfigManager.settings.knownPricePresets = table.concat(values, "|")
+            DT_ConfigManager.save()
+            return
+        end
+    end
+
+    values[#values + 1] = normalized
+    table.sort(values, function(left, right)
+        return string.lower(left) < string.lower(right)
+    end)
+    DT_ConfigManager.settings.knownPricePresets = table.concat(values, "|")
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.setPriceEditorSelection(tag)
+    DT_ConfigManager.settings.priceSelectedTag = tostring(tag or "")
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getPriceEditorSelection()
+    return tostring(DT_ConfigManager.settings.priceSelectedTag or "")
+end
+
+function DT_ConfigManager.setPriceCollapsedTags(tags)
+    if type(tags) == "table" then
+        local values = {}
+        for _, tag in ipairs(tags) do
+            values[#values + 1] = tostring(tag)
+        end
+        DT_ConfigManager.settings.priceCollapsedTags = table.concat(values, "|")
+    else
+        DT_ConfigManager.settings.priceCollapsedTags = tostring(tags or "")
+    end
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getPriceCollapsedTags()
+    local raw = tostring(DT_ConfigManager.settings.priceCollapsedTags or "")
+    local tags = {}
+    if raw == "" then
+        return tags
+    end
+
+    for tag in string.gmatch(raw, "([^|]+)") do
+        tags[#tags + 1] = tag
+    end
+
+    return tags
 end
 
 

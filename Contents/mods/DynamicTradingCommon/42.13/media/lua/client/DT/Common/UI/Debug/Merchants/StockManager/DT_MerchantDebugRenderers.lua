@@ -54,13 +54,21 @@ end
 function DT_MerchantDebugRenderers.drawStockItem(listbox, y, item, alt)
     local itemType = item.text
     local stockItem = item.item
+    local effectiveBasePrice = stockItem and stockItem.basePrice or 0
+    local itemData = itemType and DynamicTrading and DynamicTrading.Config and DynamicTrading.Config.MasterList
+        and DynamicTrading.Config.MasterList[itemType]
+        or nil
+
+    if itemData and DynamicTrading.PriceConfig and DynamicTrading.PriceConfig.GetEffectiveBasePrice then
+        effectiveBasePrice = DynamicTrading.PriceConfig.GetEffectiveBasePrice(itemType, itemData)
+    end
 
     if alt then
         listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 1, 1, 1)
     end
 
     listbox:drawText(itemType, 10, y + 5, 1, 1, 1, 1, UIFont.Small)
-    local detailStr = string.format("Qty: %d | Pr: %d | Mod: %.1f", stockItem.qty, stockItem.basePrice or 0, stockItem.dynamicMod or 1.0)
+    local detailStr = string.format("Qty: %d | Pr: %d | Mod: %.1f", stockItem.qty, effectiveBasePrice or 0, stockItem.dynamicMod or 1.0)
     listbox:drawText(detailStr, listbox.width - 250, y + 5, 0.8, 1, 0.8, 1, UIFont.Small)
 
     return y + listbox.itemheight

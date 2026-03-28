@@ -347,6 +347,7 @@ end
 require "DT/Common/DT_Logger"
 require "DT/Common/Quests/DT_QuestManager"
 require "DT/Common/Items/DT_QuestItems"
+require "DT/Common/Pricing/DT_PriceConfig"
 
 
 -- 0. CUSTOM SIGNALS
@@ -371,6 +372,12 @@ if LuaEventManager then
     end
     if not LuaEventManager.OnDynamicTradingTradeCompleted then
         LuaEventManager.AddEvent("OnDynamicTradingTradeCompleted")
+    end
+    if not LuaEventManager.OnDynamicTradingPriceConfigUpdated then
+        LuaEventManager.AddEvent("OnDynamicTradingPriceConfigUpdated")
+    end
+    if not LuaEventManager.OnDynamicTradingPriceConfigActionResult then
+        LuaEventManager.AddEvent("OnDynamicTradingPriceConfigActionResult")
     end
 end
 

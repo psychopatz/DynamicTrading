@@ -10,9 +10,23 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/Common/ServerHelpers/ServerHelpers"
+require "DT/Common/Pricing/DT_PriceConfig"
 
 local DataHandlers = {}
 local Handlers = {}
+
+local function sendPriceConfigToPlayer(player)
+    local payload = DynamicTrading.PriceConfig.BuildSyncPayload(DynamicTrading.PriceConfig.GetData())
+    DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "SyncPriceConfig", payload)
+end
+
+local function sendPriceConfigActionResult(player, success, message, warnings)
+    DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "PriceConfigActionResult", {
+        success = success == true,
+        message = tostring(message or ""),
+        warnings = warnings or {}
+    })
+end
 
 local function syncOwnedFactionStatus(player)
     if not player or not DynamicTrading_Factions or not DynamicTrading_Factions.GetOwnedFactionStatus then
@@ -63,6 +77,10 @@ function DataHandlers.SendSyncStockToPlayer(player, traderID)
         gender = soul and soul.isFemale and "Female" or "Male",
         returnTime = soul and soul.returnTime
     })
+end
+
+function DataHandlers.SendPriceConfigToPlayer(player)
+    sendPriceConfigToPlayer(player)
 end
 
 -- =============================================================================
@@ -188,6 +206,111 @@ Handlers.RequestOwnedFactionStatus = function(player, args)
         DynamicTrading_Factions.ResumeLeadership(player)
     end
     syncOwnedFactionStatus(player)
+end
+
+Handlers.RequestPriceConfig = function(player, args)
+    if not DynamicTrading.PriceConfig.CanEdit(player) then
+        sendPriceConfigActionResult(player, false, "You do not have permission to edit pricing.")
+        return
+    end
+
+    sendPriceConfigToPlayer(player)
+end
+
+Handlers.ApplyPriceTagMultiplier = function(player, args)
+    if not DynamicTrading.PriceConfig.CanEdit(player) then
+        sendPriceConfigActionResult(player, false, "You do not have permission to edit pricing.")
+        return
+    end
+
+    local success, reason = DynamicTrading.PriceConfig.SetTagMultiplier(args and args.tag, args and args.multiplier)
+    if success then
+        sendPriceConfigToPlayer(player)
+        sendPriceConfigActionResult(player, true, "Tag multiplier updated.")
+    else
+        sendPriceConfigActionResult(player, false, reason or "Failed to update tag multiplier.")
+    end
+end
+
+Handlers.ResetPriceTagMultiplier = function(player, args)
+    if not DynamicTrading.PriceConfig.CanEdit(player) then
+        sendPriceConfigActionResult(player, false, "You do not have permission to edit pricing.")
+        return
+    end
+
+    local success, reason = DynamicTrading.PriceConfig.ResetTagMultiplier(args and args.tag)
+    if success then
+        sendPriceConfigToPlayer(player)
+        sendPriceConfigActionResult(player, true, "Tag multiplier reset.")
+    else
+        sendPriceConfigActionResult(player, false, reason or "Failed to reset tag multiplier.")
+    end
+end
+
+Handlers.ApplyItemBasePriceOverride = function(player, args)
+    if not DynamicTrading.PriceConfig.CanEdit(player) then
+        sendPriceConfigActionResult(player, false, "You do not have permission to edit pricing.")
+        return
+    end
+
+    local success, reason = DynamicTrading.PriceConfig.SetItemOverride(args and args.itemKey, args and args.basePrice)
+    if success then
+        sendPriceConfigToPlayer(player)
+        sendPriceConfigActionResult(player, true, "Item base price updated.")
+    else
+        sendPriceConfigActionResult(player, false, reason or "Failed to update item override.")
+    end
+end
+
+Handlers.ResetItemBasePriceOverride = function(player, args)
+    if not DynamicTrading.PriceConfig.CanEdit(player) then
+        sendPriceConfigActionResult(player, false, "You do not have permission to edit pricing.")
+        return
+    end
+
+    local success, reason = DynamicTrading.PriceConfig.ResetItemOverride(args and args.itemKey)
+    if success then
+        sendPriceConfigToPlayer(player)
+        sendPriceConfigActionResult(player, true, "Item override reset.")
+    else
+        sendPriceConfigActionResult(player, false, reason or "Failed to reset item override.")
+    end
+end
+
+Handlers.ResetAllPriceOverrides = function(player, args)
+    if not DynamicTrading.PriceConfig.CanEdit(player) then
+        sendPriceConfigActionResult(player, false, "You do not have permission to edit pricing.")
+        return
+    end
+
+    DynamicTrading.PriceConfig.ResetAllOverrides()
+    sendPriceConfigToPlayer(player)
+    sendPriceConfigActionResult(player, true, "All price overrides reset.")
+end
+
+Handlers.ImportPricePreset = function(player, args)
+    if not DynamicTrading.PriceConfig.CanEdit(player) then
+        sendPriceConfigActionResult(player, false, "You do not have permission to edit pricing.")
+        return
+    end
+
+    if type(args) ~= "table" then
+        sendPriceConfigActionResult(player, false, "Invalid preset payload.")
+        return
+    end
+
+    local payload = {
+        tagMultipliers = type(args.tagMultipliers) == "table" and args.tagMultipliers or {},
+        itemOverrides = type(args.itemOverrides) == "table" and args.itemOverrides or {}
+    }
+
+    local success, warnings = DynamicTrading.PriceConfig.ReplaceFromPreset(payload)
+    if success then
+        sendPriceConfigToPlayer(player)
+        sendPriceConfigActionResult(player, true, "Preset imported.", warnings)
+    else
+        sendPriceConfigActionResult(player, false, "Preset import failed.")
+    end
 end
 
 Handlers.CreatePlayerFaction = function(player, args)

@@ -10,6 +10,16 @@ DynamicTrading.TradingProvider = DynamicTrading.TradingProvider or {}
 function DynamicTrading.TradingProvider.AttachPricing(provider)
     if not provider then return end
 
+    if provider.getEffectiveBasePrice == nil then
+        function provider:getEffectiveBasePrice(key, itemData)
+            local resolvedItemData = itemData or DynamicTrading.Config.MasterList[key]
+            if DynamicTrading.PriceConfig and DynamicTrading.PriceConfig.GetEffectiveBasePrice then
+                return DynamicTrading.PriceConfig.GetEffectiveBasePrice(key, resolvedItemData)
+            end
+            return resolvedItemData and resolvedItemData.basePrice or 0
+        end
+    end
+
     if provider.getItemData == nil then
         function provider:getItemData(key)
             return DynamicTrading.Config.MasterList[key]

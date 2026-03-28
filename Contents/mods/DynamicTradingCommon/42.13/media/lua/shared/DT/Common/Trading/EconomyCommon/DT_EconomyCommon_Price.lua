@@ -4,6 +4,13 @@
 
 local Common = DynamicTrading.Economy.Common
 
+local function getEffectiveBasePrice(itemKey, itemData)
+    if DynamicTrading and DynamicTrading.PriceConfig and DynamicTrading.PriceConfig.GetEffectiveBasePrice then
+        return DynamicTrading.PriceConfig.GetEffectiveBasePrice(itemKey, itemData)
+    end
+    return itemData and itemData.basePrice or 0
+end
+
 --- Calculates the BUY price (Trader selling to Player)
 -- @param itemKey (String) Item FullType
 -- @param itemData (Table) MasterList entry
@@ -18,7 +25,8 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
     local globalHeat = modifiers.globalHeat or {}
     local getPriceMod = modifiers.getPriceModifier
     
-    local price = itemData.basePrice
+    local effectiveBasePrice = getEffectiveBasePrice(itemKey, itemData)
+    local price = effectiveBasePrice
     
     if verbose then
         DynamicTrading.Log("DTCommons", "Trade", "Trace", "Buy Price Calc: " .. itemKey .. " | Base: " .. price)
@@ -92,8 +100,8 @@ function Common.GetBuyPrice(itemKey, itemData, diffData, modifiers, verbose)
             -- We want pure Container price mults. Ideally we'd scan empty container tags.
             -- Approximating: Use default item tags for container part.
             local containerMults = 1.0
-            if itemData.basePrice > 0 then
-                 containerMults = price / itemData.basePrice
+            if effectiveBasePrice > 0 then
+                 containerMults = price / effectiveBasePrice
             end
             
             -- B. Fluid Multipliers (Dynamic based on Fluid Tags)
@@ -228,7 +236,8 @@ function Common.GetSellPrice(itemKey, itemData, itemObj, diffData, archetype, mo
     local localDeflationCount = modifiers.localDeflationCount or 0
 
     -- 1. Base & Difficulty
-    local price = itemData.basePrice * diffData.sellMult
+    local effectiveBasePrice = getEffectiveBasePrice(itemKey, itemData)
+    local price = effectiveBasePrice * diffData.sellMult
     
     if verbose then
         DynamicTrading.Log("DTCommons", "Trade", "Trace", "Sell Price Calc: " .. itemKey .. " | Base: " .. price)
