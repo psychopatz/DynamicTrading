@@ -41,6 +41,22 @@ function DT_ManualUI:createChildren()
     self.navList.drawBorder = true
     self.navList.onMouseDown = self.onNavMouseDown
     self.navList.doDrawItem = self.drawNavItem
+    self.navList.doGetItemHeight = function(self, item)
+        local row = item.item
+        local width = self:getWidth() - 24 - ((row.depth or 0) * 18)
+        local titleFont = UIFont.NewSmall
+        if row.kind == "manual" then titleFont = UIFont.Medium end
+        if row.kind == "chapter" then titleFont = UIFont.Small end
+        local titleLines = DT_ManualUI_Utils.WrapManualText(row.title or "", width, titleFont)
+        local subtitleLines = {}
+        if row.kind == "manual" and row.subtitle and row.subtitle ~= "" then
+            subtitleLines = DT_ManualUI_Utils.WrapManualText(row.subtitle, width, UIFont.Small)
+        end
+        local h = 8 + (#titleLines * 18) + (#subtitleLines * 16)
+        if row.kind == "manual" then h = h + 6 end
+        if row.kind == "chapter" then h = h + 5 end
+        return math.max(h, 26)
+    end
     self:addChild(self.navList)
 
     self.resultsLabel = ISLabel:new(metrics.rightX, metrics.titleBarHeight + metrics.pad + metrics.toolbarHeight + 4, 18, "Search Results", 0.9, 0.9, 0.9, 1, UIFont.Small, true)
@@ -84,10 +100,9 @@ function DT_ManualUI:createChildren()
     self.supportBannerTitle:instantiate()
     self.supportBannerPanel:addChild(self.supportBannerTitle)
 
-    self.supportBannerText = ISLabel:new(10, 30, 16, "If the mod is earning permanent slots in your load order, consider supporting its continued development.", 0.88, 0.88, 0.88, 1, UIFont.Small, true)
-    self.supportBannerText:initialise()
-    self.supportBannerText:instantiate()
-    self.supportBannerPanel:addChild(self.supportBannerText)
+    self.supportBannerTextLabels = {}
+    self.supportBannerTextRaw = "If the mod is earning permanent slots in your load order, consider supporting its continued development."
+    -- Labels will be created in refreshLayout
 
     self.btnSupportBanner = ISButton:new(10, 48, 110, 24, "View Support", self, self.onOpenSupportBanner)
     self.btnSupportBanner:initialise()
@@ -156,22 +171,47 @@ function DT_ManualUI:refreshLayout()
         self.supportBannerPanel:setX(metrics.rightX)
         self.supportBannerPanel:setY(metrics.supportBannerY)
         self.supportBannerPanel:setWidth(metrics.rightWidth)
-        self.supportBannerPanel:setHeight(metrics.supportBannerHeight)
-        self.supportBannerPanel:setVisible(self.showSupportBanner == true)
+        -- Remove old text labels
+        if self.supportBannerTextLabels then
+            for _, lbl in ipairs(self.supportBannerTextLabels) do
+                self.supportBannerPanel:removeChild(lbl)
+            end
+        end
+        self.supportBannerTextLabels = {}
 
+        self.supportBannerPanel:setVisible(self.showSupportBanner == true)
         if self.showSupportBanner == true then
             local manual = self.supportBannerManual or {}
             local title = manual.bannerTitle ~= "" and manual.bannerTitle or "Support Dynamic Trading"
-            local text = manual.bannerText ~= "" and manual.bannerText or "If the mod is earning permanent slots in your load order, consider supporting its continued development."
+            local text = manual.bannerText ~= "" and manual.bannerText or self.supportBannerTextRaw
             local actionLabel = manual.bannerActionLabel ~= "" and manual.bannerActionLabel or "View Support"
 
             self.supportBannerTitle:setName(title)
-            self.supportBannerText:setName(text)
             self.btnSupportBanner:setTitle(actionLabel)
             self.btnSupportBanner:setX(10)
-            self.btnSupportBanner:setY(48)
+            self.btnSupportBanner:setY(0) -- Will be set after text
             self.btnWhatsNew:setX(130)
-            self.btnWhatsNew:setY(48)
+            self.btnWhatsNew:setY(0) -- Will be set after text
+
+            -- Wrap text
+            local wrapWidth = math.max(metrics.rightWidth - 20, 120)
+            local lines = DynamicTrading.Utils.WrapText(text, wrapWidth, UIFont.Small)
+            local y = 30
+            for i, line in ipairs(lines) do
+                local lbl = ISLabel:new(10, y, 16, line, 0.88, 0.88, 0.88, 1, UIFont.Small, true)
+                lbl:initialise()
+                lbl:instantiate()
+                self.supportBannerPanel:addChild(lbl)
+                table.insert(self.supportBannerTextLabels, lbl)
+                y = y + 18
+            end
+            -- Place buttons below text
+            self.btnSupportBanner:setY(y)
+            self.btnWhatsNew:setY(y)
+            -- Adjust banner height
+            local bannerHeight = y + 28
+            self.supportBannerPanel:setHeight(bannerHeight)
+            metrics.supportBannerHeight = bannerHeight
         end
     end
 

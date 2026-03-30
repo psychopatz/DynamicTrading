@@ -107,10 +107,21 @@ function DT_ManualUI:drawNavItem(y, item, alt)
         indicatorOffset = 14
     end
 
-    self:drawText(tostring(row.title or ""), 8 + indent + indicatorOffset, titleY, titleR, titleG, titleB, 1, titleFont)
+    -- Wrap title
+    local titleLines = DT_ManualUI_Utils.WrapManualText(row.title or "", width - 24 - indent - indicatorOffset, titleFont)
+    local lineY = titleY
+    for _, line in ipairs(titleLines) do
+        self:drawText(line, 8 + indent + indicatorOffset, lineY, titleR, titleG, titleB, 1, titleFont)
+        lineY = lineY + 18
+    end
 
     if row.kind == "manual" and row.subtitle and row.subtitle ~= "" then
-        self:drawText(DynamicTrading.Utils.TruncateString(row.subtitle, UIFont.Small, width - 24 - indent - indicatorOffset), 8 + indent + indicatorOffset, y + 28, subtitleR, subtitleG, subtitleB, 1, UIFont.Small)
+        local subtitleLines = DT_ManualUI_Utils.WrapManualText(row.subtitle, width - 24 - indent - indicatorOffset, UIFont.Small)
+        local subY = y + 28
+        for _, line in ipairs(subtitleLines) do
+            self:drawText(line, 8 + indent + indicatorOffset, subY, subtitleR, subtitleG, subtitleB, 1, UIFont.Small)
+            subY = subY + 16
+        end
     elseif row.kind == "chapter" then
         self:drawRect(8 + indent + indicatorOffset, y + height - 4, math.max(34, DT_ManualUI_Utils.safeMeasure(UIFont.Small, tostring(row.title or "")) + 4), 1, 0.55, 0.30, 0.52, 0.78)
     end
@@ -125,9 +136,22 @@ function DT_ManualUI:drawResultItem(y, item, alt)
     local isHovered = self.mouseoverselected == item.index
 
     self:drawRect(0, y, width, height - 1, isHovered and 0.4 or 0.25, 0.12, 0.12, 0.12)
-    self:drawText(tostring(row.label or ""), 8, y + 4, 0.95, 0.95, 0.95, 1, UIFont.Small)
-    self:drawText(DynamicTrading.Utils.TruncateString(tostring(row.path or ""), UIFont.Small, width - 16), 8, y + 20, 0.70, 0.85, 0.95, 1, UIFont.Small)
-    self:drawText(DynamicTrading.Utils.TruncateString(tostring(row.snippet or ""), UIFont.Small, width - 16), 8, y + 34, 0.70, 0.70, 0.70, 1, UIFont.Small)
+    local labelLines = DT_ManualUI_Utils.WrapManualText(row.label or "", width - 16, UIFont.Small)
+    local lineY = y + 4
+    for _, line in ipairs(labelLines) do
+        self:drawText(line, 8, lineY, 0.95, 0.95, 0.95, 1, UIFont.Small)
+        lineY = lineY + 16
+    end
+    local pathLines = DT_ManualUI_Utils.WrapManualText(tostring(row.path or ""), width - 16, UIFont.Small)
+    for _, line in ipairs(pathLines) do
+        self:drawText(line, 8, lineY, 0.70, 0.85, 0.95, 1, UIFont.Small)
+        lineY = lineY + 16
+    end
+    local snippetLines = DT_ManualUI_Utils.WrapManualText(tostring(row.snippet or ""), width - 16, UIFont.Small)
+    for _, line in ipairs(snippetLines) do
+        self:drawText(line, 8, lineY, 0.70, 0.70, 0.70, 1, UIFont.Small)
+        lineY = lineY + 16
+    end
     return y + height
 end
 
@@ -138,10 +162,20 @@ function DT_ManualUI:drawContentItem(y, item, alt)
     local padding = 8
 
     if block.kind == "library" then
-        self:drawRect(0, y, width, height - 1, 0.30, 0.10, 0.10, 0.10)
-        self:drawText(tostring(block.title or ""), 10, y + 8, 1, 1, 1, 1, UIFont.Medium)
-        self:drawText(DynamicTrading.Utils.TruncateString(tostring(block.description or ""), UIFont.Small, width - 20), 10, y + 34, 0.75, 0.75, 0.75, 1, UIFont.Small)
-        return y + height
+        local titleLines = DT_ManualUI_Utils.WrapManualText(block.title or "", width - 20, UIFont.Medium)
+        local descLines = DT_ManualUI_Utils.WrapManualText(tostring(block.description or ""), width - 20, UIFont.Small)
+        local blockHeight = 8 + (#titleLines * 20) + (#descLines * 16) + 8
+        self:drawRect(0, y, width, blockHeight - 1, 0.30, 0.10, 0.10, 0.10)
+        local lineY = y + 8
+        for _, line in ipairs(titleLines) do
+            self:drawText(line, 10, lineY, 1, 1, 1, 1, UIFont.Medium)
+            lineY = lineY + 20
+        end
+        for _, line in ipairs(descLines) do
+            self:drawText(line, 10, lineY, 0.75, 0.75, 0.75, 1, UIFont.Small)
+            lineY = lineY + 16
+        end
+        return y + blockHeight
     end
 
     if block.kind == "heading" then

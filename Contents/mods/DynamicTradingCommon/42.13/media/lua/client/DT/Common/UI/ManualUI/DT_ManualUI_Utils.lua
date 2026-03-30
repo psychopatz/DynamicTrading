@@ -1,6 +1,14 @@
-require "Utils/DT_ConfigManager"
 
 DT_ManualUI_Utils = DT_ManualUI_Utils or {}
+require "Utils/DT_ConfigManager"
+
+-- Reusable string wrapper for all manual UI text
+function DT_ManualUI_Utils.WrapManualText(text, maxWidth, font)
+    if not DynamicTrading or not DynamicTrading.Utils or not DynamicTrading.Utils.WrapText then
+        return { tostring(text or "") }
+    end
+    return DynamicTrading.Utils.WrapText(tostring(text or ""), maxWidth, font or UIFont.Small)
+end
 
 DT_ManualUI_Utils.FONT_BY_LEVEL = {
     [1] = UIFont.Large,
@@ -45,7 +53,14 @@ function DT_ManualUI_Utils.getLayoutMetrics(ui)
     local toolbarHeight = 28
     local pageTitleHeight = 28
     local updateToggleHeight = (ui and ui.showUpdateToggle) and 28 or 0
-    local supportBannerHeight = (ui and ui.showSupportBanner) and 78 or 0
+    local supportBannerHeight = 0
+    if ui and ui.showSupportBanner then
+        if ui.supportBannerPanel and ui.supportBannerPanel:getHeight() > 0 then
+            supportBannerHeight = ui.supportBannerPanel:getHeight()
+        else
+            supportBannerHeight = 78
+        end
+    end
     local showResults = DT_ManualUI_Utils.shouldShowResults(ui)
     local resultsHeight = showResults and 120 or 0
     local rightX = pad + leftWidth + pad
