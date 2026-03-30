@@ -4,6 +4,60 @@
 
 local Common = DynamicTrading.Economy.Common
 
+local function cloneShallowTable(source)
+    if type(source) ~= "table" then
+        return source
+    end
+
+    local copy = {}
+    for key, value in pairs(source) do
+        copy[key] = value
+    end
+
+    return copy
+end
+
+local function ensureStockEntry(resultStock, itemKey)
+    local entry = resultStock[itemKey]
+    if type(entry) ~= "table" then
+        entry = { slots = 0 }
+        resultStock[itemKey] = entry
+    end
+
+    entry.slots = tonumber(entry.slots) or 0
+    return entry
+end
+
+local function applyAllocationData(stockEntry, allocation)
+    if type(stockEntry) ~= "table" or type(allocation) ~= "table" then
+        return
+    end
+
+    local fixedQty = allocation.fixedQty
+    if fixedQty == nil then
+        fixedQty = allocation.qty
+    end
+    if fixedQty ~= nil then
+        stockEntry.fixedQty = math.max(0, math.floor(tonumber(fixedQty) or 0))
+    end
+
+    local fixedPrice = allocation.fixedPrice
+    if fixedPrice == nil then
+        fixedPrice = allocation.price
+    end
+    if fixedPrice ~= nil then
+        stockEntry.fixedPrice = math.max(0, math.floor(tonumber(fixedPrice) or 0))
+    end
+
+    if allocation.customData ~= nil then
+        stockEntry.customData = cloneShallowTable(allocation.customData)
+    end
+
+    if allocation.expert ~= nil then
+        stockEntry.forceExpert = allocation.expert == true
+    end
+end
+
 local function pickGeneratedStockFluid()
     if not DynamicTrading or not DynamicTrading.Fluids then
         return nil
@@ -128,7 +182,9 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             for i=1, count do
                 if slotsFilled >= totalSlots then break end
                 local pick = validItems[ZombRand(#validItems)+1]
-                resultStock[pick] = (resultStock[pick] or 0) -- Placeholder
+                local stockEntry = ensureStockEntry(resultStock, pick)
+                stockEntry.slots = stockEntry.slots + 1
+                applyAllocationData(stockEntry, entry)
                 slotsFilled = slotsFilled + 1
             end
         end
@@ -137,7 +193,7 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
     -- ---------------------------------------------------------
     -- PHASE 2: WILDCARDS (The Weighted Lottery)
     -- ---------------------------------------------------------
-    if slotsFilled < totalSlots then
+    if slotsFilled < totalSlots and DynamicTrading.IsArchetypeWildcardStockEnabled(archetype) then
         local lotteryPool = {}
         
         for key, itemData in pairs(masterList) do
@@ -197,7 +253,8 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
         while slotsFilled < totalSlots do
             local pickKey = Common.PickFromWeightedPool(lotteryPool)
             if pickKey then
-                resultStock[pickKey] = (resultStock[pickKey] or 0)
+                local stockEntry = ensureStockEntry(resultStock, pickKey)
+                stockEntry.slots = stockEntry.slots + 1
                 slotsFilled = slotsFilled + 1
             else
                 break 
@@ -211,32 +268,31 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
     -- Modifiers function for volume
     local getVolumeMod = modifiers.getVolumeModifier
     
-    for key, _ in pairs(resultStock) do
+    for key, stockEntry in pairs(resultStock) do
         local itemData = masterList[key]
         if itemData then
-            local min = itemData.stockRange.min
-            local max = itemData.stockRange.max
-            
-            -- Event Volume Multiplier
-            local volumeMult = 1.0
-            if getVolumeMod then
-                -- Check if it's a function or a value? No, passed as function from caller ideally?
-                -- Or caller resolves it. 
-                -- Wait, in V1 it was DynamicTrading.Events.GetVolumeModifier(itemData.tags)
-                -- So `getVolumeMod` should be a function that takes tags and returns float.
-                volumeMult = getVolumeMod(itemData.tags)
+            stockEntry = type(stockEntry) == "table" and stockEntry or {}
+
+            local qty = nil
+            if stockEntry.fixedQty ~= nil then
+                qty = math.max(0, math.floor(tonumber(stockEntry.fixedQty) or 0))
+            else
+                local min = itemData.stockRange.min
+                local max = itemData.stockRange.max
+
+                local volumeMult = 1.0
+                if getVolumeMod then
+                    volumeMult = getVolumeMod(itemData.tags)
+                end
+
+                qty = ZombRand(min, max + 1)
+                qty = math.floor(qty * diffData.stockMult * volumeMult * globalStockMult)
+                if qty < 1 then qty = 1 end
             end
             
-            local qty = ZombRand(min, max + 1)
-            
-            -- Apply factors
-            qty = math.floor(qty * diffData.stockMult * volumeMult * globalStockMult)
-            
-            if qty < 1 then qty = 1 end 
-            
             -- [NEW] EXPERT TAG CHECK (Agnostic variation system: Archetype + Events)
-            local isExpert = false
-            if archetype and archetype.expertTags then
+            local isExpert = stockEntry.forceExpert == true
+            if not isExpert and archetype and archetype.expertTags then
                 for _, eTag in ipairs(archetype.expertTags) do
                     if Common.HasMatchingTag(itemData.tags, eTag) then isExpert = true break end
                     if isExpert then break end
@@ -249,13 +305,16 @@ function Common.GenerateStock(archetype, masterList, diffData, modifiers)
             end
 
             -- [NEW] Unified Table Structure {qty=X, customData=Y}
-            local conditionData = Common.GenerateItemCondition(itemData, isExpert)
+            local conditionData = stockEntry.customData ~= nil
+                and cloneShallowTable(stockEntry.customData)
+                or Common.GenerateItemCondition(itemData, isExpert)
             
             DynamicTrading.Log("DTCommons", "Trade", "Debug", "GenerateStock: " .. key .. " | Qty: " .. qty .. " | CustomData: " .. (conditionData and "YES" or "NO") .. " | IsExpert: " .. tostring(isExpert))
             
             resultStock[key] = {
                 qty = qty,
-                customData = conditionData
+                customData = conditionData,
+                fixedPrice = stockEntry.fixedPrice
             }
         end
     end

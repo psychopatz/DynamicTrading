@@ -197,6 +197,12 @@ function DT_FactionDebugData.handleServerResponse(command, args)
         end
         
         return true
+    elseif command == "TradeResult" then
+        DynamicTrading.Log("DTCommons", "Debug", "UI", tostring(args and args.reason or "TradeResult"))
+        if DT_FactionDebugWindow and DT_FactionDebugWindow.instance and DT_FactionDebugWindow.instance:getIsVisible() then
+            DT_FactionDebugWindow.instance:refreshList()
+        end
+        return true
     end
     
     return false

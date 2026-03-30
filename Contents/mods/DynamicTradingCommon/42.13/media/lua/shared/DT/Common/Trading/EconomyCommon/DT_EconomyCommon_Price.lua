@@ -209,7 +209,7 @@ local function findWantMultiplier(tags, archetype)
 
     for _, t in ipairs(tags or {}) do
         for wantTag, bonus in pairs(archetype.wants) do
-            if t == wantTag or string.find(t, wantTag .. "%.") == 1 then
+            if Common.TagMatches(t, wantTag) then
                 return bonus, wantTag
             end
         end

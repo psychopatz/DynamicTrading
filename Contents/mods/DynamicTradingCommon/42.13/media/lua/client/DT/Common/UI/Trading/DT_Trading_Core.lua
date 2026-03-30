@@ -58,3 +58,47 @@ function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName
         tag = tag
     })
 end
+
+function DT_TradingWindow:getCurrentTrader()
+    if not self.dataProvider or not self.traderID or not self.dataProvider.getTrader then
+        return nil
+    end
+
+    return self.dataProvider:getTrader(self.traderID, self.archetype)
+end
+
+function DT_TradingWindow:getTradeModeConfig(trader)
+    if self.dataProvider and self.dataProvider.getTradeModeConfig then
+        return self.dataProvider:getTradeModeConfig(trader or self:getCurrentTrader())
+    end
+
+    return { canBuy = true, canSell = true, defaultIsBuying = true }
+end
+
+function DT_TradingWindow:isTradeModeEnabled(isBuying, trader)
+    local config = self:getTradeModeConfig(trader)
+    return isBuying and config.canBuy or config.canSell
+end
+
+function DT_TradingWindow:syncTradeModeVisibility(trader)
+    local config = self:getTradeModeConfig(trader)
+
+    if self.btnTabBuy then
+        self.btnTabBuy:setVisible(config.canBuy)
+    end
+
+    if self.btnTabSell then
+        self.btnTabSell:setVisible(config.canSell)
+    end
+
+    return config
+end
+
+function DT_TradingWindow:coerceTradeMode(trader)
+    local config = self:syncTradeModeVisibility(trader)
+    if not self:isTradeModeEnabled(self.isBuying, trader) then
+        self.isBuying = config.defaultIsBuying ~= false
+    end
+
+    return config
+end

@@ -201,14 +201,23 @@ function DT_TradingWindow:relayout()
     end
     
     -- 5. Right column (Tabs & Listbox) updates
-    local tabW = rightW / 2
-    if self.btnTabBuy then
-        self.btnTabBuy:setX(rightX)
-        self.btnTabBuy:setWidth(tabW)
+    local visibleTabs = {}
+    if self.btnTabBuy and self.btnTabBuy:isVisible() then
+        table.insert(visibleTabs, self.btnTabBuy)
     end
-    if self.btnTabSell then
-        self.btnTabSell:setX(rightX + tabW)
-        self.btnTabSell:setWidth(tabW)
+    if self.btnTabSell and self.btnTabSell:isVisible() then
+        table.insert(visibleTabs, self.btnTabSell)
+    end
+
+    if #visibleTabs == 0 and self.btnTabBuy then
+        self.btnTabBuy:setVisible(true)
+        table.insert(visibleTabs, self.btnTabBuy)
+    end
+
+    local tabW = rightW / math.max(1, #visibleTabs)
+    for index, button in ipairs(visibleTabs) do
+        button:setX(rightX + ((index - 1) * tabW))
+        button:setWidth(tabW)
     end
     
     if self.listbox then

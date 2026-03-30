@@ -55,7 +55,7 @@ function DT_TradingWindow:getMaxSellQuantity(data, trader)
 end
 
 function DT_TradingWindow:sendSellTransaction(data, qty, itemNameOverride)
-    if not data then return end
+    if not data or not self:isTradeModeEnabled(false) then return end
 
     local player = getSpecificPlayer(0)
     if not player then return end
@@ -109,7 +109,7 @@ function DT_TradingWindow:sendSellTransaction(data, qty, itemNameOverride)
 end
 
 function DT_TradingWindow:onConfirmQuantityBuy(data, qty)
-    if not data then return end
+    if not data or not self:isTradeModeEnabled(true) then return end
 
     local amount = math.max(1, math.floor(tonumber(qty) or 1))
     local preview = self:getBulkBuyPreview(data, amount)
@@ -140,11 +140,16 @@ function DT_TradingWindow:onConfirmQuantityBuy(data, qty)
 end
 
 function DT_TradingWindow:onConfirmQuantitySell(data, qty)
+    if not self:isTradeModeEnabled(false) then return end
     self:sendSellTransaction(data, qty)
 end
 
 function DT_TradingWindow:onAction()
     if self.resetIdleTimer then self:resetIdleTimer() end
+    if not self:isTradeModeEnabled(self.isBuying) then
+        self:populateList()
+        return
+    end
 
     if not self.listbox or self.listbox.selected == -1 then return end
     local selItem = self.listbox.items[self.listbox.selected]

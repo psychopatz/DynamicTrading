@@ -113,6 +113,40 @@ local function resolveInventoryFluidState(itemObj)
     return fluidType, amount
 end
 
+local function getTraderArchetypeID(soul, stockData)
+    if soul then
+        return soul.archetypeID or soul.archetype or "General"
+    end
+
+    if stockData then
+        return stockData.archetype or "General"
+    end
+
+    return "General"
+end
+
+local function isTradeModeAllowed(archetypeID, txType)
+    if txType == "buy" then
+        return not DynamicTrading.IsArchetypeBuyTabEnabled
+            or DynamicTrading.IsArchetypeBuyTabEnabled(archetypeID)
+    end
+
+    if txType == "sell" then
+        return not DynamicTrading.IsArchetypeSellTabEnabled
+            or DynamicTrading.IsArchetypeSellTabEnabled(archetypeID)
+    end
+
+    return true
+end
+
+local function getTradeModeDisabledMessage(txType)
+    if txType == "sell" then
+        return "This trader is not buying items."
+    end
+
+    return "This trader is not selling items."
+end
+
 -- =============================================================================
 -- TRADE TRANSACTION - BUY/SELL
 -- =============================================================================
@@ -150,7 +184,16 @@ Handlers.TradeTransaction = function(player, args)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderID) or DynamicTrading_Roster.GetTrader(traderID)
     local factionID = soul and soul.factionID or nil
     local factionData = factionID and DynamicTrading_Factions.GetFaction(factionID) or nil
+    local archetypeID = getTraderArchetypeID(soul, stockData)
     DynamicTrading.Log("DTCommons", "Trade", "Logic", "FactionID: " .. tostring(factionID) .. ", Faction wealth: $" .. tostring(factionData and factionData.wealth or 0))
+
+    if not isTradeModeAllowed(archetypeID, txType) then
+        DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", {
+            success = false,
+            msg = getTradeModeDisabledMessage(txType)
+        })
+        return
+    end
     
     if txType == "buy" then
         -- 1. Get price from stock

@@ -1,7 +1,7 @@
 -- =============================================================================
 -- 4. DYNAMIC LOADER
 -- =============================================================================
-DynamicTrading.Config.ArchetypeList = {
+local defaultArchetypeList = {
     "Angler", "Athlete", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
     "Carpenter", "Chef", "Demo", "Designer", "Doctor", "Electrician", "Farmer", "Foreman",
     "Geek", "Gunrunner", "Herbalist", "Hiker", "Hunter", "Janitor", "Librarian", "Mechanic",
@@ -10,6 +10,24 @@ DynamicTrading.Config.ArchetypeList = {
     "Survivalist", "Tailor", "Teacher", "Tribal", "Welder",
     "General", "Player" -- Meta archetypes
 }
+
+DynamicTrading.Config.ArchetypeList = DynamicTrading.Config.ArchetypeList or {}
+for _, id in ipairs(defaultArchetypeList) do
+    if DynamicTrading.RegisterArchetypeModule then
+        DynamicTrading.RegisterArchetypeModule(id)
+    else
+        local exists = false
+        for _, currentID in ipairs(DynamicTrading.Config.ArchetypeList) do
+            if currentID == id then
+                exists = true
+                break
+            end
+        end
+        if not exists then
+            table.insert(DynamicTrading.Config.ArchetypeList, id)
+        end
+    end
+end
 
 local languages = {
     "AR", "CA", "CH", "CN", "CS", "DA", "DE", "EN", "ES", "FI",

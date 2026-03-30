@@ -7,11 +7,26 @@
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.TradingProvider = DynamicTrading.TradingProvider or {}
 
+local function getFixedStockPrice(provider, key)
+    local stockItems = provider and provider._stockItems
+    local stockEntry = stockItems and stockItems[key] or nil
+    if type(stockEntry) ~= "table" or stockEntry.fixedPrice == nil then
+        return nil
+    end
+
+    return math.max(0, math.floor(tonumber(stockEntry.fixedPrice) or 0))
+end
+
 function DynamicTrading.TradingProvider.AttachPricing(provider)
     if not provider then return end
 
     if provider.getEffectiveBasePrice == nil then
         function provider:getEffectiveBasePrice(key, itemData)
+            local fixedPrice = getFixedStockPrice(self, key)
+            if fixedPrice ~= nil then
+                return fixedPrice
+            end
+
             local resolvedItemData = itemData or DynamicTrading.Config.MasterList[key]
             if DynamicTrading.PriceConfig and DynamicTrading.PriceConfig.GetEffectiveBasePrice then
                 return DynamicTrading.PriceConfig.GetEffectiveBasePrice(key, resolvedItemData)
@@ -30,6 +45,11 @@ function DynamicTrading.TradingProvider.AttachPricing(provider)
         function provider:getBuyPrice(key, customData, verbose)
             local traderID = self._currentTraderID
             if not traderID then return 99999 end
+
+            local fixedPrice = getFixedStockPrice(self, key)
+            if fixedPrice ~= nil then
+                return fixedPrice
+            end
 
             local itemData = DynamicTrading.Config.MasterList[key]
             if not itemData then return 99999 end
@@ -63,6 +83,13 @@ function DynamicTrading.TradingProvider.AttachPricing(provider)
         function provider:getSellPrice(invItem, masterKey, trader, verbose)
             local traderID = self._currentTraderID
             if not traderID or not invItem then return 0 end
+
+            if DynamicTrading and DynamicTrading.IsArchetypeSellTabEnabled then
+                local archetypeID = trader and trader.archetype or "General"
+                if not DynamicTrading.IsArchetypeSellTabEnabled(archetypeID) then
+                    return 0
+                end
+            end
 
             local itemData = DynamicTrading.Config.MasterKey and DynamicTrading.Config.MasterList[masterKey]
             if not itemData then itemData = DynamicTrading.Config.MasterList[masterKey] end

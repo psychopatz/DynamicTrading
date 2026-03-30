@@ -222,16 +222,39 @@ function Lifecycle.GenerateRoster(factionID)
     
     local archetypes = {} 
     for id, _ in pairs(DynamicTrading.Archetypes) do
-        table.insert(archetypes, id)
+        if not DynamicTrading.IsArchetypeAllowedForFaction
+            or DynamicTrading.IsArchetypeAllowedForFaction(id, factionID) then
+            table.insert(archetypes, id)
+        end
     end
     
-    if #archetypes == 0 then return end
+    if #archetypes == 0 then
+        table.insert(archetypes, "General")
+    end
+
+    local requiredArchetypes = {}
+    if DynamicTrading.GetRosterPoolEntriesForFaction then
+        local rosterEntries = DynamicTrading.GetRosterPoolEntriesForFaction(factionID)
+        for _, entry in ipairs(rosterEntries) do
+            if DynamicTrading.Archetypes and DynamicTrading.Archetypes[entry.archetypeID] then
+                for _ = 1, entry.minCount do
+                    table.insert(requiredArchetypes, entry.archetypeID)
+                end
+            end
+        end
+    end
+
+    local totalMembers = math.max(tonumber(faction.memberCount) or 0, #requiredArchetypes)
+    if totalMembers < 1 then
+        totalMembers = 1
+    end
+    faction.memberCount = totalMembers
     
     local home = faction.homeCoords
     local scatterRange = 10 -- +/- 10 tiles
 
-    for i=1, faction.memberCount do
-        local randomArch = archetypes[ZombRand(#archetypes) + 1]
+    for i=1, totalMembers do
+        local randomArch = requiredArchetypes[i] or archetypes[ZombRand(#archetypes) + 1]
         
         -- Scattered Home logic
         local scatteredHome = nil

@@ -121,6 +121,26 @@ function DT_TradingWindow:populateList()
     local trader = dataProvider:getTrader(self.traderID, self.archetype)
     if not trader then return end
 
+    self:coerceTradeMode(trader)
+    if self.relayout then
+        self:relayout()
+    end
+
+    if self.btnAsk then
+        local config = dataProvider:getAskButtonConfig(self.isBuying)
+        if config then
+            self.btnAsk:setTitle(config.title or "Talk")
+            self.btnAsk:setVisible(config.visible ~= false)
+            self.btnAsk:setEnable(true)
+        else
+            self.btnAsk:setVisible(false)
+        end
+    end
+
+    if self.btnLock then
+        self.btnLock:setVisible(dataProvider:getLockButtonVisible(self.isBuying))
+    end
+
     self:updateIdentityDisplay(trader)
     self:updateWallet()
 

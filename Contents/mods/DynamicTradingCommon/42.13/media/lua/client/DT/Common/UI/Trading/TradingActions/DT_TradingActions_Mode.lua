@@ -1,5 +1,15 @@
 function DT_TradingWindow:setTradingMode(isBuying)
-    if self.isBuying == isBuying then return end
+    local trader = self:getCurrentTrader()
+    self:coerceTradeMode(trader)
+
+    if not self:isTradeModeEnabled(isBuying, trader) then
+        return
+    end
+
+    if self.isBuying == isBuying then
+        if self.relayout then self:relayout() end
+        return
+    end
     if self.resetIdleTimer then self:resetIdleTimer() end
 
     self.isBuying = isBuying
@@ -32,6 +42,9 @@ function DT_TradingWindow:setTradingMode(isBuying)
         self.btnLock:setVisible(self.dataProvider:getLockButtonVisible(self.isBuying))
     end
 
+    if self.relayout then
+        self:relayout()
+    end
     self:populateList()
     self.btnAction:setEnable(false)
 end

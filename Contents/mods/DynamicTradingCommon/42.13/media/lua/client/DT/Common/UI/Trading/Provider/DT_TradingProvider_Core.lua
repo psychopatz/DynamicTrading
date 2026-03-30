@@ -15,6 +15,15 @@ local function getLocalPlayer()
     return getSpecificPlayer(0)
 end
 
+local function getArchetypeDataForTrader(trader)
+    local archetypeID = trader and trader.archetype or nil
+    if DynamicTrading and DynamicTrading.GetArchetypeData then
+        return DynamicTrading.GetArchetypeData(archetypeID)
+    end
+
+    return DynamicTrading and DynamicTrading.Archetypes and DynamicTrading.Archetypes[archetypeID] or nil
+end
+
 function DynamicTrading.TradingProvider.AttachCore(provider)
     if not provider then return end
 
@@ -37,6 +46,50 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
     if provider.getAskButtonConfig == nil then
         function provider:getAskButtonConfig(isBuying)
             return { title = isBuying and "Talk" or "Ask What They Want", visible = true }
+        end
+    end
+
+    if provider.getTradeModeConfig == nil then
+        function provider:getTradeModeConfig(trader)
+            local archetypeData = getArchetypeDataForTrader(trader)
+            local canBuy = true
+            local canSell = true
+
+            if DynamicTrading and DynamicTrading.IsArchetypeBuyTabEnabled then
+                canBuy = DynamicTrading.IsArchetypeBuyTabEnabled(archetypeData or (trader and trader.archetype))
+            elseif archetypeData then
+                canBuy = archetypeData.disableBuyTab ~= true
+            end
+
+            if DynamicTrading and DynamicTrading.IsArchetypeSellTabEnabled then
+                canSell = DynamicTrading.IsArchetypeSellTabEnabled(archetypeData or (trader and trader.archetype))
+            elseif archetypeData then
+                canSell = archetypeData.disableSellTab ~= true
+            end
+
+            if not canBuy and not canSell then
+                canBuy = true
+            end
+
+            return {
+                canBuy = canBuy,
+                canSell = canSell,
+                defaultIsBuying = canBuy
+            }
+        end
+    end
+
+    if provider.isTradeModeEnabled == nil then
+        function provider:isTradeModeEnabled(trader, isBuying)
+            local config = self:getTradeModeConfig(trader)
+            return isBuying and config.canBuy or config.canSell
+        end
+    end
+
+    if provider.getDefaultTradingMode == nil then
+        function provider:getDefaultTradingMode(trader)
+            local config = self:getTradeModeConfig(trader)
+            return config.defaultIsBuying ~= false
         end
     end
 

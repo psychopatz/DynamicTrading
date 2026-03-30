@@ -52,6 +52,11 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
         ui:setTitle("Trading Window")
     end
 
+    if dataProvider.getDefaultTradingMode then
+        ui.isBuying = dataProvider:getDefaultTradingMode(trader)
+    end
+    ui:coerceTradeMode(trader)
+    ui:relayout()
     ui:populateList()
 
     local gameTime = GameTime:getInstance()

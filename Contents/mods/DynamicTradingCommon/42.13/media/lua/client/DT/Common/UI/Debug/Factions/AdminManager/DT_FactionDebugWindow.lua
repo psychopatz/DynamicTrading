@@ -158,6 +158,17 @@ function DT_FactionDebugWindow:createChildren()
     self.btnForceTrade.enable = false
     self:addChild(self.btnForceTrade)
 
+    local spawnY = locateY + 35
+    self.archCombo = ISComboBox:new(locateX, spawnY, 220, 25, self, nil)
+    self.archCombo:initialise()
+    self.archCombo:instantiate()
+    self:addChild(self.archCombo)
+
+    self.btnSpawnTrader = ISButton:new(locateX + 230, spawnY, 170, 25, "SPAWN TRADER", self, DT_FactionDebugWindow.onSpawnTraderClick)
+    self.btnSpawnTrader:initialise()
+    self.btnSpawnTrader.backgroundColor = {r=0.5, g=0.35, b=0.1, a=1}
+    self:addChild(self.btnSpawnTrader)
+
     -- FORCE EVENT BUTTON
     self.btnForceEvent = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 4, ctrlY, ctrlBtnWidth, 20, "FORCE EVENT", self, DT_FactionDebugWindow.onForceEventClick)
     self.btnForceEvent:initialise()
@@ -175,6 +186,7 @@ function DT_FactionDebugWindow:createChildren()
     self:addChild(self.btnMerchant)
 
     self:refreshList()
+    self:refreshArchetypeOptions()
 end
 
 -- ==========================================================
@@ -200,6 +212,43 @@ function DT_FactionDebugWindow:populateList(factionData)
     for _, entry in ipairs(sorted) do
         self.listbox:addItem(entry.data.name or entry.id, entry.data)
     end
+
+    self:refreshArchetypeOptions()
+end
+
+function DT_FactionDebugWindow:refreshArchetypeOptions()
+    if not self.archCombo then
+        return
+    end
+
+    local previousText = self.archCombo.selected and self.archCombo:getOptionText(self.archCombo.selected) or nil
+    self.archCombo:clear()
+    self.availableArchetypes = {}
+
+    local archetypeIDs = {}
+    for id, _ in pairs(DynamicTrading.Archetypes or {}) do
+        table.insert(archetypeIDs, id)
+    end
+    table.sort(archetypeIDs)
+
+    local selectedIndex = 1
+    for index, archetypeID in ipairs(archetypeIDs) do
+        self.archCombo:addOption(archetypeID)
+        self.availableArchetypes[index] = archetypeID
+        if previousText == archetypeID then
+            selectedIndex = index
+        end
+    end
+
+    self.archCombo.selected = #self.availableArchetypes > 0 and selectedIndex or 0
+    if self.btnSpawnTrader then
+        self.btnSpawnTrader.enable = #self.availableArchetypes > 0
+    end
+end
+
+function DT_FactionDebugWindow:getSelectedArchetypeID()
+    local selected = self.archCombo and self.archCombo.selected or 0
+    return self.availableArchetypes and self.availableArchetypes[selected] or nil
 end
 
 -- ==========================================================
@@ -277,6 +326,15 @@ function DT_FactionDebugWindow:onForceEventClick()
     if f then
         DT_FactionDebugActions.showEventSelection(f.item.id, getMouseX(), getMouseY())
     end
+end
+
+function DT_FactionDebugWindow:onSpawnTraderClick()
+    local archetypeID = self:getSelectedArchetypeID()
+    if not archetypeID then
+        return
+    end
+
+    DT_FactionDebugActions.forceTraderByArchetype(archetypeID)
 end
 
 -- ==========================================================

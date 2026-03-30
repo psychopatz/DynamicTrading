@@ -22,6 +22,156 @@ DynamicTrading.Manager = {}
 local V1_DATA_KEY = "DynamicTrading_V1_Radio" -- Deprecated, kept only for legacy saves
 local V2_RADAR_KEY = "DT_V2_RadarFound"
 
+local function getFactionModData()
+    return ModData.get("DynamicTrading_Factions") or {}
+end
+
+local function syncSharedTraderData()
+    if isServer() or not isClient() then
+        ModData.transmit("DynamicTrading_Roster")
+        ModData.transmit("DynamicTrading_Factions")
+        ModData.transmit("DynamicTrading_Stock")
+    end
+end
+
+local function ensureFactionExists(factionID)
+    local targetFactionID = tostring(factionID or "Independent")
+    local factionData = getFactionModData()
+    if factionData[targetFactionID] then
+        return targetFactionID
+    end
+
+    if targetFactionID == "Independent"
+        and DynamicTrading_Factions
+        and DynamicTrading_Factions.CreateFaction then
+        DynamicTrading_Factions.CreateFaction("Independent", {
+            memberCount = 10,
+            isNomadic = true
+        })
+        return "Independent"
+    end
+
+    return targetFactionID
+end
+
+local function resolveFactionForArchetype(archetypeID)
+    local factionData = getFactionModData()
+    local preferredFactionID = DynamicTrading.GetArchetypePreferredFaction
+        and DynamicTrading.GetArchetypePreferredFaction(archetypeID) or nil
+
+    if preferredFactionID and factionData[preferredFactionID] then
+        return preferredFactionID
+    end
+
+    local eligibleFactionIDs = {}
+    for id, _ in pairs(factionData) do
+        if not DynamicTrading.IsArchetypeAllowedForFaction
+            or DynamicTrading.IsArchetypeAllowedForFaction(archetypeID, id) then
+            table.insert(eligibleFactionIDs, id)
+        end
+    end
+
+    if #eligibleFactionIDs > 0 then
+        return eligibleFactionIDs[ZombRand(#eligibleFactionIDs) + 1]
+    end
+
+    if preferredFactionID == "Independent"
+        and DynamicTrading_Factions
+        and DynamicTrading_Factions.CreateFaction
+        and not factionData["Independent"] then
+        DynamicTrading_Factions.CreateFaction("Independent", {
+            memberCount = 10,
+            isNomadic = true
+        })
+        return "Independent"
+    end
+
+    if factionData["Independent"] then
+        return "Independent"
+    end
+
+    return preferredFactionID or "Independent"
+end
+
+local function applyArchetypeFactionWealthFloor(archetypeID, factionID)
+    local minWealth = DynamicTrading.GetArchetypeFactionWealthFloor
+        and DynamicTrading.GetArchetypeFactionWealthFloor(archetypeID) or 0
+
+    if minWealth <= 0 or not factionID or not DynamicTrading_Factions or not DynamicTrading_Factions.GetFaction then
+        return
+    end
+
+    local faction = DynamicTrading_Factions.GetFaction(factionID)
+    if faction and (tonumber(faction.wealth) or 0) < minWealth then
+        faction.wealth = minWealth
+    end
+end
+
+local function syncFactionMemberCount(factionID)
+    if not factionID or not DynamicTrading_Factions or not DynamicTrading_Factions.GetFaction then
+        return
+    end
+
+    local faction = DynamicTrading_Factions.GetFaction(factionID)
+    if not faction then
+        return
+    end
+
+    local members = DynamicTrading_Roster and DynamicTrading_Roster.GetSouls
+        and DynamicTrading_Roster.GetSouls(factionID) or nil
+    if type(members) ~= "table" then
+        return
+    end
+
+    faction.memberCount = #members
+end
+
+local function seedTradingCoordinates(uuid)
+    if not uuid or not DynamicTrading_Roster then
+        return false
+    end
+
+    local registry = DynamicTrading_Roster.GetSoulRegistry and DynamicTrading_Roster.GetSoulRegistry(uuid) or nil
+    local npcData = DynamicTrading_Roster.GetSoul and DynamicTrading_Roster.GetSoul(uuid) or nil
+    if not registry or not npcData then
+        return false
+    end
+
+    if npcData.lastX and npcData.lastY then
+        return true
+    end
+
+    local targetX = nil
+    local targetY = nil
+    local targetZ = 0
+
+    if DTNPCManager and DTNPCManager.PlanTradingDestination then
+        targetX, targetY, targetZ = DTNPCManager.PlanTradingDestination(uuid, registry)
+    end
+
+    if (not targetX or not targetY) and (npcData.homeCoords or registry.homeCoords) then
+        local fallbackHome = npcData.homeCoords or registry.homeCoords
+        targetX = fallbackHome and fallbackHome.x or nil
+        targetY = fallbackHome and fallbackHome.y or nil
+        targetZ = fallbackHome and (fallbackHome.z or 0) or 0
+    end
+
+    if not targetX or not targetY then
+        return false
+    end
+
+    npcData.lastX = math.floor(targetX)
+    npcData.lastY = math.floor(targetY)
+    npcData.lastZ = math.floor(targetZ or 0)
+    npcData.travelTarget = nil
+    DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    return true
+end
+
+function DynamicTrading.Manager.EnsureTraderTradingCoordinates(uuid)
+    return seedTradingCoordinates(uuid)
+end
+
 -- =============================================================================
 -- 1. HELPER: CALCULATE "TRADING DAY" (5 AM START)
 -- =============================================================================
@@ -69,8 +219,6 @@ function DynamicTrading.Manager.GenerateRandomContact(finder, targetArchetype)
 end
 
 function DynamicTrading.Manager.GenerateRandomContact_ServerCommand(targetArchetype, finder)
-    local data = DynamicTrading.Manager.GetData()
-    
     -- 1. Pick Archetype
     local archetype = targetArchetype
     if not archetype then
@@ -80,66 +228,87 @@ function DynamicTrading.Manager.GenerateRandomContact_ServerCommand(targetArchet
         archetype = archetypes[ZombRand(#archetypes) + 1]
     end
 
-    -- 2. Pick a random faction to assign this radio trader to
-    local factionID = "Independent"
-    if DynamicTrading_Factions then
-        local factionData = ModData.get("DynamicTrading_Factions")
-        if factionData then
-            local factionIDs = {}
-            for id, _ in pairs(factionData) do
-                table.insert(factionIDs, id)
-            end
-            if #factionIDs > 0 then
-                factionID = factionIDs[ZombRand(#factionIDs) + 1]
-            end
-        end
-    end
+    return DynamicTrading.Manager.SpawnTraderWithArchetype(archetype)
+end
 
-    -- 3. Create Soul in shared Roster
-    local uuid = nil
-    if DynamicTrading_Roster and DynamicTrading_Roster.AddSoul then
-        uuid = DynamicTrading_Roster.AddSoul(factionID, archetype, nil)
-    end
-    
+function DynamicTrading.Manager.ActivateTraderSoul(uuid, options)
     if not uuid then
-        DynamicTrading.Log("DTV1", "Radio", "Error", "Failed to create Soul in Roster!")
         return nil
     end
 
-    -- 4. Set Soul to "Trading" status so stock can be generated
+    options = type(options) == "table" and options or {}
+
+    DynamicTrading.Manager.EnsureTraderTradingCoordinates(uuid)
+
     if DynamicTrading_Roster.UpdateSoulStatus then
         DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", nil, nil)
     end
 
-    -- 5. Generate Stock via shared economy
+    -- Generate stock via shared economy
     if DynamicTrading_Stock and DynamicTrading_Stock.CheckAndGenerateStock then
         local success, reason = DynamicTrading_Stock.CheckAndGenerateStock(uuid)
         DynamicTrading.Log("DTV1", "Radio", "Stock", "Stock for " .. uuid .. " => " .. tostring(reason))
     end
 
-    -- 6. Expiration (Radio specific — traders leave after X hours)
-    -- V1 now dictates returnTime instantly upon generation rather than relying on RadioTraders table
+    -- Expiration (Radio specific — traders leave after X hours)
     local gt = GameTime:getInstance()
     local currentHours = gt:getWorldAgeHours()
-    local minHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6
-    local maxHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMax) or 24
+    local fixedDuration = tonumber(options.durationHours)
+    local minHours = fixedDuration or tonumber(options.minHours)
+        or ((SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6)
+    local maxHours = fixedDuration or tonumber(options.maxHours)
+        or ((SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMax) or 24)
     if minHours > maxHours then minHours = maxHours end
     local duration = ZombRand(minHours, maxHours + 1)
     local expireTime = currentHours + duration
 
-    -- Apply expiration to Common Roster
     if DynamicTrading_Roster.UpdateSoulStatus then
-        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", expireTime, "Away")
+        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", expireTime, options.returnStatus or "Away")
     end
 
-    -- Server syncs Common Faction/Roster instead of legacy Radio data
-    if isServer() or not isClient() then 
-        ModData.transmit("DynamicTrading_Roster") 
-        ModData.transmit("DynamicTrading_Factions")
-    end
-    
-    -- Return a V1-compatible trader object for the caller
+    syncSharedTraderData()
+
     return DynamicTrading.Manager.GetTrader(uuid)
+end
+
+function DynamicTrading.Manager.SpawnTraderWithArchetype(archetypeID, options)
+    options = type(options) == "table" and options or {}
+
+    if type(archetypeID) ~= "string" or archetypeID == "" then
+        return nil
+    end
+
+    if not (DynamicTrading.Archetypes and DynamicTrading.Archetypes[archetypeID]) then
+        DynamicTrading.Log("DTV1", "Radio", "Error", "SpawnTraderWithArchetype: Unknown archetype [" .. tostring(archetypeID) .. "]")
+        return nil
+    end
+
+    local factionID = options.factionID or resolveFactionForArchetype(archetypeID)
+    factionID = ensureFactionExists(factionID)
+    applyArchetypeFactionWealthFloor(archetypeID, factionID)
+
+    local uuid = nil
+    if DynamicTrading_Roster and DynamicTrading_Roster.AddSoul then
+        uuid = DynamicTrading_Roster.AddSoul(factionID, archetypeID, options.homeCoords, {
+            forceFaction = options.forceFaction == true
+        })
+    end
+
+    if not uuid then
+        DynamicTrading.Log("DTV1", "Radio", "Error", "Failed to create Soul in Roster!")
+        return nil
+    end
+
+    syncFactionMemberCount(factionID)
+
+    local trader = DynamicTrading.Manager.ActivateTraderSoul(uuid, options)
+
+    if trader and options.discoverForPlayer and DynamicTrading.Manager.DiscoverTrader then
+        DynamicTrading.Manager.DiscoverTrader(uuid, options.discoverForPlayer)
+        trader = DynamicTrading.Manager.GetTrader(uuid)
+    end
+
+    return trader
 end
 
 -- =============================================================================

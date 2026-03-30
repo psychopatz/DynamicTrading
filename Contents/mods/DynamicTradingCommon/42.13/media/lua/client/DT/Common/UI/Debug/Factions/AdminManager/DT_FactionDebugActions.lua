@@ -64,6 +64,22 @@ function DT_FactionDebugActions.createRandomFaction()
     DT_DebugNetworkAdapter.sendDebugAction("createTestFaction", { targetID = testID })
 end
 
+function DT_FactionDebugActions.forceTraderByArchetype(archetypeID)
+    if type(archetypeID) ~= "string" or archetypeID == "" then
+        return false
+    end
+
+    DT_DebugNetworkAdapter.sendDebugAction("ForceTraderByArchetype", {
+        archetypeID = archetypeID,
+        factionID = "Independent"
+    })
+
+    if getPlayer() then
+        getPlayer():Say("Requested trader spawn: " .. archetypeID)
+    end
+    return true
+end
+
 -- ==========================================================
 -- NPC ROSTER ACTIONS
 -- ==========================================================

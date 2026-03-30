@@ -212,8 +212,19 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
     
     DynamicTrading.Log("DTCommons", "Roster", "Status", "Updated status for " .. uuid .. " to " .. (status or "nil") .. " (Return in: " .. tostring(returnTime) .. " as " .. tostring(returnStatus) .. ")")
 end
-function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords)
+function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords, options)
     local data = ModData.get(MOD_DATA_KEY)
+    options = type(options) == "table" and options or {}
+
+    if not options.forceFaction
+        and DynamicTrading.IsArchetypeAllowedForFaction
+        and not DynamicTrading.IsArchetypeAllowedForFaction(archetypeID, factionID) then
+        local preferredFactionID = DynamicTrading.GetArchetypePreferredFaction
+            and DynamicTrading.GetArchetypePreferredFaction(archetypeID) or nil
+        if preferredFactionID then
+            factionID = preferredFactionID
+        end
+    end
     
     -- [PARITY FIX] Auto-generate scattered homeCoords based on faction if not explicitly provided
     if not homeCoords and factionID and factionID ~= "Independent" then

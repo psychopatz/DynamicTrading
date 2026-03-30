@@ -11,6 +11,7 @@ require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/ServerHelpers/ServerHelpers"
+require "DT/V1/Manager"
 
 local DebugHandlers = {}
 local Handlers = {}
@@ -126,6 +127,30 @@ Handlers.DebugCommand = function(player, args)
             memberCount = 10
         })
         DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Faction Spawned" })
+
+    elseif action == "ForceTraderByArchetype" then
+        local archetypeID = tostring(args.archetypeID or args.archetype or "")
+        local trader = DynamicTrading.Manager
+            and DynamicTrading.Manager.SpawnTraderWithArchetype
+            and DynamicTrading.Manager.SpawnTraderWithArchetype(archetypeID, {
+                factionID = "Independent",
+                forceFaction = true,
+                discoverForPlayer = player
+            }) or nil
+
+        if trader then
+            DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+                success = true,
+                reason = "Trader spawned: " .. tostring(trader.name or archetypeID),
+                traderID = trader.id,
+                archetype = trader.archetype
+            })
+        else
+            DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+                success = false,
+                reason = "Failed to spawn trader for archetype: " .. archetypeID
+            })
+        end
     
     elseif action == "InjectEvent" then
         local factionID = args.factionID

@@ -8,6 +8,13 @@ local LEGACY_TAG_ALIASES = {
     ["Food.General"] = { prefix = "Food.", suffix = ".General" },
     ["Food.Spice"] = { prefix = "Food.", suffix = ".Spice" }
 }
+local LUA_PATTERN_MAGIC = "([%(%)%.%%%+%-%?%[%]%^%$])"
+
+local function globToPattern(glob)
+    local pattern = tostring(glob or ""):gsub(LUA_PATTERN_MAGIC, "%%%1")
+    pattern = pattern:gsub("%*", ".*")
+    return "^" .. pattern .. "$"
+end
 
 -- Building sub-type hierarchy (used by TagMatches hierarchy walk).
 -- Querying "Building" matches Building.Moveable, Building.Material, etc.
@@ -18,6 +25,11 @@ local LEGACY_TAG_ALIASES = {
 
 function Common.TagMatches(itemTag, queryTag)
     if not itemTag or not queryTag then return false end
+
+    if string.find(queryTag, "*", 1, true) then
+        return string.match(itemTag, globToPattern(queryTag)) ~= nil
+    end
+
     if itemTag == queryTag or string.find(itemTag, queryTag .. "%.") == 1 then
         return true
     end
