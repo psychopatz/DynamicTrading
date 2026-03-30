@@ -47,7 +47,10 @@ local function tryOpenWhatsNew()
     })
 end
 
-Events.OnGameStart.Add(tryOpenWhatsNew)
+Events.OnGameStart.Add(function()
+    DT_ManualUI_AutoOpen.checked = false
+    tryOpenWhatsNew()
+end)
 Events.OnCreatePlayer.Add(function(playerIndex)
     if playerIndex == 0 then
         tryOpenWhatsNew()

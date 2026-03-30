@@ -71,16 +71,20 @@ function DT_ManualUI:onOpenSupportBanner()
     })
 end
 
-function DT_ManualUI:onHideSupportBanner()
-    local version = tostring(self.supportBannerVersion or "")
-    if version == "" or not DT_ConfigManager or not DT_ConfigManager.setDismissedSupportBannerVersion then
+function DT_ManualUI:onOpenWhatsNew()
+    if not DynamicTrading or not DynamicTrading.Manuals or not DynamicTrading.Manuals.GetLatestWhatsNewManual then
         return
     end
 
-    DT_ConfigManager.setDismissedSupportBannerVersion(version)
-    self:refreshSupportBannerState()
-    self:refreshLayout()
-    self:refreshContent()
+    local manual = DynamicTrading.Manuals.GetLatestWhatsNewManual()
+    if not manual then
+        return
+    end
+
+    DynamicTrading.Manuals.OpenUpdates({
+        manualId = manual.id,
+        pageId = manual.startPageId,
+    })
 end
 
 function DT_ManualUI:onNavMouseDown(x, y)

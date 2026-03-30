@@ -45,7 +45,7 @@ function DT_ManualUI_Utils.getLayoutMetrics(ui)
     local toolbarHeight = 28
     local pageTitleHeight = 28
     local updateToggleHeight = (ui and ui.showUpdateToggle) and 28 or 0
-    local supportBannerHeight = (ui and ui.showSupportBanner) and 58 or 0
+    local supportBannerHeight = (ui and ui.showSupportBanner) and 78 or 0
     local showResults = DT_ManualUI_Utils.shouldShowResults(ui)
     local resultsHeight = showResults and 120 or 0
     local rightX = pad + leftWidth + pad

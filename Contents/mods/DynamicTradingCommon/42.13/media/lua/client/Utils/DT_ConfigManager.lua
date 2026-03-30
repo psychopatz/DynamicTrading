@@ -22,10 +22,7 @@ DT_ConfigManager.defaultSettings = {
     lastManualId = "",
     lastManualPageId = "",
     lastManualSectionId = "",
-    lastSeenReleaseVersion = "",
-    lastAutoOpenedReleaseVersion = "",
-    disabledAutoOpenReleaseVersion = "",
-    dismissedSupportBannerVersion = "",
+
     lastPricePresetName = "default",
     knownPricePresets = "default",
     priceSelectedTag = "",
@@ -66,10 +63,7 @@ function DT_ConfigManager.save()
         fileWriter:write("lastManualId=" .. tostring(DT_ConfigManager.settings.lastManualId or "") .. "\r\n")
         fileWriter:write("lastManualPageId=" .. tostring(DT_ConfigManager.settings.lastManualPageId or "") .. "\r\n")
         fileWriter:write("lastManualSectionId=" .. tostring(DT_ConfigManager.settings.lastManualSectionId or "") .. "\r\n")
-        fileWriter:write("lastSeenReleaseVersion=" .. tostring(DT_ConfigManager.settings.lastSeenReleaseVersion or "") .. "\r\n")
-        fileWriter:write("lastAutoOpenedReleaseVersion=" .. tostring(DT_ConfigManager.settings.lastAutoOpenedReleaseVersion or "") .. "\r\n")
-        fileWriter:write("disabledAutoOpenReleaseVersion=" .. tostring(DT_ConfigManager.settings.disabledAutoOpenReleaseVersion or "") .. "\r\n")
-        fileWriter:write("dismissedSupportBannerVersion=" .. tostring(DT_ConfigManager.settings.dismissedSupportBannerVersion or "") .. "\r\n")
+
         fileWriter:write("lastPricePresetName=" .. tostring(DT_ConfigManager.settings.lastPricePresetName or "default") .. "\r\n")
         fileWriter:write("knownPricePresets=" .. tostring(DT_ConfigManager.settings.knownPricePresets or "default") .. "\r\n")
         fileWriter:write("priceSelectedTag=" .. tostring(DT_ConfigManager.settings.priceSelectedTag or "") .. "\r\n")
@@ -146,18 +140,7 @@ function DT_ConfigManager.load()
         if string.find(line, "lastManualSectionId=") then
             DT_ConfigManager.settings.lastManualSectionId = string.sub(line, 21)
         end
-        if string.find(line, "lastSeenReleaseVersion=") then
-            DT_ConfigManager.settings.lastSeenReleaseVersion = string.sub(line, 24)
-        end
-        if string.find(line, "lastAutoOpenedReleaseVersion=") then
-            DT_ConfigManager.settings.lastAutoOpenedReleaseVersion = string.sub(line, 30)
-        end
-        if string.find(line, "disabledAutoOpenReleaseVersion=") then
-            DT_ConfigManager.settings.disabledAutoOpenReleaseVersion = string.sub(line, 32)
-        end
-        if string.find(line, "dismissedSupportBannerVersion=") then
-            DT_ConfigManager.settings.dismissedSupportBannerVersion = string.sub(line, 31)
-        end
+
         if string.find(line, "lastPricePresetName=") then
             DT_ConfigManager.settings.lastPricePresetName = string.sub(line, 20)
         end
@@ -287,40 +270,60 @@ function DT_ConfigManager.getLastManualLocation()
     }
 end
 
+-- =============================================================================
+-- MODDATA-BASED MANUAL STATE (per-save, resets on new game)
+-- =============================================================================
+
+local DT_MANUAL_MODDATA_KEY = "DT_ManualState"
+
+function DT_ConfigManager.getManualModData()
+    local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+    if not player then return nil end
+    local modData = player:getModData()
+    if not modData[DT_MANUAL_MODDATA_KEY] then
+        modData[DT_MANUAL_MODDATA_KEY] = {}
+    end
+    return modData[DT_MANUAL_MODDATA_KEY]
+end
+
 function DT_ConfigManager.setLastSeenReleaseVersion(version)
-    DT_ConfigManager.settings.lastSeenReleaseVersion = tostring(version or "")
-    DT_ConfigManager.save()
+    local md = DT_ConfigManager.getManualModData()
+    if md then md.lastSeenReleaseVersion = tostring(version or "") end
 end
 
 function DT_ConfigManager.getLastSeenReleaseVersion()
-    return tostring(DT_ConfigManager.settings.lastSeenReleaseVersion or "")
+    local md = DT_ConfigManager.getManualModData()
+    return md and tostring(md.lastSeenReleaseVersion or "") or ""
 end
 
 function DT_ConfigManager.setLastAutoOpenedReleaseVersion(version)
-    DT_ConfigManager.settings.lastAutoOpenedReleaseVersion = tostring(version or "")
-    DT_ConfigManager.save()
+    local md = DT_ConfigManager.getManualModData()
+    if md then md.lastAutoOpenedReleaseVersion = tostring(version or "") end
 end
 
 function DT_ConfigManager.getLastAutoOpenedReleaseVersion()
-    return tostring(DT_ConfigManager.settings.lastAutoOpenedReleaseVersion or "")
+    local md = DT_ConfigManager.getManualModData()
+    return md and tostring(md.lastAutoOpenedReleaseVersion or "") or ""
 end
 
 function DT_ConfigManager.setDisabledAutoOpenReleaseVersion(version)
-    DT_ConfigManager.settings.disabledAutoOpenReleaseVersion = tostring(version or "")
-    DT_ConfigManager.save()
+    local md = DT_ConfigManager.getManualModData()
+    if md then md.disabledAutoOpenReleaseVersion = tostring(version or "") end
 end
 
 function DT_ConfigManager.getDisabledAutoOpenReleaseVersion()
-    return tostring(DT_ConfigManager.settings.disabledAutoOpenReleaseVersion or "")
+    local md = DT_ConfigManager.getManualModData()
+    return md and tostring(md.disabledAutoOpenReleaseVersion or "") or ""
 end
 
 function DT_ConfigManager.setDismissedSupportBannerVersion(version)
-    DT_ConfigManager.settings.dismissedSupportBannerVersion = tostring(version or "")
-    DT_ConfigManager.save()
+    local md = DT_ConfigManager.getManualModData()
+    if md then md.dismissedSupportBannerVersion = tostring(version or "") end
 end
 
 function DT_ConfigManager.getDismissedSupportBannerVersion()
-    return tostring(DT_ConfigManager.settings.dismissedSupportBannerVersion or "")
+    local md = DT_ConfigManager.getManualModData()
+    return md and tostring(md.dismissedSupportBannerVersion or "") or ""
 end
 
 function DT_ConfigManager.setLastPricePresetName(name)

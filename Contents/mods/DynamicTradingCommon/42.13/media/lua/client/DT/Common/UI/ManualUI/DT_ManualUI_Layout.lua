@@ -89,15 +89,15 @@ function DT_ManualUI:createChildren()
     self.supportBannerText:instantiate()
     self.supportBannerPanel:addChild(self.supportBannerText)
 
-    self.btnSupportBanner = ISButton:new(metrics.rightWidth - 230, 17, 110, 24, "View Support", self, self.onOpenSupportBanner)
+    self.btnSupportBanner = ISButton:new(10, 48, 110, 24, "View Support", self, self.onOpenSupportBanner)
     self.btnSupportBanner:initialise()
     self.btnSupportBanner:instantiate()
     self.supportBannerPanel:addChild(self.btnSupportBanner)
 
-    self.btnHideSupportBanner = ISButton:new(metrics.rightWidth - 115, 17, 105, 24, "Don't Show", self, self.onHideSupportBanner)
-    self.btnHideSupportBanner:initialise()
-    self.btnHideSupportBanner:instantiate()
-    self.supportBannerPanel:addChild(self.btnHideSupportBanner)
+    self.btnWhatsNew = ISButton:new(130, 48, 110, 24, "What's New", self, self.onOpenWhatsNew)
+    self.btnWhatsNew:initialise()
+    self.btnWhatsNew:instantiate()
+    self.supportBannerPanel:addChild(self.btnWhatsNew)
 
     self.contentList = ISScrollingListBox:new(metrics.rightX, metrics.contentY, metrics.rightWidth, metrics.contentHeight)
     self.contentList:initialise()
@@ -168,8 +168,10 @@ function DT_ManualUI:refreshLayout()
             self.supportBannerTitle:setName(title)
             self.supportBannerText:setName(text)
             self.btnSupportBanner:setTitle(actionLabel)
-            self.btnSupportBanner:setX(metrics.rightWidth - 230)
-            self.btnHideSupportBanner:setX(metrics.rightWidth - 115)
+            self.btnSupportBanner:setX(10)
+            self.btnSupportBanner:setY(48)
+            self.btnWhatsNew:setX(130)
+            self.btnWhatsNew:setY(48)
         end
     end
 

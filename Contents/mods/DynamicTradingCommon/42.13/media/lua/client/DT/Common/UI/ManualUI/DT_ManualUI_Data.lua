@@ -50,11 +50,10 @@ end
 function DT_ManualUI:refreshSupportBannerState()
     local manual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("support") or nil
     local version = manual and tostring(manual.popupVersion or manual.releaseVersion or manual.id or "") or ""
-    local dismissedVersion = DT_ConfigManager and DT_ConfigManager.getDismissedSupportBannerVersion and DT_ConfigManager.getDismissedSupportBannerVersion() or ""
 
     self.supportBannerManual = manual
     self.supportBannerVersion = version
-    self.showSupportBanner = manual ~= nil and version ~= "" and dismissedVersion ~= version and self.currentManualId ~= manual.id
+    self.showSupportBanner = manual ~= nil and version ~= "" and self.currentManualId ~= manual.id
 end
 
 function DT_ManualUI:isManualExpanded(manualId)
