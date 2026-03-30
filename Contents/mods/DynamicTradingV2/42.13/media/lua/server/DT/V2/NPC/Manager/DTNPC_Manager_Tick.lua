@@ -72,6 +72,40 @@ local awayTransitionCheckCounter = 0
 local TRADE_CYCLE_CHECK_RATE = 600 -- Start new trade missions every ~30 seconds
 local tradeCycleCheckCounter = 0
 
+local hasLoggedMissingRespawnHooks = false
+
+local function EnsureRespawnHooks()
+    local hasHooks = DTNPCManager
+        and DTNPCManager.CheckForRespawn
+        and DTNPCManager.CheckRosterSpawns
+        and DTNPCManager.ProcessAwayTransitions
+        and DTNPCManager.ProcessTradeCycles
+
+    if hasHooks then
+        return true
+    end
+
+    require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn"
+
+    hasHooks = DTNPCManager
+        and DTNPCManager.CheckForRespawn
+        and DTNPCManager.CheckRosterSpawns
+        and DTNPCManager.ProcessAwayTransitions
+        and DTNPCManager.ProcessTradeCycles
+
+    if not hasHooks and not hasLoggedMissingRespawnHooks then
+        hasLoggedMissingRespawnHooks = true
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Respawn hooks are still missing after reload; skipping respawn/trade tick work"
+        )
+    end
+
+    return hasHooks
+end
+
 function DTNPCManager.OnTick()
     -- Run on Server or Single Player
 
@@ -100,24 +134,28 @@ function DTNPCManager.OnTick()
     local shouldCheckAwayTransitions = (awayTransitionCheckCounter >= AWAY_TRANSITION_CHECK_RATE)
     if shouldCheckAwayTransitions then
         awayTransitionCheckCounter = 0
-        DTNPCManager.ProcessAwayTransitions()
+        if EnsureRespawnHooks() then
+            DTNPCManager.ProcessAwayTransitions()
+        end
     end
 
     local shouldCheckTradeCycles = (tradeCycleCheckCounter >= TRADE_CYCLE_CHECK_RATE)
     if shouldCheckTradeCycles then
         tradeCycleCheckCounter = 0
-        DTNPCManager.ProcessTradeCycles()
+        if EnsureRespawnHooks() then
+            DTNPCManager.ProcessTradeCycles()
+        end
     end
     
     -- Respawn check
-    if shouldCheckActiveRespawn then
+    if shouldCheckActiveRespawn and EnsureRespawnHooks() then
         -- 1. Validate existing tracked NPCs at a slower cadence.
         for uuid, npcData in pairs(DTNPCManager.Data) do
             DTNPCManager.CheckForRespawn(npcData, uuid)
         end
     end
 
-    if shouldCheckRosterRespawn then
+    if shouldCheckRosterRespawn and EnsureRespawnHooks() then
         -- 2. Check for new spawns from Roster (Bridge) more frequently for responsiveness.
         DTNPCManager.CheckRosterSpawns()
     end

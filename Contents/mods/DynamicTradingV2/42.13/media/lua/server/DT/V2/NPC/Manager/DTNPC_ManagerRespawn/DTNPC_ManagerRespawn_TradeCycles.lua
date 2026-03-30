@@ -26,25 +26,26 @@ function DTNPCManager.ProcessTradeCycles()
     for uuid, registry in pairs(rosterData.Souls) do
         local factionID = registry.factionID or "Independent"
         local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
+        local shouldCount = true
 
         if faction and faction.playerOwned and faction.leadershipState ~= "Regency" then
-            goto continue_count
+            shouldCount = false
         end
 
-        if faction and faction.playerOwned then
+        if shouldCount and faction and faction.playerOwned then
             local workerID = registry.linkedWorkerID
             if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
-                goto continue_count
+                shouldCount = false
             end
         end
 
-        factionTotalCounts[factionID] = (factionTotalCounts[factionID] or 0) + 1
-        
-        if registry.status == "Away" or registry.status == "Trading" then
-            factionTradingCounts[factionID] = (factionTradingCounts[factionID] or 0) + 1
+        if shouldCount then
+            factionTotalCounts[factionID] = (factionTotalCounts[factionID] or 0) + 1
+            
+            if registry.status == "Away" or registry.status == "Trading" then
+                factionTradingCounts[factionID] = (factionTradingCounts[factionID] or 0) + 1
+            end
         end
-
-        ::continue_count::
     end
     
     -- Second pass: Trigger missions based on limits
@@ -54,41 +55,46 @@ function DTNPCManager.ProcessTradeCycles()
         if registry.status == "Resting" and not isDeparting then
             local factionID = registry.factionID or "Independent"
             local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
+            local shouldDispatch = true
+
             if faction and faction.playerOwned then
                 if faction.leadershipState ~= "Regency" then
-                    goto continue_dispatch
+                    shouldDispatch = false
                 end
 
-                local workerID = registry.linkedWorkerID
-                if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
-                    goto continue_dispatch
+                if shouldDispatch then
+                    local workerID = registry.linkedWorkerID
+                    if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
+                        shouldDispatch = false
+                    end
                 end
             end
-            local currentTrading = factionTradingCounts[factionID] or 0
-            local totalMembers = factionTotalCounts[factionID] or 1
-            
-            -- [UNIFIED] Apply Event Modifiers
-            local limitMult = 1.0
-            if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
-                local faction = DynamicTrading_Factions.GetFaction(factionID)
-                limitMult = DynamicTrading.Events.GetFactionSystemModifier(faction, "traderLimit")
-            end
-            
-            local effectivePopLimit = popLimitPercent * limitMult
-            local currentPercent = (currentTrading / totalMembers) * 100
-            
-            if currentPercent < effectivePopLimit then
-                -- Much higher chance if NO ONE is trading for this faction
-                local baseChance = (currentTrading == 0) and 200 or 50
-                -- Adjusted for check frequency (every 30s)
-                if ZombRand(1000) < baseChance then 
-                    DTNPCManager.StartTradeMission(uuid)
-                    -- Update count so we don't over-spawn in the same tick
-                    factionTradingCounts[factionID] = currentTrading + 1
+
+            if shouldDispatch then
+                local currentTrading = factionTradingCounts[factionID] or 0
+                local totalMembers = factionTotalCounts[factionID] or 1
+                
+                -- [UNIFIED] Apply Event Modifiers
+                local limitMult = 1.0
+                if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
+                    local faction = DynamicTrading_Factions.GetFaction(factionID)
+                    limitMult = DynamicTrading.Events.GetFactionSystemModifier(faction, "traderLimit")
+                end
+                
+                local effectivePopLimit = popLimitPercent * limitMult
+                local currentPercent = (currentTrading / totalMembers) * 100
+                
+                if currentPercent < effectivePopLimit then
+                    -- Adjusted for check frequency (every 30s).
+                    local baseChance = (currentTrading == 0) and 200 or 50
+                    if ZombRand(1000) < baseChance then 
+                        DTNPCManager.StartTradeMission(uuid)
+                        -- Update count so we don't over-spawn in the same tick.
+                        factionTradingCounts[factionID] = currentTrading + 1
+                    end
                 end
             end
         end
-        ::continue_dispatch::
     end
 end
 

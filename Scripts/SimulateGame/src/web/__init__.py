@@ -1,1 +1,0 @@
-"""Static web output generator."""
