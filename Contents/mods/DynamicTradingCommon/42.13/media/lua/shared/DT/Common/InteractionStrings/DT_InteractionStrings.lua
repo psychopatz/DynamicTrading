@@ -16,8 +16,7 @@ InteractionStrings.ModuleList = InteractionStrings.ModuleList or {
     "DT/Common/InteractionStrings/Labour/Outcome/DT_InteractionStrings_Labour_Outcome_Common",
     "DT/Common/InteractionStrings/Labour/Outcome/DT_InteractionStrings_Labour_Outcome_Scavenge",
     "DT/Common/InteractionStrings/Labour/Outcome/DT_InteractionStrings_Labour_Outcome_Fish",
-    "DT/Common/InteractionStrings/Labour/Outcome/DT_InteractionStrings_Labour_Outcome_Farm",
-    "DT/Common/InteractionStrings/Lottery/DT_InteractionStrings_Lottery_Wallet"
+    "DT/Common/InteractionStrings/Labour/Outcome/DT_InteractionStrings_Labour_Outcome_Farm"
 }
 
 local function mergeNestedTables(target, source)
