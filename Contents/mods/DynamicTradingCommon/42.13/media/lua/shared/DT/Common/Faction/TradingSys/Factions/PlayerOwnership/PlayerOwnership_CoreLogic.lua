@@ -16,6 +16,7 @@ return function(Public, Internal)
     local buildFactionHome = Utils.buildFactionHome
     local appendUnique = Utils.appendUnique
     local getWorkerSummary = Utils.getWorkerSummary
+    local isWorkerRegistryAvailable = Utils.isWorkerRegistryAvailable
 
     local function normalizeMembershipState(faction)
         if not faction then
@@ -50,7 +51,7 @@ return function(Public, Internal)
     end
 
     local function syncLinkedWorkersFromOwner(faction, owner)
-        if not faction then return end
+        if not faction or not isWorkerRegistryAvailable() then return false end
         faction.linkedWorkerIDs = faction.linkedWorkerIDs or {}
         local ownerWorkers = getWorkersForOwner(owner)
         for _, worker in ipairs(ownerWorkers) do
@@ -58,6 +59,7 @@ return function(Public, Internal)
                 appendUnique(faction.linkedWorkerIDs, worker.workerID)
             end
         end
+        return true
     end
     Internal.syncLinkedWorkersFromOwner = syncLinkedWorkersFromOwner
 
@@ -160,7 +162,10 @@ return function(Public, Internal)
         faction.tradeWorkerSouls = faction.tradeWorkerSouls or {}
         faction.controlMode = faction.controlMode or "HybridManual"
         faction.leadershipState = faction.leadershipState or "Active"
-        syncLinkedWorkersFromOwner(faction, owner)
+        if not syncLinkedWorkersFromOwner(faction, owner) then
+            faction.memberCount = math.max(tonumber(faction.memberCount) or 0, #(faction.linkedWorkerIDs or {}))
+            return faction
+        end
         local livingCount = 0
         local staleIDs = {}
         for _, workerID in ipairs(faction.linkedWorkerIDs) do
@@ -214,7 +219,8 @@ return function(Public, Internal)
 
     function Public.BuildOwnedFactionStatus(ownerUsername)
         local owner = getOwnerUsername(ownerUsername)
-        local workers = getWorkersForOwner(owner)
+        local registryReady = isWorkerRegistryAvailable()
+        local workers = registryReady and getWorkersForOwner(owner) or {}
         local livingWorkers = {}
         for _, worker in ipairs(workers) do
             if isWorkerLiving(worker) then livingWorkers[#livingWorkers + 1] = worker end
@@ -226,11 +232,12 @@ return function(Public, Internal)
         local authorityOwner = faction and getOwnerUsername(faction.leaderUsername) or owner
         local linkedWorkers = faction and buildFactionWorkerSummaries(faction) or {}
         local buildingsSummary = DT_Buildings and DT_Buildings.GetOwnerSummary and DT_Buildings.GetOwnerSummary(authorityOwner) or nil
+        local workerCount = registryReady and #livingWorkers or (faction and math.max(tonumber(faction.memberCount) or 0, #(faction.linkedWorkerIDs or {})) or 0)
         return {
             ownerUsername = authorityOwner,
             memberUsername = owner,
-            canCreate = faction == nil and #livingWorkers >= 1,
-            workerCount = #livingWorkers,
+            canCreate = faction == nil and registryReady and #livingWorkers >= 1,
+            workerCount = workerCount,
             faction = faction,
             buildings = buildingsSummary,
             linkedWorkers = linkedWorkers,
@@ -240,7 +247,7 @@ return function(Public, Internal)
             permissions = permissions,
             memberUsernames = faction and copyArray(faction.memberUsernames) or {},
             inviteUsernames = faction and copyArray(faction.inviteUsernames) or {},
-            createBlockedReason = faction and "already_has_faction" or (#livingWorkers < 1 and "needs_recruit" or nil)
+            createBlockedReason = faction and "already_has_faction" or ((not registryReady) and "syncing" or (#livingWorkers < 1 and "needs_recruit" or nil))
         }
     end
 

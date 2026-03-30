@@ -6,6 +6,7 @@
 -- =============================================================================
 
 require "DT/Common/UI/ConversationUI/ConversationUI"
+require "DT/Common/UI/ConversationUI/DT_ConversationChatMenus"
 require "DT/V1/Radio/RadioTradingWrapper/RadioTradingWrapper"
 
 local DEBUG_PREFIX = "[DT-V1-Hub]"
@@ -52,7 +53,13 @@ function DT_V1_Dialogue_Hub.Init(ui, radioObj, traderID, player)
     if not traderID or not player then return end
     
     -- Speak Intro
-    ui:speak("Hello. This is " .. (traderProxy and traderProxy.name or "The Trader") .. " on the line.")
+    local greeting = "Hello. What can I do for you?"
+    if DynamicTrading and DynamicTrading.DialogueManager and ui.target then
+        greeting = DynamicTrading.DialogueManager.GenerateGreeting(ui.target)
+    elseif ui.target and ui.target.name then
+        greeting = "Hello. This is " .. tostring(ui.target.name) .. " on the line."
+    end
+    ui:speak(greeting)
 
     -- Generate Options
     DT_V1_Dialogue_Hub.GenerateOptions(ui, radioObj, traderID, player)
@@ -72,9 +79,12 @@ function DT_V1_Dialogue_Hub.GenerateOptions(ui, radioObj, traderID, player)
     table.insert(options, {
         text = "Chat",
         message = "Can you hear me clearly?",
-        onSelect = function(ui)
-            ui:speak("Signal is strong. I'm ready to trade if you have the goods.")
-            DT_V1_Dialogue_Hub.GenerateOptions(ui, radioObj, traderID, player)
+        onSelect = function(conversationUI)
+            DT_ConversationChatMenus.OpenTraderChat(conversationUI, {
+                onBack = function(backUI)
+                    DT_V1_Dialogue_Hub.GenerateOptions(backUI, radioObj, traderID, player)
+                end
+            })
         end
     })
 

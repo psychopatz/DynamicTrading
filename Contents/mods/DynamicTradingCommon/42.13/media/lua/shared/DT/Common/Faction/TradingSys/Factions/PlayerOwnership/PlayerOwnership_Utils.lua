@@ -48,6 +48,20 @@ function PlayerOwnership_Utils.getWorkerRegistry()
     return DC_Colony and DC_Colony.Registry or nil
 end
 
+function PlayerOwnership_Utils.isWorkerRegistryAvailable()
+    local registry = PlayerOwnership_Utils.getWorkerRegistry()
+    if type(registry) ~= "table" then
+        return false
+    end
+
+    local hasOwnerLookup = type(registry.GetWorkersForOwnerRaw) == "function"
+        or type(registry.GetWorkersForOwner) == "function"
+    local hasWorkerLookup = type(registry.GetWorkerForOwnerRaw) == "function"
+        or type(registry.GetWorkerForOwner) == "function"
+
+    return hasOwnerLookup and hasWorkerLookup
+end
+
 function PlayerOwnership_Utils.getWorkerSummary(worker)
     local registry = PlayerOwnership_Utils.getWorkerRegistry()
     if registry and registry.GetWorkerSummary then
