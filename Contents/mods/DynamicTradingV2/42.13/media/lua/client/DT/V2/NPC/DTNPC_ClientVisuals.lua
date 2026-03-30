@@ -173,6 +173,7 @@ end
 Events.OnTick.Add(DTNPCClient.OnTick)
 Events.OnServerCommand.Add(DTNPCClient.OnServerCommand)
 Events.OnCreatePlayer.Add(DTNPCClient.RequestInitialSync)
+Events.OnGameStart.Add(DTNPCClient.RequestInitialSync)
 
 -- Safety check for non-vanilla event
 if Events.OnZombieUpdate then

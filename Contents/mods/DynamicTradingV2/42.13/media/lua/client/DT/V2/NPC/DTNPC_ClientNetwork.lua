@@ -32,6 +32,129 @@ end
 
 DynamicTrading.Log("DTV2", "NPC", "Init", "Module loading complete")
 
+local function getLocalPlayer(playerNum)
+    if type(playerNum) == "number" then
+        local indexedPlayer = getSpecificPlayer(playerNum)
+        if indexedPlayer then
+            return indexedPlayer
+        end
+    end
+
+    local defaultPlayer = getSpecificPlayer(0)
+    if defaultPlayer then
+        return defaultPlayer
+    end
+
+    if getPlayer then
+        return getPlayer()
+    end
+
+    return nil
+end
+
+local function getNowMillis()
+    if getTimeInMillis then
+        return getTimeInMillis()
+    end
+
+    return os.time() * 1000
+end
+
+function DTNPCClient.QueueNearbySync(reason, resetState)
+    if isServer() and isDedicatedServer() then return end
+
+    if resetState and DTNPCClient.ResetSessionState then
+        DTNPCClient.ResetSessionState(reason or "queued-nearby-sync")
+    else
+        DTNPCClient.PendingNearbySyncReason = tostring(reason or "queued-nearby-sync")
+    end
+end
+
+function DTNPCClient.SendNearbySyncRequest(player, reason)
+    if not isClient() then return false end
+
+    player = player or getLocalPlayer(0)
+    if not player then
+        DTNPCClient.PendingNearbySyncReason = tostring(reason or DTNPCClient.PendingNearbySyncReason or "missing-player")
+        return false
+    end
+
+    local px = player:getX()
+    local py = player:getY()
+    local pz = player:getZ()
+
+    sendClientCommand(player, "DTNPC", "RequestNearbySync", {
+        x = px,
+        y = py,
+        z = pz,
+        nearRadius = DTNPCClient.NEARBY_SYNC_NEAR_RADIUS or 350,
+        metadataRadius = DTNPCClient.NEARBY_SYNC_METADATA_RADIUS or 1000,
+    })
+
+    DTNPCClient.LastNearbySyncX = px
+    DTNPCClient.LastNearbySyncY = py
+    DTNPCClient.LastNearbySyncZ = pz
+    DTNPCClient.LastNearbySyncTime = getNowMillis()
+    DTNPCClient.PendingNearbySyncReason = nil
+    DTNPCClient.hasSyncedOnce = true
+
+    DynamicTrading.Log("DTV2", "NPC", "Sync", "Requested nearby sync (" .. tostring(reason or "periodic") .. ") for player: " .. player:getUsername())
+    return true
+end
+
+function DTNPCClient.MaybeRequestNearbySync()
+    if not isClient() then return end
+
+    local player = getLocalPlayer(0)
+    if not player then return end
+
+    local now = getNowMillis()
+    local lastSyncTime = DTNPCClient.LastNearbySyncTime or 0
+    local elapsed = now - lastSyncTime
+    local minInterval = DTNPCClient.NEARBY_SYNC_MIN_INTERVAL_MS or 4000
+    local staleInterval = DTNPCClient.NEARBY_SYNC_STALE_INTERVAL_MS or 15000
+
+    if DTNPCClient.PendingNearbySyncReason then
+        if elapsed >= 500 then
+            DTNPCClient.SendNearbySyncRequest(player, DTNPCClient.PendingNearbySyncReason)
+        end
+        return
+    end
+
+    if not DTNPCClient.hasSyncedOnce then
+        if elapsed >= 500 then
+            DTNPCClient.SendNearbySyncRequest(player, "first-nearby-sync")
+        end
+        return
+    end
+
+    local lastX = DTNPCClient.LastNearbySyncX
+    local lastY = DTNPCClient.LastNearbySyncY
+    local lastZ = DTNPCClient.LastNearbySyncZ
+
+    if lastX == nil or lastY == nil or lastZ == nil then
+        if elapsed >= 500 then
+            DTNPCClient.SendNearbySyncRequest(player, "sync-position-missing")
+        end
+        return
+    end
+
+    local dx = player:getX() - lastX
+    local dy = player:getY() - lastY
+    local dz = player:getZ() - lastZ
+    local dist = math.sqrt(dx * dx + dy * dy)
+    local moveThreshold = DTNPCClient.NEARBY_SYNC_MOVE_THRESHOLD or 45
+
+    if elapsed >= staleInterval then
+        DTNPCClient.SendNearbySyncRequest(player, "stale-refresh")
+        return
+    end
+
+    if elapsed >= minInterval and (dist >= moveThreshold or math.abs(dz) >= 1) then
+        DTNPCClient.SendNearbySyncRequest(player, "movement-refresh")
+    end
+end
+
 function DTNPCClient.OnServerCommand(module, command, args)
     if module ~= "DTNPC" then return end
 
@@ -291,7 +414,11 @@ function DTNPCClient.OnServerCommand(module, command, args)
         end
 
         for uuid, meta in pairs(args.metadata or {}) do
-            DTNPCClient.CacheMetadata(uuid, meta)
+            if DT_V2_RadarManager and DT_V2_RadarManager.OnMetadataReceived then
+                DT_V2_RadarManager.OnMetadataReceived(uuid, meta)
+            else
+                DTNPCClient.CacheMetadata(uuid, meta)
+            end
             metadataCount = metadataCount + 1
         end
 
@@ -302,25 +429,15 @@ end
 
 function DTNPCClient.RequestInitialSync(playerNum)
     if isServer() and isDedicatedServer() then return end
-    
-    local player = getSpecificPlayer(playerNum)
-    if not player then return end
 
-    if DTNPCClient.ResetSessionState then
-        DTNPCClient.ResetSessionState("initial-sync")
+    DTNPCClient.QueueNearbySync("initial-sync", true)
+
+    local player = getLocalPlayer(playerNum)
+    if player then
+        DTNPCClient.SendNearbySyncRequest(player, "initial-sync")
     else
-        DTNPCClient.hasSyncedOnce = false
+        DynamicTrading.Log("DTV2", "NPC", "Sync", "Queued initial nearby sync until player is ready")
     end
-    
-    DynamicTrading.Log("DTV2", "NPC", "Sync", "Requesting initial sync for player: " .. player:getUsername())
-    sendClientCommand(player, "DTNPC", "RequestNearbySync", {
-        x = player:getX(),
-        y = player:getY(),
-        z = player:getZ(),
-        nearRadius = 200,
-        metadataRadius = 1000,
-    })
-    DTNPCClient.hasSyncedOnce = true
 end
 
 -- Events will be registered in DTNPC_ClientVisuals.lua to ensure all functions are defined.

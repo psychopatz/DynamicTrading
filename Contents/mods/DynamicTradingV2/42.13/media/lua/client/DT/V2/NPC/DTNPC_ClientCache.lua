@@ -10,6 +10,17 @@ DTNPCClient.ProcessedZombies = {} -- Tracks visual application
 DTNPCClient.LocalControlled = {} -- Tracks locally controlled NPCs
 DTNPCClient.MetadataCache = {} -- Far NPC metadata for radar/faction intel
 DTNPCClient.VISUAL_CHECK_RATE = 60 -- Ticks between visual checks
+DTNPCClient.NEARBY_SYNC_CHECK_RATE = 30 -- Ticks between MP nearby-sync checks
+DTNPCClient.NEARBY_SYNC_MIN_INTERVAL_MS = 4000
+DTNPCClient.NEARBY_SYNC_STALE_INTERVAL_MS = 15000
+DTNPCClient.NEARBY_SYNC_MOVE_THRESHOLD = 45
+DTNPCClient.NEARBY_SYNC_NEAR_RADIUS = 350
+DTNPCClient.NEARBY_SYNC_METADATA_RADIUS = 1000
+DTNPCClient.LastNearbySyncX = nil
+DTNPCClient.LastNearbySyncY = nil
+DTNPCClient.LastNearbySyncZ = nil
+DTNPCClient.LastNearbySyncTime = 0
+DTNPCClient.PendingNearbySyncReason = nil
 
 function DTNPCClient.GetNPCData(zombie)
     if not zombie then return nil end
@@ -101,6 +112,12 @@ function DTNPCClient.ResetSessionState(reason)
     DTNPCClient.LocalControlled = {}
     DTNPCClient.MetadataCache = {}
     DTNPCClient.hasSyncedOnce = false
+    DTNPCClient.LastNearbySyncX = nil
+    DTNPCClient.LastNearbySyncY = nil
+    DTNPCClient.LastNearbySyncZ = nil
+    DTNPCClient.LastNearbySyncTime = 0
+    DTNPCClient.PendingNearbySyncReason = tostring(reason or "unknown")
+    DTNPCClient.nearbySyncCheckCounter = 0
 
     if DTNPC_ClientInterpolation and DTNPC_ClientInterpolation.ClearAll then
         DTNPC_ClientInterpolation.ClearAll()

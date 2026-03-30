@@ -7,7 +7,15 @@ DTNPCClient = DTNPCClient or {}
 
 function DTNPCClient.OnTick()
     if isServer() and isDedicatedServer() then return end
-    
+
+    DTNPCClient.nearbySyncCheckCounter = (DTNPCClient.nearbySyncCheckCounter or 0) + 1
+    if DTNPCClient.nearbySyncCheckCounter >= (DTNPCClient.NEARBY_SYNC_CHECK_RATE or 30) then
+        DTNPCClient.nearbySyncCheckCounter = 0
+        if DTNPCClient.MaybeRequestNearbySync then
+            DTNPCClient.MaybeRequestNearbySync()
+        end
+    end
+
     DTNPCClient.visualCheckCounter = (DTNPCClient.visualCheckCounter or 0) + 1
     if DTNPCClient.visualCheckCounter < DTNPCClient.VISUAL_CHECK_RATE then return end
     DTNPCClient.visualCheckCounter = 0
