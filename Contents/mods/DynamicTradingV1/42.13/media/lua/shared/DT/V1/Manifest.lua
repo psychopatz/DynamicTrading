@@ -19,7 +19,7 @@ require "DT/Common/Tags"
 require "DT/Common/Events/DT_EventManager"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
-require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Economy"
 

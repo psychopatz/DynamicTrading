@@ -9,6 +9,11 @@ require "DT/V1/UI/DT_SidebarButton"
 
 DT_OptionsManager = {}
 
+local function isCurrencyExpandedActive()
+    local activated = getActivatedMods and getActivatedMods() or nil
+    return activated and activated.contains and activated:contains("CurrencyExpanded") or false
+end
+
 -- =============================================================================
 -- 1. AUDIO REGISTRATION
 -- =============================================================================
@@ -20,8 +25,12 @@ function DT_OptionsManager.RegisterAudio()
 
     -- Register V1 specific map
     DT_AudioManager.RegisterCategory("DT_Radio", "Radio")
-    DT_AudioManager.RegisterCategory("DT_Casino", "Wallet")
     DT_AudioManager.RegisterCategory("DT_Cashier", "Trade")
+
+    if isCurrencyExpandedActive() then
+        DT_AudioManager.RegisterCategory("CE_Casino", "Wallet")
+        DT_AudioManager.RegisterCategory("CE_Cashier", "Wallet")
+    end
 
     DynamicTrading.Log("DTV1", "Options", "Init", "V1 Audio Categories Registered.")
 end
@@ -34,9 +43,12 @@ function DT_OptionsManager.RegisterUI()
 
     -- Audio Categories
     DT_OptionsUI.RegisterAudioCategory("Radio:", "Radio", "DT_RadioRandom")
-    DT_OptionsUI.RegisterAudioCategory("Wallet:", "Wallet", "DT_CasinoRandom")
     DT_OptionsUI.RegisterAudioCategory("Trade:", "Trade", "DT_Cashier")
     DT_OptionsUI.RegisterAudioCategory("General:", "General", "DT_RadioBeep")
+
+    if isCurrencyExpandedActive() then
+        DT_OptionsUI.RegisterAudioCategory("Wallet:", "Wallet", "CE_CasinoRandom")
+    end
 
     -- General Settings
     DT_OptionsUI.RegisterGeneralSetting("Show Sidebar Button", "showSidebar", function(val) 

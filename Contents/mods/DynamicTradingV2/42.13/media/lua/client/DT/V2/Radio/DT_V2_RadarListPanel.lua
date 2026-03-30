@@ -5,7 +5,7 @@
 
 require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
-require "DT/Common/Faction/TradingSys/DynamicTrading_Roster"
+require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 
