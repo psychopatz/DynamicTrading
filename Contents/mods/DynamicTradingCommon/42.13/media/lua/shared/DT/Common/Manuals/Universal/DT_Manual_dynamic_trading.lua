@@ -1,9 +1,19 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dynamic_trading",
+--   "module": "common",
 --   "title": "Dynamic Trading Guide",
 --   "description": "Overview pages for the Dynamic Trading ecosystem and quick links for major systems.",
 --   "start_page_id": "intro",
+--   "audiences": [
+--     "common"
+--   ],
+--   "sort_order": 1,
+--   "release_version": "",
+--   "auto_open_on_update": false,
+--   "is_whats_new": false,
+--   "show_in_library": true,
+--   "source_folder": "Universal",
 --   "chapters": [
 --     {
 --       "id": "getting_started",
@@ -144,6 +154,12 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "Dynamic Trading Guide",
         description = "Overview pages for the Dynamic Trading ecosystem and quick links for major systems.",
         startPageId = "intro",
+        audiences = { "common" },
+        sortOrder = 1,
+        releaseVersion = "",
+        autoOpenOnUpdate = false,
+        isWhatsNew = false,
+        showInLibrary = true,
         chapters = {
             {
                 id = "getting_started",
@@ -180,11 +196,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                     { type = "paragraph", text = "Open the Dynamic Trading settings window and switch to the Manuals tab. From there you can launch the library or jump straight into a registered manual." },
                     { type = "heading", id = "custom-buttons", level = 2, text = "Custom Buttons" },
                     { type = "paragraph", text = "Any custom UI or dialogue callback can call the manual API directly. The API accepts a manual id, page id, optional section id, and an optional search query." },
-                    { type = "bullet_list", items = {
-                        "Use page ids for stable quick links.",
-                        "Use heading block ids for section-level jumps.",
-                        "Search works across all registered manuals."
-                    } },
+                    { type = "bullet_list", items = { "Use page ids for stable quick links.", "Use heading block ids for section-level jumps.", "Search works across all registered manuals." } },
                 },
             },
             {

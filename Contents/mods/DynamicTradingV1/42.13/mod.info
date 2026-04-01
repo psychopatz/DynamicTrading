@@ -9,4 +9,3 @@ incompatible=\DynamicTradingV2
 loadModAfter=\DynamicTradingCommon
 category=features
 versionMin=42.13
-versionMax=42.15
