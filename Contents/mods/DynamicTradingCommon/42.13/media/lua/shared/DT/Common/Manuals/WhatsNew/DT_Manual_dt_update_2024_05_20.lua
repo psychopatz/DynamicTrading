@@ -156,6 +156,35 @@
 --           ]
 --         }
 --       ]
+--     },
+--     {
+--       "id": "price_editor",
+--       "chapter_id": "release_notes",
+--       "title": "Price Editor",
+--       "keywords": [
+--         "price"
+--       ],
+--       "blocks": [
+--         {
+--           "type": "heading",
+--           "id": "price-editor",
+--           "level": 1,
+--           "text": "In game price edit"
+--         },
+--         {
+--           "type": "image",
+--           "path": "media/ui/Manuals/dt_update_2024_05_20/image_ba90ef4078.png",
+--           "caption": "You can access that on the dynamic trading settings, make sure youre an admin/debug mode",
+--           "width": 234,
+--           "height": 149,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.5714285714285714
+--         },
+--         {
+--           "type": "paragraph",
+--           "text": "You can now easily edit the price of the itself using the in game editor and can even share your configs to other players on that way you can tailor it to your needs"
+--         }
+--       ]
 --     }
 --   ]
 -- }
@@ -226,6 +255,17 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 blocks = {
                     { type = "heading", id = "npc-chat", level = 1, text = "NPC Interactions & Chat" },
                     { type = "bullet_list", items = { "New daily chat reputation system.(Moved to other mod Dynamic Colonies)", "Expanded NPC dialogue options with faction news and personal info.", "Refactored trader dialogue hubs to support modular chat interactions.", "Archetype-based roster spawning and dynamic trade mode restrictions." } },
+                },
+            },
+            {
+                id = "price_editor",
+                chapterId = "release_notes",
+                title = "Price Editor",
+                keywords = { "price" },
+                blocks = {
+                    { type = "heading", id = "price-editor", level = 1, text = "In game price edit" },
+                    { type = "image", path = "media/ui/Manuals/dt_update_2024_05_20/image_ba90ef4078.png", caption = "You can access that on the dynamic trading settings, make sure youre an admin/debug mode", width = 234, height = 149 },
+                    { type = "paragraph", text = "You can now easily edit the price of the itself using the in game editor and can even share your configs to other players on that way you can tailor it to your needs" },
                 },
             },
         },

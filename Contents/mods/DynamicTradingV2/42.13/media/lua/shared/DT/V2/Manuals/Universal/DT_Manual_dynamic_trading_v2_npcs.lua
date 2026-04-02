@@ -57,6 +57,15 @@
 --           "text": "Finding the Merchant"
 --         },
 --         {
+--           "type": "image",
+--           "path": "media/ui/Manuals/dynamic_trading_v2_npcs/image_95b2ead4ac.png",
+--           "caption": "",
+--           "width": 220,
+--           "height": 140,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.5714285714285714
+--         },
+--         {
 --           "type": "paragraph",
 --           "text": "In the V2 system, traders are physical actors in the world. Their location is dictated by their affiliation understanding this logic is key to mastering your trade routes."
 --         },
@@ -146,7 +155,7 @@
 --         },
 --         {
 --           "type": "paragraph",
---           "text": "Each entry shows the exact distance (e.g., 300m or 400m) and an Expiry Timer. Physical traders are not permanent—they will pack up their bags and move to a new sector once their timer (typically 16-18 hours) hits zero."
+--           "text": "Each entry shows the exact distance (e.g., 300m or 400m) and an Expiry Timer. Physical traders are not permanent they will pack up their bags and move to a new sector once their timer (typically 16-18 hours) hits zero."
 --         },
 --         {
 --           "type": "callout",
@@ -201,6 +210,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 keywords = { "spawn", "independent", "faction", "towns", "nomadic" },
                 blocks = {
                     { type = "heading", id = "spawn-mechanics", level = 1, text = "Finding the Merchant" },
+                    { type = "image", path = "media/ui/Manuals/dynamic_trading_v2_npcs/image_95b2ead4ac.png", caption = "", width = 220, height = 140 },
                     { type = "paragraph", text = "In the V2 system, traders are physical actors in the world. Their location is dictated by their affiliation understanding this logic is key to mastering your trade routes." },
                     { type = "bullet_list", items = { "Independent Traders: These lone wolves are nomadic and tend to spawn in the general vicinity of active players. They offer a baseline market but move frequently.", "Faction Traders: These specialists are anchored to their dedicated towns or base locations. If a faction controls Muldraugh, their merchants will primarily stay within those borders. Or Might even reach out to your location sometimes.", "If you befriend them more, you will have a chance to recruit them to your roster if you got the colonies addon" } },
                     { type = "callout", tone = "info", title = "Operational Note", text = "Faction traders have much stronger standing requirements but often provide bulk supplies that independent roamers simply cannot carry." },
@@ -227,7 +237,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 blocks = {
                     { type = "heading", id = "tracking-data", level = 1, text = "Radar Intelligence" },
                     { type = "paragraph", text = "Your radar tracks the physical state of the merchant across three tabs: Stationary (settled traders), Callable (those you can hail or your companions(Currently broken in MP so i just removed it temporarily)), and Quest (trader that needs help,special delivery targets, etc(Partially implemented))." },
-                    { type = "paragraph", text = "Each entry shows the exact distance (e.g., 300m or 400m) and an Expiry Timer. Physical traders are not permanent—they will pack up their bags and move to a new sector once their timer (typically 16-18 hours) hits zero." },
+                    { type = "paragraph", text = "Each entry shows the exact distance (e.g., 300m or 400m) and an Expiry Timer. Physical traders are not permanent they will pack up their bags and move to a new sector once their timer (typically 16-18 hours) hits zero." },
                     { type = "callout", tone = "info", title = "Travel Tip", text = "Use the LOCATE button to mark a trader on your map, but make sure you have enough time to reach them before their signal expires!" },
                 },
             },
