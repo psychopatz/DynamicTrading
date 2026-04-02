@@ -48,14 +48,16 @@
 --           "type": "heading",
 --           "id": "intel-intro",
 --           "level": 1,
---           "text": "Gathering Intelligence"
+--           "text": "The Intelligence Window"
 --         },
 --         {
 --           "type": "image",
 --           "path": "media/ui/Manuals/dt_intelligence/image.png",
 --           "caption": "",
---           "width": 220,
---           "height": 140
+--           "width": 222,
+--           "height": 141,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.5714285714285714
 --         },
 --         {
 --           "type": "paragraph",
@@ -87,15 +89,17 @@
 --           "text": "Factions & Standing"
 --         },
 --         {
---           "type": "paragraph",
---           "text": "Traders don't inherently trust strangers. Every trader may belong to a Faction, and your 'Standing' with that Faction dictates the terms of your interaction with them. Building a positive reputation through fair trades and fulfilling demands will earn you better prices and unlock specialized inventory and can even recruit them(Dynamic Colonies Required). Conversely, hostility or ignoring a faction's pleas will restrict your access to their services(Partially Implimented)."
+--           "type": "image",
+--           "path": "media/ui/Manuals/dt_intelligence/image_bdd4cf64e7.png",
+--           "caption": "Your reputation precedes you in every town.",
+--           "width": 132,
+--           "height": 114,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.1595744680851063
 --         },
 --         {
---           "type": "image",
---           "path": "media/ui/Icon_MarketInfo.png",
---           "caption": "Your reputation precedes you in every town.",
---           "width": 64,
---           "height": 64
+--           "type": "paragraph",
+--           "text": "Traders don't inherently trust strangers. Every trader may belong to a Faction, and your 'Standing' with that Faction dictates the terms of your interaction with them. Building a positive reputation through fair trades and fulfilling demands will earn you better prices and unlock specialized inventory and can even recruit them(Dynamic Colonies Required). \n\nConversely, hostility or ignoring a faction's pleas will restrict your access to their services(Partially Implemented)."
 --         }
 --       ]
 --     },
@@ -147,7 +151,7 @@
 --         },
 --         {
 --           "type": "paragraph",
---           "text": "Every faction maintains a stockpile of essential resources. If their Food or Medical supplies drop to zero, they'll experience 'Attrition'—their members will begin to die from neglect."
+--           "text": "Every faction maintains a stockpile of essential resources. If their Food or Medical supplies drop to zero, they'll experience 'Attrition' their members will begin to die from neglect."
 --         },
 --         {
 --           "type": "paragraph",
@@ -174,8 +178,17 @@
 --           "text": "Faction Roster"
 --         },
 --         {
+--           "type": "image",
+--           "path": "media/ui/Manuals/dt_intelligence/image_12ca421aa5.png",
+--           "caption": "",
+--           "width": 220,
+--           "height": 140,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.5714285714285714
+--         },
+--         {
 --           "type": "paragraph",
---           "text": "The Population tab shows every individual member of a faction. You can track their status—whether they're out trading, guarding a camp, or if they've met a grim end in the streets."
+--           "text": "The Population tab shows every individual member of a faction. You can track their status whether they're out trading, guarding a camp, or if they've met a grim end in the streets."
 --         },
 --         {
 --           "type": "paragraph",
@@ -222,8 +235,8 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 title = "The Intelligence Window",
                 keywords = { "intel", "intelligence", "ui", "window" },
                 blocks = {
-                    { type = "heading", id = "intel-intro", level = 1, text = "Gathering Intelligence" },
-                    { type = "image", path = "media/ui/Manuals/dt_intelligence/image.png", caption = "", width = 220, height = 140 },
+                    { type = "heading", id = "intel-intro", level = 1, text = "The Intelligence Window" },
+                    { type = "image", path = "media/ui/Manuals/dt_intelligence/image.png", caption = "", width = 222, height = 141 },
                     { type = "paragraph", text = "Knowledge is as valuable as ammunition. The Faction Intelligence window is your tactical dashboard for the entire exclusion zone. It allows you to monitor the health, wealth, and stability of every group you've encountered." },
                     { type = "callout", tone = "info", title = "Field Tip", text = "Access the Intelligence window through the main Dynamic Trading menu or use the designated hotkey in your options." },
                 },
@@ -235,8 +248,10 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 keywords = { "faction", "standing", "reputation", "trust" },
                 blocks = {
                     { type = "heading", id = "trust-mechanics", level = 1, text = "Factions & Standing" },
-                    { type = "paragraph", text = "Traders don't inherently trust strangers. Every trader may belong to a Faction, and your 'Standing' with that Faction dictates the terms of your interaction with them. Building a positive reputation through fair trades and fulfilling demands will earn you better prices and unlock specialized inventory and can even recruit them(Dynamic Colonies Required). Conversely, hostility or ignoring a faction's pleas will restrict your access to their services(Partially Implimented)." },
-                    { type = "image", path = "media/ui/Icon_MarketInfo.png", caption = "Your reputation precedes you in every town.", width = 64, height = 64 },
+                    { type = "image", path = "media/ui/Manuals/dt_intelligence/image_bdd4cf64e7.png", caption = "Your reputation precedes you in every town.", width = 132, height = 114 },
+                    { type = "paragraph", text = "Traders don't inherently trust strangers. Every trader may belong to a Faction, and your 'Standing' with that Faction dictates the terms of your interaction with them. Building a positive reputation through fair trades and fulfilling demands will earn you better prices and unlock specialized inventory and can even recruit them(Dynamic Colonies Required). 
+
+Conversely, hostility or ignoring a faction's pleas will restrict your access to their services(Partially Implemented)." },
                 },
             },
             {
@@ -257,7 +272,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 keywords = { "stockpiles", "resources", "food", "meds", "supply" },
                 blocks = {
                     { type = "heading", id = "monitoring-supplies", level = 1, text = "Stockpiles & Attrition" },
-                    { type = "paragraph", text = "Every faction maintains a stockpile of essential resources. If their Food or Medical supplies drop to zero, they'll experience 'Attrition'—their members will begin to die from neglect." },
+                    { type = "paragraph", text = "Every faction maintains a stockpile of essential resources. If their Food or Medical supplies drop to zero, they'll experience 'Attrition' their members will begin to die from neglect." },
                     { type = "paragraph", text = "By monitoring these levels, you can predict what a faction needs most. Selling them a crate of canned food when they're starving isn't just profitable; it keeps their market alive." },
                 },
             },
@@ -268,7 +283,8 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 keywords = { "population", "roster", "members", "survival", "dead" },
                 blocks = {
                     { type = "heading", id = "roster-management", level = 1, text = "Faction Roster" },
-                    { type = "paragraph", text = "The Population tab shows every individual member of a faction. You can track their status—whether they're out trading, guarding a camp, or if they've met a grim end in the streets." },
+                    { type = "image", path = "media/ui/Manuals/dt_intelligence/image_12ca421aa5.png", caption = "", width = 220, height = 140 },
+                    { type = "paragraph", text = "The Population tab shows every individual member of a faction. You can track their status whether they're out trading, guarding a camp, or if they've met a grim end in the streets." },
                     { type = "paragraph", text = "For factions you control, this interface allows you to dispatch workers to specific trade routes or recall them to safety when a storm hits." },
                 },
             },

@@ -10,9 +10,15 @@
 --   ],
 --   "sort_order": 1,
 --   "release_version": "",
+--   "popup_version": "",
 --   "auto_open_on_update": false,
 --   "is_whats_new": false,
+--   "manual_type": "manual",
 --   "show_in_library": true,
+--   "support_url": "",
+--   "banner_title": "",
+--   "banner_text": "",
+--   "banner_action_label": "",
 --   "source_folder": "Universal",
 --   "chapters": [
 --     {
@@ -56,8 +62,10 @@
 --           "type": "image",
 --           "path": "media/ui/Backgrounds/dawn.png",
 --           "caption": "Manual pages can embed images using any valid in-mod texture path.",
---           "width": 220,
---           "height": 140
+--           "width": 227,
+--           "height": 147,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.5442176870748299
 --         },
 --         {
 --           "type": "callout",
@@ -157,9 +165,15 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         audiences = { "common" },
         sortOrder = 1,
         releaseVersion = "",
+        popupVersion = "",
         autoOpenOnUpdate = false,
         isWhatsNew = false,
+        manualType = "manual",
         showInLibrary = true,
+        supportUrl = "",
+        bannerTitle = "",
+        bannerText = "",
+        bannerActionLabel = "",
         chapters = {
             {
                 id = "getting_started",
@@ -182,7 +196,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                     { type = "heading", id = "overview", level = 1, text = "Dynamic Trading Overview" },
                     { type = "paragraph", text = "Dynamic Trading Commons now supports in-game manuals that can be opened from the Options window or from any custom button callback." },
                     { type = "paragraph", text = "Use the navigation on the left to move between chapters and pages. Use search to jump directly to a section in any registered manual." },
-                    { type = "image", path = "media/ui/Backgrounds/dawn.png", caption = "Manual pages can embed images using any valid in-mod texture path.", width = 220, height = 140 },
+                    { type = "image", path = "media/ui/Backgrounds/dawn.png", caption = "Manual pages can embed images using any valid in-mod texture path.", width = 227, height = 147 },
                     { type = "callout", tone = "info", title = "Deep Link Example", text = "DynamicTrading.Manuals.Open({ manualId = \"dynamic_trading\", pageId = \"trading_window\", sectionId = \"trade-flow\" })" },
                 },
             },

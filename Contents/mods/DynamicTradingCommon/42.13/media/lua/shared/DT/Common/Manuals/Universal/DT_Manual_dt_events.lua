@@ -2,8 +2,8 @@
 -- {
 --   "manual_id": "dt_events",
 --   "module": "common",
---   "title": "World Events System",
---   "description": "A field guide to the sudden shifts and seasonal cycles that define life and death in Kentucky.",
+--   "title": "World Events & Shifting Markets",
+--   "description": "Understanding the Shift",
 --   "start_page_id": "event_types",
 --   "audiences": [
 --     "common"
@@ -36,13 +36,13 @@
 --     {
 --       "id": "event_types",
 --       "chapter_id": "types",
---       "title": "Three Types of Chaos",
+--       "title": "The Economics Dashboard",
 --       "keywords": [
 --         "flash",
 --         "meta",
 --         "seasonal",
---         "types",
---         "crises"
+--         "economic",
+--         "events"
 --       ],
 --       "blocks": [
 --         {
@@ -53,7 +53,7 @@
 --         },
 --         {
 --           "type": "paragraph",
---           "text": "Flash events are local and violent. A 'Warehouse Fire' or a 'Civil Riot' will only affect the town it happens in. They burn hot and fast—blink and you'll miss the window to sell your surplus or grab a bargain."
+--           "text": "The Economics tab is the most critical tool for any serious merchant. It reveals the invisible forces currently warping the market. This interface breaks down disruptions into four distinct categories: Market (baseline trends), Flash (local crises), Meta (global shifts), and Seasonal (long-term cycles).\n\n[Paragraph Block] By monitoring these sub-tabs, you can see the active \"Market Influence\" and \"Faction Impact\" of every ongoing event simultaneously."
 --         },
 --         {
 --           "type": "heading",
@@ -80,27 +80,43 @@
 --     {
 --       "id": "event_lottery",
 --       "chapter_id": "mechanics",
---       "title": "The Daily Roll",
+--       "title": "Local Flash Events",
 --       "keywords": [
---         "lottery",
---         "chance",
---         "probability",
---         "daily"
+--         "flash",
+--         "local",
+--         "crisis",
+--         "expiry",
+--         "stability"
 --       ],
 --       "blocks": [
 --         {
 --           "type": "heading",
 --           "id": "how-it-triggers",
 --           "level": 1,
---           "text": "The Hour of Choice"
+--           "text": "Faction Flash Events"
+--         },
+--         {
+--           "type": "image",
+--           "path": "media/ui/Manuals/dt_events/image_030d7270f4.png",
+--           "caption": "",
+--           "width": 220,
+--           "height": 140,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.5714285714285714
 --         },
 --         {
 --           "type": "paragraph",
---           "text": "Every hour, the server rolls the dice for every faction. It checks if they're already overwhelmed with events and if enough time has passed since the last crisis. If the gods of fate are feeling fickle, a new event triggers immediately."
+--           "text": "Flash events are sudden, localized crises that affect a specific faction. They represent temporary realities like a \"Radio Silence\" blackout where broadcasters are being hunted that force traders to change their behavior immediately. Or even a localized crisis that affects a certain availability of the specified goods"
 --         },
 --         {
 --           "type": "paragraph",
 --           "text": "Once an event hits, it marks the merchants. They'll adjust their stock and prices based on the new reality, and they won't go back until the event timer runs out."
+--         },
+--         {
+--           "type": "callout",
+--           "tone": "warn",
+--           "title": "Faction Impact",
+--           "text": "Events don't just affect prices; they damage the faction itself. Keep an eye on \"Stability\" penalties if an event drains too much stability, the faction may become increasingly volatile and desperate or even wipe itself."
 --         }
 --       ]
 --     },
@@ -130,7 +146,9 @@
 --           "path": "media/ui/Backgrounds/sunrise.png",
 --           "caption": "The market doesn't care about your budget during a triple-crisis.",
 --           "width": 400,
---           "height": 200
+--           "height": 200,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 2.0
 --         },
 --         {
 --           "type": "callout",
@@ -163,7 +181,54 @@
 --         },
 --         {
 --           "type": "paragraph",
---           "text": "Worse still is 'Attrition'. If a town runs out of food or medical supplies during an event, people start dying from neglect. You have the power to stop this—selling them the supplies they need can stabilize their population."
+--           "text": "Worse still is 'Attrition'. If a town runs out of food or medical supplies during an event, people start dying from neglect. You have the power to stop thisselling them the supplies they need can stabilize their population."
+--         }
+--       ]
+--     },
+--     {
+--       "id": "page_5",
+--       "chapter_id": "types",
+--       "title": "Market Influence & Multipliers",
+--       "keywords": [
+--         "multipliers",
+--         "price",
+--         "volume",
+--         "tags",
+--         "inflation"
+--       ],
+--       "blocks": [
+--         {
+--           "type": "heading",
+--           "id": "marketmultiplier",
+--           "level": 1,
+--           "text": "Reading the Multipliers"
+--         },
+--         {
+--           "type": "paragraph",
+--           "text": "The \"Market Influence\" section reveals exactly how an event modifies the value of specific item categories. These multipliers target item Tags, not just individual items."
+--         },
+--         {
+--           "type": "image",
+--           "path": "media/ui/Manuals/dt_events/image_d8ae2df93e.png",
+--           "caption": "",
+--           "width": 220,
+--           "height": 140,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.5714285714285714
+--         },
+--         {
+--           "type": "bullet_list",
+--           "items": [
+--             "Red Multipliers (^x1.50): These indicate a price hike. For example, during a security crisis, \"Police\" themed items may see a 200% price increase.",
+--             "Green Multipliers (vx0.50): These indicate a price drop. During a communications blackout, \"Electronics\" might lose half their value.",
+--             "Volume Multipliers (vx0.20): These affect how many items the trader is willing to stock or buy. If volume is low, a trader may refuse even high-value goods because they simply don't have the logistics to move them."
+--           ]
+--         },
+--         {
+--           "type": "callout",
+--           "tone": "info",
+--           "title": "Arbitrage Opportunity",
+--           "text": "A smart trader buys items where the price is \"vx0.50\" and hauls them to a faction where the price is stable or inflated. Use the global Meta and Trends tabs to find these massive profit gaps!"
 --         }
 --       ]
 --     }
@@ -172,8 +237,8 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_events", {
-        title = "World Events System",
-        description = "A field guide to the sudden shifts and seasonal cycles that define life and death in Kentucky.",
+        title = "World Events & Shifting Markets",
+        description = "Understanding the Shift",
         startPageId = "event_types",
         audiences = { "common" },
         sortOrder = 4,
@@ -203,11 +268,13 @@ if DynamicTrading and DynamicTrading.RegisterManual then
             {
                 id = "event_types",
                 chapterId = "types",
-                title = "Three Types of Chaos",
-                keywords = { "flash", "meta", "seasonal", "types", "crises" },
+                title = "The Economics Dashboard",
+                keywords = { "flash", "meta", "seasonal", "economic", "events" },
                 blocks = {
                     { type = "heading", id = "flash-events", level = 1, text = "Sudden Flashes" },
-                    { type = "paragraph", text = "Flash events are local and violent. A 'Warehouse Fire' or a 'Civil Riot' will only affect the town it happens in. They burn hot and fast—blink and you'll miss the window to sell your surplus or grab a bargain." },
+                    { type = "paragraph", text = "The Economics tab is the most critical tool for any serious merchant. It reveals the invisible forces currently warping the market. This interface breaks down disruptions into four distinct categories: Market (baseline trends), Flash (local crises), Meta (global shifts), and Seasonal (long-term cycles).
+
+[Paragraph Block] By monitoring these sub-tabs, you can see the active \"Market Influence\" and \"Faction Impact\" of every ongoing event simultaneously." },
                     { type = "heading", id = "meta-events", level = 1, text = "Global Shifts" },
                     { type = "paragraph", text = "Meta events are world-altering. A 'State-wide Shortage' or a 'Plague Outbreak' affects every merchant from Rosewood to West Point. These aren't just market blips; they are new realities you must adapt to." },
                     { type = "heading", id = "seasonal-events", level = 1, text = "The Turning Seasons" },
@@ -217,12 +284,14 @@ if DynamicTrading and DynamicTrading.RegisterManual then
             {
                 id = "event_lottery",
                 chapterId = "mechanics",
-                title = "The Daily Roll",
-                keywords = { "lottery", "chance", "probability", "daily" },
+                title = "Local Flash Events",
+                keywords = { "flash", "local", "crisis", "expiry", "stability" },
                 blocks = {
-                    { type = "heading", id = "how-it-triggers", level = 1, text = "The Hour of Choice" },
-                    { type = "paragraph", text = "Every hour, the server rolls the dice for every faction. It checks if they're already overwhelmed with events and if enough time has passed since the last crisis. If the gods of fate are feeling fickle, a new event triggers immediately." },
+                    { type = "heading", id = "how-it-triggers", level = 1, text = "Faction Flash Events" },
+                    { type = "image", path = "media/ui/Manuals/dt_events/image_030d7270f4.png", caption = "", width = 220, height = 140 },
+                    { type = "paragraph", text = "Flash events are sudden, localized crises that affect a specific faction. They represent temporary realities like a \"Radio Silence\" blackout where broadcasters are being hunted that force traders to change their behavior immediately. Or even a localized crisis that affects a certain availability of the specified goods" },
                     { type = "paragraph", text = "Once an event hits, it marks the merchants. They'll adjust their stock and prices based on the new reality, and they won't go back until the event timer runs out." },
+                    { type = "callout", tone = "warn", title = "Faction Impact", text = "Events don't just affect prices; they damage the faction itself. Keep an eye on \"Stability\" penalties if an event drains too much stability, the faction may become increasingly volatile and desperate or even wipe itself." },
                 },
             },
             {
@@ -245,7 +314,20 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 blocks = {
                     { type = "heading", id = "human-cost", level = 1, text = "Casualties and Starvation" },
                     { type = "paragraph", text = "Events aren't just numbers on a screen. Factions lose people during a 'Civil War' or a 'Plague'. If you see a faction's population dropping, it's because the events are taking their toll." },
-                    { type = "paragraph", text = "Worse still is 'Attrition'. If a town runs out of food or medical supplies during an event, people start dying from neglect. You have the power to stop this—selling them the supplies they need can stabilize their population." },
+                    { type = "paragraph", text = "Worse still is 'Attrition'. If a town runs out of food or medical supplies during an event, people start dying from neglect. You have the power to stop thisselling them the supplies they need can stabilize their population." },
+                },
+            },
+            {
+                id = "page_5",
+                chapterId = "types",
+                title = "Market Influence & Multipliers",
+                keywords = { "multipliers", "price", "volume", "tags", "inflation" },
+                blocks = {
+                    { type = "heading", id = "marketmultiplier", level = 1, text = "Reading the Multipliers" },
+                    { type = "paragraph", text = "The \"Market Influence\" section reveals exactly how an event modifies the value of specific item categories. These multipliers target item Tags, not just individual items." },
+                    { type = "image", path = "media/ui/Manuals/dt_events/image_d8ae2df93e.png", caption = "", width = 220, height = 140 },
+                    { type = "bullet_list", items = { "Red Multipliers (^x1.50): These indicate a price hike. For example, during a security crisis, \"Police\" themed items may see a 200% price increase.", "Green Multipliers (vx0.50): These indicate a price drop. During a communications blackout, \"Electronics\" might lose half their value.", "Volume Multipliers (vx0.20): These affect how many items the trader is willing to stock or buy. If volume is low, a trader may refuse even high-value goods because they simply don't have the logistics to move them." } },
+                    { type = "callout", tone = "info", title = "Arbitrage Opportunity", text = "A smart trader buys items where the price is \"vx0.50\" and hauls them to a faction where the price is stable or inflated. Use the global Meta and Trends tabs to find these massive profit gaps!" },
                 },
             },
         },
