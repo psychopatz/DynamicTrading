@@ -3,7 +3,7 @@
 --   "manual_id": "dt_support_patreon",
 --   "module": "common",
 --   "title": "Support Dynamic Trading",
---   "description": "A short support page for players who want to fund continued development.",
+--   "description": "Support page for players who want to fund continued development",
 --   "start_page_id": "support_overview",
 --   "audiences": [
 --     "common"
@@ -53,8 +53,10 @@
 --           "type": "image",
 --           "path": "media/ui/Manuals/dt_support_patreon/donate.png",
 --           "caption": "",
---           "width": 220,
---           "height": 140
+--           "width": 247,
+--           "height": 167,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.4790419161676647
 --         },
 --         {
 --           "type": "paragraph",
@@ -98,7 +100,7 @@
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_support_patreon", {
         title = "Support Dynamic Trading",
-        description = "A short support page for players who want to fund continued development.",
+        description = "Support page for players who want to fund continued development",
         startPageId = "support_overview",
         audiences = { "common" },
         sortOrder = 9999999,
@@ -128,7 +130,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 blocks = {
                     { type = "heading", id = "support-dynamic-trading", level = 1, text = "Support Dynamic Trading" },
                     { type = "paragraph", text = "Dynamic Trading Needs ya <3" },
-                    { type = "image", path = "media/ui/Manuals/dt_support_patreon/donate.png", caption = "", width = 220, height = 140 },
+                    { type = "image", path = "media/ui/Manuals/dt_support_patreon/donate.png", caption = "", width = 247, height = 167 },
                     { type = "paragraph", text = "I started making this mod as a hobby, mostly because I hit that point in Project Zomboid where the late game just feels… empty. I love the simulation side of it, and Zomboid gets so close to something incredible but it’s always felt like it was missing real NPC interaction and something meaningful to work toward long-term." },
                     { type = "paragraph", text = "So I figured I’d try building that myself." },
                     { type = "paragraph", text = "What I ended up with is a mix of a trading system and a colony simulator, kind of like if State of Decay and RimWorld somehow existed inside Zomboid(UI only and some basic functionalities for now but I will port an actual V2 compatible once I finalized the System to make my implimentation easier). It’s been a genuinely fun project to work on, and seeing people actually enjoy it has made it even better." },

@@ -249,9 +249,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 blocks = {
                     { type = "heading", id = "trust-mechanics", level = 1, text = "Factions & Standing" },
                     { type = "image", path = "media/ui/Manuals/dt_intelligence/image_bdd4cf64e7.png", caption = "Your reputation precedes you in every town.", width = 132, height = 114 },
-                    { type = "paragraph", text = "Traders don't inherently trust strangers. Every trader may belong to a Faction, and your 'Standing' with that Faction dictates the terms of your interaction with them. Building a positive reputation through fair trades and fulfilling demands will earn you better prices and unlock specialized inventory and can even recruit them(Dynamic Colonies Required). 
-
-Conversely, hostility or ignoring a faction's pleas will restrict your access to their services(Partially Implemented)." },
+                    { type = "paragraph", text = "Traders don't inherently trust strangers. Every trader may belong to a Faction, and your 'Standing' with that Faction dictates the terms of your interaction with them. Building a positive reputation through fair trades and fulfilling demands will earn you better prices and unlock specialized inventory and can even recruit them(Dynamic Colonies Required). \n\nConversely, hostility or ignoring a faction's pleas will restrict your access to their services(Partially Implemented)." },
                 },
             },
             {

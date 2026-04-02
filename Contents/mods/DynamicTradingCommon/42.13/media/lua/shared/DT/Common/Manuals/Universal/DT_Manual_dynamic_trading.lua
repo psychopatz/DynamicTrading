@@ -3,7 +3,7 @@
 --   "manual_id": "dynamic_trading",
 --   "module": "common",
 --   "title": "Dynamic Trading Guide",
---   "description": "Overview pages for the Dynamic Trading ecosystem and quick links for major systems.",
+--   "description": "Overview pages for mod system and quick links for major systems.",
 --   "start_page_id": "intro",
 --   "audiences": [
 --     "common"
@@ -160,7 +160,7 @@
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dynamic_trading", {
         title = "Dynamic Trading Guide",
-        description = "Overview pages for the Dynamic Trading ecosystem and quick links for major systems.",
+        description = "Overview pages for mod system and quick links for major systems.",
         startPageId = "intro",
         audiences = { "common" },
         sortOrder = 1,

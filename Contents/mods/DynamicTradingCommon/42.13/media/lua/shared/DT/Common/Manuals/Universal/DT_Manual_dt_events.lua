@@ -272,9 +272,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 keywords = { "flash", "meta", "seasonal", "economic", "events" },
                 blocks = {
                     { type = "heading", id = "flash-events", level = 1, text = "Sudden Flashes" },
-                    { type = "paragraph", text = "The Economics tab is the most critical tool for any serious merchant. It reveals the invisible forces currently warping the market. This interface breaks down disruptions into four distinct categories: Market (baseline trends), Flash (local crises), Meta (global shifts), and Seasonal (long-term cycles).
-
-[Paragraph Block] By monitoring these sub-tabs, you can see the active \"Market Influence\" and \"Faction Impact\" of every ongoing event simultaneously." },
+                    { type = "paragraph", text = "The Economics tab is the most critical tool for any serious merchant. It reveals the invisible forces currently warping the market. This interface breaks down disruptions into four distinct categories: Market (baseline trends), Flash (local crises), Meta (global shifts), and Seasonal (long-term cycles).\n\n[Paragraph Block] By monitoring these sub-tabs, you can see the active \"Market Influence\" and \"Faction Impact\" of every ongoing event simultaneously." },
                     { type = "heading", id = "meta-events", level = 1, text = "Global Shifts" },
                     { type = "paragraph", text = "Meta events are world-altering. A 'State-wide Shortage' or a 'Plague Outbreak' affects every merchant from Rosewood to West Point. These aren't just market blips; they are new realities you must adapt to." },
                     { type = "heading", id = "seasonal-events", level = 1, text = "The Turning Seasons" },
