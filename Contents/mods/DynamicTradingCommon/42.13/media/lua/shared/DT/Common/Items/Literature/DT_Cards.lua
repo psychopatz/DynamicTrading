@@ -12,27 +12,27 @@ DynamicTrading.RegisterBatch({
     -- The items are grouped by Primary tag and Rarity
 
     -- [Literature.Cards] [Rarity.Common] (3 items)
-    { item="Base.Card_Christmas", basePrice=481, tags={"Literature.Cards", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=25} },
-    { item="Base.Card_Valentine", basePrice=481, tags={"Literature.Cards", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=25} },
-    { item="Base.Postcard", basePrice=481, tags={"Literature.Cards", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=25} },
+    { item="Base.Card_Christmas", basePrice=245, tags={"Literature.Cards", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=25} },
+    { item="Base.Card_Valentine", basePrice=245, tags={"Literature.Cards", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=25} },
+    { item="Base.Postcard", basePrice=245, tags={"Literature.Cards", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=4, max=25} },
 
     -- [Literature.Cards] [Rarity.Rare] (16 items)
-    { item="Base.BusinessCard_Nolans", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=27} },
-    { item="Base.BusinessCard_Personal", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=27} },
-    { item="Base.Card_Birthday", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.Card_Easter", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.Card_Halloween", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.Card_Hanukkah", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.Card_LunarYear", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.Card_StPatrick", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.Card_Sympathy", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.CardDeck", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.CreditCard_Stolen", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.IDcard_Blank", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.IDcard_Female", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.IDcard_Male", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.IDcard_Stolen", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
-    { item="Base.TarotCardDeck", basePrice=706, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.BusinessCard_Nolans", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=27} },
+    { item="Base.BusinessCard_Personal", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=27} },
+    { item="Base.Card_Birthday", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.Card_Easter", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.Card_Halloween", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.Card_Hanukkah", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.Card_LunarYear", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.Card_StPatrick", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.Card_Sympathy", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.CardDeck", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.CreditCard_Stolen", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.IDcard_Blank", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.IDcard_Female", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.IDcard_Male", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.IDcard_Stolen", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
+    { item="Base.TarotCardDeck", basePrice=364, tags={"Literature.Cards", "Rarity.Rare", "Origin.Vanilla"}, stockRange={min=0, max=13} },
 })
 
 print("[DynamicTrading] Cards Registry Complete")

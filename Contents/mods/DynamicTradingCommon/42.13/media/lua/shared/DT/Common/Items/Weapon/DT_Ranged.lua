@@ -15,7 +15,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.AssaultRifle", basePrice=427, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
     { item="Base.AssaultRifle2", basePrice=465, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
     { item="Base.DoubleBarrelShotgun", basePrice=457, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
-    { item="Base.DoubleBarrelShotgunSawnoff", basePrice=420, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
+    { item="Base.DoubleBarrelShotgunSawnoff", basePrice=421, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
     { item="Base.HuntingRifle", basePrice=466, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
     { item="Base.JS14_Rifle", basePrice=428, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
     { item="Base.JS3T_Shotgun", basePrice=444, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
@@ -31,7 +31,7 @@ DynamicTrading.RegisterBatch({
     { item="Base.Revolver_Short", basePrice=303, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=3} },
     { item="Base.Rifle_CapGun", basePrice=266, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
     { item="Base.Shotgun", basePrice=445, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
-    { item="Base.ShotgunSawnoff", basePrice=414, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
+    { item="Base.ShotgunSawnoff", basePrice=415, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
     { item="Base.TrapperCarbine", basePrice=364, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
     { item="Base.VarmintRifle", basePrice=417, tags={"Weapon.Ranged.Firearm", "Rarity.Common", "Origin.Vanilla"}, stockRange={min=0, max=1} },
 })
