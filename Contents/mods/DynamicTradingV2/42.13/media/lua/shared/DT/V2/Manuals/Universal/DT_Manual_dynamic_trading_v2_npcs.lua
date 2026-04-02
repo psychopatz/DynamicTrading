@@ -2,7 +2,7 @@
 -- {
 --   "manual_id": "dynamic_trading_v2_npcs",
 --   "module": "v2",
---   "title": "Field Trader Discovery",
+--   "title": "FieldTrader Discovery",
 --   "description": "How to find and track physical NPCs in the world using your radio.",
 --   "start_page_id": "spawning_logic",
 --   "audiences": [
@@ -170,7 +170,7 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dynamic_trading_v2_npcs", {
-        title = "Field Trader Discovery",
+        title = "FieldTrader Discovery",
         description = "How to find and track physical NPCs in the world using your radio.",
         startPageId = "spawning_logic",
         audiences = { "v2" },

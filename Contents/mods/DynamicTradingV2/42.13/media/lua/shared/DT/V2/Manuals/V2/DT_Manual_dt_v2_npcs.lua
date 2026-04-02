@@ -2,7 +2,7 @@
 -- {
 --   "manual_id": "dt_v2_npcs",
 --   "module": "v2",
---   "title": "Survivalist's Guide to Trading",
+--   "title": "Guide to Trading",
 --   "description": "Scouting the streets and handling high-stakes deals",
 --   "start_page_id": "v2_philosophy",
 --   "audiences": [
@@ -142,7 +142,7 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_v2_npcs", {
-        title = "Survivalist's Guide to Trading",
+        title = "Guide to Trading",
         description = "Scouting the streets and handling high-stakes deals",
         startPageId = "v2_philosophy",
         audiences = { "v2" },

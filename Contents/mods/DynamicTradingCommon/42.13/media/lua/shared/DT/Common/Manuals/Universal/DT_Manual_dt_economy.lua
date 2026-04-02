@@ -2,17 +2,23 @@
 -- {
 --   "manual_id": "dt_economy",
 --   "module": "common",
---   "title": "Market Mastery & Profits",
---   "description": "A merchant's guide to turning junk into gold and surviving the crushing weight of inflation.",
+--   "title": "Economic System",
+--   "description": "Guide for proper inflation and deflation mechanics",
 --   "start_page_id": "price_calculation",
 --   "audiences": [
 --     "common"
 --   ],
 --   "sort_order": 3,
 --   "release_version": "",
+--   "popup_version": "",
 --   "auto_open_on_update": false,
 --   "is_whats_new": false,
+--   "manual_type": "manual",
 --   "show_in_library": true,
+--   "support_url": "",
+--   "banner_title": "",
+--   "banner_text": "",
+--   "banner_action_label": "",
 --   "source_folder": "Universal",
 --   "chapters": [
 --     {
@@ -97,7 +103,9 @@
 --           "path": "media/ui/Icon_MarketInfo.png",
 --           "caption": "Empty shelves are a scavenger's best friend.",
 --           "width": 64,
---           "height": 64
+--           "height": 64,
+--           "keep_aspect_ratio": true,
+--           "aspect_ratio": 1.0
 --         }
 --       ]
 --     },
@@ -182,15 +190,21 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_economy", {
-        title = "Market Mastery & Profits",
-        description = "A merchant's guide to turning junk into gold and surviving the crushing weight of inflation.",
+        title = "Economic System",
+        description = "Guide for proper inflation and deflation mechanics",
         startPageId = "price_calculation",
         audiences = { "common" },
         sortOrder = 3,
         releaseVersion = "",
+        popupVersion = "",
         autoOpenOnUpdate = false,
         isWhatsNew = false,
+        manualType = "manual",
         showInLibrary = true,
+        supportUrl = "",
+        bannerTitle = "",
+        bannerText = "",
+        bannerActionLabel = "",
         chapters = {
             {
                 id = "pricing",
