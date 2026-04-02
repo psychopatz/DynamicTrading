@@ -15,8 +15,6 @@ local function tryOpenWhatsNew()
         return
     end
 
-    DT_ManualUI_AutoOpen.checked = true
-
     if not DynamicTrading or not DynamicTrading.Manuals or not DynamicTrading.Manuals.GetLatestWhatsNewManual then
         return
     end
@@ -29,17 +27,28 @@ local function tryOpenWhatsNew()
 
     local blockedVersion = DT_ConfigManager and DT_ConfigManager.getDisabledAutoOpenReleaseVersion and DT_ConfigManager.getDisabledAutoOpenReleaseVersion() or ""
     if blockedVersion == version then
+        DT_ManualUI_AutoOpen.checked = true
+        return
+    end
+
+    local lastSeen = DT_ConfigManager and DT_ConfigManager.getLastSeenReleaseVersion and DT_ConfigManager.getLastSeenReleaseVersion() or ""
+    if lastSeen == version then
+        DT_ManualUI_AutoOpen.checked = true
         return
     end
 
     local lastAutoOpened = DT_ConfigManager and DT_ConfigManager.getLastAutoOpenedReleaseVersion and DT_ConfigManager.getLastAutoOpenedReleaseVersion() or ""
     if lastAutoOpened == version then
-        return
+        if DT_ConfigManager and DT_ConfigManager.setLastAutoOpenedReleaseVersion then
+            DT_ConfigManager.setLastAutoOpenedReleaseVersion("")
+        end
     end
 
     if DT_ConfigManager and DT_ConfigManager.setLastAutoOpenedReleaseVersion then
         DT_ConfigManager.setLastAutoOpenedReleaseVersion(version)
     end
+
+    DT_ManualUI_AutoOpen.checked = true
 
     DynamicTrading.Manuals.OpenUpdates({
         manualId = manual.id,

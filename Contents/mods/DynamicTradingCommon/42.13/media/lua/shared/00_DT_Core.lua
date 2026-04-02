@@ -309,10 +309,12 @@ function DynamicTrading.Manuals.GetLatestWhatsNewManual(active)
     for _, manual in ipairs(DynamicTrading.Manuals.GetOrderedUpdateManuals(active)) do
         local isCandidate = manual and (manual.manualType == "whats_new" or manual.isWhatsNew == true or manual.autoOpenOnUpdate == true)
         if isCandidate then
+            local manualVersion = tostring(manual.popupVersion or manual.releaseVersion or "")
             if not latest then
                 latest = manual
             else
-                local compare = DynamicTrading.Manuals.CompareReleaseVersions(manual.releaseVersion, latest.releaseVersion)
+                local latestVersion = tostring(latest.popupVersion or latest.releaseVersion or "")
+                local compare = DynamicTrading.Manuals.CompareReleaseVersions(manualVersion, latestVersion)
                 if compare > 0 or (compare == 0 and (tonumber(manual.sortOrder) or 0) < (tonumber(latest.sortOrder) or 0)) then
                     latest = manual
                 end

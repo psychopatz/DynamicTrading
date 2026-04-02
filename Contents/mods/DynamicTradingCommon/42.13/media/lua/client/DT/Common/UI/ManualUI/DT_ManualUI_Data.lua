@@ -158,6 +158,12 @@ function DT_ManualUI:openLocation(args)
     self.currentManualType = manual and tostring(manual.manualType or "manual") or "manual"
     self.currentPopupVersion = manual and tostring(manual.popupVersion or manual.releaseVersion or "") or ""
 
+    if manual and self.currentManualType == "whats_new" and self.currentPopupVersion ~= "" then
+        if DT_ConfigManager and DT_ConfigManager.setLastSeenReleaseVersion then
+            DT_ConfigManager.setLastSeenReleaseVersion(self.currentPopupVersion)
+        end
+    end
+
     if manual then
         self:ensureExpandedPath(manual.id, page and page.chapterId or nil)
     end
