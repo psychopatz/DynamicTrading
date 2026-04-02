@@ -162,6 +162,7 @@ function DynamicTrading.Manuals.GetActiveAudienceState()
         v1 = false,
         v2 = false,
         colony = false,
+        currency = false,
     }
     local flags = DynamicTrading.Manuals.RuntimeAudienceFlags or {}
 
@@ -170,10 +171,12 @@ function DynamicTrading.Manuals.GetActiveAudienceState()
         active.v1 = activated:contains("DynamicTrading") or flags.v1 == true
         active.v2 = activated:contains("DynamicTradingV2") or flags.v2 == true
         active.colony = activated:contains("DynamicColonies") or flags.colony == true
+        active.currency = activated:contains("CurrencyExpanded") or flags.currency == true
     else
         active.v1 = flags.v1 == true
         active.v2 = flags.v2 == true
         active.colony = flags.colony == true
+        active.currency = flags.currency == true
     end
 
     return active
