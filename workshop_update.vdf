@@ -3,5 +3,53 @@
 	"appid" "108600"
 	"publishedfileid" "3635333613"
 	"contentfolder" "/home/psychopatz/Zomboid/Workshop/DynamicTrading/upload_staging"
-	"changenote" "Mod update pushed via Dynamic Trading Manager"
+	"changenote" "[b]Major Features & Overhauls[/b]
+[list]
+[] [b]In-game Price Editor and Sharer:[/b] Introduced a full fledged in game price editor for those admins on MP/ enable debug on SP.
+[] [b]Comprehensive In-Game Manual:[/b] Introduced a fully functional in-game manual UI featuring search, navigation, text wrapping, and dynamic support banners. Includes detailed guides for World Events, the Economics Dashboard, Scavenger Radio, and dynamic colony features. Manuals now automatically open after major updates.
+[] [b]Player-Owned Factions:[/b] Added comprehensive player faction management. Players can now create factions, manage invites and roles, track status updates, and prioritize owned factions in the UI.
+[] [b]Reputation System:[/b] Implemented a dynamic reputation system influenced by daily chats, trade values, and interactions. Reputation directly impacts trader dialogue and features visual halo text for faction names and standing changes.
+[] [b]Colony & Building Management:[/b] Introduced a new building construction, installation, and destruction system with dedicated UI, project tracking, and map integration.
+[/list]
+
+[b]NPCs & Dialogue[/b]
+[list]
+[] [b]Ambient & Interactive Dialogue:[/b] Added a modular, archetype-based ambient dialogue system with overhead text. Expanded NPC chat interactions with daily reputation gains, faction news, and personal info.
+[] [b]Overhead Indicators:[/b] Implemented client-side overhead health bars and names for NPCs.
+[] [b]Advanced NPC Behaviors:[/b] Added dedicated behaviors for trading, idling, and departing. Improved pathfinding with stuck detection.
+[] [b]Incapacitated State:[/b] Added a new incapacitated state for downed NPCs, complete with distinct pulsing health bars and customized dialogue.
+[*] [b]Spawn & Zombie Logic:[/b] Disabled NPC zombie biting flags to prevent unwarranted biting on spawn. Implemented a system to repair and re-register existing NPCs to ensure stable spawning.
+[/list]
+
+[b]Economy & Trading[/b]
+[list]
+[] [b]Dynamic Pricing & Heuristics:[/b] Overhauled the economy with a tag-based pricing heuristic system. Added support for persistent price presets and dynamic base price configurations.
+[] [b]Trading UI Enhancements:[/b] Added quantity selection for selling items. Greatly optimized sellable item scanning through caching and grouping.
+[] [b]Archetype Editor:[/b] Introduced a dedicated UI and admin tool to manage NPC archetypes, allowing configuration of names, expert/forbid tags, wants multipliers, and custom item allocations.
+[] [b]Expanded Trade Categories:[/b] Added new tradable categories including buildings, fluids, clothing, electronics, cookware, and medical drugs.
+[*] Added [b]CurrencyExpanded[/b] support for audio categories.
+[/list]
+
+[b]Labour & Scavenging Systems[/b]
+[list]
+[] [b]Advanced Scavenging:[/b] Implemented detailed scavenging simulation including worker presence states, travel logic, auto-repeat functionality, and contextual map integration. Added worker carry weight, container capacity, and configurable tools.
+[] [b]Worker Mechanics:[/b] Introduced comprehensive worker systems including a new tiredness system, archetype skills, condition/head condition tracking, and a meal-based nutrition/health system.
+[] [b]Medical Care System:[/b] Added a new Infirmary building and Doctor job with refined provisioning logic.
+[] [b]Supply Window UI:[/b] Completely redesigned the supply management UI with tabbed filtering (provisions, output, equipment), search functionality, bulk deposit, and a new labour warehouse system.
+[/list]
+
+[b]Items & Quality of Life[/b]
+[list]
+[] [b]Wallet Lottery System:[/b] Implemented a new lottery system with state tracking for wallet items.
+[] [b]Texture Resolution Improvements:[/b] Improved item texture resolution with support for script variants, clothing items, and multiple fallback mechanisms.
+[*] [b]Admin & Debug Tools:[/b] Added an expandable debug UI for browsing local player ModData, new admin tools for forced trader generation, and secure access checks for all debug features.
+[/list]
+
+[b]Bug Fixes & Technical Improvements[/b]
+[list]
+[] Synchronized custom item data fields on the server to ensure consistency across all clients.
+[] Refactored UI detail formatting, separating the activity log for better performance and readability.
+[] Resolved data merging issues between cached and live faction/roster ModData.
+[] Removed legacy manual files, redundant pcall requires, and legacy labour-related sandbox options to streamline the codebase.
+[/list]"
 }
