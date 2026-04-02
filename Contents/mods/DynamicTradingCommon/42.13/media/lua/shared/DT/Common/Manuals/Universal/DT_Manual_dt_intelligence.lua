@@ -3,16 +3,22 @@
 --   "manual_id": "dt_intelligence",
 --   "module": "common",
 --   "title": "Faction Intelligence & Logistics",
---   "description": "A commander's guide to monitoring faction wealth, survival, and economic trends.",
+--   "description": "Guide to monitoring faction wealth, survival, and economic trends.",
 --   "start_page_id": "intel_overview",
 --   "audiences": [
 --     "common"
 --   ],
 --   "sort_order": 2,
 --   "release_version": "",
+--   "popup_version": "",
 --   "auto_open_on_update": false,
 --   "is_whats_new": false,
+--   "manual_type": "manual",
 --   "show_in_library": true,
+--   "support_url": "",
+--   "banner_title": "",
+--   "banner_text": "",
+--   "banner_action_label": "",
 --   "source_folder": "Universal",
 --   "chapters": [
 --     {
@@ -45,6 +51,13 @@
 --           "text": "Gathering Intelligence"
 --         },
 --         {
+--           "type": "image",
+--           "path": "media/ui/Manuals/dt_intelligence/image.png",
+--           "caption": "",
+--           "width": 220,
+--           "height": 140
+--         },
+--         {
 --           "type": "paragraph",
 --           "text": "Knowledge is as valuable as ammunition. The Faction Intelligence window is your tactical dashboard for the entire exclusion zone. It allows you to monitor the health, wealth, and stability of every group you've encountered."
 --         },
@@ -61,21 +74,21 @@
 --       "chapter_id": "public_intel",
 --       "title": "Reputation & Trust",
 --       "keywords": [
---         "reputation",
---         "trust",
+--         "faction",
 --         "standing",
---         "alignment"
+--         "reputation",
+--         "trust"
 --       ],
 --       "blocks": [
 --         {
 --           "type": "heading",
 --           "id": "trust-mechanics",
 --           "level": 1,
---           "text": "Winning Hearts and Minds"
+--           "text": "Factions & Standing"
 --         },
 --         {
 --           "type": "paragraph",
---           "text": "Traders don't trust strangers. Your 'Standing' with a faction determines the prices you get and the items they're willing to show you. Trust is earned through fair trades and fulfilling their needs, and it's lost through hostile actions or ignoring their pleas for help."
+--           "text": "Traders don't inherently trust strangers. Every trader may belong to a Faction, and your 'Standing' with that Faction dictates the terms of your interaction with them. Building a positive reputation through fair trades and fulfilling demands will earn you better prices and unlock specialized inventory and can even recruit them(Dynamic Colonies Required). Conversely, hostility or ignoring a faction's pleas will restrict your access to their services(Partially Implimented)."
 --         },
 --         {
 --           "type": "image",
@@ -176,14 +189,20 @@
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_intelligence", {
         title = "Faction Intelligence & Logistics",
-        description = "A commander's guide to monitoring faction wealth, survival, and economic trends.",
+        description = "Guide to monitoring faction wealth, survival, and economic trends.",
         startPageId = "intel_overview",
         audiences = { "common" },
         sortOrder = 2,
         releaseVersion = "",
+        popupVersion = "",
         autoOpenOnUpdate = false,
         isWhatsNew = false,
+        manualType = "manual",
         showInLibrary = true,
+        supportUrl = "",
+        bannerTitle = "",
+        bannerText = "",
+        bannerActionLabel = "",
         chapters = {
             {
                 id = "public_intel",
@@ -204,6 +223,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 keywords = { "intel", "intelligence", "ui", "window" },
                 blocks = {
                     { type = "heading", id = "intel-intro", level = 1, text = "Gathering Intelligence" },
+                    { type = "image", path = "media/ui/Manuals/dt_intelligence/image.png", caption = "", width = 220, height = 140 },
                     { type = "paragraph", text = "Knowledge is as valuable as ammunition. The Faction Intelligence window is your tactical dashboard for the entire exclusion zone. It allows you to monitor the health, wealth, and stability of every group you've encountered." },
                     { type = "callout", tone = "info", title = "Field Tip", text = "Access the Intelligence window through the main Dynamic Trading menu or use the designated hotkey in your options." },
                 },
@@ -212,10 +232,10 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 id = "reputation_system",
                 chapterId = "public_intel",
                 title = "Reputation & Trust",
-                keywords = { "reputation", "trust", "standing", "alignment" },
+                keywords = { "faction", "standing", "reputation", "trust" },
                 blocks = {
-                    { type = "heading", id = "trust-mechanics", level = 1, text = "Winning Hearts and Minds" },
-                    { type = "paragraph", text = "Traders don't trust strangers. Your 'Standing' with a faction determines the prices you get and the items they're willing to show you. Trust is earned through fair trades and fulfilling their needs, and it's lost through hostile actions or ignoring their pleas for help." },
+                    { type = "heading", id = "trust-mechanics", level = 1, text = "Factions & Standing" },
+                    { type = "paragraph", text = "Traders don't inherently trust strangers. Every trader may belong to a Faction, and your 'Standing' with that Faction dictates the terms of your interaction with them. Building a positive reputation through fair trades and fulfilling demands will earn you better prices and unlock specialized inventory and can even recruit them(Dynamic Colonies Required). Conversely, hostility or ignoring a faction's pleas will restrict your access to their services(Partially Implimented)." },
                     { type = "image", path = "media/ui/Icon_MarketInfo.png", caption = "Your reputation precedes you in every town.", width = 64, height = 64 },
                 },
             },
