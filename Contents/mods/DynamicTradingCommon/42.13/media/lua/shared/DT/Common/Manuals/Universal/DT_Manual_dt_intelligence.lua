@@ -2,7 +2,7 @@
 -- {
 --   "manual_id": "dt_intelligence",
 --   "module": "common",
---   "title": "Faction Intelligence & Logistics",
+--   "title": "Faction Intelligence",
 --   "description": "Guide to monitoring faction wealth, survival, and economic trends.",
 --   "start_page_id": "intel_overview",
 --   "audiences": [
@@ -54,7 +54,7 @@
 --           "type": "image",
 --           "path": "media/ui/Manuals/dt_intelligence/image.png",
 --           "caption": "",
---           "width": 222,
+--           "width": 0,
 --           "height": 141,
 --           "keep_aspect_ratio": true,
 --           "aspect_ratio": 1.5714285714285714
@@ -67,7 +67,7 @@
 --           "type": "callout",
 --           "tone": "info",
 --           "title": "Field Tip",
---           "text": "Access the Intelligence window through the main Dynamic Trading menu or use the designated hotkey in your options."
+--           "text": "Access the Intelligence window through the radio(V1) or scanner/info(v2)"
 --         }
 --       ]
 --     },
@@ -201,7 +201,7 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_intelligence", {
-        title = "Faction Intelligence & Logistics",
+        title = "Faction Intelligence",
         description = "Guide to monitoring faction wealth, survival, and economic trends.",
         startPageId = "intel_overview",
         audiences = { "common" },
@@ -236,9 +236,9 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 keywords = { "intel", "intelligence", "ui", "window" },
                 blocks = {
                     { type = "heading", id = "intel-intro", level = 1, text = "The Intelligence Window" },
-                    { type = "image", path = "media/ui/Manuals/dt_intelligence/image.png", caption = "", width = 222, height = 141 },
+                    { type = "image", path = "media/ui/Manuals/dt_intelligence/image.png", caption = "", width = 0, height = 141 },
                     { type = "paragraph", text = "Knowledge is as valuable as ammunition. The Faction Intelligence window is your tactical dashboard for the entire exclusion zone. It allows you to monitor the health, wealth, and stability of every group you've encountered." },
-                    { type = "callout", tone = "info", title = "Field Tip", text = "Access the Intelligence window through the main Dynamic Trading menu or use the designated hotkey in your options." },
+                    { type = "callout", tone = "info", title = "Field Tip", text = "Access the Intelligence window through the radio(V1) or scanner/info(v2)" },
                 },
             },
             {

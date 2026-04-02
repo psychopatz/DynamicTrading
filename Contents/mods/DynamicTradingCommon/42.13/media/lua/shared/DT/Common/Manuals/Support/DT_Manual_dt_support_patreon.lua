@@ -2,7 +2,7 @@
 -- {
 --   "manual_id": "dt_support_patreon",
 --   "module": "common",
---   "title": "Support Dynamic Trading",
+--   "title": "Support the Mod",
 --   "description": "Support page for players who want to fund continued development",
 --   "start_page_id": "support_overview",
 --   "audiences": [
@@ -99,7 +99,7 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_support_patreon", {
-        title = "Support Dynamic Trading",
+        title = "Support the Mod",
         description = "Support page for players who want to fund continued development",
         startPageId = "support_overview",
         audiences = { "common" },

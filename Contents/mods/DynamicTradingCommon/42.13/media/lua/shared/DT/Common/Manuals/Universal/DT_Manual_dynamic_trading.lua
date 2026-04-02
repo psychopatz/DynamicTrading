@@ -2,7 +2,7 @@
 -- {
 --   "manual_id": "dynamic_trading",
 --   "module": "common",
---   "title": "Dynamic Trading Manual Guide",
+--   "title": "Manual Guide",
 --   "description": "Overview pages for mod system and quick links for major systems.",
 --   "start_page_id": "intro",
 --   "audiences": [
@@ -159,7 +159,7 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dynamic_trading", {
-        title = "Dynamic Trading Manual Guide",
+        title = "Manual Guide",
         description = "Overview pages for mod system and quick links for major systems.",
         startPageId = "intro",
         audiences = { "common" },

@@ -2,7 +2,7 @@
 -- {
 --   "manual_id": "dt_events",
 --   "module": "common",
---   "title": "World Events & Shifting Markets",
+--   "title": "Shifting Market",
 --   "description": "Understanding the Shift",
 --   "start_page_id": "event_types",
 --   "audiences": [
@@ -237,7 +237,7 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_events", {
-        title = "World Events & Shifting Markets",
+        title = "Shifting Market",
         description = "Understanding the Shift",
         startPageId = "event_types",
         audiences = { "common" },
