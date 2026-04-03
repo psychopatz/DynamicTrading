@@ -3,7 +3,18 @@
 -- Trader discovery and scan logic for the radar manager.
 -- ==============================================================================
 
+require "DT/Common/FlavorText/DT_FlavorText"
+require "DT/Common/FlavorText/DT_FlavorText_RadioScan"
+
 local RadarManager = DT_V2_RadarManager
+
+local function DT_RadioScanResponse(key, ...)
+    return DynamicTrading.FlavorText.GetValue("RadioScan", "Responses", key, ...)
+end
+
+local function getRandomRadioScanText(kind)
+    return DynamicTrading.FlavorText.GetRandom("RadioScan", kind)
+end
 
 function RadarManager.Scan(player, device)
     if not player or not device then
@@ -22,14 +33,16 @@ function RadarManager.Scan(player, device)
     if not rosterData or not rosterData.Souls then
         if isClient() then
             RadarManager.RequestRoster()
-            player:Say("Syncing radar frequencies... try again.")
+            player:Say(DT_RadioScanResponse("RadarSyncing"))
         else
-            player:Say("Static... no frequencies found.")
+            player:Say(DT_RadioScanResponse("RadarNoFrequencies"))
         end
         return
     end
 
     local foundNew = false
+    local discoveredCount = 0
+    local firstDiscoveredName = nil
     local px, py = player:getX(), player:getY()
     local currentHours = getGameTime():getWorldAgeHours()
 
@@ -62,12 +75,15 @@ function RadarManager.Scan(player, device)
                     local chance = (20 + (elecLevel * 5)) * globalChanceMult * factionChanceMult
 
                     if ZombRand(100) < chance and not RadarManager.FoundTraders[uuid] then
+                        local traderName = soul.name or DT_RadioScanResponse("UnknownTrader")
                         RadarManager.FoundTraders[uuid] = {
-                            name = soul.name or "Unknown Trader",
+                            name = traderName,
                             faction = soul.factionID or "Independent",
                             discoveredAt = getGameTime():getWorldAgeHours()
                         }
                         foundNew = true
+                        discoveredCount = discoveredCount + 1
+                        firstDiscoveredName = firstDiscoveredName or traderName
                         DynamicTrading.Log("DTV2", "Radio", "Scan", "Discovered trader: " .. tostring(soul.name) .. " (UUID: " .. uuid .. ")")
                         RadarManager.CacheMetadata(uuid, {
                             name = soul.name,
@@ -91,7 +107,19 @@ function RadarManager.Scan(player, device)
     RadarManager.Cleanup()
 
     if foundNew then
-        player:Say("Found something! Frequency locked.")
+        if discoveredCount == 1 and firstDiscoveredName then
+            player:Say(DT_RadioScanResponse("Connected", firstDiscoveredName))
+        else
+            player:Say(DT_RadioScanResponse("RadarLockAcquired"))
+        end
+
+        if HaloTextHelper then
+            local haloText = DT_RadioScanResponse("RadarLockAcquired")
+            if discoveredCount == 1 and firstDiscoveredName then
+                haloText = DT_RadioScanResponse("SignalAcquired", firstDiscoveredName)
+            end
+            HaloTextHelper.addTextWithArrow(player, haloText, true, HaloTextHelper.getColorGreen())
+        end
 
         if DT_V2_RadarWindow then
             if DT_V2_RadarWindow.instance and DT_V2_RadarWindow.instance:getIsVisible() then
@@ -101,6 +129,18 @@ function RadarManager.Scan(player, device)
             end
         end
     else
-        player:Say("Nothing but static...")
+        local textSay = getRandomRadioScanText("FailLines")
+        local textHalo = getRandomRadioScanText("FailStates")
+
+        player:Say(textSay ~= "" and textSay or DT_RadioScanResponse("RadarNothingButStatic"))
+
+        if HaloTextHelper then
+            HaloTextHelper.addTextWithArrow(
+                player,
+                textHalo ~= "" and textHalo or DT_RadioScanResponse("RadarNothingButStatic"),
+                true,
+                HaloTextHelper.getColorRed()
+            )
+        end
     end
 end

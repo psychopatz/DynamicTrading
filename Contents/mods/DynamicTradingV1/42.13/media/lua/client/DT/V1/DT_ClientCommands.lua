@@ -1,6 +1,16 @@
 require "ISUI/ISUIHandler"
 require "DT/V1/Utils/DT_OptionsManager"
 require "DT/Common/Reputation/DT_Reputation"
+require "DT/Common/FlavorText/DT_FlavorText"
+require "DT/Common/FlavorText/DT_FlavorText_RadioScan"
+
+local function DT_RadioScanResponse(key, ...)
+    return DynamicTrading.FlavorText.GetValue("RadioScan", "Responses", key, ...)
+end
+
+local function getRandomRadioScanText(kind)
+    return DynamicTrading.FlavorText.GetRandom("RadioScan", kind)
+end
 
 -- =============================================================================
 -- 1. HANDLE SERVER RESPONSES (SCAN RESULTS)
@@ -13,7 +23,8 @@ local function OnServerCommand(module, command, args)
         if not player then return end
 
         local myName = player:getUsername()
-        local targetName = args.targetUser or "Unknown"
+        local unknownText = DT_RadioScanResponse("Unknown")
+        local targetName = args.targetUser or unknownText
         local isMe = (myName == targetName)
         
         -- ==========================================================
@@ -23,7 +34,7 @@ local function OnServerCommand(module, command, args)
             -- 1. SUCCESS (Green)
             if args.status == "SUCCESS" then
                 if DT_AudioManager then DT_AudioManager.PlaySound("DT_RadioRandom", false, 0.1) end
-                player:Say("Connected: " .. (args.name or "Unknown"))
+                player:Say(DT_RadioScanResponse("Connected", args.name or unknownText))
                 
                 -- [NEW] Discover trader locally so it updates the client cache immediately
                 if args.id then
@@ -38,16 +49,16 @@ local function OnServerCommand(module, command, args)
                 end
                 
                 if HaloTextHelper then
-                    local alias = args.name or "Unknown"
-                    HaloTextHelper.addTextWithArrow(player, "Signal Acquired: " .. alias, true, HaloTextHelper.getColorGreen())
+                    local alias = args.name or unknownText
+                    HaloTextHelper.addTextWithArrow(player, DT_RadioScanResponse("SignalAcquired", alias), true, HaloTextHelper.getColorGreen())
                 end
             
             -- 2. FAILURE: LIMIT REACHED (Red)
             elseif args.status == "LIMIT_REACHED" then
                 -- player:playSound("RadioStatic")
                 
-                local failMsg = "Network Exhausted. Try again tomorrow."
-                player:Say("The airwaves are dead... no more traders today.")
+                local failMsg = DT_RadioScanResponse("NetworkExhausted")
+                player:Say(DT_RadioScanResponse("AirwavesDead"))
                 
                 if HaloTextHelper then
                     HaloTextHelper.addTextWithArrow(player, failMsg, true, HaloTextHelper.getColorRed())
@@ -55,55 +66,8 @@ local function OnServerCommand(module, command, args)
                 
             -- 3. FAILURE: RNG / BAD LUCK / COOLDOWN (Red)
             else
-                local failLines = {
-                        "Anyone trading out there? Come in.",
-                        "This is a survivor looking to trade. Copy?",
-                        "Calling any merchants on this frequency.",
-                        "Hello? Anyone running a market today?",
-                        "Any traders alive out there?",
-                        "Trying to reach a trading post. Respond.",
-                        "If anyone's selling, I'm listening.",
-                        "Merchant frequency check. Over.",
-                        "Looking for supplies. Any traders?",
-                        "Broadcasting for trade. Anyone home?",
-                        "This is an open call for merchants.",
-                        "Any caravans or traders nearby?",
-                        "Trying all channels… looking for trade.",
-                        "Anyone buying or selling out there?",
-                        "This is a survivor seeking commerce.",
-                        "Requesting trade contact. Over.",
-                        "Any safe zones or traders responding?",
-                        "Looking to barter. Respond if you can.",
-                        "Calling any active traders.",
-                        "If you can hear this, answer back."
-                    }
-
-                    local failState = {
-                        "Harsh static crackles through the speaker.",
-                        "The signal fades into white noise.",
-                        "A burst of interference drowns everything out.",
-                        "The radio hisses, then goes silent.",
-                        "Only distorted static replies.",
-                        "The channel collapses into noise.",
-                        "A low hum replaces the signal.",
-                        "The transmission cuts off abruptly.",
-                        "Heavy interference blocks the channel.",
-                        "The radio pops and crackles erratically.",
-                        "Nothing but dead air.",
-                        "The signal drops mid-transmission.",
-                        "A wall of static answers back.",
-                        "The frequency is completely jammed.",
-                        "The radio squeals, then quiets.",
-                        "Broken noise pulses through the speaker.",
-                        "The channel is overwhelmed by interference.",
-                        "A weak hiss lingers, then fades.",
-                        "The signal fails to connect.",
-                        "Silence. No reply."
-                    }
-
-
-                local textSay = failLines[ZombRand(#failLines)+1]
-                local textHalo = failState[ZombRand(#failState)+1]
+                local textSay = getRandomRadioScanText("FailLines")
+                local textHalo = getRandomRadioScanText("FailStates")
                 
                 player:Say(textSay)
                 
@@ -123,7 +87,7 @@ local function OnServerCommand(module, command, args)
             -- If Public, we only care about SUCCESS (Don't spam me when others fail)
             if args.status == "SUCCESS" then
                 if HaloTextHelper then
-                    local msg = "Signal Acquired by " .. targetName .. ": " .. (args.name or "Unknown")
+                    local msg = DT_RadioScanResponse("PublicSignalAcquired", targetName, args.name or unknownText)
                     -- Show as a general notification (no arrow, just text on screen)
                     HaloTextHelper.addText(player, msg, HaloTextHelper.getColorGreen())
                 end
