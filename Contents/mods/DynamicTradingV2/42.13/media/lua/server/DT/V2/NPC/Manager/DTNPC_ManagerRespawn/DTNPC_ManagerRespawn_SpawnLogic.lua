@@ -9,62 +9,182 @@ DTNPCManager = DTNPCManager or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
-local RESPAWN_RANGE = 120 -- Maximum distance for respawn + buffer zone
+-- Physical world bodies need a tighter spawn radius than metadata/radar discovery.
+-- At larger distances the engine can unload zombies even though our roster still
+-- considers them "nearby", which causes false respawn loops and visible pop-in.
+local RESPAWN_RANGE = 55
+local RESPAWN_CONFIRM_RANGE = 24
+local RESPAWN_CONFIRM_MISSES = 3
 
-function DTNPCManager.CheckForRespawn(npcData, uuid)
-    if not npcData or not npcData.lastX or not npcData.lastY then return end
-    
+DTNPCManager.RespawnRuntime = DTNPCManager.RespawnRuntime or {}
+DTNPCManager.RespawnRuntime.MissingBodies = DTNPCManager.RespawnRuntime.MissingBodies or {}
+
+local function clearMissingBodyCheck(uuid)
+    if not uuid then return end
+    DTNPCManager.RespawnRuntime.MissingBodies[uuid] = nil
+end
+
+local function noteMissingBodyCheck(uuid, player, dist)
+    if not uuid then return nil end
+
+    local entry = DTNPCManager.RespawnRuntime.MissingBodies[uuid]
+    local now = getGameTime():getWorldAgeHours()
+
+    if not entry then
+        entry = {
+            count = 0,
+            firstSeenAt = now,
+        }
+        DTNPCManager.RespawnRuntime.MissingBodies[uuid] = entry
+    end
+
+    entry.count = (entry.count or 0) + 1
+    entry.lastSeenAt = now
+    entry.lastDistance = dist
+    entry.playerName = player and player:getUsername() or nil
+
+    return entry
+end
+
+local function isTrackedSquareLoaded(npcData)
+    if not npcData or not npcData.lastX or not npcData.lastY then return false end
+
+    local cell = getCell()
+    if not cell then return false end
+
+    local x = math.floor(npcData.lastX)
+    local y = math.floor(npcData.lastY)
+    local z = math.floor(npcData.lastZ or 0)
+
+    return cell:getGridSquare(x, y, z) ~= nil
+end
+
+local function getNearestRespawnObserver(npcData)
+    if not npcData or not npcData.lastX or not npcData.lastY then
+        return nil, nil
+    end
+
+    local nearestPlayer = nil
+    local nearestDist = nil
+
     local players = DTNPCManager.GetActivePlayers()
     for _, player in ipairs(players) do
         local dx = player:getX() - npcData.lastX
         local dy = player:getY() - npcData.lastY
         local dz = player:getZ() - (npcData.lastZ or 0)
-        
-        local dist = math.sqrt(dx*dx + dy*dy)
-        if math.abs(dz) <= 1 and dist < RESPAWN_RANGE then
-            -- Check if zombie exists by UUID
-            local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
-            
-            if not zombie then
-                DTNPCManager.RespawnDebug.Log(
-                    "respawn_missing_" .. tostring(uuid),
-                    "Process=respawn_check decision=spawn_missing uuid=" .. tostring(uuid) ..
-                        " name=" .. tostring(npcData.name or uuid) ..
-                        " player=" .. tostring(player:getUsername()) ..
-                        " dist=" .. string.format("%.1f", dist),
-                    true
-                )
-                DynamicTrading.Log("DTV2", "NPC", "Logic", "Respawning NPC: " .. (npcData.name or uuid) .. " near player " .. player:getUsername() .. " (dist: " .. string.format("%.1f", dist) .. ")")
-                DTNPCServerCore.RespawnNPC(npcData, uuid)
-                return true
-            elseif DTNPCManager.ReclaimZombie then
-                local modData = zombie:getModData()
-                local needsRepair = (not modData.IsDTNPC)
-                    or (modData.DTNPC_UUID ~= uuid)
-                    or (not modData.DTNPC_Data)
-                    or (not modData.DTNPCVisualID)
-                    or (modData.DTNPCVisualID == 0)
-                    or (npcData.visualID and modData.DTNPCVisualID ~= npcData.visualID)
+        local dist = math.sqrt(dx * dx + dy * dy)
 
-                if needsRepair then
-                    DTNPCManager.RespawnDebug.Log(
-                        "respawn_repair_" .. tostring(uuid),
-                        "Process=respawn_check decision=reclaim_repair uuid=" .. tostring(uuid) ..
-                            " name=" .. tostring(npcData.name or uuid) ..
-                            " player=" .. tostring(player:getUsername()) ..
-                            " outfitID=" .. tostring(zombie:getPersistentOutfitID()) ..
-                            " hasIsDTNPC=" .. tostring(modData.IsDTNPC == true) ..
-                            " modUUID=" .. tostring(modData.DTNPC_UUID) ..
-                            " visualID=" .. tostring(modData.DTNPCVisualID),
-                        true
-                    )
-                    DTNPCManager.ReclaimZombie(zombie, npcData, "respawn-check")
-                    return true
-                end
-            end
+        if math.abs(dz) <= 1 and dist < RESPAWN_RANGE and (not nearestDist or dist < nearestDist) then
+            nearestPlayer = player
+            nearestDist = dist
         end
     end
-    
+
+    return nearestPlayer, nearestDist
+end
+
+function DTNPCManager.CheckForRespawn(npcData, uuid)
+    if not npcData or not npcData.lastX or not npcData.lastY then return end
+
+    local player, dist = getNearestRespawnObserver(npcData)
+    if not player then
+        clearMissingBodyCheck(uuid)
+        return false
+    end
+
+    local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
+
+    if not zombie then
+        local playerName = tostring(player:getUsername())
+
+        if dist > RESPAWN_CONFIRM_RANGE then
+            clearMissingBodyCheck(uuid)
+            DTNPCManager.RespawnDebug.Log(
+                "respawn_missing_defer_distance_" .. tostring(uuid),
+                "Process=respawn_check decision=defer_missing uuid=" .. tostring(uuid) ..
+                    " name=" .. tostring(npcData.name or uuid) ..
+                    " player=" .. playerName ..
+                    " dist=" .. string.format("%.1f", dist) ..
+                    " reason=observer_not_close_enough",
+                true
+            )
+            return false
+        end
+
+        if not isTrackedSquareLoaded(npcData) then
+            clearMissingBodyCheck(uuid)
+            DTNPCManager.RespawnDebug.Log(
+                "respawn_missing_defer_square_" .. tostring(uuid),
+                "Process=respawn_check decision=defer_missing uuid=" .. tostring(uuid) ..
+                    " name=" .. tostring(npcData.name or uuid) ..
+                    " player=" .. playerName ..
+                    " dist=" .. string.format("%.1f", dist) ..
+                    " reason=tracked_square_unloaded",
+                true
+            )
+            return false
+        end
+
+        local missingEntry = noteMissingBodyCheck(uuid, player, dist)
+        if not missingEntry or missingEntry.count < RESPAWN_CONFIRM_MISSES then
+            DTNPCManager.RespawnDebug.Log(
+                "respawn_missing_confirm_" .. tostring(uuid),
+                "Process=respawn_check decision=wait_for_confirmed_missing uuid=" .. tostring(uuid) ..
+                    " name=" .. tostring(npcData.name or uuid) ..
+                    " player=" .. playerName ..
+                    " dist=" .. string.format("%.1f", dist) ..
+                    " missCount=" .. tostring(missingEntry and missingEntry.count or 0) ..
+                    " requiredMisses=" .. tostring(RESPAWN_CONFIRM_MISSES),
+                true
+            )
+            return false
+        end
+
+        clearMissingBodyCheck(uuid)
+        DTNPCManager.RespawnDebug.Log(
+            "respawn_missing_" .. tostring(uuid),
+            "Process=respawn_check decision=spawn_missing_confirmed uuid=" .. tostring(uuid) ..
+                " name=" .. tostring(npcData.name or uuid) ..
+                " player=" .. playerName ..
+                " dist=" .. string.format("%.1f", dist) ..
+                " missCount=" .. tostring(missingEntry.count),
+            true
+        )
+        DynamicTrading.Log("DTV2", "NPC", "Logic", "Respawning NPC after confirmed missing body: " .. (npcData.name or uuid) .. " near player " .. playerName .. " (dist: " .. string.format("%.1f", dist) .. ")")
+        DTNPCServerCore.RespawnNPC(npcData, uuid)
+        return true
+    elseif DTNPCManager.ReclaimZombie then
+        clearMissingBodyCheck(uuid)
+
+        if DTNPCServerCore.PruneDuplicateZombies then
+            zombie = DTNPCServerCore.PruneDuplicateZombies(uuid, npcData, zombie, "respawn-check")
+        end
+
+        local modData = zombie:getModData()
+        local needsRepair = (not modData.IsDTNPC)
+            or (modData.DTNPC_UUID ~= uuid)
+            or (not modData.DTNPC_Data)
+            or (not modData.DTNPCVisualID)
+            or (modData.DTNPCVisualID == 0)
+            or (npcData.visualID and modData.DTNPCVisualID ~= npcData.visualID)
+
+        if needsRepair then
+            DTNPCManager.RespawnDebug.Log(
+                "respawn_repair_" .. tostring(uuid),
+                "Process=respawn_check decision=reclaim_repair uuid=" .. tostring(uuid) ..
+                    " name=" .. tostring(npcData.name or uuid) ..
+                    " player=" .. tostring(player:getUsername()) ..
+                    " outfitID=" .. tostring(zombie:getPersistentOutfitID()) ..
+                    " hasIsDTNPC=" .. tostring(modData.IsDTNPC == true) ..
+                    " modUUID=" .. tostring(modData.DTNPC_UUID) ..
+                    " visualID=" .. tostring(modData.DTNPCVisualID),
+                true
+            )
+            DTNPCManager.ReclaimZombie(zombie, npcData, "respawn-check")
+            return true
+        end
+    end
+
     return false
 end
 
@@ -147,6 +267,9 @@ function DTNPCManager.CheckRosterSpawns()
                                         -- [NEW] Safety Check: Check if already physically in world before spawning clone
                                         local existingZombie = DTNPCServerCore.FindZombieByUUID(uuid)
                                         if existingZombie then
+                                            if DTNPCServerCore.PruneDuplicateZombies then
+                                                existingZombie = DTNPCServerCore.PruneDuplicateZombies(uuid, npcData, existingZombie, "roster-hash")
+                                            end
                                             DTNPCManager.RespawnDebug.Log(
                                                 "roster_hash_reclaim_" .. tostring(uuid),
                                                 "Process=roster_hash decision=reclaim_existing uuid=" .. tostring(uuid) ..
@@ -235,6 +358,9 @@ function DTNPCManager.CheckRosterSpawns()
                                     if npcData then
                                         local existingZombie = DTNPCServerCore.FindZombieByUUID(uuid)
                                         if existingZombie then
+                                            if DTNPCServerCore.PruneDuplicateZombies then
+                                                existingZombie = DTNPCServerCore.PruneDuplicateZombies(uuid, npcData, existingZombie, "roster-fallback")
+                                            end
                                             DTNPCManager.RespawnDebug.Log(
                                                 "roster_fallback_reclaim_" .. tostring(uuid),
                                                 "Process=roster_fallback decision=reclaim_existing uuid=" .. tostring(uuid) ..

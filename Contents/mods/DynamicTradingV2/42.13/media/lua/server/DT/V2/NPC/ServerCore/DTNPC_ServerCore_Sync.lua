@@ -175,3 +175,18 @@ function DTNPCServerCore.NotifyRemoval(uuid, outfitID, name, removalReason, remo
     
     DynamicTrading.Log("DTV2", "NPC", "Remove", "Notified removal: " .. (name or uuid))
 end
+
+function DTNPCServerCore.NotifyInstanceRemoval(uuid, outfitID)
+    if not outfitID then return end
+
+    local data = {
+        uuid = uuid,
+        outfitID = outfitID,
+    }
+
+    if isServer() then
+        sendServerCommand("DTNPC", "RemoveNPCInstance", data)
+    else
+        triggerEvent("OnServerCommand", "DTNPC", "RemoveNPCInstance", data)
+    end
+end

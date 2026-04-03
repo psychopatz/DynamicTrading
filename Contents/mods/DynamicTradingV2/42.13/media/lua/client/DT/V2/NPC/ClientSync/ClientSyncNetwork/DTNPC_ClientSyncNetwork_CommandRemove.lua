@@ -84,3 +84,36 @@ function Handlers.HandleRemoveNPC(args)
         DT_V2_RadarWindow.instance:refresh()
     end
 end
+
+function Handlers.HandleRemoveNPCInstance(args)
+    if not args or not args.outfitID then
+        return
+    end
+
+    local uuid = args.uuid
+    local outfitID = args.outfitID
+    local zombie = DTNPCClient.FindZombieByOutfitID and DTNPCClient.FindZombieByOutfitID(outfitID) or nil
+
+    if zombie then
+        zombie:removeFromWorld()
+        zombie:removeFromSquare()
+    end
+
+    if DTNPCClient.OutfitIDToUUID and DTNPCClient.OutfitIDToUUID[outfitID] == uuid then
+        DTNPCClient.OutfitIDToUUID[outfitID] = nil
+    end
+
+    local tracked = DTNPCClient.HealthBarTracked and uuid and DTNPCClient.HealthBarTracked[uuid] or nil
+    if tracked and tracked.outfitID == outfitID then
+        tracked.zombie = nil
+        tracked.outfitID = nil
+        tracked.nextResolveAt = 0
+    end
+
+    local ambientTracked = DTNPCClient.DialogueAmbientTracked and uuid and DTNPCClient.DialogueAmbientTracked[uuid] or nil
+    if ambientTracked and ambientTracked.outfitID == outfitID then
+        ambientTracked.zombie = nil
+        ambientTracked.outfitID = nil
+        ambientTracked.nextResolveAt = 0
+    end
+end

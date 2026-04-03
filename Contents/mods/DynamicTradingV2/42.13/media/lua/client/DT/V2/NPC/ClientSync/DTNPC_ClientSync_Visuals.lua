@@ -20,6 +20,92 @@ modules.Visuals = true
 require "DT/V2/NPC/ClientSync/HealthBars/DTNPC_ClientSync_HealthBars"
 require "DT/V2/NPC/Dialogue/Ambient/DT_Dialogue_Ambient"
 
+local function doesZombieMatchUUID(zombie, uuid)
+    if not zombie or zombie:isDead() or not uuid then
+        return false
+    end
+
+    local modData = zombie:getModData()
+    local cached = DTNPCClient.NPCCache and DTNPCClient.NPCCache[uuid]
+    local cachedData = cached and cached.npcData or nil
+    local outfitID = zombie:getPersistentOutfitID()
+
+    if cachedData and cachedData.currentOutfitID and outfitID ~= cachedData.currentOutfitID then
+        local zombieData = (modData and (modData.DTNPC_Data or modData.DTNPCBrain)) or nil
+        local zombieVisualID = modData and modData.DTNPCVisualID or nil
+        local cachedVisualID = cachedData.visualID
+        if not (zombieData and zombieData.uuid == uuid and cachedVisualID and zombieVisualID == cachedVisualID) then
+            return false
+        end
+    end
+
+    if modData and modData.DTNPC_UUID == uuid then
+        return true
+    end
+
+    local npcData = (modData and (modData.DTNPC_Data or modData.DTNPCBrain)) or nil
+    return npcData and npcData.uuid == uuid or false
+end
+
+local function scoreZombieForUUID(zombie, uuid)
+    if not zombie or zombie:isDead() or not uuid then
+        return nil
+    end
+
+    local modData = zombie:getModData()
+    local cached = DTNPCClient.NPCCache and DTNPCClient.NPCCache[uuid]
+    local cachedData = cached and cached.npcData or nil
+    local score = 0
+    local hasIdentityEvidence = false
+
+    if modData and modData.DTNPC_UUID == uuid then
+        score = score + 100
+        hasIdentityEvidence = true
+    end
+
+    local npcData = (modData and (modData.DTNPC_Data or modData.DTNPCBrain)) or nil
+    if npcData and npcData.uuid == uuid then
+        score = score + 80
+        hasIdentityEvidence = true
+    end
+
+    if cachedData and cachedData.visualID and modData and modData.DTNPCVisualID == cachedData.visualID then
+        score = score + 40
+        hasIdentityEvidence = true
+    end
+
+    if not hasIdentityEvidence then
+        return nil
+    end
+
+    if modData and modData.IsDTNPC then
+        score = score + 20
+    end
+
+    return score
+end
+
+local function removeDuplicateLocalZombies(uuid, keepOutfitID)
+    if not uuid then return end
+
+    local cell = getCell()
+    if not cell then return end
+
+    local zombieList = cell:getZombieList()
+    if not zombieList then return end
+
+    for i = zombieList:size() - 1, 0, -1 do
+        local zombie = zombieList:get(i)
+        if zombie and not zombie:isDead() and doesZombieMatchUUID(zombie, uuid) then
+            local outfitID = zombie:getPersistentOutfitID()
+            if outfitID ~= keepOutfitID then
+                zombie:removeFromWorld()
+                zombie:removeFromSquare()
+            end
+        end
+    end
+end
+
 function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     if not zombie or not npcData then return end
     if isServer() and isDedicatedServer() then return end
@@ -82,21 +168,24 @@ function DTNPCClient.FindZombieByUUID(uuid)
     
     local zombieList = cell:getZombieList()
     if not zombieList then return nil end
-    
+
+    local bestZombie = nil
+    local bestScore = nil
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie then
-            local modData = zombie:getModData()
-            if modData.DTNPC_UUID == uuid then
-                return zombie
-            end
+        local score = scoreZombieForUUID(zombie, uuid)
+        if score and (not bestScore or score > bestScore) then
+            bestZombie = zombie
+            bestScore = score
         end
     end
-    
-    return nil
+
+    return bestZombie
 end
 
 function DTNPCClient.FindZombieByOutfitID(outfitID)
+    if not outfitID then return nil end
+
     local cell = getCell()
     if not cell then return nil end
     
@@ -105,7 +194,7 @@ function DTNPCClient.FindZombieByOutfitID(outfitID)
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie and zombie:getPersistentOutfitID() == outfitID then
+        if zombie and not zombie:isDead() and zombie:getPersistentOutfitID() == outfitID then
             return zombie
         end
     end
@@ -151,6 +240,9 @@ function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
     
     return false
 end
+
+DTNPCClient.DoesZombieMatchUUID = doesZombieMatchUUID
+DTNPCClient.RemoveDuplicateLocalZombies = removeDuplicateLocalZombies
 
 function DTNPCClient.IsValidNPC(zombie)
     if not zombie then return false end

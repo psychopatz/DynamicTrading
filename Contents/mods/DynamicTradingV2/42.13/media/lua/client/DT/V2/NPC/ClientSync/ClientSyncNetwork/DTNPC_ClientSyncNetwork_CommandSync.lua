@@ -34,6 +34,9 @@ function Handlers.HandleSyncNPC(args)
     DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncNPC for: " .. (args.npcData.name or uuid))
 
     DTNPCClient.CacheData(uuid, outfitID, args.npcData)
+    if DTNPCClient.RemoveDuplicateLocalZombies and outfitID then
+        DTNPCClient.RemoveDuplicateLocalZombies(uuid, outfitID)
+    end
     Helpers.TrackNPCSystems(nil, args.npcData, uuid, outfitID)
     Helpers.RecordInterpolation(uuid, args.x, args.y, args.z)
 
@@ -63,6 +66,9 @@ function Handlers.HandleSyncAllNPCs(args)
         local outfitID = npcData.currentOutfitID
 
         DTNPCClient.CacheData(uuid, outfitID, npcData)
+        if DTNPCClient.RemoveDuplicateLocalZombies and outfitID then
+            DTNPCClient.RemoveDuplicateLocalZombies(uuid, outfitID)
+        end
         Helpers.TrackNPCSystems(nil, npcData, uuid, outfitID)
 
         local zombie = Helpers.FindZombieByIdentifiers(uuid, outfitID)
@@ -89,6 +95,9 @@ function Handlers.HandleSyncNearbyNPCs(args)
             local outfitID = npcData.outfitID
 
             DTNPCClient.CacheData(uuid, outfitID, npcData.npcData)
+            if DTNPCClient.RemoveDuplicateLocalZombies and outfitID then
+                DTNPCClient.RemoveDuplicateLocalZombies(uuid, outfitID)
+            end
             Helpers.TrackNPCSystems(nil, npcData.npcData, uuid, outfitID)
 
             local x = npcData.x or npcData.npcData.lastX

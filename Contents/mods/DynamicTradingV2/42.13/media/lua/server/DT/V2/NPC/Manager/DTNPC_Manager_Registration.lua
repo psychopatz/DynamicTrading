@@ -22,16 +22,9 @@ function DTNPCManager.Register(zombie, npcData)
         uuid = modData.DTNPC_UUID
         
         if not uuid then
-            -- Check outfit ID mapping (in case of respawn)
-            uuid = DTNPCManager.GetUUIDFromOutfitID(outfitID)
-            
-            if not uuid then
-                -- Brand new NPC, generate UUID
-                uuid = DTNPCManager.GenerateSoulID(npcData.name)
-                DynamicTrading.Log("DTV2", "NPC", "Soul", "Generated new Soul ID for NPC: " .. (npcData.name or "Unknown") .. " - " .. uuid)
-            else
-                DynamicTrading.Log("DTV2", "NPC", "Soul", "Found existing UUID from outfit mapping: " .. uuid)
-            end
+            -- Brand new NPC, generate UUID
+            uuid = DTNPCManager.GenerateSoulID(npcData.name)
+            DynamicTrading.Log("DTV2", "NPC", "Soul", "Generated new Soul ID for NPC: " .. (npcData.name or "Unknown") .. " - " .. uuid)
         else
             DynamicTrading.Log("DTV2", "NPC", "Soul", "Found UUID in zombie modData: " .. uuid)
         end
@@ -65,6 +58,10 @@ function DTNPCManager.Register(zombie, npcData)
     -- Store in database by UUID
     DTNPCManager.Data[uuid] = npcData
     DTNPCManager.Save()
+
+    if DTNPCManager.RespawnRuntime and DTNPCManager.RespawnRuntime.MissingBodies then
+        DTNPCManager.RespawnRuntime.MissingBodies[uuid] = nil
+    end
     
     DTNPCManager.PendingRegistrations[uuid] = nil
     
@@ -75,7 +72,7 @@ function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
     if not zombie or not npcData then return nil end
 
     local modData = zombie:getModData()
-    local uuid = npcData.uuid or modData.DTNPC_UUID or DTNPCManager.GetUUIDFromOutfitID(zombie:getPersistentOutfitID())
+    local uuid = npcData.uuid or modData.DTNPC_UUID
     if not uuid then return nil end
 
     npcData.uuid = uuid
@@ -153,6 +150,9 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removal
         -- Remove from database
         DTNPCManager.Data[uuid] = nil
         DTNPCManager.PendingRegistrations[uuid] = nil
+        if DTNPCManager.RespawnRuntime and DTNPCManager.RespawnRuntime.MissingBodies then
+            DTNPCManager.RespawnRuntime.MissingBodies[uuid] = nil
+        end
         DTNPCManager.Save()
         
         DynamicTrading.Log("DTV2", "NPC", "Remove", "Removed NPC data from world tracker: " .. (npcData.name or uuid) .. " (Status: " .. (status or "Removed") .. ")")
@@ -267,33 +267,7 @@ function DTNPCManager.Unregister(zombie)
         DynamicTrading.Log("DTV2", "NPC", "Death", "NPC Died: " .. (npcData.name or uuid))
         DTNPCManager.RemoveData(uuid, "Dead", nil, nil, removalContext)
     else
-        -- Fallback: try outfit ID
-        local outfitID = zombie:getPersistentOutfitID()
-        local fallbackUUID = DTNPCManager.GetUUIDFromOutfitID(outfitID)
-        if fallbackUUID and DTNPCManager.Data[fallbackUUID] then
-            local npcData = DTNPCManager.Data[fallbackUUID]
-            if not removalContext and npcData.lastPlayerAttackerUsername then
-                local elapsed = npcData.lastPlayerAttackedAt and (getTimeInMillis() - npcData.lastPlayerAttackedAt) or nil
-                if not elapsed or elapsed <= 15000 then
-                    removalContext = {
-                        killerUsername = npcData.lastPlayerAttackerUsername,
-                        killerOnlineID = npcData.lastPlayerAttackerOnlineID,
-                    }
-                end
-            end
-            if npcData.incapState == "Active" then
-                DynamicTrading.Log("DTV2", "NPC", "Death", "Incapacitated NPC killed for good (fallback lookup): " .. (npcData.name or fallbackUUID))
-                DTNPCManager.RemoveData(fallbackUUID, "Dead", nil, nil, removalContext)
-                return
-            end
-
-            if DTNPCManager.ConvertDeathToIncapacitated(zombie, fallbackUUID, npcData, removalContext) then
-                return
-            end
-
-            DynamicTrading.Log("DTV2", "NPC", "Death", "NPC Died (fallback lookup): " .. (npcData.name or fallbackUUID))
-            DTNPCManager.RemoveData(fallbackUUID, "Dead", nil, nil, removalContext)
-        end
+        DynamicTrading.Log("DTV2", "NPC", "Warn", "Unregister ignored zombie with no authoritative UUID; refusing outfit-ID fallback.")
     end
 end
 

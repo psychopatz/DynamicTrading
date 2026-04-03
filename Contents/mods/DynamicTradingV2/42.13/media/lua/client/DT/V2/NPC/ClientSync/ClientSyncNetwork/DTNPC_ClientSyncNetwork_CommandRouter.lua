@@ -48,6 +48,13 @@ function DTNPCClient.OnServerCommand(module, command, args)
         return
     end
 
+    if command == "RemoveNPCInstance" then
+        if Handlers.HandleRemoveNPCInstance then
+            Handlers.HandleRemoveNPCInstance(args)
+        end
+        return
+    end
+
     if command == "SyncAllNPCs" then
         if Handlers.HandleSyncAllNPCs then
             Handlers.HandleSyncAllNPCs(args)

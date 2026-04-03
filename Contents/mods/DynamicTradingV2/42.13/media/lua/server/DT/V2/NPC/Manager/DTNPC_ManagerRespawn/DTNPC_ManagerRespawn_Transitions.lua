@@ -10,6 +10,8 @@ if isClient() and not isServer() then return end
 local LIVE_DEPARTURE_RADIUS = 120
 local DEFAULT_DEPARTURE_VISIBLE_HOURS = 0.25
 local STALE_TRADING_RECOVERY_GRACE_HOURS = 0.02
+local NEARBY_DESPAWN_HOLD_RADIUS = 80
+local NEARBY_DESPAWN_HOLD_HOURS = 0.25
 
 local function isVisibleToActivePlayer(zombie, radius)
     if not zombie or not DTNPCManager.GetActivePlayers then return false end
@@ -31,6 +33,38 @@ local function isVisibleToActivePlayer(zombie, radius)
     end
 
     return false
+end
+
+local function isRegistryNearActivePlayer(registry, radius)
+    if not registry or not DTNPCManager.GetActivePlayers then return false end
+
+    local rx = registry.lastX or (registry.homeCoords and registry.homeCoords.x)
+    local ry = registry.lastY or (registry.homeCoords and registry.homeCoords.y)
+    local rz = registry.lastZ or (registry.homeCoords and registry.homeCoords.z) or 0
+    if not rx or not ry then return false end
+
+    local maxDist = radius or NEARBY_DESPAWN_HOLD_RADIUS
+    for _, player in ipairs(DTNPCManager.GetActivePlayers()) do
+        if math.abs(player:getZ() - rz) <= 1 then
+            local dx = player:getX() - rx
+            local dy = player:getY() - ry
+            local dist = math.sqrt(dx * dx + dy * dy)
+            if dist <= maxDist then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+local function shouldDelayNearbyDespawn(uuid, registry)
+    local zombie = DTNPCServerCore and DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(uuid) or nil
+    if zombie and isVisibleToActivePlayer(zombie, NEARBY_DESPAWN_HOLD_RADIUS) then
+        return true
+    end
+
+    return isRegistryNearActivePlayer(registry, NEARBY_DESPAWN_HOLD_RADIUS)
 end
 
 local function clearDepartureRuntime(npcData, keepStatusData)
@@ -380,9 +414,24 @@ function DTNPCManager.ProcessAwayTransitions()
                 local newReturnStatus = nil
                 local shouldApplyStatus = true
 
-                DynamicTrading.Log("DTV2", "NPC", "Logic", "Away Transition TIMER EXPIRED for " .. (registry.name or uuid) .. ". Target: " .. nextStatus)
+                if registry.status == "Trading" and nextStatus ~= "Trading" and shouldDelayNearbyDespawn(uuid, registry) then
+                    local heldUntil = currentHours + NEARBY_DESPAWN_HOLD_HOURS
+                    DynamicTrading.Log(
+                        "DTV2",
+                        "NPC",
+                        "Logic",
+                        "Delaying despawn for nearby trader " .. (registry.name or uuid) ..
+                            " until " .. tostring(heldUntil)
+                    )
+                    DTNPCManager.SetNPCStatus(uuid, "Trading", heldUntil, nextStatus)
+                    shouldApplyStatus = false
+                end
 
-                if nextStatus == "Trading" then
+                if shouldApplyStatus then
+                    DynamicTrading.Log("DTV2", "NPC", "Logic", "Away Transition TIMER EXPIRED for " .. (registry.name or uuid) .. ". Target: " .. nextStatus)
+                end
+
+                if shouldApplyStatus and nextStatus == "Trading" then
                     local targetX, targetY, targetZ = DTNPCManager.PlanTradingDestination(uuid, registry)
                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                     if targetX and targetY and npcData then
@@ -403,7 +452,7 @@ function DTNPCManager.ProcessAwayTransitions()
                     end
                 end
 
-                if nextStatus == "Resting" then
+                if shouldApplyStatus and nextStatus == "Resting" then
                     DynamicTrading.Log("DTV2", "NPC", "Logic", "NPC " .. (registry.name or uuid) .. " transitioning to Home (Resting).")
                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                     if npcData and npcData.homeCoords then
@@ -415,7 +464,7 @@ function DTNPCManager.ProcessAwayTransitions()
                         newReturnStatus = nil
                         DynamicTrading_Roster.SaveSoul(uuid, npcData)
                     end
-                elseif nextStatus == "Away" then
+                elseif shouldApplyStatus and nextStatus == "Away" then
                     DynamicTrading.Log("DTV2", "NPC", "Logic", "NPC " .. (registry.name or uuid) .. " mission ended. Transitioning to Away (Walking Home).")
                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                     if npcData then

@@ -14,12 +14,11 @@ function DTNPCManager.Load()
     DTNPCManager.Data = globalData.NPCs or {}
     globalData.NPCs = DTNPCManager.Data
     
-    -- Rebuild outfit ID mapping
+    -- Outfit IDs are transient engine instance handles, not persistent identity.
+    -- Rebuilding stale mappings across loads can bind a recycled body to the wrong soul.
     DTNPCManager.OutfitIDToUUID = {}
-    for uuid, npcData in pairs(DTNPCManager.Data) do
-        if npcData.currentOutfitID then
-            DTNPCManager.OutfitIDToUUID[npcData.currentOutfitID] = uuid
-        end
+    for _, npcData in pairs(DTNPCManager.Data) do
+        npcData.currentOutfitID = nil
     end
     
     DynamicTrading.Log("DTV2", "NPC", "Save", "Manager Loaded. Tracking " .. tostring(DTNPCManager.GetTableSize(DTNPCManager.Data)) .. " NPCs.")

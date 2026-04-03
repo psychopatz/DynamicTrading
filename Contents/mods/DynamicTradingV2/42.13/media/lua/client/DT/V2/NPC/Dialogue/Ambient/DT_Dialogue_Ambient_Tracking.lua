@@ -128,8 +128,7 @@ function Ambient.ResolveTrackedZombie(uuid, entry, currentTime)
     local zombie = entry.zombie
 
     if zombie and not zombie:isDead() then
-        local modData = zombie:getModData()
-        if modData and (modData.DTNPC_UUID == uuid or modData.IsDTNPC) then
+        if DTNPCClient.DoesZombieMatchUUID and DTNPCClient.DoesZombieMatchUUID(zombie, uuid) then
             return zombie
         end
     end

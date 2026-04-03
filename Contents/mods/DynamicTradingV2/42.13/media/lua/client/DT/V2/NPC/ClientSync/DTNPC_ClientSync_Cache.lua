@@ -71,8 +71,25 @@ function DTNPCClient.GetTimestamp()
     return os.time()
 end
 
+function DTNPCClient.ClearOutfitMappingsForUUID(uuid, keepOutfitID)
+    if not uuid or not DTNPCClient.OutfitIDToUUID then return end
+
+    for mappedOutfitID, mappedUUID in pairs(DTNPCClient.OutfitIDToUUID) do
+        if mappedUUID == uuid and mappedOutfitID ~= keepOutfitID then
+            DTNPCClient.OutfitIDToUUID[mappedOutfitID] = nil
+        end
+    end
+end
+
 function DTNPCClient.CacheData(uuid, outfitID, npcData)
     if not uuid or not npcData then return end
+
+    if outfitID then
+        npcData.currentOutfitID = outfitID
+        if DTNPCClient.ClearOutfitMappingsForUUID then
+            DTNPCClient.ClearOutfitMappingsForUUID(uuid, outfitID)
+        end
+    end
     
     DTNPCClient.NPCCache[uuid] = {
         npcData = npcData,
@@ -93,6 +110,9 @@ end
 
 function DTNPCClient.RemoveFromCache(uuid, outfitID)
     if uuid then
+        if DTNPCClient.ClearOutfitMappingsForUUID then
+            DTNPCClient.ClearOutfitMappingsForUUID(uuid, nil)
+        end
         DTNPCClient.NPCCache[uuid] = nil
         DTNPCClient.ProcessedZombies[uuid] = nil
         DTNPCClient.LocalControlled[uuid] = nil

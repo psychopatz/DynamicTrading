@@ -15,6 +15,23 @@ if isClient() and not isServer() then return end
 
 function DTNPCServerCore.RespawnNPC(npcData, uuid)
     if not npcData or not npcData.lastX or not npcData.lastY then return end
+
+    uuid = uuid or npcData.uuid
+    local previousOutfitID = npcData.currentOutfitID
+    if uuid then
+        local existingZombie = DTNPCServerCore.FindZombieByUUID(uuid)
+        if existingZombie then
+            if DTNPCServerCore.PruneDuplicateZombies then
+                existingZombie = DTNPCServerCore.PruneDuplicateZombies(uuid, npcData, existingZombie, "respawn-guard")
+            end
+
+            if DTNPCManager and DTNPCManager.ReclaimZombie then
+                return DTNPCManager.ReclaimZombie(existingZombie, npcData, "respawn-guard"), npcData
+            end
+
+            return existingZombie, npcData
+        end
+    end
     
     local x = npcData.lastX
     local y = npcData.lastY
@@ -110,6 +127,10 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     local newOutfitID = zombie:getPersistentOutfitID()
     
     DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned with new OutfitID: " .. newOutfitID)
+
+    if previousOutfitID and previousOutfitID ~= newOutfitID and DTNPCServerCore.NotifyInstanceRemoval then
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, previousOutfitID)
+    end
     
     local modData = zombie:getModData()
     modData.IsDTNPC = true
@@ -118,8 +139,10 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     -- Keep the same UUID
     npcData.uuid = uuid
     
-    -- CRITICAL: Generate new visual ID to force clients to reapply visuals
-    npcData.visualID = ZombRand(1000000)
+    -- Keep the saved appearance stable across legitimate body recovery.
+    if not npcData.visualID or npcData.visualID == 0 then
+        npcData.visualID = ZombRand(1000000)
+    end
     
     -- CRITICAL: Determine state based on status
     local status = npcData.status or "Resting"
@@ -161,7 +184,7 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     -- Force sync to all clients with new visual ID
     DTNPCServerCore.SyncToAllClients(zombie, npcData)
 
-    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned: " .. npcData.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID .. " | New VisualID: " .. npcData.visualID)
+    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned: " .. npcData.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID .. " | VisualID: " .. npcData.visualID)
     
     return zombie, npcData
 end

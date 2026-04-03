@@ -21,6 +21,10 @@ function RadarManager.Scan(player, device)
         return
     end
 
+    if isClient() and DTNPCClient and DTNPCClient.SendNearbySyncRequest then
+        DTNPCClient.SendNearbySyncRequest(player, "radar-scan")
+    end
+
     local deviceName, range = RadarManager.GetDeviceInfo(device)
 
     DynamicTrading.Log("DTV2", "Radio", "Scan", "Starting scan with " .. tostring(deviceName) .. " (Range: " .. tostring(range) .. ")")
