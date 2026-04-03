@@ -174,7 +174,7 @@ function DTNPCManager.CheckForRespawn(npcData, uuid)
                 "Process=respawn_check decision=reclaim_repair uuid=" .. tostring(uuid) ..
                     " name=" .. tostring(npcData.name or uuid) ..
                     " player=" .. tostring(player:getUsername()) ..
-                    " outfitID=" .. tostring(zombie:getPersistentOutfitID()) ..
+                    " bodyInstanceID=" .. tostring(zombie:getPersistentOutfitID()) ..
                     " hasIsDTNPC=" .. tostring(modData.IsDTNPC == true) ..
                     " modUUID=" .. tostring(modData.DTNPC_UUID) ..
                     " visualID=" .. tostring(modData.DTNPCVisualID),
@@ -274,7 +274,7 @@ function DTNPCManager.CheckRosterSpawns()
                                                 "roster_hash_reclaim_" .. tostring(uuid),
                                                 "Process=roster_hash decision=reclaim_existing uuid=" .. tostring(uuid) ..
                                                     " name=" .. tostring(npcData.name or uuid) ..
-                                                    " outfitID=" .. tostring(existingZombie:getPersistentOutfitID()),
+                                                    " bodyInstanceID=" .. tostring(existingZombie:getPersistentOutfitID()),
                                                 true
                                             )
                                             DynamicTrading.Log("DTV2", "NPC", "Logic", "NPC " .. (npcData.name or uuid) .. " already found in world. Reclaiming instead of spawning duplicate.")
@@ -365,7 +365,7 @@ function DTNPCManager.CheckRosterSpawns()
                                                 "roster_fallback_reclaim_" .. tostring(uuid),
                                                 "Process=roster_fallback decision=reclaim_existing uuid=" .. tostring(uuid) ..
                                                     " name=" .. tostring(npcData.name or uuid) ..
-                                                    " outfitID=" .. tostring(existingZombie:getPersistentOutfitID()),
+                                                    " bodyInstanceID=" .. tostring(existingZombie:getPersistentOutfitID()),
                                                 true
                                             )
                                             DynamicTrading.Log("DTV2", "NPC", "Logic", "NPC " .. (npcData.name or uuid) .. " already found during fallback scan. Reclaiming instead of spawning duplicate.")

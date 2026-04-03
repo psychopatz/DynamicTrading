@@ -29,18 +29,18 @@ function Handlers.HandleSyncNPC(args)
     end
 
     local uuid = args.uuid
-    local outfitID = args.outfitID
+    local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
 
     DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncNPC for: " .. (args.npcData.name or uuid))
 
-    DTNPCClient.CacheData(uuid, outfitID, args.npcData)
-    if DTNPCClient.RemoveDuplicateLocalZombies and outfitID then
-        DTNPCClient.RemoveDuplicateLocalZombies(uuid, outfitID)
+    DTNPCClient.CacheData(uuid, bodyInstanceID, args.npcData)
+    if DTNPCClient.RemoveDuplicateLocalZombies and bodyInstanceID then
+        DTNPCClient.RemoveDuplicateLocalZombies(uuid, bodyInstanceID)
     end
-    Helpers.TrackNPCSystems(nil, args.npcData, uuid, outfitID)
+    Helpers.TrackNPCSystems(nil, args.npcData, uuid, bodyInstanceID)
     Helpers.RecordInterpolation(uuid, args.x, args.y, args.z)
 
-    local zombie = Helpers.FindZombieByIdentifiers(uuid, outfitID)
+    local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
     if zombie then
         DTNPCClient.ApplyVisualsToNPC(zombie, args.npcData)
         DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
@@ -63,15 +63,15 @@ function Handlers.HandleSyncAllNPCs(args)
     DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncAllNPCs. Count: " .. DTNPCClient.GetTableSize(args.npcs))
 
     for uuid, npcData in pairs(args.npcs) do
-        local outfitID = npcData.currentOutfitID
+        local bodyInstanceID = npcData.currentBodyInstanceID
 
-        DTNPCClient.CacheData(uuid, outfitID, npcData)
-        if DTNPCClient.RemoveDuplicateLocalZombies and outfitID then
-            DTNPCClient.RemoveDuplicateLocalZombies(uuid, outfitID)
+        DTNPCClient.CacheData(uuid, bodyInstanceID, npcData)
+        if DTNPCClient.RemoveDuplicateLocalZombies and bodyInstanceID then
+            DTNPCClient.RemoveDuplicateLocalZombies(uuid, bodyInstanceID)
         end
-        Helpers.TrackNPCSystems(nil, npcData, uuid, outfitID)
+        Helpers.TrackNPCSystems(nil, npcData, uuid, bodyInstanceID)
 
-        local zombie = Helpers.FindZombieByIdentifiers(uuid, outfitID)
+        local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
         if zombie then
             DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
             DTNPCClient.ProcessedZombies[uuid] = true
@@ -92,20 +92,20 @@ function Handlers.HandleSyncNearbyNPCs(args)
 
     for uuid, npcData in pairs(args.nearby or {}) do
         if npcData and npcData.npcData then
-            local outfitID = npcData.outfitID
+            local bodyInstanceID = Helpers.ResolveBodyInstanceID(npcData)
 
-            DTNPCClient.CacheData(uuid, outfitID, npcData.npcData)
-            if DTNPCClient.RemoveDuplicateLocalZombies and outfitID then
-                DTNPCClient.RemoveDuplicateLocalZombies(uuid, outfitID)
+            DTNPCClient.CacheData(uuid, bodyInstanceID, npcData.npcData)
+            if DTNPCClient.RemoveDuplicateLocalZombies and bodyInstanceID then
+                DTNPCClient.RemoveDuplicateLocalZombies(uuid, bodyInstanceID)
             end
-            Helpers.TrackNPCSystems(nil, npcData.npcData, uuid, outfitID)
+            Helpers.TrackNPCSystems(nil, npcData.npcData, uuid, bodyInstanceID)
 
             local x = npcData.x or npcData.npcData.lastX
             local y = npcData.y or npcData.npcData.lastY
             local z = npcData.z or npcData.npcData.lastZ or 0
             Helpers.RecordInterpolation(uuid, x, y, z)
 
-            local zombie = Helpers.FindZombieByIdentifiers(uuid, outfitID)
+            local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
             if zombie then
                 DTNPCClient.ApplyVisualsToNPC(zombie, npcData.npcData)
                 DTNPCClient.ReconcilePosition(zombie, x, y, z)

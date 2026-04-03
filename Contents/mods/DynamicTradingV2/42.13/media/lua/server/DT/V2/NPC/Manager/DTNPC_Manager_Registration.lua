@@ -12,7 +12,7 @@ if isClient() and not isServer() then return end
 function DTNPCManager.Register(zombie, npcData)
     if not zombie or not npcData then return end
     
-    local outfitID = zombie:getPersistentOutfitID()
+    local bodyInstanceID = zombie:getPersistentOutfitID()
     
     -- Get or create UUID
     local uuid = npcData.uuid
@@ -43,12 +43,13 @@ function DTNPCManager.Register(zombie, npcData)
     end
     
     -- Update outfit ID mapping
-    DTNPCManager.OutfitIDToUUID[outfitID] = uuid
+    DTNPCManager.BodyInstanceIDToUUID[bodyInstanceID] = uuid
     
     DTNPCManager.PendingRegistrations[uuid] = true
     
     -- Update npcData data
-    npcData.currentOutfitID = outfitID
+    npcData.currentBodyInstanceID = bodyInstanceID
+    npcData.startupBodyInstanceHint = nil
     npcData.lastX = math.floor(zombie:getX())
     npcData.lastY = math.floor(zombie:getY())
     npcData.lastZ = math.floor(zombie:getZ())
@@ -65,7 +66,7 @@ function DTNPCManager.Register(zombie, npcData)
     
     DTNPCManager.PendingRegistrations[uuid] = nil
     
-    DynamicTrading.Log("DTV2", "NPC", "Register", "Registered NPC: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ", OutfitID: " .. outfitID .. ") at " .. npcData.lastX .. "," .. npcData.lastY .. "," .. npcData.lastZ)
+    DynamicTrading.Log("DTV2", "NPC", "Register", "Registered NPC: " .. (npcData.name or "Unknown") .. " (UUID: " .. uuid .. ", BodyInstanceID: " .. bodyInstanceID .. ") at " .. npcData.lastX .. "," .. npcData.lastY .. "," .. npcData.lastZ)
 end
 
 function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
@@ -107,7 +108,7 @@ function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
             "Process=reclaim_existing_zombie uuid=" .. tostring(uuid) ..
                 " name=" .. tostring(npcData.name or "Unknown") ..
                 " reason=" .. tostring(reason or "repair") ..
-                " outfitID=" .. tostring(zombie:getPersistentOutfitID()) ..
+                " bodyInstanceID=" .. tostring(zombie:getPersistentOutfitID()) ..
                 " visualID=" .. tostring(npcData.visualID),
             true
         )
@@ -128,8 +129,9 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removal
         local npcData = DTNPCManager.Data[uuid]
         
         -- Remove from outfit mapping
-        if npcData.currentOutfitID then
-            DTNPCManager.OutfitIDToUUID[npcData.currentOutfitID] = nil
+        local currentBodyInstanceID = npcData.currentBodyInstanceID
+        if currentBodyInstanceID then
+            DTNPCManager.BodyInstanceIDToUUID[currentBodyInstanceID] = nil
         end
         
         -- Remove from spatial hash
@@ -159,7 +161,7 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removal
         
         -- Broadcast removal to all clients
         if DTNPCServerCore and DTNPCServerCore.NotifyRemoval then
-            DTNPCServerCore.NotifyRemoval(uuid, npcData.currentOutfitID, npcData.name, status, removalContext)
+            DTNPCServerCore.NotifyRemoval(uuid, currentBodyInstanceID, npcData.name, status, removalContext)
         end
     end
 end

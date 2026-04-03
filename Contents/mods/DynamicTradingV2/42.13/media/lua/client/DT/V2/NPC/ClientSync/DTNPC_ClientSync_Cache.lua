@@ -18,7 +18,7 @@ end
 modules.Cache = true
 
 DTNPCClient.NPCCache = DTNPCClient.NPCCache or {} -- Keyed by UUID
-DTNPCClient.OutfitIDToUUID = DTNPCClient.OutfitIDToUUID or {} -- Maps outfit IDs to UUIDs
+DTNPCClient.BodyInstanceIDToUUID = DTNPCClient.BodyInstanceIDToUUID or {}
 DTNPCClient.ProcessedZombies = DTNPCClient.ProcessedZombies or {} -- Tracks visual application
 DTNPCClient.LocalControlled = DTNPCClient.LocalControlled or {} -- Tracks locally controlled NPCs
 DTNPCClient.MetadataCache = DTNPCClient.MetadataCache or {} -- Far NPC metadata for radar/faction intel
@@ -53,8 +53,8 @@ function DTNPCClient.GetNPCData(zombie)
         return DTNPCClient.NPCCache[uuid].npcData
     end
     
-    local outfitID = zombie:getPersistentOutfitID()
-    uuid = DTNPCClient.OutfitIDToUUID[outfitID]
+    local bodyInstanceID = zombie:getPersistentOutfitID()
+    uuid = DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID]
     if uuid and DTNPCClient.NPCCache[uuid] then
         return DTNPCClient.NPCCache[uuid].npcData
     end
@@ -71,23 +71,25 @@ function DTNPCClient.GetTimestamp()
     return os.time()
 end
 
-function DTNPCClient.ClearOutfitMappingsForUUID(uuid, keepOutfitID)
-    if not uuid or not DTNPCClient.OutfitIDToUUID then return end
+function DTNPCClient.ClearBodyInstanceMappingsForUUID(uuid, keepBodyInstanceID)
+    if not uuid or not DTNPCClient.BodyInstanceIDToUUID then return end
 
-    for mappedOutfitID, mappedUUID in pairs(DTNPCClient.OutfitIDToUUID) do
-        if mappedUUID == uuid and mappedOutfitID ~= keepOutfitID then
-            DTNPCClient.OutfitIDToUUID[mappedOutfitID] = nil
+    for mappedBodyInstanceID, mappedUUID in pairs(DTNPCClient.BodyInstanceIDToUUID) do
+        if mappedUUID == uuid and mappedBodyInstanceID ~= keepBodyInstanceID then
+            DTNPCClient.BodyInstanceIDToUUID[mappedBodyInstanceID] = nil
         end
     end
 end
 
-function DTNPCClient.CacheData(uuid, outfitID, npcData)
+function DTNPCClient.CacheData(uuid, bodyInstanceID, npcData)
     if not uuid or not npcData then return end
 
-    if outfitID then
-        npcData.currentOutfitID = outfitID
-        if DTNPCClient.ClearOutfitMappingsForUUID then
-            DTNPCClient.ClearOutfitMappingsForUUID(uuid, outfitID)
+    bodyInstanceID = bodyInstanceID or npcData.currentBodyInstanceID or npcData.bodyInstanceID
+
+    if bodyInstanceID then
+        npcData.currentBodyInstanceID = bodyInstanceID
+        if DTNPCClient.ClearBodyInstanceMappingsForUUID then
+            DTNPCClient.ClearBodyInstanceMappingsForUUID(uuid, bodyInstanceID)
         end
     end
     
@@ -96,38 +98,38 @@ function DTNPCClient.CacheData(uuid, outfitID, npcData)
         lastSync = DTNPCClient.GetTimestamp()
     }
     
-    if outfitID then
-        DTNPCClient.OutfitIDToUUID[outfitID] = uuid
+    if bodyInstanceID then
+        DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = uuid
     end
     
     DynamicTrading.Log("DTV2", "NPC", "Cache", "Cached NPC data for: " .. (npcData.name or uuid) .. " (UUID: " .. uuid .. ")")
 end
 
 -- Deprecated: Use DTNPCClient.CacheData
-function DTNPCClient.CacheBrain(uuid, outfitID, npcData)
-    DTNPCClient.CacheData(uuid, outfitID, npcData)
+function DTNPCClient.CacheBrain(uuid, bodyInstanceID, npcData)
+    DTNPCClient.CacheData(uuid, bodyInstanceID, npcData)
 end
 
-function DTNPCClient.RemoveFromCache(uuid, outfitID)
+function DTNPCClient.RemoveFromCache(uuid, bodyInstanceID)
     if uuid then
-        if DTNPCClient.ClearOutfitMappingsForUUID then
-            DTNPCClient.ClearOutfitMappingsForUUID(uuid, nil)
+        if DTNPCClient.ClearBodyInstanceMappingsForUUID then
+            DTNPCClient.ClearBodyInstanceMappingsForUUID(uuid, nil)
         end
         DTNPCClient.NPCCache[uuid] = nil
         DTNPCClient.ProcessedZombies[uuid] = nil
         DTNPCClient.LocalControlled[uuid] = nil
         DTNPCClient.MetadataCache[uuid] = nil
         if DTNPCClient.UntrackNPCForHealthBars then
-            DTNPCClient.UntrackNPCForHealthBars(uuid, outfitID)
+            DTNPCClient.UntrackNPCForHealthBars(uuid, bodyInstanceID)
         end
         if DTNPCClient.UntrackNPCAmbientDialogue then
-            DTNPCClient.UntrackNPCAmbientDialogue(uuid, outfitID)
+            DTNPCClient.UntrackNPCAmbientDialogue(uuid, bodyInstanceID)
         end
         DynamicTrading.Log("DTV2", "NPC", "Cache", "Removed from cache: " .. uuid)
     end
     
-    if outfitID then
-        DTNPCClient.OutfitIDToUUID[outfitID] = nil
+    if bodyInstanceID then
+        DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = nil
     end
 end
 
@@ -140,7 +142,7 @@ end
 
 function DTNPCClient.ResetSessionState(reason)
     DTNPCClient.NPCCache = {}
-    DTNPCClient.OutfitIDToUUID = {}
+    DTNPCClient.BodyInstanceIDToUUID = {}
     DTNPCClient.ProcessedZombies = {}
     DTNPCClient.LocalControlled = {}
     DTNPCClient.MetadataCache = {}

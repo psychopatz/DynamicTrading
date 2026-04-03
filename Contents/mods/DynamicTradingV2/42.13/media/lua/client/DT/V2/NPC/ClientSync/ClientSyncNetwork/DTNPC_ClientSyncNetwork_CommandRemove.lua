@@ -30,7 +30,7 @@ function Handlers.HandleRemoveNPC(args)
 
     local uuid = args.uuid
     local name = args.name or "Unknown"
-    local outfitID = args.outfitID
+    local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
     local cachedEntry = DTNPCClient.NPCCache[uuid]
     local factionID = cachedEntry and cachedEntry.npcData and cachedEntry.npcData.factionID or nil
 
@@ -42,7 +42,7 @@ function Handlers.HandleRemoveNPC(args)
 
     DTNPC_ClientInterpolation.ClearNPC(uuid)
 
-    local zombie = Helpers.FindZombieByIdentifiers(uuid, outfitID)
+    local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
 
     if DT_Reputation then
         local reason = args.removalReason
@@ -67,7 +67,7 @@ function Handlers.HandleRemoveNPC(args)
         DynamicTrading.Log("DTV2", "NPC", "Remove", "SUCCESS: Removed zombie from local world: " .. name)
     end
 
-    DTNPCClient.RemoveFromCache(uuid, outfitID)
+    DTNPCClient.RemoveFromCache(uuid, bodyInstanceID)
 
     if DT_V2_RadarManager then
         if DT_V2_RadarManager.ClientRoster and DT_V2_RadarManager.ClientRoster.Souls then
@@ -86,34 +86,34 @@ function Handlers.HandleRemoveNPC(args)
 end
 
 function Handlers.HandleRemoveNPCInstance(args)
-    if not args or not args.outfitID then
+    local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
+    if not args or not bodyInstanceID then
         return
     end
 
     local uuid = args.uuid
-    local outfitID = args.outfitID
-    local zombie = DTNPCClient.FindZombieByOutfitID and DTNPCClient.FindZombieByOutfitID(outfitID) or nil
+    local zombie = DTNPCClient.FindZombieByBodyInstanceID and DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID) or nil
 
     if zombie then
         zombie:removeFromWorld()
         zombie:removeFromSquare()
     end
 
-    if DTNPCClient.OutfitIDToUUID and DTNPCClient.OutfitIDToUUID[outfitID] == uuid then
-        DTNPCClient.OutfitIDToUUID[outfitID] = nil
+    if DTNPCClient.BodyInstanceIDToUUID and DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] == uuid then
+        DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = nil
     end
 
     local tracked = DTNPCClient.HealthBarTracked and uuid and DTNPCClient.HealthBarTracked[uuid] or nil
-    if tracked and tracked.outfitID == outfitID then
+    if tracked and tracked.bodyInstanceID == bodyInstanceID then
         tracked.zombie = nil
-        tracked.outfitID = nil
+        tracked.bodyInstanceID = nil
         tracked.nextResolveAt = 0
     end
 
     local ambientTracked = DTNPCClient.DialogueAmbientTracked and uuid and DTNPCClient.DialogueAmbientTracked[uuid] or nil
-    if ambientTracked and ambientTracked.outfitID == outfitID then
+    if ambientTracked and ambientTracked.bodyInstanceID == bodyInstanceID then
         ambientTracked.zombie = nil
-        ambientTracked.outfitID = nil
+        ambientTracked.bodyInstanceID = nil
         ambientTracked.nextResolveAt = 0
     end
 end

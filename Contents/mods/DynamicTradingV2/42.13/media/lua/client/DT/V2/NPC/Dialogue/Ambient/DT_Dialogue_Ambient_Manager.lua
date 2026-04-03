@@ -118,7 +118,7 @@ function ISDTNPCAmbientDialogueManager:update()
             end
 
             if npcData or zombie then
-                Ambient.TouchTrackedEntry(tracked, zombie, npcData, tracked.outfitID, currentTime)
+                Ambient.TouchTrackedEntry(tracked, zombie, npcData, tracked.bodyInstanceID, currentTime)
             end
 
             local inRange = zombie
@@ -176,14 +176,14 @@ function ISDTNPCAmbientDialogueManager:update()
             end
 
             if Ambient.IsTrackedEntryStale(tracked, currentTime) then
-                table.insert(staleUUIDs, { uuid = uuid, outfitID = tracked.outfitID })
+                table.insert(staleUUIDs, { uuid = uuid, bodyInstanceID = tracked.bodyInstanceID })
             end
         end
     end
 
     for i = 1, #staleUUIDs do
         local stale = staleUUIDs[i]
-        DTNPCClient.UntrackNPCAmbientDialogue(stale.uuid, stale.outfitID)
+        DTNPCClient.UntrackNPCAmbientDialogue(stale.uuid, stale.bodyInstanceID)
     end
 end
 

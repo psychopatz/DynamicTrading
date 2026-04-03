@@ -58,7 +58,7 @@ function Ambient.CacheTextMetrics(entry, name)
     end
 end
 
-function Ambient.TouchTrackedEntry(entry, zombie, npcData, outfitID, currentTime)
+function Ambient.TouchTrackedEntry(entry, zombie, npcData, bodyInstanceID, currentTime)
     if zombie then
         entry.zombie = zombie
         entry.worldX = zombie:getX()
@@ -66,8 +66,8 @@ function Ambient.TouchTrackedEntry(entry, zombie, npcData, outfitID, currentTime
         entry.worldZ = zombie:getZ()
     end
 
-    if outfitID then
-        entry.outfitID = outfitID
+    if bodyInstanceID then
+        entry.bodyInstanceID = bodyInstanceID
     end
 
     if npcData then
@@ -97,20 +97,20 @@ function Ambient.GetTrackedEntry(uuid)
     return entry
 end
 
-function DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, uuid, outfitID)
+function DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, uuid, bodyInstanceID)
     local resolvedUUID = Ambient.DeriveUUID(zombie, npcData, uuid)
     if not resolvedUUID then return nil end
 
     local entry = Ambient.GetTrackedEntry(resolvedUUID)
-    Ambient.TouchTrackedEntry(entry, zombie, npcData, outfitID, getTimeInMillis())
+    Ambient.TouchTrackedEntry(entry, zombie, npcData, bodyInstanceID, getTimeInMillis())
     return entry
 end
 
-function DTNPCClient.UntrackNPCAmbientDialogue(uuid, outfitID)
+function DTNPCClient.UntrackNPCAmbientDialogue(uuid, bodyInstanceID)
     local resolvedUUID = uuid
 
-    if not resolvedUUID and outfitID and DTNPCClient.OutfitIDToUUID then
-        resolvedUUID = DTNPCClient.OutfitIDToUUID[outfitID]
+    if not resolvedUUID and bodyInstanceID and DTNPCClient.BodyInstanceIDToUUID then
+        resolvedUUID = DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID]
     end
     if not resolvedUUID then return end
 
@@ -142,8 +142,9 @@ function Ambient.ResolveTrackedZombie(uuid, entry, currentTime)
         zombie = DTNPCClient.FindZombieByUUID(uuid)
     end
 
-    if not zombie and entry.outfitID and DTNPCClient.FindZombieByOutfitID then
-        zombie = DTNPCClient.FindZombieByOutfitID(entry.outfitID)
+    local bodyInstanceID = entry.bodyInstanceID
+    if not zombie and bodyInstanceID and DTNPCClient.FindZombieByBodyInstanceID then
+        zombie = DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
     end
 
     entry.zombie = zombie

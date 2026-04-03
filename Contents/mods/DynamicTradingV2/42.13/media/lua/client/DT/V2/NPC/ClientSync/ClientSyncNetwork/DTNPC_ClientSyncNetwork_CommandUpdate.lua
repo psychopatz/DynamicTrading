@@ -30,6 +30,7 @@ function Handlers.HandleUpdatePosition(args)
 
     local uuid = args.uuid
     local cached = DTNPCClient.NPCCache[uuid]
+    local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
 
     Helpers.RecordInterpolation(uuid, args.x, args.y, args.z)
 
@@ -47,12 +48,12 @@ function Handlers.HandleUpdatePosition(args)
         if args.status then
             cached.npcData.status = args.status
         end
-        if args.outfitID then
-            DTNPCClient.OutfitIDToUUID[args.outfitID] = uuid
-            cached.npcData.currentOutfitID = args.outfitID
+        if bodyInstanceID then
+            DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = uuid
+            cached.npcData.currentBodyInstanceID = bodyInstanceID
         end
 
-        local zombie = Helpers.FindZombieByIdentifiers(uuid, args.outfitID)
+        local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
         if zombie then
             local zombieData = DTNPC.GetData(zombie)
             if zombieData then
@@ -78,9 +79,9 @@ function Handlers.HandleUpdatePosition(args)
         end
     end
 
-    Helpers.TrackNPCSystems(nil, cached and cached.npcData or nil, uuid, args.outfitID)
+    Helpers.TrackNPCSystems(nil, cached and cached.npcData or nil, uuid, bodyInstanceID)
 
     if args.health and DTNPCClient.MarkNPCCombatForHealthBars then
-        DTNPCClient.MarkNPCCombatForHealthBars(uuid, nil, cached and cached.npcData or nil, args.outfitID)
+        DTNPCClient.MarkNPCCombatForHealthBars(uuid, nil, cached and cached.npcData or nil, bodyInstanceID)
     end
 end

@@ -28,9 +28,10 @@ local function doesZombieMatchUUID(zombie, uuid)
     local modData = zombie:getModData()
     local cached = DTNPCClient.NPCCache and DTNPCClient.NPCCache[uuid]
     local cachedData = cached and cached.npcData or nil
-    local outfitID = zombie:getPersistentOutfitID()
+    local bodyInstanceID = zombie:getPersistentOutfitID()
+    local expectedBodyInstanceID = cachedData and cachedData.currentBodyInstanceID or nil
 
-    if cachedData and cachedData.currentOutfitID and outfitID ~= cachedData.currentOutfitID then
+    if expectedBodyInstanceID and bodyInstanceID ~= expectedBodyInstanceID then
         local zombieData = (modData and (modData.DTNPC_Data or modData.DTNPCBrain)) or nil
         local zombieVisualID = modData and modData.DTNPCVisualID or nil
         local cachedVisualID = cachedData.visualID
@@ -85,7 +86,7 @@ local function scoreZombieForUUID(zombie, uuid)
     return score
 end
 
-local function removeDuplicateLocalZombies(uuid, keepOutfitID)
+local function removeDuplicateLocalZombies(uuid, keepBodyInstanceID)
     if not uuid then return end
 
     local cell = getCell()
@@ -97,8 +98,8 @@ local function removeDuplicateLocalZombies(uuid, keepOutfitID)
     for i = zombieList:size() - 1, 0, -1 do
         local zombie = zombieList:get(i)
         if zombie and not zombie:isDead() and doesZombieMatchUUID(zombie, uuid) then
-            local outfitID = zombie:getPersistentOutfitID()
-            if outfitID ~= keepOutfitID then
+            local bodyInstanceID = zombie:getPersistentOutfitID()
+            if bodyInstanceID ~= keepBodyInstanceID then
                 zombie:removeFromWorld()
                 zombie:removeFromSquare()
             end
@@ -183,8 +184,8 @@ function DTNPCClient.FindZombieByUUID(uuid)
     return bestZombie
 end
 
-function DTNPCClient.FindZombieByOutfitID(outfitID)
-    if not outfitID then return nil end
+function DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
+    if not bodyInstanceID then return nil end
 
     local cell = getCell()
     if not cell then return nil end
@@ -194,7 +195,7 @@ function DTNPCClient.FindZombieByOutfitID(outfitID)
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie and not zombie:isDead() and zombie:getPersistentOutfitID() == outfitID then
+        if zombie and not zombie:isDead() and zombie:getPersistentOutfitID() == bodyInstanceID then
             return zombie
         end
     end

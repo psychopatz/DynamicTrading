@@ -39,8 +39,9 @@ local function resolveTrackedZombie(uuid, entry, currentTime)
         zombie = DTNPCClient.FindZombieByUUID(uuid)
     end
 
-    if not zombie and entry.outfitID and DTNPCClient.FindZombieByOutfitID then
-        zombie = DTNPCClient.FindZombieByOutfitID(entry.outfitID)
+    local bodyInstanceID = entry.bodyInstanceID
+    if not zombie and bodyInstanceID and DTNPCClient.FindZombieByBodyInstanceID then
+        zombie = DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
     end
 
     entry.zombie = zombie
@@ -124,7 +125,7 @@ function ISDTNPCHealthBarManager:update()
             end
 
             if npcData or zombie then
-                HealthBars.touchTrackedEntry(tracked, zombie, npcData, tracked.outfitID, currentTime)
+                HealthBars.touchTrackedEntry(tracked, zombie, npcData, tracked.bodyInstanceID, currentTime)
             end
 
             if zombie
@@ -183,14 +184,14 @@ function ISDTNPCHealthBarManager:update()
             end
 
             if isTrackedEntryStale(tracked, currentTime) then
-                table.insert(staleUUIDs, { uuid = uuid, outfitID = tracked.outfitID })
+                table.insert(staleUUIDs, { uuid = uuid, bodyInstanceID = tracked.bodyInstanceID })
             end
         end
     end
 
     for i = 1, #staleUUIDs do
         local stale = staleUUIDs[i]
-        DTNPCClient.UntrackNPCForHealthBars(stale.uuid, stale.outfitID)
+        DTNPCClient.UntrackNPCForHealthBars(stale.uuid, stale.bodyInstanceID)
     end
 
     for uuid, _ in pairs(self.barList) do

@@ -47,6 +47,65 @@ local function buildMetadataEntry(uuid, soul)
     }
 end
 
+local function getSoulCoords(soul)
+    if not soul then return nil, nil, nil end
+    return soul.lastX or (soul.homeCoords and soul.homeCoords.x),
+        soul.lastY or (soul.homeCoords and soul.homeCoords.y),
+        soul.lastZ or (soul.homeCoords and soul.homeCoords.z) or 0
+end
+
+local function isZombieNearSoul(zombie, soul)
+    if not zombie or not soul then
+        return false
+    end
+
+    local sx, sy, sz = getSoulCoords(soul)
+    if not sx or not sy then
+        return false
+    end
+
+    local dx = zombie:getX() - sx
+    local dy = zombie:getY() - sy
+    local dz = zombie:getZ() - sz
+    return math.abs(dz) <= 1 and math.sqrt(dx * dx + dy * dy) <= 3
+end
+
+local function tryReclaimZombieFromStartupHint(uuid, npcData, soul)
+    if not uuid or not npcData or not DTNPCServerCore or not DTNPCManager then
+        return nil
+    end
+
+    local hintBodyInstanceID = npcData.startupBodyInstanceHint
+    if not hintBodyInstanceID or not DTNPCServerCore.FindZombieByBodyInstanceID then
+        return nil
+    end
+
+    local zombie = DTNPCServerCore.FindZombieByBodyInstanceID(hintBodyInstanceID)
+    if not zombie or zombie:isDead() or not isZombieNearSoul(zombie, soul or npcData) then
+        return nil
+    end
+
+    local existingUUID = DTNPCManager.GetUUIDFromZombie and DTNPCManager.GetUUIDFromZombie(zombie) or nil
+    if existingUUID and existingUUID ~= uuid then
+        return nil
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Adopt",
+        "Reattached nearby startup body for " .. tostring(npcData.name or uuid) ..
+            " using BodyInstanceID hint " .. tostring(hintBodyInstanceID)
+    )
+
+    if DTNPCManager.ReclaimZombie then
+        return DTNPCManager.ReclaimZombie(zombie, npcData, "startup-hint")
+    end
+
+    DTNPCManager.Register(zombie, npcData)
+    return zombie
+end
+
 local function onClientCommand(module, command, player, args)
     if module ~= "DTNPC" then return end
 
@@ -165,10 +224,13 @@ local function onClientCommand(module, command, player, args)
                     if dist <= nearRadius then
                         local npcData = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] or nil
                         local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
+                        if not zombie and npcData then
+                            zombie = tryReclaimZombieFromStartupHint(uuid, npcData, soul)
+                        end
                         if npcData and zombie then
                             nearby[uuid] = {
                                 uuid = uuid,
-                                outfitID = zombie:getPersistentOutfitID(),
+                                bodyInstanceID = zombie:getPersistentOutfitID(),
                                 x = zombie:getX(),
                                 y = zombie:getY(),
                                 z = zombie:getZ(),

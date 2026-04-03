@@ -49,8 +49,8 @@ function DTNPCClient.OnTick()
             local uuid = modData.DTNPC_UUID
             
             if not uuid then
-                local outfitID = zombie:getPersistentOutfitID()
-                uuid = DTNPCClient.OutfitIDToUUID[outfitID]
+                local bodyInstanceID = zombie:getPersistentOutfitID()
+                uuid = DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID]
                 if uuid then
                     modData.DTNPC_UUID = uuid
                 end

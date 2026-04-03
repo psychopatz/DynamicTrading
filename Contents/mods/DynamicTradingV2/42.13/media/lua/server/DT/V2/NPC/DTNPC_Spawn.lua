@@ -39,8 +39,8 @@ function DTNPCSpawn.FindZombieByUUID(...)
     return DTNPCServerCore.FindZombieByUUID(...)
 end
 
-function DTNPCSpawn.FindZombieByOutfitID(...)
-    return DTNPCServerCore.FindZombieByOutfitID(...)
+function DTNPCSpawn.FindZombieByBodyInstanceID(...)
+    return DTNPCServerCore.FindZombieByBodyInstanceID(...)
 end
 
 function DTNPCSpawn.SummonAll(...)

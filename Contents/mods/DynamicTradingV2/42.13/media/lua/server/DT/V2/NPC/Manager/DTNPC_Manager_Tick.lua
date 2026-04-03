@@ -191,17 +191,17 @@ function DTNPCManager.OnTick()
                 end
 
                 if savedData then
-                    -- 1. Sync Outfit ID (for outfitID-to-uuid mapping)
-                    local currentOutfitID = zombie:getPersistentOutfitID()
-                    if savedData.currentOutfitID ~= currentOutfitID then
+                    -- 1. Sync Body Instance ID (for body-instance-to-uuid mapping)
+                    local currentBodyInstanceID = zombie:getPersistentOutfitID()
+                    local savedBodyInstanceID = savedData.currentBodyInstanceID
+                    if savedBodyInstanceID ~= currentBodyInstanceID then
                         -- Clear old mapping
-                        if savedData.currentOutfitID then
-                            DTNPCManager.OutfitIDToUUID[savedData.currentOutfitID] = nil
+                        if savedBodyInstanceID then
+                            DTNPCManager.BodyInstanceIDToUUID[savedBodyInstanceID] = nil
                         end
                         -- Set new mapping
-                        savedData.currentOutfitID = currentOutfitID
-                        -- print("[DTNPC] Updated outfit ID for " .. (savedData.name or uuid) .. ": " .. currentOutfitID)
-                        DTNPCManager.OutfitIDToUUID[currentOutfitID] = uuid
+                        savedData.currentBodyInstanceID = currentBodyInstanceID
+                        DTNPCManager.BodyInstanceIDToUUID[currentBodyInstanceID] = uuid
                     end
                     
                     -- 2. Update Position History (used for respawn/teleport)

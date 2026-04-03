@@ -56,20 +56,25 @@ function Helpers.RecordInterpolation(uuid, x, y, z)
     end
 end
 
-function Helpers.FindZombieByIdentifiers(uuid, outfitID)
+function Helpers.ResolveBodyInstanceID(data)
+    if not data then return nil end
+    return data.bodyInstanceID
+end
+
+function Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
     local zombie = DTNPCClient.FindZombieByUUID(uuid)
-    if not zombie and outfitID then
-        zombie = DTNPCClient.FindZombieByOutfitID(outfitID)
+    if not zombie and bodyInstanceID then
+        zombie = DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
     end
     return zombie
 end
 
-function Helpers.TrackNPCSystems(zombie, npcData, uuid, outfitID)
+function Helpers.TrackNPCSystems(zombie, npcData, uuid, bodyInstanceID)
     if DTNPCClient.TrackNPCForHealthBars then
-        DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, outfitID)
+        DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, bodyInstanceID)
     end
     if DTNPCClient.TrackNPCForAmbientDialogue then
-        DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, uuid, outfitID)
+        DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, uuid, bodyInstanceID)
     end
 end
 

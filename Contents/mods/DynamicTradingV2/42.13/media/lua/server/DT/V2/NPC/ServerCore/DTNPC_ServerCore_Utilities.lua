@@ -134,8 +134,8 @@ function DTNPCServerCore.FindZombieByUUID(uuid)
     return matches[1] and matches[1].zombie or nil
 end
 
-function DTNPCServerCore.FindZombieByOutfitID(outfitID)
-    if not outfitID then return nil end
+function DTNPCServerCore.FindZombieByBodyInstanceID(bodyInstanceID)
+    if not bodyInstanceID then return nil end
 
     local cell = getCell()
     if not cell then return nil end
@@ -145,7 +145,7 @@ function DTNPCServerCore.FindZombieByOutfitID(outfitID)
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie and not zombie:isDead() and zombie:getPersistentOutfitID() == outfitID then
+        if zombie and not zombie:isDead() and zombie:getPersistentOutfitID() == bodyInstanceID then
             return zombie
         end
     end

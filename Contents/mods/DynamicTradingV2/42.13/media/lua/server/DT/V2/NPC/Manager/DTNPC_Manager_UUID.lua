@@ -32,8 +32,8 @@ end
 -- Backward compatibility alias
 DTNPCManager.GenerateUUID = DTNPCManager.GenerateSoulID
 
-function DTNPCManager.GetUUIDFromOutfitID(outfitID)
-    return DTNPCManager.OutfitIDToUUID[outfitID]
+function DTNPCManager.GetUUIDFromBodyInstanceID(bodyInstanceID)
+    return DTNPCManager.BodyInstanceIDToUUID and DTNPCManager.BodyInstanceIDToUUID[bodyInstanceID] or nil
 end
 
 function DTNPCManager.GetUUIDFromZombie(zombie)
@@ -46,6 +46,6 @@ function DTNPCManager.GetUUIDFromZombie(zombie)
     end
     
     -- Fallback: check outfit ID mapping
-    local outfitID = zombie:getPersistentOutfitID()
-    return DTNPCManager.GetUUIDFromOutfitID(outfitID)
+    local bodyInstanceID = zombie:getPersistentOutfitID()
+    return DTNPCManager.GetUUIDFromBodyInstanceID(bodyInstanceID)
 end

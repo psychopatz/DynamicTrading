@@ -17,7 +17,7 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     if not npcData or not npcData.lastX or not npcData.lastY then return end
 
     uuid = uuid or npcData.uuid
-    local previousOutfitID = npcData.currentOutfitID
+    local previousBodyInstanceID = npcData.currentBodyInstanceID
     if uuid then
         local existingZombie = DTNPCServerCore.FindZombieByUUID(uuid)
         if existingZombie then
@@ -124,12 +124,12 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     end
 
     local zombie = zombieList:get(0)
-    local newOutfitID = zombie:getPersistentOutfitID()
+    local newBodyInstanceID = zombie:getPersistentOutfitID()
     
-    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned with new OutfitID: " .. newOutfitID)
+    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned with new BodyInstanceID: " .. newBodyInstanceID)
 
-    if previousOutfitID and previousOutfitID ~= newOutfitID and DTNPCServerCore.NotifyInstanceRemoval then
-        DTNPCServerCore.NotifyInstanceRemoval(uuid, previousOutfitID)
+    if previousBodyInstanceID and previousBodyInstanceID ~= newBodyInstanceID and DTNPCServerCore.NotifyInstanceRemoval then
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, previousBodyInstanceID)
     end
     
     local modData = zombie:getModData()
@@ -184,7 +184,7 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     -- Force sync to all clients with new visual ID
     DTNPCServerCore.SyncToAllClients(zombie, npcData)
 
-    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned: " .. npcData.name .. " | UUID: " .. uuid .. " | New OutfitID: " .. newOutfitID .. " | VisualID: " .. npcData.visualID)
+    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned: " .. npcData.name .. " | UUID: " .. uuid .. " | New BodyInstanceID: " .. newBodyInstanceID .. " | VisualID: " .. npcData.visualID)
     
     return zombie, npcData
 end

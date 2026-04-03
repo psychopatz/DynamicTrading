@@ -7,7 +7,7 @@
 DTNPCManager = DTNPCManager or {}
 DTNPCManager.Data = DTNPCManager.Data or {}
 DTNPCManager.PendingRegistrations = DTNPCManager.PendingRegistrations or {}
-DTNPCManager.OutfitIDToUUID = DTNPCManager.OutfitIDToUUID or {} -- Maps current outfit IDs to persistent UUIDs
+DTNPCManager.BodyInstanceIDToUUID = DTNPCManager.BodyInstanceIDToUUID or {}
 
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 

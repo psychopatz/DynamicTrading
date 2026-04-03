@@ -21,7 +21,7 @@ local Constants = HealthBars.Constants
 local Helpers = HealthBars.Helpers
 local State = HealthBars.State
 
-local function touchTrackedEntry(entry, zombie, npcData, outfitID, currentTime)
+local function touchTrackedEntry(entry, zombie, npcData, bodyInstanceID, currentTime)
     if zombie then
         entry.zombie = zombie
         entry.worldX = zombie:getX()
@@ -29,8 +29,8 @@ local function touchTrackedEntry(entry, zombie, npcData, outfitID, currentTime)
         entry.worldZ = zombie:getZ()
     end
 
-    if outfitID then
-        entry.outfitID = outfitID
+    if bodyInstanceID then
+        entry.bodyInstanceID = bodyInstanceID
     end
 
     if npcData then
@@ -74,28 +74,28 @@ end
 HealthBars.touchTrackedEntry = touchTrackedEntry
 HealthBars.getTrackedEntry = getTrackedEntry
 
-function DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, outfitID)
+function DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, bodyInstanceID)
     local resolvedUUID = Helpers.deriveUUID(zombie, npcData, uuid)
     if not resolvedUUID then return nil end
 
     local entry = getTrackedEntry(resolvedUUID)
-    touchTrackedEntry(entry, zombie, npcData, outfitID, getTimeInMillis())
+    touchTrackedEntry(entry, zombie, npcData, bodyInstanceID, getTimeInMillis())
     return entry
 end
 
-function DTNPCClient.MarkNPCCombatForHealthBars(uuid, zombie, npcData, outfitID)
-    local entry = DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, outfitID)
+function DTNPCClient.MarkNPCCombatForHealthBars(uuid, zombie, npcData, bodyInstanceID)
+    local entry = DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, bodyInstanceID)
     if entry then
         entry.visibleUntil = getTimeInMillis() + Constants.COMBAT_SHOW_DURATION
     end
     return entry
 end
 
-function DTNPCClient.UntrackNPCForHealthBars(uuid, outfitID)
+function DTNPCClient.UntrackNPCForHealthBars(uuid, bodyInstanceID)
     local resolvedUUID = uuid
 
-    if not resolvedUUID and outfitID and DTNPCClient.OutfitIDToUUID then
-        resolvedUUID = DTNPCClient.OutfitIDToUUID[outfitID]
+    if not resolvedUUID and bodyInstanceID and DTNPCClient.BodyInstanceIDToUUID then
+        resolvedUUID = DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID]
     end
     if not resolvedUUID then return end
 

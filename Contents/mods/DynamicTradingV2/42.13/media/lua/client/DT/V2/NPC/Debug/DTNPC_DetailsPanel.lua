@@ -43,7 +43,7 @@ function DTNPC_DetailsPanel:setData(item)
     -- 1. IDENTIFICATION
     addHeader("IDENTIFICATION", {r=0, g=0.8, b=1, a=1})
     addProp("Name", npcData.name, {r=1, g=1, b=1, a=1})
-    addProp("Outfit ID", id, {r=0.6, g=0.6, b=0.6, a=1})
+    addProp("Body Instance ID", id, {r=0.6, g=0.6, b=0.6, a=1})
     addProp("Data ID", npcData.uuid or "N/A", {r=0.4, g=0.9, b=0.4, a=1})
     
     -- 2. STATE

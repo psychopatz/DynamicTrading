@@ -71,7 +71,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     end
 
     local zombie = zombieList:get(0)
-    local outfitID = zombie:getPersistentOutfitID()
+    local bodyInstanceID = zombie:getPersistentOutfitID()
     
     local modData = zombie:getModData()
     modData.IsDTNPC = true
@@ -122,7 +122,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
 
     DTNPCServerCore.SyncToAllClients(zombie, npcData)
 
-    DynamicTrading.Log("DTV2", "NPC", "Logic", "Spawned/Summoned: " .. npcData.name .. " | UUID: " .. npcData.uuid .. " | OutfitID: " .. outfitID)
+    DynamicTrading.Log("DTV2", "NPC", "Logic", "Spawned/Summoned: " .. npcData.name .. " | UUID: " .. npcData.uuid .. " | BodyInstanceID: " .. bodyInstanceID)
     
     return zombie, npcData
 end

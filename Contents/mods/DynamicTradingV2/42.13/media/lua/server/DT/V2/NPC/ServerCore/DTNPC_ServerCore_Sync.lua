@@ -58,7 +58,7 @@ end
 function DTNPCServerCore.SyncToAllClients(zombie, npcData)
     if not zombie or not npcData then return end
     
-    local outfitID = zombie:getPersistentOutfitID()
+    local bodyInstanceID = zombie:getPersistentOutfitID()
     local uuid = npcData.uuid
     
     local modData = zombie:getModData()
@@ -68,7 +68,7 @@ function DTNPCServerCore.SyncToAllClients(zombie, npcData)
     
     local syncData = {
         uuid = uuid,
-        outfitID = outfitID,
+        bodyInstanceID = bodyInstanceID,
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
@@ -95,7 +95,7 @@ end
 function DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
     if not player or not zombie or not npcData then return end
     
-    local outfitID = zombie:getPersistentOutfitID()
+    local bodyInstanceID = zombie:getPersistentOutfitID()
     local uuid = npcData.uuid
     
     local modData = zombie:getModData()
@@ -105,7 +105,7 @@ function DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
     
     local syncData = {
         uuid = uuid,
-        outfitID = outfitID,
+        bodyInstanceID = bodyInstanceID,
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
@@ -133,7 +133,7 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData)
 
     local posData = {
         uuid = uuid,
-        outfitID = zombie:getPersistentOutfitID(),
+        bodyInstanceID = zombie:getPersistentOutfitID(),
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
@@ -157,10 +157,10 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData)
     end
 end
 
-function DTNPCServerCore.NotifyRemoval(uuid, outfitID, name, removalReason, removalContext)
+function DTNPCServerCore.NotifyRemoval(uuid, bodyInstanceID, name, removalReason, removalContext)
     if not uuid then return end
     
-    local data = { uuid = uuid, outfitID = outfitID, name = name, removalReason = removalReason }
+    local data = { uuid = uuid, bodyInstanceID = bodyInstanceID, name = name, removalReason = removalReason }
     if removalContext then
         data.killerUsername = removalContext.killerUsername
         data.killerOnlineID = removalContext.killerOnlineID
@@ -176,12 +176,12 @@ function DTNPCServerCore.NotifyRemoval(uuid, outfitID, name, removalReason, remo
     DynamicTrading.Log("DTV2", "NPC", "Remove", "Notified removal: " .. (name or uuid))
 end
 
-function DTNPCServerCore.NotifyInstanceRemoval(uuid, outfitID)
-    if not outfitID then return end
+function DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID)
+    if not bodyInstanceID then return end
 
     local data = {
         uuid = uuid,
-        outfitID = outfitID,
+        bodyInstanceID = bodyInstanceID,
     }
 
     if isServer() then
