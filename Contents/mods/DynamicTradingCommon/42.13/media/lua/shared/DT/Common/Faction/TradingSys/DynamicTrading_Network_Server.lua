@@ -12,8 +12,8 @@ if isClient() and not isServer() then return end
 -- =============================================================================
 -- 1. LOAD HANDLER SUB-MODULES
 -- =============================================================================
-local DataHandlers  = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers"
-local TradeHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/TradeHandlers"
+local DataHandlers  = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers/DataHandlers"
+local TradeHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/TradeHandlers/TradeHandlers"
 local DebugHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DebugHandlers"
 local ok, LabourNetwork = pcall(require, "DC/Common/Colony/ColonyNetwork/DC_Colony_Network")
 if not ok then LabourNetwork = nil end
