@@ -1,6 +1,6 @@
 -- DynamicTrading_Stock.lua (Shared)
 
-require "DT/Common/Faction/TradingSys/DynamicTrading_Economy"
+require "DT/Common/Faction/TradingSys/Economy/DynamicTrading_Economy"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 
 DynamicTrading_Stock = {}
