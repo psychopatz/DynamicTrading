@@ -2,7 +2,7 @@
 -- {
 --   "manual_id": "dt_update_2024_05_20",
 --   "module": "common",
---   "title": "Major Update",
+--   "title": "April 3, 2026 Update",
 --   "description": "New NPC chat, colony management, economy UI, and labour systems.",
 --   "start_page_id": "overview",
 --   "audiences": [
@@ -191,7 +191,7 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dt_update_2024_05_20", {
-        title = "Major Update",
+        title = "April 3, 2026 Update",
         description = "New NPC chat, colony management, economy UI, and labour systems.",
         startPageId = "overview",
         audiences = { "common" },
