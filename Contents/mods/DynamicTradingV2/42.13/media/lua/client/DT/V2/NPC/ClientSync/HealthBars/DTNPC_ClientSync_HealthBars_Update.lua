@@ -1,12 +1,12 @@
 -- ==============================================================================
--- DTNPC_HealthBars_Update.lua
+-- DTNPC_ClientSync_HealthBars_Update.lua
 -- Update loop, stale cleanup, and damage text generation.
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
-DTNPC_HealthBars = DTNPC_HealthBars or {}
+DTNPC_ClientSync_HealthBars = DTNPC_ClientSync_HealthBars or {}
 
-local HealthBars = DTNPC_HealthBars
+local HealthBars = DTNPC_ClientSync_HealthBars
 local modules = HealthBars.Modules or {}
 
 HealthBars.Modules = modules

@@ -1,14 +1,27 @@
 -- ==============================================================================
--- DTNPC_ClientCache.lua
+-- DTNPC_ClientSync_Cache.lua
 -- Management of local NPC cache and npcData data.
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
-DTNPCClient.NPCCache = {} -- Keyed by UUID
-DTNPCClient.OutfitIDToUUID = {} -- Maps outfit IDs to UUIDs
-DTNPCClient.ProcessedZombies = {} -- Tracks visual application
-DTNPCClient.LocalControlled = {} -- Tracks locally controlled NPCs
-DTNPCClient.MetadataCache = {} -- Far NPC metadata for radar/faction intel
+DTNPC_ClientSync = DTNPC_ClientSync or {}
+
+local ClientSync = DTNPC_ClientSync
+local modules = ClientSync.Modules or {}
+
+ClientSync.Modules = modules
+
+if modules.Cache then
+    return
+end
+
+modules.Cache = true
+
+DTNPCClient.NPCCache = DTNPCClient.NPCCache or {} -- Keyed by UUID
+DTNPCClient.OutfitIDToUUID = DTNPCClient.OutfitIDToUUID or {} -- Maps outfit IDs to UUIDs
+DTNPCClient.ProcessedZombies = DTNPCClient.ProcessedZombies or {} -- Tracks visual application
+DTNPCClient.LocalControlled = DTNPCClient.LocalControlled or {} -- Tracks locally controlled NPCs
+DTNPCClient.MetadataCache = DTNPCClient.MetadataCache or {} -- Far NPC metadata for radar/faction intel
 DTNPCClient.VISUAL_CHECK_RATE = 60 -- Ticks between visual checks
 DTNPCClient.NEARBY_SYNC_CHECK_RATE = 30 -- Ticks between MP nearby-sync checks
 DTNPCClient.NEARBY_SYNC_MIN_INTERVAL_MS = 4000
@@ -19,7 +32,7 @@ DTNPCClient.NEARBY_SYNC_METADATA_RADIUS = 1000
 DTNPCClient.LastNearbySyncX = nil
 DTNPCClient.LastNearbySyncY = nil
 DTNPCClient.LastNearbySyncZ = nil
-DTNPCClient.LastNearbySyncTime = 0
+DTNPCClient.LastNearbySyncTime = DTNPCClient.LastNearbySyncTime or 0
 DTNPCClient.PendingNearbySyncReason = nil
 
 function DTNPCClient.GetNPCData(zombie)

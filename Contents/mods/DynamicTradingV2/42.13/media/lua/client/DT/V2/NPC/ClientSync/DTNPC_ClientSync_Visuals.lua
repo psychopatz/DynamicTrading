@@ -1,11 +1,23 @@
 -- ==============================================================================
--- DTNPC_ClientVisuals.lua
+-- DTNPC_ClientSync_Visuals.lua
 -- Visual application and world searching for NPCs.
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
+DTNPC_ClientSync = DTNPC_ClientSync or {}
 
-require "DT/V2/NPC/HealthBars/DTNPC_HealthBars"
+local ClientSync = DTNPC_ClientSync
+local modules = ClientSync.Modules or {}
+
+ClientSync.Modules = modules
+
+if modules.Visuals then
+    return
+end
+
+modules.Visuals = true
+
+require "DT/V2/NPC/ClientSync/HealthBars/DTNPC_ClientSync_HealthBars"
 require "DT/V2/NPC/Dialogue/Ambient/DT_Dialogue_Ambient"
 
 function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
@@ -168,7 +180,7 @@ end
 -- ==============================================================================
 
 -- These must be registered after all modules have initialized their DTNPCClient functions.
--- This file (Visuals.lua) loads last alphabetically.
+-- This file is loaded last by DTNPC_ClientSync.lua.
 
 Events.OnTick.Add(DTNPCClient.OnTick)
 Events.OnServerCommand.Add(DTNPCClient.OnServerCommand)

@@ -9,7 +9,7 @@ require "DT/Common/Config"
 require "Utils/DT_CoreUtils"
 require "DT/Common/Reputation/DT_Reputation"
 require "DT/V2/Dialog/DT_DialogueManager"
-require "DT/V2/NPC/DTNPC_ClientCache"
+require "DT/V2/NPC/ClientSync/DTNPC_ClientSync"
 require "DT/Common/Utils/DT_AudioManager"
 require "DT/Common/Trading/DT_Economy_Common"
 

@@ -1,15 +1,27 @@
 -- ==============================================================================
--- DTNPC_ClientNetwork.lua
+-- DTNPC_ClientSync_Network.lua
 -- Client-side network command handlers for NPC synchronization.
 -- ==============================================================================
 
 require "DT/Common/Reputation/DT_Reputation"
 
 DTNPCClient = DTNPCClient or {}
+DTNPC_ClientSync = DTNPC_ClientSync or {}
+
+local ClientSync = DTNPC_ClientSync
+local modules = ClientSync.Modules or {}
+
+ClientSync.Modules = modules
+
+if modules.Network then
+    return
+end
+
+modules.Network = true
 
 DynamicTrading.Log("DTV2", "NPC", "Init", "Loading client interpolation module...")
 
-require "DT/V2/NPC/DTNPC_ClientInterpolation"
+require "DT/V2/NPC/ClientSync/DTNPC_ClientSync_Interpolation"
 DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_ClientInterpolation loaded: " .. tostring(DTNPC_ClientInterpolation ~= nil))
 
 -- Guard: Create fallback table with stub functions if module didn't load
@@ -440,4 +452,4 @@ function DTNPCClient.RequestInitialSync(playerNum)
     end
 end
 
--- Events will be registered in DTNPC_ClientVisuals.lua to ensure all functions are defined.
+-- Events will be registered in DTNPC_ClientSync_Visuals.lua after all sync functions are defined.

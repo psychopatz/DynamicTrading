@@ -1,9 +1,21 @@
 -- ==============================================================================
--- DTNPC_ClientEvents.lua
+-- DTNPC_ClientSync_Events.lua
 -- Event registration and periodic checks for NPCs.
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
+DTNPC_ClientSync = DTNPC_ClientSync or {}
+
+local ClientSync = DTNPC_ClientSync
+local modules = ClientSync.Modules or {}
+
+ClientSync.Modules = modules
+
+if modules.Events then
+    return
+end
+
+modules.Events = true
 
 function DTNPCClient.OnTick()
     if isServer() and isDedicatedServer() then return end
@@ -165,4 +177,4 @@ function DTNPCClient.OnZombieUpdate(zombie)
     end
 end
 
--- Events will be registered in DTNPC_ClientVisuals.lua to ensure all functions are defined.
+-- Events will be registered in DTNPC_ClientSync_Visuals.lua after all sync functions are defined.

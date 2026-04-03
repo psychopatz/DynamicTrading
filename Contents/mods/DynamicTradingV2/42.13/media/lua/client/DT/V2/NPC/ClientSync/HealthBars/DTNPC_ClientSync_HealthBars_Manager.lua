@@ -1,11 +1,11 @@
 -- ==============================================================================
--- DTNPC_HealthBars_Manager.lua
+-- DTNPC_ClientSync_HealthBars_Manager.lua
 -- Manager class setup for the health bar overlay.
 -- ==============================================================================
 
-DTNPC_HealthBars = DTNPC_HealthBars or {}
+DTNPC_ClientSync_HealthBars = DTNPC_ClientSync_HealthBars or {}
 
-local HealthBars = DTNPC_HealthBars
+local HealthBars = DTNPC_ClientSync_HealthBars
 local modules = HealthBars.Modules or {}
 
 HealthBars.Modules = modules

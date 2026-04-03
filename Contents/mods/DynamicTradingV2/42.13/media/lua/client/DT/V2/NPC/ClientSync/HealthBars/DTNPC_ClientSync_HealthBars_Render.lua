@@ -1,11 +1,11 @@
 -- ==============================================================================
--- DTNPC_HealthBars_Render.lua
+-- DTNPC_ClientSync_HealthBars_Render.lua
 -- Rendering logic for names, bars, and floating damage text.
 -- ==============================================================================
 
-DTNPC_HealthBars = DTNPC_HealthBars or {}
+DTNPC_ClientSync_HealthBars = DTNPC_ClientSync_HealthBars or {}
 
-local HealthBars = DTNPC_HealthBars
+local HealthBars = DTNPC_ClientSync_HealthBars
 local modules = HealthBars.Modules or {}
 
 HealthBars.Modules = modules

@@ -1,12 +1,12 @@
 -- ==============================================================================
--- DTNPC_HealthBars_Tracking.lua
+-- DTNPC_ClientSync_HealthBars_Tracking.lua
 -- Tracking lifecycle and public health bar APIs.
 -- ==============================================================================
 
 DTNPCClient = DTNPCClient or {}
-DTNPC_HealthBars = DTNPC_HealthBars or {}
+DTNPC_ClientSync_HealthBars = DTNPC_ClientSync_HealthBars or {}
 
-local HealthBars = DTNPC_HealthBars
+local HealthBars = DTNPC_ClientSync_HealthBars
 local modules = HealthBars.Modules or {}
 
 HealthBars.Modules = modules

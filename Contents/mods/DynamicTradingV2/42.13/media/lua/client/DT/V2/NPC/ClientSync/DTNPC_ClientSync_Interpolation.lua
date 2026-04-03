@@ -1,11 +1,23 @@
 -- ==============================================================================
--- DTNPC_ClientInterpolation.lua
+-- DTNPC_ClientSync_Interpolation.lua
 -- Client-side position interpolation for smooth NPC movement.
 -- Predicts NPC position between server updates for visual smoothness.
 -- Works automatically on modded and vanilla maps.
 -- ==============================================================================
 
+DTNPC_ClientSync = DTNPC_ClientSync or {}
 DTNPC_ClientInterpolation = DTNPC_ClientInterpolation or {}
+
+local ClientSync = DTNPC_ClientSync
+local modules = ClientSync.Modules or {}
+
+ClientSync.Modules = modules
+
+if modules.Interpolation then
+    return
+end
+
+modules.Interpolation = true
 
 -- Interpolation state per NPC
 -- Format: [uuid] = { lastX, lastY, lastZ, targetX, targetY, targetZ, lastUpdateTime, updateFreq }
