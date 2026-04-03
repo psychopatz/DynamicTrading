@@ -1,5 +1,7 @@
 local PlayerOwnership_Utils = {}
 
+require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig"
+
 PlayerOwnership_Utils.MOD_DATA_KEY = "DynamicTrading_Factions"
 
 function PlayerOwnership_Utils.getFactionData()

@@ -7,6 +7,8 @@
 -- Ensure DTM global exists
 DTM = DTM or {}
 
+require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig"
+
 -- =============================================================================
 -- SERVER STARTUP HANDLER
 -- =============================================================================
