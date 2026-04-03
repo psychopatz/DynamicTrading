@@ -1,5 +1,5 @@
 require "ISUI/ISCollapsableWindow"
-require "DT/V1/Radio/DT_SignalPanel"
+require "DT/V1/Radio/SignalPanel/SignalPanel"
 require "DT/V1/Radio/DT_TraderListPanel"
 require "DT/V1/Radio/DT_LogPanel"
 require "Utils/DT_ConfigManager"
