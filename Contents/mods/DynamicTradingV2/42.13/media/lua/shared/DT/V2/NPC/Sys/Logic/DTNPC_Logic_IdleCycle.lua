@@ -8,6 +8,47 @@ DTNPCLogic.Internal = DTNPCLogic.Internal or {}
 
 local Internal = DTNPCLogic.Internal
 
+local function getVariableBooleanSafe(zombie, name)
+    if not zombie or not name then
+        return false
+    end
+
+    if zombie.getVariableBoolean then
+        return zombie:getVariableBoolean(name) == true
+    end
+
+    local value = zombie.getVariableString and zombie:getVariableString(name) or ""
+    value = string.lower(tostring(value or ""))
+    return value == "true" or value == "1"
+end
+
+local function getVariableStringSafe(zombie, name)
+    if not zombie or not name or not zombie.getVariableString then
+        return ""
+    end
+
+    local value = zombie:getVariableString(name)
+    if value == nil then
+        return ""
+    end
+
+    return tostring(value)
+end
+
+local function resolveMovingState(zombie, npcData)
+    local bMoving = getVariableStringSafe(zombie, "bMoving")
+    if bMoving ~= "" then
+        return getVariableBooleanSafe(zombie, "bMoving")
+    end
+
+    local isMoving = getVariableStringSafe(zombie, "isMoving")
+    if isMoving ~= "" then
+        return getVariableBooleanSafe(zombie, "isMoving")
+    end
+
+    return npcData.isMovingState == true
+end
+
 function DTNPCLogic.ResetIdleCycle(zombie, npcData)
     npcData.idleCycleCounter = 0
     npcData.idleCycleIndex = 0
@@ -40,7 +81,8 @@ function DTNPCLogic.UpdateIdleCycle(zombie, npcData, state)
         npcData.idleCycleCounter = 0
     end
 
-    local moving = zombie:isMoving() or (npcData.isMovingState == true)
+    local moving = resolveMovingState(zombie, npcData)
+
     if moving then
         DTNPCLogic.ResetIdleCycle(zombie, npcData)
         return

@@ -142,9 +142,6 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     if DTNPC and DTNPC.AttachData then
         DTNPC.AttachData(zombie, npcData)
     end
-    if DTNPC and DTNPC.SuppressZombieEngineState then
-        DTNPC.SuppressZombieEngineState(zombie, npcData, { state = npcData.state })
-    end
 
     if not needsVisuals then
         if DTNPC and DTNPC.SyncEquipmentVisuals then

@@ -16,6 +16,9 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     DiagnosticCooldownMs = 4000,
     HostilePlayerRepThreshold = -40,
     StationaryPostResetDistance = 4,
+    StationaryCombatLeashRadius = 10,
+    CombatUnreachableTimeoutMs = 6000,
+    CombatProgressDistance = 0.35,
 }
 
 DTNPCProtect.LOADOUT_WEIGHTS = DTNPCProtect.LOADOUT_WEIGHTS or {

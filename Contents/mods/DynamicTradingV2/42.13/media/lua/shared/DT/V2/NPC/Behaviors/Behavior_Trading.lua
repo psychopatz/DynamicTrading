@@ -40,6 +40,62 @@ local function getTargetDistance(zombie, target)
     return math.sqrt((dx * dx) + (dy * dy))
 end
 
+local function getCombatAnchorTarget(zombie, npcData)
+    if DTNPCProtect and DTNPCProtect.GetCombatAnchorTarget then
+        return DTNPCProtect.GetCombatAnchorTarget(npcData, zombie)
+    end
+    return nil
+end
+
+local function getCombatLeashRadius(npcData)
+    if DTNPCProtect and DTNPCProtect.GetStationaryCombatLeashRadius then
+        return DTNPCProtect.GetStationaryCombatLeashRadius(npcData)
+    end
+    return 10
+end
+
+local function getDistanceToCombatAnchor(zombie, npcData, x, y, z)
+    if DTNPCProtect and DTNPCProtect.GetDistanceToCombatAnchor then
+        return DTNPCProtect.GetDistanceToCombatAnchor(
+            x ~= nil and x or zombie:getX(),
+            y ~= nil and y or zombie:getY(),
+            z ~= nil and z or zombie:getZ(),
+            npcData,
+            zombie
+        )
+    end
+    return nil
+end
+
+local function selectStationaryThreat(zombie, npcData)
+    local anchorTarget = getCombatAnchorTarget(zombie, npcData)
+    local anchorRadius = getCombatLeashRadius(npcData)
+    return DTNPCProtect.SelectNearestThreat(zombie, npcData, nil, anchorTarget, anchorRadius)
+end
+
+local function isOutsideCombatLeash(zombie, npcData, x, y, z, padding)
+    local dist = getDistanceToCombatAnchor(zombie, npcData, x, y, z)
+    if dist == nil then
+        return false, nil, nil
+    end
+
+    local leash = getCombatLeashRadius(npcData) + math.max(0, tonumber(padding) or 0)
+    return dist > leash, dist, leash
+end
+
+local function markCombatPursuit(npcData, target, dist, attacked)
+    if DTNPCProtect and DTNPCProtect.MarkCombatPursuit then
+        DTNPCProtect.MarkCombatPursuit(npcData, target, dist, attacked)
+    end
+end
+
+local function shouldAbortCombatPursuit(npcData)
+    if DTNPCProtect and DTNPCProtect.ShouldAbortCombatPursuit then
+        return DTNPCProtect.ShouldAbortCombatPursuit(npcData)
+    end
+    return false
+end
+
 local function stopMoveAnim(zombie)
     zombie:setVariable("bMoving", false)
     zombie:setVariable("isMoving", false)
@@ -62,7 +118,7 @@ local function ensureManualControl(zombie)
     zombie:setTarget(nil)
 end
 
-local function moveTowardTarget(zombie, speed, target, stopDistance)
+local function moveTowardTarget(zombie, speed, target, stopDistance, anchorX, anchorY, anchorZ, leashRadius)
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
     local dx = tx - zx
@@ -71,11 +127,11 @@ local function moveTowardTarget(zombie, speed, target, stopDistance)
     local desiredDistance = math.max(0, tonumber(stopDistance) or 0)
     if len <= 0.001 then
         stopMoveAnim(zombie)
-        return true
+        return true, "arrived"
     end
     if len <= desiredDistance then
         stopMoveAnim(zombie)
-        return true
+        return true, "arrived"
     end
 
     dx = dx / len
@@ -83,27 +139,38 @@ local function moveTowardTarget(zombie, speed, target, stopDistance)
     local step = math.min(speed, math.max(0, len - desiredDistance))
     if step <= 0.001 then
         stopMoveAnim(zombie)
-        return true
+        return true, "arrived"
     end
 
     local nextX = zx + (dx * step)
     local nextY = zy + (dy * step)
+
+    if anchorX ~= nil and anchorY ~= nil and leashRadius ~= nil then
+        local leashDx = nextX - anchorX
+        local leashDy = nextY - anchorY
+        local leashDist = math.sqrt((leashDx * leashDx) + (leashDy * leashDy))
+        local leashFloor = tonumber(anchorZ) or zz
+        if math.abs(zz - leashFloor) > 1.1 or leashDist > leashRadius then
+            stopMoveAnim(zombie)
+            return false, "leash"
+        end
+    end
 
     if isTileSafe(nextX, nextY, zz) then
         forceWalkAnim(zombie, speed > 0.06)
         zombie:setX(nextX)
         zombie:setY(nextY)
         zombie:faceLocation(nextX, nextY)
-        return true
+        return true, "moving"
     end
 
     if len <= (desiredDistance + 0.35) then
         stopMoveAnim(zombie)
-        return true
+        return true, "close_enough"
     end
 
     stopMoveAnim(zombie)
-    return false
+    return false, "blocked"
 end
 
 local function syncCombatStateChange(zombie, npcData)
@@ -121,7 +188,7 @@ end
 local exitTradingDefense
 
 local function getPostDistance(zombie, npcData)
-    local postX, postY, postZ = DTNPCProtect.GetStationaryPost(npcData)
+    local postX, postY, postZ = DTNPCProtect.GetCombatAnchor and DTNPCProtect.GetCombatAnchor(npcData, zombie) or DTNPCProtect.GetStationaryPost(npcData)
     if postX == nil or postY == nil then
         return nil
     end
@@ -138,7 +205,7 @@ end
 
 local function returnToPostOrResume(zombie, npcData)
     local resumeState = npcData.combatResumeState or "Trading"
-    local postX, postY, postZ = DTNPCProtect.GetStationaryPost(npcData)
+    local postX, postY, postZ = DTNPCProtect.GetCombatAnchor and DTNPCProtect.GetCombatAnchor(npcData, zombie) or DTNPCProtect.GetStationaryPost(npcData)
 
     if postX == nil or postY == nil then
         exitTradingDefense(zombie, npcData)
@@ -224,7 +291,7 @@ DTNPCLogic.Behaviors["Trading"] = function(zombie, npcData)
     local targetDist = 9999
     DTNPCProtect.RememberStationaryPost(zombie, npcData, "Trading")
     if DTNPCProtect and DTNPCProtect.SelectNearestThreat then
-        target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData)
+        target, targetDist = selectStationaryThreat(zombie, npcData)
     end
     if target then
         local nextState = DTNPCProtect and DTNPCProtect.GetTradingDefenseState and DTNPCProtect.GetTradingDefenseState(npcData, targetDist or 9999) or nil
@@ -247,7 +314,7 @@ DTNPCLogic.Behaviors["Trading"] = function(zombie, npcData)
 end
 
 DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
-    local target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData)
+    local target, targetDist = selectStationaryThreat(zombie, npcData)
     if not DTNPCProtect.HasUsableRangedLoadout(npcData) then
         returnToPostOrResume(zombie, npcData)
         return
@@ -258,6 +325,27 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     end
 
     ensureManualControl(zombie)
+
+    local anchorTarget = getCombatAnchorTarget(zombie, npcData)
+    local anchorX = anchorTarget and anchorTarget:getX() or nil
+    local anchorY = anchorTarget and anchorTarget:getY() or nil
+    local anchorZ = anchorTarget and anchorTarget:getZ() or zombie:getZ()
+    local leashRadius = getCombatLeashRadius(npcData)
+    local outsideLeash, leashDist, leashLimit = isOutsideCombatLeash(zombie, npcData)
+    if outsideLeash then
+        if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+            DTNPCProtect.ReportCombatIssue(
+                zombie,
+                npcData,
+                "TradingDefenseLeash",
+                "Too far from post. Returning.",
+                "warning",
+                "dist=" .. tostring(string.format("%.2f", leashDist or 0)) .. " leash=" .. tostring(string.format("%.2f", leashLimit or leashRadius))
+            )
+        end
+        returnToPostOrResume(zombie, npcData)
+        return
+    end
 
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
@@ -291,7 +379,26 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
         zombie:setVariable("DTIdleState", "0")
         local nextX = zx + (dx * moveSpeed * moveDir)
         local nextY = zy + (dy * moveSpeed * moveDir)
-        if isTileSafe(nextX, nextY, zz) then
+        local nextOutsideLeash = false
+        if anchorX ~= nil and anchorY ~= nil then
+            local nextDx = nextX - anchorX
+            local nextDy = nextY - anchorY
+            nextOutsideLeash = math.sqrt((nextDx * nextDx) + (nextDy * nextDy)) > leashRadius
+        end
+        if nextOutsideLeash then
+            if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+                DTNPCProtect.ReportCombatIssue(
+                    zombie,
+                    npcData,
+                    "TradingDefenseLeashAdvance",
+                    "Won't chase that far. Returning.",
+                    "warning",
+                    "targetDist=" .. tostring(string.format("%.2f", len))
+                )
+            end
+            returnToPostOrResume(zombie, npcData)
+            return
+        elseif isTileSafe(nextX, nextY, zz) then
             forceWalkAnim(zombie, false)
             zombie:setX(nextX)
             zombie:setY(nextY)
@@ -309,12 +416,28 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     faceTarget(zombie, target)
 
     if targetDist > RANGED_MAX_RANGE then
+        markCombatPursuit(npcData, target, targetDist, false)
+        if shouldAbortCombatPursuit(npcData) then
+            if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+                DTNPCProtect.ReportCombatIssue(
+                    zombie,
+                    npcData,
+                    "TradingDefenseRangeTimeout",
+                    "Can't reach that threat. Returning.",
+                    "warning",
+                    "targetDist=" .. tostring(string.format("%.2f", targetDist))
+                )
+            end
+            returnToPostOrResume(zombie, npcData)
+        end
         return
     end
 
     local stats = DTNPCProtect.GetRangedCombatStats(npcData)
     npcData.attackTimer = (npcData.attackTimer or 0) + 1
+    local attacked = false
     if npcData.attackTimer < stats.fireRate then
+        markCombatPursuit(npcData, target, targetDist, false)
         return
     end
 
@@ -322,11 +445,13 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     if DTNPC and DTNPC.TriggerRangedCombatAnim then
         DTNPC.TriggerRangedCombatAnim(zombie, npcData)
     end
+    attacked = true
     DTNPCProtect.ConsumeAmmo(npcData, 1)
     DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
     zombie:getEmitter():playSound("DT_GunRandom")
 
     local hitChance = moved and stats.hitMove or stats.hitStill
+    markCombatPursuit(npcData, target, targetDist, attacked)
     if ZombRand(100) < hitChance then
         DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
             attackType = "ranged",
@@ -336,7 +461,7 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
 end
 
 DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
-    local target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData)
+    local target, targetDist = selectStationaryThreat(zombie, npcData)
     if not DTNPCProtect.HasUsableMeleeLoadout(npcData) then
         returnToPostOrResume(zombie, npcData)
         return
@@ -349,22 +474,90 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
     ensureManualControl(zombie)
     faceTarget(zombie, target)
 
+    local anchorTarget = getCombatAnchorTarget(zombie, npcData)
+    local anchorX = anchorTarget and anchorTarget:getX() or nil
+    local anchorY = anchorTarget and anchorTarget:getY() or nil
+    local anchorZ = anchorTarget and anchorTarget:getZ() or zombie:getZ()
+    local leashRadius = getCombatLeashRadius(npcData)
+    local outsideLeash, leashDist, leashLimit = isOutsideCombatLeash(zombie, npcData)
+    if outsideLeash then
+        if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+            DTNPCProtect.ReportCombatIssue(
+                zombie,
+                npcData,
+                "TradingDefenseMeleeLeash",
+                "Too far from post. Returning.",
+                "warning",
+                "dist=" .. tostring(string.format("%.2f", leashDist or 0)) .. " leash=" .. tostring(string.format("%.2f", leashLimit or leashRadius))
+            )
+        end
+        returnToPostOrResume(zombie, npcData)
+        return
+    end
+
     local stats = DTNPCProtect.GetMeleeCombatStats(npcData)
     local engageReach = math.max(stats.reach or TRADING_DEFENSE_MELEE_REACH, 1.45)
     local currentDist = getTargetDistance(zombie, target)
     if currentDist > engageReach then
-        local arrived = moveTowardTarget(
+        local arrived, moveState = moveTowardTarget(
             zombie,
             stats.chaseSpeed or TRADING_DEFENSE_DEFAULT_SPEED,
             target,
-            math.max(0.9, engageReach - 0.1)
+            math.max(0.9, engageReach - 0.1),
+            anchorX,
+            anchorY,
+            anchorZ,
+            leashRadius
         )
-        if not arrived then
+        currentDist = getTargetDistance(zombie, target)
+        markCombatPursuit(npcData, target, currentDist, false)
+
+        if moveState == "leash" then
+            if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+                DTNPCProtect.ReportCombatIssue(
+                    zombie,
+                    npcData,
+                    "TradingDefenseMeleeLeashAdvance",
+                    "Won't chase that far. Returning.",
+                    "warning",
+                    "targetDist=" .. tostring(string.format("%.2f", currentDist))
+                )
+            end
+            returnToPostOrResume(zombie, npcData)
             return
         end
 
-        currentDist = getTargetDistance(zombie, target)
+        if not arrived then
+            if shouldAbortCombatPursuit(npcData) then
+                if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+                    DTNPCProtect.ReportCombatIssue(
+                        zombie,
+                        npcData,
+                        "TradingDefenseMeleeTimeout",
+                        "Can't reach that threat. Returning.",
+                        "warning",
+                        "targetDist=" .. tostring(string.format("%.2f", currentDist))
+                    )
+                end
+                returnToPostOrResume(zombie, npcData)
+            end
+            return
+        end
+
         if currentDist > engageReach then
+            if shouldAbortCombatPursuit(npcData) then
+                if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+                    DTNPCProtect.ReportCombatIssue(
+                        zombie,
+                        npcData,
+                        "TradingDefenseMeleeClosingTimeout",
+                        "Can't close in on that threat. Returning.",
+                        "warning",
+                        "targetDist=" .. tostring(string.format("%.2f", currentDist))
+                    )
+                end
+                returnToPostOrResume(zombie, npcData)
+            end
             return
         end
     end
@@ -376,6 +569,7 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
 
     npcData.attackTimer = (npcData.attackTimer or 0) + 1
     if npcData.attackTimer < stats.attackRate then
+        markCombatPursuit(npcData, target, currentDist, false)
         return
     end
 
@@ -383,6 +577,7 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
     if DTNPC and DTNPC.TriggerMeleeCombatAnim then
         DTNPC.TriggerMeleeCombatAnim(zombie, npcData)
     end
+    markCombatPursuit(npcData, target, currentDist, true)
     DTNPCProtect.ConsumeWeaponCondition(npcData, "melee", 1)
     if ZombRand(100) < stats.hitChance then
         DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {

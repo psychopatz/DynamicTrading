@@ -142,6 +142,7 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     -- 5. Calculate Next Position
     local isMoving = false
     if moveDir ~= 0 then
+        zombie:setVariable("DTIdleState", "0")
         local nextX = zx + (dx * currentSpeed * moveDir)
         local nextY = zy + (dy * currentSpeed * moveDir)
         
@@ -157,6 +158,9 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         end
     else
         forceCombatAnim(zombie, false)
+        if DTNPC and DTNPC.SetRangedCombatIdleState then
+            DTNPC.SetRangedCombatIdleState(zombie, npcData)
+        end
     end
 
     -- 6. Range Check for Firing
@@ -173,6 +177,12 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         
         -- Use pcall to prevent crashes during combat calcs
         pcall(function()
+            if DTNPC and DTNPC.TriggerRangedCombatAnim then
+                DTNPC.TriggerRangedCombatAnim(zombie, npcData)
+            end
+            if DTNPCProtect and DTNPCProtect.ConsumeWeaponCondition then
+                DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
+            end
             zombie:getEmitter():playSound("DT_GunRandom") 
             
             local hitChance = ACCURACY_STILL

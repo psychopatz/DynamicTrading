@@ -39,9 +39,6 @@ function DTNPCLogic.ProcessNPC(zombie)
     if DTNPC and DTNPC.ApplyCharacterFlags then
         DTNPC.ApplyCharacterFlags(zombie, npcData)
     end
-    if DTNPC and DTNPC.SuppressZombieEngineState then
-        DTNPC.SuppressZombieEngineState(zombie, npcData, { state = state })
-    end
     if DTNPC and DTNPC.SyncEquipmentVisuals then
         DTNPC.SyncEquipmentVisuals(zombie, npcData)
     end
@@ -58,18 +55,18 @@ function DTNPCLogic.ProcessNPC(zombie)
 
     if HIGH_SPEED_STATES[state] then
         DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
-        return
+    else
+        if not npcData.tickTimer then
+            npcData.tickTimer = 0
+        end
+        npcData.tickTimer = npcData.tickTimer + 1
+
+        if npcData.tickTimer >= 10 then
+            npcData.tickTimer = 0
+            DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
+        end
     end
 
-    if not npcData.tickTimer then
-        npcData.tickTimer = 0
-    end
-    npcData.tickTimer = npcData.tickTimer + 1
-
-    if npcData.tickTimer >= 10 then
-        npcData.tickTimer = 0
-        DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
-    end
 end
 
 function DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)

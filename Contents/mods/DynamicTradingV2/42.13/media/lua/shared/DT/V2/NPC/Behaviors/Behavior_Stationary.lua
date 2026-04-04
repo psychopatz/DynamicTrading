@@ -50,6 +50,20 @@ local function canUseAmbientAutoDefense(npcData)
     return state == "Trading" or status == "Trading" or status == "Resting"
 end
 
+local function getStationaryCombatAnchorTarget(zombie, npcData)
+    if DTNPCProtect and DTNPCProtect.GetCombatAnchorTarget then
+        return DTNPCProtect.GetCombatAnchorTarget(npcData, zombie)
+    end
+    return nil
+end
+
+local function getStationaryCombatAnchorRadius(npcData)
+    if DTNPCProtect and DTNPCProtect.GetStationaryCombatLeashRadius then
+        return DTNPCProtect.GetStationaryCombatLeashRadius(npcData)
+    end
+    return nil
+end
+
 local function maybeStartAutoDefense(zombie, npcData)
     if not zombie or not npcData or not canUseAmbientAutoDefense(npcData) then
         return false
@@ -60,7 +74,13 @@ local function maybeStartAutoDefense(zombie, npcData)
 
     DTNPCProtect.RememberStationaryPost(zombie, npcData, npcData.state)
 
-    local target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData)
+    local target, targetDist = DTNPCProtect.SelectNearestThreat(
+        zombie,
+        npcData,
+        nil,
+        getStationaryCombatAnchorTarget(zombie, npcData),
+        getStationaryCombatAnchorRadius(npcData)
+    )
     if not target then
         npcData.combatResumeState = nil
         return false
@@ -194,6 +214,7 @@ function Stationary.Run(zombie, npcData)
     end
 
     zombie:setVariable("bMoving", false)
+    zombie:setVariable("isMoving", false)
     zombie:setVariable("Speed", 0.0)
     zombie:setPath2(nil)
     zombie:setTarget(nil)

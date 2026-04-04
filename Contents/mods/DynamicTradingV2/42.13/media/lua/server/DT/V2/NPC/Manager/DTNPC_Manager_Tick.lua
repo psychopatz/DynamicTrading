@@ -220,9 +220,7 @@ function DTNPCManager.OnTick()
                     end
                     
                     -- Keep local DTNPCs detached from the stock zombie horde logic.
-                    if DTNPC and DTNPC.SuppressZombieEngineState then
-                        DTNPC.SuppressZombieEngineState(zombie, savedData, { state = savedData.state })
-                    elseif zombie:isUseless() and (savedData.state == "Stay" or savedData.state == "Guard" or savedData.state == "Idle" or savedData.state == "Trading") then
+                    if zombie:isUseless() and (savedData.state == "Stay" or savedData.state == "Guard" or savedData.state == "Idle" or savedData.state == "Trading") then
                         zombie:setPath2(nil)
                         zombie:setTarget(nil)
                     end
