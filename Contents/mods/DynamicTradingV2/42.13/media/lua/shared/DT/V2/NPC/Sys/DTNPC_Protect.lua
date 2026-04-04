@@ -258,6 +258,18 @@ local function isPlayerOwnedTraderRaw(npcData)
     return npcData.linkedWorkerID ~= nil
 end
 
+local function isWeaponDurabilitySandboxEnabled()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    if sandbox and sandbox.NPCWeaponDurability ~= nil then
+        return sandbox.NPCWeaponDurability ~= false
+    end
+    return true
+end
+
+local function shouldConsumeWeaponDurabilityRaw(npcData)
+    return isPlayerOwnedTraderRaw(npcData) and isWeaponDurabilitySandboxEnabled()
+end
+
 local function resolveSkillLevel(npcData, skillID)
     npcData._resolvedSkillLevels = npcData._resolvedSkillLevels or {}
     if npcData._resolvedSkillLevels[skillID] ~= nil then
@@ -642,6 +654,10 @@ end
 
 function DTNPCProtect.IsFiniteAmmoTrader(npcData)
     return DTNPCProtect.IsPlayerOwnedTrader(npcData)
+end
+
+function DTNPCProtect.ShouldConsumeWeaponDurability(npcData)
+    return shouldConsumeWeaponDurabilityRaw(npcData)
 end
 
 function DTNPCProtect.GetRandomWorldLoadoutType()
@@ -1103,7 +1119,7 @@ end
 function DTNPCProtect.ConsumeWeaponCondition(npcData, slot, amount)
     DTNPCProtect.EnsureDataDefaults(npcData)
 
-    if not DTNPCProtect.IsPlayerOwnedTrader(npcData) then
+    if not DTNPCProtect.ShouldConsumeWeaponDurability(npcData) then
         return nil
     end
 

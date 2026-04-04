@@ -212,3 +212,11 @@ option DynamicTrading.TownTraderWanderChance
     translation = DynamicTrading_TownTraderWanderChance,
 }
 
+option DynamicTrading.NPCWeaponDurability
+{
+    type = boolean,
+    default = true,
+    page = DynamicTrading,
+    translation = DynamicTrading_NPCWeaponDurability,
+}
+

@@ -88,17 +88,6 @@ function DTNPCLogic.GetActivePlayers()
     return DTNPCLogic.ActivePlayersSnapshot or {}
 end
 
-local function suppressSound(zombie)
-    if not zombie then return end
-    
-    -- Build 42: Set voice prefix to "NotAZombie" to prevent zombie sounds
-    -- This prevents the game engine from playing any zombie vocals/moans/shouts
-    local desc = zombie:getDescriptor()
-    if desc then
-        desc:setVoicePrefix("NotAZombie")
-    end
-end
-
 -- ==============================================================================
 -- 3. CORE LOOP
 -- ==============================================================================
@@ -144,9 +133,6 @@ function DTNPCLogic.ProcessNPC(zombie)
         DTNPCProtect.EnsureDataDefaults(npcData)
     end
 
-    -- Suppress zombie sounds (shouting, groaning, etc.)
-    suppressSound(zombie)
-
     -- Tag DynamicTrading NPCs for AnimSet-based posture overrides.
     zombie:setVariable("DTNPC", true)
     if zombie:getVariableString("DTIdleState") == "" then
@@ -156,6 +142,9 @@ function DTNPCLogic.ProcessNPC(zombie)
     local state = npcData.state or "Stay"
     if DTNPC and DTNPC.ApplyCharacterFlags then
         DTNPC.ApplyCharacterFlags(zombie, npcData)
+    end
+    if DTNPC and DTNPC.SuppressZombieEngineState then
+        DTNPC.SuppressZombieEngineState(zombie, npcData, { state = state })
     end
     if DTNPC and DTNPC.SyncEquipmentVisuals then
         DTNPC.SyncEquipmentVisuals(zombie, npcData)

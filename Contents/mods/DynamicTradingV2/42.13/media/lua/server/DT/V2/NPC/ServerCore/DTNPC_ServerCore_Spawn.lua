@@ -107,6 +107,9 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
 
     DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)
+    if DTNPC and DTNPC.SuppressZombieEngineState then
+        DTNPC.SuppressZombieEngineState(zombie, npcData, { state = npcData.state })
+    end
     
     modData.DTNPCVisualID = npcData.visualID
 
