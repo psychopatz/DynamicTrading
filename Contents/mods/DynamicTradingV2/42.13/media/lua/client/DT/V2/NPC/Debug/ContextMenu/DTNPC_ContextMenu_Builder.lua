@@ -95,6 +95,10 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             debugSub:addOption("TEST: Flee (Return as Trading)", npc, Menu.OnOrder, "Flee", player, "Trading")
             debugSub:addOption("TEST: Attack Me (Melee)", npc, Menu.OnOrder, "Attack", player)
             debugSub:addOption("TEST: Attack Me (Gun)", npc, Menu.OnOrder, "AttackRange", player)
+            local heldWeaponLabel = Menu.GetHeldDebugWeaponLabel and Menu.GetHeldDebugWeaponLabel(player) or nil
+            if heldWeaponLabel then
+                debugSub:addOption("TEST: Give Held Weapon [" .. tostring(heldWeaponLabel) .. "]", npc, Menu.OnDebugGiveHeldWeapon, player)
+            end
             debugSub:addOption("TEST: Force Ambient Speech", player, Menu.OnForceAmbientDialogue, npc)
             debugSub:addOption("DEBUG: Print Ambient Dialogue Info", player, Menu.OnDebugAmbientDialogue, npc)
             debugSub:addOption("DEBUG: Inspect Data", nil, function()

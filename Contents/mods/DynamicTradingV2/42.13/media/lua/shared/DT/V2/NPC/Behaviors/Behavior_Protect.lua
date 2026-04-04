@@ -108,6 +108,9 @@ local function announceCombatEngage(zombie, npcData)
     npcData.companionLastCombatTargetID = targetID
     npcData.companionLastRangedTargetID = nil
     pushCompanionModeNotice(zombie, npcData, "Companion", "Attack", "combat")
+    if DTNPCProtect and DTNPCProtect.LogProtectDebug then
+        DTNPCProtect.LogProtectDebug(npcData, "engage", "target=" .. tostring(targetID))
+    end
 end
 
 local function announceRangedAttack(zombie, npcData)
@@ -221,6 +224,26 @@ local function protectTargetOrEscort(zombie, npcData, master, distToMaster, requ
     end
 
     if not effectiveState or not master or distToMaster > PROTECT_LEASH then
+        if requestedState and distToMaster and distToMaster > PROTECT_LEASH and DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+            DTNPCProtect.ReportCombatIssue(
+                zombie,
+                npcData,
+                "ProtectLeash",
+                "Too far from you. Regrouping.",
+                "warning",
+                "distToMaster=" .. tostring(string.format("%.2f", tonumber(distToMaster) or 0))
+            )
+        elseif requestedState and not effectiveState and DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+            local text, sentiment = DTNPCProtect.BuildFallbackNotice(requestedState, effectiveState)
+            DTNPCProtect.ReportCombatIssue(
+                zombie,
+                npcData,
+                "ProtectNoLoadout:" .. tostring(requestedState),
+                text or "No combat loadout ready.",
+                sentiment or "warning",
+                "requested=" .. tostring(requestedState)
+            )
+        end
         followEscort(zombie, npcData, master, distToMaster)
         return nil, nil, true
     end
@@ -233,6 +256,16 @@ local function protectTargetOrEscort(zombie, npcData, master, distToMaster, requ
         getProtectEngageRadius(npcData)
     )
     if not target then
+        if requestedState and DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+            DTNPCProtect.ReportCombatIssue(
+                zombie,
+                npcData,
+                "ProtectNoTarget:" .. tostring(requestedState),
+                "No threat in protect range.",
+                "neutral",
+                "requested=" .. tostring(requestedState) .. " engageRadius=" .. tostring(getProtectEngageRadius(npcData))
+            )
+        end
         followEscort(zombie, npcData, master, distToMaster)
         return nil, nil, true
     end
@@ -243,6 +276,20 @@ local function protectTargetOrEscort(zombie, npcData, master, distToMaster, requ
 end
 
 local function executeProtectRanged(zombie, npcData, target, targetDist)
+    if DTNPCProtect and not DTNPCProtect.HasUsableRangedLoadout(npcData) then
+        if DTNPCProtect.ReportCombatIssue then
+            DTNPCProtect.ReportCombatIssue(
+                zombie,
+                npcData,
+                "ProtectRangedUnavailable",
+                "Can't fire. No usable firearm.",
+                "warning",
+                "targetDist=" .. tostring(string.format("%.2f", tonumber(targetDist) or 0))
+            )
+        end
+        return
+    end
+
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
     local dx = tx - zx
@@ -321,6 +368,20 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
 end
 
 local function executeProtectMelee(zombie, npcData, target, targetDist)
+    if DTNPCProtect and not DTNPCProtect.HasUsableMeleeLoadout(npcData) then
+        if DTNPCProtect.ReportCombatIssue then
+            DTNPCProtect.ReportCombatIssue(
+                zombie,
+                npcData,
+                "ProtectMeleeUnavailable",
+                "Can't swing. No usable melee weapon.",
+                "warning",
+                "targetDist=" .. tostring(string.format("%.2f", tonumber(targetDist) or 0))
+            )
+        end
+        return
+    end
+
     faceTarget(zombie, target)
 
     local stats = DTNPCProtect.GetMeleeCombatStats(npcData)
@@ -334,11 +395,29 @@ local function executeProtectMelee(zombie, npcData, target, targetDist)
             math.max(0.9, engageReach - 0.1)
         )
         if not arrived then
+            if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+                DTNPCProtect.ReportCombatIssue(
+                    zombie,
+                    npcData,
+                    "ProtectMeleeBlocked",
+                    "Can't reach that zombie.",
+                    "warning",
+                    "currentDist=" .. tostring(string.format("%.2f", currentDist))
+                )
+            end
             return
         end
 
         currentDist = getTargetDistance(zombie, target)
         if currentDist > engageReach then
+            if DTNPCProtect and DTNPCProtect.LogProtectDebug and isDebugEnabled and isDebugEnabled() then
+                DTNPCProtect.LogProtectDebug(
+                    npcData,
+                    "ProtectMeleeClosing",
+                    "currentDist=" .. tostring(string.format("%.2f", currentDist))
+                        .. " reach=" .. tostring(string.format("%.2f", engageReach))
+                )
+            end
             return
         end
     end
@@ -358,6 +437,14 @@ local function executeProtectMelee(zombie, npcData, target, targetDist)
         DTNPC.TriggerMeleeCombatAnim(zombie, npcData)
     end
     DTNPCProtect.ConsumeWeaponCondition(npcData, "melee", 1)
+    if DTNPCProtect and DTNPCProtect.LogProtectDebug and isDebugEnabled and isDebugEnabled() then
+        DTNPCProtect.LogProtectDebug(
+            npcData,
+            "ProtectMeleeSwing",
+            "dist=" .. tostring(string.format("%.2f", currentDist))
+                .. " hitChance=" .. tostring(stats.hitChance)
+        )
+    end
     if ZombRand(100) < stats.hitChance then
         DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
             attackType = "melee",

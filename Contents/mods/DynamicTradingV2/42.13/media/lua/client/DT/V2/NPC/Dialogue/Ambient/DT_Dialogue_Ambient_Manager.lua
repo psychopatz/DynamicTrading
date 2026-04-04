@@ -127,6 +127,17 @@ function ISDTNPCAmbientDialogueManager:update()
                 and Ambient.CalculateDistance(self.player, zombie) <= Config.TriggerDistance
 
             if inRange then
+                local currentNoticeSerial = npcData and tonumber(npcData.protectNoticeSerial) or 0
+                if currentNoticeSerial > 0 and currentNoticeSerial ~= tracked.lastProtectNoticeSerial and npcData then
+                    local noticeSpeech = Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
+                    tracked.lastProtectNoticeSerial = currentNoticeSerial
+                    if noticeSpeech then
+                        noticeSpeech.zombie = zombie
+                        self.speechList[uuid] = noticeSpeech
+                        Ambient.ScheduleRepeatSpeak(tracked, currentTime)
+                    end
+                end
+
                 if not tracked.wasInRange or not tracked.nextSpeakAt then
                     Ambient.ScheduleInitialSpeak(tracked, currentTime)
                 end

@@ -33,6 +33,60 @@ function Menu.GetNPCData(zombie)
     return nil
 end
 
+local function lower(value)
+    return string.lower(tostring(value or ""))
+end
+
+function Menu.IsValidDebugWeaponItem(item)
+    if not item then
+        return false
+    end
+
+    if item.IsWeapon and item:IsWeapon() then
+        return true
+    end
+
+    local fullType = item.getFullType and item:getFullType() or item.getType and item:getType() or ""
+    local lowered = lower(fullType)
+    return lowered:find("bat", 1, true) ~= nil
+        or lowered:find("axe", 1, true) ~= nil
+        or lowered:find("knife", 1, true) ~= nil
+        or lowered:find("crowbar", 1, true) ~= nil
+        or lowered:find("hammer", 1, true) ~= nil
+        or lowered:find("pistol", 1, true) ~= nil
+        or lowered:find("revolver", 1, true) ~= nil
+        or lowered:find("shotgun", 1, true) ~= nil
+        or lowered:find("rifle", 1, true) ~= nil
+        or lowered:find("carbine", 1, true) ~= nil
+end
+
+function Menu.GetHeldDebugWeapon(player)
+    if not player then
+        return nil
+    end
+
+    local primary = player:getPrimaryHandItem()
+    if Menu.IsValidDebugWeaponItem(primary) then
+        return primary, "primary"
+    end
+
+    local secondary = player:getSecondaryHandItem()
+    if Menu.IsValidDebugWeaponItem(secondary) then
+        return secondary, "secondary"
+    end
+
+    return nil, nil
+end
+
+function Menu.GetHeldDebugWeaponLabel(player)
+    local item = Menu.GetHeldDebugWeapon(player)
+    if not item then
+        return nil
+    end
+
+    return item.getDisplayName and item:getDisplayName() or item.getName and item:getName() or item:getFullType()
+end
+
 function Menu.CalculateDistance(obj1, obj2)
     if not obj1 or not obj2 then return 9999 end
 

@@ -163,3 +163,24 @@ function Menu.OnSpawnRandomNPC(player)
     local occupation = RANDOM_OCCUPATIONS[ZombRand(#RANDOM_OCCUPATIONS) + 1]
     sendClientCommand(player, "DTNPC", "Spawn", { occupation = occupation })
 end
+
+function Menu.OnDebugGiveHeldWeapon(npc, player)
+    if not npc or not player then
+        return
+    end
+
+    local npcData = Menu.GetNPCData(npc)
+    local heldItem = Menu.GetHeldDebugWeapon and Menu.GetHeldDebugWeapon(player) or nil
+    if not heldItem then
+        player:Say("Hold a weapon first.")
+        return
+    end
+
+    sendClientCommand(player, "DTNPC", "DebugGiveHeldWeapon", {
+        uuid = npcData and npcData.uuid or nil,
+    })
+
+    local itemName = heldItem.getDisplayName and heldItem:getDisplayName() or heldItem:getFullType()
+    local npcName = npcData and npcData.name or "NPC"
+    player:Say("Test handoff: " .. tostring(itemName) .. " -> " .. tostring(npcName))
+end

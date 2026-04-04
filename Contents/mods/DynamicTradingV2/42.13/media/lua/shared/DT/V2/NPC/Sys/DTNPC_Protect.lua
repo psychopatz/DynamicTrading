@@ -10,6 +10,7 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     FloorTolerance = 1,
     StickyRadiusBonus = 1.75,
     NoticeCooldownMs = 12000,
+    DiagnosticCooldownMs = 4000,
 }
 
 DTNPCProtect.LOADOUT_WEIGHTS = DTNPCProtect.LOADOUT_WEIGHTS or {
@@ -59,6 +60,17 @@ local function nowMillis()
         return getTimeInMillis()
     end
     return 0
+end
+
+local function protectLog(message)
+    local line = "[DTNPC Protect] " .. tostring(message or "")
+    print(line)
+
+    if DynamicTrading and DynamicTrading.Log then
+        pcall(function()
+            DynamicTrading.Log("DTV2", "NPC", "Protect", tostring(message or ""))
+        end)
+    end
 end
 
 local function lower(value)
@@ -176,6 +188,48 @@ local function getProfile(npcData)
     end
 
     return DynamicTrading.GetArchetypeSkillProfile(npcData and npcData.archetypeID or "General")
+end
+
+local function getEquipmentProfile(npcData)
+    if not DynamicTrading or not DynamicTrading.GetArchetypeEquipmentProfile then
+        return nil
+    end
+
+    return DynamicTrading.GetArchetypeEquipmentProfile(npcData and npcData.archetypeID or "General")
+end
+
+local function syncProtectNotice(zombie, npcData)
+    if not zombie or not npcData or not npcData.uuid then
+        return false
+    end
+    if not DTNPCServerCore or not DTNPCServerCore.SyncToAllClients then
+        return false
+    end
+
+    local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
+    if ownedZombie ~= zombie then
+        return false
+    end
+
+    DTNPCServerCore.SyncToAllClients(zombie, npcData)
+    if DTNPCServerCore.BroadcastPosition then
+        DTNPCServerCore.BroadcastPosition(zombie, npcData)
+    end
+    return true
+end
+
+local function buildProtectDebugSummary(npcData)
+    npcData = type(npcData) == "table" and npcData or {}
+    local loadout = type(npcData.loadout) == "table" and npcData.loadout or {}
+
+    return table.concat({
+        "uuid=" .. tostring(npcData.uuid or "?"),
+        "state=" .. tostring(npcData.state or "nil"),
+        "order=" .. tostring(npcData.combatOrder or "nil"),
+        "melee=" .. tostring(loadout.meleeWeapon or "nil"),
+        "ranged=" .. tostring(loadout.rangedWeapon or "nil"),
+        "ammo=" .. tostring(loadout.ammoCount or 0),
+    }, " | ")
 end
 
 local function isPlayerOwnedTraderRaw(npcData)
@@ -343,6 +397,138 @@ local function isMeleeWeapon(fullType, scriptItem)
         or lowered:find("crowbar", 1, true) ~= nil
 end
 
+local function mixLoadoutSeed(npcData, salt)
+    local seed = tonumber(npcData and npcData.identitySeed) or 1
+    local text = tostring(npcData and npcData.archetypeID or "General") .. ":" .. tostring(salt or "Loadout")
+
+    for i = 1, #text do
+        seed = ((seed * 1103515245) + string.byte(text, i) + 12345) % 2147483647
+    end
+
+    if seed <= 0 then
+        seed = 1
+    end
+
+    return seed
+end
+
+local function getDeterministicChanceRoll(npcData, salt)
+    return (mixLoadoutSeed(npcData, salt) % 10000) / 10000
+end
+
+local function getPoolEntryItem(entry)
+    if type(entry) == "string" then
+        return entry
+    end
+    if type(entry) ~= "table" then
+        return nil
+    end
+    return entry.item or entry.weapon or entry.bag
+end
+
+local function chooseWeightedEquipmentEntry(pool, npcData, salt)
+    local totalWeight = 0
+    local normalizedPool = {}
+
+    for _, entry in ipairs(type(pool) == "table" and pool or {}) do
+        local item = getPoolEntryItem(entry)
+        local weight = type(entry) == "table" and math.max(0, tonumber(entry.weight) or 1) or 1
+        if item and item ~= "" and weight > 0 then
+            normalizedPool[#normalizedPool + 1] = entry
+            totalWeight = totalWeight + weight
+        end
+    end
+
+    if totalWeight <= 0 then
+        return nil
+    end
+
+    local roll = mixLoadoutSeed(npcData, salt) % totalWeight
+    for _, entry in ipairs(normalizedPool) do
+        local weight = type(entry) == "table" and math.max(0, tonumber(entry.weight) or 1) or 1
+        if roll < weight then
+            return entry
+        end
+        roll = roll - weight
+    end
+
+    return normalizedPool[#normalizedPool]
+end
+
+local function resolveAmmoCount(entry, npcData, salt)
+    if type(entry) ~= "table" then
+        return 0
+    end
+
+    if entry.ammoCount ~= nil then
+        return math.max(0, math.floor(tonumber(entry.ammoCount) or 0))
+    end
+
+    local minAmmo = math.max(0, math.floor(tonumber(entry.ammoMin or entry.minAmmo or 0) or 0))
+    local maxAmmo = math.max(minAmmo, math.floor(tonumber(entry.ammoMax or entry.maxAmmo or minAmmo) or minAmmo))
+    if maxAmmo <= minAmmo then
+        return minAmmo
+    end
+
+    return minAmmo + (mixLoadoutSeed(npcData, salt) % ((maxAmmo - minAmmo) + 1))
+end
+
+local function getResolvedSkillLevel(npcData, skillID)
+    return clamp(resolveSkillLevel(npcData, skillID) + getEarnedSkillLevelBonus(npcData, skillID), 0, 20)
+end
+
+local function buildSeededWorldLoadout(npcData, forcedType)
+    local profile = getEquipmentProfile(npcData) or {}
+    local meleeEntry = chooseWeightedEquipmentEntry(profile.meleeWeapons, npcData, "MeleeWeapon")
+    local meleeWeapon = getPoolEntryItem(meleeEntry) or "Base.BaseballBat"
+    local rangedEntry = nil
+    local bagEntry = nil
+
+    local bagChance = math.max(0, math.min(1, tonumber(profile.bagChance) or 0.55))
+    if forcedType ~= "nobag" and getDeterministicChanceRoll(npcData, "BagChance") < bagChance then
+        bagEntry = chooseWeightedEquipmentEntry(profile.bags, npcData, "Bag")
+    end
+
+    local shouldRollRanged = forcedType == "hybrid" or forcedType == "ranged"
+    if not shouldRollRanged then
+        local rangedChance = type(profile.rangedChance) == "table" and profile.rangedChance or {}
+        local shootingLevel = getResolvedSkillLevel(npcData, "Shooting")
+        local threshold = math.max(0, math.floor(tonumber(rangedChance.shootingThreshold or rangedChance.threshold) or 8))
+        if shootingLevel >= threshold then
+            local baseChance = math.max(0, tonumber(rangedChance.base) or 0)
+            local perLevel = math.max(0, tonumber(rangedChance.perLevel) or 0)
+            local maxChance = math.max(0, math.min(1, tonumber(rangedChance.max) or 0.65))
+            local bonusLevels = math.max(0, shootingLevel - threshold + 1)
+            local chance = math.max(0, math.min(maxChance, baseChance + (bonusLevels * perLevel)))
+            shouldRollRanged = getDeterministicChanceRoll(npcData, "RangedChance") < chance
+        end
+    end
+
+    if shouldRollRanged and forcedType ~= "melee" then
+        rangedEntry = chooseWeightedEquipmentEntry(profile.rangedWeapons, npcData, "RangedWeapon")
+    end
+
+    local rangedWeapon = getPoolEntryItem(rangedEntry)
+    local loadout = {
+        rangedWeapon = rangedWeapon or nil,
+        rangedAmmoType = type(rangedEntry) == "table" and (rangedEntry.ammoType or rangedEntry.rangedAmmoType) or nil,
+        ammoCount = rangedWeapon and resolveAmmoCount(rangedEntry, npcData, "RangedAmmo") or 0,
+        meleeWeapon = meleeWeapon,
+        bag = getPoolEntryItem(bagEntry) or nil,
+        rangedCondition = nil,
+        meleeCondition = nil,
+    }
+
+    local loadoutType = "melee"
+    if loadout.rangedWeapon and loadout.meleeWeapon then
+        loadoutType = "hybrid"
+    elseif loadout.rangedWeapon then
+        loadoutType = "ranged"
+    end
+
+    return loadout, loadoutType
+end
+
 function DTNPCProtect.EnsureDataDefaults(npcData)
     if not npcData then
         return nil
@@ -381,6 +567,14 @@ function DTNPCProtect.EnsureDataDefaults(npcData)
     local trackCondition = isPlayerOwnedTraderRaw(npcData)
     normalizeWeaponCondition(loadout, "rangedWeapon", "rangedCondition", trackCondition)
     normalizeWeaponCondition(loadout, "meleeWeapon", "meleeCondition", trackCondition)
+
+    if not trackCondition and (not loadout.meleeWeapon or loadout.meleeWeapon == "") and (not loadout.rangedWeapon or loadout.rangedWeapon == "") then
+        local seededLoadout, loadoutType = buildSeededWorldLoadout(npcData)
+        npcData.loadout = seededLoadout
+        npcData.randomLoadoutType = loadoutType
+        loadout = npcData.loadout
+    end
+
     if npcData.skillXP.Melee == nil then npcData.skillXP.Melee = 0 end
     if npcData.skillXP.Shooting == nil then npcData.skillXP.Shooting = 0 end
 
@@ -399,12 +593,7 @@ function DTNPCProtect.PushCompanionNotice(zombie, npcData, text, sentiment)
     npcData.protectNoticeDialogueStatus = nil
     npcData.protectNoticeDialogueState = nil
 
-    if zombie and npcData.uuid and DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
-        local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
-        if ownedZombie == zombie then
-            DTNPCServerCore.SyncToAllClients(zombie, npcData)
-        end
-    end
+    syncProtectNotice(zombie, npcData)
 
     return true
 end
@@ -421,12 +610,7 @@ function DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, dialogueStatus, d
     npcData.protectNoticeDialogueStatus = dialogueStatus
     npcData.protectNoticeDialogueState = dialogueState
 
-    if zombie and npcData.uuid and DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
-        local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
-        if ownedZombie == zombie then
-            DTNPCServerCore.SyncToAllClients(zombie, npcData)
-        end
-    end
+    syncProtectNotice(zombie, npcData)
 
     return true
 end
@@ -495,8 +679,8 @@ function DTNPCProtect.AssignRandomWorldLoadout(npcData, forcedType)
         return npcData.loadout
     end
 
-    local loadoutType = forcedType or DTNPCProtect.GetRandomWorldLoadoutType()
-    npcData.loadout = DTNPCProtect.GetWorldLoadoutPreset(loadoutType)
+    local loadout, loadoutType = buildSeededWorldLoadout(npcData, forcedType)
+    npcData.loadout = loadout
     npcData.randomLoadoutType = loadoutType
     return npcData.loadout
 end
@@ -692,6 +876,44 @@ function DTNPCProtect.PushFallbackNotice(npcData, text, sentiment)
     npcData.protectNoticeSentiment = sentiment or "neutral"
     npcData.protectNoticeDialogueStatus = nil
     npcData.protectNoticeDialogueState = nil
+    return true
+end
+
+function DTNPCProtect.LogProtectDebug(npcData, label, detail)
+    local prefix = tostring(npcData and (npcData.name or npcData.uuid) or "Unknown NPC")
+    local suffix = tostring(label or "debug")
+    local extra = detail and (" | " .. tostring(detail)) or ""
+    protectLog(prefix .. " | " .. suffix .. extra .. " | " .. buildProtectDebugSummary(npcData))
+end
+
+function DTNPCProtect.ReportCombatIssue(zombie, npcData, issueKey, text, sentiment, detail, cooldownMs)
+    if not npcData then
+        return false
+    end
+
+    DTNPCProtect.EnsureDataDefaults(npcData)
+
+    local key = tostring(issueKey or "generic")
+    local currentTime = nowMillis()
+    local cooldown = math.max(0, tonumber(cooldownMs) or tonumber(DTNPCProtect.CONFIG.DiagnosticCooldownMs) or 4000)
+    npcData._protectDiagnosticTimes = type(npcData._protectDiagnosticTimes) == "table" and npcData._protectDiagnosticTimes or {}
+
+    local lastTime = tonumber(npcData._protectDiagnosticTimes[key]) or 0
+    if currentTime > 0 and lastTime > 0 and (currentTime - lastTime) < cooldown then
+        return false
+    end
+    npcData._protectDiagnosticTimes[key] = currentTime
+
+    if text and text ~= "" then
+        npcData.protectNoticeSerial = (tonumber(npcData.protectNoticeSerial) or 0) + 1
+        npcData.protectNoticeText = text
+        npcData.protectNoticeSentiment = sentiment or "warning"
+        npcData.protectNoticeDialogueStatus = nil
+        npcData.protectNoticeDialogueState = nil
+        syncProtectNotice(zombie, npcData)
+    end
+
+    DTNPCProtect.LogProtectDebug(npcData, key, detail or text)
     return true
 end
 

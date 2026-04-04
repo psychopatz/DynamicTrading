@@ -113,6 +113,17 @@ function DynamicTrading.LoadArchetypes()
                 totalLoaded = totalLoaded + 1
             end
         end
+
+        local equipmentPath = "DT/Common/ArchetypeDefinitions/" .. id .. "/Definitions/DT_" .. id .. "_Equipments"
+        if FileExists(equipmentPath) then
+            local equipmentOk, equipmentErr = pcall(require, equipmentPath)
+            if not equipmentOk then
+                DynamicTrading.Log("DTCommons", "Core", "Error", "Failed to load Equipment Definition for " .. id .. ": " .. tostring(equipmentErr))
+                errors = errors + 1
+            else
+                totalLoaded = totalLoaded + 1
+            end
+        end
         
         -- 2. Load Dialogues and Translations
         for _, dType in ipairs(dialogueTypes) do
