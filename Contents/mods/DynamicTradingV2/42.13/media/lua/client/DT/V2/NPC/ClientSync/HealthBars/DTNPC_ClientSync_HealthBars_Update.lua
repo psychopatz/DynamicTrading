@@ -147,6 +147,7 @@ function ISDTNPCHealthBarManager:update()
                         nameWidth = tracked.nameWidth or State.textManager:MeasureStringX(Constants.FONT_NAME, tracked.name or "Unknown"),
                         visibleUntil = tracked.visibleUntil or 0,
                     }
+                    Helpers.cacheHealthTextMetrics(barData, tracked.currentHp, tracked.maxHp)
                     self.barList[uuid] = barData
                 else
                     barData.zombie = zombie
@@ -156,6 +157,7 @@ function ISDTNPCHealthBarManager:update()
                     barData.name = tracked.name or barData.name or "Unknown"
                     barData.nameWidth = tracked.nameWidth or barData.nameWidth
                     barData.visibleUntil = math.max(barData.visibleUntil or 0, tracked.visibleUntil or 0)
+                    Helpers.cacheHealthTextMetrics(barData, tracked.currentHp, tracked.maxHp)
 
                     if tracked.currentHp ~= barData.previousHp then
                         local delta = barData.previousHp - tracked.currentHp

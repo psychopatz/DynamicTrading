@@ -56,7 +56,7 @@ function DTNPC_DetailsPanel:setData(item)
     -- 3. ZOMBIE DATA (LIVE)
     if zombie then
         addHeader("LIVE ENGINE DATA", {r=1, g=0.3, b=0.3, a=1})
-        addProp("Health", string.format("%.2f", zombie:getHealth()), {r=1, g=0.4, b=0.4, a=1})
+        addProp("Engine Health", string.format("%.2f", zombie:getHealth()), {r=1, g=0.4, b=0.4, a=1})
         addProp("Engine State", zombie:getRealState(), {r=1, g=0.6, b=0.3, a=1})
         addProp("Moving", zombie:isMoving(), zombie:isMoving() and {r=0.3, g=1, b=0.3, a=1} or {r=0.7, g=0.7, b=0.7, a=1})
         addProp("Useless", zombie:isUseless(), zombie:isUseless() and {r=1, g=0.2, b=0.2, a=1} or {r=0.7, g=0.7, b=0.7, a=1})
@@ -65,6 +65,15 @@ function DTNPC_DetailsPanel:setData(item)
         if target then
             addProp("Target", target:getObjectName() or "Object", {r=1, g=0.5, b=0.5, a=1})
         end
+    end
+
+    if npcData.combatHealth then
+        addHeader("CUSTOM HEALTH", {r=0.5, g=1, b=0.5, a=1})
+        addProp("Enabled", npcData.combatHealth.enabled, npcData.combatHealth.enabled and {r=0.2, g=1, b=0.2, a=1} or {r=1, g=0.6, b=0.2, a=1})
+        addProp("Current", npcData.combatHealth.current or "N/A", {r=0.6, g=1, b=0.6, a=1})
+        addProp("Max", npcData.combatHealth.max or "N/A", {r=0.6, g=1, b=0.6, a=1})
+        addProp("Base Max", npcData.combatHealth.baseMax or "N/A", {r=0.8, g=1, b=0.8, a=1})
+        addProp("Skill Bonus", npcData.combatHealth.skillBonus or "N/A", {r=0.8, g=1, b=0.8, a=1})
     end
 
     -- 4. OUTFIT / LOOKS

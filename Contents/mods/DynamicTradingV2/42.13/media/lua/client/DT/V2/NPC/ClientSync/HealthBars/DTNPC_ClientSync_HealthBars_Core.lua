@@ -39,7 +39,9 @@ Constants.FLOOR_TOLERANCE = 1
 Constants.ZOMBIE_RESOLVE_RETRY_MS = 1000
 Constants.STALE_TRACK_MS = 15000
 Constants.FONT_NAME = UIFont.Small
+Constants.FONT_HP = UIFont.Small
 Constants.FONT_DAMAGE = UIFont.Medium
+Constants.HP_TEXT_GAP = 6
 
 State.textManager = getTextManager()
 
@@ -126,6 +128,16 @@ function Helpers.getCachedNPCData(uuid)
 end
 
 function Helpers.resolveHealth(npcData, zombie, existingMax)
+    local combatHealth = npcData and npcData.combatHealth or nil
+    if type(combatHealth) == "table" and combatHealth.current ~= nil and combatHealth.max ~= nil then
+        local currentHp = tonumber(combatHealth.current) or 0
+        local maxHp = tonumber(combatHealth.max) or math.max(1, currentHp)
+        if maxHp <= 0 then
+            maxHp = math.max(1, tonumber(existingMax) or 1)
+        end
+        return currentHp, maxHp
+    end
+
     local currentHp = tonumber(zombie and zombie:getHealth())
         or tonumber(npcData and npcData.health)
         or 0
@@ -162,5 +174,23 @@ function Helpers.cacheNameMetrics(entry, name)
         entry.nameWidth = State.textManager:MeasureStringX(Constants.FONT_NAME, safeName)
     elseif not entry.nameWidth then
         entry.nameWidth = State.textManager:MeasureStringX(Constants.FONT_NAME, safeName)
+    end
+end
+
+function Helpers.formatHealthValue(value)
+    return tostring(Helpers.round(tonumber(value) or 0, 0))
+end
+
+function Helpers.formatHealthText(currentHp, maxHp)
+    return "[" .. Helpers.formatHealthValue(currentHp) .. "/" .. Helpers.formatHealthValue(maxHp) .. "]"
+end
+
+function Helpers.cacheHealthTextMetrics(entry, currentHp, maxHp)
+    local hpText = Helpers.formatHealthText(currentHp, maxHp)
+    if entry.hpText ~= hpText then
+        entry.hpText = hpText
+        entry.hpTextWidth = State.textManager:MeasureStringX(Constants.FONT_HP, hpText)
+    elseif not entry.hpTextWidth then
+        entry.hpTextWidth = State.textManager:MeasureStringX(Constants.FONT_HP, hpText)
     end
 end

@@ -40,6 +40,12 @@
    - Defense mechanics
    - Resource management
 
+6. **[Custom Health And Invulnerability](06_Custom_Health_And_Invulnerability.md)** - Where NPC HP and animation state really live
+   - Engine animation variables vs `DTNPC_Data`
+   - Why `npcData.health` is not safe for custom HP
+   - Safe custom HP storage layout
+   - Best hook points for invulnerability and downed states
+
 ---
 
 ## System Dependencies

@@ -85,6 +85,7 @@ end
 
 function DTNPCManager.CheckForRespawn(npcData, uuid)
     if not npcData or not npcData.lastX or not npcData.lastY then return end
+    if npcData.status == "Dead" then return false end
 
     local player, dist = getNearestRespawnObserver(npcData)
     if not player then

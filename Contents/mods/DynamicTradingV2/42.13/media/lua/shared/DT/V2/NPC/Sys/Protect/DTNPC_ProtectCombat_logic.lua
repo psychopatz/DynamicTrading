@@ -71,6 +71,33 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     local damage = math.max(0.05, tonumber(options.damage) or 0.1)
     local applied = false
     local isPlayerTarget = instanceof(target, "IsoPlayer")
+    local targetModData = target.getModData and target:getModData() or nil
+    local targetNPCData = targetModData and (targetModData.DTNPC_Data or targetModData.DTNPCBrain) or nil
+    local isDTNPCTarget = targetModData and targetModData.IsDTNPC == true and targetNPCData ~= nil
+
+    if isDTNPCTarget and DTNPCHealth and DTNPCHealth.IsCustomHealthEnabled and DTNPCHealth.IsCustomHealthEnabled(targetNPCData) then
+        if attackType == "ranged" then
+            local shootingSkill = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
+            local normalized = math.min(math.max(shootingSkill, 0), 20) / 20
+            local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "ranged")
+            if weaponItem then
+                damage = math.max(damage, rollWeaponDamage(weaponItem) * (0.75 + (normalized * 0.75)))
+            end
+        elseif attackType == "melee" then
+            local meleeSkill = DTNPCProtect.GetSkillLevel(npcData, "Melee")
+            local normalized = math.min(math.max(meleeSkill, 0), 20) / 20
+            local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "melee")
+            if weaponItem then
+                damage = math.max(damage, rollWeaponDamage(weaponItem) * (0.8 + (normalized * 0.9)))
+            end
+        end
+
+        return DTNPCHealth.ApplyDamage(target, targetNPCData, damage, zombie, {
+            source = "dt_npc_combat",
+            attackType = attackType,
+            queueFallbackIgnore = false,
+        })
+    end
 
     if isPlayerTarget then
         local bodyDamage = target.getBodyDamage and target:getBodyDamage() or nil

@@ -174,7 +174,7 @@ function DTNPCManager.OnTick()
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie then
+        if zombie and not zombie:isDead() then
             local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
             
             if uuid then
@@ -183,7 +183,7 @@ function DTNPCManager.OnTick()
                 -- [NEW] Active Adoption: If physical NPC exists but is NOT in runtime Data (e.g. after restart)
                 if not savedData and DynamicTrading_Roster then
                     local rosterData = DynamicTrading_Roster.GetSoul(uuid)
-                    if rosterData then
+                    if rosterData and rosterData.status ~= "Dead" then
                         DynamicTrading.Log("DTV2", "NPC", "Adopt", "Active Adoption: Found existing NPC in world, reclaiming: " .. (rosterData.name or uuid))
                         DTNPCManager.Register(zombie, rosterData)
                         savedData = DTNPCManager.Data[uuid] -- Refresh local reference

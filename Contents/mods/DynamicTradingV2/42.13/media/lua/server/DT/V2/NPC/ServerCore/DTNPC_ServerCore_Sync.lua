@@ -124,13 +124,19 @@ function DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
     DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC to player: " .. (npcData.name or uuid))
 end
 
-function DTNPCServerCore.BroadcastPosition(zombie, npcData)
+function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
     if not zombie or not npcData then return end
     
     local uuid = npcData.uuid
-    local shouldUpdate, tier = DTNPC_DistanceFrequency.ShouldUpdateNPC(uuid)
-    if not shouldUpdate then
-        return
+    local tier = nil
+    if forceUpdate ~= true then
+        local shouldUpdate
+        shouldUpdate, tier = DTNPC_DistanceFrequency.ShouldUpdateNPC(uuid)
+        if not shouldUpdate then
+            return
+        end
+    else
+        tier = "forced"
     end
 
     local posData = {
@@ -141,6 +147,9 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData)
         y = zombie:getY(),
         z = zombie:getZ(),
         health = zombie:getHealth(),
+        combatHealthCurrent = npcData.combatHealth and npcData.combatHealth.current or nil,
+        combatHealthMax = npcData.combatHealth and npcData.combatHealth.max or nil,
+        combatHealthEnabled = npcData.combatHealth and npcData.combatHealth.enabled or nil,
         state = npcData.state,
         status = npcData.status,
         combatOrder = npcData.combatOrder,

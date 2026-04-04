@@ -14,6 +14,10 @@ function DTNPCLogic.GetClosestTarget(zombie)
         return nil, 9999
     end
 
+    if npcData.incapState == "Active" or npcData.state == "Incapacitated" then
+        return nil, 9999
+    end
+
     if npcData.isHostile then
         local player = zombie:getTarget()
 

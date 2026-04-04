@@ -54,7 +54,13 @@ function DTNPC_ActiveNearbyListPanel:refresh()
                 end
                 
                 local stateText = " [" .. (npcData.state or "Idle") .. "]"
-                self.npcList:addItem(npcData.name .. stateText .. distText, {id = id, npcData = npcData, zombie = zombie})
+                local hpText = ""
+                if npcData.combatHealth and npcData.combatHealth.max then
+                    hpText = string.format(" [HP %d/%d]", math.floor(tonumber(npcData.combatHealth.current) or 0), math.floor(tonumber(npcData.combatHealth.max) or 0))
+                else
+                    hpText = string.format(" [ENG %.0f]", tonumber(zombie:getHealth()) or 0)
+                end
+                self.npcList:addItem(npcData.name .. stateText .. hpText .. distText, {id = id, npcData = npcData, zombie = zombie})
                 
                 local item = self.npcList.items[#self.npcList.items]
                 local color = {r=1, g=1, b=1, a=1}

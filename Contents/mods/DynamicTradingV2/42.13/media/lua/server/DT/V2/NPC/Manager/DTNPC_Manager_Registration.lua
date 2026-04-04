@@ -11,6 +11,7 @@ if isClient() and not isServer() then return end
 
 function DTNPCManager.Register(zombie, npcData)
     if not zombie or not npcData then return end
+    if npcData.status == "Dead" then return end
     
     local bodyInstanceID = zombie:getPersistentOutfitID()
     
@@ -71,6 +72,8 @@ end
 
 function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
     if not zombie or not npcData then return nil end
+    if zombie:isDead() then return nil end
+    if npcData.status == "Dead" then return nil end
 
     local modData = zombie:getModData()
     local uuid = npcData.uuid or modData.DTNPC_UUID
@@ -90,7 +93,11 @@ function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
 
     if not zombie:isUseless() then
         zombie:setUseless(true)
-        zombie:DoZombieStats()
+    end
+    zombie:DoZombieStats()
+    if DTNPCHealth and DTNPCHealth.InitializeForSpawn then
+        DTNPCHealth.InitializeForSpawn(zombie, npcData, { resetCurrent = false })
+    else
         zombie:setHealth(2)
     end
 

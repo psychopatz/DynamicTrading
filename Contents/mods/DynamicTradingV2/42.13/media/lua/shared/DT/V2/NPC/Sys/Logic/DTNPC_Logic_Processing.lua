@@ -29,6 +29,8 @@ function DTNPCLogic.ProcessNPC(zombie)
         DTNPCProtect.EnsureDataDefaults(npcData)
     end
 
+    local combatHealth = DTNPCHealth and DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
+
     zombie:setVariable("DTNPC", true)
     if zombie:getVariableString("DTIdleState") == "" then
         zombie:setVariable("DTIdleState", "0")
@@ -43,14 +45,35 @@ function DTNPCLogic.ProcessNPC(zombie)
         DTNPC.SyncEquipmentVisuals(zombie, npcData)
     end
 
+    if npcData.incapState == "Active" then
+        npcData.state = "Incapacitated"
+        npcData.isHostile = false
+        zombie:setTarget(nil)
+        zombie:setAttackedBy(nil)
+        state = "Incapacitated"
+    end
+
     DTNPCLogic.UpdateIdleCycle(zombie, npcData, state)
     DTNPCLogic.ApplyAnchorStabilization(zombie, npcData, state)
+
+    state = npcData.state or state
+
+    local fallbackDamaged = false
+    if DTNPCHealth and DTNPCHealth.ProcessFallbackDamage then
+        fallbackDamaged = DTNPCHealth.ProcessFallbackDamage(zombie, npcData) == true
+    end
 
     local currentHealth = zombie:getHealth()
     if not npcData.lastHealth then
         npcData.lastHealth = currentHealth
     end
-    local wasDamaged = currentHealth < npcData.lastHealth
+    local customDamageAt = combatHealth and tonumber(combatHealth.lastDamageAt) or 0
+    local lastProcessedDamageAt = tonumber(npcData.lastCustomDamageHandledAt) or 0
+    local customWasDamaged = customDamageAt > lastProcessedDamageAt
+    if customWasDamaged then
+        npcData.lastCustomDamageHandledAt = customDamageAt
+    end
+    local wasDamaged = fallbackDamaged or currentHealth < npcData.lastHealth or customWasDamaged
     npcData.lastHealth = currentHealth
 
     if HIGH_SPEED_STATES[state] then

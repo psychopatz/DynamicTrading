@@ -38,9 +38,19 @@ function Handlers.HandleUpdatePosition(args)
         cached.npcData.lastX = math.floor(args.x)
         cached.npcData.lastY = math.floor(args.y)
         cached.npcData.lastZ = math.floor(args.z)
+        cached.npcData.combatHealth = type(cached.npcData.combatHealth) == "table" and cached.npcData.combatHealth or {}
 
         if args.health then
             cached.npcData.health = args.health
+        end
+        if args.combatHealthCurrent ~= nil then
+            cached.npcData.combatHealth.current = args.combatHealthCurrent
+        end
+        if args.combatHealthMax ~= nil then
+            cached.npcData.combatHealth.max = args.combatHealthMax
+        end
+        if args.combatHealthEnabled ~= nil then
+            cached.npcData.combatHealth.enabled = args.combatHealthEnabled == true
         end
         if args.state then
             cached.npcData.state = args.state
@@ -75,11 +85,21 @@ function Handlers.HandleUpdatePosition(args)
         if zombie then
             local zombieData = DTNPC.GetData(zombie)
             if zombieData then
+                zombieData.combatHealth = type(zombieData.combatHealth) == "table" and zombieData.combatHealth or {}
                 if args.state then
                     zombieData.state = args.state
                 end
                 if args.health then
                     zombieData.health = args.health
+                end
+                if args.combatHealthCurrent ~= nil then
+                    zombieData.combatHealth.current = args.combatHealthCurrent
+                end
+                if args.combatHealthMax ~= nil then
+                    zombieData.combatHealth.max = args.combatHealthMax
+                end
+                if args.combatHealthEnabled ~= nil then
+                    zombieData.combatHealth.enabled = args.combatHealthEnabled == true
                 end
                 if args.status then
                     zombieData.status = args.status
@@ -125,7 +145,7 @@ function Handlers.HandleUpdatePosition(args)
 
     Helpers.TrackNPCSystems(nil, cached and cached.npcData or nil, uuid, bodyInstanceID)
 
-    if args.health and DTNPCClient.MarkNPCCombatForHealthBars then
+    if (args.health or args.combatHealthCurrent ~= nil) and DTNPCClient.MarkNPCCombatForHealthBars then
         DTNPCClient.MarkNPCCombatForHealthBars(uuid, nil, cached and cached.npcData or nil, bodyInstanceID)
     end
 end

@@ -15,6 +15,10 @@ if isClient() and not isServer() then return end
 
 function DTNPCServerCore.RespawnNPC(npcData, uuid)
     if not npcData or not npcData.lastX or not npcData.lastY then return end
+    if npcData.status == "Dead" then
+        DynamicTrading.Log("DTV2", "NPC", "Warn", "Refusing to respawn dead NPC: " .. tostring(npcData.name or uuid or "Unknown"))
+        return nil
+    end
 
     uuid = uuid or npcData.uuid
     local previousBodyInstanceID = npcData.currentBodyInstanceID
@@ -172,8 +176,12 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     modData.DTNPCVisualID = npcData.visualID
 
     zombie:setUseless(true) 
-    zombie:DoZombieStats()   
-    zombie:setHealth(2)
+    zombie:DoZombieStats()
+    if DTNPCHealth and DTNPCHealth.InitializeForSpawn then
+        DTNPCHealth.InitializeForSpawn(zombie, npcData, { resetCurrent = true })
+    else
+        zombie:setHealth(2)
+    end
     
     zombie:resetModelNextFrame()
 

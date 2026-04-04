@@ -120,6 +120,9 @@ function DTNPCProtect.EnsureDataDefaults(npcData)
 
     if npcData.skillXP.Melee == nil then npcData.skillXP.Melee = 0 end
     if npcData.skillXP.Shooting == nil then npcData.skillXP.Shooting = 0 end
+    if DTNPCHealth and DTNPCHealth.EnsureDefaults then
+        DTNPCHealth.EnsureDefaults(npcData)
+    end
 
     return npcData
 end

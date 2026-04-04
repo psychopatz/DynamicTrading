@@ -220,3 +220,13 @@ option DynamicTrading.NPCWeaponDurability
     translation = DynamicTrading_NPCWeaponDurability,
 }
 
+option DynamicTrading.NPCBaseHealthMultiplier
+{
+    type = double,
+    default = 1.0,
+    min = 0.25,
+    max = 10.0,
+    page = DynamicTrading,
+    translation = DynamicTrading_NPCBaseHealthMultiplier,
+}
+

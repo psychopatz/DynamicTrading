@@ -74,6 +74,8 @@ function ISDTNPCHealthBarManager:render()
                         or Helpers.getColorForRatio(hpRatio)
                     local barLeft = screenX - (barWidth / 2)
                     local barTop = screenY - barYOffset
+                    local hpText = barData.hpText or Helpers.formatHealthText(barData.currentHp, barData.maxHp)
+                    local hpTextWidth = barData.hpTextWidth or State.textManager:MeasureStringX(Constants.FONT_HP, hpText)
 
                     self:drawRect(
                         barLeft - Constants.PADDING,
@@ -104,6 +106,17 @@ function ISDTNPCHealthBarManager:render()
                         barData.isIncapacitated and math.min(1, hpColor.r + 0.08) or 0.4,
                         barData.isIncapacitated and hpColor.g or 0.4,
                         barData.isIncapacitated and hpColor.b or 0.4
+                    )
+
+                    self:drawText(
+                        hpText,
+                        barLeft - Constants.HP_TEXT_GAP - hpTextWidth,
+                        barTop - 3,
+                        0.92,
+                        0.2,
+                        0.2,
+                        alpha,
+                        Constants.FONT_HP
                     )
                 end
             end

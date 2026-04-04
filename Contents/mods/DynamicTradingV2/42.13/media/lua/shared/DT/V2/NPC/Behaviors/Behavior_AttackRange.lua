@@ -210,13 +210,27 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
                     
                 elseif instanceof(target, "IsoZombie") then
                     -- Zombie vs Zombie Damage
-                    target:setHealth(target:getHealth() - 0.4)
-                    target:getEmitter():playSound("ZombieImpact")
-                    
-                    if target:getHealth() <= 0 then
-                        target:Kill(zombie)
-                    else
-                        target:setHitReaction("HitReaction")
+                    local targetModData = target.getModData and target:getModData() or nil
+                    local targetNPCData = targetModData and (targetModData.DTNPC_Data or targetModData.DTNPCBrain) or nil
+                    local appliedCustom = false
+
+                    if targetModData and targetModData.IsDTNPC and targetNPCData and DTNPCHealth and DTNPCHealth.IsCustomHealthEnabled and DTNPCHealth.IsCustomHealthEnabled(targetNPCData) then
+                        appliedCustom = DTNPCHealth.ApplyDamage(target, targetNPCData, 0.4, zombie, {
+                            source = "attack_range",
+                            attackType = "ranged",
+                            queueFallbackIgnore = false,
+                        }) == true
+                    end
+
+                    if not appliedCustom then
+                        target:setHealth(target:getHealth() - 0.4)
+                        target:getEmitter():playSound("ZombieImpact")
+                        
+                        if target:getHealth() <= 0 then
+                            target:Kill(zombie)
+                        else
+                            target:setHitReaction("HitReaction")
+                        end
                     end
                 end
             end

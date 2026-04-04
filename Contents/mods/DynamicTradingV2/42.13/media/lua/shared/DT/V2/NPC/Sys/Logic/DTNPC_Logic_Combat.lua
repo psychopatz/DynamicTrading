@@ -6,6 +6,18 @@
 DTNPCLogic = DTNPCLogic or {}
 
 function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged)
+    if not zombie or not npcData then
+        return
+    end
+
+    if npcData.incapState == "Active" or npcData.state == "Incapacitated" then
+        npcData.state = "Incapacitated"
+        npcData.isHostile = false
+        zombie:setTarget(nil)
+        zombie:setAttackedBy(nil)
+        return
+    end
+
     local attacker = zombie:getAttackedBy()
 
     if wasDamaged and attacker and instanceof(attacker, "IsoPlayer") then

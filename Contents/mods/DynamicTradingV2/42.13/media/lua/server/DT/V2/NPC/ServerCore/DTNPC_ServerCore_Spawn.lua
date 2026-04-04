@@ -111,8 +111,12 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     modData.DTNPCVisualID = npcData.visualID
 
     zombie:setUseless(true) 
-    zombie:DoZombieStats()   
-    zombie:setHealth(2)
+    zombie:DoZombieStats()
+    if DTNPCHealth and DTNPCHealth.InitializeForSpawn then
+        DTNPCHealth.InitializeForSpawn(zombie, npcData, { resetCurrent = true })
+    else
+        zombie:setHealth(2)
+    end
     
     zombie:resetModelNextFrame()
 
