@@ -104,8 +104,10 @@ local function stopMoveAnim(zombie)
 end
 
 local function forceWalkAnim(zombie, isRunning)
+    zombie:setVariable("DTIdleState", "0")
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
+    zombie:setVariable("WalkType", "1")
     zombie:setVariable("Speed", isRunning and 1.15 or 1.0)
     zombie:setRunning(isRunning == true)
 end
