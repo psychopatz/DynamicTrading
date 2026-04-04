@@ -6,6 +6,7 @@
 -- ==============================================================================
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+require "DT/V2/NPC/Sys/DTNPC_Protect"
 
 -- Anchor stabilization tuning.
 -- In SP, zombie movement jitter can cause repeated tiny drift corrections.
@@ -25,6 +26,7 @@ require "DT/V2/NPC/Behaviors/Behavior_Attack"
 require "DT/V2/NPC/Behaviors/Behavior_AttackRange"
 require "DT/V2/NPC/Behaviors/Behavior_Flee"
 require "DT/V2/NPC/Behaviors/Behavior_Follow"
+require "DT/V2/NPC/Behaviors/Behavior_Protect"
 require "DT/V2/NPC/Behaviors/Behavior_Stationary"
 require "DT/V2/NPC/Behaviors/Behavior_Idle"
 require "DT/V2/NPC/Behaviors/Behavior_Guard" 
@@ -138,6 +140,9 @@ Events.OnTick.Add(DTNPCLogic.OnTick)
 function DTNPCLogic.ProcessNPC(zombie)
     local npcData = DTNPC.GetData(zombie)
     if not npcData then return end
+    if DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
+        DTNPCProtect.EnsureDataDefaults(npcData)
+    end
 
     -- Suppress zombie sounds (shouting, groaning, etc.)
     suppressSound(zombie)
@@ -151,6 +156,9 @@ function DTNPCLogic.ProcessNPC(zombie)
     local state = npcData.state or "Stay"
     if DTNPC and DTNPC.ApplyCharacterFlags then
         DTNPC.ApplyCharacterFlags(zombie, npcData)
+    end
+    if DTNPC and DTNPC.SyncEquipmentVisuals then
+        DTNPC.SyncEquipmentVisuals(zombie, npcData)
     end
     updateIdleCycle(zombie, npcData, state)
     
@@ -202,7 +210,10 @@ function DTNPCLogic.ProcessNPC(zombie)
     npcData.lastHealth = currentHealth
 
     -- HIGH SPEED BEHAVIORS (Every Frame)
-    if state == "GoTo" or state == "Flee" or state == "AttackRange" or state == "Follow" or state == "Departure" or state == "Incapacitated" then
+    if state == "GoTo" or state == "Flee" or state == "AttackRange" or state == "Follow"
+        or state == "TradingDefenseRanged" or state == "TradingDefenseMelee"
+        or state == "ProtectRanged" or state == "ProtectMelee" or state == "ProtectAuto"
+        or state == "Departure" or state == "Incapacitated" then
         DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
         return
     end

@@ -6,6 +6,9 @@
 
 DTNPC = DTNPC or {}
 
+require "DT/V2/NPC/Sys/DTNPC_Protect"
+require "DT/V2/NPC/Sys/DTNPC_EquipmentVisuals"
+
 
 -- ==============================================================================
 -- 1. DATA MANAGEMENT
@@ -22,6 +25,10 @@ function DTNPC.GetData(zombie)
         modData.DTNPCBrain = nil
     end
     
+    if modData.DTNPC_Data and DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
+        DTNPCProtect.EnsureDataDefaults(modData.DTNPC_Data)
+    end
+
     return modData.DTNPC_Data
 end
 
@@ -34,6 +41,12 @@ function DTNPC.AttachData(zombie, npcData)
     if not zombie or not npcData then return end
     local modData = zombie:getModData()
     if not modData then return end
+    if DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
+        DTNPCProtect.EnsureDataDefaults(npcData)
+    end
+    if DTNPCProtect and DTNPCProtect.AssignRandomWorldLoadout then
+        DTNPCProtect.AssignRandomWorldLoadout(npcData)
+    end
     modData.DTNPC_Data = npcData
     modData.IsDTNPC = true
 end
@@ -66,6 +79,44 @@ function DTNPC.ApplyCharacterFlags(zombie, npcData)
     end
 end
 
+function DTNPC.GetMeleeWeaponFamily(npcData)
+    if DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.GetMeleeWeaponFamily then
+        return DTNPCEquipmentVisuals.GetMeleeWeaponFamily(npcData)
+    end
+    return "onehanded"
+end
+
+function DTNPC.SetMeleeCombatIdleState(zombie, npcData)
+    if DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.SetMeleeCombatIdleState then
+        DTNPCEquipmentVisuals.SetMeleeCombatIdleState(zombie, npcData)
+    end
+end
+
+function DTNPC.SetRangedCombatIdleState(zombie, npcData)
+    if DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.SetRangedCombatIdleState then
+        DTNPCEquipmentVisuals.SetRangedCombatIdleState(zombie, npcData)
+    end
+end
+
+function DTNPC.TriggerMeleeCombatAnim(zombie, npcData)
+    if DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.TriggerMeleeCombatAnim then
+        DTNPCEquipmentVisuals.TriggerMeleeCombatAnim(zombie, npcData)
+    end
+end
+
+function DTNPC.TriggerRangedCombatAnim(zombie, npcData)
+    if DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.TriggerRangedCombatAnim then
+        DTNPCEquipmentVisuals.TriggerRangedCombatAnim(zombie, npcData)
+    end
+end
+
+function DTNPC.SyncEquipmentVisuals(zombie, npcData, options)
+    if DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.Apply then
+        return DTNPCEquipmentVisuals.Apply(zombie, npcData, options)
+    end
+    return false
+end
+
 -- ==============================================================================
 -- 2. VISUALS (THE COSTUME)
 -- ==============================================================================
@@ -73,6 +124,9 @@ end
 function DTNPC.ApplyVisuals(zombie, npcData)
     if not zombie or not npcData then return end
 
+    if DTNPCProtect and DTNPCProtect.AssignRandomWorldLoadout then
+        DTNPCProtect.AssignRandomWorldLoadout(npcData)
+    end
     DTNPC.ApplyCharacterFlags(zombie, npcData)
 
     local humanVisual = zombie:getHumanVisual()
@@ -158,6 +212,8 @@ function DTNPC.ApplyVisuals(zombie, npcData)
     -- 7. Clean up
     humanVisual:removeBlood()
     humanVisual:removeDirt()
+
+    DTNPC.SyncEquipmentVisuals(zombie, npcData, { force = true })
     
     -- 8. Refresh Model
     zombie:resetModelNextFrame()

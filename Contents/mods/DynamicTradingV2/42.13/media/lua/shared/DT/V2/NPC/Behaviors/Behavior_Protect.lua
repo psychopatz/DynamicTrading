@@ -1,6 +1,6 @@
 -- ==============================================================================
--- Behavior_Trading.lua
--- Handles the live trading state while the NPC is available to interact with.
+-- Behavior_Protect.lua
+-- Companion protect behaviors for ranged and melee escort combat.
 -- ==============================================================================
 
 DTNPCLogic = DTNPCLogic or {}
@@ -12,8 +12,10 @@ local RANGED_KITE_MAX = 8.5
 local RANGED_MAX_RANGE = 13.5
 local RANGED_ADVANCE_SPEED = 0.05
 local RANGED_BACKPEDAL_SPEED = 0.03
-local TRADING_DEFENSE_MELEE_REACH = 1.25
-local TRADING_DEFENSE_DEFAULT_SPEED = 0.05
+local MELEE_REACH = 1.25
+local MELEE_DEFAULT_SPEED = 0.05
+local PROTECT_LEASH = 14
+local PROTECT_MASTER_ENGAGE_RADIUS = 10
 
 local function isTileSafe(x, y, z)
     local cell = getCell()
@@ -62,6 +64,89 @@ local function ensureManualControl(zombie)
     zombie:setTarget(nil)
 end
 
+local function clearProtectCombat(zombie, npcData)
+    if npcData then
+        npcData.attackTimer = 0
+        npcData.reactionTimer = 0
+        npcData.autoProtectActiveState = nil
+        DTNPCProtect.ClearCombatTarget(npcData)
+    end
+    if zombie then
+        zombie:setTarget(nil)
+    end
+end
+
+local function pushCompanionModeNotice(zombie, npcData, dialogueStatus, dialogueState, mode)
+    if not npcData then
+        return false
+    end
+    if mode and npcData.companionAmbientMode == mode then
+        return false
+    end
+
+    if DTNPCProtect and DTNPCProtect.PushCompanionAmbientCue then
+        if DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, dialogueStatus, dialogueState) then
+            npcData.companionAmbientMode = mode or npcData.companionAmbientMode
+            return true
+        end
+    end
+
+    return false
+end
+
+local function announceCombatEngage(zombie, npcData)
+    if not npcData then
+        return
+    end
+
+    local targetID = npcData.combatTargetID
+    if npcData.companionCombatActive == true and npcData.companionLastCombatTargetID == targetID then
+        return
+    end
+
+    npcData.companionCombatActive = true
+    npcData.companionLastCombatTargetID = targetID
+    npcData.companionLastRangedTargetID = nil
+    pushCompanionModeNotice(zombie, npcData, "Companion", "Attack", "combat")
+end
+
+local function announceRangedAttack(zombie, npcData)
+    if not npcData then
+        return
+    end
+
+    local targetID = npcData.combatTargetID
+    if not targetID or npcData.companionLastRangedTargetID == targetID then
+        return
+    end
+
+    npcData.companionLastRangedTargetID = targetID
+    pushCompanionModeNotice(zombie, npcData, "Companion", "AttackRange", "ranged")
+end
+
+local function announceReturnToMaster(zombie, npcData)
+    if not npcData or npcData.companionCombatActive ~= true then
+        return
+    end
+
+    npcData.companionCombatActive = false
+    npcData.companionLastCombatTargetID = nil
+    npcData.companionLastRangedTargetID = nil
+    pushCompanionModeNotice(zombie, npcData, "Companion", "Return", "return")
+end
+
+local function followEscort(zombie, npcData, master, dist)
+    announceReturnToMaster(zombie, npcData)
+    clearProtectCombat(zombie, npcData)
+    if DTNPCLogic.Behaviors["Follow"] then
+        DTNPCLogic.Behaviors["Follow"](zombie, npcData, master, dist)
+    end
+end
+
+local function getProtectEngageRadius(npcData)
+    return tonumber(npcData and npcData.protectEngageRadius) or PROTECT_MASTER_ENGAGE_RADIUS
+end
+
 local function moveTowardTarget(zombie, speed, target, stopDistance)
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
@@ -106,7 +191,7 @@ local function moveTowardTarget(zombie, speed, target, stopDistance)
     return false
 end
 
-local function syncCombatStateChange(zombie, npcData)
+local function syncProtectStateChange(zombie, npcData)
     if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
         local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
         if ownedZombie == zombie then
@@ -118,70 +203,46 @@ local function syncCombatStateChange(zombie, npcData)
     end
 end
 
-local function exitTradingDefense(zombie, npcData)
-    local resumeState = npcData.combatResumeState or "Trading"
-    npcData.state = resumeState
-    npcData.combatResumeState = nil
-    npcData.attackTimer = 0
-    npcData.reactionTimer = 0
-    zombie:setTarget(nil)
-    if DTNPCProtect and DTNPCProtect.ClearCombatTarget then
-        DTNPCProtect.ClearCombatTarget(npcData)
-    end
-    stopMoveAnim(zombie)
-    syncCombatStateChange(zombie, npcData)
-end
+local function protectTargetOrEscort(zombie, npcData, master, distToMaster, requestedState)
+    local effectiveState = DTNPCProtect.ResolveProtectState(npcData, requestedState)
 
-local function enterTradingDefense(zombie, npcData, state)
-    local changed = false
-    if npcData.combatResumeState ~= "Trading" then
-        npcData.combatResumeState = "Trading"
-        changed = true
-    end
-    if npcData.state ~= state then
-        npcData.state = state
-        changed = true
-    end
-    if changed then
-        syncCombatStateChange(zombie, npcData)
-    end
-end
-
-DTNPCLogic.Behaviors["Trading"] = function(zombie, npcData)
-    local target = nil
-    local targetDist = 9999
-    if DTNPCProtect and DTNPCProtect.SelectNearestZombie then
-        target, targetDist = DTNPCProtect.SelectNearestZombie(zombie, npcData)
-    end
-    if target then
-        local nextState = DTNPCProtect and DTNPCProtect.GetTradingDefenseState and DTNPCProtect.GetTradingDefenseState(npcData, targetDist or 9999) or nil
-        if nextState then
-            enterTradingDefense(zombie, npcData, nextState)
-            local behavior = DTNPCLogic.Behaviors[nextState]
-            if behavior then
-                behavior(zombie, npcData, target, targetDist)
-            end
-            return
-        end
-        if DTNPCProtect and DTNPCProtect.ClearCombatTarget then
-            DTNPCProtect.ClearCombatTarget(npcData)
-        end
-    else
-        npcData.combatResumeState = nil
+    if effectiveState == "ProtectRanged" and requestedState ~= "ProtectRanged" then
+        npcData.state = "ProtectRanged"
+        syncProtectStateChange(zombie, npcData)
+        DTNPCLogic.Behaviors["ProtectRanged"](zombie, npcData, master, distToMaster)
+        return nil, nil, true
     end
 
-    DTNPCLogic.Stationary.Run(zombie, npcData)
-end
-
-DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
-    local target, targetDist = DTNPCProtect.SelectNearestZombie(zombie, npcData)
-    if not target or not DTNPCProtect.HasUsableRangedLoadout(npcData) then
-        exitTradingDefense(zombie, npcData)
-        return
+    if effectiveState == "ProtectMelee" and requestedState ~= "ProtectMelee" then
+        npcData.state = "ProtectMelee"
+        syncProtectStateChange(zombie, npcData)
+        DTNPCLogic.Behaviors["ProtectMelee"](zombie, npcData, master, distToMaster)
+        return nil, nil, true
     end
 
+    if not effectiveState or not master or distToMaster > PROTECT_LEASH then
+        followEscort(zombie, npcData, master, distToMaster)
+        return nil, nil, true
+    end
+
+    local target, targetDist = DTNPCProtect.SelectNearestZombie(
+        zombie,
+        npcData,
+        nil,
+        master,
+        getProtectEngageRadius(npcData)
+    )
+    if not target then
+        followEscort(zombie, npcData, master, distToMaster)
+        return nil, nil, true
+    end
+
+    announceCombatEngage(zombie, npcData)
     ensureManualControl(zombie)
+    return target, targetDist, false
+end
 
+local function executeProtectRanged(zombie, npcData, target, targetDist)
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
     local dx = tx - zx
@@ -190,7 +251,7 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     if len > 0.001 then
         dx = dx / len
         dy = dy / len
-        faceTarget(zombie, target)
+        zombie:faceLocation(tx, ty)
     end
 
     local moveDir = 0
@@ -242,6 +303,7 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     end
 
     npcData.attackTimer = 0
+    announceRangedAttack(zombie, npcData)
     if DTNPC and DTNPC.TriggerRangedCombatAnim then
         DTNPC.TriggerRangedCombatAnim(zombie, npcData)
     end
@@ -258,23 +320,16 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     end
 end
 
-DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
-    local target, targetDist = DTNPCProtect.SelectNearestZombie(zombie, npcData)
-    if not target or not DTNPCProtect.HasUsableMeleeLoadout(npcData) then
-        exitTradingDefense(zombie, npcData)
-        return
-    end
-
-    ensureManualControl(zombie)
+local function executeProtectMelee(zombie, npcData, target, targetDist)
     faceTarget(zombie, target)
 
     local stats = DTNPCProtect.GetMeleeCombatStats(npcData)
-    local engageReach = math.max(stats.reach or TRADING_DEFENSE_MELEE_REACH, 1.45)
+    local engageReach = math.max(stats.reach or MELEE_REACH, 1.45)
     local currentDist = getTargetDistance(zombie, target)
     if currentDist > engageReach then
         local arrived = moveTowardTarget(
             zombie,
-            stats.chaseSpeed or TRADING_DEFENSE_DEFAULT_SPEED,
+            stats.chaseSpeed or MELEE_DEFAULT_SPEED,
             target,
             math.max(0.9, engageReach - 0.1)
         )
@@ -309,4 +364,55 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
             damage = stats.damage,
         })
     end
+end
+
+DTNPCLogic.Behaviors["ProtectRanged"] = function(zombie, npcData, master, distToMaster)
+    local target, targetDist, handled = protectTargetOrEscort(zombie, npcData, master, distToMaster, "ProtectRanged")
+    if handled then
+        return
+    end
+    executeProtectRanged(zombie, npcData, target, targetDist)
+end
+
+DTNPCLogic.Behaviors["ProtectMelee"] = function(zombie, npcData, master, distToMaster)
+    local target, targetDist, handled = protectTargetOrEscort(zombie, npcData, master, distToMaster, "ProtectMelee")
+    if handled then
+        return
+    end
+    executeProtectMelee(zombie, npcData, target, targetDist)
+end
+
+DTNPCLogic.Behaviors["ProtectAuto"] = function(zombie, npcData, master, distToMaster)
+    if not master or distToMaster > PROTECT_LEASH then
+        followEscort(zombie, npcData, master, distToMaster)
+        return
+    end
+
+    local target, targetDist = DTNPCProtect.SelectNearestZombie(
+        zombie,
+        npcData,
+        nil,
+        master,
+        getProtectEngageRadius(npcData)
+    )
+    if not target then
+        followEscort(zombie, npcData, master, distToMaster)
+        return
+    end
+
+    announceCombatEngage(zombie, npcData)
+    ensureManualControl(zombie)
+    local resolvedState = DTNPCProtect.GetAutoProtectState(npcData, targetDist)
+    npcData.autoProtectActiveState = resolvedState
+
+    if resolvedState == "ProtectRanged" then
+        executeProtectRanged(zombie, npcData, target, targetDist)
+        return
+    end
+    if resolvedState == "ProtectMelee" then
+        executeProtectMelee(zombie, npcData, target, targetDist)
+        return
+    end
+
+    followEscort(zombie, npcData, master, distToMaster)
 end

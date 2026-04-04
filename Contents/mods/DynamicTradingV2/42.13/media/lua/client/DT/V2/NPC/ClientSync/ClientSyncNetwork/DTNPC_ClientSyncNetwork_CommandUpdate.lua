@@ -48,6 +48,24 @@ function Handlers.HandleUpdatePosition(args)
         if args.status then
             cached.npcData.status = args.status
         end
+        if args.combatOrder ~= nil then
+            cached.npcData.combatOrder = args.combatOrder
+        end
+        if args.protectNoticeSerial ~= nil then
+            cached.npcData.protectNoticeSerial = args.protectNoticeSerial
+        end
+        if args.protectNoticeText ~= nil then
+            cached.npcData.protectNoticeText = args.protectNoticeText
+        end
+        if args.protectNoticeSentiment ~= nil then
+            cached.npcData.protectNoticeSentiment = args.protectNoticeSentiment
+        end
+        if args.protectNoticeDialogueStatus ~= nil then
+            cached.npcData.protectNoticeDialogueStatus = args.protectNoticeDialogueStatus
+        end
+        if args.protectNoticeDialogueState ~= nil then
+            cached.npcData.protectNoticeDialogueState = args.protectNoticeDialogueState
+        end
         if bodyInstanceID then
             DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = uuid
             cached.npcData.currentBodyInstanceID = bodyInstanceID
@@ -66,6 +84,24 @@ function Handlers.HandleUpdatePosition(args)
                 if args.status then
                     zombieData.status = args.status
                 end
+                if args.combatOrder ~= nil then
+                    zombieData.combatOrder = args.combatOrder
+                end
+                if args.protectNoticeSerial ~= nil then
+                    zombieData.protectNoticeSerial = args.protectNoticeSerial
+                end
+                if args.protectNoticeText ~= nil then
+                    zombieData.protectNoticeText = args.protectNoticeText
+                end
+                if args.protectNoticeSentiment ~= nil then
+                    zombieData.protectNoticeSentiment = args.protectNoticeSentiment
+                end
+                if args.protectNoticeDialogueStatus ~= nil then
+                    zombieData.protectNoticeDialogueStatus = args.protectNoticeDialogueStatus
+                end
+                if args.protectNoticeDialogueState ~= nil then
+                    zombieData.protectNoticeDialogueState = args.protectNoticeDialogueState
+                end
             end
 
             if not DTNPCClient.LocalControlled[uuid] then
@@ -76,6 +112,14 @@ function Handlers.HandleUpdatePosition(args)
         if args.state then
             cached.lastReportedState = cached.lastReportedState or {}
             cached.lastReportedState.state = args.state
+        end
+        if args.combatOrder ~= nil then
+            cached.lastReportedState = cached.lastReportedState or {}
+            cached.lastReportedState.combatOrder = args.combatOrder
+        end
+        if args.protectNoticeSerial ~= nil then
+            cached.lastReportedState = cached.lastReportedState or {}
+            cached.lastReportedState.protectNoticeSerial = args.protectNoticeSerial
         end
     end
 

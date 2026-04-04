@@ -18,6 +18,7 @@ ClientSync.Modules = ClientSync.Modules or {}
 
 require "DT/V2/NPC/ClientSync/DTNPC_ClientSync_Cache"
 require "DT/V2/NPC/ClientSync/DTNPC_ClientSync_Interpolation"
+require "DT/V2/NPC/ClientSync/DTNPC_ClientSync_VanillaPatches"
 require "DT/V2/NPC/ClientSync/HealthBars/DTNPC_ClientSync_HealthBars"
 require "DT/V2/NPC/ClientSync/ClientSyncNetwork/DTNPC_ClientSync_Network"
 require "DT/V2/NPC/ClientSync/DTNPC_ClientSync_Events"

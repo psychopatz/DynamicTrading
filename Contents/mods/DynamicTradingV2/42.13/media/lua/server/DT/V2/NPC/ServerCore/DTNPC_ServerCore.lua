@@ -8,6 +8,7 @@ DTNPCServerCore = DTNPCServerCore or {}
 
 -- Required external dependencies
 require "DT/V2/NPC/Sys/DTNPC_Generator"
+require "DT/V2/NPC/Sys/DTNPC_Protect"
 require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
 require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"
 
@@ -55,19 +56,22 @@ if isClient() and not isServer() then return end
 -- 1. Utilities - Helper functions needed by other modules
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Utilities"
 
--- 2. Sync - Synchronization functions needed by spawn/respawn/summon
+-- 2. Control helpers - UUID-based state and order helpers used by commands and integrations
+require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Control"
+
+-- 3. Sync - Synchronization functions needed by spawn/respawn/summon
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Sync"
 
--- 3. Spawn - Core spawning functionality
+-- 4. Spawn - Core spawning functionality
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Spawn"
 
--- 4. Respawn - Respawning logic (depends on spawn patterns)
+-- 5. Respawn - Respawning logic (depends on spawn patterns)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Respawn"
 
--- 5. Summon - Summoning/teleporting (depends on respawn)
+-- 6. Summon - Summoning/teleporting (depends on respawn)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Summon"
 
--- 6. Commands - Client command handler (needs all of the above)
+-- 7. Commands - Client command handler (needs all of the above)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Commands"
 
 DynamicTrading.Log("DTV2", "NPC", "Init", "ServerCore initialized successfully")

@@ -144,6 +144,9 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     end
 
     if not needsVisuals then
+        if DTNPC and DTNPC.SyncEquipmentVisuals then
+            DTNPC.SyncEquipmentVisuals(zombie, npcData)
+        end
         return
     end
 

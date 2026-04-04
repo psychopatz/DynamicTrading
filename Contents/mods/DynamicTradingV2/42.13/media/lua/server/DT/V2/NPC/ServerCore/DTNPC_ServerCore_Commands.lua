@@ -121,6 +121,15 @@ local function onClientCommand(module, command, player, args)
 
     if command == "Order" then
         DynamicTrading.Log("DTV2", "NPC", "Command", "Received Order command from: " .. player:getUsername() .. " | State: " .. (args.state or "Unknown"))
+
+        if args.uuid and DTNPCServerCore and DTNPCServerCore.IssueOrderByUUID then
+            local changed, updatedNPC = DTNPCServerCore.IssueOrderByUUID(args.uuid, player, args)
+            if changed and updatedNPC then
+                DynamicTrading.Log("DTV2", "NPC", "Order", "Issued UUID order for " .. tostring(updatedNPC.name or args.uuid) .. ": " .. tostring(args.state))
+            end
+            return
+        end
+
         local square = getCell():getGridSquare(args.x, args.y, args.z)
         if square then
             local movingObjects = square:getMovingObjects()
@@ -137,14 +146,20 @@ local function onClientCommand(module, command, player, args)
                         npcData.anchorZ = nil
                         
                         npcData.requestedReturnStatus = args.returnStatus
+                        npcData.combatTargetID = nil
                         
-                        if args.state == "Follow" or args.state == "Flee" then
+                        if args.state == "Follow" or args.state == "Flee"
+                            or args.state == "ProtectRanged" or args.state == "ProtectMelee" or args.state == "ProtectAuto" then
                             npcData.master = player:getUsername()
                             npcData.masterID = isClient() and player:getOnlineID() or 0
+                            npcData.combatOrder = (args.state == "ProtectRanged" or args.state == "ProtectMelee" or args.state == "ProtectAuto") and args.state or nil
                             DynamicTrading.Log("DTV2", "NPC", "Order", "Master assigned for " .. args.state .. " order: " .. npcData.master)
                         elseif args.state == "GoTo" then
                            table.insert(npcData.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
+                           npcData.combatOrder = nil
                            DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
+                        else
+                            npcData.combatOrder = nil
                         end
 
                         DTNPC.AttachData(obj, npcData)
@@ -260,6 +275,20 @@ local function onClientCommand(module, command, player, args)
         if not args.uuid or not args.updates then return end
         
         DynamicTrading.Log("DTV2", "NPC", "Command", "Received UpdateNPC for UUID: " .. args.uuid)
+
+        if DTNPCServerCore and DTNPCServerCore.UpdateNPCByUUID then
+            local changed, updatedNPC = DTNPCServerCore.UpdateNPCByUUID(
+                args.uuid,
+                args.updates,
+                args.updates.broadcastPosition or false
+            )
+            if changed and updatedNPC then
+                DynamicTrading.Log("DTV2", "NPC", "Update", "Updated and synced NPC via control module: " .. tostring(updatedNPC.name or args.uuid))
+            elseif not updatedNPC then
+                DynamicTrading.Log("DTV2", "NPC", "Warn", "UpdateNPC for unknown UUID: " .. args.uuid)
+            end
+            return
+        end
         
         local uuid = args.uuid
         local serverBrain = DTNPCManager.Data[uuid]

@@ -83,8 +83,22 @@ function Helpers.SetReportedState(cached, npcData)
         return
     end
 
+    local loadout = type(npcData.loadout) == "table" and npcData.loadout or {}
+    local loadoutSignature = table.concat({
+        tostring(loadout.rangedWeapon or ""),
+        tostring(loadout.rangedAmmoType or ""),
+        tostring(math.max(0, tonumber(loadout.ammoCount) or 0)),
+        tostring(loadout.meleeWeapon or ""),
+        tostring(loadout.bag or ""),
+        tostring(loadout.rangedCondition ~= nil and math.max(0, math.floor(tonumber(loadout.rangedCondition) or 0)) or ""),
+        tostring(loadout.meleeCondition ~= nil and math.max(0, math.floor(tonumber(loadout.meleeCondition) or 0)) or ""),
+    }, "|")
+
     cached.lastReportedState = {
         state = npcData.state,
-        tasksCount = (npcData.tasks and #npcData.tasks or 0)
+        tasksCount = (npcData.tasks and #npcData.tasks or 0),
+        loadoutSignature = loadoutSignature,
+        combatOrder = npcData.combatOrder,
+        protectNoticeSerial = npcData.protectNoticeSerial or 0,
     }
 end

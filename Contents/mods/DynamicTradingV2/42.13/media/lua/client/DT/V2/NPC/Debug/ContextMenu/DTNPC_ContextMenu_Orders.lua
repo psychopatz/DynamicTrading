@@ -32,15 +32,21 @@ local function attachNPCData(npc, npcData)
     end
 end
 
+local function isProtectState(state)
+    return state == "ProtectRanged" or state == "ProtectMelee" or state == "ProtectAuto"
+end
+
 function Menu.OnOrder(npc, state, player, returnStatus)
     if not npc or not player then return end
+    local npcData = Menu.GetNPCData(npc)
 
     local args = {
         x = npc:getX(),
         y = npc:getY(),
         z = npc:getZ(),
         state = state,
-        returnStatus = returnStatus
+        returnStatus = returnStatus,
+        uuid = npcData and npcData.uuid or nil,
     }
 
     if state == "GoTo" then
@@ -51,21 +57,23 @@ function Menu.OnOrder(npc, state, player, returnStatus)
 
     sendClientCommand(player, "DTNPC", "Order", args)
 
-    local npcData = Menu.GetNPCData(npc)
     if not npcData then return end
 
     npcData.state = state
 
-    if state == "Follow" then
+    if state == "Follow" or isProtectState(state) then
         npcData.master = player:getUsername()
         npcData.masterID = isClient() and player:getOnlineID() or 0
         npcData.tasks = {}
+        npcData.combatOrder = isProtectState(state) and state or nil
     elseif state == "GoTo" then
         npcData.tasks = {
             { x = args.targetX, y = args.targetY, z = args.targetZ }
         }
+        npcData.combatOrder = nil
     else
         npcData.tasks = {}
+        npcData.combatOrder = nil
     end
 
     attachNPCData(npc, npcData)

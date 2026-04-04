@@ -17,6 +17,19 @@ end
 
 modules.Events = true
 
+local function getLoadoutSignature(loadout)
+    loadout = type(loadout) == "table" and loadout or {}
+    return table.concat({
+        tostring(loadout.rangedWeapon or ""),
+        tostring(loadout.rangedAmmoType or ""),
+        tostring(math.max(0, tonumber(loadout.ammoCount) or 0)),
+        tostring(loadout.meleeWeapon or ""),
+        tostring(loadout.bag or ""),
+        tostring(loadout.rangedCondition ~= nil and math.max(0, math.floor(tonumber(loadout.rangedCondition) or 0)) or ""),
+        tostring(loadout.meleeCondition ~= nil and math.max(0, math.floor(tonumber(loadout.meleeCondition) or 0)) or ""),
+    }, "|")
+end
+
 function DTNPCClient.OnTick()
     if isServer() and isDedicatedServer() then return end
 
@@ -96,6 +109,10 @@ function DTNPCClient.OnTick()
                         DTNPCClient.ApplyVisualsToNPC(zombie, cached.npcData)
                     end
 
+                    if DTNPC and DTNPC.SyncEquipmentVisuals then
+                        DTNPC.SyncEquipmentVisuals(zombie, cached.npcData)
+                    end
+
                     if zombie:isLocal() and modData.IsDTNPC then
                         DTNPCClient.SetLocalControl(uuid, true)
                         
@@ -109,7 +126,10 @@ function DTNPCClient.OnTick()
                             if not cached.lastReportedState then 
                                 cached.lastReportedState = {
                                     state = localData.state,
-                                    tasksCount = (localData.tasks and #localData.tasks or 0)
+                                    tasksCount = (localData.tasks and #localData.tasks or 0),
+                                    loadoutSignature = getLoadoutSignature(localData.loadout),
+                                    combatOrder = localData.combatOrder,
+                                    protectNoticeSerial = localData.protectNoticeSerial or 0,
                                 }
                             end
                             
@@ -125,6 +145,30 @@ function DTNPCClient.OnTick()
                             if currentTasksCount ~= cached.lastReportedState.tasksCount then
                                 updates.tasks = localData.tasks
                                 cached.lastReportedState.tasksCount = currentTasksCount
+                                changed = true
+                            end
+
+                            local currentLoadoutSignature = getLoadoutSignature(localData.loadout)
+                            if currentLoadoutSignature ~= cached.lastReportedState.loadoutSignature then
+                                updates.loadout = localData.loadout
+                                cached.lastReportedState.loadoutSignature = currentLoadoutSignature
+                                changed = true
+                            end
+
+                            if localData.combatOrder ~= cached.lastReportedState.combatOrder then
+                                updates.combatOrder = localData.combatOrder
+                                cached.lastReportedState.combatOrder = localData.combatOrder
+                                changed = true
+                            end
+
+                            local currentNoticeSerial = localData.protectNoticeSerial or 0
+                            if currentNoticeSerial ~= cached.lastReportedState.protectNoticeSerial then
+                                updates.protectNoticeSerial = currentNoticeSerial
+                                updates.protectNoticeText = localData.protectNoticeText
+                                updates.protectNoticeSentiment = localData.protectNoticeSentiment
+                                updates.protectNoticeDialogueStatus = localData.protectNoticeDialogueStatus
+                                updates.protectNoticeDialogueState = localData.protectNoticeDialogueState
+                                cached.lastReportedState.protectNoticeSerial = currentNoticeSerial
                                 changed = true
                             end
                             

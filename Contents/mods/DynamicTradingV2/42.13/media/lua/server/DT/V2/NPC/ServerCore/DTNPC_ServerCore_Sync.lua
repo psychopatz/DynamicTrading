@@ -69,6 +69,7 @@ function DTNPCServerCore.SyncToAllClients(zombie, npcData)
     local syncData = {
         uuid = uuid,
         bodyInstanceID = bodyInstanceID,
+        onlineID = zombie:getOnlineID(),
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
@@ -106,6 +107,7 @@ function DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
     local syncData = {
         uuid = uuid,
         bodyInstanceID = bodyInstanceID,
+        onlineID = zombie:getOnlineID(),
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
@@ -134,11 +136,19 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData)
     local posData = {
         uuid = uuid,
         bodyInstanceID = zombie:getPersistentOutfitID(),
+        onlineID = zombie:getOnlineID(),
         x = zombie:getX(),
         y = zombie:getY(),
         z = zombie:getZ(),
         health = zombie:getHealth(),
         state = npcData.state,
+        status = npcData.status,
+        combatOrder = npcData.combatOrder,
+        protectNoticeSerial = npcData.protectNoticeSerial,
+        protectNoticeText = npcData.protectNoticeText,
+        protectNoticeSentiment = npcData.protectNoticeSentiment,
+        protectNoticeDialogueStatus = npcData.protectNoticeDialogueStatus,
+        protectNoticeDialogueState = npcData.protectNoticeDialogueState,
         tier = tier
     }
     
