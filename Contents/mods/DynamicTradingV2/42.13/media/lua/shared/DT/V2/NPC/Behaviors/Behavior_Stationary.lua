@@ -6,6 +6,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 DTNPCLogic.Stationary = DTNPCLogic.Stationary or {}
+require "DT/V2/NPC/Sys/DTNPC_Protect"
 
 local Stationary = DTNPCLogic.Stationary
 
@@ -16,19 +17,75 @@ Stationary.TRADE_INTERACTION_IDLE_STATE = "10"
 Stationary.TARGET_STICKY_BONUS = 1.5
 
 local function getPlayerRuntimeID(player)
+    if DTNPCProtect and DTNPCProtect.GetPlayerRuntimeID then
+        return DTNPCProtect.GetPlayerRuntimeID(player)
+    end
     if not player then return nil end
-
-    local onlineID = player.getOnlineID and player:getOnlineID()
-    if onlineID and onlineID ~= 0 then
-        return "online:" .. tostring(onlineID)
-    end
-
-    local username = player.getUsername and player:getUsername()
-    if username and username ~= "" then
-        return "user:" .. tostring(username)
-    end
-
     return "player:" .. tostring(player)
+end
+
+local function syncStationaryStateChange(zombie, npcData)
+    if not zombie or not npcData or not DTNPCServerCore or not DTNPCServerCore.SyncToAllClients then
+        return
+    end
+
+    local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
+    if ownedZombie ~= zombie then
+        return
+    end
+
+    DTNPCServerCore.SyncToAllClients(zombie, npcData)
+    if DTNPCServerCore.BroadcastPosition then
+        DTNPCServerCore.BroadcastPosition(zombie, npcData)
+    end
+end
+
+local function canUseAmbientAutoDefense(npcData)
+    if not npcData then
+        return false
+    end
+
+    local state = npcData.state or "Idle"
+    local status = npcData.status or ""
+    return state == "Trading" or status == "Trading" or status == "Resting"
+end
+
+local function maybeStartAutoDefense(zombie, npcData)
+    if not zombie or not npcData or not canUseAmbientAutoDefense(npcData) then
+        return false
+    end
+    if not DTNPCProtect or not DTNPCProtect.SelectNearestThreat or not DTNPCProtect.GetTradingDefenseState then
+        return false
+    end
+
+    DTNPCProtect.RememberStationaryPost(zombie, npcData, npcData.state)
+
+    local target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData)
+    if not target then
+        npcData.combatResumeState = nil
+        return false
+    end
+
+    local nextState = DTNPCProtect.GetTradingDefenseState(npcData, targetDist or 9999)
+    if not nextState then
+        return false
+    end
+
+    if npcData.combatResumeState ~= npcData.state then
+        npcData.combatResumeState = npcData.state
+    end
+    if npcData.state ~= nextState then
+        npcData.state = nextState
+        syncStationaryStateChange(zombie, npcData)
+    end
+
+    local behavior = DTNPCLogic.Behaviors[nextState]
+    if behavior then
+        behavior(zombie, npcData, target, targetDist)
+        return true
+    end
+
+    return false
 end
 
 function Stationary.GetClientForcedIdleState(zombie)
@@ -121,6 +178,14 @@ end
 
 function Stationary.Run(zombie, npcData)
     if not zombie then return end
+
+    if maybeStartAutoDefense(zombie, npcData) then
+        return
+    end
+
+    if DTNPCProtect and canUseAmbientAutoDefense(npcData) then
+        DTNPCProtect.RememberStationaryPost(zombie, npcData, npcData.state)
+    end
 
     if not zombie:isUseless() then
         zombie:setUseless(true)

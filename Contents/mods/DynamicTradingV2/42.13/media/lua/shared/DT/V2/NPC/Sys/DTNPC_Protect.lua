@@ -11,6 +11,8 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     StickyRadiusBonus = 1.75,
     NoticeCooldownMs = 12000,
     DiagnosticCooldownMs = 4000,
+    HostilePlayerRepThreshold = -40,
+    StationaryPostResetDistance = 4,
 }
 
 DTNPCProtect.LOADOUT_WEIGHTS = DTNPCProtect.LOADOUT_WEIGHTS or {
@@ -169,6 +171,93 @@ local function getZombieRuntimeID(zombie)
     end
 
     return tostring(zombie)
+end
+
+local function getPlayerRuntimeID(player)
+    if not player then
+        return nil
+    end
+
+    local onlineID = player.getOnlineID and player:getOnlineID() or nil
+    if onlineID and onlineID ~= 0 then
+        return "online:" .. tostring(onlineID)
+    end
+
+    local username = player.getUsername and player:getUsername() or nil
+    if username and username ~= "" then
+        return "user:" .. tostring(username)
+    end
+
+    return "player:" .. tostring(player)
+end
+
+DTNPCProtect.GetPlayerRuntimeID = getPlayerRuntimeID
+
+local function getThreatPlayers()
+    local players = {}
+
+    if DTNPCLogic and DTNPCLogic.GetActivePlayers then
+        local snapshot = DTNPCLogic.GetActivePlayers()
+        for i = 1, #(snapshot or {}) do
+            local player = snapshot[i]
+            if player then
+                players[#players + 1] = player
+            end
+        end
+        if #players > 0 then
+            return players
+        end
+    end
+
+    local online = getOnlinePlayers and getOnlinePlayers() or nil
+    if online then
+        for i = 0, online:size() - 1 do
+            local player = online:get(i)
+            if player then
+                players[#players + 1] = player
+            end
+        end
+        if #players > 0 then
+            return players
+        end
+    end
+
+    local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+    if player then
+        players[1] = player
+    end
+
+    return players
+end
+
+local function getFactionReputationForPlayer(npcData, player)
+    if not npcData or not npcData.factionID or not player then
+        return 0
+    end
+    if not DynamicTrading_Factions or not DynamicTrading_Factions.GetFaction then
+        return 0
+    end
+
+    local faction = DynamicTrading_Factions.GetFaction(npcData.factionID)
+    if not faction or type(faction.reputation) ~= "table" then
+        return 0
+    end
+
+    local username = player.getUsername and player:getUsername() or nil
+    if not username or username == "" then
+        return 0
+    end
+
+    return tonumber(faction.reputation[username]) or 0
+end
+
+local function isHostilePlayerForNPC(npcData, player)
+    if not npcData or not player or player:isDead() then
+        return false
+    end
+
+    local threshold = tonumber(DTNPCProtect.CONFIG.HostilePlayerRepThreshold) or -40
+    return getFactionReputationForPlayer(npcData, player) <= threshold
 end
 
 local function getSkillSeed(npcData, skillID)
@@ -552,6 +641,7 @@ function DTNPCProtect.EnsureDataDefaults(npcData)
     if npcData.isPlayerFactionTrader == nil then npcData.isPlayerFactionTrader = false end
     if npcData.combatOrder == nil then npcData.combatOrder = nil end
     if npcData.combatTargetID == nil then npcData.combatTargetID = nil end
+    if npcData.combatTargetType == nil then npcData.combatTargetType = nil end
     if npcData.combatFallbackAnnouncedAt == nil then npcData.combatFallbackAnnouncedAt = nil end
     if npcData.protectNoticeSerial == nil then npcData.protectNoticeSerial = 0 end
     if npcData.protectNoticeText == nil then npcData.protectNoticeText = nil end
@@ -591,6 +681,62 @@ function DTNPCProtect.EnsureDataDefaults(npcData)
     if npcData.skillXP.Shooting == nil then npcData.skillXP.Shooting = 0 end
 
     return npcData
+end
+
+function DTNPCProtect.RememberStationaryPost(zombie, npcData, state, force)
+    if not zombie or not npcData then
+        return false
+    end
+
+    DTNPCProtect.EnsureDataDefaults(npcData)
+
+    local desiredState = state or npcData.state or "Idle"
+    local currentX = zombie:getX()
+    local currentY = zombie:getY()
+    local currentZ = zombie:getZ()
+    local resetDistance = tonumber(DTNPCProtect.CONFIG.StationaryPostResetDistance) or 4
+    local storedX = tonumber(npcData.stationaryPostX)
+    local storedY = tonumber(npcData.stationaryPostY)
+    local storedZ = tonumber(npcData.stationaryPostZ) or currentZ
+    local dist = 9999
+
+    if storedX ~= nil and storedY ~= nil then
+        local dx = currentX - storedX
+        local dy = currentY - storedY
+        dist = math.sqrt((dx * dx) + (dy * dy))
+    end
+
+    local shouldUpdate = force == true
+        or storedX == nil
+        or storedY == nil
+        or npcData.stationaryPostState ~= desiredState
+        or (npcData.combatResumeState == nil and dist > resetDistance)
+        or math.abs(currentZ - storedZ) > 0.1
+
+    if not shouldUpdate then
+        return false
+    end
+
+    npcData.stationaryPostX = currentX
+    npcData.stationaryPostY = currentY
+    npcData.stationaryPostZ = currentZ
+    npcData.stationaryPostState = desiredState
+    return true
+end
+
+function DTNPCProtect.GetStationaryPost(npcData)
+    if not npcData then
+        return nil, nil, nil
+    end
+
+    local x = tonumber(npcData.stationaryPostX)
+    local y = tonumber(npcData.stationaryPostY)
+    local z = tonumber(npcData.stationaryPostZ) or 0
+    if x == nil or y == nil then
+        return nil, nil, nil
+    end
+
+    return x, y, z
 end
 
 function DTNPCProtect.PushCompanionNotice(zombie, npcData, text, sentiment)
@@ -974,7 +1120,120 @@ end
 function DTNPCProtect.ClearCombatTarget(npcData)
     if npcData then
         npcData.combatTargetID = nil
+        npcData.combatTargetType = nil
     end
+end
+
+function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget, anchorRadius)
+    if not zombie then return nil, 9999 end
+
+    DTNPCProtect.EnsureDataDefaults(npcData)
+
+    local searchRadius = tonumber(radius) or DTNPCProtect.CONFIG.ScanRadius
+    local keepRadius = searchRadius + DTNPCProtect.CONFIG.StickyRadiusBonus
+    local anchorSearchRadius = tonumber(anchorRadius)
+    local anchorKeepRadius = anchorSearchRadius and (anchorSearchRadius + DTNPCProtect.CONFIG.StickyRadiusBonus) or nil
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local zz = zombie:getZ()
+    local ax = anchorTarget and anchorTarget.getX and anchorTarget:getX() or nil
+    local ay = anchorTarget and anchorTarget.getY and anchorTarget:getY() or nil
+    local az = anchorTarget and anchorTarget.getZ and anchorTarget:getZ() or nil
+    local currentTargetID = npcData.combatTargetID
+    local currentTarget = nil
+    local currentDistance = 9999
+    local currentType = nil
+    local nearestTarget = nil
+    local nearestDistance = 9999
+    local nearestType = nil
+
+    local function evaluateCandidate(candidate, candidateID, threatType, candidateX, candidateY, candidateZ)
+        if not candidateID then
+            return
+        end
+
+        local dx = candidateX - zx
+        local dy = candidateY - zy
+        local dist = math.sqrt((dx * dx) + (dy * dy))
+        local anchorDist = nil
+
+        if ax ~= nil and ay ~= nil then
+            if az ~= nil and math.abs((candidateZ or 0) - az) > DTNPCProtect.CONFIG.FloorTolerance then
+                anchorDist = 9999
+            else
+                local adx = candidateX - ax
+                local ady = candidateY - ay
+                anchorDist = math.sqrt((adx * adx) + (ady * ady))
+            end
+        end
+
+        local withinAnchorAcquire = anchorSearchRadius == nil or (anchorDist ~= nil and anchorDist <= anchorSearchRadius)
+        local withinAnchorKeep = anchorKeepRadius == nil or (anchorDist ~= nil and anchorDist <= anchorKeepRadius)
+
+        if currentTargetID and candidateID == currentTargetID and dist <= keepRadius and withinAnchorKeep then
+            currentTarget = candidate
+            currentDistance = dist
+            currentType = threatType
+        end
+
+        if withinAnchorAcquire and dist <= searchRadius and dist < nearestDistance then
+            nearestTarget = candidate
+            nearestDistance = dist
+            nearestType = threatType
+        end
+    end
+
+    local players = getThreatPlayers()
+    for i = 1, #players do
+        local player = players[i]
+        if player
+            and not player:isDead()
+            and math.abs((player:getZ() or 0) - zz) <= DTNPCProtect.CONFIG.FloorTolerance
+            and isHostilePlayerForNPC(npcData, player) then
+            evaluateCandidate(
+                player,
+                getPlayerRuntimeID(player),
+                "player",
+                player:getX(),
+                player:getY(),
+                player:getZ() or 0
+            )
+        end
+    end
+
+    local zombieList = getCell() and getCell():getZombieList() or nil
+    if zombieList then
+        for i = 0, zombieList:size() - 1 do
+            local candidate = zombieList:get(i)
+            if candidate and candidate ~= zombie and not candidate:isDead() then
+                local modData = candidate:getModData()
+                if not (modData and modData.IsDTNPC)
+                    and math.abs((candidate:getZ() or 0) - zz) <= DTNPCProtect.CONFIG.FloorTolerance then
+                    evaluateCandidate(
+                        candidate,
+                        getZombieRuntimeID(candidate),
+                        "zombie",
+                        candidate:getX(),
+                        candidate:getY(),
+                        candidate:getZ() or 0
+                    )
+                end
+            end
+        end
+    end
+
+    local chosen = currentTarget or nearestTarget
+    local distance = currentTarget and currentDistance or nearestDistance
+    local threatType = currentTarget and currentType or nearestType
+
+    if chosen then
+        npcData.combatTargetID = threatType == "player" and getPlayerRuntimeID(chosen) or getZombieRuntimeID(chosen)
+        npcData.combatTargetType = threatType
+        return chosen, distance
+    end
+
+    DTNPCProtect.ClearCombatTarget(npcData)
+    return nil, 9999
 end
 
 function DTNPCProtect.SelectNearestZombie(zombie, npcData, radius, anchorTarget, anchorRadius)
@@ -1235,8 +1494,49 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     local attackType = options.attackType or "generic"
     local damage = math.max(0.05, tonumber(options.damage) or 0.1)
     local applied = false
+    local isPlayerTarget = instanceof(target, "IsoPlayer")
 
-    if attackType == "ranged" then
+    if isPlayerTarget then
+        local bodyDamage = target.getBodyDamage and target:getBodyDamage() or nil
+        local bodyPart = bodyDamage
+            and bodyDamage.getBodyPart
+            and BodyPartType
+            and BodyPartType.Torso_Upper
+            and bodyDamage:getBodyPart(BodyPartType.Torso_Upper)
+            or nil
+
+        if bodyPart and bodyPart.AddDamage then
+            local appliedDamage = damage
+            if attackType == "melee" then
+                appliedDamage = damage * 0.8
+            end
+
+            bodyPart:AddDamage(appliedDamage)
+            if attackType == "ranged" then
+                if bodyPart.setHaveBullet then
+                    bodyPart:setHaveBullet(true, 0)
+                end
+                if bodyPart.setBleedingTime then
+                    bodyPart:setBleedingTime(math.max(10, tonumber(bodyPart.getBleedingTime and bodyPart:getBleedingTime() or 0) or 0))
+                end
+            end
+
+            if bodyDamage.Update then
+                bodyDamage:Update()
+            end
+            if target.setAttackedBy then
+                target:setAttackedBy(zombie)
+            end
+            if target.setHitReaction then
+                target:setHitReaction("HitReaction")
+            end
+            if target.getEmitter then
+                target:getEmitter():playSound("ImpactFlesh")
+            end
+
+            applied = true
+        end
+    elseif attackType == "ranged" then
         local shootingSkill = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
         local normalized = math.min(math.max(shootingSkill, 0), 20) / 20
         local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "ranged")

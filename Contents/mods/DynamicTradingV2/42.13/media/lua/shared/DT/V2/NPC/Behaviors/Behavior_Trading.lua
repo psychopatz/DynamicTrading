@@ -118,7 +118,77 @@ local function syncCombatStateChange(zombie, npcData)
     end
 end
 
-local function exitTradingDefense(zombie, npcData)
+local exitTradingDefense
+
+local function getPostDistance(zombie, npcData)
+    local postX, postY, postZ = DTNPCProtect.GetStationaryPost(npcData)
+    if postX == nil or postY == nil then
+        return nil
+    end
+
+    local dz = math.abs((zombie:getZ() or 0) - (postZ or 0))
+    if dz > 1 then
+        return 9999
+    end
+
+    local dx = postX - zombie:getX()
+    local dy = postY - zombie:getY()
+    return math.sqrt((dx * dx) + (dy * dy))
+end
+
+local function returnToPostOrResume(zombie, npcData)
+    local resumeState = npcData.combatResumeState or "Trading"
+    local postX, postY, postZ = DTNPCProtect.GetStationaryPost(npcData)
+
+    if postX == nil or postY == nil then
+        exitTradingDefense(zombie, npcData)
+        return
+    end
+
+    local dist = getPostDistance(zombie, npcData)
+    if dist ~= nil and dist <= 0.75 then
+        zombie:setX(postX)
+        zombie:setY(postY)
+        zombie:setZ(postZ or zombie:getZ())
+        stopMoveAnim(zombie)
+        npcData.combatResumeState = resumeState
+        exitTradingDefense(zombie, npcData)
+        return
+    end
+
+    ensureManualControl(zombie)
+
+    local pointTarget = {
+        getX = function() return postX end,
+        getY = function() return postY end,
+        getZ = function() return postZ or zombie:getZ() end,
+    }
+
+    local moved = moveTowardTarget(zombie, TRADING_DEFENSE_DEFAULT_SPEED, pointTarget, 0.3)
+    if not moved then
+        zombie:setX(postX)
+        zombie:setY(postY)
+        zombie:setZ(postZ or zombie:getZ())
+        stopMoveAnim(zombie)
+        npcData.combatResumeState = resumeState
+        exitTradingDefense(zombie, npcData)
+        return
+    end
+
+    zombie:faceLocation(postX, postY)
+
+    dist = getPostDistance(zombie, npcData)
+    if dist ~= nil and dist <= 0.75 then
+        zombie:setX(postX)
+        zombie:setY(postY)
+        zombie:setZ(postZ or zombie:getZ())
+        stopMoveAnim(zombie)
+        npcData.combatResumeState = resumeState
+        exitTradingDefense(zombie, npcData)
+    end
+end
+
+exitTradingDefense = function(zombie, npcData)
     local resumeState = npcData.combatResumeState or "Trading"
     npcData.state = resumeState
     npcData.combatResumeState = nil
@@ -134,10 +204,12 @@ end
 
 local function enterTradingDefense(zombie, npcData, state)
     local changed = false
-    if npcData.combatResumeState ~= "Trading" then
-        npcData.combatResumeState = "Trading"
+    local resumeState = npcData.combatResumeState or npcData.state or "Trading"
+    if npcData.combatResumeState ~= resumeState then
+        npcData.combatResumeState = resumeState
         changed = true
     end
+    DTNPCProtect.RememberStationaryPost(zombie, npcData, resumeState)
     if npcData.state ~= state then
         npcData.state = state
         changed = true
@@ -150,8 +222,9 @@ end
 DTNPCLogic.Behaviors["Trading"] = function(zombie, npcData)
     local target = nil
     local targetDist = 9999
-    if DTNPCProtect and DTNPCProtect.SelectNearestZombie then
-        target, targetDist = DTNPCProtect.SelectNearestZombie(zombie, npcData)
+    DTNPCProtect.RememberStationaryPost(zombie, npcData, "Trading")
+    if DTNPCProtect and DTNPCProtect.SelectNearestThreat then
+        target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData)
     end
     if target then
         local nextState = DTNPCProtect and DTNPCProtect.GetTradingDefenseState and DTNPCProtect.GetTradingDefenseState(npcData, targetDist or 9999) or nil
@@ -174,9 +247,13 @@ DTNPCLogic.Behaviors["Trading"] = function(zombie, npcData)
 end
 
 DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
-    local target, targetDist = DTNPCProtect.SelectNearestZombie(zombie, npcData)
-    if not target or not DTNPCProtect.HasUsableRangedLoadout(npcData) then
-        exitTradingDefense(zombie, npcData)
+    local target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData)
+    if not DTNPCProtect.HasUsableRangedLoadout(npcData) then
+        returnToPostOrResume(zombie, npcData)
+        return
+    end
+    if not target then
+        returnToPostOrResume(zombie, npcData)
         return
     end
 
@@ -259,9 +336,13 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
 end
 
 DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
-    local target, targetDist = DTNPCProtect.SelectNearestZombie(zombie, npcData)
-    if not target or not DTNPCProtect.HasUsableMeleeLoadout(npcData) then
-        exitTradingDefense(zombie, npcData)
+    local target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData)
+    if not DTNPCProtect.HasUsableMeleeLoadout(npcData) then
+        returnToPostOrResume(zombie, npcData)
+        return
+    end
+    if not target then
+        returnToPostOrResume(zombie, npcData)
         return
     end
 
