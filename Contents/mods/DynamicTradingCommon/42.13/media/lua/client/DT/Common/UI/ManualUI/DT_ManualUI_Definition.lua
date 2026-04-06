@@ -21,6 +21,8 @@ local function dtEnsureManualUIModulesLoaded()
     -- Load the implementation files directly so Open() does not depend on
     -- ManualUI.lua being fully evaluated first.
     require "DT/Common/UI/ManualUI/DT_ManualUI_Utils"
+    require "DT/Common/UI/ManualUI/Donators/DT_ManualUI_Donators"
+    require "DT/Common/UI/ManualUI/Donators/DT_ManualUI_Donators_Render"
     require "DT/Common/UI/ManualUI/DT_ManualUI_Layout"
     require "DT/Common/UI/ManualUI/DT_ManualUI_Data"
     require "DT/Common/UI/ManualUI/DT_ManualUI_Search"
@@ -57,6 +59,10 @@ function DT_ManualUI:initialise()
     self.showSupportBanner = false
     self.supportBannerManual = nil
     self.supportBannerVersion = ""
+    self.hallOfFameManual = nil
+    self.hallOfFameSupporters = {}
+    self.hallOfFameAutoplayMs = 4000
+    self.hallOfFameCurrencySymbol = "$"
 end
 
 function DT_ManualUI:close()
@@ -133,6 +139,17 @@ end
 DynamicTrading.Manuals.OpenSupport = function(args)
     args = args or {}
     local manual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("support") or nil
+    if manual then
+        args.viewMode = "manuals"
+        args.manualId = args.manualId or manual.id
+        args.pageId = args.pageId or manual.startPageId
+    end
+    return DT_ManualUI.Open(args)
+end
+
+DynamicTrading.Manuals.OpenDonators = function(args)
+    args = args or {}
+    local manual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("donators") or nil
     if manual then
         args.viewMode = "manuals"
         args.manualId = args.manualId or manual.id

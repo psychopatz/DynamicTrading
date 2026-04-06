@@ -58,6 +58,21 @@ function DT_ManualUI:prepareBlock(block)
         return payload
     end
 
+    if kind == "supporter_carousel" then
+        payload.title = tostring(block.title or "Hall of Fame Donators")
+        payload.autoplayMs = tonumber(block.autoplayMs or block.autoplay_ms) or 4000
+        payload.currencySymbol = tostring(block.currencySymbol or block.currency_symbol or "$")
+        payload.thankYouText = tostring(block.thankYouText or block.thank_you_text or "")
+        payload.supporters = DT_ManualUI_Donators and DT_ManualUI_Donators.GetActiveSupportersFromBlock and DT_ManualUI_Donators.GetActiveSupportersFromBlock(block) or {}
+        local thankYouLines = {}
+        if payload.thankYouText ~= "" then
+            thankYouLines = DynamicTrading.Utils.WrapText(payload.thankYouText, width - 30, UIFont.Small)
+        end
+        payload.height = 350 + (#thankYouLines * 16)
+        payload.label = payload.title
+        return payload
+    end
+
     payload.font = UIFont.NewSmall
     payload.lines = DynamicTrading.Utils.WrapText(block.text or "", width - 10, payload.font)
     payload.height = (#payload.lines * 18) + 16
@@ -235,6 +250,11 @@ function DT_ManualUI:drawContentItem(y, item, alt)
             self:drawText(line, padding, lineY, 0.97, 0.97, 0.97, 1, UIFont.NewSmall)
             lineY = lineY + 18
         end
+        return y + height
+    end
+
+    if block.kind == "supporter_carousel" then
+        DT_ManualUI_Donators_Render.DrawContentCarousel(self, block, y, width, height)
         return y + height
     end
 

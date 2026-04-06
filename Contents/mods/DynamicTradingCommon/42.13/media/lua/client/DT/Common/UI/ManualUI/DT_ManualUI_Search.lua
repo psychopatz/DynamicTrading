@@ -51,6 +51,14 @@ function DT_ManualUI:runSearch(query)
                     text = table.concat(block.items or {}, " ")
                 elseif block.type == "image" then
                     text = tostring(block.caption or "")
+                elseif block.type == "supporter_carousel" then
+                    local names = {}
+                    for _, supporter in ipairs(block.supporters or {}) do
+                        if supporter.active ~= false then
+                            table.insert(names, tostring(supporter.name or ""))
+                        end
+                    end
+                    text = tostring(block.title or "") .. " " .. table.concat(names, " ") .. " " .. tostring(block.thankYouText or block.thank_you_text or "")
                 end
 
                 if DT_ManualUI_Utils.lowercase(text):find(needle, 1, true) then

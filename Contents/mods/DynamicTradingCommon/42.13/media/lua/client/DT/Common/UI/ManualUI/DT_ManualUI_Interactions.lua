@@ -87,6 +87,14 @@ function DT_ManualUI:onOpenWhatsNew()
     })
 end
 
+function DT_ManualUI:onOpenHallOfFame()
+    if not DynamicTrading or not DynamicTrading.Manuals or not DynamicTrading.Manuals.OpenDonators then
+        return
+    end
+
+    DynamicTrading.Manuals.OpenDonators()
+end
+
 function DT_ManualUI:onNavMouseDown(x, y)
     local row = self:rowAt(x, y)
     if row == -1 then

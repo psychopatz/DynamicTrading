@@ -50,10 +50,20 @@ end
 function DT_ManualUI:refreshSupportBannerState()
     local manual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("support") or nil
     local version = manual and tostring(manual.popupVersion or manual.releaseVersion or manual.id or "") or ""
+    local donorManual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("donators") or nil
+    local donorBlock = DT_ManualUI_Donators and DT_ManualUI_Donators.GetPrimaryCarouselBlock and DT_ManualUI_Donators.GetPrimaryCarouselBlock(donorManual) or nil
+    local donorSupporters = DT_ManualUI_Donators and DT_ManualUI_Donators.GetActiveSupportersFromBlock and DT_ManualUI_Donators.GetActiveSupportersFromBlock(donorBlock) or {}
 
     self.supportBannerManual = manual
     self.supportBannerVersion = version
-    self.showSupportBanner = manual ~= nil and version ~= "" and self.currentManualId ~= manual.id
+    self.hallOfFameManual = donorManual
+    self.hallOfFameSupporters = donorSupporters
+    self.hallOfFameAutoplayMs = donorBlock and tonumber(donorBlock.autoplayMs or donorBlock.autoplay_ms) or 4000
+    self.hallOfFameCurrencySymbol = donorBlock and tostring(donorBlock.currencySymbol or donorBlock.currency_symbol or "$") or "$"
+
+    local viewingSupport = manual ~= nil and self.currentManualId == manual.id
+    local viewingDonators = donorManual ~= nil and self.currentManualId == donorManual.id
+    self.showSupportBanner = manual ~= nil and version ~= "" and not viewingSupport and not viewingDonators
 end
 
 function DT_ManualUI:isManualExpanded(manualId)

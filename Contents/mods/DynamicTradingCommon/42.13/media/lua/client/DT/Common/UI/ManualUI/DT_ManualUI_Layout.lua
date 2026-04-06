@@ -6,6 +6,7 @@ require "ISUI/ISTickBox"
 require "ISUI/ISTextEntryBox"
 require "DT/Common/UI/ManualUI/DT_ManualUI_Definition"
 require "DT/Common/UI/ManualUI/DT_ManualUI_Utils"
+require "DT/Common/UI/ManualUI/Donators/DT_ManualUI_Donators_Render"
 
 function DT_ManualUI:createChildren()
     ISCollapsableWindow.createChildren(self)
@@ -104,12 +105,20 @@ function DT_ManualUI:createChildren()
     self.supportBannerTextRaw = "If the mod is earning permanent slots in your load order, consider supporting its continued development."
     -- Labels will be created in refreshLayout
 
+    self.supportBannerPreviewPanel = DT_ManualUI_Donators_Render.CreateBannerPreviewPanel(self, 10, 34, math.max(metrics.rightWidth - 20, 160), 96)
+    self.supportBannerPanel:addChild(self.supportBannerPreviewPanel)
+
     self.btnSupportBanner = ISButton:new(10, 48, 110, 24, "View Support", self, self.onOpenSupportBanner)
     self.btnSupportBanner:initialise()
     self.btnSupportBanner:instantiate()
     self.supportBannerPanel:addChild(self.btnSupportBanner)
 
-    self.btnWhatsNew = ISButton:new(130, 48, 110, 24, "What's New", self, self.onOpenWhatsNew)
+    self.btnHallOfFame = ISButton:new(130, 48, 110, 24, "Hall of Fame", self, self.onOpenHallOfFame)
+    self.btnHallOfFame:initialise()
+    self.btnHallOfFame:instantiate()
+    self.supportBannerPanel:addChild(self.btnHallOfFame)
+
+    self.btnWhatsNew = ISButton:new(250, 48, 110, 24, "What's New", self, self.onOpenWhatsNew)
     self.btnWhatsNew:initialise()
     self.btnWhatsNew:instantiate()
     self.supportBannerPanel:addChild(self.btnWhatsNew)
@@ -190,13 +199,24 @@ function DT_ManualUI:refreshLayout()
             self.btnSupportBanner:setTitle(actionLabel)
             self.btnSupportBanner:setX(10)
             self.btnSupportBanner:setY(0) -- Will be set after text
-            self.btnWhatsNew:setX(130)
+            self.btnHallOfFame:setX(130)
+            self.btnHallOfFame:setVisible(self.hallOfFameManual ~= nil)
+            self.btnHallOfFame.enable = self.hallOfFameManual ~= nil
+            self.btnWhatsNew:setX((self.hallOfFameManual ~= nil) and 250 or 130)
             self.btnWhatsNew:setY(0) -- Will be set after text
+            self.btnHallOfFame:setY(0)
+
+            if self.supportBannerPreviewPanel then
+                self.supportBannerPreviewPanel:setX(10)
+                self.supportBannerPreviewPanel:setY(34)
+                self.supportBannerPreviewPanel:setWidth(math.max(metrics.rightWidth - 20, 160))
+                self.supportBannerPreviewPanel:setVisible(self.hallOfFameManual ~= nil)
+            end
 
             -- Wrap text
             local wrapWidth = math.max(metrics.rightWidth - 20, 120)
             local lines = DynamicTrading.Utils.WrapText(text, wrapWidth, UIFont.Small)
-            local y = 30
+            local y = (self.hallOfFameManual ~= nil) and 138 or 30
             for i, line in ipairs(lines) do
                 local lbl = ISLabel:new(10, y, 16, line, 0.88, 0.88, 0.88, 1, UIFont.Small, true)
                 lbl:initialise()
@@ -207,11 +227,14 @@ function DT_ManualUI:refreshLayout()
             end
             -- Place buttons below text
             self.btnSupportBanner:setY(y)
+            self.btnHallOfFame:setY(y)
             self.btnWhatsNew:setY(y)
             -- Adjust banner height
             local bannerHeight = y + 28
             self.supportBannerPanel:setHeight(bannerHeight)
             metrics.supportBannerHeight = bannerHeight
+        elseif self.supportBannerPreviewPanel then
+            self.supportBannerPreviewPanel:setVisible(false)
         end
     end
 

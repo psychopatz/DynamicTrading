@@ -11,6 +11,8 @@ DynamicTrading.Manuals = DynamicTrading.Manuals or {}
 
 require "DT/Common/UI/ManualUI/DT_ManualUI_Definition"
 require "DT/Common/UI/ManualUI/DT_ManualUI_Utils"
+require "DT/Common/UI/ManualUI/Donators/DT_ManualUI_Donators"
+require "DT/Common/UI/ManualUI/Donators/DT_ManualUI_Donators_Render"
 require "DT/Common/UI/ManualUI/DT_ManualUI_Layout"
 require "DT/Common/UI/ManualUI/DT_ManualUI_Data"
 require "DT/Common/UI/ManualUI/DT_ManualUI_Search"
