@@ -72,6 +72,8 @@ local rosterRespawnCheckCounter = 0
 
 local AWAY_TRANSITION_CHECK_RATE = 60 -- Resolve expired traders/departures every ~3 seconds
 local awayTransitionCheckCounter = 0
+local RESTING_REGEN_CHECK_RATE = 120 -- Simulate unloaded resting healing every ~6 seconds
+local restingRegenCheckCounter = 0
 local TRADE_CYCLE_CHECK_RATE = 600 -- Start new trade missions every ~30 seconds
 local tradeCycleCheckCounter = 0
 
@@ -109,6 +111,38 @@ local function EnsureRespawnHooks()
     return hasHooks
 end
 
+local function ProcessOfflineRestingRegen()
+    if not DTNPCHealth or not DTNPCHealth.ProcessPassiveRestRegen then
+        return
+    end
+    if not DynamicTrading_Roster or not DynamicTrading_Roster.MOD_DATA_KEY or not ModData then
+        return
+    end
+
+    local rosterData = ModData.get(DynamicTrading_Roster.MOD_DATA_KEY)
+    local souls = rosterData and rosterData.Souls or nil
+    if not souls then
+        return
+    end
+
+    for uuid, registry in pairs(souls) do
+        if registry
+            and registry.status == "Resting"
+            and not DTNPCManager.Data[uuid] then
+            local currentHp = tonumber(registry.combatHealthCurrent) or tonumber(registry.health) or 0
+            local maxHp = tonumber(registry.combatHealthMax) or 0
+            if currentHp > 0 and (maxHp <= 0 or currentHp < maxHp) then
+                local npcData = DynamicTrading_Roster.GetSoul(uuid)
+                if npcData then
+                    DTNPCHealth.ProcessPassiveRestRegen(nil, npcData, {
+                        forceManagerSave = false,
+                    })
+                end
+            end
+        end
+    end
+end
+
 function DTNPCManager.OnTick()
     -- Run on Server or Single Player
 
@@ -117,6 +151,7 @@ function DTNPCManager.OnTick()
     activeRespawnCheckCounter = activeRespawnCheckCounter + 1
     rosterRespawnCheckCounter = rosterRespawnCheckCounter + 1
     awayTransitionCheckCounter = awayTransitionCheckCounter + 1
+    restingRegenCheckCounter = restingRegenCheckCounter + 1
     tradeCycleCheckCounter = tradeCycleCheckCounter + 1
 
     if DTNPC_ZombieAggro and DTNPC_ZombieAggro.OnManagerTick then
@@ -144,6 +179,12 @@ function DTNPCManager.OnTick()
         if EnsureRespawnHooks() then
             DTNPCManager.ProcessAwayTransitions()
         end
+    end
+
+    local shouldCheckRestingRegen = (restingRegenCheckCounter >= RESTING_REGEN_CHECK_RATE)
+    if shouldCheckRestingRegen then
+        restingRegenCheckCounter = 0
+        ProcessOfflineRestingRegen()
     end
 
     local shouldCheckTradeCycles = (tradeCycleCheckCounter >= TRADE_CYCLE_CHECK_RATE)

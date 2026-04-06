@@ -77,6 +77,9 @@ DTNPCHealth.BANDAGE_TIERS = DTNPCHealth.BANDAGE_TIERS or {
     },
 }
 DTNPCHealth.SELF_BANDAGE_TUNING_VERSION = DTNPCHealth.SELF_BANDAGE_TUNING_VERSION or 3
+DTNPCHealth.RESTING_REGEN_INTERVAL_MS = DTNPCHealth.RESTING_REGEN_INTERVAL_MS or 20000
+DTNPCHealth.RESTING_REGEN_PER_TICK = DTNPCHealth.RESTING_REGEN_PER_TICK or 0.5
+DTNPCHealth.DEFAULT_RESTING_REGEN_MULTIPLIER = DTNPCHealth.DEFAULT_RESTING_REGEN_MULTIPLIER or 1.0
 
 local nowMillis
 
@@ -342,6 +345,38 @@ local function getBandageTierDef(tierID)
         regenPerTick = 1,
         regenIntervalMs = 2000,
     }
+end
+
+local function getRestingRegenMultiplier(npcData, combatHealth)
+    local multiplier = tonumber(combatHealth and combatHealth.restingRegenMultiplier)
+        or tonumber(npcData and npcData.restingRegenMultiplier)
+        or tonumber(npcData and npcData.restingHealMultiplier)
+        or tonumber(DTNPCHealth.DEFAULT_RESTING_REGEN_MULTIPLIER)
+        or 1.0
+    return math.max(0, multiplier)
+end
+
+local function canUseRestingRegen(npcData, combatHealth, now)
+    if not npcData or not combatHealth or combatHealth.enabled ~= true then
+        return false
+    end
+    if npcData.incapState == "Active" or npcData.status ~= "Resting" then
+        return false
+    end
+    if npcData.state == "Bandage" or combatHealth.activeBandage == true then
+        return false
+    end
+    if isCombatState(npcData.state) then
+        return false
+    end
+    if (tonumber(combatHealth.current) or 0) <= DTNPCHealth.MIN_DAMAGE
+        or (tonumber(combatHealth.current) or 0) >= (tonumber(combatHealth.max) or 0) then
+        return false
+    end
+    if getRestingRegenMultiplier(npcData, combatHealth) <= DTNPCHealth.MIN_DAMAGE then
+        return false
+    end
+    return true
 end
 
 local function playEmitterSound(character, soundName)
@@ -930,6 +965,12 @@ function DTNPCHealth.EnsureDefaults(npcData)
     end
     if combatHealth.lastPersistedAt == nil then combatHealth.lastPersistedAt = 0 end
     if combatHealth.bandageTuningVersion == nil then combatHealth.bandageTuningVersion = 0 end
+    if combatHealth.lastRestingRegenAt == nil then combatHealth.lastRestingRegenAt = 0 end
+    if combatHealth.restingRegenMultiplier == nil then
+        combatHealth.restingRegenMultiplier = tonumber(npcData.restingRegenMultiplier)
+            or tonumber(npcData.restingHealMultiplier)
+            or DTNPCHealth.DEFAULT_RESTING_REGEN_MULTIPLIER
+    end
 
     if tonumber(combatHealth.bandageTuningVersion) < DTNPCHealth.SELF_BANDAGE_TUNING_VERSION then
         combatHealth.selfBandageApplyDurationMs = DTNPCHealth.SELF_BANDAGE_APPLY_DURATION_MS
@@ -1164,6 +1205,54 @@ function DTNPCHealth.ProcessPassiveBandageRegen(zombie, npcData)
     end
 
     syncAndPersistHealth(zombie, npcData, false, false)
+    return true
+end
+
+function DTNPCHealth.ProcessPassiveRestRegen(zombie, npcData, options)
+    if not npcData or isRemoteClient() then
+        return false
+    end
+
+    options = type(options) == "table" and options or {}
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth then
+        return false
+    end
+
+    local now = nowMillis()
+    if not canUseRestingRegen(npcData, combatHealth, now) then
+        combatHealth.lastRestingRegenAt = now
+        return false
+    end
+
+    local lastRegenAt = tonumber(combatHealth.lastRestingRegenAt) or 0
+    if lastRegenAt <= 0 then
+        combatHealth.lastRestingRegenAt = now
+        return false
+    end
+
+    local intervalMs = math.max(1000, tonumber(DTNPCHealth.RESTING_REGEN_INTERVAL_MS) or 20000)
+    local elapsedMs = math.max(0, now - lastRegenAt)
+    local elapsedSteps = math.floor(elapsedMs / intervalMs)
+    if elapsedSteps <= 0 then
+        return false
+    end
+
+    local currentBefore = tonumber(combatHealth.current) or 0
+    local missingHealth = math.max(0, (tonumber(combatHealth.max) or 0) - currentBefore)
+    local healBudget = elapsedSteps
+        * math.max(0, tonumber(DTNPCHealth.RESTING_REGEN_PER_TICK) or 0.5)
+        * getRestingRegenMultiplier(npcData, combatHealth)
+    local healAmount = math.min(healBudget, missingHealth)
+    combatHealth.lastRestingRegenAt = lastRegenAt + (elapsedSteps * intervalMs)
+
+    if healAmount <= DTNPCHealth.MIN_DAMAGE then
+        return false
+    end
+
+    combatHealth.current = clamp(currentBefore + healAmount, 0, combatHealth.max)
+    syncAndPersistHealth(zombie, npcData, false, options.forceManagerSave == true)
     return true
 end
 
