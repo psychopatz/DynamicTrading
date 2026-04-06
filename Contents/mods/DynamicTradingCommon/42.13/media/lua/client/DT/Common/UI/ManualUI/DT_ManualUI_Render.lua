@@ -65,10 +65,18 @@ function DT_ManualUI:prepareBlock(block)
         payload.thankYouText = tostring(block.thankYouText or block.thank_you_text or "")
         payload.supporters = DT_ManualUI_Donators and DT_ManualUI_Donators.GetActiveSupportersFromBlock and DT_ManualUI_Donators.GetActiveSupportersFromBlock(block) or {}
         local thankYouLines = {}
+        local hasSupportMessages = false
         if payload.thankYouText ~= "" then
             thankYouLines = DynamicTrading.Utils.WrapText(payload.thankYouText, width - 30, UIFont.Small)
         end
-        payload.height = 350 + (#thankYouLines * 16)
+        for _, supporter in ipairs(payload.supporters) do
+            local supportMessage = tostring((supporter and supporter.supportMessage) or (supporter and supporter.support_message) or "")
+            if supportMessage ~= "" then
+                hasSupportMessages = true
+                break
+            end
+        end
+        payload.height = (hasSupportMessages and 420 or 350) + (#thankYouLines * 16)
         payload.label = payload.title
         return payload
     end

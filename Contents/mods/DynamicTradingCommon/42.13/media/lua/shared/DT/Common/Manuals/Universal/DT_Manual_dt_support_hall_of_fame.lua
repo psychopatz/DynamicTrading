@@ -45,27 +45,14 @@
 --           "title": "Hall of Fame Donators",
 --           "autoplay_ms": 4000,
 --           "currency_symbol": "$",
---           "thank_you_text": "Thank you to everyone helping keep Dynamic Trading moving.",
+--           "thank_you_text": "Thank you to everyone who’s supported the development of this mod. Your donations go directly into tools and resources (like Copilot) that help me build faster and improve things more often. It genuinely makes a difference. \n\nShout out to Summer for covering it up that made the companion system developed faster <3.",
 --           "supporters": [
 --             {
 --               "id": "summer",
 --               "name": "Summer",
 --               "total_donation": 20.0,
 --               "image_path": "media/ui/Manuals/dt_support_hall_of_fame/image_e3b0585f79.png",
---               "active": true
---             },
---             {
---               "id": "sy",
---               "name": "Sy",
---               "total_donation": 1.0,
---               "image_path": "media/ui/Manuals/dt_support_hall_of_fame/image_ef8ebfa9fd.png",
---               "active": true
---             },
---             {
---               "id": "w",
---               "name": "w",
---               "total_donation": 0.0,
---               "image_path": "media/ui/Manuals/dt_support_hall_of_fame/image_1221f7d13e.png",
+--               "support_message": "Love your mod, thank you for sharing your creation with the community, we appreciate you!",
 --               "active": true
 --             }
 --           ]
@@ -106,7 +93,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 title = "Hall of Fame",
                 keywords = { "support", "donators", "hall of fame", "supporters", "donation" },
                 blocks = {
-                    { type = "supporter_carousel", title = "Hall of Fame Donators", autoplayMs = 4000, currencySymbol = "$", thankYouText = "Thank you to everyone helping keep Dynamic Trading moving.", supporters = { { id = "summer", name = "Summer", totalDonation = 20.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_e3b0585f79.png", active = true }, { id = "sy", name = "Sy", totalDonation = 1.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_ef8ebfa9fd.png", active = true }, { id = "w", name = "w", totalDonation = 0.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_1221f7d13e.png", active = true } } },
+                    { type = "supporter_carousel", title = "Hall of Fame Donators", autoplayMs = 4000, currencySymbol = "$", thankYouText = "Thank you to everyone who’s supported the development of this mod. Your donations go directly into tools and resources (like Copilot) that help me build faster and improve things more often. It genuinely makes a difference. \n\nShout out to Summer for covering it up that made the companion system developed faster <3.", supporters = { { id = "summer", name = "Summer", totalDonation = 20.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_e3b0585f79.png", supportMessage = "Love your mod, thank you for sharing your creation with the community, we appreciate you!", active = true } } },
                 },
             },
         },

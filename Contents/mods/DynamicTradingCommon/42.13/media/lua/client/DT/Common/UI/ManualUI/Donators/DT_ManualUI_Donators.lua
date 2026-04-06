@@ -20,6 +20,7 @@ local function donorNormalizeEntry(entry)
         name = tostring(entry.name or ""),
         totalDonation = tonumber(entry.totalDonation or entry.total_donation) or 0,
         imagePath = tostring(entry.imagePath or entry.image_path or ""),
+        supportMessage = tostring(entry.supportMessage or entry.support_message or entry.message or ""),
         active = entry.active ~= false,
     }
 end

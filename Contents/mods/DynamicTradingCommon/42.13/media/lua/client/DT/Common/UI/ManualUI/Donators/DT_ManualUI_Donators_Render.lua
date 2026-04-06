@@ -16,12 +16,62 @@ local function wrapLines(text, width, font)
     return { tostring(text) }
 end
 
+local function normalizeInlineText(text)
+    local normalized = tostring(text or "")
+    normalized = normalized:gsub("\r\n", "\n")
+    normalized = normalized:gsub("\r", "\n")
+    normalized = normalized:gsub("\n", " ")
+    normalized = normalized:gsub("%s+", " ")
+    normalized = normalized:gsub("^%s+", "")
+    normalized = normalized:gsub("%s+$", "")
+    return normalized
+end
+
+local function truncateToWidth(text, width, font)
+    local value = tostring(text or "")
+    if value == "" or DT_ManualUI_Utils.safeMeasure(font, value) <= width then
+        return value
+    end
+
+    local suffix = "..."
+    local clipped = value
+    while #clipped > 0 do
+        clipped = string.sub(clipped, 1, #clipped - 1)
+        local candidate = clipped .. suffix
+        if DT_ManualUI_Utils.safeMeasure(font, candidate) <= width then
+            return candidate
+        end
+    end
+
+    return suffix
+end
+
+local function limitWrappedLines(text, width, font, maxLines)
+    if maxLines <= 0 then
+        return {}
+    end
+
+    local lines = wrapLines(text, width, font)
+    if #lines <= maxLines then
+        return lines
+    end
+
+    local limited = {}
+    for index = 1, maxLines do
+        limited[index] = lines[index]
+    end
+    limited[maxLines] = truncateToWidth(limited[maxLines], width, font)
+    return limited
+end
+
 local function drawDonorCard(target, x, y, width, height, supporter, rank, currencySymbol, alpha, compact)
     target:drawRect(x, y, width, height, 0.26 * alpha, 0.08, 0.08, 0.08)
     target:drawRectBorder(x, y, width, height, 0.85 * alpha, 0.62, 0.48, 0.18)
 
     local padding = compact and 10 or 14
-    local imageSize = compact and math.min(height - 20, 54) or math.min(math.floor(height * 0.58), math.min(width - (padding * 2), 210))
+    local supportMessage = normalizeInlineText(supporter and supporter.supportMessage or "")
+    local hasSupportMessage = supportMessage ~= ""
+    local imageSize = compact and math.min(height - 20, 54) or math.min(math.floor(height * (hasSupportMessage and 0.48 or 0.58)), math.min(width - (padding * 2), 210))
     local imageX = x + padding
     local imageY = y + padding
 
@@ -53,10 +103,7 @@ local function drawDonorCard(target, x, y, width, height, supporter, rank, curre
     if compact then
         local textX = imageX + imageSize + 14
         local textWidth = math.max(60, (x + width - 12) - textX)
-        local nameLines = wrapLines(name, textWidth, UIFont.Medium)
-        if #nameLines > 2 then
-            nameLines = { nameLines[1], nameLines[2] }
-        end
+        local nameLines = limitWrappedLines(name, textWidth, UIFont.Medium, 2)
         local textHeight = (#nameLines * 18) + 18
         local textY = y + math.max(10, math.floor((height - textHeight) / 2))
         for _, line in ipairs(nameLines) do
@@ -67,13 +114,82 @@ local function drawDonorCard(target, x, y, width, height, supporter, rank, curre
         return
     end
 
-    local nameLines = wrapLines(name, width - 48, UIFont.Medium)
+    local textWidth = width - 48
+    local nameLines = limitWrappedLines(name, textWidth, UIFont.Medium, 2)
+    local messageLines = hasSupportMessage and limitWrappedLines('"' .. supportMessage .. '"', textWidth, UIFont.Small, 3) or {}
     local textY = imageY + imageSize + 18
     for _, line in ipairs(nameLines) do
         target:drawTextCentre(line, x + (width / 2), textY, 0.98, 0.96, 0.92, alpha, UIFont.Medium)
         textY = textY + 20
     end
     target:drawTextCentre(donation, x + (width / 2), textY, 0.95, 0.74, 0.38, alpha, UIFont.Small)
+
+    if #messageLines > 0 then
+        textY = textY + 20
+        for _, line in ipairs(messageLines) do
+            target:drawTextCentre(line, x + (width / 2), textY, 0.84, 0.82, 0.78, alpha * 0.92, UIFont.Small)
+            textY = textY + 16
+        end
+    end
+end
+
+local function drawPreviewCard(target, x, y, width, height, supporter, alpha)
+    if not supporter or alpha <= 0 then
+        return
+    end
+
+    target:drawRect(x, y, width, height, 0.14 * alpha, 0.06, 0.06, 0.06)
+    target:drawRectBorder(x, y, width, height, 0.26 * alpha, 0.54, 0.42, 0.18)
+
+    local padding = math.max(8, math.floor(width * 0.07))
+    local imageSize = math.min(width - (padding * 2), height - 34)
+    local imageX = x + math.floor((width - imageSize) / 2)
+    local imageY = y + math.max(8, math.floor((height - imageSize - 18) / 2))
+
+    local texture = DT_ManualUI_Utils.resolveTexture(supporter.imagePath or "")
+    if texture then
+        target:drawTextureScaled(texture, imageX, imageY, imageSize, imageSize, 0.56 * alpha, 1, 1, 1)
+    else
+        target:drawRect(imageX, imageY, imageSize, imageSize, 0.14 * alpha, 0.18, 0.18, 0.18)
+    end
+
+    target:drawRect(imageX, imageY, imageSize, imageSize, 0.08 * alpha, 0.02, 0.02, 0.02)
+    target:drawRectBorder(imageX, imageY, imageSize, imageSize, 0.18 * alpha, 0.4, 0.4, 0.4)
+
+    local name = tostring(supporter.name or "Unnamed Supporter")
+    target:drawTextCentre(name, x + (width / 2), y + height - 20, 0.82, 0.80, 0.76, 0.52 * alpha, UIFont.Small)
+end
+
+local function getWrappedIndex(index, count)
+    if count <= 0 then
+        return 0
+    end
+    return ((index - 1) % count) + 1
+end
+
+local function drawPreviewSlotBlend(target, x, y, width, height, supporters, firstIndex, firstAlpha, secondIndex, secondAlpha)
+    local count = supporters and #supporters or 0
+    if count <= 0 then
+        return
+    end
+
+    local normalizedFirstAlpha = math.max(0, tonumber(firstAlpha) or 0)
+    local normalizedSecondAlpha = math.max(0, tonumber(secondAlpha) or 0)
+    local wrappedFirstIndex = getWrappedIndex(firstIndex, count)
+    local wrappedSecondIndex = getWrappedIndex(secondIndex, count)
+
+    if wrappedFirstIndex == wrappedSecondIndex then
+        drawPreviewCard(target, x, y, width, height, supporters[wrappedFirstIndex], math.min(1, normalizedFirstAlpha + normalizedSecondAlpha))
+        return
+    end
+
+    if normalizedFirstAlpha > 0 then
+        drawPreviewCard(target, x, y, width, height, supporters[wrappedFirstIndex], normalizedFirstAlpha)
+    end
+
+    if normalizedSecondAlpha > 0 then
+        drawPreviewCard(target, x, y, width, height, supporters[wrappedSecondIndex], normalizedSecondAlpha)
+    end
 end
 
 local function drawPaginationDots(target, x, y, width, count, activeIndex)
@@ -118,15 +234,42 @@ function DT_ManualUI_Donators_Render.DrawContentCarousel(target, block, y, width
     end
 
     local currentIndex, nextIndex, blend = DT_ManualUI_Donators.GetCarouselFrame(supporters, block.autoplayMs, 300)
+    local supporterCount = #supporters
+    local activeIndex = blend >= 0.5 and nextIndex or currentIndex
 
-    if blend > 0 and supporters[nextIndex] then
-        drawDonorCard(target, cardX, cardY, cardW, cardH, supporters[currentIndex], currentIndex, block.currencySymbol, 1 - blend, false)
-        drawDonorCard(target, cardX, cardY, cardW, cardH, supporters[nextIndex], nextIndex, block.currencySymbol, blend, false)
-        drawPaginationDots(target, cardX, cardY + cardH + 6, cardW, #supporters, nextIndex)
+    if supporterCount > 1 then
+        local previewGap = math.max(10, math.floor(cardW * 0.02))
+        local previewW = math.max(84, math.min(152, math.floor(cardW * 0.20)))
+        local mainW = cardW - (previewW * 2) - (previewGap * 2)
+        if mainW < 220 then
+            previewW = math.max(68, math.floor((cardW - 220 - (previewGap * 2)) / 2))
+            mainW = math.max(220, cardW - (previewW * 2) - (previewGap * 2))
+        end
+
+        local previewH = math.max(126, math.floor(cardH * 0.74))
+        local previewY = cardY + math.floor((cardH - previewH) / 2)
+        local mainX = cardX + previewW + previewGap
+        local leftPreviewX = cardX
+        local rightPreviewX = mainX + mainW + previewGap
+
+        local previousIndex = getWrappedIndex(currentIndex - 1, supporterCount)
+        local afterNextIndex = getWrappedIndex(nextIndex + 1, supporterCount)
+        local previewAlpha = 0.55
+
+        drawPreviewSlotBlend(target, leftPreviewX, previewY, previewW, previewH, supporters, previousIndex, previewAlpha * (1 - blend), currentIndex, previewAlpha * blend)
+        drawPreviewSlotBlend(target, rightPreviewX, previewY, previewW, previewH, supporters, nextIndex, previewAlpha * (1 - blend), afterNextIndex, previewAlpha * blend)
+
+        if blend > 0 and supporters[nextIndex] then
+            drawDonorCard(target, mainX, cardY, mainW, cardH, supporters[currentIndex], currentIndex, block.currencySymbol, 1 - blend, false)
+            drawDonorCard(target, mainX, cardY, mainW, cardH, supporters[nextIndex], nextIndex, block.currencySymbol, blend, false)
+        else
+            drawDonorCard(target, mainX, cardY, mainW, cardH, supporters[currentIndex], currentIndex, block.currencySymbol, 1, false)
+        end
     else
         drawDonorCard(target, cardX, cardY, cardW, cardH, supporters[currentIndex], currentIndex, block.currencySymbol, 1, false)
-        drawPaginationDots(target, cardX, cardY + cardH + 6, cardW, #supporters, currentIndex)
     end
+
+    drawPaginationDots(target, cardX, cardY + cardH + 6, cardW, supporterCount, activeIndex)
 
     local thankYouY = cardY + cardH + dotsHeight + 8
     for _, line in ipairs(thankYouLines) do
