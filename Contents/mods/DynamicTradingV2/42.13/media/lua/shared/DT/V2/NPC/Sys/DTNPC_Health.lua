@@ -30,9 +30,119 @@ DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER or
 DTNPCHealth.INCAP_GRACE_WINDOW_MS = DTNPCHealth.INCAP_GRACE_WINDOW_MS or 1200
 DTNPCHealth.MIN_DAMAGE = DTNPCHealth.MIN_DAMAGE or 0.01
 DTNPCHealth.FALLBACK_IGNORE_WINDOW_MS = DTNPCHealth.FALLBACK_IGNORE_WINDOW_MS or 250
+DTNPCHealth.NETWORK_SAFE_SPAWN_ENGINE_HEALTH = DTNPCHealth.NETWORK_SAFE_SPAWN_ENGINE_HEALTH or 2
+DTNPCHealth.NETWORK_SAFE_SPAWN_DELAY_MS = DTNPCHealth.NETWORK_SAFE_SPAWN_DELAY_MS or 250
+DTNPCHealth.SPAWN_FALLBACK_GUARD_MS = DTNPCHealth.SPAWN_FALLBACK_GUARD_MS or 12000
+
+local nowMillis
 
 local function isRemoteClient()
     return isClient() and not isServer()
+end
+
+local function isDedicatedServer()
+    return isServer() and not isClient()
+end
+
+local function isLocalPlayerAttacker(attacker)
+    if not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
+        return false
+    end
+
+    if attacker.isLocalPlayer then
+        local ok, result = pcall(attacker.isLocalPlayer, attacker)
+        if ok and result == true then
+            return true
+        end
+    end
+
+    if attacker.getPlayerNum and getSpecificPlayer then
+        local ok, playerNum = pcall(attacker.getPlayerNum, attacker)
+        if ok and playerNum ~= nil and playerNum >= 0 then
+            local localPlayer = getSpecificPlayer(playerNum)
+            if localPlayer == attacker then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+local function reportWeaponHitToServer(attacker, target, weapon, damage)
+    if not isRemoteClient() or not sendClientCommand then
+        return false
+    end
+    if not isLocalPlayerAttacker(attacker) then
+        return false
+    end
+
+    local modData = target and target.getModData and target:getModData() or nil
+    local uuid = modData and modData.DTNPC_UUID or nil
+    if not uuid then
+        return false
+    end
+
+    sendClientCommand("DTNPC", "ReportWeaponHit", {
+        uuid = uuid,
+        bodyInstanceID = target.getPersistentOutfitID and target:getPersistentOutfitID() or nil,
+        damage = tonumber(damage) or 0,
+        attackerOnlineID = attacker.getOnlineID and attacker:getOnlineID() or nil,
+        weaponFullType = weapon and weapon.getFullType and weapon:getFullType() or nil,
+        targetHealthAfterHit = target.getHealth and target:getHealth() or nil,
+    })
+
+    return true
+end
+
+local function clearDeferredSpawnRestore(combatHealth)
+    if not combatHealth then
+        return
+    end
+
+    combatHealth.deferredSpawnBufferTarget = nil
+    combatHealth.deferredSpawnBufferUntil = nil
+    combatHealth.deferredSpawnReason = nil
+end
+
+local function scheduleDeferredSpawnRestore(combatHealth, targetHealth, reason)
+    if not combatHealth then
+        return
+    end
+
+    local resolvedTarget = math.max(1, tonumber(targetHealth) or 0)
+    if resolvedTarget <= 0 then
+        clearDeferredSpawnRestore(combatHealth)
+        return
+    end
+
+    combatHealth.deferredSpawnBufferTarget = resolvedTarget
+    combatHealth.deferredSpawnBufferUntil = nowMillis() + DTNPCHealth.NETWORK_SAFE_SPAWN_DELAY_MS
+    combatHealth.deferredSpawnReason = tostring(reason or "spawn")
+end
+
+local function resolveSpawnHealthPlan(npcData, combatHealth, options)
+    options = type(options) == "table" and options or {}
+
+    local desiredHealth
+    local isIncapacitatedSpawn = npcData and npcData.incapState == "Active"
+    if npcData and npcData.incapState == "Active" then
+        desiredHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+    else
+        desiredHealth = math.max(1, tonumber(combatHealth and combatHealth.engineBuffer) or DTNPCHealth.DEFAULT_ENGINE_BUFFER)
+    end
+
+    local initialHealth = desiredHealth
+    local deferRestore = false
+    if options.deferNetworkSafeBuffer == true and not isIncapacitatedSpawn then
+        initialHealth = math.min(
+            desiredHealth,
+            math.max(1, tonumber(options.networkSafeSpawnHealth) or DTNPCHealth.NETWORK_SAFE_SPAWN_ENGINE_HEALTH)
+        )
+        deferRestore = initialHealth < desiredHealth
+    end
+
+    return initialHealth, desiredHealth, deferRestore
 end
 
 local function getBaseHPMultiplier()
@@ -45,7 +155,7 @@ local function getBaseHPMultiplier()
     return 1.0
 end
 
-local function nowMillis()
+nowMillis = function()
     if getTimeInMillis then
         local value = tonumber(getTimeInMillis())
         if value and value > 0 then
@@ -119,6 +229,30 @@ local function getAttackerID(attacker)
     end
 
     return tostring(attacker)
+end
+
+local function isLikelySpawnFallbackCollapse(npcData, combatHealth, currentHealth, previousHealth, attacker)
+    if attacker then
+        return false
+    end
+
+    local spawnedAt = tonumber(combatHealth and combatHealth.spawnInitializedAt) or 0
+    if spawnedAt <= 0 then
+        return false
+    end
+
+    local ageMs = nowMillis() - spawnedAt
+    if ageMs < 0 or ageMs > DTNPCHealth.SPAWN_FALLBACK_GUARD_MS then
+        return false
+    end
+
+    local prev = tonumber(previousHealth) or 0
+    local curr = tonumber(currentHealth) or 0
+    if prev < 50 then
+        return false
+    end
+
+    return curr <= DTNPCHealth.INCAP_ENGINE_HEALTH
 end
 
 local function getResolvedSkillLevelForHealth(npcData, skillID)
@@ -319,6 +453,8 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if combatHealth.current == nil then
         combatHealth.current = npcData.incapState == "Active" and 0 or combatHealth.max
     end
+    if combatHealth.eventDrivenOnly == nil then combatHealth.eventDrivenOnly = true end
+    if combatHealth.invulnerableBody == nil then combatHealth.invulnerableBody = true end
     if combatHealth.engineBuffer == nil then combatHealth.engineBuffer = DTNPCHealth.DEFAULT_ENGINE_BUFFER end
     if combatHealth.zeroHpMode == nil then combatHealth.zeroHpMode = "Incapacitated" end
     if combatHealth.lastEngineHealth == nil then
@@ -353,6 +489,11 @@ function DTNPCHealth.IsCustomHealthEnabled(npcData)
     return combatHealth and combatHealth.enabled == true
 end
 
+function DTNPCHealth.IsEventDrivenOnly(npcData)
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    return combatHealth and combatHealth.eventDrivenOnly == true
+end
+
 function DTNPCHealth.GetCurrentHP(npcData)
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
     return combatHealth and tonumber(combatHealth.current) or nil
@@ -377,6 +518,45 @@ function DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
     zombie:setHealth(engineBuffer)
     combatHealth.lastEngineHealth = engineBuffer
     npcData.health = engineBuffer
+    npcData.lastHealth = engineBuffer
+    clearDeferredSpawnRestore(combatHealth)
+    return true
+end
+
+function DTNPCHealth.ProcessDeferredSpawnRestore(zombie, npcData)
+    if not zombie or not npcData or isRemoteClient() then
+        return false
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth then
+        return false
+    end
+
+    local targetHealth = tonumber(combatHealth.deferredSpawnBufferTarget) or 0
+    local restoreAt = tonumber(combatHealth.deferredSpawnBufferUntil) or 0
+    if targetHealth <= 0 or nowMillis() < restoreAt then
+        return false
+    end
+
+    zombie:setHealth(targetHealth)
+    combatHealth.lastEngineHealth = targetHealth
+    npcData.health = targetHealth
+    npcData.lastHealth = targetHealth
+
+    local restoreReason = combatHealth.deferredSpawnReason
+    clearDeferredSpawnRestore(combatHealth)
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Health",
+        "Deferred engine-buffer restore applied for "
+            .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " reason=" .. tostring(restoreReason or "spawn")
+            .. " targetHealth=" .. tostring(targetHealth)
+    )
+
     return true
 end
 
@@ -388,23 +568,45 @@ function DTNPCHealth.InitializeForSpawn(zombie, npcData, options)
     options = type(options) == "table" and options or {}
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
     local resetCurrent = options.resetCurrent == true
+    local spawnReason = tostring(options.spawnReason or "spawn")
     combatHealth.lastDamageAt = 0
     combatHealth.lastDamageAmount = 0
     combatHealth.pendingFallbackIgnoreAmount = 0
     combatHealth.pendingFallbackIgnoreUntil = 0
+    combatHealth.spawnInitializedAt = nowMillis()
+    combatHealth.spawnReason = spawnReason
+
+    local initialEngineHealth, desiredEngineHealth, deferRestore = resolveSpawnHealthPlan(npcData, combatHealth, options)
 
     if npcData.incapState == "Active" then
         combatHealth.enabled = false
         combatHealth.engineProtected = true
         combatHealth.current = 0
-        combatHealth.incapGraceUntil = math.max(tonumber(combatHealth.incapGraceUntil) or 0, nowMillis())
-        combatHealth.lastEngineHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
-        if zombie then
-            zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
+        combatHealth.incapGraceUntil = nowMillis() + DTNPCHealth.INCAP_GRACE_WINDOW_MS
+        combatHealth.lastEngineHealth = initialEngineHealth
+        if deferRestore then
+            scheduleDeferredSpawnRestore(combatHealth, desiredEngineHealth, spawnReason .. "_incap")
+        else
+            clearDeferredSpawnRestore(combatHealth)
         end
-        npcData.health = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
-        npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        if zombie then
+            zombie:setHealth(initialEngineHealth)
+        end
+        npcData.health = initialEngineHealth
+        npcData.lastHealth = initialEngineHealth
         npcData.lastCustomDamageHandledAt = 0
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Health",
+        "InitializeForSpawn incap name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+                .. " reason=" .. spawnReason
+                .. " initialEngineHealth=" .. tostring(initialEngineHealth)
+                .. " desiredEngineHealth=" .. tostring(desiredEngineHealth)
+                .. " deferred=" .. tostring(deferRestore)
+                .. " graceUntil=" .. tostring(combatHealth.incapGraceUntil)
+                .. " incapState=" .. tostring(npcData.incapState)
+        )
         return combatHealth
     end
 
@@ -416,15 +618,36 @@ function DTNPCHealth.InitializeForSpawn(zombie, npcData, options)
         combatHealth.current = clamp(combatHealth.current, 0, combatHealth.max)
     end
 
-    if zombie then
+    if zombie and deferRestore then
+        zombie:setHealth(initialEngineHealth)
+        combatHealth.lastEngineHealth = initialEngineHealth
+        npcData.health = initialEngineHealth
+        npcData.lastHealth = initialEngineHealth
+        scheduleDeferredSpawnRestore(combatHealth, desiredEngineHealth, spawnReason)
+    elseif zombie then
         DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
         npcData.lastHealth = zombie:getHealth()
     else
         combatHealth.lastEngineHealth = combatHealth.engineBuffer
         npcData.health = combatHealth.engineBuffer
         npcData.lastHealth = combatHealth.engineBuffer
+        clearDeferredSpawnRestore(combatHealth)
     end
     npcData.lastCustomDamageHandledAt = 0
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Health",
+        "InitializeForSpawn name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " reason=" .. spawnReason
+            .. " resetCurrent=" .. tostring(resetCurrent)
+            .. " customCurrent=" .. tostring(combatHealth.current)
+            .. " customMax=" .. tostring(combatHealth.max)
+            .. " initialEngineHealth=" .. tostring(initialEngineHealth)
+            .. " desiredEngineHealth=" .. tostring(desiredEngineHealth)
+            .. " deferred=" .. tostring(deferRestore)
+    )
 
     return combatHealth
 end
@@ -442,6 +665,20 @@ function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
     if attacker and zombie.setAttackedBy then
         zombie:setAttackedBy(attacker)
     end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Health",
+        "HandleZeroHP name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " uuid=" .. tostring(npcData.uuid)
+            .. " source=" .. tostring(context and context.source or "unknown")
+            .. " attackerType=" .. tostring(getAttackerType(attacker))
+            .. " attackerID=" .. tostring(getAttackerID(attacker))
+            .. " engineHealth=" .. tostring(zombie:getHealth())
+            .. " customCurrent=" .. tostring(combatHealth.current)
+            .. " customMax=" .. tostring(combatHealth.max)
+    )
 
     capturePlayerAttacker(npcData, attacker)
     setIncapacitatedState(zombie, npcData)
@@ -465,6 +702,20 @@ function DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, amount, attacker
     local graceUntil = tonumber(combatHealth.incapGraceUntil) or 0
 
     capturePlayerAttacker(npcData, attacker)
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Health",
+        "HandleIncapacitatedDamage name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " uuid=" .. tostring(npcData.uuid)
+            .. " source=" .. tostring(context and context.source or "unknown")
+            .. " amount=" .. tostring(amount)
+            .. " attackerType=" .. tostring(getAttackerType(attacker))
+            .. " attackerID=" .. tostring(getAttackerID(attacker))
+            .. " currentTime=" .. tostring(currentTime)
+            .. " graceUntil=" .. tostring(graceUntil)
+    )
 
     if currentTime < graceUntil then
         combatHealth.lastDamageAt = currentTime
@@ -532,6 +783,21 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
         queueFallbackIgnore(combatHealth, damage)
     end
 
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Health",
+        "ApplyDamage name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " uuid=" .. tostring(npcData.uuid)
+            .. " source=" .. tostring(context and context.source or "unknown")
+            .. " damage=" .. tostring(damage)
+            .. " attackerType=" .. tostring(getAttackerType(attacker))
+            .. " attackerID=" .. tostring(getAttackerID(attacker))
+            .. " customBefore=" .. tostring(combatHealth.current)
+            .. " customMax=" .. tostring(combatHealth.max)
+            .. " engineHealth=" .. tostring(zombie:getHealth())
+    )
+
     combatHealth.current = clamp((tonumber(combatHealth.current) or combatHealth.max) - damage, 0, combatHealth.max)
 
     if attacker and zombie.setAttackedBy then
@@ -554,6 +820,12 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
     end
 
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if combatHealth and combatHealth.eventDrivenOnly == true then
+        combatHealth.lastEngineHealth = zombie:getHealth()
+        npcData.health = zombie:getHealth()
+        return false, false
+    end
+
     if npcData.incapState == "Active" then
         local currentHealth = tonumber(zombie:getHealth()) or 0
         local previousHealth = tonumber(combatHealth and combatHealth.lastEngineHealth) or currentHealth
@@ -566,6 +838,38 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
             npcData.health = currentHealth
             return false, false
         end
+
+        if isLikelySpawnFallbackCollapse(npcData, combatHealth, currentHealth, previousHealth, zombie:getAttackedBy()) then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Warn",
+                "Ignored suspicious incapacitated spawn fallback collapse for "
+                    .. tostring(npcData.name or npcData.uuid or "Unknown")
+                    .. " uuid=" .. tostring(npcData.uuid)
+                    .. " previousHealth=" .. tostring(previousHealth)
+                    .. " currentHealth=" .. tostring(currentHealth)
+                    .. " spawnAgeMs=" .. tostring(nowMillis() - (tonumber(combatHealth.spawnInitializedAt) or 0))
+            )
+            zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
+            combatHealth.lastEngineHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+            npcData.health = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+            npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+            return false, false
+        end
+
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Health",
+            "ProcessFallbackDamage incap name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+                .. " uuid=" .. tostring(npcData.uuid)
+                .. " previousHealth=" .. tostring(previousHealth)
+                .. " currentHealth=" .. tostring(currentHealth)
+                .. " delta=" .. tostring(healthDelta)
+                .. " attackerType=" .. tostring(getAttackerType(zombie:getAttackedBy()))
+                .. " attackerID=" .. tostring(getAttackerID(zombie:getAttackedBy()))
+        )
 
         return DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, healthDelta, zombie:getAttackedBy(), {
             source = "incap_engine_fallback",
@@ -590,11 +894,40 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
         return false, false
     end
 
+    if isLikelySpawnFallbackCollapse(npcData, combatHealth, currentHealth, previousHealth, zombie:getAttackedBy()) then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Ignored suspicious spawn fallback collapse for "
+                .. tostring(npcData.name or npcData.uuid or "Unknown")
+                .. " uuid=" .. tostring(npcData.uuid)
+                .. " previousHealth=" .. tostring(previousHealth)
+                .. " currentHealth=" .. tostring(currentHealth)
+                .. " spawnAgeMs=" .. tostring(nowMillis() - (tonumber(combatHealth.spawnInitializedAt) or 0))
+        )
+        DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
+        return false, false
+    end
+
     healthDelta = consumeFallbackIgnore(combatHealth, healthDelta)
     if healthDelta <= DTNPCHealth.MIN_DAMAGE then
         DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
         return false, false
     end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Health",
+        "ProcessFallbackDamage name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " uuid=" .. tostring(npcData.uuid)
+            .. " previousHealth=" .. tostring(previousHealth)
+            .. " currentHealth=" .. tostring(currentHealth)
+            .. " delta=" .. tostring(healthDelta)
+            .. " attackerType=" .. tostring(getAttackerType(zombie:getAttackedBy()))
+            .. " attackerID=" .. tostring(getAttackerID(zombie:getAttackedBy()))
+    )
 
     return DTNPCHealth.ApplyDamage(zombie, npcData, healthDelta, zombie:getAttackedBy(), {
         source = "engine_fallback",
@@ -603,7 +936,7 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
 end
 
 local function onWeaponHitCharacter(attacker, target, weapon, damage)
-    if isRemoteClient() or not target then
+    if not target then
         return
     end
     if not instanceof or not instanceof(target, "IsoZombie") then
@@ -617,6 +950,17 @@ local function onWeaponHitCharacter(attacker, target, weapon, damage)
 
     local npcData = (DTNPC and DTNPC.GetData and DTNPC.GetData(target)) or modData.DTNPC_Data or modData.DTNPCBrain
     if not npcData then
+        return
+    end
+
+    if isRemoteClient() then
+        reportWeaponHitToServer(attacker, target, weapon, damage)
+        return
+    end
+
+    -- Dedicated MP server should trust the hit-owning client report for player weapon hits,
+    -- matching the Bandits pattern of client-side hit ownership plus server fan-out sync.
+    if isDedicatedServer() and attacker and instanceof and instanceof(attacker, "IsoPlayer") then
         return
     end
 

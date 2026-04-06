@@ -44,6 +44,45 @@ function DTNPCClient.OnTick()
     DTNPCClient.visualCheckCounter = (DTNPCClient.visualCheckCounter or 0) + 1
     if DTNPCClient.visualCheckCounter < DTNPCClient.VISUAL_CHECK_RATE then return end
     DTNPCClient.visualCheckCounter = 0
+
+    local currentMillis = getTimeInMillis()
+    for uuid, cached in pairs(DTNPCClient.NPCCache or {}) do
+        if cached and cached.awaitingWorldZombieSince then
+            local bodyInstanceID = cached.npcData and cached.npcData.currentBodyInstanceID or nil
+            local zombie = DTNPCClient.FindZombieByUUID and DTNPCClient.FindZombieByUUID(uuid) or nil
+            if not zombie and bodyInstanceID and DTNPCClient.FindZombieByBodyInstanceID then
+                zombie = DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
+            end
+
+            if zombie then
+                cached.awaitingWorldZombieSince = nil
+                cached.awaitingWorldZombieLoggedAt = nil
+                DynamicTrading.Log(
+                    "DTV2",
+                    "NPC",
+                    "Sync",
+                    "Delayed live zombie resolved uuid=" .. tostring(uuid)
+                        .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+                )
+            elseif currentMillis - cached.awaitingWorldZombieSince >= 3000 then
+                local lastLoggedAt = tonumber(cached.awaitingWorldZombieLoggedAt) or 0
+                if lastLoggedAt == 0 or currentMillis - lastLoggedAt >= 3000 then
+                    cached.awaitingWorldZombieLoggedAt = currentMillis
+                    DynamicTrading.Log(
+                        "DTV2",
+                        "NPC",
+                        "Warn",
+                        "Still waiting for live zombie after SyncNPC uuid=" .. tostring(uuid)
+                            .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+                            .. " waitMs=" .. tostring(currentMillis - cached.awaitingWorldZombieSince)
+                            .. " name=" .. tostring(cached.npcData and (cached.npcData.name or uuid) or uuid)
+                            .. " customCurrent=" .. tostring(cached.npcData and cached.npcData.combatHealth and cached.npcData.combatHealth.current or nil)
+                            .. " customMax=" .. tostring(cached.npcData and cached.npcData.combatHealth and cached.npcData.combatHealth.max or nil)
+                    )
+                end
+            end
+        end
+    end
     
     local cell = getCell()
     if not cell then return end

@@ -20,6 +20,17 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
         return nil
     end
 
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Respawn",
+        "RespawnNPC request name=" .. tostring(npcData.name or uuid or "Unknown")
+            .. " uuid=" .. tostring(uuid or npcData.uuid)
+            .. " lastPos=" .. tostring(npcData.lastX) .. "," .. tostring(npcData.lastY) .. "," .. tostring(npcData.lastZ or 0)
+            .. " status=" .. tostring(npcData.status)
+            .. " incapState=" .. tostring(npcData.incapState)
+    )
+
     uuid = uuid or npcData.uuid
     local previousBodyInstanceID = npcData.currentBodyInstanceID
     if uuid then
@@ -106,6 +117,7 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     local spawnAsCrawler = npcData.incapState == "Active"
     local fallOnFront = spawnAsCrawler
     local knockedDown = spawnAsCrawler
+    local invulnerable = true
     local zombieList = addZombiesInOutfit(
         x,
         y,
@@ -117,7 +129,7 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
         fallOnFront,
         false,
         knockedDown,
-        false,
+        invulnerable,
         false,
         1
     )
@@ -178,10 +190,24 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     zombie:setUseless(true) 
     zombie:DoZombieStats()
     if DTNPCHealth and DTNPCHealth.InitializeForSpawn then
-        DTNPCHealth.InitializeForSpawn(zombie, npcData, { resetCurrent = true })
+        DTNPCHealth.InitializeForSpawn(zombie, npcData, {
+            resetCurrent = true,
+            deferNetworkSafeBuffer = isServer(),
+            spawnReason = "server_respawn",
+        })
     else
         zombie:setHealth(2)
     end
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Respawn",
+        "RespawnNPC initialized health name=" .. tostring(npcData.name or uuid or "Unknown")
+            .. " engineHealth=" .. tostring(zombie:getHealth())
+            .. " customCurrent=" .. tostring(npcData.combatHealth and npcData.combatHealth.current or nil)
+            .. " customMax=" .. tostring(npcData.combatHealth and npcData.combatHealth.max or nil)
+            .. " deferredBuffer=" .. tostring(npcData.combatHealth and npcData.combatHealth.deferredSpawnBufferTarget or nil)
+    )
     
     zombie:resetModelNextFrame()
 
@@ -192,7 +218,16 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     -- Force sync to all clients with new visual ID
     DTNPCServerCore.SyncToAllClients(zombie, npcData)
 
-    DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned: " .. npcData.name .. " | UUID: " .. uuid .. " | New BodyInstanceID: " .. newBodyInstanceID .. " | VisualID: " .. npcData.visualID)
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Respawn",
+        "RespawnNPC complete name=" .. tostring(npcData.name)
+            .. " uuid=" .. tostring(uuid)
+            .. " bodyInstanceID=" .. tostring(newBodyInstanceID)
+            .. " pos=" .. tostring(math.floor(zombie:getX())) .. "," .. tostring(math.floor(zombie:getY())) .. "," .. tostring(math.floor(zombie:getZ()))
+            .. " visualID=" .. tostring(npcData.visualID)
+    )
     
     return zombie, npcData
 end

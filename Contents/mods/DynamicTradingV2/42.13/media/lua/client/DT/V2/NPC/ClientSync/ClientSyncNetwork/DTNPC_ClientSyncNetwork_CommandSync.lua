@@ -31,7 +31,17 @@ function Handlers.HandleSyncNPC(args)
     local uuid = args.uuid
     local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
 
-    DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncNPC for: " .. (args.npcData.name or uuid))
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Sync",
+        "Received SyncNPC name=" .. tostring(args.npcData.name or uuid)
+            .. " uuid=" .. tostring(uuid)
+            .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+            .. " pos=" .. tostring(args.x) .. "," .. tostring(args.y) .. "," .. tostring(args.z)
+            .. " customCurrent=" .. tostring(args.npcData.combatHealth and args.npcData.combatHealth.current or nil)
+            .. " customMax=" .. tostring(args.npcData.combatHealth and args.npcData.combatHealth.max or nil)
+    )
 
     DTNPCClient.CacheData(uuid, bodyInstanceID, args.npcData)
     if DTNPCClient.RemoveDuplicateLocalZombies and bodyInstanceID then
@@ -41,17 +51,32 @@ function Handlers.HandleSyncNPC(args)
     Helpers.RecordInterpolation(uuid, args.x, args.y, args.z)
 
     local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
+    local cached = DTNPCClient.NPCCache[uuid]
     if zombie then
         DTNPCClient.ApplyVisualsToNPC(zombie, args.npcData)
         DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
         DTNPCClient.ProcessedZombies[uuid] = true
 
-        local cached = DTNPCClient.NPCCache[uuid]
+        if cached then
+            cached.awaitingWorldZombieSince = nil
+            cached.awaitingWorldZombieLoggedAt = nil
+        end
         Helpers.SetReportedState(cached, args.npcData)
 
         DynamicTrading.Log("DTV2", "NPC", "Sync", "Applied visuals to zombie: " .. uuid)
     else
-        DynamicTrading.Log("DTV2", "NPC", "Sync", "Zombie not in world yet, cached for later: " .. uuid)
+        if cached then
+            cached.awaitingWorldZombieSince = cached.awaitingWorldZombieSince or getTimeInMillis()
+            cached.awaitingWorldZombieLoggedAt = nil
+        end
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "SyncNPC cached without live zombie uuid=" .. tostring(uuid)
+                .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+                .. " pos=" .. tostring(args.x) .. "," .. tostring(args.y) .. "," .. tostring(args.z)
+        )
     end
 end
 

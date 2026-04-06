@@ -75,13 +75,17 @@ local function requestEscapeRemoval(zombie, npcData)
     npcData.requestedReturnStatus = "Resting"
     npcData.removalRequested = true
 
-    if isClient() then
-        sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", {
-            uuid = uuid,
-            status = "Away",
-            returnTime = returnTime,
-            returnStatus = "Resting"
-        })
+    if isClient() and not isServer() then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Client suppressed incapacitated escape removal for "
+                .. tostring(npcData.name or uuid)
+                .. " uuid=" .. tostring(uuid)
+                .. " because removal must be server-authoritative"
+        )
+        return
     elseif DTNPCManager then
         DTNPCManager.SetNPCStatus(uuid, "Away", returnTime, "Resting")
     end

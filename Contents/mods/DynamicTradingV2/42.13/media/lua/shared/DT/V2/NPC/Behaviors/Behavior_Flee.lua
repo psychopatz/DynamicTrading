@@ -45,12 +45,18 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
         local uuid = npcData.uuid
         local returnTime = getGameTime():getWorldAgeHours() + ZombRand(2, 5) -- Returns in 2-4 hours
         
-        if isClient() then
-             DynamicTrading.Log("DTV2", "NPC", "Despawn", "TARGET REACHED: Requesting removal for fleeing NPC: " .. (npcData.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
-             local nextStatus = npcData.requestedReturnStatus or "Resting"
-             sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", { uuid = uuid, status = "Away", returnTime = returnTime, returnStatus = nextStatus })
-             npcData.removalRequested = true -- Prevent further requests
-             -- We stop processing locally but let the server handle removeFromWorld to avoid sync issues
+        if isClient() and not isServer() then
+             DynamicTrading.Log(
+                 "DTV2",
+                 "NPC",
+                 "Warn",
+                 "Client suppressed flee removal for "
+                    .. tostring(npcData.name or uuid)
+                    .. " uuid=" .. tostring(uuid)
+                    .. " dist=" .. tostring(math.floor(dist))
+                    .. " because removal must be server-authoritative"
+             )
+             return
         elseif DTNPCManager then 
              DynamicTrading.Log("DTV2", "NPC", "Despawn", "TARGET REACHED: Server-side removal for fleeing NPC: " .. (npcData.name or uuid) .. " (Dist: " .. math.floor(dist) .. ")")
              local nextStatus = npcData.requestedReturnStatus or "Resting"

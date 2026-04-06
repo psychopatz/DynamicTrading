@@ -204,6 +204,57 @@ local function saveSoulIfAvailable(uuid, npcData)
     end
 end
 
+local function preserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData)
+    if not zombie or not uuid or not npcData or npcData.incapState ~= "Active" then
+        return false
+    end
+
+    local combatHealth = npcData.combatHealth
+    local spawnedAt = tonumber(combatHealth and combatHealth.spawnInitializedAt) or 0
+    local guardWindow = DTNPCHealth and tonumber(DTNPCHealth.SPAWN_FALLBACK_GUARD_MS) or 12000
+    local now = getTimeInMillis and getTimeInMillis() or 0
+    local ageMs = spawnedAt > 0 and (now - spawnedAt) or math.huge
+    local attacker = zombie:getAttackedBy()
+
+    if attacker or ageMs < 0 or ageMs > guardWindow then
+        return false
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Warn",
+        "Preserving suspicious incapacitated death for "
+            .. tostring(npcData.name or uuid)
+            .. " uuid=" .. tostring(uuid)
+            .. " spawnAgeMs=" .. tostring(ageMs)
+            .. " engineHealth=" .. tostring(zombie:getHealth())
+            .. " customCurrent=" .. tostring(combatHealth and combatHealth.current or nil)
+    )
+
+    saveSoulIfAvailable(uuid, npcData)
+    DTNPCManager.RemoveData(uuid, "Incapacitated", nil, nil, nil)
+
+    local newZombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, uuid) or nil
+    if newZombie then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Death",
+            "Recovered suspicious incapacitated death by respawning body: " .. tostring(npcData.name or uuid)
+        )
+        return true
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Error",
+        "Failed to recover suspicious incapacitated death, falling back to permanent death: " .. tostring(uuid)
+    )
+    return false
+end
+
 function DTNPCManager.ConvertDeathToIncapacitated(zombie, uuid, npcData, removalContext)
     if not zombie or not uuid or not npcData then return false end
 
@@ -254,6 +305,24 @@ function DTNPCManager.Unregister(zombie)
     
     if uuid and DTNPCManager.Data[uuid] then
         local npcData = DTNPCManager.Data[uuid]
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Death",
+            "Unregister triggered for "
+                .. tostring(npcData.name or uuid)
+                .. " uuid=" .. tostring(uuid)
+                .. " engineHealth=" .. tostring(zombie and zombie:getHealth() or nil)
+                .. " customCurrent=" .. tostring(npcData.combatHealth and npcData.combatHealth.current or nil)
+                .. " customMax=" .. tostring(npcData.combatHealth and npcData.combatHealth.max or nil)
+                .. " incapState=" .. tostring(npcData.incapState)
+                .. " state=" .. tostring(npcData.state)
+                .. " status=" .. tostring(npcData.status)
+        )
+        if npcData.incapState == "Active" and preserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData) then
+            return
+        end
+
         if not removalContext and npcData.lastPlayerAttackerUsername then
             local elapsed = npcData.lastPlayerAttackedAt and (getTimeInMillis() - npcData.lastPlayerAttackedAt) or nil
             if not elapsed or elapsed <= 15000 then

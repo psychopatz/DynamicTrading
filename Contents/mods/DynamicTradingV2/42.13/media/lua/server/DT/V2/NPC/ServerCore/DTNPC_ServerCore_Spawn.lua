@@ -37,7 +37,15 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         if foundSafe then break end
     end
     
-    DynamicTrading.Log("DTV2", "NPC", "Logic", "Spawning NPC at: " .. spawnX .. "," .. spawnY .. "," .. z)
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Spawn",
+        "SpawnNPC request player=" .. tostring(player:getUsername())
+            .. " existingBrain=" .. tostring(existingBrain ~= nil)
+            .. " spawnAt=" .. tostring(spawnX) .. "," .. tostring(spawnY) .. "," .. tostring(z)
+            .. " foundSafe=" .. tostring(foundSafe)
+    )
     
     local outfitStr = "Naked"
     local femaleChance = 50 
@@ -49,6 +57,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     local spawnAsCrawler = existingBrain and existingBrain.incapState == "Active" or false
     local fallOnFront = spawnAsCrawler
     local knockedDown = spawnAsCrawler
+    local invulnerable = true
     local zombieList = addZombiesInOutfit(
         spawnX,
         spawnY,
@@ -60,7 +69,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         fallOnFront,
         false,
         knockedDown,
-        false,
+        invulnerable,
         false,
         1
     )
@@ -72,6 +81,13 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
 
     local zombie = zombieList:get(0)
     local bodyInstanceID = zombie:getPersistentOutfitID()
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Spawn",
+        "SpawnNPC body created bodyInstanceID=" .. tostring(bodyInstanceID)
+            .. " onlineID=" .. tostring(zombie:getOnlineID())
+    )
     
     local modData = zombie:getModData()
     modData.IsDTNPC = true
@@ -113,10 +129,24 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     zombie:setUseless(true) 
     zombie:DoZombieStats()
     if DTNPCHealth and DTNPCHealth.InitializeForSpawn then
-        DTNPCHealth.InitializeForSpawn(zombie, npcData, { resetCurrent = true })
+        DTNPCHealth.InitializeForSpawn(zombie, npcData, {
+            resetCurrent = true,
+            deferNetworkSafeBuffer = isServer(),
+            spawnReason = "server_spawn",
+        })
     else
         zombie:setHealth(2)
     end
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Spawn",
+        "SpawnNPC initialized health name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " engineHealth=" .. tostring(zombie:getHealth())
+            .. " customCurrent=" .. tostring(npcData.combatHealth and npcData.combatHealth.current or nil)
+            .. " customMax=" .. tostring(npcData.combatHealth and npcData.combatHealth.max or nil)
+            .. " deferredBuffer=" .. tostring(npcData.combatHealth and npcData.combatHealth.deferredSpawnBufferTarget or nil)
+    )
     
     zombie:resetModelNextFrame()
 
@@ -126,7 +156,15 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
 
     DTNPCServerCore.SyncToAllClients(zombie, npcData)
 
-    DynamicTrading.Log("DTV2", "NPC", "Logic", "Spawned/Summoned: " .. npcData.name .. " | UUID: " .. npcData.uuid .. " | BodyInstanceID: " .. bodyInstanceID)
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Spawn",
+        "SpawnNPC complete name=" .. tostring(npcData.name)
+            .. " uuid=" .. tostring(npcData.uuid)
+            .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+            .. " pos=" .. tostring(math.floor(zombie:getX())) .. "," .. tostring(math.floor(zombie:getY())) .. "," .. tostring(math.floor(zombie:getZ()))
+    )
     
     return zombie, npcData
 end

@@ -154,14 +154,18 @@ local function completeDeparture(zombie, npcData, reason)
         DynamicTrading_Roster.SaveSoul(uuid, npcData)
     end
 
-    if isClient() then
-        sendClientCommand(getPlayer(), "DTNPC", "RemoveNPC", {
-            uuid = uuid,
-            status = "Away",
-            returnTime = returnTime,
-            returnStatus = nextStatus
-        })
-        npcData.removalRequested = true
+    if isClient() and not isServer() then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Client suppressed departure removal for "
+                .. tostring(npcData.name or uuid)
+                .. " uuid=" .. tostring(uuid)
+                .. " reason=" .. tostring(reason or "unknown")
+                .. " because removal must be server-authoritative"
+        )
+        return false
     elseif DTNPCManager then
         DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
         zombie:removeFromWorld()

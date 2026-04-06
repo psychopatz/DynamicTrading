@@ -31,6 +31,10 @@ function DTNPCLogic.ProcessNPC(zombie)
 
     local combatHealth = DTNPCHealth and DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
 
+    if DTNPCHealth and DTNPCHealth.ProcessDeferredSpawnRestore then
+        DTNPCHealth.ProcessDeferredSpawnRestore(zombie, npcData)
+    end
+
     zombie:setVariable("DTNPC", true)
     if zombie:getVariableString("DTIdleState") == "" then
         zombie:setVariable("DTIdleState", "0")
@@ -73,7 +77,8 @@ function DTNPCLogic.ProcessNPC(zombie)
     if customWasDamaged then
         npcData.lastCustomDamageHandledAt = customDamageAt
     end
-    local wasDamaged = fallbackDamaged or currentHealth < npcData.lastHealth or customWasDamaged
+    local useEngineDelta = not (combatHealth and combatHealth.eventDrivenOnly == true)
+    local wasDamaged = fallbackDamaged or (useEngineDelta and currentHealth < npcData.lastHealth) or customWasDamaged
     npcData.lastHealth = currentHealth
 
     if HIGH_SPEED_STATES[state] then

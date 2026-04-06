@@ -191,6 +191,21 @@ function DTNPCManager.OnTick()
                 end
 
                 if savedData then
+                    if DTNPCHealth and DTNPCHealth.ProcessDeferredSpawnRestore then
+                        local restored = DTNPCHealth.ProcessDeferredSpawnRestore(zombie, savedData)
+                        if restored then
+                            DynamicTrading.Log(
+                                "DTV2",
+                                "NPC",
+                                "Health",
+                                "Server manager restored deferred engine buffer for "
+                                    .. tostring(savedData.name or uuid)
+                                    .. " uuid=" .. tostring(uuid)
+                                    .. " engineHealth=" .. tostring(zombie:getHealth())
+                            )
+                        end
+                    end
+
                     -- 1. Sync Body Instance ID (for body-instance-to-uuid mapping)
                     local currentBodyInstanceID = zombie:getPersistentOutfitID()
                     local savedBodyInstanceID = savedData.currentBodyInstanceID

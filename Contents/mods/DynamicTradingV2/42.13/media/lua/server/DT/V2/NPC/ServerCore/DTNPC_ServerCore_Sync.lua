@@ -85,7 +85,30 @@ function DTNPCServerCore.SyncToAllClients(zombie, npcData)
             syncData.z,
             DTNPCServerCore.BROADCAST_RANGES.MEDIUM
         )
-        DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y .. " [" .. sent .. "/" .. total .. " players]")
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Sync",
+            "SyncNPC send name=" .. tostring(npcData.name or uuid)
+                .. " uuid=" .. tostring(uuid)
+                .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+                .. " pos=" .. tostring(syncData.x) .. "," .. tostring(syncData.y) .. "," .. tostring(syncData.z)
+                .. " engineHealth=" .. tostring(zombie:getHealth())
+                .. " customCurrent=" .. tostring(npcData.combatHealth and npcData.combatHealth.current or nil)
+                .. " customMax=" .. tostring(npcData.combatHealth and npcData.combatHealth.max or nil)
+                .. " sentPlayers=" .. tostring(sent) .. "/" .. tostring(total)
+        )
+        if sent == 0 then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Warn",
+                "SyncNPC reached zero nearby players for "
+                    .. tostring(npcData.name or uuid)
+                    .. " uuid=" .. tostring(uuid)
+                    .. " at " .. tostring(syncData.x) .. "," .. tostring(syncData.y) .. "," .. tostring(syncData.z)
+            )
+        end
     else
         -- Single Player fallback
         triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)

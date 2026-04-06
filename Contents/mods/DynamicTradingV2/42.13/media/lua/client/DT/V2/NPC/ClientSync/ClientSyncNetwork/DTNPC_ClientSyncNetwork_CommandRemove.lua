@@ -38,7 +38,15 @@ function Handlers.HandleRemoveNPC(args)
         name = DTNPCClient.NPCCache[uuid].npcData.name or "Unknown"
     end
 
-    DynamicTrading.Log("DTV2", "NPC", "Remove", "Received RemoveNPC for: " .. name .. " (" .. uuid .. ")")
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Remove",
+        "Received RemoveNPC for: " .. name .. " (" .. uuid .. ")"
+            .. " reason=" .. tostring(args.removalReason or args.status or "unknown")
+            .. " returnStatus=" .. tostring(args.returnStatus or "nil")
+            .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+    )
 
     DTNPC_ClientInterpolation.ClearNPC(uuid)
 
