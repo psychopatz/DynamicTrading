@@ -484,6 +484,19 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
         or state == "ProtectAuto"
     local requestedReturnStatus = args.returnStatus
 
+    if usesMaster and not zombie and controller and DTNPCServerCore.SpawnNearbyCompanionByUUID then
+        local spawned, spawnedZombie, spawnedData = DTNPCServerCore.SpawnNearbyCompanionByUUID(
+            normalizedUUID,
+            controller,
+            2,
+            5
+        )
+        if spawned then
+            zombie = spawnedZombie or zombie
+            npcData = spawnedData or npcData
+        end
+    end
+
     if args.startDeparture and not usesMaster then
         local nextStatus = requestedReturnStatus or "Resting"
         local home = npcData.homeCoords

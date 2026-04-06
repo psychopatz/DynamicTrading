@@ -8,6 +8,7 @@ require "DT/V2/NPC/DTNPC_TradingHandler"
 require "DT/V2/NPC/DTNPC_InteractionPose"
 require "DT/V2/UI/TradingWindowWrapper/TradingWindowWrapper"
 require "DT/V2/Utils/DT_V2_OptionsManager"
+pcall(require, "DT/V2/NPC/Jobs/DTNPC_JobUI")
 
 DTNPC_TraderDialogue_Hub = {}
 
@@ -43,6 +44,10 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
                 factionID = npcData and npcData.factionID,
                 returnTime = npcData and npcData.returnTime
             }
+
+            if DTNPCJobUI and DTNPCJobUI.ApplyTraderProxyPatch then
+                traderProxy = (DTNPCJobUI.ApplyTraderProxyPatch(traderProxy, ui, npc, player, npcData))
+            end
 
             if DT_Reputation then
                 traderProxy.personalRep = DT_Reputation.GetPersonalRep(traderProxy.id)
@@ -107,6 +112,16 @@ end
 
 function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     local options = {}
+    local npcData = DTNPC.GetData(npc)
+
+    if DTNPCJobUI and DTNPCJobUI.TryGenerateOptions then
+        local handled = DTNPCJobUI.TryGenerateOptions(ui, npc, player, npcData)
+        if handled then
+            return
+        end
+    end
+
+    ui.isCompanionConversation = false
 
     -- OPTION 1: CHAT (First implementation)
     table.insert(options, {
@@ -122,7 +137,6 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     })
 
     -- OPTION 2: TRADE (Always Visible)
-    local npcData = DTNPC.GetData(npc)
     local isTrading = false
     
     if npcData and npcData.state ~= "Departure" and (npcData.status == "Trading" or npcData.state == "Trading") then

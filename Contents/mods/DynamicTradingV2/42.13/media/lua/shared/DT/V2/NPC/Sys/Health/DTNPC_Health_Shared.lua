@@ -804,6 +804,13 @@ local function applyPlayerDamageReputationPenalty(npcData, combatHealth, attacke
         return
     end
 
+    if DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isFriendlyAuthorityPlayer then
+        local ok, isFriendlyAuthority = pcall(DTNPCProtect.Internal.isFriendlyAuthorityPlayer, npcData, attacker)
+        if ok and isFriendlyAuthority == true then
+            return
+        end
+    end
+
     local resolvedDamage = math.max(0, tonumber(appliedDamage) or 0)
     if resolvedDamage <= DTNPCHealth.MIN_DAMAGE then
         return

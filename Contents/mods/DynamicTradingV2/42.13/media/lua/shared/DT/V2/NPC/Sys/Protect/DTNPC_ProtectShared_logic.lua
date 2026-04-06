@@ -260,6 +260,40 @@ local function isPlayerOwnedTraderRaw(npcData)
     return npcData.linkedWorkerID ~= nil
 end
 
+local function isFriendlyAuthorityPlayer(npcData, player)
+    if not npcData or not player or not instanceof or not instanceof(player, "IsoPlayer") then
+        return false
+    end
+
+    local playerID = player.getOnlineID and player:getOnlineID() or nil
+    if playerID ~= nil and npcData.masterID ~= nil and tonumber(npcData.masterID) == tonumber(playerID) then
+        return true
+    end
+
+    local username = player.getUsername and player:getUsername() or nil
+    if not username or username == "" then
+        return false
+    end
+
+    if npcData.master and tostring(npcData.master) == username then
+        return true
+    end
+
+    if npcData.ownerUsername and tostring(npcData.ownerUsername) == username then
+        return true
+    end
+
+    if DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
+        local faction = DynamicTrading_Factions.GetFaction(npcData.factionID)
+        local leaderUsername = faction and (faction.leaderUsername or faction.ownerUsername) or nil
+        if leaderUsername and tostring(leaderUsername) == username then
+            return true
+        end
+    end
+
+    return false
+end
+
 local function isWeaponDurabilitySandboxEnabled()
     local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
     if sandbox and sandbox.NPCWeaponDurability ~= nil then
@@ -285,6 +319,7 @@ Internal.getPlayerRuntimeID = getPlayerRuntimeID
 Internal.syncProtectNotice = syncProtectNotice
 Internal.buildProtectDebugSummary = buildProtectDebugSummary
 Internal.isPlayerOwnedTraderRaw = isPlayerOwnedTraderRaw
+Internal.isFriendlyAuthorityPlayer = isFriendlyAuthorityPlayer
 Internal.isWeaponDurabilitySandboxEnabled = isWeaponDurabilitySandboxEnabled
 Internal.shouldConsumeWeaponDurabilityRaw = shouldConsumeWeaponDurabilityRaw
 

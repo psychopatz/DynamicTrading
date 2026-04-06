@@ -9,6 +9,7 @@ DTNPCProtect.Internal = DTNPCProtect.Internal or {}
 local Internal = DTNPCProtect.Internal
 local getZombieRuntimeID = Internal.getZombieRuntimeID
 local getPlayerRuntimeID = Internal.getPlayerRuntimeID
+local isFriendlyAuthorityPlayer = Internal.isFriendlyAuthorityPlayer
 
 local function getThreatPlayers()
     local players = {}
@@ -70,6 +71,10 @@ end
 
 local function isHostilePlayerForNPC(npcData, player)
     if not npcData or not player or player:isDead() then
+        return false
+    end
+
+    if isFriendlyAuthorityPlayer and isFriendlyAuthorityPlayer(npcData, player) then
         return false
     end
 

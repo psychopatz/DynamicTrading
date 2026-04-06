@@ -54,6 +54,7 @@ DynamicTrading_Factions.OnLabourWorkerRemoved       = PlayerOwnership.OnLabourWo
 DynamicTrading_Factions.OnColonyWorkerCreated       = PlayerOwnership.OnLabourWorkerCreated
 DynamicTrading_Factions.OnColonyWorkerRemoved       = PlayerOwnership.OnLabourWorkerRemoved
 DynamicTrading_Factions.SetWorkerTradeEligibility   = PlayerOwnership.SetWorkerTradeEligibility
+DynamicTrading_Factions.EnsureTradeSoul            = PlayerOwnership.EnsureTradeSoul
 DynamicTrading_Factions.DispatchTrade               = PlayerOwnership.DispatchTrade
 DynamicTrading_Factions.RecallTrade                 = PlayerOwnership.RecallTrade
 DynamicTrading_Factions.EnterRegency                = PlayerOwnership.EnterRegency

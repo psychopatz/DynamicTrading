@@ -162,20 +162,28 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     
     -- CRITICAL: Determine state based on status
     local status = npcData.status or "Resting"
+    local preserveCompanionControl = status == "Working"
+        and npcData.master ~= nil
+        and (npcData.state == "Follow"
+            or npcData.state == "ProtectRanged"
+            or npcData.state == "ProtectMelee"
+            or npcData.state == "ProtectAuto")
     if npcData.incapState == "Active" then
         npcData.state = "Incapacitated"
     elseif status == "Trading" then
         npcData.state = "Trading"
     elseif status == "Working" then
-        npcData.state = "Guard"
+        npcData.state = preserveCompanionControl and npcData.state or "Guard"
     else
         npcData.state = "Idle"
     end
     
     DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Mapped Status [" .. status .. "] to Behavior State [" .. npcData.state .. "]")
     
-    npcData.master = nil
-    npcData.masterID = nil
+    if not preserveCompanionControl then
+        npcData.master = nil
+        npcData.masterID = nil
+    end
     
     DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)

@@ -5,6 +5,17 @@
 
 DTNPCLogic = DTNPCLogic or {}
 
+local function isFriendlyAuthorityPlayer(npcData, player)
+    if DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isFriendlyAuthorityPlayer then
+        local ok, result = pcall(DTNPCProtect.Internal.isFriendlyAuthorityPlayer, npcData, player)
+        if ok then
+            return result == true
+        end
+    end
+
+    return false
+end
+
 function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged)
     if not zombie or not npcData then
         return
@@ -25,9 +36,26 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
         npcData.lastPlayerAttackerOnlineID = attacker.getOnlineID and attacker:getOnlineID() or nil
         npcData.lastPlayerAttackedAt = getTimeInMillis and getTimeInMillis() or nil
 
-        local isMaster = (master and attacker == master)
+        if (master and attacker == master) or isFriendlyAuthorityPlayer(npcData, attacker) then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Combat",
+                "Ignoring friendly authority damage for " .. tostring(npcData.name or npcData.uuid)
+                    .. " attacker=" .. tostring(attacker.getUsername and attacker:getUsername() or "Unknown Player")
+            )
+            zombie:setAttackedBy(nil)
+            return
+        end
 
-        if isMaster or not npcData.isHostile then
+        if not npcData.isHostile then
+            local dist = nil
+            if attacker.getX and attacker.getY and zombie.getX and zombie.getY then
+                local dx = attacker:getX() - zombie:getX()
+                local dy = attacker:getY() - zombie:getY()
+                dist = math.sqrt((dx * dx) + (dy * dy))
+            end
+
             local nextState = "Attack"
             if DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
                 DTNPCProtect.EnsureDataDefaults(npcData)

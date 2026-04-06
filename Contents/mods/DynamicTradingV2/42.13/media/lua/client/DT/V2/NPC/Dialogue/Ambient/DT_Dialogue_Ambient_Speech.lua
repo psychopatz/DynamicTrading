@@ -14,6 +14,12 @@ local function lower(value)
     return string.lower(tostring(value or ""))
 end
 
+local function isProtectAmbientState(state)
+    return state == "ProtectAuto"
+        or state == "ProtectRanged"
+        or state == "ProtectMelee"
+end
+
 local PROTECT_NOTICE_FALLBACKS = {
     ["Companion:Attack"] = "On it.",
     ["Companion:AttackRange"] = "Covering you.",
@@ -112,6 +118,11 @@ function Ambient.BuildSpeechData(npcData, zombie, currentTime)
     if ambientState == "Incapacitated" then
         -- Incapacitated pleas should override duty chatter like Trading/Working.
         ambientStatus = "Default"
+    end
+
+    -- Protect-mode companions should use protect notices and combat cues, not generic work chatter.
+    if isProtectAmbientState(ambientState) then
+        return nil
     end
 
     if DynamicTrading and DynamicTrading.DialogueAmbient and DynamicTrading.DialogueAmbient.GetEntry then
