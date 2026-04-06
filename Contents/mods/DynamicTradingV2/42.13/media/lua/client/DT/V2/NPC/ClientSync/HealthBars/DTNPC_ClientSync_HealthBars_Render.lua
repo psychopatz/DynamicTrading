@@ -120,12 +120,12 @@ function ISDTNPCHealthBarManager:render()
                         Constants.FONT_HP
                     )
 
-                    if barData.hasActiveBandage and State.bandageIcon then
+                    if barData.hasActiveBandage and barData.bandageIconTexture then
                         local iconSize = Constants.BANDAGE_ICON_SIZE / scaleDivisor
                         local iconX = barLeft + barWidth + Constants.BANDAGE_ICON_GAP
                         local iconY = barTop + ((barHeight - iconSize) / 2)
                         self:drawTextureScaled(
-                            State.bandageIcon,
+                            barData.bandageIconTexture,
                             iconX,
                             iconY,
                             iconSize,

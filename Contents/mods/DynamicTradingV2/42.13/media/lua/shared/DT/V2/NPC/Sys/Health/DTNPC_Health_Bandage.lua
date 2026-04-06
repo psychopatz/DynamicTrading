@@ -322,6 +322,7 @@ function DTNPCHealth.ProcessSelfBandageAction(zombie, npcData)
     combatHealth.activeBandage = true
     combatHealth.bandageDirty = false
     combatHealth.bandageStatus = "Clean"
+    combatHealth.bandageItemFullType = linkedSupply and linkedSupply.fullType or tostring(tierDef.iconFullType or "Base.Bandage")
     combatHealth.bandageHealPool = bandageHealPool
     combatHealth.bandageHealRemaining = math.max(0, bandageHealPool - immediateHeal)
     combatHealth.lastBandageRegenAt = now

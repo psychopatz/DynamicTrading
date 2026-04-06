@@ -65,6 +65,7 @@ DTNPCHealth.DEFAULT_BANDAGE_TIER = DTNPCHealth.DEFAULT_BANDAGE_TIER or "clean_ra
 DTNPCHealth.BANDAGE_TIERS = DTNPCHealth.BANDAGE_TIERS or {
     clean_rag = {
         label = "Clean Rag",
+        iconFullType = "Base.RippedSheets",
         totalHeal = 20,
         applyHeal = 2,
         regenPerTick = 1,
@@ -72,6 +73,7 @@ DTNPCHealth.BANDAGE_TIERS = DTNPCHealth.BANDAGE_TIERS or {
     },
     sterilized_rag = {
         label = "Sterilized Rag",
+        iconFullType = "Base.AlcoholRippedSheets",
         totalHeal = 28,
         applyHeal = 3,
         regenPerTick = 1.5,
@@ -79,6 +81,7 @@ DTNPCHealth.BANDAGE_TIERS = DTNPCHealth.BANDAGE_TIERS or {
     },
     bandage = {
         label = "Bandage",
+        iconFullType = "Base.Bandage",
         totalHeal = 36,
         applyHeal = 4,
         regenPerTick = 2,

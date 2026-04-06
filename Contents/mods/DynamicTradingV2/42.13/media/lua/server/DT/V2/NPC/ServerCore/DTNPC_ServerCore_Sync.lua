@@ -175,6 +175,8 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         combatHealthEnabled = npcData.combatHealth and npcData.combatHealth.enabled or nil,
         combatHealthBandageActive = npcData.combatHealth and npcData.combatHealth.activeBandage or nil,
         combatHealthBandageDirty = npcData.combatHealth and npcData.combatHealth.bandageDirty or nil,
+        combatHealthBandageTier = npcData.combatHealth and npcData.combatHealth.bandageTier or nil,
+        combatHealthBandageItemFullType = npcData.combatHealth and npcData.combatHealth.bandageItemFullType or nil,
         state = npcData.state,
         status = npcData.status,
         combatOrder = npcData.combatOrder,

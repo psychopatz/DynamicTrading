@@ -371,6 +371,7 @@ local function getBandageTierDef(tierID)
 
     return "clean_rag", {
         label = "Clean Rag",
+        iconFullType = "Base.RippedSheets",
         totalHeal = 20,
         applyHeal = 2,
         regenPerTick = 1,
@@ -379,6 +380,32 @@ local function getBandageTierDef(tierID)
 end
 
 internal.getBandageTierDef = getBandageTierDef
+
+local function getBandageItemFullType(npcData)
+    if not npcData then
+        return nil
+    end
+
+    local combatHealth = npcData.combatHealth
+    if type(combatHealth) ~= "table" then
+        return nil
+    end
+
+    local explicitFullType = tostring(combatHealth.bandageItemFullType or "")
+    if explicitFullType ~= "" then
+        return explicitFullType
+    end
+
+    local _, tierDef = getBandageTierDef(combatHealth.bandageTier)
+    local fallbackFullType = tostring(tierDef and tierDef.iconFullType or "")
+    if fallbackFullType ~= "" then
+        return fallbackFullType
+    end
+
+    return "Base.Bandage"
+end
+
+internal.getBandageItemFullType = getBandageItemFullType
 
 local function getRestingRegenMultiplier(npcData, combatHealth)
     local multiplier = tonumber(combatHealth and combatHealth.restingRegenMultiplier)
@@ -714,6 +741,7 @@ local function clearActiveBandage(combatHealth, keepDirtyFlag)
     combatHealth.bandageHealRemaining = 0
     combatHealth.lastBandageRegenAt = 0
     combatHealth.bandageAnimVariant = nil
+    combatHealth.bandageItemFullType = nil
     combatHealth.bandageStatus = keepDirtyFlag and "Dirty" or "None"
     if keepDirtyFlag ~= true then
         combatHealth.bandageDirty = false

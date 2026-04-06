@@ -46,7 +46,7 @@ Constants.BANDAGE_ICON_GAP = 6
 Constants.BANDAGE_ICON_SIZE = 10
 
 State.textManager = getTextManager()
-State.bandageIcon = State.bandageIcon or getTexture("media/ui/Moodle_internal_plus_red.png")
+State.bandageTextureCache = State.bandageTextureCache or {}
 
 DTNPCClient.HealthBarManagers = DTNPCClient.HealthBarManagers or {}
 DTNPCClient.HealthBarTracked = DTNPCClient.HealthBarTracked or {}
@@ -123,6 +123,88 @@ function Helpers.hasActiveBandage(npcData)
     end
 
     return npcData.state == "Bandage"
+end
+
+local function isValidTexture(tex)
+    return tex and tex.getName and tex:getName() ~= "Question_Highlight"
+end
+
+local function tryTexture(textureName)
+    if not textureName or textureName == "" then
+        return nil
+    end
+
+    local tex = getTexture(textureName)
+    if isValidTexture(tex) then
+        return tex
+    end
+
+    return nil
+end
+
+local function resolveBandageFullType(npcData)
+    local combatHealth = npcData and npcData.combatHealth or nil
+    if type(combatHealth) ~= "table" then
+        return nil
+    end
+
+    local explicitFullType = tostring(combatHealth.bandageItemFullType or "")
+    if explicitFullType ~= "" then
+        return explicitFullType
+    end
+
+    if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.getBandageItemFullType then
+        local ok, fullType = pcall(DTNPCHealth.Internal.getBandageItemFullType, npcData)
+        if ok and fullType and tostring(fullType) ~= "" then
+            return tostring(fullType)
+        end
+    end
+
+    if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.getBandageTierDef then
+        local ok, _, tierDef = pcall(DTNPCHealth.Internal.getBandageTierDef, combatHealth.bandageTier)
+        if ok and type(tierDef) == "table" and tostring(tierDef.iconFullType or "") ~= "" then
+            return tostring(tierDef.iconFullType)
+        end
+    end
+
+    return "Base.Bandage"
+end
+
+function Helpers.getBandageIconTexture(npcData)
+    local fullType = resolveBandageFullType(npcData)
+    if not fullType then
+        return nil
+    end
+
+    local cache = State.bandageTextureCache or {}
+    State.bandageTextureCache = cache
+    if cache[fullType] ~= nil then
+        return cache[fullType] or nil
+    end
+
+    local texture = nil
+    local script = getScriptManager and getScriptManager():getItem(fullType) or nil
+    if script and script.getIcon then
+        local iconName = script:getIcon()
+        if iconName and iconName ~= "" then
+            texture = tryTexture("Item_" .. tostring(iconName))
+                or tryTexture(tostring(iconName))
+                or tryTexture("media/textures/Item_" .. tostring(iconName) .. ".png")
+        end
+    end
+
+    if not isValidTexture(texture) and InventoryItemFactory and InventoryItemFactory.CreateItem then
+        local ok, item = pcall(InventoryItemFactory.CreateItem, fullType)
+        if ok and item and item.getTex then
+            local itemTex = item:getTex()
+            if isValidTexture(itemTex) then
+                texture = itemTex
+            end
+        end
+    end
+
+    cache[fullType] = isValidTexture(texture) and texture or false
+    return cache[fullType] or nil
 end
 
 function Helpers.getNPCData(zombie)

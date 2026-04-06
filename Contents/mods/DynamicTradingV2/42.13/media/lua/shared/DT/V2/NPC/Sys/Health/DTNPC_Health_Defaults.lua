@@ -82,6 +82,9 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if combatHealth.bandageDirty == nil then combatHealth.bandageDirty = false end
     if combatHealth.activeBandage == nil then combatHealth.activeBandage = false end
     if combatHealth.bandageStatus == nil then combatHealth.bandageStatus = "None" end
+    if combatHealth.bandageItemFullType == nil then
+        combatHealth.bandageItemFullType = tostring(tierDef.iconFullType or "Base.Bandage")
+    end
     if combatHealth.bandageResumeState == nil then combatHealth.bandageResumeState = nil end
     if combatHealth.bandageAnimVariant ~= nil then
         combatHealth.bandageAnimVariant = internal.getResolvedBandageAnimVariantID(combatHealth.bandageAnimVariant)
@@ -106,6 +109,9 @@ function DTNPCHealth.EnsureDefaults(npcData)
 
     tierID, tierDef = internal.getBandageTierDef(combatHealth.bandageTier)
     combatHealth.bandageTier = tierID
+    if combatHealth.bandageItemFullType == nil or combatHealth.bandageItemFullType == "" then
+        combatHealth.bandageItemFullType = tostring(tierDef.iconFullType or "Base.Bandage")
+    end
     if combatHealth.activeBandage ~= true then
         combatHealth.bandageHealPool = 0
         combatHealth.bandageHealRemaining = 0
