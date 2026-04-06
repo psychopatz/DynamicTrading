@@ -33,6 +33,8 @@ DTNPCHealth.FALLBACK_IGNORE_WINDOW_MS = DTNPCHealth.FALLBACK_IGNORE_WINDOW_MS or
 DTNPCHealth.NETWORK_SAFE_SPAWN_ENGINE_HEALTH = DTNPCHealth.NETWORK_SAFE_SPAWN_ENGINE_HEALTH or 2
 DTNPCHealth.NETWORK_SAFE_SPAWN_DELAY_MS = DTNPCHealth.NETWORK_SAFE_SPAWN_DELAY_MS or 250
 DTNPCHealth.SPAWN_FALLBACK_GUARD_MS = DTNPCHealth.SPAWN_FALLBACK_GUARD_MS or 12000
+DTNPCHealth.PLAYER_REP_DAMAGE_THRESHOLD_RATIO = DTNPCHealth.PLAYER_REP_DAMAGE_THRESHOLD_RATIO or 0.25
+DTNPCHealth.PLAYER_REP_DAMAGE_PENALTY = DTNPCHealth.PLAYER_REP_DAMAGE_PENALTY or -10
 
 local nowMillis
 
@@ -339,6 +341,82 @@ local function capturePlayerAttacker(npcData, attacker)
     npcData.lastPlayerAttackedAt = nowMillis()
 end
 
+local function getPlayerUsername(attacker)
+    if not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
+        return nil
+    end
+
+    local username = attacker.getUsername and attacker:getUsername() or nil
+    if not username or username == "" then
+        return nil
+    end
+
+    return username
+end
+
+local function applyPlayerDamageReputationPenalty(npcData, combatHealth, attacker, appliedDamage)
+    if not npcData or not combatHealth then
+        return
+    end
+    if not DynamicTrading_Factions or not DynamicTrading_Factions.ModifyReputation then
+        return
+    end
+    if not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
+        return
+    end
+
+    local factionID = npcData.factionID
+    if not factionID or factionID == "" or factionID == "Independent" then
+        return
+    end
+
+    local username = getPlayerUsername(attacker)
+    if not username then
+        return
+    end
+
+    local resolvedDamage = math.max(0, tonumber(appliedDamage) or 0)
+    if resolvedDamage <= DTNPCHealth.MIN_DAMAGE then
+        return
+    end
+
+    local maxHealth = math.max(1, tonumber(combatHealth.max) or 0)
+    local threshold = math.max(1, maxHealth * math.max(0.01, tonumber(DTNPCHealth.PLAYER_REP_DAMAGE_THRESHOLD_RATIO) or 0.25))
+    local tracker = combatHealth.playerReputationDamage or {}
+    local entry = tracker[username] or {
+        totalDamage = 0,
+        penaltiesApplied = 0,
+    }
+
+    entry.totalDamage = math.min(maxHealth, math.max(0, tonumber(entry.totalDamage) or 0) + resolvedDamage)
+
+    local totalPenalties = math.floor(entry.totalDamage / threshold)
+    local appliedPenalties = math.max(0, math.floor(tonumber(entry.penaltiesApplied) or 0))
+    local newPenalties = totalPenalties - appliedPenalties
+
+    if newPenalties > 0 then
+        local delta = (tonumber(DTNPCHealth.PLAYER_REP_DAMAGE_PENALTY) or -10) * newPenalties
+        if DynamicTrading_Factions.ModifyReputation(factionID, username, delta) then
+            entry.penaltiesApplied = totalPenalties
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Combat",
+                "Applied faction reputation damage penalty name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+                    .. " uuid=" .. tostring(npcData.uuid)
+                    .. " faction=" .. tostring(factionID)
+                    .. " username=" .. tostring(username)
+                    .. " delta=" .. tostring(delta)
+                    .. " accumulatedDamage=" .. tostring(string.format("%.2f", entry.totalDamage))
+                    .. " threshold=" .. tostring(string.format("%.2f", threshold))
+            )
+        end
+    end
+
+    tracker[username] = entry
+    combatHealth.playerReputationDamage = tracker
+end
+
 local function setIncapacitatedState(zombie, npcData)
     local incapacitatedAt = nowMillis()
 
@@ -464,6 +542,7 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if combatHealth.lastDamageAmount == nil then combatHealth.lastDamageAmount = 0 end
     if combatHealth.lastAttackerType == nil then combatHealth.lastAttackerType = nil end
     if combatHealth.lastAttackerID == nil then combatHealth.lastAttackerID = nil end
+    if type(combatHealth.playerReputationDamage) ~= "table" then combatHealth.playerReputationDamage = {} end
     if combatHealth.pendingFallbackIgnoreAmount == nil then combatHealth.pendingFallbackIgnoreAmount = 0 end
     if combatHealth.pendingFallbackIgnoreUntil == nil then combatHealth.pendingFallbackIgnoreUntil = 0 end
     if combatHealth.incapGraceUntil == nil then combatHealth.incapGraceUntil = 0 end
@@ -798,7 +877,11 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
             .. " engineHealth=" .. tostring(zombie:getHealth())
     )
 
-    combatHealth.current = clamp((tonumber(combatHealth.current) or combatHealth.max) - damage, 0, combatHealth.max)
+    local currentBefore = clamp(tonumber(combatHealth.current) or combatHealth.max, 0, combatHealth.max)
+    local appliedDamage = math.min(damage, currentBefore)
+    combatHealth.current = clamp(currentBefore - damage, 0, combatHealth.max)
+
+    applyPlayerDamageReputationPenalty(npcData, combatHealth, attacker, appliedDamage)
 
     if attacker and zombie.setAttackedBy then
         zombie:setAttackedBy(attacker)

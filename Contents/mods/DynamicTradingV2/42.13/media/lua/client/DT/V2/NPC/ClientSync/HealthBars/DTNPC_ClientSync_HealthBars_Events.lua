@@ -65,7 +65,12 @@ local function onWeaponHitCharacter(attacker, target, weapon, damage)
 
     if DT_Reputation then
         local npcData = Helpers.getNPCData(target)
-        DT_Reputation.RecordNPCHit(modData.DTNPC_UUID, npcData and npcData.factionID)
+        local maxHealth = npcData and npcData.combatHealth and npcData.combatHealth.max or nil
+        if DT_Reputation.RecordNPCDamage then
+            DT_Reputation.RecordNPCDamage(modData.DTNPC_UUID, npcData and npcData.factionID, damage, maxHealth)
+        else
+            DT_Reputation.RecordNPCHit(modData.DTNPC_UUID, npcData and npcData.factionID)
+        end
     end
 end
 

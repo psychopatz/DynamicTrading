@@ -15,6 +15,8 @@ DT_Reputation.TRADE_REP_GAIN = 1
 DT_Reputation.KILL_PENALTY = -30
 DT_Reputation.INCAP_PENALTY = -25
 DT_Reputation.RECRUIT_PENALTY = -15
+DT_Reputation.DAMAGE_PENALTY = -10
+DT_Reputation.DAMAGE_THRESHOLD_RATIO = 0.25
 DT_Reputation.HIT_ATTRIBUTION_MS = 15000
 DT_Reputation.FAST_KILL_CONFIRM_MS = 2500
 DT_Reputation.SAVE_DEBOUNCE_MS = 1500
@@ -33,6 +35,7 @@ DT_Reputation.state = DT_Reputation.state or {
     totalSold = {},
     factionRepCache = {},
     recentHits = {},
+    recentDamage = {},
 }
 
 function Internal.Log(category, text)
@@ -211,4 +214,5 @@ function Internal.ResetState(characterKey)
     DT_Reputation.state.totalSold = {}
     DT_Reputation.state.factionRepCache = {}
     DT_Reputation.state.recentHits = {}
+    DT_Reputation.state.recentDamage = {}
 end

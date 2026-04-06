@@ -29,6 +29,73 @@ end
 
 Internal.rollWeaponDamage = rollWeaponDamage
 
+local function playEmitterSound(character, soundName)
+    if not character or not soundName or soundName == "" then
+        return false
+    end
+
+    local emitter = character.getEmitter and character:getEmitter() or nil
+    if emitter and emitter.playSound then
+        emitter:playSound(soundName)
+        return true
+    end
+
+    return false
+end
+
+local function getAttackWeaponItem(npcData, attackType)
+    if attackType == "ranged" then
+        return DTNPCProtect.CreateLoadoutWeaponItem(npcData, "ranged")
+    end
+    if attackType == "melee" then
+        return DTNPCProtect.CreateLoadoutWeaponItem(npcData, "melee")
+    end
+    return nil
+end
+
+local function scaleWeaponDamage(npcData, attackType, baseDamage, weaponItem)
+    local damage = math.max(0.05, tonumber(baseDamage) or 0.1)
+    if not weaponItem then
+        return damage
+    end
+
+    if attackType == "ranged" then
+        local shootingSkill = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
+        local normalized = math.min(math.max(shootingSkill, 0), 20) / 20
+        return math.max(damage, rollWeaponDamage(weaponItem) * (0.75 + (normalized * 0.75)))
+    end
+
+    if attackType == "melee" then
+        local meleeSkill = DTNPCProtect.GetSkillLevel(npcData, "Melee")
+        local normalized = math.min(math.max(meleeSkill, 0), 20) / 20
+        return math.max(damage, rollWeaponDamage(weaponItem) * (0.8 + (normalized * 0.9)))
+    end
+
+    return damage
+end
+
+local function playSuccessfulHitSound(zombie, target, weaponItem, attackType)
+    if attackType == "ranged" then
+        playEmitterSound(target, "ImpactFlesh")
+        return
+    end
+
+    local swingSound = weaponItem and weaponItem.getSwingSound and weaponItem:getSwingSound() or nil
+    local hitSound = weaponItem and weaponItem.getZombieHitSound and weaponItem:getZombieHitSound() or nil
+
+    if playEmitterSound(zombie, swingSound) then
+        return
+    end
+    if target and target.playSound and hitSound and hitSound ~= "" then
+        target:playSound(hitSound)
+        return
+    end
+    if playEmitterSound(target, hitSound) then
+        return
+    end
+    playEmitterSound(target, "ImpactFlesh")
+end
+
 function DTNPCProtect.GetRangedCombatStats(npcData)
     local shooting = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
     local normalized = math.min(math.max(shooting, 0), 20) / 20
@@ -70,28 +137,15 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     local attackType = options.attackType or "generic"
     local damage = math.max(0.05, tonumber(options.damage) or 0.1)
     local applied = false
+    local weaponItem = getAttackWeaponItem(npcData, attackType)
     local isPlayerTarget = instanceof(target, "IsoPlayer")
     local targetModData = target.getModData and target:getModData() or nil
     local targetNPCData = targetModData and (targetModData.DTNPC_Data or targetModData.DTNPCBrain) or nil
     local isDTNPCTarget = targetModData and targetModData.IsDTNPC == true and targetNPCData ~= nil
 
-    if isDTNPCTarget and DTNPCHealth and DTNPCHealth.IsCustomHealthEnabled and DTNPCHealth.IsCustomHealthEnabled(targetNPCData) then
-        if attackType == "ranged" then
-            local shootingSkill = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
-            local normalized = math.min(math.max(shootingSkill, 0), 20) / 20
-            local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "ranged")
-            if weaponItem then
-                damage = math.max(damage, rollWeaponDamage(weaponItem) * (0.75 + (normalized * 0.75)))
-            end
-        elseif attackType == "melee" then
-            local meleeSkill = DTNPCProtect.GetSkillLevel(npcData, "Melee")
-            local normalized = math.min(math.max(meleeSkill, 0), 20) / 20
-            local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "melee")
-            if weaponItem then
-                damage = math.max(damage, rollWeaponDamage(weaponItem) * (0.8 + (normalized * 0.9)))
-            end
-        end
+    damage = scaleWeaponDamage(npcData, attackType, damage, weaponItem)
 
+    if isDTNPCTarget and DTNPCHealth and DTNPCHealth.IsCustomHealthEnabled and DTNPCHealth.IsCustomHealthEnabled(targetNPCData) then
         return DTNPCHealth.ApplyDamage(target, targetNPCData, damage, zombie, {
             source = "dt_npc_combat",
             attackType = attackType,
@@ -133,20 +187,12 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
             if target.setHitReaction then
                 target:setHitReaction("HitReaction")
             end
-            if target.getEmitter then
-                target:getEmitter():playSound("ImpactFlesh")
-            end
+            playSuccessfulHitSound(zombie, target, weaponItem, attackType)
 
             applied = true
         end
     elseif attackType == "ranged" then
-        local shootingSkill = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
-        local normalized = math.min(math.max(shootingSkill, 0), 20) / 20
-        local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "ranged")
-
         if weaponItem then
-            damage = math.max(damage, rollWeaponDamage(weaponItem) * (0.75 + (normalized * 0.75)))
-
             if target.setBumpDone then
                 target:setBumpDone(true)
             end
@@ -175,16 +221,11 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
                 if target.setAttackedBy then
                     target:setAttackedBy(zombie)
                 end
+                playSuccessfulHitSound(zombie, target, weaponItem, attackType)
             end
         end
     elseif attackType == "melee" then
-        local meleeSkill = DTNPCProtect.GetSkillLevel(npcData, "Melee")
-        local normalized = math.min(math.max(meleeSkill, 0), 20) / 20
-        local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "melee")
-
         if weaponItem then
-            damage = math.max(damage, rollWeaponDamage(weaponItem) * (0.8 + (normalized * 0.9)))
-
             if target.setPlayerAttackPosition and target.testDotSide then
                 target:setPlayerAttackPosition(target:testDotSide(zombie))
             end
@@ -213,21 +254,14 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
             end)
             if didHit then
                 applied = true
-                local hitSound = weaponItem.getZombieHitSound and weaponItem:getZombieHitSound() or nil
-                if hitSound and hitSound ~= "" and target.playSound then
-                    target:playSound(hitSound)
-                elseif target.getEmitter then
-                    target:getEmitter():playSound("ZombieImpact")
-                end
+                playSuccessfulHitSound(zombie, target, weaponItem, attackType)
             end
         end
     end
 
     if not applied then
         target:setHealth(target:getHealth() - damage)
-        if target.getEmitter then
-            target:getEmitter():playSound("ZombieImpact")
-        end
+        playSuccessfulHitSound(zombie, target, weaponItem, attackType)
         applied = true
     end
 

@@ -61,7 +61,7 @@ function Menu.OnOrder(npc, state, player, returnStatus)
 
     npcData.state = state
 
-    if state == "Follow" or isProtectState(state) then
+    if state == "Follow" or state == "Attack" or state == "AttackRange" or isProtectState(state) then
         npcData.master = player:getUsername()
         npcData.masterID = isClient() and player:getOnlineID() or 0
         npcData.tasks = {}

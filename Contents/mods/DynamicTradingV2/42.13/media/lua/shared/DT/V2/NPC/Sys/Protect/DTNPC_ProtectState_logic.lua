@@ -340,6 +340,71 @@ function DTNPCProtect.GetAutoProtectState(npcData, targetDist)
     return nil
 end
 
+function DTNPCProtect.GetHostileCombatState(npcData, targetDist)
+    DTNPCProtect.EnsureDataDefaults(npcData)
+
+    local hasRanged = DTNPCProtect.HasUsableRangedLoadout(npcData)
+    local hasMelee = DTNPCProtect.HasUsableMeleeLoadout(npcData)
+    local distance = tonumber(targetDist) or 9999
+
+    if hasMelee and distance <= 1.85 then
+        return "Attack"
+    end
+    if hasRanged then
+        return "AttackRange"
+    end
+    if hasMelee then
+        return "Attack"
+    end
+
+    -- Failsafe: if loadout resolution is ambiguous, keep combat in melee mode.
+    return "Attack"
+end
+
+function DTNPCProtect.ResolveHostileCombatState(npcData, preferredState, targetDist)
+    DTNPCProtect.EnsureDataDefaults(npcData)
+
+    local hasRanged = DTNPCProtect.HasUsableRangedLoadout(npcData)
+    local hasMelee = DTNPCProtect.HasUsableMeleeLoadout(npcData)
+    local requestedState = preferredState
+    local distance = tonumber(targetDist) or 9999
+
+    if requestedState ~= "Attack" and requestedState ~= "AttackRange" then
+        requestedState = npcData and npcData.state or nil
+    end
+
+    if requestedState == "AttackRange" then
+        if hasMelee and distance <= 1.85 then
+            return "Attack"
+        end
+        if hasRanged then
+            return "AttackRange"
+        end
+        if hasMelee then
+            return "Attack"
+        end
+        return "Attack"
+    end
+
+    if requestedState == "Attack" then
+        if hasRanged and not hasMelee then
+            return "AttackRange"
+        end
+        if hasMelee and distance <= 1.85 then
+            return "Attack"
+        end
+        if hasRanged then
+            return "AttackRange"
+        end
+        if hasMelee then
+            return "Attack"
+        end
+        return "Attack"
+    end
+
+    return DTNPCProtect.GetHostileCombatState(npcData, targetDist)
+end
+
 function DTNPCProtect.ResolveProtectState(npcData, preferredState)
     DTNPCProtect.EnsureDataDefaults(npcData)
 

@@ -17,6 +17,7 @@ local function isManualControlState(state)
     return state == "GoTo"
         or state == "Flee"
         or state == "Follow"
+        or state == "Attack"
         or state == "AttackRange"
         or state == "TradingDefenseRanged"
         or state == "TradingDefenseMelee"
@@ -63,7 +64,7 @@ function DTNPC.ApplyCharacterFlags(zombie, npcData)
     if not zombie then return end
 
     local state = npcData and npcData.state or nil
-    local allowZombieMelee = state == "Attack"
+    local allowZombieMelee = false
 
     zombie:setNoTeeth(not allowZombieMelee)
     zombie:setVariable("NoLungeAttack", not allowZombieMelee)

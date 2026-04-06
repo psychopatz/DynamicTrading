@@ -73,7 +73,9 @@ local function isHostilePlayerForNPC(npcData, player)
         return false
     end
 
-    local threshold = tonumber(DTNPCProtect.CONFIG.HostilePlayerRepThreshold) or -40
+    local threshold = tonumber(DTNPCProtect.CONFIG.AggressivePlayerRepThreshold)
+        or tonumber(DTNPCProtect.CONFIG.HostilePlayerRepThreshold)
+        or -10
     return getFactionReputationForPlayer(npcData, player) <= threshold
 end
 

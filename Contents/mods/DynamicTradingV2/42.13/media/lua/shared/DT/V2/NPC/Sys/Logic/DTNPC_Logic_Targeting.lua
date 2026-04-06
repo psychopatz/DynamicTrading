@@ -25,8 +25,24 @@ function DTNPCLogic.GetClosestTarget(zombie)
             return player, Internal.CalculateDistance(zombie, player)
         end
 
+        local activePlayers = DTNPCLogic.GetActivePlayers()
+        for i = 1, #activePlayers do
+            local p = activePlayers[i]
+            if p and not p:isDead() then
+                local onlineMatch = npcData.lastPlayerAttackerOnlineID
+                    and p.getOnlineID
+                    and p:getOnlineID() == npcData.lastPlayerAttackerOnlineID
+                local usernameMatch = npcData.lastPlayerAttackerUsername
+                    and p.getUsername
+                    and p:getUsername() == npcData.lastPlayerAttackerUsername
+                if onlineMatch or usernameMatch then
+                    zombie:setTarget(p)
+                    return p, Internal.CalculateDistance(zombie, p)
+                end
+            end
+        end
+
         if npcData.masterID then
-            local activePlayers = DTNPCLogic.GetActivePlayers()
             for i = 1, #activePlayers do
                 local p = activePlayers[i]
                 if p and p:getOnlineID() == npcData.masterID then

@@ -28,7 +28,15 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
         local isMaster = (master and attacker == master)
 
         if isMaster or not npcData.isHostile then
-            npcData.state = "AttackRange"
+            local nextState = "Attack"
+            if DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
+                DTNPCProtect.EnsureDataDefaults(npcData)
+                if DTNPCProtect.ResolveHostileCombatState then
+                    nextState = DTNPCProtect.ResolveHostileCombatState(npcData, npcData.state, dist)
+                end
+            end
+
+            npcData.state = nextState
             npcData.isHostile = true
             npcData.tasks = {}
 
@@ -38,6 +46,7 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
                 "NPC",
                 "Combat",
                 "Combat Initiated! " .. npcData.name .. " is attacking " .. attackerName
+                    .. " using state=" .. tostring(nextState)
             )
 
             zombie:setTarget(attacker)

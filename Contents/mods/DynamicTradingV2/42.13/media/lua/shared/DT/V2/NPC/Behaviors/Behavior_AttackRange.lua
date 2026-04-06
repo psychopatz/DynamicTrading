@@ -1,12 +1,11 @@
 -- ==============================================================================
 -- Behavior_AttackRange.lua
--- Handles "Ranged Combat" logic.
--- REWRITTEN: Animation Fixes, Slower Kiting speeds, and Rotation Alignment.
--- Build 42 Compatible.
+-- Hostile ranged combat using the shared dynamic loadout/combat helpers.
 -- ==============================================================================
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+require "DT/V2/NPC/Sys/DTNPC_Protect"
 
 -- DISTANCE CONFIG
 local KITE_DIST_MIN = 3.5
@@ -14,29 +13,13 @@ local KITE_DIST_MAX = 8.0
 local MAX_RANGE = 14.0
 
 -- SPEED CONFIG
--- Slower speeds to prevent sliding/jittering during combat
-local SPEED_FWD = 0.055 -- Advancing
-local SPEED_BCK = 0.035 -- Backpedaling (Kiting)
-
--- COMBAT CONFIG
+local SPEED_FWD = 0.055
+local SPEED_BCK = 0.035
 local REACTION_DELAY = 30
-local FIRE_RATE = 90
-
-local ACCURACY_STILL = 25
-local ACCURACY_MOVE = 10
-
-local DAMAGE_MIN = 10
-local DAMAGE_MAX = 25
 
 -- ==============================================================================
 -- 1. UTILITIES
 -- ==============================================================================
-
-local function getDist(x1, y1, x2, y2)
-    local dx = x1 - x2
-    local dy = y1 - y2
-    return math.sqrt(dx * dx + dy * dy)
-end
 
 local function isTileSafe(x, y, z)
     local cell = getCell()
@@ -45,6 +28,21 @@ local function isTileSafe(x, y, z)
     if not sq:isFree(false) then return false end
     if sq:isSolid() or sq:isSolidTrans() then return false end
     return true
+end
+
+local function stopMoveAnim(zombie)
+    zombie:setVariable("bMoving", false)
+    zombie:setVariable("isMoving", false)
+    zombie:setVariable("Speed", 0.0)
+    zombie:setRunning(false)
+end
+
+local function ensureManualControl(zombie)
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+    end
+    zombie:setPath2(nil)
+    zombie:setTarget(nil)
 end
 
 -- ==============================================================================
@@ -78,20 +76,42 @@ end
 -- ==============================================================================
 
 DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
+    if not npcData or npcData.state ~= "AttackRange" then
+        return
+    end
 
-    -- 1. Force safety
-    if not zombie:isUseless() then
-        zombie:setUseless(true)
-        zombie:setPath2(nil)
+    if not target and zombie and zombie.getTarget then
+        local currentTarget = zombie:getTarget()
+        if currentTarget and instanceof and instanceof(currentTarget, "IsoPlayer") and not currentTarget:isDead() then
+            target = currentTarget
+            local dx = currentTarget:getX() - zombie:getX()
+            local dy = currentTarget:getY() - zombie:getY()
+            dist = math.sqrt((dx * dx) + (dy * dy))
+        end
     end
 
     if not target or target:isDead() then
-        npcData.state = "Stay"
-        DynamicTrading.Log("DTV2", "NPC", "Combat", "Target dead. Standing down.")
-        -- Reset anim
-        zombie:setVariable("bMoving", false)
+        npcData.attackTimer = 0
+        stopMoveAnim(zombie)
+        zombie:setTarget(nil)
         return
     end
+
+    local resolvedState = DTNPCProtect and DTNPCProtect.ResolveHostileCombatState
+        and DTNPCProtect.ResolveHostileCombatState(npcData, "AttackRange", dist)
+        or "Attack"
+    npcData.combatTargetDistance = tonumber(dist)
+
+    if resolvedState ~= "AttackRange" then
+        if DTNPCLogic.Behaviors["Attack"] then
+            npcData.state = "Attack"
+            DTNPCLogic.Behaviors["Attack"](zombie, npcData, target, dist)
+        end
+        return
+    end
+
+    ensureManualControl(zombie)
+    zombie:setTarget(target)
 
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
@@ -112,34 +132,29 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         zombie:faceLocation(tx, ty)
     end
 
-    -- 4. Kiting Logic (Movement Decision)
     if not npcData.reactionTimer then npcData.reactionTimer = 0 end
 
-    local moveDir = 0 -- 0=Stop, 1=Forward, -1=Backward
+    local moveDir = 0
     local currentSpeed = 0
     
     if len < KITE_DIST_MIN then
-        -- Too close! Back up.
         npcData.reactionTimer = npcData.reactionTimer + 1
         if npcData.reactionTimer > REACTION_DELAY then
             moveDir = -1
             currentSpeed = SPEED_BCK
         else
-            moveDir = 0 -- Pausing before reacting
+            moveDir = 0
         end
         
     elseif len > KITE_DIST_MAX then
-        -- Too far! Advance.
         npcData.reactionTimer = 0
         moveDir = 1
         currentSpeed = SPEED_FWD
     else
-        -- Sweet spot. Stand ground and aim.
         npcData.reactionTimer = 0
         moveDir = 0
     end
 
-    -- 5. Calculate Next Position
     local isMoving = false
     if moveDir ~= 0 then
         zombie:setVariable("DTIdleState", "0")
@@ -147,13 +162,11 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         local nextY = zy + (dy * currentSpeed * moveDir)
         
         if isTileSafe(nextX, nextY, zz) then
-            -- Apply Movement
             forceCombatAnim(zombie, true)
             zombie:setX(nextX)
             zombie:setY(nextY)
             isMoving = true
         else
-            -- Blocked (Wall behind or in front)
             forceCombatAnim(zombie, false)
         end
     else
@@ -163,77 +176,28 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         end
     end
 
-    -- 6. Range Check for Firing
     if len > MAX_RANGE then
         return 
     end
 
-    -- 7. Firing Logic
-    if not npcData.attackTimer then npcData.attackTimer = 0 end
-    npcData.attackTimer = npcData.attackTimer + 1
+    local stats = DTNPCProtect.GetRangedCombatStats(npcData)
+    npcData.attackTimer = (npcData.attackTimer or 0) + 1
+    if npcData.attackTimer >= stats.fireRate then
+        npcData.attackTimer = 0
 
-    if npcData.attackTimer >= FIRE_RATE then
-        npcData.attackTimer = 0 
-        
-        -- Use pcall to prevent crashes during combat calcs
-        pcall(function()
-            if DTNPC and DTNPC.TriggerRangedCombatAnim then
-                DTNPC.TriggerRangedCombatAnim(zombie, npcData)
-            end
-            if DTNPCProtect and DTNPCProtect.ConsumeWeaponCondition then
-                DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
-            end
-            zombie:getEmitter():playSound("DT_GunRandom") 
-            
-            local hitChance = ACCURACY_STILL
-            if isMoving then
-                hitChance = ACCURACY_MOVE
-            end
+        if DTNPC and DTNPC.TriggerRangedCombatAnim then
+            DTNPC.TriggerRangedCombatAnim(zombie, npcData)
+        end
+        DTNPCProtect.ConsumeAmmo(npcData, 1)
+        DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
+        zombie:getEmitter():playSound("DT_GunRandom")
 
-            -- Simple RNG Hit calculation
-            if ZombRand(100) < hitChance then
-                if instanceof(target, "IsoPlayer") then
-                    -- PVP / Betrayal Damage
-                    local bodyDamage = target:getBodyDamage()
-                    local bodyPart = bodyDamage:getBodyPart(BodyPartType.Torso_Upper)
-                    
-                    local dmg = ZombRand(DAMAGE_MIN, DAMAGE_MAX)
-                    bodyPart:AddDamage(dmg)
-                    
-                    -- Add bullet hole/bleeding
-                    bodyPart:setHaveBullet(true, 0)
-                    bodyPart:setBleedingTime(20)
-                    bodyDamage:Update()
-                    
-                    target:getEmitter():playSound("ImpactFlesh")
-                    target:setHitReaction("HitReaction")
-                    
-                elseif instanceof(target, "IsoZombie") then
-                    -- Zombie vs Zombie Damage
-                    local targetModData = target.getModData and target:getModData() or nil
-                    local targetNPCData = targetModData and (targetModData.DTNPC_Data or targetModData.DTNPCBrain) or nil
-                    local appliedCustom = false
-
-                    if targetModData and targetModData.IsDTNPC and targetNPCData and DTNPCHealth and DTNPCHealth.IsCustomHealthEnabled and DTNPCHealth.IsCustomHealthEnabled(targetNPCData) then
-                        appliedCustom = DTNPCHealth.ApplyDamage(target, targetNPCData, 0.4, zombie, {
-                            source = "attack_range",
-                            attackType = "ranged",
-                            queueFallbackIgnore = false,
-                        }) == true
-                    end
-
-                    if not appliedCustom then
-                        target:setHealth(target:getHealth() - 0.4)
-                        target:getEmitter():playSound("ZombieImpact")
-                        
-                        if target:getHealth() <= 0 then
-                            target:Kill(zombie)
-                        else
-                            target:setHitReaction("HitReaction")
-                        end
-                    end
-                end
-            end
-        end)
+        local hitChance = isMoving and stats.hitMove or stats.hitStill
+        if ZombRand(100) < hitChance then
+            DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
+                attackType = "ranged",
+                damage = stats.damage,
+            })
+        end
     end
 end

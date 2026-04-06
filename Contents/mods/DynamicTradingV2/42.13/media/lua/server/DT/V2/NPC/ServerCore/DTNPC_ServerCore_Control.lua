@@ -462,6 +462,8 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
     local masterUsername, masterID = normalizeController(controller)
     local usesMaster = state == "Follow"
         or state == "Flee"
+        or state == "Attack"
+        or state == "AttackRange"
         or state == "ProtectRanged"
         or state == "ProtectMelee"
         or state == "ProtectAuto"

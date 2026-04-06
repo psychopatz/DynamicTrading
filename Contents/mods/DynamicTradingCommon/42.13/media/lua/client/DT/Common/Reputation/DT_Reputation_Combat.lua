@@ -15,6 +15,48 @@ function DT_Reputation.RecordNPCHit(uuid, factionID)
     }
 end
 
+function DT_Reputation.RecordNPCDamage(uuid, factionID, damage, maxHealth)
+    if not uuid then return end
+    if not DT_Reputation.EnsureLoaded() then return end
+
+    DT_Reputation.RecordNPCHit(uuid, factionID)
+
+    if not factionID or factionID == "Independent" then
+        return
+    end
+
+    local resolvedDamage = math.max(0, tonumber(damage) or 0)
+    local resolvedMax = math.max(1, tonumber(maxHealth) or 0)
+    if resolvedDamage <= 0 then
+        return
+    end
+
+    local threshold = math.max(1, resolvedMax * math.max(0.01, tonumber(DT_Reputation.DAMAGE_THRESHOLD_RATIO) or 0.25))
+    local entry = DT_Reputation.state.recentDamage[uuid] or {
+        factionID = factionID,
+        totalDamage = 0,
+        penaltiesApplied = 0,
+    }
+
+    entry.factionID = factionID
+    entry.totalDamage = math.min(resolvedMax, math.max(0, tonumber(entry.totalDamage) or 0) + resolvedDamage)
+
+    local totalPenalties = math.floor(entry.totalDamage / threshold)
+    local appliedPenalties = math.max(0, math.floor(tonumber(entry.penaltiesApplied) or 0))
+    local newPenalties = totalPenalties - appliedPenalties
+
+    if newPenalties > 0 then
+        entry.penaltiesApplied = totalPenalties
+        DT_Reputation.ModifyFactionBias(
+            factionID,
+            (tonumber(DT_Reputation.DAMAGE_PENALTY) or -10) * newPenalties,
+            "combat_damage"
+        )
+    end
+
+    DT_Reputation.state.recentDamage[uuid] = entry
+end
+
 local function isLocalPlayerKiller(killerUsername, killerOnlineID)
     local player = Internal.GetLocalPlayer()
     if not player then return false end
@@ -36,6 +78,7 @@ function DT_Reputation.TryApplyKillPenalty(uuid, factionID, zombie, killerUserna
 
     local hit = DT_Reputation.state.recentHits[uuid]
     DT_Reputation.state.recentHits[uuid] = nil
+    DT_Reputation.state.recentDamage[uuid] = nil
 
     local confirmedDead = false
     if zombie and (zombie:isDead() or zombie:getHealth() <= 0) then

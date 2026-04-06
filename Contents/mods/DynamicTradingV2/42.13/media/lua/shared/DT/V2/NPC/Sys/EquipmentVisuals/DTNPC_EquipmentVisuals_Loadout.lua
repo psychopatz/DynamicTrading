@@ -65,7 +65,29 @@ function Internal.chooseActiveWeapon(npcData)
     local hasMelee = DTNPCProtect and DTNPCProtect.HasUsableMeleeLoadout and DTNPCProtect.HasUsableMeleeLoadout(npcData) or false
     local state = npcData.autoProtectActiveState or npcData.state or ""
 
-    if state == "AttackRange" or state == "TradingDefenseRanged" or state == "ProtectRanged" then
+    if state == "Attack" or state == "AttackRange" then
+        local resolved = DTNPCProtect
+            and DTNPCProtect.ResolveHostileCombatState
+            and DTNPCProtect.ResolveHostileCombatState(npcData, state, npcData.combatTargetDistance)
+            or state
+        if resolved == "AttackRange" then
+            if hasRanged then
+                return loadout.rangedWeapon
+            end
+            if hasMelee then
+                return loadout.meleeWeapon
+            end
+        else
+            if hasMelee then
+                return loadout.meleeWeapon
+            end
+            if hasRanged then
+                return loadout.rangedWeapon
+            end
+        end
+    end
+
+    if state == "TradingDefenseRanged" or state == "ProtectRanged" then
         if hasRanged then
             return loadout.rangedWeapon
         end
@@ -74,7 +96,7 @@ function Internal.chooseActiveWeapon(npcData)
         end
     end
 
-    if state == "Attack" or state == "TradingDefenseMelee" or state == "ProtectMelee" then
+    if state == "TradingDefenseMelee" or state == "ProtectMelee" then
         if hasMelee then
             return loadout.meleeWeapon
         end

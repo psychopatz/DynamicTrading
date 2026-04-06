@@ -12,6 +12,23 @@ EquipmentVisuals.Internal = EquipmentVisuals.Internal or {}
 local Helpers = EquipmentVisuals.Helpers
 local Internal = EquipmentVisuals.Internal
 
+local function buildEquipmentStateKey(npcData, activeWeapon, bagItem)
+    local loadout = npcData and npcData.loadout or {}
+    local parts = {
+        tostring(npcData and npcData.state or ""),
+        tostring(npcData and npcData.autoProtectActiveState or ""),
+        tostring(npcData and npcData.combatOrder or ""),
+        tostring(activeWeapon or ""),
+        tostring(loadout.rangedWeapon or ""),
+        tostring(loadout.rangedCondition or ""),
+        tostring(loadout.ammoCount or ""),
+        tostring(loadout.meleeWeapon or ""),
+        tostring(loadout.meleeCondition or ""),
+        tostring(bagItem or ""),
+    }
+    return table.concat(parts, "|")
+end
+
 function EquipmentVisuals.Apply(zombie, npcData, options)
     if not zombie or not npcData then
         return false
@@ -25,20 +42,18 @@ function EquipmentVisuals.Apply(zombie, npcData, options)
     end
 
     local activeWeapon = Internal.chooseActiveWeapon(npcData)
+    local bagItem = EquipmentVisuals.GetDisplayBag(npcData)
+    local stateKey = buildEquipmentStateKey(npcData, activeWeapon, bagItem)
+
+    if not options.force and modData.DTNPCEquipmentStateKey == stateKey then
+        return false
+    end
+
+    local bagChanged = Helpers.syncBagVisual(zombie, modData, bagItem)
     local activeItem = Helpers.createDisplayItem(activeWeapon, Helpers.getStoredWeaponCondition(npcData, activeWeapon))
     local primaryType = Helpers.getWeaponDisplayType(activeItem)
     local attachments = Internal.buildAttachmentMap(npcData, activeWeapon)
-    local bagItem = EquipmentVisuals.GetDisplayBag(npcData)
     local signature = Internal.buildSignature(activeWeapon, primaryType, attachments, bagItem)
-    local bagChanged = Helpers.syncBagVisual(zombie, modData, bagItem)
-
-    if not options.force and modData.DTNPCEquipmentSignature == signature then
-        if bagChanged then
-            zombie:resetModelNextFrame()
-        end
-        modData.DTNPCDisplayBag = bagItem
-        return bagChanged
-    end
 
     Helpers.clearManagedEquipment(zombie)
 
@@ -61,6 +76,7 @@ function EquipmentVisuals.Apply(zombie, npcData, options)
     end
 
     modData.DTNPCEquipmentSignature = signature
+    modData.DTNPCEquipmentStateKey = stateKey
     modData.DTNPCDisplayBag = bagItem
     if bagChanged then
         zombie:resetModelNextFrame()
@@ -79,6 +95,7 @@ function EquipmentVisuals.Clear(zombie)
     zombie:setVariable("DTNPCPrimaryType", "")
     if modData then
         modData.DTNPCEquipmentSignature = nil
+        modData.DTNPCEquipmentStateKey = nil
         modData.DTNPCDisplayBag = nil
         if modData.DTNPCInjectedBag and modData.DTNPCInjectedBag ~= "" then
             if Helpers.removeBagVisual(zombie, modData.DTNPCInjectedBag) then

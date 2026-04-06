@@ -8,6 +8,7 @@ DTNPCLogic = DTNPCLogic or {}
 local HIGH_SPEED_STATES = {
     GoTo = true,
     Flee = true,
+    Attack = true,
     AttackRange = true,
     Follow = true,
     TradingDefenseRanged = true,
@@ -104,6 +105,7 @@ function DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
 
     if npcData.state ~= state then
         state = npcData.state
+        master, dist = DTNPCLogic.GetClosestTarget(zombie)
     end
 
     local behaviorFunc = DTNPCLogic.Behaviors[state]

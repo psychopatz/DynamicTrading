@@ -14,6 +14,7 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     StickyRadiusBonus = 1.75,
     NoticeCooldownMs = 12000,
     DiagnosticCooldownMs = 4000,
+    AggressivePlayerRepThreshold = -10,
     HostilePlayerRepThreshold = -40,
     StationaryPostResetDistance = 4,
     StationaryCombatLeashRadius = 10,
