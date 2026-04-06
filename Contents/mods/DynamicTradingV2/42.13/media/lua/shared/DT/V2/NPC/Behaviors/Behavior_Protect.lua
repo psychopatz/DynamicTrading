@@ -72,6 +72,9 @@ local function clearProtectCombat(zombie, npcData)
         npcData.reactionTimer = 0
         npcData.autoProtectActiveState = nil
         DTNPCProtect.ClearCombatTarget(npcData)
+        if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
+            DTNPCProtect.ResetCombatRhythm(npcData)
+        end
     end
     if zombie then
         zombie:setTarget(nil)
@@ -196,6 +199,53 @@ local function moveTowardTarget(zombie, speed, target, stopDistance)
     return false
 end
 
+local function moveAwayFromTarget(zombie, speed, target, desiredDistance)
+    local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
+    local tx, ty = target:getX(), target:getY()
+    local dx = zx - tx
+    local dy = zy - ty
+    local len = math.sqrt((dx * dx) + (dy * dy))
+    local safeDistance = math.max(0, tonumber(desiredDistance) or 0)
+
+    if len >= safeDistance then
+        stopMoveAnim(zombie)
+        return true
+    end
+
+    if len <= 0.001 then
+        dx = ZombRandFloat(-1.0, 1.0)
+        dy = ZombRandFloat(-1.0, 1.0)
+        len = math.sqrt((dx * dx) + (dy * dy))
+        if len <= 0.001 then
+            stopMoveAnim(zombie)
+            return false
+        end
+    end
+
+    dx = dx / len
+    dy = dy / len
+
+    local step = math.min(speed, math.max(0, safeDistance - len))
+    if step <= 0.001 then
+        stopMoveAnim(zombie)
+        return true
+    end
+
+    local nextX = zx + (dx * step)
+    local nextY = zy + (dy * step)
+
+    if isTileSafe(nextX, nextY, zz) then
+        forceWalkAnim(zombie, false)
+        zombie:setX(nextX)
+        zombie:setY(nextY)
+        zombie:faceLocation(tx, ty)
+        return true
+    end
+
+    stopMoveAnim(zombie)
+    return false
+end
+
 local function syncProtectStateChange(zombie, npcData)
     if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
         local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
@@ -303,15 +353,23 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
         zombie:faceLocation(tx, ty)
     end
 
+    local recovering, recovery = false, nil
+    if DTNPCProtect and DTNPCProtect.GetCombatRecovery then
+        recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "ranged", target)
+    end
+
+    local desiredMin = recovering and math.max(RANGED_KITE_MIN, recovery and recovery.distance or RANGED_KITE_MIN) or RANGED_KITE_MIN
+    local desiredMax = recovering and math.max(RANGED_KITE_MAX, desiredMin + 0.75) or RANGED_KITE_MAX
+
     local moveDir = 0
     local moveSpeed = 0
-    if len < RANGED_KITE_MIN then
+    if len < desiredMin then
         npcData.reactionTimer = (npcData.reactionTimer or 0) + 1
         if npcData.reactionTimer >= 18 then
             moveDir = -1
             moveSpeed = RANGED_BACKPEDAL_SPEED
         end
-    elseif len > RANGED_KITE_MAX then
+    elseif len > desiredMax then
         npcData.reactionTimer = 0
         moveDir = 1
         moveSpeed = RANGED_ADVANCE_SPEED
@@ -346,6 +404,11 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
     end
 
     local stats = DTNPCProtect.GetRangedCombatStats(npcData)
+    if recovering then
+        npcData.attackTimer = 0
+        return
+    end
+
     npcData.attackTimer = (npcData.attackTimer or 0) + 1
     if npcData.attackTimer < stats.fireRate then
         return
@@ -366,6 +429,9 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
             attackType = "ranged",
             damage = stats.damage,
         })
+    end
+    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
+        DTNPCProtect.RecordCombatAttack(zombie, npcData, "ranged", target)
     end
 end
 
@@ -389,6 +455,30 @@ local function executeProtectMelee(zombie, npcData, target, targetDist)
     local stats = DTNPCProtect.GetMeleeCombatStats(npcData)
     local engageReach = math.max(stats.reach or MELEE_REACH, 1.45)
     local currentDist = getTargetDistance(zombie, target)
+    local recovering, recovery = false, nil
+    if DTNPCProtect and DTNPCProtect.GetCombatRecovery then
+        recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "melee", target)
+    end
+
+    if recovering then
+        npcData.attackTimer = 0
+        local retreatDistance = math.max(engageReach + 0.45, recovery and recovery.distance or (engageReach + 0.7))
+        if currentDist < retreatDistance then
+            moveAwayFromTarget(
+                zombie,
+                math.max(0.028, (stats.chaseSpeed or MELEE_DEFAULT_SPEED) * 0.75),
+                target,
+                retreatDistance
+            )
+        else
+            stopMoveAnim(zombie)
+            if DTNPC and DTNPC.SetMeleeCombatIdleState then
+                DTNPC.SetMeleeCombatIdleState(zombie, npcData)
+            end
+        end
+        return
+    end
+
     if currentDist > engageReach then
         local arrived = moveTowardTarget(
             zombie,
@@ -452,6 +542,9 @@ local function executeProtectMelee(zombie, npcData, target, targetDist)
             attackType = "melee",
             damage = stats.damage,
         })
+    end
+    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
+        DTNPCProtect.RecordCombatAttack(zombie, npcData, "melee", target)
     end
 end
 

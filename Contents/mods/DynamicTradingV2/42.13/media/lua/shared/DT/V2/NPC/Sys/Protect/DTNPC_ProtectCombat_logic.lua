@@ -8,6 +8,238 @@ DTNPCProtect.Internal = DTNPCProtect.Internal or {}
 
 local Internal = DTNPCProtect.Internal
 local clamp = Internal.clamp
+local nowMillis = Internal.nowMillis
+local getZombieRuntimeID = Internal.getZombieRuntimeID
+local getPlayerRuntimeID = Internal.getPlayerRuntimeID
+
+local COMBAT_RHYTHM_RESET_MS = 4500
+
+local COMBAT_FLAVOR = {
+    meleeRecovery = {
+        "Need a breath.",
+        "Backing off a step.",
+        "Easy. Re-center.",
+        "Hold still. Not done yet.",
+    },
+    rangedRecovery = {
+        "Hold. Repositioning.",
+        "Need a cleaner shot.",
+        "Give me a second.",
+        "Backing up for space.",
+    },
+}
+
+local function rollInt(minValue, maxValue)
+    local safeMin = math.floor(tonumber(minValue) or 0)
+    local safeMax = math.floor(tonumber(maxValue) or safeMin)
+    if safeMax < safeMin then
+        safeMax = safeMin
+    end
+    if safeMax <= safeMin then
+        return safeMin
+    end
+    return safeMin + ZombRand((safeMax - safeMin) + 1)
+end
+
+local function resolveCombatTargetKey(target)
+    if not target then
+        return nil
+    end
+    if instanceof and instanceof(target, "IsoPlayer") then
+        return getPlayerRuntimeID and getPlayerRuntimeID(target) or tostring(target)
+    end
+    return getZombieRuntimeID and getZombieRuntimeID(target) or tostring(target)
+end
+
+local function getCombatRhythmBucket(npcData)
+    DTNPCProtect.EnsureDataDefaults(npcData)
+
+    local rhythm = type(npcData._combatRhythm) == "table" and npcData._combatRhythm or {}
+    npcData._combatRhythm = rhythm
+
+    if type(rhythm.flavorTimes) ~= "table" then
+        rhythm.flavorTimes = {}
+    end
+
+    return rhythm
+end
+
+local function resetCombatRhythmBucket(rhythm)
+    if not rhythm then
+        return
+    end
+
+    rhythm.targetKey = nil
+    rhythm.attackType = nil
+    rhythm.burstCount = 0
+    rhythm.burstLimit = nil
+    rhythm.recoveryUntil = 0
+    rhythm.recoveryDistance = nil
+    rhythm.lastAttackAt = 0
+end
+
+local function pushCombatFlavor(zombie, npcData, flavorKey, sentiment, cooldownMs)
+    local lines = COMBAT_FLAVOR[flavorKey]
+    if not lines or #lines == 0 then
+        return false
+    end
+
+    local rhythm = getCombatRhythmBucket(npcData)
+    local currentTime = nowMillis()
+    local safeCooldown = math.max(0, tonumber(cooldownMs) or 3500)
+    local lastTime = tonumber(rhythm.flavorTimes[flavorKey]) or 0
+    if currentTime > 0 and lastTime > 0 and (currentTime - lastTime) < safeCooldown then
+        return false
+    end
+
+    rhythm.flavorTimes[flavorKey] = currentTime
+
+    if DTNPCProtect.PushCompanionNotice then
+        local index = rollInt(1, #lines)
+        return DTNPCProtect.PushCompanionNotice(zombie, npcData, lines[index], sentiment or "neutral")
+    end
+
+    return false
+end
+
+function DTNPCProtect.ResetCombatRhythm(npcData)
+    if not npcData then
+        return false
+    end
+
+    local rhythm = getCombatRhythmBucket(npcData)
+    resetCombatRhythmBucket(rhythm)
+    return true
+end
+
+function DTNPCProtect.GetCombatRhythmProfile(npcData, attackType)
+    DTNPCProtect.EnsureDataDefaults(npcData)
+
+    local isRanged = attackType == "ranged"
+    local skillID = isRanged and "Shooting" or "Melee"
+    local skill = DTNPCProtect.GetSkillLevel(npcData, skillID)
+    local normalized = math.min(math.max(skill, 0), 20) / 20
+
+    if isRanged then
+        return {
+            attackType = attackType,
+            skill = skill,
+            normalized = normalized,
+            burstMin = 2 + math.floor(normalized * 2),
+            burstMax = 4 + math.floor(normalized * 3),
+            recoveryMinMs = math.floor(1200 - (normalized * 450)),
+            recoveryMaxMs = math.floor(2200 - (normalized * 700)),
+            recoveryDistance = 6.25 + ((1 - normalized) * 1.5),
+            flavorChance = math.floor(42 + (normalized * 18)),
+            flavorKey = "rangedRecovery",
+            flavorSentiment = "warning",
+        }
+    end
+
+    return {
+        attackType = attackType,
+        skill = skill,
+        normalized = normalized,
+        burstMin = 1 + math.floor(normalized * 2),
+        burstMax = 3 + math.floor(normalized * 3),
+        recoveryMinMs = math.floor(900 + ((1 - normalized) * 1100)),
+        recoveryMaxMs = math.floor(1600 + ((1 - normalized) * 1400)),
+        recoveryDistance = 1.85 + ((1 - normalized) * 0.9),
+        flavorChance = math.floor(48 + (normalized * 14)),
+        flavorKey = "meleeRecovery",
+        flavorSentiment = "warning",
+    }
+end
+
+function DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
+    if not npcData then
+        return false, nil
+    end
+
+    local profile = DTNPCProtect.GetCombatRhythmProfile(npcData, attackType)
+    local rhythm = getCombatRhythmBucket(npcData)
+    local currentTime = nowMillis()
+    local targetKey = resolveCombatTargetKey(target)
+    local lastAttackAt = tonumber(rhythm.lastAttackAt) or 0
+
+    if targetKey == nil then
+        resetCombatRhythmBucket(rhythm)
+        return false, profile
+    end
+
+    if rhythm.targetKey ~= targetKey
+        or rhythm.attackType ~= attackType
+        or (currentTime > 0 and lastAttackAt > 0 and (currentTime - lastAttackAt) > COMBAT_RHYTHM_RESET_MS) then
+        resetCombatRhythmBucket(rhythm)
+        rhythm.targetKey = targetKey
+        rhythm.attackType = attackType
+        rhythm.burstLimit = rollInt(profile.burstMin, profile.burstMax)
+    elseif not rhythm.burstLimit then
+        rhythm.burstLimit = rollInt(profile.burstMin, profile.burstMax)
+    end
+
+    local recoveryUntil = tonumber(rhythm.recoveryUntil) or 0
+    if recoveryUntil > 0 and currentTime > 0 and currentTime < recoveryUntil then
+        return true, {
+            untilTime = recoveryUntil,
+            distance = tonumber(rhythm.recoveryDistance) or profile.recoveryDistance,
+            profile = profile,
+        }
+    end
+
+    if recoveryUntil > 0 and currentTime > 0 and currentTime >= recoveryUntil then
+        rhythm.recoveryUntil = 0
+        rhythm.recoveryDistance = nil
+    end
+
+    return false, {
+        untilTime = 0,
+        distance = profile.recoveryDistance,
+        profile = profile,
+    }
+end
+
+function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
+    if not npcData then
+        return false, nil
+    end
+
+    local recovering, recoveryState = DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
+    if recovering then
+        return true, recoveryState
+    end
+
+    local rhythm = getCombatRhythmBucket(npcData)
+    local profile = recoveryState and recoveryState.profile or DTNPCProtect.GetCombatRhythmProfile(npcData, attackType)
+    local currentTime = nowMillis()
+
+    rhythm.lastAttackAt = currentTime
+    rhythm.burstCount = (tonumber(rhythm.burstCount) or 0) + 1
+
+    local burstLimit = tonumber(rhythm.burstLimit) or rollInt(profile.burstMin, profile.burstMax)
+    if rhythm.burstCount < burstLimit then
+        return false, {
+            untilTime = 0,
+            distance = profile.recoveryDistance,
+            profile = profile,
+        }
+    end
+
+    rhythm.burstCount = 0
+    rhythm.burstLimit = rollInt(profile.burstMin, profile.burstMax)
+    rhythm.recoveryDistance = profile.recoveryDistance
+    rhythm.recoveryUntil = currentTime + rollInt(profile.recoveryMinMs, profile.recoveryMaxMs)
+
+    if ZombRand(100) < (profile.flavorChance or 0) then
+        pushCombatFlavor(zombie, npcData, profile.flavorKey, profile.flavorSentiment, 3000)
+    end
+
+    return true, {
+        untilTime = rhythm.recoveryUntil,
+        distance = rhythm.recoveryDistance,
+        profile = profile,
+    }
+end
 
 local function rollWeaponDamage(item)
     local minDamage = item and item.getMinDamage and tonumber(item:getMinDamage()) or nil

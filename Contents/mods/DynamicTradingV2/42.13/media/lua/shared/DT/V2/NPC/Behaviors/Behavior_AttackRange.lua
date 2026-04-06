@@ -92,6 +92,9 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
 
     if not target or target:isDead() then
         npcData.attackTimer = 0
+        if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
+            DTNPCProtect.ResetCombatRhythm(npcData)
+        end
         stopMoveAnim(zombie)
         zombie:setTarget(nil)
         return
@@ -134,10 +137,17 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
 
     if not npcData.reactionTimer then npcData.reactionTimer = 0 end
 
+    local recovering, recovery = false, nil
+    if DTNPCProtect and DTNPCProtect.GetCombatRecovery then
+        recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "ranged", target)
+    end
+    local desiredMin = recovering and math.max(KITE_DIST_MIN, recovery and recovery.distance or KITE_DIST_MIN) or KITE_DIST_MIN
+    local desiredMax = recovering and math.max(KITE_DIST_MAX, desiredMin + 0.75) or KITE_DIST_MAX
+
     local moveDir = 0
     local currentSpeed = 0
     
-    if len < KITE_DIST_MIN then
+    if len < desiredMin then
         npcData.reactionTimer = npcData.reactionTimer + 1
         if npcData.reactionTimer > REACTION_DELAY then
             moveDir = -1
@@ -146,7 +156,7 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
             moveDir = 0
         end
         
-    elseif len > KITE_DIST_MAX then
+    elseif len > desiredMax then
         npcData.reactionTimer = 0
         moveDir = 1
         currentSpeed = SPEED_FWD
@@ -181,6 +191,11 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     end
 
     local stats = DTNPCProtect.GetRangedCombatStats(npcData)
+    if recovering then
+        npcData.attackTimer = 0
+        return
+    end
+
     npcData.attackTimer = (npcData.attackTimer or 0) + 1
     if npcData.attackTimer >= stats.fireRate then
         npcData.attackTimer = 0
@@ -198,6 +213,9 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
                 attackType = "ranged",
                 damage = stats.damage,
             })
+        end
+        if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
+            DTNPCProtect.RecordCombatAttack(zombie, npcData, "ranged", target)
         end
     end
 end

@@ -175,6 +175,64 @@ local function moveTowardTarget(zombie, speed, target, stopDistance, anchorX, an
     return false, "blocked"
 end
 
+local function moveAwayFromTarget(zombie, speed, target, desiredDistance, anchorX, anchorY, anchorZ, leashRadius)
+    local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
+    local tx, ty = target:getX(), target:getY()
+    local dx = zx - tx
+    local dy = zy - ty
+    local len = math.sqrt((dx * dx) + (dy * dy))
+    local safeDistance = math.max(0, tonumber(desiredDistance) or 0)
+
+    if len >= safeDistance then
+        stopMoveAnim(zombie)
+        return true, "spaced"
+    end
+
+    if len <= 0.001 then
+        dx = ZombRandFloat(-1.0, 1.0)
+        dy = ZombRandFloat(-1.0, 1.0)
+        len = math.sqrt((dx * dx) + (dy * dy))
+        if len <= 0.001 then
+            stopMoveAnim(zombie)
+            return false, "blocked"
+        end
+    end
+
+    dx = dx / len
+    dy = dy / len
+
+    local step = math.min(speed, math.max(0, safeDistance - len))
+    if step <= 0.001 then
+        stopMoveAnim(zombie)
+        return true, "spaced"
+    end
+
+    local nextX = zx + (dx * step)
+    local nextY = zy + (dy * step)
+
+    if anchorX ~= nil and anchorY ~= nil and leashRadius ~= nil then
+        local leashDx = nextX - anchorX
+        local leashDy = nextY - anchorY
+        local leashDist = math.sqrt((leashDx * leashDx) + (leashDy * leashDy))
+        local leashFloor = tonumber(anchorZ) or zz
+        if math.abs(zz - leashFloor) > 1.1 or leashDist > leashRadius then
+            stopMoveAnim(zombie)
+            return false, "leash"
+        end
+    end
+
+    if isTileSafe(nextX, nextY, zz) then
+        forceWalkAnim(zombie, false)
+        zombie:setX(nextX)
+        zombie:setY(nextY)
+        zombie:faceLocation(tx, ty)
+        return true, "moving"
+    end
+
+    stopMoveAnim(zombie)
+    return false, "blocked"
+end
+
 local function syncCombatStateChange(zombie, npcData)
     if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
         local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
@@ -266,6 +324,9 @@ exitTradingDefense = function(zombie, npcData)
     zombie:setTarget(nil)
     if DTNPCProtect and DTNPCProtect.ClearCombatTarget then
         DTNPCProtect.ClearCombatTarget(npcData)
+    end
+    if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
+        DTNPCProtect.ResetCombatRhythm(npcData)
     end
     stopMoveAnim(zombie)
     syncCombatStateChange(zombie, npcData)
@@ -360,15 +421,23 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
         faceTarget(zombie, target)
     end
 
+    local recovering, recovery = false, nil
+    if DTNPCProtect and DTNPCProtect.GetCombatRecovery then
+        recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "ranged", target)
+    end
+
+    local desiredMin = recovering and math.max(RANGED_KITE_MIN, recovery and recovery.distance or RANGED_KITE_MIN) or RANGED_KITE_MIN
+    local desiredMax = recovering and math.max(RANGED_KITE_MAX, desiredMin + 0.75) or RANGED_KITE_MAX
+
     local moveDir = 0
     local moveSpeed = 0
-    if len < RANGED_KITE_MIN then
+    if len < desiredMin then
         npcData.reactionTimer = (npcData.reactionTimer or 0) + 1
         if npcData.reactionTimer >= 18 then
             moveDir = -1
             moveSpeed = RANGED_BACKPEDAL_SPEED
         end
-    elseif len > RANGED_KITE_MAX then
+    elseif len > desiredMax then
         npcData.reactionTimer = 0
         moveDir = 1
         moveSpeed = RANGED_ADVANCE_SPEED
@@ -436,6 +505,12 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     end
 
     local stats = DTNPCProtect.GetRangedCombatStats(npcData)
+    if recovering then
+        npcData.attackTimer = 0
+        markCombatPursuit(npcData, target, targetDist, false)
+        return
+    end
+
     npcData.attackTimer = (npcData.attackTimer or 0) + 1
     local attacked = false
     if npcData.attackTimer < stats.fireRate then
@@ -459,6 +534,9 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
             attackType = "ranged",
             damage = stats.damage,
         })
+    end
+    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
+        DTNPCProtect.RecordCombatAttack(zombie, npcData, "ranged", target)
     end
 end
 
@@ -500,6 +578,42 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
     local stats = DTNPCProtect.GetMeleeCombatStats(npcData)
     local engageReach = math.max(stats.reach or TRADING_DEFENSE_MELEE_REACH, 1.45)
     local currentDist = getTargetDistance(zombie, target)
+    local recovering, recovery = false, nil
+    if DTNPCProtect and DTNPCProtect.GetCombatRecovery then
+        recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "melee", target)
+    end
+
+    if recovering then
+        npcData.attackTimer = 0
+        local retreatDistance = math.max(engageReach + 0.45, recovery and recovery.distance or (engageReach + 0.7))
+        if currentDist < retreatDistance then
+            local movedAway, moveState = moveAwayFromTarget(
+                zombie,
+                math.max(0.028, (stats.chaseSpeed or TRADING_DEFENSE_DEFAULT_SPEED) * 0.75),
+                target,
+                retreatDistance,
+                anchorX,
+                anchorY,
+                anchorZ,
+                leashRadius
+            )
+            if moveState == "leash" then
+                returnToPostOrResume(zombie, npcData)
+                return
+            end
+            if not movedAway then
+                stopMoveAnim(zombie)
+            end
+        else
+            stopMoveAnim(zombie)
+            if DTNPC and DTNPC.SetMeleeCombatIdleState then
+                DTNPC.SetMeleeCombatIdleState(zombie, npcData)
+            end
+        end
+        markCombatPursuit(npcData, target, currentDist, false)
+        return
+    end
+
     if currentDist > engageReach then
         local arrived, moveState = moveTowardTarget(
             zombie,
@@ -586,5 +700,8 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
             attackType = "melee",
             damage = stats.damage,
         })
+    end
+    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
+        DTNPCProtect.RecordCombatAttack(zombie, npcData, "melee", target)
     end
 end

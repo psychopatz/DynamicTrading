@@ -112,6 +112,57 @@ local function moveTowardTarget(zombie, speed, target, stopDistance)
     return false
 end
 
+local function moveAwayFromTarget(zombie, speed, target, desiredDistance)
+    local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
+    local tx, ty = target:getX(), target:getY()
+    local dx = zx - tx
+    local dy = zy - ty
+    local len = math.sqrt((dx * dx) + (dy * dy))
+    local safeDistance = math.max(0, tonumber(desiredDistance) or 0)
+
+    if len >= safeDistance then
+        stopMoveAnim(zombie)
+        return true
+    end
+
+    if len <= 0.001 then
+        dx = ZombRandFloat(-1.0, 1.0)
+        dy = ZombRandFloat(-1.0, 1.0)
+        len = math.sqrt((dx * dx) + (dy * dy))
+        if len <= 0.001 then
+            stopMoveAnim(zombie)
+            return false
+        end
+    end
+
+    dx = dx / len
+    dy = dy / len
+
+    local step = math.min(speed, math.max(0, safeDistance - len))
+    if step <= 0.001 then
+        stopMoveAnim(zombie)
+        return true
+    end
+
+    local nextX = zx + (dx * step)
+    local nextY = zy + (dy * step)
+    local cell = getCell()
+    local square = cell and cell:getGridSquare(nextX, nextY, zz) or nil
+    local canMove = (not square)
+        or (square:isFree(false) and not square:isSolid() and not square:isSolidTrans())
+
+    if canMove then
+        forceWalkAnim(zombie, false)
+        zombie:setX(nextX)
+        zombie:setY(nextY)
+        zombie:faceLocation(tx, ty)
+        return true
+    end
+
+    stopMoveAnim(zombie)
+    return false
+end
+
 DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     if not npcData then
         runLegacyWakeup(zombie, target, dist)
@@ -133,6 +184,9 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
 
     if not target or target:isDead() then
         npcData.attackTimer = 0
+        if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
+            DTNPCProtect.ResetCombatRhythm(npcData)
+        end
         stopMoveAnim(zombie)
         zombie:setTarget(nil)
         return
@@ -160,6 +214,30 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     local stats = DTNPCProtect.GetMeleeCombatStats(npcData)
     local engageReach = math.max(stats.reach or MELEE_DEFAULT_REACH, 1.45)
     local currentDist = getTargetDistance(zombie, target)
+    local recovering, recovery = false, nil
+    if DTNPCProtect and DTNPCProtect.GetCombatRecovery then
+        recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "melee", target)
+    end
+
+    if recovering then
+        npcData.attackTimer = 0
+        local retreatDistance = math.max(engageReach + 0.45, recovery and recovery.distance or (engageReach + 0.7))
+        if currentDist < retreatDistance then
+            moveAwayFromTarget(
+                zombie,
+                math.max(0.028, (stats.chaseSpeed or MELEE_DEFAULT_SPEED) * 0.75),
+                target,
+                retreatDistance
+            )
+        else
+            stopMoveAnim(zombie)
+            if DTNPC and DTNPC.SetMeleeCombatIdleState then
+                DTNPC.SetMeleeCombatIdleState(zombie, npcData)
+            end
+        end
+        return
+    end
+
     if currentDist > engageReach then
         local arrived = moveTowardTarget(
             zombie,
@@ -198,5 +276,8 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
             attackType = "melee",
             damage = stats.damage,
         })
+    end
+    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
+        DTNPCProtect.RecordCombatAttack(zombie, npcData, "melee", target)
     end
 end
