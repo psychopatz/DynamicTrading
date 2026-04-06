@@ -48,6 +48,7 @@ local function isStationaryState(state)
         or state == "Guard"
         or state == "Idle"
         or state == "Trading"
+        or state == "Bandage"
         or state == "TradingDefenseRanged"
         or state == "TradingDefenseMelee"
 end

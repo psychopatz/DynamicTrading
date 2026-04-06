@@ -60,6 +60,7 @@ function DTNPCLogic.UpdateIdleCycle(zombie, npcData, state)
         or state == "Stay"
         or state == "Guard"
         or state == "Trading"
+        or state == "Bandage"
 
     if not isIdleCycleState then
         DTNPCLogic.ResetIdleCycle(zombie, npcData)

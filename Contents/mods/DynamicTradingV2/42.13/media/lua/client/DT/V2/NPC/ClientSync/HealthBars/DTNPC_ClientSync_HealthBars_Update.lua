@@ -142,6 +142,7 @@ function ISDTNPCHealthBarManager:update()
                         currentHp = tracked.currentHp,
                         maxHp = tracked.maxHp,
                         isIncapacitated = tracked.isIncapacitated,
+                        hasActiveBandage = tracked.hasActiveBandage,
                         previousHp = tracked.currentHp,
                         name = tracked.name or "Unknown",
                         nameWidth = tracked.nameWidth or State.textManager:MeasureStringX(Constants.FONT_NAME, tracked.name or "Unknown"),
@@ -154,6 +155,7 @@ function ISDTNPCHealthBarManager:update()
                     barData.currentHp = tracked.currentHp
                     barData.maxHp = tracked.maxHp
                     barData.isIncapacitated = tracked.isIncapacitated
+                    barData.hasActiveBandage = tracked.hasActiveBandage
                     barData.name = tracked.name or barData.name or "Unknown"
                     barData.nameWidth = tracked.nameWidth or barData.nameWidth
                     barData.visibleUntil = math.max(barData.visibleUntil or 0, tracked.visibleUntil or 0)

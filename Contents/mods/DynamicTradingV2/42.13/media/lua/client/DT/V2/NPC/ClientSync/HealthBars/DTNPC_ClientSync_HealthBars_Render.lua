@@ -18,6 +18,7 @@ modules.Render = true
 
 local Constants = HealthBars.Constants
 local Helpers = HealthBars.Helpers
+local State = HealthBars.State
 
 function ISDTNPCHealthBarManager:render()
     if not self.active then
@@ -118,6 +119,23 @@ function ISDTNPCHealthBarManager:render()
                         alpha,
                         Constants.FONT_HP
                     )
+
+                    if barData.hasActiveBandage and State.bandageIcon then
+                        local iconSize = Constants.BANDAGE_ICON_SIZE / scaleDivisor
+                        local iconX = barLeft + barWidth + Constants.BANDAGE_ICON_GAP
+                        local iconY = barTop + ((barHeight - iconSize) / 2)
+                        self:drawTextureScaled(
+                            State.bandageIcon,
+                            iconX,
+                            iconY,
+                            iconSize,
+                            iconSize,
+                            alpha,
+                            1,
+                            1,
+                            1
+                        )
+                    end
                 end
             end
         end

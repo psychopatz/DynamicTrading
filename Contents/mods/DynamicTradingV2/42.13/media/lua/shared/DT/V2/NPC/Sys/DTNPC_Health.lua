@@ -35,6 +35,48 @@ DTNPCHealth.NETWORK_SAFE_SPAWN_DELAY_MS = DTNPCHealth.NETWORK_SAFE_SPAWN_DELAY_M
 DTNPCHealth.SPAWN_FALLBACK_GUARD_MS = DTNPCHealth.SPAWN_FALLBACK_GUARD_MS or 12000
 DTNPCHealth.PLAYER_REP_DAMAGE_THRESHOLD_RATIO = DTNPCHealth.PLAYER_REP_DAMAGE_THRESHOLD_RATIO or 0.25
 DTNPCHealth.PLAYER_REP_DAMAGE_PENALTY = DTNPCHealth.PLAYER_REP_DAMAGE_PENALTY or -10
+DTNPCHealth.SELF_BANDAGE_THRESHOLD_RATIO = DTNPCHealth.SELF_BANDAGE_THRESHOLD_RATIO or 0.66
+DTNPCHealth.SELF_BANDAGE_APPLY_DURATION_MS = DTNPCHealth.SELF_BANDAGE_APPLY_DURATION_MS or 4000
+DTNPCHealth.PLAYER_OWNED_DEFAULT_BANDAGE_CHARGES = DTNPCHealth.PLAYER_OWNED_DEFAULT_BANDAGE_CHARGES or 2
+DTNPCHealth.SELF_BANDAGE_RETRY_DELAY_MS = DTNPCHealth.SELF_BANDAGE_RETRY_DELAY_MS or 15000
+DTNPCHealth.SELF_BANDAGE_VISIBLE_RADIUS = DTNPCHealth.SELF_BANDAGE_VISIBLE_RADIUS or 18
+DTNPCHealth.BANDAGE_IDLE_STATE = DTNPCHealth.BANDAGE_IDLE_STATE or "11"
+DTNPCHealth.BANDAGE_SOUND = DTNPCHealth.BANDAGE_SOUND or "FirstAidApplyBandage"
+DTNPCHealth.BANDAGE_ANIM_VARIANTS = DTNPCHealth.BANDAGE_ANIM_VARIANTS or {
+    { id = "UpperBody", weight = 3 },
+    { id = "LeftArm", weight = 2 },
+    { id = "RightArm", weight = 2 },
+    { id = "LowerBody", weight = 1 },
+    { id = "LeftLeg", weight = 1 },
+    { id = "RightLeg", weight = 1 },
+    { id = "Head", weight = 1 },
+}
+DTNPCHealth.HEALTH_PERSIST_INTERVAL_MS = DTNPCHealth.HEALTH_PERSIST_INTERVAL_MS or 2000
+DTNPCHealth.DEFAULT_BANDAGE_TIER = DTNPCHealth.DEFAULT_BANDAGE_TIER or "clean_rag"
+DTNPCHealth.BANDAGE_TIERS = DTNPCHealth.BANDAGE_TIERS or {
+    clean_rag = {
+        label = "Clean Rag",
+        totalHeal = 20,
+        applyHeal = 2,
+        regenPerTick = 1,
+        regenIntervalMs = 2000,
+    },
+    sterilized_rag = {
+        label = "Sterilized Rag",
+        totalHeal = 28,
+        applyHeal = 3,
+        regenPerTick = 1.5,
+        regenIntervalMs = 2000,
+    },
+    bandage = {
+        label = "Bandage",
+        totalHeal = 36,
+        applyHeal = 4,
+        regenPerTick = 2,
+        regenIntervalMs = 2000,
+    },
+}
+DTNPCHealth.SELF_BANDAGE_TUNING_VERSION = DTNPCHealth.SELF_BANDAGE_TUNING_VERSION or 3
 
 local nowMillis
 
@@ -233,6 +275,195 @@ local function getAttackerID(attacker)
     return tostring(attacker)
 end
 
+local function isPlayerOwnedNPC(npcData)
+    if not npcData then
+        return false
+    end
+
+    if DTNPCProtect and DTNPCProtect.IsPlayerOwnedTrader then
+        local ok, result = pcall(DTNPCProtect.IsPlayerOwnedTrader, npcData)
+        if ok and result == true then
+            return true
+        end
+    end
+
+    if npcData.isPlayerFactionTrader == true then
+        return true
+    end
+
+    if npcData.masterID ~= nil then
+        return true
+    end
+
+    if npcData.master and tostring(npcData.master) ~= "" then
+        return true
+    end
+
+    if DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
+        local faction = DynamicTrading_Factions.GetFaction(npcData.factionID)
+        if faction and faction.playerOwned == true then
+            return true
+        end
+    end
+
+    return npcData.linkedWorkerID ~= nil
+end
+
+local function isCombatState(state)
+    return state == "Attack"
+        or state == "AttackRange"
+        or state == "Flee"
+        or state == "TradingDefenseRanged"
+        or state == "TradingDefenseMelee"
+        or state == "ProtectRanged"
+        or state == "ProtectMelee"
+        or state == "ProtectAuto"
+        or state == "Incapacitated"
+end
+
+local function getBandageTierDef(tierID)
+    local tiers = DTNPCHealth.BANDAGE_TIERS or {}
+    local resolvedID = tostring(tierID or DTNPCHealth.DEFAULT_BANDAGE_TIER or "clean_rag")
+    local tier = tiers[resolvedID]
+    if tier then
+        return resolvedID, tier
+    end
+
+    local fallbackID = tostring(DTNPCHealth.DEFAULT_BANDAGE_TIER or "clean_rag")
+    tier = tiers[fallbackID]
+    if tier then
+        return fallbackID, tier
+    end
+
+    return "clean_rag", {
+        label = "Clean Rag",
+        totalHeal = 20,
+        applyHeal = 2,
+        regenPerTick = 1,
+        regenIntervalMs = 2000,
+    }
+end
+
+local function playEmitterSound(character, soundName)
+    if not character or not soundName or soundName == "" then
+        return false
+    end
+
+    local emitter = character.getEmitter and character:getEmitter() or nil
+    if emitter and emitter.playSound then
+        emitter:playSound(soundName)
+        return true
+    end
+
+    return false
+end
+
+local function getDefaultBandageAnimVariantID()
+    local variants = DTNPCHealth.BANDAGE_ANIM_VARIANTS or {}
+    return variants[1] and tostring(variants[1].id or "UpperBody") or "UpperBody"
+end
+
+local function getResolvedBandageAnimVariantID(variantID)
+    local safeVariantID = tostring(variantID or "")
+    local variants = DTNPCHealth.BANDAGE_ANIM_VARIANTS or {}
+    for i = 1, #variants do
+        if safeVariantID == tostring(variants[i].id or "") then
+            return safeVariantID
+        end
+    end
+
+    return getDefaultBandageAnimVariantID()
+end
+
+local function rollBandageAnimVariantID()
+    local variants = DTNPCHealth.BANDAGE_ANIM_VARIANTS or {}
+    local totalWeight = 0
+
+    for i = 1, #variants do
+        totalWeight = totalWeight + math.max(1, tonumber(variants[i].weight) or 1)
+    end
+
+    if totalWeight <= 0 then
+        return getDefaultBandageAnimVariantID()
+    end
+
+    local roll = ZombRand(totalWeight)
+    local cursor = 0
+    for i = 1, #variants do
+        local entry = variants[i]
+        cursor = cursor + math.max(1, tonumber(entry.weight) or 1)
+        if roll < cursor then
+            return tostring(entry.id or getDefaultBandageAnimVariantID())
+        end
+    end
+
+    return getDefaultBandageAnimVariantID()
+end
+
+local function applyBandageAnimVariables(zombie, combatHealth)
+    if not zombie or not combatHealth then
+        return nil
+    end
+
+    local variantID = getResolvedBandageAnimVariantID(combatHealth.bandageAnimVariant)
+    combatHealth.bandageAnimVariant = variantID
+    zombie:setVariable("DTBandageVariant", variantID)
+    return variantID
+end
+
+local function clearBandageAnimVariables(zombie)
+    if not zombie then
+        return
+    end
+
+    zombie:setVariable("DTBandageVariant", "")
+end
+
+local function pushBandageAmbientCue(zombie, npcData)
+    if not npcData or not DTNPCProtect or not DTNPCProtect.PushCompanionAmbientCue then
+        return false
+    end
+
+    return DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, "Default", "Bandage") == true
+end
+
+local function getActivePlayersForBandage()
+    local players = {}
+
+    if DTNPCLogic and DTNPCLogic.GetActivePlayers then
+        local snapshot = DTNPCLogic.GetActivePlayers()
+        for i = 1, #(snapshot or {}) do
+            local player = snapshot[i]
+            if player then
+                players[#players + 1] = player
+            end
+        end
+        if #players > 0 then
+            return players
+        end
+    end
+
+    local online = getOnlinePlayers and getOnlinePlayers() or nil
+    if online then
+        for i = 0, online:size() - 1 do
+            local player = online:get(i)
+            if player then
+                players[#players + 1] = player
+            end
+        end
+        if #players > 0 then
+            return players
+        end
+    end
+
+    local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+    if player then
+        players[1] = player
+    end
+
+    return players
+end
+
 local function isLikelySpawnFallbackCollapse(npcData, combatHealth, currentHealth, previousHealth, attacker)
     if attacker then
         return false
@@ -293,11 +524,136 @@ local function syncHealth(zombie, npcData, fullSync)
         return
     end
 
-    if DTNPCServerCore.SyncToAllClients then
+    if fullSync == true and DTNPCServerCore.SyncToAllClients then
         DTNPCServerCore.SyncToAllClients(zombie, npcData)
     end
     if DTNPCServerCore.BroadcastPosition then
         DTNPCServerCore.BroadcastPosition(zombie, npcData, true)
+    end
+end
+
+local function persistHealthSnapshot(npcData, forceManagerSave)
+    if not npcData or isRemoteClient() then
+        return
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
+    if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul and npcData.uuid then
+        DynamicTrading_Roster.SaveSoul(npcData.uuid, npcData)
+    end
+
+    if not DTNPCManager or not DTNPCManager.Save then
+        return
+    end
+
+    local now = nowMillis()
+    local lastPersistedAt = tonumber(combatHealth and combatHealth.lastPersistedAt) or 0
+    if forceManagerSave == true or (now - lastPersistedAt) >= DTNPCHealth.HEALTH_PERSIST_INTERVAL_MS then
+        if combatHealth then
+            combatHealth.lastPersistedAt = now
+        end
+        DTNPCManager.Save()
+    end
+end
+
+local function syncAndPersistHealth(zombie, npcData, fullSync, forceManagerSave)
+    syncHealth(zombie, npcData, fullSync)
+    persistHealthSnapshot(npcData, forceManagerSave)
+end
+
+local function isBandageVisibleOpportunity(zombie)
+    if not zombie or zombie:isDead() then
+        return false
+    end
+
+    if zombie.isOnScreen then
+        local ok, visible = pcall(zombie.isOnScreen, zombie)
+        if ok and visible == true then
+            return true
+        end
+    end
+
+    local players = getActivePlayersForBandage()
+    if #players <= 0 then
+        return not isDedicatedServer()
+    end
+
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local zz = zombie:getZ() or 0
+    local visibleRadius = tonumber(DTNPCHealth.SELF_BANDAGE_VISIBLE_RADIUS) or 18
+    local visibleRadiusSq = visibleRadius * visibleRadius
+
+    for i = 1, #players do
+        local player = players[i]
+        if player and not player:isDead() and math.abs((player:getZ() or 0) - zz) <= 1 then
+            local dx = player:getX() - zx
+            local dy = player:getY() - zy
+            local distSq = (dx * dx) + (dy * dy)
+            if distSq <= visibleRadiusSq then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
+local function startSelfBandage(zombie, npcData, resumeState, options)
+    if not zombie or not npcData then
+        return false
+    end
+
+    options = type(options) == "table" and options or {}
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth or combatHealth.enabled ~= true then
+        return false
+    end
+
+    if npcData.incapState == "Active" or npcData.state == "Incapacitated" or npcData.state == "Departure" then
+        return false
+    end
+
+    local now = nowMillis()
+    if options.ignoreRetry ~= true and (tonumber(combatHealth.bandageRetryAt) or 0) > now then
+        return false
+    end
+
+    local resolvedResumeState = resumeState
+    if resolvedResumeState == "Bandage" or resolvedResumeState == nil or resolvedResumeState == "" then
+        resolvedResumeState = combatHealth.bandageResumeState or "Idle"
+    end
+
+    combatHealth.bandageResumeState = resolvedResumeState
+    combatHealth.bandageActionUntil = options.immediate == true
+        and 0
+        or (now + math.max(0, tonumber(combatHealth.selfBandageApplyDurationMs) or 0))
+    combatHealth.bandageRetryAt = 0
+    combatHealth.bandageAnimVariant = rollBandageAnimVariantID()
+    combatHealth.bandageDirty = false
+    combatHealth.bandageStatus = combatHealth.bandageActionUntil > now and "Applying" or "Ready"
+    applyBandageAnimVariables(zombie, combatHealth)
+    playEmitterSound(zombie, DTNPCHealth.BANDAGE_SOUND)
+    npcData.state = "Bandage"
+    pushBandageAmbientCue(zombie, npcData)
+    syncAndPersistHealth(zombie, npcData, false, false)
+    return true
+end
+
+local function clearActiveBandage(combatHealth, keepDirtyFlag)
+    if not combatHealth then
+        return
+    end
+
+    combatHealth.activeBandage = false
+    combatHealth.bandageHealPool = 0
+    combatHealth.bandageHealRemaining = 0
+    combatHealth.lastBandageRegenAt = 0
+    combatHealth.bandageAnimVariant = nil
+    combatHealth.bandageStatus = keepDirtyFlag and "Dirty" or "None"
+    if keepDirtyFlag ~= true then
+        combatHealth.bandageDirty = false
     end
 end
 
@@ -461,6 +817,11 @@ local function setIncapacitatedState(zombie, npcData)
     combatHealth.pendingFallbackIgnoreUntil = 0
     combatHealth.incapGraceUntil = incapacitatedAt + DTNPCHealth.INCAP_GRACE_WINDOW_MS
     combatHealth.lastEngineHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+    clearActiveBandage(combatHealth, false)
+    combatHealth.bandageActionUntil = 0
+    combatHealth.bandageRetryAt = 0
+    combatHealth.bandageResumeState = nil
+    combatHealth.bandageAnimVariant = nil
     npcData.health = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
     npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
     npcData.lastCustomDamageHandledAt = combatHealth.lastDamageAt
@@ -478,6 +839,7 @@ local function setIncapacitatedState(zombie, npcData)
     zombie:setVariable("Speed", 0.0)
     zombie:setVariable("WalkType", "2")
     zombie:setVariable("DTWalkType", "Crawl")
+    clearBandageAnimVariables(zombie)
     zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
 
     if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul and npcData.uuid then
@@ -546,6 +908,53 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if combatHealth.pendingFallbackIgnoreAmount == nil then combatHealth.pendingFallbackIgnoreAmount = 0 end
     if combatHealth.pendingFallbackIgnoreUntil == nil then combatHealth.pendingFallbackIgnoreUntil = 0 end
     if combatHealth.incapGraceUntil == nil then combatHealth.incapGraceUntil = 0 end
+    if combatHealth.selfBandageThreshold == nil then combatHealth.selfBandageThreshold = DTNPCHealth.SELF_BANDAGE_THRESHOLD_RATIO end
+    if combatHealth.selfBandageApplyDurationMs == nil then combatHealth.selfBandageApplyDurationMs = DTNPCHealth.SELF_BANDAGE_APPLY_DURATION_MS end
+    if combatHealth.bandageUnlimited == nil then combatHealth.bandageUnlimited = not isPlayerOwnedNPC(npcData) end
+    if combatHealth.bandageCharges == nil and combatHealth.bandageUnlimited ~= true then
+        combatHealth.bandageCharges = DTNPCHealth.PLAYER_OWNED_DEFAULT_BANDAGE_CHARGES
+    end
+    local tierID, tierDef = getBandageTierDef(combatHealth.bandageTier)
+    if combatHealth.bandageTier == nil then combatHealth.bandageTier = tierID end
+    if combatHealth.bandageActionUntil == nil then combatHealth.bandageActionUntil = 0 end
+    if combatHealth.bandageRetryAt == nil then combatHealth.bandageRetryAt = 0 end
+    if combatHealth.bandageHealPool == nil then combatHealth.bandageHealPool = 0 end
+    if combatHealth.bandageHealRemaining == nil then combatHealth.bandageHealRemaining = 0 end
+    if combatHealth.lastBandageRegenAt == nil then combatHealth.lastBandageRegenAt = 0 end
+    if combatHealth.bandageDirty == nil then combatHealth.bandageDirty = false end
+    if combatHealth.activeBandage == nil then combatHealth.activeBandage = false end
+    if combatHealth.bandageStatus == nil then combatHealth.bandageStatus = "None" end
+    if combatHealth.bandageResumeState == nil then combatHealth.bandageResumeState = nil end
+    if combatHealth.bandageAnimVariant ~= nil then
+        combatHealth.bandageAnimVariant = getResolvedBandageAnimVariantID(combatHealth.bandageAnimVariant)
+    end
+    if combatHealth.lastPersistedAt == nil then combatHealth.lastPersistedAt = 0 end
+    if combatHealth.bandageTuningVersion == nil then combatHealth.bandageTuningVersion = 0 end
+
+    if tonumber(combatHealth.bandageTuningVersion) < DTNPCHealth.SELF_BANDAGE_TUNING_VERSION then
+        combatHealth.selfBandageApplyDurationMs = DTNPCHealth.SELF_BANDAGE_APPLY_DURATION_MS
+        combatHealth.bandageTier = tierID
+        combatHealth.bandageHealPool = combatHealth.activeBandage == true and math.max(0, tonumber(tierDef.totalHeal) or 0) or 0
+        combatHealth.bandageHealRemaining = combatHealth.activeBandage == true and math.max(0, tonumber(tierDef.totalHeal) or 0) or 0
+        combatHealth.lastBandageRegenAt = 0
+        combatHealth.bandageTuningVersion = DTNPCHealth.SELF_BANDAGE_TUNING_VERSION
+    end
+
+    tierID, tierDef = getBandageTierDef(combatHealth.bandageTier)
+    combatHealth.bandageTier = tierID
+    if combatHealth.activeBandage ~= true then
+        combatHealth.bandageHealPool = 0
+        combatHealth.bandageHealRemaining = 0
+    elseif (tonumber(combatHealth.bandageHealPool) or 0) <= 0 then
+        combatHealth.bandageHealPool = math.max(0, tonumber(tierDef.totalHeal) or 0)
+        combatHealth.bandageHealRemaining = math.max(0, tonumber(combatHealth.bandageHealPool) or 0)
+    else
+        combatHealth.bandageHealRemaining = clamp(
+            tonumber(combatHealth.bandageHealRemaining) or combatHealth.bandageHealPool,
+            0,
+            math.max(0, tonumber(combatHealth.bandageHealPool) or 0)
+        )
+    end
 
     combatHealth.baseMax = baseMax
     combatHealth.skillBonus = skillBonus
@@ -554,6 +963,11 @@ function DTNPCHealth.EnsureDefaults(npcData)
         combatHealth.enabled = false
         combatHealth.engineProtected = true
         combatHealth.current = 0
+        clearActiveBandage(combatHealth, false)
+        combatHealth.bandageActionUntil = 0
+        combatHealth.bandageRetryAt = 0
+        combatHealth.bandageResumeState = nil
+        combatHealth.bandageAnimVariant = nil
     else
         combatHealth.current = clamp(combatHealth.current, 0, combatHealth.max)
         combatHealth.incapGraceUntil = 0
@@ -581,6 +995,309 @@ end
 function DTNPCHealth.GetMaxHP(npcData)
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
     return combatHealth and tonumber(combatHealth.max) or nil
+end
+
+function DTNPCHealth.GetHealthRatio(npcData)
+    local current = DTNPCHealth.GetCurrentHP(npcData)
+    local maxHealth = DTNPCHealth.GetMaxHP(npcData)
+    if not current or not maxHealth or maxHealth <= 0 then
+        return 1
+    end
+
+    return clamp(current / maxHealth, 0, 1)
+end
+
+function DTNPCHealth.IsCombatState(state)
+    return isCombatState(state)
+end
+
+function DTNPCHealth.HasUsableBandageSupply(npcData)
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth then
+        return false
+    end
+
+    if combatHealth.bandageUnlimited == true then
+        return true
+    end
+
+    return math.max(0, tonumber(combatHealth.bandageCharges) or 0) > 0
+end
+
+function DTNPCHealth.HasActiveBandage(npcData)
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth then
+        return false
+    end
+
+    return combatHealth.activeBandage == true
+        and combatHealth.bandageDirty ~= true
+        and (tonumber(combatHealth.bandageHealRemaining) or 0) > DTNPCHealth.MIN_DAMAGE
+end
+
+function DTNPCHealth.ApplyBandageVisualState(zombie, npcData)
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth then
+        return nil
+    end
+
+    if combatHealth.bandageAnimVariant == nil or combatHealth.bandageAnimVariant == "" then
+        combatHealth.bandageAnimVariant = rollBandageAnimVariantID()
+    else
+        combatHealth.bandageAnimVariant = getResolvedBandageAnimVariantID(combatHealth.bandageAnimVariant)
+    end
+
+    if zombie then
+        zombie:setVariable("DTIdleState", tostring(DTNPCHealth.BANDAGE_IDLE_STATE or "11"))
+        applyBandageAnimVariables(zombie, combatHealth)
+    end
+
+    return combatHealth.bandageAnimVariant
+end
+
+function DTNPCHealth.IsBandageVisibleOpportunity(zombie)
+    return isBandageVisibleOpportunity(zombie)
+end
+
+function DTNPCHealth.GetBandageDebugInfo(zombie, npcData)
+    if not npcData then
+        return nil
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth then
+        return nil
+    end
+
+    return {
+        state = npcData.state or "Idle",
+        status = combatHealth.bandageStatus or "None",
+        activeBandage = combatHealth.activeBandage == true,
+        bandageDirty = combatHealth.bandageDirty == true,
+        bandageTier = combatHealth.bandageTier or DTNPCHealth.DEFAULT_BANDAGE_TIER,
+        bandageTierLabel = select(2, getBandageTierDef(combatHealth.bandageTier)).label,
+        bandageHealPool = tonumber(combatHealth.bandageHealPool) or 0,
+        bandageHealRemaining = tonumber(combatHealth.bandageHealRemaining) or 0,
+        current = tonumber(combatHealth.current) or 0,
+        max = tonumber(combatHealth.max) or 0,
+        ratio = DTNPCHealth.GetHealthRatio(npcData),
+        threshold = tonumber(combatHealth.selfBandageThreshold) or DTNPCHealth.SELF_BANDAGE_THRESHOLD_RATIO,
+        visible = isBandageVisibleOpportunity(zombie),
+        hasSupply = DTNPCHealth.HasUsableBandageSupply(npcData),
+        bandageUnlimited = combatHealth.bandageUnlimited == true,
+        bandageCharges = tonumber(combatHealth.bandageCharges) or 0,
+        retryAt = tonumber(combatHealth.bandageRetryAt) or 0,
+        actionUntil = tonumber(combatHealth.bandageActionUntil) or 0,
+        animVariant = combatHealth.bandageAnimVariant or getDefaultBandageAnimVariantID(),
+    }
+end
+
+function DTNPCHealth.ForceEnterSelfBandage(zombie, npcData, resumeState)
+    return startSelfBandage(zombie, npcData, resumeState, {
+        ignoreRetry = true,
+        immediate = false,
+    })
+end
+
+function DTNPCHealth.RequestSync(zombie, npcData, fullSync)
+    syncHealth(zombie, npcData, fullSync)
+end
+
+function DTNPCHealth.ProcessPassiveBandageRegen(zombie, npcData)
+    if not npcData or isRemoteClient() then
+        return false
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth or combatHealth.enabled ~= true then
+        return false
+    end
+
+    if combatHealth.activeBandage ~= true then
+        return false
+    end
+
+    local healRemaining = math.max(0, tonumber(combatHealth.bandageHealRemaining) or 0)
+    if healRemaining <= DTNPCHealth.MIN_DAMAGE then
+        clearActiveBandage(combatHealth, true)
+        syncAndPersistHealth(zombie, npcData, false, false)
+        return false
+    end
+
+    local now = nowMillis()
+    if combatHealth.bandageDirty == true then
+        combatHealth.lastBandageRegenAt = now
+        return false
+    end
+
+    if combatHealth.current >= combatHealth.max then
+        combatHealth.lastBandageRegenAt = now
+        return false
+    end
+
+    local _, tierDef = getBandageTierDef(combatHealth.bandageTier)
+    local lastRegenAt = tonumber(combatHealth.lastBandageRegenAt) or 0
+    if lastRegenAt <= 0 then
+        combatHealth.lastBandageRegenAt = now
+        return false
+    end
+
+    local intervalMs = math.max(250, tonumber(tierDef.regenIntervalMs) or 2000)
+    local elapsedMs = math.max(0, now - lastRegenAt)
+    local elapsedSteps = math.floor(elapsedMs / intervalMs)
+    if elapsedSteps <= 0 then
+        return false
+    end
+
+    local currentBefore = tonumber(combatHealth.current) or 0
+    local missingHealth = math.max(0, (tonumber(combatHealth.max) or 0) - currentBefore)
+    local healBudget = elapsedSteps * math.max(0, tonumber(tierDef.regenPerTick) or 0)
+    local healAmount = math.min(healBudget, missingHealth, healRemaining)
+    combatHealth.current = clamp(currentBefore + healAmount, 0, combatHealth.max)
+    combatHealth.bandageHealRemaining = math.max(0, healRemaining - healAmount)
+    combatHealth.lastBandageRegenAt = lastRegenAt + (elapsedSteps * intervalMs)
+    if combatHealth.bandageHealRemaining <= DTNPCHealth.MIN_DAMAGE then
+        clearActiveBandage(combatHealth, true)
+    end
+    if healAmount <= DTNPCHealth.MIN_DAMAGE and combatHealth.bandageDirty ~= true then
+        return false
+    end
+
+    syncAndPersistHealth(zombie, npcData, false, false)
+    return true
+end
+
+function DTNPCHealth.ShouldSelfBandage(npcData)
+    if not npcData or npcData.incapState == "Active" then
+        return false
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth or combatHealth.enabled ~= true then
+        return false
+    end
+
+    if combatHealth.current <= 0 or combatHealth.current >= combatHealth.max then
+        return false
+    end
+
+    if combatHealth.activeBandage == true and combatHealth.bandageDirty ~= true then
+        return false
+    end
+
+    if (tonumber(combatHealth.bandageActionUntil) or 0) > nowMillis() then
+        return true
+    end
+
+    if not DTNPCHealth.HasUsableBandageSupply(npcData) then
+        return false
+    end
+
+    return DTNPCHealth.GetHealthRatio(npcData) <= (tonumber(combatHealth.selfBandageThreshold) or DTNPCHealth.SELF_BANDAGE_THRESHOLD_RATIO)
+end
+
+function DTNPCHealth.TryEnterSelfBandage(zombie, npcData, currentState)
+    if not zombie or not npcData or npcData.state == "Bandage" then
+        return false
+    end
+
+    local state = currentState or npcData.state or "Idle"
+    if isCombatState(state) or state == "Departure" then
+        return false
+    end
+
+    if not DTNPCHealth.ShouldSelfBandage(npcData) then
+        return false
+    end
+
+    if not isBandageVisibleOpportunity(zombie) then
+        return false
+    end
+
+    return startSelfBandage(zombie, npcData, state)
+end
+
+function DTNPCHealth.ProcessSelfBandageAction(zombie, npcData)
+    if not zombie or not npcData or isRemoteClient() then
+        return "blocked"
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth or combatHealth.enabled ~= true then
+        return "blocked"
+    end
+
+    if combatHealth.activeBandage == true and combatHealth.bandageDirty ~= true then
+        return "applied"
+    end
+
+    local now = nowMillis()
+    if (tonumber(combatHealth.bandageActionUntil) or 0) > now then
+        combatHealth.bandageStatus = "Applying"
+        return "applying"
+    end
+
+    if not DTNPCHealth.HasUsableBandageSupply(npcData) then
+        combatHealth.bandageActionUntil = 0
+        combatHealth.bandageStatus = "None"
+        combatHealth.bandageDirty = false
+        return "blocked"
+    end
+
+    if combatHealth.bandageUnlimited ~= true then
+        combatHealth.bandageCharges = math.max(0, (tonumber(combatHealth.bandageCharges) or 0) - 1)
+    end
+
+    local _, tierDef = getBandageTierDef(combatHealth.bandageTier)
+    local bandageHealPool = math.max(0, tonumber(tierDef.totalHeal) or 0)
+    local applyHeal = math.min(bandageHealPool, math.max(0, tonumber(tierDef.applyHeal) or 0))
+    local currentHealth = tonumber(combatHealth.current) or 0
+    local missingHealth = math.max(0, (tonumber(combatHealth.max) or 0) - currentHealth)
+    local immediateHeal = math.min(applyHeal, missingHealth)
+
+    combatHealth.bandageActionUntil = 0
+    combatHealth.bandageRetryAt = 0
+    combatHealth.activeBandage = true
+    combatHealth.bandageDirty = false
+    combatHealth.bandageStatus = "Clean"
+    combatHealth.bandageHealPool = bandageHealPool
+    combatHealth.bandageHealRemaining = math.max(0, bandageHealPool - immediateHeal)
+    combatHealth.lastBandageRegenAt = now
+    combatHealth.current = clamp(
+        currentHealth + immediateHeal,
+        0,
+        combatHealth.max
+    )
+    if combatHealth.bandageHealRemaining <= DTNPCHealth.MIN_DAMAGE then
+        clearActiveBandage(combatHealth, true)
+    end
+    syncAndPersistHealth(zombie, npcData, false, true)
+    return "applied"
+end
+
+function DTNPCHealth.ExitSelfBandage(zombie, npcData, resumeOverride)
+    if not npcData then
+        return
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth then
+        return
+    end
+
+    local nextState = resumeOverride or combatHealth.bandageResumeState or "Idle"
+    if nextState == "Bandage" then
+        nextState = "Idle"
+    end
+
+    combatHealth.bandageActionUntil = 0
+    combatHealth.bandageResumeState = nil
+    combatHealth.bandageAnimVariant = nil
+    clearBandageAnimVariables(zombie)
+    if npcData.state == "Bandage" then
+        npcData.state = nextState
+        syncAndPersistHealth(zombie, npcData, false, false)
+    end
 end
 
 function DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
@@ -805,7 +1522,7 @@ function DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, amount, attacker
         zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
         npcData.health = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
         npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
-        syncHealth(zombie, npcData, false)
+        syncAndPersistHealth(zombie, npcData, false, true)
         return true, false
     end
 
@@ -893,7 +1610,7 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
     end
 
     DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
-    syncHealth(zombie, npcData, false)
+    syncAndPersistHealth(zombie, npcData, false, true)
     return true, false
 end
 

@@ -610,6 +610,36 @@ local function onClientCommand(module, command, player, args)
         return
     end
 
+    if command == "DebugForceBandage" then
+        if not player or not args or not args.uuid then
+            return
+        end
+
+        local zombie, npcData = nil, nil
+        if DTNPCServerCore and DTNPCServerCore.GetNPCDataByUUID then
+            zombie, npcData = DTNPCServerCore.GetNPCDataByUUID(args.uuid)
+        end
+        if not zombie or not npcData then
+            DynamicTrading.Log("DTV2", "NPC", "Warn", "DebugForceBandage for unknown UUID: " .. tostring(args.uuid))
+            return
+        end
+
+        local started = DTNPCHealth
+            and DTNPCHealth.ForceEnterSelfBandage
+            and DTNPCHealth.ForceEnterSelfBandage(zombie, npcData, npcData.state or "Idle")
+
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Debug",
+            "DebugForceBandage: " .. tostring(player:getUsername())
+                .. " -> " .. tostring(npcData.name or args.uuid)
+                .. " | started=" .. tostring(started == true)
+                .. " | state=" .. tostring(npcData.state)
+        )
+        return
+    end
+
     if command == "RemoveNPC" then
         if not args.uuid then 
             DynamicTrading.Log("DTV2", "NPC", "Error", "RemoveNPC received with no UUID!")

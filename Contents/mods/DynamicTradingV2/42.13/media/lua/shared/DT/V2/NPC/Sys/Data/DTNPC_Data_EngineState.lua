@@ -6,7 +6,7 @@
 DTNPC = DTNPC or {}
 
 local function isStationaryState(state)
-    return state == "Stay" or state == "Guard" or state == "Idle" or state == "Trading"
+    return state == "Stay" or state == "Guard" or state == "Idle" or state == "Trading" or state == "Bandage"
 end
 
 local function isManualControlState(state)

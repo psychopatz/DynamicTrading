@@ -42,8 +42,11 @@ Constants.FONT_NAME = UIFont.Small
 Constants.FONT_HP = UIFont.Small
 Constants.FONT_DAMAGE = UIFont.Medium
 Constants.HP_TEXT_GAP = 6
+Constants.BANDAGE_ICON_GAP = 6
+Constants.BANDAGE_ICON_SIZE = 10
 
 State.textManager = getTextManager()
+State.bandageIcon = State.bandageIcon or getTexture("media/ui/Moodle_internal_plus_red.png")
 
 DTNPCClient.HealthBarManagers = DTNPCClient.HealthBarManagers or {}
 DTNPCClient.HealthBarTracked = DTNPCClient.HealthBarTracked or {}
@@ -105,6 +108,21 @@ function Helpers.isCombatState(npcData)
         or state == "AttackRange"
         or state == "Flee"
         or state == "Incapacitated"
+end
+
+function Helpers.hasActiveBandage(npcData)
+    if not npcData then return false end
+
+    local combatHealth = npcData.combatHealth
+    if type(combatHealth) ~= "table" then
+        return npcData.state == "Bandage"
+    end
+
+    if combatHealth.activeBandage == true and combatHealth.bandageDirty ~= true then
+        return true
+    end
+
+    return npcData.state == "Bandage"
 end
 
 function Helpers.getNPCData(zombie)

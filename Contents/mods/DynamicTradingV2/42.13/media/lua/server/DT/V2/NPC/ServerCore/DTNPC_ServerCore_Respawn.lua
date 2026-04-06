@@ -191,7 +191,7 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     zombie:DoZombieStats()
     if DTNPCHealth and DTNPCHealth.InitializeForSpawn then
         DTNPCHealth.InitializeForSpawn(zombie, npcData, {
-            resetCurrent = true,
+            resetCurrent = false,
             deferNetworkSafeBuffer = isServer(),
             spawnReason = "server_respawn",
         })

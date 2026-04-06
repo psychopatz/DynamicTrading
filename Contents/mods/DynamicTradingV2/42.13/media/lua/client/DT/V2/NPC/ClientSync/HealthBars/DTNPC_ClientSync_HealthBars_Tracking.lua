@@ -36,6 +36,7 @@ local function touchTrackedEntry(entry, zombie, npcData, bodyInstanceID, current
     if npcData then
         entry.npcData = npcData
         entry.isIncapacitated = Helpers.isIncapacitatedState(npcData) or false
+        entry.hasActiveBandage = Helpers.hasActiveBandage(npcData) or false
         Helpers.cacheNameMetrics(entry, npcData.name)
         entry.currentHp, entry.maxHp = Helpers.resolveHealth(npcData, zombie or entry.zombie, entry.maxHp)
 
@@ -62,6 +63,7 @@ local function getTrackedEntry(uuid)
         currentHp = 1,
         maxHp = 1,
         isIncapacitated = false,
+        hasActiveBandage = false,
         visibleUntil = 0,
         lastSeenAt = getTimeInMillis(),
         nextResolveAt = 0,

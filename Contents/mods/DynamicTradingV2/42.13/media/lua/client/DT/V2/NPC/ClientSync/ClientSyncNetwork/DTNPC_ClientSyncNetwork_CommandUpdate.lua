@@ -52,6 +52,12 @@ function Handlers.HandleUpdatePosition(args)
         if args.combatHealthEnabled ~= nil then
             cached.npcData.combatHealth.enabled = args.combatHealthEnabled == true
         end
+        if args.combatHealthBandageActive ~= nil then
+            cached.npcData.combatHealth.activeBandage = args.combatHealthBandageActive == true
+        end
+        if args.combatHealthBandageDirty ~= nil then
+            cached.npcData.combatHealth.bandageDirty = args.combatHealthBandageDirty == true
+        end
         if args.state then
             cached.npcData.state = args.state
         end
@@ -100,6 +106,12 @@ function Handlers.HandleUpdatePosition(args)
                 end
                 if args.combatHealthEnabled ~= nil then
                     zombieData.combatHealth.enabled = args.combatHealthEnabled == true
+                end
+                if args.combatHealthBandageActive ~= nil then
+                    zombieData.combatHealth.activeBandage = args.combatHealthBandageActive == true
+                end
+                if args.combatHealthBandageDirty ~= nil then
+                    zombieData.combatHealth.bandageDirty = args.combatHealthBandageDirty == true
                 end
                 if args.status then
                     zombieData.status = args.status

@@ -123,6 +123,10 @@ function Stationary.GetDesiredIdleState(zombie, npcData)
         return tostring(forcedState)
     end
 
+    if npcData and npcData.state == "Bandage" then
+        return tostring(DTNPCHealth and DTNPCHealth.BANDAGE_IDLE_STATE or "11")
+    end
+
     return nil
 end
 

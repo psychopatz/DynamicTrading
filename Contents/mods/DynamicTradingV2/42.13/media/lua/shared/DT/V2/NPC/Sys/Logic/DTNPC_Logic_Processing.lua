@@ -82,6 +82,10 @@ function DTNPCLogic.ProcessNPC(zombie)
     local wasDamaged = fallbackDamaged or (useEngineDelta and currentHealth < npcData.lastHealth) or customWasDamaged
     npcData.lastHealth = currentHealth
 
+    if DTNPCHealth and DTNPCHealth.ProcessPassiveBandageRegen then
+        DTNPCHealth.ProcessPassiveBandageRegen(zombie, npcData)
+    end
+
     if HIGH_SPEED_STATES[state] then
         DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
     else
@@ -106,6 +110,15 @@ function DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
     if npcData.state ~= state then
         state = npcData.state
         master, dist = DTNPCLogic.GetClosestTarget(zombie)
+    end
+
+    if DTNPCHealth and DTNPCHealth.TryEnterSelfBandage then
+        local enteredBandage = DTNPCHealth.TryEnterSelfBandage(zombie, npcData, state)
+        if enteredBandage then
+            state = npcData.state or "Bandage"
+            master = nil
+            dist = 9999
+        end
     end
 
     local behaviorFunc = DTNPCLogic.Behaviors[state]

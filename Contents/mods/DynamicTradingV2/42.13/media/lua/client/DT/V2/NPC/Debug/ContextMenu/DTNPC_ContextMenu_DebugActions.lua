@@ -16,6 +16,15 @@ end
 
 Menu.DebugActionsLoaded = true
 
+local function formatBandageTime(timeValue)
+    local numeric = math.max(0, tonumber(timeValue) or 0)
+    if numeric <= 0 then
+        return "0"
+    end
+
+    return tostring(math.floor(numeric))
+end
+
 function Menu.OnForceAmbientDialogue(player, npc)
     if not npc or not player then return end
 
@@ -82,4 +91,63 @@ function Menu.OnInspectNPCData(npc)
             end
         end
     end
+end
+
+function Menu.OnForceBandage(player, npc)
+    if not npc or not player then return end
+
+    local npcData = Menu.GetNPCData(npc)
+    if not npcData or not npcData.uuid then
+        player:Say("Bandage test unavailable for this NPC.")
+        return
+    end
+
+    sendClientCommand(player, "DTNPC", "DebugForceBandage", {
+        uuid = npcData.uuid,
+    })
+
+    player:Say("Force bandage: " .. tostring(npcData.name or npcData.uuid))
+end
+
+function Menu.OnDebugBandageInfo(player, npc)
+    if not npc or not player then return end
+
+    local npcData = Menu.GetNPCData(npc)
+    if not npcData or not DTNPCHealth or not DTNPCHealth.GetBandageDebugInfo then
+        player:Say("Bandage debug unavailable.")
+        return
+    end
+
+    local info = DTNPCHealth.GetBandageDebugInfo(npc, npcData)
+    if not info then
+        player:Say("Bandage debug unavailable.")
+        return
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Debug",
+        "BandageInfo name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " uuid=" .. tostring(npcData.uuid)
+            .. " state=" .. tostring(info.state)
+            .. " status=" .. tostring(info.status)
+            .. " active=" .. tostring(info.activeBandage)
+            .. " dirty=" .. tostring(info.bandageDirty)
+            .. " tier=" .. tostring(info.bandageTier)
+            .. " tierLabel=" .. tostring(info.bandageTierLabel)
+            .. " healRemaining=" .. tostring(string.format("%.2f", info.bandageHealRemaining or 0))
+            .. "/" .. tostring(string.format("%.2f", info.bandageHealPool or 0))
+            .. " visible=" .. tostring(info.visible)
+            .. " supply=" .. tostring(info.hasSupply)
+            .. " unlimited=" .. tostring(info.bandageUnlimited)
+            .. " charges=" .. tostring(info.bandageCharges)
+            .. " hp=" .. tostring(string.format("%.2f", info.current)) .. "/" .. tostring(string.format("%.2f", info.max))
+            .. " ratio=" .. tostring(string.format("%.3f", info.ratio or 0))
+            .. " threshold=" .. tostring(string.format("%.3f", info.threshold or 0))
+            .. " retryAt=" .. formatBandageTime(info.retryAt)
+            .. " actionUntil=" .. formatBandageTime(info.actionUntil)
+    )
+
+    player:Say("Bandage info printed.")
 end

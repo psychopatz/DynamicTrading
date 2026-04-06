@@ -20,6 +20,13 @@ DynamicTrading.RegisterDialogue("General", "Ambient", {
             Flee = {
                 { dialogue = "Move now, talk later.", sentiment = "warning" },
             },
+            Bandage = {
+                { dialogue = "Give me a second. Patching this up.", sentiment = "resting" },
+                { dialogue = "Hold together... just a little longer.", sentiment = "resting" },
+                { dialogue = "I've had worse. Still hurts, though.", sentiment = "neutral" },
+                { dialogue = "Need this wrapped before it gets ugly.", sentiment = "warning" },
+                { dialogue = "Keep watch. I'm busy not bleeding out.", sentiment = "warning" },
+            },
             Incapacitated = {
                 { dialogue = "Please... don't finish me off...", sentiment = "warning" },
                 { dialogue = "I can't keep moving... just let me go...", sentiment = "warning" },

@@ -13,6 +13,7 @@ function DTNPCLogic.ApplyAnchorStabilization(zombie, npcData, state)
         or state == "Guard"
         or state == "Idle"
         or state == "Trading"
+        or state == "Bandage"
 
     if isStationaryState then
         zombie:setPath2(nil)
