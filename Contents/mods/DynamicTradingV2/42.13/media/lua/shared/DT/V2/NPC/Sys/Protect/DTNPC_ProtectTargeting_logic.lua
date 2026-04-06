@@ -203,6 +203,15 @@ function DTNPCProtect.SelectNearestZombie(zombie, npcData, radius, anchorTarget,
     end
 
     DTNPCProtect.EnsureDataDefaults(npcData)
+    local isAuthoritativeSide = (not isClient()) or isServer()
+    if isAuthoritativeSide and DTNPC_ZombieAggro and DTNPC_ZombieAggro.GetThreatTarget and npcData and npcData.uuid then
+        local cachedTarget, cachedDist = DTNPC_ZombieAggro.GetThreatTarget(npcData.uuid)
+        if cachedTarget then
+            npcData.combatTargetID = getZombieRuntimeID(cachedTarget)
+            return cachedTarget, cachedDist
+        end
+    end
+
     local searchRadius = tonumber(radius) or DTNPCProtect.CONFIG.ScanRadius
     local keepRadius = searchRadius + DTNPCProtect.CONFIG.StickyRadiusBonus
     local anchorSearchRadius = tonumber(anchorRadius)

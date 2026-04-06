@@ -61,6 +61,10 @@ function DTNPCManager.Register(zombie, npcData)
     DTNPCManager.Data[uuid] = npcData
     DTNPCManager.Save()
 
+    if DTNPC_ZombieAggro and DTNPC_ZombieAggro.ClearThreat then
+        DTNPC_ZombieAggro.ClearThreat(uuid)
+    end
+
     if DTNPCManager.RespawnRuntime and DTNPCManager.RespawnRuntime.MissingBodies then
         DTNPCManager.RespawnRuntime.MissingBodies[uuid] = nil
     end
@@ -134,6 +138,10 @@ end
 function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removalContext)
     if DTNPCManager.Data[uuid] then
         local npcData = DTNPCManager.Data[uuid]
+
+        if DTNPC_ZombieAggro and DTNPC_ZombieAggro.OnNPCRemoved then
+            DTNPC_ZombieAggro.OnNPCRemoved(uuid)
+        end
         
         -- Remove from outfit mapping
         local currentBodyInstanceID = npcData.currentBodyInstanceID
@@ -351,6 +359,12 @@ end
 
 function DTNPCManager.Unregister(zombie)
     local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
+    local zombieRuntimeID = DTNPC_ZombieAggro and DTNPC_ZombieAggro._internal and DTNPC_ZombieAggro._internal.getZombieRuntimeID
+        and DTNPC_ZombieAggro._internal.getZombieRuntimeID(zombie)
+        or nil
+    if zombieRuntimeID and DTNPC_ZombieAggro and DTNPC_ZombieAggro.OnZombieInvalidated then
+        DTNPC_ZombieAggro.OnZombieInvalidated(zombieRuntimeID)
+    end
     local removalContext = nil
     local attacker = zombie and zombie:getAttackedBy() or nil
     if attacker and instanceof(attacker, "IsoPlayer") then

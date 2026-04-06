@@ -17,6 +17,9 @@ DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_DistanceFrequency loaded: " .. 
 require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"
 DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_SpatialHash loaded: " .. tostring(DTNPC_SpatialHash ~= nil))
 
+require "DT/V2/NPC/Manager/DTNPC_ZombieAggro/DTNPC_ZombieAggro"
+DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_ZombieAggro loaded: " .. tostring(DTNPC_ZombieAggro ~= nil))
+
 -- Guard: Create fallback tables with stub functions if modules didn't load
 if not DTNPC_SpatialHash then
     DynamicTrading.Log("DTV2", "NPC", "Warn", "DTNPC_SpatialHash is nil, creating fallback")
@@ -115,6 +118,10 @@ function DTNPCManager.OnTick()
     rosterRespawnCheckCounter = rosterRespawnCheckCounter + 1
     awayTransitionCheckCounter = awayTransitionCheckCounter + 1
     tradeCycleCheckCounter = tradeCycleCheckCounter + 1
+
+    if DTNPC_ZombieAggro and DTNPC_ZombieAggro.OnManagerTick then
+        DTNPC_ZombieAggro.OnManagerTick()
+    end
     
     local shouldBroadcast = (positionBroadcastCounter >= POSITION_BROADCAST_RATE)
     if shouldBroadcast then
