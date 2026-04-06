@@ -324,6 +324,21 @@ function DTNPCServerCore.SpawnOffscreenCompanionByUUID(uuid, controller)
     return true, spawnedZombie, spawnedData or npcData
 end
 
+function DTNPCServerCore.StartPatchUpByUUID(uuid)
+    local normalizedUUID = normalizeUUID(uuid)
+    if not normalizedUUID then
+        return false, nil
+    end
+
+    local zombie, npcData = DTNPCServerCore.GetNPCDataByUUID(normalizedUUID)
+    if not zombie or not npcData or not DTNPCHealth or not DTNPCHealth.ForceEnterSelfBandage then
+        return false, npcData
+    end
+
+    local entered = DTNPCHealth.ForceEnterSelfBandage(zombie, npcData, npcData.state or "Idle")
+    return entered == true, npcData
+end
+
 function DTNPCServerCore.SpawnNearbyCompanionByUUID(uuid, controller, minRadius, maxRadius)
     local normalizedUUID = normalizeUUID(uuid)
     if not normalizedUUID or not controller or not DTNPCServerCore.RespawnNPC then

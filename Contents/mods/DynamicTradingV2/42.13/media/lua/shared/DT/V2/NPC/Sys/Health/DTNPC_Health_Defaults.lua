@@ -35,6 +35,12 @@ function DTNPCHealth.EnsureDefaults(npcData)
 
     local combatHealth = npcData.combatHealth
     local baseMax, skillBonus, maxHealth = DTNPCHealth.ComputeMaxHP(npcData)
+    local linkedWorkerHealth = internal.getLinkedWorkerHealthSnapshot and internal.getLinkedWorkerHealthSnapshot(npcData) or nil
+    if linkedWorkerHealth and tonumber(linkedWorkerHealth.maxHp) and tonumber(linkedWorkerHealth.maxHp) > 0 then
+        baseMax = math.max(1, math.floor(tonumber(linkedWorkerHealth.maxHp) + 0.5))
+        skillBonus = 0
+        maxHealth = baseMax
+    end
 
     if combatHealth.enabled == nil then combatHealth.enabled = npcData.incapState ~= "Active" end
     if combatHealth.engineProtected == nil then combatHealth.engineProtected = combatHealth.enabled == true end
@@ -42,7 +48,8 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if combatHealth.skillBonus == nil then combatHealth.skillBonus = skillBonus end
     if combatHealth.max == nil then combatHealth.max = maxHealth end
     if combatHealth.current == nil then
-        combatHealth.current = npcData.incapState == "Active" and 0 or combatHealth.max
+        combatHealth.current = npcData.incapState == "Active" and 0
+            or math.max(0, tonumber(linkedWorkerHealth and linkedWorkerHealth.hp) or combatHealth.max)
     end
     if combatHealth.eventDrivenOnly == nil then combatHealth.eventDrivenOnly = true end
     if combatHealth.invulnerableBody == nil then combatHealth.invulnerableBody = true end
@@ -175,6 +182,10 @@ function DTNPCHealth.HasUsableBandageSupply(npcData)
     end
 
     if combatHealth.bandageUnlimited == true then
+        return true
+    end
+
+    if internal.hasLinkedWorkerBandageSupply and internal.hasLinkedWorkerBandageSupply(npcData) then
         return true
     end
 

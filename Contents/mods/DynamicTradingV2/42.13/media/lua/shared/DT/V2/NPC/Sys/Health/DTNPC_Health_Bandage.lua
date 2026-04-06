@@ -303,7 +303,10 @@ function DTNPCHealth.ProcessSelfBandageAction(zombie, npcData)
         return "blocked"
     end
 
-    if combatHealth.bandageUnlimited ~= true then
+    local linkedSupply = internal.consumeLinkedWorkerBandageSupply and internal.consumeLinkedWorkerBandageSupply(npcData) or nil
+    if linkedSupply and linkedSupply.tierID then
+        combatHealth.bandageTier = linkedSupply.tierID
+    elseif combatHealth.bandageUnlimited ~= true then
         combatHealth.bandageCharges = math.max(0, (tonumber(combatHealth.bandageCharges) or 0) - 1)
     end
 

@@ -125,5 +125,12 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         end
     end
 
+    local colony = rawget(_G, "DC_Colony")
+    local companion = colony and colony.Companion or nil
+    if companion and companion.OnSoulStatusChanged then
+        local soulSnapshot = npcData or (data.Souls and data.Souls[uuid]) or nil
+        companion.OnSoulStatusChanged(uuid, status, soulSnapshot)
+    end
+
     DynamicTrading.Log("DTCommons", "Roster", "Status", "Updated status for " .. uuid .. " to " .. (status or "nil") .. " (Return in: " .. tostring(returnTime) .. " as " .. tostring(returnStatus) .. ")")
 end

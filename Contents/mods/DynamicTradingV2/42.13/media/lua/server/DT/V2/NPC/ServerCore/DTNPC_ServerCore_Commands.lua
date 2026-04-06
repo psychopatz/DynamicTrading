@@ -299,6 +299,13 @@ local function onClientCommand(module, command, player, args)
         DynamicTrading.Log("DTV2", "NPC", "Command", "Received Order command from: " .. player:getUsername() .. " | State: " .. (args.state or "Unknown"))
 
         if args.uuid and DTNPCServerCore and DTNPCServerCore.IssueOrderByUUID then
+            if args.state == "PatchUp" and DTNPCServerCore.StartPatchUpByUUID then
+                local changed, updatedNPC = DTNPCServerCore.StartPatchUpByUUID(args.uuid)
+                if changed and updatedNPC then
+                    DynamicTrading.Log("DTV2", "NPC", "Order", "Issued PatchUp order for " .. tostring(updatedNPC.name or args.uuid))
+                end
+                return
+            end
             local changed, updatedNPC = DTNPCServerCore.IssueOrderByUUID(args.uuid, player, args)
             if changed and updatedNPC then
                 DynamicTrading.Log("DTV2", "NPC", "Order", "Issued UUID order for " .. tostring(updatedNPC.name or args.uuid) .. ": " .. tostring(args.state))
