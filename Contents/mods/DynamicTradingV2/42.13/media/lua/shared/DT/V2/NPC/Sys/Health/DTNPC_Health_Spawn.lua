@@ -85,7 +85,10 @@ function DTNPCHealth.InitializeForSpawn(zombie, npcData, options)
     if npcData.incapState == "Active" then
         combatHealth.enabled = false
         combatHealth.engineProtected = true
-        combatHealth.current = 0
+        combatHealth.current = math.max(
+            tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1,
+            tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01
+        )
         combatHealth.incapGraceUntil = internal.nowMillis() + DTNPCHealth.INCAP_GRACE_WINDOW_MS
         combatHealth.lastEngineHealth = initialEngineHealth
         if deferRestore then

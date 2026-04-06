@@ -893,7 +893,10 @@ local function setIncapacitatedState(zombie, npcData)
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
     combatHealth.enabled = false
     combatHealth.engineProtected = true
-    combatHealth.current = 0
+    combatHealth.current = math.max(
+        tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1,
+        tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01
+    )
     combatHealth.lastDamageAt = incapacitatedAt
     combatHealth.pendingFallbackIgnoreAmount = 0
     combatHealth.pendingFallbackIgnoreUntil = 0

@@ -48,7 +48,7 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if combatHealth.skillBonus == nil then combatHealth.skillBonus = skillBonus end
     if combatHealth.max == nil then combatHealth.max = maxHealth end
     if combatHealth.current == nil then
-        combatHealth.current = npcData.incapState == "Active" and 0
+        combatHealth.current = npcData.incapState == "Active" and (tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1)
             or math.max(0, tonumber(linkedWorkerHealth and linkedWorkerHealth.hp) or combatHealth.max)
     end
     if combatHealth.eventDrivenOnly == nil then combatHealth.eventDrivenOnly = true end
@@ -126,7 +126,10 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if npcData.incapState == "Active" then
         combatHealth.enabled = false
         combatHealth.engineProtected = true
-        combatHealth.current = 0
+        combatHealth.current = math.max(
+            tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1,
+            tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01
+        )
         internal.clearActiveBandage(combatHealth, false)
         combatHealth.bandageActionUntil = 0
         combatHealth.bandageRetryAt = 0
