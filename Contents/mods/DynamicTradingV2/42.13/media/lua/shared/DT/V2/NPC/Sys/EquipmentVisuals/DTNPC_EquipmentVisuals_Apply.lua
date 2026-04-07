@@ -12,18 +12,17 @@ EquipmentVisuals.Internal = EquipmentVisuals.Internal or {}
 local Helpers = EquipmentVisuals.Helpers
 local Internal = EquipmentVisuals.Internal
 
-local function buildEquipmentStateKey(npcData, activeWeapon, bagItem)
-    local loadout = npcData and npcData.loadout or {}
+local function buildEquipmentStateKey(npcData, resolvedState, activeWeapon, bagItem)
     local parts = {
         tostring(npcData and npcData.state or ""),
         tostring(npcData and npcData.autoProtectActiveState or ""),
         tostring(npcData and npcData.combatOrder or ""),
+        tostring(resolvedState and resolvedState.inventorySignature or ""),
         tostring(activeWeapon or ""),
-        tostring(loadout.rangedWeapon or ""),
-        tostring(loadout.rangedCondition or ""),
-        tostring(loadout.ammoCount or ""),
-        tostring(loadout.meleeWeapon or ""),
-        tostring(loadout.meleeCondition or ""),
+        tostring(resolvedState and resolvedState.rangedWeapon or ""),
+        tostring(resolvedState and resolvedState.conditions and resolvedState.conditions[resolvedState.rangedWeapon] or ""),
+        tostring(resolvedState and resolvedState.meleeWeapon or ""),
+        tostring(resolvedState and resolvedState.conditions and resolvedState.conditions[resolvedState.meleeWeapon] or ""),
         tostring(bagItem or ""),
     }
     return table.concat(parts, "|")
@@ -41,18 +40,20 @@ function EquipmentVisuals.Apply(zombie, npcData, options)
         return false
     end
 
-    local activeWeapon = Internal.chooseActiveWeapon(npcData)
-    local bagItem = EquipmentVisuals.GetDisplayBag(npcData)
-    local stateKey = buildEquipmentStateKey(npcData, activeWeapon, bagItem)
+    local resolvedState = Internal.resolveDisplayState(zombie, npcData, options)
+    local activeWeapon = Internal.chooseActiveWeapon(npcData, resolvedState)
+    local bagItem = resolvedState and resolvedState.bagItem or EquipmentVisuals.GetDisplayBag(npcData)
+    local stateKey = buildEquipmentStateKey(npcData, resolvedState, activeWeapon, bagItem)
 
     if not options.force and modData.DTNPCEquipmentStateKey == stateKey then
         return false
     end
 
     local bagChanged = Helpers.syncBagVisual(zombie, modData, bagItem)
-    local activeItem = Helpers.createDisplayItem(activeWeapon, Helpers.getStoredWeaponCondition(npcData, activeWeapon))
+    local activeCondition = resolvedState and resolvedState.conditions and resolvedState.conditions[activeWeapon] or Helpers.getStoredWeaponCondition(npcData, activeWeapon)
+    local activeItem = Helpers.createDisplayItem(activeWeapon, activeCondition)
     local primaryType = Helpers.getWeaponDisplayType(activeItem)
-    local attachments = Internal.buildAttachmentMap(npcData, activeWeapon)
+    local attachments = Internal.buildAttachmentMap(npcData, resolvedState, activeWeapon)
     local signature = Internal.buildSignature(activeWeapon, primaryType, attachments, bagItem)
 
     Helpers.clearManagedEquipment(zombie)
@@ -65,7 +66,12 @@ function EquipmentVisuals.Apply(zombie, npcData, options)
     end
 
     for slot, itemType in pairs(attachments) do
-        local item = Helpers.createDisplayItem(itemType, Helpers.getStoredWeaponCondition(npcData, itemType))
+        local resolvedType = type(itemType) == "table" and itemType.itemType or itemType
+        local resolvedCondition = type(itemType) == "table" and itemType.condition or nil
+        local item = Helpers.createDisplayItem(
+            resolvedType,
+            resolvedCondition ~= nil and resolvedCondition or Helpers.getStoredWeaponCondition(npcData, resolvedType)
+        )
         if item then
             zombie:setAttachedItem(slot, item)
         end
@@ -97,6 +103,9 @@ function EquipmentVisuals.Clear(zombie)
         modData.DTNPCEquipmentSignature = nil
         modData.DTNPCEquipmentStateKey = nil
         modData.DTNPCDisplayBag = nil
+        modData.DTNPCDynamicDisplayState = nil
+        modData.DTNPCDynamicDisplayScanAt = nil
+        modData.DTNPCDynamicDisplayLoadoutSignature = nil
         if modData.DTNPCInjectedBag and modData.DTNPCInjectedBag ~= "" then
             if Helpers.removeBagVisual(zombie, modData.DTNPCInjectedBag) then
                 zombie:resetModelNextFrame()

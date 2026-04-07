@@ -14,9 +14,48 @@ local Helpers = EquipmentVisuals.Helpers
 
 Constants.MANAGED_ATTACHMENT_TYPES = Constants.MANAGED_ATTACHMENT_TYPES or {
     HolsterRight = true,
+    HolsterLeft = true,
+    HolsterShoulder = true,
     Back = true,
     SmallBeltLeft = true,
+    SmallBeltRight = true,
 }
+
+Constants.MANAGED_SLOT_TYPE_PRIORITY = Constants.MANAGED_SLOT_TYPE_PRIORITY or {
+    HolsterRight = 1,
+    HolsterLeft = 2,
+    HolsterShoulder = 3,
+    SmallBeltLeft = 4,
+    SmallBeltRight = 5,
+    Back = 6,
+}
+
+Constants.ATTACHMENT_TYPE_SLOT_PRIORITY = Constants.ATTACHMENT_TYPE_SLOT_PRIORITY or {
+    Holster = { "HolsterRight", "HolsterLeft", "HolsterShoulder" },
+    HolsterSmall = { "HolsterRight", "HolsterLeft", "HolsterShoulder" },
+    Knife = { "SmallBeltLeft", "SmallBeltRight" },
+    NotKnife = { "SmallBeltLeft", "SmallBeltRight" },
+    Hammer = { "SmallBeltLeft", "SmallBeltRight" },
+    HammerRotated = { "SmallBeltLeft", "SmallBeltRight" },
+    Nightstick = { "SmallBeltLeft", "SmallBeltRight" },
+    Screwdriver = { "SmallBeltLeft", "SmallBeltRight" },
+    Wrench = { "SmallBeltLeft", "SmallBeltRight" },
+    MeatCleaver = { "SmallBeltLeft", "SmallBeltRight" },
+    Walkie = { "SmallBeltLeft", "SmallBeltRight" },
+    BigWeapon = { "Back" },
+    BigBlade = { "Back" },
+    Racket = { "Back" },
+    Shovel = { "Back" },
+    Guitar = { "Back" },
+    GuitarAcoustic = { "Back" },
+    Pan = { "Back" },
+    Saucepan = { "Back" },
+    Rifle = { "Back" },
+    Sword = { "Back", "SmallBeltLeft", "SmallBeltRight" },
+}
+
+Constants.DYNAMIC_SCAN_INTERVAL_MS = Constants.DYNAMIC_SCAN_INTERVAL_MS or 750
+Constants.MAX_INVENTORY_SCAN_DEPTH = Constants.MAX_INVENTORY_SCAN_DEPTH or 3
 
 Constants.MELEE_BUMP_TYPES = Constants.MELEE_BUMP_TYPES or {
     onehanded = { "DTNPCAttack1H1", "DTNPCAttack1H2" },
@@ -109,6 +148,22 @@ function Helpers.getManagedAttachmentSlots()
     return slots
 end
 
+function Helpers.getNowMillis()
+    if getTimeInMillis then
+        local now = tonumber(getTimeInMillis())
+        if now and now > 0 then
+            return math.floor(now)
+        end
+    end
+
+    local gameTime = getGameTime and getGameTime() or nil
+    if gameTime and gameTime.getWorldAgeHours then
+        return math.floor((tonumber(gameTime:getWorldAgeHours()) or 0) * 3600000)
+    end
+
+    return 0
+end
+
 function Helpers.clearManagedEquipment(zombie)
     if not zombie then
         return
@@ -131,27 +186,93 @@ function Helpers.clearManagedEquipment(zombie)
     end
 end
 
-function Helpers.resolveAttachmentSlot(item)
-    if not item or not ISHotbarAttachDefinition then
-        return nil
+function Helpers.getAttachmentSlotsByType(attachmentType)
+    if not attachmentType or attachmentType == "" or not ISHotbarAttachDefinition then
+        return {}
     end
 
-    local attachmentType = item.getAttachmentType and item:getAttachmentType() or nil
-    if not attachmentType or attachmentType == "" then
-        return nil
+    local preferredTypes = Constants.ATTACHMENT_TYPE_SLOT_PRIORITY[attachmentType] or {}
+    local preferredLookup = {}
+    for i = 1, #preferredTypes do
+        preferredLookup[preferredTypes[i]] = i
     end
 
+    local slotEntries = {}
     for _, def in pairs(ISHotbarAttachDefinition) do
         if def and Constants.MANAGED_ATTACHMENT_TYPES[def.type] and def.attachments then
-            for attachKey, slot in pairs(def.attachments) do
-                if attachKey == attachmentType then
-                    return slot
-                end
+            local slot = def.attachments[attachmentType]
+            if slot and slot ~= "" then
+                slotEntries[#slotEntries + 1] = {
+                    slot = slot,
+                    type = def.type,
+                    preferred = preferredLookup[def.type] or 999,
+                    fallback = Constants.MANAGED_SLOT_TYPE_PRIORITY[def.type] or 999,
+                }
             end
         end
     end
 
+    table.sort(slotEntries, function(left, right)
+        if left.preferred ~= right.preferred then
+            return left.preferred < right.preferred
+        end
+        if left.fallback ~= right.fallback then
+            return left.fallback < right.fallback
+        end
+        return tostring(left.slot) < tostring(right.slot)
+    end)
+
+    local slots = {}
+    local seen = {}
+    for i = 1, #slotEntries do
+        local slot = slotEntries[i].slot
+        if not seen[slot] then
+            seen[slot] = true
+            slots[#slots + 1] = slot
+        end
+    end
+
+    return slots
+end
+
+function Helpers.getItemFullType(item)
+    if not item then
+        return nil
+    end
+
+    if item.getFullType then
+        return item:getFullType()
+    end
+    if item.getType then
+        return item:getType()
+    end
+
     return nil
+end
+
+function Helpers.getItemCondition(item)
+    if not item or not item.getCondition then
+        return nil
+    end
+    return tonumber(item:getCondition())
+end
+
+function Helpers.resolveAttachmentSlot(item)
+    local slots = Helpers.resolveAttachmentSlots(item)
+    return slots[1]
+end
+
+function Helpers.resolveAttachmentSlots(item)
+    if not item or not ISHotbarAttachDefinition then
+        return {}
+    end
+
+    local attachmentType = item.getAttachmentType and item:getAttachmentType() or nil
+    if not attachmentType or attachmentType == "" then
+        return {}
+    end
+
+    return Helpers.getAttachmentSlotsByType(attachmentType)
 end
 
 function Helpers.getWeaponDisplayType(item)
