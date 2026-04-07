@@ -121,24 +121,12 @@ function DT_RadioInteraction.PerformScan(playerObj, deviceItem, isHam)
     if not deviceData then return false end
 
     -- 3. POWER & STATE CHECK
-    local hasPower = false
-    
     if not deviceData:getIsTurnedOn() then
         player:Say("I need to turn it on first.")
         return false
     end
 
-    if isHam then
-        if deviceData:getIsBatteryPowered() then
-            if deviceData:getPower() > 0 then hasPower = true end
-        else
-            if deviceItem:getSquare() and deviceItem:getSquare():haveElectricity() then hasPower = true end
-        end
-    else
-        if deviceData:getPower() > 0.001 then hasPower = true end
-    end
-
-    if not hasPower then
+    if not DynamicTrading.Utils.HasOperationalRadioPower(deviceItem, deviceData) then
         player:Say("Signal lost... check power.")
         return false
     end
@@ -230,7 +218,7 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
         end
         
         local d = radioItem:getDeviceData()
-        if not d or not d:getIsTurnedOn() or d:getPower() <= 0.001 then
+        if not d or not DynamicTrading.Utils.HasOperationalRadioPower(radioItem, d) then
             option.notAvailable = true
             option.toolTip = ISWorldObjectContextMenu.addToolTip()
             option.toolTip.description = "Radio must be ON and have Power."
@@ -241,42 +229,28 @@ end
 local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, test)
     local player = getSpecificPlayer(playerNum)
     local radioObj = nil
-    local isPortable = false
-    
+    local isHam = false
+
     for _, obj in ipairs(worldObjects) do
-        -- Only allow stationary IsoWaveSignal objects in world interaction
         if instanceof(obj, "IsoWaveSignal") then
             local typeID = DT_RadioInteraction.GetDeviceType(obj)
             if typeID then
-                -- Check if it's a portable type (which we want to exclude from world context)
-                if string.find(typeID, "WalkieTalkie") or typeID == "Base.ManPackRadio" then
-                    isPortable = true
-                else
-                    radioObj = obj
-                end
+                radioObj = obj
+                isHam = not (string.find(typeID, "WalkieTalkie") or typeID == "Base.ManPackRadio")
                 break
             end
         end
     end
-    
-    -- If we found a stationary HAM radio and it's NOT a portable device dropped/placed
-    if radioObj and not isPortable then
-         local data = radioObj:getDeviceData()
-         local isOperational = false
-         
-         if data and data:getIsTurnedOn() then
-             if data:getIsBatteryPowered() then
-                 if data:getPower() > 0 then isOperational = true end
-             elseif radioObj:getSquare() and radioObj:getSquare():haveElectricity() then
-                 isOperational = true
-             end
-         end
 
-         local option = context:addOption("Open Trader Network (HAM)", 
+    if radioObj then
+         local data = radioObj:getDeviceData()
+         local isOperational = data and DynamicTrading.Utils.HasOperationalRadioPower(radioObj, data) or false
+
+         local option = context:addOption("Open Trader Network",
             radioObj,
-            function(obj) 
+            function(obj)
                 if DT_RadioWindow then
-                    DT_RadioWindow.ToggleWindow(obj, true)
+                    DT_RadioWindow.ToggleWindow(obj, isHam)
                 else
                     player:Say("Error: UI failed to load.")
                 end

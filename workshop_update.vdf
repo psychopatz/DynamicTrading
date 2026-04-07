@@ -3,118 +3,21 @@
 	"appid" "108600"
 	"publishedfileid" "3635333613"
 	"contentfolder" "/home/psychopatz/Zomboid/Workshop/DynamicTrading/upload_staging"
-	"changenote" "[b]DynamicTrading Combat Update[/b]
+	"changenote" "[b]DynamicTrading - April 7, 2026 Update[/b]
 [list]
-[*]Adds improved NPC walk animation variables to ensure consistent movement state
-[*]Adds combat pursuit tracking and unreachable target timeout logic for NPCs
-[*]Adds ambient auto-defense system for stationary NPCs with post-return logic
-[*]Adds NPC engine state suppression and a sandbox option for weapon durability control
-[*]Adds NPC archetype equipment registry and a debug command to assign held weapons to NPCs
-[*]Adds NPC combat protection behavior, custom animation sets, and patches vanilla fishing handlers for compatibility
-[*]Adds NPC zombie reattachment via startup body instance hints and renames outfit ID references to body instance IDs for clarity
-[*]Adds an in-game manual system and documentation for the new colony, economy, and NPC features
-[*]Adds Scavenger Radio manual and fixes formatting in existing documentation files
-[*]Overhauls World Events manual with Economics Dashboard, flash event details, and market influence guides
-[*]Replaces legacy manual files with new economy and event guides and adds support assets
-[*]Enhances manual UI with text wrapping and dynamic support banner height adjustments
+[*] Supporter carousel UI component added with Hall of Fame manual integration to showcase supporters and recognize contributions.
+[*] Dynamic bandage icon rendering introduced for NPC health bars based on item type, improving healing status clarity.
+[*] Incapacitated NPC health initialization fixed to use configurable custom HP values instead of zero for more accurate HP scaling.
+[*] Travel companion system expanded with a dedicated job UI and integration with NPC logic and dialogue systems.
+[*] Travel companion order menu implemented, including self-bandage functionality with linked supply support for streamlined care.
+[*] Passive health regeneration for resting NPCs introduced, with offline processing support via the manager tick.
+[*] NPC bandaging system added, featuring animation sets, UI indicators, and debugging tools for development and testing.
+[*] Modular zombie aggro management system implemented to improve NPC threat handling and engagement logic.
+[*] Combat rhythm system introduced, delivering tactical recovery, kiting strategies, and dynamic flavor text for NPC behaviors.
+[*] Overhauled NPC combat lifecycle and network synchronization, with new sandbox options and an in-game manual system for players.
+[*] Custom NPC health system added with configurable scaling and seamless combat integration.
+[*] NPC walk animation variables updated to ensure consistent movement state across scenarios.
+[*] NPC combat pursuit tracking and unreachable target timeout logic implemented to improve engagement reliability.
+[*] Ambient auto-defense system added for stationary NPCs, including post-return logic to resume guarding behavior.
 [/list]"
-	"title" "Dynamic Trading (w/ NPC) B42.13+"
-	"description" "[h1]🔥 MASSIVE UPDATE: Dynamic Colonies, Labour & Admin Tools![/h1]
-
-[list]
-(Separate mod: Dynamic Colonies)
-[*] [b]Player Factions & Dynamic Colonies:[/b] Create and manage your own player-owned factions! Construct buildings like the new Infirmary, assign roles, and build a thriving community.
-[*] [b]Advanced Labour & Scavenging:[/b] Put your workers to use! Automate scavenging runs with a deep simulation that tracks worker tiredness, meal-based nutrition (HP), carry weight, and contextual map locations.
-
-[*] [b]In-Game Manual & Guides:[/b] Never get lost again. Access a fully searchable, dynamic in-game manual that provides detailed guides on World Events, the Economics Dashboard, Scavenger Radio, and Colony features.
-[*] [b]In-Game Price & Archetype Editor:[/b] Server admins can now dynamically configure the economy on the fly! Edit item prices, manage tags, adjust NPC item allocations, and force-generate traders directly through a dedicated in-game UI.
-
-[*] [b]Reputation System & NPC Interactions:[/b] Your actions have real consequences. A dynamic reputation system tracks your trade value, daily chats, and even player kills, directly influencing trader dialogue, relations, and faction standing.
-[/list]
-
-[hr][/hr]
-
-[h1]THE DYNAMIC TRADING SYSTEM[/h1]
-
-Transforms Project Zomboid’s economy into a living, breathing market. Prices fluctuate, traders move, and world events dictate value.
-
-[list]
-[*] [b]Living Economy & Smart Pricing:[/b] A sophisticated tag-based pricing engine handles inflation and deflation. Item condition, rot, fluids per liter, and randomized durability all directly affect true market value.
-[*] [b]Events & Global Heat:[/b] Multi-flash events dynamically change the world. Winter spikes food prices; raids discount weapons.
-[*] [b]Realism Update:[/b] Traders sell scavenged goods with randomized durability, not factory-new products. However, producer archetypes (farmers, anglers, etc.) will still sell fresh produce depending on your luck.
-[*] [b]Medical Care & Needs:[/b] Hire Doctors, manage the new Infirmary building, and ensure your faction workers are healed and fed through the new tabbed warehouse supply UI.
-[*] [b]Wallets & Lottery:[/b] Zombies drop wallets—check them for cash and engage with the new wallet lottery system.
-[/list]
-
-[hr][/hr]
-
-[h1]⚠️ CHOOSE YOUR VERSION (100% PARITY)[/h1]
-
-[b]Both versions share the exact same advanced economy backend and can be swapped mid-save with NO issues![/b]
-
-[b]Choose ONE. Do NOT enable both at the same time.[/b]
-[b]Both require: [code]DynamicTradingCommon[/code][/b]
-
-[h2]📻 OPTION A: Dynamic Trading V1 (Classic)[/h2]
-
-[b]Mod ID:[/b] [code]DynamicTrading[/code]
-
-Best for players who want the deep simulated economy and colony management without physical NPCs or the need to travel to traders in person.
-
-[list]
-[*] [b]Radio Only:[/b] Trade via Walkie-Talkies/HAM Radios.
-[*] [b]Scan Signals:[/b] Electricity skill helps find better signals.
-[*] [b]Stable & Optimized:[/b] Fully server-authoritative networking with zero physical entities to impact performance.
-[/list]
-
-[h2]🧍‍♂️ OPTION B: Dynamic Trading V2[/h2]
-
-[b]Mod ID:[/b] [code]DynamicTradingV2[/code]
-
-A complete overhaul of V1. The economy physically exists in the world. Best for players who want realism and slightly harder gameplay, since they must physically travel to the trader itself. You have been warned!
-
-[list]
-[*] [b]Physical NPCs:[/b] Traders spawn, travel, rest, flee, and even become incapacitated! Features cyclical animations, ambient dialogue, and overhead health/name UIs.
-[*] [b]Factions & Reputation:[/b] Traders belong to groups with simulated wealth, goals, and shifting opinions of you based on interactions.
-[*] [b]Advanced Features:[/b] Core Quest System, Trader Management, Radar with distance sorting, and an all-new Faction UI dashboard.
-[*] [b]Optimized Performance:[/b] Spatial hashing and distance-aware network broadcasting ensures massive server bandwidth reductions.
-[/list]
-
-[hr][/hr]
-
-[h1]📥 INSTALLATION[/h1]
-
-[b]Classic (Radio):[/b] Enable [b]DynamicTradingCommon[/b] + [b]DynamicTrading[/b]  
-[b]New (NPCs):[/b] Enable [b]DynamicTradingCommon[/b] + [b]DynamicTradingV2[/b]
-
-[b]✅ Safe to add/remove mid-save. Safe to swap between V1 and V2 at any time![/b]
-
-[hr][/hr]
-
-[h1]⏳ PLANNED ROADMAP[/h1]
-
-[b]1. Player-Owned Storefronts:[/b] Construct a trading station at your base to automate sales to passing NPCs and earn passive income. [i](Partially implemented in Dynamic Colonies)[/i]
-
-[b]2. Expanded Contracts & Quests:[/b] Build upon the quest backend to fulfill high-priority faction requests (e.g. medical shortages) for massive reputation and cash bonuses.
-
-[b]3. Crime & Consequence:[/b] The world fights back. Defend your wealth against burglars and rival factions, manage NPC sentiment, and hire [b]Guards[/b] to protect your stockpile.
-
-[hr][/hr]
-
-[h1]🏆 CREDITS & SUPPORT[/h1]
-
-Thanks to [b]S4ro, IronLungs, External, Saren[/b], Summer and the community.
-
-[b]Like the mod? Rate it![/b]
-
-[img]http://i.imgur.com/oEtvFdv.png[/img][url=https://steamcommunity.com/id/bpatrickoliverb/myworkshopfiles/appid=108600][img]http://i.imgur.com/aJmBEpZ.png[/img][/url][img]http://i.imgur.com/Mftyk3C.png[/img][url=https://ko-fi.com/psychopatz][img]http://i.imgur.com/uPY3dEJ.png[/img][/url]
-
-[i]Found a bug? Please report it in the discussions![/i]
-
-Workshop ID: 3635333613
-Mod ID: DynamicTradingCommon
-Mod ID: DynamicTrading
-Mod ID: DynamicTradingV2"
-	"visibility" "0"
-	"tags" "Build 42;Balance;Hardmode;Interface;Items;Military;Misc;Multiplayer;Realistic;QOL;WIP;Weapons"
 }
