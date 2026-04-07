@@ -53,6 +53,9 @@ function DTNPCProtect.BuildFallbackNotice(requestedState, resolvedState)
     if resolvedState == "ProtectRanged" and requestedState == "ProtectMelee" then
         return "No melee weapon ready. Switching to ranged.", "warning"
     end
+    if requestedState == "ProtectAuto" then
+        return "Can't cover you, I got no available weapons.", "warning"
+    end
     if requestedState == "ProtectRanged" then
         return "Can't cover you. No usable firearm.", "warning"
     end

@@ -582,10 +582,27 @@ DTNPCLogic.Behaviors["ProtectAuto"] = function(zombie, npcData, master, distToMa
         return
     end
 
-    announceCombatEngage(zombie, npcData)
-    ensureManualControl(zombie)
     local resolvedState = DTNPCProtect.GetAutoProtectState(npcData, targetDist)
     npcData.autoProtectActiveState = resolvedState
+
+    if not resolvedState then
+        if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
+            local text, sentiment = DTNPCProtect.BuildFallbackNotice("ProtectAuto", nil)
+            DTNPCProtect.ReportCombatIssue(
+                zombie,
+                npcData,
+                "ProtectNoLoadout:ProtectAuto",
+                text or "No combat loadout ready.",
+                sentiment or "warning",
+                "requested=ProtectAuto"
+            )
+        end
+        followEscort(zombie, npcData, master, distToMaster)
+        return
+    end
+
+    announceCombatEngage(zombie, npcData)
+    ensureManualControl(zombie)
 
     if resolvedState == "ProtectRanged" then
         executeProtectRanged(zombie, npcData, target, targetDist)
