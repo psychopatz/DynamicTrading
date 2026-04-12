@@ -269,6 +269,10 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
         return false, nil
     end
 
+    if DTNPCCombat and DTNPCCombat.NotifyAttack then
+        DTNPCCombat.NotifyAttack(zombie, npcData, attackType, target)
+    end
+
     local recovering, recoveryState = DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
     if recovering then
         return true, recoveryState
@@ -667,6 +671,14 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
         end
     elseif target.setHitReaction then
         target:setHitReaction(attackType == "ranged" and "ShotBelly" or "HitReaction")
+    end
+
+    if applied and not killed and not isPlayerTarget and not isDTNPCTarget then
+        if DTNPC_ZombieAggro and DTNPC_ZombieAggro.OnZombieProvoked then
+            DTNPC_ZombieAggro.OnZombieProvoked(target, zombie)
+        elseif target.pathToLocation then
+            target:pathToLocation(zombie:getX(), zombie:getY(), zombie:getZ())
+        end
     end
 
     if applied and (attackType == "melee" or attackType == "ranged") then

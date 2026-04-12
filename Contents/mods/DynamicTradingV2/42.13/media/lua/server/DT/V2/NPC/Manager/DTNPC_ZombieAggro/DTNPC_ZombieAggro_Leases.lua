@@ -181,4 +181,7 @@ function DTNPC_ZombieAggro.OnManagerTick()
 
     DTNPC_ZombieAggro.RebuildAttackableNPCGrid()
     refreshLeases()
+    if DTNPC_ZombieAggro.ApplyCombatStimuli then
+        DTNPC_ZombieAggro.ApplyCombatStimuli()
+    end
 end

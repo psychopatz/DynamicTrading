@@ -45,8 +45,23 @@ function DTNPC_ZombieAggro.TryApplyLeaseDamage(zombie, lease, targetEntry)
     lease.nextDamageTick = tick + DTNPC_ZombieAggro.CONFIG.HIT_COOLDOWN_TICKS
     rt.ZombieLeases[Internal.getZombieRuntimeID(zombie)] = lease
 
+    local resolvedDamage = DTNPC_ZombieAggro.CONFIG.HIT_DAMAGE
+    if DTNPCCombat and DTNPCCombat.ResolveZombieHit then
+        local outcome = DTNPCCombat.ResolveZombieHit(targetZombie, npcData, zombie, resolvedDamage, {
+            threatCount = npcData.zombieThreatCount,
+        })
+        if outcome and outcome.evaded == true then
+            lease.nextDamageTick = tick + math.max(1, tonumber(outcome.cooldownTicks) or 1)
+            rt.ZombieLeases[Internal.getZombieRuntimeID(zombie)] = lease
+            return true
+        end
+        if outcome and outcome.damage then
+            resolvedDamage = math.max(DTNPCHealth and DTNPCHealth.MIN_DAMAGE or 0.01, tonumber(outcome.damage) or resolvedDamage)
+        end
+    end
+
     if DTNPCHealth and DTNPCHealth.ApplyDamage then
-        DTNPCHealth.ApplyDamage(targetZombie, npcData, DTNPC_ZombieAggro.CONFIG.HIT_DAMAGE, zombie, {
+        DTNPCHealth.ApplyDamage(targetZombie, npcData, resolvedDamage, zombie, {
             source = "zombie_lease",
             queueFallbackIgnore = false,
         })
