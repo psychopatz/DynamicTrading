@@ -272,6 +272,12 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
     if DTNPCCombat and DTNPCCombat.NotifyAttack then
         DTNPCCombat.NotifyAttack(zombie, npcData, attackType, target)
     end
+    if DTNPC_ZombieAggro and DTNPC_ZombieAggro.EmitCombatNoise then
+        local emitted = DTNPC_ZombieAggro.EmitCombatNoise(zombie, npcData, attackType)
+        if emitted ~= true and DTNPC_ZombieAggro.ApplyCombatStimuli then
+            DTNPC_ZombieAggro.ApplyCombatStimuli()
+        end
+    end
 
     local recovering, recoveryState = DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
     if recovering then

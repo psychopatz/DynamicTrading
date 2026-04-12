@@ -414,17 +414,24 @@ function DTNPCManager.ProcessAwayTransitions()
                 local newReturnStatus = nil
                 local shouldApplyStatus = true
 
-                if registry.status == "Trading" and nextStatus ~= "Trading" and shouldDelayNearbyDespawn(uuid, registry) then
-                    local heldUntil = currentHours + NEARBY_DESPAWN_HOLD_HOURS
-                    DynamicTrading.Log(
-                        "DTV2",
-                        "NPC",
-                        "Logic",
-                        "Delaying despawn for nearby trader " .. (registry.name or uuid) ..
-                            " until " .. tostring(heldUntil)
-                    )
-                    DTNPCManager.SetNPCStatus(uuid, "Trading", heldUntil, nextStatus)
-                    shouldApplyStatus = false
+                if registry.status == "Trading" and nextStatus ~= "Trading" then
+                    local npcData = DynamicTrading_Roster.GetSoul(uuid)
+                    local home = npcData and npcData.homeCoords or nil
+                    local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
+                    if home and DTNPCManager.TryStartLiveDeparture(uuid, "Resting", walkHours, home.x, home.y, home.z or 0) then
+                        shouldApplyStatus = false
+                    elseif shouldDelayNearbyDespawn(uuid, registry) then
+                        local heldUntil = currentHours + NEARBY_DESPAWN_HOLD_HOURS
+                        DynamicTrading.Log(
+                            "DTV2",
+                            "NPC",
+                            "Logic",
+                            "Delaying despawn for nearby trader " .. (registry.name or uuid) ..
+                                " until " .. tostring(heldUntil)
+                        )
+                        DTNPCManager.SetNPCStatus(uuid, "Trading", heldUntil, nextStatus)
+                        shouldApplyStatus = false
+                    end
                 end
 
                 if shouldApplyStatus then

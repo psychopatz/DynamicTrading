@@ -86,14 +86,20 @@ function DTNPC_ZombieAggro.OnZombieProvoked(targetZombie, npcZombie)
         return false
     end
 
+    if targetZombie.clearAggroList then
+        targetZombie:clearAggroList()
+    end
+    if targetZombie.setTurnAlertedValues then
+        targetZombie:setTurnAlertedValues(0, 0)
+    end
+    if targetZombie.setTargetSeenTime then
+        targetZombie:setTargetSeenTime(60)
+    end
     if targetZombie.pathToLocation then
         targetZombie:pathToLocation(npcZombie:getX(), npcZombie:getY(), npcZombie:getZ())
     end
     if targetZombie.faceLocation then
         targetZombie:faceLocation(npcZombie:getX(), npcZombie:getY())
-    end
-    if targetZombie.setTargetSeenTime then
-        targetZombie:setTargetSeenTime(60)
     end
 
     return true
