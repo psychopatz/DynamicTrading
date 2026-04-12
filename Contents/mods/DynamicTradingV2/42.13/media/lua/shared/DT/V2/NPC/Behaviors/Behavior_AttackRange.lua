@@ -129,12 +129,6 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         dy = dy / len
     end
 
-    -- 3. ROTATION (Apply FIRST)
-    -- In combat, we ALWAYS face the target, even if backing up.
-    if len > 0.001 then
-        zombie:faceLocation(tx, ty)
-    end
-
     if not npcData.reactionTimer then npcData.reactionTimer = 0 end
 
     local recovering, recovery = false, nil
@@ -176,6 +170,7 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
             zombie:setX(nextX)
             zombie:setY(nextY)
             isMoving = true
+            zombie:faceLocation(nextX + (dx * moveDir), nextY + (dy * moveDir))
         else
             forceCombatAnim(zombie, false)
         end
@@ -184,6 +179,10 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         if DTNPC and DTNPC.SetRangedCombatIdleState then
             DTNPC.SetRangedCombatIdleState(zombie, npcData)
         end
+    end
+
+    if not isMoving and len > 0.001 then
+        zombie:faceLocation(tx, ty)
     end
 
     if len > MAX_RANGE then

@@ -286,7 +286,6 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
     if len > 0.001 then
         dx = dx / len
         dy = dy / len
-        zombie:faceLocation(tx, ty)
     end
 
     local recovering, recovery = false, nil
@@ -322,6 +321,7 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
             forceWalkAnim(zombie, false)
             zombie:setX(nextX)
             zombie:setY(nextY)
+            zombie:faceLocation(nextX + (dx * moveDir), nextY + (dy * moveDir))
             moved = true
         else
             stopMoveAnim(zombie)
@@ -333,7 +333,9 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
         end
     end
 
-    faceTarget(zombie, target)
+    if not moved then
+        faceTarget(zombie, target)
+    end
 
     if targetDist > RANGED_MAX_RANGE then
         return

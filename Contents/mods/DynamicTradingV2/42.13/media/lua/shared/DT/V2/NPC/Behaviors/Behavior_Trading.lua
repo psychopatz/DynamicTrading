@@ -543,7 +543,6 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     if len > 0.001 then
         dx = dx / len
         dy = dy / len
-        faceTarget(zombie, target)
     end
 
     local recovering, recovery = false, nil
@@ -601,6 +600,7 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
             forceWalkAnim(zombie, false)
             zombie:setX(nextX)
             zombie:setY(nextY)
+            zombie:faceLocation(nextX + (dx * moveDir), nextY + (dy * moveDir))
             moved = true
         else
             stopMoveAnim(zombie)
@@ -612,7 +612,9 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
         end
     end
 
-    faceTarget(zombie, target)
+    if not moved then
+        faceTarget(zombie, target)
+    end
 
     if targetDist > RANGED_MAX_RANGE then
         markCombatPursuit(npcData, target, targetDist, false)
