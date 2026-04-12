@@ -33,6 +33,10 @@ end
 function DTNPCClient.OnTick()
     if isServer() and isDedicatedServer() then return end
 
+    if DTNPC_ClientInterpolation and DTNPC_ClientInterpolation.ApplyToTrackedNPCs then
+        DTNPC_ClientInterpolation.ApplyToTrackedNPCs()
+    end
+
     DTNPCClient.nearbySyncCheckCounter = (DTNPCClient.nearbySyncCheckCounter or 0) + 1
     if DTNPCClient.nearbySyncCheckCounter >= (DTNPCClient.NEARBY_SYNC_CHECK_RATE or 30) then
         DTNPCClient.nearbySyncCheckCounter = 0

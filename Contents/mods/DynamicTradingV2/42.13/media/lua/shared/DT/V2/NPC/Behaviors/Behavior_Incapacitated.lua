@@ -5,6 +5,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+require "DT/V2/NPC/Sys/DTNPC_Mobility"
 
 local ESCAPE_DIST = 26
 local PAUSE_MIN_MS = 900
@@ -27,15 +28,6 @@ local function getDist(x1, y1, x2, y2)
     return math.sqrt(dx * dx + dy * dy)
 end
 
-local function isTileSafe(x, y, z)
-    local cell = getCell()
-    local sq = cell and cell:getGridSquare(x, y, z) or nil
-    if not sq then return true end
-    if not sq:isFree(false) then return false end
-    if sq:isSolid() or sq:isSolidTrans() then return false end
-    return true
-end
-
 local function findNearestPlayer(zombie)
     local players = DTNPCLogic.GetActivePlayers and DTNPCLogic.GetActivePlayers() or {}
     local bestPlayer = nil
@@ -56,14 +48,14 @@ local function findNearestPlayer(zombie)
 end
 
 local function applyCrawlAnimation(zombie, moving)
-    zombie:setVariable("bBecomeCrawler", true)
-    zombie:setVariable("bCrawling", true)
-    zombie:setVariable("bMoving", moving)
-    zombie:setVariable("isMoving", moving)
-    zombie:setVariable("Speed", moving and 0.28 or 0.0)
-    zombie:setVariable("WalkType", "2")
-    zombie:setVariable("DTWalkType", "Crawl")
-    zombie:setRunning(false)
+    DTNPCMobility.SetLocomotionState(zombie, {
+        moving = moving == true,
+        crawl = true,
+        walkType = "2",
+        dtWalkType = "Crawl",
+        animSpeed = moving and 0.28 or 0.0,
+        isRunning = false,
+    })
 end
 
 local function requestEscapeRemoval(zombie, npcData)
@@ -158,30 +150,22 @@ DTNPCLogic.Behaviors["Incapacitated"] = function(zombie, npcData, target, dist)
     end
 
     local speed = DynamicTrading.GetNPCRunSpeed() * CRAWL_SPEED_MULT
-    local nextX = zx + (dx * speed)
-    local nextY = zy + (dy * speed)
-    local z = zombie:getZ()
+    local moved = DTNPCMobility.MoveByDirection(zombie, npcData, {
+        dirX = dx,
+        dirY = dy,
+        speed = speed,
+        blockCounterKey = "incapBlockedTicks",
+        stuckTicks = 14,
+        anim = {
+            crawl = true,
+            walkType = "2",
+            dtWalkType = "Crawl",
+            animSpeed = 0.28,
+            isRunning = false,
+        },
+    })
 
-    local canMove = isTileSafe(nextX, nextY, z)
-    if not canMove then
-        if isTileSafe(nextX, zy, z) then
-            nextY = zy
-            canMove = true
-        elseif isTileSafe(zx, nextY, z) then
-            nextX = zx
-            canMove = true
-        end
-    end
-
-    if canMove then
-        zombie:setX(nextX)
-        zombie:setY(nextY)
-        applyCrawlAnimation(zombie, true)
-
-        if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
-            zombie:faceLocation(nextX + dx, nextY + dy)
-        end
-    else
+    if not moved then
         applyCrawlAnimation(zombie, false)
     end
 end

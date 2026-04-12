@@ -107,6 +107,64 @@ function DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
     return interpX, interpY, interpZ
 end
 
+function DTNPC_ClientInterpolation.ApplyToZombie(uuid, zombie)
+    if not uuid or not zombie then
+        return false
+    end
+
+    local interpX, interpY, interpZ = DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
+    if not interpX or not interpY then
+        return false
+    end
+
+    local localX = zombie:getX()
+    local localY = zombie:getY()
+    local localZ = zombie:getZ()
+    local dx = interpX - localX
+    local dy = interpY - localY
+    local dz = (interpZ or localZ) - localZ
+
+    if math.abs(dx) <= 0.001 and math.abs(dy) <= 0.001 and math.abs(dz) <= 0.001 then
+        return false
+    end
+
+    zombie:setX(interpX)
+    zombie:setY(interpY)
+    if interpZ ~= nil and math.abs(dz) > 0.001 then
+        zombie:setZ(interpZ)
+    end
+
+    return true
+end
+
+function DTNPC_ClientInterpolation.ApplyToTrackedNPCs()
+    local cell = getCell()
+    if not cell then
+        return 0
+    end
+
+    local zombieList = cell:getZombieList()
+    if not zombieList then
+        return 0
+    end
+
+    local applied = 0
+    for i = 0, zombieList:size() - 1 do
+        local zombie = zombieList:get(i)
+        if zombie and not zombie:isDead() then
+            local modData = zombie:getModData()
+            local uuid = modData and modData.DTNPC_UUID or nil
+            if uuid and not (DTNPCClient and DTNPCClient.LocalControlled and DTNPCClient.LocalControlled[uuid]) then
+                if DTNPC_ClientInterpolation.ApplyToZombie(uuid, zombie) then
+                    applied = applied + 1
+                end
+            end
+        end
+    end
+
+    return applied
+end
+
 -- ==============================================================================
 -- 3. CLEANUP
 -- ==============================================================================

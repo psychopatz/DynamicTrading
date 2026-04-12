@@ -12,6 +12,7 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     ScanRadius = 12,
     FloorTolerance = 1,
     StickyRadiusBonus = 1.75,
+    StickyTargetScoreBias = 0.45,
     NoticeCooldownMs = 12000,
     DiagnosticCooldownMs = 4000,
     AggressivePlayerRepThreshold = -10,
@@ -20,6 +21,14 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     StationaryCombatLeashRadius = 10,
     CombatUnreachableTimeoutMs = 6000,
     CombatProgressDistance = 0.35,
+    MeleeCrowdRadius = 1.8,
+    MeleeCrowdPenalty = 0.8,
+    MeleeCrowdClosestPenalty = 0.7,
+    MeleeCrowdDangerRadius = 2.4,
+    MeleeCrowdDangerThreshold = 3,
+    MeleeCrowdSevereThreshold = 4,
+    MeleeRecentZombieDamageWindowMs = 4500,
+    MeleeLowHealthRetreatRatio = 0.58,
 }
 
 DTNPCProtect.LOADOUT_WEIGHTS = DTNPCProtect.LOADOUT_WEIGHTS or {

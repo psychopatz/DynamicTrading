@@ -41,6 +41,71 @@ local function rollInt(minValue, maxValue)
     return safeMin + ZombRand((safeMax - safeMin) + 1)
 end
 
+local function getNearbyZombiePressure(originX, originY, originZ, radius, excludedIDs)
+    local zombieList = getCell() and getCell():getZombieList() or nil
+    if not zombieList then
+        return {
+            count = 0,
+            closest = 9999,
+            centerX = originX,
+            centerY = originY,
+        }
+    end
+
+    local safeRadius = math.max(0.25, tonumber(radius) or DTNPCProtect.CONFIG.MeleeCrowdDangerRadius or 2.4)
+    local radiusSq = safeRadius * safeRadius
+    local count = 0
+    local closest = 9999
+    local weightedX = 0
+    local weightedY = 0
+    local totalWeight = 0
+
+    for i = 0, zombieList:size() - 1 do
+        local candidate = zombieList:get(i)
+        if candidate and not candidate:isDead() then
+            local modData = candidate:getModData()
+            if not (modData and modData.IsDTNPC)
+                and math.abs((candidate:getZ() or 0) - (originZ or 0)) <= DTNPCProtect.CONFIG.FloorTolerance then
+                local candidateID = getZombieRuntimeID(candidate)
+                if not (excludedIDs and excludedIDs[candidateID]) then
+                    local dx = candidate:getX() - originX
+                    local dy = candidate:getY() - originY
+                    local distSq = (dx * dx) + (dy * dy)
+                    if distSq <= radiusSq then
+                        local dist = math.sqrt(distSq)
+                        local weight = 1 / math.max(0.25, dist)
+                        count = count + 1
+                        closest = math.min(closest, dist)
+                        weightedX = weightedX + (candidate:getX() * weight)
+                        weightedY = weightedY + (candidate:getY() * weight)
+                        totalWeight = totalWeight + weight
+                    end
+                end
+            end
+        end
+    end
+
+    return {
+        count = count,
+        closest = closest,
+        centerX = totalWeight > 0 and (weightedX / totalWeight) or originX,
+        centerY = totalWeight > 0 and (weightedY / totalWeight) or originY,
+    }
+end
+
+function DTNPCProtect.GetNearbyZombiePressure(zombie, radius, excludedIDs)
+    if not zombie then
+        return {
+            count = 0,
+            closest = 9999,
+            centerX = 0,
+            centerY = 0,
+        }
+    end
+
+    return getNearbyZombiePressure(zombie:getX(), zombie:getY(), zombie:getZ(), radius, excludedIDs)
+end
+
 local function resolveCombatTargetKey(target)
     if not target then
         return nil
@@ -357,6 +422,104 @@ function DTNPCProtect.GetMeleeCombatStats(npcData)
         damage = math.max(0.45, scaledDamage),
         chaseSpeed = 0.05 + (normalized * 0.025),
         reach = clamp(weaponRange + 0.15, 1.15, 1.9),
+    }
+end
+
+function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
+    if not zombie or not npcData then
+        return nil
+    end
+
+    options = type(options) == "table" and options or {}
+
+    local combatHealth = DTNPCHealth and DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
+    local currentTime = nowMillis()
+    local recentZombieDamage = false
+    local recentDamageAmount = 0
+
+    if combatHealth and combatHealth.lastAttackerType == "zombie" then
+        local lastDamageAt = tonumber(combatHealth.lastDamageAt) or 0
+        if lastDamageAt > 0
+            and (currentTime - lastDamageAt) <= (tonumber(DTNPCProtect.CONFIG.MeleeRecentZombieDamageWindowMs) or 4500) then
+            recentZombieDamage = true
+            recentDamageAmount = math.max(0, tonumber(combatHealth.lastDamageAmount) or 0)
+        end
+    end
+
+    local excludedIDs = {}
+    local targetID = target and getZombieRuntimeID(target) or nil
+    if targetID then
+        excludedIDs[targetID] = true
+    end
+
+    local selfPressure = DTNPCProtect.GetNearbyZombiePressure(
+        zombie,
+        tonumber(options.pressureRadius) or DTNPCProtect.CONFIG.MeleeCrowdDangerRadius,
+        nil
+    )
+    local targetPressure = target and getNearbyZombiePressure(
+        target:getX(),
+        target:getY(),
+        target:getZ() or zombie:getZ(),
+        tonumber(options.targetPressureRadius) or DTNPCProtect.CONFIG.MeleeCrowdRadius,
+        excludedIDs
+    ) or {
+        count = 0,
+        closest = 9999,
+        centerX = target and target:getX() or zombie:getX(),
+        centerY = target and target:getY() or zombie:getY(),
+    }
+
+    local healthRatio = DTNPCHealth and DTNPCHealth.GetHealthRatio and DTNPCHealth.GetHealthRatio(npcData) or 1
+    local crowdThreshold = tonumber(DTNPCProtect.CONFIG.MeleeCrowdDangerThreshold) or 3
+    local severeThreshold = tonumber(DTNPCProtect.CONFIG.MeleeCrowdSevereThreshold) or 4
+    local lowHealthRatio = tonumber(DTNPCProtect.CONFIG.MeleeLowHealthRetreatRatio) or 0.58
+
+    local surrounded = selfPressure.count >= crowdThreshold
+    local severeCrowd = selfPressure.count >= severeThreshold or targetPressure.count >= crowdThreshold
+    local lowHealth = healthRatio <= lowHealthRatio
+    local pressured = recentZombieDamage and (selfPressure.count >= math.max(2, crowdThreshold - 1) or targetPressure.count >= 2)
+
+    if not (surrounded or severeCrowd or (lowHealth and selfPressure.count >= 2) or pressured) then
+        return {
+            shouldDisengage = false,
+            selfPressure = selfPressure,
+            targetPressure = targetPressure,
+            recentZombieDamage = recentZombieDamage,
+            recentDamageAmount = recentDamageAmount,
+            healthRatio = healthRatio,
+        }
+    end
+
+    local retreatDistance = math.max(
+        tonumber(options.retreatDistance) or tonumber(options.engageReach) or 1.8,
+        (tonumber(options.engageReach) or 1.45) + 0.8 + (math.max(selfPressure.count, targetPressure.count) * 0.22)
+    )
+
+    local fleeFromX = selfPressure.centerX
+    local fleeFromY = selfPressure.centerY
+    if targetPressure.count > selfPressure.count and targetPressure.count >= 2 then
+        fleeFromX = targetPressure.centerX
+        fleeFromY = targetPressure.centerY
+    elseif target and selfPressure.count <= 1 then
+        fleeFromX = target:getX()
+        fleeFromY = target:getY()
+    end
+
+    return {
+        shouldDisengage = true,
+        reason = severeCrowd and "crowd"
+            or surrounded and "surrounded"
+            or pressured and "pressured"
+            or "low_health",
+        retreatDistance = retreatDistance,
+        fleeFromX = fleeFromX,
+        fleeFromY = fleeFromY,
+        selfPressure = selfPressure,
+        targetPressure = targetPressure,
+        recentZombieDamage = recentZombieDamage,
+        recentDamageAmount = recentDamageAmount,
+        healthRatio = healthRatio,
     }
 end
 

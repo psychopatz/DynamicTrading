@@ -6,6 +6,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 require "DT/V2/NPC/Sys/DTNPC_Protect"
+require "DT/V2/NPC/Sys/DTNPC_Mobility"
 
 local RANGED_KITE_MIN = 3.25
 local RANGED_KITE_MAX = 8.5
@@ -14,8 +15,31 @@ local RANGED_ADVANCE_SPEED = 0.05
 local RANGED_BACKPEDAL_SPEED = 0.03
 local TRADING_DEFENSE_MELEE_REACH = 1.25
 local TRADING_DEFENSE_DEFAULT_SPEED = 0.05
+local MELEE_APPROACH_START_BUFFER = 0.18
+local MELEE_APPROACH_STOP_BUFFER = 0.16
+
+local function getMobility()
+    if DTNPCMobility and DTNPCMobility.MoveTowardTarget and DTNPCMobility.MoveAwayFromPoint then
+        return DTNPCMobility
+    end
+
+    if require then
+        pcall(require, "DT/V2/NPC/Sys/DTNPC_Mobility")
+    end
+
+    if DTNPCMobility and DTNPCMobility.MoveTowardTarget and DTNPCMobility.MoveAwayFromPoint then
+        return DTNPCMobility
+    end
+
+    return nil
+end
 
 local function isTileSafe(x, y, z)
+    local mobility = getMobility()
+    if mobility and mobility.IsTileSafe then
+        return mobility.IsTileSafe(x, y, z)
+    end
+
     local cell = getCell()
     local sq = cell and cell:getGridSquare(x, y, z) or nil
     if not sq then return true end
@@ -96,7 +120,26 @@ local function shouldAbortCombatPursuit(npcData)
     return false
 end
 
+local function resetTradingMoveState(npcData)
+    if not npcData then
+        return
+    end
+
+    npcData.isMovingState = false
+    npcData.tradingMovePrimed = nil
+    npcData.tradingMoveReason = nil
+end
+
 local function stopMoveAnim(zombie)
+    local npcData = zombie and DTNPC and DTNPC.GetData and DTNPC.GetData(zombie) or nil
+    resetTradingMoveState(npcData)
+
+    local mobility = getMobility()
+    if mobility and mobility.Stop then
+        mobility.Stop(zombie)
+        return
+    end
+
     zombie:setVariable("bMoving", false)
     zombie:setVariable("isMoving", false)
     zombie:setVariable("Speed", 0.0)
@@ -104,12 +147,50 @@ local function stopMoveAnim(zombie)
 end
 
 local function forceWalkAnim(zombie, isRunning)
+    local mobility = getMobility()
+    if mobility and mobility.SetLocomotionState then
+        mobility.SetLocomotionState(zombie, {
+            moving = true,
+            animSpeed = isRunning and 1.15 or 1.0,
+            isRunning = isRunning == true,
+        })
+        return
+    end
+
     zombie:setVariable("DTIdleState", "0")
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
     zombie:setVariable("WalkType", "1")
     zombie:setVariable("Speed", isRunning and 1.15 or 1.0)
     zombie:setRunning(isRunning == true)
+end
+
+local function primeTradingMovement(zombie, npcData, dirX, dirY, isRunning, reason)
+    if not zombie or not npcData then
+        return true
+    end
+
+    local moveDirX = tonumber(dirX) or 0
+    local moveDirY = tonumber(dirY) or 0
+    local len = math.sqrt((moveDirX * moveDirX) + (moveDirY * moveDirY))
+    if len <= 0.001 then
+        return true
+    end
+
+    moveDirX = moveDirX / len
+    moveDirY = moveDirY / len
+
+    npcData.isMovingState = true
+
+    if npcData.tradingMovePrimed == true and npcData.tradingMoveReason == reason then
+        return true
+    end
+
+    npcData.tradingMovePrimed = true
+    npcData.tradingMoveReason = reason or "move"
+    forceWalkAnim(zombie, isRunning == true)
+    zombie:faceLocation(zombie:getX() + moveDirX, zombie:getY() + moveDirY)
+    return false
 end
 
 local function ensureManualControl(zombie)
@@ -120,7 +201,26 @@ local function ensureManualControl(zombie)
     zombie:setTarget(nil)
 end
 
-local function moveTowardTarget(zombie, speed, target, stopDistance, anchorX, anchorY, anchorZ, leashRadius)
+local function moveTowardTarget(zombie, npcData, speed, target, stopDistance, anchorX, anchorY, anchorZ, leashRadius)
+    local mobility = getMobility()
+    if mobility and mobility.MoveTowardTarget then
+        return mobility.MoveTowardTarget(zombie, npcData, {
+            target = target,
+            speed = speed,
+            stopDistance = stopDistance,
+            blockCounterKey = "tradingBlockedTicks",
+            stuckTicks = 10,
+            anchorX = anchorX,
+            anchorY = anchorY,
+            anchorZ = anchorZ,
+            leashRadius = leashRadius,
+            anim = {
+                animSpeed = speed > 0.06 and 1.15 or 1.0,
+                isRunning = speed > 0.06,
+            },
+        })
+    end
+
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
     local dx = tx - zx
@@ -175,11 +275,30 @@ local function moveTowardTarget(zombie, speed, target, stopDistance, anchorX, an
     return false, "blocked"
 end
 
-local function moveAwayFromTarget(zombie, speed, target, desiredDistance, anchorX, anchorY, anchorZ, leashRadius)
+local function moveAwayFromTarget(zombie, npcData, speed, sourceX, sourceY, desiredDistance, anchorX, anchorY, anchorZ, leashRadius, faceTarget)
+    local mobility = getMobility()
+    if mobility and mobility.MoveAwayFromPoint then
+        return mobility.MoveAwayFromPoint(zombie, npcData, {
+            fromX = sourceX,
+            fromY = sourceY,
+            speed = speed,
+            desiredDistance = desiredDistance,
+            blockCounterKey = "tradingBlockedTicks",
+            stuckTicks = 8,
+            anchorX = anchorX,
+            anchorY = anchorY,
+            anchorZ = anchorZ,
+            leashRadius = leashRadius,
+            anim = {
+                animSpeed = 1.0,
+                isRunning = false,
+            },
+        })
+    end
+
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
-    local tx, ty = target:getX(), target:getY()
-    local dx = zx - tx
-    local dy = zy - ty
+    local dx = zx - sourceX
+    local dy = zy - sourceY
     local len = math.sqrt((dx * dx) + (dy * dy))
     local safeDistance = math.max(0, tonumber(desiredDistance) or 0)
 
@@ -225,7 +344,7 @@ local function moveAwayFromTarget(zombie, speed, target, desiredDistance, anchor
         forceWalkAnim(zombie, false)
         zombie:setX(nextX)
         zombie:setY(nextY)
-        zombie:faceLocation(tx, ty)
+        zombie:faceLocation(nextX + dx, nextY + dy)
         return true, "moving"
     end
 
@@ -291,8 +410,14 @@ local function returnToPostOrResume(zombie, npcData)
         getZ = function() return postZ or zombie:getZ() end,
     }
 
-    local moved = moveTowardTarget(zombie, TRADING_DEFENSE_DEFAULT_SPEED, pointTarget, 0.3)
-    if not moved then
+    local dx = postX - zombie:getX()
+    local dy = postY - zombie:getY()
+    if not primeTradingMovement(zombie, npcData, dx, dy, false, "return-to-post") then
+        return
+    end
+
+    local moved, moveState = moveTowardTarget(zombie, npcData, TRADING_DEFENSE_DEFAULT_SPEED, pointTarget, 0.3)
+    if not moved and moveState ~= "arrived" and moveState ~= "close_enough" then
         zombie:setX(postX)
         zombie:setY(postY)
         zombie:setZ(postZ or zombie:getZ())
@@ -301,8 +426,6 @@ local function returnToPostOrResume(zombie, npcData)
         exitTradingDefense(zombie, npcData)
         return
     end
-
-    zombie:faceLocation(postX, postY)
 
     dist = getPostDistance(zombie, npcData)
     if dist ~= nil and dist <= 0.75 then
@@ -321,6 +444,7 @@ exitTradingDefense = function(zombie, npcData)
     npcData.combatResumeState = nil
     npcData.attackTimer = 0
     npcData.reactionTimer = 0
+    resetTradingMoveState(npcData)
     zombie:setTarget(nil)
     if DTNPCProtect and DTNPCProtect.ClearCombatTarget then
         DTNPCProtect.ClearCombatTarget(npcData)
@@ -341,6 +465,7 @@ local function enterTradingDefense(zombie, npcData, state)
     end
     DTNPCProtect.RememberStationaryPost(zombie, npcData, resumeState)
     if npcData.state ~= state then
+        resetTradingMoveState(npcData)
         npcData.state = state
         changed = true
     end
@@ -448,6 +573,9 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     local moved = false
     if moveDir ~= 0 then
         zombie:setVariable("DTIdleState", "0")
+        if not primeTradingMovement(zombie, npcData, dx * moveDir, dy * moveDir, false, "ranged-kite") then
+            return
+        end
         local nextX = zx + (dx * moveSpeed * moveDir)
         local nextY = zy + (dy * moveSpeed * moveDir)
         local nextOutsideLeash = false
@@ -552,7 +680,6 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
     end
 
     ensureManualControl(zombie)
-    faceTarget(zombie, target)
 
     local anchorTarget = getCombatAnchorTarget(zombie, npcData)
     local anchorX = anchorTarget and anchorTarget:getX() or nil
@@ -577,20 +704,69 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
 
     local stats = DTNPCProtect.GetMeleeCombatStats(npcData)
     local engageReach = math.max(stats.reach or TRADING_DEFENSE_MELEE_REACH, 1.45)
+    local attackRange = engageReach + MELEE_APPROACH_START_BUFFER
+    local stopDistance = math.max(0.9, engageReach - MELEE_APPROACH_STOP_BUFFER)
     local currentDist = getTargetDistance(zombie, target)
     local recovering, recovery = false, nil
+    local dangerState = DTNPCProtect and DTNPCProtect.GetMeleeDangerState
+        and DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, {
+            engageReach = engageReach,
+            retreatDistance = engageReach + 0.7,
+        })
+        or nil
     if DTNPCProtect and DTNPCProtect.GetCombatRecovery then
         recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "melee", target)
+    end
+
+    if dangerState and dangerState.shouldDisengage then
+        npcData.attackTimer = 0
+        local retreatDistance = math.max(engageReach + 0.8, tonumber(dangerState.retreatDistance) or (engageReach + 1.2))
+        local retreatDirX = zombie:getX() - (dangerState.fleeFromX or target:getX())
+        local retreatDirY = zombie:getY() - (dangerState.fleeFromY or target:getY())
+        if not primeTradingMovement(zombie, npcData, retreatDirX, retreatDirY, false, "melee-retreat") then
+            return
+        end
+        local movedAway, moveState = moveAwayFromTarget(
+            zombie,
+            npcData,
+            math.max(0.034, (stats.chaseSpeed or TRADING_DEFENSE_DEFAULT_SPEED) * 0.9),
+            dangerState.fleeFromX or target:getX(),
+            dangerState.fleeFromY or target:getY(),
+            retreatDistance,
+            anchorX,
+            anchorY,
+            anchorZ,
+            leashRadius
+        )
+        if moveState == "leash" then
+            returnToPostOrResume(zombie, npcData)
+            return
+        end
+        if not movedAway then
+            stopMoveAnim(zombie)
+            if DTNPC and DTNPC.SetMeleeCombatIdleState then
+                DTNPC.SetMeleeCombatIdleState(zombie, npcData)
+            end
+        end
+        markCombatPursuit(npcData, target, currentDist, false)
+        return
     end
 
     if recovering then
         npcData.attackTimer = 0
         local retreatDistance = math.max(engageReach + 0.45, recovery and recovery.distance or (engageReach + 0.7))
         if currentDist < retreatDistance then
+            local retreatDirX = zombie:getX() - target:getX()
+            local retreatDirY = zombie:getY() - target:getY()
+            if not primeTradingMovement(zombie, npcData, retreatDirX, retreatDirY, false, "melee-recover") then
+                return
+            end
             local movedAway, moveState = moveAwayFromTarget(
                 zombie,
+                npcData,
                 math.max(0.028, (stats.chaseSpeed or TRADING_DEFENSE_DEFAULT_SPEED) * 0.75),
-                target,
+                target:getX(),
+                target:getY(),
                 retreatDistance,
                 anchorX,
                 anchorY,
@@ -614,12 +790,18 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
         return
     end
 
-    if currentDist > engageReach then
+    if currentDist > attackRange then
+        local advanceDirX = target:getX() - zombie:getX()
+        local advanceDirY = target:getY() - zombie:getY()
+        if not primeTradingMovement(zombie, npcData, advanceDirX, advanceDirY, (stats.chaseSpeed or TRADING_DEFENSE_DEFAULT_SPEED) > 0.06, "melee-advance") then
+            return
+        end
         local arrived, moveState = moveTowardTarget(
             zombie,
+            npcData,
             stats.chaseSpeed or TRADING_DEFENSE_DEFAULT_SPEED,
             target,
-            math.max(0.9, engageReach - 0.1),
+            stopDistance,
             anchorX,
             anchorY,
             anchorZ,
@@ -660,7 +842,7 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
             return
         end
 
-        if currentDist > engageReach then
+        if currentDist > attackRange then
             if shouldAbortCombatPursuit(npcData) then
                 if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
                     DTNPCProtect.ReportCombatIssue(
@@ -679,6 +861,7 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
     end
 
     stopMoveAnim(zombie)
+    zombie:faceLocation(target:getX(), target:getY())
     if DTNPC and DTNPC.SetMeleeCombatIdleState then
         DTNPC.SetMeleeCombatIdleState(zombie, npcData)
     end
