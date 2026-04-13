@@ -25,6 +25,50 @@ local function getAnimSpeed(options)
     return options and options.isRunning == true and 1.2 or 1.0
 end
 
+local function safeCall(object, methodName, ...)
+    if not object then
+        return false, nil
+    end
+
+    local method = object[methodName]
+    if type(method) ~= "function" then
+        return false, nil
+    end
+
+    local ok, result = pcall(method, object, ...)
+    if ok then
+        return true, result
+    end
+
+    return false, nil
+end
+
+local function getMovementAnimName(options, moving)
+    if not moving then
+        return ""
+    end
+    if options and options.crawl == true then
+        return "Crawl"
+    end
+    if options and options.dtWalkType ~= nil and tostring(options.dtWalkType) ~= "" then
+        return tostring(options.dtWalkType)
+    end
+    if options and options.isRunning == true then
+        return "Run"
+    end
+    return "Walk"
+end
+
+local function applyEngineWalkType(zombie, moveAnim)
+    if not zombie then
+        return
+    end
+
+    if moveAnim == "Walk" or moveAnim == "Run" then
+        safeCall(zombie, "setWalkType", moveAnim)
+    end
+end
+
 function DTNPCMobility.IsTileSafe(x, y, z)
     local cell = getCell()
     local square = cell and cell:getGridSquare(x, y, z) or nil
@@ -47,6 +91,8 @@ function DTNPCMobility.SetLocomotionState(zombie, options)
 
     options = type(options) == "table" and options or {}
     local moving = options.moving == true
+    local animSpeed = getAnimSpeed(options)
+    local moveAnim = getMovementAnimName(options, moving)
 
     if options.idleState ~= nil then
         zombie:setVariable("DTIdleState", tostring(options.idleState))
@@ -64,6 +110,12 @@ function DTNPCMobility.SetLocomotionState(zombie, options)
 
     zombie:setVariable("bMoving", moving)
     zombie:setVariable("isMoving", moving)
+    zombie:setVariable("DTNPCMoveAnim", moveAnim)
+    zombie:setVariable("DTNPCAnimSpeed", moving and animSpeed or 0.0)
+    zombie:setVariable("MovementSpeed", moving and animSpeed or 0.0)
+    zombie:setVariable("WalkSpeed", moving and math.max(0.1, animSpeed) or 0.0)
+    zombie:setVariable("RunSpeed", moving and math.max(0.1, animSpeed) or 0.0)
+    applyEngineWalkType(zombie, moveAnim)
 
     if options.walkType ~= nil then
         zombie:setVariable("WalkType", tostring(options.walkType))
@@ -72,10 +124,15 @@ function DTNPCMobility.SetLocomotionState(zombie, options)
     end
     if options.dtWalkType ~= nil then
         zombie:setVariable("DTWalkType", tostring(options.dtWalkType))
+    elseif moving then
+        zombie:setVariable("DTWalkType", moveAnim)
+    else
+        zombie:setVariable("DTWalkType", "")
     end
 
-    zombie:setVariable("Speed", moving and getAnimSpeed(options) or 0.0)
+    zombie:setVariable("Speed", moving and animSpeed or 0.0)
     zombie:setRunning(moving and options.isRunning == true or false)
+    safeCall(zombie, "setSpeedMod", 1)
 end
 
 function DTNPCMobility.Stop(zombie, options)

@@ -26,12 +26,34 @@ local function isTileSafe(x, y, z)
 end
 
 local function forceRunAnimation(zombie)
+    if DTNPCMobility and DTNPCMobility.SetLocomotionState then
+        DTNPCMobility.SetLocomotionState(zombie, {
+            moving = true,
+            isRunning = true,
+            dtWalkType = "Run",
+            animSpeed = 1.2,
+        })
+        return
+    end
+
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
     zombie:setVariable("Speed", 1.2) -- Force run speed
     zombie:setVariable("DTWalkType", "Run")
     zombie:setVariable("WalkType", "1")
     zombie:setRunning(true)
+end
+
+local function stopMovementAnimation(zombie)
+    if DTNPCMobility and DTNPCMobility.Stop then
+        DTNPCMobility.Stop(zombie)
+        return
+    end
+
+    zombie:setVariable("bMoving", false)
+    zombie:setVariable("isMoving", false)
+    zombie:setVariable("Speed", 0.0)
+    zombie:setRunning(false)
 end
 
 DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
@@ -104,8 +126,7 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
         -- No target, no memory. Stand still.
         if not zombie:isUseless() then zombie:setUseless(true) end
         npcData.isMovingState = false
-        zombie:setVariable("bMoving", false)
-        zombie:setVariable("Speed", 0.0)
+        stopMovementAnimation(zombie)
         return
     end
 
@@ -160,7 +181,6 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
         end
     else
         -- Blocked completely
-        zombie:setVariable("bMoving", false)
-        zombie:setVariable("Speed", 0.0)
+        stopMovementAnimation(zombie)
     end
 end

@@ -23,6 +23,36 @@ end
 
 Network.Modules.CommandUpdate = true
 
+local function applyRemoteLocomotion(zombie, args)
+    if not zombie or not args or args.isMoving == nil then
+        return
+    end
+
+    local moving = args.isMoving == true
+    local isRunning = args.isRunning == true
+    local moveAnim = moving and (isRunning and "Run" or "Walk") or ""
+    local animSpeed = moving and (isRunning and 1.2 or 1.0) or 0.0
+
+    zombie:setVariable("DTNPC", true)
+    zombie:setVariable("bMoving", moving)
+    zombie:setVariable("isMoving", moving)
+    zombie:setVariable("DTNPCMoveAnim", moveAnim)
+    zombie:setVariable("DTWalkType", moveAnim)
+    zombie:setVariable("Speed", animSpeed)
+    zombie:setVariable("DTNPCAnimSpeed", animSpeed)
+    zombie:setVariable("MovementSpeed", animSpeed)
+    zombie:setVariable("WalkSpeed", moving and math.max(0.1, animSpeed) or 0.0)
+    zombie:setVariable("RunSpeed", moving and math.max(0.1, animSpeed) or 0.0)
+    zombie:setRunning(isRunning and moving)
+
+    if zombie.setWalkType and moveAnim ~= "" then
+        pcall(zombie.setWalkType, zombie, moveAnim)
+    end
+    if zombie.setSpeedMod then
+        pcall(zombie.setSpeedMod, zombie, 1)
+    end
+end
+
 function Handlers.HandleUpdatePosition(args)
     if not args or not args.uuid then
         return
@@ -150,6 +180,7 @@ function Handlers.HandleUpdatePosition(args)
 
             if not DTNPCClient.LocalControlled[uuid] then
                 DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
+                applyRemoteLocomotion(zombie, args)
             end
         end
 

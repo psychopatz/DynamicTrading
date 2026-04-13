@@ -28,12 +28,34 @@ local function isTileSafe(x, y, z)
 end
 
 local function forceRunAnimation(zombie)
+    if DTNPCMobility and DTNPCMobility.SetLocomotionState then
+        DTNPCMobility.SetLocomotionState(zombie, {
+            moving = true,
+            isRunning = true,
+            dtWalkType = "Run",
+            animSpeed = 1.2,
+        })
+        return
+    end
+
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
     zombie:setVariable("Speed", 1.2) -- Force run speed for GoTo
     zombie:setVariable("DTWalkType", "Run")
     zombie:setVariable("WalkType", "1")
     zombie:setRunning(true)
+end
+
+local function stopMovementAnimation(zombie)
+    if DTNPCMobility and DTNPCMobility.Stop then
+        DTNPCMobility.Stop(zombie)
+        return
+    end
+
+    zombie:setVariable("bMoving", false)
+    zombie:setVariable("isMoving", false)
+    zombie:setVariable("Speed", 0.0)
+    zombie:setRunning(false)
 end
 
 local function resetGoToStuck(npcData)
@@ -70,8 +92,7 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
         npcData.state = "Stay"
         npcData.isMovingState = false
         resetGoToStuck(npcData)
-        zombie:setVariable("bMoving", false)
-        zombie:setVariable("Speed", 0.0)
+        stopMovementAnimation(zombie)
         
         -- Ensure safety when idle
         if not zombie:isUseless() then zombie:setUseless(true) end
@@ -117,9 +138,7 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
             if math.abs(task.x - zx) > 0.001 or math.abs(task.y - zy) > 0.001 then
                 zombie:faceLocation(task.x, task.y)
             end
-            
-            zombie:setVariable("bMoving", false)
-            zombie:setVariable("Speed", 0.0)
+            stopMovementAnimation(zombie)
             DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo: Destination Reached.")
         end
         return
@@ -178,11 +197,9 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
             npcData.isMovingState = false
             npcData.tasks = {}
             resetGoToStuck(npcData)
-            zombie:setVariable("bMoving", false)
-            zombie:setVariable("Speed", 0.0)
+            stopMovementAnimation(zombie)
         else
-            zombie:setVariable("bMoving", false)
-            zombie:setVariable("Speed", 0.0)
+            stopMovementAnimation(zombie)
         end
     end
 end

@@ -162,6 +162,13 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         tier = "forced"
     end
 
+    local isMoving = npcData.isMovingState == true
+    local isRunning = isMoving and npcData._dtMotionHint and npcData._dtMotionHint.running == true or false
+    if not isRunning and zombie.isRunning then
+        local ok, result = pcall(zombie.isRunning, zombie)
+        isRunning = isMoving and ok and result == true or false
+    end
+
     local posData = {
         uuid = uuid,
         bodyInstanceID = zombie:getPersistentOutfitID(),
@@ -185,6 +192,8 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         protectNoticeSentiment = npcData.protectNoticeSentiment,
         protectNoticeDialogueStatus = npcData.protectNoticeDialogueStatus,
         protectNoticeDialogueState = npcData.protectNoticeDialogueState,
+        isMoving = isMoving,
+        isRunning = isRunning,
         tier = tier
     }
     

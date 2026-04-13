@@ -42,9 +42,19 @@ end
 -- ==============================================================================
 
 local function forceWalkAnimation(zombie, isRunning)
+    if DTNPCMobility and DTNPCMobility.SetLocomotionState then
+        DTNPCMobility.SetLocomotionState(zombie, {
+            moving = true,
+            isRunning = isRunning == true,
+            dtWalkType = isRunning == true and "Run" or "Walk",
+            animSpeed = isRunning == true and 1.2 or 1.0,
+        })
+        return
+    end
+
     zombie:setVariable("bMoving", true)
     zombie:setVariable("isMoving", true)
-    
+
     if isRunning then
         zombie:setVariable("Speed", 1.2)
         zombie:setRunning(true)
@@ -55,6 +65,11 @@ local function forceWalkAnimation(zombie, isRunning)
 end
 
 local function stopAnimation(zombie)
+    if DTNPCMobility and DTNPCMobility.Stop then
+        DTNPCMobility.Stop(zombie)
+        return
+    end
+
     zombie:setVariable("bMoving", false)
     zombie:setVariable("isMoving", false)
     zombie:setVariable("Speed", 0.0)
