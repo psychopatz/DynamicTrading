@@ -19,7 +19,7 @@ DTNPC_PortraitDebugger.instance = nil
 
 local MODEL_SIZE = 256
 local PANEL_W = 320
-local PANEL_H = 520
+local PANEL_H = 550
 local CTRL_X = 10
 local CTRL_W_HALF = 145
 local BTN_H = 25
@@ -62,6 +62,7 @@ function DTNPC_PortraitDebugger:initialise()
     self.currentDirIndex = 1
     self.isAnimating = true
     self.isIsometric = false
+    self.isOverlayOn = false
     self.targetZombie = nil
     self.targetName = "None"
 
@@ -182,7 +183,17 @@ function DTNPC_PortraitDebugger:createChildren()
     y = y + BTN_H + 5
 
     -- =========================================================================
-    -- CONTROLS ROW 5: Reset & Clear
+    -- CONTROLS ROW 5: Extra Toggles
+    -- =========================================================================
+
+    self.btnToggleOverlay = ISButton:new(CTRL_X, y, CTRL_W_HALF, BTN_H, "Overlay: OFF", self, self.onToggleOverlay)
+    self.btnToggleOverlay:initialise()
+    self.btnToggleOverlay.backgroundColor = {r=0.5, g=0.2, b=0.2, a=1}
+    self:addChild(self.btnToggleOverlay)
+    y = y + BTN_H + 5
+
+    -- =========================================================================
+    -- CONTROLS ROW 6: Reset & Clear
     -- =========================================================================
 
     self.btnReset = ISButton:new(CTRL_X, y, CTRL_W_HALF, BTN_H, "Reset Values", self, self.onReset)
@@ -322,6 +333,14 @@ function DTNPC_PortraitDebugger:onToggleIso()
     if self.modelView then self.modelView:setIsometric(self.isIsometric) end
     self.btnToggleIso:setTitle(self.isIsometric and "Iso: ON" or "Iso: OFF")
     self.btnToggleIso.backgroundColor = self.isIsometric
+        and {r=0.2, g=0.5, b=0.2, a=1}
+        or  {r=0.5, g=0.2, b=0.2, a=1}
+end
+
+function DTNPC_PortraitDebugger:onToggleOverlay()
+    self.isOverlayOn = not self.isOverlayOn
+    self.btnToggleOverlay:setTitle(self.isOverlayOn and "Overlay: ON" or "Overlay: OFF")
+    self.btnToggleOverlay.backgroundColor = self.isOverlayOn
         and {r=0.2, g=0.5, b=0.2, a=1}
         or  {r=0.5, g=0.2, b=0.2, a=1}
 end
@@ -474,6 +493,20 @@ function DTNPC_PortraitDebugger:render()
     local my = self.modelView:getY()
     local mw = self.modelView:getWidth()
     local mh = self.modelView:getHeight()
+
+    -- CRT Overlay (Matches Trading UI logic)
+    if self.isOverlayOn then
+        if not self.overlayTex then
+            self.overlayTex = getTexture("media/ui/Effects/crt.png")
+        end
+        if self.overlayTex then
+            -- Simple static chaotic transparency value to mimic the effect without the trader loop overhead
+            local gt = GameTime:getInstance()
+            local chaosFactor = 1.0
+            local alpha = (0.15 + (chaosFactor * 0.3)) + ZombRandFloat(0.0, 0.05 + (chaosFactor * 0.4))
+            self:drawTextureScaled(self.overlayTex, mx, my, mw, mh, math.min(alpha, 0.9), 1, 1, 1)
+        end
+    end
 
     self:drawRectBorder(mx - 1, my - 1, mw + 2, mh + 2, 1.0, 0.4, 0.4, 0.4)
 
