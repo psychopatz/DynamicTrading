@@ -1,8 +1,0 @@
-Title: Tag Classification System
-Tags: [script, tags-taxonomy]
-
-LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Tags.lua
-PURPOSE: Provide hierarchical tag definitions used for item classification, weighted selection, and economic modifier application.
-OVERVIEW: Tags encode rarity, category, and conditional context, then power matching logic for stock generation, pricing, and event-driven filtering.
-DEPENDENCIES: Config registration flow, item registry tag assignments, economy price composition, event and archetype matching rules.
-REMARKS: Keep exact tier values and conditional behavior references in chunk files to maintain a stable schema-first index.

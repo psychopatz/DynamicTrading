@@ -1,8 +1,0 @@
-Title: DynamicTradingCommon Library Overview
-Tags: [script, common-overview]
-
-LOCATION: Contents/mods/DynamicTradingCommon/
-PURPOSE: Provide the shared core library used by DynamicTradingV1 and DynamicTradingV2 for economy, items, factions, quests, events, and UI-facing data.
-OVERVIEW: The library initializes shared globals, loads config-driven registries, and exposes reusable systems that both gameplay variants consume through common APIs.
-DEPENDENCIES: Project Zomboid Build 42 Lua runtime, shared/client/server module load order, ModData-backed persistence, sandbox options.
-REMARKS: Keep this index as blueprint-only; implementation details belong in subordinate chunk files under mirrored subsystem paths.

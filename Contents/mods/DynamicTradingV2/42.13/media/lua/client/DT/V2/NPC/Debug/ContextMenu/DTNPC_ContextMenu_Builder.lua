@@ -5,6 +5,8 @@
 
 if not isDebugEnabled() then return end
 
+require "DT/V2/NPC/Debug/DTNPC_PortraitDebugger"
+
 DTNPCMenu = DTNPCMenu or {}
 DTNPCMenu.ContextMenu = DTNPCMenu.ContextMenu or {}
 
@@ -106,6 +108,9 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             debugSub:addOption("DEBUG: Inspect Data", nil, function()
                 Menu.OnInspectNPCData(npc)
             end)
+            debugSub:addOption("DEBUG: View Portrait", nil, function()
+                DTNPC_PortraitDebugger.OpenForZombie(npc)
+            end)
         end
 
         return
@@ -128,6 +133,9 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
     end
 
     managerSubMenu:addOption("Open NPC Global Debugger", nil, DTNPC_Debugger.OnOpenWindow)
+    managerSubMenu:addOption("Open Portrait Debugger", nil, function()
+        DTNPC_PortraitDebugger.Open()
+    end)
 end
 
 if not Menu.EventsRegistered then

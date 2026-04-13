@@ -1,8 +1,0 @@
-Title: Building Scanner Configuration and Geo Mapping
-Tags: [script, building-scanner-config]
-
-LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT_BuildingScannerConfig.lua
-PURPOSE: Define scanner thresholds, county/town geography lookup, and shared scan/load helpers for building, wilderness, and road location datasets.
-OVERVIEW: The file initializes `DTM.Config`, exposes coordinate classification utilities, performs grid/meta scans, and builds lookup caches used by server and UI location consumers.
-DEPENDENCIES: Project Zomboid MetaGrid/zone APIs, ModData storage (`DT_Buildings`), scanner consumers in server-side location workflows.
-REMARKS: Keep expensive scan loops controlled and prefer cached ModData loading when available.

@@ -1,8 +1,0 @@
-Title: Event System & Dynamic Economy
-Tags: [script, event-system]
-
-LOCATION: Contents/mods/DynamicTradingCommon/42.13/media/lua/shared/DT/Common/Events/
-PURPOSE: Manage dynamic world events that alter prices, stock availability, and faction simulation conditions over time.
-OVERVIEW: Event definitions are registered and evaluated on timed ticks, then active effects are compounded and applied to matching tags and simulation consumers.
-DEPENDENCIES: Tags hierarchy, item and economy calculators, faction simulation loop, sandbox event controls, admin/debug command layer.
-REMARKS: Keep category matrices, command examples, and lifecycle internals in sidecar chunks instead of embedding them in this blueprint file.
