@@ -15,7 +15,7 @@ function Trading.GetMobility()
     end
 
     if require then
-        pcall(require, "DT/V2/NPC/Sys/DTNPC_Mobility")
+        pcall(require, "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility")
     end
 
     if DTNPCMobility and DTNPCMobility.MoveTowardTarget and DTNPCMobility.MoveAwayFromPoint then

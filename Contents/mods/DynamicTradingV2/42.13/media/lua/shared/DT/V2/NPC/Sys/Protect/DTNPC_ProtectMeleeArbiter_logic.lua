@@ -6,7 +6,7 @@
 DTNPCProtect = DTNPCProtect or {}
 DTNPCProtect.Internal = DTNPCProtect.Internal or {}
 
-require "DT/V2/NPC/Sys/DTNPC_Mobility"
+require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
 
 local Internal = DTNPCProtect.Internal
 local getZombieRuntimeID = Internal.getZombieRuntimeID

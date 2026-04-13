@@ -6,7 +6,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 require "DT/V2/NPC/Sys/DTNPC_Protect"
-require "DT/V2/NPC/Sys/DTNPC_Mobility"
+require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
 
 local RANGED_KITE_MIN = 3.25
 local RANGED_KITE_MAX = 8.5

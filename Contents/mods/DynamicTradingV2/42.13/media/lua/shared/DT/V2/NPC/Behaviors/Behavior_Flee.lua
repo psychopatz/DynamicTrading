@@ -7,7 +7,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
-require "DT/V2/NPC/Sys/DTNPC_Mobility"
+require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
 
 local DESPAWN_DIST = 35
 local STUCK_TICKS = 12

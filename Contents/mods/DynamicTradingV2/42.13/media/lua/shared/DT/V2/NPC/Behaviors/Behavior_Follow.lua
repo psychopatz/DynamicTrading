@@ -7,7 +7,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
-require "DT/V2/NPC/Sys/DTNPC_Mobility"
+require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
 
 -- MOVEMENT CONFIGURATION
 local STOP_THRESHOLD_START = 3.5

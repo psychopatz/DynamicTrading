@@ -15,7 +15,7 @@ end
 DTNPCLogic.BehaviorTrading.EntryLoaded = true
 
 require "DT/V2/NPC/Sys/DTNPC_Protect"
-require "DT/V2/NPC/Sys/DTNPC_Mobility"
+require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
 
 require "DT/V2/NPC/Behaviors/BehaviorTrading/Behavior_Trading_Shared"
 require "DT/V2/NPC/Behaviors/BehaviorTrading/Behavior_Trading_Movement"

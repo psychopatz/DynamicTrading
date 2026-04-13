@@ -7,7 +7,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
-require "DT/V2/NPC/Sys/DTNPC_Mobility"
+require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
 
 local STOP_DIST = 0.5 -- Stricter stopping distance for precise GoTo
 local STUCK_TICKS = 15

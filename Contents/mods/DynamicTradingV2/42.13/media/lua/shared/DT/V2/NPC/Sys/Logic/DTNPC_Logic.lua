@@ -16,7 +16,7 @@ end
 DTNPCLogic.EntryLoaded = true
 
 require "DT/V2/NPC/Sys/DTNPC_Protect"
-require "DT/V2/NPC/Sys/DTNPC_Mobility"
+require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
 require "DT/V2/NPC/Sys/Combat/DTNPC_Combat"
 require "DT/V2/NPC/Sys/Data/DTNPC_Data"
 
