@@ -299,6 +299,37 @@ local function onClientCommand(module, command, player, args)
         DynamicTrading.Log("DTV2", "NPC", "Command", "Received Order command from: " .. player:getUsername() .. " | State: " .. (args.state or "Unknown"))
 
         if args.uuid and DTNPCServerCore and DTNPCServerCore.IssueOrderByUUID then
+            local npcData = nil
+            if DTNPCServerCore.GetNPCDataByUUID then
+                local _
+                _, npcData = DTNPCServerCore.GetNPCDataByUUID(args.uuid)
+            end
+            if npcData
+                and tostring(npcData.dcCompanionJob or "") == "TravelCompanion"
+                and tostring(npcData.linkedWorkerID or "") ~= ""
+                and not args.systemCompanionOrder then
+                local companion = DC_Colony and DC_Colony.Companion or nil
+                local canCommand, reason = false, "Companion command authority is unavailable."
+                if companion and companion.CanPlayerCommandCompanion then
+                    canCommand, reason = companion.CanPlayerCommandCompanion(player, npcData)
+                end
+                if not canCommand then
+                    if DynamicTrading and DynamicTrading.ServerHelpers and DynamicTrading.ServerHelpers.SendResponse then
+                        DynamicTrading.ServerHelpers.SendResponse(player, "DColony", "ColonyNotice", {
+                            message = reason or "You cannot command this companion.",
+                            severity = "error",
+                            popup = true
+                        })
+                    else
+                        sendServerCommand(player, "DColony", "ColonyNotice", {
+                            message = reason or "You cannot command this companion.",
+                            severity = "error",
+                            popup = true
+                        })
+                    end
+                    return
+                end
+            end
             if args.state == "PatchUp" and DTNPCServerCore.StartPatchUpByUUID then
                 local changed, updatedNPC = DTNPCServerCore.StartPatchUpByUUID(args.uuid)
                 if changed and updatedNPC then
@@ -321,6 +352,30 @@ local function onClientCommand(module, command, player, args)
                 if instanceof(obj, "IsoZombie") then
                     local npcData = DTNPC.GetBrain(obj)
                     if npcData then
+                        if tostring(npcData.dcCompanionJob or "") == "TravelCompanion"
+                            and tostring(npcData.linkedWorkerID or "") ~= "" then
+                            local companion = DC_Colony and DC_Colony.Companion or nil
+                            local canCommand, reason = false, "Companion command authority is unavailable."
+                            if companion and companion.CanPlayerCommandCompanion then
+                                canCommand, reason = companion.CanPlayerCommandCompanion(player, npcData)
+                            end
+                            if not canCommand then
+                                if DynamicTrading and DynamicTrading.ServerHelpers and DynamicTrading.ServerHelpers.SendResponse then
+                                    DynamicTrading.ServerHelpers.SendResponse(player, "DColony", "ColonyNotice", {
+                                        message = reason or "You cannot command this companion.",
+                                        severity = "error",
+                                        popup = true
+                                    })
+                                else
+                                    sendServerCommand(player, "DColony", "ColonyNotice", {
+                                        message = reason or "You cannot command this companion.",
+                                        severity = "error",
+                                        popup = true
+                                    })
+                                end
+                                return
+                            end
+                        end
                         npcData.state = args.state
                         npcData.tasks = {} 
                         
