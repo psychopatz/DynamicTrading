@@ -12,6 +12,7 @@ local MELEE_DEFAULT_REACH = 1.25
 local MELEE_DEFAULT_SPEED = 0.05
 local MELEE_APPROACH_START_BUFFER = 0.18
 local MELEE_APPROACH_STOP_BUFFER = 0.16
+local MELEE_ATTACK_COMMIT_BUFFER = 0.12
 
 local function runLegacyWakeup(zombie, target, dist)
     if zombie:isUseless() then
@@ -75,15 +76,11 @@ local function primeAttackMovement(zombie, npcData, dirX, dirY, isRunning, reaso
     moveDirY = moveDirY / len
     npcData.isMovingState = true
 
-    if npcData.attackMovePrimed == true and npcData.attackMoveReason == reason then
-        return true
-    end
-
     npcData.attackMovePrimed = true
     npcData.attackMoveReason = reason or "move"
     forceWalkAnim(zombie, isRunning == true)
     zombie:faceLocation(zombie:getX() + moveDirX, zombie:getY() + moveDirY)
-    return false
+    return true
 end
 
 local function ensureManualControl(zombie)
@@ -161,6 +158,54 @@ local function preserveAttackWindup(npcData, stats)
     npcData.attackTimer = math.min(tonumber(npcData.attackTimer) or 0, cap)
 end
 
+local function getTargetKey(target)
+    if not target then
+        return nil
+    end
+    local id = target.getID and target:getID() or nil
+    if id then
+        return "id:" .. tostring(id)
+    end
+    return tostring(target)
+end
+
+local function primeContactSwing(npcData, target, stats)
+    if not npcData then
+        return
+    end
+
+    local targetKey = getTargetKey(target)
+    if npcData.meleeContactTargetKey == targetKey and npcData.meleeContactPrimed == true then
+        return
+    end
+
+    local attackRate = tonumber(stats and stats.attackRate) or 0
+    npcData.attackTimer = math.max(tonumber(npcData.attackTimer) or 0, math.max(0, attackRate - 6))
+    npcData.meleeContactTargetKey = targetKey
+    npcData.meleeContactPrimed = true
+end
+
+local function shouldStandAndFight(dangerState, currentDist, attackRange)
+    if not dangerState or dangerState.shouldDisengage ~= true then
+        return false
+    end
+    if (tonumber(currentDist) or 9999) > (tonumber(attackRange) or 0) then
+        return false
+    end
+    if dangerState.reason == "low_health" then
+        return false
+    end
+
+    local selfPressure = dangerState.selfPressure or {}
+    local severeThreshold = tonumber(DTNPCProtect.CONFIG.MeleeCrowdSevereThreshold) or 4
+    local lowHealthRatio = tonumber(DTNPCProtect.CONFIG.MeleeLowHealthRetreatRatio) or 0.58
+    if dangerState.reason == "pressured" and (tonumber(dangerState.healthRatio) or 1) <= (lowHealthRatio + 0.08) then
+        return false
+    end
+
+    return (tonumber(selfPressure.count) or 0) < severeThreshold
+end
+
 DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     if not npcData then
         runLegacyWakeup(zombie, target, dist)
@@ -182,6 +227,9 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
 
     if not target or target:isDead() then
         npcData.attackTimer = 0
+        if DTNPCProtect and DTNPCProtect.ResetMeleeCombat then
+            DTNPCProtect.ResetMeleeCombat(npcData)
+        end
         if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
             DTNPCProtect.ResetCombatRhythm(npcData)
         end
@@ -208,124 +256,15 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     ensureManualControl(zombie)
     zombie:setTarget(target)
 
-    local stats = DTNPCProtect.GetMeleeCombatStats(npcData)
-    local engageReach = math.max(stats.reach or MELEE_DEFAULT_REACH, 1.45)
-    local attackRange = engageReach + MELEE_APPROACH_START_BUFFER
-    local stopDistance = math.max(0.9, engageReach - MELEE_APPROACH_STOP_BUFFER)
-    local currentDist = getTargetDistance(zombie, target)
-    local recovering, recovery = false, nil
-    local dangerState = DTNPCProtect and DTNPCProtect.GetMeleeDangerState
-        and DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, {
-            engageReach = engageReach,
-            retreatDistance = engageReach + 0.7,
+    if DTNPCProtect and DTNPCProtect.ExecuteMeleeCombat then
+        DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, {
+            mode = "hostile",
+            blockCounterKey = "attackBlockedTicks",
+            fallbackReach = MELEE_DEFAULT_REACH,
+            defaultSpeed = MELEE_DEFAULT_SPEED,
+            enterBuffer = 0.25,
+            holdBuffer = 0.45,
+            stopBuffer = MELEE_APPROACH_STOP_BUFFER,
         })
-        or nil
-    if DTNPCProtect and DTNPCProtect.GetCombatRecovery then
-        recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "melee", target)
-    end
-
-    if dangerState and dangerState.shouldDisengage then
-        preserveAttackWindup(npcData, stats)
-        local retreatDistance = math.max(engageReach + 0.8, tonumber(dangerState.retreatDistance) or (engageReach + 1.2))
-        local retreatDirX = zombie:getX() - (dangerState.fleeFromX or target:getX())
-        local retreatDirY = zombie:getY() - (dangerState.fleeFromY or target:getY())
-        if not primeAttackMovement(zombie, npcData, retreatDirX, retreatDirY, false, "danger-retreat") then
-            return
-        end
-        local movedAway = moveAwayFromPoint(
-            zombie,
-            npcData,
-            math.max(0.034, (stats.chaseSpeed or MELEE_DEFAULT_SPEED) * 0.9),
-            dangerState.fleeFromX or target:getX(),
-            dangerState.fleeFromY or target:getY(),
-            retreatDistance
-        )
-        if not movedAway then
-            stopMoveAnim(zombie, npcData)
-            if DTNPC and DTNPC.SetMeleeCombatIdleState then
-                DTNPC.SetMeleeCombatIdleState(zombie, npcData)
-            end
-        end
-        return
-    end
-
-    if recovering then
-        npcData.attackTimer = 0
-        local retreatDistance = math.max(engageReach + 0.45, recovery and recovery.distance or (engageReach + 0.7))
-        if currentDist < retreatDistance then
-            local retreatDirX = zombie:getX() - target:getX()
-            local retreatDirY = zombie:getY() - target:getY()
-            if not primeAttackMovement(zombie, npcData, retreatDirX, retreatDirY, false, "recover") then
-                return
-            end
-            moveAwayFromPoint(
-                zombie,
-                npcData,
-                math.max(0.028, (stats.chaseSpeed or MELEE_DEFAULT_SPEED) * 0.75),
-                target:getX(),
-                target:getY(),
-                retreatDistance
-            )
-        else
-            stopMoveAnim(zombie, npcData)
-            if DTNPC and DTNPC.SetMeleeCombatIdleState then
-                DTNPC.SetMeleeCombatIdleState(zombie, npcData)
-            end
-        end
-        return
-    end
-
-    if currentDist > attackRange then
-        local chaseSpeed = stats.chaseSpeed or MELEE_DEFAULT_SPEED
-        local advanceDirX = target:getX() - zombie:getX()
-        local advanceDirY = target:getY() - zombie:getY()
-        if not primeAttackMovement(zombie, npcData, advanceDirX, advanceDirY, chaseSpeed > 0.06, "advance") then
-            return
-        end
-        local arrived, moveState = moveTowardTarget(
-            zombie,
-            npcData,
-            chaseSpeed,
-            target,
-            stopDistance
-        )
-        if not arrived then
-            return
-        end
-
-        currentDist = getTargetDistance(zombie, target)
-        if currentDist > attackRange then
-            if moveState == "arrived" or moveState == "close_enough" then
-                stopMoveAnim(zombie, npcData)
-            end
-            return
-        end
-    end
-
-    stopMoveAnim(zombie, npcData)
-    zombie:faceLocation(target:getX(), target:getY())
-    if DTNPC and DTNPC.SetMeleeCombatIdleState then
-        DTNPC.SetMeleeCombatIdleState(zombie, npcData)
-    end
-
-    npcData.attackTimer = (npcData.attackTimer or 0) + 1
-    if npcData.attackTimer < stats.attackRate then
-        return
-    end
-
-    npcData.attackTimer = 0
-    if DTNPC and DTNPC.TriggerMeleeCombatAnim then
-        DTNPC.TriggerMeleeCombatAnim(zombie, npcData)
-    end
-    DTNPCProtect.ConsumeWeaponCondition(npcData, "melee", 1)
-
-    if ZombRand(100) < stats.hitChance then
-        DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
-            attackType = "melee",
-            damage = stats.damage,
-        })
-    end
-    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
-        DTNPCProtect.RecordCombatAttack(zombie, npcData, "melee", target)
     end
 end

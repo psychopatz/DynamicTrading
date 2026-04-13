@@ -29,6 +29,8 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     MeleeCrowdSevereThreshold = 4,
     MeleeRecentZombieDamageWindowMs = 4500,
     MeleeLowHealthRetreatRatio = 0.58,
+    MeleeImmediateThreatRadius = 2.2,
+    MeleeImmediateThreatStickyBreak = 0.65,
 }
 
 DTNPCProtect.LOADOUT_WEIGHTS = DTNPCProtect.LOADOUT_WEIGHTS or {
