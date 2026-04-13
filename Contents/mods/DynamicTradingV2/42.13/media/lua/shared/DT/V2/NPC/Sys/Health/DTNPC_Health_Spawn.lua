@@ -79,6 +79,7 @@ function DTNPCHealth.InitializeForSpawn(zombie, npcData, options)
     combatHealth.pendingFallbackIgnoreUntil = 0
     combatHealth.spawnInitializedAt = internal.nowMillis()
     combatHealth.spawnReason = spawnReason
+    combatHealth.eventDrivenOnly = false
 
     local initialEngineHealth, desiredEngineHealth, deferRestore = internal.resolveSpawnHealthPlan(npcData, combatHealth, options)
 

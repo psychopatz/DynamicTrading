@@ -51,7 +51,7 @@ function DTNPCHealth.EnsureDefaults(npcData)
         combatHealth.current = npcData.incapState == "Active" and (tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1)
             or math.max(0, tonumber(linkedWorkerHealth and linkedWorkerHealth.hp) or combatHealth.max)
     end
-    if combatHealth.eventDrivenOnly == nil then combatHealth.eventDrivenOnly = true end
+    if combatHealth.eventDrivenOnly == nil or combatHealth.eventDrivenOnly == true then combatHealth.eventDrivenOnly = false end
     if combatHealth.invulnerableBody == nil then combatHealth.invulnerableBody = true end
     if combatHealth.engineBuffer == nil then combatHealth.engineBuffer = DTNPCHealth.DEFAULT_ENGINE_BUFFER end
     if combatHealth.zeroHpMode == nil then combatHealth.zeroHpMode = "Incapacitated" end

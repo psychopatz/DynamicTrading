@@ -355,6 +355,15 @@ end
 
 internal.isCombatState = isCombatState
 
+local function isFollowerOrProtectorState(state)
+    return state == "Follow"
+        or state == "ProtectRanged"
+        or state == "ProtectMelee"
+        or state == "ProtectAuto"
+end
+
+internal.isFollowerOrProtectorState = isFollowerOrProtectorState
+
 local function getBandageTierDef(tierID)
     local tiers = DTNPCHealth.BANDAGE_TIERS or {}
     local resolvedID = tostring(tierID or DTNPCHealth.DEFAULT_BANDAGE_TIER or "clean_rag")
@@ -839,6 +848,61 @@ end
 
 internal.getPlayerUsername = getPlayerUsername
 
+local function isPlayerMatchedToCompanion(npcData, player, username)
+    if not npcData or not player then
+        return false
+    end
+
+    local playerID = player.getOnlineID and player:getOnlineID() or nil
+    if playerID ~= nil then
+        if npcData.masterID ~= nil and tonumber(npcData.masterID) == tonumber(playerID) then
+            return true
+        end
+        if npcData.preIncapMasterID ~= nil and tonumber(npcData.preIncapMasterID) == tonumber(playerID) then
+            return true
+        end
+    end
+
+    if not username or username == "" then
+        return false
+    end
+
+    return (npcData.master and tostring(npcData.master) == username)
+        or (npcData.preIncapMaster and tostring(npcData.preIncapMaster) == username)
+end
+
+local function isFriendlyFollowerOrProtectorHit(npcData, attacker)
+    if not npcData or not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
+        return false
+    end
+
+    local state = tostring(npcData.state or "")
+    local combatOrder = tostring(npcData.combatOrder or "")
+    local shouldProtect = isFollowerOrProtectorState(state) or isFollowerOrProtectorState(combatOrder)
+    if npcData.incapState == "Active" and isFollowerOrProtectorState(tostring(npcData.preIncapState or "")) then
+        shouldProtect = true
+    end
+    if not shouldProtect then
+        return false
+    end
+
+    local username = getPlayerUsername(attacker)
+    if isPlayerMatchedToCompanion(npcData, attacker, username) then
+        return true
+    end
+
+    if DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isFriendlyAuthorityPlayer then
+        local ok, isFriendlyAuthority = pcall(DTNPCProtect.Internal.isFriendlyAuthorityPlayer, npcData, attacker)
+        if ok and isFriendlyAuthority == true then
+            return true
+        end
+    end
+
+    return false
+end
+
+internal.isFriendlyFollowerOrProtectorHit = isFriendlyFollowerOrProtectorHit
+
 local function applyPlayerDamageReputationPenalty(npcData, combatHealth, attacker, appliedDamage)
     if not npcData or not combatHealth then
         return
@@ -917,9 +981,12 @@ local function setIncapacitatedState(zombie, npcData)
     npcData.lastX = math.floor(zombie:getX())
     npcData.lastY = math.floor(zombie:getY())
     npcData.lastZ = math.floor(zombie:getZ())
+    npcData.preIncapState = npcData.state
     npcData.state = "Incapacitated"
     npcData.incapState = "Active"
     npcData.preIncapStatus = npcData.status or "Resting"
+    npcData.preIncapMaster = npcData.master
+    npcData.preIncapMasterID = npcData.masterID
     npcData.isHostile = false
     npcData.master = nil
     npcData.masterID = nil

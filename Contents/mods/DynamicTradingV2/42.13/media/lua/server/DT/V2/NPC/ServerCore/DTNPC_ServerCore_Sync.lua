@@ -219,6 +219,12 @@ function DTNPCServerCore.NotifyRemoval(uuid, bodyInstanceID, name, removalReason
     if removalContext then
         data.killerUsername = removalContext.killerUsername
         data.killerOnlineID = removalContext.killerOnlineID
+        data.cleanupCorpse = removalContext.cleanupCorpse
+        data.corpseX = removalContext.corpseX
+        data.corpseY = removalContext.corpseY
+        data.corpseZ = removalContext.corpseZ
+        data.preserveCorpse = removalContext.preserveCorpse
+        data.staleBodyOnly = removalContext.staleBodyOnly
     end
     
     if isServer() then

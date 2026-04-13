@@ -23,6 +23,107 @@ end
 
 Network.Modules.CommandRemove = true
 
+local pendingIncapacitationCorpseCleanups = {}
+
+local function cleanupStrayIncapacitationCorpse(x, y, z, npcData, reason)
+    local cell = getCell and getCell() or nil
+    local square = cell and cell:getGridSquare(x, y, z or 0) or nil
+    if not square then
+        return false
+    end
+
+    local removed = 0
+    local function purgeFromList(list)
+        if not list then
+            return
+        end
+
+        for i = list:size() - 1, 0, -1 do
+            local obj = list:get(i)
+            if obj and instanceof and instanceof(obj, "IsoDeadBody") then
+                obj:removeFromWorld()
+                obj:removeFromSquare()
+                removed = removed + 1
+            end
+        end
+    end
+
+    if square.getStaticMovingObjects then
+        purgeFromList(square:getStaticMovingObjects())
+    end
+    if removed <= 0 and square.getMovingObjects then
+        purgeFromList(square:getMovingObjects())
+    end
+
+    if removed > 0 then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Death",
+            "Client removed stray incapacitation corpse(s) for "
+                .. tostring(npcData and (npcData.name or npcData.uuid) or "Unknown")
+                .. " count=" .. tostring(removed)
+                .. " reason=" .. tostring(reason or "incap_transition")
+                .. " square=" .. tostring(x) .. "," .. tostring(y) .. "," .. tostring(z or 0)
+        )
+        return true
+    end
+
+    return false
+end
+
+local function runPendingIncapacitationCorpseCleanups()
+    for i = #pendingIncapacitationCorpseCleanups, 1, -1 do
+        local cleanup = pendingIncapacitationCorpseCleanups[i]
+        cleanup.attempts = (cleanup.attempts or 0) + 1
+
+        local removed = cleanupStrayIncapacitationCorpse(
+            cleanup.x,
+            cleanup.y,
+            cleanup.z,
+            cleanup.npcData,
+            cleanup.reason
+        )
+
+        if removed or cleanup.attempts >= (cleanup.maxAttempts or 8) then
+            table.remove(pendingIncapacitationCorpseCleanups, i)
+        end
+    end
+
+    if #pendingIncapacitationCorpseCleanups <= 0 and Events and Events.OnTick then
+        Events.OnTick.Remove(runPendingIncapacitationCorpseCleanups)
+    end
+end
+
+local function scheduleIncapacitationCorpseCleanup(x, y, z, npcData, reason)
+    if not x or not y then
+        return
+    end
+
+    table.insert(pendingIncapacitationCorpseCleanups, {
+        x = x,
+        y = y,
+        z = z or 0,
+        npcData = npcData,
+        reason = reason,
+        attempts = 0,
+        maxAttempts = 8,
+    })
+
+    if Events and Events.OnTick then
+        Events.OnTick.Remove(runPendingIncapacitationCorpseCleanups)
+        Events.OnTick.Add(runPendingIncapacitationCorpseCleanups)
+    end
+end
+
+local function resolveRemovalZombie(uuid, bodyInstanceID, reason, staleBodyOnly)
+    if (staleBodyOnly == true or reason == "Incapacitated") and bodyInstanceID and DTNPCClient.FindZombieByBodyInstanceID then
+        return DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
+    end
+
+    return Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
+end
+
 function Handlers.HandleRemoveNPC(args)
     if not args or not args.uuid then
         return
@@ -33,6 +134,14 @@ function Handlers.HandleRemoveNPC(args)
     local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
     local cachedEntry = DTNPCClient.NPCCache[uuid]
     local factionID = cachedEntry and cachedEntry.npcData and cachedEntry.npcData.factionID or nil
+    local reason = args.removalReason or args.status
+    local preserveCorpse = reason == "Dead" and args.preserveCorpse == true
+    local staleBodyOnly = args.staleBodyOnly == true
+    local removeCache = not staleBodyOnly
+    local cachedBodyInstanceID = cachedEntry and cachedEntry.npcData and cachedEntry.npcData.currentBodyInstanceID or nil
+    if reason == "Incapacitated" and bodyInstanceID and cachedBodyInstanceID and cachedBodyInstanceID ~= bodyInstanceID then
+        removeCache = false
+    end
 
     if name == "Unknown" and DTNPCClient.NPCCache[uuid] then
         name = DTNPCClient.NPCCache[uuid].npcData.name or "Unknown"
@@ -48,12 +157,16 @@ function Handlers.HandleRemoveNPC(args)
             .. " bodyInstanceID=" .. tostring(bodyInstanceID)
     )
 
-    DTNPC_ClientInterpolation.ClearNPC(uuid)
+    if removeCache then
+        DTNPC_ClientInterpolation.ClearNPC(uuid)
+    end
 
-    local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
+    local zombie = resolveRemovalZombie(uuid, bodyInstanceID, reason, staleBodyOnly)
+    local zombieX = zombie and math.floor(zombie:getX()) or nil
+    local zombieY = zombie and math.floor(zombie:getY()) or nil
+    local zombieZ = zombie and math.floor(zombie:getZ()) or nil
 
-    if DT_Reputation then
-        local reason = args.removalReason
+    if DT_Reputation and not staleBodyOnly then
         if reason == "Incapacitated" then
             DT_Reputation.ApplyIncapPenalty(uuid, factionID)
         elseif reason == "Dead" then
@@ -69,22 +182,40 @@ function Handlers.HandleRemoveNPC(args)
         end
     end
 
-    if zombie then
+    if zombie and not preserveCorpse then
         zombie:removeFromWorld()
         zombie:removeFromSquare()
         DynamicTrading.Log("DTV2", "NPC", "Remove", "SUCCESS: Removed zombie from local world: " .. name)
+    elseif zombie and preserveCorpse then
+        DynamicTrading.Log("DTV2", "NPC", "Remove", "Preserved dead NPC body in local world: " .. name)
     end
 
-    DTNPCClient.RemoveFromCache(uuid, bodyInstanceID)
+    if args.cleanupCorpse == true or (reason == "Incapacitated" and args.cleanupCorpse == nil) then
+        local npcData = cachedEntry and cachedEntry.npcData or nil
+        local corpseX = args.corpseX or (npcData and npcData.lastX) or zombieX
+        local corpseY = args.corpseY or (npcData and npcData.lastY) or zombieY
+        local corpseZ = args.corpseZ or (npcData and npcData.lastZ) or zombieZ or 0
+        if corpseX and corpseY then
+            local cleanupReason = reason == "Incapacitated" and "client_death_to_incapacitated" or "client_stale_body_cleanup"
+            cleanupStrayIncapacitationCorpse(corpseX, corpseY, corpseZ, npcData, cleanupReason)
+            scheduleIncapacitationCorpseCleanup(corpseX, corpseY, corpseZ, npcData, cleanupReason .. "_delayed")
+        end
+    end
 
-    if DT_V2_RadarManager then
+    if removeCache then
+        DTNPCClient.RemoveFromCache(uuid, bodyInstanceID)
+    elseif bodyInstanceID and DTNPCClient.BodyInstanceIDToUUID and DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] == uuid then
+        DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = nil
+    end
+
+    if removeCache and DT_V2_RadarManager then
         if DT_V2_RadarManager.ClientRoster and DT_V2_RadarManager.ClientRoster.Souls then
             DT_V2_RadarManager.ClientRoster.Souls[uuid] = nil
         end
         DT_V2_RadarManager.FoundTraders[uuid] = nil
     end
 
-    if DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Traders then
+    if removeCache and DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Traders then
         DynamicTrading_Client.Cache.Traders[uuid] = nil
     end
 

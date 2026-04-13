@@ -212,6 +212,8 @@ local function saveSoulIfAvailable(uuid, npcData)
     end
 end
 
+local pendingIncapacitationCorpseCleanups = {}
+
 local function cleanupStrayIncapacitationCorpse(x, y, z, npcData, reason)
     local cell = getCell and getCell() or nil
     local square = cell and cell:getGridSquare(x, y, z or 0) or nil
@@ -259,6 +261,144 @@ local function cleanupStrayIncapacitationCorpse(x, y, z, npcData, reason)
     return false
 end
 
+local function runPendingIncapacitationCorpseCleanups()
+    for i = #pendingIncapacitationCorpseCleanups, 1, -1 do
+        local cleanup = pendingIncapacitationCorpseCleanups[i]
+        cleanup.attempts = (cleanup.attempts or 0) + 1
+
+        local removed = cleanupStrayIncapacitationCorpse(
+            cleanup.x,
+            cleanup.y,
+            cleanup.z,
+            cleanup.npcData,
+            cleanup.reason
+        )
+
+        if removed or cleanup.attempts >= (cleanup.maxAttempts or 8) then
+            table.remove(pendingIncapacitationCorpseCleanups, i)
+        end
+    end
+
+    if #pendingIncapacitationCorpseCleanups <= 0 and Events and Events.OnTick then
+        Events.OnTick.Remove(runPendingIncapacitationCorpseCleanups)
+    end
+end
+
+local function scheduleIncapacitationCorpseCleanup(x, y, z, npcData, reason)
+    if not x or not y then
+        return
+    end
+
+    table.insert(pendingIncapacitationCorpseCleanups, {
+        x = x,
+        y = y,
+        z = z or 0,
+        npcData = npcData,
+        reason = reason,
+        attempts = 0,
+        maxAttempts = 8,
+    })
+
+    if Events and Events.OnTick then
+        Events.OnTick.Remove(runPendingIncapacitationCorpseCleanups)
+        Events.OnTick.Add(runPendingIncapacitationCorpseCleanups)
+    end
+end
+
+local function withIncapacitationCorpseCleanupContext(removalContext, x, y, z)
+    local context = {}
+    if type(removalContext) == "table" then
+        for key, value in pairs(removalContext) do
+            context[key] = value
+        end
+    end
+
+    context.cleanupCorpse = true
+    context.corpseX = x
+    context.corpseY = y
+    context.corpseZ = z or 0
+    return context
+end
+
+local function withPreservedCorpseContext(removalContext)
+    local context = {}
+    if type(removalContext) == "table" then
+        for key, value in pairs(removalContext) do
+            context[key] = value
+        end
+    end
+
+    context.preserveCorpse = true
+    return context
+end
+
+local function withFinalKillContext(zombie, removalContext)
+    local isCorpseReady = zombie and zombie.isDead and zombie:isDead() == true
+    if isCorpseReady then
+        return withPreservedCorpseContext(removalContext)
+    end
+
+    local context = {}
+    if type(removalContext) == "table" then
+        for key, value in pairs(removalContext) do
+            context[key] = value
+        end
+    end
+    context.preserveCorpse = false
+    context.forcedLiveBodyRemoval = true
+    return context
+end
+
+local function createCorpseFromIncapacitatedZombie(zombie, npcData)
+    if not zombie or not IsoDeadBody then
+        return false, nil
+    end
+
+    local ok, body = pcall(IsoDeadBody.new, zombie, false, true)
+    if not ok or not body then
+        ok, body = pcall(IsoDeadBody.new, zombie, false)
+    end
+    if not ok or not body then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Failed to create manual corpse for "
+                .. tostring(npcData and (npcData.name or npcData.uuid) or "Unknown")
+                .. " error=" .. tostring(body)
+        )
+        return false, nil
+    end
+
+    local bodyModData = body.getModData and body:getModData() or nil
+    if bodyModData and npcData then
+        bodyModData.DTNPC_UUID = npcData.uuid
+        bodyModData.DTNPC_Name = npcData.name
+        bodyModData.DTNPC_FinalKillCorpse = true
+    end
+
+    if isServer() and body.transmitCompleteItemToClients then
+        pcall(function()
+            body:transmitCompleteItemToClients()
+        end)
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Death",
+        "Created manual corpse for incapacitated final kill: "
+            .. tostring(npcData and (npcData.name or npcData.uuid) or "Unknown")
+    )
+    return true, body
+end
+
+local function withStaleBodyCleanupContext(removalContext, x, y, z)
+    local context = withIncapacitationCorpseCleanupContext(removalContext, x, y, z)
+    context.staleBodyOnly = true
+    return context
+end
+
 local function preserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData)
     if not zombie or not uuid or not npcData or npcData.incapState ~= "Active" then
         return false
@@ -266,12 +406,16 @@ local function preserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData)
 
     local combatHealth = npcData.combatHealth
     local spawnedAt = tonumber(combatHealth and combatHealth.spawnInitializedAt) or 0
-    local guardWindow = DTNPCHealth and tonumber(DTNPCHealth.SPAWN_FALLBACK_GUARD_MS) or 12000
     local now = getTimeInMillis and getTimeInMillis() or 0
+    local graceUntil = tonumber(combatHealth and combatHealth.incapGraceUntil) or 0
+    local fallbackGraceMs = DTNPCHealth and tonumber(DTNPCHealth.INCAP_GRACE_WINDOW_MS) or 1200
+    if graceUntil <= 0 and spawnedAt > 0 then
+        graceUntil = spawnedAt + fallbackGraceMs
+    end
     local ageMs = spawnedAt > 0 and (now - spawnedAt) or math.huge
     local attacker = zombie:getAttackedBy()
 
-    if attacker or ageMs < 0 or ageMs > guardWindow then
+    if attacker or ageMs < 0 or now > graceUntil then
         return false
     end
 
@@ -292,11 +436,18 @@ local function preserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData)
     local corpseZ = npcData.lastZ or math.floor(zombie:getZ())
 
     saveSoulIfAvailable(uuid, npcData)
-    DTNPCManager.RemoveData(uuid, "Incapacitated", nil, nil, nil)
+    DTNPCManager.RemoveData(
+        uuid,
+        "Incapacitated",
+        nil,
+        nil,
+        withIncapacitationCorpseCleanupContext(nil, corpseX, corpseY, corpseZ)
+    )
 
     local newZombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, uuid) or nil
     if newZombie then
         cleanupStrayIncapacitationCorpse(corpseX, corpseY, corpseZ, npcData, "suspicious_incap_recovery")
+        scheduleIncapacitationCorpseCleanup(corpseX, corpseY, corpseZ, npcData, "suspicious_incap_recovery_delayed")
         DynamicTrading.Log(
             "DTV2",
             "NPC",
@@ -315,6 +466,64 @@ local function preserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData)
     return false
 end
 
+local function recoverPrematureCustomHealthDeath(zombie, uuid, npcData, removalContext)
+    if not zombie or not uuid or not npcData or npcData.incapState == "Active" then
+        return false
+    end
+    if not DTNPCHealth or not DTNPCHealth.EnsureDefaults then
+        return false
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    local customCurrent = tonumber(combatHealth and combatHealth.current) or 0
+    if not combatHealth or combatHealth.enabled ~= true or customCurrent <= (tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01) then
+        return false
+    end
+
+    local corpseX = math.floor(zombie:getX())
+    local corpseY = math.floor(zombie:getY())
+    local corpseZ = math.floor(zombie:getZ())
+
+    npcData.lastX = corpseX
+    npcData.lastY = corpseY
+    npcData.lastZ = corpseZ
+    npcData.health = math.max(1, tonumber(combatHealth.engineBuffer) or DTNPCHealth.DEFAULT_ENGINE_BUFFER)
+    npcData.lastHealth = npcData.health
+    combatHealth.engineProtected = true
+    combatHealth.eventDrivenOnly = false
+    combatHealth.lastEngineHealth = npcData.health
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Warn",
+        "Recovered premature engine death while custom HP remained for "
+            .. tostring(npcData.name or uuid)
+            .. " uuid=" .. tostring(uuid)
+            .. " customCurrent=" .. tostring(customCurrent)
+            .. " customMax=" .. tostring(combatHealth.max)
+            .. " engineHealth=" .. tostring(zombie:getHealth())
+    )
+
+    saveSoulIfAvailable(uuid, npcData)
+    DTNPCManager.RemoveData(uuid, nil, nil, nil, withStaleBodyCleanupContext(removalContext, corpseX, corpseY, corpseZ))
+
+    local newZombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, uuid) or nil
+    if newZombie then
+        cleanupStrayIncapacitationCorpse(corpseX, corpseY, corpseZ, npcData, "premature_custom_health_death")
+        scheduleIncapacitationCorpseCleanup(corpseX, corpseY, corpseZ, npcData, "premature_custom_health_death_delayed")
+        return true
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Error",
+        "Failed to recover premature custom health death; falling back to normal death path: " .. tostring(uuid)
+    )
+    return false
+end
+
 function DTNPCManager.ConvertDeathToIncapacitated(zombie, uuid, npcData, removalContext)
     if not zombie or not uuid or not npcData then return false end
 
@@ -326,9 +535,12 @@ function DTNPCManager.ConvertDeathToIncapacitated(zombie, uuid, npcData, removal
     npcData.lastY = math.floor(zombie:getY())
     npcData.lastZ = math.floor(zombie:getZ())
     npcData.health = 2
+    npcData.preIncapState = npcData.state
     npcData.state = "Incapacitated"
     npcData.incapState = "Active"
     npcData.preIncapStatus = npcData.status or "Resting"
+    npcData.preIncapMaster = npcData.master
+    npcData.preIncapMasterID = npcData.masterID
     npcData.isHostile = false
     npcData.master = nil
     npcData.masterID = nil
@@ -341,11 +553,13 @@ function DTNPCManager.ConvertDeathToIncapacitated(zombie, uuid, npcData, removal
     npcData.lastFleeY = nil
 
     saveSoulIfAvailable(uuid, npcData)
-    DTNPCManager.RemoveData(uuid, "Incapacitated", nil, nil, removalContext)
+    local incapRemovalContext = withIncapacitationCorpseCleanupContext(removalContext, corpseX, corpseY, corpseZ)
+    DTNPCManager.RemoveData(uuid, "Incapacitated", nil, nil, incapRemovalContext)
 
     local newZombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, uuid) or nil
     if newZombie then
         cleanupStrayIncapacitationCorpse(corpseX, corpseY, corpseZ, npcData, "death_to_incapacitated")
+        scheduleIncapacitationCorpseCleanup(corpseX, corpseY, corpseZ, npcData, "death_to_incapacitated_delayed")
         DynamicTrading.Log("DTV2", "NPC", "Death", "NPC incapacitated instead of dying: " .. (npcData.name or uuid))
         return true
     end
@@ -355,6 +569,54 @@ function DTNPCManager.ConvertDeathToIncapacitated(zombie, uuid, npcData, removal
         DynamicTrading_Roster.UpdateSoulStatus(uuid, "Dead", nil, nil)
     end
     return false
+end
+
+function DTNPCManager.FinalizeIncapacitatedDeath(zombie, npcData, attacker)
+    local uuid = (npcData and npcData.uuid) or DTNPCManager.GetUUIDFromZombie(zombie)
+    if not uuid or not DTNPCManager.Data[uuid] then
+        return false
+    end
+
+    local liveData = DTNPCManager.Data[uuid]
+    if liveData.incapState ~= "Active" then
+        return false
+    end
+
+    local removalContext = nil
+    if attacker and instanceof and instanceof(attacker, "IsoPlayer") then
+        removalContext = {
+            killerUsername = attacker.getUsername and attacker:getUsername() or nil,
+            killerOnlineID = attacker.getOnlineID and attacker:getOnlineID() or nil,
+        }
+    elseif liveData.lastPlayerAttackerUsername then
+        removalContext = {
+            killerUsername = liveData.lastPlayerAttackerUsername,
+            killerOnlineID = liveData.lastPlayerAttackerOnlineID,
+        }
+    end
+
+    DynamicTrading.Log("DTV2", "NPC", "Death", "Incapacitated NPC killed for good: " .. (liveData.name or uuid))
+    local finalKillContext = withFinalKillContext(zombie, removalContext)
+    local manualCorpseCreated = false
+    if finalKillContext.forcedLiveBodyRemoval == true then
+        manualCorpseCreated = createCorpseFromIncapacitatedZombie(zombie, liveData) == true
+        finalKillContext.manualCorpseCreated = manualCorpseCreated
+    end
+    DTNPCManager.RemoveData(uuid, "Dead", nil, nil, finalKillContext)
+
+    if finalKillContext.forcedLiveBodyRemoval == true and zombie and not (zombie.isDead and zombie:isDead()) then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Engine Kill did not convert incapacitated body to corpse; "
+                .. (manualCorpseCreated and "manual corpse created, " or "manual corpse failed, ")
+                .. "removing live body for " .. tostring(liveData.name or uuid)
+        )
+        zombie:removeFromWorld()
+        zombie:removeFromSquare()
+    end
+    return true
 end
 
 function DTNPCManager.Unregister(zombie)
@@ -404,8 +666,11 @@ function DTNPCManager.Unregister(zombie)
             end
         end
         if npcData.incapState == "Active" then
-            DynamicTrading.Log("DTV2", "NPC", "Death", "Incapacitated NPC killed for good: " .. (npcData.name or uuid))
-            DTNPCManager.RemoveData(uuid, "Dead", nil, nil, removalContext)
+            DTNPCManager.FinalizeIncapacitatedDeath(zombie, npcData, attacker)
+            return
+        end
+
+        if recoverPrematureCustomHealthDeath(zombie, uuid, npcData, removalContext) then
             return
         end
 

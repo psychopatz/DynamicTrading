@@ -481,6 +481,34 @@ local function onClientCommand(module, command, player, args)
             end
         end
 
+        local damage = tonumber(args.damage) or 0
+        if damage <= 0 then
+            return
+        end
+
+        if (not zombie or zombie:isDead()) and npcData and DTNPCHealth and DTNPCHealth.ApplyDamageToDataOnly then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Health",
+                "ReportWeaponHit applying data-only damage for dead/unresolved body "
+                    .. tostring(npcData.name or args.uuid)
+                    .. " uuid=" .. tostring(args.uuid)
+                    .. " player=" .. tostring(player:getUsername())
+                    .. " damage=" .. tostring(damage)
+                    .. " weapon=" .. tostring(args.weaponFullType)
+                    .. " clientHealthAfterHit=" .. tostring(args.targetHealthAfterHit)
+            )
+            local _, killed = DTNPCHealth.ApplyDamageToDataOnly(npcData, damage, player, {
+                source = "client_weapon_hit_report_dead_body",
+                weaponFullType = args.weaponFullType,
+            })
+            if killed and npcData.incapState == "Active" and DTNPCManager and DTNPCManager.FinalizeIncapacitatedDeath then
+                DTNPCManager.FinalizeIncapacitatedDeath(zombie, npcData, player)
+            end
+            return
+        end
+
         if not zombie or zombie:isDead() or not npcData then
             DynamicTrading.Log(
                 "DTV2",
@@ -496,8 +524,21 @@ local function onClientCommand(module, command, player, args)
             return
         end
 
-        local damage = tonumber(args.damage) or 0
-        if damage <= 0 then
+        local currentBodyInstanceID = npcData.currentBodyInstanceID
+        if npcData.incapState == "Active"
+            and args.bodyInstanceID
+            and currentBodyInstanceID
+            and args.bodyInstanceID ~= currentBodyInstanceID then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Health",
+                "Ignored stale pre-incapacitation ReportWeaponHit for "
+                    .. tostring(npcData.name or args.uuid)
+                    .. " uuid=" .. tostring(args.uuid)
+                    .. " reportedBodyInstanceID=" .. tostring(args.bodyInstanceID)
+                    .. " currentBodyInstanceID=" .. tostring(currentBodyInstanceID)
+            )
             return
         end
 
@@ -670,10 +711,12 @@ local function onClientCommand(module, command, player, args)
             end
             
             local zombie = DTNPCServerCore.FindZombieByUUID(args.uuid)
-            if zombie then
+            if zombie and not (args.status == "Dead" and args.preserveCorpse == true) then
                 zombie:removeFromWorld()
                 zombie:removeFromSquare()
                 DynamicTrading.Log("DTV2", "NPC", "Remove", "SUCCESS: Removed NPC from world: " .. args.uuid)
+            elseif zombie and args.status == "Dead" and args.preserveCorpse == true then
+                DynamicTrading.Log("DTV2", "NPC", "Remove", "Preserved dead NPC body in world: " .. args.uuid)
             else
                 DynamicTrading.Log("DTV2", "NPC", "Remove", "INFO: NPC " .. args.uuid .. " not found in local world (may already be unloaded).")
             end

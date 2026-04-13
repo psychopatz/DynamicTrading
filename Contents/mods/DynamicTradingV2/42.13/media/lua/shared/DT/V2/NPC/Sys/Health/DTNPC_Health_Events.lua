@@ -8,6 +8,38 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function restoreLocalEngineBuffer(target, npcData)
+    if not target or not npcData or not target.setHealth then
+        return
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
+    local isDead = target.isDead and target:isDead()
+
+    if npcData.incapState == "Active" then
+        local graceUntil = tonumber(combatHealth and combatHealth.incapGraceUntil) or 0
+        if isDead and (graceUntil <= 0 or internal.nowMillis() >= graceUntil) then
+            return
+        end
+
+        target:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
+        if combatHealth then
+            combatHealth.lastEngineHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        end
+        npcData.health = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        return
+    end
+
+    if combatHealth and combatHealth.enabled == true and combatHealth.engineProtected == true then
+        local engineBuffer = math.max(1, tonumber(combatHealth.engineBuffer) or DTNPCHealth.DEFAULT_ENGINE_BUFFER)
+        target:setHealth(engineBuffer)
+        combatHealth.lastEngineHealth = engineBuffer
+        npcData.health = engineBuffer
+        npcData.lastHealth = engineBuffer
+    end
+end
+
 local function onWeaponHitCharacter(attacker, target, weapon, damage)
     if not target then
         return
@@ -28,6 +60,7 @@ local function onWeaponHitCharacter(attacker, target, weapon, damage)
 
     if internal.isRemoteClient() then
         internal.reportWeaponHitToServer(attacker, target, weapon, damage)
+        restoreLocalEngineBuffer(target, npcData)
         return
     end
 

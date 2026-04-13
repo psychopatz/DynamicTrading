@@ -8,6 +8,55 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function restoreAfterIgnoredFriendlyFire(zombie, npcData, combatHealth)
+    if not zombie or not npcData then
+        return
+    end
+
+    if npcData.incapState == "Active" then
+        combatHealth.engineProtected = true
+        combatHealth.lastEngineHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        npcData.health = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
+        return
+    end
+
+    if DTNPCHealth.RestoreEngineBuffer then
+        DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
+    end
+end
+
+local function shouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker, context)
+    if not internal.isFriendlyFollowerOrProtectorHit
+        or not internal.isFriendlyFollowerOrProtectorHit(npcData, attacker) then
+        return false
+    end
+
+    context = type(context) == "table" and context or {}
+    local now = internal.nowMillis()
+    local lastLogAt = tonumber(combatHealth and combatHealth.lastFriendlyFireIgnoredAt) or 0
+
+    restoreAfterIgnoredFriendlyFire(zombie, npcData, combatHealth)
+
+    if combatHealth and now - lastLogAt > 1500 then
+        combatHealth.lastFriendlyFireIgnoredAt = now
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Health",
+            "Ignored friendly fire for "
+                .. tostring(npcData.name or npcData.uuid or "Unknown")
+                .. " uuid=" .. tostring(npcData.uuid)
+                .. " source=" .. tostring(context.source or "unknown")
+                .. " attackerType=" .. tostring(internal.getAttackerType(attacker))
+                .. " attackerID=" .. tostring(internal.getAttackerID(attacker))
+        )
+    end
+
+    return true
+end
+
 function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
     if not zombie or not npcData or internal.isRemoteClient() then
         return false
@@ -57,6 +106,10 @@ function DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, amount, attacker
     local currentTime = internal.nowMillis()
     local graceUntil = tonumber(combatHealth.incapGraceUntil) or 0
 
+    if shouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker, context) then
+        return true, false
+    end
+
     internal.capturePlayerAttacker(npcData, attacker)
 
     DynamicTrading.Log(
@@ -88,6 +141,7 @@ function DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, amount, attacker
 
     combatHealth.engineProtected = false
     combatHealth.incapGraceUntil = 0
+    combatHealth.incapFinalKillRequestedAt = currentTime
     combatHealth.lastDamageAt = currentTime
     combatHealth.lastDamageAmount = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
     combatHealth.lastAttackerType = internal.getAttackerType(attacker)
@@ -97,13 +151,16 @@ function DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, amount, attacker
         zombie:setAttackedBy(attacker)
     end
 
-    npcData.health = DTNPCHealth.INCAP_ENGINE_HEALTH
-    npcData.lastHealth = DTNPCHealth.INCAP_ENGINE_HEALTH
-    combatHealth.lastEngineHealth = DTNPCHealth.INCAP_ENGINE_HEALTH
-    zombie:setHealth(DTNPCHealth.INCAP_ENGINE_HEALTH)
+    npcData.health = 0
+    npcData.lastHealth = 0
+    combatHealth.lastEngineHealth = 0
+    zombie:setHealth(0)
 
     if zombie.Kill then
         zombie:Kill(attacker or zombie)
+        if DTNPCManager and DTNPCManager.FinalizeIncapacitatedDeath then
+            DTNPCManager.FinalizeIncapacitatedDeath(zombie, npcData, attacker)
+        end
         return true, true
     end
 
@@ -125,6 +182,10 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
     end
 
     context = type(context) == "table" and context or {}
+    if shouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker, context) then
+        return true, false
+    end
+
     local damage = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
     local now = internal.nowMillis()
 
@@ -172,6 +233,81 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
     DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
     internal.syncAndPersistHealth(zombie, npcData, false, true)
     return true, false
+end
+
+function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
+    if not npcData or internal.isRemoteClient() then
+        return false, false
+    end
+
+    context = type(context) == "table" and context or {}
+    local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+    if not combatHealth then
+        return false, false
+    end
+
+    if shouldIgnoreFriendlyFire(nil, npcData, combatHealth, attacker, context) then
+        return true, false
+    end
+
+    local damage = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
+    local now = internal.nowMillis()
+
+    internal.capturePlayerAttacker(npcData, attacker)
+    combatHealth.lastDamageAt = now
+    combatHealth.lastDamageAmount = damage
+    combatHealth.lastAttackerType = internal.getAttackerType(attacker)
+    combatHealth.lastAttackerID = internal.getAttackerID(attacker)
+
+    if npcData.incapState == "Active" then
+        local graceUntil = tonumber(combatHealth.incapGraceUntil) or 0
+        if now < graceUntil then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Health",
+                "ApplyDamageToDataOnly ignored incapacitated grace hit for "
+                    .. tostring(npcData.name or npcData.uuid or "Unknown")
+                    .. " uuid=" .. tostring(npcData.uuid)
+                    .. " source=" .. tostring(context.source or "unknown")
+                    .. " damage=" .. tostring(damage)
+                    .. " graceUntil=" .. tostring(graceUntil)
+            )
+            return true, false
+        end
+
+        combatHealth.engineProtected = false
+        combatHealth.incapGraceUntil = 0
+        combatHealth.incapFinalKillRequestedAt = now
+        npcData.health = 0
+        npcData.lastHealth = 0
+        combatHealth.lastEngineHealth = 0
+        return true, true
+    end
+
+    if combatHealth.enabled ~= true then
+        return false, false
+    end
+
+    local currentBefore = internal.clamp(tonumber(combatHealth.current) or combatHealth.max, 0, combatHealth.max)
+    local appliedDamage = math.min(damage, currentBefore)
+    combatHealth.current = internal.clamp(currentBefore - damage, 0, combatHealth.max)
+    internal.applyPlayerDamageReputationPenalty(npcData, combatHealth, attacker, appliedDamage)
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Health",
+        "ApplyDamageToDataOnly name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " uuid=" .. tostring(npcData.uuid)
+            .. " source=" .. tostring(context.source or "unknown")
+            .. " damage=" .. tostring(damage)
+            .. " customBefore=" .. tostring(currentBefore)
+            .. " customAfter=" .. tostring(combatHealth.current)
+            .. " customMax=" .. tostring(combatHealth.max)
+    )
+
+    return true, combatHealth.current <= 0
 end
 
 function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
