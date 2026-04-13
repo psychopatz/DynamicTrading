@@ -517,6 +517,17 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
     end
 
     local changed = false
+    if state ~= "PatchUp"
+        and DTNPCHealth
+        and DTNPCHealth.CancelPendingSelfBandage
+        and DTNPCHealth.CancelPendingSelfBandage(zombie, npcData, state, {
+            manualInterrupt = true,
+            retryDelayMs = DTNPCHealth.SELF_BANDAGE_MANUAL_INTERRUPT_RETRY_MS,
+            sync = false,
+        }) then
+        changed = true
+    end
+
     if npcData.state ~= state then
         npcData.state = state
         changed = true

@@ -999,6 +999,7 @@ local function setIncapacitatedState(zombie, npcData)
     npcData.lastFleeY = nil
     npcData.attackTimer = 0
     npcData.reactionTimer = 0
+    npcData.isMovingState = false
     npcData.combatOrder = nil
     npcData.combatTargetID = nil
     npcData.combatTargetType = nil
@@ -1040,15 +1041,22 @@ local function setIncapacitatedState(zombie, npcData)
     end
     zombie:setPath2(nil)
     zombie:setRunning(false)
-    zombie:setVariable("bBecomeCrawler", true)
-    zombie:setVariable("bCrawling", true)
+    zombie:setVariable("bBecomeCrawler", false)
+    zombie:setVariable("bCrawling", false)
+    zombie:setVariable("FallOnFront", false)
     zombie:setVariable("bMoving", false)
     zombie:setVariable("isMoving", false)
+    zombie:setVariable("DTNPCMoveAnim", "")
+    zombie:setVariable("DTNPCAnimSpeed", 0.0)
+    zombie:setVariable("MovementSpeed", 0.0)
+    zombie:setVariable("WalkSpeed", 0.0)
+    zombie:setVariable("RunSpeed", 0.0)
     zombie:setVariable("Speed", 0.0)
-    zombie:setVariable("WalkType", "2")
+    zombie:setVariable("WalkType", "")
     zombie:setVariable("DTWalkType", "Crawl")
     clearBandageAnimVariables(zombie)
     zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
+    zombie:resetModelNextFrame()
 
     if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul and npcData.uuid then
         DynamicTrading_Roster.SaveSoul(npcData.uuid, npcData)

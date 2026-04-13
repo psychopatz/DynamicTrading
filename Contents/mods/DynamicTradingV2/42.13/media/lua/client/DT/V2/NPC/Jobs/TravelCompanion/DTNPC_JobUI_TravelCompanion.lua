@@ -158,6 +158,13 @@ local function updateCompanionState(player, npc, state, extraArgs)
     end
 
     if state ~= "PatchUp" then
+        if DTNPCHealth and DTNPCHealth.CancelPendingSelfBandage then
+            DTNPCHealth.CancelPendingSelfBandage(npc, npcData, state, {
+                manualInterrupt = true,
+                retryDelayMs = DTNPCHealth.SELF_BANDAGE_MANUAL_INTERRUPT_RETRY_MS,
+                sync = false,
+            })
+        end
         npcData.state = state or npcData.state
     end
     if extraArgs and extraArgs.combatOrder then

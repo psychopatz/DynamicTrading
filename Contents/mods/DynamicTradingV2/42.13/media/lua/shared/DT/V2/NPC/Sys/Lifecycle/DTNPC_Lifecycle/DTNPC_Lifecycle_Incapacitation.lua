@@ -49,6 +49,7 @@ function DTNPCLifecycle.EnterIncapacitated(zombie, npcData, attacker, context)
         npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
         zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
     end
+
     if healthInternal and healthInternal.syncHealth then
         healthInternal.syncHealth(zombie, npcData, true)
     end

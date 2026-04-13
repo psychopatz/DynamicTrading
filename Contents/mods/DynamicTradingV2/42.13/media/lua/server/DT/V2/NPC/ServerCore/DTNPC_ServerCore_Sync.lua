@@ -162,11 +162,34 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         tier = "forced"
     end
 
+    local motionHint = type(npcData._dtMotionHint) == "table" and npcData._dtMotionHint or nil
     local isMoving = npcData.isMovingState == true
-    local isRunning = isMoving and npcData._dtMotionHint and npcData._dtMotionHint.running == true or false
+    local isRunning = isMoving and motionHint and motionHint.running == true or false
+    local isCrawling = tostring(npcData.state or "") == "Incapacitated"
+        or (motionHint and motionHint.crawl == true)
     if not isRunning and zombie.isRunning then
         local ok, result = pcall(zombie.isRunning, zombie)
         isRunning = isMoving and ok and result == true or false
+    end
+
+    local moveAnim = ""
+    local animSpeed = 0.0
+    local walkType = nil
+    local dtWalkType = ""
+    if isMoving then
+        if isCrawling then
+            moveAnim = "Crawl"
+            animSpeed = 0.28
+            dtWalkType = "Crawl"
+        else
+            moveAnim = isRunning and "Run" or "Walk"
+            animSpeed = isRunning and 1.2 or 1.0
+            walkType = "1"
+            dtWalkType = moveAnim
+        end
+    elseif isCrawling then
+        walkType = ""
+        dtWalkType = "Crawl"
     end
 
     local posData = {
@@ -194,6 +217,11 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         protectNoticeDialogueState = npcData.protectNoticeDialogueState,
         isMoving = isMoving,
         isRunning = isRunning,
+        isCrawling = isCrawling,
+        moveAnim = moveAnim,
+        animSpeed = animSpeed,
+        walkType = walkType,
+        dtWalkType = dtWalkType,
         tier = tier
     }
     

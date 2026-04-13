@@ -51,7 +51,6 @@ local function applyCrawlAnimation(zombie, moving)
     DTNPCMobility.SetLocomotionState(zombie, {
         moving = moving == true,
         crawl = true,
-        walkType = "2",
         dtWalkType = "Crawl",
         animSpeed = moving and 0.28 or 0.0,
         isRunning = false,
@@ -84,6 +83,8 @@ local function requestEscapeRemoval(zombie, npcData)
 end
 
 DTNPCLogic.Behaviors["Incapacitated"] = function(zombie, npcData, target, dist)
+    npcData.isMovingState = false
+
     if npcData.incapState ~= "Active" then
         npcData.incapState = "Active"
     end
@@ -158,13 +159,13 @@ DTNPCLogic.Behaviors["Incapacitated"] = function(zombie, npcData, target, dist)
         stuckTicks = 14,
         anim = {
             crawl = true,
-            walkType = "2",
             dtWalkType = "Crawl",
             animSpeed = 0.28,
             isRunning = false,
         },
     })
 
+    npcData.isMovingState = moved == true
     if not moved then
         applyCrawlAnimation(zombie, false)
     end

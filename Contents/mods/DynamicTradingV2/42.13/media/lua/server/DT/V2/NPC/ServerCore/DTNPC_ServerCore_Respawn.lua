@@ -114,9 +114,10 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     end
     
     local femaleChance = npcData.isFemale and 100 or 0
-    local spawnAsCrawler = npcData.incapState == "Active"
-    local fallOnFront = spawnAsCrawler
-    local knockedDown = spawnAsCrawler
+    local startIncapacitated = npcData.incapState == "Active"
+    local spawnAsCrawler = false
+    local fallOnFront = false
+    local knockedDown = false
     local invulnerable = true
     local zombieList = addZombiesInOutfit(
         x,
@@ -188,9 +189,20 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)
 
-    if spawnAsCrawler then
-        zombie:setVariable("bBecomeCrawler", true)
-        zombie:setVariable("bCrawling", true)
+    if startIncapacitated then
+        zombie:setVariable("bBecomeCrawler", false)
+        zombie:setVariable("bCrawling", false)
+        zombie:setVariable("FallOnFront", false)
+        zombie:setVariable("bMoving", false)
+        zombie:setVariable("isMoving", false)
+        zombie:setVariable("DTNPCMoveAnim", "")
+        zombie:setVariable("DTNPCAnimSpeed", 0.0)
+        zombie:setVariable("MovementSpeed", 0.0)
+        zombie:setVariable("WalkSpeed", 0.0)
+        zombie:setVariable("RunSpeed", 0.0)
+        zombie:setVariable("Speed", 0.0)
+        zombie:setVariable("WalkType", "")
+        zombie:setVariable("DTWalkType", "Crawl")
     end
     
     modData.DTNPCVisualID = npcData.visualID

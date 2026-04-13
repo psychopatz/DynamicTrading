@@ -30,22 +30,30 @@ local function applyRemoteLocomotion(zombie, args)
 
     local moving = args.isMoving == true
     local isRunning = args.isRunning == true
-    local moveAnim = moving and (isRunning and "Run" or "Walk") or ""
-    local animSpeed = moving and (isRunning and 1.2 or 1.0) or 0.0
+    local isCrawling = args.isCrawling == true or tostring(args.state or "") == "Incapacitated"
+    local moveAnim = moving and (args.moveAnim or (isCrawling and "Crawl" or (isRunning and "Run" or "Walk"))) or ""
+    local animSpeed = tonumber(args.animSpeed)
+        or (moving and (isCrawling and 0.28 or (isRunning and 1.2 or 1.0)) or 0.0)
+    local walkType = args.walkType ~= nil and tostring(args.walkType) or (moving and not isCrawling and "1" or "")
+    local dtWalkType = args.dtWalkType ~= nil and tostring(args.dtWalkType) or (isCrawling and "Crawl" or moveAnim)
 
     zombie:setVariable("DTNPC", true)
+    zombie:setVariable("bBecomeCrawler", false)
+    zombie:setVariable("bCrawling", false)
+    zombie:setVariable("FallOnFront", false)
     zombie:setVariable("bMoving", moving)
     zombie:setVariable("isMoving", moving)
     zombie:setVariable("DTNPCMoveAnim", moveAnim)
-    zombie:setVariable("DTWalkType", moveAnim)
+    zombie:setVariable("DTWalkType", dtWalkType)
     zombie:setVariable("Speed", animSpeed)
     zombie:setVariable("DTNPCAnimSpeed", animSpeed)
     zombie:setVariable("MovementSpeed", animSpeed)
     zombie:setVariable("WalkSpeed", moving and math.max(0.1, animSpeed) or 0.0)
     zombie:setVariable("RunSpeed", moving and math.max(0.1, animSpeed) or 0.0)
     zombie:setRunning(isRunning and moving)
+    zombie:setVariable("WalkType", walkType)
 
-    if zombie.setWalkType and moveAnim ~= "" then
+    if zombie.setWalkType and (moveAnim == "Walk" or moveAnim == "Run") then
         pcall(zombie.setWalkType, zombie, moveAnim)
     end
     if zombie.setSpeedMod then

@@ -54,9 +54,10 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         femaleChance = existingBrain.isFemale and 100 or 0
     end
     
-    local spawnAsCrawler = existingBrain and existingBrain.incapState == "Active" or false
-    local fallOnFront = spawnAsCrawler
-    local knockedDown = spawnAsCrawler
+    local startIncapacitated = existingBrain and existingBrain.incapState == "Active" or false
+    local spawnAsCrawler = false
+    local fallOnFront = false
+    local knockedDown = false
     local invulnerable = true
     local zombieList = addZombiesInOutfit(
         spawnX,
@@ -109,7 +110,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
         npcData.runSpeed = nil
         if not npcData.visualID then npcData.visualID = ZombRand(1000000) end
         
-        npcData.state = "Idle"
+        npcData.state = startIncapacitated and "Incapacitated" or "Idle"
         npcData.isHostile = false
         DynamicTrading.Log("DTV2", "NPC", "Logic", "Rehydrated npcData for: " .. npcData.name)
     end
@@ -123,6 +124,22 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
 
     DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)
+
+    if startIncapacitated then
+        zombie:setVariable("bBecomeCrawler", false)
+        zombie:setVariable("bCrawling", false)
+        zombie:setVariable("FallOnFront", false)
+        zombie:setVariable("bMoving", false)
+        zombie:setVariable("isMoving", false)
+        zombie:setVariable("DTNPCMoveAnim", "")
+        zombie:setVariable("DTNPCAnimSpeed", 0.0)
+        zombie:setVariable("MovementSpeed", 0.0)
+        zombie:setVariable("WalkSpeed", 0.0)
+        zombie:setVariable("RunSpeed", 0.0)
+        zombie:setVariable("Speed", 0.0)
+        zombie:setVariable("WalkType", "")
+        zombie:setVariable("DTWalkType", "Crawl")
+    end
     
     modData.DTNPCVisualID = npcData.visualID
 
