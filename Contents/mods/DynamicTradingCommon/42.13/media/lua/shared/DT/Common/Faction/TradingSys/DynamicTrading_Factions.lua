@@ -46,6 +46,14 @@ DynamicTrading_Factions.AcceptFactionInvite         = PlayerOwnership.AcceptFact
 DynamicTrading_Factions.DeclineFactionInvite        = PlayerOwnership.DeclineFactionInvite
 DynamicTrading_Factions.LeavePlayerFaction          = PlayerOwnership.LeavePlayerFaction
 DynamicTrading_Factions.KickFactionMember           = PlayerOwnership.KickFactionMember
+DynamicTrading_Factions.TransferFactionLeadership   = PlayerOwnership.TransferFactionLeadership
+DynamicTrading_Factions.AbandonLeadership           = PlayerOwnership.AbandonLeadership
+DynamicTrading_Factions.GetPendingInvites           = PlayerOwnership.GetPendingInvites
+DynamicTrading_Factions.MarkFactionAdminReview      = PlayerOwnership.MarkFactionAdminReview
+DynamicTrading_Factions.SyncFactionToColony         = PlayerOwnership.SyncFactionToColony
+DynamicTrading_Factions.AdminRestoreFactionLeader   = PlayerOwnership.AdminRestoreFactionLeader
+DynamicTrading_Factions.AdminArchiveFaction         = PlayerOwnership.AdminArchiveFaction
+DynamicTrading_Factions.AdminDeleteFactionArchive   = PlayerOwnership.AdminDeleteFactionArchive
 DynamicTrading_Factions.GetPlayerFactionWorkers     = PlayerOwnership.GetLivingWorkersForFaction
 DynamicTrading_Factions.GetPlayerFactionWorkerData  = PlayerOwnership.BuildOwnedFactionStatus
 DynamicTrading_Factions.ApplyPlayerFactionCasualties = PlayerOwnership.ApplyCasualties
@@ -60,6 +68,7 @@ DynamicTrading_Factions.RecallTrade                 = PlayerOwnership.RecallTrad
 DynamicTrading_Factions.EnterRegency                = PlayerOwnership.EnterRegency
 DynamicTrading_Factions.ResumeLeadership            = PlayerOwnership.ResumeLeadership
 DynamicTrading_Factions.IsPlayerFaction             = PlayerOwnership.IsPlayerFaction
+DynamicTrading_Factions.IsDynamicColoniesEnabled    = PlayerOwnership.IsDynamicColoniesEnabled
 
 -- ==========================================================
 -- 4. MP SYNC LISTENER

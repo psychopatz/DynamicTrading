@@ -33,6 +33,38 @@ return function(context)
         })
     end
 
+    function Helpers.FindOnlinePlayerByUsername(username)
+        local target = tostring(username or "")
+        if target == "" then
+            return nil
+        end
+
+        local onlinePlayers = getOnlinePlayers and getOnlinePlayers() or nil
+        if onlinePlayers then
+            for index = 0, onlinePlayers:size() - 1 do
+                local player = onlinePlayers:get(index)
+                if player and player.getUsername and tostring(player:getUsername() or "") == target then
+                    return player
+                end
+            end
+        end
+        return nil
+    end
+
+    function Helpers.SyncOwnedFactionStatusForUsername(username)
+        local player = Helpers.FindOnlinePlayerByUsername(username)
+        if player then
+            Helpers.SyncOwnedFactionStatus(player)
+        end
+    end
+
+    function Helpers.SyncOwnedFactionTargets(details)
+        details = details or {}
+        Helpers.SyncOwnedFactionStatusForUsername(details.targetUsername)
+        Helpers.SyncOwnedFactionStatusForUsername(details.leaderUsername)
+        Helpers.SyncOwnedFactionStatusForUsername(details.previousLeaderUsername)
+    end
+
     function DataHandlers.SendPriceConfigToPlayer(player)
         Helpers.SendPriceConfigToPlayer(player)
     end

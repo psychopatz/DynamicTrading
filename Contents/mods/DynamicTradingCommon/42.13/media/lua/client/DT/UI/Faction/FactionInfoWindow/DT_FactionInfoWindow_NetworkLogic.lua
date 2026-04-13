@@ -117,6 +117,12 @@ local function onServerCommand(module, command, args)
                 rosterData
             )
         end
+        if DT_PlayerFactionMembersModal
+            and DT_PlayerFactionMembersModal.instance
+            and DT_PlayerFactionMembersModal.instance:getIsVisible() then
+            DT_PlayerFactionMembersModal.instance.status = DT_FactionInfoWindow.cachedOwnedFactionStatus
+            DT_PlayerFactionMembersModal.instance:refresh()
+        end
     elseif command == "OwnedFactionActionResult" then
         if args and args.success and args.discoverTrader and args.traderID
             and DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.DiscoverTrader then
@@ -124,6 +130,13 @@ local function onServerCommand(module, command, args)
             if player then
                 DynamicTrading.Manager.DiscoverTrader(args.traderID, player)
             end
+        end
+        if DT_PlayerFactionMembersModal
+            and DT_PlayerFactionMembersModal.instance
+            and DT_PlayerFactionMembersModal.instance:getIsVisible()
+            and args
+            and args.message then
+            DT_PlayerFactionMembersModal.instance:setStatus(args.message)
         end
     end
 end

@@ -8,6 +8,11 @@ require "ISUI/ISButton"
 
 DT_FactionInfoHeaderPanel = ISPanel:derive("DT_FactionInfoHeaderPanel")
 
+local function isDynamicColoniesActive()
+    local activated = getActivatedMods and getActivatedMods() or nil
+    return activated and activated.contains and activated:contains("DynamicColonies") or false
+end
+
 function DT_FactionInfoHeaderPanel:initialise()
     ISPanel.initialise(self)
 end
@@ -29,9 +34,15 @@ function DT_FactionInfoHeaderPanel:createChildren()
     self.btnOwnedFaction:initialise()
     self.btnOwnedFaction:instantiate()
     self:addChild(self.btnOwnedFaction)
+
+    self.btnFactionMembers = ISButton:new(self.width - 340, 10, 160, 24, "Colony Members", self, self.onFactionMembersButton)
+    self.btnFactionMembers:initialise()
+    self.btnFactionMembers:instantiate()
+    self:addChild(self.btnFactionMembers)
     
-    if not getActivatedMods():contains("DynamicColonies") then
+    if not isDynamicColoniesActive() then
         self.btnOwnedFaction:setVisible(false)
+        self.btnFactionMembers:setVisible(false)
     end
 end
 
@@ -69,7 +80,7 @@ function DT_FactionInfoHeaderPanel:updateOwnedFactionStatus(status, selectedFact
     end
 
     if self.btnOwnedFaction then
-        if not getActivatedMods():contains("DynamicColonies") then
+        if not isDynamicColoniesActive() then
             self.btnOwnedFaction:setVisible(false)
         elseif status and not status.faction and status.canCreate then
             self.btnOwnedFaction:setTitle("Create Faction")
@@ -79,6 +90,20 @@ function DT_FactionInfoHeaderPanel:updateOwnedFactionStatus(status, selectedFact
             self.btnOwnedFaction:setTitle("Open Colony Management")
             self.btnOwnedFaction:setEnable(true)
             self.btnOwnedFaction:setVisible(true)
+        end
+    end
+
+    if self.btnFactionMembers then
+        local pendingCount = status and status.pendingInvites and #status.pendingInvites or 0
+        local hasFaction = status and status.faction ~= nil
+        if not isDynamicColoniesActive() then
+            self.btnFactionMembers:setVisible(false)
+        elseif hasFaction or pendingCount > 0 then
+            self.btnFactionMembers:setTitle(pendingCount > 0 and not hasFaction and "Faction Invites" or "Colony Members")
+            self.btnFactionMembers:setEnable(true)
+            self.btnFactionMembers:setVisible(true)
+        else
+            self.btnFactionMembers:setVisible(false)
         end
     end
 end
@@ -91,6 +116,12 @@ function DT_FactionInfoHeaderPanel:onOwnedFactionButton()
 
     if DC_System and DC_System.OpenWindow then
         DC_System.OpenWindow()
+    end
+end
+
+function DT_FactionInfoHeaderPanel:onFactionMembersButton()
+    if DT_PlayerFactionMembersModal and DT_PlayerFactionMembersModal.Open then
+        DT_PlayerFactionMembersModal.Open(self.ownedStatus)
     end
 end
 
@@ -109,6 +140,9 @@ function DT_FactionInfoHeaderPanel:prerender()
     centerLabel(self.lblStatus, self.lblStatus.font)
     if self.btnOwnedFaction then
         self.btnOwnedFaction:setX(self.width - self.btnOwnedFaction:getWidth() - 10)
+    end
+    if self.btnFactionMembers then
+        self.btnFactionMembers:setX(self.width - self.btnOwnedFaction:getWidth() - self.btnFactionMembers:getWidth() - 20)
     end
 end
 

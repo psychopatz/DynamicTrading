@@ -89,6 +89,9 @@ function DT_FactionList:doDrawItem(y, item, alt)
         popCount = DynamicTrading.Manager.GetDiscoveredCount(getSpecificPlayer(0))
     end
     local statusText = "State: " .. tostring(state) .. " | Pop: " .. tostring(popCount) .. " | Flash: " .. tostring(eventCount)
+    if f.playerOwned then
+        statusText = "Leader: " .. tostring(f.leaderUsername or "Admin Review") .. " | Pop: " .. tostring(popCount) .. " | " .. tostring(f.leadershipState or state)
+    end
     self:drawText(statusText, 10, y + statusY, 0.6, 0.6, 0.6, 0.8, statusFont)
 
     -- Borders between items

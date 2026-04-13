@@ -91,10 +91,20 @@ function Lifecycle.Init()
         end
 
         if f.playerOwned then
-            f.leaderUsername = f.leaderUsername or "local"
             f.leadershipState = f.leadershipState or "Active"
+            local existingLeader = tostring(f.leaderUsername or "")
+            if existingLeader == "" then
+                f.leaderUsername = ""
+                f.leadershipState = "AdminReview"
+            else
+                f.leaderUsername = existingLeader
+            end
             f.regencyReason = f.regencyReason or nil
             f.controlMode = f.controlMode or "HybridManual"
+            if f.leadershipState == "AdminReview" then
+                f.controlMode = "AdminReview"
+            end
+            f.previousLeaderUsername = f.previousLeaderUsername or nil
             f.memberUsernames = type(f.memberUsernames) == "table" and f.memberUsernames or {}
             f.inviteUsernames = type(f.inviteUsernames) == "table" and f.inviteUsernames or {}
             f.linkedWorkerIDs = type(f.linkedWorkerIDs) == "table" and f.linkedWorkerIDs or {}
@@ -185,6 +195,7 @@ function Lifecycle.CreateFaction(factionID, initialData)
             leaderUsername = initialData.leaderUsername,
             leadershipState = initialData.leadershipState or "Active",
             regencyReason = initialData.regencyReason,
+            previousLeaderUsername = initialData.previousLeaderUsername,
             controlMode = initialData.controlMode or (initialData.playerOwned and "HybridManual" or nil),
             memberUsernames = initialData.memberUsernames or {},
             inviteUsernames = initialData.inviteUsernames or {},

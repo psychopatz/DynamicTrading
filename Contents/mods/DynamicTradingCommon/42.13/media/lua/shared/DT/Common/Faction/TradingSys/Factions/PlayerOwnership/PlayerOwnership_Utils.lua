@@ -64,6 +64,26 @@ function PlayerOwnership_Utils.isWorkerRegistryAvailable()
     return hasOwnerLookup and hasWorkerLookup
 end
 
+function PlayerOwnership_Utils.isDynamicColoniesActive()
+    local activated = getActivatedMods and getActivatedMods() or nil
+    if activated and activated.contains and activated:contains("DynamicColonies") then
+        return true
+    end
+    return rawget(_G, "DC_Colony") ~= nil
+end
+
+function PlayerOwnership_Utils.isAdminReview(faction)
+    if type(faction) ~= "table" then
+        return false
+    end
+    local state = tostring(faction.leadershipState or "")
+    return state == "AdminReview" or state == "Archived"
+end
+
+function PlayerOwnership_Utils.getColonyRegistry()
+    return DC_Colony and DC_Colony.Registry or nil
+end
+
 function PlayerOwnership_Utils.getWorkerSummary(worker)
     local registry = PlayerOwnership_Utils.getWorkerRegistry()
     if registry and registry.GetWorkerSummary then

@@ -58,9 +58,14 @@ function DT_FactionInfoWindow:populateList(factionData, rosterData)
 
     for _, id in ipairs(keys) do
         local f = factionData[id]
+        if f and f.playerOwned and tostring(f.leadershipState or "") == "AdminReview" then
+            f = nil
+        end
         
         local isAlive = true
-        if f.isV1 then
+        if not f then
+            isAlive = false
+        elseif f.isV1 then
             -- Virtual faction is always alive
             isAlive = true
         elseif rosterData and rosterData.FactionMembers then

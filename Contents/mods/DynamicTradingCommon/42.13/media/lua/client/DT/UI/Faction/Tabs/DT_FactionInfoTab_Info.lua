@@ -93,6 +93,14 @@ function DT_FactionInfoTab_Info:updateData(f)
             text = text .. " Control Mode: " .. tostring(f.controlMode or "HybridManual") .. " <LINE> "
             text = text .. " Leadership State: " .. tostring(f.leadershipState or "Active") .. " <LINE> "
             text = text .. " Linked Recruits: " .. tostring(f.memberCount or 0) .. " <LINE> "
+            if ownedStatus then
+                text = text .. " Your Role: " .. tostring(ownedStatus.role or "Observer") .. " <LINE> "
+            end
+            text = text .. " Player Members: " .. tostring(#(f.memberUsernames or {})) .. " <LINE> "
+            text = text .. " Pending Invites: " .. tostring(#(f.inviteUsernames or {})) .. " <LINE> "
+            if tostring(f.leadershipState or "") == "AdminReview" then
+                text = text .. " <RGB:1,0.55,0.25> Admin Review: This colony is preserved but hidden from normal player management until reassigned. <LINE> "
+            end
             if buildingSummary and buildingSummary.housing then
                 text = text .. " <LINE> <RGB:0.4,0.8,1> BUILDINGS: <LINE> "
                 text = text .. " <RGB:0.8,0.8,0.8> Active Projects: " .. tostring(buildingSummary.activeProjectCount or 0) .. " <LINE> "

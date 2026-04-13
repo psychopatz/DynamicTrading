@@ -202,6 +202,11 @@ function DT_FactionDebugData.handleServerResponse(command, args)
         if DT_FactionDebugWindow and DT_FactionDebugWindow.instance and DT_FactionDebugWindow.instance:getIsVisible() then
             DT_FactionDebugWindow.instance:refreshList()
         end
+        if DT_ColonyArchiveDebugWindow
+            and DT_ColonyArchiveDebugWindow.instance
+            and DT_ColonyArchiveDebugWindow.instance:getIsVisible() then
+            DT_ColonyArchiveDebugWindow.instance:refreshList()
+        end
         return true
     end
     

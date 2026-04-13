@@ -6,10 +6,19 @@
 
 require "DT/Common/UI/Debug/Shared/DT_DebugNetworkAdapter"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugWindow"
+require "DT/Common/UI/Debug/Factions/AdminManager/DT_ColonyArchiveDebugWindow"
 require "DT/Common/UI/Debug/DT_PlayerModDataDebugWindow"
 -- Merchant window will be loaded when available
 
 DT_FactionDebugMenu = DT_FactionDebugMenu or {}
+
+local function isDynamicColoniesActive()
+    local activated = getActivatedMods and getActivatedMods() or nil
+    if activated and activated.contains and activated:contains("DynamicColonies") then
+        return true
+    end
+    return rawget(_G, "DC_Colony") ~= nil
+end
 
 local function hasAdminAccess(playerObj)
     if not playerObj or not playerObj.getAccessLevel then
@@ -50,6 +59,12 @@ DT_FactionDebugMenu.OnFillWorldObjectContextMenu = function(playerNum, context, 
     debugMenu:addOption("Faction Manager", worldobjects, function()
         DT_FactionDebugWindow.Open()
     end)
+
+    if isDynamicColoniesActive() then
+        debugMenu:addOption("Colony Archive Manager", worldobjects, function()
+            DT_ColonyArchiveDebugWindow.Open()
+        end)
+    end
 
     debugMenu:addOption("Merchant Stock Manager", worldobjects, function()
         if DT_MerchantDebugWindow and DT_MerchantDebugWindow.Open then

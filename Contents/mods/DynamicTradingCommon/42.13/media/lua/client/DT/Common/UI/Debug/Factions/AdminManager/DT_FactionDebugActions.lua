@@ -64,6 +64,35 @@ function DT_FactionDebugActions.createRandomFaction()
     DT_DebugNetworkAdapter.sendDebugAction("createTestFaction", { targetID = testID })
 end
 
+function DT_FactionDebugActions.adminReviewPlayerFaction(factionID)
+    if not factionID then return end
+    DT_DebugNetworkAdapter.sendDebugAction("AdminReviewPlayerFaction", {
+        factionID = factionID
+    })
+end
+
+function DT_FactionDebugActions.restorePlayerFactionLeader(factionID, username)
+    if not factionID or not username or tostring(username) == "" then return end
+    DT_DebugNetworkAdapter.sendDebugAction("RestorePlayerFactionLeader", {
+        factionID = factionID,
+        username = username
+    })
+end
+
+function DT_FactionDebugActions.archivePlayerFaction(factionID)
+    if not factionID then return end
+    DT_DebugNetworkAdapter.sendDebugAction("ArchivePlayerFaction", {
+        factionID = factionID
+    })
+end
+
+function DT_FactionDebugActions.deletePlayerFactionArchive(factionID)
+    if not factionID then return end
+    DT_DebugNetworkAdapter.sendDebugAction("DeletePlayerFactionArchive", {
+        factionID = factionID
+    })
+end
+
 function DT_FactionDebugActions.forceTraderByArchetype(archetypeID)
     if type(archetypeID) ~= "string" or archetypeID == "" then
         return false

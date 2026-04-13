@@ -25,6 +25,18 @@ local function hasAdminAccess(player)
     return accessLevel and string.lower(tostring(accessLevel)) == "admin"
 end
 
+local function areDynamicColoniesEnabled()
+    return DynamicTrading_Factions.IsDynamicColoniesEnabled
+        and DynamicTrading_Factions.IsDynamicColoniesEnabled() == true
+end
+
+local function sendDynamicColoniesRequired(player)
+    DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+        success = false,
+        reason = "Dynamic Colonies required"
+    })
+end
+
 -- =============================================================================
 -- DEBUG & ADMIN COMMANDS
 -- =============================================================================
@@ -118,6 +130,54 @@ Handlers.DebugCommand = function(player, args)
         local amt = args.amount
         DynamicTrading_Factions.ModifyReputation(factionID, player:getUsername(), amt)
         DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Reputation Modified" })
+
+    elseif action == "AdminReviewPlayerFaction" then
+        if not areDynamicColoniesEnabled() then
+            sendDynamicColoniesRequired(player)
+            return
+        end
+        local factionID = tostring(args.factionID or "")
+        local faction = DynamicTrading_Factions.MarkFactionAdminReview and DynamicTrading_Factions.MarkFactionAdminReview(factionID, "admin_review")
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+            success = faction ~= nil,
+            reason = faction and "Colony moved to admin review" or "Failed to move colony to admin review"
+        })
+
+    elseif action == "RestorePlayerFactionLeader" then
+        if not areDynamicColoniesEnabled() then
+            sendDynamicColoniesRequired(player)
+            return
+        end
+        local ok, message = DynamicTrading_Factions.AdminRestoreFactionLeader(
+            tostring(args.factionID or ""),
+            tostring(args.username or "")
+        )
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+            success = ok == true,
+            reason = message or "Leader restore processed"
+        })
+
+    elseif action == "ArchivePlayerFaction" then
+        if not areDynamicColoniesEnabled() then
+            sendDynamicColoniesRequired(player)
+            return
+        end
+        local ok, message = DynamicTrading_Factions.AdminArchiveFaction(tostring(args.factionID or ""))
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+            success = ok == true,
+            reason = message or "Archive processed"
+        })
+
+    elseif action == "DeletePlayerFactionArchive" then
+        if not areDynamicColoniesEnabled() then
+            sendDynamicColoniesRequired(player)
+            return
+        end
+        local ok, message = DynamicTrading_Factions.AdminDeleteFactionArchive(tostring(args.factionID or ""))
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+            success = ok == true,
+            reason = message or "Archive delete processed"
+        })
 
     elseif action == "ForceSpawn" then
         local town = args.town or "Rosewood"

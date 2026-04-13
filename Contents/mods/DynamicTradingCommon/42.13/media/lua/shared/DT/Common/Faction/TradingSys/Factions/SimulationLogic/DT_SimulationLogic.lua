@@ -36,6 +36,12 @@ function DT_SimulationLogic.UpdateDaily()
     local factionsToRemove = {}
 
     for id, faction in pairs(data) do
+        if faction and faction.playerOwned
+            and (tostring(faction.leadershipState or "") == "AdminReview"
+                or (DynamicTrading_Factions.IsDynamicColoniesEnabled and not DynamicTrading_Factions.IsDynamicColoniesEnabled())) then
+            faction = nil
+        end
+
         if faction and faction.playerOwned and DynamicTrading_Factions.RefreshPlayerFaction then
             faction = DynamicTrading_Factions.RefreshPlayerFaction(id)
         end
@@ -59,8 +65,13 @@ function DT_SimulationLogic.UpdateDaily()
 
                 -- 4. Death Check
                 if factionActive and faction.memberCount <= 0 then
-                    DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction ["..(faction.name or id).."] has DIED OUT")
-                    table.insert(factionsToRemove, id)
+                    if faction.playerOwned and DynamicTrading_Factions.MarkFactionAdminReview then
+                        DynamicTrading_Factions.MarkFactionAdminReview(id, "no_linked_workers")
+                        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Player faction ["..(faction.name or id).."] moved to admin review")
+                    else
+                        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction ["..(faction.name or id).."] has DIED OUT")
+                        table.insert(factionsToRemove, id)
+                    end
                 end
             end
         end
