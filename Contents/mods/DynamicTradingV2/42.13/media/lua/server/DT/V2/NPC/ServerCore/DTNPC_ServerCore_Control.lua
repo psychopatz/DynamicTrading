@@ -335,7 +335,17 @@ function DTNPCServerCore.StartPatchUpByUUID(uuid)
         return false, npcData
     end
 
+    if DTNPCHealth.HasUsableBandageSupply and not DTNPCHealth.HasUsableBandageSupply(npcData) then
+        if DTNPCProtect and DTNPCProtect.PushCompanionNotice then
+            DTNPCProtect.PushCompanionNotice(zombie, npcData, "I don't have any bandages or rags packed.", "warning")
+        end
+        return false, npcData
+    end
+
     local entered = DTNPCHealth.ForceEnterSelfBandage(zombie, npcData, npcData.state or "Idle")
+    if not entered and DTNPCProtect and DTNPCProtect.PushCompanionNotice then
+        DTNPCProtect.PushCompanionNotice(zombie, npcData, "I can't patch up right now.", "warning")
+    end
     return entered == true, npcData
 end
 

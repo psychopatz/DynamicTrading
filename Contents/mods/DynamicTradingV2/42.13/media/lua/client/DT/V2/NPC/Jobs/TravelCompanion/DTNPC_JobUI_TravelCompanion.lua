@@ -6,6 +6,21 @@
 pcall(require, "DC/UI/Colony/System/DC_System")
 pcall(require, "DC/UI/Colony/SupplyWindow/DC_SupplyWindow")
 
+local MEDICAL_TEXTURE_CACHE = {}
+local MEDICAL_PROVISION_FULL_TYPES = {
+    ["Base.Bandage"] = true,
+    ["Base.BandageBox"] = true,
+    ["Base.AlcoholBandage"] = true,
+    ["Base.RippedSheets"] = true,
+    ["Base.AlcoholRippedSheets"] = true,
+    ["Base.Bandaid"] = true,
+    ["Base.CottonBalls"] = true,
+    ["Base.CottonBallsBox"] = true,
+    ["Base.AlcoholWipes"] = true,
+    ["Base.AlcoholedCottonBalls"] = true,
+    ["Base.Disinfectant"] = true,
+}
+
 local function debugCompanionUI(message)
     local text = "[DTV2 Companion UI] " .. tostring(message or "")
     print(text)
@@ -133,6 +148,143 @@ local function refreshCompanionWorker(worker)
     DC_System.SendCommand("RequestCompanionCommandStatus", {
         workerID = worker.workerID
     })
+end
+
+local function isValidTexture(texture)
+    return texture ~= nil and texture ~= false
+end
+
+local function tryTexture(textureName)
+    if not textureName or textureName == "" or not getTexture then
+        return nil
+    end
+
+    local texture = getTexture(textureName)
+    return isValidTexture(texture) and texture or nil
+end
+
+local function getTextureForFullType(fullType)
+    fullType = normalizeText(fullType)
+    if not fullType then
+        return nil
+    end
+    if MEDICAL_TEXTURE_CACHE[fullType] ~= nil then
+        return MEDICAL_TEXTURE_CACHE[fullType] ~= false and MEDICAL_TEXTURE_CACHE[fullType] or nil
+    end
+
+    local texture = nil
+    if DC_SupplyWindow and DC_SupplyWindow.Internal and DC_SupplyWindow.Internal.getTextureForFullType then
+        texture = DC_SupplyWindow.Internal.getTextureForFullType(fullType)
+    end
+
+    local script = getScriptManager and getScriptManager():getItem(fullType) or nil
+    if not isValidTexture(texture) and script and script.getIcon then
+        local iconName = script:getIcon()
+        if iconName and iconName ~= "" then
+            texture = tryTexture("Item_" .. tostring(iconName))
+                or tryTexture("media/textures/Item_" .. tostring(iconName) .. ".png")
+        end
+    end
+
+    if not isValidTexture(texture) and InventoryItemFactory and InventoryItemFactory.CreateItem then
+        local ok, item = pcall(InventoryItemFactory.CreateItem, fullType)
+        if ok and item and item.getTex then
+            texture = item:getTex()
+        end
+    end
+
+    MEDICAL_TEXTURE_CACHE[fullType] = isValidTexture(texture) and texture or false
+    return MEDICAL_TEXTURE_CACHE[fullType] ~= false and MEDICAL_TEXTURE_CACHE[fullType] or nil
+end
+
+local function getDisplayNameForFullType(fullType)
+    local script = fullType and getScriptManager and getScriptManager():getItem(fullType) or nil
+    if script and script.getDisplayName then
+        local name = normalizeText(script:getDisplayName())
+        if name then
+            return name
+        end
+    end
+
+    if InventoryItemFactory and InventoryItemFactory.CreateItem and fullType then
+        local ok, item = pcall(InventoryItemFactory.CreateItem, fullType)
+        if ok and item and item.getDisplayName then
+            local name = normalizeText(item:getDisplayName())
+            if name then
+                return name
+            end
+        end
+    end
+
+    return tostring(fullType or "Medical Supply")
+end
+
+local function addMedicalSupplySummary(supplies, byFullType, entry)
+    if type(entry) ~= "table" then
+        return
+    end
+
+    local fullType = normalizeText(entry.fullType)
+    if not fullType then
+        return
+    end
+
+    local useKind = tostring(entry.medicalUse or "")
+    local provisionType = tostring(entry.provisionType or "")
+    local units = math.max(0, math.floor((tonumber(entry.treatmentUnitsRemaining) or 0) + 0.5))
+    local knownMedical = MEDICAL_PROVISION_FULL_TYPES[fullType] == true
+    if units <= 0 or (provisionType ~= "medical" and not knownMedical) or (useKind ~= "" and useKind ~= "bandage") then
+        return
+    end
+
+    local supply = byFullType[fullType]
+    if not supply then
+        supply = {
+            fullType = fullType,
+            displayName = normalizeText(entry.displayName) or getDisplayNameForFullType(fullType),
+            units = 0,
+            texture = getTextureForFullType(fullType),
+        }
+        byFullType[fullType] = supply
+        supplies[#supplies + 1] = supply
+    end
+    supply.units = supply.units + units
+end
+
+local function collectMedicalSupplies(worker)
+    local supplies = {}
+    local byFullType = {}
+
+    for _, entry in ipairs(worker and worker.companionMedicalSupplies or {}) do
+        addMedicalSupplySummary(supplies, byFullType, entry)
+    end
+
+    for _, entry in ipairs(worker and worker.nutritionLedger or {}) do
+        addMedicalSupplySummary(supplies, byFullType, entry)
+    end
+
+    table.sort(supplies, function(a, b)
+        return tostring(a.displayName or a.fullType or "") < tostring(b.displayName or b.fullType or "")
+    end)
+
+    local total = 0
+    for _, supply in ipairs(supplies) do
+        total = total + math.max(0, tonumber(supply.units) or 0)
+    end
+
+    return supplies, total
+end
+
+local function getPatchUpLabel(worker)
+    if not worker then
+        return "Patch Up", 1
+    end
+
+    local _, total = collectMedicalSupplies(worker)
+    if total <= 0 then
+        return "Patch Up (No medicine)", total
+    end
+    return "Patch Up (" .. tostring(total) .. " medical)", total
 end
 
 local function buildWorkerLookupUI(ui, npc, npcData)
@@ -413,6 +565,50 @@ local function addAttackTypeContextMenu(parentMenu, npc, player)
     end)
 end
 
+local function sendPatchUpOrder(player, npc)
+    return updateCompanionState(player, npc, "PatchUp", {
+        state = "PatchUp",
+    })
+end
+
+local function addPatchUpContextMenu(parentMenu, npc, player, worker)
+    if not worker then
+        addCompanionContextAction(parentMenu, "Patch Up", function()
+            sendPatchUpOrder(player, npc)
+        end)
+        return
+    end
+
+    local supplies, total = collectMedicalSupplies(worker)
+    local label = total > 0 and ("Patch Up (" .. tostring(total) .. " medical)") or "Patch Up (No medicine)"
+    local option = parentMenu:addOption(label)
+    local subMenu = parentMenu:getNew(parentMenu)
+    parentMenu:addSubMenu(option, subMenu)
+
+    if total > 0 then
+        for _, supply in ipairs(supplies) do
+            local itemOption = subMenu:addOption(
+                tostring(supply.displayName or supply.fullType or "Medical Supply") .. " x" .. tostring(supply.units or 0),
+                nil,
+                nil
+            )
+            if itemOption then
+                itemOption.notAvailable = true
+                itemOption.iconTexture = supply.texture
+            end
+        end
+        addCompanionContextAction(subMenu, "Use Medical Supply", function()
+            sendPatchUpOrder(player, npc)
+        end)
+        return
+    end
+
+    addDisabledContextAction(subMenu, "No bandages, rags, or first-aid supplies packed.")
+    addCompanionContextAction(subMenu, "Ask Anyway", function()
+        sendPatchUpOrder(player, npc)
+    end)
+end
+
 local function addTransferCommandContextMenu(parentMenu, worker, player)
     local candidates = collectTransferCandidates(player, worker)
     local option = parentMenu:addOption("Transfer Command")
@@ -482,11 +678,7 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
         })
     end)
 
-    addCompanionContextAction(rootMenu, "Patch Up", function()
-        updateCompanionState(player, npc, "PatchUp", {
-            state = "PatchUp",
-        })
-    end)
+    addPatchUpContextMenu(rootMenu, npc, player, worker)
 
     addAttackTypeContextMenu(rootMenu, npc, player)
     if usesCommandAuthority and worker then
@@ -636,15 +828,18 @@ local function generateRootOptions(ui, npc, player, worker)
         end
     }
 
+    local patchUpLabel, patchUpSupplyTotal = getPatchUpLabel(worker)
     options[#options + 1] = {
-        text = "Patch Up",
+        text = patchUpLabel,
         message = "Take a moment to bandage yourself.",
         onSelect = function(innerUI)
-            local sent = updateCompanionState(player, npc, "PatchUp", {
-                state = "PatchUp",
-            })
+            local sent = sendPatchUpOrder(player, npc)
             if sent then
-                innerUI:speak("I'll patch myself up.")
+                if patchUpSupplyTotal > 0 then
+                    innerUI:speak("I'll patch myself up.")
+                else
+                    innerUI:speak("I don't have any bandages or rags packed.")
+                end
             else
                 innerUI:speak("I couldn't patch up right now.")
             end
