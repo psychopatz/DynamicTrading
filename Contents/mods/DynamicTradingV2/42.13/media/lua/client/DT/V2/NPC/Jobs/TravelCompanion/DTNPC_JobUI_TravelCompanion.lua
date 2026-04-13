@@ -157,7 +157,9 @@ local function updateCompanionState(player, npc, state, extraArgs)
         return false
     end
 
-    npcData.state = state or npcData.state
+    if state ~= "PatchUp" then
+        npcData.state = state or npcData.state
+    end
     if extraArgs and extraArgs.combatOrder then
         npcData.combatOrder = extraArgs.combatOrder
     elseif state == "ProtectAuto" or state == "ProtectRanged" or state == "ProtectMelee" then

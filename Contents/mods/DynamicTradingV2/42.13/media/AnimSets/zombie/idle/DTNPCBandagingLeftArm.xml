@@ -29,4 +29,10 @@
         <m_Type>STRING</m_Type>
         <m_Value>LeftArm</m_Value>
     </m_Conditions>
+
+    <m_Events>
+        <m_EventName>SetVariable</m_EventName>
+        <m_Time>End</m_Time>
+        <m_ParameterValue>DTBandageAnimFinished=true</m_ParameterValue>
+    </m_Events>
 </animNode>

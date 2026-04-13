@@ -520,12 +520,39 @@ end
 
 internal.applyBandageAnimVariables = applyBandageAnimVariables
 
+local function resetBandageAnimFinished(zombie)
+    if not zombie then
+        return
+    end
+
+    zombie:setVariable("DTBandageAnimFinished", false)
+end
+
+internal.resetBandageAnimFinished = resetBandageAnimFinished
+
+local function isBandageAnimFinished(zombie)
+    if not zombie then
+        return false
+    end
+
+    if zombie.getVariableBoolean then
+        return zombie:getVariableBoolean("DTBandageAnimFinished") == true
+    end
+
+    local value = zombie.getVariableString and zombie:getVariableString("DTBandageAnimFinished") or ""
+    value = string.lower(tostring(value or ""))
+    return value == "true" or value == "1"
+end
+
+internal.isBandageAnimFinished = isBandageAnimFinished
+
 local function clearBandageAnimVariables(zombie)
     if not zombie then
         return
     end
 
     zombie:setVariable("DTBandageVariant", "")
+    resetBandageAnimFinished(zombie)
 end
 
 internal.clearBandageAnimVariables = clearBandageAnimVariables
@@ -740,6 +767,7 @@ local function clearActiveBandage(combatHealth, keepDirtyFlag)
     combatHealth.bandageHealPool = 0
     combatHealth.bandageHealRemaining = 0
     combatHealth.lastBandageRegenAt = 0
+    combatHealth.bandageAnimFallbackUntil = 0
     combatHealth.bandageAnimVariant = nil
     combatHealth.bandageItemFullType = nil
     combatHealth.bandageStatus = keepDirtyFlag and "Dirty" or "None"

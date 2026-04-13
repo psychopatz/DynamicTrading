@@ -29,6 +29,25 @@ local function startSelfBandage(zombie, npcData, resumeState, options)
         return false
     end
 
+    if combatHealth.activeBandage == true and combatHealth.bandageDirty ~= true then
+        return false
+    end
+
+    if (tonumber(combatHealth.bandageActionUntil) or 0) > now then
+        npcData.state = "Bandage"
+        combatHealth.bandageStatus = "Applying"
+        if combatHealth.bandageAnimVariant == nil or combatHealth.bandageAnimVariant == "" then
+            combatHealth.bandageAnimVariant = internal.rollBandageAnimVariantID()
+        end
+        internal.applyBandageAnimVariables(zombie, combatHealth)
+        internal.syncAndPersistHealth(zombie, npcData, false, false)
+        return true
+    end
+
+    if combatHealth.activeBandage == true and combatHealth.bandageDirty == true then
+        internal.clearActiveBandage(combatHealth, false)
+    end
+
     local resolvedResumeState = resumeState
     if resolvedResumeState == "Bandage" or resolvedResumeState == nil or resolvedResumeState == "" then
         resolvedResumeState = combatHealth.bandageResumeState or "Idle"
@@ -38,10 +57,13 @@ local function startSelfBandage(zombie, npcData, resumeState, options)
     combatHealth.bandageActionUntil = options.immediate == true
         and 0
         or (now + math.max(0, tonumber(combatHealth.selfBandageApplyDurationMs) or 0))
+    combatHealth.bandageAnimFallbackUntil = combatHealth.bandageActionUntil
+        + math.max(0, tonumber(DTNPCHealth.SELF_BANDAGE_ANIM_FALLBACK_GRACE_MS) or 0)
     combatHealth.bandageRetryAt = 0
     combatHealth.bandageAnimVariant = internal.rollBandageAnimVariantID()
     combatHealth.bandageDirty = false
     combatHealth.bandageStatus = combatHealth.bandageActionUntil > now and "Applying" or "Ready"
+    internal.resetBandageAnimFinished(zombie)
     internal.applyBandageAnimVariables(zombie, combatHealth)
     internal.playEmitterSound(zombie, DTNPCHealth.BANDAGE_SOUND)
     npcData.state = "Bandage"
@@ -295,11 +317,19 @@ function DTNPCHealth.ProcessSelfBandageAction(zombie, npcData)
         combatHealth.bandageStatus = "Applying"
         return "applying"
     end
+    if internal.isBandageAnimFinished
+        and not internal.isBandageAnimFinished(zombie)
+        and now < (tonumber(combatHealth.bandageAnimFallbackUntil) or 0) then
+        combatHealth.bandageStatus = "Applying"
+        return "applying"
+    end
 
     if not DTNPCHealth.HasUsableBandageSupply(npcData) then
         combatHealth.bandageActionUntil = 0
+        combatHealth.bandageAnimFallbackUntil = 0
         combatHealth.bandageStatus = "None"
         combatHealth.bandageDirty = false
+        combatHealth.bandageRetryAt = now + math.max(0, tonumber(DTNPCHealth.SELF_BANDAGE_RETRY_DELAY_MS) or 0)
         return "blocked"
     end
 
@@ -318,6 +348,7 @@ function DTNPCHealth.ProcessSelfBandageAction(zombie, npcData)
     local immediateHeal = math.min(applyHeal, missingHealth)
 
     combatHealth.bandageActionUntil = 0
+    combatHealth.bandageAnimFallbackUntil = 0
     combatHealth.bandageRetryAt = 0
     combatHealth.activeBandage = true
     combatHealth.bandageDirty = false
@@ -350,6 +381,7 @@ function DTNPCHealth.ExitSelfBandage(zombie, npcData, resumeOverride)
     end
 
     combatHealth.bandageActionUntil = 0
+    combatHealth.bandageAnimFallbackUntil = 0
     combatHealth.bandageResumeState = nil
     combatHealth.bandageAnimVariant = nil
     internal.clearBandageAnimVariables(zombie)
