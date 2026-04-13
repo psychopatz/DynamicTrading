@@ -67,6 +67,8 @@ function DTNPCMobility.SetLocomotionState(zombie, options)
 
     if options.walkType ~= nil then
         zombie:setVariable("WalkType", tostring(options.walkType))
+    elseif moving and options.crawl ~= true then
+        zombie:setVariable("WalkType", "1")
     end
     if options.dtWalkType ~= nil then
         zombie:setVariable("DTWalkType", tostring(options.dtWalkType))

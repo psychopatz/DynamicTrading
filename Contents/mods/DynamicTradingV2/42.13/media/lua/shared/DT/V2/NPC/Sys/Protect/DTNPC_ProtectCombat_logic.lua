@@ -485,10 +485,16 @@ function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
     local severeThreshold = tonumber(DTNPCProtect.CONFIG.MeleeCrowdSevereThreshold) or 4
     local lowHealthRatio = tonumber(DTNPCProtect.CONFIG.MeleeLowHealthRetreatRatio) or 0.58
 
-    local surrounded = selfPressure.count >= crowdThreshold
-    local severeCrowd = selfPressure.count >= severeThreshold or targetPressure.count >= crowdThreshold
     local lowHealth = healthRatio <= lowHealthRatio
+    local targetCrowdDanger = targetPressure.count >= crowdThreshold
+        and (selfPressure.count >= math.max(2, crowdThreshold - 1) or lowHealth or recentZombieDamage)
+    local surrounded = selfPressure.count >= crowdThreshold
+    local severeCrowd = selfPressure.count >= severeThreshold or targetCrowdDanger
     local pressured = recentZombieDamage and (selfPressure.count >= math.max(2, crowdThreshold - 1) or targetPressure.count >= 2)
+
+    if healthRatio > 0.72 and not recentZombieDamage and not severeCrowd then
+        surrounded = false
+    end
 
     if not (surrounded or severeCrowd or (lowHealth and selfPressure.count >= 2) or pressured) then
         return {

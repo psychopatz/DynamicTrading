@@ -30,7 +30,7 @@ require "DT/V2/NPC/Behaviors/Behavior_Bandage"
 require "DT/V2/NPC/Behaviors/Behavior_Stationary"
 require "DT/V2/NPC/Behaviors/Behavior_Idle"
 require "DT/V2/NPC/Behaviors/Behavior_Guard"
-require "DT/V2/NPC/Behaviors/Behavior_Trading"
+require "DT/V2/NPC/Behaviors/BehaviorTrading/Behavior_Trading"
 require "DT/V2/NPC/Behaviors/Behavior_Departure"
 require "DT/V2/NPC/Behaviors/Behavior_Incapacitated"
 
