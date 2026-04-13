@@ -225,6 +225,8 @@ function DTNPCServerCore.NotifyRemoval(uuid, bodyInstanceID, name, removalReason
         data.corpseZ = removalContext.corpseZ
         data.preserveCorpse = removalContext.preserveCorpse
         data.staleBodyOnly = removalContext.staleBodyOnly
+        data.forcedLiveBodyRemoval = removalContext.forcedLiveBodyRemoval
+        data.manualCorpseCreated = removalContext.manualCorpseCreated
     end
     
     if isServer() then

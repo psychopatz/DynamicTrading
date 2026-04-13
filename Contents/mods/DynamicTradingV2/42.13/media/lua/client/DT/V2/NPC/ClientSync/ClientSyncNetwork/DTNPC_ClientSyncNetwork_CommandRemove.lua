@@ -124,6 +124,44 @@ local function resolveRemovalZombie(uuid, bodyInstanceID, reason, staleBodyOnly)
     return Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
 end
 
+local function createCorpseFromLiveRemovalZombie(zombie, npcData, name)
+    if not zombie or not IsoDeadBody then
+        return false
+    end
+
+    local ok, body = pcall(IsoDeadBody.new, zombie, false, true)
+    if not ok or not body then
+        ok, body = pcall(IsoDeadBody.new, zombie, false)
+    end
+    if not ok or not body then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Client failed to create manual corpse for preserved dead NPC "
+                .. tostring(name or (npcData and (npcData.name or npcData.uuid)) or "Unknown")
+                .. " error=" .. tostring(body)
+        )
+        return false
+    end
+
+    local bodyModData = body.getModData and body:getModData() or nil
+    if bodyModData and npcData then
+        bodyModData.DTNPC_UUID = npcData.uuid
+        bodyModData.DTNPC_Name = npcData.name
+        bodyModData.DTNPC_FinalKillCorpse = true
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Death",
+        "Client created manual corpse for preserved dead NPC: "
+            .. tostring(name or (npcData and (npcData.name or npcData.uuid)) or "Unknown")
+    )
+    return true
+end
+
 function Handlers.HandleRemoveNPC(args)
     if not args or not args.uuid then
         return
@@ -182,7 +220,22 @@ function Handlers.HandleRemoveNPC(args)
         end
     end
 
-    if zombie and not preserveCorpse then
+    local zombieIsDead = zombie and zombie.isDead and zombie:isDead() == true
+    if zombie and preserveCorpse and not zombieIsDead then
+        local npcData = cachedEntry and cachedEntry.npcData or nil
+        local createdCorpse = args.manualCorpseCreated == true
+            or createCorpseFromLiveRemovalZombie(zombie, npcData, name) == true
+        zombie:removeFromWorld()
+        zombie:removeFromSquare()
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Remove",
+            "Removed live local body for dead NPC after "
+                .. (createdCorpse and "creating/receiving corpse: " or "corpse creation failed: ")
+                .. name
+        )
+    elseif zombie and not preserveCorpse then
         zombie:removeFromWorld()
         zombie:removeFromSquare()
         DynamicTrading.Log("DTV2", "NPC", "Remove", "SUCCESS: Removed zombie from local world: " .. name)

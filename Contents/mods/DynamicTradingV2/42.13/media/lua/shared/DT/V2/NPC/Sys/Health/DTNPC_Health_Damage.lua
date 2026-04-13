@@ -57,6 +57,46 @@ local function shouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker,
     return true
 end
 
+local function shouldIgnoreMultiplayerEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, source)
+    if not isServer or not isServer() then
+        return false
+    end
+
+    local now = internal.nowMillis()
+    local lastLogAt = tonumber(combatHealth and combatHealth.lastMultiplayerEngineDeltaIgnoredAt) or 0
+    if combatHealth and now - lastLogAt > 1500 then
+        combatHealth.lastMultiplayerEngineDeltaIgnoredAt = now
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Ignored multiplayer engine health delta for "
+                .. tostring(npcData and (npcData.name or npcData.uuid) or "Unknown")
+                .. " uuid=" .. tostring(npcData and npcData.uuid or nil)
+                .. " source=" .. tostring(source or "engine_fallback")
+                .. " previousHealth=" .. tostring(previousHealth)
+                .. " currentHealth=" .. tostring(currentHealth)
+                .. " attackerType=" .. tostring(internal.getAttackerType(attacker))
+                .. " attackerID=" .. tostring(internal.getAttackerID(attacker))
+        )
+    end
+
+    if npcData and npcData.incapState == "Active" then
+        if zombie and zombie.setHealth then
+            zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
+        end
+        if combatHealth then
+            combatHealth.lastEngineHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        end
+        npcData.health = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+        npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
+    elseif zombie and DTNPCHealth.RestoreEngineBuffer then
+        DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
+    end
+
+    return true
+end
+
 function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
     if not zombie or not npcData or internal.isRemoteClient() then
         return false
@@ -326,6 +366,7 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
         local currentHealth = tonumber(zombie:getHealth()) or 0
         local previousHealth = tonumber(combatHealth and combatHealth.lastEngineHealth) or currentHealth
         local healthDelta = math.max(0, previousHealth - currentHealth)
+        local attacker = zombie:getAttackedBy()
 
         if healthDelta <= 0 then
             if combatHealth then
@@ -335,7 +376,7 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
             return false, false
         end
 
-        if internal.isLikelySpawnFallbackCollapse(npcData, combatHealth, currentHealth, previousHealth, zombie:getAttackedBy()) then
+        if internal.isLikelySpawnFallbackCollapse(npcData, combatHealth, currentHealth, previousHealth, attacker) then
             DynamicTrading.Log(
                 "DTV2",
                 "NPC",
@@ -354,6 +395,10 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
             return false, false
         end
 
+        if shouldIgnoreMultiplayerEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, "incap_engine_fallback") then
+            return false, false
+        end
+
         DynamicTrading.Log(
             "DTV2",
             "NPC",
@@ -363,11 +408,11 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
                 .. " previousHealth=" .. tostring(previousHealth)
                 .. " currentHealth=" .. tostring(currentHealth)
                 .. " delta=" .. tostring(healthDelta)
-                .. " attackerType=" .. tostring(internal.getAttackerType(zombie:getAttackedBy()))
-                .. " attackerID=" .. tostring(internal.getAttackerID(zombie:getAttackedBy()))
+                .. " attackerType=" .. tostring(internal.getAttackerType(attacker))
+                .. " attackerID=" .. tostring(internal.getAttackerID(attacker))
         )
 
-        return DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, healthDelta, zombie:getAttackedBy(), {
+        return DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, healthDelta, attacker, {
             source = "incap_engine_fallback",
             queueFallbackIgnore = false,
         })
@@ -384,13 +429,14 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
     local currentHealth = tonumber(zombie:getHealth()) or 0
     local previousHealth = tonumber(combatHealth.lastEngineHealth) or currentHealth
     local healthDelta = math.max(0, previousHealth - currentHealth)
+    local attacker = zombie:getAttackedBy()
     if healthDelta <= 0 then
         combatHealth.lastEngineHealth = currentHealth
         npcData.health = currentHealth
         return false, false
     end
 
-    if internal.isLikelySpawnFallbackCollapse(npcData, combatHealth, currentHealth, previousHealth, zombie:getAttackedBy()) then
+    if internal.isLikelySpawnFallbackCollapse(npcData, combatHealth, currentHealth, previousHealth, attacker) then
         DynamicTrading.Log(
             "DTV2",
             "NPC",
@@ -403,6 +449,10 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
                 .. " spawnAgeMs=" .. tostring(internal.nowMillis() - (tonumber(combatHealth.spawnInitializedAt) or 0))
         )
         DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
+        return false, false
+    end
+
+    if shouldIgnoreMultiplayerEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, "engine_fallback") then
         return false, false
     end
 
@@ -421,11 +471,11 @@ function DTNPCHealth.ProcessFallbackDamage(zombie, npcData)
             .. " previousHealth=" .. tostring(previousHealth)
             .. " currentHealth=" .. tostring(currentHealth)
             .. " delta=" .. tostring(healthDelta)
-            .. " attackerType=" .. tostring(internal.getAttackerType(zombie:getAttackedBy()))
-            .. " attackerID=" .. tostring(internal.getAttackerID(zombie:getAttackedBy()))
+            .. " attackerType=" .. tostring(internal.getAttackerType(attacker))
+            .. " attackerID=" .. tostring(internal.getAttackerID(attacker))
     )
 
-    return DTNPCHealth.ApplyDamage(zombie, npcData, healthDelta, zombie:getAttackedBy(), {
+    return DTNPCHealth.ApplyDamage(zombie, npcData, healthDelta, attacker, {
         source = "engine_fallback",
         queueFallbackIgnore = false,
     })
