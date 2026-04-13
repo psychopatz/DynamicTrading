@@ -5,6 +5,16 @@
 
 DTNPCMobility = DTNPCMobility or {}
 
+local DAMAGE_PRESSURE_WINDOW_MS = 2500
+local DAMAGE_RETREAT_LOCK_MS = 900
+local DAMAGE_RETREAT_DISTANCE = 2.2
+local DAMAGE_RETREAT_LOW_HEALTH_RATIO = 0.60
+local DAMAGE_RETREAT_ADJACENT_DIST = 1.2
+local BLOCKED_HEADING_MEMORY_MS = 850
+local DEFAULT_STEERING_ANGLES = { 0, 30, -30, 60, -60, 90, -90 }
+
+local isWithinLeash
+
 local function getTimeMs()
     if getTimeInMillis then
         return getTimeInMillis()
@@ -23,6 +33,170 @@ local function getAnimSpeed(options)
     end
 
     return options and options.isRunning == true and 1.2 or 1.0
+end
+
+local function getDistance(x1, y1, x2, y2)
+    local dx = (tonumber(x2) or 0) - (tonumber(x1) or 0)
+    local dy = (tonumber(y2) or 0) - (tonumber(y1) or 0)
+    return math.sqrt((dx * dx) + (dy * dy))
+end
+
+local function getHealthRatio(npcData)
+    if DTNPCHealth and DTNPCHealth.GetHealthRatio then
+        return tonumber(DTNPCHealth.GetHealthRatio(npcData)) or 1
+    end
+
+    return 1
+end
+
+local function getObjectRuntimeKey(object)
+    if not object then
+        return nil
+    end
+
+    if object.getOnlineID then
+        local onlineID = object:getOnlineID()
+        if onlineID and onlineID ~= 0 then
+            return "online:" .. tostring(onlineID)
+        end
+    end
+
+    if object.getUsername then
+        local username = object:getUsername()
+        if username and username ~= "" then
+            return "user:" .. tostring(username)
+        end
+    end
+
+    if object.getPersistentOutfitID then
+        local outfitID = object:getPersistentOutfitID()
+        if outfitID and outfitID ~= 0 then
+            return "outfit:" .. tostring(outfitID)
+        end
+    end
+
+    if object.getID then
+        local objectID = object:getID()
+        if objectID and objectID ~= 0 then
+            return "id:" .. tostring(objectID)
+        end
+    end
+
+    return tostring(object)
+end
+
+local function getAttackerPosition(attackerID, fallbackX, fallbackY, fallbackZ)
+    if not attackerID then
+        return nil, nil
+    end
+
+    local zombieList = getCell() and getCell():getZombieList() or nil
+    if not zombieList then
+        return nil, nil
+    end
+
+    local floorZ = tonumber(fallbackZ) or 0
+    for i = 0, zombieList:size() - 1 do
+        local candidate = zombieList:get(i)
+        if candidate and not candidate:isDead() then
+            local modData = candidate:getModData()
+            if not (modData and modData.IsDTNPC)
+                and math.abs((candidate:getZ() or 0) - floorZ) <= 1.1
+                and getObjectRuntimeKey(candidate) == attackerID then
+                return candidate:getX(), candidate:getY()
+            end
+        end
+    end
+
+    return nil, nil
+end
+
+local function getNearbyZombiePressure(originX, originY, originZ, radius)
+    if DTNPCProtect and DTNPCProtect.GetNearbyZombiePressure then
+        local pressure = DTNPCProtect.GetNearbyZombiePressure({
+            getX = function() return originX end,
+            getY = function() return originY end,
+            getZ = function() return originZ end,
+        }, radius, nil)
+        if pressure then
+            return pressure
+        end
+    end
+
+    local zombieList = getCell() and getCell():getZombieList() or nil
+    local safeRadius = math.max(0.25, tonumber(radius) or 2.6)
+    local radiusSq = safeRadius * safeRadius
+    local count = 0
+    local closest = 9999
+    local weightedX = 0
+    local weightedY = 0
+    local totalWeight = 0
+
+    if zombieList then
+        for i = 0, zombieList:size() - 1 do
+            local candidate = zombieList:get(i)
+            if candidate and not candidate:isDead() then
+                local modData = candidate:getModData()
+                if not (modData and modData.IsDTNPC)
+                    and math.abs((candidate:getZ() or 0) - (originZ or 0)) <= 1.1 then
+                    local dx = candidate:getX() - originX
+                    local dy = candidate:getY() - originY
+                    local distSq = (dx * dx) + (dy * dy)
+                    if distSq <= radiusSq then
+                        local dist = math.sqrt(distSq)
+                        local weight = 1 / math.max(0.25, dist)
+                        count = count + 1
+                        closest = math.min(closest, dist)
+                        weightedX = weightedX + (candidate:getX() * weight)
+                        weightedY = weightedY + (candidate:getY() * weight)
+                        totalWeight = totalWeight + weight
+                    end
+                end
+            end
+        end
+    end
+
+    return {
+        count = count,
+        closest = closest,
+        centerX = totalWeight > 0 and (weightedX / totalWeight) or originX,
+        centerY = totalWeight > 0 and (weightedY / totalWeight) or originY,
+    }
+end
+
+local function rotateDirection(dirX, dirY, angleDegrees)
+    local radians = math.rad(tonumber(angleDegrees) or 0)
+    local cosAngle = math.cos(radians)
+    local sinAngle = math.sin(radians)
+    return (dirX * cosAngle) - (dirY * sinAngle), (dirX * sinAngle) + (dirY * cosAngle)
+end
+
+local function setBlockedHeading(npcData, dirX, dirY)
+    if type(npcData) ~= "table" then
+        return
+    end
+
+    npcData._dtBlockedHeading = {
+        x = tonumber(dirX) or 0,
+        y = tonumber(dirY) or 0,
+    }
+    npcData._dtBlockedHeadingUntil = getTimeMs() + BLOCKED_HEADING_MEMORY_MS
+end
+
+local function headingRepeatsBlocked(npcData, dirX, dirY)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    local blocked = npcData._dtBlockedHeading
+    local untilTime = tonumber(npcData._dtBlockedHeadingUntil) or 0
+    if type(blocked) ~= "table" or untilTime <= 0 or getTimeMs() > untilTime then
+        return false
+    end
+
+    local dot = ((tonumber(blocked.x) or 0) * (tonumber(dirX) or 0))
+        + ((tonumber(blocked.y) or 0) * (tonumber(dirY) or 0))
+    return dot >= 0.92
 end
 
 local function safeCall(object, methodName, ...)
@@ -290,7 +464,47 @@ local function getPassageKind(object)
     return nil
 end
 
-function DTNPCMobility.FindPassageBetween(fromSquare, nextSquare)
+local function findDirectionalPassageObject(fromSquare, nextSquare)
+    if not fromSquare or not nextSquare then
+        return nil
+    end
+
+    local directionalLookups = {
+        { "getDoorTo", "getIsoDoorTo" },
+        { "getWindowTo", "getWindowOrWindowThumpableTo", "getWindowThumpableTo" },
+    }
+
+    for i = 1, #directionalLookups do
+        local ok, object = callObjectMethod(fromSquare, directionalLookups[i], nextSquare)
+        if ok and object then
+            return object
+        end
+    end
+
+    return nil
+end
+
+function DTNPCMobility.FindDirectionalPassage(fromSquare, nextSquare)
+    local directionalObject = findDirectionalPassageObject(fromSquare, nextSquare)
+    if directionalObject then
+        local kind = getPassageKind(directionalObject)
+        if kind
+            and not isObstacleLocked(directionalObject)
+            and not objectBool(directionalObject, { "IsOpen", "isOpen" }, false)
+            and not objectBool(directionalObject, { "isDestroyed", "IsDestroyed" }, false) then
+            local objectSquare = getObjectSquare(directionalObject) or fromSquare
+            local x, y, z = getSquareCoords(objectSquare)
+            return {
+                object = directionalObject,
+                kind = kind,
+                square = objectSquare,
+                x = x,
+                y = y,
+                z = z,
+            }
+        end
+    end
+
     local squares = {
         nextSquare,
         fromSquare,
@@ -322,6 +536,139 @@ function DTNPCMobility.FindPassageBetween(fromSquare, nextSquare)
     end
 
     return nil
+end
+
+function DTNPCMobility.FindPassageBetween(fromSquare, nextSquare)
+    return DTNPCMobility.FindDirectionalPassage(fromSquare, nextSquare)
+end
+
+function DTNPCMobility.UpdateDamagePressure(zombie, npcData)
+    if not zombie or type(npcData) ~= "table" then
+        return nil
+    end
+
+    local currentTime = getTimeMs()
+    local combatHealth = DTNPCHealth and DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
+    if not combatHealth then
+        return nil
+    end
+
+    if (tonumber(npcData.damagePressureUntil) or 0) > 0 and currentTime > (tonumber(npcData.damagePressureUntil) or 0) then
+        npcData.damagePressureCount = 0
+        npcData.damagePressureUntil = 0
+    end
+    if (tonumber(npcData.damageRetreatUntil) or 0) > 0 and currentTime > (tonumber(npcData.damageRetreatUntil) or 0) then
+        npcData.damageRetreatUntil = 0
+    end
+
+    local lastDamageAt = tonumber(combatHealth.lastDamageAt) or 0
+    local freshZombieHit = combatHealth.lastAttackerType == "zombie"
+        and lastDamageAt > 0
+        and (currentTime - lastDamageAt) <= DAMAGE_PRESSURE_WINDOW_MS
+        and (tonumber(npcData._dtDamagePressureLastAt) or 0) ~= lastDamageAt
+
+    local pressure = getNearbyZombiePressure(zombie:getX(), zombie:getY(), zombie:getZ(), 2.6)
+    local healthRatio = getHealthRatio(npcData)
+
+    if freshZombieHit then
+        local previousUntil = tonumber(npcData.damagePressureUntil) or 0
+        local previousCount = tonumber(npcData.damagePressureCount) or 0
+        if previousUntil > 0 and previousUntil >= lastDamageAt then
+            npcData.damagePressureCount = previousCount + 1
+        else
+            npcData.damagePressureCount = 1
+        end
+        npcData.damagePressureUntil = lastDamageAt + DAMAGE_PRESSURE_WINDOW_MS
+        npcData._dtDamagePressureLastAt = lastDamageAt
+
+        local shouldRetreat = (tonumber(npcData.damagePressureCount) or 0) >= 2
+            or ((tonumber(npcData.damagePressureCount) or 0) >= 1
+                and (tonumber(pressure.closest) or 9999) <= DAMAGE_RETREAT_ADJACENT_DIST
+                and healthRatio <= DAMAGE_RETREAT_LOW_HEALTH_RATIO)
+
+        if shouldRetreat then
+            local retreatFromX = pressure and pressure.count and pressure.count > 0 and pressure.centerX or nil
+            local retreatFromY = pressure and pressure.count and pressure.count > 0 and pressure.centerY or nil
+            if retreatFromX == nil or retreatFromY == nil then
+                retreatFromX, retreatFromY = getAttackerPosition(
+                    combatHealth.lastAttackerID,
+                    zombie:getX(),
+                    zombie:getY(),
+                    zombie:getZ()
+                )
+            end
+
+            npcData.damageRetreatUntil = currentTime + DAMAGE_RETREAT_LOCK_MS
+            npcData.damageRetreatFromX = retreatFromX or zombie:getX()
+            npcData.damageRetreatFromY = retreatFromY or zombie:getY()
+        end
+    end
+
+    return {
+        count = tonumber(npcData.damagePressureCount) or 0,
+        untilTime = tonumber(npcData.damagePressureUntil) or 0,
+        retreatUntil = tonumber(npcData.damageRetreatUntil) or 0,
+        retreatFromX = tonumber(npcData.damageRetreatFromX),
+        retreatFromY = tonumber(npcData.damageRetreatFromY),
+        healthRatio = healthRatio,
+        nearbyPressure = pressure,
+        freshZombieHit = freshZombieHit,
+    }
+end
+
+function DTNPCMobility.GetForcedRetreat(zombie, npcData, options)
+    if not zombie or type(npcData) ~= "table" then
+        return nil
+    end
+
+    options = type(options) == "table" and options or {}
+    local pressureState = DTNPCMobility.UpdateDamagePressure(zombie, npcData)
+    local currentTime = getTimeMs()
+    local retreatUntil = tonumber(npcData.damageRetreatUntil) or 0
+    if retreatUntil <= 0 or currentTime > retreatUntil then
+        return nil
+    end
+
+    local pressure = pressureState and pressureState.nearbyPressure or getNearbyZombiePressure(zombie:getX(), zombie:getY(), zombie:getZ(), 2.6)
+    local fromX = pressure and pressure.count and pressure.count > 0 and pressure.centerX or tonumber(npcData.damageRetreatFromX)
+    local fromY = pressure and pressure.count and pressure.count > 0 and pressure.centerY or tonumber(npcData.damageRetreatFromY)
+    if fromX == nil or fromY == nil then
+        return nil
+    end
+
+    local dirX = zombie:getX() - fromX
+    local dirY = zombie:getY() - fromY
+    local len = math.sqrt((dirX * dirX) + (dirY * dirY))
+    if len <= 0.001 then
+        local lastDirX = tonumber(npcData._dtLastMoveDirX) or 0
+        local lastDirY = tonumber(npcData._dtLastMoveDirY) or 0
+        if math.abs(lastDirX) > 0.001 or math.abs(lastDirY) > 0.001 then
+            dirX = lastDirX
+            dirY = lastDirY
+            len = math.sqrt((dirX * dirX) + (dirY * dirY))
+        end
+    end
+    if len <= 0.001 then
+        dirX = ZombRandFloat(-1.0, 1.0)
+        dirY = ZombRandFloat(-1.0, 1.0)
+        len = math.sqrt((dirX * dirX) + (dirY * dirY))
+    end
+    if len <= 0.001 then
+        return nil
+    end
+
+    dirX = dirX / len
+    dirY = dirY / len
+
+    return {
+        dirX = dirX,
+        dirY = dirY,
+        fromX = fromX,
+        fromY = fromY,
+        desiredDistance = math.max(1.2, tonumber(options.damageRetreatDistance) or DAMAGE_RETREAT_DISTANCE),
+        lockMs = math.max(150, tonumber(options.damageRetreatLockMs) or DAMAGE_RETREAT_LOCK_MS),
+        untilTime = retreatUntil,
+    }
 end
 
 function DTNPCMobility.TryOpenPassage(zombie, passage)
@@ -476,7 +823,7 @@ local function tryInteractWithObstacle(zombie, npcData, fromX, fromY, fromZ, nex
         return false, nil
     end
 
-    local passage = DTNPCMobility.FindPassageBetween(
+    local passage = DTNPCMobility.FindDirectionalPassage(
         getSquareAt(cell, fromX, fromY, fromZ),
         getSquareAt(cell, nextX, nextY, fromZ)
     )
@@ -487,6 +834,83 @@ local function tryInteractWithObstacle(zombie, npcData, fromX, fromY, fromZ, nex
     end
 
     return false, nil
+end
+
+function DTNPCMobility.ChooseSteeredStep(zombie, npcData, desiredDirX, desiredDirY, step, options)
+    if not zombie then
+        return nil
+    end
+
+    options = type(options) == "table" and options or {}
+    local len = math.sqrt((desiredDirX * desiredDirX) + (desiredDirY * desiredDirY))
+    if len <= 0.001 or step <= 0.001 then
+        return nil
+    end
+
+    desiredDirX = desiredDirX / len
+    desiredDirY = desiredDirY / len
+
+    local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
+    local goalX = tonumber(options.goalX)
+    local goalY = tonumber(options.goalY)
+    local baseGoalDist = (goalX ~= nil and goalY ~= nil) and getDistance(zx, zy, goalX, goalY) or nil
+    local angles = type(options.steeringAngles) == "table" and options.steeringAngles or DEFAULT_STEERING_ANGLES
+    local bestCandidate = nil
+    local bestFallback = nil
+
+    for i = 1, #angles do
+        local angle = tonumber(angles[i]) or 0
+        local candidateDirX, candidateDirY = rotateDirection(desiredDirX, desiredDirY, angle)
+        local nextX = zx + (candidateDirX * step)
+        local nextY = zy + (candidateDirY * step)
+        local inLeash = isWithinLeash(nextX, nextY, zz, options)
+        if inLeash then
+            local passage = nil
+            if options.allowObstacleInteract == true then
+                passage = DTNPCMobility.FindDirectionalPassage(
+                    getSquareAt(getCell(), zx, zy, zz),
+                    getSquareAt(getCell(), nextX, nextY, zz)
+                )
+            end
+
+            local canMove = DTNPCMobility.IsTileSafe(nextX, nextY, zz)
+            local candidateGoalDist = (goalX ~= nil and goalY ~= nil) and getDistance(nextX, nextY, goalX, goalY) or nil
+            local exceedsGoalSlack = candidateGoalDist ~= nil
+                and baseGoalDist ~= nil
+                and (candidateGoalDist - baseGoalDist) > 0.35
+            local progressScore = candidateGoalDist ~= nil and (baseGoalDist - candidateGoalDist)
+                or ((candidateDirX * desiredDirX) + (candidateDirY * desiredDirY))
+            local blockedPenalty = headingRepeatsBlocked(npcData, candidateDirX, candidateDirY) and 1.2 or 0
+            local score = (progressScore * 4.0)
+                - (math.abs(angle) * 0.01)
+                - blockedPenalty
+                + ((canMove or passage) and 0.15 or -2.0)
+
+            if canMove or passage then
+                local candidate = {
+                    dirX = candidateDirX,
+                    dirY = candidateDirY,
+                    nextX = nextX,
+                    nextY = nextY,
+                    canMove = canMove,
+                    passage = passage,
+                    goalDist = candidateGoalDist,
+                    score = score,
+                    angle = angle,
+                }
+
+                if not exceedsGoalSlack then
+                    if not bestCandidate or candidate.score > bestCandidate.score then
+                        bestCandidate = candidate
+                    end
+                elseif not bestFallback or candidate.score > bestFallback.score then
+                    bestFallback = candidate
+                end
+            end
+        end
+    end
+
+    return bestCandidate or bestFallback
 end
 
 local function tryUnstick(zombie, z, dirX, dirY)
@@ -517,7 +941,7 @@ local function tryUnstick(zombie, z, dirX, dirY)
     return false, nil, nil
 end
 
-local function isWithinLeash(nextX, nextY, currentZ, options)
+isWithinLeash = function(nextX, nextY, currentZ, options)
     options = type(options) == "table" and options or {}
     local anchorX = tonumber(options.anchorX)
     local anchorY = tonumber(options.anchorY)
@@ -562,9 +986,20 @@ function DTNPCMobility.MoveByDirection(zombie, npcData, options)
         return false, "stopped"
     end
 
+    if options.allowDamageRetreat ~= false and options._forcedRetreatActive ~= true then
+        local forcedRetreat = DTNPCMobility.GetForcedRetreat(zombie, npcData, options)
+        if forcedRetreat then
+            dirX = forcedRetreat.dirX
+            dirY = forcedRetreat.dirY
+        end
+    end
+
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
-    local nextX = zx + (dirX * step)
-    local nextY = zy + (dirY * step)
+    local chosenStep = DTNPCMobility.ChooseSteeredStep(zombie, npcData, dirX, dirY, step, options)
+    local nextX = chosenStep and chosenStep.nextX or (zx + (dirX * step))
+    local nextY = chosenStep and chosenStep.nextY or (zy + (dirY * step))
+    local moveDirX = chosenStep and chosenStep.dirX or dirX
+    local moveDirY = chosenStep and chosenStep.dirY or dirY
 
     if not isWithinLeash(nextX, nextY, zz, options) then
         DTNPCMobility.Stop(zombie, options.anim)
@@ -572,7 +1007,19 @@ function DTNPCMobility.MoveByDirection(zombie, npcData, options)
     end
 
     if options.allowObstacleInteract == true then
-        local interacted, obstacleKind = tryInteractWithObstacle(zombie, npcData, zx, zy, zz, nextX, nextY, options)
+        local interacted = false
+        local obstacleKind = nil
+        if chosenStep and chosenStep.passage and chosenStep.canMove ~= true then
+            local opened, openedKind = DTNPCMobility.TryOpenPassage(zombie, chosenStep.passage)
+            if opened then
+                DTNPCMobility.TrackOpenedPassage(npcData, chosenStep.passage)
+                interacted = true
+                obstacleKind = openedKind
+            end
+        else
+            interacted, obstacleKind = tryInteractWithObstacle(zombie, npcData, zx, zy, zz, nextX, nextY, options)
+        end
+
         if interacted then
             clearBlockedCounter(npcData, options.blockCounterKey)
             DTNPCMobility.Stop(zombie, options.anim)
@@ -580,7 +1027,7 @@ function DTNPCMobility.MoveByDirection(zombie, npcData, options)
         end
     end
 
-    local canMove = DTNPCMobility.IsTileSafe(nextX, nextY, zz)
+    local canMove = chosenStep and chosenStep.canMove or DTNPCMobility.IsTileSafe(nextX, nextY, zz)
     if not canMove and options.allowAxisSlide ~= false then
         if isWithinLeash(nextX, zy, zz, options) and DTNPCMobility.IsTileSafe(nextX, zy, zz) then
             nextY = zy
@@ -614,7 +1061,7 @@ function DTNPCMobility.MoveByDirection(zombie, npcData, options)
         if options.faceTargetWhileMoving == true and faceX ~= nil and faceY ~= nil then
             zombie:faceLocation(faceX, faceY)
         else
-            zombie:faceLocation(nextX + dirX, nextY + dirY)
+            zombie:faceLocation(nextX + moveDirX, nextY + moveDirY)
         end
 
         rememberMotion(npcData, zx, zy, nextX, nextY, {
@@ -623,8 +1070,12 @@ function DTNPCMobility.MoveByDirection(zombie, npcData, options)
             isRunning = options.anim and options.anim.isRunning == true or false,
         })
         if type(npcData) == "table" then
-            npcData._dtLastMoveDirX = dirX
-            npcData._dtLastMoveDirY = dirY
+            npcData._dtLastMoveDirX = moveDirX
+            npcData._dtLastMoveDirY = moveDirY
+            npcData._dtLastSteerDirX = moveDirX
+            npcData._dtLastSteerDirY = moveDirY
+            npcData._dtBlockedHeading = nil
+            npcData._dtBlockedHeadingUntil = 0
         end
         DTNPCMobility.TryClosePassedDoor(zombie, npcData, {
             target = options.closeDoorTarget,
@@ -634,9 +1085,10 @@ function DTNPCMobility.MoveByDirection(zombie, npcData, options)
     end
 
     local blockedTicks = incrementBlockedCounter(npcData, options.blockCounterKey)
+    setBlockedHeading(npcData, moveDirX, moveDirY)
     local stuckTicks = math.max(0, tonumber(options.stuckTicks) or 0)
     if blockedTicks >= stuckTicks and stuckTicks > 0 then
-        local unstuck, unstuckX, unstuckY = tryUnstick(zombie, zz, dirX, dirY)
+        local unstuck, unstuckX, unstuckY = tryUnstick(zombie, zz, moveDirX, moveDirY)
         if unstuck then
             clearBlockedCounter(npcData, options.blockCounterKey)
             DTNPCMobility.SetLocomotionState(zombie, {
@@ -648,15 +1100,17 @@ function DTNPCMobility.MoveByDirection(zombie, npcData, options)
                 idleState = options.anim and options.anim.idleState or nil,
                 crawl = options.anim and options.anim.crawl == true or false,
             })
-            zombie:faceLocation(unstuckX + dirX, unstuckY + dirY)
+            zombie:faceLocation(unstuckX + moveDirX, unstuckY + moveDirY)
             rememberMotion(npcData, zx, zy, unstuckX, unstuckY, {
                 speed = step,
                 crawl = options.anim and options.anim.crawl == true or false,
                 isRunning = options.anim and options.anim.isRunning == true or false,
             })
             if type(npcData) == "table" then
-                npcData._dtLastMoveDirX = dirX
-                npcData._dtLastMoveDirY = dirY
+                npcData._dtLastMoveDirX = moveDirX
+                npcData._dtLastMoveDirY = moveDirY
+                npcData._dtLastSteerDirX = moveDirX
+                npcData._dtLastSteerDirY = moveDirY
             end
             return true, "unstuck"
         end
@@ -696,6 +1150,39 @@ function DTNPCMobility.MoveTowardTarget(zombie, npcData, options)
         return true, "arrived", len
     end
 
+    local forcedRetreat = nil
+    if options.allowDamageRetreat ~= false then
+        forcedRetreat = DTNPCMobility.GetForcedRetreat(zombie, npcData, options)
+        if forcedRetreat then
+            local retreatMoved, retreatState = DTNPCMobility.MoveByDirection(zombie, npcData, {
+                dirX = forcedRetreat.dirX,
+                dirY = forcedRetreat.dirY,
+                speed = step,
+                allowAxisSlide = options.allowAxisSlide ~= false,
+                allowObstacleInteract = options.allowObstacleInteract ~= false,
+                allowDamageRetreat = false,
+                _forcedRetreatActive = true,
+                blockCounterKey = options.blockCounterKey,
+                stuckTicks = options.stuckTicks,
+                anim = options.anim,
+                anchorX = options.anchorX,
+                anchorY = options.anchorY,
+                anchorZ = options.anchorZ,
+                leashRadius = options.leashRadius,
+                targetZ = options.targetZ,
+                faceX = options.faceX,
+                faceY = options.faceY,
+                faceTargetWhileMoving = options.faceTargetWhileMoving,
+                goalX = zombie:getX() + (forcedRetreat.dirX * step),
+                goalY = zombie:getY() + (forcedRetreat.dirY * step),
+                closeDoorTarget = options.target,
+                closeDoorSafeRadius = options.closeDoorSafeRadius,
+                steeringAngles = options.steeringAngles,
+            })
+            return retreatMoved, retreatState == "moving" and "damage_retreat" or retreatState, len
+        end
+    end
+
     local moved, state = DTNPCMobility.MoveByDirection(zombie, npcData, {
         dirX = dx,
         dirY = dy,
@@ -712,8 +1199,15 @@ function DTNPCMobility.MoveTowardTarget(zombie, npcData, options)
         targetZ = options.targetZ,
         faceX = options.faceX,
         faceY = options.faceY,
+        faceTargetWhileMoving = options.faceTargetWhileMoving,
+        goalX = tx,
+        goalY = ty,
         closeDoorTarget = options.target,
         closeDoorSafeRadius = options.closeDoorSafeRadius,
+        allowDamageRetreat = options.allowDamageRetreat ~= false,
+        damageRetreatDistance = options.damageRetreatDistance,
+        damageRetreatLockMs = options.damageRetreatLockMs,
+        steeringAngles = options.steeringAngles,
     })
 
     if not moved and len <= (stopDistance + 0.35) then
@@ -773,12 +1267,22 @@ function DTNPCMobility.MoveAwayFromPoint(zombie, npcData, options)
         return true, "spaced", len
     end
 
+    local forcedRetreat = nil
+    if options.allowDamageRetreat ~= false then
+        forcedRetreat = DTNPCMobility.GetForcedRetreat(zombie, npcData, options)
+    end
+
+    local moveDirX = forcedRetreat and forcedRetreat.dirX or dx
+    local moveDirY = forcedRetreat and forcedRetreat.dirY or dy
+
     return DTNPCMobility.MoveByDirection(zombie, npcData, {
-        dirX = dx,
-        dirY = dy,
+        dirX = moveDirX,
+        dirY = moveDirY,
         speed = step,
         allowAxisSlide = options.allowAxisSlide ~= false,
         allowObstacleInteract = options.allowObstacleInteract ~= false,
+        allowDamageRetreat = false,
+        _forcedRetreatActive = forcedRetreat ~= nil,
         blockCounterKey = options.blockCounterKey,
         stuckTicks = options.stuckTicks,
         anim = options.anim,
@@ -789,5 +1293,9 @@ function DTNPCMobility.MoveAwayFromPoint(zombie, npcData, options)
         targetZ = options.targetZ,
         faceX = options.faceX,
         faceY = options.faceY,
+        faceTargetWhileMoving = options.faceTargetWhileMoving,
+        goalX = zombie:getX() + (moveDirX * step),
+        goalY = zombie:getY() + (moveDirY * step),
+        steeringAngles = options.steeringAngles,
     })
 end

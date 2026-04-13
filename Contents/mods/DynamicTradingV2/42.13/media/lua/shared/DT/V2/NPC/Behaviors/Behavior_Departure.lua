@@ -5,6 +5,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+require "DT/V2/NPC/Sys/DTNPC_Mobility"
 
 local DESPAWN_DIST = 45
 local TARGET_REACHED_DIST = 2
@@ -283,63 +284,30 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         zombie:setRunning(false)
     end
 
-    local speed = DynamicTrading.GetNPCRunSpeed()
-    local nextX = zx + (dx * speed)
-    local nextY = zy + (dy * speed)
-    local canMove = isTileSafe(nextX, nextY, z)
+    local moved, moveState = DTNPCMobility.MoveByDirection(zombie, npcData, {
+        dirX = dx,
+        dirY = dy,
+        speed = DynamicTrading.GetNPCRunSpeed(),
+        allowObstacleInteract = true,
+        allowDamageRetreat = true,
+        blockCounterKey = "departureBlockedTicks",
+        stuckTicks = STUCK_TICKS,
+        anim = {
+            animSpeed = 1.2,
+            isRunning = true,
+            dtWalkType = "Run",
+        },
+    })
 
-    if not canMove then
-        if isTileSafe(nextX, zy, z) then
-            nextY = zy
-            canMove = true
-        elseif isTileSafe(zx, nextY, z) then
-            nextX = zx
-            canMove = true
-        end
-    end
-
-    if canMove then
-        zombie:setX(nextX)
-        zombie:setY(nextY)
-        forceRunAnimation(zombie)
-
-        if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
-            zombie:faceLocation(nextX + dx, nextY + dy)
-        end
-
-        if npcData.departureStuckLastX then
-            local moved = getDist(nextX, nextY, npcData.departureStuckLastX, npcData.departureStuckLastY)
-            if moved < 0.05 then
-                npcData.departureBlockedTicks = (npcData.departureBlockedTicks or 0) + 1
-            else
-                npcData.departureBlockedTicks = 0
-            end
-        else
-            npcData.departureBlockedTicks = 0
-        end
-
-        npcData.departureStuckLastX = nextX
-        npcData.departureStuckLastY = nextY
-
-        if (npcData.departureBlockedTicks or 0) >= STUCK_ABORT_TICKS then
-            completeDeparture(zombie, npcData, "stuck_abort_move")
-            return
-        end
+    if moved or moveState == "damage_retreat" then
+        npcData.departureStuckLastX = zombie:getX()
+        npcData.departureStuckLastY = zombie:getY()
+    elseif moveState and string.find(tostring(moveState), "interacted_", 1, true) then
+        npcData.departureBlockedTicks = 0
+    elseif (npcData.departureBlockedTicks or 0) >= STUCK_ABORT_TICKS then
+        completeDeparture(zombie, npcData, "stuck_abort_blocked")
+        return
     else
-        npcData.departureBlockedTicks = (npcData.departureBlockedTicks or 0) + 1
-        if npcData.departureBlockedTicks >= STUCK_TICKS and tryUnstick(zombie, z, dx, dy) then
-            npcData.departureBlockedTicks = 0
-            npcData.departureStuckLastX = zombie:getX()
-            npcData.departureStuckLastY = zombie:getY()
-            forceRunAnimation(zombie)
-            return
-        end
-
-        if npcData.departureBlockedTicks >= STUCK_ABORT_TICKS then
-            completeDeparture(zombie, npcData, "stuck_abort_blocked")
-            return
-        end
-
         stopDepartureAnimation(zombie)
     end
 end

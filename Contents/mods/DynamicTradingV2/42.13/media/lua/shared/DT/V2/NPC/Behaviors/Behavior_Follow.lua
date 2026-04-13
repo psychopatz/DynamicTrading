@@ -7,6 +7,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+require "DT/V2/NPC/Sys/DTNPC_Mobility"
 
 -- MOVEMENT CONFIGURATION
 local STOP_THRESHOLD_START = 3.5
@@ -80,6 +81,46 @@ local function resetFollowStuck(npcData)
     npcData.followBlockedTicks = 0
 end
 
+local function resetFollowMoveState(npcData)
+    if not npcData then
+        return
+    end
+
+    npcData.followMovePrimed = nil
+    npcData.followMoveReason = nil
+end
+
+local function primeFollowMovement(zombie, npcData, target, isRunning)
+    if not zombie or not npcData or not target then
+        return true
+    end
+
+    local dx = target:getX() - zombie:getX()
+    local dy = target:getY() - zombie:getY()
+    local len = math.sqrt((dx * dx) + (dy * dy))
+    if len <= 0.001 then
+        return true
+    end
+
+    dx = dx / len
+    dy = dy / len
+
+    if npcData.followMovePrimed == true and npcData.followMoveReason == "follow" then
+        return true
+    end
+
+    npcData.followMovePrimed = true
+    npcData.followMoveReason = "follow"
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+        zombie:setPath2(nil)
+        zombie:setRunning(false)
+    end
+    forceWalkAnimation(zombie, isRunning == true)
+    zombie:faceLocation(zombie:getX() + dx, zombie:getY() + dy)
+    return false
+end
+
 local function tryUnstick(zombie, z, dirX, dirY)
     local zx = zombie:getX()
     local zy = zombie:getY()
@@ -130,6 +171,7 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         zombie:setY(target:getY() + 1)
         zombie:setZ(target:getZ())
         resetFollowStuck(npcData)
+        resetFollowMoveState(npcData)
         stopAnimation(zombie)
         return
     end
@@ -152,20 +194,24 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
     
     npcData.isMovingState = shouldMove
 
-    -- 3. WAKE UP CALL
-    if shouldMove and not wasMoving then
-        if DTNPCLogic.Behaviors["Attack"] then
-            DTNPCLogic.Behaviors["Attack"](zombie, npcData, target, dist)
-        end
-        return 
-    end
-
-    -- 4. STOPPING LOGIC
+    -- 3. STOPPING LOGIC
     if not shouldMove then
         if not zombie:isUseless() then zombie:setUseless(true) end
         resetFollowStuck(npcData)
+        resetFollowMoveState(npcData)
         stopAnimation(zombie)
         zombie:faceLocation(target:getX(), target:getY())
+        npcData.tasks = {}
+        return
+    end
+
+    if shouldMove and not wasMoving then
+        resetFollowMoveState(npcData)
+    end
+
+    local isRunning = dist > 7.0 or target:isRunning() or target:isSprinting()
+    if not primeFollowMovement(zombie, npcData, target, isRunning) then
+        resetFollowStuck(npcData)
         npcData.tasks = {}
         return
     end
@@ -177,57 +223,35 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         zombie:setRunning(false)
     end
 
-    -- Movement Vector Calculation
-    local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
-    local tx, ty = target:getX(), target:getY()
-    
-    local dx = tx - zx
-    local dy = ty - zy
-    local len = math.sqrt(dx * dx + dy * dy)
-    
-    if len > 0 then
-        dx = dx / len
-        dy = dy / len
-    end
-
-    -- Rotation
-    if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
-        zombie:faceLocation(zx + dx, zy + dy)
-    end
-
-    -- Speed & Collision
-    local isRunning = dist > 7.0 or target:isRunning() or target:isSprinting()
     local speed = isRunning and RUN_SPEED_PHYSICAL or WALK_SPEED_PHYSICAL
-    
-    local nextX = zx + (dx * speed)
-    local nextY = zy + (dy * speed)
-    local canMove = isTileSafe(nextX, nextY, zz)
-    
-    if not canMove then
-        if isTileSafe(nextX, zy, zz) then
-            nextY = zy
-            canMove = true
-        elseif isTileSafe(zx, nextY, zz) then
-            nextX = zx
-            canMove = true
-        end
-    end
+    local moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
+        target = target,
+        speed = speed,
+        stopDistance = STOP_THRESHOLD_END,
+        allowObstacleInteract = true,
+        allowDamageRetreat = true,
+        blockCounterKey = "followBlockedTicks",
+        stuckTicks = STUCK_TICKS,
+        closeDoorTarget = target,
+        closeDoorSafeRadius = 3.0,
+        faceX = target:getX(),
+        faceY = target:getY(),
+        anim = {
+            animSpeed = isRunning and 1.2 or 1.0,
+            isRunning = isRunning,
+            dtWalkType = isRunning and "Run" or "Walk",
+        },
+    })
 
-    -- Apply Movement
-    if canMove then
+    if moved or moveState == "arrived" or moveState == "close_enough" or moveState == "damage_retreat" then
         resetFollowStuck(npcData)
-        forceWalkAnimation(zombie, isRunning)
-        zombie:setX(nextX)
-        zombie:setY(nextY)
+    elseif moveState and string.find(tostring(moveState), "interacted_", 1, true) then
+        resetFollowStuck(npcData)
+        zombie:faceLocation(target:getX(), target:getY())
     else
-        npcData.followBlockedTicks = (npcData.followBlockedTicks or 0) + 1
-        if npcData.followBlockedTicks >= STUCK_TICKS and tryUnstick(zombie, zz, dx, dy) then
-            resetFollowStuck(npcData)
-            forceWalkAnimation(zombie, isRunning)
-            return
-        end
+        resetFollowMoveState(npcData)
         stopAnimation(zombie)
     end
-    
+
     npcData.tasks = {}
 end

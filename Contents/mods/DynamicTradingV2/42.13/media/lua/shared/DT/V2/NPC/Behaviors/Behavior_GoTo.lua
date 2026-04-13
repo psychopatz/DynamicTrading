@@ -7,6 +7,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+require "DT/V2/NPC/Sys/DTNPC_Mobility"
 
 local STOP_DIST = 0.5 -- Stricter stopping distance for precise GoTo
 local STUCK_TICKS = 15
@@ -144,62 +145,44 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
         return
     end
 
-    -- Calculate Vector
-    local dx = task.x - zx
-    local dy = task.y - zy
-    local len = math.sqrt(dx * dx + dy * dy)
-    if len > 0 then
-        dx = dx / len
-        dy = dy / len
-    end
-
     local speed = DynamicTrading.GetNPCRunSpeed()
-    local nextX = zx + (dx * speed)
-    local nextY = zy + (dy * speed)
+    local taskTarget = {
+        getX = function() return task.x end,
+        getY = function() return task.y end,
+        getZ = function() return task.z or 0 end,
+    }
+    local moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
+        target = taskTarget,
+        speed = speed,
+        stopDistance = STOP_DIST,
+        allowObstacleInteract = true,
+        allowDamageRetreat = true,
+        blockCounterKey = "goToBlockedTicks",
+        stuckTicks = STUCK_TICKS,
+        targetZ = task.z or 0,
+        faceX = task.x,
+        faceY = task.y,
+        closeDoorSafeRadius = 3.0,
+        anim = {
+            animSpeed = 1.2,
+            isRunning = true,
+            dtWalkType = "Run",
+        },
+    })
 
-    -- Collision Check
-    local canMove = isTileSafe(nextX, nextY, zz)
-    
-    if not canMove then
-        if isTileSafe(nextX, zy, zz) then
-            nextY = zy
-            canMove = true
-        elseif isTileSafe(zx, nextY, zz) then
-            nextX = zx
-            canMove = true
-        end
-    end
-
-    -- Apply
-    if canMove then
+    if moved or moveState == "arrived" or moveState == "close_enough" or moveState == "damage_retreat" then
         resetGoToStuck(npcData)
-        zombie:setX(nextX)
-        zombie:setY(nextY)
-        zombie:setZ(task.z or 0)
-        forceRunAnimation(zombie)
-        
-        -- Rotation
-        if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
-            zombie:faceLocation(nextX + dx, nextY + dy)
-        end
+    elseif moveState and string.find(tostring(moveState), "interacted_", 1, true) then
+        resetGoToStuck(npcData)
+        zombie:faceLocation(task.x, task.y)
+    elseif (npcData.goToBlockedTicks or 0) >= STUCK_ABORT_TICKS then
+        DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo: Path blocked too long. Aborting.")
+        npcData.state = "Stay"
+        npcData.isMovingState = false
+        npcData.tasks = {}
+        resetGoToStuck(npcData)
+        stopMovementAnimation(zombie)
     else
-        npcData.goToBlockedTicks = (npcData.goToBlockedTicks or 0) + 1
-
-        if npcData.goToBlockedTicks >= STUCK_TICKS and tryUnstick(zombie, zz, dx, dy) then
-            resetGoToStuck(npcData)
-            forceRunAnimation(zombie)
-            return
-        end
-
-        if npcData.goToBlockedTicks >= STUCK_ABORT_TICKS then
-            DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo: Path blocked too long. Aborting.")
-            npcData.state = "Stay"
-            npcData.isMovingState = false
-            npcData.tasks = {}
-            resetGoToStuck(npcData)
-            stopMovementAnimation(zombie)
-        else
-            stopMovementAnimation(zombie)
-        end
+        stopMovementAnimation(zombie)
     end
 end

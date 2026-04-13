@@ -125,6 +125,9 @@ local function moveTowardTarget(zombie, npcData, target, stats, stopDistance, op
         anchorZ = options.anchorZ,
         leashRadius = options.leashRadius,
         allowObstacleInteract = options.allowObstacleInteract ~= false,
+        allowDamageRetreat = options.allowDamageRetreat ~= false,
+        damageRetreatDistance = options.damageRetreatDistance,
+        damageRetreatLockMs = options.damageRetreatLockMs,
         closeDoorSafeRadius = options.closeDoorSafeRadius or 3.0,
         anim = {
             animSpeed = speed > 0.06 and 1.15 or 1.0,
@@ -154,6 +157,9 @@ local function moveAwayFromPoint(zombie, npcData, stats, sourceX, sourceY, desir
         anchorZ = options.anchorZ,
         leashRadius = options.leashRadius,
         allowObstacleInteract = false,
+        allowDamageRetreat = options.allowDamageRetreat ~= false,
+        damageRetreatDistance = options.damageRetreatDistance,
+        damageRetreatLockMs = options.damageRetreatLockMs,
         anim = {
             animSpeed = 1.0,
             isRunning = false,
@@ -335,6 +341,44 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
             attacked = false,
             distance = currentDist,
             reason = "retreat_lock",
+            moveState = moveState,
+        }
+    end
+
+    local forcedRetreat = DTNPCMobility.GetForcedRetreat and DTNPCMobility.GetForcedRetreat(zombie, npcData, {
+        anchorX = options.anchorX,
+        anchorY = options.anchorY,
+        anchorZ = options.anchorZ,
+        leashRadius = options.leashRadius,
+        damageRetreatDistance = options.damageRetreatDistance,
+        damageRetreatLockMs = options.damageRetreatLockMs,
+    }) or nil
+    if forcedRetreat then
+        preserveAttackWindup(npcData, stats)
+        setPhase(npcData, "retreat", math.max(options.retreatLockMs or RETREAT_LOCK_MS, forcedRetreat.lockMs or 0))
+        local moved, moveState = moveAwayFromPoint(
+            zombie,
+            npcData,
+            stats,
+            forcedRetreat.fromX or target:getX(),
+            forcedRetreat.fromY or target:getY(),
+            forcedRetreat.desiredDistance or (holdRange + 0.45),
+            {
+                blockCounterKey = options.blockCounterKey,
+                retreatStuckTicks = options.retreatStuckTicks,
+                anchorX = options.anchorX,
+                anchorY = options.anchorY,
+                anchorZ = options.anchorZ,
+                leashRadius = options.leashRadius,
+                allowDamageRetreat = false,
+            }
+        )
+        return {
+            status = moveState == "leash" and "leash" or "retreat",
+            moved = moved == true,
+            attacked = false,
+            distance = currentDist,
+            reason = "damage_retreat",
             moveState = moveState,
         }
     end

@@ -6,6 +6,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 require "DT/V2/NPC/Sys/DTNPC_Protect"
+require "DT/V2/NPC/Sys/DTNPC_Mobility"
 
 -- DISTANCE CONFIG
 local KITE_DIST_MIN = 3.5
@@ -21,16 +22,12 @@ local REACTION_DELAY = 30
 -- 1. UTILITIES
 -- ==============================================================================
 
-local function isTileSafe(x, y, z)
-    local cell = getCell()
-    local sq = cell:getGridSquare(x, y, z)
-    if not sq then return true end
-    if not sq:isFree(false) then return false end
-    if sq:isSolid() or sq:isSolidTrans() then return false end
-    return true
-end
-
 local function stopMoveAnim(zombie)
+    if DTNPCMobility and DTNPCMobility.Stop then
+        DTNPCMobility.Stop(zombie)
+        return
+    end
+
     zombie:setVariable("bMoving", false)
     zombie:setVariable("isMoving", false)
     zombie:setVariable("Speed", 0.0)
@@ -50,6 +47,16 @@ end
 -- ==============================================================================
 
 local function forceCombatAnim(zombie, isMoving)
+    if DTNPCMobility and DTNPCMobility.SetLocomotionState then
+        DTNPCMobility.SetLocomotionState(zombie, {
+            moving = isMoving == true,
+            isRunning = false,
+            dtWalkType = "Walk",
+            animSpeed = isMoving and 1.0 or 0.0,
+        })
+        return
+    end
+
     if isMoving then
         zombie:setVariable("bMoving", true)
         zombie:setVariable("isMoving", true)
@@ -162,16 +169,52 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     local isMoving = false
     if moveDir ~= 0 then
         zombie:setVariable("DTIdleState", "0")
-        local nextX = zx + (dx * currentSpeed * moveDir)
-        local nextY = zy + (dy * currentSpeed * moveDir)
-        
-        if isTileSafe(nextX, nextY, zz) then
-            forceCombatAnim(zombie, true)
-            zombie:setX(nextX)
-            zombie:setY(nextY)
-            isMoving = true
-            zombie:faceLocation(nextX + (dx * moveDir), nextY + (dy * moveDir))
+        local moved, moveState
+        if moveDir > 0 then
+            moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
+                target = target,
+                speed = currentSpeed,
+                stopDistance = desiredMin + 0.1,
+                allowObstacleInteract = true,
+                allowDamageRetreat = true,
+                blockCounterKey = "attackRangeBlockedTicks",
+                stuckTicks = 12,
+                faceX = tx,
+                faceY = ty,
+                closeDoorTarget = target,
+                closeDoorSafeRadius = 3.0,
+                anim = {
+                    animSpeed = 1.0,
+                    isRunning = false,
+                    dtWalkType = "Walk",
+                },
+            })
         else
+            moved, moveState = DTNPCMobility.MoveAwayFromPoint(zombie, npcData, {
+                target = target,
+                speed = currentSpeed,
+                desiredDistance = desiredMin + 0.75,
+                allowObstacleInteract = true,
+                allowDamageRetreat = true,
+                blockCounterKey = "attackRangeBlockedTicks",
+                stuckTicks = 12,
+                faceX = tx,
+                faceY = ty,
+                faceTargetWhileMoving = true,
+                closeDoorTarget = target,
+                closeDoorSafeRadius = 3.0,
+                anim = {
+                    animSpeed = 1.0,
+                    isRunning = false,
+                    dtWalkType = "Walk",
+                },
+            })
+        end
+
+        isMoving = moved == true or moveState == "damage_retreat"
+        if isMoving then
+            forceCombatAnim(zombie, true)
+        elseif not (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
             forceCombatAnim(zombie, false)
         end
     else

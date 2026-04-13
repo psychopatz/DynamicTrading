@@ -7,8 +7,10 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+require "DT/V2/NPC/Sys/DTNPC_Mobility"
 
 local DESPAWN_DIST = 35
+local STUCK_TICKS = 12
 
 local function getDist(x1, y1, x2, y2)
     local dx = x1 - x2
@@ -153,34 +155,25 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
     end
 
     local speed = DynamicTrading.GetNPCRunSpeed()
-    local nextX = zx + (dx * speed)
-    local nextY = zy + (dy * speed)
-    local z = zombie:getZ()
+    local moved, moveState
+    moved, moveState = DTNPCMobility.MoveByDirection(zombie, npcData, {
+        dirX = dx,
+        dirY = dy,
+        speed = speed,
+        allowObstacleInteract = true,
+        allowDamageRetreat = true,
+        blockCounterKey = "fleeBlockedTicks",
+        stuckTicks = STUCK_TICKS,
+        closeDoorTarget = target,
+        closeDoorSafeRadius = 3.0,
+        anim = {
+            animSpeed = 1.2,
+            isRunning = true,
+            dtWalkType = "Run",
+        },
+    })
 
-    local canMove = isTileSafe(nextX, nextY, z)
-    
-    -- Simple obstacle avoidance (Slide along walls)
-    if not canMove then
-        if isTileSafe(nextX, zy, z) then
-            nextY = zy
-            canMove = true
-        elseif isTileSafe(zx, nextY, z) then
-            nextX = zx
-            canMove = true
-        end
-    end
-
-    if canMove then
-        zombie:setX(nextX)
-        zombie:setY(nextY)
-        forceRunAnimation(zombie)
-        
-        -- Rotation
-        if math.abs(dx) > 0.001 or math.abs(dy) > 0.001 then
-            zombie:faceLocation(nextX + dx, nextY + dy)
-        end
-    else
-        -- Blocked completely
+    if not moved and not (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
         stopMovementAnimation(zombie)
     end
 end
