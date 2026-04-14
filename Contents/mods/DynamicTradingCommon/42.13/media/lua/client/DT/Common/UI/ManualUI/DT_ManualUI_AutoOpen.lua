@@ -25,18 +25,26 @@ local function tryOpenWhatsNew()
         return
     end
 
+    -- 1. Check if this version is explicitly blocked
     local blockedVersion = DT_ConfigManager and DT_ConfigManager.getDisabledAutoOpenReleaseVersion and DT_ConfigManager.getDisabledAutoOpenReleaseVersion() or ""
     if blockedVersion == version then
         DT_ManualUI_AutoOpen.checked = true
         return
     end
 
-    local lastSeen = DT_ConfigManager and DT_ConfigManager.getLastSeenReleaseVersion and DT_ConfigManager.getLastSeenReleaseVersion() or ""
-    if lastSeen == version then
+    -- 2. Check if we've already seen this version AND the total count hasn't changed
+    local lastSeenVersion = DT_ConfigManager and DT_ConfigManager.getLastSeenReleaseVersion and DT_ConfigManager.getLastSeenReleaseVersion() or ""
+    local lastSeenCount = DT_ConfigManager and DT_ConfigManager.getLastSeenWhatsNewCount and DT_ConfigManager.getLastSeenWhatsNewCount() or 0
+    
+    local allWhatsNew = DynamicTrading.Manuals.GetOrderedUpdateManuals()
+    local currentCount = allWhatsNew and #allWhatsNew or 0
+
+    if lastSeenVersion == version and currentCount <= lastSeenCount then
         DT_ManualUI_AutoOpen.checked = true
         return
     end
 
+    -- 3. Check if we've already auto-opened this version (this prevents infinite loop if something goes wrong)
     local lastAutoOpened = DT_ConfigManager and DT_ConfigManager.getLastAutoOpenedReleaseVersion and DT_ConfigManager.getLastAutoOpenedReleaseVersion() or ""
     if lastAutoOpened == version then
         if DT_ConfigManager and DT_ConfigManager.setLastAutoOpenedReleaseVersion then
@@ -44,8 +52,17 @@ local function tryOpenWhatsNew()
         end
     end
 
+    -- 4. Update the stored state and open the UI
     if DT_ConfigManager and DT_ConfigManager.setLastAutoOpenedReleaseVersion then
         DT_ConfigManager.setLastAutoOpenedReleaseVersion(version)
+    end
+    
+    if DT_ConfigManager and DT_ConfigManager.setLastSeenReleaseVersion then
+        DT_ConfigManager.setLastSeenReleaseVersion(version)
+    end
+
+    if DT_ConfigManager and DT_ConfigManager.setLastSeenWhatsNewCount then
+        DT_ConfigManager.setLastSeenWhatsNewCount(currentCount)
     end
 
     DT_ManualUI_AutoOpen.checked = true

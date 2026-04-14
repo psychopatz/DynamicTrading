@@ -296,6 +296,16 @@ function DT_ConfigManager.getLastSeenReleaseVersion()
     return md and tostring(md.lastSeenReleaseVersion or "") or ""
 end
 
+function DT_ConfigManager.setLastSeenWhatsNewCount(count)
+    local md = DT_ConfigManager.getManualModData()
+    if md then md.lastSeenWhatsNewCount = tonumber(count or 0) or 0 end
+end
+
+function DT_ConfigManager.getLastSeenWhatsNewCount()
+    local md = DT_ConfigManager.getManualModData()
+    return md and tonumber(md.lastSeenWhatsNewCount or 0) or 0
+end
+
 function DT_ConfigManager.setLastAutoOpenedReleaseVersion(version)
     local md = DT_ConfigManager.getManualModData()
     if md then md.lastAutoOpenedReleaseVersion = tostring(version or "") end
