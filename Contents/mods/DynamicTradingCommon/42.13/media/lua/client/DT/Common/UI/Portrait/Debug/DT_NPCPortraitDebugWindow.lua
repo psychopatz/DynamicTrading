@@ -61,6 +61,7 @@ function DT_NPCPortraitDebugWindow:createChildren()
     self.portraitPanel:initialise()
     self.portraitPanel:instantiate()
     self:addChild(self.portraitPanel)
+    self.portraitPanel:setAnimationProfile("debug")
     self.portraitPanel:resetViewState()
 
     y = y + MODEL_SIZE + 10

@@ -36,6 +36,7 @@ function DT_TradingWindow:refreshPortraitWithTrader(trader, force)
     self._portraitKey = portraitKey
 
     self.portraitPanel:setOverlayMode("trading")
+    self.portraitPanel:setAnimationProfile("trading")
     self.portraitPanel:setLegacyProvider(self.dataProvider)
     self.portraitPanel:setTargetCharacter(trader.npcRef, trader)
 end

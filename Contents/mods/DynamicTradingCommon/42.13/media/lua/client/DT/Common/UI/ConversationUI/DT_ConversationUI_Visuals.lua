@@ -44,6 +44,7 @@ function DT_ConversationUI:refreshPortrait(force)
 
     self.portraitPanel:setOverlayMode(self.isRadio and "radio" or "none")
     self.portraitPanel:setRadioMode(self.isRadio == true)
+    self.portraitPanel:setAnimationProfile(self.isRadio and "radio" or "conversation")
     self.portraitPanel:setLegacyProvider(nil)
     self.portraitPanel:setTargetCharacter(self.interactionObj, self.target)
 end

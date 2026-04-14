@@ -4,6 +4,15 @@
 function DT_TradingWindow:update()
     ISCollapsableWindow.update(self)
 
+    local isNPCTyping = false
+    if #self.msgQueue > 0 then
+        local nextMsg = self.msgQueue[1]
+        isNPCTyping = nextMsg and (not nextMsg.isPlayer) and (nextMsg.delay or 0) > 0
+    end
+    if self.portraitPanel and self.portraitPanel.setSpeechActive then
+        self.portraitPanel:setSpeechActive(isNPCTyping)
+    end
+
     local player = getSpecificPlayer(0)
     if not player or player:isDead() then
         self:close()
@@ -64,6 +73,10 @@ function DT_TradingWindow:update()
             msg.delay = msg.delay - 1
         else
             self:logLocal(msg.text, msg.isError, msg.isPlayer)
+
+            if (not msg.isPlayer) and self.portraitPanel and self.portraitPanel.pulseSpeechAnimation then
+                self.portraitPanel:pulseSpeechAnimation(90)
+            end
 
             if player then
                 if msg.sound then

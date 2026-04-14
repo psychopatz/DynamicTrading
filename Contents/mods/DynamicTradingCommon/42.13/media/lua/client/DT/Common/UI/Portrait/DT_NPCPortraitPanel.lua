@@ -31,6 +31,47 @@ DT_NPCPortraitPanel.DIR_NAMES = {
     [IsoDirections.SW] = "SW",
 }
 
+DT_NPCPortraitPanel.ANIMATION_PROFILES = {
+    ["default"] = {
+        ambientStates = { 20, 24, 22 },
+        speechStates = { 21, 22, 23 },
+        ambientMinTicks = 240,
+        ambientMaxTicks = 540,
+    },
+    radio = {
+        ambientStates = { 23, 22, 20, 24 },
+        speechStates = { 23, 22, 21 },
+        ambientMinTicks = 200,
+        ambientMaxTicks = 420,
+    },
+    conversation = {
+        ambientStates = { 20, 24, 22 },
+        speechStates = { 21, 22, 23 },
+        ambientMinTicks = 240,
+        ambientMaxTicks = 520,
+    },
+    trading = {
+        ambientStates = { 20, 21, 24, 22 },
+        speechStates = { 21, 22, 23 },
+        ambientMinTicks = 220,
+        ambientMaxTicks = 480,
+    },
+    debug = {
+        ambientStates = { 20, 21, 22, 23, 24 },
+        speechStates = { 21, 22, 23, 24 },
+        ambientMinTicks = 120,
+        ambientMaxTicks = 260,
+    }
+}
+
+local function getPortraitRandomRange(minValue, maxValue)
+    if minValue >= maxValue then
+        return minValue
+    end
+
+    return minValue + ZombRand((maxValue - minValue) + 1)
+end
+
 function DT_NPCPortraitPanel:initialise()
     ISPanel.initialise(self)
 
@@ -66,6 +107,14 @@ function DT_NPCPortraitPanel:initialise()
     self.currentMode = "legacy"
     self.currentTexture = nil
     self.currentDescriptor = nil
+
+    self.animationProfile = self.animationProfile or "default"
+    self.currentIdleState = 20
+    self.ambientIdleState = 20
+    self.speechIdleState = 21
+    self.speechPulseTicks = 0
+    self.isSpeechActive = false
+    self.ambientTicksRemaining = 0
 end
 
 function DT_NPCPortraitPanel:createChildren()
@@ -76,9 +125,13 @@ function DT_NPCPortraitPanel:createChildren()
     self.modelView.borderColor = { r = 0, g = 0, b = 0, a = 0 }
     self.modelView:initialise()
     self.modelView:instantiate()
+    pcall(function()
+        self.modelView:setAnimSetName("zombie")
+    end)
     self:addChild(self.modelView)
 
     self:updateViewport()
+    self:resetPortraitAnimation(true)
     self:applyViewState()
     self:refreshPortrait(true)
 end
@@ -118,12 +171,14 @@ end
 function DT_NPCPortraitPanel:setTargetCharacter(character, targetData)
     self.targetCharacter = character
     self.targetData = targetData or self.targetData
+    self:resetPortraitAnimation(true)
     self:refreshPortrait(true)
 end
 
 function DT_NPCPortraitPanel:setTargetData(targetData)
     self.targetData = targetData
     self.targetCharacter = nil
+    self:resetPortraitAnimation(true)
     self:refreshPortrait(true)
 end
 
@@ -143,6 +198,21 @@ end
 
 function DT_NPCPortraitPanel:setInteractive(enabled)
     self.interactive = enabled == true
+end
+
+function DT_NPCPortraitPanel:setAnimationProfile(profile)
+    local nextProfile = profile or "default"
+    if not DT_NPCPortraitPanel.ANIMATION_PROFILES[nextProfile] then
+        nextProfile = "default"
+    end
+
+    if self.animationProfile == nextProfile then
+        return
+    end
+
+    self.animationProfile = nextProfile
+    self:resetPortraitAnimation(true)
+    self:applyViewState()
 end
 
 function DT_NPCPortraitPanel:setForceMode(mode)
@@ -170,10 +240,130 @@ function DT_NPCPortraitPanel:applyViewState()
     self.modelView:setZoom(self.currentZoom)
     self.modelView:setXOffset(self.currentXOffset)
     self.modelView:setYOffset(self.currentYOffset)
+    self:applyAnimationVariables()
 
     if self.modelView.javaObject then
         self.modelView.javaObject:setAnimate(self.isAnimating)
     end
+end
+
+function DT_NPCPortraitPanel:getAnimationConfig()
+    return DT_NPCPortraitPanel.ANIMATION_PROFILES[self.animationProfile]
+        or DT_NPCPortraitPanel.ANIMATION_PROFILES["default"]
+end
+
+function DT_NPCPortraitPanel:getAnimationIdentitySeed()
+    local targetData = self.targetData or {}
+    return tonumber(targetData.identitySeed or targetData.visualID or 1) or 1
+end
+
+function DT_NPCPortraitPanel:chooseAmbientIdleState(config)
+    config = config or self:getAnimationConfig()
+    local states = config.ambientStates or { 20 }
+    if #states == 0 then
+        return 20
+    end
+
+    local seed = self:getAnimationIdentitySeed()
+    local index = ((seed - 1) % #states) + 1
+    local state = states[index] or states[1] or 20
+
+    if #states > 1 and state == self.ambientIdleState then
+        local nextIndex = ((index) % #states) + 1
+        state = states[nextIndex] or state
+    end
+
+    return state
+end
+
+function DT_NPCPortraitPanel:scheduleAmbientAnimation(config)
+    config = config or self:getAnimationConfig()
+    local minTicks = tonumber(config.ambientMinTicks) or 240
+    local maxTicks = tonumber(config.ambientMaxTicks) or minTicks
+    self.ambientTicksRemaining = getPortraitRandomRange(minTicks, maxTicks)
+end
+
+function DT_NPCPortraitPanel:resetPortraitAnimation(forceApply)
+    local config = self:getAnimationConfig()
+    self.ambientIdleState = self:chooseAmbientIdleState(config)
+    self.speechIdleState = 21
+    self.currentIdleState = self.ambientIdleState
+    self.speechPulseTicks = 0
+    self.isSpeechActive = false
+    self:scheduleAmbientAnimation(config)
+
+    if forceApply then
+        self:applyAnimationVariables()
+    end
+end
+
+function DT_NPCPortraitPanel:chooseSpeechIdleState(config)
+    config = config or self:getAnimationConfig()
+    local states = config.speechStates or { config.speechState or 21 }
+    if #states == 0 then
+        return 21
+    end
+
+    local seed = self:getAnimationIdentitySeed() + (self.typingTick or 0) + ZombRand(1000)
+    local index = ((seed - 1) % #states) + 1
+    local state = states[index] or states[1] or 21
+    if #states > 1 and state == self.speechIdleState then
+        local nextIndex = (index % #states) + 1
+        state = states[nextIndex] or state
+    end
+    return state
+end
+
+function DT_NPCPortraitPanel:applyAnimationVariables()
+    if not self.modelView then
+        return
+    end
+
+    local idleState = tostring(self.currentIdleState or 20)
+    self.modelView:setVariable("DTNPC", "true")
+    self.modelView:setVariable("bMoving", "false")
+    self.modelView:setVariable("isMoving", "false")
+    self.modelView:setVariable("Speed", "0.0")
+    self.modelView:setVariable("MovementSpeed", "0.0")
+    self.modelView:setVariable("DTNPCAnimSpeed", "0.0")
+    self.modelView:setVariable("WalkSpeed", "0.0")
+    self.modelView:setVariable("RunSpeed", "0.0")
+    self.modelView:setVariable("WalkType", "")
+    self.modelView:setVariable("DTWalkType", "")
+    self.modelView:setVariable("DTIdleState", idleState)
+    self.modelView:setState("idle")
+end
+
+function DT_NPCPortraitPanel:refreshAnimationState(force)
+    local nextState = self.ambientIdleState or 20
+    if self.isSpeechActive or (self.speechPulseTicks or 0) > 0 then
+        nextState = self.speechIdleState or 21
+    end
+
+    if force or self.currentIdleState ~= nextState then
+        self.currentIdleState = nextState
+        self:applyAnimationVariables()
+    end
+end
+
+function DT_NPCPortraitPanel:setSpeechActive(active)
+    local nextValue = active == true
+    if self.isSpeechActive == nextValue then
+        return
+    end
+
+    self.isSpeechActive = nextValue
+    if nextValue then
+        self.speechIdleState = self:chooseSpeechIdleState()
+        self.speechPulseTicks = math.max(self.speechPulseTicks or 0, 45)
+    end
+    self:refreshAnimationState(true)
+end
+
+function DT_NPCPortraitPanel:pulseSpeechAnimation(durationTicks)
+    self.speechIdleState = self:chooseSpeechIdleState()
+    self.speechPulseTicks = math.max(self.speechPulseTicks or 0, durationTicks or 75)
+    self:refreshAnimationState(true)
 end
 
 function DT_NPCPortraitPanel:clearModelTarget()
@@ -231,6 +421,7 @@ function DT_NPCPortraitPanel:resetViewState()
     self.currentDirIndex = 1
     self.isAnimating = true
     self.isIsometric = false
+    self:resetPortraitAnimation(true)
     self:applyViewState()
 end
 
@@ -367,6 +558,33 @@ function DT_NPCPortraitPanel:onMouseWheel(del)
     return true
 end
 
+function DT_NPCPortraitPanel:update()
+    ISPanel.update(self)
+
+    if self.currentMode ~= "3d" or not self.modelView then
+        return
+    end
+
+    if not self.isSpeechActive and (self.speechPulseTicks or 0) > 0 then
+        self.speechPulseTicks = self.speechPulseTicks - 1
+        if self.speechPulseTicks < 0 then
+            self.speechPulseTicks = 0
+        end
+    end
+
+    if not self.isSpeechActive and (self.speechPulseTicks or 0) <= 0 then
+        self.ambientTicksRemaining = (self.ambientTicksRemaining or 0) - 1
+        if self.ambientTicksRemaining <= 0 then
+            self.ambientIdleState = self:chooseAmbientIdleState()
+            self:scheduleAmbientAnimation()
+            self:refreshAnimationState(true)
+            return
+        end
+    end
+
+    self:refreshAnimationState(false)
+end
+
 function DT_NPCPortraitPanel:new(x, y, width, height, options)
     options = options or {}
 
@@ -378,6 +596,7 @@ function DT_NPCPortraitPanel:new(x, y, width, height, options)
     o.isRadioMode = options.isRadioMode == true
     o.interactive = options.interactive == true
     o.forceMode = options.forceMode
+    o.animationProfile = options.animationProfile or "default"
 
     return o
 end

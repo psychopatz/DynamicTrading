@@ -11,6 +11,15 @@ function DT_ConversationUI:update()
 
     self.typingTick = self.typingTick + 1
 
+    local isNPCTyping = false
+    if #self.msgQueue > 0 then
+        local nextMsg = self.msgQueue[1]
+        isNPCTyping = nextMsg and (not nextMsg.isPlayer) and (nextMsg.delay or 0) > 0
+    end
+    if self.portraitPanel and self.portraitPanel.setSpeechActive then
+        self.portraitPanel:setSpeechActive(isNPCTyping)
+    end
+
     if self.target and self.target.factionID and self.typingTick % 30 == 0 then
         self:refreshFactionInfo()
     end
@@ -58,6 +67,10 @@ end
 function DT_ConversationUI:addMessage(text, author, isPlayer)
     if not text then
         return
+    end
+
+    if (not isPlayer) and self.portraitPanel and self.portraitPanel.pulseSpeechAnimation then
+        self.portraitPanel:pulseSpeechAnimation(90)
     end
 
     local maxBubbleW = (self.chatList:getWidth() - 25) * 0.85
