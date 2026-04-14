@@ -33,34 +33,49 @@ DT_NPCPortraitPanel.DIR_NAMES = {
 
 DT_NPCPortraitPanel.ANIMATION_PROFILES = {
     ["default"] = {
-        ambientStates = { 20, 24, 22 },
-        speechStates = { 21, 22, 23 },
+        ambientStates = { 20, 21, 24 },
+        speechStates = { 23 },
+        transactionStates = { 25 },
         ambientMinTicks = 240,
         ambientMaxTicks = 540,
+        speechPulseTicks = 42,
+        transactionPulseTicks = 34,
     },
     radio = {
-        ambientStates = { 23, 22, 20, 24 },
-        speechStates = { 23, 22, 21 },
+        ambientStates = { 20, 21, 24 },
+        speechStates = { 23 },
+        transactionStates = { 25 },
         ambientMinTicks = 200,
         ambientMaxTicks = 420,
+        speechPulseTicks = 42,
+        transactionPulseTicks = 34,
     },
     conversation = {
-        ambientStates = { 20, 24, 22 },
-        speechStates = { 21, 22, 23 },
+        ambientStates = { 20, 21, 24 },
+        speechStates = { 23 },
+        transactionStates = { 25 },
         ambientMinTicks = 240,
         ambientMaxTicks = 520,
+        speechPulseTicks = 42,
+        transactionPulseTicks = 34,
     },
     trading = {
-        ambientStates = { 20, 21, 24, 22 },
-        speechStates = { 21, 22, 23 },
+        ambientStates = { 20, 21, 24 },
+        speechStates = { 23 },
+        transactionStates = { 25 },
         ambientMinTicks = 220,
         ambientMaxTicks = 480,
+        speechPulseTicks = 42,
+        transactionPulseTicks = 34,
     },
     debug = {
-        ambientStates = { 20, 21, 22, 23, 24 },
-        speechStates = { 21, 22, 23, 24 },
+        ambientStates = { 20, 21, 24 },
+        speechStates = { 23 },
+        transactionStates = { 25 },
         ambientMinTicks = 120,
         ambientMaxTicks = 260,
+        speechPulseTicks = 42,
+        transactionPulseTicks = 34,
     }
 }
 
@@ -113,7 +128,10 @@ function DT_NPCPortraitPanel:initialise()
     self.ambientIdleState = 20
     self.speechIdleState = 21
     self.speechPulseTicks = 0
-    self.isSpeechActive = false
+    self.tradeIdleState = 25
+    self.tradePulseTicks = 0
+    self.speechTriggerCount = 0
+    self.tradeTriggerCount = 0
     self.ambientTicksRemaining = 0
 end
 
@@ -264,12 +282,11 @@ function DT_NPCPortraitPanel:chooseAmbientIdleState(config)
         return 20
     end
 
-    local seed = self:getAnimationIdentitySeed()
-    local index = ((seed - 1) % #states) + 1
+    local index = ZombRand(#states) + 1
     local state = states[index] or states[1] or 20
 
     if #states > 1 and state == self.ambientIdleState then
-        local nextIndex = ((index) % #states) + 1
+        local nextIndex = (index % #states) + 1
         state = states[nextIndex] or state
     end
 
@@ -286,10 +303,13 @@ end
 function DT_NPCPortraitPanel:resetPortraitAnimation(forceApply)
     local config = self:getAnimationConfig()
     self.ambientIdleState = self:chooseAmbientIdleState(config)
-    self.speechIdleState = 21
+    self.speechIdleState = config.speechStates and config.speechStates[1] or 23
+    self.tradeIdleState = config.transactionStates and config.transactionStates[1] or 25
     self.currentIdleState = self.ambientIdleState
     self.speechPulseTicks = 0
-    self.isSpeechActive = false
+    self.tradePulseTicks = 0
+    self.speechTriggerCount = 0
+    self.tradeTriggerCount = 0
     self:scheduleAmbientAnimation(config)
 
     if forceApply then
@@ -304,10 +324,27 @@ function DT_NPCPortraitPanel:chooseSpeechIdleState(config)
         return 21
     end
 
-    local seed = self:getAnimationIdentitySeed() + (self.typingTick or 0) + ZombRand(1000)
+    local seed = self:getAnimationIdentitySeed() + (self.speechTriggerCount or 0)
     local index = ((seed - 1) % #states) + 1
     local state = states[index] or states[1] or 21
     if #states > 1 and state == self.speechIdleState then
+        local nextIndex = (index % #states) + 1
+        state = states[nextIndex] or state
+    end
+    return state
+end
+
+function DT_NPCPortraitPanel:chooseTradeIdleState(config)
+    config = config or self:getAnimationConfig()
+    local states = config.transactionStates or { config.transactionState or 25 }
+    if #states == 0 then
+        return 25
+    end
+
+    local seed = self:getAnimationIdentitySeed() + (self.tradeTriggerCount or 0)
+    local index = ((seed - 1) % #states) + 1
+    local state = states[index] or states[1] or 25
+    if #states > 1 and state == self.tradeIdleState then
         local nextIndex = (index % #states) + 1
         state = states[nextIndex] or state
     end
@@ -336,7 +373,9 @@ end
 
 function DT_NPCPortraitPanel:refreshAnimationState(force)
     local nextState = self.ambientIdleState or 20
-    if self.isSpeechActive or (self.speechPulseTicks or 0) > 0 then
+    if (self.tradePulseTicks or 0) > 0 then
+        nextState = self.tradeIdleState or 25
+    elseif (self.speechPulseTicks or 0) > 0 then
         nextState = self.speechIdleState or 21
     end
 
@@ -348,21 +387,28 @@ end
 
 function DT_NPCPortraitPanel:setSpeechActive(active)
     local nextValue = active == true
-    if self.isSpeechActive == nextValue then
-        return
-    end
-
-    self.isSpeechActive = nextValue
     if nextValue then
-        self.speechIdleState = self:chooseSpeechIdleState()
-        self.speechPulseTicks = math.max(self.speechPulseTicks or 0, 45)
+        self:pulseSpeechAnimation()
     end
-    self:refreshAnimationState(true)
 end
 
 function DT_NPCPortraitPanel:pulseSpeechAnimation(durationTicks)
+    local config = self:getAnimationConfig()
+    local pulseTicks = durationTicks or tonumber(config.speechPulseTicks) or 36
+
+    self.speechTriggerCount = (self.speechTriggerCount or 0) + 1
     self.speechIdleState = self:chooseSpeechIdleState()
-    self.speechPulseTicks = math.max(self.speechPulseTicks or 0, durationTicks or 75)
+    self.speechPulseTicks = math.max(1, pulseTicks)
+    self:refreshAnimationState(true)
+end
+
+function DT_NPCPortraitPanel:pulseTradeAnimation(durationTicks)
+    local config = self:getAnimationConfig()
+    local pulseTicks = durationTicks or tonumber(config.transactionPulseTicks) or 30
+
+    self.tradeTriggerCount = (self.tradeTriggerCount or 0) + 1
+    self.tradeIdleState = self:chooseTradeIdleState()
+    self.tradePulseTicks = math.max(1, pulseTicks)
     self:refreshAnimationState(true)
 end
 
@@ -565,14 +611,21 @@ function DT_NPCPortraitPanel:update()
         return
     end
 
-    if not self.isSpeechActive and (self.speechPulseTicks or 0) > 0 then
+    if (self.tradePulseTicks or 0) > 0 then
+        self.tradePulseTicks = self.tradePulseTicks - 1
+        if self.tradePulseTicks < 0 then
+            self.tradePulseTicks = 0
+        end
+    end
+
+    if (self.speechPulseTicks or 0) > 0 then
         self.speechPulseTicks = self.speechPulseTicks - 1
         if self.speechPulseTicks < 0 then
             self.speechPulseTicks = 0
         end
     end
 
-    if not self.isSpeechActive and (self.speechPulseTicks or 0) <= 0 then
+    if (self.tradePulseTicks or 0) <= 0 and (self.speechPulseTicks or 0) <= 0 then
         self.ambientTicksRemaining = (self.ambientTicksRemaining or 0) - 1
         if self.ambientTicksRemaining <= 0 then
             self.ambientIdleState = self:chooseAmbientIdleState()
