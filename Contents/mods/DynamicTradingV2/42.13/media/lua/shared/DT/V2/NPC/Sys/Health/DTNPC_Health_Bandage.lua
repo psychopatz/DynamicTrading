@@ -299,8 +299,12 @@ function DTNPCHealth.TryEnterSelfBandage(zombie, npcData, currentState)
 end
 
 function DTNPCHealth.ProcessSelfBandageAction(zombie, npcData)
-    if not zombie or not npcData or internal.isRemoteClient() then
+    if not zombie or not npcData then
         return "blocked"
+    end
+
+    if internal.isRemoteClient() then
+        return "applying"
     end
 
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
