@@ -4,6 +4,7 @@
 -- Entry point for the modular conversation UI.
 -- =============================================================================
 
+require "DT/Common/UI/Portrait/Portrait"
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Faction"
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Visuals"

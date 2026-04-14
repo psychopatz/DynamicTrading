@@ -35,9 +35,10 @@ function DT_ConversationUI:createChildren()
     ISCollapsableWindow.createChildren(self)
 
     local th = self:titleBarHeight()
-    local leftColW = 200
+    local leftColW = math.max(180, math.min(240, math.floor(self.width * 0.33)))
     local pad = 10
 
+    self.leftColW = leftColW
     local rightX = leftColW + (pad * 2)
     local rightW = self.width - rightX - pad
 
@@ -50,6 +51,13 @@ function DT_ConversationUI:createChildren()
 
     self.imageY = th + pad
     self.imageSize = leftColW
+
+    self.portraitPanel = DT_NPCPortraitPanel:new(pad, self.imageY, self.imageSize, self.imageSize, {
+        overlayStyle = "none"
+    })
+    self.portraitPanel:initialise()
+    self.portraitPanel:instantiate()
+    self:addChild(self.portraitPanel)
 
     self.lblName = ISLabel:new(leftColW / 2 + pad, self.imageY + self.imageSize + 10, 25, "Unknown", 1, 1, 1, 1, UIFont.Medium, true)
     self.lblName.center = true

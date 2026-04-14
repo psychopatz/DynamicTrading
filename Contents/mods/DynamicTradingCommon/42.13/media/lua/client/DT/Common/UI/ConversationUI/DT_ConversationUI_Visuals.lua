@@ -1,94 +1,55 @@
 -- =============================================================================
 -- DYNAMIC TRADING: CONVERSATION UI VISUALS
 -- =============================================================================
--- Portrait/background resolution and chat bubble rendering.
+-- Shared portrait panel binding and chat bubble rendering.
 -- =============================================================================
 
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
 
-function DT_ConversationUI:resolvePortrait(trader)
-    if not trader then
-        return nil
-    end
-    if trader.texture then
-        return trader.texture
-    end
-
-    local arch = trader.archetype or trader.role or "General"
-    local gender = trader.gender or "Male"
-    local seed = trader.identitySeed or 1
-
-    local mappedID = 1
-    if DynamicTrading and DynamicTrading.Portraits and DynamicTrading.Portraits.GetMappedID then
-        mappedID = DynamicTrading.Portraits.GetMappedID(arch, gender, seed)
+local function getPortraitKey(ui)
+    local target = ui and ui.target or nil
+    local interactionObj = ui and ui.interactionObj or nil
+    local modeKey = DT_NPCPortraitRenderers.Use3DPortraits() and "3d" or "legacy"
+    if not target then
+        return modeKey .. ":none"
     end
 
-    local pathFolder = DynamicTrading.Portraits.GetPathFolder(arch, gender)
-    local tex = getTexture(pathFolder .. tostring(mappedID) .. ".png")
-    if tex then
-        return tex
-    end
-
-    return getTexture("media/ui/Portraits/General/" .. gender .. "/1.png")
+    local targetID = target.uuid or target.traderID or target.id or target.name or "unknown"
+    local liveRef = target.npcRef or interactionObj
+    return table.concat({
+        modeKey,
+        tostring(targetID),
+        tostring(target.identitySeed or 1),
+        tostring(target.archetype or target.archetypeID or target.role or "General"),
+        tostring(target.gender or (target.isFemale and "Female" or "Male") or "Male"),
+        tostring(liveRef)
+    }, ":")
 end
 
 function DT_ConversationUI:getBackgroundTexture()
-    local hour = GameTime:getInstance():getHour()
-    local filename = "twilight"
-    if hour >= 4 and hour < 6 then
-        filename = "dawn"
-    elseif hour >= 6 and hour < 9 then
-        filename = "sunrise"
-    elseif hour >= 9 and hour < 17 then
-        local dayTex = getTexture("media/ui/Backgrounds/day.png")
-        if dayTex then
-            return dayTex
-        end
-        filename = "sunrise"
-    elseif hour >= 17 and hour < 19 then
-        filename = "sunset"
-    elseif hour >= 19 and hour < 21 then
-        filename = "dusk"
-    elseif hour >= 21 or hour < 4 then
-        filename = "twilight"
+    return DT_NPCPortraitRenderers.GetBackgroundTexture()
+end
+
+function DT_ConversationUI:refreshPortrait(force)
+    if not self.portraitPanel then
+        return
     end
 
-    local path = "media/ui/Backgrounds/" .. filename .. ".png"
-    local tex = getTexture(path)
-    return tex or getTexture("media/ui/Backgrounds/twilight.png")
+    local nextKey = getPortraitKey(self)
+    if (not force) and self._portraitKey == nextKey then
+        return
+    end
+
+    self._portraitKey = nextKey
+
+    self.portraitPanel:setOverlayMode(self.isRadio and "radio" or "none")
+    self.portraitPanel:setRadioMode(self.isRadio == true)
+    self.portraitPanel:setLegacyProvider(nil)
+    self.portraitPanel:setTargetCharacter(self.interactionObj, self.target)
 end
 
 function DT_ConversationUI:render()
     ISCollapsableWindow.render(self)
-
-    local x = 10
-    local y = self.imageY
-    local w = self.imageSize
-    local h = self.imageSize
-
-    local bgTex = self:getBackgroundTexture()
-    if bgTex then
-        self:drawTextureScaled(bgTex, x, y, w, h, 1.0, 1.0, 1.0, 1.0)
-    else
-        self:drawRect(x, y, w, h, 1, 0.1, 0.1, 0.1)
-    end
-
-    if self.targetTexture then
-        self:drawTextureScaled(self.targetTexture, x, y, w, h, 1, 1, 1, 1)
-    end
-
-    if self.isRadio then
-        local crtTex = getTexture("media/ui/Effects/crt.png")
-        if crtTex then
-            local alpha = 0.15 + ZombRandFloat(0.0, 0.05)
-            if ZombRand(100) < 5 then
-                alpha = alpha + ZombRandFloat(0.1, 0.25)
-            end
-            self:drawTextureScaled(crtTex, x, y, w, h, math.min(alpha, 0.9), 1, 1, 1)
-        end
-    end
-
-    self:drawRectBorder(x, y, w, h, 1, 1.0, 1.0, 1.0)
 
     if #self.msgQueue > 0 then
         local nextMsg = self.msgQueue[1]

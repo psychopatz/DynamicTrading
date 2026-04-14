@@ -64,4 +64,8 @@ function DT_TradingWindow:updateIdentityDisplay(trader)
         self.lblSignal:setName(text)
         self.lblSignal:setColor(r, g, b, 1)
     end
+
+    if self.refreshPortraitWithTrader then
+        self:refreshPortraitWithTrader(trader)
+    end
 end

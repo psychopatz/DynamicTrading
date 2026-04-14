@@ -66,6 +66,9 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     ui.wasFoggy = climate:getFogIntensity() > 0.4
 
     if trader then
+        if ui.refreshPortraitWithTrader then
+            ui:refreshPortraitWithTrader(trader, true)
+        end
         local introMsg = dataProvider:getPlayerMessage("Intro", {})
         ui:queueMessage(introMsg, false, true, 0)
 

@@ -5,6 +5,7 @@ require "ISUI/ISScrollingListBox"
 require "ISUI/ISImage"
 
 require "DT/Common/Config"
+require "DT/Common/UI/Portrait/Portrait"
 
 -- Keep explicit load order so late modules can override methods exactly as before.
 require "DT/Common/UI/Trading/DT_Trading_Core"

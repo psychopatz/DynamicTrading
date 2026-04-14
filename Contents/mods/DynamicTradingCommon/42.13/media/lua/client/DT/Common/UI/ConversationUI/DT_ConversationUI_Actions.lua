@@ -64,7 +64,9 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
         ui:refreshFactionInfo()
     end
 
-    ui.targetTexture = ui:resolvePortrait(traderObj)
+    if ui.refreshPortrait then
+        ui:refreshPortrait(true)
+    end
 
     if initialText then
         ui:speak(initialText)

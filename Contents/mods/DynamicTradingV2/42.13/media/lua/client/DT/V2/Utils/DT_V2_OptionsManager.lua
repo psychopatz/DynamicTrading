@@ -12,6 +12,19 @@ local function isCurrencyExpandedActive()
     return activated and activated.contains and activated:contains("CurrencyExpanded") or false
 end
 
+local function refreshPortraitUIs()
+    if DT_TradingWindow and DT_TradingWindow.instance and DT_TradingWindow.instance.refreshPortraitWithTrader then
+        local trader = DT_TradingWindow.instance:getCurrentTrader()
+        if trader then
+            DT_TradingWindow.instance:refreshPortraitWithTrader(trader, true)
+        end
+    end
+
+    if DT_ConversationUI and DT_ConversationUI.instance and DT_ConversationUI.instance.refreshPortrait then
+        DT_ConversationUI.instance:refreshPortrait(true)
+    end
+end
+
 function DT_V2_OptionsManager.RegisterUI()
     if not DT_OptionsUI then return end
 
@@ -32,6 +45,9 @@ function DT_V2_OptionsManager.RegisterUI()
         else
             DynamicTrading.Debug = selected == true
         end
+    end)
+    DT_OptionsUI.RegisterGeneralSetting("Use 3D Portraits", "use3DPortraits", function()
+        refreshPortraitUIs()
     end)
 
     DynamicTrading.Log("DTV2", "Init", "Config", "V2 UI Registered.")

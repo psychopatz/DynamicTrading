@@ -14,6 +14,7 @@ DT_ConfigManager.defaultSettings = {
     enableSound = true,
     showSidebar = true,
     debugLogs = false,
+    use3DPortraits = true,
     volMaster = 0.6,
     volRadio = 0.6,
     volWallet = 0.5,
@@ -55,6 +56,7 @@ function DT_ConfigManager.save()
         fileWriter:write("enableSound=" .. tostring(DT_ConfigManager.settings.enableSound) .. "\r\n")
         fileWriter:write("showSidebar=" .. tostring(DT_ConfigManager.settings.showSidebar) .. "\r\n")
         fileWriter:write("debugLogs=" .. tostring(DT_ConfigManager.settings.debugLogs) .. "\r\n")
+        fileWriter:write("use3DPortraits=" .. tostring(DT_ConfigManager.settings.use3DPortraits) .. "\r\n")
         fileWriter:write("volMaster=" .. tostring(DT_ConfigManager.settings.volMaster) .. "\r\n")
         fileWriter:write("volRadio=" .. tostring(DT_ConfigManager.settings.volRadio) .. "\r\n")
         fileWriter:write("volWallet=" .. tostring(DT_ConfigManager.settings.volWallet) .. "\r\n")
@@ -110,6 +112,9 @@ function DT_ConfigManager.load()
         end
         if string.find(line, "debugLogs=") then
             DT_ConfigManager.settings.debugLogs = (string.sub(line, 11) == "true")
+        end
+        if string.find(line, "use3DPortraits=") then
+            DT_ConfigManager.settings.use3DPortraits = (string.sub(line, 16) == "true")
         end
         if string.find(line, "volMaster=") then
             local n = tonumber(string.sub(line, 11))
