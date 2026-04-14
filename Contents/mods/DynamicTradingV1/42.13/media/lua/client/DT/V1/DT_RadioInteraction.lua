@@ -3,6 +3,10 @@ require "DT/Common/Config"
 require "DT/V1/Radio/DT_RadioWindow"
 require "DT/V1/Utils/DT_OptionsManager" 
 
+if isDebugEnabled() then
+    require "DT/Common/UI/Portrait/Debug/PortraitDebugger"
+end
+
 DT_RadioInteraction = {}
 
 -- ==========================================================
@@ -223,6 +227,18 @@ local function OnFillInventoryObjectContextMenu(playerNum, context, items)
             option.toolTip = ISWorldObjectContextMenu.addToolTip()
             option.toolTip.description = "Radio must be ON and have Power."
         end
+
+        if isDebugEnabled() and DTNPC_PortraitDebugger then
+            context:addOption("DEBUG: Open Portrait Debugger", radioItem, function()
+                DTNPC_PortraitDebugger.Open(nil, "V1 Radio Portrait Debug", {
+                    name = "V1 Radio Trader",
+                    archetype = "General",
+                    archetypeID = "General",
+                    gender = "Male",
+                    identitySeed = 1
+                })
+            end)
+        end
     end
 end
 
@@ -266,6 +282,18 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
             option.notAvailable = true
             option.toolTip = ISWorldObjectContextMenu.addToolTip()
             option.toolTip.description = "Radio must be ON and Powered."
+        end
+
+        if isDebugEnabled() and DTNPC_PortraitDebugger then
+            context:addOption("DEBUG: Open Portrait Debugger", radioObj, function()
+                DTNPC_PortraitDebugger.Open(nil, "V1 Radio Portrait Debug", {
+                    name = "V1 Radio Trader",
+                    archetype = "General",
+                    archetypeID = "General",
+                    gender = "Male",
+                    identitySeed = 1
+                })
+            end)
         end
     end
 end

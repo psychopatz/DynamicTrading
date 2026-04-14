@@ -12,10 +12,22 @@ local function isRenderableCharacter(character)
         return false
     end
 
-    local ok, visual = pcall(function()
-        return character:getHumanVisual()
-    end)
-    return ok and visual ~= nil
+    if type(character) ~= "userdata" then
+        return false
+    end
+
+    if instanceof then
+        local isCharacter = instanceof(character, "IsoGameCharacter")
+            or instanceof(character, "IsoPlayer")
+            or instanceof(character, "IsoZombie")
+            or instanceof(character, "IsoSurvivor")
+        if not isCharacter then
+            return false
+        end
+    end
+
+    local visual = character:getHumanVisual()
+    return visual ~= nil
 end
 
 function DT_NPCPortraitResolver.Resolve(targetData, character, options)
