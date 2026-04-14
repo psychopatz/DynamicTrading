@@ -16,7 +16,14 @@ local DataHandlers  = require "DT/Common/Faction/TradingSys/NetworkServer/DataHa
 local TradeHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/TradeHandlers/TradeHandlers"
 local DebugHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DebugHandlers"
 local ok, LabourNetwork = pcall(require, "DC/Common/Colony/ColonyNetwork/DC_Colony_Network")
-if not ok then LabourNetwork = nil end
+if not ok then
+    if DynamicTrading and DynamicTrading.Log then
+        DynamicTrading.Log("DTCommons", "Init", "Network", "Dynamic Colonies network unavailable: " .. tostring(LabourNetwork))
+    else
+        print("[DynamicTrading] Dynamic Colonies network unavailable: " .. tostring(LabourNetwork))
+    end
+    LabourNetwork = nil
+end
 
 -- =============================================================================
 -- 2. MERGE HANDLERS INTO A SINGLE DISPATCH TABLE
