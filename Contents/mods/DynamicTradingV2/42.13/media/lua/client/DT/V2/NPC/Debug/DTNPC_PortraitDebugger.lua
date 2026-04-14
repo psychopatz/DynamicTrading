@@ -8,6 +8,7 @@ if not isDebugEnabled() then return end
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISButton"
 require "ISUI/ISLabel"
+require "ISUI/ISPanel"
 require "ISUI/ISUI3DModel"
 
 DTNPC_PortraitDebugger = ISCollapsableWindow:derive("DTNPC_PortraitDebugger")
@@ -19,7 +20,7 @@ DTNPC_PortraitDebugger.instance = nil
 
 local MODEL_SIZE = 256
 local PANEL_W = 320
-local PANEL_H = 550
+local PANEL_H = 605
 local CTRL_X = 10
 local CTRL_W_HALF = 145
 local BTN_H = 25
@@ -106,35 +107,52 @@ function DTNPC_PortraitDebugger:createChildren()
 
     y = y + MODEL_SIZE + 10
 
-    -- Info Label
-    self.lblTarget = ISLabel:new(CTRL_X, y, 20, "Target: None", 0.8, 1.0, 0.8, 1, UIFont.Small, false)
-    self:addChild(self.lblTarget)
-    y = y + 22
+    -- Dedicated info panel for status text (prevents label clipping/overlap).
+    local infoW = PANEL_W - (CTRL_X * 2)
+    local infoH = 64
+    self.infoPanel = ISPanel:new(CTRL_X, y, infoW, infoH)
+    self.infoPanel:initialise()
+    self.infoPanel:instantiate()
+    self.infoPanel.backgroundColor = { r = 0.08, g = 0.08, b = 0.08, a = 0.65 }
+    self.infoPanel.borderColor = { r = 0.35, g = 0.35, b = 0.35, a = 0.9 }
+    self.infoPanel.prerender = function(panel)
+        ISPanel.prerender(panel)
+        local parent = panel.parent
+        if not parent then return end
 
-    self.lblZoom = ISLabel:new(CTRL_X, y, 20, "Zoom: 3.0", 0.7, 0.7, 0.7, 1, UIFont.Small, false)
-    self:addChild(self.lblZoom)
+        local targetR, targetG, targetB = 0.7, 0.7, 0.7
+        if parent.targetZombie then
+            targetR, targetG, targetB = 0.4, 1.0, 0.4
+        end
 
-    self.lblOffset = ISLabel:new(CTRL_X + 160, y, 20, "Offset: 0.0, 0.3", 0.7, 0.7, 0.7, 1, UIFont.Small, false)
-    self:addChild(self.lblOffset)
-    y = y + 22
+        panel:drawText("Target: " .. tostring(parent.targetName or "None"), 8, 6, targetR, targetG, targetB, 1.0, UIFont.Small)
+        panel:drawText(string.format("Zoom: %.1f", tonumber(parent.currentZoom) or 0), 8, 24, 0.78, 0.78, 0.78, 1.0, UIFont.Small)
+        panel:drawText(string.format("Offset: %.2f, %.2f", tonumber(parent.currentXOffset) or 0, tonumber(parent.currentYOffset) or 0), 120, 24, 0.78, 0.78, 0.78, 1.0, UIFont.Small)
 
-    self.lblDir = ISLabel:new(CTRL_X, y, 20, "Dir: S (Front)", 0.7, 0.7, 0.7, 1, UIFont.Small, false)
-    self:addChild(self.lblDir)
-    y = y + 28
+        local dirEnum = DIRECTIONS[parent.currentDirIndex or 1]
+        panel:drawText("Dir: " .. tostring(DIR_NAMES[dirEnum] or "?"), 8, 42, 0.78, 0.78, 0.78, 1.0, UIFont.Small)
+    end
+    self:addChild(self.infoPanel)
+    y = y + infoH + 8
 
     -- =========================================================================
     -- CONTROLS ROW 1: Target Selection
     -- =========================================================================
 
-    self.btnUsePlayer = ISButton:new(CTRL_X, y, CTRL_W_HALF, BTN_H, "Use Player", self, self.onUsePlayer)
+    self.btnUsePlayer = ISButton:new(CTRL_X, y, 95, BTN_H, "Player", self, self.onUsePlayer)
     self.btnUsePlayer:initialise()
     self.btnUsePlayer.backgroundColor = {r=0.2, g=0.4, b=0.6, a=1}
     self:addChild(self.btnUsePlayer)
 
-    self.btnUseNearestNPC = ISButton:new(CTRL_X + CTRL_W_HALF + 10, y, CTRL_W_HALF, BTN_H, "Use Nearest NPC", self, self.onUseNearestNPC)
+    self.btnUseNearestNPC = ISButton:new(CTRL_X + 100, y, 95, BTN_H, "Nearest", self, self.onUseNearestNPC)
     self.btnUseNearestNPC:initialise()
     self.btnUseNearestNPC.backgroundColor = {r=0.4, g=0.5, b=0.2, a=1}
     self:addChild(self.btnUseNearestNPC)
+
+    self.btnUseDummy = ISButton:new(CTRL_X + 200, y, 95, BTN_H, "V1 Dummy", self, self.onUseDummy)
+    self.btnUseDummy:initialise()
+    self.btnUseDummy.backgroundColor = {r=0.4, g=0.3, b=0.6, a=1}
+    self:addChild(self.btnUseDummy)
     y = y + BTN_H + 5
 
     -- =========================================================================
@@ -206,10 +224,20 @@ function DTNPC_PortraitDebugger:createChildren()
     self.btnClear.backgroundColor = {r=0.5, g=0.2, b=0.2, a=1}
     self:addChild(self.btnClear)
 
-    -- Tip
-    y = y + BTN_H + 10
-    self.lblTip = ISLabel:new(CTRL_X, y, 16, "Drag model to adjust offset. Scroll to zoom.", 0.5, 0.5, 0.5, 1, UIFont.Small, false)
-    self:addChild(self.lblTip)
+    -- Tip Panel
+    y = y + BTN_H + 8
+    local infoW = PANEL_W - (CTRL_X * 2)
+    local footerH = 26
+    self.footerPanel = ISPanel:new(CTRL_X, y, infoW, footerH)
+    self.footerPanel:initialise()
+    self.footerPanel:instantiate()
+    self.footerPanel.backgroundColor = { r = 0.08, g = 0.08, b = 0.08, a = 0.65 }
+    self.footerPanel.borderColor = { r = 0.35, g = 0.35, b = 0.35, a = 0.9 }
+    self.footerPanel.prerender = function(panel)
+        ISPanel.prerender(panel)
+        panel:drawText("Drag model to pan. Scroll to zoom.", 8, 4, 0.55, 0.55, 0.55, 1.0, UIFont.Small)
+    end
+    self:addChild(self.footerPanel)
 end
 
 -- =============================================================================
@@ -269,8 +297,9 @@ function DTNPC_PortraitDebugger:onUseNearestNPC()
     if bestZombie then
         self:setTarget(bestZombie, bestName)
     else
-        self.lblTarget:setName("Target: No NPCs nearby!")
-        self.lblTarget:setColor(1.0, 0.4, 0.4, 1.0)
+        self.targetZombie = nil
+        self.targetName = "No NPCs nearby!"
+        self:updateLabels()
     end
 end
 
@@ -279,8 +308,138 @@ function DTNPC_PortraitDebugger:onClear()
     self.targetName = "None"
     if self.modelView then
         self.modelView:setCharacter(nil)
+        self.modelView:setSurvivorDesc(nil)
+        if self.modelView.javaObject then
+            self.modelView.javaObject:clearVariables()
+        end
+        self.modelView:setOutfitName("Generic01", false, false)
     end
     self:updateLabels()
+end
+
+local function createPortraitItem(itemType)
+    if not itemType or itemType == "" then
+        return nil
+    end
+
+    if instanceItem then
+        local ok, item = pcall(instanceItem, itemType)
+        if ok and item then
+            return item
+        end
+    end
+
+    if InventoryItemFactory and InventoryItemFactory.CreateItem then
+        local ok, item = pcall(InventoryItemFactory.CreateItem, itemType)
+        if ok and item then
+            return item
+        end
+    end
+
+    return nil
+end
+
+local function createPortraitSurvivorDesc()
+    if not SurvivorFactory or not SurvivorFactory.CreateSurvivor then
+        return nil
+    end
+
+    if SurvivorType and SurvivorType.Neutral then
+        local ok, desc = pcall(SurvivorFactory.CreateSurvivor, SurvivorType.Neutral, false)
+        if ok and desc then
+            return desc
+        end
+    end
+
+    local ok, desc = pcall(SurvivorFactory.CreateSurvivor)
+    if ok and desc then
+        return desc
+    end
+
+    return nil
+end
+
+function DTNPC_PortraitDebugger:setDummyTarget(npcData)
+    if not self.modelView then return end
+    
+    local isFemale = npcData.isFemale or false
+    local desc = createPortraitSurvivorDesc()
+    if not desc then
+        self.targetZombie = nil
+        self.targetName = "Dummy creation failed"
+        self:updateLabels()
+        return
+    end
+    desc:setFemale(isFemale)
+    
+    local humanVisual = desc:getHumanVisual()
+    -- Skin
+    local skinTexture = isFemale and "FemaleBody01" or "MaleBody01"
+    humanVisual:setSkinTextureName(skinTexture)
+    
+    -- Hair
+    local style = npcData.hairStyle or (DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetHairStyleBySeed(npcData.archetypeID or "General", isFemale, npcData.identitySeed or 1))
+    if style then humanVisual:setHairModel(style) end
+    
+    -- Beard
+    local beard = npcData.beardStyle or (not isFemale and DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetBeardStyleBySeed(npcData.archetypeID or "General", npcData.identitySeed or 1))
+    if beard then humanVisual:setBeardModel(beard) elseif not isFemale then humanVisual:setBeardModel("") end
+    
+    -- Color
+    local color = npcData.hairColor or (DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetHairColorBySeed(npcData.archetypeID or "General", npcData.identitySeed or 1))
+    if color and ImmutableColor then
+        local immutableColor = ImmutableColor.new(color.r or 0.2, color.g or 0.1, color.b or 0.1, 1)
+        humanVisual:setHairColor(immutableColor)
+        humanVisual:setBeardColor(immutableColor)
+    end
+    
+    -- Outfit
+    desc:getWornItems():clear()
+    
+    local outfit = npcData.outfit or (DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetOutfitBySeed(npcData.archetypeID or "General", isFemale, npcData.identitySeed or 1))
+    if outfit and type(outfit) == "table" then
+        local wornItems = desc:getWornItems()
+        for _, itemType in ipairs(outfit) do
+            if itemType and type(itemType) == "string" then
+                local item = createPortraitItem(itemType)
+                if item then
+                    local loc = item:getBodyLocation()
+                    if loc and loc ~= "" then
+                        wornItems:setItem(loc, item)
+                    end
+                end
+            end
+        end
+    end
+    
+    humanVisual:removeBlood()
+    humanVisual:removeDirt()
+
+    -- Keep descriptor clean for cross-version compatibility.
+    if desc.resetModel then
+        pcall(function()
+            desc:resetModel()
+        end)
+    end
+
+    self.targetZombie = nil
+    self.targetName = (npcData.name or "V1 Trader") .. " (Dummy)"
+    self.modelView:setCharacter(nil)
+    self.modelView:setSurvivorDesc(desc)
+    self:updateLabels()
+end
+
+function DTNPC_PortraitDebugger:onUseDummy()
+    local archetypes = {"General", "Military", "Doctor", "Raider", "Mechanic"}
+    local arch = archetypes[ZombRand(#archetypes) + 1]
+    
+    local npcData = {
+        name = "V1 " .. arch,
+        archetypeID = arch,
+        isFemale = ZombRand(0, 2) == 1,
+        identitySeed = ZombRand(1, 1000)
+    }
+    self:setDummyTarget(npcData)
 end
 
 -- =============================================================================
@@ -509,12 +668,6 @@ function DTNPC_PortraitDebugger:render()
     end
 
     self:drawRectBorder(mx - 1, my - 1, mw + 2, mh + 2, 1.0, 0.4, 0.4, 0.4)
-
-    -- Crosshair guides (center marker) ON TOP of the model
-    local cx = mx + mw / 2
-    local cy = my + mh / 2
-    self:drawRect(cx - 1, cy - 8, 2, 16, 0.3, 0.5, 1.0, 0.5)
-    self:drawRect(cx - 8, cy - 1, 16, 2, 0.3, 0.5, 1.0, 0.5)
 end
 
 -- =============================================================================
@@ -522,6 +675,11 @@ end
 -- =============================================================================
 
 function DTNPC_PortraitDebugger:updateLabels()
+    if self.infoPanel then
+        self.infoPanel:setVisible(false)
+        self.infoPanel:setVisible(true)
+    end
+
     if self.lblTarget then
         self.lblTarget:setName("Target: " .. self.targetName)
         if self.targetZombie then
