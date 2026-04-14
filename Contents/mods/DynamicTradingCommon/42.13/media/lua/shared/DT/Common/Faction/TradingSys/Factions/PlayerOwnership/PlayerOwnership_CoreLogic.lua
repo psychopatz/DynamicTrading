@@ -23,6 +23,36 @@ return function(Public, Internal)
 
     local DYNAMIC_COLONIES_REQUIRED = "Dynamic Colonies is required for player-made colony factions."
 
+    local function getWorkerTransfer()
+        if DC_Colony and DC_Colony.WorkerTransfer then
+            return DC_Colony.WorkerTransfer
+        end
+        local ok = pcall(require, "DC/Common/Colony/WorkerTransfer/DC_WorkerTransfer")
+        if ok and DC_Colony and DC_Colony.WorkerTransfer then
+            return DC_Colony.WorkerTransfer
+        end
+        return nil
+    end
+
+    local function getStarterWorkers()
+        if DC_Colony and DC_Colony.StarterWorkers then
+            return DC_Colony.StarterWorkers
+        end
+        local ok = pcall(require, "DC/Common/Colony/StarterWorkers/DC_StarterWorkers")
+        if ok and DC_Colony and DC_Colony.StarterWorkers then
+            return DC_Colony.StarterWorkers
+        end
+        return nil
+    end
+
+    local function ensureStarterWorkersForJoin(player, owner)
+        local starters = getStarterWorkers()
+        if starters and starters.EnsureForOwner then
+            return starters.EnsureForOwner(owner, player)
+        end
+        return nil
+    end
+
     local function normalizeMembershipState(faction)
         if not faction then
             return
@@ -630,7 +660,7 @@ return function(Public, Internal)
         end
 
         if Public.GetPlayerFaction(owner) then
-            return false, "You already belong to a faction.", faction
+            return false, "You already have a colony faction. Disband or abandon it before joining another.", faction
         end
 
         normalizeMembershipState(faction)
@@ -638,9 +668,18 @@ return function(Public, Internal)
             return false, "No pending invite found.", faction
         end
 
+        ensureStarterWorkersForJoin(player, owner)
+        local transfer = getWorkerTransfer()
+        if transfer and transfer.AddOwnerWorkersToFaction then
+            transfer.AddOwnerWorkersToFaction(faction, owner)
+        end
+
         removeValue(faction.inviteUsernames, owner)
         faction.memberUsernames[#faction.memberUsernames + 1] = owner
         normalizeMembershipState(faction)
+        if transfer and transfer.CountLivingLinkedWorkers then
+            faction.memberCount = transfer.CountLivingLinkedWorkers(faction)
+        end
         syncFactionToColony(faction, { createIfMissing = true })
         ModData.transmit(Utils.MOD_DATA_KEY)
         return true, "Faction joined.", faction, { targetUsername = owner, leaderUsername = faction.leaderUsername }
@@ -686,14 +725,21 @@ return function(Public, Internal)
 
         removeValue(faction.memberUsernames, owner)
         removeValue(faction.inviteUsernames, owner)
-        normalizeMembershipState(faction)
-        syncFactionToColony(faction, { createIfMissing = true })
         removeColonyUsernameMapping(owner)
+        local transfer = getWorkerTransfer()
+        if transfer and transfer.ReturnContributorWorkers then
+            transfer.ReturnContributorWorkers(faction, owner)
+        end
+        normalizeMembershipState(faction)
+        if transfer and transfer.CountLivingLinkedWorkers then
+            faction.memberCount = transfer.CountLivingLinkedWorkers(faction)
+        end
+        syncFactionToColony(faction, { createIfMissing = true })
         ModData.transmit(Utils.MOD_DATA_KEY)
         return true, "You left the faction.", faction, { targetUsername = owner, leaderUsername = faction.leaderUsername }
     end
 
-    function Public.KickFactionMember(player, targetUsername)
+    function Public.KickFactionMember(player, targetUsername, workerTransferAction)
         local coloniesOk, coloniesMessage = requireDynamicColonies()
         if not coloniesOk then return false, coloniesMessage, nil end
         local owner = getOwnerUsername(player)
@@ -724,10 +770,24 @@ return function(Public, Internal)
             return false, "That player is not part of this faction.", faction
         end
 
-        syncFactionToColony(faction, { createIfMissing = true })
         if removedMember then
+            local transfer = getWorkerTransfer()
+            local action = tostring(workerTransferAction or "return")
             removeColonyUsernameMapping(target)
+            if action == "retain" then
+                if transfer and transfer.RetainContributorWorkers then
+                    transfer.RetainContributorWorkers(faction, target)
+                end
+            else
+                if transfer and transfer.ReturnContributorWorkers then
+                    transfer.ReturnContributorWorkers(faction, target)
+                end
+            end
+            if transfer and transfer.CountLivingLinkedWorkers then
+                faction.memberCount = transfer.CountLivingLinkedWorkers(faction)
+            end
         end
+        syncFactionToColony(faction, { createIfMissing = true })
         ModData.transmit(Utils.MOD_DATA_KEY)
         return true, removedMember and "Member removed." or "Invitation revoked.", faction, { targetUsername = target }
     end

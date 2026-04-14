@@ -81,7 +81,11 @@ return function(context)
     Handlers.KickFactionMember = function(player, args)
         args = args or {}
         runColonyAction(player, function()
-            return DynamicTrading_Factions.KickFactionMember(player, args.username)
+            return DynamicTrading_Factions.KickFactionMember(
+                player,
+                args.username,
+                args.workerTransferAction or args.workerPolicy
+            )
         end, "Faction membership updated.")
     end
 

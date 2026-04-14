@@ -137,6 +137,10 @@ function DT_PlayerFactionMembersModal:createChildren()
     self.btnLeave:initialise()
     self:addChild(self.btnLeave)
 
+    self.btnKickRetain = ISButton:new(pad + 160, buttonY + 32, 120, 24, "Kick + Keep", self, self.onKickRetain)
+    self.btnKickRetain:initialise()
+    self:addChild(self.btnKickRetain)
+
     self.btnClose = ISButton:new(self.width - 110, buttonY + 32, 100, 24, "Close", self, self.onClose)
     self.btnClose:initialise()
     self:addChild(self.btnClose)
@@ -282,6 +286,9 @@ function DT_PlayerFactionMembersModal:updateButtons()
     if self.btnKick then
         self.btnKick:setEnable(faction ~= nil and isLeader and selected and (selected.type == "member" or selected.type == "invite"))
     end
+    if self.btnKickRetain then
+        self.btnKickRetain:setEnable(faction ~= nil and isLeader and selected and selected.type == "member")
+    end
     if self.btnTransfer then
         self.btnTransfer:setEnable(faction ~= nil and isLeader and selected and selected.type == "member")
     end
@@ -329,8 +336,17 @@ function DT_PlayerFactionMembersModal:onKickOrRevoke()
     if username == "" then
         return
     end
-    sendFactionCommand("KickFactionMember", { username = username })
+    sendFactionCommand("KickFactionMember", { username = username, workerTransferAction = "return" })
     self:setStatus("Membership update sent.")
+end
+
+function DT_PlayerFactionMembersModal:onKickRetain()
+    local username = self:getTargetUsername()
+    if username == "" then
+        return
+    end
+    sendFactionCommand("KickFactionMember", { username = username, workerTransferAction = "retain" })
+    self:setStatus("Membership update sent. Transferred workers will stay with the faction.")
 end
 
 function DT_PlayerFactionMembersModal:onTransfer()
