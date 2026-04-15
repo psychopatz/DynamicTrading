@@ -3,21 +3,5 @@
 	"appid" "108600"
 	"publishedfileid" "3635333613"
 	"contentfolder" "/home/psychopatz/Zomboid/Workshop/DynamicTrading/upload_staging"
-	"changenote" "[b]DynamicTrading - April 7, 2026 Update[/b]
-[list]
-[*] Supporter carousel UI component added with Hall of Fame manual integration to showcase supporters and recognize contributions.
-[*] Dynamic bandage icon rendering introduced for NPC health bars based on item type, improving healing status clarity.
-[*] Incapacitated NPC health initialization fixed to use configurable custom HP values instead of zero for more accurate HP scaling.
-[*] Travel companion system expanded with a dedicated job UI and integration with NPC logic and dialogue systems.
-[*] Travel companion order menu implemented, including self-bandage functionality with linked supply support for streamlined care.
-[*] Passive health regeneration for resting NPCs introduced, with offline processing support via the manager tick.
-[*] NPC bandaging system added, featuring animation sets, UI indicators, and debugging tools for development and testing.
-[*] Modular zombie aggro management system implemented to improve NPC threat handling and engagement logic.
-[*] Combat rhythm system introduced, delivering tactical recovery, kiting strategies, and dynamic flavor text for NPC behaviors.
-[*] Overhauled NPC combat lifecycle and network synchronization, with new sandbox options and an in-game manual system for players.
-[*] Custom NPC health system added with configurable scaling and seamless combat integration.
-[*] NPC walk animation variables updated to ensure consistent movement state across scenarios.
-[*] NPC combat pursuit tracking and unreachable target timeout logic implemented to improve engagement reliability.
-[*] Ambient auto-defense system added for stationary NPCs, including post-return logic to resume guarding behavior.
-[/list]"
+	"changenote" "Multiplayer Hotfix"
 }

@@ -138,7 +138,26 @@ end
 function DT_NPCPortraitPanel:createChildren()
     ISPanel.createChildren(self)
 
-    self.modelView = ISUI3DModel:new(0, 0, self.width, self.height)
+    self:updateViewport()
+    self:resetPortraitAnimation(true)
+    self:applyViewState()
+    self:refreshPortrait(true)
+end
+
+function DT_NPCPortraitPanel:ensureModelView()
+    if self.modelView then
+        return true
+    end
+
+    if not DT_NPCPortraitRenderers.Use3DPortraits() then
+        return false
+    end
+
+    if DynamicTrading and DynamicTrading.Log then
+        DynamicTrading.Log("System", "UI", "Info", "DynamicTrading: Instantiating 3D Portrait View (Lazy-Load)")
+    end
+
+    self.modelView = ISUI3DModel:new(0, 0, self.viewportW or self.width, self.viewportH or self.height)
     self.modelView.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
     self.modelView.borderColor = { r = 0, g = 0, b = 0, a = 0 }
     self.modelView:initialise()
@@ -148,10 +167,11 @@ function DT_NPCPortraitPanel:createChildren()
     end)
     self:addChild(self.modelView)
 
+    -- Synchronize initial state
     self:updateViewport()
-    self:resetPortraitAnimation(true)
     self:applyViewState()
-    self:refreshPortrait(true)
+
+    return true
 end
 
 function DT_NPCPortraitPanel:updateViewport()
@@ -352,7 +372,7 @@ function DT_NPCPortraitPanel:chooseTradeIdleState(config)
 end
 
 function DT_NPCPortraitPanel:applyAnimationVariables()
-    if not self.modelView then
+    if not self.modelView or not self.modelView.javaObject then
         return
     end
 
@@ -423,30 +443,30 @@ function DT_NPCPortraitPanel:clearModelTarget()
 end
 
 function DT_NPCPortraitPanel:applyResolvedPortrait(resolved)
-    if not self.modelView then
-        return
-    end
-
     self.currentMode = resolved and resolved.mode or "legacy"
     self.currentTexture = resolved and resolved.texture or nil
     self.currentDescriptor = resolved and resolved.survivorDesc or nil
 
     if self.currentMode == "3d" and (resolved.character or resolved.survivorDesc) then
-        self.modelView:setVisible(true)
-        self:clearModelTarget()
+        if self:ensureModelView() then
+            self.modelView:setVisible(true)
+            self:clearModelTarget()
 
-        if resolved.character then
-            self.modelView:setCharacter(resolved.character)
-        else
-            self.modelView:setCharacter(nil)
-            self.modelView:setSurvivorDesc(resolved.survivorDesc)
+            if resolved.character then
+                self.modelView:setCharacter(resolved.character)
+            else
+                self.modelView:setCharacter(nil)
+                self.modelView:setSurvivorDesc(resolved.survivorDesc)
+            end
+
+            self:applyViewState()
         end
-
-        self:applyViewState()
     else
         self:clearModelTarget()
-        self.modelView:setCharacter(nil)
-        self.modelView:setVisible(false)
+        if self.modelView then
+            self.modelView:setCharacter(nil)
+            self.modelView:setVisible(false)
+        end
     end
 end
 
@@ -607,7 +627,7 @@ end
 function DT_NPCPortraitPanel:update()
     ISPanel.update(self)
 
-    if self.currentMode ~= "3d" or not self.modelView then
+    if not self.modelView or self.currentMode ~= "3d" then
         return
     end
 
