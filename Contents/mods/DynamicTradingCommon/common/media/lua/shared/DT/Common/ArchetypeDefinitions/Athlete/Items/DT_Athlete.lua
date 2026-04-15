@@ -10,7 +10,7 @@ DynamicTrading.RegisterArchetype("Athlete", {
         { tags={"Food.HighNutrition"}, count = 5 },
         { tags={"Container.Liquid"}, count = 4 },
         { tags={"Medical.General.Vitamin"}, count = 3 },
-        { item = "Base.WaterBottleFull", count = 1 }
+        { item = "Base.WaterBottle", count = 1 }
     },
     expertTags = { "Clothing", "Building.Survival", "Food.HighNutrition", "Medical.General.Vitamin", "Clothing.Feet" },
     wants = {

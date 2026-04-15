@@ -9,11 +9,11 @@ DynamicTrading.RegisterArchetype("Blacksmith", {
         { tags={"Resource.Fuel"}, count = 5 },
         { tags={"Weapon.Melee.General"}, count = 2 },
         { tags={"Tool.General"}, count = 3 },
-        { item = "Base.MeltingPot", count = 1 }
+        { item = "Base.Charcoal", count = 1 }
     },
     expertTags = { "Resource.Material.Metal", "Tool.General", "Weapon.Melee.General", "Resource.Material.Hardware", "Building.Fixture.Hardware" },
     wants = {
-        ["Resource.Fuel"] = 1.4,
+        ["Resource.Fuel"] = 3.4,
         ["Clothing"] = 1.3,
         ["Tool.Cookware"] = 1.25,
         ["Quality.Waste"] = 1.2,

@@ -9,8 +9,7 @@ DynamicTrading.RegisterArchetype("Geek", {
         { tags={"Literature.Media"}, count = 10 },
         { tags={"Electronics.Battery"}, count = 8 },
         { tags={"Electronics"}, count = 3 },
-        { tags={"Electronics.Parts"}, count = 12 },
-        { item = "Base.Game90", count = 1 }
+        { item = "Base.VideoGame", count = 1 }
     },
     expertTags = { "Electronics", "Literature.Media", "Electronics.Battery", "Electronics", "Electronics.LightSource" },
     wants = {
