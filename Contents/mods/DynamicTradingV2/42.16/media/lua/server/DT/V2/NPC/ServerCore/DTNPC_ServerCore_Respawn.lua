@@ -35,6 +35,12 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     local previousBodyInstanceID = npcData.currentBodyInstanceID
     if uuid then
         local existingZombie = DTNPCServerCore.FindZombieByUUID(uuid)
+        if not existingZombie and DTNPCServerCore.FindReusableWorldBody then
+            existingZombie = DTNPCServerCore.FindReusableWorldBody(uuid, npcData, {
+                allowPositionalMatch = true,
+                positionRadius = 1.25,
+            })
+        end
         if existingZombie then
             if DTNPCServerCore.PruneDuplicateZombies then
                 existingZombie = DTNPCServerCore.PruneDuplicateZombies(uuid, npcData, existingZombie, "respawn-guard")

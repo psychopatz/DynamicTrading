@@ -9,6 +9,7 @@ DTNPCServerCore = DTNPCServerCore or {}
 -- Required external dependencies
 require "DT/V2/NPC/Sys/DTNPC_Generator"
 require "DT/V2/NPC/Sys/DTNPC_Protect"
+require "DT/V2/NPC/Sys/Data/DTNPC_Data"
 require "DT/V2/NPC/Sys/Lifecycle/DTNPC_Lifecycle"
 require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
 require "DT/V2/NPC/Manager/DTNPC_SpatialHash/DTNPC_SpatialHash"

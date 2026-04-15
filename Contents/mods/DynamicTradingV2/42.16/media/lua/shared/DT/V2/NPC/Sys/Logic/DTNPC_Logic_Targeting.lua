@@ -8,6 +8,10 @@ DTNPCLogic.Internal = DTNPCLogic.Internal or {}
 
 local Internal = DTNPCLogic.Internal
 
+local function isPlayerTarget(target)
+    return target and instanceof and instanceof(target, "IsoPlayer")
+end
+
 function DTNPCLogic.GetClosestTarget(zombie)
     local npcData = DTNPC.GetData(zombie)
     if not npcData then
@@ -21,8 +25,8 @@ function DTNPCLogic.GetClosestTarget(zombie)
     if npcData.isHostile then
         local player = zombie:getTarget()
 
-        if player and instanceof(player, "IsoPlayer") then
-            return player, Internal.CalculateDistance(zombie, player)
+        if isPlayerTarget(player) then
+            zombie:setTarget(nil)
         end
 
         local activePlayers = DTNPCLogic.GetActivePlayers()
@@ -36,7 +40,6 @@ function DTNPCLogic.GetClosestTarget(zombie)
                     and p.getUsername
                     and p:getUsername() == npcData.lastPlayerAttackerUsername
                 if onlineMatch or usernameMatch then
-                    zombie:setTarget(p)
                     return p, Internal.CalculateDistance(zombie, p)
                 end
             end

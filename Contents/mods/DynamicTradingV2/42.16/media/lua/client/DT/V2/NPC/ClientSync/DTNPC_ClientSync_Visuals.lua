@@ -131,6 +131,12 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     modData.IsDTNPC = true
     modData.DTNPC_UUID = uuid
 
+    if DTNPC and DTNPC.ApplySafetyFlags then
+        DTNPC.ApplySafetyFlags(zombie, npcData, { clearPlayerTarget = true })
+    elseif DTNPC and DTNPC.ApplyCharacterFlags then
+        DTNPC.ApplyCharacterFlags(zombie, npcData)
+    end
+
     if DTNPCClient.TrackNPCForHealthBars then
         DTNPCClient.TrackNPCForHealthBars(zombie, npcData, uuid, zombie:getPersistentOutfitID())
     end
@@ -164,6 +170,29 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     end
     
     zombie:resetModelNextFrame()
+end
+
+function DTNPCClient.ApplySafetyToMarkedZombie(zombie, npcData)
+    if not zombie or zombie:isDead() then return false end
+
+    local modData = zombie:getModData()
+    if not modData then return false end
+
+    npcData = npcData or modData.DTNPC_Data or modData.DTNPCBrain
+    if not (modData.IsDTNPC or modData.DTNPC_UUID or npcData) then
+        return false
+    end
+
+    if DTNPC and DTNPC.ApplySafetyFlags then
+        DTNPC.ApplySafetyFlags(zombie, npcData, { clearPlayerTarget = true })
+        return true
+    end
+    if DTNPC and DTNPC.ApplyCharacterFlags then
+        DTNPC.ApplyCharacterFlags(zombie, npcData)
+        return true
+    end
+
+    return false
 end
 
 function DTNPCClient.FindZombieByUUID(uuid)

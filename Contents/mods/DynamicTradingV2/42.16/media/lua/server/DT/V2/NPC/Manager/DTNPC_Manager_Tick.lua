@@ -11,6 +11,7 @@ if isClient() and not isServer() then return end
 
 DynamicTrading.Log("DTV2", "NPC", "Init", "Loading optimization modules...")
 
+require "DT/V2/NPC/Sys/Data/DTNPC_Data"
 require "DT/V2/NPC/Manager/DTNPC_DistanceFrequency"
 DynamicTrading.Log("DTV2", "NPC", "Init", "DTNPC_DistanceFrequency loaded: " .. tostring(DTNPC_DistanceFrequency ~= nil))
 
@@ -78,6 +79,35 @@ local TRADE_CYCLE_CHECK_RATE = 600 -- Start new trade missions every ~30 seconds
 local tradeCycleCheckCounter = 0
 
 local hasLoggedMissingRespawnHooks = false
+
+local function ApplySafetyToMarkedServerZombie(zombie)
+    if not zombie or zombie:isDead() then
+        return
+    end
+
+    local modData = zombie:getModData()
+    if not modData then
+        return
+    end
+
+    local npcData = modData.DTNPC_Data or modData.DTNPCBrain
+    local uuid = modData.DTNPC_UUID or (npcData and npcData.uuid) or nil
+
+    if not (modData.IsDTNPC or uuid or npcData) then
+        return
+    end
+
+    local savedData = (uuid and DTNPCManager.Data and DTNPCManager.Data[uuid]) or npcData
+    if not savedData and uuid and DynamicTrading_Roster and DynamicTrading_Roster.GetSoul then
+        savedData = DynamicTrading_Roster.GetSoul(uuid)
+    end
+
+    if DTNPC and DTNPC.ApplySafetyFlags then
+        DTNPC.ApplySafetyFlags(zombie, savedData, { clearPlayerTarget = true })
+    elseif DTNPC and DTNPC.ApplyCharacterFlags then
+        DTNPC.ApplyCharacterFlags(zombie, savedData)
+    end
+end
 
 local function EnsureRespawnHooks()
     local hasHooks = DTNPCManager
@@ -233,12 +263,22 @@ function DTNPCManager.OnTick()
                     local rosterData = DynamicTrading_Roster.GetSoul(uuid)
                     if rosterData and rosterData.status ~= "Dead" then
                         DynamicTrading.Log("DTV2", "NPC", "Adopt", "Active Adoption: Found existing NPC in world, reclaiming: " .. (rosterData.name or uuid))
-                        DTNPCManager.Register(zombie, rosterData)
+                        if DTNPCManager.ReclaimZombie then
+                            DTNPCManager.ReclaimZombie(zombie, rosterData, "active-adoption")
+                        else
+                            DTNPCManager.Register(zombie, rosterData)
+                        end
                         savedData = DTNPCManager.Data[uuid] -- Refresh local reference
                     end
                 end
 
                 if savedData then
+                    if DTNPC and DTNPC.ApplySafetyFlags then
+                        DTNPC.ApplySafetyFlags(zombie, savedData, { clearPlayerTarget = true })
+                    elseif DTNPC and DTNPC.ApplyCharacterFlags then
+                        DTNPC.ApplyCharacterFlags(zombie, savedData)
+                    end
+
                     if DTNPCHealth and DTNPCHealth.ProcessDeferredSpawnRestore then
                         local restored = DTNPCHealth.ProcessDeferredSpawnRestore(zombie, savedData)
                         if restored then
@@ -312,3 +352,6 @@ function DTNPCManager.OnTick()
 end
 
 Events.OnTick.Add(DTNPCManager.OnTick)
+if Events.OnZombieUpdate then
+    Events.OnZombieUpdate.Add(ApplySafetyToMarkedServerZombie)
+end

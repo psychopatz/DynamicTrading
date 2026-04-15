@@ -16,6 +16,10 @@ local function isFriendlyAuthorityPlayer(npcData, player)
     return false
 end
 
+local function isPlayerTarget(target)
+    return target and instanceof and instanceof(target, "IsoPlayer")
+end
+
 function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged)
     if not zombie or not npcData then
         return
@@ -77,7 +81,11 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
                     .. " using state=" .. tostring(nextState)
             )
 
-            zombie:setTarget(attacker)
+            if not isPlayerTarget(attacker) then
+                zombie:setTarget(attacker)
+            else
+                zombie:setTarget(nil)
+            end
             zombie:setAttackedBy(nil)
         end
     end

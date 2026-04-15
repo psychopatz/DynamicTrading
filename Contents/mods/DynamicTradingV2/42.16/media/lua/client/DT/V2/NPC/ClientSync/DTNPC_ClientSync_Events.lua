@@ -87,7 +87,7 @@ function DTNPCClient.OnTick()
             end
         end
     end
-    
+
     local cell = getCell()
     if not cell then return end
     
@@ -103,7 +103,8 @@ function DTNPCClient.OnTick()
         if zombie then
             local modData = zombie:getModData()
             local uuid = modData.DTNPC_UUID
-            
+            local cached = nil
+
             if not uuid then
                 local bodyInstanceID = zombie:getPersistentOutfitID()
                 uuid = DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID]
@@ -111,9 +112,12 @@ function DTNPCClient.OnTick()
                     modData.DTNPC_UUID = uuid
                 end
             end
-            
-            local cached = DTNPCClient.NPCCache[uuid]
-            
+
+            cached = DTNPCClient.NPCCache[uuid]
+            if DTNPCClient.ApplySafetyToMarkedZombie then
+                DTNPCClient.ApplySafetyToMarkedZombie(zombie, cached and cached.npcData or nil)
+            end
+
             if cached and cached.npcData then
                 local needsVisuals = false
                 
@@ -166,7 +170,7 @@ function DTNPCClient.OnTick()
                             local updates = {}
                             
                             -- Initialize last reported state if missing
-                            if not cached.lastReportedState then 
+                            if not cached.lastReportedState then
                                 cached.lastReportedState = {
                                     state = localData.state,
                                     tasksCount = (localData.tasks and #localData.tasks or 0),
@@ -214,7 +218,7 @@ function DTNPCClient.OnTick()
                                 cached.lastReportedState.protectNoticeSerial = currentNoticeSerial
                                 changed = true
                             end
-                            
+
                             if changed then
                                 -- Broadcast position if state changed
                                 if updates.state then updates.broadcastPosition = true end
@@ -261,6 +265,11 @@ end
 function DTNPCClient.OnZombieUpdate(zombie)
     if not zombie or zombie:isDead() then
         DTNPCClient.OnZombieRemoved(zombie)
+        return
+    end
+
+    if DTNPCClient.ApplySafetyToMarkedZombie then
+        DTNPCClient.ApplySafetyToMarkedZombie(zombie)
     end
 end
 

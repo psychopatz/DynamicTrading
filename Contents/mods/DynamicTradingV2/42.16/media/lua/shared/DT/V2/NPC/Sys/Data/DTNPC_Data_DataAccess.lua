@@ -44,6 +44,10 @@ function DTNPC.AttachData(zombie, npcData)
 
     modData.DTNPC_Data = npcData
     modData.IsDTNPC = true
+
+    if DTNPC.ApplyCharacterFlags then
+        DTNPC.ApplyCharacterFlags(zombie, npcData)
+    end
 end
 
 -- Deprecated: Use DTNPC.AttachData

@@ -143,12 +143,136 @@ function DTNPCServerCore.FindZombieByBodyInstanceID(bodyInstanceID)
     local zombieList = cell:getZombieList()
     if not zombieList then return nil end
     
+    local wantedBodyInstanceID = tostring(bodyInstanceID)
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie and not zombie:isDead() and zombie:getPersistentOutfitID() == bodyInstanceID then
+        if zombie and not zombie:isDead() and tostring(zombie:getPersistentOutfitID()) == wantedBodyInstanceID then
             return zombie
         end
     end
     
     return nil
+end
+
+local function getBodyID(zombie)
+    return zombie and zombie.getPersistentOutfitID and zombie:getPersistentOutfitID() or nil
+end
+
+local function getDataUUID(data)
+    return type(data) == "table" and data.uuid or nil
+end
+
+local function hasDifferentNPCIdentity(modData, uuid)
+    if not modData then
+        return false
+    end
+
+    local wantedUUID = tostring(uuid)
+    local modUUID = modData.DTNPC_UUID
+    if modUUID and tostring(modUUID) ~= wantedUUID then
+        return true
+    end
+
+    local embeddedUUID = getDataUUID(modData.DTNPC_Data or modData.DTNPCBrain)
+    return embeddedUUID and tostring(embeddedUUID) ~= wantedUUID
+end
+
+local function getSavedCoords(savedData)
+    if not savedData then
+        return nil, nil, nil
+    end
+
+    return savedData.lastX or (savedData.homeCoords and savedData.homeCoords.x),
+        savedData.lastY or (savedData.homeCoords and savedData.homeCoords.y),
+        savedData.lastZ or (savedData.homeCoords and savedData.homeCoords.z) or 0
+end
+
+local function getPositionScore(zombie, savedData, radius)
+    local sx, sy, sz = getSavedCoords(savedData)
+    if not zombie or not sx or not sy then
+        return nil
+    end
+
+    local dx = zombie:getX() - sx
+    local dy = zombie:getY() - sy
+    local dz = zombie:getZ() - sz
+    local dist = math.sqrt(dx * dx + dy * dy)
+    radius = tonumber(radius) or 1.25
+
+    if math.abs(dz) > 1 or dist > radius then
+        return nil
+    end
+
+    return math.max(1, math.floor((radius - dist) * 20) + 10)
+end
+
+local function scoreReusableWorldBody(zombie, uuid, savedData, options)
+    if not zombie or zombie:isDead() or not uuid then
+        return nil
+    end
+
+    local modData = zombie:getModData()
+    if hasDifferentNPCIdentity(modData, uuid) then
+        return nil
+    end
+
+    options = options or {}
+    local score = scoreZombieForUUID(zombie, uuid, savedData) or 0
+    local hasIdentityEvidence = score > 0
+    local bodyID = getBodyID(zombie)
+    local bodyIDText = bodyID and tostring(bodyID) or nil
+
+    if savedData then
+        if savedData.startupBodyInstanceHint and bodyIDText == tostring(savedData.startupBodyInstanceHint) then
+            score = score + 70
+            hasIdentityEvidence = true
+        end
+        if savedData.currentBodyInstanceID and bodyIDText == tostring(savedData.currentBodyInstanceID) then
+            score = score + 60
+            hasIdentityEvidence = true
+        end
+    end
+
+    if options.allowPositionalMatch == true then
+        local positionScore = getPositionScore(zombie, savedData, options.positionRadius)
+        if positionScore then
+            score = score + positionScore
+        elseif not hasIdentityEvidence then
+            return nil
+        end
+    elseif not hasIdentityEvidence then
+        return nil
+    end
+
+    return score
+end
+
+function DTNPCServerCore.FindReusableWorldBody(uuid, savedData, options)
+    if not uuid then return nil end
+
+    local cell = getCell()
+    if not cell then return nil end
+
+    local zombieList = cell:getZombieList()
+    if not zombieList then return nil end
+
+    savedData = savedData or getSavedData(uuid)
+
+    local matches = {}
+    for i = 0, zombieList:size() - 1 do
+        local zombie = zombieList:get(i)
+        local score = scoreReusableWorldBody(zombie, uuid, savedData, options)
+        if score then
+            table.insert(matches, { zombie = zombie, score = score })
+        end
+    end
+
+    table.sort(matches, function(a, b)
+        if a.score == b.score then
+            return (tonumber(getBodyID(a.zombie)) or 0) < (tonumber(getBodyID(b.zombie)) or 0)
+        end
+        return a.score > b.score
+    end)
+
+    return matches[1] and matches[1].zombie or nil
 end

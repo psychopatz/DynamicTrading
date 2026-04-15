@@ -42,6 +42,61 @@ local function clearZombieEngineAggro(zombie)
     end
 end
 
+local function stopZombieVocals(zombie)
+    local emitter = zombie and zombie.getEmitter and zombie:getEmitter() or nil
+    if emitter and emitter.stopAll then
+        emitter:stopAll()
+    end
+end
+
+local function clearZombieTargetAggro(zombie)
+    if not zombie then
+        return
+    end
+
+    if zombie.setTarget then
+        zombie:setTarget(nil)
+    end
+    if zombie.setAttackedBy then
+        zombie:setAttackedBy(nil)
+    end
+
+    clearZombieEngineAggro(zombie)
+    stopZombieVocals(zombie)
+end
+
+local function clearPlayerTargetAggro(zombie)
+    if not zombie then
+        return
+    end
+
+    local hadPlayerAggro = false
+    local target = zombie.getTarget and zombie:getTarget() or nil
+    if target and instanceof and instanceof(target, "IsoPlayer") then
+        if zombie.setTarget then
+            zombie:setTarget(nil)
+        end
+        hadPlayerAggro = true
+    end
+
+    local attackedBy = zombie.getAttackedBy and zombie:getAttackedBy() or nil
+    if attackedBy and instanceof and instanceof(attackedBy, "IsoPlayer") then
+        if zombie.setAttackedBy then
+            zombie:setAttackedBy(nil)
+        end
+        hadPlayerAggro = true
+    end
+
+    if hadPlayerAggro then
+        zombie:setVariable("bAttack", false)
+        zombie:setVariable("bAttacking", false)
+        zombie:setVariable("Attack", false)
+        zombie:setVariable("Lunge", false)
+        clearZombieEngineAggro(zombie)
+        stopZombieVocals(zombie)
+    end
+end
+
 local function clearZombiePathing(zombie)
     if not zombie then
         return
@@ -60,16 +115,82 @@ local function clearZombiePathing(zombie)
     end
 end
 
+local function shouldClearVanillaTarget(npcData)
+    if not npcData then
+        return true
+    end
+    if npcData.incapState == "Active" or npcData.state == "Incapacitated" then
+        return true
+    end
+    if npcData.isHostile ~= true then
+        return true
+    end
+
+    local state = npcData.state
+    if state == "Follow"
+        or state == "ProtectRanged"
+        or state == "ProtectMelee"
+        or state == "ProtectAuto"
+        or state == "Guard"
+        or state == "Stay"
+        or state == "Idle"
+        or state == "Trading"
+        or state == "GoTo"
+        or state == "Flee"
+        or state == "Bandage" then
+        return true
+    end
+
+    return npcData.dcCompanionJob == "TravelCompanion" or npcData.linkedWorkerID ~= nil
+end
+
+local function isCompanionControlled(npcData)
+    if not npcData then
+        return false
+    end
+
+    return npcData.dcCompanionJob == "TravelCompanion"
+        or npcData.linkedWorkerID ~= nil
+        or (npcData.status == "Working" and (npcData.master ~= nil or npcData.masterID ~= nil))
+end
+
+local function normalizeCompanionHostility(npcData)
+    if not isCompanionControlled(npcData) then
+        return
+    end
+
+    npcData.isHostile = false
+    npcData.combatTargetID = nil
+    npcData.lastPlayerAttackerUsername = nil
+    npcData.lastPlayerAttackerOnlineID = nil
+
+    if npcData.state == "Attack" or npcData.state == "AttackRange" then
+        local combatOrder = npcData.combatOrder
+        if combatOrder == "ProtectRanged"
+            or combatOrder == "ProtectMelee"
+            or combatOrder == "ProtectAuto" then
+            npcData.state = combatOrder
+        elseif npcData.master ~= nil or npcData.masterID ~= nil then
+            npcData.state = "Follow"
+        else
+            npcData.state = "Guard"
+        end
+    end
+end
+
 function DTNPC.ApplyCharacterFlags(zombie, npcData)
     if not zombie then return end
 
-    local state = npcData and npcData.state or nil
-    local allowZombieMelee = false
-
-    zombie:setNoTeeth(not allowZombieMelee)
-    zombie:setVariable("NoLungeAttack", not allowZombieMelee)
+    zombie:setNoTeeth(true)
+    zombie:setVariable("NoTeeth", true)
+    zombie:setVariable("CanBite", false)
+    zombie:setVariable("CanLunge", false)
+    zombie:setVariable("bLunger", false)
+    zombie:setVariable("NoLungeAttack", true)
     zombie:setVariable("NoLungeTarget", true)
     zombie:setVariable("ZombieHitReaction", "Chainsaw")
+    zombie:setVariable("DTNPCNoBite", true)
+    zombie:setVariable("DTNPCNoMoan", true)
 
     local desc = zombie:getDescriptor()
     if desc then
@@ -119,5 +240,64 @@ function DTNPC.SuppressZombieEngineState(zombie, npcData, options)
 
     if needsIdleReset and ZombieIdleState and ZombieIdleState.instance and zombie.changeState then
         zombie:changeState(ZombieIdleState.instance())
+    end
+end
+
+function DTNPC.RestoreNPCBodyState(zombie, npcData, options)
+    if not zombie or not npcData then
+        return
+    end
+
+    options = options or {}
+
+    if options.normalizeCompanionHostility == true then
+        normalizeCompanionHostility(npcData)
+    end
+
+    local modData = zombie:getModData()
+    if modData then
+        modData.IsDTNPC = true
+        modData.DTNPC_Data = npcData
+        if npcData.uuid then
+            modData.DTNPC_UUID = npcData.uuid
+        end
+        if npcData.visualID then
+            modData.DTNPCVisualID = npcData.visualID
+        end
+    end
+
+    zombie:setVariable("DTNPC", true)
+    DTNPC.ApplyCharacterFlags(zombie, npcData)
+    stopZombieVocals(zombie)
+
+    local clearTarget = options.clearTarget
+    if clearTarget == nil then
+        clearTarget = shouldClearVanillaTarget(npcData)
+    end
+    if clearTarget ~= false then
+        clearZombieTargetAggro(zombie)
+    else
+        clearZombieEngineAggro(zombie)
+    end
+
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+    end
+end
+
+function DTNPC.ApplySafetyFlags(zombie, npcData, options)
+    if not zombie then
+        return
+    end
+
+    options = options or {}
+    DTNPC.ApplyCharacterFlags(zombie, npcData)
+
+    if options.clearTarget == true then
+        clearZombieTargetAggro(zombie)
+    elseif options.clearPlayerTarget ~= false then
+        clearPlayerTargetAggro(zombie)
+    else
+        clearZombieEngineAggro(zombie)
     end
 end

@@ -18,6 +18,10 @@ local SPEED_FWD = 0.055
 local SPEED_BCK = 0.035
 local REACTION_DELAY = 30
 
+local function isPlayerTarget(target)
+    return target and instanceof and instanceof(target, "IsoPlayer")
+end
+
 -- ==============================================================================
 -- 1. UTILITIES
 -- ==============================================================================
@@ -90,10 +94,7 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     if not target and zombie and zombie.getTarget then
         local currentTarget = zombie:getTarget()
         if currentTarget and instanceof and instanceof(currentTarget, "IsoPlayer") and not currentTarget:isDead() then
-            target = currentTarget
-            local dx = currentTarget:getX() - zombie:getX()
-            local dy = currentTarget:getY() - zombie:getY()
-            dist = math.sqrt((dx * dx) + (dy * dy))
+            zombie:setTarget(nil)
         end
     end
 
@@ -121,7 +122,11 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     end
 
     ensureManualControl(zombie)
-    zombie:setTarget(target)
+    if isPlayerTarget(target) then
+        zombie:setTarget(nil)
+    else
+        zombie:setTarget(target)
+    end
 
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()

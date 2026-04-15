@@ -103,6 +103,9 @@ function DTNPCLogic.ProcessNPC(zombie)
         end
     end
 
+    if DTNPC and DTNPC.ApplySafetyFlags then
+        DTNPC.ApplySafetyFlags(zombie, npcData, { clearPlayerTarget = true })
+    end
 end
 
 function DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)

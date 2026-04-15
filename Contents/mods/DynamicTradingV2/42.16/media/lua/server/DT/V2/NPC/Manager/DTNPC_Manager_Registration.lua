@@ -10,6 +10,7 @@ DTNPCManager = DTNPCManager or {}
 if isClient() and not isServer() then return end
 
 require "DT/V2/NPC/Sys/Lifecycle/DTNPC_Lifecycle"
+require "DT/V2/NPC/Sys/Data/DTNPC_Data"
 
 function DTNPCManager.Register(zombie, npcData)
     if not zombie or not npcData then return end
@@ -38,6 +39,15 @@ function DTNPCManager.Register(zombie, npcData)
     -- Store UUID in zombie modData for future lookups
     local modData = zombie:getModData()
     modData.DTNPC_UUID = uuid
+    modData.DTNPC_Data = npcData
+    modData.IsDTNPC = true
+    if npcData.visualID then
+        modData.DTNPCVisualID = npcData.visualID
+    end
+
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+    end
     
     -- Check for duplicate registration
     if DTNPCManager.PendingRegistrations[uuid] then
@@ -92,6 +102,12 @@ function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
 
     DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)
+    if DTNPC.RestoreNPCBodyState then
+        DTNPC.RestoreNPCBodyState(zombie, npcData, {
+            clearTarget = true,
+            normalizeCompanionHostility = true,
+        })
+    end
 
     modData.IsDTNPC = true
     modData.DTNPC_UUID = uuid

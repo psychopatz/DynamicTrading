@@ -40,6 +40,10 @@ local function getTargetDistance(zombie, target)
     return math.sqrt((dx * dx) + (dy * dy))
 end
 
+local function isPlayerTarget(target)
+    return target and instanceof and instanceof(target, "IsoPlayer")
+end
+
 local function resetMoveState(npcData)
     if not npcData then
         return
@@ -107,7 +111,7 @@ local function ensureManualControl(zombie, target, options)
     end
     zombie:setPath2(nil)
     zombie:setTarget(nil)
-    if target then
+    if target and not isPlayerTarget(target) then
         zombie:setTarget(target)
     end
 end

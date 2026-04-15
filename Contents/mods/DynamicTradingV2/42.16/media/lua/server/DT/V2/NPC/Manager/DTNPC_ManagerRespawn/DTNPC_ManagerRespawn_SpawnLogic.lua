@@ -96,6 +96,19 @@ function DTNPCManager.CheckForRespawn(npcData, uuid)
     local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
 
     if not zombie then
+        if DTNPCServerCore.FindReusableWorldBody then
+            zombie = DTNPCServerCore.FindReusableWorldBody(uuid, npcData, {
+                allowPositionalMatch = true,
+                positionRadius = 1.25,
+            })
+            if zombie and DTNPCManager.ReclaimZombie then
+                clearMissingBodyCheck(uuid)
+                DynamicTrading.Log("DTV2", "NPC", "Adopt", "Reclaiming saved-position startup body for " .. (npcData.name or uuid))
+                DTNPCManager.ReclaimZombie(zombie, npcData, "respawn-position-adoption")
+                return true
+            end
+        end
+
         local playerName = tostring(player:getUsername())
 
         if dist > RESPAWN_CONFIRM_RANGE then

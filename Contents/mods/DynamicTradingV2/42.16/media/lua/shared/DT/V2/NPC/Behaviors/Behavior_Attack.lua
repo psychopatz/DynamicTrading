@@ -14,7 +14,22 @@ local MELEE_APPROACH_START_BUFFER = 0.18
 local MELEE_APPROACH_STOP_BUFFER = 0.16
 local MELEE_ATTACK_COMMIT_BUFFER = 0.12
 
+local function isPlayerTarget(target)
+    return target and instanceof and instanceof(target, "IsoPlayer")
+end
+
 local function runLegacyWakeup(zombie, target, dist)
+    if isPlayerTarget(target) then
+        zombie:setTarget(nil)
+        if target and target.getX and target.getY then
+            zombie:faceLocation(target:getX(), target:getY())
+        end
+        if DTNPC and DTNPC.ApplySafetyFlags then
+            DTNPC.ApplySafetyFlags(zombie, DTNPC.GetData and DTNPC.GetData(zombie) or nil, { clearPlayerTarget = true })
+        end
+        return
+    end
+
     if zombie:isUseless() then
         zombie:setUseless(false)
         zombie:setSpeedMod(1.1)
@@ -23,7 +38,11 @@ local function runLegacyWakeup(zombie, target, dist)
     end
 
     if target then
-        zombie:setTarget(target)
+        if isPlayerTarget(target) then
+            zombie:setTarget(nil)
+        else
+            zombie:setTarget(target)
+        end
 
         local shouldRun = (tonumber(dist) or 9999) > 3.0 or target:isRunning() or target:isSprinting()
         zombie:setRunning(shouldRun)
@@ -220,8 +239,7 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     if not target and zombie and zombie.getTarget then
         local currentTarget = zombie:getTarget()
         if currentTarget and instanceof and instanceof(currentTarget, "IsoPlayer") and not currentTarget:isDead() then
-            target = currentTarget
-            dist = getTargetDistance(zombie, currentTarget)
+            zombie:setTarget(nil)
         end
     end
 
@@ -254,7 +272,11 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     end
 
     ensureManualControl(zombie)
-    zombie:setTarget(target)
+    if isPlayerTarget(target) then
+        zombie:setTarget(nil)
+    else
+        zombie:setTarget(target)
+    end
 
     if DTNPCProtect and DTNPCProtect.ExecuteMeleeCombat then
         DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, {

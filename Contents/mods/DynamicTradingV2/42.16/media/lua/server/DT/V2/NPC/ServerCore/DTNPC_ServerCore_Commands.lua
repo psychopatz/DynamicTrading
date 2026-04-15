@@ -257,6 +257,12 @@ local function tryReclaimZombieFromStartupHint(uuid, npcData, soul)
     end
 
     local zombie = DTNPCServerCore.FindZombieByBodyInstanceID(hintBodyInstanceID)
+    if not zombie and DTNPCServerCore.FindReusableWorldBody then
+        zombie = DTNPCServerCore.FindReusableWorldBody(uuid, npcData, {
+            allowPositionalMatch = true,
+            positionRadius = 1.25,
+        })
+    end
     if not zombie or zombie:isDead() or not isZombieNearSoul(zombie, soul or npcData) then
         return nil
     end
