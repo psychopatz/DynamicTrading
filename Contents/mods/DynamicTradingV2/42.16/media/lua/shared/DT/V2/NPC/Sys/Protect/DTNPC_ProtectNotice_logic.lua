@@ -71,6 +71,7 @@ function DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, dialogueStatus, d
 end
 
 function DTNPCProtect.BuildFallbackNotice(requestedState, resolvedState)
+    -- Protect state transitions
     if resolvedState == "ProtectMelee" and requestedState == "ProtectRanged" then
         return "No firearm ready. Switching to melee.", "warning"
     end
@@ -85,6 +86,16 @@ function DTNPCProtect.BuildFallbackNotice(requestedState, resolvedState)
     end
     if requestedState == "ProtectMelee" then
         return "Can't protect up close. No melee weapon.", "warning"
+    end
+    -- Guard state fallbacks
+    if requestedState == "GuardAuto" then
+        return "Can't guard, no available weapons.", "warning"
+    end
+    if requestedState == "GuardRanged" then
+        return "No firearm ready for guard duty.", "warning"
+    end
+    if requestedState == "GuardMelee" then
+        return "No melee weapon ready for guard duty.", "warning"
     end
     return nil, nil
 end
