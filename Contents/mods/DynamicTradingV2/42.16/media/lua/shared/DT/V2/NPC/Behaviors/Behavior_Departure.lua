@@ -6,11 +6,13 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
+require "DT/V2/NPC/Behaviors/Behavior_AntiStuck"
 
 local DESPAWN_DIST = 45
 local TARGET_REACHED_DIST = 2
 local STUCK_TICKS = 15
 local STUCK_ABORT_TICKS = 60
+local RECOVERY_STEP_DIST = 5
 
 local function isColonyRecruitmentDeparture(npcData)
     if not npcData then
@@ -97,6 +99,9 @@ local function clearDepartureRuntime(npcData)
     npcData.departureRecruitObserverLostLogged = nil
     npcData.departureRecruitFallbackLogged = nil
     npcData.departureRecruitNoDirectionLogged = nil
+    if DTNPCBehaviorAntiStuck and DTNPCBehaviorAntiStuck.Reset then
+        DTNPCBehaviorAntiStuck.Reset(npcData, "Departure")
+    end
 end
 
 local function getActivePlayers()
@@ -167,6 +172,32 @@ local function tryUnstick(zombie, z, dirX, dirY)
     end
 
     return false
+end
+
+local function getDepartureRecoveryTarget(zombie, npcData, dirX, dirY)
+    local zx = zombie and zombie:getX() or 0
+    local zy = zombie and zombie:getY() or 0
+    local targetX = tonumber(npcData and npcData.departureTargetX)
+    local targetY = tonumber(npcData and npcData.departureTargetY)
+    local targetZ = tonumber(npcData and npcData.departureTargetZ) or (zombie and zombie:getZ() or 0)
+
+    if targetX ~= nil and targetY ~= nil then
+        local distToGoal = getDist(zx, zy, targetX, targetY)
+        if distToGoal <= (RECOVERY_STEP_DIST + 2.0) then
+            return targetX, targetY, targetZ
+        end
+    end
+
+    local moveX = tonumber(dirX) or 0
+    local moveY = tonumber(dirY) or 0
+    local len = math.sqrt((moveX * moveX) + (moveY * moveY))
+    if len > 0.001 then
+        moveX = moveX / len
+        moveY = moveY / len
+        return zx + (moveX * RECOVERY_STEP_DIST), zy + (moveY * RECOVERY_STEP_DIST), targetZ
+    end
+
+    return targetX, targetY, targetZ
 end
 
 local function completeDeparture(zombie, npcData, reason)
@@ -441,10 +472,52 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         npcData.departureStuckLastY = zombie:getY()
     elseif moveState and string.find(tostring(moveState), "interacted_", 1, true) then
         npcData.departureBlockedTicks = 0
-    elseif (npcData.departureBlockedTicks or 0) >= STUCK_ABORT_TICKS then
-        completeDeparture(zombie, npcData, "stuck_abort_blocked")
-        return
+    elseif DTNPCBehaviorAntiStuck and DTNPCBehaviorAntiStuck.TryRecover then
+        local recoveryTargetX, recoveryTargetY, recoveryTargetZ = getDepartureRecoveryTarget(zombie, npcData, dx, dy)
+        local recovered = false
+        if recoveryTargetX ~= nil and recoveryTargetY ~= nil then
+            recovered = DTNPCBehaviorAntiStuck.TryRecover(zombie, npcData, {
+                behaviorKey = "Departure",
+                targetX = recoveryTargetX,
+                targetY = recoveryTargetY,
+                targetZ = recoveryTargetZ,
+                currentDist = getDist(zombie:getX(), zombie:getY(), recoveryTargetX, recoveryTargetY),
+                moved = moved,
+                moveState = moveState,
+                blockCounterKey = "departureBlockedTicks",
+                blockedTicks = npcData.departureBlockedTicks,
+                blockedThreshold = STUCK_TICKS + 6,
+                hardBlockedThreshold = STUCK_TICKS + 16,
+                stallThreshold = STUCK_TICKS + 8,
+                minDistance = 1.5,
+                cooldownTicks = 260,
+                maxRecoveries = 1,
+                arrivalRadius = 0.9,
+                allowExactTarget = false,
+                faceX = recoveryTargetX,
+                faceY = recoveryTargetY,
+                fallbackDirX = dx,
+                fallbackDirY = dy,
+            })
+        end
+
+        if recovered then
+            npcData.departureBlockedTicks = 0
+            npcData.departureStuckLastX = zombie:getX()
+            npcData.departureStuckLastY = zombie:getY()
+            npcData.departureLastDirX = dx
+            npcData.departureLastDirY = dy
+        elseif (npcData.departureBlockedTicks or 0) >= STUCK_ABORT_TICKS then
+            completeDeparture(zombie, npcData, "stuck_abort_blocked")
+            return
+        else
+            stopDepartureAnimation(zombie)
+        end
     else
+        if (npcData.departureBlockedTicks or 0) >= STUCK_ABORT_TICKS then
+            completeDeparture(zombie, npcData, "stuck_abort_blocked")
+            return
+        end
         stopDepartureAnimation(zombie)
     end
 end

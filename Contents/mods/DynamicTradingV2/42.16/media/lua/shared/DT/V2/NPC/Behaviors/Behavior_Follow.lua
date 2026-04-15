@@ -8,6 +8,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
+require "DT/V2/NPC/Behaviors/Behavior_AntiStuck"
 
 -- MOVEMENT CONFIGURATION
 local STOP_THRESHOLD_START = 3.5
@@ -90,6 +91,12 @@ local function resetFollowMoveState(npcData)
     npcData.followMoveReason = nil
 end
 
+local function resetFollowAntiStuck(npcData)
+    if DTNPCBehaviorAntiStuck and DTNPCBehaviorAntiStuck.Reset then
+        DTNPCBehaviorAntiStuck.Reset(npcData, "Follow")
+    end
+end
+
 local function primeFollowMovement(zombie, npcData, target, isRunning)
     if not zombie or not npcData or not target then
         return true
@@ -159,22 +166,12 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
     if not target then 
         DynamicTrading.Log("DTV2", "NPC", "Follow", "Master not found (Target is nil)")
         if not zombie:isUseless() then zombie:setUseless(true) end
+        resetFollowAntiStuck(npcData)
         stopAnimation(zombie)
         return 
     end
 
     -- print("[DTNPC-Follow] Following target " .. target:getUsername() .. " at dist " .. dist)
-
-    -- 1. Teleport catch-up
-    if dist > TELEPORT_DIST then
-        zombie:setX(target:getX() + 1)
-        zombie:setY(target:getY() + 1)
-        zombie:setZ(target:getZ())
-        resetFollowStuck(npcData)
-        resetFollowMoveState(npcData)
-        stopAnimation(zombie)
-        return
-    end
 
     -- 2. HYSTERESIS CHECK
     if not npcData.isMovingState then npcData.isMovingState = false end
@@ -199,6 +196,7 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         if not zombie:isUseless() then zombie:setUseless(true) end
         resetFollowStuck(npcData)
         resetFollowMoveState(npcData)
+        resetFollowAntiStuck(npcData)
         stopAnimation(zombie)
         zombie:faceLocation(target:getX(), target:getY())
         npcData.tasks = {}
@@ -249,8 +247,38 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         resetFollowStuck(npcData)
         zombie:faceLocation(target:getX(), target:getY())
     else
-        resetFollowMoveState(npcData)
-        stopAnimation(zombie)
+        local recovered = false
+        if DTNPCBehaviorAntiStuck and DTNPCBehaviorAntiStuck.TryRecover then
+            recovered = DTNPCBehaviorAntiStuck.TryRecover(zombie, npcData, {
+                behaviorKey = "Follow",
+                target = target,
+                currentDist = dist,
+                moved = moved,
+                moveState = moveState,
+                blockCounterKey = "followBlockedTicks",
+                blockedTicks = npcData.followBlockedTicks,
+                blockedThreshold = STUCK_TICKS + 4,
+                hardBlockedThreshold = STUCK_TICKS + 12,
+                stallThreshold = STUCK_TICKS + 6,
+                minDistance = 2.0,
+                farDistance = TELEPORT_DIST,
+                farStallThreshold = STUCK_TICKS + 24,
+                cooldownTicks = 220,
+                maxRecoveries = 2,
+                arrivalRadius = 1.0,
+                allowExactTarget = false,
+                faceX = target:getX(),
+                faceY = target:getY(),
+            })
+        end
+
+        if recovered then
+            resetFollowStuck(npcData)
+            resetFollowMoveState(npcData)
+        else
+            resetFollowMoveState(npcData)
+            stopAnimation(zombie)
+        end
     end
 
     npcData.tasks = {}
