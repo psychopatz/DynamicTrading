@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="DTNPCRunBase.xml">
+    <m_Name>DTNPCRun2Handed</m_Name>
+    <m_AnimName>Bob_RunBat</m_AnimName>
+    <m_Priority>2</m_Priority>
+    <m_Conditions>
+        <m_Name>DTNPC</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>true</m_Value>
+    </m_Conditions>
+    <m_Conditions>
+        <m_Name>bMoving</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>true</m_Value>
+    </m_Conditions>
+    <m_Conditions>
+        <m_Name>DTNPCMoveAnim</m_Name>
+        <m_Type>STRING</m_Type>
+        <m_StringValue>Run</m_StringValue>
+    </m_Conditions>
+    <m_Conditions>
+        <m_Name>DTNPCPrimaryType</m_Name>
+        <m_Type>STRING</m_Type>
+        <m_StringValue>twohanded</m_StringValue>
+    </m_Conditions>
+</animNode>

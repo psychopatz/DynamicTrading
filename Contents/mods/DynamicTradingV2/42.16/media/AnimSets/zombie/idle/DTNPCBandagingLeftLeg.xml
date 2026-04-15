@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+    <m_Name>DTNPCBandagingLeftLeg</m_Name>
+    <m_AnimName>Bob_BandageLeftLeg</m_AnimName>
+    <m_BlendTime>0.20</m_BlendTime>
+    <m_randomAdvanceFraction>0.20</m_randomAdvanceFraction>
+    <m_SpeedScale>1.0</m_SpeedScale>
+
+    <m_Conditions>
+        <m_Name>DTNPC</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>true</m_Value>
+    </m_Conditions>
+
+    <m_Conditions>
+        <m_Name>bMoving</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>false</m_Value>
+    </m_Conditions>
+
+    <m_Conditions>
+        <m_Name>DTIdleState</m_Name>
+        <m_Type>STRING</m_Type>
+        <m_Value>11</m_Value>
+    </m_Conditions>
+
+    <m_Conditions>
+        <m_Name>DTBandageVariant</m_Name>
+        <m_Type>STRING</m_Type>
+        <m_Value>LeftLeg</m_Value>
+    </m_Conditions>
+
+    <m_Events>
+        <m_EventName>SetVariable</m_EventName>
+        <m_Time>End</m_Time>
+        <m_ParameterValue>DTBandageAnimFinished=true</m_ParameterValue>
+    </m_Events>
+</animNode>

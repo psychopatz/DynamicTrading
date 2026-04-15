@@ -1,0 +1,166 @@
+require "ISUI/ISCollapsableWindow"
+require "ISUI/ISButton"
+require "ISUI/ISLabel"
+require "ISUI/ISScrollingListBox"
+require "ISUI/ISImage"
+
+DT_Trading_Modal = ISCollapsableWindow:derive("DT_Trading_Modal")
+
+function DT_Trading_Modal:initialise()
+    ISCollapsableWindow.initialise(self)
+    self:setResizable(false)
+end
+
+function DT_Trading_Modal:createChildren()
+    ISCollapsableWindow.createChildren(self)
+
+    -- 1. TITLE / WARNING
+    local text = "This container has items inside:"
+    self.lblWarning = ISLabel:new(self.width / 2, 25, 20, text, 1, 0.5, 0.5, 1, UIFont.Medium, true)
+    self.lblWarning.center = true
+    self:addChild(self.lblWarning)
+
+    -- 2. CONTENT LIST
+    local listY = 55
+    local listH = self.height - 110
+    
+    self.listbox = ISScrollingListBox:new(10, listY, self.width - 20, listH)
+    self.listbox:initialise()
+    self.listbox:setAnchorBottom(true)
+    self.listbox.font = UIFont.NewSmall
+    self.listbox.itemheight = 24
+    self.listbox.drawBorder = true
+    self.listbox.borderColor = {r=0.4, g=0.4, b=0.4, a=1}
+    self.listbox.backgroundColor = {r=0.1, g=0.1, b=0.1, a=0.8}
+    self.listbox.doDrawItem = self.drawItem
+    self:addChild(self.listbox)
+    
+    -- 3. BUTTONS
+    local btnW = 100
+    local btnH = 25
+    local btnY = self.height - 35
+    
+    -- CANCEL
+    self.btnCancel = ISButton:new(10, btnY, btnW, btnH, "CANCEL", self, self.close)
+    self.btnCancel:initialise()
+    self.btnCancel.backgroundColor = {r=0.3, g=0.3, b=0.3, a=1.0}
+    self.btnCancel.borderColor = {r=1, g=1, b=1, a=0.4}
+    self:addChild(self.btnCancel)
+    
+    -- LOCK CONTAINER
+    self.btnLock = ISButton:new(120, btnY, btnW, btnH, "LOCK CONTAINER", self, self.onLockContainer)
+    self.btnLock:initialise()
+    self.btnLock.backgroundColor = {r=0.4, g=0.4, b=0.1, a=1.0}
+    self.btnLock.borderColor = {r=1, g=1, b=1, a=0.4}
+    self.btnLock:setTooltip("Lock this container to prevent accidental sale")
+    self:addChild(self.btnLock)
+
+    -- UNPACK [MP-SAFE]
+    self.btnUnpack = ISButton:new(230, btnY, btnW, btnH, "UNPACK", self, self.onUnpack)
+    self.btnUnpack:initialise()
+    self.btnUnpack.backgroundColor = {r=0.2, g=0.4, b=0.6, a=1.0}
+    self.btnUnpack.borderColor = {r=1, g=1, b=1, a=0.4}
+    self.btnUnpack:setTooltip("Dumps items to the floor safely")
+    self:addChild(self.btnUnpack)
+
+    -- CONFIRM
+    self.btnConfirm = ISButton:new(340, btnY, btnW, btnH, "CONFIRM SELL", self, self.onConfirm)
+    self.btnConfirm:initialise()
+    self.btnConfirm.backgroundColor = {r=0.6, g=0.2, b=0.2, a=1.0}
+    self.btnConfirm.borderColor = {r=1, g=1, b=1, a=0.4}
+    self.btnConfirm:setTooltip("Warning: The Trader would just pretend that they haven't \nsaw what items are inside and grab this item with passion. \nYou have been warned!")
+    self:addChild(self.btnConfirm)
+
+    self:populateList()
+end
+
+function DT_Trading_Modal:onLockContainer()
+    if not self.item then return end
+    
+    local player = getSpecificPlayer(0)
+    local modData = player:getModData()
+    if not modData.DT_LockedItems then modData.DT_LockedItems = {} end
+    
+    modData.DT_LockedItems[self.item:getID()] = true
+    
+    player:setHaloNote("Container Locked (Protected)", 255, 255, 100, 300)
+    player:playSound("LockDoor")
+    
+    -- Refresh Parent UI
+    if self.callbackTarget and self.callbackTarget.populateList then
+        self.callbackTarget:populateList()
+    end
+    
+    self:close()
+end
+
+function DT_Trading_Modal:populateList()
+    self.listbox:clear()
+    
+    if not self.item then return end
+    local inv = self.item:getItemContainer()
+    if not inv then return end
+    
+    local items = inv:getItems()
+    for i=0, items:size()-1 do
+        local item = items:get(i)
+        self.listbox:addItem(item:getDisplayName(), item)
+    end
+end
+
+function DT_Trading_Modal.drawItem(list, y, item, alt)
+    local height = list.itemheight
+    local width = list:getWidth()
+    local it = item.item
+    
+    if alt then
+        list:drawRect(0, y, width, height, 0.1, 0.2, 0.2, 0.2)
+    end
+    
+    -- Icon
+    if it then
+        local tex = DT_TradingWindow.GetItemTexture(it:getFullType(), it)
+        if tex then
+            list:drawTextureScaled(tex, 4, y + 2, 20, 20, 1, 1, 1, 1)
+        end
+    end
+
+    list:drawText(item.text, 30, y + 2, 0.9, 0.9, 0.9, 1, list.font)
+    
+    return y + height
+end
+
+function DT_Trading_Modal:onConfirm()
+    if self.callbackTarget and self.callbackFunc then
+        -- Execute the sale logic
+        self.callbackFunc(self.callbackTarget, self.item, self.data)
+    end
+    self:close()
+end
+
+function DT_Trading_Modal:onUnpack()
+    if self.callbackTarget and self.callbackUnpackFunc then
+        -- Execute the unpack logic
+        self.callbackUnpackFunc(self.callbackTarget, self.item)
+    end
+    self:close()
+end
+
+function DT_Trading_Modal:close()
+    self:setVisible(false)
+    self:removeFromUIManager()
+end
+
+-- STATIC SHOW HELPER
+function DT_Trading_Modal.Show(item, target, func, data, unpackFunc)
+    local modal = DT_Trading_Modal:new(0, 0, 450, 300) -- Wider for 4 buttons
+    modal:initialise()
+    modal.item = item
+    modal.callbackTarget = target
+    modal.callbackFunc = func
+    modal.callbackUnpackFunc = unpackFunc
+    modal.data = data
+    modal:addToUIManager()
+    modal:setX((getCore():getScreenWidth() / 2) - 225)
+    modal:setY((getCore():getScreenHeight() / 2) - 150)
+end
