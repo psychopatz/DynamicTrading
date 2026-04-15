@@ -1,9 +1,26 @@
 local MOD_DATA_KEY = DynamicTrading_Roster.MOD_DATA_KEY
 
+local function isColonyRecruitmentAway(status, returnStatus, npcData)
+    if status ~= "Away" then
+        return false
+    end
+
+    if npcData and npcData.colonyRecruitmentPending == true then
+        return true
+    end
+
+    if DTNPCManager and DTNPCManager.IsColonyRecruitmentReturnStatus then
+        return DTNPCManager.IsColonyRecruitmentReturnStatus(returnStatus)
+    end
+
+    return tostring(returnStatus or "") == "ColonyRecruitment"
+end
+
 function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)
     local npcData = DynamicTrading_Roster.GetSoul(uuid)
     if npcData then
         local wasIncapacitated = npcData.incapState == "Active"
+        local isRecruitmentAway = isColonyRecruitmentAway(status, returnStatus, npcData)
         if npcData.status == "Away" and status ~= "Away" then
             DynamicTrading.Log("DTCommons", "Roster", "Sync", "Resetting state and master for " .. (npcData.name or uuid) .. " on return.")
             if status == "Trading" then
@@ -32,7 +49,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
             end
         end
 
-        if status == "Away" then
+        if status == "Away" and not isRecruitmentAway then
             npcData.state = "Idle"
             npcData.master = nil
             npcData.masterID = nil

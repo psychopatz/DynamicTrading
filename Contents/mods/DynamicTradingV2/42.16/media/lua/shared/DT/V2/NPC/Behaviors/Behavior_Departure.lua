@@ -12,6 +12,39 @@ local TARGET_REACHED_DIST = 2
 local STUCK_TICKS = 15
 local STUCK_ABORT_TICKS = 60
 
+local function isColonyRecruitmentDeparture(npcData)
+    if not npcData then
+        return false
+    end
+
+    if npcData.colonyRecruitmentPending == true or npcData.colonyRecruitmentRemoveSource == true then
+        return true
+    end
+
+    local returnStatus = npcData.returnStatus or npcData.requestedReturnStatus
+    if DTNPCManager and DTNPCManager.IsColonyRecruitmentReturnStatus then
+        return DTNPCManager.IsColonyRecruitmentReturnStatus(returnStatus)
+    end
+
+    return tostring(returnStatus or "") == "ColonyRecruitment"
+end
+
+local function logDepartureTrace(npcData, suffix, message, force)
+    local uuid = npcData and npcData.uuid or "unknown"
+    DynamicTrading.Log("DTV2", "NPC", "Departure", message)
+
+    if not isClient()
+        and DTNPCManager
+        and DTNPCManager.RespawnDebug
+        and DTNPCManager.RespawnDebug.Log then
+        DTNPCManager.RespawnDebug.Log(
+            "departure_trace_" .. tostring(suffix or "event") .. "_" .. tostring(uuid),
+            message,
+            force == true
+        )
+    end
+end
+
 local function getDist(x1, y1, x2, y2)
     local dx = x1 - x2
     local dy = y1 - y2
@@ -60,6 +93,10 @@ local function clearDepartureRuntime(npcData)
     npcData.departureStartedAt = nil
     npcData.departureForceDespawnAt = nil
     npcData.departureTimeoutVisibleLogged = nil
+    npcData.departureRecruitModeLogged = nil
+    npcData.departureRecruitObserverLostLogged = nil
+    npcData.departureRecruitFallbackLogged = nil
+    npcData.departureRecruitNoDirectionLogged = nil
 end
 
 local function getActivePlayers()
@@ -72,8 +109,13 @@ local function getActivePlayers()
                 table.insert(players, player)
             end
         end
-    else
+    end
+
+    if #players == 0 then
         local player = getSpecificPlayer(0)
+        if not player and getPlayer then
+            player = getPlayer()
+        end
         if player then
             table.insert(players, player)
         end
@@ -177,7 +219,16 @@ local function completeDeparture(zombie, npcData, reason)
 end
 
 DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
-    local observer, observerDist = getNearestPlayer(zombie)
+    local isRecruitmentDeparture = isColonyRecruitmentDeparture(npcData)
+    local observer = nil
+    local observerDist = 9999
+    if isRecruitmentDeparture and target and instanceof and instanceof(target, "IsoPlayer") then
+        observer = target
+        observerDist = tonumber(dist) or getDist(zombie:getX(), zombie:getY(), target:getX(), target:getY())
+    else
+        observer, observerDist = getNearestPlayer(zombie)
+    end
+
     local currentHours = getGameTime():getWorldAgeHours()
 
     if npcData.departureForceDespawnAt and currentHours >= npcData.departureForceDespawnAt then
@@ -214,7 +265,80 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
     local dy = 0
     local hasDestination = false
 
-    if npcData.departureTargetX and npcData.departureTargetY then
+    if isRecruitmentDeparture then
+        if not npcData.departureRecruitModeLogged then
+            npcData.departureRecruitModeLogged = true
+            logDepartureTrace(
+                npcData,
+                "colony_mode",
+                "Process=departure_colony_mode uuid=" .. tostring(npcData.uuid) ..
+                    " name=" .. tostring(npcData.name or npcData.uuid) ..
+                    " observerDist=" .. tostring(observerDist) ..
+                    " hasObserver=" .. tostring(observer ~= nil) ..
+                    " targetType=" .. tostring(
+                        (target and target.getObjectName and target:getObjectName())
+                            or (target and target.getType and target:getType())
+                            or type(target)
+                    ) ..
+                    " target=" .. tostring(npcData.departureTargetX) .. "," .. tostring(npcData.departureTargetY) .. "," .. tostring(npcData.departureTargetZ),
+                true
+            )
+        end
+
+        if observer then
+            local len = math.sqrt(((zx - observer:getX()) ^ 2) + ((zy - observer:getY()) ^ 2))
+            if len > 0.001 then
+                dx = (zx - observer:getX()) / len
+                dy = (zy - observer:getY()) / len
+                npcData.departureLastDirX = dx
+                npcData.departureLastDirY = dy
+                hasDestination = true
+            elseif npcData.departureLastDirX and npcData.departureLastDirY then
+                dx = npcData.departureLastDirX
+                dy = npcData.departureLastDirY
+                hasDestination = true
+            end
+        elseif npcData.departureLastDirX and npcData.departureLastDirY then
+            dx = npcData.departureLastDirX
+            dy = npcData.departureLastDirY
+            hasDestination = true
+
+            if not npcData.departureRecruitObserverLostLogged then
+                npcData.departureRecruitObserverLostLogged = true
+                logDepartureTrace(
+                    npcData,
+                    "colony_no_observer",
+                    "Process=departure_colony_no_observer uuid=" .. tostring(npcData.uuid) ..
+                        " name=" .. tostring(npcData.name or npcData.uuid) ..
+                        " usingLastDir=true",
+                    true
+                )
+            end
+        elseif npcData.departureTargetX and npcData.departureTargetY then
+            dx = npcData.departureTargetX - zx
+            dy = npcData.departureTargetY - zy
+            local len = math.sqrt(dx * dx + dy * dy)
+            if len > 0.001 then
+                dx = dx / len
+                dy = dy / len
+                npcData.departureLastDirX = dx
+                npcData.departureLastDirY = dy
+                hasDestination = true
+            end
+
+            if hasDestination and not npcData.departureRecruitFallbackLogged then
+                npcData.departureRecruitFallbackLogged = true
+                logDepartureTrace(
+                    npcData,
+                    "colony_target_fallback",
+                    "Process=departure_colony_target_fallback uuid=" .. tostring(npcData.uuid) ..
+                        " name=" .. tostring(npcData.name or npcData.uuid) ..
+                        " target=" .. tostring(npcData.departureTargetX) .. "," .. tostring(npcData.departureTargetY) .. "," .. tostring(npcData.departureTargetZ),
+                    true
+                )
+            end
+        end
+    elseif npcData.departureTargetX and npcData.departureTargetY then
         dx = npcData.departureTargetX - zx
         dy = npcData.departureTargetY - zy
         local len = math.sqrt(dx * dx + dy * dy)
@@ -264,6 +388,19 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
     end
 
     if not hasDestination then
+        if isRecruitmentDeparture and not npcData.departureRecruitNoDirectionLogged then
+            npcData.departureRecruitNoDirectionLogged = true
+            logDepartureTrace(
+                npcData,
+                "colony_no_direction",
+                "Process=departure_colony_no_direction uuid=" .. tostring(npcData.uuid) ..
+                    " name=" .. tostring(npcData.name or npcData.uuid) ..
+                    " observer=" .. tostring(observer ~= nil) ..
+                    " target=" .. tostring(npcData.departureTargetX) .. "," .. tostring(npcData.departureTargetY) ..
+                    "," .. tostring(npcData.departureTargetZ),
+                true
+            )
+        end
         if not zombie:isUseless() then zombie:setUseless(true) end
         stopDepartureAnimation(zombie)
         return
@@ -288,7 +425,7 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         dirX = dx,
         dirY = dy,
         speed = DynamicTrading.GetNPCRunSpeed(),
-        allowObstacleInteract = true,
+        allowObstacleInteract = not isRecruitmentDeparture,
         allowDamageRetreat = true,
         blockCounterKey = "departureBlockedTicks",
         stuckTicks = STUCK_TICKS,

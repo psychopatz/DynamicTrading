@@ -28,17 +28,19 @@ function DTNPCLogic.RefreshActivePlayers()
                     players[#players + 1] = player
                 end
             end
-        else
-            local player = nil
-            if getPlayer then
-                player = getPlayer()
-            end
-            if not player then
-                player = getSpecificPlayer(0)
-            end
-            if player then
-                players[1] = player
-            end
+        end
+    end
+
+    if #players == 0 then
+        local player = nil
+        if getSpecificPlayer then
+            player = getSpecificPlayer(0)
+        end
+        if not player and getPlayer then
+            player = getPlayer()
+        end
+        if player then
+            players[1] = player
         end
     end
 

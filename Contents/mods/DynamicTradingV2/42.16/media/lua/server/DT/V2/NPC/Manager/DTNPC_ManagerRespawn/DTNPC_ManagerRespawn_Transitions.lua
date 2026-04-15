@@ -13,6 +13,12 @@ local STALE_TRADING_RECOVERY_GRACE_HOURS = 0.02
 local NEARBY_DESPAWN_HOLD_RADIUS = 80
 local NEARBY_DESPAWN_HOLD_HOURS = 0.25
 
+DTNPCManager.COLONY_RECRUITMENT_RETURN_STATUS = DTNPCManager.COLONY_RECRUITMENT_RETURN_STATUS or "ColonyRecruitment"
+
+function DTNPCManager.IsColonyRecruitmentReturnStatus(returnStatus)
+    return tostring(returnStatus or "") == tostring(DTNPCManager.COLONY_RECRUITMENT_RETURN_STATUS or "ColonyRecruitment")
+end
+
 local function isVisibleToActivePlayer(zombie, radius)
     if not zombie or not DTNPCManager.GetActivePlayers then return false end
 
@@ -84,10 +90,176 @@ local function clearDepartureRuntime(npcData, keepStatusData)
     npcData.departureStartedAt = nil
     npcData.departureForceDespawnAt = nil
     npcData.departureTimeoutVisibleLogged = nil
+    npcData.departureRecruitModeLogged = nil
+    npcData.departureRecruitObserverLostLogged = nil
+    npcData.departureRecruitFallbackLogged = nil
+    npcData.departureRecruitNoDirectionLogged = nil
 
     if not keepStatusData then
         npcData.requestedReturnStatus = nil
     end
+end
+
+local function setRecruitmentDepartureDirection(zombie, npcData)
+    if not zombie or not npcData or not DTNPCManager.GetActivePlayers then
+        return false
+    end
+
+    local nearestPlayer = nil
+    local nearestDist = nil
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local zz = zombie:getZ()
+
+    for _, player in ipairs(DTNPCManager.GetActivePlayers()) do
+        if math.abs((player:getZ() or 0) - zz) <= 1 then
+            local dx = zx - player:getX()
+            local dy = zy - player:getY()
+            local dist = math.sqrt(dx * dx + dy * dy)
+            if not nearestDist or dist < nearestDist then
+                nearestPlayer = player
+                nearestDist = dist
+            end
+        end
+    end
+
+    local dirX = nil
+    local dirY = nil
+
+    if nearestPlayer and nearestDist and nearestDist > 0.001 then
+        dirX = (zx - nearestPlayer:getX()) / nearestDist
+        dirY = (zy - nearestPlayer:getY()) / nearestDist
+        npcData.master = nearestPlayer.getUsername and nearestPlayer:getUsername() or npcData.master
+        npcData.masterID = nearestPlayer.getOnlineID and nearestPlayer:getOnlineID() or npcData.masterID
+    elseif npcData.departureTargetX and npcData.departureTargetY then
+        local dx = npcData.departureTargetX - zx
+        local dy = npcData.departureTargetY - zy
+        local len = math.sqrt(dx * dx + dy * dy)
+        if len > 0.001 then
+            dirX = dx / len
+            dirY = dy / len
+        end
+    end
+
+    if not dirX or not dirY then
+        return false
+    end
+
+    npcData.departureLastDirX = dirX
+    npcData.departureLastDirY = dirY
+
+    if DTNPCManager.RespawnDebug and DTNPCManager.RespawnDebug.Log then
+        DTNPCManager.RespawnDebug.Log(
+            "departure_recruit_seed_" .. tostring(npcData.uuid),
+            "Process=departure_recruit_seed uuid=" .. tostring(npcData.uuid) ..
+                " name=" .. tostring(npcData.name or npcData.uuid) ..
+                " dir=" .. string.format("%.3f", dirX) .. "," .. string.format("%.3f", dirY) ..
+                " nearestPlayerDist=" .. tostring(nearestDist) ..
+                " master=" .. tostring(npcData.master) ..
+                " masterID=" .. tostring(npcData.masterID) ..
+                " target=" .. tostring(npcData.departureTargetX) .. "," .. tostring(npcData.departureTargetY) ..
+                "," .. tostring(npcData.departureTargetZ or 0),
+            true
+        )
+    end
+
+    return true
+end
+
+local function finalizeRecruitmentDeparture(uuid, npcData)
+    if not npcData or npcData.colonyRecruitmentRemoveSource ~= true then
+        return false
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Departure",
+        "Finalizing colony recruitment departure for " .. tostring(npcData.name or uuid)
+            .. " uuid=" .. tostring(uuid)
+            .. " pending=" .. tostring(npcData.colonyRecruitmentPending == true)
+    )
+
+    if npcData.colonyRecruitmentPending == true then
+        local completeRecruitment = DC_Colony
+            and DC_Colony.Network
+            and DC_Colony.Network.Internal
+            and DC_Colony.Network.Internal.completePendingV2Recruitment
+            or nil
+        if completeRecruitment then
+            local ok, completed = pcall(completeRecruitment, uuid, npcData, "departure_complete")
+            if not ok then
+                DynamicTrading.Log(
+                    "DTV2",
+                    "NPC",
+                    "Departure",
+                    "Colony recruitment completion failed for " .. tostring(uuid) .. ": " .. tostring(completed)
+                )
+            elseif completed ~= true then
+                DynamicTrading.Log(
+                    "DTV2",
+                    "NPC",
+                    "Departure",
+                    "Colony recruitment completion returned false for " .. tostring(uuid)
+                )
+            else
+                DynamicTrading.Log(
+                    "DTV2",
+                    "NPC",
+                    "Departure",
+                    "Colony recruitment completion succeeded for " .. tostring(uuid)
+                )
+            end
+        else
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Departure",
+                "Colony recruitment completion hook missing for " .. tostring(uuid)
+            )
+        end
+    end
+
+    local factionID = npcData.colonyRecruitmentSourceFactionID or npcData.factionID
+    local removed = false
+
+    if DynamicTrading_Stock and DynamicTrading_Stock.ClearStock then
+        DynamicTrading_Stock.ClearStock(uuid)
+    end
+
+    if DynamicTrading_Roster and DynamicTrading_Roster.RemoveSpecificSoul and DynamicTrading_Roster.RemoveSpecificSoul(uuid) then
+        removed = true
+    end
+
+    if DynamicTrading_Roster and DynamicTrading_Roster.RemoveTrader and DynamicTrading_Roster.RemoveTrader(uuid) then
+        removed = true
+    end
+
+    if removed and factionID and DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
+        local faction = DynamicTrading_Factions.GetFaction(factionID)
+        if faction and not faction.playerOwned then
+            faction.memberCount = math.max(0, (tonumber(faction.memberCount) or 0) - 1)
+        end
+    end
+
+    if removed then
+        ModData.transmit("DynamicTrading_Roster")
+        ModData.transmit("DynamicTrading_Stock")
+        if factionID then
+            ModData.transmit("DynamicTrading_Factions")
+        end
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Departure",
+        "Colony recruitment source cleanup uuid=" .. tostring(uuid)
+            .. " removed=" .. tostring(removed)
+            .. " factionID=" .. tostring(factionID)
+    )
+
+    return removed
 end
 
 function DTNPCManager.GetDepartureVisibleHours(travelHours)
@@ -118,6 +290,7 @@ function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
     local currentHours = getGameTime():getWorldAgeHours()
     local nextStatus = npcData.returnStatus or npcData.requestedReturnStatus or "Resting"
     local returnTime = npcData.returnTime
+    local currentBodyInstanceID = npcData.currentBodyInstanceID
 
     if returnTime == nil or returnTime <= 0 then
         local travelHours = npcData.departureTravelHours or 0
@@ -129,9 +302,11 @@ function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
     npcData.returnStatus = nextStatus
     npcData.state = "Idle"
 
+    local isRecruitmentDeparture = npcData.colonyRecruitmentRemoveSource == true
+        or DTNPCManager.IsColonyRecruitmentReturnStatus(nextStatus)
     clearDepartureRuntime(npcData)
 
-    if DynamicTrading_Roster then
+    if DynamicTrading_Roster and not isRecruitmentDeparture then
         DynamicTrading_Roster.SaveSoul(uuid, npcData)
     end
 
@@ -148,7 +323,33 @@ function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
     end
 
     if DTNPCManager.RemoveData then
-        DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
+        if isRecruitmentDeparture then
+            DTNPCManager.RemoveData(uuid, nil, nil, nil, {
+                reason = "colony-recruitment",
+                departureReason = reason,
+                colonyRecruitment = true,
+            })
+        else
+            DTNPCManager.RemoveData(uuid, "Away", returnTime, nextStatus)
+        end
+    end
+
+    if isRecruitmentDeparture then
+        finalizeRecruitmentDeparture(uuid, npcData)
+    end
+
+    if isRecruitmentDeparture
+        and currentBodyInstanceID
+        and DTNPCServerCore
+        and DTNPCServerCore.NotifyInstanceRemoval then
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, currentBodyInstanceID)
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Departure",
+            "Notified recruit body instance removal for " .. tostring(npcData.name or uuid)
+                .. " bodyInstanceID=" .. tostring(currentBodyInstanceID)
+        )
     end
 
     zombie = zombie
@@ -159,6 +360,13 @@ function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
     if zombie then
         zombie:removeFromWorld()
         zombie:removeFromSquare()
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Departure",
+            "Removed live body after departure for " .. tostring(npcData.name or uuid)
+                .. " uuid=" .. tostring(uuid)
+        )
     end
 
     DynamicTrading.Log(
@@ -323,6 +531,9 @@ function DTNPCManager.TryStartLiveDeparture(uuid, requestedReturnStatus, travelH
     npcData.departureTimeoutVisibleLogged = nil
 
     DTNPCManager.Data[uuid] = npcData
+    if DTNPCManager.IsColonyRecruitmentReturnStatus(nextStatus) then
+        setRecruitmentDepartureDirection(zombie, npcData)
+    end
     DTNPC.AttachData(zombie, npcData)
     DynamicTrading_Roster.SaveSoul(uuid, npcData)
     if DTNPCManager.Save then
@@ -459,7 +670,13 @@ function DTNPCManager.ProcessAwayTransitions()
                     end
                 end
 
-                if shouldApplyStatus and nextStatus == "Resting" then
+                if shouldApplyStatus and DTNPCManager.IsColonyRecruitmentReturnStatus(nextStatus) then
+                    local liveSoul = DynamicTrading_Roster.GetSoul(uuid) or registry
+                    local zombie = DTNPCServerCore and DTNPCServerCore.FindZombieByUUID
+                        and DTNPCServerCore.FindZombieByUUID(uuid) or nil
+                    DTNPCManager.CompleteLiveDeparture(uuid, liveSoul, zombie, "colony_recruitment_recovery")
+                    shouldApplyStatus = false
+                elseif shouldApplyStatus and nextStatus == "Resting" then
                     DynamicTrading.Log("DTV2", "NPC", "Logic", "NPC " .. (registry.name or uuid) .. " transitioning to Home (Resting).")
                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                     if npcData and npcData.homeCoords then

@@ -27,6 +27,13 @@ function DTNPCManager.GetActivePlayers()
                  if p then table.insert(players, p) end
              end
          end
+         if #players == 0 then
+             local p = getSpecificPlayer and getSpecificPlayer(0) or nil
+             if not p and getPlayer then
+                 p = getPlayer()
+             end
+             if p then table.insert(players, p) end
+         end
     end
     return players
 end

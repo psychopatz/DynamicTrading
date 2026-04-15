@@ -242,9 +242,18 @@ end
 
 function DTNPCServerCore.NotifyRemoval(uuid, bodyInstanceID, name, removalReason, removalContext)
     if not uuid then return end
-    
-    local data = { uuid = uuid, bodyInstanceID = bodyInstanceID, name = name, removalReason = removalReason }
-    if removalContext then
+
+    local effectiveReason = removalReason
+    if effectiveReason == nil then
+        if type(removalContext) == "table" then
+            effectiveReason = removalContext.reason or removalContext.removalReason
+        elseif type(removalContext) == "string" then
+            effectiveReason = removalContext
+        end
+    end
+
+    local data = { uuid = uuid, bodyInstanceID = bodyInstanceID, name = name, removalReason = effectiveReason }
+    if type(removalContext) == "table" then
         data.killerUsername = removalContext.killerUsername
         data.killerOnlineID = removalContext.killerOnlineID
         data.cleanupCorpse = removalContext.cleanupCorpse
@@ -264,7 +273,12 @@ function DTNPCServerCore.NotifyRemoval(uuid, bodyInstanceID, name, removalReason
         triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", data)
     end
     
-    DynamicTrading.Log("DTV2", "NPC", "Remove", "Notified removal: " .. (name or uuid))
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Remove",
+        "Notified removal: " .. (name or uuid) .. " reason=" .. tostring(effectiveReason or "unknown")
+    )
 end
 
 function DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID)

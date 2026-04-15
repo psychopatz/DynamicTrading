@@ -156,6 +156,14 @@ end
 function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removalContext)
     if DTNPCManager.Data[uuid] then
         local npcData = DTNPCManager.Data[uuid]
+        local notifiedRemovalReason = status
+        if notifiedRemovalReason == nil then
+            if type(removalContext) == "table" then
+                notifiedRemovalReason = removalContext.reason or removalContext.removalReason
+            elseif type(removalContext) == "string" then
+                notifiedRemovalReason = removalContext
+            end
+        end
 
         if DTNPC_ZombieAggro and DTNPC_ZombieAggro.OnNPCRemoved then
             DTNPC_ZombieAggro.OnNPCRemoved(uuid)
@@ -194,7 +202,7 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removal
         
         -- Broadcast removal to all clients
         if DTNPCServerCore and DTNPCServerCore.NotifyRemoval then
-            DTNPCServerCore.NotifyRemoval(uuid, currentBodyInstanceID, npcData.name, status, removalContext)
+            DTNPCServerCore.NotifyRemoval(uuid, currentBodyInstanceID, npcData.name, notifiedRemovalReason, removalContext)
         end
     end
 end
