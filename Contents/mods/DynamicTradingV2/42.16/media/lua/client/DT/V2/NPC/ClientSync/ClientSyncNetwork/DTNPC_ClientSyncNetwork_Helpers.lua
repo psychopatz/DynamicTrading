@@ -99,6 +99,7 @@ function Helpers.SetReportedState(cached, npcData)
         tasksCount = (npcData.tasks and #npcData.tasks or 0),
         loadoutSignature = loadoutSignature,
         combatOrder = npcData.combatOrder,
+        guardCombatOrder = npcData.guardCombatOrder,
         protectNoticeSerial = npcData.protectNoticeSerial or 0,
     }
 end

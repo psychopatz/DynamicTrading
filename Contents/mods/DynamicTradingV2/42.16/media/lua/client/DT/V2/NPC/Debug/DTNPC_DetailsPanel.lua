@@ -49,6 +49,8 @@ function DTNPC_DetailsPanel:setData(item)
     -- 2. STATE
     addHeader("STATE & POSITION", {r=1, g=0.9, b=0, a=1})
     addProp("State", npcData.state, {r=1, g=0.8, b=0.2, a=1})
+    addProp("Combat Order", npcData.combatOrder or "None", {r=1, g=0.8, b=0.2, a=1})
+    addProp("Guard Mode", npcData.guardCombatOrder or npcData.guardAttackMode or "None", {r=1, g=0.8, b=0.2, a=1})
     addProp("Hostile", npcData.isHostile, npcData.isHostile and {r=1, g=0.2, b=0.2, a=1} or {r=0.2, g=1, b=0.2, a=1})
     addProp("Master", npcData.master or "None", {r=0.8, g=0.8, b=1, a=1})
     addProp("Last Pos", (npcData.lastX or "?") .. "," .. (npcData.lastY or "?") .. "," .. (npcData.lastZ or "?"), {r=0, g=1, b=1, a=1})

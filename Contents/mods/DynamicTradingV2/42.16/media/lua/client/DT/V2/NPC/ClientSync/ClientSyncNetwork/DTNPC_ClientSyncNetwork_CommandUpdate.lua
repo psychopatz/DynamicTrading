@@ -111,6 +111,12 @@ function Handlers.HandleUpdatePosition(args)
         if args.combatOrder ~= nil then
             cached.npcData.combatOrder = args.combatOrder
         end
+        if args.guardCombatOrder ~= nil then
+            cached.npcData.guardCombatOrder = args.guardCombatOrder
+        end
+        if args.guardAttackMode ~= nil then
+            cached.npcData.guardAttackMode = args.guardAttackMode
+        end
         if args.protectNoticeSerial ~= nil then
             cached.npcData.protectNoticeSerial = args.protectNoticeSerial
         end
@@ -169,6 +175,12 @@ function Handlers.HandleUpdatePosition(args)
                 if args.combatOrder ~= nil then
                     zombieData.combatOrder = args.combatOrder
                 end
+                if args.guardCombatOrder ~= nil then
+                    zombieData.guardCombatOrder = args.guardCombatOrder
+                end
+                if args.guardAttackMode ~= nil then
+                    zombieData.guardAttackMode = args.guardAttackMode
+                end
                 if args.protectNoticeSerial ~= nil then
                     zombieData.protectNoticeSerial = args.protectNoticeSerial
                 end
@@ -199,6 +211,10 @@ function Handlers.HandleUpdatePosition(args)
         if args.combatOrder ~= nil then
             cached.lastReportedState = cached.lastReportedState or {}
             cached.lastReportedState.combatOrder = args.combatOrder
+        end
+        if args.guardCombatOrder ~= nil then
+            cached.lastReportedState = cached.lastReportedState or {}
+            cached.lastReportedState.guardCombatOrder = args.guardCombatOrder
         end
         if args.protectNoticeSerial ~= nil then
             cached.lastReportedState = cached.lastReportedState or {}

@@ -18,6 +18,58 @@ end
 
 Menu.BuilderLoaded = true
 
+local function getRangedAmmoSnapshot(npcData)
+    local loadout = npcData and type(npcData.loadout) == "table" and npcData.loadout or nil
+    local rangedWeapon = loadout and tostring(loadout.rangedWeapon or "") or ""
+    if rangedWeapon == "" then
+        return {
+            hasRangedWeapon = false,
+            ammoCount = 0,
+        }
+    end
+
+    return {
+        hasRangedWeapon = true,
+        ammoCount = math.max(0, math.floor(tonumber(loadout and loadout.ammoCount) or 0)),
+    }
+end
+
+local function getProtectMode(npcData)
+    local combatOrder = npcData and tostring(npcData.combatOrder or "") or ""
+    if combatOrder == "ProtectAuto" or combatOrder == "ProtectRanged" or combatOrder == "ProtectMelee" then
+        return combatOrder
+    end
+
+    local state = npcData and tostring(npcData.state or "") or ""
+    if state == "ProtectAuto" or state == "ProtectRanged" or state == "ProtectMelee" then
+        return state
+    end
+
+    return nil
+end
+
+local function getGuardMode(npcData)
+    local guardOrder = npcData and (npcData.guardCombatOrder or npcData.guardAttackMode) or nil
+    if guardOrder == "GuardAuto" or guardOrder == "GuardRanged" or guardOrder == "GuardMelee" then
+        return guardOrder
+    end
+
+    return nil
+end
+
+local function buildModeOptionLabel(baseLabel, isActive, includeAmmo, ammoCount)
+    local label = tostring(baseLabel or "")
+    if not isActive then
+        return label
+    end
+
+    label = label .. " [ACTIVE]"
+    if includeAmmo then
+        label = label .. " (Ammo: " .. tostring(math.max(0, tonumber(ammoCount) or 0)) .. ")"
+    end
+    return label
+end
+
 local function scanSquare(square, npcList, processedIDs)
     if not square then return end
 
@@ -72,16 +124,69 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
         for _, npc in ipairs(npcList) do
             local npcData = Menu.GetNPCData(npc) or { name = "Unknown", state = "Unknown" }
             local status = " [" .. (npcData.state or "Idle") .. "]"
+            local protectMode = getProtectMode(npcData)
+            local guardMode = getGuardMode(npcData)
+            local ammoSnapshot = getRangedAmmoSnapshot(npcData)
+            local protectShowAmmo = ammoSnapshot.hasRangedWeapon and (protectMode == "ProtectAuto" or protectMode == "ProtectRanged")
+            local guardShowAmmo = ammoSnapshot.hasRangedWeapon and (guardMode == "GuardAuto" or guardMode == "GuardRanged")
 
             local option = context:addOption("NPC: " .. npcData.name .. status)
             local subMenu = context:getNew(context)
             context:addSubMenu(option, subMenu)
 
             subMenu:addOption("Follow Me", npc, Menu.OnOrder, "Follow", player)
-            subMenu:addOption("Protect Me (Auto)", npc, Menu.OnOrder, "ProtectAuto", player)
-            subMenu:addOption("Protect Me (Ranged)", npc, Menu.OnOrder, "ProtectRanged", player)
-            subMenu:addOption("Protect Me (Melee)", npc, Menu.OnOrder, "ProtectMelee", player)
-            subMenu:addOption("Stop / Guard", npc, Menu.OnOrder, "Stay", player)
+            subMenu:addOption(
+                buildModeOptionLabel("Protect Me (Auto)", protectMode == "ProtectAuto", protectShowAmmo and protectMode == "ProtectAuto", ammoSnapshot.ammoCount),
+                npc,
+                Menu.OnOrder,
+                "ProtectAuto",
+                player
+            )
+            subMenu:addOption(
+                buildModeOptionLabel("Protect Me (Ranged)", protectMode == "ProtectRanged", protectShowAmmo and protectMode == "ProtectRanged", ammoSnapshot.ammoCount),
+                npc,
+                Menu.OnOrder,
+                "ProtectRanged",
+                player
+            )
+            subMenu:addOption(
+                buildModeOptionLabel("Protect Me (Melee)", protectMode == "ProtectMelee", false, ammoSnapshot.ammoCount),
+                npc,
+                Menu.OnOrder,
+                "ProtectMelee",
+                player
+            )
+            subMenu:addOption("Hold Position (Stay)", npc, Menu.OnOrder, "Stay", player)
+            local guardOption = subMenu:addOption("Guard Position")
+            local guardSub = subMenu:getNew(subMenu)
+            context:addSubMenu(guardOption, guardSub)
+            guardSub:addOption(
+                buildModeOptionLabel("Auto", guardMode == "GuardAuto", guardShowAmmo and guardMode == "GuardAuto", ammoSnapshot.ammoCount),
+                npc,
+                Menu.OnOrder,
+                "Guard",
+                player,
+                nil,
+                { guardCombatOrder = "GuardAuto" }
+            )
+            guardSub:addOption(
+                buildModeOptionLabel("Ranged", guardMode == "GuardRanged", guardShowAmmo and guardMode == "GuardRanged", ammoSnapshot.ammoCount),
+                npc,
+                Menu.OnOrder,
+                "Guard",
+                player,
+                nil,
+                { guardCombatOrder = "GuardRanged" }
+            )
+            guardSub:addOption(
+                buildModeOptionLabel("Melee", guardMode == "GuardMelee", false, ammoSnapshot.ammoCount),
+                npc,
+                Menu.OnOrder,
+                "Guard",
+                player,
+                nil,
+                { guardCombatOrder = "GuardMelee" }
+            )
             subMenu:addOption("Come Here (My Pos)", npc, Menu.OnOrder, "GoTo", player)
 
             if EventMarkerHandler then
@@ -97,6 +202,9 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             debugSub:addOption("TEST: Flee (Return as Trading)", npc, Menu.OnOrder, "Flee", player, "Trading")
             debugSub:addOption("TEST: Attack Me (Melee)", npc, Menu.OnOrder, "Attack", player)
             debugSub:addOption("TEST: Attack Me (Gun)", npc, Menu.OnOrder, "AttackRange", player)
+            debugSub:addOption("TEST: Guard Here (Auto)", npc, Menu.OnOrder, "Guard", player, nil, { guardCombatOrder = "GuardAuto" })
+            debugSub:addOption("TEST: Guard Here (Ranged)", npc, Menu.OnOrder, "Guard", player, nil, { guardCombatOrder = "GuardRanged" })
+            debugSub:addOption("TEST: Guard Here (Melee)", npc, Menu.OnOrder, "Guard", player, nil, { guardCombatOrder = "GuardMelee" })
             local heldWeaponLabel = Menu.GetHeldDebugWeaponLabel and Menu.GetHeldDebugWeaponLabel(player) or nil
             if heldWeaponLabel then
                 debugSub:addOption("TEST: Give Held Weapon [" .. tostring(heldWeaponLabel) .. "]", npc, Menu.OnDebugGiveHeldWeapon, player)

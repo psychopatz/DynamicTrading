@@ -97,6 +97,14 @@ local function ensureManualControl(zombie)
 end
 
 local function clearProtectCombat(zombie, npcData)
+    if DTNPCProtect and DTNPCProtect.ResetGuardedCombatState then
+        DTNPCProtect.ResetGuardedCombatState(zombie, npcData, {
+            resetMoveState = resetProtectMoveState,
+            clearAutoProtectState = true,
+        })
+        return
+    end
+
     if npcData then
         npcData.attackTimer = 0
         npcData.reactionTimer = 0
@@ -116,6 +124,10 @@ local function clearProtectCombat(zombie, npcData)
 end
 
 local function pushCompanionModeNotice(zombie, npcData, dialogueStatus, dialogueState, mode)
+    if DTNPCProtect and DTNPCProtect.PushCompanionModeNotice then
+        return DTNPCProtect.PushCompanionModeNotice(zombie, npcData, dialogueStatus, dialogueState, mode)
+    end
+
     if not npcData then
         return false
     end
@@ -134,6 +146,14 @@ local function pushCompanionModeNotice(zombie, npcData, dialogueStatus, dialogue
 end
 
 local function announceCombatEngage(zombie, npcData)
+    if DTNPCProtect and DTNPCProtect.AnnounceCompanionCombatEngage then
+        DTNPCProtect.AnnounceCompanionCombatEngage(zombie, npcData, "combat")
+        if DTNPCProtect and DTNPCProtect.LogProtectDebug then
+            DTNPCProtect.LogProtectDebug(npcData, "engage", "target=" .. tostring(npcData and npcData.combatTargetID))
+        end
+        return
+    end
+
     if not npcData then
         return
     end
@@ -153,6 +173,11 @@ local function announceCombatEngage(zombie, npcData)
 end
 
 local function announceRangedAttack(zombie, npcData)
+    if DTNPCProtect and DTNPCProtect.AnnounceCompanionRangedAttack then
+        DTNPCProtect.AnnounceCompanionRangedAttack(zombie, npcData, "ranged")
+        return
+    end
+
     if not npcData then
         return
     end
@@ -167,6 +192,11 @@ local function announceRangedAttack(zombie, npcData)
 end
 
 local function announceReturnToMaster(zombie, npcData)
+    if DTNPCProtect and DTNPCProtect.AnnounceCompanionCombatReturn then
+        DTNPCProtect.AnnounceCompanionCombatReturn(zombie, npcData, "return")
+        return
+    end
+
     if not npcData or npcData.companionCombatActive ~= true then
         return
     end
@@ -376,6 +406,29 @@ local function protectTargetOrEscort(zombie, npcData, master, distToMaster, requ
 end
 
 local function executeProtectRanged(zombie, npcData, target, targetDist)
+    if DTNPCProtect and DTNPCProtect.ExecuteGuardedRangedCombat then
+        DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, targetDist, {
+            mode = "protect",
+            issuePrefix = "ProtectRanged",
+            unavailableText = "Can't fire. No usable firearm.",
+            onStartMove = function(runZombie)
+                forceWalkAnim(runZombie, false)
+            end,
+            onStopMove = function(stopZombie, stopNpcData)
+                stopMoveAnim(stopZombie, stopNpcData)
+            end,
+            onCombatIdle = function(idleZombie, idleNpcData)
+                if DTNPC and DTNPC.SetRangedCombatIdleState then
+                    DTNPC.SetRangedCombatIdleState(idleZombie, idleNpcData)
+                end
+            end,
+            onRangedAttack = function(attackZombie, attackNpcData)
+                announceRangedAttack(attackZombie, attackNpcData)
+            end,
+        })
+        return
+    end
+
     if DTNPCProtect and not DTNPCProtect.HasUsableRangedLoadout(npcData) then
         if DTNPCProtect.ReportCombatIssue then
             DTNPCProtect.ReportCombatIssue(
@@ -486,6 +539,23 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
 end
 
 local function executeProtectMelee(zombie, npcData, target, targetDist)
+    if DTNPCProtect and DTNPCProtect.ExecuteGuardedMeleeCombat then
+        DTNPCProtect.ExecuteGuardedMeleeCombat(zombie, npcData, target, targetDist, {
+            mode = "protect",
+            issuePrefix = "ProtectMelee",
+            unavailableText = "Can't swing. No usable melee weapon.",
+            blockedText = "Can't reach that zombie.",
+            blockCounterKey = "protectBlockedTicks",
+            fallbackReach = MELEE_REACH,
+            defaultSpeed = MELEE_DEFAULT_SPEED,
+            enterBuffer = 0.25,
+            holdBuffer = 0.45,
+            stopBuffer = MELEE_APPROACH_STOP_BUFFER,
+            debugLabel = "ProtectMeleeSwing",
+        })
+        return
+    end
+
     if DTNPCProtect and not DTNPCProtect.HasUsableMeleeLoadout(npcData) then
         if DTNPCProtect.ResetMeleeCombat then
             DTNPCProtect.ResetMeleeCombat(npcData)

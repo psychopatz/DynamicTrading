@@ -210,6 +210,8 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         state = npcData.state,
         status = npcData.status,
         combatOrder = npcData.combatOrder,
+        guardCombatOrder = npcData.guardCombatOrder,
+        guardAttackMode = npcData.guardAttackMode,
         protectNoticeSerial = npcData.protectNoticeSerial,
         protectNoticeText = npcData.protectNoticeText,
         protectNoticeSentiment = npcData.protectNoticeSentiment,

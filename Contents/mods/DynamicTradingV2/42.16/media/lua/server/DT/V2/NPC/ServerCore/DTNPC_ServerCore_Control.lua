@@ -603,13 +603,70 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
     end
 
     local combatOrder = nil
+    local guardCombatOrder = nil
     if args.combatOrder == "ProtectRanged" or args.combatOrder == "ProtectMelee" or args.combatOrder == "ProtectAuto" then
         combatOrder = args.combatOrder
     elseif state == "ProtectRanged" or state == "ProtectMelee" or state == "ProtectAuto" then
         combatOrder = state
     end
+    if args.guardCombatOrder == "GuardRanged" or args.guardCombatOrder == "GuardMelee" or args.guardCombatOrder == "GuardAuto" then
+        guardCombatOrder = args.guardCombatOrder
+    elseif args.guardAttackMode == "GuardRanged" or args.guardAttackMode == "GuardMelee" or args.guardAttackMode == "GuardAuto" then
+        guardCombatOrder = args.guardAttackMode
+    elseif state == "Guard" then
+        guardCombatOrder = npcData.guardCombatOrder or npcData.guardAttackMode or "GuardAuto"
+    end
     if npcData.combatOrder ~= combatOrder then
         npcData.combatOrder = combatOrder
+        changed = true
+    end
+    if npcData.guardCombatOrder ~= guardCombatOrder then
+        npcData.guardCombatOrder = guardCombatOrder
+        changed = true
+    end
+    if npcData.guardAttackMode ~= guardCombatOrder then
+        npcData.guardAttackMode = guardCombatOrder
+        changed = true
+    end
+    if state == "Guard" then
+        local guardX = tonumber(args.x) or zombie:getX()
+        local guardY = tonumber(args.y) or zombie:getY()
+        local guardZ = tonumber(args.z) or zombie:getZ()
+
+        if npcData.stationaryPostX ~= guardX then
+            npcData.stationaryPostX = guardX
+            changed = true
+        end
+        if npcData.stationaryPostY ~= guardY then
+            npcData.stationaryPostY = guardY
+            changed = true
+        end
+        if npcData.stationaryPostZ ~= guardZ then
+            npcData.stationaryPostZ = guardZ
+            changed = true
+        end
+        if npcData.stationaryPostState ~= "Guard" then
+            npcData.stationaryPostState = "Guard"
+            changed = true
+        end
+        if npcData.anchorX ~= guardX then
+            npcData.anchorX = guardX
+            changed = true
+        end
+        if npcData.anchorY ~= guardY then
+            npcData.anchorY = guardY
+            changed = true
+        end
+        if npcData.anchorZ ~= guardZ then
+            npcData.anchorZ = guardZ
+            changed = true
+        end
+        if npcData.guardReturningToPost ~= nil then
+            npcData.guardReturningToPost = nil
+            changed = true
+        end
+    elseif state == "Stay" and npcData.guardReturningToPost ~= nil then
+        npcData.guardReturningToPost = nil
         changed = true
     end
     if combatOrder == nil and npcData.combatFallbackAnnouncedAt ~= nil then

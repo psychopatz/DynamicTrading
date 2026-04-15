@@ -75,7 +75,7 @@ function DTNPCCombat.GetZombieDefenseProfile(zombie, npcData, options)
     local melee = clamp(getSkillLevel(npcData, "Melee"), 0, 20) / 20
     local ranged = clamp(getSkillLevel(npcData, "Shooting"), 0, 20) / 20
     local threatCount = math.max(0, tonumber(options.threatCount) or tonumber(npcData.zombieThreatCount) or 0)
-    local state = tostring(npcData.state or "")
+    local state = tostring(npcData.autoProtectActiveState or npcData.state or "")
 
     local evadeChance = tonumber(DTNPCCombat.CONFIG.ZombieEvadeBaseChance) or 0
     evadeChance = evadeChance

@@ -414,6 +414,7 @@ local function updateCompanionState(player, npc, state, extraArgs)
         end
         npcData.state = state or npcData.state
     end
+
     if extraArgs and extraArgs.combatOrder then
         npcData.combatOrder = extraArgs.combatOrder
     elseif state == "ProtectAuto" or state == "ProtectRanged" or state == "ProtectMelee" then
@@ -422,9 +423,40 @@ local function updateCompanionState(player, npc, state, extraArgs)
         npcData.combatOrder = nil
     end
 
+    if extraArgs and extraArgs.guardCombatOrder then
+        npcData.guardCombatOrder = extraArgs.guardCombatOrder
+        npcData.guardAttackMode = extraArgs.guardCombatOrder
+    elseif extraArgs and extraArgs.guardAttackMode then
+        npcData.guardAttackMode = extraArgs.guardAttackMode
+        npcData.guardCombatOrder = extraArgs.guardAttackMode
+    elseif state == "Stay" and extraArgs and extraArgs.clearGuardMode == true then
+        npcData.guardCombatOrder = nil
+        npcData.guardAttackMode = nil
+    elseif state == "PatchUp" then
+        -- Preserve guard settings through temporary self-care orders.
+    elseif state ~= "Guard" then
+        npcData.guardCombatOrder = npcData.guardCombatOrder
+        npcData.guardAttackMode = npcData.guardAttackMode
+    end
+
     if state == "Follow" or state == "ProtectAuto" or state == "ProtectRanged" or state == "ProtectMelee" then
         npcData.master = player and player.getUsername and player:getUsername() or npcData.master
         npcData.masterID = player and player.getOnlineID and player:getOnlineID() or npcData.masterID
+    end
+
+    if state == "Guard" and npc then
+        npcData.stationaryPostX = npc:getX()
+        npcData.stationaryPostY = npc:getY()
+        npcData.stationaryPostZ = npc:getZ()
+        npcData.stationaryPostState = "Guard"
+        npcData.anchorX = npc:getX()
+        npcData.anchorY = npc:getY()
+        npcData.anchorZ = npc:getZ()
+        npcData.guardReturningToPost = nil
+    end
+
+    if state == "Stay" then
+        npcData.guardReturningToPost = nil
     end
 
     npcData.tasks = {}
@@ -434,6 +466,12 @@ end
 
 local function getAttackTypeLabel(npcData)
     local combatOrder = npcData and npcData.combatOrder or nil
+    if combatOrder ~= "ProtectAuto" and combatOrder ~= "ProtectRanged" and combatOrder ~= "ProtectMelee" then
+        local state = npcData and npcData.state or nil
+        if state == "ProtectAuto" or state == "ProtectRanged" or state == "ProtectMelee" then
+            combatOrder = state
+        end
+    end
     if combatOrder == "ProtectAuto" then
         return "Auto"
     end
@@ -444,6 +482,98 @@ local function getAttackTypeLabel(npcData)
         return "Melee"
     end
     return "Balanced"
+end
+
+local function getAttackTypeMode(npcData)
+    local combatOrder = npcData and npcData.combatOrder or nil
+    if combatOrder == "ProtectAuto" or combatOrder == "ProtectRanged" or combatOrder == "ProtectMelee" then
+        return combatOrder
+    end
+
+    local state = npcData and npcData.state or nil
+    if state == "ProtectAuto" or state == "ProtectRanged" or state == "ProtectMelee" then
+        return state
+    end
+
+    return nil
+end
+
+local function getGuardAttackTypeLabel(npcData)
+    local guardOrder = npcData and (npcData.guardCombatOrder or npcData.guardAttackMode) or nil
+    if guardOrder == "GuardAuto" then
+        return "Auto"
+    end
+    if guardOrder == "GuardRanged" then
+        return "Ranged"
+    end
+    if guardOrder == "GuardMelee" then
+        return "Melee"
+    end
+    return "Auto"
+end
+
+local function getGuardAttackTypeMode(npcData)
+    local guardOrder = npcData and (npcData.guardCombatOrder or npcData.guardAttackMode) or nil
+    if guardOrder == "GuardAuto" or guardOrder == "GuardRanged" or guardOrder == "GuardMelee" then
+        return guardOrder
+    end
+    return nil
+end
+
+local function getRangedAmmoSnapshot(npcData)
+    local loadout = npcData and type(npcData.loadout) == "table" and npcData.loadout or nil
+    local rangedWeapon = normalizeText(loadout and loadout.rangedWeapon or nil)
+    if not rangedWeapon then
+        return {
+            hasRangedWeapon = false,
+            ammoCount = 0,
+        }
+    end
+
+    return {
+        hasRangedWeapon = true,
+        ammoCount = math.max(0, math.floor(tonumber(loadout and loadout.ammoCount) or 0)),
+    }
+end
+
+local function buildModeOptionLabel(baseLabel, isActive, includeAmmo, ammoCount)
+    local label = tostring(baseLabel or "")
+    if not isActive then
+        return label
+    end
+
+    label = label .. " [ACTIVE]"
+    if includeAmmo then
+        label = label .. " (Ammo: " .. tostring(math.max(0, tonumber(ammoCount) or 0)) .. ")"
+    end
+    return label
+end
+
+local function buildModeOptionStyle(isActive, modeKey)
+    if not isActive then
+        return nil
+    end
+
+    if modeKey == "auto" then
+        return {
+            bgColor = { 0.16, 0.24, 0.36, 1.0 },
+            borderColor = { 0.48, 0.70, 0.98, 1.0 },
+            textColor = { 0.90, 0.96, 1.0, 1.0 },
+        }
+    end
+    if modeKey == "ranged" then
+        return {
+            bgColor = { 0.17, 0.31, 0.20, 1.0 },
+            borderColor = { 0.48, 0.86, 0.50, 1.0 },
+            textColor = { 0.90, 1.0, 0.90, 1.0 },
+        }
+    end
+
+    return {
+        bgColor = { 0.36, 0.20, 0.18, 1.0 },
+        borderColor = { 0.95, 0.50, 0.44, 1.0 },
+        textColor = { 1.0, 0.92, 0.90, 1.0 },
+    }
 end
 
 local function openCompanionInventory(ui, worker, npc, npcData)
@@ -540,29 +670,93 @@ local function addAttackTypeContextMenu(parentMenu, npc, player)
     local subMenu = parentMenu:getNew(parentMenu)
     parentMenu:addSubMenu(option, subMenu)
 
-    addCompanionContextAction(subMenu, "Auto", function()
+    local liveData = getNPCData(npc)
+    local currentMode = getAttackTypeMode(liveData)
+    local ammoSnapshot = getRangedAmmoSnapshot(liveData)
+    local showAmmo = ammoSnapshot.hasRangedWeapon and (currentMode == "ProtectAuto" or currentMode == "ProtectRanged")
+
+    addCompanionContextAction(
+        subMenu,
+        buildModeOptionLabel("Auto", currentMode == "ProtectAuto", showAmmo and currentMode == "ProtectAuto", ammoSnapshot.ammoCount),
+        function()
         updateCompanionState(player, npc, "ProtectAuto", {
             state = "ProtectAuto",
             combatOrder = "ProtectAuto",
             returnStatus = "Resting",
         })
-    end)
+        end
+    )
 
-    addCompanionContextAction(subMenu, "Ranged", function()
+    addCompanionContextAction(
+        subMenu,
+        buildModeOptionLabel("Ranged", currentMode == "ProtectRanged", showAmmo and currentMode == "ProtectRanged", ammoSnapshot.ammoCount),
+        function()
         updateCompanionState(player, npc, "ProtectRanged", {
             state = "ProtectRanged",
             combatOrder = "ProtectRanged",
             returnStatus = "Resting",
         })
-    end)
+        end
+    )
 
-    addCompanionContextAction(subMenu, "Melee", function()
+    addCompanionContextAction(
+        subMenu,
+        buildModeOptionLabel("Melee", currentMode == "ProtectMelee", false, ammoSnapshot.ammoCount),
+        function()
         updateCompanionState(player, npc, "ProtectMelee", {
             state = "ProtectMelee",
             combatOrder = "ProtectMelee",
             returnStatus = "Resting",
         })
-    end)
+        end
+    )
+end
+
+local function addGuardAttackTypeContextMenu(parentMenu, npc, player)
+    local option = parentMenu:addOption("Guard Attack Type")
+    local subMenu = parentMenu:getNew(parentMenu)
+    parentMenu:addSubMenu(option, subMenu)
+
+    local liveData = getNPCData(npc)
+    local currentMode = getGuardAttackTypeMode(liveData)
+    local ammoSnapshot = getRangedAmmoSnapshot(liveData)
+    local showAmmo = ammoSnapshot.hasRangedWeapon and (currentMode == "GuardAuto" or currentMode == "GuardRanged")
+
+    addCompanionContextAction(
+        subMenu,
+        buildModeOptionLabel("Auto", currentMode == "GuardAuto", showAmmo and currentMode == "GuardAuto", ammoSnapshot.ammoCount),
+        function()
+        updateCompanionState(player, npc, "Guard", {
+            state = "Guard",
+            guardCombatOrder = "GuardAuto",
+            returnStatus = "Resting",
+        })
+        end
+    )
+
+    addCompanionContextAction(
+        subMenu,
+        buildModeOptionLabel("Ranged", currentMode == "GuardRanged", showAmmo and currentMode == "GuardRanged", ammoSnapshot.ammoCount),
+        function()
+        updateCompanionState(player, npc, "Guard", {
+            state = "Guard",
+            guardCombatOrder = "GuardRanged",
+            returnStatus = "Resting",
+        })
+        end
+    )
+
+    addCompanionContextAction(
+        subMenu,
+        buildModeOptionLabel("Melee", currentMode == "GuardMelee", false, ammoSnapshot.ammoCount),
+        function()
+        updateCompanionState(player, npc, "Guard", {
+            state = "Guard",
+            guardCombatOrder = "GuardMelee",
+            returnStatus = "Resting",
+        })
+        end
+    )
 end
 
 local function sendPatchUpOrder(player, npc)
@@ -674,6 +868,15 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
     addCompanionContextAction(rootMenu, "Hold Position", function()
         updateCompanionState(player, npc, "Stay", {
             state = "Stay",
+            clearGuardMode = true,
+            returnStatus = "Resting",
+        })
+    end)
+
+    addCompanionContextAction(rootMenu, "Guard Position", function()
+        updateCompanionState(player, npc, "Guard", {
+            state = "Guard",
+            guardCombatOrder = (liveData and (liveData.guardCombatOrder or liveData.guardAttackMode)) or "GuardAuto",
             returnStatus = "Resting",
         })
     end)
@@ -681,6 +884,7 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
     addPatchUpContextMenu(rootMenu, npc, player, worker)
 
     addAttackTypeContextMenu(rootMenu, npc, player)
+    addGuardAttackTypeContextMenu(rootMenu, npc, player)
     if usesCommandAuthority and worker then
         addTransferCommandContextMenu(rootMenu, worker, player)
     end
@@ -818,11 +1022,30 @@ local function generateRootOptions(ui, npc, player, worker)
         onSelect = function(innerUI)
             if updateCompanionState(player, npc, "Stay", {
                 state = "Stay",
+                clearGuardMode = true,
                 returnStatus = "Resting",
             }) then
                 innerUI:speak("I'll hold here.")
             else
                 innerUI:speak("I couldn't hold position right now.")
+            end
+            generateRootOptions(innerUI, npc, player, worker)
+        end
+    }
+
+    options[#options + 1] = {
+        text = "Guard Position",
+        message = "Hold this area and engage nearby threats.",
+        onSelect = function(innerUI)
+            local liveData = getNPCData(npc)
+            if updateCompanionState(player, npc, "Guard", {
+                state = "Guard",
+                guardCombatOrder = (liveData and (liveData.guardCombatOrder or liveData.guardAttackMode)) or "GuardAuto",
+                returnStatus = "Resting",
+            }) then
+                innerUI:speak("I'll guard this position.")
+            else
+                innerUI:speak("I couldn't take up guard duty right now.")
             end
             generateRootOptions(innerUI, npc, player, worker)
         end
@@ -851,13 +1074,22 @@ local function generateRootOptions(ui, npc, player, worker)
         text = "Attack Type",
         message = "Let's talk combat.",
         onSelect = function(innerUI)
-            local npcData = getNPCData(npc)
-            local currentLabel = getAttackTypeLabel(npcData)
+            local liveData = getNPCData(npc)
+            local currentLabel = getAttackTypeLabel(liveData)
+            local currentMode = getAttackTypeMode(liveData)
+            local ammoSnapshot = getRangedAmmoSnapshot(liveData)
+            local showAmmo = ammoSnapshot.hasRangedWeapon and (currentMode == "ProtectAuto" or currentMode == "ProtectRanged")
             innerUI:speak("Current attack type: " .. currentLabel .. ".")
             innerUI:updateOptions({
                 {
-                    text = "Auto",
+                    text = buildModeOptionLabel(
+                        "Auto",
+                        currentMode == "ProtectAuto",
+                        showAmmo and currentMode == "ProtectAuto",
+                        ammoSnapshot.ammoCount
+                    ),
                     message = "Use whichever weapon fits the fight.",
+                    style = buildModeOptionStyle(currentMode == "ProtectAuto", "auto"),
                     onSelect = function(choiceUI)
                         if updateCompanionState(player, npc, "ProtectAuto", {
                             state = "ProtectAuto",
@@ -872,8 +1104,14 @@ local function generateRootOptions(ui, npc, player, worker)
                     end
                 },
                 {
-                    text = "Ranged",
+                    text = buildModeOptionLabel(
+                        "Ranged",
+                        currentMode == "ProtectRanged",
+                        showAmmo and currentMode == "ProtectRanged",
+                        ammoSnapshot.ammoCount
+                    ),
                     message = "Cover me from range.",
+                    style = buildModeOptionStyle(currentMode == "ProtectRanged", "ranged"),
                     onSelect = function(choiceUI)
                         if updateCompanionState(player, npc, "ProtectRanged", {
                             state = "ProtectRanged",
@@ -888,8 +1126,9 @@ local function generateRootOptions(ui, npc, player, worker)
                     end
                 },
                 {
-                    text = "Melee",
+                    text = buildModeOptionLabel("Melee", currentMode == "ProtectMelee", false, ammoSnapshot.ammoCount),
                     message = "Stay close and fight up front.",
+                    style = buildModeOptionStyle(currentMode == "ProtectMelee", "melee"),
                     onSelect = function(choiceUI)
                         if updateCompanionState(player, npc, "ProtectMelee", {
                             state = "ProtectMelee",
@@ -899,6 +1138,89 @@ local function generateRootOptions(ui, npc, player, worker)
                             choiceUI:speak("I'll stay close and handle threats up front.")
                         else
                             choiceUI:speak("I couldn't switch attack type right now.")
+                        end
+                        generateRootOptions(choiceUI, npc, player, worker)
+                    end
+                },
+                {
+                    text = "Back",
+                    message = "",
+                    onSelect = function(choiceUI)
+                        generateRootOptions(choiceUI, npc, player, worker)
+                    end
+                }
+            })
+        end
+    }
+
+    options[#options + 1] = {
+        text = "Guard Attack Type",
+        message = "How should you fight while guarding?",
+        onSelect = function(innerUI)
+            local liveData = getNPCData(npc)
+            local currentLabel = getGuardAttackTypeLabel(liveData)
+            local currentMode = getGuardAttackTypeMode(liveData)
+            local ammoSnapshot = getRangedAmmoSnapshot(liveData)
+            local showAmmo = ammoSnapshot.hasRangedWeapon and (currentMode == "GuardAuto" or currentMode == "GuardRanged")
+            innerUI:speak("Current guard attack type: " .. currentLabel .. ".")
+            innerUI:updateOptions({
+                {
+                    text = buildModeOptionLabel(
+                        "Auto",
+                        currentMode == "GuardAuto",
+                        showAmmo and currentMode == "GuardAuto",
+                        ammoSnapshot.ammoCount
+                    ),
+                    message = "Use whichever weapon fits the threat while guarding.",
+                    style = buildModeOptionStyle(currentMode == "GuardAuto", "auto"),
+                    onSelect = function(choiceUI)
+                        if updateCompanionState(player, npc, "Guard", {
+                            state = "Guard",
+                            guardCombatOrder = "GuardAuto",
+                            returnStatus = "Resting",
+                        }) then
+                            choiceUI:speak("I'll guard this spot and adapt as needed.")
+                        else
+                            choiceUI:speak("I couldn't switch guard attack type right now.")
+                        end
+                        generateRootOptions(choiceUI, npc, player, worker)
+                    end
+                },
+                {
+                    text = buildModeOptionLabel(
+                        "Ranged",
+                        currentMode == "GuardRanged",
+                        showAmmo and currentMode == "GuardRanged",
+                        ammoSnapshot.ammoCount
+                    ),
+                    message = "Guard from a distance.",
+                    style = buildModeOptionStyle(currentMode == "GuardRanged", "ranged"),
+                    onSelect = function(choiceUI)
+                        if updateCompanionState(player, npc, "Guard", {
+                            state = "Guard",
+                            guardCombatOrder = "GuardRanged",
+                            returnStatus = "Resting",
+                        }) then
+                            choiceUI:speak("I'll hold this spot and engage from range.")
+                        else
+                            choiceUI:speak("I couldn't switch guard attack type right now.")
+                        end
+                        generateRootOptions(choiceUI, npc, player, worker)
+                    end
+                },
+                {
+                    text = buildModeOptionLabel("Melee", currentMode == "GuardMelee", false, ammoSnapshot.ammoCount),
+                    message = "Hold the line up close.",
+                    style = buildModeOptionStyle(currentMode == "GuardMelee", "melee"),
+                    onSelect = function(choiceUI)
+                        if updateCompanionState(player, npc, "Guard", {
+                            state = "Guard",
+                            guardCombatOrder = "GuardMelee",
+                            returnStatus = "Resting",
+                        }) then
+                            choiceUI:speak("I'll hold this spot and fight up close.")
+                        else
+                            choiceUI:speak("I couldn't switch guard attack type right now.")
                         end
                         generateRootOptions(choiceUI, npc, player, worker)
                     end

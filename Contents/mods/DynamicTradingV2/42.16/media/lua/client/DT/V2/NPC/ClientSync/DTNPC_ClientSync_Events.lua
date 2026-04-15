@@ -176,6 +176,7 @@ function DTNPCClient.OnTick()
                                     tasksCount = (localData.tasks and #localData.tasks or 0),
                                     loadoutSignature = getLoadoutSignature(localData.loadout),
                                     combatOrder = localData.combatOrder,
+                                    guardCombatOrder = localData.guardCombatOrder,
                                     protectNoticeSerial = localData.protectNoticeSerial or 0,
                                 }
                             end
@@ -205,6 +206,13 @@ function DTNPCClient.OnTick()
                             if localData.combatOrder ~= cached.lastReportedState.combatOrder then
                                 updates.combatOrder = localData.combatOrder
                                 cached.lastReportedState.combatOrder = localData.combatOrder
+                                changed = true
+                            end
+
+                            if localData.guardCombatOrder ~= cached.lastReportedState.guardCombatOrder then
+                                updates.guardCombatOrder = localData.guardCombatOrder
+                                updates.guardAttackMode = localData.guardAttackMode
+                                cached.lastReportedState.guardCombatOrder = localData.guardCombatOrder
                                 changed = true
                             end
 

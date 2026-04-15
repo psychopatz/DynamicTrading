@@ -36,9 +36,14 @@ local function isProtectState(state)
     return state == "ProtectRanged" or state == "ProtectMelee" or state == "ProtectAuto"
 end
 
-function Menu.OnOrder(npc, state, player, returnStatus)
+local function isGuardCombatOrder(value)
+    return value == "GuardAuto" or value == "GuardRanged" or value == "GuardMelee"
+end
+
+function Menu.OnOrder(npc, state, player, returnStatus, extraArgs)
     if not npc or not player then return end
     local npcData = Menu.GetNPCData(npc)
+    extraArgs = type(extraArgs) == "table" and extraArgs or {}
 
     local args = {
         x = npc:getX(),
@@ -48,6 +53,17 @@ function Menu.OnOrder(npc, state, player, returnStatus)
         returnStatus = returnStatus,
         uuid = npcData and npcData.uuid or nil,
     }
+
+    if extraArgs.combatOrder ~= nil then
+        args.combatOrder = extraArgs.combatOrder
+    end
+    if isGuardCombatOrder(extraArgs.guardCombatOrder) then
+        args.guardCombatOrder = extraArgs.guardCombatOrder
+        args.guardAttackMode = extraArgs.guardCombatOrder
+    elseif isGuardCombatOrder(extraArgs.guardAttackMode) then
+        args.guardAttackMode = extraArgs.guardAttackMode
+        args.guardCombatOrder = extraArgs.guardAttackMode
+    end
 
     if state == "GoTo" then
         args.targetX = player:getX()
@@ -65,15 +81,39 @@ function Menu.OnOrder(npc, state, player, returnStatus)
         npcData.master = player:getUsername()
         npcData.masterID = isClient() and player:getOnlineID() or 0
         npcData.tasks = {}
-        npcData.combatOrder = isProtectState(state) and state or nil
+        npcData.combatOrder = extraArgs.combatOrder or (isProtectState(state) and state or nil)
+        npcData.guardCombatOrder = nil
+        npcData.guardAttackMode = nil
+    elseif state == "Guard" then
+        npcData.master = nil
+        npcData.masterID = nil
+        npcData.tasks = {}
+        npcData.combatOrder = nil
+        npcData.guardCombatOrder = args.guardCombatOrder or npcData.guardCombatOrder or "GuardAuto"
+        npcData.guardAttackMode = npcData.guardCombatOrder
+        npcData.stationaryPostX = npc:getX()
+        npcData.stationaryPostY = npc:getY()
+        npcData.stationaryPostZ = npc:getZ()
+        npcData.stationaryPostState = "Guard"
+        npcData.anchorX = npc:getX()
+        npcData.anchorY = npc:getY()
+        npcData.anchorZ = npc:getZ()
+        npcData.guardReturningToPost = nil
     elseif state == "GoTo" then
         npcData.tasks = {
             { x = args.targetX, y = args.targetY, z = args.targetZ }
         }
         npcData.combatOrder = nil
+        npcData.guardCombatOrder = nil
+        npcData.guardAttackMode = nil
     else
         npcData.tasks = {}
         npcData.combatOrder = nil
+        if state == "Stay" then
+            npcData.guardCombatOrder = nil
+            npcData.guardAttackMode = nil
+            npcData.guardReturningToPost = nil
+        end
     end
 
     attachNPCData(npc, npcData)

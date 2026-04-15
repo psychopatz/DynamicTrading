@@ -9,11 +9,20 @@ DTNPCLogic.Internal = DTNPCLogic.Internal or {}
 local Internal = DTNPCLogic.Internal
 
 function DTNPCLogic.ApplyAnchorStabilization(zombie, npcData, state)
+    local isActiveGuardState = state == "Guard"
+        and npcData
+        and (
+            npcData.combatTargetID ~= nil
+            or npcData.guardReturningToPost == true
+            or npcData.isMovingState == true
+            or npcData.companionCombatActive == true
+        )
+
     local isStationaryState = state == "Stay"
-        or state == "Guard"
         or state == "Idle"
         or state == "Trading"
         or state == "Bandage"
+        or (state == "Guard" and not isActiveGuardState)
 
     if isStationaryState then
         zombie:setPath2(nil)

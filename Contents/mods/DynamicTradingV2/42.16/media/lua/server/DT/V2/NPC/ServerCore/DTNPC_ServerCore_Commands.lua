@@ -397,13 +397,37 @@ local function onClientCommand(module, command, player, args)
                             npcData.master = player:getUsername()
                             npcData.masterID = isClient() and player:getOnlineID() or 0
                             npcData.combatOrder = (args.state == "ProtectRanged" or args.state == "ProtectMelee" or args.state == "ProtectAuto") and args.state or nil
+                            npcData.guardCombatOrder = nil
+                            npcData.guardAttackMode = nil
                             DynamicTrading.Log("DTV2", "NPC", "Order", "Master assigned for " .. args.state .. " order: " .. npcData.master)
+                        elseif args.state == "Guard" then
+                            npcData.combatOrder = nil
+                            npcData.guardCombatOrder = (args.guardCombatOrder == "GuardRanged" or args.guardCombatOrder == "GuardMelee" or args.guardCombatOrder == "GuardAuto")
+                                and args.guardCombatOrder
+                                or ((args.guardAttackMode == "GuardRanged" or args.guardAttackMode == "GuardMelee" or args.guardAttackMode == "GuardAuto") and args.guardAttackMode or npcData.guardCombatOrder or "GuardAuto")
+                            npcData.guardAttackMode = npcData.guardCombatOrder
+                            npcData.master = nil
+                            npcData.masterID = nil
+                            npcData.stationaryPostX = args.x or obj:getX()
+                            npcData.stationaryPostY = args.y or obj:getY()
+                            npcData.stationaryPostZ = args.z or obj:getZ()
+                            npcData.stationaryPostState = "Guard"
+                            npcData.anchorX = npcData.stationaryPostX
+                            npcData.anchorY = npcData.stationaryPostY
+                            npcData.anchorZ = npcData.stationaryPostZ
+                            npcData.guardReturningToPost = nil
                         elseif args.state == "GoTo" then
                            table.insert(npcData.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
                            npcData.combatOrder = nil
+                           npcData.guardCombatOrder = nil
+                           npcData.guardAttackMode = nil
                            DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
                         else
                             npcData.combatOrder = nil
+                            if args.state == "Stay" then
+                                npcData.guardCombatOrder = nil
+                                npcData.guardAttackMode = nil
+                            end
                         end
 
                         DTNPC.AttachData(obj, npcData)
