@@ -10,6 +10,29 @@ local Internal = DTNPCProtect.Internal
 local getConditionMax = Internal.getConditionMax
 local createConditionProbeItem = Internal.createConditionProbeItem
 
+local function retireBrokenWeapon(npcData, loadout, slot, weaponKey, conditionKey, reason)
+    local weapon = loadout and loadout[weaponKey] or nil
+    if not loadout or not weapon or weapon == "" then
+        return 0
+    end
+
+    loadout[weaponKey] = nil
+    loadout[conditionKey] = nil
+    if slot == "ranged" then
+        loadout.rangedAmmoType = nil
+    end
+
+    if npcData then
+        npcData._protectBrokenWeapons = type(npcData._protectBrokenWeapons) == "table" and npcData._protectBrokenWeapons or {}
+        npcData._protectBrokenWeapons[slot] = {
+            weapon = weapon,
+            reason = reason or "condition_zero",
+            time = Internal.nowMillis and Internal.nowMillis() or 0,
+        }
+    end
+    return 0
+end
+
 function DTNPCProtect.ConsumeAmmo(npcData, amount)
     DTNPCProtect.EnsureDataDefaults(npcData)
     if not DTNPCProtect.IsFiniteAmmoTrader(npcData) then
@@ -63,6 +86,9 @@ function DTNPCProtect.CreateLoadoutWeaponItem(npcData, slot)
     end
 
     local currentCondition = tonumber(loadout[conditionKey])
+    if currentCondition ~= nil and currentCondition <= 0 then
+        return nil
+    end
     if currentCondition ~= nil and item.setCondition then
         local maxCondition = item.getConditionMax and tonumber(item:getConditionMax()) or nil
         local appliedCondition = math.max(0, math.floor(currentCondition))
@@ -112,6 +138,9 @@ function DTNPCProtect.ConsumeWeaponCondition(npcData, slot, amount)
         currentCondition = maxCondition
     end
     currentCondition = math.max(0, math.min(maxCondition, math.floor(currentCondition)))
+    if currentCondition <= 0 then
+        return retireBrokenWeapon(npcData, loadout, slot, weaponKey, conditionKey, "already_broken")
+    end
 
     local spend = math.max(1, math.floor(tonumber(amount) or 1))
     local maintenanceLevel = DTNPCProtect.GetSkillLevel(npcData, "Maintenance")
@@ -128,6 +157,9 @@ function DTNPCProtect.ConsumeWeaponCondition(npcData, slot, amount)
             local nextCondition = tonumber(probeItem:getCondition())
             if nextCondition ~= nil then
                 currentCondition = math.max(0, math.min(maxCondition, math.floor(nextCondition)))
+                if currentCondition <= 0 then
+                    return retireBrokenWeapon(npcData, loadout, slot, weaponKey, conditionKey, "damage_check")
+                end
                 loadout[conditionKey] = currentCondition
                 return currentCondition
             end
@@ -149,6 +181,9 @@ function DTNPCProtect.ConsumeWeaponCondition(npcData, slot, amount)
     end
 
     currentCondition = math.max(0, currentCondition - spend)
+    if currentCondition <= 0 then
+        return retireBrokenWeapon(npcData, loadout, slot, weaponKey, conditionKey, "durability_roll")
+    end
     loadout[conditionKey] = currentCondition
     return currentCondition
 end

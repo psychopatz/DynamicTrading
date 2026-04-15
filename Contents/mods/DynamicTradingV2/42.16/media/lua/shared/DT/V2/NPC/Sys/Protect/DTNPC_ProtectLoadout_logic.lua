@@ -351,9 +351,7 @@ function DTNPCProtect.HasUsableRangedLoadout(npcData)
     if DTNPCProtect.IsFiniteAmmoTrader(npcData) and ammoCount <= 0 then
         return false
     end
-    if DTNPCProtect.IsPlayerOwnedTrader(npcData)
-        and loadout.rangedCondition ~= nil
-        and tonumber(loadout.rangedCondition) <= 0 then
+    if loadout.rangedCondition ~= nil and tonumber(loadout.rangedCondition) <= 0 then
         return false
     end
 
@@ -367,9 +365,7 @@ function DTNPCProtect.HasUsableMeleeLoadout(npcData)
         return false
     end
 
-    if DTNPCProtect.IsPlayerOwnedTrader(npcData)
-        and npcData.loadout.meleeCondition ~= nil
-        and tonumber(npcData.loadout.meleeCondition) <= 0 then
+    if npcData.loadout.meleeCondition ~= nil and tonumber(npcData.loadout.meleeCondition) <= 0 then
         return false
     end
 

@@ -12,6 +12,30 @@ local syncProtectNotice = Internal.syncProtectNotice
 local protectLog = Internal.protectLog
 local buildProtectDebugSummary = Internal.buildProtectDebugSummary
 
+local function isProtectDebugEnabled(options)
+    if options and options.issue == true then
+        if DTNPCProtect.CONFIG.CombatIssueLogging == true then
+            return true
+        end
+    end
+
+    if DTNPCProtect.CONFIG.DebugLogging == true then
+        return true
+    end
+
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    if sandbox then
+        if sandbox.NPCProtectDebug ~= nil then
+            return sandbox.NPCProtectDebug == true
+        end
+        if sandbox.NPCDebug ~= nil then
+            return sandbox.NPCDebug == true
+        end
+    end
+
+    return false
+end
+
 function DTNPCProtect.PushCompanionNotice(zombie, npcData, text, sentiment)
     DTNPCProtect.EnsureDataDefaults(npcData)
     if not npcData or not text or text == "" then
@@ -86,11 +110,30 @@ function DTNPCProtect.PushFallbackNotice(npcData, text, sentiment)
     return true
 end
 
-function DTNPCProtect.LogProtectDebug(npcData, label, detail)
+function DTNPCProtect.LogProtectDebug(npcData, label, detail, options)
+    options = type(options) == "table" and options or {}
+    if not isProtectDebugEnabled(options) then
+        return false
+    end
+
+    if npcData then
+        local key = tostring(label or "debug")
+        local currentTime = nowMillis()
+        local cooldown = math.max(0, tonumber(options.cooldownMs) or tonumber(DTNPCProtect.CONFIG.DebugCooldownMs) or 15000)
+        npcData._protectDebugLogTimes = type(npcData._protectDebugLogTimes) == "table" and npcData._protectDebugLogTimes or {}
+
+        local lastTime = tonumber(npcData._protectDebugLogTimes[key]) or 0
+        if currentTime > 0 and lastTime > 0 and cooldown > 0 and (currentTime - lastTime) < cooldown then
+            return false
+        end
+        npcData._protectDebugLogTimes[key] = currentTime
+    end
+
     local prefix = tostring(npcData and (npcData.name or npcData.uuid) or "Unknown NPC")
     local suffix = tostring(label or "debug")
     local extra = detail and (" | " .. tostring(detail)) or ""
     protectLog(prefix .. " | " .. suffix .. extra .. " | " .. buildProtectDebugSummary(npcData))
+    return true
 end
 
 function DTNPCProtect.ReportCombatIssue(zombie, npcData, issueKey, text, sentiment, detail, cooldownMs)
@@ -120,6 +163,9 @@ function DTNPCProtect.ReportCombatIssue(zombie, npcData, issueKey, text, sentime
         syncProtectNotice(zombie, npcData)
     end
 
-    DTNPCProtect.LogProtectDebug(npcData, key, detail or text)
+    DTNPCProtect.LogProtectDebug(npcData, key, detail or text, {
+        issue = true,
+        cooldownMs = cooldown,
+    })
     return true
 end

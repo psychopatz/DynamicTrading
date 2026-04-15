@@ -7,6 +7,7 @@ DTNPCLifecycle = DTNPCLifecycle or {}
 DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 
 local internal = DTNPCLifecycle.Internal
+local MULTIPLAYER_ENGINE_DELTA_LOG_COOLDOWN_MS = 15000
 
 local function restoreAfterIgnoredFriendlyFire(zombie, npcData, combatHealth)
     if not npcData then
@@ -70,7 +71,7 @@ function DTNPCLifecycle.ShouldIgnoreMultiplayerEngineDelta(zombie, npcData, comb
 
     local now = internal.nowMillis()
     local lastLogAt = tonumber(combatHealth and combatHealth.lastMultiplayerEngineDeltaIgnoredAt) or 0
-    if combatHealth and now - lastLogAt > 1500 then
+    if combatHealth and now - lastLogAt > MULTIPLAYER_ENGINE_DELTA_LOG_COOLDOWN_MS then
         combatHealth.lastMultiplayerEngineDeltaIgnoredAt = now
         DynamicTrading.Log(
             "DTV2",

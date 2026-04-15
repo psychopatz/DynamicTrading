@@ -14,7 +14,11 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     StickyRadiusBonus = 1.75,
     StickyTargetScoreBias = 0.45,
     NoticeCooldownMs = 12000,
-    DiagnosticCooldownMs = 4000,
+    DiagnosticCooldownMs = 15000,
+    DebugCooldownMs = 15000,
+    DebugLogging = false,
+    ConsoleLogging = false,
+    CombatIssueLogging = false,
     AggressivePlayerRepThreshold = -10,
     HostilePlayerRepThreshold = -40,
     StationaryPostResetDistance = 4,
@@ -32,6 +36,12 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     MeleeImmediateThreatRadius = 2.2,
     MeleeImmediateThreatStickyBreak = 0.65,
 }
+
+DTNPCProtect.CONFIG.DiagnosticCooldownMs = tonumber(DTNPCProtect.CONFIG.DiagnosticCooldownMs) or 15000
+DTNPCProtect.CONFIG.DebugCooldownMs = tonumber(DTNPCProtect.CONFIG.DebugCooldownMs) or 15000
+DTNPCProtect.CONFIG.DebugLogging = DTNPCProtect.CONFIG.DebugLogging == true
+DTNPCProtect.CONFIG.ConsoleLogging = DTNPCProtect.CONFIG.ConsoleLogging == true
+DTNPCProtect.CONFIG.CombatIssueLogging = DTNPCProtect.CONFIG.CombatIssueLogging == true
 
 DTNPCProtect.LOADOUT_WEIGHTS = DTNPCProtect.LOADOUT_WEIGHTS or {
     melee = 45,
@@ -84,12 +94,16 @@ end
 
 local function protectLog(message)
     local line = "[DTNPC Protect] " .. tostring(message or "")
-    print(line)
+    if DTNPCProtect.CONFIG.ConsoleLogging == true then
+        print(line)
+    end
 
     if DynamicTrading and DynamicTrading.Log then
         pcall(function()
             DynamicTrading.Log("DTV2", "NPC", "Protect", tostring(message or ""))
         end)
+    elseif DTNPCProtect.CONFIG.ConsoleLogging == true then
+        print(line)
     end
 end
 
