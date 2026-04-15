@@ -14,24 +14,15 @@ Sandbox_EN = {
     Sandbox_DynamicTrading_StockMult = "Stock Quantity Multiplier",
     Sandbox_DynamicTrading_StockMult_tooltip = "Adjusts the amount of items traders have in stock.",
 
+    Sandbox_DynamicTrading_InflationDecay = "Inflation Decay (Daily %)",
+    Sandbox_DynamicTrading_InflationDecay_tooltip = "Percentage of price inflation that recovers every day.\n0.1 = 10% Decay.\n0.5 = 50% Decay (Fast Recovery).\n0.0 = Inflation never decays.",
+
     Sandbox_DynamicTrading_WalkieDropChance = "Walkie Talkie Loot Chance (%)",
     Sandbox_DynamicTrading_WalkieDropChance_tooltip = "The percentage chance (0-100) that a zombie will spawn with a Makeshift Walkie Talkie on death.",
-
-
-    Sandbox_DynamicTrading_GlobalWealthStart = "Global Economy (Start)",
-    Sandbox_DynamicTrading_GlobalWealthStart_tooltip = "The total amount of money available in the global economy at the start of the game.",
-
-    Sandbox_DynamicTrading_GlobalWealthStimulus = "Global Wealth Stimulus",
-    Sandbox_DynamicTrading_GlobalWealthStimulus_tooltip = "The amount of money added to the Global Wealth pool every 3 days. This helps sustain the economy and prevent it from completely stalling.",
-
-    Sandbox_DynamicTrading_EventFrequency = "Event Frequency (Days)",
-    Sandbox_DynamicTrading_EventFrequency_tooltip = "How often the system checks to start a new Global Economic Event.",
 
     Sandbox_DynamicTrading_EventChance = "Event Chance (%)",
     Sandbox_DynamicTrading_EventChance_tooltip = "Probability of an event starting when the frequency check occurs.",
 
-    Sandbox_DynamicTrading_EventDuration = "Event Duration (Days)",
-    Sandbox_DynamicTrading_EventDuration_tooltip = "How long global events (e.g. Market Crash, Harvest) last.",
 
     Sandbox_DynamicTrading_AllowSeasonalEvents = "Enable Seasonal Events",
     Sandbox_DynamicTrading_AllowSeasonalEvents_tooltip = "If enabled, events like Harvest (Autumn) and Deep Freeze (Winter) can occur.",
@@ -42,8 +33,6 @@ Sandbox_EN = {
     Sandbox_DynamicTrading_AllowHardcoreEvents = "Enable Hardcore Events",
     Sandbox_DynamicTrading_AllowHardcoreEvents_tooltip = "If enabled, negative events like Famine, War, and Inflation can occur.",
 
-    Sandbox_DynamicTrading_MaxEvents = "Max Simultaneous Events",
-    Sandbox_DynamicTrading_MaxEvents_tooltip = "Maximum number of active events allowed (Stacking). Includes both Seasonal and Random events.",
 
     Sandbox_DynamicTrading_FactionFlashMinActive = "Faction Flash Min Active",
     Sandbox_DynamicTrading_FactionFlashMinActive_tooltip = "Minimum number of faction flash-event slots reserved per faction. Full multi-event logic is applied in the event-system runtime.",
@@ -59,4 +48,7 @@ Sandbox_EN = {
 
     Sandbox_DynamicTrading_NPCTradingStayHours = "NPC: Trade Stay Time (Hours)",
     Sandbox_DynamicTrading_NPCTradingStayHours_tooltip = "How many hours the NPC stays at the trading location (Trading state).",
+
+    Sandbox_DynamicTrading_NPCDepartureVisibleHours = "NPC: Departure Notification Hours",
+    Sandbox_DynamicTrading_NPCDepartureVisibleHours_tooltip = "The minimum number of travel hours remaining before an NPC's departure is broadcasted on the network.",
 }

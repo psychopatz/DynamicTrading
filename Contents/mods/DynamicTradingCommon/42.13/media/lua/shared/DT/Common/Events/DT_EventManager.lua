@@ -17,7 +17,7 @@ end
 
 -- Load sub-modules in order
 require "DT/Common/Events/DT_EventManager_Registry"
-require "DT/Common/Events/DT_EventManager_GlobalEvents"
-require "DT/Common/Events/DT_EventManager_FactionEvents"
+require "DT/Common/Events/EventManagerGlobal/DT_EventManagerGlobal"
+require "DT/Common/Events/EventManagerFaction/DT_EventManagerFaction"
 
 DynamicTrading.Log("DTCommons", "Events", "Main", "Event Manager Fully Initialized.")
