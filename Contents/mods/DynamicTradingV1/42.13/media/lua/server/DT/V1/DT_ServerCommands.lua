@@ -14,7 +14,7 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 
-local DataHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers"
+local DataHandlers = require "DT/Common/Faction/TradingSys/NetworkServer/DataHandlers/DataHandlers"
 
 -- 1. GLOBAL TABLE REGISTRATION
 DynamicTrading = DynamicTrading or {}

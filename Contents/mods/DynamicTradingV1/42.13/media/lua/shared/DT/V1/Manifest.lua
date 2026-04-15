@@ -21,7 +21,7 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
-require "DT/Common/Faction/TradingSys/DynamicTrading_Economy"
+require "DT/Common/Faction/TradingSys/Economy/DynamicTrading_Economy"
 
 -- 3. V1-SPECIFIC LOGIC (Radio Only)
 require "DT/V1/Manager"
@@ -32,7 +32,7 @@ require "03b_DynamicTrading_PortraitConfig"
 -- 4. CLIENT-ONLY SYSTEMS
 if isClient() then
     -- INTERACTION SYSTEMS
-    require "DT/V1/RadioInteraction"  -- Radio Scanning Logic
+    require "DT/V1/DT_RadioInteraction"  -- Radio Scanning Logic
 
     -- USER INTERFACE
     require "DT/V1/Radio/DT_V1_TradingWrapper"      -- Radio Trading Window (Wrapper)
