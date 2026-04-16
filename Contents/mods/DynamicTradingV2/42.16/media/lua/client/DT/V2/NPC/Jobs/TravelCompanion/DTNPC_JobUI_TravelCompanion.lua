@@ -5,6 +5,7 @@
 
 pcall(require, "DC/UI/Colony/System/DC_System")
 pcall(require, "DC/UI/Colony/SupplyWindow/DC_SupplyWindow")
+pcall(require, "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Client")
 
 local MEDICAL_TEXTURE_CACHE = {}
 local MEDICAL_PROVISION_FULL_TYPES = {
@@ -662,6 +663,16 @@ local function openCompanionDialogue(npc, player)
     return false
 end
 
+local function openLootSearchWindow(player, npcData)
+    if not player or not npcData or not npcData.uuid or not DTNPCLootSearchClient then
+        return false
+    end
+
+    DTNPCLootSearchClient.OpenForNPC(player:getPlayerNum(), npcData)
+    DTNPCLootSearchClient.RequestSync(player, npcData)
+    return true
+end
+
 local function addCompanionContextAction(menu, label, callback)
     menu:addOption(label, nil, callback)
 end
@@ -890,7 +901,7 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
     end)
 
     local isLooting = liveData and liveData.state == "LootNearby"
-    addCompanionContextAction(rootMenu, isLooting and "Stop Looting" or "Loot Nearby", function()
+    addCompanionContextAction(rootMenu, isLooting and "Stop Loot Search" or "Search Nearby Loot", function()
         local latestData = getNPCData(npc) or liveData
         if latestData and latestData.state == "LootNearby" then
             updateCompanionState(player, npc, "Stay", {
@@ -909,6 +920,7 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
             combatOrder = getLootCombatOrder(latestData),
             returnStatus = "Resting",
         })
+        openLootSearchWindow(player, latestData)
     end)
 
     addPatchUpContextMenu(rootMenu, npc, player, worker)
@@ -1082,8 +1094,8 @@ local function generateRootOptions(ui, npc, player, worker)
     }
 
     options[#options + 1] = {
-        text = (npcData and npcData.state == "LootNearby") and "Stop Looting" or "Loot Nearby",
-        message = "Sweep nearby containers and grab matching loot while staying combat-ready.",
+        text = (npcData and npcData.state == "LootNearby") and "Stop Loot Search" or "Search Nearby Loot",
+        message = "Search nearby sources, reveal their contents, then tell me what to collect.",
         onSelect = function(innerUI)
             local liveData = getNPCData(npc)
             if liveData and liveData.state == "LootNearby" then
@@ -1108,7 +1120,8 @@ local function generateRootOptions(ui, npc, player, worker)
                 combatOrder = getLootCombatOrder(liveData),
                 returnStatus = "Resting",
             }) then
-                innerUI:speak("I'll sweep the nearby containers.")
+                innerUI:speak("I'll search nearby sources and wait for your pickup orders.")
+                openLootSearchWindow(player, liveData)
             else
                 innerUI:speak("I couldn't start looting right now.")
             end

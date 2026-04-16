@@ -68,6 +68,13 @@ function DTNPCClient.OnServerCommand(module, command, args)
         end
         return
     end
+
+    if command == "LootSearchSync" then
+        if DTNPCLootSearchClient and DTNPCLootSearchClient.HandleSync then
+            DTNPCLootSearchClient.HandleSync(args)
+        end
+        return
+    end
 end
 
 -- Events will be registered in DTNPC_ClientSync_Visuals.lua after all sync functions are defined.

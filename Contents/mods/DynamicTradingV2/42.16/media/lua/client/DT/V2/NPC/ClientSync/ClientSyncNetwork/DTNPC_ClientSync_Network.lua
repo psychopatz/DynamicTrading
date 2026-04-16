@@ -31,4 +31,5 @@ require "DT/V2/NPC/ClientSync/ClientSyncNetwork/DTNPC_ClientSyncNetwork_RequestF
 require "DT/V2/NPC/ClientSync/ClientSyncNetwork/DTNPC_ClientSyncNetwork_CommandSync"
 require "DT/V2/NPC/ClientSync/ClientSyncNetwork/DTNPC_ClientSyncNetwork_CommandUpdate"
 require "DT/V2/NPC/ClientSync/ClientSyncNetwork/DTNPC_ClientSyncNetwork_CommandRemove"
+require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Client"
 require "DT/V2/NPC/ClientSync/ClientSyncNetwork/DTNPC_ClientSyncNetwork_CommandRouter"

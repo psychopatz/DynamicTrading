@@ -73,6 +73,9 @@ require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Respawn"
 -- 6. Summon - Summoning/teleporting (depends on respawn)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Summon"
 
+-- 6.5 Loot Search - Companion loot discovery/collection subsystem
+require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Server"
+
 -- 7. Commands - Client command handler (needs all of the above)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Commands"
 

@@ -770,6 +770,20 @@ local function onClientCommand(module, command, player, args)
         return
     end
 
+    if command == "LootSearchOpen" then
+        if DTNPCLootSearchServer and DTNPCLootSearchServer.Open then
+            DTNPCLootSearchServer.Open(player, args or {})
+        end
+        return
+    end
+
+    if command == "LootSearchCollect" then
+        if DTNPCLootSearchServer and DTNPCLootSearchServer.Collect then
+            DTNPCLootSearchServer.Collect(player, args or {})
+        end
+        return
+    end
+
     if command == "RemoveNPC" then
         if not args.uuid then 
             DynamicTrading.Log("DTV2", "NPC", "Error", "RemoveNPC received with no UUID!")

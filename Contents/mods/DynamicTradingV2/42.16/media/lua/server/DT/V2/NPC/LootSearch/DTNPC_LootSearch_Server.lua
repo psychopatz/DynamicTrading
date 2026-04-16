@@ -1,0 +1,73 @@
+-- ==============================================================================
+-- DTNPC_LootSearch_Server.lua
+-- Server handlers for loot search UI commands.
+-- ==============================================================================
+
+DTNPCLootSearchServer = DTNPCLootSearchServer or {}
+
+if DTNPCLootSearchServer.Loaded then
+    return
+end
+
+DTNPCLootSearchServer.Loaded = true
+
+require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Shared"
+
+local function copyTable(value)
+    if type(value) ~= "table" then
+        return value
+    end
+
+    local result = {}
+    for key, entry in pairs(value) do
+        result[key] = copyTable(entry)
+    end
+    return result
+end
+
+function DTNPCLootSearchServer.Open(player, args)
+    local uuid = args and args.uuid or nil
+    if not uuid or not DTNPCServerCore or not DTNPCServerCore.GetNPCDataByUUID then
+        return false
+    end
+
+    local _, npcData = DTNPCServerCore.GetNPCDataByUUID(uuid)
+    if not npcData then
+        return false
+    end
+
+    local worker = DTNPCLootSearch.ResolveWorker(npcData)
+    sendServerCommand(player, "DTNPC", "LootSearchSync", DTNPCLootSearch.BuildSyncPayload(npcData, nil, true, player))
+    DTNPCLootSearch.SendSyncToCommander(npcData, worker, nil, true)
+    return true
+end
+
+function DTNPCLootSearchServer.Collect(player, args)
+    local uuid = args and args.uuid or nil
+    local sourceKey = args and args.sourceKey or nil
+    local itemKeys = type(args and args.itemKeys) == "table" and args.itemKeys or nil
+    if not uuid or not sourceKey or not itemKeys or #itemKeys <= 0 or not DTNPCServerCore or not DTNPCServerCore.GetNPCDataByUUID then
+        return false
+    end
+
+    local _, npcData = DTNPCServerCore.GetNPCDataByUUID(uuid)
+    if not npcData then
+        return false
+    end
+
+    local changed = DTNPCLootSearch.QueueCollectRequest(npcData, sourceKey, itemKeys, player and player.getUsername and player:getUsername() or nil)
+    if not changed then
+        return false
+    end
+
+    if DTNPCServerCore.UpdateNPCByUUID then
+        DTNPCServerCore.UpdateNPCByUUID(uuid, {
+            dcLootSearch = copyTable(npcData.dcLootSearch),
+            dcLootStatus = "collecting",
+            state = "LootNearby",
+        }, true)
+    end
+
+    sendServerCommand(player, "DTNPC", "LootSearchSync", DTNPCLootSearch.BuildSyncPayload(npcData, sourceKey, true, player))
+    return true
+end

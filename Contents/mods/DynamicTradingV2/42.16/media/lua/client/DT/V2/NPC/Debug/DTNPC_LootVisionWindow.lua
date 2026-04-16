@@ -94,9 +94,6 @@ function DTNPC_LootVisionWindow:getLootStatusColor(item)
     if item.lootable then
         return { r = 0.55, g = 1, b = 0.55, a = 1 }
     end
-    if reason == "filtered" then
-        return { r = 1, g = 0.65, b = 0.35, a = 1 }
-    end
     if reason == "no-capacity" then
         return { r = 1, g = 0.45, b = 0.45, a = 1 }
     end
@@ -125,7 +122,7 @@ function DTNPC_LootVisionWindow:refreshData()
         "Center: " .. tostring(scan.center and scan.center.x or 0) .. ", " .. tostring(scan.center and scan.center.y or 0) .. ", " .. tostring(scan.center and scan.center.z or 0)
             .. " | Sources: " .. tostring(scan.totalSources or 0)
             .. " | Items: " .. tostring(scan.totalItems or 0)
-            .. " | Filter: " .. tostring(scan.filterActive and "on" or "off")
+            .. " | Capacity Check: " .. tostring(scan.workerID and "on" or "off")
             .. " | Worker: " .. tostring(scan.workerName or scan.workerID or "n/a"),
         { r = 0.7, g = 0.9, b = 1, a = 1 }
     )
