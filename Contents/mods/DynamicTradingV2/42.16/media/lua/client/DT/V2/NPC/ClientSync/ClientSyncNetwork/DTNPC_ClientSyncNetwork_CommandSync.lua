@@ -114,6 +114,7 @@ function Handlers.HandleSyncNearbyNPCs(args)
 
     local nearbyCount = 0
     local metadataCount = 0
+    local missingLiveZombie = false
 
     for uuid, npcData in pairs(args.nearby or {}) do
         if npcData and npcData.npcData then
@@ -131,10 +132,21 @@ function Handlers.HandleSyncNearbyNPCs(args)
             Helpers.RecordInterpolation(uuid, x, y, z)
 
             local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
+            local cached = DTNPCClient.NPCCache[uuid]
             if zombie then
                 DTNPCClient.ApplyVisualsToNPC(zombie, npcData.npcData)
                 DTNPCClient.ReconcilePosition(zombie, x, y, z)
                 DTNPCClient.ProcessedZombies[uuid] = true
+
+                if cached then
+                    cached.awaitingWorldZombieSince = nil
+                    cached.awaitingWorldZombieLoggedAt = nil
+                end
+                Helpers.SetReportedState(cached, npcData.npcData)
+            elseif cached then
+                cached.awaitingWorldZombieSince = cached.awaitingWorldZombieSince or getTimeInMillis()
+                cached.awaitingWorldZombieLoggedAt = nil
+                missingLiveZombie = true
             end
 
             nearbyCount = nearbyCount + 1
@@ -148,6 +160,10 @@ function Handlers.HandleSyncNearbyNPCs(args)
             DTNPCClient.CacheMetadata(uuid, meta)
         end
         metadataCount = metadataCount + 1
+    end
+
+    if missingLiveZombie and DTNPCClient.QueueNearbySync then
+        DTNPCClient.QueueNearbySync("nearby-missing-world-zombie")
     end
 
     DynamicTrading.Log("DTV2", "NPC", "Sync", "Received SyncNearbyNPCs: nearby=" .. nearbyCount .. ", metadata=" .. metadataCount)

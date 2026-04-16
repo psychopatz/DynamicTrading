@@ -288,6 +288,82 @@ local function tryReclaimZombieFromStartupHint(uuid, npcData, soul)
     return zombie
 end
 
+local function shouldRecycleNearbyZombieForSync(zombie, uuid, npcData)
+    if not zombie or zombie:isDead() or not uuid or not npcData then
+        return false
+    end
+
+    local modData = zombie:getModData()
+    if not modData then
+        return true
+    end
+
+    local modUUID = modData.DTNPC_UUID
+    if modUUID and tostring(modUUID) ~= tostring(uuid) then
+        return false
+    end
+
+    local embeddedData = modData.DTNPC_Data or modData.DTNPCBrain
+    local embeddedUUID = embeddedData and embeddedData.uuid or nil
+    if embeddedUUID and tostring(embeddedUUID) ~= tostring(uuid) then
+        return false
+    end
+
+    if modData.IsDTNPC ~= true then
+        return true
+    end
+
+    if not embeddedData then
+        return true
+    end
+
+    local visualID = tonumber(modData.DTNPCVisualID) or 0
+    if visualID == 0 then
+        return true
+    end
+
+    local expectedVisualID = tonumber(npcData.visualID) or 0
+    if expectedVisualID ~= 0 and visualID ~= expectedVisualID then
+        return true
+    end
+
+    return false
+end
+
+local function recycleNearbyZombieForSync(uuid, npcData, zombie, reason)
+    if not zombie or zombie:isDead() or not uuid or not npcData or not DTNPCServerCore or not DTNPCServerCore.RespawnNPC then
+        return zombie
+    end
+
+    local bodyInstanceID = zombie:getPersistentOutfitID()
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Repair",
+        "Recycling malformed nearby body for " .. tostring(npcData.name or uuid)
+            .. " reason=" .. tostring(reason or "nearby-sync")
+            .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+    )
+
+    zombie:removeFromWorld()
+    zombie:removeFromSquare()
+
+    if bodyInstanceID and DTNPCServerCore.NotifyInstanceRemoval then
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID)
+    end
+
+    if tostring(npcData.currentBodyInstanceID or "") == tostring(bodyInstanceID or "") then
+        npcData.currentBodyInstanceID = nil
+    end
+    if tostring(npcData.startupBodyInstanceHint or "") == tostring(bodyInstanceID or "") then
+        npcData.startupBodyInstanceHint = nil
+    end
+
+    local respawnedZombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
+    return respawnedZombie
+end
+
 local function onClientCommand(module, command, player, args)
     if module ~= "DTNPC" then return end
 
@@ -507,6 +583,9 @@ local function onClientCommand(module, command, player, args)
                     if dist <= nearRadius then
                         local npcData = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] or nil
                         local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
+                        if zombie and npcData and shouldRecycleNearbyZombieForSync(zombie, uuid, npcData) then
+                            zombie = recycleNearbyZombieForSync(uuid, npcData, zombie, "nearby-sync")
+                        end
                         if not zombie and npcData then
                             zombie = tryReclaimZombieFromStartupHint(uuid, npcData, soul)
                         end

@@ -82,17 +82,18 @@ function DTNPCClient.MaybeRequestNearbySync()
     local lastSyncTime = DTNPCClient.LastNearbySyncTime or 0
     local elapsed = now - lastSyncTime
     local minInterval = DTNPCClient.NEARBY_SYNC_MIN_INTERVAL_MS or 4000
+    local recoveryInterval = DTNPCClient.NEARBY_SYNC_RECOVERY_INTERVAL_MS or 750
     local staleInterval = DTNPCClient.NEARBY_SYNC_STALE_INTERVAL_MS or 15000
 
     if DTNPCClient.PendingNearbySyncReason then
-        if elapsed >= 500 then
+        if elapsed >= recoveryInterval then
             DTNPCClient.SendNearbySyncRequest(player, DTNPCClient.PendingNearbySyncReason)
         end
         return
     end
 
     if not DTNPCClient.hasSyncedOnce then
-        if elapsed >= 500 then
+        if elapsed >= recoveryInterval then
             DTNPCClient.SendNearbySyncRequest(player, "first-nearby-sync")
         end
         return
@@ -103,7 +104,7 @@ function DTNPCClient.MaybeRequestNearbySync()
     local lastZ = DTNPCClient.LastNearbySyncZ
 
     if lastX == nil or lastY == nil or lastZ == nil then
-        if elapsed >= 500 then
+        if elapsed >= recoveryInterval then
             DTNPCClient.SendNearbySyncRequest(player, "sync-position-missing")
         end
         return
