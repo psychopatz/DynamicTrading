@@ -648,6 +648,15 @@ DTNPCLogic.Behaviors["LootNearby"] = function(zombie, npcData)
 
     local lootState = DTNPCLootSearch.EnsureState(npcData)
 
+    local visualCollectTarget = DTNPCLootSearch.GetVisualCollectTarget and DTNPCLootSearch.GetVisualCollectTarget(npcData) or nil
+    if visualCollectTarget then
+        lootState.currentSourceKey = visualCollectTarget.sourceKey or lootState.currentSourceKey
+        trackLootApproach(npcData, visualCollectTarget.key or visualCollectTarget.sourceKey)
+        DTNPCLootSearch.MoveTowardSource(zombie, npcData, visualCollectTarget)
+        npcData.dcLootStatus = "collecting"
+        return
+    end
+
     local queuedSourceKey = DTNPCLootSearch.GetQueuedSourceKey(npcData)
     if queuedSourceKey then
         lootState.currentSourceKey = queuedSourceKey

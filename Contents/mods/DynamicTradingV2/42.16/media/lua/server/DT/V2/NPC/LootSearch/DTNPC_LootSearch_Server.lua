@@ -55,7 +55,14 @@ function DTNPCLootSearchServer.Collect(player, args)
         return false
     end
 
-    local changed = DTNPCLootSearch.QueueCollectRequest(npcData, sourceKey, itemKeys, player and player.getUsername and player:getUsername() or nil)
+    local changed, collectedCount = DTNPCLootSearch.CollectItemsImmediately(
+        player,
+        nil,
+        npcData,
+        sourceKey,
+        itemKeys,
+        player and player.getUsername and player:getUsername() or nil
+    )
     if not changed then
         return false
     end
@@ -63,7 +70,7 @@ function DTNPCLootSearchServer.Collect(player, args)
     if DTNPCServerCore.UpdateNPCByUUID then
         DTNPCServerCore.UpdateNPCByUUID(uuid, {
             dcLootSearch = copyTable(npcData.dcLootSearch),
-            dcLootStatus = "collecting",
+            dcLootStatus = npcData.dcLootStatus or (collectedCount > 0 and "looting" or "collecting"),
             state = "LootNearby",
         }, true)
     end

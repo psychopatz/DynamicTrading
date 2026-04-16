@@ -11,6 +11,7 @@ end
 
 DTNPCLootSearchClient.Loaded = true
 DTNPCLootSearchClient.Cache = DTNPCLootSearchClient.Cache or {}
+DTNPCLootSearchClient.HandledCollectEvents = DTNPCLootSearchClient.HandledCollectEvents or {}
 
 local function findCacheByName(name)
     local normalized = tostring(name or "")
@@ -105,6 +106,7 @@ function DTNPCLootSearchClient.SetCache(args)
         currentSourceKey = args.currentSourceKey,
         sources = type(args.sources) == "table" and args.sources or {},
         workerCarry = type(args.workerCarry) == "table" and args.workerCarry or nil,
+        collectEvent = type(args.collectEvent) == "table" and args.collectEvent or nil,
         autoOpen = args.autoOpen == true,
         dynamicColoniesExclusive = args.dynamicColoniesExclusive == true,
     }
@@ -132,6 +134,27 @@ function DTNPCLootSearchClient.RequestCollect(player, npcData, sourceKey, itemKe
         uuid = npcData.uuid,
         sourceKey = sourceKey,
         itemKeys = itemKeys,
+    })
+    return true
+end
+
+function DTNPCLootSearchClient.RequestReturnHomeForDeposit(player, npcData)
+    if not player or not isEligibleCompanion(npcData) or not npcData.uuid then
+        return false
+    end
+
+    if npcData.linkedWorkerID and DC_System and DC_System.SendCommand then
+        DC_System.SendCommand("SetWorkerJobEnabled", {
+            workerID = npcData.linkedWorkerID,
+            enabled = false,
+        })
+    end
+
+    sendClientCommand(player, "DTNPC", "Order", {
+        uuid = npcData.uuid,
+        state = "Idle",
+        returnStatus = "Resting",
+        startDeparture = true,
     })
     return true
 end
@@ -180,12 +203,17 @@ function DTNPCLootSearchClient.HandleSync(args)
         return
     end
 
-    if DTNPCLootSearchWindow and DTNPCLootSearchWindow.instance then
-        if DTNPCLootSearchWindow.instance.npcData then
-            DTNPCLootSearchWindow.instance.npcData.uuid = cache.uuid or DTNPCLootSearchWindow.instance.npcData.uuid
-            DTNPCLootSearchWindow.instance.npcData.name = cache.npcName or DTNPCLootSearchWindow.instance.npcData.name
+    local activeWindow = DTNPCLootSearchWindow and DTNPCLootSearchWindow.instance or nil
+    if activeWindow and activeWindow.npcData and tostring(activeWindow.npcData.uuid or "") ~= tostring(cache.uuid or "") then
+        activeWindow = nil
+    end
+
+    if activeWindow then
+        if activeWindow.npcData then
+            activeWindow.npcData.uuid = cache.uuid or activeWindow.npcData.uuid
+            activeWindow.npcData.name = cache.npcName or activeWindow.npcData.name
         end
-        DTNPCLootSearchWindow.instance:refreshFromCache(cache)
+        activeWindow:refreshFromCache(cache)
     end
 
     if cache.autoOpen then
@@ -195,6 +223,20 @@ function DTNPCLootSearchClient.HandleSync(args)
         })
         if window and window.refreshFromCache then
             window:refreshFromCache(cache)
+        end
+        activeWindow = window or activeWindow
+    end
+
+    local collectEvent = type(cache.collectEvent) == "table" and cache.collectEvent or nil
+    local eventID = collectEvent and math.max(0, math.floor(tonumber(collectEvent.id) or 0)) or 0
+    if eventID > 0 then
+        local uuid = tostring(cache.uuid or "")
+        local lastHandled = math.max(0, math.floor(tonumber(DTNPCLootSearchClient.HandledCollectEvents[uuid]) or 0))
+        if eventID > lastHandled and collectEvent.type == "no_capacity" then
+            DTNPCLootSearchClient.HandledCollectEvents[uuid] = eventID
+            if activeWindow and activeWindow.promptFullInventoryReturnHome then
+                activeWindow:promptFullInventoryReturnHome(cache)
+            end
         end
     end
 end

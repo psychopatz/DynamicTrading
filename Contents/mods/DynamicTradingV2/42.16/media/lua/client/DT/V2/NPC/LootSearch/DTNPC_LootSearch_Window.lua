@@ -6,6 +6,7 @@
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
+require "ISUI/ISModalDialog"
 require "ISUI/ISRichTextPanel"
 require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Client"
 
@@ -434,6 +435,40 @@ function DTNPCLootSearchWindow:refreshData()
     self:refreshFromCache(self:getCache())
 end
 
+function DTNPCLootSearchWindow:promptFullInventoryReturnHome(cache)
+    if self.fullInventoryPromptOpen then
+        return
+    end
+
+    local playerObj = self:getPlayerObj()
+    if not playerObj or not self.npcData then
+        return
+    end
+
+    local carryState = type(cache and cache.collectEvent and cache.collectEvent.carryState) == "table"
+        and cache.collectEvent.carryState
+        or (cache and cache.workerCarry)
+        or nil
+    local npcName = tostring((cache and cache.npcName) or (self.npcData and self.npcData.name) or "Companion")
+    local usedWeight = formatWeightValue(carryState and carryState.usedWeight or 0)
+    local maxWeight = formatWeightValue(carryState and carryState.maxWeight or 0)
+    local text = npcName .. " is carrying " .. usedWeight .. " / " .. maxWeight .. ".\n\n"
+        .. "Their inventory is full. Send them home now to deposit their loot into the warehouse using the standard return-home protocol?"
+
+    self.fullInventoryPromptOpen = true
+    local function onConfirm(_, button)
+        self.fullInventoryPromptOpen = false
+        if button and button.internal == "YES" then
+            DTNPCLootSearchClient.RequestReturnHomeForDeposit(playerObj, self.npcData)
+            playerObj:Say("Head home and unload at the warehouse.")
+        end
+    end
+
+    local modal = ISModalDialog:new(0, 0, 420, 180, text, true, nil, onConfirm, nil)
+    modal:initialise()
+    modal:addToUIManager()
+end
+
 function DTNPCLootSearchWindow:onRefresh()
     local playerObj = self:getPlayerObj()
     if playerObj and self.npcData then
@@ -445,14 +480,7 @@ end
 function DTNPCLootSearchWindow:onCollect()
     local playerObj = self:getPlayerObj()
     local source = self:getSelectedSource()
-    local cache = self:getCache()
-    local workerCarry = cache and cache.workerCarry or nil
     if not playerObj or not source or not self.npcData then
-        return
-    end
-
-    if workerCarry and tonumber(workerCarry.remainingWeight) and tonumber(workerCarry.remainingWeight) <= 0 then
-        playerObj:Say("Companion carry " .. formatWeightValue(workerCarry.usedWeight) .. " / " .. formatWeightValue(workerCarry.maxWeight) .. ". Inventory is full.")
         return
     end
 

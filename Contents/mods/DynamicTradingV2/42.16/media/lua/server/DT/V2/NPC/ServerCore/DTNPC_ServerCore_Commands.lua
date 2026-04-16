@@ -9,6 +9,8 @@ DTNPCServerCore = DTNPCServerCore or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
+require "DT/V1/Manager"
+
 -- ==============================================================================
 -- CLIENT COMMAND HANDLER
 -- ==============================================================================
@@ -369,7 +371,27 @@ local function onClientCommand(module, command, player, args)
 
     if command == "Spawn" then
         DynamicTrading.Log("DTV2", "NPC", "Command", "Received Spawn command from: " .. player:getUsername())
-        DTNPCServerCore.SpawnNPC(player, nil, args)
+        -- [DT-V2-SPAWN-DEBUG] Use actual spawner to test the full lifecycle
+        local archetypeID = args.occupation or "General"
+        if DynamicTrading.Manager and DynamicTrading.Manager.SpawnTraderWithArchetype then
+            local trader = DynamicTrading.Manager.SpawnTraderWithArchetype(archetypeID, {
+                factionID = "Independent",
+                forceFaction = true,
+                homeCoords = { x = player:getX(), y = player:getY(), z = player:getZ() },
+                discoverForPlayer = player
+            })
+
+            if trader and trader.id then
+                DynamicTrading.Log("DTV2", "NPC", "Debug", "Spawned actual trader Soul [" .. tostring(trader.id) .. "]. Forcing physical spawn...")
+                -- Trigger immediate roster spawn check to make them appear
+                if DTNPCManager and DTNPCManager.CheckRosterSpawns then
+                    DTNPCManager.CheckRosterSpawns()
+                end
+            end
+        else
+            -- Fallback to low-level body spawn if system manager is missing
+            DTNPCServerCore.SpawnNPC(player, nil, args)
+        end
     end
 
     if command == "Summon" then

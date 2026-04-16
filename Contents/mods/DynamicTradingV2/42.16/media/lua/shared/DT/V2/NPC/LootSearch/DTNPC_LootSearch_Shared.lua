@@ -25,6 +25,7 @@ local SEARCH_SOURCE_LIMIT = 24
 local SEARCH_ITEM_LIMIT = 48
 local SEARCH_SYNC_COOLDOWN_MS = 1000
 local SEARCH_RECENT_COLLECT_TTL_MS = 4000
+local SEARCH_VISUAL_COLLECT_MS = 2000
 
 local function lower(value)
     return string.lower(tostring(value or ""))
@@ -273,6 +274,78 @@ local function markRecentlyCollected(state, sourceKey, itemKey)
     entries[tostring(itemKey)] = nowMillis() + SEARCH_RECENT_COLLECT_TTL_MS
 end
 
+local function copyTableShallow(value)
+    if type(value) ~= "table" then
+        return value
+    end
+
+    local result = {}
+    for key, entry in pairs(value) do
+        result[key] = copyTableShallow(entry)
+    end
+    return result
+end
+
+local function setCollectEvent(state, eventType, sourceKey, carryState, requesterUsername)
+    if type(state) ~= "table" or tostring(eventType or "") == "" then
+        return nil
+    end
+
+    state.collectEventCounter = math.max(0, math.floor(tonumber(state.collectEventCounter) or 0)) + 1
+    state.lastCollectEvent = {
+        id = state.collectEventCounter,
+        type = tostring(eventType),
+        sourceKey = sourceKey and tostring(sourceKey) or nil,
+        requestedBy = requesterUsername and tostring(requesterUsername) or nil,
+        createdAt = nowMillis(),
+        carryState = type(carryState) == "table" and copyTableShallow(carryState) or nil,
+    }
+    return state.lastCollectEvent
+end
+
+local function getVisualCollectTarget(state)
+    local target = type(state and state.visualCollectTarget) == "table" and state.visualCollectTarget or nil
+    if not target then
+        return nil
+    end
+
+    if (tonumber(target.expiresAt) or 0) <= nowMillis() then
+        state.visualCollectTarget = nil
+        return nil
+    end
+
+    return target
+end
+
+local function setVisualCollectTarget(state, source)
+    if type(state) ~= "table" or type(source) ~= "table" then
+        return nil
+    end
+
+    local target = {
+        key = source.key,
+        sourceKey = source.key,
+        kind = source.kind,
+        label = source.label,
+        x = source.x,
+        y = source.y,
+        z = source.z,
+        approachX = source.approachX,
+        approachY = source.approachY,
+        approachZ = source.approachZ,
+        stopDistance = source.stopDistance,
+        expiresAt = nowMillis() + SEARCH_VISUAL_COLLECT_MS,
+    }
+    state.visualCollectTarget = target
+    return target
+end
+
+local function clearVisualCollectTarget(state)
+    if type(state) == "table" then
+        state.visualCollectTarget = nil
+    end
+end
+
 local function findOnlinePlayer(username)
     local resolved = tostring(username or "")
     if resolved == "" then
@@ -340,7 +413,11 @@ function DTNPCLootSearch.EnsureState(npcData)
     state.recentCollects = type(state.recentCollects) == "table" and state.recentCollects or {}
     state.currentSourceKey = state.currentSourceKey or nil
     state.lastSyncAt = tonumber(state.lastSyncAt) or 0
+    state.collectEventCounter = math.max(0, math.floor(tonumber(state.collectEventCounter) or 0))
+    state.lastCollectEvent = type(state.lastCollectEvent) == "table" and state.lastCollectEvent or nil
+    state.visualCollectTarget = type(state.visualCollectTarget) == "table" and state.visualCollectTarget or nil
     pruneRecentCollects(state)
+    getVisualCollectTarget(state)
     return state
 end
 
@@ -697,6 +774,12 @@ function DTNPCLootSearch.GetQueuedSourceKey(npcData)
     return nil
 end
 
+function DTNPCLootSearch.GetVisualCollectTarget(npcData)
+    local state = DTNPCLootSearch.EnsureState(npcData)
+    local target = getVisualCollectTarget(state)
+    return target and copyTableShallow(target) or nil
+end
+
 function DTNPCLootSearch.QueueCollectRequest(npcData, sourceKey, itemKeys, requesterUsername)
     if not DTNPCLootSearch.IsDynamicColoniesCompanion(npcData) or not sourceKey or type(itemKeys) ~= "table" then
         return false
@@ -726,6 +809,9 @@ function DTNPCLootSearch.QueueCollectRequest(npcData, sourceKey, itemKeys, reque
 
     state.requestedBy = requesterUsername or state.requestedBy
     state.currentSourceKey = sourceKey
+    if changed then
+        state.lastCollectEvent = nil
+    end
     return changed
 end
 
@@ -794,6 +880,7 @@ function DTNPCLootSearch.BuildSyncPayload(npcData, sourceKey, autoOpen, anchor)
             currentSourceKey = nil,
             autoOpen = autoOpen == true,
             sources = {},
+            collectEvent = nil,
             dynamicColoniesExclusive = true,
         }
     end
@@ -812,6 +899,7 @@ function DTNPCLootSearch.BuildSyncPayload(npcData, sourceKey, autoOpen, anchor)
         autoOpen = autoOpen == true,
         sources = sources,
         workerCarry = getWorkerCarryState(worker, apis),
+        collectEvent = type(state.lastCollectEvent) == "table" and copyTableShallow(state.lastCollectEvent) or nil,
         dynamicColoniesExclusive = true,
     }
 end
@@ -872,6 +960,83 @@ local function syncWorkerLootUpdate(worker, npcData, apis)
     end
 end
 
+local function rollbackWorkerOutputEntry(worker, registry, outputEntry, storedQty)
+    local ledger = worker and worker.outputLedger or nil
+    if type(ledger) ~= "table" or storedQty <= 0 or not outputEntry or not registry then
+        return false
+    end
+
+    local internal = registry.Internal or nil
+    local signatureBuilder = internal and internal.GetOutputEntryStateSignature or nil
+    local targetSignature = signatureBuilder and signatureBuilder(outputEntry) or nil
+    for index = #ledger, 1, -1 do
+        local entry = ledger[index]
+        local sameEntry = false
+        if targetSignature and signatureBuilder then
+            sameEntry = signatureBuilder(entry) == targetSignature
+        else
+            sameEntry = tostring(entry and entry.fullType or "") == tostring(outputEntry.fullType or "")
+                and tostring(entry and entry.displayName or "") == tostring(outputEntry.displayName or "")
+        end
+
+        if sameEntry then
+            local currentQty = math.max(0, tonumber(entry and entry.qty) or 0)
+            local nextQty = currentQty - storedQty
+            if nextQty > 0 then
+                entry.qty = nextQty
+            else
+                table.remove(ledger, index)
+            end
+            if internal and internal.MarkOutputCacheDirty then
+                internal.MarkOutputCacheDirty(worker)
+            end
+            return true
+        end
+    end
+
+    return false
+end
+
+local function isRemovedFromSource(invItem, originalContainer)
+    if not invItem then
+        return false
+    end
+
+    local currentContainer = invItem.getContainer and invItem:getContainer() or nil
+    if originalContainer then
+        return currentContainer ~= originalContainer
+    end
+
+    local worldItem = invItem.getWorldItem and invItem:getWorldItem() or nil
+    return currentContainer == nil and worldItem == nil
+end
+
+local function removeInventoryItemFromSource(invItem)
+    if not invItem then
+        return false
+    end
+
+    local container = invItem.getContainer and invItem:getContainer() or nil
+    if container and container.DoRemoveItem then
+        container:DoRemoveItem(invItem)
+        if sendRemoveItemFromContainer then
+            sendRemoveItemFromContainer(container, invItem)
+        end
+        if isRemovedFromSource(invItem, container) then
+            return true
+        end
+    end
+
+    if DynamicTrading and DynamicTrading.ServerHelpers and DynamicTrading.ServerHelpers.RemoveItem then
+        DynamicTrading.ServerHelpers.RemoveItem(invItem)
+        if isRemovedFromSource(invItem, container) then
+            return true
+        end
+    end
+
+    return false
+end
+
 local function transferItemToWorker(zombie, npcData, worker, apis, invItem)
     local registry = apis and apis.registry or nil
     if not registry or not worker or not invItem then
@@ -899,16 +1064,17 @@ local function transferItemToWorker(zombie, npcData, worker, apis, invItem)
     end
 
     outputEntry.qty = math.max(1, math.floor(tonumber(outputEntry.qty) or requestedQty))
-    local container = invItem.getContainer and invItem:getContainer() or nil
     local storedQty = registry.AddOutputEntry and registry.AddOutputEntry(worker, outputEntry) or 0
     if storedQty < requestedQty then
         return false, "no_capacity", carryState
     end
 
-    if container and container.DoRemoveItem then
-        container:DoRemoveItem(invItem)
-    elseif DynamicTrading and DynamicTrading.ServerHelpers and DynamicTrading.ServerHelpers.RemoveItem then
-        DynamicTrading.ServerHelpers.RemoveItem(invItem)
+    if not removeInventoryItemFromSource(invItem) then
+        rollbackWorkerOutputEntry(worker, registry, outputEntry, storedQty)
+        if registry.RecalculateWorker then
+            registry.RecalculateWorker(worker)
+        end
+        return false, "remove_failed", getWorkerCarryState(worker, apis)
     end
 
     syncWorkerLootUpdate(worker, npcData, apis)
@@ -938,6 +1104,7 @@ function DTNPCLootSearch.TryCollectQueuedItems(zombie, npcData, worker, apis, so
     local collected = 0
     local blockedByCapacity = false
     local carryState = getWorkerCarryState(worker, apis)
+    local stateChanged = false
     for _, itemKey in ipairs(queue) do
         local normalizedItemKey = tostring(itemKey)
         local entry = itemByKey[tostring(itemKey)]
@@ -949,6 +1116,7 @@ function DTNPCLootSearch.TryCollectQueuedItems(zombie, npcData, worker, apis, so
             if transferred then
                 markRecentlyCollected(state, source.key, normalizedItemKey)
                 collected = collected + 1
+                stateChanged = true
             elseif reason == "no_capacity" then
                 blockedByCapacity = true
             else
@@ -976,15 +1144,47 @@ function DTNPCLootSearch.TryCollectQueuedItems(zombie, npcData, worker, apis, so
 
     npcData.dcLootLastCarryState = carryState
     if blockedByCapacity and DTNPCProtect and DTNPCProtect.PushCompanionNotice and carryState then
+        setCollectEvent(state, "no_capacity", source.key, carryState, state.requestedBy or getCommanderUsername(npcData, worker))
         DTNPCProtect.PushCompanionNotice(
             zombie,
             npcData,
             string.format("Carry full %.1f / %.1f.", carryState.usedWeight or 0, carryState.maxWeight or 0),
             "warning"
         )
+        stateChanged = true
+    elseif stateChanged then
+        state.lastCollectEvent = nil
     end
 
     return collected
+end
+
+function DTNPCLootSearch.CollectItemsImmediately(anchor, zombie, npcData, sourceKey, itemKeys, requesterUsername)
+    if not anchor or not DTNPCLootSearch.IsDynamicColoniesCompanion(npcData) or not sourceKey or type(itemKeys) ~= "table" or #itemKeys <= 0 then
+        return false, 0
+    end
+
+    local worker, apis = getLinkedWorker(npcData)
+    if not worker or not (apis and apis.registry) then
+        return false, 0
+    end
+
+    local source = DTNPCLootSearch.FindSourceByKey(anchor, npcData, sourceKey)
+    if not source then
+        return false, 0
+    end
+
+    local changed = DTNPCLootSearch.QueueCollectRequest(npcData, sourceKey, itemKeys, requesterUsername)
+    if not changed then
+        return false, 0
+    end
+
+    local state = DTNPCLootSearch.EnsureState(npcData)
+    setVisualCollectTarget(state, source)
+    local collectedCount = DTNPCLootSearch.TryCollectQueuedItems(zombie, npcData, worker, apis, source)
+    npcData.dcLootStatus = collectedCount > 0 and "looting" or "collecting"
+    state.currentSourceKey = source.key
+    return true, collectedCount
 end
 
 function DTNPCLootSearch.ResolveWorker(npcData)

@@ -160,6 +160,37 @@ function DT_V2_RadarListPanel:onListDoubleClick(itemData)
     end
 end
 
+function DT_V2_RadarListPanel:render()
+    ISPanel.render(self)
+
+    if self.listbox and #self.listbox.items == 0 then
+        local category = self.parent and self.parent.currentCategory or "Stationary"
+        if category == "Location" then return end
+
+        local font = UIFont.Medium
+        local font2 = UIFont.Small
+        
+        local text1 = "NO ACTIVE SIGNALS"
+        local text2 = "Traders may be resting or in transit."
+        local text3 = "Please wait for a new broadcast window."
+
+        local h1 = getTextManager():getFontHeight(font)
+        local h2 = getTextManager():getFontHeight(font2)
+        
+        local totalH = h1 + (h2 * 2) + 10
+        local y = (self.height / 2) - (totalH / 2)
+        
+        local tw1 = getTextManager():MeasureStringX(font, text1)
+        self:drawText(text1, (self.width - tw1) / 2, y, 0.8, 0.8, 0.8, 0.8, font)
+        
+        local tw2 = getTextManager():MeasureStringX(font2, text2)
+        self:drawText(text2, (self.width - tw2) / 2, y + h1 + 5, 0.6, 0.6, 0.6, 0.7, font2)
+
+        local tw3 = getTextManager():MeasureStringX(font2, text3)
+        self:drawText(text3, (self.width - tw3) / 2, y + h1 + h2 + 8, 0.5, 0.5, 0.5, 0.6, font2)
+    end
+end
+
 function DT_V2_RadarListPanel:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
