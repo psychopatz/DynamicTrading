@@ -23,6 +23,7 @@ end
 local PROTECT_NOTICE_FALLBACKS = {
     ["Companion:Attack"] = "On it.",
     ["Companion:AttackRange"] = "Covering you.",
+    ["Companion:NoAmmo"] = "I'm out of ammo.",
     ["Companion:Return"] = "Back with you.",
 }
 

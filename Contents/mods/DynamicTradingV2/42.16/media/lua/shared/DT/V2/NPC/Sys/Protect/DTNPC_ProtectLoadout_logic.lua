@@ -43,6 +43,18 @@ local function isRangedWeapon(fullType, scriptItem)
         or lowered:find("gun", 1, true) ~= nil
 end
 
+local function normalizeAmmoTypeIdentifier(value)
+    local token = lower(value)
+    if token == "" then
+        return ""
+    end
+
+    token = token:match("([^%.:]+)$") or token
+    token = token:gsub("_", "")
+    token = token:gsub("box$", "")
+    return token
+end
+
 local function isMeleeWeapon(fullType, scriptItem)
     if not fullType or fullType == "" then
         return false
@@ -323,39 +335,56 @@ function DTNPCProtect.GetRangedAmmoType(npcData)
     return nil
 end
 
-function DTNPCProtect.HasUsableRangedLoadout(npcData)
+function DTNPCProtect.AreAmmoTypesEquivalent(left, right)
+    local leftText = tostring(left or "")
+    local rightText = tostring(right or "")
+    if leftText == "" or rightText == "" then
+        return false
+    end
+    if leftText == rightText then
+        return true
+    end
+    return normalizeAmmoTypeIdentifier(leftText) == normalizeAmmoTypeIdentifier(rightText)
+end
+
+function DTNPCProtect.GetRangedLoadoutIssue(npcData)
     DTNPCProtect.EnsureDataDefaults(npcData)
     local loadout = npcData.loadout
     local weapon = loadout.rangedWeapon
     if not weapon then
-        return false
+        return "no_weapon"
     end
 
     local scriptItem = getScriptItem(weapon)
     if not isRangedWeapon(weapon, scriptItem) then
-        return false
+        return "invalid_weapon"
     end
 
     local ammoType = DTNPCProtect.GetRangedAmmoType(npcData)
+    if not ammoType or ammoType == "" then
+        return "no_ammo_type"
+    end
+
     if scriptItem and scriptItem.getAmmoType then
         local expectedAmmoType = scriptItem:getAmmoType()
-        if expectedAmmoType and expectedAmmoType ~= "" and ammoType ~= expectedAmmoType then
-            return false
+        if expectedAmmoType and expectedAmmoType ~= "" and not DTNPCProtect.AreAmmoTypesEquivalent(ammoType, expectedAmmoType) then
+            return "ammo_mismatch"
         end
     end
 
     local ammoCount = tonumber(loadout.ammoCount) or 0
-    if not ammoType or ammoType == "" then
-        return false
-    end
     if DTNPCProtect.IsFiniteAmmoTrader(npcData) and ammoCount <= 0 then
-        return false
+        return "no_ammo"
     end
     if loadout.rangedCondition ~= nil and tonumber(loadout.rangedCondition) <= 0 then
-        return false
+        return "broken_weapon"
     end
 
-    return true
+    return nil
+end
+
+function DTNPCProtect.HasUsableRangedLoadout(npcData)
+    return DTNPCProtect.GetRangedLoadoutIssue(npcData) == nil
 end
 
 function DTNPCProtect.HasUsableMeleeLoadout(npcData)

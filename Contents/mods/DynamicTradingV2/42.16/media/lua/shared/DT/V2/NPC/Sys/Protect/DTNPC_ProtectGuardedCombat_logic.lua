@@ -160,14 +160,22 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
     local issuePrefix = tostring(options.issuePrefix or "GuardRanged")
 
     if DTNPCProtect and not DTNPCProtect.HasUsableRangedLoadout(npcData) then
+        local issue = DTNPCProtect.GetRangedLoadoutIssue and DTNPCProtect.GetRangedLoadoutIssue(npcData) or "unavailable"
+        local ammoIssue = issue == "no_ammo"
+            or issue == "no_ammo_type"
+            or issue == "ammo_mismatch"
+
+        if ammoIssue and DTNPCProtect.PushCompanionAmbientCue then
+            DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, "Companion", "NoAmmo")
+        end
         if DTNPCProtect.ReportCombatIssue then
             DTNPCProtect.ReportCombatIssue(
                 zombie,
                 npcData,
-                issuePrefix .. "Unavailable",
-                options.unavailableText or "Can't fire. No usable firearm.",
+                issuePrefix .. "Unavailable:" .. tostring(issue),
+                ammoIssue and nil or (options.unavailableText or "Can't fire. No usable firearm."),
                 "warning",
-                "targetDist=" .. tostring(string.format("%.2f", tonumber(targetDist) or 0))
+                "issue=" .. tostring(issue) .. " targetDist=" .. tostring(string.format("%.2f", tonumber(targetDist) or 0))
             )
         end
         return {
