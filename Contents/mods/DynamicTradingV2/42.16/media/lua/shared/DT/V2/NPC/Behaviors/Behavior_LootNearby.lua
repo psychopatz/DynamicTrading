@@ -5,6 +5,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
+DTNPCLootDebug = DTNPCLootDebug or {}
 
 require "DT/V2/NPC/Sys/DTNPC_Protect"
 require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
@@ -24,6 +25,13 @@ local LOOT_MOVE_ABORT_TICKS = 30
 local LOOT_THREAT_RADIUS = 10
 local LOOT_THREAT_LEASH_BONUS = 2
 local LOOT_SYNC_COOLDOWN_MS = 1250
+local LOOT_MAX_ITEM_CANDIDATES = 48
+local LOOT_DEBUG_ENABLED = true
+
+-- Forward references for local functions defined later in the file
+local itemMatchesLootFilter
+local resolveLootTargetContainer
+local resolveLootTargetGroundItem
 
 local function buildPointTarget(x, y, z)
     if x == nil or y == nil then
@@ -61,11 +69,283 @@ local function getDistance(ax, ay, bx, by)
     return math.sqrt((dx * dx) + (dy * dy))
 end
 
+local function isLootTileSafe(x, y, z)
+    if DTNPCMobility and DTNPCMobility.IsTileSafe then
+        return DTNPCMobility.IsTileSafe(x, y, z)
+    end
+
+    local cell = getCell and getCell() or nil
+    local square = cell and cell:getGridSquare(x, y, z or 0) or nil
+    if not square then
+        return true
+    end
+    if not square:isFree(false) then
+        return false
+    end
+    if square:isSolid() or square:isSolidTrans() then
+        return false
+    end
+    return true
+end
+
+local function shouldUseAdjacentApproach(target)
+    return type(target) == "table" and (target.kind == "world" or target.kind == "vehicle")
+end
+
+local function resolveLootApproachPoint(target, zombie)
+    if type(target) ~= "table" then
+        return nil
+    end
+
+    local targetX = tonumber(target.x)
+    local targetY = tonumber(target.y)
+    local targetZ = tonumber(target.z) or 0
+    if targetX == nil or targetY == nil then
+        return nil
+    end
+
+    if not shouldUseAdjacentApproach(target) then
+        return {
+            x = targetX,
+            y = targetY,
+            z = targetZ,
+            stopDistance = tonumber(target.stopDistance) or LOOT_STOP_DISTANCE,
+        }
+    end
+
+    local candidates = {
+        { x = targetX - 1, y = targetY, z = targetZ },
+        { x = targetX + 1, y = targetY, z = targetZ },
+        { x = targetX, y = targetY - 1, z = targetZ },
+        { x = targetX, y = targetY + 1, z = targetZ },
+        { x = targetX - 1, y = targetY - 1, z = targetZ },
+        { x = targetX + 1, y = targetY - 1, z = targetZ },
+        { x = targetX - 1, y = targetY + 1, z = targetZ },
+        { x = targetX + 1, y = targetY + 1, z = targetZ },
+        { x = targetX, y = targetY, z = targetZ },
+    }
+
+    local zombieX = zombie and zombie.getX and zombie:getX() or targetX
+    local zombieY = zombie and zombie.getY and zombie:getY() or targetY
+    local bestCandidate = nil
+    local bestDistance = nil
+
+    for _, candidate in ipairs(candidates) do
+        if isLootTileSafe(candidate.x, candidate.y, candidate.z) then
+            local candidateDistance = getDistance(zombieX, zombieY, candidate.x, candidate.y)
+            if not bestCandidate or candidateDistance < bestDistance then
+                bestCandidate = candidate
+                bestDistance = candidateDistance
+            end
+        end
+    end
+
+    if bestCandidate then
+        bestCandidate.stopDistance = 0.55
+        return bestCandidate
+    end
+
+    return {
+        x = targetX,
+        y = targetY,
+        z = targetZ,
+        stopDistance = tonumber(target.stopDistance) or LOOT_STOP_DISTANCE,
+    }
+end
+
+local function ensureLootApproachPoint(target, zombie)
+    if type(target) ~= "table" then
+        return nil
+    end
+
+    local approach = resolveLootApproachPoint(target, zombie)
+    if not approach then
+        return nil
+    end
+
+    target.approachX = approach.x
+    target.approachY = approach.y
+    target.approachZ = approach.z
+    target.approachStopDistance = approach.stopDistance
+    return approach
+end
+
+local function lootDebugLog(npcData, worker, stage, message)
+    if not LOOT_DEBUG_ENABLED then
+        return
+    end
+
+    local name = tostring(npcData and npcData.name or worker and worker.name or "Unknown")
+    local uuid = tostring(npcData and npcData.uuid or "nil")
+    local workerID = tostring(worker and worker.workerID or npcData and npcData.linkedWorkerID or "nil")
+    local text = "[DTV2 Loot Debug][" .. tostring(stage or "Trace") .. "][" .. name .. "][uuid=" .. uuid .. "][workerID=" .. workerID .. "] " .. tostring(message or "")
+    if DynamicTrading and DynamicTrading.Log then
+        DynamicTrading.Log("DTV2", "NPC", "LootDebug", text)
+    else
+        print(text)
+    end
+end
+
+local function lootDebugLogChanged(npcData, worker, cacheKey, stage, message)
+    if not LOOT_DEBUG_ENABLED then
+        return
+    end
+
+    if not npcData then
+        lootDebugLog(npcData, worker, stage, message)
+        return
+    end
+
+    npcData.dcLootDebugMessages = npcData.dcLootDebugMessages or {}
+    if npcData.dcLootDebugMessages[cacheKey] == message then
+        return
+    end
+
+    npcData.dcLootDebugMessages[cacheKey] = message
+    lootDebugLog(npcData, worker, stage, message)
+end
+
+local function formatTargetDebug(target)
+    if type(target) ~= "table" then
+        return "nil"
+    end
+
+    return tostring(target.kind or "?")
+        .. " key=" .. tostring(target.key or "nil")
+        .. " pos=" .. tostring(target.x or "?") .. "," .. tostring(target.y or "?") .. "," .. tostring(target.z or 0)
+        .. " approach=" .. tostring(target.approachX or target.x or "?") .. "," .. tostring(target.approachY or target.y or "?") .. "," .. tostring(target.approachZ or target.z or 0)
+        .. " stop=" .. tostring(target.stopDistance or "?")
+end
+
+local function formatSourceConfigDebug(config)
+    if type(config) ~= "table" then
+        return "no-config"
+    end
+
+    return table.concat({
+        "radius=" .. tostring(config.radius or "nil"),
+        "groundItems=" .. tostring(config.includeLooseWorldItems ~= false),
+        "groundBags=" .. tostring(config.includeGroundContainers ~= false),
+        "furniture=" .. tostring(config.includeFurnitureContainers ~= false),
+        "corpses=" .. tostring(config.includeCorpseContainers ~= false),
+        "vehicles=" .. tostring(config.includeVehicleContainers ~= false),
+        "profile=" .. tostring(config.profileID or "nil"),
+        "rawTags=" .. tostring(#(config.rawTags or {})),
+    }, " ")
+end
+
+local function getItemDisplayName(invItem)
+    if not invItem then
+        return "nil"
+    end
+
+    return tostring(invItem.getDisplayName and invItem:getDisplayName() or invItem.getFullType and invItem:getFullType() or "unknown-item")
+end
+
+local function getInventoryItemID(invItem)
+    if not invItem then
+        return nil
+    end
+    if invItem.getID then
+        return tonumber(invItem:getID())
+    end
+    return nil
+end
+
+local function summarizeContainerItems(container, filterContext, limit)
+    local items = container and container.getItems and container:getItems() or nil
+    if not items then
+        return "items=0"
+    end
+
+    local names = {}
+    local maxCount = math.max(1, tonumber(limit) or 5)
+    local matched = 0
+    for index = 0, items:size() - 1 do
+        local invItem = items:get(index)
+        if invItem and #names < maxCount then
+            names[#names + 1] = getItemDisplayName(invItem)
+        end
+        if invItem and filterContext and itemMatchesLootFilter(invItem, filterContext) then
+            matched = matched + 1
+        end
+    end
+
+    local suffix = items:size() > #names and (", ... +" .. tostring(items:size() - #names)) or ""
+    return "items=" .. tostring(items:size())
+        .. " matched=" .. tostring(matched)
+        .. " preview=[" .. table.concat(names, ", ") .. suffix .. "]"
+end
+
+local function describeLootTarget(target, filterContext)
+    if type(target) ~= "table" then
+        return "nil-target"
+    end
+
+    local itemLabel = ""
+    if target.lootDisplayName or target.lootFullType then
+        itemLabel = " item=" .. tostring(target.lootDisplayName or target.lootFullType)
+    end
+
+    if target.kind == "groundItem" then
+        local invItem = resolveLootTargetGroundItem(target)
+        return "Ground Item " .. getItemDisplayName(invItem) .. itemLabel
+    end
+
+    local container = resolveLootTargetContainer(target)
+    if target.kind == "bag" then
+        local cell = getCell and getCell() or nil
+        local square = cell and cell:getGridSquare(tonumber(target.x) or 0, tonumber(target.y) or 0, tonumber(target.z) or 0) or nil
+        local label = "Ground Bag"
+        if square and square.getWorldObjects then
+            local worldObjects = square:getWorldObjects()
+            for index = 0, worldObjects:size() - 1 do
+                local worldObject = worldObjects:get(index)
+                local item = worldObject and worldObject.getItem and worldObject:getItem() or nil
+                if item and tonumber(item.getID and item:getID() or 0) == tonumber(target.itemID) then
+                    label = getItemDisplayName(item)
+                    break
+                end
+            end
+        end
+        return label .. itemLabel .. " | " .. summarizeContainerItems(container, filterContext, 5)
+    end
+
+    if target.kind == "corpse" then
+        return "Corpse" .. itemLabel .. " | " .. summarizeContainerItems(container, filterContext, 6)
+    end
+
+    if target.kind == "vehicle" then
+        local containerType = container and container.getType and container:getType() or "VehicleContainer"
+        return tostring(containerType) .. itemLabel .. " | " .. summarizeContainerItems(container, filterContext, 5)
+    end
+
+    if target.kind == "world" then
+        local containerType = container and container.getType and container:getType() or "WorldContainer"
+        return tostring(containerType) .. itemLabel .. " | " .. summarizeContainerItems(container, filterContext, 5)
+    end
+
+    return tostring(target.kind or "unknown") .. itemLabel .. " | " .. summarizeContainerItems(container, filterContext, 5)
+end
+
 local function normalizeLootConfig(npcData)
     local config = type(npcData and npcData.dcLootConfig) == "table" and npcData.dcLootConfig or {}
+    local includeWorldContainers = config.includeWorldContainers ~= false
+    local includeLooseWorldItems = config.includeLooseWorldItems ~= nil
+        and config.includeLooseWorldItems ~= false
+        or (config.includeLooseWorldItems == nil and includeWorldContainers)
+    local includeGroundContainers = config.includeGroundContainers ~= nil
+        and config.includeGroundContainers ~= false
+        or (config.includeGroundContainers == nil and includeWorldContainers)
+    local includeFurnitureContainers = config.includeFurnitureContainers ~= nil
+        and config.includeFurnitureContainers ~= false
+        or (config.includeFurnitureContainers == nil and includeWorldContainers)
     return {
         radius = math.max(2, math.min(25, math.floor(tonumber(npcData and npcData.dcLootRadius or config.radius) or 10))),
-        includeWorldContainers = config.includeWorldContainers ~= false,
+        includeWorldContainers = includeWorldContainers,
+        includeLooseWorldItems = includeLooseWorldItems,
+        includeGroundContainers = includeGroundContainers,
+        includeFurnitureContainers = includeFurnitureContainers,
         includeCorpseContainers = config.includeCorpseContainers ~= false,
         includeVehicleContainers = config.includeVehicleContainers ~= false,
         profileID = tostring(config.profileID or "") ~= "" and tostring(config.profileID) or nil,
@@ -203,7 +483,7 @@ local function tagMatches(itemTags, queryTag, filterContext)
     return false
 end
 
-local function itemMatchesLootFilter(invItem, filterContext)
+itemMatchesLootFilter = function(invItem, filterContext)
     if not invItem or not filterContext or not filterContext.hasAnyFilter then
         return false
     end
@@ -233,6 +513,410 @@ local function getInventoryItemQuantity(invItem)
         return math.max(1, math.floor(count))
     end
     return 1
+end
+
+local function getDebugItemLootability(invItem, filterContext, worker, registry)
+    if not invItem then
+        return false, "invalid", 0, 0
+    end
+
+    local requestedQty = getInventoryItemQuantity(invItem)
+
+    if not filterContext then
+        return false, "no-context", 0, requestedQty
+    end
+
+    if not filterContext.hasAnyFilter then
+        return false, "no-filter", 0, requestedQty
+    end
+
+    if not itemMatchesLootFilter(invItem, filterContext) then
+        return false, "filtered", 0, requestedQty
+    end
+
+    if not worker or not registry or not registry.GetFittingInventoryQuantity then
+        return true, "filter-match", requestedQty, requestedQty
+    end
+
+    local fitQty = registry.GetFittingInventoryQuantity(worker, invItem:getFullType(), requestedQty) or 0
+    if fitQty <= 0 then
+        return false, "no-capacity", fitQty, requestedQty
+    end
+
+    return true, "lootable", fitQty, requestedQty
+end
+
+local function appendDebugItemEntry(result, invItem, prefix, depth, limit, filterContext, worker, registry)
+    if not invItem or #result >= limit then
+        return
+    end
+
+    local labelPrefix = tostring(prefix or "")
+    local lootable, lootReason, fitQty, requestedQty = getDebugItemLootability(invItem, filterContext, worker, registry)
+    result[#result + 1] = {
+        displayName = labelPrefix .. getItemDisplayName(invItem),
+        fullType = invItem.getFullType and invItem:getFullType() or nil,
+        quantity = getInventoryItemQuantity(invItem),
+        depth = tonumber(depth) or 0,
+        lootable = lootable,
+        lootReason = lootReason,
+        fitQty = fitQty,
+        requestedQty = requestedQty,
+    }
+end
+
+local function collectDebugItemsRecursive(container, result, prefix, depth, limit, filterContext, worker, registry)
+    if not container or #result >= limit then
+        return
+    end
+
+    local items = container.getItems and container:getItems() or nil
+    if not items then
+        return
+    end
+
+    for index = 0, items:size() - 1 do
+        if #result >= limit then
+            return
+        end
+
+        local invItem = items:get(index)
+        if invItem then
+            appendDebugItemEntry(result, invItem, prefix, depth, limit, filterContext, worker, registry)
+
+            local nestedInventory = invItem.getInventory and invItem:getInventory() or nil
+            if nestedInventory and #result < limit then
+                local nestedPrefix = tostring(prefix or "") .. getItemDisplayName(invItem) .. " > "
+                collectDebugItemsRecursive(nestedInventory, result, nestedPrefix, (tonumber(depth) or 0) + 1, limit, filterContext, worker, registry)
+            end
+        end
+    end
+end
+
+local function getDebugItemsFromContainer(container, limit, filterContext, worker, registry)
+    local result = {}
+    collectDebugItemsRecursive(container, result, "", 0, math.max(1, tonumber(limit) or 40), filterContext, worker, registry)
+    return result
+end
+
+local function buildDebugSourceEntry(kind, x, y, z, key, label, distance, items)
+    return {
+        kind = kind,
+        x = x,
+        y = y,
+        z = z or 0,
+        key = key,
+        label = label,
+        distance = distance or 0,
+        items = items or {},
+    }
+end
+
+local function sortDebugSources(sources)
+    table.sort(sources, function(a, b)
+        if math.abs((a.distance or 0) - (b.distance or 0)) > 0.05 then
+            return (a.distance or 0) < (b.distance or 0)
+        end
+        return tostring(a.key or "") < tostring(b.key or "")
+    end)
+end
+
+function DTNPCLootDebug.ScanNearbySources(player, npcData, radiusOverride)
+    if not player then
+        return {
+            sources = {},
+            totalSources = 0,
+            totalItems = 0,
+            radius = tonumber(radiusOverride) or 0,
+        }
+    end
+
+    local cell = getCell and getCell() or nil
+    if not cell then
+        return {
+            sources = {},
+            totalSources = 0,
+            totalItems = 0,
+            radius = tonumber(radiusOverride) or 0,
+        }
+    end
+
+    local mockNpcData = type(npcData) == "table" and npcData or {}
+    if radiusOverride ~= nil then
+        mockNpcData = {}
+        for key, value in pairs(type(npcData) == "table" and npcData or {}) do
+            mockNpcData[key] = value
+        end
+        mockNpcData.dcLootRadius = radiusOverride
+    end
+
+    local config = normalizeLootConfig(mockNpcData)
+    local filterContext = nil
+    local worker = nil
+    local registry = nil
+    if type(npcData) == "table" then
+        filterContext = buildLootFilterContext(mockNpcData)
+        worker = getLinkedWorker(mockNpcData)
+        local apis = filterContext and filterContext.apis or getColonyApis()
+        registry = apis and apis.registry or nil
+    end
+    local radius = math.max(1, math.min(25, math.floor(tonumber(config.radius) or 10)))
+    local anchorX = math.floor(player:getX())
+    local anchorY = math.floor(player:getY())
+    local anchorZ = math.floor(player:getZ())
+    local sources = {}
+    local seenVehicles = {}
+    local totalItems = 0
+    local itemLimitPerSource = 40
+
+    for y = anchorY - radius, anchorY + radius do
+        for x = anchorX - radius, anchorX + radius do
+            local square = cell:getGridSquare(x, y, anchorZ)
+            if square then
+                local distance = getDistance(anchorX, anchorY, x, y)
+
+                if config.includeWorldContainers then
+                    local worldObjects = square:getWorldObjects()
+                    if worldObjects then
+                        for index = 0, worldObjects:size() - 1 do
+                            local worldObject = worldObjects:get(index)
+                            local item = worldObject and worldObject.getItem and worldObject:getItem() or nil
+                            local inventory = item and item.getInventory and item:getInventory() or nil
+
+                            if item and inventory and lower(item.getCategory and item:getCategory() or "") == "container"
+                                and config.includeGroundContainers then
+                                local debugItems = getDebugItemsFromContainer(inventory, itemLimitPerSource, filterContext, worker, registry)
+                                totalItems = totalItems + #debugItems
+                                sources[#sources + 1] = buildDebugSourceEntry(
+                                    "bag",
+                                    x,
+                                    y,
+                                    anchorZ,
+                                    "bag:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(item:getID()),
+                                    getItemDisplayName(item),
+                                    distance,
+                                    debugItems
+                                )
+                            elseif item and not inventory and config.includeLooseWorldItems then
+                                local lootable, lootReason, fitQty, requestedQty = getDebugItemLootability(item, filterContext, worker, registry)
+                                local debugItems = {
+                                    {
+                                        displayName = getItemDisplayName(item),
+                                        fullType = item.getFullType and item:getFullType() or nil,
+                                        quantity = getInventoryItemQuantity(item),
+                                        depth = 0,
+                                        lootable = lootable,
+                                        lootReason = lootReason,
+                                        fitQty = fitQty,
+                                        requestedQty = requestedQty,
+                                    }
+                                }
+                                totalItems = totalItems + 1
+                                sources[#sources + 1] = buildDebugSourceEntry(
+                                    "groundItem",
+                                    x,
+                                    y,
+                                    anchorZ,
+                                    "groundItem:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(item:getID()),
+                                    "Ground Item",
+                                    distance,
+                                    debugItems
+                                )
+                            end
+                        end
+                    end
+
+                    if config.includeFurnitureContainers then
+                        local objects = square:getObjects()
+                        if objects then
+                            for objectIndex = 0, objects:size() - 1 do
+                                local object = objects:get(objectIndex)
+                                local containerCount = object and object.getContainerCount and tonumber(object:getContainerCount()) or 0
+                                for containerIndex = 0, math.max(0, containerCount - 1) do
+                                    local container = object and object.getContainerByIndex and object:getContainerByIndex(containerIndex) or nil
+                                    local items = container and container.getItems and container:getItems() or nil
+                                    if items and items:size() > 0 then
+                                        local debugItems = getDebugItemsFromContainer(container, itemLimitPerSource, filterContext, worker, registry)
+                                        totalItems = totalItems + #debugItems
+                                        local label = container.getType and tostring(container:getType()) or "WorldContainer"
+                                        sources[#sources + 1] = buildDebugSourceEntry(
+                                            "world",
+                                            x,
+                                            y,
+                                            anchorZ,
+                                            "world:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(objectIndex) .. ":" .. tostring(containerIndex),
+                                            label,
+                                            distance,
+                                            debugItems
+                                        )
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+
+                if config.includeCorpseContainers then
+                    local staticObjects = square:getStaticMovingObjects()
+                    if staticObjects then
+                        for index = 0, staticObjects:size() - 1 do
+                            local staticObject = staticObjects:get(index)
+                            local container = staticObject and staticObject.getContainer and staticObject:getContainer() or nil
+                            local items = container and container.getItems and container:getItems() or nil
+                            if items and items:size() > 0 then
+                                local debugItems = getDebugItemsFromContainer(container, itemLimitPerSource, filterContext, worker, registry)
+                                totalItems = totalItems + #debugItems
+                                sources[#sources + 1] = buildDebugSourceEntry(
+                                    "corpse",
+                                    x,
+                                    y,
+                                    anchorZ,
+                                    "corpse:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(staticObject:getID()),
+                                    "Corpse",
+                                    distance,
+                                    debugItems
+                                )
+                            end
+                        end
+                    end
+                end
+
+                if config.includeVehicleContainers then
+                    local vehicle = square:getVehicleContainer()
+                    if vehicle and not seenVehicles[vehicle] then
+                        seenVehicles[vehicle] = true
+                        local vehicleID = vehicle.getId and vehicle:getId()
+                            or vehicle.getID and vehicle:getID()
+                            or tostring(vehicle)
+                        for partIndex = 0, vehicle:getPartCount() - 1 do
+                            local vehiclePart = vehicle:getPartByIndex(partIndex)
+                            local container = vehiclePart and vehiclePart.getItemContainer and vehiclePart:getItemContainer() or nil
+                            local items = container and container.getItems and container:getItems() or nil
+                            if items and items:size() > 0 then
+                                local debugItems = getDebugItemsFromContainer(container, itemLimitPerSource, filterContext, worker, registry)
+                                totalItems = totalItems + #debugItems
+                                local label = container.getType and tostring(container:getType()) or "VehicleContainer"
+                                sources[#sources + 1] = buildDebugSourceEntry(
+                                    "vehicle",
+                                    x,
+                                    y,
+                                    anchorZ,
+                                    "vehicle:" .. tostring(vehicleID) .. ":" .. tostring(partIndex),
+                                    label,
+                                    distance,
+                                    debugItems
+                                )
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    sortDebugSources(sources)
+
+    return {
+        sources = sources,
+        totalSources = #sources,
+        totalItems = totalItems,
+        radius = radius,
+        center = { x = anchorX, y = anchorY, z = anchorZ },
+        filterActive = filterContext and filterContext.hasAnyFilter or false,
+        filterPresetCount = filterContext and #(filterContext.presetTags or {}) or 0,
+        filterRawCount = filterContext and #(filterContext.rawTags or {}) or 0,
+        workerName = worker and worker.name or nil,
+        workerID = worker and worker.workerID or nil,
+    }
+end
+
+local function copyLootTarget(baseTarget)
+    local copy = {}
+    for key, value in pairs(baseTarget or {}) do
+        copy[key] = value
+    end
+    return copy
+end
+
+local function appendMatchedItemCandidate(candidates, baseTarget, invItem, requestedQty, fitQty)
+    if not baseTarget or not invItem or fitQty <= 0 then
+        return
+    end
+
+    local itemID = getInventoryItemID(invItem)
+    local candidate = copyLootTarget(baseTarget)
+    candidate.key = tostring(baseTarget.key) .. ":item:" .. tostring(itemID or invItem:getFullType() or "unknown")
+    candidate.lootItemID = itemID
+    candidate.lootFullType = invItem.getFullType and invItem:getFullType() or nil
+    candidate.lootDisplayName = getItemDisplayName(invItem)
+    candidate.requestedQty = requestedQty
+    candidate.fitQty = fitQty
+    candidates[#candidates + 1] = candidate
+end
+
+local function collectMatchingItemsRecursive(candidates, baseTarget, container, filterContext, worker, registry, limit)
+    if not container or not filterContext or not filterContext.hasAnyFilter then
+        return
+    end
+
+    local items = container.getItems and container:getItems() or nil
+    if not items then
+        return
+    end
+
+    for index = 0, items:size() - 1 do
+        if #candidates >= limit then
+            return
+        end
+
+        local invItem = items:get(index)
+        if invItem then
+            if itemMatchesLootFilter(invItem, filterContext) then
+                local requestedQty = getInventoryItemQuantity(invItem)
+                local fitQty = registry and registry.GetFittingInventoryQuantity
+                    and registry.GetFittingInventoryQuantity(worker, invItem:getFullType(), requestedQty)
+                    or requestedQty
+                if fitQty > 0 then
+                    appendMatchedItemCandidate(candidates, baseTarget, invItem, requestedQty, fitQty)
+                end
+            end
+
+            local nestedInventory = invItem.getInventory and invItem:getInventory() or nil
+            if nestedInventory and #candidates < limit then
+                collectMatchingItemsRecursive(candidates, baseTarget, nestedInventory, filterContext, worker, registry, limit)
+            end
+        end
+    end
+end
+
+local function findItemInContainerRecursive(container, lootItemID, lootFullType)
+    if not container then
+        return nil
+    end
+
+    local items = container.getItems and container:getItems() or nil
+    if not items then
+        return nil
+    end
+
+    for index = 0, items:size() - 1 do
+        local invItem = items:get(index)
+        if invItem then
+            local invItemID = getInventoryItemID(invItem)
+            if (lootItemID ~= nil and invItemID == lootItemID)
+                or (lootItemID == nil and lootFullType ~= nil and invItem.getFullType and invItem:getFullType() == lootFullType) then
+                return invItem
+            end
+
+            local nestedInventory = invItem.getInventory and invItem:getInventory() or nil
+            local nestedItem = nestedInventory and findItemInContainerRecursive(nestedInventory, lootItemID, lootFullType) or nil
+            if nestedItem then
+                return nestedItem
+            end
+        end
+    end
+
+    return nil
 end
 
 local function findMatchingItemRecursive(container, filterContext, worker, registry)
@@ -269,7 +953,7 @@ local function findMatchingItemRecursive(container, filterContext, worker, regis
     return nil, 0
 end
 
-local function resolveLootTargetContainer(target)
+resolveLootTargetContainer = function(target)
     if type(target) ~= "table" then
         return nil
     end
@@ -339,14 +1023,151 @@ local function resolveLootTargetContainer(target)
     return nil
 end
 
-local function canLootTarget(target)
+resolveLootTargetGroundItem = function(target)
+    if type(target) ~= "table" then
+        return nil, nil
+    end
+
+    local cell = getCell and getCell() or nil
+    if not cell then
+        return nil, nil
+    end
+
+    local square = cell:getGridSquare(tonumber(target.x) or 0, tonumber(target.y) or 0, tonumber(target.z) or 0)
+    if not square then
+        return nil, nil
+    end
+
+    local worldObjects = square:getWorldObjects()
+    if not worldObjects then
+        return nil, square
+    end
+
+    local itemID = tonumber(target.itemID)
+    for index = 0, worldObjects:size() - 1 do
+        local worldObject = worldObjects:get(index)
+        local item = worldObject and worldObject.getItem and worldObject:getItem() or nil
+        if item and tonumber(item.getID and item:getID() or 0) == itemID then
+            return item, square
+        end
+    end
+
+    return nil, square
+end
+
+local function canAccessVehicleTarget(target, zombie)
+    if not target or target.kind ~= "vehicle" then
+        return true
+    end
+
+    local cell = getCell and getCell() or nil
+    if not cell then
+        return false
+    end
+
+    local square = cell:getGridSquare(tonumber(target.x) or 0, tonumber(target.y) or 0, tonumber(target.z) or 0)
+    local vehicle = square and square.getVehicleContainer and square:getVehicleContainer() or nil
+    if not vehicle then
+        return false
+    end
+
+    if vehicle.canAccessContainer then
+        return vehicle:canAccessContainer(tonumber(target.partIndex) or -1, zombie)
+    end
+
+    return true
+end
+
+local function getLootableTargetItem(target, filterContext, worker, registry)
+    if not target then
+        return nil, 0
+    end
+
+    if target.kind == "groundItem" then
+        local invItem = resolveLootTargetGroundItem(target)
+        if target.lootItemID and getInventoryItemID(invItem) ~= tonumber(target.lootItemID) then
+            return nil, 0
+        end
+        if not invItem or not itemMatchesLootFilter(invItem, filterContext) then
+            if invItem then
+                lootDebugLog(nil, worker, "Match", "Ground item did not match filters: " .. tostring(invItem:getFullType()))
+            end
+            return nil, 0
+        end
+
+        local requestedQty = getInventoryItemQuantity(invItem)
+        local fitQty = registry and registry.GetFittingInventoryQuantity
+            and registry.GetFittingInventoryQuantity(worker, invItem:getFullType(), requestedQty)
+            or requestedQty
+        if fitQty <= 0 or fitQty < requestedQty then
+            lootDebugLog(nil, worker, "Capacity", "Ground item fit failed: fullType=" .. tostring(invItem:getFullType()) .. " requested=" .. tostring(requestedQty) .. " fit=" .. tostring(fitQty))
+            return nil, 0
+        end
+        return invItem, fitQty
+    end
+
+    local container = resolveLootTargetContainer(target)
+    if not container then
+        return nil, 0
+    end
+
+    if target.lootItemID ~= nil or target.lootFullType ~= nil then
+        local invItem = findItemInContainerRecursive(container, tonumber(target.lootItemID), target.lootFullType)
+        if not invItem or not itemMatchesLootFilter(invItem, filterContext) then
+            return nil, 0
+        end
+
+        local requestedQty = getInventoryItemQuantity(invItem)
+        local fitQty = registry and registry.GetFittingInventoryQuantity
+            and registry.GetFittingInventoryQuantity(worker, invItem:getFullType(), requestedQty)
+            or requestedQty
+        if fitQty <= 0 then
+            return nil, 0
+        end
+        return invItem, fitQty
+    end
+
+    return findMatchingItemRecursive(container, filterContext, worker, registry)
+end
+
+local function canLootTarget(target, zombie, filterContext, worker, registry)
+    if not target then
+        return false
+    end
+
+    if target.kind == "vehicle" and not canAccessVehicleTarget(target, zombie) then
+        lootDebugLog(nil, worker, "Access", "Vehicle target not accessible: " .. formatTargetDebug(target))
+        return false
+    end
+
+    if target.kind == "groundItem" then
+        local invItem = resolveLootTargetGroundItem(target)
+        if not invItem then
+            return false
+        end
+        if filterContext and worker and registry then
+            local matchedItem, fitQty = getLootableTargetItem(target, filterContext, worker, registry)
+            return matchedItem ~= nil and fitQty > 0
+        end
+        return true
+    end
+
     local container = resolveLootTargetContainer(target)
     if not container then
         return false
     end
 
     local items = container.getItems and container:getItems() or nil
-    return items ~= nil and items:size() > 0
+    if not items or items:size() <= 0 then
+        return false
+    end
+
+    if filterContext and worker and registry then
+        local matchedItem, fitQty = getLootableTargetItem(target, filterContext, worker, registry)
+        return matchedItem ~= nil and fitQty > 0
+    end
+
+    return true
 end
 
 local function addCandidate(candidates, npcData, target)
@@ -356,9 +1177,33 @@ local function addCandidate(candidates, npcData, target)
     candidates[#candidates + 1] = target
 end
 
-local function buildLootCandidates(zombie, npcData, filterContext)
+local function addLootItemCandidates(candidates, npcData, baseTarget, container, filterContext, worker, registry)
+    if not baseTarget or isLootContainerVisited(npcData, baseTarget.key) then
+        return
+    end
+
+    if baseTarget.kind == "groundItem" then
+        local invItem = resolveLootTargetGroundItem(baseTarget)
+        if not invItem or not itemMatchesLootFilter(invItem, filterContext) then
+            return
+        end
+
+        local requestedQty = getInventoryItemQuantity(invItem)
+        local fitQty = registry and registry.GetFittingInventoryQuantity
+            and registry.GetFittingInventoryQuantity(worker, invItem:getFullType(), requestedQty)
+            or requestedQty
+        if fitQty > 0 then
+            appendMatchedItemCandidate(candidates, baseTarget, invItem, requestedQty, fitQty)
+        end
+        return
+    end
+
+    collectMatchingItemsRecursive(candidates, baseTarget, container, filterContext, worker, registry, LOOT_MAX_ITEM_CANDIDATES)
+end
+
+local function buildLootCandidates(zombie, npcData, filterContext, worker, registry)
     local cell = getCell and getCell() or nil
-    if not cell or not zombie or not npcData then
+    if not cell or not zombie or not npcData or not worker or not registry then
         return {}
     end
 
@@ -380,8 +1225,9 @@ local function buildLootCandidates(zombie, npcData, filterContext)
                             local worldObject = worldObjects:get(index)
                             local item = worldObject and worldObject.getItem and worldObject:getItem() or nil
                             local inventory = item and item.getInventory and item:getInventory() or nil
-                            if item and inventory and lower(item.getCategory and item:getCategory() or "") == "container" then
-                                addCandidate(candidates, npcData, {
+                            if item and inventory and lower(item.getCategory and item:getCategory() or "") == "container"
+                                and filterContext.config.includeGroundContainers then
+                                addLootItemCandidates(candidates, npcData, {
                                     key = "bag:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(item:getID()),
                                     kind = "bag",
                                     x = x,
@@ -390,31 +1236,54 @@ local function buildLootCandidates(zombie, npcData, filterContext)
                                     itemID = item:getID(),
                                     distance = getDistance(anchorX, anchorY, x, y),
                                     stopDistance = LOOT_STOP_DISTANCE,
-                                })
+                                }, inventory, filterContext, worker, registry)
+                            elseif item and not inventory and filterContext.config.includeLooseWorldItems then
+                                addLootItemCandidates(candidates, npcData, {
+                                    key = "groundItem:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(item:getID()),
+                                    kind = "groundItem",
+                                    x = x,
+                                    y = y,
+                                    z = anchorZ,
+                                    itemID = item:getID(),
+                                    distance = getDistance(anchorX, anchorY, x, y),
+                                    stopDistance = LOOT_STOP_DISTANCE,
+                                }, nil, filterContext, worker, registry)
+                            end
+
+                            if #candidates >= LOOT_MAX_ITEM_CANDIDATES then
+                                break
                             end
                         end
                     end
 
-                    local objects = square:getObjects()
-                    if objects then
-                        for objectIndex = 0, objects:size() - 1 do
-                            local object = objects:get(objectIndex)
-                            local containerCount = object and object.getContainerCount and tonumber(object:getContainerCount()) or 0
-                            for containerIndex = 0, math.max(0, containerCount - 1) do
-                                local container = object and object.getContainerByIndex and object:getContainerByIndex(containerIndex) or nil
-                                local items = container and container.getItems and container:getItems() or nil
-                                if items and items:size() > 0 then
-                                    addCandidate(candidates, npcData, {
-                                        key = "world:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(objectIndex) .. ":" .. tostring(containerIndex),
-                                        kind = "world",
-                                        x = x,
-                                        y = y,
-                                        z = anchorZ,
-                                        objectIndex = objectIndex,
-                                        containerIndex = containerIndex,
-                                        distance = getDistance(anchorX, anchorY, x, y),
-                                        stopDistance = LOOT_STOP_DISTANCE,
-                                    })
+                    if filterContext.config.includeFurnitureContainers then
+                        local objects = square:getObjects()
+                        if objects then
+                            for objectIndex = 0, objects:size() - 1 do
+                                local object = objects:get(objectIndex)
+                                local containerCount = object and object.getContainerCount and tonumber(object:getContainerCount()) or 0
+                                for containerIndex = 0, math.max(0, containerCount - 1) do
+                                    local container = object and object.getContainerByIndex and object:getContainerByIndex(containerIndex) or nil
+                                    local items = container and container.getItems and container:getItems() or nil
+                                    if items and items:size() > 0 then
+                                        addLootItemCandidates(candidates, npcData, {
+                                            key = "world:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(objectIndex) .. ":" .. tostring(containerIndex),
+                                            kind = "world",
+                                            x = x,
+                                            y = y,
+                                            z = anchorZ,
+                                            objectIndex = objectIndex,
+                                            containerIndex = containerIndex,
+                                            distance = getDistance(anchorX, anchorY, x, y),
+                                            stopDistance = LOOT_STOP_DISTANCE,
+                                        }, container, filterContext, worker, registry)
+                                    end
+                                    if #candidates >= LOOT_MAX_ITEM_CANDIDATES then
+                                        break
+                                    end
+                                end
+                                if #candidates >= LOOT_MAX_ITEM_CANDIDATES then
+                                    break
                                 end
                             end
                         end
@@ -429,7 +1298,7 @@ local function buildLootCandidates(zombie, npcData, filterContext)
                             local container = staticObject and staticObject.getContainer and staticObject:getContainer() or nil
                             local items = container and container.getItems and container:getItems() or nil
                             if items and items:size() > 0 then
-                                addCandidate(candidates, npcData, {
+                                addLootItemCandidates(candidates, npcData, {
                                     key = "corpse:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(staticObject:getID()),
                                     kind = "corpse",
                                     x = x,
@@ -438,7 +1307,10 @@ local function buildLootCandidates(zombie, npcData, filterContext)
                                     objectID = staticObject:getID(),
                                     distance = getDistance(anchorX, anchorY, x, y),
                                     stopDistance = LOOT_STOP_DISTANCE,
-                                })
+                                }, container, filterContext, worker, registry)
+                            end
+                            if #candidates >= LOOT_MAX_ITEM_CANDIDATES then
+                                break
                             end
                         end
                     end
@@ -455,8 +1327,14 @@ local function buildLootCandidates(zombie, npcData, filterContext)
                             local vehiclePart = vehicle:getPartByIndex(partIndex)
                             local container = vehiclePart and vehiclePart.getItemContainer and vehiclePart:getItemContainer() or nil
                             local items = container and container.getItems and container:getItems() or nil
-                            if items and items:size() > 0 then
-                                addCandidate(candidates, npcData, {
+                            if items and items:size() > 0 and canAccessVehicleTarget({
+                                kind = "vehicle",
+                                x = x,
+                                y = y,
+                                z = anchorZ,
+                                partIndex = partIndex,
+                            }, zombie) then
+                                addLootItemCandidates(candidates, npcData, {
                                     key = "vehicle:" .. tostring(vehicleID) .. ":" .. tostring(partIndex),
                                     kind = "vehicle",
                                     x = x,
@@ -465,12 +1343,23 @@ local function buildLootCandidates(zombie, npcData, filterContext)
                                     partIndex = partIndex,
                                     distance = getDistance(anchorX, anchorY, x, y),
                                     stopDistance = LOOT_VEHICLE_STOP_DISTANCE,
-                                })
+                                }, container, filterContext, worker, registry)
+                            end
+                            if #candidates >= LOOT_MAX_ITEM_CANDIDATES then
+                                break
                             end
                         end
                     end
                 end
             end
+
+            if #candidates >= LOOT_MAX_ITEM_CANDIDATES then
+                break
+            end
+        end
+
+        if #candidates >= LOOT_MAX_ITEM_CANDIDATES then
+            break
         end
     end
 
@@ -481,25 +1370,41 @@ local function buildLootCandidates(zombie, npcData, filterContext)
         return tostring(a.key or "") < tostring(b.key or "")
     end)
 
+    local roundedAnchorX = math.floor((tonumber(anchorX) or 0) * 10 + 0.5) / 10
+    local roundedAnchorY = math.floor((tonumber(anchorY) or 0) * 10 + 0.5) / 10
+    local roundedAnchorZ = math.floor((tonumber(anchorZ) or 0) * 10 + 0.5) / 10
+    local candidateSummary = "Built " .. tostring(#candidates) .. " candidates around anchor=" .. tostring(roundedAnchorX) .. "," .. tostring(roundedAnchorY) .. "," .. tostring(roundedAnchorZ)
+    lootDebugLogChanged(npcData, nil, "candidate_count", "Candidates", candidateSummary)
+    if #candidates > 0 then
+        local preview = {}
+        local limit = math.min(#candidates, 6)
+        for index = 1, limit do
+            local candidate = candidates[index]
+            preview[#preview + 1] = formatTargetDebug(candidate) .. " | " .. describeLootTarget(candidate, filterContext)
+        end
+        lootDebugLogChanged(npcData, nil, "candidate_preview", "Candidates", "Candidate preview: " .. table.concat(preview, " || "))
+    end
+
     return candidates
 end
 
 local function selectNextLootTarget(zombie, npcData, filterContext, worker, registry)
-    local candidates = buildLootCandidates(zombie, npcData, filterContext)
+    local candidates = buildLootCandidates(zombie, npcData, filterContext, worker, registry)
     for _, candidate in ipairs(candidates) do
-        local container = resolveLootTargetContainer(candidate)
-        if container then
-            local invItem, fitQty = findMatchingItemRecursive(container, filterContext, worker, registry)
-            if invItem and fitQty > 0 then
-                return candidate
-            end
-            markLootContainerVisited(npcData, candidate.key)
+        if canLootTarget(candidate, zombie, filterContext, worker, registry) then
+            ensureLootApproachPoint(candidate, zombie)
+            lootDebugLog(npcData, worker, "Target", "Selected target: " .. formatTargetDebug(candidate) .. " | " .. describeLootTarget(candidate, filterContext))
+            return candidate
         end
+        lootDebugLog(npcData, worker, "Target", "Rejected target: " .. formatTargetDebug(candidate) .. " | " .. describeLootTarget(candidate, filterContext))
+        markLootContainerVisited(npcData, candidate.key)
     end
+    lootDebugLog(npcData, worker, "Target", "No valid target found after filtering candidates")
     return nil
 end
 
 local function stopLooting(zombie, npcData, notice, sentiment)
+    lootDebugLog(npcData, nil, "Stop", "Looting stopped. notice=" .. tostring(notice) .. " sentiment=" .. tostring(sentiment))
     if npcData then
         npcData.state = "Stay"
         npcData.dcLootStatus = notice and "idle" or npcData.dcLootStatus
@@ -590,6 +1495,7 @@ local function transferLootToWorker(zombie, npcData, worker, invItem, movedQty, 
     local registry = apis and apis.registry or nil
     local helpers = DynamicTrading and DynamicTrading.ServerHelpers or nil
     if not registry or not invItem or movedQty <= 0 then
+        lootDebugLog(npcData, worker, "Transfer", "Aborted before transfer: registry=" .. tostring(registry ~= nil) .. " invItem=" .. tostring(invItem ~= nil) .. " movedQty=" .. tostring(movedQty))
         return false
     end
 
@@ -600,28 +1506,39 @@ local function transferLootToWorker(zombie, npcData, worker, invItem, movedQty, 
         qty = movedQty,
     }
     if not outputEntry or not outputEntry.fullType then
+        lootDebugLog(npcData, worker, "Transfer", "Failed to build output entry for item")
         return false
     end
 
     local availableQty = math.max(1, tonumber(outputEntry.qty) or getInventoryItemQuantity(invItem))
     local container = invItem.getContainer and invItem:getContainer() or nil
+    lootDebugLog(npcData, worker, "Transfer", "Attempting transfer: fullType=" .. tostring(invItem:getFullType()) .. " movedQty=" .. tostring(movedQty) .. " display=" .. tostring(invItem.getDisplayName and invItem:getDisplayName() or "nil") .. " container=" .. tostring(container and container.getType and container:getType() or "ground-or-nil"))
     outputEntry.qty = math.max(1, math.min(availableQty, math.floor(movedQty)))
+    lootDebugLog(npcData, worker, "Transfer", "Built output entry: fullType=" .. tostring(outputEntry.fullType) .. " availableQty=" .. tostring(availableQty) .. " requestedStoreQty=" .. tostring(outputEntry.qty) .. " hasContainer=" .. tostring(container ~= nil))
 
     local storedQty = registry.AddOutputEntry and registry.AddOutputEntry(worker, outputEntry) or 0
     if storedQty <= 0 then
+        lootDebugLog(npcData, worker, "Transfer", "Registry rejected item: fullType=" .. tostring(outputEntry.fullType) .. " storedQty=" .. tostring(storedQty))
         return false
     end
 
+    lootDebugLog(npcData, worker, "Transfer", "Registry stored item: fullType=" .. tostring(outputEntry.fullType) .. " storedQty=" .. tostring(storedQty))
+
     if helpers and helpers.RemoveItem then
+        lootDebugLog(npcData, worker, "Transfer", "Removing source item via ServerHelpers.RemoveItem")
         helpers.RemoveItem(invItem)
     elseif container and container.DoRemoveItem then
+        lootDebugLog(npcData, worker, "Transfer", "Removing source item via container:DoRemoveItem")
         container:DoRemoveItem(invItem)
+    else
+        lootDebugLog(npcData, worker, "Transfer", "No removal path found for source item")
     end
 
     if availableQty > storedQty and container then
         local customData = registry.Internal and registry.Internal.BuildOutputAddItemCustomData
             and registry.Internal.BuildOutputAddItemCustomData(outputEntry)
             or nil
+        lootDebugLog(npcData, worker, "Transfer", "Returning remainder to source container: remainder=" .. tostring(availableQty - storedQty))
         if helpers and helpers.AddItemWithCondition then
             helpers.AddItemWithCondition(container, outputEntry.fullType, availableQty - storedQty, customData)
         elseif container.AddItems then
@@ -737,62 +1654,86 @@ local function runLootCombat(zombie, npcData)
     return false
 end
 
-local function moveToLootTarget(zombie, npcData, target)
-    if not zombie or not npcData or not target then
-        return false
-    end
+local function getLootCommanderTarget(npcData, worker)
+    local usernames = {
+        tostring(npcData and npcData.dcCommanderUsername or ""),
+        tostring(worker and worker.ownerUsername or ""),
+    }
 
-    local pointTarget = buildPointTarget(target.x, target.y, target.z)
-    if not pointTarget then
-        return false
-    end
-
-    local moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
-        target = pointTarget,
-        speed = LOOT_MOVE_SPEED,
-        stopDistance = tonumber(target.stopDistance) or LOOT_STOP_DISTANCE,
-        allowObstacleInteract = true,
-        allowDamageRetreat = true,
-        blockCounterKey = "dcLootMoveBlockedTicks",
-        stuckTicks = LOOT_MOVE_STUCK_TICKS,
-        targetZ = target.z or 0,
-        faceX = target.x,
-        faceY = target.y,
-        closeDoorSafeRadius = 2.5,
-        anim = {
-            animSpeed = 1.0,
-            isRunning = false,
-            dtWalkType = "Walk",
-        },
-    })
-
-    if moved or moveState == "moving" or moveState == "unstuck" then
-        npcData.isMovingState = true
-        npcData.dcLootStatus = "moving"
-        return false
-    end
-
-    if moveState == "arrived" or moveState == "close_enough" then
-        npcData.isMovingState = false
-        return true
-    end
-
-    if (tonumber(npcData.dcLootMoveBlockedTicks) or 0) >= LOOT_MOVE_ABORT_TICKS then
-        markLootContainerVisited(npcData, target.key)
-        clearLootTarget(npcData, "searching")
-        if DTNPCProtect and DTNPCProtect.PushCompanionNotice then
-            DTNPCProtect.PushCompanionNotice(zombie, npcData, "Can't reach that container. Skipping it.", "warning")
+    for _, username in ipairs(usernames) do
+        if username ~= "" then
+            local player = findOnlinePlayer(username)
+            if player then
+                return player
+            end
         end
-        if DTNPCMobility and DTNPCMobility.Stop then
-            DTNPCMobility.Stop(zombie)
-        end
-        return false
     end
 
-    if DTNPCMobility and DTNPCMobility.Stop then
-        DTNPCMobility.Stop(zombie)
+    return nil
+end
+
+local function updateLootFollowEscort(zombie, npcData, commander)
+    if not zombie or not npcData or not commander then
+        return nil
     end
-    return false
+
+    local dist = getDistance(zombie:getX(), zombie:getY(), commander:getX(), commander:getY())
+    if DTNPCLogic and DTNPCLogic.Behaviors and DTNPCLogic.Behaviors["Follow"] then
+        DTNPCLogic.Behaviors["Follow"](zombie, npcData, commander, dist)
+    end
+    return dist
+end
+
+local function performNearbyAutoLoot(zombie, npcData, worker, filterContext, registry)
+    if not zombie or not npcData or not worker or not filterContext or not registry then
+        return 0
+    end
+
+    local originalRadius = tonumber(filterContext.config and filterContext.config.radius) or 2
+    local autoLootRadius = math.max(1, math.min(3, math.floor(originalRadius)))
+    filterContext.config.radius = autoLootRadius
+
+    npcData.dcLootAnchorX = zombie:getX()
+    npcData.dcLootAnchorY = zombie:getY()
+    npcData.dcLootAnchorZ = zombie:getZ()
+
+    local candidates = buildLootCandidates(zombie, npcData, filterContext, worker, registry)
+    local transferredCount = 0
+    local transferLimit = 2
+
+    if #candidates > 0 then
+        local preview = {}
+        local limit = math.min(#candidates, 4)
+        for index = 1, limit do
+            preview[#preview + 1] = describeLootTarget(candidates[index], filterContext)
+        end
+        lootDebugLogChanged(
+            npcData,
+            worker,
+            "autoloot_scan",
+            "AutoLoot",
+            "Nearby scan radius=" .. tostring(autoLootRadius) .. " candidates=" .. tostring(#candidates) .. " preview=[" .. table.concat(preview, " || ") .. "]"
+        )
+    end
+
+    for _, candidate in ipairs(candidates) do
+        if transferredCount >= transferLimit then
+            break
+        end
+
+        local invItem, fitQty = getLootableTargetItem(candidate, filterContext, worker, registry)
+        if invItem and fitQty > 0 then
+            lootDebugLog(npcData, worker, "AutoLoot", "Auto-grab item: " .. formatTargetDebug(candidate) .. " | " .. describeLootTarget(candidate, filterContext))
+            local transferred = transferLootToWorker(zombie, npcData, worker, invItem, fitQty, filterContext)
+            if transferred then
+                transferredCount = transferredCount + 1
+            end
+            markLootContainerVisited(npcData, candidate.key)
+        end
+    end
+
+    filterContext.config.radius = originalRadius
+    return transferredCount
 end
 
 DTNPCLogic.Behaviors["LootNearby"] = function(zombie, npcData)
@@ -805,97 +1746,59 @@ DTNPCLogic.Behaviors["LootNearby"] = function(zombie, npcData)
     end
 
     DTNPCProtect.EnsureDataDefaults(npcData)
-
-    if npcData.dcLootAnchorX == nil or npcData.dcLootAnchorY == nil then
-        npcData.dcLootAnchorX = npcData.anchorX or zombie:getX()
-        npcData.dcLootAnchorY = npcData.anchorY or zombie:getY()
-        npcData.dcLootAnchorZ = npcData.anchorZ or zombie:getZ()
-    end
-    npcData.anchorX = npcData.dcLootAnchorX
-    npcData.anchorY = npcData.dcLootAnchorY
-    npcData.anchorZ = npcData.dcLootAnchorZ
+    clearLootTarget(npcData)
 
     local worker, apis = getLinkedWorker(npcData)
     local registry = apis and apis.registry or nil
     if not worker or not registry then
+        lootDebugLog(npcData, worker, "Init", "Looting unavailable: worker=" .. tostring(worker ~= nil) .. " registry=" .. tostring(registry ~= nil))
         stopLooting(zombie, npcData, "Looting isn't available right now.", "warning")
         return
     end
 
     if registry.GetInventoryRemainingCapacity and registry.GetInventoryRemainingCapacity(worker) <= 0 then
+        lootDebugLog(npcData, worker, "Init", "Worker has no remaining capacity")
         stopLooting(zombie, npcData, "I'm full. Can't carry more loot.", "warning")
         return
     end
 
     local filterContext = buildLootFilterContext(npcData)
+    filterContext.apis = apis
+
+    local debugSignature = table.concat({
+        tostring(npcData.state or "nil"),
+        tostring(npcData.dcLootStatus or "nil"),
+        formatSourceConfigDebug(filterContext.config),
+        "hasFilter=" .. tostring(filterContext.hasAnyFilter),
+        "mode=follow_autograb",
+    }, " | ")
+    if npcData.dcLootDebugSignature ~= debugSignature then
+        npcData.dcLootDebugSignature = debugSignature
+        lootDebugLog(npcData, worker, "Init", debugSignature)
+    end
+
     if not filterContext.hasAnyFilter then
+        lootDebugLog(npcData, worker, "Init", "No filters configured; refusing to loot")
         stopLooting(zombie, npcData, "Set loot filters first.", "warning")
         return
     end
-
-    filterContext.apis = apis
 
     if runLootCombat(zombie, npcData) then
         return
     end
 
-    local target = type(npcData.dcLootTarget) == "table" and npcData.dcLootTarget or nil
-    if target and (target.key ~= npcData.dcLootTargetKey or not canLootTarget(target)) then
-        markLootContainerVisited(npcData, target.key)
-        clearLootTarget(npcData, "searching")
-        target = nil
-    end
+    local commander = getLootCommanderTarget(npcData, worker)
+    local followDist = commander and updateLootFollowEscort(zombie, npcData, commander) or nil
 
-    if not target then
-        target = selectNextLootTarget(zombie, npcData, filterContext, worker, registry)
-        if not target then
-            stopLooting(zombie, npcData, "Done looting nearby containers.", "positive")
-            return
-        end
-        npcData.dcLootTarget = target
-        npcData.dcLootTargetKey = target.key
-        npcData.dcLootStatus = "searching"
-    end
-
-    local arrived = moveToLootTarget(zombie, npcData, target)
-    if not arrived then
-        return
-    end
-
-    local container = resolveLootTargetContainer(target)
-    if not container then
-        markLootContainerVisited(npcData, target.key)
-        clearLootTarget(npcData, "searching")
-        return
-    end
-
-    local invItem, fitQty = findMatchingItemRecursive(container, filterContext, worker, registry)
-    if not invItem or fitQty <= 0 then
-        markLootContainerVisited(npcData, target.key)
-        clearLootTarget(npcData, "searching")
-        return
-    end
-
-    local transferred = transferLootToWorker(zombie, npcData, worker, invItem, fitQty, filterContext)
-    if not transferred then
-        if registry.GetInventoryRemainingCapacity and registry.GetInventoryRemainingCapacity(worker) <= 0 then
-            stopLooting(zombie, npcData, "I'm full. Can't carry more loot.", "warning")
-            return
-        end
-        clearLootTarget(npcData, "searching")
-        return
-    end
-
-    if registry.GetInventoryRemainingCapacity and registry.GetInventoryRemainingCapacity(worker) <= 0 then
-        stopLooting(zombie, npcData, "I'm full. Can't carry more loot.", "warning")
-        return
-    end
-
-    local nextItem = findMatchingItemRecursive(container, filterContext, worker, registry)
-    if not nextItem then
-        markLootContainerVisited(npcData, target.key)
-        clearLootTarget(npcData, "searching")
-    else
+    local movedCount = performNearbyAutoLoot(zombie, npcData, worker, filterContext, registry)
+    if movedCount > 0 then
         npcData.dcLootStatus = "looting"
+        return
+    end
+
+    if commander then
+        npcData.dcLootStatus = (followDist and followDist > 2.0) and "following" or "idle"
+    else
+        npcData.dcLootStatus = "idle"
     end
 end

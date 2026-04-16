@@ -151,3 +151,15 @@ function Menu.OnDebugBandageInfo(player, npc)
 
     player:Say("Bandage info printed.")
 end
+
+function Menu.OnOpenLootVisionInspector(player, npc)
+    if not player then return end
+
+    local npcData = npc and Menu.GetNPCData and Menu.GetNPCData(npc) or nil
+    require "DT/V2/NPC/Debug/DTNPC_LootVisionWindow"
+    if DTNPC_LootVisionWindow and DTNPC_LootVisionWindow.Open then
+        DTNPC_LootVisionWindow.Open(player:getPlayerNum(), npcData)
+    else
+        player:Say("Loot vision inspector unavailable.")
+    end
+end

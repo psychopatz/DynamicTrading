@@ -262,6 +262,18 @@ function DTNPCManager.OnTick()
                 if not savedData and DynamicTrading_Roster then
                     local rosterData = DynamicTrading_Roster.GetSoul(uuid)
                     if rosterData and rosterData.status ~= "Dead" then
+                        local isWorkerLinkedCompanion = tostring(rosterData.dcCompanionJob or "") == "TravelCompanion"
+                            and tostring(rosterData.linkedWorkerID or "") ~= ""
+                        if isWorkerLinkedCompanion and #players <= 0 then
+                            DynamicTrading.Log(
+                                "DTV2",
+                                "NPC",
+                                "Adopt",
+                                "Skipping active adoption for worker-linked travel companion with no active players: " .. tostring(rosterData.name or uuid)
+                            )
+                            zombie:removeFromWorld()
+                            zombie:removeFromSquare()
+                        else
                         DynamicTrading.Log("DTV2", "NPC", "Adopt", "Active Adoption: Found existing NPC in world, reclaiming: " .. (rosterData.name or uuid))
                         if DTNPCManager.ReclaimZombie then
                             DTNPCManager.ReclaimZombie(zombie, rosterData, "active-adoption")
@@ -269,6 +281,7 @@ function DTNPCManager.OnTick()
                             DTNPCManager.Register(zombie, rosterData)
                         end
                         savedData = DTNPCManager.Data[uuid] -- Refresh local reference
+                        end
                     end
                 end
 

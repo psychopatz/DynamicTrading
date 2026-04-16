@@ -216,6 +216,35 @@ function DTNPCLifecycle.HandleZombieDead(zombie)
                 .. " status=" .. tostring(npcData.status)
         )
 
+        local activePlayers = DTNPCManager.GetActivePlayers and DTNPCManager.GetActivePlayers() or {}
+        local isWorkerLinkedCompanion = tostring(npcData.dcCompanionJob or "") == "TravelCompanion"
+            and tostring(npcData.linkedWorkerID or "") ~= ""
+        local isSuspiciousRestartDeath = isWorkerLinkedCompanion
+            and #activePlayers <= 0
+            and removalContext == nil
+            and tostring(npcData.status or "") ~= "Dead"
+
+        if isSuspiciousRestartDeath then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Lifecycle",
+                "Ignoring suspicious restart death for worker-linked travel companion and clearing stale body only: "
+                    .. tostring(npcData.name or uuid)
+                    .. " uuid=" .. tostring(uuid)
+            )
+            DTNPCManager.RemoveData(
+                uuid,
+                nil,
+                nil,
+                nil,
+                DTNPCLifecycle.WithStaleBodyCleanupContext({
+                    reason = "restart_companion_stale_body",
+                }, zombie:getX(), zombie:getY(), zombie:getZ())
+            )
+            return
+        end
+
         if npcData.incapState == "Active" and DTNPCLifecycle.PreserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData) then
             return
         end

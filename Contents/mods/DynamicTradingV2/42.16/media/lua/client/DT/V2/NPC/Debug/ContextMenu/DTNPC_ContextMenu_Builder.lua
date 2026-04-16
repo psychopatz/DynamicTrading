@@ -213,6 +213,7 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             debugSub:addOption("TEST: Force Ambient Speech", player, Menu.OnForceAmbientDialogue, npc)
             debugSub:addOption("DEBUG: Print Bandage Info", player, Menu.OnDebugBandageInfo, npc)
             debugSub:addOption("DEBUG: Print Ambient Dialogue Info", player, Menu.OnDebugAmbientDialogue, npc)
+            debugSub:addOption("DEBUG: Open Loot Vision Inspector", player, Menu.OnOpenLootVisionInspector, npc)
             debugSub:addOption("DEBUG: Inspect Data", nil, function()
                 Menu.OnInspectNPCData(npc)
             end)
@@ -230,6 +231,7 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
 
     managerSubMenu:addOption("Summon All Followers", player, Menu.OnSummon)
     managerSubMenu:addOption("Spawn Random NPC", player, Menu.OnSpawnRandomNPC)
+    managerSubMenu:addOption("Open Loot Vision Inspector", player, Menu.OnOpenLootVisionInspector)
 
     if EventMarkerHandler then
         local markerOption = managerSubMenu:addOption("NPC Markers")
