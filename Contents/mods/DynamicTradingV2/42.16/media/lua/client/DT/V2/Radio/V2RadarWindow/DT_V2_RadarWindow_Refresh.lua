@@ -83,7 +83,41 @@ function DT_V2_RadarWindow:refresh()
 
     local tempList = {}
 
-    local function buildDistanceEntry(uuid, data)
+    local function normalizeText(value)
+        local text = tostring(value or "")
+        if text == "" then
+            return nil
+        end
+        return string.lower(text)
+    end
+
+    local function isOwnedTravelCompanion(npcData)
+        if not npcData then
+            return false
+        end
+
+        local isCompanion = tostring(npcData.dcCompanionJob or "") == "TravelCompanion"
+            or tostring(npcData.linkedWorkerID or "") ~= ""
+        if not isCompanion then
+            return false
+        end
+
+        local playerID = player.getOnlineID and player:getOnlineID() or nil
+        if playerID ~= nil and npcData.masterID ~= nil and tonumber(npcData.masterID) == tonumber(playerID) then
+            return true
+        end
+
+        local username = normalizeText(player.getUsername and player:getUsername() or nil)
+        if not username then
+            return false
+        end
+
+        return normalizeText(npcData.master) == username
+            or normalizeText(npcData.ownerUsername) == username
+            or normalizeText(npcData.dcCompanionOwner) == username
+    end
+
+    local function buildDistanceEntry(uuid, data, soul)
         local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(uuid)
         local dist = 99999
         local distText = "Distance: Unknown"
@@ -98,6 +132,7 @@ function DT_V2_RadarWindow:refresh()
         return {
             uuid = uuid,
             data = data,
+            soul = soul,
             tx = tx,
             ty = ty,
             tz = tz,
@@ -109,19 +144,34 @@ function DT_V2_RadarWindow:refresh()
 
     if self.currentCategory == "Stationary" then
         for uuid, data in pairs(DT_V2_RadarManager.FoundTraders) do
-            table.insert(tempList, buildDistanceEntry(uuid, data))
+            table.insert(tempList, buildDistanceEntry(uuid, data, DT_V2_RadarManager.GetSoul(uuid)))
         end
     elseif self.currentCategory == "Callable" then
-        local rosterData = DT_V2_RadarManager.GetRosterData()
-        local souls = rosterData and rosterData.Souls or nil
+        local seenUUIDs = {}
 
-        if souls then
-            for uuid, soul in pairs(souls) do
-                if soul and soul.isCallableCompanion == true then
+        local cache = DTNPCClient and DTNPCClient.NPCCache or nil
+        if cache then
+            for uuid, cached in pairs(cache) do
+                local npcData = cached and cached.npcData or nil
+                if uuid and npcData and isOwnedTravelCompanion(npcData) and not seenUUIDs[uuid] then
+                    seenUUIDs[uuid] = true
                     table.insert(tempList, buildDistanceEntry(uuid, {
-                        name = soul.name or "Companion",
-                        faction = soul.factionID or "Independent",
-                    }))
+                        name = npcData.name or "Companion",
+                        faction = npcData.factionID or npcData.faction or "Independent",
+                    }, npcData))
+                end
+            end
+        end
+
+        local metadataCache = DTNPCClient and DTNPCClient.MetadataCache or nil
+        if metadataCache then
+            for uuid, meta in pairs(metadataCache) do
+                if uuid and meta and meta.isCallableCompanion == true and not seenUUIDs[uuid] then
+                    seenUUIDs[uuid] = true
+                    table.insert(tempList, buildDistanceEntry(uuid, {
+                        name = meta.name or "Companion",
+                        faction = meta.factionID or meta.faction or "Independent",
+                    }, meta))
                 end
             end
         end
@@ -136,7 +186,7 @@ function DT_V2_RadarWindow:refresh()
     for _, entry in ipairs(tempList) do
         local uuid = entry.uuid
         local data = entry.data
-        local soul = DT_V2_RadarManager.GetSoul(uuid)
+        local soul = entry.soul or DT_V2_RadarManager.GetSoul(uuid) or (DTNPCClient and DTNPCClient.GetMetadata and DTNPCClient.GetMetadata(uuid) or nil)
         local archetypeID = soul and soul.archetypeID or "General"
         local gender = (soul and soul.isFemale) and "Female" or "Male"
         local identitySeed = soul and soul.identitySeed or 1
