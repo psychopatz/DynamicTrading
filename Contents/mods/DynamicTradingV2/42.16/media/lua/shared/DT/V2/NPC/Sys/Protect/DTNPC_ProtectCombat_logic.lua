@@ -129,6 +129,26 @@ local function getCombatRhythmBucket(npcData)
     return rhythm
 end
 
+local function recordLinkedWorkerCombatAttack(npcData, attackType)
+    if not npcData or not npcData.linkedWorkerID then
+        return false
+    end
+
+    local colony = type(DC_Colony) == "table" and DC_Colony or nil
+    local companion = colony and type(colony.Companion) == "table" and colony.Companion or nil
+    if not companion or type(companion.RecordCombatAttack) ~= "function" then
+        return false
+    end
+
+    local ok = pcall(function()
+        companion.RecordCombatAttack(npcData.linkedWorkerID, npcData, attackType, {
+            source = "DTNPCProtect",
+        })
+    end)
+
+    return ok == true
+end
+
 local function resetCombatRhythmBucket(rhythm)
     if not rhythm then
         return
@@ -278,6 +298,7 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
             DTNPC_ZombieAggro.ApplyCombatStimuli()
         end
     end
+    recordLinkedWorkerCombatAttack(npcData, attackType)
 
     local recovering, recoveryState = DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
     if recovering then
