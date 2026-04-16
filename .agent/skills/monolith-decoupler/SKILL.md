@@ -193,3 +193,10 @@ For `DC_ColonyCompanion.lua`:
   - `DC_ColonyCompanion_ApiCommands.lua`
 
 This keeps the original feature namespace intact while making each responsibility independently editable and scalable.
+Refactor the following file into modules for scalability. Follow these rules:
+1. Naming: Convert underscores in descriptors to PascalCase (e.g., Manager_Respawn → ManagerRespawn).
+2.Submodules: Use the format Prefix_ModuleName_logic (e.g.,DTNPC_ManagerRespawn_logic).
+3. Create the folder that houses these files, on the previous example its "ManagerRespawn",The entry file is also housed in here for better organization so remove the ".lua" and mod prefix such as "DTNPC", "DC" or "DT".
+4. PZ Loading: Keep [Filename].lua as the entry point. Name submodules [Filename]_[ModuleName].lua, if the previous file DT_Trading_ItemUtils.lua just combine them on the new version DT_TradingItemUtils_Price.lua since were refactoring a submodule already.
+5.Entry point should explicitly require the modules in the correct order to maintain the same hierarchical loading as the original monolithic file. Dont forget to scan for its dependencies too since we moved it inside the folder. Avoid Making a Shim if not explicitly requested by the user. We should update the direct callers to the new path instead.
+Analyze the file and show me the potential file hierarchy so that i can do some adjustments if i want to before we proceed.
