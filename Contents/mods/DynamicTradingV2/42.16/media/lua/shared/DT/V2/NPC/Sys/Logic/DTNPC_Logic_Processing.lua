@@ -17,6 +17,7 @@ local HIGH_SPEED_STATES = {
     ProtectMelee = true,
     ProtectAuto = true,
     Guard = true,
+    LootNearby = true,
     Departure = true,
     Incapacitated = true,
 }

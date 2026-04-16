@@ -520,6 +520,14 @@ local function getGuardAttackTypeMode(npcData)
     return nil
 end
 
+local function getLootCombatOrder(npcData)
+    local combatOrder = npcData and npcData.combatOrder or nil
+    if combatOrder == "ProtectAuto" or combatOrder == "ProtectRanged" or combatOrder == "ProtectMelee" then
+        return combatOrder
+    end
+    return "ProtectAuto"
+end
+
 local function getRangedAmmoSnapshot(npcData)
     local loadout = npcData and type(npcData.loadout) == "table" and npcData.loadout or nil
     local rangedWeapon = normalizeText(loadout and loadout.rangedWeapon or nil)
@@ -881,6 +889,28 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
         })
     end)
 
+    local isLooting = liveData and liveData.state == "LootNearby"
+    addCompanionContextAction(rootMenu, isLooting and "Stop Looting" or "Loot Nearby", function()
+        local latestData = getNPCData(npc) or liveData
+        if latestData and latestData.state == "LootNearby" then
+            updateCompanionState(player, npc, "Stay", {
+                state = "Stay",
+                returnStatus = "Resting",
+            })
+            return
+        end
+
+        updateCompanionState(player, npc, "LootNearby", {
+            state = "LootNearby",
+            x = npc:getX(),
+            y = npc:getY(),
+            z = npc:getZ(),
+            lootRadius = latestData and latestData.dcLootConfig and latestData.dcLootConfig.radius or nil,
+            combatOrder = getLootCombatOrder(latestData),
+            returnStatus = "Resting",
+        })
+    end)
+
     addPatchUpContextMenu(rootMenu, npc, player, worker)
 
     addAttackTypeContextMenu(rootMenu, npc, player)
@@ -1046,6 +1076,41 @@ local function generateRootOptions(ui, npc, player, worker)
                 innerUI:speak("I'll guard this position.")
             else
                 innerUI:speak("I couldn't take up guard duty right now.")
+            end
+            generateRootOptions(innerUI, npc, player, worker)
+        end
+    }
+
+    options[#options + 1] = {
+        text = (npcData and npcData.state == "LootNearby") and "Stop Looting" or "Loot Nearby",
+        message = "Sweep nearby containers and grab matching loot while staying combat-ready.",
+        onSelect = function(innerUI)
+            local liveData = getNPCData(npc)
+            if liveData and liveData.state == "LootNearby" then
+                if updateCompanionState(player, npc, "Stay", {
+                    state = "Stay",
+                    returnStatus = "Resting",
+                }) then
+                    innerUI:speak("Looting paused.")
+                else
+                    innerUI:speak("I couldn't stop looting right now.")
+                end
+                generateRootOptions(innerUI, npc, player, worker)
+                return
+            end
+
+            if updateCompanionState(player, npc, "LootNearby", {
+                state = "LootNearby",
+                x = npc:getX(),
+                y = npc:getY(),
+                z = npc:getZ(),
+                lootRadius = liveData and liveData.dcLootConfig and liveData.dcLootConfig.radius or nil,
+                combatOrder = getLootCombatOrder(liveData),
+                returnStatus = "Resting",
+            }) then
+                innerUI:speak("I'll sweep the nearby containers.")
+            else
+                innerUI:speak("I couldn't start looting right now.")
             end
             generateRootOptions(innerUI, npc, player, worker)
         end

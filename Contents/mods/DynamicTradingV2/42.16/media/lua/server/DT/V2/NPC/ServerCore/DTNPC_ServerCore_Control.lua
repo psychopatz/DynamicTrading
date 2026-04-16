@@ -665,6 +665,62 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
             npcData.guardReturningToPost = nil
             changed = true
         end
+    elseif state == "LootNearby" then
+        local lootX = tonumber(args.x) or zombie:getX()
+        local lootY = tonumber(args.y) or zombie:getY()
+        local lootZ = tonumber(args.z) or zombie:getZ()
+        local lootConfig = type(npcData.dcLootConfig) == "table" and npcData.dcLootConfig or {}
+        local requestedRadius = tonumber(args.lootRadius or args.radius or lootConfig.radius) or 10
+        local normalizedRadius = math.max(2, math.min(25, math.floor(requestedRadius)))
+
+        if npcData.anchorX ~= lootX then
+            npcData.anchorX = lootX
+            changed = true
+        end
+        if npcData.anchorY ~= lootY then
+            npcData.anchorY = lootY
+            changed = true
+        end
+        if npcData.anchorZ ~= lootZ then
+            npcData.anchorZ = lootZ
+            changed = true
+        end
+        if npcData.dcLootAnchorX ~= lootX then
+            npcData.dcLootAnchorX = lootX
+            changed = true
+        end
+        if npcData.dcLootAnchorY ~= lootY then
+            npcData.dcLootAnchorY = lootY
+            changed = true
+        end
+        if npcData.dcLootAnchorZ ~= lootZ then
+            npcData.dcLootAnchorZ = lootZ
+            changed = true
+        end
+        if npcData.dcLootRadius ~= normalizedRadius then
+            npcData.dcLootRadius = normalizedRadius
+            changed = true
+        end
+        if npcData.dcLootTarget ~= nil then
+            npcData.dcLootTarget = nil
+            changed = true
+        end
+        if npcData.dcLootVisited ~= nil then
+            npcData.dcLootVisited = nil
+            changed = true
+        end
+        if npcData.dcLootTargetKey ~= nil then
+            npcData.dcLootTargetKey = nil
+            changed = true
+        end
+        if npcData.dcLootStatus ~= "searching" then
+            npcData.dcLootStatus = "searching"
+            changed = true
+        end
+        if npcData.guardReturningToPost ~= nil then
+            npcData.guardReturningToPost = nil
+            changed = true
+        end
     elseif state == "Stay" and npcData.guardReturningToPost ~= nil then
         npcData.guardReturningToPost = nil
         changed = true

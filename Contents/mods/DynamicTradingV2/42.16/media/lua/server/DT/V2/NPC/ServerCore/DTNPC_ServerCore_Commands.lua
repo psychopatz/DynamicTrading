@@ -492,6 +492,27 @@ local function onClientCommand(module, command, player, args)
                             npcData.anchorY = npcData.stationaryPostY
                             npcData.anchorZ = npcData.stationaryPostZ
                             npcData.guardReturningToPost = nil
+                        elseif args.state == "LootNearby" then
+                            npcData.combatOrder = (args.combatOrder == "ProtectRanged" or args.combatOrder == "ProtectMelee" or args.combatOrder == "ProtectAuto")
+                                and args.combatOrder
+                                or npcData.combatOrder
+                                or "ProtectAuto"
+                            npcData.guardCombatOrder = nil
+                            npcData.guardAttackMode = nil
+                            npcData.master = nil
+                            npcData.masterID = nil
+                            npcData.anchorX = args.x or obj:getX()
+                            npcData.anchorY = args.y or obj:getY()
+                            npcData.anchorZ = args.z or obj:getZ()
+                            npcData.dcLootAnchorX = npcData.anchorX
+                            npcData.dcLootAnchorY = npcData.anchorY
+                            npcData.dcLootAnchorZ = npcData.anchorZ
+                            npcData.dcLootRadius = math.max(2, math.min(25, math.floor(tonumber(args.lootRadius or args.radius) or tonumber(npcData.dcLootRadius) or 10)))
+                            npcData.dcLootTarget = nil
+                            npcData.dcLootVisited = nil
+                            npcData.dcLootTargetKey = nil
+                            npcData.dcLootStatus = "searching"
+                            npcData.guardReturningToPost = nil
                         elseif args.state == "GoTo" then
                            table.insert(npcData.tasks, {x = args.targetX, y = args.targetY, z = args.targetZ or 0})
                            npcData.combatOrder = nil
