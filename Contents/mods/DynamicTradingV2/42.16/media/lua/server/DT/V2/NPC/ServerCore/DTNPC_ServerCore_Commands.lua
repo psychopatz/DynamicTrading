@@ -207,7 +207,34 @@ local function resolveFactionName(factionID)
     return factionID
 end
 
-local function buildMetadataEntry(uuid, soul)
+local function isOwnedTravelCompanionForPlayer(player, npcData)
+    if not player or not npcData then
+        return false
+    end
+
+    local isCompanion = tostring(npcData.dcCompanionJob or "") == "TravelCompanion"
+        or tostring(npcData.linkedWorkerID or "") ~= ""
+    if not isCompanion then
+        return false
+    end
+
+    local playerID = player.getOnlineID and player:getOnlineID() or nil
+    if playerID ~= nil and npcData.masterID ~= nil and tonumber(npcData.masterID) == tonumber(playerID) then
+        return true
+    end
+
+    local username = player.getUsername and player:getUsername() or nil
+    if not username or username == "" then
+        return false
+    end
+
+    return (npcData.master and tostring(npcData.master) == username)
+        or (npcData.ownerUsername and tostring(npcData.ownerUsername) == username)
+        or (npcData.dcCompanionOwner and tostring(npcData.dcCompanionOwner) == username)
+end
+
+local function buildMetadataEntry(uuid, soul, npcData, player)
+    local isCallableCompanion = isOwnedTravelCompanionForPlayer(player, npcData)
     return {
         uuid = uuid,
         name = soul.name,
@@ -222,6 +249,8 @@ local function buildMetadataEntry(uuid, soul)
         lastX = soul.lastX or (soul.homeCoords and soul.homeCoords.x),
         lastY = soul.lastY or (soul.homeCoords and soul.homeCoords.y),
         lastZ = soul.lastZ or (soul.homeCoords and soul.homeCoords.z) or 0,
+        radarCategory = isCallableCompanion and "Callable" or nil,
+        isCallableCompanion = isCallableCompanion,
     }
 end
 
@@ -642,10 +671,11 @@ local function onClientCommand(module, command, player, args)
                                 npcData = npcData,
                             }
                         else
-                            metadata[uuid] = buildMetadataEntry(uuid, soul)
+                            metadata[uuid] = buildMetadataEntry(uuid, soul, npcData, player)
                         end
                     elseif dist <= metadataRadius then
-                        metadata[uuid] = buildMetadataEntry(uuid, soul)
+                        local npcData = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] or nil
+                        metadata[uuid] = buildMetadataEntry(uuid, soul, npcData, player)
                     end
                 end
             end

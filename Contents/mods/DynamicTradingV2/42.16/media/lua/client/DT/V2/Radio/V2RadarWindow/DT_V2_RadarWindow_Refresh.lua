@@ -83,29 +83,47 @@ function DT_V2_RadarWindow:refresh()
 
     local tempList = {}
 
+    local function buildDistanceEntry(uuid, data)
+        local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(uuid)
+        local dist = 99999
+        local distText = "Distance: Unknown"
+
+        if tx and ty then
+            local dx = tx - player:getX()
+            local dy = ty - player:getY()
+            dist = math.sqrt(dx * dx + dy * dy)
+            distText = string.format("Distance: %.0fm", dist)
+        end
+
+        return {
+            uuid = uuid,
+            data = data,
+            tx = tx,
+            ty = ty,
+            tz = tz,
+            isLive = isLive,
+            dist = dist,
+            distText = distText,
+        }
+    end
+
     if self.currentCategory == "Stationary" then
         for uuid, data in pairs(DT_V2_RadarManager.FoundTraders) do
-            local tx, ty, tz, isLive = DT_V2_RadarManager.GetTraderCoords(uuid)
-            local dist = 99999
-            local distText = "Distance: Unknown"
+            table.insert(tempList, buildDistanceEntry(uuid, data))
+        end
+    elseif self.currentCategory == "Callable" then
+        local rosterData = DT_V2_RadarManager.GetRosterData()
+        local souls = rosterData and rosterData.Souls or nil
 
-            if tx and ty then
-                local dx = tx - player:getX()
-                local dy = ty - player:getY()
-                dist = math.sqrt(dx * dx + dy * dy)
-                distText = string.format("Distance: %.0fm", dist)
+        if souls then
+            for uuid, soul in pairs(souls) do
+                if soul and soul.isCallableCompanion == true then
+                    table.insert(tempList, buildDistanceEntry(uuid, {
+                        name = soul.name or "Companion",
+                        faction = soul.factionID or "Independent",
+                    }))
+                end
             end
-
-            table.insert(tempList, {
-                uuid = uuid,
-                data = data,
-                tx = tx,
-                ty = ty,
-                tz = tz,
-                isLive = isLive,
-                dist = dist,
-                distText = distText,
-            })
         end
     end
 
@@ -127,7 +145,9 @@ function DT_V2_RadarWindow:refresh()
         local factionName = factionData and factionData.name or data.faction or "Independent"
 
         local expireText = ""
-        if soul and soul.returnTime and soul.returnTime > 0 then
+        if soul and soul.isCallableCompanion == true then
+            expireText = soul.state and ("State: " .. tostring(soul.state)) or "Companion"
+        elseif soul and soul.returnTime and soul.returnTime > 0 then
             local hours = math.ceil(soul.returnTime - getGameTime():getWorldAgeHours())
             if hours < 0 then
                 hours = 0
