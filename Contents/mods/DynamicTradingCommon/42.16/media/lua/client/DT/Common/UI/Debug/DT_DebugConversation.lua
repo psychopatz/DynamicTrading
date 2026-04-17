@@ -6,9 +6,26 @@
 if not isDebugEnabled() then return end
 
 require "DT/Common/UI/ConversationUI/ConversationUI"
+require "DT/Common/Contacts/DT_TraderContacts"
+require "DT/Common/UI/Contacts/DT_ContactsWindow"
+require "DT/Common/UI/Contacts/DT_ContactsConversation"
 
 local DebugDialogue = {}
 local NPCGenerator = {}
+
+local function grantRandomContact(debugOpenConversation)
+    local randomNPC = NPCGenerator.Create()
+    local _, saved = DT_TraderContacts.UnlockContact(randomNPC, {
+        ignoreReputation = true,
+        debugGranted = true,
+    })
+
+    if debugOpenConversation and saved then
+        DT_ContactsConversation.Open(saved)
+    else
+        DT_ContactsWindow.Open({ selectTraderID = saved and saved.id or nil })
+    end
+end
 
 -- =============================================================================
 -- 1. NPC RANDOMIZER
@@ -216,6 +233,18 @@ local function OnDebugContext(player, context, worldObjects, test)
         local randomNPC = NPCGenerator.Create()
         local ui = DT_ConversationUI.Open(randomNPC, nil, nil, false)
         DebugDialogue.Node_Intro(ui)
+    end)
+
+    subMenu:addOption("Grant Random Contact", nil, function()
+        grantRandomContact(false)
+    end)
+
+    subMenu:addOption("Open Random Contact Frequency", nil, function()
+        grantRandomContact(true)
+    end)
+
+    subMenu:addOption("Open Contacts Window", nil, function()
+        DT_ContactsWindow.Open()
     end)
 end
 

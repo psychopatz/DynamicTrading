@@ -6,6 +6,7 @@
 
 require "DT/Common/DT_DialogueManager"
 require "DT/Common/Reputation/DT_Reputation"
+require "DT/Common/Contacts/DT_TraderContacts"
 pcall(require, "DC/UI/Colony/System/DC_System")
 
 DT_ConversationChatMenus = DT_ConversationChatMenus or {}
@@ -13,6 +14,61 @@ DT_ConversationChatMenus = DT_ConversationChatMenus or {}
 local DAILY_CHAT_REP_CHANCE = 25
 local DAILY_CHAT_REP_GAIN = 1
 local DAILY_CHAT_MODDATA_KEY = "DT_DailyChatFriendship"
+
+local function getContactUnlockLabel(ui)
+    local target = ui and ui.target or nil
+    local requiredRep = DT_TraderContacts.GetRequiredReputation()
+    if not target then
+        return "Request contact number"
+    end
+
+    if DT_TraderContacts.HasContact(target) then
+        return "Ask about your contact line"
+    end
+
+    local rep = DT_TraderContacts.GetEffectiveReputation(target)
+    if rep >= requiredRep then
+        return "Request contact number"
+    end
+
+    return string.format("Request contact number (%d/%d Rep)", rep, requiredRep)
+end
+
+local function handleContactUnlock(ui, ignoreReputation)
+    local target = ui and ui.target or nil
+    if not target then
+        return "I don't know who I'm talking to anymore."
+    end
+
+    local requiredRep = DT_TraderContacts.GetRequiredReputation()
+    local currentRep = DT_TraderContacts.GetEffectiveReputation(target)
+    local alreadyUnlocked = DT_TraderContacts.HasContact(target)
+    local ok, saved, reason = DT_TraderContacts.UnlockContact(target, {
+        ignoreReputation = ignoreReputation == true,
+        debugGranted = ignoreReputation == true,
+    })
+
+    if ok and alreadyUnlocked then
+        return "You already have my number. Keep the radio close and use the Contacts list when you need me."
+    end
+
+    if ok and saved then
+        return string.format(
+            "Fine. You earned it. Save this frequency and reach me through Contacts when you need to talk, %s.",
+            tostring(saved.name or target.name or "survivor")
+        )
+    end
+
+    if reason == "rep" then
+        return string.format(
+            "Not yet. Build a bit more trust first. I need at least %d reputation before I hand over my frequency. You're at %d.",
+            requiredRep,
+            currentRep
+        )
+    end
+
+    return "The line's bad right now. Ask me again in a bit."
+end
 
 local function getColonySystem()
     local mods = getActivatedMods and getActivatedMods() or nil
@@ -295,8 +351,32 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
                 conversationUI:speak(buildWantsText(conversationUI))
                 conversationUI:updateOptions(DT_ConversationChatMenus.BuildTraderChatOptions(conversationUI, context))
             end
+        },
+        {
+            text = getContactUnlockLabel(ui),
+            message = "Can I get your contact number?",
+            onSelect = function(conversationUI)
+                conversationUI:speak(handleContactUnlock(conversationUI, false))
+                conversationUI:updateOptions(DT_ConversationChatMenus.BuildTraderChatOptions(conversationUI, context))
+            end
         }
     }
+
+    if isDebugEnabled and isDebugEnabled() then
+        options[#options + 1] = {
+            text = "[DEBUG] Force contact unlock",
+            message = "Let's skip the trust exercise and test the contact pipeline.",
+            onSelect = function(conversationUI)
+                conversationUI:speak(handleContactUnlock(conversationUI, true))
+                conversationUI:updateOptions(DT_ConversationChatMenus.BuildTraderChatOptions(conversationUI, context))
+            end,
+            style = {
+                bgColor = { 0.25, 0.18, 0.12, 1 },
+                borderColor = { 0.7, 0.5, 0.2, 1 },
+                textColor = { 1, 0.88, 0.65, 1 }
+            }
+        }
+    end
 
     options._dtMenu = "chat"
 

@@ -19,6 +19,12 @@ function DT_SignalPanel:createChildren()
     self.btnInfo.backgroundColor = { r = 0.2, g = 0.2, b = 0.4, a = 1.0 }
     self:addChild(self.btnInfo)
 
+    self.btnContacts = ISButton:new(0, 0, 100, 25, "CONTACTS", self, self.onContactsClick)
+    self.btnContacts:initialise()
+    self.btnContacts.borderColor = { r = 1, g = 1, b = 1, a = 0.5 }
+    self.btnContacts.backgroundColor = { r = 0.12, g = 0.24, b = 0.45, a = 1.0 }
+    self:addChild(self.btnContacts)
+
     local btnSize = 18
     self.btnOptions = ISButton:new(0, 0, btnSize, btnSize, "", self, self.onOptionsClick)
     self.btnOptions:initialise()

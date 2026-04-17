@@ -3,6 +3,7 @@
 -- =============================================================================
 require "DT/Common/UI/ConversationUI/ConversationUI"
 require "DT/Common/UI/ConversationUI/DT_ConversationChatMenus"
+require "DT/Common/UI/Contacts/DT_ContactsWindow"
 require "DT/Common/Reputation/DT_Reputation"
 require "DT/V2/NPC/DTNPC_TradingHandler"
 require "DT/V2/NPC/DTNPC_InteractionPose"
@@ -25,6 +26,50 @@ local function applyInteractionPose(npc, player)
             DTNPCLogic and DTNPCLogic.Stationary and DTNPCLogic.Stationary.INTERACTION_IDLE_STATE or "3",
             player
         )
+    end
+end
+
+local function requestCalledTraderGuard(player, npc, npcData)
+    if not player or not npc or type(npcData) ~= "table" or not npcData.uuid then
+        return
+    end
+
+    if npcData.contactVisitActive ~= true then
+        return
+    end
+
+    local requester = tostring(npcData.contactVisitRequestedBy or "")
+    local username = player.getUsername and player:getUsername() or nil
+    if requester ~= "" and username and requester ~= username then
+        return
+    end
+
+    if npcData.state ~= "Guard" then
+        sendClientCommand(player, "DTNPC", "Order", {
+            uuid = npcData.uuid,
+            state = "Guard",
+            x = math.floor(npc:getX()),
+            y = math.floor(npc:getY()),
+            z = math.floor(npc:getZ()),
+            guardCombatOrder = (npcData.guardCombatOrder or npcData.guardAttackMode or "GuardAuto"),
+        })
+    end
+
+    npcData.state = "Guard"
+    npcData.contactVisitMode = "Guard"
+    npcData.master = nil
+    npcData.masterID = nil
+    npcData.stationaryPostX = npc:getX()
+    npcData.stationaryPostY = npc:getY()
+    npcData.stationaryPostZ = npc:getZ()
+    npcData.stationaryPostState = "Guard"
+    npcData.anchorX = npc:getX()
+    npcData.anchorY = npc:getY()
+    npcData.anchorZ = npc:getZ()
+    npcData.guardReturningToPost = nil
+
+    if DTNPC and DTNPC.AttachData then
+        DTNPC.AttachData(npc, npcData)
     end
 end
 
@@ -161,6 +206,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             if isTrading then
                 -- SUCCESS: Open Trade Window
                 DynamicTrading.Log("DTV2", "Dialog", "Trade", "Trade option selected")
+                requestCalledTraderGuard(player, npc, npcData)
                 
                 local traderID = (npcData and npcData.uuid) or npc:getPersistentOutfitID() or npc:getID()
                 local archetype = npcData and npcData.archetypeID or "General"
@@ -218,6 +264,16 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
                 -- Regenerate options so player can choose something else
                 DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             end
+        end
+    })
+
+    table.insert(options, {
+        text = "Contacts",
+        message = "Let me check my contacts.",
+        onSelect = function(conversationUI)
+            local selectTraderID = conversationUI and conversationUI.target and (conversationUI.target.uuid or conversationUI.target.traderID or conversationUI.target.id) or nil
+            DT_ContactsWindow.Open({ selectTraderID = selectTraderID })
+            DTNPC_TraderDialogue_Hub.GenerateOptions(conversationUI, npc, player)
         end
     })
 

@@ -38,7 +38,8 @@ function DT_SignalPanel:onResize()
     local bottomSpace = 5
     local spacing = 6
     local availableH = h - headerSpace - bottomSpace
-    local btnH = math.floor((availableH - spacing) / 2)
+    local buttonCount = 3
+    local btnH = math.floor((availableH - (spacing * (buttonCount - 1))) / buttonCount)
 
     if btnH < 22 then
         btnH = 22
@@ -52,14 +53,14 @@ function DT_SignalPanel:onResize()
         font = UIFont.Medium
     end
 
-    local totalBlockH = (btnH * 2) + spacing
+    local totalBlockH = (btnH * buttonCount) + (spacing * (buttonCount - 1))
     local safeZoneCenterY = headerSpace + (availableH / 2)
     local currentY = safeZoneCenterY - (totalBlockH / 2)
     if currentY < headerSpace then
         currentY = headerSpace
     end
 
-    local btns = { self.btnScan, self.btnInfo }
+    local btns = { self.btnScan, self.btnContacts, self.btnInfo }
     for _, btn in ipairs(btns) do
         if btn then
             btn:setX(startX)

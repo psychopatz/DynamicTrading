@@ -41,6 +41,10 @@ function DT_SignalPanel:onInfoClick()
     end
 end
 
+function DT_SignalPanel:onContactsClick()
+    DT_ContactsWindow.Open()
+end
+
 function DT_SignalPanel:onOptionsClick()
     if DT_OptionsManager then
         DT_OptionsManager.ToggleWindow()
