@@ -17,8 +17,9 @@ local function layoutButtons(panel)
     local panelWidth = panel:getWidth()
     local dynamicButtonWidth = math.floor((panelWidth - BUTTON_SPACING) / 2)
     local startX = 0
+    local panelHeight = panel:getHeight()
     local totalHeight = (BUTTON_HEIGHT * 2) + BUTTON_ROW_SPACING
-    local startY = math.max(0, math.floor((panel.height - totalHeight) / 2))
+    local startY = math.max(0, math.floor((panelHeight - totalHeight) / 2))
 
     local function place(button, col, row)
         if not button then
@@ -179,5 +180,6 @@ function DT_RadioScannerActionPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
     o.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    o.borderColor = { r = 0, g = 0, b = 0, a = 0 }
     return o
 end

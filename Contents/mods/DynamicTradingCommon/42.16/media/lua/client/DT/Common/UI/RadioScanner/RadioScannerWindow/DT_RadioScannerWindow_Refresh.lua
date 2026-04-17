@@ -184,7 +184,49 @@ function DT_RadioScannerWindow:refresh()
     end
 
     local function shouldShowCallableContact(contact)
-        return contact and tostring(contact.status or "") ~= "Dead"
+        if not contact or tostring(contact.status or "") == "Dead" then
+            return false
+        end
+
+        local refreshed = DT_TraderContacts and DT_TraderContacts.RefreshContactData and DT_TraderContacts.RefreshContactData(contact) or contact
+        if not refreshed or refreshed.contactVisitActive ~= true then
+            return false
+        end
+
+        local playerID = player.getOnlineID and player:getOnlineID() or nil
+        local requestedByID = refreshed.contactVisitRequestedByID
+        if playerID ~= nil and requestedByID ~= nil and tonumber(requestedByID) == tonumber(playerID) then
+            return true
+        end
+
+        local username = normalizeText(player.getUsername and player:getUsername() or nil)
+        local isRequestedByPlayer = username and normalizeText(refreshed.contactVisitRequestedBy) == username
+        if not isRequestedByPlayer then
+            return false
+        end
+
+        local status = tostring(refreshed.status or "")
+        local state = tostring(refreshed.state or "")
+        local returnStatus = tostring(refreshed.returnStatus or "")
+        local visitMode = tostring(refreshed.contactVisitMode or "")
+
+        if status == "Away" and returnStatus == "Trading" then
+            return true
+        end
+
+        if status == "Trading" then
+            return true
+        end
+
+        if state == "Departure" or state == "Trading" or state == "Follow" then
+            return true
+        end
+
+        if visitMode == "Departure" or visitMode == "Trading" or visitMode == "Follow" then
+            return true
+        end
+
+        return false
     end
 
     if self.currentCategory == "Stationary" then
