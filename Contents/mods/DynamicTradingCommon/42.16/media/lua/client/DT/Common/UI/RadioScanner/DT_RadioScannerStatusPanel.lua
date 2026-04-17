@@ -21,6 +21,15 @@ function DT_RadioScannerStatusPanel:setStatus(status)
     self.status = status or {}
 end
 
+function DT_RadioScannerStatusPanel:prerender()
+    ISPanel.prerender(self)
+
+    if self.parent and self.parent.device and DT_RadioScannerManager and DT_RadioScannerManager.GetScanStatus then
+        local player = getSpecificPlayer(0)
+        self.status = DT_RadioScannerManager.GetScanStatus(self.parent.device, player)
+    end
+end
+
 function DT_RadioScannerStatusPanel:render()
     ISPanel.render(self)
 
@@ -29,11 +38,11 @@ function DT_RadioScannerStatusPanel:render()
     local headerY = 4
     local barX = padding
     local barY = 20
-    local barW = clamp(math.floor(self.width * 0.42), 180, 320)
-    local barH = 14
+    local barW = math.max(120, self.width - (padding * 2))
+    local barH = 16
     local progress = clamp(tonumber(status.cooldownProgress) or 0, 0, 1)
     local canScan = status.canScan == true
-    local remainingMinutes = math.max(0, tonumber(status.remainingMinutes) or 0)
+    local remainingMs = math.max(0, tonumber(status.remainingMs) or 0)
     local cooldownMinutes = math.max(1, tonumber(status.cooldownMinutes) or 1)
     local foundCount = math.max(0, tonumber(status.foundCount) or 0)
     local capacity = math.max(1, tonumber(status.capacity) or 1)
@@ -54,13 +63,19 @@ function DT_RadioScannerStatusPanel:render()
         self:drawRect(barX + 1, barY + 1, fillW, barH - 2, 0.95, fillColor.r, fillColor.g, fillColor.b)
     end
 
-    local cooldownText = canScan and "READY" or (tostring(math.max(1, math.ceil(remainingMinutes))) .. "m / " .. tostring(cooldownMinutes) .. "m")
-    self:drawTextRight(cooldownText, barX + barW + 86, barY - 1, 1, 1, 1, 1, UIFont.Small)
+    local cooldownText = "READY"
+    if not canScan then
+        local totalSeconds = math.max(0, math.ceil(remainingMs / 1000))
+        local minutes = math.floor(totalSeconds / 60)
+        local seconds = totalSeconds % 60
+        cooldownText = string.format("%02d:%02d / %dm", minutes, seconds, cooldownMinutes)
+    end
+    self:drawTextRight(cooldownText, self.width - padding, headerY, 1, 1, 1, 1, UIFont.Small)
 
-    local detailsX = math.max(barX + barW + 24, math.floor(self.width * 0.54))
-    self:drawText("Channels: " .. tostring(foundCount) .. "/" .. tostring(capacity), detailsX, 5, 0.88, 0.88, 0.88, 1, UIFont.Small)
-    self:drawText("Locked: " .. tostring(lockedCount) .. "   Free: " .. tostring(availableSlots), detailsX, 20, 0.72, 0.86, 1.0, 1, UIFont.Small)
-    self:drawText(deviceDesc, detailsX, 35, 0.65, 0.65, 0.65, 1, UIFont.Small)
+    local detailY = barY + barH + 10
+    self:drawText("Channels: " .. tostring(foundCount) .. "/" .. tostring(capacity), padding, detailY, 0.88, 0.88, 0.88, 1, UIFont.Small)
+    self:drawText(string.format("Locked: %d   Free: %d", lockedCount, availableSlots), math.floor(self.width * 0.37), detailY, 0.72, 0.86, 1.0, 1, UIFont.Small)
+    self:drawTextRight(deviceDesc, self.width - padding, detailY, 0.65, 0.65, 0.65, 1, UIFont.Small)
 end
 
 function DT_RadioScannerStatusPanel:new(x, y, width, height)

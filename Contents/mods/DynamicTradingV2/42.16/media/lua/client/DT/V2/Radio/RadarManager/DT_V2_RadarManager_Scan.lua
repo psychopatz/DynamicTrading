@@ -17,6 +17,36 @@ local function getRandomRadioScanText(kind)
     return DynamicTrading.FlavorText.GetRandom("RadioScan", kind)
 end
 
+local function getLocalIdentity(player)
+    local username = player and player.getUsername and player:getUsername() or nil
+    local onlineID = player and player.getOnlineID and player:getOnlineID() or nil
+    return username, onlineID
+end
+
+local function isPriorityContactVisitForPlayer(soul, player)
+    if not soul or soul.contactVisitActive ~= true then
+        return false
+    end
+
+    local username, onlineID = getLocalIdentity(player)
+    if onlineID ~= nil and soul.contactVisitRequestedByID ~= nil and tonumber(soul.contactVisitRequestedByID) == tonumber(onlineID) then
+        return true
+    end
+
+    if username and tostring(soul.contactVisitRequestedBy or "") == tostring(username) then
+        return true
+    end
+
+    return false
+end
+
+local function chooseRandomEntry(list)
+    if not list or #list == 0 then
+        return nil
+    end
+    return list[ZombRand(#list) + 1]
+end
+
 function RadarManager.Scan(player, device)
     if not player or not device then return end
 
@@ -99,72 +129,126 @@ function RadarManager.Scan(player, device)
         return false
     end
 
-    -- Scan Loop
-    for uuid, soul in pairs(rosterData.Souls) do
-        if discoveredCount >= scanLimit then
-            break
-        end
+    local eligibleSignals = {}
+    local prioritySignals = {}
 
+    for uuid, soul in pairs(rosterData.Souls) do
         local isExpired = soul.returnTime and soul.returnTime <= currentHours
-        if soul.status == "Trading" and not isExpired and soul.lastX and soul.lastY then
+        local isActiveTrading = soul.status == "Trading" and not isExpired and soul.state ~= "Departure"
+        if isActiveTrading and soul.lastX and soul.lastY and not RadarManager.FoundTraders[uuid] then
             local dist = IsoUtils.DistanceTo(px, py, soul.lastX, soul.lastY)
             if dist <= effectiveRange then
-                local factionChanceMult = 1.0
-                if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
-                    local faction = RadarManager.GetFaction(soul.factionID)
-                    factionChanceMult = DynamicTrading.Events.GetFactionSystemModifier(faction, "scanChance")
-                end
-
-                local elecLevel = player:getPerkLevel(Perks.Electricity)
-                local powerBonus = profile and tonumber(profile.power) or 1.0
-                local chance = (20 + (elecLevel * 5)) * globalChanceMult * factionChanceMult * powerBonus
-
-                if ZombRand(100) < chance and not RadarManager.FoundTraders[uuid] then
-                    while RadarManager.GetCount() >= capacity do
-                        local recycleName = "Unknown"
-                        local recycleCandidate = RadarManager.GetOldestUnlockedSignal and RadarManager.GetOldestUnlockedSignal() or nil
-                        if recycleCandidate and recycleCandidate.entry and recycleCandidate.entry.name then
-                            recycleName = recycleCandidate.entry.name
-                        end
-                        local releasedUUID, releasedEntry = RadarManager.ReleaseOldestUnlockedSignal(
-                            "Signal Released: " .. tostring(recycleName) .. " (channel reallocated)",
-                            "event"
-                        )
-                        if not releasedUUID then
-                            break
-                        end
-                    end
-
-                    if RadarManager.GetCount() >= capacity then
-                        break
-                    end
-
-                    local name = soul.name or DT_RadioScanResponse("UnknownTrader")
-                    local factionName = soul.factionID or "Independent"
-                    local faction = RadarManager.GetFaction and RadarManager.GetFaction(soul.factionID) or nil
-                    if faction and faction.name then
-                        factionName = faction.name
-                    end
-
-                    RadarManager.FoundTraders[uuid] = {
-                        name = name,
-                        faction = soul.factionID or "Independent",
-                        discoveredAt = currentHours,
-                        locked = false,
-                    }
-                    foundNew = true
-                    discoveredCount = discoveredCount + 1
-                    firstName = firstName or name
-                    RadarManager.CacheMetadata(uuid, soul)
-                    if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddRadioLog then
-                        DynamicTrading.NetworkLogs.AddRadioLog(
-                            "Signal Acquired by " .. tostring(username) .. ": " .. tostring(name) .. " (" .. tostring(factionName) .. ")",
-                            "good"
-                        )
-                    end
-                    DynamicTrading.Log("DTV2", "Radio", "Scan", "Discovered: " .. name .. " (" .. uuid .. ")")
+                local entry = {
+                    uuid = uuid,
+                    soul = soul,
+                    dist = dist,
+                }
+                eligibleSignals[#eligibleSignals + 1] = entry
+                if isPriorityContactVisitForPlayer(soul, player) then
+                    prioritySignals[#prioritySignals + 1] = entry
                 end
             end
+        end
+    end
+
+    if #eligibleSignals == 0 then
+        local failSay = getRandomRadioScanText("FailLines")
+        local failHalo = getRandomRadioScanText("FailStates")
+        local staticMsg = DT_RadioScanResponse("RadarNothingButStatic")
+
+        player:Say(failSay ~= "" and failSay or staticMsg)
+        if HaloTextHelper then
+            HaloTextHelper.addTextWithArrow(player, failHalo ~= "" and failHalo or staticMsg, true, HaloTextHelper.getColorRed())
+        end
+
+        if DT_RadioScannerWindow and DT_RadioScannerWindow.instance then
+            DT_RadioScannerWindow.instance:refresh()
+        end
+        return false
+    end
+
+    table.sort(prioritySignals, function(a, b)
+        local startedA = tonumber(a.soul and a.soul.contactVisitStartedAt) or math.huge
+        local startedB = tonumber(b.soul and b.soul.contactVisitStartedAt) or math.huge
+        if startedA == startedB then
+            return tostring(a.uuid) < tostring(b.uuid)
+        end
+        return startedA < startedB
+    end)
+
+    local targetEntry = prioritySignals[1] or chooseRandomEntry(eligibleSignals)
+    local targetSoul = targetEntry and targetEntry.soul or nil
+    local usedPriorityContact = prioritySignals[1] ~= nil and targetEntry == prioritySignals[1]
+    local elecLevel = player:getPerkLevel(Perks.Electricity)
+    local baseChance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanBaseChance) or 30
+    local powerBonus = profile and tonumber(profile.power) or 1.0
+    local skillBonus = 1.0 + (elecLevel * 0.05)
+    local progressRatio = capacity > 0 and (currentCount / capacity) or 1
+    local penaltyFactor = 1.0 + (progressRatio * 4.0)
+    local factionChanceMult = 1.0
+
+    if targetSoul and DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
+        local targetFaction = RadarManager.GetFaction(targetSoul.factionID)
+        factionChanceMult = DynamicTrading.Events.GetFactionSystemModifier(targetFaction, "scanChance")
+    end
+
+    local finalChance = (baseChance * powerBonus * skillBonus * globalChanceMult * factionChanceMult) / penaltyFactor
+    if finalChance < 1 then
+        finalChance = 1
+    end
+
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Base Chance: " .. tostring(baseChance))
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Power Bonus: " .. string.format("%.2f", powerBonus))
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Skill Bonus: " .. string.format("%.2f", skillBonus))
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Capacity Ratio: " .. tostring(currentCount) .. "/" .. tostring(capacity))
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Penalty Factor: " .. string.format("%.2f", penaltyFactor))
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Candidate Pool: " .. tostring(#eligibleSignals) .. " | Priority Pool: " .. tostring(#prioritySignals))
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Final Chance: " .. string.format("%.2f", finalChance) .. "%")
+
+    if targetEntry and ZombRand(100) < finalChance then
+        while RadarManager.GetCount() >= capacity do
+            local recycleName = "Unknown"
+            local recycleCandidate = RadarManager.GetOldestUnlockedSignal and RadarManager.GetOldestUnlockedSignal() or nil
+            if recycleCandidate and recycleCandidate.entry and recycleCandidate.entry.name then
+                recycleName = recycleCandidate.entry.name
+            end
+
+            local releasedUUID = RadarManager.ReleaseOldestUnlockedSignal(
+                "Signal Released: " .. tostring(recycleName) .. " (channel reallocated)",
+                "event"
+            )
+            if not releasedUUID then
+                break
+            end
+        end
+
+        if RadarManager.GetCount() < capacity then
+            local uuid = targetEntry.uuid
+            local soul = targetEntry.soul
+            local name = soul.name or DT_RadioScanResponse("UnknownTrader")
+            local factionName = soul.factionID or "Independent"
+            local faction = RadarManager.GetFaction and RadarManager.GetFaction(soul.factionID) or nil
+            if faction and faction.name then
+                factionName = faction.name
+            end
+
+            RadarManager.FoundTraders[uuid] = {
+                name = name,
+                faction = soul.factionID or "Independent",
+                discoveredAt = currentHours,
+                locked = false,
+            }
+            foundNew = true
+            discoveredCount = 1
+            firstName = name
+            RadarManager.CacheMetadata(uuid, soul)
+            if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddRadioLog then
+                DynamicTrading.NetworkLogs.AddRadioLog(
+                    "Signal Acquired by " .. tostring(username) .. ": " .. tostring(name) .. " (" .. tostring(factionName) .. ")",
+                    "good"
+                )
+            end
+            DynamicTrading.Log("DTV2", "Radio", "Scan", "Discovered: " .. name .. " (" .. uuid .. ")")
         end
     end
 
@@ -177,7 +261,7 @@ function RadarManager.Scan(player, device)
 
     -- Feedback
     if foundNew then
-        if RadarManager.SetScanTimestamp then
+        if RadarManager.SetScanTimestamp and not usedPriorityContact then
             RadarManager.SetScanTimestamp(player, device)
         end
         local isOne = (discoveredCount == 1 and firstName)

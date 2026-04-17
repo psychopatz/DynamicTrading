@@ -60,29 +60,40 @@ end
 
 function DT_RadioScannerListPanel:setLayoutMode(mode)
     self.layoutMode = (mode == "Location") and "Location" or "Standard"
+    local panelWidth = self:getWidth()
+    local panelHeight = self:getHeight()
 
     if mode == "Location" then
         self.btnFaction:setVisible(true)
+        self.listbox.itemheight = 84
         self.listbox:setY(35)
-        self.listbox:setWidth(self.width)
-        self.listbox:setHeight(self.height - 35)
+        self.listbox:setWidth(panelWidth)
+        self.listbox:setHeight(panelHeight - 35)
     else
         self.btnFaction:setVisible(false)
+        self.listbox.itemheight = 72
         self.listbox:setY(0)
-        self.listbox:setWidth(self.width)
-        self.listbox:setHeight(self.height)
+        self.listbox:setWidth(panelWidth)
+        self.listbox:setHeight(panelHeight)
+    end
+
+    if self.listbox and self.listbox.vscroll then
+        self.listbox.vscroll:setHeight(self.listbox:getHeight())
+        self.listbox.vscroll:setX(self.listbox:getWidth() - 13)
     end
 end
 
 function DT_RadioScannerListPanel:onResize()
     ISPanel.onResize(self)
 
+    local panelWidth = self:getWidth()
+
     if self.btnFaction then
-        self.btnFaction:setWidth(self.width)
+        self.btnFaction:setWidth(panelWidth)
     end
 
     if self.listbox then
-        self.listbox:setWidth(self.width)
+        self.listbox:setWidth(panelWidth)
     end
 
     self:setLayoutMode(self.layoutMode or "Standard")
@@ -119,13 +130,14 @@ function DT_RadioScannerListPanel:doDrawItem(y, item, alt)
     local target = self.target
 
     if data.isLocationInfo then
+        local width = self:getWidth()
         if alt then
-            self:drawRect(0, y, self.width, self.itemheight, 0.1, 0.2, 0.2, 0.2)
+            self:drawRect(0, y, width, self.itemheight, 0.1, 0.2, 0.2, 0.2)
         end
 
         local titleColor = { r = 0.8, g = 0.8, b = 1.0 }
         self:drawText(data.label, 15, y + 10, titleColor.r, titleColor.g, titleColor.b, 1, UIFont.Medium)
-        self:drawText(tostring(data.value), 15, y + 35, 0.7, 0.7, 0.7, 1, UIFont.Small)
+        self:drawText(tostring(data.value), 15, y + 44, 0.7, 0.7, 0.7, 1, UIFont.Small)
         return y + self.itemheight
     end
 

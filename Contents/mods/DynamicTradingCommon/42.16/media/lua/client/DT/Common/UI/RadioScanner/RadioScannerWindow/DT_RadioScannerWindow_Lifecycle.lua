@@ -38,9 +38,9 @@ function DT_RadioScannerWindow.ToggleWindow(device)
     local screenW = getCore():getScreenWidth()
     local screenH = getCore():getScreenHeight()
     local width = math.min(820, screenW * 0.62)
-    local height = math.min(680, screenH * 0.72)
+    local height = math.min(720, screenH * 0.76)
     width = math.max(620, width)
-    height = math.max(500, height)
+    height = math.max(600, height)
 
     local window = DT_RadioScannerWindow:new(screenW / 2 - width / 2, screenH / 2 - height / 2, width, height)
     window.device = device

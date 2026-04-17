@@ -7,7 +7,7 @@ function DT_RadioScannerWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
     self.minimumWidth = 620
-    self.minimumHeight = 560
+    self.minimumHeight = 600
 
     self.currentCategory = "Stationary"
     self.updateTimer = 0

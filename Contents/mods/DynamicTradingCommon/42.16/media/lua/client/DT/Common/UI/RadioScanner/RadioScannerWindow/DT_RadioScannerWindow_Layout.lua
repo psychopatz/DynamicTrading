@@ -12,11 +12,11 @@ function DT_RadioScannerWindow:relayout()
     local titleBarHeight = self:titleBarHeight()
     local width = self:getWidth()
     local height = self:getHeight()
-    local headerHeight = 85
-    local footerHeight = 42
+    local headerHeight = 70
     local outerPadding = 10
     local columnGap = 10
-    local statusHeight = 54
+    local statusHeight = 62
+    local actionHeight = 62
 
     if self.headerPanel then
         self.headerPanel:setX(0)
@@ -26,30 +26,37 @@ function DT_RadioScannerWindow:relayout()
     end
 
     local bodyY = titleBarHeight + headerHeight
-    local footerY = height - footerHeight
-    local bodyHeight = math.max(150, footerY - bodyY)
+    local bodyHeight = math.max(220, height - bodyY - outerPadding)
     local bodyWidth = math.max(320, width - (outerPadding * 2))
-    local leftColumnWidth = clamp(math.floor(bodyWidth * 0.28), 180, 260)
-    local minListWidth = 320
+    local leftColumnWidth = clamp(math.floor(bodyWidth * 0.26), 150, 250)
+    local minListWidth = 220
     if bodyWidth - leftColumnWidth - columnGap < minListWidth then
-        leftColumnWidth = math.max(150, bodyWidth - columnGap - minListWidth)
+        leftColumnWidth = math.max(130, bodyWidth - columnGap - minListWidth)
     end
 
-    local logHeight = clamp(math.floor(bodyHeight * 0.27), 110, 170)
-    local topRowHeight = math.max(150, bodyHeight - logHeight - statusHeight - (columnGap * 2))
+    local rightColumnWidth = math.max(180, bodyWidth - leftColumnWidth - columnGap)
+    local logHeight = clamp(math.floor(bodyHeight * 0.23), 110, 180)
+    local availableTopHeight = math.max(170, bodyHeight - logHeight - statusHeight - (columnGap * 2))
+    local squareSize = math.min(leftColumnWidth, math.max(96, availableTopHeight - actionHeight - columnGap))
     local rightColumnX = outerPadding + leftColumnWidth + columnGap
-    local rightColumnWidth = math.max(220, width - rightColumnX - outerPadding)
+    local imageBlockHeight = squareSize + columnGap + actionHeight
+    local imageBlockTop = bodyY + math.max(0, math.floor((availableTopHeight - imageBlockHeight) / 2))
+    local actionY = imageBlockTop + squareSize + columnGap
+    local statusY = bodyY + availableTopHeight + columnGap
+    local logY = statusY + statusHeight + columnGap
+
+    self._leftColumnWidth = leftColumnWidth
 
     if self.signalDisplayPanel then
-        self.signalDisplayPanel:setX(outerPadding)
-        self.signalDisplayPanel:setY(bodyY)
-        self.signalDisplayPanel:setWidth(leftColumnWidth)
-        self.signalDisplayPanel:setHeight(topRowHeight)
+        self.signalDisplayPanel:setX(outerPadding + math.floor((leftColumnWidth - squareSize) / 2))
+        self.signalDisplayPanel:setY(imageBlockTop)
+        self.signalDisplayPanel:setWidth(squareSize)
+        self.signalDisplayPanel:setHeight(squareSize)
     end
 
     if self.logPanel then
         self.logPanel:setX(outerPadding)
-        self.logPanel:setY(bodyY + topRowHeight + statusHeight + (columnGap * 2))
+        self.logPanel:setY(logY)
         self.logPanel:setWidth(bodyWidth)
         self.logPanel:setHeight(logHeight)
         self.logPanel:onResize()
@@ -59,7 +66,7 @@ function DT_RadioScannerWindow:relayout()
         self.listPanel:setX(rightColumnX)
         self.listPanel:setY(bodyY)
         self.listPanel:setWidth(rightColumnWidth)
-        self.listPanel:setHeight(topRowHeight)
+        self.listPanel:setHeight(availableTopHeight)
         if self.listPanel.onResize then
             self.listPanel:onResize()
         end
@@ -67,16 +74,16 @@ function DT_RadioScannerWindow:relayout()
 
     if self.statusPanel then
         self.statusPanel:setX(outerPadding)
-        self.statusPanel:setY(bodyY + topRowHeight + columnGap)
+        self.statusPanel:setY(statusY)
         self.statusPanel:setWidth(bodyWidth)
         self.statusPanel:setHeight(statusHeight)
     end
 
     if self.actionPanel then
-        self.actionPanel:setX(0)
-        self.actionPanel:setY(footerY)
-        self.actionPanel:setWidth(width)
-        self.actionPanel:setHeight(footerHeight)
+        self.actionPanel:setX(outerPadding)
+        self.actionPanel:setY(actionY)
+        self.actionPanel:setWidth(leftColumnWidth)
+        self.actionPanel:setHeight(actionHeight)
         self.actionPanel:onResize()
     end
 end
@@ -89,13 +96,13 @@ end
 function DT_RadioScannerWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
 
-    self.headerPanel = DT_RadioScannerHeaderPanel:new(0, 0, self.width, 85)
+    self.headerPanel = DT_RadioScannerHeaderPanel:new(0, 0, self.width, 70)
     self.headerPanel:initialise()
     self.headerPanel:instantiate()
     self.headerPanel:setAnchorRight(true)
     self:addChild(self.headerPanel)
 
-    self.signalDisplayPanel = DT_RadioSignalDisplayPanel:new(0, 0, 220, 220)
+    self.signalDisplayPanel = DT_RadioSignalDisplayPanel:new(0, 0, 220, 220, { stretchToBounds = true, padding = 10 })
     self.signalDisplayPanel:initialise()
     self.signalDisplayPanel:instantiate()
     self:addChild(self.signalDisplayPanel)
@@ -119,12 +126,11 @@ function DT_RadioScannerWindow:createChildren()
     self:addChild(self.listPanel)
     self.listPanel:setLayoutMode(self.currentCategory == "Location" and "Location" or "Standard")
 
-    self.actionPanel = DT_RadioScannerActionPanel:new(0, 0, self.width, 30)
+    self.actionPanel = DT_RadioScannerActionPanel:new(0, 0, self.width, 38)
     self.actionPanel:initialise()
     self.actionPanel:instantiate()
     self.actionPanel:setAnchorRight(true)
-    self.actionPanel:setAnchorTop(false)
-    self.actionPanel:setAnchorBottom(true)
+    self.actionPanel:setAnchorBottom(false)
     self:addChild(self.actionPanel)
 
     self:relayout()

@@ -76,8 +76,12 @@ function DT_RadioScannerWindow:refresh()
 
     local bestRange = 0
     local bestName = "Unknown"
+    local bestProfile = nil
     if self.device then
         bestName, bestRange = DT_RadioScannerManager.GetDeviceInfo(self.device)
+        if DT_RadioScannerManager.GetDeviceProfile then
+            bestProfile = DT_RadioScannerManager.GetDeviceProfile(self.device)
+        end
     end
 
     if bestRange == 0 then
@@ -89,9 +93,18 @@ function DT_RadioScannerWindow:refresh()
                 if range > bestRange then
                     bestRange = range
                     bestName = name
+                    if DT_RadioScannerManager.GetDeviceProfile then
+                        bestProfile = DT_RadioScannerManager.GetDeviceProfile(item)
+                    end
                 end
             end
         end
+    end
+
+    if bestProfile and self.signalDisplayPanel then
+        local leftColumnWidth = self.signalDisplayPanel:getWidth()
+        local targetPadding = math.max(6, math.floor(leftColumnWidth * 0.05))
+        self.signalDisplayPanel.padding = targetPadding
     end
 
     self.headerPanel:updateSignalInfo(bestName, bestRange)

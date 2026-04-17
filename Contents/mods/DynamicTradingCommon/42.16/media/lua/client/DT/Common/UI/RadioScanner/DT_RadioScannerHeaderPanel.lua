@@ -10,11 +10,7 @@ end
 function DT_RadioScannerHeaderPanel:createChildren()
     ISPanel.createChildren(self)
 
-    self.labelTitle = ISLabel:new(self.width / 2, 5, 25, "TRADER RADAR", 1, 1, 1, 1, UIFont.Medium, true)
-    self.labelTitle:initialise()
-    self:addChild(self.labelTitle)
-
-    self.lblDeviceName = ISLabel:new(self.width / 2, 24, 18, "Device: Unknown", 1, 1, 1, 1, UIFont.Small, true)
+    self.lblDeviceName = ISLabel:new(self.width / 2, 8, 18, "Device: Unknown", 1, 1, 1, 1, UIFont.Medium, true)
     self.lblDeviceName:initialise()
     self:addChild(self.lblDeviceName)
 
@@ -30,7 +26,7 @@ function DT_RadioScannerHeaderPanel:createChildren()
     self.btnOptions:setImage(getTexture("media/ui/inventoryPanes/Button_Settings.png"))
     self:addChild(self.btnOptions)
 
-    self.lblRangeInfo = ISLabel:new(self.width / 2, 43, 18, "Broadcast Range: Unknown", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
+    self.lblRangeInfo = ISLabel:new(self.width / 2, 29, 18, "Broadcast Range: Unknown", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
     self.lblRangeInfo:initialise()
     self:addChild(self.lblRangeInfo)
 
@@ -94,8 +90,7 @@ function DT_RadioScannerHeaderPanel:prerender()
         label:setX((self.width / 2) - (width / 2))
     end
 
-    centerLabel(self.labelTitle, UIFont.Medium)
-    centerLabel(self.lblDeviceName, UIFont.Small)
+    centerLabel(self.lblDeviceName, UIFont.Medium)
     centerLabel(self.lblRangeInfo, UIFont.Small)
 
     local tabWidth = self.width / 4
@@ -134,10 +129,6 @@ function DT_RadioScannerHeaderPanel:prerender()
 end
 
 function DT_RadioScannerHeaderPanel:updateSignalInfo(bestName, bestRange)
-    if self.labelTitle then
-        self.labelTitle:setName("TRADER RADAR")
-    end
-
     if self.lblDeviceName then
         self.lblDeviceName:setName("[" .. tostring(bestName) .. "]")
         self.lblDeviceName:setColor(1, 1, 1)

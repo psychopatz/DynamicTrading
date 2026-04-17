@@ -7,36 +7,33 @@ DT_RadioScannerActionPanel = ISPanel:derive("DT_RadioScannerActionPanel")
 local BUTTON_WIDTH = 94
 local BUTTON_HEIGHT = 25
 local BUTTON_SPACING = 10
+local BUTTON_ROW_SPACING = 6
 
 local function layoutButtons(panel)
-    local buttons = {
-        panel.btnRefresh,
-        panel.btnContacts,
-        panel.btnLock,
-        panel.btnLocate,
-    }
-
-    local activeButtons = {}
-    for _, button in ipairs(buttons) do
-        if button then
-            activeButtons[#activeButtons + 1] = button
-        end
-    end
-
-    if #activeButtons == 0 then
+    if not panel.parent then
         return
     end
 
-    local totalWidth = (#activeButtons * BUTTON_WIDTH) + ((#activeButtons - 1) * BUTTON_SPACING)
-    local startX = math.floor((panel.width - totalWidth) / 2)
-    local y = math.floor((panel.height - BUTTON_HEIGHT) / 2)
+    local panelWidth = panel:getWidth()
+    local startX = math.max(BUTTON_SPACING, math.floor((panelWidth - ((BUTTON_WIDTH * 2) + BUTTON_SPACING)) / 2))
+    local totalHeight = (BUTTON_HEIGHT * 2) + BUTTON_ROW_SPACING
+    local startY = math.max(0, math.floor((panel.height - totalHeight) / 2))
 
-    for index, button in ipairs(activeButtons) do
-        button:setX(startX + ((index - 1) * (BUTTON_WIDTH + BUTTON_SPACING)))
-        button:setY(y)
+    local function place(button, col, row)
+        if not button then
+            return
+        end
+
+        button:setX(startX + ((col - 1) * (BUTTON_WIDTH + BUTTON_SPACING)))
+        button:setY(startY + ((row - 1) * (BUTTON_HEIGHT + BUTTON_ROW_SPACING)))
         button:setWidth(BUTTON_WIDTH)
         button:setHeight(BUTTON_HEIGHT)
     end
+
+    place(panel.btnLock, 1, 1)
+    place(panel.btnLocate, 2, 1)
+    place(panel.btnRefresh, 1, 2)
+    place(panel.btnContacts, 2, 2)
 end
 
 function DT_RadioScannerActionPanel:initialise()
@@ -92,7 +89,7 @@ function DT_RadioScannerActionPanel:updateButtonState(selectedUUID, selectedData
         self.btnLocate.title = "STOP"
         self.btnLocate.backgroundColor = { r = 0.6, g = 0.1, b = 0.1, a = 1 }
     else
-        self.btnLocate.title = "LOCATE"
+        self.btnLocate.title = "FOLLOW"
         self.btnLocate.backgroundColor = { r = 0, g = 0.5, b = 0, a = 1 }
     end
 
