@@ -9,6 +9,8 @@ DTNPCManager = DTNPCManager or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
+require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic_TradeScheduler"
+
 DynamicTrading.Log("DTV2", "NPC", "Init", "Loading optimization modules...")
 
 require "DT/V2/NPC/Sys/Data/DTNPC_Data"
@@ -240,6 +242,10 @@ function DTNPCManager.OnTick()
     
     if tickCounter < TICK_RATE then return end
     tickCounter = 0
+
+    if DynamicTrading_TradeScheduler and DynamicTrading_TradeScheduler.NormalizeRosterState then
+        DynamicTrading_TradeScheduler.NormalizeRosterState(nil, getGameTime():getWorldAgeHours())
+    end
 
     local cell = getCell()
     if not cell then return end

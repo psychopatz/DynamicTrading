@@ -46,7 +46,7 @@ return function(Public, Internal)
 
     local function startTradeMission(uuid)
         if isV2TradeBackendActive() then
-            DTNPCManager.StartTradeMission(uuid)
+            DTNPCManager.StartTradeMission(uuid, false, true)
             return { backend = "V2", traderID = uuid, discoverTrader = false }
         end
         DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", getCurrentHours() + rollRadioStayHours(), "Away")

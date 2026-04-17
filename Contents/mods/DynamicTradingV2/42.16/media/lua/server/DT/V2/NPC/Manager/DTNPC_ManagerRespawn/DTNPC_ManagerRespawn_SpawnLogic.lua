@@ -207,6 +207,10 @@ function DTNPCManager.CheckRosterSpawns()
     
     local rosterData = ModData.get("DynamicTrading_Roster")
     if not rosterData or not rosterData.Souls then return end
+
+    if DynamicTrading_TradeScheduler and DynamicTrading_TradeScheduler.NormalizeRosterState then
+        DynamicTrading_TradeScheduler.NormalizeRosterState(rosterData, getGameTime():getWorldAgeHours())
+    end
     
     local players = DTNPCManager.GetActivePlayers()
     if #players == 0 then return end

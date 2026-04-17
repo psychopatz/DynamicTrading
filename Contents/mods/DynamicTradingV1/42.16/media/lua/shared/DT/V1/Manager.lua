@@ -291,10 +291,6 @@ function DynamicTrading.Manager.ActivateTraderSoul(uuid, options)
 
     DynamicTrading.Manager.EnsureTraderTradingCoordinates(uuid)
 
-    if DynamicTrading_Roster.UpdateSoulStatus then
-        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", nil, nil)
-    end
-
     -- Generate stock via shared economy
     if DynamicTrading_Stock and DynamicTrading_Stock.CheckAndGenerateStock then
         local success, reason = DynamicTrading_Stock.CheckAndGenerateStock(uuid)
@@ -479,23 +475,11 @@ function DynamicTrading.Manager.RegisterRadioSignal(traderID, player, options)
     local soul = GetSignalSoulSnapshot(traderID)
     if not soul then return false end
 
-    -- Ensure trader has an expiration time if they are somehow missing one
+    -- Do not force-activate undiscovered souls here; normalize stale state instead.
     if not soul.returnTime or soul.returnTime == 0 then
-        local gt = GameTime:getInstance()
-        local currentHours = gt:getWorldAgeHours()
-        local minHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6
-        local maxHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMax) or 24
-        if minHours > maxHours then minHours = maxHours end
-        local duration = ZombRand(minHours, maxHours + 1)
-        
-        if isClient() and not isServer() then
-             -- (Ideally this doesn't happen, but if it does, server commands would be needed. 
-             -- For now, just assume server handles generation correctly)
-        else
-            if DynamicTrading_Roster.UpdateSoulStatus then
-                DynamicTrading_Roster.UpdateSoulStatus(traderID, "Trading", currentHours + duration, "Away")
-                ModData.transmit("DynamicTrading_Roster")
-            end
+        if not (isClient() and not isServer()) and DynamicTrading_TradeScheduler then
+            DynamicTrading_TradeScheduler.NormalizeSoulState(traderID, soul, getGameTime():getWorldAgeHours())
+            soul = GetSignalSoulSnapshot(traderID) or soul
         end
     end
 

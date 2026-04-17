@@ -30,11 +30,28 @@ function DTNPCManager.ProcessTradeCycles()
     end
 end
 
-function DTNPCManager.StartTradeMission(uuid, forceImmediate)
+function DTNPCManager.StartTradeMission(uuid, forceImmediate, allowOutOfSchedule)
     local soul = DynamicTrading_Roster.GetSoulRegistry(uuid)
     if not soul then 
         DynamicTrading.Log("DTV2", "NPC", "Logic", "ERROR: StartTradeMission failed - Soul not found for " .. tostring(uuid))
         return 
+    end
+
+    if forceImmediate ~= true and allowOutOfSchedule ~= true then
+        local factionID = soul.factionID or "Independent"
+        local currentHours = getGameTime():getWorldAgeHours()
+        local allowed, plan = DynamicTrading_TradeScheduler.IsSoulScheduledToDispatch(uuid, factionID, nil, currentHours)
+        if not allowed then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Logic",
+                "Skipped out-of-schedule trade start for " .. tostring(soul.name or uuid)
+                    .. " faction=" .. tostring(factionID)
+                    .. " windowActive=" .. tostring(plan and plan.isWindowActive or false)
+            )
+            return
+        end
     end
     
     local currentHours = getGameTime():getWorldAgeHours()

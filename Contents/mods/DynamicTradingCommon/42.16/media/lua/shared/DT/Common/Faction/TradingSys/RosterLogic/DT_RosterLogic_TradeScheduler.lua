@@ -417,6 +417,15 @@ function Scheduler.GetDispatchCandidates(factionID, rosterData, currentHours, fa
     return dispatchable, plan
 end
 
+function Scheduler.IsSoulScheduledToDispatch(uuid, factionID, rosterData, currentHours, factionOverride)
+    if not uuid or not factionID then
+        return false, nil
+    end
+
+    local plan = Scheduler.BuildFactionPlan(factionID, rosterData, currentHours, factionOverride)
+    return plan.isWindowActive == true and plan.selectedSet[uuid] == true, plan
+end
+
 function Scheduler.BuildAllFactionPlans(rosterData, currentHours)
     local data = getRosterData(rosterData)
     local plans = {}
