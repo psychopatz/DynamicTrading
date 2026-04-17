@@ -149,6 +149,16 @@ option DynamicTrading.NPCTradePopPercent
     translation = DynamicTrading.NPCTradePopPercent,
 }
 
+option DynamicTrading.NPCTradeEligiblePercent
+{
+    type = integer,
+    default = 100,
+    min = 0,
+    max = 100,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading.NPCTradeEligiblePercent,
+}
+
 option DynamicTrading.NPCTradingWalkHours
 {
     type = double,

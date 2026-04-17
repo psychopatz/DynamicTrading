@@ -20,6 +20,7 @@ function DT_FactionInfoWindow:applyFactionSelection(f, requestRoster)
         local rosterData = DT_FactionInfoWindow.resolveRosterData()
         if win.tabReputation then win.tabReputation:updateData(f, rosterData) end
         if win.tabEconomics then win.tabEconomics:updateData(f) end
+        if win.tabCalendar then win.tabCalendar:updateData(f, rosterData) end
         if win.tabStockpiles then win.tabStockpiles:updateData(f) end
 
         -- Population Tab needs roster data too

@@ -15,6 +15,7 @@ require "DT/Common/Events/DT_EventManager"
 require "DT/V1/NetworkLogs"
 require "DT/V1/CooldownManager"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic_TradeScheduler"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manager = {}
@@ -180,9 +181,7 @@ end
 -- 1. HELPER: CALCULATE "TRADING DAY" (5 AM START)
 -- =============================================================================
 function DynamicTrading.Manager.GetTradingDay()
-    local gt = GameTime:getInstance()
-    local hours = gt:getWorldAgeHours()
-    return math.floor((hours - 5) / 24)
+    return DynamicTrading_TradeScheduler.GetTradingDay()
 end
 
 -- =============================================================================

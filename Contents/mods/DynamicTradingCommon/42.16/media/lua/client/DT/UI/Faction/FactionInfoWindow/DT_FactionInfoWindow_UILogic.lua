@@ -84,6 +84,13 @@ function DT_FactionInfoWindow:createChildren()
     self.tabEconomics:setAnchorRight(true)
     self.tabEconomics:setAnchorBottom(true)
     self.panel:addView("Economics", self.tabEconomics)
+
+    -- Calendar Tab
+    self.tabCalendar = DT_FactionInfoTab_Calendar:new(0, 0, tabWidth, contentHeight)
+    self.tabCalendar:initialise()
+    self.tabCalendar:setAnchorRight(true)
+    self.tabCalendar:setAnchorBottom(true)
+    self.panel:addView("Calendar", self.tabCalendar)
     
     -- Stockpiles Tab
     self.tabStockpiles = DT_FactionInfoTab_Stockpiles:new(0, 0, tabWidth, contentHeight)

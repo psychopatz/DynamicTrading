@@ -69,6 +69,9 @@ local function onServerCommand(module, command, args)
                 if DT_FactionInfoWindow.instance.tabReputation then
                     DT_FactionInfoWindow.instance.tabReputation:updateData(DT_FactionInfoWindow.selectedFaction, DT_FactionInfoWindow.cachedRosterData)
                 end
+                if DT_FactionInfoWindow.instance.tabCalendar then
+                    DT_FactionInfoWindow.instance.tabCalendar:updateData(DT_FactionInfoWindow.selectedFaction, DT_FactionInfoWindow.cachedRosterData)
+                end
             end
         end
     elseif command == "SyncOwnedFactionStatus" then
@@ -113,6 +116,14 @@ local function onServerCommand(module, command, args)
             and DT_FactionInfoWindow.instance
             and DT_FactionInfoWindow.instance.tabInfo then
             DT_FactionInfoWindow.instance.tabInfo:updateData(
+                selectedFaction,
+                rosterData
+            )
+        end
+        if selectedFaction
+            and DT_FactionInfoWindow.instance
+            and DT_FactionInfoWindow.instance.tabCalendar then
+            DT_FactionInfoWindow.instance.tabCalendar:updateData(
                 selectedFaction,
                 rosterData
             )

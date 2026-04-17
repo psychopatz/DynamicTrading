@@ -41,6 +41,9 @@
     "Sandbox_DynamicTrading.NPCTradePopPercent": "NPC: Max Trading Population (%)",
     "Sandbox_DynamicTrading.NPCTradePopPercent_tooltip": "The maximum percentage of a faction's population allowed to be on a trading mission (Away or Trading status) at once.",
 
+    "Sandbox_DynamicTrading.NPCTradeEligiblePercent": "NPC: Trade Eligibility Pool (%)",
+    "Sandbox_DynamicTrading.NPCTradeEligiblePercent_tooltip": "The percentage of a faction's roster that is allowed to participate in the automatic trading rotation at all. Player factions still require workers to be manually trade-approved first.",
+
     "Sandbox_DynamicTrading.NPCTradingWalkHours": "NPC: Trade Travel Time (Hours)",
     "Sandbox_DynamicTrading.NPCTradingWalkHours_tooltip": "How many hours of travel time (Away state) the NPC takes to reach or return from a trading location.",
 

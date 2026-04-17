@@ -7,6 +7,8 @@
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.V1Sim = {}
 
+require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic_TradeScheduler"
+
 -- GUARD: Prevent Remote MP Clients from running this
 if isClient() and not isServer() then return end
 
@@ -110,12 +112,13 @@ local function ProcessSimulation()
     if not rosterData or not rosterData.Souls then return end
 
     local currentHours = getGameTime():getWorldAgeHours()
-    local popLimitPercent = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradePopPercent) or 40
     local minTradeHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMin) or 6
     local maxTradeHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.TraderStayHoursMax) or 24
     if minTradeHours > maxTradeHours then
         minTradeHours = maxTradeHours
     end
+
+    DynamicTrading_TradeScheduler.NormalizeRosterState(rosterData, currentHours)
 
     -- 1. Process Transitions (Away -> Trading, Trading -> Away, Away -> Resting)
     for uuid, registry in pairs(rosterData.Souls) do
@@ -171,71 +174,22 @@ local function ProcessSimulation()
         end
     end
 
-    -- 2. Process New Trade Missions (Resting -> Away)
-    local factionTradingCounts = {}
-    local factionTotalCounts = {}
+    -- 2. Process New Trade Missions (Resting -> Away) from seeded faction plans
+    local plans = DynamicTrading_TradeScheduler.BuildAllFactionPlans(rosterData, currentHours)
 
-    for uuid, registry in pairs(rosterData.Souls) do
-        local factionID = registry.factionID or "Independent"
-        local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
-        local includeSoul = true
-
-        if faction and faction.playerOwned and faction.leadershipState ~= "Regency" then
-            includeSoul = false
-        end
-
-        if includeSoul and faction and faction.playerOwned then
-            local workerID = registry.linkedWorkerID
-            if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
-                includeSoul = false
-            end
-        end
-
-        if includeSoul then
-            factionTotalCounts[factionID] = (factionTotalCounts[factionID] or 0) + 1
-            if registry.status == "Away" or registry.status == "Trading" then
-                factionTradingCounts[factionID] = (factionTradingCounts[factionID] or 0) + 1
-            end
-        end
-    end
-
-    for uuid, registry in pairs(rosterData.Souls) do
-        if registry.status == "Resting" then
-            local factionID = registry.factionID or "Independent"
-            local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
-            local canDispatch = true
-
-            if faction and faction.playerOwned then
-                if faction.leadershipState ~= "Regency" then
-                    canDispatch = false
-                end
-
-                if canDispatch then
-                    local workerID = registry.linkedWorkerID
-                    if not workerID or not faction.tradeEligibleWorkerIDs or faction.tradeEligibleWorkerIDs[workerID] ~= true then
-                        canDispatch = false
-                    end
-                end
-            end
-
-            if canDispatch then
-                local currentTrading = factionTradingCounts[factionID] or 0
-                local totalMembers = factionTotalCounts[factionID] or 1
-
-                local currentPercent = (currentTrading / totalMembers) * 100
-                if currentPercent < popLimitPercent then
-                    if ZombRand(100) < 10 then
-                        if faction and faction.playerOwned then
-                            local duration = ZombRand(minTradeHours, maxTradeHours + 1)
-                            DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " entering regency trade rotation.")
-                            DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", currentHours + duration, "Away")
-                        else
-                            local walkHours = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingWalkHours) or 2.0
-                            DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " starting trade mission.")
-                            DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", currentHours + walkHours, "Trading")
-                        end
-                        factionTradingCounts[factionID] = currentTrading + 1
-                    end
+    for factionID, plan in pairs(plans) do
+        local dispatchable = DynamicTrading_TradeScheduler.GetDispatchCandidates(factionID, rosterData, currentHours, plan.faction)
+        for _, uuid in ipairs(dispatchable) do
+            local registry = rosterData.Souls[uuid]
+            if registry and registry.status == "Resting" then
+                if plan.faction and plan.faction.playerOwned then
+                    local duration = ZombRand(minTradeHours, maxTradeHours + 1)
+                    DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " entering seeded regency trade window.")
+                    DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", currentHours + duration, "Away")
+                else
+                    local walkHours = DynamicTrading_TradeScheduler.GetSettings().walkHours
+                    DynamicTrading.Log("DTV1", "Sim", "Mission", (registry.name or uuid) .. " starting seeded trade mission.")
+                    DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", currentHours + walkHours, "Trading")
                 end
             end
         end
