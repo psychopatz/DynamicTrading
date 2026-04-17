@@ -13,7 +13,7 @@ DynamicTrading.Events.Register("SolarFlare", {
     system = {
         scanChance = 0.4,
         traderLimit = 0.8
-    },
+    , passiveIncomeMult = 0.9},
     effects = {
         ["Electronics.Communicator"] = { price = 3.0 },
         ["Electronics"] = { price = 0.5 }

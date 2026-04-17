@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("Inflation", {
     type = "flash",
     description = "Currency is losing value rapidly.",
     canSpawn = function() return SandboxVars.DynamicTrading.AllowHardcoreEvents end,
+    system = { autoBuyPriceMult = 2.5, traderBudgetMult = 0.6 },
     effects = {
         ["Misc"] = { price = 2.0 },
         ["Quality.Luxury"] = { price = 0.2 }

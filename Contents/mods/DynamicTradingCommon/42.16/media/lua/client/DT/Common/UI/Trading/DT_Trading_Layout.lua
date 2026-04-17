@@ -1,4 +1,4 @@
-require "DT/Common/UI/Trading/DT_Trading"
+
 
 local RIGHT_MARGIN = 10
 local PADDING = 10

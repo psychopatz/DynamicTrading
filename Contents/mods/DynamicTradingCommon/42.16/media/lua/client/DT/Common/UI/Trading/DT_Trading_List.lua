@@ -1,5 +1,4 @@
 require "DT/Common/UI/Trading/TradingItemUtils/DT_TradingItemUtils"
-require "DT/Common/UI/Trading/DT_Trading"
 require "Utils/DT_StringUtils"
 
 function DT_TradingWindow.drawItem(listbox, y, item, alt)

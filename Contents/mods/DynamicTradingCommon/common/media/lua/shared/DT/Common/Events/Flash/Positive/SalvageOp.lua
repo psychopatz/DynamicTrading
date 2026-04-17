@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("SalvageOp", {
     type = "flash",
     description = "Scavengers cleared a warehouse.",
     canSpawn = function() return true end,
+    system = { passiveIncomeMult = 1.3 },
     effects = {
         ["Resource.Material"] = { price = 0.5, vol = 4.0 },
         ["Quality.Waste"] = { price = 0.1, vol = 5.0 },

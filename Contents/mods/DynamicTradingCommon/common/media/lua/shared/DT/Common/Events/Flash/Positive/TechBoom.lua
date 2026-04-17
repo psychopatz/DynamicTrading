@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("TechBoom", {
     type = "flash",
     description = "A shipment of electronics was found.",
     canSpawn = function() return true end,
+    system = { passiveIncomeMult = 1.5, autoBuyPriceMult = 0.8 },
     effects = {
         ["Electronics"] = { price = 0.4, vol = 3.0 },
         ["Resource.Material.General"] = { price = 0.5, vol = 2.0 }, -- Generic parts

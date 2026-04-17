@@ -13,7 +13,7 @@ DynamicTrading.Events.Register("EmergencyNet", {
     system = {
         scanChance = 1.8,
         traderLimit = 1.2
-    },
+    , traderBudgetMult = 1.2},
     effects = {
         ["Medical"] = { price = 0.8 },
         ["Clothing.Protective"] = { price = 0.8 },

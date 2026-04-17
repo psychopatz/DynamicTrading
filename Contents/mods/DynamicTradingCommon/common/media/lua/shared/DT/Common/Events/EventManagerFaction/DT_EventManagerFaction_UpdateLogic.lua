@@ -27,6 +27,7 @@ function DynamicTrading.Events.UpdateFaction(faction)
                 DynamicTrading.Log("DTCommons", "Event", "Logic", "Event expired: " .. tostring(entry.id) .. " for faction " .. tostring(faction.id))
             end
             table.remove(active, i)
+            faction.lastEventExpiredHour = currentHour
             expiredCount = expiredCount + 1
         end
     end
@@ -35,13 +36,9 @@ function DynamicTrading.Events.UpdateFaction(faction)
         DynamicTrading.Log("DTCommons", "Event", "Logic", "Removed " .. expiredCount .. " expired events from faction " .. tostring(faction.id))
     end
 
-    -- B. STABILITY TRACKING
-    if faction.state == "Stable" then
-        faction.consecutiveStableDays = (faction.consecutiveStableDays or 0) + 1
-    else
-        faction.consecutiveStableDays = 0
-    end
-
+    -- B. STABILITY TRACKING 
+    -- (Removed inline consecutiveStableDays update - this is now handled by TownSim logic)
+    
     if DynamicTrading.Debug then
         DynamicTrading.Log("DTCommons", "Event", "Logic", "Faction " .. tostring(faction.id) .. " state=" .. (faction.state or "unknown") .. " stableDays=" .. (faction.consecutiveStableDays or 0))
     end
@@ -118,9 +115,9 @@ function DynamicTrading.Events.UpdateFaction(faction)
 
         if def and def.factionImpact then
             if def.factionImpact.wealthAdd then
-                faction.wealth = (faction.wealth or 0) + def.factionImpact.wealthAdd
+                faction.ColonyWealth = math.max(0, (faction.ColonyWealth or 0) + def.factionImpact.wealthAdd)
                 if DynamicTrading.Debug then
-                    DynamicTrading.Log("DTCommons", "Event", "Logic", "Wealth applied: +" .. def.factionImpact.wealthAdd)
+                    DynamicTrading.Log("DTCommons", "Event", "Logic", "ColonyWealth applied: +" .. def.factionImpact.wealthAdd)
                 end
             end
 
@@ -164,6 +161,14 @@ function DynamicTrading.Events.UpdateFaction(faction)
         if not force and roll > threshold then
             if DynamicTrading.Debug then
                 DynamicTrading.Log("DTCommons", "Event", "Logic", "trySpawn: roll " .. roll .. " > threshold " .. threshold .. " (no spawn)")
+            end
+            return false
+        end
+
+        local cooldownHours = 72
+        if not force and (faction.lastEventExpiredHour and currentHour - faction.lastEventExpiredHour < cooldownHours) then
+            if DynamicTrading.Debug then
+                DynamicTrading.Log("DTCommons", "Event", "Logic", "trySpawn: faction on cooldown. Last expiry: " .. faction.lastEventExpiredHour .. " Current: " .. currentHour)
             end
             return false
         end

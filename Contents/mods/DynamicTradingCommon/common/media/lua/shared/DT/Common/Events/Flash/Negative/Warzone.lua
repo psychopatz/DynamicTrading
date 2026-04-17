@@ -10,7 +10,7 @@ DynamicTrading.Events.Register("Warzone", {
     type = "flash",
     description = "War has broken out. Traders are hiding, ammo is scarce.",
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
-    system = { traderLimit = 0.5 },
+    system = { traderLimit = 0.5 , traderBudgetMult = 0.5, passiveIncomeMult = 0.5, autoBuyPriceMult = 1.5},
     effects = {
         ["Weapon.Ranged.Firearm"] = { price = 2.5, vol = 0.5 },
         ["Weapon.Ranged.Ammo"] = { price = 3.0, vol = 0.2 },

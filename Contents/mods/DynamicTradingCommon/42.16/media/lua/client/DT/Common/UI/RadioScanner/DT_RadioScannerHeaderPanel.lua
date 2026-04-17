@@ -1,5 +1,4 @@
 require "ISUI/ISPanel"
-require "DT/Common/UI/RadioScanner/DT_RadioScannerBridge"
 
 DT_RadioScannerHeaderPanel = ISPanel:derive("DT_RadioScannerHeaderPanel")
 

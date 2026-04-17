@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("FireSale", {
     type = "flash",
     description = "Traders are offloading stock cheap.",
     canSpawn = function() return true end,
+    system = { autoBuyPriceMult = 0.5 },
     effects = {
         ["Misc.General"] = { price = 0.5, vol = 1.5 },
         ["Quality.Luxury"] = { price = 1.5 },

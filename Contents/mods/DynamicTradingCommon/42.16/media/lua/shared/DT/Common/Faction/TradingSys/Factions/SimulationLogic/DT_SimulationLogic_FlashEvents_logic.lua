@@ -10,13 +10,6 @@ function FlashEventsLogic.Process(faction, id, data, currentHour)
     if not factionActive then return nil, false end
 
     faction.ActiveFlashEvents = faction.ActiveFlashEvents or {}
-    if #faction.ActiveFlashEvents == 0 and faction.ActiveFlashEvent and faction.ActiveFlashEvent.id then
-        table.insert(faction.ActiveFlashEvents, {
-            id = faction.ActiveFlashEvent.id,
-            expires = faction.ActiveFlashEvent.expires or 0,
-            targetCasualties = faction.ActiveFlashEvent.targetCasualties or 0
-        })
-    end
 
     for _, afe in ipairs(faction.ActiveFlashEvents) do
         if factionActive and afe and afe.id then

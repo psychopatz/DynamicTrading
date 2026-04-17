@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("Famine", {
     type = "flash",
     description = "Crops have died. Food prices skyrocket.",
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
+    system = { autoBuyPriceMult = 3.0, passiveIncomeMult = 0.8 },
     effects = {
         ["Food"] = { price = 2.5, vol = 0.3 },
         ["Building.Garden"] = { price = 3.0 },

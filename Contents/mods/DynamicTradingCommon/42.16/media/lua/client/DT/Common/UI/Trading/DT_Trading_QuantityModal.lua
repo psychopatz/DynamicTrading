@@ -2,7 +2,7 @@ require "ISUI/ISCollapsableWindow"
 require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "ISUI/ISTextEntryBox"
-require "ISSliderPanel"
+require "ISUI/ISSliderPanel"
 
 DT_Trading_QuantityModal = ISCollapsableWindow:derive("DT_Trading_QuantityModal")
 DT_Trading_QuantityModal.instance = nil

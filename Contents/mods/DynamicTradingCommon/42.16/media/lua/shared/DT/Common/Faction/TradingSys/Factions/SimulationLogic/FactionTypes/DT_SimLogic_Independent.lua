@@ -1,11 +1,11 @@
 -- ==============================================================================
--- Simulation/Simulation_IndependentFaction.lua
+-- SimulationLogic/FactionTypes/DT_SimLogic_Independent.lua
 -- Logic: Wandering merchant faction - lightweight, non-colony daily updates.
 -- ==============================================================================
 
-local IndependentFactionSim = {}
+local IndependentSim = {}
 
-function IndependentFactionSim.Process(faction, id, data)
+function IndependentSim.Process(faction, id, data)
     if not faction then return nil, false end
 
     -- Wandering merchants never die out, don't consume food, and their budget comes from their trader sessions
@@ -17,4 +17,4 @@ function IndependentFactionSim.Process(faction, id, data)
     return faction, true
 end
 
-return IndependentFactionSim
+return IndependentSim

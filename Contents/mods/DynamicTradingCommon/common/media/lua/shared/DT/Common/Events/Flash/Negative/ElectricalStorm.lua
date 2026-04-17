@@ -12,7 +12,7 @@ DynamicTrading.Events.Register("ElectricalStorm", {
     canSpawn = function() return true end,
     system = {
         scanChance = 0.5
-    },
+    , passiveIncomeMult = 0.9},
     effects = {
         ["Electronics.Battery"] = { price = 2.0 },
         ["Electronics.Light"] = { price = 1.5 },

@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("HospitalFound", {
     type = "flash",
     description = "A hospital was looted. Meds are cheap.",
     canSpawn = function() return true end,
+    system = { autoBuyPriceMult = 0.6 },
     effects = {
         ["Medical"] = { price = 0.3, vol = 5.0 },
         ["Medical.General.Pills"] = { price = 0.4, vol = 4.0 },

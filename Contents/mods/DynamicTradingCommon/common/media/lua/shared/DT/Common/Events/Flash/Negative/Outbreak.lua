@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("Outbreak", {
     type = "flash",
     description = "A sickness spreads. Medicine is critical.",
     canSpawn = function() return (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.AllowHardcoreEvents) end,
+    system = { autoBuyPriceMult = 2.0, traderBudgetMult = 0.7 },
     effects = {
         ["Medical"] = { price = 3.5, vol = 0.2 },
         ["Medical.General.Pills"] = { price = 3.0 },

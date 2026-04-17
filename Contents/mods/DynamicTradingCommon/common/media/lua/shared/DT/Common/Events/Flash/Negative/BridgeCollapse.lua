@@ -13,7 +13,7 @@ DynamicTrading.Events.Register("BridgeCollapse", {
     system = {
         traderLimit = 0.6,
         globalStock = 0.7 -- Less items overall too
-    },
+    , traderBudgetMult = 0.5},
     effects = {
         ["Resource.Fuel"] = { price = 2.5 },
         ["Clothing.Armor.Heavy"] = { price = 2.0 },

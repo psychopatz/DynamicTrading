@@ -13,7 +13,7 @@ DynamicTrading.Events.Register("PanicBroadcast", {
     system = {
         scanChance = 1.5, -- Easy to hear *something*
         traderLimit = 0.5 -- Hard to find a *useful trader* amidst the noise
-    },
+    , passiveIncomeMult = 0.8, traderBudgetMult = 0.8},
     effects = {
         ["Weapon"] = { price = 2.0 },
         ["Food"] = { price = 2.0 },

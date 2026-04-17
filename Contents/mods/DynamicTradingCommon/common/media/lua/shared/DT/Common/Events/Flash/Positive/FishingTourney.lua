@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("FishingTourney", {
     type = "flash",
     description = "Fish are biting like crazy!",
     canSpawn = function() return true end,
+    system = { passiveIncomeMult = 1.3 },
     effects = {
         ["Food.Perishable.Fish"] = { price = 0.5, vol = 3.0 },
         ["Resource.Fishing"] = { price = 1.5, vol = 0.5 },

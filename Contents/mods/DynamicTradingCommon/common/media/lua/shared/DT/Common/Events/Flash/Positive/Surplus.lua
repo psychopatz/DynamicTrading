@@ -10,7 +10,7 @@ DynamicTrading.Events.Register("MilitarySurplus", {
     type = "flash",
     description = "A military bunker was raided. Gear is everywhere.",
     canSpawn = function() return true end,
-    system = { globalStock = 1.5 },
+    system = { globalStock = 1.5 , traderBudgetMult = 1.2, autoBuyPriceMult = 0.8},
     effects = {
         ["Weapon.Ranged.Firearm"] = { price = 0.6, vol = 2.0 },
         ["Weapon.Ranged.Ammo"] = { price = 0.5, vol = 3.0 },

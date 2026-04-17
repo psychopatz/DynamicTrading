@@ -12,7 +12,7 @@ DynamicTrading.Events.Register("FreeMarket", {
     canSpawn = function() return true end,
     system = {
         traderLimit = 1.8 -- Almost double traders
-    },
+    , traderBudgetMult = 1.5, autoBuyPriceMult = 0.7},
     effects = {
         ["Quality.Luxury"] = { price = 1.2, vol = 1.5 },
         ["Resource.Material.MetalForm.Coin"] = { price = 1.5 }, -- If currency items exist

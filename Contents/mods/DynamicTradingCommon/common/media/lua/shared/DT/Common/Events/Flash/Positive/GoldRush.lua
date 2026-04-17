@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("GoldRush", {
     type = "flash",
     description = "Survivors are hoarding precious metals.",
     canSpawn = function() return true end,
+    system = { passiveIncomeMult = 1.4, traderBudgetMult = 1.3 },
     effects = {
         ["Resource.Material.MetalFamily.Gold"] = { price = 3.0 },
         ["Resource.Material.MetalFamily.Silver"] = { price = 2.5 },

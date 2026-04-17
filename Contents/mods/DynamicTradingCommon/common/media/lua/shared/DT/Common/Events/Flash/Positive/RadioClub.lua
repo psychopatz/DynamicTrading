@@ -13,7 +13,7 @@ DynamicTrading.Events.Register("RadioClub", {
     system = {
         scanChance = 1.5,
         traderLimit = 1.5
-    },
+    , passiveIncomeMult = 1.1},
     effects = {
         ["Electronics.Communicator"] = { price = 0.5, vol = 3.0 }, -- Radios are cheap
         ["Resource.Parts"] = { vol = 2.0 },

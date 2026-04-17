@@ -17,8 +17,10 @@ local ProductionLogic = require "DT/Common/Faction/TradingSys/Factions/Simulatio
 local FlashEventsLogic = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_FlashEvents_logic"
 local ConsumptionLogic = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_Consumption_logic"
 local RespawnLogic = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_Respawn_logic"
-local TownFactionSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_TownFaction"
-local IndependentFactionSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_IndependentFaction"
+local TownSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/FactionTypes/DT_SimLogic_Town"
+local IndependentSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/FactionTypes/DT_SimLogic_Independent"
+local PlayerSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/FactionTypes/DT_SimLogic_Player"
+local VirtualStore = require "DT/Common/ColonyEconomy/VirtualStore/DT_VirtualStore"
 
 -- ==========================================================
 -- DAILY SIMULATION
@@ -31,6 +33,8 @@ function DT_SimulationLogic.UpdateDaily()
     local engineData = DynamicTrading_Engine.GetEngineData()
     local Sandbox = SandboxVars.DynamicTrading
     
+    VirtualStore.Prices.RecalculatePrices()
+    
     local consumptionMult = Sandbox.FactionDailyConsumption or 1.0
     local deathThreshold = Sandbox.FactionDeathThreshold or 3
     local growthChance = Sandbox.FactionGrowthChance or 50
@@ -38,14 +42,8 @@ function DT_SimulationLogic.UpdateDaily()
     local factionsToRemove = {}
 
     for id, faction in pairs(data) do
-        if faction and faction.playerOwned
-            and (tostring(faction.leadershipState or "") == "AdminReview"
-                or (DynamicTrading_Factions.IsDynamicColoniesEnabled and not DynamicTrading_Factions.IsDynamicColoniesEnabled())) then
-            faction = nil
-        end
-
-        if faction and faction.playerOwned and DynamicTrading_Factions.RefreshPlayerFaction then
-            faction = DynamicTrading_Factions.RefreshPlayerFaction(id)
+        if faction and faction.playerOwned then
+            faction = PlayerSim.PreProcess(faction, id)
         end
 
         local factionActive = faction ~= nil
@@ -64,20 +62,21 @@ function DT_SimulationLogic.UpdateDaily()
             -- 3. Consumption Logic & Modular Simulation
             if factionActive then
                 if faction.factionType == "independent" then
-                    faction, factionActive = IndependentFactionSim.Process(faction, id, data)
+                    faction, factionActive = IndependentSim.Process(faction, id, data)
                 else
                     faction, factionActive = ConsumptionLogic.Process(faction, id, data, consumptionMult, deathThreshold, growthChance)
                     if factionActive and faction.factionType == "town" then
-                        faction, factionActive = TownFactionSim.Process(faction, id, data)
+                        faction, factionActive = TownSim.Process(faction, id, data)
                     end
                 end
 
                 -- 4. Death Check
                 if factionActive and faction.memberCount <= 0 then
-                    if faction.playerOwned and DynamicTrading_Factions.MarkFactionAdminReview then
-                        DynamicTrading_Factions.MarkFactionAdminReview(id, "no_linked_workers")
-                        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Player faction ["..(faction.name or id).."] moved to admin review")
-                    else
+                    local playerHandled = false
+                    if faction.playerOwned then
+                        playerHandled = PlayerSim.DeathCheck(faction, id)
+                    end
+                    if not playerHandled then
                         DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction ["..(faction.name or id).."] has DIED OUT")
                         table.insert(factionsToRemove, id)
                     end

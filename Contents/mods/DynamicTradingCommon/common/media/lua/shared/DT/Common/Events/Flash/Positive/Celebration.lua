@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("Celebration", {
     type = "flash",
     description = "Survivors are gathering to party.",
     canSpawn = function() return true end,
+    system = { passiveIncomeMult = 1.5 },
     effects = {
         ["Food.Drink.Alcohol"] = { price = 2.0, vol = 0.2 },
         ["Food.NonPerishable.Sweets"] = { price = 2.0 },

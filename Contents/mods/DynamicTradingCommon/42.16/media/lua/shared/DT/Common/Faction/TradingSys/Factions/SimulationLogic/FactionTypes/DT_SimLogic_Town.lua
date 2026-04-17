@@ -3,9 +3,10 @@
 -- Logic: Auto town survival interactions, state machine, passive income.
 -- ==============================================================================
 
-local TownFactionSim = {}
+local VirtualStore = require "DT/Common/ColonyEconomy/VirtualStore/DT_VirtualStore"
+local TownSim = {}
 
-function TownFactionSim.Process(faction, id, data)
+function TownSim.Process(faction, id, data)
     if not faction then return nil, false end
 
     -- 1. Passive Income
@@ -25,25 +26,23 @@ function TownFactionSim.Process(faction, id, data)
     local income = math.floor(faction.memberCount * dailyRate * stateMult * eventMult)
     faction.ColonyWealth = math.max(0, (faction.ColonyWealth or 0) + income)
 
+    -- Phase 5: Resilience Bonus (Emergency Reserve)
+    faction.emergencyReserve = faction.emergencyReserve or 0
+    if (faction.consecutiveStableDays or 0) >= 30 and faction.ColonyWealth > 0 then
+        local reserveAdd = math.floor(income * 0.1)
+        local reserveCap = math.floor(faction.ColonyWealth * 0.2)
+        if faction.emergencyReserve < reserveCap then
+            faction.emergencyReserve = math.min(reserveCap, faction.emergencyReserve + reserveAdd)
+        end
+    end
+
     -- 2. Auto-buy missing resources using ColonyWealth
     if faction.ColonyWealth > 1000 and (faction.state == "Stable" or faction.state == "Thriving" or faction.state == "Strained") then
         local consumes = DynamicTrading.Config.Sim.BaseConsumption
         local targetFood = faction.memberCount * (consumes.food or 1) * 7 -- 7 days buffer
         if (faction.stockpile.food or 0) < targetFood then
             local missing = targetFood - faction.stockpile.food
-            local costPerFood = 10 -- Base auto-buy cost
-            local eventCostMult = 1.0
-            if DynamicTrading.Events and DynamicTrading.Events.getAutoBuyPriceModifier then
-                eventCostMult = DynamicTrading.Events.getAutoBuyPriceModifier(faction)
-            end
-            local autoCost = costPerFood * eventCostMult
-            local affordable = math.floor(faction.ColonyWealth / autoCost)
-            local bought = math.min(missing, affordable)
-            if bought > 0 then
-                faction.ColonyWealth = math.floor(faction.ColonyWealth - (bought * autoCost))
-                faction.stockpile.food = math.floor(faction.stockpile.food + bought)
-                DynamicTrading.Log("Colony", "Economy", "Sim", "Town " .. faction.name .. " auto-bought " .. bought .. " food for $" .. math.floor(bought * autoCost))
-            end
+            VirtualStore.AutoBuy.AutoBuy(faction, "food", missing)
         end
     end
 
@@ -54,6 +53,15 @@ function TownFactionSim.Process(faction, id, data)
     if faction.starvationDays > 3 then
         faction.state = "Collapsing"
         faction.CollapseDays = (faction.CollapseDays or 0) + 1
+        
+        -- Burn emergency reserve to survive
+        if faction.emergencyReserve > 0 and faction.ColonyWealth > 0 then
+            local emergencySpend = math.min(faction.emergencyReserve, VirtualStore.Prices.GetPrice("food") * faction.memberCount)
+            faction.emergencyReserve = math.max(0, faction.emergencyReserve - emergencySpend)
+            faction.ColonyWealth = math.max(0, faction.ColonyWealth - emergencySpend)
+            -- Reset starvation partially since they spent reserves
+            faction.starvationDays = math.max(0, faction.starvationDays - 1)
+        end
     elseif faction.starvationDays > 0 then
         faction.state = "Struggling"
         faction.CollapseDays = 0
@@ -77,4 +85,4 @@ function TownFactionSim.Process(faction, id, data)
     return faction, true
 end
 
-return TownFactionSim
+return TownSim

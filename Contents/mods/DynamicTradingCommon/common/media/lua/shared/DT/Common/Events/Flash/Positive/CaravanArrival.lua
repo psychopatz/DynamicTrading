@@ -13,7 +13,7 @@ DynamicTrading.Events.Register("CaravanArrival", {
     system = {
         traderLimit = 2.0, -- Double the daily limit
         scanChance = 1.2   -- +20% Scan chance
-    },
+    , traderBudgetMult = 2.0, autoBuyPriceMult = 0.8},
     effects = {
         ["Misc.General"] = { price = 0.8, vol = 2.0 },
         ["Food"] = { vol = 1.5 },

@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("HuntingSeason", {
     type = "flash",
     description = "Wild game is migrating through the area.",
     canSpawn = function() return true end,
+    system = { passiveIncomeMult = 1.2 },
     effects = {
         ["Food.Perishable.Meat"] = { price = 0.5, vol = 3.0 },
         ["Food.Perishable"] = { price = 0.6, vol = 2.0 },

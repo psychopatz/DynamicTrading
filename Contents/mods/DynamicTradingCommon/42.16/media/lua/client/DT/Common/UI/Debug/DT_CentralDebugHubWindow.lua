@@ -201,6 +201,18 @@ local HUB_BUTTONS = {
             DT_ModDataManagement.Open()
         end,
     },
+    {
+        id = "virtualStore",
+        title = "Virtual Store",
+        description = "Monitor exactly what the abstracted faction economy is buying/selling and correct the prices directly.",
+        available = function()
+            local ok = pcall(require, "DT/Common/UI/Debug/Factions/VirtualStore/DT_VirtualStoreDebugWindow")
+            return ok and DT_VirtualStoreDebugWindow and DT_VirtualStoreDebugWindow.Open
+        end,
+        action = function()
+            DT_VirtualStoreDebugWindow.Open()
+        end,
+    },
 }
 
 function DT_CentralDebugHubWindow:initialise()

@@ -3,7 +3,7 @@
 -- =============================================================================
 -- Separated logic for debugging trading items via UI Context Menu.
 
-require "DT/Common/UI/Trading/DT_Trading"
+
 
 function DT_TradingWindow:onListRightMouseUp(x, y)
     if not isDebugEnabled() then return end

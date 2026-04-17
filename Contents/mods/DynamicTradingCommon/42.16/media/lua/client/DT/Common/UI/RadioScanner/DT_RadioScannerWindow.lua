@@ -1,7 +1,7 @@
 require "ISUI/ISCollapsableWindow"
 require "DT/Common/UI/Radio/DT_RadioSignalDisplayPanel"
 require "DT/Common/UI/Radio/DT_RadioNetworkLogPanel"
-require "DT/Common/UI/RadioScanner/DT_RadioScannerBridge"
+
 require "DT/Common/UI/RadioScanner/DT_RadioScannerHeaderPanel"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerListPanel"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerActionPanel"

@@ -12,6 +12,7 @@ DynamicTrading.Events.Register("AtmosphericClear", {
     canSpawn = function() return true end,
     system = {
         scanChance = 2.0, -- Double scan chance (Easy mode)
+        traderBudgetMult = 1.2
     },
     effects = {
         ["Electronics.Communicator"] = { price = 1.2 }, -- Good radios in demand to use the clear air

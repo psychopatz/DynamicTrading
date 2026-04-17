@@ -1,4 +1,4 @@
-require "DT/Common/UI/Trading/DT_Trading"
+
 
 -- Keep explicit load order so action handlers preserve the original hierarchy.
 require "DT/Common/UI/Trading/TradingActions/DT_TradingActions_Transaction"

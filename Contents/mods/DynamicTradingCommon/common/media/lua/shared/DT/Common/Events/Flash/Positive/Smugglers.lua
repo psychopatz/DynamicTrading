@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("Smugglers", {
     type = "flash",
     description = "The underground market is active.",
     canSpawn = function() return true end,
+    system = { traderBudgetMult = 1.5 },
     effects = {
         ["Food.Drink.Alcohol"] = { price = 0.6, vol = 2.0 },
         ["Medical.General.Drug"] = { price = 0.6, vol = 2.0 },

@@ -367,6 +367,16 @@ function DT_FactionDebugWindow:createChildren()
     self.btnDebugHub.backgroundColor = {r=0.28, g=0.18, b=0.46, a=1}
     self.footerPanel:addChild(self.btnDebugHub)
 
+    self.btnStoreHub = ISButton:new(0, 0, 140, 25, "VIRTUAL STORE", self, function()
+        local ok = pcall(require, "DT/Common/UI/Debug/Factions/VirtualStore/DT_VirtualStoreDebugWindow")
+        if ok and DT_VirtualStoreDebugWindow and DT_VirtualStoreDebugWindow.Open then
+            DT_VirtualStoreDebugWindow.Open()
+        end
+    end)
+    self.btnStoreHub:initialise()
+    self.btnStoreHub.backgroundColor = {r=0.2, g=0.35, b=0.2, a=1}
+    self.footerPanel:addChild(self.btnStoreHub)
+
     -- 7. SELECTED FACTION CONTROLS
     self.btnWealthAdd = ISButton:new(0, 0, 100, 20, "+ COLONY$", self, function()
         local f = self.listbox.items[self.listbox.selected]

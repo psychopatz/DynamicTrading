@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("SchoolStart", {
     type = "flash",
     description = "Communities are rebuilding schools.",
     canSpawn = function() return true end,
+    system = { passiveIncomeMult = 1.1 },
     effects = {
         ["Literature.Book"] = { price = 2.5, vol = 0.2 },
         ["Literature"] = { price = 1.5 },

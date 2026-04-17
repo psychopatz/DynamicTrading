@@ -13,7 +13,7 @@ DynamicTrading.Events.Register("WitchHunt", {
     system = {
         traderLimit = 0.3, -- Only 30% of normal traders available
         scanChance = 0.8
-    },
+    , passiveIncomeMult = 0.6},
     effects = {
         ["Weapon"] = { price = 1.5 },
         ["Theme.Police"] = { price = 2.0 },

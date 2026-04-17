@@ -10,6 +10,7 @@ DynamicTrading.Events.Register("ConstructionBoom", {
     type = "flash",
     description = "Everyone is reinforcing their bases.",
     canSpawn = function() return true end,
+    system = { passiveIncomeMult = 1.2, traderBudgetMult = 1.1 },
     effects = {
         ["Resource.Material"] = { price = 2.0, vol = 0.5 },
         ["Resource.Material.Wood"] = { price = 1.8 },
