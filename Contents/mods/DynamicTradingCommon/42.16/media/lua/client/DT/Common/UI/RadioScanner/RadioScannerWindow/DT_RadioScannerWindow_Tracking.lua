@@ -281,8 +281,19 @@ local function buildTrackingPanelHeading(targetData)
 end
 
 local TRACKING_PROXIMITY_STAGES = {
+    { distance = 3000, key = "Approach3000" },
+    { distance = 2000, key = "Approach2000" },
+    { distance = 1500, key = "Approach1500" },
+    { distance = 1000, key = "Approach1000" },
+    { distance = 750, key = "Approach750" },
+    { distance = 500, key = "Approach500" },
+    { distance = 300, key = "Approach300" },
+    { distance = 200, key = "Approach200" },
+    { distance = 150, key = "Approach150" },
     { distance = 100, key = "Approach100" },
+    { distance = 75, key = "Approach75" },
     { distance = 50, key = "Approach50" },
+    { distance = 25, key = "Approach25" },
     { distance = 10, key = "Approach10" },
 }
 
