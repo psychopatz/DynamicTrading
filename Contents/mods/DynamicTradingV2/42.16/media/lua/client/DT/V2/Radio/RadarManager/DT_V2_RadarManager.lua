@@ -15,13 +15,15 @@ end
 RadarManager.EntryLoaded = true
 RadarManager.Modules = RadarManager.Modules or {}
 
-require "DT/V2/Radio/DT_V2_RadarLocationHandler"
+require "DT/Common/UI/RadioScanner/DT_RadioScannerLocationHandler"
+require "DT/V2/NetworkLogs"
 
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_Core"
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_Sync"
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_Accessors"
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_Coords"
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_Device"
+require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_State"
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_Cleanup"
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_Scan"
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager_Events"

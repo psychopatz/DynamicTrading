@@ -13,6 +13,7 @@ require "DT/V1/Utils/DT_OptionsManager"
 require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 require "DT/Common/Utils/DT_AudioManager"
 require "DT/Common/UI/Contacts/DT_ContactsWindow"
+require "DT/Common/UI/Radio/DT_RadioSignalDisplayPanel"
 
 DT_SignalPanel = ISPanel:derive("DT_SignalPanel")
 

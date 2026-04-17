@@ -109,8 +109,8 @@ function Handlers.HandleRemoveNPC(args)
         DynamicTrading_Client.Cache.Traders[uuid] = nil
     end
 
-    if DT_V2_RadarWindow and DT_V2_RadarWindow.instance and DT_V2_RadarWindow.instance.refresh then
-        DT_V2_RadarWindow.instance:refresh()
+    if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance.refresh then
+        DT_RadioScannerWindow.instance:refresh()
     end
 end
 

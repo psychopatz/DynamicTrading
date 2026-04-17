@@ -31,6 +31,10 @@ function RadarManager.Init()
     local data = ModData.getOrCreate("DT_V2_RadarFound")
     RadarManager.FoundTraders = data
 
+    if RadarManager.InitScanState then
+        RadarManager.InitScanState()
+    end
+
     if not isClient() then
         RadarManager.ClientRoster = ModData.get("DynamicTrading_Roster")
         RadarManager.ClientFactions = ModData.get("DynamicTrading_Factions")

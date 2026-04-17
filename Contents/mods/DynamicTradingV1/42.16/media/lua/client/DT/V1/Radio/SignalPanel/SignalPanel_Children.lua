@@ -7,6 +7,10 @@ V1_SignalPanel_Children_logic = {}
 function DT_SignalPanel:createChildren()
     ISPanel.createChildren(self)
 
+    self.signalDisplay = DT_RadioSignalDisplayPanel:new(0, 0, 0, 0)
+    self.signalDisplay:initialise()
+    self:addChild(self.signalDisplay)
+
     self.btnScan = ISButton:new(0, 0, 100, 25, "SCAN FREQUENCIES", self, self.onScanClick)
     self.btnScan:initialise()
     self.btnScan.backgroundColor = { r = 0.1, g = 0.3, b = 0.1, a = 1.0 }

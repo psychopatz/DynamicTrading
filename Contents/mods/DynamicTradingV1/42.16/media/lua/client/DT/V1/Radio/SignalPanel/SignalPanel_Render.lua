@@ -7,15 +7,6 @@ V1_SignalPanel_Render_logic = {}
 function DT_SignalPanel:render()
     ISPanel.render(self)
 
-    local tex = self.signalTextures[self.signalState] and self.signalTextures[self.signalState][self.signalFrame]
-    if self.clickAnimTimer > 0 and self.signalTextures.none and self.signalTextures.none[2] then
-        tex = self.signalTextures.none[2]
-    end
-
-    if tex then
-        self:drawTextureScaled(tex, self.imgX, self.imgY, self.imgSize, self.imgSize, 1, 1, 1, 1)
-    end
-
     if self.parent and self.parent.radioObj then
         local typeID = self:getRadioTypeID()
         local radioData = DynamicTrading.Config.GetRadioData(typeID)

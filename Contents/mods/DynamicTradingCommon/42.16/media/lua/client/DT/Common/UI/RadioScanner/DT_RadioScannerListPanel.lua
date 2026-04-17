@@ -1,17 +1,12 @@
--- ==============================================================================
--- DT_V2_RadarListPanel.lua
--- Manages the scrolling list of traders and their portraits.
--- ==============================================================================
-
 require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 
-DT_V2_RadarListPanel = ISPanel:derive("DT_V2_RadarListPanel")
+DT_RadioScannerListPanel = ISPanel:derive("DT_RadioScannerListPanel")
 
-local function resolveRadarListItem(listbox, itemOrData)
+local function resolveScannerListItem(listbox, itemOrData)
     if type(itemOrData) == "table" then
         if type(itemOrData.item) == "table" then
             return itemOrData.item
@@ -32,17 +27,17 @@ local function resolveRadarListItem(listbox, itemOrData)
     return nil
 end
 
-function DT_V2_RadarListPanel:initialise()
+function DT_RadioScannerListPanel:initialise()
     ISPanel.initialise(self)
 end
 
-function DT_V2_RadarListPanel:createChildren()
+function DT_RadioScannerListPanel:createChildren()
     ISPanel.createChildren(self)
 
     self.listbox = ISScrollingListBox:new(0, 0, self.width, self.height)
     self.listbox:initialise()
     self.listbox:instantiate()
-    self.listbox.itemheight = 65
+    self.listbox.itemheight = 72
     self.listbox.doDrawItem = self.doDrawItem
     self.listbox.onmousedown = self.onListMouseDown
     self.listbox.onmousedblclick = self.onListDoubleClick
@@ -51,30 +46,49 @@ function DT_V2_RadarListPanel:createChildren()
     self.listbox:setAnchorBottom(true)
     self:addChild(self.listbox)
 
-    -- FACTION INTEL BUTTON (Hidden by default)
     self.btnFaction = ISButton:new(0, 0, self.width, 30, "FACTION INTELLIGENCE", self, function()
-        if DT_FactionInfoWindow then DT_FactionInfoWindow.Open() end
+        if DT_FactionInfoWindow then
+            DT_FactionInfoWindow.Open()
+        end
     end)
     self.btnFaction:initialise()
-    self.btnFaction.backgroundColor = {r=0, g=0.2, b=0.5, a=1}
-    self.btnFaction.borderColor = {r=0.4, g=0.4, b=1, a=1}
+    self.btnFaction.backgroundColor = { r = 0, g = 0.2, b = 0.5, a = 1 }
+    self.btnFaction.borderColor = { r = 0.4, g = 0.4, b = 1, a = 1 }
     self.btnFaction:setVisible(false)
     self:addChild(self.btnFaction)
 end
 
-function DT_V2_RadarListPanel:setLayoutMode(mode)
+function DT_RadioScannerListPanel:setLayoutMode(mode)
+    self.layoutMode = (mode == "Location") and "Location" or "Standard"
+
     if mode == "Location" then
         self.btnFaction:setVisible(true)
         self.listbox:setY(35)
+        self.listbox:setWidth(self.width)
         self.listbox:setHeight(self.height - 35)
     else
         self.btnFaction:setVisible(false)
         self.listbox:setY(0)
+        self.listbox:setWidth(self.width)
         self.listbox:setHeight(self.height)
     end
 end
 
-function DT_V2_RadarListPanel:drawPortrait(ctx, y, itemData)
+function DT_RadioScannerListPanel:onResize()
+    ISPanel.onResize(self)
+
+    if self.btnFaction then
+        self.btnFaction:setWidth(self.width)
+    end
+
+    if self.listbox then
+        self.listbox:setWidth(self.width)
+    end
+
+    self:setLayoutMode(self.layoutMode or "Standard")
+end
+
+function DT_RadioScannerListPanel:drawPortrait(context, y, itemData)
     local tex = nil
     if DynamicTrading and DynamicTrading.Portraits then
         local seed = itemData.identitySeed or 1
@@ -82,42 +96,42 @@ function DT_V2_RadarListPanel:drawPortrait(ctx, y, itemData)
         if DynamicTrading.Portraits.GetMappedID then
             mappedID = DynamicTrading.Portraits.GetMappedID(itemData.archetype, itemData.gender, seed)
         end
-        
+
         local pathFolder = DynamicTrading.Portraits.GetPathFolder(itemData.archetype, itemData.gender)
         tex = getTexture(pathFolder .. tostring(mappedID) .. ".png")
     end
-    
-    if not tex then tex = getTexture("Item_WalkieTalkie1") end
-    
-    if tex then 
-        ctx:drawTextureScaled(tex, 10, y + 5, 55, 55, 1, 1, 1, 1) 
+
+    if not tex then
+        tex = getTexture("Item_WalkieTalkie1")
+    end
+
+    if tex then
+        context:drawTextureScaled(tex, 10, y + 5, 55, 55, 1, 1, 1, 1)
     end
 end
 
-function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
+function DT_RadioScannerListPanel:doDrawItem(y, item, alt)
     local data = item.item
-    if not data then return y end
+    if not data then
+        return y
+    end
 
     local target = self.target
 
-    -- SPECIAL CASE: Location Info
     if data.isLocationInfo then
         if alt then
-             self:drawRect(0, y, self.width, self.itemheight, 0.1, 0.2, 0.2, 0.2)
+            self:drawRect(0, y, self.width, self.itemheight, 0.1, 0.2, 0.2, 0.2)
         end
-        
-        local titleColor = {r=0.8, g=0.8, b=1.0}
+
+        local titleColor = { r = 0.8, g = 0.8, b = 1.0 }
         self:drawText(data.label, 15, y + 10, titleColor.r, titleColor.g, titleColor.b, 1, UIFont.Medium)
         self:drawText(tostring(data.value), 15, y + 35, 0.7, 0.7, 0.7, 1, UIFont.Small)
-        
         return y + self.itemheight
     end
 
     local isSelected = (item.selected == true)
-    if not isSelected and self.selected ~= -1 then
-        if self.items[self.selected] == item then
-            isSelected = true
-        end
+    if not isSelected and self.selected ~= -1 and self.items[self.selected] == item then
+        isSelected = true
     end
 
     if isSelected then
@@ -132,49 +146,52 @@ function DT_V2_RadarListPanel:doDrawItem(y, item, alt)
     target:drawPortrait(self, y, data)
 
     local contentX = 75
-    local color = data.isLive and {r=0.4, g=1, b=0.4} or {r=0.7, g=0.7, b=0.7}
-    
-    local archName = (DynamicTrading and DynamicTrading.Archetypes and DynamicTrading.Archetypes[data.archetype]) and DynamicTrading.Archetypes[data.archetype].name or data.archetype
+    local color = data.isLive and { r = 0.4, g = 1, b = 0.4 } or { r = 0.7, g = 0.7, b = 0.7 }
+    local archName = (DynamicTrading and DynamicTrading.Archetypes and DynamicTrading.Archetypes[data.archetype])
+        and DynamicTrading.Archetypes[data.archetype].name
+        or data.archetype
     self:drawText(tostring(data.name) .. " [" .. tostring(archName) .. "]", contentX, y + 5, 1, 1, 1, 1, UIFont.Small)
-    
+
+    if data.locked == true then
+        self:drawTextRight("LOCKED", self.width - 12, y + 6, 1.0, 0.82, 0.35, 1, UIFont.Small)
+    end
+
     local fR, fG, fB = 1, 1, 1
     if data.faction == "Independent" then
-        fR, fG, fB = 0.8, 0.8, 0.4 
+        fR, fG, fB = 0.8, 0.8, 0.4
     else
-        if data.archetype and string.find(data.archetype, "Soldier") then fR, fG, fB = 1, 0.4, 0.4
-        elseif data.archetype and string.find(data.archetype, "Doctor") then fR, fG, fB = 0.4, 0.8, 1
+        if data.archetype and string.find(data.archetype, "Soldier") then
+            fR, fG, fB = 1, 0.4, 0.4
+        elseif data.archetype and string.find(data.archetype, "Doctor") then
+            fR, fG, fB = 0.4, 0.8, 1
         end
     end
     self:drawText("Faction: " .. tostring(data.factionName), contentX, y + 25, fR, fG, fB, 1, UIFont.Small)
-
-    self:drawText(tostring(data.distText) .. (data.isLive and " [SIGNAL STRONG]" or " [SIGNAL WEAK]"), contentX, y + 45, color.r, color.g, color.b, 1, UIFont.Small)
+    self:drawText(tostring(data.distText) .. (data.isLive and " [SIGNAL STRONG]" or " [SIGNAL WEAK]"), contentX, y + 46, color.r, color.g, color.b, 1, UIFont.Small)
 
     if data.expireText and data.expireText ~= "" then
-        local expR, expG, expB = 1.0, 1.0, 0.6 
-        self:drawTextRight(data.expireText, self.width - 65, y + 45, expR, expG, expB, 1, UIFont.Small)
+        self:drawTextRight(data.expireText, self.width - 65, y + 28, 1.0, 1.0, 0.6, 1, UIFont.Small)
     end
 
     return y + self.itemheight
 end
 
-function DT_V2_RadarListPanel:onListMouseDown(itemData)
-    -- 'self' is the DT_V2_RadarListPanel here
+function DT_RadioScannerListPanel:onListMouseDown(itemData)
     if self.parent and self.parent.actionPanel then
-        local resolved = resolveRadarListItem(self.listbox, itemData)
-        if resolved and resolved.uuid then
-            self.parent.actionPanel.btnLocate.enable = true
-            self.parent.actionPanel:updateButtonState(resolved.uuid)
-        else
-            self.parent.actionPanel.btnLocate.enable = false
+        local resolved = resolveScannerListItem(self.listbox, itemData)
+        if self.parent.actionPanel.updateSelectionState then
+            self.parent.actionPanel:updateSelectionState(resolved)
         end
     end
 end
 
-function DT_V2_RadarListPanel:onListDoubleClick(itemData)
+function DT_RadioScannerListPanel:onListDoubleClick(itemData)
     if self.parent and self.parent.actionPanel then
-        local resolved = resolveRadarListItem(self.listbox, itemData)
+        local resolved = resolveScannerListItem(self.listbox, itemData)
         if resolved and resolved.uuid then
-            self.parent.actionPanel.btnLocate.enable = true
+            if self.parent.actionPanel.updateSelectionState then
+                self.parent.actionPanel:updateSelectionState(resolved)
+            end
             if self.parent.actionPanel.onLocate then
                 self.parent.actionPanel:onLocate()
             end
@@ -182,41 +199,40 @@ function DT_V2_RadarListPanel:onListDoubleClick(itemData)
     end
 end
 
-function DT_V2_RadarListPanel:render()
+function DT_RadioScannerListPanel:render()
     ISPanel.render(self)
 
     if self.listbox and #self.listbox.items == 0 then
         local category = self.parent and self.parent.currentCategory or "Stationary"
-        if category == "Location" then return end
+        if category == "Location" then
+            return
+        end
 
         local font = UIFont.Medium
-        local font2 = UIFont.Small
-        
+        local smallFont = UIFont.Small
         local text1 = "NO ACTIVE SIGNALS"
         local text2 = "Traders may be resting or in transit."
         local text3 = "Please wait for a new broadcast window."
-
         local h1 = getTextManager():getFontHeight(font)
-        local h2 = getTextManager():getFontHeight(font2)
-        
+        local h2 = getTextManager():getFontHeight(smallFont)
         local totalH = h1 + (h2 * 2) + 10
         local y = (self.height / 2) - (totalH / 2)
-        
+
         local tw1 = getTextManager():MeasureStringX(font, text1)
         self:drawText(text1, (self.width - tw1) / 2, y, 0.8, 0.8, 0.8, 0.8, font)
-        
-        local tw2 = getTextManager():MeasureStringX(font2, text2)
-        self:drawText(text2, (self.width - tw2) / 2, y + h1 + 5, 0.6, 0.6, 0.6, 0.7, font2)
 
-        local tw3 = getTextManager():MeasureStringX(font2, text3)
-        self:drawText(text3, (self.width - tw3) / 2, y + h1 + h2 + 8, 0.5, 0.5, 0.5, 0.6, font2)
+        local tw2 = getTextManager():MeasureStringX(smallFont, text2)
+        self:drawText(text2, (self.width - tw2) / 2, y + h1 + 5, 0.6, 0.6, 0.6, 0.7, smallFont)
+
+        local tw3 = getTextManager():MeasureStringX(smallFont, text3)
+        self:drawText(text3, (self.width - tw3) / 2, y + h1 + h2 + 8, 0.5, 0.5, 0.5, 0.6, smallFont)
     end
 end
 
-function DT_V2_RadarListPanel:new(x, y, width, height)
+function DT_RadioScannerListPanel:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.backgroundColor = {r=0, g=0, b=0, a=0}
+    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
     return o
 end

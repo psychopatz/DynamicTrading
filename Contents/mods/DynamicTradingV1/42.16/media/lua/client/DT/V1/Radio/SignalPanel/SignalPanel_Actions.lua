@@ -12,7 +12,9 @@ function DT_SignalPanel:onScanClick()
     end
 
     self.signalFoundPersist = false
-    self.clickAnimTimer = 300
+    if self.signalDisplay then
+        self.signalDisplay:pulseStatic(300)
+    end
     sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
 
     if DT_RadioInteraction and DT_RadioInteraction.PerformScan then

@@ -24,7 +24,14 @@ function RadarManager.Cleanup()
     end
 
     for _, uuid in ipairs(toRemove) do
+        local soul = rosterData.Souls[uuid]
+        local traderName = (soul and soul.name) or (RadarManager.FoundTraders[uuid] and RadarManager.FoundTraders[uuid].name) or uuid
+
         DynamicTrading.Log("DTV2", "Radio", "Cleanup", "Removing expired/inactive trader from radar: " .. uuid)
-        RadarManager.FoundTraders[uuid] = nil
+        if RadarManager.RemoveSignal then
+            RadarManager.RemoveSignal(uuid, "Signal Lost: " .. tostring(traderName), "bad")
+        else
+            RadarManager.FoundTraders[uuid] = nil
+        end
     end
 end

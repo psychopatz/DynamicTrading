@@ -4,14 +4,16 @@
 -- ==============================================================================
 
 require "ISUI/ISRadioWindow"
+require "DT/Common/UI/RadioScanner/DT_RadioScannerWindow"
+require "DT/V2/Radio/RadarManager/DT_V2_RadarManager"
 
 local original_createChildren = ISRadioWindow.createChildren
 local original_close = ISRadioWindow.close
 local original_readFromObject = ISRadioWindow.readFromObject
 
 function ISRadioWindow:close()
-    if DT_V2_RadarWindow and DT_V2_RadarWindow.instance then
-        DT_V2_RadarWindow.instance:close()
+    if DT_RadioScannerWindow and DT_RadioScannerWindow.instance then
+        DT_RadioScannerWindow.instance:close()
     end
     original_close(self)
 end
@@ -19,8 +21,8 @@ end
 function ISRadioWindow:readFromObject(_player, _deviceObject)
     -- If device changes, close our radar list (it might have stale data/range)
     if self.device ~= _deviceObject then
-        if DT_V2_RadarWindow and DT_V2_RadarWindow.instance then
-            DT_V2_RadarWindow.instance:close()
+        if DT_RadioScannerWindow and DT_RadioScannerWindow.instance then
+            DT_RadioScannerWindow.instance:close()
         end
     end
     original_readFromObject(self, _player, _deviceObject)
@@ -36,9 +38,9 @@ function ISRadioWindow:createChildren()
     local y = 100 -- Default placeholder
 
     -- Add the "SCAN FOR TRADERS" button
-    self.btnTraderScan = ISButton:new(startX, y, btnWidth, btnHeight, "SCAN TRADERS", self, function(self)
-        if DT_V2_RadarManager then
-            DT_V2_RadarManager.Scan(getPlayer(), self.device)
+    self.btnTraderScan = ISButton:new(startX, y, btnWidth, btnHeight, "SCAN TRADERS", self, function(window)
+        if DT_V2_RadarManager and DT_V2_RadarManager.Scan then
+            DT_V2_RadarManager.Scan(getSpecificPlayer(0), window.device)
         end
     end)
     self.btnTraderScan:initialise()
@@ -47,9 +49,9 @@ function ISRadioWindow:createChildren()
     self:addChild(self.btnTraderScan)
 
     -- Add the "OPEN RADAR LIST" button
-    self.btnTraderList = ISButton:new(startX + btnWidth + 10, y, btnWidth, btnHeight, "RADAR LIST", self, function(self)
-        if DT_V2_RadarWindow then
-            DT_V2_RadarWindow.ToggleWindow(self.device)
+    self.btnTraderList = ISButton:new(startX + btnWidth + 10, y, btnWidth, btnHeight, "RADAR LIST", self, function(window)
+        if DT_RadioScannerWindow then
+            DT_RadioScannerWindow.ToggleWindow(window.device)
         end
     end)
     self.btnTraderList:initialise()
@@ -81,12 +83,26 @@ function ISRadioWindow:prerender()
         if self.deviceData and self.deviceData:getIsTurnedOn() then
             if self.deviceData:getPower() > 0 then operational = true end
         end
-        self.btnTraderScan.enable = operational
+        local canScan = operational
+        local remainingMinutes = 0
+        if operational and DT_V2_RadarManager and DT_V2_RadarManager.CanScan then
+            local player = getSpecificPlayer(0)
+            canScan, remainingMinutes = DT_V2_RadarManager.CanScan(player, self.device)
+        end
+
+        self.btnTraderScan.enable = canScan == true
         self.btnTraderList.enable = operational
+        if canScan == true then
+            self.btnTraderScan:setTitle("SCAN TRADERS")
+            self.btnTraderScan.textColor = { r = 1, g = 1, b = 1, a = 1 }
+        else
+            self.btnTraderScan:setTitle("WAIT (" .. tostring(math.max(1, math.ceil(remainingMinutes or 0))) .. "m)")
+            self.btnTraderScan.textColor = { r = 1, g = 0.65, b = 0.35, a = 1 }
+        end
 
         -- V2.5: Auto-close Radar Window if radio loses power/is turned off
-        if not operational and DT_V2_RadarWindow and DT_V2_RadarWindow.instance then
-            DT_V2_RadarWindow.instance:close()
+        if not operational and DT_RadioScannerWindow and DT_RadioScannerWindow.instance then
+            DT_RadioScannerWindow.instance:close()
         end
     end
 

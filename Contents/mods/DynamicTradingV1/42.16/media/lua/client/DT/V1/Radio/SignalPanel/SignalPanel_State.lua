@@ -29,11 +29,6 @@ function DT_SignalPanel:updateSignalLogic()
     local player = getSpecificPlayer(0)
     local signalAvailable = false
 
-    local deltaTime = UIManager.getMillisSinceLastRender()
-    if self.clickAnimTimer > 0 then
-        self.clickAnimTimer = self.clickAnimTimer - deltaTime
-    end
-
     local totalTrading = DynamicTrading.Manager.GetTotalTradingSignals() or 0
     local foundByMe = DynamicTrading.Manager.GetFoundSignalsCount(player) or 0
     local typeID = self:getRadioTypeID()
@@ -44,21 +39,16 @@ function DT_SignalPanel:updateSignalLogic()
         signalAvailable = true
     end
 
+    local nextState = "none"
     if self.signalFoundPersist then
-        self.signalState = "found"
+        nextState = "found"
     elseif not signalAvailable then
-        self.signalState = "none"
+        nextState = "none"
     else
-        self.signalState = "search"
+        nextState = "search"
     end
 
-    self.signalAnimTimer = self.signalAnimTimer + deltaTime
-    if self.signalAnimTimer >= self.signalFrameDuration then
-        self.signalAnimTimer = self.signalAnimTimer - self.signalFrameDuration
-        self.signalFrame = self.signalFrame + 1
-        local max = self.signalFrameCounts[self.signalState] or 3
-        if self.signalFrame > max then
-            self.signalFrame = 1
-        end
+    if self.signalDisplay then
+        self.signalDisplay:setSignalState(nextState)
     end
 end

@@ -6,24 +6,7 @@ V1_SignalPanel_Core_logic = {}
 
 function DT_SignalPanel:initialise()
     ISPanel.initialise(self)
-    self.signalState = "search"
-    self.signalFrame = 1
-    self.signalAnimTimer = 0
-    self.signalFrameDuration = 200
     self.signalFoundPersist = false
-    self.clickAnimTimer = 0
-
-    self.signalFrameCounts = { search = 5, found = 3, none = 3 }
-    self.signalTextures = { search = {}, found = {}, none = {} }
-
-    for i = 1, 5 do
-        self.signalTextures.search[i] = getTexture("media/ui/Radio/Signal_search/" .. i .. ".png")
-    end
-
-    for i = 1, 3 do
-        self.signalTextures.found[i] = getTexture("media/ui/Radio/Signal_found/" .. i .. ".png")
-        self.signalTextures.none[i] = getTexture("media/ui/Radio/Signal_none/" .. i .. ".png")
-    end
 
     self.imgSize = 130
     self.imgX = 10

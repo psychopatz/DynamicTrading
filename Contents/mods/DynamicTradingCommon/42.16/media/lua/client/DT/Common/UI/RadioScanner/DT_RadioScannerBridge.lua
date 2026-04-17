@@ -1,0 +1,7 @@
+require "DT/V2/Utils/DT_V2_OptionsManager"
+require "DT/Common/UI/RadioScanner/DT_RadioScannerLocationHandler"
+require "DT/V2/Radio/RadarManager/DT_V2_RadarManager"
+
+DT_RadioScannerManager = DT_RadioScannerManager or DT_V2_RadarManager
+DT_RadioScannerLocationHandler = DT_RadioScannerLocationHandler or DT_RadioScannerLocationHandler
+DT_RadioScannerOptionsManager = DT_RadioScannerOptionsManager or DT_V2_OptionsManager

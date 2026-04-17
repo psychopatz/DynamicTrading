@@ -20,6 +20,13 @@ function DT_SignalPanel:onResize()
     self.imgX = 10
     self.imgY = (h - self.imgSize) / 2
 
+    if self.signalDisplay then
+        self.signalDisplay:setX(self.imgX)
+        self.signalDisplay:setY(self.imgY)
+        self.signalDisplay:setWidth(self.imgSize)
+        self.signalDisplay:setHeight(self.imgSize)
+    end
+
     local startX = self.imgX + self.imgSize + 20
     local remWidth = w - startX - 10
     if remWidth < 120 then
