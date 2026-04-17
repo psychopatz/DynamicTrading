@@ -34,7 +34,7 @@ local languages = {
     "FR", "HU", "ID", "IT", "JP", "KO", "NL", "NO", "PH", "PL",
     "PT", "PTBR", "RO", "RU", "TH", "TR", "UA"
 }
-local dialogueTypes = { "Greetings", "Buying", "Selling", "Sell_ask", "Idle", "Request" }
+local dialogueTypes = { "Greetings", "Buying", "Selling", "Sell_ask", "Idle", "Request", "Tracking" }
 local ambientDialogueStatuses = { "Default", "Trading", "Resting", "Working", "Away" }
 
 -- Debug Flag

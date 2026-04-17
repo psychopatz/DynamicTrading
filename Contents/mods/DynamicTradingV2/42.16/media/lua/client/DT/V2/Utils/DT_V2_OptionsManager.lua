@@ -23,6 +23,10 @@ local function refreshPortraitUIs()
     if DT_ConversationUI and DT_ConversationUI.instance and DT_ConversationUI.instance.refreshPortrait then
         DT_ConversationUI.instance:refreshPortrait(true)
     end
+
+    if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance.refreshTrackingPresentation then
+        DT_RadioScannerWindow.instance:refreshTrackingPresentation(true)
+    end
 end
 
 function DT_V2_OptionsManager.RegisterUI()

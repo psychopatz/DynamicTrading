@@ -14,6 +14,10 @@ function DT_RadioScannerWindow:initialise()
     self.syncTimer = 0
     self.trackingUUID = nil
     self.trackingName = nil
+    self.trackingData = nil
+    self.trackingContext = nil
+    self.trackingMessageQueue = {}
+    self.trackingMilestones = nil
 end
 
 function DT_RadioScannerWindow:new(x, y, width, height)

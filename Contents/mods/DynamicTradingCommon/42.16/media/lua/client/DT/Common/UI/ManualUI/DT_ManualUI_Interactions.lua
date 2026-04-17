@@ -161,6 +161,13 @@ function DT_ManualUI:onContentMouseDown(x, y)
         return
     end
 
+    if entry.kind == "image" then
+        if DT_ManualUI_ImageModal and DT_ManualUI_ImageModal.Open then
+            DT_ManualUI_ImageModal.Open(entry)
+        end
+        return
+    end
+
     if entry.kind == "library" then
         DT_ManualUI.instance:openLocation({ manualId = entry.manualId })
     end

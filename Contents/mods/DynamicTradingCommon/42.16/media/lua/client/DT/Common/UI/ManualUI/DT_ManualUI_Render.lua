@@ -238,6 +238,13 @@ function DT_ManualUI:drawContentItem(y, item, alt)
         end
 
         self:drawRectBorder(drawX, drawY, drawW, drawH, 0.8, 0.5, 0.5, 0.5)
+
+        -- "Click to expand" hint
+        local hintText = "Click to expand"
+        local hintFont = UIFont.Small
+        local hintW = DT_ManualUI_Utils.safeMeasure(hintFont, hintText)
+        self:drawText(hintText, drawX + drawW - hintW - 4, drawY + drawH - 18, 0.55, 0.65, 0.80, 0.85, hintFont)
+
         if block.caption and block.caption ~= "" then
             self:drawText(block.caption, drawX, drawY + drawH + 6, 0.75, 0.75, 0.75, 1, UIFont.Small)
         end

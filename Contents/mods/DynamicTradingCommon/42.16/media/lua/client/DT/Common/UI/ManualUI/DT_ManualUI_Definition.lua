@@ -28,6 +28,7 @@ local function dtEnsureManualUIModulesLoaded()
     require "DT/Common/UI/ManualUI/DT_ManualUI_Search"
     require "DT/Common/UI/ManualUI/DT_ManualUI_Render"
     require "DT/Common/UI/ManualUI/DT_ManualUI_Interactions"
+    require "DT/Common/UI/ManualUI/DT_ManualUI_ImageModal"
 
     DT_ManualUI._modulesLoading = false
 end

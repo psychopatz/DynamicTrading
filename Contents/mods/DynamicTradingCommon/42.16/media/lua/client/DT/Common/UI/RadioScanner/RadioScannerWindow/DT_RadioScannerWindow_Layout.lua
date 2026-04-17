@@ -39,6 +39,11 @@ function DT_RadioScannerWindow:relayout()
     local rightColumnWidth = math.max(180, bodyWidth - leftColumnWidth - columnGap)
     local logHeight = clamp(math.floor(bodyHeight * 0.23), 110, 180)
     local availableTopHeight = math.max(170, bodyHeight - logHeight - statusHeight - (columnGap * 2))
+    local conversationWidth = clamp(math.floor(bodyWidth * 0.42), 220, 360)
+    if bodyWidth - conversationWidth - columnGap < 220 then
+        conversationWidth = math.max(220, bodyWidth - columnGap - 220)
+    end
+    local networkLogWidth = math.max(220, bodyWidth - conversationWidth - columnGap)
     
     -- Ensure squareSize is exactly the same as leftColumnWidth so they match as requested.
     local squareSize = leftColumnWidth
@@ -59,12 +64,30 @@ function DT_RadioScannerWindow:relayout()
         self.signalDisplayPanel:setHeight(squareSize)
     end
 
+    if self.trackedPortraitPanel then
+        self.trackedPortraitPanel:setX(outerPadding)
+        self.trackedPortraitPanel:setY(imageBlockTop)
+        self.trackedPortraitPanel:setWidth(squareSize)
+        self.trackedPortraitPanel:setHeight(squareSize)
+        if self.trackedPortraitPanel.onResize then
+            self.trackedPortraitPanel:onResize()
+        end
+    end
+
     if self.logPanel then
-        self.logPanel:setX(outerPadding)
+        self.logPanel:setX(outerPadding + conversationWidth + columnGap)
         self.logPanel:setY(logY)
-        self.logPanel:setWidth(bodyWidth)
+        self.logPanel:setWidth(networkLogWidth)
         self.logPanel:setHeight(logHeight)
         self.logPanel:onResize()
+    end
+
+    if self.trackingDialoguePanel then
+        self.trackingDialoguePanel:setX(outerPadding)
+        self.trackingDialoguePanel:setY(logY)
+        self.trackingDialoguePanel:setWidth(conversationWidth)
+        self.trackingDialoguePanel:setHeight(logHeight)
+        self.trackingDialoguePanel:onResize()
     end
 
     if self.listPanel then
@@ -112,11 +135,22 @@ function DT_RadioScannerWindow:createChildren()
     self.signalDisplayPanel:instantiate()
     self:addChild(self.signalDisplayPanel)
 
+    self.trackedPortraitPanel = DT_RadioScannerTrackedPortraitPanel:new(0, 0, 220, 220)
+    self.trackedPortraitPanel:initialise()
+    self.trackedPortraitPanel:instantiate()
+    self.trackedPortraitPanel:setVisible(false)
+    self:addChild(self.trackedPortraitPanel)
+
     self.statusPanel = DT_RadioScannerStatusPanel:new(0, 0, self.width, 54)
     self.statusPanel:initialise()
     self.statusPanel:instantiate()
     self.statusPanel:setAnchorRight(true)
     self:addChild(self.statusPanel)
+
+    self.trackingDialoguePanel = DT_RadioScannerConversationPanel:new(0, 0, 280, 140, "Tracked Channel:")
+    self.trackingDialoguePanel:initialise()
+    self.trackingDialoguePanel:instantiate()
+    self:addChild(self.trackingDialoguePanel)
 
     self.logPanel = DT_RadioNetworkLogPanel:new(0, 0, 220, 140, "DynamicTrading_Logs_v1.0")
     self.logPanel:initialise()

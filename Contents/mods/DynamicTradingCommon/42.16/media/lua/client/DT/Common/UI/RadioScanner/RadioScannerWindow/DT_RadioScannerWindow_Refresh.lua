@@ -204,6 +204,9 @@ function DT_RadioScannerWindow:refresh()
         if self.actionPanel and self.actionPanel.updateSelectionState then
             self.actionPanel:updateSelectionState(nil)
         end
+        if self.refreshTrackingPresentation then
+            self:refreshTrackingPresentation(false)
+        end
         return
     end
     local tempList = {}
@@ -375,5 +378,9 @@ function DT_RadioScannerWindow:refresh()
 
     if self.actionPanel and self.actionPanel.updateSelectionState then
         self.actionPanel:updateSelectionState(selectedData)
+    end
+
+    if self.refreshTrackingPresentation then
+        self:refreshTrackingPresentation(false)
     end
 end

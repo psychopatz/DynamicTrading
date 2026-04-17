@@ -17,6 +17,9 @@ function DT_RadioScannerWindow:update()
         end
 
         self.updateTimer = self.updateTimer + uiDt
+        if self.processTrackingDialogueQueue then
+            self:processTrackingDialogueQueue(uiDt)
+        end
         if self.updateTimer >= 2.0 then
             self.updateTimer = 0
             self:refresh()

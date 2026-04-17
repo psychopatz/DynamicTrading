@@ -134,7 +134,7 @@ function DT_RadioScannerActionPanel:onLocate()
     if self.parent.trackingUUID == uuid then
         self.parent:stopTracking()
     else
-        self.parent:startTracking(uuid, data.name)
+        self.parent:startTracking(uuid, data.name, data)
     end
 
     self:updateButtonState(uuid, data)

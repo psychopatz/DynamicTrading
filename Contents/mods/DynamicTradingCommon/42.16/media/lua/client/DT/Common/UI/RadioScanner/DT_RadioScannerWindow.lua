@@ -6,6 +6,8 @@ require "DT/Common/UI/RadioScanner/DT_RadioScannerHeaderPanel"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerListPanel"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerActionPanel"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerStatusPanel"
+require "DT/Common/UI/RadioScanner/DT_RadioScannerConversationPanel"
+require "DT/Common/UI/RadioScanner/DT_RadioScannerTrackedPortraitPanel"
 
 require "DT/Common/UI/RadioScanner/RadioScannerWindow/DT_RadioScannerWindow_Core"
 require "DT/Common/UI/RadioScanner/RadioScannerWindow/DT_RadioScannerWindow_Layout"
