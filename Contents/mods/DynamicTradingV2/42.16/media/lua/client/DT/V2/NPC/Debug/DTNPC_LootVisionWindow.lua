@@ -3,7 +3,7 @@
 -- Debug-only modal that shows nearby loot sources/items around the player.
 -- ==============================================================================
 
-if not isDebugEnabled() then return end
+if not ((isDebugEnabled and isDebugEnabled()) or rawget(_G, "DT_PRIVATE_DEBUG_BYPASS") == true) then return end
 
 require "ISUI/ISCollapsableWindow"
 require "ISUI/ISScrollingListBox"

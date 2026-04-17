@@ -5,117 +5,365 @@
 -- Build 42 Compatible
 -- ==============================================================================
 
+require "ISUI/ISCollapsableWindow"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugData"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugRenderers"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugActions"
 
-DT_FactionDebugWindow = ISPanel:derive("DT_FactionDebugWindow")
+DT_FactionDebugWindow = ISCollapsableWindow:derive("DT_FactionDebugWindow")
+
+local CONTENT_PAD = 10
+local CONTENT_GAP = 10
+local CONTROL_PANEL_HEIGHT = 92
+local FOOTER_HEIGHT = 32
+local CONTROL_GAP = 8
+local CONTENT_TOP_PADDING = 10
+local DEFAULT_TITLEBAR_HEIGHT = 35
+local SECTION_HEADER_HEIGHT = 18
+local SECTION_INNER_PAD = 8
+local SMALL_BUTTON_HEIGHT = 20
+local NORMAL_BUTTON_HEIGHT = 25
+local MIN_CONTENT_HEIGHT = 320
+
+local function getFlowColumns(availableWidth, minWidth, gap)
+    if availableWidth <= 0 then
+        return 1
+    end
+    return math.max(1, math.floor((availableWidth + gap) / (minWidth + gap)))
+end
+
+local function getFlowHeight(count, availableWidth, minWidth, buttonHeight, gap)
+    if count <= 0 then
+        return 0
+    end
+    local columns = getFlowColumns(availableWidth, minWidth, gap)
+    local rows = math.ceil(count / columns)
+    return (rows * buttonHeight) + (math.max(0, rows - 1) * gap)
+end
+
+local function layoutButtonFlow(startX, startY, availableWidth, buttons, minWidth, buttonHeight, gap)
+    local columns = getFlowColumns(availableWidth, minWidth, gap)
+    local actualWidth = math.floor((availableWidth - ((columns - 1) * gap)) / columns)
+    for index, button in ipairs(buttons) do
+        local row = math.floor((index - 1) / columns)
+        local column = (index - 1) % columns
+        button:setX(startX + (column * (actualWidth + gap)))
+        button:setY(startY + (row * (buttonHeight + gap)))
+        button:setWidth(actualWidth)
+        button:setHeight(buttonHeight)
+    end
+    return startY + getFlowHeight(#buttons, availableWidth, minWidth, buttonHeight, gap)
+end
+
+local function setSelectedItemIndex(listbox, item)
+    if not listbox or not listbox.items then
+        return
+    end
+    for index, row in ipairs(listbox.items) do
+        if row and row.item == item then
+            listbox.selected = index
+            return
+        end
+    end
+end
+
+local function rowYForIndex(listbox, index)
+    local topIndex = tonumber(listbox.topItem or 1) or 1
+    local itemHeight = tonumber(listbox.itemheight or 1) or 1
+    return (index - topIndex) * itemHeight
+end
+
+local function measureTextWidth(font, text)
+    return getTextManager():MeasureStringX(font, tostring(text or ""))
+end
+
+local function getColumnWidths(totalWidth)
+    local contentWidth = totalWidth - (CONTENT_PAD * 2)
+    local listWidth = math.max(220, math.min(280, math.floor(contentWidth * 0.25)))
+    local detailsWidth = math.max(260, math.min(340, math.floor(contentWidth * 0.31)))
+    local rosterWidth = contentWidth - listWidth - detailsWidth - (CONTENT_GAP * 2)
+
+    if rosterWidth < 280 then
+        local deficit = 280 - rosterWidth
+        local detailsShrink = math.min(deficit, math.max(0, detailsWidth - 240))
+        detailsWidth = detailsWidth - detailsShrink
+        deficit = deficit - detailsShrink
+        if deficit > 0 then
+            local listShrink = math.min(deficit, math.max(0, listWidth - 200))
+            listWidth = listWidth - listShrink
+        end
+        rosterWidth = contentWidth - listWidth - detailsWidth - (CONTENT_GAP * 2)
+    end
+
+    return contentWidth, listWidth, detailsWidth, rosterWidth
+end
+
+local function getControlPanelMetrics(totalWidth)
+    local contentWidth = totalWidth - (CONTENT_PAD * 2)
+    local controlWidth = math.floor((contentWidth - CONTENT_GAP) / 2)
+    local rosterControlWidth = contentWidth - controlWidth - CONTENT_GAP
+
+    local factionInnerW = controlWidth - (CONTROL_GAP * 2)
+    local factionTopHeight = getFlowHeight(4, factionInnerW, 110, SMALL_BUTTON_HEIGHT, CONTROL_GAP)
+    local factionBottomHeight = getFlowHeight(2, factionInnerW, 150, SMALL_BUTTON_HEIGHT, CONTROL_GAP)
+    local factionControlHeight = SECTION_INNER_PAD + SECTION_HEADER_HEIGHT + 6 + factionTopHeight + CONTROL_GAP + factionBottomHeight + SECTION_INNER_PAD
+
+    local rosterInnerW = rosterControlWidth - (CONTROL_GAP * 2)
+    local rosterTopHeight = getFlowHeight(3, rosterInnerW, 150, NORMAL_BUTTON_HEIGHT, CONTROL_GAP)
+    local stackedRosterBottom = rosterInnerW < 360
+    local rosterBottomHeight = stackedRosterBottom and ((NORMAL_BUTTON_HEIGHT * 2) + CONTROL_GAP) or NORMAL_BUTTON_HEIGHT
+    local rosterControlHeight = SECTION_INNER_PAD + SECTION_HEADER_HEIGHT + 6 + rosterTopHeight + CONTROL_GAP + rosterBottomHeight + SECTION_INNER_PAD
+
+    return controlWidth, rosterControlWidth, factionInnerW, rosterInnerW, stackedRosterBottom, math.max(factionControlHeight, rosterControlHeight)
+end
+
+local function getPreferredWindowHeight(totalWidth, screenHeight)
+    local _, _, _, _, _, controlPanelHeight = getControlPanelMetrics(totalWidth)
+    local contentTop = DEFAULT_TITLEBAR_HEIGHT + CONTENT_TOP_PADDING
+    local preferred = contentTop + MIN_CONTENT_HEIGHT + CONTENT_GAP + controlPanelHeight + CONTENT_GAP + FOOTER_HEIGHT + CONTENT_PAD
+    return math.min(preferred, math.max(420, screenHeight - 60))
+end
+
+local function relayoutEmbeddedScrollbars(widget)
+    if not widget then
+        return
+    end
+
+    if widget.vscroll then
+        local widgetWidth = widget.getWidth and widget:getWidth() or widget.width or 0
+        local widgetHeight = widget.getHeight and widget:getHeight() or widget.height or 0
+        local vscrollWidth = widget.vscroll.getWidth and widget.vscroll:getWidth() or widget.vscroll.width or 12
+        local vscrollHeight = widgetHeight
+        if widget.hscroll and (widget.hscroll.isVisible and widget.hscroll:isVisible() or widget.hscroll.visible) then
+            local hscrollHeight = widget.hscroll.getHeight and widget.hscroll:getHeight() or widget.hscroll.height or 12
+            vscrollHeight = math.max(0, vscrollHeight - hscrollHeight)
+        end
+        widget.vscroll:setX(math.max(0, widgetWidth - vscrollWidth))
+        widget.vscroll:setY(0)
+        widget.vscroll:setHeight(vscrollHeight)
+        widget.vscroll:bringToTop()
+    end
+
+    if widget.hscroll then
+        local widgetWidth = widget.getWidth and widget:getWidth() or widget.width or 0
+        local widgetHeight = widget.getHeight and widget:getHeight() or widget.height or 0
+        local hscrollHeight = widget.hscroll.getHeight and widget.hscroll:getHeight() or widget.hscroll.height or 12
+        local hscrollWidth = widgetWidth
+        if widget.vscroll and (widget.vscroll.isVisible and widget.vscroll:isVisible() or widget.vscroll.visible) then
+            local vscrollWidth = widget.vscroll.getWidth and widget.vscroll:getWidth() or widget.vscroll.width or 12
+            hscrollWidth = math.max(0, hscrollWidth - vscrollWidth)
+        end
+        widget.hscroll:setX(0)
+        widget.hscroll:setY(math.max(0, widgetHeight - hscrollHeight))
+        widget.hscroll:setWidth(hscrollWidth)
+        widget.hscroll:bringToTop()
+    end
+end
 
 function DT_FactionDebugWindow:initialise()
-    ISPanel.initialise(self)
+    ISCollapsableWindow.initialise(self)
+    self:setTitle("Faction Management")
+    self:setResizable(true)
+    self.minimumWidth = 980
+    self.minimumHeight = 520
     self:createChildren()
 end
 
 function DT_FactionDebugWindow:createChildren()
-    local x, y = 10, 10
-    
-    -- 1. TITLE
-    self.labelTitle = ISLabel:new(self.width/2, 10, 25, "FACTION MANAGEMENT", 1, 1, 1, 1, UIFont.Large, true)
-    self.labelTitle:initialise()
-    self:addChild(self.labelTitle)
+    ISCollapsableWindow.createChildren(self)
+    if self._dtChildrenCreated then
+        return
+    end
+    self._dtChildrenCreated = true
+
+    self.factionListPanel = ISPanel:new(0, 0, 100, 100)
+    self.factionListPanel:initialise()
+    self.factionListPanel.backgroundColor = {r=0.04, g=0.04, b=0.04, a=0.94}
+    self.factionListPanel.borderColor = {r=0.24, g=0.24, b=0.24, a=1}
+    self:addChild(self.factionListPanel)
+
+    self.detailsPanel = ISPanel:new(0, 0, 100, 100)
+    self.detailsPanel:initialise()
+    self.detailsPanel.backgroundColor = {r=0.04, g=0.04, b=0.04, a=0.94}
+    self.detailsPanel.borderColor = {r=0.24, g=0.24, b=0.24, a=1}
+    self:addChild(self.detailsPanel)
+
+    self.rosterListPanel = ISPanel:new(0, 0, 100, 100)
+    self.rosterListPanel:initialise()
+    self.rosterListPanel.backgroundColor = {r=0.04, g=0.04, b=0.04, a=0.94}
+    self.rosterListPanel.borderColor = {r=0.24, g=0.24, b=0.24, a=1}
+    self:addChild(self.rosterListPanel)
+
+    self.factionListLabel = ISLabel:new(0, 0, 18, "FACTIONS", 0.92, 0.92, 0.92, 1, UIFont.Small, true)
+    self.factionListLabel:initialise()
+    self.factionListPanel:addChild(self.factionListLabel)
+
+    self.detailsLabel = ISLabel:new(0, 0, 18, "DETAILS", 0.92, 0.92, 0.92, 1, UIFont.Small, true)
+    self.detailsLabel:initialise()
+    self.detailsPanel:addChild(self.detailsLabel)
+
+    self.rosterListLabel = ISLabel:new(0, 0, 18, "ROSTER", 0.92, 0.92, 0.92, 1, UIFont.Small, true)
+    self.rosterListLabel:initialise()
+    self.rosterListPanel:addChild(self.rosterListLabel)
 
     -- 2. LIST BOX (Left Side)
-    local listWidth = 250
-    self.listbox = ISScrollingListBox:new(10, 45, listWidth, self.height - 140)
+    self.listbox = ISScrollingListBox:new(0, 0, 100, 100)
     self.listbox:initialise()
     self.listbox:instantiate()
     self.listbox.itemheight = 40
     self.listbox.doDrawItem = DT_FactionDebugRenderers.drawFactionItem
-    self.listbox.onmousedown = function(target, item) 
-        DT_FactionDebugWindow.instance:onFactionSelected(item) 
+    self.listbox.onMouseDown = function(target, x, y)
+        local row = target:rowAt(x, y)
+        if type(row) ~= "number" or row <= 0 then
+            return false
+        end
+
+        local entry = target.items and target.items[row] or nil
+        if not entry or not entry.item then
+            return false
+        end
+
+        target.selected = row
+        if DT_FactionDebugWindow.instance then
+            DT_FactionDebugWindow.instance:onFactionSelected(entry.item)
+        end
+        return true
     end
-    self:addChild(self.listbox)
+    self.listbox.onmousedown = function(target, item)
+        if not target or not target.items then
+            return false
+        end
+        for index, row in ipairs(target.items) do
+            if row and row.item == item then
+                return target:onMouseDown(0, rowYForIndex(target, index) + 1)
+            end
+        end
+        return false
+    end
+    self.listbox.backgroundColor = {r=0, g=0, b=0, a=0.78}
+    self.factionListPanel:addChild(self.listbox)
 
     -- 3. DETAIL PANEL (Middle)
-    local detailsX = 10 + listWidth + 10
-    local detailsWidth = 300
-    self.details = ISRichTextPanel:new(detailsX, 45, detailsWidth, self.height - 140)
+    self.details = ISRichTextPanel:new(0, 0, 100, 100)
     self.details:initialise()
-    self.details.backgroundColor = {r=0, g=0, b=0, a=0.5}
+    self.details.backgroundColor = {r=0, g=0, b=0, a=0.82}
     self.details:addScrollBars()
-    self:addChild(self.details)
+    self.detailsPanel:addChild(self.details)
     self.details:setText("Select a faction.")
 
     -- 4. ROSTER LIST (Right Side)
-    local rosterX = detailsX + detailsWidth + 10
-    local rosterWidth = self.width - rosterX - 10
-    self.rosterlist = ISScrollingListBox:new(rosterX, 45, rosterWidth, self.height - 180)
+    self.rosterlist = ISScrollingListBox:new(0, 0, 100, 100)
     self.rosterlist:initialise()
     self.rosterlist:instantiate()
     self.rosterlist.itemheight = 45
     self.rosterlist.doDrawItem = DT_FactionDebugRenderers.drawRosterItem
-    self.rosterlist.onmousedown = function(target, item) 
-        DT_FactionDebugWindow.instance:onRosterSelected(item) 
-    end
-    self.rosterlist.backgroundColor = {r=0, g=0, b=0, a=0.5}
-    self:addChild(self.rosterlist)
+    self.rosterlist.onMouseDown = function(target, x, y)
+        local row = target:rowAt(x, y)
+        if type(row) ~= "number" or row <= 0 then
+            return false
+        end
 
-    -- 5. BUTTONS (Centered at bottom)
-    local btnWidth = 120
-    local totalBtnWidth = (btnWidth * 4) + 30
-    local startBtnX = (self.width - totalBtnWidth) / 2
-    local btnY = self.height - 40
-    
-    self.btnRefresh = ISButton:new(startBtnX, btnY, btnWidth, 25, "REFRESH", self, DT_FactionDebugWindow.onRefreshClick)
+        local entry = target.items and target.items[row] or nil
+        if not entry or not entry.item then
+            return false
+        end
+
+        target.selected = row
+        if DT_FactionDebugWindow.instance then
+            DT_FactionDebugWindow.instance:onRosterSelected(entry.item)
+        end
+        return true
+    end
+    self.rosterlist.onmousedown = function(target, item)
+        if not target or not target.items then
+            return false
+        end
+        for index, row in ipairs(target.items) do
+            if row and row.item == item then
+                return target:onMouseDown(0, rowYForIndex(target, index) + 1)
+            end
+        end
+        return false
+    end
+    self.rosterlist.backgroundColor = {r=0, g=0, b=0, a=0.78}
+    self.rosterListPanel:addChild(self.rosterlist)
+
+    -- 5. CONTROL PANELS
+    self.factionControlPanel = ISPanel:new(0, 0, 100, 100)
+    self.factionControlPanel:initialise()
+    self.factionControlPanel.backgroundColor = {r=0.04, g=0.04, b=0.04, a=0.94}
+    self.factionControlPanel.borderColor = {r=0.24, g=0.24, b=0.24, a=1}
+    self:addChild(self.factionControlPanel)
+
+    self.rosterControlPanel = ISPanel:new(0, 0, 100, 100)
+    self.rosterControlPanel:initialise()
+    self.rosterControlPanel.backgroundColor = {r=0.04, g=0.04, b=0.04, a=0.94}
+    self.rosterControlPanel.borderColor = {r=0.24, g=0.24, b=0.24, a=1}
+    self:addChild(self.rosterControlPanel)
+
+    self.footerPanel = ISPanel:new(0, 0, 100, FOOTER_HEIGHT)
+    self.footerPanel:initialise()
+    self.footerPanel.backgroundColor = {r=0.03, g=0.03, b=0.03, a=0.96}
+    self.footerPanel.borderColor = {r=0.2, g=0.2, b=0.2, a=1}
+    self:addChild(self.footerPanel)
+
+    self.factionActionsLabel = ISLabel:new(0, 0, 18, "FACTION ACTIONS", 0.92, 0.92, 0.92, 1, UIFont.Small, true)
+    self.factionActionsLabel:initialise()
+    self.factionControlPanel:addChild(self.factionActionsLabel)
+
+    self.rosterActionsLabel = ISLabel:new(0, 0, 18, "ROSTER ACTIONS", 0.92, 0.92, 0.92, 1, UIFont.Small, true)
+    self.rosterActionsLabel:initialise()
+    self.rosterControlPanel:addChild(self.rosterActionsLabel)
+
+    -- 6. FOOTER BUTTONS
+    self.btnRefresh = ISButton:new(0, 0, 120, 25, "REFRESH", self, DT_FactionDebugWindow.onRefreshClick)
     self.btnRefresh:initialise()
     self.btnRefresh.backgroundColor = {r=0.2, g=0.5, b=0.2, a=1}
-    self:addChild(self.btnRefresh)
+    self.footerPanel:addChild(self.btnRefresh)
 
-    self.btnSim = ISButton:new(startBtnX + btnWidth + 10, btnY, btnWidth, 25, "SIMULATE DAY", self, function()
+    self.btnSim = ISButton:new(0, 0, 120, 25, "SIMULATE DAY", self, function()
         DT_FactionDebugActions.simulateDay()
     end)
     self.btnSim:initialise()
     self.btnSim.backgroundColor = {r=0.2, g=0.2, b=0.5, a=1}
-    self:addChild(self.btnSim)
+    self.footerPanel:addChild(self.btnSim)
 
-    self.btnWipe = ISButton:new(startBtnX + (btnWidth + 10) * 2, btnY, btnWidth, 25, "WIPE ALL", self, function()
+    self.btnWipe = ISButton:new(0, 0, 120, 25, "WIPE ALL", self, function()
         DT_FactionDebugActions.wipeFactions()
     end)
     self.btnWipe:initialise()
     self.btnWipe.backgroundColor = {r=0.5, g=0.2, b=0.2, a=1}
-    self:addChild(self.btnWipe)
+    self.footerPanel:addChild(self.btnWipe)
 
-    self.btnClose = ISButton:new(startBtnX + (btnWidth + 10) * 3, btnY, btnWidth, 25, "CLOSE", self, function(self) 
-        self:setVisible(false)
-        self:removeFromUIManager() 
-    end)
+    self.btnClose = ISButton:new(0, 0, 120, 25, "CLOSE", self, DT_FactionDebugWindow.close)
     self.btnClose:initialise()
-    self:addChild(self.btnClose)
+    self.footerPanel:addChild(self.btnClose)
 
-    -- 6. SELECTED FACTION CONTROLS
-    local ctrlX = detailsX
-    local ctrlY = self.height - 75
-    local ctrlBtnWidth = 100
+    self.btnDebugHub = ISButton:new(0, 0, 140, 25, "DEBUG HUB", self, DT_FactionDebugWindow.onDebugHubClick)
+    self.btnDebugHub:initialise()
+    self.btnDebugHub.backgroundColor = {r=0.28, g=0.18, b=0.46, a=1}
+    self.footerPanel:addChild(self.btnDebugHub)
 
-    self.btnWealthAdd = ISButton:new(ctrlX, ctrlY, ctrlBtnWidth, 20, "+ WEALTH", self, function()
+    -- 7. SELECTED FACTION CONTROLS
+    self.btnWealthAdd = ISButton:new(0, 0, 100, 20, "+ WEALTH", self, function()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             DT_FactionDebugActions.modifyWealth(f.item.id, 1000)
         end
     end)
     self.btnWealthAdd:initialise()
-    self:addChild(self.btnWealthAdd)
+    self.factionControlPanel:addChild(self.btnWealthAdd)
 
-    self.btnWealthSub = ISButton:new(ctrlX + ctrlBtnWidth + 5, ctrlY, ctrlBtnWidth, 20, "- WEALTH", self, function()
+    self.btnWealthSub = ISButton:new(0, 0, 100, 20, "- WEALTH", self, function()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             DT_FactionDebugActions.modifyWealth(f.item.id, -1000)
         end
     end)
     self.btnWealthSub:initialise()
-    self:addChild(self.btnWealthSub)
+    self.factionControlPanel:addChild(self.btnWealthSub)
 
-    self.btnRepAdd = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 2, ctrlY, ctrlBtnWidth, 20, "+ REP", self, function()
+    self.btnRepAdd = ISButton:new(0, 0, 100, 20, "+ REP", self, function()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             if self.selectedMemberUUID then
@@ -126,9 +374,9 @@ function DT_FactionDebugWindow:createChildren()
         end
     end)
     self.btnRepAdd:initialise()
-    self:addChild(self.btnRepAdd)
+    self.factionControlPanel:addChild(self.btnRepAdd)
 
-    self.btnRepSub = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 3, ctrlY, ctrlBtnWidth, 20, "- REP", self, function()
+    self.btnRepSub = ISButton:new(0, 0, 100, 20, "- REP", self, function()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             if self.selectedMemberUUID then
@@ -139,54 +387,192 @@ function DT_FactionDebugWindow:createChildren()
         end
     end)
     self.btnRepSub:initialise()
-    self:addChild(self.btnRepSub)
+    self.factionControlPanel:addChild(self.btnRepSub)
 
-    -- 7. LOCATE NPC BUTTON (Under Roster)
-    local locateX = rosterX
-    local locateY = self.height - 130
-    local locateWidth = 150
-
-    self.btnLocate = ISButton:new(locateX, locateY, locateWidth, 25, "LOCATE NPC", self, DT_FactionDebugWindow.onLocateClick)
-    self.btnLocate:initialise()
-    self.btnLocate.backgroundColor = {r=0.2, g=0.2, b=0.7, a=1}
-    self.btnLocate.enable = false
-    self:addChild(self.btnLocate)
-
-    self.btnForceTrade = ISButton:new(locateX + locateWidth + 10, locateY, locateWidth, 25, "FORCE TRADE", self, DT_FactionDebugWindow.onForceTradeClick)
-    self.btnForceTrade:initialise()
-    self.btnForceTrade.backgroundColor = {r=0.7, g=0.2, b=0.2, a=1}
-    self.btnForceTrade.enable = false
-    self:addChild(self.btnForceTrade)
-
-    local spawnY = locateY + 35
-    self.archCombo = ISComboBox:new(locateX, spawnY, 220, 25, self, nil)
-    self.archCombo:initialise()
-    self.archCombo:instantiate()
-    self:addChild(self.archCombo)
-
-    self.btnSpawnTrader = ISButton:new(locateX + 230, spawnY, 170, 25, "SPAWN TRADER", self, DT_FactionDebugWindow.onSpawnTraderClick)
-    self.btnSpawnTrader:initialise()
-    self.btnSpawnTrader.backgroundColor = {r=0.5, g=0.35, b=0.1, a=1}
-    self:addChild(self.btnSpawnTrader)
-
-    -- FORCE EVENT BUTTON
-    self.btnForceEvent = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 4, ctrlY, ctrlBtnWidth, 20, "FORCE EVENT", self, DT_FactionDebugWindow.onForceEventClick)
+    self.btnForceEvent = ISButton:new(0, 0, 100, 20, "FORCE EVENT", self, DT_FactionDebugWindow.onForceEventClick)
     self.btnForceEvent:initialise()
     self.btnForceEvent.backgroundColor = {r=0.7, g=0.5, b=0, a=1}
-    self:addChild(self.btnForceEvent)
+    self.factionControlPanel:addChild(self.btnForceEvent)
 
-    -- MERCHANT STOCK BUTTON
-    self.btnMerchant = ISButton:new(ctrlX + (ctrlBtnWidth + 5) * 5, ctrlY, ctrlBtnWidth, 20, "MERCHANTS", self, function()
+    self.btnMerchant = ISButton:new(0, 0, 100, 20, "MERCHANTS", self, function()
         if DT_MerchantDebugWindow and DT_MerchantDebugWindow.Open then
             DT_MerchantDebugWindow.Open()
         end
     end)
     self.btnMerchant:initialise()
     self.btnMerchant.backgroundColor = {r=0, g=0.5, b=0.5, a=1}
-    self:addChild(self.btnMerchant)
+    self.factionControlPanel:addChild(self.btnMerchant)
+
+    -- 8. ROSTER ACTIONS
+    self.btnLocate = ISButton:new(0, 0, 150, 25, "LOCATE NPC", self, DT_FactionDebugWindow.onLocateClick)
+    self.btnLocate:initialise()
+    self.btnLocate.backgroundColor = {r=0.2, g=0.2, b=0.7, a=1}
+    self.btnLocate.enable = false
+    self.rosterControlPanel:addChild(self.btnLocate)
+
+    self.btnForceTrade = ISButton:new(0, 0, 150, 25, "FORCE TRADE", self, DT_FactionDebugWindow.onForceTradeClick)
+    self.btnForceTrade:initialise()
+    self.btnForceTrade.backgroundColor = {r=0.7, g=0.2, b=0.2, a=1}
+    self.btnForceTrade.enable = false
+    self.rosterControlPanel:addChild(self.btnForceTrade)
+
+    self.btnGrantContact = ISButton:new(0, 0, 170, 25, "ADD CONTACT +100 REP", self, DT_FactionDebugWindow.onGrantContactClick)
+    self.btnGrantContact:initialise()
+    self.btnGrantContact.backgroundColor = {r=0.22, g=0.42, b=0.18, a=1}
+    self.btnGrantContact.enable = false
+    self.rosterControlPanel:addChild(self.btnGrantContact)
+
+    self.archCombo = ISComboBox:new(0, 0, 220, 25, self, nil)
+    self.archCombo:initialise()
+    self.archCombo:instantiate()
+    self.rosterControlPanel:addChild(self.archCombo)
+
+    self.btnSpawnTrader = ISButton:new(0, 0, 170, 25, "SPAWN TRADER", self, DT_FactionDebugWindow.onSpawnTraderClick)
+    self.btnSpawnTrader:initialise()
+    self.btnSpawnTrader.backgroundColor = {r=0.5, g=0.35, b=0.1, a=1}
+    self.rosterControlPanel:addChild(self.btnSpawnTrader)
 
     self:refreshList()
     self:refreshArchetypeOptions()
+    self:layoutChildren()
+
+    if self.resizeWidget then
+        self.resizeWidget:bringToTop()
+        self.resizeWidget:setVisible(true)
+    end
+end
+
+function DT_FactionDebugWindow:onResize()
+    ISCollapsableWindow.onResize(self)
+    self:layoutChildren()
+end
+
+function DT_FactionDebugWindow:layoutChildren()
+    local contentTop = self:titleBarHeight() + CONTENT_TOP_PADDING
+    local contentWidth, listWidth, detailsWidth, rosterWidth = getColumnWidths(self.width)
+
+    local listX = CONTENT_PAD
+    local detailsX = listX + listWidth + CONTENT_GAP
+    local rosterX = detailsX + detailsWidth + CONTENT_GAP
+
+    local controlWidth, rosterControlWidth, factionInnerW, rosterInnerW, stackedRosterBottom, controlPanelHeight = getControlPanelMetrics(self.width)
+    local footerY = self.height - CONTENT_PAD - FOOTER_HEIGHT
+    local controlY = footerY - CONTENT_GAP - controlPanelHeight
+    local contentHeight = controlY - contentTop - CONTENT_GAP
+
+    self.factionListPanel:setX(listX)
+    self.factionListPanel:setY(contentTop)
+    self.factionListPanel:setWidth(listWidth)
+    self.factionListPanel:setHeight(contentHeight)
+
+    self.detailsPanel:setX(detailsX)
+    self.detailsPanel:setY(contentTop)
+    self.detailsPanel:setWidth(detailsWidth)
+    self.detailsPanel:setHeight(contentHeight)
+
+    self.rosterListPanel:setX(rosterX)
+    self.rosterListPanel:setY(contentTop)
+    self.rosterListPanel:setWidth(rosterWidth)
+    self.rosterListPanel:setHeight(contentHeight)
+
+    local sectionContentY = SECTION_INNER_PAD + SECTION_HEADER_HEIGHT + 4
+    local sectionContentHeight = math.max(60, contentHeight - sectionContentY - SECTION_INNER_PAD)
+
+    self.factionListLabel:setX(SECTION_INNER_PAD)
+    self.factionListLabel:setY(SECTION_INNER_PAD)
+    self.listbox:setX(SECTION_INNER_PAD)
+    self.listbox:setY(sectionContentY)
+    self.listbox:setWidth(listWidth - (SECTION_INNER_PAD * 2))
+    self.listbox:setHeight(sectionContentHeight)
+    relayoutEmbeddedScrollbars(self.listbox)
+
+    self.detailsLabel:setX(SECTION_INNER_PAD)
+    self.detailsLabel:setY(SECTION_INNER_PAD)
+    self.details:setX(SECTION_INNER_PAD)
+    self.details:setY(sectionContentY)
+    self.details:setWidth(detailsWidth - (SECTION_INNER_PAD * 2))
+    self.details:setHeight(sectionContentHeight)
+    relayoutEmbeddedScrollbars(self.details)
+
+    self.rosterListLabel:setX(SECTION_INNER_PAD)
+    self.rosterListLabel:setY(SECTION_INNER_PAD)
+    self.rosterlist:setX(SECTION_INNER_PAD)
+    self.rosterlist:setY(sectionContentY)
+    self.rosterlist:setWidth(rosterWidth - (SECTION_INNER_PAD * 2))
+    self.rosterlist:setHeight(sectionContentHeight)
+    relayoutEmbeddedScrollbars(self.rosterlist)
+
+    self.factionControlPanel:setX(CONTENT_PAD)
+    self.factionControlPanel:setY(controlY)
+    self.factionControlPanel:setWidth(controlWidth)
+    self.factionControlPanel:setHeight(controlPanelHeight)
+
+    self.rosterControlPanel:setX(CONTENT_PAD + controlWidth + CONTENT_GAP)
+    self.rosterControlPanel:setY(controlY)
+    self.rosterControlPanel:setWidth(rosterControlWidth)
+    self.rosterControlPanel:setHeight(controlPanelHeight)
+
+    self.footerPanel:setX(CONTENT_PAD)
+    self.footerPanel:setY(footerY)
+    self.footerPanel:setWidth(contentWidth)
+    self.footerPanel:setHeight(FOOTER_HEIGHT)
+
+    self.factionActionsLabel:setX(CONTROL_GAP)
+    self.factionActionsLabel:setY(SECTION_INNER_PAD)
+    local factionActionsY = SECTION_INNER_PAD + SECTION_HEADER_HEIGHT + 6
+    factionActionsY = layoutButtonFlow(CONTROL_GAP, factionActionsY, factionInnerW, {
+        self.btnWealthAdd,
+        self.btnWealthSub,
+        self.btnRepAdd,
+        self.btnRepSub,
+    }, 110, SMALL_BUTTON_HEIGHT, CONTROL_GAP)
+    factionActionsY = factionActionsY + CONTROL_GAP
+    layoutButtonFlow(CONTROL_GAP, factionActionsY, factionInnerW, {
+        self.btnForceEvent,
+        self.btnMerchant,
+    }, 150, SMALL_BUTTON_HEIGHT, CONTROL_GAP)
+
+    self.rosterActionsLabel:setX(CONTROL_GAP)
+    self.rosterActionsLabel:setY(SECTION_INNER_PAD)
+    local rosterActionsY = SECTION_INNER_PAD + SECTION_HEADER_HEIGHT + 6
+    rosterActionsY = layoutButtonFlow(CONTROL_GAP, rosterActionsY, rosterInnerW, {
+        self.btnLocate,
+        self.btnForceTrade,
+        self.btnGrantContact,
+    }, 150, NORMAL_BUTTON_HEIGHT, CONTROL_GAP)
+    rosterActionsY = rosterActionsY + CONTROL_GAP
+
+    if stackedRosterBottom then
+        self.archCombo:setX(CONTROL_GAP)
+        self.archCombo:setY(rosterActionsY)
+        self.archCombo:setWidth(rosterInnerW)
+        self.archCombo:setHeight(NORMAL_BUTTON_HEIGHT)
+        self.btnSpawnTrader:setX(CONTROL_GAP)
+        self.btnSpawnTrader:setY(rosterActionsY + NORMAL_BUTTON_HEIGHT + CONTROL_GAP)
+        self.btnSpawnTrader:setWidth(rosterInnerW)
+        self.btnSpawnTrader:setHeight(NORMAL_BUTTON_HEIGHT)
+    else
+        local spawnWidth = math.max(150, math.min(190, math.floor(rosterInnerW * 0.36)))
+        local comboWidth = rosterInnerW - spawnWidth - CONTROL_GAP
+        self.archCombo:setX(CONTROL_GAP)
+        self.archCombo:setY(rosterActionsY)
+        self.archCombo:setWidth(comboWidth)
+        self.archCombo:setHeight(NORMAL_BUTTON_HEIGHT)
+        self.btnSpawnTrader:setX(CONTROL_GAP + comboWidth + CONTROL_GAP)
+        self.btnSpawnTrader:setY(rosterActionsY)
+        self.btnSpawnTrader:setWidth(spawnWidth)
+        self.btnSpawnTrader:setHeight(NORMAL_BUTTON_HEIGHT)
+    end
+
+    local footerButtons = { self.btnRefresh, self.btnSim, self.btnWipe, self.btnDebugHub, self.btnClose }
+    local footerInnerW = self.footerPanel:getWidth() - (CONTROL_GAP * 2)
+    local footerYInner = math.floor((self.footerPanel:getHeight() - NORMAL_BUTTON_HEIGHT) / 2)
+    layoutButtonFlow(CONTROL_GAP, footerYInner, footerInnerW, footerButtons, 120, NORMAL_BUTTON_HEIGHT, 10)
+
+    if self.details.text ~= nil and tostring(self.details.text) ~= "" then
+        self.details:paginate()
+        relayoutEmbeddedScrollbars(self.details)
+    end
 end
 
 -- ==========================================================
@@ -268,6 +654,7 @@ function DT_FactionDebugWindow:onFactionSelected(item)
     self.selectedMemberSoul = nil
     self.btnLocate.enable = false
     self.btnForceTrade.enable = false
+    self.btnGrantContact.enable = false
     
     -- Use cached roster data
     local rosterData = DT_FactionDebugData.cachedRosterData or ModData.get("DynamicTrading_Roster")
@@ -298,6 +685,7 @@ function DT_FactionDebugWindow:onRosterSelected(item)
     self.selectedMemberSoul = item.soul
     self.btnLocate.enable = true
     self.btnForceTrade.enable = true
+    self.btnGrantContact.enable = true
 end
 
 -- ==========================================================
@@ -318,6 +706,21 @@ function DT_FactionDebugWindow:onForceTradeClick()
     local item = self.rosterlist.items[self.rosterlist.selected]
     if item and item.item then
         DT_FactionDebugActions.forceTradeMission(item.item.uuid, item.item.soul)
+    end
+end
+
+function DT_FactionDebugWindow:onGrantContactClick()
+    local factionItem = self.listbox.items[self.listbox.selected]
+    local rosterItem = self.rosterlist.items[self.rosterlist.selected]
+    if factionItem and rosterItem and rosterItem.item then
+        DT_FactionDebugActions.grantContactTestAccess(rosterItem.item.uuid, rosterItem.item.soul, factionItem.item.id)
+    end
+end
+
+function DT_FactionDebugWindow:onDebugHubClick()
+    local ok = pcall(require, "DT/Common/UI/Debug/DT_CentralDebugHubWindow")
+    if ok and DT_CentralDebugHubWindow and DT_CentralDebugHubWindow.Open then
+        DT_CentralDebugHubWindow.Open()
     end
 end
 
@@ -358,11 +761,18 @@ function DT_FactionDebugWindow.Open()
     if DT_FactionDebugWindow.instance then
         DT_FactionDebugWindow.instance:setVisible(true)
         DT_FactionDebugWindow.instance:addToUIManager()
+        DT_FactionDebugWindow.instance:bringToTop()
+        DT_FactionDebugWindow.instance:layoutChildren()
         DT_FactionDebugWindow.instance:refreshList()
         return
     end
 
-    local window = DT_FactionDebugWindow:new(100, 100, 1000, 500)
+    local core = getCore()
+    local width = math.min(1180, core:getScreenWidth() - 40)
+    local height = getPreferredWindowHeight(width, core:getScreenHeight())
+    local x = math.floor((core:getScreenWidth() - width) / 2)
+    local y = math.floor((core:getScreenHeight() - height) / 2)
+    local window = DT_FactionDebugWindow:new(x, y, width, height)
     window:initialise()
     window:addToUIManager()
     DT_FactionDebugWindow.instance = window
@@ -370,13 +780,20 @@ function DT_FactionDebugWindow.Open()
 end
 
 function DT_FactionDebugWindow:new(x, y, width, height)
-    local o = ISPanel:new(x, y, width, height)
+    local o = ISCollapsableWindow:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.backgroundColor = {r=0, g=0, b=0, a=0.8}
+    o.backgroundColor = {r=0.02, g=0.02, b=0.02, a=0.96}
     o.borderColor = {r=1, g=1, b=1, a=1}
     o.moveWithMouse = true
+    o.resizable = true
     return o
+end
+
+function DT_FactionDebugWindow:close()
+    self:setVisible(false)
+    self:removeFromUIManager()
+    DT_FactionDebugWindow.instance = nil
 end
 
 DynamicTrading.Log("DTCommons", "Debug", "UI", "Faction Debug Window Loaded")

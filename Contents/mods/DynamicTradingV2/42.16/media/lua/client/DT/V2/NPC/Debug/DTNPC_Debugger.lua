@@ -2,7 +2,7 @@
 -- DTNPC_Debugger.lua
 -- Main Window: Controls the decoupled NPC debug components.
 -- ==============================================================================
-if not isDebugEnabled() then return end
+if not ((isDebugEnabled and isDebugEnabled()) or rawget(_G, "DT_PRIVATE_DEBUG_BYPASS") == true) then return end
 
 require "DT/V2/NPC/Debug/DTNPC_LiveListPanel"
 require "DT/V2/NPC/Debug/DTNPC_GlobalListPanel"

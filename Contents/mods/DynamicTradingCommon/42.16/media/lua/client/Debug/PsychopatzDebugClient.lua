@@ -148,6 +148,14 @@ function PsychopatzDebugWindow:createChildren()
     self.executeBtn.borderColor = {r=1, g=1, b=1, a=0.4}
     self:addChild(self.executeBtn)
 
+    currentY = currentY + 30
+
+    self.debugHubBtn = ISButton:new(padX, currentY, elementWidth, 25, "OPEN DEBUG HUB", self, PsychopatzDebugWindow.onOpenDebugHub)
+    self.debugHubBtn:initialise(); self.debugHubBtn:instantiate()
+    self.debugHubBtn.borderColor = {r=1, g=1, b=1, a=0.4}
+    self.debugHubBtn.backgroundColor = {r=0.28, g=0.18, b=0.46, a=1}
+    self:addChild(self.debugHubBtn)
+
     -- ==========================================
     -- 5. FINAL RESIZE
     -- ==========================================
@@ -196,6 +204,19 @@ function PsychopatzDebugWindow:onExecute()
     self:close()
 end
 
+function PsychopatzDebugWindow:onOpenDebugHub()
+    _G.DT_PRIVATE_DEBUG_BYPASS = true
+    local ok = pcall(require, "DT/Common/UI/Debug/DT_CentralDebugHubWindow")
+    if ok and DT_CentralDebugHubWindow and DT_CentralDebugHubWindow.Open then
+        DT_CentralDebugHubWindow.Open()
+    else
+        local player = getPlayer()
+        if player then
+            player:Say("Debug hub unavailable.")
+        end
+    end
+end
+
 -- =============================================================================
 -- 2. HELPER & KEY LISTENER
 -- =============================================================================
@@ -224,6 +245,7 @@ local function onPsychopatzKey(key)
         end
 
         if isAllowed then
+            _G.DT_PRIVATE_DEBUG_BYPASS = true
             local w = 250
             local h = 100 -- Will be auto-resized
             local core = getCore()

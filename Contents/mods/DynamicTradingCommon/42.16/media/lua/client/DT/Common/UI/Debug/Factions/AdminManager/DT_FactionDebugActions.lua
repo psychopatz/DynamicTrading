@@ -7,6 +7,7 @@
 require "DT/Common/UI/Debug/Shared/DT_DebugNetworkAdapter"
 require "DT/Common/UI/Debug/Shared/DT_NPCLocator"
 require "DT/Common/Reputation/DT_Reputation"
+require "DT/Common/Contacts/DT_TraderContacts"
 
 DT_FactionDebugActions = DT_FactionDebugActions or {}
 
@@ -43,6 +44,48 @@ function DT_FactionDebugActions.modifyPersonalReputation(traderUUID, factionID, 
     if DT_Reputation and DT_Reputation.ModifyPersonalRep then
         DT_Reputation.ModifyPersonalRep(traderUUID, factionID, amount, "admin_debug")
     end
+end
+
+function DT_FactionDebugActions.grantContactTestAccess(traderUUID, soul, factionID)
+    if not traderUUID or type(soul) ~= "table" then
+        return false
+    end
+
+    local targetFactionID = factionID or soul.factionID
+    local currentRep = DT_Reputation and DT_Reputation.GetEffectiveRep and DT_Reputation.GetEffectiveRep(traderUUID, targetFactionID) or 0
+    local delta = 100 - tonumber(currentRep or 0)
+    if DT_Reputation and DT_Reputation.ModifyPersonalRep and delta ~= 0 then
+        DT_Reputation.ModifyPersonalRep(traderUUID, targetFactionID, delta, "admin_debug_contact_test")
+    end
+
+    local contactTrader = {}
+    for key, value in pairs(soul) do
+        contactTrader[key] = value
+    end
+    contactTrader.id = tostring(traderUUID)
+    contactTrader.uuid = tostring(traderUUID)
+    contactTrader.traderID = tostring(traderUUID)
+    contactTrader.factionID = targetFactionID
+
+    local ok, saved, reason = false, nil, "unavailable"
+    if DT_TraderContacts and DT_TraderContacts.UnlockContact then
+        ok, saved, reason = DT_TraderContacts.UnlockContact(contactTrader, {
+            ignoreReputation = true,
+            debugGranted = true,
+        })
+    end
+
+    local player = getPlayer and getPlayer() or nil
+    if player then
+        if ok then
+            local name = tostring((saved and saved.name) or soul.name or traderUUID)
+            player:Say("Contact unlocked for testing: " .. name .. " (Rep 100)")
+        else
+            player:Say("Failed to unlock debug contact: " .. tostring(reason or traderUUID))
+        end
+    end
+
+    return ok, saved, reason
 end
 
 -- ==========================================================
