@@ -160,6 +160,29 @@ local function relayoutEmbeddedScrollbars(widget)
     end
 end
 
+local function refreshRichTextPanel(widget)
+    if not widget then
+        return
+    end
+
+    if widget.onResize then
+        pcall(function()
+            widget:onResize()
+        end)
+    end
+
+    if widget.text ~= nil and tostring(widget.text) ~= "" then
+        widget:paginate()
+    end
+
+    if widget.vscroll then
+        widget.vscroll:bringToTop()
+    end
+    if widget.hscroll then
+        widget.hscroll:bringToTop()
+    end
+end
+
 function DT_FactionDebugWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setTitle("Faction Management")
@@ -492,7 +515,7 @@ function DT_FactionDebugWindow:layoutChildren()
     self.details:setY(sectionContentY)
     self.details:setWidth(detailsWidth - (SECTION_INNER_PAD * 2))
     self.details:setHeight(sectionContentHeight)
-    relayoutEmbeddedScrollbars(self.details)
+    refreshRichTextPanel(self.details)
 
     self.rosterListLabel:setX(SECTION_INNER_PAD)
     self.rosterListLabel:setY(SECTION_INNER_PAD)
@@ -571,7 +594,7 @@ function DT_FactionDebugWindow:layoutChildren()
 
     if self.details.text ~= nil and tostring(self.details.text) ~= "" then
         self.details:paginate()
-        relayoutEmbeddedScrollbars(self.details)
+        refreshRichTextPanel(self.details)
     end
 end
 
@@ -646,7 +669,7 @@ function DT_FactionDebugWindow:onFactionSelected(item)
     -- Update details panel
     local text = DT_FactionDebugData.formatFactionDetails(faction)
     self.details:setText(text)
-    self.details:paginate()
+    refreshRichTextPanel(self.details)
 
     -- Repopulate Roster List
     self.rosterlist:clear()
