@@ -38,10 +38,20 @@ function DT_RadioScannerWindow:updateSignalDisplayState(bestRange)
         end
     end
 
-    if foundCount > 0 then
-        state = "found"
-    elseif (bestRange or 0) > 0 and totalTrading > foundCount and hasReusableSlots then
+    self.lastFoundCount = self.lastFoundCount or foundCount
+    if foundCount > self.lastFoundCount then
+        self.foundVisualTimer = 2.0
+    end
+    self.lastFoundCount = foundCount
+
+    if (bestRange or 0) > 0 then
         state = "search"
+        if totalTrading == 0 then
+            state = "none"
+        end
+        if self.foundVisualTimer and self.foundVisualTimer > 0 then
+            state = "found"
+        end
     end
 
     self.signalDisplayPanel:setSignalState(state)
@@ -107,6 +117,54 @@ function DT_RadioScannerWindow:refresh()
         self.signalDisplayPanel.padding = targetPadding
     end
 
+    local function normalizeText(value)
+        local text = tostring(value or "")
+        if text == "" then
+            return nil
+        end
+        return string.lower(text)
+    end
+
+    local function isCallableTradeActiveForPlayer(contact)
+        if not contact or contact.contactVisitActive ~= true then
+            return false
+        end
+
+        local playerID = player.getOnlineID and player:getOnlineID() or nil
+        local requestedByID = contact.contactVisitRequestedByID
+        local username = normalizeText(player.getUsername and player:getUsername() or nil)
+        local requestedByName = normalizeText(contact.contactVisitRequestedBy)
+        local isRequestedByPlayer = false
+
+        if playerID ~= nil and requestedByID ~= nil and tonumber(requestedByID) == tonumber(playerID) then
+            isRequestedByPlayer = true
+        elseif username and requestedByName == username then
+            isRequestedByPlayer = true
+        end
+
+        if not isRequestedByPlayer then
+            return false
+        end
+
+        local status = tostring(contact.status or "")
+        local state = tostring(contact.state or "")
+        local returnStatus = tostring(contact.returnStatus or "")
+        local visitMode = tostring(contact.contactVisitMode or "")
+
+        return (status == "Away" and returnStatus == "Trading")
+            or status == "Trading"
+            or state == "Departure"
+            or state == "Trading"
+            or state == "Follow"
+            or visitMode == "Departure"
+            or visitMode == "Trading"
+            or visitMode == "Follow"
+    end
+
+    if DT_RadioScannerManager and DT_RadioScannerManager.Cleanup then
+        DT_RadioScannerManager.Cleanup(player)
+    end
+
     self.headerPanel:updateSignalInfo(bestName, bestRange)
     self:updateSignalDisplayState(bestRange)
 
@@ -125,18 +183,7 @@ function DT_RadioScannerWindow:refresh()
         end
         return
     end
-
-    DT_RadioScannerManager.Cleanup()
-
     local tempList = {}
-
-    local function normalizeText(value)
-        local text = tostring(value or "")
-        if text == "" then
-            return nil
-        end
-        return string.lower(text)
-    end
 
     local function isOwnedTravelCompanion(npcData)
         if not npcData then return false end
@@ -189,44 +236,7 @@ function DT_RadioScannerWindow:refresh()
         end
 
         local refreshed = DT_TraderContacts and DT_TraderContacts.RefreshContactData and DT_TraderContacts.RefreshContactData(contact) or contact
-        if not refreshed or refreshed.contactVisitActive ~= true then
-            return false
-        end
-
-        local playerID = player.getOnlineID and player:getOnlineID() or nil
-        local requestedByID = refreshed.contactVisitRequestedByID
-        if playerID ~= nil and requestedByID ~= nil and tonumber(requestedByID) == tonumber(playerID) then
-            return true
-        end
-
-        local username = normalizeText(player.getUsername and player:getUsername() or nil)
-        local isRequestedByPlayer = username and normalizeText(refreshed.contactVisitRequestedBy) == username
-        if not isRequestedByPlayer then
-            return false
-        end
-
-        local status = tostring(refreshed.status or "")
-        local state = tostring(refreshed.state or "")
-        local returnStatus = tostring(refreshed.returnStatus or "")
-        local visitMode = tostring(refreshed.contactVisitMode or "")
-
-        if status == "Away" and returnStatus == "Trading" then
-            return true
-        end
-
-        if status == "Trading" then
-            return true
-        end
-
-        if state == "Departure" or state == "Trading" or state == "Follow" then
-            return true
-        end
-
-        if visitMode == "Departure" or visitMode == "Trading" or visitMode == "Follow" then
-            return true
-        end
-
-        return false
+        return isCallableTradeActiveForPlayer(refreshed)
     end
 
     if self.currentCategory == "Stationary" then
@@ -272,6 +282,9 @@ function DT_RadioScannerWindow:refresh()
                         name = contact.name or "Contact",
                         faction = contact.factionID or contact.faction or "Independent",
                         factionName = contact.factionName,
+                        archetype = contact.archetype or contact.archetypeID,
+                        gender = contact.gender,
+                        identitySeed = contact.identitySeed,
                         occupation = contact.occupation,
                     }, contact))
                 end
@@ -287,9 +300,9 @@ function DT_RadioScannerWindow:refresh()
         local uuid = entry.uuid
         local data = entry.data
         local soul = entry.soul or DT_RadioScannerManager.GetSoul(uuid) or (DTNPCClient and DTNPCClient.GetMetadata and DTNPCClient.GetMetadata(uuid) or nil)
-        local archetypeID = soul and soul.archetypeID or "General"
-        local gender = (soul and soul.isFemale) and "Female" or "Male"
-        local identitySeed = soul and soul.identitySeed or 1
+        local archetypeID = (soul and (soul.archetypeID or soul.archetype)) or data.archetype or data.occupation or "General"
+        local gender = data.gender or ((soul and soul.isFemale) and "Female" or "Male")
+        local identitySeed = tonumber(data.identitySeed) or (soul and soul.identitySeed) or 1
 
         local factionData = DT_RadioScannerManager.GetFaction(data.faction)
         local factionName = factionData and factionData.name or data.factionName or data.faction or "Independent"

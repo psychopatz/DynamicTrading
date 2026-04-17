@@ -102,9 +102,6 @@ end
 function DT_RadioSignalDisplayPanel:render()
     ISPanel.render(self)
 
-    self:drawRect(0, 0, self.width, self.height, 0.45, 0.03, 0.03, 0.03)
-    self:drawRectBorder(0, 0, self.width, self.height, 0.75, 0.3, 0.3, 0.3)
-
     local tex = self:getCurrentTexture()
     if not tex then
         return
@@ -138,6 +135,7 @@ function DT_RadioSignalDisplayPanel:new(x, y, width, height, options)
     self.__index = self
 
     o.backgroundColor = options.backgroundColor or { r = 0, g = 0, b = 0, a = 0 }
+    o.borderColor = { r = 0, g = 0, b = 0, a = 0 }
     o.signalState = options.signalState or "none"
     o.signalFrameDuration = options.frameDuration or 200
     o.padding = options.padding or 12

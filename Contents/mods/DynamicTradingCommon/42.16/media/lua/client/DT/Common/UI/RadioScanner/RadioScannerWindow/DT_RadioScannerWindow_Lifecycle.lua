@@ -6,14 +6,24 @@ function DT_RadioScannerWindow:update()
             self:updateTrackingMarker()
         end
 
-        self.updateTimer = self.updateTimer + getGameTime():getRealworldSecondsSinceLastUpdate()
+        local dt = getGameTime():getRealworldSecondsSinceLastUpdate()
+        -- The visual timer should use absolute UI time so it ticks down even when the game is paused.
+        local uiDt = UIManager.getMillisSinceLastRender() / 1000.0
+        if self.foundVisualTimer and self.foundVisualTimer > 0 then
+            self.foundVisualTimer = math.max(0, self.foundVisualTimer - uiDt)
+            if self.foundVisualTimer == 0 then
+                self:refresh()
+            end
+        end
+
+        self.updateTimer = self.updateTimer + dt
         if self.updateTimer >= 2.0 then
             self.updateTimer = 0
             self:refresh()
         end
 
         if isClient() and DT_RadioScannerManager and DT_RadioScannerManager.RequestRoster then
-            self.syncTimer = self.syncTimer + getGameTime():getRealworldSecondsSinceLastUpdate()
+            self.syncTimer = self.syncTimer + dt
             if self.syncTimer >= 10.0 then
                 self.syncTimer = 0
                 DT_RadioScannerManager.RequestRoster()

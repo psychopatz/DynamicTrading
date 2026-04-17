@@ -50,6 +50,10 @@ end
 function RadarManager.Scan(player, device)
     if not player or not device then return end
 
+    if RadarManager.Cleanup then
+        RadarManager.Cleanup(player)
+    end
+
     local canScan, remainingMinutes, scanStatus = true, 0, nil
     if RadarManager.CanScan then
         canScan, remainingMinutes, scanStatus = RadarManager.CanScan(player, device)
@@ -252,7 +256,7 @@ function RadarManager.Scan(player, device)
         end
     end
 
-    RadarManager.Cleanup()
+    RadarManager.Cleanup(player)
 
     -- Final Refresh
     if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance:getIsVisible() then

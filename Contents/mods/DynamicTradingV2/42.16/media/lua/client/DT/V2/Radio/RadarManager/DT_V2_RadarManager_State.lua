@@ -62,13 +62,6 @@ local function getCurrentHours()
     return getGameTime():getWorldAgeHours()
 end
 
-local function getCurrentMs()
-    if getTimestampMs then
-        return tonumber(getTimestampMs()) or 0
-    end
-    return math.floor(getCurrentHours() * 60 * 60 * 1000)
-end
-
 local function getSortedUnlockedSignals()
     local unlocked = {}
 
@@ -148,16 +141,10 @@ function RadarManager.GetScanStatus(device, player)
     local playerObj = player or getSpecificPlayer(0)
     local state = getPlayerState(playerObj)
     local cooldownMinutes = RadarManager.GetDeviceCooldownMinutes(device)
-    local cooldownMs = cooldownMinutes * 60 * 1000
-    local lastScanAtMs = tonumber(state.lastScanAtMs) or 0
-    local elapsedMs = 0
-
-    if lastScanAtMs > 0 then
-        elapsedMs = math.max(0, getCurrentMs() - lastScanAtMs)
-    else
-        elapsedMs = math.max(0, (getCurrentHours() - (tonumber(state.lastScanAt) or 0)) * 60 * 60 * 1000)
-    end
-
+    local cooldownHours = cooldownMinutes / 60
+    local elapsedHours = math.max(0, getCurrentHours() - (tonumber(state.lastScanAt) or 0))
+    local elapsedMs = elapsedHours * 60 * 60 * 1000
+    local cooldownMs = cooldownHours * 60 * 60 * 1000
     local remainingMs = math.max(0, cooldownMs - elapsedMs)
     local remainingMinutes = remainingMs / (60 * 1000)
     local foundCount = RadarManager.GetCount and RadarManager.GetCount() or 0
@@ -166,11 +153,11 @@ function RadarManager.GetScanStatus(device, player)
     local availableSlots = math.max(0, capacity - foundCount)
     local unlockedCount = math.max(0, foundCount - lockedCount)
     local replaceableSlots = foundCount >= capacity and unlockedCount or 0
-    local cooldownProgress = cooldownMs <= 0 and 1 or math.min(1, elapsedMs / cooldownMs)
+    local cooldownProgress = cooldownHours <= 0 and 1 or math.min(1, elapsedHours / cooldownHours)
     local profile = RadarManager.GetDeviceProfile and RadarManager.GetDeviceProfile(device) or nil
 
     return {
-        canScan = remainingMinutes <= 0.05,
+        canScan = remainingMs <= 0,
         remainingMinutes = remainingMinutes,
         remainingMs = remainingMs,
         cooldownMinutes = cooldownMinutes,
@@ -195,7 +182,7 @@ end
 function RadarManager.SetScanTimestamp(player, device)
     local state = getPlayerState(player or getSpecificPlayer(0))
     state.lastScanAt = getCurrentHours()
-    state.lastScanAtMs = getCurrentMs()
+    state.lastScanAtMs = 0
     state.lastDeviceType = RadarManager.GetDeviceTypeID and RadarManager.GetDeviceTypeID(device) or nil
     state.lastCooldownMinutes = RadarManager.GetDeviceCooldownMinutes(device)
     return state
