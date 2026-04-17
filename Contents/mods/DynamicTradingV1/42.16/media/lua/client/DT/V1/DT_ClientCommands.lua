@@ -12,6 +12,51 @@ local function getRandomRadioScanText(kind)
     return DynamicTrading.FlavorText.GetRandom("RadioScan", kind)
 end
 
+local function applyIncomingRosterState(args)
+    if not args or not args.id or not ModData or not ModData.get then
+        return false
+    end
+
+    local rosterData = ModData.get("DynamicTrading_Roster")
+    if not rosterData then
+        return false
+    end
+
+    rosterData.Souls = rosterData.Souls or {}
+    local soul = rosterData.Souls[args.id] or {}
+    if args.name ~= nil then soul.name = args.name end
+    if args.traderStatus ~= nil then soul.status = args.traderStatus end
+    if args.traderState ~= nil then soul.state = args.traderState end
+    if args.returnTime ~= nil then soul.returnTime = args.returnTime end
+    if args.returnStatus ~= nil then soul.returnStatus = args.returnStatus end
+    if args.contactVisitActive ~= nil then soul.contactVisitActive = args.contactVisitActive end
+    if args.contactVisitMode ~= nil then soul.contactVisitMode = args.contactVisitMode end
+    if args.contactVisitBackend ~= nil then soul.contactVisitBackend = args.contactVisitBackend end
+    rosterData.Souls[args.id] = soul
+    return true
+end
+
+local function handleContactVisitArrivalUI(args)
+    local radioUI = DT_RadioWindow and DT_RadioWindow.EnsureOpen and DT_RadioWindow.EnsureOpen() or nil
+    if radioUI and radioUI.signalPanel then
+        radioUI.signalPanel.signalFoundPersist = true
+    end
+    if radioUI and radioUI.refreshList then
+        radioUI.refreshList()
+    end
+    if radioUI and radioUI.logPanel and radioUI.logPanel.populateLogs then
+        radioUI.logPanel:populateLogs()
+    end
+
+    DynamicTrading.Log(
+        "DTV1",
+        "Radio",
+        "Sync",
+        "Handled ContactVisitV1 arrival UI id=" .. tostring(args and args.id)
+            .. " openedRadio=" .. tostring(radioUI ~= nil)
+    )
+end
+
 -- =============================================================================
 -- 1. HANDLE SERVER RESPONSES (SCAN RESULTS)
 -- =============================================================================
@@ -21,6 +66,16 @@ local function OnServerCommand(module, command, args)
     if command == "ScanResult" then
         local player = getSpecificPlayer(0)
         if not player then return end
+
+        DynamicTrading.Log(
+            "DTV1",
+            "Radio",
+            "Sync",
+            "ScanResult received status=" .. tostring(args and args.status)
+                .. " source=" .. tostring(args and args.source)
+                .. " id=" .. tostring(args and args.id)
+                .. " targetUser=" .. tostring(args and args.targetUser)
+        )
 
         local myName = player:getUsername()
         local unknownText = DT_RadioScanResponse("Unknown")
@@ -35,10 +90,50 @@ local function OnServerCommand(module, command, args)
             if args.status == "SUCCESS" then
                 if DT_AudioManager then DT_AudioManager.PlaySound("DT_RadioRandom", false, 0.1) end
                 player:Say(DT_RadioScanResponse("Connected", args.name or unknownText))
+
+                if args.source == "ContactVisitV1" then
+                    local applied = applyIncomingRosterState(args)
+                    DynamicTrading.Log(
+                        "DTV1",
+                        "Radio",
+                        "Sync",
+                        "Applied ContactVisitV1 roster state id=" .. tostring(args.id)
+                            .. " applied=" .. tostring(applied)
+                            .. " status=" .. tostring(args.traderStatus)
+                            .. " returnTime=" .. tostring(args.returnTime)
+                    )
+                end
                 
-                -- [NEW] Discover trader locally so it updates the client cache immediately
                 if args.id then
-                    DynamicTrading.Manager.DiscoverTrader(args.id, player)
+                    if args.source == "ContactVisitV1" and DynamicTrading.Manager.RegisterRadioSignal then
+                        local registered = DynamicTrading.Manager.RegisterRadioSignal(args.id, player, {
+                            logMessage = "Contact arrival: " .. tostring(args.name or "Unknown Trader") .. " is now broadcasting on your frequency.",
+                            logCategory = "good",
+                        })
+                        local hasDiscovered = DynamicTrading.Manager.HasDiscovered and DynamicTrading.Manager.HasDiscovered(args.id, player) or false
+                        local discoveredCount = DynamicTrading.Manager.GetDiscoveredCount and DynamicTrading.Manager.GetDiscoveredCount(player) or -1
+                        local activeSignals = DynamicTrading.Manager.GetActiveRadioTraders and DynamicTrading.Manager.GetActiveRadioTraders(player) or {}
+                        local trader = DynamicTrading.Manager.GetTrader and DynamicTrading.Manager.GetTrader(args.id) or nil
+                        DynamicTrading.Log(
+                            "DTV1",
+                            "Radio",
+                            "ContactVisit",
+                            "Arrival registration id=" .. tostring(args.id)
+                                .. " registered=" .. tostring(registered)
+                                .. " discovered=" .. tostring(hasDiscovered)
+                                .. " discoveredCount=" .. tostring(discoveredCount)
+                                .. " activeSignals=" .. tostring(#activeSignals)
+                                .. " traderStatus=" .. tostring(trader and trader.status or "nil")
+                                .. " returnTime=" .. tostring(trader and trader.returnTime or "nil")
+                        )
+                    else
+                        DynamicTrading.Manager.DiscoverTrader(args.id, player)
+                    end
+                end
+
+                if args.source == "ContactVisitV1" then
+                    sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
+                    handleContactVisitArrivalUI(args)
                 end
 
                 -- [FIX] Force UI Animation and List Refresh immediately

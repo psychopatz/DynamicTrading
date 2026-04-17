@@ -263,6 +263,7 @@ function DT_TraderContacts.NormalizeTrader(trader)
         lastZ = trader.lastZ,
         contactVisitActive = trader.contactVisitActive,
         contactVisitMode = trader.contactVisitMode,
+        contactVisitBackend = trader.contactVisitBackend,
         contactVisitRequestedBy = trader.contactVisitRequestedBy,
         contactVisitRequestedByID = trader.contactVisitRequestedByID,
         contactVisitTargetX = trader.contactVisitTargetX,

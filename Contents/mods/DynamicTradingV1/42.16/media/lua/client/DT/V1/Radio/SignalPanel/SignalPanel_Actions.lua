@@ -42,7 +42,10 @@ function DT_SignalPanel:onInfoClick()
 end
 
 function DT_SignalPanel:onContactsClick()
-    DT_ContactsWindow.Open({ radioObj = self.parent and self.parent.radioObj or nil })
+    DT_ContactsWindow.Open({
+        radioObj = self.parent and self.parent.radioObj or nil,
+        requestBackend = "V1",
+    })
 end
 
 function DT_SignalPanel:onOptionsClick()

@@ -144,6 +144,60 @@ function Commands.UnpackContainer(player, args)
     SendResponse(player, "UnpackResult", { success = true })
 end
 
+-- COMMAND: RequestTraderVisit
+-- Description: V1 contact call request. Routes through V1 radio lifecycle instead of DTNPC.
+function Commands.RequestTraderVisit(player, args)
+    if not player or not args or not args.uuid then
+        return
+    end
+
+    local uuid = tostring(args.uuid)
+    local registry = DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry and DynamicTrading_Roster.GetSoulRegistry(uuid) or nil
+    local soul = DynamicTrading_Roster and DynamicTrading_Roster.GetSoul and DynamicTrading_Roster.GetSoul(uuid) or registry
+    if not registry or not soul then
+        DynamicTrading.Log("DTV1", "Radio", "Warn", "RequestTraderVisit failed, unknown trader: " .. uuid)
+        return
+    end
+
+    if tostring(registry.status or soul.status or "") ~= "Resting" then
+        DynamicTrading.Log("DTV1", "Radio", "Warn", "RequestTraderVisit denied, trader not resting: " .. uuid)
+        return
+    end
+
+    local currentHours = getGameTime() and getGameTime():getWorldAgeHours() or 0
+    local walkHours = SandboxVars and SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
+    local targetX = tonumber(args.x) or player:getX()
+    local targetY = tonumber(args.y) or player:getY()
+    local targetZ = tonumber(args.z) or player:getZ() or 0
+    local username = player:getUsername()
+    local onlineID = player.getOnlineID and player:getOnlineID() or nil
+
+    soul.contactVisitActive = true
+    soul.contactVisitMode = "Departure"
+    soul.contactVisitBackend = "V1"
+    soul.contactVisitRequestedBy = username
+    soul.contactVisitRequestedByID = onlineID
+    soul.contactVisitTargetX = math.floor(targetX)
+    soul.contactVisitTargetY = math.floor(targetY)
+    soul.contactVisitTargetZ = math.floor(targetZ)
+    soul.contactVisitStartedAt = currentHours
+    soul.contactVisitReturnStatus = "Resting"
+    soul.travelTarget = nil
+    DynamicTrading_Roster.SaveSoul(uuid, soul)
+    DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", currentHours + walkHours, "Trading")
+    ModData.transmit("DynamicTrading_Roster")
+
+    DynamicTrading.Log(
+        "DTV1",
+        "Radio",
+        "Command",
+        "RequestTraderVisit queued uuid=" .. tostring(uuid)
+            .. " requester=" .. tostring(username)
+            .. " etaHours=" .. tostring(walkHours)
+            .. " target=" .. tostring(targetX) .. "," .. tostring(targetY) .. "," .. tostring(targetZ)
+    )
+end
+
 -- COMMAND: AttemptScan
 -- Description: The RNG roll for finding new traders via radio
 function Commands.AttemptScan(player, args)
@@ -157,9 +211,14 @@ function Commands.AttemptScan(player, args)
         return
     end
 
-    -- 2. Get Undiscovered Traders (Existing ones in "Trading" state)
+    -- 2. Prefer undiscovered V1 contact visits requested by this player.
+    local requestedContacts = DynamicTrading.Manager.GetUndiscoveredRequestedContactVisits
+        and DynamicTrading.Manager.GetUndiscoveredRequestedContactVisits(player)
+        or {}
+
+    -- 3. Get Undiscovered Traders (Existing ones in "Trading" state)
     local undiscovered = DynamicTrading.Manager.GetUndiscoveredTraders(player)
-    local hasUndiscovered = (#undiscovered > 0)
+    local hasUndiscovered = (#requestedContacts > 0) or (#undiscovered > 0)
 
     -- [NEW] If no undiscovered traders exist, scan always fails (no generation allowed)
     if not hasUndiscovered then
@@ -167,8 +226,15 @@ function Commands.AttemptScan(player, args)
         return
     end
 
-    -- 3. Apply Cooldown
-    DynamicTrading.CooldownManager.SetScanTimestamp(player)
+    -- 3. Capacity Check
+    local capacity = args.capacity or 1
+    local foundSignals = args.foundSignals or 0
+
+    if foundSignals >= capacity then
+        DynamicTrading.Log("DTV1", "Radio", "Scan", "FAILED: Radio Capacity Full (" .. foundSignals .. "/" .. capacity .. ")")
+        SendResponse(player, "ScanResult", { status = "CAPACITY_FULL", targetUser = targetUser, currentCount = foundSignals, capacity = capacity })
+        return
+    end
 
     -- 4. Calculate Chances
     local radioTier = args.radioTier or 0.5
@@ -178,17 +244,6 @@ function Commands.AttemptScan(player, args)
     local eventMult = 1.0
     if DynamicTrading.Events and DynamicTrading.Events.GetSystemModifier then
         eventMult = DynamicTrading.Events.GetSystemModifier("scanChance")
-    end
-
-    -- [REFACTORED] Difficulty Scaling (Based on Capacity)
-    local capacity = args.capacity or 1
-    local foundSignals = args.foundSignals or 0
-    
-    -- BLOCK: Capacity Check
-    if foundSignals >= capacity then
-        DynamicTrading.Log("DTV1", "Radio", "Scan", "FAILED: Radio Capacity Full (" .. foundSignals .. "/" .. capacity .. ")")
-        SendResponse(player, "ScanResult", { status = "CAPACITY_FULL", targetUser = targetUser, currentCount = foundSignals, capacity = capacity })
-        return
     end
 
     local progressRatio = foundSignals / capacity
@@ -220,9 +275,20 @@ function Commands.AttemptScan(player, args)
     
     if isSuccess then
         -- 6. Discover EXISTING trader
-        local trader = undiscovered[ZombRand(#undiscovered) + 1]
+        local trader = nil
+        local usedPriorityContact = false
+        if #requestedContacts > 0 then
+            trader = requestedContacts[1]
+            usedPriorityContact = true
+            DynamicTrading.Log("DTV1", "Radio", "Scan", "PRIORITY PICK: called-in contact " .. tostring(trader.name or trader.id))
+        elseif #undiscovered > 0 then
+            trader = undiscovered[ZombRand(#undiscovered) + 1]
+        end
         
         if trader then
+            if not usedPriorityContact then
+                DynamicTrading.CooldownManager.SetScanTimestamp(player)
+            end
             DynamicTrading.Log("DTV1", "Radio", "Scan", "  - SUCCESS! Found: " .. trader.name .. " (" .. trader.archetype .. ")")
             
             SendResponse(player, "ScanResult", { 

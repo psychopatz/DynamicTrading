@@ -11,6 +11,7 @@ require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "ISUI/ISModalDialog"
+require "Utils/DT_StringUtils"
 require "DT/Common/Contacts/DT_TraderContacts"
 require "DT/Common/UI/Contacts/DT_ContactsConversation"
 require "DT/Common/UI/Portrait/Portrait"
@@ -20,6 +21,7 @@ DT_ContactsWindow.instance = nil
 
 local DT_ContactsHeaderPanel = ISPanel:derive("DT_ContactsHeaderPanel")
 local DT_ContactsStatusPanel = ISPanel:derive("DT_ContactsStatusPanel")
+local DT_ContactsDeleteModal = ISCollapsableWindow:derive("DT_ContactsDeleteModal")
 local getContactsAPI
 local AUTO_REFRESH_TICKS = 180
 
@@ -50,6 +52,113 @@ local function wrapUIText(text, maxWidth, font)
     end
 
     return { tostring(text or "") }
+end
+
+local function buildDeleteModalText(contact)
+    local name = tostring(contact and contact.name or "this contact")
+    local reason = tostring(contact and contact.deathReason or "")
+
+    if reason == "Starvation" then
+        return string.format(
+            "Delete saved contact for %s?\n\nThis trader was lost to starvation. Removing this entry only clears the saved frequency from your contacts list.",
+            name
+        )
+    end
+
+    if reason == "WipedOut" then
+        return string.format(
+            "Delete saved contact for %s?\n\nThis trader's faction was wiped out. Removing this entry only clears the saved frequency from your contacts list.",
+            name
+        )
+    end
+
+    if tostring(contact and contact.status or "") == "Dead" then
+        return string.format(
+            "Delete saved contact for %s?\n\nThis trader is deceased. Removing this entry only clears the saved frequency from your contacts list.",
+            name
+        )
+    end
+
+    return string.format(
+        "Delete saved contact for %s?\n\nThis only removes the saved number. If you still qualify, you can unlock it again through Chat.",
+        name
+    )
+end
+
+function DT_ContactsDeleteModal:initialise()
+    ISCollapsableWindow.initialise(self)
+    self:setResizable(false)
+end
+
+function DT_ContactsDeleteModal:createChildren()
+    ISCollapsableWindow.createChildren(self)
+
+    local btnW = 100
+    local btnH = 24
+    local btnGap = 12
+    local btnY = self.height - 34
+    local btnX = math.floor((self.width - ((btnW * 2) + btnGap)) / 2)
+
+    self.btnYes = ISButton:new(btnX, btnY, btnW, btnH, "Yes", self, self.onConfirm)
+    self.btnYes:initialise()
+    self.btnYes.backgroundColor = { r = 0.15, g = 0.45, b = 0.15, a = 1.0 }
+    self.btnYes.borderColor = { r = 1, g = 1, b = 1, a = 0.35 }
+    self:addChild(self.btnYes)
+
+    self.btnNo = ISButton:new(btnX + btnW + btnGap, btnY, btnW, btnH, "No", self, self.onCancel)
+    self.btnNo:initialise()
+    self.btnNo.backgroundColor = { r = 0.45, g = 0.1, b = 0.1, a = 1.0 }
+    self.btnNo.borderColor = { r = 1, g = 1, b = 1, a = 0.35 }
+    self:addChild(self.btnNo)
+end
+
+function DT_ContactsDeleteModal:render()
+    ISCollapsableWindow.render(self)
+
+    local text = tostring(self.modalText or "")
+    local lines = wrapUIText(text, self.width - 36, UIFont.Small)
+    local startY = self:titleBarHeight() + 24
+    local lineH = getTextManager():getFontHeight(UIFont.Small)
+
+    for index, line in ipairs(lines) do
+        self:drawTextCentre(tostring(line), self.width / 2, startY + ((index - 1) * lineH), 0.94, 0.94, 0.94, 1, UIFont.Small)
+    end
+end
+
+function DT_ContactsDeleteModal:onConfirm()
+    if self.owner and self.owner.onDeleteContactConfirmed then
+        self.owner:onDeleteContactConfirmed(nil, { internal = "YES" })
+    end
+    self:close()
+end
+
+function DT_ContactsDeleteModal:onCancel()
+    self:close()
+end
+
+function DT_ContactsDeleteModal:close()
+    self:setVisible(false)
+    self:removeFromUIManager()
+end
+
+function DT_ContactsDeleteModal.Show(owner, contact)
+    if not owner then
+        return nil
+    end
+
+    local width = 420
+    local height = 170
+    local x = owner:getX() + math.max(20, math.floor((owner:getWidth() - width) / 2))
+    local y = owner:getY() + math.max(30, math.floor((owner:getHeight() - height) / 2))
+
+    local modal = DT_ContactsDeleteModal:new(x, y, width, height)
+    modal:initialise()
+    modal.title = "Confirm Contact Removal"
+    modal.owner = owner
+    modal.contact = contact
+    modal.modalText = buildDeleteModalText(contact)
+    modal:addToUIManager()
+    return modal
 end
 
 function DT_ContactsStatusPanel:render()
@@ -135,6 +244,7 @@ function DT_ContactsWindow.Open(options)
     ui:initialise()
     ui:addToUIManager()
     ui.radioObj = options.radioObj
+    ui.requestBackend = options.requestBackend
     ui:populateContacts(options.selectTraderID)
     DT_ContactsWindow.instance = ui
     return ui
@@ -423,7 +533,10 @@ function DT_ContactsWindow:drawContactItem(y, item, alt)
     local factionName = contactsAPI and contactsAPI.GetFactionDisplayName and contactsAPI.GetFactionDisplayName(data) or tostring(data.factionName or data.factionID or "Independent")
     local rep = contactsAPI and contactsAPI.GetEffectiveReputation and contactsAPI.GetEffectiveReputation(data) or 0
     local statusText = contactsAPI and contactsAPI.GetStatusText and contactsAPI.GetStatusText(data) or "Status unknown"
-    local canVisit = contactsAPI and contactsAPI.CanRequestVisit and contactsAPI.CanRequestVisit(data) or false
+    local canVisit = contactsAPI and contactsAPI.CanRequestVisit and contactsAPI.CanRequestVisit(data, {
+        requestBackend = self.parent and self.parent.requestBackend or nil,
+        radioObj = self.parent and self.parent.radioObj or nil,
+    }) or false
     local isDead = tostring(data.status or "") == "Dead"
 
     self:drawText(tostring(data.name or "Unknown") .. " [" .. role .. "]", contentX, y + 5, 1, 1, 1, 1, UIFont.Small)
@@ -502,21 +615,7 @@ function DT_ContactsWindow:onDeleteContact()
         return
     end
 
-    local name = tostring(self.selectedContact.name or "this contact")
-    local x = self:getX() + math.max(20, math.floor((self:getWidth() - 360) / 2))
-    local y = self:getY() + math.max(30, math.floor((self:getHeight() - 140) / 2))
-    local modal = ISModalDialog:new(
-        x,
-        y,
-        360,
-        140,
-        "Delete contact for " .. name .. "?\n\nThis only removes the saved number. If you still qualify, you can unlock it again through Chat.",
-        true,
-        self,
-        self.onDeleteContactConfirmed
-    )
-    modal:initialise()
-    modal:addToUIManager()
+    DT_ContactsDeleteModal.Show(self, self.selectedContact)
 end
 
 function DT_ContactsWindow:onOpenFrequency()
@@ -538,6 +637,7 @@ function DT_ContactsWindow:onOpenFrequency()
 
     DT_ContactsConversation.Open(self.selectedContact, {
         radioObj = self.radioObj,
+        requestBackend = self.requestBackend,
         onClose = function(ui)
             ui:close()
         end

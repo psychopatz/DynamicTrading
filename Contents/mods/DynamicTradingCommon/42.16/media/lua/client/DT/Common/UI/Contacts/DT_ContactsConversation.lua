@@ -63,13 +63,18 @@ local function buildAvailabilityLine(contact)
     return state .. ". Keep that in mind before you ask me to move."
 end
 
-local function buildVisitResultLine(contact)
+local function buildVisitResultLine(contact, context)
     local contactsAPI = getContactsAPI()
     if not contactsAPI then
         return "The contact network is unavailable right now. Try reopening the window."
     end
 
-    local allowed, reason, hydrated = contactsAPI.CanRequestVisit(contact)
+    context = context or {}
+
+    local allowed, reason, hydrated = contactsAPI.CanRequestVisit(contact, {
+        requestBackend = context.requestBackend,
+        radioObj = context.radioObj,
+    })
     if not allowed then
         if reason == "rep" then
             return string.format(
@@ -84,12 +89,15 @@ local function buildVisitResultLine(contact)
             )
         end
         if reason == "unsupported" then
-            return "This contact line is active, but the call-to-you travel behavior is only wired for V2 roster traders right now."
+            return "This contact line is active, but the trader data needed to route the visit is not available right now."
         end
         return "The line is unstable. Try that request again in a moment."
     end
 
-    local ok, updated, walkHours = contactsAPI.RequestVisit(hydrated)
+    local ok, updated, walkHours = contactsAPI.RequestVisit(hydrated, {
+        requestBackend = context.requestBackend,
+        radioObj = context.radioObj,
+    })
     if not ok then
         return "I heard you, but the request didn't stick. Try again in a second."
     end
@@ -111,9 +119,15 @@ function DT_ContactsConversation.BuildOptions(ui, contact, context)
     context = context or {}
     local contactsAPI = getContactsAPI()
     local visitCost = contactsAPI and contactsAPI.GetVisitCost and contactsAPI.GetVisitCost() or 0
-    local canVisit, reason, refreshedContact = contactsAPI and contactsAPI.CanRequestVisit and contactsAPI.CanRequestVisit(contact) or false, nil, contact
+    local canVisit, reason, refreshedContact = contactsAPI and contactsAPI.CanRequestVisit and contactsAPI.CanRequestVisit(contact, {
+        requestBackend = context.requestBackend,
+        radioObj = context.radioObj,
+    }) or false, nil, contact
     if contactsAPI and contactsAPI.CanRequestVisit then
-        canVisit, reason, refreshedContact = contactsAPI.CanRequestVisit(contact)
+        canVisit, reason, refreshedContact = contactsAPI.CanRequestVisit(contact, {
+            requestBackend = context.requestBackend,
+            radioObj = context.radioObj,
+        })
     end
 
     local requestText = string.format("Request visit (-%d Rep)", visitCost)
@@ -157,7 +171,7 @@ function DT_ContactsConversation.BuildOptions(ui, contact, context)
             style = requestStyle,
             onSelect = function(conversationUI)
                 local refreshed = contactsAPI and contactsAPI.RefreshContactData and contactsAPI.RefreshContactData(contact) or contact
-                local resultLine = buildVisitResultLine(refreshed)
+                local resultLine = buildVisitResultLine(refreshed, context)
                 local activeContact = contactsAPI and contactsAPI.RefreshContactData and contactsAPI.RefreshContactData(refreshed) or refreshed
                 if activeContact then
                     contact = activeContact
@@ -212,6 +226,10 @@ end
 
 function DT_ContactsConversation.Open(contact, context)
     context = context or {}
+
+    if not context.requestBackend and context.radioObj then
+        context.requestBackend = "V1"
+    end
 
     local contactsAPI = getContactsAPI()
     if not contactsAPI then

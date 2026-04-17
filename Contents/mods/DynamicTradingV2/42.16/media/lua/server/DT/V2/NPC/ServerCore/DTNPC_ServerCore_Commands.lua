@@ -627,6 +627,17 @@ local function onClientCommand(module, command, player, args)
         local currentHours = getGameTime() and getGameTime():getWorldAgeHours() or 0
         local username = player:getUsername()
         local onlineID = player.getOnlineID and player:getOnlineID() or nil
+        local requestBackend = tostring(args.requestBackend or "")
+
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Command",
+            "RequestTraderVisit received uuid=" .. tostring(uuid)
+                .. " backend=" .. tostring(requestBackend ~= "" and requestBackend or "V2")
+                .. " requester=" .. tostring(username)
+                .. " target=" .. tostring(targetX) .. "," .. tostring(targetY) .. "," .. tostring(targetZ)
+        )
 
         soul.travelTarget = {
             x = targetX,
@@ -637,6 +648,7 @@ local function onClientCommand(module, command, player, args)
         soul.lastContactRequester = player:getUsername()
         soul.contactVisitActive = true
         soul.contactVisitMode = "Departure"
+        soul.contactVisitBackend = requestBackend ~= "" and requestBackend or nil
         soul.master = nil
         soul.masterID = nil
         soul.tasks = {}
@@ -664,7 +676,14 @@ local function onClientCommand(module, command, player, args)
 
         if DTNPCManager and DTNPCManager.SetNPCStatus then
             DTNPCManager.SetNPCStatus(uuid, "Away", currentHours + walkHours, "Trading")
-            DynamicTrading.Log("DTV2", "NPC", "Logic", "RequestTraderVisit queued away->trading for " .. tostring(soul.name or uuid))
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Logic",
+                "RequestTraderVisit queued away->trading for " .. tostring(soul.name or uuid)
+                    .. " backend=" .. tostring(soul.contactVisitBackend or "V2")
+                    .. " etaHours=" .. tostring(walkHours)
+            )
         end
         return
     end

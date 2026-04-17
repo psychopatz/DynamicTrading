@@ -73,6 +73,83 @@ local function shouldDelayNearbyDespawn(uuid, registry)
     return isRegistryNearActivePlayer(registry, NEARBY_DESPAWN_HOLD_RADIUS)
 end
 
+local function getContactRequesterPlayer(npcData)
+    if not npcData then
+        return nil
+    end
+
+    local requesterID = npcData.contactVisitRequestedByID
+    if requesterID ~= nil and getPlayerByOnlineID then
+        local byID = getPlayerByOnlineID(requesterID)
+        if byID then
+            return byID
+        end
+    end
+
+    local requesterName = tostring(npcData.contactVisitRequestedBy or "")
+    if requesterName == "" then
+        return nil
+    end
+
+    local onlinePlayers = getOnlinePlayers and getOnlinePlayers() or nil
+    if onlinePlayers then
+        for index = 0, onlinePlayers:size() - 1 do
+            local player = onlinePlayers:get(index)
+            if player and player.getUsername and tostring(player:getUsername() or "") == requesterName then
+                return player
+            end
+        end
+    end
+
+    return nil
+end
+
+local function notifyV1ContactArrival(uuid, npcData)
+    if not npcData then
+        return
+    end
+
+    local requester = getContactRequesterPlayer(npcData)
+    if not requester then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "V1 contact arrival could not resolve requester for " .. tostring(npcData.name or uuid)
+                .. " requesterName=" .. tostring(npcData.contactVisitRequestedBy)
+                .. " requesterID=" .. tostring(npcData.contactVisitRequestedByID)
+        )
+        return
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Logic",
+        "Notifying V1 contact arrival for " .. tostring(npcData.name or uuid)
+            .. " requester=" .. tostring(requester.getUsername and requester:getUsername() or "unknown")
+            .. " returnTime=" .. tostring(npcData.returnTime)
+            .. " returnStatus=" .. tostring(npcData.returnStatus)
+    )
+
+    if DynamicTrading and DynamicTrading.ServerHelpers and DynamicTrading.ServerHelpers.SendResponse then
+        DynamicTrading.ServerHelpers.SendResponse(requester, "DynamicTrading", "ScanResult", {
+            status = "SUCCESS",
+            targetUser = requester.getUsername and requester:getUsername() or nil,
+            id = uuid,
+            name = npcData.name or "Unknown Trader",
+            source = "ContactVisitV1",
+            traderStatus = npcData.status,
+            traderState = npcData.state,
+            returnTime = npcData.returnTime,
+            returnStatus = npcData.returnStatus,
+            contactVisitActive = npcData.contactVisitActive,
+            contactVisitMode = npcData.contactVisitMode,
+            contactVisitBackend = npcData.contactVisitBackend,
+        })
+    end
+end
+
 local function clearDepartureRuntime(npcData, keepStatusData)
     if not npcData then return end
 
@@ -659,10 +736,47 @@ function DTNPCManager.ProcessAwayTransitions()
                         npcData.travelTarget = nil
 
                         if npcData.contactVisitActive == true then
-                            npcData.state = "Follow"
-                            npcData.contactVisitMode = "Follow"
-                            npcData.master = npcData.contactVisitRequestedBy or npcData.master
-                            npcData.masterID = npcData.contactVisitRequestedByID or npcData.masterID
+                            local visitBackend = string.upper(tostring(npcData.contactVisitBackend or ""))
+
+                            DynamicTrading.Log(
+                                "DTV2",
+                                "NPC",
+                                "Logic",
+                                "Resolving contact arrival uuid=" .. tostring(uuid)
+                                    .. " backend=" .. tostring(visitBackend ~= "" and visitBackend or "V2")
+                                    .. " status=" .. tostring(npcData.status)
+                                    .. " returnStatus=" .. tostring(npcData.returnStatus)
+                            )
+
+                            if visitBackend == "V1" then
+                                npcData.state = "Trading"
+                                npcData.contactVisitMode = "Trading"
+                                npcData.master = nil
+                                npcData.masterID = nil
+
+                                DynamicTrading.Log(
+                                    "DTV2",
+                                    "NPC",
+                                    "Logic",
+                                    "Contact trader arrival entering V1 radio mode for " .. tostring(npcData.name or uuid)
+                                        .. " requester=" .. tostring(npcData.contactVisitRequestedBy)
+                                )
+                                notifyV1ContactArrival(uuid, npcData)
+                            else
+                                npcData.state = "Follow"
+                                npcData.contactVisitMode = "Follow"
+                                npcData.master = npcData.contactVisitRequestedBy or npcData.master
+                                npcData.masterID = npcData.contactVisitRequestedByID or npcData.masterID
+
+                                DynamicTrading.Log(
+                                    "DTV2",
+                                    "NPC",
+                                    "Logic",
+                                    "Contact trader arrival entering Follow mode for " .. tostring(npcData.name or uuid)
+                                        .. " requester=" .. tostring(npcData.contactVisitRequestedBy)
+                                )
+                            end
+
                             npcData.tasks = {}
                             npcData.combatTargetID = nil
                             npcData.combatOrder = nil
@@ -676,14 +790,6 @@ function DTNPCManager.ProcessAwayTransitions()
                             npcData.stationaryPostY = nil
                             npcData.stationaryPostZ = nil
                             npcData.stationaryPostState = nil
-
-                            DynamicTrading.Log(
-                                "DTV2",
-                                "NPC",
-                                "Logic",
-                                "Contact trader arrival entering Follow mode for " .. tostring(npcData.name or uuid)
-                                    .. " requester=" .. tostring(npcData.contactVisitRequestedBy)
-                            )
                         end
 
                         local stayHours = SandboxVars.DynamicTrading.NPCTradingStayHours or 4.0

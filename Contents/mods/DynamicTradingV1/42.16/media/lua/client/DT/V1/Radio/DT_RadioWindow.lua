@@ -7,6 +7,8 @@ require "Utils/DT_ConfigManager"
 
 DT_RadioWindow = ISCollapsableWindow:derive("DT_RadioWindow")
 DT_RadioWindow.instance = nil
+DT_RadioWindow.lastRadioObj = nil
+DT_RadioWindow.lastIsHam = false
 
 function DT_RadioWindow:initialise()
     ISCollapsableWindow.initialise(self)
@@ -139,6 +141,29 @@ function DT_RadioWindow:close()
     DT_RadioWindow.instance = nil
 end
 
+function DT_RadioWindow.RememberRadio(radioObj, isHam)
+    if not radioObj then
+        return
+    end
+
+    DT_RadioWindow.lastRadioObj = radioObj
+    DT_RadioWindow.lastIsHam = isHam == true
+end
+
+function DT_RadioWindow.EnsureOpen(radioObj, isHam)
+    if DT_RadioWindow.instance and DT_RadioWindow.instance:getIsVisible() then
+        return DT_RadioWindow.instance
+    end
+
+    local targetRadio = radioObj or DT_RadioWindow.lastRadioObj
+    if not targetRadio then
+        return nil
+    end
+
+    DT_RadioWindow.ToggleWindow(targetRadio, isHam == true or DT_RadioWindow.lastIsHam == true)
+    return DT_RadioWindow.instance
+end
+
 function DT_RadioWindow:updateButtonState()
     if self.signalPanel then
         self.signalPanel:updateButtonState()
@@ -150,6 +175,8 @@ function DT_RadioWindow.ToggleWindow(radioObj, isHam)
         DT_RadioWindow.instance:close()
         return
     end
+
+    DT_RadioWindow.RememberRadio(radioObj, isHam)
 
     -- Dynamic Sizing
     local screenW = getCore():getScreenWidth()

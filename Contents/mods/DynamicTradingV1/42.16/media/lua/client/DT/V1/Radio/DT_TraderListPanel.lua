@@ -194,7 +194,7 @@ function DT_TraderListPanel:populateList()
     end
 
     if #sortedList == 0 then
-        self.listbox:addItem("No signals. Try scanning.", {})
+        self.listbox:addItem("No signal, Try scanning it later to check if any traders are available.", {})
     end
 end
 

@@ -40,10 +40,25 @@ local function handleContactUnlock(ui, ignoreReputation)
         return "I don't know who I'm talking to anymore."
     end
 
+    local resolvedTarget = target
+    local traderID = DT_TraderContacts.GetTraderID and DT_TraderContacts.GetTraderID(target) or nil
+    if traderID and DT_TraderContacts.GetRosterSoul then
+        local liveSoul = DT_TraderContacts.GetRosterSoul(traderID)
+        if liveSoul then
+            resolvedTarget = liveSoul
+        end
+    end
+    if traderID and ui and ui.isRadio and DynamicTrading and DynamicTrading.Manager and DynamicTrading.Manager.GetTrader then
+        local liveTrader = DynamicTrading.Manager.GetTrader(traderID)
+        if liveTrader and (resolvedTarget == target or resolvedTarget.status == nil or resolvedTarget.returnTime == nil) then
+            resolvedTarget = liveTrader
+        end
+    end
+
     local requiredRep = DT_TraderContacts.GetRequiredReputation()
-    local currentRep = DT_TraderContacts.GetEffectiveReputation(target)
-    local alreadyUnlocked = DT_TraderContacts.HasContact(target)
-    local ok, saved, reason = DT_TraderContacts.UnlockContact(target, {
+    local currentRep = DT_TraderContacts.GetEffectiveReputation(resolvedTarget)
+    local alreadyUnlocked = DT_TraderContacts.HasContact(resolvedTarget)
+    local ok, saved, reason = DT_TraderContacts.UnlockContact(resolvedTarget, {
         ignoreReputation = ignoreReputation == true,
         debugGranted = ignoreReputation == true,
     })
@@ -55,7 +70,7 @@ local function handleContactUnlock(ui, ignoreReputation)
     if ok and saved then
         return string.format(
             "Fine. You earned it. Save this frequency and reach me through Contacts when you need to talk, %s.",
-            tostring(saved.name or target.name or "survivor")
+            tostring(saved.name or resolvedTarget.name or target.name or "survivor")
         )
     end
 

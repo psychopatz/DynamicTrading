@@ -1,5 +1,90 @@
 local Internal = DT_TraderContacts.Internal
 
+function Internal.NormalizeStoredContactEntry(entry)
+    if type(entry) ~= "table" then
+        return false
+    end
+
+    local changed = false
+
+    if entry.requestBackend ~= nil then
+        entry.requestBackend = nil
+        changed = true
+    end
+
+    if entry.contactVisitBackend == "" then
+        entry.contactVisitBackend = nil
+        changed = true
+    end
+
+    if entry.contactVisitActive ~= true then
+        local transientKeys = {
+            "contactVisitMode",
+            "contactVisitBackend",
+            "contactVisitRequestedBy",
+            "contactVisitRequestedByID",
+            "contactVisitTargetX",
+            "contactVisitTargetY",
+            "contactVisitTargetZ",
+            "contactVisitStartedAt",
+            "contactVisitReturnStatus",
+        }
+
+        for _, key in ipairs(transientKeys) do
+            if entry[key] ~= nil then
+                entry[key] = nil
+                changed = true
+            end
+        end
+    end
+
+    return changed
+end
+
+function Internal.NormalizeContactsContainer(container)
+    if type(container) ~= "table" then
+        return false
+    end
+
+    local changed = false
+    local characters = type(container.characters) == "table" and container.characters or nil
+    if not characters then
+        return false
+    end
+
+    for _, store in pairs(characters) do
+        if type(store) == "table" then
+            for _, entry in pairs(store) do
+                if Internal.NormalizeStoredContactEntry(entry) then
+                    changed = true
+                end
+            end
+        end
+    end
+
+    if (tonumber(container.version) or 0) < DT_TraderContacts.VERSION then
+        container.version = DT_TraderContacts.VERSION
+        changed = true
+    end
+
+    return changed
+end
+
+function Internal.NormalizeContactStore(store)
+    if type(store) ~= "table" then
+        return false
+    end
+
+    local changed = false
+    for _, entry in pairs(store) do
+        if Internal.NormalizeStoredContactEntry(entry) then
+            changed = true
+        end
+    end
+
+    return changed
+end
+
 function Internal.EnsureCharacterKey(player, modData)
     if not player or not modData then
         return nil
@@ -59,6 +144,8 @@ function Internal.EnsureStore(player)
         return nil
     end
 
+    local normalizedContainer = Internal.NormalizeContactsContainer(container)
+
     local characters = container.characters
     if type(characters[characterKey]) ~= "table" then
         if type(characters.legacy) == "table" and Internal.HasTableEntries(characters.legacy) then
@@ -68,6 +155,14 @@ function Internal.EnsureStore(player)
         else
             characters[characterKey] = {}
         end
+    end
+
+    if Internal.NormalizeContactStore(characters[characterKey]) then
+        normalizedContainer = true
+    end
+
+    if normalizedContainer then
+        Internal.TransmitPlayerModData(player)
     end
 
     return characters[characterKey]
@@ -102,35 +197,77 @@ function DT_TraderContacts.SaveContact(trader, options)
 
     local id = normalized.id
     local existing = type(store[id]) == "table" and store[id] or {}
+    local live = DT_TraderContacts.GetRosterSoul and DT_TraderContacts.GetRosterSoul(id) or nil
 
     existing.id = id
     existing.uuid = id
     existing.traderID = id
-    existing.name = normalized.name
-    existing.archetype = normalized.archetype
-    existing.gender = normalized.gender
-    existing.identitySeed = normalized.identitySeed
-    existing.factionID = normalized.factionID
-    existing.factionName = normalized.factionName or DT_TraderContacts.GetFactionDisplayName(normalized)
-    existing.occupation = normalized.occupation
-    existing.returnTime = normalized.returnTime
-    existing.returnStatus = normalized.returnStatus
-    existing.status = normalized.status
-    existing.state = normalized.state
-    existing.lastX = normalized.lastX
-    existing.lastY = normalized.lastY
-    existing.lastZ = normalized.lastZ
-    existing.contactVisitActive = normalized.contactVisitActive
-    existing.contactVisitMode = normalized.contactVisitMode
-    existing.contactVisitRequestedBy = normalized.contactVisitRequestedBy
-    existing.contactVisitRequestedByID = normalized.contactVisitRequestedByID
-    existing.contactVisitTargetX = normalized.contactVisitTargetX
-    existing.contactVisitTargetY = normalized.contactVisitTargetY
-    existing.contactVisitTargetZ = normalized.contactVisitTargetZ
-    existing.contactVisitStartedAt = normalized.contactVisitStartedAt
-    existing.contactVisitReturnStatus = normalized.contactVisitReturnStatus
+    existing.name = normalized.name or (live and live.name) or existing.name
+    existing.archetype = normalized.archetype or (live and (live.archetype or live.archetypeID)) or existing.archetype
+    existing.gender = normalized.gender or (live and (live.isFemale and "Female" or "Male")) or existing.gender
+    existing.identitySeed = normalized.identitySeed or (live and live.identitySeed) or existing.identitySeed
+    existing.factionID = (live and live.factionID) or normalized.factionID or existing.factionID
+    existing.factionName = (live and live.factionName)
+        or normalized.factionName
+        or existing.factionName
+        or DT_TraderContacts.GetFactionDisplayName((live and live.factionID) or normalized)
+    existing.occupation = normalized.occupation or existing.occupation
+    existing.returnTime = (live and live.returnTime)
+        or normalized.returnTime
+        or existing.returnTime
+    existing.returnStatus = (live and live.returnStatus)
+        or normalized.returnStatus
+        or existing.returnStatus
+    existing.status = (live and live.status)
+        or normalized.status
+        or existing.status
+    existing.state = (live and live.state)
+        or normalized.state
+        or existing.state
+    existing.lastX = (live and live.lastX)
+        or normalized.lastX
+        or existing.lastX
+    existing.lastY = (live and live.lastY)
+        or normalized.lastY
+        or existing.lastY
+    existing.lastZ = (live and live.lastZ)
+        or normalized.lastZ
+        or existing.lastZ
+    existing.contactVisitActive = (live and live.contactVisitActive)
+        or normalized.contactVisitActive
+        or existing.contactVisitActive
+    existing.contactVisitMode = (live and live.contactVisitMode)
+        or normalized.contactVisitMode
+        or existing.contactVisitMode
+    existing.contactVisitBackend = (live and live.contactVisitBackend)
+        or normalized.contactVisitBackend
+        or existing.contactVisitBackend
+    existing.contactVisitRequestedBy = (live and live.contactVisitRequestedBy)
+        or normalized.contactVisitRequestedBy
+        or existing.contactVisitRequestedBy
+    existing.contactVisitRequestedByID = (live and live.contactVisitRequestedByID)
+        or normalized.contactVisitRequestedByID
+        or existing.contactVisitRequestedByID
+    existing.contactVisitTargetX = (live and live.contactVisitTargetX)
+        or normalized.contactVisitTargetX
+        or existing.contactVisitTargetX
+    existing.contactVisitTargetY = (live and live.contactVisitTargetY)
+        or normalized.contactVisitTargetY
+        or existing.contactVisitTargetY
+    existing.contactVisitTargetZ = (live and live.contactVisitTargetZ)
+        or normalized.contactVisitTargetZ
+        or existing.contactVisitTargetZ
+    existing.contactVisitStartedAt = (live and live.contactVisitStartedAt)
+        or normalized.contactVisitStartedAt
+        or existing.contactVisitStartedAt
+    existing.contactVisitReturnStatus = (live and live.contactVisitReturnStatus)
+        or normalized.contactVisitReturnStatus
+        or existing.contactVisitReturnStatus
+    existing.requestBackend = nil
+
+    Internal.NormalizeStoredContactEntry(existing)
     existing.lastSeenWorldHours = Internal.GetWorldAgeHours()
-    existing.rep = DT_TraderContacts.GetEffectiveReputation(trader)
+    existing.rep = DT_TraderContacts.GetEffectiveReputation(live or normalized)
     existing.unlockedAt = existing.unlockedAt or Internal.GetWorldAgeHours()
     existing.debugGranted = options and options.debugGranted == true or existing.debugGranted == true
 

@@ -44,7 +44,8 @@ function DT_V1_Dialogue_Hub.Init(ui, radioObj, traderID, player)
             identitySeed = trader.identitySeed or 1,
             factionID = trader.factionID,
             factionName = trader.factionName,
-            returnTime = trader.returnTime
+            returnTime = trader.returnTime,
+            status = trader.status
         }
         
         ui = DT_ConversationUI.Open(traderProxy, nil, nil, true, radioObj) -- isRadio = true, interactionObj = radioObj

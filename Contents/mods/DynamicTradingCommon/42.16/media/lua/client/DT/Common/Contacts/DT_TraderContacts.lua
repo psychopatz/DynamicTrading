@@ -9,7 +9,7 @@ require "DT/Common/Reputation/DT_Reputation"
 DT_TraderContacts = DT_TraderContacts or {}
 DT_TraderContacts.Internal = DT_TraderContacts.Internal or {}
 
-DT_TraderContacts.VERSION = 2
+DT_TraderContacts.VERSION = 3
 DT_TraderContacts.MODDATA_KEY = "DT_TraderContacts"
 DT_TraderContacts.CHARACTER_KEY_MODDATA = "DT_TraderContactsCharacterKey"
 DT_TraderContacts.CONTACT_REPUTATION_REQUIRED = 20
