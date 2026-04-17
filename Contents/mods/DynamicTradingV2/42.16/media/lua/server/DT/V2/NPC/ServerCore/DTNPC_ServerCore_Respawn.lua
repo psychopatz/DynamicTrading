@@ -175,10 +175,14 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
             or npcData.state == "ProtectRanged"
             or npcData.state == "ProtectMelee"
             or npcData.state == "ProtectAuto")
+    local preserveContactVisitFollow = status == "Trading"
+        and npcData.contactVisitActive == true
+        and npcData.master ~= nil
+        and (npcData.state == "Follow" or npcData.contactVisitMode == "Follow")
     if npcData.incapState == "Active" then
         npcData.state = "Incapacitated"
     elseif status == "Trading" then
-        npcData.state = "Trading"
+        npcData.state = preserveContactVisitFollow and "Follow" or "Trading"
     elseif status == "Working" then
         npcData.state = preserveCompanionControl and npcData.state or "Guard"
     else
@@ -187,9 +191,19 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     
     DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Mapped Status [" .. status .. "] to Behavior State [" .. npcData.state .. "]")
     
-    if not preserveCompanionControl then
+    if not preserveCompanionControl and not preserveContactVisitFollow then
         npcData.master = nil
         npcData.masterID = nil
+    end
+
+    if preserveContactVisitFollow then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Respawn",
+            "Preserving Follow state for called trader arrival name=" .. tostring(npcData.name or uuid)
+                .. " requester=" .. tostring(npcData.contactVisitRequestedBy)
+        )
     end
     
     DTNPC.AttachData(zombie, npcData)

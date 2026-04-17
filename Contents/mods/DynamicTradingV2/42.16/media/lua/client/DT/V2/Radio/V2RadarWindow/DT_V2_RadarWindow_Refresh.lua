@@ -142,6 +142,14 @@ function DT_V2_RadarWindow:refresh()
         }
     end
 
+    local function shouldShowCallableContact(contact)
+        if not contact then
+            return false
+        end
+
+        return tostring(contact.status or "") ~= "Dead"
+    end
+
     if self.currentCategory == "Stationary" then
         for uuid, data in pairs(DT_V2_RadarManager.FoundTraders) do
             table.insert(tempList, buildDistanceEntry(uuid, data, DT_V2_RadarManager.GetSoul(uuid)))
@@ -175,6 +183,23 @@ function DT_V2_RadarWindow:refresh()
                 end
             end
         end
+
+        local contactsAPI = DT_TraderContacts
+        if contactsAPI and contactsAPI.GetAllContacts and contactsAPI.RefreshContactData then
+            for _, savedContact in ipairs(contactsAPI.GetAllContacts(player)) do
+                local contact = contactsAPI.RefreshContactData(savedContact)
+                local uuid = contact and tostring(contact.id or contact.uuid or "") or nil
+                if uuid and uuid ~= "" and not seenUUIDs[uuid] and shouldShowCallableContact(contact) then
+                    seenUUIDs[uuid] = true
+                    table.insert(tempList, buildDistanceEntry(uuid, {
+                        name = contact.name or "Contact",
+                        faction = contact.factionID or contact.faction or "Independent",
+                        factionName = contact.factionName,
+                        occupation = contact.occupation,
+                    }, contact))
+                end
+            end
+        end
     end
 
     table.sort(tempList, function(a, b)
@@ -192,11 +217,16 @@ function DT_V2_RadarWindow:refresh()
         local identitySeed = soul and soul.identitySeed or 1
 
         local factionData = DT_V2_RadarManager.GetFaction(data.faction)
-        local factionName = factionData and factionData.name or data.faction or "Independent"
+        local factionName = factionData and factionData.name or data.factionName or data.faction or "Independent"
+        if self.currentCategory == "Callable" and DT_TraderContacts and DT_TraderContacts.GetFactionDisplayName then
+            factionName = DT_TraderContacts.GetFactionDisplayName(soul or data)
+        end
 
         local expireText = ""
         if soul and soul.isCallableCompanion == true then
             expireText = soul.state and ("State: " .. tostring(soul.state)) or "Companion"
+        elseif self.currentCategory == "Callable" and DT_TraderContacts and DT_TraderContacts.GetStatusText then
+            expireText = DT_TraderContacts.GetStatusText(soul)
         elseif soul and soul.returnTime and soul.returnTime > 0 then
             local hours = math.ceil(soul.returnTime - getGameTime():getWorldAgeHours())
             if hours < 0 then

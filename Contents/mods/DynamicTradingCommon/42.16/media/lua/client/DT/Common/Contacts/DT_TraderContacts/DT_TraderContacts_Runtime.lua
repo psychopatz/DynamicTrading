@@ -1,16 +1,72 @@
 local Internal = DT_TraderContacts.Internal
 
-function Internal.GetRosterSource()
+function Internal.GetVisitWalkHours()
+    return tonumber(SandboxVars and SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0) or 1.0
+end
+
+function Internal.FormatCountdownFromHours(hoursRemaining)
+    local hours = tonumber(hoursRemaining)
+    if not hours or hours <= 0 then
+        return "now"
+    end
+
+    local totalSeconds = math.max(1, math.floor(hours * 3600))
+    local totalMinutes = math.floor(totalSeconds / 60)
+    local remainingSeconds = totalSeconds % 60
+    local wholeHours = math.floor(totalMinutes / 60)
+    local remainingMinutes = totalMinutes % 60
+
+    if wholeHours > 0 then
+        return string.format("%dh %02dm", wholeHours, remainingMinutes)
+    end
+    if totalMinutes > 0 then
+        return string.format("%dm %02ds", totalMinutes, remainingSeconds)
+    end
+
+    return string.format("%ds", totalSeconds)
+end
+
+function DT_TraderContacts.GetVisitArrivalTime(contact)
+    local current = DT_TraderContacts.RefreshContactData(contact)
+    if not current or current.contactVisitActive ~= true then
+        return nil
+    end
+
+    local startedAt = tonumber(current.contactVisitStartedAt)
+    if not startedAt then
+        return nil
+    end
+
+    return startedAt + Internal.GetVisitWalkHours()
+end
+
+function DT_TraderContacts.GetArrivalCountdownText(contact)
+    local arrivalTime = DT_TraderContacts.GetVisitArrivalTime(contact)
+    if not arrivalTime then
+        return nil
+    end
+
+    local remainingHours = arrivalTime - Internal.GetWorldAgeHours()
+    if remainingHours <= 0 then
+        return nil
+    end
+
+    return Internal.FormatCountdownFromHours(remainingHours)
+end
+
+function Internal.GetRosterSources()
+    local sources = {}
+
     if DT_V2_RadarManager and DT_V2_RadarManager.ClientRoster and type(DT_V2_RadarManager.ClientRoster.Souls) == "table" then
-        return DT_V2_RadarManager.ClientRoster.Souls
+        sources[#sources + 1] = DT_V2_RadarManager.ClientRoster.Souls
     end
 
     local roster = ModData.get and ModData.get("DynamicTrading_Roster") or nil
     if roster and type(roster.Souls) == "table" then
-        return roster.Souls
+        sources[#sources + 1] = roster.Souls
     end
 
-    return nil
+    return sources
 end
 
 function DT_TraderContacts.GetRosterSoul(traderOrID)
@@ -23,13 +79,15 @@ function DT_TraderContacts.GetRosterSoul(traderOrID)
         return nil
     end
 
-    local souls = Internal.GetRosterSource()
-    local soul = souls and souls[tostring(traderID)] or nil
-    if type(soul) ~= "table" then
-        return nil
+    local sources = Internal.GetRosterSources()
+    for _, souls in ipairs(sources) do
+        local soul = souls and souls[tostring(traderID)] or nil
+        if type(soul) == "table" then
+            return Internal.CloneContact(soul)
+        end
     end
 
-    return Internal.CloneContact(soul)
+    return nil
 end
 
 function DT_TraderContacts.RefreshContactData(contact)
@@ -39,9 +97,13 @@ function DT_TraderContacts.RefreshContactData(contact)
     end
 
     local soul = DT_TraderContacts.GetRosterSoul(normalized.id)
+    normalized.missingFromRoster = soul == nil
+    normalized.factionMissing = DT_TraderContacts.Internal.IsFactionMissing and DT_TraderContacts.Internal.IsFactionMissing(normalized.factionID) or false
+
     if soul then
         if soul.name ~= nil then normalized.name = soul.name end
         if soul.factionID ~= nil then normalized.factionID = soul.factionID end
+        if soul.factionName ~= nil then normalized.factionName = soul.factionName end
         if soul.archetypeID ~= nil then normalized.archetype = soul.archetypeID end
         if soul.isFemale ~= nil then normalized.gender = soul.isFemale and "Female" or "Male" end
         if soul.identitySeed ~= nil then normalized.identitySeed = soul.identitySeed end
@@ -54,8 +116,53 @@ function DT_TraderContacts.RefreshContactData(contact)
         if soul.lastZ ~= nil then normalized.lastZ = soul.lastZ end
         if soul.contactVisitActive ~= nil then normalized.contactVisitActive = soul.contactVisitActive end
         if soul.contactVisitMode ~= nil then normalized.contactVisitMode = soul.contactVisitMode end
+        if soul.contactVisitRequestedBy ~= nil then normalized.contactVisitRequestedBy = soul.contactVisitRequestedBy end
+        if soul.contactVisitRequestedByID ~= nil then normalized.contactVisitRequestedByID = soul.contactVisitRequestedByID end
+        if soul.contactVisitTargetX ~= nil then normalized.contactVisitTargetX = soul.contactVisitTargetX end
+        if soul.contactVisitTargetY ~= nil then normalized.contactVisitTargetY = soul.contactVisitTargetY end
+        if soul.contactVisitTargetZ ~= nil then normalized.contactVisitTargetZ = soul.contactVisitTargetZ end
+        if soul.contactVisitStartedAt ~= nil then normalized.contactVisitStartedAt = soul.contactVisitStartedAt end
+        if soul.contactVisitReturnStatus ~= nil then normalized.contactVisitReturnStatus = soul.contactVisitReturnStatus end
+
+        normalized.missingFromRoster = false
+        normalized.factionMissing = DT_TraderContacts.Internal.IsFactionMissing and DT_TraderContacts.Internal.IsFactionMissing(normalized.factionID) or false
     end
 
+    if normalized.missingFromRoster and normalized.factionMissing then
+        normalized.status = "Dead"
+        normalized.state = "Dead"
+        normalized.returnTime = nil
+        normalized.returnStatus = nil
+        normalized.contactVisitActive = false
+        normalized.contactVisitMode = nil
+        normalized.contactVisitRequestedBy = nil
+        normalized.contactVisitRequestedByID = nil
+        normalized.contactVisitTargetX = nil
+        normalized.contactVisitTargetY = nil
+        normalized.contactVisitTargetZ = nil
+        normalized.contactVisitStartedAt = nil
+        normalized.contactVisitReturnStatus = nil
+    elseif normalized.missingFromRoster and (normalized.status == nil or normalized.status == "" or normalized.status == "Unknown") then
+        normalized.status = "Unavailable"
+        normalized.state = normalized.state or "Unavailable"
+    end
+
+    if tostring(normalized.status or "") == "Dead" then
+        normalized.state = "Dead"
+        normalized.returnTime = nil
+        normalized.returnStatus = nil
+        normalized.contactVisitActive = false
+        normalized.contactVisitMode = nil
+        normalized.contactVisitRequestedBy = nil
+        normalized.contactVisitRequestedByID = nil
+        normalized.contactVisitTargetX = nil
+        normalized.contactVisitTargetY = nil
+        normalized.contactVisitTargetZ = nil
+        normalized.contactVisitStartedAt = nil
+        normalized.contactVisitReturnStatus = nil
+    end
+
+    normalized.factionName = DT_TraderContacts.GetFactionDisplayName(normalized)
     normalized.reputation = DT_TraderContacts.GetEffectiveReputation(normalized)
     return normalized
 end
@@ -71,27 +178,55 @@ function DT_TraderContacts.GetStatusText(contact)
     local returnStatus = tostring(current.returnStatus or "")
     local visitMode = tostring(current.contactVisitMode or "")
     local visitActive = current.contactVisitActive == true
+    local arrivalCountdown = DT_TraderContacts.GetArrivalCountdownText(current)
 
-    if status == "Resting" then
-        return "Status: Resting at base"
+    if status == "Dead" then
+        return "Status: Deceased"
     end
-    if status == "Trading" and visitActive and (visitMode == "Follow" or state == "Follow") then
-        return "Status: Called in and following your lead"
+    if status == "Unavailable" or current.missingFromRoster == true then
+        return "Contact unavailable"
     end
-    if status == "Trading" and visitActive and (visitMode == "Guard" or state == "Guard") then
-        return "Status: Called in and guarding nearby"
+
+    if (status == "Unknown" or status == "") and visitActive and returnStatus == "Resting" then
+        return "Status: Returning home"
     end
-    if status == "Trading" then
-        return "Status: Trading in the field"
-    end
-    if status == "Away" and visitActive and returnStatus == "Trading" then
+    if (status == "Unknown" or status == "") and visitActive and returnStatus == "Trading" then
+        if arrivalCountdown then
+            return string.format("Status: Moving toward your area (ETA %s)", arrivalCountdown)
+        end
         return "Status: Moving toward your area"
     end
+    if (status == "Unknown" or status == "") and visitMode == "Departure" then
+        return "Status: Returning home"
+    end
+
+    if visitActive and arrivalCountdown and (status == "Away" or status == "Trading") then
+        return string.format("Status: Moving toward your area (ETA %s)", arrivalCountdown)
+    end
+
+    if status == "Resting" then
+        return "Resting at base"
+    end
+    if status == "Trading" and visitActive and (visitMode == "Follow" or state == "Follow") then
+        return "Called in and following"
+    end
+    if status == "Trading" and visitActive and (visitMode == "Trading" or state == "Trading") then
+        return "Called in and trading"
+    end
+    if status == "Trading" then
+        return "Trading in the field"
+    end
+    if status == "Away" and visitActive and returnStatus == "Trading" then
+        if arrivalCountdown then
+            return string.format("Moving toward your area (ETA %s)", arrivalCountdown)
+        end
+        return "Moving toward your area"
+    end
     if status == "Away" and returnStatus == "Trading" then
-        return "Status: En route to trade"
+        return "En route to trade"
     end
     if status == "Away" and returnStatus == "Resting" then
-        return "Status: Returning home"
+        return "Returning home"
     end
     if state ~= "" then
         return "Status: " .. state
@@ -145,13 +280,14 @@ function DT_TraderContacts.RequestVisit(contact)
         DT_Reputation.ModifyPersonalRep(hydrated.id, hydrated.factionID, -DT_TraderContacts.VISIT_REPUTATION_COST, "contact_visit_request")
     end
 
+    local walkHours = Internal.GetVisitWalkHours()
     local stayHours = SandboxVars and SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingStayHours or 4.0
-    hydrated.status = "Trading"
-    hydrated.state = "Follow"
-    hydrated.returnStatus = "Away"
-    hydrated.returnTime = Internal.GetWorldAgeHours() + stayHours
+    hydrated.status = "Away"
+    hydrated.state = "Departure"
+    hydrated.returnStatus = "Trading"
+    hydrated.returnTime = Internal.GetWorldAgeHours() + walkHours
     hydrated.contactVisitActive = true
-    hydrated.contactVisitMode = "Follow"
+    hydrated.contactVisitMode = "Departure"
     hydrated.contactVisitRequestedBy = player.getUsername and player:getUsername() or nil
     hydrated.contactVisitRequestedByID = player.getOnlineID and player:getOnlineID() or nil
     hydrated.contactVisitTargetX = math.floor(player:getX())
@@ -166,7 +302,7 @@ function DT_TraderContacts.RequestVisit(contact)
         DT_V2_RadarManager.RequestRoster()
     end
 
-    return true, hydrated, stayHours
+    return true, hydrated, walkHours, stayHours
 end
 
 function DT_TraderContacts.BuildConversationTarget(contact)
@@ -175,6 +311,8 @@ function DT_TraderContacts.BuildConversationTarget(contact)
         return nil
     end
 
+    normalized.factionName = DT_TraderContacts.GetFactionDisplayName(normalized)
+    normalized.returnTime = nil
     normalized.reputation = DT_TraderContacts.GetEffectiveReputation(normalized)
     normalized.isContactConversation = true
     return normalized

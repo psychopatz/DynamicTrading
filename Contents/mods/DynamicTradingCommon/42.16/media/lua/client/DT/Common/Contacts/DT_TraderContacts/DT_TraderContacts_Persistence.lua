@@ -111,6 +111,7 @@ function DT_TraderContacts.SaveContact(trader, options)
     existing.gender = normalized.gender
     existing.identitySeed = normalized.identitySeed
     existing.factionID = normalized.factionID
+    existing.factionName = normalized.factionName or DT_TraderContacts.GetFactionDisplayName(normalized)
     existing.occupation = normalized.occupation
     existing.returnTime = normalized.returnTime
     existing.returnStatus = normalized.returnStatus
@@ -119,6 +120,15 @@ function DT_TraderContacts.SaveContact(trader, options)
     existing.lastX = normalized.lastX
     existing.lastY = normalized.lastY
     existing.lastZ = normalized.lastZ
+    existing.contactVisitActive = normalized.contactVisitActive
+    existing.contactVisitMode = normalized.contactVisitMode
+    existing.contactVisitRequestedBy = normalized.contactVisitRequestedBy
+    existing.contactVisitRequestedByID = normalized.contactVisitRequestedByID
+    existing.contactVisitTargetX = normalized.contactVisitTargetX
+    existing.contactVisitTargetY = normalized.contactVisitTargetY
+    existing.contactVisitTargetZ = normalized.contactVisitTargetZ
+    existing.contactVisitStartedAt = normalized.contactVisitStartedAt
+    existing.contactVisitReturnStatus = normalized.contactVisitReturnStatus
     existing.lastSeenWorldHours = Internal.GetWorldAgeHours()
     existing.rep = DT_TraderContacts.GetEffectiveReputation(trader)
     existing.unlockedAt = existing.unlockedAt or Internal.GetWorldAgeHours()
@@ -169,6 +179,27 @@ function DT_TraderContacts.GetContact(traderOrID, player)
     end
 
     return Internal.CloneContact(store[tostring(traderID)])
+end
+
+function DT_TraderContacts.DeleteContact(traderOrID, player)
+    local traderID = traderOrID
+    if type(traderOrID) == "table" then
+        traderID = DT_TraderContacts.GetTraderID(traderOrID)
+    end
+
+    if not traderID then
+        return false
+    end
+
+    player = player or Internal.GetLocalPlayer()
+    local store = Internal.EnsureStore(player)
+    if not store or type(store[tostring(traderID)]) ~= "table" then
+        return false
+    end
+
+    store[tostring(traderID)] = nil
+    Internal.TransmitPlayerModData(player)
+    return true
 end
 
 function DT_TraderContacts.GetAllContacts(player)

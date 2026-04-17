@@ -112,7 +112,8 @@ end
 --- @param player any: Optional. The player character. Defaults to player 0.
 --- @param trader any: Optional. The trader data object.
 --- @return boolean: True if valid, false otherwise.
-function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
+--- @return string|nil: Invalid reason when false.
+function DynamicTrading.Utils.CheckInteractionValid(obj, player, trader)
     local liveNpcData = nil
     if obj and instanceof(obj, "IsoGameCharacter") and DTNPC and DTNPC.GetData then
         liveNpcData = DTNPC.GetData(obj)
@@ -131,23 +132,23 @@ function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
     if traderForTimer and traderForTimer.returnTime then
         local gt = GameTime:getInstance()
         if traderForTimer.returnTime <= gt:getWorldAgeHours() then
-            return false
+            return false, "trader_return_time_expired"
         end
     end
 
-    if not obj then return true end -- If no object, assume it's a permanent UI (like debug) or not distance-bound
+    if not obj then return true, nil end -- If no object, assume it's a permanent UI (like debug) or not distance-bound
     
     player = player or getSpecificPlayer(0)
-    if not player then return false end
+    if not player then return false, "missing_player" end
 
     -- 1. NPC CHARACTER
     if instanceof(obj, "IsoGameCharacter") then
-        if obj:isDead() then return false end
-        if liveNpcData and liveNpcData.state == "Departure" then return false end
+        if obj:isDead() then return false, "npc_dead" end
+        if liveNpcData and liveNpcData.state == "Departure" then return false, "npc_departure" end
         -- Distance check for NPCs (4 tiles)
         local dist = IsoUtils.DistanceTo(player:getX(), player:getY(), obj:getX(), obj:getY())
-        if dist > 4.0 then return false end
-        return true
+        if dist > 4.0 then return false, "npc_out_of_range" end
+        return true, nil
     end
 
     -- 2. RADIO DEVICE (In-World or Inventory)
@@ -156,28 +157,34 @@ function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
         deviceData = obj:getDeviceData()
     end
     
-    if not deviceData or not deviceData:getIsTurnedOn() then return false end
+    if not deviceData then return false, "radio_missing_device_data" end
+    if not deviceData:getIsTurnedOn() then return false, "radio_powered_off" end
 
     -- A. In-World Radio
     if instanceof(obj, "IsoWaveSignal") then
         local sq = obj:getSquare()
-        if not sq then return false end
+        if not sq then return false, "world_radio_missing_square" end
 
         -- Distance check for World Radios (5 tiles)
         local dist = IsoUtils.DistanceTo(player:getX(), player:getY(), obj:getX(), obj:getY())
-        if dist > 5.0 then return false end
+        if dist > 5.0 then return false, "world_radio_out_of_range" end
 
-        if not DynamicTrading.Utils.HasOperationalRadioPower(obj, deviceData) then return false end
+        if not DynamicTrading.Utils.HasOperationalRadioPower(obj, deviceData) then return false, "world_radio_no_power" end
 
-        return true
+        return true, nil
     end
 
     -- B. Handheld Radio (Inventory Item)
     -- Check if it's still in player's inventory
-    if obj:getContainer() ~= player:getInventory() then return false end
-    if not DynamicTrading.Utils.HasOperationalRadioPower(obj, deviceData) then return false end
+    if obj:getContainer() ~= player:getInventory() then return false, "handheld_not_in_inventory" end
+    if not DynamicTrading.Utils.HasOperationalRadioPower(obj, deviceData) then return false, "handheld_no_power" end
 
-    return true
+    return true, nil
+end
+
+function DynamicTrading.Utils.IsInteractionValid(obj, player, trader)
+    local valid = DynamicTrading.Utils.CheckInteractionValid(obj, player, trader)
+    return valid == true
 end
 
 --- Resolves a MasterList key from an item's fullType.

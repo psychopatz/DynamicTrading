@@ -570,6 +570,18 @@ local function onClientCommand(module, command, player, args)
                            npcData.guardCombatOrder = nil
                            npcData.guardAttackMode = nil
                            DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo task added: " .. args.targetX .. "," .. args.targetY .. "," .. (args.targetZ or 0))
+                        elseif args.state == "Trading" then
+                            npcData.master = nil
+                            npcData.masterID = nil
+                            npcData.tasks = {}
+                            npcData.combatOrder = nil
+                            npcData.guardCombatOrder = nil
+                            npcData.guardAttackMode = nil
+                            npcData.stationaryPostX = nil
+                            npcData.stationaryPostY = nil
+                            npcData.stationaryPostZ = nil
+                            npcData.stationaryPostState = nil
+                            npcData.guardReturningToPost = nil
                         else
                             npcData.combatOrder = nil
                             if args.state == "Stay" then
@@ -612,81 +624,9 @@ local function onClientCommand(module, command, player, args)
         local targetY = tonumber(args.y) or player:getY()
         local targetZ = tonumber(args.z) or player:getZ() or 0
         local walkHours = SandboxVars and SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
-        local stayHours = SandboxVars and SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingStayHours or 4.0
         local currentHours = getGameTime() and getGameTime():getWorldAgeHours() or 0
         local username = player:getUsername()
         local onlineID = player.getOnlineID and player:getOnlineID() or nil
-
-        local zombie = DTNPCServerCore and DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(uuid) or nil
-        local npcData = soul
-        if not zombie and DTNPCServerCore and DTNPCServerCore.SpawnOffscreenCompanionByUUID then
-            local spawned, spawnedZombie, spawnedData = DTNPCServerCore.SpawnOffscreenCompanionByUUID(uuid, player)
-            if not spawned and DTNPCServerCore.SpawnNearbyCompanionByUUID then
-                spawned, spawnedZombie, spawnedData = DTNPCServerCore.SpawnNearbyCompanionByUUID(uuid, player, 2, 5)
-            end
-            if spawned then
-                zombie = spawnedZombie or zombie
-                npcData = spawnedData or npcData
-            end
-        end
-
-        if zombie and npcData then
-            npcData.status = "Trading"
-            npcData.returnTime = currentHours + stayHours
-            npcData.returnStatus = "Away"
-            npcData.requestedReturnStatus = nil
-            npcData.state = "Follow"
-            npcData.master = username
-            npcData.masterID = onlineID
-            npcData.tasks = {}
-            npcData.combatTargetID = nil
-            npcData.combatOrder = nil
-            npcData.guardCombatOrder = nil
-            npcData.guardAttackMode = nil
-            npcData.guardReturningToPost = nil
-            npcData.anchorX = nil
-            npcData.anchorY = nil
-            npcData.anchorZ = nil
-            npcData.stationaryPostX = nil
-            npcData.stationaryPostY = nil
-            npcData.stationaryPostZ = nil
-            npcData.stationaryPostState = nil
-            npcData.travelTarget = nil
-            npcData.contactVisitActive = true
-            npcData.contactVisitMode = "Follow"
-            npcData.contactVisitRequestedBy = username
-            npcData.contactVisitRequestedByID = onlineID
-            npcData.contactVisitTargetX = targetX
-            npcData.contactVisitTargetY = targetY
-            npcData.contactVisitTargetZ = targetZ
-            npcData.contactVisitStartedAt = currentHours
-            npcData.contactVisitReturnStatus = "Resting"
-
-            if DTNPC and DTNPC.AttachData then
-                DTNPC.AttachData(zombie, npcData)
-            end
-            if DTNPCManager and DTNPCManager.Data then
-                DTNPCManager.Data[uuid] = npcData
-            end
-            if DTNPCManager and DTNPCManager.Register then
-                DTNPCManager.Register(zombie, npcData)
-            end
-            if DTNPCManager and DTNPCManager.Save then
-                DTNPCManager.Save()
-            end
-            if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
-                DynamicTrading_Roster.SaveSoul(uuid, npcData)
-            end
-            if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
-                DTNPCServerCore.SyncToAllClients(zombie, npcData)
-            end
-            if DTNPCServerCore and DTNPCServerCore.BroadcastPosition then
-                DTNPCServerCore.BroadcastPosition(zombie, npcData)
-            end
-
-            DynamicTrading.Log("DTV2", "NPC", "Logic", "RequestTraderVisit linked trader to player follow for " .. tostring(npcData.name or uuid))
-            return
-        end
 
         soul.travelTarget = {
             x = targetX,
@@ -697,6 +637,22 @@ local function onClientCommand(module, command, player, args)
         soul.lastContactRequester = player:getUsername()
         soul.contactVisitActive = true
         soul.contactVisitMode = "Departure"
+        soul.master = nil
+        soul.masterID = nil
+        soul.tasks = {}
+        soul.requestedReturnStatus = nil
+        soul.combatTargetID = nil
+        soul.combatOrder = nil
+        soul.guardCombatOrder = nil
+        soul.guardAttackMode = nil
+        soul.guardReturningToPost = nil
+        soul.anchorX = nil
+        soul.anchorY = nil
+        soul.anchorZ = nil
+        soul.stationaryPostX = nil
+        soul.stationaryPostY = nil
+        soul.stationaryPostZ = nil
+        soul.stationaryPostState = nil
         soul.contactVisitRequestedBy = username
         soul.contactVisitRequestedByID = onlineID
         soul.contactVisitTargetX = targetX
@@ -705,11 +661,6 @@ local function onClientCommand(module, command, player, args)
         soul.contactVisitStartedAt = currentHours
         soul.contactVisitReturnStatus = "Resting"
         DynamicTrading_Roster.SaveSoul(uuid, soul)
-
-        if DTNPCManager and DTNPCManager.TryStartLiveDeparture and DTNPCManager.TryStartLiveDeparture(uuid, "Trading", walkHours, targetX, targetY, targetZ) then
-            DynamicTrading.Log("DTV2", "NPC", "Logic", "RequestTraderVisit started live departure for " .. tostring(soul.name or uuid))
-            return
-        end
 
         if DTNPCManager and DTNPCManager.SetNPCStatus then
             DTNPCManager.SetNPCStatus(uuid, "Away", currentHours + walkHours, "Trading")

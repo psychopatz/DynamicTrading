@@ -29,7 +29,7 @@ local function applyInteractionPose(npc, player)
     end
 end
 
-local function requestCalledTraderGuard(player, npc, npcData)
+local function requestCalledTraderTrading(player, npc, npcData)
     if not player or not npc or type(npcData) ~= "table" or not npcData.uuid then
         return
     end
@@ -44,28 +44,28 @@ local function requestCalledTraderGuard(player, npc, npcData)
         return
     end
 
-    if npcData.state ~= "Guard" then
+    if npcData.state ~= "Trading" then
         sendClientCommand(player, "DTNPC", "Order", {
             uuid = npcData.uuid,
-            state = "Guard",
-            x = math.floor(npc:getX()),
-            y = math.floor(npc:getY()),
-            z = math.floor(npc:getZ()),
-            guardCombatOrder = (npcData.guardCombatOrder or npcData.guardAttackMode or "GuardAuto"),
+            state = "Trading",
         })
     end
 
-    npcData.state = "Guard"
-    npcData.contactVisitMode = "Guard"
+    npcData.state = "Trading"
+    npcData.contactVisitMode = "Trading"
     npcData.master = nil
     npcData.masterID = nil
-    npcData.stationaryPostX = npc:getX()
-    npcData.stationaryPostY = npc:getY()
-    npcData.stationaryPostZ = npc:getZ()
-    npcData.stationaryPostState = "Guard"
-    npcData.anchorX = npc:getX()
-    npcData.anchorY = npc:getY()
-    npcData.anchorZ = npc:getZ()
+    npcData.tasks = {}
+    npcData.combatOrder = nil
+    npcData.guardCombatOrder = nil
+    npcData.guardAttackMode = nil
+    npcData.stationaryPostX = nil
+    npcData.stationaryPostY = nil
+    npcData.stationaryPostZ = nil
+    npcData.stationaryPostState = nil
+    npcData.anchorX = nil
+    npcData.anchorY = nil
+    npcData.anchorZ = nil
     npcData.guardReturningToPost = nil
 
     if DTNPC and DTNPC.AttachData then
@@ -206,7 +206,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             if isTrading then
                 -- SUCCESS: Open Trade Window
                 DynamicTrading.Log("DTV2", "Dialog", "Trade", "Trade option selected")
-                requestCalledTraderGuard(player, npc, npcData)
+                requestCalledTraderTrading(player, npc, npcData)
                 
                 local traderID = (npcData and npcData.uuid) or npc:getPersistentOutfitID() or npc:getID()
                 local archetype = npcData and npcData.archetypeID or "General"

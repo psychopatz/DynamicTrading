@@ -16,9 +16,42 @@ function DT_ConversationUI:update()
     end
 
     if self.typingTick % 15 == 0 then
-        if not DynamicTrading.Utils.IsInteractionValid(self.interactionObj, nil, self.target) then
-            self:close()
-            return
+        local validationTarget = self.isContactConversation and nil or self.target
+        local valid, invalidReason = true, nil
+        if DynamicTrading and DynamicTrading.Utils and DynamicTrading.Utils.CheckInteractionValid then
+            valid, invalidReason = DynamicTrading.Utils.CheckInteractionValid(self.interactionObj, nil, validationTarget)
+        else
+            valid = DynamicTrading.Utils.IsInteractionValid(self.interactionObj, nil, validationTarget)
+        end
+
+        if not valid then
+            if self.isContactConversation then
+                if self.lastValidationLogReason ~= invalidReason or self.typingTick % 120 == 0 then
+                    DynamicTrading.Log(
+                        "DTCommons",
+                        "Dialog",
+                        "Contact",
+                        "Keeping contact conversation open despite invalid interaction. reason=" .. tostring(invalidReason)
+                            .. " target=" .. tostring(self.target and (self.target.name or self.target.uuid or self.target.id) or "nil")
+                            .. " hasInteractionObj=" .. tostring(self.interactionObj ~= nil)
+                    )
+                    self.lastValidationLogReason = invalidReason
+                end
+            else
+                self.closeReason = invalidReason or "invalid_interaction"
+                DynamicTrading.Log(
+                    "DTCommons",
+                    "Dialog",
+                    "Close",
+                    "Closing conversation due to invalid interaction. reason=" .. tostring(self.closeReason)
+                        .. " target=" .. tostring(self.target and (self.target.name or self.target.uuid or self.target.id) or "nil")
+                        .. " hasInteractionObj=" .. tostring(self.interactionObj ~= nil)
+                )
+                self:close()
+                return
+            end
+        else
+            self.lastValidationLogReason = nil
         end
     end
 

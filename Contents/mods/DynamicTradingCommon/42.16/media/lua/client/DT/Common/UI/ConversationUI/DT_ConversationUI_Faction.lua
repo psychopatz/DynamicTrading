@@ -52,6 +52,14 @@ function DT_ConversationUI:refreshFactionInfo()
         return
     end
 
+    if self.isContactConversation and DT_TraderContacts and DT_TraderContacts.RefreshContactData then
+        local refreshed = DT_TraderContacts.RefreshContactData(traderObj)
+        if refreshed then
+            self.target = refreshed
+            traderObj = refreshed
+        end
+    end
+
     local faction = self:getFactionData(traderObj.factionID)
     local traderUUID = traderObj.uuid or traderObj.traderID or traderObj.id
 
@@ -80,8 +88,15 @@ function DT_ConversationUI:refreshFactionInfo()
         self.lblWealth:setVisible(false)
     end
 
-    if faction and faction.state then
-        self.lblState:setName(string.format("Status: %s", faction.state))
+    local statusText = nil
+    if self.isContactConversation and DT_TraderContacts and DT_TraderContacts.GetStatusText then
+        statusText = DT_TraderContacts.GetStatusText(traderObj)
+    elseif faction and faction.state then
+        statusText = string.format("Status: %s", faction.state)
+    end
+
+    if statusText then
+        self.lblState:setName(tostring(statusText))
         self.lblState:setVisible(true)
     else
         self.lblState:setVisible(false)

@@ -658,6 +658,34 @@ function DTNPCManager.ProcessAwayTransitions()
                         npcData.lastZ = targetZ or 0
                         npcData.travelTarget = nil
 
+                        if npcData.contactVisitActive == true then
+                            npcData.state = "Follow"
+                            npcData.contactVisitMode = "Follow"
+                            npcData.master = npcData.contactVisitRequestedBy or npcData.master
+                            npcData.masterID = npcData.contactVisitRequestedByID or npcData.masterID
+                            npcData.tasks = {}
+                            npcData.combatTargetID = nil
+                            npcData.combatOrder = nil
+                            npcData.guardCombatOrder = nil
+                            npcData.guardAttackMode = nil
+                            npcData.guardReturningToPost = nil
+                            npcData.anchorX = nil
+                            npcData.anchorY = nil
+                            npcData.anchorZ = nil
+                            npcData.stationaryPostX = nil
+                            npcData.stationaryPostY = nil
+                            npcData.stationaryPostZ = nil
+                            npcData.stationaryPostState = nil
+
+                            DynamicTrading.Log(
+                                "DTV2",
+                                "NPC",
+                                "Logic",
+                                "Contact trader arrival entering Follow mode for " .. tostring(npcData.name or uuid)
+                                    .. " requester=" .. tostring(npcData.contactVisitRequestedBy)
+                            )
+                        end
+
                         local stayHours = SandboxVars.DynamicTrading.NPCTradingStayHours or 4.0
                         newReturnTime = currentHours + stayHours
                         newReturnStatus = "Away"

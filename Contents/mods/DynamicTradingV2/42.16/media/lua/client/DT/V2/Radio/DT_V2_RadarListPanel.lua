@@ -11,6 +11,27 @@ require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 
 DT_V2_RadarListPanel = ISPanel:derive("DT_V2_RadarListPanel")
 
+local function resolveRadarListItem(listbox, itemOrData)
+    if type(itemOrData) == "table" then
+        if type(itemOrData.item) == "table" then
+            return itemOrData.item
+        end
+        if itemOrData.uuid or itemOrData.isLocationInfo then
+            return itemOrData
+        end
+    end
+
+    local selectedIndex = listbox and listbox.selected or -1
+    if listbox and listbox.items and selectedIndex and selectedIndex >= 0 then
+        local selectedItem = listbox.items[selectedIndex]
+        if selectedItem and type(selectedItem.item) == "table" then
+            return selectedItem.item
+        end
+    end
+
+    return nil
+end
+
 function DT_V2_RadarListPanel:initialise()
     ISPanel.initialise(self)
 end
@@ -139,10 +160,10 @@ end
 function DT_V2_RadarListPanel:onListMouseDown(itemData)
     -- 'self' is the DT_V2_RadarListPanel here
     if self.parent and self.parent.actionPanel then
-        if itemData and itemData.uuid then
+        local resolved = resolveRadarListItem(self.listbox, itemData)
+        if resolved and resolved.uuid then
             self.parent.actionPanel.btnLocate.enable = true
-            -- [NEW] Update Button Label ("LOCATE" or "STOP")
-            self.parent.actionPanel:updateButtonState(itemData.uuid)
+            self.parent.actionPanel:updateButtonState(resolved.uuid)
         else
             self.parent.actionPanel.btnLocate.enable = false
         end
@@ -151,7 +172,8 @@ end
 
 function DT_V2_RadarListPanel:onListDoubleClick(itemData)
     if self.parent and self.parent.actionPanel then
-        if itemData and itemData.uuid then
+        local resolved = resolveRadarListItem(self.listbox, itemData)
+        if resolved and resolved.uuid then
             self.parent.actionPanel.btnLocate.enable = true
             if self.parent.actionPanel.onLocate then
                 self.parent.actionPanel:onLocate()

@@ -8,6 +8,7 @@ require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
 
 function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio, interactionObj)
     if DT_ConversationUI.instance then
+        DT_ConversationUI.instance.closeReason = DT_ConversationUI.instance.closeReason or "replaced_by_new_conversation"
         DT_ConversationUI.instance:close()
     end
 
@@ -77,10 +78,28 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
     end
 
     DT_ConversationUI.instance = ui
+    DynamicTrading.Log(
+        "DTCommons",
+        "Dialog",
+        "Open",
+        "Opened conversation target=" .. tostring(traderObj and (traderObj.name or traderObj.uuid or traderObj.id) or "nil")
+            .. " isRadio=" .. tostring(ui.isRadio)
+            .. " isContact=" .. tostring(ui.isContactConversation == true or traderObj and traderObj.isContactConversation == true)
+            .. " hasInteractionObj=" .. tostring(interactionObj ~= nil)
+    )
     return ui
 end
 
 function DT_ConversationUI:close()
+    DynamicTrading.Log(
+        "DTCommons",
+        "Dialog",
+        "Close",
+        "Closing conversation target=" .. tostring(self.target and (self.target.name or self.target.uuid or self.target.id) or "nil")
+            .. " reason=" .. tostring(self.closeReason or "manual_or_callback")
+            .. " isContact=" .. tostring(self.isContactConversation == true)
+    )
+
     if DT_ConfigManager and DT_ConfigManager.setWindowState then
         DT_ConfigManager.setWindowState("ConversationUI", self:getX(), self:getY(), self:getWidth(), self:getHeight())
     end
