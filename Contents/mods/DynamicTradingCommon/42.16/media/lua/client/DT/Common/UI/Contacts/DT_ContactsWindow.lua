@@ -17,6 +17,25 @@ require "DT/Common/UI/Portrait/Portrait"
 DT_ContactsWindow = DT_ContactsWindow or ISCollapsableWindow:derive("DT_ContactsWindow")
 DT_ContactsWindow.instance = nil
 
+local DT_ContactsHeaderPanel = ISPanel:derive("DT_ContactsHeaderPanel")
+
+function DT_ContactsHeaderPanel:render()
+    ISPanel.render(self)
+
+    local owner = self.owner
+    if not owner then
+        return
+    end
+
+    local titleText = owner.headerTitleText or "Known traders you can reach over the radio."
+    local statusText = owner.headerStatusText or "Select a contact to open their frequency."
+    local countText = string.format("%d SAVED", #(owner.contacts or {}))
+
+    self:drawText(titleText, 12, 8, 1, 1, 1, 1, UIFont.Small)
+    self:drawText(statusText, 12, 25, 0.78, 0.84, 0.9, 1, UIFont.Small)
+    self:drawTextRight(countText, self.width - 12, 8, 0.75, 0.85, 1, 1, UIFont.Small)
+end
+
 local function getContactsAPI()
     local api = DT_TraderContacts
     if type(api) == "table" then
@@ -55,6 +74,8 @@ function DT_ContactsWindow:initialise()
     self.selectedContact = nil
     self.minimumWidth = 620
     self.minimumHeight = 470
+    self.headerTitleText = "Known traders you can reach over the radio."
+    self.headerStatusText = "Select a contact to open their frequency."
 end
 
 function DT_ContactsWindow:createChildren()
@@ -70,22 +91,15 @@ function DT_ContactsWindow:createChildren()
     self.closeButton.textColor = { r = 1, g = 1, b = 1, a = 1 }
     self:addChild(self.closeButton)
 
-    self.headerPanel = ISPanel:new(pad, th + pad, self.width - (pad * 2), 48)
+    self.headerPanel = DT_ContactsHeaderPanel:new(pad, th + pad, self.width - (pad * 2), 54)
     self.headerPanel:initialise()
+    self.headerPanel.owner = self
     self.headerPanel.backgroundColor = { r = 0.03, g = 0.03, b = 0.03, a = 0.92 }
     self.headerPanel.borderColor = { r = 0.28, g = 0.28, b = 0.28, a = 1 }
     self.headerPanel:setAnchorLeft(true)
     self.headerPanel:setAnchorRight(true)
     self.headerPanel:setAnchorTop(true)
     self:addChild(self.headerPanel)
-
-    self.summaryLabel = ISLabel:new(12, 8, 18, "Known traders you can reach over the radio.", 1, 1, 1, 1, UIFont.Small, false)
-    self.summaryLabel:initialise()
-    self.headerPanel:addChild(self.summaryLabel)
-
-    self.statusLabel = ISLabel:new(12, 24, 18, "Select a contact to open their frequency.", 0.8, 0.84, 0.88, 1, UIFont.Small, false)
-    self.statusLabel:initialise()
-    self.headerPanel:addChild(self.statusLabel)
 
     self.listPanel = ISPanel:new(pad, self.headerPanel:getY() + self.headerPanel:getHeight() + 8, self.width - (pad * 2), self.height - th - 136)
     self.listPanel:initialise()
@@ -149,7 +163,7 @@ function DT_ContactsWindow:layoutChildren()
     local th = self:titleBarHeight()
     local pad = 10
     local contentWidth = self.width - (pad * 2)
-    local headerHeight = 48
+    local headerHeight = 54
     local footerHeight = 40
     local footerY = self.height - footerHeight - 18
     local listY = th + pad + headerHeight + 8
@@ -208,9 +222,7 @@ function DT_ContactsWindow:populateContacts(selectTraderID)
         if self.emptyLabel then
             self.emptyLabel:setName("Contacts module failed to load.")
         end
-        if self.statusLabel then
-            self.statusLabel:setName("Unable to open contacts right now. Try again after the UI reloads.")
-        end
+        self.headerStatusText = "Unable to open contacts right now. Try again after the UI reloads."
         return
     end
 
@@ -240,10 +252,10 @@ function DT_ContactsWindow:populateContacts(selectTraderID)
 
     if #self.contacts == 0 then
         self.emptyLabel:setName("No contacts unlocked yet. Ask a trader for their number through Chat.")
-        self.statusLabel:setName("No saved contacts for this character yet.")
+        self.headerStatusText = "No saved contacts for this character yet."
     else
         self.emptyLabel:setName(string.format("%d contact(s) available.", #self.contacts))
-        self.statusLabel:setName("Select a frequency entry to inspect or call a trader.")
+        self.headerStatusText = "Select a frequency entry to inspect or call a trader."
     end
 end
 
@@ -312,7 +324,7 @@ function DT_ContactsWindow:onListMouseDown(item)
     if self.selectedContact then
         local contactsAPI = getContactsAPI()
         local statusText = contactsAPI and contactsAPI.GetStatusText and contactsAPI.GetStatusText(self.selectedContact) or "Status unknown"
-        self.statusLabel:setName(statusText)
+        self.headerStatusText = statusText
     end
 end
 
