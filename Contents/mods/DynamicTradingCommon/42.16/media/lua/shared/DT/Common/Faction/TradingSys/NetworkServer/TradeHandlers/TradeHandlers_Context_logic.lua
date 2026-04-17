@@ -54,12 +54,15 @@ return function(context)
             return nil
         end
 
+        local sessionData = DT_TraderSession.GetSession(traderID)
+        
         return {
             txType = txType,
             traderID = traderID,
             key = key,
             clientQty = clientQty,
             stockData = stockData,
+            sessionData = sessionData,
             itemData = itemData,
             inv = inv,
             safeDisplayName = safeDisplayName,

@@ -30,11 +30,38 @@ function Interaction.ModifyStockpile(factionID, resource, amount)
     return false
 end
 
-function Interaction.ModifyWealth(factionID, amount)
+function Interaction.ModifyColonyWealth(factionID, amount)
     local data = ModData.get(MOD_DATA_KEY)
     local faction = data[factionID]
     if faction then
-        faction.wealth = math.max(0, (faction.wealth or 0) + amount)
+        faction.ColonyWealth = math.max(0, (faction.ColonyWealth or 0) + amount)
+        ModData.transmit(MOD_DATA_KEY)
+        return true
+    end
+    return false
+end
+
+-- Backward compatibility alias
+function Interaction.ModifyWealth(factionID, amount)
+    return Interaction.ModifyColonyWealth(factionID, amount)
+end
+
+function Interaction.AllocateTraderBudget(factionID, amount)
+    local data = ModData.get(MOD_DATA_KEY)
+    local faction = data[factionID]
+    if faction then
+        faction.ColonyWealth = math.max(0, (faction.ColonyWealth or 0) - amount)
+        ModData.transmit(MOD_DATA_KEY)
+        return true
+    end
+    return false
+end
+
+function Interaction.ReturnTraderBudget(factionID, amount)
+    local data = ModData.get(MOD_DATA_KEY)
+    local faction = data[factionID]
+    if faction then
+        faction.ColonyWealth = math.max(0, (faction.ColonyWealth or 0) + amount)
         ModData.transmit(MOD_DATA_KEY)
         return true
     end

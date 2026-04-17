@@ -19,6 +19,13 @@ DynamicTrading.Config.Sim = {
     MaxDailyGrowth = 2
 }
 
+DynamicTrading.Config.TraderBudget = {
+    BaseBudget = 500,
+    MinBudget = 100,
+    MaxBudget = 15000,
+    IncapacitatedPenaltyMult = 0.25 -- Only 25% returned on incapacitation (75% penalty)
+}
+
 DynamicTrading.Config.FactionEvents = {
     Thresholds = {
         FoodHigh = 50.0,

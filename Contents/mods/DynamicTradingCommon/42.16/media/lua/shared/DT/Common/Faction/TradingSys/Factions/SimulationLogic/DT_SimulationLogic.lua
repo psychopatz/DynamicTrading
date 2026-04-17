@@ -17,6 +17,8 @@ local ProductionLogic = require "DT/Common/Faction/TradingSys/Factions/Simulatio
 local FlashEventsLogic = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_FlashEvents_logic"
 local ConsumptionLogic = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_Consumption_logic"
 local RespawnLogic = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_Respawn_logic"
+local TownFactionSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_TownFaction"
+local IndependentFactionSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic_IndependentFaction"
 
 -- ==========================================================
 -- DAILY SIMULATION
@@ -59,9 +61,16 @@ function DT_SimulationLogic.UpdateDaily()
             -- 2. Flash Events Logic
             faction, factionActive = FlashEventsLogic.Process(faction, id, data, currentHour)
 
-            -- 3. Consumption Logic
+            -- 3. Consumption Logic & Modular Simulation
             if factionActive then
-                faction, factionActive = ConsumptionLogic.Process(faction, id, data, consumptionMult, deathThreshold, growthChance)
+                if faction.factionType == "independent" then
+                    faction, factionActive = IndependentFactionSim.Process(faction, id, data)
+                else
+                    faction, factionActive = ConsumptionLogic.Process(faction, id, data, consumptionMult, deathThreshold, growthChance)
+                    if factionActive and faction.factionType == "town" then
+                        faction, factionActive = TownFactionSim.Process(faction, id, data)
+                    end
+                end
 
                 -- 4. Death Check
                 if factionActive and faction.memberCount <= 0 then

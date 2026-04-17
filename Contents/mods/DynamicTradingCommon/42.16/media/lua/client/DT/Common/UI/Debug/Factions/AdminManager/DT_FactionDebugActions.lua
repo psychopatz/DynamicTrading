@@ -16,7 +16,7 @@ DT_FactionDebugActions = DT_FactionDebugActions or {}
 -- ==========================================================
 function DT_FactionDebugActions.modifyWealth(factionID, amount)
     if not factionID then return end
-    DT_DebugNetworkAdapter.sendDebugAction("ModifyWealth", { 
+    DT_DebugNetworkAdapter.sendDebugAction("ModifyColonyWealth", { 
         factionID = factionID, 
         amount = amount 
     })

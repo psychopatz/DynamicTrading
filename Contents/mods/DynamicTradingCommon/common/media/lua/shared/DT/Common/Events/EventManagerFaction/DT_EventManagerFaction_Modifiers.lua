@@ -136,3 +136,23 @@ function DynamicTrading.Events.GetFactionForbidTags(faction)
     end
     return tags
 end
+
+-- =============================================================================
+-- COLONY ECONOMY ALIASES Phase 4
+-- =============================================================================
+
+function DynamicTrading.Events.getTraderBudgetMultiplier(faction)
+    return DynamicTrading.Events.GetFactionSystemModifier(faction, "traderBudgetMult")
+end
+
+function DynamicTrading.Events.getPassiveIncomeMult(faction)
+    return DynamicTrading.Events.GetFactionSystemModifier(faction, "passiveIncomeMult")
+end
+
+function DynamicTrading.Events.getAutoBuyPriceModifier(faction)
+    return DynamicTrading.Events.GetFactionSystemModifier(faction, "autoBuyPriceMult")
+end
+
+function DynamicTrading.Events.getColonyWealthModifier(faction)
+    return DynamicTrading.Events.GetFactionSystemModifier(faction, "colonyWealthMult")
+end

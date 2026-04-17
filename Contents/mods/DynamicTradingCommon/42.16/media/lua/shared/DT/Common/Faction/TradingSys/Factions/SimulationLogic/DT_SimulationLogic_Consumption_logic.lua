@@ -87,36 +87,24 @@ function ConsumptionLogic.Process(faction, id, data, consumptionMult, deathThres
             end
 
             if faction.memberCount > 0 then
-                if id == "Independent" then
-                    faction.memberCount = math.max(faction.memberCount, 10)
-                    faction.state = "Stable"
-                    faction.stockpile.food = math.max(faction.stockpile.food or 0, 500)
-                    faction.wealth = math.max(faction.wealth or 0, 5000)
-                else
-                    if DynamicTrading.Events and DynamicTrading.Events.GetDemographicsModifier then
-                        local attritionAdd = DynamicTrading.Events.GetDemographicsModifier("attritionAdd")
-                        if attritionAdd and attritionAdd > 0 then
-                            local passiveDeaths = math.floor(faction.memberCount * attritionAdd)
-                            if passiveDeaths > 0 then
-                                if faction.playerOwned and DynamicTrading_Factions.ApplyPlayerFactionCasualties then
-                                    passiveDeaths = DynamicTrading_Factions.ApplyPlayerFactionCasualties(id, passiveDeaths, "Global attrition")
-                                    faction = data[id]
-                                    factionActive = faction ~= nil
-                                else
-                                    faction.memberCount = math.max(0, faction.memberCount - passiveDeaths)
-                                    DynamicTrading_Roster.RemoveSoul(id, passiveDeaths)
-                                end
+                if DynamicTrading.Events and DynamicTrading.Events.GetDemographicsModifier then
+                    local attritionAdd = DynamicTrading.Events.GetDemographicsModifier("attritionAdd")
+                    if attritionAdd and attritionAdd > 0 then
+                        local passiveDeaths = math.floor(faction.memberCount * attritionAdd)
+                        if passiveDeaths > 0 then
+                            if faction.playerOwned and DynamicTrading_Factions.ApplyPlayerFactionCasualties then
+                                passiveDeaths = DynamicTrading_Factions.ApplyPlayerFactionCasualties(id, passiveDeaths, "Global attrition")
+                                faction = data[id]
+                                factionActive = faction ~= nil
+                            else
+                                faction.memberCount = math.max(0, faction.memberCount - passiveDeaths)
+                                DynamicTrading_Roster.RemoveSoul(id, passiveDeaths)
+                            end
 
-                                if factionActive then
-                                    DynamicTrading.Log("DTCommons", "Faction", "Sim", "Global Attrition hit faction [" .. faction.name .. "] | Casualties: " .. passiveDeaths)
-                                end
+                            if factionActive then
+                                DynamicTrading.Log("DTCommons", "Faction", "Sim", "Global Attrition hit faction [" .. faction.name .. "] | Casualties: " .. passiveDeaths)
                             end
                         end
-                    end
-
-                    if factionActive then
-                        local dailyEarn = faction.memberCount * 50
-                        faction.wealth = (faction.wealth or 0) + dailyEarn
                     end
                 end
             end

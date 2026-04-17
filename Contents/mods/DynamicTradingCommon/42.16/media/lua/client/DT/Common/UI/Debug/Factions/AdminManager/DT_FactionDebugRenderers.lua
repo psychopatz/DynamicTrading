@@ -14,10 +14,16 @@ function DT_FactionDebugRenderers.drawFactionItem(listbox, y, item, alt)
     if not f then return y end
 
     local r, g, b = 1, 1, 1
-    if f.state == "Starving" then 
+    if f.state == "Thriving" then
+        r, g, b = 0, 1, 0
+    elseif f.state == "Stable" then
+        r, g, b = 1, 1, 1
+    elseif f.state == "Strained" then
+        r, g, b = 1, 1, 0
+    elseif f.state == "Struggling" then
+        r, g, b = 1, 0.5, 0
+    elseif f.state == "Collapsing" or f.state == "Starving" then 
         r, g, b = 1, 0, 0
-    elseif f.state == "Vulnerable" then 
-        r, g, b = 1, 0.8, 0
     end
 
     if item.selected then
@@ -41,7 +47,7 @@ function DT_FactionDebugRenderers.drawFactionItem(listbox, y, item, alt)
     local eventStr = (#flashEvents > 0) and tostring(#flashEvents) or "None"
 
     listbox:drawText(item.text, 10, y + 2, r, g, b, 1, UIFont.Medium)
-    listbox:drawText("State: " .. tostring(f.state) .. " | Pop: " .. tostring(f.memberCount) .. " | Flash Events: " .. eventStr, 10, y + 20, 0.7, 0.7, 0.7, 1, UIFont.Small)
+    listbox:drawText("State: " .. tostring(f.state) .. " | Pop: " .. tostring(f.memberCount) .. " | ColonyWealth: $" .. tostring(f.ColonyWealth or 0) .. " | Flash Events: " .. eventStr, 10, y + 20, 0.7, 0.7, 0.7, 1, UIFont.Small)
 
     return y + listbox.itemheight
 end

@@ -20,8 +20,9 @@ return function(context)
 
         DynamicTrading.Log("DTCommons", "Trade", "Logic", "Sell: " .. tx.key .. " @ $" .. totalGain .. " (Base: $" .. totalBaseGain .. ")")
 
-        local factionWealth = tx.factionData and tx.factionData.wealth or 999999
-        if factionWealth < totalGain then
+        local session = DT_TraderSession.GetSession(tx.traderID)
+        local traderBudget = session and session.budget or 999999
+        if traderBudget < totalGain then
             Helpers.SendTransactionResult(player, { success = false, msg = "Trader cannot afford this!" })
             return
         end
@@ -49,7 +50,7 @@ return function(context)
         end
 
         if tx.factionData then
-            DynamicTrading_Factions.ModifyWealth(tx.factionID, -totalGain)
+            DT_TraderSession.OnSell(tx.traderID, totalGain)
         end
 
         if not tx.stockData.deflation then

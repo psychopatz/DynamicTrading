@@ -2,6 +2,7 @@
 
 require "DT/Common/Faction/TradingSys/Economy/DynamicTrading_Economy"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
+require "DT/Common/Faction/TradingSys/TraderSession/DT_TraderSession"
 
 DynamicTrading_Stock = {}
 local MOD_DATA_KEY = "DynamicTrading_Stock"
@@ -59,40 +60,6 @@ function DynamicTrading_Stock.UpdateItemQty(traderUUID, itemFullType, delta, pla
             itemEntry.dynamicMod = 1.0
         end
 
-        -- [NEW] Faction Interaction
-        local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
-        if soul and soul.factionID then
-            local pricePerUnit = DynamicTrading.Economy.V2.GetBuyPrice(traderUUID, itemFullType)
-            -- delta is negative if player buys, positive if player sells
-            local totalValue = math.abs(delta) * pricePerUnit
-
-            if delta < 0 then -- Player BUYS from NPC
-                DynamicTrading_Factions.ModifyWealth(soul.factionID, totalValue)
-                -- Decrease Faction stockpile (Macro level)
-                local resourceType = "misc"
-                local itemData = DynamicTrading.Config.MasterList[itemFullType]
-                if itemData and itemData.tags then
-                    resourceType = DynamicTrading.Economy.Common.ResolveMappedValue(
-                        itemData.tags,
-                        DynamicTrading.V2.Config.ResourceMap
-                    ) or resourceType
-                end
-                DynamicTrading_Factions.ModifyStockpile(soul.factionID, resourceType, delta)
-            elseif delta > 0 then -- Player SELLS to NPC
-                DynamicTrading_Factions.ModifyWealth(soul.factionID, -totalValue)
-                -- Increase Faction stockpile
-                local resourceType = "misc"
-                local itemData = DynamicTrading.Config.MasterList[itemFullType]
-                if itemData and itemData.tags then
-                    resourceType = DynamicTrading.Economy.Common.ResolveMappedValue(
-                        itemData.tags,
-                        DynamicTrading.V2.Config.ResourceMap
-                    ) or resourceType
-                end
-                DynamicTrading_Factions.ModifyStockpile(soul.factionID, resourceType, delta)
-            end
-        end
-        
         -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
         return true
     end
@@ -109,6 +76,7 @@ function DynamicTrading_Stock.ClearStock(traderUUID)
         DynamicTrading.Log("DTCommons", "Trade", "Stock", "Clearing stock for " .. traderUUID)
         data[traderUUID] = nil
         -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
+        DT_TraderSession.Close(traderUUID, "normal")
     end
 end
 
@@ -125,6 +93,10 @@ function DynamicTrading_Stock.CheckAndGenerateStock(traderUUID)
         DynamicTrading.Log("DTCommons", "Trade", "Stock", "Generating fresh stock for " .. traderUUID)
         local newItems = DynamicTrading.Economy.V2.GenerateStock(traderUUID)
         DynamicTrading_Stock.InitializeInventory(traderUUID, newItems)
+        
+        if soul.factionID then
+            DT_TraderSession.Create(traderUUID, soul.factionID)
+        end
         return true, "Stock Generated"
     else
         return true, "Stock Already Existed"

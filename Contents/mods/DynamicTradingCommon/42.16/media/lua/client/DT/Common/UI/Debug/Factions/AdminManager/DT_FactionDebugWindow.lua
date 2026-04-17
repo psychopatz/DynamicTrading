@@ -368,7 +368,7 @@ function DT_FactionDebugWindow:createChildren()
     self.footerPanel:addChild(self.btnDebugHub)
 
     -- 7. SELECTED FACTION CONTROLS
-    self.btnWealthAdd = ISButton:new(0, 0, 100, 20, "+ WEALTH", self, function()
+    self.btnWealthAdd = ISButton:new(0, 0, 100, 20, "+ COLONY$", self, function()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             DT_FactionDebugActions.modifyWealth(f.item.id, 1000)
@@ -377,7 +377,7 @@ function DT_FactionDebugWindow:createChildren()
     self.btnWealthAdd:initialise()
     self.factionControlPanel:addChild(self.btnWealthAdd)
 
-    self.btnWealthSub = ISButton:new(0, 0, 100, 20, "- WEALTH", self, function()
+    self.btnWealthSub = ISButton:new(0, 0, 100, 20, "- COLONY$", self, function()
         local f = self.listbox.items[self.listbox.selected]
         if f then
             DT_FactionDebugActions.modifyWealth(f.item.id, -1000)

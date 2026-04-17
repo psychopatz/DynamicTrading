@@ -117,7 +117,7 @@ function DT_FactionInfoTab_Info:updateData(f)
     
     -- Economy
     text = text .. " <LINE> <RGB:0.4,0.8,1> ECONOMIC DATA: <LINE> "
-    text = text .. " <RGB:0.2,1,0.2> Global Wealth: $" .. tostring(f.wealth or 0) .. " <LINE> "
+    text = text .. " <RGB:0.2,1,0.2> Colony Wealth: $" .. tostring(f.ColonyWealth or 0) .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> Value Trend: " .. (f.valueTrend or "Stable") .. " <LINE> " 
     
     self.richText:setText(text)

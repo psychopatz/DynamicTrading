@@ -117,7 +117,7 @@ function DT_FactionDebugData.formatFactionDetails(faction)
         text = text .. "Base: NOMADIC <LINE> "
     end
     
-    text = text .. "Wealth: <RGB:0.2,1,0.2> " .. tostring(faction.wealth or 0) .. " <LINE> "
+    text = text .. "ColonyWealth: <RGB:0.2,1,0.2> $" .. tostring(faction.ColonyWealth or 0) .. " <LINE> "
     text = text .. " <LINE> <RGB:0.2,0.2,1> PLAYER REPUTATIONS: <LINE> "
     
     if faction.reputation and type(faction.reputation) == "table" then

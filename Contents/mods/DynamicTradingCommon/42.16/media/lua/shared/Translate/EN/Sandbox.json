@@ -54,5 +54,8 @@
     "Sandbox_DynamicTrading.NPCTradingStayHours_tooltip": "How many hours the NPC stays at the trading location (Trading state).",
 
     "Sandbox_DynamicTrading.NPCDepartureVisibleHours": "NPC: Departure Notification Hours",
-    "Sandbox_DynamicTrading.NPCDepartureVisibleHours_tooltip": "The minimum number of travel hours remaining before an NPC's departure is broadcasted on the network."
+    "Sandbox_DynamicTrading.NPCDepartureVisibleHours_tooltip": "The minimum number of travel hours remaining before an NPC's departure is broadcasted on the network.",
+
+    "Sandbox_DynamicTrading.TraderBudgetPercent": "Trader Budget Transfer (%)",
+    "Sandbox_DynamicTrading.TraderBudgetPercent_tooltip": "The percentage of the total Colony Wealth that an individual trader will carry on a trading mission as their temporary budget."
 }

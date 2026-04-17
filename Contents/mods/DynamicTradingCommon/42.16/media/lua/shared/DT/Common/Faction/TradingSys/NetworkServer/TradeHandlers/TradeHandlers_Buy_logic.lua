@@ -54,7 +54,7 @@ return function(context)
         end
 
         if tx.factionData then
-            DynamicTrading_Factions.ModifyWealth(tx.factionID, totalCost)
+            DT_TraderSession.OnBuy(tx.traderID, totalCost)
         end
 
         local itemStockData = type(itemStock) == "table" and itemStock or {}

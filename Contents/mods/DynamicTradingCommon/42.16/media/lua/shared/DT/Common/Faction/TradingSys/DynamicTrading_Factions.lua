@@ -8,6 +8,16 @@
 
 -- =============================================================================
 -- 1. LOAD SUB-MODULES
+-- ==============================================================================
+-- DynamicTrading_Factions.lua
+-- Logic: Facade — loads sub-modules and exposes unified API.
+-- Build 42 Compatible.
+-- ==============================================================================
+
+-- if isClient() and not isServer() then return end -- Server Side Only (Allow SP & Host)
+
+-- =============================================================================
+-- 1. LOAD SUB-MODULES
 -- =============================================================================
 local Lifecycle   = require "DT/Common/Faction/TradingSys/Factions/Lifecycle"
 local DT_SimulationLogic  = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic"
@@ -31,7 +41,10 @@ DynamicTrading_Factions.UpdateDaily       = DT_SimulationLogic.UpdateDaily
 -- Interaction
 DynamicTrading_Factions.GetFaction        = Interaction.GetFaction
 DynamicTrading_Factions.ModifyStockpile   = Interaction.ModifyStockpile
+DynamicTrading_Factions.ModifyColonyWealth = Interaction.ModifyColonyWealth
 DynamicTrading_Factions.ModifyWealth      = Interaction.ModifyWealth
+DynamicTrading_Factions.AllocateTraderBudget = Interaction.AllocateTraderBudget
+DynamicTrading_Factions.ReturnTraderBudget = Interaction.ReturnTraderBudget
 DynamicTrading_Factions.ModifyReputation  = Interaction.ModifyReputation
 
 -- Player-owned factions

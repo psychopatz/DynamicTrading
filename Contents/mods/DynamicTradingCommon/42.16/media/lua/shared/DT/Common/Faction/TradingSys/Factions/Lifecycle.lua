@@ -60,8 +60,26 @@ function Lifecycle.Init()
             f.reputation = {}
         end
         
-        if type(f.wealth) ~= "number" then
-            f.wealth = 1000
+        if type(f.wealth) == "number" and not f.ColonyWealth then
+            f.ColonyWealth = f.wealth
+            f.wealth = nil
+        end
+        if type(f.ColonyWealth) ~= "number" then
+            f.ColonyWealth = 1000
+        end
+
+        if not f.CollapseDays then
+            f.CollapseDays = 0
+        end
+
+        if not f.factionType then
+            if f.playerOwned then
+                f.factionType = "player"
+            elseif id == "Independent" or f.isNomadic then
+                f.factionType = "independent"
+            else
+                f.factionType = "town"
+            end
         end
 
         -- Phase-A schema prep: support new list format while keeping legacy field for compatibility.
@@ -185,7 +203,9 @@ function Lifecycle.CreateFaction(factionID, initialData)
             stockpile = initialData.stockpile or { food = 200, ammo = 100, meds = 50, fuel = 25 },
             state = initialData.state or "Stable",
             memberCount = initialData.memberCount or (SandboxVars.DynamicTrading.FactionStartPop or 10),
-            wealth = initialData.wealth or 1000, -- Stores the total money of all the traders in the faction
+            ColonyWealth = initialData.ColonyWealth or initialData.wealth or 1000, -- Stores the total economic power of the colony
+            CollapseDays = 0,
+            factionType = initialData.playerOwned and "player" or (factionID == "Independent" or initialData.isNomadic) and "independent" or "town",
             reputation = initialData.reputation or {}, -- [Username] = Integer
             starvationDays = 0, -- Track days without food
             consecutiveStableDays = 0, -- Track how long they've been stable (for wildcard triggers)
