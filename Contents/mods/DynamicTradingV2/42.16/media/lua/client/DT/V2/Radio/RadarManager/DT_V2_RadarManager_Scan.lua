@@ -54,6 +54,27 @@ function RadarManager.Scan(player, device)
         RadarManager.Cleanup(player)
     end
 
+    local currentHour = getGameTime():getTimeOfDay()
+    local gateDisabled = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DisableNightScanGate == true
+    if not gateDisabled and (currentHour >= 22.0 or currentHour < 5.0) then
+        player:Say("There is nothing but static. Broadcasters must be resting till morning.")
+        if HaloTextHelper then
+            HaloTextHelper.addTextWithArrow(player, "Traders Offline (10PM - 5AM)", true, HaloTextHelper.getColorRed())
+        end
+        
+        if DT_RadioScannerWindow then
+            local inst = DT_RadioScannerWindow.instance
+            if not (inst and inst:getIsVisible()) then
+                DT_RadioScannerWindow.ToggleWindow(device)
+            end
+            if DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance.signalDisplayPanel then
+                DT_RadioScannerWindow.instance.signalDisplayPanel:pulseStatic(350)
+                DT_RadioScannerWindow.instance:refresh()
+            end
+        end
+        return false
+    end
+
     local canScan, remainingMinutes, scanStatus = true, 0, nil
     if RadarManager.CanScan then
         canScan, remainingMinutes, scanStatus = RadarManager.CanScan(player, device)

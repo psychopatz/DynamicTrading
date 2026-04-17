@@ -50,6 +50,14 @@ option DynamicTrading.MaxLogs
     translation = DynamicTrading.MaxLogs,
 }
 
+option DynamicTrading.DisableNightScanGate
+{
+    type = boolean,
+    default = false,
+    page = DynamicTradingMisc,
+    translation = DynamicTrading.DisableNightScanGate,
+}
+
 option DynamicTrading.WalkieDropChance
 {
     type = double,

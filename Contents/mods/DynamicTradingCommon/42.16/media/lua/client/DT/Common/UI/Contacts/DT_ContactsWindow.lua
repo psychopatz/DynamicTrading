@@ -57,6 +57,7 @@ end
 local function buildDeleteModalText(contact)
     local name = tostring(contact and contact.name or "this contact")
     local reason = tostring(contact and contact.deathReason or "")
+    local flavor = tostring(contact and contact.deathFlavorText or "")
 
     if reason == "Starvation" then
         return string.format(
@@ -73,6 +74,13 @@ local function buildDeleteModalText(contact)
     end
 
     if tostring(contact and contact.status or "") == "Dead" then
+        if flavor ~= "" then
+            return string.format(
+                "Delete saved contact for %s?\n\nRecorded cause of death: %s. Removing this entry only clears the saved frequency from your contacts list.",
+                name,
+                flavor
+            )
+        end
         return string.format(
             "Delete saved contact for %s?\n\nThis trader is deceased. Removing this entry only clears the saved frequency from your contacts list.",
             name

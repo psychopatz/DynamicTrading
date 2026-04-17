@@ -178,6 +178,35 @@ function Internal.IsFactionMissing(factionID)
     return Internal.GetFactionData(factionID) == nil
 end
 
+function Internal.GetRosterData()
+    if DT_V2_RadarManager and type(DT_V2_RadarManager.ClientRoster) == "table" then
+        return DT_V2_RadarManager.ClientRoster
+    end
+
+    return ModData.get and ModData.get("DynamicTrading_Roster") or nil
+end
+
+function Internal.IsTraderListedInFaction(traderID, factionID)
+    if not traderID or not factionID or factionID == "" then
+        return false
+    end
+
+    local rosterData = Internal.GetRosterData()
+    local members = rosterData and rosterData.FactionMembers and rosterData.FactionMembers[factionID] or nil
+    if type(members) ~= "table" then
+        return false
+    end
+
+    local targetID = tostring(traderID)
+    for _, memberID in pairs(members) do
+        if tostring(memberID) == targetID then
+            return true
+        end
+    end
+
+    return false
+end
+
 function Internal.GetFactionDisplayName(factionID)
     if not factionID or factionID == "" then
         return "Independent"

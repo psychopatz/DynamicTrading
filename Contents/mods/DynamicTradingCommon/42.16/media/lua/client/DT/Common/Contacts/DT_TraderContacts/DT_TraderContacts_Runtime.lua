@@ -1,5 +1,67 @@
 local Internal = DT_TraderContacts.Internal
 
+local MISSING_CONTACT_DEATH_FLAVORS = {
+    "bled out after a roadside ambush",
+    "was dragged down by the dead on a supply run",
+    "never made it back from a bad trade route",
+    "was found dead after a raider hit",
+    "disappeared in the fog and turned up dead days later",
+    "was torn apart while trying to break through a horde",
+    "caught a bullet in a scavenger crossfire",
+    "was killed while fleeing a collapsed safehouse",
+}
+
+local function hashText(value)
+    local text = tostring(value or "")
+    local hash = 0
+    for index = 1, #text do
+        hash = (hash * 33 + string.byte(text, index)) % 2147483647
+    end
+    return hash
+end
+
+local function cloneDeathFlavor(contact)
+    if not contact then
+        return nil
+    end
+
+    local flavor = tostring(contact.deathFlavorText or "")
+    if flavor ~= "" then
+        return flavor
+    end
+
+    local seed = table.concat({
+        tostring(contact.id or contact.uuid or contact.traderID or "unknown"),
+        tostring(contact.factionID or "nofaction"),
+        tostring(contact.name or "noname"),
+    }, "|")
+    local index = (hashText(seed) % #MISSING_CONTACT_DEATH_FLAVORS) + 1
+    return MISSING_CONTACT_DEATH_FLAVORS[index]
+end
+
+local function clearTransientVisitState(normalized)
+    normalized.returnTime = nil
+    normalized.returnStatus = nil
+    normalized.contactVisitActive = false
+    normalized.contactVisitMode = nil
+    normalized.contactVisitBackend = nil
+    normalized.contactVisitRequestedBy = nil
+    normalized.contactVisitRequestedByID = nil
+    normalized.contactVisitTargetX = nil
+    normalized.contactVisitTargetY = nil
+    normalized.contactVisitTargetZ = nil
+    normalized.contactVisitStartedAt = nil
+    normalized.contactVisitReturnStatus = nil
+end
+
+local function markTraderDead(normalized, deathReason, deathFlavorText)
+    normalized.status = "Dead"
+    normalized.state = "Dead"
+    normalized.deathReason = deathReason
+    normalized.deathFlavorText = deathFlavorText
+    clearTransientVisitState(normalized)
+end
+
 function Internal.GetVisitWalkHours()
     return tonumber(SandboxVars and SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0) or 1.0
 end
@@ -172,6 +234,7 @@ function DT_TraderContacts.RefreshContactData(contact)
     normalized.missingFromRoster = soul == nil
     normalized.factionMissing = DT_TraderContacts.Internal.IsFactionMissing and DT_TraderContacts.Internal.IsFactionMissing(normalized.factionID) or false
     normalized.deathReason = normalized.deathReason
+    normalized.deathFlavorText = normalized.deathFlavorText
 
     local factionData = DT_TraderContacts.Internal.GetFactionData and DT_TraderContacts.Internal.GetFactionData(normalized.factionID) or nil
     local factionState = tostring(factionData and factionData.state or "")
@@ -206,57 +269,29 @@ function DT_TraderContacts.RefreshContactData(contact)
     end
 
     if normalized.missingFromRoster and normalized.factionMissing then
-        normalized.status = "Dead"
-        normalized.state = "Dead"
-        normalized.deathReason = "WipedOut"
-        normalized.returnTime = nil
-        normalized.returnStatus = nil
-        normalized.contactVisitActive = false
-        normalized.contactVisitMode = nil
-        normalized.contactVisitBackend = nil
-        normalized.contactVisitRequestedBy = nil
-        normalized.contactVisitRequestedByID = nil
-        normalized.contactVisitTargetX = nil
-        normalized.contactVisitTargetY = nil
-        normalized.contactVisitTargetZ = nil
-        normalized.contactVisitStartedAt = nil
-        normalized.contactVisitReturnStatus = nil
+        markTraderDead(normalized, "WipedOut", "faction wiped out")
     elseif normalized.missingFromRoster and factionState == "Starving" then
-        normalized.status = "Dead"
-        normalized.state = "Dead"
-        normalized.deathReason = "Starvation"
-        normalized.returnTime = nil
-        normalized.returnStatus = nil
-        normalized.contactVisitActive = false
-        normalized.contactVisitMode = nil
-        normalized.contactVisitBackend = nil
-        normalized.contactVisitRequestedBy = nil
-        normalized.contactVisitRequestedByID = nil
-        normalized.contactVisitTargetX = nil
-        normalized.contactVisitTargetY = nil
-        normalized.contactVisitTargetZ = nil
-        normalized.contactVisitStartedAt = nil
-        normalized.contactVisitReturnStatus = nil
-    elseif normalized.missingFromRoster and (normalized.status == nil or normalized.status == "" or normalized.status == "Unknown") then
-        normalized.status = "Unavailable"
-        normalized.state = normalized.state or "Unavailable"
-        normalized.deathReason = nil
+        markTraderDead(normalized, "Starvation", "lost to starvation")
+    elseif normalized.missingFromRoster then
+        local listedInFaction = DT_TraderContacts.Internal.IsTraderListedInFaction
+            and DT_TraderContacts.Internal.IsTraderListedInFaction(normalized.id, normalized.factionID)
+            or false
+        local deathReason = listedInFaction and "MissingFromRoster" or "MissingFromFaction"
+        markTraderDead(normalized, deathReason, cloneDeathFlavor(normalized))
     end
 
     if tostring(normalized.status or "") == "Dead" then
         normalized.state = "Dead"
-        normalized.returnTime = nil
-        normalized.returnStatus = nil
-        normalized.contactVisitActive = false
-        normalized.contactVisitMode = nil
-        normalized.contactVisitBackend = nil
-        normalized.contactVisitRequestedBy = nil
-        normalized.contactVisitRequestedByID = nil
-        normalized.contactVisitTargetX = nil
-        normalized.contactVisitTargetY = nil
-        normalized.contactVisitTargetZ = nil
-        normalized.contactVisitStartedAt = nil
-        normalized.contactVisitReturnStatus = nil
+        clearTransientVisitState(normalized)
+        if not normalized.deathFlavorText or normalized.deathFlavorText == "" then
+            if tostring(normalized.deathReason or "") == "Starvation" then
+                normalized.deathFlavorText = "lost to starvation"
+            elseif tostring(normalized.deathReason or "") == "WipedOut" then
+                normalized.deathFlavorText = "faction wiped out"
+            else
+                normalized.deathFlavorText = cloneDeathFlavor(normalized)
+            end
+        end
     end
 
     normalized.factionName = DT_TraderContacts.GetFactionDisplayName(normalized)
@@ -278,16 +313,14 @@ function DT_TraderContacts.GetStatusText(contact)
     local arrivalCountdown = DT_TraderContacts.GetArrivalCountdownText(current)
 
     if status == "Dead" then
-        if tostring(current.deathReason or "") == "Starvation" then
-            return "Status: Deceased (lost to starvation)"
-        end
-        if tostring(current.deathReason or "") == "WipedOut" then
-            return "Status: Deceased (faction wiped out)"
+        local deathFlavorText = tostring(current.deathFlavorText or "")
+        if deathFlavorText ~= "" then
+            return "Status: Deceased (" .. deathFlavorText .. ")"
         end
         return "Status: Deceased"
     end
     if status == "Unavailable" or current.missingFromRoster == true then
-        return "Contact unavailable"
+        return "Status: Deceased"
     end
 
     if (status == "Unknown" or status == "") and visitActive and returnStatus == "Resting" then

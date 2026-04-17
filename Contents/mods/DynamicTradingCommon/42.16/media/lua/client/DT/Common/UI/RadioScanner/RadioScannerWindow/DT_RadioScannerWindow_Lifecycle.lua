@@ -16,14 +16,14 @@ function DT_RadioScannerWindow:update()
             end
         end
 
-        self.updateTimer = self.updateTimer + dt
+        self.updateTimer = self.updateTimer + uiDt
         if self.updateTimer >= 2.0 then
             self.updateTimer = 0
             self:refresh()
         end
 
         if isClient() and DT_RadioScannerManager and DT_RadioScannerManager.RequestRoster then
-            self.syncTimer = self.syncTimer + dt
+            self.syncTimer = self.syncTimer + uiDt
             if self.syncTimer >= 10.0 then
                 self.syncTimer = 0
                 DT_RadioScannerManager.RequestRoster()

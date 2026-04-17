@@ -44,12 +44,16 @@ function DT_RadioScannerWindow:updateSignalDisplayState(bestRange)
     end
     self.lastFoundCount = foundCount
 
+    local currentHour = getGameTime():getTimeOfDay()
+    local gateDisabled = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DisableNightScanGate == true
+    local isNightDisabled = not gateDisabled and (currentHour >= 22.0 or currentHour < 5.0)
+
     if (bestRange or 0) > 0 then
         state = "search"
-        if totalTrading == 0 then
+        if totalTrading == 0 or isNightDisabled then
             state = "none"
         end
-        if self.foundVisualTimer and self.foundVisualTimer > 0 then
+        if not isNightDisabled and self.foundVisualTimer and self.foundVisualTimer > 0 then
             state = "found"
         end
     end
@@ -115,6 +119,25 @@ function DT_RadioScannerWindow:refresh()
         local leftColumnWidth = self.signalDisplayPanel:getWidth()
         local targetPadding = math.max(6, math.floor(leftColumnWidth * 0.05))
         self.signalDisplayPanel.padding = targetPadding
+    end
+
+    local function formatExpireCountdown(hoursRemaining)
+        if not hoursRemaining or hoursRemaining <= 0 then
+            return "now"
+        end
+        local totalSeconds = math.max(1, math.floor(hoursRemaining * 3600))
+        local totalMinutes = math.floor(totalSeconds / 60)
+        local remainingSeconds = totalSeconds % 60
+        local wholeHours = math.floor(totalMinutes / 60)
+        local remainingMinutes = totalMinutes % 60
+
+        if wholeHours > 0 then
+            return string.format("%dh %02dm", wholeHours, remainingMinutes)
+        end
+        if totalMinutes > 0 then
+            return string.format("%dm %02ds", totalMinutes, remainingSeconds)
+        end
+        return string.format("%ds", totalSeconds)
     end
 
     local function normalizeText(value)
@@ -316,9 +339,9 @@ function DT_RadioScannerWindow:refresh()
         elseif self.currentCategory == "Callable" and DT_TraderContacts and DT_TraderContacts.GetStatusText then
             expireText = DT_TraderContacts.GetStatusText(soul)
         elseif soul and soul.returnTime and soul.returnTime > 0 then
-            local hours = math.ceil(soul.returnTime - getGameTime():getWorldAgeHours())
-            if hours < 0 then hours = 0 end
-            expireText = "Expires: " .. hours .. "h"
+            local hoursRemaining = soul.returnTime - getGameTime():getWorldAgeHours()
+            if hoursRemaining < 0 then hoursRemaining = 0 end
+            expireText = "Expires: " .. formatExpireCountdown(hoursRemaining)
         end
 
         listbox:addItem(data.name, {
