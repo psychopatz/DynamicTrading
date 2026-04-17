@@ -3,6 +3,8 @@
 -- Trader proxy construction and stock/faction cache reads.
 -- =============================================================================
 
+require "DT/Common/Faction/TradingSys/TraderSession/DT_TraderSession"
+
 V2_DataProvider = V2_DataProvider or {}
 
 function V2_DataProvider:getTrader(traderID, archetype)
@@ -29,16 +31,23 @@ function V2_DataProvider:getTrader(traderID, archetype)
         local factionData = (DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions)
             or ModData.get("DynamicTrading_Factions")
         if factionData and factionData[stock.factionID] then
-            factionWealth = factionData[stock.factionID].wealth or 0
+            factionWealth = factionData[stock.factionID].ColonyWealth or factionData[stock.factionID].wealth or 0
         end
     end
+
+    local sessionData = nil
+    if DT_TraderSession and DT_TraderSession.GetSession then
+        sessionData = DT_TraderSession.GetSession(traderID)
+    end
+    
+    local traderBudget = sessionData and sessionData.budget or factionWealth
 
     local trader = {
         traderID = traderID,
         archetype = stock.archetype or archetype or "General",
         name = stock.name or "Trader",
-        wallet = stock.wallet or factionWealth or 0,
-        budget = factionWealth,
+        wallet = stock.wallet or 0,
+        budget = traderBudget,
         stocks = processedStocks,
         deflation = stock.deflation or {},
         factionID = stock.factionID,
