@@ -15,7 +15,8 @@ local function layoutButtons(panel)
     end
 
     local panelWidth = panel:getWidth()
-    local startX = math.max(BUTTON_SPACING, math.floor((panelWidth - ((BUTTON_WIDTH * 2) + BUTTON_SPACING)) / 2))
+    local dynamicButtonWidth = math.floor((panelWidth - BUTTON_SPACING) / 2)
+    local startX = 0
     local totalHeight = (BUTTON_HEIGHT * 2) + BUTTON_ROW_SPACING
     local startY = math.max(0, math.floor((panel.height - totalHeight) / 2))
 
@@ -24,9 +25,9 @@ local function layoutButtons(panel)
             return
         end
 
-        button:setX(startX + ((col - 1) * (BUTTON_WIDTH + BUTTON_SPACING)))
+        button:setX(startX + ((col - 1) * (dynamicButtonWidth + BUTTON_SPACING)))
         button:setY(startY + ((row - 1) * (BUTTON_HEIGHT + BUTTON_ROW_SPACING)))
-        button:setWidth(BUTTON_WIDTH)
+        button:setWidth(dynamicButtonWidth)
         button:setHeight(BUTTON_HEIGHT)
     end
 

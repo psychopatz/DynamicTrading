@@ -6,8 +6,8 @@ DT_RadioScannerWindow.MARKER_ID = "DT_Radar_Active_Target"
 function DT_RadioScannerWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
-    self.minimumWidth = 620
-    self.minimumHeight = 600
+    self.minimumWidth = 650
+    self.minimumHeight = 650
 
     self.currentCategory = "Stationary"
     self.updateTimer = 0

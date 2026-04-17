@@ -28,16 +28,21 @@ function DT_RadioScannerWindow:relayout()
     local bodyY = titleBarHeight + headerHeight
     local bodyHeight = math.max(220, height - bodyY - outerPadding)
     local bodyWidth = math.max(320, width - (outerPadding * 2))
-    local leftColumnWidth = clamp(math.floor(bodyWidth * 0.26), 150, 250)
+    
+    local minLeftWidth = 200
+    local leftColumnWidth = clamp(math.floor(bodyWidth * 0.26), minLeftWidth, 300)
     local minListWidth = 220
     if bodyWidth - leftColumnWidth - columnGap < minListWidth then
-        leftColumnWidth = math.max(130, bodyWidth - columnGap - minListWidth)
+        leftColumnWidth = math.max(minLeftWidth, bodyWidth - columnGap - minListWidth)
     end
 
     local rightColumnWidth = math.max(180, bodyWidth - leftColumnWidth - columnGap)
     local logHeight = clamp(math.floor(bodyHeight * 0.23), 110, 180)
     local availableTopHeight = math.max(170, bodyHeight - logHeight - statusHeight - (columnGap * 2))
-    local squareSize = math.min(leftColumnWidth, math.max(96, availableTopHeight - actionHeight - columnGap))
+    
+    -- Ensure squareSize is exactly the same as leftColumnWidth so they match as requested.
+    local squareSize = leftColumnWidth
+    
     local rightColumnX = outerPadding + leftColumnWidth + columnGap
     local imageBlockHeight = squareSize + columnGap + actionHeight
     local imageBlockTop = bodyY + math.max(0, math.floor((availableTopHeight - imageBlockHeight) / 2))
@@ -48,7 +53,7 @@ function DT_RadioScannerWindow:relayout()
     self._leftColumnWidth = leftColumnWidth
 
     if self.signalDisplayPanel then
-        self.signalDisplayPanel:setX(outerPadding + math.floor((leftColumnWidth - squareSize) / 2))
+        self.signalDisplayPanel:setX(outerPadding)
         self.signalDisplayPanel:setY(imageBlockTop)
         self.signalDisplayPanel:setWidth(squareSize)
         self.signalDisplayPanel:setHeight(squareSize)
