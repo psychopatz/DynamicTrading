@@ -70,9 +70,10 @@ function DT_RadioScannerListPanel:createChildren()
     self.listbox:setAnchorBottom(true)
     self.listContainer:addChild(self.listbox)
 
-    self.btnFaction = ISButton:new(0, 0, self.width, 30, "FACTION INTELLIGENCE", self, function()
+    self.btnFaction = ISButton:new(0, 0, self.width, 30, "FACTION INTELLIGENCE", self, function(self)
         if DT_FactionInfoWindow then
-            DT_FactionInfoWindow.Open()
+            local device = (DT_RadioScannerWindow and DT_RadioScannerWindow.instance) and DT_RadioScannerWindow.instance.device or nil
+            DT_FactionInfoWindow.Open(device)
         end
     end)
     self.btnFaction:initialise()

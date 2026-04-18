@@ -15,8 +15,8 @@ function DT_FactionInfoWindow:applyFactionSelection(f, requestRoster)
     -- Update Window Header & Active Tab Only
     if DT_FactionInfoWindow.instance then
         local win = DT_FactionInfoWindow.instance
-        if win.headerPanel and win.headerPanel.updateOwnedFactionStatus then
-            win.headerPanel:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, f)
+        if win.updateOwnedFactionStatus then
+            win:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, f)
         end
         
         -- Update the info header (title etc)

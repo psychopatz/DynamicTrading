@@ -9,8 +9,8 @@ function DT_FactionInfoWindow:refreshList()
         if DT_FactionInfoWindow.cachedFactionData then
             self:populateList(DT_FactionInfoWindow.cachedFactionData, DT_FactionInfoWindow.cachedRosterData)
         end
-        if self.headerPanel and self.headerPanel.updateOwnedFactionStatus then
-            self.headerPanel:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, DT_FactionInfoWindow.selectedFaction)
+        if self.updateOwnedFactionStatus then
+            self:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, DT_FactionInfoWindow.selectedFaction)
         end
         sendClientCommand(player, "DynamicTrading_V2", "RequestFactionData", {})
         return

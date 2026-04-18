@@ -29,13 +29,29 @@ function DT_FactionInfoWindow:createChildren()
     self.headerPanel:setAnchorTop(true)
     self:addChild(self.headerPanel)
 
+    -- 1.1 FOOTER PANEL (Centered with margins to avoid resize handle)
+    local footerHeight = 44
+    local footerMargin = 10
+    local bottomMargin = 10
+    self.footerPanel = DT_FactionInfoFooterPanel:new(footerMargin, h - footerHeight - bottomMargin, w - (footerMargin * 2), footerHeight)
+    self.footerPanel:initialise()
+    self.footerPanel:setAnchorRight(true)
+    self.footerPanel:setAnchorLeft(true)
+    self.footerPanel:setAnchorBottom(true)
+    self.footerPanel:setAnchorTop(false)
+    self.footerPanel.parent = self
+    self:addChild(self.footerPanel)
+
     -- Layout Vars
     local listY = th + headerHeight
-    local contentHeight = h - listY - 10 -- 10 padding bottom
-    local listWidth = 280
+    local footerHeight = 44
+    local footerPadding = 10 -- Space between content and footer
+    local bottomMargin = 10
+    local contentHeight = h - listY - footerHeight - footerPadding - bottomMargin
+    local listWidth = 290
 
     -- 2. LIST BOX (Left Side)
-    self.listbox = DT_FactionList:new(10, listY, listWidth, contentHeight)
+    self.listbox = DT_FactionList:new(0, listY, listWidth, contentHeight)
     self.listbox:initialise()
     self.listbox:instantiate()
     self.listbox.target = self
@@ -44,10 +60,8 @@ function DT_FactionInfoWindow:createChildren()
     self.listbox:setAnchorLeft(true)
     self.listbox:setAnchorTop(true)
     self.listbox:setAnchorBottom(true)
-    self:addChild(self.listbox)
-    
     -- 3. TAB PANEL (Right Side)
-    local tabX = 10 + listWidth + 10
+    local tabX = listWidth + 10
     local tabWidth = w - tabX - 10
     
     self.panel = ISTabPanel:new(tabX, listY, tabWidth, contentHeight)
@@ -62,6 +76,7 @@ function DT_FactionInfoWindow:createChildren()
     self.panel:setAnchorBottom(true)
     
     self:addChild(self.panel)
+    self:addChild(self.listbox)
     
     -- Sync Active View logic override
     self.panel.onActivateView = function(view)
@@ -134,10 +149,13 @@ function DT_FactionInfoWindow:prerender()
     local th = self:titleBarHeight()
     local headerHeight = 60
     local listY = th + headerHeight
-    local listWidth = 280
-    local contentHeight = self.height - listY - 10
+    local listWidth = 290
+    local footerHeight = 44
+    local footerPadding = 10
+    local bottomMargin = 10
+    local contentHeight = self.height - listY - footerHeight - footerPadding - bottomMargin
     
-    self:drawRectBorder(10, listY, listWidth, contentHeight, 0.5, 1, 1, 1)
+    self:drawRectBorder(0, listY, listWidth, contentHeight, 0.5, 1, 1, 1)
 end
 
 function DT_FactionInfoWindow:onResize()
@@ -169,23 +187,33 @@ function DT_FactionInfoWindow:onResize()
     end
 end
 
-function DT_FactionInfoWindow.ToggleWindow()
+function DT_FactionInfoWindow.ToggleWindow(device)
+    if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance:getIsVisible() then
+        DT_RadioScannerWindow.instance:close()
+    end
+
     if DT_FactionInfoWindow.instance then
         if DT_FactionInfoWindow.instance:getIsVisible() then
             DT_FactionInfoWindow.instance:close()
         else
+            DT_FactionInfoWindow.instance.device = device
             DT_FactionInfoWindow.instance:setVisible(true)
             DT_FactionInfoWindow.instance:addToUIManager()
             DT_FactionInfoWindow.instance:refreshList()
         end
         return
     end
-    
-    DT_FactionInfoWindow.Open()
+
+    DT_FactionInfoWindow.Open(device)
 end
 
-function DT_FactionInfoWindow.Open()
+function DT_FactionInfoWindow.Open(device)
+    if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance:getIsVisible() then
+        DT_RadioScannerWindow.instance:close()
+    end
+
     if DT_FactionInfoWindow.instance then
+        DT_FactionInfoWindow.instance.device = device
         DT_FactionInfoWindow.instance:setVisible(true)
         DT_FactionInfoWindow.instance:addToUIManager()
         DT_FactionInfoWindow.instance:refreshList()
@@ -198,6 +226,7 @@ function DT_FactionInfoWindow.Open()
     local y = (getCore():getScreenHeight() - height) / 2
 
     local window = DT_FactionInfoWindow:new(x, y, width, height)
+    window.device = device
     window:initialise()
     window:addToUIManager()
     DT_FactionInfoWindow.instance = window
@@ -206,6 +235,60 @@ end
 function DT_FactionInfoWindow:close()
     self:setVisible(false)
     self:removeFromUIManager()
+end
+
+function DT_FactionInfoWindow:update()
+    ISCollapsableWindow.update(self)
+
+    if self:getIsVisible() then
+        local player = getSpecificPlayer(0)
+        if not player then return end
+
+        -- Radio Requirement Check
+        if DT_RadioScannerManager and DT_RadioScannerManager.HasActiveRadio then
+            local activeDevice = DT_RadioScannerManager.HasActiveRadio(player, self.device)
+            if not activeDevice then
+                self:close()
+                if HaloTextHelper then
+                    HaloTextHelper.addTextWithArrow(player, "Signal Lost (Radio Off/Missing)", true, HaloTextHelper.getColorRed())
+                end
+            else
+                self.device = activeDevice
+            end
+        end
+    end
+end
+
+function DT_FactionInfoWindow:updateOwnedFactionStatus(status, selectedFaction)
+    if self.headerPanel and self.headerPanel.updateOwnedFactionStatus then
+        self.headerPanel:updateOwnedFactionStatus(status, selectedFaction)
+    end
+    if self.footerPanel and self.footerPanel.updateOwnedFactionStatus then
+        self.footerPanel:updateOwnedFactionStatus(status)
+    end
+end
+
+function DT_FactionInfoWindow:onRadarButton()
+    if DT_RadioScannerWindow and DT_RadioScannerWindow.ToggleWindow then
+        DT_RadioScannerWindow.ToggleWindow(self.device)
+    end
+end
+
+function DT_FactionInfoWindow:onFactionMembersButton(ownedStatus)
+    if DT_PlayerFactionMembersModal and DT_PlayerFactionMembersModal.Open then
+        DT_PlayerFactionMembersModal.Open(ownedStatus)
+    end
+end
+
+function DT_FactionInfoWindow:onOwnedFactionButton(ownedStatus)
+    if ownedStatus and not ownedStatus.faction and ownedStatus.canCreate and DC_System and DC_System.PromptCreateFaction then
+        DC_System.PromptCreateFaction()
+        return
+    end
+
+    if DC_System and DC_System.OpenWindow then
+        DC_System.OpenWindow()
+    end
 end
 
 function DT_FactionInfoWindow:new(x, y, width, height)

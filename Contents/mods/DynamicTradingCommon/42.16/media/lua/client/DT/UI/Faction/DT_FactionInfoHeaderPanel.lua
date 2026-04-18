@@ -30,20 +30,18 @@ function DT_FactionInfoHeaderPanel:createChildren()
     self.lblStatus:initialise()
     self:addChild(self.lblStatus)
 
-    self.btnOwnedFaction = ISButton:new(self.width - 170, 10, 160, 24, "Open Colony Management", self, self.onOwnedFactionButton)
-    self.btnOwnedFaction:initialise()
-    self.btnOwnedFaction:instantiate()
-    self:addChild(self.btnOwnedFaction)
-
-    self.btnFactionMembers = ISButton:new(self.width - 340, 10, 160, 24, "Colony Members", self, self.onFactionMembersButton)
-    self.btnFactionMembers:initialise()
-    self.btnFactionMembers:instantiate()
-    self:addChild(self.btnFactionMembers)
-    
-    if not isDynamicColoniesActive() then
-        self.btnOwnedFaction:setVisible(false)
-        self.btnFactionMembers:setVisible(false)
-    end
+    -- Settings Button (top-right for symmetry with Radar)
+    local btnSize = 18
+    self.btnOptions = ISButton:new(self.width - btnSize - 10, 10, btnSize, btnSize, "", self, function()
+        if DT_RadioScannerOptionsManager then
+            DT_RadioScannerOptionsManager.ToggleWindow()
+        end
+    end)
+    self.btnOptions:initialise()
+    self.btnOptions.borderColor = { r = 1, g = 1, b = 1, a = 0.2 }
+    self.btnOptions.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    self.btnOptions:setImage(getTexture("media/ui/inventoryPanes/Button_Settings.png"))
+    self:addChild(self.btnOptions)
 end
 
 function DT_FactionInfoHeaderPanel:onResizeFont(scale)
@@ -78,52 +76,9 @@ function DT_FactionInfoHeaderPanel:updateOwnedFactionStatus(status, selectedFact
     else
         self.lblStatus:setName("Global Faction Overview")
     end
-
-    if self.btnOwnedFaction then
-        if not isDynamicColoniesActive() then
-            self.btnOwnedFaction:setVisible(false)
-        elseif status and not status.faction and status.canCreate then
-            self.btnOwnedFaction:setTitle("Create Faction")
-            self.btnOwnedFaction:setEnable(true)
-            self.btnOwnedFaction:setVisible(true)
-        else
-            self.btnOwnedFaction:setTitle("Open Colony Management")
-            self.btnOwnedFaction:setEnable(true)
-            self.btnOwnedFaction:setVisible(true)
-        end
-    end
-
-    if self.btnFactionMembers then
-        local pendingCount = status and status.pendingInvites and #status.pendingInvites or 0
-        local hasFaction = status and status.faction ~= nil
-        if not isDynamicColoniesActive() then
-            self.btnFactionMembers:setVisible(false)
-        elseif hasFaction or pendingCount > 0 then
-            self.btnFactionMembers:setTitle(pendingCount > 0 and not hasFaction and "Faction Invites" or "Colony Members")
-            self.btnFactionMembers:setEnable(true)
-            self.btnFactionMembers:setVisible(true)
-        else
-            self.btnFactionMembers:setVisible(false)
-        end
-    end
 end
 
-function DT_FactionInfoHeaderPanel:onOwnedFactionButton()
-    if self.ownedStatus and not self.ownedStatus.faction and self.ownedStatus.canCreate and DC_System and DC_System.PromptCreateFaction then
-        DC_System.PromptCreateFaction()
-        return
-    end
-
-    if DC_System and DC_System.OpenWindow then
-        DC_System.OpenWindow()
-    end
-end
-
-function DT_FactionInfoHeaderPanel:onFactionMembersButton()
-    if DT_PlayerFactionMembersModal and DT_PlayerFactionMembersModal.Open then
-        DT_PlayerFactionMembersModal.Open(self.ownedStatus)
-    end
-end
+-- Logic moved to Footer/Window level
 
 function DT_FactionInfoHeaderPanel:prerender()
     ISPanel.prerender(self)
@@ -138,11 +93,14 @@ function DT_FactionInfoHeaderPanel:prerender()
     -- Keep labels centered
     centerLabel(self.labelTitle, self.labelTitle.font)
     centerLabel(self.lblStatus, self.lblStatus.font)
-    if self.btnOwnedFaction then
-        self.btnOwnedFaction:setX(self.width - self.btnOwnedFaction:getWidth() - 10)
+    if self.btnOptions then
+        self.btnOptions:setX(self.width - self.btnOptions:getWidth() - 10)
     end
-    if self.btnFactionMembers then
-        self.btnFactionMembers:setX(self.width - self.btnOwnedFaction:getWidth() - self.btnFactionMembers:getWidth() - 20)
+end
+
+function DT_FactionInfoHeaderPanel:onRadarButton()
+    if DT_RadioScannerWindow and DT_RadioScannerWindow.ToggleWindow then
+        DT_RadioScannerWindow.ToggleWindow(self.parent.device)
     end
 end
 

@@ -24,6 +24,7 @@ DT_FactionInfoWindow = ISCollapsableWindow:derive("DT_FactionInfoWindow")
 DT_FactionInfoWindow.instance = nil
 
 require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow_HelpersLogic"
+require "DT/UI/Faction/Tabs/DT_FactionInfoFooterPanel"
 require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow_UILogic"
 require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow_DataLogic"
 require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow_InteractionLogic"

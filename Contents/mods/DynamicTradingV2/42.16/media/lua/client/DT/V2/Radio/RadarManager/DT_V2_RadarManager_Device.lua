@@ -170,3 +170,77 @@ function RadarManager.GetDeviceInfo(device)
 
     return name, range
 end
+
+function RadarManager.HasActiveRadio(player, currentDevice)
+    if not player then return nil end
+    
+    local function isValidOn(obj)
+        if not obj then return false end
+        
+        local deviceData = nil
+        if obj.getDeviceData then
+            deviceData = obj:getDeviceData()
+        end
+        if not deviceData then return false end
+
+        -- Use the existing operational power check from DynamicTrading.Utils if available
+        if DynamicTrading and DynamicTrading.Utils and DynamicTrading.Utils.HasOperationalRadioPower then
+            return DynamicTrading.Utils.HasOperationalRadioPower(obj, deviceData)
+        end
+
+        -- Fallback if Utils not available yet
+        if not deviceData:getIsTurnedOn() then return false end
+        
+        -- Be VERY lenient on power (0.0001) to avoid flickering
+        return deviceData:getPower() > 0.0001
+    end
+
+    -- 1. Check current device first (for continuity)
+    if currentDevice and isValidOn(currentDevice) then
+        return currentDevice
+    end
+
+    -- 2. Check Primary/Secondary Hands
+    local primary = player:getPrimaryHandItem()
+    if primary and primary:getCategory() == "Communications" and isValidOn(primary) then
+        return primary
+    end
+    local secondary = player:getSecondaryHandItem()
+    if secondary and secondary:getCategory() == "Communications" and isValidOn(secondary) then
+        return secondary
+    end
+
+    -- 3. Check Inventory (All Items)
+    local inv = player:getInventory()
+    local it = inv:getItems()
+    for i=0, it:size()-1 do
+        local item = it:get(i)
+        if item:getCategory() == "Communications" and isValidOn(item) then
+            return item
+        end
+    end
+
+    -- 4. Check Nearby World Objects (V1 Style Hub check) - ONLY if no handheld found
+    local px, py, pz = player:getX(), player:getY(), player:getZ()
+    local range = 5 -- Standard range for world radio interaction
+    for x = -range, range do
+        for y = -range, range do
+            local sq = getCell():getGridSquare(px + x, py + y, pz)
+            if sq then
+                local objs = sq:getObjects()
+                for i=0, objs:size()-1 do
+                    local obj = objs:get(i)
+                    if instanceof(obj, "IsoWaveSignal") and isValidOn(obj) then
+                        -- Check if it's a 2-way radio
+                        local dd = obj:getDeviceData()
+                        if dd and dd:getIsTwoWay() then
+                            return obj
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end

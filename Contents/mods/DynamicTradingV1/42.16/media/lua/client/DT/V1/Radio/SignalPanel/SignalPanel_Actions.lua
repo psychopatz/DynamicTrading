@@ -39,7 +39,7 @@ Events.OnServerCommand.Add(DT_SignalPanel.OnServerCommand)
 
 function DT_SignalPanel:onInfoClick()
     if DT_FactionInfoWindow then
-        DT_FactionInfoWindow.ToggleWindow()
+        DT_FactionInfoWindow.ToggleWindow(self.parent and self.parent.radioObj or nil)
     end
 end
 

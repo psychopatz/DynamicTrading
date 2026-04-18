@@ -96,8 +96,8 @@ local function onServerCommand(module, command, args)
             DT_FactionInfoWindow.instance.selectedFaction = selectedFaction
         end
 
-        if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.headerPanel and DT_FactionInfoWindow.instance.headerPanel.updateOwnedFactionStatus then
-            DT_FactionInfoWindow.instance.headerPanel:updateOwnedFactionStatus(
+        if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.updateOwnedFactionStatus then
+            DT_FactionInfoWindow.instance:updateOwnedFactionStatus(
                 DT_FactionInfoWindow.cachedOwnedFactionStatus,
                 selectedFaction
             )

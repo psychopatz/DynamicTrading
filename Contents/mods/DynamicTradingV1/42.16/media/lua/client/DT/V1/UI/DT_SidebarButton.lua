@@ -46,7 +46,9 @@ end
 
 function DT_SidebarButton.onButtonClick()
     if DT_FactionInfoWindow then
-        DT_FactionInfoWindow.ToggleWindow()
+        local player = getSpecificPlayer(0)
+        local device = (DT_RadioScannerManager and DT_RadioScannerManager.HasActiveRadio) and DT_RadioScannerManager.HasActiveRadio(player) or nil
+        DT_FactionInfoWindow.ToggleWindow(device)
     end
 end
 

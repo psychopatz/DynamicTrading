@@ -2,6 +2,22 @@ function DT_RadioScannerWindow:update()
     ISCollapsableWindow.update(self)
 
     if self:getIsVisible() then
+        local player = getSpecificPlayer(0)
+        if not player then return end
+
+        -- Radio Requirement Check
+        if DT_RadioScannerManager and DT_RadioScannerManager.HasActiveRadio then
+            local activeDevice = DT_RadioScannerManager.HasActiveRadio(player, self.device)
+            if not activeDevice then
+                self:close()
+                if HaloTextHelper then
+                    HaloTextHelper.addTextWithArrow(player, "Signal Lost (Radio Off/Missing)", true, HaloTextHelper.getColorRed())
+                end
+            else
+                self.device = activeDevice
+            end
+        end
+
         if self.trackingUUID then
             self:updateTrackingMarker()
         end
@@ -36,6 +52,10 @@ function DT_RadioScannerWindow:update()
 end
 
 function DT_RadioScannerWindow.ToggleWindow(device)
+    if DT_FactionInfoWindow and DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance:getIsVisible() then
+        DT_FactionInfoWindow.instance:close()
+    end
+
     if DT_RadioScannerWindow.instance then
         if DT_RadioScannerWindow.instance:getIsVisible() then
             DT_RadioScannerWindow.instance:close()
