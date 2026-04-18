@@ -39,6 +39,38 @@ function DynamicTrading.NetworkLogManager.Append(key, text, category)
 end
 
 -- =============================================================================
+-- FACTION SPECIFIC EVENTS (Integrated with Faction Intelligence)
+-- =============================================================================
+
+function DynamicTrading.NetworkLogManager.AddFactionEvent(factionID, text, category)
+    if not factionID then return end
+    
+    local factions = ModData.get("DynamicTrading_Factions")
+    if not factions or not factions[factionID] then return end
+    
+    local faction = factions[factionID]
+    if not faction.news then faction.news = {} end
+    
+    local gt = GameTime:getInstance()
+    local timeStr = string.format("%02d/%02d %02d:%02d", gt:getDay()+1, gt:getMonth()+1, gt:getHour(), gt:getMinutes())
+    
+    -- Insert at top
+    table.insert(faction.news, 1, { text = text, cat = category or "info", time = timeStr })
+    
+    -- Limit to 30 entries for bandwidth efficiency
+    while #faction.news > 30 do
+        table.remove(faction.news)
+    end
+    
+    -- Transmit updated faction data if on server (or singleplayer)
+    if isServer() or not isClient() then
+        ModData.transmit("DynamicTrading_Factions")
+        -- Signal UI update locally (not strictly needed as ModData.transmit handles it, but good for local)
+        triggerEvent("OnDynamicTradingFactionNewsUpdated", factionID)
+    end
+end
+
+-- =============================================================================
 -- CLIENT SYNC
 -- =============================================================================
 local function OnReceiveLogs(key, data)

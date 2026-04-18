@@ -5,6 +5,7 @@
 
 require "ISUI/ISPanel"
 require "ISUI/ISRichTextPanel"
+require "DT/UI/Faction/Tabs/DT_FactionEventLogPanel"
 
 DT_FactionInfoTab_Info = ISPanel:derive("DT_FactionInfoTab_Info")
 
@@ -19,7 +20,6 @@ end
 
 function DT_FactionInfoTab_Info:initialise()
     ISPanel.initialise(self)
-    self:createChildren()
 end
 
 function DT_FactionInfoTab_Info:createChildren()
@@ -29,14 +29,29 @@ function DT_FactionInfoTab_Info:createChildren()
     self.richText.borderColor = {r=0, g=0, b=0, a=0.0}
     self.richText:addScrollBars()
     self.richText:setAnchorRight(true)
-    self.richText:setAnchorBottom(true)
+    self.richText:setAnchorBottom(false)
     self:addChild(self.richText)
+
+    -- Event Log Section
+    self.logPanel = DT_FactionEventLogPanel:new(0, self.height * 0.6, self.width, self.height * 0.4)
+    self.logPanel:initialise()
+    self.logPanel:setAnchorRight(true)
+    self.logPanel:setAnchorBottom(true)
+    self:addChild(self.logPanel)
 end
 
 function DT_FactionInfoTab_Info:onResize()
     ISPanel.onResize(self)
     if self.richText then
+        self.richText:setWidth(self.width)
+        self.richText:setHeight(self.height * 0.6)
         self.richText:paginate()
+    end
+    if self.logPanel then
+        self.logPanel:setY(self.height * 0.6)
+        self.logPanel:setWidth(self.width)
+        self.logPanel:setHeight(self.height * 0.4)
+        self.logPanel:onResize()
     end
 end
 
@@ -122,4 +137,8 @@ function DT_FactionInfoTab_Info:updateData(f)
     
     self.richText:setText(text)
     self.richText:paginate()
+
+    if self.logPanel then
+        self.logPanel:updateData(f)
+    end
 end

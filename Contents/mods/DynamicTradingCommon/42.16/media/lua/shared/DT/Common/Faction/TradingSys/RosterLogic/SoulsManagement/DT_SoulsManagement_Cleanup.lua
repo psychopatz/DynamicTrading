@@ -10,6 +10,10 @@ function DynamicTrading_Roster.RemoveSoul(factionID, count)
         if #members > 0 then
             local idx = ZombRand(#members) + 1
             local uuid = table.remove(members, idx)
+            local soul = data.Souls[uuid]
+            if soul and DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
+                DynamicTrading.NetworkLogManager.AddFactionEvent(factionID, "Member died: " .. tostring(soul.name or "Unknown"), "bad")
+            end
             data.Souls[uuid] = nil
             if ModData.remove then ModData.remove("DTSOUL_" .. uuid) end
         end

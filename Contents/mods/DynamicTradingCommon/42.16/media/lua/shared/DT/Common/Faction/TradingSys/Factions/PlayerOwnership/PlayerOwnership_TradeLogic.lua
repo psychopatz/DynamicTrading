@@ -45,6 +45,11 @@ return function(Public, Internal)
     end
 
     local function startTradeMission(uuid)
+        local soul = DynamicTrading_Roster.GetSoul(uuid)
+        if soul and soul.factionID and DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
+            DynamicTrading.NetworkLogManager.AddFactionEvent(soul.factionID, tostring(soul.name or "A member") .. " started a trading run.", "info")
+        end
+
         if isV2TradeBackendActive() then
             DTNPCManager.StartTradeMission(uuid, false, true)
             return { backend = "V2", traderID = uuid, discoverTrader = false }

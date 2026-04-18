@@ -74,6 +74,9 @@ function BuildingLogic.ProcessBuildings(faction)
                             bData.hp = def.baseHp
                             bData.maxHp = def.baseHp
                             DynamicTrading.Log("Colony", "Infrastructure", "Build", faction.name .. " finished constructing " .. def.name)
+                            if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
+                                DynamicTrading.NetworkLogManager.AddFactionEvent(id, "Constructed " .. def.name, "good")
+                            end
                         end
                     else
                         DynamicTrading.Log("Colony", "Infrastructure", "Build", faction.name .. " construction STALLED (no materials) for " .. def.name)

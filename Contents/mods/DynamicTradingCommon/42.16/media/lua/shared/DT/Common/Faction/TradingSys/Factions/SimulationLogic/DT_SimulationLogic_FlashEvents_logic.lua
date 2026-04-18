@@ -41,6 +41,10 @@ function FlashEventsLogic.Process(faction, id, data, currentHour)
                     if factionActive then
                         afe.targetCasualties = afe.targetCasualties - killToday
                         DynamicTrading.Log("DTCommons", "Faction", "Sim", "Event casualty hit for faction [" .. faction.name .. "] [" .. tostring(afe.id) .. "] | Killed: " .. killToday .. " | Remaining Targets: " .. tostring(afe.targetCasualties))
+                        if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
+                            local eventName = (DynamicTrading.Events and DynamicTrading.Events.Registry and DynamicTrading.Events.Registry[afe.id] and DynamicTrading.Events.Registry[afe.id].name) or afe.id
+                            DynamicTrading.NetworkLogManager.AddFactionEvent(id, "Lost " .. killToday .. " members to " .. eventName, "bad")
+                        end
                     end
                 end
             end
@@ -75,6 +79,9 @@ function FlashEventsLogic.Process(faction, id, data, currentHour)
                             if factionActive then
                                 DynamicTrading.Log("DTCommons", "Faction", "Sim", "Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
                                 faction.state = "Starving"
+                                if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
+                                    DynamicTrading.NetworkLogManager.AddFactionEvent(id, "Lost " .. casualties .. " members to " .. resource .. " shortage!", "bad")
+                                end
                             end
                         end
                     end
