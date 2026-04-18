@@ -79,7 +79,7 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
                 and DTNPCJobUI.GetTalkLabel(nil, npc, player, npcData, name)
                 or ("Talk to " .. name)
 
-            context:addOption(talkLabel, npc, function(n)
+            local option = context:addOption(talkLabel, npc, function(n)
                 -- Delegate all interaction logic to the Dialogue Hub
                 if DTNPC_TraderDialogue_Hub and DTNPC_TraderDialogue_Hub.Init then
                     DTNPC_TraderDialogue_Hub.Init(nil, n, player)
@@ -87,6 +87,8 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
                     DynamicTrading.Log("DTV2", "NPC", "Error", "DTNPC_TraderDialogue_Hub not found")
                 end
             end)
+            
+            option.iconTexture = getTexture("media/ui/Icon_MarketInfo.png")
 
             if DTNPCJobUI and DTNPCJobUI.AddContextMenuOptions then
                 DTNPCJobUI.AddContextMenuOptions(context, nil, npc, player, npcData)

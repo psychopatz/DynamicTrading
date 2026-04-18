@@ -38,23 +38,51 @@ function ISRadioWindow:createChildren()
     local y = 100 -- Default placeholder
 
     -- Add the "SCAN FOR TRADERS" button
-    self.btnTraderScan = ISButton:new(startX, y, btnWidth, btnHeight, "SCAN TRADERS", self, function(window)
+    self.btnTraderScan = ISButton:new(startX, y, btnWidth, btnHeight, "Scan", self, function(window)
+        -- 1. Check Gameplay Cooldown
+        if DT_V2_RadarManager and DT_V2_RadarManager.CanScan then
+            local canScan = DT_V2_RadarManager.CanScan(getSpecificPlayer(0), window.device)
+            if not canScan then return end
+        end
+
+        -- 2. Check Spam Protection
+        local now = getTimeInMillis()
+        if window.dt_lastScanClick and now - window.dt_lastScanClick < 3000 then
+            return
+        end
+        window.dt_lastScanClick = now
+
         if DT_V2_RadarManager and DT_V2_RadarManager.Scan then
             DT_V2_RadarManager.Scan(getSpecificPlayer(0), window.device)
         end
     end)
     self.btnTraderScan:initialise()
+    -- Store texture and handle manual rendering to place it on the left
+    self.btnTraderScan.dt_icon = getTexture("media/ui/Icon_MarketInfo.png")
+    self.btnTraderScan.render = function(btn)
+        ISButton.render(btn)
+        if btn.dt_icon then
+            btn:drawTextureScaled(btn.dt_icon, 4, (btn.height - 16) / 2, 16, 16, 1, 1, 1, 1)
+        end
+    end
     self.btnTraderScan.backgroundColor = {r=0.2, g=0.5, b=0.2, a=0.8}
     self.btnTraderScan:setVisible(false)
     self:addChild(self.btnTraderScan)
 
     -- Add the "OPEN RADAR LIST" button
-    self.btnTraderList = ISButton:new(startX + btnWidth + 10, y, btnWidth, btnHeight, "RADAR LIST", self, function(window)
+    self.btnTraderList = ISButton:new(startX + btnWidth + 10, y, btnWidth, btnHeight, "Access Radio", self, function(window)
         if DT_RadioScannerWindow then
             DT_RadioScannerWindow.ToggleWindow(window.device)
         end
     end)
     self.btnTraderList:initialise()
+    self.btnTraderList.dt_icon = getTexture("media/ui/Icon_MarketInfo.png")
+    self.btnTraderList.render = function(btn)
+        ISButton.render(btn)
+        if btn.dt_icon then
+            btn:drawTextureScaled(btn.dt_icon, 4, (btn.height - 16) / 2, 16, 16, 1, 1, 1, 1)
+        end
+    end
     self.btnTraderList.backgroundColor = {r=0.2, g=0.2, b=0.5, a=0.8}
     self.btnTraderList:setVisible(false)
     self:addChild(self.btnTraderList)
@@ -90,14 +118,29 @@ function ISRadioWindow:prerender()
             canScan, remainingMinutes = DT_V2_RadarManager.CanScan(player, self.device)
         end
 
-        self.btnTraderScan.enable = canScan == true
+        -- Manual enable state to control visuals without engine-forced darkening
+        local isEffectivelyDisabled = (canScan ~= true)
+        local now = getTimeInMillis()
+        if not isEffectivelyDisabled and self.dt_lastScanClick and now - self.dt_lastScanClick < 3000 then
+            isEffectivelyDisabled = true
+        end
+
+        self.btnTraderScan.enable = true -- Keep engine-enabled for white text
         self.btnTraderList.enable = operational
-        if canScan == true then
-            self.btnTraderScan:setTitle("SCAN TRADERS")
+
+        if not isEffectivelyDisabled then
+            self.btnTraderScan:setTitle("Scan")
             self.btnTraderScan.textColor = { r = 1, g = 1, b = 1, a = 1 }
+            self.btnTraderScan.backgroundColor = {r=0.2, g=0.5, b=0.2, a=0.8}
         else
-            self.btnTraderScan:setTitle("WAIT (" .. tostring(math.max(1, math.ceil(remainingMinutes or 0))) .. "m)")
-            self.btnTraderScan.textColor = { r = 1, g = 0.65, b = 0.35, a = 1 }
+            if canScan ~= true then
+                self.btnTraderScan:setTitle("Wait (" .. tostring(math.max(1, math.ceil(remainingMinutes or 0))) .. "m)")
+            else
+                self.btnTraderScan:setTitle("Scan") -- During 3s grace
+            end
+            -- Force White Text for readability on Red Background
+            self.btnTraderScan.textColor = { r = 1, g = 1, b = 1, a = 1 }
+            self.btnTraderScan.backgroundColor = {r=0.5, g=0.2, b=0.2, a=0.8}
         end
 
         -- V2.5: Auto-close Radar Window if radio loses power/is turned off
@@ -164,3 +207,71 @@ function ISRadioWindow:prerender()
         end
     end
 end
+
+-- ==============================================================================
+-- CONTEXT MENU SUPPORT (V2)
+-- ==============================================================================
+local function OnFillRadioContextMenu(playerNum, context, items, isWorld)
+    local player = getSpecificPlayer(playerNum)
+    local radioDevice = nil
+    
+    if isWorld then
+        for _, obj in ipairs(items) do
+            if instanceof(obj, "IsoWaveSignal") then
+                if DT_V2_RadarManager and DT_V2_RadarManager.GetDeviceTypeID then
+                    if DT_V2_RadarManager.GetDeviceTypeID(obj) then
+                        radioDevice = obj
+                        break
+                    end
+                end
+            end
+        end
+    else
+        for _, v in ipairs(items) do
+            local item = v
+            if not instanceof(v, "InventoryItem") then item = v.items[1] end
+            if DT_V2_RadarManager and DT_V2_RadarManager.GetDeviceTypeID then
+                if DT_V2_RadarManager.GetDeviceTypeID(item) then
+                    radioDevice = item
+                    break
+                end
+            end
+        end
+    end
+
+    if radioDevice then
+        local option = context:addOption("Open Trader Radar", 
+            radioDevice, 
+            function(device) 
+                if DT_RadioScannerWindow then
+                    DT_RadioScannerWindow.ToggleWindow(device)
+                end
+            end
+        )
+        
+        local icon = getTexture("media/ui/Icon_MarketInfo.png")
+        if icon then
+            option.iconTexture = icon
+        end
+
+        -- Operational check
+        local data = radioDevice.getDeviceData and radioDevice:getDeviceData() or nil
+        if not data or not data:getIsTurnedOn() or data:getPower() <= 0 then
+            option.notAvailable = true
+            option.toolTip = ISWorldObjectContextMenu.addToolTip()
+            option.toolTip.description = "Radio must be ON and have Power."
+        end
+    end
+end
+
+local function OnFillInventoryObjectContextMenu(playerNum, context, items)
+    OnFillRadioContextMenu(playerNum, context, items, false)
+end
+
+local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, test)
+    OnFillRadioContextMenu(playerNum, context, worldObjects, true)
+end
+
+Events.OnFillInventoryObjectContextMenu.Add(OnFillInventoryObjectContextMenu)
+Events.OnFillWorldObjectContextMenu.Add(OnFillWorldObjectContextMenu)
+
