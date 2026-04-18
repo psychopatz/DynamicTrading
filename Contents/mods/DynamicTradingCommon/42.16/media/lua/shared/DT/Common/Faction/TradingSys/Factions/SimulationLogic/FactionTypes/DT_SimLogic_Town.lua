@@ -6,10 +6,11 @@ local TownSim = {}
 
 function TownSim.Process(faction, id, data)
     if not faction then return nil, false end
+    local previousState = faction.state
 
     -- 1. Building Multipliers & Production
     local mults = BuildingLogic.GetGlobalMultipliers(faction)
-    local buildingProd = BuildingLogic.ProcessBuildings(faction)
+    local buildingProd = BuildingLogic.ProcessBuildings(faction, id)
     
     -- 2. Horde Attack
     local attacked, casualties = HordeLogic.ProcessHorde(faction, id, data)
@@ -115,6 +116,37 @@ function TownSim.Process(faction, id, data)
         faction.consecutiveStableDays = (faction.consecutiveStableDays or 0) + 1
     else
         faction.consecutiveStableDays = 0
+    end
+
+    if faction.state ~= previousState then
+        DynamicTrading.Log("Colony", "TownLogic", "State", faction.name .. " changed state: " .. tostring(previousState) .. " -> " .. faction.state)
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
+            DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.STATE_CHANGED, {faction.state, tostring(previousState)})
+        end
+    end
+
+    if faction.CollapseDays and faction.CollapseDays >= 3 then
+        DynamicTrading.Log("Colony", "TownLogic", "Danger", faction.name .. " is on the VERGE OF COLLAPSE!")
+        local cMult = 1.0
+        if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
+            cMult = DynamicTrading.Events.GetFactionSystemModifier(faction, "townCollapseDamageMult") or 1.0
+        end
+        local collapseDamage = math.ceil(faction.memberCount * 0.15 * cMult)
+        if collapseDamage < 1 then collapseDamage = 1 end
+        
+        local factionActive = true
+        if faction.playerOwned and DynamicTrading_Factions.ApplyPlayerFactionCasualties then
+            collapseDamage = DynamicTrading_Factions.ApplyPlayerFactionCasualties(id, collapseDamage, "Colony Collapse")
+            faction = data[id]
+            factionActive = faction ~= nil
+        else
+            faction.memberCount = math.max(0, faction.memberCount - collapseDamage)
+            DynamicTrading_Roster.RemoveSoul(id, collapseDamage)
+        end
+        
+        if factionActive and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
+            DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.FACTION_DYING, {})
+        end
     end
 
     return faction, true, { mults = mults, buildingProd = buildingProd }

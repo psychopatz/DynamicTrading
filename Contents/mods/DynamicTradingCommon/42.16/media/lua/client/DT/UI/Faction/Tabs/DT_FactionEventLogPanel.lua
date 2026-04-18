@@ -14,7 +14,7 @@ function DT_FactionEventLogPanel:new(x, y, width, height)
     self.__index = self
     o.backgroundColor = {r=0, g=0, b=0, a=0.2}
     o.borderColor = {r=0.3, g=0.3, b=0.3, a=0.5}
-    o.lastNewsCount = -1
+    o.lastNewsHash = ""
     o.lastFactionID = ""
     return o
 end
@@ -52,20 +52,24 @@ function DT_FactionEventLogPanel:updateData(f)
     if not f then 
         self.richText:setText("")
         self.lastFactionID = ""
-        self.lastNewsCount = -1
+        self.lastNewsHash = ""
         return 
     end
 
-    local news = f.news or {}
+    local newsData = ModData.getOrCreate("DynamicTrading_Logs_Factions")
+    local news = newsData[f.id] or {}
     local newsCount = #news
     
+    local topEntry = news[1]
+    local topNewsHash = tostring(newsCount) .. (newsCount > 0 and ((topEntry.time or topEntry.t or "") .. (topEntry.text or tostring(topEntry.e))) or "")
+    
     -- Optimization: Only update if faction changed or new entries arrived
-    if f.id == self.lastFactionID and newsCount == self.lastNewsCount then
+    if f.id == self.lastFactionID and topNewsHash == self.lastNewsHash then
         return
     end
 
     self.lastFactionID = f.id
-    self.lastNewsCount = newsCount
+    self.lastNewsHash = topNewsHash
 
     if newsCount == 0 then
         self.richText:setText(" <RGB:0.5,0.5,0.5> No recent records for this faction.")
@@ -74,21 +78,25 @@ function DT_FactionEventLogPanel:updateData(f)
     end
 
     local text = ""
-    for i, entry in ipairs(news) do
-        -- Date formatting from network log style
-        local dateStr = " <RGB:0.5,0.5,0.5> [" .. tostring(entry.time or "??/??") .. "]"
+    for i = 1, #news do
+        local entry = news[i]
         
-        -- Color coding by category
-        local colorTag = " <RGB:0.8,0.8,0.8> " -- info/default
-        if entry.cat == "good" then
-            colorTag = " <RGB:0.4,1,0.4> "
-        elseif entry.cat == "bad" then
-            colorTag = " <RGB:1,0.4,0.4> "
-        elseif entry.cat == "event" then
-            colorTag = " <RGB:1,1,0.4> "
+        -- Serialize text using template resolver
+        local textStr, catStr = entry.text, entry.cat
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.ResolveText then
+            textStr, catStr = DynamicTrading.GameplayLogs.ResolveText(entry)
         end
         
-        text = text .. dateStr .. colorTag .. " " .. tostring(entry.text or "") .. " <LINE> "
+        local color = "<RGB:0.8,0.8,0.8> "
+        if catStr == "good" then
+            color = "<RGB:0.4,1.0,0.4> "
+        elseif catStr == "bad" then
+            color = "<RGB:1.0,0.4,0.4> "
+        elseif catStr == "event" then
+            color = "<RGB:1.0,1.0,0.4> "
+        end
+        local timeStr = entry.time or entry.t or ""
+        text = text .. "<RGB:0.5,0.5,0.5> [" .. timeStr .. "] " .. color .. (textStr or "Unknown event") .. " <LINE> "
     end
 
     self.richText:setText(text)

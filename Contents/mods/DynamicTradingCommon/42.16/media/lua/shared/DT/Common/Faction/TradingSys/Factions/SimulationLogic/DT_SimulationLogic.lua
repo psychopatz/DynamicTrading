@@ -8,6 +8,8 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/Config"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Events/DT_EventManager"
+require "DT/Common/Logging/DT_GameplayLogs"
+require "DT/Common/Faction/DT_FactionEventRegistry"
 
 local DT_SimulationLogic = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"
@@ -103,6 +105,11 @@ function DT_SimulationLogic.UpdateDaily()
     RespawnLogic.Process(data, factionsToRemove, Sandbox)
 
     ModData.transmit(MOD_DATA_KEY)
+    
+    if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.FlushChannel then
+        DynamicTrading.GameplayLogs.FlushChannel("Factions")
+    end
+    
     DynamicTrading.Log("Colony", "Faction", "Sim", "Daily Faction Simulation Updated.")
 end
 

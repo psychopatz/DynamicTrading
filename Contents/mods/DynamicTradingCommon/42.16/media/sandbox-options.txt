@@ -50,6 +50,16 @@ option DynamicTrading.MaxLogs
     translation = DynamicTrading.MaxLogs,
 }
 
+option DynamicTrading.MaxGameplayLogs
+{
+    type = integer,
+    default = 30,
+    min = 10,
+    max = 100,
+    page = DynamicTradingSim,
+    translation = DynamicTrading.MaxGameplayLogs,
+}
+
 option DynamicTrading.DisableNightScanGate
 {
     type = boolean,

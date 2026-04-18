@@ -90,6 +90,9 @@ function ConsumptionLogic.Process(faction, id, data, consumptionMult, deathThres
 
             if factionActive then
                 DynamicTrading.Log("Colony", "Faction", "Starving", "Faction " .. faction.name .. " is STARVING! Lost " .. deaths .. " souls.")
+                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
+                    DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.STARVATION_DEATHS, {deaths})
+                end
             end
         end
 
@@ -120,6 +123,9 @@ function ConsumptionLogic.Process(faction, id, data, consumptionMult, deathThres
 
                     if factionActive then
                         DynamicTrading.Log("Colony", "Faction", "Sim", "Attrition hit faction [" .. faction.name .. "] | Casualties: " .. passiveDeaths)
+                        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
+                            DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.ATTRITION_DEATHS, {passiveDeaths})
+                        end
                     end
                 end
             end

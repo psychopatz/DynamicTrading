@@ -77,7 +77,8 @@ function DT_RadioNetworkLogPanel:prerender()
     local currentTopLog = ""
 
     if data.list and data.list[1] then
-        currentTopLog = data.list[1].time .. data.list[1].text
+        local log = data.list[1]
+        currentTopLog = (log.time or log.t or "") .. (log.text or tostring(log.e))
     end
 
     if currentLogCount ~= self.lastLogCount or currentTopLog ~= self.lastTopLogID then
@@ -107,24 +108,35 @@ function DT_RadioNetworkLogPanel:populateLogs()
 
     for i = 1, #data.list do
         local log = data.list[i]
-        local timeWidth = textManager:MeasureStringX(font, log.time)
+        -- Serialize using template resolver
+        local timeStr = log.time or log.t or ""
+        local textStr, catStr = log.text, log.cat
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.ResolveText then
+            textStr, catStr = DynamicTrading.GameplayLogs.ResolveText(log)
+        end
+        textStr = textStr or "Unknown event"
+
+        local timeWidth = textManager:MeasureStringX(font, timeStr)
         local textSpace = listWidth - timeWidth - 15
         if textSpace < 50 then
             textSpace = 50
         end
 
-        local lines = DynamicTrading.Utils.WrapText(log.text, textSpace, font)
+        local lines = DynamicTrading.Utils.WrapText(textStr, textSpace, font)
         local lineHeight = self.logList.itemheight
         local totalHeight = #lines * lineHeight
         if totalHeight < lineHeight then
             totalHeight = lineHeight
         end
 
-        local addedItem = self.logList:addItem(log.time, {
+        local addedItem = self.logList:addItem(timeStr, {
             log = log,
             lines = lines,
             timeWidth = timeWidth,
             height = totalHeight,
+            timeStr = timeStr,
+            textStr = textStr,
+            catStr = catStr
         })
         addedItem.height = totalHeight
     end
@@ -141,15 +153,15 @@ function DT_RadioNetworkLogPanel.drawLogItem(listbox, y, item, alt)
     end
 
     local r, g, b = 0.8, 0.8, 0.8
-    if log.cat == "good" then
+    if data.catStr == "good" then
         r, g, b = 0.4, 1.0, 0.4
-    elseif log.cat == "bad" then
+    elseif data.catStr == "bad" then
         r, g, b = 1.0, 0.4, 0.4
-    elseif log.cat == "event" then
+    elseif data.catStr == "event" then
         r, g, b = 1.0, 1.0, 0.4
     end
 
-    listbox:drawText(log.time, 5, y + 2, 0.5, 0.5, 0.5, 1, listbox.font)
+    listbox:drawText(data.timeStr, 5, y + 2, 0.5, 0.5, 0.5, 1, listbox.font)
 
     local textX = 5 + data.timeWidth + 8
     local currentY = y
@@ -161,7 +173,7 @@ function DT_RadioNetworkLogPanel.drawLogItem(listbox, y, item, alt)
             currentY = currentY + lineHeight
         end
     else
-        listbox:drawText(log.text, textX, y + 2, r, g, b, 1, listbox.font)
+        listbox:drawText(data.textStr, textX, y + 2, r, g, b, 1, listbox.font)
     end
 
     return y + height

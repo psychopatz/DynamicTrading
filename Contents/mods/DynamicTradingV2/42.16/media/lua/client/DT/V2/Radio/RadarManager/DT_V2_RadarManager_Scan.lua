@@ -145,8 +145,8 @@ function RadarManager.Scan(player, device)
 
     if scanLimit <= 0 then
         player:Say("All signal channels are occupied. Unlock or clear a signal before rescanning.")
-        if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddRadioLog then
-            DynamicTrading.NetworkLogs.AddRadioLog("Signal Memory Full: all locked channels occupied", "bad")
+        if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddRadioEvent then
+            DynamicTrading.NetworkLogs.AddRadioEvent(DynamicTrading.GameplayLogs.SIGNAL_MEMORY_FULL, {})
         end
         if DT_RadioScannerWindow and DT_RadioScannerWindow.instance then
             DT_RadioScannerWindow.instance:refresh()
@@ -238,10 +238,7 @@ function RadarManager.Scan(player, device)
                 recycleName = recycleCandidate.entry.name
             end
 
-            local releasedUUID = RadarManager.ReleaseOldestUnlockedSignal(
-                "Signal Released: " .. tostring(recycleName) .. " (channel reallocated)",
-                "event"
-            )
+            local releasedUUID = RadarManager.ReleaseOldestUnlockedSignal(recycleName)
             if not releasedUUID then
                 break
             end
@@ -267,11 +264,8 @@ function RadarManager.Scan(player, device)
             discoveredCount = 1
             firstName = name
             RadarManager.CacheMetadata(uuid, soul)
-            if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddRadioLog then
-                DynamicTrading.NetworkLogs.AddRadioLog(
-                    "Signal Acquired by " .. tostring(username) .. ": " .. tostring(name) .. " (" .. tostring(factionName) .. ")",
-                    "good"
-                )
+            if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddRadioEvent then
+                DynamicTrading.NetworkLogs.AddRadioEvent(DynamicTrading.GameplayLogs.SIGNAL_ACQUIRED, {tostring(username), tostring(name), tostring(factionName)})
             end
             DynamicTrading.Log("DTV2", "Radio", "Scan", "Discovered: " .. name .. " (" .. uuid .. ")")
         end

@@ -79,8 +79,8 @@ function FlashEventsLogic.Process(faction, id, data, currentHour)
                             if factionActive then
                                 DynamicTrading.Log("DTCommons", "Faction", "Sim", "Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
                                 faction.state = "Starving"
-                                if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
-                                    DynamicTrading.NetworkLogManager.AddFactionEvent(id, "Lost " .. casualties .. " members to " .. resource .. " shortage!", "bad")
+                                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
+                                    DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.SHORTAGE_CASUALTIES, {casualties, resource})
                                 end
                             end
                         end

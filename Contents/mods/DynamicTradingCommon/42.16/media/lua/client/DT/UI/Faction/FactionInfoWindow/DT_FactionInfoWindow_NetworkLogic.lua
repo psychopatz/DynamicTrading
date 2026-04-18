@@ -166,8 +166,8 @@ if not DT_FactionInfoWindow.EventsAdded then
                 local rosterData = DT_FactionInfoWindow.resolveRosterData()
                 DT_FactionInfoWindow.instance:populateList(factionData, rosterData)
             
-            -- Engine Data (Inflation/Events) -> Update Active Tab Details
-            elseif key == "DynamicTrading_Engine_v2" then
+            -- Engine Data (Inflation/Events/News) -> Update Active Tab Details
+            elseif key == "DynamicTrading_Engine_v2" or key == "DynamicTrading_Logs_Factions" then
                  local panel = DT_FactionInfoWindow.instance.panel
                  if panel then
                      local activeView = panel:getActiveView()

@@ -188,28 +188,28 @@ function RadarManager.SetScanTimestamp(player, device)
     return state
 end
 
-function RadarManager.RemoveSignal(uuid, logText, logCategory)
+function RadarManager.RemoveSignal(uuid, releasedName)
     if not uuid or not RadarManager.FoundTraders or not RadarManager.FoundTraders[uuid] then
         return nil
     end
 
     local entry = RadarManager.FoundTraders[uuid]
-    if logText and DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddRadioLog then
-        DynamicTrading.NetworkLogs.AddRadioLog(logText, logCategory or "event")
+    if releasedName and DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddRadioEvent then
+        DynamicTrading.NetworkLogs.AddRadioEvent(DynamicTrading.GameplayLogs.SIGNAL_RELEASED, {releasedName, "channel reallocated"})
     end
 
     RadarManager.FoundTraders[uuid] = nil
     return entry
 end
 
-function RadarManager.ReleaseOldestUnlockedSignal(logText, logCategory)
+function RadarManager.ReleaseOldestUnlockedSignal(releasedName)
     local unlocked = getSortedUnlockedSignals()
     local target = unlocked[1]
     if not target then
         return nil, nil
     end
 
-    local entry = RadarManager.RemoveSignal(target.uuid, logText, logCategory)
+    local entry = RadarManager.RemoveSignal(target.uuid, releasedName)
     return target.uuid, entry
 end
 

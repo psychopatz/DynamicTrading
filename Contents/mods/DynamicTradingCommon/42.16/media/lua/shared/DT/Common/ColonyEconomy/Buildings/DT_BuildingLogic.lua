@@ -39,7 +39,7 @@ function BuildingLogic.GetGlobalMultipliers(faction)
 end
 
 --- Processes the day tick for buildings (Construction, Production, Degradation)
-function BuildingLogic.ProcessBuildings(faction)
+function BuildingLogic.ProcessBuildings(faction, factionID)
     if not faction or not faction.buildings then return end
     
     local outProduction = { food = 0, water = 0, meds = 0, ammo = 0, fuel = 0, materials = 0 }
@@ -74,8 +74,8 @@ function BuildingLogic.ProcessBuildings(faction)
                             bData.hp = def.baseHp
                             bData.maxHp = def.baseHp
                             DynamicTrading.Log("Colony", "Infrastructure", "Build", faction.name .. " finished constructing " .. def.name)
-                            if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
-                                DynamicTrading.NetworkLogManager.AddFactionEvent(id, "Constructed " .. def.name, "good")
+                            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
+                                DynamicTrading.GameplayLogs.Queue("Factions", factionID, DynamicTrading.GameplayLogs.CONSTRUCTED, {def.name})
                             end
                         end
                     else

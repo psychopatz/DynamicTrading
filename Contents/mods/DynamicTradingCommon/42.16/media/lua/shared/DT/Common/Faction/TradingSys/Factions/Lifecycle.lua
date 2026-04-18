@@ -234,6 +234,10 @@ function Lifecycle.CreateFaction(factionID, initialData)
         if not initialData.playerOwned then
             DynamicTrading_Factions.GenerateRoster(factionID)
         end
+        
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", factionID, DynamicTrading.GameplayLogs.FACTION_FOUNDED, {displayName})
+        end
 
         ModData.transmit(MOD_DATA_KEY)
         
@@ -307,7 +311,7 @@ function Lifecycle.GenerateRoster(factionID)
             }
         end
         
-        DynamicTrading_Roster.AddSoul(factionID, randomArch, scatteredHome)
+        DynamicTrading_Roster.AddSoul(factionID, randomArch, scatteredHome, { suppressRecruitLog = true })
     end
     
     BuildingInit.InitializeStarterBuildings(faction)

@@ -91,9 +91,10 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords, optio
     end
     table.insert(data.FactionMembers[factionID], uuid)
 
-    if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
-        local archName = (DynamicTrading.Archetypes and DynamicTrading.Archetypes[archetypeID] and DynamicTrading.Archetypes[archetypeID].name) or archetypeID
-        DynamicTrading.NetworkLogManager.AddFactionEvent(factionID, "Recruited " .. tostring(npcData.name) .. " (" .. tostring(archName) .. ")", "good")
+    if not options.suppressRecruitLog then
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", factionID, DynamicTrading.GameplayLogs.RECRUITED, {npcData.name, archetypeID})
+        end
     end
 
     return uuid

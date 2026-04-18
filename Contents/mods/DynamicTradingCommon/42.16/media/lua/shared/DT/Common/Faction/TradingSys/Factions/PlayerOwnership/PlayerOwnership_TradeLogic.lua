@@ -46,8 +46,8 @@ return function(Public, Internal)
 
     local function startTradeMission(uuid)
         local soul = DynamicTrading_Roster.GetSoul(uuid)
-        if soul and soul.factionID and DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
-            DynamicTrading.NetworkLogManager.AddFactionEvent(soul.factionID, tostring(soul.name or "A member") .. " started a trading run.", "info")
+        if soul and soul.factionID and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", soul.factionID, DynamicTrading.GameplayLogs.TRADE_STARTED, {uuid})
         end
 
         if isV2TradeBackendActive() then
