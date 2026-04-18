@@ -7,7 +7,6 @@
 function DynamicTrading.Events._ensureFactionFlashSchema(faction)
     faction.ActiveFlashEvents = faction.ActiveFlashEvents or {}
 
-    -- Migrate legacy single-event field if needed.
     if faction.ActiveFlashEvent and faction.ActiveFlashEvent.id and #faction.ActiveFlashEvents == 0 then
         if DynamicTrading.Debug then
             DynamicTrading.Log("DTCommons", "Event", "Logic", "Migrating legacy ActiveFlashEvent into list for faction " .. tostring(faction.id))

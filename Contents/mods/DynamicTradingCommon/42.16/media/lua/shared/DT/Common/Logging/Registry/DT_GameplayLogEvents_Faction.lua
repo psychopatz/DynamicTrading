@@ -160,3 +160,10 @@ register(Events.MEMBER_KILLED_BY_PLAYER, {
         EN = "{2} was confirmed killed by {1}"
     }
 })
+
+register(Events.FLASH_EVENT_ACTIVATED, {
+    category = "event",
+    templates = {
+        EN = "Flash event activated: {1}"
+    }
+})

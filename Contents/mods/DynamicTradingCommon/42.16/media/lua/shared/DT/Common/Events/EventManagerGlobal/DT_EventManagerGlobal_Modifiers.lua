@@ -8,7 +8,7 @@ function DynamicTrading.Events.GetPriceModifier(itemTags, verbose)
     local multiplier = 1.0
     if not itemTags then return 1.0 end
     verbose = verbose or DynamicTrading.Debug
-    
+
     for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
         if event.effects then
             for _, tag in ipairs(itemTags) do
@@ -28,7 +28,7 @@ end
 function DynamicTrading.Events.GetVolumeModifier(itemTags)
     local multiplier = 1.0
     if not itemTags then return 1.0 end
-    
+
     for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
         if event.effects then
             for _, tag in ipairs(itemTags) do
@@ -56,8 +56,8 @@ function DynamicTrading.Events.GetSystemModifier(key)
 end
 
 function DynamicTrading.Events.GetDemographicsModifier(key)
-    local modifier = nil -- Using nil for multiplicative (1.0) and additive (0) distinction
-    
+    local modifier = nil
+
     for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
         if event.demographics and event.demographics[key] then
             if key:find("Mult") then
@@ -67,32 +67,31 @@ function DynamicTrading.Events.GetDemographicsModifier(key)
             end
         end
     end
-    
-    -- Final defaults
+
     if key:find("Mult") then return modifier or 1.0 end
     return modifier or 0
 end
 
 function DynamicTrading.Events.GetWorldModifier(key, subKey)
     local modifier = nil
-    
+
     for _, event in ipairs(DynamicTrading.Events.ActiveEvents) do
         if event.world then
-            local val = event.world[key]
-            if type(val) == "table" and subKey then
-                val = val[subKey]
+            local value = event.world[key]
+            if type(value) == "table" and subKey then
+                value = value[subKey]
             end
-            
-            if val then
+
+            if value then
                 if key:find("Mult") or (type(event.world[key]) == "table" and key:find("Mults")) then
-                    modifier = (modifier or 1.0) * val
+                    modifier = (modifier or 1.0) * value
                 else
-                    modifier = (modifier or 0) + val
+                    modifier = (modifier or 0) + value
                 end
             end
         end
     end
-    
+
     if key:find("Mult") or key:find("Mults") then return modifier or 1.0 end
     return modifier or 0
 end

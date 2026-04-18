@@ -5,42 +5,40 @@
 -- =============================================================================
 
 function DynamicTrading.Events.Tick(data)
-    if not data or not data.EventSystem then 
+    if not data or not data.EventSystem then
         if DynamicTrading.Debug then
             DynamicTrading.Log("DTCommons", "Events", "Global", "Tick: invalid engine data")
         end
-        return 
+        return
     end
-    
-    local es = data.EventSystem
-    local currentDay = math.floor(GameTime:getInstance():getDaysSurvived()) 
+
+    local eventSystem = data.EventSystem
+    local currentDay = math.floor(GameTime:getInstance():getDaysSurvived())
     local changed = false
 
     if DynamicTrading.Debug then
         DynamicTrading.Log("DTCommons", "Events", "Global", "=== GLOBAL TICK START === (Day: " .. currentDay .. ")")
     end
 
-    -- A: CLEANUP & COOLDOWN SETTING
     local expiredCount = 0
-    for id, eventData in pairs(es.activeEvents) do
+    for id, eventData in pairs(eventSystem.activeEvents) do
         if eventData.expires ~= -1 and currentDay >= eventData.expires then
             local def = DynamicTrading.Events.Registry[id]
             local name = def and def.name or id
-            
+
             if DynamicTrading.Debug then
                 DynamicTrading.Log("DTCommons", "Events", "Global", "Event expired: " .. tostring(name) .. " (day " .. currentDay .. ")")
             end
-            
+
             if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddRadioEvent then
                 DynamicTrading.GameplayLogs.AddRadioEvent(DynamicTrading.GameplayEvents.SIGNAL_RELEASED, {"Event Ended: " .. name, "info"})
             end
-            
-            -- Set Cooldown: Current Day + 14 Days (prevents immediate repeat)
+
             if DynamicTrading.CooldownManager and DynamicTrading.CooldownManager.SetEventCooldown then
                 DynamicTrading.CooldownManager.SetEventCooldown(id, currentDay + 14)
             end
-            
-            es.activeEvents[id] = nil
+
+            eventSystem.activeEvents[id] = nil
             changed = true
             expiredCount = expiredCount + 1
         end
@@ -58,9 +56,8 @@ function DynamicTrading.Events.Tick(data)
         DynamicTrading.Log("DTCommons", "Events", "Global", "Sandbox state: AllowMeta=" .. tostring(allowMeta) .. " AllowSeasonal=" .. tostring(allowSeasonal))
     end
 
-    -- B: FORCE-CLEAR META/SEASONAL WHEN DISABLED BY SANDBOX
     local forceClearedCount = 0
-    for id, _ in pairs(es.activeEvents) do
+    for id, _ in pairs(eventSystem.activeEvents) do
         local def = DynamicTrading.Events.Registry[id]
         if def then
             local disableMeta = def.type == "meta" and not allowMeta
@@ -69,7 +66,7 @@ function DynamicTrading.Events.Tick(data)
                 if DynamicTrading.Debug then
                     DynamicTrading.Log("DTCommons", "Events", "Global", "Force-clearing disabled event: " .. tostring(def.name) .. " (type=" .. def.type .. ")")
                 end
-                es.activeEvents[id] = nil
+                eventSystem.activeEvents[id] = nil
                 changed = true
                 forceClearedCount = forceClearedCount + 1
             end
@@ -80,17 +77,16 @@ function DynamicTrading.Events.Tick(data)
         DynamicTrading.Log("DTCommons", "Events", "Global", "Force-cleared " .. forceClearedCount .. " sandbox-disabled events")
     end
 
-    -- C: META & SEASONAL EVENTS (Always Active if Conditions Met)
     local metaSeasonalChanged = 0
     for id, def in pairs(DynamicTrading.Events.Registry) do
         if (def.type == "meta" or def.type == "seasonal") and def.condition then
-            local isActive = es.activeEvents[id] ~= nil
+            local isActive = eventSystem.activeEvents[id] ~= nil
             local isEnabled = (def.type == "meta" and allowMeta) or (def.type == "seasonal" and allowSeasonal)
             local shouldBeActive = isEnabled and def.condition()
-            
+
             if shouldBeActive and not isActive then
-                es.activeEvents[id] = { expires = -1 }
-                
+                eventSystem.activeEvents[id] = { expires = -1 }
+
                 if DynamicTrading.Debug then
                     local prefix = def.type == "seasonal" and "Seasonal" or "Meta"
                     DynamicTrading.Log("DTCommons", "Events", "Global", prefix .. " event ACTIVATED: " .. tostring(def.name))
@@ -106,8 +102,8 @@ function DynamicTrading.Events.Tick(data)
                 changed = true
                 metaSeasonalChanged = metaSeasonalChanged + 1
             elseif not shouldBeActive and isActive then
-                es.activeEvents[id] = nil
-                
+                eventSystem.activeEvents[id] = nil
+
                 if DynamicTrading.Debug then
                     local prefix = def.type == "seasonal" and "Seasonal" or "Meta"
                     DynamicTrading.Log("DTCommons", "Events", "Global", prefix .. " event CLEARED: " .. tostring(def.name) .. " (condition no longer met)")
@@ -126,10 +122,6 @@ function DynamicTrading.Events.Tick(data)
         DynamicTrading.Log("DTCommons", "Events", "Global", "Meta/Seasonal changes: " .. metaSeasonalChanged)
     end
 
-    -- D: FLASH EVENTS
-    -- Intentionally disabled at global-engine scope.
-    -- Flash events are faction-scoped and managed by DynamicTrading.Events.UpdateFaction.
-
     if changed then
         if DynamicTrading.Debug then
             DynamicTrading.Log("DTCommons", "Events", "Global", "Change detected, transmitting engine data and rebuilding cache")
@@ -146,25 +138,24 @@ end
 function DynamicTrading.Events.RebuildActiveCache(data)
     DynamicTrading.Events.ActiveEvents = {}
     if not data or not data.EventSystem or not data.EventSystem.activeEvents then return end
-    
+
     local count = 0
     for id, _ in pairs(data.EventSystem.activeEvents) do
         local def = DynamicTrading.Events.Registry[id]
-        if def then 
-            table.insert(DynamicTrading.Events.ActiveEvents, def) 
+        if def then
+            table.insert(DynamicTrading.Events.ActiveEvents, def)
             count = count + 1
         end
     end
 
     if DynamicTrading.Debug then
         DynamicTrading.Log("DTCommons", "Events", "Global", "Cache rebuilt: " .. count .. " active global events")
-        for i, def in ipairs(DynamicTrading.Events.ActiveEvents) do
-            DynamicTrading.Log("DTCommons", "Events", "Global", "  [" .. i .. "] " .. tostring(def.name) .. " (type=" .. tostring(def.type) .. ")")
+        for index, def in ipairs(DynamicTrading.Events.ActiveEvents) do
+            DynamicTrading.Log("DTCommons", "Events", "Global", "  [" .. index .. "] " .. tostring(def.name) .. " (type=" .. tostring(def.type) .. ")")
         end
     end
 end
 
--- Returns normalized global active event definitions (meta/seasonal only) from engine state.
 function DynamicTrading.Events.GetActiveGlobalEventDefs(engineData)
     local list = {}
 

@@ -16,17 +16,16 @@ function DynamicTrading.Events.UpdateFaction(faction)
     local sandbox = SandboxVars and SandboxVars.DynamicTrading or {}
     local active = DynamicTrading.Events._ensureFactionFlashSchema(faction)
 
-    -- A. EXPIRE OLD EVENTS
     local expiredCount = 0
-    for i = #active, 1, -1 do
-        local entry = active[i]
+    for index = #active, 1, -1 do
+        local entry = active[index]
         if not entry or not entry.id then
-            table.remove(active, i)
+            table.remove(active, index)
         elseif currentHour >= (entry.expires or 0) then
             if DynamicTrading.Debug then
                 DynamicTrading.Log("DTCommons", "Event", "Logic", "Event expired: " .. tostring(entry.id) .. " for faction " .. tostring(faction.id))
             end
-            table.remove(active, i)
+            table.remove(active, index)
             faction.lastEventExpiredHour = currentHour
             expiredCount = expiredCount + 1
         end
@@ -36,9 +35,6 @@ function DynamicTrading.Events.UpdateFaction(faction)
         DynamicTrading.Log("DTCommons", "Event", "Logic", "Removed " .. expiredCount .. " expired events from faction " .. tostring(faction.id))
     end
 
-    -- B. STABILITY TRACKING 
-    -- (Removed inline consecutiveStableDays update - this is now handled by TownSim logic)
-    
     if DynamicTrading.Debug then
         DynamicTrading.Log("DTCommons", "Event", "Logic", "Faction " .. tostring(faction.id) .. " state=" .. (faction.state or "unknown") .. " stableDays=" .. (faction.consecutiveStableDays or 0))
     end
@@ -53,8 +49,8 @@ function DynamicTrading.Events.UpdateFaction(faction)
     end
 
     local function isAlreadyActive(id)
-        for _, e in ipairs(active) do
-            if e and e.id == id then return true end
+        for _, entry in ipairs(active) do
+            if entry and entry.id == id then return true end
         end
         return false
     end
@@ -113,6 +109,12 @@ function DynamicTrading.Events.UpdateFaction(faction)
             DynamicTrading.Log("DTCommons", "Event", "Logic", "Faction [" .. tostring(faction.id) .. "] flash event ACTIVATED: " .. tostring(def and def.name or finalID) .. " duration=" .. duration .. "h targetCasulties=" .. entry.targetCasualties)
         end
 
+        if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayEvents and DynamicTrading.GameplayLogs.AddFactionEvent then
+            local eventName = tostring(def and def.name or finalID)
+            DynamicTrading.Log("DTLogs", "Gameplay", "Lifecycle", "Flash lifecycle hook fired | Faction: " .. tostring(faction.id) .. " | Event: " .. eventName .. " | Context: " .. (isServer() and "Server" or (isClient() and "Client" or "SinglePlayer")))
+            DynamicTrading.GameplayLogs.AddFactionEvent(faction.id, DynamicTrading.GameplayEvents.FLASH_EVENT_ACTIVATED, {eventName})
+        end
+
         if def and def.factionImpact then
             if def.factionImpact.wealthAdd then
                 faction.ColonyWealth = math.max(0, (faction.ColonyWealth or 0) + def.factionImpact.wealthAdd)
@@ -123,10 +125,10 @@ function DynamicTrading.Events.UpdateFaction(faction)
 
             if def.factionImpact.stockpileAdd then
                 faction.stockpile = faction.stockpile or {}
-                for res, amt in pairs(def.factionImpact.stockpileAdd) do
-                    faction.stockpile[res] = (faction.stockpile[res] or 0) + amt
+                for resource, amount in pairs(def.factionImpact.stockpileAdd) do
+                    faction.stockpile[resource] = (faction.stockpile[resource] or 0) + amount
                     if DynamicTrading.Debug then
-                        DynamicTrading.Log("DTCommons", "Event", "Logic", "Stockpile: " .. res .. " +" .. amt)
+                        DynamicTrading.Log("DTCommons", "Event", "Logic", "Stockpile: " .. resource .. " +" .. amount)
                     end
                 end
             end
@@ -149,11 +151,11 @@ function DynamicTrading.Events.UpdateFaction(faction)
     end
 
     local function trySpawn(force)
-        if #active >= maxSlots then 
+        if #active >= maxSlots then
             if DynamicTrading.Debug then
                 DynamicTrading.Log("DTCommons", "Event", "Logic", "trySpawn: already at max slots (" .. maxSlots .. ")")
             end
-            return false 
+            return false
         end
 
         local roll = ZombRand(100) + 1
@@ -205,7 +207,6 @@ function DynamicTrading.Events.UpdateFaction(faction)
         return false
     end
 
-    -- C. GUARANTEE MIN SLOTS
     if DynamicTrading.Debug then
         DynamicTrading.Log("DTCommons", "Event", "Logic", "Enforcing minimum slots: " .. minSlots)
     end
@@ -213,7 +214,6 @@ function DynamicTrading.Events.UpdateFaction(faction)
         if not trySpawn(true) then break end
     end
 
-    -- D. OPTIONAL EXTRA SPAWN UP TO MAX SLOTS
     if #active < maxSlots then
         if DynamicTrading.Debug then
             DynamicTrading.Log("DTCommons", "Event", "Logic", "Attempting optional spawn up to max")
