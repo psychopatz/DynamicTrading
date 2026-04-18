@@ -120,8 +120,8 @@ function TownSim.Process(faction, id, data)
 
     if faction.state ~= previousState then
         DynamicTrading.Log("Colony", "TownLogic", "State", faction.name .. " changed state: " .. tostring(previousState) .. " -> " .. faction.state)
-        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
-            DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.STATE_CHANGED, {faction.state, tostring(previousState)})
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+            DynamicTrading.GameplayLogs.AddFactionEvent(id, DynamicTrading.GameplayEvents.STATE_CHANGED, {faction.state, tostring(previousState)})
         end
     end
 
@@ -144,11 +144,11 @@ function TownSim.Process(faction, id, data)
             DynamicTrading_Roster.RemoveSoul(id, collapseDamage)
         end
         
-        if factionActive and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
-            DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.FACTION_DYING, {})
+        if factionActive and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+            DynamicTrading.GameplayLogs.AddFactionEvent(id, DynamicTrading.GameplayEvents.FACTION_DYING, {})
             -- Global broadcast via Radio module for collapse
-            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddEvent then
-                DynamicTrading.GameplayLogs.AddEvent("Radio", DynamicTrading.GameplayEvents.FACTION_COLLAPSED, {faction.name or "Unknown Colony"})
+            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddRadioEvent then
+                DynamicTrading.GameplayLogs.AddRadioEvent(DynamicTrading.GameplayEvents.FACTION_COLLAPSED, {faction.name or "Unknown Colony"})
             end
         end
     end

@@ -11,7 +11,7 @@ function DT_RadioNetworkLogPanel:initialise()
     self.lastTopLogID = ""
 
     if not self.logKey then
-        self.logKey = "DynamicTrading_Logs_v1.0"
+        self.logKey = DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.GetStorageKey and DynamicTrading.GameplayLogs.GetStorageKey("Radio") or "DynamicTrading_GameplayLogs_Radio"
     end
 
     if not self.headingText then
@@ -74,7 +74,7 @@ function DT_RadioNetworkLogPanel:prerender()
 
     local globalData = ModData.getOrCreate(self.logKey)
     local player = getSpecificPlayer(0)
-    local localLogKey = player and ("DynamicTrading_LocalLogs_" .. player:getUsername() .. "_Radio") or nil
+    local localLogKey = player and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.GetLocalStorageKey and DynamicTrading.GameplayLogs.GetLocalStorageKey("Radio", player:getUsername()) or nil
     local localData = localLogKey and ModData.getOrCreate(localLogKey) or { list = {} }
 
     local gCount = globalData.list and #globalData.list or 0
@@ -116,7 +116,7 @@ function DT_RadioNetworkLogPanel:populateLogs()
 
     local globalData = ModData.getOrCreate(self.logKey)
     local player = getSpecificPlayer(0)
-    local localLogKey = player and ("DynamicTrading_LocalLogs_" .. player:getUsername() .. "_Radio") or nil
+    local localLogKey = player and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.GetLocalStorageKey and DynamicTrading.GameplayLogs.GetLocalStorageKey("Radio", player:getUsername()) or nil
     local localData = localLogKey and ModData.getOrCreate(localLogKey) or { list = {} }
 
     local combinedList = {}

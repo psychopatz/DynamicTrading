@@ -149,37 +149,50 @@ local function onServerCommand(module, command, args)
             and args.message then
             DT_PlayerFactionMembersModal.instance:setStatus(args.message)
         end
+        if DT_FactionInfoWindow.instance
+            and DT_FactionInfoWindow.instance:getIsVisible()
+            and DT_FactionInfoWindow.selectedFaction then
+            DT_FactionInfoWindow.instance:applyFactionSelection(DT_FactionInfoWindow.selectedFaction, false)
+        end
+    end
+end
+
+local function onFactionWindowModDataUpdated(key)
+    if not DT_FactionInfoWindow.instance or not DT_FactionInfoWindow.instance:getIsVisible() then
+        return
+    end
+
+    local factionLogsKey = DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.GetStorageKey and DynamicTrading.GameplayLogs.GetStorageKey("Factions") or "DynamicTrading_GameplayLogs_Factions"
+
+    if key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster" then
+        local factionData = DT_FactionInfoWindow.resolveFactionData()
+        local rosterData = DT_FactionInfoWindow.resolveRosterData()
+        DT_FactionInfoWindow.instance:populateList(factionData, rosterData)
+        return
+    end
+
+    if key == "DynamicTrading_Engine_v2" or key == factionLogsKey or key == "DynamicTrading_Logs_Factions" then
+        local panel = DT_FactionInfoWindow.instance.panel
+        if panel then
+            local activeView = panel:getActiveView()
+            if activeView and activeView.updateData then
+                local rosterData = DT_FactionInfoWindow.resolveRosterData()
+                activeView:updateData(DT_FactionInfoWindow.selectedFaction, rosterData)
+            end
+        end
     end
 end
 
 -- Reactive Refresh for Multiplayer (Static/Singleton level)
 if not DT_FactionInfoWindow.EventsAdded then
     Events.OnReceiveGlobalModData.Add(function(key, data)
-        if not DT_FactionInfoWindow.instance then return end
-        
-        if DT_FactionInfoWindow.instance:getIsVisible() then
-            -- Faction/Roster Data -> Update List
-            -- [FIX] Do NOT call refreshList() here, it sends another network command!
-            -- Call populateList() with local data instead.
-            if (key == "DynamicTrading_Factions" or key == "DynamicTrading_Roster") then
-                local factionData = DT_FactionInfoWindow.resolveFactionData()
-                local rosterData = DT_FactionInfoWindow.resolveRosterData()
-                DT_FactionInfoWindow.instance:populateList(factionData, rosterData)
-            
-            -- Engine Data (Inflation/Events/News) -> Update Active Tab Details
-            elseif key == "DynamicTrading_Engine_v2" or key == "DynamicTrading_Logs_Factions" then
-                 local panel = DT_FactionInfoWindow.instance.panel
-                 if panel then
-                     local activeView = panel:getActiveView()
-                     if activeView and activeView.updateData then
-                         -- data is already in ModData, just re-render
-                         local rosterData = DT_FactionInfoWindow.resolveRosterData()
-                         activeView:updateData(DT_FactionInfoWindow.selectedFaction, rosterData)
-                     end
-                 end
-            end
-        end
+        onFactionWindowModDataUpdated(key)
     end)
+    if Events.OnDynamicTradingLogsUpdated then
+        Events.OnDynamicTradingLogsUpdated.Add(function(key)
+            onFactionWindowModDataUpdated(key)
+        end)
+    end
     Events.OnServerCommand.Add(onServerCommand)
     DT_FactionInfoWindow.EventsAdded = true
 end

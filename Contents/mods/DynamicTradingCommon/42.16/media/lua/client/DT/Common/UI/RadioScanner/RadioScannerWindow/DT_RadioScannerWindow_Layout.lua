@@ -159,7 +159,8 @@ function DT_RadioScannerWindow:createChildren()
     self.trackingDialoguePanel:instantiate()
     self:addChild(self.trackingDialoguePanel)
 
-    self.logPanel = DT_RadioNetworkLogPanel:new(0, 0, 220, 140, "DynamicTrading_Logs_v1.0")
+    local radioLogKey = DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.GetStorageKey and DynamicTrading.GameplayLogs.GetStorageKey("Radio") or "DynamicTrading_GameplayLogs_Radio"
+    self.logPanel = DT_RadioNetworkLogPanel:new(0, 0, 220, 140, radioLogKey)
     self.logPanel:initialise()
     self.logPanel:instantiate()
     self:addChild(self.logPanel)

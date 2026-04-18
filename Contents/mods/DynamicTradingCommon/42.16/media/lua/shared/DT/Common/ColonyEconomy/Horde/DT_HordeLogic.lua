@@ -44,8 +44,8 @@ function HordeLogic.ProcessHorde(faction, id, data)
         
         if remainingZombies <= 0 then
             DynamicTrading.Log("Colony", "Horde", "Resolve", faction.name .. " successfully gunned down all " .. hordeSize .. " zombies.")
-            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
-                DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.HORDE_REPELLED, {hordeSize})
+            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+                DynamicTrading.GameplayLogs.AddFactionEvent(id, DynamicTrading.GameplayEvents.HORDE_REPELLED, {hordeSize})
             end
             return faction, true, 0
         end
@@ -72,8 +72,8 @@ function HordeLogic.ProcessHorde(faction, id, data)
             
             if remainingZombies <= 0 then
                 DynamicTrading.Log("Colony", "Horde", "Resolve", "Barricade absorbed the remaining horde at " .. faction.name .. ".")
-                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
-                    DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.HORDE_REPELLED, {hordeSize})
+                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+                    DynamicTrading.GameplayLogs.AddFactionEvent(id, DynamicTrading.GameplayEvents.HORDE_REPELLED, {hordeSize})
                 end
                 return faction, true, 0
             end
@@ -97,8 +97,8 @@ function HordeLogic.ProcessHorde(faction, id, data)
             DynamicTrading_Roster.RemoveSoul(id, casualties)
         end
         DynamicTrading.Log("Colony", "Horde", "Resolve", "Defenses failed! " .. faction.name .. " suffered " .. casualties .. " casualties from " .. remainingZombies .. " breached zombies.")
-        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
-            DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.HORDE_CASUALTIES, {casualties, remainingZombies})
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+            DynamicTrading.GameplayLogs.AddFactionEvent(id, DynamicTrading.GameplayEvents.HORDE_CASUALTIES, {casualties, remainingZombies})
         end
     end
     

@@ -46,14 +46,19 @@ return function(Public, Internal)
 
     local function startTradeMission(uuid)
         local soul = DynamicTrading_Roster.GetSoul(uuid)
-        if soul and soul.factionID and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
-            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", soul.factionID, DynamicTrading.GameplayLogs.TRADE_STARTED, {uuid})
-        end
-
         if isV2TradeBackendActive() then
             DTNPCManager.StartTradeMission(uuid, false, true)
             return { backend = "V2", traderID = uuid, discoverTrader = false }
         end
+
+        if soul and soul.factionID and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+            local faction = DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and (DynamicTrading_Factions.GetFaction(tostring(soul.factionID)) or DynamicTrading_Factions.GetFaction(soul.factionID)) or nil
+            local factionName = faction and faction.name or "Independent"
+            local traderName = soul.name or factionName
+            DynamicTrading.GameplayLogs.AddFactionEvent(soul.factionID, DynamicTrading.GameplayEvents.TRADE_STARTED, {tostring(traderName)})
+            DynamicTrading.GameplayLogs.AddRadioEvent(DynamicTrading.GameplayEvents.TRADE_STARTED, {tostring(factionName)})
+        end
+
         DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", getCurrentHours() + rollRadioStayHours(), "Away")
         return { backend = "V1", traderID = uuid, discoverTrader = true }
     end

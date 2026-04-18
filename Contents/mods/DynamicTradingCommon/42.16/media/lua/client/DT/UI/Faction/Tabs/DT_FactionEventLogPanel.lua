@@ -5,6 +5,7 @@
 
 require "ISUI/ISPanel"
 require "ISUI/ISRichTextPanel"
+require "ISUI/ISButton"
 
 DT_FactionEventLogPanel = ISPanel:derive("DT_FactionEventLogPanel")
 
@@ -16,6 +17,7 @@ function DT_FactionEventLogPanel:new(x, y, width, height)
     o.borderColor = {r=0.3, g=0.3, b=0.3, a=0.5}
     o.lastNewsHash = ""
     o.lastFactionID = ""
+    o.currentFaction = nil
     return o
 end
 
@@ -27,6 +29,12 @@ function DT_FactionEventLogPanel:createChildren()
     -- Title for the log section
     self.lblTitle = ISLabel:new(0, 0, 20, " RECENT EVENTS ", 0.4, 0.8, 1, 1, UIFont.Small, true)
     self:addChild(self.lblTitle)
+
+    self.btnRefresh = ISButton:new(self.width - 84, 0, 84, 20, "Refresh", self, self.onRefreshClick)
+    self.btnRefresh:initialise()
+    self.btnRefresh:setAnchorLeft(false)
+    self.btnRefresh:setAnchorRight(true)
+    self:addChild(self.btnRefresh)
 
     self.richText = ISRichTextPanel:new(0, 22, self.width, self.height - 22)
     self.richText:initialise()
@@ -40,6 +48,9 @@ end
 
 function DT_FactionEventLogPanel:onResize()
     ISPanel.onResize(self)
+    if self.btnRefresh then
+        self.btnRefresh:setX(self.width - self.btnRefresh:getWidth())
+    end
     if self.richText then
         self.richText:setWidth(self.width)
         self.richText:setHeight(self.height - 22)
@@ -48,7 +59,24 @@ function DT_FactionEventLogPanel:onResize()
     end
 end
 
+function DT_FactionEventLogPanel:forceRefresh()
+    self.lastFactionID = ""
+    self.lastNewsHash = ""
+
+    local logKey = DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.GetStorageKey and DynamicTrading.GameplayLogs.GetStorageKey("Factions") or "DynamicTrading_GameplayLogs_Factions"
+    if ModData and ModData.request then
+        ModData.request(logKey)
+    end
+
+    self:updateData(self.currentFaction)
+end
+
+function DT_FactionEventLogPanel:onRefreshClick()
+    self:forceRefresh()
+end
+
 function DT_FactionEventLogPanel:updateData(f)
+    self.currentFaction = f
     if not f then 
         self.richText:setText("")
         self.lastFactionID = ""
@@ -56,19 +84,25 @@ function DT_FactionEventLogPanel:updateData(f)
         return 
     end
 
-    local newsData = ModData.getOrCreate("DynamicTrading_Logs_Factions")
-    local news = newsData[f.id] or {}
+    local logKey = DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.GetStorageKey and DynamicTrading.GameplayLogs.GetStorageKey("Factions") or "DynamicTrading_GameplayLogs_Factions"
+    local newsData = ModData.getOrCreate(logKey)
+    local factionID = tostring(f.id or "")
+    local news = newsData[factionID] or newsData[f.id] or {}
     local newsCount = #news
+
+    if DynamicTrading and DynamicTrading.Log then
+        DynamicTrading.Log("DTLogs", "Gameplay", "UI", "Faction log lookup | Faction: " .. tostring(f.id) .. " | Normalized: " .. factionID .. " | Entries: " .. tostring(newsCount))
+    end
     
     local topEntry = news[1]
     local topNewsHash = tostring(newsCount) .. (newsCount > 0 and ((topEntry.time or topEntry.t or "") .. (topEntry.text or tostring(topEntry.e))) or "")
     
     -- Optimization: Only update if faction changed or new entries arrived
-    if f.id == self.lastFactionID and topNewsHash == self.lastNewsHash then
+    if factionID == self.lastFactionID and topNewsHash == self.lastNewsHash then
         return
     end
 
-    self.lastFactionID = f.id
+    self.lastFactionID = factionID
     self.lastNewsHash = topNewsHash
 
     if newsCount == 0 then

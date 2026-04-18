@@ -235,8 +235,8 @@ function Lifecycle.CreateFaction(factionID, initialData)
             DynamicTrading_Factions.GenerateRoster(factionID)
         end
         
-        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
-            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", factionID, DynamicTrading.GameplayLogs.FACTION_FOUNDED, {displayName})
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+            DynamicTrading.GameplayLogs.AddFactionEvent(factionID, DynamicTrading.GameplayEvents.FACTION_FOUNDED, {displayName})
         end
 
         ModData.transmit(MOD_DATA_KEY)

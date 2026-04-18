@@ -31,8 +31,8 @@ function DynamicTrading.Events.Tick(data)
                 DynamicTrading.Log("DTCommons", "Events", "Global", "Event expired: " .. tostring(name) .. " (day " .. currentDay .. ")")
             end
             
-            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddEvent then
-                DynamicTrading.GameplayLogs.AddEvent("Radio", DynamicTrading.GameplayEvents.SIGNAL_RELEASED, {"Event Ended: " .. name, "info"})
+            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddRadioEvent then
+                DynamicTrading.GameplayLogs.AddRadioEvent(DynamicTrading.GameplayEvents.SIGNAL_RELEASED, {"Event Ended: " .. name, "info"})
             end
             
             -- Set Cooldown: Current Day + 14 Days (prevents immediate repeat)
@@ -97,8 +97,8 @@ function DynamicTrading.Events.Tick(data)
                 end
 
                 local logPrefix = def.type == "seasonal" and "SEASONAL: " or "WORLD ALERT: "
-                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddEvent then
-                    DynamicTrading.GameplayLogs.AddEvent("Radio", DynamicTrading.GameplayEvents.SIGNAL_ACQUIRED, {logPrefix .. def.name, "event"})
+                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddRadioEvent then
+                    DynamicTrading.GameplayLogs.AddRadioEvent(DynamicTrading.GameplayEvents.SIGNAL_ACQUIRED, {logPrefix .. def.name, "event"})
                 end
                 if DynamicTrading.NetworkLogs and DynamicTrading.NetworkLogs.AddLog then
                     DynamicTrading.NetworkLogs.AddLog(logPrefix .. def.name, "event")
@@ -113,8 +113,8 @@ function DynamicTrading.Events.Tick(data)
                     DynamicTrading.Log("DTCommons", "Events", "Global", prefix .. " event CLEARED: " .. tostring(def.name) .. " (condition no longer met)")
                 end
 
-                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddEvent then
-                    DynamicTrading.GameplayLogs.AddEvent("Radio", DynamicTrading.GameplayEvents.SIGNAL_RELEASED, {"Condition Cleared: " .. def.name, "info"})
+                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddRadioEvent then
+                    DynamicTrading.GameplayLogs.AddRadioEvent(DynamicTrading.GameplayEvents.SIGNAL_RELEASED, {"Condition Cleared: " .. def.name, "info"})
                 end
                 changed = true
                 metaSeasonalChanged = metaSeasonalChanged + 1

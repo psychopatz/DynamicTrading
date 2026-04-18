@@ -41,9 +41,9 @@ function FlashEventsLogic.Process(faction, id, data, currentHour)
                     if factionActive then
                         afe.targetCasualties = afe.targetCasualties - killToday
                         DynamicTrading.Log("DTCommons", "Faction", "Sim", "Event casualty hit for faction [" .. faction.name .. "] [" .. tostring(afe.id) .. "] | Killed: " .. killToday .. " | Remaining Targets: " .. tostring(afe.targetCasualties))
-                        if DynamicTrading.NetworkLogManager and DynamicTrading.NetworkLogManager.AddFactionEvent then
+                        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
                             local eventName = (DynamicTrading.Events and DynamicTrading.Events.Registry and DynamicTrading.Events.Registry[afe.id] and DynamicTrading.Events.Registry[afe.id].name) or afe.id
-                            DynamicTrading.NetworkLogManager.AddFactionEvent(id, "Lost " .. killToday .. " members to " .. eventName, "bad")
+                            DynamicTrading.GameplayLogs.AddFactionEvent(id, DynamicTrading.GameplayEvents.FLASH_CASUALTIES, {killToday, tostring(eventName)})
                         end
                     end
                 end
@@ -79,8 +79,8 @@ function FlashEventsLogic.Process(faction, id, data, currentHour)
                             if factionActive then
                                 DynamicTrading.Log("DTCommons", "Faction", "Sim", "Faction [" .. faction.name .. "] " .. resource:upper() .. " SHORTAGE! Lost " .. casualties .. " souls.")
                                 faction.state = "Starving"
-                                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
-                                    DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.SHORTAGE_CASUALTIES, {casualties, resource})
+                                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+                                    DynamicTrading.GameplayLogs.AddFactionEvent(id, DynamicTrading.GameplayEvents.SHORTAGE_CASUALTIES, {casualties, resource})
                                 end
                             end
                         end

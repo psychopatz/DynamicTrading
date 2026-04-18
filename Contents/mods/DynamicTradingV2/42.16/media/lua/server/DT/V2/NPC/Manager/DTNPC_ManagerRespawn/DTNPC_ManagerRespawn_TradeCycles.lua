@@ -60,6 +60,17 @@ function DTNPCManager.StartTradeMission(uuid, forceImmediate, allowOutOfSchedule
     if forceImmediate then 
         walkHours = 0.02 -- Force Trade still simulates travel (approx 1.2 mins) but at a priority speed
     end
+
+    if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayEvents and DynamicTrading.GameplayLogs.AddFactionEvent then
+        local factionID = soul.factionID and tostring(soul.factionID) or nil
+        local traderName = tostring(soul.name or uuid)
+        if factionID and factionID ~= "" then
+            DynamicTrading.Log("DTLogs", "Gameplay", "Lifecycle", "Trade lifecycle hook fired | UUID: " .. tostring(uuid) .. " | Trader: " .. traderName .. " | Faction: " .. factionID .. " | Context: " .. (isServer() and "Server" or (isClient() and "Client" or "SinglePlayer")))
+            DynamicTrading.GameplayLogs.AddFactionEvent(factionID, DynamicTrading.GameplayEvents.TRADE_STARTED, {traderName})
+        else
+            DynamicTrading.Log("DTLogs", "Gameplay", "Lifecycle", "Trade lifecycle hook skipped - missing factionID for UUID: " .. tostring(uuid) .. " | Trader: " .. traderName)
+        end
+    end
     
     DynamicTrading.Log("DTV2", "NPC", "Logic", "STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)
     DynamicTrading.Log("DTV2", "NPC", "Logic", "| Travel Time: " .. walkHours .. "h. Status: Away. Target: Trading")

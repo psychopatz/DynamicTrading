@@ -384,6 +384,9 @@ if LuaEventManager then
     if not LuaEventManager.OnDynamicTradingPriceConfigActionResult then
         LuaEventManager.AddEvent("OnDynamicTradingPriceConfigActionResult")
     end
+    if not LuaEventManager.OnDynamicTradingLogsUpdated then
+        LuaEventManager.AddEvent("OnDynamicTradingLogsUpdated")
+    end
 end
 
 -- 1. STATIC CONFIGURATION (Commonly referenced)

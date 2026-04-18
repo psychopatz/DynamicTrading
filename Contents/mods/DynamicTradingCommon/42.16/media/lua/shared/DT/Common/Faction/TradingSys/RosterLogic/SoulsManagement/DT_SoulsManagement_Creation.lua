@@ -92,8 +92,8 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords, optio
     table.insert(data.FactionMembers[factionID], uuid)
 
     if not options.suppressRecruitLog then
-        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
-            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", factionID, DynamicTrading.GameplayLogs.RECRUITED, {npcData.name, archetypeID})
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+            DynamicTrading.GameplayLogs.AddFactionEvent(factionID, DynamicTrading.GameplayEvents.RECRUITED, {npcData.name, archetypeID})
         end
     end
 

@@ -145,8 +145,8 @@ function RadarManager.Scan(player, device)
 
     if scanLimit <= 0 then
         player:Say("All signal channels are occupied. Unlock or clear a signal before rescanning.")
-        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddLocalEvent then
-            DynamicTrading.GameplayLogs.AddLocalEvent(player, "Radio", DynamicTrading.GameplayEvents.SIGNAL_MEMORY_FULL, {})
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddPlayerRadioEvent then
+            DynamicTrading.GameplayLogs.AddPlayerRadioEvent(player, DynamicTrading.GameplayEvents.SIGNAL_MEMORY_FULL, {})
         end
         if DT_RadioScannerWindow and DT_RadioScannerWindow.instance then
             DT_RadioScannerWindow.instance:refresh()
@@ -264,8 +264,8 @@ function RadarManager.Scan(player, device)
             discoveredCount = 1
             firstName = name
             RadarManager.CacheMetadata(uuid, soul)
-            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddLocalEvent then
-                DynamicTrading.GameplayLogs.AddLocalEvent(player, "Radio", DynamicTrading.GameplayEvents.SIGNAL_ACQUIRED, {tostring(username), tostring(name), tostring(factionName)})
+            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddPlayerRadioEvent then
+                DynamicTrading.GameplayLogs.AddPlayerRadioEvent(player, DynamicTrading.GameplayEvents.SIGNAL_ACQUIRED, {tostring(username), tostring(name), tostring(factionName)})
             end
             DynamicTrading.Log("DTV2", "Radio", "Scan", "Discovered: " .. name .. " (" .. uuid .. ")")
         end

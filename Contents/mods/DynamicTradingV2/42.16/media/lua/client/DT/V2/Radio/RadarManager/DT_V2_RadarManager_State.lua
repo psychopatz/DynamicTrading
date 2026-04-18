@@ -194,9 +194,9 @@ function RadarManager.RemoveSignal(uuid, releasedName)
     end
 
     local entry = RadarManager.FoundTraders[uuid]
-    if releasedName and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddLocalEvent then
+    if releasedName and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddPlayerRadioEvent then
         local pObj = getSpecificPlayer(0)
-        DynamicTrading.GameplayLogs.AddLocalEvent(pObj, "Radio", DynamicTrading.GameplayEvents.SIGNAL_RELEASED, {releasedName, "channel reallocated"})
+        DynamicTrading.GameplayLogs.AddPlayerRadioEvent(pObj, DynamicTrading.GameplayEvents.SIGNAL_RELEASED, {releasedName, "channel reallocated"})
     end
 
     RadarManager.FoundTraders[uuid] = nil

@@ -90,8 +90,8 @@ return function(context)
             if repGain >= 1 then
                 DynamicTrading_Factions.ModifyReputation(factionID, player:getUsername(), repGain)
                 local factionName = tx.factionData.name or "Independent"
-                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddLocalEvent then
-                   DynamicTrading.GameplayLogs.AddLocalEvent(player, "Radio", DynamicTrading.GameplayEvents.TRADE_REP_GAINED, {tostring(factionName), tostring(repGain)})
+                     if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddPlayerRadioEvent then
+                         DynamicTrading.GameplayLogs.AddPlayerRadioEvent(player, DynamicTrading.GameplayEvents.TRADE_REP_GAINED, {tostring(factionName), tostring(repGain)})
                 end
             end
         end

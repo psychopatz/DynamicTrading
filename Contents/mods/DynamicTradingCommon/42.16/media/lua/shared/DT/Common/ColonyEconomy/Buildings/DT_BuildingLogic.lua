@@ -74,8 +74,8 @@ function BuildingLogic.ProcessBuildings(faction, factionID)
                             bData.hp = def.baseHp
                             bData.maxHp = def.baseHp
                             DynamicTrading.Log("Colony", "Infrastructure", "Build", faction.name .. " finished constructing " .. def.name)
-                            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
-                                DynamicTrading.GameplayLogs.Queue("Factions", factionID, DynamicTrading.GameplayLogs.CONSTRUCTED, {def.name})
+                            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
+                                DynamicTrading.GameplayLogs.AddFactionEvent(factionID, DynamicTrading.GameplayEvents.CONSTRUCTED, {def.name})
                             end
                         end
                     else

@@ -56,9 +56,9 @@ function DTNPCLifecycle.EnterIncapacitated(zombie, npcData, attacker, context)
 
     local isPlayerAttacker = attacker and instanceof and instanceof(attacker, "IsoPlayer")
     if isPlayerAttacker and npcData.factionID and npcData.factionID ~= "Independent" then
-        if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+        if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
             local attackerName = attacker.getUsername and attacker:getUsername() or "A player"
-            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", npcData.factionID, DynamicTrading.GameplayLogs.MEMBER_INCAPACITATED_BY_PLAYER, {attackerName, npcData.name or "A member"})
+            DynamicTrading.GameplayLogs.AddFactionEvent(npcData.factionID, DynamicTrading.GameplayEvents.MEMBER_INCAPACITATED_BY_PLAYER, {attackerName, npcData.name or "A member"})
         end
     end
 
