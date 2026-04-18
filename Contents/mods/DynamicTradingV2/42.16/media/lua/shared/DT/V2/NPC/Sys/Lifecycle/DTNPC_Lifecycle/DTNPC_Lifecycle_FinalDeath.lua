@@ -105,6 +105,12 @@ function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, co
         end
     end
 
+    if removalContext and removalContext.killerUsername and liveData.factionID and liveData.factionID ~= "Independent" then
+        if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", liveData.factionID, DynamicTrading.GameplayLogs.MEMBER_KILLED_BY_PLAYER, {removalContext.killerUsername, liveData.name or "A member"})
+        end
+    end
+
     DynamicTrading.Log("DTV2", "NPC", "Lifecycle", "Incapacitated NPC killed for good: " .. (liveData.name or uuid))
     local finalKillContext = DTNPCLifecycle.WithFinalKillContext(zombie, removalContext)
     local manualCorpseCreated = false
@@ -269,6 +275,12 @@ function DTNPCLifecycle.HandleZombieDead(zombie)
 
         if DTNPCLifecycle.ConvertDeathToIncapacitated(zombie, uuid, npcData, removalContext) then
             return
+        end
+
+        if removalContext and removalContext.killerUsername and npcData.factionID and npcData.factionID ~= "Independent" then
+            if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+                DynamicTrading.GameplayLogs.QueueAndFlush("Factions", npcData.factionID, DynamicTrading.GameplayLogs.MEMBER_KILLED_BY_PLAYER, {removalContext.killerUsername, npcData.name or "A member"})
+            end
         end
 
         DynamicTrading.Log("DTV2", "NPC", "Lifecycle", "NPC Died: " .. (npcData.name or uuid))

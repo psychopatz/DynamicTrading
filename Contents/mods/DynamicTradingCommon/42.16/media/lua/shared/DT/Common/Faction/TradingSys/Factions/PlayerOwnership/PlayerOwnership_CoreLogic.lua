@@ -680,6 +680,9 @@ return function(Public, Internal)
         if transfer and transfer.CountLivingLinkedWorkers then
             faction.memberCount = transfer.CountLivingLinkedWorkers(faction)
         end
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", faction.id, DynamicTrading.GameplayLogs.MEMBER_JOINED, {owner})
+        end
         syncFactionToColony(faction, { createIfMissing = true })
         ModData.transmit(Utils.MOD_DATA_KEY)
         return true, "Faction joined.", faction, { targetUsername = owner, leaderUsername = faction.leaderUsername }
@@ -734,6 +737,9 @@ return function(Public, Internal)
         if transfer and transfer.CountLivingLinkedWorkers then
             faction.memberCount = transfer.CountLivingLinkedWorkers(faction)
         end
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", faction.id, DynamicTrading.GameplayLogs.MEMBER_LEFT, {owner})
+        end
         syncFactionToColony(faction, { createIfMissing = true })
         ModData.transmit(Utils.MOD_DATA_KEY)
         return true, "You left the faction.", faction, { targetUsername = owner, leaderUsername = faction.leaderUsername }
@@ -787,6 +793,9 @@ return function(Public, Internal)
                 faction.memberCount = transfer.CountLivingLinkedWorkers(faction)
             end
         end
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", faction.id, DynamicTrading.GameplayLogs.MEMBER_KICKED, {target, owner})
+        end
         syncFactionToColony(faction, { createIfMissing = true })
         ModData.transmit(Utils.MOD_DATA_KEY)
         return true, removedMember and "Member removed." or "Invitation revoked.", faction, { targetUsername = target }
@@ -823,6 +832,9 @@ return function(Public, Internal)
         faction.leadershipState = "Active"
         faction.regencyReason = nil
         normalizeMembershipState(faction)
+        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.QueueAndFlush then
+            DynamicTrading.GameplayLogs.QueueAndFlush("Factions", faction.id, DynamicTrading.GameplayLogs.LEADERSHIP_TRANSFER, {owner, target})
+        end
         syncFactionToColony(faction, { createIfMissing = true })
         ModData.transmit(Utils.MOD_DATA_KEY)
         return true, "Leadership transferred to " .. tostring(target) .. ".", faction, {
