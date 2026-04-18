@@ -26,8 +26,15 @@ function DT_FactionDebugRenderers.drawFactionItem(listbox, y, item, alt)
         r, g, b = 1, 0, 0
     end
 
-    if item.selected then
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.3, 0.7, 0.7, 0.7)
+    -- Selection / Background
+    local isSelected = (item.selected == true)
+    if not isSelected and listbox.selected ~= -1 and listbox.items[listbox.selected] == item then
+        isSelected = true
+    end
+
+    if isSelected then
+        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.4, 0.05, 0.5, 0.05)
+        listbox:drawRectBorder(0, y, listbox.width, listbox.itemheight, 1, 0.1, 0.8, 0.1)
     elseif alt then
         listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 1, 1, 1)
     else
@@ -62,8 +69,15 @@ function DT_FactionDebugRenderers.drawRosterItem(listbox, y, item, alt)
 
     if not soul then return y end
 
-    if item.selected then
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.3, 0.7, 0.7, 0.7)
+    -- Selection / Background
+    local isSelected = (item.selected == true)
+    if not isSelected and listbox.selected ~= -1 and listbox.items[listbox.selected] == item then
+        isSelected = true
+    end
+
+    if isSelected then
+        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.4, 0.05, 0.5, 0.05)
+        listbox:drawRectBorder(0, y, listbox.width, listbox.itemheight, 1, 0.1, 0.8, 0.1)
     elseif alt then
         listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 1, 1, 1)
     else
