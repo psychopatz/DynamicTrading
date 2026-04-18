@@ -17,6 +17,7 @@ require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Calendar"
 require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Stockpiles"
 require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Population"
 require "DT/UI/Faction/DT_NPCProfilePanel"
+require "DT/UI/Faction/Tabs/DT_FactionInfoTab_Infrastructure"
 
 DT_FactionInfoWindow = ISCollapsableWindow:derive("DT_FactionInfoWindow")
 DT_FactionInfoWindow.instance = nil

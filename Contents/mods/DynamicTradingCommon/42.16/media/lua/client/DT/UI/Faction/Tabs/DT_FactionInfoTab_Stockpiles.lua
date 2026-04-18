@@ -36,6 +36,8 @@ end
 function DT_FactionInfoTab_Stockpiles:onResize()
     ISPanel.onResize(self)
     if self.richText then
+        self.richText:setWidth(self.width)
+        self.richText:setHeight(self.height)
         self.richText:paginate()
     end
 end
@@ -69,26 +71,43 @@ function DT_FactionInfoTab_Stockpiles:updateData(f)
     local text = " <RGB:1,1,1> <SIZE:" .. titleTag .. "> KNOWN STOCKPILES <SIZE:" .. bodyTag .. "> <LINE> <LINE> "
 
     if f.isV1 then
-        text = text .. " <RGB:0.6,0.6,0.6> The Radio Network does not store physical stockpiles. Resources are distributed across independent moving trade caravans. <LINE> <LINE> "
+        text = text .. " <RGB:0.6,0.6,0.6> The Radio Network does not store physical stockpiles. <LINE> Resources are distributed across independent moving trade caravans. <LINE> <LINE> "
         text = text .. " <RGB:0.8,0.8,0.8> Check <RGB:0.4,0.8,1> Economics > Market <RGB:0.8,0.8,0.8> to see global supply and demand modifiers. <LINE> "
     elseif f.stockpile then
-        -- Sort keys for consistent display
-        local keys = {}
-        for k in pairs(f.stockpile) do table.insert(keys, k) end
-        table.sort(keys)
-        
-        for _, k in ipairs(keys) do
-            local v = f.stockpile[k]
-            text = text .. " <RGB:0.8,0.8,0.8> - " .. k .. ": <RGB:0.4,0.8,1> " .. v .. " <LINE> "
+        -- 1. Penalties section for stockpiles
+        local penalties = {}
+        if f.penalties then
+            if f.penalties.dehydrated then table.insert(penalties, "DEHYDRATED") end
+            if f.penalties.sick then table.insert(penalties, "SICK") end
+            if f.penalties.vulnerable then table.insert(penalties, "VULNERABLE") end
+            if f.penalties.isolated then table.insert(penalties, "ISOLATED") end
+            if f.penalties.decaying then table.insert(penalties, "DECAYING") end
         end
         
-        if #keys == 0 then
-             text = text .. " <RGB:0.6,0.6,0.6> Stockpile empty. <LINE> "
+        if #penalties > 0 then
+             text = text .. " <RGB:1,0,0> ALERT: <RGB:0.8,0.8,0.8> Resource shortages detected. <LINE> <LINE> "
         end
+
+        -- 2. Explicit 6-resource list
+        local resOrder = { "food", "water", "meds", "ammo", "fuel", "materials" }
+        local resNames = { food = "Food Stock", water = "Fresh Water", meds = "Medical Supplies", ammo = "Ammunition", fuel = "Operational Fuel", materials = "Raw Materials" }
+        
+        for _, r in ipairs(resOrder) do
+            local amt = math.floor(f.stockpile[r] or 0)
+            local color = " <RGB:0.8,0.8,0.8> "
+            if amt <= 0 then color = " <RGB:1,0,0> " end
+            
+            text = text .. color .. " - " .. (resNames[r] or r) .. ": <RGB:0.4,0.8,1> " .. amt .. " <LINE> "
+        end
+
     else
         text = text .. " <RGB:0.6,0.6,0.6> No stockpile data available. <LINE> "
     end
     
-    self.richText:setText(text)
-    self.richText:paginate()
+    if self.richText then
+        self.richText:setWidth(self.width)
+        self.richText:setHeight(self.height)
+        self.richText:setText(text)
+        self.richText:paginate()
+    end
 end

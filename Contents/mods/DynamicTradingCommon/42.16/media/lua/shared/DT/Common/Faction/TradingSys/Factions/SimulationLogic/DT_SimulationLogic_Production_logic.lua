@@ -19,8 +19,10 @@ function ProductionLogic.buildProductionFromArchetype(production, archetypeID)
     end
 end
 
-function ProductionLogic.Process(faction, id)
-    local production = { food=0, ammo=0, meds=0, fuel=0 }
+function ProductionLogic.Process(faction, id, buildingProduction, globalMults)
+    local production = { food=0, ammo=0, meds=0, fuel=0, water=0, materials=0 }
+    
+    -- 1. Base Soul/Worker Production
     if faction.playerOwned and DynamicTrading_Factions.GetPlayerFactionWorkers then
         local livingWorkers = DynamicTrading_Factions.GetPlayerFactionWorkers(id) or {}
         faction.memberCount = #livingWorkers
@@ -37,12 +39,36 @@ function ProductionLogic.Process(faction, id)
         end
     end
 
+    -- 2. Apply Multipliers
+    local prodMult = globalMults and globalMults.prodMult or 1.0
+    local sandboxProdMult = DynamicTrading.Config.GetSandboxMult("ProductionMult")
+    prodMult = prodMult * sandboxProdMult
+    
+    -- Decay Penalty (Resource shortage)
+    if faction.penalties and faction.penalties.decaying then
+        prodMult = prodMult * 0.5
+    end
+
+    for res, amt in pairs(production) do
+        production[res] = amt * prodMult
+    end
+
+    -- 3. Add Building Production (usually specific flat rates from generators)
+    if buildingProduction then
+        for res, amt in pairs(buildingProduction) do
+            production[res] = (production[res] or 0) + amt
+        end
+    end
+
+    -- 4. Commit to Stockpile
     if not faction.stockpile then
-        faction.stockpile = { food=0, ammo=0, meds=0, fuel=0 }
+        faction.stockpile = { food=0, ammo=0, meds=0, fuel=0, water=0, materials=0 }
     end
     for res, amt in pairs(production) do
         faction.stockpile[res] = (faction.stockpile[res] or 0) + amt
     end
+    
+    return production -- Useful for logging/UI
 end
 
 return ProductionLogic

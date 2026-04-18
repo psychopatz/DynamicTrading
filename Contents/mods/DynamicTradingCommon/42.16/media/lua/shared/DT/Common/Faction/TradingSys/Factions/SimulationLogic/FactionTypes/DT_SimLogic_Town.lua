@@ -1,15 +1,20 @@
--- ==============================================================================
--- Simulation/Simulation_TownFaction.lua
--- Logic: Auto town survival interactions, state machine, passive income.
--- ==============================================================================
-
 local VirtualStore = require "DT/Common/ColonyEconomy/VirtualStore/DT_VirtualStore"
+local BuildingLogic = require "DT/Common/ColonyEconomy/Buildings/DT_BuildingLogic"
+local HordeLogic = require "DT/Common/ColonyEconomy/Horde/DT_HordeLogic"
+
 local TownSim = {}
 
 function TownSim.Process(faction, id, data)
     if not faction then return nil, false end
 
-    -- 1. Passive Income
+    -- 1. Building Multipliers & Production
+    local mults = BuildingLogic.GetGlobalMultipliers(faction)
+    local buildingProd = BuildingLogic.ProcessBuildings(faction)
+    
+    -- 2. Horde Attack
+    local attacked, casualties = HordeLogic.ProcessHorde(faction, id, data)
+
+    -- 3. Passive Income (Wealth)
     local dailyRate = 50
     local stateMult = 1.0
     if faction.state == "Thriving" then stateMult = 1.2
@@ -18,12 +23,23 @@ function TownSim.Process(faction, id, data)
     elseif faction.state == "Collapsing" then stateMult = 0.1
     end
     
+    -- Isolation Penalty (Fuel shortage)
+    local isolatedMult = 1.0
+    if faction.penalties and faction.penalties.isolated then
+        isolatedMult = 0.5
+        DynamicTrading.Log("Colony", "Penalty", "Isolation", faction.name .. " is ISOLATED! Income halved.")
+    end
+
     local eventMult = 1.0
     if DynamicTrading.Events and DynamicTrading.Events.getPassiveIncomeMult then
         eventMult = DynamicTrading.Events.getPassiveIncomeMult(faction)
     end
     
-    local income = math.floor(faction.memberCount * dailyRate * stateMult * eventMult)
+    -- Note: mults.prodMult (Workshop bonus) affects resource production in ProductionLogic, 
+    -- but here we apply it to wealth income as well if it's a "production multiplier".
+    local totalIncomeMult = stateMult * eventMult * isolatedMult * mults.prodMult
+    
+    local income = math.floor(faction.memberCount * dailyRate * totalIncomeMult)
     faction.ColonyWealth = math.max(0, (faction.ColonyWealth or 0) + income)
 
     -- Phase 5: Resilience Bonus (Emergency Reserve)
@@ -36,21 +52,41 @@ function TownSim.Process(faction, id, data)
         end
     end
 
-    -- 2. Auto-buy missing resources using ColonyWealth
+    -- 4. Prioritized Auto-buy (Food > Water > Meds > Ammo > Fuel > Materials)
     if faction.ColonyWealth > 1000 and (faction.state == "Stable" or faction.state == "Thriving" or faction.state == "Strained") then
         local consumes = DynamicTrading.Config.Sim.BaseConsumption
-        local targetFood = faction.memberCount * (consumes.food or 1) * 7 -- 7 days buffer
-        if (faction.stockpile.food or 0) < targetFood then
-            local missing = targetFood - faction.stockpile.food
-            VirtualStore.AutoBuy.AutoBuy(faction, "food", missing)
+        local resources = { "food", "water", "meds", "ammo", "fuel", "materials" }
+        local buffers = { food = 7, water = 5, meds = 5, ammo = 5, fuel = 3, materials = 3 }
+
+        for _, res in ipairs(resources) do
+            local rate = consumes[res] or 0
+            local target = 0
+            if res == "fuel" or res == "materials" then
+                target = rate * (buffers[res] or 3)
+            else
+                target = faction.memberCount * rate * (buffers[res] or 5)
+            end
+
+            if (faction.stockpile[res] or 0) < target then
+                local missing = target - (faction.stockpile[res] or 0)
+                local bought = VirtualStore.AutoBuy.AutoBuy(faction, res, missing)
+                if (faction.ColonyWealth or 0) < 500 then break end -- Stop if wealth gets too low
+            end
         end
     end
 
-    -- 3. 5-Tier State Machine
+    -- 5. 5-Tier State Machine (Nuanced)
     local consumes = DynamicTrading.Config.Sim.BaseConsumption
     local daysOfFood = (faction.stockpile.food or 0) / math.max(1, (faction.memberCount * (consumes.food or 1)))
+    
+    local penaltyCount = 0
+    if faction.penalties then
+        for k, v in pairs(faction.penalties) do
+            if v == true then penaltyCount = penaltyCount + 1 end
+        end
+    end
 
-    if faction.starvationDays > 3 then
+    if faction.starvationDays > 3 or (faction.buildings and faction.buildings.Barricade and faction.buildings.Barricade.hp <= 0 and (faction.stockpile.ammo or 0) <= 0) then
         faction.state = "Collapsing"
         faction.CollapseDays = (faction.CollapseDays or 0) + 1
         
@@ -59,16 +95,15 @@ function TownSim.Process(faction, id, data)
             local emergencySpend = math.min(faction.emergencyReserve, VirtualStore.Prices.GetPrice("food") * faction.memberCount)
             faction.emergencyReserve = math.max(0, faction.emergencyReserve - emergencySpend)
             faction.ColonyWealth = math.max(0, faction.ColonyWealth - emergencySpend)
-            -- Reset starvation partially since they spent reserves
             faction.starvationDays = math.max(0, faction.starvationDays - 1)
         end
-    elseif faction.starvationDays > 0 then
+    elseif faction.starvationDays > 0 or penaltyCount >= 3 then
         faction.state = "Struggling"
         faction.CollapseDays = 0
-    elseif daysOfFood < 3 or (faction.ColonyWealth or 0) < 500 then
+    elseif daysOfFood < 3 or penaltyCount >= 1 or (faction.ColonyWealth or 0) < 500 then
         faction.state = "Strained"
         faction.CollapseDays = 0
-    elseif daysOfFood > 7 and (faction.ColonyWealth or 0) > 5000 then
+    elseif daysOfFood > 7 and penaltyCount == 0 and (faction.ColonyWealth or 0) > 5000 then
         faction.state = "Thriving"
         faction.CollapseDays = 0
     else
@@ -82,7 +117,7 @@ function TownSim.Process(faction, id, data)
         faction.consecutiveStableDays = 0
     end
 
-    return faction, true
+    return faction, true, { mults = mults, buildingProd = buildingProd }
 end
 
 return TownSim

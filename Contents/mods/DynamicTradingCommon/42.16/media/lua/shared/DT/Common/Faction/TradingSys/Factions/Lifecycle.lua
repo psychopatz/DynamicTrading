@@ -7,6 +7,7 @@
 require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/Config"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
+local BuildingInit = require "DT/Common/ColonyEconomy/Buildings/DT_BuildingInit"
 
 local Lifecycle = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"
@@ -200,14 +201,17 @@ function Lifecycle.CreateFaction(factionID, initialData)
             name = displayName, -- The "flavor" name (The Iron Vanguard)
             town = initialData.town, -- Keep track of which town this faction belongs to
             homeCoords = assignedHome, -- The "physical" base (Rosewood Fire Station)
-            stockpile = initialData.stockpile or { food = 200, ammo = 100, meds = 50, fuel = 25 },
+            stockpile = initialData.stockpile or { food = 200, ammo = 100, meds = 50, fuel = 25, water = 150, materials = 30 },
             state = initialData.state or "Stable",
-            memberCount = initialData.memberCount or (SandboxVars.DynamicTrading.FactionStartPop or 10),
+            memberCount = initialData.memberCount or math.max(8, SandboxVars.DynamicTrading.FactionStartPop or 10),
             ColonyWealth = initialData.ColonyWealth or initialData.wealth or 1000, -- Stores the total economic power of the colony
             CollapseDays = 0,
             factionType = initialData.playerOwned and "player" or (factionID == "Independent" or initialData.isNomadic) and "independent" or "town",
             reputation = initialData.reputation or {}, -- [Username] = Integer
             starvationDays = 0, -- Track days without food
+            shortageDays = { water = 0, meds = 0, ammo = 0, fuel = 0, materials = 0 },
+            penalties = { dehydrated = false, sick = false, vulnerable = false, isolated = false, decaying = false },
+            buildings = {},
             consecutiveStableDays = 0, -- Track how long they've been stable (for wildcard triggers)
             ActiveFlashEvents = {}, -- list of faction flash events (Phase-A schema)
             ActiveFlashEvent = { id = nil, expires = 0, targetCasualties = 0 }, -- legacy compatibility mirror
@@ -275,6 +279,12 @@ function Lifecycle.GenerateRoster(factionID)
         end
     end
 
+    if faction.factionType == "town" then
+        -- Enforce minimum requirement of 2 Farmers and 2 Carpenters
+        for _ = 1, 2 do table.insert(requiredArchetypes, "Farmer") end
+        for _ = 1, 2 do table.insert(requiredArchetypes, "Carpenter") end
+    end
+
     local totalMembers = math.max(tonumber(faction.memberCount) or 0, #requiredArchetypes)
     if totalMembers < 1 then
         totalMembers = 1
@@ -299,6 +309,10 @@ function Lifecycle.GenerateRoster(factionID)
         
         DynamicTrading_Roster.AddSoul(factionID, randomArch, scatteredHome)
     end
+    
+    BuildingInit.InitializeStarterBuildings(faction)
+    
+    ModData.transmit(MOD_DATA_KEY)
 end
 
 return Lifecycle

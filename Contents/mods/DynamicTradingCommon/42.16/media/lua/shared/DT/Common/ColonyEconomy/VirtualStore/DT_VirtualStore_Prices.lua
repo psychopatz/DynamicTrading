@@ -12,7 +12,7 @@ VirtualStorePrices.BasePrices = {
     ammo = 20,
     water = 5,
     fuel = 15,
-    parts = 30
+    materials = 30
 }
 
 function VirtualStorePrices.Init()

@@ -53,31 +53,45 @@ function DT_SimulationLogic.UpdateDaily()
                 DynamicTrading.Events.UpdateFaction(faction)
             end
 
-            -- 1. Production Logic
-            ProductionLogic.Process(faction, id)
+            -- 1. Town-specific Pre-Production (Infrastructure & Hordes)
+            local buildingProd = nil
+            local globalMults = nil
+            if factionActive and faction.factionType == "town" then
+                local tRes = { TownSim.Process(faction, id, data) }
+                faction = tRes[1]
+                factionActive = tRes[2]
+                if tRes[3] then
+                    buildingProd = tRes[3].buildingProd
+                    globalMults = tRes[3].mults
+                end
+            end
 
-            -- 2. Flash Events Logic
-            faction, factionActive = FlashEventsLogic.Process(faction, id, data, currentHour)
+            -- 2. Production Logic (Soul/Worker + Buildings + Multipliers)
+            if factionActive then
+                ProductionLogic.Process(faction, id, buildingProd, globalMults)
+            end
 
-            -- 3. Consumption Logic & Modular Simulation
+            -- 3. Flash Events Logic
+            if factionActive then
+                faction, factionActive = FlashEventsLogic.Process(faction, id, data, currentHour)
+            end
+
+            -- 4. Consumption Logic & Generic Simulation
             if factionActive then
                 if faction.factionType == "independent" then
                     faction, factionActive = IndependentSim.Process(faction, id, data)
                 else
                     faction, factionActive = ConsumptionLogic.Process(faction, id, data, consumptionMult, deathThreshold, growthChance)
-                    if factionActive and faction.factionType == "town" then
-                        faction, factionActive = TownSim.Process(faction, id, data)
-                    end
                 end
 
-                -- 4. Death Check
+                -- 5. Death Check
                 if factionActive and faction.memberCount <= 0 then
                     local playerHandled = false
                     if faction.playerOwned then
                         playerHandled = PlayerSim.DeathCheck(faction, id)
                     end
                     if not playerHandled then
-                        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction ["..(faction.name or id).."] has DIED OUT")
+                        DynamicTrading.Log("Colony", "Faction", "Logic", "Faction ["..(faction.name or id).."] has DIED OUT")
                         table.insert(factionsToRemove, id)
                     end
                 end
@@ -89,7 +103,7 @@ function DT_SimulationLogic.UpdateDaily()
     RespawnLogic.Process(data, factionsToRemove, Sandbox)
 
     ModData.transmit(MOD_DATA_KEY)
-    DynamicTrading.Log("DTCommons", "Faction", "Sim", "Daily Faction Simulation Updated.")
+    DynamicTrading.Log("Colony", "Faction", "Sim", "Daily Faction Simulation Updated.")
 end
 
 return DT_SimulationLogic

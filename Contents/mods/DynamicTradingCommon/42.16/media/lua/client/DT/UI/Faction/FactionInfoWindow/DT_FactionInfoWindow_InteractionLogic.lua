@@ -6,25 +6,29 @@ function DT_FactionInfoWindow:applyFactionSelection(f, requestRoster)
 
     requestRoster = (requestRoster ~= false)
 
-    -- Cache selected faction for updates (if needed)
+    -- Cache Data for Tabs
     DT_FactionInfoWindow.selectedFaction = f
     self.selectedFaction = f
+    local rosterData = DT_FactionInfoWindow.resolveRosterData()
+    DT_FactionInfoWindow.lastRosterData = rosterData
 
-    -- Update All Tabs
+    -- Update Window Header & Active Tab Only
     if DT_FactionInfoWindow.instance then
         local win = DT_FactionInfoWindow.instance
         if win.headerPanel and win.headerPanel.updateOwnedFactionStatus then
             win.headerPanel:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, f)
         end
+        
+        -- Update the info header (title etc)
         if win.tabInfo then win.tabInfo:updateData(f) end
-        local rosterData = DT_FactionInfoWindow.resolveRosterData()
-        if win.tabReputation then win.tabReputation:updateData(f, rosterData) end
-        if win.tabEconomics then win.tabEconomics:updateData(f) end
-        if win.tabCalendar then win.tabCalendar:updateData(f, rosterData) end
-        if win.tabStockpiles then win.tabStockpiles:updateData(f) end
 
-        -- Population Tab needs roster data too
-        if win.tabPopulation then win.tabPopulation:updateData(f, rosterData) end
+        -- Update ONLY the currently visible tab
+        local activeView = win.panel:getActiveView()
+        if activeView and activeView.updateData then
+            activeView:updateData(f, rosterData)
+            -- Sync dimensions immediately to prevent "needs resize" bug
+            if activeView.onResize then activeView:onResize() end 
+        end
     end
 
     -- [MP OPTIMIZATION] Request detailed soul data for this faction on-demand

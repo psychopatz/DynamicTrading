@@ -62,6 +62,17 @@ function DT_FactionInfoWindow:createChildren()
     self.panel:setAnchorBottom(true)
     
     self:addChild(self.panel)
+    
+    -- Sync Active View logic override
+    self.panel.onActivateView = function(view)
+        if view and view.updateData then
+            local f = DT_FactionInfoWindow.selectedFaction
+            local roster = DT_FactionInfoWindow.lastRosterData or DT_FactionInfoWindow.resolveRosterData()
+            view:updateData(f, roster)
+            if view.onResize then view:onResize() end
+        end
+    end
+
 
     -- 3.1. Create Tabs
     -- Info Tab
@@ -106,6 +117,15 @@ function DT_FactionInfoWindow:createChildren()
     self.tabPopulation:setAnchorBottom(true)
     self.panel:addView("Population", self.tabPopulation)
 
+    -- Infrastructure Tab (Requires Dynamic Colonies)
+    if getActivatedMods():contains("DynamicColonies") then
+        self.tabInfrastructure = DT_FactionInfoTab_Infrastructure:new(0, 0, tabWidth, contentHeight)
+        self.tabInfrastructure:initialise()
+        self.tabInfrastructure:setAnchorRight(true)
+        self.tabInfrastructure:setAnchorBottom(true)
+        self.panel:addView("Infrastructure", self.tabInfrastructure)
+    end
+    
     self:refreshList()
 end
 

@@ -206,3 +206,43 @@ option DynamicTrading.TraderBudgetPercent
     page = DynamicTradingMisc,
     translation = DynamicTrading.TraderBudgetPercent,
 }
+
+option DynamicTrading.FactionConsumptionMult
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 10.0,
+    page = DynamicTradingSim,
+    translation = DynamicTrading.FactionConsumptionMult,
+}
+
+option DynamicTrading.BuildingMaterialMult
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 10.0,
+    page = DynamicTradingSim,
+    translation = DynamicTrading.BuildingMaterialMult,
+}
+
+option DynamicTrading.ProductionMult
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 10.0,
+    page = DynamicTradingSim,
+    translation = DynamicTrading.ProductionMult,
+}
+
+option DynamicTrading.ZombieThreatMult
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 50.0,
+    page = DynamicTradingSim,
+    translation = DynamicTrading.ZombieThreatMult,
+}
