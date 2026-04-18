@@ -58,19 +58,29 @@ function DT_FactionInfoTab_Population:createChildren()
     local listY = topH + padding
     local listH = self.height - topH - padding -- Fill to bottom
     
-    self.rosterlist = ISScrollingListBox:new(0, listY, self.width, listH)
+    self.listContainer = ISPanel:new(0, listY, self.width, listH)
+    self.listContainer:initialise()
+    self.listContainer:instantiate()
+    self.listContainer.clip = true
+    self.listContainer.backgroundColor = {r=0.05, g=0.05, b=0.05, a=0.5}
+    self.listContainer.borderColor = {r=0.4, g=0.4, b=0.4, a=0.5}
+    self.listContainer:setAnchorRight(true)
+    self.listContainer:setAnchorBottom(true)
+    self:addChild(self.listContainer)
+
+    self.rosterlist = ISScrollingListBox:new(0, 0, self.listContainer.width, self.listContainer.height)
     self.rosterlist:initialise()
     self.rosterlist:instantiate()
     self.rosterlist.itemheight = 40 
     self.rosterlist.doDrawItem = self.doDrawRosterItem
-    self.rosterlist.backgroundColor = {r=0.05, g=0.05, b=0.05, a=0.5}
-    self.rosterlist.drawBorder = true
+    self.rosterlist.backgroundColor = {r=0, g=0, b=0, a=0}
+    self.rosterlist.drawBorder = false
     self.rosterlist:setAnchorRight(true)
     self.rosterlist:setAnchorBottom(true)
     
     self.rosterlist.target = self
     self.rosterlist.onmousedown = self.onRosterClick
-    self:addChild(self.rosterlist)
+    self.listContainer:addChild(self.rosterlist)
 end
 
 function DT_FactionInfoTab_Population:onRosterClick(data)
@@ -96,7 +106,10 @@ end
 
 function DT_FactionInfoTab_Population:onResize()
     ISPanel.onResize(self)
-    -- Anchors should handle resizing of subpanels
+    if self.listContainer then
+        self.listContainer:setWidth(self.width)
+        -- height is handled by anchors but we ensure width matches
+    end
 end
 
 function DT_FactionInfoTab_Population:updateActionButtons()

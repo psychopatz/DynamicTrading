@@ -29,12 +29,34 @@ end
 
 function DT_RadioScannerListPanel:initialise()
     ISPanel.initialise(self)
+    self.clip = true
 end
 
 function DT_RadioScannerListPanel:createChildren()
     ISPanel.createChildren(self)
 
-    self.listbox = ISScrollingListBox:new(0, 0, self.width, self.height)
+    self.listContainer = ISPanel:new(0, 0, self.width, self.height)
+    self.listContainer:initialise()
+    self.listContainer:instantiate()
+    self.listContainer.clip = true
+    self.listContainer.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    self.listContainer.borderColor = { r = 0, g = 0, b = 0, a = 0 }
+    self:addChild(self.listContainer)
+
+    function self.listContainer:prerender()
+        if self.clip then
+            self:setStencilRect(0, 0, self:getWidth(), self:getHeight())
+        end
+        ISPanel.prerender(self)
+    end
+    function self.listContainer:render()
+        ISPanel.render(self)
+        if self.clip then
+            self:clearStencilRect()
+        end
+    end
+
+    self.listbox = ISScrollingListBox:new(0, 0, self.listContainer.width, self.listContainer.height)
     self.listbox:initialise()
     self.listbox:instantiate()
     self.listbox.itemheight = 72
@@ -44,7 +66,7 @@ function DT_RadioScannerListPanel:createChildren()
     self.listbox.target = self
     self.listbox:setAnchorRight(true)
     self.listbox:setAnchorBottom(true)
-    self:addChild(self.listbox)
+    self.listContainer:addChild(self.listbox)
 
     self.btnFaction = ISButton:new(0, 0, self.width, 30, "FACTION INTELLIGENCE", self, function()
         if DT_FactionInfoWindow then
@@ -65,17 +87,24 @@ function DT_RadioScannerListPanel:setLayoutMode(mode)
 
     if mode == "Location" then
         self.btnFaction:setVisible(true)
+        self.listContainer:setX(0)
+        self.listContainer:setY(35)
+        self.listContainer:setWidth(panelWidth)
+        self.listContainer:setHeight(panelHeight - 35)
         self.listbox.itemheight = 84
-        self.listbox:setY(35)
-        self.listbox:setWidth(panelWidth)
-        self.listbox:setHeight(panelHeight - 35)
     else
         self.btnFaction:setVisible(false)
+        self.listContainer:setX(0)
+        self.listContainer:setY(0)
+        self.listContainer:setWidth(panelWidth)
+        self.listContainer:setHeight(panelHeight)
         self.listbox.itemheight = 72
-        self.listbox:setY(0)
-        self.listbox:setWidth(panelWidth)
-        self.listbox:setHeight(panelHeight)
     end
+
+    self.listbox:setX(0)
+    self.listbox:setY(0)
+    self.listbox:setWidth(self.listContainer:getWidth())
+    self.listbox:setHeight(self.listContainer:getHeight())
 
     if self.listbox and self.listbox.vscroll then
         self.listbox.vscroll:setHeight(self.listbox:getHeight())
@@ -211,33 +240,42 @@ function DT_RadioScannerListPanel:onListDoubleClick(itemData)
     end
 end
 
+function DT_RadioScannerListPanel:prerender()
+    if self.clip then
+        self:setStencilRect(0, 0, self:getWidth(), self:getHeight())
+    end
+    ISPanel.prerender(self)
+end
+
 function DT_RadioScannerListPanel:render()
     ISPanel.render(self)
 
     if self.listbox and #self.listbox.items == 0 then
         local category = self.parent and self.parent.currentCategory or "Stationary"
-        if category == "Location" then
-            return
+        if category ~= "Location" then
+            local font = UIFont.Medium
+            local smallFont = UIFont.Small
+            local text1 = "NO ACTIVE SIGNALS"
+            local text2 = "Traders may be resting or in transit."
+            local text3 = "Please wait for a new broadcast window."
+            local h1 = getTextManager():getFontHeight(font)
+            local h2 = getTextManager():getFontHeight(smallFont)
+            local totalH = h1 + (h2 * 2) + 10
+            local y = (self.height / 2) - (totalH / 2)
+
+            local tw1 = getTextManager():MeasureStringX(font, text1)
+            self:drawText(text1, (self.width - tw1) / 2, y, 0.8, 0.8, 0.8, 0.8, font)
+
+            local tw2 = getTextManager():MeasureStringX(smallFont, text2)
+            self:drawText(text2, (self.width - tw2) / 2, y + h1 + 5, 0.6, 0.6, 0.6, 0.7, smallFont)
+
+            local tw3 = getTextManager():MeasureStringX(smallFont, text3)
+            self:drawText(text3, (self.width - tw3) / 2, y + h1 + h2 + 8, 0.5, 0.5, 0.5, 0.6, smallFont)
         end
+    end
 
-        local font = UIFont.Medium
-        local smallFont = UIFont.Small
-        local text1 = "NO ACTIVE SIGNALS"
-        local text2 = "Traders may be resting or in transit."
-        local text3 = "Please wait for a new broadcast window."
-        local h1 = getTextManager():getFontHeight(font)
-        local h2 = getTextManager():getFontHeight(smallFont)
-        local totalH = h1 + (h2 * 2) + 10
-        local y = (self.height / 2) - (totalH / 2)
-
-        local tw1 = getTextManager():MeasureStringX(font, text1)
-        self:drawText(text1, (self.width - tw1) / 2, y, 0.8, 0.8, 0.8, 0.8, font)
-
-        local tw2 = getTextManager():MeasureStringX(smallFont, text2)
-        self:drawText(text2, (self.width - tw2) / 2, y + h1 + 5, 0.6, 0.6, 0.6, 0.7, smallFont)
-
-        local tw3 = getTextManager():MeasureStringX(smallFont, text3)
-        self:drawText(text3, (self.width - tw3) / 2, y + h1 + h2 + 8, 0.5, 0.5, 0.5, 0.6, smallFont)
+    if self.clip then
+        self:clearStencilRect()
     end
 end
 
@@ -245,6 +283,8 @@ function DT_RadioScannerListPanel:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    o.clip = true
+    o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.6 }
+    o.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 0.5 }
     return o
 end

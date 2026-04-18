@@ -12,9 +12,9 @@ function DT_RadioScannerWindow:relayout()
     local titleBarHeight = self:titleBarHeight()
     local width = self:getWidth()
     local height = self:getHeight()
-    local headerHeight = 70
-    local outerPadding = 10
-    local columnGap = 10
+    local headerHeight = 65
+    local outerPadding = 5
+    local columnGap = 5
     local statusHeight = 62
     local actionHeight = 62
 
@@ -90,13 +90,20 @@ function DT_RadioScannerWindow:relayout()
         self.trackingDialoguePanel:onResize()
     end
 
-    if self.listPanel then
-        self.listPanel:setX(rightColumnX)
-        self.listPanel:setY(bodyY)
-        self.listPanel:setWidth(rightColumnWidth)
-        self.listPanel:setHeight(availableTopHeight)
-        if self.listPanel.onResize then
-            self.listPanel:onResize()
+    if self.listContainer then
+        self.listContainer:setX(rightColumnX)
+        self.listContainer:setY(bodyY)
+        self.listContainer:setWidth(rightColumnWidth)
+        self.listContainer:setHeight(availableTopHeight)
+        
+        if self.listPanel then
+            self.listPanel:setX(0)
+            self.listPanel:setY(0)
+            self.listPanel:setWidth(self.listContainer:getWidth())
+            self.listPanel:setHeight(self.listContainer:getHeight())
+            if self.listPanel.onResize then
+                self.listPanel:onResize()
+            end
         end
     end
 
@@ -124,7 +131,7 @@ end
 function DT_RadioScannerWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
 
-    self.headerPanel = DT_RadioScannerHeaderPanel:new(0, 0, self.width, 70)
+    self.headerPanel = DT_RadioScannerHeaderPanel:new(0, 0, self.width, 65)
     self.headerPanel:initialise()
     self.headerPanel:instantiate()
     self.headerPanel:setAnchorRight(true)
@@ -157,12 +164,22 @@ function DT_RadioScannerWindow:createChildren()
     self.logPanel:instantiate()
     self:addChild(self.logPanel)
 
-    self.listPanel = DT_RadioScannerListPanel:new(0, 0, 320, 300)
+    self.listContainer = ISPanel:new(0, 0, 320, 300)
+    self.listContainer:initialise()
+    self.listContainer:instantiate()
+    self.listContainer.clip = true
+    self.listContainer.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    self.listContainer.borderColor = { r = 0, g = 0, b = 0, a = 0 }
+    self.listContainer:setAnchorRight(true)
+    self.listContainer:setAnchorBottom(true)
+    self:addChild(self.listContainer)
+
+    self.listPanel = DT_RadioScannerListPanel:new(0, 0, self.listContainer.width, self.listContainer.height)
     self.listPanel:initialise()
     self.listPanel:instantiate()
     self.listPanel:setAnchorRight(true)
     self.listPanel:setAnchorBottom(true)
-    self:addChild(self.listPanel)
+    self.listContainer:addChild(self.listPanel)
     self.listPanel:setLayoutMode(self.currentCategory == "Location" and "Location" or "Standard")
 
     self.actionPanel = DT_RadioScannerActionPanel:new(0, 0, self.width, 38)

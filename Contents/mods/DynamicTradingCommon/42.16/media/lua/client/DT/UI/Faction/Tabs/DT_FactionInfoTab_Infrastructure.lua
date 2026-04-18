@@ -25,7 +25,15 @@ function DT_FactionInfoTab_Infrastructure:initialise()
 end
 
 function DT_FactionInfoTab_Infrastructure:createChildren()
-    self.listbox = ISScrollingListBox:new(0, 0, self.width, self.height)
+    self.listContainer = ISPanel:new(0, 0, self.width, self.height)
+    self.listContainer:initialise()
+    self.listContainer:instantiate()
+    self.listContainer.clip = true
+    self.listContainer.backgroundColor = {r=0, g=0, b=0, a=0.5}
+    self.listContainer.borderColor = {r=0.4, g=0.4, b=0.4, a=0.5}
+    self:addChild(self.listContainer)
+
+    self.listbox = ISScrollingListBox:new(0, 0, self.listContainer.width, self.listContainer.height)
     self.listbox:initialise()
     self.listbox:instantiate()
     self.listbox.itemheight = 100
@@ -34,11 +42,15 @@ function DT_FactionInfoTab_Infrastructure:createChildren()
     self.listbox.doDrawItem = function(listbox, y, item, alt)
         return self:doDrawItem(y, item, alt)
     end
-    self:addChild(self.listbox)
+    self.listContainer:addChild(self.listbox)
 end
 
 function DT_FactionInfoTab_Infrastructure:onResize()
     ISPanel.onResize(self)
+    if self.listContainer then
+        self.listContainer:setWidth(self.width)
+        self.listContainer:setHeight(self.height)
+    end
     if self.listbox then
         self.listbox:setWidth(self.width)
         self.listbox:setHeight(self.height)
