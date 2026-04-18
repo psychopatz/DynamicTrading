@@ -1,8 +1,4 @@
--- ==============================================================================
--- DT_MerchantDebugRenderers.lua
--- Merchant Debug Tool: Rendering Layer
--- Custom drawing functions for merchant and stock lists
--- ==============================================================================
+require "DT/UI/Shared/DT_UIUtils"
 
 DT_MerchantDebugRenderers = DT_MerchantDebugRenderers or {}
 
@@ -14,15 +10,8 @@ function DT_MerchantDebugRenderers.drawMerchantItem(listbox, y, item, alt)
         local data = item and item.item
         if not data then return y end
 
-        if item.selected then
-            -- Strong highlight for clear click feedback.
-            listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.45, 0.2, 0.65, 1.0)
-            listbox:drawRectBorder(0, y, listbox.width, listbox.itemheight, 1.0, 0.3, 0.8, 1.0)
-        elseif alt then
-            listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 1, 1, 1)
-        else
-            listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 0, 0, 0)
-        end
+        -- Selection / Background (Unified Utility)
+        DT_UIUtils.drawSelectionHighlight(listbox, y, item, alt)
         
         listbox:drawText(tostring(data.name or "Unknown"), 10, y + 2, 1, 1, 1, 1, UIFont.Medium)
         
@@ -63,9 +52,8 @@ function DT_MerchantDebugRenderers.drawStockItem(listbox, y, item, alt)
         effectiveBasePrice = DynamicTrading.PriceConfig.GetEffectiveBasePrice(itemType, itemData)
     end
 
-    if alt then
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 1, 1, 1)
-    end
+    -- Selection / Background (Unified Utility)
+    DT_UIUtils.drawSelectionHighlight(listbox, y, item, alt)
 
     listbox:drawText(itemType, 10, y + 5, 1, 1, 1, 1, UIFont.Small)
     local detailStr = string.format("Qty: %d | Pr: %d | Mod: %.1f", stockItem.qty, effectiveBasePrice or 0, stockItem.dynamicMod or 1.0)

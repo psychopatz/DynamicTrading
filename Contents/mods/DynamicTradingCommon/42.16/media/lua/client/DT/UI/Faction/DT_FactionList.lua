@@ -5,6 +5,7 @@
 -- ==============================================================================
 
 require "ISUI/ISScrollingListBox"
+require "DT/UI/Shared/DT_UIUtils"
 
 DT_FactionList = ISScrollingListBox:derive("DT_FactionList")
 
@@ -36,20 +37,8 @@ function DT_FactionList:doDrawItem(y, item, alt)
     local f = item.item
     if not f then return y end
 
-    -- Selection / Background
-    local isSelected = (item.selected == true)
-    if not isSelected and self.selected ~= -1 and self.items[self.selected] == item then
-        isSelected = true
-    end
-
-    if isSelected then
-        self:drawRect(0, y, self.width, self.itemheight, 0.4, 0.05, 0.5, 0.05)
-        self:drawRectBorder(0, y, self.width, self.itemheight, 1, 0.1, 0.8, 0.1)
-    elseif alt then
-        self:drawRect(0, y, self.width, self.itemheight, 0.1, 1, 1, 1)
-    else
-        self:drawRect(0, y, self.width, self.itemheight, 0.1, 0, 0, 0)
-    end
+    -- Selection / Background (Unified Utility)
+    DT_UIUtils.drawSelectionHighlight(self, y, item, alt)
 
     -- Color Coding based on Status
     local r, g, b = 0.8, 0.8, 0.8 -- Default gray-ish

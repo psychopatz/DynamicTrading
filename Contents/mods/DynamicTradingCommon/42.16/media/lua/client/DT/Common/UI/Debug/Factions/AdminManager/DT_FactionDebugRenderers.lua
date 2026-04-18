@@ -1,8 +1,4 @@
--- ==============================================================================
--- DT_FactionDebugRenderers.lua
--- Faction Debug Tool: Rendering Layer
--- Custom drawing functions for faction and roster lists
--- ==============================================================================
+require "DT/UI/Shared/DT_UIUtils"
 
 DT_FactionDebugRenderers = DT_FactionDebugRenderers or {}
 
@@ -26,20 +22,8 @@ function DT_FactionDebugRenderers.drawFactionItem(listbox, y, item, alt)
         r, g, b = 1, 0, 0
     end
 
-    -- Selection / Background
-    local isSelected = (item.selected == true)
-    if not isSelected and listbox.selected ~= -1 and listbox.items[listbox.selected] == item then
-        isSelected = true
-    end
-
-    if isSelected then
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.4, 0.05, 0.5, 0.05)
-        listbox:drawRectBorder(0, y, listbox.width, listbox.itemheight, 1, 0.1, 0.8, 0.1)
-    elseif alt then
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 1, 1, 1)
-    else
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 0, 0, 0)
-    end
+    -- Selection / Background (Unified Utility)
+    DT_UIUtils.drawSelectionHighlight(listbox, y, item, alt)
     
     -- Count flash events
     local flashEvents = f.ActiveFlashEvents or {}
@@ -69,20 +53,8 @@ function DT_FactionDebugRenderers.drawRosterItem(listbox, y, item, alt)
 
     if not soul then return y end
 
-    -- Selection / Background
-    local isSelected = (item.selected == true)
-    if not isSelected and listbox.selected ~= -1 and listbox.items[listbox.selected] == item then
-        isSelected = true
-    end
-
-    if isSelected then
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.4, 0.05, 0.5, 0.05)
-        listbox:drawRectBorder(0, y, listbox.width, listbox.itemheight, 1, 0.1, 0.8, 0.1)
-    elseif alt then
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 1, 1, 1)
-    else
-        listbox:drawRect(0, y, listbox.width, listbox.itemheight, 0.1, 0, 0, 0)
-    end
+    -- Selection / Background (Unified Utility)
+    DT_UIUtils.drawSelectionHighlight(listbox, y, item, alt)
 
     local status = soul.status or "Active"
     local spawned = trader and trader.isPhysicallySpawned and "Spawned: YES" or "Spawned: NO"
