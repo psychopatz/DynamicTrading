@@ -9,7 +9,7 @@ require "DT/Common/Config"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Events/DT_EventManager"
 require "DT/Common/Logging/DT_GameplayLogs"
-require "DT/Common/Faction/DT_FactionEventRegistry"
+require "DT/Common/Logging/Registry/DT_FactionLogEvents"
 
 local DT_SimulationLogic = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"

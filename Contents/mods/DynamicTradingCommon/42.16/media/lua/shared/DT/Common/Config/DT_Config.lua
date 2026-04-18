@@ -14,8 +14,9 @@ require "DT/Common/Config/DT_Config_GameplayHelpers"
 -- 6. EVENT SYSTEM
 -- =============================================================================
 require "DT/Common/Events/DT_EventManager"
-
+require "DT/Common/Logging/DT_GameplayLogs"
 require "DT/Common/Config/DT_Config_FactionSystem"
+require "DT/Common/Logging/DT_GameplayEvents"
 
 DynamicTrading.Log("DTCommons", "Core", "Init", "Config & Registry Core Loaded.")
  

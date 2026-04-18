@@ -72,13 +72,34 @@ end
 function DT_RadioNetworkLogPanel:prerender()
     ISPanel.prerender(self)
 
-    local data = ModData.getOrCreate(self.logKey)
-    local currentLogCount = data.list and #data.list or 0
+    local globalData = ModData.getOrCreate(self.logKey)
+    local player = getSpecificPlayer(0)
+    local localLogKey = player and ("DynamicTrading_LocalLogs_" .. player:getUsername() .. "_Radio") or nil
+    local localData = localLogKey and ModData.getOrCreate(localLogKey) or { list = {} }
+
+    local gCount = globalData.list and #globalData.list or 0
+    local lCount = localData.list and #localData.list or 0
+    local currentLogCount = gCount + lCount
+    
+    local topG = globalData.list and globalData.list[1] or nil
+    local topL = localData.list and localData.list[1] or nil
     local currentTopLog = ""
 
-    if data.list and data.list[1] then
-        local log = data.list[1]
-        currentTopLog = (log.time or log.t or "") .. (log.text or tostring(log.e))
+    local topLog = topG
+    if topL then
+        if not topG then
+            topLog = topL
+        else
+            local tG = topG.time or topG.t or ""
+            local tL = topL.time or topL.t or ""
+            if tL > tG then
+                topLog = topL
+            end
+        end
+    end
+
+    if topLog then
+        currentTopLog = (topLog.time or topLog.t or "") .. (topLog.text or tostring(topLog.e))
     end
 
     if currentLogCount ~= self.lastLogCount or currentTopLog ~= self.lastTopLogID then
@@ -93,7 +114,30 @@ end
 function DT_RadioNetworkLogPanel:populateLogs()
     self.logList:clear()
 
-    local data = ModData.getOrCreate(self.logKey)
+    local globalData = ModData.getOrCreate(self.logKey)
+    local player = getSpecificPlayer(0)
+    local localLogKey = player and ("DynamicTrading_LocalLogs_" .. player:getUsername() .. "_Radio") or nil
+    local localData = localLogKey and ModData.getOrCreate(localLogKey) or { list = {} }
+
+    local combinedList = {}
+    if globalData.list then
+        for i=1, #globalData.list do
+            table.insert(combinedList, globalData.list[i])
+        end
+    end
+    if localData.list then
+        for i=1, #localData.list do
+            table.insert(combinedList, localData.list[i])
+        end
+    end
+
+    table.sort(combinedList, function(a, b)
+        local ta = a.time or a.t or ""
+        local tb = b.time or b.t or ""
+        -- Newest first
+        return ta > tb
+    end)
+
     local listWidth = self.logList:getWidth() - 25
     if listWidth < 50 then
         listWidth = 50
@@ -102,12 +146,12 @@ function DT_RadioNetworkLogPanel:populateLogs()
     local textManager = getTextManager()
     local font = self.logList.font
 
-    if not data.list then
+    if #combinedList == 0 then
         return
     end
 
-    for i = 1, #data.list do
-        local log = data.list[i]
+    for i = 1, #combinedList do
+        local log = combinedList[i]
         -- Serialize using template resolver
         local timeStr = log.time or log.t or ""
         local textStr, catStr = log.text, log.cat

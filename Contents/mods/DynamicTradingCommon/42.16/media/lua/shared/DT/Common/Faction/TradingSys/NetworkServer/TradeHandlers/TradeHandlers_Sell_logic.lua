@@ -107,5 +107,17 @@ return function(context)
             isBuy = false,
             qty = tx.clientQty
         })
+
+        local factionID = tx.factionData and tx.factionData.id or nil
+        if factionID and DynamicTrading_Factions and DynamicTrading_Factions.ModifyReputation then
+            local repGain = math.floor(totalGain / 500)
+            if repGain >= 1 then
+                DynamicTrading_Factions.ModifyReputation(factionID, player:getUsername(), repGain)
+                local factionName = tx.factionData.name or "Independent"
+                if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddLocalEvent then
+                   DynamicTrading.GameplayLogs.AddLocalEvent(player, "Radio", DynamicTrading.GameplayEvents.TRADE_REP_GAINED, {tostring(factionName), tostring(repGain)})
+                end
+            end
+        end
     end
 end

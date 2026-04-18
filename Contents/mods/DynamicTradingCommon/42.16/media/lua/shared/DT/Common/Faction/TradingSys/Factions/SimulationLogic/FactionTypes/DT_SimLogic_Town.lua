@@ -146,6 +146,10 @@ function TownSim.Process(faction, id, data)
         
         if factionActive and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.Queue then
             DynamicTrading.GameplayLogs.Queue("Factions", id, DynamicTrading.GameplayLogs.FACTION_DYING, {})
+            -- Global broadcast via Radio module for collapse
+            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddEvent then
+                DynamicTrading.GameplayLogs.AddEvent("Radio", DynamicTrading.GameplayEvents.FACTION_COLLAPSED, {faction.name or "Unknown Colony"})
+            end
         end
     end
 
