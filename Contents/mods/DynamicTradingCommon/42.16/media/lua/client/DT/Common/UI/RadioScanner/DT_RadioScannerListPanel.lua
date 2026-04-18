@@ -64,6 +64,8 @@ function DT_RadioScannerListPanel:createChildren()
     self.listbox.onmousedown = self.onListMouseDown
     self.listbox.onmousedblclick = self.onListDoubleClick
     self.listbox.target = self
+    self.listbox.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    self.listbox.drawBorder = false
     self.listbox:setAnchorRight(true)
     self.listbox:setAnchorBottom(true)
     self.listContainer:addChild(self.listbox)
