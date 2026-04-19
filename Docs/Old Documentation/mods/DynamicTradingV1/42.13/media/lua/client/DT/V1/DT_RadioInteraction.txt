@@ -1,7 +1,0 @@
-Title: Radio Interaction Logic (V1)
-Tags: [v1, lua, radio]
-
-This file handles the main logic for radio-based traders in V1.
-- Logic: Periodic state checks
-- Dependencies: DynamicTradingCommon utilities
-- Entry point for radio dialogue.
