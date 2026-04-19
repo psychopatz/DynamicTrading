@@ -331,6 +331,18 @@ DynamicTrading.RegisterDialogue("Player", "Tracking", {
             "Eyes up, {npc}. That's me walking toward you. Ten meters out.",
             "{npc}, we did it. Visual contact. Closing the last ten meters now.",
             "Finally. I can see you, {npc}. Radio's done its job. Coming over.",
+        },
+        Away = {
+            "Wait... I think I'm losing the signal. Am I going the wrong way?",
+            "Static's getting heavy. Did I miss a turn?",
+            "The ping's fading out. I must be heading away from the source.",
+            "Hold on, the tracker's dropping. Wrong way.",
+            "Dammit, the signal's getting weaker. I need to re-center.",
+            "I think I'm losing you, {npc}. Heading might be off.",
+            "The relay's getting spotty. I'm drifting too far.",
+            "Wrong direction. The signal just tanked.",
+            "If I keep this up, I'll lose the lock entirely. Backtrack.",
+            "The noise is drowning you out, {npc}. I'm heading the wrong way.",
         }
     }
 })

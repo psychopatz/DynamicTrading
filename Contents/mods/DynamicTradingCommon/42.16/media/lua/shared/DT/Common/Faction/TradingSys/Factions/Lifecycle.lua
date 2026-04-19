@@ -12,6 +12,11 @@ local BuildingInit = require "DT/Common/ColonyEconomy/Buildings/DT_BuildingInit"
 local Lifecycle = {}
 local MOD_DATA_KEY = "DynamicTrading_Factions"
 local IS_SERVER_RUNTIME = (not isClient()) or isServer()
+local deferredBootstrapPending = false
+local deferredBootstrapTickCounter = 0
+local deferredTownQueue = {}
+local EXPLORATION_DATA_KEY = "DynamicTrading_Exploration"
+local townVisitTickCounter = 0
 
 if IS_SERVER_RUNTIME then
     require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem"
@@ -29,12 +34,438 @@ local function buildTownFactionID(townName)
     return prefix .. "_" .. tostring(100000 + ZombRand(900000))
 end
 
+local function normalizeTownKey(value)
+    if DT_GeolocatorSystem and DT_GeolocatorSystem.NormalizeLocationKey then
+        return DT_GeolocatorSystem.NormalizeLocationKey(value)
+    end
+
+    if value == nil then
+        return nil
+    end
+
+    local normalized = tostring(value):lower()
+    normalized = normalized:gsub(",%s*ky$", "")
+    normalized = normalized:gsub("%s+ky$", "")
+    normalized = normalized:gsub("[^%w]", "")
+    if normalized == "" then
+        return nil
+    end
+
+    return normalized
+end
+
+local function ensureGeolocatorReady()
+    return IS_SERVER_RUNTIME
+        and DT_GeolocatorSystem
+        and DT_GeolocatorSystem.EnsureBuildingsLoaded
+        and DT_GeolocatorSystem.EnsureBuildingsLoaded(true, true)
+end
+
+local function collectSpatialAnchorPlayers()
+    local players = {}
+    local onlinePlayers = getOnlinePlayers and getOnlinePlayers() or nil
+
+    if onlinePlayers then
+        for index = 0, onlinePlayers:size() - 1 do
+            local player = onlinePlayers:get(index)
+            if player and player.getX and player.getY then
+                players[#players + 1] = player
+            end
+        end
+    end
+
+    if #players == 0 then
+        local localPlayer = nil
+        if getSpecificPlayer then
+            localPlayer = getSpecificPlayer(0)
+        elseif getPlayer then
+            localPlayer = getPlayer()
+        end
+
+        if localPlayer and localPlayer.getX and localPlayer.getY then
+            players[#players + 1] = localPlayer
+        end
+    end
+
+    return players
+end
+
+local function sortDeferredTownQueue()
+    table.sort(deferredTownQueue, function(left, right)
+        if left.priority ~= right.priority then
+            return left.priority > right.priority
+        end
+        return tostring(left.spawnTown) < tostring(right.spawnTown)
+    end)
+end
+
+local function ensureExplorationData()
+    if not ModData.exists(EXPLORATION_DATA_KEY) then
+        ModData.add(EXPLORATION_DATA_KEY, {
+            visitedTowns = {},
+            playerLastTown = {},
+        })
+    end
+
+    local data = ModData.get(EXPLORATION_DATA_KEY) or {}
+    data.visitedTowns = type(data.visitedTowns) == "table" and data.visitedTowns or {}
+    data.playerLastTown = type(data.playerLastTown) == "table" and data.playerLastTown or {}
+    return data
+end
+
+local function buildExistingTownCounts(data)
+    local counts = {}
+
+    for id, faction in pairs(data or {}) do
+        if id ~= "Independent" and type(faction) == "table" then
+            local key = normalizeTownKey(faction.town)
+            if key then
+                counts[key] = (counts[key] or 0) + 1
+            end
+        end
+    end
+
+    return counts
+end
+
+local function collectPriorityTownKeys()
+    local keys = {}
+    if not DT_GeolocatorSystem or not DT_GeolocatorSystem.GetLocation then
+        return keys
+    end
+
+    for _, player in ipairs(collectSpatialAnchorPlayers()) do
+        local location = DT_GeolocatorSystem.GetLocation(math.floor(player:getX()), math.floor(player:getY()))
+        if location then
+            local locationKey = normalizeTownKey(location.shortName or location.id)
+            if locationKey then
+                keys[locationKey] = true
+            end
+        end
+    end
+
+    return keys
+end
+
+local function scheduleMissingTownPopulation(data)
+    for index = #deferredTownQueue, 1, -1 do
+        deferredTownQueue[index] = nil
+    end
+
+    if type(DT_FactionLocations) ~= "table" then
+        return 0, 0
+    end
+
+    local existingCounts = buildExistingTownCounts(data)
+    local priorityTownKeys = collectPriorityTownKeys()
+    local maxFactions = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.MaxFactionsPerTown) or 2
+    local memberCount = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.FactionStartPop) or 3
+    local priorityCount = 0
+
+    for townID, townData in pairs(DT_FactionLocations) do
+        local spawnTown = (type(townData) == "table" and townData.name) or townID
+        local factionSeed = (type(townData) == "table" and townData.id) or townID
+        local townKey = normalizeTownKey(spawnTown) or normalizeTownKey(townID)
+        local existing = townKey and (existingCounts[townKey] or 0) or 0
+        local missing = math.max(0, maxFactions - existing)
+        local priority = townKey and priorityTownKeys[townKey] or false
+
+        for _ = 1, missing do
+            deferredTownQueue[#deferredTownQueue + 1] = {
+                spawnTown = spawnTown,
+                townKey = townKey,
+                factionSeed = factionSeed,
+                memberCount = memberCount,
+                priority = priority and 1 or 0,
+                queueSource = priority and "startup-near-player" or "startup-deferred",
+            }
+            if priority then
+                priorityCount = priorityCount + 1
+            end
+        end
+    end
+
+    sortDeferredTownQueue()
+
+    return #deferredTownQueue, priorityCount
+end
+
+local function promoteTownQueueEntries(townName, priority)
+    local townKey = normalizeTownKey(townName)
+    if not townKey then
+        return 0
+    end
+
+    local promoted = 0
+    for _, entry in ipairs(deferredTownQueue) do
+        local entryTownKey = entry.townKey or normalizeTownKey(entry.spawnTown)
+        if entryTownKey == townKey then
+            local targetPriority = tonumber(priority) or 2
+            if (tonumber(entry.priority) or 0) < targetPriority then
+                entry.priority = targetPriority
+                entry.queueSource = "player-exploration"
+            end
+            promoted = promoted + 1
+        end
+    end
+
+    if promoted > 0 then
+        sortDeferredTownQueue()
+        DynamicTrading.Log(
+            "DTCommons",
+            "Faction",
+            "Queue",
+            "Prioritized deferred town queue for " .. tostring(townName)
+                .. "; promotedEntries=" .. tostring(promoted)
+                .. "; queueSize=" .. tostring(#deferredTownQueue)
+        )
+    end
+
+    return promoted
+end
+
+local function handleVisitedTown(player, townName, reason)
+    local normalizedTown = normalizeTownKey(townName)
+    if not normalizedTown then
+        return 0
+    end
+
+    local explorationData = ensureExplorationData()
+    local visitedBefore = explorationData.visitedTowns[normalizedTown] == true
+    if not visitedBefore then
+        explorationData.visitedTowns[normalizedTown] = true
+        ModData.transmit(EXPLORATION_DATA_KEY)
+        DynamicTrading.Log(
+            "DTCommons",
+            "Faction",
+            "Exploration",
+            "Town discovered through exploration: " .. tostring(townName)
+                .. " by " .. tostring(player and player.getUsername and player:getUsername() or "unknown-player")
+        )
+    end
+
+    local promoted = promoteTownQueueEntries(townName, 2)
+    if promoted <= 0 then
+        DynamicTrading.Log(
+            "DTCommons",
+            "Faction",
+            "Exploration",
+            "Town visit did not change queue state for " .. tostring(townName)
+                .. "; no deferred factions remain for that town."
+        )
+        return 0
+    end
+
+    if not ensureGeolocatorReady() then
+        deferredBootstrapPending = true
+        DynamicTrading.Log(
+            "DTCommons",
+            "Faction",
+            "Exploration",
+            "Queued town " .. tostring(townName)
+                .. " as high-priority exploration target while geolocator finishes preparing."
+        )
+        return 0
+    end
+
+    DynamicTrading.Log(
+        "DTCommons",
+        "Faction",
+        "Exploration",
+        "Town " .. tostring(townName)
+            .. " moved to the front of the deferred simulation queue during " .. tostring(reason or "exploration")
+            .. "; it will now mature through normal queue processing instead of spawning instantly."
+    )
+    return promoted
+end
+
+local function updateExplorationDrivenTownGeneration()
+    if not IS_SERVER_RUNTIME or not DT_GeolocatorSystem or not DT_GeolocatorSystem.GetLocation then
+        return 0
+    end
+
+    if #deferredTownQueue == 0 then
+        return 0
+    end
+
+    local explorationData = ensureExplorationData()
+    local processed = 0
+
+    for _, player in ipairs(collectSpatialAnchorPlayers()) do
+        local username = player.getUsername and player:getUsername() or tostring(player)
+        local location = DT_GeolocatorSystem.GetLocation(math.floor(player:getX()), math.floor(player:getY()))
+        local townName = location and (location.shortName or location.id) or nil
+        local townKey = normalizeTownKey(townName)
+        local lastTownKey = explorationData.playerLastTown[username]
+
+        if townKey and townKey ~= lastTownKey then
+            explorationData.playerLastTown[username] = townKey
+            processed = processed + handleVisitedTown(player, townName, "player-visit")
+        elseif not townKey and lastTownKey ~= nil then
+            explorationData.playerLastTown[username] = nil
+        end
+    end
+
+    return processed
+end
+
+local function processDeferredTownQueue(reason, maxEntries, randomize)
+    if #deferredTownQueue == 0 then
+        return 0
+    end
+
+    local limit = math.max(1, tonumber(maxEntries) or 1)
+    local processed = 0
+
+    while processed < limit and #deferredTownQueue > 0 do
+        local index = randomize and (ZombRand(#deferredTownQueue) + 1) or 1
+        local entry = table.remove(deferredTownQueue, index)
+        if entry then
+            DynamicTrading.Log(
+                "DTCommons",
+                "Faction",
+                "Queue",
+                "Processing deferred town entry town=" .. tostring(entry.spawnTown)
+                    .. " priority=" .. tostring(entry.priority)
+                    .. " source=" .. tostring(entry.queueSource or "unknown")
+                    .. " reason=" .. tostring(reason or "deferred")
+            )
+            local factionID = tostring(entry.factionSeed) .. "_" .. tostring(100000 + ZombRand(900000))
+            Lifecycle.CreateFaction(factionID, {
+                town = entry.spawnTown,
+                memberCount = entry.memberCount,
+            })
+            processed = processed + 1
+        end
+    end
+
+    if processed > 0 then
+        DynamicTrading.Log(
+            "DTCommons",
+            "Faction",
+            "Logic",
+            "Processed " .. tostring(processed) .. " deferred town spawns during " .. tostring(reason or "deferred")
+                .. "; remaining=" .. tostring(#deferredTownQueue)
+        )
+    end
+
+    return processed
+end
+
+local function hasValidHomeCoords(homeCoords)
+    return type(homeCoords) == "table"
+        and tonumber(homeCoords.x) ~= nil
+        and tonumber(homeCoords.y) ~= nil
+end
+
+local function buildSpatialFallbackHome(factionID, faction)
+    if not DT_GeolocatorSystem or not DT_GeolocatorSystem.CreateSpatialHome then
+        return nil
+    end
+
+    local label = nil
+    if type(faction) == "table" then
+        label = faction.name
+    end
+    if not label or label == "" then
+        if factionID == "Independent" or (type(faction) == "table" and faction.factionType == "independent") then
+            label = "Independent Route"
+        else
+            label = tostring(factionID or "Nomadic Route") .. " Route"
+        end
+    end
+
+    return DT_GeolocatorSystem.CreateSpatialHome(label, {
+        town = faction and faction.town or nil,
+        factionID = factionID,
+        preferUsableRange = true,
+    })
+end
+
+local function countTownFactions(data)
+    local count = 0
+    for id, _ in pairs(data or {}) do
+        if id ~= "Independent" then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+local function repairMissingFactionHomes(data)
+    local repairedCount = 0
+
+    if not IS_SERVER_RUNTIME then
+        return repairedCount
+    end
+
+    for id, faction in pairs(data or {}) do
+        if not faction.playerOwned and not hasValidHomeCoords(faction.homeCoords) then
+            local repairedHome = nil
+
+            if id == "Independent" or faction.factionType == "independent" then
+                repairedHome = buildSpatialFallbackHome(id, faction)
+            elseif DT_FactionLocationManager and DT_FactionLocationManager.AssignHome then
+                repairedHome = DT_FactionLocationManager.AssignHome(id, faction.town)
+                if not repairedHome then
+                    repairedHome = buildSpatialFallbackHome(id, faction)
+                end
+            else
+                repairedHome = buildSpatialFallbackHome(id, faction)
+            end
+
+            if repairedHome then
+                faction.homeCoords = repairedHome
+                faction.town = repairedHome.town or faction.town
+                repairedCount = repairedCount + 1
+            end
+        end
+    end
+
+    return repairedCount
+end
+
+local function tryFinalizeFactionBootstrap(reason)
+    if not ensureGeolocatorReady() then
+        deferredBootstrapPending = true
+        return false
+    end
+
+    if DT_FactionLocationManager and DT_FactionLocationManager.RegisterDynamicTowns then
+        DT_FactionLocationManager.RegisterDynamicTowns()
+    end
+
+    local data = ModData.get(MOD_DATA_KEY) or {}
+    local queuedCount, priorityCount = scheduleMissingTownPopulation(data)
+    local repairedCount = repairMissingFactionHomes(data)
+    if repairedCount > 0 then
+        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Repaired " .. tostring(repairedCount) .. " faction homes during " .. tostring(reason or "bootstrap"))
+        ModData.transmit(MOD_DATA_KEY)
+    end
+
+    if deferredBootstrapPending and queuedCount > 0 then
+        deferredBootstrapPending = false
+        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Completing deferred town population during " .. tostring(reason or "bootstrap"))
+        processDeferredTownQueue(reason or "bootstrap", math.max(priorityCount, 1), false)
+        return true
+    end
+
+    deferredBootstrapPending = false
+    return repairedCount > 0 or queuedCount > 0
+end
+
 -- ==========================================================
 -- 1. INITIALIZATION
 -- ==========================================================
 function Lifecycle.Init()
     if not IS_SERVER_RUNTIME then
         return
+    end
+
+    ensureExplorationData()
+
+    if DT_FactionLocationManager and DT_FactionLocationManager.RegisterDynamicTowns then
+        DT_FactionLocationManager.RegisterDynamicTowns()
     end
 
     if not ModData.exists(MOD_DATA_KEY) then
@@ -53,35 +484,30 @@ function Lifecycle.Init()
 
     -- 2. Check if we need to repopulate towns
     -- We do this if ONLY "Independent" exists or if there are NO town factions
-    local townFactionCount = 0
-    for id, f in pairs(data) do
-        if id ~= "Independent" then
-            townFactionCount = townFactionCount + 1
-        end
+    local townFactionCount = countTownFactions(data)
+    local geolocatorReady = ensureGeolocatorReady()
+
+    if geolocatorReady then
+        scheduleMissingTownPopulation(data)
     end
 
     if townFactionCount == 0 then
-        DynamicTrading.Log("DTCommons", "Init", "Faction", "No town factions found, triggering initial population")
-        DynamicTrading_Factions.RepopulateTowns()
+        if geolocatorReady then
+            DynamicTrading.Log("DTCommons", "Init", "Faction", "No town factions found, triggering initial population")
+            DynamicTrading_Factions.RepopulateTowns()
+            townFactionCount = countTownFactions(data)
+        else
+            deferredBootstrapPending = true
+            DynamicTrading.Log("DTCommons", "Init", "Faction", "No town factions found, but geolocator is not ready yet. Deferring initial population.")
+        end
     end
 
     -- 3. Data Integrity: Ensure proper data types for existing factions
+    local needsHomeRepair = false
     for id, f in pairs(data) do
         -- Fallback: ensure reputation is a table
         if type(f.reputation) ~= "table" then
             f.reputation = {}
-        end
-
-        if IS_SERVER_RUNTIME and DT_GeolocatorSystem and f.homeCoords and f.homeCoords.x and f.homeCoords.y then
-            if not f.homeCoords.town or f.homeCoords.town == "" or f.homeCoords.town == "Wilderness" then
-                local resolvedTown = DT_GeolocatorSystem.GetTownName(f.homeCoords.x, f.homeCoords.y)
-                if resolvedTown and resolvedTown ~= "" then
-                    f.homeCoords.town = resolvedTown
-                end
-            end
-            if (not f.town or f.town == "" or f.town == "Wilderness") and f.homeCoords.town then
-                f.town = f.homeCoords.town
-            end
         end
         
         if type(f.wealth) == "number" and not f.ColonyWealth then
@@ -132,6 +558,16 @@ function Lifecycle.Init()
             f.consecutiveStableDays = 0
         end
 
+        if DT_GeolocatorSystem and DT_GeolocatorSystem.ResolveLocationName and type(f.town) == "string" and f.town ~= "" then
+            f.town = DT_GeolocatorSystem.ResolveLocationName(f.town)
+        end
+
+        if IS_SERVER_RUNTIME
+            and not f.playerOwned
+            and not hasValidHomeCoords(f.homeCoords) then
+            needsHomeRepair = true
+        end
+
         if f.playerOwned then
             f.leadershipState = f.leadershipState or "Active"
             local existingLeader = tostring(f.leaderUsername or "")
@@ -161,6 +597,10 @@ function Lifecycle.Init()
         DynamicTrading_Factions.RefreshAllPlayerFactions()
     end
 
+    if needsHomeRepair and not tryFinalizeFactionBootstrap("init") then
+        DynamicTrading.Log("DTCommons", "Faction", "Warn", "Deferred faction home repair until geolocator data becomes available.")
+    end
+
     ModData.transmit(MOD_DATA_KEY)
 end
 
@@ -169,29 +609,82 @@ function Lifecycle.RepopulateTowns()
         return
     end
 
-    local geolocator = DT_GeolocatorSystem
-    if not geolocator or not geolocator.LoadBuildings or not geolocator.GetSeedTowns then
-        DynamicTrading.Log("DTCommons", "Faction", "Warn", "GeolocatorSystem unavailable. Town repopulation skipped.")
-        return
-    end
+    DynamicTrading.Log("DTCommons", "Faction", "Logic", "Starting Town Repopulation...")
 
-    geolocator.LoadBuildings()
-    local seedTowns = geolocator.GetSeedTowns()
-    if #seedTowns == 0 then
-        DynamicTrading.Log("DTCommons", "Faction", "Warn", "GeolocatorSystem found no eligible regions for town faction seeding.")
-        return
-    end
-
-    for _, townName in ipairs(seedTowns) do
-        local maxFactions = SandboxVars.DynamicTrading.MaxFactionsPerTown or 2
-        for _ = 1, maxFactions do
-            local factionID = buildTownFactionID(townName)
-            DynamicTrading_Factions.CreateFaction(factionID, {
-                town = townName,
-                memberCount = SandboxVars.DynamicTrading.FactionStartPop or 3
-            })
+    local hasLocations = false
+    if type(DT_FactionLocations) == "table" then
+        for _ in pairs(DT_FactionLocations) do
+            hasLocations = true
+            break
         end
     end
+
+    if not hasLocations then
+        DynamicTrading.Log("DTCommons", "Faction", "Warn", "RepopulateTowns: No town locations available! Faction spawning aborted.")
+        return
+    end
+
+    local data = ModData.get(MOD_DATA_KEY) or {}
+    local queuedCount, priorityCount = scheduleMissingTownPopulation(data)
+    if queuedCount == 0 then
+        DynamicTrading.Log("DTCommons", "Faction", "Logic", "Town population already satisfies configured limits.")
+        return
+    end
+
+    local immediateBudget = math.max(priorityCount, 1)
+    DynamicTrading.Log(
+        "DTCommons",
+        "Faction",
+        "Logic",
+        "Queued " .. tostring(queuedCount) .. " missing town faction spawns; processing " .. tostring(immediateBudget) .. " immediately."
+    )
+    processDeferredTownQueue("startup", immediateBudget, false)
+end
+
+local function onLifecycleServerStarted()
+    tryFinalizeFactionBootstrap("server-start")
+end
+
+local function onLifecycleTick()
+    townVisitTickCounter = townVisitTickCounter + 1
+    if townVisitTickCounter >= 60 then
+        townVisitTickCounter = 0
+        updateExplorationDrivenTownGeneration()
+    end
+
+    if not deferredBootstrapPending then
+        return
+    end
+
+    deferredBootstrapTickCounter = deferredBootstrapTickCounter + 1
+    if deferredBootstrapTickCounter < 300 then
+        return
+    end
+
+    deferredBootstrapTickCounter = 0
+    tryFinalizeFactionBootstrap("deferred-retry")
+end
+
+local function onLifecycleDailySimulation()
+    if #deferredTownQueue == 0 then
+        return
+    end
+
+    if ensureGeolocatorReady() then
+        DynamicTrading.Log(
+            "DTCommons",
+            "Faction",
+            "Queue",
+            "Daily simulation advancing deferred town queue; pending=" .. tostring(#deferredTownQueue)
+        )
+        processDeferredTownQueue("daily-simulation", 1, false)
+    end
+end
+
+if IS_SERVER_RUNTIME then
+    Events.OnServerStarted.Add(onLifecycleServerStarted)
+    Events.OnTick.Add(onLifecycleTick)
+    Events.OnDynamicTradingDailySimulation.Add(onLifecycleDailySimulation)
 end
 
 -- ==========================================================
@@ -207,6 +700,11 @@ function Lifecycle.CreateFaction(factionID, initialData)
     if not data[factionID] then
         local displayName = ""
         local assignedHome = nil
+        local resolvedTown = initialData.town
+
+        if DT_GeolocatorSystem and DT_GeolocatorSystem.ResolveLocationName and resolvedTown then
+            resolvedTown = DT_GeolocatorSystem.ResolveLocationName(resolvedTown)
+        end
 
         -- A. Handle Naming & Home Assignment
         if initialData.playerOwned then
@@ -214,7 +712,11 @@ function Lifecycle.CreateFaction(factionID, initialData)
             assignedHome = initialData.homeCoords
         elseif factionID == "Independent" or initialData.isNomadic then
             displayName = "Independent Traders"
-            assignedHome = nil -- Nomads have no home base
+            assignedHome = buildSpatialFallbackHome(factionID, {
+                name = displayName,
+                town = resolvedTown,
+                factionType = "independent"
+            })
         else
             -- Use our new dynamic naming engine
             if DT_FactionNames and DT_FactionNames.Generate then
@@ -224,11 +726,17 @@ function Lifecycle.CreateFaction(factionID, initialData)
             end
             -- Ask the location manager for a physical base
             if DT_FactionLocationManager and DT_FactionLocationManager.AssignHome then
-                assignedHome = DT_FactionLocationManager.AssignHome(factionID, initialData.town)
+                assignedHome = DT_FactionLocationManager.AssignHome(factionID, resolvedTown)
+            end
+            if not assignedHome then
+                assignedHome = buildSpatialFallbackHome(factionID, {
+                    name = displayName,
+                    town = resolvedTown,
+                    factionType = initialData.playerOwned and "player" or "town"
+                })
             end
         end
 
-        local resolvedTown = initialData.town
         if (not resolvedTown or resolvedTown == "" or resolvedTown == "Wilderness") and assignedHome and assignedHome.town then
             resolvedTown = assignedHome.town
         end

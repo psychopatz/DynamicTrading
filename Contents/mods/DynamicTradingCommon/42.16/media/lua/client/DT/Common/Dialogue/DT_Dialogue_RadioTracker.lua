@@ -48,6 +48,13 @@ function DynamicTrading.Dialogue.RadioTracker.GeneratePlayerRequest(trader, cont
     return replaceTokens(rawText, trader, context)
 end
 
+function DynamicTrading.Dialogue.RadioTracker.GeneratePlayerAway(trader, context)
+    requireTrackingDialogue(trader and (trader.archetypeID or trader.archetype) or nil)
+    local pool = Core.GetDialoguePool("Player", "Tracking", "Away")
+    local rawText = Core.PickRandom(pool) or "Wait... I think I'm losing the signal. Am I going the wrong way?"
+    return replaceTokens(rawText, trader, context)
+end
+
 function DynamicTrading.Dialogue.RadioTracker.GeneratePlayerApproach(trader, context, stage)
     requireTrackingDialogue(trader and (trader.archetypeID or trader.archetype) or nil)
     local subContext = tostring(stage or "Approach100")
@@ -62,6 +69,12 @@ function DynamicTrading.Dialogue.RadioTracker.GenerateReply(trader, context)
     local subContext = context and context.isLive and "ReplyLive" or "ReplyLastKnown"
     local pool = Core.GetDialoguePool(archetype, "Tracking", subContext)
     local rawText = Core.PickRandom(pool) or "Best lead I've got is {coords}, {site}."
+
+    local distance = context and context.distance or 0
+    if distance > 1000 and context and context.location and context.location.county and context.location.county ~= "Unknown" then
+        rawText = rawText .. " I'm way out in {county}."
+    end
+
     return replaceTokens(rawText, trader, context)
 end
 
@@ -71,6 +84,14 @@ function DynamicTrading.Dialogue.RadioTracker.GenerateApproachReply(trader, cont
     local subContext = tostring(stage or "Approach100")
     local pool = Core.GetDialoguePool(archetype, "Tracking", subContext)
     local rawText = Core.PickRandom(pool) or "Keep coming."
+    return replaceTokens(rawText, trader, context)
+end
+
+function DynamicTrading.Dialogue.RadioTracker.GenerateAwayReply(trader, context)
+    local archetype = trader and (trader.archetypeID or trader.archetype) or "General"
+    requireTrackingDialogue(archetype)
+    local pool = Core.GetDialoguePool(archetype, "Tracking", "Away")
+    local rawText = Core.PickRandom(pool) or "Yeah, you're fading out man. Pick it up."
     return replaceTokens(rawText, trader, context)
 end
 

@@ -13,32 +13,44 @@ require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig"
 -- SERVER STARTUP HANDLER
 -- =============================================================================
 
-local function onServerStart()
-    DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Initializing geolocator database...")
-    
-    -- Try to load from ModData or Scan if first time
-    if DTM.LoadBuildings() then
-        local modData = ModData.getOrCreate("DT_Buildings")
-        
-        -- If this is the server and we have no locations in ModData yet, save them
-        if not modData.locations or #modData.locations == 0 then
-            DynamicTrading.Log("DTCommons", "Debug", "Scanner", "No cached building data found. Performing initial scan...")
-            DTM.Buildings = DTM.ScanForBuildings()
-            DTM.MarkLocationCachesDirty = DTM.MarkLocationCachesDirty or function() end
-            DTM.MarkLocationCachesDirty()
-            
-            -- Save to ModData for persistence
-            modData.locations = DTM.Buildings
-            ModData.transmit("DT_Buildings")
-            
-            DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Initial scan complete. Saved " .. #DTM.Buildings .. " buildings to ModData.")
-        else
-            DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Loaded " .. #modData.locations .. " buildings from ModData cache.")
-        end
+local pendingBootstrap = false
+local bootstrapRetryTicks = 0
+
+local function attemptGeolocatorBootstrap(reason)
+    DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Initializing geolocator database (" .. tostring(reason or "startup") .. ")...")
+
+    if DTM.EnsureBuildingsLoaded and DTM.EnsureBuildingsLoaded(true, true) then
+        pendingBootstrap = false
+        bootstrapRetryTicks = 0
+        DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Spatial database ready with " .. tostring(#(DTM.Buildings or {})) .. " cached locations.")
+        return true
     end
+
+    pendingBootstrap = true
+    return false
+end
+
+local function onServerStart()
+    attemptGeolocatorBootstrap("server-start")
 end
 
 Events.OnServerStarted.Add(onServerStart)
+
+local function onServerTick()
+    if not pendingBootstrap then
+        return
+    end
+
+    bootstrapRetryTicks = bootstrapRetryTicks + 1
+    if bootstrapRetryTicks < 300 then
+        return
+    end
+
+    bootstrapRetryTicks = 0
+    attemptGeolocatorBootstrap("deferred-retry")
+end
+
+Events.OnTick.Add(onServerTick)
 
 -- =============================================================================
 -- ADMIN COMMANDS (Optional)
@@ -49,24 +61,18 @@ local function onRescanBuildings(module, command, player, args)
     if (module == "dtm" or module == "geolocator") and command == "rescan" then
         if player:getAccessLevel() == "admin" or player:getAccessLevel() == "moderator" then
             DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Admin " .. player:getUsername() .. " initiated building rescan.")
-            
-            -- Perform new scan
-            DTM.Buildings = DTM.ScanForBuildings()
-            DTM.MarkLocationCachesDirty = DTM.MarkLocationCachesDirty or function() end
-            DTM.MarkLocationCachesDirty()
-            
-            -- Rebuild lookup
-            DTM.BuildingLookup = {}
-            for _, b in ipairs(DTM.Buildings) do
-                DTM.BuildingLookup[b.x .. "," .. b.y] = b
+
+            if not DTM.CanScanBuildings or not DTM.CanScanBuildings() then
+                player:Say("[DTM] Rescan failed. World building data is not ready yet.")
+                return
             end
-            
-            -- Save to ModData
-            local modData = ModData.getOrCreate("DT_Buildings")
-            modData.locations = DTM.Buildings
-            ModData.transmit("DT_Buildings")
-            
-            player:Say("[DTM] Rescan complete. Found " .. #DTM.Buildings .. " buildings.")
+
+            local scanned = DTM.ScanForBuildings and DTM.ScanForBuildings() or nil
+            if DTM.ReplaceBuildings and DTM.ReplaceBuildings(scanned, true) then
+                player:Say("[DTM] Rescan complete. Found " .. #DTM.Buildings .. " buildings.")
+            else
+                player:Say("[DTM] Rescan failed. Scan returned no valid locations.")
+            end
         else
             player:Say("[DTM] You need admin privileges to use this command.")
         end

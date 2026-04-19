@@ -250,11 +250,18 @@ local function buildTrackedContext(targetData)
         siteDescription = "near " .. tostring(location.town)
     end
 
+    local distance = nil
+    local player = getSpecificPlayer(0)
+    if player and targetData.lastX and targetData.lastY then
+        distance = IsoUtils.DistanceTo(targetData.lastX, targetData.lastY, player:getX(), player:getY())
+    end
+
     return {
         seed = targetData.identitySeed,
         isLive = targetData.isLive == true,
         signalLead = signalLead,
         signalBadge = targetData.isLive and "LIVE SIGNAL" or "LAST KNOWN",
+        distance = distance,
         coordsText = coordsText,
         siteDescription = siteDescription,
         location = location,
@@ -297,6 +304,21 @@ local TRACKING_PROXIMITY_STAGES = {
     { distance = 10, key = "Approach10" },
 }
 
+local function getTrackingProgressDepth(distance)
+    if not distance then
+        return 0
+    end
+
+    local depth = 0
+    for index, stage in ipairs(TRACKING_PROXIMITY_STAGES) do
+        if distance <= stage.distance then
+            depth = index
+        end
+    end
+
+    return depth
+end
+
 local function getTrackingDistanceToTarget(window)
     if not window or not window.trackingUUID or not DT_RadioScannerManager then
         return nil
@@ -314,6 +336,10 @@ end
 function DT_RadioScannerWindow:clearTrackingConversation()
     self.trackingMessageQueue = {}
     self.trackingMilestones = nil
+    self.trackingAwayTriggered = nil
+    self.lastTrackingDistance = nil
+    self.lastAwayDepth = nil
+    self.lastTriggeredTrackingDepth = nil
     if self.trackingDialoguePanel then
         self.trackingDialoguePanel:clearMessages()
         self.trackingDialoguePanel:setHeadingText("Tracked Channel:")
@@ -384,15 +410,42 @@ function DT_RadioScannerWindow:processTrackingProximityDialogue()
         return
     end
 
-    for _, stage in ipairs(TRACKING_PROXIMITY_STAGES) do
-        if distance <= stage.distance and self.trackingMilestones[stage.key] ~= true then
+    self.trackingContext.distance = distance
+
+    local currentDepth = getTrackingProgressDepth(distance)
+    local lastTriggeredDepth = self.lastTriggeredTrackingDepth or 0
+    if currentDepth > lastTriggeredDepth then
+        local stage = TRACKING_PROXIMITY_STAGES[currentDepth]
+        if stage and self.trackingMilestones[stage.key] ~= true then
             self.trackingMilestones[stage.key] = true
+            self.lastTriggeredTrackingDepth = currentDepth
+
             local playerLine = DynamicTrading.Dialogue.RadioTracker.GeneratePlayerApproach(self.trackingData, self.trackingContext, stage.key)
             local replyLine = DynamicTrading.Dialogue.RadioTracker.GenerateApproachReply(self.trackingData, self.trackingContext, stage.key)
             self:queueTrackingConversationMessage(playerLine, true, 0, false)
             self:queueTrackingConversationMessage(replyLine, false, 0.9, false)
+
+            self.trackingAwayTriggered = false
         end
     end
+
+    if self.lastTrackingDistance and distance > (self.lastTrackingDistance + 15) then
+        if not self.trackingAwayTriggered then
+            local playerLine = DynamicTrading.Dialogue.RadioTracker.GeneratePlayerAway(self.trackingData, self.trackingContext)
+            local replyLine = DynamicTrading.Dialogue.RadioTracker.GenerateAwayReply(self.trackingData, self.trackingContext)
+            self:queueTrackingConversationMessage(playerLine, true, 0, false)
+            self:queueTrackingConversationMessage(replyLine, false, 0.9, false)
+            self.trackingAwayTriggered = true
+            self.lastAwayDepth = currentDepth
+        end
+    end
+
+    if self.trackingAwayTriggered and self.lastAwayDepth and currentDepth >= (self.lastAwayDepth + 2) then
+        self.trackingAwayTriggered = false
+        self.lastAwayDepth = nil
+    end
+
+    self.lastTrackingDistance = distance
 end
 
 function DT_RadioScannerWindow:refreshTrackingPresentation(force)
@@ -435,6 +488,10 @@ function DT_RadioScannerWindow:startTracking(uuid, name, data)
     self.trackingData = data
     self.trackingContext = nil
     self.trackingMilestones = {}
+    self.trackingAwayTriggered = false
+    self.lastTrackingDistance = nil
+    self.lastAwayDepth = nil
+    self.lastTriggeredTrackingDepth = 0
     self:refreshTrackingPresentation(true)
 
     local targetData = buildTrackedTargetData(self, uuid)

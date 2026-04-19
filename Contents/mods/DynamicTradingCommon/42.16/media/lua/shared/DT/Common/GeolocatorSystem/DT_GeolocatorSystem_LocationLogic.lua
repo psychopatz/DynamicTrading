@@ -21,6 +21,142 @@ local function normalizeLocationKey(name)
     return value
 end
 
+local function clearSequentialTable(target)
+    for index = #target, 1, -1 do
+        target[index] = nil
+    end
+end
+
+local function clampNumber(value, minValue, maxValue)
+    local numeric = tonumber(value)
+    if numeric == nil then
+        return minValue
+    end
+    if numeric < minValue then
+        return minValue
+    end
+    if numeric > maxValue then
+        return maxValue
+    end
+    return numeric
+end
+
+local function collectSpatialAnchorPlayers()
+    local players = {}
+    local onlinePlayers = getOnlinePlayers and getOnlinePlayers() or nil
+
+    if onlinePlayers then
+        for index = 0, onlinePlayers:size() - 1 do
+            local player = onlinePlayers:get(index)
+            if player and player.getX and player.getY then
+                players[#players + 1] = player
+            end
+        end
+    end
+
+    if #players == 0 then
+        local localPlayer = nil
+        if getSpecificPlayer then
+            localPlayer = getSpecificPlayer(0)
+        elseif getPlayer then
+            localPlayer = getPlayer()
+        end
+
+        if localPlayer and localPlayer.getX and localPlayer.getY then
+            players[#players + 1] = localPlayer
+        end
+    end
+
+    return players
+end
+
+local function buildSpatialHomeEntry(x, y, z, name, town, county, source)
+    local resolvedTown = town
+    if DT_GeolocatorSystem.ResolveLocationName and resolvedTown then
+        resolvedTown = DT_GeolocatorSystem.ResolveLocationName(resolvedTown)
+    end
+
+    local finalName = tostring(name or "Nomadic Route")
+    return {
+        name = finalName,
+        x = math.floor(tonumber(x) or 0),
+        y = math.floor(tonumber(y) or 0),
+        z = math.floor(tonumber(z) or 0),
+        town = resolvedTown or town or "Unknown",
+        county = county,
+        zone = finalName,
+        isSpatial = true,
+        spatialSource = source or "fallback",
+    }
+end
+
+local function buildLocationCenterEntry(location, label)
+    if type(location) ~= "table" then
+        return nil
+    end
+
+    local centerX = math.floor(((tonumber(location.startX) or 0) + (tonumber(location.endX) or 0)) / 2)
+    local centerY = math.floor(((tonumber(location.startY) or 0) + (tonumber(location.endY) or 0)) / 2)
+    local town = location.shortName or location.id or "Unknown"
+    local name = label or (town ~= "Unknown" and (tostring(town) .. " Route") or "Nomadic Route")
+    return buildSpatialHomeEntry(centerX, centerY, 0, name, town, location.longName, "location-center")
+end
+
+local function getSpatialRadiusRange(options)
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or {}
+    local minRadius = tonumber(options and options.minRadius) or tonumber(sandbox.IndependentSpawnRadiusMin) or 500
+    local maxRadius = tonumber(options and options.maxRadius) or tonumber(sandbox.IndependentSpawnRadiusMax) or 1000
+
+    if options and options.preferUsableRange then
+        minRadius = math.min(minRadius, 80)
+        maxRadius = math.min(maxRadius, 180)
+    end
+
+    minRadius = clampNumber(minRadius, 10, 10000)
+    maxRadius = clampNumber(maxRadius, minRadius + 10, 10000)
+    if maxRadius < minRadius then
+        maxRadius = minRadius
+    end
+
+    return minRadius, maxRadius
+end
+
+local function pickNearbyBuildingForAnchor(anchorX, anchorY, minRadius, maxRadius, targetTown)
+    if not DT_GeolocatorSystem.EnsureBuildingsLoaded
+        or not DT_GeolocatorSystem.EnsureBuildingsLoaded(false, false) then
+        return nil
+    end
+
+    local minRadiusSq = minRadius * minRadius
+    local candidates = {}
+    local nearbyBuildings = nil
+
+    if DT_GeolocatorSystem.GetBuildingsNearPoint then
+        nearbyBuildings = DT_GeolocatorSystem.GetBuildingsNearPoint(anchorX, anchorY, maxRadius, targetTown)
+    else
+        nearbyBuildings = DT_GeolocatorSystem.Buildings or {}
+    end
+
+    for _, building in ipairs(nearbyBuildings) do
+        local bx = tonumber(building.cx) or tonumber(building.x)
+        local by = tonumber(building.cy) or tonumber(building.y)
+        if bx and by then
+            local dx = bx - anchorX
+            local dy = by - anchorY
+            local distSq = (dx * dx) + (dy * dy)
+            if distSq >= minRadiusSq then
+                candidates[#candidates + 1] = building
+            end
+        end
+    end
+
+    if #candidates == 0 then
+        return nil
+    end
+
+    return candidates[ZombRand(#candidates) + 1]
+end
+
 local function upsertLocation(location)
     if not location then
         return nil
@@ -96,6 +232,91 @@ function DT_GeolocatorSystem.AddLocation(id, longName, modName, startX, startY, 
         endY = endY,
         isVanilla = false,
     })
+end
+
+function DT_GeolocatorSystem.NormalizeLocationKey(value)
+    return normalizeLocationKey(value)
+end
+
+function DT_GeolocatorSystem.FindLocationByName(value)
+    DT_GeolocatorSystem.InitCache()
+
+    local targetKey = normalizeLocationKey(value)
+    if not targetKey then
+        return nil
+    end
+
+    local locations = DT_GeolocatorSystem.ActiveLocations or {}
+    for _, location in ipairs(locations) do
+        if normalizeLocationKey(location.id) == targetKey
+            or normalizeLocationKey(location.shortName) == targetKey
+            or normalizeLocationKey(location.longName) == targetKey then
+            return location
+        end
+    end
+
+    return nil
+end
+
+function DT_GeolocatorSystem.ResolveLocationName(value)
+    local location = DT_GeolocatorSystem.FindLocationByName(value)
+    if location and location.shortName and location.shortName ~= "" then
+        return location.shortName
+    end
+
+    return value
+end
+
+function DT_GeolocatorSystem.CreateSpatialHome(label, options)
+    options = type(options) == "table" and options or {}
+
+    local targetTown = options.town
+    local resolvedLocation = DT_GeolocatorSystem.FindLocationByName(targetTown)
+    local minRadius, maxRadius = getSpatialRadiusRange(options)
+    local players = collectSpatialAnchorPlayers()
+
+    if #players > 0 then
+        local anchor = players[ZombRand(#players) + 1]
+        local anchorX = math.floor(anchor:getX())
+        local anchorY = math.floor(anchor:getY())
+        local anchorZ = math.floor((anchor.getZ and anchor:getZ()) or 0)
+        local building = pickNearbyBuildingForAnchor(anchorX, anchorY, minRadius, maxRadius, targetTown)
+
+        if building then
+            local bx = tonumber(building.cx) or tonumber(building.x) or anchorX
+            local by = tonumber(building.cy) or tonumber(building.y) or anchorY
+            local buildingTown = building.town or (DT_GeolocatorSystem.GetTownName and DT_GeolocatorSystem.GetTownName(bx, by)) or targetTown
+            local buildingCounty = building.county or (DT_GeolocatorSystem.GetCountyName and DT_GeolocatorSystem.GetCountyName(bx, by)) or nil
+            return buildSpatialHomeEntry(bx, by, 0, building.name or label, buildingTown, buildingCounty, "nearby-building")
+        end
+
+        local angle = math.rad(ZombRand(360))
+        local radius = minRadius
+        if maxRadius > minRadius then
+            radius = minRadius + ZombRand(maxRadius - minRadius + 1)
+        end
+        local x = math.floor(anchorX + (math.cos(angle) * radius))
+        local y = math.floor(anchorY + (math.sin(angle) * radius))
+        local town = (DT_GeolocatorSystem.GetTownName and DT_GeolocatorSystem.GetTownName(x, y)) or targetTown
+        local county = (DT_GeolocatorSystem.GetCountyName and DT_GeolocatorSystem.GetCountyName(x, y)) or nil
+        local name = label
+        if not name or name == "" then
+            local townLabel = (DT_GeolocatorSystem.ResolveLocationName and DT_GeolocatorSystem.ResolveLocationName(town)) or town
+            name = townLabel and townLabel ~= "Wilderness" and (tostring(townLabel) .. " Route") or "Nomadic Route"
+        end
+        return buildSpatialHomeEntry(x, y, anchorZ, name, town, county, "nearby-player")
+    end
+
+    if resolvedLocation then
+        return buildLocationCenterEntry(resolvedLocation, label)
+    end
+
+    if DT_GeolocatorSystem.ActiveLocations and #DT_GeolocatorSystem.ActiveLocations > 0 then
+        local fallbackLocation = DT_GeolocatorSystem.ActiveLocations[ZombRand(#DT_GeolocatorSystem.ActiveLocations) + 1]
+        return buildLocationCenterEntry(fallbackLocation, label)
+    end
+
+    return buildSpatialHomeEntry(0, 0, 0, label or "Nomadic Route", targetTown or "Unknown", nil, "origin-fallback")
 end
 
 function DT_GeolocatorSystem.GetLocation(x, y)

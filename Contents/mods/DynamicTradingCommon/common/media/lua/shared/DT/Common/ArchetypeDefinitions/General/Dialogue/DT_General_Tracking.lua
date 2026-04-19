@@ -353,6 +353,18 @@ DynamicTrading.RegisterDialogue("General", "Tracking", {
             "There's the face behind the voice. Good to see you in person.",
             "Hey. Over here. Yeah, that's me. Welcome, {player.firstname}.",
             "Signal matched, visual matched. Come on, let's do this proper.",
+        },
+        Away = {
+            "Yeah, you're fading out man. Pick it up.",
+            "Wait, the signal is dropping. Are you heading the wrong way?",
+            "I'm losing you, {player.firstname}. Double check your bearing.",
+            "You're drifting out of range. Stay on the signal or we're done.",
+            "The ping's getting weaker. You heading back to the start or something?",
+            "Static's building on my end. You're walking away, {player.firstname}!",
+            "I can barely hear you through the soup. Turn around!",
+            "Where you going? You're dropping off the scope.",
+            "Signal lock is failing. You're headed for the wilderness, man.",
+            "Keep this up and we're going to lose the line. Focus!",
         }
     }
 })
