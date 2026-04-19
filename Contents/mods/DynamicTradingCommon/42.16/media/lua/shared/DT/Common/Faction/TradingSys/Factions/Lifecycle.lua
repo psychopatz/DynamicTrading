@@ -14,8 +14,19 @@ local MOD_DATA_KEY = "DynamicTrading_Factions"
 local IS_SERVER_RUNTIME = (not isClient()) or isServer()
 
 if IS_SERVER_RUNTIME then
+    require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem"
     require "DT/Common/Faction/Templates/BaseSpawn/DT_FactionLocationManager"
     require "DT/Common/Faction/Templates/FactionNames/DT_FactionNames"
+end
+
+local function buildTownFactionID(townName)
+    local prefix = tostring(townName or "Town")
+    prefix = prefix:gsub("%s+", "")
+    prefix = prefix:gsub("[^%w_]", "")
+    if prefix == "" then
+        prefix = "Town"
+    end
+    return prefix .. "_" .. tostring(100000 + ZombRand(900000))
 end
 
 -- ==========================================================
@@ -59,6 +70,18 @@ function Lifecycle.Init()
         -- Fallback: ensure reputation is a table
         if type(f.reputation) ~= "table" then
             f.reputation = {}
+        end
+
+        if IS_SERVER_RUNTIME and DT_GeolocatorSystem and f.homeCoords and f.homeCoords.x and f.homeCoords.y then
+            if not f.homeCoords.town or f.homeCoords.town == "" or f.homeCoords.town == "Wilderness" then
+                local resolvedTown = DT_GeolocatorSystem.GetTownName(f.homeCoords.x, f.homeCoords.y)
+                if resolvedTown and resolvedTown ~= "" then
+                    f.homeCoords.town = resolvedTown
+                end
+            end
+            if (not f.town or f.town == "" or f.town == "Wilderness") and f.homeCoords.town then
+                f.town = f.homeCoords.town
+            end
         end
         
         if type(f.wealth) == "number" and not f.ColonyWealth then
@@ -146,17 +169,27 @@ function Lifecycle.RepopulateTowns()
         return
     end
 
-     if DT_FactionLocations then
-        for townName, _ in pairs(DT_FactionLocations) do
-            local maxFactions = SandboxVars.DynamicTrading.MaxFactionsPerTown or 2
-            for i=1, maxFactions do
-                -- We generate unique IDs for each faction instance
-                local factionID = townName .. "_" .. tostring(100000 + ZombRand(900000))
-                DynamicTrading_Factions.CreateFaction(factionID, {
-                    town = townName,
-                    memberCount = SandboxVars.DynamicTrading.FactionStartPop or 3
-                })
-            end
+    local geolocator = DT_GeolocatorSystem
+    if not geolocator or not geolocator.LoadBuildings or not geolocator.GetSeedTowns then
+        DynamicTrading.Log("DTCommons", "Faction", "Warn", "GeolocatorSystem unavailable. Town repopulation skipped.")
+        return
+    end
+
+    geolocator.LoadBuildings()
+    local seedTowns = geolocator.GetSeedTowns()
+    if #seedTowns == 0 then
+        DynamicTrading.Log("DTCommons", "Faction", "Warn", "GeolocatorSystem found no eligible regions for town faction seeding.")
+        return
+    end
+
+    for _, townName in ipairs(seedTowns) do
+        local maxFactions = SandboxVars.DynamicTrading.MaxFactionsPerTown or 2
+        for _ = 1, maxFactions do
+            local factionID = buildTownFactionID(townName)
+            DynamicTrading_Factions.CreateFaction(factionID, {
+                town = townName,
+                memberCount = SandboxVars.DynamicTrading.FactionStartPop or 3
+            })
         end
     end
 end
@@ -195,11 +228,16 @@ function Lifecycle.CreateFaction(factionID, initialData)
             end
         end
 
+        local resolvedTown = initialData.town
+        if (not resolvedTown or resolvedTown == "" or resolvedTown == "Wilderness") and assignedHome and assignedHome.town then
+            resolvedTown = assignedHome.town
+        end
+
         -- B. Construct the Faction Object
         data[factionID] = {
             id = factionID,
             name = displayName, -- The "flavor" name (The Iron Vanguard)
-            town = initialData.town, -- Keep track of which town this faction belongs to
+            town = resolvedTown, -- Keep track of which town this faction belongs to
             homeCoords = assignedHome, -- The "physical" base (Rosewood Fire Station)
             stockpile = initialData.stockpile or { food = 200, ammo = 100, meds = 50, fuel = 25, water = 150, materials = 30 },
             state = initialData.state or "Stable",

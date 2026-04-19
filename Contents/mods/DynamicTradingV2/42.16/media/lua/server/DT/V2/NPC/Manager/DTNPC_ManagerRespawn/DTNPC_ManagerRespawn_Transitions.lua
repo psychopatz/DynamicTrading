@@ -525,7 +525,7 @@ function DTNPCManager.PlanTradingDestination(uuid, registry)
             end
         end
     else
-        local town = "Rosewood"
+        local town = nil
         if registry.factionID and DynamicTrading_Factions then
             local faction = DynamicTrading_Factions.GetFaction(registry.factionID)
             if faction and faction.town then
@@ -533,7 +533,11 @@ function DTNPCManager.PlanTradingDestination(uuid, registry)
             end
         end
 
-        if (not town or town == "Rosewood") and registry.homeCoords and DTM and DTM.GetTownName then
+        if (not town or town == "" or town == "Wilderness") and registry.homeCoords and registry.homeCoords.town then
+            town = registry.homeCoords.town
+        end
+
+        if (not town or town == "" or town == "Wilderness") and registry.homeCoords and DTM and DTM.GetTownName then
             local detected = DTM.GetTownName(registry.homeCoords.x, registry.homeCoords.y)
             if detected and detected ~= "Wilderness" then
                 town = detected
@@ -542,9 +546,20 @@ function DTNPCManager.PlanTradingDestination(uuid, registry)
 
         if DTM and DTM.Buildings then
             local townBuildings = {}
+            local nearestBuilding = nil
+            local nearestDistance = nil
             for _, building in ipairs(DTM.Buildings) do
-                if building.town == town then
+                if town and (building.town == town or building.county == town) then
                     table.insert(townBuildings, building)
+                end
+                if registry.homeCoords and registry.homeCoords.x and registry.homeCoords.y and building.cx and building.cy then
+                    local dx = registry.homeCoords.x - building.cx
+                    local dy = registry.homeCoords.y - building.cy
+                    local distance = (dx * dx) + (dy * dy)
+                    if not nearestDistance or distance < nearestDistance then
+                        nearestDistance = distance
+                        nearestBuilding = building
+                    end
                 end
             end
 
@@ -552,6 +567,9 @@ function DTNPCManager.PlanTradingDestination(uuid, registry)
                 local targetBuilding = townBuildings[ZombRand(#townBuildings) + 1]
                 targetX = targetBuilding.cx
                 targetY = targetBuilding.cy
+            elseif nearestBuilding then
+                targetX = nearestBuilding.cx
+                targetY = nearestBuilding.cy
             end
         end
     end

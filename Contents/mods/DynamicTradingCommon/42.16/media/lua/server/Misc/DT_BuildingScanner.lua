@@ -14,7 +14,7 @@ require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig"
 -- =============================================================================
 
 local function onServerStart()
-    DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Initializing building database...")
+    DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Initializing geolocator database...")
     
     -- Try to load from ModData or Scan if first time
     if DTM.LoadBuildings() then
@@ -24,6 +24,8 @@ local function onServerStart()
         if not modData.locations or #modData.locations == 0 then
             DynamicTrading.Log("DTCommons", "Debug", "Scanner", "No cached building data found. Performing initial scan...")
             DTM.Buildings = DTM.ScanForBuildings()
+            DTM.MarkLocationCachesDirty = DTM.MarkLocationCachesDirty or function() end
+            DTM.MarkLocationCachesDirty()
             
             -- Save to ModData for persistence
             modData.locations = DTM.Buildings
@@ -44,12 +46,14 @@ Events.OnServerStarted.Add(onServerStart)
 
 -- Command to rescan all buildings (admin only)
 local function onRescanBuildings(module, command, player, args)
-    if module == "dtm" and command == "rescan" then
+    if (module == "dtm" or module == "geolocator") and command == "rescan" then
         if player:getAccessLevel() == "admin" or player:getAccessLevel() == "moderator" then
             DynamicTrading.Log("DTCommons", "Debug", "Scanner", "Admin " .. player:getUsername() .. " initiated building rescan.")
             
             -- Perform new scan
             DTM.Buildings = DTM.ScanForBuildings()
+            DTM.MarkLocationCachesDirty = DTM.MarkLocationCachesDirty or function() end
+            DTM.MarkLocationCachesDirty()
             
             -- Rebuild lookup
             DTM.BuildingLookup = {}

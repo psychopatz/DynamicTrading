@@ -5,16 +5,6 @@
 -- VERSION: 2.0 - Enhanced with County Support
 -- =============================================================================
 
-DTM = DTM or {}
-DTM.Config = {}
+require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem"
 
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_Settings"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_MapData"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_LocationLogic"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_BuildingLogic"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_ZoneLogic"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_BuildingScanLogic"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_WildernessScanLogic"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_RoadScanLogic"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_LoadLogic"
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig_DebugLogic"
+DTM = DT_GeolocatorSystem
