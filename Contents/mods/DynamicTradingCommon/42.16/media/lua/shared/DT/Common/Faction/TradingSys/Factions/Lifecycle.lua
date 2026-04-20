@@ -61,6 +61,15 @@ local function ensureGeolocatorReady()
         and DT_GeolocatorSystem.EnsureBuildingsLoaded(true, true)
 end
 
+local function getConfiguredColonyWealth()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    local configured = sandbox and tonumber(sandbox.ColonyWealth) or nil
+    if configured == nil then
+        return 10000
+    end
+    return math.max(0, math.floor(configured))
+end
+
 local function collectSpatialAnchorPlayers()
     local players = {}
     local onlinePlayers = getOnlinePlayers and getOnlinePlayers() or nil
@@ -514,9 +523,7 @@ function Lifecycle.Init()
             f.ColonyWealth = f.wealth
             f.wealth = nil
         end
-        if type(f.ColonyWealth) ~= "number" then
-            f.ColonyWealth = 1000
-        end
+        f.ColonyWealth = getConfiguredColonyWealth()
 
         if not f.CollapseDays then
             f.CollapseDays = 0
@@ -750,7 +757,7 @@ function Lifecycle.CreateFaction(factionID, initialData)
             stockpile = initialData.stockpile or { food = 200, ammo = 100, meds = 50, fuel = 25, water = 150, materials = 30 },
             state = initialData.state or "Stable",
             memberCount = initialData.memberCount or math.max(8, SandboxVars.DynamicTrading.FactionStartPop or 10),
-            ColonyWealth = initialData.ColonyWealth or initialData.wealth or 1000, -- Stores the total economic power of the colony
+            ColonyWealth = getConfiguredColonyWealth(), -- Stores the total economic power of the colony
             CollapseDays = 0,
             factionType = initialData.playerOwned and "player" or (factionID == "Independent" or initialData.isNomadic) and "independent" or "town",
             reputation = initialData.reputation or {}, -- [Username] = Integer
