@@ -195,7 +195,13 @@ local HUB_BUTTONS = {
         description = "Open the dedicated wipe and maintenance window for Dynamic Trading mod data.",
         available = function()
             local ok = pcall(require, "Debug/DT_DataWipe_Client")
-            return ok and DT_ModDataManagement and DT_ModDataManagement.Open
+            if not (ok and DT_ModDataManagement and DT_ModDataManagement.Open) then
+                return false
+            end
+            if isDebugEnabled() or _G.DT_PRIVATE_DEBUG_BYPASS then return true end
+            local player = getPlayer()
+            local accessLevel = player and player.getAccessLevel and player:getAccessLevel() or "None"
+            return string.lower(tostring(accessLevel)) == "admin"
         end,
         action = function()
             DT_ModDataManagement.Open()

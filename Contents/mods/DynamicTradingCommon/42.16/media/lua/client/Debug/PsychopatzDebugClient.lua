@@ -191,6 +191,7 @@ function PsychopatzDebugWindow:onExecute()
             qtyWalkie = qtyWalkie
         }
         
+
         sendClientCommand(player, "DynamicTrading", "GrantPowers", args)
         
         -- Handle Night Vision Toggle Locally

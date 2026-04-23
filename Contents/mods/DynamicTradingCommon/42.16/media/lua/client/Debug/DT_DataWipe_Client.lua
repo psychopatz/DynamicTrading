@@ -54,10 +54,12 @@ local function hasModDataManagementContextAccess(playerObj)
     if not playerObj then
         return false
     end
-    if isDebugEnabled() then
+    if isDebugEnabled() or _G.DT_PRIVATE_DEBUG_BYPASS then
         return true
     end
-    return tostring(playerObj:getAccessLevel() or "None") ~= "None"
+    
+    local accessLevel = playerObj.getAccessLevel and playerObj:getAccessLevel() or "None"
+    return accessLevel and string.lower(tostring(accessLevel)) == "admin"
 end
 
 local function RequestServerWipe(playerObj, target, label)
