@@ -493,6 +493,27 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
         or state == "ProtectMelee"
         or state == "ProtectAuto"
     local requestedReturnStatus = args.returnStatus
+    local escortLocked = tostring(npcData.doObjectiveHookId or "") == "TraderNeeds.HelpEscort"
+        and npcData.doObjectiveEscortActive == true
+
+    if escortLocked then
+        if state ~= "Follow" and state ~= "Stay" then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Escort",
+                "Rejected escort-locked order for " .. tostring(npcData.name or normalizedUUID)
+                    .. " state=" .. tostring(state)
+                    .. " controller=" .. tostring(masterUsername or "system")
+            )
+            return false, npcData
+        end
+
+        args.combatOrder = nil
+        args.guardCombatOrder = nil
+        args.guardAttackMode = nil
+        requestedReturnStatus = nil
+    end
 
     if usesMaster and not zombie and controller and DTNPCServerCore.SpawnNearbyCompanionByUUID then
         local spawned, spawnedZombie, spawnedData = DTNPCServerCore.SpawnNearbyCompanionByUUID(

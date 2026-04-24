@@ -485,6 +485,20 @@ local function onClientCommand(module, command, player, args)
                 if instanceof(obj, "IsoZombie") then
                     local npcData = DTNPC.GetBrain(obj)
                     if npcData then
+                        local escortLocked = tostring(npcData.doObjectiveHookId or "") == "TraderNeeds.HelpEscort"
+                            and npcData.doObjectiveEscortActive == true
+                        if escortLocked and args.state ~= "Follow" and args.state ~= "Stay" then
+                            DynamicTrading.Log(
+                                "DTV2",
+                                "NPC",
+                                "Escort",
+                                "Rejected escort-locked fallback order for "
+                                    .. tostring(npcData.name or npcData.uuid or "unknown")
+                                    .. " state=" .. tostring(args.state)
+                            )
+                            return
+                        end
+
                         if tostring(npcData.dcCompanionJob or "") == "TravelCompanion"
                             and tostring(npcData.linkedWorkerID or "") ~= "" then
                             local companion = DC_Colony and DC_Colony.Companion or nil
@@ -518,6 +532,13 @@ local function onClientCommand(module, command, player, args)
                         
                         npcData.requestedReturnStatus = args.returnStatus
                         npcData.combatTargetID = nil
+
+                        if escortLocked then
+                            npcData.requestedReturnStatus = nil
+                            args.combatOrder = nil
+                            args.guardCombatOrder = nil
+                            args.guardAttackMode = nil
+                        end
                         
                         if args.state == "Follow" or args.state == "Flee"
                             or args.state == "ProtectRanged" or args.state == "ProtectMelee" or args.state == "ProtectAuto" then

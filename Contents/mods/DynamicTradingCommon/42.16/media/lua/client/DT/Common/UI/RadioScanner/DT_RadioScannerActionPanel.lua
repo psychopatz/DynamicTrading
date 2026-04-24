@@ -9,6 +9,30 @@ local BUTTON_HEIGHT = 25
 local BUTTON_SPACING = 10
 local BUTTON_ROW_SPACING = 6
 
+local function focusObjectiveQuest(data)
+    if type(data) ~= "table" or tostring(data.entryKind or "") ~= "activeQuest" then
+        return false
+    end
+
+    local questID = data.questID and tostring(data.questID) or ""
+    if questID == "" or not (DynamicObjectives and DynamicObjectives.Quests) then
+        return false
+    end
+
+    local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+    if not player then
+        return false
+    end
+
+    if DynamicObjectives.Quests.FocusQuest then
+        return DynamicObjectives.Quests.FocusQuest(player, questID, true) == true
+    end
+
+    local tracked = DynamicObjectives.Quests.SetTrackedQuest and DynamicObjectives.Quests.SetTrackedQuest(player, questID) == true
+    local located = DynamicObjectives.Quests.SetLocatedQuest and DynamicObjectives.Quests.SetLocatedQuest(player, questID) == true
+    return tracked == true and located == true
+end
+
 local function layoutButtons(panel)
     if not panel.parent then
         return
@@ -130,6 +154,17 @@ function DT_RadioScannerActionPanel:onLocate()
     end
 
     local data = item.item
+    if focusObjectiveQuest(data) then
+        if self.parent.stopTracking then
+            self.parent:stopTracking()
+        end
+        if self.parent.refresh then
+            self.parent:refresh()
+        end
+        self:updateButtonState(data.uuid, data)
+        return
+    end
+
     local uuid = data.uuid
     if self.parent.trackingUUID == uuid then
         self.parent:stopTracking()
