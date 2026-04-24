@@ -195,6 +195,63 @@ function DT_RadioScannerWindow:refresh()
         self.statusPanel:setStatus(DT_RadioScannerManager.GetScanStatus(self.device, player))
     end
 
+    if self.currentCategory == "Quest" then
+        local questEntries = {}
+        if DynamicObjectives and DynamicObjectives.UI then
+            if self.skipQuestServerRefresh == true then
+                self.skipQuestServerRefresh = false
+            elseif DynamicObjectives.UI.RequestScannerQuestRefresh then
+                DynamicObjectives.UI.RequestScannerQuestRefresh(player)
+            end
+            if DynamicObjectives.UI.GetScannerQuestEntries then
+                questEntries = DynamicObjectives.UI.GetScannerQuestEntries(player) or {}
+            end
+        end
+
+        for _, entry in ipairs(questEntries) do
+            listbox:addItem(entry.name or "Quest", {
+                uuid = entry.uuid,
+                hookId = entry.hookId,
+                incidentId = entry.incidentId,
+                questID = entry.questID,
+                entryKind = entry.entryKind,
+                name = entry.name,
+                faction = entry.faction,
+                factionName = entry.factionName or entry.faction or "Independent",
+                archetype = entry.archetype or "Quest",
+                gender = entry.gender or "Unknown",
+                identitySeed = tonumber(entry.identitySeed) or 1,
+                distText = entry.distText or "Signal: Quest",
+                expireText = entry.expireText or "",
+                isLive = entry.isLive == true,
+                x = entry.x,
+                y = entry.y,
+                z = entry.z,
+                locked = false,
+                canLock = false,
+            })
+
+            if selectedUUID == entry.uuid and #listbox.items > 0 then
+                listbox.selected = #listbox.items
+            end
+        end
+
+        local selectedData = nil
+        if listbox.selected and listbox.selected ~= -1 then
+            local selectedItem = listbox.items[listbox.selected]
+            selectedData = selectedItem and selectedItem.item or nil
+        end
+
+        if self.actionPanel and self.actionPanel.updateSelectionState then
+            self.actionPanel:updateSelectionState(selectedData)
+        end
+
+        if self.refreshTrackingPresentation then
+            self:refreshTrackingPresentation(false)
+        end
+        return
+    end
+
     if self.currentCategory == "Location" then
         if DT_RadioScannerLocationHandler then
             DT_RadioScannerLocationHandler.PopulateList(listbox, player)

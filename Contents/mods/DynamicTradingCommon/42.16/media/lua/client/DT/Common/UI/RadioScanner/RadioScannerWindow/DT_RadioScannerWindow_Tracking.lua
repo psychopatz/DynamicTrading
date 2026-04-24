@@ -75,7 +75,13 @@ local function buildTrackedTargetData(window, uuid)
     local cachedEntry = DTNPCClient and DTNPCClient.NPCCache and DTNPCClient.NPCCache[uuid] or nil
     local npcData = cachedEntry and cachedEntry.npcData or nil
     local meta = DTNPCClient and DTNPCClient.GetMetadata and DTNPCClient.GetMetadata(uuid) or nil
-    local tx, ty, tz, isLive = DT_RadioScannerManager.GetTraderCoords(uuid)
+    local tx = selectedData and selectedData.x or nil
+    local ty = selectedData and selectedData.y or nil
+    local tz = selectedData and selectedData.z or nil
+    local isLive = selectedData and selectedData.isLive or nil
+    if tx == nil or ty == nil then
+        tx, ty, tz, isLive = DT_RadioScannerManager.GetTraderCoords(uuid)
+    end
     local liveCharacter = getLiveTrackedCharacter(uuid)
     local selectedGender = selectedData and selectedData.gender or nil
     local isFemale = firstNonNil(
@@ -324,7 +330,11 @@ local function getTrackingDistanceToTarget(window)
         return nil
     end
 
-    local tx, ty = DT_RadioScannerManager.GetTraderCoords(window.trackingUUID)
+    local tx = window.trackingData and window.trackingData.x or nil
+    local ty = window.trackingData and window.trackingData.y or nil
+    if tx == nil or ty == nil then
+        tx, ty = DT_RadioScannerManager.GetTraderCoords(window.trackingUUID)
+    end
     local player = getSpecificPlayer(0)
     if not tx or not ty or not player then
         return nil
@@ -537,7 +547,11 @@ function DT_RadioScannerWindow:updateTrackingMarker()
         return
     end
 
-    local tx, ty = DT_RadioScannerManager.GetTraderCoords(self.trackingUUID)
+    local tx = self.trackingData and self.trackingData.x or nil
+    local ty = self.trackingData and self.trackingData.y or nil
+    if tx == nil or ty == nil then
+        tx, ty = DT_RadioScannerManager.GetTraderCoords(self.trackingUUID)
+    end
     if not tx or not ty then
         return
     end

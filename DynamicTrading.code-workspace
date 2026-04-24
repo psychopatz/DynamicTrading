@@ -8,6 +8,12 @@
 		},
 		{
 			"path": "../../../Desktop/Projects/ModManager"
+		},
+		{
+			"path": "../DynamicObjectives"
+		},
+		{
+			"path": "../CurrencyExpanded"
 		}
 	],
 	"settings": {}

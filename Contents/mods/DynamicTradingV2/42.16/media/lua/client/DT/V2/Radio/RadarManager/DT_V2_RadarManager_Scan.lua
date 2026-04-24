@@ -54,6 +54,10 @@ function RadarManager.Scan(player, device)
         RadarManager.Cleanup(player)
     end
 
+    if DynamicObjectives and DynamicObjectives.UI and DynamicObjectives.UI.RequestScannerQuestRefresh then
+        DynamicObjectives.UI.RequestScannerQuestRefresh(player)
+    end
+
     local currentHour = getGameTime():getTimeOfDay()
     local gateDisabled = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DisableNightScanGate == true
     if not gateDisabled and (currentHour >= 22.0 or currentHour < 5.0) then
