@@ -2,6 +2,7 @@
 -- DYNAMIC TRADING V2: NPC TRADER DIALOGUE HUB
 -- =============================================================================
 require "DT/Common/UI/ConversationUI/ConversationUI"
+require "DT/Common/UI/ConversationUI/DT_ConversationQuestOffer"
 require "DT/Common/UI/ConversationUI/DT_ConversationChatMenus"
 require "DT/Common/UI/Contacts/DT_ContactsWindow"
 require "DT/Common/Reputation/DT_Reputation"
@@ -71,6 +72,150 @@ local function requestCalledTraderTrading(player, npc, npcData)
     if DTNPC and DTNPC.AttachData then
         DTNPC.AttachData(npc, npcData)
     end
+end
+
+local function resolveTraderConversationState(npc, npcData)
+    local state = npcData and (npcData.status or npcData.state) or nil
+    if state and state ~= "" then
+        return tostring(state)
+    end
+
+    local id = (npcData and npcData.uuid) or (npc and (npc:getPersistentOutfitID() or npc:getID())) or nil
+    local rosterData = id and ModData and ModData.get and ModData.get("DynamicTrading_Roster") or nil
+    local soul = rosterData and rosterData.Souls and rosterData.Souls[id] or nil
+    if soul and (soul.status or soul.state) then
+        return tostring(soul.status or soul.state)
+    end
+
+    return "Resting"
+end
+
+local function buildTraderQuestContext(ui, npc, npcData)
+    local target = ui and ui.target or nil
+    return {
+        traderID = (npcData and npcData.uuid) or (target and (target.id or target.uuid)) or (npc and (npc:getPersistentOutfitID() or npc:getID())) or nil,
+        id = (npcData and npcData.uuid) or (target and (target.id or target.uuid)) or nil,
+        displayName = (npcData and npcData.name) or (target and target.name) or "Survivor",
+        name = (npcData and npcData.name) or (target and target.name) or "Survivor",
+        archetype = (npcData and (npcData.archetypeID or npcData.occupation)) or (target and target.archetype) or "General",
+        factionID = (npcData and npcData.factionID) or (target and target.factionID) or nil,
+        currentState = resolveTraderConversationState(npc, npcData),
+        status = resolveTraderConversationState(npc, npcData),
+    }
+end
+
+local function reopenTraderDialogueOptions(ui, npc, player)
+    DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
+end
+
+local function openTraderQuestOffer(ui, npc, player, npcData)
+    if DT_ConversationQuestOffer and DT_ConversationQuestOffer.OpenQuestOffer then
+        return DT_ConversationQuestOffer.OpenQuestOffer(ui, npc, player, npcData, {
+            onBack = function(backUI)
+                reopenTraderDialogueOptions(backUI, npc, player)
+            end
+        })
+    end
+
+    if not (DynamicObjectives and DynamicObjectives.Quests and DynamicObjectives.Quests.BuildTraderQuestOffer) then
+        ui:speak("I am not handing out jobs right now.")
+        reopenTraderDialogueOptions(ui, npc, player)
+        return
+    end
+
+    local traderContext = buildTraderQuestContext(ui, npc, npcData)
+    local offer = DynamicObjectives.Quests.BuildTraderQuestOffer(player, traderContext)
+    if not offer then
+        local resting = traderContext.currentState == "Resting"
+        ui:speak(resting and "No work from me right now. Check back later." or "I only hand out work when I am settled down.")
+        reopenTraderDialogueOptions(ui, npc, player)
+        return
+    end
+
+    local function showMainMenu(conversationUI)
+        reopenTraderDialogueOptions(conversationUI, npc, player)
+    end
+
+    local function showOfferOptions(conversationUI, currentOffer)
+        local options = {}
+
+        if currentOffer.canStart == true then
+            options[#options + 1] = {
+                text = currentOffer.choiceLabels.accept,
+                message = currentOffer.choiceLabels.accept,
+                onSelect = function(nextUI)
+                    local quest = DynamicObjectives.Quests.StartQuestFromResolvedOffer and DynamicObjectives.Quests.StartQuestFromResolvedOffer(player, currentOffer) or nil
+                    if quest then
+                        nextUI:speak(currentOffer.resolvedDialogue.accept)
+                    else
+                        nextUI:speak(currentOffer.resolvedDialogue.active ~= "" and currentOffer.resolvedDialogue.active or currentOffer.resolvedDialogue.unavailable)
+                    end
+                    showMainMenu(nextUI)
+                end
+            }
+            options[#options + 1] = {
+                text = currentOffer.choiceLabels.details,
+                message = currentOffer.choiceLabels.details,
+                onSelect = function(nextUI)
+                    nextUI:speak(currentOffer.resolvedDialogue.details)
+                    showOfferOptions(nextUI, currentOffer)
+                end
+            }
+            options[#options + 1] = {
+                text = currentOffer.choiceLabels.rewards,
+                message = currentOffer.choiceLabels.rewards,
+                onSelect = function(nextUI)
+                    nextUI:speak(currentOffer.resolvedDialogue.rewards)
+                    showOfferOptions(nextUI, currentOffer)
+                end
+            }
+            options[#options + 1] = {
+                text = currentOffer.choiceLabels.decline,
+                message = currentOffer.choiceLabels.decline,
+                onSelect = function(nextUI)
+                    nextUI:speak(currentOffer.resolvedDialogue.decline)
+                    showMainMenu(nextUI)
+                end
+            }
+        elseif currentOffer.activeQuest then
+            options[#options + 1] = {
+                text = "How's it going?",
+                message = "Remind me where I am on that job.",
+                onSelect = function(nextUI)
+                    nextUI:speak(currentOffer.progressSummary or currentOffer.resolvedDialogue.active)
+                    showOfferOptions(nextUI, currentOffer)
+                end
+            }
+            options[#options + 1] = {
+                text = currentOffer.choiceLabels.rewards,
+                message = currentOffer.choiceLabels.rewards,
+                onSelect = function(nextUI)
+                    nextUI:speak(currentOffer.resolvedDialogue.rewards)
+                    showOfferOptions(nextUI, currentOffer)
+                end
+            }
+        end
+
+        options[#options + 1] = {
+            text = currentOffer.choiceLabels.back,
+            message = "",
+            onSelect = function(nextUI)
+                showMainMenu(nextUI)
+            end
+        }
+
+        conversationUI:updateOptions(options)
+    end
+
+    if offer.canStart == true then
+        ui:speak(offer.resolvedDialogue.offer)
+    elseif offer.activeQuest then
+        ui:speak(offer.resolvedDialogue.active)
+    else
+        ui:speak(offer.resolvedDialogue.unavailable)
+    end
+
+    showOfferOptions(ui, offer)
 end
 
 
@@ -178,6 +323,14 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
                     DTNPC_TraderDialogue_Hub.GenerateOptions(backUI, npc, player)
                 end
             })
+        end
+    })
+
+    table.insert(options, {
+        text = "Any work?",
+        message = "Got any work for me?",
+        onSelect = function(conversationUI)
+            openTraderQuestOffer(conversationUI, npc, player, npcData)
         end
     })
 
