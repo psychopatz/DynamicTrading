@@ -62,5 +62,3 @@ DynamicTrading.RegisterTag("Winter",    { priceMult = 1.5, weight = 0 }) -- Park
 DynamicTrading.RegisterTag("Harvest",   { priceMult = 0.5, weight = 0 }) -- Cheap crops during harvest
 DynamicTrading.RegisterTag("Illegal",   { priceMult = 3.0, weight = 0 }) -- Contraband
 
--- QUEST SYSTEM
-DynamicTrading.RegisterTag("Quest",     { priceMult = 1.0, weight = 0 }) -- Items that should not spawn naturally

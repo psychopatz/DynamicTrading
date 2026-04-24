@@ -350,8 +350,6 @@ end
 
 -- CORE MODULES
 require "DT/Common/DT_Logger"
-require "DT/Common/Quests/DT_QuestManager"
-require "DT/Common/Items/DT_QuestItems"
 require "DT/Common/Pricing/DT_PriceConfig"
 
 

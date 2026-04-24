@@ -2,6 +2,12 @@ require "ISUI/ISPanel"
 
 DT_RadioScannerHeaderPanel = ISPanel:derive("DT_RadioScannerHeaderPanel")
 
+function DT_RadioScannerHeaderPanel:shouldShowQuestTab()
+    return DynamicObjectives
+        and DynamicObjectives.UI
+        and DynamicObjectives.UI.ShowScannerQuestTab == true
+end
+
 function DT_RadioScannerHeaderPanel:initialise()
     ISPanel.initialise(self)
 end
@@ -31,7 +37,9 @@ function DT_RadioScannerHeaderPanel:createChildren()
 
     local tabHeight = 20
     local tabY = self.height - tabHeight
-    local tabWidth = self.width / 4
+    local showQuestTab = self:shouldShowQuestTab()
+    local tabCount = showQuestTab and 4 or 3
+    local tabWidth = self.width / tabCount
 
     self.btnStat = ISButton:new(0, tabY, tabWidth, tabHeight, "Stationary", self, function(panel)
         panel:onCategoryClick("Stationary")
@@ -51,16 +59,19 @@ function DT_RadioScannerHeaderPanel:createChildren()
     self.btnCall:setAnchorBottom(true)
     self:addChild(self.btnCall)
 
-    self.btnQuest = ISButton:new(tabWidth * 2, tabY, tabWidth, tabHeight, "Quest", self, function(panel)
-        panel:onCategoryClick("Quest")
-    end)
-    self.btnQuest:initialise()
-    self.btnQuest.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
-    self.btnQuest:setAnchorTop(false)
-    self.btnQuest:setAnchorBottom(true)
-    self:addChild(self.btnQuest)
+    if showQuestTab then
+        self.btnQuest = ISButton:new(tabWidth * 2, tabY, tabWidth, tabHeight, "Quest", self, function(panel)
+            panel:onCategoryClick("Quest")
+        end)
+        self.btnQuest:initialise()
+        self.btnQuest.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
+        self.btnQuest:setAnchorTop(false)
+        self.btnQuest:setAnchorBottom(true)
+        self:addChild(self.btnQuest)
+    end
 
-    self.btnInfo = ISButton:new(tabWidth * 3, tabY, tabWidth, tabHeight, "Info", self, function(panel)
+    local infoIndex = showQuestTab and 3 or 2
+    self.btnInfo = ISButton:new(tabWidth * infoIndex, tabY, tabWidth, tabHeight, "Info", self, function(panel)
         panel:onCategoryClick("Location")
     end)
     self.btnInfo:initialise()
@@ -92,11 +103,16 @@ function DT_RadioScannerHeaderPanel:prerender()
     centerLabel(self.lblDeviceName, UIFont.Medium)
     centerLabel(self.lblRangeInfo, UIFont.Small)
 
-    local tabWidth = self.width / 4
+    local showQuestTab = self:shouldShowQuestTab()
+    local tabCount = showQuestTab and 4 or 3
+    local tabWidth = self.width / tabCount
     if self.btnStat then self.btnStat:setWidth(tabWidth) end
     if self.btnCall then self.btnCall:setX(tabWidth); self.btnCall:setWidth(tabWidth) end
     if self.btnQuest then self.btnQuest:setX(tabWidth * 2); self.btnQuest:setWidth(tabWidth) end
-    if self.btnInfo then self.btnInfo:setX(tabWidth * 3); self.btnInfo:setWidth(tabWidth) end
+    if self.btnInfo then
+        self.btnInfo:setX(showQuestTab and (tabWidth * 3) or (tabWidth * 2))
+        self.btnInfo:setWidth(tabWidth)
+    end
 
     if self.btnOptions then
         self.btnOptions:setX(self.width - self.btnOptions:getWidth() - 5)
@@ -123,7 +139,9 @@ function DT_RadioScannerHeaderPanel:prerender()
 
     updateButton(self.btnStat, "Stationary")
     updateButton(self.btnCall, "Callable")
-    updateButton(self.btnQuest, "Quest")
+    if self.btnQuest then
+        updateButton(self.btnQuest, "Quest")
+    end
     updateButton(self.btnInfo, "Location")
 end
 
