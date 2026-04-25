@@ -1,6 +1,7 @@
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
 require "DT/Common/UI/Contacts/DT_ContactsWindow"
+pcall(require, "DT/Common/UI/ConversationUI/DT_ConversationQuestOffer")
 
 DT_RadioScannerActionPanel = ISPanel:derive("DT_RadioScannerActionPanel")
 
@@ -60,6 +61,46 @@ local function layoutButtons(panel)
     place(panel.btnLocate, 2, 1)
     place(panel.btnRefresh, 1, 2)
     place(panel.btnContacts, 2, 2)
+end
+
+local function openRadioQuestConversation(data)
+    if type(data) ~= "table" or tostring(data.entryKind or "") ~= "availableQuest" then
+        return false
+    end
+    if not (DT_ConversationQuestOffer and DT_ConversationQuestOffer.OpenDebugConversation) then
+        return false
+    end
+
+    local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+    if not player then
+        return false
+    end
+
+    local traderContext = type(data.traderContext) == "table" and data.traderContext or {
+        traderID = data.uuid,
+        id = data.uuid,
+        displayName = data.name or "Radio Contact",
+        name = data.name or "Radio Contact",
+        archetype = data.archetype or "General",
+        currentState = "Trading",
+        status = "Trading",
+    }
+
+    DT_ConversationQuestOffer.OpenDebugConversation(player, {
+        overrideTraderContext = traderContext,
+        traderProxy = {
+            id = traderContext.traderID or traderContext.id or data.uuid,
+            traderID = traderContext.traderID or traderContext.id or data.uuid,
+            uuid = traderContext.traderID or traderContext.id or data.uuid,
+            name = traderContext.displayName or traderContext.name or data.name or "Radio Contact",
+            archetype = traderContext.archetype or data.archetype or "General",
+            gender = data.gender or "Unknown",
+            identitySeed = tonumber(data.identitySeed) or 1,
+            factionID = traderContext.factionID or data.faction,
+        },
+        initialGreeting = "Radio link established.",
+    })
+    return true
 end
 
 function DT_RadioScannerActionPanel:initialise()
@@ -128,6 +169,14 @@ function DT_RadioScannerActionPanel:updateButtonState(selectedUUID, selectedData
             and { r = 0.62, g = 0.26, b = 0.12, a = 1 }
             or { r = 0.45, g = 0.3, b = 0.1, a = 1 }
     end
+
+    if self.btnContacts then
+        local isQuestOffer = selectedData and tostring(selectedData.entryKind or "") == "availableQuest"
+        self.btnContacts.title = isQuestOffer and "TALK" or "CONTACTS"
+        self.btnContacts.backgroundColor = isQuestOffer
+            and { r = 0.12, g = 0.36, b = 0.26, a = 1 }
+            or { r = 0.12, g = 0.24, b = 0.45, a = 1 }
+    end
 end
 
 function DT_RadioScannerActionPanel:updateSelectionState(selectedData)
@@ -194,12 +243,18 @@ end
 
 function DT_RadioScannerActionPanel:onContacts()
     local selectedUUID = nil
+    local selectedData = nil
     if self.parent and self.parent.listPanel and self.parent.listPanel.listbox then
         local listbox = self.parent.listPanel.listbox
         local item = listbox.items[listbox.selected]
         if item and item.item then
             selectedUUID = item.item.uuid
+            selectedData = item.item
         end
+    end
+
+    if openRadioQuestConversation(selectedData) then
+        return
     end
 
     DT_ContactsWindow.Open({ selectTraderID = selectedUUID })

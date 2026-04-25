@@ -49,6 +49,39 @@ local function closeConversation(ui)
     end
 end
 
+local function getOfferMenuLabel(offer)
+    if type(offer) ~= "table" then
+        return "Objective"
+    end
+    return tostring(
+        offer.menuLabel
+            or (offer.questSpec and (offer.questSpec.title or offer.questSpec.name))
+            or (offer.activeQuest and (offer.activeQuest.title or offer.activeQuest.name))
+            or (offer.blueprint and (offer.blueprint.name or offer.blueprint.id))
+            or offer.blueprintId
+            or "Objective"
+    )
+end
+
+local function getQuestOfferList(player, traderContext)
+    if not (DynamicObjectives and DynamicObjectives.Quests) then
+        return {}
+    end
+
+    if DynamicObjectives.Quests.BuildTraderQuestOffers then
+        return DynamicObjectives.Quests.BuildTraderQuestOffers(player, traderContext) or {}
+    end
+
+    local single = DynamicObjectives.Quests.BuildTraderQuestOffer and DynamicObjectives.Quests.BuildTraderQuestOffer(player, traderContext) or nil
+    return single and { single } or {}
+end
+
+local function getOfferUnavailableLine(traderContext)
+    local state = tostring(traderContext and traderContext.currentState or "")
+    local canOfferWork = state == "Resting" or state == "Trading"
+    return canOfferWork and "No work from me right now. Check back later." or "I only hand out work when I am settled down."
+end
+
 function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
     options = type(options) == "table" and options or {}
 
@@ -60,16 +93,8 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
     local onQuestAccepted = type(options.onQuestAccepted) == "function" and options.onQuestAccepted or nil
     local traderContext = QuestOffer.BuildTraderContext(ui, npc, npcData, options.overrideTraderContext)
 
-    if not (DynamicObjectives and DynamicObjectives.Quests and DynamicObjectives.Quests.BuildTraderQuestOffer) then
+    if not (DynamicObjectives and DynamicObjectives.Quests and (DynamicObjectives.Quests.BuildTraderQuestOffers or DynamicObjectives.Quests.BuildTraderQuestOffer)) then
         ui:speak("I am not handing out jobs right now.")
-        onBack(ui)
-        return nil
-    end
-
-    local offer = DynamicObjectives.Quests.BuildTraderQuestOffer(player, traderContext)
-    if not offer then
-        local resting = traderContext.currentState == "Resting"
-        ui:speak(resting and "No work from me right now. Check back later." or "I only hand out work when I am settled down.")
         onBack(ui)
         return nil
     end
@@ -78,7 +103,46 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
         onBack(conversationUI)
     end
 
-    local function showOfferOptions(conversationUI, currentOffer)
+    local showOfferOptions
+
+    local function showOfferList(conversationUI, fromBack)
+        local offers = getQuestOfferList(player, traderContext)
+        if #offers == 0 then
+            conversationUI:speak(getOfferUnavailableLine(traderContext))
+            showMainMenu(conversationUI)
+            return nil
+        end
+
+        if #offers == 1 and fromBack ~= true then
+            return offers[1]
+        end
+
+        conversationUI:speak(fromBack and "Anything else on the board?" or (#offers > 1 and "I've got a few jobs lined up. Pick the one you want to talk through." or "Here's the job."))
+
+        local menu = {}
+        for _, offer in ipairs(offers) do
+            menu[#menu + 1] = {
+                text = getOfferMenuLabel(offer),
+                message = "",
+                onSelect = function(nextUI)
+                    showOfferOptions(nextUI, offer)
+                end
+            }
+        end
+
+        menu[#menu + 1] = {
+            text = "Back",
+            message = "",
+            onSelect = function(nextUI)
+                showMainMenu(nextUI)
+            end
+        }
+
+        conversationUI:updateOptions(menu)
+        return nil
+    end
+
+    function showOfferOptions(conversationUI, currentOffer)
         local menu = {}
 
         if currentOffer.canStart == true then
@@ -95,7 +159,7 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
                     else
                         nextUI:speak(currentOffer.resolvedDialogue.active ~= "" and currentOffer.resolvedDialogue.active or currentOffer.resolvedDialogue.unavailable)
                     end
-                    showMainMenu(nextUI)
+                    showOfferList(nextUI, true)
                 end
             }
             menu[#menu + 1] = {
@@ -119,7 +183,7 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
                 message = currentOffer.choiceLabels.decline,
                 onSelect = function(nextUI)
                     nextUI:speak(currentOffer.resolvedDialogue.decline)
-                    showMainMenu(nextUI)
+                    showOfferList(nextUI, true)
                 end
             }
         elseif currentOffer.activeQuest then
@@ -145,23 +209,28 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
             text = currentOffer.choiceLabels.back,
             message = "",
             onSelect = function(nextUI)
-                showMainMenu(nextUI)
+                showOfferList(nextUI, true)
             end
         }
 
         conversationUI:updateOptions(menu)
     end
 
-    if offer.canStart == true then
-        ui:speak(offer.resolvedDialogue.offer)
-    elseif offer.activeQuest then
-        ui:speak(offer.resolvedDialogue.active)
-    else
-        ui:speak(offer.resolvedDialogue.unavailable)
+    local initialOffer = showOfferList(ui, false)
+    if not initialOffer then
+        return nil
     end
 
-    showOfferOptions(ui, offer)
-    return offer
+    if initialOffer.canStart == true then
+        ui:speak(initialOffer.resolvedDialogue.offer)
+    elseif initialOffer.activeQuest then
+        ui:speak(initialOffer.resolvedDialogue.active)
+    else
+        ui:speak(initialOffer.resolvedDialogue.unavailable)
+    end
+
+    showOfferOptions(ui, initialOffer)
+    return initialOffer
 end
 
 local function buildDebugTraderProxy(traderContext)

@@ -20,16 +20,6 @@ option DynamicTrading.ScanCooldown
     translation = DynamicTrading.ScanCooldown,
 }
 
-option DynamicTrading.ScanPenaltyPerTrader
-{
-    type = double,
-    default = 0.4,
-    min = 0.0,
-    max = 1.0,
-    page = DynamicTrading,
-    translation = DynamicTrading.ScanPenaltyPerTrader,
-}
-
 option DynamicTrading.SeasonImpact
 {
     type = double,

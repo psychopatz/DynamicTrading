@@ -229,6 +229,8 @@ function DT_RadioScannerWindow:refresh()
                 z = entry.z,
                 locked = false,
                 canLock = false,
+                offerBlueprintId = entry.offerBlueprintId,
+                traderContext = entry.traderContext,
             })
 
             if selectedUUID == entry.uuid and #listbox.items > 0 then

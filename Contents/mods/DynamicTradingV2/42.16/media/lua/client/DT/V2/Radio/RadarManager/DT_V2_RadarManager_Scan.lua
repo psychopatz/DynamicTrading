@@ -212,8 +212,6 @@ function RadarManager.Scan(player, device)
     local baseChance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanBaseChance) or 30
     local powerBonus = profile and tonumber(profile.power) or 1.0
     local skillBonus = 1.0 + (elecLevel * 0.05)
-    local progressRatio = capacity > 0 and (currentCount / capacity) or 1
-    local penaltyFactor = 1.0 + (progressRatio * 4.0)
     local factionChanceMult = 1.0
 
     if targetSoul and DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
@@ -221,7 +219,7 @@ function RadarManager.Scan(player, device)
         factionChanceMult = DynamicTrading.Events.GetFactionSystemModifier(targetFaction, "scanChance")
     end
 
-    local finalChance = (baseChance * powerBonus * skillBonus * globalChanceMult * factionChanceMult) / penaltyFactor
+    local finalChance = baseChance * powerBonus * skillBonus * globalChanceMult * factionChanceMult
     if finalChance < 1 then
         finalChance = 1
     end
@@ -230,11 +228,13 @@ function RadarManager.Scan(player, device)
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Power Bonus: " .. string.format("%.2f", powerBonus))
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Skill Bonus: " .. string.format("%.2f", skillBonus))
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Capacity Ratio: " .. tostring(currentCount) .. "/" .. tostring(capacity))
-    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Penalty Factor: " .. string.format("%.2f", penaltyFactor))
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Penalty Factor: removed (discovered trader count no longer reduces scan chance)")
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Candidate Pool: " .. tostring(#eligibleSignals) .. " | Priority Pool: " .. tostring(#prioritySignals))
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Final Chance: " .. string.format("%.2f", finalChance) .. "%")
+    local scanRoll = ZombRand(100)
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Roll: " .. tostring(scanRoll) .. " / 100")
 
-    if targetEntry and ZombRand(100) < finalChance then
+    if targetEntry and scanRoll < finalChance then
         while RadarManager.GetCount() >= capacity do
             local recycleName = "Unknown"
             local recycleCandidate = RadarManager.GetOldestUnlockedSignal and RadarManager.GetOldestUnlockedSignal() or nil
@@ -273,6 +273,8 @@ function RadarManager.Scan(player, device)
             end
             DynamicTrading.Log("DTV2", "Radio", "Scan", "Discovered: " .. name .. " (" .. uuid .. ")")
         end
+    else
+        DynamicTrading.Log("DTV2", "Radio", "Scan", "Scan roll failed to lock a new signal")
     end
 
     RadarManager.Cleanup(player)

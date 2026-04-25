@@ -7,9 +7,6 @@
     "Sandbox_DynamicTrading.ScanCooldown": "Scan Cooldown (Minutes)",
     "Sandbox_DynamicTrading.ScanCooldown_tooltip": "Real-time minutes a player must wait between scanning attempts.",
 
-    "Sandbox_DynamicTrading.ScanPenaltyPerTrader": "Difficulty Scaling",
-    "Sandbox_DynamicTrading.ScanPenaltyPerTrader_tooltip": "Reduces scan chance based on how many traders have already been found today. Higher = Harder to find the last few traders.",
-
     "Sandbox_DynamicTrading.SeasonImpact": "Seasonal Impact",
     "Sandbox_DynamicTrading.SeasonImpact_tooltip": "How strongly seasons affect prices (e.g. Winter making food expensive).",
 
