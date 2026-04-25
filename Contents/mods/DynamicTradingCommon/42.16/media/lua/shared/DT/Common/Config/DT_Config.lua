@@ -3,6 +3,7 @@ require "DT/Common/DT_Logger"
 DynamicTrading.Config = DynamicTrading.Config or {}
 
 require "DT/Common/Config/DT_Config_ItemRegistry"
+require "DT/Common/ItemUseabilityRanker/DT_ItemUseabilityRanker"
 require "DT/Common/Config/DT_Config_ArchetypeRegistry"
 require "DT/Common/Config/DT_Config_ArchetypeSkillRegistry"
 require "DT/Common/Config/DT_Config_ArchetypeEquipmentRegistry"

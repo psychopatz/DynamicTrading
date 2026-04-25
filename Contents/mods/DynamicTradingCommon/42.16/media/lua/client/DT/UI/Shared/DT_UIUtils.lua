@@ -36,4 +36,48 @@ function DT_UIUtils.drawSelectionHighlight(listbox, y, item, alt)
     return false
 end
 
+--- Draws text inside a fixed-width lane. Long text scrolls horizontally.
+--- @param panel ISUIElement drawing context
+--- @param text string text to draw
+--- @param x number left edge
+--- @param y number top edge
+--- @param width number clipping width
+--- @param font UIFont font
+--- @param r number red
+--- @param g number green
+--- @param b number blue
+--- @param a number alpha
+--- @param options table optional speedMs/gap/height
+function DT_UIUtils.drawMarqueeText(panel, text, x, y, width, font, r, g, b, a, options)
+    if not panel or width <= 0 then
+        return
+    end
+
+    text = tostring(text or "")
+    if text == "" then
+        return
+    end
+
+    font = font or UIFont.Small
+    local tm = getTextManager and getTextManager() or TextManager and TextManager.instance or nil
+    local textWidth = tm and tm:MeasureStringX(font, text) or 0
+    if textWidth <= width then
+        panel:drawText(text, x, y, r, g, b, a, font)
+        return
+    end
+
+    options = type(options) == "table" and options or {}
+    local height = tonumber(options.height) or (tm and tm:getFontHeight(font) or 16)
+    local gap = math.max(20, tonumber(options.gap) or 48)
+    local speedMs = math.max(12, tonumber(options.speedMs) or 35)
+    local now = getTimestampMs and getTimestampMs() or 0
+    local cycle = math.max(1, textWidth + gap)
+    local offset = math.floor((now / speedMs) % cycle)
+
+    panel:setStencilRect(x, y, width, height + 2)
+    panel:drawText(text, x - offset, y, r, g, b, a, font)
+    panel:drawText(text, x - offset + textWidth + gap, y, r, g, b, a, font)
+    panel:clearStencilRect()
+end
+
 DynamicTrading.Log("DTCommons", "UI", "Utility", "Shared UI Utils Loaded")

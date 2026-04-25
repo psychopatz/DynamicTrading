@@ -63,6 +63,30 @@ local function getOfferMenuLabel(offer)
     )
 end
 
+local function offerMatchesBlueprint(offer, blueprintID)
+    blueprintID = tostring(blueprintID or "")
+    if blueprintID == "" or type(offer) ~= "table" then
+        return false
+    end
+
+    local candidates = {
+        offer.blueprintId,
+        offer.blueprintID,
+        offer.id,
+        offer.questSpec and offer.questSpec.blueprintId,
+        offer.questSpec and offer.questSpec.blueprintID,
+        offer.blueprint and offer.blueprint.id,
+        offer.activeQuest and offer.activeQuest.blueprintId,
+    }
+
+    for _, value in ipairs(candidates) do
+        if tostring(value or "") == blueprintID then
+            return true
+        end
+    end
+    return false
+end
+
 local function getQuestOfferList(player, traderContext)
     if not (DynamicObjectives and DynamicObjectives.Quests) then
         return {}
@@ -92,6 +116,7 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
     local onBack = type(options.onBack) == "function" and options.onBack or function() end
     local onQuestAccepted = type(options.onQuestAccepted) == "function" and options.onQuestAccepted or nil
     local traderContext = QuestOffer.BuildTraderContext(ui, npc, npcData, options.overrideTraderContext)
+    local preselectedBlueprintId = tostring(options.preselectedBlueprintId or "")
 
     if not (DynamicObjectives and DynamicObjectives.Quests and (DynamicObjectives.Quests.BuildTraderQuestOffers or DynamicObjectives.Quests.BuildTraderQuestOffer)) then
         ui:speak("I am not handing out jobs right now.")
@@ -111,6 +136,14 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
             conversationUI:speak(getOfferUnavailableLine(traderContext))
             showMainMenu(conversationUI)
             return nil
+        end
+
+        if preselectedBlueprintId ~= "" and fromBack ~= true then
+            for _, offer in ipairs(offers) do
+                if offerMatchesBlueprint(offer, preselectedBlueprintId) then
+                    return offer
+                end
+            end
         end
 
         if #offers == 1 and fromBack ~= true then
@@ -283,6 +316,7 @@ function QuestOffer.OpenDebugConversation(player, options)
                 onSelect = function(nextUI)
                     QuestOffer.OpenQuestOffer(nextUI, nil, player, nil, {
                         overrideTraderContext = traderContext,
+                        preselectedBlueprintId = fromBack and nil or options.preselectedBlueprintId,
                         onBack = function(backUI)
                             showRoot(backUI, true)
                         end,
@@ -300,6 +334,17 @@ function QuestOffer.OpenDebugConversation(player, options)
         })
     end
 
-    showRoot(ui, false)
+    if options.preselectedBlueprintId then
+        QuestOffer.OpenQuestOffer(ui, nil, player, nil, {
+            overrideTraderContext = traderContext,
+            preselectedBlueprintId = options.preselectedBlueprintId,
+            onBack = function(backUI)
+                showRoot(backUI, true)
+            end,
+            onQuestAccepted = options.onQuestAccepted,
+        })
+    else
+        showRoot(ui, false)
+    end
     return ui
 end

@@ -88,6 +88,7 @@ local function openRadioQuestConversation(data)
 
     DT_ConversationQuestOffer.OpenDebugConversation(player, {
         overrideTraderContext = traderContext,
+        preselectedBlueprintId = data.offerBlueprintId,
         traderProxy = {
             id = traderContext.traderID or traderContext.id or data.uuid,
             traderID = traderContext.traderID or traderContext.id or data.uuid,

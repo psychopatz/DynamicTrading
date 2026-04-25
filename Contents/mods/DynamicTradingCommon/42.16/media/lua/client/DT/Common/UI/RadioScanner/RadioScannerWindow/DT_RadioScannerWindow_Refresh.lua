@@ -223,6 +223,7 @@ function DT_RadioScannerWindow:refresh()
                 identitySeed = tonumber(entry.identitySeed) or 1,
                 distText = entry.distText or "Signal: Quest",
                 expireText = entry.expireText or "",
+                rewardText = entry.rewardText or "",
                 isLive = entry.isLive == true,
                 x = entry.x,
                 y = entry.y,

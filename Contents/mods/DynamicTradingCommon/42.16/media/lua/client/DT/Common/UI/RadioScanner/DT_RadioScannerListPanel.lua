@@ -96,6 +96,13 @@ function DT_RadioScannerListPanel:setLayoutMode(mode)
         self.listContainer:setWidth(panelWidth)
         self.listContainer:setHeight(panelHeight - 35)
         self.listbox.itemheight = 84
+    elseif mode == "Quest" then
+        self.btnFaction:setVisible(false)
+        self.listContainer:setX(0)
+        self.listContainer:setY(0)
+        self.listContainer:setWidth(panelWidth)
+        self.listContainer:setHeight(panelHeight)
+        self.listbox.itemheight = 96
     else
         self.btnFaction:setVisible(false)
         self.listContainer:setX(0)
@@ -184,10 +191,30 @@ function DT_RadioScannerListPanel:doDrawItem(y, item, alt)
     local archName = (DynamicTrading and DynamicTrading.Archetypes and DynamicTrading.Archetypes[data.archetype])
         and DynamicTrading.Archetypes[data.archetype].name
         or data.archetype
-    self:drawText(tostring(data.name) .. " [" .. tostring(archName) .. "]", contentX, y + 5, 1, 1, 1, 1, UIFont.Small)
+    local isQuestRow = target and target.layoutMode == "Quest"
+    local expireText = tostring(data.expireText or "")
+    local rightReserve = isQuestRow and 150 or 130
+    local textRight = math.max(contentX + 80, self.width - rightReserve)
+    local laneWidth = math.max(80, textRight - contentX - 8)
+
+    DT_UIUtils.drawMarqueeText(
+        self,
+        tostring(data.name) .. " [" .. tostring(archName) .. "]",
+        contentX,
+        y + 5,
+        laneWidth,
+        UIFont.Small,
+        1,
+        1,
+        1,
+        1,
+        { speedMs = 38, gap = 56 }
+    )
 
     if data.locked == true then
         self:drawTextRight("LOCKED", self.width - 12, y + 6, 1.0, 0.82, 0.35, 1, UIFont.Small)
+    elseif expireText ~= "" then
+        self:drawTextRight(expireText, self.width - 14, y + 6, 1.0, 1.0, 0.6, 1, UIFont.Small)
     end
 
     local fR, fG, fB = 1, 1, 1
@@ -200,11 +227,17 @@ function DT_RadioScannerListPanel:doDrawItem(y, item, alt)
             fR, fG, fB = 0.4, 0.8, 1
         end
     end
-    self:drawText("Faction: " .. tostring(data.factionName), contentX, y + 25, fR, fG, fB, 1, UIFont.Small)
-    self:drawText(tostring(data.distText) .. (data.isLive and " [SIGNAL STRONG]" or " [SIGNAL WEAK]"), contentX, y + 46, color.r, color.g, color.b, 1, UIFont.Small)
+    DT_UIUtils.drawMarqueeText(self, "Faction: " .. tostring(data.factionName), contentX, y + 25, laneWidth, UIFont.Small, fR, fG, fB, 1, { speedMs = 42, gap = 48 })
 
-    if data.expireText and data.expireText ~= "" then
-        self:drawTextRight(data.expireText, self.width - 65, y + 28, 1.0, 1.0, 0.6, 1, UIFont.Small)
+    local signalText = tostring(data.distText) .. (data.isLive and " [SIGNAL STRONG]" or " [SIGNAL WEAK]")
+    if isQuestRow then
+        local rewardText = tostring(data.rewardText or "")
+        if rewardText ~= "" then
+            DT_UIUtils.drawMarqueeText(self, "Reward: " .. rewardText, contentX, y + 46, laneWidth, UIFont.Small, 1.0, 1.0, 0.6, 1, { speedMs = 35, gap = 60 })
+        end
+        DT_UIUtils.drawMarqueeText(self, signalText, contentX, y + 68, laneWidth, UIFont.Small, color.r, color.g, color.b, 1, { speedMs = 42, gap = 48 })
+    else
+        DT_UIUtils.drawMarqueeText(self, signalText, contentX, y + 46, laneWidth, UIFont.Small, color.r, color.g, color.b, 1, { speedMs = 42, gap = 48 })
     end
 
     return y + self.itemheight
