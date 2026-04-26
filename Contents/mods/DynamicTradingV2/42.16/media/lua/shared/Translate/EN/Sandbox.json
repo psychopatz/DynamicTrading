@@ -56,6 +56,9 @@
     "Sandbox_DynamicTrading.BanditAmbushChance": "Bandit Ambush Chance (%)",
     "Sandbox_DynamicTrading.BanditAmbushChance_tooltip": "Chance for each eligible ambush check to spawn a bandit group near an active player.",
 
+    "Sandbox_DynamicTrading.BanditRaidPartyPercent": "Bandit Raid Party Size (%)",
+    "Sandbox_DynamicTrading.BanditRaidPartyPercent_tooltip": "Percentage of resting hostile faction members that can join a raid, capped by Bandit Ambush Difficulty.",
+
     "Sandbox_DynamicTrading.BanditAmbushCooldownHours": "Bandit Ambush Cooldown (Hours)",
     "Sandbox_DynamicTrading.BanditAmbushCooldownHours_tooltip": "Minimum in-game hours between random bandit ambushes on the server."
 }

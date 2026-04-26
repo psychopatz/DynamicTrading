@@ -126,6 +126,16 @@ option DynamicTrading.BanditAmbushChance
     translation = DynamicTrading.BanditAmbushChance,
 }
 
+option DynamicTrading.BanditRaidPartyPercent
+{
+    type = integer,
+    default = 50,
+    min = 1,
+    max = 100,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditRaidPartyPercent,
+}
+
 option DynamicTrading.BanditAmbushCooldownHours
 {
     type = double,

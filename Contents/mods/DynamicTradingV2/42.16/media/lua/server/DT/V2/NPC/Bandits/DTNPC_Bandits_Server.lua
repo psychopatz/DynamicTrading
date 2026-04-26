@@ -29,6 +29,7 @@ local SPAWN_RADIUS_MIN = 12
 local SPAWN_RADIUS_MAX = 22
 local BANDIT_MIN_ROSTER = 6
 local BANDIT_FACTION_ENSURE_INTERVAL_HOURS = 1
+local HOSTILE_REP_THRESHOLD = -40
 
 local function nowMillis()
     return getTimeInMillis and getTimeInMillis() or math.floor((os.time() or 0) * 1000)
@@ -44,6 +45,13 @@ local function clampDifficulty(value)
     if difficulty < 1 then difficulty = 1 end
     if difficulty > 5 then difficulty = 5 end
     return difficulty
+end
+
+local function clampPercent(value, fallback)
+    local percent = math.floor(tonumber(value) or fallback or 50)
+    if percent < 1 then percent = 1 end
+    if percent > 100 then percent = 100 end
+    return percent
 end
 
 local function getSandbox()
@@ -268,6 +276,52 @@ local function ensureRosterModData()
     return roster
 end
 
+local function getFactionData(factionID)
+    if not factionID then return nil end
+    local factions = ModData.get("DynamicTrading_Factions")
+    return factions and factions[factionID] or nil
+end
+
+local function getFactionDisplayName(factionID)
+    local faction = getFactionData(factionID)
+    return faction and (faction.name or faction.displayName) or tostring(factionID or "Unknown")
+end
+
+local function isFactionHostileToPlayer(factionID, faction, player)
+    if not factionID or not faction or not player then return false end
+    if faction.hostileToPlayers == true or faction.alwaysHostile == true then return true end
+
+    local username = getUsername(player)
+    if not username then return false end
+
+    local rep = 0
+    if type(faction.reputation) == "table" and faction.reputation[username] ~= nil then
+        rep = tonumber(faction.reputation[username]) or 0
+    elseif faction.reputationDefault ~= nil then
+        rep = tonumber(faction.reputationDefault) or 0
+    end
+
+    local threshold = DTNPCProtect
+        and DTNPCProtect.CONFIG
+        and tonumber(DTNPCProtect.CONFIG.HostilePlayerRepThreshold)
+        or HOSTILE_REP_THRESHOLD
+    return rep <= threshold
+end
+
+local function getHostileFactionIDsForPlayer(player)
+    local factions = ModData.get("DynamicTrading_Factions")
+    local hostile = {}
+    if type(factions) ~= "table" then return hostile end
+
+    for factionID, faction in pairs(factions) do
+        if faction and isFactionHostileToPlayer(factionID, faction, player) then
+            hostile[#hostile + 1] = factionID
+        end
+    end
+
+    return hostile
+end
+
 local function removeBandit(uuid, reason)
     if not uuid then return end
 
@@ -323,7 +377,9 @@ local function makeNPCDataHostile(uuid, npcData, player, reason)
 
     npcData.state = nextState
     npcData.isHostile = true
-    npcData.isBandit = true
+    npcData.isBandit = npcData.isBandit == true
+        or isBanditFactionID(npcData.factionID)
+        or npcData.archetypeID == "Bandit"
     npcData.factionID = npcData.factionID or BANDIT_FACTION_ID
     npcData.banditHostileReason = tostring(reason or "bandit")
     npcData.master = targetUsername
@@ -369,7 +425,7 @@ function Bandits.MakeGroupHostile(groupID, player, reason)
 end
 
 function Bandits.OnBanditDamagedByPlayer(npcData, attacker)
-    if not npcData or npcData.isBandit ~= true then
+    if not npcData or (npcData.isBandit ~= true and npcData.banditGroupID == nil and npcData.raidHostileFaction ~= true) then
         return false
     end
     if npcData.banditGroupID ~= nil then
@@ -656,11 +712,158 @@ function Bandits.RefuseDemand(player, args)
     Bandits.MakeGroupHostile(group.id, player, args.reason or "refused")
 end
 
-local function generateGroupID(player)
-    return "Bandit_" .. tostring(getUsername(player) or "Player") .. "_" .. tostring(math.floor(worldHours() * 100)) .. "_" .. tostring(ZombRand(1000000))
+local function generateGroupID(player, factionID)
+    return "Raid_" .. tostring(factionID or "Faction") .. "_" .. tostring(getUsername(player) or "Player") .. "_" .. tostring(math.floor(worldHours() * 100)) .. "_" .. tostring(ZombRand(1000000))
 end
 
-local function createBanditData(player, groupID, difficulty, index, square)
+local function getSoulData(uuid)
+    if not uuid or not DynamicTrading_Roster then return nil end
+    if DynamicTrading_Roster.GetSoul then
+        local soul = DynamicTrading_Roster.GetSoul(uuid)
+        if soul then return soul end
+    end
+
+    local roster = ModData.get("DynamicTrading_Roster")
+    return roster and roster.Souls and roster.Souls[uuid] or nil
+end
+
+local function getRestingFactionMembers(factionID)
+    local roster = ensureRosterModData()
+    local members = roster.FactionMembers and roster.FactionMembers[factionID] or nil
+    local resting = {}
+    if type(members) ~= "table" then return resting end
+
+    for _, uuid in ipairs(members) do
+        local registry = roster.Souls and roster.Souls[uuid] or nil
+        local soul = getSoulData(uuid) or registry
+        if soul and soul.status == "Resting" and soul.status ~= "Dead" then
+            resting[#resting + 1] = {
+                uuid = uuid,
+                soul = soul,
+            }
+        end
+    end
+
+    return resting
+end
+
+local function pickRaidMembers(factionID, maxCap, percent)
+    local resting = getRestingFactionMembers(factionID)
+    if #resting <= 0 then return {} end
+
+    for i = #resting, 2, -1 do
+        local j = ZombRand(i) + 1
+        resting[i], resting[j] = resting[j], resting[i]
+    end
+
+    local count = math.ceil(#resting * (clampPercent(percent, 50) / 100))
+    count = math.max(1, math.min(#resting, clampDifficulty(maxCap), count))
+
+    local selected = {}
+    for i = 1, count do
+        selected[#selected + 1] = resting[i]
+    end
+    return selected
+end
+
+local function markSoulForRaid(uuid, npcData)
+    if not uuid or not npcData or not DynamicTrading_Roster then return end
+    if DynamicTrading_Roster.UpdateSoulStatus then
+        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Working", 0, nil)
+    end
+    if DynamicTrading_Roster.SaveSoul then
+        DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    end
+end
+
+local function restoreSoulAfterFailedRaid(uuid, npcData)
+    if not uuid or not npcData or not DynamicTrading_Roster then return end
+    npcData.status = "Resting"
+    npcData.state = "Idle"
+    npcData.isHostile = false
+    npcData.isBandit = npcData.factionID == BANDIT_FACTION_ID and npcData.isBandit or nil
+    npcData.banditGroupID = nil
+    npcData.banditRole = nil
+    npcData.banditTargetUsername = nil
+    npcData.banditTargetOnlineID = nil
+    npcData.banditDemandResolved = nil
+    npcData.master = nil
+    npcData.masterID = nil
+    npcData.tasks = {}
+    DynamicTrading_Roster.SaveSoul(uuid, npcData)
+end
+
+local function returnRaidSoulToResting(uuid, npcData)
+    if not uuid or not npcData or not DynamicTrading_Roster then return end
+    npcData.status = "Resting"
+    npcData.state = "Idle"
+    npcData.returnTime = 0
+    npcData.returnStatus = nil
+    npcData.requestedReturnStatus = nil
+    npcData.master = nil
+    npcData.masterID = nil
+    npcData.tasks = {}
+    npcData.isHostile = false
+    npcData.banditGroupID = nil
+    npcData.banditRole = nil
+    npcData.banditTargetUsername = nil
+    npcData.banditTargetOnlineID = nil
+    npcData.banditDemandStarted = nil
+    npcData.banditDemandStartedAt = nil
+    npcData.banditDemandResolved = nil
+    npcData.banditLeaving = nil
+    npcData.raidHostileFaction = nil
+    if DynamicTrading_Roster.UpdateSoulStatus then
+        DynamicTrading_Roster.UpdateSoulStatus(uuid, "Resting", 0, nil)
+    end
+    DynamicTrading_Roster.SaveSoul(uuid, npcData)
+end
+
+local function createRaidDataFromSoul(player, groupID, factionID, raidMember, difficulty, index, square, robbery)
+    local uuid = raidMember and raidMember.uuid or nil
+    local gen = raidMember and raidMember.soul or nil
+    if not uuid or not gen then return nil end
+
+    gen.uuid = uuid
+    gen.factionID = factionID
+    gen.archetypeID = gen.archetypeID or (robbery and "Bandit" or "General")
+    gen.occupation = gen.occupation or gen.archetypeID
+    gen.status = "Working"
+    gen.state = robbery and "Follow" or "Attack"
+    gen.master = getUsername(player)
+    gen.masterID = getOnlineID(player)
+    gen.tasks = {}
+    gen.isPlayerFactionTrader = false
+    gen.isBandit = robbery == true or gen.archetypeID == "Bandit" or isBanditFactionID(factionID)
+    gen.banditFactionHostile = isBanditFactionID(factionID)
+    gen.banditGroupID = groupID
+    gen.banditRole = index == 1 and "leader" or "raider"
+    gen.banditDifficulty = difficulty
+    gen.banditTargetUsername = getUsername(player)
+    gen.banditTargetOnlineID = getOnlineID(player)
+    gen.banditSpawnedAt = nowMillis()
+    gen.banditDemandResolved = robbery ~= true
+    gen.raidFactionID = factionID
+    gen.raidFactionName = getFactionDisplayName(factionID)
+    gen.raidHostileFaction = true
+    gen.lastX = square:getX()
+    gen.lastY = square:getY()
+    gen.lastZ = square:getZ()
+    gen.returnTime = 0
+    gen.returnStatus = nil
+    gen.requestedReturnStatus = nil
+    gen.isHostile = robbery ~= true
+
+    if gen.isHostile == true then
+        gen.lastPlayerAttackerUsername = getUsername(player)
+        gen.lastPlayerAttackerOnlineID = getOnlineID(player)
+        gen.lastPlayerAttackedAt = nowMillis()
+    end
+
+    return gen
+end
+
+local function createGeneratedBanditData(player, groupID, difficulty, index, square)
     local gen = DTNPCGenerator and DTNPCGenerator.CreateStandardData
         and DTNPCGenerator.CreateStandardData({
             occupation = "Bandit",
@@ -708,32 +911,72 @@ function Bandits.SpawnAmbushForPlayer(player, options)
     if not player or player:isDead() then return false end
     Bandits.EnsureBanditFaction(true)
     options = type(options) == "table" and options or {}
-    local difficulty = clampDifficulty(options.difficulty or getSandbox().BanditAmbushDifficulty)
-    local groupID = generateGroupID(player)
+    local sandbox = getSandbox()
+    local difficulty = clampDifficulty(options.difficulty or sandbox.BanditAmbushDifficulty)
+    local partyPercent = clampPercent(options.partyPercent or sandbox.BanditRaidPartyPercent, 50)
+    local factionID = options.factionID and tostring(options.factionID) or BANDIT_FACTION_ID
+    local robbery = isBanditFactionID(factionID)
+    local selectedMembers = pickRaidMembers(factionID, difficulty, partyPercent)
+
+    if #selectedMembers <= 0 then
+        DynamicTrading.Log(
+            "DTV2",
+            "Bandits",
+            "Raid",
+            "No resting raid members available for faction " .. tostring(factionID)
+        )
+        return false
+    end
+
+    local groupID = generateGroupID(player, factionID)
     local group = {
         id = groupID,
+        factionID = factionID,
+        factionName = getFactionDisplayName(factionID),
         difficulty = difficulty,
+        partyPercent = partyPercent,
+        robbery = robbery,
         targetUsername = getUsername(player),
         targetOnlineID = getOnlineID(player),
         members = {},
-        status = "active",
+        status = robbery and "active" or "hostile",
         spawnedAt = nowMillis(),
     }
 
-    for i = 1, difficulty do
+    for i, raidMember in ipairs(selectedMembers) do
         local square = findSafeAmbushSquare(player, i)
         if not square then
             DynamicTrading.Log("DTV2", "Bandits", "Warn", "No safe bandit ambush square for " .. tostring(getUsername(player)))
             for _, uuid in ipairs(group.members) do
                 removeBandit(uuid, "BanditSpawnRollback")
+                local failedSoul = getSoulData(uuid)
+                if failedSoul then restoreSoulAfterFailedRaid(uuid, failedSoul) end
             end
             return false
         end
 
-        local npcData = createBanditData(player, groupID, difficulty, i, square)
+        local npcData = createRaidDataFromSoul(player, groupID, factionID, raidMember, difficulty, i, square, robbery)
+        if not npcData and robbery then
+            npcData = createGeneratedBanditData(player, groupID, difficulty, i, square)
+        end
+        if not npcData then
+            for _, uuid in ipairs(group.members) do
+                removeBandit(uuid, "RaidSpawnRollback")
+                local failedSoul = getSoulData(uuid)
+                if failedSoul then restoreSoulAfterFailedRaid(uuid, failedSoul) end
+            end
+            return false
+        end
+
+        markSoulForRaid(npcData.uuid, npcData)
         local zombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, npcData.uuid) or nil
         if zombie then
             group.members[#group.members + 1] = npcData.uuid
+            if robbery ~= true then
+                makeNPCDataHostile(npcData.uuid, npcData, player, "faction_raid")
+            end
+        else
+            restoreSoulAfterFailedRaid(npcData.uuid, npcData)
         end
     end
 
@@ -749,7 +992,10 @@ local function playerAlreadyTargeted(player)
     local username = getUsername(player)
     local onlineID = getOnlineID(player)
     for _, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
-        if npcData and npcData.isBandit == true and npcData.banditDemandResolved ~= true and npcData.status ~= "Dead" then
+        if npcData
+            and (npcData.isBandit == true or npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil)
+            and (npcData.banditDemandResolved ~= true or npcData.raidHostileFaction == true or npcData.isHostile == true)
+            and npcData.status ~= "Dead" then
             if (onlineID ~= nil and tonumber(npcData.banditTargetOnlineID) == tonumber(onlineID))
                 or (username and tostring(npcData.banditTargetUsername) == tostring(username)) then
                 return true
@@ -757,6 +1003,20 @@ local function playerAlreadyTargeted(player)
         end
     end
     return false
+end
+
+local function pickHostileRaidFactionForPlayer(player, maxCap, partyPercent)
+    Bandits.EnsureBanditFaction(false)
+    local candidates = {}
+    for _, factionID in ipairs(getHostileFactionIDsForPlayer(player)) do
+        local resting = getRestingFactionMembers(factionID)
+        if #resting > 0 then
+            candidates[#candidates + 1] = factionID
+        end
+    end
+
+    if #candidates <= 0 then return nil end
+    return candidates[ZombRand(#candidates) + 1]
 end
 
 local function tryRandomAmbush()
@@ -782,7 +1042,16 @@ local function tryRandomAmbush()
     if #candidates <= 0 then return end
 
     local player = candidates[ZombRand(#candidates) + 1]
-    Bandits.SpawnAmbushForPlayer(player, { difficulty = sandbox.BanditAmbushDifficulty })
+    local difficulty = clampDifficulty(sandbox.BanditAmbushDifficulty)
+    local partyPercent = clampPercent(sandbox.BanditRaidPartyPercent, 50)
+    local factionID = pickHostileRaidFactionForPlayer(player, difficulty, partyPercent)
+    if not factionID then return end
+
+    Bandits.SpawnAmbushForPlayer(player, {
+        difficulty = difficulty,
+        partyPercent = partyPercent,
+        factionID = factionID,
+    })
 end
 
 local function processDemandTimeouts()
@@ -796,6 +1065,7 @@ local function processDemandTimeouts()
         elseif group and (group.status == "paid" or group.status == "empty") then
             if tonumber(group.cleanupAt) and current >= tonumber(group.cleanupAt) then
                 for _, member in ipairs(getGroupMembers(group)) do
+                    returnRaidSoulToResting(member.uuid, member.npcData)
                     removeBandit(member.uuid, "BanditPaidCleanup")
                 end
                 Bandits.Groups[groupID] = nil
@@ -832,20 +1102,21 @@ local function getNearestPlayerToNPC(npcData)
     return bestPlayer
 end
 
-local function processBanditFactionAggro()
+local function processHostileFactionAggro()
     for uuid, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
+        local player = getNearestPlayerToNPC(npcData)
+        local faction = npcData and getFactionData(npcData.factionID) or nil
         if npcData
-            and isBanditFactionID(npcData.factionID)
+            and faction
+            and isFactionHostileToPlayer(npcData.factionID, faction, player)
             and npcData.status ~= "Dead"
             and npcData.incapState ~= "Active"
             and not (npcData.banditGroupID ~= nil and npcData.banditDemandResolved ~= true) then
-            npcData.isBandit = true
-            npcData.banditFactionHostile = true
-            if npcData.isHostile ~= true and npcData.banditLeaving ~= true then
-                local player = getNearestPlayerToNPC(npcData)
-                if player then
-                    makeNPCDataHostile(uuid, npcData, player, "bandit_faction")
-                end
+            npcData.isBandit = npcData.isBandit == true or isBanditFactionID(npcData.factionID) or npcData.archetypeID == "Bandit"
+            npcData.banditFactionHostile = isBanditFactionID(npcData.factionID)
+            npcData.raidHostileFaction = true
+            if npcData.isHostile ~= true and npcData.banditLeaving ~= true and player then
+                makeNPCDataHostile(uuid, npcData, player, "hostile_faction")
             end
         end
     end
@@ -856,7 +1127,7 @@ local function onTick()
     if Bandits.TickCounter % 60 ~= 0 then return end
     Bandits.EnsureBanditFaction(false)
     processDemandTimeouts()
-    processBanditFactionAggro()
+    processHostileFactionAggro()
     tryRandomAmbush()
 end
 
@@ -881,6 +1152,8 @@ local function onClientCommand(module, command, player, args)
             Bandits.EnsureBanditFaction(true)
             Bandits.SpawnAmbushForPlayer(player, {
                 difficulty = args and args.difficulty or nil,
+                partyPercent = args and args.partyPercent or nil,
+                factionID = args and args.factionID or BANDIT_FACTION_ID,
                 debug = true,
             })
         end
