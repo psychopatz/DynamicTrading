@@ -7,6 +7,8 @@ if isServer() and not isClient() then return end
 
 require "DT/Common/UI/ConversationUI/ConversationUI"
 pcall(require, "DT/V2/NPC/DTNPC_InteractionPose")
+require "ISUI/ISCollapsableWindow"
+require "ISUI/ISButton"
 
 DTNPCBanditClient = DTNPCBanditClient or {}
 
@@ -18,6 +20,94 @@ BanditClient.PendingGroups = BanditClient.PendingGroups or {}
 BanditClient.TickCounter = BanditClient.TickCounter or 0
 
 local AUTO_OPEN_DISTANCE = 4.0
+
+local FLAVOUR = {
+    approach = {
+        "Stop right there. You're paying a road fee.",
+        "That's close enough. Hands where we can see them.",
+        "Easy now. This road has a toll.",
+        "Don't make this ugly. We only want our cut.",
+        "Nice and slow. Bags open.",
+        "You wandered into the wrong stretch of road.",
+        "Nobody passes here for free anymore.",
+        "Keep your hands still and listen close.",
+        "We have been watching you. Pay up and keep walking.",
+        "You look stocked. That makes this simple.",
+    },
+    money = {
+        "Let's keep this simple. Hand over {amount}.",
+        "Your wallet. {amount}. Now.",
+        "Road tax is {amount}. Pay it.",
+        "You can spare {amount}, or you can bleed for it.",
+        "Count out {amount} and nobody needs to get brave.",
+        "We are taking {amount}. Don't reach for anything else.",
+        "Drop {amount} on the ground and back away.",
+        "Price of staying alive today is {amount}.",
+    },
+    item = {
+        "That {item}. Hand it over.",
+        "We want the {item}. No arguments.",
+        "The {item} comes with us.",
+        "Put the {item} down nice and slow.",
+        "That {item} looks useful. It belongs to us now.",
+        "Toss over the {item} and you walk.",
+        "We will take the {item}. You keep your teeth.",
+        "Don't get attached to the {item}.",
+    },
+    accept = {
+        "Smart choice.",
+        "See? Nobody had to be stupid.",
+        "Good. Keep walking.",
+        "That will do.",
+        "You made the right call.",
+        "Pleasure doing business. Keep moving.",
+    },
+    refuse = {
+        "Wrong answer.",
+        "Then we do this the hard way.",
+        "You should have paid.",
+        "Bad time to grow a spine.",
+        "Enough talking.",
+        "Your choice.",
+        "Take them.",
+        "Fine. We take everything.",
+    },
+    empty = {
+        "You've got nothing worth the trouble. Get out of here.",
+        "Empty pockets. Waste of our time.",
+        "Not even worth the swing. Move.",
+        "You are poorer than you look. Leave.",
+        "Nothing to take. Lucky day.",
+        "We are done here. Run along.",
+    },
+    waiting = {
+        "Waiting for demand...",
+        "They are looking through your pack...",
+        "The bandits are deciding what to take...",
+        "Keep still...",
+    },
+    hostile = {
+        "That's it. Get them.",
+        "Enough. Take them down.",
+        "Should have listened.",
+        "No more warnings.",
+        "Make it hurt.",
+    },
+}
+
+local function isCurrencyExpandedActive()
+    local activated = getActivatedMods and getActivatedMods() or nil
+    return activated and activated.contains and activated:contains("CurrencyExpanded") or false
+end
+
+local function pickLine(key, replacements)
+    local list = FLAVOUR[key] or {}
+    local line = list[(#list > 0 and (ZombRand(#list) + 1)) or 1] or ""
+    for token, value in pairs(replacements or {}) do
+        line = string.gsub(line, "{" .. token .. "}", tostring(value or ""))
+    end
+    return line
+end
 
 local function normalize(value)
     value = value and tostring(value) or ""
@@ -131,6 +221,79 @@ local function closeBanditUI(ui)
     ui:close()
 end
 
+local ForecastWindow = ISCollapsableWindow:derive("DTNPCBanditRaidForecastWindow")
+
+function ForecastWindow:new(lines)
+    local width = 520
+    local height = math.min(520, math.max(260, 110 + (#(lines or {}) * 18)))
+    local screenW = getCore and getCore():getScreenWidth() or 1280
+    local screenH = getCore and getCore():getScreenHeight() or 720
+    local x = math.max(20, math.floor((screenW - width) / 2))
+    local y = math.max(20, math.floor((screenH - height) / 2))
+    local o = ISCollapsableWindow.new(self, x, y, width, height)
+    o.lines = lines or {}
+    o.title = "Raid Forecast"
+    o.resizable = false
+    return o
+end
+
+function ForecastWindow:createChildren()
+    ISCollapsableWindow.createChildren(self)
+    self.closeButton = ISButton:new(self.width - 96, self.height - 36, 76, 24, "Close", self, function(target)
+        target:close()
+    end)
+    self.closeButton:initialise()
+    self:addChild(self.closeButton)
+end
+
+function ForecastWindow:render()
+    ISCollapsableWindow.render(self)
+    self:drawText("Next Raid Window", 18, 34, 1, 1, 1, 1, UIFont.Medium)
+    local y = 62
+    for _, line in ipairs(self.lines or {}) do
+        self:drawText(tostring(line), 20, y, 0.86, 0.86, 0.86, 1, UIFont.Small)
+        y = y + 18
+    end
+end
+
+function BanditClient.ShowRaidForecast(args)
+    args = type(args) == "table" and args or {}
+    if BanditClient.ForecastWindow then
+        BanditClient.ForecastWindow:close()
+        BanditClient.ForecastWindow = nil
+    end
+
+    local lines = {}
+    if args.currencyExpanded ~= true then
+        lines[#lines + 1] = "CurrencyExpanded is not active. Bandit raids are disabled."
+    else
+        lines[#lines + 1] = "System: " .. (args.enabled == false and "disabled by sandbox" or "enabled")
+        lines[#lines + 1] = "Chance per eligible check: " .. tostring(args.chance or 0) .. "%"
+        lines[#lines + 1] = "Cooldown: " .. tostring(args.cooldownHours or 0) .. " hours"
+        lines[#lines + 1] = "Next eligible: in " .. tostring(string.format("%.1f", tonumber(args.cooldownRemainingHours) or 0)) .. " hours"
+        lines[#lines + 1] = "Max party size: " .. tostring(args.maxRaidSize or "?") .. " | Resting roster share: " .. tostring(args.partyPercent or "?") .. "%"
+        lines[#lines + 1] = ""
+        lines[#lines + 1] = "Angry factions ready to raid:"
+
+        local any = false
+        for _, entry in ipairs(args.hostileFactions or {}) do
+            any = true
+            lines[#lines + 1] = "- " .. tostring(entry.name or entry.factionID or "Faction")
+                .. ": " .. tostring(entry.raidSize or 0)
+                .. " raiders from " .. tostring(entry.resting or 0)
+                .. " resting members"
+        end
+        if not any then
+            lines[#lines + 1] = "- None with resting members right now."
+        end
+    end
+
+    local window = ForecastWindow:new(lines)
+    window:initialise()
+    window:addToUIManager()
+    BanditClient.ForecastWindow = window
+end
+
 function BanditClient.ShowDemand(ui, player, demand)
     if not ui or not demand then return end
 
@@ -141,14 +304,14 @@ function BanditClient.ShowDemand(ui, player, demand)
 
     if demand.kind == "money" then
         local amountText = "$" .. tostring(tonumber(demand.amount) or 0)
-        ui:speak("Let's keep this simple. Hand over " .. amountText .. ".")
+        ui:speak(pickLine("money", { amount = amountText }))
         ui:updateOptions({
             {
                 text = "Hand over " .. amountText,
                 message = "Fine. Take it.",
                 onSelect = function(nextUI)
                     nextUI.banditPaymentSent = true
-                    nextUI:speak("Smart choice.")
+                    nextUI:speak(pickLine("accept"))
                     setWaitingOptions(nextUI, "Handing it over...")
                     sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
                 end
@@ -159,7 +322,7 @@ function BanditClient.ShowDemand(ui, player, demand)
                 style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
                 onSelect = function(nextUI)
                     nextUI.banditRefuseSent = true
-                    nextUI:speak("Wrong answer.")
+                    nextUI:speak(pickLine("refuse"))
                     setWaitingOptions(nextUI, "They are turning hostile...")
                     sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
@@ -170,14 +333,14 @@ function BanditClient.ShowDemand(ui, player, demand)
 
     if demand.kind == "item" then
         local itemName = normalize(demand.displayName) or "that item"
-        ui:speak("That " .. itemName .. ". Hand it over.")
+        ui:speak(pickLine("item", { item = itemName }))
         ui:updateOptions({
             {
                 text = "Hand over " .. itemName,
                 message = "Take it and leave.",
                 onSelect = function(nextUI)
                     nextUI.banditPaymentSent = true
-                    nextUI:speak("That will do.")
+                    nextUI:speak(pickLine("accept"))
                     setWaitingOptions(nextUI, "Handing it over...")
                     sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
                 end
@@ -188,7 +351,7 @@ function BanditClient.ShowDemand(ui, player, demand)
                 style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
                 onSelect = function(nextUI)
                     nextUI.banditRefuseSent = true
-                    nextUI:speak("Then we do this the hard way.")
+                    nextUI:speak(pickLine("refuse"))
                     setWaitingOptions(nextUI, "They are turning hostile...")
                     sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
@@ -200,7 +363,7 @@ function BanditClient.ShowDemand(ui, player, demand)
     ui.banditPaymentSent = true
     ui.banditResolved = true
     markResolved(groupID)
-    ui:speak("You've got nothing worth the trouble. Get out of here.")
+    ui:speak(pickLine("empty"))
     ui:updateOptions({
         {
             text = "Leave",
@@ -214,6 +377,7 @@ function BanditClient.ShowDemand(ui, player, demand)
 end
 
 function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
+    if not isCurrencyExpandedActive() then return false end
     if not ui or not player or not npcData then return false end
     local groupID = normalize(npcData.banditGroupID)
     local uuid = normalize(npcData.uuid)
@@ -250,8 +414,8 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
         end
     end
 
-    ui:speak("Stop right there. You're paying a road fee.")
-    setWaitingOptions(ui, "Waiting for demand...")
+    ui:speak(pickLine("approach"))
+    setWaitingOptions(ui, pickLine("waiting"))
     sendBanditCommand(player, "BanditDemandStarted", {
         groupID = groupID,
         uuid = uuid,
@@ -261,6 +425,7 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
 end
 
 function BanditClient.OpenDemand(npc, player, npcData)
+    if not isCurrencyExpandedActive() then return false end
     if not npc or not player or not npcData then return false end
     local groupID = normalize(npcData.banditGroupID)
     if not groupID then return false end
@@ -277,6 +442,7 @@ end
 local function onTick()
     BanditClient.TickCounter = (BanditClient.TickCounter or 0) + 1
     if BanditClient.TickCounter % 15 ~= 0 then return end
+    if not isCurrencyExpandedActive() then return end
 
     local player = getSpecificPlayer and getSpecificPlayer(0) or nil
     if not player or player:isDead() then return end
@@ -307,6 +473,21 @@ local function onServerCommand(module, command, args)
     if module ~= "DTNPC" then return end
     args = type(args) == "table" and args or {}
 
+    if command == "BanditDebugNotice" then
+        local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+        if player and player.Say then
+            player:Say(tostring(args.message or "Bandit debug event."))
+        end
+        return
+    end
+
+    if command == "BanditRaidForecast" then
+        BanditClient.ShowRaidForecast(args)
+        return
+    end
+
+    if not isCurrencyExpandedActive() then return end
+
     if command == "BanditDemand" then
         local groupID = tostring(args.groupID or "")
         local pending = BanditClient.PendingGroups[groupID]
@@ -327,15 +508,15 @@ local function onServerCommand(module, command, args)
 
         ui.banditResolved = true
         if args.result == "hostile" then
-            ui:speak("That's it. Get them.")
+            ui:speak(pickLine("hostile"))
             closeBanditUI(ui)
             return
         end
 
         if args.result == "empty" then
-            ui:speak("You've got nothing worth the trouble. Get out of here.")
+            ui:speak(pickLine("empty"))
         else
-            ui:speak("Pleasure doing business. Keep walking.")
+            ui:speak(pickLine("accept"))
         end
 
         ui:updateOptions({

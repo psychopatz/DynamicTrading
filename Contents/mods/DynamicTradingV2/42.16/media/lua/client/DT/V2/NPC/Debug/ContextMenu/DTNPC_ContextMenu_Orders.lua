@@ -214,6 +214,24 @@ function Menu.OnSpawnBanditAmbush(player, difficulty)
     end
 end
 
+function Menu.OnSpawnHostileFactionRaid(player)
+    sendClientCommand(player, "DTNPC", "SpawnHostileFactionRaid", {})
+    if player and player.Say then
+        player:Say("Spawning raid from an angry faction...")
+    end
+end
+
+function Menu.OnMakeFactionAngry(player)
+    sendClientCommand(player, "DTNPC", "BanditDebugMakeFactionAngry", {})
+    if player and player.Say then
+        player:Say("Marking a faction angry for raid testing...")
+    end
+end
+
+function Menu.OnRequestBanditRaidForecast(player)
+    sendClientCommand(player, "DTNPC", "RequestBanditRaidForecast", {})
+end
+
 function Menu.OnDebugGiveHeldWeapon(npc, player)
     if not npc or not player then
         return

@@ -45,7 +45,12 @@ function RespawnLogic.Process(data, factionsToRemove, Sandbox)
             -- Count existing factions in this town
             local count = 0
             for _, f in pairs(data) do
-                if normalizeTownKey(f.town) == spawnTownKey then
+                if f
+                    and f.excludeFromPopulationPool ~= true
+                    and f.excludeFromFactionCap ~= true
+                    and f.isSystemFaction ~= true
+                    and f.systemFaction ~= true
+                    and normalizeTownKey(f.town) == spawnTownKey then
                     count = count + 1
                 end
             end

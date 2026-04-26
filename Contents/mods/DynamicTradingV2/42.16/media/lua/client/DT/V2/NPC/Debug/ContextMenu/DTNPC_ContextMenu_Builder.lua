@@ -231,11 +231,22 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
 
     managerSubMenu:addOption("Summon All Followers", player, Menu.OnSummon)
     managerSubMenu:addOption("Spawn Random NPC", player, Menu.OnSpawnRandomNPC)
-    local banditOption = managerSubMenu:addOption("Spawn Bandit Ambush")
-    local banditSubMenu = managerSubMenu:getNew(managerSubMenu)
-    context:addSubMenu(banditOption, banditSubMenu)
-    for difficulty = 1, 5 do
-        banditSubMenu:addOption("Difficulty " .. tostring(difficulty), player, Menu.OnSpawnBanditAmbush, difficulty)
+
+    local activated = getActivatedMods and getActivatedMods() or nil
+    local currencyExpanded = activated and activated.contains and activated:contains("CurrencyExpanded") or false
+    if currencyExpanded then
+        local banditOption = managerSubMenu:addOption("Bandit / Hostile Raids")
+        local banditSubMenu = managerSubMenu:getNew(managerSubMenu)
+        context:addSubMenu(banditOption, banditSubMenu)
+        banditSubMenu:addOption("Show Raid Forecast", player, Menu.OnRequestBanditRaidForecast)
+        banditSubMenu:addOption("Make Random Faction Angry", player, Menu.OnMakeFactionAngry)
+        banditSubMenu:addOption("Spawn Angry Faction Raid", player, Menu.OnSpawnHostileFactionRaid)
+        local spawnBanditOption = banditSubMenu:addOption("Spawn Bandit Ambush")
+        local spawnBanditSubMenu = banditSubMenu:getNew(banditSubMenu)
+        context:addSubMenu(spawnBanditOption, spawnBanditSubMenu)
+        for difficulty = 1, 5 do
+            spawnBanditSubMenu:addOption("Difficulty " .. tostring(difficulty), player, Menu.OnSpawnBanditAmbush, difficulty)
+        end
     end
     managerSubMenu:addOption("Open Loot Vision Inspector", player, Menu.OnOpenLootVisionInspector)
 

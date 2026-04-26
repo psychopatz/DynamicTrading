@@ -1,8 +1,13 @@
 -- =============================================================================
 -- 4. DYNAMIC LOADER
 -- =============================================================================
+local function isCurrencyExpandedActive()
+    local activated = getActivatedMods and getActivatedMods() or nil
+    return activated and activated.contains and activated:contains("CurrencyExpanded") or false
+end
+
 local defaultArchetypeList = {
-    "Angler", "Athlete", "Bandit", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
+    "Angler", "Athlete", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
     "Carpenter", "Chef", "Demo", "Designer", "Doctor", "Electrician", "Farmer", "Foreman",
     "Geek", "Gunrunner", "Herbalist", "Hiker", "Hunter", "Janitor", "Librarian", "Mechanic",
     "Musician", "Office", "Painter", "Pawnbroker", "Pharmacist", "Pyro",
@@ -10,6 +15,10 @@ local defaultArchetypeList = {
     "Survivalist", "Tailor", "Teacher", "Tribal", "Welder",
     "General", "Player" -- Meta archetypes
 }
+
+if isCurrencyExpandedActive() then
+    defaultArchetypeList[#defaultArchetypeList + 1] = "Bandit"
+end
 
 DynamicTrading.Config.ArchetypeList = DynamicTrading.Config.ArchetypeList or {}
 for _, id in ipairs(defaultArchetypeList) do

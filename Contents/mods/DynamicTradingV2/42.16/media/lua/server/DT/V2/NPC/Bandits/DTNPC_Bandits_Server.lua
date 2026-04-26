@@ -31,6 +31,11 @@ local BANDIT_MIN_ROSTER = 6
 local BANDIT_FACTION_ENSURE_INTERVAL_HOURS = 1
 local HOSTILE_REP_THRESHOLD = -40
 
+local function isCurrencyExpandedActive()
+    local activated = getActivatedMods and getActivatedMods() or nil
+    return activated and activated.contains and activated:contains("CurrencyExpanded") or false
+end
+
 local function nowMillis()
     return getTimeInMillis and getTimeInMillis() or math.floor((os.time() or 0) * 1000)
 end
@@ -287,6 +292,18 @@ local function getFactionDisplayName(factionID)
     return faction and (faction.name or faction.displayName) or tostring(factionID or "Unknown")
 end
 
+local function isFactionExcludedFromPopulationPool(factionID, faction)
+    return factionID == "Independent"
+        or factionID == "Factionless"
+        or factionID == BANDIT_FACTION_ID
+        or (faction and (
+            faction.excludeFromPopulationPool == true
+            or faction.excludeFromFactionCap == true
+            or faction.isSystemFaction == true
+            or faction.systemFaction == true
+        ))
+end
+
 local function isFactionHostileToPlayer(factionID, faction, player)
     if not factionID or not faction or not player then return false end
     if faction.hostileToPlayers == true or faction.alwaysHostile == true then return true end
@@ -425,6 +442,7 @@ function Bandits.MakeGroupHostile(groupID, player, reason)
 end
 
 function Bandits.OnBanditDamagedByPlayer(npcData, attacker)
+    if not isCurrencyExpandedActive() then return false end
     if not npcData or (npcData.isBandit ~= true and npcData.banditGroupID == nil and npcData.raidHostileFaction ~= true) then
         return false
     end
@@ -536,9 +554,11 @@ local function buildDemand(player, difficulty)
 end
 
 function Bandits.EnsureBanditFaction(force)
+    if not isCurrencyExpandedActive() then return false end
+
     local currentHour = worldHours()
     if force ~= true and currentHour - (Bandits.LastFactionEnsureHour or -99999) < BANDIT_FACTION_ENSURE_INTERVAL_HOURS then
-        return
+        return true
     end
     Bandits.LastFactionEnsureHour = currentHour
 
@@ -560,6 +580,11 @@ function Bandits.EnsureBanditFaction(force)
     faction.ColonyWealth = math.max(tonumber(faction.ColonyWealth) or 0, 250)
     faction.factionType = "bandit"
     faction.isNomadic = true
+    faction.isSystemFaction = true
+    faction.systemFaction = true
+    faction.excludeFromPopulationPool = true
+    faction.excludeFromFactionCap = true
+    faction.ignorePopulationCap = true
     faction.hostileToPlayers = true
     faction.alwaysHostile = true
     faction.reputationDefault = -100
@@ -617,9 +642,12 @@ function Bandits.EnsureBanditFaction(force)
         ModData.transmit("DynamicTrading_Factions")
         ModData.transmit("DynamicTrading_Roster")
     end
+
+    return true
 end
 
 function Bandits.StartDemand(player, args)
+    if not isCurrencyExpandedActive() then return end
     if not player or type(args) ~= "table" then return end
     local uuid = args.uuid and tostring(args.uuid) or nil
     local groupID = args.groupID and tostring(args.groupID) or nil
@@ -664,6 +692,7 @@ function Bandits.StartDemand(player, args)
 end
 
 function Bandits.PayDemand(player, args)
+    if not isCurrencyExpandedActive() then return end
     if not player or type(args) ~= "table" then return end
     local group = getGroup(args.groupID)
     if not group or not group.demand or group.demand.resolved == true then return end
@@ -704,6 +733,7 @@ function Bandits.PayDemand(player, args)
 end
 
 function Bandits.RefuseDemand(player, args)
+    if not isCurrencyExpandedActive() then return end
     if not player or type(args) ~= "table" then return end
     local group = getGroup(args.groupID)
     if not group then return end
@@ -908,14 +938,34 @@ local function createGeneratedBanditData(player, groupID, difficulty, index, squ
 end
 
 function Bandits.SpawnAmbushForPlayer(player, options)
+    if not isCurrencyExpandedActive() then
+        if options and options.debug == true then
+            sendBanditCommand(player, "BanditDebugNotice", {
+                message = "Bandit raids require CurrencyExpanded.",
+            })
+        end
+        return false
+    end
     if not player or player:isDead() then return false end
-    Bandits.EnsureBanditFaction(true)
     options = type(options) == "table" and options or {}
     local sandbox = getSandbox()
     local difficulty = clampDifficulty(options.difficulty or sandbox.BanditAmbushDifficulty)
     local partyPercent = clampPercent(options.partyPercent or sandbox.BanditRaidPartyPercent, 50)
     local factionID = options.factionID and tostring(options.factionID) or BANDIT_FACTION_ID
     local robbery = isBanditFactionID(factionID)
+    local faction = getFactionData(factionID)
+
+    if robbery then
+        Bandits.EnsureBanditFaction(true)
+    elseif not isFactionHostileToPlayer(factionID, faction, player) then
+        if options.debug == true then
+            sendBanditCommand(player, "BanditDebugNotice", {
+                message = tostring(getFactionDisplayName(factionID)) .. " is not angry enough to raid you.",
+            })
+        end
+        return false
+    end
+
     local selectedMembers = pickRaidMembers(factionID, difficulty, partyPercent)
 
     if #selectedMembers <= 0 then
@@ -1005,12 +1055,13 @@ local function playerAlreadyTargeted(player)
     return false
 end
 
-local function pickHostileRaidFactionForPlayer(player, maxCap, partyPercent)
+local function pickHostileRaidFactionForPlayer(player, maxCap, partyPercent, includeBandits)
+    if not isCurrencyExpandedActive() then return nil end
     Bandits.EnsureBanditFaction(false)
     local candidates = {}
     for _, factionID in ipairs(getHostileFactionIDsForPlayer(player)) do
         local resting = getRestingFactionMembers(factionID)
-        if #resting > 0 then
+        if #resting > 0 and (includeBandits ~= false or not isBanditFactionID(factionID)) then
             candidates[#candidates + 1] = factionID
         end
     end
@@ -1020,6 +1071,7 @@ local function pickHostileRaidFactionForPlayer(player, maxCap, partyPercent)
 end
 
 local function tryRandomAmbush()
+    if not isCurrencyExpandedActive() then return end
     local sandbox = getSandbox()
     if sandbox.EnableBanditAmbushes == false then return end
 
@@ -1044,7 +1096,7 @@ local function tryRandomAmbush()
     local player = candidates[ZombRand(#candidates) + 1]
     local difficulty = clampDifficulty(sandbox.BanditAmbushDifficulty)
     local partyPercent = clampPercent(sandbox.BanditRaidPartyPercent, 50)
-    local factionID = pickHostileRaidFactionForPlayer(player, difficulty, partyPercent)
+    local factionID = pickHostileRaidFactionForPlayer(player, difficulty, partyPercent, true)
     if not factionID then return end
 
     Bandits.SpawnAmbushForPlayer(player, {
@@ -1055,6 +1107,7 @@ local function tryRandomAmbush()
 end
 
 local function processDemandTimeouts()
+    if not isCurrencyExpandedActive() then return end
     local current = nowMillis()
     for groupID, group in pairs(Bandits.Groups or {}) do
         if group and group.status == "demanding" and group.demand and group.demand.resolved ~= true then
@@ -1103,6 +1156,7 @@ local function getNearestPlayerToNPC(npcData)
 end
 
 local function processHostileFactionAggro()
+    if not isCurrencyExpandedActive() then return end
     for uuid, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
         local player = getNearestPlayerToNPC(npcData)
         local faction = npcData and getFactionData(npcData.factionID) or nil
@@ -1125,6 +1179,7 @@ end
 local function onTick()
     Bandits.TickCounter = (Bandits.TickCounter or 0) + 1
     if Bandits.TickCounter % 60 ~= 0 then return end
+    if not isCurrencyExpandedActive() then return end
     Bandits.EnsureBanditFaction(false)
     processDemandTimeouts()
     processHostileFactionAggro()
@@ -1136,6 +1191,103 @@ local function canUseDebugCommand(player)
     if not player or not player.getAccessLevel then return false end
     local access = tostring(player:getAccessLevel() or "")
     return access ~= "" and access ~= "None"
+end
+
+local function computeRaidPartySize(factionID, maxCap, partyPercent)
+    local resting = getRestingFactionMembers(factionID)
+    if #resting <= 0 then return 0, 0 end
+    local count = math.ceil(#resting * (clampPercent(partyPercent, 50) / 100))
+    count = math.max(1, math.min(#resting, clampDifficulty(maxCap), count))
+    return count, #resting
+end
+
+local function collectHostileRaidSummaries(player, maxCap, partyPercent)
+    local summaries = {}
+    for _, factionID in ipairs(getHostileFactionIDsForPlayer(player)) do
+        local faction = getFactionData(factionID)
+        local raidSize, resting = computeRaidPartySize(factionID, maxCap, partyPercent)
+        if raidSize > 0 then
+            summaries[#summaries + 1] = {
+                factionID = factionID,
+                name = getFactionDisplayName(factionID),
+                raidSize = raidSize,
+                resting = resting,
+                isBandit = isBanditFactionID(factionID),
+                systemFaction = isFactionExcludedFromPopulationPool(factionID, faction),
+            }
+        end
+    end
+    table.sort(summaries, function(left, right)
+        return tostring(left.name) < tostring(right.name)
+    end)
+    return summaries
+end
+
+local function pickFactionToAnger(player)
+    local factions = ModData.get("DynamicTrading_Factions")
+    if type(factions) ~= "table" then return nil end
+
+    local readyCandidates = {}
+    local fallbackCandidates = {}
+    for factionID, faction in pairs(factions) do
+        if type(faction) == "table"
+            and not isFactionExcludedFromPopulationPool(factionID, faction)
+            and not isFactionHostileToPlayer(factionID, faction, player) then
+            if #getRestingFactionMembers(factionID) > 0 then
+                readyCandidates[#readyCandidates + 1] = factionID
+            else
+                fallbackCandidates[#fallbackCandidates + 1] = factionID
+            end
+        end
+    end
+
+    local candidates = #readyCandidates > 0 and readyCandidates or fallbackCandidates
+    if #candidates <= 0 then return nil end
+    return candidates[ZombRand(#candidates) + 1]
+end
+
+local function makeFactionAngryAtPlayer(player, factionID)
+    if not player then return nil end
+    local factions = ModData.get("DynamicTrading_Factions")
+    if type(factions) ~= "table" then return nil end
+
+    factionID = factionID and tostring(factionID) or pickFactionToAnger(player)
+    local faction = factionID and factions[factionID] or nil
+    if not faction or isFactionExcludedFromPopulationPool(factionID, faction) then return nil end
+
+    local username = getUsername(player)
+    if not username then return nil end
+    faction.reputation = type(faction.reputation) == "table" and faction.reputation or {}
+    faction.reputation[username] = -100
+    if ModData.transmit then ModData.transmit("DynamicTrading_Factions") end
+    return factionID, faction
+end
+
+local function sendRaidForecast(player)
+    local sandbox = getSandbox()
+    local currentHour = worldHours()
+    local cooldown = tonumber(sandbox.BanditAmbushCooldownHours) or 72
+    local nextEligible = math.max(currentHour, (Bandits.LastRandomAmbushHour or -99999) + cooldown)
+    local difficulty = clampDifficulty(sandbox.BanditAmbushDifficulty)
+    local partyPercent = clampPercent(sandbox.BanditRaidPartyPercent, 50)
+
+    if isCurrencyExpandedActive() then
+        Bandits.EnsureBanditFaction(false)
+    end
+
+    sendBanditCommand(player, "BanditRaidForecast", {
+        currencyExpanded = isCurrencyExpandedActive(),
+        enabled = sandbox.EnableBanditAmbushes ~= false,
+        currentHour = currentHour,
+        nextEligibleHour = nextEligible,
+        cooldownRemainingHours = math.max(0, nextEligible - currentHour),
+        checkIntervalHours = RANDOM_CHECK_INTERVAL_HOURS,
+        chance = tonumber(sandbox.BanditAmbushChance) or 3,
+        cooldownHours = cooldown,
+        maxRaidSize = difficulty,
+        partyPercent = partyPercent,
+        hostileFactions = isCurrencyExpandedActive() and collectHostileRaidSummaries(player, difficulty, partyPercent) or {},
+    })
 end
 
 local function onClientCommand(module, command, player, args)
@@ -1156,6 +1308,43 @@ local function onClientCommand(module, command, player, args)
                 factionID = args and args.factionID or BANDIT_FACTION_ID,
                 debug = true,
             })
+        end
+    elseif command == "SpawnHostileFactionRaid" then
+        if canUseDebugCommand(player) then
+            local sandbox = getSandbox()
+            local difficulty = clampDifficulty(args and args.difficulty or sandbox.BanditAmbushDifficulty)
+            local partyPercent = clampPercent(args and args.partyPercent or sandbox.BanditRaidPartyPercent, 50)
+            local factionID = args and args.factionID or pickHostileRaidFactionForPlayer(player, difficulty, partyPercent, false)
+            if factionID then
+                local ok = Bandits.SpawnAmbushForPlayer(player, {
+                    difficulty = difficulty,
+                    partyPercent = partyPercent,
+                    factionID = factionID,
+                    debug = true,
+                })
+                if ok then
+                    sendBanditCommand(player, "BanditDebugNotice", {
+                        message = "Spawned angry faction raid: " .. tostring(getFactionDisplayName(factionID)),
+                    })
+                end
+            else
+                sendBanditCommand(player, "BanditDebugNotice", {
+                    message = "No angry non-bandit faction with resting members is ready to raid you.",
+                })
+            end
+        end
+    elseif command == "BanditDebugMakeFactionAngry" then
+        if canUseDebugCommand(player) then
+            local factionID, faction = makeFactionAngryAtPlayer(player, args and args.factionID or nil)
+            sendBanditCommand(player, "BanditDebugNotice", {
+                message = factionID
+                    and (tostring(faction.name or factionID) .. " is now at -100 reputation with you.")
+                    or "No eligible faction could be made angry.",
+            })
+        end
+    elseif command == "RequestBanditRaidForecast" then
+        if canUseDebugCommand(player) then
+            sendRaidForecast(player)
         end
     end
 end

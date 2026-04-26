@@ -9,13 +9,18 @@ local function isBandit(npcData)
     return npcData and npcData.isBandit == true
 end
 
+local function isCurrencyExpandedActive()
+    local activated = getActivatedMods and getActivatedMods() or nil
+    return activated and activated.contains and activated:contains("CurrencyExpanded") or false
+end
+
 if DTNPCJobUI and DTNPCJobUI.Register then
     DTNPCJobUI.Register({
         id = "BanditDemand",
         priority = 1000,
 
         matches = function(ui, npc, player, npcData)
-            return isBandit(npcData)
+            return isCurrencyExpandedActive() and isBandit(npcData)
         end,
 
         getTalkLabel = function(ui, npc, player, npcData)

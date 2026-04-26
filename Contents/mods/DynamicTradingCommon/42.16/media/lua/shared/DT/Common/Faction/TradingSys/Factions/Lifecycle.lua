@@ -126,7 +126,12 @@ local function buildExistingTownCounts(data)
     local counts = {}
 
     for id, faction in pairs(data or {}) do
-        if id ~= "Independent" and type(faction) == "table" then
+        if id ~= "Independent"
+            and type(faction) == "table"
+            and faction.excludeFromPopulationPool ~= true
+            and faction.excludeFromFactionCap ~= true
+            and faction.isSystemFaction ~= true
+            and faction.systemFaction ~= true then
             local key = normalizeTownKey(faction.town)
             if key then
                 counts[key] = (counts[key] or 0) + 1
