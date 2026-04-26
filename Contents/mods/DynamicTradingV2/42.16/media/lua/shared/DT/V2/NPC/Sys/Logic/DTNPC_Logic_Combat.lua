@@ -40,6 +40,13 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
         npcData.lastPlayerAttackerOnlineID = attacker.getOnlineID and attacker:getOnlineID() or nil
         npcData.lastPlayerAttackedAt = getTimeInMillis and getTimeInMillis() or nil
 
+        if npcData.isBandit == true and DTNPCBandits and DTNPCBandits.OnBanditDamagedByPlayer then
+            if DTNPCBandits.OnBanditDamagedByPlayer(npcData, attacker) then
+                zombie:setAttackedBy(nil)
+                return
+            end
+        end
+
         if (master and attacker == master) or isFriendlyAuthorityPlayer(npcData, attacker) then
             DynamicTrading.Log(
                 "DTV2",

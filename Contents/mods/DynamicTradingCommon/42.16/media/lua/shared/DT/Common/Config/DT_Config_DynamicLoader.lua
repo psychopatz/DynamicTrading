@@ -2,7 +2,7 @@
 -- 4. DYNAMIC LOADER
 -- =============================================================================
 local defaultArchetypeList = {
-    "Angler", "Athlete", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
+    "Angler", "Athlete", "Bandit", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
     "Carpenter", "Chef", "Demo", "Designer", "Doctor", "Electrician", "Farmer", "Foreman",
     "Geek", "Gunrunner", "Herbalist", "Hiker", "Hunter", "Janitor", "Librarian", "Mechanic",
     "Musician", "Office", "Painter", "Pawnbroker", "Pharmacist", "Pyro",

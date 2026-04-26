@@ -204,6 +204,16 @@ function Menu.OnSpawnRandomNPC(player)
     sendClientCommand(player, "DTNPC", "Spawn", { occupation = occupation })
 end
 
+function Menu.OnSpawnBanditAmbush(player, difficulty)
+    difficulty = math.floor(tonumber(difficulty) or 2)
+    if difficulty < 1 then difficulty = 1 end
+    if difficulty > 5 then difficulty = 5 end
+    sendClientCommand(player, "DTNPC", "SpawnBanditAmbush", { difficulty = difficulty })
+    if player and player.Say then
+        player:Say("Spawning bandit ambush: difficulty " .. tostring(difficulty))
+    end
+end
+
 function Menu.OnDebugGiveHeldWeapon(npc, player)
     if not npc or not player then
         return

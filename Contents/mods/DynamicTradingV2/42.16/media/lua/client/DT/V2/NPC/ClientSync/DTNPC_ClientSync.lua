@@ -23,3 +23,4 @@ require "DT/V2/NPC/ClientSync/HealthBars/DTNPC_ClientSync_HealthBars"
 require "DT/V2/NPC/ClientSync/ClientSyncNetwork/DTNPC_ClientSync_Network"
 require "DT/V2/NPC/ClientSync/DTNPC_ClientSync_Events"
 require "DT/V2/NPC/ClientSync/DTNPC_ClientSync_Visuals"
+pcall(require, "DT/V2/NPC/Bandits/DTNPC_Bandits_Client")

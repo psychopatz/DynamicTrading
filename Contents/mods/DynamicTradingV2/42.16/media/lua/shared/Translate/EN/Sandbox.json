@@ -1,5 +1,6 @@
 {
     "Sandbox_DynamicTrading": "Dynamic Trading V2",
+    "Sandbox_DynamicTradingNPC": "Dynamic Trading: NPC Events",
 
     "Sandbox_DynamicTrading.RestockInterval": "Restock Interval (Days)",
     "Sandbox_DynamicTrading.RestockInterval_tooltip": "How many days must pass before a trader refreshes their inventory.",
@@ -44,5 +45,17 @@
     "Sandbox_DynamicTrading.NPCWeaponDurability_tooltip": "If enabled, only player-roster NPCs consume weapon durability in combat. World NPCs never use this mechanic.",
 
     "Sandbox_DynamicTrading.NPCBaseHealthMultiplier": "NPC Base Health Multiplier",
-    "Sandbox_DynamicTrading.NPCBaseHealthMultiplier_tooltip": "Scales the archetype base HP used by DT NPC custom health. 1.0 = default values, 2.0 = double base HP before skill bonuses."
+    "Sandbox_DynamicTrading.NPCBaseHealthMultiplier_tooltip": "Scales the archetype base HP used by DT NPC custom health. 1.0 = default values, 2.0 = double base HP before skill bonuses.",
+
+    "Sandbox_DynamicTrading.EnableBanditAmbushes": "Enable Bandit Ambushes",
+    "Sandbox_DynamicTrading.EnableBanditAmbushes_tooltip": "Allows no-base hostile bandit groups to ambush players and demand money or items. Debug/admin spawning still works when disabled.",
+
+    "Sandbox_DynamicTrading.BanditAmbushDifficulty": "Bandit Ambush Difficulty",
+    "Sandbox_DynamicTrading.BanditAmbushDifficulty_tooltip": "Controls random ambush group size. 1 = one bandit, 5 = five bandits.",
+
+    "Sandbox_DynamicTrading.BanditAmbushChance": "Bandit Ambush Chance (%)",
+    "Sandbox_DynamicTrading.BanditAmbushChance_tooltip": "Chance for each eligible ambush check to spawn a bandit group near an active player.",
+
+    "Sandbox_DynamicTrading.BanditAmbushCooldownHours": "Bandit Ambush Cooldown (Hours)",
+    "Sandbox_DynamicTrading.BanditAmbushCooldownHours_tooltip": "Minimum in-game hours between random bandit ambushes on the server."
 }

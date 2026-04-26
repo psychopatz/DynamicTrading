@@ -264,6 +264,10 @@ local function isPlayerOwnedTraderRaw(npcData)
         return false
     end
 
+    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
+        return false
+    end
+
     if npcData.isPlayerFactionTrader == true then
         return true
     end
@@ -287,6 +291,10 @@ end
 
 local function isFriendlyAuthorityPlayer(npcData, player)
     if not npcData or not player or not instanceof or not instanceof(player, "IsoPlayer") then
+        return false
+    end
+
+    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
         return false
     end
 

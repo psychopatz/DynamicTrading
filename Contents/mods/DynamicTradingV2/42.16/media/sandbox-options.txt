@@ -97,3 +97,41 @@ option DynamicTrading.NPCBaseHealthMultiplier
     page = DynamicTrading,
     translation = DynamicTrading.NPCBaseHealthMultiplier,
 }
+
+option DynamicTrading.EnableBanditAmbushes
+{
+    type = boolean,
+    default = true,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.EnableBanditAmbushes,
+}
+
+option DynamicTrading.BanditAmbushDifficulty
+{
+    type = integer,
+    default = 2,
+    min = 1,
+    max = 5,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditAmbushDifficulty,
+}
+
+option DynamicTrading.BanditAmbushChance
+{
+    type = double,
+    default = 3.0,
+    min = 0.0,
+    max = 100.0,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditAmbushChance,
+}
+
+option DynamicTrading.BanditAmbushCooldownHours
+{
+    type = double,
+    default = 72.0,
+    min = 1.0,
+    max = 720.0,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditAmbushCooldownHours,
+}

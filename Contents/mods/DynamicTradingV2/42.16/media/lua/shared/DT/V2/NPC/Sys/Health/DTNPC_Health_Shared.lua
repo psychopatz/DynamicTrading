@@ -232,6 +232,10 @@ local function isPlayerOwnedNPC(npcData)
         return false
     end
 
+    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
+        return false
+    end
+
     if DTNPCProtect and DTNPCProtect.IsPlayerOwnedTrader then
         local ok, result = pcall(DTNPCProtect.IsPlayerOwnedTrader, npcData)
         if ok and result == true then
@@ -873,6 +877,10 @@ end
 
 local function isFriendlyFollowerOrProtectorHit(npcData, attacker)
     if not npcData or not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
+        return false
+    end
+
+    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
         return false
     end
 

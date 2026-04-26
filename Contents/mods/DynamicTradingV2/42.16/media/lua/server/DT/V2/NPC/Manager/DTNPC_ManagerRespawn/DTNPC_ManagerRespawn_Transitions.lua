@@ -475,9 +475,9 @@ function DTNPCManager.PlanTradingDestination(uuid, registry)
     local isWandering = false
     local debugReason = ""
 
-    if registry.factionID == "Independent" or registry.factionID == "Factionless" then
+    if registry.factionID == "Independent" or registry.factionID == "Factionless" or registry.factionID == "Bandits" then
         isWandering = true
-        debugReason = "Independent/Factionless Trader"
+        debugReason = registry.factionID == "Bandits" and "Bandit Raider" or "Independent/Factionless Trader"
     else
         local wanderChance = SandboxVars.DynamicTrading.TownTraderWanderChance or 5.0
         if ZombRand(10000) < (wanderChance * 100) then

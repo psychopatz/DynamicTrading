@@ -231,6 +231,12 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
 
     managerSubMenu:addOption("Summon All Followers", player, Menu.OnSummon)
     managerSubMenu:addOption("Spawn Random NPC", player, Menu.OnSpawnRandomNPC)
+    local banditOption = managerSubMenu:addOption("Spawn Bandit Ambush")
+    local banditSubMenu = managerSubMenu:getNew(managerSubMenu)
+    context:addSubMenu(banditOption, banditSubMenu)
+    for difficulty = 1, 5 do
+        banditSubMenu:addOption("Difficulty " .. tostring(difficulty), player, Menu.OnSpawnBanditAmbush, difficulty)
+    end
     managerSubMenu:addOption("Open Loot Vision Inspector", player, Menu.OnOpenLootVisionInspector)
 
     if EventMarkerHandler then

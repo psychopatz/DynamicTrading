@@ -151,6 +151,10 @@ local function isCompanionControlled(npcData)
         return false
     end
 
+    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
+        return false
+    end
+
     return npcData.dcCompanionJob == "TravelCompanion"
         or npcData.linkedWorkerID ~= nil
         or (npcData.status == "Working" and (npcData.master ~= nil or npcData.masterID ~= nil))

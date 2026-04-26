@@ -364,6 +364,10 @@ function Scheduler.BuildFactionPlan(factionID, rosterData, currentHours, faction
     end
 
     local isWindowActive = autoEnabled and Scheduler.IsWindowActive(window, hours)
+    if faction and faction.hostileToPlayers == true and tostring(faction.factionType or "") == "bandit" then
+        isWindowActive = autoEnabled
+        targetCount = math.max(1, math.min(tonumber(faction.trickleActiveCount) or 1, math.max(1, maxConcurrentCount)))
+    end
     local nextWindow = Scheduler.GetUpcomingWindows(factionID, 1, hours)[1]
 
     return {

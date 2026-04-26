@@ -28,6 +28,7 @@ DTNPCHealth.BASE_HP_BY_ARCHETYPE = DTNPCHealth.BASE_HP_BY_ARCHETYPE or {
     Hiker = 135,
     Foreman = 140,
     Athlete = 145,
+    Bandit = 150,
     Sheriff = 160,
     Survivalist = 170,
 }
