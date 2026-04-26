@@ -28,6 +28,29 @@ local function shouldKeepBanditConversationOpen(ui, invalidReason)
         or invalidReason == "invalid_interaction"
 end
 
+local function getTributeOptionText(tier)
+    local tierName = tostring(tier and tier.tier or "low")
+    local amountText = Helpers.formatCurrency(tier and tier.amount or 0)
+    if tierName == "high" then
+        return "Offer a high gift (" .. amountText .. ")"
+    end
+    if tierName == "medium" then
+        return "Offer a medium gift (" .. amountText .. ")"
+    end
+    return "Offer a low gift (" .. amountText .. ")"
+end
+
+local function getTributeSelectMessage(tier)
+    local tierName = tostring(tier and tier.tier or "low")
+    if tierName == "high" then
+        return "This should smooth things over."
+    end
+    if tierName == "medium" then
+        return "Take this and let it end here."
+    end
+    return "Take this and back off."
+end
+
 function BanditClient.ShowDemand(ui, player, demand)
     if not ui or not demand then return end
 
@@ -93,6 +116,45 @@ function BanditClient.ShowDemand(ui, player, demand)
                 end
             }
         })
+        return
+    end
+
+    if demand.kind == "tribute" then
+        ui:speak(Helpers.pickDialogueLine("Tribute", {
+            ["1"] = Helpers.normalize(demand.factionName) or "our faction",
+        }))
+
+        local options = {}
+        for _, tier in ipairs(demand.tiers or {}) do
+            options[#options + 1] = {
+                text = getTributeOptionText(tier),
+                message = getTributeSelectMessage(tier),
+                onSelect = function(nextUI)
+                    nextUI.banditPaymentSent = true
+                    nextUI.keepOpenOnInvalidInteraction = true
+                    nextUI:speak(Helpers.pickDialogueLine("Accept"))
+                    Helpers.setWaitingOptions(nextUI, "Offering the gift...")
+                    Helpers.sendBanditCommand(player, "BanditDemandPay", {
+                        groupID = groupID,
+                        tier = tier.tier,
+                    })
+                end
+            }
+        end
+
+        options[#options + 1] = {
+            text = "Refuse",
+            message = "No tribute.",
+            style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
+            onSelect = function(nextUI)
+                nextUI.banditRefuseSent = true
+                nextUI:speak(Helpers.pickDialogueLine("Refuse"))
+                Helpers.setWaitingOptions(nextUI, "They are turning hostile...")
+                Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
+            end
+        }
+
+        ui:updateOptions(options)
         return
     end
 

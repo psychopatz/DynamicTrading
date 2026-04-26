@@ -35,6 +35,13 @@ DynamicTrading.FlavorText.RegisterTable("Bandits", "Item", "EN", {
     "Don't get attached to the %1.",
 })
 
+DynamicTrading.FlavorText.RegisterTable("Bandits", "Tribute", "EN", {
+    "%1 sent us. Offer a gift and maybe we leave this alone.",
+    "You're in bad standing with %1. Make an offering before this gets worse.",
+    "%1 has a grievance. Bring a gift and we might walk.",
+    "We came on behalf of %1. Show respect with a gift.",
+})
+
 DynamicTrading.FlavorText.RegisterTable("Bandits", "Accept", "EN", {
     "Smart choice.",
     "See? Nobody had to be stupid.",
@@ -42,6 +49,20 @@ DynamicTrading.FlavorText.RegisterTable("Bandits", "Accept", "EN", {
     "That will do.",
     "You made the right call.",
     "Pleasure doing business. Keep moving.",
+})
+
+DynamicTrading.FlavorText.RegisterTable("Bandits", "GiftAccepted", "EN", {
+    "That will buy you a little peace.",
+    "We'll take it and step back for now.",
+    "A sensible offering. We're done here.",
+    "This settles today.",
+})
+
+DynamicTrading.FlavorText.RegisterTable("Bandits", "GiftAcceptedHigh", "EN", {
+    "A proper gift. We'll remember it.",
+    "That buys more than distance. We'll cool things off a little.",
+    "Generous. Maybe %1 points of goodwill finds its way back to you.",
+    "That's enough to ease tempers, for now.",
 })
 
 DynamicTrading.FlavorText.RegisterTable("Bandits", "Refuse", "EN", {
@@ -87,6 +108,7 @@ DynamicTrading.FlavorText.RegisterTable("Bandits", "Forecast", "EN", {
     SystemDisabled = "System: disabled by sandbox",
     ChancePerCheck = "Chance per eligible check: %1%",
     CooldownHours = "Cooldown: %1 hours",
+    DemandWindow = "Demand window: %1 real-time minutes",
     NextEligibleHours = "Next eligible: in %1 hours",
     MaxPartySize = "Max party size: %1 | Resting roster share: %2%",
     HostileHeading = "Angry factions ready to raid:",

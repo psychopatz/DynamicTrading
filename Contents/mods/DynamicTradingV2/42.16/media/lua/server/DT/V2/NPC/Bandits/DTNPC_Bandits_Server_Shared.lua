@@ -189,7 +189,9 @@ function Shared.getGroup(groupID)
     local members = {}
     local targetUsername, targetOnlineID
     for uuid, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
-        if npcData and npcData.isBandit == true and tostring(npcData.banditGroupID or "") == groupID then
+        if npcData
+            and tostring(npcData.banditGroupID or "") == groupID
+            and (npcData.isBandit == true or npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil) then
             members[#members + 1] = uuid
             targetUsername = targetUsername or npcData.banditTargetUsername
             targetOnlineID = targetOnlineID or npcData.banditTargetOnlineID
@@ -225,7 +227,10 @@ function Shared.getGroupMembers(group)
     end
 
     for uuid, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
-        if npcData and npcData.isBandit == true and tostring(npcData.banditGroupID or "") == tostring(group.id or "") and not seen[uuid] then
+        if npcData
+            and tostring(npcData.banditGroupID or "") == tostring(group.id or "")
+            and (npcData.isBandit == true or npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil)
+            and not seen[uuid] then
             members[#members + 1] = { uuid = uuid, npcData = npcData }
             seen[uuid] = true
             group.members = group.members or {}

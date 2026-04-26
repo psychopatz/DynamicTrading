@@ -62,6 +62,10 @@ function BanditClient.ShowRaidForecast(args)
         lines[#lines + 1] = Helpers.getForecastText("ChancePerCheck", tostring(args.chance or 0))
         lines[#lines + 1] = Helpers.getForecastText("CooldownHours", tostring(args.cooldownHours or 0))
         lines[#lines + 1] = Helpers.getForecastText(
+            "DemandWindow",
+            tostring(string.format("%.1f", tonumber(args.demandWindowMinutes) or 0))
+        )
+        lines[#lines + 1] = Helpers.getForecastText(
             "NextEligibleHours",
             tostring(string.format("%.1f", tonumber(args.cooldownRemainingHours) or 0))
         )

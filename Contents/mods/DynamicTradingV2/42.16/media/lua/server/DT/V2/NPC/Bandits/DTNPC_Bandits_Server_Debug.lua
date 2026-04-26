@@ -152,6 +152,7 @@ local function sendRaidForecast(player)
         checkIntervalHours = Constants.RANDOM_CHECK_INTERVAL_HOURS or 0.25,
         chance = tonumber(sandbox.BanditAmbushChance) or 3,
         cooldownHours = cooldown,
+        demandWindowMinutes = (tonumber(Constants.DEMAND_TIMEOUT_MS) or 120000) / 60000,
         maxRaidSize = difficulty,
         partyPercent = partyPercent,
         hostileFactions = Shared.isCurrencyExpandedActive() and collectHostileRaidSummaries(player, difficulty, partyPercent) or {},

@@ -138,7 +138,7 @@ local function createRaidDataFromSoul(player, groupID, factionID, raidMember, di
     gen.archetypeID = gen.archetypeID or (robbery and "Bandit" or "General")
     gen.occupation = gen.occupation or gen.archetypeID
     gen.status = "Working"
-    gen.state = robbery and "Follow" or "Attack"
+    gen.state = "Follow"
     gen.master = Shared.getUsername(player)
     gen.masterID = Shared.getOnlineID(player)
     gen.tasks = {}
@@ -151,7 +151,7 @@ local function createRaidDataFromSoul(player, groupID, factionID, raidMember, di
     gen.banditTargetUsername = Shared.getUsername(player)
     gen.banditTargetOnlineID = Shared.getOnlineID(player)
     gen.banditSpawnedAt = Shared.nowMillis()
-    gen.banditDemandResolved = robbery ~= true
+    gen.banditDemandResolved = false
     gen.raidFactionID = factionID
     gen.raidFactionName = Faction.getFactionDisplayName(factionID)
     gen.raidHostileFaction = true
@@ -161,13 +161,7 @@ local function createRaidDataFromSoul(player, groupID, factionID, raidMember, di
     gen.returnTime = 0
     gen.returnStatus = nil
     gen.requestedReturnStatus = nil
-    gen.isHostile = robbery ~= true
-
-    if gen.isHostile == true then
-        gen.lastPlayerAttackerUsername = Shared.getUsername(player)
-        gen.lastPlayerAttackerOnlineID = Shared.getOnlineID(player)
-        gen.lastPlayerAttackedAt = Shared.nowMillis()
-    end
+    gen.isHostile = false
 
     return gen
 end
@@ -268,7 +262,7 @@ function Bandits.SpawnAmbushForPlayer(player, options)
         targetUsername = Shared.getUsername(player),
         targetOnlineID = Shared.getOnlineID(player),
         members = {},
-        status = robbery and "active" or "hostile",
+        status = "active",
         spawnedAt = Shared.nowMillis(),
     }
 
@@ -301,9 +295,6 @@ function Bandits.SpawnAmbushForPlayer(player, options)
         local zombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, npcData.uuid) or nil
         if zombie then
             group.members[#group.members + 1] = npcData.uuid
-            if robbery ~= true then
-                Demand.makeNPCDataHostile(npcData.uuid, npcData, player, "faction_raid")
-            end
         else
             restoreSoulAfterFailedRaid(npcData.uuid, npcData)
         end

@@ -3,8 +3,11 @@
 -- Keeps bandits out of normal trader menus and redirects interaction to demands.
 -- ==============================================================================
 
-local function isBandit(npcData)
-    return npcData and npcData.isBandit == true
+local function isBanditDemandEncounter(npcData)
+    return npcData
+        and npcData.banditGroupID ~= nil
+        and npcData.banditDemandResolved ~= true
+        and npcData.isHostile ~= true
 end
 
 local function isCurrencyExpandedActive()
@@ -18,11 +21,11 @@ if DTNPCJobUI and DTNPCJobUI.Register then
         priority = 1000,
 
         matches = function(ui, npc, player, npcData)
-            return isCurrencyExpandedActive() and isBandit(npcData)
+            return isCurrencyExpandedActive() and isBanditDemandEncounter(npcData)
         end,
 
         getTalkLabel = function(ui, npc, player, npcData)
-            return "Talk to Bandit"
+            return "Answer Demand"
         end,
 
         getTraderProxyPatch = function(ui, npc, player, npcData)

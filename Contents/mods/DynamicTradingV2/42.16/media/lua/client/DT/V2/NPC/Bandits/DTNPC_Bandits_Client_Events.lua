@@ -29,7 +29,6 @@ local function onTick()
         local npcData = cacheEntry and (cacheEntry.npcData or cacheEntry) or nil
         local groupID = Helpers.normalize(npcData and npcData.banditGroupID)
         if npcData
-            and npcData.isBandit == true
             and groupID
             and npcData.banditDemandResolved ~= true
             and npcData.isHostile ~= true
@@ -93,6 +92,12 @@ local function onServerCommand(module, command, args)
 
         if args.result == "empty" then
             ui:speak(Helpers.pickDialogueLine("Empty"))
+        elseif args.kind == "tribute" and tonumber(args.repDelta) and tonumber(args.repDelta) > 0 then
+            ui:speak(Helpers.pickDialogueLine("GiftAcceptedHigh", {
+                ["1"] = tostring(math.floor(tonumber(args.repDelta) or 0)),
+            }))
+        elseif args.kind == "tribute" then
+            ui:speak(Helpers.pickDialogueLine("GiftAccepted"))
         else
             ui:speak(Helpers.pickDialogueLine("Accept"))
         end

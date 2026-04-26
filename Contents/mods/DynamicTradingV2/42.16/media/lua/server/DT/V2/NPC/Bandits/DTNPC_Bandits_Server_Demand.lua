@@ -178,10 +178,42 @@ local function findItemByID(player, itemID)
     return nil
 end
 
-local function buildMoneyDemand(player, difficulty)
+local function getPlayerWealth(player)
     local helpers = DynamicTrading and DynamicTrading.ServerHelpers or nil
     local wealth = helpers and helpers.GetWealth and helpers.GetWealth(player) or 0
-    wealth = math.floor(tonumber(wealth) or 0)
+    return math.max(0, math.floor(tonumber(wealth) or 0))
+end
+
+local function buildTributeTier(amount, tier, repDelta)
+    amount = math.max(1, math.floor(tonumber(amount) or 0))
+    return {
+        tier = tostring(tier or "low"),
+        amount = amount,
+        displayName = "$" .. tostring(amount),
+        repDelta = math.max(0, math.floor(tonumber(repDelta) or 0)),
+    }
+end
+
+local function buildTributeDemand(player, difficulty, factionID)
+    local wealth = getPlayerWealth(player)
+    local baseWealth = math.max(wealth, 80)
+    local lowAmount = math.max(10 * difficulty, math.floor(baseWealth * 0.06))
+    local mediumAmount = math.max(lowAmount + (8 * difficulty), math.floor(baseWealth * 0.13))
+    local highAmount = math.max(mediumAmount + (12 * difficulty), math.floor(baseWealth * 0.24))
+
+    return {
+        kind = "tribute",
+        factionName = Faction.getFactionDisplayName(factionID),
+        tiers = {
+            buildTributeTier(lowAmount, "low", 0),
+            buildTributeTier(mediumAmount, "medium", 0),
+            buildTributeTier(highAmount, "high", 12),
+        },
+    }
+end
+
+local function buildMoneyDemand(player, difficulty)
+    local wealth = getPlayerWealth(player)
     if wealth <= 0 then return nil end
 
     local pct = 0.08 + (difficulty * 0.04)
@@ -213,7 +245,35 @@ local function buildItemDemand(player)
     }
 end
 
-function Demand.buildDemand(player, difficulty)
+local function findTributeTier(demand, tierName)
+    local targetTier = tostring(tierName or "low")
+    for _, tier in ipairs(demand and demand.tiers or {}) do
+        if tostring(tier.tier or "") == targetTier then
+            return tier
+        end
+    end
+    return nil
+end
+
+local function applyTributeReputationChange(group, player, repDelta)
+    repDelta = math.floor(tonumber(repDelta) or 0)
+    if repDelta <= 0 or not group or Shared.isBanditFactionID(group.factionID) then
+        return false
+    end
+
+    local username = Shared.getUsername(player)
+    if not username or not DynamicTrading_Factions or not DynamicTrading_Factions.ModifyReputation then
+        return false
+    end
+
+    return DynamicTrading_Factions.ModifyReputation(group.factionID, username, repDelta) == true
+end
+
+function Demand.buildDemand(player, difficulty, group)
+    if group and group.robbery ~= true then
+        return buildTributeDemand(player, difficulty, group.factionID)
+    end
+
     return buildMoneyDemand(player, difficulty) or buildItemDemand(player) or {
         kind = "none",
         displayName = "nothing",
@@ -228,7 +288,7 @@ function Bandits.StartDemand(player, args)
     if not uuid or not groupID then return end
 
     local npcData = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] or nil
-    if not npcData or npcData.isBandit ~= true or tostring(npcData.banditGroupID or "") ~= groupID then return end
+    if not npcData or tostring(npcData.banditGroupID or "") ~= groupID then return end
     if not Shared.matchesPlayer(npcData, player) then return end
 
     local group = Shared.getGroup(groupID)
@@ -239,7 +299,7 @@ function Bandits.StartDemand(player, args)
     group.difficulty = Shared.clampDifficulty(group.difficulty or npcData.banditDifficulty)
 
     if not group.demand or group.demand.resolved == true then
-        group.demand = Demand.buildDemand(player, group.difficulty)
+        group.demand = Demand.buildDemand(player, group.difficulty, group)
         group.demand.startedAt = Shared.nowMillis()
         group.demand.resolved = false
         group.status = "demanding"
@@ -261,6 +321,8 @@ function Bandits.StartDemand(player, args)
         itemID = group.demand.itemID,
         fullType = group.demand.fullType,
         displayName = group.demand.displayName,
+        tiers = group.demand.tiers,
+        factionName = group.demand.factionName,
         timeoutSeconds = math.floor(Constants.DEMAND_TIMEOUT_MS / 1000),
     })
 end
@@ -274,6 +336,8 @@ function Bandits.PayDemand(player, args)
 
     local demand = group.demand
     local paid = false
+    local repDelta = 0
+    local selectedTier = nil
 
     if demand.kind == "money" then
         local helpers = DynamicTrading and DynamicTrading.ServerHelpers or nil
@@ -287,6 +351,13 @@ function Bandits.PayDemand(player, args)
                 paid = true
             end
         end
+    elseif demand.kind == "tribute" then
+        selectedTier = findTributeTier(demand, args.tier)
+        if selectedTier then
+            local helpers = DynamicTrading and DynamicTrading.ServerHelpers or nil
+            paid = helpers and helpers.RemoveMoney and helpers.RemoveMoney(player, tonumber(selectedTier.amount) or 0) == true
+            repDelta = tonumber(selectedTier.repDelta) or 0
+        end
     elseif demand.kind == "none" then
         paid = true
     end
@@ -296,13 +367,22 @@ function Bandits.PayDemand(player, args)
         return
     end
 
+    if demand.kind == "tribute" and repDelta > 0 then
+        applyTributeReputationChange(group, player, repDelta)
+    end
+
     demand.resolved = true
+    demand.repDelta = repDelta
+    demand.selectedTier = selectedTier and selectedTier.tier or nil
     finishGroupAsLeaving(group, player, demand.kind == "none" and "empty" or "paid")
     Shared.sendBanditCommand(player, "BanditDemandResolved", {
         groupID = group.id,
         result = demand.kind == "none" and "empty" or "paid",
         kind = demand.kind,
         displayName = demand.displayName,
+        factionName = demand.factionName,
+        repDelta = repDelta,
+        selectedTier = demand.selectedTier,
     })
 end
 

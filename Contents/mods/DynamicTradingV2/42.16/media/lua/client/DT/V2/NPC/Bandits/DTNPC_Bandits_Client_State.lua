@@ -75,6 +75,10 @@ function Helpers.sendBanditCommand(player, command, args)
     sendClientCommand(player, "DTNPC", command, args or {})
 end
 
+function Helpers.formatCurrency(amount)
+    return "$" .. tostring(math.max(0, math.floor(tonumber(amount) or 0)))
+end
+
 function Helpers.isTargetingLocalPlayer(npcData, player)
     if not npcData or not player then return false end
 
