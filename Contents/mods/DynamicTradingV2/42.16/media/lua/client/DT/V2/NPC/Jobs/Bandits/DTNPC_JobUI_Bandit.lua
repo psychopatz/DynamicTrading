@@ -3,8 +3,6 @@
 -- Keeps bandits out of normal trader menus and redirects interaction to demands.
 -- ==============================================================================
 
-pcall(require, "DT/V2/NPC/Bandits/DTNPC_Bandits_Client")
-
 local function isBandit(npcData)
     return npcData and npcData.isBandit == true
 end
@@ -41,7 +39,8 @@ if DTNPCJobUI and DTNPCJobUI.Register then
                 return DTNPCBanditClient.RequestDemandForUI(ui, npc, player, npcData) == true
             end
 
-            ui:speak("That's close enough.")
+            local helpers = DTNPCBanditClient and DTNPCBanditClient.Internal and DTNPCBanditClient.Internal.Helpers or nil
+            ui:speak(helpers and helpers.pickDialogueLine and helpers.pickDialogueLine("Approach") or "That's close enough.")
             ui:updateOptions({
                 {
                     text = "Leave",

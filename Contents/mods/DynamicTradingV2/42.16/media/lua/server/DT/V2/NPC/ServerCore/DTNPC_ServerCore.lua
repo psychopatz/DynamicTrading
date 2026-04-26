@@ -77,7 +77,7 @@ require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Summon"
 require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Server"
 
 -- 6.6 Bandit ambush events - ephemeral hostile NPC groups and robbery demands
-require "DT/V2/NPC/Bandits/DTNPC_Bandits_Server"
+require "DT/V2/NPC/Bandits/DTNPC_Bandits"
 
 -- 7. Commands - Client command handler (needs all of the above)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Commands"

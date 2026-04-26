@@ -38,17 +38,36 @@ function DT_ConversationUI:update()
                     self.lastValidationLogReason = invalidReason
                 end
             else
-                self.closeReason = invalidReason or "invalid_interaction"
-                DynamicTrading.Log(
-                    "DTCommons",
-                    "Dialog",
-                    "Close",
-                    "Closing conversation due to invalid interaction. reason=" .. tostring(self.closeReason)
-                        .. " target=" .. tostring(self.target and (self.target.name or self.target.uuid or self.target.id) or "nil")
-                        .. " hasInteractionObj=" .. tostring(self.interactionObj ~= nil)
-                )
-                self:close()
-                return
+                local keepOpen = self.keepOpenOnInvalidInteraction == true
+                if not keepOpen and type(self.shouldKeepOpenOnInvalidInteraction) == "function" then
+                    keepOpen = self:shouldKeepOpenOnInvalidInteraction(invalidReason) == true
+                end
+
+                if keepOpen then
+                    if self.lastValidationLogReason ~= invalidReason or self.typingTick % 120 == 0 then
+                        DynamicTrading.Log(
+                            "DTCommons",
+                            "Dialog",
+                            "KeepOpen",
+                            "Keeping conversation open despite invalid interaction. reason=" .. tostring(invalidReason)
+                                .. " target=" .. tostring(self.target and (self.target.name or self.target.uuid or self.target.id) or "nil")
+                                .. " hasInteractionObj=" .. tostring(self.interactionObj ~= nil)
+                        )
+                        self.lastValidationLogReason = invalidReason
+                    end
+                else
+                    self.closeReason = invalidReason or "invalid_interaction"
+                    DynamicTrading.Log(
+                        "DTCommons",
+                        "Dialog",
+                        "Close",
+                        "Closing conversation due to invalid interaction. reason=" .. tostring(self.closeReason)
+                            .. " target=" .. tostring(self.target and (self.target.name or self.target.uuid or self.target.id) or "nil")
+                            .. " hasInteractionObj=" .. tostring(self.interactionObj ~= nil)
+                    )
+                    self:close()
+                    return
+                end
             end
         else
             self.lastValidationLogReason = nil

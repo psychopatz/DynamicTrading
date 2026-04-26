@@ -97,5 +97,5 @@ end
 
 require "DT/V2/NPC/Jobs/TravelCompanion/DTNPC_JobUI_TravelCompanion"
 require "DT/V2/NPC/Jobs/TraderNeeds/DTNPC_JobUI_TraderHelpEscort"
-pcall(require, "DT/V2/NPC/Bandits/DTNPC_Bandits_Client")
+require "DT/V2/NPC/Bandits/DTNPC_Bandits"
 require "DT/V2/NPC/Jobs/Bandits/DTNPC_JobUI_Bandit"
