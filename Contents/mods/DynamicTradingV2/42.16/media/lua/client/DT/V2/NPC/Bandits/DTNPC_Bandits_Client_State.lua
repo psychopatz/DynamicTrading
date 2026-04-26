@@ -28,6 +28,14 @@ Internal.Helpers = Internal.Helpers or {}
 local Helpers = Internal.Helpers
 
 Helpers.AUTO_OPEN_DISTANCE = Helpers.AUTO_OPEN_DISTANCE or 4.0
+Helpers.IDLE_WARNING_DELAY_MS = Helpers.IDLE_WARNING_DELAY_MS or 30000
+
+function Helpers.nowMillis()
+    if getTimeInMillis then
+        return math.floor(tonumber(getTimeInMillis()) or 0)
+    end
+    return math.floor((os.time() or 0) * 1000)
+end
 
 function Helpers.isCurrencyExpandedActive()
     local activated = getActivatedMods and getActivatedMods() or nil
@@ -38,8 +46,28 @@ function Helpers.getForecastText(key, ...)
     return DynamicTrading.FlavorText.GetValue("Bandits", "Forecast", key, ...)
 end
 
-function Helpers.getDialogueLine(kind, ...)
-    return DynamicTrading.FlavorText.GetRandom("Bandits", kind) or ""
+function Helpers.getDialogueCategory(source)
+    local npcData = source
+    if source and source.npcData then
+        npcData = source.npcData
+    elseif source and source.banditDialogueCategory then
+        return tostring(source.banditDialogueCategory)
+    end
+
+    if npcData and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits") then
+        return "Bandits"
+    end
+
+    if npcData and npcData.raidHostileFaction == true then
+        return "HostileRaiders"
+    end
+
+    return "Bandits"
+end
+
+function Helpers.getDialogueLine(kind, source)
+    local category = Helpers.getDialogueCategory(source)
+    return DynamicTrading.FlavorText.GetRandom(category, kind) or ""
 end
 
 function Helpers.formatLine(line, replacements)
@@ -52,8 +80,8 @@ function Helpers.formatLine(line, replacements)
     return text
 end
 
-function Helpers.pickDialogueLine(kind, replacements)
-    local line = Helpers.getDialogueLine(kind)
+function Helpers.pickDialogueLine(kind, replacements, source)
+    local line = Helpers.getDialogueLine(kind, source)
     return Helpers.formatLine(line, replacements)
 end
 
@@ -112,15 +140,19 @@ end
 
 function Helpers.buildBanditProxy(npcData)
     local uuid = npcData and npcData.uuid or nil
+    local isTrueBandit = npcData and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits") or false
     return {
         id = uuid,
         uuid = uuid,
         traderID = uuid,
         name = npcData and npcData.name or "Bandit",
-        archetype = "Bandit",
-        role = "Bandit",
+        archetype = isTrueBandit and "Bandit" or (npcData and (npcData.archetypeID or npcData.occupation) or "General"),
+        role = isTrueBandit and "Bandit" or "Raider",
         factionID = npcData and npcData.factionID or "Bandits",
         isBanditDemand = true,
+        isTrueBandit = isTrueBandit,
+        isHostileFactionRaider = npcData and npcData.raidHostileFaction == true and not isTrueBandit or false,
+        banditDialogueCategory = Helpers.getDialogueCategory(npcData),
     }
 end
 
@@ -149,6 +181,38 @@ function Helpers.setWaitingOptions(ui, text)
             onSelect = function() end
         }
     })
+end
+
+function Helpers.disarmIdleWarning(ui)
+    if not ui then return end
+    ui.banditIdleWarningAt = nil
+    ui.banditIdleWarningSent = nil
+end
+
+function Helpers.armIdleWarning(ui)
+    if not ui then return end
+    ui.banditIdleWarningAt = Helpers.nowMillis() + Helpers.IDLE_WARNING_DELAY_MS
+    ui.banditIdleWarningSent = false
+end
+
+function Helpers.maybeShowIdleWarning(ui, currentTime)
+    if not ui
+        or ui.isBanditDemand ~= true
+        or ui.banditResolved == true
+        or ui.banditPaymentSent == true
+        or ui.banditRefuseSent == true
+        or ui.banditIdleWarningSent == true
+        or not ui.banditIdleWarningAt then
+        return
+    end
+
+    currentTime = math.floor(tonumber(currentTime) or Helpers.nowMillis())
+    if currentTime < ui.banditIdleWarningAt then
+        return
+    end
+
+    ui.banditIdleWarningSent = true
+    ui:speak(Helpers.pickDialogueLine("Warning", nil, ui))
 end
 
 function Helpers.markResolved(groupID)

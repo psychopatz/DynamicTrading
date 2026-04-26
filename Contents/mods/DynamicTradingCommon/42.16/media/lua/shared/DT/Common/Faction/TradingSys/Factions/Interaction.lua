@@ -79,18 +79,20 @@ function Interaction.ModifyReputation(factionID, username, amount)
              faction.reputation = {}
         end
 
+        local delta = tonumber(amount) or 0
+
         if faction.hostileToPlayers == true and tostring(faction.factionType or "") == "bandit" then
             faction.reputation[username] = -100
             ModData.transmit(MOD_DATA_KEY)
             return true
         end
 
-        faction.reputation[username] = (faction.reputation[username] or 0) + (amount or 0)
+        faction.reputation[username] = (faction.reputation[username] or 0) + delta
         
         if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
-            if improved then
+            if delta > 0 then
                 DynamicTrading.GameplayLogs.AddFactionEvent(factionID, DynamicTrading.GameplayEvents.REP_SIGNIFICANT_CHANGE, {username})
-            else
+            elseif delta < 0 then
                 DynamicTrading.GameplayLogs.AddFactionEvent(factionID, DynamicTrading.GameplayEvents.REP_SIGNIFICANT_LOSS, {username})
             end
         end

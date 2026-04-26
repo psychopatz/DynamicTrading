@@ -9,7 +9,13 @@ require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
 function DT_ConversationUI:update()
     ISCollapsableWindow.update(self)
 
+    local currentTime = getTimeInMillis and getTimeInMillis() or 0
+
     self.typingTick = self.typingTick + 1
+
+    if type(self.onConversationUpdate) == "function" then
+        self:onConversationUpdate(currentTime)
+    end
 
     if self.target and self.target.factionID and self.typingTick % 30 == 0 then
         self:refreshFactionInfo()

@@ -7,6 +7,9 @@ DTNPCClient = DTNPCClient or {}
 DTNPCClient.DialogueAmbient = DTNPCClient.DialogueAmbient or DTNPCClient.AmbientDialogue or {}
 DTNPCClient.AmbientDialogue = DTNPCClient.DialogueAmbient
 
+require "DT/Common/FlavorText/DT_FlavorText"
+require "DT/Common/FlavorText/DT_FlavorText_Bandits"
+
 local Ambient = DTNPCClient.DialogueAmbient
 local Config = DTNPCClient.DialogueAmbientConfig or DTNPCClient.AmbientDialogueConfig
 
@@ -43,6 +46,61 @@ local function buildSpeechDataFromText(text, sentiment, zombie, currentTime)
         timestamp = currentTime,
         expireTime = currentTime + Config.DisplayTimeMs,
     }
+end
+
+local function getRaidAmbientCategory(npcData)
+    if not npcData then
+        return nil
+    end
+
+    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
+        return "BanditsAmbient"
+    end
+
+    if npcData.raidHostileFaction == true and npcData.banditGroupID ~= nil then
+        return "HostileRaidersAmbient"
+    end
+
+    return nil
+end
+
+local function getRaidAmbientKind(npcData)
+    local state = tostring(npcData and npcData.state or "Default")
+    local status = tostring(npcData and npcData.status or "Default")
+
+    if state == "Attack" then
+        return "Attack", "angry"
+    end
+    if state == "AttackRange" then
+        return "AttackRange", "warning"
+    end
+    if state == "Flee" then
+        return "Flee", "warning"
+    end
+    if status == "Working" or state == "Guard" then
+        return "Working", "warning"
+    end
+
+    return "Default", "neutral"
+end
+
+local function buildRaidAmbientSpeechData(npcData, zombie, currentTime)
+    local category = getRaidAmbientCategory(npcData)
+    if not category then
+        return nil
+    end
+
+    local kind, sentiment = getRaidAmbientKind(npcData)
+    local text = DynamicTrading
+        and DynamicTrading.FlavorText
+        and DynamicTrading.FlavorText.GetRandom
+        and DynamicTrading.FlavorText.GetRandom(category, kind)
+        or nil
+    if not text or text == "" then
+        return nil
+    end
+
+    return buildSpeechDataFromText(text, sentiment, zombie, currentTime)
 end
 
 function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
@@ -124,6 +182,11 @@ function Ambient.BuildSpeechData(npcData, zombie, currentTime)
     -- Protect-mode companions should use protect notices and combat cues, not generic work chatter.
     if isProtectAmbientState(ambientState) then
         return nil
+    end
+
+    local raidAmbientSpeech = buildRaidAmbientSpeechData(npcData, zombie, currentTime)
+    if raidAmbientSpeech then
+        return raidAmbientSpeech
     end
 
     if DynamicTrading and DynamicTrading.DialogueAmbient and DynamicTrading.DialogueAmbient.GetEntry then

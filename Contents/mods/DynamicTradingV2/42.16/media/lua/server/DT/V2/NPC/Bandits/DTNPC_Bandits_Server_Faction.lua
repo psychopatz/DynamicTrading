@@ -53,6 +53,53 @@ function Faction.getFactionDisplayName(factionID)
     return faction and (faction.name or faction.displayName) or tostring(factionID or "Unknown")
 end
 
+local function getAliveSoul(uuid, roster)
+    if not uuid then return nil end
+    if DynamicTrading_Roster and DynamicTrading_Roster.GetSoul then
+        local soul = DynamicTrading_Roster.GetSoul(uuid)
+        if soul then
+            return soul.status ~= "Dead" and soul or nil
+        end
+    end
+
+    local soul = roster and roster.Souls and roster.Souls[uuid] or nil
+    if soul and soul.status ~= "Dead" then
+        return soul
+    end
+    return nil
+end
+
+function Faction.getAliveFactionMemberUUIDs(factionID)
+    local roster = Faction.ensureRosterModData()
+    local members = roster and roster.FactionMembers and roster.FactionMembers[factionID] or nil
+    local alive = {}
+    local seen = {}
+
+    if type(members) == "table" then
+        for _, uuid in ipairs(members) do
+            if not seen[uuid] and getAliveSoul(uuid, roster) then
+                alive[#alive + 1] = uuid
+                seen[uuid] = true
+            end
+        end
+    end
+
+    if roster and type(roster.Souls) == "table" then
+        for uuid, soul in pairs(roster.Souls) do
+            if soul and soul.factionID == factionID and soul.status ~= "Dead" and not seen[uuid] then
+                alive[#alive + 1] = uuid
+                seen[uuid] = true
+            end
+        end
+    end
+
+    return alive
+end
+
+function Faction.getAliveFactionMemberCount(factionID)
+    return #Faction.getAliveFactionMemberUUIDs(factionID)
+end
+
 function Faction.isFactionExcludedFromPopulationPool(factionID, faction)
     return factionID == "Independent"
         or factionID == "Factionless"

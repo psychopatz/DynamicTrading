@@ -119,6 +119,17 @@ local function makeFactionAngryAtPlayer(player, factionID)
     faction.reputation = type(faction.reputation) == "table" and faction.reputation or {}
     faction.reputation[username] = -100
     if ModData.transmit then ModData.transmit("DynamicTrading_Factions") end
+
+    if type(Shared.sendBanditCommand) == "function" then
+        Shared.sendBanditCommand(player, "BanditRepSync", {
+            factionID = factionID,
+            mode = "set",
+            value = -100,
+            memberUUIDs = Faction.getAliveFactionMemberUUIDs and Faction.getAliveFactionMemberUUIDs(factionID) or {},
+            source = "debug_make_angry",
+        })
+    end
+
     return factionID, faction
 end
 

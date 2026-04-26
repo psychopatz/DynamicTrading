@@ -29,11 +29,17 @@ if DTNPCJobUI and DTNPCJobUI.Register then
         end,
 
         getTraderProxyPatch = function(ui, npc, player, npcData)
+            local isTrueBandit = npcData
+                and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits")
+                or false
             return {
-                archetype = "Bandit",
-                role = "Bandit",
+                archetype = isTrueBandit and "Bandit" or (npcData and (npcData.archetypeID or npcData.occupation) or "General"),
+                role = isTrueBandit and "Bandit" or "Raider",
                 factionID = npcData and npcData.factionID or "Bandits",
                 isBanditDemand = true,
+                isTrueBandit = isTrueBandit,
+                isHostileFactionRaider = npcData and npcData.raidHostileFaction == true and not isTrueBandit or false,
+                banditDialogueCategory = isTrueBandit and "Bandits" or "HostileRaiders",
             }
         end,
 
@@ -43,7 +49,7 @@ if DTNPCJobUI and DTNPCJobUI.Register then
             end
 
             local helpers = DTNPCBanditClient and DTNPCBanditClient.Internal and DTNPCBanditClient.Internal.Helpers or nil
-            ui:speak(helpers and helpers.pickDialogueLine and helpers.pickDialogueLine("Approach") or "That's close enough.")
+            ui:speak(helpers and helpers.pickDialogueLine and helpers.pickDialogueLine("Approach", nil, npcData) or "That's close enough.")
             ui:updateOptions({
                 {
                     text = "Leave",

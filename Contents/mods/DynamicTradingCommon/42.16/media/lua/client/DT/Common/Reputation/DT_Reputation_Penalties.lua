@@ -82,6 +82,61 @@ function DT_Reputation.ModifyPersonalRep(traderUUID, factionID, amount, reason)
     return newValue
 end
 
+function DT_Reputation.ApplyRosterPersonalRepSync(memberUUIDs, factionID, mode, value, reason)
+    if type(memberUUIDs) ~= "table" or #memberUUIDs <= 0 then
+        return 0
+    end
+    if not DT_Reputation.EnsureLoaded() then return 0 end
+
+    local state = DT_Reputation.state
+    local syncMode = tostring(mode or "add")
+    local delta = tonumber(value) or 0
+    local changedCount = 0
+    local seen = {}
+    local resetFactionBias = (syncMode == "set" and delta <= DT_Reputation.REP_MIN and factionID ~= nil)
+
+    for _, rawUUID in ipairs(memberUUIDs) do
+        local traderUUID = rawUUID and tostring(rawUUID) or nil
+        if traderUUID and not seen[traderUUID] then
+            local currentValue = state.personalRep[traderUUID] or 0
+            local nextValue = currentValue
+
+            if syncMode == "set" then
+                nextValue = DT_Reputation.Clamp(delta)
+            else
+                nextValue = DT_Reputation.Clamp(currentValue + delta)
+            end
+
+            if nextValue ~= currentValue then
+                state.personalRep[traderUUID] = nextValue
+                changedCount = changedCount + 1
+            end
+
+            seen[traderUUID] = true
+        end
+    end
+
+    if resetFactionBias and (state.factionBias[factionID] or 0) ~= 0 then
+        state.factionBias[factionID] = 0
+        changedCount = math.max(changedCount, 1)
+    end
+
+    if changedCount > 0 then
+        Internal.InvalidateFactionCache(factionID)
+        Internal.QueueSave()
+        Internal.Log(
+            "RosterSync",
+            "Applied roster reputation sync faction=" .. tostring(factionID)
+                .. " mode=" .. tostring(syncMode)
+                .. " value=" .. tostring(delta)
+                .. " members=" .. tostring(changedCount)
+                .. " reason=" .. tostring(reason or "n/a")
+        )
+    end
+
+    return changedCount
+end
+
 function DT_Reputation.ApplyKillPenalty(factionID)
     return DT_Reputation.ModifyFactionBias(factionID, DT_Reputation.KILL_PENALTY, "kill")
 end

@@ -32,23 +32,23 @@ local function getTributeOptionText(tier)
     local tierName = tostring(tier and tier.tier or "low")
     local amountText = Helpers.formatCurrency(tier and tier.amount or 0)
     if tierName == "high" then
-        return "Offer a high gift (" .. amountText .. ")"
+        return "Bribe the whole crew (" .. amountText .. ")"
     end
     if tierName == "medium" then
-        return "Offer a medium gift (" .. amountText .. ")"
+        return "Bribe the delegate (" .. amountText .. ")"
     end
-    return "Offer a low gift (" .. amountText .. ")"
+    return "Pay for a ceasefire (" .. amountText .. ")"
 end
 
 local function getTributeSelectMessage(tier)
     local tierName = tostring(tier and tier.tier or "low")
     if tierName == "high" then
-        return "This should smooth things over."
+        return "Everybody gets a cut. Tell your people to stand down."
     end
     if tierName == "medium" then
-        return "Take this and let it end here."
+        return "This is for you. Tell the others I'm good."
     end
-    return "Take this and back off."
+    return "Take it and call this off."
 end
 
 function BanditClient.ShowDemand(ui, player, demand)
@@ -61,15 +61,16 @@ function BanditClient.ShowDemand(ui, player, demand)
 
     if demand.kind == "money" then
         local amountText = "$" .. tostring(tonumber(demand.amount) or 0)
-        ui:speak(Helpers.pickDialogueLine("Money", { ["1"] = amountText }))
+        ui:speak(Helpers.pickDialogueLine("Money", { ["1"] = amountText }, ui))
         ui:updateOptions({
             {
                 text = "Hand over " .. amountText,
                 message = "Fine. Take it.",
                 onSelect = function(nextUI)
+                    Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
-                    nextUI:speak(Helpers.pickDialogueLine("Accept"))
+                    nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
                     Helpers.setWaitingOptions(nextUI, "Handing it over...")
                     Helpers.sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
                 end
@@ -79,27 +80,30 @@ function BanditClient.ShowDemand(ui, player, demand)
                 message = "No.",
                 style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
                 onSelect = function(nextUI)
+                    Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditRefuseSent = true
-                    nextUI:speak(Helpers.pickDialogueLine("Refuse"))
+                    nextUI:speak(Helpers.pickDialogueLine("Refuse", nil, nextUI))
                     Helpers.setWaitingOptions(nextUI, "They are turning hostile...")
                     Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
             }
         })
+        Helpers.armIdleWarning(ui)
         return
     end
 
     if demand.kind == "item" then
         local itemName = Helpers.normalize(demand.displayName) or "that item"
-        ui:speak(Helpers.pickDialogueLine("Item", { ["1"] = itemName }))
+        ui:speak(Helpers.pickDialogueLine("Item", { ["1"] = itemName }, ui))
         ui:updateOptions({
             {
                 text = "Hand over " .. itemName,
                 message = "Take it and leave.",
                 onSelect = function(nextUI)
+                    Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
-                    nextUI:speak(Helpers.pickDialogueLine("Accept"))
+                    nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
                     Helpers.setWaitingOptions(nextUI, "Handing it over...")
                     Helpers.sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
                 end
@@ -109,20 +113,22 @@ function BanditClient.ShowDemand(ui, player, demand)
                 message = "No.",
                 style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
                 onSelect = function(nextUI)
+                    Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditRefuseSent = true
-                    nextUI:speak(Helpers.pickDialogueLine("Refuse"))
+                    nextUI:speak(Helpers.pickDialogueLine("Refuse", nil, nextUI))
                     Helpers.setWaitingOptions(nextUI, "They are turning hostile...")
                     Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
             }
         })
+        Helpers.armIdleWarning(ui)
         return
     end
 
     if demand.kind == "tribute" then
         ui:speak(Helpers.pickDialogueLine("Tribute", {
             ["1"] = Helpers.normalize(demand.factionName) or "our faction",
-        }))
+        }, ui))
 
         local options = {}
         for _, tier in ipairs(demand.tiers or {}) do
@@ -130,10 +136,11 @@ function BanditClient.ShowDemand(ui, player, demand)
                 text = getTributeOptionText(tier),
                 message = getTributeSelectMessage(tier),
                 onSelect = function(nextUI)
+                    Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
-                    nextUI:speak(Helpers.pickDialogueLine("Accept"))
-                    Helpers.setWaitingOptions(nextUI, "Offering the gift...")
+                    nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
+                    Helpers.setWaitingOptions(nextUI, "Working the bribe...")
                     Helpers.sendBanditCommand(player, "BanditDemandPay", {
                         groupID = groupID,
                         tier = tier.tier,
@@ -147,22 +154,25 @@ function BanditClient.ShowDemand(ui, player, demand)
             message = "No tribute.",
             style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
             onSelect = function(nextUI)
+                Helpers.disarmIdleWarning(nextUI)
                 nextUI.banditRefuseSent = true
-                nextUI:speak(Helpers.pickDialogueLine("Refuse"))
+                nextUI:speak(Helpers.pickDialogueLine("Refuse", nil, nextUI))
                 Helpers.setWaitingOptions(nextUI, "They are turning hostile...")
                 Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
             end
         }
 
         ui:updateOptions(options)
+        Helpers.armIdleWarning(ui)
         return
     end
 
+    Helpers.disarmIdleWarning(ui)
     ui.banditPaymentSent = true
     ui.banditResolved = true
     ui.keepOpenOnInvalidInteraction = true
     Helpers.markResolved(groupID)
-    ui:speak(Helpers.pickDialogueLine("Empty"))
+    ui:speak(Helpers.pickDialogueLine("Empty", nil, ui))
     ui:updateOptions({
         {
             text = "Leave",
@@ -185,11 +195,17 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
     ui.isBanditDemand = true
     ui.banditGroupID = groupID
     ui.banditLeaderUUID = uuid
+    ui.banditDialogueCategory = Helpers.getDialogueCategory(npcData)
     ui.banditResolved = false
     ui.banditPaymentSent = false
     ui.banditRefuseSent = false
+    ui.banditIdleWarningAt = nil
+    ui.banditIdleWarningSent = false
     ui.keepOpenOnInvalidInteraction = false
     ui.shouldKeepOpenOnInvalidInteraction = shouldKeepBanditConversationOpen
+    ui.onConversationUpdate = function(activeUI, currentTime)
+        Helpers.maybeShowIdleWarning(activeUI, currentTime)
+    end
 
     BanditClient.OpenedGroups[groupID] = true
     BanditClient.PendingGroups[groupID] = {
@@ -201,6 +217,7 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
 
     Helpers.applyInteractionPose(npc, player)
     ui.onCloseCallback = function(closedUI)
+        Helpers.disarmIdleWarning(closedUI)
         Helpers.clearInteractionPose(npc)
         BanditClient.PendingGroups[groupID] = nil
         if closedUI.banditResolved ~= true
@@ -215,8 +232,8 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
         end
     end
 
-    ui:speak(Helpers.pickDialogueLine("Approach"))
-    Helpers.setWaitingOptions(ui, Helpers.pickDialogueLine("Waiting"))
+    ui:speak(Helpers.pickDialogueLine("Approach", nil, ui))
+    Helpers.setWaitingOptions(ui, Helpers.pickDialogueLine("Waiting", nil, ui))
     Helpers.sendBanditCommand(player, "BanditDemandStarted", {
         groupID = groupID,
         uuid = uuid,

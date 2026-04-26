@@ -184,13 +184,14 @@ local function getPlayerWealth(player)
     return math.max(0, math.floor(tonumber(wealth) or 0))
 end
 
-local function buildTributeTier(amount, tier, repDelta)
+local function buildTributeTier(amount, tier, repPerMember, rewardScope)
     amount = math.max(1, math.floor(tonumber(amount) or 0))
     return {
         tier = tostring(tier or "low"),
         amount = amount,
         displayName = "$" .. tostring(amount),
-        repDelta = math.max(0, math.floor(tonumber(repDelta) or 0)),
+        repPerMember = math.max(0, math.floor(tonumber(repPerMember) or 0)),
+        rewardScope = tostring(rewardScope or "none"),
     }
 end
 
@@ -205,9 +206,9 @@ local function buildTributeDemand(player, difficulty, factionID)
         kind = "tribute",
         factionName = Faction.getFactionDisplayName(factionID),
         tiers = {
-            buildTributeTier(lowAmount, "low", 0),
-            buildTributeTier(mediumAmount, "medium", 0),
-            buildTributeTier(highAmount, "high", 12),
+            buildTributeTier(lowAmount, "low", 0, "none"),
+            buildTributeTier(mediumAmount, "medium", 5, "delegate"),
+            buildTributeTier(highAmount, "high", 5, "party"),
         },
     }
 end
@@ -255,18 +256,70 @@ local function findTributeTier(demand, tierName)
     return nil
 end
 
-local function applyTributeReputationChange(group, player, repDelta)
-    repDelta = math.floor(tonumber(repDelta) or 0)
-    if repDelta <= 0 or not group or Shared.isBanditFactionID(group.factionID) then
-        return false
+local function collectTributeRecipientUUIDs(group, selectedTier)
+    local recipients = {}
+    local seen = {}
+    if not group or not selectedTier then
+        return recipients
     end
 
+    local rewardScope = tostring(selectedTier.rewardScope or "none")
+    if rewardScope == "delegate" then
+        local leaderUUID = group.leaderUUID and tostring(group.leaderUUID) or nil
+        if leaderUUID then
+            recipients[#recipients + 1] = leaderUUID
+        end
+        return recipients
+    end
+
+    if rewardScope == "party" then
+        for _, member in ipairs(Shared.getGroupMembers(group)) do
+            local uuid = member and member.uuid and tostring(member.uuid) or nil
+            if uuid and not seen[uuid] then
+                recipients[#recipients + 1] = uuid
+                seen[uuid] = true
+            end
+        end
+    end
+
+    return recipients
+end
+
+local function applyTributeReputationChange(group, player, selectedTier)
+    if not group or not player or not selectedTier or Shared.isBanditFactionID(group.factionID) then
+        return 0, 0
+    end
+
+    local repPerMember = math.max(0, math.floor(tonumber(selectedTier.repPerMember) or 0))
+    if repPerMember <= 0 then
+        return 0, 0
+    end
+
+    local recipientUUIDs = collectTributeRecipientUUIDs(group, selectedTier)
+    local recipientCount = #recipientUUIDs
+    if recipientCount <= 0 then
+        return repPerMember, 0
+    end
+
+    local aliveFactionCount = Faction.getAliveFactionMemberCount and Faction.getAliveFactionMemberCount(group.factionID) or 0
     local username = Shared.getUsername(player)
-    if not username or not DynamicTrading_Factions or not DynamicTrading_Factions.ModifyReputation then
-        return false
+    if aliveFactionCount > 0
+        and username
+        and DynamicTrading_Factions
+        and DynamicTrading_Factions.ModifyReputation then
+        local scalarDelta = (recipientCount * repPerMember) / aliveFactionCount
+        DynamicTrading_Factions.ModifyReputation(group.factionID, username, scalarDelta)
     end
 
-    return DynamicTrading_Factions.ModifyReputation(group.factionID, username, repDelta) == true
+    Shared.sendBanditCommand(player, "BanditRepSync", {
+        factionID = group.factionID,
+        mode = "add",
+        value = repPerMember,
+        memberUUIDs = recipientUUIDs,
+        source = "tribute_" .. tostring(selectedTier.tier or "low"),
+    })
+
+    return repPerMember, recipientCount
 end
 
 function Demand.buildDemand(player, difficulty, group)
@@ -337,6 +390,8 @@ function Bandits.PayDemand(player, args)
     local demand = group.demand
     local paid = false
     local repDelta = 0
+    local repPerMember = 0
+    local repAwardedCount = 0
     local selectedTier = nil
 
     if demand.kind == "money" then
@@ -356,7 +411,6 @@ function Bandits.PayDemand(player, args)
         if selectedTier then
             local helpers = DynamicTrading and DynamicTrading.ServerHelpers or nil
             paid = helpers and helpers.RemoveMoney and helpers.RemoveMoney(player, tonumber(selectedTier.amount) or 0) == true
-            repDelta = tonumber(selectedTier.repDelta) or 0
         end
     elseif demand.kind == "none" then
         paid = true
@@ -367,12 +421,15 @@ function Bandits.PayDemand(player, args)
         return
     end
 
-    if demand.kind == "tribute" and repDelta > 0 then
-        applyTributeReputationChange(group, player, repDelta)
+    if demand.kind == "tribute" and selectedTier then
+        repPerMember, repAwardedCount = applyTributeReputationChange(group, player, selectedTier)
+        repDelta = repPerMember * repAwardedCount
     end
 
     demand.resolved = true
     demand.repDelta = repDelta
+    demand.repPerMember = repPerMember
+    demand.repAwardedCount = repAwardedCount
     demand.selectedTier = selectedTier and selectedTier.tier or nil
     finishGroupAsLeaving(group, player, demand.kind == "none" and "empty" or "paid")
     Shared.sendBanditCommand(player, "BanditDemandResolved", {
@@ -382,6 +439,8 @@ function Bandits.PayDemand(player, args)
         displayName = demand.displayName,
         factionName = demand.factionName,
         repDelta = repDelta,
+        repPerMember = repPerMember,
+        repAwardedCount = repAwardedCount,
         selectedTier = demand.selectedTier,
     })
 end

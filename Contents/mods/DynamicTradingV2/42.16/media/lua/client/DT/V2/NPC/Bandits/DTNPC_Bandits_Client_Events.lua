@@ -5,6 +5,8 @@
 
 if isServer() and not isClient() then return end
 
+require "DT/Common/Reputation/DT_Reputation"
+
 local BanditClient = DTNPCBanditClient
 BanditClient.Internal = BanditClient.Internal or {}
 BanditClient.Internal.Helpers = BanditClient.Internal.Helpers or {}
@@ -13,6 +15,52 @@ local Helpers = BanditClient.Internal.Helpers
 local function isBanditClientActive()
     return type(Helpers.isCurrencyExpandedActive) == "function"
         and Helpers.isCurrencyExpandedActive() == true
+end
+
+local function resolveFactionDataForRefresh(factionID)
+    if not factionID then
+        return nil
+    end
+
+    local sources = {}
+    sources[#sources + 1] = DT_FactionInfoWindow and DT_FactionInfoWindow.cachedFactionData or false
+    sources[#sources + 1] = DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions or false
+    sources[#sources + 1] = DT_V2_RadarManager and DT_V2_RadarManager.ClientFactions or false
+    sources[#sources + 1] = ModData.get("DynamicTrading_Factions") or false
+
+    for _, source in ipairs(sources) do
+        if type(source) == "table" and source[factionID] then
+            return source[factionID]
+        end
+    end
+
+    return nil
+end
+
+local function refreshOpenFactionUI(factionID)
+    if not factionID or factionID == "" then
+        return
+    end
+
+    if DT_ConversationUI and DT_ConversationUI.instance then
+        local ui = DT_ConversationUI.instance
+        local target = ui.target or nil
+        if target and tostring(target.factionID or "") == tostring(factionID) and ui.refreshFactionInfo then
+            ui:refreshFactionInfo()
+        end
+    end
+
+    if DT_FactionInfoWindow
+        and DT_FactionInfoWindow.instance
+        and DT_FactionInfoWindow.selectedFaction
+        and tostring(DT_FactionInfoWindow.selectedFaction.id or "") == tostring(factionID) then
+        local factionData = resolveFactionDataForRefresh(factionID)
+        if factionData and DT_FactionInfoWindow.instance.applyFactionSelection then
+            DT_FactionInfoWindow.selectedFaction = factionData
+            DT_FactionInfoWindow.instance.selectedFaction = factionData
+            DT_FactionInfoWindow.instance:applyFactionSelection(factionData, false)
+        end
+    end
 end
 
 local function onTick()
@@ -62,6 +110,22 @@ local function onServerCommand(module, command, args)
         return
     end
 
+    if command == "BanditRepSync" then
+        if DT_Reputation and DT_Reputation.ApplyRosterPersonalRepSync then
+            local changed = DT_Reputation.ApplyRosterPersonalRepSync(
+                args.memberUUIDs,
+                args.factionID,
+                args.mode,
+                args.value,
+                args.source or "bandit_sync"
+            )
+            if changed > 0 then
+                refreshOpenFactionUI(args.factionID)
+            end
+        end
+        return
+    end
+
     if not isBanditClientActive() then return end
 
     if command == "BanditDemand" then
@@ -82,24 +146,32 @@ local function onServerCommand(module, command, args)
 
         if not ui then return end
 
+        Helpers.disarmIdleWarning(ui)
         ui.banditResolved = true
         ui.keepOpenOnInvalidInteraction = args.result ~= "hostile"
         if args.result == "hostile" then
-            ui:speak(Helpers.pickDialogueLine("Hostile"))
+            ui:speak(Helpers.pickDialogueLine("Hostile", nil, ui))
             Helpers.closeBanditUI(ui)
             return
         end
 
         if args.result == "empty" then
-            ui:speak(Helpers.pickDialogueLine("Empty"))
-        elseif args.kind == "tribute" and tonumber(args.repDelta) and tonumber(args.repDelta) > 0 then
-            ui:speak(Helpers.pickDialogueLine("GiftAcceptedHigh", {
-                ["1"] = tostring(math.floor(tonumber(args.repDelta) or 0)),
-            }))
+            ui:speak(Helpers.pickDialogueLine("Empty", nil, ui))
         elseif args.kind == "tribute" then
-            ui:speak(Helpers.pickDialogueLine("GiftAccepted"))
+            if tostring(args.selectedTier or "") == "high" then
+                ui:speak(Helpers.pickDialogueLine("GiftAcceptedHigh", {
+                    ["1"] = tostring(math.floor(tonumber(args.repPerMember) or 0)),
+                    ["2"] = tostring(math.floor(tonumber(args.repAwardedCount) or 0)),
+                }, ui))
+            elseif tostring(args.selectedTier or "") == "medium" then
+                ui:speak(Helpers.pickDialogueLine("GiftAcceptedMedium", {
+                    ["1"] = tostring(math.floor(tonumber(args.repPerMember) or 0)),
+                }, ui))
+            else
+                ui:speak(Helpers.pickDialogueLine("GiftAccepted", nil, ui))
+            end
         else
-            ui:speak(Helpers.pickDialogueLine("Accept"))
+            ui:speak(Helpers.pickDialogueLine("Accept", nil, ui))
         end
 
         ui:updateOptions({

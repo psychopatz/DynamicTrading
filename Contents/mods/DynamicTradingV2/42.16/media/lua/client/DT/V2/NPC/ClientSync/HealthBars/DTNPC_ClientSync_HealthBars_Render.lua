@@ -56,15 +56,19 @@ function ISDTNPCHealthBarManager:render()
             if alpha > 0 then
                 local screenX = isoToScreenX(self.playerIndex, zombie:getX(), zombie:getY(), zombie:getZ()) - self.x
                 local screenY = isoToScreenY(self.playerIndex, zombie:getX(), zombie:getY(), zombie:getZ()) - self.y
+                local isHostile = barData.npcData and barData.npcData.isHostile == true
+                local nameColor = isHostile
+                    and { r = 1.0, g = 0.28, b = 0.28, a = 1.0 }
+                    or { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 
                 self:drawText(
                     barData.name,
                     screenX - (barData.nameWidth / 2),
                     screenY - nameYOffset,
-                    1,
-                    1,
-                    1,
-                    alpha,
+                    nameColor.r,
+                    nameColor.g,
+                    nameColor.b,
+                    nameColor.a * alpha,
                     Constants.FONT_NAME
                 )
 
