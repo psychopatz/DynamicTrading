@@ -133,6 +133,8 @@ function RadarManager.Scan(player, device)
     local foundNew = false
     local discoveredCount = 0
     local firstName = nil
+    local firstUUID = nil
+    local firstPreviewData = nil
     local username = player.getUsername and player:getUsername() or "Unknown"
     local px, py = player:getX(), player:getY()
     local currentHours = getGameTime():getWorldAgeHours()
@@ -267,6 +269,20 @@ function RadarManager.Scan(player, device)
             foundNew = true
             discoveredCount = 1
             firstName = name
+            firstUUID = firstUUID or uuid
+            firstPreviewData = firstPreviewData or {
+                uuid = uuid,
+                name = name,
+                faction = soul.factionID or "Independent",
+                factionName = factionName,
+                archetype = soul.archetypeID or soul.archetype or soul.occupation or "General",
+                gender = soul.isFemale == true and "Female" or "Male",
+                identitySeed = tonumber(soul.identitySeed) or 1,
+                x = soul.lastX,
+                y = soul.lastY,
+                z = soul.lastZ or 0,
+                isLive = true,
+            }
             RadarManager.CacheMetadata(uuid, soul)
             if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddPlayerRadioEvent then
                 DynamicTrading.GameplayLogs.AddPlayerRadioEvent(player, DynamicTrading.GameplayEvents.SIGNAL_ACQUIRED, {tostring(username), tostring(name), tostring(factionName)})
@@ -282,6 +298,12 @@ function RadarManager.Scan(player, device)
     -- Final Refresh
     if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance:getIsVisible() then
         DT_RadioScannerWindow.instance:refresh()
+        if foundNew
+            and firstUUID
+            and DT_RadioScannerWindow.instance.showDiscoveryConversationForSignal
+        then
+            DT_RadioScannerWindow.instance:showDiscoveryConversationForSignal(firstUUID, firstPreviewData, true)
+        end
     end
 
     -- Feedback

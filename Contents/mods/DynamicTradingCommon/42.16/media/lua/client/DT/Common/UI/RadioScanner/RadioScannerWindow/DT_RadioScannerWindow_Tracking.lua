@@ -293,6 +293,13 @@ local function buildTrackingPanelHeading(targetData)
     return "Tracked Channel: " .. tostring(targetData.name)
 end
 
+local function buildDiscoveryPanelHeading(targetData)
+    if not targetData or not targetData.name then
+        return "Open Channel:"
+    end
+    return "Open Channel: " .. tostring(targetData.name)
+end
+
 local TRACKING_PROXIMITY_STAGES = {
     { distance = 3000, key = "Approach3000" },
     { distance = 2000, key = "Approach2000" },
@@ -350,6 +357,8 @@ function DT_RadioScannerWindow:clearTrackingConversation()
     self.lastTrackingDistance = nil
     self.lastAwayDepth = nil
     self.lastTriggeredTrackingDepth = nil
+    self.discoveryTargetData = nil
+    self.discoveryContext = nil
     if self.trackingDialoguePanel then
         self.trackingDialoguePanel:clearMessages()
         self.trackingDialoguePanel:setHeadingText("Tracked Channel:")
@@ -399,6 +408,8 @@ function DT_RadioScannerWindow:startTrackingConversation(targetData, context)
         return
     end
 
+    self.discoveryTargetData = nil
+    self.discoveryContext = nil
     self:clearTrackingConversation()
     self.trackingDialoguePanel:setHeadingText(buildTrackingPanelHeading(targetData))
 
@@ -407,6 +418,68 @@ function DT_RadioScannerWindow:startTrackingConversation(targetData, context)
 
     self:queueTrackingConversationMessage(playerRequest, true, 0, false)
     self:queueTrackingConversationMessage(reply, false, 0.9, false)
+end
+
+function DT_RadioScannerWindow:showDiscoveryConversation(targetData, context, force)
+    if not self.trackingDialoguePanel or not targetData or not context then
+        return
+    end
+
+    if not force and self.trackingUUID then
+        return
+    end
+
+    local heading = buildDiscoveryPanelHeading(targetData)
+    local shouldSkip = force ~= true
+        and self.discoveryTargetData
+        and tostring(self.discoveryTargetData.uuid or "") == tostring(targetData.uuid or "")
+        and self.trackingDialoguePanel
+        and #(self.trackingDialoguePanel.localLogs or {}) > 0
+    if shouldSkip then
+        self.trackingDialoguePanel:setHeadingText(heading)
+        return
+    end
+
+    self.trackingMessageQueue = {}
+    self.trackingMilestones = nil
+    self.trackingAwayTriggered = nil
+    self.lastTrackingDistance = nil
+    self.lastAwayDepth = nil
+    self.lastTriggeredTrackingDepth = nil
+    self.discoveryTargetData = targetData
+    self.discoveryContext = context
+    self.trackingDialoguePanel:clearMessages()
+    self.trackingDialoguePanel:setHeadingText(heading)
+
+    local playerRequest = DynamicTrading.Dialogue.RadioTracker.GeneratePlayerRequest(targetData, context)
+    local reply = DynamicTrading.Dialogue.RadioTracker.GenerateReply(targetData, context)
+    self:queueTrackingConversationMessage(playerRequest, true, 0, false)
+    self:queueTrackingConversationMessage(reply, false, 0.9, false)
+end
+
+function DT_RadioScannerWindow:showDiscoveryConversationForSignal(uuid, data, force)
+    if self.trackingUUID then
+        return
+    end
+
+    if uuid == nil or uuid == "" then
+        return
+    end
+
+    local previousData = self.trackingData
+    local previousName = self.trackingName
+    self.trackingData = data or self.trackingData
+    self.trackingName = (data and data.name) or self.trackingName
+
+    local targetData = buildTrackedTargetData(self, uuid)
+    local context = targetData and buildTrackedContext(targetData) or nil
+
+    self.trackingData = previousData
+    self.trackingName = previousName
+
+    if targetData and context then
+        self:showDiscoveryConversation(targetData, context, force)
+    end
 end
 
 function DT_RadioScannerWindow:processTrackingProximityDialogue()
@@ -468,7 +541,11 @@ function DT_RadioScannerWindow:refreshTrackingPresentation(force)
         self.trackedPortraitPanel:setVisible(false)
         self.trackedPortraitPanel:clearTrackingInfo(force)
         if self.trackingDialoguePanel then
-            self.trackingDialoguePanel:setHeadingText("Tracked Channel:")
+            if self.discoveryTargetData then
+                self.trackingDialoguePanel:setHeadingText(buildDiscoveryPanelHeading(self.discoveryTargetData))
+            else
+                self.trackingDialoguePanel:setHeadingText("Tracked Channel:")
+            end
         end
         return
     end

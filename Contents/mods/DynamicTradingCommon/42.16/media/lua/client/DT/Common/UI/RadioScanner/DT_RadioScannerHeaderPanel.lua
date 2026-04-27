@@ -8,6 +8,30 @@ function DT_RadioScannerHeaderPanel:shouldShowQuestTab()
         and DynamicObjectives.UI.ShowScannerQuestTab == true
 end
 
+function DT_RadioScannerHeaderPanel:ensureQuestButton(showQuestTab)
+    if showQuestTab and not self.btnQuest then
+        local tabHeight = 20
+        local tabY = self.height - tabHeight
+        self.btnQuest = ISButton:new(0, tabY, 0, tabHeight, "Quest", self, function(panel)
+            panel:onCategoryClick("Quest")
+        end)
+        self.btnQuest:initialise()
+        self.btnQuest.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
+        self.btnQuest:setAnchorTop(false)
+        self.btnQuest:setAnchorBottom(true)
+        self:addChild(self.btnQuest)
+        return
+    end
+
+    if not showQuestTab and self.btnQuest then
+        self:removeChild(self.btnQuest)
+        self.btnQuest = nil
+        if self.parent and self.parent.currentCategory == "Quest" and self.parent.setCategory then
+            self.parent:setCategory("Stationary")
+        end
+    end
+end
+
 function DT_RadioScannerHeaderPanel:initialise()
     ISPanel.initialise(self)
 end
@@ -59,16 +83,7 @@ function DT_RadioScannerHeaderPanel:createChildren()
     self.btnCall:setAnchorBottom(true)
     self:addChild(self.btnCall)
 
-    if showQuestTab then
-        self.btnQuest = ISButton:new(tabWidth * 2, tabY, tabWidth, tabHeight, "Quest", self, function(panel)
-            panel:onCategoryClick("Quest")
-        end)
-        self.btnQuest:initialise()
-        self.btnQuest.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
-        self.btnQuest:setAnchorTop(false)
-        self.btnQuest:setAnchorBottom(true)
-        self:addChild(self.btnQuest)
-    end
+    self:ensureQuestButton(showQuestTab)
 
     local infoIndex = showQuestTab and 3 or 2
     self.btnInfo = ISButton:new(tabWidth * infoIndex, tabY, tabWidth, tabHeight, "Info", self, function(panel)
@@ -104,14 +119,34 @@ function DT_RadioScannerHeaderPanel:prerender()
     centerLabel(self.lblRangeInfo, UIFont.Small)
 
     local showQuestTab = self:shouldShowQuestTab()
+    self:ensureQuestButton(showQuestTab)
     local tabCount = showQuestTab and 4 or 3
     local tabWidth = self.width / tabCount
-    if self.btnStat then self.btnStat:setWidth(tabWidth) end
-    if self.btnCall then self.btnCall:setX(tabWidth); self.btnCall:setWidth(tabWidth) end
-    if self.btnQuest then self.btnQuest:setX(tabWidth * 2); self.btnQuest:setWidth(tabWidth) end
+    local tabHeight = 20
+    local tabY = self.height - tabHeight
+    if self.btnStat then
+        self.btnStat:setX(0)
+        self.btnStat:setY(tabY)
+        self.btnStat:setWidth(tabWidth)
+        self.btnStat:setHeight(tabHeight)
+    end
+    if self.btnCall then
+        self.btnCall:setX(tabWidth)
+        self.btnCall:setY(tabY)
+        self.btnCall:setWidth(tabWidth)
+        self.btnCall:setHeight(tabHeight)
+    end
+    if self.btnQuest then
+        self.btnQuest:setX(tabWidth * 2)
+        self.btnQuest:setY(tabY)
+        self.btnQuest:setWidth(tabWidth)
+        self.btnQuest:setHeight(tabHeight)
+    end
     if self.btnInfo then
         self.btnInfo:setX(showQuestTab and (tabWidth * 3) or (tabWidth * 2))
+        self.btnInfo:setY(tabY)
         self.btnInfo:setWidth(tabWidth)
+        self.btnInfo:setHeight(tabHeight)
     end
 
     if self.btnOptions then
