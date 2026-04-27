@@ -2,6 +2,8 @@ local HOOK_ID = "TraderNeeds.HelpEscort"
 
 local TraderHelpEscortUI = {
     pendingRequest = nil,
+    activeConversation = nil,
+    pendingAction = nil,
 }
 
 local function getHook()
@@ -67,21 +69,149 @@ local function closeConversation(ui)
     end
 end
 
-local function showEscortConversation(ui, npc, player, npcData, context)
-    local quest = getActiveEscortQuest(player, context.traderId, context.incidentId)
+local function rememberConversation(ui, npc, player, npcData, context)
+    TraderHelpEscortUI.activeConversation = {
+        ui = ui,
+        npc = npc,
+        player = player,
+        npcData = npcData,
+        context = context,
+    }
+end
+
+local function countBandages(player)
+    if DynamicObjectives and DynamicObjectives.MedicalItemUtils and DynamicObjectives.MedicalItemUtils.CountBandageItems then
+        return tonumber(DynamicObjectives.MedicalItemUtils.CountBandageItems(player)) or 0
+    end
+    return 0
+end
+
+local function buildEscortStatusText(player, npcData, context, quest)
+    local detail = quest and DynamicObjectives
+        and DynamicObjectives.Quests
+        and DynamicObjectives.Quests.GetQuestDetailData
+        and DynamicObjectives.Quests.GetQuestDetailData(player, quest.id)
+        or nil
     local summary = quest and DynamicObjectives
         and DynamicObjectives.Quests
         and DynamicObjectives.Quests.BuildSummaryText
         and DynamicObjectives.Quests.BuildSummaryText(quest, player)
         or "Stay close and keep the escort moving."
 
-    ui:speak("We're moving. Keep me alive and get me back to base.")
+    local parts = { summary or "Stay close and keep the escort moving." }
+    local npc = context and context.npcData or npcData or nil
+    local current = tonumber(npc and (npc.combatHealthCurrent or (npc.combatHealth and npc.combatHealth.current)) or nil)
+    local maxHealth = tonumber(npc and (npc.combatHealthMax or (npc.combatHealth and npc.combatHealth.max)) or nil)
+    if current and maxHealth and maxHealth > 0 then
+        parts[#parts + 1] = string.format("Health: %d/%d", math.floor(current + 0.5), math.floor(maxHealth + 0.5))
+    end
+
+    local state = tostring((npc and npc.state) or "")
+    if state ~= "" then
+        parts[#parts + 1] = "Order: " .. state
+    end
+
+    local hookState = quest and type(quest.hookState) == "table" and quest.hookState or nil
+    local homeCoords = hookState and hookState.homeCoords or nil
+    if player and type(homeCoords) == "table" and tonumber(homeCoords.x) and tonumber(homeCoords.y) then
+        local dx = tonumber(homeCoords.x) - tonumber(player:getX())
+        local dy = tonumber(homeCoords.y) - tonumber(player:getY())
+        parts[#parts + 1] = string.format("Home: %.0fm", math.sqrt((dx * dx) + (dy * dy)))
+    elseif detail and detail.targetLabel and tostring(detail.targetLabel) ~= "" then
+        parts[#parts + 1] = "Destination: " .. tostring(detail.targetLabel)
+    end
+
+    return table.concat(parts, "\n")
+end
+
+local function sendEscortAction(player, context, action)
+    if not player or not context or not context.traderId or not sendClientCommand then
+        return false
+    end
+
+    sendClientCommand(player, "DynamicObjectives", "EscortObjectiveAction", {
+        hookId = HOOK_ID,
+        incidentId = context.incidentId,
+        traderId = context.traderId,
+        action = action,
+    })
+    return true
+end
+
+local function showEscortConversation(ui, npc, player, npcData, context, overrideSpeech)
+    npcData = getNPCData(npc) or npcData
+    local resolvedContext = getIncidentContext(player, npcData)
+    if type(resolvedContext) == "table" and (resolvedContext.traderId or resolvedContext.incidentId) then
+        context = resolvedContext
+    else
+        context = type(context) == "table" and context or {}
+    end
+    context.npcData = npcData
+    rememberConversation(ui, npc, player, npcData, context)
+
+    local quest = getActiveEscortQuest(player, context.traderId, context.incidentId)
+    local summary = buildEscortStatusText(player, npcData, context, quest)
+    local bandageCount = countBandages(player)
+
+    ui:speak(overrideSpeech or "We're moving. Keep me alive and get me back to base.")
     ui:updateOptions({
         {
             text = "Status",
             message = "",
             onSelect = function(innerUI)
-                innerUI:speak(summary or "Keep the trader alive and moving.")
+                showEscortConversation(
+                    innerUI,
+                    npc,
+                    player,
+                    getNPCData(npc) or npcData,
+                    getIncidentContext(player, getNPCData(npc) or npcData),
+                    summary or "Keep the trader alive and moving."
+                )
+            end,
+        },
+        {
+            text = "Follow",
+            message = "",
+            onSelect = function(innerUI)
+                TraderHelpEscortUI.pendingAction = {
+                    ui = innerUI,
+                    npc = npc,
+                    player = player,
+                }
+                sendEscortAction(player, context, "follow")
+                showEscortConversation(innerUI, npc, player, getNPCData(npc) or npcData, getIncidentContext(player, getNPCData(npc) or npcData), "Stay close. I'll follow your lead.")
+            end,
+        },
+        {
+            text = "Stay",
+            message = "",
+            onSelect = function(innerUI)
+                TraderHelpEscortUI.pendingAction = {
+                    ui = innerUI,
+                    npc = npc,
+                    player = player,
+                }
+                sendEscortAction(player, context, "stay")
+                showEscortConversation(innerUI, npc, player, getNPCData(npc) or npcData, getIncidentContext(player, getNPCData(npc) or npcData), "I'll hold here until you move me again.")
+            end,
+        },
+        {
+            text = bandageCount > 0 and ("Heal Up (" .. tostring(bandageCount) .. ")") or "Heal Up (Need bandage)",
+            message = "",
+            onSelect = function(innerUI)
+                if bandageCount <= 0 then
+                    innerUI:speak("Bring me a bandage, adhesive bandage, or clean rag first.")
+                    showEscortConversation(innerUI, npc, player, getNPCData(npc) or npcData, getIncidentContext(player, getNPCData(npc) or npcData))
+                    return
+                end
+
+                TraderHelpEscortUI.pendingAction = {
+                    ui = innerUI,
+                    npc = npc,
+                    player = player,
+                }
+                sendEscortAction(player, context, "patchup")
+                showEscortConversation(innerUI, npc, player, getNPCData(npc) or npcData, getIncidentContext(player, getNPCData(npc) or npcData), "Hold still. Use the bandage and keep moving.")
             end,
         },
         {
@@ -95,6 +225,7 @@ local function showEscortConversation(ui, npc, player, npcData, context)
 end
 
 local function showUnavailable(ui, message)
+    TraderHelpEscortUI.activeConversation = nil
     ui:speak(message or "This rescue call is no longer available.")
     ui:updateOptions({
         {
@@ -108,6 +239,7 @@ local function showUnavailable(ui, message)
 end
 
 local function showPendingConversation(ui, npc, player, npcData, context)
+    rememberConversation(ui, npc, player, npcData, context)
     local offer = getOffer(player, context) or {}
     local incident = context.incident
     if not incident then
@@ -193,16 +325,14 @@ function TraderHelpEscortUI.OnIncidentAccepted(args)
         DTNPCClient.QueueNearbySync("trader-help-escort-accepted")
     end
 
-    pending.ui:speak((args and args.message) or "I'm with you. Get me home.")
-    pending.ui:updateOptions({
-        {
-            text = "Leave",
-            message = "",
-            onSelect = function(innerUI)
-                closeConversation(innerUI)
-            end,
-        },
-    })
+    showEscortConversation(
+        pending.ui,
+        pending.npc,
+        pending.player,
+        getNPCData(pending.npc),
+        getIncidentContext(pending.player, getNPCData(pending.npc)),
+        (args and args.message) or "I'm with you. Get me home."
+    )
 end
 
 function TraderHelpEscortUI.OnIncidentFailed(args)
@@ -213,6 +343,34 @@ function TraderHelpEscortUI.OnIncidentFailed(args)
     end
 
     showUnavailable(pending.ui, args and args.message or "This rescue is no longer available.")
+end
+
+function TraderHelpEscortUI.OnEscortActionResult(args)
+    local pending = TraderHelpEscortUI.pendingAction
+    TraderHelpEscortUI.pendingAction = nil
+    if DTNPCClient and DTNPCClient.QueueNearbySync then
+        DTNPCClient.QueueNearbySync("trader-help-escort-action")
+    end
+    if not pending or not pending.ui then
+        return
+    end
+
+    local npcData = getNPCData(pending.npc)
+    local context = getIncidentContext(pending.player, npcData)
+    if (not context or (not context.traderId and not context.incidentId))
+        and TraderHelpEscortUI.activeConversation
+        and TraderHelpEscortUI.activeConversation.context
+    then
+        context = TraderHelpEscortUI.activeConversation.context
+    end
+    showEscortConversation(
+        pending.ui,
+        pending.npc,
+        pending.player,
+        npcData,
+        context,
+        args and args.message or "Escort order updated."
+    )
 end
 
 _G.DOTraderHelpEscortJobUI = TraderHelpEscortUI

@@ -224,6 +224,7 @@ function DT_RadioScannerWindow:refresh()
                 distText = entry.distText or "Signal: Quest",
                 expireText = entry.expireText or "",
                 rewardText = entry.rewardText or "",
+                detailText = entry.detailText or "",
                 isLive = entry.isLive == true,
                 x = entry.x,
                 y = entry.y,

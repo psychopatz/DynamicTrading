@@ -257,7 +257,10 @@ function DT_RadioScannerListPanel:doDrawItem(y, item, alt)
     local signalText = tostring(data.distText) .. (data.isLive and " [SIGNAL STRONG]" or " [SIGNAL WEAK]")
     if isQuestRow then
         local rewardText = tostring(data.rewardText or "")
-        if rewardText ~= "" then
+        local detailText = tostring(data.detailText or "")
+        if detailText ~= "" then
+            DT_UIUtils.drawMarqueeText(self, detailText, contentX, y + 46, laneWidth, UIFont.Small, 1.0, 1.0, 0.6, 1, { speedMs = 35, gap = 60 })
+        elseif rewardText ~= "" then
             DT_UIUtils.drawMarqueeText(self, "Reward: " .. rewardText, contentX, y + 46, laneWidth, UIFont.Small, 1.0, 1.0, 0.6, 1, { speedMs = 35, gap = 60 })
         end
         DT_UIUtils.drawMarqueeText(self, signalText, contentX, y + 68, laneWidth, UIFont.Small, color.r, color.g, color.b, 1, { speedMs = 42, gap = 48 })
