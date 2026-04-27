@@ -38,3 +38,35 @@ function RadarManager.GetFaction(factionID)
 
     return nil
 end
+
+function RadarManager.IsBanditFactionID(factionID)
+    if DTNPCBandits and DTNPCBandits.IsBanditFaction then
+        local ok, result = pcall(DTNPCBandits.IsBanditFaction, factionID)
+        if ok and result == true then
+            return true
+        end
+    end
+
+    return tostring(factionID or "") == "Bandits"
+end
+
+function RadarManager.IsRadioDiscoverableSoul(soul)
+    if type(soul) ~= "table" then
+        return false
+    end
+
+    if RadarManager.IsBanditFactionID and RadarManager.IsBanditFactionID(soul.factionID) then
+        return false
+    end
+
+    if soul.isBandit == true then
+        return false
+    end
+
+    local archetypeID = tostring(soul.archetypeID or soul.archetype or soul.occupation or "")
+    if archetypeID == "Bandit" then
+        return false
+    end
+
+    return true
+end

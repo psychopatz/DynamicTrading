@@ -53,6 +53,7 @@ function DT_V2_OptionsManager.RegisterUI()
     DT_OptionsUI.RegisterGeneralSetting("Use 3D Portraits", "use3DPortraits", function()
         refreshPortraitUIs()
     end)
+    DT_OptionsUI.RegisterGeneralSetting("Disable Transparency", "disableConversationTransparency", nil)
 
     DynamicTrading.Log("DTV2", "Init", "Config", "V2 UI Registered.")
 end

@@ -64,7 +64,8 @@ function RadarManager.Cleanup(player)
         local isExpiredTrading = soul and soul.status == "Trading" and soul.returnTime and soul.returnTime <= currentHours
         local isDeparting = soul and soul.state == "Departure"
         local isCallableForPlayer = isCallableTradeActiveForPlayer(soul, playerObj)
-        if not soul or soul.status ~= "Trading" or isExpiredTrading or isDeparting or isCallableForPlayer then
+        local isDiscoverable = soul and (RadarManager.IsRadioDiscoverableSoul == nil or RadarManager.IsRadioDiscoverableSoul(soul)) or false
+        if not soul or not isDiscoverable or soul.status ~= "Trading" or isExpiredTrading or isDeparting or isCallableForPlayer then
             table.insert(toRemove, {
                 uuid = uuid,
                 isCallableForPlayer = isCallableForPlayer,

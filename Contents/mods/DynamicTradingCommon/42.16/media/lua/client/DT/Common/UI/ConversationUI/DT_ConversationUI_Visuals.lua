@@ -100,11 +100,46 @@ local function getOverlayOpacity()
             return value
         end
     end
-    return 0.42
+    return 1.0
 end
 
-local function alphaScaled(alpha, scale)
-    return (alpha or 0) * (scale or 1)
+local function isTransparencyDisabled()
+    if DT_ConfigManager and DT_ConfigManager.isConversationTransparencyDisabled then
+        return DT_ConfigManager.isConversationTransparencyDisabled()
+    end
+    if DT_ConfigManager and DT_ConfigManager.settings then
+        return DT_ConfigManager.settings.disableConversationTransparency == true
+    end
+    return false
+end
+
+local function getOverlayVisualState()
+    local opacity = getOverlayOpacity()
+    local solid = isTransparencyDisabled()
+
+    if solid then
+        return {
+            opacity = opacity,
+            solid = true,
+            frameAlpha = 0.86 + (opacity * 0.10),
+            rootAlpha = 0.78 + (opacity * 0.18),
+            leftShadeAlpha = 0.70 + (opacity * 0.18),
+            gradientStartAlpha = 0.76 + (opacity * 0.18),
+            gradientEndAlpha = 0.54 + (opacity * 0.16),
+            panelAlpha = 0.74 + (opacity * 0.20),
+        }
+    end
+
+    return {
+        opacity = opacity,
+        solid = false,
+        frameAlpha = 0.24 + (opacity * 0.46),
+        rootAlpha = opacity * 0.72,
+        leftShadeAlpha = opacity * 0.36,
+        gradientStartAlpha = opacity * 0.52,
+        gradientEndAlpha = opacity * 0.18,
+        panelAlpha = opacity * 0.68,
+    }
 end
 
 function DT_ConversationUI:getBackgroundTexture()
@@ -143,16 +178,23 @@ function DT_ConversationUI:prerender()
     local contentY = self.rootContent:getY()
     local contentW = self.rootContent:getWidth()
     local contentH = self.rootContent:getHeight()
-    local overlayOpacity = getOverlayOpacity()
+    local overlayState = getOverlayVisualState()
     local accent = self.visualAccentColor or { r = 0.80, g = 0.88, b = 0.76, a = 0.95 }
-    drawGlassBlock(self, contentX, contentY, contentW, contentH, alphaScaled(0.05, overlayOpacity), 0.02, 0.04, 0.03, { accent.r, accent.g, accent.b, 1.0 })
-    drawFrameBorder(self, 0, 0, self.width, self.height, self.visualBorderColor)
+    drawGlassBlock(self, contentX, contentY, contentW, contentH, overlayState.rootAlpha, 0.02, 0.04, 0.03, { accent.r, accent.g, accent.b, 1.0 })
+
+    local borderColor = {
+        r = (self.visualBorderColor and self.visualBorderColor.r) or 0.52,
+        g = (self.visualBorderColor and self.visualBorderColor.g) or 0.58,
+        b = (self.visualBorderColor and self.visualBorderColor.b) or 0.52,
+        a = overlayState.frameAlpha,
+    }
+    drawFrameBorder(self, 0, 0, self.width, self.height, borderColor)
 
     if self.layoutMetrics then
         local leftColumnW = math.min(contentW, self.layoutMetrics.leftW + math.floor(self.layoutMetrics.columnGap * 0.5))
         local gradientW = math.min(contentW, self.layoutMetrics.leftW + math.floor(self.layoutMetrics.portraitW * 0.22))
-        self:drawRect(contentX, contentY, leftColumnW, contentH, alphaScaled(0.08, overlayOpacity), 0.01, 0.01, 0.01)
-        drawRectGradient(self, contentX, contentY, gradientW, contentH, alphaScaled(0.28, overlayOpacity), alphaScaled(0.07, overlayOpacity), 0.01, 0.01, 0.01, 28)
+        self:drawRect(contentX, contentY, leftColumnW, contentH, overlayState.leftShadeAlpha, 0.01, 0.01, 0.01)
+        drawRectGradient(self, contentX, contentY, gradientW, contentH, overlayState.gradientStartAlpha, overlayState.gradientEndAlpha, 0.01, 0.01, 0.01, 28)
     end
 
     if self.infoPanel then
@@ -165,7 +207,7 @@ function DT_ConversationUI:prerender()
             infoY,
             self.infoPanel:getWidth(),
             self.infoPanel:getHeight(),
-            alphaScaled(0.05, overlayOpacity),
+            overlayState.panelAlpha,
             0.02,
             0.02,
             0.02,
@@ -180,7 +222,7 @@ function DT_ConversationUI:prerender()
             contentY + self.messagePanel:getY(),
             self.messagePanel:getWidth(),
             self.messagePanel:getHeight(),
-            alphaScaled(0.05, overlayOpacity),
+            overlayState.panelAlpha,
             0.02,
             0.02,
             0.02,
@@ -195,7 +237,7 @@ function DT_ConversationUI:prerender()
             contentY + self.optionPanel:getY(),
             self.optionPanel:getWidth(),
             self.optionPanel:getHeight(),
-            alphaScaled(0.05, overlayOpacity),
+            overlayState.panelAlpha,
             0.03,
             0.03,
             0.02,

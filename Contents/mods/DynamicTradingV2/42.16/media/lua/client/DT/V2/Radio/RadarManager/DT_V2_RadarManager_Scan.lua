@@ -166,7 +166,8 @@ function RadarManager.Scan(player, device)
     for uuid, soul in pairs(rosterData.Souls) do
         local isExpired = soul.returnTime and soul.returnTime <= currentHours
         local isActiveTrading = soul.status == "Trading" and not isExpired and soul.state ~= "Departure"
-        if isActiveTrading and soul.lastX and soul.lastY and not RadarManager.FoundTraders[uuid] then
+        local isDiscoverable = RadarManager.IsRadioDiscoverableSoul == nil or RadarManager.IsRadioDiscoverableSoul(soul)
+        if isActiveTrading and isDiscoverable and soul.lastX and soul.lastY and not RadarManager.FoundTraders[uuid] then
             local dist = IsoUtils.DistanceTo(px, py, soul.lastX, soul.lastY)
             if dist <= effectiveRange then
                 local entry = {
