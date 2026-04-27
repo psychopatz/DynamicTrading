@@ -50,9 +50,9 @@ function Helpers.GetNowMillis()
     return os.time() * 1000
 end
 
-function Helpers.RecordInterpolation(uuid, x, y, z)
+function Helpers.RecordInterpolation(uuid, x, y, z, updateFreq, motionHint)
     if uuid and x and y then
-        DTNPC_ClientInterpolation.RecordUpdate(uuid, x, y, z or 0)
+        DTNPC_ClientInterpolation.RecordUpdate(uuid, x, y, z or 0, updateFreq, motionHint)
     end
 end
 

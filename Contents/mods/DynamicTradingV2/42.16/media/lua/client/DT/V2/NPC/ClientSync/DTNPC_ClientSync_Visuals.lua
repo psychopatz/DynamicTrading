@@ -198,7 +198,7 @@ end
 function DTNPCClient.FindZombieByUUID(uuid)
     local cell = getCell()
     if not cell then return nil end
-    
+
     local zombieList = cell:getZombieList()
     if not zombieList then return nil end
 
@@ -221,7 +221,7 @@ function DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
 
     local cell = getCell()
     if not cell then return nil end
-    
+
     local zombieList = cell:getZombieList()
     if not zombieList then return nil end
     
@@ -251,7 +251,13 @@ function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
     if DTNPCClient.LocalControlled[uuid] then
         return false
     end
-    
+    if uuid
+        and DTNPC_ClientInterpolation
+        and DTNPC_ClientInterpolation.HasFreshState
+        and DTNPC_ClientInterpolation.HasFreshState(uuid) then
+        return false
+    end
+
     local localX = zombie:getX()
     local localY = zombie:getY()
     local localZ = zombie:getZ()

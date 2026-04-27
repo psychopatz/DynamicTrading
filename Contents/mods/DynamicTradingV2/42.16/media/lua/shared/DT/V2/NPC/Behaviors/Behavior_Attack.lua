@@ -18,6 +18,221 @@ local function isPlayerTarget(target)
     return target and instanceof and instanceof(target, "IsoPlayer")
 end
 
+local function getTimeMs()
+    if getTimeInMillis then
+        return getTimeInMillis()
+    end
+    return math.floor((getGameTime():getWorldAgeHours() or 0) * 3600000)
+end
+
+local function getDistance(ax, ay, bx, by)
+    local dx = (tonumber(ax) or 0) - (tonumber(bx) or 0)
+    local dy = (tonumber(ay) or 0) - (tonumber(by) or 0)
+    return math.sqrt((dx * dx) + (dy * dy))
+end
+
+local function createPointTarget(x, y, z)
+    if x == nil or y == nil then
+        return nil
+    end
+
+    local px = tonumber(x)
+    local py = tonumber(y)
+    local pz = tonumber(z) or 0
+    return {
+        getX = function() return px end,
+        getY = function() return py end,
+        getZ = function() return pz end,
+        isDead = function() return false end,
+    }
+end
+
+local function isOffscreenFromActivePlayers(zombie)
+    local radius = tonumber(DTNPCProtect and DTNPCProtect.CONFIG and DTNPCProtect.CONFIG.HostileOffscreenDespawnRadius) or 70
+    local players = DTNPCLogic.GetActivePlayers and DTNPCLogic.GetActivePlayers() or {}
+    if #players <= 0 then
+        return true
+    end
+
+    for i = 1, #players do
+        local player = players[i]
+        if player and not player:isDead() and math.abs((player:getZ() or 0) - (zombie:getZ() or 0)) <= 1 then
+            if getDistance(zombie:getX(), zombie:getY(), player:getX(), player:getY()) <= radius then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+local function randomLostSightTimeoutMs(npcData)
+    if npcData.hostileLostSightTimeoutMs then
+        return tonumber(npcData.hostileLostSightTimeoutMs) or 75000
+    end
+
+    local config = DTNPCProtect and DTNPCProtect.CONFIG or {}
+    local minMs = math.max(1000, tonumber(config.HostileLostSightSearchMinMs) or 60000)
+    local maxMs = math.max(minMs, tonumber(config.HostileLostSightSearchMaxMs) or 90000)
+    local timeout = minMs
+    if maxMs > minMs then
+        timeout = minMs + ZombRand((maxMs - minMs) + 1)
+    end
+    npcData.hostileLostSightTimeoutMs = timeout
+    return timeout
+end
+
+local function pushSearchAmbient(zombie, npcData, nowMs)
+    if not npcData or not zombie then
+        return
+    end
+
+    local lastAt = tonumber(npcData.combatSearchAmbientAt) or 0
+    if lastAt > 0 and (nowMs - lastAt) < 10000 then
+        return
+    end
+
+    npcData.combatSearchAmbientAt = nowMs
+    npcData.protectNoticeSerial = (tonumber(npcData.protectNoticeSerial) or 0) + 1
+    npcData.protectNoticeText = nil
+    npcData.protectNoticeSentiment = "warning"
+    npcData.protectNoticeDialogueStatus = "Default"
+    npcData.protectNoticeDialogueState = "Looking"
+
+    if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
+        local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
+        if ownedZombie == zombie then
+            DTNPCServerCore.SyncToAllClients(zombie, npcData)
+            if DTNPCServerCore.BroadcastPosition then
+                DTNPCServerCore.BroadcastPosition(zombie, npcData, true)
+            end
+        end
+    end
+end
+
+local function clearHostileSightMemory(npcData)
+    if not npcData then
+        return
+    end
+
+    npcData.hostileLostSightAt = nil
+    npcData.hostileLostSightTimeoutMs = nil
+    npcData.combatSearchAmbientAt = nil
+end
+
+local function disengageHostile(zombie, npcData, reason)
+    npcData.isHostile = false
+    npcData.state = "Idle"
+    npcData.master = nil
+    npcData.masterID = nil
+    npcData.tasks = {}
+    npcData.combatTargetID = nil
+    npcData.combatTargetType = nil
+    npcData.hostileTargetType = nil
+    clearHostileSightMemory(npcData)
+    if DTNPCProtect and DTNPCProtect.ResetMeleeCombat then
+        DTNPCProtect.ResetMeleeCombat(npcData)
+    end
+    if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
+        DTNPCProtect.ResetCombatRhythm(npcData)
+    end
+    if DTNPCProtect and DTNPCProtect.StopCombatActions then
+        DTNPCProtect.StopCombatActions(zombie, npcData, reason or "lost_sight")
+    else
+        DTNPCMobility.Stop(zombie)
+        zombie:setTarget(nil)
+    end
+end
+
+local function despawnLostHostile(zombie, npcData)
+    if isClient() and not isServer() then
+        return false
+    end
+    if not npcData or not npcData.uuid or not DTNPCManager or not DTNPCManager.SetNPCStatus then
+        return false
+    end
+
+    local currentHours = getGameTime() and getGameTime():getWorldAgeHours() or 0
+    local awayHours = ZombRandFloat and ZombRandFloat(2.0, 4.0) or (2 + (ZombRand(120) / 60))
+    npcData.requestedReturnStatus = "Resting"
+    DTNPCManager.SetNPCStatus(npcData.uuid, "Away", currentHours + awayHours, "Resting")
+    return true
+end
+
+function DTNPCLogic.HandleHostileLostSight(zombie, npcData, target, dist, options)
+    options = type(options) == "table" and options or {}
+    if not zombie or not npcData or not isPlayerTarget(target) then
+        return false
+    end
+
+    local canSee = DTNPCProtect and DTNPCProtect.HasLineOfSight and DTNPCProtect.HasLineOfSight(zombie, target) or true
+    local nowMs = getTimeMs()
+    if DTNPCProtect and DTNPCProtect.IsCombatCapable then
+        local capable, reason = DTNPCProtect.IsCombatCapable(zombie, npcData)
+        if not capable then
+            if DTNPCProtect.StopCombatActions then
+                DTNPCProtect.StopCombatActions(zombie, npcData, reason)
+            end
+            return true
+        end
+    end
+    if canSee then
+        npcData.hostileTargetType = "player"
+        npcData.hostileLastSeenTargetAt = nowMs
+        npcData.hostileLastSeenX = target:getX()
+        npcData.hostileLastSeenY = target:getY()
+        npcData.hostileLastSeenZ = target:getZ()
+        clearHostileSightMemory(npcData)
+        return false
+    end
+
+    npcData.hostileTargetType = "player"
+    npcData.hostileLostSightAt = npcData.hostileLostSightAt or nowMs
+    npcData.hostileLastSeenX = npcData.hostileLastSeenX or target:getX()
+    npcData.hostileLastSeenY = npcData.hostileLastSeenY or target:getY()
+    npcData.hostileLastSeenZ = npcData.hostileLastSeenZ or target:getZ()
+    pushSearchAmbient(zombie, npcData, nowMs)
+
+    if DTNPCProtect and DTNPCProtect.StopCombatActions then
+        DTNPCProtect.StopCombatActions(zombie, npcData, "lost_sight")
+    else
+        zombie:setTarget(nil)
+    end
+
+    local elapsed = nowMs - (tonumber(npcData.hostileLostSightAt) or nowMs)
+    local timeoutMs = randomLostSightTimeoutMs(npcData)
+    if elapsed >= timeoutMs then
+        if isOffscreenFromActivePlayers(zombie) and despawnLostHostile(zombie, npcData) then
+            return true
+        end
+
+        disengageHostile(zombie, npcData, "lost_sight_timeout")
+        return true
+    end
+
+    local chaseMs = tonumber(DTNPCProtect and DTNPCProtect.CONFIG and DTNPCProtect.CONFIG.HostileLastSeenChaseMs) or 4500
+    local lastSeenTarget = createPointTarget(npcData.hostileLastSeenX, npcData.hostileLastSeenY, npcData.hostileLastSeenZ)
+    if lastSeenTarget and elapsed <= chaseMs then
+        local speed = tonumber(options.speed) or 0.045
+        DTNPCMobility.MoveTowardTarget(zombie, npcData, {
+            target = lastSeenTarget,
+            speed = speed,
+            stopDistance = 0.7,
+            blockCounterKey = "hostileSearchBlockedTicks",
+            stuckTicks = 10,
+            allowObstacleInteract = true,
+            allowDamageRetreat = false,
+            anim = {
+                animSpeed = 1.0,
+                isRunning = false,
+                walkType = "1",
+            },
+        })
+    end
+
+    return true
+end
+
 local function runLegacyWakeup(zombie, target, dist)
     if isPlayerTarget(target) then
         zombie:setTarget(nil)
@@ -253,6 +468,11 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
         end
         stopMoveAnim(zombie, npcData)
         zombie:setTarget(nil)
+        return
+    end
+
+    if DTNPCLogic.HandleHostileLostSight
+        and DTNPCLogic.HandleHostileLostSight(zombie, npcData, target, dist, { speed = MELEE_DEFAULT_SPEED }) then
         return
     end
 

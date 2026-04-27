@@ -28,6 +28,8 @@ local PROTECT_NOTICE_FALLBACKS = {
     ["Companion:AttackRange"] = "Covering you.",
     ["Companion:NoAmmo"] = "I'm out of ammo.",
     ["Companion:Return"] = "Back with you.",
+    ["Default:Looking"] = "Checking the last spot.",
+    ["Default:Searching"] = "Still looking.",
 }
 
 local function buildSpeechDataFromText(text, sentiment, zombie, currentTime)

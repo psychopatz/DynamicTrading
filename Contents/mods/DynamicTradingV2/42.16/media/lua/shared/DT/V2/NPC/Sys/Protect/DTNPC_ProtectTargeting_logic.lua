@@ -11,6 +11,61 @@ local getZombieRuntimeID = Internal.getZombieRuntimeID
 local getPlayerRuntimeID = Internal.getPlayerRuntimeID
 local isFriendlyAuthorityPlayer = Internal.isFriendlyAuthorityPlayer
 
+local HOSTILE_NPC_ENGAGE_LINES = {
+    "Hostile survivor. Engaging.",
+    "Eyes on an armed hostile.",
+    "That one is after us. Moving in.",
+}
+
+local THREAT_LOST_LINES = {
+    "Threat lost. Coming back.",
+    "No clear target. Returning.",
+    "Area looks clear. Back to you.",
+}
+
+local function nowMillisSafe()
+    if Internal.nowMillis then
+        return Internal.nowMillis()
+    end
+    if getTimeInMillis then
+        return getTimeInMillis()
+    end
+    return math.floor((getGameTime():getWorldAgeHours() or 0) * 3600000)
+end
+
+local function chooseLine(lines)
+    if not lines or #lines == 0 then
+        return nil
+    end
+    return lines[1 + ZombRand(#lines)]
+end
+
+local function pushThrottledCompanionNotice(zombie, npcData, key, lines, sentiment, cooldownMs, targetID)
+    if not zombie or not npcData or not DTNPCProtect.PushCompanionNotice then
+        return false
+    end
+
+    local nowMs = nowMillisSafe()
+    local timeKey = key .. "At"
+    local targetKey = key .. "TargetID"
+    local lastAt = tonumber(npcData[timeKey]) or 0
+    if targetID ~= nil and npcData[targetKey] == targetID and lastAt > 0 and (nowMs - lastAt) < cooldownMs then
+        return false
+    end
+    if targetID == nil and lastAt > 0 and (nowMs - lastAt) < cooldownMs then
+        return false
+    end
+
+    local line = chooseLine(lines)
+    if not line then
+        return false
+    end
+
+    npcData[timeKey] = nowMs
+    npcData[targetKey] = targetID
+    return DTNPCProtect.PushCompanionNotice(zombie, npcData, line, sentiment or "warning")
+end
+
 local function upsertZombieCandidate(candidates, candidateMap, entry)
     local key = entry and entry.id
     if not key then
@@ -183,9 +238,120 @@ local function isHostilePlayerForNPC(npcData, player)
     return getFactionReputationForPlayer(npcData, player) <= threshold
 end
 
+local function getDTNPCDataFromZombie(zombie)
+    local modData = zombie and zombie.getModData and zombie:getModData() or nil
+    if not (modData and modData.IsDTNPC == true) then
+        return nil, nil
+    end
+
+    local targetData = modData.DTNPC_Data or modData.DTNPCBrain
+    local uuid = modData.DTNPC_UUID or (targetData and targetData.uuid)
+    if (not targetData) and uuid and DTNPCManager and DTNPCManager.Data then
+        targetData = DTNPCManager.Data[uuid]
+    end
+    return targetData, uuid
+end
+
+local function isCompanionLike(npcData)
+    if not npcData then
+        return false
+    end
+    return tostring(npcData.dcCompanionJob or "") == "TravelCompanion"
+        or npcData.linkedWorkerID ~= nil
+        or npcData.masterID ~= nil
+        or (npcData.master and tostring(npcData.master) ~= "")
+end
+
+local function isBanditLike(npcData)
+    return npcData
+        and (npcData.isBandit == true
+            or npcData.banditGroupID ~= nil
+            or npcData.raidHostileFaction == true
+            or tostring(npcData.factionID or "") == "Bandits")
+end
+
+local function shareOwnerOrMaster(left, right)
+    if not left or not right then
+        return false
+    end
+
+    local leftID = left.masterID or left.ownerOnlineID
+    local rightID = right.masterID or right.ownerOnlineID
+    if leftID ~= nil and rightID ~= nil and tonumber(leftID) == tonumber(rightID) then
+        return true
+    end
+
+    local leftName = left.master or left.ownerUsername or left.dcCompanionOwner
+    local rightName = right.master or right.ownerUsername or right.dcCompanionOwner
+    return leftName ~= nil
+        and rightName ~= nil
+        and tostring(leftName) ~= ""
+        and tostring(leftName) == tostring(rightName)
+end
+
+local function targetIsHostileToOwner(npcData, targetData)
+    if not npcData or not targetData then
+        return false
+    end
+
+    local ownerID = npcData.masterID or npcData.ownerOnlineID
+    if ownerID ~= nil and targetData.lastPlayerAttackerOnlineID ~= nil
+        and tonumber(ownerID) == tonumber(targetData.lastPlayerAttackerOnlineID) then
+        return true
+    end
+
+    local ownerName = npcData.master or npcData.ownerUsername or npcData.dcCompanionOwner
+    if ownerName ~= nil and tostring(ownerName) ~= ""
+        and targetData.lastPlayerAttackerUsername ~= nil
+        and tostring(ownerName) == tostring(targetData.lastPlayerAttackerUsername) then
+        return true
+    end
+
+    return false
+end
+
+local function isDTNPCHostileToNPC(npcData, targetData)
+    if not npcData or not targetData then
+        return false
+    end
+    if targetData.incapState == "Active" or targetData.state == "Incapacitated" then
+        return false
+    end
+    if shareOwnerOrMaster(npcData, targetData) then
+        return false
+    end
+
+    if isCompanionLike(npcData) and targetData.isHostile == true then
+        return true
+    end
+    if isCompanionLike(npcData) and targetIsHostileToOwner(npcData, targetData) then
+        return true
+    end
+    if isBanditLike(targetData) and not isBanditLike(npcData) then
+        return true
+    end
+    if isBanditLike(npcData) and isCompanionLike(targetData) then
+        return true
+    end
+    if targetData.isHostile == true and targetData.combatTargetID then
+        return true
+    end
+
+    local leftFaction = tostring(npcData.factionID or "")
+    local rightFaction = tostring(targetData.factionID or "")
+    if leftFaction ~= "" and rightFaction ~= "" and leftFaction ~= rightFaction then
+        if targetData.raidHostileFaction == true or npcData.raidHostileFaction == true then
+            return true
+        end
+    end
+
+    return false
+end
+
 Internal.getThreatPlayers = getThreatPlayers
 Internal.getFactionReputationForPlayer = getFactionReputationForPlayer
 Internal.isHostilePlayerForNPC = isHostilePlayerForNPC
+Internal.isDTNPCHostileToNPC = isDTNPCHostileToNPC
 
 local function getObjectSquare(object)
     return object and object.getSquare and object:getSquare() or nil
@@ -315,6 +481,8 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
     local nearestTarget = nil
     local nearestDistance = 9999
     local nearestType = nil
+    local hostileNPCTarget = nil
+    local hostileNPCDistance = 9999
     local zombieCandidates = {}
     local zombieCandidateMap = {}
 
@@ -352,6 +520,14 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
             nearestDistance = dist
             nearestType = threatType
         end
+
+        if threatType == "dtnpc"
+            and withinAnchorAcquire
+            and dist <= searchRadius
+            and dist < hostileNPCDistance then
+            hostileNPCTarget = candidate
+            hostileNPCDistance = dist
+        end
     end
 
     local players = getThreatPlayers()
@@ -379,7 +555,26 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
             local candidate = zombieList:get(i)
             if candidate and candidate ~= zombie and not candidate:isDead() then
                 local modData = candidate:getModData()
-                if not (modData and modData.IsDTNPC) and hasLineOfSight(zombie, candidate) then
+                if modData and modData.IsDTNPC == true then
+                    local targetNPCData, targetUUID = getDTNPCDataFromZombie(candidate)
+                    if targetNPCData
+                        and targetUUID
+                        and targetUUID ~= npcData.uuid
+                        and isDTNPCHostileToNPC(npcData, targetNPCData)
+                        and hasLineOfSight(zombie, candidate) then
+                        local candidateZ = candidate:getZ() or 0
+                        if math.abs(candidateZ - zz) <= DTNPCProtect.CONFIG.FloorTolerance then
+                            evaluateCandidate(
+                                candidate,
+                                "dtnpc:" .. tostring(targetUUID),
+                                "dtnpc",
+                                candidate:getX(),
+                                candidate:getY(),
+                                candidateZ
+                            )
+                        end
+                    end
+                elseif not (modData and modData.IsDTNPC) and hasLineOfSight(zombie, candidate) then
                     local candidateZ = candidate:getZ() or 0
                     if math.abs(candidateZ - zz) <= DTNPCProtect.CONFIG.FloorTolerance then
                         local candidateX = candidate:getX()
@@ -435,19 +630,55 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
         nearestType = "zombie"
     end
 
-    local chosen = currentTarget or nearestTarget
-    local distance = currentTarget and currentDistance or nearestDistance
-    local threatType = currentTarget and currentType or nearestType
+    local chosen = currentTarget or hostileNPCTarget or nearestTarget
+    local distance = currentTarget and currentDistance
+        or (hostileNPCTarget and hostileNPCDistance or nearestDistance)
+    local threatType = currentTarget and currentType
+        or (hostileNPCTarget and "dtnpc" or nearestType)
 
     if chosen then
-        npcData.combatTargetID = threatType == "player" and getPlayerRuntimeID(chosen) or getZombieRuntimeID(chosen)
+        local chosenDTNPCData, chosenDTNPCUUID = nil, nil
+        if threatType == "dtnpc" then
+            chosenDTNPCData, chosenDTNPCUUID = getDTNPCDataFromZombie(chosen)
+        end
+        local previousTargetID = npcData.combatTargetID
+        local chosenTargetID = threatType == "player" and getPlayerRuntimeID(chosen)
+            or threatType == "dtnpc" and ("dtnpc:" .. tostring(chosenDTNPCUUID or (chosenDTNPCData and chosenDTNPCData.uuid) or getZombieRuntimeID(chosen)))
+            or getZombieRuntimeID(chosen)
+        npcData.combatTargetID = chosenTargetID
         npcData.combatTargetType = threatType
+        if threatType == "dtnpc" and chosenTargetID ~= previousTargetID then
+            pushThrottledCompanionNotice(
+                zombie,
+                npcData,
+                "combatHostileNPCNotice",
+                HOSTILE_NPC_ENGAGE_LINES,
+                "warning",
+                8000,
+                chosenTargetID
+            )
+        end
         return chosen, distance
+    end
+
+    if npcData.combatTargetID ~= nil then
+        pushThrottledCompanionNotice(
+            zombie,
+            npcData,
+            "combatThreatLostNotice",
+            THREAT_LOST_LINES,
+            "neutral",
+            9000,
+            nil
+        )
     end
 
     DTNPCProtect.ClearCombatTarget(npcData)
     return nil, 9999
 end
+
+DTNPCProtect.HasLineOfSight = hasLineOfSight
+DTNPCProtect.IsDTNPCHostileToNPC = isDTNPCHostileToNPC
 
 function DTNPCProtect.SelectNearestZombie(zombie, npcData, radius, anchorTarget, anchorRadius)
     if not zombie then

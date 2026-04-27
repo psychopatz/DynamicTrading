@@ -194,6 +194,7 @@ function DTNPCProtect.ResetCombatRhythm(npcData)
 
     local rhythm = getCombatRhythmBucket(npcData)
     resetCombatRhythmBucket(rhythm)
+    npcData.combatRecoveryUntil = nil
     return true
 end
 
@@ -210,10 +211,10 @@ function DTNPCProtect.GetCombatRhythmProfile(npcData, attackType)
             attackType = attackType,
             skill = skill,
             normalized = normalized,
-            burstMin = 2 + math.floor(normalized * 2),
-            burstMax = 4 + math.floor(normalized * 3),
-            recoveryMinMs = math.floor(1200 - (normalized * 450)),
-            recoveryMaxMs = math.floor(2200 - (normalized * 700)),
+            burstMin = 1 + math.floor(normalized * 2),
+            burstMax = 3 + math.floor(normalized * 2),
+            recoveryMinMs = math.floor(1500 - (normalized * 450)),
+            recoveryMaxMs = math.floor(2800 - (normalized * 700)),
             recoveryDistance = 6.25 + ((1 - normalized) * 1.5),
             flavorChance = math.floor(42 + (normalized * 18)),
             flavorKey = "rangedRecovery",
@@ -225,10 +226,10 @@ function DTNPCProtect.GetCombatRhythmProfile(npcData, attackType)
         attackType = attackType,
         skill = skill,
         normalized = normalized,
-        burstMin = 2 + math.floor(normalized * 2),
-        burstMax = 4 + math.floor(normalized * 3),
-        recoveryMinMs = math.floor(350 + ((1 - normalized) * 450)),
-        recoveryMaxMs = math.floor(700 + ((1 - normalized) * 650)),
+        burstMin = 1 + math.floor(normalized * 2),
+        burstMax = 2 + math.floor(normalized * 3),
+        recoveryMinMs = math.floor(850 + ((1 - normalized) * 550)),
+        recoveryMaxMs = math.floor(1450 + ((1 - normalized) * 800)),
         recoveryDistance = 1.35 + ((1 - normalized) * 0.45),
         flavorChance = math.floor(48 + (normalized * 14)),
         flavorKey = "meleeRecovery",
@@ -275,6 +276,7 @@ function DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
     if recoveryUntil > 0 and currentTime > 0 and currentTime >= recoveryUntil then
         rhythm.recoveryUntil = 0
         rhythm.recoveryDistance = nil
+        npcData.combatRecoveryUntil = nil
     end
 
     return false, {
@@ -325,6 +327,7 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
     rhythm.burstLimit = rollInt(profile.burstMin, profile.burstMax)
     rhythm.recoveryDistance = profile.recoveryDistance
     rhythm.recoveryUntil = currentTime + rollInt(profile.recoveryMinMs, profile.recoveryMaxMs)
+    npcData.combatRecoveryUntil = rhythm.recoveryUntil
 
     if ZombRand(100) < (profile.flavorChance or 0) then
         pushCombatFlavor(zombie, npcData, profile.flavorKey, profile.flavorSentiment, 3000)
@@ -449,9 +452,9 @@ function DTNPCProtect.GetMeleeCombatStats(npcData)
 
     return {
         hitChance = math.floor(55 + (normalized * 40)),
-        attackRate = math.max(16, math.floor(34 - (normalized * 18))),
+        attackRate = math.max(24, math.floor(42 - (normalized * 16))),
         damage = math.max(0.45, scaledDamage),
-        chaseSpeed = 0.05 + (normalized * 0.025),
+        chaseSpeed = 0.045 + (normalized * 0.02),
         reach = clamp(weaponRange + 0.15, 1.15, 1.9),
     }
 end
@@ -564,6 +567,15 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     if not zombie or not target or target:isDead() then
         return false, false
     end
+    if DTNPCProtect.IsCombatCapable then
+        local capable = DTNPCProtect.IsCombatCapable(zombie, npcData)
+        if not capable then
+            if DTNPCProtect.StopCombatActions then
+                DTNPCProtect.StopCombatActions(zombie, npcData, "not_capable")
+            end
+            return false, false
+        end
+    end
 
     options = type(options) == "table" and options or {}
     local attackType = options.attackType or "generic"
@@ -616,7 +628,7 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
             if target.setAttackedBy then
                 target:setAttackedBy(zombie)
             end
-            if target.setHitReaction then
+            if target.setHitReaction and DTNPCProtect.CanApplyPlayerHitReaction(npcData, target) then
                 target:setHitReaction("HitReaction")
             end
             playSuccessfulHitSound(zombie, target, weaponItem, attackType)
@@ -702,7 +714,8 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
         if not target:isDead() then
             target:Kill(zombie)
         end
-    elseif target.setHitReaction then
+    elseif target.setHitReaction
+        and (not isPlayerTarget or DTNPCProtect.CanApplyPlayerHitReaction(npcData, target)) then
         target:setHitReaction(attackType == "ranged" and "ShotBelly" or "HitReaction")
     end
 

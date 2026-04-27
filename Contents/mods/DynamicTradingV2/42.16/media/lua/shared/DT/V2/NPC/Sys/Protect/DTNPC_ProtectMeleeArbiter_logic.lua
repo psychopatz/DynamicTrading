@@ -219,6 +219,23 @@ local function primeContactSwing(npcData, targetKey, stats)
 end
 
 local function commitAttack(zombie, npcData, target, targetKey, stats, currentDist, options)
+    local capable, reason = true, nil
+    if DTNPCProtect.IsCombatCapable then
+        capable, reason = DTNPCProtect.IsCombatCapable(zombie, npcData)
+    end
+    if not capable then
+        if DTNPCProtect.StopCombatActions then
+            DTNPCProtect.StopCombatActions(zombie, npcData, reason)
+        end
+        return {
+            status = "not_capable",
+            moved = false,
+            attacked = false,
+            distance = currentDist,
+            reason = reason,
+        }
+    end
+
     setPhase(npcData, "commit", 0)
     stopMoveAnim(zombie, npcData)
     zombie:faceLocation(target:getX(), target:getY())
@@ -226,7 +243,9 @@ local function commitAttack(zombie, npcData, target, targetKey, stats, currentDi
         DTNPC.SetMeleeCombatIdleState(zombie, npcData)
     end
 
-    primeContactSwing(npcData, targetKey, stats)
+    if not (options.mode == "hostile" and isPlayerTarget(target)) then
+        primeContactSwing(npcData, targetKey, stats)
+    end
     npcData.attackTimer = (tonumber(npcData.attackTimer) or 0) + 1
     if npcData.attackTimer < stats.attackRate then
         return {
@@ -281,6 +300,24 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
         }
     end
 
+    local capable, blockReason = true, nil
+    if DTNPCProtect.IsCombatCapable then
+        capable, blockReason = DTNPCProtect.IsCombatCapable(zombie, npcData)
+    end
+    if not capable then
+        if DTNPCProtect.StopCombatActions then
+            DTNPCProtect.StopCombatActions(zombie, npcData, blockReason)
+        end
+        DTNPCProtect.ResetMeleeCombat(npcData)
+        return {
+            status = "not_capable",
+            moved = false,
+            attacked = false,
+            distance = getTargetDistance(zombie, target),
+            reason = blockReason,
+        }
+    end
+
     local targetKey = getTargetKey(target)
     resetForTarget(npcData, targetKey)
     ensureManualControl(zombie, target, options)
@@ -291,6 +328,11 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
     stats.hitChance = tonumber(stats.hitChance) or 65
     stats.damage = tonumber(stats.damage) or 0.45
     stats.chaseSpeed = tonumber(stats.chaseSpeed) or tonumber(options.defaultSpeed) or DEFAULT_SPEED
+    if options.mode == "hostile" and isPlayerTarget(target) then
+        stats.attackRate = math.max(stats.attackRate, 42)
+        stats.hitChance = math.min(stats.hitChance, 72)
+        stats.chaseSpeed = math.min(stats.chaseSpeed, 0.058)
+    end
     local engageReach = math.max(
         tonumber(stats.reach) or tonumber(options.fallbackReach) or 1.25,
         tonumber(options.minimumReach) or 1.45
@@ -313,7 +355,7 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
         recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "melee", target)
     end
 
-    if currentDist <= holdRange then
+    if currentDist <= holdRange and not (options.mode == "hostile" and isPlayerTarget(target)) then
         recovering = false
     end
 

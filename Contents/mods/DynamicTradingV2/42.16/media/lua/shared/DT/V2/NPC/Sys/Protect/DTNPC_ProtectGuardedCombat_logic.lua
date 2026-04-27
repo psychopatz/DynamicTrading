@@ -159,6 +159,21 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
     options = type(options) == "table" and options or {}
     local issuePrefix = tostring(options.issuePrefix or "GuardRanged")
 
+    if DTNPCProtect.IsCombatCapable then
+        local capable, reason = DTNPCProtect.IsCombatCapable(zombie, npcData)
+        if not capable then
+            if DTNPCProtect.StopCombatActions then
+                DTNPCProtect.StopCombatActions(zombie, npcData, reason)
+            end
+            return {
+                status = "not_capable",
+                moved = false,
+                attacked = false,
+                reason = reason,
+            }
+        end
+    end
+
     if DTNPCProtect and not DTNPCProtect.HasUsableRangedLoadout(npcData) then
         local issue = DTNPCProtect.GetRangedLoadoutIssue and DTNPCProtect.GetRangedLoadoutIssue(npcData) or "unavailable"
         local ammoIssue = issue == "no_ammo"

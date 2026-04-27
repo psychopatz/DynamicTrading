@@ -89,10 +89,6 @@ local function clearPlayerTargetAggro(zombie)
     end
 
     if hadPlayerAggro then
-        zombie:setVariable("bAttack", false)
-        zombie:setVariable("bAttacking", false)
-        zombie:setVariable("Attack", false)
-        zombie:setVariable("Lunge", false)
         clearZombieEngineAggro(zombie)
         stopZombieVocals(zombie)
     end

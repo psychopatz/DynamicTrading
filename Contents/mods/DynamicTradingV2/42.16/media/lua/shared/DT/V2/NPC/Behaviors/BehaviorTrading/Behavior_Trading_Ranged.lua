@@ -20,6 +20,17 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
         return
     end
 
+    if DTNPCProtect and DTNPCProtect.IsCombatCapable then
+        local capable, reason = DTNPCProtect.IsCombatCapable(zombie, npcData)
+        if not capable then
+            if DTNPCProtect.StopCombatActions then
+                DTNPCProtect.StopCombatActions(zombie, npcData, reason)
+            end
+            Trading.ReturnToPostOrResume(zombie, npcData)
+            return
+        end
+    end
+
     Trading.EnsureManualControl(zombie)
 
     local anchorTarget = Trading.GetCombatAnchorTarget(zombie, npcData)

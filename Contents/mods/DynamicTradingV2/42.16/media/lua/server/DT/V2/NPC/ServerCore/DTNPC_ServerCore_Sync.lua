@@ -224,6 +224,17 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         animSpeed = animSpeed,
         walkType = walkType,
         dtWalkType = dtWalkType,
+        motionHint = motionHint and {
+            fromX = motionHint.fromX,
+            fromY = motionHint.fromY,
+            toX = motionHint.toX,
+            toY = motionHint.toY,
+            dirX = motionHint.dirX,
+            dirY = motionHint.dirY,
+            durationMs = motionHint.durationMs,
+            crawl = motionHint.crawl == true,
+            running = motionHint.running == true,
+        } or nil,
         tier = tier
     }
     

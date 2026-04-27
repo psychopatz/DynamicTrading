@@ -17,6 +17,15 @@ DynamicTrading.RegisterDialogue("General", "Ambient", {
                 { dialogue = "Keep your head down.", sentiment = "warning" },
                 { dialogue = "Too exposed. Back up a little.", sentiment = "warning" },
             },
+            Looking = {
+                { dialogue = "I saw you. Come on out.", sentiment = "warning" },
+                { dialogue = "Lost sight. Checking the last spot.", sentiment = "warning" },
+                { dialogue = "You can hide, but not for long.", sentiment = "angry" },
+            },
+            Searching = {
+                { dialogue = "Quiet now. I'm listening.", sentiment = "warning" },
+                { dialogue = "Tracks don't vanish that fast.", sentiment = "warning" },
+            },
             Flee = {
                 { dialogue = "Move now, talk later.", sentiment = "warning" },
             },

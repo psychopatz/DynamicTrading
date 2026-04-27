@@ -108,6 +108,21 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         return
     end
 
+    if DTNPCLogic.HandleHostileLostSight
+        and DTNPCLogic.HandleHostileLostSight(zombie, npcData, target, dist, { speed = SPEED_FWD }) then
+        return
+    end
+
+    if DTNPCProtect and DTNPCProtect.IsCombatCapable then
+        local capable, reason = DTNPCProtect.IsCombatCapable(zombie, npcData)
+        if not capable then
+            if DTNPCProtect.StopCombatActions then
+                DTNPCProtect.StopCombatActions(zombie, npcData, reason)
+            end
+            return
+        end
+    end
+
     local resolvedState = DTNPCProtect and DTNPCProtect.ResolveHostileCombatState
         and DTNPCProtect.ResolveHostileCombatState(npcData, "AttackRange", dist)
         or "Attack"
@@ -238,6 +253,11 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     end
 
     local stats = DTNPCProtect.GetRangedCombatStats(npcData)
+    if isPlayerTarget(target) then
+        stats.fireRate = math.max(72, tonumber(stats.fireRate) or 72)
+        stats.hitStill = math.min(tonumber(stats.hitStill) or 0, 58)
+        stats.hitMove = math.min(tonumber(stats.hitMove) or 0, 28)
+    end
     if recovering then
         npcData.attackTimer = 0
         return

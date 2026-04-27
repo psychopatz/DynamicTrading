@@ -12,6 +12,36 @@ local function isPlayerTarget(target)
     return target and instanceof and instanceof(target, "IsoPlayer")
 end
 
+local function findDTNPCTargetByCombatID(combatTargetID)
+    local text = tostring(combatTargetID or "")
+    local uuid = string.match(text, "^dtnpc:(.+)$")
+    if not uuid or uuid == "" then
+        return nil
+    end
+
+    if DTNPCServerCore and DTNPCServerCore.FindZombieByUUID then
+        local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
+        if zombie and not zombie:isDead() then
+            return zombie
+        end
+    end
+
+    local zombieList = getCell() and getCell():getZombieList() or nil
+    if not zombieList then
+        return nil
+    end
+
+    for i = 0, zombieList:size() - 1 do
+        local candidate = zombieList:get(i)
+        local modData = candidate and candidate.getModData and candidate:getModData() or nil
+        if candidate and not candidate:isDead() and modData and modData.DTNPC_UUID == uuid then
+            return candidate
+        end
+    end
+
+    return nil
+end
+
 function DTNPCLogic.GetClosestTarget(zombie)
     local npcData = DTNPC.GetData(zombie)
     if not npcData then
@@ -23,6 +53,13 @@ function DTNPCLogic.GetClosestTarget(zombie)
     end
 
     if npcData.isHostile then
+        if npcData.combatTargetType == "dtnpc" and npcData.combatTargetID then
+            local npcTarget = findDTNPCTargetByCombatID(npcData.combatTargetID)
+            if npcTarget then
+                return npcTarget, Internal.CalculateDistance(zombie, npcTarget)
+            end
+        end
+
         local player = zombie:getTarget()
 
         if isPlayerTarget(player) then

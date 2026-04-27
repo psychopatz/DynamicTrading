@@ -23,34 +23,49 @@ modules.Interpolation = true
 -- Format: [uuid] = { lastX, lastY, lastZ, targetX, targetY, targetZ, lastUpdateTime, updateFreq }
 DTNPC_ClientInterpolation.NPCState = DTNPC_ClientInterpolation.NPCState or {}
 
--- Configuration (in game hours)
+-- Configuration (milliseconds)
 DTNPC_ClientInterpolation.CONFIG = {
-    BASE_UPDATE_FREQ = 0.5,       -- Base update frequency in hours (~1 second)
+    BASE_UPDATE_FREQ = 350,       -- Base visual blend duration in milliseconds.
     INTERPOLATION_FACTOR = 1.0,   -- How much to interpolate (1.0 = full, 0.5 = half)
-    DISTANCE_THRESHOLD = 50,      -- Only interpolate if distance < 50 tiles
-    MAX_UPDATE_TIME = 2.0,        -- Max time between updates before resetting (in hours)
+    DISTANCE_THRESHOLD = 18,      -- Snap instead of smoothing large teleports
+    MAX_UPDATE_TIME = 2200,       -- Drop stale interpolation state after this many ms
+    MAX_EXTRAPOLATE_MS = 180,
 }
 
 -- ==============================================================================
 -- 1. UPDATE TRACKING
 -- ==============================================================================
 
-function DTNPC_ClientInterpolation.RecordUpdate(uuid, x, y, z, updateFreq)
+local function getNowMs()
+    if getTimeInMillis then
+        return getTimeInMillis()
+    end
+    return os.time() * 1000
+end
+
+function DTNPC_ClientInterpolation.RecordUpdate(uuid, x, y, z, updateFreq, motionHint)
     if not uuid or not x then return end
     
     local state = DTNPC_ClientInterpolation.NPCState[uuid] or {}
+    local nowMs = getNowMs()
+    local hint = type(motionHint) == "table" and motionHint or nil
+    local durationMs = tonumber(updateFreq) or (hint and tonumber(hint.durationMs)) or DTNPC_ClientInterpolation.CONFIG.BASE_UPDATE_FREQ
+    durationMs = math.max(50, math.min(1200, durationMs))
     
-    -- Store previous position
-    state.lastX = state.targetX or x
-    state.lastY = state.targetY or y
+    state.lastX = hint and tonumber(hint.fromX) or state.targetX or state.lastX or x
+    state.lastY = hint and tonumber(hint.fromY) or state.targetY or state.lastY or y
     state.lastZ = state.targetZ or z
     
     -- Store new target and timing
-    state.targetX = x
-    state.targetY = y
+    state.targetX = hint and tonumber(hint.toX) or x
+    state.targetY = hint and tonumber(hint.toY) or y
     state.targetZ = z
-    state.lastUpdateTime = getGameTime():getWorldAgeHours()
-    state.updateFreq = updateFreq or DTNPC_ClientInterpolation.CONFIG.BASE_UPDATE_FREQ
+    state.lastUpdateTime = nowMs
+    state.updateFreq = durationMs
+    state.dirX = hint and tonumber(hint.dirX) or nil
+    state.dirY = hint and tonumber(hint.dirY) or nil
+    state.crawl = hint and hint.crawl == true or false
+    state.running = hint and hint.running == true or false
     
     DTNPC_ClientInterpolation.NPCState[uuid] = state
 end
@@ -69,7 +84,7 @@ function DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
         return nil
     end
     
-    local currentTime = getGameTime():getWorldAgeHours()
+    local currentTime = getNowMs()
     local timeSinceUpdate = currentTime - (state.lastUpdateTime or currentTime)
     
     -- Reset if update is stale (NPC likely disconnected or despawned)
@@ -82,7 +97,9 @@ function DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
     end
     
     -- Calculate progress (0 to 1) within update interval
-    local progress = math.min(timeSinceUpdate / state.updateFreq, 1.0)
+    local maxTime = (tonumber(state.updateFreq) or DTNPC_ClientInterpolation.CONFIG.BASE_UPDATE_FREQ)
+        + DTNPC_ClientInterpolation.CONFIG.MAX_EXTRAPOLATE_MS
+    local progress = math.min(timeSinceUpdate / math.max(1, tonumber(state.updateFreq) or 1), maxTime / math.max(1, tonumber(state.updateFreq) or 1))
     progress = progress * DTNPC_ClientInterpolation.CONFIG.INTERPOLATION_FACTOR
     
     -- Verify distance is reasonable (sanity check)
@@ -91,12 +108,11 @@ function DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
     local dist = math.sqrt(dx * dx + dy * dy)
     
     if dist > DTNPC_ClientInterpolation.CONFIG.DISTANCE_THRESHOLD then
-        -- Distance too large - likely a teleport or synchronization issue
-        -- Return actual position without interpolation
+        DTNPC_ClientInterpolation.NPCState[uuid] = nil
         if zombie then
-            return zombie:getX(), zombie:getY(), zombie:getZ()
+            return state.targetX, state.targetY, state.targetZ, true
         end
-        return state.targetX, state.targetY, state.targetZ
+        return state.targetX, state.targetY, state.targetZ, true
     end
     
     -- Linear interpolation
@@ -104,7 +120,7 @@ function DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
     local interpY = state.lastY + (state.targetY - state.lastY) * progress
     local interpZ = state.lastZ + (state.targetZ - state.lastZ) * progress
     
-    return interpX, interpY, interpZ
+    return interpX, interpY, interpZ, false
 end
 
 function DTNPC_ClientInterpolation.ApplyToZombie(uuid, zombie)
@@ -112,7 +128,7 @@ function DTNPC_ClientInterpolation.ApplyToZombie(uuid, zombie)
         return false
     end
 
-    local interpX, interpY, interpZ = DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
+    local interpX, interpY, interpZ, shouldSnap = DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
     if not interpX or not interpY then
         return false
     end
@@ -135,6 +151,14 @@ function DTNPC_ClientInterpolation.ApplyToZombie(uuid, zombie)
     end
 
     return true
+end
+
+function DTNPC_ClientInterpolation.HasFreshState(uuid)
+    local state = uuid and DTNPC_ClientInterpolation.NPCState[uuid] or nil
+    if not state or not state.targetX then
+        return false
+    end
+    return (getNowMs() - (tonumber(state.lastUpdateTime) or 0)) <= DTNPC_ClientInterpolation.CONFIG.MAX_UPDATE_TIME
 end
 
 function DTNPC_ClientInterpolation.ApplyToTrackedNPCs()

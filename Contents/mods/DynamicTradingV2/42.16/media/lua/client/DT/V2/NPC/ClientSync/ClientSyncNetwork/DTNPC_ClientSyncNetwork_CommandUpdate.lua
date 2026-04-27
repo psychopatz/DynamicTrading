@@ -70,7 +70,7 @@ function Handlers.HandleUpdatePosition(args)
     local cached = DTNPCClient.NPCCache[uuid]
     local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
 
-    Helpers.RecordInterpolation(uuid, args.x, args.y, args.z)
+    Helpers.RecordInterpolation(uuid, args.x, args.y, args.z, nil, args.motionHint)
 
     if cached and cached.npcData then
         cached.npcData.lastX = math.floor(args.x)
@@ -199,7 +199,6 @@ function Handlers.HandleUpdatePosition(args)
             end
 
             if not DTNPCClient.LocalControlled[uuid] then
-                DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
                 applyRemoteLocomotion(zombie, args)
             end
         end

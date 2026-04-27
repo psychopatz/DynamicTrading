@@ -48,7 +48,7 @@ function Handlers.HandleSyncNPC(args)
         DTNPCClient.RemoveDuplicateLocalZombies(uuid, bodyInstanceID)
     end
     Helpers.TrackNPCSystems(nil, args.npcData, uuid, bodyInstanceID)
-    Helpers.RecordInterpolation(uuid, args.x, args.y, args.z)
+    Helpers.RecordInterpolation(uuid, args.x, args.y, args.z, nil, args.motionHint)
 
     local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
     local cached = DTNPCClient.NPCCache[uuid]
@@ -129,7 +129,7 @@ function Handlers.HandleSyncNearbyNPCs(args)
             local x = npcData.x or npcData.npcData.lastX
             local y = npcData.y or npcData.npcData.lastY
             local z = npcData.z or npcData.npcData.lastZ or 0
-            Helpers.RecordInterpolation(uuid, x, y, z)
+            Helpers.RecordInterpolation(uuid, x, y, z, nil, npcData.motionHint)
 
             local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
             local cached = DTNPCClient.NPCCache[uuid]

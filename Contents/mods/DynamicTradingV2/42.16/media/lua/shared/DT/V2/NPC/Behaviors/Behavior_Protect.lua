@@ -112,7 +112,7 @@ local function protectTargetOrEscort(zombie, npcData, master, distToMaster, requ
         return nil, nil, true
     end
 
-    local target, targetDist = DTNPCProtect.SelectNearestZombie(
+    local target, targetDist = DTNPCProtect.SelectNearestThreat(
         zombie,
         npcData,
         nil,
@@ -193,7 +193,7 @@ DTNPCLogic.Behaviors["ProtectAuto"] = function(zombie, npcData, master, distToMa
         return
     end
 
-    local target, targetDist = DTNPCProtect.SelectNearestZombie(
+    local target, targetDist = DTNPCProtect.SelectNearestThreat(
         zombie,
         npcData,
         nil,
