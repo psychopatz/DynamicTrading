@@ -65,6 +65,10 @@ function DTNPCLogic.ProcessNPC(zombie)
 
     state = npcData.state or state
 
+    if DTNPCLogic.UpdateHostileGiveUpCooldown and DTNPCLogic.UpdateHostileGiveUpCooldown(zombie, npcData) then
+        state = npcData.state or state
+    end
+
     local fallbackDamaged = false
     if DTNPCHealth and DTNPCHealth.ProcessFallbackDamage then
         fallbackDamaged = DTNPCHealth.ProcessFallbackDamage(zombie, npcData) == true

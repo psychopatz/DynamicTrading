@@ -59,6 +59,10 @@ function Demand.makeNPCDataHostile(uuid, npcData, player, reason)
     local targetUsername = Shared.getUsername(player) or npcData.banditTargetUsername or npcData.master
     local targetOnlineID = Shared.getOnlineID(player) or npcData.banditTargetOnlineID or npcData.masterID
 
+    if zombie and DTNPCLogic and DTNPCLogic.RememberHostileChaseOrigin then
+        DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
+    end
+
     npcData.state = nextState
     npcData.isHostile = true
     npcData.isBandit = npcData.isBandit == true
@@ -71,6 +75,11 @@ function Demand.makeNPCDataHostile(uuid, npcData, player, reason)
     npcData.lastPlayerAttackerUsername = targetUsername
     npcData.lastPlayerAttackerOnlineID = targetOnlineID
     npcData.lastPlayerAttackedAt = Shared.nowMillis()
+    npcData.hostileChaseCooldownUntil = nil
+    npcData.banditPassiveFleeEligibleAt = nil
+    npcData.hostileChaseTargetID = nil
+    npcData.hostileChaseStartedAt = nil
+    npcData.hostileChaseGiveUpAfterMs = nil
     npcData.tasks = {}
     Shared.syncNPC(uuid, npcData)
     return true

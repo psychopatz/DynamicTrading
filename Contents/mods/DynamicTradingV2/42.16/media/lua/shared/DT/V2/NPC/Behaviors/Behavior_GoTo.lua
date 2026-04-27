@@ -90,7 +90,8 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
     
     -- 1. Check if we have anywhere to go
     if not npcData.tasks or #npcData.tasks == 0 then
-        npcData.state = "Stay"
+        npcData.state = npcData.goToReturnState or "Stay"
+        npcData.goToReturnState = nil
         npcData.isMovingState = false
         resetGoToStuck(npcData)
         stopMovementAnimation(zombie)
@@ -131,7 +132,15 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
         
         if #npcData.tasks == 0 then
             -- All done
-            npcData.state = "Stay"
+            local returnState = npcData.goToReturnState
+            npcData.state = returnState or "Stay"
+            npcData.goToReturnState = nil
+            if returnState ~= nil then
+                npcData.hostileReturnX = nil
+                npcData.hostileReturnY = nil
+                npcData.hostileReturnZ = nil
+                npcData.hostileReturnState = nil
+            end
             npcData.isMovingState = false
             resetGoToStuck(npcData)
             
@@ -177,7 +186,15 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
         zombie:faceLocation(task.x, task.y)
     elseif (npcData.goToBlockedTicks or 0) >= STUCK_ABORT_TICKS then
         DynamicTrading.Log("DTV2", "NPC", "Order", "GoTo: Path blocked too long. Aborting.")
-        npcData.state = "Stay"
+        local returnState = npcData.goToReturnState
+        npcData.state = returnState or "Stay"
+        npcData.goToReturnState = nil
+        if returnState ~= nil then
+            npcData.hostileReturnX = nil
+            npcData.hostileReturnY = nil
+            npcData.hostileReturnZ = nil
+            npcData.hostileReturnState = nil
+        end
         npcData.isMovingState = false
         npcData.tasks = {}
         resetGoToStuck(npcData)

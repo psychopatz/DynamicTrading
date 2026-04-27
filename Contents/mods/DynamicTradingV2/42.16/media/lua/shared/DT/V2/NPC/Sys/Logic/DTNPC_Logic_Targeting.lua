@@ -52,6 +52,13 @@ function DTNPCLogic.GetClosestTarget(zombie)
         return nil, 9999
     end
 
+    if DTNPCProtect and DTNPCProtect.IsHostileChasePaused and DTNPCProtect.IsHostileChasePaused(npcData) then
+        if zombie.setTarget then
+            zombie:setTarget(nil)
+        end
+        return nil, 9999
+    end
+
     if npcData.isHostile then
         if npcData.combatTargetType == "dtnpc" and npcData.combatTargetID then
             local npcTarget = findDTNPCTargetByCombatID(npcData.combatTargetID)

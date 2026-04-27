@@ -40,6 +40,10 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     HostileLastSeenChaseMs = 4500,
     HostileOffscreenDespawnRadius = 70,
     PlayerHitReactionCooldownMs = 1600,
+    HostileChaseGiveUpMinMs = 30000,
+    HostileChaseGiveUpMaxMs = 55000,
+    HostileChaseGiveUpMinDistance = 8,
+    BanditChasePauseMs = 120000,
 }
 
 DTNPCProtect.CONFIG.DiagnosticCooldownMs = tonumber(DTNPCProtect.CONFIG.DiagnosticCooldownMs) or 15000
@@ -47,6 +51,10 @@ DTNPCProtect.CONFIG.DebugCooldownMs = tonumber(DTNPCProtect.CONFIG.DebugCooldown
 DTNPCProtect.CONFIG.DebugLogging = DTNPCProtect.CONFIG.DebugLogging == true
 DTNPCProtect.CONFIG.ConsoleLogging = DTNPCProtect.CONFIG.ConsoleLogging == true
 DTNPCProtect.CONFIG.CombatIssueLogging = DTNPCProtect.CONFIG.CombatIssueLogging == true
+DTNPCProtect.CONFIG.HostileChaseGiveUpMinMs = tonumber(DTNPCProtect.CONFIG.HostileChaseGiveUpMinMs) or 30000
+DTNPCProtect.CONFIG.HostileChaseGiveUpMaxMs = tonumber(DTNPCProtect.CONFIG.HostileChaseGiveUpMaxMs) or 55000
+DTNPCProtect.CONFIG.HostileChaseGiveUpMinDistance = tonumber(DTNPCProtect.CONFIG.HostileChaseGiveUpMinDistance) or 8
+DTNPCProtect.CONFIG.BanditChasePauseMs = tonumber(DTNPCProtect.CONFIG.BanditChasePauseMs) or 120000
 
 DTNPCProtect.LOADOUT_WEIGHTS = DTNPCProtect.LOADOUT_WEIGHTS or {
     melee = 45,
@@ -474,6 +482,20 @@ function DTNPCProtect.CanApplyPlayerHitReaction(npcData, target)
 
     npcData.lastPlayerHitReactionAt = currentTime
     return true
+end
+
+function DTNPCProtect.IsHostileChasePaused(npcData)
+    if not npcData then
+        return false
+    end
+
+    local pauseUntil = tonumber(npcData.hostileChaseCooldownUntil) or 0
+    if pauseUntil <= 0 then
+        return false
+    end
+
+    local currentTime = nowMillis()
+    return currentTime > 0 and currentTime < pauseUntil
 end
 
 Internal.nowMillis = nowMillis

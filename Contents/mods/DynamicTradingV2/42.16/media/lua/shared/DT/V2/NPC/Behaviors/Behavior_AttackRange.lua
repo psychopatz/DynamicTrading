@@ -112,6 +112,10 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         and DTNPCLogic.HandleHostileLostSight(zombie, npcData, target, dist, { speed = SPEED_FWD }) then
         return
     end
+    if DTNPCLogic.HandleHostileChaseGiveUp
+        and DTNPCLogic.HandleHostileChaseGiveUp(zombie, npcData, target, dist) then
+        return
+    end
 
     if DTNPCProtect and DTNPCProtect.IsCombatCapable then
         local capable, reason = DTNPCProtect.IsCombatCapable(zombie, npcData)

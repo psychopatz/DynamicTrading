@@ -50,6 +50,15 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
     local attacker = zombie:getAttackedBy()
 
     if wasDamaged and attacker and instanceof(attacker, "IsoPlayer") then
+        if DTNPCLogic.RememberHostileChaseOrigin then
+            DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
+        end
+        npcData.hostileChaseCooldownUntil = nil
+        npcData.banditPassiveFleeEligibleAt = nil
+        npcData.hostileChaseTargetID = nil
+        npcData.hostileChaseStartedAt = nil
+        npcData.hostileChaseGiveUpAfterMs = nil
+
         npcData.lastPlayerAttackerUsername = attacker.getUsername and attacker:getUsername() or nil
         npcData.lastPlayerAttackerOnlineID = attacker.getOnlineID and attacker:getOnlineID() or nil
         npcData.lastPlayerAttackedAt = getTimeInMillis and getTimeInMillis() or nil

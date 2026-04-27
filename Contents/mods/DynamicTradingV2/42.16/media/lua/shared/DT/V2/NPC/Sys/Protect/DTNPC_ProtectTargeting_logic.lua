@@ -463,6 +463,10 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
     end
 
     DTNPCProtect.EnsureDataDefaults(npcData)
+    if DTNPCProtect.IsHostileChasePaused and DTNPCProtect.IsHostileChasePaused(npcData) then
+        DTNPCProtect.ClearCombatTarget(npcData)
+        return nil, 9999
+    end
 
     local searchRadius = tonumber(radius) or DTNPCProtect.CONFIG.ScanRadius
     local keepRadius = searchRadius + DTNPCProtect.CONFIG.StickyRadiusBonus
