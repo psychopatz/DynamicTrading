@@ -50,6 +50,10 @@ function DT_NPCPortraitRenderers.GetOverlayTexture()
     return getTexture("media/ui/Effects/crt.png")
 end
 
+function DT_NPCPortraitRenderers.GetRadialFadeTexture()
+    return getTexture("media/ui/Effects/conversation_radial.png")
+end
+
 function DT_NPCPortraitRenderers.GetOverlayAlpha(style, targetData)
     if style == "radio" then
         local alpha = 0.15 + ZombRandFloat(0.0, 0.05)

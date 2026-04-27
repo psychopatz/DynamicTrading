@@ -6,6 +6,39 @@
 
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
 
+local function measureChatEntry(ui, entry)
+    if not ui or not ui.chatList or not entry then
+        return
+    end
+
+    local maxBubbleW = ui:getChatBubbleMaxWidth()
+    local lines = DynamicTrading.Utils.WrapText(entry.text, maxBubbleW, ui.chatList.font)
+    local tm = getTextManager()
+    local actualMaxWidth = 0
+
+    for _, line in ipairs(lines) do
+        local width = tm:MeasureStringX(ui.chatList.font, line)
+        if width > actualMaxWidth then
+            actualMaxWidth = width
+        end
+    end
+
+    local minW = DT_ConversationUI.MIN_BUBBLE_WIDTH or 100
+    if actualMaxWidth < minW then
+        actualMaxWidth = minW
+    end
+
+    local lineHeight = 18
+    local totalHeight = (#lines * lineHeight) + 10
+    if totalHeight < 30 then
+        totalHeight = 30
+    end
+
+    entry.lines = lines
+    entry.height = totalHeight
+    entry.trueWidth = actualMaxWidth
+end
+
 function DT_ConversationUI:update()
     ISCollapsableWindow.update(self)
 
@@ -113,6 +146,24 @@ function DT_ConversationUI:speak(text)
     self:queueMessage(text, author, false, DT_ConversationUI.TEXT_DELAY, soundName)
 end
 
+function DT_ConversationUI:rebuildChatLayout()
+    if not self.chatList or not self.chatList.items then
+        return
+    end
+
+    for _, item in ipairs(self.chatList.items) do
+        local entry = item and item.item or nil
+        if entry then
+            measureChatEntry(self, entry)
+            item.height = (entry.height or 30) + 4
+        end
+    end
+
+    if #self.chatList.items > 0 then
+        self.chatList:ensureVisible(#self.chatList.items)
+    end
+end
+
 function DT_ConversationUI:addMessage(text, author, isPlayer)
     if not text then
         return
@@ -122,39 +173,14 @@ function DT_ConversationUI:addMessage(text, author, isPlayer)
         self.portraitPanel:pulseSpeechAnimation()
     end
 
-    local maxBubbleW = (self.chatList:getWidth() - 25) * 0.85
-    local lines = DynamicTrading.Utils.WrapText(text, maxBubbleW, self.chatList.font)
-
-    local tm = getTextManager()
-    local actualMaxWidth = 0
-    for _, line in ipairs(lines) do
-        local w = tm:MeasureStringX(self.chatList.font, line)
-        if w > actualMaxWidth then
-            actualMaxWidth = w
-        end
-    end
-
-    local minW = DT_ConversationUI.MIN_BUBBLE_WIDTH or 100
-    if actualMaxWidth < minW then
-        actualMaxWidth = minW
-    end
-
-    local lineHeight = 18
-    local totalHeight = (#lines * lineHeight) + 10
-    if totalHeight < 30 then
-        totalHeight = 30
-    end
-
     local entry = {
         text = text,
-        lines = lines,
         author = author,
         isPlayer = isPlayer,
-        height = totalHeight,
-        trueWidth = actualMaxWidth
     }
+    measureChatEntry(self, entry)
 
     local item = self.chatList:addItem(author, entry)
-    item.height = totalHeight + 4
+    item.height = (entry.height or 30) + 4
     self.chatList:ensureVisible(#self.chatList.items)
 end

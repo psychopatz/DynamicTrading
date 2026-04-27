@@ -15,6 +15,7 @@ DT_ConfigManager.defaultSettings = {
     showSidebar = true,
     debugLogs = false,
     use3DPortraits = true,
+    conversationOverlayOpacity = 0.42,
     volMaster = 0.6,
     volRadio = 0.6,
     volWallet = 0.5,
@@ -57,6 +58,7 @@ function DT_ConfigManager.save()
         fileWriter:write("showSidebar=" .. tostring(DT_ConfigManager.settings.showSidebar) .. "\r\n")
         fileWriter:write("debugLogs=" .. tostring(DT_ConfigManager.settings.debugLogs) .. "\r\n")
         fileWriter:write("use3DPortraits=" .. tostring(DT_ConfigManager.settings.use3DPortraits) .. "\r\n")
+        fileWriter:write("conversationOverlayOpacity=" .. tostring(DT_ConfigManager.settings.conversationOverlayOpacity) .. "\r\n")
         fileWriter:write("volMaster=" .. tostring(DT_ConfigManager.settings.volMaster) .. "\r\n")
         fileWriter:write("volRadio=" .. tostring(DT_ConfigManager.settings.volRadio) .. "\r\n")
         fileWriter:write("volWallet=" .. tostring(DT_ConfigManager.settings.volWallet) .. "\r\n")
@@ -115,6 +117,14 @@ function DT_ConfigManager.load()
         end
         if string.find(line, "use3DPortraits=") then
             DT_ConfigManager.settings.use3DPortraits = (string.sub(line, 16) == "true")
+        end
+        if string.find(line, "conversationOverlayOpacity=") then
+            local n = tonumber(string.sub(line, 28))
+            if n then
+                if n < 0 then n = 0 end
+                if n > 1 then n = 1 end
+                DT_ConfigManager.settings.conversationOverlayOpacity = n
+            end
         end
         if string.find(line, "volMaster=") then
             local n = tonumber(string.sub(line, 11))
@@ -226,6 +236,24 @@ function DT_ConfigManager.setVolume(category, level)
     end
     
     DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.setConversationOverlayOpacity(level)
+    local value = tonumber(level) or DT_ConfigManager.defaultSettings.conversationOverlayOpacity or 0.42
+    if value < 0 then value = 0 end
+    if value > 1 then value = 1 end
+    DT_ConfigManager.settings.conversationOverlayOpacity = value
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.getConversationOverlayOpacity()
+    local value = tonumber(DT_ConfigManager.settings.conversationOverlayOpacity)
+    if value == nil then
+        value = tonumber(DT_ConfigManager.defaultSettings.conversationOverlayOpacity) or 0.42
+    end
+    if value < 0 then value = 0 end
+    if value > 1 then value = 1 end
+    return value
 end
 
 function DT_ConfigManager.shouldPlaySound()

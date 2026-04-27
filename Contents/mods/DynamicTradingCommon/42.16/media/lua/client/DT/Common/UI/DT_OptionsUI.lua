@@ -126,12 +126,33 @@ function DT_OptionsUI:createGeneralChildren(panel)
                 end
             end
         end
-        
         panel:addChild(self.tickGeneral)
+        y = y + math.max(34, (#DT_OptionsUI.config.generalSettings * 28) + 8)
     else
         local noSettings = ISLabel:new(pad, y, 20, "No general settings registered.", 1, 0.5, 0.5, 0.5, UIFont.Small, true)
         panel:addChild(noSettings)
+        y = y + 34
     end
+
+    local opacityTitle = ISLabel:new(pad, y + 4, 20, "Conversation Background", 1, 1, 1, 1, UIFont.Small, true)
+    panel:addChild(opacityTitle)
+
+    local currentOpacity = math.floor((DT_ConfigManager.getConversationOverlayOpacity() or 0.42) * 100 + 0.5)
+    local opacityValue = ISLabel:new(pad + 250, y + 6, 20, currentOpacity .. "%", 0.9, 0.9, 0.9, 1, UIFont.Small, true)
+    panel:addChild(opacityValue)
+
+    self.sliderConversationOpacity = ISSliderPanel:new(pad + 120, y + 2, 120, 20, self, function(target, val)
+        local snappedVal = math.floor((val / 5) + 0.5) * 5
+        DT_ConfigManager.setConversationOverlayOpacity(snappedVal / 100)
+        opacityValue:setName(snappedVal .. "%")
+    end)
+    self.sliderConversationOpacity:initialise()
+    self.sliderConversationOpacity.currentValue = currentOpacity
+    self.sliderConversationOpacity:setValues(0, 100, 5, 5)
+    panel:addChild(self.sliderConversationOpacity)
+
+    local opacityHint = ISLabel:new(pad, y + 28, 20, "0% is fully transparent. 100% is the most opaque conversation backdrop.", 0.72, 0.72, 0.72, 1, UIFont.Small, true)
+    panel:addChild(opacityHint)
 end
 
 function DT_OptionsUI:onGeneralTick(index, selected)

@@ -6,6 +6,143 @@
 
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
 
+local function containsStatusToken(value, token)
+    local text = tostring(value or ""):lower()
+    return text ~= "" and string.find(text, token, 1, true) ~= nil
+end
+
+local function clamp01(value)
+    if value < 0 then
+        return 0
+    end
+    if value > 1 then
+        return 1
+    end
+    return value
+end
+
+local function makeColor(r, g, b, a)
+    return {
+        r = clamp01(r or 0),
+        g = clamp01(g or 0),
+        b = clamp01(b or 0),
+        a = clamp01(a or 1)
+    }
+end
+
+local function brighten(color, amount, alpha)
+    local lift = amount or 0
+    return makeColor(
+        (color.r or 0) + lift,
+        (color.g or 0) + lift,
+        (color.b or 0) + lift,
+        alpha or color.a or 1
+    )
+end
+
+local function soften(color, amount, alpha)
+    local blend = clamp01(amount or 0.18)
+    return makeColor(
+        (color.r or 0) + ((1 - (color.r or 0)) * blend),
+        (color.g or 0) + ((1 - (color.g or 0)) * blend),
+        (color.b or 0) + ((1 - (color.b or 0)) * blend),
+        alpha or color.a or 1
+    )
+end
+
+local function resolveStateKey(traderObj, faction, statusText)
+    local stateBlob = table.concat({
+        tostring(traderObj and traderObj.currentState or ""),
+        tostring(traderObj and traderObj.status or ""),
+        tostring(traderObj and traderObj.archetype or ""),
+        tostring(traderObj and traderObj.role or ""),
+        tostring(faction and faction.state or ""),
+        tostring(statusText or "")
+    }, " "):lower()
+
+    if containsStatusToken(stateBlob, "hostile")
+        or containsStatusToken(stateBlob, "attack")
+        or containsStatusToken(stateBlob, "flee")
+        or containsStatusToken(stateBlob, "bandit") then
+        return "hostile"
+    end
+
+    if containsStatusToken(stateBlob, "rest")
+        or containsStatusToken(stateBlob, "resting")
+        or containsStatusToken(stateBlob, "sleep")
+        or containsStatusToken(stateBlob, "idle") then
+        return "resting"
+    end
+
+    if containsStatusToken(stateBlob, "trade")
+        or containsStatusToken(stateBlob, "trader")
+        or containsStatusToken(stateBlob, "merchant")
+        or containsStatusToken(stateBlob, "vendor")
+        or containsStatusToken(stateBlob, "shop") then
+        return "trader"
+    end
+
+    if containsStatusToken(stateBlob, "guard")
+        or containsStatusToken(stateBlob, "patrol")
+        or containsStatusToken(stateBlob, "watch") then
+        return "guard"
+    end
+
+    return "reputation"
+end
+
+local function isHostileTarget(traderObj, faction, statusText)
+    if not traderObj then
+        return false
+    end
+
+    if traderObj.isBanditDemand == true or traderObj.isTrueBandit == true or traderObj.isHostileFactionRaider == true then
+        return true
+    end
+
+    if tostring(traderObj.factionID or "") == "Bandits" then
+        return true
+    end
+
+    if containsStatusToken(traderObj.status, "hostile")
+        or containsStatusToken(traderObj.currentState, "hostile")
+        or containsStatusToken(traderObj.currentState, "attack")
+        or containsStatusToken(traderObj.currentState, "flee")
+        or containsStatusToken(statusText, "hostile")
+        or containsStatusToken(faction and faction.state, "hostile") then
+        return true
+    end
+
+    return false
+end
+
+function DT_ConversationUI:refreshVisualTone(stageData, statusText, faction)
+    local target = self.target or {}
+    local hostile = isHostileTarget(target, faction, statusText)
+    local stateKey = hostile and "hostile" or resolveStateKey(target, faction, statusText)
+    self.visualIsHostile = hostile
+
+    local baseColor
+    if stateKey == "hostile" then
+        baseColor = makeColor(0.92, 0.24, 0.20, 0.95)
+    elseif stateKey == "resting" then
+        baseColor = makeColor(0.92, 0.72, 0.26, 0.95)
+    elseif stateKey == "trader" then
+        baseColor = makeColor(0.44, 0.92, 0.58, 0.95)
+    elseif stateKey == "guard" then
+        baseColor = makeColor(0.46, 0.70, 0.96, 0.95)
+    else
+        local color = stageData and stageData.color or { r = 0.78, g = 0.82, b = 0.76 }
+        baseColor = makeColor(color.r or 0.78, color.g or 0.82, color.b or 0.76, 0.95)
+    end
+
+    self.visualAccentColor = brighten(baseColor, 0.06, 0.95)
+    self.visualBorderColor = makeColor(baseColor.r, baseColor.g, baseColor.b, hostile and 0.86 or 0.76)
+    self.visualNameColor = brighten(baseColor, hostile and 0.18 or 0.24, 1.0)
+    self.visualFactionColor = soften(baseColor, hostile and 0.08 or 0.16, 1.0)
+    self.visualRoleColor = soften(baseColor, 0.22, 1.0)
+end
+
 function DT_ConversationUI:getFactionData(factionID)
     if not factionID then
         return nil
@@ -100,5 +237,13 @@ function DT_ConversationUI:refreshFactionInfo()
         self.lblState:setVisible(true)
     else
         self.lblState:setVisible(false)
+    end
+
+    self:refreshVisualTone(stageData, statusText, faction)
+    if self.lblFactionTitle then
+        self.lblFactionTitle:setColor(self.visualRoleColor.r, self.visualRoleColor.g, self.visualRoleColor.b)
+    end
+    if self.lblFactionName then
+        self.lblFactionName:setColor(self.visualFactionColor.r, self.visualFactionColor.g, self.visualFactionColor.b)
     end
 end

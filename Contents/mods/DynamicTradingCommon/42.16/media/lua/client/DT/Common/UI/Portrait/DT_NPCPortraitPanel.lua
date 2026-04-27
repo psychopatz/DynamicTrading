@@ -87,6 +87,26 @@ local function getPortraitRandomRange(minValue, maxValue)
     return minValue + ZombRand((maxValue - minValue) + 1)
 end
 
+local function drawTextureFitted(target, texture, x, y, width, height, alpha, r, g, b)
+    if not texture then
+        return
+    end
+
+    local texWidth = texture.getWidthOrig and texture:getWidthOrig() or texture:getWidth()
+    local texHeight = texture.getHeightOrig and texture:getHeightOrig() or texture:getHeight()
+    if not texWidth or not texHeight or texWidth <= 0 or texHeight <= 0 then
+        target:drawTextureScaled(texture, x, y, width, height, alpha or 1.0, r or 1.0, g or 1.0, b or 1.0)
+        return
+    end
+
+    local scale = math.min(width / texWidth, height / texHeight)
+    local drawWidth = texWidth * scale
+    local drawHeight = texHeight * scale
+    local drawX = x + ((width - drawWidth) / 2)
+    local drawY = y + ((height - drawHeight) / 2)
+    target:drawTextureScaled(texture, drawX, drawY, drawWidth, drawHeight, alpha or 1.0, r or 1.0, g or 1.0, b or 1.0)
+end
+
 function DT_NPCPortraitPanel:initialise()
     ISPanel.initialise(self)
 
@@ -98,6 +118,8 @@ function DT_NPCPortraitPanel:initialise()
     self.legacyProvider = nil
     self.forceMode = nil
     self.overlayStyle = self.overlayStyle or "none"
+    self.backgroundStyle = self.backgroundStyle or "scene"
+    self.viewportMode = self.viewportMode or "square"
     self.isRadioMode = self.isRadioMode == true
     self.interactive = self.interactive == true
 
@@ -175,15 +197,23 @@ function DT_NPCPortraitPanel:ensureModelView()
 end
 
 function DT_NPCPortraitPanel:updateViewport()
-    local size = math.floor(math.min(self.width, self.height))
-    if size < 1 then
-        size = 1
-    end
+    local viewportMode = self.viewportMode or "square"
+    if viewportMode == "fill" then
+        self.viewportW = math.max(1, math.floor(self.width))
+        self.viewportH = math.max(1, math.floor(self.height))
+        self.viewportX = 0
+        self.viewportY = 0
+    else
+        local size = math.floor(math.min(self.width, self.height))
+        if size < 1 then
+            size = 1
+        end
 
-    self.viewportW = size
-    self.viewportH = size
-    self.viewportX = math.floor((self.width - size) / 2)
-    self.viewportY = math.floor((self.height - size) / 2)
+        self.viewportW = size
+        self.viewportH = size
+        self.viewportX = math.floor((self.width - size) / 2)
+        self.viewportY = math.floor((self.height - size) / 2)
+    end
 
     if self.modelView then
         self.modelView:setX(self.viewportX)
@@ -232,6 +262,29 @@ function DT_NPCPortraitPanel:setOverlayMode(style)
     end
 
     self.overlayStyle = style
+end
+
+function DT_NPCPortraitPanel:setBackgroundStyle(style)
+    local nextStyle = style or "scene"
+    if nextStyle ~= "scene" and nextStyle ~= "none" then
+        nextStyle = "scene"
+    end
+
+    self.backgroundStyle = nextStyle
+end
+
+function DT_NPCPortraitPanel:setViewportMode(mode)
+    local nextMode = mode or "square"
+    if nextMode ~= "square" and nextMode ~= "fill" then
+        nextMode = "square"
+    end
+
+    if self.viewportMode == nextMode then
+        return
+    end
+
+    self.viewportMode = nextMode
+    self:updateViewport()
 end
 
 function DT_NPCPortraitPanel:setInteractive(enabled)
@@ -543,9 +596,13 @@ end
 function DT_NPCPortraitPanel:prerender()
     ISPanel.prerender(self)
 
+    if self.backgroundStyle == "none" then
+        return
+    end
+
     local bgTex = DT_NPCPortraitRenderers.GetBackgroundTexture()
     if bgTex then
-        self:drawTextureScaled(bgTex, self.viewportX, self.viewportY, self.viewportW, self.viewportH, 1.0, 1.0, 1.0, 1.0)
+        drawTextureFitted(self, bgTex, self.viewportX, self.viewportY, self.viewportW, self.viewportH, 1.0, 1.0, 1.0, 1.0)
     else
         self:drawRect(self.viewportX, self.viewportY, self.viewportW, self.viewportH, 1.0, 0.12, 0.12, 0.12)
     end
@@ -555,7 +612,7 @@ function DT_NPCPortraitPanel:render()
     ISPanel.render(self)
 
     if self.currentMode ~= "3d" and self.currentTexture then
-        self:drawTextureScaled(self.currentTexture, self.viewportX, self.viewportY, self.viewportW, self.viewportH, 1.0, 1.0, 1.0, 1.0)
+        drawTextureFitted(self, self.currentTexture, self.viewportX, self.viewportY, self.viewportW, self.viewportH, 1.0, 1.0, 1.0, 1.0)
     end
 
     if self.overlayStyle and self.overlayStyle ~= "none" then
@@ -566,7 +623,9 @@ function DT_NPCPortraitPanel:render()
         end
     end
 
-    self:drawRectBorder(self.viewportX - 1, self.viewportY - 1, self.viewportW + 2, self.viewportH + 2, 1.0, 1.0, 1.0, 1.0)
+    if self.backgroundStyle ~= "none" then
+        self:drawRectBorder(self.viewportX - 1, self.viewportY - 1, self.viewportW + 2, self.viewportH + 2, 1.0, 1.0, 1.0, 1.0)
+    end
 end
 
 function DT_NPCPortraitPanel:onMouseDown(x, y)
