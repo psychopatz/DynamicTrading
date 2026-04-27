@@ -82,6 +82,8 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords, optio
     npcData.homeCoords = homeCoords or { x = 0, y = 0, z = 0 }
     npcData.workCoords = { x = 0, y = 0, z = 0 }
     npcData.status = "Resting"
+    npcData.abstractResident = DynamicTrading_Roster.IsAbstractNomadFaction
+        and DynamicTrading_Roster.IsAbstractNomadFaction(factionID) == true or false
     npcData.memory = {}
 
     DynamicTrading_Roster.SaveSoul(uuid, npcData)

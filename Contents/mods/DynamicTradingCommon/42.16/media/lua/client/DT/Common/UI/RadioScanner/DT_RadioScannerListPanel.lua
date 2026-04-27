@@ -4,6 +4,7 @@ require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Factions"
 require "DT/UI/Faction/FactionInfoWindow/DT_FactionInfoWindow"
 require "DT/UI/Shared/DT_UIUtils"
+pcall(require, "DO/UI/DO_MissionViewerWindow")
 
 DT_RadioScannerListPanel = ISPanel:derive("DT_RadioScannerListPanel")
 
@@ -82,29 +83,50 @@ function DT_RadioScannerListPanel:createChildren()
     self.btnFaction.borderColor = { r = 0.4, g = 0.4, b = 1, a = 1 }
     self.btnFaction:setVisible(false)
     self:addChild(self.btnFaction)
+
+    self.btnMissions = ISButton:new(0, 0, self.width, 30, "MISSIONS", self, function()
+        if DO_MissionViewerWindow and DO_MissionViewerWindow.OnOpen then
+            DO_MissionViewerWindow.OnOpen()
+        end
+    end)
+    self.btnMissions:initialise()
+    self.btnMissions.backgroundColor = { r = 0.16, g = 0.34, b = 0.2, a = 1 }
+    self.btnMissions.borderColor = { r = 0.55, g = 0.85, b = 0.6, a = 1 }
+    self.btnMissions:setVisible(false)
+    self:addChild(self.btnMissions)
 end
 
 function DT_RadioScannerListPanel:setLayoutMode(mode)
-    self.layoutMode = (mode == "Location") and "Location" or "Standard"
+    if mode == "Location" then
+        self.layoutMode = "Location"
+    elseif mode == "Quest" then
+        self.layoutMode = "Quest"
+    else
+        self.layoutMode = "Standard"
+    end
     local panelWidth = self:getWidth()
     local panelHeight = self:getHeight()
+    local topButtonHeight = 35
 
     if mode == "Location" then
         self.btnFaction:setVisible(true)
+        self.btnMissions:setVisible(false)
         self.listContainer:setX(0)
-        self.listContainer:setY(35)
+        self.listContainer:setY(topButtonHeight)
         self.listContainer:setWidth(panelWidth)
-        self.listContainer:setHeight(panelHeight - 35)
+        self.listContainer:setHeight(panelHeight - topButtonHeight)
         self.listbox.itemheight = 84
     elseif mode == "Quest" then
         self.btnFaction:setVisible(false)
+        self.btnMissions:setVisible(true)
         self.listContainer:setX(0)
-        self.listContainer:setY(0)
+        self.listContainer:setY(topButtonHeight)
         self.listContainer:setWidth(panelWidth)
-        self.listContainer:setHeight(panelHeight)
+        self.listContainer:setHeight(panelHeight - topButtonHeight)
         self.listbox.itemheight = 96
     else
         self.btnFaction:setVisible(false)
+        self.btnMissions:setVisible(false)
         self.listContainer:setX(0)
         self.listContainer:setY(0)
         self.listContainer:setWidth(panelWidth)
@@ -130,6 +152,9 @@ function DT_RadioScannerListPanel:onResize()
 
     if self.btnFaction then
         self.btnFaction:setWidth(panelWidth)
+    end
+    if self.btnMissions then
+        self.btnMissions:setWidth(panelWidth)
     end
 
     if self.listbox then

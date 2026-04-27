@@ -83,6 +83,20 @@ local function getNearestRespawnObserver(npcData)
     return nearestPlayer, nearestDist
 end
 
+local function isRosterStatusSpawnable(status)
+    return status == "Resting" or status == "Working" or status == "Trading"
+end
+
+local function shouldKeepRosterSoulAbstract(uuid, registry, status)
+    if tostring(status or "") ~= "Resting" then
+        return false
+    end
+    if not DynamicTrading_Roster or not DynamicTrading_Roster.ShouldAbstractSoulAtRest then
+        return false
+    end
+    return DynamicTrading_Roster.ShouldAbstractSoulAtRest(registry or uuid) == true
+end
+
 function DTNPCManager.CheckForRespawn(npcData, uuid)
     if not npcData or not npcData.lastX or not npcData.lastY then return end
     if npcData.status == "Dead" then return false end
@@ -269,7 +283,7 @@ function DTNPCManager.CheckRosterSpawns()
                     -- Skip if spawn backoff active
                     if not (registry.spawnRetryTime and currentHours < registry.spawnRetryTime) then
                         -- Only spawn spawnnable statuses
-                        if status == "Resting" or status == "Working" or status == "Trading" then
+                        if isRosterStatusSpawnable(status) and not shouldKeepRosterSoulAbstract(uuid, registry, status) then
                             local targetX = npcData.x or (registry.lastX or (registry.homeCoords and registry.homeCoords.x))
                             local targetY = npcData.y or (registry.lastY or (registry.homeCoords and registry.homeCoords.y))
                             local targetZ = npcData.z or (registry.lastZ or (registry.homeCoords and registry.homeCoords.z) or 0)
@@ -331,6 +345,13 @@ function DTNPCManager.CheckRosterSpawns()
                                     end
                                 end
                             end
+                        elseif shouldKeepRosterSoulAbstract(uuid, registry, status) then
+                            DTNPCManager.RespawnDebug.Log(
+                                "roster_hash_abstract_" .. tostring(uuid),
+                                "Process=roster_hash decision=skip_abstract_resting uuid=" .. tostring(uuid) ..
+                                    " name=" .. tostring(registry.name or uuid),
+                                true
+                            )
                         end
                     end
                 end
@@ -352,7 +373,7 @@ function DTNPCManager.CheckRosterSpawns()
                 
                 -- Skip if spawn backoff active
                 if not (registry.spawnRetryTime and currentHours < registry.spawnRetryTime) then
-                    if status == "Resting" or status == "Working" or status == "Trading" then
+                    if isRosterStatusSpawnable(status) and not shouldKeepRosterSoulAbstract(uuid, registry, status) then
                         local npcX = registry.lastX or (registry.homeCoords and registry.homeCoords.x)
                         local npcY = registry.lastY or (registry.homeCoords and registry.homeCoords.y)
                         local npcZ = registry.lastZ or (registry.homeCoords and registry.homeCoords.z) or 0
@@ -421,6 +442,13 @@ function DTNPCManager.CheckRosterSpawns()
                                 end
                             end
                         end
+                    elseif shouldKeepRosterSoulAbstract(uuid, registry, status) then
+                        DTNPCManager.RespawnDebug.Log(
+                            "roster_fallback_abstract_" .. tostring(uuid),
+                            "Process=roster_fallback decision=skip_abstract_resting uuid=" .. tostring(uuid) ..
+                                " name=" .. tostring(registry.name or uuid),
+                            true
+                        )
                     end
                 end
             end

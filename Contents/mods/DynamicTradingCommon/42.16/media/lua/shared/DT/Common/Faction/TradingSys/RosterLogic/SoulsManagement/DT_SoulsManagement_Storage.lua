@@ -7,6 +7,72 @@ local function stripMovementSpeed(npcData)
     return npcData
 end
 
+local function getFactionSnapshot(factionID)
+    local key = factionID and tostring(factionID) or ""
+    if key == "" or not DynamicTrading_Factions or not DynamicTrading_Factions.GetFaction then
+        return nil
+    end
+
+    local ok, faction = pcall(function()
+        return DynamicTrading_Factions.GetFaction(key)
+    end)
+    if ok and type(faction) == "table" then
+        return faction
+    end
+    return nil
+end
+
+local function isAbstractNomadFaction(factionID)
+    local key = factionID and tostring(factionID) or ""
+    if key == "" then
+        return false
+    end
+
+    if key == "Independent" then
+        return true
+    end
+
+    local faction = getFactionSnapshot(key)
+    local factionType = tostring(faction and faction.factionType or "")
+    return (faction and faction.isNomadic == true)
+        or factionType == "independent"
+        or factionType == "bandit"
+end
+
+local function normalizeSoulAbstraction(npcData)
+    if type(npcData) ~= "table" then
+        return npcData
+    end
+
+    local shouldAbstract = (npcData.abstractResident == true) or isAbstractNomadFaction(npcData.factionID)
+    npcData.abstractResident = shouldAbstract == true
+    return npcData
+end
+
+function DynamicTrading_Roster.IsAbstractNomadFaction(factionID)
+    return isAbstractNomadFaction(factionID)
+end
+
+function DynamicTrading_Roster.ShouldAbstractSoulAtRest(soulLike)
+    local soul = nil
+    if type(soulLike) == "table" then
+        soul = soulLike
+    elseif soulLike ~= nil then
+        soul = DynamicTrading_Roster.GetSoulRegistry(tostring(soulLike))
+    end
+
+    if type(soul) ~= "table" then
+        return false
+    end
+
+    local status = tostring(soul.status or "Resting")
+    if status ~= "Resting" then
+        return false
+    end
+
+    return normalizeSoulAbstraction(soul).abstractResident == true
+end
+
 function DynamicTrading_Roster.GetSouls(factionID)
     local data = ModData.get(MOD_DATA_KEY)
     if not data.FactionMembers[factionID] then
@@ -17,25 +83,25 @@ end
 
 function DynamicTrading_Roster.GetSoulRegistry(uuid)
     local data = ModData.get(MOD_DATA_KEY)
-    return data.Souls[uuid]
+    return normalizeSoulAbstraction(data.Souls[uuid])
 end
 
 function DynamicTrading_Roster.GetSoul(uuid)
     local soulKey = "DTSOUL_" .. uuid
     if ModData.exists(soulKey) then
-        return stripMovementSpeed(ModData.get(soulKey))
+        return stripMovementSpeed(normalizeSoulAbstraction(ModData.get(soulKey)))
     end
 
     local registry = DynamicTrading_Roster.GetSoulRegistry(uuid)
     if registry and registry.name then
-        return stripMovementSpeed(registry)
+        return stripMovementSpeed(normalizeSoulAbstraction(registry))
     end
 
     return nil
 end
 
 function DynamicTrading_Roster.SaveSoul(uuid, npcData)
-    npcData = stripMovementSpeed(npcData)
+    npcData = stripMovementSpeed(normalizeSoulAbstraction(npcData))
 
     local soulKey = "DTSOUL_" .. uuid
     if not ModData.exists(soulKey) then
@@ -73,6 +139,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         identitySeed = npcData.identitySeed or 1,
         linkedWorkerID = npcData.linkedWorkerID,
         ownerUsername = npcData.ownerUsername,
-        isPlayerFactionTrader = npcData.isPlayerFactionTrader == true
+        isPlayerFactionTrader = npcData.isPlayerFactionTrader == true,
+        abstractResident = npcData.abstractResident == true,
     }
 end
