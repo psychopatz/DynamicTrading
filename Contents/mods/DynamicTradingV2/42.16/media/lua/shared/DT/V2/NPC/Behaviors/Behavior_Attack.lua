@@ -25,6 +25,34 @@ local function getTimeMs()
     return math.floor((getGameTime():getWorldAgeHours() or 0) * 3600000)
 end
 
+local function isHostileDebugEnabled()
+    if DynamicTrading and DynamicTrading.Debug == true then
+        return true
+    end
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    if sandbox and (sandbox.NPCDebug == true or sandbox.NPCProtectDebug == true) then
+        return true
+    end
+    return DTNPCProtect
+        and DTNPCProtect.CONFIG
+        and (DTNPCProtect.CONFIG.DebugLogging == true or DTNPCProtect.CONFIG.CombatIssueLogging == true)
+end
+
+local function hostileDebugLog(npcData, event, message)
+    if not isHostileDebugEnabled() or not DynamicTrading or not DynamicTrading.Log then
+        return
+    end
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "HostileDebug",
+        tostring(event or "state")
+            .. " npc=" .. tostring(npcData and (npcData.name or npcData.uuid) or "Unknown")
+            .. " uuid=" .. tostring(npcData and npcData.uuid or nil)
+            .. " " .. tostring(message or "")
+    )
+end
+
 local function getDistance(ax, ay, bx, by)
     local dx = (tonumber(ax) or 0) - (tonumber(bx) or 0)
     local dy = (tonumber(ay) or 0) - (tonumber(by) or 0)
@@ -98,6 +126,7 @@ local function randomChaseGiveUpMs(npcData)
         timeout = minMs + ZombRand((maxMs - minMs) + 1)
     end
     npcData.hostileChaseGiveUpAfterMs = timeout
+    hostileDebugLog(npcData, "chase_timer", "giveUpAfterMs=" .. tostring(timeout))
     return timeout
 end
 
@@ -215,6 +244,7 @@ function DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
     npcData.hostileReturnY = y
     npcData.hostileReturnZ = z or 0
     npcData.hostileReturnState = npcData.combatResumeState or npcData.state or npcData.status or "Idle"
+    hostileDebugLog(npcData, "chase_origin", "x=" .. tostring(x) .. " y=" .. tostring(y) .. " state=" .. tostring(npcData.hostileReturnState))
     return true
 end
 
@@ -256,6 +286,7 @@ local function beginTraderReturn(zombie, npcData)
     if x == nil or y == nil then
         disengageHostile(zombie, npcData, "chase_give_up")
         pushHostileNotice(zombie, npcData, "Fine. Not worth the chase.", "warning")
+        hostileDebugLog(npcData, "trader_give_up", "no return coords; disengaged")
         return true
     end
 
@@ -271,6 +302,7 @@ local function beginTraderReturn(zombie, npcData)
     }
     npcData.isMovingState = false
     pushHostileNotice(zombie, npcData, "Enough. Back to business.", "warning")
+    hostileDebugLog(npcData, "trader_return", "returning to x=" .. tostring(x) .. " y=" .. tostring(y))
     syncHostileState(zombie, npcData, true)
     return true
 end
@@ -278,6 +310,7 @@ end
 local function beginGenericGiveUp(zombie, npcData)
     disengageHostile(zombie, npcData, "chase_give_up")
     pushHostileNotice(zombie, npcData, "Forget it. Not worth the chase.", "warning")
+    hostileDebugLog(npcData, "chase_give_up", "generic disengage")
     syncHostileState(zombie, npcData, true)
     return true
 end
@@ -305,6 +338,7 @@ local function beginBanditPause(zombie, npcData, target, nowMs)
     resetHostileChaseTimers(npcData)
     clearHostileSightMemory(npcData)
     pushHostileNotice(zombie, npcData, "Lost them. Hold up a minute.", "warning")
+    hostileDebugLog(npcData, "bandit_pause", "cooldownMs=" .. tostring(pauseMs))
     syncHostileState(zombie, npcData, true)
     return true
 end
@@ -331,6 +365,7 @@ local function beginBanditFleeHome(zombie, npcData)
     resetHostileChaseTimers(npcData)
     clearHostileSightMemory(npcData)
     pushHostileNotice(zombie, npcData, "Enough waiting. We're leaving.", "warning")
+    hostileDebugLog(npcData, "bandit_flee", "passive enough after chase cooldown")
     syncHostileState(zombie, npcData, true)
     return true
 end
@@ -440,10 +475,14 @@ function DTNPCLogic.HandleHostileLostSight(zombie, npcData, target, dist, option
     end
 
     npcData.hostileTargetType = "player"
+    local firstLostSight = npcData.hostileLostSightAt == nil
     npcData.hostileLostSightAt = npcData.hostileLostSightAt or nowMs
     npcData.hostileLastSeenX = npcData.hostileLastSeenX or target:getX()
     npcData.hostileLastSeenY = npcData.hostileLastSeenY or target:getY()
     npcData.hostileLastSeenZ = npcData.hostileLastSeenZ or target:getZ()
+    if firstLostSight then
+        hostileDebugLog(npcData, "lost_sight", "lastSeen=" .. tostring(npcData.hostileLastSeenX) .. "," .. tostring(npcData.hostileLastSeenY))
+    end
     pushSearchAmbient(zombie, npcData, nowMs)
 
     if DTNPCProtect and DTNPCProtect.StopCombatActions then
@@ -456,10 +495,12 @@ function DTNPCLogic.HandleHostileLostSight(zombie, npcData, target, dist, option
     local timeoutMs = randomLostSightTimeoutMs(npcData)
     if elapsed >= timeoutMs then
         if isOffscreenFromActivePlayers(zombie) and despawnLostHostile(zombie, npcData) then
+            hostileDebugLog(npcData, "lost_sight_despawn", "elapsedMs=" .. tostring(elapsed))
             return true
         end
 
         disengageHostile(zombie, npcData, "lost_sight_timeout")
+        hostileDebugLog(npcData, "lost_sight_disengage", "elapsedMs=" .. tostring(elapsed))
         return true
     end
 
@@ -491,6 +532,10 @@ function DTNPCLogic.HandleHostileChaseGiveUp(zombie, npcData, target, dist)
         return false
     end
     if DTNPCProtect and DTNPCProtect.IsHostileChasePaused and DTNPCProtect.IsHostileChasePaused(npcData) then
+        if npcData.hostilePauseDebugLogged ~= true then
+            npcData.hostilePauseDebugLogged = true
+            hostileDebugLog(npcData, "chase_paused", "cooldownUntil=" .. tostring(npcData.hostileChaseCooldownUntil))
+        end
         return true
     end
 
@@ -505,6 +550,7 @@ function DTNPCLogic.HandleHostileChaseGiveUp(zombie, npcData, target, dist)
         npcData.hostileChaseStartedAt = nowMs
         npcData.hostileChaseGiveUpAfterMs = nil
         DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
+        hostileDebugLog(npcData, "chase_start", "target=" .. tostring(targetKey))
     end
 
     local elapsed = nowMs - (tonumber(npcData.hostileChaseStartedAt) or nowMs)
@@ -545,6 +591,8 @@ function DTNPCLogic.UpdateHostileGiveUpCooldown(zombie, npcData)
     end
 
     npcData.hostileChaseCooldownUntil = nil
+    npcData.hostilePauseDebugLogged = nil
+    hostileDebugLog(npcData, "chase_cooldown_done", "state=" .. tostring(npcData.state))
     if isBanditLike(npcData)
         and not npcData.isHostile
         and (tonumber(npcData.banditPassiveFleeEligibleAt) or 0) > 0

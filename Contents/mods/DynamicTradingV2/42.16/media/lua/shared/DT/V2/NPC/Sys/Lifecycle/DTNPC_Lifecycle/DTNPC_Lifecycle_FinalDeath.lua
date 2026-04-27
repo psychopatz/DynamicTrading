@@ -7,6 +7,230 @@ DTNPCLifecycle = DTNPCLifecycle or {}
 DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 
 local internal = DTNPCLifecycle.Internal
+local DEATH_MONEY_BUNDLE_VALUE = 100
+
+local function isLifecycleDebugEnabled()
+    if DynamicTrading and DynamicTrading.Debug == true then
+        return true
+    end
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    if sandbox and (sandbox.NPCDebug == true or sandbox.NPCProtectDebug == true) then
+        return true
+    end
+    return DTNPCProtect
+        and DTNPCProtect.CONFIG
+        and (DTNPCProtect.CONFIG.DebugLogging == true or DTNPCProtect.CONFIG.CombatIssueLogging == true)
+end
+
+local function lifecycleDebugLog(npcData, event, message)
+    if not isLifecycleDebugEnabled() or not DynamicTrading or not DynamicTrading.Log then
+        return
+    end
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "LifecycleDebug",
+        tostring(event or "state")
+            .. " npc=" .. tostring(npcData and (npcData.name or npcData.uuid) or "Unknown")
+            .. " uuid=" .. tostring(npcData and npcData.uuid or nil)
+            .. " " .. tostring(message or "")
+    )
+end
+
+local function randomInt(minValue, maxValue)
+    local minInt = math.floor(tonumber(minValue) or 0)
+    local maxInt = math.floor(tonumber(maxValue) or minInt)
+    if maxInt <= minInt then
+        return minInt
+    end
+    if ZombRand then
+        return minInt + ZombRand((maxInt - minInt) + 1)
+    end
+    return math.random(minInt, maxInt)
+end
+
+local function getFactionBudgetEstimate(npcData)
+    local factionID = npcData and npcData.factionID or nil
+    local faction = factionID and DynamicTrading_Factions and DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(factionID) or nil
+    local config = DynamicTrading and DynamicTrading.Config and DynamicTrading.Config.TraderBudget or {
+        BaseBudget = 500,
+        MinBudget = 100,
+        MaxBudget = 15000,
+    }
+
+    local eventMult = 1.0
+    if DynamicTrading and DynamicTrading.Events and DynamicTrading.Events.getTraderBudgetMultiplier and faction then
+        eventMult = tonumber(DynamicTrading.Events.getTraderBudgetMultiplier(faction)) or 1.0
+    end
+
+    if faction and tostring(faction.factionType or "") == "independent" then
+        return math.max(0, math.floor(((tonumber(config.BaseBudget) or 500) + randomInt(0, 1000)) * eventMult))
+    end
+
+    local colonyWealth = 0
+    if faction then
+        colonyWealth = tonumber(faction.ColonyWealth or faction.wealth) or 0
+    else
+        colonyWealth = tonumber(npcData and (npcData.ColonyWealth or npcData.colonyWealth or npcData.factionWealth)) or 0
+    end
+    if colonyWealth <= 0 then
+        return 0
+    end
+
+    local budgetPercent = (SandboxVars and SandboxVars.DynamicTrading and tonumber(SandboxVars.DynamicTrading.TraderBudgetPercent) or 10.0) / 100
+    local allocatedBudget = math.floor((colonyWealth * budgetPercent) * eventMult)
+    allocatedBudget = math.max(tonumber(config.MinBudget) or 100, math.min(tonumber(config.MaxBudget) or 15000, allocatedBudget))
+    if allocatedBudget > colonyWealth then
+        allocatedBudget = colonyWealth
+    end
+    return math.max(0, math.floor(allocatedBudget))
+end
+
+local function getDeathMoneyPlan(npcData)
+    if not npcData or not npcData.uuid then
+        return 0, "no_uuid", nil, false
+    end
+
+    local stockData = nil
+    if DynamicTrading_Stock and DynamicTrading_Stock.GetStock then
+        local ok, result = pcall(DynamicTrading_Stock.GetStock, npcData.uuid)
+        if ok then
+            stockData = result
+        end
+    end
+
+    local session = nil
+    if DT_TraderSession and DT_TraderSession.GetSession then
+        local ok, result = pcall(DT_TraderSession.GetSession, npcData.uuid)
+        if ok then
+            session = result
+        end
+    end
+    local sessionBudget = math.max(0, math.floor(tonumber(session and session.budget) or 0))
+
+    if stockData and stockData.tradeInteracted == true and session then
+        return sessionBudget, "active_trader_budget", session, false
+    end
+
+    local budget = sessionBudget > 0 and sessionBudget or getFactionBudgetEstimate(npcData)
+    if budget <= 0 then
+        return 0, "no_budget", session, false
+    end
+
+    local minAmount = math.max(1, math.floor(budget * 0.25))
+    local maxAmount = math.max(minAmount, math.floor(budget * 0.75))
+    return randomInt(minAmount, maxAmount), "random_colony_budget", session, session == nil
+end
+
+local function addMoneyToContainer(container, amount)
+    local safeAmount = math.max(0, math.floor(tonumber(amount) or 0))
+    if not container or safeAmount <= 0 then
+        return false
+    end
+
+    local helpers = DynamicTrading and DynamicTrading.ServerHelpers or nil
+    local bundles = math.floor(safeAmount / DEATH_MONEY_BUNDLE_VALUE)
+    local loose = safeAmount % DEATH_MONEY_BUNDLE_VALUE
+
+    local function addItem(fullType, count)
+        if count <= 0 then
+            return true
+        end
+        if helpers and helpers.AddItem then
+            helpers.AddItem(container, fullType, count)
+            return true
+        end
+        if container.AddItems then
+            container:AddItems(fullType, count)
+            return true
+        end
+        return false
+    end
+
+    if bundles > 0 then
+        if not addItem("Base.MoneyBundle", bundles) then
+            return false
+        end
+    end
+    if loose > 0 then
+        if not addItem("Base.Money", loose) then
+            return false
+        end
+    end
+
+    return true, bundles, loose
+end
+
+local function deductDeathMoneyFromEconomy(npcData, amount, session, deductFactionDirectly)
+    local safeAmount = math.max(0, math.floor(tonumber(amount) or 0))
+    if safeAmount <= 0 then
+        return
+    end
+
+    if session and session.closed ~= true then
+        session.budget = math.max(0, math.floor(tonumber(session.budget) or 0) - safeAmount)
+        if ModData and ModData.transmit then
+            ModData.transmit("DynamicTrading_TraderSessions")
+        end
+        return
+    end
+
+    if deductFactionDirectly and npcData and npcData.factionID and DynamicTrading_Factions and DynamicTrading_Factions.AllocateTraderBudget then
+        local faction = DynamicTrading_Factions.GetFaction and DynamicTrading_Factions.GetFaction(npcData.factionID) or nil
+        if faction and tostring(faction.factionType or "") == "independent" then
+            return
+        end
+        DynamicTrading_Factions.AllocateTraderBudget(npcData.factionID, safeAmount)
+    end
+end
+
+function DTNPCLifecycle.DropDeathMoney(zombie, npcData, removalContext)
+    if isClient and isClient() and not (isServer and isServer()) then
+        return false
+    end
+    if not zombie or not npcData or npcData.deathMoneyDropped == true then
+        return false
+    end
+
+    local inv = zombie.getInventory and zombie:getInventory() or nil
+    if not inv then
+        lifecycleDebugLog(npcData, "death_money_skip", "no inventory container")
+        return false
+    end
+
+    local amount, reason, session, deductFactionDirectly = getDeathMoneyPlan(npcData)
+    amount = math.max(0, math.floor(tonumber(amount) or 0))
+    if amount <= 0 then
+        lifecycleDebugLog(npcData, "death_money_skip", "reason=" .. tostring(reason))
+        return false
+    end
+
+    local added, bundles, loose = addMoneyToContainer(inv, amount)
+    if not added then
+        lifecycleDebugLog(npcData, "death_money_skip", "failed to add amount=" .. tostring(amount))
+        return false
+    end
+
+    npcData.deathMoneyDropped = true
+    npcData.deathMoneyDropAmount = amount
+    npcData.deathMoneyDropReason = reason
+    deductDeathMoneyFromEconomy(npcData, amount, session, deductFactionDirectly)
+
+    if type(removalContext) == "table" then
+        removalContext.deathMoneyDropAmount = amount
+        removalContext.deathMoneyDropReason = reason
+    end
+
+    lifecycleDebugLog(
+        npcData,
+        "death_money_drop",
+        "amount=" .. tostring(amount)
+            .. " bundles=" .. tostring(bundles or 0)
+            .. " loose=" .. tostring(loose or 0)
+            .. " reason=" .. tostring(reason)
+    )
+    return true
+end
 
 function DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attacker, context)
     if not zombie or not npcData or internal.isRemoteClient() or npcData.incapState ~= "Active" then
@@ -112,6 +336,7 @@ function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, co
     end
 
     DynamicTrading.Log("DTV2", "NPC", "Lifecycle", "Incapacitated NPC killed for good: " .. (liveData.name or uuid))
+    DTNPCLifecycle.DropDeathMoney(zombie, liveData, removalContext)
     local finalKillContext = DTNPCLifecycle.WithFinalKillContext(zombie, removalContext)
     local manualCorpseCreated = false
     if finalKillContext.forcedLiveBodyRemoval == true then
@@ -284,6 +509,7 @@ function DTNPCLifecycle.HandleZombieDead(zombie)
         end
 
         DynamicTrading.Log("DTV2", "NPC", "Lifecycle", "NPC Died: " .. (npcData.name or uuid))
+        DTNPCLifecycle.DropDeathMoney(zombie, npcData, removalContext)
         DTNPCManager.RemoveData(uuid, "Dead", nil, nil, removalContext)
     else
         DynamicTrading.Log("DTV2", "NPC", "Warn", "Unregister ignored zombie with no authoritative UUID; refusing outfit-ID fallback.")

@@ -57,6 +57,13 @@ return function(context)
             DT_TraderSession.OnBuy(tx.traderID, totalCost)
         end
 
+        tx.stockData.playerInteracted = true
+        tx.stockData.tradeInteracted = true
+        tx.stockData.lastTradeKind = "buy"
+        tx.stockData.lastTradeBy = player and player.getUsername and player:getUsername() or nil
+        tx.stockData.lastTradeAt = getTimeInMillis and getTimeInMillis() or nil
+        tx.stockData.totalTradeVolume = (tonumber(tx.stockData.totalTradeVolume) or 0) + totalCost
+
         local itemStockData = type(itemStock) == "table" and itemStock or {}
         customData = itemStockData.customData
 

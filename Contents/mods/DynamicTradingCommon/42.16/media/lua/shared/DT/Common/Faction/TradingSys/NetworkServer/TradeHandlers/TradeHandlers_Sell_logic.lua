@@ -53,6 +53,13 @@ return function(context)
             DT_TraderSession.OnSell(tx.traderID, totalGain)
         end
 
+        tx.stockData.playerInteracted = true
+        tx.stockData.tradeInteracted = true
+        tx.stockData.lastTradeKind = "sell"
+        tx.stockData.lastTradeBy = player and player.getUsername and player:getUsername() or nil
+        tx.stockData.lastTradeAt = getTimeInMillis and getTimeInMillis() or nil
+        tx.stockData.totalTradeVolume = (tonumber(tx.stockData.totalTradeVolume) or 0) + totalGain
+
         if not tx.stockData.deflation then
             tx.stockData.deflation = {}
         end

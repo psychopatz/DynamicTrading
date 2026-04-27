@@ -65,6 +65,9 @@ return function(context)
         if success then
             local stockData = DynamicTrading_Stock.GetStock(traderID)
             if stockData then
+                stockData.playerInteracted = true
+                stockData.lastInteractedBy = player and player.getUsername and player:getUsername() or nil
+                stockData.lastInteractedAt = getTimeInMillis and getTimeInMillis() or nil
                 DynamicTrading.ServerHelpers.SendResponse(player, commandModule, "SyncStock", buildSyncStockPayload(traderID, stockData, true))
                 DynamicTrading.ServerHelpers.SendResponse(player, commandModule, "TradeResult", { success = true, reason = "Stock Generated" })
             end
