@@ -462,7 +462,7 @@ local function hasLineOfSight(observer, target)
     return true
 end
 
-function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget, anchorRadius)
+function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget, anchorRadius, preferDTNPCsOverZombies)
     if not zombie then
         return nil, 9999
     end
@@ -639,10 +639,18 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
         nearestType = "zombie"
     end
 
-    local chosen = currentTarget or hostileNPCTarget or nearestTarget
-    local distance = currentTarget and currentDistance
+    local shouldSwitchFromZombie = preferDTNPCsOverZombies == true
+        and currentType == "zombie"
+        and hostileNPCTarget ~= nil
+
+    local effectiveCurrentTarget = shouldSwitchFromZombie and nil or currentTarget
+    local effectiveCurrentType = shouldSwitchFromZombie and nil or currentType
+    local effectiveCurrentDistance = shouldSwitchFromZombie and 9999 or currentDistance
+
+    local chosen = effectiveCurrentTarget or hostileNPCTarget or nearestTarget
+    local distance = effectiveCurrentTarget and effectiveCurrentDistance
         or (hostileNPCTarget and hostileNPCDistance or nearestDistance)
-    local threatType = currentTarget and currentType
+    local threatType = effectiveCurrentTarget and effectiveCurrentType
         or (hostileNPCTarget and "dtnpc" or nearestType)
 
     if chosen then

@@ -117,7 +117,8 @@ local function protectTargetOrEscort(zombie, npcData, master, distToMaster, requ
         npcData,
         nil,
         master,
-        getProtectEngageRadius(npcData)
+        getProtectEngageRadius(npcData),
+        true
     )
     if not target then
         if requestedState and DTNPCProtect and DTNPCProtect.ReportCombatIssue then
@@ -198,7 +199,8 @@ DTNPCLogic.Behaviors["ProtectAuto"] = function(zombie, npcData, master, distToMa
         npcData,
         nil,
         master,
-        getProtectEngageRadius(npcData)
+        getProtectEngageRadius(npcData),
+        true
     )
     if not target then
         followEscort(zombie, npcData, master, distToMaster)
