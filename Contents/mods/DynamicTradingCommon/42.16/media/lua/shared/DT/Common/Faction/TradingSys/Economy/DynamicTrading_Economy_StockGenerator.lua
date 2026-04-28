@@ -3,48 +3,27 @@ local Common = DynamicTrading.Economy.Common
 
 local function getResolvedArchetypeForSoul(soul)
     local archetypeID = soul and soul.archetypeID or "General"
-    local archetype = DynamicTrading.Archetypes[archetypeID]
-    if not archetype and DynamicTrading.IsLotteryAgent and DynamicTrading.IsLotteryAgent(soul) then
-        archetype = DynamicTrading.Archetypes["LotteryAgent"]
-    end
-    return archetypeID, archetype or DynamicTrading.Archetypes["General"]
+    local stockArchetypeID = DynamicTrading.GetArchetypeStockSourceID
+        and DynamicTrading.GetArchetypeStockSourceID(soul, archetypeID)
+        or archetypeID
+    local archetype = DynamicTrading.Archetypes[stockArchetypeID] or DynamicTrading.Archetypes[archetypeID]
+    return stockArchetypeID, archetype or DynamicTrading.Archetypes["General"]
 end
 
-local function isLotteryTicketItem(item)
-    if not item then
+local function normalizeStockMatchText(value)
+    local text = string.lower(tostring(value or ""))
+    return string.gsub(text, "[%s%._%-]+", "")
+end
+
+local function textMatchesKeywords(text, keywords)
+    local normalizedText = normalizeStockMatchText(text)
+    if normalizedText == "" or type(keywords) ~= "table" then
         return false
     end
 
-    local fullType = string.lower(tostring(item.getFullType and item:getFullType() or ""))
-    local displayName = string.lower(tostring(item.getDisplayName and item:getDisplayName() or item.getName and item:getName() or ""))
-
-    local fullHasTicket = string.find(fullType, "ticket", 1, true) ~= nil
-    local displayHasTicket = string.find(displayName, "ticket", 1, true) ~= nil
-
-    return string.find(fullType, "lottery", 1, true) ~= nil
-        or string.find(fullType, "lotto", 1, true) ~= nil
-        or string.find(displayName, "lottery", 1, true) ~= nil
-        or string.find(displayName, "lotto", 1, true) ~= nil
-        or (string.find(fullType, "scratch", 1, true) ~= nil and fullHasTicket)
-        or (string.find(displayName, "scratch", 1, true) ~= nil and displayHasTicket)
-end
-
-local function getFallbackInventoryPrice(item)
-    local weight = tonumber(item and item.getActualWeight and item:getActualWeight() or item and item.getWeight and item:getWeight() or 0.1) or 0.1
-    return math.max(10, math.floor((weight * 100) + 25))
-end
-
-local function isLotteryMasterListEntry(itemKey, itemData)
-    local keyText = string.lower(tostring(itemKey or itemData and itemData.item or ""))
-    if string.find(keyText, "lottery", 1, true)
-        or string.find(keyText, "lotto", 1, true)
-        or (string.find(keyText, "scratch", 1, true) and string.find(keyText, "ticket", 1, true)) then
-        return true
-    end
-
-    for _, tag in ipairs(itemData and itemData.tags or {}) do
-        local tagText = string.lower(tostring(tag or ""))
-        if string.find(tagText, "lottery", 1, true) or string.find(tagText, "lotto", 1, true) then
+    for _, keyword in ipairs(keywords) do
+        local normalizedKeyword = normalizeStockMatchText(keyword)
+        if normalizedKeyword ~= "" and string.find(normalizedText, normalizedKeyword, 1, true) ~= nil then
             return true
         end
     end
@@ -52,19 +31,50 @@ local function isLotteryMasterListEntry(itemKey, itemData)
     return false
 end
 
-local function mergeLotteryInventoryStock(finalItems, masterList, traderUUID, soul)
-    if not (DynamicTrading.IsLotteryAgent and DynamicTrading.IsLotteryAgent(soul)) then
+local function itemMatchesSpecializedStock(item, keywords)
+    if not item or type(keywords) ~= "table" then
+        return false
+    end
+
+    local fullType = tostring(item.getFullType and item:getFullType() or "")
+    local displayName = tostring(item.getDisplayName and item:getDisplayName() or item.getName and item:getName() or "")
+    return textMatchesKeywords(fullType, keywords) or textMatchesKeywords(displayName, keywords)
+end
+
+local function getFallbackInventoryPrice(item)
+    local weight = tonumber(item and item.getActualWeight and item:getActualWeight() or item and item.getWeight and item:getWeight() or 0.1) or 0.1
+    return math.max(10, math.floor((weight * 100) + 25))
+end
+
+local function masterListEntryMatchesSpecializedStock(itemKey, itemData, keywords)
+    if textMatchesKeywords(itemKey or itemData and itemData.item or "", keywords) then
+        return true
+    end
+
+    for _, tag in ipairs(itemData and itemData.tags or {}) do
+        if textMatchesKeywords(tag, keywords) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function mergeSpecializedInventoryStock(finalItems, masterList, traderUUID, soul)
+    local inventoryKeywords = DynamicTrading.GetArchetypeInventoryStockKeywords
+        and DynamicTrading.GetArchetypeInventoryStockKeywords(soul)
+        or nil
+    if type(inventoryKeywords) ~= "table" or #inventoryKeywords == 0 then
         return
     end
+
+    local fallbackKeywords = DynamicTrading.GetArchetypeFallbackStockKeywords
+        and DynamicTrading.GetArchetypeFallbackStockKeywords(soul)
+        or inventoryKeywords
 
     local zombie = nil
-    local npcData = nil
     if DTNPCServerCore and DTNPCServerCore.GetNPCDataByUUID then
-        zombie, npcData = DTNPCServerCore.GetNPCDataByUUID(traderUUID)
-    end
-
-    if not (DynamicTrading.IsLotteryAgent and DynamicTrading.IsLotteryAgent(npcData or soul)) then
-        return
+        zombie = DTNPCServerCore.GetNPCDataByUUID(traderUUID)
     end
 
     local inventory = zombie and zombie.getInventory and zombie:getInventory() or nil
@@ -77,7 +87,7 @@ local function mergeLotteryInventoryStock(finalItems, masterList, traderUUID, so
     if items then
         for index = 0, items:size() - 1 do
             local item = items:get(index)
-            if isLotteryTicketItem(item) then
+            if itemMatchesSpecializedStock(item, inventoryKeywords) then
                 local itemKey = tostring(item:getFullType())
                 local itemData = masterList and masterList[itemKey] or nil
                 local basePrice = itemData and itemData.basePrice or getFallbackInventoryPrice(item)
@@ -106,7 +116,7 @@ local function mergeLotteryInventoryStock(finalItems, masterList, traderUUID, so
     end
 
     for itemKey, itemData in pairs(masterList) do
-        if isLotteryMasterListEntry(itemKey, itemData) then
+        if masterListEntryMatchesSpecializedStock(itemKey, itemData, fallbackKeywords) then
             local basePrice = itemData.basePrice
             if DynamicTrading.PriceConfig and DynamicTrading.PriceConfig.GetEffectiveBasePrice then
                 basePrice = DynamicTrading.PriceConfig.GetEffectiveBasePrice(itemKey, itemData)
@@ -173,7 +183,7 @@ function V2.GenerateStock(traderUUID)
         end
     end
 
-    mergeLotteryInventoryStock(finalItems, masterList, traderUUID, soul)
+    mergeSpecializedInventoryStock(finalItems, masterList, traderUUID, soul)
 
     return finalItems
 end

@@ -1,6 +1,19 @@
 require "ISUI/ISPanel"
+pcall(require, "DT/Common/UI/RadioScanner/DT_RadioScannerScanStatsModal")
 
 DT_RadioScannerScanStatsPanel = ISPanel:derive("DT_RadioScannerScanStatsPanel")
+
+local function hasStatsData(stats)
+    if type(stats) ~= "table" then
+        return false
+    end
+
+    for _, _ in pairs(stats) do
+        return true
+    end
+
+    return false
+end
 
 local function pickMetricColor(kind, value, fallbackGood)
     local numeric = tonumber(value)
@@ -79,11 +92,16 @@ function DT_RadioScannerScanStatsPanel:onMouseDown(x, y)
 end
 
 function DT_RadioScannerScanStatsPanel:onMouseUp(x, y)
-    if self.stats and next(self.stats) ~= nil and DT_RadioScannerScanStatsModal and DT_RadioScannerScanStatsModal.Open then
-        DT_RadioScannerScanStatsModal.Open(self.stats)
-        return true
+    if hasStatsData(self.stats)
+        and type(DT_RadioScannerScanStatsModal) == "table"
+        and type(DT_RadioScannerScanStatsModal.Open) == "function" then
+        local ok, err = pcall(DT_RadioScannerScanStatsModal.Open, self.stats)
+        if not ok and DynamicTrading and DynamicTrading.Log then
+            DynamicTrading.Log("DTCommons", "Radio", "Error", "Failed to open scan stats modal: " .. tostring(err))
+        end
+        return ok == true
     end
-    return ISPanel.onMouseUp(self, x, y)
+    return false
 end
 
 function DT_RadioScannerScanStatsPanel:prerender()

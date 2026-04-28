@@ -4,6 +4,7 @@
 -- ==============================================================================
 
 require "ISUI/ISPanel"
+require "DT/UI/Shared/DT_UIUtils"
 
 DT_NPCProfilePanel = ISPanel:derive("DT_NPCProfilePanel")
 
@@ -83,7 +84,11 @@ function DT_NPCProfilePanel:prerender()
     self:drawText("NPC PROFILE", textX, currY, 1, 0.8, 0, 1, UIFont.Large)
     currY = currY + 30
     
-    self:drawText("Name: " .. (self.soul.name or "Unknown"), textX, currY, 0.9, 0.9, 0.9, 1, UIFont.Medium)
+    local nameColor = DT_UIUtils.GetTraderReputationColor
+        and DT_UIUtils.GetTraderReputationColor(self.uuid, self.soul and self.soul.factionID, { alpha = 1 })
+        or { r = 0.9, g = 0.9, b = 0.9, a = 1 }
+    self:drawText("Name:", textX, currY, 0.75, 0.75, 0.75, 1, UIFont.Medium)
+    self:drawText(self.soul.name or "Unknown", textX + 52, currY, nameColor.r, nameColor.g, nameColor.b, nameColor.a or 1, UIFont.Medium)
     currY = currY + 25
 
     self:drawText("Archetype: " .. (self.archName or "Unknown"), textX, currY, 0.9, 0.9, 0.9, 1, UIFont.Medium)

@@ -139,6 +139,8 @@ function ISDTNPCHealthBarManager:update()
                 if not barData then
                     barData = {
                         zombie = zombie,
+                        uuid = uuid,
+                        npcData = npcData,
                         currentHp = tracked.currentHp,
                         maxHp = tracked.maxHp,
                         isIncapacitated = tracked.isIncapacitated,
@@ -153,6 +155,8 @@ function ISDTNPCHealthBarManager:update()
                     self.barList[uuid] = barData
                 else
                     barData.zombie = zombie
+                    barData.uuid = uuid
+                    barData.npcData = npcData
                     barData.currentHp = tracked.currentHp
                     barData.maxHp = tracked.maxHp
                     barData.isIncapacitated = tracked.isIncapacitated

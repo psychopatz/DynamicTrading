@@ -5,6 +5,7 @@
 
 DTNPCClient = DTNPCClient or {}
 DTNPC_ClientSync_HealthBars = DTNPC_ClientSync_HealthBars or {}
+require "DT/UI/Shared/DT_UIUtils"
 
 local HealthBars = DTNPC_ClientSync_HealthBars
 local modules = HealthBars.Modules or {}
@@ -108,6 +109,18 @@ function Helpers.isCombatState(npcData)
         or state == "AttackRange"
         or state == "Flee"
         or state == "Incapacitated"
+end
+
+function Helpers.getNameColor(npcData, uuid)
+    if DT_UIUtils and DT_UIUtils.GetTraderReputationColor then
+        return DT_UIUtils.GetTraderReputationColor(uuid or (npcData and npcData.uuid), npcData and npcData.factionID, { alpha = 1 })
+    end
+
+    if npcData and npcData.isHostile == true then
+        return { r = 1.0, g = 0.28, b = 0.28, a = 1.0 }
+    end
+
+    return { r = 1.0, g = 1.0, b = 1.0, a = 1.0 }
 end
 
 function Helpers.hasActiveBandage(npcData)

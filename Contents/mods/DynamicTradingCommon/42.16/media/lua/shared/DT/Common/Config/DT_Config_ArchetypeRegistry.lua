@@ -43,6 +43,38 @@ local function normalizeFactionList(list)
     return normalized
 end
 
+local function normalizeStringList(list)
+    if type(list) == "string" then
+        list = { list }
+    end
+
+    if type(list) ~= "table" then
+        return nil
+    end
+
+    local normalized = {}
+    local seen = {}
+
+    for _, value in ipairs(list) do
+        local text = tostring(value or "")
+        text = string.gsub(text, "^%s+", "")
+        text = string.gsub(text, "%s+$", "")
+        if text ~= "" then
+            local key = string.lower(text)
+            if not seen[key] then
+                seen[key] = true
+                normalized[#normalized + 1] = text
+            end
+        end
+    end
+
+    if #normalized == 0 then
+        return nil
+    end
+
+    return normalized
+end
+
 local function resolveArchetypeData(idOrData)
     if type(idOrData) == "table" then
         return idOrData
@@ -117,6 +149,92 @@ local function normalizeRosterPoolEntry(id, data)
     end
 
     return normalized
+end
+
+local function normalizeArchetypeSpecialization(id, data)
+    if type(data) ~= "table" then
+        return nil
+    end
+
+    local source = type(data.specialization) == "table" and data.specialization or nil
+    local spec = nil
+
+    if source then
+        spec = {}
+        for key, value in pairs(source) do
+            spec[key] = value
+        end
+    end
+
+    if type(data.specialTradeProfile) == "string" and data.specialTradeProfile ~= "" then
+        spec = spec or {}
+        spec.role = spec.role or data.specialTradeProfile
+    end
+
+    if data.contactReputationRequired ~= nil then
+        spec = spec or {}
+        spec.contactReputationRequired = data.contactReputationRequired
+    end
+
+    if data.neverRecruitable == true then
+        spec = spec or {}
+        spec.neverRecruitable = true
+    end
+
+    if type(data.stockSourceArchetypeID) == "string" and data.stockSourceArchetypeID ~= "" then
+        spec = spec or {}
+        spec.stockSourceArchetypeID = data.stockSourceArchetypeID
+    end
+
+    if data.inventoryStockKeywords ~= nil then
+        spec = spec or {}
+        spec.inventoryStockKeywords = data.inventoryStockKeywords
+    end
+
+    if data.fallbackStockKeywords ~= nil then
+        spec = spec or {}
+        spec.fallbackStockKeywords = data.fallbackStockKeywords
+    end
+
+    if data.rosterPool ~= nil then
+        spec = spec or {}
+        spec.rosterPool = data.rosterPool
+    end
+
+    if not spec then
+        return nil
+    end
+
+    spec.id = tostring(spec.id or id or data.id or data.name or spec.role or "SpecializedArchetype")
+    spec.role = tostring(spec.role or spec.id)
+
+    if spec.contactReputationRequired ~= nil then
+        spec.contactReputationRequired = math.max(0, tonumber(spec.contactReputationRequired) or 0)
+    end
+
+    spec.neverRecruitable = spec.neverRecruitable == true
+    spec.stockSourceArchetypeID = type(spec.stockSourceArchetypeID) == "string"
+            and spec.stockSourceArchetypeID ~= ""
+            and spec.stockSourceArchetypeID
+        or tostring(id or data.id or "General")
+    spec.inventoryStockKeywords = normalizeStringList(spec.inventoryStockKeywords)
+    spec.fallbackStockKeywords = normalizeStringList(spec.fallbackStockKeywords or spec.inventoryStockKeywords)
+    spec.mergeLiveInventoryStock = spec.mergeLiveInventoryStock ~= false and spec.inventoryStockKeywords ~= nil
+
+    if type(spec.rosterPool) == "table" then
+        local rosterPool = {}
+        for key, value in pairs(spec.rosterPool) do
+            rosterPool[key] = value
+        end
+        rosterPool.archetypeID = rosterPool.archetypeID or tostring(id or data.id or "General")
+        rosterPool.allowedFactions = rosterPool.allowedFactions or data.allowedFactions
+        rosterPool.factionID = rosterPool.factionID or data.preferredFactionID
+        spec.rosterPool = normalizeRosterPoolEntry(spec.id .. "_RosterPool", rosterPool)
+    else
+        spec.rosterPool = nil
+    end
+
+    return spec
 end
 
 function DynamicTrading.RegisterArchetypeModule(id)
@@ -225,8 +343,39 @@ function DynamicTrading.IsArchetypeWildcardStockEnabled(idOrData)
     return not (data and data.disableWildcardStock == true)
 end
 
+function DynamicTrading.GetArchetypeSpecialization(idOrData)
+    local data = resolveArchetypeData(idOrData)
+    if type(data) == "table" and type(data.specialization) == "table" then
+        return data.specialization
+    end
+    return nil
+end
+
+function DynamicTrading.GetArchetypeStockSourceID(idOrData, defaultValue)
+    local specialization = DynamicTrading.GetArchetypeSpecialization(idOrData)
+    if specialization and type(specialization.stockSourceArchetypeID) == "string" and specialization.stockSourceArchetypeID ~= "" then
+        return specialization.stockSourceArchetypeID
+    end
+    return tostring(defaultValue or (type(idOrData) == "string" and idOrData) or "General")
+end
+
+function DynamicTrading.GetArchetypeInventoryStockKeywords(idOrData)
+    local specialization = DynamicTrading.GetArchetypeSpecialization(idOrData)
+    return specialization and specialization.inventoryStockKeywords or nil
+end
+
+function DynamicTrading.GetArchetypeFallbackStockKeywords(idOrData)
+    local specialization = DynamicTrading.GetArchetypeSpecialization(idOrData)
+    return specialization and specialization.fallbackStockKeywords or nil
+end
+
 function DynamicTrading.IsLotteryAgent(idOrData)
     local hints, data = collectArchetypeHints(idOrData)
+    local specialization = DynamicTrading.GetArchetypeSpecialization(data or idOrData)
+    if specialization and tostring(specialization.role or "") == "lottery" then
+        return true
+    end
+
     if type(data) == "table" and data.specialTradeProfile == "lottery" then
         return true
     end
@@ -242,6 +391,11 @@ end
 
 function DynamicTrading.GetArchetypeContactRequiredReputation(idOrData, defaultValue)
     local _, data = collectArchetypeHints(idOrData)
+    local specialization = DynamicTrading.GetArchetypeSpecialization(data or idOrData)
+    if type(specialization) == "table" and specialization.contactReputationRequired ~= nil then
+        return math.max(0, tonumber(specialization.contactReputationRequired) or 0)
+    end
+
     if type(data) == "table" and data.contactReputationRequired ~= nil then
         return math.max(0, tonumber(data.contactReputationRequired) or 0)
     end
@@ -255,6 +409,11 @@ end
 
 function DynamicTrading.IsArchetypeNeverRecruitable(idOrData)
     local _, data = collectArchetypeHints(idOrData)
+    local specialization = DynamicTrading.GetArchetypeSpecialization(data or idOrData)
+    if type(specialization) == "table" and specialization.neverRecruitable == true then
+        return true
+    end
+
     if type(data) == "table" and data.neverRecruitable == true then
         return true
     end
@@ -286,6 +445,13 @@ function DynamicTrading.RegisterArchetype(id, data)
     end
 
     data.minFactionWealth = math.max(0, math.floor(tonumber(data.minFactionWealth) or 0))
+    data.specialization = normalizeArchetypeSpecialization(id, data)
+    if data.specialization and data.specialization.contactReputationRequired ~= nil and data.contactReputationRequired == nil then
+        data.contactReputationRequired = data.specialization.contactReputationRequired
+    end
+    if data.specialization and data.specialization.neverRecruitable == true then
+        data.neverRecruitable = true
+    end
     if data.contactReputationRequired ~= nil then
         data.contactReputationRequired = math.max(0, tonumber(data.contactReputationRequired) or 0)
     end
@@ -296,6 +462,9 @@ function DynamicTrading.RegisterArchetype(id, data)
 
     DynamicTrading.RegisterArchetypeModule(id)
     DynamicTrading.Archetypes[id] = data
+    if data.specialization and data.specialization.rosterPool then
+        DynamicTrading.RegisterRosterPoolEntry(data.specialization.rosterPool.id, data.specialization.rosterPool)
+    end
     
     DynamicTrading.Log("DTCommons", "Core", "Info", "Registered Archetype: " .. id)
 end

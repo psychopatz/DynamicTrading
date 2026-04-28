@@ -70,6 +70,48 @@ local function getConfiguredColonyWealth()
     return math.max(0, math.floor(configured))
 end
 
+local function ensureRosterPoolMinimums(data)
+    if not (DynamicTrading and DynamicTrading.GetRosterPoolEntriesForFaction and DynamicTrading_Roster and DynamicTrading_Roster.AddSoul) then
+        return false
+    end
+
+    local rosterData = ModData.get("DynamicTrading_Roster") or {}
+    local souls = rosterData.Souls or {}
+    local changed = false
+
+    for factionID, faction in pairs(data or {}) do
+        if type(faction) == "table" and faction.playerOwned ~= true then
+            local members = DynamicTrading_Roster.GetFactionMembers and DynamicTrading_Roster.GetFactionMembers(factionID) or {}
+            local archetypeCounts = {}
+
+            for _, uuid in ipairs(members) do
+                local soul = souls[uuid] or (DynamicTrading_Roster.GetSoulRegistry and DynamicTrading_Roster.GetSoulRegistry(uuid)) or nil
+                if soul and tostring(soul.status or "") ~= "Dead" then
+                    local archetypeID = tostring(soul.archetypeID or "General")
+                    archetypeCounts[archetypeID] = (archetypeCounts[archetypeID] or 0) + 1
+                end
+            end
+
+            local rosterEntries = DynamicTrading.GetRosterPoolEntriesForFaction(factionID)
+            for _, entry in ipairs(rosterEntries or {}) do
+                local archetypeID = tostring(entry.archetypeID or "General")
+                local currentCount = archetypeCounts[archetypeID] or 0
+                local requiredCount = math.max(0, tonumber(entry.minCount) or 0)
+
+                while currentCount < requiredCount do
+                    DynamicTrading_Roster.AddSoul(factionID, archetypeID, faction.homeCoords, { suppressRecruitLog = true })
+                    faction.memberCount = math.max(0, tonumber(faction.memberCount) or 0) + 1
+                    currentCount = currentCount + 1
+                    archetypeCounts[archetypeID] = currentCount
+                    changed = true
+                end
+            end
+        end
+    end
+
+    return changed
+end
+
 local function collectSpatialAnchorPlayers()
     local players = {}
     local onlinePlayers = getOnlinePlayers and getOnlinePlayers() or nil
@@ -612,6 +654,8 @@ function Lifecycle.Init()
     if DynamicTrading_Factions and DynamicTrading_Factions.RefreshAllPlayerFactions then
         DynamicTrading_Factions.RefreshAllPlayerFactions()
     end
+
+    ensureRosterPoolMinimums(data)
 
     if needsHomeRepair and not tryFinalizeFactionBootstrap("init") then
         DynamicTrading.Log("DTCommons", "Faction", "Warn", "Deferred faction home repair until geolocator data becomes available.")

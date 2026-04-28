@@ -40,18 +40,12 @@ function DT_FactionList:doDrawItem(y, item, alt)
     -- Selection / Background (Unified Utility)
     DT_UIUtils.drawSelectionHighlight(self, y, item, alt)
 
-    -- Color Coding based on Status
-    local r, g, b = 0.8, 0.8, 0.8 -- Default gray-ish
     local state = f.state or "Stable"
-    if state == "Starving" then 
-        r, g, b = 1, 0.2, 0.2 -- Red
-    elseif state == "Vulnerable" then 
-        r, g, b = 1, 0.6, 0.2 -- Orange
-    elseif state == "Prospering" then
-        r, g, b = 0.2, 1, 0.2 -- Green
-    elseif state == "Stable" then
-        r, g, b = 0.4, 0.8, 1 -- Light Blue
-    end
+    local rosterData = DT_FactionInfoWindow and DT_FactionInfoWindow.cachedRosterData or nil
+    local nameColor = DT_UIUtils.GetFactionReputationColor and DT_UIUtils.GetFactionReputationColor(f, rosterData, { alpha = 1 })
+        or { r = 0.8, g = 0.8, b = 0.8, a = 1 }
+    local statusColor = DT_UIUtils.ScaleColor and DT_UIUtils.ScaleColor(nameColor, 0.82, 0.9)
+        or { r = 0.6, g = 0.6, b = 0.6, a = 0.9 }
 
     -- Event Indicator (multi-flash aware with legacy fallback)
     local flashEvents = f.ActiveFlashEvents or {}
@@ -76,7 +70,7 @@ function DT_FactionList:doDrawItem(y, item, alt)
         statusY = 30
     end
 
-    self:drawText(item.text, 10, y + 5, r, g, b, 1, nameFont)
+    self:drawText(item.text, 10, y + 5, nameColor.r, nameColor.g, nameColor.b, nameColor.a or 1, nameFont)
     
     -- Status Line (State | Pop)
     local popCount = f.memberCount or "0"
@@ -87,7 +81,7 @@ function DT_FactionList:doDrawItem(y, item, alt)
     if f.playerOwned then
         statusText = "Leader: " .. tostring(f.leaderUsername or "Admin Review") .. " | Pop: " .. tostring(popCount) .. " | " .. tostring(f.leadershipState or state)
     end
-    self:drawText(statusText, 10, y + statusY, 0.6, 0.6, 0.6, 0.8, statusFont)
+    self:drawText(statusText, 10, y + statusY, statusColor.r, statusColor.g, statusColor.b, statusColor.a or 0.9, statusFont)
 
     -- Borders between items
     self:drawRectBorder(0, y, self.width, self.itemheight, 0.1, 1, 1, 1)

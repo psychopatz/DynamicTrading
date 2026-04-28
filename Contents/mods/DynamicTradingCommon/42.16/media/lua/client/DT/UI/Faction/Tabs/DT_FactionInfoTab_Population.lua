@@ -21,10 +21,11 @@ local function getDisplayStatus(soul)
     return status
 end
 
-local function buildWorkerSoul(worker)
+local function buildWorkerSoul(worker, factionID)
     return {
         name = worker.name,
         archetypeID = worker.archetypeID or worker.profession or "General",
+        factionID = worker.factionID or factionID,
         identitySeed = worker.identitySeed,
         isFemale = worker.isFemale,
         status = worker.tradeActive and (worker.tradeStatus or "Trading") or (worker.tradeEligible and "Standby" or tostring(worker.state or "Idle"))
@@ -255,7 +256,7 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
 
                 self.rosterlist:addItem(worker.name or worker.workerID, {
                     worker = liveWorker,
-                    soul = buildWorkerSoul(liveWorker),
+                    soul = buildWorkerSoul(liveWorker, f.id),
                     uuid = liveWorker.tradeSoulUUID or liveWorker.workerID
                 })
                 rememberSelection(self.rosterlist.items[#self.rosterlist.items].item)
@@ -266,6 +267,7 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                 soul = {
                     name = "Public Intel",
                     archetypeID = "Player Faction",
+                    factionID = f.id,
                     identitySeed = 1,
                     isFemale = false,
                     status = tostring(f.memberCount or 0) .. " linked labour recruits"
@@ -297,6 +299,7 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
                     local soul = {
                         name = trader.name,
                         archetypeID = trader.archetype,
+                        factionID = f.id,
                         identitySeed = trader.identitySeed,
                         status = "Active",
                         isFemale = (trader.gender == "Female")

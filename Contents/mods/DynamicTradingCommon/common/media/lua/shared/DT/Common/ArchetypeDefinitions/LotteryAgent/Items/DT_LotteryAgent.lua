@@ -4,6 +4,8 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("LotteryAgent", {
     name = "Lottery Agent",
+    preferredFactionID = "Independent",
+    allowedFactions = { "Independent" },
     allocations = {
         { tags={"Resource.Material.Paper"}, count = 12 },
         { tags={"Misc.General"}, count = 6 },
@@ -17,9 +19,20 @@ DynamicTrading.RegisterArchetype("LotteryAgent", {
         ["Misc.General"] = 1.1,
     },
     forbid = { "Quality.Waste", "Weapon.Explosive", "Resource.Fuel" },
-    contactReputationRequired = 0,
-    neverRecruitable = true,
     specialTradeProfile = "lottery",
+    specialization = {
+        role = "lottery",
+        contactReputationRequired = 0,
+        neverRecruitable = true,
+        stockSourceArchetypeID = "LotteryAgent",
+        inventoryStockKeywords = { "lottery", "lotto", "scratchticket" },
+        fallbackStockKeywords = { "lottery", "lotto", "scratchticket" },
+        rosterPool = {
+            minCount = 1,
+            priority = 15,
+            allowedFactions = { "Independent" },
+        },
+    },
 })
 
 end

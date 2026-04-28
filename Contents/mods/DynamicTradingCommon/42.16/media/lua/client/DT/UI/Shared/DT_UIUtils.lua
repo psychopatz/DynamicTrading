@@ -6,6 +6,20 @@
 
 DT_UIUtils = DT_UIUtils or {}
 
+local function clamp01(value, defaultValue)
+    local n = tonumber(value)
+    if n == nil then
+        return defaultValue or 0
+    end
+    if n < 0 then
+        return 0
+    end
+    if n > 1 then
+        return 1
+    end
+    return n
+end
+
 --- Draws a consistent selection highlight for list items.
 --- @param listbox ISScrollingListBox the listbox instance
 --- @param y number the vertical position
@@ -34,6 +48,49 @@ function DT_UIUtils.drawSelectionHighlight(listbox, y, item, alt)
     end
     
     return false
+end
+
+function DT_UIUtils.ScaleColor(color, factor, alpha)
+    local source = type(color) == "table" and color or { r = 0.8, g = 0.8, b = 0.8, a = 1 }
+    local lift = tonumber(factor) or 1
+    return {
+        r = clamp01((source.r or 0.8) * lift, 0.8),
+        g = clamp01((source.g or 0.8) * lift, 0.8),
+        b = clamp01((source.b or 0.8) * lift, 0.8),
+        a = clamp01(alpha, source.a or 1),
+    }
+end
+
+function DT_UIUtils.GetReputationColor(reputation, options)
+    local alpha = options and options.alpha or 1
+    local stageData = DT_Reputation and DT_Reputation.GetStageData and DT_Reputation.GetStageData(reputation or 0) or nil
+    local color = stageData and stageData.color or { r = 0.8, g = 0.8, b = 0.8 }
+    return {
+        r = clamp01(color.r, 0.8),
+        g = clamp01(color.g, 0.8),
+        b = clamp01(color.b, 0.8),
+        a = clamp01(alpha, 1),
+    }, tonumber(reputation) or 0, stageData and stageData.label or "Neutral"
+end
+
+function DT_UIUtils.GetFactionReputationColor(factionOrID, rosterData, options)
+    local factionID = type(factionOrID) == "table" and factionOrID.id or factionOrID
+    local factionType = type(factionOrID) == "table" and tostring(factionOrID.factionType or "") or ""
+    if tostring(factionID or "") == "Bandits" or factionType == "bandit" then
+        return { r = 1, g = 0.2, b = 0.2, a = clamp01(options and options.alpha or 1, 1) }, -100, "Hostile"
+    end
+
+    local reputation = DT_Reputation and DT_Reputation.GetFactionRep and DT_Reputation.GetFactionRep(factionID, rosterData) or 0
+    return DT_UIUtils.GetReputationColor(reputation, options)
+end
+
+function DT_UIUtils.GetTraderReputationColor(traderUUID, factionID, options)
+    if tostring(factionID or "") == "Bandits" then
+        return { r = 1, g = 0.2, b = 0.2, a = clamp01(options and options.alpha or 1, 1) }, -100, "Hostile"
+    end
+
+    local reputation = DT_Reputation and DT_Reputation.GetEffectiveRep and DT_Reputation.GetEffectiveRep(traderUUID, factionID) or 0
+    return DT_UIUtils.GetReputationColor(reputation, options)
 end
 
 --- Draws text inside a fixed-width lane. Long text scrolls horizontally.
