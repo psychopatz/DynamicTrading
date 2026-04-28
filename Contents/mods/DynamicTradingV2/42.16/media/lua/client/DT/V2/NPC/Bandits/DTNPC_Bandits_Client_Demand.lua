@@ -188,12 +188,16 @@ end
 function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
     if not Helpers.isCurrencyExpandedActive() then return false end
     if not ui or not player or not npcData then return false end
-    local groupID = Helpers.normalize(npcData.banditGroupID)
+    local groupID = Helpers.resolveEncounterGroupID and Helpers.resolveEncounterGroupID(npcData) or Helpers.normalize(npcData.banditGroupID)
     local uuid = Helpers.normalize(npcData.uuid)
-    local pendingKey = groupID or (uuid and ("TradeCycle_" .. uuid)) or nil
+    local pendingKey = Helpers.buildPendingEncounterKey and Helpers.buildPendingEncounterKey(npcData, player)
+        or groupID
+        or (uuid and ("TradeCycle_" .. uuid))
+        or nil
     local isTradeCycleDemand = Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player) or false
+    local isHostileDemand = Helpers.isNegotiableHostileEncounter and Helpers.isNegotiableHostileEncounter(npcData, player) or false
     if not uuid then return false end
-    if not groupID and not isTradeCycleDemand then return false end
+    if not groupID and not isTradeCycleDemand and not isHostileDemand then return false end
 
     ui.isBanditDemand = true
     ui.banditGroupID = groupID
@@ -264,10 +268,15 @@ end
 function BanditClient.OpenDemand(npc, player, npcData)
     if not Helpers.isCurrencyExpandedActive() then return false end
     if not npc or not player or not npcData then return false end
-    local groupID = Helpers.normalize(npcData.banditGroupID)
+    local groupID = Helpers.resolveEncounterGroupID and Helpers.resolveEncounterGroupID(npcData) or Helpers.normalize(npcData.banditGroupID)
     local uuid = Helpers.normalize(npcData.uuid)
-    local pendingKey = groupID or (uuid and ("TradeCycle_" .. uuid)) or nil
-    if not groupID and not (Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player)) then
+    local pendingKey = Helpers.buildPendingEncounterKey and Helpers.buildPendingEncounterKey(npcData, player)
+        or groupID
+        or (uuid and ("TradeCycle_" .. uuid))
+        or nil
+    local isTradeCycleDemand = Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player) or false
+    local isHostileDemand = Helpers.isNegotiableHostileEncounter and Helpers.isNegotiableHostileEncounter(npcData, player) or false
+    if not groupID and not isTradeCycleDemand and not isHostileDemand then
         return false
     end
     if groupID and BanditClient.ResolvedGroups[groupID] then return false end

@@ -59,6 +59,10 @@ function Helpers.getDialogueCategory(source)
         return "Bandits"
     end
 
+    if npcData and npcData.isHostile == true then
+        return "HostileRaiders"
+    end
+
     if npcData and tostring(npcData.tradeCycleMode or "") == "hostile_bribe" then
         return "HostileRaiders"
     end
@@ -212,9 +216,61 @@ function Helpers.isTargetingLocalPlayer(npcData, player)
     if username then
         if Helpers.normalize(npcData.banditTargetUsername) == username then return true end
         if Helpers.normalize(npcData.master) == username then return true end
+        if Helpers.normalize(npcData.lastPlayerAttackerUsername) == username then return true end
+    end
+
+    if playerID ~= nil and npcData.lastPlayerAttackerOnlineID ~= nil and tonumber(npcData.lastPlayerAttackerOnlineID) == tonumber(playerID) then
+        return true
     end
 
     return false
+end
+
+function Helpers.isNegotiableHostileEncounter(npcData, player)
+    if not npcData or npcData.isHostile ~= true then
+        return false
+    end
+
+    if npcData.banditLeaving == true then
+        return false
+    end
+
+    return Helpers.isTargetingLocalPlayer(npcData, player)
+end
+
+function Helpers.resolveEncounterGroupID(npcData)
+    if not npcData then
+        return nil
+    end
+
+    return Helpers.normalize(npcData.banditGroupID)
+        or Helpers.normalize(npcData.hostileNegotiationGroupID)
+end
+
+function Helpers.buildPendingEncounterKey(npcData, player)
+    if not npcData then
+        return nil
+    end
+
+    local groupID = Helpers.resolveEncounterGroupID(npcData)
+    if groupID then
+        return groupID
+    end
+
+    local uuid = Helpers.normalize(npcData.uuid)
+    if not uuid then
+        return nil
+    end
+
+    if Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player) then
+        return "TradeCycle_" .. uuid
+    end
+
+    if Helpers.isNegotiableHostileEncounter(npcData, player) then
+        return "Hostile_" .. uuid
+    end
+
+    return nil
 end
 
 function Helpers.getDistance(player, npc)

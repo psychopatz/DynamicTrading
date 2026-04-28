@@ -101,6 +101,27 @@ function Shared.matchesPlayer(npcData, player)
     return false
 end
 
+function Shared.matchesHostileNegotiationPlayer(npcData, player)
+    if not npcData or not player then
+        return false
+    end
+
+    if Shared.matchesPlayer(npcData, player) then
+        return true
+    end
+
+    local playerID = Shared.getOnlineID(player)
+    local username = Shared.getUsername(player)
+    if playerID ~= nil and npcData.lastPlayerAttackerOnlineID ~= nil and tonumber(npcData.lastPlayerAttackerOnlineID) == tonumber(playerID) then
+        return true
+    end
+    if username and npcData.lastPlayerAttackerUsername and tostring(npcData.lastPlayerAttackerUsername) == tostring(username) then
+        return true
+    end
+
+    return false
+end
+
 function Shared.playerMatchesGroup(player, group)
     if not player or not group then return false end
     local playerID = Shared.getOnlineID(player)
@@ -191,23 +212,66 @@ function Shared.getGroup(groupID)
 
     local members = {}
     local targetUsername, targetOnlineID
+    local factionID, leaderUUID, banditDifficulty
+    local hostileNegotiationOnly = false
+    local tradeCycleEncounter = false
+    local robbery = false
+    local isBanditMember = false
+    local isRaidHostileFaction = false
+    local isHostileBribeMode = false
     for uuid, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
         if npcData
-            and tostring(npcData.banditGroupID or "") == groupID
-            and (npcData.isBandit == true or npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil) then
+            and (tostring(npcData.banditGroupID or "") == groupID
+                or tostring(npcData.hostileNegotiationGroupID or "") == groupID)
+            and (npcData.isBandit == true or npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil or npcData.hostileNegotiationGroupID ~= nil) then
             members[#members + 1] = uuid
-            targetUsername = targetUsername or npcData.banditTargetUsername
-            targetOnlineID = targetOnlineID or npcData.banditTargetOnlineID
+            targetUsername = targetUsername or npcData.banditTargetUsername or npcData.lastPlayerAttackerUsername
+            targetOnlineID = targetOnlineID or npcData.banditTargetOnlineID or npcData.lastPlayerAttackerOnlineID
+            factionID = factionID or npcData.factionID
+            leaderUUID = leaderUUID or tostring(uuid)
+            banditDifficulty = banditDifficulty or npcData.banditDifficulty
+            isBanditMember = isBanditMember or npcData.isBandit == true
+            isRaidHostileFaction = isRaidHostileFaction or npcData.raidHostileFaction == true
+            if tostring(npcData.hostileNegotiationGroupID or "") == groupID then
+                hostileNegotiationOnly = true
+                tradeCycleEncounter = true
+            end
+            if npcData.tradeCycleDemandEligible == true or npcData.tradeCycleMode ~= nil then
+                tradeCycleEncounter = true
+            end
+            if tostring(npcData.tradeCycleMode or "") == "robbery" then
+                robbery = true
+            elseif tostring(npcData.tradeCycleMode or "") == "hostile_bribe" then
+                isHostileBribeMode = true
+            end
         end
     end
 
     if #members <= 0 then return nil end
 
+    local resolveBehavior = nil
+    if hostileNegotiationOnly then
+        local isBanditFaction = Shared.isBanditFactionID(factionID) or isBanditMember == true
+        resolveBehavior = (isBanditFaction or isRaidHostileFaction or isHostileBribeMode or robbery) and "leave" or "return_trading"
+    end
+
+    if not factionID and isBanditMember then
+        factionID = Bandits.FACTION_ID
+    end
+
     group = {
         id = groupID,
         members = members,
+        factionID = factionID,
+        factionName = factionID and Faction.getFactionDisplayName(factionID) or nil,
+        difficulty = Shared.clampDifficulty(banditDifficulty or 2),
+        robbery = robbery,
+        tradeCycleEncounter = tradeCycleEncounter,
+        hostileNegotiationOnly = hostileNegotiationOnly,
         targetUsername = targetUsername,
         targetOnlineID = targetOnlineID,
+        leaderUUID = leaderUUID,
+        resolveBehavior = resolveBehavior,
         status = "active",
     }
     Bandits.Groups[groupID] = group
@@ -231,8 +295,9 @@ function Shared.getGroupMembers(group)
 
     for uuid, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
         if npcData
-            and tostring(npcData.banditGroupID or "") == tostring(group.id or "")
-            and (npcData.isBandit == true or npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil)
+            and (tostring(npcData.banditGroupID or "") == tostring(group.id or "")
+                or tostring(npcData.hostileNegotiationGroupID or "") == tostring(group.id or ""))
+            and (npcData.isBandit == true or npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil or npcData.hostileNegotiationGroupID ~= nil)
             and not seen[uuid] then
             members[#members + 1] = { uuid = uuid, npcData = npcData }
             seen[uuid] = true

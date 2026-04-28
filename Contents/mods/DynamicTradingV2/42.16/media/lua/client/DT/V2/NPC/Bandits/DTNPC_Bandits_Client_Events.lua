@@ -135,6 +135,7 @@ local function onServerCommand(module, command, args)
         local pending = BanditClient.PendingGroups[groupID]
         if not pending and leaderUUID then
             pending = BanditClient.PendingGroups["TradeCycle_" .. leaderUUID]
+                or BanditClient.PendingGroups["Hostile_" .. leaderUUID]
         end
         local ui = Helpers.getCurrentBanditUI(groupID)
             or (leaderUUID and Helpers.getCurrentBanditUIForLeaderUUID and Helpers.getCurrentBanditUIForLeaderUUID(leaderUUID))

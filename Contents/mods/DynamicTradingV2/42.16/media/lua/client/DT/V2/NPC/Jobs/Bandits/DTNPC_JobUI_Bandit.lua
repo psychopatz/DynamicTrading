@@ -13,6 +13,10 @@ local function isBanditDemandEncounter(npcData, player)
     end
 
     local helpers = getHelpers()
+    if helpers and helpers.isNegotiableHostileEncounter and helpers.isNegotiableHostileEncounter(npcData, player) then
+        return true
+    end
+
     if helpers and helpers.isTradeCycleDemandEligible and helpers.isTradeCycleDemandEligible(npcData, player) then
         return npcData.banditDemandResolved ~= true and npcData.banditLeaving ~= true
     end
@@ -37,6 +41,13 @@ if DTNPCJobUI and DTNPCJobUI.Register then
         end,
 
         getTalkLabel = function(ui, npc, player, npcData)
+            local helpers = getHelpers()
+            local isTrueBandit = npcData
+                and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits")
+                or false
+            if helpers and helpers.isNegotiableHostileEncounter and helpers.isNegotiableHostileEncounter(npcData, player) then
+                return isTrueBandit and "Bribe" or "Negotiate"
+            end
             if tostring(npcData and npcData.tradeCycleMode or "") == "hostile_bribe" then
                 return "Negotiate"
             end
@@ -48,17 +59,19 @@ if DTNPCJobUI and DTNPCJobUI.Register then
                 and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits")
                 or false
             local isHostileFactionRaider = npcData
-                and ((npcData.raidHostileFaction == true) or tostring(npcData.tradeCycleMode or "") == "hostile_bribe")
+                and ((npcData.raidHostileFaction == true) or tostring(npcData.tradeCycleMode or "") == "hostile_bribe" or npcData.isHostile == true)
                 and not isTrueBandit
                 or false
+            local helpers = getHelpers()
             return {
                 archetype = isTrueBandit and "Bandit" or (npcData and (npcData.archetypeID or npcData.occupation) or "General"),
-                role = isTrueBandit and "Bandit" or "Raider",
+                role = isTrueBandit and "Bandit" or (npcData and npcData.isHostile == true and "Hostile" or "Raider"),
                 factionID = npcData and npcData.factionID or "Bandits",
                 isBanditDemand = true,
                 isTrueBandit = isTrueBandit,
                 isHostileFactionRaider = isHostileFactionRaider,
-                banditDialogueCategory = isTrueBandit and "Bandits" or "HostileRaiders",
+                banditDialogueCategory = helpers and helpers.getDialogueCategory and helpers.getDialogueCategory(npcData)
+                    or (isTrueBandit and "Bandits" or "HostileRaiders"),
             }
         end,
 
