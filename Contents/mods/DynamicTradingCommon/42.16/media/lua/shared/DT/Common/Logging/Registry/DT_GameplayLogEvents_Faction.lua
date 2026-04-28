@@ -167,3 +167,10 @@ register(Events.FLASH_EVENT_ACTIVATED, {
         EN = "Flash event activated: {1}"
     }
 })
+
+register(Events.BANDIT_RAID_STARTED, {
+    category = "event",
+    templates = {
+        EN = "{1} started a raiding run"
+    }
+})

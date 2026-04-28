@@ -163,6 +163,103 @@ local function getAllKnownFactions()
     return {}
 end
 
+local function getFactionLogChannel()
+    local logKey = DynamicTrading
+        and DynamicTrading.GameplayLogs
+        and DynamicTrading.GameplayLogs.GetStorageKey
+        and DynamicTrading.GameplayLogs.GetStorageKey("Factions")
+        or "DynamicTrading_GameplayLogs_Factions"
+    return ModData.getOrCreate(logKey) or {}
+end
+
+local function getFactionDisplayName(factionID, factions)
+    local faction = type(factions) == "table" and factions[factionID] or nil
+    if type(faction) == "table" then
+        return tostring(faction.name or faction.id or factionID or "Unknown")
+    end
+    if tostring(factionID or "") == "Bandits" then
+        return "Bandit Raiders"
+    end
+    if tostring(factionID or "") == "Independent" then
+        return "Independent Traders"
+    end
+    return tostring(factionID or "Unknown")
+end
+
+local function isRumorEligibleLogEntry(entry)
+    if type(entry) ~= "table" then
+        return false
+    end
+
+    local gameplayEvents = DynamicTrading and DynamicTrading.GameplayEvents or nil
+    if gameplayEvents and tonumber(entry.e) == tonumber(gameplayEvents.TRADE_STARTED) then
+        return false
+    end
+
+    return true
+end
+
+local function resolveRumorEntryText(entry)
+    if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.ResolveText then
+        local textStr = DynamicTrading.GameplayLogs.ResolveText(entry)
+        return tostring(textStr or "")
+    end
+    return tostring(entry and entry.text or "")
+end
+
+local function collectFactionRumorPool(currentFactionID)
+    local logs = getFactionLogChannel()
+    local currentPool = {}
+    local otherPool = {}
+
+    for factionID, entries in pairs(logs) do
+        if type(entries) == "table" then
+            local addedForFaction = 0
+            for index = 1, #entries do
+                local entry = entries[index]
+                if isRumorEligibleLogEntry(entry) then
+                    local payload = {
+                        factionID = tostring(factionID),
+                        entry = entry,
+                    }
+                    if tostring(factionID) == tostring(currentFactionID or "") then
+                        currentPool[#currentPool + 1] = payload
+                    else
+                        otherPool[#otherPool + 1] = payload
+                    end
+                    addedForFaction = addedForFaction + 1
+                    if addedForFaction >= 4 then
+                        break
+                    end
+                end
+            end
+        end
+    end
+
+    return currentPool, otherPool
+end
+
+local function pickRandomRumor(pool)
+    if not pool or #pool == 0 then
+        return nil
+    end
+    return pool[ZombRand(#pool) + 1]
+end
+
+local function buildRumorLine(rumor, factions, prefix)
+    if not rumor or not rumor.entry then
+        return nil
+    end
+
+    local text = resolveRumorEntryText(rumor.entry)
+    if text == "" or text == "Unknown event" or text == "Invalid Entry" then
+        return nil
+    end
+
+    local factionName = getFactionDisplayName(rumor.factionID, factions)
+    return string.format("%s %s: %s.", tostring(prefix or "Recent word from"), factionName, text)
+end
+
 local function getLocalPlayer()
     if getSpecificPlayer then
         local player = getSpecificPlayer(0)
@@ -274,7 +371,24 @@ local function buildNewsText(ui)
     local trader = ui and ui.target or {}
     local faction = ui and ui.getFactionData and ui:getFactionData(trader.factionID) or nil
     local factionName = ui and ui.getFactionName and ui:getFactionName(trader, faction) or nil
+    local allFactions = getAllKnownFactions()
     local lines = {}
+
+    local currentRumors, otherRumors = collectFactionRumorPool(trader.factionID)
+    local primaryRumor = pickRandomRumor(currentRumors)
+    local secondaryRumor = pickRandomRumor(otherRumors)
+    local primaryLine = buildRumorLine(primaryRumor, allFactions, "Latest word from")
+    local secondaryLine = buildRumorLine(secondaryRumor, allFactions, "Other chatter says")
+
+    if primaryLine then
+        lines[#lines + 1] = primaryLine
+    end
+    if secondaryLine and secondaryLine ~= primaryLine then
+        lines[#lines + 1] = secondaryLine
+    end
+    if #lines > 0 then
+        return table.concat(lines, " ")
+    end
 
     if trader.factionID and trader.factionID ~= "Independent" then
         local localEvents = collectFlashEvents(faction)
@@ -300,7 +414,6 @@ local function buildNewsText(ui)
         lines[#lines + 1] = "I'm independent, so most of my news comes from the road."
     end
 
-    local allFactions = getAllKnownFactions()
     local otherFaction = nil
     for id, candidate in pairs(allFactions) do
         if id ~= trader.factionID and candidate then

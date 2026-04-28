@@ -9,6 +9,15 @@ require "DT/UI/Faction/Tabs/DT_FactionEventLogPanel"
 
 DT_FactionInfoTab_Info = ISPanel:derive("DT_FactionInfoTab_Info")
 
+local function isNomadicFaction(faction)
+    return type(faction) == "table"
+        and (faction.isNomadic == true
+            or tostring(faction.id or "") == "Independent"
+            or tostring(faction.id or "") == "Bandits"
+            or tostring(faction.factionType or "") == "independent"
+            or tostring(faction.factionType or "") == "bandit")
+end
+
 function DT_FactionInfoTab_Info:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
@@ -94,7 +103,12 @@ function DT_FactionInfoTab_Info:updateData(f)
         -- Location (V2)
         text = text .. " <RGB:0.4,0.8,1> LOCATION DATA: <LINE> "
         text = text .. " <RGB:0.8,0.8,0.8> Town: " .. tostring(f.town or "N/A") .. " <LINE> "
-        if f.homeCoords then
+        if isNomadicFaction(f) then
+            text = text .. " Mobility: Nomadic / No fixed base <LINE> "
+            if f.homeCoords and f.homeCoords.name and tostring(f.homeCoords.name) ~= "" and tostring(f.homeCoords.name) ~= "Nomadic" then
+                text = text .. " Route Anchor: " .. tostring(f.homeCoords.name) .. " <LINE> "
+            end
+        elseif f.homeCoords then
             text = text .. " Base: " .. f.homeCoords.name .. " (" .. f.homeCoords.x .. "," .. f.homeCoords.y .. "," .. f.homeCoords.z .. ") <LINE> "
         else
             text = text .. " Base: NOMADIC (Roaming) <LINE> "

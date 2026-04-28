@@ -9,7 +9,7 @@ function DT_RadioScannerWindow:initialise()
     self.minimumWidth = 650
     self.minimumHeight = 650
 
-    self.currentCategory = "Stationary"
+    self.currentCategory = "Discovered"
     self.updateTimer = 0
     self.syncTimer = 0
     self.trackingUUID = nil

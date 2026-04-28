@@ -10,6 +10,15 @@ local BuildingDefs = require "DT/Common/ColonyEconomy/Buildings/DT_BuildingDefs"
 
 DT_FactionInfoTab_Infrastructure = ISPanel:derive("DT_FactionInfoTab_Infrastructure")
 
+local function isNomadicFaction(faction)
+    return type(faction) == "table"
+        and (faction.isNomadic == true
+            or tostring(faction.id or "") == "Independent"
+            or tostring(faction.id or "") == "Bandits"
+            or tostring(faction.factionType or "") == "independent"
+            or tostring(faction.factionType or "") == "bandit")
+end
+
 function DT_FactionInfoTab_Infrastructure:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
@@ -138,10 +147,22 @@ function DT_FactionInfoTab_Infrastructure:updateData(f)
     
     if not f then return end
 
-    if f.factionType == "independent" then
-        self.listbox:addItem("Independent Info", { isHeader = true, text = "NOMADIC NETWORK" })
-        self.listbox:addItem("Nomadic Text", { isSubHeader = true, text = "This faction operates as a nomadic trading network." })
-        self.listbox:addItem("Nomadic Text 2", { isSubHeader = true, text = "They do not maintain permanent settlements or infrastructure." })
+    if isNomadicFaction(f) then
+        local isBandit = tostring(f.id or "") == "Bandits" or tostring(f.factionType or "") == "bandit"
+        self.listbox:addItem("Nomadic Info", {
+            isHeader = true,
+            text = isBandit and "NOMADIC RAIDERS" or "NOMADIC NETWORK"
+        })
+        self.listbox:addItem("Nomadic Text", {
+            isSubHeader = true,
+            text = isBandit
+                and "This faction survives through moving raider cells, temporary camps, and occupied houses."
+                or "This faction operates as a nomadic trading network."
+        })
+        self.listbox:addItem("Nomadic Text 2", {
+            isSubHeader = true,
+            text = "They do not maintain permanent settlements or fixed infrastructure."
+        })
         return
     end
 

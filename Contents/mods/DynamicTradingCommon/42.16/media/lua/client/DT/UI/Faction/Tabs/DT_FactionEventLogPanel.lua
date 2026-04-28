@@ -9,6 +9,29 @@ require "ISUI/ISButton"
 
 DT_FactionEventLogPanel = ISPanel:derive("DT_FactionEventLogPanel")
 
+local function isBanditFaction(faction)
+    return type(faction) == "table"
+        and (tostring(faction.id or "") == "Bandits"
+            or tostring(faction.factionType or "") == "bandit")
+end
+
+local function resolveEntryTextForFaction(faction, entry)
+    local textStr, catStr = entry.text, entry.cat
+    if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.ResolveText then
+        textStr, catStr = DynamicTrading.GameplayLogs.ResolveText(entry)
+    end
+
+    if isBanditFaction(faction)
+        and DynamicTrading
+        and DynamicTrading.GameplayEvents
+        and tonumber(entry and entry.e) == tonumber(DynamicTrading.GameplayEvents.TRADE_STARTED) then
+        local data = entry and (entry.tokens or entry.p or entry.d) or {}
+        textStr = tostring(data[1] or "A raider") .. " started a raiding run"
+    end
+
+    return textStr, catStr
+end
+
 function DT_FactionEventLogPanel:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
@@ -116,10 +139,7 @@ function DT_FactionEventLogPanel:updateData(f)
         local entry = news[i]
         
         -- Serialize text using template resolver
-        local textStr, catStr = entry.text, entry.cat
-        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.ResolveText then
-            textStr, catStr = DynamicTrading.GameplayLogs.ResolveText(entry)
-        end
+        local textStr, catStr = resolveEntryTextForFaction(f, entry)
         
         local color = "<RGB:0.8,0.8,0.8> "
         if catStr == "good" then

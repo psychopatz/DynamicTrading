@@ -326,11 +326,11 @@ function DT_RadioScannerWindow:refresh()
         return isCallableTradeActiveForPlayer(refreshed)
     end
 
-    if self.currentCategory == "Stationary" then
+    if self.currentCategory == "Discovered" then
         for uuid, data in pairs(DT_RadioScannerManager.FoundTraders) do
             table.insert(tempList, buildDistanceEntry(uuid, data, DT_RadioScannerManager.GetSoul(uuid)))
         end
-    elseif self.currentCategory == "Callable" then
+    elseif self.currentCategory == "Linked" then
         local seenUUIDs = {}
         local cache = DTNPCClient and DTNPCClient.NPCCache or nil
         if cache then
@@ -393,14 +393,14 @@ function DT_RadioScannerWindow:refresh()
 
         local factionData = DT_RadioScannerManager.GetFaction(data.faction)
         local factionName = factionData and factionData.name or data.factionName or data.faction or "Independent"
-        if self.currentCategory == "Callable" and DT_TraderContacts and DT_TraderContacts.GetFactionDisplayName then
+        if self.currentCategory == "Linked" and DT_TraderContacts and DT_TraderContacts.GetFactionDisplayName then
             factionName = DT_TraderContacts.GetFactionDisplayName(soul or data)
         end
 
         local expireText = ""
         if soul and soul.isCallableCompanion == true then
             expireText = soul.state and ("State: " .. tostring(soul.state)) or "Companion"
-        elseif self.currentCategory == "Callable" and DT_TraderContacts and DT_TraderContacts.GetStatusText then
+        elseif self.currentCategory == "Linked" and DT_TraderContacts and DT_TraderContacts.GetStatusText then
             expireText = DT_TraderContacts.GetStatusText(soul)
         elseif soul and soul.returnTime and soul.returnTime > 0 then
             local hoursRemaining = soul.returnTime - getGameTime():getWorldAgeHours()
@@ -423,7 +423,7 @@ function DT_RadioScannerWindow:refresh()
             y = entry.ty,
             z = entry.tz,
             locked = DT_RadioScannerManager and DT_RadioScannerManager.IsLocked and DT_RadioScannerManager.IsLocked(uuid) or (data.locked == true),
-            canLock = self.currentCategory == "Stationary",
+            canLock = self.currentCategory == "Discovered",
         })
 
         if selectedUUID == uuid and #listbox.items > 0 then

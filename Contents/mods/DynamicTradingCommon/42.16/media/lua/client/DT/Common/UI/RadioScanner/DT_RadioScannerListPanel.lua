@@ -305,7 +305,7 @@ function DT_RadioScannerListPanel:render()
     ISPanel.render(self)
 
     if self.listbox and #self.listbox.items == 0 then
-        local category = self.parent and self.parent.currentCategory or "Stationary"
+        local category = self.parent and self.parent.currentCategory or "Discovered"
         if category ~= "Location" then
             local font = UIFont.Medium
             local smallFont = UIFont.Small

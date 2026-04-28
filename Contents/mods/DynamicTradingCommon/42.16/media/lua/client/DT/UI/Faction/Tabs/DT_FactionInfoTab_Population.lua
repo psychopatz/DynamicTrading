@@ -6,6 +6,21 @@ require "DT/UI/Faction/DT_NPCProfilePanel"
 
 DT_FactionInfoTab_Population = ISPanel:derive("DT_FactionInfoTab_Population")
 
+local function isBanditSoul(soul)
+    return type(soul) == "table"
+        and (soul.isBandit == true
+            or tostring(soul.factionID or "") == "Bandits"
+            or tostring(soul.archetypeID or "") == "Bandit")
+end
+
+local function getDisplayStatus(soul)
+    local status = tostring(soul and soul.status or "Active")
+    if isBanditSoul(soul) and (soul.banditRoamActive == true or status == "Trading") then
+        return "Raiding"
+    end
+    return status
+end
+
 local function buildWorkerSoul(worker)
     return {
         name = worker.name,
@@ -347,11 +362,12 @@ function DT_FactionInfoTab_Population:doDrawRosterItem(y, item, alt)
         self:drawRect(0, y, self.width, self.itemheight, 0.05, 1, 1, 1)
     end
     
-    local status = soul.status or "Active"
+    local status = getDisplayStatus(soul)
     local r, g, b = 0.8, 0.8, 0.8
     if status == "Dead" then r,g,b = 0.6, 0.2, 0.2
     elseif status == "Away" then r,g,b = 0.4, 0.4, 0.9
     elseif status == "Trading" then r,g,b = 0.9, 0.8, 0.2
+    elseif status == "Raiding" then r,g,b = 0.9, 0.7, 0.15
     elseif status == "Standby" then r,g,b = 0.4, 0.8, 0.4
     end
     

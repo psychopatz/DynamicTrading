@@ -27,7 +27,7 @@ function DT_RadioScannerHeaderPanel:ensureQuestButton(showQuestTab)
         self:removeChild(self.btnQuest)
         self.btnQuest = nil
         if self.parent and self.parent.currentCategory == "Quest" and self.parent.setCategory then
-            self.parent:setCategory("Stationary")
+            self.parent:setCategory("Discovered")
         end
     end
 end
@@ -65,8 +65,8 @@ function DT_RadioScannerHeaderPanel:createChildren()
     local tabCount = showQuestTab and 4 or 3
     local tabWidth = self.width / tabCount
 
-    self.btnStat = ISButton:new(0, tabY, tabWidth, tabHeight, "Stationary", self, function(panel)
-        panel:onCategoryClick("Stationary")
+    self.btnStat = ISButton:new(0, tabY, tabWidth, tabHeight, "Discovered Broadcast", self, function(panel)
+        panel:onCategoryClick("Discovered")
     end)
     self.btnStat:initialise()
     self.btnStat.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
@@ -74,8 +74,8 @@ function DT_RadioScannerHeaderPanel:createChildren()
     self.btnStat:setAnchorBottom(true)
     self:addChild(self.btnStat)
 
-    self.btnCall = ISButton:new(tabWidth, tabY, tabWidth, tabHeight, "Callable", self, function(panel)
-        panel:onCategoryClick("Callable")
+    self.btnCall = ISButton:new(tabWidth, tabY, tabWidth, tabHeight, "Linked Broadcast", self, function(panel)
+        panel:onCategoryClick("Linked")
     end)
     self.btnCall:initialise()
     self.btnCall.borderColor = { r = 0.4, g = 0.4, b = 0.4, a = 1 }
@@ -153,7 +153,7 @@ function DT_RadioScannerHeaderPanel:prerender()
         self.btnOptions:setX(self.width - self.btnOptions:getWidth() - 5)
     end
 
-    local activeCategory = "Stationary"
+    local activeCategory = "Discovered"
     if self.parent and self.parent.currentCategory then
         activeCategory = self.parent.currentCategory
     end
@@ -172,8 +172,8 @@ function DT_RadioScannerHeaderPanel:prerender()
             or { r = 0.7, g = 0.7, b = 0.7, a = 1 }
     end
 
-    updateButton(self.btnStat, "Stationary")
-    updateButton(self.btnCall, "Callable")
+    updateButton(self.btnStat, "Discovered")
+    updateButton(self.btnCall, "Linked")
     if self.btnQuest then
         updateButton(self.btnQuest, "Quest")
     end

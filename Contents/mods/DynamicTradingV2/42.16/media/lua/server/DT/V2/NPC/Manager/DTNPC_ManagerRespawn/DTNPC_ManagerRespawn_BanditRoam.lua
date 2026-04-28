@@ -311,6 +311,17 @@ function DTNPCManager.StartBanditHouseRoam(uuid, forceImmediate)
     liveSoul.hostileNegotiationGroupID = nil
     DynamicTrading_Roster.SaveSoul(uuid, liveSoul)
 
+    if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayEvents
+        and DynamicTrading.GameplayLogs.AddFactionEvent then
+        local factionID = tostring(liveSoul.factionID or BANDIT_FACTION_ID)
+        local raiderName = tostring(liveSoul.name or uuid)
+        DynamicTrading.GameplayLogs.AddFactionEvent(
+            factionID,
+            DynamicTrading.GameplayEvents.BANDIT_RAID_STARTED,
+            { raiderName }
+        )
+    end
+
     if targetX and targetY and DTNPCManager.TryStartLiveDeparture
         and DTNPCManager.TryStartLiveDeparture(uuid, BANDIT_ROAM_RETURN_STATUS, travelHours, targetX, targetY, targetZ or 0) then
         return true
