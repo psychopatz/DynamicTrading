@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Scavenger", {
+    module = "DynamicTradingCommon",
     name = "Scavenger",
     allocations = {
         { tags={"Quality.Waste"}, count = 15 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Scavenger", {
         { tags={"Building.Survival.Trap"}, count = 5 },
         { tags={"Resource.Material.General"}, count = 8 },
         { tags={"Tool.General"}, count = 4 },
-        { item = "Base.TinOpener", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.TinOpener", count = 1 }
     },
     expertTags = { "Quality.Waste", "Misc.General", "Building.Survival.Trap", "Resource.Material.General", "Tool.General" },
     wants = {

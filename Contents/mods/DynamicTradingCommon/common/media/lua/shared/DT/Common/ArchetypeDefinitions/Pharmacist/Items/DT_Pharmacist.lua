@@ -4,6 +4,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 
 DynamicTrading.RegisterArchetype("Pharmacist", {
+    module = "DynamicTradingCommon",
     name = "Pharmacist",
     allocations = {
         { tags={"Medical.General.Drug"}, count = 5 },
@@ -11,7 +12,7 @@ DynamicTrading.RegisterArchetype("Pharmacist", {
         { tags={"Medical.General.Vitamin"}, count = 8 },
         { tags={"Medical.Consumable"}, count = 10 },
         { tags={"Resource.Material.Packaging"}, count = 5 },
-        { item = "Base.PillsVitamins", count = 2 }
+        { module = "DynamicTradingCommon",  item = "Base.PillsVitamins", count = 2 }
     },
     expertTags = { "Medical.General.Pills", "Medical.General.Drug", "Medical.General.Vitamin", "Medical.Consumable", "Tool.Medical" },
     wants = {

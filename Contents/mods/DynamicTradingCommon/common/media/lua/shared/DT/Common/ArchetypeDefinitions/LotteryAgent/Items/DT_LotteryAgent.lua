@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("LotteryAgent", {
+    module = "DynamicTradingCommon",
     name = "Lottery Agent",
     preferredFactionID = "Independent",
     allowedFactions = { "Independent" },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("LotteryAgent", {
         { tags={"Resource.Material.Paper"}, count = 12 },
         { tags={"Misc.General"}, count = 6 },
         { tags={"Literature.Media"}, count = 4 },
-        { item = "Base.BluePen", count = 2 },
+        { module = "DynamicTradingCommon",  item = "Base.BluePen", count = 2 },
     },
     expertTags = { "Resource.Material.Paper", "Misc.General", "Literature.Media" },
     wants = {

@@ -4,6 +4,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 
 DynamicTrading.RegisterArchetype("Pawnbroker", {
+    module = "DynamicTradingCommon",
     name = "Pawnbroker",
     allocations = {
         { tags={"Clothing.Accessory.Jewelry"}, count = 10 },
@@ -11,7 +12,7 @@ DynamicTrading.RegisterArchetype("Pawnbroker", {
         { tags={"Electronics"}, count = 5 },
         { tags={"Rarity.Rare"}, count = 4 },
         { tags={"Weapon.Melee.Blade"}, count = 3 },
-        { item = "Base.WristWatch_Left_ClassicGold", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.WristWatch_Left_ClassicGold", count = 1 }
     },
     expertTags = { "Clothing.Accessory.Jewelry", "Quality.Luxury", "Electronics", "Rarity.Rare", "Weapon.Melee.Blade" },
     wants = {

@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Musician", {
+    module = "DynamicTradingCommon",
     name = "DJ / Musician",
     allocations = {
         { tags={"Literature.Media"}, count = 15 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Musician", {
         { tags={"Literature.Book"}, count = 6 },
         { tags={"Clothing.Accessory.Cosmetic"}, count = 4 },
         { tags={"Electronics.Battery"}, count = 8 },
-        { item = "Base.CDplayer", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.CDplayer", count = 1 }
     },
     expertTags = { "Literature.Media", "Electronics", "Misc.General", "Literature.Book", "Clothing.Accessory.Cosmetic" },
     wants = {

@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_events",
---   "module": "common",
+--   "module": "DynamicTradingCommon",
 --   "title": "Shifting Market",
 --   "description": "Understanding the Shift",
 --   "start_page_id": "event_types",
 --   "audiences": [
---     "common"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 4,
 --   "release_version": "",
@@ -240,7 +240,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "Shifting Market",
         description = "Understanding the Shift",
         startPageId = "event_types",
-        audiences = { "common" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 4,
         releaseVersion = "",
         popupVersion = "",

@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_update_2023_10_25",
---   "module": "common",
+--   "module": "DynamicTradingCommon",
 --   "title": "April 7, 2026 Update",
 --   "description": "travel companions, health and combat system.",
 --   "start_page_id": "overview",
 --   "audiences": [
---     "common"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 10,
 --   "release_version": "1.5.1",
@@ -95,7 +95,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "April 7, 2026 Update",
         description = "travel companions, health and combat system.",
         startPageId = "overview",
-        audiences = { "common" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 10,
         releaseVersion = "1.5.1",
         popupVersion = "1.5.1",

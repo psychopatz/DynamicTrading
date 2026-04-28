@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_update_2024_05_20",
---   "module": "common",
+--   "module": "DynamicTradingCommon",
 --   "title": "April 3, 2026 Update",
 --   "description": "New NPC chat, colony management, economy UI, and labour systems.",
 --   "start_page_id": "overview",
 --   "audiences": [
---     "common"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 10,
 --   "release_version": "1.0.0",
@@ -194,7 +194,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "April 3, 2026 Update",
         description = "New NPC chat, colony management, economy UI, and labour systems.",
         startPageId = "overview",
-        audiences = { "common" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 10,
         releaseVersion = "1.0.0",
         popupVersion = "2.0.0",

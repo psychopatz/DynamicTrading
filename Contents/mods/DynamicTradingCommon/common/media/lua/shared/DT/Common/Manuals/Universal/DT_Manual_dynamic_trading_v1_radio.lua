@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dynamic_trading_v1_radio",
---   "module": "v1",
---   "title": "The Scavenger Radio Guide",
+--   "module": "DynamicTradingCommon",
+--   "title": "The Scavenger Radio Gu",
 --   "description": "Master the airwaves to find merchants from your safehouse.",
 --   "start_page_id": "radio_basics",
 --   "audiences": [
---     "v1"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 1,
 --   "release_version": "",
@@ -160,10 +160,10 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dynamic_trading_v1_radio", {
-        title = "The Scavenger Radio Guide",
+        title = "The Scavenger Radio Gu",
         description = "Master the airwaves to find merchants from your safehouse.",
         startPageId = "radio_basics",
-        audiences = { "v1" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 1,
         releaseVersion = "",
         popupVersion = "",

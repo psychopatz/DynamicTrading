@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dynamic_trading_radio_tech",
---   "module": "v1",
---   "title": "Signal Hardware Comparison",
+--   "module": "DynamicTradingCommon",
+--   "title": "Signal Hardware Compar",
 --   "description": "Analysis of Handhelds vs HAM radios and their signal multipliers.",
 --   "start_page_id": "hardware_types",
 --   "audiences": [
---     "v1"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 3,
 --   "release_version": "",
@@ -124,10 +124,10 @@
 -- DT_MANUAL_EDITOR_END
 if DynamicTrading and DynamicTrading.RegisterManual then
     DynamicTrading.RegisterManual("dynamic_trading_radio_tech", {
-        title = "Signal Hardware Comparison",
+        title = "Signal Hardware Compar",
         description = "Analysis of Handhelds vs HAM radios and their signal multipliers.",
         startPageId = "hardware_types",
-        audiences = { "v1" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 3,
         releaseVersion = "",
         popupVersion = "",

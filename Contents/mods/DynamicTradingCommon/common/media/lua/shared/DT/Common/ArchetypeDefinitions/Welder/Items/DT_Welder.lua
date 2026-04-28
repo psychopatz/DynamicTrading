@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Welder", {
+    module = "DynamicTradingCommon",
     name = "Metalworker",
     allocations = {
         { tags={"Resource.Material.Metal"}, count = 8 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Welder", {
         { tags={"Resource.Material.Hardware"}, count = 4 },
         { tags={"Resource.Material.Adhesive"}, count = 4 },
         { tags={"Tool.General"}, count = 3 },
-        { item = "Base.WeldingMask", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.WeldingMask", count = 1 }
     },
     expertTags = { "Resource.Material.Metal", "Tool.General", "Resource.Material.Hardware", "Resource.Material.Adhesive", "Building.Fixture.Hardware" },
     wants = {

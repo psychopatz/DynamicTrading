@@ -4,7 +4,7 @@ DynamicTrading.V2 = {}
 DynamicTrading.V2.Config = {}
 
 if DynamicTrading.Manuals and DynamicTrading.Manuals.MarkAudienceActive then
-    DynamicTrading.Manuals.MarkAudienceActive("v2", true)
+    DynamicTrading.Manuals.MarkAudienceActive("DynamicTradingV2", true)
 end
 
 

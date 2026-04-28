@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Hiker", {
+    module = "DynamicTradingCommon",
     name = "Drifter",
     allocations = {
         { tags={"Theme.Survival"}, count = 8 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Hiker", {
         { tags={"Food.NonPerishable"}, count = 6 },
         { tags={"Tool.General"}, count = 5 },
         { tags={"Clothing"}, count = 3 },
-        { item = "Base.FirstAidKit", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.FirstAidKit", count = 1 }
     },
     expertTags = { "Container.Bag.Backpack", "Food.NonPerishable", "Clothing", "Tool.General", "Theme.Survival" },
     wants = {

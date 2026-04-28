@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dynamic_trading",
---   "module": "common",
+--   "module": "DynamicTradingCommon",
 --   "title": "Manual Guide",
 --   "description": "Overview pages for mod system and quick links for major systems.",
 --   "start_page_id": "intro",
 --   "audiences": [
---     "common"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 1,
 --   "release_version": "",
@@ -162,7 +162,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "Manual Guide",
         description = "Overview pages for mod system and quick links for major systems.",
         startPageId = "intro",
-        audiences = { "common" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 1,
         releaseVersion = "",
         popupVersion = "",

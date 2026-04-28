@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Painter", {
+    module = "DynamicTradingCommon",
     name = "Renovator",
     allocations = {
         { tags={"Building.Furniture.Decor"}, count = 8 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Painter", {
         { tags={"Resource.Material.General"}, count = 6 },
         { tags={"Tool.General"}, count = 5 },
         { tags={"Misc.General"}, count = 4 },
-        { item = "Base.Paintbrush", count = 2 }
+        { module = "DynamicTradingCommon",  item = "Base.Paintbrush", count = 2 }
     },
     expertTags = { "Building.Furniture.Decor", "Resource.Material.Textile", "Resource.Material.General", "Tool.General", "Misc.General" },
     wants = {

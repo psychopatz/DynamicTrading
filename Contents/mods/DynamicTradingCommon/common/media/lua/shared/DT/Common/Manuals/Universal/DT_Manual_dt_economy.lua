@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_economy",
---   "module": "common",
+--   "module": "DynamicTradingCommon",
 --   "title": "Economic System",
 --   "description": "Guide for proper inflation and deflation mechanics",
 --   "start_page_id": "price_calculation",
 --   "audiences": [
---     "common"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 3,
 --   "release_version": "",
@@ -193,7 +193,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "Economic System",
         description = "Guide for proper inflation and deflation mechanics",
         startPageId = "price_calculation",
-        audiences = { "common" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 3,
         releaseVersion = "",
         popupVersion = "",

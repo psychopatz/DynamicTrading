@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Gunrunner", {
+    module = "DynamicTradingCommon",
     name = "Gunrunner",
     allocations = {
         { tags={"Weapon.Ranged"}, count = 5 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Gunrunner", {
         { tags={"Weapon.Part"}, count = 5 },
         { tags={"Theme.Militia"}, count = 4 },
         { tags={"Rarity.Rare"}, count = 3 },
-        { item = "Base.Bag_ALICEpack_Army", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.Bag_ALICEpack_Army", count = 1 }
     },
     expertTags = { "Weapon.Ranged", "Weapon.Ranged.Ammo", "Weapon.Part", "Theme.Militia", "Theme.Combat" },
     wants = {

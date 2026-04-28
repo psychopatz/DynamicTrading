@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_update_2026_03_27",
---   "module": "common",
+--   "module": "DynamicTradingCommon",
 --   "title": "March 27, 2026 Update",
 --   "description": "Patch highlights for liquid registry and liter-based pricing",
 --   "start_page_id": "update_overview",
 --   "audiences": [
---     "common"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 10,
 --   "release_version": "2026-03-27",
@@ -70,7 +70,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "March 27, 2026 Update",
         description = "Patch highlights for liquid registry and liter-based pricing",
         startPageId = "update_overview",
-        audiences = { "common" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 10,
         releaseVersion = "2026-03-27",
         popupVersion = "2026-03-27",

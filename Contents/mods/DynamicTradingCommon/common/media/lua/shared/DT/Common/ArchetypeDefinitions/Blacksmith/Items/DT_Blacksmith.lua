@@ -2,6 +2,7 @@ require "DT/Common/Config"
 
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 DynamicTrading.RegisterArchetype("Blacksmith", {
+    module = "DynamicTradingCommon",
     name = "Blacksmith",
     allocations = {
         { tags={"Resource.Material.Metal"}, count = 8 },
@@ -9,7 +10,7 @@ DynamicTrading.RegisterArchetype("Blacksmith", {
         { tags={"Resource.Fuel"}, count = 5 },
         { tags={"Weapon.Melee.General"}, count = 2 },
         { tags={"Tool.General"}, count = 3 },
-        { item = "Base.Charcoal", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.Charcoal", count = 1 }
     },
     expertTags = { "Resource.Material.Metal", "Tool.General", "Weapon.Melee.General", "Resource.Material.Hardware", "Building.Fixture.Hardware" },
     wants = {

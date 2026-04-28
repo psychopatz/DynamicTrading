@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_update_2026_04_04",
---   "module": "v2",
+--   "module": "DynamicTradingV2",
 --   "title": "April 5, 2026 Update",
 --   "description": "NPC Combat Update",
 --   "start_page_id": "overview",
 --   "audiences": [
---     "v2"
+--     "DynamicTradingV2"
 --   ],
 --   "sort_order": 10,
 --   "release_version": "1.1.0",
@@ -69,7 +69,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "April 5, 2026 Update",
         description = "NPC Combat Update",
         startPageId = "overview",
-        audiences = { "v2" },
+        audiences = { "DynamicTradingV2" },
         sortOrder = 10,
         releaseVersion = "1.1.0",
         popupVersion = "1.1.0",

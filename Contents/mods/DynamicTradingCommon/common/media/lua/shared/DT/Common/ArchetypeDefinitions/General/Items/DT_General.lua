@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("General", {
+    module = "DynamicTradingCommon",
     name = "General Trader",
     allocations = {
         { tags={"Food.NonPerishable"}, count = 8 },

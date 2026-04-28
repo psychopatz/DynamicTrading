@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_support_patreon",
---   "module": "common",
+--   "module": "DynamicTradingCommon",
 --   "title": "Support the Mod",
 --   "description": "Support page for players who want to fund continued development",
 --   "start_page_id": "support_overview",
 --   "audiences": [
---     "common"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 9999999,
 --   "release_version": "",
@@ -102,7 +102,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "Support the Mod",
         description = "Support page for players who want to fund continued development",
         startPageId = "support_overview",
-        audiences = { "common" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 9999999,
         releaseVersion = "",
         popupVersion = "dt_support_patreon",

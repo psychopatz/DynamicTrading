@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_v2_npcs",
---   "module": "v2",
+--   "module": "DynamicTradingV2",
 --   "title": "Guide to Trading",
 --   "description": "Scouting the streets and handling high-stakes deals",
 --   "start_page_id": "v2_philosophy",
 --   "audiences": [
---     "v2"
+--     "DynamicTradingV2"
 --   ],
 --   "sort_order": 100000,
 --   "release_version": "",
@@ -145,7 +145,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "Guide to Trading",
         description = "Scouting the streets and handling high-stakes deals",
         startPageId = "v2_philosophy",
-        audiences = { "v2" },
+        audiences = { "DynamicTradingV2" },
         sortOrder = 100000,
         releaseVersion = "",
         popupVersion = "",

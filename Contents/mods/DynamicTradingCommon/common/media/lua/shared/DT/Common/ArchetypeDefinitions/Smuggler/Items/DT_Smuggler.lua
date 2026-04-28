@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Smuggler", {
+    module = "DynamicTradingCommon",
     name = "Night Trader",
     allocations = {
         { tags={"Medical.General.Drug"}, count = 8 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Smuggler", {
         { tags={"Quality.Luxury"}, count = 5 },
         { tags={"Rarity.Rare"}, count = 4 },
         { tags={"Weapon.Ranged"}, count = 3 },
-        { item = "Base.CigarettePack", count = 5 }
+        { module = "DynamicTradingCommon",  item = "Base.CigarettePack", count = 5 }
     },
     expertTags = { "Quality.Luxury", "Quality.Luxury", "Rarity.Rare", "Rarity.Rare", "Weapon.Ranged" },
     wants = {

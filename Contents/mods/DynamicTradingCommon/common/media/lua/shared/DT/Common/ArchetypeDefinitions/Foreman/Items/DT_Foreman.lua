@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Foreman", {
+    module = "DynamicTradingCommon",
     name = "Site Foreman",
     allocations = {
         { tags={"Building.Fixture.General"}, count = 5 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Foreman", {
         { tags={"Resource.Material.Hardware"}, count = 10 },
         { tags={"Resource.Material.Metal"}, count = 4 },
         { tags={"Tool.General"}, count = 6 },
-        { item = "Base.Sledgehammer", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.Sledgehammer", count = 1 }
     },
     expertTags = { "Building.Fixture.General", "Building.Furniture", "Resource.Material.Hardware", "Resource.Material.Metal", "Tool.General" },
     wants = {

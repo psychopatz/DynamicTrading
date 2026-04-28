@@ -45,18 +45,8 @@ local function dtManualNormalizeAudience(value)
     if normalized == "" then
         return nil
     end
-    if normalized == "all" or normalized == "shared" or normalized == "universal" then
-        return "common"
-    end
-    if normalized == "dynamictrading" or normalized == "dtv1" then
-        return "v1"
-    end
-    if normalized == "dynamictradingv2" or normalized == "dtv2" then
-        return "v2"
-    end
-    if normalized == "dynamiccolonies" then
-        return "colony"
-    end
+    -- Future-proof: just return the normalized string. 
+    -- The migration script already updated existing manuals to use Mod IDs.
     return normalized
 end
 
@@ -76,17 +66,8 @@ local function dtManualNormalizeAudienceList(id, data)
         return audiences
     end
 
-    local normalizedId = dtManualLower(id)
-    if string.sub(normalizedId, 1, 3) == "dc_" then
-        return { "colony" }
-    end
-    if string.find(normalizedId, "v1", 1, true) then
-        return { "v1" }
-    end
-    if string.find(normalizedId, "v2", 1, true) then
-        return { "v2" }
-    end
-    return { "common" }
+    -- Default to DynamicTradingCommon if no audience specified
+    return { "DynamicTradingCommon" }
 end
 
 local function dtManualTokenizeVersion(value)
@@ -99,12 +80,12 @@ local function dtManualTokenizeVersion(value)
 end
 
 local function dtManualDefaultSortOrder(manualId, audiences, orderIndex, isWhatsNew)
-    local primary = audiences and audiences[1] or "common"
+    local primary = audiences and audiences[1] or "DynamicTradingCommon"
     local base = 300000
 
-    if primary == "v1" or primary == "v2" then
+    if primary == "DynamicTrading" or primary == "DynamicTradingV2" then
         base = 100000
-    elseif primary == "colony" then
+    elseif primary == "DynamicColonies" then
         base = 200000
     end
 
@@ -158,25 +139,25 @@ end
 
 function DynamicTrading.Manuals.GetActiveAudienceState()
     local active = {
-        common = true,
-        v1 = false,
-        v2 = false,
-        colony = false,
-        currency = false,
+        DynamicTradingCommon = true,
     }
-    local flags = DynamicTrading.Manuals.RuntimeAudienceFlags or {}
-
+    
     local activated = getActivatedMods and getActivatedMods() or nil
     if activated and activated.contains then
-        active.v1 = activated:contains("DynamicTrading") or flags.v1 == true
-        active.v2 = activated:contains("DynamicTradingV2") or flags.v2 == true
-        active.colony = activated:contains("DynamicColonies") or flags.colony == true
-        active.currency = activated:contains("CurrencyExpanded") or flags.currency == true
-    else
-        active.v1 = flags.v1 == true
-        active.v2 = flags.v2 == true
-        active.colony = flags.colony == true
-        active.currency = flags.currency == true
+        -- Dynamically check for all activated mods to support any mod ID
+        -- We can iterate through the activated mods provided by the engine
+        for i = 0, activated:size() - 1 do
+            local modId = activated:get(i)
+            active[modId] = true
+        end
+        
+        -- Also support manual overrides/flags
+        local flags = DynamicTrading.Manuals.RuntimeAudienceFlags or {}
+        for k, v in pairs(flags) do
+            if v == true then
+                active[k] = true
+            end
+        end
     end
 
     return active
@@ -207,11 +188,11 @@ function DynamicTrading.Manuals.IsManualVisible(manual, active)
         return false
     end
 
-    local audiences = manual.audiences or { "common" }
+    local audiences = manual.audiences or { "DynamicTradingCommon" }
     active = active or DynamicTrading.Manuals.GetActiveAudienceState()
 
     for _, audience in ipairs(audiences) do
-        if audience == "common" or audience == "all" then
+        if audience == "DynamicTradingCommon" or audience == "all" or audience == "common" then
             return true
         end
         if active[audience] == true then

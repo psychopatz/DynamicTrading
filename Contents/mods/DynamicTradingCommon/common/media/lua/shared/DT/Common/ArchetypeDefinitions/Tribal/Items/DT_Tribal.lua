@@ -4,6 +4,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 
 DynamicTrading.RegisterArchetype("Tribal", {
+    module = "DynamicTradingCommon",
     name = "Primitive Survivor",
     allocations = {
         { tags={"Theme.Primitive"}, count = 10 },
@@ -11,7 +12,7 @@ DynamicTrading.RegisterArchetype("Tribal", {
         { tags={"Food.Perishable.Meat"}, count = 6 },
         { tags={"Resource.Material"}, count = 12 },
         { tags={"Weapon.Melee.Axe"}, count = 3 },
-        { item = "Base.StoneAxeLarge", count = 2 }
+        { module = "DynamicTradingCommon",  item = "Base.StoneAxeLarge", count = 2 }
     },
     expertTags = { "Theme.Primitive", "Medical.Healthcare.Botanical", "Food.Perishable.Meat", "Resource.Material", "Weapon.Melee.Axe" },
     wants = {

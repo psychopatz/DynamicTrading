@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Electrician", {
+    module = "DynamicTradingCommon",
     name = "Electrician",
     allocations = {
         { tags={"Electronics.Battery"}, count = 10 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Electrician", {
         { tags={"Electronics"}, count = 5 },
         { tags={"Electronics"}, count = 8 },
         { tags={"Electronics"}, count = 3 },
-        { item = "Base.Screwdriver", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.Screwdriver", count = 1 }
     },
     expertTags = { "Electronics.Battery", "Electronics", "Electronics", "Electronics.Generator", "Electronics.PowerGenerator" },
     wants = {

@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
     DynamicTrading.RegisterArchetype("Angler", {
+    module = "DynamicTradingCommon",
         name = "River Trader",
     allocations = {
         { tags={"Resource.Fishing"}, count = 8 },
@@ -10,7 +11,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
         { tags={"Food.Perishable.Fish"}, count = 8 },
         { tags={"Container.Utility"}, count = 4 },
         { tags={"Clothing"}, count = 2 },
-        { item = "Base.FishingRod", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.FishingRod", count = 1 }
     },
         expertTags = { "Resource.Fishing", "Tool.Fishing", "Food.Perishable.Fish", "Container.Utility", "Clothing" },
         wants = {

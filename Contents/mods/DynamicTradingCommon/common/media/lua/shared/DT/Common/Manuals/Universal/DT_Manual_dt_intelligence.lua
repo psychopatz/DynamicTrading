@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dt_intelligence",
---   "module": "common",
+--   "module": "DynamicTradingCommon",
 --   "title": "Faction Intelligence",
 --   "description": "Guide to monitoring faction wealth, survival, and economic trends.",
 --   "start_page_id": "intel_overview",
 --   "audiences": [
---     "common"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 2,
 --   "release_version": "",
@@ -204,7 +204,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "Faction Intelligence",
         description = "Guide to monitoring faction wealth, survival, and economic trends.",
         startPageId = "intel_overview",
-        audiences = { "common" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 2,
         releaseVersion = "",
         popupVersion = "",

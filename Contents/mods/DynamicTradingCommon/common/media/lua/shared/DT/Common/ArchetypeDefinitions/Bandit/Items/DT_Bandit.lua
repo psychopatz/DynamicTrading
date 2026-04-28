@@ -2,6 +2,7 @@ require "DT/Common/Config"
 
 if DynamicTrading and DynamicTrading.RegisterArchetype then
     DynamicTrading.RegisterArchetype("Bandit", {
+    module = "DynamicTradingCommon",
         name = "Bandit",
         preferredFactionID = "Bandits",
         allowedFactions = { "Bandits" },
@@ -13,7 +14,7 @@ if DynamicTrading and DynamicTrading.RegisterArchetype then
             { tags = { "Medical.General" }, count = 2 },
             { tags = { "Food.Preserved" }, count = 2 },
             { tags = { "Container" }, count = 1 },
-            { item = "Base.MoneyBundle", count = 1 },
+            { module = "DynamicTradingCommon",  item = "Base.MoneyBundle", count = 1 },
         },
         expertTags = { "Weapon.Melee", "Weapon.Ranged", "Medical.General", "Container" },
         wants = {

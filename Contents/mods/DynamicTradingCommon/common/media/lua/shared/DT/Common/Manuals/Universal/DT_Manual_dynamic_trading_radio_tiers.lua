@@ -1,12 +1,12 @@
 -- DT_MANUAL_EDITOR_BEGIN
 -- {
 --   "manual_id": "dynamic_trading_radio_tiers",
---   "module": "v1",
+--   "module": "DynamicTradingCommon",
 --   "title": "Hardware Tier List",
 --   "description": "Comprehensive guide to all ten tiers of radio technology.",
 --   "start_page_id": "tier_overview",
 --   "audiences": [
---     "v1"
+--     "DynamicTradingCommon"
 --   ],
 --   "sort_order": 2,
 --   "release_version": "",
@@ -109,7 +109,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
         title = "Hardware Tier List",
         description = "Comprehensive guide to all ten tiers of radio technology.",
         startPageId = "tier_overview",
-        audiences = { "v1" },
+        audiences = { "DynamicTradingCommon" },
         sortOrder = 2,
         releaseVersion = "",
         popupVersion = "",

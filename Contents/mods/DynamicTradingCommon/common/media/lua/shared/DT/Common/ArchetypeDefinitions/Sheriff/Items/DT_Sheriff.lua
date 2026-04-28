@@ -3,6 +3,7 @@ require "DT/Common/Config"
 if DynamicTrading and DynamicTrading.RegisterArchetype then
 
 DynamicTrading.RegisterArchetype("Sheriff", {
+    module = "DynamicTradingCommon",
     name = "Constable",
     allocations = {
         { tags={"Theme.Police"}, count = 5 },
@@ -10,7 +11,7 @@ DynamicTrading.RegisterArchetype("Sheriff", {
         { tags={"Weapon.Ranged.Ammo"}, count = 8 },
         { tags={"Clothing"}, count = 3 },
         { tags={"Weapon.Melee.Blunt"}, count = 2 },
-        { item = "Base.PistolCase1", count = 1 }
+        { module = "DynamicTradingCommon",  item = "Base.PistolCase1", count = 1 }
     },
     expertTags = { "Weapon.Ranged.Firearm", "Weapon.Ranged.Ammo", "Clothing", "Tool.Security", "Theme.Combat" },
     wants = {
