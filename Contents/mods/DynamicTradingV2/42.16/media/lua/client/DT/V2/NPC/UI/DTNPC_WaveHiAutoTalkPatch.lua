@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- DTNPC_WaveHiAutoTalkPatch.lua
--- Wraps the vanilla Wave Hi emote to open the closest valid trader conversation.
+-- Wraps the vanilla Wave Hi emote to simulate the closest valid NPC talk action.
 -- ==============================================================================
 
 if isServer() and not isClient() then
@@ -19,28 +19,14 @@ Patch.Loaded = true
 
 pcall(require, "ISUI/ISEmoteRadialMenu")
 pcall(require, "DT/V2/NPC/UI/DTNPC_TraderDialogue_Hub")
+pcall(require, "DT/V2/NPC/UI/DTNPC_WaveHiInteraction")
 pcall(require, "DT/V2/NPC/Jobs/DTNPC_JobUI")
 pcall(require, "DT/V2/NPC/Dialogue/Ambient/DT_Dialogue_Ambient")
-pcall(require, "DT/Common/FlavorText/DT_FlavorText_TraderSignals")
 pcall(require, "Utils/DT_CoreUtils")
 
-local EXCLUDED_HANDLER_IDS = {
-    TravelCompanion = true,
-    BanditDemand = true,
-}
-local TRADER_REPLY_DELAY_MS = 280
-local AUTO_OPEN_DELAY_MS = 820
-
-local function formatPlaceholders(text, ...)
-    local args = { ... }
-    return (tostring(text or ""):gsub("%%(%d+)", function(index)
-        local value = args[tonumber(index)]
-        if value == nil then
-            return "%" .. index
-        end
-        return tostring(value)
-    end))
-end
+local PLAYER_FLAVOR_DELAY_MS = 350
+local NPC_REPLY_DELAY_MS = 1250
+local AUTO_OPEN_DELAY_MS = 4000
 
 local function getNPCData(zombie)
     if not zombie then
@@ -90,54 +76,12 @@ local function isConversationAlreadyOpenForTarget(npcKey)
     return currentTargetID and currentTargetID == tostring(npcKey) or false
 end
 
-local function getNPCName(zombie, npcData)
-    return tostring(
-        npcData and npcData.name
-            or zombie and zombie.getDescriptor and zombie:getDescriptor() and zombie:getDescriptor():getForename()
-            or "Trader"
-    )
-end
-
-local function getFlavorText(category, kind, ...)
-    local text = DynamicTrading
-        and DynamicTrading.FlavorText
-        and DynamicTrading.FlavorText.GetRandom
-        and DynamicTrading.FlavorText.GetRandom(category, kind)
-        or ""
-
-    if text == "" then
-        return ""
-    end
-
-    return formatPlaceholders(text, ...)
-end
-
-local function isExcludedByNPCData(npcData)
-    if type(npcData) ~= "table" then
-        return true
-    end
-
-    if npcData.isBandit == true
-        or npcData.isHostile == true
-        or npcData.raidHostileFaction == true
-        or npcData.banditGroupID ~= nil
-        or tostring(npcData.factionID or "") == "Bandits" then
-        return true
-    end
-
-    return false
-end
-
-local function isValidTraderCandidate(player, zombie, npcData)
+local function isValidTalkCandidate(player, zombie, npcData)
     if not player or not zombie or zombie:isDead() or type(npcData) ~= "table" then
         return false
     end
 
     if (tonumber(player:getZ()) or 0) ~= (tonumber(zombie:getZ()) or 0) then
-        return false
-    end
-
-    if isExcludedByNPCData(npcData) then
         return false
     end
 
@@ -150,15 +94,10 @@ local function isValidTraderCandidate(player, zombie, npcData)
         return false
     end
 
-    local handler = DTNPCJobUI and DTNPCJobUI.Resolve and DTNPCJobUI.Resolve(nil, zombie, player, npcData) or nil
-    if handler and EXCLUDED_HANDLER_IDS[tostring(handler.id or "")] then
-        return false
-    end
-
     return true
 end
 
-local function resolveClosestTrader(player)
+local function resolveClosestTalkTarget(player)
     local cell = getCell and getCell() or nil
     if not cell then
         return nil, nil
@@ -182,7 +121,7 @@ local function resolveClosestTrader(player)
         if key and not seen[key] then
             seen[key] = true
 
-            if isValidTraderCandidate(player, zombie, npcData) then
+            if isValidTalkCandidate(player, zombie, npcData) then
                 local distance = IsoUtils.DistanceTo(player:getX(), player:getY(), zombie:getX(), zombie:getY())
                 if not bestZombie
                     or distance < bestDistance
@@ -198,7 +137,7 @@ local function resolveClosestTrader(player)
     return bestZombie, bestKey
 end
 
-local function validatePendingTrader(player, npc, npcKey)
+local function validatePendingTalkTarget(player, npc, npcKey)
     if not player or not npc or player:isDead() or npc:isDead() then
         return false, nil
     end
@@ -208,48 +147,47 @@ local function validatePendingTrader(player, npc, npcKey)
         return false, nil
     end
 
-    if not isValidTraderCandidate(player, npc, npcData) then
+    if not isValidTalkCandidate(player, npc, npcData) then
         return false, nil
     end
 
     return true, npcData
 end
 
-local function queueTraderConversation(player, npc, npcKey, npcData)
+local function queueTalkConversation(player, npc, npcKey, npcData)
     local now = getTimeInMillis()
-    local traderName = getNPCName(npc, npcData)
-    local playerLine = getFlavorText("TraderSignals", "WaveHiPlayer", traderName)
-    local traderLine = getFlavorText("TraderSignals", "WaveHiTrader", traderName)
+    local plan = DTNPC_WaveHiInteraction and DTNPC_WaveHiInteraction.BuildPlan
+        and DTNPC_WaveHiInteraction.BuildPlan(player, npc, npcData)
+        or nil
 
-    if playerLine == "" then
-        playerLine = traderName .. ", got a minute?"
-    end
-    if traderLine == "" then
-        traderLine = "I'm listening."
-    end
-
-    if playerLine ~= "" and player.Say then
-        player:Say(playerLine)
-    end
+    local playerLine = plan and plan.playerLine or "Hey, you."
+    local npcLine = plan and plan.npcLine or "Yeah?"
+    local npcSentiment = plan and plan.npcSentiment or "neutral"
 
     Patch.PendingOpen = {
         player = player,
         npc = npc,
         npcKey = tostring(npcKey),
-        traderLine = traderLine,
-        traderSpeechSent = false,
-        traderSpeechAt = now + TRADER_REPLY_DELAY_MS,
+        playerLine = playerLine,
+        initialPlayerMessage = plan and plan.playerMessage or nil,
+        npcLine = npcLine,
+        npcSentiment = npcSentiment,
+        introGreeting = plan and plan.introGreeting or nil,
+        playerSpeechSent = false,
+        playerSpeechAt = now + PLAYER_FLAVOR_DELAY_MS,
+        npcSpeechSent = false,
+        npcSpeechAt = now + NPC_REPLY_DELAY_MS,
         openAt = now + AUTO_OPEN_DELAY_MS,
     }
 end
 
-local function tryQueueClosestTraderConversation(character)
+local function tryQueueClosestTalkConversation(character)
     local player = character
     if not player or not instanceof or not instanceof(player, "IsoPlayer") or player:isDead() then
         return
     end
 
-    local npc, npcKey = resolveClosestTrader(player)
+    local npc, npcKey = resolveClosestTalkTarget(player)
     if not npc or not npcKey or isConversationAlreadyOpenForTarget(npcKey) then
         return
     end
@@ -259,7 +197,7 @@ local function tryQueueClosestTraderConversation(character)
         return
     end
 
-    queueTraderConversation(player, npc, npcKey, npcData)
+    queueTalkConversation(player, npc, npcKey, npcData)
 end
 
 local function onTick()
@@ -268,7 +206,7 @@ local function onTick()
         return
     end
 
-    local valid, npcData = validatePendingTrader(pending.player, pending.npc, pending.npcKey)
+    local valid, npcData = validatePendingTalkTarget(pending.player, pending.npc, pending.npcKey)
     if not valid then
         Patch.PendingOpen = nil
         return
@@ -280,16 +218,23 @@ local function onTick()
     end
 
     local now = getTimeInMillis()
-    if not pending.traderSpeechSent and now >= (pending.traderSpeechAt or 0) then
-        if pending.traderLine ~= "" and DTNPCClient and DTNPCClient.QueueAmbientSpeechForNPC then
+    if not pending.playerSpeechSent and now >= (pending.playerSpeechAt or 0) then
+        if pending.playerLine ~= "" and pending.player and pending.player.Say then
+            pending.player:Say(pending.playerLine)
+        end
+        pending.playerSpeechSent = true
+    end
+
+    if not pending.npcSpeechSent and now >= (pending.npcSpeechAt or 0) then
+        if pending.npcLine ~= "" and DTNPCClient and DTNPCClient.QueueAmbientSpeechForNPC then
             DTNPCClient.QueueAmbientSpeechForNPC(
                 pending.npc,
-                pending.traderLine,
-                "neutral",
+                pending.npcLine,
+                pending.npcSentiment or "neutral",
                 pending.player and pending.player.getPlayerNum and pending.player:getPlayerNum() or 0
             )
         end
-        pending.traderSpeechSent = true
+        pending.npcSpeechSent = true
     end
 
     if now < (pending.openAt or 0) then
@@ -297,7 +242,10 @@ local function onTick()
     end
 
     if DTNPC_TraderDialogue_Hub and DTNPC_TraderDialogue_Hub.Init then
-        DTNPC_TraderDialogue_Hub.Init(nil, pending.npc, pending.player)
+        DTNPC_TraderDialogue_Hub.Init(nil, pending.npc, pending.player, {
+            initialPlayerMessage = pending.initialPlayerMessage,
+            initialGreeting = pending.introGreeting,
+        })
     end
     Patch.PendingOpen = nil
 end
@@ -318,7 +266,7 @@ local function patchWaveHiEmote()
         local result = Patch.OriginalEmote(self, emote)
 
         if baseEmote == "wavehi" then
-            tryQueueClosestTraderConversation(self and self.character or nil)
+            tryQueueClosestTalkConversation(self and self.character or nil)
         end
 
         return result

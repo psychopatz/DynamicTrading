@@ -218,8 +218,20 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
     showOfferOptions(ui, offer)
 end
 
+local function cloneMessagePayload(payload)
+    if type(payload) ~= "table" then
+        return payload
+    end
 
-function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
+    local copy = {}
+    for key, value in pairs(payload) do
+        copy[key] = value
+    end
+    return copy
+end
+
+
+function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
     if not ui then
         -- Open if not already open
         if DT_ConversationUI then
@@ -290,9 +302,33 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player)
     end
     
     -- 1. Intro Speech
-    local greeting = "Hello. What can I do for you?"
-    if DynamicTrading and DynamicTrading.DialogueManager and ui.target then
+    local initialPlayerMessage = initOptions and initOptions.initialPlayerMessage or nil
+    if initialPlayerMessage and initialPlayerMessage.text then
+        ui:queueMessage(
+            initialPlayerMessage.text,
+            initialPlayerMessage.author or "Me",
+            true,
+            tonumber(initialPlayerMessage.delay) or 0,
+            initialPlayerMessage.sound or "DT_RadioRandom",
+            initialPlayerMessage.style
+        )
+    end
+
+    local greeting = initOptions and initOptions.initialGreeting or nil
+    if not greeting and DynamicTrading and DynamicTrading.DialogueManager and ui.target then
         greeting = DynamicTrading.DialogueManager.GenerateGreeting(ui.target)
+    end
+    if not greeting then
+        greeting = "Hello. What can I do for you?"
+    end
+    if initialPlayerMessage and initialPlayerMessage.text and type(greeting) == "table" and greeting.delay == nil then
+        greeting = cloneMessagePayload(greeting)
+        greeting.delay = DT_ConversationUI.TEXT_DELAY
+    elseif initialPlayerMessage and initialPlayerMessage.text and type(greeting) ~= "table" then
+        greeting = {
+            text = greeting,
+            delay = DT_ConversationUI.TEXT_DELAY,
+        }
     end
     ui:speak(greeting)
 

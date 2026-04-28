@@ -6,6 +6,37 @@
 
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
 
+local function clamp01(value)
+    local numeric = tonumber(value)
+    if numeric == nil then
+        return nil
+    end
+    if numeric < 0 then
+        return 0
+    end
+    if numeric > 1 then
+        return 1
+    end
+    return numeric
+end
+
+local function readColorChannel(source, key, index, fallback)
+    if type(source) ~= "table" then
+        return fallback
+    end
+
+    local value = source[key]
+    if value == nil and index ~= nil then
+        value = source[index]
+    end
+
+    local normalized = clamp01(value)
+    if normalized == nil then
+        return fallback
+    end
+    return normalized
+end
+
 local function getPortraitKey(ui)
     local target = ui and ui.target or nil
     local interactionObj = ui and ui.interactionObj or nil
@@ -328,16 +359,31 @@ function DT_ConversationUI:drawLogItem(y, item, alt)
         bodyA = 0.20
     end
 
+    local textR, textG, textB, textA = 0.92, 0.94, 0.90, 1
+    local style = type(data.style) == "table" and data.style or nil
+    if style then
+        accentR = readColorChannel(style.accentColor, "r", 1, accentR)
+        accentG = readColorChannel(style.accentColor, "g", 2, accentG)
+        accentB = readColorChannel(style.accentColor, "b", 3, accentB)
+        bodyR = readColorChannel(style.bodyColor, "r", 1, bodyR)
+        bodyG = readColorChannel(style.bodyColor, "g", 2, bodyG)
+        bodyB = readColorChannel(style.bodyColor, "b", 3, bodyB)
+        bodyA = readColorChannel(style.bodyColor, "a", 4, bodyA)
+        textR = readColorChannel(style.textColor, "r", 1, textR)
+        textG = readColorChannel(style.textColor, "g", 2, textG)
+        textB = readColorChannel(style.textColor, "b", 3, textB)
+        textA = readColorChannel(style.textColor, "a", 4, textA)
+    end
+
     self:drawRect(x, y + 1, bubbleW, bubbleH, bodyA, bodyR, bodyG, bodyB)
     self:drawRect(x, y + 1, 7, bubbleH, 0.46, accentR, accentG, accentB)
     self:drawRect(x, y + 1, math.max(32, math.floor(bubbleW * 0.40)), 1, 0.22, accentR, accentG, accentB)
 
     local ly = y + 6
     local font = self.font
-    local textR, textG, textB = 0.92, 0.94, 0.90
 
     for _, line in ipairs(data.lines or {}) do
-        self:drawText(line, x + 13, ly, textR, textG, textB, 1, font)
+        self:drawText(line, x + 13, ly, textR, textG, textB, textA, font)
         ly = ly + 18
     end
 

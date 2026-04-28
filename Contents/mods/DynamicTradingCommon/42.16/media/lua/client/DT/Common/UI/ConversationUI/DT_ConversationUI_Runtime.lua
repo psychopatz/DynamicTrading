@@ -119,7 +119,7 @@ function DT_ConversationUI:update()
         if msg.delay > 0 then
             msg.delay = msg.delay - 1
         else
-            self:addMessage(msg.text, msg.author, msg.isPlayer)
+            self:addMessage(msg.text, msg.author, msg.isPlayer, msg.style)
 
             if msg.sound then
                 getSoundManager():PlaySound(msg.sound, false, 0.1)
@@ -130,20 +130,32 @@ function DT_ConversationUI:update()
     end
 end
 
-function DT_ConversationUI:queueMessage(text, author, isPlayer, delay, sound)
+function DT_ConversationUI:queueMessage(text, author, isPlayer, delay, sound, style)
     table.insert(self.msgQueue, {
         text = text,
         author = author,
         isPlayer = isPlayer,
         delay = delay or 0,
-        sound = sound
+        sound = sound,
+        style = style,
     })
 end
 
-function DT_ConversationUI:speak(text)
-    local author = self.target and self.target.name or "NPC"
+function DT_ConversationUI:speak(textOrPayload, style)
+    local payload = nil
+    if type(textOrPayload) == "table" then
+        payload = textOrPayload
+    else
+        payload = {
+            text = textOrPayload,
+            style = style,
+        }
+    end
+
+    local text = payload and payload.text or nil
+    local author = payload and payload.author or self.target and self.target.name or "NPC"
     local soundName = "DT_RadioRandom"
-    self:queueMessage(text, author, false, DT_ConversationUI.TEXT_DELAY, soundName)
+    self:queueMessage(text, author, false, payload and payload.delay or DT_ConversationUI.TEXT_DELAY, soundName, payload and payload.style or nil)
 end
 
 function DT_ConversationUI:rebuildChatLayout()
@@ -164,7 +176,7 @@ function DT_ConversationUI:rebuildChatLayout()
     end
 end
 
-function DT_ConversationUI:addMessage(text, author, isPlayer)
+function DT_ConversationUI:addMessage(text, author, isPlayer, style)
     if not text then
         return
     end
@@ -177,6 +189,7 @@ function DT_ConversationUI:addMessage(text, author, isPlayer)
         text = text,
         author = author,
         isPlayer = isPlayer,
+        style = style,
     }
     measureChatEntry(self, entry)
 
