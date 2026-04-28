@@ -195,9 +195,10 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
         or (uuid and ("TradeCycle_" .. uuid))
         or nil
     local isTradeCycleDemand = Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player) or false
+    local isBanditRoamDemand = Helpers.isBanditHouseRoamEncounterEligible and Helpers.isBanditHouseRoamEncounterEligible(npcData) or false
     local isHostileDemand = Helpers.isNegotiableHostileEncounter and Helpers.isNegotiableHostileEncounter(npcData, player) or false
     if not uuid then return false end
-    if not groupID and not isTradeCycleDemand and not isHostileDemand then return false end
+    if not groupID and not isTradeCycleDemand and not isBanditRoamDemand and not isHostileDemand then return false end
 
     ui.isBanditDemand = true
     ui.banditGroupID = groupID
@@ -275,8 +276,9 @@ function BanditClient.OpenDemand(npc, player, npcData)
         or (uuid and ("TradeCycle_" .. uuid))
         or nil
     local isTradeCycleDemand = Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player) or false
+    local isBanditRoamDemand = Helpers.isBanditHouseRoamEncounterEligible and Helpers.isBanditHouseRoamEncounterEligible(npcData) or false
     local isHostileDemand = Helpers.isNegotiableHostileEncounter and Helpers.isNegotiableHostileEncounter(npcData, player) or false
-    if not groupID and not isTradeCycleDemand and not isHostileDemand then
+    if not groupID and not isTradeCycleDemand and not isBanditRoamDemand and not isHostileDemand then
         return false
     end
     if groupID and BanditClient.ResolvedGroups[groupID] then return false end

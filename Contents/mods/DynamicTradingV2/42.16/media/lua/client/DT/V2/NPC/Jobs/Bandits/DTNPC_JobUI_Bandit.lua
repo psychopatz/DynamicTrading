@@ -45,6 +45,9 @@ if DTNPCJobUI and DTNPCJobUI.Register then
             local isTrueBandit = npcData
                 and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits")
                 or false
+            if helpers and helpers.isBanditHouseRoamEncounterEligible and helpers.isBanditHouseRoamEncounterEligible(npcData) then
+                return isTrueBandit and "Bribe" or "Negotiate"
+            end
             if helpers and helpers.isNegotiableHostileEncounter and helpers.isNegotiableHostileEncounter(npcData, player) then
                 return isTrueBandit and "Bribe" or "Negotiate"
             end

@@ -13,6 +13,30 @@ local function clearTradeCycleEncounterFields(npcData, registry)
     target.tradeCycleTargetPlayerOnlineID = nil
 end
 
+local function clearBanditHouseRoamFields(npcData, registry)
+    local target = npcData or registry
+    if type(target) ~= "table" then
+        return
+    end
+
+    target.banditRoamActive = nil
+    target.banditRoamSite = nil
+    target.banditRoamStartedAt = nil
+    target.banditRoamEndsAt = nil
+    target.banditRoamReturnStatus = nil
+    target.banditRoamEncounterMode = nil
+    target.banditRoamAggroRadius = nil
+end
+
+local function copyEncounterField(registry, npcData, fieldName)
+    if type(registry) ~= "table" or fieldName == nil then
+        return
+    end
+    if npcData ~= nil then
+        registry[fieldName] = npcData[fieldName]
+    end
+end
+
 local function isColonyRecruitmentAway(status, returnStatus, npcData)
     if status ~= "Away" then
         return false
@@ -36,7 +60,9 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         local isRecruitmentAway = isColonyRecruitmentAway(status, returnStatus, npcData)
         if npcData.status == "Away" and status ~= "Away" then
             DynamicTrading.Log("DTCommons", "Roster", "Sync", "Resetting state and master for " .. (npcData.name or uuid) .. " on return.")
-            if status == "Trading" then
+            if status == "Trading" and npcData.banditRoamActive == true then
+                npcData.state = "Stay"
+            elseif status == "Trading" then
                 npcData.state = "Trading"
             elseif status == "Working" then
                 npcData.state = "Guard"
@@ -89,6 +115,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
 
         if status == "Dead" or (status ~= "Away" and status ~= "Trading") then
             clearTradeCycleEncounterFields(npcData, nil)
+            clearBanditHouseRoamFields(npcData, nil)
         end
 
         if status ~= nil then npcData.status = status end
@@ -113,13 +140,21 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         registry.linkedWorkerID = npcData and npcData.linkedWorkerID or registry.linkedWorkerID
         registry.ownerUsername = npcData and npcData.ownerUsername or registry.ownerUsername
         registry.isPlayerFactionTrader = npcData and (npcData.isPlayerFactionTrader == true) or registry.isPlayerFactionTrader
-        registry.tradeCycleMode = npcData and npcData.tradeCycleMode or registry.tradeCycleMode
-        registry.tradeCycleDemandEligible = npcData and (npcData.tradeCycleDemandEligible == true) or registry.tradeCycleDemandEligible
-        registry.tradeCycleAggroRadius = npcData and npcData.tradeCycleAggroRadius or registry.tradeCycleAggroRadius
-        registry.tradeCycleTargetPlayerUsername = npcData and npcData.tradeCycleTargetPlayerUsername or registry.tradeCycleTargetPlayerUsername
-        registry.tradeCycleTargetPlayerOnlineID = npcData and npcData.tradeCycleTargetPlayerOnlineID or registry.tradeCycleTargetPlayerOnlineID
+        copyEncounterField(registry, npcData, "tradeCycleMode")
+        copyEncounterField(registry, npcData, "tradeCycleDemandEligible")
+        copyEncounterField(registry, npcData, "tradeCycleAggroRadius")
+        copyEncounterField(registry, npcData, "tradeCycleTargetPlayerUsername")
+        copyEncounterField(registry, npcData, "tradeCycleTargetPlayerOnlineID")
+        copyEncounterField(registry, npcData, "banditRoamActive")
+        copyEncounterField(registry, npcData, "banditRoamSite")
+        copyEncounterField(registry, npcData, "banditRoamStartedAt")
+        copyEncounterField(registry, npcData, "banditRoamEndsAt")
+        copyEncounterField(registry, npcData, "banditRoamReturnStatus")
+        copyEncounterField(registry, npcData, "banditRoamEncounterMode")
+        copyEncounterField(registry, npcData, "banditRoamAggroRadius")
         if status == "Dead" or (status ~= "Away" and status ~= "Trading") then
             clearTradeCycleEncounterFields(nil, registry)
+            clearBanditHouseRoamFields(nil, registry)
         end
     end
 

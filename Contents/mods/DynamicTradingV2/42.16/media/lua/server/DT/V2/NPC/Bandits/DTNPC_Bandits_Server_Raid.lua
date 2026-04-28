@@ -455,7 +455,25 @@ local function processHostileFactionAggro()
     for uuid, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
         local player, bestDist = getNearestPlayerToNPC(npcData)
         local faction = npcData and Faction.getFactionData(npcData.factionID) or nil
-        if npcData and npcData.tradeCycleMode ~= nil then
+        if npcData and npcData.banditRoamActive == true then
+            if npcData.status ~= "Dead"
+                and npcData.incapState ~= "Active"
+                and npcData.banditLeaving ~= true
+                and player then
+                local radius = tonumber(npcData.banditRoamAggroRadius) or Constants.TRADE_CYCLE_AGGRO_RADIUS
+                local shouldAggro = bestDist ~= nil and bestDist <= (radius * radius)
+                if shouldAggro then
+                    local group = Bandits.EnsureBanditHouseRoamEncounterGroup
+                        and Bandits.EnsureBanditHouseRoamEncounterGroup(player, uuid, npcData, {
+                            difficulty = npcData.banditDifficulty,
+                        })
+                        or nil
+                    if group and npcData.isHostile ~= true then
+                        Bandits.MakeGroupHostile(group.id, player, "bandit_roam_proximity")
+                    end
+                end
+            end
+        elseif npcData and npcData.tradeCycleMode ~= nil then
             if npcData.status ~= "Dead"
                 and npcData.incapState ~= "Active"
                 and npcData.banditLeaving ~= true

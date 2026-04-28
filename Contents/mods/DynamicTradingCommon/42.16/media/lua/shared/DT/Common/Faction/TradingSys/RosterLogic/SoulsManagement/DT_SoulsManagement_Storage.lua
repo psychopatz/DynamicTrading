@@ -146,5 +146,12 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         tradeCycleAggroRadius = npcData.tradeCycleAggroRadius,
         tradeCycleTargetPlayerUsername = npcData.tradeCycleTargetPlayerUsername,
         tradeCycleTargetPlayerOnlineID = npcData.tradeCycleTargetPlayerOnlineID,
+        banditRoamActive = npcData.banditRoamActive == true,
+        banditRoamSite = npcData.banditRoamSite,
+        banditRoamStartedAt = npcData.banditRoamStartedAt,
+        banditRoamEndsAt = npcData.banditRoamEndsAt,
+        banditRoamReturnStatus = npcData.banditRoamReturnStatus,
+        banditRoamEncounterMode = npcData.banditRoamEncounterMode,
+        banditRoamAggroRadius = npcData.banditRoamAggroRadius,
     }
 end

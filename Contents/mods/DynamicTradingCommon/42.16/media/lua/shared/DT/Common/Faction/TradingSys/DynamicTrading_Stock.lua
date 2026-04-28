@@ -84,6 +84,10 @@ function DynamicTrading_Stock.CheckAndGenerateStock(traderUUID)
     local soul = DynamicTrading_Roster.GetSoulRegistry(traderUUID)
     if not soul then return false, "Soul not found" end
 
+    if soul.banditRoamActive == true then
+        return false, "Trader is a bandit house roamer"
+    end
+
     if soul.tradeCycleDemandEligible == true or tostring(soul.tradeCycleMode or "trade") ~= "trade" then
         return false, "Trader is using robbery/bribe flow"
     end

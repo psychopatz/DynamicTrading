@@ -60,6 +60,7 @@ DynamicTrading.Log("DTV2", "Init", "NPC", "Loading respawn modules...")
 -- Load all respawn modules in alphabetical order (PZ requirement)
 -- Debug module must load first as other modules depend on it
 require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn_Debug"
+require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn_BanditRoam"
 require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn_Commands"
 require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn_SpawnLogic"
 require "DT/V2/NPC/Manager/DTNPC_ManagerRespawn/DTNPC_ManagerRespawn_TradeCycles"

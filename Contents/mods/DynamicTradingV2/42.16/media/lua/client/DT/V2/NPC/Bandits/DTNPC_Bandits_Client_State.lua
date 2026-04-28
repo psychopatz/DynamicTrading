@@ -178,7 +178,7 @@ function Helpers.isTradeCycleDemandEligible(npcData, player)
     end
 
     if tostring(npcData.factionID or "") == "Bandits" then
-        return true
+        return npcData.banditRoamActive == true or npcData.banditGroupID ~= nil
     end
 
     player = player or Helpers.getLocalPlayer()
@@ -187,6 +187,14 @@ function Helpers.isTradeCycleDemandEligible(npcData, player)
     end
 
     return Helpers.isFactionHostileToLocalPlayer(npcData.factionID)
+end
+
+function Helpers.isBanditHouseRoamEncounterEligible(npcData)
+    return npcData
+        and npcData.banditRoamActive == true
+        and tostring(npcData.banditRoamEncounterMode or "") == "bribe_only"
+        and npcData.banditLeaving ~= true
+        or false
 end
 
 function Helpers.sendBanditCommand(player, command, args)
@@ -263,6 +271,9 @@ function Helpers.buildPendingEncounterKey(npcData, player)
     end
 
     if Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player) then
+        if Helpers.isBanditHouseRoamEncounterEligible and Helpers.isBanditHouseRoamEncounterEligible(npcData) then
+            return "BanditRoam_" .. uuid
+        end
         return "TradeCycle_" .. uuid
     end
 

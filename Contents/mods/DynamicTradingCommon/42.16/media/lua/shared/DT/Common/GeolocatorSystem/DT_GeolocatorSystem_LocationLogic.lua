@@ -337,23 +337,36 @@ function DT_GeolocatorSystem.GetLocation(x, y)
 end
 
 local function addTownZoneLocation(zone)
-    if not zone or zone:getType() ~= "TownZone" then
+    if not zone then
         return nil
     end
 
-    local zoneName = normalizeLocationName(zone:getName() or "Nearby Town")
+    local zoneType = zone.getType and zone:getType() or zone.type
+    if zoneType ~= "TownZone" then
+        return nil
+    end
+
+    local zoneName = normalizeLocationName((zone.getName and zone:getName()) or zone.name or "Nearby Town")
     if zoneName == "" then
         zoneName = "Nearby Town"
+    end
+
+    local x = tonumber((zone.getX and zone:getX()) or zone.x)
+    local y = tonumber((zone.getY and zone:getY()) or zone.y)
+    local width = tonumber((zone.getW and zone:getW()) or (zone.getWidth and zone:getWidth()) or zone.w) or 0
+    local height = tonumber((zone.getH and zone:getH()) or (zone.getHeight and zone:getHeight()) or zone.h) or 0
+    if x == nil or y == nil then
+        return nil
     end
 
     return DT_GeolocatorSystem.AddLocation(
         normalizeLocationKey(zoneName),
         zoneName,
         "Dynamic",
-        zone:getX(),
-        zone:getY(),
-        zone:getX() + zone:getW(),
-        zone:getY() + zone:getH(),
+        x,
+        y,
+        x + width,
+        y + height,
         zoneName
     )
 end
@@ -386,12 +399,13 @@ function DT_GeolocatorSystem.GetTownName(x, y)
         if zones then
             for i = 0, zones:size() - 1 do
                 local zone = zones:get(i)
-                if zone:getType() == "TownZone" then
+                local zoneType = zone and ((zone.getType and zone:getType()) or zone.type) or nil
+                if zoneType == "TownZone" then
                     local dynamicLocation = addTownZoneLocation(zone)
                     if dynamicLocation and dynamicLocation.shortName then
                         return dynamicLocation.shortName
                     end
-                    return normalizeLocationName(zone:getName() or "Nearby Town")
+                    return normalizeLocationName(((zone and zone.getName) and zone:getName()) or zone.name or "Nearby Town")
                 end
             end
         end

@@ -60,5 +60,29 @@
     "Sandbox_DynamicTrading.BanditRaidPartyPercent_tooltip": "Percentage of resting hostile faction members that can join a raid, capped by Bandit Ambush Difficulty.",
 
     "Sandbox_DynamicTrading.BanditAmbushCooldownHours": "Bandit Ambush Cooldown (Hours)",
-    "Sandbox_DynamicTrading.BanditAmbushCooldownHours_tooltip": "Minimum in-game hours between random bandit ambushes on the server."
+    "Sandbox_DynamicTrading.BanditAmbushCooldownHours_tooltip": "Minimum in-game hours between random bandit ambushes on the server.",
+
+    "Sandbox_DynamicTrading.EnableBanditHouseRoamers": "Enable Bandit House Roamers",
+    "Sandbox_DynamicTrading.EnableBanditHouseRoamers_tooltip": "Allows true Bandits faction members to run dedicated house-roaming danger encounters instead of using normal trader trade runs.",
+
+    "Sandbox_DynamicTrading.BanditHouseRoamerChance": "Bandit House Roamer Chance (%)",
+    "Sandbox_DynamicTrading.BanditHouseRoamerChance_tooltip": "Chance for each bandit roamer dispatch check to start a new occupied-house encounter when the faction is below its active roamer cap.",
+
+    "Sandbox_DynamicTrading.BanditHouseRoamerPopPercent": "Bandit House Roamer Active Cap (%)",
+    "Sandbox_DynamicTrading.BanditHouseRoamerPopPercent_tooltip": "Maximum percentage of alive Bandits faction members that can be active as house roamers at the same time.",
+
+    "Sandbox_DynamicTrading.BanditHouseRoamerEligiblePercent": "Bandit House Roamer Eligible Pool (%)",
+    "Sandbox_DynamicTrading.BanditHouseRoamerEligiblePercent_tooltip": "Percentage of alive Bandits faction members that are eligible to be selected for house-roamer runs.",
+
+    "Sandbox_DynamicTrading.BanditHouseRoamerTravelHours": "Bandit House Roamer Travel Time (Hours)",
+    "Sandbox_DynamicTrading.BanditHouseRoamerTravelHours_tooltip": "How many in-game hours Bandit roamers spend traveling to and from their occupied-house encounter site.",
+
+    "Sandbox_DynamicTrading.BanditHouseRoamerStayHours": "Bandit House Roamer Stay Time (Hours)",
+    "Sandbox_DynamicTrading.BanditHouseRoamerStayHours_tooltip": "How many in-game hours Bandit roamers hold a chosen house/building before abandoning the site and leaving the run.",
+
+    "Sandbox_DynamicTrading.BanditHouseRoamerRadiusMin": "Bandit House Roamer Radius (Min)",
+    "Sandbox_DynamicTrading.BanditHouseRoamerRadiusMin_tooltip": "Minimum tile distance from an active player when choosing a house/building for a Bandit roamer site.",
+
+    "Sandbox_DynamicTrading.BanditHouseRoamerRadiusMax": "Bandit House Roamer Radius (Max)",
+    "Sandbox_DynamicTrading.BanditHouseRoamerRadiusMax_tooltip": "Maximum tile distance from an active player when choosing a house/building for a Bandit roamer site."
 }

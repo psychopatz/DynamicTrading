@@ -373,14 +373,18 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     -- OPTION 2: TRADE (Always Visible)
     local isTrading = false
     
-    if npcData and npcData.state ~= "Departure" and (npcData.status == "Trading" or npcData.state == "Trading") then
+    if npcData
+        and npcData.banditRoamActive ~= true
+        and npcData.state ~= "Departure"
+        and (npcData.status == "Trading" or npcData.state == "Trading") then
         isTrading = true
     else
         -- Fallback to Roster ModData if npcData is missing or unsynced
         local id = (npcData and npcData.uuid) or npc:getPersistentOutfitID() or npc:getID()
         local rosterData = ModData.get("DynamicTrading_Roster")
         if rosterData and rosterData.Souls and rosterData.Souls[id] then
-            if rosterData.Souls[id].status == "Trading" or rosterData.Souls[id].state == "Trading" then
+            if rosterData.Souls[id].banditRoamActive ~= true
+                and (rosterData.Souls[id].status == "Trading" or rosterData.Souls[id].state == "Trading") then
                 isTrading = true
             end
         end

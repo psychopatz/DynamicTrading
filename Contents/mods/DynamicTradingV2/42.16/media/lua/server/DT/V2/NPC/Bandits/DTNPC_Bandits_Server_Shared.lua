@@ -216,6 +216,7 @@ function Shared.getGroup(groupID)
     local hostileNegotiationOnly = false
     local tradeCycleEncounter = false
     local robbery = false
+    local banditRoamEncounter = false
     local isBanditMember = false
     local isRaidHostileFaction = false
     local isHostileBribeMode = false
@@ -232,8 +233,12 @@ function Shared.getGroup(groupID)
             banditDifficulty = banditDifficulty or npcData.banditDifficulty
             isBanditMember = isBanditMember or npcData.isBandit == true
             isRaidHostileFaction = isRaidHostileFaction or npcData.raidHostileFaction == true
+            banditRoamEncounter = banditRoamEncounter or npcData.banditRoamActive == true
             if tostring(npcData.hostileNegotiationGroupID or "") == groupID then
                 hostileNegotiationOnly = true
+                tradeCycleEncounter = true
+            end
+            if tostring(npcData.banditGroupID or "") == groupID and npcData.banditRoamActive == true then
                 tradeCycleEncounter = true
             end
             if npcData.tradeCycleDemandEligible == true or npcData.tradeCycleMode ~= nil then
@@ -253,6 +258,8 @@ function Shared.getGroup(groupID)
     if hostileNegotiationOnly then
         local isBanditFaction = Shared.isBanditFactionID(factionID) or isBanditMember == true
         resolveBehavior = (isBanditFaction or isRaidHostileFaction or isHostileBribeMode or robbery) and "leave" or "return_trading"
+    elseif banditRoamEncounter then
+        resolveBehavior = "leave"
     end
 
     if not factionID and isBanditMember then
@@ -268,6 +275,7 @@ function Shared.getGroup(groupID)
         robbery = robbery,
         tradeCycleEncounter = tradeCycleEncounter,
         hostileNegotiationOnly = hostileNegotiationOnly,
+        banditRoamEncounter = banditRoamEncounter,
         targetUsername = targetUsername,
         targetOnlineID = targetOnlineID,
         leaderUUID = leaderUUID,

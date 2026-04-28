@@ -145,3 +145,81 @@ option DynamicTrading.BanditAmbushCooldownHours
     page = DynamicTradingNPC,
     translation = DynamicTrading.BanditAmbushCooldownHours,
 }
+
+option DynamicTrading.EnableBanditHouseRoamers
+{
+    type = boolean,
+    default = true,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.EnableBanditHouseRoamers,
+}
+
+option DynamicTrading.BanditHouseRoamerChance
+{
+    type = double,
+    default = 25.0,
+    min = 0.0,
+    max = 100.0,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditHouseRoamerChance,
+}
+
+option DynamicTrading.BanditHouseRoamerPopPercent
+{
+    type = integer,
+    default = 20,
+    min = 0,
+    max = 100,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditHouseRoamerPopPercent,
+}
+
+option DynamicTrading.BanditHouseRoamerEligiblePercent
+{
+    type = integer,
+    default = 50,
+    min = 0,
+    max = 100,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditHouseRoamerEligiblePercent,
+}
+
+option DynamicTrading.BanditHouseRoamerTravelHours
+{
+    type = double,
+    default = 0.75,
+    min = 0.1,
+    max = 24.0,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditHouseRoamerTravelHours,
+}
+
+option DynamicTrading.BanditHouseRoamerStayHours
+{
+    type = double,
+    default = 6.0,
+    min = 0.5,
+    max = 72.0,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditHouseRoamerStayHours,
+}
+
+option DynamicTrading.BanditHouseRoamerRadiusMin
+{
+    type = integer,
+    default = 80,
+    min = 20,
+    max = 2000,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditHouseRoamerRadiusMin,
+}
+
+option DynamicTrading.BanditHouseRoamerRadiusMax
+{
+    type = integer,
+    default = 220,
+    min = 40,
+    max = 4000,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.BanditHouseRoamerRadiusMax,
+}

@@ -335,6 +335,9 @@ local function isDTNPCHostileToNPC(npcData, targetData)
     if isBanditLike(targetData) and not isBanditLike(npcData) then
         return true
     end
+    if isBanditLike(npcData) and not isBanditLike(targetData) then
+        return true
+    end
     if isBanditLike(npcData) and isCompanionLike(targetData) then
         return true
     end

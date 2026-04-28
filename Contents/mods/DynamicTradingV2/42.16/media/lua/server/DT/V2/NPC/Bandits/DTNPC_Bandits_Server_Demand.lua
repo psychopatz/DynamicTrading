@@ -33,6 +33,13 @@ local function buildTradeCycleGroupID(player, uuid)
         .. "_" .. tostring(ZombRand(1000000))
 end
 
+local function buildBanditHouseRoamGroupID(player, uuid)
+    return "BanditRoam_" .. tostring(uuid or "Unknown")
+        .. "_" .. tostring(Shared.getUsername(player) or "Player")
+        .. "_" .. tostring(math.floor(Shared.worldHours() * 100))
+        .. "_" .. tostring(ZombRand(1000000))
+end
+
 local function buildHostileNegotiationGroupID(player, uuid)
     return "Hostile_" .. tostring(uuid or "Unknown")
         .. "_" .. tostring(Shared.getUsername(player) or "Player")
@@ -81,14 +88,23 @@ local function isHostileNegotiationEligible(npcData, player)
         or false
 end
 
+local function isBanditHouseRoamEncounterEligible(npcData)
+    return type(npcData) == "table"
+        and npcData.banditRoamActive == true
+        and npcData.banditLeaving ~= true
+        and tostring(npcData.banditRoamEncounterMode or "") == "bribe_only"
+end
+
 local function shouldLeaveAfterPayment(group, npcData)
     local factionID = npcData and npcData.factionID or (group and group.factionID) or nil
     local mode = getTradeCycleMode(npcData)
     return Shared.isBanditFactionID(factionID)
         or (npcData and npcData.isBandit == true)
+        or (npcData and npcData.banditRoamActive == true)
         or (npcData and npcData.raidHostileFaction == true)
         or mode == "robbery"
         or mode == "hostile_bribe"
+        or (group and group.banditRoamEncounter == true)
         or (group and group.robbery == true)
 end
 
@@ -200,6 +216,9 @@ local function finishGroupAsLeaving(group, player, result)
 
     for _, member in ipairs(Shared.getGroupMembers(group)) do
         local npcData = member.npcData
+        if npcData.banditRoamActive == true and DTNPCManager and DTNPCManager.ClearBanditHouseRoamState then
+            DTNPCManager.ClearBanditHouseRoamState(npcData)
+        end
         npcData.hostileNegotiationGroupID = nil
         npcData.banditDemandResolved = true
         npcData.banditLeaving = true
@@ -207,6 +226,7 @@ local function finishGroupAsLeaving(group, player, result)
         npcData.state = "Flee"
         npcData.master = Shared.getUsername(player) or npcData.banditTargetUsername
         npcData.masterID = Shared.getOnlineID(player) or npcData.banditTargetOnlineID
+        npcData.requestedReturnStatus = npcData.requestedReturnStatus or "Resting"
         npcData.tasks = {}
         if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
             DynamicTrading_Roster.SaveSoul(member.uuid, npcData)
@@ -579,6 +599,77 @@ function Bandits.EnsureTradeCycleEncounterGroup(player, uuid, npcData, options)
     return group
 end
 
+function Bandits.EnsureBanditHouseRoamEncounterGroup(player, uuid, npcData, options)
+    if not player or not uuid or type(npcData) ~= "table" then
+        return nil
+    end
+
+    options = type(options) == "table" and options or {}
+    if not isBanditHouseRoamEncounterEligible(npcData) then
+        return nil
+    end
+
+    local existingGroupID = npcData.banditGroupID and tostring(npcData.banditGroupID) or nil
+    if existingGroupID then
+        local existing = Shared.getGroup(existingGroupID)
+        if existing then
+            existing.tradeCycleEncounter = true
+            existing.banditRoamEncounter = true
+            existing.robbery = false
+            existing.targetUsername = Shared.getUsername(player) or existing.targetUsername
+            existing.targetOnlineID = Shared.getOnlineID(player) or existing.targetOnlineID
+            existing.factionID = existing.factionID or npcData.factionID
+            existing.factionName = existing.factionName or Faction.getFactionDisplayName(npcData.factionID)
+            existing.leaderUUID = existing.leaderUUID or tostring(uuid)
+            existing.resolveBehavior = "leave"
+            npcData.banditTargetUsername = existing.targetUsername
+            npcData.banditTargetOnlineID = existing.targetOnlineID
+            npcData.banditDemandResolved = false
+            if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
+                DynamicTrading_Roster.SaveSoul(uuid, npcData)
+            end
+            Shared.syncNPC(uuid, npcData)
+            return existing
+        end
+    end
+
+    local groupID = buildBanditHouseRoamGroupID(player, uuid)
+    local group = {
+        id = groupID,
+        factionID = npcData.factionID or Bandits.FACTION_ID,
+        factionName = Faction.getFactionDisplayName(npcData.factionID),
+        difficulty = Shared.clampDifficulty(options.difficulty or npcData.banditDifficulty or 2),
+        partyPercent = 100,
+        robbery = false,
+        tradeCycleEncounter = true,
+        banditRoamEncounter = true,
+        resolveBehavior = "leave",
+        targetUsername = Shared.getUsername(player),
+        targetOnlineID = Shared.getOnlineID(player),
+        members = { tostring(uuid) },
+        leaderUUID = tostring(uuid),
+        status = "active",
+        spawnedAt = Shared.nowMillis(),
+    }
+
+    npcData.banditGroupID = groupID
+    npcData.banditRole = npcData.banditRole or "leader"
+    npcData.banditDemandStarted = nil
+    npcData.banditDemandStartedAt = nil
+    npcData.banditDemandResolved = false
+    npcData.banditLeaving = nil
+    npcData.banditTargetUsername = group.targetUsername
+    npcData.banditTargetOnlineID = group.targetOnlineID
+    npcData.banditRoamEncounterMode = npcData.banditRoamEncounterMode or "bribe_only"
+    if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
+        DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    end
+
+    Bandits.Groups[groupID] = group
+    Shared.syncNPC(uuid, npcData)
+    return group
+end
+
 function Bandits.EnsureHostileNegotiationGroup(player, uuid, npcData, options)
     if not player or not uuid or type(npcData) ~= "table" then
         return nil
@@ -658,11 +749,16 @@ function Bandits.StartDemand(player, args)
     if not npcData then return end
 
     local tradeCycleGroup = nil
+    local banditRoamGroup = nil
     local hostileGroup = nil
     if (not groupID or groupID == "")
         and (npcData.tradeCycleDemandEligible == true or npcData.tradeCycleMode ~= nil) then
         tradeCycleGroup = Bandits.EnsureTradeCycleEncounterGroup(player, uuid, npcData)
         groupID = tradeCycleGroup and tostring(tradeCycleGroup.id) or nil
+    end
+    if (not groupID or groupID == "") and isBanditHouseRoamEncounterEligible(npcData) then
+        banditRoamGroup = Bandits.EnsureBanditHouseRoamEncounterGroup(player, uuid, npcData)
+        groupID = banditRoamGroup and tostring(banditRoamGroup.id) or groupID
     end
     if (not groupID or groupID == "") and npcData.hostileNegotiationGroupID then
         hostileGroup = Bandits.EnsureHostileNegotiationGroup(player, uuid, npcData)
@@ -677,14 +773,14 @@ function Bandits.StartDemand(player, args)
         and tostring(npcData.hostileNegotiationGroupID or "") ~= groupID then
         return
     end
-    if not Shared.matchesPlayer(npcData, player)
-        and not (Shared.matchesHostileNegotiationPlayer and Shared.matchesHostileNegotiationPlayer(npcData, player))
-        and not isTradeCycleEncounter(tradeCycleGroup or hostileGroup, npcData) then
-        return
-    end
-
     local group = Shared.getGroup(groupID)
     if not group then return end
+    if not Shared.matchesPlayer(npcData, player)
+        and not (Shared.matchesHostileNegotiationPlayer and Shared.matchesHostileNegotiationPlayer(npcData, player))
+        and not isTradeCycleEncounter(tradeCycleGroup or hostileGroup, npcData)
+        and not (group.banditRoamEncounter == true) then
+        return
+    end
     group.targetUsername = group.targetUsername or Shared.getUsername(player)
     group.targetOnlineID = group.targetOnlineID or Shared.getOnlineID(player)
     group.leaderUUID = group.leaderUUID or uuid
@@ -800,6 +896,8 @@ function Bandits.RefuseDemand(player, args)
         local npcData = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] or nil
         if npcData and isTradeCycleEncounter(nil, npcData) then
             group = Bandits.EnsureTradeCycleEncounterGroup(player, uuid, npcData)
+        elseif npcData and isBanditHouseRoamEncounterEligible(npcData) then
+            group = Bandits.EnsureBanditHouseRoamEncounterGroup(player, uuid, npcData)
         elseif npcData and npcData.hostileNegotiationGroupID then
             group = Bandits.EnsureHostileNegotiationGroup(player, uuid, npcData)
                 or Shared.getGroup(npcData.hostileNegotiationGroupID)

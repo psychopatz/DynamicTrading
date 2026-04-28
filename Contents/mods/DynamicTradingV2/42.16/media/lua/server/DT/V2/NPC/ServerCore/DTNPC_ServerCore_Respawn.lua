@@ -36,6 +36,7 @@ local function shouldPreserveBanditEncounterState(npcData, status)
     local mode = tostring(npcData.tradeCycleMode or "")
     local activeEncounter = npcData.banditGroupID ~= nil
         or npcData.raidHostileFaction == true
+        or npcData.banditRoamActive == true
         or mode == "robbery"
         or mode == "hostile_bribe"
     if not activeEncounter then
@@ -67,6 +68,10 @@ local function resolveTradingRespawnState(npcData, preserveContactVisitFollow, p
 
         if npcData and npcData.isHostile == true then
             return "Attack"
+        end
+
+        if npcData and npcData.banditRoamActive == true then
+            return "Stay"
         end
 
         return "Stay"

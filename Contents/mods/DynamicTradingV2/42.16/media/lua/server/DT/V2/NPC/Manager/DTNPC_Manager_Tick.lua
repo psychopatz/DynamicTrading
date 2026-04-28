@@ -224,6 +224,9 @@ function DTNPCManager.OnTick()
         tradeCycleCheckCounter = 0
         if EnsureRespawnHooks() then
             DTNPCManager.ProcessTradeCycles()
+            if DTNPCManager.ProcessBanditHouseRoamers then
+                DTNPCManager.ProcessBanditHouseRoamers()
+            end
         end
     end
     

@@ -475,9 +475,9 @@ function DTNPCManager.PlanTradingDestination(uuid, registry)
     local isWandering = false
     local debugReason = ""
 
-    if registry.factionID == "Independent" or registry.factionID == "Factionless" or registry.factionID == "Bandits" then
+    if registry.factionID == "Independent" or registry.factionID == "Factionless" then
         isWandering = true
-        debugReason = registry.factionID == "Bandits" and "Bandit Raider" or "Independent/Factionless Trader"
+        debugReason = "Independent/Factionless Trader"
     else
         local wanderChance = SandboxVars.DynamicTrading.TownTraderWanderChance or 5.0
         if ZombRand(10000) < (wanderChance * 100) then
@@ -724,9 +724,18 @@ function DTNPCManager.ProcessAwayTransitions()
                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                     local home = npcData and npcData.homeCoords or nil
                     local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
+                    local isBanditRoamTrading = npcData and npcData.banditRoamActive == true or false
+                    if isBanditRoamTrading and DTNPCManager.GetBanditHouseRoamTravelHours then
+                        walkHours = DTNPCManager.GetBanditHouseRoamTravelHours()
+                    end
+                    if isBanditRoamTrading and DTNPCManager.ClearBanditHouseRoamState then
+                        DTNPCManager.ClearBanditHouseRoamState(npcData)
+                        DynamicTrading_Roster.SaveSoul(uuid, npcData)
+                    end
+
                     if home and DTNPCManager.TryStartLiveDeparture(uuid, "Resting", walkHours, home.x, home.y, home.z or 0) then
                         shouldApplyStatus = false
-                    elseif shouldDelayNearbyDespawn(uuid, registry) then
+                    elseif not isBanditRoamTrading and shouldDelayNearbyDespawn(uuid, registry) then
                         local heldUntil = currentHours + NEARBY_DESPAWN_HOLD_HOURS
                         DynamicTrading.Log(
                             "DTV2",
@@ -828,6 +837,22 @@ function DTNPCManager.ProcessAwayTransitions()
                         DynamicTrading.Log("DTV2", "NPC", "Logic", "WARNING: Unable to plan trading destination. Returning NPC to base.")
                         nextStatus = "Resting"
                     end
+                elseif shouldApplyStatus and DTNPCManager.IsBanditHouseRoamReturnStatus
+                    and DTNPCManager.IsBanditHouseRoamReturnStatus(nextStatus) then
+                    local npcData = DynamicTrading_Roster.GetSoul(uuid)
+                    if npcData and DTNPCManager.EnterBanditHouseRoamSite
+                        and DTNPCManager.EnterBanditHouseRoamSite(uuid, npcData, currentHours) then
+                        nextStatus = "Trading"
+                        newReturnTime = npcData.returnTime or (currentHours + (DTNPCManager.GetBanditHouseRoamStayHours and DTNPCManager.GetBanditHouseRoamStayHours() or 6.0))
+                        newReturnStatus = npcData.returnStatus or "Away"
+                    else
+                        DynamicTrading.Log("DTV2", "NPC", "Logic", "WARNING: Unable to enter bandit house-roam site. Returning NPC to base.")
+                        if npcData and DTNPCManager.ClearBanditHouseRoamState then
+                            DTNPCManager.ClearBanditHouseRoamState(npcData)
+                            DynamicTrading_Roster.SaveSoul(uuid, npcData)
+                        end
+                        nextStatus = "Resting"
+                    end
                 end
 
                 if shouldApplyStatus and DTNPCManager.IsColonyRecruitmentReturnStatus(nextStatus) then
@@ -847,6 +872,9 @@ function DTNPCManager.ProcessAwayTransitions()
                         if DTNPCManager.ClearTradeCycleEncounterState then
                             DTNPCManager.ClearTradeCycleEncounterState(npcData)
                         end
+                        if DTNPCManager.ClearBanditHouseRoamState then
+                            DTNPCManager.ClearBanditHouseRoamState(npcData)
+                        end
                         newReturnTime = 0
                         newReturnStatus = nil
                         DynamicTrading_Roster.SaveSoul(uuid, npcData)
@@ -856,12 +884,18 @@ function DTNPCManager.ProcessAwayTransitions()
                     local npcData = DynamicTrading_Roster.GetSoul(uuid)
                     if npcData then
                         local walkHours = SandboxVars.DynamicTrading.NPCTradingWalkHours or 1.0
+                        if npcData.banditRoamActive == true and DTNPCManager.GetBanditHouseRoamTravelHours then
+                            walkHours = DTNPCManager.GetBanditHouseRoamTravelHours()
+                        end
                         local home = npcData.homeCoords
                         if home and DTNPCManager.TryStartLiveDeparture(uuid, "Resting", walkHours, home.x, home.y, home.z or 0) then
                             shouldApplyStatus = false
                         else
                             if DTNPCManager.ClearTradeCycleEncounterState then
                                 DTNPCManager.ClearTradeCycleEncounterState(npcData)
+                            end
+                            if DTNPCManager.ClearBanditHouseRoamState then
+                                DTNPCManager.ClearBanditHouseRoamState(npcData)
                             end
                             newReturnTime = currentHours + walkHours
                             newReturnStatus = "Resting"

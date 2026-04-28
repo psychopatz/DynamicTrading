@@ -87,9 +87,11 @@ function DTNPCManager.ProcessTradeCycles()
 
     local plans = DynamicTrading_TradeScheduler.BuildAllFactionPlans(rosterData, currentHours)
     for factionID, plan in pairs(plans) do
-        local dispatchable = DynamicTrading_TradeScheduler.GetDispatchCandidates(factionID, rosterData, currentHours, plan.faction)
-        for _, uuid in ipairs(dispatchable) do
-            DTNPCManager.StartTradeMission(uuid)
+        if tostring(factionID or "") ~= "Bandits" then
+            local dispatchable = DynamicTrading_TradeScheduler.GetDispatchCandidates(factionID, rosterData, currentHours, plan.faction)
+            for _, uuid in ipairs(dispatchable) do
+                DTNPCManager.StartTradeMission(uuid)
+            end
         end
     end
 end
@@ -99,6 +101,13 @@ function DTNPCManager.StartTradeMission(uuid, forceImmediate, allowOutOfSchedule
     if not soul then 
         DynamicTrading.Log("DTV2", "NPC", "Logic", "ERROR: StartTradeMission failed - Soul not found for " .. tostring(uuid))
         return 
+    end
+
+    if tostring(soul.factionID or "") == "Bandits" then
+        if DTNPCManager.StartBanditHouseRoam then
+            DTNPCManager.StartBanditHouseRoam(uuid, forceImmediate == true)
+        end
+        return
     end
 
     if forceImmediate ~= true and allowOutOfSchedule ~= true then
