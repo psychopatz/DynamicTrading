@@ -9,6 +9,19 @@ DTNPCClient.AmbientDialogue = DTNPCClient.DialogueAmbient
 
 local Ambient = DTNPCClient.DialogueAmbient
 
+local function queueSpeechData(manager, zombie, npcData, speechData)
+    if not manager or not zombie or not npcData or not speechData then
+        return false
+    end
+
+    speechData.zombie = zombie
+    manager.speechList[npcData.uuid or tostring(zombie:getPersistentOutfitID())] = speechData
+    if DTNPCClient.TrackNPCForAmbientDialogue then
+        DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, npcData.uuid, zombie:getPersistentOutfitID())
+    end
+    return true
+end
+
 function Ambient.GetAmbientDebugInfo(npcData)
     local archetype = npcData and (npcData.archetypeID or npcData.occupation) or "General"
     local status = npcData and npcData.status or "Default"
@@ -99,9 +112,7 @@ function DTNPCClient.ForceAmbientDialogueForNPC(zombie, playerIndex)
         return false
     end
 
-    speechData.zombie = zombie
-    manager.speechList[npcData.uuid or tostring(zombie:getPersistentOutfitID())] = speechData
-    DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, npcData.uuid, zombie:getPersistentOutfitID())
+    queueSpeechData(manager, zombie, npcData, speechData)
 
     DynamicTrading.Log(
         "DTV2",
@@ -110,4 +121,20 @@ function DTNPCClient.ForceAmbientDialogueForNPC(zombie, playerIndex)
         "Force Ambient queued for " .. tostring(npcData.name or "Unknown") .. ": " .. tostring(speechData.text)
     )
     return true
+end
+
+function DTNPCClient.QueueAmbientSpeechForNPC(zombie, text, sentiment, playerIndex)
+    local speechText = tostring(text or "")
+    if not zombie or speechText == "" then
+        return false
+    end
+
+    local npcData = Ambient.GetNPCData and Ambient.GetNPCData(zombie) or nil
+    local manager = DTNPCClient.DialogueAmbientManagers and DTNPCClient.DialogueAmbientManagers[playerIndex or 0] or nil
+    if not npcData or not manager or not Ambient.BuildCustomSpeechData then
+        return false
+    end
+
+    local speechData = Ambient.BuildCustomSpeechData(speechText, sentiment or "neutral", zombie, getTimeInMillis())
+    return queueSpeechData(manager, zombie, npcData, speechData)
 end

@@ -50,6 +50,10 @@ local function buildSpeechDataFromText(text, sentiment, zombie, currentTime)
     }
 end
 
+function Ambient.BuildCustomSpeechData(text, sentiment, zombie, currentTime)
+    return buildSpeechDataFromText(text, sentiment or "neutral", zombie, currentTime or getTimeInMillis())
+end
+
 local function getRaidAmbientCategory(npcData)
     if not npcData then
         return nil

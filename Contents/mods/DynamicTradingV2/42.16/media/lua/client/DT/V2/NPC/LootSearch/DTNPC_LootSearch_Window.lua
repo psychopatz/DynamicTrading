@@ -9,6 +9,7 @@ require "ISUI/ISButton"
 require "ISUI/ISModalDialog"
 require "ISUI/ISRichTextPanel"
 require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Client"
+pcall(require, "DT/V2/NPC/UI/DTNPC_CommandEmotes")
 
 DTNPCLootSearchWindow = ISCollapsableWindow:derive("DTNPCLootSearchWindow")
 
@@ -527,9 +528,15 @@ function DTNPCLootSearchWindow:onToggleMode()
     if DTNPCLootSearchClient.RequestModeToggle(playerObj, self.npcData) then
         if tostring(self.npcData.state or "") == "LootNearby" then
             self.npcData.state = "Follow"
+            if DTNPC_CommandEmotes and DTNPC_CommandEmotes.Play then
+                DTNPC_CommandEmotes.Play(playerObj, "Follow")
+            end
             playerObj:Say("Returning to follow mode.")
         else
             self.npcData.state = "LootNearby"
+            if DTNPC_CommandEmotes and DTNPC_CommandEmotes.Play then
+                DTNPC_CommandEmotes.Play(playerObj, "LootNearby")
+            end
             playerObj:Say("Starting loot search.")
         end
         self:updateModeButton(self:getCache())

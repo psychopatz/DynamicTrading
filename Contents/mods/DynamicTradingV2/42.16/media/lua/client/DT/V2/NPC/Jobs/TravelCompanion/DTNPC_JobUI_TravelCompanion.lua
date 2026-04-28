@@ -6,6 +6,7 @@
 pcall(require, "DC/UI/Colony/System/DC_System")
 pcall(require, "DC/UI/Colony/SupplyWindow/DC_SupplyWindow")
 pcall(require, "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Client")
+pcall(require, "DT/V2/NPC/UI/DTNPC_CommandEmotes")
 
 local MEDICAL_TEXTURE_CACHE = {}
 local MEDICAL_PROVISION_FULL_TYPES = {
@@ -465,6 +466,39 @@ local function updateCompanionState(player, npc, state, extraArgs)
     return true
 end
 
+local function playCompanionCommandCue(player, cueKey)
+    if DTNPC_CommandEmotes and DTNPC_CommandEmotes.Play then
+        DTNPC_CommandEmotes.Play(player, cueKey)
+    end
+end
+
+local function resolveCompanionCommandCue(state, extraArgs)
+    local explicitCue = normalizeText(extraArgs and extraArgs.commandCue or nil)
+    if explicitCue then
+        return explicitCue
+    end
+
+    local combatOrder = normalizeText(extraArgs and extraArgs.combatOrder or nil)
+    if combatOrder then
+        return combatOrder
+    end
+
+    local guardOrder = normalizeText(extraArgs and (extraArgs.guardCombatOrder or extraArgs.guardAttackMode) or nil)
+    if guardOrder then
+        return guardOrder
+    end
+
+    return normalizeText(state)
+end
+
+local function issueCompanionStateOrder(player, npc, state, extraArgs)
+    local sent = updateCompanionState(player, npc, state, extraArgs)
+    if sent then
+        playCompanionCommandCue(player, resolveCompanionCommandCue(state, extraArgs))
+    end
+    return sent
+end
+
 local function getAttackTypeLabel(npcData)
     local combatOrder = npcData and npcData.combatOrder or nil
     if combatOrder ~= "ProtectAuto" and combatOrder ~= "ProtectRanged" and combatOrder ~= "ProtectMelee" then
@@ -698,7 +732,7 @@ local function addAttackTypeContextMenu(parentMenu, npc, player)
         subMenu,
         buildModeOptionLabel("Auto", currentMode == "ProtectAuto", showAmmo and currentMode == "ProtectAuto", ammoSnapshot.ammoCount),
         function()
-        updateCompanionState(player, npc, "ProtectAuto", {
+        issueCompanionStateOrder(player, npc, "ProtectAuto", {
             state = "ProtectAuto",
             combatOrder = "ProtectAuto",
             returnStatus = "Resting",
@@ -710,7 +744,7 @@ local function addAttackTypeContextMenu(parentMenu, npc, player)
         subMenu,
         buildModeOptionLabel("Ranged", currentMode == "ProtectRanged", showAmmo and currentMode == "ProtectRanged", ammoSnapshot.ammoCount),
         function()
-        updateCompanionState(player, npc, "ProtectRanged", {
+        issueCompanionStateOrder(player, npc, "ProtectRanged", {
             state = "ProtectRanged",
             combatOrder = "ProtectRanged",
             returnStatus = "Resting",
@@ -722,7 +756,7 @@ local function addAttackTypeContextMenu(parentMenu, npc, player)
         subMenu,
         buildModeOptionLabel("Melee", currentMode == "ProtectMelee", false, ammoSnapshot.ammoCount),
         function()
-        updateCompanionState(player, npc, "ProtectMelee", {
+        issueCompanionStateOrder(player, npc, "ProtectMelee", {
             state = "ProtectMelee",
             combatOrder = "ProtectMelee",
             returnStatus = "Resting",
@@ -745,7 +779,7 @@ local function addGuardAttackTypeContextMenu(parentMenu, npc, player)
         subMenu,
         buildModeOptionLabel("Auto", currentMode == "GuardAuto", showAmmo and currentMode == "GuardAuto", ammoSnapshot.ammoCount),
         function()
-        updateCompanionState(player, npc, "Guard", {
+        issueCompanionStateOrder(player, npc, "Guard", {
             state = "Guard",
             guardCombatOrder = "GuardAuto",
             returnStatus = "Resting",
@@ -757,7 +791,7 @@ local function addGuardAttackTypeContextMenu(parentMenu, npc, player)
         subMenu,
         buildModeOptionLabel("Ranged", currentMode == "GuardRanged", showAmmo and currentMode == "GuardRanged", ammoSnapshot.ammoCount),
         function()
-        updateCompanionState(player, npc, "Guard", {
+        issueCompanionStateOrder(player, npc, "Guard", {
             state = "Guard",
             guardCombatOrder = "GuardRanged",
             returnStatus = "Resting",
@@ -769,7 +803,7 @@ local function addGuardAttackTypeContextMenu(parentMenu, npc, player)
         subMenu,
         buildModeOptionLabel("Melee", currentMode == "GuardMelee", false, ammoSnapshot.ammoCount),
         function()
-        updateCompanionState(player, npc, "Guard", {
+        issueCompanionStateOrder(player, npc, "Guard", {
             state = "Guard",
             guardCombatOrder = "GuardMelee",
             returnStatus = "Resting",
@@ -835,8 +869,10 @@ local function addTransferCommandContextMenu(parentMenu, worker, player)
 
     for _, username in ipairs(candidates) do
         addCompanionContextAction(subMenu, username, function()
-            sendTransferCommand(worker, username)
-            refreshCompanionWorker(worker)
+            if sendTransferCommand(worker, username) then
+                playCompanionCommandCue(player, "TransferCommand")
+                refreshCompanionWorker(worker)
+            end
         end)
     end
 end
@@ -868,8 +904,10 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
     if usesCommandAuthority and not isCommander then
         if worker and canClaimCommand(player, npc) then
             addCompanionContextAction(rootMenu, "Claim Command", function()
-                sendClaimCommand(worker)
-                refreshCompanionWorker(worker)
+                if sendClaimCommand(worker) then
+                    playCompanionCommandCue(player, "ClaimCommand")
+                    refreshCompanionWorker(worker)
+                end
             end)
         else
             addDisabledContextAction(rootMenu, "Move closer to claim command.")
@@ -878,14 +916,14 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
     end
 
     addCompanionContextAction(rootMenu, "Follow Me", function()
-        updateCompanionState(player, npc, "Follow", {
+        issueCompanionStateOrder(player, npc, "Follow", {
             state = "Follow",
             returnStatus = "Resting",
         })
     end)
 
     addCompanionContextAction(rootMenu, "Hold Position", function()
-        updateCompanionState(player, npc, "Stay", {
+        issueCompanionStateOrder(player, npc, "Stay", {
             state = "Stay",
             clearGuardMode = true,
             returnStatus = "Resting",
@@ -893,7 +931,7 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
     end)
 
     addCompanionContextAction(rootMenu, "Guard Position", function()
-        updateCompanionState(player, npc, "Guard", {
+        issueCompanionStateOrder(player, npc, "Guard", {
             state = "Guard",
             guardCombatOrder = (liveData and (liveData.guardCombatOrder or liveData.guardAttackMode)) or "GuardAuto",
             returnStatus = "Resting",
@@ -904,14 +942,14 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
     addCompanionContextAction(rootMenu, isLooting and "Stop Loot Search" or "Search Nearby Loot", function()
         local latestData = getNPCData(npc) or liveData
         if latestData and latestData.state == "LootNearby" then
-            updateCompanionState(player, npc, "Stay", {
+            issueCompanionStateOrder(player, npc, "Stay", {
                 state = "Stay",
                 returnStatus = "Resting",
             })
             return
         end
 
-        updateCompanionState(player, npc, "LootNearby", {
+        issueCompanionStateOrder(player, npc, "LootNearby", {
             state = "LootNearby",
             x = npc:getX(),
             y = npc:getY(),
@@ -941,6 +979,9 @@ local function addCompanionContextMenu(context, ui, npc, player, npcData)
         addCompanionContextAction(rootMenu, "Go Home", function()
             local workerCommandSent = sendCompanionHome(worker)
             local returnOrderSent = orderCompanionReturnHome(player, npc)
+            if workerCommandSent and returnOrderSent then
+                playCompanionCommandCue(player, "GoHome")
+            end
             return workerCommandSent and returnOrderSent
         end)
     end
@@ -984,6 +1025,7 @@ local function generateRootOptions(ui, npc, player, worker)
                 message = "I'm taking command. Follow my lead.",
                 onSelect = function(innerUI)
                     if sendClaimCommand(worker) then
+                        playCompanionCommandCue(player, "ClaimCommand")
                         local liveData = getNPCData(npc)
                         if liveData then
                             liveData.dcCommanderUsername = getLocalUsername(player)
@@ -1046,7 +1088,7 @@ local function generateRootOptions(ui, npc, player, worker)
         text = "Follow Me",
         message = "Stay close and move with me.",
         onSelect = function(innerUI)
-            if updateCompanionState(player, npc, "Follow", {
+            if issueCompanionStateOrder(player, npc, "Follow", {
                 state = "Follow",
                 returnStatus = "Resting",
             }) then
@@ -1062,7 +1104,7 @@ local function generateRootOptions(ui, npc, player, worker)
         text = "Hold Position",
         message = "Stay put until I tell you otherwise.",
         onSelect = function(innerUI)
-            if updateCompanionState(player, npc, "Stay", {
+            if issueCompanionStateOrder(player, npc, "Stay", {
                 state = "Stay",
                 clearGuardMode = true,
                 returnStatus = "Resting",
@@ -1080,7 +1122,7 @@ local function generateRootOptions(ui, npc, player, worker)
         message = "Hold this area and engage nearby threats.",
         onSelect = function(innerUI)
             local liveData = getNPCData(npc)
-            if updateCompanionState(player, npc, "Guard", {
+            if issueCompanionStateOrder(player, npc, "Guard", {
                 state = "Guard",
                 guardCombatOrder = (liveData and (liveData.guardCombatOrder or liveData.guardAttackMode)) or "GuardAuto",
                 returnStatus = "Resting",
@@ -1099,7 +1141,7 @@ local function generateRootOptions(ui, npc, player, worker)
         onSelect = function(innerUI)
             local liveData = getNPCData(npc)
             if liveData and liveData.state == "LootNearby" then
-                if updateCompanionState(player, npc, "Stay", {
+                if issueCompanionStateOrder(player, npc, "Stay", {
                     state = "Stay",
                     returnStatus = "Resting",
                 }) then
@@ -1111,7 +1153,7 @@ local function generateRootOptions(ui, npc, player, worker)
                 return
             end
 
-            if updateCompanionState(player, npc, "LootNearby", {
+            if issueCompanionStateOrder(player, npc, "LootNearby", {
                 state = "LootNearby",
                 x = npc:getX(),
                 y = npc:getY(),
@@ -1169,7 +1211,7 @@ local function generateRootOptions(ui, npc, player, worker)
                     message = "Use whichever weapon fits the fight.",
                     style = buildModeOptionStyle(currentMode == "ProtectAuto", "auto"),
                     onSelect = function(choiceUI)
-                        if updateCompanionState(player, npc, "ProtectAuto", {
+                        if issueCompanionStateOrder(player, npc, "ProtectAuto", {
                             state = "ProtectAuto",
                             combatOrder = "ProtectAuto",
                             returnStatus = "Resting",
@@ -1191,7 +1233,7 @@ local function generateRootOptions(ui, npc, player, worker)
                     message = "Cover me from range.",
                     style = buildModeOptionStyle(currentMode == "ProtectRanged", "ranged"),
                     onSelect = function(choiceUI)
-                        if updateCompanionState(player, npc, "ProtectRanged", {
+                        if issueCompanionStateOrder(player, npc, "ProtectRanged", {
                             state = "ProtectRanged",
                             combatOrder = "ProtectRanged",
                             returnStatus = "Resting",
@@ -1208,7 +1250,7 @@ local function generateRootOptions(ui, npc, player, worker)
                     message = "Stay close and fight up front.",
                     style = buildModeOptionStyle(currentMode == "ProtectMelee", "melee"),
                     onSelect = function(choiceUI)
-                        if updateCompanionState(player, npc, "ProtectMelee", {
+                        if issueCompanionStateOrder(player, npc, "ProtectMelee", {
                             state = "ProtectMelee",
                             combatOrder = "ProtectMelee",
                             returnStatus = "Resting",
@@ -1252,7 +1294,7 @@ local function generateRootOptions(ui, npc, player, worker)
                     message = "Use whichever weapon fits the threat while guarding.",
                     style = buildModeOptionStyle(currentMode == "GuardAuto", "auto"),
                     onSelect = function(choiceUI)
-                        if updateCompanionState(player, npc, "Guard", {
+                        if issueCompanionStateOrder(player, npc, "Guard", {
                             state = "Guard",
                             guardCombatOrder = "GuardAuto",
                             returnStatus = "Resting",
@@ -1274,7 +1316,7 @@ local function generateRootOptions(ui, npc, player, worker)
                     message = "Guard from a distance.",
                     style = buildModeOptionStyle(currentMode == "GuardRanged", "ranged"),
                     onSelect = function(choiceUI)
-                        if updateCompanionState(player, npc, "Guard", {
+                        if issueCompanionStateOrder(player, npc, "Guard", {
                             state = "Guard",
                             guardCombatOrder = "GuardRanged",
                             returnStatus = "Resting",
@@ -1291,7 +1333,7 @@ local function generateRootOptions(ui, npc, player, worker)
                     message = "Hold the line up close.",
                     style = buildModeOptionStyle(currentMode == "GuardMelee", "melee"),
                     onSelect = function(choiceUI)
-                        if updateCompanionState(player, npc, "Guard", {
+                        if issueCompanionStateOrder(player, npc, "Guard", {
                             state = "Guard",
                             guardCombatOrder = "GuardMelee",
                             returnStatus = "Resting",
@@ -1333,6 +1375,7 @@ local function generateRootOptions(ui, npc, player, worker)
                         message = "Report to " .. tostring(username) .. ".",
                         onSelect = function(choiceUI)
                             if sendTransferCommand(worker, username) then
+                                playCompanionCommandCue(player, "TransferCommand")
                                 choiceUI:speak("Command transferred to " .. tostring(username) .. ".")
                                 refreshCompanionWorker(worker)
                             else
@@ -1382,6 +1425,7 @@ local function generateRootOptions(ui, npc, player, worker)
             local workerCommandSent = worker and sendCompanionHome(worker) or true
             local returnOrderSent = orderCompanionReturnHome(player, npc)
             if workerCommandSent and returnOrderSent then
+                playCompanionCommandCue(player, "GoHome")
                 innerUI:speak("Understood. I'll head home.")
                 innerUI:updateOptions({
                     {
