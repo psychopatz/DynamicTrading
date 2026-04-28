@@ -92,7 +92,7 @@ function DT_Reputation.ApplyTradeResult(args, trader, isBuy)
     DT_Reputation.AddTradeValue(traderID, factionID, tradeValue, effectiveIsBuy, transactionKind)
 
     if trader then
-        trader.personalRep = DT_Reputation.GetPersonalRep(traderID)
+        trader.personalRep = DT_Reputation.GetPersonalRep(traderID, factionID)
         trader.factionRep = DT_Reputation.GetFactionRep(factionID)
         trader.reputation = DT_Reputation.GetEffectiveRep(traderID, factionID)
         trader.reputationStage = DT_Reputation.GetStageData(trader.reputation).label

@@ -5,10 +5,53 @@ DT_Reputation.Internal = DT_Reputation.Internal or {}
 
 local Internal = DT_Reputation.Internal
 
-function DT_Reputation.GetPersonalRep(traderUUID)
+local function resolveFactionSnapshot(factionID)
+    if not factionID then
+        return nil
+    end
+
+    local snapshots = {
+        DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions or nil,
+        DT_V2_RadarManager and DT_V2_RadarManager.ClientFactions or nil,
+        DT_FactionInfoWindow and DT_FactionInfoWindow.cachedFactionData or nil,
+        ModData.get("DynamicTrading_Factions") or nil,
+    }
+
+    for _, source in ipairs(snapshots) do
+        if type(source) == "table" and type(source[factionID]) == "table" then
+            return source[factionID]
+        end
+    end
+
+    return nil
+end
+
+local function getDefaultPersonalRep(factionID)
+    local faction = resolveFactionSnapshot(factionID)
+    if type(faction) ~= "table" then
+        return 0
+    end
+
+    if tostring(faction.factionType or "") == "bandit"
+        or tostring(factionID or "") == "Bandits"
+        or faction.hostileToPlayers == true
+        or faction.alwaysHostile == true then
+        return DT_Reputation.REP_MIN
+    end
+
+    return 0
+end
+
+function DT_Reputation.GetPersonalRep(traderUUID, factionID)
     if not traderUUID then return 0 end
     if not DT_Reputation.EnsureLoaded() then return 0 end
-    return DT_Reputation.state.personalRep[traderUUID] or 0
+
+    local stored = DT_Reputation.state.personalRep[traderUUID]
+    if stored ~= nil then
+        return stored
+    end
+
+    return getDefaultPersonalRep(factionID)
 end
 
 function DT_Reputation.GetFactionBias(factionID)
@@ -20,7 +63,7 @@ end
 function DT_Reputation.GetEffectiveRep(traderUUID, factionID)
     if not DT_Reputation.EnsureLoaded() then return 0 end
 
-    local personal = traderUUID and (DT_Reputation.state.personalRep[traderUUID] or 0) or 0
+    local personal = traderUUID and DT_Reputation.GetPersonalRep(traderUUID, factionID) or 0
     local bias = factionID and (DT_Reputation.state.factionBias[factionID] or 0) or 0
 
     return DT_Reputation.Clamp(personal + bias)
@@ -66,7 +109,7 @@ function DT_Reputation.GetFactionRep(factionID, rosterData)
 
     for _, uuid in ipairs(members) do
         if Internal.IsSoulAlive(souls[uuid]) then
-            local personal = state.personalRep[uuid] or 0
+            local personal = DT_Reputation.GetPersonalRep(uuid, factionID)
             total = total + DT_Reputation.Clamp(personal + bias)
             count = count + 1
         end

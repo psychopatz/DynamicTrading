@@ -393,7 +393,7 @@ function DT_FactionDebugWindow:createChildren()
             if self.selectedMemberUUID then
                 DT_FactionDebugActions.modifyPersonalReputation(self.selectedMemberUUID, f.item.id, 10)
             else
-                DT_FactionDebugActions.modifyReputation(f.item.id, 10)
+                DT_FactionDebugActions.modifyFactionBias(f.item.id, 10)
             end
         end
     end)
@@ -406,7 +406,7 @@ function DT_FactionDebugWindow:createChildren()
             if self.selectedMemberUUID then
                 DT_FactionDebugActions.modifyPersonalReputation(self.selectedMemberUUID, f.item.id, -10)
             else
-                DT_FactionDebugActions.modifyReputation(f.item.id, -10)
+                DT_FactionDebugActions.modifyFactionBias(f.item.id, -10)
             end
         end
     end)

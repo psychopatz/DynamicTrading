@@ -71,36 +71,4 @@ function Interaction.ReturnTraderBudget(factionID, amount)
     return false
 end
 
-function Interaction.ModifyReputation(factionID, username, amount)
-    local data = ModData.get(MOD_DATA_KEY)
-    local faction = data[factionID]
-    if faction and username then
-        if type(faction.reputation) ~= "table" then
-             faction.reputation = {}
-        end
-
-        local delta = tonumber(amount) or 0
-
-        if faction.hostileToPlayers == true and tostring(faction.factionType or "") == "bandit" then
-            faction.reputation[username] = -100
-            ModData.transmit(MOD_DATA_KEY)
-            return true
-        end
-
-        faction.reputation[username] = (faction.reputation[username] or 0) + delta
-        
-        if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
-            if delta > 0 then
-                DynamicTrading.GameplayLogs.AddFactionEvent(factionID, DynamicTrading.GameplayEvents.REP_SIGNIFICANT_CHANGE, {username})
-            elseif delta < 0 then
-                DynamicTrading.GameplayLogs.AddFactionEvent(factionID, DynamicTrading.GameplayEvents.REP_SIGNIFICANT_LOSS, {username})
-            end
-        end
-
-        ModData.transmit(MOD_DATA_KEY)
-        return true
-    end
-    return false
-end
-
 return Interaction

@@ -27,10 +27,32 @@ local function onTick()
     end
 end
 
+local function onServerCommand(module, command, args)
+    if module ~= "DynamicTrading" or command ~= "ReputationSync" or type(args) ~= "table" then
+        return
+    end
+
+    local action = tostring(args.action or "")
+    if action == "factionBiasDelta" then
+        DT_Reputation.ModifyFactionBias(args.factionID, args.amount, args.reason or "server_sync")
+    elseif action == "personalRepDelta" then
+        DT_Reputation.ModifyPersonalRep(args.traderUUID, args.factionID, args.amount, args.reason or "server_sync")
+    elseif action == "rosterPersonalRepSync" then
+        DT_Reputation.ApplyRosterPersonalRepSync(
+            args.memberUUIDs,
+            args.factionID,
+            args.mode,
+            args.value,
+            args.reason or "server_sync"
+        )
+    end
+end
+
 if not Internal.EventsRegistered then
     Events.OnCreatePlayer.Add(onCreatePlayer)
     Events.OnGameStart.Add(onGameStart)
     Events.OnReceiveGlobalModData.Add(onReceiveGlobalModData)
     Events.OnTick.Add(onTick)
+    Events.OnServerCommand.Add(onServerCommand)
     Internal.EventsRegistered = true
 end

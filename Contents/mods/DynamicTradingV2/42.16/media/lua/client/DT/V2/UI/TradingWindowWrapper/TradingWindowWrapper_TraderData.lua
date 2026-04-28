@@ -58,7 +58,7 @@ function V2_DataProvider:getTrader(traderID, archetype)
     }
 
     if DT_Reputation then
-        trader.personalRep = DT_Reputation.GetPersonalRep(traderID)
+        trader.personalRep = DT_Reputation.GetPersonalRep(traderID, factionID)
         trader.factionRep = DT_Reputation.GetFactionRep(stock.factionID)
         trader.reputation = DT_Reputation.GetEffectiveRep(traderID, stock.factionID)
         trader.reputationStage = DT_Reputation.GetStageData(trader.reputation).label

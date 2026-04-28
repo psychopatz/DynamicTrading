@@ -37,3 +37,12 @@ function Helpers.SendResponse(player, module, command, args)
         triggerEvent("OnServerCommand", module, command, args)
     end
 end
+
+function Helpers.SendReputationSync(player, payload)
+    if not player or type(payload) ~= "table" then
+        return false
+    end
+
+    Helpers.SendResponse(player, "DynamicTrading", "ReputationSync", payload)
+    return true
+end

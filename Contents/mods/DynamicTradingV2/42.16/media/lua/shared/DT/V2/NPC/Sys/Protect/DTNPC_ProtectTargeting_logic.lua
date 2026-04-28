@@ -211,7 +211,7 @@ local function getFactionReputationForPlayer(npcData, player)
     end
 
     local faction = DynamicTrading_Factions.GetFaction(npcData.factionID)
-    if not faction or type(faction.reputation) ~= "table" then
+    if not faction then
         return 0
     end
 
@@ -220,7 +220,12 @@ local function getFactionReputationForPlayer(npcData, player)
         return 0
     end
 
-    return tonumber(faction.reputation[username]) or 0
+    local disposition = type(faction.playerDisposition) == "table" and faction.playerDisposition or nil
+    if disposition and disposition[username] ~= nil then
+        return tonumber(disposition[username]) or 0
+    end
+
+    return tonumber(faction.playerDispositionDefault) or 0
 end
 
 local function isHostilePlayerForNPC(npcData, player)

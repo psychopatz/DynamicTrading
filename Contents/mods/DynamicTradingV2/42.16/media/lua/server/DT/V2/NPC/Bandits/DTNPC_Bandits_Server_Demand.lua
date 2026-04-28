@@ -366,12 +366,9 @@ local function applyTributeReputationChange(group, player, selectedTier)
 
     local aliveFactionCount = Faction.getAliveFactionMemberCount and Faction.getAliveFactionMemberCount(group.factionID) or 0
     local username = Shared.getUsername(player)
-    if aliveFactionCount > 0
-        and username
-        and DynamicTrading_Factions
-        and DynamicTrading_Factions.ModifyReputation then
+    if aliveFactionCount > 0 and username and Faction.adjustPlayerDisposition then
         local scalarDelta = (recipientCount * repPerMember) / aliveFactionCount
-        DynamicTrading_Factions.ModifyReputation(group.factionID, username, scalarDelta)
+        Faction.adjustPlayerDisposition(group.factionID, username, scalarDelta)
     end
 
     Shared.sendBanditCommand(player, "BanditRepSync", {

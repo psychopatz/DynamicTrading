@@ -118,14 +118,14 @@ function DT_FactionDebugData.formatFactionDetails(faction)
     end
     
     text = text .. "ColonyWealth: <RGB:0.2,1,0.2> $" .. tostring(faction.ColonyWealth or 0) .. " <LINE> "
-    text = text .. " <LINE> <RGB:0.2,0.2,1> PLAYER REPUTATIONS: <LINE> "
-    
-    if faction.reputation and type(faction.reputation) == "table" then
-        for user, rep in pairs(faction.reputation) do
+    text = text .. " <LINE> <RGB:0.2,0.2,1> PLAYER DISPOSITIONS: <LINE> "
+
+    if faction.playerDisposition and type(faction.playerDisposition) == "table" then
+        for user, rep in pairs(faction.playerDisposition) do
             text = text .. " <RGB:0.7,0.7,0.7> - " .. user .. ": <RGB:1,1,1> " .. rep .. " <LINE> "
         end
     else
-        text = text .. " <RGB:0.7,0.7,0.7> - No reputation data. <LINE> "
+        text = text .. " <RGB:0.7,0.7,0.7> - No player disposition data. <LINE> "
     end
     
     text = text .. " <LINE> <RGB:1,1,0> ACTIVE FLASH EVENTS: <LINE> "

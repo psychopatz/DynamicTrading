@@ -252,7 +252,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
             end
 
             if DT_Reputation then
-                traderProxy.personalRep = DT_Reputation.GetPersonalRep(traderProxy.id)
+                traderProxy.personalRep = DT_Reputation.GetPersonalRep(traderProxy.id, traderProxy.factionID)
                 traderProxy.factionRep = DT_Reputation.GetFactionRep(traderProxy.factionID)
                 traderProxy.reputation = DT_Reputation.GetEffectiveRep(traderProxy.id, traderProxy.factionID)
                 traderProxy.reputationStage = DT_Reputation.GetStageData(traderProxy.reputation).label

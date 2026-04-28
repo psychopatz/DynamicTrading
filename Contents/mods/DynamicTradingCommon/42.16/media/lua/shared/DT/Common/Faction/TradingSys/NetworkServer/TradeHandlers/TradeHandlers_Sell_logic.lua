@@ -129,10 +129,10 @@ return function(context)
         })
 
         local factionID = tx.factionData and tx.factionData.id or nil
-        if (not isGift) and factionID and DynamicTrading_Factions and DynamicTrading_Factions.ModifyReputation then
+        if (not isGift) and factionID then
             local repGain = math.floor(totalGain / 500)
             if repGain >= 1 then
-                DynamicTrading_Factions.ModifyReputation(factionID, player:getUsername(), repGain)
+                Helpers.SyncFactionBiasDelta(player, factionID, repGain, "trade_sell")
                 local factionName = tx.factionData.name or "Independent"
                      if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddPlayerRadioEvent then
                          DynamicTrading.GameplayLogs.AddPlayerRadioEvent(player, DynamicTrading.GameplayEvents.TRADE_REP_GAINED, {tostring(factionName), tostring(repGain)})

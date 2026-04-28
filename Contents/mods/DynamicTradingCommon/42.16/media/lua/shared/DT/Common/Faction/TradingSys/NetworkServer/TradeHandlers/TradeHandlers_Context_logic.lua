@@ -11,6 +11,24 @@ return function(context)
         DynamicTrading.ServerHelpers.SendResponse(player, "DynamicTrading", "TransactionResult", payload)
     end
 
+    function Helpers.SyncFactionBiasDelta(player, factionID, amount, reason)
+        if not player or not factionID then
+            return false
+        end
+
+        local delta = tonumber(amount) or 0
+        if delta == 0 then
+            return false
+        end
+
+        return DynamicTrading.ServerHelpers.SendReputationSync(player, {
+            action = "factionBiasDelta",
+            factionID = tostring(factionID),
+            amount = delta,
+            reason = reason or "server_trade"
+        })
+    end
+
     function Helpers.BuildTradeTransactionContext(player, args)
         local txType = args.type
         local traderID = args.traderID

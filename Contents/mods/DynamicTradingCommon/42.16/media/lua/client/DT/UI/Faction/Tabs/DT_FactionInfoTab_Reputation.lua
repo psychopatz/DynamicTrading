@@ -122,7 +122,7 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
                 local name = soul and soul.name or uuid
                 local effectiveRep = DT_Reputation.GetEffectiveRep(uuid, f.id)
                 local effectiveStage = DT_Reputation.GetStageData(effectiveRep)
-                local personalRep = DT_Reputation.GetPersonalRep(uuid)
+                local personalRep = DT_Reputation.GetPersonalRep(uuid, f.id)
                 local totalBought = DT_Reputation.GetTotalBought(uuid)
                 local totalSold = DT_Reputation.GetTotalSold(uuid)
                 local totalGifted = DT_Reputation.GetTotalGifted(uuid)

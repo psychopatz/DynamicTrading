@@ -144,11 +144,12 @@ function Helpers.isFactionHostileToLocalPlayer(factionID)
         return false
     end
 
+    local disposition = type(faction.playerDisposition) == "table" and faction.playerDisposition or nil
     local rep = 0
-    if type(faction.reputation) == "table" and faction.reputation[username] ~= nil then
-        rep = tonumber(faction.reputation[username]) or 0
-    elseif faction.reputationDefault ~= nil then
-        rep = tonumber(faction.reputationDefault) or 0
+    if disposition and disposition[username] ~= nil then
+        rep = tonumber(disposition[username]) or 0
+    elseif faction.playerDispositionDefault ~= nil then
+        rep = tonumber(faction.playerDispositionDefault) or 0
     end
 
     local threshold = DTNPCProtect

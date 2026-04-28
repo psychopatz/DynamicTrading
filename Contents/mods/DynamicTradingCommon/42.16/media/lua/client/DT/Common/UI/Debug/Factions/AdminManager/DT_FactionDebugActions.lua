@@ -22,16 +22,14 @@ function DT_FactionDebugActions.modifyWealth(factionID, amount)
     })
 end
 
-function DT_FactionDebugActions.modifyReputation(factionID, amount)
+function DT_FactionDebugActions.modifyFactionBias(factionID, amount)
     if not factionID then return end
-    
-    -- [NEW LOGIC] Use the current reputation system for local player testing
+
     if DT_Reputation and DT_Reputation.ModifyFactionBias then
         DT_Reputation.ModifyFactionBias(factionID, amount, "admin_debug")
     end
 
-    -- [OLD LOGIC] Keep for backend faction state continuity
-    DT_DebugNetworkAdapter.sendDebugAction("ModifyReputation", { 
+    DT_DebugNetworkAdapter.sendDebugAction("ModifyFactionBias", {
         factionID = factionID, 
         amount = amount 
     })

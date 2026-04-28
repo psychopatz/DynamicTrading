@@ -139,6 +139,60 @@ function Faction.isFactionExcludedFromPopulationPool(factionID, faction)
         ))
 end
 
+function Faction.ensurePlayerDispositionState(faction)
+    if type(faction) ~= "table" then
+        return nil
+    end
+
+    if type(faction.playerDisposition) ~= "table" then
+        faction.playerDisposition = {}
+    end
+    if faction.playerDispositionDefault == nil then
+        if tostring(faction.factionType or "") == "bandit" then
+            faction.playerDispositionDefault = -100
+        end
+    end
+
+    return faction.playerDisposition
+end
+
+function Faction.getPlayerDisposition(faction, username)
+    if type(faction) ~= "table" or not username or username == "" then
+        return 0
+    end
+
+    local disposition = Faction.ensurePlayerDispositionState(faction)
+    if type(disposition) == "table" and disposition[username] ~= nil then
+        return tonumber(disposition[username]) or 0
+    end
+
+    return tonumber(faction.playerDispositionDefault) or 0
+end
+
+function Faction.setPlayerDisposition(factionID, username, value)
+    local faction = Faction.getFactionData(factionID)
+    if not faction or not username or username == "" then
+        return false
+    end
+
+    local disposition = Faction.ensurePlayerDispositionState(faction)
+    disposition[username] = math.max(-100, math.min(100, tonumber(value) or 0))
+    if ModData.transmit then
+        ModData.transmit("DynamicTrading_Factions")
+    end
+    return true
+end
+
+function Faction.adjustPlayerDisposition(factionID, username, delta)
+    local faction = Faction.getFactionData(factionID)
+    if not faction or not username or username == "" then
+        return false
+    end
+
+    local current = Faction.getPlayerDisposition(faction, username)
+    return Faction.setPlayerDisposition(factionID, username, current + (tonumber(delta) or 0))
+end
+
 function Faction.isFactionHostileToPlayer(factionID, faction, player)
     if not factionID or not faction or not player then return false end
     if faction.hostileToPlayers == true or faction.alwaysHostile == true then return true end
@@ -146,12 +200,7 @@ function Faction.isFactionHostileToPlayer(factionID, faction, player)
     local username = Shared.getUsername(player)
     if not username then return false end
 
-    local rep = 0
-    if type(faction.reputation) == "table" and faction.reputation[username] ~= nil then
-        rep = tonumber(faction.reputation[username]) or 0
-    elseif faction.reputationDefault ~= nil then
-        rep = tonumber(faction.reputationDefault) or 0
-    end
+    local rep = Faction.getPlayerDisposition(faction, username)
 
     local threshold = DTNPCProtect
         and DTNPCProtect.CONFIG
@@ -208,14 +257,14 @@ function Bandits.EnsureBanditFaction(force)
     faction.ignorePopulationCap = true
     faction.hostileToPlayers = true
     faction.alwaysHostile = true
-    faction.reputationDefault = -100
+    faction.playerDispositionDefault = -100
     faction.trickleActiveCount = tonumber(faction.trickleActiveCount) or 1
-    faction.reputation = type(faction.reputation) == "table" and faction.reputation or {}
+    local disposition = Faction.ensurePlayerDispositionState(faction)
 
     for _, player in ipairs(Shared.getActivePlayers()) do
         local username = Shared.getUsername(player)
-        if username then
-            faction.reputation[username] = -100
+        if username and disposition[username] == nil then
+            disposition[username] = -100
         end
     end
 

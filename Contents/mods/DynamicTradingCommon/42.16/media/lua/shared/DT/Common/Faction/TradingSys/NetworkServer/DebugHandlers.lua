@@ -126,10 +126,15 @@ Handlers.DebugCommand = function(player, args)
         DynamicTrading_Factions.ModifyColonyWealth(factionID, amt)
         DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Colony Wealth Modified" })
 
-    elseif action == "ModifyReputation" then
+    elseif action == "ModifyFactionBias" then
         local factionID = args.factionID
         local amt = args.amount
-        DynamicTrading_Factions.ModifyReputation(factionID, player:getUsername(), amt)
+        DynamicTrading.ServerHelpers.SendReputationSync(player, {
+            action = "factionBiasDelta",
+            factionID = tostring(factionID or ""),
+            amount = tonumber(amt) or 0,
+            reason = "admin_debug"
+        })
         DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Reputation Modified" })
 
     elseif action == "AdminReviewPlayerFaction" then

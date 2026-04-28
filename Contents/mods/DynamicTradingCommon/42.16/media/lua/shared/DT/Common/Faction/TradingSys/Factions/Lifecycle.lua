@@ -519,11 +519,15 @@ function Lifecycle.Init()
     -- 3. Data Integrity: Ensure proper data types for existing factions
     local needsHomeRepair = false
     for id, f in pairs(data) do
-        -- Fallback: ensure reputation is a table
-        if type(f.reputation) ~= "table" then
-            f.reputation = {}
+        if tostring(f.factionType or "") == "bandit" then
+            if type(f.playerDisposition) ~= "table" then
+                f.playerDisposition = {}
+            end
+            if f.playerDispositionDefault == nil then
+                f.playerDispositionDefault = -100
+            end
         end
-        
+
         if type(f.wealth) == "number" and not f.ColonyWealth then
             f.ColonyWealth = f.wealth
             f.wealth = nil

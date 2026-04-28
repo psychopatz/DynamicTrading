@@ -116,8 +116,11 @@ local function makeFactionAngryAtPlayer(player, factionID)
 
     local username = Shared.getUsername(player)
     if not username then return nil end
-    faction.reputation = type(faction.reputation) == "table" and faction.reputation or {}
-    faction.reputation[username] = -100
+    if Faction.ensurePlayerDispositionState then
+        Faction.ensurePlayerDispositionState(faction)
+    end
+    faction.playerDisposition = type(faction.playerDisposition) == "table" and faction.playerDisposition or {}
+    faction.playerDisposition[username] = -100
     if ModData.transmit then ModData.transmit("DynamicTrading_Factions") end
 
     if type(Shared.sendBanditCommand) == "function" then

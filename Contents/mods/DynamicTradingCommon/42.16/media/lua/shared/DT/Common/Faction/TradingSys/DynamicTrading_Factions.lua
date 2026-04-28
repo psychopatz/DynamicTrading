@@ -45,8 +45,6 @@ DynamicTrading_Factions.ModifyColonyWealth = Interaction.ModifyColonyWealth
 DynamicTrading_Factions.ModifyWealth      = Interaction.ModifyWealth
 DynamicTrading_Factions.AllocateTraderBudget = Interaction.AllocateTraderBudget
 DynamicTrading_Factions.ReturnTraderBudget = Interaction.ReturnTraderBudget
-DynamicTrading_Factions.ModifyReputation  = Interaction.ModifyReputation
-
 -- Player-owned factions
 DynamicTrading_Factions.CreatePlayerFaction         = PlayerOwnership.CreatePlayerFaction
 DynamicTrading_Factions.GetPlayerFaction            = PlayerOwnership.GetPlayerFaction

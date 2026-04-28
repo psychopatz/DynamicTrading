@@ -6,6 +6,10 @@
 DTNPCHealth = DTNPCHealth or {}
 DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
+if not isServer() then
+    pcall(require, "DT/Common/Reputation/DT_Reputation")
+end
+
 local internal = DTNPCHealth.Internal
 
 local function isRemoteClient()
@@ -19,6 +23,37 @@ local function isDedicatedServer()
 end
 
 internal.isDedicatedServer = isDedicatedServer
+
+local function applyFactionBiasPenalty(playerObj, factionID, delta, reason)
+    if not playerObj or not factionID then
+        return false
+    end
+
+    local amount = tonumber(delta) or 0
+    if amount == 0 then
+        return false
+    end
+
+    if isServer() then
+        return DynamicTrading
+            and DynamicTrading.ServerHelpers
+            and DynamicTrading.ServerHelpers.SendReputationSync
+            and DynamicTrading.ServerHelpers.SendReputationSync(playerObj, {
+                action = "factionBiasDelta",
+                factionID = tostring(factionID),
+                amount = amount,
+                reason = reason or "npc_damage_penalty"
+            })
+            or false
+    end
+
+    if not isClient() and DT_Reputation and DT_Reputation.ModifyFactionBias then
+        DT_Reputation.ModifyFactionBias(tostring(factionID), amount, reason or "npc_damage_penalty")
+        return true
+    end
+
+    return false
+end
 
 local function isLocalPlayerAttacker(attacker)
     if not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
@@ -966,7 +1001,7 @@ local function applyPlayerDamageReputationPenalty(npcData, combatHealth, attacke
 
     if newPenalties > 0 then
         local delta = (tonumber(DTNPCHealth.PLAYER_REP_DAMAGE_PENALTY) or -10) * newPenalties
-        if DynamicTrading_Factions.ModifyReputation(factionID, username, delta) then
+        if applyFactionBiasPenalty(attacker, factionID, delta, "npc_damage_penalty") then
             entry.penaltiesApplied = totalPenalties
             DynamicTrading.Log(
                 "DTV2",

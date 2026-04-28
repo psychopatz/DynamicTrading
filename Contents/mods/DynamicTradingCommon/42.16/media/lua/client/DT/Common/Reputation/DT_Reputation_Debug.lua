@@ -44,7 +44,7 @@ function DT_Reputation.GetDebugSnapshot(traderUUID, factionID)
         traderName = getTraderDebugName(traderUUID),
         factionID = factionID,
         factionName = getFactionDebugName(factionID),
-        personalRep = traderUUID and DT_Reputation.GetPersonalRep(traderUUID) or 0,
+        personalRep = traderUUID and DT_Reputation.GetPersonalRep(traderUUID, factionID) or 0,
         factionBias = factionID and DT_Reputation.GetFactionBias(factionID) or 0,
         effectiveRep = traderUUID and DT_Reputation.GetEffectiveRep(traderUUID, factionID) or 0,
         factionRep = factionID and DT_Reputation.GetFactionRep(factionID) or 0,
