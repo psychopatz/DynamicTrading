@@ -300,6 +300,9 @@ function DT_TraderContacts.NormalizeTrader(trader)
         contactVisitTargetZ = trader.contactVisitTargetZ,
         contactVisitStartedAt = trader.contactVisitStartedAt,
         contactVisitReturnStatus = trader.contactVisitReturnStatus,
+        canRecruit = trader.canRecruit,
+        allowRecruit = trader.allowRecruit,
+        neverRecruitable = trader.neverRecruitable,
     }
 end
 
@@ -316,6 +319,14 @@ function DT_TraderContacts.GetEffectiveReputation(trader)
     return tonumber(trader and trader.reputation or 0) or 0
 end
 
+function DT_TraderContacts.GetRequiredReputationForTrader(trader)
+    if DynamicTrading and DynamicTrading.GetArchetypeContactRequiredReputation then
+        return DynamicTrading.GetArchetypeContactRequiredReputation(trader, DT_TraderContacts.CONTACT_REPUTATION_REQUIRED)
+    end
+
+    return DT_TraderContacts.CONTACT_REPUTATION_REQUIRED
+end
+
 function DT_TraderContacts.CanUnlock(trader)
-    return DT_TraderContacts.GetEffectiveReputation(trader) >= DT_TraderContacts.CONTACT_REPUTATION_REQUIRED
+    return DT_TraderContacts.GetEffectiveReputation(trader) >= DT_TraderContacts.GetRequiredReputationForTrader(trader)
 end

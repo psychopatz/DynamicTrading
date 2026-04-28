@@ -3,6 +3,8 @@ require "DT/Common/UI/Radio/DT_RadioSignalDisplayPanel"
 require "DT/Common/UI/Radio/DT_RadioNetworkLogPanel"
 
 require "DT/Common/UI/RadioScanner/DT_RadioScannerHeaderPanel"
+require "DT/Common/UI/RadioScanner/DT_RadioScannerScanStatsPanel"
+require "DT/Common/UI/RadioScanner/DT_RadioScannerScanStatsModal"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerListPanel"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerActionPanel"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerStatusPanel"

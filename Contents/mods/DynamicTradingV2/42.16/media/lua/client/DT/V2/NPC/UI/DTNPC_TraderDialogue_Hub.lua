@@ -251,6 +251,12 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
                 traderProxy = (DTNPCJobUI.ApplyTraderProxyPatch(traderProxy, ui, npc, player, npcData))
             end
 
+            if DynamicTrading and DynamicTrading.IsArchetypeNeverRecruitable and DynamicTrading.IsArchetypeNeverRecruitable(npcData or traderProxy) then
+                traderProxy.canRecruit = false
+                traderProxy.allowRecruit = false
+                traderProxy.neverRecruitable = true
+            end
+
             if DT_Reputation then
                 traderProxy.personalRep = DT_Reputation.GetPersonalRep(traderProxy.id, traderProxy.factionID)
                 traderProxy.factionRep = DT_Reputation.GetFactionRep(traderProxy.factionID)

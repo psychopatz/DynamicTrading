@@ -212,6 +212,15 @@ function DT_TraderContacts.SaveContact(trader, options)
         or existing.factionName
         or DT_TraderContacts.GetFactionDisplayName((live and live.factionID) or normalized)
     existing.occupation = normalized.occupation or existing.occupation
+    existing.canRecruit = (live and live.canRecruit)
+        or normalized.canRecruit
+        or existing.canRecruit
+    existing.allowRecruit = (live and live.allowRecruit)
+        or normalized.allowRecruit
+        or existing.allowRecruit
+    existing.neverRecruitable = (live and live.neverRecruitable)
+        or normalized.neverRecruitable
+        or existing.neverRecruitable
     existing.returnTime = (live and live.returnTime)
         or normalized.returnTime
         or existing.returnTime

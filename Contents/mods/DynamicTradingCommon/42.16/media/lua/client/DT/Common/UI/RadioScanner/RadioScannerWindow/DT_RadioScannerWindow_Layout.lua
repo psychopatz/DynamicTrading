@@ -12,7 +12,7 @@ function DT_RadioScannerWindow:relayout()
     local titleBarHeight = self:titleBarHeight()
     local width = self:getWidth()
     local height = self:getHeight()
-    local headerHeight = 65
+    local headerHeight = 112
     local outerPadding = 5
     local columnGap = 5
     local statusHeight = 62
@@ -131,7 +131,7 @@ end
 function DT_RadioScannerWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
 
-    self.headerPanel = DT_RadioScannerHeaderPanel:new(0, 0, self.width, 65)
+    self.headerPanel = DT_RadioScannerHeaderPanel:new(0, 0, self.width, 112)
     self.headerPanel:initialise()
     self.headerPanel:instantiate()
     self.headerPanel:setAnchorRight(true)

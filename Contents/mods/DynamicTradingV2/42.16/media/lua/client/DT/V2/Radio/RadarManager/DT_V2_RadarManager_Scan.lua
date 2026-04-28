@@ -47,6 +47,168 @@ local function chooseRandomEntry(list)
     return list[ZombRand(#list) + 1]
 end
 
+local function clamp(value, minValue, maxValue)
+    local numeric = tonumber(value) or minValue
+    if numeric < minValue then
+        return minValue
+    end
+    if numeric > maxValue then
+        return maxValue
+    end
+    return numeric
+end
+
+local function getElectricityScanFloorChance(level)
+    local maxLevel = 10
+    local normalizedLevel = clamp(level, 0, maxLevel)
+    return (normalizedLevel / maxLevel) * 100
+end
+
+local function getRadarScanElectricityXP()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    return math.max(0, tonumber(sandbox and sandbox.RadarScanElectricityXP) or 0.05)
+end
+
+local function awardElectricityXP(player, amount)
+    local xp = tonumber(amount) or 0
+    if not player or xp <= 0 then
+        return
+    end
+
+    local xpSystem = player.getXp and player:getXp() or nil
+    if xpSystem and xpSystem.AddXP then
+        xpSystem:AddXP(Perks.Electricity, xp)
+    end
+end
+
+local function getGlobalScanModifiers()
+    local globalRangeMult = 1.0
+    local globalChanceMult = 1.0
+    if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
+        globalRangeMult = DynamicTrading.Events.GetFactionSystemModifier(nil, "signalRange")
+        globalChanceMult = DynamicTrading.Events.GetFactionSystemModifier(nil, "scanChance")
+    end
+    return globalRangeMult, globalChanceMult
+end
+
+local function collectEligibleSignals(rosterData, px, py, currentHours, effectiveRange, player)
+    local eligibleSignals = {}
+    local prioritySignals = {}
+
+    if not rosterData or not rosterData.Souls then
+        return eligibleSignals, prioritySignals
+    end
+
+    for uuid, soul in pairs(rosterData.Souls) do
+        local isExpired = soul.returnTime and soul.returnTime <= currentHours
+        local isActiveTrading = soul.status == "Trading" and not isExpired and soul.state ~= "Departure"
+        local isDiscoverable = RadarManager.IsRadioDiscoverableSoul == nil or RadarManager.IsRadioDiscoverableSoul(soul)
+        if isActiveTrading and isDiscoverable and soul.lastX and soul.lastY and not RadarManager.FoundTraders[uuid] then
+            local dist = IsoUtils.DistanceTo(px, py, soul.lastX, soul.lastY)
+            if dist <= effectiveRange then
+                local entry = {
+                    uuid = uuid,
+                    soul = soul,
+                    dist = dist,
+                }
+                eligibleSignals[#eligibleSignals + 1] = entry
+                if isPriorityContactVisitForPlayer(soul, player) then
+                    prioritySignals[#prioritySignals + 1] = entry
+                end
+            end
+        end
+    end
+
+    table.sort(prioritySignals, function(a, b)
+        local startedA = tonumber(a.soul and a.soul.contactVisitStartedAt) or math.huge
+        local startedB = tonumber(b.soul and b.soul.contactVisitStartedAt) or math.huge
+        if startedA == startedB then
+            return tostring(a.uuid) < tostring(b.uuid)
+        end
+        return startedA < startedB
+    end)
+
+    table.sort(eligibleSignals, function(a, b)
+        local distA = tonumber(a.dist) or math.huge
+        local distB = tonumber(b.dist) or math.huge
+        if distA == distB then
+            return tostring(a.uuid) < tostring(b.uuid)
+        end
+        return distA < distB
+    end)
+
+    return eligibleSignals, prioritySignals
+end
+
+local function buildScanPreview(player, device, scanStatus)
+    if not player or not device then
+        return nil
+    end
+
+    local rosterData = RadarManager.GetRosterData and RadarManager.GetRosterData() or nil
+    local profile = RadarManager.GetDeviceProfile and RadarManager.GetDeviceProfile(device) or nil
+    local deviceName = profile and profile.name or select(1, RadarManager.GetDeviceInfo(device))
+    local range = profile and profile.range or select(2, RadarManager.GetDeviceInfo(device))
+    local currentCount = scanStatus and scanStatus.foundCount or (RadarManager.GetCount and RadarManager.GetCount() or 0)
+    local lockedCount = RadarManager.GetLockedCount and RadarManager.GetLockedCount() or 0
+    local unlockedCount = scanStatus and scanStatus.unlockedCount or math.max(0, currentCount - lockedCount)
+    local capacity = scanStatus and scanStatus.capacity or (profile and profile.capacity) or 1
+    local scanLimit = math.max(0, (capacity - currentCount) + unlockedCount)
+    local currentHours = getGameTime():getWorldAgeHours()
+    local px, py = player:getX(), player:getY()
+    local globalRangeMult, globalChanceMult = getGlobalScanModifiers()
+    local effectiveRange = range * globalRangeMult
+    local eligibleSignals, prioritySignals = collectEligibleSignals(rosterData, px, py, currentHours, effectiveRange, player)
+    local targetEntry = prioritySignals[1] or eligibleSignals[1]
+    local targetSoul = targetEntry and targetEntry.soul or nil
+    local electricityLevel = player:getPerkLevel(Perks.Electricity)
+    local baseChance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanBaseChance) or 30
+    local powerBonus = profile and tonumber(profile.power) or 1.0
+    local skillBonus = 1.0 + (electricityLevel * 0.05)
+    local electricityFloorChance = getElectricityScanFloorChance(electricityLevel)
+    local factionChanceMult = 1.0
+
+    if targetSoul and DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
+        local targetFaction = RadarManager.GetFaction and RadarManager.GetFaction(targetSoul.factionID) or nil
+        factionChanceMult = DynamicTrading.Events.GetFactionSystemModifier(targetFaction, "scanChance")
+    end
+
+    local finalChance = clamp(math.max(baseChance * powerBonus * skillBonus * globalChanceMult * factionChanceMult, electricityFloorChance), 1, 100)
+
+    return {
+        deviceName = deviceName,
+        range = range,
+        effectiveRange = effectiveRange,
+        baseChance = baseChance,
+        powerBonus = powerBonus,
+        skillBonus = skillBonus,
+        electricityLevel = electricityLevel,
+        electricityFloorChance = electricityFloorChance,
+        globalChanceMult = globalChanceMult,
+        factionChanceMult = factionChanceMult,
+        finalChance = finalChance,
+        candidateCount = #eligibleSignals,
+        priorityCount = #prioritySignals,
+        currentCount = currentCount,
+        capacity = capacity,
+        scanLimit = scanLimit,
+        hasEligibleTarget = targetEntry ~= nil and scanLimit > 0,
+        targetUUID = targetEntry and targetEntry.uuid or nil,
+        targetDistance = targetEntry and targetEntry.dist or nil,
+        targetName = targetSoul and targetSoul.name or nil,
+        targetFaction = targetSoul and targetSoul.factionID or nil,
+    }
+end
+
+function RadarManager.GetScanPreview(device, player)
+    if not player or not device then
+        return nil
+    end
+
+    local scanStatus = RadarManager.GetScanStatus and RadarManager.GetScanStatus(device, player) or nil
+    return buildScanPreview(player, device, scanStatus)
+end
+
 function RadarManager.Scan(player, device)
     if not player or not device then return end
 
@@ -139,14 +301,7 @@ function RadarManager.Scan(player, device)
     local px, py = player:getX(), player:getY()
     local currentHours = getGameTime():getWorldAgeHours()
 
-    -- Global modifiers
-    local globalRangeMult = 1.0
-    local globalChanceMult = 1.0
-    if DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
-        globalRangeMult = DynamicTrading.Events.GetFactionSystemModifier(nil, "signalRange")
-        globalChanceMult = DynamicTrading.Events.GetFactionSystemModifier(nil, "scanChance")
-    end
-
+    local globalRangeMult, globalChanceMult = getGlobalScanModifiers()
     local effectiveRange = range * globalRangeMult
 
     if scanLimit <= 0 then
@@ -160,28 +315,7 @@ function RadarManager.Scan(player, device)
         return false
     end
 
-    local eligibleSignals = {}
-    local prioritySignals = {}
-
-    for uuid, soul in pairs(rosterData.Souls) do
-        local isExpired = soul.returnTime and soul.returnTime <= currentHours
-        local isActiveTrading = soul.status == "Trading" and not isExpired and soul.state ~= "Departure"
-        local isDiscoverable = RadarManager.IsRadioDiscoverableSoul == nil or RadarManager.IsRadioDiscoverableSoul(soul)
-        if isActiveTrading and isDiscoverable and soul.lastX and soul.lastY and not RadarManager.FoundTraders[uuid] then
-            local dist = IsoUtils.DistanceTo(px, py, soul.lastX, soul.lastY)
-            if dist <= effectiveRange then
-                local entry = {
-                    uuid = uuid,
-                    soul = soul,
-                    dist = dist,
-                }
-                eligibleSignals[#eligibleSignals + 1] = entry
-                if isPriorityContactVisitForPlayer(soul, player) then
-                    prioritySignals[#prioritySignals + 1] = entry
-                end
-            end
-        end
-    end
+    local eligibleSignals, prioritySignals = collectEligibleSignals(rosterData, px, py, currentHours, effectiveRange, player)
 
     if #eligibleSignals == 0 then
         local failSay = getRandomRadioScanText("FailLines")
@@ -199,15 +333,6 @@ function RadarManager.Scan(player, device)
         return false
     end
 
-    table.sort(prioritySignals, function(a, b)
-        local startedA = tonumber(a.soul and a.soul.contactVisitStartedAt) or math.huge
-        local startedB = tonumber(b.soul and b.soul.contactVisitStartedAt) or math.huge
-        if startedA == startedB then
-            return tostring(a.uuid) < tostring(b.uuid)
-        end
-        return startedA < startedB
-    end)
-
     local targetEntry = prioritySignals[1] or chooseRandomEntry(eligibleSignals)
     local targetSoul = targetEntry and targetEntry.soul or nil
     local usedPriorityContact = prioritySignals[1] ~= nil and targetEntry == prioritySignals[1]
@@ -215,6 +340,7 @@ function RadarManager.Scan(player, device)
     local baseChance = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.ScanBaseChance) or 30
     local powerBonus = profile and tonumber(profile.power) or 1.0
     local skillBonus = 1.0 + (elecLevel * 0.05)
+    local electricityFloorChance = getElectricityScanFloorChance(elecLevel)
     local factionChanceMult = 1.0
 
     if targetSoul and DynamicTrading.Events and DynamicTrading.Events.GetFactionSystemModifier then
@@ -223,13 +349,13 @@ function RadarManager.Scan(player, device)
     end
 
     local finalChance = baseChance * powerBonus * skillBonus * globalChanceMult * factionChanceMult
-    if finalChance < 1 then
-        finalChance = 1
-    end
+    finalChance = math.max(finalChance, electricityFloorChance)
+    finalChance = clamp(finalChance, 1, 100)
 
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Base Chance: " .. tostring(baseChance))
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Power Bonus: " .. string.format("%.2f", powerBonus))
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Skill Bonus: " .. string.format("%.2f", skillBonus))
+    DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Electricity Floor: " .. string.format("%.2f", electricityFloorChance) .. "%")
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Capacity Ratio: " .. tostring(currentCount) .. "/" .. tostring(capacity))
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Penalty Factor: removed (discovered trader count no longer reduces scan chance)")
     DynamicTrading.Log("DTV2", "Radio", "Scan", "  - Candidate Pool: " .. tostring(#eligibleSignals) .. " | Priority Pool: " .. tostring(#prioritySignals))
@@ -288,6 +414,7 @@ function RadarManager.Scan(player, device)
             if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddPlayerRadioEvent then
                 DynamicTrading.GameplayLogs.AddPlayerRadioEvent(player, DynamicTrading.GameplayEvents.SIGNAL_ACQUIRED, {tostring(username), tostring(name), tostring(factionName)})
             end
+            awardElectricityXP(player, getRadarScanElectricityXP())
             DynamicTrading.Log("DTV2", "Radio", "Scan", "Discovered: " .. name .. " (" .. uuid .. ")")
         end
     else

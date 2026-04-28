@@ -15,6 +15,20 @@ require "DT/Common/NPC/DT_NPC_Archetypes"
 
 DTNPCGenerator.MVPChance = 10 -- 1 in 10 chance to spawn an MVP (if available)
 
+local function applyArchetypeSpecialFlags(npcData, occupation)
+    if not npcData then
+        return npcData
+    end
+
+    if DynamicTrading and DynamicTrading.IsArchetypeNeverRecruitable and DynamicTrading.IsArchetypeNeverRecruitable(occupation or npcData.archetypeID or npcData) then
+        npcData.canRecruit = false
+        npcData.allowRecruit = false
+        npcData.neverRecruitable = true
+    end
+
+    return npcData
+end
+
 -- ==============================================================================
 -- 2. GENERATION
 -- ==============================================================================
@@ -95,8 +109,7 @@ function DTNPCGenerator.CreateMVPData(mvpData, options)
         archetypeID = mvpData.archetypeID or options.occupation or "General",
     }
 
-    
-    return npcData
+    return applyArchetypeSpecialFlags(npcData, npcData.archetypeID or options.occupation)
 end
 
 
@@ -172,8 +185,7 @@ function DTNPCGenerator.CreateStandardData(options)
         archetypeID = occupation,
     }
 
-    
-    return npcData
+    return applyArchetypeSpecialFlags(npcData, occupation)
 end
 
 -- ==============================================================================

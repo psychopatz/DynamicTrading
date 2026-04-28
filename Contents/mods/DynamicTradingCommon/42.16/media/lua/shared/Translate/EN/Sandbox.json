@@ -11,6 +11,9 @@
     "Sandbox_DynamicTrading.DisableNightScanGate": "Disable Scanner Night Gate",
     "Sandbox_DynamicTrading.DisableNightScanGate_tooltip": "If enabled, the radio scanner will be capable of acquiring trader signals at night (10PM to 5AM) instead of just static.",
 
+    "Sandbox_DynamicTrading.RadarScanElectricityXP": "Radar Scan Electricity XP",
+    "Sandbox_DynamicTrading.RadarScanElectricityXP_tooltip": "How much Electricity XP a player earns each time a radar scan successfully discovers a new signal. Keep this low because scanning can happen often.",
+
     "Sandbox_DynamicTrading.PriceBuyMult": "Buy Price Multiplier",
     "Sandbox_DynamicTrading.PriceBuyMult_tooltip": "Adjusts how expensive items are when buying from traders. Higher = More expensive.",
 

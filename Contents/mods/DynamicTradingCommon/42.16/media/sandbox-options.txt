@@ -88,6 +88,16 @@ option DynamicTrading.DisableNightScanGate
     translation = DynamicTrading.DisableNightScanGate,
 }
 
+option DynamicTrading.RadarScanElectricityXP
+{
+    type = double,
+    default = 0.05,
+    min = 0.0,
+    max = 5.0,
+    page = DynamicTradingRadio,
+    translation = DynamicTrading.RadarScanElectricityXP,
+}
+
 option DynamicTrading.WalkieDropChance
 {
     type = double,

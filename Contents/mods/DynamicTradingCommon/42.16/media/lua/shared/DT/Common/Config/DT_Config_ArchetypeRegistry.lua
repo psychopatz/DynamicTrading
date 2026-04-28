@@ -55,6 +55,44 @@ local function resolveArchetypeData(idOrData)
     return nil
 end
 
+local function normalizeArchetypeText(value)
+    local text = string.lower(tostring(value or ""))
+    text = string.gsub(text, "[%s%-%_]+", "")
+    return text
+end
+
+local function collectArchetypeHints(idOrData)
+    local hints = {}
+    local seen = {}
+
+    local function push(value)
+        local normalized = normalizeArchetypeText(value)
+        if normalized ~= "" and not seen[normalized] then
+            seen[normalized] = true
+            hints[#hints + 1] = normalized
+        end
+    end
+
+    local data = resolveArchetypeData(idOrData)
+    if type(idOrData) == "string" then
+        push(idOrData)
+    elseif type(idOrData) == "table" then
+        push(idOrData.id)
+        push(idOrData.archetypeID)
+        push(idOrData.archetype)
+        push(idOrData.occupation)
+        push(idOrData.role)
+        push(idOrData.name)
+    end
+
+    if type(data) == "table" and data ~= idOrData then
+        push(data.id)
+        push(data.name)
+    end
+
+    return hints, data
+end
+
 local function normalizeRosterPoolEntry(id, data)
     if type(data) ~= "table" then
         return nil
@@ -187,6 +225,43 @@ function DynamicTrading.IsArchetypeWildcardStockEnabled(idOrData)
     return not (data and data.disableWildcardStock == true)
 end
 
+function DynamicTrading.IsLotteryAgent(idOrData)
+    local hints, data = collectArchetypeHints(idOrData)
+    if type(data) == "table" and data.specialTradeProfile == "lottery" then
+        return true
+    end
+
+    for _, hint in ipairs(hints) do
+        if string.find(hint, "lottery", 1, true) or string.find(hint, "lotto", 1, true) then
+            return true
+        end
+    end
+
+    return false
+end
+
+function DynamicTrading.GetArchetypeContactRequiredReputation(idOrData, defaultValue)
+    local _, data = collectArchetypeHints(idOrData)
+    if type(data) == "table" and data.contactReputationRequired ~= nil then
+        return math.max(0, tonumber(data.contactReputationRequired) or 0)
+    end
+
+    if DynamicTrading.IsLotteryAgent(idOrData) then
+        return 0
+    end
+
+    return math.max(0, tonumber(defaultValue) or 0)
+end
+
+function DynamicTrading.IsArchetypeNeverRecruitable(idOrData)
+    local _, data = collectArchetypeHints(idOrData)
+    if type(data) == "table" and data.neverRecruitable == true then
+        return true
+    end
+
+    return DynamicTrading.IsLotteryAgent(idOrData)
+end
+
 -- The Core Function: Preserves your ID schema
 function DynamicTrading.RegisterArchetype(id, data)
     if not id then 
@@ -211,6 +286,10 @@ function DynamicTrading.RegisterArchetype(id, data)
     end
 
     data.minFactionWealth = math.max(0, math.floor(tonumber(data.minFactionWealth) or 0))
+    if data.contactReputationRequired ~= nil then
+        data.contactReputationRequired = math.max(0, tonumber(data.contactReputationRequired) or 0)
+    end
+    data.neverRecruitable = data.neverRecruitable == true
     data.disableBuyTab = data.disableBuyTab == true
     data.disableSellTab = data.disableSellTab == true
     data.disableWildcardStock = data.disableWildcardStock == true

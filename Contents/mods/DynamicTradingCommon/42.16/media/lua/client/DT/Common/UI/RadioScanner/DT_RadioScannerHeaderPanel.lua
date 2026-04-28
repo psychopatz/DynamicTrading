@@ -59,6 +59,13 @@ function DT_RadioScannerHeaderPanel:createChildren()
     self.lblRangeInfo:initialise()
     self:addChild(self.lblRangeInfo)
 
+    self.scanStatsPanel = DT_RadioScannerScanStatsPanel:new(10, 46, math.max(120, self.width - 20), 38)
+    self.scanStatsPanel:initialise()
+    self.scanStatsPanel:instantiate()
+    self.scanStatsPanel:setAnchorLeft(true)
+    self.scanStatsPanel:setAnchorRight(true)
+    self:addChild(self.scanStatsPanel)
+
     local tabHeight = 20
     local tabY = self.height - tabHeight
     local showQuestTab = self:shouldShowQuestTab()
@@ -94,6 +101,12 @@ function DT_RadioScannerHeaderPanel:createChildren()
     self.btnInfo:setAnchorTop(false)
     self.btnInfo:setAnchorBottom(true)
     self:addChild(self.btnInfo)
+end
+
+function DT_RadioScannerHeaderPanel:updateScanStats(stats)
+    if self.scanStatsPanel and self.scanStatsPanel.setStats then
+        self.scanStatsPanel:setStats(stats)
+    end
 end
 
 function DT_RadioScannerHeaderPanel:onCategoryClick(category)
@@ -151,6 +164,13 @@ function DT_RadioScannerHeaderPanel:prerender()
 
     if self.btnOptions then
         self.btnOptions:setX(self.width - self.btnOptions:getWidth() - 5)
+    end
+
+    if self.scanStatsPanel then
+        self.scanStatsPanel:setX(10)
+        self.scanStatsPanel:setY(46)
+        self.scanStatsPanel:setWidth(math.max(120, self.width - 20))
+        self.scanStatsPanel:setHeight(math.max(34, tabY - 48))
     end
 
     local activeCategory = "Discovered"

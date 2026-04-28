@@ -91,6 +91,7 @@ function DT_RadioScannerWindow:refresh()
     local bestRange = 0
     local bestName = "Unknown"
     local bestProfile = nil
+    local bestDevice = self.device
     if self.device then
         bestName, bestRange = DT_RadioScannerManager.GetDeviceInfo(self.device)
         if DT_RadioScannerManager.GetDeviceProfile then
@@ -107,6 +108,7 @@ function DT_RadioScannerWindow:refresh()
                 if range > bestRange then
                     bestRange = range
                     bestName = name
+                    bestDevice = item
                     if DT_RadioScannerManager.GetDeviceProfile then
                         bestProfile = DT_RadioScannerManager.GetDeviceProfile(item)
                     end
@@ -189,6 +191,10 @@ function DT_RadioScannerWindow:refresh()
     end
 
     self.headerPanel:updateSignalInfo(bestName, bestRange)
+    if self.headerPanel.updateScanStats then
+        local scanPreview = DT_RadioScannerManager.GetScanPreview and DT_RadioScannerManager.GetScanPreview(bestDevice, player) or nil
+        self.headerPanel:updateScanStats(scanPreview)
+    end
     self:updateSignalDisplayState(bestRange)
 
     if self.statusPanel and DT_RadioScannerManager and DT_RadioScannerManager.GetScanStatus then

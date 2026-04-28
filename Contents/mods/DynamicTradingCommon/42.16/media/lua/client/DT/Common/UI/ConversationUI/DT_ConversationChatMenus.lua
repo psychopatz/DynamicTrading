@@ -21,7 +21,9 @@ end
 
 local function getContactUnlockLabel(ui)
     local target = ui and ui.target or nil
-    local requiredRep = DT_TraderContacts.GetRequiredReputation()
+    local requiredRep = DT_TraderContacts.GetRequiredReputationForTrader
+        and DT_TraderContacts.GetRequiredReputationForTrader(target)
+        or DT_TraderContacts.GetRequiredReputation()
     if not target then
         return "Request contact number"
     end
@@ -59,7 +61,9 @@ local function handleContactUnlock(ui, ignoreReputation)
         end
     end
 
-    local requiredRep = DT_TraderContacts.GetRequiredReputation()
+    local requiredRep = DT_TraderContacts.GetRequiredReputationForTrader
+        and DT_TraderContacts.GetRequiredReputationForTrader(resolvedTarget)
+        or DT_TraderContacts.GetRequiredReputation()
     local currentRep = DT_TraderContacts.GetEffectiveReputation(resolvedTarget)
     local alreadyUnlocked = DT_TraderContacts.HasContact(resolvedTarget)
     local ok, saved, reason = DT_TraderContacts.UnlockContact(resolvedTarget, {

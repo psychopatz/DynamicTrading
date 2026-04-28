@@ -10,7 +10,7 @@ local defaultArchetypeList = {
     "Angler", "Athlete", "Bartender", "Blacksmith", "Brewer", "Burglar", "Butcher",
     "Carpenter", "Chef", "Demo", "Designer", "Doctor", "Electrician", "Farmer", "Foreman",
     "Geek", "Gunrunner", "Herbalist", "Hiker", "Hunter", "Janitor", "Librarian", "Mechanic",
-    "Musician", "Office", "Painter", "Pawnbroker", "Pharmacist", "Pyro",
+    "LotteryAgent", "Musician", "Office", "Painter", "Pawnbroker", "Pharmacist", "Pyro",
     "Quartermaster", "RoadWarrior", "Scavenger", "Sheriff", "Smuggler",
     "Survivalist", "Tailor", "Teacher", "Tribal", "Welder",
     "General", "Player" -- Meta archetypes

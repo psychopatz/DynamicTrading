@@ -85,6 +85,11 @@ function DynamicTrading_Roster.AddSoul(factionID, archetypeID, homeCoords, optio
     npcData.abstractResident = DynamicTrading_Roster.IsAbstractNomadFaction
         and DynamicTrading_Roster.IsAbstractNomadFaction(factionID) == true or false
     npcData.memory = {}
+    if DynamicTrading and DynamicTrading.IsArchetypeNeverRecruitable and DynamicTrading.IsArchetypeNeverRecruitable(archetypeID or npcData) then
+        npcData.canRecruit = false
+        npcData.allowRecruit = false
+        npcData.neverRecruitable = true
+    end
 
     DynamicTrading_Roster.SaveSoul(uuid, npcData)
 
