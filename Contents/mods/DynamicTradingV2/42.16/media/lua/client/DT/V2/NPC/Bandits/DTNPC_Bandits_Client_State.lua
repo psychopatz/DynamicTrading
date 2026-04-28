@@ -271,6 +271,8 @@ function Helpers.setWaitingOptions(ui, text)
             message = "...",
             onSelect = function() end
         }
+    }, {
+        resetHistory = true,
     })
 end
 

@@ -6,6 +6,13 @@
 
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
 
+local CONVERSATION_EXIT_LINES = {
+    "Goodbye, %s.",
+    "See you around, %s.",
+    "Take care, %s.",
+    "Stay safe, %s.",
+}
+
 local function clamp(value, minValue, maxValue)
     if value < minValue then
         return minValue
@@ -14,6 +21,35 @@ local function clamp(value, minValue, maxValue)
         return maxValue
     end
     return value
+end
+
+local function getLocalPlayer()
+    if getSpecificPlayer then
+        local player = getSpecificPlayer(0)
+        if player then
+            return player
+        end
+    end
+
+    if getPlayer then
+        return getPlayer()
+    end
+
+    return nil
+end
+
+local function getExitTargetName(ui)
+    local target = ui and ui.target or nil
+    local name = target and target.name or nil
+    if name == nil or name == "" then
+        return "there"
+    end
+    return tostring(name)
+end
+
+local function getDefaultExitLine(ui)
+    local template = CONVERSATION_EXIT_LINES[(ZombRand(#CONVERSATION_EXIT_LINES) or 0) + 1]
+    return string.format(template, getExitTargetName(ui))
 end
 
 function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio, interactionObj)
@@ -140,7 +176,82 @@ function DT_ConversationUI:close()
         end
     end
 
+    self.pendingCloseAfterQueue = false
+    self.pendingCloseDisplayTicks = nil
+    self.pendingCloseCallback = nil
+    self.pendingCloseFooterAction = nil
+
     self:setVisible(false)
     self:removeFromUIManager()
     DT_ConversationUI.instance = nil
+end
+
+function DT_ConversationUI:getExitConversationMessage(footerAction)
+    if type(footerAction) == "table" then
+        local overrideText = tostring(footerAction.message or "")
+        if overrideText ~= "" then
+            return overrideText
+        end
+    end
+
+    return getDefaultExitLine(self)
+end
+
+function DT_ConversationUI:playExitConversationEmote()
+    local player = getLocalPlayer()
+    if not player or not player.playEmote then
+        return false
+    end
+
+    player:playEmote("wavehi")
+    return true
+end
+
+function DT_ConversationUI:performPendingClose()
+    if self.pendingCloseAfterQueue ~= true then
+        return false
+    end
+
+    local callback = self.pendingCloseCallback
+    local footerAction = self.pendingCloseFooterAction
+
+    self.pendingCloseAfterQueue = false
+    self.pendingCloseDisplayTicks = nil
+    self.pendingCloseCallback = nil
+    self.pendingCloseFooterAction = nil
+
+    if type(callback) == "function" then
+        callback(self, footerAction and footerAction.data, footerAction)
+    end
+
+    if DT_ConversationUI.instance == self then
+        self.closeReason = self.closeReason or "footer_leave"
+        self:close()
+    end
+
+    return true
+end
+
+function DT_ConversationUI:requestExitConversation(footerAction)
+    if #self.msgQueue > 0 or self.pendingCloseAfterQueue == true then
+        return false
+    end
+
+    local exitMessage = self:getExitConversationMessage(footerAction)
+    local exitStyle = type(footerAction) == "table" and footerAction.style or nil
+
+    self.closeReason = self.closeReason or "footer_leave"
+    self.pendingCloseAfterQueue = true
+    self.pendingCloseDisplayTicks = nil
+    self.pendingCloseCallback = type(footerAction) == "table" and footerAction.onSelect or nil
+    self.pendingCloseFooterAction = footerAction
+
+    self:playExitConversationEmote()
+
+    if exitMessage and exitMessage ~= "" then
+        self:queueMessage(exitMessage, "Me", true, 0, "DT_RadioRandom", exitStyle)
+        return true
+    end
+
+    return self:performPendingClose()
 end

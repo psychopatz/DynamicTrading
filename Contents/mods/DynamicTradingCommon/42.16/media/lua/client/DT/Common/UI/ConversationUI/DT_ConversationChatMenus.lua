@@ -15,6 +15,10 @@ local DAILY_CHAT_REP_CHANCE = 25
 local DAILY_CHAT_REP_GAIN = 1
 local DAILY_CHAT_MODDATA_KEY = "DT_DailyChatFriendship"
 
+local function refreshTraderChatOptions(ui, context)
+    ui:replaceOptions(DT_ConversationChatMenus.BuildTraderChatOptions(ui, context))
+end
+
 local function getContactUnlockLabel(ui)
     local target = ui and ui.target or nil
     local requiredRep = DT_TraderContacts.GetRequiredReputation()
@@ -348,7 +352,7 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
             message = "Tell me about yourself.",
             onSelect = function(conversationUI)
                 conversationUI:speak(buildAboutYourselfText(conversationUI))
-                conversationUI:updateOptions(DT_ConversationChatMenus.BuildTraderChatOptions(conversationUI, context))
+                refreshTraderChatOptions(conversationUI, context)
             end
         },
         {
@@ -356,7 +360,7 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
             message = "Any news?",
             onSelect = function(conversationUI)
                 conversationUI:speak(buildNewsText(conversationUI))
-                conversationUI:updateOptions(DT_ConversationChatMenus.BuildTraderChatOptions(conversationUI, context))
+                refreshTraderChatOptions(conversationUI, context)
             end
         },
         {
@@ -364,7 +368,7 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
             message = "Do you want something?",
             onSelect = function(conversationUI)
                 conversationUI:speak(buildWantsText(conversationUI))
-                conversationUI:updateOptions(DT_ConversationChatMenus.BuildTraderChatOptions(conversationUI, context))
+                refreshTraderChatOptions(conversationUI, context)
             end
         },
         {
@@ -372,7 +376,7 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
             message = "Can I get your contact number?",
             onSelect = function(conversationUI)
                 conversationUI:speak(handleContactUnlock(conversationUI, false))
-                conversationUI:updateOptions(DT_ConversationChatMenus.BuildTraderChatOptions(conversationUI, context))
+                refreshTraderChatOptions(conversationUI, context)
             end
         }
     }
@@ -383,7 +387,7 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
             message = "Let's skip the trust exercise and test the contact pipeline.",
             onSelect = function(conversationUI)
                 conversationUI:speak(handleContactUnlock(conversationUI, true))
-                conversationUI:updateOptions(DT_ConversationChatMenus.BuildTraderChatOptions(conversationUI, context))
+                refreshTraderChatOptions(conversationUI, context)
             end,
             style = {
                 bgColor = { 0.25, 0.18, 0.12, 1 },
@@ -400,9 +404,10 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
         options = colonySystem.BuildConversationChatOptions(ui, options)
     end
 
-    options[#options + 1] = {
-        text = context.backText or "Back",
-        message = "",
+    options._dtFooterAction = {
+        kind = "back",
+        title = context.backText or "Back",
+        message = context.backMessage or "",
         onSelect = function(conversationUI)
             if context.onBack then
                 context.onBack(conversationUI, context)

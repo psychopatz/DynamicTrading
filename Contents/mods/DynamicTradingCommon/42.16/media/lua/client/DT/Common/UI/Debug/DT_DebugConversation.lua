@@ -129,7 +129,9 @@ function DebugDialogue.Node_Intro(ui, data)
         }
         
     }
-    ui:updateOptions(options)
+    ui:updateOptions(options, {
+        resetHistory = true,
+    })
 end
 
 -- STATE: IDENTITY
@@ -158,17 +160,8 @@ function DebugDialogue.Node_Identity(ui, data)
                 if ui.target.identitySeed then
                     ui:speak("If my portrait is white, check: media/ui/Portraits/" .. archetype .. "/" .. gender .. "/" .. mappedID .. ".png") 
                 end
-                -- Nested return
-                ui:updateOptions({
-                    { text = "< Back", message = "", onSelect = DebugDialogue.Node_Intro }
-                })
+                ui:updateOptions({})
             end
-        },
-        -- SILENT BACK BUTTON
-        { 
-            text = "< Back", 
-            message = "", -- Won't spam chat with "< Back"
-            onSelect = DebugDialogue.Node_Intro 
         }
     }
     ui:updateOptions(options)

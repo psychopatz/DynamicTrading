@@ -163,19 +163,23 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
             }
         end
 
-        menu[#menu + 1] = {
-            text = "Back",
-            message = "",
+        menu._dtFooterAction = {
+            kind = "back",
+            title = "Back",
             onSelect = function(nextUI)
                 showMainMenu(nextUI)
             end
         }
 
-        conversationUI:updateOptions(menu)
+        if fromBack == true then
+            conversationUI:replaceOptions(menu)
+        else
+            conversationUI:updateOptions(menu)
+        end
         return nil
     end
 
-    function showOfferOptions(conversationUI, currentOffer)
+    function showOfferOptions(conversationUI, currentOffer, replaceCurrent)
         local menu = {}
 
         if currentOffer.canStart == true then
@@ -200,7 +204,7 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
                 message = currentOffer.choiceLabels.details,
                 onSelect = function(nextUI)
                     nextUI:speak(currentOffer.resolvedDialogue.details)
-                    showOfferOptions(nextUI, currentOffer)
+                    showOfferOptions(nextUI, currentOffer, true)
                 end
             }
             menu[#menu + 1] = {
@@ -208,7 +212,7 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
                 message = currentOffer.choiceLabels.rewards,
                 onSelect = function(nextUI)
                     nextUI:speak(currentOffer.resolvedDialogue.rewards)
-                    showOfferOptions(nextUI, currentOffer)
+                    showOfferOptions(nextUI, currentOffer, true)
                 end
             }
             menu[#menu + 1] = {
@@ -225,7 +229,7 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
                 message = "Remind me where I am on that job.",
                 onSelect = function(nextUI)
                     nextUI:speak(currentOffer.progressSummary or currentOffer.resolvedDialogue.active)
-                    showOfferOptions(nextUI, currentOffer)
+                    showOfferOptions(nextUI, currentOffer, true)
                 end
             }
             menu[#menu + 1] = {
@@ -233,20 +237,24 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
                 message = currentOffer.choiceLabels.rewards,
                 onSelect = function(nextUI)
                     nextUI:speak(currentOffer.resolvedDialogue.rewards)
-                    showOfferOptions(nextUI, currentOffer)
+                    showOfferOptions(nextUI, currentOffer, true)
                 end
             }
         end
 
-        menu[#menu + 1] = {
-            text = currentOffer.choiceLabels.back,
-            message = "",
+        menu._dtFooterAction = {
+            kind = "back",
+            title = currentOffer.choiceLabels.back,
             onSelect = function(nextUI)
                 showOfferList(nextUI, true)
             end
         }
 
-        conversationUI:updateOptions(menu)
+        if replaceCurrent == true then
+            conversationUI:replaceOptions(menu)
+        else
+            conversationUI:updateOptions(menu)
+        end
     end
 
     local initialOffer = showOfferList(ui, false)
@@ -323,10 +331,12 @@ function QuestOffer.OpenDebugConversation(player, options)
                         onQuestAccepted = options.onQuestAccepted,
                     })
                 end
-            },
-            {
-                text = "Close",
-                message = "",
+            }
+        }, {
+            resetHistory = true,
+            footerAction = {
+                kind = "leave",
+                title = "Leave",
                 onSelect = function(nextUI)
                     closeConversation(nextUI)
                 end

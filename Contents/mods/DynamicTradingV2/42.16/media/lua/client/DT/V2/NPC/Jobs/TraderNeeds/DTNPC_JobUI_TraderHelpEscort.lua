@@ -214,13 +214,6 @@ local function showEscortConversation(ui, npc, player, npcData, context, overrid
                 showEscortConversation(innerUI, npc, player, getNPCData(npc) or npcData, getIncidentContext(player, getNPCData(npc) or npcData), "Hold still. Use the bandage and keep moving.")
             end,
         },
-        {
-            text = "Leave",
-            message = "",
-            onSelect = function(innerUI)
-                closeConversation(innerUI)
-            end,
-        },
     }, {
         resetHistory = true,
     })
@@ -229,15 +222,7 @@ end
 local function showUnavailable(ui, message)
     TraderHelpEscortUI.activeConversation = nil
     ui:speak(message or "This rescue call is no longer available.")
-    ui:updateOptions({
-        {
-            text = "Leave",
-            message = "",
-            onSelect = function(innerUI)
-                closeConversation(innerUI)
-            end,
-        },
-    }, {
+    ui:updateOptions({}, {
         resetHistory = true,
     })
 end
@@ -249,10 +234,6 @@ local function showPendingConversation(ui, npc, player, npcData, context)
     if not incident then
         showUnavailable(ui, offer.unavailable or "This rescue call is gone.")
         return
-    end
-
-    local function refresh()
-        showPendingConversation(ui, npc, player, npcData, context)
     end
 
     ui:speak(offer.offer or "I need an escort back to base.")
@@ -275,6 +256,8 @@ local function showPendingConversation(ui, npc, player, npcData, context)
                         message = "",
                         onSelect = function() end,
                     },
+                }, {
+                    resetHistory = true,
                 })
                 sendClientCommand(player, "DynamicObjectives", "AcceptObjectiveHookIncident", {
                     hookId = HOOK_ID,
@@ -288,15 +271,7 @@ local function showPendingConversation(ui, npc, player, npcData, context)
             message = "",
             onSelect = function(innerUI)
                 innerUI:speak(offer.details or "Guide the trader home and keep them alive.")
-                innerUI:updateOptions({
-                    {
-                        text = "Back",
-                        message = "",
-                        onSelect = function(nextUI)
-                            refresh()
-                        end,
-                    },
-                })
+                innerUI:updateOptions({})
             end,
         },
         {
@@ -304,14 +279,8 @@ local function showPendingConversation(ui, npc, player, npcData, context)
             message = "",
             onSelect = function(innerUI)
                 innerUI:speak(offer.decline or "Then I keep hiding in here.")
-                innerUI:updateOptions({
-                    {
-                        text = "Leave",
-                        message = "",
-                        onSelect = function(nextUI)
-                            closeConversation(nextUI)
-                        end,
-                    },
+                innerUI:updateOptions({}, {
+                    resetHistory = true,
                 })
             end,
         },

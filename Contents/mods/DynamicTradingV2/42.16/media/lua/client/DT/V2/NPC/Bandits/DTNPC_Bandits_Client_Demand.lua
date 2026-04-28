@@ -87,6 +87,8 @@ function BanditClient.ShowDemand(ui, player, demand)
                     Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
             }
+        }, {
+            resetHistory = true,
         })
         Helpers.armIdleWarning(ui)
         return
@@ -120,6 +122,8 @@ function BanditClient.ShowDemand(ui, player, demand)
                     Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
             }
+        }, {
+            resetHistory = true,
         })
         Helpers.armIdleWarning(ui)
         return
@@ -162,7 +166,9 @@ function BanditClient.ShowDemand(ui, player, demand)
             end
         }
 
-        ui:updateOptions(options)
+        ui:updateOptions(options, {
+            resetHistory = true,
+        })
         Helpers.armIdleWarning(ui)
         return
     end
@@ -173,14 +179,8 @@ function BanditClient.ShowDemand(ui, player, demand)
     ui.keepOpenOnInvalidInteraction = true
     Helpers.markResolved(groupID)
     ui:speak(Helpers.pickDialogueLine("Empty", nil, ui))
-    ui:updateOptions({
-        {
-            text = "Leave",
-            message = "I'm leaving.",
-            onSelect = function(nextUI)
-                Helpers.closeBanditUI(nextUI)
-            end
-        }
+    ui:updateOptions({}, {
+        resetHistory = true,
     })
     Helpers.sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
 end

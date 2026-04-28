@@ -69,14 +69,8 @@ if DTNPCJobUI and DTNPCJobUI.Register then
 
             local helpers = getHelpers()
             ui:speak(helpers and helpers.pickDialogueLine and helpers.pickDialogueLine("Approach", nil, npcData) or "That's close enough.")
-            ui:updateOptions({
-                {
-                    text = "Leave",
-                    message = "I'm leaving.",
-                    onSelect = function(nextUI)
-                        nextUI:close()
-                    end
-                }
+            ui:updateOptions({}, {
+                resetHistory = true,
             })
             return true
         end,

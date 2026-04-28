@@ -54,19 +54,98 @@ local function resolveOptions(ui, options)
     return resolvedOptions or {}
 end
 
+local function normalizeFooterActionDefinition(footerAction)
+    if type(footerAction) ~= "table" then
+        return nil
+    end
+
+    local rawKind = tostring(footerAction.kind or footerAction.action or "")
+    local rawTitle = footerAction.title or footerAction.text
+    local kind = rawKind
+
+    if kind ~= "back" and kind ~= "leave" then
+        kind = tostring(rawTitle or "") == "Back" and "back" or "leave"
+    end
+
+    return {
+        kind = kind,
+        title = tostring(rawTitle or (kind == "back" and "Back" or "Leave")),
+        message = footerAction.message,
+        onSelect = type(footerAction.onSelect) == "function" and footerAction.onSelect or nil,
+        data = footerAction.data,
+        style = type(footerAction.style) == "table" and footerAction.style or nil,
+    }
+end
+
+local function prepareOptions(ui, options, footerActionOverride)
+    local rawFooterAction = type(options) == "table" and (options._dtFooterAction or options._dtFooter) or nil
+    local resolvedOptions = resolveOptions(ui, options)
+    local explicitFooterAction = footerActionOverride
+    if explicitFooterAction == nil then
+        explicitFooterAction = rawFooterAction or resolvedOptions._dtFooterAction or resolvedOptions._dtFooter
+    end
+
+    local footerAction = normalizeFooterActionDefinition(explicitFooterAction)
+
+    return resolvedOptions, footerAction
+end
+
 local function renderOptions(ui, options)
     ui.optionList:clear()
 
-    local resolvedOptions = resolveOptions(ui, options)
-    if not resolvedOptions or #resolvedOptions == 0 then
+    if not options or #options == 0 then
         return
     end
 
-    for _, opt in ipairs(resolvedOptions) do
+    for _, opt in ipairs(options) do
         local lines, totalHeight = measureOptionItem(ui.optionList, opt)
         local item = ui.optionList:addItem(opt.text, opt)
         item.lines = lines
         item.height = totalHeight + 6
+    end
+end
+
+local function getFooterNavigationState(ui)
+    if not ui then
+        return "Leave", nil, false
+    end
+
+    local footerOption = ui.footerNavigationOption
+    if footerOption and type(footerOption.onSelect) == "function" then
+        local isBackAction = footerOption.kind == "back"
+        local label = tostring(footerOption.title or (isBackAction and "Back" or "Leave"))
+        return label, function()
+            if isBackAction then
+                if footerOption.message and footerOption.message ~= "" then
+                    ui:queueMessage(footerOption.message, "Me", true, 0, "DT_RadioRandom", footerOption.style)
+                end
+                footerOption.onSelect(ui, footerOption.data, footerOption)
+                return
+            end
+            ui:requestExitConversation(footerOption)
+        end, isBackAction
+    end
+
+    if ui.canNavigateBack and ui:canNavigateBack() then
+        return "Back", function()
+            ui:navigateBack()
+        end, true
+    end
+
+    return "Leave", function()
+        ui:requestExitConversation()
+    end, false
+end
+
+local function setButtonTitle(button, title)
+    if not button then
+        return
+    end
+
+    if button.setTitle then
+        button:setTitle(title)
+    else
+        button.title = title
     end
 end
 
@@ -75,12 +154,40 @@ function DT_ConversationUI:canNavigateBack()
 end
 
 function DT_ConversationUI:updateNavigationButtons()
-    if self.backButton and self.backButton.setEnable then
-        self.backButton:setEnable(self:canNavigateBack() and #self.msgQueue == 0)
+    if not self.navigationButton then
+        return
     end
-    if self.exitButton and self.exitButton.setEnable then
-        self.exitButton:setEnable(#self.msgQueue == 0)
+
+    local label, _, isBackAction = getFooterNavigationState(self)
+    setButtonTitle(self.navigationButton, label)
+
+    self.navigationButton.backgroundColor = isBackAction
+        and { r = 0.16, g = 0.24, b = 0.14, a = 0.92 }
+        or { r = 0.24, g = 0.14, b = 0.14, a = 0.92 }
+    self.navigationButton.backgroundColorMouseOver = isBackAction
+        and { r = 0.22, g = 0.32, b = 0.18, a = 0.96 }
+        or { r = 0.32, g = 0.18, b = 0.18, a = 0.96 }
+    self.navigationButton.borderColor = isBackAction
+        and { r = 0.70, g = 0.82, b = 0.44, a = 0.72 }
+        or { r = 0.88, g = 0.56, b = 0.44, a = 0.74 }
+
+    if self.navigationButton.setEnable then
+        self.navigationButton:setEnable(#self.msgQueue == 0 and self.pendingCloseAfterQueue ~= true)
     end
+end
+
+function DT_ConversationUI:activateFooterNavigation()
+    if #self.msgQueue > 0 then
+        return false
+    end
+
+    local _, action = getFooterNavigationState(self)
+    if type(action) ~= "function" then
+        return false
+    end
+
+    action()
+    return true
 end
 
 function DT_ConversationUI:navigateBack()
@@ -100,7 +207,9 @@ function DT_ConversationUI:navigateBack()
     end
 
     self.currentBackAction = type(snapshot.backAction) == "function" and snapshot.backAction or nil
-    self.baseOptions = snapshot.options or {}
+    self.footerActionOverride = snapshot.footerActionOverride or nil
+    self.rawOptions = snapshot.options or {}
+    self.baseOptions, self.footerNavigationOption = prepareOptions(self, self.rawOptions, self.footerActionOverride)
     renderOptions(self, self.baseOptions)
     self:updateNavigationButtons()
     return true
@@ -111,9 +220,7 @@ function DT_ConversationUI:exitConversation()
         return false
     end
 
-    self.closeReason = self.closeReason or "footer_exit"
-    self:close()
-    return true
+    return self:requestExitConversation()
 end
 
 function DT_ConversationUI:updateOptions(options, navState)
@@ -123,18 +230,33 @@ function DT_ConversationUI:updateOptions(options, navState)
         self.history = {}
     end
 
-    local previousOptions = self.baseOptions
-    if navState and navState.suppressHistory ~= true and previousOptions and #previousOptions > 0 then
+    local previousOptions = self.rawOptions
+    if (not navState or (navState.suppressHistory ~= true and navState.resetHistory ~= true)) and previousOptions and #previousOptions > 0 then
         self.history[#self.history + 1] = {
             options = previousOptions,
             backAction = self.currentBackAction,
+            footerActionOverride = self.footerActionOverride,
         }
     end
 
-    self.baseOptions = options or {}
+    self.rawOptions = options or {}
     self.currentBackAction = navState and type(navState.backAction) == "function" and navState.backAction or nil
+    self.footerActionOverride = navState and navState.footerAction or nil
+    self.baseOptions, self.footerNavigationOption = prepareOptions(self, self.rawOptions, self.footerActionOverride)
 
     renderOptions(self, self.baseOptions)
+    self:updateNavigationButtons()
+end
+
+function DT_ConversationUI:setFooterAction(footerAction)
+    self.footerActionOverride = footerAction
+    self.baseOptions, self.footerNavigationOption = prepareOptions(self, self.rawOptions, self.footerActionOverride)
+    self:updateNavigationButtons()
+end
+
+function DT_ConversationUI:clearFooterAction()
+    self.footerActionOverride = nil
+    self.baseOptions, self.footerNavigationOption = prepareOptions(self, self.rawOptions, self.footerActionOverride)
     self:updateNavigationButtons()
 end
 
@@ -160,7 +282,8 @@ function DT_ConversationUI:replaceOptions(options, navState)
 end
 
 function DT_ConversationUI:refreshOptionLayout()
-    if self.baseOptions then
+    if self.rawOptions then
+        self.baseOptions, self.footerNavigationOption = prepareOptions(self, self.rawOptions, self.footerActionOverride)
         renderOptions(self, self.baseOptions)
         self:updateNavigationButtons()
     end

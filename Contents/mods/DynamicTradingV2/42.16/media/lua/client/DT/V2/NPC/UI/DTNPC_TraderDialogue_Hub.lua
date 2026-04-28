@@ -480,15 +480,6 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
         end
     })
 
-    -- OPTION 5: LEAVE
-    table.insert(options, {
-        text = "Leave",
-        message = "I'll be going now. Good luck.",
-        onSelect = function(ui)
-            ui:close()
-        end
-    })
-
     options._dtMenu = "root"
     ui:updateOptions(options, {
         resetHistory = true,

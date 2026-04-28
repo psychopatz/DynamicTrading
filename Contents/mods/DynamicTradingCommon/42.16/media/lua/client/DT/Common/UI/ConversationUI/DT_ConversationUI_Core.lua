@@ -82,8 +82,15 @@ function DT_ConversationUI:initialise()
     self.msgQueue = {}
     self.typingTick = 0
     self.interactionObj = nil
+    self.rawOptions = {}
     self.baseOptions = {}
     self.currentBackAction = nil
+    self.footerActionOverride = nil
+    self.footerNavigationOption = nil
+    self.pendingCloseAfterQueue = false
+    self.pendingCloseDisplayTicks = nil
+    self.pendingCloseCallback = nil
+    self.pendingCloseFooterAction = nil
     self.headerNameText = "Unknown"
     self.headerRoleText = "Survivor"
     self.headerNameFont = UIFont.Medium
@@ -275,19 +282,12 @@ function DT_ConversationUI:createChildren()
     self.footerPanel = createTransparentPanel(0, 0, 100, DT_ConversationUI.FOOTER_HEIGHT)
     self.optionPanel:addChild(self.footerPanel)
 
-    self.backButton = ISButton:new(0, 0, 110, DT_ConversationUI.FOOTER_HEIGHT, "Back", self, DT_ConversationUI.onFooterBackClick)
-    self.backButton:initialise()
-    self.backButton.backgroundColor = { r = 0.16, g = 0.24, b = 0.14, a = 0.92 }
-    self.backButton.backgroundColorMouseOver = { r = 0.22, g = 0.32, b = 0.18, a = 0.96 }
-    self.backButton.borderColor = { r = 0.70, g = 0.82, b = 0.44, a = 0.72 }
-    self.footerPanel:addChild(self.backButton)
-
-    self.exitButton = ISButton:new(0, 0, 110, DT_ConversationUI.FOOTER_HEIGHT, "Exit", self, DT_ConversationUI.onFooterExitClick)
-    self.exitButton:initialise()
-    self.exitButton.backgroundColor = { r = 0.24, g = 0.14, b = 0.14, a = 0.92 }
-    self.exitButton.backgroundColorMouseOver = { r = 0.32, g = 0.18, b = 0.18, a = 0.96 }
-    self.exitButton.borderColor = { r = 0.88, g = 0.56, b = 0.44, a = 0.74 }
-    self.footerPanel:addChild(self.exitButton)
+    self.navigationButton = ISButton:new(0, 0, 110, DT_ConversationUI.FOOTER_HEIGHT, "Leave", self, DT_ConversationUI.onFooterNavigationClick)
+    self.navigationButton:initialise()
+    self.navigationButton.backgroundColor = { r = 0.24, g = 0.14, b = 0.14, a = 0.92 }
+    self.navigationButton.backgroundColorMouseOver = { r = 0.32, g = 0.18, b = 0.18, a = 0.96 }
+    self.navigationButton.borderColor = { r = 0.88, g = 0.56, b = 0.44, a = 0.74 }
+    self.footerPanel:addChild(self.navigationButton)
 
     self:updateHeaderMetrics()
     self:relayout()
@@ -355,24 +355,17 @@ function DT_ConversationUI:relayout()
     end
 
     if self.footerPanel then
-        local buttonWidth = math.max(96, math.floor((metrics.leftW - 8) / 2))
         local footerY = math.max(0, metrics.optionH - DT_ConversationUI.FOOTER_HEIGHT)
         self.footerPanel:setX(0)
         self.footerPanel:setY(footerY)
         self.footerPanel:setWidth(metrics.leftW)
         self.footerPanel:setHeight(DT_ConversationUI.FOOTER_HEIGHT)
 
-        if self.backButton then
-            self.backButton:setX(0)
-            self.backButton:setY(0)
-            self.backButton:setWidth(buttonWidth)
-            self.backButton:setHeight(DT_ConversationUI.FOOTER_HEIGHT)
-        end
-        if self.exitButton then
-            self.exitButton:setX(metrics.leftW - buttonWidth)
-            self.exitButton:setY(0)
-            self.exitButton:setWidth(buttonWidth)
-            self.exitButton:setHeight(DT_ConversationUI.FOOTER_HEIGHT)
+        if self.navigationButton then
+            self.navigationButton:setX(0)
+            self.navigationButton:setY(0)
+            self.navigationButton:setWidth(metrics.leftW)
+            self.navigationButton:setHeight(DT_ConversationUI.FOOTER_HEIGHT)
         end
     end
 
@@ -437,18 +430,8 @@ function DT_ConversationUI:onResize()
     self:relayout()
 end
 
-function DT_ConversationUI:onFooterBackClick()
-    if self.navigateBack then
-        self:navigateBack()
+function DT_ConversationUI:onFooterNavigationClick()
+    if self.activateFooterNavigation then
+        self:activateFooterNavigation()
     end
-end
-
-function DT_ConversationUI:onFooterExitClick()
-    if self.exitConversation then
-        self:exitConversation()
-        return
-    end
-
-    self.closeReason = self.closeReason or "footer_exit"
-    self:close()
 end

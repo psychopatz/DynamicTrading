@@ -1052,14 +1052,9 @@ local function generateRootOptions(ui, npc, player, worker)
             }
         end
 
-        options[#options + 1] = {
-            text = "Leave",
-            message = "",
-            onSelect = function(innerUI)
-                innerUI:close()
-            end
-        }
-        ui:updateOptions(options)
+        ui:updateOptions(options, {
+            resetHistory = true,
+        })
         return
     end
 
@@ -1262,13 +1257,6 @@ local function generateRootOptions(ui, npc, player, worker)
                         generateRootOptions(choiceUI, npc, player, worker)
                     end
                 },
-                {
-                    text = "Back",
-                    message = "",
-                    onSelect = function(choiceUI)
-                        generateRootOptions(choiceUI, npc, player, worker)
-                    end
-                }
             })
         end
     }
@@ -1345,13 +1333,6 @@ local function generateRootOptions(ui, npc, player, worker)
                         generateRootOptions(choiceUI, npc, player, worker)
                     end
                 },
-                {
-                    text = "Back",
-                    message = "",
-                    onSelect = function(choiceUI)
-                        generateRootOptions(choiceUI, npc, player, worker)
-                    end
-                }
             })
         end
     }
@@ -1385,13 +1366,6 @@ local function generateRootOptions(ui, npc, player, worker)
                         end
                     }
                 end
-                choices[#choices + 1] = {
-                    text = "Back",
-                    message = "",
-                    onSelect = function(choiceUI)
-                        generateRootOptions(choiceUI, npc, player, worker)
-                    end
-                }
                 innerUI:updateOptions(choices)
             end
         }
@@ -1427,14 +1401,8 @@ local function generateRootOptions(ui, npc, player, worker)
             if workerCommandSent and returnOrderSent then
                 playCompanionCommandCue(player, "GoHome")
                 innerUI:speak("Understood. I'll head home.")
-                innerUI:updateOptions({
-                    {
-                        text = "Exit",
-                        message = "",
-                        onSelect = function(closeUI)
-                            closeUI:close()
-                        end
-                    }
+                innerUI:updateOptions({}, {
+                    resetHistory = true,
                 })
             else
                 innerUI:speak("I couldn't head home right now.")
@@ -1443,15 +1411,9 @@ local function generateRootOptions(ui, npc, player, worker)
         end
     }
 
-    options[#options + 1] = {
-        text = "Leave",
-        message = "",
-        onSelect = function(innerUI)
-            innerUI:close()
-        end
-    }
-
-    ui:updateOptions(options)
+    ui:updateOptions(options, {
+        resetHistory = true,
+    })
 end
 
 DTNPCJobUI.Register({

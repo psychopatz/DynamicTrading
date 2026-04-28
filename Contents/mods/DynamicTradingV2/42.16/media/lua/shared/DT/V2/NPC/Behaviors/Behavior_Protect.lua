@@ -58,6 +58,41 @@ local function getProtectEngageRadius(npcData)
     return tonumber(npcData and npcData.protectEngageRadius) or PROTECT_MASTER_ENGAGE_RADIUS
 end
 
+local function resolveAutoProtectCombatState(zombie, npcData, targetDist)
+    if not DTNPCProtect or not DTNPCProtect.GetAutoProtectState then
+        return nil
+    end
+
+    local hasRanged = DTNPCProtect.HasUsableRangedLoadout and DTNPCProtect.HasUsableRangedLoadout(npcData)
+    local hasMelee = DTNPCProtect.HasUsableMeleeLoadout and DTNPCProtect.HasUsableMeleeLoadout(npcData)
+    local distance = tonumber(targetDist) or 9999
+
+    if hasMelee and distance <= 1.85 then
+        return "ProtectMelee"
+    end
+
+    local primaryItem = zombie and zombie.getPrimaryHandItem and zombie:getPrimaryHandItem() or nil
+    if primaryItem then
+        local isPrimaryRanged = false
+        if primaryItem.isRanged and primaryItem:isRanged() then
+            isPrimaryRanged = true
+        elseif primaryItem.isAimedFirearm and primaryItem:isAimedFirearm() then
+            isPrimaryRanged = true
+        elseif primaryItem.getAmmoType and primaryItem:getAmmoType() and primaryItem:getAmmoType() ~= "" then
+            isPrimaryRanged = true
+        end
+
+        if isPrimaryRanged and hasRanged then
+            return "ProtectRanged"
+        end
+        if hasMelee then
+            return "ProtectMelee"
+        end
+    end
+
+    return DTNPCProtect.GetAutoProtectState(npcData, targetDist)
+end
+
 local function syncProtectStateChange(zombie, npcData)
     if DTNPCServerCore and DTNPCServerCore.SyncToAllClients then
         local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
@@ -156,7 +191,10 @@ local function executeProtectRanged(zombie, npcData, target, targetDist)
     })
 end
 
-local function executeProtectMelee(zombie, npcData, target, targetDist)
+local function executeProtectMelee(zombie, npcData, target, targetDist, master)
+    local anchorX = master and master.getX and master:getX() or zombie:getX()
+    local anchorY = master and master.getY and master:getY() or zombie:getY()
+    local anchorZ = master and master.getZ and master:getZ() or zombie:getZ()
     DTNPCProtect.ExecuteGuardedMeleeCombat(zombie, npcData, target, targetDist, {
         mode = "protect",
         issuePrefix = "ProtectMelee",
@@ -169,6 +207,10 @@ local function executeProtectMelee(zombie, npcData, target, targetDist)
         holdBuffer = 0.45,
         stopBuffer = MELEE_APPROACH_STOP_BUFFER,
         debugLabel = "ProtectMeleeSwing",
+        anchorX = anchorX,
+        anchorY = anchorY,
+        anchorZ = anchorZ,
+        leashRadius = math.max(getProtectEngageRadius(npcData), PROTECT_LEASH),
     })
 end
 
@@ -185,7 +227,7 @@ DTNPCLogic.Behaviors["ProtectMelee"] = function(zombie, npcData, master, distToM
     if handled then
         return
     end
-    executeProtectMelee(zombie, npcData, target, targetDist)
+    executeProtectMelee(zombie, npcData, target, targetDist, master)
 end
 
 DTNPCLogic.Behaviors["ProtectAuto"] = function(zombie, npcData, master, distToMaster)
@@ -207,7 +249,7 @@ DTNPCLogic.Behaviors["ProtectAuto"] = function(zombie, npcData, master, distToMa
         return
     end
 
-    local resolvedState = DTNPCProtect.GetAutoProtectState(npcData, targetDist)
+    local resolvedState = resolveAutoProtectCombatState(zombie, npcData, targetDist)
     npcData.autoProtectActiveState = resolvedState
 
     if not resolvedState then
@@ -234,7 +276,7 @@ DTNPCLogic.Behaviors["ProtectAuto"] = function(zombie, npcData, master, distToMa
         return
     end
     if resolvedState == "ProtectMelee" then
-        executeProtectMelee(zombie, npcData, target, targetDist)
+        executeProtectMelee(zombie, npcData, target, targetDist, master)
         return
     end
 

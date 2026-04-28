@@ -113,6 +113,14 @@ function DT_ConversationUI:update()
         end
     end
 
+    if self.pendingCloseAfterQueue == true and #self.msgQueue == 0 and self.pendingCloseDisplayTicks and self.pendingCloseDisplayTicks > 0 then
+        self.pendingCloseDisplayTicks = self.pendingCloseDisplayTicks - 1
+        if self.pendingCloseDisplayTicks <= 0 and self.performPendingClose then
+            self:performPendingClose()
+            return
+        end
+    end
+
     if #self.msgQueue > 0 then
         local msg = self.msgQueue[1]
 
@@ -126,6 +134,13 @@ function DT_ConversationUI:update()
             end
 
             table.remove(self.msgQueue, 1)
+            if self.updateNavigationButtons then
+                self:updateNavigationButtons()
+            end
+
+            if self.pendingCloseAfterQueue == true and #self.msgQueue == 0 then
+                self.pendingCloseDisplayTicks = math.max(12, math.floor((DT_ConversationUI.TEXT_DELAY or 30) * 0.6))
+            end
         end
     end
 end
@@ -139,6 +154,10 @@ function DT_ConversationUI:queueMessage(text, author, isPlayer, delay, sound, st
         sound = sound,
         style = style,
     })
+
+    if self.updateNavigationButtons then
+        self:updateNavigationButtons()
+    end
 end
 
 function DT_ConversationUI:speak(textOrPayload, style)

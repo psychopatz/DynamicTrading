@@ -198,14 +198,8 @@ local function onServerCommand(module, command, args)
             ui:speak(Helpers.pickDialogueLine("Accept", nil, ui))
         end
 
-        ui:updateOptions({
-            {
-                text = "Leave",
-                message = "I'm leaving.",
-                onSelect = function(nextUI)
-                    Helpers.closeBanditUI(nextUI)
-                end
-            }
+        ui:updateOptions({}, {
+            resetHistory = true,
         })
     end
 end
