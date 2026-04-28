@@ -1,5 +1,18 @@
 local MOD_DATA_KEY = DynamicTrading_Roster.MOD_DATA_KEY
 
+local function clearTradeCycleEncounterFields(npcData, registry)
+    local target = npcData or registry
+    if type(target) ~= "table" then
+        return
+    end
+
+    target.tradeCycleMode = nil
+    target.tradeCycleDemandEligible = nil
+    target.tradeCycleAggroRadius = nil
+    target.tradeCycleTargetPlayerUsername = nil
+    target.tradeCycleTargetPlayerOnlineID = nil
+end
+
 local function isColonyRecruitmentAway(status, returnStatus, npcData)
     if status ~= "Away" then
         return false
@@ -74,6 +87,10 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
             npcData.incapNextPauseAt = nil
         end
 
+        if status == "Dead" or (status ~= "Away" and status ~= "Trading") then
+            clearTradeCycleEncounterFields(npcData, nil)
+        end
+
         if status ~= nil then npcData.status = status end
         if returnTime ~= nil then npcData.returnTime = returnTime end
         if returnStatus ~= nil then npcData.returnStatus = returnStatus end
@@ -96,6 +113,14 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         registry.linkedWorkerID = npcData and npcData.linkedWorkerID or registry.linkedWorkerID
         registry.ownerUsername = npcData and npcData.ownerUsername or registry.ownerUsername
         registry.isPlayerFactionTrader = npcData and (npcData.isPlayerFactionTrader == true) or registry.isPlayerFactionTrader
+        registry.tradeCycleMode = npcData and npcData.tradeCycleMode or registry.tradeCycleMode
+        registry.tradeCycleDemandEligible = npcData and (npcData.tradeCycleDemandEligible == true) or registry.tradeCycleDemandEligible
+        registry.tradeCycleAggroRadius = npcData and npcData.tradeCycleAggroRadius or registry.tradeCycleAggroRadius
+        registry.tradeCycleTargetPlayerUsername = npcData and npcData.tradeCycleTargetPlayerUsername or registry.tradeCycleTargetPlayerUsername
+        registry.tradeCycleTargetPlayerOnlineID = npcData and npcData.tradeCycleTargetPlayerOnlineID or registry.tradeCycleTargetPlayerOnlineID
+        if status == "Dead" or (status ~= "Away" and status ~= "Trading") then
+            clearTradeCycleEncounterFields(nil, registry)
+        end
     end
 
     local linkedWorkerID = (npcData and npcData.linkedWorkerID) or (data.Souls[uuid] and data.Souls[uuid].linkedWorkerID) or nil

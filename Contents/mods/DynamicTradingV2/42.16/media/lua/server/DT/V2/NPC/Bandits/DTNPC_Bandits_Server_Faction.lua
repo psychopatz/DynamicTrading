@@ -100,6 +100,33 @@ function Faction.getAliveFactionMemberCount(factionID)
     return #Faction.getAliveFactionMemberUUIDs(factionID)
 end
 
+function Faction.getFactionMemberUUIDs(factionID)
+    local roster = Faction.ensureRosterModData()
+    local members = roster and roster.FactionMembers and roster.FactionMembers[factionID] or nil
+    local uuids = {}
+    local seen = {}
+
+    if type(members) == "table" then
+        for _, uuid in ipairs(members) do
+            if uuid and not seen[uuid] then
+                uuids[#uuids + 1] = uuid
+                seen[uuid] = true
+            end
+        end
+    end
+
+    if roster and type(roster.Souls) == "table" then
+        for uuid, soul in pairs(roster.Souls) do
+            if soul and soul.factionID == factionID and not seen[uuid] then
+                uuids[#uuids + 1] = uuid
+                seen[uuid] = true
+            end
+        end
+    end
+
+    return uuids
+end
+
 function Faction.isFactionExcludedFromPopulationPool(factionID, faction)
     return factionID == "Independent"
         or factionID == "Factionless"
@@ -238,4 +265,124 @@ function Bandits.EnsureBanditFaction(force)
     end
 
     return true
+end
+
+function Faction.PruneDeadNonPlayerSouls()
+    local roster = Faction.ensureRosterModData()
+    local factions = Faction.ensureFactionModData()
+    local removed = 0
+    local touchedFactions = {}
+    local toRemove = {}
+
+    for uuid, soul in pairs(roster and roster.Souls or {}) do
+        local factionID = soul and soul.factionID or nil
+        local faction = factionID and factions[factionID] or nil
+        local isDead = soul and tostring(soul.status or "") == "Dead"
+        local isTrackedLive = DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] ~= nil
+
+        if isDead and faction and faction.playerOwned ~= true and not isTrackedLive then
+            toRemove[#toRemove + 1] = {
+                uuid = uuid,
+                factionID = factionID,
+            }
+        end
+    end
+
+    for _, entry in ipairs(toRemove) do
+        if DynamicTrading_Roster and DynamicTrading_Roster.RemoveSpecificSoul
+            and DynamicTrading_Roster.RemoveSpecificSoul(entry.uuid) then
+            removed = removed + 1
+            touchedFactions[entry.factionID] = true
+        end
+    end
+
+    for factionID in pairs(touchedFactions) do
+        local faction = factions[factionID]
+        if faction and faction.playerOwned ~= true then
+            faction.memberCount = Faction.getAliveFactionMemberCount(factionID)
+        end
+    end
+
+    return removed, touchedFactions
+end
+
+function Faction.GetRecoveryTargetCount(factionID, faction)
+    faction = faction or Faction.getFactionData(factionID)
+    if not faction or faction.playerOwned == true then
+        return 0
+    end
+
+    local baseline = math.max(
+        tonumber(faction.raidRecoveryTargetCount) or 0,
+        tonumber(faction.memberCount) or 0,
+        Faction.getAliveFactionMemberCount(factionID)
+    )
+
+    if Shared.isBanditFactionID(factionID) then
+        baseline = math.max(baseline, Constants.BANDIT_MIN_ROSTER)
+    end
+
+    faction.raidRecoveryTargetCount = baseline
+    return baseline
+end
+
+function Faction.RefillHostileRaidPools()
+    local factions = Faction.ensureFactionModData()
+    local roster = Faction.ensureRosterModData()
+    local refilled = 0
+
+    for factionID, faction in pairs(factions) do
+        local isEligibleHostileFaction = type(faction) == "table" and (
+            Shared.isBanditFactionID(factionID)
+            or faction.hostileToPlayers == true
+            or faction.alwaysHostile == true
+        ) or false
+        if not isEligibleHostileFaction then
+            for _, player in ipairs(Shared.getActivePlayers()) do
+                if Faction.isFactionHostileToPlayer(factionID, faction, player) then
+                    isEligibleHostileFaction = true
+                    break
+                end
+            end
+        end
+
+        if type(faction) == "table"
+            and faction.playerOwned ~= true
+            and (Shared.isBanditFactionID(factionID) or not Faction.isFactionExcludedFromPopulationPool(factionID, faction))
+            and isEligibleHostileFaction then
+            local aliveCount = Faction.getAliveFactionMemberCount(factionID)
+            local targetCount = Faction.GetRecoveryTargetCount(factionID, faction)
+            local deficit = math.max(0, targetCount - aliveCount)
+
+            if deficit > 0 then
+                local replenish = math.max(1, math.ceil(deficit / math.max(1, Constants.HOSTILE_POOL_RECOVERY_DAYS)))
+                replenish = math.min(deficit, replenish)
+                local archetypePool = {}
+                for uuid, soul in pairs(roster.Souls or {}) do
+                    if soul and soul.factionID == factionID and tostring(soul.status or "") ~= "Dead" then
+                        archetypePool[#archetypePool + 1] = soul.archetypeID or "General"
+                    end
+                end
+
+                for _ = 1, replenish do
+                    local archetypeID = Shared.isBanditFactionID(factionID)
+                        and "Bandit"
+                        or ((#archetypePool > 0 and archetypePool[ZombRand(#archetypePool) + 1]) or "General")
+                    local added = DynamicTrading_Roster
+                        and DynamicTrading_Roster.AddSoul
+                        and DynamicTrading_Roster.AddSoul(factionID, archetypeID, nil, {
+                            forceFaction = true,
+                            suppressRecruitLog = true,
+                        })
+                    if added then
+                        refilled = refilled + 1
+                    end
+                end
+            end
+
+            faction.memberCount = Faction.getAliveFactionMemberCount(factionID)
+        end
+    end
+
+    return refilled
 end

@@ -387,11 +387,36 @@ local function processDemandTimeouts()
             end
         elseif group and (group.status == "paid" or group.status == "empty") then
             if tonumber(group.cleanupAt) and current >= tonumber(group.cleanupAt) then
-                for _, member in ipairs(Shared.getGroupMembers(group)) do
-                    Raid.returnRaidSoulToResting(member.uuid, member.npcData)
-                    Shared.removeBandit(member.uuid, "BanditPaidCleanup")
+                if group.tradeCycleEncounter == true then
+                    Bandits.Groups[groupID] = nil
+                else
+                    for _, member in ipairs(Shared.getGroupMembers(group)) do
+                        Raid.returnRaidSoulToResting(member.uuid, member.npcData)
+                        Shared.removeBandit(member.uuid, "BanditPaidCleanup")
+                    end
+                    Bandits.Groups[groupID] = nil
                 end
+            end
+        elseif group and group.tradeCycleEncounter == true then
+            local members = Shared.getGroupMembers(group)
+            if #members <= 0 then
                 Bandits.Groups[groupID] = nil
+            else
+                local allDeparted = true
+                for _, member in ipairs(members) do
+                    local npcData = member.npcData
+                    if npcData
+                        and tostring(npcData.status or "") ~= "Dead"
+                        and npcData.banditLeaving ~= true
+                        and tostring(npcData.state or "") ~= "Flee"
+                        and tostring(npcData.status or "") ~= "Away" then
+                        allDeparted = false
+                        break
+                    end
+                end
+                if allDeparted then
+                    Bandits.Groups[groupID] = nil
+                end
             end
         end
     end
@@ -422,15 +447,35 @@ local function getNearestPlayerToNPC(npcData)
         end
     end
 
-    return bestPlayer
+    return bestPlayer, bestDist
 end
 
 local function processHostileFactionAggro()
     if not Shared.isCurrencyExpandedActive() then return end
     for uuid, npcData in pairs(DTNPCManager and DTNPCManager.Data or {}) do
-        local player = getNearestPlayerToNPC(npcData)
+        local player, bestDist = getNearestPlayerToNPC(npcData)
         local faction = npcData and Faction.getFactionData(npcData.factionID) or nil
-        if npcData
+        if npcData and npcData.tradeCycleMode ~= nil then
+            if npcData.status ~= "Dead"
+                and npcData.incapState ~= "Active"
+                and npcData.banditLeaving ~= true
+                and player then
+                local radius = tonumber(npcData.tradeCycleAggroRadius) or Constants.TRADE_CYCLE_AGGRO_RADIUS
+                local shouldAggro = bestDist ~= nil and bestDist <= (radius * radius)
+                if shouldAggro and DTNPCManager and DTNPCManager.ResolveScheduledTradeCycleMode then
+                    local mode = DTNPCManager.ResolveScheduledTradeCycleMode(npcData, player)
+                    if mode == "robbery" or mode == "hostile_bribe" then
+                        local group = Bandits.EnsureTradeCycleEncounterGroup(player, uuid, npcData, {
+                            mode = mode,
+                            difficulty = npcData.banditDifficulty,
+                        })
+                        if group and npcData.isHostile ~= true then
+                            Bandits.MakeGroupHostile(group.id, player, mode == "robbery" and "robbery_proximity" or "hostile_faction")
+                        end
+                    end
+                end
+            end
+        elseif npcData
             and faction
             and Faction.isFactionHostileToPlayer(npcData.factionID, faction, player)
             and npcData.status ~= "Dead"
@@ -446,11 +491,45 @@ local function processHostileFactionAggro()
     end
 end
 
+local function processFactionMaintenance()
+    if not Shared.isCurrencyExpandedActive() then return end
+    local currentHour = Shared.worldHours()
+    if currentHour - (Bandits.LastFactionMaintenanceHour or -99999) < Constants.FACTION_MAINTENANCE_INTERVAL_HOURS then
+        return
+    end
+
+    Bandits.LastFactionMaintenanceHour = currentHour
+    Bandits.EnsureBanditFaction(true)
+
+    local removed = 0
+    local refilled = 0
+    if Faction.PruneDeadNonPlayerSouls then
+        removed = Faction.PruneDeadNonPlayerSouls() or 0
+    end
+    if Faction.RefillHostileRaidPools then
+        refilled = Faction.RefillHostileRaidPools() or 0
+    end
+
+    if removed > 0 or refilled > 0 then
+        if ModData.transmit then
+            ModData.transmit("DynamicTrading_Roster")
+            ModData.transmit("DynamicTrading_Factions")
+        end
+        DynamicTrading.Log(
+            "DTV2",
+            "Bandits",
+            "Maintenance",
+            "Hostile faction maintenance complete removed=" .. tostring(removed) .. " refilled=" .. tostring(refilled)
+        )
+    end
+end
+
 function Raid.onTick()
     Bandits.TickCounter = (Bandits.TickCounter or 0) + 1
     if Bandits.TickCounter % 60 ~= 0 then return end
     if not Shared.isCurrencyExpandedActive() then return end
     Bandits.EnsureBanditFaction(false)
+    processFactionMaintenance()
     processDemandTimeouts()
     processHostileFactionAggro()
     tryRandomAmbush()

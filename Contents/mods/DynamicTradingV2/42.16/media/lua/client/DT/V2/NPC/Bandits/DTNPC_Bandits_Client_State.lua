@@ -29,6 +29,7 @@ local Helpers = Internal.Helpers
 
 Helpers.AUTO_OPEN_DISTANCE = Helpers.AUTO_OPEN_DISTANCE or 4.0
 Helpers.IDLE_WARNING_DELAY_MS = Helpers.IDLE_WARNING_DELAY_MS or 30000
+Helpers.DEFAULT_HOSTILE_REP_THRESHOLD = Helpers.DEFAULT_HOSTILE_REP_THRESHOLD or -40
 
 function Helpers.nowMillis()
     if getTimeInMillis then
@@ -56,6 +57,10 @@ function Helpers.getDialogueCategory(source)
 
     if npcData and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits") then
         return "Bandits"
+    end
+
+    if npcData and tostring(npcData.tradeCycleMode or "") == "hostile_bribe" then
+        return "HostileRaiders"
     end
 
     if npcData and npcData.raidHostileFaction == true then
@@ -96,6 +101,87 @@ end
 
 function Helpers.getOnlineID(player)
     return player and player.getOnlineID and player:getOnlineID() or nil
+end
+
+function Helpers.getLocalPlayer()
+    return getSpecificPlayer and getSpecificPlayer(0) or nil
+end
+
+local function resolveFactionSnapshot(factionID)
+    if not factionID then
+        return nil
+    end
+
+    local snapshots = {
+        DynamicTrading_Client and DynamicTrading_Client.Cache and DynamicTrading_Client.Cache.Factions or nil,
+        DT_V2_RadarManager and DT_V2_RadarManager.ClientFactions or nil,
+        DT_FactionInfoWindow and DT_FactionInfoWindow.cachedFactionData or nil,
+        ModData.get("DynamicTrading_Factions") or nil,
+    }
+
+    for _, source in ipairs(snapshots) do
+        if type(source) == "table" and type(source[factionID]) == "table" then
+            return source[factionID]
+        end
+    end
+
+    return nil
+end
+
+function Helpers.isFactionHostileToLocalPlayer(factionID)
+    local faction = resolveFactionSnapshot(factionID)
+    if type(faction) ~= "table" then
+        return false
+    end
+
+    if faction.hostileToPlayers == true or faction.alwaysHostile == true then
+        return true
+    end
+
+    local player = Helpers.getLocalPlayer()
+    local username = Helpers.getUsername(player)
+    if not username then
+        return false
+    end
+
+    local rep = 0
+    if type(faction.reputation) == "table" and faction.reputation[username] ~= nil then
+        rep = tonumber(faction.reputation[username]) or 0
+    elseif faction.reputationDefault ~= nil then
+        rep = tonumber(faction.reputationDefault) or 0
+    end
+
+    local threshold = DTNPCProtect
+        and DTNPCProtect.CONFIG
+        and tonumber(DTNPCProtect.CONFIG.HostilePlayerRepThreshold)
+        or Helpers.DEFAULT_HOSTILE_REP_THRESHOLD
+    return rep <= threshold
+end
+
+function Helpers.isTradeCycleDemandEligible(npcData, player)
+    if not npcData then
+        return false
+    end
+
+    local mode = tostring(npcData.tradeCycleMode or "")
+    if mode == "" and npcData.tradeCycleDemandEligible ~= true then
+        return false
+    end
+
+    if mode == "robbery" or mode == "hostile_bribe" then
+        return true
+    end
+
+    if tostring(npcData.factionID or "") == "Bandits" then
+        return true
+    end
+
+    player = player or Helpers.getLocalPlayer()
+    if not player then
+        return false
+    end
+
+    return Helpers.isFactionHostileToLocalPlayer(npcData.factionID)
 end
 
 function Helpers.sendBanditCommand(player, command, args)
@@ -141,6 +227,10 @@ end
 function Helpers.buildBanditProxy(npcData)
     local uuid = npcData and npcData.uuid or nil
     local isTrueBandit = npcData and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits") or false
+    local isHostileFactionRaider = npcData
+        and ((npcData.raidHostileFaction == true) or tostring(npcData.tradeCycleMode or "") == "hostile_bribe")
+        and not isTrueBandit
+        or false
     return {
         id = uuid,
         uuid = uuid,
@@ -151,7 +241,7 @@ function Helpers.buildBanditProxy(npcData)
         factionID = npcData and npcData.factionID or "Bandits",
         isBanditDemand = true,
         isTrueBandit = isTrueBandit,
-        isHostileFactionRaider = npcData and npcData.raidHostileFaction == true and not isTrueBandit or false,
+        isHostileFactionRaider = isHostileFactionRaider,
         banditDialogueCategory = Helpers.getDialogueCategory(npcData),
     }
 end
@@ -227,6 +317,29 @@ function Helpers.getCurrentBanditUI(groupID)
     if ui and ui.isBanditDemand == true and tostring(ui.banditGroupID or "") == tostring(groupID or "") then
         return ui
     end
+    return nil
+end
+
+function Helpers.getCurrentBanditUIForLeaderUUID(uuid)
+    uuid = Helpers.normalize(uuid)
+    if not uuid then
+        return nil
+    end
+
+    local ui = DT_ConversationUI and DT_ConversationUI.instance or nil
+    if not ui or ui.isBanditDemand ~= true then
+        return nil
+    end
+
+    if Helpers.normalize(ui.banditLeaderUUID) == uuid then
+        return ui
+    end
+
+    local target = ui.target or nil
+    if Helpers.normalize(target and (target.uuid or target.traderID or target.id)) == uuid then
+        return ui
+    end
+
     return nil
 end
 

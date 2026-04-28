@@ -752,6 +752,14 @@ function DTNPCManager.ProcessAwayTransitions()
                         npcData.lastY = targetY
                         npcData.lastZ = targetZ or 0
                         npcData.travelTarget = nil
+                        if DTNPCManager.ResolveScheduledTradeCycleMode and DTNPCManager.SetTradeCycleEncounterMode then
+                            DTNPCManager.SetTradeCycleEncounterMode(
+                                npcData,
+                                DTNPCManager.ResolveScheduledTradeCycleMode(npcData, nil)
+                            )
+                        end
+                        npcData.tradeCycleTargetPlayerUsername = nil
+                        npcData.tradeCycleTargetPlayerOnlineID = nil
 
                         if npcData.contactVisitActive == true then
                             local visitBackend = string.upper(tostring(npcData.contactVisitBackend or ""))
@@ -836,6 +844,9 @@ function DTNPCManager.ProcessAwayTransitions()
                         npcData.lastY = npcData.homeCoords.y
                         npcData.lastZ = npcData.homeCoords.z or 0
                         npcData.travelTarget = nil
+                        if DTNPCManager.ClearTradeCycleEncounterState then
+                            DTNPCManager.ClearTradeCycleEncounterState(npcData)
+                        end
                         newReturnTime = 0
                         newReturnStatus = nil
                         DynamicTrading_Roster.SaveSoul(uuid, npcData)
@@ -849,6 +860,9 @@ function DTNPCManager.ProcessAwayTransitions()
                         if home and DTNPCManager.TryStartLiveDeparture(uuid, "Resting", walkHours, home.x, home.y, home.z or 0) then
                             shouldApplyStatus = false
                         else
+                            if DTNPCManager.ClearTradeCycleEncounterState then
+                                DTNPCManager.ClearTradeCycleEncounterState(npcData)
+                            end
                             newReturnTime = currentHours + walkHours
                             newReturnStatus = "Resting"
                             DynamicTrading_Roster.SaveSoul(uuid, npcData)

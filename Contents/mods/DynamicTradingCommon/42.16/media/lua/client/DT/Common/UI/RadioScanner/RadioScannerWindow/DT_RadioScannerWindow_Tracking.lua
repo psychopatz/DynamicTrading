@@ -65,6 +65,25 @@ local function findTrackedListData(window, uuid)
     return nil
 end
 
+local function resolveTrackingCoords(data)
+    if type(data) ~= "table" then
+        return nil, nil, nil
+    end
+
+    local x = data.x
+    local y = data.y
+    local z = data.z
+    if x == nil or y == nil then
+        x = data.lastX
+        y = data.lastY
+        if z == nil then
+            z = data.lastZ
+        end
+    end
+
+    return x, y, z
+end
+
 local function buildTrackedTargetData(window, uuid)
     if not uuid or not DT_RadioScannerManager then
         return nil
@@ -75,9 +94,7 @@ local function buildTrackedTargetData(window, uuid)
     local cachedEntry = DTNPCClient and DTNPCClient.NPCCache and DTNPCClient.NPCCache[uuid] or nil
     local npcData = cachedEntry and cachedEntry.npcData or nil
     local meta = DTNPCClient and DTNPCClient.GetMetadata and DTNPCClient.GetMetadata(uuid) or nil
-    local tx = selectedData and selectedData.x or nil
-    local ty = selectedData and selectedData.y or nil
-    local tz = selectedData and selectedData.z or nil
+    local tx, ty, tz = resolveTrackingCoords(selectedData)
     local isLive = selectedData and selectedData.isLive or nil
     if tx == nil or ty == nil then
         tx, ty, tz, isLive = DT_RadioScannerManager.GetTraderCoords(uuid)
@@ -131,6 +148,9 @@ local function buildTrackedTargetData(window, uuid)
         status = firstNonNil(soul and soul.status, npcData and npcData.status, meta and meta.status, "Unknown"),
         state = firstNonNil(soul and soul.state, npcData and npcData.state, meta and meta.state, "Unknown"),
         returnTime = firstNonNil(soul and soul.returnTime, npcData and npcData.returnTime, meta and meta.returnTime),
+        x = tx,
+        y = ty,
+        z = tz,
         lastX = tx,
         lastY = ty,
         lastZ = tz,
@@ -337,8 +357,7 @@ local function getTrackingDistanceToTarget(window)
         return nil
     end
 
-    local tx = window.trackingData and window.trackingData.x or nil
-    local ty = window.trackingData and window.trackingData.y or nil
+    local tx, ty = resolveTrackingCoords(window.trackingData)
     if tx == nil or ty == nil then
         tx, ty = DT_RadioScannerManager.GetTraderCoords(window.trackingUUID)
     end
@@ -624,8 +643,7 @@ function DT_RadioScannerWindow:updateTrackingMarker()
         return
     end
 
-    local tx = self.trackingData and self.trackingData.x or nil
-    local ty = self.trackingData and self.trackingData.y or nil
+    local tx, ty = resolveTrackingCoords(self.trackingData)
     if tx == nil or ty == nil then
         tx, ty = DT_RadioScannerManager.GetTraderCoords(self.trackingUUID)
     end

@@ -190,7 +190,10 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
     if not ui or not player or not npcData then return false end
     local groupID = Helpers.normalize(npcData.banditGroupID)
     local uuid = Helpers.normalize(npcData.uuid)
-    if not groupID or not uuid then return false end
+    local pendingKey = groupID or (uuid and ("TradeCycle_" .. uuid)) or nil
+    local isTradeCycleDemand = Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player) or false
+    if not uuid then return false end
+    if not groupID and not isTradeCycleDemand then return false end
 
     ui.isBanditDemand = true
     ui.banditGroupID = groupID
@@ -207,25 +210,41 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
         Helpers.maybeShowIdleWarning(activeUI, currentTime)
     end
 
-    BanditClient.OpenedGroups[groupID] = true
-    BanditClient.PendingGroups[groupID] = {
+    if pendingKey then
+        BanditClient.OpenedGroups[pendingKey] = true
+    end
+    if groupID then
+        BanditClient.OpenedGroups[groupID] = true
+    end
+    BanditClient.PendingGroups[pendingKey or uuid] = {
         ui = ui,
         player = player,
         npc = npc,
         npcData = npcData,
+        pendingKey = pendingKey or uuid,
+        leaderUUID = uuid,
     }
 
     Helpers.applyInteractionPose(npc, player)
     ui.onCloseCallback = function(closedUI)
         Helpers.disarmIdleWarning(closedUI)
         Helpers.clearInteractionPose(npc)
-        BanditClient.PendingGroups[groupID] = nil
+        local activeGroupID = Helpers.normalize(closedUI.banditGroupID)
+        local activeKey = activeGroupID or pendingKey or uuid
+        BanditClient.PendingGroups[activeKey] = nil
+        if activeGroupID then
+            BanditClient.OpenedGroups[activeGroupID] = nil
+        end
+        if pendingKey then
+            BanditClient.PendingGroups[pendingKey] = nil
+            BanditClient.OpenedGroups[pendingKey] = nil
+        end
         if closedUI.banditResolved ~= true
             and closedUI.banditPaymentSent ~= true
             and closedUI.banditRefuseSent ~= true then
             closedUI.banditRefuseSent = true
             Helpers.sendBanditCommand(player, "BanditDemandRefuse", {
-                groupID = groupID,
+                groupID = activeGroupID,
                 uuid = uuid,
                 reason = closedUI.closeReason or "closed",
             })
@@ -246,11 +265,19 @@ function BanditClient.OpenDemand(npc, player, npcData)
     if not Helpers.isCurrencyExpandedActive() then return false end
     if not npc or not player or not npcData then return false end
     local groupID = Helpers.normalize(npcData.banditGroupID)
-    if not groupID then return false end
-    if BanditClient.ResolvedGroups[groupID] then return false end
+    local uuid = Helpers.normalize(npcData.uuid)
+    local pendingKey = groupID or (uuid and ("TradeCycle_" .. uuid)) or nil
+    if not groupID and not (Helpers.isTradeCycleDemandEligible and Helpers.isTradeCycleDemandEligible(npcData, player)) then
+        return false
+    end
+    if groupID and BanditClient.ResolvedGroups[groupID] then return false end
 
-    local current = Helpers.getCurrentBanditUI(groupID)
+    local current = groupID and Helpers.getCurrentBanditUI(groupID) or nil
+    if not current and uuid and Helpers.getCurrentBanditUIForLeaderUUID then
+        current = Helpers.getCurrentBanditUIForLeaderUUID(uuid)
+    end
     if current then return true end
+    if pendingKey and BanditClient.OpenedGroups[pendingKey] then return true end
 
     local ui = DT_ConversationUI.Open(Helpers.buildBanditProxy(npcData), nil, nil, false, npc)
     if not ui then return false end

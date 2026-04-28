@@ -78,6 +78,7 @@ local function onTick()
         local groupID = Helpers.normalize(npcData and npcData.banditGroupID)
         if npcData
             and groupID
+            and npcData.tradeCycleDemandEligible ~= true
             and npcData.banditDemandResolved ~= true
             and npcData.isHostile ~= true
             and not BanditClient.OpenedGroups[groupID]
@@ -130,9 +131,26 @@ local function onServerCommand(module, command, args)
 
     if command == "BanditDemand" then
         local groupID = tostring(args.groupID or "")
+        local leaderUUID = Helpers.normalize(args.leaderUUID)
         local pending = BanditClient.PendingGroups[groupID]
-        local ui = Helpers.getCurrentBanditUI(groupID) or (pending and pending.ui) or nil
+        if not pending and leaderUUID then
+            pending = BanditClient.PendingGroups["TradeCycle_" .. leaderUUID]
+        end
+        local ui = Helpers.getCurrentBanditUI(groupID)
+            or (leaderUUID and Helpers.getCurrentBanditUIForLeaderUUID and Helpers.getCurrentBanditUIForLeaderUUID(leaderUUID))
+            or (pending and pending.ui)
+            or nil
         local player = pending and pending.player or (getSpecificPlayer and getSpecificPlayer(0) or nil)
+        if pending and groupID ~= "" then
+            pending.ui = pending.ui or ui
+            pending.pendingKey = pending.pendingKey or (leaderUUID and ("TradeCycle_" .. leaderUUID)) or groupID
+            BanditClient.PendingGroups[groupID] = pending
+            BanditClient.OpenedGroups[groupID] = true
+            if pending.pendingKey and pending.pendingKey ~= groupID then
+                BanditClient.PendingGroups[pending.pendingKey] = nil
+                BanditClient.OpenedGroups[pending.pendingKey] = nil
+            end
+        end
         if ui and player then
             BanditClient.ShowDemand(ui, player, args)
         end
@@ -142,7 +160,13 @@ local function onServerCommand(module, command, args)
     if command == "BanditDemandResolved" then
         local groupID = tostring(args.groupID or "")
         local ui = Helpers.getCurrentBanditUI(groupID)
-        Helpers.markResolved(groupID)
+        if args.result == "hostile" and args.reopenAllowed == true then
+            BanditClient.PendingGroups[groupID] = nil
+            BanditClient.OpenedGroups[groupID] = nil
+            BanditClient.ResolvedGroups[groupID] = nil
+        else
+            Helpers.markResolved(groupID)
+        end
 
         if not ui then return end
 

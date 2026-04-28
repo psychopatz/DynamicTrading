@@ -141,5 +141,10 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         ownerUsername = npcData.ownerUsername,
         isPlayerFactionTrader = npcData.isPlayerFactionTrader == true,
         abstractResident = npcData.abstractResident == true,
+        tradeCycleMode = npcData.tradeCycleMode,
+        tradeCycleDemandEligible = npcData.tradeCycleDemandEligible == true,
+        tradeCycleAggroRadius = npcData.tradeCycleAggroRadius,
+        tradeCycleTargetPlayerUsername = npcData.tradeCycleTargetPlayerUsername,
+        tradeCycleTargetPlayerOnlineID = npcData.tradeCycleTargetPlayerOnlineID,
     }
 end

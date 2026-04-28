@@ -11,6 +11,70 @@ require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic_TradeScheduler"
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
+local DEFAULT_TRADE_CYCLE_AGGRO_RADIUS = 4.5
+
+local function getFactionData(factionID)
+    if not factionID or not DynamicTrading_Factions or not DynamicTrading_Factions.GetFaction then
+        return nil
+    end
+    return DynamicTrading_Factions.GetFaction(factionID)
+end
+
+function DTNPCManager.SetTradeCycleEncounterMode(npcData, mode)
+    if type(npcData) ~= "table" then
+        return npcData
+    end
+
+    local normalizedMode = tostring(mode or "trade")
+    npcData.tradeCycleMode = normalizedMode
+    npcData.tradeCycleDemandEligible = normalizedMode ~= "trade"
+    npcData.tradeCycleAggroRadius = npcData.tradeCycleDemandEligible == true
+        and (tonumber(npcData.tradeCycleAggroRadius) or DEFAULT_TRADE_CYCLE_AGGRO_RADIUS)
+        or nil
+
+    if npcData.tradeCycleDemandEligible ~= true then
+        npcData.tradeCycleTargetPlayerUsername = nil
+        npcData.tradeCycleTargetPlayerOnlineID = nil
+    end
+
+    return npcData
+end
+
+function DTNPCManager.ClearTradeCycleEncounterState(npcData)
+    if type(npcData) ~= "table" then
+        return npcData
+    end
+
+    npcData.tradeCycleMode = nil
+    npcData.tradeCycleDemandEligible = nil
+    npcData.tradeCycleAggroRadius = nil
+    npcData.tradeCycleTargetPlayerUsername = nil
+    npcData.tradeCycleTargetPlayerOnlineID = nil
+    return npcData
+end
+
+function DTNPCManager.ResolveScheduledTradeCycleMode(npcData, player)
+    if type(npcData) ~= "table" then
+        return "trade"
+    end
+
+    local factionID = tostring(npcData.factionID or "")
+    if factionID == "Bandits" or npcData.isBandit == true or npcData.archetypeID == "Bandit" then
+        return "robbery"
+    end
+
+    if player and DTNPCBandits and DTNPCBandits.Internal and DTNPCBandits.Internal.Faction then
+        local faction = getFactionData(factionID)
+        local factionHelpers = DTNPCBandits.Internal.Faction
+        if faction and factionHelpers.isFactionHostileToPlayer
+            and factionHelpers.isFactionHostileToPlayer(factionID, faction, player) then
+            return "hostile_bribe"
+        end
+    end
+
+    return "trade"
+end
+
 function DTNPCManager.ProcessTradeCycles()
     if not DynamicTrading_Roster then return end
     
@@ -71,7 +135,19 @@ function DTNPCManager.StartTradeMission(uuid, forceImmediate, allowOutOfSchedule
             DynamicTrading.Log("DTLogs", "Gameplay", "Lifecycle", "Trade lifecycle hook skipped - missing factionID for UUID: " .. tostring(uuid) .. " | Trader: " .. traderName)
         end
     end
-    
+
+    DTNPCManager.SetTradeCycleEncounterMode(
+        soul,
+        DTNPCManager.ResolveScheduledTradeCycleMode(soul, nil)
+    )
+    soul.banditDemandStarted = nil
+    soul.banditDemandStartedAt = nil
+    soul.banditDemandResolved = nil
+    soul.banditLeaving = nil
+    soul.tradeCycleTargetPlayerUsername = nil
+    soul.tradeCycleTargetPlayerOnlineID = nil
+    DynamicTrading_Roster.SaveSoul(uuid, soul)
+
     DynamicTrading.Log("DTV2", "NPC", "Logic", "STARTING TRADE MISSION for: " .. (soul.name or uuid) .. " at " .. currentHours)
     DynamicTrading.Log("DTV2", "NPC", "Logic", "| Travel Time: " .. walkHours .. "h. Status: Away. Target: Trading")
 
