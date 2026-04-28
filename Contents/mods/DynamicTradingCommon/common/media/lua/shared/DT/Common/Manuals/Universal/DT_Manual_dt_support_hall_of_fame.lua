@@ -56,6 +56,14 @@
 --               "active": true
 --             },
 --             {
+--               "id": "amikcze",
+--               "name": "Amikcze",
+--               "total_donation": 10.0,
+--               "image_path": "media/ui/Manuals/dt_support_hall_of_fame/image_fb22414ddf.png",
+--               "support_message": "Thank you for the best trading mod on Zomboid! Don't bother with the people who can't read descriptions. Your vision for the mod is amazing, and the real fans appreciate the hard work. Take care of yourself first! Hopefully, we will see your vision come to life!",
+--               "active": true
+--             },
+--             {
 --               "id": "dremons",
 --               "name": "Dremons",
 --               "total_donation": 10.0,
@@ -69,6 +77,14 @@
 --               "total_donation": 10.0,
 --               "image_path": "media/ui/Manuals/dt_support_hall_of_fame/image_46a120b30e.png",
 --               "support_message": "Thanks for the mod, I'm really enjoying the extra depth and purpose it gives to the game. Just started my first run with the colony add-on!",
+--               "active": true
+--             },
+--             {
+--               "id": "supporter_4",
+--               "name": "ДанилоМироненко",
+--               "total_donation": 10.0,
+--               "image_path": "media/ui/Manuals/dt_support_hall_of_fame/image_1b927e850e.png",
+--               "support_message": "I sent a donation and wanted to suggest improving price balance, as some values feel inconsistent.\n\nThanks for your work!",
 --               "active": true
 --             }
 --           ]
@@ -109,7 +125,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 title = "Hall of Fame",
                 keywords = { "support", "donators", "hall of fame", "supporters", "donation" },
                 blocks = {
-                    { type = "supporter_carousel", title = "Hall of Fame Donators", autoplayMs = 4000, currencySymbol = "$", thankYouText = "Thank you to everyone who’s supported the development of this mod. Your donations go directly into tools and resources (like Copilot) that help me build faster and improve things more often. It genuinely makes a difference. \n\nShout out to Summer for covering it up that made the companion system developed faster <3.", supporters = { { id = "summer", name = "Summer", totalDonation = 20.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_e3b0585f79.png", supportMessage = "Love your mod, thank you for sharing your creation with the community, we appreciate you!", active = true }, { id = "dremons", name = "Dremons", totalDonation = 10.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_5e4eff3fde.png", supportMessage = "Greetings from Brazil", active = true }, { id = "psy", name = "Psy", totalDonation = 10.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_46a120b30e.png", supportMessage = "Thanks for the mod, I'm really enjoying the extra depth and purpose it gives to the game. Just started my first run with the colony add-on!", active = true } } },
+                    { type = "supporter_carousel", title = "Hall of Fame Donators", autoplayMs = 4000, currencySymbol = "$", thankYouText = "Thank you to everyone who’s supported the development of this mod. Your donations go directly into tools and resources (like Copilot) that help me build faster and improve things more often. It genuinely makes a difference. \n\nShout out to Summer for covering it up that made the companion system developed faster <3.", supporters = { { id = "summer", name = "Summer", totalDonation = 20.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_e3b0585f79.png", supportMessage = "Love your mod, thank you for sharing your creation with the community, we appreciate you!", active = true }, { id = "amikcze", name = "Amikcze", totalDonation = 10.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_21f12ca290.png", supportMessage = "Thank you for the best trading mod on Zomboid! Don't bother with the people who can't read descriptions. Your vision for the mod is amazing, and the real fans appreciate the hard work. Take care of yourself first! Hopefully, we will see your vision come to life!", active = true }, { id = "dremons", name = "Dremons", totalDonation = 10.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_5e4eff3fde.png", supportMessage = "Greetings from Brazil", active = true }, { id = "psy", name = "Psy", totalDonation = 10.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_46a120b30e.png", supportMessage = "Thanks for the mod, I'm really enjoying the extra depth and purpose it gives to the game. Just started my first run with the colony add-on!", active = true }, { id = "supporter_4", name = "ДанилоМироненко", totalDonation = 10.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_1b927e850e.png", supportMessage = "I sent a donation and wanted to suggest improving price balance, as some values feel inconsistent.\n\nThanks for your work!", active = true }, { id = "amikcze", name = "Amikcze", totalDonation = 0.0, imagePath = "media/ui/Manuals/dt_support_hall_of_fame/image_fb22414ddf.png", supportMessage = "Thank you for the best trading mod on Zomboid! Don't bother with the people who can't read descriptions. Your vision for the mod is amazing, and the real fans appreciate the hard work. Take care of yourself first! Hopefully, we will see your vision come to life!", active = true } } },
                 },
             },
         },
