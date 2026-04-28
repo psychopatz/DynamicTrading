@@ -5,7 +5,7 @@ DT_Reputation.Internal = DT_Reputation.Internal or {}
 
 local Internal = DT_Reputation.Internal
 
-function DT_Reputation.AddTradeValue(traderUUID, factionID, amount, isBuy)
+function DT_Reputation.AddTradeValue(traderUUID, factionID, amount, isBuy, transactionKind)
     if not traderUUID then return 0 end
     if not DT_Reputation.EnsureLoaded() then return 0 end
 
@@ -20,7 +20,11 @@ function DT_Reputation.AddTradeValue(traderUUID, factionID, amount, isBuy)
         oldEffectiveRep = state.personalRep[traderUUID] or 0
     end
 
-    if isBuy == true then
+    local kind = tostring(transactionKind or "")
+
+    if kind == "gift" then
+        state.totalGifted[traderUUID] = (state.totalGifted[traderUUID] or 0) + tradeValue
+    elseif isBuy == true then
         state.totalBought[traderUUID] = (state.totalBought[traderUUID] or 0) + tradeValue
     elseif isBuy == false then
         state.totalSold[traderUUID] = (state.totalSold[traderUUID] or 0) + tradeValue
@@ -81,14 +85,17 @@ function DT_Reputation.ApplyTradeResult(args, trader, isBuy)
     if not traderID then return end
 
     local factionID = (args and args.factionID) or (trader and trader.factionID) or nil
-    local price = (args and args.price) or 0
+    local transactionKind = args and tostring(args.transactionKind or "") or ""
+    local tradeValue = (args and (args.repValue or args.price)) or 0
+    local effectiveIsBuy = (transactionKind == "gift") and false or (isBuy == true)
 
-    DT_Reputation.AddTradeValue(traderID, factionID, price, isBuy == true)
+    DT_Reputation.AddTradeValue(traderID, factionID, tradeValue, effectiveIsBuy, transactionKind)
 
     if trader then
         trader.personalRep = DT_Reputation.GetPersonalRep(traderID)
         trader.factionRep = DT_Reputation.GetFactionRep(factionID)
         trader.reputation = DT_Reputation.GetEffectiveRep(traderID, factionID)
         trader.reputationStage = DT_Reputation.GetStageData(trader.reputation).label
+        trader.totalGifted = DT_Reputation.GetTotalGifted(traderID)
     end
 end

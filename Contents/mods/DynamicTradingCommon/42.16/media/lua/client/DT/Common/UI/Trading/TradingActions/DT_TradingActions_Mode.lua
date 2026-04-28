@@ -27,6 +27,10 @@ function DT_TradingWindow:setTradingMode(isBuying)
         end
     end
 
+    if self.refreshTradeLabels then
+        self:refreshTradeLabels()
+    end
+
     if self.btnAsk then
         local config = self.dataProvider:getAskButtonConfig(self.isBuying)
         if config then
@@ -47,4 +51,5 @@ function DT_TradingWindow:setTradingMode(isBuying)
     end
     self:populateList()
     self.btnAction:setEnable(false)
+    self.btnAction:setTitle(self:getDefaultActionTitle())
 end

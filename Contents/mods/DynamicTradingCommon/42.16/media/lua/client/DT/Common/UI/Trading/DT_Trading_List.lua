@@ -217,8 +217,7 @@ function DT_TradingWindow:populateList()
     -- Final Visual State update
     if foundValidSelection then
         local sel = self.listbox.items[self.listbox.selected].item
-        local actionStr = self.isBuying and "BUY" or "SELL"
-        self.btnAction:setTitle(actionStr .. " ($" .. sel.price .. ")")
+        self.btnAction:setTitle(self:getActionButtonTitle(sel))
         
         if self.isBuying then
             self.btnAction:setEnable(sel.qty > 0)
@@ -227,7 +226,7 @@ function DT_TradingWindow:populateList()
             local sellQty = tonumber(sel.qty) or 1
 
             if sellQty > 1 then
-                self.btnAction:setTitle("SELL x" .. sellQty .. " ($" .. sel.price .. " EA)")
+                self.btnAction:setTitle(self:getActionButtonTitle(sel))
                 self.btnAction:setEnable(true)
                 self.btnLock:setTitle("LOCK ITEM")
                 self.btnLock:setEnable(false)
@@ -249,7 +248,7 @@ function DT_TradingWindow:populateList()
         self.selectedKey = nil
         self.selectedItemID = -1
         self.btnAction:setEnable(false)
-        self.btnAction:setTitle("SELECT AN ITEM")
+        self.btnAction:setTitle(self:getDefaultActionTitle())
         if self.btnLock then self.btnLock:setTitle("LOCK ITEM") end
     end
 

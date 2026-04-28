@@ -7,7 +7,7 @@
 -- Ensure DTM global exists
 DTM = DTM or {}
 
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig"
+require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem"
 
 -- =============================================================================
 -- SERVER STARTUP HANDLER

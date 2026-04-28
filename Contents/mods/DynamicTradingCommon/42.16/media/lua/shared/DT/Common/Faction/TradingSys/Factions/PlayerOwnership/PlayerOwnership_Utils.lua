@@ -1,6 +1,6 @@
 local PlayerOwnership_Utils = {}
 
-require "DT/Common/BuildingScannerConfig/DT_BuildingScannerConfig"
+require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem"
 
 PlayerOwnership_Utils.MOD_DATA_KEY = "DynamicTrading_Factions"
 

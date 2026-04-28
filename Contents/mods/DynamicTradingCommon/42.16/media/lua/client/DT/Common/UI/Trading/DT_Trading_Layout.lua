@@ -95,7 +95,7 @@ function DT_TradingWindow:createChildren()
     self.btnLock:setVisible(false)
     self:addChild(self.btnLock)
 
-    self.btnAction = ISButton:new(20, 0, leftColW - 20, 30, "BUY ITEM", self, self.onAction)
+    self.btnAction = ISButton:new(20, 0, leftColW - 20, 30, self:getDefaultActionTitle(), self, self.onAction)
     self.btnAction:initialise()
     self.btnAction.backgroundColor = { r = 0.2, g = 0.5, b = 0.2, a = 1.0 }
     self.btnAction:setEnable(false)
@@ -113,13 +113,13 @@ function DT_TradingWindow:createChildren()
     self:addChild(self.chatList)
 
     local tabW = rightW / 2
-    self.btnTabBuy = ISButton:new(rightX, th + PADDING, tabW, 25, "BUY FROM TRADER", self, function(window) window:setTradingMode(true) end)
+    self.btnTabBuy = ISButton:new(rightX, th + PADDING, tabW, 25, self:getModeTabTitle(true), self, function(window) window:setTradingMode(true) end)
     self.btnTabBuy:initialise()
     self.btnTabBuy.backgroundColor = { r = 0.2, g = 0.5, b = 0.2, a = 1.0 }
     self.btnTabBuy:setAnchorRight(true)
     self:addChild(self.btnTabBuy)
 
-    self.btnTabSell = ISButton:new(rightX + tabW, th + PADDING, tabW, 25, "SELL TO TRADER", self, function(window) window:setTradingMode(false) end)
+    self.btnTabSell = ISButton:new(rightX + tabW, th + PADDING, tabW, 25, self:getModeTabTitle(false), self, function(window) window:setTradingMode(false) end)
     self.btnTabSell:initialise()
     self.btnTabSell.backgroundColor = { r = 0.2, g = 0.2, b = 0.2, a = 1.0 }
     self.btnTabSell:setAnchorRight(true)
@@ -163,18 +163,13 @@ function DT_TradingWindow:createChildren()
         ui.selectedItemID = item.item.isGrouped and -1 or (item.item.itemID or -1)
         ui.lastSelectedIndex = row
         ui.btnAction:setEnable(true)
+        ui.btnAction:setTitle(ui:getActionButtonTitle(item.item))
 
         if ui.isBuying then
-            ui.btnAction:setTitle("BUY ($" .. item.item.price .. ")")
             ui.btnLock:setVisible(false)
             ui.btnAction:setEnable(item.item.qty > 0)
         else
             local sellQty = tonumber(item.item.qty) or 1
-            if sellQty > 1 then
-                ui.btnAction:setTitle("SELL x" .. sellQty .. " ($" .. item.item.price .. " EA)")
-            else
-                ui.btnAction:setTitle("SELL ($" .. item.item.price .. ")")
-            end
             if ui.btnAsk then
                 ui.btnAsk:setVisible(true)
             end

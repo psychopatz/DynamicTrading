@@ -46,6 +46,10 @@ function DT_TradingWindow:getMaxSellQuantity(data, trader)
         return 0
     end
 
+    if self:isGiftMode() then
+        return availableQty
+    end
+
     local unitPrice = tonumber(data and data.price) or 0
     if unitPrice <= 0 or not trader or not trader.budget then
         return availableQty
@@ -84,7 +88,7 @@ function DT_TradingWindow:sendSellTransaction(data, qty, itemNameOverride)
     end
 
     local args = {
-        type = "sell",
+        type = self:isGiftMode() and "gift" or "sell",
         traderID = self.traderID,
         key = data.key,
         category = data.effectiveCategory or (data.data and data.data.tags[1]) or "Misc",
@@ -98,7 +102,9 @@ function DT_TradingWindow:sendSellTransaction(data, qty, itemNameOverride)
     local effectiveBasePrice = self.dataProvider and self.dataProvider.getEffectiveBasePrice
         and self.dataProvider:getEffectiveBasePrice(data.key, data.data)
         or (data.data and data.data.basePrice or args.price or 0)
-    local pMsg = self.dataProvider:getPlayerMessage("Sell", {
+    local messageAction = self:isGiftMode() and "Gift" or "Sell"
+    local pMsg = self.dataProvider:getPlayerMessage(messageAction, {
+        transactionKind = self:getTransactionKind(),
         itemName = itemNameOverride or self:getSellDisplayName(data, amount),
         price = totalPrice,
         basePrice = effectiveBasePrice * amount
@@ -162,6 +168,7 @@ function DT_TradingWindow:onAction()
     local diagArgs = {
         itemName = d.displayName or d.name,
         price = d.price,
+        transactionKind = self:getTransactionKind(),
         basePrice = self.dataProvider and self.dataProvider.getEffectiveBasePrice
             and self.dataProvider:getEffectiveBasePrice(d.key, d.data)
             or (d.data and d.data.basePrice or d.price)
@@ -229,7 +236,7 @@ function DT_TradingWindow:onAction()
                 diagArgs.success = false
                 diagArgs.failReason = "NoCash"
 
-                local playerMsg = self.dataProvider:getPlayerMessage("Sell", diagArgs)
+                local playerMsg = self.dataProvider:getPlayerMessage(self:isGiftMode() and "Gift" or "Sell", diagArgs)
                 self:queueMessage(playerMsg, false, true, 0, nil, "transaction")
 
                 local failMsg = self.dataProvider:getTransactionMessage(trader, false, diagArgs)
@@ -239,7 +246,9 @@ function DT_TradingWindow:onAction()
 
             if DT_Trading_QuantityModal then
                 DT_Trading_QuantityModal.Show({
-                    title = "Sell Multiple",
+                    title = self:isGiftMode() and "Gift Multiple" or "Sell Multiple",
+                    promptText = self:isGiftMode() and "Choose how many items to offer as a gift." or nil,
+                    actionLabel = self:isGiftMode() and "GIFT" or "SELL",
                     itemName = d.displayName or d.name,
                     unitPrice = d.price,
                     availableQty = groupedQty,
@@ -291,7 +300,7 @@ function DT_TradingWindow:onAction()
             end
         end
 
-        if trader and trader.budget and trader.budget < d.price then
+        if (not self:isGiftMode()) and trader and trader.budget and trader.budget < d.price then
             diagArgs.success = false
             diagArgs.failReason = "NoCash"
 
@@ -314,7 +323,7 @@ function DT_TradingWindow:onAction()
         itemID = d.itemID or -1
     }
 
-    local pAction = self.isBuying and "Buy" or "Sell"
+    local pAction = self.isBuying and "Buy" or (self:isGiftMode() and "Gift" or "Sell")
     local pMsg = self.dataProvider:getPlayerMessage(pAction, diagArgs)
     if self.isBuying then
         self:queueMessage(pMsg, false, true, 0, nil, "transaction")

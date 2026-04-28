@@ -127,6 +127,41 @@ end
 function DynamicTrading.Dialogue.Trader.GenerateTransactionMessage(trader, isBuy, args)
     if not trader then return "..." end
     local safeArgs = args or {}
+
+    if tostring(safeArgs.transactionKind or "") == "gift" then
+        if not safeArgs.success then
+            local failLines = {
+                "Keep it. I don't want a cursed gift.",
+                "Not now. Take it back.",
+                "I said no. Keep your item.",
+            }
+            return Core.FormatMessage(failLines[ZombRand(#failLines) + 1], safeArgs)
+        end
+
+        local price = tonumber(safeArgs.price) or 0
+        local giftLines = nil
+        if price >= 200 then
+            giftLines = {
+                "That's generous. I won't forget it.",
+                "A gift like that travels farther than words.",
+                "You just bought a lot of goodwill without buying anything at all.",
+            }
+        elseif price < 10 then
+            giftLines = {
+                "A small gesture still counts.",
+                "Not much, but I get the meaning.",
+                "I've seen worse peace offerings.",
+            }
+        else
+            giftLines = {
+                "I'll take it. Appreciated.",
+                "That's thoughtful. Thank you.",
+                "A gift like that smooths things over.",
+            }
+        end
+
+        return Core.FormatMessage(giftLines[ZombRand(#giftLines) + 1], safeArgs)
+    end
     
     local category = isBuy and "Buying" or "Selling"
     local subContext = "Generic"

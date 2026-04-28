@@ -65,6 +65,7 @@ function V2_DataProvider:getTrader(traderID, archetype)
         trader.tradeProgress = DT_Reputation.GetTradeProgress(traderID)
         trader.totalBought = DT_Reputation.GetTotalBought(traderID)
         trader.totalSold = DT_Reputation.GetTotalSold(traderID)
+        trader.totalGifted = DT_Reputation.GetTotalGifted(traderID)
     end
 
     return trader

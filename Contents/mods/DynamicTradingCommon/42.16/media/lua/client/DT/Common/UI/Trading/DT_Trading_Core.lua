@@ -10,6 +10,8 @@ function DT_TradingWindow:initialise()
     self.minimumWidth = 600
     self.minimumHeight = 650
     self.isBuying = true
+    self.transactionKind = "buy"
+    self.sessionContext = nil
     self.selectedKey = nil
     self.radioObj = nil
     self.collapsed = {}
@@ -34,6 +36,94 @@ function DT_TradingWindow:initialise()
     -- Structure: { text="", isError=false, isPlayer=false, delay=0, sound=nil }
     self.msgQueue = {}
     self.typingTick = 0
+end
+
+function DT_TradingWindow:getTradeSessionContext()
+    if self.sessionContext ~= nil then
+        return self.sessionContext
+    end
+
+    if self.dataProvider and self.dataProvider.getTradeSessionContext then
+        self.sessionContext = self.dataProvider:getTradeSessionContext(self.traderID, self.archetype)
+    end
+
+    return self.sessionContext
+end
+
+function DT_TradingWindow:getTransactionKind()
+    local sessionContext = self:getTradeSessionContext()
+    local transactionKind = sessionContext and sessionContext.transactionKind or nil
+    if transactionKind == "gift" then
+        return "gift"
+    end
+
+    return self.isBuying and "buy" or "sell"
+end
+
+function DT_TradingWindow:isGiftMode()
+    return self:getTransactionKind() == "gift"
+end
+
+function DT_TradingWindow:getDefaultActionTitle()
+    if self.isBuying then
+        return "BUY ITEM"
+    end
+
+    if self:isGiftMode() then
+        return "GIFT ITEM"
+    end
+
+    return "SELL ITEM"
+end
+
+function DT_TradingWindow:getModeTabTitle(isBuying)
+    if isBuying then
+        return "BUY FROM TRADER"
+    end
+
+    if self:isGiftMode() then
+        return "GIFT TO NPC"
+    end
+
+    return "SELL TO TRADER"
+end
+
+function DT_TradingWindow:getActionButtonTitle(data)
+    if not data then
+        return self:getDefaultActionTitle()
+    end
+
+    local price = tonumber(data.price) or 0
+    if self.isBuying then
+        return "BUY ($" .. tostring(price) .. ")"
+    end
+
+    local qty = tonumber(data.qty) or 1
+    if self:isGiftMode() then
+        if qty > 1 then
+            return "GIFT x" .. tostring(qty) .. " (Value $" .. tostring(price) .. " EA)"
+        end
+        return "GIFT (Value $" .. tostring(price) .. ")"
+    end
+
+    if qty > 1 then
+        return "SELL x" .. tostring(qty) .. " ($" .. tostring(price) .. " EA)"
+    end
+    return "SELL ($" .. tostring(price) .. ")"
+end
+
+function DT_TradingWindow:refreshTradeLabels()
+    if self.btnTabBuy then
+        self.btnTabBuy:setTitle(self:getModeTabTitle(true))
+    end
+
+    if self.btnTabSell then
+        self.btnTabSell:setTitle(self:getModeTabTitle(false))
+    end
+
+    if self.btnAction and (not self.listbox or self.listbox.selected == -1) then
+        self.btnAction:setTitle(self:getDefaultActionTitle())
+    end
 end
 
 function DT_TradingWindow:resetIdleTimer()
@@ -90,6 +180,8 @@ function DT_TradingWindow:syncTradeModeVisibility(trader)
     if self.btnTabSell then
         self.btnTabSell:setVisible(config.canSell)
     end
+
+    self:refreshTradeLabels()
 
     return config
 end

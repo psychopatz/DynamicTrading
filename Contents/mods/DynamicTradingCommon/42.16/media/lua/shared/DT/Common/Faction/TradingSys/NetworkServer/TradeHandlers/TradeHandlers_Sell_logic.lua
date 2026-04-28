@@ -9,6 +9,7 @@ return function(context)
     local DataHandlers = context.DataHandlers
 
     function Helpers.HandleSellTransaction(player, args, tx)
+        local isGift = tx.txType == "gift"
         local sellItems, unitPrice, baseUnitPrice = Helpers.ResolveSellItems(tx.inv, args, tx.traderID, tx.key, tx.clientQty)
         if not sellItems or #sellItems ~= tx.clientQty then
             Helpers.SendTransactionResult(player, { success = false, msg = unitPrice or "Item missing!" })
@@ -17,14 +18,22 @@ return function(context)
 
         local totalGain = unitPrice * tx.clientQty
         local totalBaseGain = baseUnitPrice * tx.clientQty
+        local repValue = isGift and (totalGain * 2) or totalGain
 
-        DynamicTrading.Log("DTCommons", "Trade", "Logic", "Sell: " .. tx.key .. " @ $" .. totalGain .. " (Base: $" .. totalBaseGain .. ")")
+        DynamicTrading.Log(
+            "DTCommons",
+            "Trade",
+            "Logic",
+            (isGift and "Gift" or "Sell") .. ": " .. tx.key .. " @ $" .. totalGain .. " (Base: $" .. totalBaseGain .. ")"
+        )
 
-        local session = DT_TraderSession.GetSession(tx.traderID)
-        local traderBudget = session and session.budget or 999999
-        if traderBudget < totalGain then
-            Helpers.SendTransactionResult(player, { success = false, msg = "Trader cannot afford this!" })
-            return
+        if not isGift then
+            local session = DT_TraderSession.GetSession(tx.traderID)
+            local traderBudget = session and session.budget or 999999
+            if traderBudget < totalGain then
+                Helpers.SendTransactionResult(player, { success = false, msg = "Trader cannot afford this!" })
+                return
+            end
         end
 
         for _, itemObj in ipairs(sellItems) do
@@ -40,22 +49,24 @@ return function(context)
             DynamicTrading.ServerHelpers.RemoveItem(itemObj)
         end
 
-        local bundles = math.floor(totalGain / 100)
-        local loose = totalGain % 100
-        if bundles > 0 then
-            DynamicTrading.ServerHelpers.AddItem(tx.inv, "Base.MoneyBundle", bundles)
-        end
-        if loose > 0 then
-            DynamicTrading.ServerHelpers.AddItem(tx.inv, "Base.Money", loose)
+        if not isGift then
+            local bundles = math.floor(totalGain / 100)
+            local loose = totalGain % 100
+            if bundles > 0 then
+                DynamicTrading.ServerHelpers.AddItem(tx.inv, "Base.MoneyBundle", bundles)
+            end
+            if loose > 0 then
+                DynamicTrading.ServerHelpers.AddItem(tx.inv, "Base.Money", loose)
+            end
         end
 
-        if tx.factionData then
+        if tx.factionData and not isGift then
             DT_TraderSession.OnSell(tx.traderID, totalGain)
         end
 
         tx.stockData.playerInteracted = true
         tx.stockData.tradeInteracted = true
-        tx.stockData.lastTradeKind = "sell"
+        tx.stockData.lastTradeKind = isGift and "gift" or "sell"
         tx.stockData.lastTradeBy = player and player.getUsername and player:getUsername() or nil
         tx.stockData.lastTradeAt = getTimeInMillis and getTimeInMillis() or nil
         tx.stockData.totalTradeVolume = (tonumber(tx.stockData.totalTradeVolume) or 0) + totalGain
@@ -103,7 +114,7 @@ return function(context)
             soldItemName = soldItemName .. " x" .. tostring(tx.clientQty)
         end
 
-        DynamicTrading.Log("DTCommons", "Trade", "Logic", "SUCCESS: Sold " .. soldItemName)
+        DynamicTrading.Log("DTCommons", "Trade", "Logic", "SUCCESS: " .. (isGift and "Gifted " or "Sold ") .. soldItemName)
 
         DataHandlers.SendSyncStockToPlayer(player, tx.traderID)
         Helpers.SendTransactionResult(player, {
@@ -111,12 +122,14 @@ return function(context)
             itemName = soldItemName,
             price = totalGain,
             basePrice = totalBaseGain,
+            repValue = repValue,
             isBuy = false,
+            transactionKind = isGift and "gift" or "sell",
             qty = tx.clientQty
         })
 
         local factionID = tx.factionData and tx.factionData.id or nil
-        if factionID and DynamicTrading_Factions and DynamicTrading_Factions.ModifyReputation then
+        if (not isGift) and factionID and DynamicTrading_Factions and DynamicTrading_Factions.ModifyReputation then
             local repGain = math.floor(totalGain / 500)
             if repGain >= 1 then
                 DynamicTrading_Factions.ModifyReputation(factionID, player:getUsername(), repGain)

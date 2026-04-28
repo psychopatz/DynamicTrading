@@ -11,6 +11,17 @@ local Core = DynamicTrading.Dialogue.Core
 -- =============================================================================
 function DynamicTrading.Dialogue.Player.GeneratePlayerMessage(action, args)
     if not action then action = "Buy" end
+
+    if action == "Gift" or (action == "Sell" and args and args.transactionKind == "gift") then
+        local giftLines = {
+            "This is for you.",
+            "Take this as a gift.",
+            "You earned a little goodwill.",
+            "No charge. I wanted you to have it.",
+        }
+        local index = ZombRand(#giftLines) + 1
+        return Core.FormatMessage(giftLines[index], args or {})
+    end
     
     if DynamicTrading.Debug then DynamicTrading.Log("DTCommons", "Dialogue", "Player", "GeneratePlayerMessage called for: " .. tostring(action)) end
     -- LOGIC: Check failure reasons FIRST to override success logic

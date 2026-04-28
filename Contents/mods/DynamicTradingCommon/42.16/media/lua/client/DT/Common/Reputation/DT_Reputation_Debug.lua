@@ -51,6 +51,7 @@ function DT_Reputation.GetDebugSnapshot(traderUUID, factionID)
         tradeProgress = traderUUID and DT_Reputation.GetTradeProgress(traderUUID) or 0,
         totalBought = traderUUID and DT_Reputation.GetTotalBought(traderUUID) or 0,
         totalSold = traderUUID and DT_Reputation.GetTotalSold(traderUUID) or 0,
+        totalGifted = traderUUID and DT_Reputation.GetTotalGifted(traderUUID) or 0,
     }
 end
 
@@ -70,7 +71,8 @@ function DT_Reputation.DebugDump(traderUUID, factionID, reason)
             " factionRep=" .. tostring(snapshot.factionRep) ..
             " progress=" .. tostring(snapshot.tradeProgress) .. "/" .. tostring(DT_Reputation.TRADE_THRESHOLD) ..
             " bought=" .. tostring(snapshot.totalBought) ..
-            " sold=" .. tostring(snapshot.totalSold)
+                " sold=" .. tostring(snapshot.totalSold) ..
+                " gifted=" .. tostring(snapshot.totalGifted)
     )
 
     return snapshot

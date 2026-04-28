@@ -8,6 +8,10 @@ if isServer() and not isClient() then
 end
 
 pcall(require, "DT/Common/FlavorText/DT_FlavorText_WaveHi")
+pcall(require, "DT/Common/FlavorText/DT_FlavorText_ThankYou")
+pcall(require, "DT/Common/FlavorText/DT_FlavorText_ThumbsUp")
+pcall(require, "DT/Common/FlavorText/DT_FlavorText_Insult")
+pcall(require, "DT/Common/FlavorText/DT_FlavorText_ThumbsDown")
 pcall(require, "DT/Common/Reputation/DT_Reputation")
 pcall(require, "DT/V2/NPC/Dialogue/Ambient/DT_Dialogue_Ambient_Config")
 pcall(require, "DT/V2/NPC/Jobs/DTNPC_JobUI")
@@ -15,6 +19,78 @@ pcall(require, "DT/V2/NPC/Jobs/DTNPC_JobUI")
 DTNPC_WaveHiInteraction = DTNPC_WaveHiInteraction or {}
 
 local WaveHi = DTNPC_WaveHiInteraction
+
+WaveHi.POST_ACTION_NONE = "none"
+WaveHi.POST_ACTION_OPEN_HUB = "openHub"
+WaveHi.POST_ACTION_OPEN_GIFT_TRADE = "openGiftTrade"
+WaveHi.POST_ACTION_APPLY_REP_DELTA = "applyRepDelta"
+
+WaveHi.EMOTE_DEFINITIONS = {
+    wavehi = {
+        flavorFamilies = { "WaveHi" },
+        postAction = WaveHi.POST_ACTION_OPEN_HUB,
+        playerSentiment = "auto",
+        npcSentiment = "auto",
+        defaultPlayerLine = function(npcName)
+            return "Hey, " .. tostring(npcName or "there") .. "."
+        end,
+        defaultNPCLine = function()
+            return "Yeah?"
+        end,
+    },
+    thankyou = {
+        flavorFamilies = { "ThankYou", "WaveHi" },
+        postAction = WaveHi.POST_ACTION_OPEN_GIFT_TRADE,
+        playerSentiment = "friendly",
+        npcSentiment = "friendly",
+        defaultPlayerLine = function(npcName)
+            return "Thanks, " .. tostring(npcName or "there") .. "."
+        end,
+        defaultNPCLine = function()
+            return "I appreciate that."
+        end,
+    },
+    thumbsup = {
+        flavorFamilies = { "ThumbsUp", "ThankYou", "WaveHi" },
+        postAction = WaveHi.POST_ACTION_OPEN_GIFT_TRADE,
+        playerSentiment = "friendly",
+        npcSentiment = "friendly",
+        defaultPlayerLine = function(npcName)
+            return "You have my thanks, " .. tostring(npcName or "there") .. "."
+        end,
+        defaultNPCLine = function()
+            return "Good to hear."
+        end,
+    },
+    insult = {
+        flavorFamilies = { "Insult", "WaveHi" },
+        postAction = WaveHi.POST_ACTION_APPLY_REP_DELTA,
+        repDelta = -3,
+        repReason = "emote_insult",
+        playerSentiment = "angry",
+        npcSentiment = "angry",
+        defaultPlayerLine = function(npcName)
+            return "I've heard enough from you, " .. tostring(npcName or "you") .. "."
+        end,
+        defaultNPCLine = function()
+            return "Watch your mouth."
+        end,
+    },
+    thumbsdown = {
+        flavorFamilies = { "ThumbsDown", "Insult", "WaveHi" },
+        postAction = WaveHi.POST_ACTION_APPLY_REP_DELTA,
+        repDelta = -1,
+        repReason = "emote_thumbsdown",
+        playerSentiment = "warning",
+        npcSentiment = "warning",
+        defaultPlayerLine = function(npcName)
+            return "Not impressed, " .. tostring(npcName or "friend") .. "."
+        end,
+        defaultNPCLine = function()
+            return "Then move along."
+        end,
+    },
+}
 
 local function clamp01(value, fallback)
     local numeric = tonumber(value)
@@ -127,6 +203,19 @@ local function getNPCKey(npc, npcData)
 
     local id = npc and npc:getID() or nil
     return id and tostring(id) or nil
+end
+
+local function getNPCFactionID(npcData)
+    local factionID = npcData and npcData.factionID or nil
+    if factionID == nil or factionID == "" then
+        return nil
+    end
+    return tostring(factionID)
+end
+
+local function getEmoteDefinition(emoteID)
+    local normalized = lower(emoteID)
+    return WaveHi.EMOTE_DEFINITIONS[normalized] or WaveHi.EMOTE_DEFINITIONS.wavehi
 end
 
 local function getHandler(npc, player, npcData)
@@ -355,49 +444,84 @@ local function buildFlavorKeys(kind, category, sentiment, reputationStage)
     return keys
 end
 
-local function getFlavorLine(kind, category, sentiment, reputationStage, ...)
-    local line = ""
+local function getFlavorLine(families, kind, category, sentiment, reputationStage, ...)
     local keys = buildFlavorKeys(kind, category, sentiment, reputationStage)
+    local familyList = type(families) == "table" and families or { tostring(families or "WaveHi") }
 
-    for i = 1, #keys do
-        local key = keys[i]
-        line = DynamicTrading
-            and DynamicTrading.FlavorText
-            and DynamicTrading.FlavorText.GetRandom
-            and DynamicTrading.FlavorText.GetRandom("WaveHi", key)
-            or ""
+    for familyIndex = 1, #familyList do
+        local family = tostring(familyList[familyIndex] or "")
+        if family ~= "" then
+            for i = 1, #keys do
+                local key = keys[i]
+                local line = DynamicTrading
+                    and DynamicTrading.FlavorText
+                    and DynamicTrading.FlavorText.GetRandom
+                    and DynamicTrading.FlavorText.GetRandom(family, key)
+                    or ""
 
-        if line ~= "" then
-            break
+                if line ~= "" then
+                    return formatPlaceholders(line, ...)
+                end
+            end
         end
     end
 
-    return formatPlaceholders(line, ...)
+    return ""
 end
 
-function WaveHi.BuildPlan(player, npc, npcData)
+local function resolvePlanSentiment(definitionValue, fallbackValue)
+    if definitionValue == nil or definitionValue == "auto" then
+        return fallbackValue
+    end
+    return tostring(definitionValue)
+end
+
+local function resolveDefaultLine(definition, fieldName, primaryName, secondaryName, fallbackText)
+    local factory = definition and definition[fieldName] or nil
+    if type(factory) == "function" then
+        local text = factory(primaryName, secondaryName)
+        if text and text ~= "" then
+            return tostring(text)
+        end
+    elseif type(factory) == "string" and factory ~= "" then
+        return factory
+    end
+
+    return fallbackText
+end
+
+function WaveHi.BuildPlanForEmote(emoteID, player, npc, npcData)
     local handler = getHandler(npc, player, npcData)
     local category = WaveHi.ResolveCategory(player, npc, npcData, handler)
     local reputation = WaveHi.ResolveReputation(npc, npcData)
     local npcName = getNPCName(npc, npcData)
     local playerName = getPlayerName(player)
-    local npcSentiment = WaveHi.ResolveSentiment(category, reputation)
-    local playerSentiment = WaveHi.ResolvePlayerSentiment(category, reputation)
+    local definition = getEmoteDefinition(emoteID)
+    local npcSentiment = resolvePlanSentiment(definition.npcSentiment, WaveHi.ResolveSentiment(category, reputation))
+    local playerSentiment = resolvePlanSentiment(definition.playerSentiment, WaveHi.ResolvePlayerSentiment(category, reputation))
     local reputationStage = WaveHi.ResolveReputationStage(reputation)
-    local playerLine = getFlavorLine("Player", category, playerSentiment, reputationStage, npcName, playerName)
-    local npcLine = getFlavorLine("NPC", category, npcSentiment, reputationStage, playerName, npcName)
+    local families = definition.flavorFamilies or { "WaveHi" }
+    local playerLine = getFlavorLine(families, "Player", category, playerSentiment, reputationStage, npcName, playerName)
+    local npcLine = getFlavorLine(families, "NPC", category, npcSentiment, reputationStage, playerName, npcName)
 
     if playerLine == "" then
-        playerLine = "Hey, " .. npcName .. "."
+        playerLine = resolveDefaultLine(definition, "defaultPlayerLine", npcName, playerName, "Hey, " .. npcName .. ".")
     end
     if npcLine == "" then
-        npcLine = "Yeah?"
+        npcLine = resolveDefaultLine(definition, "defaultNPCLine", playerName, npcName, "Yeah?")
     end
 
     return {
+        emoteID = lower(emoteID),
         category = category,
         reputation = reputation,
         handlerID = handler and handler.id or nil,
+        flavorFamilies = families,
+        postAction = definition.postAction or WaveHi.POST_ACTION_OPEN_HUB,
+        repDelta = tonumber(definition.repDelta or 0) or 0,
+        repReason = tostring(definition.repReason or "emote_interaction"),
+        repTargetID = getNPCKey(npc, npcData),
+        factionID = getNPCFactionID(npcData),
         playerLine = playerLine,
         playerSentiment = playerSentiment,
         playerMessage = {
@@ -414,4 +538,8 @@ function WaveHi.BuildPlan(player, npc, npcData)
             style = WaveHi.ResolveBubbleStyle(npcSentiment, reputation, false),
         },
     }
+end
+
+function WaveHi.BuildPlan(player, npc, npcData)
+    return WaveHi.BuildPlanForEmote("wavehi", player, npc, npcData)
 end

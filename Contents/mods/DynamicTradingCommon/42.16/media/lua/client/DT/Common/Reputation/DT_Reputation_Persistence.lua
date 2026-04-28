@@ -29,6 +29,7 @@ function DT_Reputation.Save()
         tradeProgress = Internal.CloneTable(state.tradeProgress),
         totalBought = Internal.CloneTable(state.totalBought),
         totalSold = Internal.CloneTable(state.totalSold),
+        totalGifted = Internal.CloneTable(state.totalGifted),
     }
 
     if isClient() and player.transmitModData then
@@ -72,6 +73,9 @@ function DT_Reputation.LoadForCharacter(characterKey)
     end
     for key, value in pairs(entry.totalSold or {}) do
         DT_Reputation.state.totalSold[key] = restoreAccumulatedValue(value)
+    end
+    for key, value in pairs(entry.totalGifted or {}) do
+        DT_Reputation.state.totalGifted[key] = restoreAccumulatedValue(value)
     end
 
     DT_Reputation.state.dirty = false

@@ -25,7 +25,7 @@ return function(context)
                 or DynamicTrading.IsArchetypeBuyTabEnabled(archetypeID)
         end
 
-        if txType == "sell" then
+        if txType == "sell" or txType == "gift" then
             return not DynamicTrading.IsArchetypeSellTabEnabled
                 or DynamicTrading.IsArchetypeSellTabEnabled(archetypeID)
         end
@@ -34,7 +34,7 @@ return function(context)
     end
 
     function Helpers.GetTradeModeDisabledMessage(txType)
-        if txType == "sell" then
+        if txType == "sell" or txType == "gift" then
             return "This trader is not buying items."
         end
 

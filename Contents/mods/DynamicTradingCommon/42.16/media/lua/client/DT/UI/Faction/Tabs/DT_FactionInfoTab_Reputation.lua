@@ -107,9 +107,9 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
         " <RGB:0.8,0.8,0.8> Overall faction standing: " ..
         " <RGB:" .. tostring(stageData.color.r) .. "," .. tostring(stageData.color.g) .. "," .. tostring(stageData.color.b) .. "> " ..
         tostring(factionRep) .. " (" .. stageData.label .. ") <LINE> " ..
-        " <RGB:0.6,0.6,0.6> Combined buy + sell volume grants +" .. tostring(DT_Reputation.TRADE_REP_GAIN) ..
+        " <RGB:0.6,0.6,0.6> Combined buy + sell + gift volume grants +" .. tostring(DT_Reputation.TRADE_REP_GAIN) ..
         " personal reputation every $" ..
-        tostring(DT_Reputation.TRADE_THRESHOLD) .. ". <LINE> <LINE> "
+        tostring(DT_Reputation.TRADE_THRESHOLD) .. ". Gifts count as double sold value toward that progress. <LINE> <LINE> "
 
     local members = collectFactionMembers(f.id, rosterData)
     local souls = rosterData.Souls or {}
@@ -125,6 +125,7 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
                 local personalRep = DT_Reputation.GetPersonalRep(uuid)
                 local totalBought = DT_Reputation.GetTotalBought(uuid)
                 local totalSold = DT_Reputation.GetTotalSold(uuid)
+                local totalGifted = DT_Reputation.GetTotalGifted(uuid)
                 local tradeProgress = DT_Reputation.GetTradeProgress(uuid)
 
                 text = text ..
@@ -134,6 +135,7 @@ function DT_FactionInfoTab_Reputation:updateData(f, rosterData)
                     " <RGB:0.6,0.6,0.6> personal " .. tostring(personalRep) ..
                     " | bought $" .. tostring(totalBought) ..
                     " | sold $" .. tostring(totalSold) ..
+                    " | gifted $" .. tostring(totalGifted) ..
                     " | next +" .. tostring(DT_Reputation.TRADE_REP_GAIN) .. " in $" ..
                     tostring(math.max(0, DT_Reputation.TRADE_THRESHOLD - tradeProgress)) ..
                     " <LINE> "

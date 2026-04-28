@@ -19,7 +19,7 @@ return function(context)
 
         if tx.txType == "buy" then
             Helpers.HandleBuyTransaction(player, tx)
-        elseif tx.txType == "sell" then
+        elseif tx.txType == "sell" or tx.txType == "gift" then
             Helpers.HandleSellTransaction(player, args, tx)
         end
     end

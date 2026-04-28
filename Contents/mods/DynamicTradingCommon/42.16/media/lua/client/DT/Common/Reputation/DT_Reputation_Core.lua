@@ -5,7 +5,7 @@ DT_Reputation.Internal = DT_Reputation.Internal or {}
 
 local Internal = DT_Reputation.Internal
 
-DT_Reputation.VERSION = 1
+DT_Reputation.VERSION = 2
 DT_Reputation.CHARACTER_KEY_MODDATA = "DT_ReputationCharacterKey"
 DT_Reputation.REP_MODDATA_KEY = "DT_ReputationState"
 DT_Reputation.REP_MIN = -100
@@ -33,6 +33,7 @@ DT_Reputation.state = DT_Reputation.state or {
     tradeProgress = {},
     totalBought = {},
     totalSold = {},
+    totalGifted = {},
     factionRepCache = {},
     recentHits = {},
     recentDamage = {},
@@ -212,6 +213,7 @@ function Internal.ResetState(characterKey)
     DT_Reputation.state.tradeProgress = {}
     DT_Reputation.state.totalBought = {}
     DT_Reputation.state.totalSold = {}
+    DT_Reputation.state.totalGifted = {}
     DT_Reputation.state.factionRepCache = {}
     DT_Reputation.state.recentHits = {}
     DT_Reputation.state.recentDamage = {}

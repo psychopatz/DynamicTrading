@@ -27,6 +27,12 @@ end
 function DynamicTrading.TradingProvider.AttachCore(provider)
     if not provider then return end
 
+    if provider.getTradeSessionContext == nil then
+        function provider:getTradeSessionContext()
+            return nil
+        end
+    end
+
     if provider.lockItem == nil then
         function provider:lockItem(itemID)
             local player = getLocalPlayer()
@@ -45,12 +51,26 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
 
     if provider.getAskButtonConfig == nil then
         function provider:getAskButtonConfig(isBuying)
+            local sessionContext = self.getTradeSessionContext and self:getTradeSessionContext() or nil
+            if sessionContext and sessionContext.transactionKind == "gift" and not isBuying then
+                return { title = "Return to Talk", visible = true }
+            end
+
             return { title = isBuying and "Talk" or "Ask What They Want", visible = true }
         end
     end
 
     if provider.getTradeModeConfig == nil then
         function provider:getTradeModeConfig(trader)
+            local sessionContext = self.getTradeSessionContext and self:getTradeSessionContext(trader and trader.traderID, trader and trader.archetype) or nil
+            if sessionContext and sessionContext.transactionKind == "gift" then
+                return {
+                    canBuy = false,
+                    canSell = true,
+                    defaultIsBuying = false
+                }
+            end
+
             local archetypeData = getArchetypeDataForTrader(trader)
             local canBuy = true
             local canSell = true
@@ -95,6 +115,14 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
 
     if provider.onAsk == nil then
         function provider:onAsk(trader, isBuying, ui)
+            local sessionContext = self.getTradeSessionContext and self:getTradeSessionContext(trader and trader.traderID, trader and trader.archetype) or nil
+            if sessionContext and sessionContext.transactionKind == "gift" and not isBuying then
+                if self.openHub then
+                    self:openHub(trader, ui)
+                end
+                return
+            end
+
             if isBuying then
                 if self.openHub then
                     self:openHub(trader, ui)
@@ -137,8 +165,16 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
     if provider.getWindowTitle == nil then
         function provider:getWindowTitle(trader)
             if not trader then return "Trading" end
+            local sessionContext = self.getTradeSessionContext and self:getTradeSessionContext(trader and trader.traderID, trader and trader.archetype) or nil
+            if sessionContext and sessionContext.windowTitle and sessionContext.windowTitle ~= "" then
+                return tostring(sessionContext.windowTitle)
+            end
+
             local name = trader.name or "Unknown"
             local archName = self.getArchetypeName and self:getArchetypeName(trader.archetype) or (trader.archetype or "Survivor")
+            if sessionContext and sessionContext.transactionKind == "gift" then
+                return name .. " - Gift"
+            end
             return name .. " - " .. archName
         end
     end

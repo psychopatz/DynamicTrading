@@ -120,8 +120,13 @@ local function OnSharedServerCommand(module, command, args)
             if args.success then
                 -- 1. Resolve transaction type (isBuy)
                 -- Prefer args from server, fallback to current UI state
+                local transactionKind = tostring(args.transactionKind or "")
                 local isBuy = (args.isBuy == true)
-                if args.isBuy == nil then isBuy = ui.isBuying end
+                if transactionKind == "gift" then
+                    isBuy = false
+                elseif args.isBuy == nil then
+                    isBuy = ui.isBuying
+                end
 
                 -- 2. Resolve trader for dialogue generation
                 local trader = ui.dataProvider and ui.dataProvider:getTrader(ui.traderID, ui.archetype)
@@ -148,6 +153,8 @@ local function OnSharedServerCommand(module, command, args)
                         itemName = args.itemName or "Item",
                         price = args.price or 0,
                         basePrice = args.basePrice or args.price or 0,
+                        repValue = args.repValue or 0,
+                        transactionKind = transactionKind,
                         wasLastOne = args.wasLastOne or false,
                         success = true
                     }

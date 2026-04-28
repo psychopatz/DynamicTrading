@@ -43,6 +43,7 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     ui.traderID = traderID
     ui.archetype = archetype or "General"
     ui.radioObj = radioObj
+    ui.sessionContext = dataProvider and dataProvider.getTradeSessionContext and dataProvider:getTradeSessionContext(traderID, archetype) or nil
 
     local trader = dataProvider:getTrader(traderID, archetype)
 
@@ -55,6 +56,7 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     if dataProvider.getDefaultTradingMode then
         ui.isBuying = dataProvider:getDefaultTradingMode(trader)
     end
+    ui.transactionKind = ui:getTransactionKind()
     ui:coerceTradeMode(trader)
     ui:relayout()
     ui:populateList()
@@ -65,15 +67,18 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     ui.wasRaining = climate:getRainIntensity() > 0.4
     ui.wasFoggy = climate:getFogIntensity() > 0.4
 
+    local suppressIntroMessages = ui.sessionContext and ui.sessionContext.suppressIntroMessages == true
     if trader then
         if ui.refreshPortraitWithTrader then
             ui:refreshPortraitWithTrader(trader, true)
         end
-        local introMsg = dataProvider:getPlayerMessage("Intro", {})
-        ui:queueMessage(introMsg, false, true, 0)
+        if not suppressIntroMessages then
+            local introMsg = dataProvider:getPlayerMessage("Intro", {})
+            ui:queueMessage(introMsg, false, true, 0)
 
-        local greeting = dataProvider:getGreeting(trader)
-        ui:queueMessage(greeting, false, false, 20)
+            local greeting = dataProvider:getGreeting(trader)
+            ui:queueMessage(greeting, false, false, 20)
+        end
     end
 
     DT_TradingWindow.instance = ui

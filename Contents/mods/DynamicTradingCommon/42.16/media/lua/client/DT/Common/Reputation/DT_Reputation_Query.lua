@@ -104,3 +104,18 @@ function DT_Reputation.GetTotalSold(traderUUID)
     if not DT_Reputation.EnsureLoaded() then return 0 end
     return DT_Reputation.state.totalSold[traderUUID] or 0
 end
+
+function DT_Reputation.GetTotalGifted(traderUUID)
+    if not traderUUID then return 0 end
+    if not DT_Reputation.EnsureLoaded() then return 0 end
+    return DT_Reputation.state.totalGifted[traderUUID] or 0
+end
+
+function DT_Reputation.GetCombinedTradeValue(traderUUID)
+    if not traderUUID then return 0 end
+    if not DT_Reputation.EnsureLoaded() then return 0 end
+
+    return (DT_Reputation.state.totalBought[traderUUID] or 0)
+        + (DT_Reputation.state.totalSold[traderUUID] or 0)
+        + (DT_Reputation.state.totalGifted[traderUUID] or 0)
+end
