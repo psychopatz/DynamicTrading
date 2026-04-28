@@ -221,6 +221,8 @@ local function showEscortConversation(ui, npc, player, npcData, context, overrid
                 closeConversation(innerUI)
             end,
         },
+    }, {
+        resetHistory = true,
     })
 end
 
@@ -235,6 +237,8 @@ local function showUnavailable(ui, message)
                 closeConversation(innerUI)
             end,
         },
+    }, {
+        resetHistory = true,
     })
 end
 
@@ -311,6 +315,8 @@ local function showPendingConversation(ui, npc, player, npcData, context)
                 })
             end,
         },
+    }, {
+        resetHistory = true,
     })
 end
 

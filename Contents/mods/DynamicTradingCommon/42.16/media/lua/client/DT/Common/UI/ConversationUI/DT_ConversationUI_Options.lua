@@ -44,30 +44,125 @@ local function measureOptionItem(list, option)
     return lines, totalHeight
 end
 
-function DT_ConversationUI:updateOptions(options)
-    self.baseOptions = options or {}
-    self.optionList:clear()
-    local resolvedOptions = self.baseOptions
+local function resolveOptions(ui, options)
+    local resolvedOptions = options or {}
 
     if DC_System and DC_System.BuildConversationOptions then
-        resolvedOptions = DC_System.BuildConversationOptions(self, self.baseOptions)
+        resolvedOptions = DC_System.BuildConversationOptions(ui, resolvedOptions)
     end
 
+    return resolvedOptions or {}
+end
+
+local function renderOptions(ui, options)
+    ui.optionList:clear()
+
+    local resolvedOptions = resolveOptions(ui, options)
     if not resolvedOptions or #resolvedOptions == 0 then
         return
     end
 
     for _, opt in ipairs(resolvedOptions) do
-        local lines, totalHeight = measureOptionItem(self.optionList, opt)
-        local item = self.optionList:addItem(opt.text, opt)
+        local lines, totalHeight = measureOptionItem(ui.optionList, opt)
+        local item = ui.optionList:addItem(opt.text, opt)
         item.lines = lines
         item.height = totalHeight + 6
     end
 end
 
+function DT_ConversationUI:canNavigateBack()
+    return type(self.currentBackAction) == "function" or #self.history > 0
+end
+
+function DT_ConversationUI:updateNavigationButtons()
+    if self.backButton and self.backButton.setEnable then
+        self.backButton:setEnable(self:canNavigateBack() and #self.msgQueue == 0)
+    end
+    if self.exitButton and self.exitButton.setEnable then
+        self.exitButton:setEnable(#self.msgQueue == 0)
+    end
+end
+
+function DT_ConversationUI:navigateBack()
+    if #self.msgQueue > 0 then
+        return false
+    end
+
+    if type(self.currentBackAction) == "function" then
+        self.currentBackAction(self)
+        return true
+    end
+
+    local snapshot = table.remove(self.history)
+    if not snapshot then
+        self:updateNavigationButtons()
+        return false
+    end
+
+    self.currentBackAction = type(snapshot.backAction) == "function" and snapshot.backAction or nil
+    self.baseOptions = snapshot.options or {}
+    renderOptions(self, self.baseOptions)
+    self:updateNavigationButtons()
+    return true
+end
+
+function DT_ConversationUI:exitConversation()
+    if #self.msgQueue > 0 then
+        return false
+    end
+
+    self.closeReason = self.closeReason or "footer_exit"
+    self:close()
+    return true
+end
+
+function DT_ConversationUI:updateOptions(options, navState)
+    navState = type(navState) == "table" and navState or nil
+
+    if navState and navState.resetHistory == true then
+        self.history = {}
+    end
+
+    local previousOptions = self.baseOptions
+    if navState and navState.suppressHistory ~= true and previousOptions and #previousOptions > 0 then
+        self.history[#self.history + 1] = {
+            options = previousOptions,
+            backAction = self.currentBackAction,
+        }
+    end
+
+    self.baseOptions = options or {}
+    self.currentBackAction = navState and type(navState.backAction) == "function" and navState.backAction or nil
+
+    renderOptions(self, self.baseOptions)
+    self:updateNavigationButtons()
+end
+
+function DT_ConversationUI:setBackAction(backAction)
+    self.currentBackAction = type(backAction) == "function" and backAction or nil
+    self:updateNavigationButtons()
+end
+
+function DT_ConversationUI:clearBackAction()
+    self.currentBackAction = nil
+    self:updateNavigationButtons()
+end
+
+function DT_ConversationUI:resetNavigationHistory()
+    self.history = {}
+    self:updateNavigationButtons()
+end
+
+function DT_ConversationUI:replaceOptions(options, navState)
+    navState = type(navState) == "table" and navState or {}
+    navState.suppressHistory = true
+    self:updateOptions(options, navState)
+end
+
 function DT_ConversationUI:refreshOptionLayout()
     if self.baseOptions then
-        self:updateOptions(self.baseOptions)
+        renderOptions(self, self.baseOptions)
+        self:updateNavigationButtons()
     end
 end
 

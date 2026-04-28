@@ -490,7 +490,9 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     })
 
     options._dtMenu = "root"
-    ui:updateOptions(options)
+    ui:updateOptions(options, {
+        resetHistory = true,
+    })
 end
 
 -- =============================================================================
