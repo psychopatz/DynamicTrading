@@ -20,6 +20,51 @@ local function isPlayerTarget(target)
     return target and instanceof and instanceof(target, "IsoPlayer")
 end
 
+local function getPlayerAttackerIdentity(attacker)
+    if not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
+        return nil
+    end
+
+    if attacker.getOnlineID then
+        local onlineID = attacker:getOnlineID()
+        if onlineID and onlineID ~= 0 then
+            return "online:" .. tostring(onlineID)
+        end
+    end
+
+    if attacker.getUsername then
+        local username = attacker:getUsername()
+        if username and username ~= "" then
+            return "user:" .. tostring(username)
+        end
+    end
+
+    return nil
+end
+
+local function isValidPlayerDamageAttribution(npcData, attacker)
+    if not npcData or not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
+        return false
+    end
+
+    local combatHealth = npcData.combatHealth
+    if type(combatHealth) ~= "table" then
+        return false
+    end
+
+    if tostring(combatHealth.lastAttackerType or "") ~= "player" then
+        return false
+    end
+
+    local expectedAttackerID = tostring(combatHealth.lastAttackerID or "")
+    local resolvedAttackerID = tostring(getPlayerAttackerIdentity(attacker) or "")
+    if expectedAttackerID ~= "" and resolvedAttackerID ~= "" then
+        return expectedAttackerID == resolvedAttackerID
+    end
+
+    return true
+end
+
 local function getDTNPCAttackerData(attacker)
     local modData = attacker and attacker.getModData and attacker:getModData() or nil
     if not (modData and modData.IsDTNPC == true) then
@@ -50,6 +95,11 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
     local attacker = zombie:getAttackedBy()
 
     if wasDamaged and attacker and instanceof(attacker, "IsoPlayer") then
+        if not isValidPlayerDamageAttribution(npcData, attacker) then
+            zombie:setAttackedBy(nil)
+            return
+        end
+
         if DTNPCLogic.RememberHostileChaseOrigin then
             DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
         end

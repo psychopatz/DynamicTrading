@@ -9,6 +9,72 @@ DTNPCServerCore = DTNPCServerCore or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
+local function getBanditEncounterTargetIdentity(npcData)
+    if type(npcData) ~= "table" then
+        return nil, nil
+    end
+
+    local username = npcData.master
+        or npcData.banditTargetUsername
+        or npcData.lastPlayerAttackerUsername
+        or npcData.tradeCycleTargetPlayerUsername
+        or npcData.banditPausedTargetUsername
+    local onlineID = npcData.masterID
+        or npcData.banditTargetOnlineID
+        or npcData.lastPlayerAttackerOnlineID
+        or npcData.tradeCycleTargetPlayerOnlineID
+        or npcData.banditPausedTargetOnlineID
+
+    return username, onlineID
+end
+
+local function shouldPreserveBanditEncounterState(npcData, status)
+    if type(npcData) ~= "table" or tostring(status or "") ~= "Trading" then
+        return false
+    end
+
+    local mode = tostring(npcData.tradeCycleMode or "")
+    local activeEncounter = npcData.banditGroupID ~= nil
+        or npcData.raidHostileFaction == true
+        or mode == "robbery"
+        or mode == "hostile_bribe"
+    if not activeEncounter then
+        return false
+    end
+
+    if npcData.banditDemandResolved == true and npcData.isHostile ~= true then
+        return false
+    end
+
+    local username, onlineID = getBanditEncounterTargetIdentity(npcData)
+    if username ~= nil or onlineID ~= nil then
+        return true
+    end
+
+    return npcData.isHostile == true
+end
+
+local function resolveTradingRespawnState(npcData, preserveContactVisitFollow, preserveBanditEncounterState)
+    if preserveContactVisitFollow then
+        return "Follow"
+    end
+
+    if preserveBanditEncounterState then
+        local state = tostring(npcData and npcData.state or "")
+        if state == "Attack" or state == "AttackRange" or state == "Stay" or state == "Flee" then
+            return state
+        end
+
+        if npcData and npcData.isHostile == true then
+            return "Attack"
+        end
+
+        return "Stay"
+    end
+
+    return "Trading"
+end
+
 -- ==============================================================================
 -- RESPAWN FUNCTION
 -- ==============================================================================
@@ -179,10 +245,12 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
         and npcData.contactVisitActive == true
         and npcData.master ~= nil
         and (npcData.state == "Follow" or npcData.contactVisitMode == "Follow")
+    local preserveBanditEncounterState = shouldPreserveBanditEncounterState(npcData, status)
+    local banditTargetUsername, banditTargetOnlineID = getBanditEncounterTargetIdentity(npcData)
     if npcData.incapState == "Active" then
         npcData.state = "Incapacitated"
     elseif status == "Trading" then
-        npcData.state = preserveContactVisitFollow and "Follow" or "Trading"
+        npcData.state = resolveTradingRespawnState(npcData, preserveContactVisitFollow, preserveBanditEncounterState)
     elseif status == "Working" then
         npcData.state = preserveCompanionControl and npcData.state or "Guard"
     else
@@ -191,7 +259,10 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     
     DynamicTrading.Log("DTV2", "NPC", "Respawn", "| Mapped Status [" .. status .. "] to Behavior State [" .. npcData.state .. "]")
     
-    if not preserveCompanionControl and not preserveContactVisitFollow then
+    if preserveBanditEncounterState then
+        npcData.master = banditTargetUsername or npcData.master
+        npcData.masterID = banditTargetOnlineID or npcData.masterID
+    elseif not preserveCompanionControl and not preserveContactVisitFollow then
         npcData.master = nil
         npcData.masterID = nil
     end
@@ -203,6 +274,15 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
             "Respawn",
             "Preserving Follow state for called trader arrival name=" .. tostring(npcData.name or uuid)
                 .. " requester=" .. tostring(npcData.contactVisitRequestedBy)
+        )
+    elseif preserveBanditEncounterState then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Respawn",
+            "Preserving robbery pursuit state for " .. tostring(npcData.name or uuid)
+                .. " state=" .. tostring(npcData.state)
+                .. " target=" .. tostring(npcData.master or banditTargetUsername)
         )
     end
     
