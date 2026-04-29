@@ -49,7 +49,8 @@ end
 function DT_ManualUI_Utils.getLayoutMetrics(ui)
     local pad = 10
     local th = ui:titleBarHeight()
-    local leftWidth = 250
+    local leftWidth = (ui and ui._currentNavWidth) and ui._currentNavWidth or 250
+    leftWidth = math.floor(leftWidth)
     local toolbarHeight = 28
     local pageTitleHeight = 28
     local updateToggleHeight = (ui and ui.showUpdateToggle) and 28 or 0

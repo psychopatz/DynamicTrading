@@ -218,7 +218,7 @@ function DT_ManualUI:refreshNavigation()
         }
         table.insert(self.navRows, manualRow)
         local manualItem = self.navList:addItem(manual.title, manualRow)
-        manualItem.height = (manual.description and manual.description ~= "") and 54 or 30
+        manualItem.height = (manual.description and manual.description ~= "") and 60 or 34
 
         if manualExpanded then
             for _, chapter in ipairs(chapters) do
@@ -248,7 +248,7 @@ function DT_ManualUI:refreshNavigation()
                 }
                 table.insert(self.navRows, chapterRow)
                 local chapterItem = self.navList:addItem(chapter.title, chapterRow)
-                chapterItem.height = 24
+                chapterItem.height = 30
 
                 if chapterExpanded then
                     for _, page in ipairs(manual.pages or {}) do
@@ -265,7 +265,7 @@ function DT_ManualUI:refreshNavigation()
                             }
                             table.insert(self.navRows, pageRow)
                             local pageItem = self.navList:addItem(page.title, pageRow)
-                            pageItem.height = 24
+                            pageItem.height = 28
                         end
                     end
                 end

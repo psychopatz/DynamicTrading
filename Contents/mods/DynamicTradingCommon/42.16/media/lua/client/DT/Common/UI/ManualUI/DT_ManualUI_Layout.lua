@@ -38,7 +38,7 @@ function DT_ManualUI:createChildren()
     self.navList:initialise()
     self.navList:instantiate()
     self.navList.font = UIFont.NewSmall
-    self.navList.itemheight = 26
+    self.navList.itemheight = 30
     self.navList.drawBorder = true
     self.navList.onMouseDown = self.onNavMouseDown
     self.navList.doDrawItem = self.drawNavItem
@@ -55,8 +55,8 @@ function DT_ManualUI:createChildren()
         end
         local h = 8 + (#titleLines * 18) + (#subtitleLines * 16)
         if row.kind == "manual" then h = h + 6 end
-        if row.kind == "chapter" then h = h + 5 end
-        return math.max(h, 26)
+        if row.kind == "chapter" then h = h + 8 end
+        return math.max(h, 30)
     end
     self:addChild(self.navList)
 
@@ -143,6 +143,7 @@ function DT_ManualUI:refreshLayout()
 
     local metrics = DT_ManualUI_Utils.getLayoutMetrics(self)
 
+    self.navList:setWidth(metrics.leftWidth)
     self.navList:setHeight(self.height - metrics.titleBarHeight - (metrics.pad * 2))
 
     self.searchEntry:setX(metrics.rightX)
@@ -274,5 +275,28 @@ function DT_ManualUI:onResize()
     end
     if self.refreshContent then
         self:refreshContent()
+    end
+end
+
+function DT_ManualUI:prerender()
+    ISCollapsableWindow.prerender(self)
+    
+    if self.navList then
+        local targetWidth = 250
+        if self.navList:isMouseOver() or self.navList.mouseoverselected ~= -1 then
+            targetWidth = math.min(self.width - 40, 420)
+        end
+        
+        self._currentNavWidth = self._currentNavWidth or 250
+        
+        if self._currentNavWidth ~= targetWidth then
+            local diff = targetWidth - self._currentNavWidth
+            if math.abs(diff) < 2 then
+                self._currentNavWidth = targetWidth
+            else
+                self._currentNavWidth = self._currentNavWidth + (diff * 0.15)
+            end
+            self:refreshLayout()
+        end
     end
 end
