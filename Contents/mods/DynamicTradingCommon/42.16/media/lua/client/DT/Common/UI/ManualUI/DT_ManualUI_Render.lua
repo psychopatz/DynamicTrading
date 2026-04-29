@@ -224,10 +224,7 @@ function DT_ManualUI:drawContentItem(y, item, alt)
         self:drawRect(0, y, 4, height - 1, 0.85, isHighlighted and 0.90 or 0.74, isHighlighted and 0.73 or 0.58, isHighlighted and 0.22 or 0.16)
         local font = block.font or UIFont.Medium
         local lineY = y + 8
-        for _, line in ipairs(block.lines or {}) do
-            self:drawText(line, padding + 6, lineY, 1, 0.88, 0.52, 1, font)
-            lineY = lineY + 22
-        end
+        lineY = DT_ManualUI_Utils.drawMarkdownLines(self, block.lines or {}, padding + 6, lineY, 1, 0.88, 0.52, 1, font, 22)
         if block.id then
             local anchorText = "#" .. tostring(block.id)
             local anchorW = DT_ManualUI_Utils.safeMeasure(UIFont.Small, anchorText)
@@ -280,10 +277,7 @@ function DT_ManualUI:drawContentItem(y, item, alt)
         end
         self:drawRect(0, y, width, height - 1, 0.42, r, g, b)
         local lineY = y + 8
-        for _, line in ipairs(block.lines or {}) do
-            self:drawText(line, padding, lineY, 0.97, 0.97, 0.97, 1, UIFont.NewSmall)
-            lineY = lineY + 18
-        end
+        lineY = DT_ManualUI_Utils.drawMarkdownLines(self, block.lines or {}, padding, lineY, 0.97, 0.97, 0.97, 1, UIFont.NewSmall, 18)
         return y + height
     end
 
@@ -294,10 +288,7 @@ function DT_ManualUI:drawContentItem(y, item, alt)
 
     self:drawRect(0, y, width, height - 1, 0.10, 0.05, 0.05, 0.05)
     local lineY = y + 8
-    for _, line in ipairs(block.lines or {}) do
-        self:drawText(line, padding, lineY, 0.84, 0.86, 0.88, 1, UIFont.NewSmall)
-        lineY = lineY + 18
-    end
+    lineY = DT_ManualUI_Utils.drawMarkdownLines(self, block.lines or {}, padding, lineY, 0.84, 0.86, 0.88, 1, UIFont.NewSmall, 18)
 
     return y + height
 end

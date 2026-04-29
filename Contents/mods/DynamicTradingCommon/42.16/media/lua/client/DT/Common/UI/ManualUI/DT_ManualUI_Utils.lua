@@ -124,6 +124,65 @@ function DT_ManualUI_Utils.getSavedLocation()
     }
 end
 
+function DT_ManualUI_Utils.drawMarkdownLines(ui, lines, startX, startY, baseR, baseG, baseB, a, font, lineSpacing)
+    if not lines then return startY end
+    local state = { b=false, i=false, u=false }
+    local lineHeight = getTextManager():getFontHeight(font)
+    local currentY = startY
+
+    for _, line in ipairs(lines) do
+        local currentX = startX
+        local currentStr = ""
+        local i = 1
+        
+        local function drawSegment(str, st)
+            if not str or str == "" then return end
+            local r, g, b = baseR, baseG, baseB
+            if st.b then r, g, b = 1, 0.90, 0.55 end
+            if st.i then r, g, b = 0.55, 0.85, 0.95 end
+            ui:drawText(str, currentX, currentY, r, g, b, a, font)
+            local width = getTextManager():MeasureStringX(font, str)
+            if st.u then
+                ui:drawRect(currentX, currentY + lineHeight - 2, width, 1, a, r, g, b)
+            end
+            currentX = currentX + width
+        end
+
+        while i <= #line do
+            local c = string.sub(line, i, i)
+            local nextC = string.sub(line, i+1, i+1)
+            
+            if c == '*' and nextC == '*' then
+                drawSegment(currentStr, state)
+                currentStr = ""
+                state.b = not state.b
+                i = i + 2
+            elseif c == '*' then
+                drawSegment(currentStr, state)
+                currentStr = ""
+                state.i = not state.i
+                i = i + 1
+            elseif c == '_' and nextC == '_' then
+                drawSegment(currentStr, state)
+                currentStr = ""
+                state.u = not state.u
+                i = i + 2
+            elseif c == '_' then
+                drawSegment(currentStr, state)
+                currentStr = ""
+                state.u = not state.u
+                i = i + 1
+            else
+                currentStr = currentStr .. c
+                i = i + 1
+            end
+        end
+        drawSegment(currentStr, state)
+        currentY = currentY + lineSpacing
+    end
+    return currentY
+end
+
 function DT_ManualUI_Utils.findChapterTitle(manual, chapterId)
     for _, chapter in ipairs(manual.chapters or {}) do
         if chapter.id == chapterId then
