@@ -144,6 +144,7 @@ function DT_ManualUI_ImageModal.Open(block)
     modal:initialise()
     modal:addToUIManager()
     modal:setVisible(true)
+    modal:bringToTop()
 
     DT_ManualUI_ImageModal.instance = modal
     return modal

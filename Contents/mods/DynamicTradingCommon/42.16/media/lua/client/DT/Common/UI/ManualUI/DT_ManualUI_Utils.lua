@@ -63,7 +63,7 @@ function DT_ManualUI_Utils.getLayoutMetrics(ui)
         end
     end
     local showResults = DT_ManualUI_Utils.shouldShowResults(ui)
-    local resultsHeight = showResults and 120 or 0
+    local resultsHeight = showResults and math.max(120, math.min(300, ui.height * 0.4)) or 0
     local rightX = pad + leftWidth + pad
     local rightWidth = ui.width - rightX - pad
     local searchBottom = th + pad + toolbarHeight

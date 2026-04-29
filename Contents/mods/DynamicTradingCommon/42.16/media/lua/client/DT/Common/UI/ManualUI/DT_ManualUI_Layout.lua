@@ -73,6 +73,15 @@ function DT_ManualUI:createChildren()
     self.resultList.drawBorder = true
     self.resultList.onMouseDown = self.onResultMouseDown
     self.resultList.doDrawItem = self.drawResultItem
+    self.resultList.doGetItemHeight = function(self, item)
+        local row = item.item
+        local width = self:getWidth() - 20
+        local labelLines = DT_ManualUI_Utils.WrapManualText(row.label or "", width, UIFont.Small)
+        local pathLines = DT_ManualUI_Utils.WrapManualText(tostring(row.path or ""), width, UIFont.Small)
+        local snippetLines = DT_ManualUI_Utils.WrapManualText(tostring(row.snippet or ""), width, UIFont.Small)
+        local h = 4 + (#labelLines * 16) + (#pathLines * 16) + (#snippetLines * 16) + 8
+        return math.max(h, 44)
+    end
     self:addChild(self.resultList)
 
     self.pageTitle = ISLabel:new(metrics.rightX, metrics.pageTitleY, 20, "Manual", 1, 1, 1, 1, UIFont.Medium, true)
@@ -167,6 +176,19 @@ function DT_ManualUI:refreshLayout()
     self.resultList:setY(metrics.resultsY)
     self.resultList:setWidth(metrics.rightWidth)
     self.resultList:setHeight(metrics.resultsHeight)
+
+    -- Force precise scroll item evaluation during window resizing or hover adjustments
+    if self.resultList.items then
+        local rw = self.resultList:getWidth() - 20
+        for _, item in ipairs(self.resultList.items) do
+            local row = item.item
+            local labelLines = DT_ManualUI_Utils.WrapManualText(row.label or "", rw, UIFont.Small)
+            local pathLines = DT_ManualUI_Utils.WrapManualText(tostring(row.path or ""), rw, UIFont.Small)
+            local snippetLines = DT_ManualUI_Utils.WrapManualText(tostring(row.snippet or ""), rw, UIFont.Small)
+            local h = 4 + (#labelLines * 16) + (#pathLines * 16) + (#snippetLines * 16) + 8
+            item.height = math.max(h, 44)
+        end
+    end
     self.resultList:setVisible(self.resultsVisible)
 
     self.pageTitle:setX(metrics.rightX)

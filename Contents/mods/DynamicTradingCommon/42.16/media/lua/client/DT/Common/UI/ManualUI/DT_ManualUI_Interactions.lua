@@ -116,7 +116,7 @@ function DT_ManualUI:onNavMouseDown(x, y)
         end
 
         if entry.expandable then
-            DT_ManualUI.instance.collapsedManuals[tostring(entry.manualId)] = false
+            DT_ManualUI.instance:ensureExpandedPath(entry.manualId)
         end
         DT_ManualUI.instance:openLocation({ manualId = entry.manualId })
         return
@@ -140,7 +140,7 @@ function DT_ManualUI:onNavMouseDown(x, y)
         end
 
         if entry.expandable then
-            DT_ManualUI.instance.collapsedChapters[tostring(entry.manualId) .. "::" .. tostring(entry.chapterId)] = false
+            DT_ManualUI.instance:ensureExpandedPath(entry.manualId, entry.chapterId)
         end
 
         if entry.firstPageId then

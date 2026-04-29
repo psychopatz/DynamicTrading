@@ -52,8 +52,8 @@ function DT_ManualUI:initialise()
     self.pageByManual = {}
     self.pageLookup = {}
     self.blockSectionIndex = {}
-    self.collapsedManuals = {}
-    self.collapsedChapters = {}
+    self.expandedManuals = {}
+    self.expandedChapters = {}
     self.resultsVisible = false
     self.showUpdateToggle = false
     self._refreshingUpdateToggle = false

@@ -12,8 +12,8 @@ function DT_ManualUI:prepareBlock(block)
         tone = block.tone or "info",
         caption = block.caption,
         path = block.path,
-        width = tonumber(block.width) or 220,
-        height = tonumber(block.height) or 140,
+        width = tonumber(block.width) or 380,
+        height = tonumber(block.height) or 220,
     }
 
     if kind == "heading" then
@@ -40,7 +40,7 @@ function DT_ManualUI:prepareBlock(block)
 
     if kind == "image" then
         payload.texture = DT_ManualUI_Utils.resolveTexture(block.path)
-        payload.height = DT_ManualUI_Utils.clamp(payload.height, 80, 280) + (block.caption and 24 or 10)
+        payload.height = DT_ManualUI_Utils.clamp(payload.height, 80, 480) + (block.caption and 24 or 10)
         payload.label = block.caption or block.path or ""
         return payload
     end
@@ -222,12 +222,12 @@ function DT_ManualUI:drawContentItem(y, item, alt)
 
     if block.kind == "image" then
         self:drawRect(0, y, width, height - 1, 0.20, 0.08, 0.08, 0.08)
-        local drawW = DT_ManualUI_Utils.clamp(block.width or 220, 80, width - (padding * 2))
-        local drawH = DT_ManualUI_Utils.clamp((block.height or 140), 80, height - 24)
+        local drawW = DT_ManualUI_Utils.clamp(block.width or 380, 80, width - (padding * 2))
+        local drawH = DT_ManualUI_Utils.clamp((block.height or 220), 80, height - 24)
         if block.caption and block.caption ~= "" then
             drawH = DT_ManualUI_Utils.clamp(drawH, 80, height - 34)
         end
-        local drawX = padding
+        local drawX = (width - drawW) / 2
         local drawY = y + padding
 
         if block.texture then
@@ -246,7 +246,7 @@ function DT_ManualUI:drawContentItem(y, item, alt)
         self:drawText(hintText, drawX + drawW - hintW - 4, drawY + drawH - 18, 0.55, 0.65, 0.80, 0.85, hintFont)
 
         if block.caption and block.caption ~= "" then
-            self:drawText(block.caption, drawX, drawY + drawH + 6, 0.75, 0.75, 0.75, 1, UIFont.Small)
+            self:drawTextCentre(block.caption, width / 2, drawY + drawH + 6, 0.75, 0.75, 0.75, 1, UIFont.Small)
         end
         return y + height
     end

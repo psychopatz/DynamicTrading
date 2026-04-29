@@ -67,30 +67,41 @@ function DT_ManualUI:refreshSupportBannerState()
 end
 
 function DT_ManualUI:isManualExpanded(manualId)
-    return self.collapsedManuals[tostring(manualId or "")] ~= true
+    local key = tostring(manualId or "")
+    if self.expandedManuals == nil then self.expandedManuals = {} end
+    local state = self.expandedManuals[key]
+    if state ~= nil then return state end
+    return manualId == self.currentManualId
 end
 
 function DT_ManualUI:isChapterExpanded(manualId, chapterId)
     local key = tostring(manualId or "") .. "::" .. tostring(chapterId or "")
-    return self.collapsedChapters[key] ~= true
+    if self.expandedChapters == nil then self.expandedChapters = {} end
+    local state = self.expandedChapters[key]
+    if state ~= nil then return state end
+    return manualId == self.currentManualId
 end
 
 function DT_ManualUI:toggleManualExpanded(manualId)
     local key = tostring(manualId or "")
-    self.collapsedManuals[key] = self:isManualExpanded(key)
+    if self.expandedManuals == nil then self.expandedManuals = {} end
+    self.expandedManuals[key] = not self:isManualExpanded(manualId)
 end
 
 function DT_ManualUI:toggleChapterExpanded(manualId, chapterId)
     local key = tostring(manualId or "") .. "::" .. tostring(chapterId or "")
-    self.collapsedChapters[key] = self:isChapterExpanded(manualId, chapterId)
+    if self.expandedChapters == nil then self.expandedChapters = {} end
+    self.expandedChapters[key] = not self:isChapterExpanded(manualId, chapterId)
 end
 
 function DT_ManualUI:ensureExpandedPath(manualId, chapterId)
+    if self.expandedManuals == nil then self.expandedManuals = {} end
+    if self.expandedChapters == nil then self.expandedChapters = {} end
     if manualId then
-        self.collapsedManuals[tostring(manualId)] = false
+        self.expandedManuals[tostring(manualId)] = true
     end
     if manualId and chapterId then
-        self.collapsedChapters[tostring(manualId) .. "::" .. tostring(chapterId)] = false
+        self.expandedChapters[tostring(manualId) .. "::" .. tostring(chapterId)] = true
     end
 end
 
@@ -292,7 +303,12 @@ function DT_ManualUI:refreshResults()
 
     for _, result in ipairs(self.results) do
         local item = self.resultList:addItem(result.label, result)
-        item.height = 48
+        local width = self.resultList:getWidth() - 20
+        local labelLines = DT_ManualUI_Utils.WrapManualText(item.item.label or "", width, UIFont.Small)
+        local pathLines = DT_ManualUI_Utils.WrapManualText(tostring(item.item.path or ""), width, UIFont.Small)
+        local snippetLines = DT_ManualUI_Utils.WrapManualText(tostring(item.item.snippet or ""), width, UIFont.Small)
+        local h = 4 + (#labelLines * 16) + (#pathLines * 16) + (#snippetLines * 16) + 8
+        item.height = math.max(h, 44)
     end
 end
 
