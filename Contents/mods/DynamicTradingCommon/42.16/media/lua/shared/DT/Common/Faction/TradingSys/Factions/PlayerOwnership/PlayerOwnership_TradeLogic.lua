@@ -48,7 +48,7 @@ return function(Public, Internal)
         local soul = DynamicTrading_Roster.GetSoul(uuid)
         if isV2TradeBackendActive() then
             DTNPCManager.StartTradeMission(uuid, false, true)
-            return { backend = "V2", traderID = uuid, discoverTrader = false }
+            return { backend = "DynamicTradingV2", traderID = uuid, discoverTrader = false }
         end
 
         if soul and soul.factionID and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
@@ -60,17 +60,17 @@ return function(Public, Internal)
         end
 
         DynamicTrading_Roster.UpdateSoulStatus(uuid, "Trading", getCurrentHours() + rollRadioStayHours(), "Away")
-        return { backend = "V1", traderID = uuid, discoverTrader = true }
+        return { backend = "DynamicTradingV1", traderID = uuid, discoverTrader = true }
     end
 
     local function recallTradeMission(uuid)
         local travelHours = getWalkHours()
         if isV2TradeBackendActive() then
             DTNPCManager.SetNPCStatus(uuid, "Away", getCurrentHours() + travelHours, "Resting")
-            return "V2"
+            return "DynamicTradingV2"
         end
         DynamicTrading_Roster.UpdateSoulStatus(uuid, "Away", getCurrentHours() + travelHours, "Resting")
-        return "V1"
+        return "DynamicTradingV1"
     end
 
     local function clearWorkerTradeLink(faction, workerID, removeSoul)
@@ -162,7 +162,7 @@ return function(Public, Internal)
             faction.activeTradeWorkerIDs = faction.activeTradeWorkerIDs or {}
             faction.activeTradeWorkerIDs[workerID] = true
             ModData.transmit(Utils.MOD_DATA_KEY)
-            return false, "That trader is already active.", faction, { backend = isV2TradeBackendActive() and "V2" or "V1", traderID = uuid, discoverTrader = not isV2TradeBackendActive() }
+            return false, "That trader is already active.", faction, { backend = isV2TradeBackendActive() and "DynamicTradingV2" or "DynamicTradingV1", traderID = uuid, discoverTrader = not isV2TradeBackendActive() }
         end
         faction.activeTradeWorkerIDs = faction.activeTradeWorkerIDs or {}
         faction.activeTradeWorkerIDs[workerID] = true

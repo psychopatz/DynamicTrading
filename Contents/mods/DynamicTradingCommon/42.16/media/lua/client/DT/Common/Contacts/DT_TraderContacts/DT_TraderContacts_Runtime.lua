@@ -135,7 +135,7 @@ function Internal.GetRosterSourcesForBackend(backend)
     local resolved = string.upper(tostring(backend or ""))
     local sources = {}
 
-    if resolved == "V1" then
+    if resolved == "DYNAMICTRADINGV1" or resolved == "V1" then
         local roster = ModData.get and ModData.get("DynamicTrading_Roster") or nil
         if roster and type(roster.Souls) == "table" then
             sources[#sources + 1] = roster.Souls
@@ -143,7 +143,7 @@ function Internal.GetRosterSourcesForBackend(backend)
         return sources
     end
 
-    if resolved == "V2" then
+    if resolved == "DYNAMICTRADINGV2" or resolved == "V2" then
         if DT_V2_RadarManager and DT_V2_RadarManager.ClientRoster and type(DT_V2_RadarManager.ClientRoster.Souls) == "table" then
             sources[#sources + 1] = DT_V2_RadarManager.ClientRoster.Souls
         end
@@ -175,18 +175,18 @@ function Internal.ResolveVisitBackend(contact, options)
     end
 
     if options.radioObj then
-        return "V1"
+        return "DynamicTradingV1"
     end
 
-    return "V2"
+    return "DynamicTradingV2"
 end
 
 function Internal.RequestVisitStateRefresh(player, backend)
-    if backend == "V1" then
+    if backend == "DynamicTradingV1" or backend == "V1" then
         sendClientCommand(player, "DynamicTrading", "RequestFullState", {})
     end
 
-    if backend ~= "V1" and DT_V2_RadarManager and DT_V2_RadarManager.RequestRoster then
+    if backend ~= "DynamicTradingV1" and backend ~= "V1" and DT_V2_RadarManager and DT_V2_RadarManager.RequestRoster then
         DT_V2_RadarManager.RequestRoster()
     end
 end
@@ -204,7 +204,7 @@ function DT_TraderContacts.GetRosterSoul(traderOrID, options)
     options = options or {}
     local backend = Internal.ResolveVisitBackend(type(traderOrID) == "table" and traderOrID or nil, options)
 
-    if backend == "V1" and DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry then
+    if (backend == "DynamicTradingV1" or backend == "V1") and DynamicTrading_Roster and DynamicTrading_Roster.GetSoulRegistry then
         local registrySoul = DynamicTrading_Roster.GetSoulRegistry(tostring(traderID))
         if type(registrySoul) == "table" then
             return Internal.CloneContact(registrySoul)
@@ -487,7 +487,7 @@ function DT_TraderContacts.RequestVisit(contact, options)
         requestBackend = backend,
     }
 
-    if backend == "V1" then
+    if backend == "DynamicTradingV1" or backend == "V1" then
         sendClientCommand(player, "DynamicTrading", "RequestTraderVisit", requestArgs)
     else
         sendClientCommand(player, "DTNPC", "RequestTraderVisit", requestArgs)

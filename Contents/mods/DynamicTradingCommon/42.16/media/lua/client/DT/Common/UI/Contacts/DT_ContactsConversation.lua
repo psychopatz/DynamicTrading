@@ -228,7 +228,7 @@ function DT_ContactsConversation.Open(contact, context)
     context = context or {}
 
     if not context.requestBackend and context.radioObj then
-        context.requestBackend = "V1"
+        context.requestBackend = "DynamicTradingV1"
     end
 
     local contactsAPI = getContactsAPI()

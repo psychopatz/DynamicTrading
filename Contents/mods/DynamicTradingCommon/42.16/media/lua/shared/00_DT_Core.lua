@@ -140,6 +140,7 @@ end
 function DynamicTrading.Manuals.GetActiveAudienceState()
     local active = {
         DynamicTradingCommon = true,
+        dynamictradingcommon = true,
     }
     
     local activated = getActivatedMods and getActivatedMods() or nil
@@ -149,6 +150,7 @@ function DynamicTrading.Manuals.GetActiveAudienceState()
         for i = 0, activated:size() - 1 do
             local modId = activated:get(i)
             active[modId] = true
+            active[dtManualLower(modId)] = true
         end
         
         -- Also support manual overrides/flags
@@ -156,6 +158,7 @@ function DynamicTrading.Manuals.GetActiveAudienceState()
         for k, v in pairs(flags) do
             if v == true then
                 active[k] = true
+                active[dtManualLower(k)] = true
             end
         end
     end
@@ -192,10 +195,11 @@ function DynamicTrading.Manuals.IsManualVisible(manual, active)
     active = active or DynamicTrading.Manuals.GetActiveAudienceState()
 
     for _, audience in ipairs(audiences) do
-        if audience == "DynamicTradingCommon" or audience == "all" or audience == "common" then
+        local lowerId = dtManualLower(audience)
+        if lowerId == "dynamictradingcommon" then
             return true
         end
-        if active[audience] == true then
+        if active[audience] == true or active[lowerId] == true then
             return true
         end
     end

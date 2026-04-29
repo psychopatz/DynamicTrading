@@ -12,21 +12,26 @@ DT_DebugNetworkAdapter = DT_DebugNetworkAdapter or {}
 local function detectVersion()
     -- Check if V2 is loaded
     if DynamicTrading and DynamicTrading.Version then
+        if DynamicTrading.Version == "V2" then
+            return "DynamicTradingV2"
+        elseif DynamicTrading.Version == "V1" then
+            return "DynamicTradingV1"
+        end
         return DynamicTrading.Version
     end
     
     -- Check for V2-specific globals
     if DT_V2_Core then
-        return "V2"
+        return "DynamicTradingV2"
     end
     
     -- Check for V1-specific globals
     if DT_V1_Core then
-        return "V1"
+        return "DynamicTradingV1"
     end
     
     -- Default fallback
-    return "V2"
+    return "DynamicTradingV2"
 end
 
 -- Cache the detected version
@@ -43,13 +48,13 @@ end
 -- MODULE NAME MAPPING
 -- ==========================================================
 local MODULE_NAMES = {
-    V1 = "DynamicTrading",
-    V2 = "DynamicTrading_V2"
+    DynamicTradingV1 = "DynamicTrading",
+    DynamicTradingV2 = "DynamicTrading_V2"
 }
 
 function DT_DebugNetworkAdapter.getModuleName()
     local version = DT_DebugNetworkAdapter.getVersion()
-    return MODULE_NAMES[version] or MODULE_NAMES.V2
+    return MODULE_NAMES[version] or MODULE_NAMES.DynamicTradingV2
 end
 
 -- ==========================================================

@@ -655,7 +655,7 @@ local function onClientCommand(module, command, player, args)
             "NPC",
             "Command",
             "RequestTraderVisit received uuid=" .. tostring(uuid)
-                .. " backend=" .. tostring(requestBackend ~= "" and requestBackend or "V2")
+                .. " backend=" .. tostring(requestBackend ~= "" and requestBackend or "DynamicTradingV2")
                 .. " requester=" .. tostring(username)
                 .. " target=" .. tostring(targetX) .. "," .. tostring(targetY) .. "," .. tostring(targetZ)
         )
@@ -702,7 +702,7 @@ local function onClientCommand(module, command, player, args)
                 "NPC",
                 "Logic",
                 "RequestTraderVisit queued away->trading for " .. tostring(soul.name or uuid)
-                    .. " backend=" .. tostring(soul.contactVisitBackend or "V2")
+                    .. " backend=" .. tostring(soul.contactVisitBackend or "DynamicTradingV2")
                     .. " etaHours=" .. tostring(walkHours)
             )
         end

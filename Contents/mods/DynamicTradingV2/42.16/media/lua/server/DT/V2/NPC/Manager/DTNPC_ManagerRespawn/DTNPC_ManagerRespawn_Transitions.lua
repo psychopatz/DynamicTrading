@@ -778,12 +778,12 @@ function DTNPCManager.ProcessAwayTransitions()
                                 "NPC",
                                 "Logic",
                                 "Resolving contact arrival uuid=" .. tostring(uuid)
-                                    .. " backend=" .. tostring(visitBackend ~= "" and visitBackend or "V2")
+                                    .. " backend=" .. tostring(visitBackend ~= "" and visitBackend or "DynamicTradingV2")
                                     .. " status=" .. tostring(npcData.status)
                                     .. " returnStatus=" .. tostring(npcData.returnStatus)
                             )
 
-                            if visitBackend == "V1" then
+                            if visitBackend == "DYNAMICTRADINGV1" or visitBackend == "V1" then
                                 npcData.state = "Trading"
                                 npcData.contactVisitMode = "Trading"
                                 npcData.master = nil
@@ -793,7 +793,7 @@ function DTNPCManager.ProcessAwayTransitions()
                                     "DTV2",
                                     "NPC",
                                     "Logic",
-                                    "Contact trader arrival entering V1 radio mode for " .. tostring(npcData.name or uuid)
+                                    "Contact trader arrival entering DynamicTradingV1 radio mode for " .. tostring(npcData.name or uuid)
                                         .. " requester=" .. tostring(npcData.contactVisitRequestedBy)
                                 )
                                 notifyV1ContactArrival(uuid, npcData)
