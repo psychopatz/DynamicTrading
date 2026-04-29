@@ -156,15 +156,15 @@ function DT_ManualUI:refreshLayout()
     self.navList:setHeight(self.height - metrics.titleBarHeight - (metrics.pad * 2))
 
     self.searchEntry:setX(metrics.rightX)
-    self.searchEntry:setY(metrics.titleBarHeight + metrics.pad)
+    self.searchEntry:setY(metrics.searchBarY)
     self.searchEntry:setWidth(metrics.rightWidth - 170)
 
     self.btnSearch:setX(metrics.rightX + metrics.rightWidth - 160)
-    self.btnSearch:setY(metrics.titleBarHeight + metrics.pad)
+    self.btnSearch:setY(metrics.searchBarY)
     self.btnClear:setX(metrics.rightX + metrics.rightWidth - 105)
-    self.btnClear:setY(metrics.titleBarHeight + metrics.pad)
+    self.btnClear:setY(metrics.searchBarY)
     self.btnHome:setX(metrics.rightX + metrics.rightWidth - 50)
-    self.btnHome:setY(metrics.titleBarHeight + metrics.pad)
+    self.btnHome:setY(metrics.searchBarY)
 
     self.resultsVisible = metrics.showResults == true
 
@@ -265,6 +265,16 @@ function DT_ManualUI:refreshLayout()
     self.contentList:setY(metrics.contentY)
     self.contentList:setWidth(metrics.rightWidth)
     self.contentList:setHeight(metrics.contentHeight)
+
+    if self.contentList and self.contentList.items then
+        for _, item in ipairs(self.contentList.items) do
+            if item.item and item.item._rawBlock then
+                local newPayload = self:prepareBlock(item.item._rawBlock)
+                item.item = newPayload
+                item.height = newPayload.height
+            end
+        end
+    end
 end
 
 function DT_ManualUI:refreshUpdateControls()

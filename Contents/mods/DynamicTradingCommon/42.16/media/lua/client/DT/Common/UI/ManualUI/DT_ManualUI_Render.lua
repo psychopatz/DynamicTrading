@@ -14,6 +14,7 @@ function DT_ManualUI:prepareBlock(block)
         path = block.path,
         width = tonumber(block.width) or 380,
         height = tonumber(block.height) or 220,
+        _rawBlock = block,
     }
 
     if kind == "heading" then
@@ -40,7 +41,23 @@ function DT_ManualUI:prepareBlock(block)
 
     if kind == "image" then
         payload.texture = DT_ManualUI_Utils.resolveTexture(block.path)
-        payload.height = DT_ManualUI_Utils.clamp(payload.height, 80, 480) + (block.caption and 24 or 10)
+        
+        local tw = (payload.texture and payload.texture:getWidth() and payload.texture:getWidth() > 0) and payload.texture:getWidth() or (tonumber(block.width) or 380)
+        local th = (payload.texture and payload.texture:getHeight() and payload.texture:getHeight() > 0) and payload.texture:getHeight() or (tonumber(block.height) or 220)
+        
+        local maxW = math.floor((width - 40) * 0.90)
+        local drawW = math.min(maxW, math.max(tw, 380))
+        local scale = drawW / tw
+        local drawH = math.floor(th * scale)
+        
+        if drawH > 500 then
+            drawH = 500
+            scale = drawH / th
+            drawW = math.floor(tw * scale)
+        end
+        
+        payload.width = drawW
+        payload.height = drawH + (block.caption and 34 or 24)
         payload.label = block.caption or block.path or ""
         return payload
     end
@@ -222,10 +239,12 @@ function DT_ManualUI:drawContentItem(y, item, alt)
 
     if block.kind == "image" then
         self:drawRect(0, y, width, height - 1, 0.20, 0.08, 0.08, 0.08)
-        local drawW = DT_ManualUI_Utils.clamp(block.width or 380, 80, width - (padding * 2))
-        local drawH = DT_ManualUI_Utils.clamp((block.height or 220), 80, height - 24)
+        local drawW = tonumber(block.width) or 380
+        local drawH = tonumber(block.height) or height
         if block.caption and block.caption ~= "" then
-            drawH = DT_ManualUI_Utils.clamp(drawH, 80, height - 34)
+            drawH = drawH - 34
+        else
+            drawH = drawH - 24
         end
         local drawX = (width - drawW) / 2
         local drawY = y + padding

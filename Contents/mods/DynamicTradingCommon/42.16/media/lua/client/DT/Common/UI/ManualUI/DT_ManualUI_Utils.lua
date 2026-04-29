@@ -63,16 +63,21 @@ function DT_ManualUI_Utils.getLayoutMetrics(ui)
         end
     end
     local showResults = DT_ManualUI_Utils.shouldShowResults(ui)
-    local resultsHeight = showResults and math.max(120, math.min(300, ui.height * 0.4)) or 0
+    local resultsHeight = showResults and math.max(120, math.min(300, ui:getHeight() * 0.4)) or 0
     local rightX = pad + leftWidth + pad
-    local rightWidth = ui.width - rightX - pad
-    local searchBottom = th + pad + toolbarHeight
+    local rightWidth = ui:getWidth() - rightX - pad
+    
+    local supportBannerY = th + pad
+    local searchBarY = supportBannerY + supportBannerHeight
+    if supportBannerHeight > 0 then
+        searchBarY = searchBarY + pad
+    end
+    local searchBottom = searchBarY + toolbarHeight
     local resultsY = searchBottom + pad
     local pageTitleY = showResults and (resultsY + resultsHeight + pad) or (searchBottom + pad)
     local updateToggleY = pageTitleY + pageTitleHeight
-    local supportBannerY = updateToggleY + updateToggleHeight
-    local contentY = supportBannerY + supportBannerHeight
-    local contentHeight = ui.height - contentY - pad
+    local contentY = updateToggleY + updateToggleHeight
+    local contentHeight = ui:getHeight() - contentY - pad
 
     return {
         pad = pad,
@@ -84,6 +89,7 @@ function DT_ManualUI_Utils.getLayoutMetrics(ui)
         rightX = rightX,
         rightWidth = rightWidth,
         showResults = showResults,
+        searchBarY = searchBarY,
         searchBottom = searchBottom,
         resultsY = resultsY,
         pageTitleY = pageTitleY,

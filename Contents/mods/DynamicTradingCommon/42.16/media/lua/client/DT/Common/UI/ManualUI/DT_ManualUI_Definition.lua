@@ -123,6 +123,8 @@ function DT_ManualUI:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
     o.resizable = true
+    o.minimumWidth = 600
+    o.minimumHeight = 600
     o.title = "Dynamic Trading Manuals"
     return o
 end
