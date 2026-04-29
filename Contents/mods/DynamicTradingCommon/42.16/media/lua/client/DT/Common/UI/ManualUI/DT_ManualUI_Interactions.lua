@@ -107,17 +107,42 @@ function DT_ManualUI:onNavMouseDown(x, y)
     end
 
     if entry.kind == "manual" then
+        if DT_ManualUI.instance.currentManualId == entry.manualId then
+            if entry.expandable then
+                DT_ManualUI.instance:toggleManualExpanded(entry.manualId)
+                DT_ManualUI.instance:refreshNavigation()
+            end
+            return
+        end
+
         if entry.expandable then
-            DT_ManualUI.instance:toggleManualExpanded(entry.manualId)
+            DT_ManualUI.instance.collapsedManuals[tostring(entry.manualId)] = false
         end
         DT_ManualUI.instance:openLocation({ manualId = entry.manualId })
         return
     end
 
     if entry.kind == "chapter" then
-        if entry.expandable then
-            DT_ManualUI.instance:toggleChapterExpanded(entry.manualId, entry.chapterId)
+        local isCurrentChapter = false
+        if DT_ManualUI.instance.currentPageId then
+            local _, cp = DT_ManualUI.instance:resolvePage(DT_ManualUI.instance.currentManualId, DT_ManualUI.instance.currentPageId)
+            if cp and cp.chapterId == entry.chapterId then
+                isCurrentChapter = true
+            end
         end
+
+        if isCurrentChapter then
+            if entry.expandable then
+                DT_ManualUI.instance:toggleChapterExpanded(entry.manualId, entry.chapterId)
+                DT_ManualUI.instance:refreshNavigation()
+            end
+            return
+        end
+
+        if entry.expandable then
+            DT_ManualUI.instance.collapsedChapters[tostring(entry.manualId) .. "::" .. tostring(entry.chapterId)] = false
+        end
+
         if entry.firstPageId then
             DT_ManualUI.instance:openLocation({ manualId = entry.manualId, pageId = entry.firstPageId })
         else
