@@ -237,6 +237,11 @@ function DT_TradingWindow:restoreSelectionAndButtons()
                 self.btnAction:setEnable(true)
             end
         end
+
+        if self.tradeRequestPending and self.btnAction then
+            self.btnAction:setEnable(false)
+            self.btnAction:setTitle("PROCESSING...")
+        end
     else
         self.listbox.selected = -1
         self.selectedKey = nil

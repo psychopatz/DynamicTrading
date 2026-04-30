@@ -100,7 +100,10 @@ function V2_DataProvider:getTrader(traderID, archetype)
         sessionData = DT_TraderSession.GetSession(traderID)
     end
 
-    local traderBudget = sessionData and sessionData.budget or factionWealth
+    local traderBudget = tonumber(stock.budget)
+    if traderBudget == nil then
+        traderBudget = sessionData and sessionData.budget or factionWealth
+    end
     local cacheVersion = table.concat({
         tostring(stockVersion),
         tostring(factionWealth or 0),

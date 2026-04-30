@@ -28,6 +28,28 @@ function DynamicTrading_Client.RequestStock(traderID)
     sendClientCommand(getPlayer(), COMMAND_MODULE, "RequestStock", { traderID = traderID })
 end
 
+function DynamicTrading_Client.BeginTradeView(traderID)
+    if not traderID then
+        return
+    end
+
+    local player = getPlayer and getPlayer() or getSpecificPlayer and getSpecificPlayer(0) or nil
+    if not player then
+        return
+    end
+
+    sendClientCommand(player, COMMAND_MODULE, "BeginTradeView", { traderID = traderID })
+end
+
+function DynamicTrading_Client.EndTradeView(traderID)
+    local player = getPlayer and getPlayer() or getSpecificPlayer and getSpecificPlayer(0) or nil
+    if not player then
+        return
+    end
+
+    sendClientCommand(player, COMMAND_MODULE, "EndTradeView", { traderID = traderID })
+end
+
 function DynamicTrading_Client.PerformTrade(type, traderID, itemFullType, qty)
     local args = {
         type = type,
@@ -86,6 +108,12 @@ local function OnServerCommand(module, command, args)
         local id = args.id
         if id then
             DynamicTrading_Client.Cache.Stocks[id] = args -- contains items, restock
+            if V2_DataProvider and V2_DataProvider.invalidateTraderCache then
+                V2_DataProvider:invalidateTraderCache(id)
+            end
+            if DT_TradingItemUtils and DT_TradingItemUtils.Internal and DT_TradingItemUtils.Internal.invalidateSellScanCacheForTrader then
+                DT_TradingItemUtils.Internal.invalidateSellScanCacheForTrader(id, "sync-stock")
+            end
             triggerEvent("OnDynamicTradingStockUpdated", id)
         end
 
@@ -106,9 +134,11 @@ Events.OnServerCommand.Add(OnServerCommand)
 -- This is needed because the server sends TransactionResult to "DynamicTrading",
 -- not "DynamicTrading_V2", for compatibility with the common TradingWindow.
 -- =============================================================================
+local emitTraderTransactionReply
+
 local function OnSharedServerCommand(module, command, args)
     if module ~= "DynamicTrading" then return end
-    
+
     if command == "TransactionResult" then
         DynamicTrading.Log("DTV2", "Network", "Client", ">>> OnSharedServerCommand RECEIVED TransactionResult")
         DynamicTrading.Log("DTV2", "Network", "Client", "  success=" .. tostring(args.success) .. ", isBuy=" .. tostring(args.isBuy) .. ", item=" .. tostring(args.itemName))
@@ -140,44 +170,28 @@ local function OnSharedServerCommand(module, command, args)
                     }
                 end
 
+                local traderName = trader.name or args.traderName or "Trader"
                 args.traderID = trader.traderID or ui.traderID
                 args.factionID = trader.factionID
+                args.traderName = traderName
 
                 if DT_Reputation then
                     DT_Reputation.ApplyTradeResult(args, trader, isBuy)
                 end
-                
-                -- 3. Trigger Dialogue & SFX
-                if DynamicTrading.DialogueManager then
-                    local diagArgs = {
-                        itemName = args.itemName or "Item",
-                        price = args.price or 0,
-                        basePrice = args.basePrice or args.price or 0,
-                        repValue = args.repValue or 0,
-                        transactionKind = transactionKind,
-                        wasLastOne = args.wasLastOne or false,
-                        success = true
-                    }
-                    
-                    local npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader, isBuy, diagArgs)
-                    
-                    if DynamicTrading.Debug then
-                        DynamicTrading.Log("DTV2", "Network", "Client", "Dialogue Debug:")
-                        DynamicTrading.Log("DTV2", "Network", "Debug", "  - Trader Archetype: " .. tostring(trader.archetype))
-                        DynamicTrading.Log("DTV2", "Network", "Debug", "  - isBuy: " .. tostring(isBuy))
-                        DynamicTrading.Log("DTV2", "Network", "Debug", "  - Generated Msg: " .. tostring(npcMsg))
-                    end
-                    
-                    ui:queueMessage(npcMsg, false, false, 15, "DT_Cashier", "transaction")
-                else
-                    -- Fallback SFX if dialogue manager is missing
-                    ui:queueMessage("...", false, false, 0, "DT_Cashier", "transaction")
+
+                emitTraderTransactionReply(ui, trader, isBuy, args)
+
+                if ui.onTradeRequestAccepted then
+                    ui:onTradeRequestAccepted()
                 end
-                
-                -- [FIX] Update wallet display and force immediate list refresh
+
+                -- Update wallet immediately, but wait for SyncStock to rebuild the list
+                -- so we don't redraw against stale cached stock.
                 if ui.updateWallet then ui:updateWallet() end
-                ui:populateList()
             else
+                if ui.onTradeRequestFailed then
+                    ui:onTradeRequestFailed()
+                end
                 -- Show failure message
                 ui:queueMessage(args.msg or "Transaction Failed", true, false, 0, nil, "transaction")
                 if HaloTextHelper and getSpecificPlayer(0) then
@@ -188,6 +202,55 @@ local function OnSharedServerCommand(module, command, args)
         
         -- Also trigger generic event for other listeners
         triggerEvent("OnDynamicTradingTradeCompleted", args)
+    end
+end
+
+emitTraderTransactionReply = function(ui, trader, isBuy, args)
+    if not ui then
+        return
+    end
+
+    local transactionKind = tostring(args and args.transactionKind or "")
+    local traderName = (trader and trader.name) or (args and args.traderName) or "Trader"
+    local replyArgs = {
+        itemName = args and args.itemName or "Item",
+        price = args and args.price or 0,
+        basePrice = (args and (args.basePrice or args.price)) or 0,
+        repValue = args and args.repValue or 0,
+        transactionKind = transactionKind,
+        wasLastOne = args and args.wasLastOne or false,
+        success = true,
+        traderName = traderName,
+    }
+
+    local npcMsg = nil
+    if DynamicTrading.DialogueManager and DynamicTrading.DialogueManager.GenerateTransactionMessage then
+        npcMsg = DynamicTrading.DialogueManager.GenerateTransactionMessage(trader or { name = traderName }, isBuy, replyArgs)
+    end
+
+    if npcMsg == nil or npcMsg == "" or npcMsg == "..." then
+        if isBuy then
+            npcMsg = "Deal. It's yours."
+        elseif transactionKind == "gift" then
+            npcMsg = "I'll take it."
+        else
+            npcMsg = "Deal. I'll take that."
+        end
+    end
+
+    ui:logLocal(npcMsg, false, false)
+    if ui.portraitPanel and ui.portraitPanel.pulseTradeAnimation then
+        ui.portraitPanel:pulseTradeAnimation()
+    end
+    if ui.dataProvider and ui.dataProvider.playSound then
+        ui.dataProvider:playSound("DT_Cashier")
+    elseif DT_AudioManager then
+        DT_AudioManager.PlaySound("DT_Cashier", false, 1.0)
+    elseif getSoundManager then
+        getSoundManager():PlaySound("DT_Cashier", false, 1.0)
+    end
+    if ui.resetIdleTimer then
+        ui:resetIdleTimer()
     end
 end
 
@@ -203,6 +266,9 @@ local function OnStockUpdated(traderID)
         -- Only refresh if this update is for our current trader
         if ui.traderID == traderID then
             DynamicTrading.Log("DTV2", "Network", "Client", "Stock updated for current trader, refreshing UI")
+            if ui.onAuthoritativeTradeSync then
+                ui:onAuthoritativeTradeSync()
+            end
             ui:populateList()
         end
     end

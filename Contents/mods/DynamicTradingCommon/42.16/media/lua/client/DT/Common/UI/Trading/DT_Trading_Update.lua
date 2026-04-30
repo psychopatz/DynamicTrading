@@ -21,6 +21,23 @@ function DT_TradingWindow:update()
         self.refreshCooldown = self.refreshCooldown - 1
     end
 
+    if self.tradeRequestPending and (tonumber(self.tradeRequestStartedAt) or 0) > 0 then
+        local elapsed = (self:GetNowMs() or 0) - (tonumber(self.tradeRequestStartedAt) or 0)
+        if elapsed >= 8000 then
+            self.tradeRequestPending = false
+            self.awaitingAuthoritativeTradeSync = false
+            self.tradeRequestStartedAt = 0
+            self.tradePendingButtonTitle = nil
+            self.inventoryDirty = true
+            self.refreshCooldown = 0
+            if self.btnAction then
+                self.btnAction:setTitle(self:getDefaultActionTitle())
+                self.btnAction:setEnable(false)
+            end
+            self:logPerf("TradeTimeout", "trade request timeout, forcing refresh for trader=" .. tostring(self.traderID))
+        end
+    end
+
     if self.sellScanSession and not self.sellScanSession.completed and not self.isBuying then
         local progressed = DT_TradingItemUtils
             and DT_TradingItemUtils.Internal

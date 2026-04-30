@@ -38,6 +38,21 @@ function Helpers.SendResponse(player, module, command, args)
     end
 end
 
+--- Broadcasts a response to every connected client in MP, or locally in SP.
+-- @param module string The module name.
+-- @param command string The command name.
+-- @param args table The arguments table to send.
+function Helpers.BroadcastResponse(module, command, args)
+    if isServer() then
+        if isDebugEnabled() then
+            DynamicTrading.Log("DTCommons", "Network", "Server", "Broadcasting MP: " .. tostring(module) .. ":" .. tostring(command))
+        end
+        sendServerCommand(module, command, args)
+    else
+        triggerEvent("OnServerCommand", module, command, args)
+    end
+end
+
 function Helpers.SendReputationSync(player, payload)
     if not player or type(payload) ~= "table" then
         return false

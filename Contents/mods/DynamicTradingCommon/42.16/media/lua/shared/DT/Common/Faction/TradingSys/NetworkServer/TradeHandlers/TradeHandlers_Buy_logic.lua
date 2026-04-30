@@ -86,6 +86,7 @@ return function(context)
         DynamicTrading.Log("DTCommons", "Trade", "Logic", "SUCCESS: Bought " .. tx.safeDisplayName)
 
         DataHandlers.SendSyncStockToPlayer(player, tx.traderID)
+        DataHandlers.BroadcastSyncStock(tx.traderID, player)
         Helpers.SendTransactionResult(player, {
             success = true,
             itemName = tx.safeDisplayName,

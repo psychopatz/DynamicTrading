@@ -208,6 +208,11 @@ function DT_TradingWindow:createChildren()
                 ui.btnAction:setEnable(true)
             end
         end
+
+        if ui.tradeRequestPending and ui.btnAction then
+            ui.btnAction:setEnable(false)
+            ui.btnAction:setTitle("PROCESSING...")
+        end
     end
 
     self:addChild(self.listbox)

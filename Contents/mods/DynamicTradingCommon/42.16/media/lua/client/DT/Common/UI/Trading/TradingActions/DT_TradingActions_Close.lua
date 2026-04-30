@@ -1,4 +1,6 @@
 function DT_TradingWindow:close()
+    local closingTraderID = self.traderID
+
     if DT_ConversationUI and DT_ConversationUI.instance then
         if DT_ConversationUI.instance.parentUI == self then
             DT_ConversationUI.instance:close()
@@ -19,6 +21,10 @@ function DT_TradingWindow:close()
     if DT_TradingWindowWrapper_State then
         DT_TradingWindowWrapper_State.currentTraderID = nil
         DT_TradingWindowWrapper_State.lastStockVersion = nil
+    end
+
+    if DynamicTrading_Client and DynamicTrading_Client.EndTradeView and closingTraderID then
+        DynamicTrading_Client.EndTradeView(closingTraderID)
     end
 
     self:setVisible(false)

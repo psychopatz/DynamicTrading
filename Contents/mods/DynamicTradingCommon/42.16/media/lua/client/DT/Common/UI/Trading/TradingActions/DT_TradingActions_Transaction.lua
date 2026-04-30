@@ -60,6 +60,7 @@ end
 
 function DT_TradingWindow:sendSellTransaction(data, qty, itemNameOverride)
     if not data or not self:isTradeModeEnabled(false) then return end
+    if self:isTradeRequestLocked() then return end
 
     local player = getSpecificPlayer(0)
     if not player then return end
@@ -111,11 +112,15 @@ function DT_TradingWindow:sendSellTransaction(data, qty, itemNameOverride)
     })
     self:queueMessage(pMsg, false, true, 0, nil, "transaction")
 
+    if not self:beginTradeRequest() then
+        return
+    end
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
 end
 
 function DT_TradingWindow:onConfirmQuantityBuy(data, qty)
     if not data or not self:isTradeModeEnabled(true) then return end
+    if self:isTradeRequestLocked() then return end
 
     local amount = math.max(1, math.floor(tonumber(qty) or 1))
     local preview = self:getBulkBuyPreview(data, amount)
@@ -135,6 +140,9 @@ function DT_TradingWindow:onConfirmQuantityBuy(data, qty)
     })
     self:queueMessage(pMsg, false, true, 0, nil, "transaction")
 
+    if not self:beginTradeRequest() then
+        return
+    end
     sendClientCommand(player, "DynamicTrading", "TradeTransaction", {
         type = "buy",
         traderID = self.traderID,
@@ -152,6 +160,7 @@ end
 
 function DT_TradingWindow:onAction()
     if self.resetIdleTimer then self:resetIdleTimer() end
+    if self:isTradeRequestLocked() then return end
     if not self:isTradeModeEnabled(self.isBuying) then
         self:populateList()
         return
@@ -327,6 +336,9 @@ function DT_TradingWindow:onAction()
     local pMsg = self.dataProvider:getPlayerMessage(pAction, diagArgs)
     if self.isBuying then
         self:queueMessage(pMsg, false, true, 0, nil, "transaction")
+        if not self:beginTradeRequest() then
+            return
+        end
         sendClientCommand(player, "DynamicTrading", "TradeTransaction", args)
     else
         self:sendSellTransaction(d, 1, d.displayName or d.name)

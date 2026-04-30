@@ -60,6 +60,10 @@ function DT_TradingWindow:initialise()
     self.sellScanListDirty = false
     self.sellScanLastListRefreshAt = 0
     self.lastOpenPopulateAt = 0
+    self.tradeRequestPending = false
+    self.awaitingAuthoritativeTradeSync = false
+    self.tradeRequestStartedAt = 0
+    self.tradePendingButtonTitle = nil
 
     self.lastHour = -1
     self.wasRaining = false
@@ -160,6 +164,55 @@ end
 
 function DT_TradingWindow:resetIdleTimer()
     self.idleTimer = 0
+end
+
+function DT_TradingWindow:isTradeRequestLocked()
+    return self.tradeRequestPending == true
+end
+
+function DT_TradingWindow:beginTradeRequest()
+    if self.tradeRequestPending then
+        return false
+    end
+
+    self.tradeRequestPending = true
+    self.awaitingAuthoritativeTradeSync = false
+    self.tradeRequestStartedAt = self:GetNowMs()
+    if self.btnAction then
+        self.tradePendingButtonTitle = self.btnAction.title or self:getDefaultActionTitle()
+        self.btnAction:setEnable(false)
+        self.btnAction:setTitle("PROCESSING...")
+    end
+    return true
+end
+
+function DT_TradingWindow:onTradeRequestFailed()
+    self.tradeRequestPending = false
+    self.awaitingAuthoritativeTradeSync = false
+    self.tradeRequestStartedAt = 0
+    self.tradePendingButtonTitle = nil
+    if self.populateList then
+        self:populateList()
+    end
+end
+
+function DT_TradingWindow:onTradeRequestAccepted()
+    if not self.tradeRequestPending then
+        return
+    end
+
+    self.awaitingAuthoritativeTradeSync = true
+end
+
+function DT_TradingWindow:onAuthoritativeTradeSync()
+    if not self.tradeRequestPending and not self.awaitingAuthoritativeTradeSync then
+        return
+    end
+
+    self.tradeRequestPending = false
+    self.awaitingAuthoritativeTradeSync = false
+    self.tradeRequestStartedAt = 0
+    self.tradePendingButtonTitle = nil
 end
 
 function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName, tag)

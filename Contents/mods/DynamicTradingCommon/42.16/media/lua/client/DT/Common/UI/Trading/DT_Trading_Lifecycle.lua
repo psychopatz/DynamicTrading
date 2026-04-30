@@ -86,6 +86,10 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     end
 
     DT_TradingWindow.instance = ui
+
+    if DynamicTrading_Client and DynamicTrading_Client.BeginTradeView then
+        DynamicTrading_Client.BeginTradeView(traderID)
+    end
 end
 
 local function onInventoryChange()
