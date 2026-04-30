@@ -54,7 +54,7 @@ function DT_ManualUI:onUpdateAutoOpenTick(index, selected)
         and DynamicTrading.Manuals.AutoOpen
         or nil
 
-    if not autoOpen or not autoOpen.SetManualDisabled then
+    if not autoOpen then
         return
     end
 
@@ -63,11 +63,17 @@ function DT_ManualUI:onUpdateAutoOpenTick(index, selected)
         return
     end
 
-    local autoOpenKey = self.currentAutoOpenKey
-        or (autoOpen.GetManualAutoOpenKey and autoOpen.GetManualAutoOpenKey(manual))
-        or nil
+    if tostring(manual.manualType or "") ~= "whats_new" then
+        return
+    end
 
-    autoOpen.SetManualDisabled(manual, autoOpenKey, selected == true)
+    if selected == true then
+        if autoOpen.MarkWhatsNewAcknowledged then
+            autoOpen.MarkWhatsNewAcknowledged()
+        end
+    elseif autoOpen.SetAcknowledgedWhatsNewCount then
+        autoOpen.SetAcknowledgedWhatsNewCount(0)
+    end
 end
 
 function DT_ManualUI:onOpenSupportBanner()

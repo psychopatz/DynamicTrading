@@ -120,6 +120,249 @@ local function dtManualGetUpdateSortKey(manual)
     )
 end
 
+local function dtManualSerializeValue(value)
+    local valueType = type(value)
+
+    if valueType == "string" then
+        return string.format("%q", value)
+    end
+
+    if valueType == "number" or valueType == "boolean" then
+        return tostring(value)
+    end
+
+    if value == nil then
+        return "nil"
+    end
+
+    if valueType ~= "table" then
+        return "nil"
+    end
+
+    local isArray = true
+    local count = 0
+
+    for key in pairs(value) do
+        count = count + 1
+        if type(key) ~= "number" or key < 1 or key % 1 ~= 0 then
+            isArray = false
+            break
+        end
+    end
+
+    if isArray then
+        for index = 1, count do
+            if value[index] == nil then
+                isArray = false
+                break
+            end
+        end
+    end
+
+    local parts = {}
+
+    if isArray then
+        for index = 1, count do
+            parts[#parts + 1] = dtManualSerializeValue(value[index])
+        end
+    else
+        local keyed = {}
+        for key, entryValue in pairs(value) do
+            keyed[#keyed + 1] = {
+                key = key,
+                value = entryValue,
+            }
+        end
+
+        table.sort(keyed, function(left, right)
+            return tostring(left.key) < tostring(right.key)
+        end)
+
+        for _, entry in ipairs(keyed) do
+            local key = entry.key
+            local serializedKey
+
+            if type(key) == "string" and key:match("^[%a_][%w_]*$") then
+                serializedKey = key
+            else
+                serializedKey = "[" .. dtManualSerializeValue(key) .. "]"
+            end
+
+            parts[#parts + 1] = serializedKey .. "=" .. dtManualSerializeValue(entry.value)
+        end
+    end
+
+    return "{" .. table.concat(parts, ",") .. "}"
+end
+
+local function dtManualDeserializeValue(blob)
+    local loader = loadstring or load
+    if type(blob) ~= "string" or blob == "" or not loader then
+        return nil
+    end
+
+    local chunk, err = loader("return " .. blob)
+    if not chunk then
+        if DynamicTrading and DynamicTrading.Log then
+            DynamicTrading.Log("DTCommons", "Manuals", "Error", "Failed to deserialize manual blob: " .. tostring(err))
+        end
+        return nil
+    end
+
+    local ok, value = pcall(chunk)
+    if not ok then
+        if DynamicTrading and DynamicTrading.Log then
+            DynamicTrading.Log("DTCommons", "Manuals", "Error", "Manual blob execution failed: " .. tostring(value))
+        end
+        return nil
+    end
+
+    return value
+end
+
+local function dtManualExtractBlockSearchText(block)
+    block = block or {}
+    local blockType = tostring(block.type or "")
+
+    if blockType == "heading" or blockType == "paragraph" then
+        return tostring(block.text or "")
+    end
+
+    if blockType == "callout" then
+        return tostring(block.title or "") .. " " .. tostring(block.text or "")
+    end
+
+    if blockType == "bullet_list" then
+        return table.concat(block.items or {}, " ")
+    end
+
+    if blockType == "image" then
+        return tostring(block.caption or "")
+    end
+
+    if blockType == "supporter_carousel" then
+        local names = {}
+        for _, supporter in ipairs(block.supporters or {}) do
+            if supporter and supporter.active ~= false then
+                names[#names + 1] = tostring(supporter.name or "")
+                names[#names + 1] = tostring(supporter.supportMessage or supporter.support_message or "")
+            end
+        end
+
+        return tostring(block.title or "")
+            .. " "
+            .. table.concat(names, " ")
+            .. " "
+            .. tostring(block.thankYouText or block.thank_you_text or "")
+    end
+
+    return tostring(block.text or "")
+end
+
+local function dtManualCompactSnippet(text, maxLen)
+    text = tostring(text or "")
+    maxLen = math.max(32, tonumber(maxLen) or 220)
+
+    if #text <= maxLen then
+        return text
+    end
+
+    return string.sub(text, 1, maxLen - 3) .. "..."
+end
+
+local function dtManualBuildSearchRecords(manualTitle, manualDescription, chapters, pages)
+    local chapterTitles = {}
+    local records = {}
+
+    for _, chapter in ipairs(chapters or {}) do
+        chapterTitles[tostring(chapter.id or "")] = tostring(chapter.title or "")
+    end
+
+    for _, page in ipairs(pages or {}) do
+        local pageId = tostring(page.id or "")
+        local chapterTitle = chapterTitles[tostring(page.chapterId or page.chapter_id or "")] or ""
+        local keywords = type(page.keywords) == "table" and table.concat(page.keywords, " ") or ""
+        local pageTitle = tostring(page.title or "")
+        local pageSnippet = manualDescription ~= "" and manualDescription or chapterTitle
+        local pageHaystack = dtManualLower(table.concat({
+            manualTitle,
+            pageTitle,
+            chapterTitle,
+            keywords,
+            pageSnippet,
+        }, " "))
+
+        records[#records + 1] = {
+            pageId = pageId,
+            sectionId = nil,
+            snippet = dtManualCompactSnippet(pageSnippet, 180),
+            haystack = pageHaystack,
+        }
+
+        for _, block in ipairs(page.blocks or {}) do
+            local blockText = tostring(dtManualExtractBlockSearchText(block) or "")
+            if blockText ~= "" then
+                records[#records + 1] = {
+                    pageId = pageId,
+                    sectionId = block.id,
+                    snippet = dtManualCompactSnippet(blockText, 220),
+                    haystack = dtManualLower(blockText),
+                }
+            end
+        end
+    end
+
+    return records
+end
+
+function DynamicTrading.Manuals.EnsureManualContent(manual)
+    if type(manual) ~= "table" then
+        return nil
+    end
+
+    if type(manual._loadedContent) == "table" then
+        return manual._loadedContent
+    end
+
+    local content = dtManualDeserializeValue(manual.contentBlob)
+    if type(content) ~= "table" then
+        content = {
+            chapters = manual.chapters or {},
+            pages = manual.pages or {},
+        }
+    end
+
+    content.chapters = type(content.chapters) == "table" and content.chapters or {}
+    content.pages = type(content.pages) == "table" and content.pages or {}
+    manual._loadedContent = content
+
+    return content
+end
+
+function DynamicTrading.Manuals.ReleaseManualContent(manual)
+    if type(manual) == "table" then
+        manual._loadedContent = nil
+    end
+end
+
+function DynamicTrading.Manuals.ReleaseAllManualContent(exceptManualId)
+    local registry = DynamicTrading.Manuals.Registry or {}
+
+    for manualId, manual in pairs(registry) do
+        if manualId ~= exceptManualId and type(manual) == "table" then
+            manual._loadedContent = nil
+        end
+    end
+end
+
+function DynamicTrading.Manuals.GetManualSearchRecords(manual)
+    if type(manual) ~= "table" then
+        return {}
+    end
+
+    return type(manual.searchRecords) == "table" and manual.searchRecords or {}
+end
+
 function DynamicTrading.Manuals.CompareReleaseVersions(left, right)
     local leftTokens = dtManualTokenizeVersion(left)
     local rightTokens = dtManualTokenizeVersion(right)
@@ -538,16 +781,27 @@ function DynamicTrading.RegisterManual(id, data)
         end
     end
 
-    local chapters = {}
+    local fullChapters = {}
+    local chapterMeta = {}
     for _, chapter in ipairs(type(data.chapters) == "table" and data.chapters or {}) do
-        table.insert(chapters, {
+        local normalizedChapter = {
             id = chapter.id,
             title = chapter.title,
             description = chapter.description,
+        }
+
+        table.insert(fullChapters, normalizedChapter)
+        table.insert(chapterMeta, {
+            id = normalizedChapter.id,
+            title = normalizedChapter.title,
+            description = normalizedChapter.description,
         })
     end
 
-    local pages = {}
+    local fullPages = {}
+    local pageMeta = {}
+    local contentBlockCount = 0
+
     for _, page in ipairs(type(data.pages) == "table" and data.pages or {}) do
         local blocks = {}
 
@@ -555,14 +809,36 @@ function DynamicTrading.RegisterManual(id, data)
             table.insert(blocks, block)
         end
 
-        table.insert(pages, {
+        contentBlockCount = contentBlockCount + #blocks
+
+        local normalizedPage = {
             id = page.id,
             chapterId = page.chapterId or page.chapter_id,
             title = page.title,
             keywords = type(page.keywords) == "table" and page.keywords or {},
             blocks = blocks,
+        }
+
+        table.insert(fullPages, normalizedPage)
+        table.insert(pageMeta, {
+            id = normalizedPage.id,
+            chapterId = normalizedPage.chapterId,
+            title = normalizedPage.title,
+            keywords = normalizedPage.keywords,
+            blockCount = #blocks,
         })
     end
+
+    local contentBlob = dtManualSerializeValue({
+        chapters = fullChapters,
+        pages = fullPages,
+    })
+    local searchRecords = dtManualBuildSearchRecords(
+        tostring(data.title or id),
+        tostring(data.description or ""),
+        fullChapters,
+        fullPages
+    )
 
     local manual = {
         id = tostring(id),
@@ -570,8 +846,8 @@ function DynamicTrading.RegisterManual(id, data)
         description = tostring(data.description or ""),
         icon = data.icon,
         startPageId = data.startPageId or data.start_page_id,
-        chapters = chapters,
-        pages = pages,
+        chapters = chapterMeta,
+        pages = pageMeta,
         audiences = audiences,
         sortOrder = sortOrder or dtManualDefaultSortOrder(id, audiences, orderIndex, isWhatsNew),
         orderIndex = orderIndex,
@@ -591,6 +867,11 @@ function DynamicTrading.RegisterManual(id, data)
         bannerActionLabel = tostring(data.bannerActionLabel or data.banner_action_label or ""),
         supportUrl = tostring(data.supportUrl or data.support_url or ""),
         source = data.source,
+        contentBlob = contentBlob,
+        contentPageCount = #pageMeta,
+        contentBlockCount = contentBlockCount,
+        searchRecords = searchRecords,
+        _loadedContent = nil,
     }
 
     DynamicTrading.Manuals.Registry[id] = manual

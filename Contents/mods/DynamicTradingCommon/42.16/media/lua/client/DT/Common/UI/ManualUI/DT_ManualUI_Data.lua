@@ -11,6 +11,37 @@ local function applyDynamicNavHeight(ui, item, row)
     end
 end
 
+local function getManualContentAPI()
+    return DynamicTrading and DynamicTrading.Manuals or nil
+end
+
+local function ensureManualContent(manual)
+    local manualsAPI = getManualContentAPI()
+    if manualsAPI and manualsAPI.EnsureManualContent then
+        return manualsAPI.EnsureManualContent(manual)
+    end
+
+    return {
+        chapters = manual and manual.chapters or {},
+        pages = manual and manual.pages or {},
+    }
+end
+
+local function getManualContentPages(manual)
+    local content = ensureManualContent(manual)
+    return content and content.pages or {}
+end
+
+local function getManualContentPage(manual, pageId)
+    for _, page in ipairs(getManualContentPages(manual)) do
+        if tostring(page.id or "") == tostring(pageId or "") then
+            return page
+        end
+    end
+
+    return nil
+end
+
 function DT_ManualUI:loadManualData()
     local registry = DynamicTrading.Manuals and DynamicTrading.Manuals.Registry or {}
 
@@ -43,15 +74,6 @@ function DT_ManualUI:loadManualData()
                 manual = manual,
                 page = page,
             }
-
-            local sectionMap = {}
-            for index, block in ipairs(page.blocks or {}) do
-                if block.type == "heading" and block.id then
-                    sectionMap[block.id] = index
-                end
-            end
-
-            self.blockSectionIndex[manual.id .. "::" .. tostring(page.id)] = sectionMap
         end
 
         self.pageByManual[manual.id] = pageMap
@@ -132,6 +154,31 @@ function DT_ManualUI:resolvePage(manualId, pageId)
     return nil, nil
 end
 
+function DT_ManualUI:resolveLoadedPage(manualId, pageId)
+    local manual = self.allManuals and self.allManuals[manualId] or nil
+    if not manual then
+        return nil, nil
+    end
+
+    local page = getManualContentPage(manual, pageId)
+    if not page then
+        return manual, nil
+    end
+
+    local key = tostring(manual.id or "") .. "::" .. tostring(page.id or "")
+    if not self.blockSectionIndex[key] then
+        local sectionMap = {}
+        for index, block in ipairs(page.blocks or {}) do
+            if block.type == "heading" and block.id then
+                sectionMap[block.id] = index
+            end
+        end
+        self.blockSectionIndex[key] = sectionMap
+    end
+
+    return manual, page
+end
+
 function DT_ManualUI:getStartPage(manual)
     if not manual then return nil end
 
@@ -159,6 +206,11 @@ function DT_ManualUI:openLocation(args)
     local page = nil
 
     if args.library == true then
+        local manualsAPI = getManualContentAPI()
+        if manualsAPI and manualsAPI.ReleaseAllManualContent then
+            manualsAPI.ReleaseAllManualContent(nil)
+        end
+
         self.currentManualId = nil
         self.currentPageId = nil
         self.currentManualType = "manual"
@@ -205,6 +257,11 @@ function DT_ManualUI:openLocation(args)
     end
 
     if manual then
+        local manualsAPI = getManualContentAPI()
+        if manualsAPI and manualsAPI.ReleaseAllManualContent then
+            manualsAPI.ReleaseAllManualContent(manual.id)
+        end
+
         self:ensureExpandedPath(manual.id, page and page.chapterId or nil)
     end
 
@@ -220,6 +277,7 @@ function DT_ManualUI:openLocation(args)
     end
 
     if manual and page and args.sectionId then
+        self:resolveLoadedPage(manual.id, page.id)
         local blockIndex = self.blockSectionIndex[(manual.id .. "::" .. page.id)]
         blockIndex = blockIndex and blockIndex[args.sectionId] or nil
         if blockIndex and self.contentList then
@@ -357,9 +415,17 @@ function DT_ManualUI:refreshContent()
         return
     end
 
-    local manual, page = self:resolvePage(self.currentManualId, self.currentPageId)
+    local manual, pageMeta = self:resolvePage(self.currentManualId, self.currentPageId)
 
-    if not manual or not page then
+    if not manual or not pageMeta then
+        self.currentReleaseVersion = nil
+        self.pageTitle:setName(self.viewMode == "updates" and "Update" or "Manual")
+        self:refreshUpdateControls()
+        return
+    end
+
+    local _, page = self:resolveLoadedPage(self.currentManualId, self.currentPageId)
+    if not page then
         self.currentReleaseVersion = nil
         self.pageTitle:setName(self.viewMode == "updates" and "Update" or "Manual")
         self:refreshUpdateControls()

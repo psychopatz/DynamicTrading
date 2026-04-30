@@ -34,24 +34,24 @@ local function requestCalledTraderTrading(player, npc, npcData)
     if not player or not npc or type(npcData) ~= "table" or not npcData.uuid then
         return
     end
-
+    
     if npcData.contactVisitActive ~= true then
         return
     end
-
+    
     local requester = tostring(npcData.contactVisitRequestedBy or "")
     local username = player.getUsername and player:getUsername() or nil
     if requester ~= "" and username and requester ~= username then
         return
     end
-
+    
     if npcData.state ~= "Trading" then
         sendClientCommand(player, "DTNPC", "Order", {
             uuid = npcData.uuid,
             state = "Trading",
         })
     end
-
+    
     npcData.state = "Trading"
     npcData.contactVisitMode = "Trading"
     npcData.master = nil
@@ -68,7 +68,7 @@ local function requestCalledTraderTrading(player, npc, npcData)
     npcData.anchorY = nil
     npcData.anchorZ = nil
     npcData.guardReturningToPost = nil
-
+    
     if DTNPC and DTNPC.AttachData then
         DTNPC.AttachData(npc, npcData)
     end
@@ -79,14 +79,14 @@ local function resolveTraderConversationState(npc, npcData)
     if state and state ~= "" then
         return tostring(state)
     end
-
+    
     local id = (npcData and npcData.uuid) or (npc and (npc:getPersistentOutfitID() or npc:getID())) or nil
     local rosterData = id and ModData and ModData.get and ModData.get("DynamicTrading_Roster") or nil
     local soul = rosterData and rosterData.Souls and rosterData.Souls[id] or nil
     if soul and (soul.status or soul.state) then
         return tostring(soul.status or soul.state)
     end
-
+    
     return "Resting"
 end
 
@@ -116,13 +116,13 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
             end
         })
     end
-
+    
     if not (DynamicObjectives and DynamicObjectives.Quests and DynamicObjectives.Quests.BuildTraderQuestOffer) then
         ui:speak("I am not handing out jobs right now.")
         reopenTraderDialogueOptions(ui, npc, player)
         return
     end
-
+    
     local traderContext = buildTraderQuestContext(ui, npc, npcData)
     local offer = DynamicObjectives.Quests.BuildTraderQuestOffer(player, traderContext)
     if not offer then
@@ -131,14 +131,14 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
         reopenTraderDialogueOptions(ui, npc, player)
         return
     end
-
+    
     local function showMainMenu(conversationUI)
         reopenTraderDialogueOptions(conversationUI, npc, player)
     end
-
+    
     local function showOfferOptions(conversationUI, currentOffer)
         local options = {}
-
+        
         if currentOffer.canStart == true then
             options[#options + 1] = {
                 text = currentOffer.choiceLabels.accept,
@@ -195,7 +195,7 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
                 end
             }
         end
-
+        
         options[#options + 1] = {
             text = currentOffer.choiceLabels.back,
             message = "",
@@ -203,10 +203,10 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
                 showMainMenu(nextUI)
             end
         }
-
+        
         conversationUI:updateOptions(options)
     end
-
+    
     if offer.canStart == true then
         ui:speak(offer.resolvedDialogue.offer)
     elseif offer.activeQuest then
@@ -214,7 +214,7 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
     else
         ui:speak(offer.resolvedDialogue.unavailable)
     end
-
+    
     showOfferOptions(ui, offer)
 end
 
@@ -222,7 +222,7 @@ local function cloneMessagePayload(payload)
     if type(payload) ~= "table" then
         return payload
     end
-
+    
     local copy = {}
     for key, value in pairs(payload) do
         copy[key] = value
@@ -246,17 +246,23 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
                 factionID = npcData and npcData.factionID,
                 returnTime = npcData and npcData.returnTime
             }
-
+            
+            -- Get trader budget from roster session data
+            local rosterData = ModData.get("DynamicTrading_Roster")
+            local traderID = traderProxy.id
+            local session = rosterData and rosterData.Sessions and rosterData.Sessions[traderID] or nil
+            traderProxy.budget = session and session.budget or 0
+            
             if DTNPCJobUI and DTNPCJobUI.ApplyTraderProxyPatch then
                 traderProxy = (DTNPCJobUI.ApplyTraderProxyPatch(traderProxy, ui, npc, player, npcData))
             end
-
+            
             if DynamicTrading and DynamicTrading.IsArchetypeNeverRecruitable and DynamicTrading.IsArchetypeNeverRecruitable(npcData or traderProxy) then
                 traderProxy.canRecruit = false
                 traderProxy.allowRecruit = false
                 traderProxy.neverRecruitable = true
             end
-
+            
             if DT_Reputation then
                 traderProxy.personalRep = DT_Reputation.GetPersonalRep(traderProxy.id, traderProxy.factionID)
                 traderProxy.factionRep = DT_Reputation.GetFactionRep(traderProxy.factionID)
@@ -285,15 +291,15 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
                     end
                 end
             else
-                DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Faction ID: nil")
+                DynamicTrading.Log("DTV2", "Dialogue", "Debug", "Trader Faction ID: nil")
             end
-
+            
             if traderProxy.returnTime then
                 DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Return Time: " .. traderProxy.returnTime)
             else
                 DynamicTrading.Log("DTV2", "Dialog", "Debug", "Trader Return Time: nil")
             end
-
+            
             ui = DT_ConversationUI.Open(traderProxy, nil, nil, false, npc) -- isRadio = false
         else
             return
@@ -301,7 +307,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
     end
     
     if not npc or not player then return end
-
+    
     applyInteractionPose(npc, player)
     ui.onCloseCallback = function()
         clearInteractionPose(npc)
@@ -319,7 +325,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
             initialPlayerMessage.style
         )
     end
-
+    
     local greeting = initOptions and initOptions.initialGreeting or nil
     if not greeting and DynamicTrading and DynamicTrading.DialogueManager and ui.target then
         greeting = DynamicTrading.DialogueManager.GenerateGreeting(ui.target)
@@ -337,7 +343,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
         }
     end
     ui:speak(greeting)
-
+    
     -- 2. Generate Options
     DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
 end
@@ -345,16 +351,16 @@ end
 function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     local options = {}
     local npcData = DTNPC.GetData(npc)
-
+    
     if DTNPCJobUI and DTNPCJobUI.TryGenerateOptions then
         local handled = DTNPCJobUI.TryGenerateOptions(ui, npc, player, npcData)
         if handled then
             return
         end
     end
-
+    
     ui.isCompanionConversation = false
-
+    
     -- OPTION 1: CHAT (First implementation)
     table.insert(options, {
         text = "Chat",
@@ -367,7 +373,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             })
         end
     })
-
+    
     table.insert(options, {
         text = "Any work?",
         message = "Got any work for me?",
@@ -375,7 +381,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             openTraderQuestOffer(conversationUI, npc, player, npcData)
         end
     })
-
+    
     -- OPTION 2: TRADE (Always Visible)
     local isTrading = false
     
@@ -395,7 +401,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             end
         end
     end
-
+    
     -- [CHANGE] We now insert the option regardless of isTrading status
     table.insert(options, {
         text = "Trade",
@@ -425,7 +431,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
                         DynamicTrading.Log("DTV2", "Dialog", "Trade", "Ignoring redundant trade request - already pending for " .. traderID)
                         return
                     end
-
+                    
                     -- Request stock generation, then open window
                     DynamicTrading.Log("DTV2", "Dialog", "Trade", "Requesting stock generation...")
                     ui:speak("Let me check what I have in stock...")
@@ -465,7 +471,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             end
         end
     })
-
+    
     table.insert(options, {
         text = "Contacts",
         message = "Let me check my contacts.",
@@ -475,8 +481,8 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             DTNPC_TraderDialogue_Hub.GenerateOptions(conversationUI, npc, player)
         end
     })
-
-
+    
+    
     -- OPTION 4: SETTINGS (Common UI)
     table.insert(options, {
         text = "Settings",
@@ -489,7 +495,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             end
         end
     })
-
+    
     options._dtMenu = "root"
     ui:updateOptions(options, {
         resetHistory = true,
@@ -542,7 +548,7 @@ local function OnTick()
         pending.ui:speak("Still looking for it, just a second...")
         pending.hasSpokenShortWait = true
     end
-
+    
     if gt and elapsed > 0.08 then
         DynamicTrading.Log("DTV2", "Dialog", "Trade", "Stock request timed out")
         if uiValid then

@@ -58,7 +58,13 @@ function DT_ManualUI_Donators.GetActiveSupportersFromBlock(block)
 end
 
 function DT_ManualUI_Donators.GetPrimaryCarouselBlock(manual)
-    for _, page in ipairs((manual and manual.pages) or {}) do
+    local content = DynamicTrading
+        and DynamicTrading.Manuals
+        and DynamicTrading.Manuals.EnsureManualContent
+        and DynamicTrading.Manuals.EnsureManualContent(manual)
+        or nil
+
+    for _, page in ipairs((content and content.pages) or (manual and manual.pages) or {}) do
         for _, block in ipairs(page.blocks or {}) do
             if tostring(block.type or "") == "supporter_carousel" then
                 return block

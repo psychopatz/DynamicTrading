@@ -274,7 +274,7 @@ function DT_ManualUI:createChildren()
     self.updateAutoOpenTick = ISTickBox:new(metrics.rightX, metrics.updateToggleY, metrics.rightWidth, 20, "", self, self.onUpdateAutoOpenTick)
     self.updateAutoOpenTick:initialise()
     self.updateAutoOpenTick:instantiate()
-    self.updateAutoOpenTick:addOption("Don't auto-open this manual/update again")
+    self.updateAutoOpenTick:addOption("Don't show this What's New again until a new update arrives")
     self.updateAutoOpenTick:setFont(UIFont.Small)
     self.updateAutoOpenTick:setVisible(false)
     self:addChild(self.updateAutoOpenTick)
@@ -484,12 +484,11 @@ function DT_ManualUI:refreshUpdateControls()
 
     self.currentAutoOpenKey = nil
 
-    if autoOpen and manual and autoOpen.CanManualShowDisableControl and autoOpen.GetManualAutoOpenKey then
-        self.currentAutoOpenKey = autoOpen.GetManualAutoOpenKey(manual)
-        shouldShow = autoOpen.CanManualShowDisableControl(manual) == true
+    if autoOpen and manual and tostring(manual.manualType or "") == "whats_new" then
+        shouldShow = true
 
-        if shouldShow and autoOpen.IsManualDisabled then
-            selected = autoOpen.IsManualDisabled(manual, self.currentAutoOpenKey) == true
+        if autoOpen.GetAcknowledgedWhatsNewCount and autoOpen.GetCurrentWhatsNewCount then
+            selected = autoOpen.GetAcknowledgedWhatsNewCount() == autoOpen.GetCurrentWhatsNewCount()
         end
     end
 

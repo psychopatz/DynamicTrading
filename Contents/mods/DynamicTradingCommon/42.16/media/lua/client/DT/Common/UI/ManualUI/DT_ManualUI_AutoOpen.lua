@@ -47,8 +47,12 @@ local function getCurrentMillis()
     return os and os.time and (os.time() * 1000) or 0
 end
 
+local function getLocalPlayer()
+    return getSpecificPlayer and getSpecificPlayer(0) or nil
+end
+
 local function getLocalPlayerUsername()
-    local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+    local player = getLocalPlayer()
 
     if player and player.getUsername then
         local username = safeTrim(player:getUsername())
@@ -145,6 +149,48 @@ local function saveState(state, modDataKey)
     end
 end
 
+local function getPlayerManualModData()
+    if DT_ConfigManager and DT_ConfigManager.getManualModData then
+        return DT_ConfigManager.getManualModData()
+    end
+
+    local player = getLocalPlayer()
+    if not player then
+        return nil
+    end
+
+    local modData = player:getModData()
+    if type(modData.DT_ManualState) ~= "table" then
+        modData.DT_ManualState = {}
+    end
+
+    return modData.DT_ManualState
+end
+
+local function transmitPlayerManualModData()
+    local player = getLocalPlayer()
+    if player and player.transmitModData then
+        player:transmitModData()
+    end
+end
+
+local function getWhatsNewState()
+    local manualState = getPlayerManualModData()
+    if not manualState then
+        return nil
+    end
+
+    if type(manualState.whatsNew) ~= "table" then
+        manualState.whatsNew = {}
+    end
+
+    local state = manualState.whatsNew
+    state.acknowledgedCount = tonumber(state.acknowledgedCount or 0) or 0
+    state.lastOpenedCount = tonumber(state.lastOpenedCount or 0) or 0
+
+    return state
+end
+
 local function getManualID(manual)
     return safeTrim(manual and manual.id or "")
 end
@@ -176,6 +222,10 @@ local function isUpdateManual(manual)
 end
 
 local function getManualPageAndBlockCount(manual)
+    if type(manual) == "table" and manual.contentPageCount ~= nil and manual.contentBlockCount ~= nil then
+        return tonumber(manual.contentPageCount) or 0, tonumber(manual.contentBlockCount) or 0
+    end
+
     local pageCount = 0
     local blockCount = 0
 
@@ -214,6 +264,69 @@ function AutoOpen.GetManualAutoOpenKey(manual)
 
     local pageCount, blockCount = getManualPageAndBlockCount(manual)
     return "content:" .. tostring(pageCount) .. ":" .. tostring(blockCount)
+end
+
+function AutoOpen.GetCurrentWhatsNewCount()
+    if not DynamicTrading
+        or not DynamicTrading.Manuals
+        or not DynamicTrading.Manuals.GetOrderedUpdateManuals then
+        return 0
+    end
+
+    local updates = DynamicTrading.Manuals.GetOrderedUpdateManuals()
+    return updates and #updates or 0
+end
+
+function AutoOpen.GetAcknowledgedWhatsNewCount()
+    local state = getWhatsNewState()
+    return state and (tonumber(state.acknowledgedCount) or 0) or 0
+end
+
+function AutoOpen.GetLastOpenedWhatsNewCount()
+    local state = getWhatsNewState()
+    return state and (tonumber(state.lastOpenedCount) or 0) or 0
+end
+
+function AutoOpen.SetAcknowledgedWhatsNewCount(count)
+    local state = getWhatsNewState()
+    if not state then
+        return false
+    end
+
+    state.acknowledgedCount = tonumber(count or 0) or 0
+    transmitPlayerManualModData()
+    return true
+end
+
+function AutoOpen.MarkWhatsNewAcknowledged()
+    local state = getWhatsNewState()
+    if not state then
+        return false
+    end
+
+    state.acknowledgedCount = AutoOpen.GetCurrentWhatsNewCount()
+    transmitPlayerManualModData()
+    return true
+end
+
+function AutoOpen.MarkWhatsNewOpened()
+    local state = getWhatsNewState()
+    if not state then
+        return false
+    end
+
+    state.lastOpenedCount = AutoOpen.GetCurrentWhatsNewCount()
+    transmitPlayerManualModData()
+    return true
+end
+
+function AutoOpen.ShouldWhatsNewAutoOpen()
+    local currentVisibleCount = AutoOpen.GetCurrentWhatsNewCount()
+    if currentVisibleCount <= 0 then
+        return false
+    end
+
+    return AutoOpen.GetAcknowledgedWhatsNewCount() ~= currentVisibleCount
 end
 
 local function getDisabledStateKey(manualID, autoOpenKey)
@@ -412,10 +525,18 @@ function AutoOpen.IsManualAutoOpenEligible(manual)
 end
 
 function AutoOpen.CanManualShowDisableControl(manual)
+    if isUpdateManual(manual) then
+        return true
+    end
+
     return AutoOpen.IsManualAutoOpenEligible(manual)
 end
 
 function AutoOpen.ShouldManualAutoOpenNow(manual)
+    if isUpdateManual(manual) then
+        return AutoOpen.ShouldWhatsNewAutoOpen()
+    end
+
     if not AutoOpen.IsManualAutoOpenEligible(manual) then
         return false
     end
@@ -597,6 +718,9 @@ function AutoOpen.OpenManual(manual, autoOpenKey)
     end
 
     if opened then
+        if isUpdateManual(manual) then
+            AutoOpen.MarkWhatsNewOpened()
+        end
         AutoOpen.MarkManualSeen(manual, autoOpenKey)
         return true
     end
@@ -609,7 +733,7 @@ function AutoOpen.TryOpenPending()
         return false
     end
 
-    local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+    local player = getLocalPlayer()
     if not player then
         return false
     end
@@ -618,15 +742,21 @@ function AutoOpen.TryOpenPending()
         return false
     end
 
-    local candidate = AutoOpen.GetBestPendingCandidate()
-
     AutoOpen.checked = true
 
-    if not candidate or not candidate.manual then
+    if not AutoOpen.ShouldWhatsNewAutoOpen() then
         return false
     end
 
-    return AutoOpen.OpenManual(candidate.manual, candidate.autoOpenKey)
+    local latest = DynamicTrading.Manuals.GetLatestWhatsNewManual
+        and DynamicTrading.Manuals.GetLatestWhatsNewManual()
+        or nil
+
+    if not latest then
+        return false
+    end
+
+    return AutoOpen.OpenManual(latest, AutoOpen.GetManualAutoOpenKey(latest))
 end
 
 function AutoOpen.ResetSessionCheck()

@@ -11,66 +11,26 @@ function DT_ManualUI:runSearch(query)
     end
 
     for _, manual in ipairs(self.manuals) do
-        for _, page in ipairs(manual.pages or {}) do
-            local chapterTitle = DT_ManualUI_Utils.findChapterTitle(manual, page.chapterId)
+        local pageMap = self.pageByManual and self.pageByManual[manual.id] or {}
+        local records = DynamicTrading
+            and DynamicTrading.Manuals
+            and DynamicTrading.Manuals.GetManualSearchRecords
+            and DynamicTrading.Manuals.GetManualSearchRecords(manual)
+            or {}
 
-            if DT_ManualUI_Utils.lowercase(manual.title):find(needle, 1, true) or DT_ManualUI_Utils.lowercase(page.title):find(needle, 1, true) then
+        for _, record in ipairs(records) do
+            if tostring(record.haystack or ""):find(needle, 1, true) then
+                local page = pageMap and pageMap[record.pageId] or nil
+                local chapterTitle = DT_ManualUI_Utils.findChapterTitle(manual, page and page.chapterId or nil)
+
                 table.insert(self.results, {
                     manualId = manual.id,
-                    pageId = page.id,
-                    sectionId = nil,
-                    label = page.title,
+                    pageId = record.pageId,
+                    sectionId = record.sectionId,
+                    label = page and page.title or "",
                     path = manual.title .. " / " .. chapterTitle,
-                    snippet = manual.description or chapterTitle,
+                    snippet = record.snippet,
                 })
-            end
-
-            for _, keyword in ipairs(page.keywords or {}) do
-                if DT_ManualUI_Utils.lowercase(keyword):find(needle, 1, true) then
-                    table.insert(self.results, {
-                        manualId = manual.id,
-                        pageId = page.id,
-                        sectionId = nil,
-                        label = page.title,
-                        path = manual.title .. " / " .. chapterTitle,
-                        snippet = "Keyword: " .. tostring(keyword),
-                    })
-                    break
-                end
-            end
-
-            for _, block in ipairs(page.blocks or {}) do
-                local text = ""
-                if block.type == "heading" then
-                    text = tostring(block.text or "")
-                elseif block.type == "paragraph" then
-                    text = tostring(block.text or "")
-                elseif block.type == "callout" then
-                    text = tostring(block.title or "") .. " " .. tostring(block.text or "")
-                elseif block.type == "bullet_list" then
-                    text = table.concat(block.items or {}, " ")
-                elseif block.type == "image" then
-                    text = tostring(block.caption or "")
-                elseif block.type == "supporter_carousel" then
-                    local names = {}
-                    for _, supporter in ipairs(block.supporters or {}) do
-                        if supporter.active ~= false then
-                            table.insert(names, tostring(supporter.name or ""))
-                        end
-                    end
-                    text = tostring(block.title or "") .. " " .. table.concat(names, " ") .. " " .. tostring(block.thankYouText or block.thank_you_text or "")
-                end
-
-                if DT_ManualUI_Utils.lowercase(text):find(needle, 1, true) then
-                    table.insert(self.results, {
-                        manualId = manual.id,
-                        pageId = page.id,
-                        sectionId = block.id,
-                        label = page.title,
-                        path = manual.title .. " / " .. chapterTitle,
-                        snippet = text,
-                    })
-                end
             end
         end
     end
