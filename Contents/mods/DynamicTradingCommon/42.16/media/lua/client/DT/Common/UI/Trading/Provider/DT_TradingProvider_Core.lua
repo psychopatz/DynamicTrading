@@ -197,4 +197,28 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
             return 0, 999
         end
     end
+
+    if provider.invalidateTradeCaches == nil then
+        function provider:invalidateTradeCaches()
+        end
+    end
+
+    if provider.getStockVersion == nil then
+        function provider:getStockVersion(trader)
+            return trader and (trader.stockVersion or trader.version or trader.sessionVersion) or nil
+        end
+    end
+
+    if provider.getSellPriceContextVersion == nil then
+        function provider:getSellPriceContextVersion(trader)
+            local priceConfig = DynamicTrading and DynamicTrading.PriceConfig or nil
+            local priceVersion = priceConfig and (priceConfig.version or priceConfig.VERSION) or 0
+            return table.concat({
+                tostring(self:getStockVersion(trader) or ""),
+                tostring(trader and trader.factionID or ""),
+                tostring(trader and trader.budget or trader and trader.wallet or 0),
+                tostring(priceVersion or 0)
+            }, "|")
+        end
+    end
 end

@@ -154,7 +154,23 @@ function DT_TradingWindow:createChildren()
         if item.item.isCategory then
             local catName = item.item.categoryName
             ui.collapsed[catName] = not ui.collapsed[catName]
-            ui:populateList()
+            if not ui.isBuying and ui.sellScanSession then
+                ui.sellScanListDirty = true
+                ui:refreshSellScanProgress(true)
+            else
+                ui:populateList()
+            end
+            return
+        end
+
+        if item.item.isPlaceholder then
+            target.selected = -1
+            ui.selectedItemID = -1
+            ui.btnAction:setEnable(false)
+            ui.btnAction:setTitle(ui:getDefaultActionTitle())
+            if ui.btnLock then
+                ui.btnLock:setVisible(false)
+            end
             return
         end
 

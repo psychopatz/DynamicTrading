@@ -59,7 +59,11 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     ui.transactionKind = ui:getTransactionKind()
     ui:coerceTradeMode(trader)
     ui:relayout()
+    local openStartedAt = ui.GetNowMs and ui:GetNowMs() or 0
     ui:populateList()
+    if ui.logPerf then
+        ui:logPerf("WindowOpen", "trader=" .. tostring(traderID) .. " openPopulateMs=" .. tostring((ui:GetNowMs() or 0) - openStartedAt))
+    end
 
     local gameTime = GameTime:getInstance()
     local climate = ClimateManager:getInstance()
@@ -85,8 +89,20 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
 end
 
 local function onInventoryChange()
+    local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
+    if player and player.getModData then
+        local modData = player:getModData()
+        modData.DT_SellScanRevision = (tonumber(modData.DT_SellScanRevision) or 0) + 1
+    end
+
     if DT_TradingWindow.instance and DT_TradingWindow.instance:getIsVisible() then
         if not DT_TradingWindow.instance.isBuying then
+            if DT_TradingWindow.instance.sellScanSession then
+                DT_TradingWindow.instance.sellScanSession.needsListRefresh = true
+            end
+            if DT_TradingItemUtils and DT_TradingItemUtils.Internal and DT_TradingItemUtils.Internal.invalidateSellScanCacheForTrader then
+                DT_TradingItemUtils.Internal.invalidateSellScanCacheForTrader(DT_TradingWindow.instance.traderID, "inventory-change")
+            end
             DT_TradingWindow.instance.inventoryDirty = true
         end
     end
@@ -97,6 +113,12 @@ Events.OnRefreshInventoryWindowContainers.Add(onInventoryChange)
 
 local function onPriceConfigUpdated()
     if DT_TradingWindow.instance and DT_TradingWindow.instance:getIsVisible() then
+        if DT_TradingItemUtils and DT_TradingItemUtils.Internal and DT_TradingItemUtils.Internal.invalidateSellScanCaches then
+            DT_TradingItemUtils.Internal.invalidateSellScanCaches("price-config-update")
+        end
+        if DT_TradingWindow.instance.dataProvider and DT_TradingWindow.instance.dataProvider.invalidateTradeCaches then
+            DT_TradingWindow.instance.dataProvider:invalidateTradeCaches(DT_TradingWindow.instance.traderID)
+        end
         DT_TradingWindow.instance:populateList()
     end
 end

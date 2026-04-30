@@ -18,6 +18,7 @@ return function(context)
 
         return {
             id = traderID,
+            version = stockData.version or 0,
             items = stockData.items,
             restock = stockData.restock,
             deflation = stockData.deflation,

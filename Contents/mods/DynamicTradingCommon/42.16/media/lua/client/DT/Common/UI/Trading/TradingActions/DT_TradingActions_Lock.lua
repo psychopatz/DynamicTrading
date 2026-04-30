@@ -18,5 +18,9 @@ function DT_TradingWindow:onToggleLock()
         player:playSound("LockDoor")
     end
 
+    if DT_TradingItemUtils and DT_TradingItemUtils.Internal and DT_TradingItemUtils.Internal.invalidateSellScanCaches then
+        DT_TradingItemUtils.Internal.invalidateSellScanCaches("lock-toggle")
+    end
+
     self:populateList()
 end

@@ -4,6 +4,34 @@
 DT_TradingWindow = DT_TradingWindow or ISCollapsableWindow:derive("DT_TradingWindow")
 DT_TradingWindow.instance = nil
 
+local function nowMs()
+    if getTimeInMillis then
+        return math.floor(tonumber(getTimeInMillis()) or 0)
+    end
+
+    return math.floor((os.time() or 0) * 1000)
+end
+
+function DT_TradingWindow:IsPerfDebugEnabled()
+    return DynamicTrading and DynamicTrading.DebugPerformance == true
+end
+
+function DT_TradingWindow:GetNowMs()
+    return nowMs()
+end
+
+function DT_TradingWindow:logPerf(scope, message)
+    if not self:IsPerfDebugEnabled() then
+        return
+    end
+
+    if DynamicTrading and DynamicTrading.Log then
+        DynamicTrading.Log("DTCommons", "TradePerf", tostring(scope or "Window"), tostring(message or ""))
+    else
+        print("[DT TradePerf][" .. tostring(scope or "Window") .. "] " .. tostring(message or ""))
+    end
+end
+
 function DT_TradingWindow:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(true)
@@ -28,6 +56,10 @@ function DT_TradingWindow:initialise()
     -- Prevent FPS drops by limiting inventory scanning frequency.
     self.inventoryDirty = false
     self.refreshCooldown = 0
+    self.sellScanSession = nil
+    self.sellScanListDirty = false
+    self.sellScanLastListRefreshAt = 0
+    self.lastOpenPopulateAt = 0
 
     self.lastHour = -1
     self.wasRaining = false

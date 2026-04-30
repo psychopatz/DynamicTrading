@@ -63,6 +63,9 @@ return function(context)
         tx.stockData.lastTradeBy = player and player.getUsername and player:getUsername() or nil
         tx.stockData.lastTradeAt = getTimeInMillis and getTimeInMillis() or nil
         tx.stockData.totalTradeVolume = (tonumber(tx.stockData.totalTradeVolume) or 0) + totalCost
+        if DynamicTrading_Stock and DynamicTrading_Stock.BumpVersion then
+            DynamicTrading_Stock.BumpVersion(tx.traderID, "buy")
+        end
 
         local itemStockData = type(itemStock) == "table" and itemStock or {}
         customData = itemStockData.customData

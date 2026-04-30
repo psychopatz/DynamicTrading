@@ -75,6 +75,9 @@ return function(context)
             tx.stockData.deflation = {}
         end
         tx.stockData.deflation[tx.key] = (tx.stockData.deflation[tx.key] or 0) + tx.clientQty
+        if DynamicTrading_Stock and DynamicTrading_Stock.BumpVersion then
+            DynamicTrading_Stock.BumpVersion(tx.traderID, isGift and "gift" or "sell")
+        end
 
         ModData.transmit("DynamicTrading_Stock")
 

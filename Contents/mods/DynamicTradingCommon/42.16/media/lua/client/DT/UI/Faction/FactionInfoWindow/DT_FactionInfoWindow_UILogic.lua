@@ -191,6 +191,9 @@ function DT_FactionInfoWindow.ToggleWindow(device)
     if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance:getIsVisible() then
         DT_RadioScannerWindow.instance:close()
     end
+    if DC_SupplyWindow and DC_SupplyWindow.instance and DC_SupplyWindow.instance:getIsVisible() then
+        DC_SupplyWindow.instance:close()
+    end
 
     if DT_FactionInfoWindow.instance then
         if DT_FactionInfoWindow.instance:getIsVisible() then
@@ -210,6 +213,9 @@ end
 function DT_FactionInfoWindow.Open(device)
     if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance:getIsVisible() then
         DT_RadioScannerWindow.instance:close()
+    end
+    if DC_SupplyWindow and DC_SupplyWindow.instance and DC_SupplyWindow.instance:getIsVisible() then
+        DC_SupplyWindow.instance:close()
     end
 
     if DT_FactionInfoWindow.instance then

@@ -16,6 +16,8 @@ function DT_TradingWindow:setTradingMode(isBuying)
     self.selectedKey = nil
     self.selectedItemID = -1
     self.lastSelectedIndex = -1
+    self.sellScanSession = nil
+    self.sellScanListDirty = false
 
     if self.btnTabBuy and self.btnTabSell then
         if self.isBuying then

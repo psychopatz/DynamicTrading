@@ -55,6 +55,9 @@ function DT_RadioScannerWindow.ToggleWindow(device)
     if DT_FactionInfoWindow and DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance:getIsVisible() then
         DT_FactionInfoWindow.instance:close()
     end
+    if DC_SupplyWindow and DC_SupplyWindow.instance and DC_SupplyWindow.instance:getIsVisible() then
+        DC_SupplyWindow.instance:close()
+    end
 
     if DT_RadioScannerWindow.instance then
         if DT_RadioScannerWindow.instance:getIsVisible() then

@@ -7,6 +7,16 @@ require "DT/Common/Faction/TradingSys/TraderSession/DT_TraderSession"
 DynamicTrading_Stock = {}
 local MOD_DATA_KEY = "DynamicTrading_Stock"
 
+local function bumpVersion(stockData, reason)
+    if type(stockData) ~= "table" then
+        return
+    end
+
+    stockData.version = (tonumber(stockData.version) or 0) + 1
+    stockData.versionReason = reason or stockData.versionReason
+    stockData.versionUpdatedAt = getTimeInMillis and getTimeInMillis() or nil
+end
+
 function DynamicTrading_Stock.Init()
     if not ModData.exists(MOD_DATA_KEY) then
         ModData.add(MOD_DATA_KEY, {})
@@ -31,7 +41,8 @@ function DynamicTrading_Stock.InitializeInventory(traderID, initialItems)
             name = soul and soul.name or "Trader",
             archetype = soul and soul.archetypeID or "General",
             identitySeed = soul and soul.identitySeed or 1,
-            gender = (soul and soul.isFemale) and "Female" or "Male"
+            gender = (soul and soul.isFemale) and "Female" or "Male",
+            version = 1
         }
         -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
     end
@@ -60,10 +71,21 @@ function DynamicTrading_Stock.UpdateItemQty(traderUUID, itemFullType, delta, pla
             itemEntry.dynamicMod = 1.0
         end
 
+        bumpVersion(traderStock, "qty-update")
+
         -- ModData.transmit(MOD_DATA_KEY) -- Removed global transmit
         return true
     end
     return false
+end
+
+function DynamicTrading_Stock.BumpVersion(traderUUID, reason)
+    local stockData = DynamicTrading_Stock.GetStock(traderUUID)
+    if not stockData then
+        return
+    end
+
+    bumpVersion(stockData, reason)
 end
 
 -- ==========================================================
@@ -107,6 +129,9 @@ function DynamicTrading_Stock.CheckAndGenerateStock(traderUUID)
         end
         return true, "Stock Generated"
     else
+        if data[traderUUID].version == nil then
+            data[traderUUID].version = 1
+        end
         return true, "Stock Already Existed"
     end
 end

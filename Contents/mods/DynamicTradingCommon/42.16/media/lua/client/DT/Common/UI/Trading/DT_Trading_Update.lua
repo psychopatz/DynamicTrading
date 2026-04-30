@@ -21,7 +21,27 @@ function DT_TradingWindow:update()
         self.refreshCooldown = self.refreshCooldown - 1
     end
 
+    if self.sellScanSession and not self.sellScanSession.completed and not self.isBuying then
+        local progressed = DT_TradingItemUtils
+            and DT_TradingItemUtils.Internal
+            and DT_TradingItemUtils.Internal.processSellScanSession
+            and DT_TradingItemUtils.Internal.processSellScanSession(self.sellScanSession)
+
+        if progressed then
+            local now = self:GetNowMs()
+            local shouldRefreshList = self.sellScanSession.completed
+                or self.sellScanSession.needsListRefresh
+                or (self.sellScanListDirty == true)
+            if shouldRefreshList and (self.sellScanSession.completed or (now - (self.sellScanLastListRefreshAt or 0)) >= 120) then
+                self:refreshSellScanProgress(true)
+            end
+        end
+    end
+
     if self.inventoryDirty and self.refreshCooldown and self.refreshCooldown <= 0 then
+        if self.dataProvider and self.dataProvider.invalidateTradeCaches then
+            self.dataProvider:invalidateTradeCaches(self.traderID)
+        end
         self:populateList()
         self.inventoryDirty = false
         self.refreshCooldown = 30

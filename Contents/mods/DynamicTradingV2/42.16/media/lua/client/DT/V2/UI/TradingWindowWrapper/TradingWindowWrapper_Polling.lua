@@ -23,32 +23,22 @@ local function OnPreUIDraw()
 
     local stock = stockData[traderID]
 
-    local totalQty = 0
-    if stock.items then
-        for _, item in pairs(stock.items) do
-            if type(item) == "table" then
-                totalQty = totalQty + (item.qty or 0)
-            else
-                totalQty = totalQty + (item or 0)
-            end
-        end
+    local version = V2_DataProvider.getStockVersion and V2_DataProvider:getStockVersion(traderID)
+    if not version then
+        version = tostring(stock.version or stock.factionWealth or 0)
     end
-
-    local playerItemCount = 0
-    if not ui.isBuying then
-        local player = getSpecificPlayer(0)
-        if player and not player:isDead() and player:getInventory() then
-            playerItemCount = player:getInventory():getItems():size()
-        end
-    end
-
-    local version = tostring(stock.factionWealth or 0) .. "_" .. tostring(totalQty) .. "_" .. tostring(playerItemCount)
 
     if DT_TradingWindowWrapper_State.currentTraderID == traderID
         and DT_TradingWindowWrapper_State.lastStockVersion
         and DT_TradingWindowWrapper_State.lastStockVersion ~= version then
         DynamicTrading.Log("DTV2", "Trade", "Sync", "Stock version changed for " .. tostring(traderID) .. ", refreshing UI")
         DT_TradingWindowWrapper_State.lastStockVersion = version
+        if V2_DataProvider.invalidateTraderCache then
+            V2_DataProvider:invalidateTraderCache(traderID)
+        end
+        if DT_TradingItemUtils and DT_TradingItemUtils.Internal and DT_TradingItemUtils.Internal.invalidateSellScanCacheForTrader then
+            DT_TradingItemUtils.Internal.invalidateSellScanCacheForTrader(traderID, "stock-version-change")
+        end
         -- Defer rebuild into the window update loop so we don't mutate list rows
         -- while the UI is handling mouse input for the current frame.
         ui.inventoryDirty = true
