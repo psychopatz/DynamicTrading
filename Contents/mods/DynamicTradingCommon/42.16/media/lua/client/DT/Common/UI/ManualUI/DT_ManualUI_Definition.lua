@@ -12,7 +12,11 @@ local function dtEnsureManualUIModulesLoaded()
         return
     end
 
-    if DT_ManualUI.loadManualData and DT_ManualUI.refreshLayout and DT_ManualUI.drawContentItem and DT_ManualUI.onSearchButton then
+    if DT_ManualUI.loadManualData
+        and DT_ManualUI.refreshLayout
+        and DT_ManualUI.drawContentItem
+        and DT_ManualUI.onSearchButton
+        and DT_ManualUI._manualFilterPatched then
         return
     end
 
@@ -29,6 +33,7 @@ local function dtEnsureManualUIModulesLoaded()
     require "DT/Common/UI/ManualUI/DT_ManualUI_Render"
     require "DT/Common/UI/ManualUI/DT_ManualUI_Interactions"
     require "DT/Common/UI/ManualUI/DT_ManualUI_ImageModal"
+    require "DT/Common/UI/ManualUI/DT_ManualUI_Filters"
 
     DT_ManualUI._modulesLoading = false
 end
@@ -37,7 +42,6 @@ function DT_ManualUI:initialise()
     ISCollapsableWindow.initialise(self)
     self:setTitle("Dynamic Trading Manuals")
     self:setResizable(true)
-
     self.viewMode = self.viewMode or "manuals"
     self.currentManualId = nil
     self.currentPageId = nil
@@ -64,12 +68,18 @@ function DT_ManualUI:initialise()
     self.hallOfFameSupporters = {}
     self.hallOfFameAutoplayMs = 4000
     self.hallOfFameCurrencySymbol = "$"
+
+    self.manualFilterKey = self.manualFilterKey or nil
+    self.manualFilterOptions = self.manualFilterOptions or {}
+    self.manualFilterOptionKeys = self.manualFilterOptionKeys or {}
+    self.allVisibleManuals = self.allVisibleManuals or {}
 end
 
 function DT_ManualUI:close()
     if DT_ConfigManager and DT_ConfigManager.setWindowState then
         DT_ConfigManager.setWindowState("ManualUI", self:getX(), self:getY(), self:getWidth(), self:getHeight())
     end
+
     if self.viewMode == "manuals" and DT_ConfigManager and DT_ConfigManager.setLastManualLocation then
         DT_ConfigManager.setLastManualLocation(self.currentManualId, self.currentPageId, self.highlightSectionId)
     end
@@ -80,6 +90,7 @@ function DT_ManualUI:close()
 end
 
 function DT_ManualUI.Open(args)
+    args = args or {}
     dtEnsureManualUIModulesLoaded()
 
     if DT_ManualUI.instance then
@@ -103,12 +114,13 @@ function DT_ManualUI.Open(args)
 
     local ui = DT_ManualUI:new(x, y, width, height)
     ui.viewMode = args and args.viewMode or "manuals"
+    ui.manualFilterKey = args.manualFilterKey or args.filterKey or nil
     ui:initialise()
     ui:addToUIManager()
     ui:loadManualData()
     ui:openLocation(args)
-
     DT_ManualUI.instance = ui
+
     return ui
 end
 
@@ -141,22 +153,32 @@ end
 
 DynamicTrading.Manuals.OpenSupport = function(args)
     args = args or {}
-    local manual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("support") or nil
+    local manual = DynamicTrading.Manuals
+        and DynamicTrading.Manuals.GetLatestManualByType
+        and DynamicTrading.Manuals.GetLatestManualByType("support")
+        or nil
+
     if manual then
         args.viewMode = "manuals"
         args.manualId = args.manualId or manual.id
         args.pageId = args.pageId or manual.startPageId
     end
+
     return DT_ManualUI.Open(args)
 end
 
 DynamicTrading.Manuals.OpenDonators = function(args)
     args = args or {}
-    local manual = DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestManualByType and DynamicTrading.Manuals.GetLatestManualByType("donators") or nil
+    local manual = DynamicTrading.Manuals
+        and DynamicTrading.Manuals.GetLatestManualByType
+        and DynamicTrading.Manuals.GetLatestManualByType("donators")
+        or nil
+
     if manual then
         args.viewMode = "manuals"
         args.manualId = args.manualId or manual.id
         args.pageId = args.pageId or manual.startPageId
     end
+
     return DT_ManualUI.Open(args)
 end

@@ -1,6 +1,16 @@
 require "DT/Common/UI/ManualUI/DT_ManualUI_Definition"
 require "DT/Common/UI/ManualUI/DT_ManualUI_Utils"
 
+local function applyDynamicNavHeight(ui, item, row)
+    if not ui or not item or not row then
+        return
+    end
+
+    if ui.getNavRowHeight and ui.navList then
+        item.height = ui:getNavRowHeight(row, ui.navList:getWidth())
+    end
+end
+
 function DT_ManualUI:loadManualData()
     local registry = DynamicTrading.Manuals and DynamicTrading.Manuals.Registry or {}
 
@@ -26,6 +36,7 @@ function DT_ManualUI:loadManualData()
 
     for _, manual in pairs(self.allManuals) do
         local pageMap = {}
+
         for _, page in ipairs(manual.pages or {}) do
             pageMap[page.id] = page
             self.pageLookup[manual.id .. "::" .. tostring(page.id)] = {
@@ -39,8 +50,10 @@ function DT_ManualUI:loadManualData()
                     sectionMap[block.id] = index
                 end
             end
+
             self.blockSectionIndex[manual.id .. "::" .. tostring(page.id)] = sectionMap
         end
+
         self.pageByManual[manual.id] = pageMap
     end
 
@@ -63,6 +76,7 @@ function DT_ManualUI:refreshSupportBannerState()
 
     local viewingSupport = manual ~= nil and self.currentManualId == manual.id
     local viewingDonators = donorManual ~= nil and self.currentManualId == donorManual.id
+
     self.showSupportBanner = manual ~= nil and version ~= "" and not viewingSupport and not viewingDonators
 end
 
@@ -97,9 +111,11 @@ end
 function DT_ManualUI:ensureExpandedPath(manualId, chapterId)
     if self.expandedManuals == nil then self.expandedManuals = {} end
     if self.expandedChapters == nil then self.expandedChapters = {} end
+
     if manualId then
         self.expandedManuals[tostring(manualId)] = true
     end
+
     if manualId and chapterId then
         self.expandedChapters[tostring(manualId) .. "::" .. tostring(chapterId)] = true
     end
@@ -108,9 +124,11 @@ end
 function DT_ManualUI:resolvePage(manualId, pageId)
     local key = tostring(manualId or "") .. "::" .. tostring(pageId or "")
     local resolved = self.pageLookup[key]
+
     if resolved then
         return resolved.manual, resolved.page
     end
+
     return nil, nil
 end
 
@@ -168,6 +186,7 @@ function DT_ManualUI:openLocation(args)
         if DynamicTrading.Manuals and DynamicTrading.Manuals.GetDefaultManual then
             manual = DynamicTrading.Manuals.GetDefaultManual(self.manuals)
         end
+
         manual = manual or self.manuals[1]
         page = self:getStartPage(manual)
     end
@@ -217,6 +236,7 @@ function DT_ManualUI:refreshNavigation()
     for _, manual in ipairs(self.manuals) do
         local manualExpanded = self:isManualExpanded(manual.id)
         local chapters = manual.chapters or {}
+
         local manualRow = {
             kind = "manual",
             manualId = manual.id,
@@ -227,15 +247,17 @@ function DT_ManualUI:refreshNavigation()
             expandable = (#chapters > 0),
             expanded = manualExpanded,
         }
+
         table.insert(self.navRows, manualRow)
         local manualItem = self.navList:addItem(manual.title, manualRow)
-        manualItem.height = (manual.description and manual.description ~= "") and 60 or 34
+        applyDynamicNavHeight(self, manualItem, manualRow)
 
         if manualExpanded then
             for _, chapter in ipairs(chapters) do
                 local chapterExpanded = self:isChapterExpanded(manual.id, chapter.id)
                 local firstPageId = nil
                 local pageCount = 0
+
                 for _, page in ipairs(manual.pages or {}) do
                     if page.chapterId == chapter.id then
                         pageCount = pageCount + 1
@@ -257,9 +279,10 @@ function DT_ManualUI:refreshNavigation()
                     expanded = chapterExpanded,
                     firstPageId = firstPageId,
                 }
+
                 table.insert(self.navRows, chapterRow)
                 local chapterItem = self.navList:addItem(chapter.title, chapterRow)
-                chapterItem.height = 30
+                applyDynamicNavHeight(self, chapterItem, chapterRow)
 
                 if chapterExpanded then
                     for _, page in ipairs(manual.pages or {}) do
@@ -274,9 +297,10 @@ function DT_ManualUI:refreshNavigation()
                                 depth = 2,
                                 selected = page.id == self.currentPageId and manual.id == self.currentManualId,
                             }
+
                             table.insert(self.navRows, pageRow)
                             local pageItem = self.navList:addItem(page.title, pageRow)
-                            pageItem.height = 28
+                            applyDynamicNavHeight(self, pageItem, pageRow)
                         end
                     end
                 end
@@ -319,6 +343,7 @@ function DT_ManualUI:refreshContent()
         self.currentReleaseVersion = nil
         self.pageTitle:setName(self.viewMode == "updates" and "Update History" or "Manual Library")
         self:refreshUpdateControls()
+
         for _, manual in ipairs(self.manuals) do
             local item = self.contentList:addItem(manual.title, {
                 kind = "library",
@@ -328,10 +353,12 @@ function DT_ManualUI:refreshContent()
             })
             item.height = 70
         end
+
         return
     end
 
     local manual, page = self:resolvePage(self.currentManualId, self.currentPageId)
+
     if not manual or not page then
         self.currentReleaseVersion = nil
         self.pageTitle:setName(self.viewMode == "updates" and "Update" or "Manual")
