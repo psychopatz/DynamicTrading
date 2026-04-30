@@ -1,8 +1,9 @@
 -- DT_V2_RadarPatch.lua
 -- Hooks into ISRadioWindow to add the Trader Radar functionality.
--- Version [V3.1] - UI Logic Recovery (Device Injection Support)
+-- Version [V3.4] - Signal Panel Collapse Fix + Distance Row Removal
 -- ==============================================================================
 
+require "ISUI/ISPanel"
 require "ISUI/ISRadioWindow"
 require "DT/Common/UI/RadioScanner/DT_RadioScannerWindow"
 require "DT/V2/Radio/RadarManager/DT_V2_RadarManager"
@@ -11,12 +12,138 @@ local original_createChildren = ISRadioWindow.createChildren
 local original_close = ISRadioWindow.close
 local original_readFromObject = ISRadioWindow.readFromObject
 
+local function getWidgetX(widget)
+    if widget and widget.getX then
+        return widget:getX()
+    end
+
+    return tonumber(widget and widget.x) or 0
+end
+
+local function getWidgetY(widget)
+    if widget and widget.getY then
+        return widget:getY()
+    end
+
+    return tonumber(widget and widget.y) or 0
+end
+
+local function getWidgetWidth(widget)
+    if widget and widget.getWidth then
+        return widget:getWidth()
+    end
+
+    return tonumber(widget and widget.width) or 0
+end
+
+local function getWidgetHeight(widget)
+    if widget and widget.getHeight then
+        return widget:getHeight()
+    end
+
+    return tonumber(widget and widget.height) or 0
+end
+
+local function setWidgetWidth(widget, width)
+    if not widget then
+        return
+    end
+
+    if widget.setWidth then
+        widget:setWidth(width)
+    else
+        widget.width = width
+    end
+end
+
+local function setWidgetHeight(widget, height)
+    if not widget then
+        return
+    end
+
+    if widget.setHeight then
+        widget:setHeight(height)
+    else
+        widget.height = height
+    end
+end
+
+local function setWidgetSize(widget, width, height)
+    setWidgetWidth(widget, width)
+    setWidgetHeight(widget, height)
+end
+
+local function setWidgetVisible(widget, visible)
+    if not widget then
+        return
+    end
+
+    if widget.setVisible then
+        widget:setVisible(visible == true)
+    else
+        widget.visible = visible == true
+    end
+end
+
+local function isWidgetVisible(widget)
+    if not widget then
+        return false
+    end
+
+    if type(widget.getIsVisible) == "function" then
+        local ok, result = pcall(widget.getIsVisible, widget)
+
+        if ok then
+            return result == true
+        end
+    end
+
+    if type(widget.isVisible) == "function" then
+        local ok, result = pcall(widget.isVisible, widget)
+
+        if ok then
+            return result == true
+        end
+    end
+
+    if type(widget.visible) == "boolean" then
+        return widget.visible == true
+    end
+
+    return true
+end
+
+local function readBooleanField(widget, field)
+    if not widget then
+        return nil
+    end
+
+    local value = widget[field]
+
+    if type(value) == "function" then
+        local ok, result = pcall(value, widget)
+
+        if ok and type(result) == "boolean" then
+            return result
+        end
+
+        return nil
+    end
+
+    if type(value) == "boolean" then
+        return value
+    end
+
+    return nil
+end
+
 local function isRadioOperationalFromWindow(window)
     if not window then
         return false
     end
 
     local data = window.deviceData
+
     if not data and window.device and window.device.getDeviceData then
         data = window.device:getDeviceData()
     end
@@ -24,6 +151,428 @@ local function isRadioOperationalFromWindow(window)
     return data ~= nil
         and data:getIsTurnedOn()
         and data:getPower() > 0
+end
+
+local function textLooksLikeBaseSignalDetail(value)
+    local text = string.lower(tostring(value or ""))
+
+    if text == "" then
+        return false
+    end
+
+    return string.find(text, "distance", 1, true) ~= nil
+        or string.find(text, "meter", 1, true) ~= nil
+        or string.find(text, "category", 1, true) ~= nil
+end
+
+local function clearBaseSignalDetailText(widget)
+    if type(widget) ~= "table" then
+        return
+    end
+
+    local textFields = {
+        "name",
+        "text",
+        "title",
+        "titleText",
+        "label",
+        "description",
+    }
+
+    for _, field in ipairs(textFields) do
+        if type(widget[field]) == "string" and textLooksLikeBaseSignalDetail(widget[field]) then
+            widget[field] = ""
+        end
+    end
+end
+
+local function clearBaseSignalDetailsRecursive(widget, depth, visited)
+    if type(widget) ~= "table" then
+        return
+    end
+
+    if depth and depth > 5 then
+        return
+    end
+
+    visited = visited or {}
+
+    if visited[widget] then
+        return
+    end
+
+    visited[widget] = true
+
+    clearBaseSignalDetailText(widget)
+
+    local children = widget.children
+
+    if type(children) == "table" then
+        for _, child in pairs(children) do
+            clearBaseSignalDetailsRecursive(child, (depth or 0) + 1, visited)
+        end
+    end
+end
+
+local function findSignalModule(window)
+    if not window or not window.modules then
+        return nil, nil, nil
+    end
+
+    for _, module in ipairs(window.modules) do
+        local element = module.element
+        local subpanel = element and element.subpanel
+        local title = element and element.titleText
+
+        local isSignal = false
+
+        if title == "Signal" then
+            isSignal = true
+        elseif subpanel and subpanel.sineWaveDisplay then
+            isSignal = true
+        end
+
+        if isSignal then
+            return module, element, subpanel or element
+        end
+    end
+
+    return nil, nil, nil
+end
+
+local function getAbsolutePositionRelativeToWindow(widget, window)
+    local x = 0
+    local y = 0
+    local current = widget
+
+    while current and current ~= window do
+        x = x + getWidgetX(current)
+        y = y + getWidgetY(current)
+        current = current.parent
+    end
+
+    return x, y
+end
+
+local function getSignalHeaderHeight(signalElement, signalPanel)
+    if not signalElement then
+        return 18
+    end
+
+    if signalElement.dt_signalHeaderHeight then
+        return signalElement.dt_signalHeaderHeight
+    end
+
+    local headerHeight = getWidgetY(signalPanel)
+
+    if headerHeight <= 0 then
+        headerHeight = getWidgetHeight(signalElement) - getWidgetHeight(signalPanel)
+    end
+
+    if headerHeight < 16 or headerHeight > 40 then
+        headerHeight = 18
+    end
+
+    signalElement.dt_signalHeaderHeight = headerHeight
+
+    return headerHeight
+end
+
+local function isSignalPanelExpanded(signalElement, signalPanel, waveDisplay)
+    if not signalElement or not signalPanel then
+        return false
+    end
+
+    if readBooleanField(signalElement, "collapsed") == true then
+        return false
+    end
+
+    if readBooleanField(signalElement, "isCollapsed") == true then
+        return false
+    end
+
+    if readBooleanField(signalElement, "expanded") == false then
+        return false
+    end
+
+    if readBooleanField(signalElement, "isExpanded") == false then
+        return false
+    end
+
+    if not isWidgetVisible(signalPanel) then
+        return false
+    end
+
+    if waveDisplay and not isWidgetVisible(waveDisplay) then
+        return false
+    end
+
+    -- If the waveform is visible, treat the Signal section as expanded even if
+    -- the previous frame temporarily left the panel height small.
+    if waveDisplay and isWidgetVisible(waveDisplay) then
+        return true
+    end
+
+    local headerHeight = getSignalHeaderHeight(signalElement, signalPanel)
+
+    return getWidgetHeight(signalElement) > headerHeight + 2
+end
+
+local function addChildIfNeeded(parent, child)
+    if not parent or not child then
+        return
+    end
+
+    if child.parent and child.parent ~= parent and child.parent.removeChild then
+        child.parent:removeChild(child)
+    end
+
+    if child.parent ~= parent then
+        parent:addChild(child)
+    end
+end
+
+local function bringChildToFront(parent, child)
+    if not parent or not child then
+        return
+    end
+
+    if child.parent and child.parent.removeChild then
+        child.parent:removeChild(child)
+    end
+
+    parent:addChild(child)
+end
+
+local function setSignalControlsVisible(window, visible)
+    if not window then
+        return
+    end
+
+    setWidgetVisible(window.dt_signalButtonBacker, visible)
+    setWidgetVisible(window.btnTraderScan, visible)
+    setWidgetVisible(window.btnTraderList, visible)
+end
+
+local function ensureSignalControls(window)
+    if not window then
+        return
+    end
+
+    local needsOrdering = false
+
+    if not window.dt_signalButtonBacker then
+        window.dt_signalButtonBacker = ISPanel:new(0, 0, 100, 24)
+        window.dt_signalButtonBacker:initialise()
+        window.dt_signalButtonBacker.backgroundColor = { r = 0, g = 0, b = 0, a = 1 }
+        window.dt_signalButtonBacker.borderColor = { r = 0, g = 0, b = 0, a = 0 }
+        window.dt_signalButtonBacker:setVisible(false)
+        needsOrdering = true
+    end
+
+    if not window.btnTraderScan then
+        window.btnTraderScan = ISButton:new(0, 0, 110, 22, "Scan", window, function(radioWindow)
+            -- Radio must be ON and powered.
+            -- Do not treat an OFF radio as a cooldown state.
+            if not isRadioOperationalFromWindow(radioWindow) then
+                return
+            end
+
+            -- Check gameplay cooldown.
+            if DT_V2_RadarManager and DT_V2_RadarManager.CanScan then
+                local canScan = DT_V2_RadarManager.CanScan(getSpecificPlayer(0), radioWindow.device)
+
+                if not canScan then
+                    return
+                end
+            end
+
+            -- Click spam protection.
+            local now = getTimeInMillis()
+
+            if radioWindow.dt_lastScanClick and now - radioWindow.dt_lastScanClick < 3000 then
+                return
+            end
+
+            radioWindow.dt_lastScanClick = now
+
+            if DT_V2_RadarManager and DT_V2_RadarManager.Scan then
+                DT_V2_RadarManager.Scan(getSpecificPlayer(0), radioWindow.device)
+            end
+        end)
+
+        window.btnTraderScan:initialise()
+        window.btnTraderScan.dt_icon = getTexture("media/ui/Icon_MarketInfo.png")
+
+        window.btnTraderScan.render = function(btn)
+            ISButton.render(btn)
+
+            if btn.dt_icon then
+                btn:drawTextureScaled(btn.dt_icon, 4, (btn.height - 16) / 2, 16, 16, 1, 1, 1, 1)
+            end
+        end
+
+        window.btnTraderScan.backgroundColor = { r = 0.2, g = 0.5, b = 0.2, a = 0.8 }
+        window.btnTraderScan:setVisible(false)
+        needsOrdering = true
+    end
+
+    if not window.btnTraderList then
+        window.btnTraderList = ISButton:new(0, 0, 110, 22, "Access Radio", window, function(radioWindow)
+            if DT_RadioScannerWindow then
+                DT_RadioScannerWindow.ToggleWindow(radioWindow.device)
+            end
+        end)
+
+        window.btnTraderList:initialise()
+        window.btnTraderList.dt_icon = getTexture("media/ui/Icon_MarketInfo.png")
+
+        window.btnTraderList.render = function(btn)
+            ISButton.render(btn)
+
+            if btn.dt_icon then
+                btn:drawTextureScaled(btn.dt_icon, 4, (btn.height - 16) / 2, 16, 16, 1, 1, 1, 1)
+            end
+        end
+
+        window.btnTraderList.backgroundColor = { r = 0.2, g = 0.2, b = 0.5, a = 0.8 }
+        window.btnTraderList:setVisible(false)
+        needsOrdering = true
+    end
+
+    addChildIfNeeded(window, window.dt_signalButtonBacker)
+    addChildIfNeeded(window, window.btnTraderScan)
+    addChildIfNeeded(window, window.btnTraderList)
+
+    -- Keep the black cover behind the buttons, and keep buttons above the
+    -- vanilla Signal panel render text.
+    if needsOrdering or window.dt_signalControlsOrdered ~= true then
+        bringChildToFront(window, window.dt_signalButtonBacker)
+        bringChildToFront(window, window.btnTraderScan)
+        bringChildToFront(window, window.btnTraderList)
+        window.dt_signalControlsOrdered = true
+    end
+end
+
+local function relayoutModulesAfterSignal(window, signalElement)
+    if not window or not window.modules or not signalElement then
+        return
+    end
+
+    local foundSignal = false
+    local nextY = 0
+
+    for _, module in ipairs(window.modules) do
+        local element = module.element
+
+        if element then
+            if foundSignal then
+                element:setY(nextY)
+                nextY = nextY + getWidgetHeight(element)
+            elseif element == signalElement then
+                foundSignal = true
+                nextY = getWidgetY(signalElement) + getWidgetHeight(signalElement)
+            end
+        end
+    end
+end
+
+local function layoutSignalControls(window, isValid)
+    ensureSignalControls(window)
+
+    local _, signalElement, signalPanel = findSignalModule(window)
+
+    if not signalElement or not signalPanel then
+        setSignalControlsVisible(window, false)
+        return
+    end
+
+    local waveDisplay = signalPanel.sineWaveDisplay
+    local headerHeight = getSignalHeaderHeight(signalElement, signalPanel)
+    local isExpanded = isSignalPanelExpanded(signalElement, signalPanel, waveDisplay)
+
+    clearBaseSignalDetailsRecursive(signalPanel, 0, {})
+
+    if not isValid or not isExpanded then
+        setSignalControlsVisible(window, false)
+
+        -- Important: restore the collapsed height so the Signal section does
+        -- not leave an invisible expanded blank area.
+        setWidgetHeight(signalPanel, 0)
+        setWidgetHeight(signalElement, headerHeight)
+
+        relayoutModulesAfterSignal(window, signalElement)
+        return
+    end
+
+    local panelWidth = getWidgetWidth(signalPanel)
+
+    if panelWidth <= 0 then
+        panelWidth = getWidgetWidth(signalElement)
+    end
+
+    if panelWidth <= 0 then
+        panelWidth = window.width
+    end
+
+    local btnHeight = 22
+    local gap = 10
+    local sidePadding = 10
+    local btnWidth = math.floor((panelWidth - (sidePadding * 2) - gap) / 2)
+
+    if btnWidth < 90 then
+        btnWidth = 90
+    end
+
+    if btnWidth > 125 then
+        btnWidth = 125
+    end
+
+    local waveBottom = 26
+
+    if waveDisplay then
+        waveBottom = getWidgetY(waveDisplay) + getWidgetHeight(waveDisplay)
+    end
+
+    local buttonYInPanel = waveBottom + 6
+    local coverYInPanel = buttonYInPanel - 2
+    local coverHeight = btnHeight + 4
+    local neededPanelHeight = buttonYInPanel + btnHeight + 6
+    local neededElementHeight = headerHeight + neededPanelHeight
+
+    setWidgetHeight(signalPanel, neededPanelHeight)
+    setWidgetHeight(signalElement, neededElementHeight)
+
+    relayoutModulesAfterSignal(window, signalElement)
+
+    local panelAbsX, panelAbsY = getAbsolutePositionRelativeToWindow(signalPanel, window)
+    local totalWidth = (btnWidth * 2) + gap
+    local startX = math.floor(panelAbsX + ((panelWidth - totalWidth) / 2))
+    local buttonY = panelAbsY + buttonYInPanel
+
+    -- This black backing covers the vanilla base radio Signal detail row:
+    -- "distance: ~ meters" / "category", without hiding the waveform.
+    window.dt_signalButtonBacker:setX(panelAbsX)
+    window.dt_signalButtonBacker:setY(panelAbsY + coverYInPanel)
+    setWidgetSize(window.dt_signalButtonBacker, panelWidth, coverHeight)
+    setWidgetVisible(window.dt_signalButtonBacker, true)
+
+    window.btnTraderScan:setX(startX)
+    window.btnTraderScan:setY(buttonY)
+    setWidgetSize(window.btnTraderScan, btnWidth, btnHeight)
+
+    window.btnTraderList:setX(startX + btnWidth + gap)
+    window.btnTraderList:setY(buttonY)
+    setWidgetSize(window.btnTraderList, btnWidth, btnHeight)
+
+    setWidgetVisible(window.btnTraderScan, true)
+    setWidgetVisible(window.btnTraderList, true)
+
+    local neededWindowHeight = getWidgetY(signalElement) + getWidgetHeight(signalElement) + 30
+
+    if window.height < neededWindowHeight then
+        window:setHeight(neededWindowHeight)
+    end
 end
 
 function ISRadioWindow:close()
@@ -48,85 +597,17 @@ end
 function ISRadioWindow:createChildren()
     original_createChildren(self)
 
-    local btnWidth = 110
-    local btnHeight = 22
-    local totalW = (btnWidth * 2) + 10
-    local startX = (self.width - totalW) / 2
-    local y = 100 -- Default placeholder
-
-    -- Add the "SCAN FOR TRADERS" button
-    self.btnTraderScan = ISButton:new(startX, y, btnWidth, btnHeight, "Scan", self, function(window)
-        -- 1. Radio must be ON and powered.
-        -- Do not treat an OFF radio as a cooldown state.
-        if not isRadioOperationalFromWindow(window) then
-            return
-        end
-
-        -- 2. Check gameplay cooldown.
-        if DT_V2_RadarManager and DT_V2_RadarManager.CanScan then
-            local canScan = DT_V2_RadarManager.CanScan(getSpecificPlayer(0), window.device)
-            if not canScan then
-                return
-            end
-        end
-
-        -- 3. Check spam protection.
-        local now = getTimeInMillis()
-        if window.dt_lastScanClick and now - window.dt_lastScanClick < 3000 then
-            return
-        end
-
-        window.dt_lastScanClick = now
-
-        if DT_V2_RadarManager and DT_V2_RadarManager.Scan then
-            DT_V2_RadarManager.Scan(getSpecificPlayer(0), window.device)
-        end
-    end)
-
-    self.btnTraderScan:initialise()
-
-    -- Store texture and handle manual rendering to place it on the left.
-    self.btnTraderScan.dt_icon = getTexture("media/ui/Icon_MarketInfo.png")
-    self.btnTraderScan.render = function(btn)
-        ISButton.render(btn)
-
-        if btn.dt_icon then
-            btn:drawTextureScaled(btn.dt_icon, 4, (btn.height - 16) / 2, 16, 16, 1, 1, 1, 1)
-        end
-    end
-
-    self.btnTraderScan.backgroundColor = { r = 0.2, g = 0.5, b = 0.2, a = 0.8 }
-    self.btnTraderScan:setVisible(false)
-    self:addChild(self.btnTraderScan)
-
-    -- Add the "OPEN RADAR LIST" button
-    self.btnTraderList = ISButton:new(startX + btnWidth + 10, y, btnWidth, btnHeight, "Access Radio", self, function(window)
-        if DT_RadioScannerWindow then
-            DT_RadioScannerWindow.ToggleWindow(window.device)
-        end
-    end)
-
-    self.btnTraderList:initialise()
-
-    self.btnTraderList.dt_icon = getTexture("media/ui/Icon_MarketInfo.png")
-    self.btnTraderList.render = function(btn)
-        ISButton.render(btn)
-
-        if btn.dt_icon then
-            btn:drawTextureScaled(btn.dt_icon, 4, (btn.height - 16) / 2, 16, 16, 1, 1, 1, 1)
-        end
-    end
-
-    self.btnTraderList.backgroundColor = { r = 0.2, g = 0.2, b = 0.5, a = 0.8 }
-    self.btnTraderList:setVisible(false)
-    self:addChild(self.btnTraderList)
+    ensureSignalControls(self)
+    layoutSignalControls(self, false)
 end
 
--- Refresh visibility/enable status and handle Dynamic Positioning
+-- Refresh visibility/enable status and handle Dynamic Positioning.
 local original_prerender = ISRadioWindow.prerender
 
 function ISRadioWindow:prerender()
     original_prerender(self)
+
+    ensureSignalControls(self)
 
     -- 1. Device Validation: must be two-way and not a TV.
     local isValid = false
@@ -135,20 +616,14 @@ function ISRadioWindow:prerender()
         isValid = true
     end
 
-    -- Fallback/Safety Check for UI state.
-    if self.btnTraderScan then
-        self.btnTraderScan:setVisible(isValid)
-    end
-
-    if self.btnTraderList then
-        self.btnTraderList:setVisible(isValid)
-    end
+    -- 2. Layout buttons as part of the base Signal section.
+    layoutSignalControls(self, isValid)
 
     if not isValid then
         return
     end
 
-    -- 2. Operational status update.
+    -- 3. Operational status update.
     if self.btnTraderScan and self.btnTraderList then
         local operational = isRadioOperationalFromWindow(self)
 
@@ -185,83 +660,13 @@ function ISRadioWindow:prerender()
                 self.btnTraderScan:setTitle("Scan")
             end
 
-            -- Force white text for readability on red background.
             self.btnTraderScan.textColor = { r = 1, g = 1, b = 1, a = 1 }
             self.btnTraderScan.backgroundColor = { r = 0.5, g = 0.2, b = 0.2, a = 0.8 }
         end
 
-        -- V2.5: Auto-close Radar Window if radio loses power/is turned off.
+        -- Auto-close Radar Window if radio loses power/is turned off.
         if not operational and DT_RadioScannerWindow and DT_RadioScannerWindow.instance then
             DT_RadioScannerWindow.instance:close()
-        end
-    end
-
-    -- 3. Dynamic Positioning and Expansion (V2.3 Simplified)
-    if self.modules and self.btnTraderScan and self.btnTraderList then
-        for i, module in ipairs(self.modules) do
-            local element = module.element
-            local subpanel = element and element.subpanel
-            local title = element and element.titleText
-
-            local isSignal = false
-
-            if title == "Signal" then
-                isSignal = true
-            elseif subpanel and subpanel.sineWaveDisplay then
-                isSignal = true
-            end
-
-            if isSignal then
-                -- Persistent Base Height Discovery
-                if not element.dt_baseHeight then
-                    local currentH = element:getHeight()
-
-                    -- If we catch it already expanded, find true base.
-                    if currentH > 80 then
-                        currentH = currentH - 45
-                    end
-
-                    element.dt_baseHeight = currentH
-
-                    local devName = self.device and self.device:getName() or "Unknown"
-                    DynamicTrading.Log("DTV2", "Radio", "Debug", "Base Height captured for " .. tostring(devName) .. ": " .. tostring(element.dt_baseHeight))
-                end
-
-                -- Force persistent expanded height.
-                local offset = 25
-                local targetH = element.dt_baseHeight + offset
-
-                if element:getHeight() ~= targetH then
-                    element:setHeight(targetH)
-
-                    if subpanel then
-                        subpanel:setHeight(subpanel:getHeight() + (targetH - element.dt_baseHeight))
-                    end
-
-                    -- Adjust window height slightly if needed.
-                    if self.height < element:getY() + targetH + 30 then
-                        self:setHeight(self.height + 25)
-                    end
-                end
-
-                -- Reposition Buttons to bottom.
-                local baseLineY = element:getY() + element:getHeight() - 25
-                local btnW = self.btnTraderScan.width
-                local totalW = (btnW * 2) + 10
-                local startX = (self.width - totalW) / 2
-
-                if self.btnTraderScan then
-                    self.btnTraderScan:setX(startX)
-                    self.btnTraderScan:setY(baseLineY)
-                end
-
-                if self.btnTraderList then
-                    self.btnTraderList:setX(startX + btnW + 10)
-                    self.btnTraderList:setY(baseLineY)
-                end
-
-                break
-            end
         end
     end
 end
