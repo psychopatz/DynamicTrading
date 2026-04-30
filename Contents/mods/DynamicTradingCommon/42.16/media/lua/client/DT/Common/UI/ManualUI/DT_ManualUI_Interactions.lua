@@ -9,6 +9,7 @@ function DT_ManualUI:onClearSearchButton()
     if self.searchEntry then
         self.searchEntry:setText("")
     end
+
     self.results = {}
     self:refreshResults()
     self:refreshContent()
@@ -18,6 +19,7 @@ function DT_ManualUI:onHomeButton()
     if self.searchEntry then
         self.searchEntry:setText("")
     end
+
     self.results = {}
     self:refreshResults()
     self.currentManualId = nil
@@ -25,12 +27,15 @@ function DT_ManualUI:onHomeButton()
     self.highlightSectionId = nil
     self.currentManualType = "manual"
     self.currentPopupVersion = ""
+
     if self.refreshSupportBannerState then
         self:refreshSupportBannerState()
     end
+
     if self.refreshLayout then
         self:refreshLayout()
     end
+
     self:refreshNavigation()
     self:refreshContent()
 end
@@ -44,19 +49,25 @@ function DT_ManualUI:onUpdateAutoOpenTick(index, selected)
         return
     end
 
-    local version = tostring(self.currentPopupVersion or "")
-    if self.currentManualType ~= "whats_new" or version == "" or not DT_ConfigManager or not DT_ConfigManager.setDisabledAutoOpenReleaseVersion then
+    local autoOpen = DynamicTrading
+        and DynamicTrading.Manuals
+        and DynamicTrading.Manuals.AutoOpen
+        or nil
+
+    if not autoOpen or not autoOpen.SetManualDisabled then
         return
     end
 
-    if selected then
-        DT_ConfigManager.setDisabledAutoOpenReleaseVersion(version)
-    else
-        local disabledVersion = DT_ConfigManager.getDisabledAutoOpenReleaseVersion and DT_ConfigManager.getDisabledAutoOpenReleaseVersion() or ""
-        if disabledVersion == version then
-            DT_ConfigManager.setDisabledAutoOpenReleaseVersion("")
-        end
+    local manual = self.allManuals and self.currentManualId and self.allManuals[self.currentManualId] or nil
+    if not manual then
+        return
     end
+
+    local autoOpenKey = self.currentAutoOpenKey
+        or (autoOpen.GetManualAutoOpenKey and autoOpen.GetManualAutoOpenKey(manual))
+        or nil
+
+    autoOpen.SetManualDisabled(manual, autoOpenKey, selected == true)
 end
 
 function DT_ManualUI:onOpenSupportBanner()
@@ -118,12 +129,14 @@ function DT_ManualUI:onNavMouseDown(x, y)
         if entry.expandable then
             DT_ManualUI.instance:ensureExpandedPath(entry.manualId)
         end
+
         DT_ManualUI.instance:openLocation({ manualId = entry.manualId })
         return
     end
 
     if entry.kind == "chapter" then
         local isCurrentChapter = false
+
         if DT_ManualUI.instance.currentPageId then
             local _, cp = DT_ManualUI.instance:resolvePage(DT_ManualUI.instance.currentManualId, DT_ManualUI.instance.currentPageId)
             if cp and cp.chapterId == entry.chapterId then

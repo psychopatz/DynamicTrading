@@ -7,13 +7,16 @@
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Config = DynamicTrading.Config or {}
-DynamicTrading.Config.MasterList = DynamicTrading.Config.MasterList or {} 
+DynamicTrading.Config.MasterList = DynamicTrading.Config.MasterList or {}
 DynamicTrading.Config.Tags = DynamicTrading.Config.Tags or {}
+
 DynamicTrading.Config.NPCMovement = DynamicTrading.Config.NPCMovement or {
     walkSpeed = 0.06,
     runSpeed = 0.09
 }
+
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
+
 DynamicTrading.Manuals = DynamicTrading.Manuals or {
     Registry = {},
     Order = {},
@@ -45,8 +48,7 @@ local function dtManualNormalizeAudience(value)
     if normalized == "" then
         return nil
     end
-    -- Future-proof: just return the normalized string. 
-    -- The migration script already updated existing manuals to use Mod IDs.
+
     return normalized
 end
 
@@ -66,34 +68,56 @@ local function dtManualNormalizeAudienceList(id, data)
         return audiences
     end
 
-    -- Default to DynamicTradingCommon if no audience specified
     return { "DynamicTradingCommon" }
 end
 
 local function dtManualTokenizeVersion(value)
     local tokens = {}
+
     for part in string.gmatch(tostring(value or ""), "[%w]+") do
         local numeric = tonumber(part)
         table.insert(tokens, numeric ~= nil and numeric or dtManualLower(part))
     end
+
     return tokens
 end
 
 local function dtManualDefaultSortOrder(manualId, audiences, orderIndex, isWhatsNew)
-    local primary = audiences and audiences[1] or "DynamicTradingCommon"
-    local base = 300000
-
-    if primary == "DynamicTrading" or primary == "DynamicTradingV2" then
-        base = 100000
-    elseif primary == "DynamicColonies" then
-        base = 200000
-    end
-
-    if isWhatsNew == true or dtManualLower(manualId) == "dt_whats_new" then
-        base = 0
-    end
-
+    local base = isWhatsNew == true and 0 or 300000
     return base + math.max(0, tonumber(orderIndex) or 0)
+end
+
+local function dtManualOptionalBoolean(camelValue, snakeValue)
+    if camelValue ~= nil then
+        return camelValue == true
+    end
+
+    if snakeValue ~= nil then
+        return snakeValue == true
+    end
+
+    return nil
+end
+
+local function dtManualFirstNonEmpty(...)
+    for index = 1, select("#", ...) do
+        local value = tostring(select(index, ...) or "")
+        if value ~= "" then
+            return value
+        end
+    end
+
+    return ""
+end
+
+local function dtManualGetUpdateSortKey(manual)
+    return dtManualFirstNonEmpty(
+        manual and manual.popupVersion,
+        manual and manual.releaseVersion,
+        manual and manual.contentRevision,
+        manual and manual.autoOpenRevision,
+        manual and manual.id
+    )
 end
 
 function DynamicTrading.Manuals.CompareReleaseVersions(left, right)
@@ -108,9 +132,11 @@ function DynamicTrading.Manuals.CompareReleaseVersions(left, right)
         if leftValue == nil and rightValue == nil then
             return 0
         end
+
         if leftValue == nil then
             return -1
         end
+
         if rightValue == nil then
             return 1
         end
@@ -125,6 +151,7 @@ function DynamicTrading.Manuals.CompareReleaseVersions(left, right)
         else
             local leftText = tostring(leftValue)
             local rightText = tostring(rightValue)
+
             if leftText < rightText then
                 return -1
             end
@@ -137,23 +164,64 @@ function DynamicTrading.Manuals.CompareReleaseVersions(left, right)
     return 0
 end
 
+local function dtManualCompareRegularDisplayOrder(a, b)
+    local leftSort = tonumber(a.sortOrder) or 0
+    local rightSort = tonumber(b.sortOrder) or 0
+
+    if leftSort ~= rightSort then
+        return leftSort < rightSort
+    end
+
+    local leftIndex = tonumber(a.orderIndex) or 0
+    local rightIndex = tonumber(b.orderIndex) or 0
+
+    if leftIndex ~= rightIndex then
+        return leftIndex < rightIndex
+    end
+
+    return dtManualLower(a.title) < dtManualLower(b.title)
+end
+
+local function dtManualCompareUpdateDisplayOrder(a, b)
+    local leftKey = dtManualGetUpdateSortKey(a)
+    local rightKey = dtManualGetUpdateSortKey(b)
+    local versionCompare = DynamicTrading.Manuals.CompareReleaseVersions(leftKey, rightKey)
+
+    if versionCompare ~= 0 then
+        return versionCompare > 0
+    end
+
+    local leftSort = tonumber(a.sortOrder) or 0
+    local rightSort = tonumber(b.sortOrder) or 0
+
+    if leftSort ~= rightSort then
+        return leftSort < rightSort
+    end
+
+    local leftIndex = tonumber(a.orderIndex) or 0
+    local rightIndex = tonumber(b.orderIndex) or 0
+
+    if leftIndex ~= rightIndex then
+        return leftIndex > rightIndex
+    end
+
+    return dtManualLower(a.title) < dtManualLower(b.title)
+end
+
 function DynamicTrading.Manuals.GetActiveAudienceState()
     local active = {
         DynamicTradingCommon = true,
         dynamictradingcommon = true,
     }
-    
+
     local activated = getActivatedMods and getActivatedMods() or nil
     if activated and activated.contains then
-        -- Dynamically check for all activated mods to support any mod ID
-        -- We can iterate through the activated mods provided by the engine
         for i = 0, activated:size() - 1 do
             local modId = activated:get(i)
             active[modId] = true
             active[dtManualLower(modId)] = true
         end
-        
-        -- Also support manual overrides/flags
+
         local flags = DynamicTrading.Manuals.RuntimeAudienceFlags or {}
         for k, v in pairs(flags) do
             if v == true then
@@ -222,7 +290,9 @@ function DynamicTrading.Manuals.GetOrderedManuals(active, viewMode)
         if not manual or seen[manualId] then
             return
         end
+
         seen[manualId] = true
+
         local isVisible = DynamicTrading.Manuals.IsManualVisible(manual, active)
         local isUpdate = DynamicTrading.Manuals.IsUpdateManual(manual)
         local matchesView = true
@@ -246,21 +316,11 @@ function DynamicTrading.Manuals.GetOrderedManuals(active, viewMode)
         tryInsert(manualId)
     end
 
-    table.sort(manuals, function(a, b)
-        local leftSort = tonumber(a.sortOrder) or 0
-        local rightSort = tonumber(b.sortOrder) or 0
-        if leftSort ~= rightSort then
-            return leftSort < rightSort
-        end
-
-        local leftIndex = tonumber(a.orderIndex) or 0
-        local rightIndex = tonumber(b.orderIndex) or 0
-        if leftIndex ~= rightIndex then
-            return leftIndex < rightIndex
-        end
-
-        return dtManualLower(a.title) < dtManualLower(b.title)
-    end)
+    if viewMode == "updates" then
+        table.sort(manuals, dtManualCompareUpdateDisplayOrder)
+    else
+        table.sort(manuals, dtManualCompareRegularDisplayOrder)
+    end
 
     return manuals
 end
@@ -293,13 +353,16 @@ function DynamicTrading.Manuals.GetLatestWhatsNewManual(active)
 
     for _, manual in ipairs(DynamicTrading.Manuals.GetOrderedUpdateManuals(active)) do
         local isCandidate = manual and (manual.manualType == "whats_new" or manual.isWhatsNew == true or manual.autoOpenOnUpdate == true)
+
         if isCandidate then
             local manualVersion = tostring(manual.popupVersion or manual.releaseVersion or "")
+
             if not latest then
                 latest = manual
             else
                 local latestVersion = tostring(latest.popupVersion or latest.releaseVersion or "")
                 local compare = DynamicTrading.Manuals.CompareReleaseVersions(manualVersion, latestVersion)
+
                 if compare > 0 or (compare == 0 and (tonumber(manual.sortOrder) or 0) < (tonumber(latest.sortOrder) or 0)) then
                     latest = manual
                 end
@@ -323,6 +386,7 @@ function DynamicTrading.Manuals.GetLatestManualByType(manualType, active)
                 local leftVersion = tostring(manual.popupVersion or manual.releaseVersion or "")
                 local rightVersion = tostring(latest.popupVersion or latest.releaseVersion or "")
                 local compare = DynamicTrading.Manuals.CompareReleaseVersions(leftVersion, rightVersion)
+
                 if compare > 0 or (compare == 0 and (tonumber(manual.sortOrder) or 0) < (tonumber(latest.sortOrder) or 0)) then
                     latest = manual
                 end
@@ -337,10 +401,6 @@ end
 require "DT/Common/DT_Logger"
 require "DT/Common/Pricing/DT_PriceConfig"
 
-
--- 0. CUSTOM SIGNALS
--- Definitions for custom events to handle engine simulation phases.
--- Added to LuaEventManager so other modules can hook via Events.OnDynamicTrading...
 if LuaEventManager then
     if not LuaEventManager.OnDynamicTradingDailySimulation then
         LuaEventManager.AddEvent("OnDynamicTradingDailySimulation")
@@ -348,7 +408,7 @@ if LuaEventManager then
     if not LuaEventManager.OnDynamicTradingHourlyTick then
         LuaEventManager.AddEvent("OnDynamicTradingHourlyTick")
     end
-    -- UI & Network Sync Events
+
     if not LuaEventManager.OnDynamicTradingTraderUpdated then
         LuaEventManager.AddEvent("OnDynamicTradingTraderUpdated")
     end
@@ -371,8 +431,6 @@ if LuaEventManager then
         LuaEventManager.AddEvent("OnDynamicTradingLogsUpdated")
     end
 end
-
--- 1. STATIC CONFIGURATION (Commonly referenced)
 
 DynamicTrading.Config.RadioTiers = {
     ["Base.WalkieTalkie1"]          = { power = 0.5, capacity = 1, desc = "Weak Signal (Toy)" },
@@ -397,37 +455,52 @@ function DynamicTrading.GetNPCRunSpeed()
     return (movement and movement.runSpeed) or 0.09
 end
 
--- 2. REGISTRATION API
-
 function DynamicTrading.RegisterTag(tag, data)
     if not tag or not data then return end
     if not data.priceMult then data.priceMult = 1.0 end
     if not data.weight then data.weight = 50 end
+
     DynamicTrading.Config.Tags[tag] = data
 end
 
 function DynamicTrading.RegisterArchetype(id, data)
     if not id or not data then return end
+
     data.name = data.name or id
-    data.allocations = data.allocations or {} 
-    data.wants = data.wants or {} 
-    data.forbid = data.forbid or {} 
+    data.allocations = data.allocations or {}
+    data.wants = data.wants or {}
+    data.forbid = data.forbid or {}
+
     DynamicTrading.Archetypes[id] = data
 end
 
 function DynamicTrading.AddItem(uniqueID, data)
     if not uniqueID or not data then return end
+
     if not data.basePrice then data.basePrice = 10 end
     if not data.tags then data.tags = { "Misc" } end
+
     local hasValid = false
-    for _, t in ipairs(data.tags) do if t then hasValid = true break end end
-    if not hasValid then table.insert(data.tags, "Misc") end
-    if not data.stockRange then data.stockRange = {min=1, max=5} end
+    for _, t in ipairs(data.tags) do
+        if t then
+            hasValid = true
+            break
+        end
+    end
+
+    if not hasValid then
+        table.insert(data.tags, "Misc")
+    end
+
+    if not data.stockRange then data.stockRange = { min = 1, max = 5 } end
+
     DynamicTrading.Config.MasterList[uniqueID] = data
     DynamicTrading.Config.ItemRegistryRevision = (tonumber(DynamicTrading.Config.ItemRegistryRevision) or 0) + 1
+
     if DynamicTrading.ItemUsabilityRanker and DynamicTrading.ItemUsabilityRanker.Invalidate then
         DynamicTrading.ItemUsabilityRanker.Invalidate("item_registry_changed")
     end
+
     if isDebugEnabled() then
         DynamicTrading.Log("DTCommons", "Init", "Item", "Registered Item: " .. tostring(uniqueID))
     end
@@ -440,7 +513,7 @@ function DynamicTrading.RegisterManual(id, data)
 
     local existing = DynamicTrading.Manuals.Registry[id]
     if not existing then
-        DynamicTrading.Manuals.RegistrationCounter = (DynamicTrading.Manuals.RegistrationCounter or 0) + 1
+        DynamicTrading.Manuals.RegistrationCounter = (tonumber(DynamicTrading.Manuals.RegistrationCounter) or 0) + 1
     end
 
     local orderIndex = existing and existing.orderIndex or DynamicTrading.Manuals.RegistrationCounter
@@ -449,6 +522,13 @@ function DynamicTrading.RegisterManual(id, data)
     local sortOrder = tonumber(data.sortOrder or data.sort_order)
     local manualType = dtManualLower(data.manualType or data.manual_type or data.type or "")
     local popupVersion = tostring(data.popupVersion or data.popup_version or data.releaseVersion or data.release_version or "")
+
+    local autoOpenOnUpdate = dtManualOptionalBoolean(data.autoOpenOnUpdate, data.auto_open_on_update)
+    local autoOpenOnFirstSeen = dtManualOptionalBoolean(data.autoOpenOnFirstSeen, data.auto_open_on_first_seen)
+    local autoOpenPriority = tonumber(data.autoOpenPriority or data.auto_open_priority)
+    local contentRevision = tostring(data.contentRevision or data.content_revision or data.revision or "")
+    local autoOpenRevision = tostring(data.autoOpenRevision or data.auto_open_revision or "")
+    local autoOpenMode = dtManualLower(data.autoOpenMode or data.auto_open_mode or "")
 
     if manualType == "" then
         if isWhatsNew then
@@ -470,6 +550,7 @@ function DynamicTrading.RegisterManual(id, data)
     local pages = {}
     for _, page in ipairs(type(data.pages) == "table" and data.pages or {}) do
         local blocks = {}
+
         for _, block in ipairs(type(page.blocks) == "table" and page.blocks or {}) do
             table.insert(blocks, block)
         end
@@ -496,7 +577,12 @@ function DynamicTrading.RegisterManual(id, data)
         orderIndex = orderIndex,
         releaseVersion = tostring(data.releaseVersion or data.release_version or ""),
         popupVersion = popupVersion,
-        autoOpenOnUpdate = data.autoOpenOnUpdate == true or data.auto_open_on_update == true,
+        autoOpenOnUpdate = autoOpenOnUpdate,
+        autoOpenOnFirstSeen = autoOpenOnFirstSeen,
+        autoOpenPriority = autoOpenPriority,
+        contentRevision = contentRevision,
+        autoOpenRevision = autoOpenRevision,
+        autoOpenMode = autoOpenMode,
         isWhatsNew = isWhatsNew,
         manualType = manualType,
         showInLibrary = data.showInLibrary ~= false and data.show_in_library ~= false and isWhatsNew ~= true,
@@ -525,7 +611,9 @@ end
 function DynamicTrading.GetMasterListCount()
     local count = 0
     if DynamicTrading.Config and DynamicTrading.Config.MasterList then
-        for _ in pairs(DynamicTrading.Config.MasterList) do count = count + 1 end
+        for _ in pairs(DynamicTrading.Config.MasterList) do
+            count = count + 1
+        end
     end
     return count
 end

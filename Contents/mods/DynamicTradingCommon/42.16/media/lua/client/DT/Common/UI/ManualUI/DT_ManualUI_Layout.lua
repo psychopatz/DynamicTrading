@@ -58,7 +58,7 @@ local function buildManualViewerContextText(ui)
         filterLabel = "All Mods"
     end
 
-    return "Viewing: " .. typeLabel .. " - " .. filterLabel
+    return typeLabel .. " - " .. filterLabel
 end
 
 local function getNavTitleFont(row)
@@ -151,7 +151,7 @@ local function refreshNavContextLabels(ui, metrics)
     local lines = DT_ManualUI_Utils.limitWrappedLines(buildManualViewerContextText(ui), width, UIFont.Small, 3)
 
     if #lines <= 0 then
-        lines = { "Viewing: Manual Library - All Mods" }
+        lines = { "Manual Library - All Mods" }
     end
 
     local lineCount = math.max(1, math.min(3, #lines))
@@ -175,6 +175,10 @@ local function refreshNavContextLabels(ui, metrics)
     end
 
     return metrics
+end
+
+local function getCurrentManual(ui)
+    return ui and ui.allManuals and ui.currentManualId and ui.allManuals[ui.currentManualId] or nil
 end
 
 function DT_ManualUI:createChildren()
@@ -270,7 +274,7 @@ function DT_ManualUI:createChildren()
     self.updateAutoOpenTick = ISTickBox:new(metrics.rightX, metrics.updateToggleY, metrics.rightWidth, 20, "", self, self.onUpdateAutoOpenTick)
     self.updateAutoOpenTick:initialise()
     self.updateAutoOpenTick:instantiate()
-    self.updateAutoOpenTick:addOption("Don't auto-open this update again")
+    self.updateAutoOpenTick:addOption("Don't auto-open this manual/update again")
     self.updateAutoOpenTick:setFont(UIFont.Small)
     self.updateAutoOpenTick:setVisible(false)
     self:addChild(self.updateAutoOpenTick)
@@ -469,18 +473,31 @@ function DT_ManualUI:refreshUpdateControls()
         return
     end
 
-    local shouldShow = self.currentManualType == "whats_new" and self.currentPopupVersion and self.currentPopupVersion ~= ""
-    self.showUpdateToggle = shouldShow == true
-    self._refreshingUpdateToggle = true
+    local autoOpen = DynamicTrading
+        and DynamicTrading.Manuals
+        and DynamicTrading.Manuals.AutoOpen
+        or nil
 
-    if shouldShow then
-        local disabledVersion = DT_ConfigManager and DT_ConfigManager.getDisabledAutoOpenReleaseVersion and DT_ConfigManager.getDisabledAutoOpenReleaseVersion() or ""
-        self.updateAutoOpenTick:setSelected(1, disabledVersion == self.currentPopupVersion)
-    else
-        self.updateAutoOpenTick:setSelected(1, false)
+    local manual = getCurrentManual(self)
+    local shouldShow = false
+    local selected = false
+
+    self.currentAutoOpenKey = nil
+
+    if autoOpen and manual and autoOpen.CanManualShowDisableControl and autoOpen.GetManualAutoOpenKey then
+        self.currentAutoOpenKey = autoOpen.GetManualAutoOpenKey(manual)
+        shouldShow = autoOpen.CanManualShowDisableControl(manual) == true
+
+        if shouldShow and autoOpen.IsManualDisabled then
+            selected = autoOpen.IsManualDisabled(manual, self.currentAutoOpenKey) == true
+        end
     end
 
+    self.showUpdateToggle = shouldShow == true
+    self._refreshingUpdateToggle = true
+    self.updateAutoOpenTick:setSelected(1, selected)
     self._refreshingUpdateToggle = false
+
     self:refreshLayout()
 end
 
