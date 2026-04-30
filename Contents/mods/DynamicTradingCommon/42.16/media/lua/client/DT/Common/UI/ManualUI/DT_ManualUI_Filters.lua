@@ -5,31 +5,305 @@ require "DT/Common/UI/ManualUI/DT_ManualUI_Utils"
 DT_ManualUI_Filters = DT_ManualUI_Filters or {}
 local Filters = DT_ManualUI_Filters
 
-local AUDIENCE_LABELS = {
-    dynamictradingcommon = "Dynamic Trading Common",
-    dynamictrading = "Dynamic Trading V1",
-    dynamictradingv1 = "Dynamic Trading V1",
-    dynamictradingv2 = "Dynamic Trading V2",
-    dynamiccolonies = "Dynamic Colonies",
-    dt = "Dynamic Trading",
-    dc = "Dynamic Colonies",
-}
+Filters.ModNameCache = Filters.ModNameCache or {}
+Filters.CanonicalModIDCache = Filters.CanonicalModIDCache or {}
 
 function Filters.NormalizeKey(value)
     return string.lower(tostring(value or "")):gsub("%s+", "")
 end
 
-local function isAllUpper(text)
-    text = tostring(text or "")
-    if text == "" then
-        return false
+local function isCallable(value)
+    return type(value) == "function"
+end
+
+local function safeTrim(value)
+    local text = tostring(value or "")
+    text = text:gsub("^%s+", "")
+    text = text:gsub("%s+$", "")
+    return text
+end
+
+local function safeCall(callback)
+    if not callback then
+        return nil
     end
 
-    return text == string.upper(text) and text:find("%a") ~= nil
+    local ok, result = pcall(callback)
+    if ok then
+        return result
+    end
+
+    return nil
+end
+
+local function getActiveMods()
+    if getActivatedMods then
+        local activated = safeCall(function()
+            return getActivatedMods()
+        end)
+
+        if activated then
+            return activated
+        end
+    end
+
+    return nil
+end
+
+local function getActiveModCount(activeMods)
+    if not activeMods then
+        return 0
+    end
+
+    if activeMods.size then
+        local count = safeCall(function()
+            return activeMods:size()
+        end)
+
+        return math.max(0, math.floor(tonumber(count) or 0))
+    end
+
+    if type(activeMods) == "table" then
+        return #activeMods
+    end
+
+    return 0
+end
+
+local function getActiveModAt(activeMods, index)
+    if not activeMods then
+        return nil
+    end
+
+    if activeMods.get then
+        local value = safeCall(function()
+            return activeMods:get(index)
+        end)
+
+        value = safeTrim(value)
+        return value ~= "" and value or nil
+    end
+
+    if type(activeMods) == "table" then
+        local value = safeTrim(activeMods[index + 1])
+        return value ~= "" and value or nil
+    end
+
+    return nil
+end
+
+function Filters.GetCanonicalModID(modID)
+    local raw = safeTrim(modID)
+
+    if raw == "" then
+        return ""
+    end
+
+    local normalized = Filters.NormalizeKey(raw)
+    local cached = Filters.CanonicalModIDCache[normalized]
+    if cached and cached ~= "" then
+        return cached
+    end
+
+    local activeMods = getActiveMods()
+    local count = getActiveModCount(activeMods)
+
+    for index = 0, count - 1 do
+        local activeID = getActiveModAt(activeMods, index)
+        if activeID and Filters.NormalizeKey(activeID) == normalized then
+            Filters.CanonicalModIDCache[normalized] = activeID
+            return activeID
+        end
+    end
+
+    Filters.CanonicalModIDCache[normalized] = raw
+    return raw
+end
+
+local function getJavaStringValue(object, methodName)
+    if not object or not methodName then
+        return nil
+    end
+
+    local method = object[methodName]
+    if not isCallable(method) then
+        return nil
+    end
+
+    local value = safeCall(function()
+        return method(object)
+    end)
+
+    value = safeTrim(value)
+    return value ~= "" and value or nil
+end
+
+local function getTableStringValue(source, key)
+    if type(source) ~= "table" then
+        return nil
+    end
+
+    local value = safeTrim(source[key])
+    return value ~= "" and value or nil
+end
+
+local function getRegisteredAudienceDisplayName(modID)
+    local manuals = DynamicTrading and DynamicTrading.Manuals or nil
+    local canonicalID = Filters.GetCanonicalModID(modID)
+    local normalized = Filters.NormalizeKey(modID)
+    local canonicalNormalized = Filters.NormalizeKey(canonicalID)
+
+    if not manuals or normalized == "" then
+        return nil
+    end
+
+    local registries = {
+        manuals.AudienceDisplayNames,
+        manuals.ModDisplayNames,
+        manuals.RuntimeAudienceLabels,
+        manuals.RuntimeAudienceNames,
+    }
+
+    for _, registry in ipairs(registries) do
+        if type(registry) == "table" then
+            local direct = safeTrim(registry[modID])
+            if direct ~= "" then
+                return direct
+            end
+
+            local canonical = safeTrim(registry[canonicalID])
+            if canonical ~= "" then
+                return canonical
+            end
+
+            local normalizedHit = safeTrim(registry[normalized])
+            if normalizedHit ~= "" then
+                return normalizedHit
+            end
+
+            local canonicalNormalizedHit = safeTrim(registry[canonicalNormalized])
+            if canonicalNormalizedHit ~= "" then
+                return canonicalNormalizedHit
+            end
+        end
+    end
+
+    if isCallable(manuals.GetAudienceDisplayName) then
+        local result = safeCall(function()
+            return manuals.GetAudienceDisplayName(canonicalID)
+        end)
+
+        result = safeTrim(result)
+        if result ~= "" then
+            return result
+        end
+
+        result = safeCall(function()
+            return manuals.GetAudienceDisplayName(modID)
+        end)
+
+        result = safeTrim(result)
+        if result ~= "" then
+            return result
+        end
+    end
+
+    if isCallable(manuals.GetModDisplayName) then
+        local result = safeCall(function()
+            return manuals.GetModDisplayName(canonicalID)
+        end)
+
+        result = safeTrim(result)
+        if result ~= "" then
+            return result
+        end
+
+        result = safeCall(function()
+            return manuals.GetModDisplayName(modID)
+        end)
+
+        result = safeTrim(result)
+        if result ~= "" then
+            return result
+        end
+    end
+
+    return nil
+end
+
+local function getPZModInfo(modID)
+    local canonicalID = Filters.GetCanonicalModID(modID)
+    local idsToTry = {
+        canonicalID,
+        safeTrim(modID),
+    }
+
+    local lookupFunctions = {
+        "getModInfoByID",
+        "getModInfo",
+    }
+
+    for _, id in ipairs(idsToTry) do
+        if id and id ~= "" then
+            for _, functionName in ipairs(lookupFunctions) do
+                local lookup = _G and _G[functionName] or nil
+
+                if isCallable(lookup) then
+                    local info = safeCall(function()
+                        return lookup(id)
+                    end)
+
+                    if info then
+                        return info
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+local function getPZModDisplayName(modID)
+    local info = getPZModInfo(modID)
+
+    if not info then
+        return nil
+    end
+
+    local methodNames = {
+        "getName",
+        "getTitle",
+        "getDisplayName",
+    }
+
+    for _, methodName in ipairs(methodNames) do
+        local value = getJavaStringValue(info, methodName)
+        if value then
+            return value
+        end
+    end
+
+    local tableKeys = {
+        "name",
+        "title",
+        "displayName",
+        "display_name",
+    }
+
+    for _, key in ipairs(tableKeys) do
+        local value = getTableStringValue(info, key)
+        if value then
+            return value
+        end
+    end
+
+    return nil
 end
 
 local function splitCamelCase(text)
     text = tostring(text or "")
+
     local result = ""
     local previous = ""
 
@@ -50,6 +324,16 @@ local function splitCamelCase(text)
     return result
 end
 
+local function isShortAcronym(word)
+    word = tostring(word or "")
+
+    if word == "" then
+        return false
+    end
+
+    return #word <= 5 and word == string.upper(word) and word:find("%a") ~= nil
+end
+
 local function capitalizeWord(word)
     word = tostring(word or "")
 
@@ -57,7 +341,7 @@ local function capitalizeWord(word)
         return ""
     end
 
-    if isAllUpper(word) and #word <= 5 then
+    if isShortAcronym(word) then
         return word
     end
 
@@ -67,19 +351,17 @@ local function capitalizeWord(word)
     return string.upper(first) .. string.lower(rest)
 end
 
-local function humanizeModID(value)
-    local text = tostring(value or "")
+local function humanizeModID(modID)
+    local canonicalID = Filters.GetCanonicalModID(modID)
+    local text = safeTrim(canonicalID ~= "" and canonicalID or modID)
 
     if text == "" then
         return "Unknown Mod"
     end
 
-    if AUDIENCE_LABELS[Filters.NormalizeKey(text)] then
-        return AUDIENCE_LABELS[Filters.NormalizeKey(text)]
-    end
-
     text = text:gsub("_", " ")
     text = text:gsub("-", " ")
+    text = text:gsub("%.", " ")
     text = splitCamelCase(text)
 
     local words = {}
@@ -88,15 +370,43 @@ local function humanizeModID(value)
     end
 
     if #words <= 0 then
-        return tostring(value or "Unknown Mod")
+        return tostring(canonicalID ~= "" and canonicalID or modID or "Unknown Mod")
     end
 
     return table.concat(words, " ")
 end
 
+function Filters.GetModDisplayName(modID)
+    local id = safeTrim(modID)
+
+    if id == "" then
+        return "Unknown Mod"
+    end
+
+    local canonicalID = Filters.GetCanonicalModID(id)
+    local normalized = Filters.NormalizeKey(canonicalID ~= "" and canonicalID or id)
+
+    local cached = Filters.ModNameCache[normalized]
+    if cached and cached ~= "" then
+        return cached
+    end
+
+    local resolved =
+        getRegisteredAudienceDisplayName(id)
+        or getPZModDisplayName(id)
+        or humanizeModID(id)
+
+    resolved = safeTrim(resolved)
+    if resolved == "" then
+        resolved = canonicalID ~= "" and canonicalID or id
+    end
+
+    Filters.ModNameCache[normalized] = resolved
+    return resolved
+end
+
 function Filters.GetAudienceLabel(audience)
-    local normalized = Filters.NormalizeKey(audience)
-    return AUDIENCE_LABELS[normalized] or humanizeModID(audience)
+    return Filters.GetModDisplayName(audience)
 end
 
 function Filters.GetViewModeManuals(viewMode)
