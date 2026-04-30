@@ -28,7 +28,12 @@ DynamicTrading.RegisterDialogue("Blacksmith", "Greetings", {
         Fog = {
             "Can't see the arc in this fog. What's the word, {player.firstname}?",
             "Ghostly weather. You still there, {player}?"
+        },
+        NoBudget = {
+            "The forge is hot, but my budget's cold. Want to buy some gear?",
+            "No cash for buying, but I've got weapons and tools to sell.",
+            "Broke as can be, but check out my latest forged items.",
+            "Can't afford purchases, but my anvil is full of quality work."
         }
     }
 })
-

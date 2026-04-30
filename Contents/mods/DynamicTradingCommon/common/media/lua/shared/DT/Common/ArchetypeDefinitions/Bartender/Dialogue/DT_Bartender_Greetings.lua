@@ -28,7 +28,12 @@ DynamicTrading.RegisterDialogue("Bartender", "Greetings", {
         Fog = {
             "Can't see the mirror in this fog. What's the word, {player.firstname}?",
             "Ghostly weather. You still there, {player}?"
+        },
+        NoBudget = {
+            "Bar's open, but the till is empty. Buy some drinks?",
+            "No cash for buying, but I've got fresh stock to sell.",
+            "Broke as can be, but check out my bar inventory!",
+            "Can't afford purchases, but I'm here to serve you drinks."
         }
     }
 })
-

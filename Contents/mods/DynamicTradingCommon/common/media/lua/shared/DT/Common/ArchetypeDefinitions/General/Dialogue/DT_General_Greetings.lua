@@ -48,6 +48,14 @@ DynamicTrading.RegisterDialogue("General", "Greetings", {
             "Can't see five feet in front of me, {player.firstname}.",
             "Fog is thick today. Watch your back, {player}.",
             "Spooky weather, {player.firstname}. You buying something?"
+        },
+        NoBudget = {
+            "I'm broke, but I've got great stuff to sell if you're buying.",
+            "No cash for buying, but take a look at my wares!",
+            "Wallet's empty, but my inventory isn't. Buy something?",
+            "Can't afford to buy anything, but I'm selling some good gear.",
+            "I'm tapped out, friend. But I've got items you might want.",
+            "No budget for purchases, but I'm open for business if you're buying!"
         }
     }
 })

@@ -28,6 +28,12 @@ DynamicTrading.RegisterDialogue("Angler", "Greetings", {
         Fog = {
             "Can't see the bobber in this fog. What's the word, {player.firstname}?",
             "Ghostly weather. You still there, {player}?"
+        },
+        NoBudget = {
+            "The fish aren't biting and neither is my wallet. But I've got gear to sell.",
+            "Broke as a joke, but I've got lures and rods if you're buying.",
+            "No cash for purchases, but check out what I caught today.",
+            "My budget's drier than the riverbed. Want to buy something instead?"
         }
     }
 })

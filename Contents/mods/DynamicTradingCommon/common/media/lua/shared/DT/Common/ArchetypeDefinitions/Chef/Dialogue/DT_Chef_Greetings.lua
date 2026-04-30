@@ -28,7 +28,12 @@ DynamicTrading.RegisterDialogue("Chef", "Greetings", {
         Fog = {
             "Can't see the stove in this fog. What's the word, {player.firstname}?",
             "Ghostly weather. You still there, {player}?"
+        },
+        NoBudget = {
+            "Kitchen's open, but the till is empty. Buy some food?",
+            "No cash for buying, but I've got fresh meals to sell.",
+            "Broke as can be, but check out my daily specials!",
+            "Can't afford purchases, but my kitchen is full of delicious goods."
         }
     }
 })
-

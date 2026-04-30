@@ -28,6 +28,12 @@ DynamicTrading.RegisterDialogue("Pawnbroker", "Greetings", {
         Fog = {
             "Can't see the hallmark in this fog. What's the word, {player.firstname}?",
             "Ghostly weather. You still there, {player}?"
+        },
+        NoBudget = {
+            "Shop's open, but my wallet's empty. Buy something?",
+            "No cash for buying, but I've got quality items to sell.",
+            "Broke as can be, but check out my pawn shop inventory!",
+            "Can't afford purchases, but I'm here to make deals."
         }
     }
 })

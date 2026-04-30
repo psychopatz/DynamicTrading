@@ -8,7 +8,12 @@ DynamicTrading.RegisterDialogue("Doctor", "Greetings", {
             "Hygiene is priority. Wash your hands, {player.firstname}.",
             "Triage center here. Is this an emergency?",
             "Pulse check. You still alive out there, {player.firstname}?"
+        },
+        NoBudget = {
+            "Clinic's open, but my wallet's empty. Need medical supplies?",
+            "No cash for buying, but I've got medicine and supplies to sell.",
+            "Broke as can be, but check out my medical inventory!",
+            "Can't afford purchases, but I'm here to treat your injuries."
         }
     }
 })
-

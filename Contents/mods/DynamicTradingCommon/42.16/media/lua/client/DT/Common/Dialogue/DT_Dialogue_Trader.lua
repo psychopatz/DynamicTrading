@@ -9,7 +9,7 @@ local DEBUG_PREFIX = "[DT-Common-Dialogue]"
 
 local function getRepAwareGreeting(trader)
     local rep = trader and trader.reputation or 0
-
+    
     if rep >= 40 then
         return {
             "Good to hear from you again, {player.firstname}.",
@@ -35,7 +35,7 @@ local function getRepAwareGreeting(trader)
             "Keep it brief, {player.firstname}."
         }
     end
-
+    
     return nil
 end
 
@@ -60,10 +60,23 @@ end
 -- =============================================================================
 function DynamicTrading.Dialogue.Trader.GenerateGreeting(trader)
     if not trader then return "..." end
-
+    
     local repPool = getRepAwareGreeting(trader)
     if repPool then
         return Core.FormatMessage(Core.PickRandom(repPool), { traderName = trader.name })
+    end
+    
+    -- Check if trader has no budget - use NoBudget subcontext
+    if trader.budget ~= nil and tonumber(trader.budget) <= 0 then
+        local pool = Core.GetDialoguePool(trader.archetype, "Greetings", "NoBudget")
+        if pool and #pool > 0 then
+            return Core.FormatMessage(Core.PickRandom(pool), {})
+        end
+        -- Fallback to General archetype if archetype doesn't have NoBudget
+        pool = Core.GetDialoguePool("General", "Greetings", "NoBudget")
+        if pool and #pool > 0 then
+            return Core.FormatMessage(Core.PickRandom(pool), {})
+        end
     end
     
     local cm = ClimateManager:getInstance()
@@ -71,7 +84,7 @@ function DynamicTrading.Dialogue.Trader.GenerateGreeting(trader)
     local hour = gt:getHour()
     
     local subContext = "Default"
-
+    
     if cm:getRainIntensity() > 0.4 then
         subContext = "Raining"
     elseif cm:getFogIntensity() > 0.4 then
@@ -82,7 +95,7 @@ function DynamicTrading.Dialogue.Trader.GenerateGreeting(trader)
         elseif hour >= 21 or hour < 5 then subContext = "Night"
         end
     end
-
+    
     local pool = Core.GetDialoguePool(trader.archetype, "Greetings", subContext)
     return Core.FormatMessage(Core.PickRandom(pool), {})
 end
@@ -108,7 +121,7 @@ function DynamicTrading.Dialogue.Trader.GenerateAmbientMessage(trader, eventType
     
     local category = "Greetings" 
     local subContext = "Default"
-
+    
     if eventType == "Morning" then subContext = "Morning"
     elseif eventType == "Evening" then subContext = "Evening"
     elseif eventType == "Night" then subContext = "Night"
@@ -116,7 +129,7 @@ function DynamicTrading.Dialogue.Trader.GenerateAmbientMessage(trader, eventType
     elseif eventType == "FogStart" then subContext = "Fog"
     elseif eventType == "RainStop" then subContext = "Default" 
     end
-
+    
     local pool = Core.GetDialoguePool(trader.archetype, category, subContext)
     return Core.FormatMessage(Core.PickRandom(pool), {})
 end
@@ -127,7 +140,7 @@ end
 function DynamicTrading.Dialogue.Trader.GenerateTransactionMessage(trader, isBuy, args)
     if not trader then return "..." end
     local safeArgs = args or {}
-
+    
     if tostring(safeArgs.transactionKind or "") == "gift" then
         if not safeArgs.success then
             local failLines = {
@@ -137,7 +150,7 @@ function DynamicTrading.Dialogue.Trader.GenerateTransactionMessage(trader, isBuy
             }
             return Core.FormatMessage(failLines[ZombRand(#failLines) + 1], safeArgs)
         end
-
+        
         local price = tonumber(safeArgs.price) or 0
         local giftLines = nil
         if price >= 200 then
@@ -159,13 +172,13 @@ function DynamicTrading.Dialogue.Trader.GenerateTransactionMessage(trader, isBuy
                 "A gift like that smooths things over.",
             }
         end
-
+        
         return Core.FormatMessage(giftLines[ZombRand(#giftLines) + 1], safeArgs)
     end
     
     local category = isBuy and "Buying" or "Selling"
     local subContext = "Generic"
-
+    
     -- Failure Check
     if not safeArgs.success then
         if isBuy then
@@ -178,7 +191,7 @@ function DynamicTrading.Dialogue.Trader.GenerateTransactionMessage(trader, isBuy
         local pool = Core.GetDialoguePool(trader.archetype, category, subContext)
         return Core.FormatMessage(Core.PickRandom(pool), safeArgs)
     end
-
+    
     -- Success Checks
     local price = safeArgs.price or 0
     local base = safeArgs.basePrice or price 
@@ -231,7 +244,7 @@ function DynamicTrading.Dialogue.Trader.GenerateSellAskDialogue(trader)
     
     local db = Core.GetDB()
     local archetype = trader.archetype or "General"
-
+    
     -- 1. Try to Load Archetype File Dynamically (Decoupling Support)
     if archetype ~= "General" then
         -- Check if table already has data, if not try to load
@@ -241,10 +254,10 @@ function DynamicTrading.Dialogue.Trader.GenerateSellAskDialogue(trader)
             pcall(require, "DT/Common/ArchetypeDefinitions/" .. archetype .. "/Dialogue/Sell_ask")
         end
     end
-
+    
     -- 2. Get Archetype Data (Tags for formatting)
     local archData = DynamicTrading.Archetypes[archetype] or DynamicTrading.Archetypes["General"]
-
+    
     -- 3. Format Wants
     local wantsList = {}
     if archData and archData.wants then
@@ -253,7 +266,7 @@ function DynamicTrading.Dialogue.Trader.GenerateSellAskDialogue(trader)
         end
     end
     local wantsStr = FormatNaturalList(wantsList)
-
+    
     -- 4. Format Forbid
     local rawForbidList = archData and archData.forbid or {}
     local forbidList = {}
@@ -261,7 +274,7 @@ function DynamicTrading.Dialogue.Trader.GenerateSellAskDialogue(trader)
         table.insert(forbidList, DynamicTrading.Utils.FormatTagDialogue(tag))
     end
     local forbidStr = FormatNaturalList(forbidList)
-
+    
     -- 5. Determine Message Pool (Priority: Archetype > General)
     local pool = nil
     
@@ -272,9 +285,9 @@ function DynamicTrading.Dialogue.Trader.GenerateSellAskDialogue(trader)
     else
         pool = { "I'm looking for {wants}. No {forbid}." }
     end
-
+    
     local rawText = Core.PickRandom(pool)
-
+    
     -- 6. Format Variables
     local text = string.gsub(rawText, "{wants}", wantsStr)
     text = string.gsub(text, "{forbid}", forbidStr)
