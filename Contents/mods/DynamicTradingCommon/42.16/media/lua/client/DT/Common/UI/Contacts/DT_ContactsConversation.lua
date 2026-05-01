@@ -17,6 +17,37 @@ local function getActiveRadioObject()
     return nil
 end
 
+local function buildNavigationBlock(footerAction, overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
+        return DT_ConversationUI.BuildNavigationBlock(footerAction, overrides)
+    end
+
+    local block = {
+        explicitFooter = true,
+        footerAction = footerAction,
+        defaultFooterAction = footerAction,
+    }
+    for key, value in pairs(overrides or {}) do
+        block[key] = value
+    end
+    return block
+end
+
+local function buildLeaveFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildLeaveFooterAction then
+        return DT_ConversationUI.BuildLeaveFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "leave",
+        title = "Leave",
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
 local function getContactsAPI()
     local api = DT_TraderContacts
     if type(api) == "table" then
@@ -164,7 +195,7 @@ function DT_ContactsConversation.BuildOptions(ui, contact, context)
         end
     end
 
-    return {
+    local options = {
         {
             text = requestText,
             message = "Can you come to my area and trade there instead?",
@@ -209,19 +240,25 @@ function DT_ContactsConversation.BuildOptions(ui, contact, context)
                 conversationUI:speak(buildAvailabilityLine(refreshed))
                 conversationUI:updateOptions(DT_ContactsConversation.BuildOptions(conversationUI, refreshed, context))
             end
-        },
-        {
-            text = "End transmission",
-            message = "That's all for now.",
-            onSelect = function(conversationUI)
-                if context.onClose then
-                    context.onClose(conversationUI, contact)
-                    return
-                end
-                conversationUI:close()
-            end
         }
     }
+
+    options._dtFooterAction = buildLeaveFooterAction({
+        title = "End transmission",
+        message = "That's all for now.",
+        suppressExitEmote = true,
+        onSelect = function(conversationUI)
+            if context.onClose then
+                context.onClose(conversationUI, contact)
+            end
+        end
+    })
+    options._dtNavigationBlock = buildNavigationBlock(options._dtFooterAction, {
+        debugLabel = "ContactsConversation",
+        requireExplicitNavigation = true,
+    })
+
+    return options
 end
 
 function DT_ContactsConversation.Open(contact, context)

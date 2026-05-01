@@ -49,6 +49,54 @@ local function closeConversation(ui)
     end
 end
 
+local function buildNavigationBlock(footerAction, overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
+        return DT_ConversationUI.BuildNavigationBlock(footerAction, overrides)
+    end
+
+    local block = {
+        explicitFooter = true,
+        footerAction = footerAction,
+        defaultFooterAction = footerAction,
+    }
+    for key, value in pairs(overrides or {}) do
+        block[key] = value
+    end
+    return block
+end
+
+local function buildBackFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildBackFooterAction then
+        return DT_ConversationUI.BuildBackFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "back",
+        title = "Back",
+        closeAfter = false,
+        exitAfter = false,
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
+local function buildLeaveFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildLeaveFooterAction then
+        return DT_ConversationUI.BuildLeaveFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "leave",
+        title = "Leave",
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
 local function getOfferMenuLabel(offer)
     if type(offer) ~= "table" then
         return "Objective"
@@ -163,13 +211,16 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
             }
         end
 
-        menu._dtFooterAction = {
-            kind = "back",
+        menu._dtFooterAction = buildBackFooterAction({
             title = "Back",
             onSelect = function(nextUI)
                 showMainMenu(nextUI)
             end
-        }
+        })
+        menu._dtNavigationBlock = buildNavigationBlock(menu._dtFooterAction, {
+            debugLabel = "QuestOfferList",
+            requireExplicitNavigation = true,
+        })
 
         if fromBack == true then
             conversationUI:replaceOptions(menu)
@@ -242,13 +293,16 @@ function QuestOffer.OpenQuestOffer(ui, npc, player, npcData, options)
             }
         end
 
-        menu._dtFooterAction = {
-            kind = "back",
+        menu._dtFooterAction = buildBackFooterAction({
             title = currentOffer.choiceLabels.back,
             onSelect = function(nextUI)
                 showOfferList(nextUI, true)
             end
-        }
+        })
+        menu._dtNavigationBlock = buildNavigationBlock(menu._dtFooterAction, {
+            debugLabel = "QuestOfferDetails",
+            requireExplicitNavigation = true,
+        })
 
         if replaceCurrent == true then
             conversationUI:replaceOptions(menu)
@@ -317,6 +371,12 @@ function QuestOffer.OpenDebugConversation(player, options)
 
     local function showRoot(conversationUI, fromBack)
         conversationUI:speak(fromBack and "Anything else?" or tostring(options.initialGreeting or "Hello. What can I do for you?"))
+        local footerAction = buildLeaveFooterAction({
+            title = "Leave",
+            onSelect = function(nextUI)
+                closeConversation(nextUI)
+            end
+        })
         conversationUI:updateOptions({
             {
                 text = "Any work?",
@@ -334,13 +394,12 @@ function QuestOffer.OpenDebugConversation(player, options)
             }
         }, {
             resetHistory = true,
-            footerAction = {
-                kind = "leave",
-                title = "Leave",
-                onSelect = function(nextUI)
-                    closeConversation(nextUI)
-                end
-            }
+            footerAction = footerAction,
+            navigationBlock = buildNavigationBlock(footerAction, {
+                resetHistory = true,
+                debugLabel = "QuestDebugRoot",
+                requireExplicitNavigation = true,
+            }),
         })
     end
 

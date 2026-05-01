@@ -31,6 +31,37 @@ local function isCurrencyExpandedActive()
     return activated and activated.contains and activated:contains("CurrencyExpanded") or false
 end
 
+local function buildFallbackExitNavigation()
+    local footerAction = DT_ConversationUI
+        and DT_ConversationUI.BuildExitFooterAction
+        and DT_ConversationUI.BuildExitFooterAction({
+            silent = true,
+            suppressDefaultMessage = true,
+            suppressExitEmote = true,
+        })
+        or {
+            kind = "leave",
+            title = "Exit",
+            silent = true,
+            suppressDefaultMessage = true,
+            suppressExitEmote = true,
+        }
+    local navBlock = DT_ConversationUI
+        and DT_ConversationUI.BuildNavigationBlock
+        and DT_ConversationUI.BuildNavigationBlock(footerAction, {
+            resetHistory = true,
+            debugLabel = "BanditDemandFallback",
+            requireExplicitNavigation = true,
+        })
+        or {
+            explicitFooter = true,
+            resetHistory = true,
+            footerAction = footerAction,
+            defaultFooterAction = footerAction,
+        }
+    return footerAction, navBlock
+end
+
 if DTNPCJobUI and DTNPCJobUI.Register then
     DTNPCJobUI.Register({
         id = "BanditDemand",
@@ -85,9 +116,11 @@ if DTNPCJobUI and DTNPCJobUI.Register then
 
             local helpers = getHelpers()
             ui:speak(helpers and helpers.pickDialogueLine and helpers.pickDialogueLine("Approach", nil, npcData) or "That's close enough.")
-            ui:updateOptions({}, {
-                resetHistory = true,
-            })
+            local options = {}
+            local footerAction, navBlock = buildFallbackExitNavigation()
+            options._dtFooterAction = footerAction
+            options._dtNavigationBlock = navBlock
+            ui:updateOptions(options, navBlock)
             return true
         end,
 

@@ -200,9 +200,7 @@ local function onServerCommand(module, command, args)
             ui:speak(Helpers.pickDialogueLine("Accept", nil, ui))
         end
 
-        ui:updateOptions({}, {
-            resetHistory = true,
-        })
+        Helpers.applyDemandOptions(ui, {}, Helpers.buildCompletedDemandFooterAction(ui))
     end
 end
 

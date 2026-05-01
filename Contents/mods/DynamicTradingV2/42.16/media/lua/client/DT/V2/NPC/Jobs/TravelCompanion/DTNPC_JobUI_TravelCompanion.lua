@@ -36,6 +36,74 @@ local function debugCompanionUI(message)
     end
 end
 
+local function buildNavigationBlock(footerAction, overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
+        return DT_ConversationUI.BuildNavigationBlock(footerAction, overrides)
+    end
+
+    local block = {
+        explicitFooter = true,
+        footerAction = footerAction,
+        defaultFooterAction = footerAction,
+    }
+    for key, value in pairs(overrides or {}) do
+        block[key] = value
+    end
+    return block
+end
+
+local function buildLeaveFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildLeaveFooterAction then
+        return DT_ConversationUI.BuildLeaveFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "leave",
+        title = "Leave",
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
+local function buildExitFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildExitFooterAction then
+        return DT_ConversationUI.BuildExitFooterAction(overrides)
+    end
+
+    local action = buildLeaveFooterAction(overrides)
+    if not overrides or overrides.title == nil then
+        action.title = "Exit"
+    end
+    return action
+end
+
+local function buildBackFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildBackFooterAction then
+        return DT_ConversationUI.BuildBackFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "back",
+        title = "Back",
+        closeAfter = false,
+        exitAfter = false,
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
+local function attachNavigationBlock(options, footerAction, overrides)
+    options = type(options) == "table" and options or {}
+    local navBlock = buildNavigationBlock(footerAction, overrides)
+    options._dtFooterAction = footerAction
+    options._dtNavigationBlock = navBlock
+    return options, navBlock
+end
+
 local function nowMs()
     if getTimeInMillis then
         return math.floor(tonumber(getTimeInMillis()) or 0)
@@ -1196,9 +1264,13 @@ local function generateRootOptions(ui, npc, player, worker)
             }
         end
 
-        ui:updateOptions(options, {
+        local footerAction = buildLeaveFooterAction()
+        local _, navBlock = attachNavigationBlock(options, footerAction, {
             resetHistory = true,
+            debugLabel = "CompanionClaimRoot",
+            requireExplicitNavigation = true,
         })
+        ui:updateOptions(options, navBlock)
         return
     end
 
@@ -1339,7 +1411,7 @@ local function generateRootOptions(ui, npc, player, worker)
             local ammoSnapshot = getRangedAmmoSnapshot(liveData)
             local showAmmo = ammoSnapshot.hasRangedWeapon and (currentMode == "ProtectAuto" or currentMode == "ProtectRanged")
             innerUI:speak("Current attack type: " .. currentLabel .. ".")
-            innerUI:updateOptions({
+            local attackOptions = {
                 {
                     text = buildModeOptionLabel(
                         "Auto",
@@ -1401,7 +1473,17 @@ local function generateRootOptions(ui, npc, player, worker)
                         generateRootOptions(choiceUI, npc, player, worker)
                     end
                 },
+            }
+            local footerAction = buildBackFooterAction({
+                onSelect = function(backUI)
+                    generateRootOptions(backUI, npc, player, worker)
+                end
             })
+            local _, navBlock = attachNavigationBlock(attackOptions, footerAction, {
+                debugLabel = "CompanionAttackType",
+                requireExplicitNavigation = true,
+            })
+            innerUI:updateOptions(attackOptions, navBlock)
         end
     }
 
@@ -1415,7 +1497,7 @@ local function generateRootOptions(ui, npc, player, worker)
             local ammoSnapshot = getRangedAmmoSnapshot(liveData)
             local showAmmo = ammoSnapshot.hasRangedWeapon and (currentMode == "GuardAuto" or currentMode == "GuardRanged")
             innerUI:speak("Current guard attack type: " .. currentLabel .. ".")
-            innerUI:updateOptions({
+            local guardOptions = {
                 {
                     text = buildModeOptionLabel(
                         "Auto",
@@ -1477,7 +1559,17 @@ local function generateRootOptions(ui, npc, player, worker)
                         generateRootOptions(choiceUI, npc, player, worker)
                     end
                 },
+            }
+            local footerAction = buildBackFooterAction({
+                onSelect = function(backUI)
+                    generateRootOptions(backUI, npc, player, worker)
+                end
             })
+            local _, navBlock = attachNavigationBlock(guardOptions, footerAction, {
+                debugLabel = "CompanionGuardAttackType",
+                requireExplicitNavigation = true,
+            })
+            innerUI:updateOptions(guardOptions, navBlock)
         end
     }
 
@@ -1510,7 +1602,16 @@ local function generateRootOptions(ui, npc, player, worker)
                         end
                     }
                 end
-                innerUI:updateOptions(choices)
+                local footerAction = buildBackFooterAction({
+                    onSelect = function(backUI)
+                        generateRootOptions(backUI, npc, player, worker)
+                    end
+                })
+                local _, navBlock = attachNavigationBlock(choices, footerAction, {
+                    debugLabel = "CompanionTransferCommand",
+                    requireExplicitNavigation = true,
+                })
+                innerUI:updateOptions(choices, navBlock)
             end
         }
     end
@@ -1545,9 +1646,14 @@ local function generateRootOptions(ui, npc, player, worker)
             if workerCommandSent and returnOrderSent then
                 playCompanionCommandCue(player, "GoHome")
                 innerUI:speak("Understood. I'll head home.")
-                innerUI:updateOptions({}, {
+                local doneOptions = {}
+                local footerAction = buildExitFooterAction()
+                local _, navBlock = attachNavigationBlock(doneOptions, footerAction, {
                     resetHistory = true,
+                    debugLabel = "CompanionGoHomeResolved",
+                    requireExplicitNavigation = true,
                 })
+                innerUI:updateOptions(doneOptions, navBlock)
             else
                 innerUI:speak("I couldn't head home right now.")
                 generateRootOptions(innerUI, npc, player, worker)
@@ -1555,9 +1661,13 @@ local function generateRootOptions(ui, npc, player, worker)
         end
     }
 
-    ui:updateOptions(options, {
+    local footerAction = buildLeaveFooterAction()
+    local _, navBlock = attachNavigationBlock(options, footerAction, {
         resetHistory = true,
+        debugLabel = "CompanionRoot",
+        requireExplicitNavigation = true,
     })
+    ui:updateOptions(options, navBlock)
 end
 
 DTNPCJobUI.Register({

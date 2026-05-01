@@ -13,6 +13,74 @@ require "DT/Common/UI/Contacts/DT_ContactsConversation"
 local DebugDialogue = {}
 local NPCGenerator = {}
 
+local function buildNavigationBlock(footerAction, overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
+        return DT_ConversationUI.BuildNavigationBlock(footerAction, overrides)
+    end
+
+    local block = {
+        explicitFooter = true,
+        footerAction = footerAction,
+        defaultFooterAction = footerAction,
+    }
+    for key, value in pairs(overrides or {}) do
+        block[key] = value
+    end
+    return block
+end
+
+local function buildLeaveFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildLeaveFooterAction then
+        return DT_ConversationUI.BuildLeaveFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "leave",
+        title = "Leave",
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
+local function buildExitFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildExitFooterAction then
+        return DT_ConversationUI.BuildExitFooterAction(overrides)
+    end
+
+    local action = buildLeaveFooterAction(overrides)
+    if not overrides or overrides.title == nil then
+        action.title = "Exit"
+    end
+    return action
+end
+
+local function buildBackFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildBackFooterAction then
+        return DT_ConversationUI.BuildBackFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "back",
+        title = "Back",
+        closeAfter = false,
+        exitAfter = false,
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
+local function attachNavigationBlock(options, footerAction, overrides)
+    options = type(options) == "table" and options or {}
+    local navBlock = buildNavigationBlock(footerAction, overrides)
+    options._dtFooterAction = footerAction
+    options._dtNavigationBlock = navBlock
+    return options, navBlock
+end
+
 local function grantRandomContact(debugOpenConversation)
     local randomNPC = NPCGenerator.Create()
     local _, saved = DT_TraderContacts.UnlockContact(randomNPC, {
@@ -122,16 +190,20 @@ function DebugDialogue.Node_Intro(ui, data)
         },
         
         -- TEST 4: Silent Closing
-        { 
-            text = "[End Simulation]", 
+        {
+            text = "[End Simulation]",
             message = "", -- Empty string = No chat log
-            onSelect = DebugDialogue.Node_Goodbye 
+            onSelect = DebugDialogue.Node_Goodbye
         }
-        
+
     }
-    ui:updateOptions(options, {
+    local footerAction = buildLeaveFooterAction()
+    local _, navBlock = attachNavigationBlock(options, footerAction, {
         resetHistory = true,
+        debugLabel = "DebugConversationIntro",
+        requireExplicitNavigation = true,
     })
+    ui:updateOptions(options, navBlock)
 end
 
 -- STATE: IDENTITY
@@ -160,11 +232,30 @@ function DebugDialogue.Node_Identity(ui, data)
                 if ui.target.identitySeed then
                     ui:speak("If my portrait is white, check: media/ui/Portraits/" .. archetype .. "/" .. gender .. "/" .. mappedID .. ".png") 
                 end
-                ui:updateOptions({})
+                local portraitOptions = {}
+                local footerAction = buildBackFooterAction({
+                    onSelect = function(backUI)
+                        DebugDialogue.Node_Identity(backUI)
+                    end
+                })
+                local _, navBlock = attachNavigationBlock(portraitOptions, footerAction, {
+                    debugLabel = "DebugConversationPortraitDetails",
+                    requireExplicitNavigation = true,
+                })
+                ui:updateOptions(portraitOptions, navBlock)
             end
         }
     }
-    ui:updateOptions(options)
+    local footerAction = buildBackFooterAction({
+        onSelect = function(backUI)
+            DebugDialogue.Node_Intro(backUI)
+        end
+    })
+    local _, navBlock = attachNavigationBlock(options, footerAction, {
+        debugLabel = "DebugConversationIdentity",
+        requireExplicitNavigation = true,
+    })
+    ui:updateOptions(options, navBlock)
 end
 
 -- STATE: BEGGING
@@ -192,17 +283,34 @@ function DebugDialogue.Node_Begging(ui, data)
             onSelect = DebugDialogue.Node_Intro 
         }
     }
-    ui:updateOptions(options)
+    local footerAction = buildBackFooterAction({
+        onSelect = function(backUI)
+            DebugDialogue.Node_Intro(backUI)
+        end
+    })
+    local _, navBlock = attachNavigationBlock(options, footerAction, {
+        debugLabel = "DebugConversationBegging",
+        requireExplicitNavigation = true,
+    })
+    ui:updateOptions(options, navBlock)
 end
 
 -- STATE: GOODBYE
 function DebugDialogue.Node_Goodbye(ui, data)
     ui:speak("Terminating session...")
-    -- Close after a short delay so the player reads the text
-    -- We can't use queue for function calls easily without extending the UI class, 
-    -- so we just close immediately or use a timer. 
-    -- For now, just close.
-    ui:close()
+    local options = {}
+    local footerAction = buildExitFooterAction({
+        title = "Exit",
+        silent = true,
+        suppressDefaultMessage = true,
+        suppressExitEmote = true,
+    })
+    local _, navBlock = attachNavigationBlock(options, footerAction, {
+        resetHistory = true,
+        debugLabel = "DebugConversationSilentExit",
+        requireExplicitNavigation = true,
+    })
+    ui:updateOptions(options, navBlock)
 end
 
 -- =============================================================================

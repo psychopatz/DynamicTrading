@@ -152,6 +152,10 @@ DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "Accept", "EN", {
     "That settles your part for now.",
     "Fine. Keep your distance and keep breathing.",
     "Good enough. We're done here.",
+    "You bought yourself a walk away. Don't waste it.",
+    "Payment clears today. Don't make us come back.",
+    "Fine. Take your little victory and disappear.",
+    "You paid. That is the only clever thing you have done today.",
 })
 
 DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "GiftAccepted", "EN", {
@@ -159,6 +163,8 @@ DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "GiftAccepted", "EN", 
     "We can call this even for today.",
     "Enough to cool heads. Move along.",
     "We'll take it and report that you made it right.",
+    "You kept this from turning into a burial detail. Move.",
+    "We'll mark it paid. Stay out of our way.",
 })
 
 DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "GiftAcceptedMedium", "EN", {
@@ -166,6 +172,8 @@ DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "GiftAcceptedMedium", 
     "This buys my word, not theirs. I'll speak for you.",
     "All right. I'll tell them you're worth leaving alone for now.",
     "You bought the delegate. I'll calm my side down.",
+    "I can cool this down for a while. Don't test how long it lasts.",
+    "You paid for restraint, not friendship. Keep moving.",
 })
 
 DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "GiftAcceptedHigh", "EN", {
@@ -173,6 +181,8 @@ DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "GiftAcceptedHigh", "E
     "Everybody got their cut. That changes the mood fast.",
     "All of us got paid. We'll stand down.",
     "That's enough for the whole crew. We can walk away from this.",
+    "Whole crew's satisfied. Don't give us a reason to revisit this road.",
+    "That pays for peace today. Spend the rest of your luck carefully.",
 })
 
 DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "Refuse", "EN", {
@@ -188,6 +198,8 @@ DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "Empty", "EN", {
     "Not enough on you to matter. Move.",
     "You're not worth the ammunition. Leave.",
     "This isn't payment. It's scraps. Go.",
+    "You're all trouble and no payout. Get out of sight.",
+    "Not worth searching twice. Move before somebody changes their mind.",
 })
 
 DynamicTrading.FlavorText.RegisterTable("HostileRaiders", "Waiting", "EN", {
@@ -249,6 +261,13 @@ DynamicTrading.FlavorText.RegisterTable("BanditsAmbient", "Working", "EN", {
     "Don't let anyone slip past.",
 })
 
+DynamicTrading.FlavorText.RegisterTable("BanditsAmbient", "Resolved", "EN", {
+    "Road's clear. Let them go.",
+    "We got what we wanted.",
+    "Move it. We're done here.",
+    "Keep walking and this stays easy.",
+})
+
 DynamicTrading.FlavorText.RegisterTable("HostileRaidersAmbient", "Default", "EN", {
     "We're here to collect.",
     "Keep it calm and maybe they pay.",
@@ -284,6 +303,16 @@ DynamicTrading.FlavorText.RegisterTable("HostileRaidersAmbient", "Working", "EN"
     "Wait for the word.",
     "Don't crowd them.",
     "Let the delegate talk.",
+})
+
+DynamicTrading.FlavorText.RegisterTable("HostileRaidersAmbient", "Resolved", "EN", {
+    "They're settled. Let them pass.",
+    "Paid enough. Eyes off unless they start something.",
+    "Issue handled. Keep them moving.",
+    "We're done here. Don't make it a second lesson.",
+    "They bought distance, not trust.",
+    "Let them limp away with whatever pride they have left.",
+    "Payment's good. Their judgement still isn't.",
 })
 
 DynamicTrading.FlavorText.RegisterTable("Bandits", "Forecast", "EN", {

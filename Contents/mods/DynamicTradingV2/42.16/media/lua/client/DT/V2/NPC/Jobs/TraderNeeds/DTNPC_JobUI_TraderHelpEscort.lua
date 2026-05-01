@@ -6,6 +6,74 @@ local TraderHelpEscortUI = {
     pendingAction = nil,
 }
 
+local function buildNavigationBlock(footerAction, overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
+        return DT_ConversationUI.BuildNavigationBlock(footerAction, overrides)
+    end
+
+    local block = {
+        explicitFooter = true,
+        footerAction = footerAction,
+        defaultFooterAction = footerAction,
+    }
+    for key, value in pairs(overrides or {}) do
+        block[key] = value
+    end
+    return block
+end
+
+local function buildLeaveFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildLeaveFooterAction then
+        return DT_ConversationUI.BuildLeaveFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "leave",
+        title = "Leave",
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
+local function buildExitFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildExitFooterAction then
+        return DT_ConversationUI.BuildExitFooterAction(overrides)
+    end
+
+    local action = buildLeaveFooterAction(overrides)
+    if not overrides or overrides.title == nil then
+        action.title = "Exit"
+    end
+    return action
+end
+
+local function buildBackFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildBackFooterAction then
+        return DT_ConversationUI.BuildBackFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "back",
+        title = "Back",
+        closeAfter = false,
+        exitAfter = false,
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
+local function attachNavigationBlock(options, footerAction, overrides)
+    options = type(options) == "table" and options or {}
+    local navBlock = buildNavigationBlock(footerAction, overrides)
+    options._dtFooterAction = footerAction
+    options._dtNavigationBlock = navBlock
+    return options, navBlock
+end
+
 local function getHook()
     return DynamicObjectives and DynamicObjectives.GetObjectiveHook and DynamicObjectives.GetObjectiveHook(HOOK_ID) or nil
 end
@@ -154,7 +222,7 @@ local function showEscortConversation(ui, npc, player, npcData, context, overrid
     local bandageCount = countBandages(player)
 
     ui:speak(overrideSpeech or "We're moving. Keep me alive and get me back to base.")
-    ui:updateOptions({
+    local options = {
         {
             text = "Status",
             message = "",
@@ -214,17 +282,27 @@ local function showEscortConversation(ui, npc, player, npcData, context, overrid
                 showEscortConversation(innerUI, npc, player, getNPCData(npc) or npcData, getIncidentContext(player, getNPCData(npc) or npcData), "Hold still. Use the bandage and keep moving.")
             end,
         },
-    }, {
+    }
+    local footerAction = buildLeaveFooterAction()
+    local _, navBlock = attachNavigationBlock(options, footerAction, {
         resetHistory = true,
+        debugLabel = "EscortActiveRoot",
+        requireExplicitNavigation = true,
     })
+    ui:updateOptions(options, navBlock)
 end
 
 local function showUnavailable(ui, message)
     TraderHelpEscortUI.activeConversation = nil
     ui:speak(message or "This rescue call is no longer available.")
-    ui:updateOptions({}, {
+    local options = {}
+    local footerAction = buildExitFooterAction()
+    local _, navBlock = attachNavigationBlock(options, footerAction, {
         resetHistory = true,
+        debugLabel = "EscortUnavailable",
+        requireExplicitNavigation = true,
     })
+    ui:updateOptions(options, navBlock)
 end
 
 local function showPendingConversation(ui, npc, player, npcData, context)
@@ -237,7 +315,7 @@ local function showPendingConversation(ui, npc, player, npcData, context)
     end
 
     ui:speak(offer.offer or "I need an escort back to base.")
-    ui:updateOptions({
+    local options = {
         {
             text = (offer.choiceLabels and offer.choiceLabels.accept) or "Accept",
             message = "",
@@ -250,15 +328,20 @@ local function showPendingConversation(ui, npc, player, npcData, context)
                     traderId = context.traderId,
                 }
                 innerUI:speak("Stay with me. I'm ready when you are.")
-                innerUI:updateOptions({
+                local waitingOptions = {
                     {
                         text = "Working...",
                         message = "",
                         onSelect = function() end,
                     },
-                }, {
+                }
+                local footerAction = buildExitFooterAction()
+                local _, navBlock = attachNavigationBlock(waitingOptions, footerAction, {
                     resetHistory = true,
+                    debugLabel = "EscortAcceptWaiting",
+                    requireExplicitNavigation = true,
                 })
+                innerUI:updateOptions(waitingOptions, navBlock)
                 sendClientCommand(player, "DynamicObjectives", "AcceptObjectiveHookIncident", {
                     hookId = HOOK_ID,
                     incidentId = context.incidentId,
@@ -271,7 +354,17 @@ local function showPendingConversation(ui, npc, player, npcData, context)
             message = "",
             onSelect = function(innerUI)
                 innerUI:speak(offer.details or "Guide the trader home and keep them alive.")
-                innerUI:updateOptions({})
+                local detailOptions = {}
+                local footerAction = buildBackFooterAction({
+                    onSelect = function(backUI)
+                        showPendingConversation(backUI, npc, player, getNPCData(npc) or npcData, context)
+                    end
+                })
+                local _, navBlock = attachNavigationBlock(detailOptions, footerAction, {
+                    debugLabel = "EscortPendingDetails",
+                    requireExplicitNavigation = true,
+                })
+                innerUI:updateOptions(detailOptions, navBlock)
             end,
         },
         {
@@ -279,14 +372,24 @@ local function showPendingConversation(ui, npc, player, npcData, context)
             message = "",
             onSelect = function(innerUI)
                 innerUI:speak(offer.decline or "Then I keep hiding in here.")
-                innerUI:updateOptions({}, {
+                local doneOptions = {}
+                local footerAction = buildExitFooterAction()
+                local _, navBlock = attachNavigationBlock(doneOptions, footerAction, {
                     resetHistory = true,
+                    debugLabel = "EscortDeclined",
+                    requireExplicitNavigation = true,
                 })
+                innerUI:updateOptions(doneOptions, navBlock)
             end,
         },
-    }, {
+    }
+    local footerAction = buildLeaveFooterAction()
+    local _, navBlock = attachNavigationBlock(options, footerAction, {
         resetHistory = true,
+        debugLabel = "EscortPendingRoot",
+        requireExplicitNavigation = true,
     })
+    ui:updateOptions(options, navBlock)
 end
 
 function TraderHelpEscortUI.OnIncidentAccepted(args)

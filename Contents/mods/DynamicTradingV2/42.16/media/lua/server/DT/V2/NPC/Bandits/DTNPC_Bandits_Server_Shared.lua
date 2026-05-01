@@ -177,6 +177,47 @@ function Shared.findPlayerByIdentity(username, onlineID)
     return nil
 end
 
+function Shared.getFactionData(factionID)
+    if not factionID then
+        return nil
+    end
+
+    local factionAPI = Internal and Internal.Faction or nil
+    if factionAPI and type(factionAPI.getFactionData) == "function" then
+        local ok, result = pcall(factionAPI.getFactionData, factionID)
+        if ok and type(result) == "table" then
+            return result
+        end
+    end
+
+    local factions = ModData and ModData.get and ModData.get("DynamicTrading_Factions") or nil
+    return type(factions) == "table" and factions[factionID] or nil
+end
+
+function Shared.getFactionDisplayName(factionID)
+    if not factionID then
+        return nil
+    end
+
+    local factionAPI = Internal and Internal.Faction or nil
+    if factionAPI and type(factionAPI.getFactionDisplayName) == "function" then
+        local ok, result = pcall(factionAPI.getFactionDisplayName, factionID)
+        if ok and result ~= nil and tostring(result) ~= "" then
+            return tostring(result)
+        end
+    end
+
+    local faction = Shared.getFactionData(factionID)
+    if type(faction) == "table" then
+        local displayName = faction.name or faction.displayName
+        if displayName ~= nil and tostring(displayName) ~= "" then
+            return tostring(displayName)
+        end
+    end
+
+    return tostring(factionID or "Unknown")
+end
+
 function Shared.isSafeSquare(square)
     return square ~= nil and square:isFree(false) and not square:isSolid() and not square:isSolidTrans()
 end
@@ -208,7 +249,14 @@ function Shared.getGroup(groupID)
     if not groupID then return nil end
     groupID = tostring(groupID)
     local group = Bandits.Groups[groupID]
-    if group then return group end
+    if group then
+        group.id = group.id or groupID
+        group.members = type(group.members) == "table" and group.members or {}
+        if not group.factionName and group.factionID then
+            group.factionName = Shared.getFactionDisplayName(group.factionID)
+        end
+        return group
+    end
 
     local members = {}
     local targetUsername, targetOnlineID
@@ -270,7 +318,7 @@ function Shared.getGroup(groupID)
         id = groupID,
         members = members,
         factionID = factionID,
-        factionName = factionID and Faction.getFactionDisplayName(factionID) or nil,
+        factionName = Shared.getFactionDisplayName(factionID),
         difficulty = Shared.clampDifficulty(banditDifficulty or 2),
         robbery = robbery,
         tradeCycleEncounter = tradeCycleEncounter,

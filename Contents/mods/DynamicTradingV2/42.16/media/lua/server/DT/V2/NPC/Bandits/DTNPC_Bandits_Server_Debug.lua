@@ -27,6 +27,20 @@ local function getFaction()
     return currentInternal and currentInternal.Faction or {}
 end
 
+local function getFactionDisplayName(factionID)
+    local shared = getShared()
+    if shared and type(shared.getFactionDisplayName) == "function" then
+        return shared.getFactionDisplayName(factionID)
+    end
+
+    local faction = getFaction()
+    if faction and type(faction.getFactionDisplayName) == "function" then
+        return faction.getFactionDisplayName(factionID)
+    end
+
+    return tostring(factionID or "Unknown")
+end
+
 local function getRaid()
     local currentInternal = DTNPCBandits and DTNPCBandits.Internal or nil
     return currentInternal and currentInternal.Raid or {}
@@ -64,7 +78,7 @@ local function collectHostileRaidSummaries(player, maxCap, partyPercent)
         if raidSize > 0 then
             summaries[#summaries + 1] = {
                 factionID = factionID,
-                name = Faction.getFactionDisplayName(factionID),
+                name = getFactionDisplayName(factionID),
                 raidSize = raidSize,
                 resting = resting,
                 isBandit = Shared.isBanditFactionID(factionID),
@@ -221,7 +235,7 @@ function Debug.onClientCommand(module, command, player, args)
                 })
                 if ok then
                     Shared.sendBanditCommand(player, "BanditDebugNotice", {
-                        message = "Spawned angry faction raid: " .. tostring(Faction.getFactionDisplayName(factionID)),
+                        message = "Spawned angry faction raid: " .. tostring(getFactionDisplayName(factionID)),
                     })
                 end
             else

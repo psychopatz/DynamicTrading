@@ -19,6 +19,16 @@ Internal.Demand = Internal.Demand or {}
 
 local Demand = Internal.Demand
 
+local function getFactionDisplayName(factionID)
+    if Shared and type(Shared.getFactionDisplayName) == "function" then
+        return Shared.getFactionDisplayName(factionID)
+    end
+    if Faction and type(Faction.getFactionDisplayName) == "function" then
+        return Faction.getFactionDisplayName(factionID)
+    end
+    return tostring(factionID or "Unknown")
+end
+
 local function isTradeCycleEncounter(group, npcData)
     if group and group.tradeCycleEncounter == true then
         return true
@@ -45,6 +55,38 @@ local function buildHostileNegotiationGroupID(player, uuid)
         .. "_" .. tostring(Shared.getUsername(player) or "Player")
         .. "_" .. tostring(math.floor(Shared.worldHours() * 100))
         .. "_" .. tostring(ZombRand(1000000))
+end
+
+local function clearStaleDemandGroupState(uuid, npcData, reason)
+    if type(npcData) ~= "table" then
+        return
+    end
+
+    npcData.banditGroupID = nil
+    npcData.hostileNegotiationGroupID = nil
+    npcData.banditDemandStarted = nil
+    npcData.banditDemandStartedAt = nil
+    npcData.banditDemandResolved = nil
+    npcData.banditLeaving = nil
+    npcData.banditTargetUsername = nil
+    npcData.banditTargetOnlineID = nil
+
+    if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul and uuid then
+        DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    end
+    if uuid then
+        Shared.syncNPC(uuid, npcData)
+    end
+
+    if DynamicTrading and DynamicTrading.Log then
+        DynamicTrading.Log(
+            "DTV2",
+            "Bandits",
+            "Recovery",
+            "Cleared stale demand group state for " .. tostring(uuid or "unknown")
+                .. " reason=" .. tostring(reason or "group_rebuild_failed")
+        )
+    end
 end
 
 local function getTradeCycleMode(npcData, player)
@@ -417,13 +459,62 @@ local function buildTributeDemand(player, difficulty, factionID)
 
     return {
         kind = "tribute",
-        factionName = Faction.getFactionDisplayName(factionID),
+        factionName = getFactionDisplayName(factionID),
         tiers = {
             buildTributeTier(lowAmount, "low", 0, "none"),
             buildTributeTier(mediumAmount, "medium", 5, "delegate"),
             buildTributeTier(highAmount, "high", 5, "party"),
         },
     }
+end
+
+local function isTrueBanditDemandGroup(group)
+    if not group then
+        return false
+    end
+
+    local factionName = string.lower(tostring(group.factionName or ""))
+    local factionID = string.lower(tostring(group.factionID or ""))
+    if factionName == "bandit raiders" or factionID == "bandit raiders" then
+        return true
+    end
+
+    if group.robbery == true or group.banditRoamEncounter == true then
+        return true
+    end
+
+    if Shared.isBanditFactionID(group.factionID) then
+        return true
+    end
+
+    for _, member in ipairs(Shared.getGroupMembers(group)) do
+        local npcData = member and member.npcData or nil
+        if npcData and (
+            npcData.isBandit == true
+            or Shared.isBanditFactionID(npcData.factionID)
+            or tostring(npcData.archetypeID or npcData.occupation or "") == "Bandit"
+            or tostring(npcData.banditRole or "") ~= ""
+            or tostring(npcData.banditRoamEncounterMode or "") ~= ""
+        ) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function shouldUseTieredTributeDemand(group)
+    if not group then
+        return false
+    end
+
+    if isTrueBanditDemandGroup(group) then
+        return false
+    end
+
+    return group.hostileNegotiationOnly == true
+        or group.tradeCycleEncounter == true
+        or tostring(group.resolveBehavior or "") == "return_trading"
 end
 
 local function buildMoneyDemand(player, difficulty)
@@ -533,8 +624,15 @@ local function applyTributeReputationChange(group, player, selectedTier)
 end
 
 function Demand.buildDemand(player, difficulty, group)
-    if group and group.robbery ~= true then
+    if shouldUseTieredTributeDemand(group) then
         return buildTributeDemand(player, difficulty, group.factionID)
+    end
+
+    if group and isTrueBanditDemandGroup(group) and group.robbery ~= true then
+        return buildMoneyDemand(player, difficulty) or {
+            kind = "none",
+            displayName = "nothing",
+        }
     end
 
     return buildMoneyDemand(player, difficulty) or buildItemDemand(player) or {
@@ -557,7 +655,7 @@ function Bandits.EnsureTradeCycleEncounterGroup(player, uuid, npcData, options)
             existing.targetUsername = Shared.getUsername(player) or existing.targetUsername
             existing.targetOnlineID = Shared.getOnlineID(player) or existing.targetOnlineID
             existing.factionID = existing.factionID or npcData.factionID
-            existing.factionName = existing.factionName or Faction.getFactionDisplayName(npcData.factionID)
+            existing.factionName = existing.factionName or getFactionDisplayName(npcData.factionID)
             existing.leaderUUID = existing.leaderUUID or tostring(uuid)
             applyTradeCycleEncounterState(npcData, player, getTradeCycleMode(npcData, player), existing.id)
             if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
@@ -577,7 +675,7 @@ function Bandits.EnsureTradeCycleEncounterGroup(player, uuid, npcData, options)
     local group = {
         id = groupID,
         factionID = npcData.factionID or Bandits.FACTION_ID,
-        factionName = Faction.getFactionDisplayName(npcData.factionID),
+        factionName = getFactionDisplayName(npcData.factionID),
         difficulty = Shared.clampDifficulty(options.difficulty or npcData.banditDifficulty or 2),
         partyPercent = 100,
         robbery = mode == "robbery",
@@ -619,7 +717,7 @@ function Bandits.EnsureBanditHouseRoamEncounterGroup(player, uuid, npcData, opti
             existing.targetUsername = Shared.getUsername(player) or existing.targetUsername
             existing.targetOnlineID = Shared.getOnlineID(player) or existing.targetOnlineID
             existing.factionID = existing.factionID or npcData.factionID
-            existing.factionName = existing.factionName or Faction.getFactionDisplayName(npcData.factionID)
+            existing.factionName = existing.factionName or getFactionDisplayName(npcData.factionID)
             existing.leaderUUID = existing.leaderUUID or tostring(uuid)
             existing.resolveBehavior = "leave"
             npcData.banditTargetUsername = existing.targetUsername
@@ -637,7 +735,7 @@ function Bandits.EnsureBanditHouseRoamEncounterGroup(player, uuid, npcData, opti
     local group = {
         id = groupID,
         factionID = npcData.factionID or Bandits.FACTION_ID,
-        factionName = Faction.getFactionDisplayName(npcData.factionID),
+        factionName = getFactionDisplayName(npcData.factionID),
         difficulty = Shared.clampDifficulty(options.difficulty or npcData.banditDifficulty or 2),
         partyPercent = 100,
         robbery = false,
@@ -689,7 +787,7 @@ function Bandits.EnsureHostileNegotiationGroup(player, uuid, npcData, options)
             existing.targetUsername = Shared.getUsername(player) or existing.targetUsername
             existing.targetOnlineID = Shared.getOnlineID(player) or existing.targetOnlineID
             existing.factionID = existing.factionID or npcData.factionID
-            existing.factionName = existing.factionName or Faction.getFactionDisplayName(npcData.factionID)
+            existing.factionName = existing.factionName or getFactionDisplayName(npcData.factionID)
             existing.leaderUUID = existing.leaderUUID or tostring(uuid)
             existing.resolveBehavior = shouldLeaveAfterPayment(existing, npcData) and "leave" or "return_trading"
             npcData.banditTargetUsername = existing.targetUsername
@@ -707,7 +805,7 @@ function Bandits.EnsureHostileNegotiationGroup(player, uuid, npcData, options)
     local group = {
         id = groupID,
         factionID = npcData.factionID or Bandits.FACTION_ID,
-        factionName = Faction.getFactionDisplayName(npcData.factionID),
+        factionName = getFactionDisplayName(npcData.factionID),
         difficulty = Shared.clampDifficulty(options.difficulty or npcData.banditDifficulty or 2),
         partyPercent = 100,
         robbery = false,
@@ -774,7 +872,27 @@ function Bandits.StartDemand(player, args)
         return
     end
     local group = Shared.getGroup(groupID)
-    if not group then return end
+    if not group then
+        if isHostileNegotiationEligible(npcData, player) then
+            hostileGroup = Bandits.EnsureHostileNegotiationGroup(player, uuid, npcData)
+            group = hostileGroup or group
+        end
+        if not group and isBanditHouseRoamEncounterEligible(npcData) then
+            banditRoamGroup = Bandits.EnsureBanditHouseRoamEncounterGroup(player, uuid, npcData)
+            group = banditRoamGroup or group
+        end
+        if not group and (npcData.tradeCycleDemandEligible == true or npcData.tradeCycleMode ~= nil) then
+            tradeCycleGroup = Bandits.EnsureTradeCycleEncounterGroup(player, uuid, npcData)
+            group = tradeCycleGroup or group
+        end
+        if group and group.id then
+            groupID = tostring(group.id)
+        end
+    end
+    if not group then
+        clearStaleDemandGroupState(uuid, npcData, "group_rebuild_failed")
+        return
+    end
     if not Shared.matchesPlayer(npcData, player)
         and not (Shared.matchesHostileNegotiationPlayer and Shared.matchesHostileNegotiationPlayer(npcData, player))
         and not isTradeCycleEncounter(tradeCycleGroup or hostileGroup, npcData)

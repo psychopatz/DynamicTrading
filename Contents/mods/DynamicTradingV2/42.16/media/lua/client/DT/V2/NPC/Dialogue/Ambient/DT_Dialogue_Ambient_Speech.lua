@@ -74,6 +74,9 @@ local function getRaidAmbientKind(npcData)
     local state = tostring(npcData and npcData.state or "Default")
     local status = tostring(npcData and npcData.status or "Default")
 
+    if npcData and (npcData.banditDemandResolved == true or npcData.banditLeaving == true) then
+        return "Resolved", "warning"
+    end
     if state == "Attack" then
         return "Attack", "angry"
     end

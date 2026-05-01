@@ -14,6 +14,54 @@ pcall(require, "DT/V2/NPC/Jobs/DTNPC_JobUI")
 
 DTNPC_TraderDialogue_Hub = {}
 
+local function buildNavigationBlock(footerAction, overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
+        return DT_ConversationUI.BuildNavigationBlock(footerAction, overrides)
+    end
+
+    local block = {
+        explicitFooter = true,
+        footerAction = footerAction,
+        defaultFooterAction = footerAction,
+    }
+    for key, value in pairs(overrides or {}) do
+        block[key] = value
+    end
+    return block
+end
+
+local function buildLeaveFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildLeaveFooterAction then
+        return DT_ConversationUI.BuildLeaveFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "leave",
+        title = "Leave",
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
+local function buildBackFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildBackFooterAction then
+        return DT_ConversationUI.BuildBackFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "back",
+        title = "Back",
+        closeAfter = false,
+        exitAfter = false,
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
 local function clearInteractionPose(npc)
     if DTNPC_InteractionPose and DTNPC_InteractionPose.Deactivate then
         DTNPC_InteractionPose.Deactivate(npc)
@@ -196,13 +244,16 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
             }
         end
         
-        options[#options + 1] = {
-            text = currentOffer.choiceLabels.back,
-            message = "",
+        options._dtFooterAction = buildBackFooterAction({
+            title = currentOffer.choiceLabels.back,
             onSelect = function(nextUI)
                 showMainMenu(nextUI)
             end
-        }
+        })
+        options._dtNavigationBlock = buildNavigationBlock(options._dtFooterAction, {
+            debugLabel = "TraderHubQuestFallback",
+            requireExplicitNavigation = true,
+        })
         
         conversationUI:updateOptions(options)
     end
@@ -496,9 +547,17 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
         end
     })
     
+    local footerAction = buildLeaveFooterAction()
     options._dtMenu = "root"
+    options._dtFooterAction = footerAction
+    options._dtNavigationBlock = buildNavigationBlock(footerAction, {
+        resetHistory = true,
+        debugLabel = "TraderHubRoot",
+        requireExplicitNavigation = true,
+    })
     ui:updateOptions(options, {
         resetHistory = true,
+        navigationBlock = options._dtNavigationBlock,
     })
 end
 

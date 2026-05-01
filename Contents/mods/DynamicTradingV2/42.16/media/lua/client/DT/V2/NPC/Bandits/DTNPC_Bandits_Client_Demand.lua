@@ -61,8 +61,8 @@ function BanditClient.ShowDemand(ui, player, demand)
 
     if demand.kind == "money" then
         local amountText = "$" .. tostring(tonumber(demand.amount) or 0)
-        ui:speak(Helpers.pickDialogueLine("Money", { ["1"] = amountText }, ui))
-        ui:updateOptions({
+        local footerAction = Helpers.buildActiveDemandFooterAction(ui)
+        local options = {
             {
                 text = "Hand over " .. amountText,
                 message = "Fine. Take it.",
@@ -71,7 +71,7 @@ function BanditClient.ShowDemand(ui, player, demand)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
                     nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
-                    Helpers.setWaitingOptions(nextUI, "Handing it over...")
+                    Helpers.setWaitingOptions(nextUI, "Handing it over...", Helpers.buildCompletedDemandFooterAction(nextUI))
                     Helpers.sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
                 end
             },
@@ -87,17 +87,17 @@ function BanditClient.ShowDemand(ui, player, demand)
                     Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
             }
-        }, {
-            resetHistory = true,
-        })
+        }
+        ui:speak(Helpers.pickDialogueLine("Money", { ["1"] = amountText }, ui))
+        Helpers.applyDemandOptions(ui, options, footerAction)
         Helpers.armIdleWarning(ui)
         return
     end
 
     if demand.kind == "item" then
         local itemName = Helpers.normalize(demand.displayName) or "that item"
-        ui:speak(Helpers.pickDialogueLine("Item", { ["1"] = itemName }, ui))
-        ui:updateOptions({
+        local footerAction = Helpers.buildActiveDemandFooterAction(ui)
+        local options = {
             {
                 text = "Hand over " .. itemName,
                 message = "Take it and leave.",
@@ -106,7 +106,7 @@ function BanditClient.ShowDemand(ui, player, demand)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
                     nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
-                    Helpers.setWaitingOptions(nextUI, "Handing it over...")
+                    Helpers.setWaitingOptions(nextUI, "Handing it over...", Helpers.buildCompletedDemandFooterAction(nextUI))
                     Helpers.sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
                 end
             },
@@ -122,14 +122,15 @@ function BanditClient.ShowDemand(ui, player, demand)
                     Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
             }
-        }, {
-            resetHistory = true,
-        })
+        }
+        ui:speak(Helpers.pickDialogueLine("Item", { ["1"] = itemName }, ui))
+        Helpers.applyDemandOptions(ui, options, footerAction)
         Helpers.armIdleWarning(ui)
         return
     end
 
     if demand.kind == "tribute" then
+        local footerAction = Helpers.buildActiveDemandFooterAction(ui)
         ui:speak(Helpers.pickDialogueLine("Tribute", {
             ["1"] = Helpers.normalize(demand.factionName) or "our faction",
         }, ui))
@@ -144,7 +145,7 @@ function BanditClient.ShowDemand(ui, player, demand)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
                     nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
-                    Helpers.setWaitingOptions(nextUI, "Working the bribe...")
+                    Helpers.setWaitingOptions(nextUI, "Working the bribe...", Helpers.buildCompletedDemandFooterAction(nextUI))
                     Helpers.sendBanditCommand(player, "BanditDemandPay", {
                         groupID = groupID,
                         tier = tier.tier,
@@ -165,10 +166,7 @@ function BanditClient.ShowDemand(ui, player, demand)
                 Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
             end
         }
-
-        ui:updateOptions(options, {
-            resetHistory = true,
-        })
+        Helpers.applyDemandOptions(ui, options, footerAction)
         Helpers.armIdleWarning(ui)
         return
     end
@@ -179,9 +177,9 @@ function BanditClient.ShowDemand(ui, player, demand)
     ui.keepOpenOnInvalidInteraction = true
     Helpers.markResolved(groupID)
     ui:speak(Helpers.pickDialogueLine("Empty", nil, ui))
-    ui:updateOptions({}, {
-        resetHistory = true,
-    })
+    local options = {}
+    local footerAction = Helpers.buildCompletedDemandFooterAction(ui)
+    Helpers.applyDemandOptions(ui, options, footerAction)
     Helpers.sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
 end
 
@@ -257,7 +255,7 @@ function BanditClient.RequestDemandForUI(ui, npc, player, npcData)
     end
 
     ui:speak(Helpers.pickDialogueLine("Approach", nil, ui))
-    Helpers.setWaitingOptions(ui, Helpers.pickDialogueLine("Waiting", nil, ui))
+    Helpers.setWaitingOptions(ui, Helpers.pickDialogueLine("Waiting", nil, ui), Helpers.buildActiveDemandFooterAction(ui))
     Helpers.sendBanditCommand(player, "BanditDemandStarted", {
         groupID = groupID,
         uuid = uuid,

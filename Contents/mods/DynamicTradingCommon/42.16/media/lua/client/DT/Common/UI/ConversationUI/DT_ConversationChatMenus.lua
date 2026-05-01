@@ -19,6 +19,39 @@ local function refreshTraderChatOptions(ui, context)
     ui:replaceOptions(DT_ConversationChatMenus.BuildTraderChatOptions(ui, context))
 end
 
+local function buildNavigationBlock(footerAction, overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
+        return DT_ConversationUI.BuildNavigationBlock(footerAction, overrides)
+    end
+
+    local block = {
+        explicitFooter = true,
+        footerAction = footerAction,
+        defaultFooterAction = footerAction,
+    }
+    for key, value in pairs(overrides or {}) do
+        block[key] = value
+    end
+    return block
+end
+
+local function buildBackFooterAction(overrides)
+    if DT_ConversationUI and DT_ConversationUI.BuildBackFooterAction then
+        return DT_ConversationUI.BuildBackFooterAction(overrides)
+    end
+
+    local action = {
+        kind = "back",
+        title = "Back",
+        closeAfter = false,
+        exitAfter = false,
+    }
+    for key, value in pairs(overrides or {}) do
+        action[key] = value
+    end
+    return action
+end
+
 local function getContactUnlockLabel(ui)
     local target = ui and ui.target or nil
     local requiredRep = DT_TraderContacts.GetRequiredReputationForTrader
@@ -521,8 +554,7 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
         options = colonySystem.BuildConversationChatOptions(ui, options)
     end
 
-    options._dtFooterAction = {
-        kind = "back",
+    options._dtFooterAction = buildBackFooterAction({
         title = context.backText or "Back",
         message = context.backMessage or "",
         onSelect = function(conversationUI)
@@ -530,7 +562,11 @@ function DT_ConversationChatMenus.BuildTraderChatOptions(ui, context)
                 context.onBack(conversationUI, context)
             end
         end
-    }
+    })
+    options._dtNavigationBlock = buildNavigationBlock(options._dtFooterAction, {
+        debugLabel = "TraderChat",
+        requireExplicitNavigation = true,
+    })
 
     return options
 end

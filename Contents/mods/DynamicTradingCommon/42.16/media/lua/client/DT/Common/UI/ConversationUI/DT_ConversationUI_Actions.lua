@@ -188,23 +188,88 @@ end
 
 function DT_ConversationUI:getExitConversationMessage(footerAction)
     if type(footerAction) == "table" then
-        local overrideText = tostring(footerAction.message or "")
+        local overrideText = tostring(footerAction.playerMessage or footerAction.message or "")
         if overrideText ~= "" then
             return overrideText
+        end
+
+        if footerAction.silent == true or footerAction.suppressDefaultMessage == true then
+            return nil
         end
     end
 
     return getDefaultExitLine(self)
 end
 
-function DT_ConversationUI:playExitConversationEmote()
+function DT_ConversationUI:playExitConversationEmote(footerAction)
+    if type(footerAction) == "table" and footerAction.suppressExitEmote == true then
+        return false
+    end
+
     local player = getLocalPlayer()
     if not player or not player.playEmote then
         return false
     end
 
-    player:playEmote("wavehi")
+    local emoteID = "wavehi"
+    if type(footerAction) == "table" then
+        local customEmote = tostring(footerAction.exitEmote or "")
+        if customEmote ~= "" then
+            emoteID = customEmote
+        end
+    end
+
+    player:playEmote(emoteID)
     return true
+end
+
+function DT_ConversationUI:getFooterActionNPCDialogue(footerAction)
+    if type(footerAction) ~= "table" or footerAction.silent == true then
+        return nil
+    end
+
+    local npcDialogue = tostring(footerAction.npcDialogue or "")
+    if npcDialogue == "" then
+        return nil
+    end
+
+    return npcDialogue
+end
+
+function DT_ConversationUI:queueFooterActionDialogue(footerAction, isExitAction)
+    if type(footerAction) == "table" and footerAction.silent == true then
+        return false
+    end
+
+    local queuedAny = false
+    local playerMessage = nil
+    local playerStyle = type(footerAction) == "table" and footerAction.style or nil
+
+    if isExitAction == true then
+        playerMessage = self:getExitConversationMessage(footerAction)
+    elseif type(footerAction) == "table" then
+        playerMessage = tostring(footerAction.playerMessage or footerAction.message or "")
+        if playerMessage == "" then
+            playerMessage = nil
+        end
+    end
+
+    if playerMessage and playerMessage ~= "" then
+        self:queueMessage(playerMessage, "Me", true, 0, "DT_RadioRandom", playerStyle)
+        queuedAny = true
+    end
+
+    local npcDialogue = self:getFooterActionNPCDialogue(footerAction)
+    if npcDialogue then
+        self:speak({
+            text = npcDialogue,
+            delay = queuedAny and (DT_ConversationUI.TEXT_DELAY or 30) or 0,
+            style = type(footerAction) == "table" and footerAction.npcStyle or nil,
+        })
+        queuedAny = true
+    end
+
+    return queuedAny
 end
 
 function DT_ConversationUI:performPendingClose()
@@ -237,8 +302,21 @@ function DT_ConversationUI:requestExitConversation(footerAction)
         return false
     end
 
-    local exitMessage = self:getExitConversationMessage(footerAction)
-    local exitStyle = type(footerAction) == "table" and footerAction.style or nil
+    local isBackAction = type(footerAction) == "table" and footerAction.kind == "back" or false
+    local shouldCloseAfter = footerAction == nil
+        or isBackAction ~= true
+        or footerAction.exitAfter == true
+        or footerAction.closeAfter == true
+
+    if shouldCloseAfter ~= true then
+        local queuedMessages = self:queueFooterActionDialogue(footerAction, false)
+        local callback = type(footerAction) == "table" and footerAction.onSelect or nil
+        if type(callback) == "function" then
+            callback(self, footerAction.data, footerAction)
+            return true
+        end
+        return queuedMessages
+    end
 
     self.closeReason = self.closeReason or "footer_leave"
     self.pendingCloseAfterQueue = true
@@ -246,10 +324,9 @@ function DT_ConversationUI:requestExitConversation(footerAction)
     self.pendingCloseCallback = type(footerAction) == "table" and footerAction.onSelect or nil
     self.pendingCloseFooterAction = footerAction
 
-    self:playExitConversationEmote()
+    self:playExitConversationEmote(footerAction)
 
-    if exitMessage and exitMessage ~= "" then
-        self:queueMessage(exitMessage, "Me", true, 0, "DT_RadioRandom", exitStyle)
+    if self:queueFooterActionDialogue(footerAction, true) then
         return true
     end
 

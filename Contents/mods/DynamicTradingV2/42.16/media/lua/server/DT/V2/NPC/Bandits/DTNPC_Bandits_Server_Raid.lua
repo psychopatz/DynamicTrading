@@ -21,6 +21,16 @@ Internal.Raid = Internal.Raid or {}
 
 local Raid = Internal.Raid
 
+local function getFactionDisplayName(factionID)
+    if Shared and type(Shared.getFactionDisplayName) == "function" then
+        return Shared.getFactionDisplayName(factionID)
+    end
+    if Faction and type(Faction.getFactionDisplayName) == "function" then
+        return Faction.getFactionDisplayName(factionID)
+    end
+    return tostring(factionID or "Unknown")
+end
+
 local function generateGroupID(player, factionID)
     return "Raid_" .. tostring(factionID or "Faction") .. "_" .. tostring(Shared.getUsername(player) or "Player") .. "_" .. tostring(math.floor(Shared.worldHours() * 100)) .. "_" .. tostring(ZombRand(1000000))
 end
@@ -153,7 +163,7 @@ local function createRaidDataFromSoul(player, groupID, factionID, raidMember, di
     gen.banditSpawnedAt = Shared.nowMillis()
     gen.banditDemandResolved = false
     gen.raidFactionID = factionID
-    gen.raidFactionName = Faction.getFactionDisplayName(factionID)
+    gen.raidFactionName = getFactionDisplayName(factionID)
     gen.raidHostileFaction = true
     gen.lastX = square:getX()
     gen.lastY = square:getY()
@@ -233,7 +243,7 @@ function Bandits.SpawnAmbushForPlayer(player, options)
     elseif not Faction.isFactionHostileToPlayer(factionID, faction, player) then
         if options.debug == true then
             Shared.sendBanditCommand(player, "BanditDebugNotice", {
-                message = tostring(Faction.getFactionDisplayName(factionID)) .. " is not angry enough to raid you.",
+                message = tostring(getFactionDisplayName(factionID)) .. " is not angry enough to raid you.",
             })
         end
         return false
@@ -255,7 +265,7 @@ function Bandits.SpawnAmbushForPlayer(player, options)
     local group = {
         id = groupID,
         factionID = factionID,
-        factionName = Faction.getFactionDisplayName(factionID),
+        factionName = getFactionDisplayName(factionID),
         difficulty = difficulty,
         partyPercent = partyPercent,
         robbery = robbery,

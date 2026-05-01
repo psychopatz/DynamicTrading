@@ -330,17 +330,89 @@ function Helpers.clearInteractionPose(npc)
     end
 end
 
-function Helpers.setWaitingOptions(ui, text)
+function Helpers.setWaitingOptions(ui, text, footerAction)
     if not ui or not ui.updateOptions then return end
-    ui:updateOptions({
+    local resolvedFooterAction = type(footerAction) == "table" and footerAction or Helpers.buildActiveDemandFooterAction(ui)
+    local options = {
         {
             text = text or "Wait",
             message = "...",
             onSelect = function() end
         }
-    }, {
+    }
+    Helpers.applyDemandOptions(ui, options, resolvedFooterAction)
+end
+
+function Helpers.buildActiveDemandFooterAction(source)
+    local category = Helpers.getDialogueCategory(source)
+    local isHostileRaider = category == "HostileRaiders"
+
+    local spec = {
+        title = "Leave",
+        silent = true,
+        suppressDefaultMessage = true,
+        suppressExitEmote = not isHostileRaider,
+        exitEmote = isHostileRaider and "insult" or nil,
+    }
+
+    if DT_ConversationUI and DT_ConversationUI.BuildLeaveFooterAction then
+        return DT_ConversationUI.BuildLeaveFooterAction(spec)
+    end
+
+    spec.kind = "leave"
+    return spec
+end
+
+function Helpers.buildCompletedDemandFooterAction(source)
+    local category = Helpers.getDialogueCategory(source)
+    local isHostileRaider = category == "HostileRaiders"
+
+    local spec = {
+        title = "Exit",
+        silent = true,
+        suppressDefaultMessage = true,
+        suppressExitEmote = not isHostileRaider,
+        exitEmote = isHostileRaider and "insult" or nil,
+    }
+
+    if DT_ConversationUI and DT_ConversationUI.BuildExitFooterAction then
+        return DT_ConversationUI.BuildExitFooterAction(spec)
+    end
+
+    spec.kind = "leave"
+    return spec
+end
+
+function Helpers.buildDemandNavigationBlock(footerAction)
+    if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
+        return DT_ConversationUI.BuildNavigationBlock(footerAction, {
+            resetHistory = true,
+        })
+    end
+
+    return {
+        explicitFooter = true,
         resetHistory = true,
-    })
+        footerAction = footerAction,
+        defaultFooterAction = footerAction,
+    }
+end
+
+function Helpers.applyDemandOptions(ui, options, footerAction)
+    if not ui or not ui.updateOptions then return end
+    options = type(options) == "table" and options or {}
+    local resolvedFooterAction = type(footerAction) == "table" and footerAction or Helpers.buildActiveDemandFooterAction(ui)
+    local navBlock = Helpers.buildDemandNavigationBlock(resolvedFooterAction)
+
+    options._dtFooterAction = resolvedFooterAction
+    options._dtNavigationBlock = navBlock
+
+    ui:updateOptions(options, navBlock)
+    if ui.setNavigationBlock then
+        ui:setNavigationBlock(navBlock)
+    elseif ui.setFooterAction then
+        ui:setFooterAction(resolvedFooterAction)
+    end
 end
 
 function Helpers.disarmIdleWarning(ui)
