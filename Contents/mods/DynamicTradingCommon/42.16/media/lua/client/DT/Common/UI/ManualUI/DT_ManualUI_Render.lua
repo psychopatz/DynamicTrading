@@ -77,28 +77,34 @@ function DT_ManualUI:prepareBlock(block)
     end
 
     if kind == "supporter_carousel" then
-        payload.title = tostring(block.title or "Hall of Fame Donators")
+        payload.title = tostring(block.title or "Thank You")
         payload.autoplayMs = tonumber(block.autoplayMs or block.autoplay_ms) or 4000
         payload.currencySymbol = tostring(block.currencySymbol or block.currency_symbol or "$")
         payload.thankYouText = tostring(block.thankYouText or block.thank_you_text or "")
+        payload.compact = (block.compact == true)
         payload.supporters = DT_ManualUI_Donators and DT_ManualUI_Donators.GetActiveSupportersFromBlock and DT_ManualUI_Donators.GetActiveSupportersFromBlock(block) or {}
 
-        local thankYouLines = {}
-        local hasSupportMessages = false
+        if payload.compact then
+            payload.height = 170
+        else
+            local thankYouLines = {}
+            local hasSupportMessages = false
 
-        if payload.thankYouText ~= "" then
-            thankYouLines = DynamicTrading.Utils.WrapText(payload.thankYouText, width - 30, UIFont.Small)
-        end
-
-        for _, supporter in ipairs(payload.supporters) do
-            local supportMessage = tostring((supporter and supporter.supportMessage) or (supporter and supporter.support_message) or "")
-            if supportMessage ~= "" then
-                hasSupportMessages = true
-                break
+            if payload.thankYouText ~= "" then
+                thankYouLines = DynamicTrading.Utils.WrapText(payload.thankYouText, width - 30, UIFont.Small)
             end
+
+            for _, supporter in ipairs(payload.supporters) do
+                local supportMessage = tostring((supporter and supporter.supportMessage) or (supporter and supporter.support_message) or "")
+                if supportMessage ~= "" then
+                    hasSupportMessages = true
+                    break
+                end
+            end
+
+            payload.height = (hasSupportMessages and 420 or 350) + (#thankYouLines * 16)
         end
 
-        payload.height = (hasSupportMessages and 420 or 350) + (#thankYouLines * 16)
         payload.label = payload.title
         return payload
     end
@@ -321,7 +327,11 @@ function DT_ManualUI:drawContentItem(y, item, alt)
     end
 
     if block.kind == "supporter_carousel" then
-        DT_ManualUI_Donators_Render.DrawContentCarousel(self, block, y, width, height)
+        if block.compact then
+            DT_ManualUI_Donators_Render.DrawContentCarouselCompact(self, block, y, width, height)
+        else
+            DT_ManualUI_Donators_Render.DrawContentCarousel(self, block, y, width, height)
+        end
         return y + height
     end
 

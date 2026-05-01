@@ -40,6 +40,15 @@
 --       ],
 --       "blocks": [
 --         {
+--           "type": "supporter_carousel",
+--           "title": "Thank You",
+--           "compact": true,
+--           "autoplay_ms": 4000,
+--           "currency_symbol": "$",
+--           "thank_you_text": "",
+--           "supporters_ref": "dt_support_hall_of_fame"
+--         },
+--         {
 --           "type": "heading",
 --           "id": "support-dynamic-trading",
 --           "level": 1,
@@ -128,6 +137,7 @@ if DynamicTrading and DynamicTrading.RegisterManual then
                 title = "Keep The Project Alive",
                 keywords = { "support", "Ko-Fi", "funding", "donate" },
                 blocks = {
+                    { type = "supporter_carousel", title = "Thank You", compact = true, autoplayMs = 4000, currencySymbol = "$", thankYouText = "", supportersRef = "dt_support_hall_of_fame" },
                     { type = "heading", id = "support-dynamic-trading", level = 1, text = "Support Dynamic Trading" },
                     { type = "paragraph", text = "Dynamic Trading Needs ya <3" },
                     { type = "image", path = "media/ui/Manuals/dt_support_patreon/donate.png", caption = "", width = 247, height = 167 },

@@ -24,7 +24,7 @@ local function getManualViewerTypeLabel(ui)
     end
 
     if manualType == "donators" then
-        return "Hall of Fame"
+        return "Supporters"
     end
 
     if manualType == "whats_new" then
@@ -303,7 +303,7 @@ function DT_ManualUI:createChildren()
     self.btnSupportBanner:instantiate()
     self.supportBannerPanel:addChild(self.btnSupportBanner)
 
-    self.btnHallOfFame = ISButton:new(130, 48, 110, 24, "Hall of Fame", self, self.onOpenHallOfFame)
+    self.btnHallOfFame = ISButton:new(130, 48, 110, 24, "Supporters", self, self.onOpenHallOfFame)
     self.btnHallOfFame:initialise()
     self.btnHallOfFame:instantiate()
     self.supportBannerPanel:addChild(self.btnHallOfFame)

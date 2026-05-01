@@ -39,6 +39,19 @@ function DT_ManualUI_Donators.FormatDonation(totalDonation, currencySymbol)
 end
 
 function DT_ManualUI_Donators.GetActiveSupportersFromBlock(block)
+    -- If the block declares a reference to another manual's carousel, pull from there instead.
+    local ref = block and (block.supportersRef or block.supporters_ref)
+    if ref and ref ~= "" then
+        local registry = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Registry or {}
+        local refManual = registry[tostring(ref)]
+        if refManual then
+            local refBlock = DT_ManualUI_Donators.GetPrimaryCarouselBlock(refManual)
+            if refBlock then
+                block = refBlock
+            end
+        end
+    end
+
     local supporters = {}
     for _, entry in ipairs((block and block.supporters) or {}) do
         local normalized = donorNormalizeEntry(entry)

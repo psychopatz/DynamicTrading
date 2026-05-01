@@ -211,7 +211,7 @@ end
 function DT_ManualUI_Donators_Render.DrawContentCarousel(target, block, y, width, height)
     local x = 0
     target:drawRect(x, y, width, height - 1, 0.20, 0.06, 0.05, 0.04)
-    target:drawText(block.title or "Hall of Fame Donators", 12, y + 8, 1, 0.90, 0.56, 1, UIFont.Medium)
+    target:drawText(block.title or "Thank You", 12, y + 8, 1, 0.90, 0.56, 1, UIFont.Medium)
 
     local supporters = block.supporters or {}
     local thankYouLines = wrapLines(block.thankYouText or "", width - 48, UIFont.Small)
@@ -278,6 +278,37 @@ function DT_ManualUI_Donators_Render.DrawContentCarousel(target, block, y, width
     end
 end
 
+function DT_ManualUI_Donators_Render.DrawContentCarouselCompact(target, block, y, width, height)
+    local x = 0
+    target:drawRect(x, y, width, height - 1, 0.20, 0.06, 0.05, 0.04)
+    target:drawText(block.title or "Thank You", 12, y + 6, 1, 0.90, 0.56, 1, UIFont.Small)
+
+    local supporters = block.supporters or {}
+    if #supporters <= 0 then
+        target:drawRect(12, y + 26, width - 24, height - 32, 0.16, 0.10, 0.10, 0.10)
+        target:drawTextCentre("No supporters yet.", width / 2, y + 26 + math.floor((height - 32) / 2) - 8, 0.82, 0.82, 0.82, 1, UIFont.Small)
+        return
+    end
+
+    local dotsHeight = #supporters > 1 and 14 or 0
+    local cardY = y + 26
+    local cardH = height - 32 - dotsHeight
+    local cardX = 12
+    local cardW = width - 24
+
+    local currentIndex, nextIndex, blend = DT_ManualUI_Donators.GetCarouselFrame(supporters, block.autoplayMs, 300)
+    local activeIndex = blend >= 0.5 and nextIndex or currentIndex
+
+    if blend > 0 and supporters[nextIndex] then
+        drawDonorCard(target, cardX, cardY, cardW, cardH, supporters[currentIndex], currentIndex, block.currencySymbol, 1 - blend, true)
+        drawDonorCard(target, cardX, cardY, cardW, cardH, supporters[nextIndex], nextIndex, block.currencySymbol, blend, true)
+    else
+        drawDonorCard(target, cardX, cardY, cardW, cardH, supporters[currentIndex], currentIndex, block.currencySymbol, 1, true)
+    end
+
+    drawPaginationDots(target, cardX, cardY + cardH + 4, cardW, #supporters, activeIndex)
+end
+
 function DT_ManualUI_Donators_Render.CreateBannerPreviewPanel(owner, x, y, width, height)
     local panel = ISPanel:new(x, y, width, height)
     panel:initialise()
@@ -296,12 +327,12 @@ function DT_ManualUI_Donators_Render.CreateBannerPreviewPanel(owner, x, y, width
         local autoplayMs = window and window.hallOfFameAutoplayMs or 4000
 
         if not supporters or #supporters <= 0 then
-            self:drawText("Hall of Fame", 8, 8, 1, 0.88, 0.52, 1, UIFont.Small)
+            self:drawText("Supporters", 8, 8, 1, 0.88, 0.52, 1, UIFont.Small)
             self:drawText("No supporters yet.", 8, 34, 0.84, 0.84, 0.84, 1, UIFont.Small)
             return
         end
 
-        self:drawText("Hall of Fame", 8, 8, 1, 0.88, 0.52, 1, UIFont.Small)
+        self:drawText("Supporters", 8, 8, 1, 0.88, 0.52, 1, UIFont.Small)
         local currentIndex, nextIndex, blend = DT_ManualUI_Donators.GetCarouselFrame(supporters, autoplayMs, 300)
         local cardY = 24
         local cardH = self:getHeight() - 28
