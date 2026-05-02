@@ -223,7 +223,12 @@ local function normalizeAllowedCategoryMap(value)
             map[tostring(key)] = true
         end
     end
-    return next(map) and map or nil
+
+    for _ in pairs(map) do
+        return map
+    end
+
+    return nil
 end
 
 local function inferRewardCategory(tags)

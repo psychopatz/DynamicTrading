@@ -479,8 +479,14 @@ end
 local function processPendingCompanionInventoryOpens()
     local stillPending = false
     local currentTime = nowMs()
+    local hasPending = false
 
-    if next(COMPANION_INVENTORY_PREWARM.pending) ~= nil
+    for _ in pairs(COMPANION_INVENTORY_PREWARM.pending) do
+        hasPending = true
+        break
+    end
+
+    if hasPending
         and DC_SupplyWindow
         and DC_SupplyWindow.Preload
         and not DC_SupplyWindow.instance then

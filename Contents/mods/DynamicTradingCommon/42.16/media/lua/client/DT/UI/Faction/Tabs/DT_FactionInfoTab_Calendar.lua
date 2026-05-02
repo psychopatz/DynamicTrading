@@ -100,8 +100,16 @@ function DT_FactionInfoTab_Calendar:updateData(f, rosterData)
     local titleTag, bodyTag = getScaleTags(self)
     local currentHours = DynamicTrading_TradeScheduler.GetCurrentHours()
     local currentTradingDay = DynamicTrading_TradeScheduler.GetTradingDay(currentHours)
+    local hasSouls = false
 
-    if f.isV1 and (not rosterData or type(rosterData.Souls) ~= "table" or next(rosterData.Souls) == nil) then
+    if rosterData and type(rosterData.Souls) == "table" then
+        for _ in pairs(rosterData.Souls) do
+            hasSouls = true
+            break
+        end
+    end
+
+    if f.isV1 and (not rosterData or type(rosterData.Souls) ~= "table" or not hasSouls) then
         local legacyText = " <RGB:1,0.8,0> <SIZE:" .. titleTag .. "> Trading Calendar <SIZE:" .. bodyTag .. "> <LINE> "
         legacyText = legacyText .. " <RGB:0.8,0.8,0.8> Current Trading Day: " .. tostring(currentTradingDay) .. " <LINE> <LINE> "
         legacyText = legacyText .. " <RGB:0.6,0.6,0.6> Legacy V1 radio data does not expose a roster-backed faction schedule on this client yet. The deterministic scheduler is active on the server runtime, but this fallback view can only show the shared trading-day anchor until roster sync is available."

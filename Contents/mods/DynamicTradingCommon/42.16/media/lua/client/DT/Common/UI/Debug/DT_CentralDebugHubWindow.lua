@@ -219,6 +219,18 @@ local HUB_BUTTONS = {
             DT_VirtualStoreDebugWindow.Open()
         end,
     },
+    {
+        id = "abstractNormalizer",
+        title = "Abstract Normalizer",
+        description = "Browse every normalized Base item, inspect bucket mappings, and rebuild the in-memory abstract item cache.",
+        available = function()
+            local ok = pcall(require, "DT/Common/UI/Debug/Abstract/DT_AbstractNormalizationDebugWindow")
+            return ok and DT_AbstractNormalizationDebugWindow and DT_AbstractNormalizationDebugWindow.Open
+        end,
+        action = function()
+            DT_AbstractNormalizationDebugWindow.Open()
+        end,
+    },
 }
 
 function DT_CentralDebugHubWindow:initialise()

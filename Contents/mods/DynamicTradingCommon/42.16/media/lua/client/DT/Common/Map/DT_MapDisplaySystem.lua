@@ -93,7 +93,13 @@ local function getProviderOwnedSymbolIDs(provider, state)
 end
 
 local function clearProviderSymbols(symbols, ownedSymbolIDs)
-    if not symbols or not next(ownedSymbolIDs or {}) then
+    local hasOwnedSymbols = false
+    for _ in pairs(ownedSymbolIDs or {}) do
+        hasOwnedSymbols = true
+        break
+    end
+
+    if not symbols or not hasOwnedSymbols then
         return
     end
 
