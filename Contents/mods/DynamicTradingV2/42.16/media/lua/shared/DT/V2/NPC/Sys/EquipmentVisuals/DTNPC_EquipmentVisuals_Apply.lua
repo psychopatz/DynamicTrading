@@ -73,7 +73,7 @@ function EquipmentVisuals.Apply(zombie, npcData, options)
             resolvedCondition ~= nil and resolvedCondition or Helpers.getStoredWeaponCondition(npcData, resolvedType)
         )
         if item then
-            zombie:setAttachedItem(slot, item)
+            Helpers.trySetAttachedItem(zombie, slot, item)
         end
     end
 

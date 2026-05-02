@@ -11,6 +11,8 @@ EquipmentVisuals.Helpers = EquipmentVisuals.Helpers or {}
 
 local Constants = EquipmentVisuals.Constants
 local Helpers = EquipmentVisuals.Helpers
+local BlockedAttachmentSlots = EquipmentVisuals.BlockedAttachmentSlots or {}
+EquipmentVisuals.BlockedAttachmentSlots = BlockedAttachmentSlots
 
 Constants.MANAGED_ATTACHMENT_TYPES = Constants.MANAGED_ATTACHMENT_TYPES or {
     HolsterRight = true,
@@ -178,12 +180,37 @@ function Helpers.clearManagedEquipment(zombie)
 
     local slots = Helpers.getManagedAttachmentSlots()
     for i = 1, #slots do
-        zombie:setAttachedItem(slots[i], nil)
+        Helpers.trySetAttachedItem(zombie, slots[i], nil)
     end
 
     if zombie.resetEquippedHandsModels then
         zombie:resetEquippedHandsModels()
     end
+end
+
+function Helpers.trySetAttachedItem(zombie, slot, item)
+    if not zombie or not slot or slot == "" then
+        return false
+    end
+
+    slot = tostring(slot)
+    if BlockedAttachmentSlots[slot] then
+        return false
+    end
+
+    local ok = pcall(function()
+        zombie:setAttachedItem(slot, item)
+    end)
+
+    if not ok then
+        BlockedAttachmentSlots[slot] = true
+        if print then
+            print("[DynamicTradingV2] Ignoring unsupported attachment slot: " .. slot)
+        end
+        return false
+    end
+
+    return true
 end
 
 function Helpers.getAttachmentSlotsByType(attachmentType)
@@ -225,8 +252,8 @@ function Helpers.getAttachmentSlotsByType(attachmentType)
     local slots = {}
     local seen = {}
     for i = 1, #slotEntries do
-        local slot = slotEntries[i].slot
-        if not seen[slot] then
+        local slot = tostring(slotEntries[i].slot)
+        if not seen[slot] and not BlockedAttachmentSlots[slot] then
             seen[slot] = true
             slots[#slots + 1] = slot
         end
