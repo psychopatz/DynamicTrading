@@ -121,6 +121,360 @@ function Internal.getPassageKind(object)
     return nil
 end
 
+function Internal.isFenceLike(object)
+    if not object then
+        return false
+    end
+
+    local square = Internal.getObjectSquare(object)
+    local properties = object.getProperties and object:getProperties() or nil
+    local lowFence = properties and properties.get and properties:get("FenceTypeLow") or nil
+    local tallFence = properties and properties.get and properties:get("FenceTypeHigh") or nil
+    local hoppable = objectBool(object, { "isHoppable" }, false)
+    local tallHoppable = objectBool(object, { "isTallHoppable" }, false)
+
+    return lowFence ~= nil or tallFence ~= nil or hoppable or tallHoppable, square, tallFence ~= nil or tallHoppable
+end
+
+local function getFenceDirectionFlags(fromSquare, nextSquare)
+    local fromX, fromY = Internal.getSquareCoords(fromSquare)
+    local nextX, nextY = Internal.getSquareCoords(nextSquare)
+    local dx = (nextX or fromX or 0) - (fromX or 0)
+    local dy = (nextY or fromY or 0) - (fromY or 0)
+
+    if math.abs(dy) >= math.abs(dx) then
+        return true
+    end
+    return false
+end
+
+local function getDirectionalFenceObject(fromSquare, nextSquare)
+    if not fromSquare or not nextSquare then
+        return nil
+    end
+
+    local isNorthSouth = getFenceDirectionFlags(fromSquare, nextSquare)
+    local squares = { fromSquare, nextSquare }
+    for i = 1, #squares do
+        local square = squares[i]
+        local okWall, wall = callObjectMethod(square, { "getWall", "getHoppableThumpable" }, isNorthSouth)
+        if okWall and wall then
+            local isFence, _, isTall = Internal.isFenceLike(wall)
+            if isFence then
+                return wall, isTall
+            end
+        end
+
+        local okHoppable, hoppable = callObjectMethod(square, { "getHoppableThumpable" }, isNorthSouth)
+        if okHoppable and hoppable then
+            local isFence, _, isTall = Internal.isFenceLike(hoppable)
+            if isFence then
+                return hoppable, isTall
+            end
+        end
+    end
+
+    return nil, false
+end
+
+function Mobility.FindFenceBetween(fromSquare, nextSquare)
+    local object, isTall = getDirectionalFenceObject(fromSquare, nextSquare)
+    if not object then
+        return nil
+    end
+
+    local objectSquare = Internal.getObjectSquare(object) or fromSquare
+    local x, y, z = Internal.getSquareCoords(objectSquare)
+    return {
+        object = object,
+        kind = "fence",
+        square = objectSquare,
+        x = x,
+        y = y,
+        z = z,
+        tall = isTall == true,
+    }
+end
+
+local function getFencePendingKey(fence)
+    if not fence then
+        return nil
+    end
+
+    local objectKey = Internal.getObjectRuntimeKey and Internal.getObjectRuntimeKey(fence.object) or nil
+    if objectKey and objectKey ~= "" then
+        return "object:" .. tostring(objectKey)
+    end
+
+    return string.format(
+        "square:%s:%s:%s:%s",
+        tostring(fence.x or 0),
+        tostring(fence.y or 0),
+        tostring(fence.z or 0),
+        fence.tall == true and "tall" or "low"
+    )
+end
+
+local function setFenceReject(npcData, fenceKey, durationMs)
+    if type(npcData) ~= "table" then
+        return
+    end
+
+    npcData._dtFenceRejectKey = fenceKey
+    npcData._dtFenceRejectUntil = Internal.getTimeMs() + math.max(120, math.floor(tonumber(durationMs) or 260))
+end
+
+local function isFenceRejected(npcData, fenceKey)
+    if type(npcData) ~= "table" or not fenceKey then
+        return false
+    end
+
+    local rejectUntil = tonumber(npcData._dtFenceRejectUntil) or 0
+    if npcData._dtFenceRejectKey == fenceKey and rejectUntil > Internal.getTimeMs() then
+        return true
+    end
+
+    return false
+end
+
+local function getProbeSquare(cell, originX, originY, originZ, dirX, dirY, distance)
+    if not cell then
+        return nil
+    end
+
+    return Internal.getSquareAt(
+        cell,
+        originX + ((tonumber(dirX) or 0) * (tonumber(distance) or 0)),
+        originY + ((tonumber(dirY) or 0) * (tonumber(distance) or 0)),
+        originZ
+    )
+end
+
+local function resolveFenceLandingSquare(cell, fence, originX, originY, originZ, dirX, dirY)
+    if not cell then
+        return nil
+    end
+
+    local distances = { 1.45, 1.8, 2.15 }
+    for i = 1, #distances do
+        local landingSquare = getProbeSquare(cell, originX, originY, originZ, dirX, dirY, distances[i])
+        if landingSquare then
+            local lx, ly, lz = Internal.getSquareCoords(landingSquare)
+            local worldX = lx ~= nil and (lx + 0.5) or nil
+            local worldY = ly ~= nil and (ly + 0.5) or nil
+            if worldX ~= nil and worldY ~= nil and Mobility.IsTileSafe(worldX, worldY, lz or originZ) then
+                return landingSquare
+            end
+        end
+    end
+
+    return nil
+end
+
+function Mobility.FindFenceAhead(zombie, npcData, options)
+    if not zombie or not Internal.getSquareAt then
+        return nil
+    end
+
+    options = type(options) == "table" and options or {}
+    local dirX = tonumber(options.dirX) or 0
+    local dirY = tonumber(options.dirY) or 0
+    local dirLen = math.sqrt((dirX * dirX) + (dirY * dirY))
+    if dirLen <= 0.001 then
+        return nil
+    end
+
+    dirX = dirX / dirLen
+    dirY = dirY / dirLen
+
+    local cell = options.cell or (getCell and getCell() or nil)
+    local originX = tonumber(options.originX) or zombie:getX()
+    local originY = tonumber(options.originY) or zombie:getY()
+    local originZ = tonumber(options.originZ) or zombie:getZ()
+    local fromSquare = options.fromSquare or Internal.getSquareAt(cell, originX, originY, originZ)
+    if not cell or not fromSquare then
+        return nil
+    end
+
+    local nearSquare = options.nearSquare or getProbeSquare(cell, originX, originY, originZ, dirX, dirY, 0.8)
+    local midSquare = options.midSquare or getProbeSquare(cell, originX, originY, originZ, dirX, dirY, 1.15)
+    local farSquare = options.farSquare or getProbeSquare(cell, originX, originY, originZ, dirX, dirY, 1.7)
+    local fence = nil
+    local fencePairs = {
+        { fromSquare, midSquare },
+        { nearSquare, farSquare },
+        { fromSquare, farSquare },
+    }
+
+    for i = 1, #fencePairs do
+        local pair = fencePairs[i]
+        local left = pair[1]
+        local right = pair[2]
+        if left and right and left ~= right then
+            fence = Mobility.FindFenceBetween(left, right)
+            if fence then
+                break
+            end
+        end
+    end
+
+    if not fence then
+        return nil
+    end
+
+    fence.dirX = dirX
+    fence.dirY = dirY
+    fence.fromSquare = fromSquare
+    fence.nearSquare = nearSquare
+    fence.midSquare = midSquare
+    fence.farSquare = farSquare
+    fence.fenceKey = getFencePendingKey(fence)
+    fence.landingSquare = resolveFenceLandingSquare(cell, fence, originX, originY, originZ, dirX, dirY)
+    return fence
+end
+
+function Mobility.ShouldEngageFenceTraverse(zombie, npcData, fence, options)
+    if not zombie or type(npcData) ~= "table" or not fence then
+        return false, "invalid"
+    end
+
+    options = type(options) == "table" and options or {}
+    local currentTime = Internal.getTimeMs()
+    local cooldownUntil = tonumber(npcData._dtFenceCooldownUntil) or 0
+    if cooldownUntil > 0 and currentTime < cooldownUntil then
+        return false, "cooldown"
+    end
+
+    local fenceKey = fence.fenceKey or getFencePendingKey(fence)
+    if isFenceRejected(npcData, fenceKey) then
+        return false, "rejected"
+    end
+
+    local landingSquare = fence.landingSquare
+    if not landingSquare then
+        setFenceReject(npcData, fenceKey, 320)
+        return false, "no_landing"
+    end
+
+    local landingX, landingY, landingZ = Internal.getSquareCoords(landingSquare)
+    local landingWorldX = landingX ~= nil and (landingX + 0.5) or nil
+    local landingWorldY = landingY ~= nil and (landingY + 0.5) or nil
+    if landingWorldX == nil or landingWorldY == nil or not Mobility.IsTileSafe(landingWorldX, landingWorldY, landingZ or zombie:getZ()) then
+        setFenceReject(npcData, fenceKey, 320)
+        return false, "unsafe_landing"
+    end
+    if not Internal.isWithinLeash(landingWorldX, landingWorldY, landingZ or zombie:getZ(), options) then
+        setFenceReject(npcData, fenceKey, 260)
+        return false, "leash"
+    end
+
+    local fenceX = tonumber(fence.x)
+    local fenceY = tonumber(fence.y)
+    local fenceCenterX = fenceX ~= nil and (fenceX + 0.5) or zombie:getX()
+    local fenceCenterY = fenceY ~= nil and (fenceY + 0.5) or zombie:getY()
+    local engageDistance = tonumber(options.fenceEngageDistance) or (fence.tall == true and 1.18 or 1.05)
+    if Internal.getDistance(zombie:getX(), zombie:getY(), fenceCenterX, fenceCenterY) > engageDistance then
+        return false, "too_far"
+    end
+
+    local dirX = tonumber(fence.dirX) or tonumber(options.dirX) or 0
+    local dirY = tonumber(fence.dirY) or tonumber(options.dirY) or 0
+    local toLandingX = landingWorldX - zombie:getX()
+    local toLandingY = landingWorldY - zombie:getY()
+    local landingLen = math.sqrt((toLandingX * toLandingX) + (toLandingY * toLandingY))
+    if landingLen <= 0.001 then
+        setFenceReject(npcData, fenceKey, 220)
+        return false, "no_delta"
+    end
+
+    local dot = ((toLandingX / landingLen) * dirX) + ((toLandingY / landingLen) * dirY)
+    if dot < 0.25 then
+        setFenceReject(npcData, fenceKey, 220)
+        return false, "wrong_side"
+    end
+
+    return true, "ok"
+end
+
+function Mobility.BeginFenceTraverse(zombie, npcData, fence, options)
+    if not zombie or type(npcData) ~= "table" or not fence then
+        return false, nil
+    end
+
+    local allowed, reason = Mobility.ShouldEngageFenceTraverse(zombie, npcData, fence, options)
+    if not allowed then
+        return false, reason
+    end
+
+    options = type(options) == "table" and options or {}
+    local landingSquare = fence.landingSquare
+    local landingX, landingY, landingZ = Internal.getSquareCoords(landingSquare)
+    local worldX = (landingX or zombie:getX()) + 0.5
+    local worldY = (landingY or zombie:getY()) + 0.5
+    local worldZ = landingZ or zombie:getZ()
+    local currentTime = Internal.getTimeMs()
+    local animName = fence.tall and "DTNPCClimbFenceTall" or "DTNPCClimbFence"
+    local travelDurationMs = fence.tall and 900 or 600
+    local finishHoldMs = fence.tall and 240 or 180
+    local actionDurationMs = travelDurationMs + finishHoldMs
+
+    npcData._dtFencePendingKey = fence.fenceKey or getFencePendingKey(fence)
+    npcData._dtFencePendingAt = currentTime
+    npcData._dtFenceRejectKey = nil
+    npcData._dtFenceRejectUntil = nil
+
+    if zombie.setTarget then
+        zombie:setTarget(nil)
+    end
+    if zombie.setPath2 then
+        zombie:setPath2(nil)
+    end
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+    end
+    if zombie.setRunning then
+        zombie:setRunning(false)
+    end
+    zombie:faceLocation((tonumber(fence.x) or zombie:getX()) + 0.5, (tonumber(fence.y) or zombie:getY()) + 0.5)
+    if zombie.setBumpType then
+        zombie:setBumpType(animName)
+    end
+
+    npcData._dtFenceTraverse = {
+        startX = zombie:getX(),
+        startY = zombie:getY(),
+        startZ = zombie:getZ(),
+        endX = worldX,
+        endY = worldY,
+        endZ = worldZ,
+        startedAt = currentTime,
+        durationMs = actionDurationMs,
+        travelDurationMs = travelDurationMs,
+        finishHoldMs = finishHoldMs,
+        bumpType = animName,
+        tall = fence.tall == true,
+        fenceKey = npcData._dtFencePendingKey,
+    }
+
+    npcData.isMovingState = false
+    npcData.attackTimer = 0
+    npcData.reactionTimer = 0
+    Internal.rememberMotion(npcData, zombie:getX(), zombie:getY(), worldX, worldY, {
+        speed = 0.085,
+        isRunning = false,
+        crawl = false,
+        durationMs = travelDurationMs,
+    })
+    if Mobility.ResetMovementProgress then
+        Mobility.ResetMovementProgress(npcData)
+    end
+    Mobility.StartSpecialAction(npcData, "fence", actionDurationMs, {
+        mode = fence.tall and "tall" or "low",
+        cooldownMs = fence.tall and 450 or 320,
+    })
+    return true, "fence"
+end
+
 local function findDirectionalPassageObject(fromSquare, nextSquare)
     if not fromSquare or not nextSquare then
         return nil
@@ -246,6 +600,132 @@ function Mobility.TrackOpenedPassage(npcData, passage)
         openedAt = Internal.getTimeMs(),
     }
     return true
+end
+
+function Mobility.TryTraverseFence(zombie, npcData, fromSquare, nextSquare, options)
+    if not zombie or type(npcData) ~= "table" then
+        return false, nil
+    end
+
+    local active = Mobility.IsSpecialActionActive and Mobility.IsSpecialActionActive(npcData)
+    if active then
+        return true, "special_action"
+    end
+
+    local collided = false
+    if zombie.isCollidedWithDoor and zombie:isCollidedWithDoor() then
+        collided = true
+    elseif zombie.isCollidedThisFrame and zombie:isCollidedThisFrame() then
+        collided = true
+    elseif zombie.isCollided and zombie:isCollided() then
+        collided = true
+    end
+    local blockedTicks = options and options.blockCounterKey and tonumber(npcData[options.blockCounterKey]) or 0
+    if not collided and blockedTicks < 1 then
+        return false, nil
+    end
+
+    local fence = Mobility.FindFenceAhead(zombie, npcData, {
+        dirX = options and options.dirX,
+        dirY = options and options.dirY,
+        fromSquare = fromSquare,
+        midSquare = nextSquare,
+        originX = zombie:getX(),
+        originY = zombie:getY(),
+        originZ = zombie:getZ(),
+    }) or Mobility.FindFenceBetween(fromSquare, nextSquare)
+
+    if not fence then
+        npcData._dtFencePendingKey = nil
+        npcData._dtFencePendingAt = nil
+        return false, nil
+    end
+
+    if not fence.fenceKey then
+        fence.fenceKey = getFencePendingKey(fence)
+    end
+    if not fence.landingSquare then
+        local cell = getCell and getCell() or nil
+        fence.landingSquare = resolveFenceLandingSquare(
+            cell,
+            fence,
+            zombie:getX(),
+            zombie:getY(),
+            zombie:getZ(),
+            tonumber(options and options.dirX) or 0,
+            tonumber(options and options.dirY) or 0
+        )
+    end
+    fence.dirX = tonumber(options and options.dirX) or fence.dirX
+    fence.dirY = tonumber(options and options.dirY) or fence.dirY
+    return Mobility.BeginFenceTraverse(zombie, npcData, fence, options)
+end
+
+function Mobility.UpdateSpecialAction(zombie, npcData)
+    if not zombie or type(npcData) ~= "table" then
+        return false, nil
+    end
+
+    local kind = npcData._dtSpecialAction
+    if kind ~= "fence" then
+        return false, nil
+    end
+
+    local traverse = type(npcData._dtFenceTraverse) == "table" and npcData._dtFenceTraverse or nil
+    if not traverse then
+        Mobility.ClearSpecialAction(npcData, "fence")
+        return false, nil
+    end
+
+    local currentTime = Internal.getTimeMs()
+    local startedAt = tonumber(traverse.startedAt) or currentTime
+    local durationMs = math.max(1, tonumber(traverse.durationMs) or 1)
+    local travelDurationMs = math.max(1, tonumber(traverse.travelDurationMs) or durationMs)
+    local progress = math.max(0, math.min(1, (currentTime - startedAt) / travelDurationMs))
+    local eased = nil
+    if progress < 0.5 then
+        eased = 2 * progress * progress
+    else
+        local inverse = (-2 * progress) + 2
+        eased = 1 - ((inverse * inverse) * 0.5)
+    end
+    local nextX = (tonumber(traverse.startX) or zombie:getX()) + (((tonumber(traverse.endX) or zombie:getX()) - (tonumber(traverse.startX) or zombie:getX())) * eased)
+    local nextY = (tonumber(traverse.startY) or zombie:getY()) + (((tonumber(traverse.endY) or zombie:getY()) - (tonumber(traverse.startY) or zombie:getY())) * eased)
+    local nextZ = tonumber(traverse.endZ) or zombie:getZ()
+
+    if not zombie:isUseless() then
+        zombie:setUseless(true)
+    end
+    if zombie.setPath2 then
+        zombie:setPath2(nil)
+    end
+    if zombie.setTarget then
+        zombie:setTarget(nil)
+    end
+    zombie:setX(nextX)
+    zombie:setY(nextY)
+    zombie:setZ(nextZ)
+    zombie:faceLocation(tonumber(traverse.endX) or nextX, tonumber(traverse.endY) or nextY)
+    Mobility.Stop(zombie, { idleState = "0" })
+
+    if progress >= 1 then
+        zombie:setX(tonumber(traverse.endX) or nextX)
+        zombie:setY(tonumber(traverse.endY) or nextY)
+        zombie:setZ(nextZ)
+        if (currentTime - startedAt) >= durationMs then
+            npcData._dtFenceTraverse = nil
+            npcData._dtFencePendingKey = nil
+            npcData._dtFencePendingAt = nil
+            if Mobility.ResetMovementProgress then
+                Mobility.ResetMovementProgress(npcData)
+            end
+            Mobility.ClearSpecialAction(npcData, "fence")
+            return false, "completed"
+        end
+        return true, "fence_finish"
+    end
+
+    return true, "fence"
 end
 
 local function isDangerNearPoint(x, y, z, radius, target)

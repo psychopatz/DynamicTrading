@@ -200,6 +200,38 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
         }
     end
 
+    if DTNPCProtect and DTNPCProtect.UpdateRangedReloadAction then
+        local busy, busyReason = DTNPCProtect.UpdateRangedReloadAction(zombie, npcData, target)
+        if busy then
+            stopMoveAnim(zombie, npcData)
+            if DTNPC and DTNPC.SetRangedCombatIdleState then
+                DTNPC.SetRangedCombatIdleState(zombie, npcData)
+            end
+            return {
+                status = "reloading",
+                moved = false,
+                attacked = false,
+                reason = busyReason,
+            }
+        end
+    end
+
+    if DTNPCMobility and DTNPCMobility.IsSpecialActionActive then
+        local specialActive = DTNPCMobility.IsSpecialActionActive(npcData)
+        if specialActive and npcData._dtSpecialAction == "fence" then
+            if DTNPCMobility.UpdateSpecialAction then
+                DTNPCMobility.UpdateSpecialAction(zombie, npcData)
+            end
+            faceTarget(zombie, target)
+            return {
+                status = "special_action",
+                moved = false,
+                attacked = false,
+                reason = "fence",
+            }
+        end
+    end
+
     local kiteMin = tonumber(options.kiteMin) or RANGED_KITE_MIN
     local kiteMax = tonumber(options.kiteMax) or RANGED_KITE_MAX
     local maxRange = tonumber(options.maxRange) or RANGED_MAX_RANGE
@@ -243,20 +275,65 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
     local moved = false
     if moveDir ~= 0 then
         zombie:setVariable("DTIdleState", "0")
-        local nextX = zx + (dx * moveSpeed * moveDir)
-        local nextY = zy + (dy * moveSpeed * moveDir)
-        if isTileSafe(nextX, nextY, zz) then
+        local moveState = nil
+        if moveDir > 0 and DTNPCMobility and DTNPCMobility.MoveTowardTarget then
+            moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
+                target = target,
+                speed = moveSpeed,
+                stopDistance = desiredMin + 0.1,
+                allowObstacleInteract = true,
+                allowDamageRetreat = true,
+                blockCounterKey = options.blockCounterKey or "guardBlockedTicks",
+                stuckTicks = 10,
+                anchorX = options.anchorX,
+                anchorY = options.anchorY,
+                anchorZ = options.anchorZ,
+                leashRadius = options.leashRadius,
+                faceX = tx,
+                faceY = ty,
+                closeDoorTarget = target,
+                closeDoorSafeRadius = 3.0,
+                anim = {
+                    animSpeed = 1.0,
+                    isRunning = false,
+                    dtWalkType = "Walk",
+                },
+            })
+        elseif DTNPCMobility and DTNPCMobility.MoveAwayFromPoint then
+            moved, moveState = DTNPCMobility.MoveAwayFromPoint(zombie, npcData, {
+                fromX = tx,
+                fromY = ty,
+                speed = moveSpeed,
+                desiredDistance = desiredMin + 0.75,
+                allowObstacleInteract = true,
+                allowDamageRetreat = true,
+                blockCounterKey = options.blockCounterKey or "guardBlockedTicks",
+                stuckTicks = 8,
+                anchorX = options.anchorX,
+                anchorY = options.anchorY,
+                anchorZ = options.anchorZ,
+                leashRadius = options.leashRadius,
+                faceX = tx,
+                faceY = ty,
+                faceTargetWhileMoving = true,
+                closeDoorTarget = target,
+                closeDoorSafeRadius = 3.0,
+                anim = {
+                    animSpeed = 1.0,
+                    isRunning = false,
+                    dtWalkType = "Walk",
+                },
+            })
+        end
+
+        moved = moved == true or moveState == "damage_retreat"
+        if moveState == "special_action" or moveState == "interacted_fence" then
+            moved = false
+        elseif moved then
             if options.onStartMove then
                 options.onStartMove(zombie, npcData, false)
-            else
-                forceWalkAnim(zombie, false)
             end
-            zombie:setX(nextX)
-            zombie:setY(nextY)
-            zombie:faceLocation(nextX + (dx * moveDir), nextY + (dy * moveDir))
-            npcData.isMovingState = true
-            moved = true
-        else
+        elseif not (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
             if options.onStopMove then
                 options.onStopMove(zombie, npcData)
             else
@@ -315,7 +392,11 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
         DTNPC.TriggerRangedCombatAnim(zombie, npcData)
     end
 
-    DTNPCProtect.ConsumeAmmo(npcData, 1)
+    if DTNPCProtect and DTNPCProtect.ConsumeRangedShot then
+        DTNPCProtect.ConsumeRangedShot(npcData, 1)
+    else
+        DTNPCProtect.ConsumeAmmo(npcData, 1)
+    end
     DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
     zombie:getEmitter():playSound("DT_GunRandom")
 

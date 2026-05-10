@@ -37,6 +37,14 @@ function DTNPC.TriggerRangedCombatAnim(zombie, npcData)
     end
 end
 
+function DTNPC.TriggerRangedReloadAnim(zombie, npcData)
+    if DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.TriggerRangedReloadAnim then
+        DTNPCEquipmentVisuals.TriggerRangedReloadAnim(zombie, npcData)
+    elseif DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.SetRangedCombatIdleState then
+        DTNPCEquipmentVisuals.SetRangedCombatIdleState(zombie, npcData)
+    end
+end
+
 function DTNPC.SyncEquipmentVisuals(zombie, npcData, options)
     if DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.Apply then
         return DTNPCEquipmentVisuals.Apply(zombie, npcData, options)

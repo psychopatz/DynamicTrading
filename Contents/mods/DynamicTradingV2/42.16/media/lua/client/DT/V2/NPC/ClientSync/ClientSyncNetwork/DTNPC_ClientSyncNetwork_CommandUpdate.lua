@@ -28,6 +28,11 @@ local function applyRemoteLocomotion(zombie, args)
         return
     end
 
+    if args.specialActionKind == "fence" then
+        zombie:setVariable("DTNPC", true)
+        return
+    end
+
     local moving = args.isMoving == true
     local isRunning = args.isRunning == true
     local isCrawling = args.isCrawling == true or tostring(args.state or "") == "Incapacitated"
@@ -58,6 +63,35 @@ local function applyRemoteLocomotion(zombie, args)
     end
     if zombie.setSpeedMod then
         pcall(zombie.setSpeedMod, zombie, 1)
+    end
+end
+
+local function applyRemoteSpecialAction(zombie, npcData, args)
+    if not zombie or not npcData or not args then
+        return
+    end
+
+    if args.specialActionKind == "reload" then
+        local incomingSeq = tonumber(args.reloadActionSeq) or 0
+        local lastSeq = tonumber(npcData._dtSeenReloadActionSeq) or 0
+        if incomingSeq > 0 and incomingSeq ~= lastSeq then
+            npcData._dtSeenReloadActionSeq = incomingSeq
+            if DTNPC and DTNPC.TriggerRangedReloadAnim then
+                DTNPC.TriggerRangedReloadAnim(zombie, npcData)
+            end
+        end
+        return
+    end
+
+    if args.specialActionKind == "fence" then
+        local incomingFenceSeq = tonumber(args.fenceActionSeq) or 0
+        local lastFenceSeq = tonumber(npcData._dtSeenFenceActionSeq) or 0
+        if incomingFenceSeq > 0 and incomingFenceSeq ~= lastFenceSeq then
+            npcData._dtSeenFenceActionSeq = incomingFenceSeq
+            if zombie.setBumpType then
+                zombie:setBumpType(args.specialActionMode == "tall" and "DTNPCClimbFenceTall" or "DTNPCClimbFence")
+            end
+        end
     end
 end
 
@@ -132,6 +166,16 @@ function Handlers.HandleUpdatePosition(args)
         if args.protectNoticeDialogueState ~= nil then
             cached.npcData.protectNoticeDialogueState = args.protectNoticeDialogueState
         end
+        cached.npcData._dtSpecialAction = args.specialActionKind
+        cached.npcData._dtSpecialActionUntil = args.specialActionUntil
+        cached.npcData._dtSpecialActionMode = args.specialActionMode
+        cached.npcData._dtSpecialActionSeq = args.specialActionSeq
+        cached.npcData._dtFenceActionSeq = args.fenceActionSeq
+        cached.npcData._dtReloadUntil = args.reloadUntil
+        cached.npcData._dtReloadActionSeq = args.reloadActionSeq
+        cached.npcData._dtReloadFamily = args.reloadFamily
+        cached.npcData._dtMagAmmo = args.magAmmo
+        cached.npcData._dtMagSize = args.magSize
         if bodyInstanceID then
             DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = uuid
             cached.npcData.currentBodyInstanceID = bodyInstanceID
@@ -196,9 +240,20 @@ function Handlers.HandleUpdatePosition(args)
                 if args.protectNoticeDialogueState ~= nil then
                     zombieData.protectNoticeDialogueState = args.protectNoticeDialogueState
                 end
+                zombieData._dtSpecialAction = args.specialActionKind
+                zombieData._dtSpecialActionUntil = args.specialActionUntil
+                zombieData._dtSpecialActionMode = args.specialActionMode
+                zombieData._dtSpecialActionSeq = args.specialActionSeq
+                zombieData._dtFenceActionSeq = args.fenceActionSeq
+                zombieData._dtReloadUntil = args.reloadUntil
+                zombieData._dtReloadActionSeq = args.reloadActionSeq
+                zombieData._dtReloadFamily = args.reloadFamily
+                zombieData._dtMagAmmo = args.magAmmo
+                zombieData._dtMagSize = args.magSize
             end
 
             if not DTNPCClient.LocalControlled[uuid] then
+                applyRemoteSpecialAction(zombie, zombieData or cached.npcData, args)
                 applyRemoteLocomotion(zombie, args)
             end
         end
@@ -218,6 +273,21 @@ function Handlers.HandleUpdatePosition(args)
         if args.protectNoticeSerial ~= nil then
             cached.lastReportedState = cached.lastReportedState or {}
             cached.lastReportedState.protectNoticeSerial = args.protectNoticeSerial
+        end
+        if args.specialActionSeq ~= nil or args.reloadActionSeq ~= nil or args.magAmmo ~= nil then
+            cached.lastReportedState = cached.lastReportedState or {}
+            cached.lastReportedState.specialActionSignature = table.concat({
+                tostring(args.specialActionKind or ""),
+                tostring(args.specialActionUntil or ""),
+                tostring(args.specialActionMode or ""),
+                tostring(args.specialActionSeq or ""),
+                tostring(args.fenceActionSeq or ""),
+                tostring(args.reloadUntil or ""),
+                tostring(args.reloadActionSeq or ""),
+                tostring(args.reloadFamily or ""),
+                tostring(args.magAmmo or ""),
+                tostring(args.magSize or ""),
+            }, "|")
         end
     end
 

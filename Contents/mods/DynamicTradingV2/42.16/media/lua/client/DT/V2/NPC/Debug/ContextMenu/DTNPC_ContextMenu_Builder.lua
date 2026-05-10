@@ -25,12 +25,26 @@ local function getRangedAmmoSnapshot(npcData)
         return {
             hasRangedWeapon = false,
             ammoCount = 0,
+            magAmmo = 0,
+            ammoLabel = "0",
+            finiteAmmo = false,
         }
+    end
+
+    local ammoCount = math.max(0, math.floor(tonumber(loadout and loadout.ammoCount) or 0))
+    local finiteAmmo = DTNPCProtect and DTNPCProtect.IsFiniteAmmoTrader and DTNPCProtect.IsFiniteAmmoTrader(npcData) == true or false
+    local magAmmo = nil
+    if DTNPCProtect and DTNPCProtect.EnsureRangedRuntime then
+        DTNPCProtect.EnsureRangedRuntime(npcData)
+        magAmmo = math.max(0, math.floor(tonumber(npcData and npcData._dtMagAmmo) or 0))
     end
 
     return {
         hasRangedWeapon = true,
-        ammoCount = math.max(0, math.floor(tonumber(loadout and loadout.ammoCount) or 0)),
+        ammoCount = ammoCount,
+        magAmmo = magAmmo,
+        finiteAmmo = finiteAmmo,
+        ammoLabel = finiteAmmo and (tostring(magAmmo or 0) .. "/" .. tostring(ammoCount)) or tostring(ammoCount),
     }
 end
 
@@ -57,7 +71,7 @@ local function getGuardMode(npcData)
     return nil
 end
 
-local function buildModeOptionLabel(baseLabel, isActive, includeAmmo, ammoCount)
+local function buildModeOptionLabel(baseLabel, isActive, includeAmmo, ammoInfo)
     local label = tostring(baseLabel or "")
     if not isActive then
         return label
@@ -65,7 +79,11 @@ local function buildModeOptionLabel(baseLabel, isActive, includeAmmo, ammoCount)
 
     label = label .. " [ACTIVE]"
     if includeAmmo then
-        label = label .. " (Ammo: " .. tostring(math.max(0, tonumber(ammoCount) or 0)) .. ")"
+        local ammoLabel = type(ammoInfo) == "table" and ammoInfo.ammoLabel or nil
+        if not ammoLabel then
+            ammoLabel = tostring(math.max(0, tonumber(ammoInfo) or 0))
+        end
+        label = label .. " (Ammo: " .. tostring(ammoLabel) .. ")"
     end
     return label
 end
@@ -136,21 +154,21 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
 
             subMenu:addOption("Follow Me", npc, Menu.OnOrder, "Follow", player)
             subMenu:addOption(
-                buildModeOptionLabel("Protect Me (Auto)", protectMode == "ProtectAuto", protectShowAmmo and protectMode == "ProtectAuto", ammoSnapshot.ammoCount),
+                buildModeOptionLabel("Protect Me (Auto)", protectMode == "ProtectAuto", protectShowAmmo and protectMode == "ProtectAuto", ammoSnapshot),
                 npc,
                 Menu.OnOrder,
                 "ProtectAuto",
                 player
             )
             subMenu:addOption(
-                buildModeOptionLabel("Protect Me (Ranged)", protectMode == "ProtectRanged", protectShowAmmo and protectMode == "ProtectRanged", ammoSnapshot.ammoCount),
+                buildModeOptionLabel("Protect Me (Ranged)", protectMode == "ProtectRanged", protectShowAmmo and protectMode == "ProtectRanged", ammoSnapshot),
                 npc,
                 Menu.OnOrder,
                 "ProtectRanged",
                 player
             )
             subMenu:addOption(
-                buildModeOptionLabel("Protect Me (Melee)", protectMode == "ProtectMelee", false, ammoSnapshot.ammoCount),
+                buildModeOptionLabel("Protect Me (Melee)", protectMode == "ProtectMelee", false, ammoSnapshot),
                 npc,
                 Menu.OnOrder,
                 "ProtectMelee",
@@ -161,7 +179,7 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
             local guardSub = subMenu:getNew(subMenu)
             context:addSubMenu(guardOption, guardSub)
             guardSub:addOption(
-                buildModeOptionLabel("Auto", guardMode == "GuardAuto", guardShowAmmo and guardMode == "GuardAuto", ammoSnapshot.ammoCount),
+                buildModeOptionLabel("Auto", guardMode == "GuardAuto", guardShowAmmo and guardMode == "GuardAuto", ammoSnapshot),
                 npc,
                 Menu.OnOrder,
                 "Guard",
@@ -170,7 +188,7 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
                 { guardCombatOrder = "GuardAuto" }
             )
             guardSub:addOption(
-                buildModeOptionLabel("Ranged", guardMode == "GuardRanged", guardShowAmmo and guardMode == "GuardRanged", ammoSnapshot.ammoCount),
+                buildModeOptionLabel("Ranged", guardMode == "GuardRanged", guardShowAmmo and guardMode == "GuardRanged", ammoSnapshot),
                 npc,
                 Menu.OnOrder,
                 "Guard",
@@ -179,7 +197,7 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
                 { guardCombatOrder = "GuardRanged" }
             )
             guardSub:addOption(
-                buildModeOptionLabel("Melee", guardMode == "GuardMelee", false, ammoSnapshot.ammoCount),
+                buildModeOptionLabel("Melee", guardMode == "GuardMelee", false, ammoSnapshot),
                 npc,
                 Menu.OnOrder,
                 "Guard",

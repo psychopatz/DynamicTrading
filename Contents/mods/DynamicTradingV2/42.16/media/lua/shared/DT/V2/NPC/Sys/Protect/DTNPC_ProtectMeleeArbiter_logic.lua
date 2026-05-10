@@ -203,6 +203,32 @@ local function preserveAttackWindup(npcData, stats)
     npcData.attackTimer = math.min(tonumber(npcData.attackTimer) or 0, cap)
 end
 
+local function maybeAnnounceCrowdRefusal(zombie, npcData, dangerState)
+    if not zombie or not npcData or not dangerState then
+        return false
+    end
+
+    local reason = tostring(dangerState.reason or "")
+    if reason ~= "crowd" and reason ~= "surrounded" and reason ~= "pressured" then
+        return false
+    end
+
+    local currentTime = nowMillis()
+    local lastTime = tonumber(npcData._dtCrowdRefuseNoticeAt) or 0
+    if currentTime > 0 and lastTime > 0 and (currentTime - lastTime) < 4500 then
+        return false
+    end
+    npcData._dtCrowdRefuseNoticeAt = currentTime
+
+    if DTNPCProtect.PushCombatFlavorNotice then
+        return DTNPCProtect.PushCombatFlavorNotice(zombie, npcData, "CrowdRefuse", "warning", "Companion", "CrowdRefuse")
+    end
+    if DTNPCProtect.PushCompanionAmbientCue then
+        return DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, "Companion", "CrowdRefuse")
+    end
+    return false
+end
+
 local function primeContactSwing(npcData, targetKey, stats)
     if not npcData then
         return
@@ -431,6 +457,7 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
 
     local shouldRetreat = isSevereDanger(dangerState)
     if shouldRetreat then
+        maybeAnnounceCrowdRefusal(zombie, npcData, dangerState)
         preserveAttackWindup(npcData, stats)
         setPhase(npcData, "retreat", options.retreatLockMs or RETREAT_LOCK_MS)
 

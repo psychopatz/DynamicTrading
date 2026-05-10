@@ -163,7 +163,23 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
     end
 
     local motionHint = type(npcData._dtMotionHint) == "table" and npcData._dtMotionHint or nil
+    local currentTime = getTimeInMillis and getTimeInMillis() or 0
+    if currentTime <= 0 and getGameTime and getGameTime() and getGameTime().getWorldAgeHours then
+        currentTime = math.floor((tonumber(getGameTime():getWorldAgeHours()) or 0) * 3600000)
+    end
+    local specialActionKind = nil
+    local specialActionUntil = tonumber(npcData._dtSpecialActionUntil) or 0
+    local specialActionMode = npcData._dtSpecialActionMode
+    if npcData._dtSpecialAction and specialActionUntil > 0 and currentTime < specialActionUntil then
+        specialActionKind = npcData._dtSpecialAction
+    else
+        specialActionUntil = 0
+        specialActionMode = nil
+    end
     local isMoving = npcData.isMovingState == true
+    if specialActionKind then
+        isMoving = false
+    end
     local isRunning = isMoving and motionHint and motionHint.running == true or false
     local isCrawling = tostring(npcData.state or "") == "Incapacitated"
         or (motionHint and motionHint.crawl == true)
@@ -235,6 +251,16 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
             crawl = motionHint.crawl == true,
             running = motionHint.running == true,
         } or nil,
+        specialActionKind = specialActionKind,
+        specialActionUntil = specialActionUntil,
+        specialActionMode = specialActionMode,
+        specialActionSeq = npcData._dtSpecialActionSeq,
+        fenceActionSeq = npcData._dtFenceActionSeq,
+        reloadUntil = npcData._dtReloadUntil,
+        reloadActionSeq = npcData._dtReloadActionSeq,
+        reloadFamily = npcData._dtReloadFamily,
+        magAmmo = npcData._dtMagAmmo,
+        magSize = npcData._dtMagSize,
         tier = tier
     }
     

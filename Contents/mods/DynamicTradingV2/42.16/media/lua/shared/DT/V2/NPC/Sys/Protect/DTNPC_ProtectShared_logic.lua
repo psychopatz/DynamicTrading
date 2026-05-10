@@ -452,6 +452,14 @@ function DTNPCProtect.StopCombatActions(zombie, npcData, reason)
         npcData.reactionTimer = 0
         npcData.isMovingState = false
         npcData.combatBlockedReason = reason
+        npcData._dtReloadUntil = nil
+        if DTNPCMobility and DTNPCMobility.ClearSpecialAction then
+            DTNPCMobility.ClearSpecialAction(npcData)
+        else
+            npcData._dtSpecialAction = nil
+            npcData._dtSpecialActionUntil = nil
+            npcData._dtSpecialActionMode = nil
+        end
     end
 
     resetCombatActionVariables(zombie)

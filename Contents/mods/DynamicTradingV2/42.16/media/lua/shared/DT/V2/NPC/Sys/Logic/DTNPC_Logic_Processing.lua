@@ -60,6 +60,20 @@ function DTNPCLogic.ProcessNPC(zombie)
         state = "Incapacitated"
     end
 
+    if state ~= "Incapacitated"
+        and DTNPCMobility
+        and DTNPCMobility.IsSpecialActionActive
+        and DTNPCMobility.UpdateSpecialAction then
+        local specialActive = DTNPCMobility.IsSpecialActionActive(npcData)
+        if specialActive then
+            DTNPCMobility.UpdateSpecialAction(zombie, npcData)
+            if DTNPC and DTNPC.ApplySafetyFlags then
+                DTNPC.ApplySafetyFlags(zombie, npcData, { clearPlayerTarget = true })
+            end
+            return
+        end
+    end
+
     DTNPCLogic.UpdateIdleCycle(zombie, npcData, state)
     DTNPCLogic.ApplyAnchorStabilization(zombie, npcData, state)
 

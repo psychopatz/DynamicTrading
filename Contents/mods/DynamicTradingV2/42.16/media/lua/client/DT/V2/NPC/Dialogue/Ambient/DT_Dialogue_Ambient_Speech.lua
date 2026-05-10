@@ -9,6 +9,7 @@ DTNPCClient.AmbientDialogue = DTNPCClient.DialogueAmbient
 
 require "DT/Common/FlavorText/DT_FlavorText"
 require "DT/Common/FlavorText/DT_FlavorText_Bandits"
+require "DT/Common/FlavorText/DT_FlavorText_Combat"
 
 local Ambient = DTNPCClient.DialogueAmbient
 local Config = DTNPCClient.DialogueAmbientConfig or DTNPCClient.AmbientDialogueConfig
@@ -26,6 +27,8 @@ end
 local PROTECT_NOTICE_FALLBACKS = {
     ["Companion:Attack"] = "On it.",
     ["Companion:AttackRange"] = "Covering you.",
+    ["Companion:Reloading"] = "Reloading.",
+    ["Companion:CrowdRefuse"] = "Too many of them. Backing off.",
     ["Companion:NoAmmo"] = "I'm out of ammo.",
     ["Companion:Return"] = "Back with you.",
     ["Default:Looking"] = "Checking the last spot.",

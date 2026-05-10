@@ -6,6 +6,8 @@
 DTNPCProtect = DTNPCProtect or {}
 DTNPCProtect.Internal = DTNPCProtect.Internal or {}
 require "DT/V2/mod-patches/bandits/DTModPatches_Bandits"
+require "DT/Common/FlavorText/DT_FlavorText"
+require "DT/Common/FlavorText/DT_FlavorText_Combat"
 
 local Internal = DTNPCProtect.Internal
 local getZombieRuntimeID = Internal.getZombieRuntimeID
@@ -16,6 +18,12 @@ local HOSTILE_NPC_ENGAGE_LINES = {
     "Hostile survivor. Engaging.",
     "Eyes on an armed hostile.",
     "That one is after us. Moving in.",
+}
+
+local BANDITS_ENGAGE_LINES = {
+    "Bandits. Weapons up.",
+    "Bandit contact ahead.",
+    "Raiders spotted. Stay sharp.",
 }
 
 local THREAT_LOST_LINES = {
@@ -41,6 +49,19 @@ local function chooseLine(lines)
     return lines[1 + ZombRand(#lines)]
 end
 
+local function chooseEncounterFlavor(threatType)
+    local flavorKind = threatType == "bandits" and "BanditsEncounter" or "HostileNPC"
+    local flavorLine = DynamicTrading
+        and DynamicTrading.FlavorText
+        and DynamicTrading.FlavorText.GetRandom
+        and DynamicTrading.FlavorText.GetRandom("CompanionCombat", flavorKind)
+        or nil
+    if flavorLine and flavorLine ~= "" then
+        return flavorLine
+    end
+    return chooseLine(threatType == "bandits" and BANDITS_ENGAGE_LINES or HOSTILE_NPC_ENGAGE_LINES)
+end
+
 local function pushThrottledCompanionNotice(zombie, npcData, key, lines, sentiment, cooldownMs, targetID)
     if not zombie or not npcData or not DTNPCProtect.PushCompanionNotice then
         return false
@@ -58,6 +79,32 @@ local function pushThrottledCompanionNotice(zombie, npcData, key, lines, sentime
     end
 
     local line = chooseLine(lines)
+    if not line then
+        return false
+    end
+
+    npcData[timeKey] = nowMs
+    npcData[targetKey] = targetID
+    return DTNPCProtect.PushCompanionNotice(zombie, npcData, line, sentiment or "warning")
+end
+
+local function pushThrottledEncounterNotice(zombie, npcData, key, threatType, sentiment, cooldownMs, targetID)
+    if not zombie or not npcData or not DTNPCProtect.PushCompanionNotice then
+        return false
+    end
+
+    local nowMs = nowMillisSafe()
+    local timeKey = key .. "At"
+    local targetKey = key .. "TargetID"
+    local lastAt = tonumber(npcData[timeKey]) or 0
+    if targetID ~= nil and npcData[targetKey] == targetID and lastAt > 0 and (nowMs - lastAt) < cooldownMs then
+        return false
+    end
+    if targetID == nil and lastAt > 0 and (nowMs - lastAt) < cooldownMs then
+        return false
+    end
+
+    local line = chooseEncounterFlavor(threatType)
     if not line then
         return false
     end
@@ -692,11 +739,11 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
         npcData.combatTargetID = chosenTargetID
         npcData.combatTargetType = threatType
         if (threatType == "dtnpc" or threatType == "bandits") and chosenTargetID ~= previousTargetID then
-            pushThrottledCompanionNotice(
+            pushThrottledEncounterNotice(
                 zombie,
                 npcData,
                 "combatHostileNPCNotice",
-                HOSTILE_NPC_ENGAGE_LINES,
+                threatType,
                 "warning",
                 8000,
                 chosenTargetID

@@ -149,6 +149,31 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
 
     local zx, zy, zz = zombie:getX(), zombie:getY(), zombie:getZ()
     local tx, ty = target:getX(), target:getY()
+
+    if DTNPCProtect and DTNPCProtect.UpdateRangedReloadAction then
+        local busy, busyReason = DTNPCProtect.UpdateRangedReloadAction(zombie, npcData, target)
+        if busy then
+            stopMoveAnim(zombie)
+            if DTNPC and DTNPC.SetRangedCombatIdleState then
+                DTNPC.SetRangedCombatIdleState(zombie, npcData)
+            end
+            return
+        end
+        if busyReason == "reloaded" and DTNPC and DTNPC.SetRangedCombatIdleState then
+            DTNPC.SetRangedCombatIdleState(zombie, npcData)
+        end
+    end
+
+    if DTNPCMobility and DTNPCMobility.IsSpecialActionActive then
+        local specialActive, mode = DTNPCMobility.IsSpecialActionActive(npcData)
+        if specialActive and npcData._dtSpecialAction == "fence" then
+            if DTNPCMobility.UpdateSpecialAction then
+                DTNPCMobility.UpdateSpecialAction(zombie, npcData)
+            end
+            zombie:faceLocation(tx, ty)
+            return
+        end
+    end
     
     -- 2. Calculate Direction to Target
     local dx = tx - zx
@@ -236,7 +261,9 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         end
 
         isMoving = moved == true or moveState == "damage_retreat"
-        if isMoving then
+        if moveState == "special_action" or moveState == "interacted_fence" then
+            isMoving = false
+        elseif isMoving then
             forceCombatAnim(zombie, true)
         elseif not (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
             forceCombatAnim(zombie, false)
@@ -274,7 +301,11 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         if DTNPC and DTNPC.TriggerRangedCombatAnim then
             DTNPC.TriggerRangedCombatAnim(zombie, npcData)
         end
-        DTNPCProtect.ConsumeAmmo(npcData, 1)
+        if DTNPCProtect and DTNPCProtect.ConsumeRangedShot then
+            DTNPCProtect.ConsumeRangedShot(npcData, 1)
+        else
+            DTNPCProtect.ConsumeAmmo(npcData, 1)
+        end
         DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
         zombie:getEmitter():playSound("DT_GunRandom")
 

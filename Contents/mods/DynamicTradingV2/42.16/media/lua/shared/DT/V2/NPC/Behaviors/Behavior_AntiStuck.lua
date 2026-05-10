@@ -168,6 +168,7 @@ function AntiStuck.TryRecover(zombie, npcData, options)
         or moveState == "unstuck"
         or moveState == "arrived"
         or moveState == "close_enough"
+        or moveState == "special_action"
         or moveState == "damage_retreat"
 
     if successful or interacted or madeProgress then

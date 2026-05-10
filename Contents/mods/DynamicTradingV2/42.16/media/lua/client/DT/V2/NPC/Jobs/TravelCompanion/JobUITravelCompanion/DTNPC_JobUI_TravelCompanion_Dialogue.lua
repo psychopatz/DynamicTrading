@@ -250,7 +250,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                         "Auto",
                         currentMode == "ProtectAuto",
                         showAmmo and currentMode == "ProtectAuto",
-                        ammoSnapshot.ammoCount
+                        ammoSnapshot
                     ),
                     message = "Use whichever weapon fits the fight.",
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "ProtectAuto", "auto"),
@@ -272,7 +272,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                         "Ranged",
                         currentMode == "ProtectRanged",
                         showAmmo and currentMode == "ProtectRanged",
-                        ammoSnapshot.ammoCount
+                        ammoSnapshot
                     ),
                     message = "Cover me from range.",
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "ProtectRanged", "ranged"),
@@ -290,7 +290,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                     end
                 },
                 {
-                    text = CompanionUI.BuildModeOptionLabel("Melee", currentMode == "ProtectMelee", false, ammoSnapshot.ammoCount),
+                    text = CompanionUI.BuildModeOptionLabel("Melee", currentMode == "ProtectMelee", false, ammoSnapshot),
                     message = "Stay close and fight up front.",
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "ProtectMelee", "melee"),
                     onSelect = function(choiceUI)
@@ -336,7 +336,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                         "Auto",
                         currentMode == "GuardAuto",
                         showAmmo and currentMode == "GuardAuto",
-                        ammoSnapshot.ammoCount
+                        ammoSnapshot
                     ),
                     message = "Use whichever weapon fits the threat while guarding.",
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "GuardAuto", "auto"),
@@ -358,7 +358,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                         "Ranged",
                         currentMode == "GuardRanged",
                         showAmmo and currentMode == "GuardRanged",
-                        ammoSnapshot.ammoCount
+                        ammoSnapshot
                     ),
                     message = "Guard from a distance.",
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "GuardRanged", "ranged"),
@@ -376,7 +376,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                     end
                 },
                 {
-                    text = CompanionUI.BuildModeOptionLabel("Melee", currentMode == "GuardMelee", false, ammoSnapshot.ammoCount),
+                    text = CompanionUI.BuildModeOptionLabel("Melee", currentMode == "GuardMelee", false, ammoSnapshot),
                     message = "Hold the line up close.",
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "GuardMelee", "melee"),
                     onSelect = function(choiceUI)

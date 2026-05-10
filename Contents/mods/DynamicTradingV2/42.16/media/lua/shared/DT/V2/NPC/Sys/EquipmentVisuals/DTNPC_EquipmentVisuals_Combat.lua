@@ -67,3 +67,18 @@ function EquipmentVisuals.TriggerRangedCombatAnim(zombie, npcData)
     local index = ZombRand(#options) + 1
     zombie:setBumpType(options[index])
 end
+
+function EquipmentVisuals.TriggerRangedReloadAnim(zombie, npcData)
+    if not zombie then
+        return
+    end
+
+    local reloadFamily = npcData and npcData._dtReloadFamily or nil
+    local bumpType = Constants.RANGED_RELOAD_BUMP_TYPES[reloadFamily or ""] or nil
+    if bumpType and bumpType ~= "" then
+        zombie:setBumpType(bumpType)
+        return
+    end
+
+    EquipmentVisuals.SetRangedCombatIdleState(zombie, npcData)
+end

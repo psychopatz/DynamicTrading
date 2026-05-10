@@ -22,18 +22,59 @@ local function applyMovementState(zombie, anim)
     })
 end
 
+local function resetProgress(npcData)
+    if Mobility.ResetMovementProgress then
+        Mobility.ResetMovementProgress(npcData)
+    end
+end
+
+local function recordProgress(npcData, currentX, currentY, goalX, goalY, options)
+    if Mobility.RecordMovementProgress then
+        return Mobility.RecordMovementProgress(npcData, currentX, currentY, goalX, goalY, options)
+    end
+    return nil
+end
+
+local function shouldRecoverFromNoProgress(npcData, options)
+    if Mobility.ShouldTriggerProgressRecovery then
+        return Mobility.ShouldTriggerProgressRecovery(npcData, options)
+    end
+    return false, nil
+end
+
 function Mobility.MoveByDirection(zombie, npcData, options)
     if not zombie then
         return false, "invalid"
     end
 
     options = type(options) == "table" and options or {}
+    local progressGoalX = tonumber(options.progressGoalX)
+    local progressGoalY = tonumber(options.progressGoalY)
+    if progressGoalX == nil or progressGoalY == nil then
+        progressGoalX = tonumber(options.goalX)
+        progressGoalY = tonumber(options.goalY)
+    end
+
+    if npcData and Mobility.IsSpecialActionActive then
+        local specialActive = Mobility.IsSpecialActionActive(npcData)
+        if specialActive then
+            if Mobility.UpdateSpecialAction then
+                Mobility.UpdateSpecialAction(zombie, npcData)
+            end
+            recordProgress(npcData, zombie:getX(), zombie:getY(), progressGoalX, progressGoalY, {
+                attemptedMove = true,
+                exempt = true,
+            })
+            return true, "special_action"
+        end
+    end
 
     local dirX = tonumber(options.dirX) or 0
     local dirY = tonumber(options.dirY) or 0
     local len = math.sqrt((dirX * dirX) + (dirY * dirY))
     if len <= 0.001 then
         Mobility.Stop(zombie, options.anim)
+        resetProgress(npcData)
         return false, "no_direction"
     end
 
@@ -43,6 +84,7 @@ function Mobility.MoveByDirection(zombie, npcData, options)
     local step = math.max(0, tonumber(options.speed) or 0)
     if step <= 0.001 then
         Mobility.Stop(zombie, options.anim)
+        resetProgress(npcData)
         return false, "stopped"
     end
 
@@ -60,9 +102,44 @@ function Mobility.MoveByDirection(zombie, npcData, options)
     local nextY = chosenStep and chosenStep.nextY or (zy + (dirY * step))
     local moveDirX = chosenStep and chosenStep.dirX or dirX
     local moveDirY = chosenStep and chosenStep.dirY or dirY
+    local cell = getCell and getCell() or nil
+    local fromSquare = Internal.getSquareAt and Internal.getSquareAt(cell, zx, zy, zz) or nil
+
+    if options.allowObstacleInteract == true and Mobility.FindFenceAhead and Mobility.BeginFenceTraverse then
+        local fenceAhead = Mobility.FindFenceAhead(zombie, npcData, {
+            cell = cell,
+            dirX = moveDirX,
+            dirY = moveDirY,
+            originX = zx,
+            originY = zy,
+            originZ = zz,
+            fromSquare = fromSquare,
+            midSquare = Internal.getSquareAt and Internal.getSquareAt(cell, nextX, nextY, zz) or nil,
+        })
+        if fenceAhead then
+            local beganTraverse = false
+            local traverseOptions = {}
+            for key, value in pairs(options) do
+                traverseOptions[key] = value
+            end
+            traverseOptions.dirX = moveDirX
+            traverseOptions.dirY = moveDirY
+            beganTraverse = Mobility.BeginFenceTraverse(zombie, npcData, fenceAhead, traverseOptions)
+            if beganTraverse then
+                Internal.clearBlockedCounter(npcData, options.blockCounterKey)
+                recordProgress(npcData, zombie:getX(), zombie:getY(), progressGoalX, progressGoalY, {
+                    attemptedMove = true,
+                    exempt = true,
+                })
+                Mobility.Stop(zombie, options.anim)
+                return true, "special_action"
+            end
+        end
+    end
 
     if not Internal.isWithinLeash(nextX, nextY, zz, options) then
         Mobility.Stop(zombie, options.anim)
+        resetProgress(npcData)
         return false, "leash"
     end
 
@@ -83,11 +160,25 @@ function Mobility.MoveByDirection(zombie, npcData, options)
         if interacted then
             Internal.clearBlockedCounter(npcData, options.blockCounterKey)
             Mobility.Stop(zombie, options.anim)
+            resetProgress(npcData)
             return false, "interacted_" .. tostring(obstacleKind or "obstacle")
         end
     end
 
     local canMove = chosenStep and chosenStep.canMove or Mobility.IsTileSafe(nextX, nextY, zz)
+    if not canMove and options.allowObstacleInteract == true and Mobility.TryTraverseFence and Internal.getSquareAt then
+        local nextSquare = Internal.getSquareAt(cell, nextX, nextY, zz)
+        local traversed, traverseKind = Mobility.TryTraverseFence(zombie, npcData, fromSquare, nextSquare, options)
+        if traversed then
+            Internal.clearBlockedCounter(npcData, options.blockCounterKey)
+            recordProgress(npcData, zombie:getX(), zombie:getY(), progressGoalX, progressGoalY, {
+                attemptedMove = true,
+                exempt = true,
+            })
+            return true, "special_action"
+        end
+    end
+
     if not canMove and options.allowAxisSlide ~= false then
         if Internal.isWithinLeash(nextX, zy, zz, options) and Mobility.IsTileSafe(nextX, zy, zz) then
             nextY = zy
@@ -129,6 +220,9 @@ function Mobility.MoveByDirection(zombie, npcData, options)
             npcData._dtBlockedHeading = nil
             npcData._dtBlockedHeadingUntil = 0
         end
+        recordProgress(npcData, nextX, nextY, progressGoalX, progressGoalY, {
+            attemptedMove = true,
+        })
         Mobility.TryClosePassedDoor(zombie, npcData, {
             target = options.closeDoorTarget,
             safeRadius = options.closeDoorSafeRadius,
@@ -138,8 +232,12 @@ function Mobility.MoveByDirection(zombie, npcData, options)
 
     local blockedTicks = Internal.incrementBlockedCounter(npcData, options.blockCounterKey)
     Internal.setBlockedHeading(npcData, moveDirX, moveDirY)
+    recordProgress(npcData, zx, zy, progressGoalX, progressGoalY, {
+        attemptedMove = true,
+    })
     local stuckTicks = math.max(0, tonumber(options.stuckTicks) or 0)
-    if blockedTicks >= stuckTicks and stuckTicks > 0 then
+    local stalled, stallReason = shouldRecoverFromNoProgress(npcData, options)
+    if (blockedTicks >= stuckTicks and stuckTicks > 0) or stalled then
         local unstuck, unstuckX, unstuckY = Internal.tryUnstick(zombie, zz, moveDirX, moveDirY)
         if unstuck then
             Internal.clearBlockedCounter(npcData, options.blockCounterKey)
@@ -156,6 +254,9 @@ function Mobility.MoveByDirection(zombie, npcData, options)
                 npcData._dtLastSteerDirX = moveDirX
                 npcData._dtLastSteerDirY = moveDirY
             end
+            recordProgress(npcData, unstuckX, unstuckY, progressGoalX, progressGoalY, {
+                attemptedMove = true,
+            })
             return true, "unstuck"
         end
     end
@@ -246,6 +347,8 @@ function Mobility.MoveTowardTarget(zombie, npcData, options)
         faceTargetWhileMoving = options.faceTargetWhileMoving,
         goalX = tx,
         goalY = ty,
+        progressGoalX = tx,
+        progressGoalY = ty,
         closeDoorTarget = options.target,
         closeDoorSafeRadius = options.closeDoorSafeRadius,
         allowDamageRetreat = options.allowDamageRetreat ~= false,

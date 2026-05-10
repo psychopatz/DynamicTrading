@@ -39,7 +39,7 @@ function CompanionUI.AddAttackTypeContextMenu(parentMenu, npc, player)
 
     CompanionUI.AddCompanionContextAction(
         subMenu,
-        CompanionUI.BuildModeOptionLabel("Auto", currentMode == "ProtectAuto", showAmmo and currentMode == "ProtectAuto", ammoSnapshot.ammoCount),
+        CompanionUI.BuildModeOptionLabel("Auto", currentMode == "ProtectAuto", showAmmo and currentMode == "ProtectAuto", ammoSnapshot),
         function()
             CompanionUI.IssueCompanionStateOrder(player, npc, "ProtectAuto", {
                 state = "ProtectAuto",
@@ -51,7 +51,7 @@ function CompanionUI.AddAttackTypeContextMenu(parentMenu, npc, player)
 
     CompanionUI.AddCompanionContextAction(
         subMenu,
-        CompanionUI.BuildModeOptionLabel("Ranged", currentMode == "ProtectRanged", showAmmo and currentMode == "ProtectRanged", ammoSnapshot.ammoCount),
+        CompanionUI.BuildModeOptionLabel("Ranged", currentMode == "ProtectRanged", showAmmo and currentMode == "ProtectRanged", ammoSnapshot),
         function()
             CompanionUI.IssueCompanionStateOrder(player, npc, "ProtectRanged", {
                 state = "ProtectRanged",
@@ -63,7 +63,7 @@ function CompanionUI.AddAttackTypeContextMenu(parentMenu, npc, player)
 
     CompanionUI.AddCompanionContextAction(
         subMenu,
-        CompanionUI.BuildModeOptionLabel("Melee", currentMode == "ProtectMelee", false, ammoSnapshot.ammoCount),
+        CompanionUI.BuildModeOptionLabel("Melee", currentMode == "ProtectMelee", false, ammoSnapshot),
         function()
             CompanionUI.IssueCompanionStateOrder(player, npc, "ProtectMelee", {
                 state = "ProtectMelee",
@@ -86,7 +86,7 @@ function CompanionUI.AddGuardAttackTypeContextMenu(parentMenu, npc, player)
 
     CompanionUI.AddCompanionContextAction(
         subMenu,
-        CompanionUI.BuildModeOptionLabel("Auto", currentMode == "GuardAuto", showAmmo and currentMode == "GuardAuto", ammoSnapshot.ammoCount),
+        CompanionUI.BuildModeOptionLabel("Auto", currentMode == "GuardAuto", showAmmo and currentMode == "GuardAuto", ammoSnapshot),
         function()
             CompanionUI.IssueCompanionStateOrder(player, npc, "Guard", {
                 state = "Guard",
@@ -98,7 +98,7 @@ function CompanionUI.AddGuardAttackTypeContextMenu(parentMenu, npc, player)
 
     CompanionUI.AddCompanionContextAction(
         subMenu,
-        CompanionUI.BuildModeOptionLabel("Ranged", currentMode == "GuardRanged", showAmmo and currentMode == "GuardRanged", ammoSnapshot.ammoCount),
+        CompanionUI.BuildModeOptionLabel("Ranged", currentMode == "GuardRanged", showAmmo and currentMode == "GuardRanged", ammoSnapshot),
         function()
             CompanionUI.IssueCompanionStateOrder(player, npc, "Guard", {
                 state = "Guard",
@@ -110,7 +110,7 @@ function CompanionUI.AddGuardAttackTypeContextMenu(parentMenu, npc, player)
 
     CompanionUI.AddCompanionContextAction(
         subMenu,
-        CompanionUI.BuildModeOptionLabel("Melee", currentMode == "GuardMelee", false, ammoSnapshot.ammoCount),
+        CompanionUI.BuildModeOptionLabel("Melee", currentMode == "GuardMelee", false, ammoSnapshot),
         function()
             CompanionUI.IssueCompanionStateOrder(player, npc, "Guard", {
                 state = "Guard",

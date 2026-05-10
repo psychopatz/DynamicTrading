@@ -70,6 +70,14 @@ Constants.RANGED_BUMP_TYPES = Constants.RANGED_BUMP_TYPES or {
     rifle = { "DTNPCIdleToAimRifle", "DTNPCAimRifle" },
 }
 
+Constants.RANGED_RELOAD_BUMP_TYPES = Constants.RANGED_RELOAD_BUMP_TYPES or {
+    pistol = "DTNPCRackPistol",
+    rifle = "DTNPCRackRifle",
+    shotgun = "DTNPCRackShotgun",
+    revolver = "DTNPCRackRevolver",
+    dbshotgun = "DTNPCRackDBShotgun",
+}
+
 function Helpers.lower(value)
     if value == nil then
         return ""

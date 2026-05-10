@@ -87,16 +87,30 @@ function CompanionUI.GetRangedAmmoSnapshot(npcData)
         return {
             hasRangedWeapon = false,
             ammoCount = 0,
+            magAmmo = 0,
+            ammoLabel = "0",
+            finiteAmmo = false,
         }
+    end
+
+    local ammoCount = math.max(0, math.floor(tonumber(loadout and loadout.ammoCount) or 0))
+    local finiteAmmo = DTNPCProtect and DTNPCProtect.IsFiniteAmmoTrader and DTNPCProtect.IsFiniteAmmoTrader(npcData) == true or false
+    local magAmmo = nil
+    if DTNPCProtect and DTNPCProtect.EnsureRangedRuntime then
+        DTNPCProtect.EnsureRangedRuntime(npcData)
+        magAmmo = math.max(0, math.floor(tonumber(npcData and npcData._dtMagAmmo) or 0))
     end
 
     return {
         hasRangedWeapon = true,
-        ammoCount = math.max(0, math.floor(tonumber(loadout and loadout.ammoCount) or 0)),
+        ammoCount = ammoCount,
+        magAmmo = magAmmo,
+        finiteAmmo = finiteAmmo,
+        ammoLabel = finiteAmmo and (tostring(magAmmo or 0) .. "/" .. tostring(ammoCount)) or tostring(ammoCount),
     }
 end
 
-function CompanionUI.BuildModeOptionLabel(baseLabel, isActive, includeAmmo, ammoCount)
+function CompanionUI.BuildModeOptionLabel(baseLabel, isActive, includeAmmo, ammoInfo)
     local label = tostring(baseLabel or "")
     if not isActive then
         return label
@@ -104,7 +118,14 @@ function CompanionUI.BuildModeOptionLabel(baseLabel, isActive, includeAmmo, ammo
 
     label = label .. " [ACTIVE]"
     if includeAmmo then
-        label = label .. " (Ammo: " .. tostring(math.max(0, tonumber(ammoCount) or 0)) .. ")"
+        local ammoLabel = nil
+        if type(ammoInfo) == "table" then
+            ammoLabel = ammoInfo.ammoLabel
+        end
+        if not ammoLabel then
+            ammoLabel = tostring(math.max(0, tonumber(ammoInfo) or 0))
+        end
+        label = label .. " (Ammo: " .. tostring(ammoLabel) .. ")"
     end
     return label
 end

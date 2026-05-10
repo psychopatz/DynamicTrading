@@ -30,6 +30,22 @@ local function getLoadoutSignature(loadout)
     }, "|")
 end
 
+local function getSpecialActionSignature(npcData)
+    npcData = type(npcData) == "table" and npcData or {}
+    return table.concat({
+        tostring(npcData._dtSpecialAction or ""),
+        tostring(npcData._dtSpecialActionUntil or ""),
+        tostring(npcData._dtSpecialActionMode or ""),
+        tostring(npcData._dtSpecialActionSeq or ""),
+        tostring(npcData._dtFenceActionSeq or ""),
+        tostring(npcData._dtReloadUntil or ""),
+        tostring(npcData._dtReloadActionSeq or ""),
+        tostring(npcData._dtReloadFamily or ""),
+        tostring(npcData._dtMagAmmo or ""),
+        tostring(npcData._dtMagSize or ""),
+    }, "|")
+end
+
 function DTNPCClient.OnTick()
     if isServer() and isDedicatedServer() then return end
 
@@ -175,6 +191,7 @@ function DTNPCClient.OnTick()
                                     state = localData.state,
                                     tasksCount = (localData.tasks and #localData.tasks or 0),
                                     loadoutSignature = getLoadoutSignature(localData.loadout),
+                                    specialActionSignature = getSpecialActionSignature(localData),
                                     combatOrder = localData.combatOrder,
                                     guardCombatOrder = localData.guardCombatOrder,
                                     protectNoticeSerial = localData.protectNoticeSerial or 0,
@@ -200,6 +217,23 @@ function DTNPCClient.OnTick()
                             if currentLoadoutSignature ~= cached.lastReportedState.loadoutSignature then
                                 updates.loadout = localData.loadout
                                 cached.lastReportedState.loadoutSignature = currentLoadoutSignature
+                                changed = true
+                            end
+
+                            local currentSpecialActionSignature = getSpecialActionSignature(localData)
+                            if currentSpecialActionSignature ~= cached.lastReportedState.specialActionSignature then
+                                updates._dtSpecialAction = localData._dtSpecialAction
+                                updates._dtSpecialActionUntil = localData._dtSpecialActionUntil
+                                updates._dtSpecialActionMode = localData._dtSpecialActionMode
+                                updates._dtSpecialActionSeq = localData._dtSpecialActionSeq
+                                updates._dtFenceActionSeq = localData._dtFenceActionSeq
+                                updates._dtReloadUntil = localData._dtReloadUntil
+                                updates._dtReloadActionSeq = localData._dtReloadActionSeq
+                                updates._dtReloadFamily = localData._dtReloadFamily
+                                updates._dtMagAmmo = localData._dtMagAmmo
+                                updates._dtMagSize = localData._dtMagSize
+                                updates.broadcastPosition = true
+                                cached.lastReportedState.specialActionSignature = currentSpecialActionSignature
                                 changed = true
                             end
 

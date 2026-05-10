@@ -33,6 +33,29 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
 
     Trading.EnsureManualControl(zombie)
 
+    if DTNPCProtect and DTNPCProtect.UpdateRangedReloadAction then
+        local busy = DTNPCProtect.UpdateRangedReloadAction(zombie, npcData, target)
+        if busy then
+            Trading.StopMoveAnim(zombie)
+            if DTNPC and DTNPC.SetRangedCombatIdleState then
+                DTNPC.SetRangedCombatIdleState(zombie, npcData)
+            end
+            Trading.MarkCombatPursuit(npcData, target, targetDist, false)
+            return
+        end
+    end
+
+    if DTNPCMobility and DTNPCMobility.IsSpecialActionActive then
+        local specialActive = DTNPCMobility.IsSpecialActionActive(npcData)
+        if specialActive and npcData._dtSpecialAction == "fence" then
+            if DTNPCMobility.UpdateSpecialAction then
+                DTNPCMobility.UpdateSpecialAction(zombie, npcData)
+            end
+            Trading.MarkCombatPursuit(npcData, target, targetDist, false)
+            return
+        end
+    end
+
     local anchorTarget = Trading.GetCombatAnchorTarget(zombie, npcData)
     local anchorX = anchorTarget and anchorTarget:getX() or nil
     local anchorY = anchorTarget and anchorTarget:getY() or nil
@@ -94,15 +117,36 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
         if not Trading.PrimeMovement(zombie, npcData, dx * moveDir, dy * moveDir, false, "ranged-kite") then
             return
         end
-        local nextX = zx + (dx * moveSpeed * moveDir)
-        local nextY = zy + (dy * moveSpeed * moveDir)
-        local nextOutsideLeash = false
-        if anchorX ~= nil and anchorY ~= nil then
-            local nextDx = nextX - anchorX
-            local nextDy = nextY - anchorY
-            nextOutsideLeash = math.sqrt((nextDx * nextDx) + (nextDy * nextDy)) > leashRadius
+        local moveState = nil
+        if moveDir > 0 then
+            moved, moveState = Trading.MoveTowardTarget(
+                zombie,
+                npcData,
+                moveSpeed,
+                target,
+                desiredMin + 0.1,
+                anchorX,
+                anchorY,
+                anchorZ,
+                leashRadius
+            )
+        else
+            moved, moveState = Trading.MoveAwayFromTarget(
+                zombie,
+                npcData,
+                moveSpeed,
+                tx,
+                ty,
+                desiredMin + 0.75,
+                anchorX,
+                anchorY,
+                anchorZ,
+                leashRadius
+            )
         end
-        if nextOutsideLeash then
+
+        moved = moved == true or moveState == "damage_retreat"
+        if moveState == "leash" then
             if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
                 DTNPCProtect.ReportCombatIssue(
                     zombie,
@@ -115,13 +159,9 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
             end
             Trading.ReturnToPostOrResume(zombie, npcData)
             return
-        elseif Trading.IsTileSafe(nextX, nextY, zz) then
-            Trading.ForceWalkAnim(zombie, false)
-            zombie:setX(nextX)
-            zombie:setY(nextY)
-            zombie:faceLocation(nextX + (dx * moveDir), nextY + (dy * moveDir))
-            moved = true
-        else
+        elseif moveState == "special_action" or moveState == "interacted_fence" then
+            moved = false
+        elseif not moved and not (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
             Trading.StopMoveAnim(zombie)
         end
     else
@@ -172,7 +212,11 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
         DTNPC.TriggerRangedCombatAnim(zombie, npcData)
     end
     attacked = true
-    DTNPCProtect.ConsumeAmmo(npcData, 1)
+    if DTNPCProtect and DTNPCProtect.ConsumeRangedShot then
+        DTNPCProtect.ConsumeRangedShot(npcData, 1)
+    else
+        DTNPCProtect.ConsumeAmmo(npcData, 1)
+    end
     DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
     zombie:getEmitter():playSound("DT_GunRandom")
 
