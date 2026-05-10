@@ -280,6 +280,8 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
             moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
                 target = target,
                 speed = moveSpeed,
+                staminaMode = "pursuit",
+                desiredRun = false,
                 stopDistance = desiredMin + 0.1,
                 allowObstacleInteract = true,
                 allowDamageRetreat = true,
@@ -304,6 +306,7 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
                 fromX = tx,
                 fromY = ty,
                 speed = moveSpeed,
+                staminaMode = "retreat",
                 desiredDistance = desiredMin + 0.75,
                 allowObstacleInteract = true,
                 allowDamageRetreat = true,
@@ -327,7 +330,14 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
         end
 
         moved = moved == true or moveState == "damage_retreat"
-        if moveState == "special_action" or moveState == "interacted_fence" then
+        if moveState == "exhausted" then
+            moved = false
+            if options.onStopMove then
+                options.onStopMove(zombie, npcData)
+            else
+                stopMoveAnim(zombie, npcData)
+            end
+        elseif moveState == "special_action" or moveState == "interacted_fence" then
             moved = false
         elseif moved then
             if options.onStartMove then

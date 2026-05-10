@@ -9,6 +9,9 @@ require "DT/Common/FlavorText/DT_FlavorText"
 require "DT/Common/FlavorText/DT_FlavorText_Combat"
 
 local Stamina = DTNPCStamina
+local MELEE_RESUME_RATIO = 0.30
+local MOVE_EXHAUST_PAUSE_RATIO = 0.25
+local MOVE_EXHAUST_RESUME_RATIO = 0.40
 
 local function nowMillis()
     if getTimeInMillis then
@@ -172,18 +175,18 @@ end
 local function getMovementDrainRate(profile)
     local mode = tostring(profile and profile.mode or "travel")
     if mode == "flee" then
-        return 5.8
+        return 7.5
     end
     if mode == "pursuit" or mode == "melee_pursuit" then
-        return 6.2
+        return 7.0
     end
     if mode == "follow" then
-        return 5.0
+        return 8.5
     end
     if mode == "travel" or mode == "goto" or mode == "departure" then
-        return 4.9
+        return 5.5
     end
-    return 4.6
+    return 5.2
 end
 
 local function getMovementRecoverRate(profile, moving)
@@ -253,8 +256,58 @@ function Stamina.BuildMovementProfile(zombie, npcData, options)
     local resolvedSpeed = baseSpeed
     local isRunning = requestedRun
     local state = "fresh"
+    local exhausted = false
+    local mode = tostring(options.mode or "travel")
+    local moveExhausted = npcData._dtMoveExhaustedActive == true
 
-    if not requestedRun or baseSpeed <= 0.001 then
+    if mode ~= "retreat" then
+        if moveExhausted and ratio < MOVE_EXHAUST_RESUME_RATIO then
+            exhausted = true
+        elseif ratio <= MOVE_EXHAUST_PAUSE_RATIO then
+            exhausted = true
+            npcData._dtMoveExhaustedActive = true
+        else
+            npcData._dtMoveExhaustedActive = false
+        end
+
+        if exhausted then
+            resolvedSpeed = 0
+            isRunning = false
+            state = "recovering"
+        elseif mode == "follow" then
+            resolvedSpeed = baseSpeed
+            isRunning = false
+            if ratio <= 0.30 or cooldownActive then
+                state = "recovering"
+            elseif ratio <= 0.60 then
+                state = "steady"
+            else
+                state = "fresh"
+            end
+        elseif not requestedRun or baseSpeed <= 0.001 then
+            resolvedSpeed = baseSpeed
+            isRunning = false
+            if ratio <= 0.30 or cooldownActive then
+                state = "recovering"
+            elseif ratio <= 0.60 then
+                state = "steady"
+            else
+                state = "fresh"
+            end
+        elseif cooldownActive or ratio <= 0.30 then
+            resolvedSpeed = math.max(0.028, math.min(baseSpeed * 0.68, 0.045))
+            isRunning = false
+            state = "recovering"
+        elseif ratio <= 0.55 then
+            resolvedSpeed = math.max(0.032, math.min(baseSpeed * 0.82, 0.055))
+            isRunning = resolvedSpeed > 0.05
+            state = "steady"
+        else
+            resolvedSpeed = baseSpeed
+            isRunning = requestedRun
+            state = "fresh"
+        end
+    elseif not requestedRun or baseSpeed <= 0.001 then
         resolvedSpeed = baseSpeed
         isRunning = false
         if ratio <= 0.22 or cooldownActive then
@@ -289,9 +342,10 @@ function Stamina.BuildMovementProfile(zombie, npcData, options)
         isRunning = isRunning,
         animSpeed = isRunning and 1.2 or 1.0,
         dtWalkType = isRunning and "Run" or "Walk",
-        mode = tostring(options.mode or "travel"),
+        mode = mode,
         ratio = ratio,
         state = state,
+        exhausted = exhausted,
     }
 end
 
@@ -312,19 +366,28 @@ function Stamina.ApplyMovementTick(zombie, npcData, profile, result)
     local maxValue = math.max(1, tonumber(npcData.staminaMax) or 1)
     local currentValue = tonumber(npcData.staminaCurrent) or maxValue
 
-    if result.moved == true and profile.requestedRun == true then
+    if result.moved == true then
         local drainRate = getMovementDrainRate(profile) * (1 - (normalized * 0.2))
+        if profile.requestedRun == true then
+            drainRate = drainRate * 1.15
+        end
         if elapsed > 0 then
             currentValue = adjustCurrent(npcData, -(drainRate * elapsed))
         end
         markVisible(npcData, 4200)
 
         if currentValue <= (maxValue * 0.11) then
+            if profile.mode == "follow" then
+                npcData._dtMoveExhaustedActive = true
+            end
             local currentSlowUntil = tonumber(npcData._dtSprintSlowUntil) or 0
             if currentSlowUntil <= currentTime then
                 npcData._dtSprintSlowUntil = currentTime + getBreatherMs(npcData)
                 pushCue(zombie, npcData, "CatchBreath", "warning", 6500)
             end
+        elseif profile.mode == "follow" and currentValue <= (maxValue * MOVE_EXHAUST_PAUSE_RATIO) then
+            npcData._dtMoveExhaustedActive = true
+            pushCue(zombie, npcData, "CatchBreath", "warning", 6500)
         elseif currentValue <= (maxValue * 0.34) and currentState ~= "winded" then
             pushCue(zombie, npcData, "StaminaSlow", "warning", 6500)
         end
@@ -339,6 +402,9 @@ function Stamina.ApplyMovementTick(zombie, npcData, profile, result)
     end
 
     local ratio = Stamina.GetRatio(npcData)
+    if npcData._dtMoveExhaustedActive == true and ratio >= MOVE_EXHAUST_RESUME_RATIO then
+        npcData._dtMoveExhaustedActive = false
+    end
     local nextState = profile.state
     if ratio > 0.7 and (tonumber(npcData._dtSprintSlowUntil) or 0) <= currentTime then
         nextState = "fresh"
@@ -395,6 +461,9 @@ function Stamina.ProcessPassive(zombie, npcData, state)
     adjustCurrent(npcData, recoverRate * (1 + (normalized * 0.18)) * elapsed)
 
     local ratioAfter = Stamina.GetRatio(npcData)
+    if npcData._dtMoveExhaustedActive == true and ratioAfter >= MOVE_EXHAUST_RESUME_RATIO then
+        npcData._dtMoveExhaustedActive = false
+    end
     if ratioAfter > ratioBefore and ratioAfter < 0.995 then
         markVisible(npcData, 2600)
     end
@@ -438,6 +507,7 @@ function Stamina.ConsumeMeleeAttack(zombie, npcData)
         local fatigueMs = math.floor(950 + ((1 - normalized) * 700))
         local currentTime = nowMillis()
         local previousUntil = tonumber(npcData._dtMeleeFatigueUntil) or 0
+        npcData._dtMeleeFatigueActive = true
         npcData._dtMeleeFatigueUntil = math.max(previousUntil, currentTime + fatigueMs)
         setStaminaState(npcData, "melee_recovering")
         pushCue(zombie, npcData, "MeleeFatigue", "warning", 6500)
@@ -456,19 +526,29 @@ function Stamina.IsMeleeFatigued(npcData)
 
     local currentTime = nowMillis()
     local untilTime = tonumber(npcData._dtMeleeFatigueUntil) or 0
-    if untilTime <= 0 then
+    local active = npcData._dtMeleeFatigueActive == true
+    if untilTime <= 0 and not active then
         return false
     end
+
+    local ratio = Stamina.GetRatio(npcData)
 
     if currentTime < untilTime then
         return true
     end
 
-    if Stamina.GetRatio(npcData) <= 0.22 then
+    if active and ratio < MELEE_RESUME_RATIO then
         npcData._dtMeleeFatigueUntil = currentTime + 250
         return true
     end
 
+    if ratio <= 0.22 then
+        npcData._dtMeleeFatigueActive = true
+        npcData._dtMeleeFatigueUntil = currentTime + 250
+        return true
+    end
+
+    npcData._dtMeleeFatigueActive = false
     npcData._dtMeleeFatigueUntil = 0
     return false
 end

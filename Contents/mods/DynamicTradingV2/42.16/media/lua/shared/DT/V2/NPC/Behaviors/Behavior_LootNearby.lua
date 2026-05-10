@@ -672,6 +672,12 @@ DTNPCLogic.Behaviors["LootNearby"] = function(zombie, npcData)
                 local collectedCount = DTNPCLootSearch.TryCollectQueuedItems(zombie, npcData, worker, apis, queuedSource)
                 DTNPCLootSearch.SendSyncToCommander(npcData, worker, queuedSource.key, true)
                 npcData.dcLootStatus = collectedCount > 0 and "looting" or "collecting"
+            elseif moveState == "exhausted" then
+                clearLootInspection(npcData)
+                resetLootAntiStuck(npcData)
+                if DTNPCMobility and DTNPCMobility.Stop then
+                    DTNPCMobility.Stop(zombie)
+                end
             elseif moved or moveState == "damage_retreat" or (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
                 clearLootInspection(npcData)
                 resetLootAntiStuck(npcData)
@@ -717,6 +723,12 @@ DTNPCLogic.Behaviors["LootNearby"] = function(zombie, npcData)
             else
                 npcData.dcLootStatus = "inspecting"
                 lootDebugLogChanged(npcData, worker, "inspect_wait", "Search", "Inspecting source " .. tostring(searchSource.label or searchSource.key) .. " before reveal")
+            end
+        elseif moveState == "exhausted" then
+            clearLootInspection(npcData, searchSource.key)
+            resetLootAntiStuck(npcData)
+            if DTNPCMobility and DTNPCMobility.Stop then
+                DTNPCMobility.Stop(zombie)
             end
         elseif moved or moveState == "damage_retreat" or (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
             clearLootInspection(npcData, searchSource.key)

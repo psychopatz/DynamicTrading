@@ -548,6 +548,19 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
         }
     end
 
+    if moveState == "exhausted" then
+        setPhase(npcData, "recovering", options.retreatLockMs or RETREAT_LOCK_MS)
+        stopMoveAnim(zombie, npcData)
+        return {
+            status = "recovering",
+            moved = false,
+            attacked = false,
+            distance = currentDist,
+            reason = "stamina",
+            moveState = moveState,
+        }
+    end
+
     if moved or moveState == "moving" or moveState == "unstuck" then
         return {
             status = "approach",

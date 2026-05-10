@@ -87,6 +87,10 @@ DTNPCLogic.Behaviors["TradingDefenseMelee"] = function(zombie, npcData)
         return
     end
 
+    if result.status == "recovering" then
+        return
+    end
+
     if result.status == "blocked" and Trading.ShouldAbortCombatPursuit(npcData) then
         if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
             DTNPCProtect.ReportCombatIssue(

@@ -175,7 +175,10 @@ DTNPCLogic.Behaviors["Flee"] = function(zombie, npcData, target, dist)
         },
     })
 
-    if not moved and not (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
+    if moveState == "exhausted" then
+        npcData.isMovingState = true
+        stopMovementAnimation(zombie)
+    elseif not moved and not (moveState and string.find(tostring(moveState), "interacted_", 1, true)) then
         stopMovementAnimation(zombie)
     end
 end

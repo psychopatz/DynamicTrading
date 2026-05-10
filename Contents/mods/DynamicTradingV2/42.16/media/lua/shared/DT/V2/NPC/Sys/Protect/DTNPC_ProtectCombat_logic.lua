@@ -248,7 +248,7 @@ function DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
         npcData.combatRecoveryUntil = untilTime
         return true, {
             untilTime = untilTime,
-            distance = (profile and profile.recoveryDistance or 1.6) + 0.25,
+            distance = math.max((profile and profile.recoveryDistance or 1.6) + 0.85, 2.5),
             profile = profile,
             reason = "stamina",
         }

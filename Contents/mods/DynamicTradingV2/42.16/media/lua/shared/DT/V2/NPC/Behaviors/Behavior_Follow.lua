@@ -12,14 +12,13 @@ require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina"
 require "DT/V2/NPC/Behaviors/Behavior_AntiStuck"
 
 -- MOVEMENT CONFIGURATION
-local STOP_THRESHOLD_START = 3.5
-local STOP_THRESHOLD_END   = 2.0
+local STOP_THRESHOLD_START = 7.0
+local STOP_THRESHOLD_END   = 5.4
 local TELEPORT_DIST = 50
 local STUCK_TICKS = 15
 
 -- Speeds
-local WALK_SPEED_PHYSICAL = 0.040
-local RUN_SPEED_PHYSICAL = 0.075
+local FOLLOW_SPEED_PHYSICAL = 0.075
 
 -- ==============================================================================
 -- 1. UTILITIES
@@ -208,15 +207,23 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         resetFollowMoveState(npcData)
     end
 
-    local wantsRun = dist > 7.0 or target:isRunning() or target:isSprinting()
     local movementProfile = DTNPCStamina and DTNPCStamina.BuildMovementProfile
         and DTNPCStamina.BuildMovementProfile(zombie, npcData, {
-            speed = wantsRun and RUN_SPEED_PHYSICAL or WALK_SPEED_PHYSICAL,
-            desiredRun = wantsRun,
+            speed = FOLLOW_SPEED_PHYSICAL,
+            desiredRun = false,
             mode = "follow",
         })
         or nil
-    local isRunning = movementProfile and movementProfile.isRunning == true or wantsRun
+    if movementProfile and movementProfile.exhausted == true then
+        if not zombie:isUseless() then zombie:setUseless(true) end
+        resetFollowMoveState(npcData)
+        stopAnimation(zombie)
+        zombie:faceLocation(target:getX(), target:getY())
+        npcData.tasks = {}
+        return
+    end
+
+    local isRunning = movementProfile and movementProfile.isRunning == true or false
     if not primeFollowMovement(zombie, npcData, target, isRunning) then
         resetFollowStuck(npcData)
         npcData.tasks = {}
@@ -230,12 +237,12 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         zombie:setRunning(false)
     end
 
-    local speed = wantsRun and RUN_SPEED_PHYSICAL or WALK_SPEED_PHYSICAL
+    local speed = FOLLOW_SPEED_PHYSICAL
     local moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
         target = target,
         speed = speed,
         staminaMode = "follow",
-        desiredRun = wantsRun,
+        desiredRun = false,
         stopDistance = STOP_THRESHOLD_END,
         allowObstacleInteract = true,
         allowDamageRetreat = true,
@@ -252,7 +259,13 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         },
     })
 
-    if moved or moveState == "arrived" or moveState == "close_enough" or moveState == "damage_retreat" then
+    if moveState == "exhausted" then
+        resetFollowStuck(npcData)
+        resetFollowMoveState(npcData)
+        resetFollowAntiStuck(npcData)
+        stopAnimation(zombie)
+        zombie:faceLocation(target:getX(), target:getY())
+    elseif moved or moveState == "arrived" or moveState == "close_enough" or moveState == "damage_retreat" then
         resetFollowStuck(npcData)
     elseif moveState and string.find(tostring(moveState), "interacted_", 1, true) then
         resetFollowStuck(npcData)

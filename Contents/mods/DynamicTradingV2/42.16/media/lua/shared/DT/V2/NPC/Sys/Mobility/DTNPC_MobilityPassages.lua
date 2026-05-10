@@ -438,8 +438,8 @@ function Mobility.BeginFenceTraverse(zombie, npcData, fence, options)
     local currentTime = Internal.getTimeMs()
     local animName = fence.tall and "DTNPCClimbFenceTall" or "DTNPCClimbFence"
     local travelDurationMs = fence.tall and 900 or 600
-    local finishHoldMs = fence.tall and 240 or 180
-    local actionDurationMs = travelDurationMs + finishHoldMs
+    local finishHoldMs = fence.tall and 420 or 320
+    local actionDurationMs = travelDurationMs + finishHoldMs + 250
 
     npcData._dtFencePendingKey = fence.fenceKey or getFencePendingKey(fence)
     npcData._dtFencePendingAt = currentTime
@@ -475,6 +475,7 @@ function Mobility.BeginFenceTraverse(zombie, npcData, fence, options)
         durationMs = actionDurationMs,
         travelDurationMs = travelDurationMs,
         finishHoldMs = finishHoldMs,
+        finishReadyAt = currentTime + travelDurationMs + finishHoldMs,
         bumpType = animName,
         tall = fence.tall == true,
         fenceKey = npcData._dtFencePendingKey,
@@ -736,7 +737,9 @@ function Mobility.UpdateSpecialAction(zombie, npcData)
         zombie:setX(tonumber(traverse.endX) or nextX)
         zombie:setY(tonumber(traverse.endY) or nextY)
         zombie:setZ(nextZ)
-        if isFenceAnimFinished(zombie) or (currentTime - startedAt) >= durationMs then
+        local finishReadyAt = tonumber(traverse.finishReadyAt) or (startedAt + travelDurationMs)
+        local finishHoldReached = currentTime >= finishReadyAt
+        if (finishHoldReached and isFenceAnimFinished(zombie)) or (currentTime - startedAt) >= durationMs then
             npcData._dtFenceTraverse = nil
             npcData._dtFencePendingKey = nil
             npcData._dtFencePendingAt = nil

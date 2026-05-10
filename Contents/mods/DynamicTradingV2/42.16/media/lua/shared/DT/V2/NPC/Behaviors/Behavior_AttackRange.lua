@@ -223,6 +223,8 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
             moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
                 target = target,
                 speed = currentSpeed,
+                staminaMode = "pursuit",
+                desiredRun = false,
                 stopDistance = desiredMin + 0.1,
                 allowObstacleInteract = true,
                 allowDamageRetreat = true,
@@ -242,6 +244,7 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
             moved, moveState = DTNPCMobility.MoveAwayFromPoint(zombie, npcData, {
                 target = target,
                 speed = currentSpeed,
+                staminaMode = "retreat",
                 desiredDistance = desiredMin + 0.75,
                 allowObstacleInteract = true,
                 allowDamageRetreat = true,
@@ -261,7 +264,10 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         end
 
         isMoving = moved == true or moveState == "damage_retreat"
-        if moveState == "special_action" or moveState == "interacted_fence" then
+        if moveState == "exhausted" then
+            isMoving = false
+            forceCombatAnim(zombie, false)
+        elseif moveState == "special_action" or moveState == "interacted_fence" then
             isMoving = false
         elseif isMoving then
             forceCombatAnim(zombie, true)

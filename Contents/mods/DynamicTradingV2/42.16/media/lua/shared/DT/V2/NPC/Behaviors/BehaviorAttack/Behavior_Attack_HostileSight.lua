@@ -184,6 +184,8 @@ function DTNPCLogic.HandleHostileLostSight(zombie, npcData, target, dist, option
         DTNPCMobility.MoveTowardTarget(zombie, npcData, {
             target = lastSeenTarget,
             speed = speed,
+            staminaMode = "pursuit",
+            desiredRun = false,
             stopDistance = 0.7,
             blockCounterKey = "hostileSearchBlockedTicks",
             stuckTicks = 10,

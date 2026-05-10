@@ -258,6 +258,9 @@ function DTNPCClient.ReconcilePosition(zombie, serverX, serverY, serverZ)
     if DTNPCClient.LocalControlled[uuid] then
         return false
     end
+    if not (isClient() and not isServer()) then
+        return false
+    end
     if uuid
         and DTNPC_ClientInterpolation
         and DTNPC_ClientInterpolation.HasFreshState

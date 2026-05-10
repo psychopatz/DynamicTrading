@@ -456,6 +456,8 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         dirX = dx,
         dirY = dy,
         speed = DynamicTrading.GetNPCRunSpeed(),
+        staminaMode = "departure",
+        desiredRun = true,
         allowObstacleInteract = not isRecruitmentDeparture,
         allowDamageRetreat = true,
         blockCounterKey = "departureBlockedTicks",
@@ -467,7 +469,10 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         },
     })
 
-    if moved or moveState == "damage_retreat" then
+    if moveState == "exhausted" then
+        npcData.departureBlockedTicks = 0
+        stopMovementAnimation(zombie)
+    elseif moved or moveState == "damage_retreat" then
         npcData.departureStuckLastX = zombie:getX()
         npcData.departureStuckLastY = zombie:getY()
     elseif moveState and string.find(tostring(moveState), "interacted_", 1, true) then

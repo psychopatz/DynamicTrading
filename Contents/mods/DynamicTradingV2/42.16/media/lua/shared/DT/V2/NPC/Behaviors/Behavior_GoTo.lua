@@ -181,7 +181,12 @@ DTNPCLogic.Behaviors["GoTo"] = function(zombie, npcData, target, dist)
         },
     })
 
-    if moved or moveState == "arrived" or moveState == "close_enough" or moveState == "damage_retreat" then
+    if moveState == "exhausted" then
+        resetGoToStuck(npcData)
+        npcData.isMovingState = true
+        stopMovementAnimation(zombie)
+        zombie:faceLocation(task.x, task.y)
+    elseif moved or moveState == "arrived" or moveState == "close_enough" or moveState == "damage_retreat" then
         resetGoToStuck(npcData)
     elseif moveState and string.find(tostring(moveState), "interacted_", 1, true) then
         resetGoToStuck(npcData)

@@ -32,6 +32,10 @@ DTNPC_ClientInterpolation.CONFIG = {
     MAX_EXTRAPOLATE_MS = 180,
 }
 
+local function shouldApplyClientInterpolation()
+    return isClient() and not isServer()
+end
+
 -- ==============================================================================
 -- 1. UPDATE TRACKING
 -- ==============================================================================
@@ -45,6 +49,9 @@ end
 
 function DTNPC_ClientInterpolation.RecordUpdate(uuid, x, y, z, updateFreq, motionHint)
     if not uuid or not x then return end
+    if not shouldApplyClientInterpolation() then
+        return
+    end
     
     local state = DTNPC_ClientInterpolation.NPCState[uuid] or {}
     local nowMs = getNowMs()
@@ -75,6 +82,13 @@ end
 -- ==============================================================================
 
 function DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
+    if not shouldApplyClientInterpolation() then
+        if zombie then
+            return zombie:getX(), zombie:getY(), zombie:getZ()
+        end
+        return nil
+    end
+
     local state = DTNPC_ClientInterpolation.NPCState[uuid]
     if not state or not state.targetX then
         -- No state recorded, return actual zombie position
@@ -127,6 +141,9 @@ function DTNPC_ClientInterpolation.ApplyToZombie(uuid, zombie)
     if not uuid or not zombie then
         return false
     end
+    if not shouldApplyClientInterpolation() then
+        return false
+    end
 
     local interpX, interpY, interpZ, shouldSnap = DTNPC_ClientInterpolation.GetInterpolatedPosition(uuid, zombie)
     if not interpX or not interpY then
@@ -154,6 +171,9 @@ function DTNPC_ClientInterpolation.ApplyToZombie(uuid, zombie)
 end
 
 function DTNPC_ClientInterpolation.HasFreshState(uuid)
+    if not shouldApplyClientInterpolation() then
+        return false
+    end
     local state = uuid and DTNPC_ClientInterpolation.NPCState[uuid] or nil
     if not state or not state.targetX then
         return false
@@ -162,6 +182,10 @@ function DTNPC_ClientInterpolation.HasFreshState(uuid)
 end
 
 function DTNPC_ClientInterpolation.ApplyToTrackedNPCs()
+    if not shouldApplyClientInterpolation() then
+        return 0
+    end
+
     local cell = getCell()
     if not cell then
         return 0

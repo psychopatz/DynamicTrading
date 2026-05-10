@@ -83,6 +83,14 @@ local function moveBackToPost(zombie, npcData)
         },
     })
 
+    if state == "exhausted" then
+        npcData.guardReturningToPost = true
+        npcData.isMovingState = false
+        DTNPCMobility.Stop(zombie)
+        zombie:faceLocation(postX, postY)
+        return true
+    end
+
     if moved and (state == "moving" or state == "unstuck") then
         npcData.isMovingState = true
         npcData.guardReturningToPost = true

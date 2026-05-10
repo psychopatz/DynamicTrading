@@ -146,7 +146,10 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
         end
 
         moved = moved == true or moveState == "damage_retreat"
-        if moveState == "leash" then
+        if moveState == "exhausted" then
+            moved = false
+            Trading.StopMoveAnim(zombie)
+        elseif moveState == "leash" then
             if DTNPCProtect and DTNPCProtect.ReportCombatIssue then
                 DTNPCProtect.ReportCombatIssue(
                     zombie,

@@ -72,6 +72,12 @@ function Trading.ReturnToPostOrResume(zombie, npcData)
     end
 
     local moved, moveState = Trading.MoveTowardTarget(zombie, npcData, Trading.TRADING_DEFENSE_DEFAULT_SPEED, pointTarget, 0.3)
+    if moveState == "exhausted" then
+        Trading.StopMoveAnim(zombie)
+        zombie:faceLocation(postX, postY)
+        return
+    end
+
     if not moved and moveState ~= "arrived" and moveState ~= "close_enough" then
         zombie:setX(postX)
         zombie:setY(postY)

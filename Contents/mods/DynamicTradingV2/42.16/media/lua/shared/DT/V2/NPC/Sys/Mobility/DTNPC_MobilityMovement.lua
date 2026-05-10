@@ -111,6 +111,15 @@ function Mobility.MoveByDirection(zombie, npcData, options)
         or nil
     local anim = buildAnimOverride(options.anim, movementProfile)
 
+    if movementProfile and movementProfile.exhausted == true then
+        Mobility.Stop(zombie, anim)
+        resetProgress(npcData)
+        if type(npcData) == "table" then
+            npcData.isMovingState = false
+        end
+        return false, "exhausted"
+    end
+
     local step = math.max(0, tonumber(movementProfile and movementProfile.speed or options.speed) or 0)
     if step <= 0.001 then
         Mobility.Stop(zombie, anim)
@@ -394,6 +403,8 @@ function Mobility.MoveTowardTarget(zombie, npcData, options)
                 faceX = options.faceX,
                 faceY = options.faceY,
                 faceTargetWhileMoving = options.faceTargetWhileMoving,
+                staminaMode = "retreat",
+                desiredRun = false,
                 goalX = zombie:getX() + (forcedRetreat.dirX * step),
                 goalY = zombie:getY() + (forcedRetreat.dirY * step),
                 closeDoorTarget = options.target,
@@ -421,6 +432,8 @@ function Mobility.MoveTowardTarget(zombie, npcData, options)
         faceX = options.faceX,
         faceY = options.faceY,
         faceTargetWhileMoving = options.faceTargetWhileMoving,
+        staminaMode = options.staminaMode,
+        desiredRun = options.desiredRun == true,
         goalX = tx,
         goalY = ty,
         progressGoalX = tx,
@@ -517,6 +530,8 @@ function Mobility.MoveAwayFromPoint(zombie, npcData, options)
         faceX = options.faceX,
         faceY = options.faceY,
         faceTargetWhileMoving = options.faceTargetWhileMoving,
+        staminaMode = options.staminaMode or "retreat",
+        desiredRun = false,
         goalX = zombie:getX() + (moveDirX * step),
         goalY = zombie:getY() + (moveDirY * step),
         steeringAngles = options.steeringAngles,
