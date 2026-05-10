@@ -183,8 +183,8 @@ function DTNPCClient.ApplySafetyToMarkedZombie(zombie, npcData)
         return false
     end
 
-    if DTNPC and DTNPC.ApplySafetyFlags then
-        DTNPC.ApplySafetyFlags(zombie, npcData, { clearPlayerTarget = true })
+    if DTNPC and DTNPC.ApplyMarkedBodySafety then
+        DTNPC.ApplyMarkedBodySafety(zombie, npcData)
         return true
     end
     if DTNPC and DTNPC.ApplyCharacterFlags then

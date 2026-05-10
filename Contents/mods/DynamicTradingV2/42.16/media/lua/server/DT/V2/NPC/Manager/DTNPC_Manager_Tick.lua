@@ -81,6 +81,88 @@ local TRADE_CYCLE_CHECK_RATE = 600 -- Start new trade missions every ~30 seconds
 local tradeCycleCheckCounter = 0
 
 local hasLoggedMissingRespawnHooks = false
+local startupHintPassTicks = 0
+
+local function getSavedCoords(npcData)
+    if not npcData then
+        return nil, nil, nil
+    end
+
+    return npcData.lastX or (npcData.homeCoords and npcData.homeCoords.x),
+        npcData.lastY or (npcData.homeCoords and npcData.homeCoords.y),
+        npcData.lastZ or (npcData.homeCoords and npcData.homeCoords.z) or 0
+end
+
+local function isZombieNearSavedCoords(zombie, npcData)
+    if not zombie or not npcData then
+        return false
+    end
+
+    local sx, sy, sz = getSavedCoords(npcData)
+    if not sx or not sy then
+        return false
+    end
+
+    local dx = zombie:getX() - sx
+    local dy = zombie:getY() - sy
+    local dz = zombie:getZ() - sz
+    return math.abs(dz) <= 1 and math.sqrt(dx * dx + dy * dy) <= 3.0
+end
+
+local function findZombieByBodyInstanceHint(bodyInstanceID)
+    if not bodyInstanceID then
+        return nil
+    end
+
+    if DTNPCServerCore and DTNPCServerCore.FindZombieByBodyInstanceID then
+        return DTNPCServerCore.FindZombieByBodyInstanceID(bodyInstanceID)
+    end
+
+    local cell = getCell()
+    local zombieList = cell and cell:getZombieList() or nil
+    if not zombieList then
+        return nil
+    end
+
+    local wanted = tostring(bodyInstanceID)
+    for i = 0, zombieList:size() - 1 do
+        local zombie = zombieList:get(i)
+        if zombie and not zombie:isDead() and tostring(zombie:getPersistentOutfitID()) == wanted then
+            return zombie
+        end
+    end
+
+    return nil
+end
+
+local function ProcessStartupBodyHints()
+    if not DTNPCManager or not DTNPCManager.Data or not DTNPCManager.ReclaimZombie then
+        return
+    end
+
+    for uuid, npcData in pairs(DTNPCManager.Data) do
+        local hintBodyInstanceID = npcData and npcData.startupBodyInstanceHint or nil
+        if hintBodyInstanceID and not npcData.currentBodyInstanceID and npcData.status ~= "Dead" then
+            local zombie = findZombieByBodyInstanceHint(hintBodyInstanceID)
+            if zombie and not zombie:isDead() and isZombieNearSavedCoords(zombie, npcData) then
+                local existingUUID = DTNPCManager.GetUUIDFromZombie and DTNPCManager.GetUUIDFromZombie(zombie) or nil
+                if not existingUUID or existingUUID == uuid then
+                    local modData = zombie:getModData()
+                    if modData and not modData.DTNPC_UUID then
+                        modData.DTNPC_UUID = uuid
+                    end
+                    if DTNPC and DTNPC.ApplyMarkedBodySafety then
+                        DTNPC.ApplyMarkedBodySafety(zombie, npcData, {
+                            suppressEngineState = true,
+                            clearTarget = true,
+                        })
+                    end
+                    DTNPCManager.ReclaimZombie(zombie, npcData, "startup-tick")
+                end
+            end
+        end
+    end
+end
 
 local function ApplySafetyToMarkedServerZombie(zombie)
     if not zombie or zombie:isDead() then
@@ -104,7 +186,9 @@ local function ApplySafetyToMarkedServerZombie(zombie)
         savedData = DynamicTrading_Roster.GetSoul(uuid)
     end
 
-    if DTNPC and DTNPC.ApplySafetyFlags then
+    if DTNPC and DTNPC.ApplyMarkedBodySafety then
+        DTNPC.ApplyMarkedBodySafety(zombie, savedData)
+    elseif DTNPC and DTNPC.ApplySafetyFlags then
         DTNPC.ApplySafetyFlags(zombie, savedData, { clearPlayerTarget = true })
     elseif DTNPC and DTNPC.ApplyCharacterFlags then
         DTNPC.ApplyCharacterFlags(zombie, savedData)
@@ -185,6 +269,11 @@ function DTNPCManager.OnTick()
     awayTransitionCheckCounter = awayTransitionCheckCounter + 1
     restingRegenCheckCounter = restingRegenCheckCounter + 1
     tradeCycleCheckCounter = tradeCycleCheckCounter + 1
+
+    if startupHintPassTicks < 50 then
+        startupHintPassTicks = startupHintPassTicks + 1
+        ProcessStartupBodyHints()
+    end
 
     if DTNPC_ZombieAggro and DTNPC_ZombieAggro.OnManagerTick then
         DTNPC_ZombieAggro.OnManagerTick()

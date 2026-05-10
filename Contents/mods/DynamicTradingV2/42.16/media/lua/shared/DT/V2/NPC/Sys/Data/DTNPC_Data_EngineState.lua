@@ -287,6 +287,64 @@ function DTNPC.RestoreNPCBodyState(zombie, npcData, options)
     end
 end
 
+function DTNPC.IsMarkedBody(zombie)
+    if not zombie or (zombie.isDead and zombie:isDead()) then
+        return false
+    end
+
+    local modData = zombie.getModData and zombie:getModData() or nil
+    if not modData then
+        return false
+    end
+
+    return modData.IsDTNPC == true
+        or modData.DTNPC_UUID ~= nil
+        or modData.DTNPC_Data ~= nil
+        or modData.DTNPCBrain ~= nil
+end
+
+function DTNPC.ApplyMarkedBodySafety(zombie, npcData, options)
+    if not DTNPC.IsMarkedBody or not DTNPC.IsMarkedBody(zombie) then
+        return false
+    end
+
+    local modData = zombie:getModData()
+    npcData = npcData or modData.DTNPC_Data or modData.DTNPCBrain
+    options = options or {}
+
+    DTNPC.ApplyCharacterFlags(zombie, npcData)
+
+    local suppressEngineState = options.suppressEngineState
+    if suppressEngineState == nil then
+        suppressEngineState = (modData.IsDTNPC ~= true) or npcData == nil
+    end
+
+    local safetyState = options.state
+        or (npcData and npcData.state)
+        or "Stay"
+    local clearPlayerTarget = options.clearPlayerTarget
+    if clearPlayerTarget == nil then
+        clearPlayerTarget = options.clearTarget ~= true
+    end
+
+    if suppressEngineState then
+        DTNPC.SuppressZombieEngineState(zombie, npcData, {
+            state = safetyState,
+            manualControl = options.manualControl ~= false,
+        })
+        if zombie.DoZombieStats then
+            zombie:DoZombieStats()
+        end
+    end
+
+    DTNPC.ApplySafetyFlags(zombie, npcData, {
+        clearTarget = options.clearTarget == true,
+        clearPlayerTarget = clearPlayerTarget,
+    })
+
+    return true
+end
+
 function DTNPC.ApplySafetyFlags(zombie, npcData, options)
     if not zombie then
         return
