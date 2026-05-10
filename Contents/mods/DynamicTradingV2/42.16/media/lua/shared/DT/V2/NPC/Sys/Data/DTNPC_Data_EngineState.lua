@@ -301,6 +301,7 @@ function DTNPC.IsMarkedBody(zombie)
         or modData.DTNPC_UUID ~= nil
         or modData.DTNPC_Data ~= nil
         or modData.DTNPCBrain ~= nil
+        or (zombie.getVariableBoolean and zombie:getVariableBoolean("DTNPC") == true)
 end
 
 function DTNPC.ApplyMarkedBodySafety(zombie, npcData, options)

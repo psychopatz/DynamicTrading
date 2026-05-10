@@ -5,6 +5,34 @@
 
 DTNPC = DTNPC or {}
 
+function DTNPC.MarkBodyOwnership(zombie, npcData)
+    if not zombie or not zombie.getModData then return nil end
+
+    local modData = zombie:getModData()
+    if not modData then return nil end
+
+    modData.IsDTNPC = true
+
+    if npcData then
+        modData.DTNPC_Data = npcData
+        if npcData.uuid then
+            modData.DTNPC_UUID = npcData.uuid
+        end
+        if npcData.visualID then
+            modData.DTNPCVisualID = npcData.visualID
+        end
+    elseif modData.DTNPCBrain and not modData.DTNPC_Data then
+        modData.DTNPC_Data = modData.DTNPCBrain
+        modData.DTNPCBrain = nil
+    end
+
+    if zombie.setVariable then
+        zombie:setVariable("DTNPC", true)
+    end
+
+    return modData
+end
+
 function DTNPC.GetData(zombie)
     if not zombie then return nil end
 
@@ -19,6 +47,10 @@ function DTNPC.GetData(zombie)
 
     if modData.DTNPC_Data and DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
         DTNPCProtect.EnsureDataDefaults(modData.DTNPC_Data)
+    end
+
+    if modData.DTNPC_Data and DTNPC.MarkBodyOwnership then
+        DTNPC.MarkBodyOwnership(zombie, modData.DTNPC_Data)
     end
 
     return modData.DTNPC_Data
@@ -42,8 +74,7 @@ function DTNPC.AttachData(zombie, npcData)
         DTNPCProtect.AssignRandomWorldLoadout(npcData)
     end
 
-    modData.DTNPC_Data = npcData
-    modData.IsDTNPC = true
+    DTNPC.MarkBodyOwnership(zombie, npcData)
 
     if DTNPC.ApplyCharacterFlags then
         DTNPC.ApplyCharacterFlags(zombie, npcData)

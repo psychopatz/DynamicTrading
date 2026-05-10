@@ -128,8 +128,15 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
         end
     end
     
-    modData.IsDTNPC = true
-    modData.DTNPC_UUID = uuid
+    if DTNPC and DTNPC.MarkBodyOwnership then
+        DTNPC.MarkBodyOwnership(zombie, npcData)
+    else
+        modData.IsDTNPC = true
+        modData.DTNPC_UUID = uuid
+        if zombie.setVariable then
+            zombie:setVariable("DTNPC", true)
+        end
+    end
 
     if DTNPC and DTNPC.ApplySafetyFlags then
         DTNPC.ApplySafetyFlags(zombie, npcData, { clearPlayerTarget = true })
