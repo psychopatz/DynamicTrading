@@ -8,6 +8,7 @@
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
+require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina"
 require "DT/V2/NPC/Behaviors/Behavior_AntiStuck"
 
 -- MOVEMENT CONFIGURATION
@@ -207,7 +208,15 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         resetFollowMoveState(npcData)
     end
 
-    local isRunning = dist > 7.0 or target:isRunning() or target:isSprinting()
+    local wantsRun = dist > 7.0 or target:isRunning() or target:isSprinting()
+    local movementProfile = DTNPCStamina and DTNPCStamina.BuildMovementProfile
+        and DTNPCStamina.BuildMovementProfile(zombie, npcData, {
+            speed = wantsRun and RUN_SPEED_PHYSICAL or WALK_SPEED_PHYSICAL,
+            desiredRun = wantsRun,
+            mode = "follow",
+        })
+        or nil
+    local isRunning = movementProfile and movementProfile.isRunning == true or wantsRun
     if not primeFollowMovement(zombie, npcData, target, isRunning) then
         resetFollowStuck(npcData)
         npcData.tasks = {}
@@ -221,10 +230,12 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         zombie:setRunning(false)
     end
 
-    local speed = isRunning and RUN_SPEED_PHYSICAL or WALK_SPEED_PHYSICAL
+    local speed = wantsRun and RUN_SPEED_PHYSICAL or WALK_SPEED_PHYSICAL
     local moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
         target = target,
         speed = speed,
+        staminaMode = "follow",
+        desiredRun = wantsRun,
         stopDistance = STOP_THRESHOLD_END,
         allowObstacleInteract = true,
         allowDamageRetreat = true,

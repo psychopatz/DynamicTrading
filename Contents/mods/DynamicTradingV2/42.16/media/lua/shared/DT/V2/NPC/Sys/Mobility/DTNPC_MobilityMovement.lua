@@ -22,6 +22,26 @@ local function applyMovementState(zombie, anim)
     })
 end
 
+local function buildAnimOverride(anim, profile)
+    if type(anim) ~= "table" and type(profile) ~= "table" then
+        return nil
+    end
+
+    local merged = {}
+    if type(anim) == "table" then
+        for key, value in pairs(anim) do
+            merged[key] = value
+        end
+    end
+    if type(profile) == "table" then
+        merged.isRunning = profile.isRunning == true
+        merged.animSpeed = tonumber(profile.animSpeed) or merged.animSpeed
+        merged.dtWalkType = profile.dtWalkType or merged.dtWalkType
+    end
+
+    return merged
+end
+
 local function resetProgress(npcData)
     if Mobility.ResetMovementProgress then
         Mobility.ResetMovementProgress(npcData)
@@ -81,9 +101,19 @@ function Mobility.MoveByDirection(zombie, npcData, options)
     dirX = dirX / len
     dirY = dirY / len
 
-    local step = math.max(0, tonumber(options.speed) or 0)
+    local movementProfile = DTNPCStamina and DTNPCStamina.BuildMovementProfile
+        and DTNPCStamina.BuildMovementProfile(zombie, npcData, {
+            speed = tonumber(options.speed) or 0,
+            desiredRun = options.desiredRun == true,
+            anim = options.anim,
+            mode = options.staminaMode,
+        })
+        or nil
+    local anim = buildAnimOverride(options.anim, movementProfile)
+
+    local step = math.max(0, tonumber(movementProfile and movementProfile.speed or options.speed) or 0)
     if step <= 0.001 then
-        Mobility.Stop(zombie, options.anim)
+        Mobility.Stop(zombie, anim)
         resetProgress(npcData)
         return false, "stopped"
     end
@@ -131,7 +161,16 @@ function Mobility.MoveByDirection(zombie, npcData, options)
                     attemptedMove = true,
                     exempt = true,
                 })
-                Mobility.Stop(zombie, options.anim)
+                if DTNPCStamina and DTNPCStamina.ApplyMovementTick then
+                    DTNPCStamina.ApplyMovementTick(zombie, npcData, movementProfile or {
+                        requestedRun = false,
+                        state = "steady",
+                    }, {
+                        moved = false,
+                        specialAction = true,
+                    })
+                end
+                Mobility.Stop(zombie, anim)
                 return true, "special_action"
             end
         end
@@ -159,7 +198,7 @@ function Mobility.MoveByDirection(zombie, npcData, options)
 
         if interacted then
             Internal.clearBlockedCounter(npcData, options.blockCounterKey)
-            Mobility.Stop(zombie, options.anim)
+            Mobility.Stop(zombie, anim)
             resetProgress(npcData)
             return false, "interacted_" .. tostring(obstacleKind or "obstacle")
         end
@@ -175,6 +214,15 @@ function Mobility.MoveByDirection(zombie, npcData, options)
                 attemptedMove = true,
                 exempt = true,
             })
+            if DTNPCStamina and DTNPCStamina.ApplyMovementTick then
+                DTNPCStamina.ApplyMovementTick(zombie, npcData, movementProfile or {
+                    requestedRun = false,
+                    state = "steady",
+                }, {
+                    moved = false,
+                    specialAction = true,
+                })
+            end
             return true, "special_action"
         end
     end
@@ -197,7 +245,7 @@ function Mobility.MoveByDirection(zombie, npcData, options)
             zombie:setZ(options.targetZ)
         end
 
-        applyMovementState(zombie, options.anim)
+        applyMovementState(zombie, anim)
 
         local faceX = tonumber(options.faceX)
         local faceY = tonumber(options.faceY)
@@ -209,8 +257,8 @@ function Mobility.MoveByDirection(zombie, npcData, options)
 
         Internal.rememberMotion(npcData, zx, zy, nextX, nextY, {
             speed = step,
-            crawl = options.anim and options.anim.crawl == true or false,
-            isRunning = options.anim and options.anim.isRunning == true or false,
+            crawl = anim and anim.crawl == true or false,
+            isRunning = anim and anim.isRunning == true or false,
         })
         if type(npcData) == "table" then
             npcData._dtLastMoveDirX = moveDirX
@@ -223,6 +271,15 @@ function Mobility.MoveByDirection(zombie, npcData, options)
         recordProgress(npcData, nextX, nextY, progressGoalX, progressGoalY, {
             attemptedMove = true,
         })
+        if DTNPCStamina and DTNPCStamina.ApplyMovementTick then
+            DTNPCStamina.ApplyMovementTick(zombie, npcData, movementProfile or {
+                requestedRun = anim and anim.isRunning == true,
+                state = anim and anim.isRunning == true and "steady" or "fresh",
+                mode = options.staminaMode,
+            }, {
+                moved = true,
+            })
+        end
         Mobility.TryClosePassedDoor(zombie, npcData, {
             target = options.closeDoorTarget,
             safeRadius = options.closeDoorSafeRadius,
@@ -241,12 +298,12 @@ function Mobility.MoveByDirection(zombie, npcData, options)
         local unstuck, unstuckX, unstuckY = Internal.tryUnstick(zombie, zz, moveDirX, moveDirY)
         if unstuck then
             Internal.clearBlockedCounter(npcData, options.blockCounterKey)
-            applyMovementState(zombie, options.anim)
+            applyMovementState(zombie, anim)
             zombie:faceLocation(unstuckX + moveDirX, unstuckY + moveDirY)
             Internal.rememberMotion(npcData, zx, zy, unstuckX, unstuckY, {
                 speed = step,
-                crawl = options.anim and options.anim.crawl == true or false,
-                isRunning = options.anim and options.anim.isRunning == true or false,
+                crawl = anim and anim.crawl == true or false,
+                isRunning = anim and anim.isRunning == true or false,
             })
             if type(npcData) == "table" then
                 npcData._dtLastMoveDirX = moveDirX
@@ -257,11 +314,30 @@ function Mobility.MoveByDirection(zombie, npcData, options)
             recordProgress(npcData, unstuckX, unstuckY, progressGoalX, progressGoalY, {
                 attemptedMove = true,
             })
+            if DTNPCStamina and DTNPCStamina.ApplyMovementTick then
+                DTNPCStamina.ApplyMovementTick(zombie, npcData, movementProfile or {
+                    requestedRun = anim and anim.isRunning == true,
+                    state = anim and anim.isRunning == true and "steady" or "fresh",
+                    mode = options.staminaMode,
+                }, {
+                    moved = true,
+                })
+            end
             return true, "unstuck"
         end
     end
 
-    Mobility.Stop(zombie, options.anim)
+    if DTNPCStamina and DTNPCStamina.ApplyMovementTick then
+        DTNPCStamina.ApplyMovementTick(zombie, npcData, movementProfile or {
+            requestedRun = anim and anim.isRunning == true,
+            state = anim and anim.isRunning == true and "steady" or "fresh",
+            mode = options.staminaMode,
+        }, {
+            moved = false,
+            blocked = true,
+        })
+    end
+    Mobility.Stop(zombie, anim)
     return false, "blocked"
 end
 

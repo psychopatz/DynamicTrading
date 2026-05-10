@@ -60,6 +60,10 @@ function DTNPCLogic.ProcessNPC(zombie)
         state = "Incapacitated"
     end
 
+    if DTNPCStamina and DTNPCStamina.ProcessPassive then
+        DTNPCStamina.ProcessPassive(zombie, npcData, state)
+    end
+
     if state ~= "Incapacitated"
         and DTNPCMobility
         and DTNPCMobility.IsSpecialActionActive

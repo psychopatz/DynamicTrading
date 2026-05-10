@@ -143,6 +143,9 @@ function ISDTNPCHealthBarManager:update()
                         npcData = npcData,
                         currentHp = tracked.currentHp,
                         maxHp = tracked.maxHp,
+                        staminaCurrent = tracked.staminaCurrent,
+                        staminaMax = tracked.staminaMax,
+                        staminaState = tracked.staminaState,
                         isIncapacitated = tracked.isIncapacitated,
                         hasActiveBandage = tracked.hasActiveBandage,
                         bandageIconTexture = tracked.bandageIconTexture,
@@ -159,6 +162,9 @@ function ISDTNPCHealthBarManager:update()
                     barData.npcData = npcData
                     barData.currentHp = tracked.currentHp
                     barData.maxHp = tracked.maxHp
+                    barData.staminaCurrent = tracked.staminaCurrent
+                    barData.staminaMax = tracked.staminaMax
+                    barData.staminaState = tracked.staminaState
                     barData.isIncapacitated = tracked.isIncapacitated
                     barData.hasActiveBandage = tracked.hasActiveBandage
                     barData.bandageIconTexture = tracked.bandageIconTexture

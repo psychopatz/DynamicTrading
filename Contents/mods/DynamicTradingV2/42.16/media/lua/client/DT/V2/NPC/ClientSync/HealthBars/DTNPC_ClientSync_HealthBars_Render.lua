@@ -40,6 +40,8 @@ function ISDTNPCHealthBarManager:render()
     local scaleDivisor = zoom > 1 and (zoom * 1.15) or 1
     local barWidth = Constants.BAR_WIDTH / scaleDivisor
     local barHeight = Constants.BAR_HEIGHT / scaleDivisor
+    local staminaBarHeight = Constants.STAMINA_BAR_HEIGHT / scaleDivisor
+    local staminaBarGap = Constants.STAMINA_BAR_GAP / scaleDivisor
     local nameYOffset = Constants.NAME_Y_OFFSET / zoom
     local barYOffset = Constants.BAR_Y_OFFSET / zoom
     local damageTextOffset = barYOffset + 26
@@ -76,8 +78,11 @@ function ISDTNPCHealthBarManager:render()
                         or Helpers.getColorForRatio(hpRatio)
                     local barLeft = screenX - (barWidth / 2)
                     local barTop = screenY - barYOffset
+                    local staminaTop = barTop + barHeight + staminaBarGap
                     local hpText = barData.hpText or Helpers.formatHealthText(barData.currentHp, barData.maxHp)
                     local hpTextWidth = barData.hpTextWidth or State.textManager:MeasureStringX(Constants.FONT_HP, hpText)
+                    local staminaRatio = Helpers.getStaminaRatio(barData.staminaCurrent, barData.staminaMax)
+                    local drawStamina = (tonumber(barData.staminaMax) or 0) > 0
 
                     self:drawRect(
                         barLeft - Constants.PADDING,
@@ -135,6 +140,39 @@ function ISDTNPCHealthBarManager:render()
                             1,
                             1,
                             1
+                        )
+                    end
+
+                    if drawStamina then
+                        self:drawRect(
+                            barLeft - Constants.PADDING,
+                            staminaTop - Constants.PADDING,
+                            barWidth + (Constants.PADDING * 2),
+                            staminaBarHeight + (Constants.PADDING * 2),
+                            0.45 * alpha,
+                            0,
+                            0,
+                            0
+                        )
+                        self:drawRect(
+                            barLeft,
+                            staminaTop,
+                            barWidth * staminaRatio,
+                            staminaBarHeight,
+                            0.92 * alpha,
+                            0.96,
+                            0.96,
+                            0.96
+                        )
+                        self:drawRectBorder(
+                            barLeft - Constants.PADDING,
+                            staminaTop - Constants.PADDING,
+                            barWidth + (Constants.PADDING * 2),
+                            staminaBarHeight + (Constants.PADDING * 2),
+                            alpha,
+                            0.72,
+                            0.72,
+                            0.72
                         )
                     end
                 end

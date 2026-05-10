@@ -261,6 +261,13 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         reloadFamily = npcData._dtReloadFamily,
         magAmmo = npcData._dtMagAmmo,
         magSize = npcData._dtMagSize,
+        staminaCurrent = npcData.staminaCurrent,
+        staminaMax = npcData.staminaMax,
+        staminaState = npcData.staminaState,
+        staminaVisibleUntil = npcData._dtStaminaVisibleUntil,
+        sprintMode = npcData._dtSprintMode,
+        sprintSlowUntil = npcData._dtSprintSlowUntil,
+        meleeFatigueUntil = npcData._dtMeleeFatigueUntil,
         tier = tier
     }
     

@@ -139,6 +139,12 @@ function Handlers.HandleUpdatePosition(args)
         if args.state then
             cached.npcData.state = args.state
         end
+        if args.isMoving ~= nil then
+            cached.npcData.isMovingState = args.isMoving == true
+        end
+        if args.isRunning ~= nil then
+            cached.npcData._dtRemoteIsRunning = args.isRunning == true
+        end
         if args.status then
             cached.npcData.status = args.status
         end
@@ -176,6 +182,13 @@ function Handlers.HandleUpdatePosition(args)
         cached.npcData._dtReloadFamily = args.reloadFamily
         cached.npcData._dtMagAmmo = args.magAmmo
         cached.npcData._dtMagSize = args.magSize
+        cached.npcData.staminaCurrent = args.staminaCurrent
+        cached.npcData.staminaMax = args.staminaMax
+        cached.npcData.staminaState = args.staminaState
+        cached.npcData._dtStaminaVisibleUntil = args.staminaVisibleUntil
+        cached.npcData._dtSprintMode = args.sprintMode
+        cached.npcData._dtSprintSlowUntil = args.sprintSlowUntil
+        cached.npcData._dtMeleeFatigueUntil = args.meleeFatigueUntil
         if bodyInstanceID then
             DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = uuid
             cached.npcData.currentBodyInstanceID = bodyInstanceID
@@ -216,6 +229,12 @@ function Handlers.HandleUpdatePosition(args)
                 if args.status then
                     zombieData.status = args.status
                 end
+                if args.isMoving ~= nil then
+                    zombieData.isMovingState = args.isMoving == true
+                end
+                if args.isRunning ~= nil then
+                    zombieData._dtRemoteIsRunning = args.isRunning == true
+                end
                 if args.combatOrder ~= nil then
                     zombieData.combatOrder = args.combatOrder
                 end
@@ -250,6 +269,13 @@ function Handlers.HandleUpdatePosition(args)
                 zombieData._dtReloadFamily = args.reloadFamily
                 zombieData._dtMagAmmo = args.magAmmo
                 zombieData._dtMagSize = args.magSize
+                zombieData.staminaCurrent = args.staminaCurrent
+                zombieData.staminaMax = args.staminaMax
+                zombieData.staminaState = args.staminaState
+                zombieData._dtStaminaVisibleUntil = args.staminaVisibleUntil
+                zombieData._dtSprintMode = args.sprintMode
+                zombieData._dtSprintSlowUntil = args.sprintSlowUntil
+                zombieData._dtMeleeFatigueUntil = args.meleeFatigueUntil
             end
 
             if not DTNPCClient.LocalControlled[uuid] then
@@ -274,7 +300,7 @@ function Handlers.HandleUpdatePosition(args)
             cached.lastReportedState = cached.lastReportedState or {}
             cached.lastReportedState.protectNoticeSerial = args.protectNoticeSerial
         end
-        if args.specialActionSeq ~= nil or args.reloadActionSeq ~= nil or args.magAmmo ~= nil then
+        if args.specialActionSeq ~= nil or args.reloadActionSeq ~= nil or args.magAmmo ~= nil or args.staminaCurrent ~= nil then
             cached.lastReportedState = cached.lastReportedState or {}
             cached.lastReportedState.specialActionSignature = table.concat({
                 tostring(args.specialActionKind or ""),
@@ -287,6 +313,13 @@ function Handlers.HandleUpdatePosition(args)
                 tostring(args.reloadFamily or ""),
                 tostring(args.magAmmo or ""),
                 tostring(args.magSize or ""),
+                tostring(args.staminaCurrent or ""),
+                tostring(args.staminaMax or ""),
+                tostring(args.staminaState or ""),
+                tostring(args.staminaVisibleUntil or ""),
+                tostring(args.sprintMode or ""),
+                tostring(args.sprintSlowUntil or ""),
+                tostring(args.meleeFatigueUntil or ""),
             }, "|")
         end
     end

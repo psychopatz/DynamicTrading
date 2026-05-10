@@ -28,6 +28,8 @@ HealthBars.State = State
 
 Constants.BAR_WIDTH = 60
 Constants.BAR_HEIGHT = 6
+Constants.STAMINA_BAR_HEIGHT = 4
+Constants.STAMINA_BAR_GAP = 4
 Constants.NAME_Y_OFFSET = 144
 Constants.BAR_Y_OFFSET = 130
 Constants.PADDING = 2
@@ -84,6 +86,11 @@ function Helpers.getColorForRatio(ratio)
     end
 
     return { r = 0.8, g = 0.15, b = 0.15, a = 1 }
+end
+
+function Helpers.getStaminaRatio(current, maxValue)
+    local safeMax = math.max(1, tonumber(maxValue) or 1)
+    return Helpers.clamp((tonumber(current) or 0) / safeMax, 0, 1)
 end
 
 function Helpers.isIncapacitatedState(npcData)

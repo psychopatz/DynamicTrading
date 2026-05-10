@@ -40,9 +40,15 @@ local function touchTrackedEntry(entry, zombie, npcData, bodyInstanceID, current
         entry.bandageIconTexture = entry.hasActiveBandage and Helpers.getBandageIconTexture(npcData) or nil
         Helpers.cacheNameMetrics(entry, npcData.name)
         entry.currentHp, entry.maxHp = Helpers.resolveHealth(npcData, zombie or entry.zombie, entry.maxHp)
+        entry.staminaCurrent = tonumber(npcData.staminaCurrent) or entry.staminaCurrent or 0
+        entry.staminaMax = tonumber(npcData.staminaMax) or entry.staminaMax or 0
+        entry.staminaState = npcData.staminaState or entry.staminaState
 
         if Helpers.isCombatState(npcData) then
             entry.visibleUntil = currentTime + Constants.COMBAT_SHOW_DURATION
+        end
+        if (tonumber(npcData._dtStaminaVisibleUntil) or 0) > currentTime then
+            entry.visibleUntil = math.max(entry.visibleUntil or 0, tonumber(npcData._dtStaminaVisibleUntil) or 0)
         end
     elseif zombie then
         entry.currentHp, entry.maxHp = Helpers.resolveHealth(nil, zombie, entry.maxHp)
@@ -63,6 +69,9 @@ local function getTrackedEntry(uuid)
         nameWidth = State.textManager:MeasureStringX(Constants.FONT_NAME, "Unknown"),
         currentHp = 1,
         maxHp = 1,
+        staminaCurrent = 0,
+        staminaMax = 0,
+        staminaState = "fresh",
         isIncapacitated = false,
         hasActiveBandage = false,
         bandageIconTexture = nil,

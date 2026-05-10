@@ -243,6 +243,17 @@ function DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
     end
 
     local profile = DTNPCProtect.GetCombatRhythmProfile(npcData, attackType)
+    if attackType == "melee" and DTNPCStamina and DTNPCStamina.IsMeleeFatigued and DTNPCStamina.IsMeleeFatigued(npcData) then
+        local untilTime = DTNPCStamina.GetMeleeRecoveryUntil and DTNPCStamina.GetMeleeRecoveryUntil(npcData) or 0
+        npcData.combatRecoveryUntil = untilTime
+        return true, {
+            untilTime = untilTime,
+            distance = (profile and profile.recoveryDistance or 1.6) + 0.25,
+            profile = profile,
+            reason = "stamina",
+        }
+    end
+
     local rhythm = getCombatRhythmBucket(npcData)
     local currentTime = nowMillis()
     local targetKey = resolveCombatTargetKey(target)
@@ -270,6 +281,7 @@ function DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
             untilTime = recoveryUntil,
             distance = tonumber(rhythm.recoveryDistance) or profile.recoveryDistance,
             profile = profile,
+            reason = "rhythm",
         }
     end
 
@@ -283,6 +295,7 @@ function DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
         untilTime = 0,
         distance = profile.recoveryDistance,
         profile = profile,
+        reason = nil,
     }
 end
 
@@ -293,6 +306,9 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
 
     if DTNPCCombat and DTNPCCombat.NotifyAttack then
         DTNPCCombat.NotifyAttack(zombie, npcData, attackType, target)
+    end
+    if attackType == "melee" and DTNPCStamina and DTNPCStamina.ConsumeMeleeAttack then
+        DTNPCStamina.ConsumeMeleeAttack(zombie, npcData)
     end
     if DTNPC_ZombieAggro and DTNPC_ZombieAggro.EmitCombatNoise then
         local emitted = DTNPC_ZombieAggro.EmitCombatNoise(zombie, npcData, attackType)
@@ -320,6 +336,7 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
             untilTime = 0,
             distance = profile.recoveryDistance,
             profile = profile,
+            reason = nil,
         }
     end
 
@@ -337,6 +354,7 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
         untilTime = rhythm.recoveryUntil,
         distance = rhythm.recoveryDistance,
         profile = profile,
+        reason = "rhythm",
     }
 end
 

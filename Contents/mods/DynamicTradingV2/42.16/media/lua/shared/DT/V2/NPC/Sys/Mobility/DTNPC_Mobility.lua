@@ -5,6 +5,7 @@
 -- ==============================================================================
 
 require "DT/V2/NPC/Sys/Health/DTNPC_Health"
+require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina"
 
 DTNPCMobility = DTNPCMobility or {}
 

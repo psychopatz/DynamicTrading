@@ -51,6 +51,21 @@ local COMBAT_FLAVOR_FALLBACKS = {
         "Bandit contact ahead.",
         "Raiders spotted. Stay sharp.",
     },
+    StaminaSlow = {
+        "Slowing down. Need a breath.",
+        "Can't hold this pace much longer.",
+        "Easy. Need to breathe.",
+    },
+    CatchBreath = {
+        "Give me a second.",
+        "Catching my breath.",
+        "Need a breather.",
+    },
+    MeleeFatigue = {
+        "Need a second before I swing again.",
+        "Arms are burning. Backing off.",
+        "Hold them a moment. Re-centering.",
+    },
 }
 
 local function pickFallbackLine(kind)

@@ -121,6 +121,8 @@ local function moveTowardTarget(zombie, npcData, target, stats, stopDistance, op
     local moved, state, distance = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
         target = target,
         speed = speed,
+        staminaMode = "melee_pursuit",
+        desiredRun = speed > 0.06,
         stopDistance = stopDistance,
         blockCounterKey = options.blockCounterKey,
         stuckTicks = options.stuckTicks or 10,
@@ -153,6 +155,8 @@ local function moveAwayFromPoint(zombie, npcData, stats, sourceX, sourceY, desir
         fromX = sourceX,
         fromY = sourceY,
         speed = speed,
+        staminaMode = "retreat",
+        desiredRun = false,
         desiredDistance = desiredDistance,
         blockCounterKey = options.blockCounterKey,
         stuckTicks = options.retreatStuckTicks or 8,
@@ -381,7 +385,9 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
         recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "melee", target)
     end
 
-    if currentDist <= holdRange and not (options.mode == "hostile" and isPlayerTarget(target)) then
+    if currentDist <= holdRange
+        and not (options.mode == "hostile" and isPlayerTarget(target))
+        and not (recovering and recovery and recovery.reason == "stamina") then
         recovering = false
     end
 
@@ -485,7 +491,7 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
         }
     end
 
-    if recovering and currentDist > holdRange then
+    if recovering then
         preserveAttackWindup(npcData, stats)
         setPhase(npcData, "retreat", options.retreatLockMs or RETREAT_LOCK_MS)
         local retreatDistance = math.max(engageReach + 0.45, recovery and recovery.distance or (engageReach + 0.7))
@@ -503,7 +509,7 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
             moved = moved == true,
             attacked = false,
             distance = currentDist,
-            reason = "recovery",
+            reason = recovery and recovery.reason or "recovery",
             moveState = moveState,
         }
     end
