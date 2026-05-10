@@ -35,6 +35,25 @@ local function getZombieVariableBoolean(zombie, variableName)
     return ok and value == true or false
 end
 
+function Patch.GetBanditZombieID(zombie)
+    if not zombie then
+        return nil
+    end
+
+    if BanditUtils and BanditUtils.GetZombieID then
+        local ok, id = pcall(BanditUtils.GetZombieID, zombie)
+        if ok and id ~= nil then
+            return id
+        end
+    end
+
+    if zombie.getPersistentOutfitID then
+        return zombie:getPersistentOutfitID()
+    end
+
+    return nil
+end
+
 function Patch.IsDTNPC(zombie)
     if not zombie then
         return false
@@ -51,6 +70,74 @@ function Patch.IsDTNPC(zombie)
     end
 
     return getZombieVariableBoolean(zombie, "DTNPC")
+end
+
+function Patch.IsBanditsNPC(zombie)
+    if not Patch.IsActive() or not zombie or Patch.IsDTNPC(zombie) then
+        return false
+    end
+
+    local modData = getZombieModData(zombie)
+    if getZombieVariableBoolean(zombie, "Bandit") then
+        return true
+    end
+
+    return modData and (modData.brain ~= nil or modData.brainId ~= nil) or false
+end
+
+function Patch.GetBanditBrain(zombie)
+    if not Patch.IsBanditsNPC(zombie) then
+        return nil
+    end
+
+    if BanditBrain and BanditBrain.Get then
+        local ok, brain = pcall(BanditBrain.Get, zombie)
+        if ok and brain then
+            return brain
+        end
+    end
+
+    local modData = getZombieModData(zombie)
+    return modData and modData.brain or nil
+end
+
+function Patch.IsHostileBanditsNPC(zombie)
+    local brain = Patch.GetBanditBrain(zombie)
+    return brain and (brain.hostile == true or brain.hostileP == true) or false
+end
+
+function Patch.BuildBanditsCombatTargetID(zombie)
+    local zombieID = Patch.GetBanditZombieID(zombie)
+    if zombieID == nil then
+        return nil
+    end
+
+    return "bandits:" .. tostring(zombieID)
+end
+
+function Patch.FindBanditsNPCByCombatID(combatTargetID)
+    local text = tostring(combatTargetID or "")
+    local idText = string.match(text, "^bandits:(.+)$")
+    if not idText or idText == "" then
+        return nil
+    end
+
+    local zombieList = getCell and getCell() and getCell():getZombieList() or nil
+    if not zombieList then
+        return nil
+    end
+
+    for i = 0, zombieList:size() - 1 do
+        local candidate = zombieList:get(i)
+        if candidate and not candidate:isDead() and Patch.IsBanditsNPC(candidate) then
+            local candidateID = Patch.GetBanditZombieID(candidate)
+            if candidateID ~= nil and tostring(candidateID) == idText then
+                return candidate
+            end
+        end
+    end
+
+    return nil
 end
 
 local function compatibilityLog(level, message)

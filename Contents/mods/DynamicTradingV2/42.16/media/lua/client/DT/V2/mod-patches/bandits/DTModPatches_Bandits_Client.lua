@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- DTModPatches_Bandits_Client.lua
--- Client-side Bandits cache cleanup and DT NPC re-suppression.
+-- Client-side Bandits cache cleanup and DT NPC combat mirroring.
 -- ==============================================================================
 
 require "DT/V2/mod-patches/bandits/DTModPatches_Bandits"
@@ -30,25 +30,6 @@ local function countEntries(tbl)
     return count
 end
 
-local function getBanditZombieID(zombie)
-    if not zombie then
-        return nil
-    end
-
-    if BanditUtils and BanditUtils.GetZombieID then
-        local ok, id = pcall(BanditUtils.GetZombieID, zombie)
-        if ok then
-            return id
-        end
-    end
-
-    if zombie.getPersistentOutfitID then
-        return zombie:getPersistentOutfitID()
-    end
-
-    return nil
-end
-
 local function refreshBanditZombieCounters()
     if not BanditZombie then
         return
@@ -63,18 +44,23 @@ function Patch.ScrubBanditCachesForZombie(zombie)
         return false
     end
 
-    local zombieID = getBanditZombieID(zombie)
+    local zombieID = Patch.GetBanditZombieID and Patch.GetBanditZombieID(zombie) or nil
     if zombieID == nil then
         return false
     end
 
     local removed = false
+    local lightEntry = BanditZombie.CacheLight and BanditZombie.CacheLight[zombieID] or nil
+    local hasCompatMirror = type(lightEntry) == "table"
+        and lightEntry.isDTNPC == true
+        and type(lightEntry.brain) == "table"
+        and lightEntry.brain.dtCompat == true
 
-    if BanditZombie.Cache and BanditZombie.Cache[zombieID] then
+    if BanditZombie.Cache and BanditZombie.Cache[zombieID] and not hasCompatMirror then
         BanditZombie.Cache[zombieID] = nil
         removed = true
     end
-    if BanditZombie.CacheLight and BanditZombie.CacheLight[zombieID] then
+    if BanditZombie.CacheLight and BanditZombie.CacheLight[zombieID] and not hasCompatMirror then
         BanditZombie.CacheLight[zombieID] = nil
         removed = true
     end
@@ -147,6 +133,82 @@ local function clearBanditContamination(zombie)
     return changed
 end
 
+local function shouldExposeDTNPCToBanditCombat(zombie, npcData)
+    if not zombie or zombie:isDead() then
+        return false
+    end
+
+    if not npcData then
+        return true
+    end
+
+    if npcData.incapState == "Active" or npcData.state == "Incapacitated" then
+        return false
+    end
+
+    return true
+end
+
+function Patch.PublishDTNPCToBanditCombatCache(zombie, npcData)
+    if not Patch.IsActive() or not BanditZombie or not Patch.IsDTNPC(zombie) then
+        return false
+    end
+
+    local zombieID = Patch.GetBanditZombieID and Patch.GetBanditZombieID(zombie) or nil
+    if zombieID == nil then
+        return false
+    end
+
+    if not shouldExposeDTNPCToBanditCombat(zombie, npcData) then
+        return false
+    end
+
+    BanditZombie.Cache = BanditZombie.Cache or {}
+    BanditZombie.CacheLight = BanditZombie.CacheLight or {}
+    BanditZombie.CacheLightZ = BanditZombie.CacheLightZ or {}
+    BanditZombie.CacheLightB = BanditZombie.CacheLightB or {}
+
+    local light = BanditZombie.CacheLight[zombieID]
+    if type(light) ~= "table" then
+        light = {}
+        BanditZombie.CacheLight[zombieID] = light
+    end
+
+    light.id = zombieID
+    light.x = zombie:getX()
+    light.y = zombie:getY()
+    light.z = zombie:getZ()
+    light.d = zombie:getDirectionAngle()
+    light.isBandit = false
+    light.isDTNPC = true
+    light.brain = type(light.brain) == "table" and light.brain or {}
+    light.brain.clan = "DynamicTrading"
+    light.brain.hostile = false
+    light.brain.hostileP = false
+    light.brain.loyal = true
+    light.brain.dtCompat = true
+    light.rid = nil
+
+    BanditZombie.Cache[zombieID] = zombie
+    BanditZombie.CacheLight[zombieID] = light
+
+    local removedBucket = false
+    if BanditZombie.CacheLightZ[zombieID] then
+        BanditZombie.CacheLightZ[zombieID] = nil
+        removedBucket = true
+    end
+    if BanditZombie.CacheLightB[zombieID] then
+        BanditZombie.CacheLightB[zombieID] = nil
+        removedBucket = true
+    end
+
+    if removedBucket then
+        refreshBanditZombieCounters()
+    end
+
+    return true
+end
+
 function Patch.ReconcileDTNPC(zombie)
     if not Patch.IsActive() or not zombie or zombie:isDead() or not Patch.IsDTNPC(zombie) then
         return false
@@ -161,12 +223,13 @@ function Patch.ReconcileDTNPC(zombie)
 
     local scrubbed = Patch.ScrubBanditCachesForZombie(zombie)
     local decontaminated = clearBanditContamination(zombie)
+    local mirrored = Patch.PublishDTNPCToBanditCombatCache(zombie, npcData)
 
     if (scrubbed or decontaminated) and DTNPCClient and DTNPCClient.ApplySafetyToMarkedZombie then
         DTNPCClient.ApplySafetyToMarkedZombie(zombie, npcData)
     end
 
-    return scrubbed == true or decontaminated == true
+    return scrubbed == true or decontaminated == true or mirrored == true
 end
 
 local function reconcileAllDTNPCs()

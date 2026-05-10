@@ -4,6 +4,7 @@
 -- ==============================================================================
 
 DTNPCLogic = DTNPCLogic or {}
+require "DT/V2/mod-patches/bandits/DTModPatches_Bandits"
 
 local function isFriendlyAuthorityPlayer(npcData, player)
     if DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isFriendlyAuthorityPlayer then
@@ -210,6 +211,36 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             else
                 zombie:setAttackedBy(nil)
             end
+        elseif DTModPatchesBandits
+            and DTModPatchesBandits.IsHostileBanditsNPC
+            and DTModPatchesBandits.IsHostileBanditsNPC(attacker) then
+            local dx = attacker:getX() - zombie:getX()
+            local dy = attacker:getY() - zombie:getY()
+            local dist = math.sqrt((dx * dx) + (dy * dy))
+            local nextState = "Attack"
+            if DTNPCProtect and DTNPCProtect.ResolveHostileCombatState then
+                nextState = DTNPCProtect.ResolveHostileCombatState(npcData, npcData.state, dist)
+            end
+
+            npcData.state = nextState
+            npcData.isHostile = true
+            npcData.tasks = {}
+            npcData.combatTargetID = DTModPatchesBandits.BuildBanditsCombatTargetID
+                and DTModPatchesBandits.BuildBanditsCombatTargetID(attacker)
+                or nil
+            npcData.combatTargetType = "bandits"
+
+            zombie:setTarget(attacker)
+            zombie:setAttackedBy(nil)
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Combat",
+                "NPC combat initiated: " .. tostring(npcData.name or npcData.uuid)
+                    .. " retaliating against Bandits NPC "
+                    .. tostring(DTModPatchesBandits.GetBanditZombieID and DTModPatchesBandits.GetBanditZombieID(attacker) or "Unknown")
+                    .. " state=" .. tostring(nextState)
+            )
         end
     end
 end

@@ -5,6 +5,7 @@
 
 DTNPCProtect = DTNPCProtect or {}
 DTNPCProtect.Internal = DTNPCProtect.Internal or {}
+require "DT/V2/mod-patches/bandits/DTModPatches_Bandits"
 
 local Internal = DTNPCProtect.Internal
 local getZombieRuntimeID = Internal.getZombieRuntimeID
@@ -495,6 +496,7 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
     local nearestType = nil
     local hostileNPCTarget = nil
     local hostileNPCDistance = 9999
+    local hostileNPCType = nil
     local zombieCandidates = {}
     local zombieCandidateMap = {}
 
@@ -533,12 +535,13 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
             nearestType = threatType
         end
 
-        if threatType == "dtnpc"
+        if (threatType == "dtnpc" or threatType == "bandits")
             and withinAnchorAcquire
             and dist <= searchRadius
             and dist < hostileNPCDistance then
             hostileNPCTarget = candidate
             hostileNPCDistance = dist
+            hostileNPCType = threatType
         end
     end
 
@@ -585,6 +588,23 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
                                 candidateZ
                             )
                         end
+                    end
+                elseif DTModPatchesBandits
+                    and DTModPatchesBandits.IsHostileBanditsNPC
+                    and DTModPatchesBandits.IsHostileBanditsNPC(candidate)
+                    and hasLineOfSight(zombie, candidate) then
+                    local candidateZ = candidate:getZ() or 0
+                    if math.abs(candidateZ - zz) <= DTNPCProtect.CONFIG.FloorTolerance then
+                        evaluateCandidate(
+                            candidate,
+                            DTModPatchesBandits.BuildBanditsCombatTargetID
+                                and DTModPatchesBandits.BuildBanditsCombatTargetID(candidate)
+                                or getZombieRuntimeID(candidate),
+                            "bandits",
+                            candidate:getX(),
+                            candidate:getY(),
+                            candidateZ
+                        )
                     end
                 elseif not (modData and modData.IsDTNPC) and hasLineOfSight(zombie, candidate) then
                     local candidateZ = candidate:getZ() or 0
@@ -654,7 +674,7 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
     local distance = effectiveCurrentTarget and effectiveCurrentDistance
         or (hostileNPCTarget and hostileNPCDistance or nearestDistance)
     local threatType = effectiveCurrentTarget and effectiveCurrentType
-        or (hostileNPCTarget and "dtnpc" or nearestType)
+        or (hostileNPCTarget and hostileNPCType or nearestType)
 
     if chosen then
         local chosenDTNPCData, chosenDTNPCUUID = nil, nil
@@ -664,10 +684,14 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
         local previousTargetID = npcData.combatTargetID
         local chosenTargetID = threatType == "player" and getPlayerRuntimeID(chosen)
             or threatType == "dtnpc" and ("dtnpc:" .. tostring(chosenDTNPCUUID or (chosenDTNPCData and chosenDTNPCData.uuid) or getZombieRuntimeID(chosen)))
+            or threatType == "bandits" and (DTModPatchesBandits
+                and DTModPatchesBandits.BuildBanditsCombatTargetID
+                and DTModPatchesBandits.BuildBanditsCombatTargetID(chosen)
+                or getZombieRuntimeID(chosen))
             or getZombieRuntimeID(chosen)
         npcData.combatTargetID = chosenTargetID
         npcData.combatTargetType = threatType
-        if threatType == "dtnpc" and chosenTargetID ~= previousTargetID then
+        if (threatType == "dtnpc" or threatType == "bandits") and chosenTargetID ~= previousTargetID then
             pushThrottledCompanionNotice(
                 zombie,
                 npcData,

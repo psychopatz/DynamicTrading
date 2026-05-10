@@ -5,6 +5,7 @@
 
 DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Internal = DTNPCLogic.Internal or {}
+require "DT/V2/mod-patches/bandits/DTModPatches_Bandits"
 
 local Internal = DTNPCLogic.Internal
 
@@ -64,6 +65,16 @@ function DTNPCLogic.GetClosestTarget(zombie)
             local npcTarget = findDTNPCTargetByCombatID(npcData.combatTargetID)
             if npcTarget then
                 return npcTarget, Internal.CalculateDistance(zombie, npcTarget)
+            end
+        end
+
+        if npcData.combatTargetType == "bandits"
+            and npcData.combatTargetID
+            and DTModPatchesBandits
+            and DTModPatchesBandits.FindBanditsNPCByCombatID then
+            local banditTarget = DTModPatchesBandits.FindBanditsNPCByCombatID(npcData.combatTargetID)
+            if banditTarget then
+                return banditTarget, Internal.CalculateDistance(zombie, banditTarget)
             end
         end
 
