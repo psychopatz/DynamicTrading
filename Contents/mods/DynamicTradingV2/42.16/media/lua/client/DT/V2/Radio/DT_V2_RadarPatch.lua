@@ -331,6 +331,7 @@ local function setSignalControlsVisible(window, visible)
     end
 
     setWidgetVisible(window.dt_signalButtonBacker, visible)
+    setWidgetVisible(window.btnColonyManagement, visible)
     setWidgetVisible(window.btnTraderScan, visible)
     setWidgetVisible(window.btnTraderList, visible)
 end
@@ -346,6 +347,33 @@ local function ensureSignalControls(window)
         window.dt_signalButtonBacker.backgroundColor = { r = 0, g = 0, b = 0, a = 1 }
         window.dt_signalButtonBacker.borderColor = { r = 0, g = 0, b = 0, a = 0 }
         window.dt_signalButtonBacker:setVisible(false)
+    end
+
+    if not window.btnColonyManagement then
+        local isColoniesActive = false
+        local activated = getActivatedMods and getActivatedMods() or nil
+        if activated and activated.contains and activated:contains("DynamicColonies") then
+            isColoniesActive = true
+        end
+
+        if isColoniesActive then
+            window.btnColonyManagement = ISButton:new(0, 0, 110, 22, "Colony Management", window, function(radioWindow)
+                if DC_MainWindow and DC_MainWindow.ToggleWindow then
+                    DC_MainWindow.ToggleWindow(radioWindow.device)
+                end
+            end)
+
+            window.btnColonyManagement:initialise()
+            window.btnColonyManagement.dt_icon = getTexture("media/ui/Moodle_Icon_Windchill.png")
+            window.btnColonyManagement.render = function(btn)
+                ISButton.render(btn)
+                if btn.dt_icon then
+                    btn:drawTextureScaled(btn.dt_icon, 4, (btn.height - 16) / 2, 16, 16, 1, 1, 1, 1)
+                end
+            end
+            window.btnColonyManagement.backgroundColor = { r = 0.5, g = 0.3, b = 0.1, a = 0.8 }
+            window.btnColonyManagement:setVisible(false)
+        end
     end
 
     if not window.btnTraderScan then
@@ -373,7 +401,7 @@ local function ensureSignalControls(window)
         end)
 
         window.btnTraderScan:initialise()
-        window.btnTraderScan.dt_icon = getTexture("media/ui/Icon_MarketInfo.png")
+        window.btnTraderScan.dt_icon = getTexture("media/ui/MP/mp_ui_internet.png")
         window.btnTraderScan.render = function(btn)
             ISButton.render(btn)
             if btn.dt_icon then
@@ -404,11 +432,17 @@ local function ensureSignalControls(window)
     end
 
     addChildIfNeeded(window, window.dt_signalButtonBacker)
+    if window.btnColonyManagement then
+        addChildIfNeeded(window, window.btnColonyManagement)
+    end
     addChildIfNeeded(window, window.btnTraderScan)
     addChildIfNeeded(window, window.btnTraderList)
 
     if window.dt_signalControlsOrdered ~= true then
         bringChildToFront(window, window.dt_signalButtonBacker)
+        if window.btnColonyManagement then
+            bringChildToFront(window, window.btnColonyManagement)
+        end
         bringChildToFront(window, window.btnTraderScan)
         bringChildToFront(window, window.btnTraderList)
         window.dt_signalControlsOrdered = true
@@ -421,6 +455,9 @@ local function keepSignalControlsInFront(window)
     end
 
     bringChildToFront(window, window.dt_signalButtonBacker)
+    if window.btnColonyManagement then
+        bringChildToFront(window, window.btnColonyManagement)
+    end
     bringChildToFront(window, window.btnTraderScan)
     bringChildToFront(window, window.btnTraderList)
 end
@@ -490,14 +527,28 @@ local function layoutSignalControls(window, isValid)
     local panelAbsX, panelAbsY = getAbsolutePositionRelativeToWindow(signalPanel, window)
     local totalWidth = (btnWidth * 2) + gap
     local startX = math.floor(panelAbsX + ((panelWidth - totalWidth) / 2))
-    local buttonY = panelAbsY + buttonYInPanel
+    
+    local currentYPosition = buttonYInPanel
+    local totalRequiredHeight = btnHeight + 4
+
+    if window.btnColonyManagement then
+        window.btnColonyManagement:setX(startX)
+        window.btnColonyManagement:setY(panelAbsY + currentYPosition)
+        setWidgetSize(window.btnColonyManagement, totalWidth, btnHeight)
+        setWidgetVisible(window.btnColonyManagement, true)
+        
+        currentYPosition = currentYPosition + btnHeight + 4
+        totalRequiredHeight = totalRequiredHeight + btnHeight + 4
+    end
+
+    local buttonY = panelAbsY + currentYPosition
 
     -- Parent these to the radio window, not the Signal subpanel. The vanilla
     -- Signal panel can draw its distance/category row during its own render,
     -- so this overlay must render after the module to hide that base text.
     window.dt_signalButtonBacker:setX(panelAbsX)
     window.dt_signalButtonBacker:setY(panelAbsY + coverYInPanel)
-    setWidgetSize(window.dt_signalButtonBacker, panelWidth, coverHeight)
+    setWidgetSize(window.dt_signalButtonBacker, panelWidth, totalRequiredHeight)
 
     window.btnTraderScan:setX(startX)
     window.btnTraderScan:setY(buttonY)
@@ -571,6 +622,17 @@ function ISRadioWindow:prerender()
         local isClickGraceBlocked = operational and self.dt_lastScanClick and now - self.dt_lastScanClick < 3000
         local isEffectivelyDisabled = not operational or isCooldownBlocked or isClickGraceBlocked
 
+        if self.btnColonyManagement then
+            self.btnColonyManagement.enable = operational
+        end
+
+        if not operational and DC_MainWindow and DC_MainWindow.instance 
+            and DC_MainWindow.instance:getIsVisible()
+            and DC_MainWindow.instance.device == self.device 
+        then
+            DC_MainWindow.instance:close()
+        end
+
         self.btnTraderScan.enable = true
         self.btnTraderList.enable = operational
 
@@ -595,73 +657,3 @@ function ISRadioWindow:prerender()
     end
 end
 
--- ==============================================================================
--- CONTEXT MENU SUPPORT (V2)
--- ==============================================================================
-
-local function OnFillRadioContextMenu(playerNum, context, items, isWorld)
-    local player = getSpecificPlayer(playerNum)
-    local radioDevice = nil
-
-    if isWorld then
-        for _, obj in ipairs(items) do
-            if instanceof(obj, "IsoWaveSignal") then
-                if DT_V2_RadarManager and DT_V2_RadarManager.GetDeviceTypeID then
-                    if DT_V2_RadarManager.GetDeviceTypeID(obj) then
-                        radioDevice = obj
-                        break
-                    end
-                end
-            end
-        end
-    else
-        for _, v in ipairs(items) do
-            local item = v
-            if not instanceof(v, "InventoryItem") then
-                item = v.items[1]
-            end
-
-            if DT_V2_RadarManager and DT_V2_RadarManager.GetDeviceTypeID then
-                if DT_V2_RadarManager.GetDeviceTypeID(item) then
-                    radioDevice = item
-                    break
-                end
-            end
-        end
-    end
-
-    if radioDevice then
-        local option = context:addOption(
-            "Open Trader Radar",
-            radioDevice,
-            function(device)
-                if DT_RadioScannerWindow then
-                    DT_RadioScannerWindow.ToggleWindow(device)
-                end
-            end
-        )
-
-        local icon = getTexture("media/ui/Icon_MarketInfo.png")
-        if icon then
-            option.iconTexture = icon
-        end
-
-        local data = radioDevice.getDeviceData and radioDevice:getDeviceData() or nil
-        if not data or not data:getIsTurnedOn() or data:getPower() <= 0 then
-            option.notAvailable = true
-            option.toolTip = ISWorldObjectContextMenu.addToolTip()
-            option.toolTip.description = "Radio must be ON and have Power."
-        end
-    end
-end
-
-local function OnFillInventoryObjectContextMenu(playerNum, context, items)
-    OnFillRadioContextMenu(playerNum, context, items, false)
-end
-
-local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, test)
-    OnFillRadioContextMenu(playerNum, context, worldObjects, true)
-end
-
-Events.OnFillInventoryObjectContextMenu.Add(OnFillInventoryObjectContextMenu)
-Events.OnFillWorldObjectContextMenu.Add(OnFillWorldObjectContextMenu)

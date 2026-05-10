@@ -55,6 +55,18 @@ function DT_RadioScannerHeaderPanel:createChildren()
     self.btnOptions:setImage(getTexture("media/ui/inventoryPanes/Button_Settings.png"))
     self:addChild(self.btnOptions)
 
+    self.btnHelp = ISButton:new(self.width - (btnSize * 2) - 10, 5, btnSize, btnSize, "", self, function()
+        if DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.Open then
+            DynamicTrading.Manuals.Open({ library = true })
+        end
+    end)
+    self.btnHelp:initialise()
+    self.btnHelp.borderColor = { r = 1, g = 1, b = 1, a = 0.2 }
+    self.btnHelp.backgroundColor = { r = 0, g = 0, b = 0, a = 0 }
+    self.btnHelp:setImage(getTexture("media/ui/Entity/BTN_Missing_Icon_48x48.png"))
+    self.btnHelp.displayBackground = false
+    self:addChild(self.btnHelp)
+
     self.lblRangeInfo = ISLabel:new(self.width / 2, 29, 18, "Broadcast Range: Unknown", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
     self.lblRangeInfo:initialise()
     self:addChild(self.lblRangeInfo)
@@ -164,6 +176,14 @@ function DT_RadioScannerHeaderPanel:prerender()
 
     if self.btnOptions then
         self.btnOptions:setX(self.width - self.btnOptions:getWidth() - 5)
+    end
+
+    if self.btnHelp then
+        local offset = 0
+        if self.btnOptions then
+            offset = self.btnOptions:getWidth() + 5
+        end
+        self.btnHelp:setX(self.width - self.btnHelp:getWidth() - 5 - offset)
     end
 
     if self.scanStatsPanel then
