@@ -457,6 +457,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     table.insert(options, {
         text = "Trade",
         message = "Let's see what you've got.",
+        style = isTrading and { bgColor = {0.8, 0.7, 0.1, 0.4} } or nil,
         onSelect = function(ui)
             -- [CHANGE] Logic check happens here instead
             if isTrading then
@@ -530,20 +531,6 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             local selectTraderID = conversationUI and conversationUI.target and (conversationUI.target.uuid or conversationUI.target.traderID or conversationUI.target.id) or nil
             DT_ContactsWindow.Open({ selectTraderID = selectTraderID })
             DTNPC_TraderDialogue_Hub.GenerateOptions(conversationUI, npc, player)
-        end
-    })
-    
-    
-    -- OPTION 4: SETTINGS (Common UI)
-    table.insert(options, {
-        text = "Settings",
-        message = "Can I adjust some settings real quick?",
-        onSelect = function(ui)
-            if DT_V2_OptionsManager then
-                DT_V2_OptionsManager.ToggleWindow()
-                -- Keep Hub open in background
-                DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
-            end
         end
     })
     

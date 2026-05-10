@@ -88,7 +88,7 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
                 end
             end)
             
-            option.iconTexture = getTexture("media/ui/Icon_MarketInfo.png")
+            option.iconTexture = getTexture("media/ui/emotes/insult.png")
 
             if DTNPCJobUI and DTNPCJobUI.AddContextMenuOptions then
                 DTNPCJobUI.AddContextMenuOptions(context, nil, npc, player, npcData)
