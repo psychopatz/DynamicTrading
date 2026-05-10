@@ -115,13 +115,44 @@ function ISDTNPCHealthBarManager:render()
                         barData.isIncapacitated and hpColor.b or 0.4
                     )
 
+                    -- Calculate total width for [Heart Icon] + [Gap] + [HP Text]
+                    local heartIconSize = Constants.HEART_ICON_SIZE / scaleDivisor
+                    local heartGap = Constants.HEART_ICON_GAP / scaleDivisor
+                    local totalCounterWidth = heartIconSize + heartGap + hpTextWidth
+                    
+                    -- Center coordinates for the counter group
+                    local counterX = screenX - (totalCounterWidth / 2)
+                    local counterY = barTop - (Constants.HP_TEXT_TOP_GAP / zoom)
+                    local heartIcon = Helpers.getHeartTexture()
+
+                    -- Draw Heart Icon
+                    if heartIcon then
+                        local iconY = counterY + (2 / zoom) -- Slight vertical adjustment for alignment
+                        self:drawTextureScaled(
+                            heartIcon,
+                            counterX,
+                            iconY,
+                            heartIconSize,
+                            heartIconSize,
+                            alpha,
+                            1, 1, 1
+                        )
+                    end
+
+                    local hpR, hpG, hpB = 0.1, 0.8, 0.1
+                    if hpRatio < 0.25 then
+                        hpR, hpG, hpB = 0.8, 0.1, 0.1
+                    elseif hpRatio < 0.6 then
+                        hpR, hpG, hpB = 0.8, 0.8, 0.1
+                    end
+
                     self:drawText(
                         hpText,
-                        barLeft - Constants.HP_TEXT_GAP - hpTextWidth,
-                        barTop - 3,
-                        0.92,
-                        0.2,
-                        0.2,
+                        counterX + heartIconSize + heartGap,
+                        counterY,
+                        hpR,
+                        hpG,
+                        hpB,
                         alpha,
                         Constants.FONT_HP
                     )
@@ -186,20 +217,50 @@ function ISDTNPCHealthBarManager:render()
             if currentTime > dmg.expireTime then
                 table.remove(damageList, i)
             else
+                local duration = Constants.DAMAGE_TEXT_TTL
+                local progress = math.min(1, (currentTime - dmg.timestamp) / duration)
+                
                 local timeOffset = (currentTime - dmg.timestamp) / Constants.DAMAGE_TEXT_SPEED
                 local screenX = isoToScreenX(self.playerIndex, dmg.x, dmg.y, dmg.z) - self.x
                 local screenY = isoToScreenY(self.playerIndex, dmg.x, dmg.y, dmg.z) - self.y - damageTextOffset - timeOffset
 
-                self:drawText(
-                    dmg.text,
-                    screenX - (dmg.width / 2),
-                    screenY,
-                    dmg.color.r,
-                    dmg.color.g,
-                    dmg.color.b,
-                    dmg.color.a,
-                    Constants.FONT_DAMAGE
-                )
+                -- Define base alpha for the damage text
+                local damageAlpha = dmg.color.a
+                local barData = self.barList[uuid]
+                if barData and barData.zombie then
+                    damageAlpha = damageAlpha * barData.zombie:getAlpha(self.playerIndex)
+                end
+
+                -- Smoothly cross-fade between fonts to simulate gradual shrinkage
+                local function drawAnimatedText(text, x, y, r, g, b, baseAlpha, p)
+                    local a1, a2, a3 = 0, 0, 0
+                    if p < 0.3 then
+                        a1 = (0.3 - p) / 0.3
+                        a2 = p / 0.3
+                    elseif p < 0.6 then
+                        a2 = (0.6 - p) / 0.3
+                        a3 = (p - 0.3) / 0.3
+                    else
+                        a3 = 1
+                    end
+                    
+                    local finalAlpha = baseAlpha * (p > 0.7 and (1 - (p - 0.7) / 0.3) or 1)
+                    
+                    if a1 > 0.05 then
+                        local w = State.textManager:MeasureStringX(UIFont.Large, text)
+                        self:drawText(text, x - (w/2), y, r, g, b, finalAlpha * a1, UIFont.Large)
+                    end
+                    if a2 > 0.05 then
+                        local w = State.textManager:MeasureStringX(UIFont.Medium, text)
+                        self:drawText(text, x - (w/2), y, r, g, b, finalAlpha * a2, UIFont.Medium)
+                    end
+                    if a3 > 0.05 then
+                        local w = State.textManager:MeasureStringX(UIFont.Small, text)
+                        self:drawText(text, x - (w/2), y, r, g, b, finalAlpha * a3, UIFont.Small)
+                    end
+                end
+
+                drawAnimatedText(dmg.text, screenX, screenY, dmg.color.r, dmg.color.g, dmg.color.b, damageAlpha, progress)
             end
         end
 

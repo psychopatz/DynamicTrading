@@ -30,7 +30,7 @@ Constants.BAR_WIDTH = 60
 Constants.BAR_HEIGHT = 6
 Constants.STAMINA_BAR_HEIGHT = 4
 Constants.STAMINA_BAR_GAP = 4
-Constants.NAME_Y_OFFSET = 144
+Constants.NAME_Y_OFFSET = 152
 Constants.BAR_Y_OFFSET = 130
 Constants.PADDING = 2
 Constants.UPDATE_RATE = 6
@@ -42,9 +42,13 @@ Constants.FLOOR_TOLERANCE = 1
 Constants.ZOMBIE_RESOLVE_RETRY_MS = 1000
 Constants.STALE_TRACK_MS = 15000
 Constants.FONT_NAME = UIFont.Small
-Constants.FONT_HP = UIFont.Small
+Constants.FONT_HP = UIFont.Medium
 Constants.FONT_DAMAGE = UIFont.Medium
 Constants.HP_TEXT_GAP = 6
+Constants.HP_TEXT_TOP_GAP = 12
+Constants.HEART_ICON_SIZE = 16
+Constants.HEART_ICON_GAP = 2
+Constants.HEART_TEXTURE_PATH = "media/ui/Moodle_internal_plus_red.png"
 Constants.BANDAGE_ICON_GAP = 6
 Constants.BANDAGE_ICON_SIZE = 10
 
@@ -159,7 +163,39 @@ local function tryTexture(textureName)
         return tex
     end
 
+    -- Try without .png extension if present
+    local noExt = textureName:gsub("%.png$", "")
+    if noExt ~= textureName then
+        tex = getTexture(noExt)
+        if isValidTexture(tex) then return tex end
+    end
+
+    -- Try lowercase
+    local lower = textureName:lower()
+    if lower ~= textureName then
+        tex = getTexture(lower)
+        if isValidTexture(tex) then return tex end
+        
+        local lowerNoExt = lower:gsub("%.png$", "")
+        if lowerNoExt ~= lower then
+            tex = getTexture(lowerNoExt)
+            if isValidTexture(tex) then return tex end
+        end
+    end
+
     return nil
+end
+
+function Helpers.getHeartTexture()
+    if State.heartTexture ~= nil then
+        return State.heartTexture or nil
+    end
+
+    local tex = tryTexture(Constants.HEART_TEXTURE_PATH)
+        or tryTexture("heart_on")
+    
+    State.heartTexture = tex or false
+    return tex
 end
 
 local function resolveBandageFullType(npcData)

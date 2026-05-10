@@ -57,26 +57,34 @@ function ISDTNPCAmbientDialogueManager:render()
                         - textYOffset
                         - floatOffset
 
-                    self:drawText(
-                        speech.text,
-                        screenX - (speech.width / 2) + 1,
-                        screenY + 1,
-                        0,
-                        0,
-                        0,
-                        alpha * 0.7,
-                        Ambient.FONT_DIALOGUE
-                    )
-                    self:drawText(
-                        speech.text,
-                        screenX - (speech.width / 2),
-                        screenY,
-                        speech.color.r,
-                        speech.color.g,
-                        speech.color.b,
-                        speech.color.a * alpha,
-                        Ambient.FONT_DIALOGUE
-                    )
+                    local duration = speech.expireTime - speech.timestamp
+                    local progress = math.min(1, (currentTime - speech.timestamp) / duration)
+                    
+                    -- Smoothly cross-fade between fonts for gradual shrinkage
+                    local function drawAnimatedSpeech(panel, text, x, y, r, g, b, baseAlpha, p)
+                        local a1, a2 = 0, 0
+                        if p < 0.4 then
+                            a1 = (0.4 - p) / 0.4
+                            a2 = p / 0.4
+                        else
+                            a2 = 1
+                        end
+                        
+                        local finalAlpha = baseAlpha * ((p > 0.7) and (1 - (p - 0.7) / 0.3) or 1)
+                        
+                        if a1 > 0.05 then
+                            local w = Ambient.textManager:MeasureStringX(UIFont.Medium, text)
+                            panel:drawText(text, x - (w/2) + 1, y + 1, 0, 0, 0, finalAlpha * a1 * 0.7, UIFont.Medium)
+                            panel:drawText(text, x - (w/2), y, r, g, b, finalAlpha * a1, UIFont.Medium)
+                        end
+                        if a2 > 0.05 then
+                            local w = Ambient.textManager:MeasureStringX(Ambient.FONT_DIALOGUE, text)
+                            panel:drawText(text, x - (w/2) + 1, y + 1, 0, 0, 0, finalAlpha * a2 * 0.7, Ambient.FONT_DIALOGUE)
+                            panel:drawText(text, x - (w/2), y, r, g, b, finalAlpha * a2, Ambient.FONT_DIALOGUE)
+                        end
+                    end
+
+                    drawAnimatedSpeech(self, speech.text, screenX, screenY, speech.color.r, speech.color.g, speech.color.b, speech.color.a * alpha, progress)
                 end
             end
         end
