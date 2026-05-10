@@ -36,6 +36,29 @@ local function objectBool(object, names, defaultValue)
     return result == true
 end
 
+local function resetFenceAnimFinished(zombie)
+    if not zombie then
+        return
+    end
+
+    zombie:setVariable("BumpAnimFinished", false)
+    zombie:setVariable("ClimbFenceFinished", false)
+end
+
+local function isFenceAnimFinished(zombie)
+    if not zombie then
+        return false
+    end
+
+    if zombie.getVariableBoolean and zombie:getVariableBoolean("BumpAnimFinished") == true then
+        return true
+    end
+
+    local value = zombie.getVariableString and zombie:getVariableString("BumpAnimFinished") or ""
+    value = string.lower(tostring(value or ""))
+    return value == "true" or value == "1"
+end
+
 function Internal.getSquareAt(cell, x, y, z)
     if not cell then
         return nil
@@ -435,6 +458,7 @@ function Mobility.BeginFenceTraverse(zombie, npcData, fence, options)
     if zombie.setRunning then
         zombie:setRunning(false)
     end
+    resetFenceAnimFinished(zombie)
     zombie:faceLocation((tonumber(fence.x) or zombie:getX()) + 0.5, (tonumber(fence.y) or zombie:getY()) + 0.5)
     if zombie.setBumpType then
         zombie:setBumpType(animName)
@@ -712,10 +736,11 @@ function Mobility.UpdateSpecialAction(zombie, npcData)
         zombie:setX(tonumber(traverse.endX) or nextX)
         zombie:setY(tonumber(traverse.endY) or nextY)
         zombie:setZ(nextZ)
-        if (currentTime - startedAt) >= durationMs then
+        if isFenceAnimFinished(zombie) or (currentTime - startedAt) >= durationMs then
             npcData._dtFenceTraverse = nil
             npcData._dtFencePendingKey = nil
             npcData._dtFencePendingAt = nil
+            resetFenceAnimFinished(zombie)
             if Mobility.ResetMovementProgress then
                 Mobility.ResetMovementProgress(npcData)
             end
