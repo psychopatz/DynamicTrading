@@ -21,3 +21,4 @@ require "DT/V2/NPC/Sys/Mobility/MobilityPassages/DTNPC_MobilityPassages_FenceDet
 require "DT/V2/NPC/Sys/Mobility/MobilityPassages/DTNPC_MobilityPassages_FenceTraverse"
 require "DT/V2/NPC/Sys/Mobility/MobilityPassages/DTNPC_MobilityPassages_PassageDetection"
 require "DT/V2/NPC/Sys/Mobility/MobilityPassages/DTNPC_MobilityPassages_PassageInteraction"
+require "DT/V2/NPC/Sys/Mobility/MobilityPassages/DTNPC_MobilityPassages_Proactive"

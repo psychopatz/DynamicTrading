@@ -120,7 +120,27 @@ function Internal.trySetDoorOpenState(object, shouldBeOpen)
 
     local ok = Internal.callObjectMethod(object, { "ToggleDoorSilent", "toggleDoorSilent" })
     local isOpen = Internal.objectBool(object, { "IsOpen", "isOpen" }, false)
+
+    -- Play sound if state changed
     if ok and isOpen == desiredOpen then
+        local props = object:getProperties()
+        local doorSound = (props and props:has("DoorSound") and props:get("DoorSound")) or "WoodDoor"
+        doorSound = doorSound .. (isOpen and "Open" or "Close")
+        
+        -- We try to play the sound at the door location
+        local square = object:getSquare()
+        if square and doorSound then
+            getSoundManager():PlayWorldSound(doorSound, square, 0, 10, 1.0, false)
+        end
+        
+        -- Invalidate paths like Bandits mod does
+        if square then
+            square:InvalidateSpecialObjectPaths()
+            if IsoGridSquare.setRecalcLightTime then
+                IsoGridSquare.setRecalcLightTime(-1.0)
+            end
+        end
+
         return true
     end
 

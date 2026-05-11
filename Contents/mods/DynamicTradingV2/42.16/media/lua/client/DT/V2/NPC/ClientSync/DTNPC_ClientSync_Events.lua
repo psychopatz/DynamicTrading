@@ -313,6 +313,18 @@ function DTNPCClient.OnZombieUpdate(zombie)
     if DTNPCClient.ApplySafetyToMarkedZombie then
         DTNPCClient.ApplySafetyToMarkedZombie(zombie)
     end
+
+    -- Proactive NPC interactions (Doors/Windows)
+    if DTNPCMobility and DTNPCMobility.UpdateProactiveInteractions then
+        local modData = zombie:getModData()
+        local uuid = modData and modData.DTNPC_UUID
+        local cached = uuid and DTNPCClient.NPCCache and DTNPCClient.NPCCache[uuid]
+        local npcData = cached and cached.npcData or (modData and (modData.DTNPC_Data or modData.DTNPCBrain))
+        
+        if npcData then
+            DTNPCMobility.UpdateProactiveInteractions(zombie, npcData)
+        end
+    end
 end
 
 -- Events will be registered in DTNPC_ClientSync_Visuals.lua after all sync functions are defined.
