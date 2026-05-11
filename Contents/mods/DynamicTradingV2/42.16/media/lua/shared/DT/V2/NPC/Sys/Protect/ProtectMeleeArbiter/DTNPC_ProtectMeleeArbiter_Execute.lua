@@ -1,318 +1,32 @@
 -- ==============================================================================
--- DTNPC_ProtectMeleeArbiter_logic.lua
--- Shared melee combat controller for hostile, protect, and trading defense modes.
+-- DTNPC_ProtectMeleeArbiter_Execute.lua
+-- Main melee arbiter execution for DTNPC protect behavior.
 -- ==============================================================================
 
 DTNPCProtect = DTNPCProtect or {}
 DTNPCProtect.Internal = DTNPCProtect.Internal or {}
 
-require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
-
 local Internal = DTNPCProtect.Internal
-local getZombieRuntimeID = Internal.getZombieRuntimeID
-local getPlayerRuntimeID = Internal.getPlayerRuntimeID
+local getTargetKey = Internal.GetMeleeArbiterTargetKey
+local getTargetDistance = Internal.GetMeleeArbiterTargetDistance
+local isPlayerTarget = Internal.IsMeleeArbiterPlayerTarget
+local resetForTarget = Internal.ResetMeleeArbiterForTarget
+local ensureManualControl = Internal.EnsureMeleeArbiterManualControl
+local stopMoveAnim = Internal.StopMeleeArbiterMoveAnim
+local setPhase = Internal.SetMeleeArbiterPhase
+local moveTowardTarget = Internal.MoveMeleeArbiterTowardTarget
+local moveAwayFromPoint = Internal.MoveMeleeArbiterAwayFromPoint
+local isSevereDanger = Internal.IsSevereMeleeArbiterDanger
+local preserveAttackWindup = Internal.PreserveMeleeArbiterAttackWindup
+local maybeAnnounceCrowdRefusal = Internal.MaybeAnnounceMeleeArbiterCrowdRefusal
+local commitAttack = Internal.CommitMeleeArbiterAttack
 local nowMillis = Internal.nowMillis
-
-local DEFAULT_SPEED = 0.05
-local ENTER_BUFFER = 0.25
-local HOLD_BUFFER = 0.45
-local STOP_BUFFER = 0.16
-local RETREAT_LOCK_MS = 450
-local PASSAGE_LOCK_MS = 350
-
-local function getTargetKey(target)
-    if not target then
-        return nil
-    end
-    if instanceof and instanceof(target, "IsoPlayer") then
-        return getPlayerRuntimeID and getPlayerRuntimeID(target) or tostring(target)
-    end
-    return getZombieRuntimeID and getZombieRuntimeID(target) or tostring(target)
-end
-
-local function getTargetDistance(zombie, target)
-    if not zombie or not target then
-        return 9999
-    end
-
-    local dx = target:getX() - zombie:getX()
-    local dy = target:getY() - zombie:getY()
-    return math.sqrt((dx * dx) + (dy * dy))
-end
-
-local function isPlayerTarget(target)
-    return target and instanceof and instanceof(target, "IsoPlayer")
-end
-
-local function resetMoveState(npcData)
-    if not npcData then
-        return
-    end
-
-    npcData.isMovingState = false
-    npcData.attackMovePrimed = nil
-    npcData.protectMovePrimed = nil
-    npcData.tradingMovePrimed = nil
-end
-
-local function stopMoveAnim(zombie, npcData)
-    resetMoveState(npcData)
-    DTNPCMobility.Stop(zombie)
-end
-
-local function setPhase(npcData, phase, lockMs)
-    if not npcData then
-        return
-    end
-
-    npcData.meleeCombatPhase = phase
-    npcData.meleeCombatPhaseUntil = (tonumber(lockMs) or 0) > 0 and (nowMillis() + lockMs) or 0
-    npcData.meleeCombatLastDecisionAt = nowMillis()
-end
-
-local function resetForTarget(npcData, targetKey)
-    if not npcData then
-        return
-    end
-
-    if npcData.meleeCombatTargetKey == targetKey then
-        return
-    end
-
-    npcData.meleeCombatTargetKey = targetKey
-    npcData.meleeCombatPhase = nil
-    npcData.meleeCombatPhaseUntil = 0
-    npcData.meleeCombatLastDecisionAt = 0
-    npcData.attackTimer = 0
-    npcData.meleeContactTargetKey = nil
-    npcData.meleeContactPrimed = nil
-end
-
-function DTNPCProtect.ResetMeleeCombat(npcData)
-    if not npcData then
-        return
-    end
-
-    npcData.meleeCombatTargetKey = nil
-    npcData.meleeCombatPhase = nil
-    npcData.meleeCombatPhaseUntil = 0
-    npcData.meleeCombatLastDecisionAt = 0
-    npcData.meleeContactTargetKey = nil
-    npcData.meleeContactPrimed = nil
-end
-
-local function ensureManualControl(zombie, target, options)
-    if options and options.ensureManualControl == false then
-        return
-    end
-
-    if not zombie:isUseless() then
-        zombie:setUseless(true)
-    end
-    zombie:setPath2(nil)
-    zombie:setTarget(nil)
-    if target and not isPlayerTarget(target) then
-        zombie:setTarget(target)
-    end
-end
-
-local function moveTowardTarget(zombie, npcData, target, stats, stopDistance, options)
-    local speed = stats.chaseSpeed or options.defaultSpeed or DEFAULT_SPEED
-    local moved, state, distance = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
-        target = target,
-        speed = speed,
-        staminaMode = "melee_pursuit",
-        desiredRun = speed > 0.06,
-        stopDistance = stopDistance,
-        blockCounterKey = options.blockCounterKey,
-        stuckTicks = options.stuckTicks or 10,
-        anchorX = options.anchorX,
-        anchorY = options.anchorY,
-        anchorZ = options.anchorZ,
-        leashRadius = options.leashRadius,
-        allowObstacleInteract = options.allowObstacleInteract ~= false,
-        allowDamageRetreat = options.allowDamageRetreat ~= false,
-        damageRetreatDistance = options.damageRetreatDistance,
-        damageRetreatLockMs = options.damageRetreatLockMs,
-        closeDoorSafeRadius = options.closeDoorSafeRadius or 3.0,
-        anim = {
-            animSpeed = speed > 0.06 and 1.15 or 1.0,
-            isRunning = speed > 0.06,
-            walkType = "1",
-        },
-    })
-
-    if moved and (state == "moving" or state == "unstuck") then
-        npcData.isMovingState = true
-    end
-
-    return moved, state, distance
-end
-
-local function moveAwayFromPoint(zombie, npcData, stats, sourceX, sourceY, desiredDistance, options)
-    local speed = math.max(0.034, (stats.chaseSpeed or options.defaultSpeed or DEFAULT_SPEED) * 0.9)
-    local moved, state, distance = DTNPCMobility.MoveAwayFromPoint(zombie, npcData, {
-        fromX = sourceX,
-        fromY = sourceY,
-        speed = speed,
-        staminaMode = "retreat",
-        desiredRun = false,
-        desiredDistance = desiredDistance,
-        blockCounterKey = options.blockCounterKey,
-        stuckTicks = options.retreatStuckTicks or 8,
-        anchorX = options.anchorX,
-        anchorY = options.anchorY,
-        anchorZ = options.anchorZ,
-        leashRadius = options.leashRadius,
-        allowObstacleInteract = false,
-        allowDamageRetreat = options.allowDamageRetreat ~= false,
-        damageRetreatDistance = options.damageRetreatDistance,
-        damageRetreatLockMs = options.damageRetreatLockMs,
-        anim = {
-            animSpeed = 1.0,
-            isRunning = false,
-            walkType = "1",
-        },
-    })
-
-    if moved and (state == "moving" or state == "unstuck") then
-        npcData.isMovingState = true
-    end
-
-    return moved, state, distance
-end
-
-local function isSevereDanger(dangerState)
-    if not dangerState or dangerState.shouldDisengage ~= true then
-        return false
-    end
-
-    if dangerState.reason == "low_health" then
-        return true
-    end
-
-    local selfPressure = dangerState.selfPressure or {}
-    local targetPressure = dangerState.targetPressure or {}
-    local severeThreshold = tonumber(DTNPCProtect.CONFIG.MeleeCrowdSevereThreshold) or 4
-    return math.max(tonumber(selfPressure.count) or 0, tonumber(targetPressure.count) or 0) >= severeThreshold
-end
-
-local function preserveAttackWindup(npcData, stats)
-    if not npcData then
-        return
-    end
-
-    local attackRate = tonumber(stats and stats.attackRate) or 0
-    local cap = attackRate > 0 and math.floor(attackRate * 0.65) or 0
-    npcData.attackTimer = math.min(tonumber(npcData.attackTimer) or 0, cap)
-end
-
-local function maybeAnnounceCrowdRefusal(zombie, npcData, dangerState)
-    if not zombie or not npcData or not dangerState then
-        return false
-    end
-
-    local reason = tostring(dangerState.reason or "")
-    if reason ~= "crowd" and reason ~= "surrounded" and reason ~= "pressured" then
-        return false
-    end
-
-    local currentTime = nowMillis()
-    local lastTime = tonumber(npcData._dtCrowdRefuseNoticeAt) or 0
-    if currentTime > 0 and lastTime > 0 and (currentTime - lastTime) < 4500 then
-        return false
-    end
-    npcData._dtCrowdRefuseNoticeAt = currentTime
-
-    if DTNPCProtect.PushCombatFlavorNotice then
-        return DTNPCProtect.PushCombatFlavorNotice(zombie, npcData, "CrowdRefuse", "warning", "Companion", "CrowdRefuse")
-    end
-    if DTNPCProtect.PushCompanionAmbientCue then
-        return DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, "Companion", "CrowdRefuse")
-    end
-    return false
-end
-
-local function primeContactSwing(npcData, targetKey, stats)
-    if not npcData then
-        return
-    end
-
-    if npcData.meleeContactTargetKey == targetKey and npcData.meleeContactPrimed == true then
-        return
-    end
-
-    local attackRate = tonumber(stats and stats.attackRate) or 0
-    npcData.attackTimer = math.max(tonumber(npcData.attackTimer) or 0, math.max(0, attackRate - 6))
-    npcData.meleeContactTargetKey = targetKey
-    npcData.meleeContactPrimed = true
-end
-
-local function commitAttack(zombie, npcData, target, targetKey, stats, currentDist, options)
-    local capable, reason = true, nil
-    if DTNPCProtect.IsCombatCapable then
-        capable, reason = DTNPCProtect.IsCombatCapable(zombie, npcData)
-    end
-    if not capable then
-        if DTNPCProtect.StopCombatActions then
-            DTNPCProtect.StopCombatActions(zombie, npcData, reason)
-        end
-        return {
-            status = "not_capable",
-            moved = false,
-            attacked = false,
-            distance = currentDist,
-            reason = reason,
-        }
-    end
-
-    setPhase(npcData, "commit", 0)
-    stopMoveAnim(zombie, npcData)
-    zombie:faceLocation(target:getX(), target:getY())
-    if DTNPC and DTNPC.SetMeleeCombatIdleState then
-        DTNPC.SetMeleeCombatIdleState(zombie, npcData)
-    end
-
-    if not (options.mode == "hostile" and isPlayerTarget(target)) then
-        primeContactSwing(npcData, targetKey, stats)
-    end
-    npcData.attackTimer = (tonumber(npcData.attackTimer) or 0) + 1
-    if npcData.attackTimer < stats.attackRate then
-        return {
-            status = "commit",
-            moved = false,
-            attacked = false,
-            distance = currentDist,
-            reason = "windup",
-        }
-    end
-
-    npcData.attackTimer = 0
-    if DTNPC and DTNPC.TriggerMeleeCombatAnim then
-        DTNPC.TriggerMeleeCombatAnim(zombie, npcData)
-    end
-    DTNPCProtect.ConsumeWeaponCondition(npcData, "melee", 1)
-
-    local hit = false
-    if ZombRand(100) < stats.hitChance then
-        hit = DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
-            attackType = "melee",
-            damage = stats.damage,
-        }) == true
-    end
-    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
-        DTNPCProtect.RecordCombatAttack(zombie, npcData, "melee", target)
-    end
-
-    return {
-        status = "commit",
-        moved = false,
-        attacked = true,
-        hit = hit,
-        distance = currentDist,
-        reason = "swing",
-    }
-end
+local DEFAULT_SPEED = Internal.MeleeArbiterDefaultSpeed
+local ENTER_BUFFER = Internal.MeleeArbiterEnterBuffer
+local HOLD_BUFFER = Internal.MeleeArbiterHoldBuffer
+local STOP_BUFFER = Internal.MeleeArbiterStopBuffer
+local RETREAT_LOCK_MS = Internal.MeleeArbiterRetreatLockMs
+local PASSAGE_LOCK_MS = Internal.MeleeArbiterPassageLockMs
 
 function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
     options = type(options) == "table" and options or {}
@@ -330,7 +44,8 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
         }
     end
 
-    local capable, blockReason = true, nil
+    local capable = true
+    local blockReason = nil
     if DTNPCProtect.IsCombatCapable then
         capable, blockReason = DTNPCProtect.IsCombatCapable(zombie, npcData)
     end
@@ -380,7 +95,8 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
             retreatDistance = engageReach + 0.7,
         })
         or nil
-    local recovering, recovery = false, nil
+    local recovering = false
+    local recovery = nil
     if DTNPCProtect.GetCombatRecovery then
         recovering, recovery = DTNPCProtect.GetCombatRecovery(npcData, "melee", target)
     end
