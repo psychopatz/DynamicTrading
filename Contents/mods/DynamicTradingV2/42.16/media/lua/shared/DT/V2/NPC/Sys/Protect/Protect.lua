@@ -16,7 +16,7 @@ DTNPCProtect.EntryLoaded = true
 require "DT/V2/NPC/Sys/Protect/DTNPC_ProtectShared_logic"
 require "DT/V2/NPC/Sys/Protect/DTNPC_ProtectProfile_logic"
 require "DT/V2/NPC/Sys/Protect/DTNPC_ProtectLoadout_logic"
-require "DT/V2/NPC/Sys/Protect/DTNPC_ProtectState_logic"
+require "DT/V2/NPC/Sys/Protect/ProtectState/DTNPC_ProtectState"
 require "DT/V2/NPC/Sys/Protect/DTNPC_ProtectNotice_logic"
 require "DT/V2/NPC/Sys/Protect/DTNPC_ProtectTargeting_logic"
 require "DT/V2/NPC/Sys/Protect/DTNPC_ProtectDurability_logic"
