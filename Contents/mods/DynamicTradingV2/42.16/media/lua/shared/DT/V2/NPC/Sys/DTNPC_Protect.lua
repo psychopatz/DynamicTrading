@@ -4,3 +4,4 @@
 -- ==============================================================================
 
 require "DT/V2/NPC/Sys/Protect/Protect"
+require "DT/V2/NPC/Sys/Hostility/DTNPC_Hostility"

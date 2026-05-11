@@ -93,6 +93,97 @@ function BehaviorAttack.ClearHostileSightMemory(npcData)
     npcData.combatSearchAmbientAt = nil
 end
 
+function BehaviorAttack.ClearHostileNoTargetState(npcData)
+    if not npcData then
+        return
+    end
+
+    npcData.hostileNoTargetSince = nil
+    npcData.hostileNoTargetCooldownMs = nil
+end
+
+local function isCombatState(state)
+    local text = tostring(state or "")
+    return text == "Attack"
+        or text == "AttackRange"
+        or text == "TradingDefenseMelee"
+        or text == "TradingDefenseRanged"
+end
+
+function BehaviorAttack.GetHostileResumeState(npcData)
+    if not npcData then
+        return "Idle"
+    end
+
+    local candidates = {
+        npcData.hostileReturnState,
+        npcData.combatResumeState,
+        npcData.stationaryPostState,
+        npcData.state,
+    }
+
+    for i = 1, #candidates do
+        local candidate = tostring(candidates[i] or "")
+        if candidate ~= "" and candidate ~= "Resting" and not isCombatState(candidate) then
+            return candidate
+        end
+    end
+
+    if BehaviorAttack.IsTradingLike(npcData) then
+        return "Trading"
+    end
+
+    if tostring(npcData.status or "") == "Resting" then
+        local postState = tostring(npcData.stationaryPostState or "")
+        if postState ~= "" and not isCombatState(postState) then
+            return postState
+        end
+        return "Idle"
+    end
+
+    return "Idle"
+end
+
+function BehaviorAttack.GetHostileNoTargetCooldownMs(npcData)
+    local configured = tonumber(DTNPCProtect and DTNPCProtect.CONFIG and DTNPCProtect.CONFIG.HostileNoTargetCooldownMs)
+    if configured ~= nil then
+        return math.max(750, configured)
+    end
+
+    local fallback = 2500
+    if DTNPCProtect and DTNPCProtect.GetCombatUnreachableTimeoutMs then
+        fallback = math.min(fallback, tonumber(DTNPCProtect.GetCombatUnreachableTimeoutMs(npcData)) or fallback)
+    end
+    return math.max(750, fallback)
+end
+
+function BehaviorAttack.SelectReplacementHostileTarget(zombie, npcData)
+    if not zombie or not npcData or not DTNPCProtect or not DTNPCProtect.SelectNearestThreat then
+        return nil, 9999
+    end
+
+    local anchorTarget = nil
+    local anchorRadius = nil
+    if not BehaviorAttack.IsBanditLike(npcData) then
+        anchorTarget = DTNPCProtect.GetCombatAnchorTarget and DTNPCProtect.GetCombatAnchorTarget(npcData, zombie) or nil
+        anchorRadius = DTNPCProtect.GetStationaryCombatLeashRadius and DTNPCProtect.GetStationaryCombatLeashRadius(npcData) or nil
+    end
+    local target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData, nil, anchorTarget, anchorRadius, true)
+    local threatType = npcData.combatTargetType
+
+    if target and (threatType == "player" or threatType == "dtnpc" or threatType == "bandits") then
+        return target, targetDist
+    end
+
+    if DTNPCProtect and DTNPCProtect.ClearCombatTarget then
+        DTNPCProtect.ClearCombatTarget(npcData)
+    else
+        npcData.combatTargetID = nil
+        npcData.combatTargetType = nil
+    end
+    return nil, 9999
+end
+
 function BehaviorAttack.ClearHostileCombatMemory(npcData)
     if not npcData then
         return
@@ -109,6 +200,7 @@ function BehaviorAttack.ClearHostileCombatMemory(npcData)
     npcData.lastPlayerAttackerOnlineID = nil
     BehaviorAttack.ResetHostileChaseTimers(npcData)
     BehaviorAttack.ClearHostileSightMemory(npcData)
+    BehaviorAttack.ClearHostileNoTargetState(npcData)
     if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
         DTNPCProtect.ResetCombatRhythm(npcData)
     end
@@ -127,6 +219,7 @@ function BehaviorAttack.DisengageHostile(zombie, npcData, reason)
     npcData.combatTargetType = nil
     npcData.hostileTargetType = nil
     BehaviorAttack.ClearHostileSightMemory(npcData)
+    BehaviorAttack.ClearHostileNoTargetState(npcData)
     if DTNPCProtect and DTNPCProtect.ResetMeleeCombat then
         DTNPCProtect.ResetMeleeCombat(npcData)
     end
@@ -153,7 +246,11 @@ function BehaviorAttack.BeginTraderReturn(zombie, npcData)
     if DTNPCProtect and DTNPCProtect.StopCombatActions then
         DTNPCProtect.StopCombatActions(zombie, npcData, "chase_give_up")
     end
+    local resumeMaster = npcData.master
+    local resumeMasterID = npcData.masterID
     BehaviorAttack.ClearHostileCombatMemory(npcData)
+    npcData.master = resumeMaster
+    npcData.masterID = resumeMasterID
     npcData.status = npcData.status or "Trading"
     npcData.state = "GoTo"
     npcData.goToReturnState = "Trading"
@@ -173,6 +270,112 @@ function BehaviorAttack.BeginGenericGiveUp(zombie, npcData)
     BehaviorAttack.HostileDebugLog(npcData, "chase_give_up", "generic disengage")
     BehaviorAttack.SyncHostileState(zombie, npcData, true)
     return true
+end
+
+function BehaviorAttack.BeginHostileResume(zombie, npcData, reason)
+    if not zombie or not npcData then
+        return false
+    end
+
+    if BehaviorAttack.IsTradingLike(npcData) then
+        return BehaviorAttack.BeginTraderReturn(zombie, npcData)
+    end
+
+    local resumeState = BehaviorAttack.GetHostileResumeState(npcData)
+    local x, y, z = BehaviorAttack.ResolveReturnCoords(zombie, npcData)
+    if DTNPCProtect and DTNPCProtect.StopCombatActions then
+        DTNPCProtect.StopCombatActions(zombie, npcData, reason or "hostile_target_lost")
+    else
+        DTNPCMobility.Stop(zombie)
+        zombie:setTarget(nil)
+    end
+
+    local resumeMaster = npcData.master
+    local resumeMasterID = npcData.masterID
+    BehaviorAttack.ClearHostileCombatMemory(npcData)
+    npcData.master = resumeMaster
+    npcData.masterID = resumeMasterID
+    npcData.state = resumeState
+    npcData.tasks = {}
+    npcData.isMovingState = false
+    npcData.goToReturnState = nil
+
+    if x ~= nil and y ~= nil then
+        local dist = BehaviorAttack.GetDistance(zombie:getX(), zombie:getY(), x, y)
+        if dist > 0.9 then
+            npcData.state = "GoTo"
+            npcData.goToReturnState = resumeState
+            npcData.tasks = {
+                { x = x, y = y, z = z or 0 },
+            }
+        end
+    end
+
+    BehaviorAttack.HostileDebugLog(
+        npcData,
+        "hostile_resume",
+        "resumeState=" .. tostring(resumeState) .. " reason=" .. tostring(reason or "hostile_target_lost")
+    )
+    BehaviorAttack.SyncHostileState(zombie, npcData, true)
+    return true
+end
+
+function BehaviorAttack.HandleMissingHostileTarget(zombie, npcData)
+    if not zombie or not npcData then
+        return nil, 9999, false
+    end
+
+    if DTNPCLogic.RememberHostileChaseOrigin then
+        DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
+    end
+
+    local replacementTarget, replacementDist = BehaviorAttack.SelectReplacementHostileTarget(zombie, npcData)
+    if replacementTarget then
+        BehaviorAttack.ClearHostileNoTargetState(npcData)
+        npcData.combatTargetDistance = tonumber(replacementDist)
+        npcData.attackTimer = 0
+        npcData.reactionTimer = 0
+        return replacementTarget, replacementDist, false
+    end
+
+    if BehaviorAttack.IsBanditLike(npcData) then
+        BehaviorAttack.ClearHostileNoTargetState(npcData)
+        return nil, 9999, false
+    end
+
+    local nowMs = BehaviorAttack.GetTimeMs()
+    if not npcData.hostileNoTargetSince then
+        npcData.hostileNoTargetSince = nowMs
+        npcData.hostileNoTargetCooldownMs = BehaviorAttack.GetHostileNoTargetCooldownMs(npcData)
+        BehaviorAttack.HostileDebugLog(
+            npcData,
+            "hostile_target_missing",
+            "cooldownMs=" .. tostring(npcData.hostileNoTargetCooldownMs)
+        )
+    end
+
+    npcData.attackTimer = 0
+    npcData.reactionTimer = 0
+    if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
+        DTNPCProtect.ResetCombatRhythm(npcData)
+    end
+    if DTNPCProtect and DTNPCProtect.ResetMeleeCombat then
+        DTNPCProtect.ResetMeleeCombat(npcData)
+    end
+    if DTNPCProtect and DTNPCProtect.StopCombatActions then
+        DTNPCProtect.StopCombatActions(zombie, npcData, "hostile_target_missing")
+    else
+        DTNPCMobility.Stop(zombie)
+        zombie:setTarget(nil)
+    end
+
+    local cooldownMs = tonumber(npcData.hostileNoTargetCooldownMs) or BehaviorAttack.GetHostileNoTargetCooldownMs(npcData)
+    if (nowMs - (tonumber(npcData.hostileNoTargetSince) or nowMs)) < cooldownMs then
+        return nil, 9999, true
+    end
+
+    BehaviorAttack.ClearHostileNoTargetState(npcData)
+    return nil, 9999, BehaviorAttack.BeginHostileResume(zombie, npcData, "hostile_target_lost")
 end
 
 function BehaviorAttack.BeginBanditPause(zombie, npcData, target, nowMs)
@@ -197,6 +400,7 @@ function BehaviorAttack.BeginBanditPause(zombie, npcData, target, nowMs)
     npcData.combatTargetType = nil
     BehaviorAttack.ResetHostileChaseTimers(npcData)
     BehaviorAttack.ClearHostileSightMemory(npcData)
+    BehaviorAttack.ClearHostileNoTargetState(npcData)
     BehaviorAttack.PushHostileNotice(zombie, npcData, "Lost them. Hold up a minute.", "warning")
     BehaviorAttack.HostileDebugLog(npcData, "bandit_pause", "cooldownMs=" .. tostring(pauseMs))
     BehaviorAttack.SyncHostileState(zombie, npcData, true)
@@ -224,6 +428,7 @@ function BehaviorAttack.BeginBanditFleeHome(zombie, npcData)
     npcData.lastFleeY = nil
     BehaviorAttack.ResetHostileChaseTimers(npcData)
     BehaviorAttack.ClearHostileSightMemory(npcData)
+    BehaviorAttack.ClearHostileNoTargetState(npcData)
     BehaviorAttack.PushHostileNotice(zombie, npcData, "Enough waiting. We're leaving.", "warning")
     BehaviorAttack.HostileDebugLog(npcData, "bandit_flee", "passive enough after chase cooldown")
     BehaviorAttack.SyncHostileState(zombie, npcData, true)

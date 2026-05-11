@@ -13,6 +13,42 @@ local function isPlayerTarget(target)
     return target and instanceof and instanceof(target, "IsoPlayer")
 end
 
+local function isBanditLike(npcData)
+    return npcData
+        and (npcData.isBandit == true
+            or npcData.banditGroupID ~= nil
+            or npcData.raidHostileFaction == true
+            or tostring(npcData.factionID or "") == "Bandits"
+            or tostring(npcData.archetypeID or "") == "Bandit")
+end
+
+local function selectNearestHostileThreat(zombie, npcData)
+    if not zombie or not npcData or not DTNPCProtect or not DTNPCProtect.SelectNearestThreat then
+        return nil, 9999
+    end
+
+    local anchorTarget = nil
+    local anchorRadius = nil
+    if not isBanditLike(npcData) then
+        anchorTarget = DTNPCProtect.GetCombatAnchorTarget and DTNPCProtect.GetCombatAnchorTarget(npcData, zombie) or nil
+        anchorRadius = DTNPCProtect.GetStationaryCombatLeashRadius and DTNPCProtect.GetStationaryCombatLeashRadius(npcData) or nil
+    end
+
+    local target, dist = DTNPCProtect.SelectNearestThreat(zombie, npcData, nil, anchorTarget, anchorRadius, true)
+    local threatType = tostring(npcData.combatTargetType or "")
+    if target and (threatType == "player" or threatType == "dtnpc" or threatType == "bandits") then
+        return target, dist
+    end
+
+    if DTNPCProtect and DTNPCProtect.ClearCombatTarget then
+        DTNPCProtect.ClearCombatTarget(npcData)
+    else
+        npcData.combatTargetID = nil
+        npcData.combatTargetType = nil
+    end
+    return nil, 9999
+end
+
 local function findDTNPCTargetByCombatID(combatTargetID)
     local text = tostring(combatTargetID or "")
     local uuid = string.match(text, "^dtnpc:(.+)$")
@@ -76,6 +112,11 @@ function DTNPCLogic.GetClosestTarget(zombie)
             if banditTarget then
                 return banditTarget, Internal.CalculateDistance(zombie, banditTarget)
             end
+        end
+
+        local hostileTarget, hostileDist = selectNearestHostileThreat(zombie, npcData)
+        if hostileTarget then
+            return hostileTarget, hostileDist
         end
 
         local player = zombie:getTarget()

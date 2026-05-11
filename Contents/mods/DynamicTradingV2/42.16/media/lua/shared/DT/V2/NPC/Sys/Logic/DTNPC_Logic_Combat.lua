@@ -153,6 +153,8 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             npcData.state = nextState
             npcData.isHostile = true
             npcData.tasks = {}
+            npcData.hostileNoTargetSince = nil
+            npcData.hostileNoTargetCooldownMs = nil
 
             local attackerName = attacker:getUsername() or "Unknown Player"
             DynamicTrading.Log(
@@ -184,6 +186,9 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             end
 
             if hostile then
+                if DTNPCLogic.RememberHostileChaseOrigin then
+                    DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
+                end
                 local dx = attacker:getX() - zombie:getX()
                 local dy = attacker:getY() - zombie:getY()
                 local dist = math.sqrt((dx * dx) + (dy * dy))
@@ -195,6 +200,8 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
                 npcData.state = nextState
                 npcData.isHostile = true
                 npcData.tasks = {}
+                npcData.hostileNoTargetSince = nil
+                npcData.hostileNoTargetCooldownMs = nil
                 npcData.combatTargetID = "dtnpc:" .. tostring(attackerUUID)
                 npcData.combatTargetType = "dtnpc"
 
@@ -214,6 +221,9 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
         elseif DTModPatchesBandits
             and DTModPatchesBandits.IsHostileBanditsNPC
             and DTModPatchesBandits.IsHostileBanditsNPC(attacker) then
+            if DTNPCLogic.RememberHostileChaseOrigin then
+                DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
+            end
             local dx = attacker:getX() - zombie:getX()
             local dy = attacker:getY() - zombie:getY()
             local dist = math.sqrt((dx * dx) + (dy * dy))
@@ -225,6 +235,8 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             npcData.state = nextState
             npcData.isHostile = true
             npcData.tasks = {}
+            npcData.hostileNoTargetSince = nil
+            npcData.hostileNoTargetCooldownMs = nil
             npcData.combatTargetID = DTModPatchesBandits.BuildBanditsCombatTargetID
                 and DTModPatchesBandits.BuildBanditsCombatTargetID(attacker)
                 or nil

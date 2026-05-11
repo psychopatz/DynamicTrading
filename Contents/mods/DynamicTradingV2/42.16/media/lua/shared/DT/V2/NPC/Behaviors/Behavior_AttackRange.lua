@@ -8,6 +8,7 @@ DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 require "DT/V2/NPC/Sys/DTNPC_Protect"
 require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
 require "Misc/DT_LightSystem"
+require "DT/V2/NPC/Behaviors/BehaviorAttack/Behavior_Attack"
 
 -- DISTANCE CONFIG
 local KITE_DIST_MIN = 3.5
@@ -142,6 +143,19 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     end
 
     if not target or target:isDead() then
+        if DTNPCLogic.BehaviorAttack and DTNPCLogic.BehaviorAttack.HandleMissingHostileTarget then
+            local replacementTarget, replacementDist, handled = DTNPCLogic.BehaviorAttack.HandleMissingHostileTarget(zombie, npcData)
+            if handled then
+                return
+            end
+            if replacementTarget then
+                target = replacementTarget
+                dist = replacementDist
+            end
+        end
+    end
+
+    if not target or target:isDead() then
         npcData.attackTimer = 0
         if DTNPCProtect and DTNPCProtect.ResetCombatRhythm then
             DTNPCProtect.ResetCombatRhythm(npcData)
@@ -149,6 +163,10 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         stopMoveAnim(zombie)
         zombie:setTarget(nil)
         return
+    end
+
+    if DTNPCLogic.BehaviorAttack and DTNPCLogic.BehaviorAttack.ClearHostileNoTargetState then
+        DTNPCLogic.BehaviorAttack.ClearHostileNoTargetState(npcData)
     end
 
     if DTNPCLogic.HandleHostileLostSight
@@ -260,6 +278,20 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
 
     local isMoving = false
     if moveDir ~= 0 then
+        if DTNPCLogic.BehaviorAttack and DTNPCLogic.BehaviorAttack.PrimeMovement then
+            local primeDir = moveDir > 0 and 1 or -1
+            if not DTNPCLogic.BehaviorAttack.PrimeMovement(
+                zombie,
+                npcData,
+                dx * primeDir,
+                dy * primeDir,
+                false,
+                moveDir > 0 and "hostile-ranged-advance" or "hostile-ranged-retreat"
+            ) then
+                return
+            end
+        end
+
         zombie:setVariable("DTIdleState", "0")
         local moved, moveState
         if moveDir > 0 then
@@ -318,6 +350,10 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
             forceCombatAnim(zombie, false)
         end
     else
+        if DTNPCLogic.BehaviorAttack then
+            npcData.attackMovePrimed = nil
+            npcData.attackMoveReason = nil
+        end
         forceCombatAnim(zombie, false)
         if DTNPC and DTNPC.SetRangedCombatIdleState then
             DTNPC.SetRangedCombatIdleState(zombie, npcData)

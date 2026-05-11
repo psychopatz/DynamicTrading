@@ -325,6 +325,21 @@ function DTNPCClient.OnZombieUpdate(zombie)
             DTNPCMobility.UpdateProactiveInteractions(zombie, npcData)
         end
     end
+
+    -- Zombie-NPC Hostility (Targeting and Attack Simulation)
+    if DTNPCHostility then
+        local modData = zombie:getModData()
+        local isDTNPCBody = modData and (modData.IsDTNPC == true or modData.DTNPC_UUID ~= nil)
+        local isBanditBody = zombie:getVariableBoolean("Bandit")
+        if not isDTNPCBody and not isBanditBody then
+            if DTNPCHostility.UpdateZombieTargeting then
+                DTNPCHostility.UpdateZombieTargeting(zombie)
+            end
+            if DTNPCHostility.UpdateAttackSimulation then
+                DTNPCHostility.UpdateAttackSimulation(zombie)
+            end
+        end
+    end
 end
 
 -- Events will be registered in DTNPC_ClientSync_Visuals.lua after all sync functions are defined.

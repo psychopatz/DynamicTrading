@@ -39,6 +39,19 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     end
 
     if not target or target:isDead() then
+        if BehaviorAttack.HandleMissingHostileTarget then
+            local replacementTarget, replacementDist, handled = BehaviorAttack.HandleMissingHostileTarget(zombie, npcData)
+            if handled then
+                return
+            end
+            if replacementTarget then
+                target = replacementTarget
+                dist = replacementDist
+            end
+        end
+    end
+
+    if not target or target:isDead() then
         npcData.attackTimer = 0
         if DTNPCProtect and DTNPCProtect.ResetMeleeCombat then
             DTNPCProtect.ResetMeleeCombat(npcData)
@@ -49,6 +62,10 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
         BehaviorAttack.StopMoveAnim(zombie, npcData)
         zombie:setTarget(nil)
         return
+    end
+
+    if BehaviorAttack.ClearHostileNoTargetState then
+        BehaviorAttack.ClearHostileNoTargetState(npcData)
     end
 
     if DTNPCLogic.HandleHostileLostSight
@@ -73,6 +90,21 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
         end
         BehaviorAttack.RunLegacyWakeup(zombie, target, dist)
         return
+    end
+
+    local actualDist = tonumber(dist) or BehaviorAttack.GetTargetDistance(zombie, target)
+    local moveThreshold = Constants.MELEE_DEFAULT_REACH + Constants.MELEE_APPROACH_STOP_BUFFER + 0.35
+    if actualDist > moveThreshold then
+        local dx = target:getX() - zombie:getX()
+        local dy = target:getY() - zombie:getY()
+        local chaseSpeed = Constants.MELEE_DEFAULT_SPEED
+        if BehaviorAttack.PrimeMovement
+            and not BehaviorAttack.PrimeMovement(zombie, npcData, dx, dy, chaseSpeed > 0.06, "hostile-melee-approach") then
+            return
+        end
+    else
+        npcData.attackMovePrimed = nil
+        npcData.attackMoveReason = nil
     end
 
     BehaviorAttack.EnsureManualControl(zombie)

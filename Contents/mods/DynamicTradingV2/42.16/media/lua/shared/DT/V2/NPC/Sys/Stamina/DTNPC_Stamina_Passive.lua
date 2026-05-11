@@ -39,7 +39,7 @@ function Stamina.ProcessPassive(zombie, npcData, state)
 
     local normalized = getSkillNormalized(npcData)
     local ratioBefore = Stamina.GetRatio(npcData)
-    local recoverRate = 4.3
+    local recoverRate = 10.5 -- Increased to compensate for zombie hostility
 
     local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
     local multiplier = tonumber(sandbox and sandbox.NPCStaminaRegenMultiplier) or 1.0
