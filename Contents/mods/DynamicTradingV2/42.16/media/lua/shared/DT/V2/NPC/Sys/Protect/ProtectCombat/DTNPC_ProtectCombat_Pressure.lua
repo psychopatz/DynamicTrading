@@ -9,6 +9,10 @@ DTNPCProtect.Internal = DTNPCProtect.Internal or {}
 local Internal = DTNPCProtect.Internal
 local getZombieRuntimeID = Internal.getZombieRuntimeID
 local getPlayerRuntimeID = Internal.getPlayerRuntimeID
+local getThreatPlayers = Internal.GetThreatPlayers
+local isHostilePlayerForNPC = Internal.IsHostilePlayerForNPC
+local getDTNPCDataFromZombie = Internal.GetDTNPCDataFromZombie
+local isDTNPCHostileToNPC = Internal.IsDTNPCHostileToNPC
 
 Internal.ProtectCombatRhythmResetMs = 4500
 
@@ -76,6 +80,99 @@ local function getNearbyZombiePressure(originX, originY, originZ, radius, exclud
     }
 end
 
+local function getNearbyHostilePressure(originX, originY, originZ, radius, npcData, excludedIDs)
+    local safeRadius = math.max(0.25, tonumber(radius) or DTNPCProtect.CONFIG.MeleeCrowdDangerRadius or 2.4)
+    local radiusSq = safeRadius * safeRadius
+    local count = 0
+    local closest = 9999
+    local weightedX = 0
+    local weightedY = 0
+    local totalWeight = 0
+
+    if npcData and getThreatPlayers and isHostilePlayerForNPC then
+        local players = getThreatPlayers() or {}
+        for i = 1, #players do
+            local player = players[i]
+            if player
+                and not player:isDead()
+                and math.abs((player:getZ() or 0) - (originZ or 0)) <= DTNPCProtect.CONFIG.FloorTolerance
+                and isHostilePlayerForNPC(npcData, player) then
+                local candidateID = getPlayerRuntimeID and getPlayerRuntimeID(player) or tostring(player)
+                if not (excludedIDs and excludedIDs[candidateID]) then
+                    local dx = player:getX() - originX
+                    local dy = player:getY() - originY
+                    local distSq = (dx * dx) + (dy * dy)
+                    if distSq <= radiusSq then
+                        local dist = math.sqrt(distSq)
+                        local weight = 1 / math.max(0.25, dist)
+                        count = count + 1
+                        closest = math.min(closest, dist)
+                        weightedX = weightedX + (player:getX() * weight)
+                        weightedY = weightedY + (player:getY() * weight)
+                        totalWeight = totalWeight + weight
+                    end
+                end
+            end
+        end
+    end
+
+    local zombieList = getCell and getCell() and getCell():getZombieList() or nil
+    if zombieList and npcData then
+        for i = 0, zombieList:size() - 1 do
+            local candidate = zombieList:get(i)
+            if candidate and not candidate:isDead() then
+                local candidateZ = candidate:getZ() or 0
+                if math.abs(candidateZ - (originZ or 0)) <= DTNPCProtect.CONFIG.FloorTolerance then
+                    local modData = candidate:getModData()
+                    local candidateID = nil
+                    local hostile = false
+
+                    if modData and modData.IsDTNPC == true then
+                        local targetData = nil
+                        local targetUUID = nil
+                        if getDTNPCDataFromZombie then
+                            targetData, targetUUID = getDTNPCDataFromZombie(candidate)
+                        end
+                        if targetData and targetUUID and targetUUID ~= npcData.uuid and isDTNPCHostileToNPC then
+                            hostile = isDTNPCHostileToNPC(npcData, targetData) == true
+                            candidateID = "dtnpc:" .. tostring(targetUUID)
+                        end
+                    elseif DTModPatchesBandits
+                        and DTModPatchesBandits.IsHostileBanditsNPC
+                        and DTModPatchesBandits.IsHostileBanditsNPC(candidate) then
+                        hostile = true
+                        candidateID = DTModPatchesBandits.BuildBanditsCombatTargetID
+                            and DTModPatchesBandits.BuildBanditsCombatTargetID(candidate)
+                            or getZombieRuntimeID(candidate)
+                    end
+
+                    if hostile and candidateID and not (excludedIDs and excludedIDs[candidateID]) then
+                        local dx = candidate:getX() - originX
+                        local dy = candidate:getY() - originY
+                        local distSq = (dx * dx) + (dy * dy)
+                        if distSq <= radiusSq then
+                            local dist = math.sqrt(distSq)
+                            local weight = 1 / math.max(0.25, dist)
+                            count = count + 1
+                            closest = math.min(closest, dist)
+                            weightedX = weightedX + (candidate:getX() * weight)
+                            weightedY = weightedY + (candidate:getY() * weight)
+                            totalWeight = totalWeight + weight
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return {
+        count = count,
+        closest = closest,
+        centerX = totalWeight > 0 and (weightedX / totalWeight) or originX,
+        centerY = totalWeight > 0 and (weightedY / totalWeight) or originY,
+    }
+end
+
 function DTNPCProtect.GetNearbyZombiePressure(zombie, radius, excludedIDs)
     if not zombie then
         return {
@@ -87,6 +184,19 @@ function DTNPCProtect.GetNearbyZombiePressure(zombie, radius, excludedIDs)
     end
 
     return getNearbyZombiePressure(zombie:getX(), zombie:getY(), zombie:getZ(), radius, excludedIDs)
+end
+
+function DTNPCProtect.GetNearbyHostilePressure(zombie, npcData, radius, excludedIDs)
+    if not zombie or not npcData then
+        return {
+            count = 0,
+            closest = 9999,
+            centerX = zombie and zombie:getX() or 0,
+            centerY = zombie and zombie:getY() or 0,
+        }
+    end
+
+    return getNearbyHostilePressure(zombie:getX(), zombie:getY(), zombie:getZ(), radius, npcData, excludedIDs)
 end
 
 local function resolveCombatTargetKey(target)
@@ -148,6 +258,7 @@ end
 
 Internal.ProtectCombatRollInt = rollInt
 Internal.GetNearbyZombiePressureAt = getNearbyZombiePressure
+Internal.GetNearbyHostilePressureAt = getNearbyHostilePressure
 Internal.ResolveCombatTargetKey = resolveCombatTargetKey
 Internal.GetCombatRhythmBucket = getCombatRhythmBucket
 Internal.RecordLinkedWorkerCombatAttack = recordLinkedWorkerCombatAttack

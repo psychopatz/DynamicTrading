@@ -36,7 +36,7 @@ local function selectNearestHostileThreat(zombie, npcData)
 
     local target, dist = DTNPCProtect.SelectNearestThreat(zombie, npcData, nil, anchorTarget, anchorRadius, true)
     local threatType = tostring(npcData.combatTargetType or "")
-    if target and (threatType == "player" or threatType == "dtnpc" or threatType == "bandits") then
+    if target and (threatType == "player" or threatType == "dtnpc" or threatType == "bandits" or threatType == "zombie") then
         return target, dist
     end
 

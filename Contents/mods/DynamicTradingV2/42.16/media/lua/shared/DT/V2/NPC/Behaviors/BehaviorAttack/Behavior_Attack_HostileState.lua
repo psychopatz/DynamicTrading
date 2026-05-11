@@ -171,7 +171,7 @@ function BehaviorAttack.SelectReplacementHostileTarget(zombie, npcData)
     local target, targetDist = DTNPCProtect.SelectNearestThreat(zombie, npcData, nil, anchorTarget, anchorRadius, true)
     local threatType = npcData.combatTargetType
 
-    if target and (threatType == "player" or threatType == "dtnpc" or threatType == "bandits") then
+    if target and (threatType == "player" or threatType == "dtnpc" or threatType == "bandits" or threatType == "zombie") then
         return target, targetDist
     end
 

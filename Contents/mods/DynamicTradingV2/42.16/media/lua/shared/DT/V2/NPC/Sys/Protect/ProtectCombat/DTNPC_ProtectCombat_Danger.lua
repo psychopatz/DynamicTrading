@@ -10,6 +10,35 @@ local Internal = DTNPCProtect.Internal
 local nowMillis = Internal.nowMillis
 local getZombieRuntimeID = Internal.getZombieRuntimeID
 local getNearbyZombiePressure = Internal.GetNearbyZombiePressureAt
+local getNearbyHostilePressure = Internal.GetNearbyHostilePressureAt
+
+local function combinePressure(primaryPressure, secondaryPressure, originX, originY)
+    local primary = type(primaryPressure) == "table" and primaryPressure or {}
+    local secondary = type(secondaryPressure) == "table" and secondaryPressure or {}
+    local primaryCount = tonumber(primary.count) or 0
+    local secondaryCount = tonumber(secondary.count) or 0
+    local total = primaryCount + secondaryCount
+    if total <= 0 then
+        return {
+            count = 0,
+            closest = math.min(tonumber(primary.closest) or 9999, tonumber(secondary.closest) or 9999),
+            centerX = originX,
+            centerY = originY,
+        }
+    end
+
+    local centerX = ((tonumber(primary.centerX) or originX) * primaryCount
+        + (tonumber(secondary.centerX) or originX) * secondaryCount) / total
+    local centerY = ((tonumber(primary.centerY) or originY) * primaryCount
+        + (tonumber(secondary.centerY) or originY) * secondaryCount) / total
+
+    return {
+        count = total,
+        closest = math.min(tonumber(primary.closest) or 9999, tonumber(secondary.closest) or 9999),
+        centerX = centerX,
+        centerY = centerY,
+    }
+end
 
 function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
     if not zombie or not npcData then
@@ -21,14 +50,21 @@ function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
     local combatHealth = DTNPCHealth and DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
     local currentTime = nowMillis()
     local recentZombieDamage = false
+    local recentHostileDamage = false
     local recentDamageAmount = 0
 
-    if combatHealth and combatHealth.lastAttackerType == "zombie" then
+    if combatHealth then
         local lastDamageAt = tonumber(combatHealth.lastDamageAt) or 0
         if lastDamageAt > 0
             and (currentTime - lastDamageAt) <= (tonumber(DTNPCProtect.CONFIG.MeleeRecentZombieDamageWindowMs) or 4500) then
-            recentZombieDamage = true
             recentDamageAmount = math.max(0, tonumber(combatHealth.lastDamageAmount) or 0)
+            if combatHealth.lastAttackerType == "zombie" then
+                recentZombieDamage = true
+            elseif combatHealth.lastAttackerType == "player"
+                or combatHealth.lastAttackerType == "dtnpc"
+                or combatHealth.lastAttackerType == "bandits" then
+                recentHostileDamage = true
+            end
         end
     end
 
@@ -38,11 +74,26 @@ function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
         excludedIDs[targetID] = true
     end
 
-    local selfPressure = DTNPCProtect.GetNearbyZombiePressure(
+    local selfZombiePressure = DTNPCProtect.GetNearbyZombiePressure(
         zombie,
         tonumber(options.pressureRadius) or DTNPCProtect.CONFIG.MeleeCrowdDangerRadius,
         nil
     )
+    local selfHostilePressure = getNearbyHostilePressure and getNearbyHostilePressure(
+        zombie:getX(),
+        zombie:getY(),
+        zombie:getZ(),
+        tonumber(options.pressureRadius) or DTNPCProtect.CONFIG.MeleeCrowdDangerRadius,
+        npcData,
+        excludedIDs
+    ) or {
+        count = 0,
+        closest = 9999,
+        centerX = zombie:getX(),
+        centerY = zombie:getY(),
+    }
+    local selfPressure = combinePressure(selfZombiePressure, selfHostilePressure, zombie:getX(), zombie:getY())
+
     local targetPressure = target and getNearbyZombiePressure(
         target:getX(),
         target:getY(),
@@ -63,12 +114,13 @@ function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
 
     local lowHealth = healthRatio <= lowHealthRatio
     local targetCrowdDanger = targetPressure.count >= crowdThreshold
-        and (selfPressure.count >= math.max(2, crowdThreshold - 1) or lowHealth or recentZombieDamage)
+        and (selfPressure.count >= math.max(2, crowdThreshold - 1) or lowHealth or recentZombieDamage or recentHostileDamage)
     local surrounded = selfPressure.count >= crowdThreshold
     local severeCrowd = selfPressure.count >= severeThreshold or targetCrowdDanger
-    local pressured = recentZombieDamage and (selfPressure.count >= math.max(2, crowdThreshold - 1) or targetPressure.count >= 2)
+    local pressured = (recentZombieDamage or recentHostileDamage)
+        and (selfPressure.count >= math.max(2, crowdThreshold - 1) or targetPressure.count >= 2)
 
-    if healthRatio > 0.72 and not recentZombieDamage and not severeCrowd then
+    if healthRatio > 0.72 and not recentZombieDamage and not recentHostileDamage and not severeCrowd then
         surrounded = false
     end
 
@@ -76,8 +128,11 @@ function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
         return {
             shouldDisengage = false,
             selfPressure = selfPressure,
+            selfZombiePressure = selfZombiePressure,
+            selfHostilePressure = selfHostilePressure,
             targetPressure = targetPressure,
             recentZombieDamage = recentZombieDamage,
+            recentHostileDamage = recentHostileDamage,
             recentDamageAmount = recentDamageAmount,
             healthRatio = healthRatio,
         }
@@ -108,8 +163,11 @@ function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
         fleeFromX = fleeFromX,
         fleeFromY = fleeFromY,
         selfPressure = selfPressure,
+        selfZombiePressure = selfZombiePressure,
+        selfHostilePressure = selfHostilePressure,
         targetPressure = targetPressure,
         recentZombieDamage = recentZombieDamage,
+        recentHostileDamage = recentHostileDamage,
         recentDamageAmount = recentDamageAmount,
         healthRatio = healthRatio,
     }

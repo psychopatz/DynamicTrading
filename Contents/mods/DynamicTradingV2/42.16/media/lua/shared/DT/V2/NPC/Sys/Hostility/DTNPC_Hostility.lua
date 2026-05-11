@@ -8,3 +8,4 @@ DTNPCHostility.Internal = DTNPCHostility.Internal or {}
 
 require "DT/V2/NPC/Sys/Hostility/DTNPC_Hostility_ZombieTargeting"
 require "DT/V2/NPC/Sys/Hostility/DTNPC_Hostility_AttackSimulation"
+require "DT/V2/NPC/Sys/Hostility/DTNPC_Hostility_Sounds"

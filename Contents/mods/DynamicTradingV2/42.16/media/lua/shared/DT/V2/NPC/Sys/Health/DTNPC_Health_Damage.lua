@@ -88,6 +88,11 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
         zombie:setAttackedBy(attacker)
     end
 
+    -- Play unique hurt sound based on character identity
+    if DTNPCHostility and DTNPCHostility.PlayHurtSound then
+        DTNPCHostility.PlayHurtSound(zombie, npcData)
+    end
+
     if combatHealth.current <= 0 then
         local handled = DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
         return handled, handled

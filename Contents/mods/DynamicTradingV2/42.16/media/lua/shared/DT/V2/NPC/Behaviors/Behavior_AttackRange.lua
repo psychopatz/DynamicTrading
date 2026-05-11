@@ -254,11 +254,28 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     end
     local desiredMin = recovering and math.max(KITE_DIST_MIN, recovery and recovery.distance or KITE_DIST_MIN) or KITE_DIST_MIN
     local desiredMax = recovering and math.max(KITE_DIST_MAX, desiredMin + 0.75) or KITE_DIST_MAX
+    local dangerState = DTNPCProtect and DTNPCProtect.GetMeleeDangerState
+        and DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, {
+            engageReach = desiredMin,
+            retreatDistance = math.max(desiredMax + 1.25, desiredMin + 1.65),
+            pressureRadius = 2.8,
+            targetPressureRadius = 2.1,
+        })
+        or nil
+
+    if dangerState and dangerState.shouldDisengage == true then
+        desiredMin = math.max(desiredMin, tonumber(dangerState.retreatDistance) or (desiredMin + 1.65))
+        desiredMax = math.max(desiredMax, desiredMin + 1.0)
+    end
 
     local moveDir = 0
     local currentSpeed = 0
-    
-    if len < desiredMin then
+
+    if dangerState and dangerState.shouldDisengage == true and len < desiredMin then
+        npcData.reactionTimer = REACTION_DELAY + 1
+        moveDir = -1
+        currentSpeed = math.max(SPEED_BCK, SPEED_FWD)
+    elseif len < desiredMin then
         npcData.reactionTimer = npcData.reactionTimer + 1
         if npcData.reactionTimer > REACTION_DELAY then
             moveDir = -1
