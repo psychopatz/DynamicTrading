@@ -83,6 +83,6 @@ require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Server"
 require "DT/V2/NPC/Bandits/DTNPC_Bandits"
 
 -- 7. Commands - Client command handler (needs all of the above)
-require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Commands"
+require "DT/V2/NPC/ServerCore/ServerCoreCommands/DTNPC_ServerCoreCommands"
 
 DynamicTrading.Log("DTV2", "NPC", "Init", "ServerCore initialized successfully")
