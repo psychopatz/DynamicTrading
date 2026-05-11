@@ -101,7 +101,7 @@ DTNPCHealth.DEFAULT_RESTING_REGEN_MULTIPLIER = DTNPCHealth.DEFAULT_RESTING_REGEN
 
 require "DT/V2/NPC/Sys/Health/DTNPC_Health_Shared"
 require "DT/V2/NPC/Sys/Health/DTNPC_Health_Defaults"
-require "DT/V2/NPC/Sys/Health/DTNPC_Health_Bandage"
+require "DT/V2/NPC/Sys/Health/HealthBandage/DTNPC_HealthBandage"
 require "DT/V2/NPC/Sys/Health/DTNPC_Health_Spawn"
 require "DT/V2/NPC/Sys/Lifecycle/DTNPC_Lifecycle"
 require "DT/V2/NPC/Sys/Health/DTNPC_Health_Damage"
