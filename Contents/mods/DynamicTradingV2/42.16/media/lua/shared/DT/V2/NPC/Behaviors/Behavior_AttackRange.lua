@@ -7,6 +7,7 @@ DTNPCLogic = DTNPCLogic or {}
 DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 require "DT/V2/NPC/Sys/DTNPC_Protect"
 require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
+require "Misc/DT_LightSystem"
 
 -- DISTANCE CONFIG
 local KITE_DIST_MIN = 3.5
@@ -314,6 +315,9 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
         end
         DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
         zombie:getEmitter():playSound("DT_GunRandom")
+        if DT_LightSystem and DT_LightSystem.MuzzleFlash then
+            DT_LightSystem.MuzzleFlash(zombie)
+        end
 
         local hitChance = isMoving and stats.hitMove or stats.hitStill
         if ZombRand(100) < hitChance then

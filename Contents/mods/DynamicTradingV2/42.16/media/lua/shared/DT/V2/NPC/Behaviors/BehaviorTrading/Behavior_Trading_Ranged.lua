@@ -8,6 +8,7 @@ DTNPCLogic.Behaviors = DTNPCLogic.Behaviors or {}
 DTNPCLogic.BehaviorTrading = DTNPCLogic.BehaviorTrading or {}
 
 local Trading = DTNPCLogic.BehaviorTrading
+require "Misc/DT_LightSystem"
 
 DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     local target, targetDist = Trading.SelectStationaryThreat(zombie, npcData)
@@ -222,6 +223,9 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     end
     DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
     zombie:getEmitter():playSound("DT_GunRandom")
+    if DT_LightSystem and DT_LightSystem.MuzzleFlash then
+        DT_LightSystem.MuzzleFlash(zombie)
+    end
 
     local hitChance = moved and stats.hitMove or stats.hitStill
     Trading.MarkCombatPursuit(npcData, target, targetDist, attacked)

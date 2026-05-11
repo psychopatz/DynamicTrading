@@ -3,6 +3,8 @@
 -- Combat stats and hit resolution for DTNPCProtect.
 -- ==============================================================================
 
+require "Misc/DT_LightSystem"
+
 DTNPCProtect = DTNPCProtect or {}
 DTNPCProtect.Internal = DTNPCProtect.Internal or {}
 

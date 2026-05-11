@@ -6,6 +6,7 @@
 DTNPCProtect = DTNPCProtect or {}
 DTNPCProtect.Internal = DTNPCProtect.Internal or {}
 require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
+require "Misc/DT_LightSystem"
 
 local RANGED_KITE_MIN = 3.25
 local RANGED_KITE_MAX = 8.5
@@ -409,6 +410,9 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
     end
     DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
     zombie:getEmitter():playSound("DT_GunRandom")
+    if DT_LightSystem and DT_LightSystem.MuzzleFlash then
+        DT_LightSystem.MuzzleFlash(zombie)
+    end
 
     local hitChance = moved and stats.hitMove or stats.hitStill
     local hit = false
