@@ -33,7 +33,7 @@ require "DT/V2/NPC/Behaviors/Behavior_Stay"
 require "DT/V2/NPC/Behaviors/Behavior_Guard"
 require "DT/V2/NPC/Behaviors/Behavior_LootNearby"
 require "DT/V2/NPC/Behaviors/BehaviorTrading/Behavior_Trading"
-require "DT/V2/NPC/Behaviors/Behavior_Departure"
+require "DT/V2/NPC/Behaviors/BehaviorDeparture/Behavior_Departure"
 require "DT/V2/NPC/Behaviors/Behavior_Incapacitated"
 
 require "DT/V2/NPC/Sys/Logic/DTNPC_Logic_Core"
