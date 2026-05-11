@@ -4,6 +4,7 @@
 -- ==============================================================================
 
 require "Misc/DT_LightSystem"
+require "Misc/DT_DamageSystem"
 
 DTNPCProtect = DTNPCProtect or {}
 DTNPCProtect.Internal = DTNPCProtect.Internal or {}
@@ -306,24 +307,27 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
         return false, nil
     end
 
+    local recovering, recoveryState = DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
+    if recovering then
+        return true, recoveryState
+    end
+
     if DTNPCCombat and DTNPCCombat.NotifyAttack then
         DTNPCCombat.NotifyAttack(zombie, npcData, attackType, target)
     end
+
     if attackType == "melee" and DTNPCStamina and DTNPCStamina.ConsumeMeleeAttack then
         DTNPCStamina.ConsumeMeleeAttack(zombie, npcData)
     end
+
     if DTNPC_ZombieAggro and DTNPC_ZombieAggro.EmitCombatNoise then
         local emitted = DTNPC_ZombieAggro.EmitCombatNoise(zombie, npcData, attackType)
         if emitted ~= true and DTNPC_ZombieAggro.ApplyCombatStimuli then
             DTNPC_ZombieAggro.ApplyCombatStimuli()
         end
     end
-    recordLinkedWorkerCombatAttack(npcData, attackType)
 
-    local recovering, recoveryState = DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
-    if recovering then
-        return true, recoveryState
-    end
+    recordLinkedWorkerCombatAttack(npcData, attackType)
 
     local rhythm = getCombatRhythmBucket(npcData)
     local profile = recoveryState and recoveryState.profile or DTNPCProtect.GetCombatRhythmProfile(npcData, attackType)
@@ -360,25 +364,6 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
     }
 end
 
-local function rollWeaponDamage(item)
-    local minDamage = item and item.getMinDamage and tonumber(item:getMinDamage()) or nil
-    local maxDamage = item and item.getMaxDamage and tonumber(item:getMaxDamage()) or nil
-
-    if not minDamage or minDamage <= 0 then
-        minDamage = maxDamage or 0.35
-    end
-    if not maxDamage or maxDamage < minDamage then
-        maxDamage = minDamage
-    end
-
-    if ZombRandFloat then
-        return ZombRandFloat(minDamage, maxDamage)
-    end
-
-    return (minDamage + maxDamage) * 0.5
-end
-
-Internal.rollWeaponDamage = rollWeaponDamage
 
 local function playEmitterSound(character, soundName)
     if not character or not soundName or soundName == "" then
@@ -404,26 +389,6 @@ local function getAttackWeaponItem(npcData, attackType)
     return nil
 end
 
-local function scaleWeaponDamage(npcData, attackType, baseDamage, weaponItem)
-    local damage = math.max(0.05, tonumber(baseDamage) or 0.1)
-    if not weaponItem then
-        return damage
-    end
-
-    if attackType == "ranged" then
-        local shootingSkill = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
-        local normalized = math.min(math.max(shootingSkill, 0), 20) / 20
-        return math.max(damage, rollWeaponDamage(weaponItem) * (0.75 + (normalized * 0.75)))
-    end
-
-    if attackType == "melee" then
-        local meleeSkill = DTNPCProtect.GetSkillLevel(npcData, "Melee")
-        local normalized = math.min(math.max(meleeSkill, 0), 20) / 20
-        return math.max(damage, rollWeaponDamage(weaponItem) * (0.8 + (normalized * 0.9)))
-    end
-
-    return damage
-end
 
 local function playSuccessfulHitSound(zombie, target, weaponItem, attackType)
     if target and instanceof(target, "IsoPlayer") then
@@ -454,6 +419,7 @@ local function playSuccessfulHitSound(zombie, target, weaponItem, attackType)
     end
     playEmitterSound(target, "ImpactFlesh")
 end
+
 
 function DTNPCProtect.GetRangedShotSpecs(npcData)
     local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "ranged")
@@ -487,18 +453,18 @@ function DTNPCProtect.GetRangedShotSpecs(npcData)
     }
 end
 
+
 function DTNPCProtect.GetRangedCombatStats(npcData)
     local shooting = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
     local normalized = math.min(math.max(shooting, 0), 20) / 20
     local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "ranged")
-    local avgDamage = rollWeaponDamage(weaponItem)
-    local scaledDamage = avgDamage * (0.75 + (normalized * 0.75))
+    local damage = DT_DamageSystem.GetScaledDamage(npcData, "ranged", weaponItem)
 
     return {
         hitStill = math.floor(22 + (normalized * 58)),
         hitMove = math.floor(10 + (normalized * 35)),
         fireRate = math.max(36, math.floor(96 - (normalized * 44))),
-        damage = math.max(0.22 + (normalized * 0.5), scaledDamage),
+        damage = damage,
     }
 end
 
@@ -507,17 +473,17 @@ function DTNPCProtect.GetMeleeCombatStats(npcData)
     local normalized = math.min(math.max(melee, 0), 20) / 20
     local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "melee")
     local weaponRange = weaponItem and weaponItem.getMaxRange and tonumber(weaponItem:getMaxRange()) or 1.0
-    local avgDamage = rollWeaponDamage(weaponItem)
-    local scaledDamage = avgDamage * (0.8 + (normalized * 0.9))
+    local damage = DT_DamageSystem.GetScaledDamage(npcData, "melee", weaponItem)
 
     return {
         hitChance = math.floor(55 + (normalized * 40)),
         attackRate = math.max(24, math.floor(42 - (normalized * 16))),
-        damage = math.max(0.45, scaledDamage),
+        damage = damage,
         chaseSpeed = 0.045 + (normalized * 0.02),
         reach = clamp(weaponRange + 0.15, 1.15, 1.9),
     }
 end
+
 
 function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
     if not zombie or not npcData then
@@ -623,6 +589,7 @@ function DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, options)
     }
 end
 
+
 function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     if not zombie or not target or target:isDead() then
         return false, false
@@ -647,7 +614,9 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     local targetNPCData = targetModData and (targetModData.DTNPC_Data or targetModData.DTNPCBrain) or nil
     local isDTNPCTarget = targetModData and targetModData.IsDTNPC == true and targetNPCData ~= nil
 
-    damage = scaleWeaponDamage(npcData, attackType, damage, weaponItem)
+    damage = DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem)
+    local hitEffects = DT_DamageSystem.CalculateHitEffects(npcData, target, damage, attackType)
+    damage = hitEffects.damage
 
     if isDTNPCTarget and DTNPCHealth and DTNPCHealth.IsCustomHealthEnabled and DTNPCHealth.IsCustomHealthEnabled(targetNPCData) then
         return DTNPCHealth.ApplyDamage(target, targetNPCData, damage, zombie, {
