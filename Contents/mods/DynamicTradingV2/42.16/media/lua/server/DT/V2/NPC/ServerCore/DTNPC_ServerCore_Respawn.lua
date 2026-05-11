@@ -219,11 +219,12 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
 
     local zombie = zombieList:get(0)
     local newBodyInstanceID = zombie:getPersistentOutfitID()
+    local newPresenceRevision = DTNPCManager and DTNPCManager.BumpPresenceRevision and DTNPCManager.BumpPresenceRevision(npcData) or nil
     
     DynamicTrading.Log("DTV2", "NPC", "Respawn", "Respawned with new BodyInstanceID: " .. newBodyInstanceID)
 
     if previousBodyInstanceID and previousBodyInstanceID ~= newBodyInstanceID and DTNPCServerCore.NotifyInstanceRemoval then
-        DTNPCServerCore.NotifyInstanceRemoval(uuid, previousBodyInstanceID)
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, previousBodyInstanceID, newPresenceRevision)
     end
     
     local modData = zombie:getModData()
@@ -311,6 +312,9 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
     end
     
     modData.DTNPCVisualID = npcData.visualID
+    if newPresenceRevision ~= nil then
+        modData.DTNPCPresenceRevision = newPresenceRevision
+    end
 
     zombie:setUseless(true) 
     zombie:DoZombieStats()

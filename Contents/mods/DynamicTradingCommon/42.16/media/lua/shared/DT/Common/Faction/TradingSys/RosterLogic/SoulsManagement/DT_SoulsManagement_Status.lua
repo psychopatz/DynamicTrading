@@ -104,6 +104,8 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
             npcData.departureLastDirY = nil
             npcData.departureStartedAt = nil
             npcData.departureForceDespawnAt = nil
+            npcData.currentBodyInstanceID = nil
+            npcData.startupBodyInstanceHint = nil
         end
 
         if status == "Dead" then
@@ -122,6 +124,10 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         if returnTime ~= nil then npcData.returnTime = returnTime end
         if returnStatus ~= nil then npcData.returnStatus = returnStatus end
 
+        if DTNPCManager and DTNPCManager.EnsurePresenceRevision then
+            DTNPCManager.EnsurePresenceRevision(npcData)
+        end
+
         DynamicTrading_Roster.SaveSoul(uuid, npcData)
 
         if DynamicTrading_Stock and DynamicTrading_Stock.OnSoulStatusChanged then
@@ -137,6 +143,7 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         registry.incapState = npcData and npcData.incapState or registry.incapState
         registry.returnTime = returnTime
         registry.returnStatus = returnStatus
+        registry.presenceRevision = npcData and npcData.presenceRevision or registry.presenceRevision
         registry.linkedWorkerID = npcData and npcData.linkedWorkerID or registry.linkedWorkerID
         registry.ownerUsername = npcData and npcData.ownerUsername or registry.ownerUsername
         registry.isPlayerFactionTrader = npcData and (npcData.isPlayerFactionTrader == true) or registry.isPlayerFactionTrader

@@ -69,6 +69,7 @@ function DTNPCServerCore.SyncToAllClients(zombie, npcData)
     local syncData = {
         uuid = uuid,
         bodyInstanceID = bodyInstanceID,
+        presenceRevision = DTNPCManager and DTNPCManager.GetPresenceRevision and DTNPCManager.GetPresenceRevision(npcData) or tonumber(npcData.presenceRevision) or 0,
         onlineID = zombie:getOnlineID(),
         x = zombie:getX(),
         y = zombie:getY(),
@@ -92,6 +93,7 @@ function DTNPCServerCore.SyncToAllClients(zombie, npcData)
             "SyncNPC send name=" .. tostring(npcData.name or uuid)
                 .. " uuid=" .. tostring(uuid)
                 .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+                .. " presenceRevision=" .. tostring(syncData.presenceRevision)
                 .. " pos=" .. tostring(syncData.x) .. "," .. tostring(syncData.y) .. "," .. tostring(syncData.z)
                 .. " engineHealth=" .. tostring(zombie:getHealth())
                 .. " customCurrent=" .. tostring(npcData.combatHealth and npcData.combatHealth.current or nil)
@@ -130,6 +132,7 @@ function DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
     local syncData = {
         uuid = uuid,
         bodyInstanceID = bodyInstanceID,
+        presenceRevision = DTNPCManager and DTNPCManager.GetPresenceRevision and DTNPCManager.GetPresenceRevision(npcData) or tonumber(npcData.presenceRevision) or 0,
         onlineID = zombie:getOnlineID(),
         x = zombie:getX(),
         y = zombie:getY(),
@@ -211,6 +214,7 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
     local posData = {
         uuid = uuid,
         bodyInstanceID = zombie:getPersistentOutfitID(),
+        presenceRevision = DTNPCManager and DTNPCManager.GetPresenceRevision and DTNPCManager.GetPresenceRevision(npcData) or tonumber(npcData.presenceRevision) or 0,
         onlineID = zombie:getOnlineID(),
         x = zombie:getX(),
         y = zombie:getY(),
@@ -298,7 +302,13 @@ function DTNPCServerCore.NotifyRemoval(uuid, bodyInstanceID, name, removalReason
         end
     end
 
-    local data = { uuid = uuid, bodyInstanceID = bodyInstanceID, name = name, removalReason = effectiveReason }
+    local data = {
+        uuid = uuid,
+        bodyInstanceID = bodyInstanceID,
+        name = name,
+        removalReason = effectiveReason,
+        presenceRevision = type(removalContext) == "table" and removalContext.presenceRevision or nil,
+    }
     if type(removalContext) == "table" then
         data.killerUsername = removalContext.killerUsername
         data.killerOnlineID = removalContext.killerOnlineID
@@ -327,12 +337,13 @@ function DTNPCServerCore.NotifyRemoval(uuid, bodyInstanceID, name, removalReason
     )
 end
 
-function DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID)
+function DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID, presenceRevision)
     if not bodyInstanceID then return end
 
     local data = {
         uuid = uuid,
         bodyInstanceID = bodyInstanceID,
+        presenceRevision = presenceRevision,
     }
 
     if isServer() then

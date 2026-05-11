@@ -41,6 +41,21 @@ function Handlers.HandleRemoveNPC(args)
     local uuid = args.uuid
     local name = args.name or "Unknown"
     local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
+    local shouldAccept, presenceRevision = Helpers.ShouldAcceptPresence(uuid, args)
+    if not shouldAccept then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Remove",
+            "Ignored stale RemoveNPC for uuid=" .. tostring(uuid)
+                .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+                .. " presenceRevision=" .. tostring(presenceRevision)
+        )
+        return
+    end
+    if DTNPCClient.SetPresenceRevision then
+        DTNPCClient.SetPresenceRevision(uuid, presenceRevision)
+    end
     local cachedEntry = DTNPCClient.NPCCache[uuid]
     local factionID = cachedEntry and cachedEntry.npcData and cachedEntry.npcData.factionID or nil
     local reason = args.removalReason or args.status
@@ -63,6 +78,7 @@ function Handlers.HandleRemoveNPC(args)
             .. " reason=" .. tostring(args.removalReason or args.status or "unknown")
             .. " returnStatus=" .. tostring(args.returnStatus or "nil")
             .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+            .. " presenceRevision=" .. tostring(presenceRevision)
     )
 
     if removeCache then
@@ -121,6 +137,13 @@ function Handlers.HandleRemoveNPCInstance(args)
     end
 
     local uuid = args.uuid
+    local shouldAccept, presenceRevision = Helpers.ShouldAcceptPresence(uuid, args)
+    if not shouldAccept then
+        return
+    end
+    if DTNPCClient.SetPresenceRevision then
+        DTNPCClient.SetPresenceRevision(uuid, presenceRevision)
+    end
     local zombie = DTNPCClient.FindZombieByBodyInstanceID and DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID) or nil
 
     if zombie then

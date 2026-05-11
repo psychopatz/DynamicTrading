@@ -61,6 +61,28 @@ function Helpers.ResolveBodyInstanceID(data)
     return data.bodyInstanceID
 end
 
+function Helpers.ResolvePresenceRevision(data)
+    if not data then
+        return 0
+    end
+
+    local revision = data.presenceRevision
+    if revision == nil and type(data.npcData) == "table" then
+        revision = data.npcData.presenceRevision
+    end
+
+    return math.max(0, math.floor(tonumber(revision) or 0))
+end
+
+function Helpers.ShouldAcceptPresence(uuid, data)
+    local revision = Helpers.ResolvePresenceRevision(data)
+    if DTNPCClient.ShouldAcceptPresenceRevision and not DTNPCClient.ShouldAcceptPresenceRevision(uuid, revision) then
+        return false, revision
+    end
+
+    return true, revision
+end
+
 function Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
     local zombie = DTNPCClient.FindZombieByUUID(uuid)
     if not zombie and bodyInstanceID then

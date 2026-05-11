@@ -282,6 +282,10 @@ local function tryReclaimZombieFromStartupHint(uuid, npcData, soul)
         return nil
     end
 
+    if DTNPCManager.IsPhysicalWorldStatus and not DTNPCManager.IsPhysicalWorldStatus(npcData.status, npcData) then
+        return nil
+    end
+
     local hintBodyInstanceID = npcData.startupBodyInstanceHint
     if not hintBodyInstanceID or not DTNPCServerCore.FindZombieByBodyInstanceID then
         return nil
@@ -377,18 +381,24 @@ local function recycleNearbyZombieForSync(uuid, npcData, zombie, reason)
             .. " bodyInstanceID=" .. tostring(bodyInstanceID)
     )
 
+    local removalRevision = DTNPCManager and DTNPCManager.BumpPresenceRevision and DTNPCManager.BumpPresenceRevision(npcData) or nil
+
     zombie:removeFromWorld()
     zombie:removeFromSquare()
 
     if bodyInstanceID and DTNPCServerCore.NotifyInstanceRemoval then
-        DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID)
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID, removalRevision)
     end
 
-    if tostring(npcData.currentBodyInstanceID or "") == tostring(bodyInstanceID or "") then
-        npcData.currentBodyInstanceID = nil
-    end
-    if tostring(npcData.startupBodyInstanceHint or "") == tostring(bodyInstanceID or "") then
-        npcData.startupBodyInstanceHint = nil
+    if DTNPCManager and DTNPCManager.ClearPhysicalBodyIdentity then
+        DTNPCManager.ClearPhysicalBodyIdentity(npcData, bodyInstanceID)
+    else
+        if tostring(npcData.currentBodyInstanceID or "") == tostring(bodyInstanceID or "") then
+            npcData.currentBodyInstanceID = nil
+        end
+        if tostring(npcData.startupBodyInstanceHint or "") == tostring(bodyInstanceID or "") then
+            npcData.startupBodyInstanceHint = nil
+        end
     end
 
     local respawnedZombie = DTNPCServerCore.RespawnNPC(npcData, uuid)
@@ -784,6 +794,7 @@ local function onClientCommand(module, command, player, args)
                             nearby[uuid] = {
                                 uuid = uuid,
                                 bodyInstanceID = zombie:getPersistentOutfitID(),
+                                presenceRevision = DTNPCManager and DTNPCManager.GetPresenceRevision and DTNPCManager.GetPresenceRevision(npcData) or tonumber(npcData.presenceRevision) or 0,
                                 x = zombie:getX(),
                                 y = zombie:getY(),
                                 z = zombie:getZ(),

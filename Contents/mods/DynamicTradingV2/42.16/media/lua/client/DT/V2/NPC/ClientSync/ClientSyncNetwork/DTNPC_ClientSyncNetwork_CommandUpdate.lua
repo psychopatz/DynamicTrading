@@ -103,10 +103,19 @@ function Handlers.HandleUpdatePosition(args)
     local uuid = args.uuid
     local cached = DTNPCClient.NPCCache[uuid]
     local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
+    local shouldAccept, presenceRevision = Helpers.ShouldAcceptPresence(uuid, args)
+    if not shouldAccept then
+        return
+    end
+    if DTNPCClient.SetPresenceRevision then
+        DTNPCClient.SetPresenceRevision(uuid, presenceRevision)
+    end
 
     Helpers.RecordInterpolation(uuid, args.x, args.y, args.z, nil, args.motionHint)
 
     if cached and cached.npcData then
+        cached.presenceRevision = presenceRevision
+        cached.npcData.presenceRevision = presenceRevision
         cached.npcData.lastX = math.floor(args.x)
         cached.npcData.lastY = math.floor(args.y)
         cached.npcData.lastZ = math.floor(args.z)

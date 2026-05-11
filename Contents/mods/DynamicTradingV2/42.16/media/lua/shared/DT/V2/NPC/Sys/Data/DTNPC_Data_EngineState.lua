@@ -266,6 +266,7 @@ function DTNPC.RestoreNPCBodyState(zombie, npcData, options)
         if npcData.visualID then
             modData.DTNPCVisualID = npcData.visualID
         end
+        modData.DTNPCPresenceRevision = math.max(0, math.floor(tonumber(npcData.presenceRevision) or 0))
     end
 
     zombie:setVariable("DTNPC", true)

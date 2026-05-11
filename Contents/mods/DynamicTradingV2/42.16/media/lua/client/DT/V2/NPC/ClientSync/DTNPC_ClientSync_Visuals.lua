@@ -30,6 +30,12 @@ local function doesZombieMatchUUID(zombie, uuid)
     local cachedData = cached and cached.npcData or nil
     local bodyInstanceID = zombie:getPersistentOutfitID()
     local expectedBodyInstanceID = cachedData and cachedData.currentBodyInstanceID or nil
+    local expectedPresenceRevision = cachedData and math.max(0, math.floor(tonumber(cachedData.presenceRevision) or 0)) or nil
+    local zombiePresenceRevision = modData and math.max(0, math.floor(tonumber(modData.DTNPCPresenceRevision) or 0)) or 0
+
+    if expectedPresenceRevision and zombiePresenceRevision < expectedPresenceRevision then
+        return false
+    end
 
     if expectedBodyInstanceID and bodyInstanceID ~= expectedBodyInstanceID then
         local zombieData = (modData and (modData.DTNPC_Data or modData.DTNPCBrain)) or nil
@@ -58,6 +64,12 @@ local function scoreZombieForUUID(zombie, uuid)
     local cachedData = cached and cached.npcData or nil
     local score = 0
     local hasIdentityEvidence = false
+    local expectedPresenceRevision = cachedData and math.max(0, math.floor(tonumber(cachedData.presenceRevision) or 0)) or nil
+    local zombiePresenceRevision = modData and math.max(0, math.floor(tonumber(modData.DTNPCPresenceRevision) or 0)) or 0
+
+    if expectedPresenceRevision and zombiePresenceRevision < expectedPresenceRevision then
+        return nil
+    end
 
     if modData and modData.DTNPC_UUID == uuid then
         score = score + 100
@@ -137,6 +149,7 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
             zombie:setVariable("DTNPC", true)
         end
     end
+    modData.DTNPCPresenceRevision = math.max(0, math.floor(tonumber(npcData.presenceRevision) or 0))
 
     if DTNPC and DTNPC.ApplySafetyFlags then
         DTNPC.ApplySafetyFlags(zombie, npcData, { clearPlayerTarget = true })

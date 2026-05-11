@@ -44,6 +44,7 @@ function DTNPCManager.Register(zombie, npcData)
     if npcData.visualID then
         modData.DTNPCVisualID = npcData.visualID
     end
+    modData.DTNPCPresenceRevision = DTNPCManager.GetPresenceRevision(npcData)
 
     if not zombie:isUseless() then
         zombie:setUseless(true)
@@ -61,6 +62,7 @@ function DTNPCManager.Register(zombie, npcData)
     DTNPCManager.PendingRegistrations[uuid] = true
     
     -- Update npcData data
+    DTNPCManager.EnsurePresenceRevision(npcData)
     npcData.currentBodyInstanceID = bodyInstanceID
     npcData.startupBodyInstanceHint = nil
     npcData.lastX = math.floor(zombie:getX())
@@ -100,6 +102,15 @@ function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
         npcData.visualID = ZombRand(1000000)
     end
 
+    local previousBodyInstanceID = npcData.currentBodyInstanceID
+    local newBodyInstanceID = zombie:getPersistentOutfitID()
+    local bodyChanged = tostring(previousBodyInstanceID or "") ~= tostring(newBodyInstanceID or "")
+    if bodyChanged then
+        DTNPCManager.BumpPresenceRevision(npcData)
+    else
+        DTNPCManager.EnsurePresenceRevision(npcData)
+    end
+
     DTNPC.AttachData(zombie, npcData)
     DTNPC.ApplyVisuals(zombie, npcData)
     if DTNPC.RestoreNPCBodyState then
@@ -112,6 +123,7 @@ function DTNPCManager.ReclaimZombie(zombie, npcData, reason)
     modData.IsDTNPC = true
     modData.DTNPC_UUID = uuid
     modData.DTNPCVisualID = npcData.visualID
+    modData.DTNPCPresenceRevision = DTNPCManager.GetPresenceRevision(npcData)
 
     if not zombie:isUseless() then
         zombie:setUseless(true)
@@ -156,6 +168,7 @@ end
 function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removalContext)
     if DTNPCManager.Data[uuid] then
         local npcData = DTNPCManager.Data[uuid]
+        DTNPCManager.EnsurePresenceRevision(npcData)
         local notifiedRemovalReason = status
         if notifiedRemovalReason == nil then
             if type(removalContext) == "table" then
@@ -173,6 +186,10 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removal
         local currentBodyInstanceID = npcData.currentBodyInstanceID
         if currentBodyInstanceID then
             DTNPCManager.BodyInstanceIDToUUID[currentBodyInstanceID] = nil
+        end
+
+        if status == "Away" or status == "Dead" then
+            DTNPCManager.ClearPhysicalBodyIdentity(npcData, currentBodyInstanceID)
         end
         
         -- Remove from spatial hash
@@ -202,7 +219,13 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removal
         
         -- Broadcast removal to all clients
         if DTNPCServerCore and DTNPCServerCore.NotifyRemoval then
-            DTNPCServerCore.NotifyRemoval(uuid, currentBodyInstanceID, npcData.name, notifiedRemovalReason, removalContext)
+            local notifyContext = removalContext
+            if type(notifyContext) ~= "table" then
+                notifyContext = { reason = notifyContext }
+            end
+            notifyContext = notifyContext or {}
+            notifyContext.presenceRevision = DTNPCManager.GetPresenceRevision(npcData)
+            DTNPCServerCore.NotifyRemoval(uuid, currentBodyInstanceID, npcData.name, notifiedRemovalReason, notifyContext)
         end
     end
 end
@@ -215,14 +238,39 @@ function DTNPCManager.SetNPCStatus(uuid, status, returnTime, returnStatus)
 
     -- 2. If the status implies they are "Away" or "Dead", clean up physical presence
     if status == "Away" or status == "Dead" then
+        local npcData = (DTNPCManager.Data and DTNPCManager.Data[uuid]) or (DynamicTrading_Roster and DynamicTrading_Roster.GetSoul and DynamicTrading_Roster.GetSoul(uuid)) or nil
+        local removalRevision = nil
+        local staleBodyInstanceID = nil
+        if npcData then
+            staleBodyInstanceID = npcData.currentBodyInstanceID
+            removalRevision = DTNPCManager.BumpPresenceRevision(npcData)
+            DTNPCManager.ClearPhysicalBodyIdentity(npcData, staleBodyInstanceID)
+            if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
+                DynamicTrading_Roster.SaveSoul(uuid, npcData)
+            end
+            if DTNPCManager.Save and DTNPCManager.Data and DTNPCManager.Data[uuid] then
+                DTNPCManager.Save()
+            end
+        end
+
+        if staleBodyInstanceID and DTNPCServerCore and DTNPCServerCore.NotifyInstanceRemoval then
+            DTNPCServerCore.NotifyInstanceRemoval(uuid, staleBodyInstanceID, removalRevision)
+        end
+
         if DTNPCManager.Data[uuid] then
             DynamicTrading.Log("DTV2", "NPC", "Status", "Status change to " .. status .. " requires world removal.")
             DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus) -- PASS ALL DATA
         end
         
         -- Clean up physical zombie if it exists
-        if DTNPCServerCore and DTNPCServerCore.FindZombieByUUID then
-            local zombie = DTNPCServerCore.FindZombieByUUID(uuid)
+        if DTNPCServerCore then
+            local zombie = nil
+            if staleBodyInstanceID and DTNPCServerCore.FindZombieByBodyInstanceID then
+                zombie = DTNPCServerCore.FindZombieByBodyInstanceID(staleBodyInstanceID)
+            end
+            if not zombie and DTNPCServerCore.FindZombieByUUID then
+                zombie = DTNPCServerCore.FindZombieByUUID(uuid)
+            end
             if zombie then
                 zombie:removeFromWorld()
                 zombie:removeFromSquare()

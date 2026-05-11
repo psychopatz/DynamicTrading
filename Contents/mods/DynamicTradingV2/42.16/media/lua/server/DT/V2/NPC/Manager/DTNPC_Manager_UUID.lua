@@ -36,6 +36,67 @@ function DTNPCManager.GetUUIDFromBodyInstanceID(bodyInstanceID)
     return DTNPCManager.BodyInstanceIDToUUID and DTNPCManager.BodyInstanceIDToUUID[bodyInstanceID] or nil
 end
 
+function DTNPCManager.GetPresenceRevision(npcData)
+    if type(npcData) ~= "table" then
+        return 0
+    end
+
+    return math.max(0, math.floor(tonumber(npcData.presenceRevision) or 0))
+end
+
+function DTNPCManager.EnsurePresenceRevision(npcData)
+    if type(npcData) ~= "table" then
+        return 0
+    end
+
+    local revision = DTNPCManager.GetPresenceRevision(npcData)
+    npcData.presenceRevision = revision
+    return revision
+end
+
+function DTNPCManager.BumpPresenceRevision(npcData)
+    if type(npcData) ~= "table" then
+        return 0
+    end
+
+    local revision = DTNPCManager.EnsurePresenceRevision(npcData) + 1
+    npcData.presenceRevision = revision
+    return revision
+end
+
+function DTNPCManager.IsPhysicalWorldStatus(status, npcData)
+    local normalized = tostring(status or "")
+    if normalized == "Resting" or normalized == "Working" or normalized == "Trading" then
+        return true
+    end
+
+    if normalized == "Incapacitated" then
+        return true
+    end
+
+    return type(npcData) == "table" and npcData.incapState == "Active"
+end
+
+function DTNPCManager.ClearPhysicalBodyIdentity(npcData, bodyInstanceID)
+    if type(npcData) ~= "table" then
+        return
+    end
+
+    local currentBodyInstanceID = npcData.currentBodyInstanceID
+    if currentBodyInstanceID ~= nil then
+        local bodyMap = DTNPCManager.BodyInstanceIDToUUID
+        if bodyMap then
+            bodyMap[currentBodyInstanceID] = nil
+        end
+    end
+
+    npcData.currentBodyInstanceID = nil
+
+    if bodyInstanceID ~= nil and tostring(npcData.startupBodyInstanceHint or "") == tostring(bodyInstanceID) then
+        npcData.startupBodyInstanceHint = nil
+    end
+end
+
 function DTNPCManager.GetUUIDFromZombie(zombie)
     if not zombie then return nil end
     

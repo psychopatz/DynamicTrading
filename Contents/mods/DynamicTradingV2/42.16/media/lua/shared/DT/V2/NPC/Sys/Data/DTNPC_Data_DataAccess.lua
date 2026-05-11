@@ -21,6 +21,7 @@ function DTNPC.MarkBodyOwnership(zombie, npcData)
         if npcData.visualID then
             modData.DTNPCVisualID = npcData.visualID
         end
+        modData.DTNPCPresenceRevision = math.max(0, math.floor(tonumber(npcData.presenceRevision) or 0))
     elseif modData.DTNPCBrain and not modData.DTNPC_Data then
         modData.DTNPC_Data = modData.DTNPCBrain
         modData.DTNPCBrain = nil

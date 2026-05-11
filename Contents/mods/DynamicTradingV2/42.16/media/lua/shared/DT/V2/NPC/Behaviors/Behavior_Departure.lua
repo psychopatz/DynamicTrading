@@ -471,7 +471,7 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
 
     if moveState == "exhausted" then
         npcData.departureBlockedTicks = 0
-        stopMovementAnimation(zombie)
+        stopDepartureAnimation(zombie)
     elseif moved or moveState == "damage_retreat" then
         npcData.departureStuckLastX = zombie:getX()
         npcData.departureStuckLastY = zombie:getY()

@@ -230,6 +230,9 @@ local function removeLiveNPCToStatus(uuid, zombie, npcData, status, returnTime, 
         return false
     end
 
+    local bodyInstanceID = zombie and zombie.getPersistentOutfitID and zombie:getPersistentOutfitID() or npcData.currentBodyInstanceID
+    local removalRevision = DTNPCManager and DTNPCManager.BumpPresenceRevision and DTNPCManager.BumpPresenceRevision(npcData) or npcData.presenceRevision
+
     npcData.status = status or npcData.status
     npcData.returnTime = returnTime
     npcData.returnStatus = returnStatus
@@ -240,13 +243,24 @@ local function removeLiveNPCToStatus(uuid, zombie, npcData, status, returnTime, 
     npcData.tasks = {}
     npcData.requestedReturnStatus = nil
     npcData.travelTarget = nil
+    if DTNPCManager and DTNPCManager.ClearPhysicalBodyIdentity then
+        DTNPCManager.ClearPhysicalBodyIdentity(npcData, bodyInstanceID)
+    end
 
     if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
         DynamicTrading_Roster.SaveSoul(uuid, npcData)
     end
 
+    if bodyInstanceID and DTNPCServerCore and DTNPCServerCore.NotifyInstanceRemoval then
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID, removalRevision)
+    end
+
     if DTNPCManager and DTNPCManager.RemoveData then
         DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus)
+    end
+
+    if not zombie and bodyInstanceID and DTNPCServerCore and DTNPCServerCore.FindZombieByBodyInstanceID then
+        zombie = DTNPCServerCore.FindZombieByBodyInstanceID(bodyInstanceID)
     end
 
     if zombie then

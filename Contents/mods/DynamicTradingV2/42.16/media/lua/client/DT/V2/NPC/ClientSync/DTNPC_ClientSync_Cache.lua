@@ -22,6 +22,7 @@ DTNPCClient.BodyInstanceIDToUUID = DTNPCClient.BodyInstanceIDToUUID or {}
 DTNPCClient.ProcessedZombies = DTNPCClient.ProcessedZombies or {} -- Tracks visual application
 DTNPCClient.LocalControlled = DTNPCClient.LocalControlled or {} -- Tracks locally controlled NPCs
 DTNPCClient.MetadataCache = DTNPCClient.MetadataCache or {} -- Far NPC metadata for radar/faction intel
+DTNPCClient.PresenceRevisions = DTNPCClient.PresenceRevisions or {} -- Highest accepted physical-instance revision per UUID
 DTNPCClient.VISUAL_CHECK_RATE = 60 -- Ticks between visual checks
 DTNPCClient.NEARBY_SYNC_CHECK_RATE = 15 -- Ticks between MP nearby-sync checks
 DTNPCClient.NEARBY_SYNC_MIN_INTERVAL_MS = 2000
@@ -82,10 +83,47 @@ function DTNPCClient.ClearBodyInstanceMappingsForUUID(uuid, keepBodyInstanceID)
     end
 end
 
+function DTNPCClient.GetPresenceRevision(uuid)
+    if not uuid then
+        return 0
+    end
+
+    return math.max(0, math.floor(tonumber(DTNPCClient.PresenceRevisions[uuid]) or 0))
+end
+
+function DTNPCClient.SetPresenceRevision(uuid, revision)
+    if not uuid then
+        return 0
+    end
+
+    local normalized = math.max(0, math.floor(tonumber(revision) or 0))
+    local current = DTNPCClient.GetPresenceRevision(uuid)
+    if normalized > current then
+        DTNPCClient.PresenceRevisions[uuid] = normalized
+        return normalized
+    end
+
+    if DTNPCClient.PresenceRevisions[uuid] == nil then
+        DTNPCClient.PresenceRevisions[uuid] = current
+    end
+    return current
+end
+
+function DTNPCClient.ShouldAcceptPresenceRevision(uuid, revision)
+    if not uuid then
+        return false
+    end
+
+    local normalized = math.max(0, math.floor(tonumber(revision) or 0))
+    return normalized >= DTNPCClient.GetPresenceRevision(uuid)
+end
+
 function DTNPCClient.CacheData(uuid, bodyInstanceID, npcData)
     if not uuid or not npcData then return end
 
     bodyInstanceID = bodyInstanceID or npcData.currentBodyInstanceID or npcData.bodyInstanceID
+    local presenceRevision = DTNPCClient.SetPresenceRevision(uuid, npcData.presenceRevision)
+    npcData.presenceRevision = presenceRevision
 
     if bodyInstanceID then
         npcData.currentBodyInstanceID = bodyInstanceID
@@ -96,7 +134,8 @@ function DTNPCClient.CacheData(uuid, bodyInstanceID, npcData)
     
     DTNPCClient.NPCCache[uuid] = {
         npcData = npcData,
-        lastSync = DTNPCClient.GetTimestamp()
+        lastSync = DTNPCClient.GetTimestamp(),
+        presenceRevision = presenceRevision,
     }
     
     if bodyInstanceID then
@@ -147,6 +186,7 @@ function DTNPCClient.ResetSessionState(reason)
     DTNPCClient.ProcessedZombies = {}
     DTNPCClient.LocalControlled = {}
     DTNPCClient.MetadataCache = {}
+    DTNPCClient.PresenceRevisions = {}
     DTNPCClient.hasSyncedOnce = false
     DTNPCClient.LastNearbySyncX = nil
     DTNPCClient.LastNearbySyncY = nil

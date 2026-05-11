@@ -368,6 +368,7 @@ function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
     local nextStatus = npcData.returnStatus or npcData.requestedReturnStatus or "Resting"
     local returnTime = npcData.returnTime
     local currentBodyInstanceID = npcData.currentBodyInstanceID
+    local removalRevision = DTNPCManager.BumpPresenceRevision and DTNPCManager.BumpPresenceRevision(npcData) or npcData.presenceRevision
 
     if returnTime == nil or returnTime <= 0 then
         local travelHours = npcData.departureTravelHours or 0
@@ -382,6 +383,9 @@ function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
     local isRecruitmentDeparture = npcData.colonyRecruitmentRemoveSource == true
         or DTNPCManager.IsColonyRecruitmentReturnStatus(nextStatus)
     clearDepartureRuntime(npcData)
+    if DTNPCManager.ClearPhysicalBodyIdentity then
+        DTNPCManager.ClearPhysicalBodyIdentity(npcData, currentBodyInstanceID)
+    end
 
     if DynamicTrading_Roster and not isRecruitmentDeparture then
         DynamicTrading_Roster.SaveSoul(uuid, npcData)
@@ -419,7 +423,7 @@ function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
         and currentBodyInstanceID
         and DTNPCServerCore
         and DTNPCServerCore.NotifyInstanceRemoval then
-        DTNPCServerCore.NotifyInstanceRemoval(uuid, currentBodyInstanceID)
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, currentBodyInstanceID, removalRevision)
         DynamicTrading.Log(
             "DTV2",
             "NPC",
@@ -429,7 +433,18 @@ function DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)
         )
     end
 
+    if (not isRecruitmentDeparture)
+        and currentBodyInstanceID
+        and DTNPCServerCore
+        and DTNPCServerCore.NotifyInstanceRemoval then
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, currentBodyInstanceID, removalRevision)
+    end
+
     zombie = zombie
+        or (DTNPCServerCore
+            and currentBodyInstanceID
+            and DTNPCServerCore.FindZombieByBodyInstanceID
+            and DTNPCServerCore.FindZombieByBodyInstanceID(currentBodyInstanceID))
         or (DTNPCServerCore
             and DTNPCServerCore.FindZombieByUUID
             and DTNPCServerCore.FindZombieByUUID(uuid))

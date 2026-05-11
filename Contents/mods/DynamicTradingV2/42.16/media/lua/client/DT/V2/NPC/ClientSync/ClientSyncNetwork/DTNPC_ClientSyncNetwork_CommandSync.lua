@@ -30,6 +30,20 @@ function Handlers.HandleSyncNPC(args)
 
     local uuid = args.uuid
     local bodyInstanceID = Helpers.ResolveBodyInstanceID(args)
+    local shouldAccept, presenceRevision = Helpers.ShouldAcceptPresence(uuid, args)
+    if not shouldAccept then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Sync",
+            "Ignored stale SyncNPC uuid=" .. tostring(uuid)
+                .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+                .. " presenceRevision=" .. tostring(presenceRevision)
+                .. " cachedRevision=" .. tostring(DTNPCClient.GetPresenceRevision and DTNPCClient.GetPresenceRevision(uuid) or 0)
+        )
+        return
+    end
+    args.npcData.presenceRevision = presenceRevision
 
     DynamicTrading.Log(
         "DTV2",
@@ -38,6 +52,7 @@ function Handlers.HandleSyncNPC(args)
         "Received SyncNPC name=" .. tostring(args.npcData.name or uuid)
             .. " uuid=" .. tostring(uuid)
             .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+            .. " presenceRevision=" .. tostring(presenceRevision)
             .. " pos=" .. tostring(args.x) .. "," .. tostring(args.y) .. "," .. tostring(args.z)
             .. " customCurrent=" .. tostring(args.npcData.combatHealth and args.npcData.combatHealth.current or nil)
             .. " customMax=" .. tostring(args.npcData.combatHealth and args.npcData.combatHealth.max or nil)
@@ -89,20 +104,24 @@ function Handlers.HandleSyncAllNPCs(args)
 
     for uuid, npcData in pairs(args.npcs) do
         local bodyInstanceID = npcData.currentBodyInstanceID
+        local shouldAccept, presenceRevision = Helpers.ShouldAcceptPresence(uuid, npcData)
+        if shouldAccept then
+            npcData.presenceRevision = presenceRevision
 
-        DTNPCClient.CacheData(uuid, bodyInstanceID, npcData)
-        if DTNPCClient.RemoveDuplicateLocalZombies and bodyInstanceID then
-            DTNPCClient.RemoveDuplicateLocalZombies(uuid, bodyInstanceID)
-        end
-        Helpers.TrackNPCSystems(nil, npcData, uuid, bodyInstanceID)
+            DTNPCClient.CacheData(uuid, bodyInstanceID, npcData)
+            if DTNPCClient.RemoveDuplicateLocalZombies and bodyInstanceID then
+                DTNPCClient.RemoveDuplicateLocalZombies(uuid, bodyInstanceID)
+            end
+            Helpers.TrackNPCSystems(nil, npcData, uuid, bodyInstanceID)
 
-        local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
-        if zombie then
-            DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
-            DTNPCClient.ProcessedZombies[uuid] = true
+            local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
+            if zombie then
+                DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
+                DTNPCClient.ProcessedZombies[uuid] = true
 
-            local cached = DTNPCClient.NPCCache[uuid]
-            Helpers.SetReportedState(cached, npcData)
+                local cached = DTNPCClient.NPCCache[uuid]
+                Helpers.SetReportedState(cached, npcData)
+            end
         end
     end
 end
@@ -119,37 +138,41 @@ function Handlers.HandleSyncNearbyNPCs(args)
     for uuid, npcData in pairs(args.nearby or {}) do
         if npcData and npcData.npcData then
             local bodyInstanceID = Helpers.ResolveBodyInstanceID(npcData)
+            local shouldAccept, presenceRevision = Helpers.ShouldAcceptPresence(uuid, npcData)
+            if shouldAccept then
+                npcData.npcData.presenceRevision = presenceRevision
 
-            DTNPCClient.CacheData(uuid, bodyInstanceID, npcData.npcData)
-            if DTNPCClient.RemoveDuplicateLocalZombies and bodyInstanceID then
-                DTNPCClient.RemoveDuplicateLocalZombies(uuid, bodyInstanceID)
-            end
-            Helpers.TrackNPCSystems(nil, npcData.npcData, uuid, bodyInstanceID)
-
-            local x = npcData.x or npcData.npcData.lastX
-            local y = npcData.y or npcData.npcData.lastY
-            local z = npcData.z or npcData.npcData.lastZ or 0
-            Helpers.RecordInterpolation(uuid, x, y, z, nil, npcData.motionHint)
-
-            local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
-            local cached = DTNPCClient.NPCCache[uuid]
-            if zombie then
-                DTNPCClient.ApplyVisualsToNPC(zombie, npcData.npcData)
-                DTNPCClient.ReconcilePosition(zombie, x, y, z)
-                DTNPCClient.ProcessedZombies[uuid] = true
-
-                if cached then
-                    cached.awaitingWorldZombieSince = nil
-                    cached.awaitingWorldZombieLoggedAt = nil
+                DTNPCClient.CacheData(uuid, bodyInstanceID, npcData.npcData)
+                if DTNPCClient.RemoveDuplicateLocalZombies and bodyInstanceID then
+                    DTNPCClient.RemoveDuplicateLocalZombies(uuid, bodyInstanceID)
                 end
-                Helpers.SetReportedState(cached, npcData.npcData)
-            elseif cached then
-                cached.awaitingWorldZombieSince = cached.awaitingWorldZombieSince or getTimeInMillis()
-                cached.awaitingWorldZombieLoggedAt = nil
-                missingLiveZombie = true
-            end
+                Helpers.TrackNPCSystems(nil, npcData.npcData, uuid, bodyInstanceID)
 
-            nearbyCount = nearbyCount + 1
+                local x = npcData.x or npcData.npcData.lastX
+                local y = npcData.y or npcData.npcData.lastY
+                local z = npcData.z or npcData.npcData.lastZ or 0
+                Helpers.RecordInterpolation(uuid, x, y, z, nil, npcData.motionHint)
+
+                local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
+                local cached = DTNPCClient.NPCCache[uuid]
+                if zombie then
+                    DTNPCClient.ApplyVisualsToNPC(zombie, npcData.npcData)
+                    DTNPCClient.ReconcilePosition(zombie, x, y, z)
+                    DTNPCClient.ProcessedZombies[uuid] = true
+
+                    if cached then
+                        cached.awaitingWorldZombieSince = nil
+                        cached.awaitingWorldZombieLoggedAt = nil
+                    end
+                    Helpers.SetReportedState(cached, npcData.npcData)
+                elseif cached then
+                    cached.awaitingWorldZombieSince = cached.awaitingWorldZombieSince or getTimeInMillis()
+                    cached.awaitingWorldZombieLoggedAt = nil
+                    missingLiveZombie = true
+                end
+
+                nearbyCount = nearbyCount + 1
+            end
         end
     end
 

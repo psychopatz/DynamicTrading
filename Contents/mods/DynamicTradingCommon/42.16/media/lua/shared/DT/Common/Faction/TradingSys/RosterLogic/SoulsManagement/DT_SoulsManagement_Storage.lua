@@ -49,6 +49,23 @@ local function normalizeSoulAbstraction(npcData)
     return npcData
 end
 
+local function clearTransientSoulKeys(entry, npcData)
+    if type(entry) ~= "table" then
+        return
+    end
+
+    local transientKeys = {
+        "currentBodyInstanceID",
+        "startupBodyInstanceHint",
+    }
+
+    for _, key in ipairs(transientKeys) do
+        if npcData[key] == nil then
+            entry[key] = nil
+        end
+    end
+end
+
 function DynamicTrading_Roster.IsAbstractNomadFaction(factionID)
     return isAbstractNomadFaction(factionID)
 end
@@ -103,6 +120,12 @@ end
 function DynamicTrading_Roster.SaveSoul(uuid, npcData)
     npcData = stripMovementSpeed(normalizeSoulAbstraction(npcData))
 
+    if DTNPCManager and DTNPCManager.EnsurePresenceRevision then
+        DTNPCManager.EnsurePresenceRevision(npcData)
+    elseif npcData.presenceRevision == nil then
+        npcData.presenceRevision = 0
+    end
+
     local soulKey = "DTSOUL_" .. uuid
     if not ModData.exists(soulKey) then
         ModData.add(soulKey, npcData)
@@ -111,6 +134,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         for key, value in pairs(npcData) do
             entry[key] = value
         end
+        clearTransientSoulKeys(entry, npcData)
         entry.walkSpeed = nil
         entry.runSpeed = nil
     end
@@ -134,6 +158,7 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         incapState = npcData.incapState,
         returnTime = npcData.returnTime,
         returnStatus = npcData.returnStatus,
+        presenceRevision = npcData.presenceRevision,
         master = npcData.master,
         isFemale = npcData.isFemale,
         identitySeed = npcData.identitySeed or 1,

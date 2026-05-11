@@ -108,7 +108,11 @@ function DTNPCServerCore.PruneDuplicateZombies(uuid, savedData, preferredZombie,
             zombie:removeFromWorld()
             zombie:removeFromSquare()
             if DTNPCServerCore.NotifyInstanceRemoval then
-                DTNPCServerCore.NotifyInstanceRemoval(uuid, duplicateOutfitID)
+                DTNPCServerCore.NotifyInstanceRemoval(
+                    uuid,
+                    duplicateOutfitID,
+                    DTNPCManager and DTNPCManager.GetPresenceRevision and DTNPCManager.GetPresenceRevision(savedData) or nil
+                )
             end
             removed = removed + 1
         end
@@ -209,6 +213,13 @@ end
 local function scoreReusableWorldBody(zombie, uuid, savedData, options)
     if not zombie or zombie:isDead() or not uuid then
         return nil
+    end
+
+    if DTNPCManager and DTNPCManager.IsPhysicalWorldStatus then
+        local savedStatus = savedData and savedData.status or nil
+        if not DTNPCManager.IsPhysicalWorldStatus(savedStatus, savedData) then
+            return nil
+        end
     end
 
     local modData = zombie:getModData()

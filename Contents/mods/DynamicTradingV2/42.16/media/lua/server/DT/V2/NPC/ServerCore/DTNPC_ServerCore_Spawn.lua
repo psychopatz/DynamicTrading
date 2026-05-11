@@ -119,6 +119,10 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     if not npcData.uuid then
         npcData.uuid = DTNPCManager.GenerateSoulID(npcData.name)
     end
+
+    if DTNPCManager and DTNPCManager.BumpPresenceRevision then
+        DTNPCManager.BumpPresenceRevision(npcData)
+    end
     
     modData.DTNPC_UUID = npcData.uuid
 
@@ -142,6 +146,7 @@ function DTNPCServerCore.SpawnNPC(player, existingBrain, options)
     end
     
     modData.DTNPCVisualID = npcData.visualID
+    modData.DTNPCPresenceRevision = npcData.presenceRevision
 
     zombie:setUseless(true) 
     zombie:DoZombieStats()

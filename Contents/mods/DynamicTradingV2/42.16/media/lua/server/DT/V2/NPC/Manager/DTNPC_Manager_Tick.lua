@@ -69,6 +69,8 @@ local positionBroadcastCounter = 0
 
 local ACTIVE_RESPAWN_CHECK_RATE = 240 -- Validate already-active NPC bodies every ~12 seconds
 local activeRespawnCheckCounter = 0
+local SHELL_CLEANUP_CHECK_RATE = 5 -- Sweep stale restart shells quickly after chunks load (~0.25s)
+local shellCleanupCheckCounter = 0
 
 local ROSTER_RESPAWN_CHECK_RATE = 60 -- Discover/spawn nearby roster NPCs every ~3 seconds
 local rosterRespawnCheckCounter = 0
@@ -135,6 +137,141 @@ local function findZombieByBodyInstanceHint(bodyInstanceID)
     return nil
 end
 
+local function removeStaleWorldBody(uuid, zombie, npcData, reason)
+    if not zombie or zombie:isDead() then
+        return false
+    end
+
+    local bodyInstanceID = zombie:getPersistentOutfitID()
+    local removalRevision = DTNPCManager and DTNPCManager.BumpPresenceRevision and DTNPCManager.BumpPresenceRevision(npcData) or nil
+
+    if DTNPCManager and DTNPCManager.ClearPhysicalBodyIdentity then
+        DTNPCManager.ClearPhysicalBodyIdentity(npcData, bodyInstanceID)
+    end
+    if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul and uuid and npcData then
+        DynamicTrading_Roster.SaveSoul(uuid, npcData)
+    end
+    if DTNPCManager and DTNPCManager.Save and DTNPCManager.Data and DTNPCManager.Data[uuid] then
+        DTNPCManager.Save()
+    end
+
+    zombie:removeFromWorld()
+    zombie:removeFromSquare()
+
+    if bodyInstanceID and DTNPCServerCore and DTNPCServerCore.NotifyInstanceRemoval then
+        DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID, removalRevision)
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Repair",
+        "Removed stale world body for " .. tostring(npcData and (npcData.name or uuid) or uuid)
+            .. " reason=" .. tostring(reason or "stale-world-body")
+            .. " bodyInstanceID=" .. tostring(bodyInstanceID)
+    )
+
+    return true
+end
+
+local function isZombieNakedShell(zombie)
+    if not zombie or zombie:isDead() then
+        return false, false
+    end
+
+    local modData = zombie:getModData()
+    local hasDTMarkers = modData and (
+        modData.IsDTNPC == true
+        or modData.DTNPC_UUID ~= nil
+        or modData.DTNPC_Data ~= nil
+        or modData.DTNPCBrain ~= nil
+        or modData.DTNPCPresenceRevision ~= nil
+    ) or false
+    local hasDTVariable = zombie.getVariableBoolean and zombie:getVariableBoolean("DTNPC") == true or false
+    local useless = zombie.isUseless and zombie:isUseless() == true or false
+    local hasSignature = hasDTMarkers or hasDTVariable or useless
+
+    local wornItems = zombie.getWornItems and zombie:getWornItems() or nil
+    local itemVisuals = zombie.getItemVisuals and zombie:getItemVisuals() or nil
+    local wornCount = wornItems and wornItems.size and wornItems:size() or 0
+    local visualCount = itemVisuals and itemVisuals.size and itemVisuals:size() or 0
+
+    if wornCount > 0 or visualCount > 0 then
+        return false, false
+    end
+
+    return true, hasSignature
+end
+
+local function findNearbyAbstractSoulForZombie(zombie, players, rosterSouls, requireShellSignature)
+    if not zombie or not rosterSouls or not players or #players == 0 then
+        return nil, nil
+    end
+
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local zz = zombie:getZ()
+    local maxSoulDist = requireShellSignature and 3.5 or 1.25
+
+    for uuid, soul in pairs(rosterSouls) do
+        if soul and DTNPCManager.IsPhysicalWorldStatus and not DTNPCManager.IsPhysicalWorldStatus(soul.status, soul) then
+            if requireShellSignature or tostring(soul.status or "") == "Away" then
+                local sx = soul.lastX or (soul.homeCoords and soul.homeCoords.x)
+                local sy = soul.lastY or (soul.homeCoords and soul.homeCoords.y)
+                local sz = soul.lastZ or (soul.homeCoords and soul.homeCoords.z) or 0
+
+                if sx and sy and math.abs(zz - sz) <= 1 then
+                    local dx = zx - sx
+                    local dy = zy - sy
+                    local soulDist = math.sqrt(dx * dx + dy * dy)
+                    if soulDist <= maxSoulDist then
+                        for _, player in ipairs(players) do
+                            if math.abs(player:getZ() - sz) <= 1 then
+                                local pdx = player:getX() - sx
+                                local pdy = player:getY() - sy
+                                local playerDist = math.sqrt(pdx * pdx + pdy * pdy)
+                                if playerDist <= 80 then
+                                    return uuid, soul
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return nil, nil
+end
+
+local function CleanupNearbyAbstractSoulShells(zombieList, players)
+    if not zombieList or not players or #players == 0 or not DTNPCManager.IsPhysicalWorldStatus then
+        return
+    end
+
+    local rosterData = ModData and ModData.get and ModData.get("DynamicTrading_Roster") or nil
+    local rosterSouls = rosterData and rosterData.Souls or nil
+    if not rosterSouls then
+        return
+    end
+
+    for i = zombieList:size() - 1, 0, -1 do
+        local zombie = zombieList:get(i)
+        local isNakedShell, hasShellSignature = isZombieNakedShell(zombie)
+        if isNakedShell then
+            local uuid, soul = findNearbyAbstractSoulForZombie(zombie, players, rosterSouls, hasShellSignature)
+            if uuid and soul then
+                removeStaleWorldBody(
+                    uuid,
+                    zombie,
+                    soul,
+                    hasShellSignature and "abstract-shell-cleanup" or "abstract-naked-zombie-cleanup"
+                )
+            end
+        end
+    end
+end
+
 local function ProcessStartupBodyHints()
     if not DTNPCManager or not DTNPCManager.Data or not DTNPCManager.ReclaimZombie then
         return
@@ -144,7 +281,10 @@ local function ProcessStartupBodyHints()
         local hintBodyInstanceID = npcData and npcData.startupBodyInstanceHint or nil
         if hintBodyInstanceID and not npcData.currentBodyInstanceID and npcData.status ~= "Dead" then
             local zombie = findZombieByBodyInstanceHint(hintBodyInstanceID)
-            if zombie and not zombie:isDead() and isZombieNearSavedCoords(zombie, npcData) then
+            if zombie and not zombie:isDead() then
+                if not (DTNPCManager.IsPhysicalWorldStatus and DTNPCManager.IsPhysicalWorldStatus(npcData.status, npcData)) then
+                    removeStaleWorldBody(uuid, zombie, npcData, "startup-hint-away")
+                elseif isZombieNearSavedCoords(zombie, npcData) then
                 local existingUUID = DTNPCManager.GetUUIDFromZombie and DTNPCManager.GetUUIDFromZombie(zombie) or nil
                 if not existingUUID or existingUUID == uuid then
                     local modData = zombie:getModData()
@@ -158,6 +298,7 @@ local function ProcessStartupBodyHints()
                         })
                     end
                     DTNPCManager.ReclaimZombie(zombie, npcData, "startup-tick")
+                end
                 end
             end
         end
@@ -265,6 +406,7 @@ function DTNPCManager.OnTick()
     tickCounter = tickCounter + 1
     positionBroadcastCounter = positionBroadcastCounter + 1
     activeRespawnCheckCounter = activeRespawnCheckCounter + 1
+    shellCleanupCheckCounter = shellCleanupCheckCounter + 1
     rosterRespawnCheckCounter = rosterRespawnCheckCounter + 1
     awayTransitionCheckCounter = awayTransitionCheckCounter + 1
     restingRegenCheckCounter = restingRegenCheckCounter + 1
@@ -327,6 +469,15 @@ function DTNPCManager.OnTick()
         end
     end
 
+    if shellCleanupCheckCounter >= SHELL_CLEANUP_CHECK_RATE then
+        shellCleanupCheckCounter = 0
+        local cell = getCell()
+        local zombieList = cell and cell:getZombieList() or nil
+        if zombieList then
+            CleanupNearbyAbstractSoulShells(zombieList, DTNPCManager.GetActivePlayers())
+        end
+    end
+
     if shouldCheckRosterRespawn and EnsureRespawnHooks() then
         -- 2. Check for new spawns from Roster (Bridge) more frequently for responsiveness.
         DTNPCManager.CheckRosterSpawns()
@@ -347,6 +498,7 @@ function DTNPCManager.OnTick()
     
     -- Get active players for distance-based frequency updates
     local players = DTNPCManager.GetActivePlayers()
+    CleanupNearbyAbstractSoulShells(zombieList, players)
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
@@ -360,6 +512,9 @@ function DTNPCManager.OnTick()
                 if not savedData and DynamicTrading_Roster then
                     local rosterData = DynamicTrading_Roster.GetSoul(uuid)
                     if rosterData and rosterData.status ~= "Dead" then
+                        if not (DTNPCManager.IsPhysicalWorldStatus and DTNPCManager.IsPhysicalWorldStatus(rosterData.status, rosterData)) then
+                            removeStaleWorldBody(uuid, zombie, rosterData, "active-adoption-away")
+                        else
                         local isWorkerLinkedCompanion = tostring(rosterData.dcCompanionJob or "") == "TravelCompanion"
                             and tostring(rosterData.linkedWorkerID or "") ~= ""
                         if isWorkerLinkedCompanion and #players <= 0 then
@@ -379,6 +534,7 @@ function DTNPCManager.OnTick()
                             DTNPCManager.Register(zombie, rosterData)
                         end
                         savedData = DTNPCManager.Data[uuid] -- Refresh local reference
+                        end
                         end
                     end
                 end
