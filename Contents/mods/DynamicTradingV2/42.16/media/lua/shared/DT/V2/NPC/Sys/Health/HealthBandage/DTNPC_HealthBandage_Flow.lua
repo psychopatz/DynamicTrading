@@ -66,6 +66,9 @@ function internal.startSelfBandage(zombie, npcData, resumeState, options)
     internal.resetBandageAnimFinished(zombie)
     internal.applyBandageAnimVariables(zombie, combatHealth)
     internal.playEmitterSound(zombie, DTNPCHealth.BANDAGE_SOUND)
+    if DTNPCHostility and DTNPCHostility.PlayHurtSound then
+        DTNPCHostility.PlayHurtSound(zombie, npcData, "Bandage")
+    end
     npcData.state = "Bandage"
     internal.pushBandageAmbientCue(zombie, npcData)
     internal.syncAndPersistHealth(zombie, npcData, false, false)

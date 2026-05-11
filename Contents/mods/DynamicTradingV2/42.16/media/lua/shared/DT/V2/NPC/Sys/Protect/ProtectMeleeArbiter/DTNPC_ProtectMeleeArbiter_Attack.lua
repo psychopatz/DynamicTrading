@@ -121,6 +121,9 @@ local function commitAttack(zombie, npcData, target, targetKey, stats, currentDi
     npcData.attackTimer = 0
     if DTNPC and DTNPC.TriggerMeleeCombatAnim then
         DTNPC.TriggerMeleeCombatAnim(zombie, npcData)
+        if DTNPCHostility and DTNPCHostility.PlayHurtSound then
+            DTNPCHostility.PlayHurtSound(zombie, npcData, "Effort")
+        end
     end
     DTNPCProtect.ConsumeWeaponCondition(npcData, "melee", 1)
 

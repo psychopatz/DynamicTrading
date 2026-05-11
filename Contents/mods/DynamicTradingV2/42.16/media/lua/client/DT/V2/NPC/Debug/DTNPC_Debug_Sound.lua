@@ -92,6 +92,20 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
                     n:setHaloNote("SFX: Death (" .. voiceSet .. ")", 255, 0, 0, 300)
                 end
             end)
+
+            subMenu:addOption("Test Effort Sound", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.PlayHurtSound then
+                    DTNPCHostility.PlayHurtSound(n, npcData, "Effort")
+                    n:setHaloNote("SFX: Effort (" .. voiceSet .. ")", 200, 200, 255, 300)
+                end
+            end)
+
+            subMenu:addOption("Test Bandage Sound", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.PlayHurtSound then
+                    DTNPCHostility.PlayHurtSound(n, npcData, "Bandage")
+                    n:setHaloNote("SFX: Bandage (" .. voiceSet .. ")", 100, 255, 100, 300)
+                end
+            end)
         end
     end
 end
