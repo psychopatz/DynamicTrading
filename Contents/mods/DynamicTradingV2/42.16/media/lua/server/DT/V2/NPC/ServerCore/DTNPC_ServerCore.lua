@@ -59,7 +59,7 @@ if isClient() and not isServer() then return end
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Utilities"
 
 -- 2. Control helpers - UUID-based state and order helpers used by commands and integrations
-require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Control"
+require "DT/V2/NPC/ServerCore/ServerCoreControl/DTNPC_ServerCoreControl"
 
 -- 3. Sync - Synchronization functions needed by spawn/respawn/summon
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Sync"
