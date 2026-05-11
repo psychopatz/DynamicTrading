@@ -3,6 +3,8 @@
 -- Final death resolution and server-side dead/unregister flow.
 -- ==============================================================================
 
+require "Misc/DT_CorpseLootRuntime"
+
 DTNPCLifecycle = DTNPCLifecycle or {}
 DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 
@@ -161,6 +163,88 @@ local function addMoneyToContainer(container, amount)
     return true, bundles, loose
 end
 
+local function getCorpseOutfit(npcData)
+    local outfit = type(npcData and npcData.outfit) == "table" and npcData.outfit or nil
+    if outfit or not (DT_NPC_Wardrobe and DT_NPC_Wardrobe.GetOutfitBySeed) then
+        return outfit
+    end
+
+    return DT_NPC_Wardrobe.GetOutfitBySeed(
+        npcData.archetypeID or "General",
+        npcData.isFemale,
+        npcData.identitySeed or 1
+    )
+end
+
+local function collectCorpseEquipmentLoot(npcData)
+    local collected = {}
+    local ordered = {}
+
+    local function addSpec(fullType, condition)
+        if not fullType or tostring(fullType) == "" then
+            return
+        end
+
+        local itemType = tostring(fullType)
+        local existing = collected[itemType]
+        if existing then
+            if existing.condition == nil and condition ~= nil then
+                existing.condition = math.floor(tonumber(condition) or 0)
+            end
+            return
+        end
+
+        local spec = {
+            fullType = itemType,
+            condition = condition ~= nil and math.floor(tonumber(condition) or 0) or nil,
+        }
+        collected[itemType] = spec
+        ordered[#ordered + 1] = spec
+    end
+
+    local outfit = getCorpseOutfit(npcData)
+    for _, itemType in ipairs(outfit or {}) do
+        addSpec(itemType, nil)
+    end
+
+    local loadout = type(npcData and npcData.loadout) == "table" and npcData.loadout or {}
+    local bagType = loadout.bag
+        or (DTNPCEquipmentVisuals and DTNPCEquipmentVisuals.GetDisplayBag and DTNPCEquipmentVisuals.GetDisplayBag(npcData))
+        or npcData.displayBag
+    addSpec(bagType, nil)
+    addSpec(loadout.rangedWeapon, loadout.rangedCondition)
+    addSpec(loadout.meleeWeapon, loadout.meleeCondition)
+
+    return ordered
+end
+
+local function addCorpseEquipmentLoot(container, lootSpecs)
+    if not container then
+        return 0
+    end
+
+    local added = 0
+    for index = 1, #(lootSpecs or {}) do
+        local spec = lootSpecs[index]
+        if spec and spec.fullType and not (DTCorpseLootRuntime and DTCorpseLootRuntime.ContainerHasItemType and DTCorpseLootRuntime.ContainerHasItemType(container, spec.fullType)) then
+            local item = DTCorpseLootRuntime and DTCorpseLootRuntime.AddItemToContainer and DTCorpseLootRuntime.AddItemToContainer(container, spec.fullType, function(createdItem)
+                if spec.condition ~= nil and createdItem and createdItem.getConditionMax and createdItem.setCondition then
+                    local maxCondition = tonumber(createdItem:getConditionMax()) or 0
+                    if maxCondition > 0 then
+                        createdItem:setCondition(math.max(0, math.min(maxCondition, math.floor(tonumber(spec.condition) or maxCondition))))
+                    end
+                end
+            end) or nil
+
+            if item then
+                added = added + 1
+            end
+        end
+    end
+
+    return added
+end
+
 local function deductDeathMoneyFromEconomy(npcData, amount, session, deductFactionDirectly)
     local safeAmount = math.max(0, math.floor(tonumber(amount) or 0))
     if safeAmount <= 0 then
@@ -188,8 +272,104 @@ function DTNPCLifecycle.DropDeathMoney(zombie, npcData, removalContext)
     if isClient and isClient() and not (isServer and isServer()) then
         return false
     end
-    if not zombie or not npcData or npcData.deathMoneyDropped == true then
+    if not zombie or not npcData then
         return false
+    end
+    if npcData.deathMoneyDropped == true and npcData.deathCorpseEquipmentDropped == true then
+        return false
+    end
+
+    local amount, reason, session, deductFactionDirectly = getDeathMoneyPlan(npcData)
+    amount = math.max(0, math.floor(tonumber(amount) or 0))
+    local corpseEquipmentLoot = collectCorpseEquipmentLoot(npcData)
+    if amount <= 0 and #corpseEquipmentLoot <= 0 then
+        lifecycleDebugLog(npcData, "death_money_skip", "reason=" .. tostring(reason))
+        return false
+    end
+
+    local x = math.floor(zombie:getX())
+    local y = math.floor(zombie:getY())
+    local z = math.floor(zombie:getZ())
+    local uuid = tostring(npcData.uuid or "")
+
+    if DTCorpseLootRuntime and DTCorpseLootRuntime.QueueCorpseMutation then
+        local key = "dt_npc_death_money:" .. uuid .. ":" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(z)
+        local queuedKey = DTCorpseLootRuntime.QueueCorpseMutation({
+            key = key,
+            label = "dt_npc_death_money",
+            x = x,
+            y = y,
+            z = z,
+            radius = 1,
+            ttlTicks = 300,
+            matcher = function(corpse, corpseModData, corpseX, corpseY, corpseZ)
+                corpseModData = corpseModData or {}
+                if corpseModData.IsDTNPC == true and tostring(corpseModData.DTNPC_UUID or "") == uuid then
+                    return true
+                end
+                return corpseX == x and corpseY == y and corpseZ == z
+            end,
+            apply = function(corpse, container)
+                local applied = false
+                local bundles = 0
+                local loose = 0
+
+                if amount > 0 and npcData.deathMoneyDropped ~= true then
+                    local moneyAdded = nil
+                    moneyAdded, bundles, loose = addMoneyToContainer(container, amount)
+                    if moneyAdded then
+                        npcData.deathMoneyDropped = true
+                        npcData.deathMoneyDropAmount = amount
+                        npcData.deathMoneyDropReason = reason
+                        deductDeathMoneyFromEconomy(npcData, amount, session, deductFactionDirectly)
+
+                        if type(removalContext) == "table" then
+                            removalContext.deathMoneyDropAmount = amount
+                            removalContext.deathMoneyDropReason = reason
+                        end
+
+                        lifecycleDebugLog(
+                            npcData,
+                            "death_money_drop",
+                            "amount=" .. tostring(amount)
+                                .. " bundles=" .. tostring(bundles or 0)
+                                .. " loose=" .. tostring(loose or 0)
+                                .. " reason=" .. tostring(reason)
+                        )
+                        applied = true
+                    end
+                end
+
+                if #corpseEquipmentLoot > 0 and npcData.deathCorpseEquipmentDropped ~= true then
+                    local gearAdded = addCorpseEquipmentLoot(container, corpseEquipmentLoot)
+                    npcData.deathCorpseEquipmentDropped = true
+                    npcData.deathCorpseEquipmentCount = math.max(0, gearAdded)
+                    if gearAdded > 0 then
+                        lifecycleDebugLog(
+                            npcData,
+                            "death_equipment_drop",
+                            "count=" .. tostring(gearAdded)
+                        )
+                        applied = true
+                    end
+                end
+
+                return applied
+            end,
+            onExpired = function()
+                lifecycleDebugLog(
+                    npcData,
+                    "death_corpse_loot_expired",
+                    "amount=" .. tostring(amount)
+                        .. " reason=" .. tostring(reason)
+                        .. " corpse not resolved near " .. tostring(x) .. "," .. tostring(y) .. "," .. tostring(z)
+                )
+            end,
+        })
+
+        if queuedKey then
+            return true
+        end
     end
 
     local inv = zombie.getInventory and zombie:getInventory() or nil
@@ -198,38 +378,46 @@ function DTNPCLifecycle.DropDeathMoney(zombie, npcData, removalContext)
         return false
     end
 
-    local amount, reason, session, deductFactionDirectly = getDeathMoneyPlan(npcData)
-    amount = math.max(0, math.floor(tonumber(amount) or 0))
-    if amount <= 0 then
-        lifecycleDebugLog(npcData, "death_money_skip", "reason=" .. tostring(reason))
-        return false
+    local applied = false
+    local bundles = 0
+    local loose = 0
+
+    if amount > 0 and npcData.deathMoneyDropped ~= true then
+        local added = nil
+        added, bundles, loose = addMoneyToContainer(inv, amount)
+        if not added then
+            lifecycleDebugLog(npcData, "death_money_skip", "failed to add amount=" .. tostring(amount))
+        else
+            npcData.deathMoneyDropped = true
+            npcData.deathMoneyDropAmount = amount
+            npcData.deathMoneyDropReason = reason
+            deductDeathMoneyFromEconomy(npcData, amount, session, deductFactionDirectly)
+
+            if type(removalContext) == "table" then
+                removalContext.deathMoneyDropAmount = amount
+                removalContext.deathMoneyDropReason = reason
+            end
+
+            lifecycleDebugLog(
+                npcData,
+                "death_money_drop",
+                "amount=" .. tostring(amount)
+                    .. " bundles=" .. tostring(bundles or 0)
+                    .. " loose=" .. tostring(loose or 0)
+                    .. " reason=" .. tostring(reason)
+            )
+            applied = true
+        end
     end
 
-    local added, bundles, loose = addMoneyToContainer(inv, amount)
-    if not added then
-        lifecycleDebugLog(npcData, "death_money_skip", "failed to add amount=" .. tostring(amount))
-        return false
+    if #corpseEquipmentLoot > 0 and npcData.deathCorpseEquipmentDropped ~= true then
+        local gearAdded = addCorpseEquipmentLoot(inv, corpseEquipmentLoot)
+        npcData.deathCorpseEquipmentDropped = true
+        npcData.deathCorpseEquipmentCount = math.max(0, gearAdded)
+        applied = gearAdded > 0 or applied
     end
 
-    npcData.deathMoneyDropped = true
-    npcData.deathMoneyDropAmount = amount
-    npcData.deathMoneyDropReason = reason
-    deductDeathMoneyFromEconomy(npcData, amount, session, deductFactionDirectly)
-
-    if type(removalContext) == "table" then
-        removalContext.deathMoneyDropAmount = amount
-        removalContext.deathMoneyDropReason = reason
-    end
-
-    lifecycleDebugLog(
-        npcData,
-        "death_money_drop",
-        "amount=" .. tostring(amount)
-            .. " bundles=" .. tostring(bundles or 0)
-            .. " loose=" .. tostring(loose or 0)
-            .. " reason=" .. tostring(reason)
-    )
-    return true
+    return applied
 end
 
 function DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attacker, context)
