@@ -426,6 +426,14 @@ local function scaleWeaponDamage(npcData, attackType, baseDamage, weaponItem)
 end
 
 local function playSuccessfulHitSound(zombie, target, weaponItem, attackType)
+    if target and instanceof(target, "IsoPlayer") then
+        if target.playerVoiceSound then
+            target:playerVoiceSound("PainFromFallHigh")
+        elseif target.playSound then
+            target:playSound("ZSHit" .. tostring(1 + ZombRand(3)))
+        end
+    end
+
     if attackType == "ranged" then
         playEmitterSound(target, "ImpactFlesh")
         return
@@ -445,6 +453,38 @@ local function playSuccessfulHitSound(zombie, target, weaponItem, attackType)
         return
     end
     playEmitterSound(target, "ImpactFlesh")
+end
+
+function DTNPCProtect.GetRangedShotSpecs(npcData)
+    local weaponItem = DTNPCProtect.CreateLoadoutWeaponItem(npcData, "ranged")
+    if not weaponItem then
+        return {
+            shotSound = "DT_GunRandom",
+            isAuto = false,
+            recoilDelay = 10,
+            shellSound = nil
+        }
+    end
+
+    local shotSound = weaponItem:getSwingSound() or "DT_GunRandom"
+    local isAuto = false
+    local modes = weaponItem:getFireModePossibilities()
+    if modes then
+        for i = 0, modes:size() - 1 do
+            if modes:get(i) == "Auto" then
+                isAuto = true
+                break
+            end
+        end
+    end
+
+    return {
+        shotSound = shotSound,
+        isAuto = isAuto,
+        recoilDelay = weaponItem:getRecoilDelay() or 10,
+        shellSound = not weaponItem:isManuallyRemoveSpentRounds() and weaponItem:getShellFallSound() or nil,
+        weaponItem = weaponItem
+    }
 end
 
 function DTNPCProtect.GetRangedCombatStats(npcData)

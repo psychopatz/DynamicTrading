@@ -14,6 +14,52 @@ local RANGED_MAX_RANGE = 13.5
 local RANGED_ADVANCE_SPEED = 0.05
 local RANGED_BACKPEDAL_SPEED = 0.03
 
+local function performRangedShot(zombie, npcData, target, stats, shotSpecs, moved, options)
+    if not zombie or not npcData or not target then return false end
+    
+    if options.onRangedAttack then
+        options.onRangedAttack(zombie, npcData, target)
+    end
+    if DTNPC and DTNPC.TriggerRangedCombatAnim then
+        DTNPC.TriggerRangedCombatAnim(zombie, npcData)
+    end
+
+    if DTNPCProtect and DTNPCProtect.ConsumeRangedShot then
+        DTNPCProtect.ConsumeRangedShot(npcData, 1)
+    elseif DTNPCProtect and DTNPCProtect.ConsumeAmmo then
+        DTNPCProtect.ConsumeAmmo(npcData, 1)
+    end
+    
+    if DTNPCProtect and DTNPCProtect.ConsumeWeaponCondition then
+        DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
+    end
+    
+    local emitter = zombie:getEmitter()
+    if shotSpecs.shotSound then
+        emitter:playSound(shotSpecs.shotSound)
+    end
+    if shotSpecs.shellSound then
+        emitter:playSound(shotSpecs.shellSound)
+    end
+
+    if DT_LightSystem and DT_LightSystem.MuzzleFlash then
+        DT_LightSystem.MuzzleFlash(zombie)
+    end
+
+    local hitChance = moved and stats.hitMove or stats.hitStill
+    local hit = false
+    if ZombRand(100) < hitChance then
+        hit = DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
+            attackType = "ranged",
+            damage = stats.damage,
+        }) == true
+    end
+    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
+        DTNPCProtect.RecordCombatAttack(zombie, npcData, "ranged", target)
+    end
+    return hit
+end
+
 local function isTileSafe(x, y, z)
     if DTNPCMobility and DTNPCMobility.IsTileSafe then
         return DTNPCMobility.IsTileSafe(x, y, z)
@@ -386,6 +432,24 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
         }
     end
 
+    -- Burst Logic
+    if npcData.burstRemaining and npcData.burstRemaining > 0 then
+        npcData.burstTimer = (npcData.burstTimer or 0) + 1
+        local shotSpecs = npcData.shotSpecs
+        local hit = false
+        if shotSpecs and npcData.burstTimer >= (shotSpecs.recoilDelay or 10) then
+            npcData.burstTimer = 0
+            npcData.burstRemaining = npcData.burstRemaining - 1
+            hit = performRangedShot(zombie, npcData, target, stats, shotSpecs, moved, options)
+        end
+        return {
+            status = "attack",
+            moved = moved,
+            attacked = true,
+            hit = hit,
+        }
+    end
+
     npcData.attackTimer = (npcData.attackTimer or 0) + 1
     if npcData.attackTimer < stats.fireRate then
         return {
@@ -396,34 +460,13 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
     end
 
     npcData.attackTimer = 0
-    if options.onRangedAttack then
-        options.onRangedAttack(zombie, npcData, target)
-    end
-    if DTNPC and DTNPC.TriggerRangedCombatAnim then
-        DTNPC.TriggerRangedCombatAnim(zombie, npcData)
-    end
+    local shotSpecs = DTNPCProtect.GetRangedShotSpecs(npcData)
+    local hit = performRangedShot(zombie, npcData, target, stats, shotSpecs, moved, options)
 
-    if DTNPCProtect and DTNPCProtect.ConsumeRangedShot then
-        DTNPCProtect.ConsumeRangedShot(npcData, 1)
-    else
-        DTNPCProtect.ConsumeAmmo(npcData, 1)
-    end
-    DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
-    zombie:getEmitter():playSound("DT_GunRandom")
-    if DT_LightSystem and DT_LightSystem.MuzzleFlash then
-        DT_LightSystem.MuzzleFlash(zombie)
-    end
-
-    local hitChance = moved and stats.hitMove or stats.hitStill
-    local hit = false
-    if ZombRand(100) < hitChance then
-        hit = DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
-            attackType = "ranged",
-            damage = stats.damage,
-        }) == true
-    end
-    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
-        DTNPCProtect.RecordCombatAttack(zombie, npcData, "ranged", target)
+    if shotSpecs.isAuto and ZombRand(100) < 60 then
+        npcData.burstRemaining = ZombRand(2, 5)
+        npcData.burstTimer = 0
+        npcData.shotSpecs = shotSpecs
     end
 
     return {

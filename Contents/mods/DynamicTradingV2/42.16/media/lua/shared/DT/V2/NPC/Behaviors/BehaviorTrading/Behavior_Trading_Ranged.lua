@@ -10,6 +10,47 @@ DTNPCLogic.BehaviorTrading = DTNPCLogic.BehaviorTrading or {}
 local Trading = DTNPCLogic.BehaviorTrading
 require "Misc/DT_LightSystem"
 
+local function performRangedShot(zombie, npcData, target, stats, shotSpecs, moved)
+    if not zombie or not npcData or not target then return end
+    
+    if DTNPC and DTNPC.TriggerRangedCombatAnim then
+        DTNPC.TriggerRangedCombatAnim(zombie, npcData)
+    end
+
+    if DTNPCProtect and DTNPCProtect.ConsumeRangedShot then
+        DTNPCProtect.ConsumeRangedShot(npcData, 1)
+    elseif DTNPCProtect and DTNPCProtect.ConsumeAmmo then
+        DTNPCProtect.ConsumeAmmo(npcData, 1)
+    end
+    
+    if DTNPCProtect and DTNPCProtect.ConsumeWeaponCondition then
+        DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
+    end
+    
+    local emitter = zombie:getEmitter()
+    if shotSpecs.shotSound then
+        emitter:playSound(shotSpecs.shotSound)
+    end
+    if shotSpecs.shellSound then
+        emitter:playSound(shotSpecs.shellSound)
+    end
+
+    if DT_LightSystem and DT_LightSystem.MuzzleFlash then
+        DT_LightSystem.MuzzleFlash(zombie)
+    end
+
+    local hitChance = moved and stats.hitMove or stats.hitStill
+    if ZombRand(100) < hitChance then
+        DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
+            attackType = "ranged",
+            damage = stats.damage,
+        })
+    end
+    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
+        DTNPCProtect.RecordCombatAttack(zombie, npcData, "ranged", target)
+    end
+end
+
 DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
     local target, targetDist = Trading.SelectStationaryThreat(zombie, npcData)
     if not DTNPCProtect.HasUsableRangedLoadout(npcData) then
@@ -204,38 +245,33 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
         return
     end
 
+    -- Burst Logic
+    if npcData.burstRemaining and npcData.burstRemaining > 0 then
+        npcData.burstTimer = (npcData.burstTimer or 0) + 1
+        local shotSpecs = npcData.shotSpecs
+        if shotSpecs and npcData.burstTimer >= (shotSpecs.recoilDelay or 10) then
+            npcData.burstTimer = 0
+            npcData.burstRemaining = npcData.burstRemaining - 1
+            performRangedShot(zombie, npcData, target, stats, shotSpecs, moved)
+        end
+        Trading.MarkCombatPursuit(npcData, target, targetDist, true)
+        return
+    end
+
     npcData.attackTimer = (npcData.attackTimer or 0) + 1
-    local attacked = false
     if npcData.attackTimer < stats.fireRate then
         Trading.MarkCombatPursuit(npcData, target, targetDist, false)
         return
     end
 
     npcData.attackTimer = 0
-    if DTNPC and DTNPC.TriggerRangedCombatAnim then
-        DTNPC.TriggerRangedCombatAnim(zombie, npcData)
-    end
-    attacked = true
-    if DTNPCProtect and DTNPCProtect.ConsumeRangedShot then
-        DTNPCProtect.ConsumeRangedShot(npcData, 1)
-    else
-        DTNPCProtect.ConsumeAmmo(npcData, 1)
-    end
-    DTNPCProtect.ConsumeWeaponCondition(npcData, "ranged", 1)
-    zombie:getEmitter():playSound("DT_GunRandom")
-    if DT_LightSystem and DT_LightSystem.MuzzleFlash then
-        DT_LightSystem.MuzzleFlash(zombie)
-    end
+    local shotSpecs = DTNPCProtect.GetRangedShotSpecs(npcData)
+    performRangedShot(zombie, npcData, target, stats, shotSpecs, moved)
 
-    local hitChance = moved and stats.hitMove or stats.hitStill
-    Trading.MarkCombatPursuit(npcData, target, targetDist, attacked)
-    if ZombRand(100) < hitChance then
-        DTNPCProtect.ApplyCombatHit(zombie, npcData, target, {
-            attackType = "ranged",
-            damage = stats.damage,
-        })
+    if shotSpecs.isAuto and ZombRand(100) < 60 then
+        npcData.burstRemaining = ZombRand(2, 5)
+        npcData.burstTimer = 0
+        npcData.shotSpecs = shotSpecs
     end
-    if DTNPCProtect and DTNPCProtect.RecordCombatAttack then
-        DTNPCProtect.RecordCombatAttack(zombie, npcData, "ranged", target)
-    end
+    Trading.MarkCombatPursuit(npcData, target, targetDist, true)
 end
