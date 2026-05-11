@@ -71,7 +71,7 @@ require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Spawn"
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Respawn"
 
 -- 5.5 Arrival - Shared abstract-to-live activation helpers
-require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Arrival"
+require "DT/V2/NPC/ServerCore/ServerCoreArrival/DTNPC_ServerCoreArrival"
 
 -- 6. Summon - Summoning/teleporting (depends on respawn/arrival)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Summon"

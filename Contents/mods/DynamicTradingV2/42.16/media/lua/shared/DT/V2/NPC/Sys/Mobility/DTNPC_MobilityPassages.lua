@@ -107,6 +107,32 @@ function Internal.isObstacleLocked(object)
         or objectBool(object, { "isBarricaded", "IsBarricaded" }, false)
 end
 
+local function trySetDoorOpenState(object, shouldBeOpen)
+    if not object or not Internal.isDoorLike(object) then
+        return false
+    end
+
+    local desiredOpen = shouldBeOpen == true
+    local wasOpen = objectBool(object, { "IsOpen", "isOpen" }, false)
+    if wasOpen == desiredOpen then
+        return true
+    end
+
+    local ok = callObjectMethod(object, { "ToggleDoorSilent", "toggleDoorSilent" })
+    local isOpen = objectBool(object, { "IsOpen", "isOpen" }, false)
+    if ok and isOpen == desiredOpen then
+        return true
+    end
+
+    ok = callObjectMethod(object, { "setOpen", "SetOpen" }, desiredOpen)
+    isOpen = objectBool(object, { "IsOpen", "isOpen" }, false)
+    if ok and isOpen == desiredOpen then
+        return true
+    end
+
+    return false
+end
+
 local function tryUsePassageObject(zombie, object)
     if not object or Internal.isObstacleLocked(object) then
         return false, nil
@@ -115,7 +141,7 @@ local function tryUsePassageObject(zombie, object)
     local isOpen = objectBool(object, { "IsOpen", "isOpen" }, false)
     if Internal.isDoorLike(object) then
         if not isOpen then
-            local ok = callObjectMethod(object, { "ToggleDoor", "toggleDoor" }, zombie)
+            local ok = trySetDoorOpenState(object, true)
             return ok == true, "door"
         end
         return false, nil
@@ -837,7 +863,7 @@ function Mobility.TryClosePassedDoor(zombie, npcData, options)
             if not isOpen then
                 table.remove(opened, i)
             elseif crossed and not isDangerNearPoint(x or zombie:getX(), y or zombie:getY(), z, options.safeRadius or 3.0, options.target) then
-                local ok = callObjectMethod(object, { "ToggleDoor", "toggleDoor" }, zombie)
+                local ok = trySetDoorOpenState(object, false)
                 if ok then
                     table.remove(opened, i)
                     closedAny = true
