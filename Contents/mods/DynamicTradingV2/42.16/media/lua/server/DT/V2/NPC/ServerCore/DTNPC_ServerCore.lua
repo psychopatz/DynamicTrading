@@ -70,7 +70,10 @@ require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Spawn"
 -- 5. Respawn - Respawning logic (depends on spawn patterns)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Respawn"
 
--- 6. Summon - Summoning/teleporting (depends on respawn)
+-- 5.5 Arrival - Shared abstract-to-live activation helpers
+require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Arrival"
+
+-- 6. Summon - Summoning/teleporting (depends on respawn/arrival)
 require "DT/V2/NPC/ServerCore/DTNPC_ServerCore_Summon"
 
 -- 6.5 Loot Search - Companion loot discovery/collection subsystem

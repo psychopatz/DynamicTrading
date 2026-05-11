@@ -29,12 +29,16 @@ local function getPrewarmState()
 end
 
 local function openPendingCompanionInventory(entry)
-    local workerToOpen = CompanionUI.ResolveCompanionWorkerByID(entry.workerID) or entry.worker
+    local workerToOpen = CompanionUI.ResolveCompanionWorkerByID(entry.workerID)
     if not workerToOpen or not workerToOpen.workerID or not DC_SupplyWindow or not DC_SupplyWindow.Open then
         return false
     end
 
-    DC_SupplyWindow.Open(workerToOpen, entry.viewMode or "inventory")
+    DC_SupplyWindow.Open(workerToOpen, entry.viewMode or "inventory", {
+        companionOpen = true,
+        requireCanonicalWorkerDetail = true,
+        forceRefresh = true,
+    })
     if DC_SupplyWindow.instance and DC_SupplyWindow.instance.updateStatus then
         DC_SupplyWindow.instance:updateStatus("Loading full inventory details...")
     end
@@ -70,15 +74,19 @@ function CompanionUI.ProcessPendingCompanionInventoryOpens()
     for workerID, entry in pairs(prewarm.pending) do
         local warmedWorker = CompanionUI.ResolveCompanionWorkerByID(workerID)
         local isReady = CompanionUI.IsWorkerDetailWarm(warmedWorker)
-        local expired = (currentTime - (entry.startedAt or currentTime)) >= Constants.COMPANION_INVENTORY_PREWARM_TIMEOUT_MS
+        local requestDue = (currentTime - (entry.lastRequestAt or 0)) >= Constants.COMPANION_INVENTORY_PREWARM_TIMEOUT_MS
 
-        if isReady or expired then
+        if isReady then
             if openPendingCompanionInventory(entry) then
                 prewarm.pending[workerID] = nil
             else
                 stillPending = true
             end
         else
+            if requestDue then
+                CompanionUI.RequestCompanionInventorySummary(workerID)
+                entry.lastRequestAt = currentTime
+            end
             stillPending = true
         end
     end
@@ -90,19 +98,21 @@ function CompanionUI.ProcessPendingCompanionInventoryOpens()
 end
 
 function CompanionUI.QueueCompanionInventoryOpen(worker)
-    if not worker or not worker.workerID then
+    local workerID = CompanionUI.NormalizeWorkerID(worker and worker.workerID or worker)
+    if not workerID then
         return false
     end
 
     local prewarm = getPrewarmState()
-    prewarm.pending[worker.workerID] = {
-        workerID = worker.workerID,
-        worker = worker,
+    prewarm.pending[workerID] = {
+        workerID = workerID,
         viewMode = "inventory",
         startedAt = CompanionUI.NowMs(),
+        lastRequestAt = 0,
     }
 
-    CompanionUI.RequestCompanionInventorySummary(worker.workerID)
+    CompanionUI.RequestCompanionInventorySummary(workerID)
+    prewarm.pending[workerID].lastRequestAt = CompanionUI.NowMs()
 
     if not prewarm.tickHookAdded then
         Events.OnTick.Add(CompanionUI.ProcessPendingCompanionInventoryOpens)
@@ -118,26 +128,11 @@ function CompanionUI.OpenCompanionInventory(ui, worker, npc, npcData)
         return false
     end
 
-    local resolvedWorker = nil
     local liveNPCData = npcData or CompanionUI.GetNPCData(npc)
-
-    if worker and worker.workerID then
-        resolvedWorker = {
-            workerID = worker.workerID,
-            name = worker.name or worker.workerID,
-            ownerUsername = worker.ownerUsername,
-        }
-    end
-
-    if (not resolvedWorker or not resolvedWorker.workerID) and (liveNPCData and liveNPCData.linkedWorkerID) then
-        resolvedWorker = {
-            workerID = liveNPCData.linkedWorkerID,
-            name = liveNPCData.name or liveNPCData.linkedWorkerID,
-            ownerUsername = liveNPCData.ownerUsername,
-        }
-    end
-
-    if not resolvedWorker or not resolvedWorker.workerID then
+    local resolvedWorkerID = CompanionUI.NormalizeWorkerID(
+        worker and worker.workerID or CompanionUI.GetCompanionWorkerID(ui, npc, liveNPCData)
+    )
+    if not resolvedWorkerID then
         CompanionUI.DebugCompanionUI(
             "openCompanionInventory failed to resolve worker linkedWorkerID="
                 .. tostring(liveNPCData and liveNPCData.linkedWorkerID or nil)
@@ -145,14 +140,12 @@ function CompanionUI.OpenCompanionInventory(ui, worker, npc, npcData)
         return false
     end
 
-    CompanionUI.DebugCompanionUI(
-        "openCompanionInventory workerID=" .. tostring(resolvedWorker.workerID)
-            .. " name=" .. tostring(resolvedWorker.name or resolvedWorker.workerID)
-    )
+    local resolvedWorker = CompanionUI.ResolveCompanionWorkerByID(resolvedWorkerID)
 
-    if ui and ui.close then
-        ui:close()
-    end
+    CompanionUI.DebugCompanionUI(
+        "openCompanionInventory workerID=" .. tostring(resolvedWorkerID)
+            .. " warm=" .. tostring(CompanionUI.IsWorkerDetailWarm(resolvedWorker))
+    )
 
     local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
     if player and player.setHaloNote then
@@ -160,13 +153,23 @@ function CompanionUI.OpenCompanionInventory(ui, worker, npc, npcData)
     end
 
     if CompanionUI.IsWorkerDetailWarm(resolvedWorker) then
-        CompanionUI.RequestCompanionInventorySummary(resolvedWorker.workerID)
-        DC_SupplyWindow.Open(resolvedWorker, "inventory")
+        if ui and ui.close then
+            ui:close()
+        end
+        CompanionUI.RequestCompanionInventorySummary(resolvedWorkerID)
+        DC_SupplyWindow.Open(resolvedWorker, "inventory", {
+            companionOpen = true,
+            requireCanonicalWorkerDetail = true,
+            forceRefresh = true,
+        })
         if DC_SupplyWindow.instance and DC_SupplyWindow.instance.updateStatus then
             DC_SupplyWindow.instance:updateStatus("Refreshing inventory details...")
         end
         return true
     end
 
-    return CompanionUI.QueueCompanionInventoryOpen(resolvedWorker)
+    if ui and ui.close then
+        ui:close()
+    end
+    return CompanionUI.QueueCompanionInventoryOpen(resolvedWorkerID)
 end

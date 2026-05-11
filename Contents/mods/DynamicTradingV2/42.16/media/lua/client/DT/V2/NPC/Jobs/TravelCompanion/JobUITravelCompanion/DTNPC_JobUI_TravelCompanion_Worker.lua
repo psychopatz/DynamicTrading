@@ -16,6 +16,63 @@ end
 
 modules.Worker = true
 
+function CompanionUI.NormalizeWorkerID(workerID)
+    if workerID == nil then
+        return nil
+    end
+
+    local textID = tostring(workerID)
+    if textID == "" then
+        return nil
+    end
+
+    return textID
+end
+
+function CompanionUI.GetWorkerIDCandidates(workerID)
+    local normalizedID = CompanionUI.NormalizeWorkerID(workerID)
+    if not normalizedID then
+        return {}
+    end
+
+    local candidates = { normalizedID }
+    local numericID = tonumber(normalizedID)
+    if numericID ~= nil then
+        candidates[#candidates + 1] = numericID
+    end
+    return candidates
+end
+
+local function lookupWorkerInMap(map, workerID)
+    if type(map) ~= "table" then
+        return nil
+    end
+
+    for _, candidate in ipairs(CompanionUI.GetWorkerIDCandidates(workerID)) do
+        local worker = map[candidate]
+        if type(worker) == "table" then
+            return worker
+        end
+    end
+
+    return nil
+end
+
+local function lookupValueInMap(map, workerID)
+    if type(map) ~= "table" then
+        return nil
+    end
+
+    for _, candidate in ipairs(CompanionUI.GetWorkerIDCandidates(workerID)) do
+        local value = map[candidate]
+        if value ~= nil then
+            return value
+        end
+    end
+
+    return nil
+end
+
 function CompanionUI.BuildWorkerLookupUI(ui, npc, npcData)
     if ui then
         return ui
@@ -36,18 +93,20 @@ function CompanionUI.BuildWorkerLookupUI(ui, npc, npcData)
 end
 
 function CompanionUI.ResolveCompanionWorkerByID(workerID)
-    if not workerID then
+    local normalizedID = CompanionUI.NormalizeWorkerID(workerID)
+    if not normalizedID then
         return nil
     end
 
     local cache = DC_MainWindow and DC_MainWindow.cachedDetails or nil
-    if type(cache) == "table" and type(cache[workerID]) == "table" then
-        return cache[workerID]
+    local cachedWorker = lookupWorkerInMap(cache, normalizedID)
+    if cachedWorker then
+        return cachedWorker
     end
 
     local internal = DC_SupplyWindow and DC_SupplyWindow.Internal or nil
     if internal and internal.resolveWorkerDetail then
-        local detail = internal.resolveWorkerDetail(workerID)
+        local detail = internal.resolveWorkerDetail(normalizedID)
         if detail then
             return detail
         end
@@ -55,14 +114,21 @@ function CompanionUI.ResolveCompanionWorkerByID(workerID)
 
     local registry = DC_Colony and DC_Colony.Registry or nil
     if registry and registry.GetWorker then
-        local worker = registry.GetWorker(workerID)
-        if worker then
-            return worker
+        for _, candidate in ipairs(CompanionUI.GetWorkerIDCandidates(normalizedID)) do
+            local worker = registry.GetWorker(candidate)
+            if worker then
+                return worker
+            end
         end
     end
 
     if registry and registry.GetWorkerRaw then
-        return registry.GetWorkerRaw(workerID)
+        for _, candidate in ipairs(CompanionUI.GetWorkerIDCandidates(normalizedID)) do
+            local worker = registry.GetWorkerRaw(candidate)
+            if worker then
+                return worker
+            end
+        end
     end
 
     return nil
@@ -73,33 +139,48 @@ function CompanionUI.IsWorkerDetailWarm(worker)
         return false
     end
 
-    return worker.nutritionLedger ~= nil
-        or worker.toolLedger ~= nil
-        or worker.outputLedger ~= nil
-        or worker.haulLedger ~= nil
-        or worker.skills ~= nil
-        or worker.warehouse ~= nil
+    local warehouse = type(worker.warehouse) == "table" and worker.warehouse or nil
+    local warehouseLedgers = warehouse and warehouse.ledgers or nil
+
+    return type(worker.nutritionLedger) == "table"
+        and type(worker.toolLedger) == "table"
+        and type(worker.skills) == "table"
+        and type(warehouseLedgers) == "table"
+        and type(warehouseLedgers.provisions) == "table"
+        and type(warehouseLedgers.equipment) == "table"
+        and type(warehouseLedgers.output) == "table"
 end
 
 function CompanionUI.RequestCompanionInventorySummary(workerID)
-    if not workerID or not DC_System or not DC_System.SendCommand then
+    local normalizedID = CompanionUI.NormalizeWorkerID(workerID)
+    if not normalizedID or not DC_System or not DC_System.SendCommand then
         return false
     end
 
     local detailVersions = DC_MainWindow and DC_MainWindow.cachedDetailVersions or nil
-    local knownWorkerVersion = detailVersions and detailVersions[workerID] or nil
+    local knownWorkerVersion = lookupValueInMap(detailVersions, normalizedID)
     local warehouseVersion = DC_SupplyWindow and DC_SupplyWindow.instance and DC_SupplyWindow.instance.warehouseVersion or nil
 
     DC_System.SendCommand("RequestWorkerDetails", {
-        workerID = workerID,
+        workerID = normalizedID,
         knownVersion = knownWorkerVersion,
-        includeWorkerLedgers = false
+        includeWorkerLedgers = true
     })
     DC_System.SendCommand("RequestWarehouse", {
         knownVersion = warehouseVersion,
-        includeLedgers = false
+        includeLedgers = true
     })
     return true
+end
+
+function CompanionUI.GetCompanionWorkerID(ui, npc, npcData)
+    local lookupUI = CompanionUI.BuildWorkerLookupUI(ui, npc, npcData)
+    local target = lookupUI and lookupUI.target or nil
+    return CompanionUI.NormalizeWorkerID(
+        (npcData and npcData.linkedWorkerID)
+            or (target and target.linkedWorkerID)
+            or nil
+    )
 end
 
 function CompanionUI.GetCompanionWorker(ui, npc, npcData)
@@ -111,10 +192,7 @@ function CompanionUI.GetCompanionWorker(ui, npc, npcData)
         end
     end
 
-    local target = lookupUI and lookupUI.target or nil
-    local linkedWorkerID = (npcData and npcData.linkedWorkerID)
-        or (target and target.linkedWorkerID)
-        or nil
+    local linkedWorkerID = CompanionUI.GetCompanionWorkerID(lookupUI, npc, npcData)
     if linkedWorkerID then
         local worker = CompanionUI.ResolveCompanionWorkerByID(linkedWorkerID)
         if worker then

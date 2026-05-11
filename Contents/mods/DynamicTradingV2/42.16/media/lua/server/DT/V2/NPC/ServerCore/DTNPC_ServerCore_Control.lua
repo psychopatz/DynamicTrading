@@ -195,6 +195,17 @@ local function findNearbyArrivalSquare(controller, minRadius, maxRadius)
     return findNearbySpawnSquare(cell, playerX + 1, playerY + 1, playerZ, 4)
 end
 
+DTNPCServerCore.ResolveControllerIdentity = normalizeController
+DTNPCServerCore.FindOffscreenArrivalSquare = findOffscreenArrivalSquare
+DTNPCServerCore.FindNearbyArrivalSquare = findNearbyArrivalSquare
+DTNPCServerCore.FindArrivalSquareNearCoords = function(x, y, z, searchRadius)
+    local cell = getCell()
+    if not cell then
+        return nil
+    end
+    return findNearbySpawnSquare(cell, x, y, z, searchRadius)
+end
+
 local function copyLoadout(loadout)
     if DTNPCProtect and DTNPCProtect.CopyLoadout then
         return DTNPCProtect.CopyLoadout(loadout)
@@ -300,6 +311,19 @@ function DTNPCServerCore.SpawnOffscreenCompanionByUUID(uuid, controller)
         return false, nil, nil
     end
 
+    if DTNPCServerCore.ActivateArrivalByUUID then
+        return DTNPCServerCore.ActivateArrivalByUUID(normalizedUUID, {
+            controller = controller,
+            targetPlayer = controller,
+            spawnPolicy = "offscreen_follow",
+            activationMode = "companion_follow",
+            state = "Follow",
+            status = "Working",
+            returnTime = 0,
+            returnStatus = nil,
+        })
+    end
+
     local zombie, npcData = DTNPCServerCore.GetNPCDataByUUID(normalizedUUID)
     if zombie and npcData then
         return true, zombie, npcData
@@ -367,6 +391,21 @@ function DTNPCServerCore.SpawnNearbyCompanionByUUID(uuid, controller, minRadius,
     local normalizedUUID = normalizeUUID(uuid)
     if not normalizedUUID or not controller or not DTNPCServerCore.RespawnNPC then
         return false, nil, nil
+    end
+
+    if DTNPCServerCore.ActivateArrivalByUUID then
+        return DTNPCServerCore.ActivateArrivalByUUID(normalizedUUID, {
+            controller = controller,
+            targetPlayer = controller,
+            spawnPolicy = "nearby_follow",
+            activationMode = "companion_follow",
+            state = "Follow",
+            status = "Working",
+            returnTime = 0,
+            returnStatus = nil,
+            minRadius = minRadius,
+            maxRadius = maxRadius,
+        })
     end
 
     local zombie, npcData = DTNPCServerCore.GetNPCDataByUUID(normalizedUUID)
@@ -530,12 +569,41 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
     end
 
     if usesMaster and not zombie and controller and DTNPCServerCore.SpawnNearbyCompanionByUUID then
-        local spawned, spawnedZombie, spawnedData = DTNPCServerCore.SpawnNearbyCompanionByUUID(
-            normalizedUUID,
-            controller,
-            2,
-            5
-        )
+        local arrivalMode = "bandit_hostile"
+        if npcData.contactVisitActive == true then
+            arrivalMode = "contact_follow"
+        elseif tostring(npcData.dcCompanionJob or "") == "TravelCompanion"
+            or tostring(npcData.linkedWorkerID or "") ~= "" then
+            arrivalMode = "companion_follow"
+        end
+
+        local spawned, spawnedZombie, spawnedData = false, nil, npcData
+        local arrivalStatus = arrivalMode == "contact_follow" and "Trading" or "Working"
+        if DTNPCServerCore.ActivateArrivalByUUID then
+            spawned, spawnedZombie, spawnedData = DTNPCServerCore.ActivateArrivalByUUID(normalizedUUID, {
+                controller = controller,
+                targetPlayer = controller,
+                spawnPolicy = "nearby_follow",
+                activationMode = arrivalMode,
+                state = state,
+                status = arrivalStatus,
+                returnTime = 0,
+                returnStatus = nil,
+                requestedReturnStatus = requestedReturnStatus,
+                combatOrder = args.combatOrder,
+                guardCombatOrder = args.guardCombatOrder,
+                guardAttackMode = args.guardAttackMode,
+                minRadius = 2,
+                maxRadius = 5,
+            })
+        else
+            spawned, spawnedZombie, spawnedData = DTNPCServerCore.SpawnNearbyCompanionByUUID(
+                normalizedUUID,
+                controller,
+                2,
+                5
+            )
+        end
         if spawned then
             zombie = spawnedZombie or zombie
             npcData = spawnedData or npcData

@@ -189,6 +189,9 @@ function DTNPCManager.RemoveData(uuid, status, returnTime, returnStatus, removal
         end
 
         if status == "Away" or status == "Dead" then
+            if DTNPCServerCore and DTNPCServerCore.ClearPendingArrival then
+                DTNPCServerCore.ClearPendingArrival(npcData)
+            end
             DTNPCManager.ClearPhysicalBodyIdentity(npcData, currentBodyInstanceID)
         end
         
@@ -244,6 +247,9 @@ function DTNPCManager.SetNPCStatus(uuid, status, returnTime, returnStatus)
         if npcData then
             staleBodyInstanceID = npcData.currentBodyInstanceID
             removalRevision = DTNPCManager.BumpPresenceRevision(npcData)
+            if DTNPCServerCore and DTNPCServerCore.ClearPendingArrival then
+                DTNPCServerCore.ClearPendingArrival(npcData)
+            end
             DTNPCManager.ClearPhysicalBodyIdentity(npcData, staleBodyInstanceID)
             if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
                 DynamicTrading_Roster.SaveSoul(uuid, npcData)

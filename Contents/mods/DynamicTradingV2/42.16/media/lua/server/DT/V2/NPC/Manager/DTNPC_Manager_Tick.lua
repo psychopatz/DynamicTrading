@@ -469,6 +469,10 @@ function DTNPCManager.OnTick()
         end
     end
 
+    if DTNPCServerCore and DTNPCServerCore.ProcessPendingArrivals then
+        DTNPCServerCore.ProcessPendingArrivals()
+    end
+
     if shellCleanupCheckCounter >= SHELL_CLEANUP_CHECK_RATE then
         shellCleanupCheckCounter = 0
         local cell = getCell()

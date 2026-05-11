@@ -302,8 +302,28 @@ function Bandits.SpawnAmbushForPlayer(player, options)
         end
 
         markSoulForRaid(npcData.uuid, npcData)
-        local zombie = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, npcData.uuid) or nil
-        if zombie then
+        local spawned = false
+        if DTNPCServerCore and DTNPCServerCore.ActivateArrivalByUUID then
+            spawned = DTNPCServerCore.ActivateArrivalByUUID(npcData.uuid, {
+                controller = player,
+                targetPlayer = player,
+                targetUsername = Shared.getUsername(player),
+                targetOnlineID = Shared.getOnlineID(player),
+                targetX = square:getX(),
+                targetY = square:getY(),
+                targetZ = square:getZ(),
+                spawnPolicy = "site_anchor",
+                activationMode = "bandit_demand",
+                state = npcData.state or "Follow",
+                status = npcData.status or "Working",
+                returnTime = 0,
+                returnStatus = nil,
+                requestedReturnStatus = nil,
+            })
+        else
+            spawned = DTNPCServerCore and DTNPCServerCore.RespawnNPC and DTNPCServerCore.RespawnNPC(npcData, npcData.uuid) ~= nil or false
+        end
+        if spawned then
             group.members[#group.members + 1] = npcData.uuid
         else
             restoreSoulAfterFailedRaid(npcData.uuid, npcData)
