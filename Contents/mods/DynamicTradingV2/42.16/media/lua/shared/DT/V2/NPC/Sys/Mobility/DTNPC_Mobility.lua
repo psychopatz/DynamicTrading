@@ -19,7 +19,7 @@ Mobility.EntryLoaded = true
 Mobility.Constants = Mobility.Constants or {}
 Mobility.Internal = Mobility.Internal or {}
 
-require "DT/V2/NPC/Sys/Mobility/DTNPC_MobilityCommon"
+require "DT/V2/NPC/Sys/Mobility/MobilityCommon/DTNPC_MobilityCommon"
 require "DT/V2/NPC/Sys/Mobility/DTNPC_MobilityLocomotion"
 require "DT/V2/NPC/Sys/Mobility/DTNPC_MobilityPassages"
 require "DT/V2/NPC/Sys/Mobility/DTNPC_MobilityPressure"
