@@ -17,10 +17,16 @@ local function shouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker,
 end
 
 function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
-    return DTNPCLifecycle
+    local incapped = DTNPCLifecycle
         and DTNPCLifecycle.EnterIncapacitated
         and DTNPCLifecycle.EnterIncapacitated(zombie, npcData, attacker, context)
         or false
+    
+    if not incapped and DTNPCHostility and DTNPCHostility.PlayDeathSound then
+        DTNPCHostility.PlayDeathSound(zombie, npcData)
+    end
+    
+    return incapped
 end
 
 function DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, amount, attacker, context)
@@ -89,8 +95,8 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
     end
 
     -- Play unique hurt sound based on character identity
-    if DTNPCHostility and DTNPCHostility.PlayHurtSound then
-        DTNPCHostility.PlayHurtSound(zombie, npcData)
+    if combatHealth.current > 0 and DTNPCHostility and DTNPCHostility.PlayHurtSound then
+        DTNPCHostility.PlayHurtSound(zombie, npcData, "Hurt")
     end
 
     if combatHealth.current <= 0 then

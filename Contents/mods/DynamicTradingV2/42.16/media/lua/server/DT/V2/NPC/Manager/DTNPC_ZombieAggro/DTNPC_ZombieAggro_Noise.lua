@@ -76,7 +76,20 @@ function DTNPC_ZombieAggro.EmitCombatNoise(zombie, npcData, attackType)
         volume = 0.5
     end
 
-    radius = math.max(6, tonumber(radius) or 0)
+    local threatCount = math.max(0, tonumber(npcData.zombieThreatCount) or 0)
+    if threatCount >= 3 then
+        radius = radius * 0.55
+        volume = volume * 0.8
+    elseif threatCount >= 1 then
+        radius = radius * 0.72
+        volume = volume * 0.9
+    end
+
+    if npcData.isMovingState == true then
+        radius = radius * 0.85
+    end
+
+    radius = math.max(5, tonumber(radius) or 0)
     local emitted = emitWorldSound(zombie:getX(), zombie:getY(), zombie:getZ(), radius, volume, zombie)
 
     npcData.combatNoiseNextAt = now + cooldownMs

@@ -18,6 +18,7 @@ local MAX_RANGE = 14.0
 -- SPEED CONFIG
 local SPEED_FWD = 0.055
 local SPEED_BCK = 0.035
+local SPEED_RETREAT_RUN = 0.07
 local REACTION_DELAY = 30
 
 local function performRangedShot(zombie, npcData, target, stats, shotSpecs)
@@ -270,11 +271,20 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
 
     local moveDir = 0
     local currentSpeed = 0
+    local retreatFromX = tx
+    local retreatFromY = ty
+    local retreatRun = false
 
-    if dangerState and dangerState.shouldDisengage == true and len < desiredMin then
+    if dangerState and dangerState.shouldDisengage == true then
+        retreatFromX = tonumber(dangerState.fleeFromX) or tx
+        retreatFromY = tonumber(dangerState.fleeFromY) or ty
+        retreatRun = dangerState.selfPressure
+            and (tonumber(dangerState.selfPressure.count) or 0) >= 3
+            or dangerState.recentZombieDamage == true
+            or dangerState.recentHostileDamage == true
         npcData.reactionTimer = REACTION_DELAY + 1
         moveDir = -1
-        currentSpeed = math.max(SPEED_BCK, SPEED_FWD)
+        currentSpeed = retreatRun and SPEED_RETREAT_RUN or math.max(SPEED_BCK, SPEED_FWD)
     elseif len < desiredMin then
         npcData.reactionTimer = npcData.reactionTimer + 1
         if npcData.reactionTimer > REACTION_DELAY then
@@ -334,10 +344,14 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
             })
         else
             moved, moveState = DTNPCMobility.MoveAwayFromPoint(zombie, npcData, {
-                target = target,
+                fromX = retreatFromX,
+                fromY = retreatFromY,
                 speed = currentSpeed,
                 staminaMode = "retreat",
-                desiredDistance = desiredMin + 0.75,
+                desiredRun = retreatRun == true,
+                desiredDistance = dangerState and dangerState.shouldDisengage == true
+                    and math.max(desiredMin + 0.75, tonumber(dangerState.retreatDistance) or (desiredMin + 1.5))
+                    or (desiredMin + 0.75),
                 allowObstacleInteract = true,
                 allowDamageRetreat = true,
                 blockCounterKey = "attackRangeBlockedTicks",
@@ -348,9 +362,9 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
                 closeDoorTarget = target,
                 closeDoorSafeRadius = 3.0,
                 anim = {
-                    animSpeed = 1.0,
-                    isRunning = false,
-                    dtWalkType = "Walk",
+                    animSpeed = retreatRun and 1.15 or 1.0,
+                    isRunning = retreatRun == true,
+                    dtWalkType = retreatRun and "Run" or "Walk",
                 },
             })
         end

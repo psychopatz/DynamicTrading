@@ -217,7 +217,7 @@ function Trading.MoveAwayFromTarget(zombie, npcData, speed, sourceX, sourceY, de
             fromY = sourceY,
             speed = speed,
             staminaMode = "retreat",
-            desiredRun = false,
+            desiredRun = speed > 0.06,
             desiredDistance = desiredDistance,
             allowObstacleInteract = true,
             blockCounterKey = "tradingBlockedTicks",
@@ -227,8 +227,8 @@ function Trading.MoveAwayFromTarget(zombie, npcData, speed, sourceX, sourceY, de
             anchorZ = anchorZ,
             leashRadius = leashRadius,
             anim = {
-                animSpeed = 1.0,
-                isRunning = false,
+                animSpeed = speed > 0.06 and 1.15 or 1.0,
+                isRunning = speed > 0.06,
             },
         })
     end

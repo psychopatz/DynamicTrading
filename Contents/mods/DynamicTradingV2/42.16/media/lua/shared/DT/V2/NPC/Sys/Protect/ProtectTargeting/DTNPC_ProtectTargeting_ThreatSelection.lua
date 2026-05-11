@@ -72,6 +72,11 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
     local hostileNPCType = nil
     local zombieCandidates = {}
     local zombieCandidateMap = {}
+    local immediateRadius = tonumber(DTNPCProtect.CONFIG.MeleeImmediateThreatRadius) or 2.2
+    local stickyBreak = tonumber(DTNPCProtect.CONFIG.MeleeImmediateThreatStickyBreak) or 0.65
+    local immediateTarget = nil
+    local immediateDistance = 9999
+    local immediateType = nil
 
     local function evaluateCandidate(candidate, candidateID, threatType, candidateX, candidateY, candidateZ)
         if not candidateID then
@@ -89,6 +94,12 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
             currentTarget = candidate
             currentDistance = dist
             currentType = threatType
+        end
+
+        if withinAnchorAcquire and dist <= immediateRadius and dist < immediateDistance then
+            immediateTarget = candidate
+            immediateDistance = dist
+            immediateType = threatType
         end
 
         if withinAnchorAcquire and dist <= searchRadius and dist < nearestDistance then
@@ -193,6 +204,12 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
                         local withinAnchorKeep = anchorKeepRadius == nil
                             or (anchorDist ~= nil and anchorDist <= anchorKeepRadius)
 
+                        if withinAnchorAcquire and dist <= immediateRadius and dist < immediateDistance then
+                            immediateTarget = candidate
+                            immediateDistance = dist
+                            immediateType = "zombie"
+                        end
+
                         if (dist <= searchRadius and withinAnchorAcquire)
                             or (currentTargetID and candidateID == currentTargetID and dist <= keepRadius and withinAnchorKeep) then
                             upsertZombieCandidate(zombieCandidates, zombieCandidateMap, {
@@ -225,6 +242,18 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
         nearestType = "zombie"
     end
 
+    if not immediateTarget and nearestTarget and nearestDistance <= immediateRadius then
+        if not currentTarget or currentDistance > (nearestDistance + stickyBreak) then
+            immediateTarget = nearestTarget
+            immediateDistance = nearestDistance
+            immediateType = nearestType
+        end
+    elseif immediateTarget and currentTarget and currentDistance <= (immediateDistance + stickyBreak) then
+        immediateTarget = nil
+        immediateDistance = 9999
+        immediateType = nil
+    end
+
     local shouldSwitchFromZombie = preferDTNPCsOverZombies == true
         and currentType == "zombie"
         and hostileNPCTarget ~= nil
@@ -233,11 +262,13 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
     local effectiveCurrentType = shouldSwitchFromZombie and nil or currentType
     local effectiveCurrentDistance = shouldSwitchFromZombie and 9999 or currentDistance
 
-    local chosen = effectiveCurrentTarget or hostileNPCTarget or nearestTarget
-    local distance = effectiveCurrentTarget and effectiveCurrentDistance
-        or (hostileNPCTarget and hostileNPCDistance or nearestDistance)
-    local threatType = effectiveCurrentTarget and effectiveCurrentType
-        or (hostileNPCTarget and hostileNPCType or nearestType)
+    local chosen = immediateTarget or effectiveCurrentTarget or hostileNPCTarget or nearestTarget
+    local distance = immediateTarget and immediateDistance
+        or (effectiveCurrentTarget and effectiveCurrentDistance
+            or (hostileNPCTarget and hostileNPCDistance or nearestDistance))
+    local threatType = immediateTarget and immediateType
+        or (effectiveCurrentTarget and effectiveCurrentType
+            or (hostileNPCTarget and hostileNPCType or nearestType))
 
     if chosen then
         local chosenDTNPCData = nil

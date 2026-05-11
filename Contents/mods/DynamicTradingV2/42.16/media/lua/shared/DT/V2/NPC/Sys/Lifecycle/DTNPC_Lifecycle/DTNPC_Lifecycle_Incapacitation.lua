@@ -22,6 +22,10 @@ function DTNPCLifecycle.EnterIncapacitated(zombie, npcData, attacker, context)
         zombie:setAttackedBy(attacker)
     end
 
+    if DTNPCHostility and DTNPCHostility.PlayHurtSound then
+        DTNPCHostility.PlayHurtSound(zombie, npcData, "Incap")
+    end
+
     DynamicTrading.Log(
         "DTV2",
         "NPC",

@@ -9,6 +9,8 @@ DTNPCLogic.BehaviorTrading = DTNPCLogic.BehaviorTrading or {}
 
 local Trading = DTNPCLogic.BehaviorTrading
 require "Misc/DT_LightSystem"
+local DANGER_RETREAT_SPEED = 0.068
+local DANGER_REACTION_DELAY = 18
 
 local function performRangedShot(zombie, npcData, target, stats, shotSpecs, moved)
     if not zombie or not npcData or not target then return end
@@ -136,10 +138,31 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
 
     local desiredMin = recovering and math.max(Trading.RANGED_KITE_MIN, recovery and recovery.distance or Trading.RANGED_KITE_MIN) or Trading.RANGED_KITE_MIN
     local desiredMax = recovering and math.max(Trading.RANGED_KITE_MAX, desiredMin + 0.75) or Trading.RANGED_KITE_MAX
+    local dangerState = DTNPCProtect and DTNPCProtect.GetMeleeDangerState
+        and DTNPCProtect.GetMeleeDangerState(zombie, npcData, target, {
+            engageReach = desiredMin,
+            retreatDistance = math.max(desiredMax + 1.25, desiredMin + 1.65),
+            pressureRadius = 2.8,
+            targetPressureRadius = 2.1,
+        })
+        or nil
+
+    if dangerState and dangerState.shouldDisengage == true then
+        desiredMin = math.max(desiredMin, tonumber(dangerState.retreatDistance) or (desiredMin + 1.65))
+        desiredMax = math.max(desiredMax, desiredMin + 1.0)
+    end
 
     local moveDir = 0
     local moveSpeed = 0
-    if len < desiredMin then
+    local retreatSourceX = tx
+    local retreatSourceY = ty
+    if dangerState and dangerState.shouldDisengage == true then
+        retreatSourceX = tonumber(dangerState.fleeFromX) or tx
+        retreatSourceY = tonumber(dangerState.fleeFromY) or ty
+        npcData.reactionTimer = DANGER_REACTION_DELAY
+        moveDir = -1
+        moveSpeed = DANGER_RETREAT_SPEED
+    elseif len < desiredMin then
         npcData.reactionTimer = (npcData.reactionTimer or 0) + 1
         if npcData.reactionTimer >= 18 then
             moveDir = -1
@@ -177,9 +200,11 @@ DTNPCLogic.Behaviors["TradingDefenseRanged"] = function(zombie, npcData)
                 zombie,
                 npcData,
                 moveSpeed,
-                tx,
-                ty,
-                desiredMin + 0.75,
+                retreatSourceX,
+                retreatSourceY,
+                dangerState and dangerState.shouldDisengage == true
+                    and math.max(desiredMin + 0.75, tonumber(dangerState.retreatDistance) or (desiredMin + 1.5))
+                    or (desiredMin + 0.75),
                 anchorX,
                 anchorY,
                 anchorZ,

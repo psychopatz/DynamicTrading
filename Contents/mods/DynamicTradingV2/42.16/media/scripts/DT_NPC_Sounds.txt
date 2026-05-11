@@ -1,0 +1,68 @@
+module DynamicTrading {
+
+    /*
+     * Vanilla Vocal Mappings for NPCs (with Variety and Multi-Sets)
+     * Registering 4 Voice Sets (V1-V4) for each Sex to allow consistent but varied voices.
+     */
+
+    // ================================= MALE =================================
+
+    // --- Voice Set 1 (Male) ---
+    sound DTNPC_Male_V1_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromHitBlunt, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Hurt_Scratch { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromScratch, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Hurt_Lacerate { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromLacerate, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromBite, volume = 0.9, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/DeathFall, volume = 1.0, pitch = 0.95 } }
+
+    // --- Voice Set 2 (Male) ---
+    sound DTNPC_Male_V2_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromHitBlunt, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Hurt_Scratch { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromScratch, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Hurt_Lacerate { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromLacerate, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromBite, volume = 0.9, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/DeathFall, volume = 1.0, pitch = 1.00 } }
+
+    // --- Voice Set 3 (Male) ---
+    sound DTNPC_Male_V3_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromHitBlunt, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Hurt_Scratch { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromScratch, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Hurt_Lacerate { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromLacerate, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromBite, volume = 0.9, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/DeathFall, volume = 1.0, pitch = 1.05 } }
+
+    // --- Voice Set 4 (Male) ---
+    sound DTNPC_Male_V4_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromHitBlunt, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Hurt_Scratch { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromScratch, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Hurt_Lacerate { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromLacerate, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromBite, volume = 0.9, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/DeathFall, volume = 1.0, pitch = 1.10 } }
+
+
+    // ================================ FEMALE ================================
+
+    // --- Voice Set 1 (Female) ---
+    sound DTNPC_Female_V1_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromHitBlunt, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Hurt_Scratch { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromScratch, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Hurt_Lacerate { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromLacerate, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromBite, volume = 0.9, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/DeathFall, volume = 1.0, pitch = 0.95 } }
+
+    // --- Voice Set 2 (Female) ---
+    sound DTNPC_Female_V2_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromHitBlunt, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Hurt_Scratch { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromScratch, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Hurt_Lacerate { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromLacerate, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromBite, volume = 0.9, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/DeathFall, volume = 1.0, pitch = 1.00 } }
+
+    // --- Voice Set 3 (Female) ---
+    sound DTNPC_Female_V3_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromHitBlunt, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Hurt_Scratch { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromScratch, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Hurt_Lacerate { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromLacerate, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromBite, volume = 0.9, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/DeathFall, volume = 1.0, pitch = 1.05 } }
+
+    // --- Voice Set 4 (Female) ---
+    sound DTNPC_Female_V4_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromHitBlunt, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Hurt_Scratch { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromScratch, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Hurt_Lacerate { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromLacerate, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromBite, volume = 0.9, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/DeathFall, volume = 1.0, pitch = 1.10 } }
+}

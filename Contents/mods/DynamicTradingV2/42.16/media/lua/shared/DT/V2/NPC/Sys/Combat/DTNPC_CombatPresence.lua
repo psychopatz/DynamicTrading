@@ -7,9 +7,9 @@ DTNPCCombat = DTNPCCombat or {}
 
 DTNPCCombat.CONFIG = DTNPCCombat.CONFIG or {}
 
-DTNPCCombat.CONFIG.MeleePresenceRadius = DTNPCCombat.CONFIG.MeleePresenceRadius or 12
-DTNPCCombat.CONFIG.RangedPresenceRadius = DTNPCCombat.CONFIG.RangedPresenceRadius or 20
-DTNPCCombat.CONFIG.GenericPresenceRadius = DTNPCCombat.CONFIG.GenericPresenceRadius or 10
+DTNPCCombat.CONFIG.MeleePresenceRadius = DTNPCCombat.CONFIG.MeleePresenceRadius or 9
+DTNPCCombat.CONFIG.RangedPresenceRadius = DTNPCCombat.CONFIG.RangedPresenceRadius or 14
+DTNPCCombat.CONFIG.GenericPresenceRadius = DTNPCCombat.CONFIG.GenericPresenceRadius or 8
 DTNPCCombat.CONFIG.MeleePresenceDurationMs = DTNPCCombat.CONFIG.MeleePresenceDurationMs or 3200
 DTNPCCombat.CONFIG.RangedPresenceDurationMs = DTNPCCombat.CONFIG.RangedPresenceDurationMs or 5200
 DTNPCCombat.CONFIG.GenericPresenceDurationMs = DTNPCCombat.CONFIG.GenericPresenceDurationMs or 2500
@@ -19,6 +19,10 @@ DTNPCCombat.CONFIG.GenericPresenceLeaseBonus = DTNPCCombat.CONFIG.GenericPresenc
 DTNPCCombat.CONFIG.MeleePresencePriority = DTNPCCombat.CONFIG.MeleePresencePriority or 1.18
 DTNPCCombat.CONFIG.RangedPresencePriority = DTNPCCombat.CONFIG.RangedPresencePriority or 1.42
 DTNPCCombat.CONFIG.GenericPresencePriority = DTNPCCombat.CONFIG.GenericPresencePriority or 1.08
+DTNPCCombat.CONFIG.PressuredPresenceRadiusScale = DTNPCCombat.CONFIG.PressuredPresenceRadiusScale or 0.76
+DTNPCCombat.CONFIG.CrowdedPresenceRadiusScale = DTNPCCombat.CONFIG.CrowdedPresenceRadiusScale or 0.62
+DTNPCCombat.CONFIG.MobilePresenceRadiusScale = DTNPCCombat.CONFIG.MobilePresenceRadiusScale or 0.84
+DTNPCCombat.CONFIG.PressuredPresencePriorityScale = DTNPCCombat.CONFIG.PressuredPresencePriorityScale or 0.92
 
 local function nowMillis()
     if getTimeInMillis then
@@ -42,6 +46,18 @@ local function isAuthoritativeSide()
     end
 
     return true
+end
+
+local function isMobileCombatState(state)
+    local text = tostring(state or "")
+    return text == "Attack"
+        or text == "AttackRange"
+        or text == "ProtectMelee"
+        or text == "ProtectRanged"
+        or text == "ProtectAuto"
+        or text == "TradingDefenseMelee"
+        or text == "TradingDefenseRanged"
+        or text == "Flee"
 end
 
 local function clearPresence(npcData)
@@ -95,17 +111,38 @@ function DTNPCCombat.NotifyAttack(zombie, npcData, attackType, target, options)
     priority = math.max(1.0, tonumber(options.priority) or priority or 1.0)
 
     local threatCount = math.max(0, tonumber(npcData.zombieThreatCount) or 0)
-    if threatCount > 0 then
-        radius = radius + math.min(3, threatCount * 0.35)
-        priority = priority + math.min(0.22, threatCount * 0.04)
+    local pressureScale = 1.0
+    if threatCount >= 4 then
+        pressureScale = pressureScale * (tonumber(DTNPCCombat.CONFIG.CrowdedPresenceRadiusScale) or 0.62)
+    elseif threatCount >= 2 then
+        pressureScale = pressureScale * (tonumber(DTNPCCombat.CONFIG.PressuredPresenceRadiusScale) or 0.76)
     end
+    if npcData.isMovingState == true or isMobileCombatState(npcData.state) then
+        pressureScale = pressureScale * (tonumber(DTNPCCombat.CONFIG.MobilePresenceRadiusScale) or 0.84)
+    end
+    if threatCount > 0 then
+        radius = radius * pressureScale
+        leaseBonus = math.max(0, leaseBonus - 1)
+        priority = priority * (tonumber(DTNPCCombat.CONFIG.PressuredPresencePriorityScale) or 0.92)
+    end
+    radius = math.max(4, radius)
+    priority = math.max(1.0, priority)
 
     local currentTime = nowMillis()
     local previousUntil = tonumber(npcData.combatPresenceUntil) or 0
     if previousUntil > currentTime then
-        radius = math.max(radius, tonumber(npcData.combatPresenceBaseRadius) or 0)
-        leaseBonus = math.max(leaseBonus, tonumber(npcData.combatPresenceLeaseBonus) or 0)
-        priority = math.max(priority, tonumber(npcData.combatPresencePriority) or 1.0)
+        local previousRadius = tonumber(npcData.combatPresenceBaseRadius) or 0
+        local previousLeaseBonus = tonumber(npcData.combatPresenceLeaseBonus) or 0
+        local previousPriority = tonumber(npcData.combatPresencePriority) or 1.0
+        if threatCount > 0 then
+            radius = math.min(math.max(4, radius), math.max(4, previousRadius))
+            leaseBonus = math.min(leaseBonus, previousLeaseBonus)
+            priority = math.min(priority, previousPriority)
+        else
+            radius = math.max(radius, previousRadius)
+            leaseBonus = math.max(leaseBonus, previousLeaseBonus)
+            priority = math.max(priority, previousPriority)
+        end
     end
 
     npcData.combatPresenceAttackType = tostring(attackType or "generic")

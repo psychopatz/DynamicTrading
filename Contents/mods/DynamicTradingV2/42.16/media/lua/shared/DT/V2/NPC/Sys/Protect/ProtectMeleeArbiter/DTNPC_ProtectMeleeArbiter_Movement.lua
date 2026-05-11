@@ -43,13 +43,14 @@ local function moveTowardTarget(zombie, npcData, target, stats, stopDistance, op
 end
 
 local function moveAwayFromPoint(zombie, npcData, stats, sourceX, sourceY, desiredDistance, options)
-    local speed = math.max(0.034, (stats.chaseSpeed or options.defaultSpeed or DEFAULT_SPEED) * 0.9)
+    local retreatRun = options.retreatRun == true
+    local speed = math.max(0.034, (stats.chaseSpeed or options.defaultSpeed or DEFAULT_SPEED) * (retreatRun and 1.15 or 0.9))
     local moved, state, distance = DTNPCMobility.MoveAwayFromPoint(zombie, npcData, {
         fromX = sourceX,
         fromY = sourceY,
         speed = speed,
         staminaMode = "retreat",
-        desiredRun = false,
+        desiredRun = retreatRun,
         desiredDistance = desiredDistance,
         blockCounterKey = options.blockCounterKey,
         stuckTicks = options.retreatStuckTicks or 8,
@@ -62,8 +63,8 @@ local function moveAwayFromPoint(zombie, npcData, stats, sourceX, sourceY, desir
         damageRetreatDistance = options.damageRetreatDistance,
         damageRetreatLockMs = options.damageRetreatLockMs,
         anim = {
-            animSpeed = 1.0,
-            isRunning = false,
+            animSpeed = retreatRun and 1.15 or 1.0,
+            isRunning = retreatRun,
             walkType = "1",
         },
     })

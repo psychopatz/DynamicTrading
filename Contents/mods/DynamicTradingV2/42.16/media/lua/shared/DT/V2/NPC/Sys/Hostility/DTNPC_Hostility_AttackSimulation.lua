@@ -12,22 +12,6 @@ Hostility.Internal = Internal
 
 local biteTab = {}
 
-local function createDummyHitItem(fullType)
-    if not fullType or fullType == "" then
-        return nil
-    end
-
-    if instanceItem then
-        return instanceItem(fullType)
-    end
-
-    if InventoryItemFactory and InventoryItemFactory.CreateItem then
-        return InventoryItemFactory.CreateItem(fullType)
-    end
-
-    return nil
-end
-
 --- Simulates combat interactions between zombies and NPCs.
 function Hostility.UpdateAttackSimulation(zombie)
     if not zombie or zombie:isDead() or zombie:getVariableBoolean("Bandit") then
@@ -80,14 +64,14 @@ function Hostility.UpdateAttackSimulation(zombie)
                  local sound = ZombRand(2) == 0 and "ZombieBite" or "ZombieScratch"
                  getSoundManager():PlayWorldSound(sound, zombie:getSquare(), 0, 5, 1.0, false)
                  
-	                 -- Apply damage to NPC
-	                 if target.Hit then
-	                      -- Create a dummy item to satisfy the Hit method
-	                      local dummyItem = createDummyHitItem("Base.RollingPin")
-	                      if dummyItem then
-	                          target:Hit(dummyItem, zombie, 0.6, false, 1.0, false)
-	                      end
-	                 end
+                 -- Damage is handled by the server-side zombie aggro lease system
+                 -- so evasion, mitigation, and combat-state scaling stay in one place.
+                 if target.setAttackedBy then
+                     target:setAttackedBy(zombie)
+                 end
+                 if target.setHitReaction then
+                     target:setHitReaction("HitReaction")
+                 end
 	             end
 	        end
 	    end

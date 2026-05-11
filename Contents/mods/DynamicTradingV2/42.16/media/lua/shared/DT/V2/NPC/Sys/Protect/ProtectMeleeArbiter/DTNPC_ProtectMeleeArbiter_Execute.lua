@@ -182,6 +182,10 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
         maybeAnnounceCrowdRefusal(zombie, npcData, dangerState)
         preserveAttackWindup(npcData, stats)
         setPhase(npcData, "retreat", options.retreatLockMs or RETREAT_LOCK_MS)
+        local retreatRun = dangerState.selfPressure
+            and (tonumber(dangerState.selfPressure.count) or 0) >= 3
+            or dangerState.recentZombieDamage == true
+            or dangerState.recentHostileDamage == true
 
         local retreatDistance = math.max(
             engageReach + 0.8,
@@ -194,7 +198,18 @@ function DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, options)
             dangerState.fleeFromX or target:getX(),
             dangerState.fleeFromY or target:getY(),
             retreatDistance,
-            options
+            {
+                blockCounterKey = options.blockCounterKey,
+                retreatStuckTicks = options.retreatStuckTicks,
+                anchorX = options.anchorX,
+                anchorY = options.anchorY,
+                anchorZ = options.anchorZ,
+                leashRadius = options.leashRadius,
+                allowDamageRetreat = options.allowDamageRetreat,
+                damageRetreatDistance = options.damageRetreatDistance,
+                damageRetreatLockMs = options.damageRetreatLockMs,
+                retreatRun = retreatRun,
+            }
         )
 
         return {
