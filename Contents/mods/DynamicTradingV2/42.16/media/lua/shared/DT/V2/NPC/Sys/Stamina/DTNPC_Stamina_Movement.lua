@@ -14,8 +14,6 @@ local getElapsedSeconds = Internal.getElapsedSeconds
 local markVisible = Internal.markVisible
 local setStaminaState = Internal.setStaminaState
 local adjustCurrent = Internal.adjustCurrent
-local moveExhaustPauseRatio = Internal.MoveExhaustPauseRatio or 0.25
-local moveExhaustResumeRatio = Internal.MoveExhaustResumeRatio or 0.40
 local pushCue = Internal.pushCue
 
 local function getMovementDrainRate(profile)
@@ -73,10 +71,13 @@ function Stamina.BuildMovementProfile(zombie, npcData, options)
     local mode = tostring(options.mode or "travel")
     local moveExhausted = npcData._dtMoveExhaustedActive == true
 
+    local resumeThreshold = tonumber(Internal.MoveExhaustResumeRatio) or 0.40
+    local pauseThreshold = tonumber(Internal.MoveExhaustPauseRatio) or 0.25
+
     if mode ~= "retreat" then
-        if moveExhausted and ratio < moveExhaustResumeRatio then
+        if moveExhausted and ratio < resumeThreshold then
             exhausted = true
-        elseif ratio <= moveExhaustPauseRatio then
+        elseif ratio <= pauseThreshold then
             exhausted = true
             npcData._dtMoveExhaustedActive = true
         else
@@ -198,7 +199,7 @@ function Stamina.ApplyMovementTick(zombie, npcData, profile, result)
                 npcData._dtSprintSlowUntil = currentTime + getBreatherMs(npcData)
                 pushCue(zombie, npcData, "CatchBreath", "warning", 6500)
             end
-        elseif profile.mode == "follow" and currentValue <= (maxValue * moveExhaustPauseRatio) then
+        elseif profile.mode == "follow" and currentValue <= (maxValue * (tonumber(Internal.MoveExhaustPauseRatio) or 0.25)) then
             npcData._dtMoveExhaustedActive = true
             pushCue(zombie, npcData, "CatchBreath", "warning", 6500)
         elseif currentValue <= (maxValue * 0.34) and currentState ~= "winded" then
@@ -215,7 +216,7 @@ function Stamina.ApplyMovementTick(zombie, npcData, profile, result)
     end
 
     local ratio = Stamina.GetRatio(npcData)
-    if npcData._dtMoveExhaustedActive == true and ratio >= moveExhaustResumeRatio then
+    if npcData._dtMoveExhaustedActive == true and ratio >= (tonumber(Internal.MoveExhaustResumeRatio) or 0.40) then
         npcData._dtMoveExhaustedActive = false
     end
     local nextState = profile.state

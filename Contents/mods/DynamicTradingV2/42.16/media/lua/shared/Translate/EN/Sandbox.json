@@ -84,5 +84,11 @@
     "Sandbox_DynamicTrading.BanditHouseRoamerRadiusMin_tooltip": "Minimum tile distance from an active player when choosing a house/building for a Bandit roamer site.",
 
     "Sandbox_DynamicTrading.BanditHouseRoamerRadiusMax": "Bandit House Roamer Radius (Max)",
-    "Sandbox_DynamicTrading.BanditHouseRoamerRadiusMax_tooltip": "Maximum tile distance from an active player when choosing a house/building for a Bandit roamer site."
+    "Sandbox_DynamicTrading.BanditHouseRoamerRadiusMax_tooltip": "Maximum tile distance from an active player when choosing a house/building for a Bandit roamer site.",
+
+    "Sandbox_DynamicTrading.NPCStaminaRegenMultiplier": "NPC Stamina Regen Multiplier",
+    "Sandbox_DynamicTrading.NPCStaminaRegenMultiplier_tooltip": "Scales how quickly NPCs recover stamina when resting or active. 1.0 is default, higher values recover faster.",
+
+    "Sandbox_DynamicTrading.NPCStaminaThreshold": "NPC Stamina Exhaustion Threshold",
+    "Sandbox_DynamicTrading.NPCStaminaThreshold_tooltip": "The stamina percentage (0.05 to 0.95) at which an exhausted NPC can resume normal activity. Default is 0.40 (40%)."
 }

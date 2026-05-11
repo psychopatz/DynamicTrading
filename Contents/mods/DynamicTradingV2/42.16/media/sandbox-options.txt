@@ -223,3 +223,23 @@ option DynamicTrading.BanditHouseRoamerRadiusMax
     page = DynamicTradingNPC,
     translation = DynamicTrading.BanditHouseRoamerRadiusMax,
 }
+
+option DynamicTrading.NPCStaminaRegenMultiplier
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 10.0,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.NPCStaminaRegenMultiplier,
+}
+
+option DynamicTrading.NPCStaminaThreshold
+{
+    type = double,
+    default = 0.40,
+    min = 0.05,
+    max = 0.95,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.NPCStaminaThreshold,
+}

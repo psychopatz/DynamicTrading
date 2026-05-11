@@ -14,7 +14,7 @@ local getElapsedSeconds = Internal.getElapsedSeconds
 local markVisible = Internal.markVisible
 local setStaminaState = Internal.setStaminaState
 local adjustCurrent = Internal.adjustCurrent
-local moveExhaustResumeRatio = Internal.MoveExhaustResumeRatio or 0.40
+
 
 function Stamina.ProcessPassive(zombie, npcData, state)
     if type(npcData) ~= "table" then
@@ -41,22 +41,27 @@ function Stamina.ProcessPassive(zombie, npcData, state)
     local ratioBefore = Stamina.GetRatio(npcData)
     local recoverRate = 4.3
 
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    local multiplier = tonumber(sandbox and sandbox.NPCStaminaRegenMultiplier) or 1.0
+    recoverRate = recoverRate * multiplier
+
     if npcData.isMovingState == true then
-        recoverRate = 1.1
+        recoverRate = recoverRate * 0.25 -- Roughly 1.1 / 4.3
     elseif tostring(state or "") == "Attack" or tostring(state or "") == "AttackRange" then
-        recoverRate = 2.0
+        recoverRate = recoverRate * 0.46 -- Roughly 2.0 / 4.3
     elseif tostring(state or "") == "ProtectMelee" or tostring(state or "") == "ProtectRanged" then
-        recoverRate = 2.2
+        recoverRate = recoverRate * 0.51 -- Roughly 2.2 / 4.3
     end
 
     if Stamina.IsMeleeFatigued(npcData) then
-        recoverRate = math.max(recoverRate, 4.8)
+        recoverRate = math.max(recoverRate, 4.8 * multiplier)
     end
 
     adjustCurrent(npcData, recoverRate * (1 + (normalized * 0.18)) * elapsed)
 
     local ratioAfter = Stamina.GetRatio(npcData)
-    if npcData._dtMoveExhaustedActive == true and ratioAfter >= moveExhaustResumeRatio then
+    local resumeThreshold = tonumber(Internal.MoveExhaustResumeRatio) or 0.40
+    if npcData._dtMoveExhaustedActive == true and ratioAfter >= resumeThreshold then
         npcData._dtMoveExhaustedActive = false
     end
     if ratioAfter > ratioBefore and ratioAfter < 0.995 then

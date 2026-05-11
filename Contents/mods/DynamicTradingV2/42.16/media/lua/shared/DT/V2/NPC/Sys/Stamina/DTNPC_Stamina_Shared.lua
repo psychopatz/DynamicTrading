@@ -9,9 +9,14 @@ DTNPCStamina.Internal = DTNPCStamina.Internal or {}
 local Stamina = DTNPCStamina
 local Internal = DTNPCStamina.Internal
 
-Internal.MeleeResumeRatio = 0.30
+local function getSandboxThreshold()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    return tonumber(sandbox and sandbox.NPCStaminaThreshold) or 0.40
+end
+
+Internal.MoveExhaustResumeRatio = getSandboxThreshold()
+Internal.MeleeResumeRatio = Internal.MoveExhaustResumeRatio * 0.75
 Internal.MoveExhaustPauseRatio = 0.25
-Internal.MoveExhaustResumeRatio = 0.40
 
 local function nowMillis()
     if getTimeInMillis then
