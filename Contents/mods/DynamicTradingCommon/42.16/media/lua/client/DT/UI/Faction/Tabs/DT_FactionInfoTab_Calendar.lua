@@ -1,6 +1,6 @@
 require "ISUI/ISPanel"
 require "ISUI/ISRichTextPanel"
-require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic_TradeScheduler"
+require "DT/Common/Faction/TradingSys/RosterLogic/TradeScheduler/DT_RosterLogic_TradeScheduler"
 
 DT_FactionInfoTab_Calendar = ISPanel:derive("DT_FactionInfoTab_Calendar")
 

@@ -9,7 +9,7 @@ DTNPCManager = DTNPCManager or {}
 -- GUARD: Prevent Remote MP Clients from running this, but allow SP and Host
 if isClient() and not isServer() then return end
 
-require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic_TradeScheduler"
+require "DT/Common/Faction/TradingSys/RosterLogic/TradeScheduler/DT_RosterLogic_TradeScheduler"
 
 DynamicTrading.Log("DTV2", "NPC", "Init", "Loading optimization modules...")
 
