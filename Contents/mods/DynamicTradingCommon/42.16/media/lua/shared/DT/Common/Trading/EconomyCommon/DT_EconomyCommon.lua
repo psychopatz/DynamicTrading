@@ -17,4 +17,4 @@ DynamicTrading.Log("DTCommons", "Init", "Economy", "Common Economy Module initia
 require "DT/Common/Trading/EconomyCommon/DT_EconomyCommon_Utils"
 require "DT/Common/Trading/EconomyCommon/DT_EconomyCommon_TagsAndCharge"
 require "DT/Common/Trading/EconomyCommon/DT_EconomyCommon_Stock"
-require "DT/Common/Trading/EconomyCommon/DT_EconomyCommon_Price"
+require "DT/Common/Trading/EconomyPrice/DT_EconomyPrice"
