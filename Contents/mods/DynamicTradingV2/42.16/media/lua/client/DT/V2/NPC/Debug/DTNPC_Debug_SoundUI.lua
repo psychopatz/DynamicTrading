@@ -70,30 +70,43 @@ function DTNPC_Debug_SoundUI:createChildren()
         }
     end
 
-    local function getEmitter()
-        return getSpecificPlayer(0)
+    local function getSoundResolver()
+        return DynamicTrading and DynamicTrading.Dialogue and DynamicTrading.Dialogue.Vocals
     end
 
-    local function ensureHostility()
-        return DTNPCHostility ~= nil
-    end
-
-    local function getVoiceSetDesc()
-        local seedStr = self.entrySeed:getText() or "0"
-        local seed = tonumber(seedStr) or 0
-        local voiceSet = "V" .. (1 + (seed % 4))
-        return voiceSet
-    end
-
-    local function addTestBtn(label, func)
+    local function addTestBtn(label, cueType)
         local btn = ISButton:new(pad, y, btnWidth, btnHeight, label, self, function(self)
-            if not ensureHostility() then return end
             local npcData = constructNpcData()
-            local n = getEmitter()
-            func(n, npcData)
-            if n and n.setHaloNote then
-                local genderStr = npcData.isFemale and "(Female)" or "(Male)"
-                n:setHaloNote("UI SFX: " .. getVoiceSetDesc() .. " " .. genderStr, 255, 255, 255, 300)
+            local Vocals = getSoundResolver()
+            if not Vocals then return end
+
+            local soundName, profile = Vocals.ResolveVocalSoundName(npcData, cueType)
+            if not soundName then return end
+
+            local p = getSpecificPlayer(0)
+            if p then
+                local emitter = getWorld():getFreeEmitter(p:getX(), p:getY(), p:getZ())
+                if emitter then
+                    local id = emitter:playSound(soundName)
+                    local basePitch = 1.0
+                    if profile.voiceSet == "V1" then basePitch = 0.95
+                    elseif profile.voiceSet == "V2" then basePitch = 1.00
+                    elseif profile.voiceSet == "V3" then basePitch = 1.05
+                    elseif profile.voiceSet == "V4" then basePitch = 1.10
+                    end
+                    
+                    local finalPitch = basePitch * (profile.microPitch or 1.0)
+                    
+                    if id and id ~= 0 and emitter.setPitch then
+                        pcall(function() emitter:setPitch(id, finalPitch) end)
+                    end
+                end
+                
+                if p.setHaloNote then
+                    local genderStr = npcData.isFemale and "(Female)" or "(Male)"
+                    local voiceSet = (profile and profile.voiceSet) or "Unknown"
+                    p:setHaloNote("UI SFX: " .. voiceSet .. " " .. genderStr, 255, 255, 255, 300)
+                end
             end
         end)
         btn:initialise()
@@ -107,48 +120,22 @@ function DTNPC_Debug_SoundUI:createChildren()
     self:addChild(lblHurt)
     y = y + 25
 
-    addTestBtn("Test Hurt Sound", function(n, npcData)
-        if DTNPCHostility.PlayHurtSound then DTNPCHostility.PlayHurtSound(n, npcData, "Hurt") end
-    end)
-    addTestBtn("Test Incap Sound", function(n, npcData)
-        if DTNPCHostility.PlayHurtSound then DTNPCHostility.PlayHurtSound(n, npcData, "Incap") end
-    end)
-    addTestBtn("Test Death Sound", function(n, npcData)
-        if DTNPCHostility.PlayHurtSound then DTNPCHostility.PlayHurtSound(n, npcData, "Death") end
-    end)
-    addTestBtn("Test Effort Sound", function(n, npcData)
-        if DTNPCHostility.PlayHurtSound then DTNPCHostility.PlayHurtSound(n, npcData, "Effort") end
-    end)
-    addTestBtn("Test Bandage", function(n, npcData)
-        if DTNPCHostility.PlayVocal then DTNPCHostility.PlayVocal(n, npcData, "Bandage") end
-    end)
+    addTestBtn("Test Hurt Sound", "Hurt")
+    addTestBtn("Test Incap Sound", "Incap")
+    addTestBtn("Test Death Sound", "Death")
+    addTestBtn("Test Effort Sound", "Effort")
+    addTestBtn("Test Bandage", "Bandage")
 
     y = y + 10
     local lblAmbient = ISLabel:new(pad, y, 20, "--- Ambient & Chat ---", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
     self:addChild(lblAmbient)
     y = y + 25
 
-    addTestBtn("Test Hey (Chat + Text)", function(n, npcData)
-        if DTNPCHostility.PlayVocal then DTNPCHostility.PlayVocal(n, npcData, "Chat") end
-    end)
-    addTestBtn("Test Sigh", function(n, npcData)
-        if DTNPCHostility.PlayVocal then DTNPCHostility.PlayVocal(n, npcData, "Sigh") end
-    end)
-    addTestBtn("Test Sneeze (Ambient)", function(n, npcData)
-        if DTNPCHostility.PlayVocal then DTNPCHostility.PlayVocal(n, npcData, "Ambient") end
-    end)
-    addTestBtn("Test State (Jump/Sleep/Smoke)", function(n, npcData)
-        if DTNPCHostility.PlayVocal then DTNPCHostility.PlayVocal(n, npcData, "State") end
-    end)
-    addTestBtn("Test Alone (Ambient)", function(n, npcData)
-        if DTNPCHostility.PlayVocal then DTNPCHostility.PlayVocal(n, npcData, "Ambient") end
-    end)
-    addTestBtn("Test Angry (Chat Pool)", function(n, npcData)
-        if DTNPCHostility.PlayVocal then DTNPCHostility.PlayVocal(n, npcData, "Chat_Angry") end
-    end)
-    addTestBtn("Test Specific: Angry", function(n, npcData)
-        if DTNPCHostility.PlayVocal then DTNPCHostility.PlayVocal(n, npcData, "Chat_Angry") end
-    end)
+    addTestBtn("Test Hey (Chat Pool)", "Chat")
+    addTestBtn("Test Sigh (Sigh Pool)", "Sigh")
+    addTestBtn("Test Sneeze (Ambient Pool)", "Ambient")
+    addTestBtn("Test State (Jump/Sleep/Smoke)", "State")
+    addTestBtn("Test Specific: Angry", "Chat_Angry")
 
     y = y + 10
     local lblUtils = ISLabel:new(pad, y, 20, "--- Utilities ---", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
@@ -163,12 +150,33 @@ function DTNPC_Debug_SoundUI:createChildren()
             fileWriter:write("Found " .. tostring(allSounds:size()) .. " sound events.\n\n")
             for i = 0, allSounds:size() - 1 do
                 local sound = allSounds:get(i)
-                fileWriter:write(tostring(sound:getName()) .. "\n")
+                local soundName = "Unknown"
+                if sound then
+                    -- Test common GameSoundScript getter methods safely since Kahlua hides methods from type()
+                    local hasFound = false
+                    for _, methodName in ipairs({"getName", "getEventName", "getEvent", "name"}) do
+                        local success, result = pcall(function() 
+                            if methodName == "name" then return sound.name end
+                            return sound[methodName](sound) 
+                        end)
+                        if success and result and result ~= "" then
+                            soundName = tostring(result)
+                            hasFound = true
+                            break
+                        end
+                    end
+                    
+                    if not hasFound then
+                        soundName = tostring(sound)
+                    end
+                end
+                fileWriter:write(tostring(soundName) .. "\n")
             end
             fileWriter:close()
             local p = getSpecificPlayer(0)
             if p and p.setHaloNote then
-                p:setHaloNote("Saved to Zomboid/Lua/DT_Audio_Dump.txt", 100, 255, 100, 300)
+                local path = Core.getMyDocumentFolder() .. "/Lua/DT_Audio_Dump.txt"
+                p:setHaloNote("Saved to " .. path, 100, 255, 100, 300)
             end
         end
     end)
