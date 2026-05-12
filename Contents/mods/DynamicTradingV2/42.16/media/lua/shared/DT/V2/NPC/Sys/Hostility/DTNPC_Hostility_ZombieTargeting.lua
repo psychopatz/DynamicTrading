@@ -12,7 +12,9 @@ Hostility.Internal = Internal
 Hostility.ClientCache = Hostility.ClientCache or {
     entriesByUUID = {},
     entriesByBodyID = {},
-    buckets = {},
+    spatialIndex = (DTNPCSpatialCache and DTNPCSpatialCache.New and DTNPCSpatialCache.New({
+        cellSize = 8,
+    })) or nil,
     lastRebuildAt = 0,
     needsFullRebuild = true,
 }
@@ -85,26 +87,6 @@ local function getKeepRadius()
     return KEEP_RADIUS
 end
 
-local function getCellKeyForPosition(x, y)
-    local cellX = math.floor((tonumber(x) or 0) / CACHE_CELL_SIZE)
-    local cellY = math.floor((tonumber(y) or 0) / CACHE_CELL_SIZE)
-    return tostring(cellX) .. ":" .. tostring(cellY), cellX, cellY
-end
-
-local function getNeighborKeys(x, y, radius)
-    local keys = {}
-    local _, centerX, centerY = getCellKeyForPosition(x, y)
-    local cellRadius = math.max(1, math.ceil((tonumber(radius) or 0) / CACHE_CELL_SIZE))
-
-    for dx = -cellRadius, cellRadius do
-        for dy = -cellRadius, cellRadius do
-            keys[#keys + 1] = tostring(centerX + dx) .. ":" .. tostring(centerY + dy)
-        end
-    end
-
-    return keys
-end
-
 local function isBanditsManagedTarget(target)
     if not target then
         return false
@@ -162,27 +144,14 @@ local function isAttackableClientTarget(zombie, npcData)
     return true, npcData
 end
 
-local function getEntryStorageKey(entry)
-    if not entry then
-        return nil
+local function ensureSpatialIndex()
+    local cache = Hostility.ClientCache
+    if DTNPCSpatialCache and DTNPCSpatialCache.New and not cache.spatialIndex then
+        cache.spatialIndex = DTNPCSpatialCache.New({
+            cellSize = CACHE_CELL_SIZE,
+        })
     end
-    if entry.uuid then
-        return entry.uuid
-    end
-    if entry.bodyID then
-        return entry.bodyID
-    end
-    return tostring(entry)
-end
-
-local function tableHasEntries(tbl)
-    if type(tbl) ~= "table" then
-        return false
-    end
-    for _, _ in pairs(tbl) do
-        return true
-    end
-    return false
+    return cache.spatialIndex
 end
 
 local function clearEntryReferences(entry)
@@ -191,18 +160,15 @@ local function clearEntryReferences(entry)
     end
 
     local cache = Hostility.ClientCache
+    local spatialIndex = ensureSpatialIndex()
     if entry.uuid then
         cache.entriesByUUID[entry.uuid] = nil
     end
     if entry.bodyID then
         cache.entriesByBodyID[entry.bodyID] = nil
     end
-    if entry.bucketKey and cache.buckets[entry.bucketKey] then
-        local bucket = cache.buckets[entry.bucketKey]
-        bucket[getEntryStorageKey(entry)] = nil
-        if not tableHasEntries(bucket) then
-            cache.buckets[entry.bucketKey] = nil
-        end
+    if spatialIndex and entry.uuid then
+        DTNPCSpatialCache.Remove(spatialIndex, entry.uuid)
     end
 end
 
@@ -212,19 +178,15 @@ local function attachEntry(entry)
     end
 
     local cache = Hostility.ClientCache
+    local spatialIndex = ensureSpatialIndex()
     if entry.uuid then
         cache.entriesByUUID[entry.uuid] = entry
     end
     if entry.bodyID then
         cache.entriesByBodyID[entry.bodyID] = entry
     end
-    if entry.bucketKey then
-        local bucket = cache.buckets[entry.bucketKey]
-        if type(bucket) ~= "table" then
-            bucket = {}
-            cache.buckets[entry.bucketKey] = bucket
-        end
-        bucket[getEntryStorageKey(entry)] = entry
+    if spatialIndex and entry.uuid then
+        DTNPCSpatialCache.Upsert(spatialIndex, entry.uuid, entry)
     end
 end
 
@@ -297,7 +259,6 @@ function Hostility.UpsertClientTarget(zombie, npcData)
     entry.x = x
     entry.y = y
     entry.z = zombie:getZ()
-    entry.bucketKey = getCellKeyForPosition(x, y)
     entry.updatedAt = nowMillis()
 
     attachEntry(entry)
@@ -307,9 +268,13 @@ end
 
 function Hostility.RebuildClientTargetCache()
     local cache = Hostility.ClientCache
+    local spatialIndex = ensureSpatialIndex()
     cache.entriesByUUID = {}
     cache.entriesByBodyID = {}
-    cache.buckets = {}
+    if spatialIndex then
+        DTNPCSpatialCache.Clear(spatialIndex)
+        spatialIndex.needsFullRebuild = false
+    end
 
     local count = 0
     local cell = getCell and getCell() or nil
@@ -348,42 +313,39 @@ function Hostility.FindNearestClientTarget(zombie, radius)
     local zx = zombie:getX()
     local zy = zombie:getY()
     local zz = zombie:getZ()
-    local bestEntry = nil
-    local bestDistSq = nil
-    local keys = getNeighborKeys(zx, zy, safeRadius)
-
-    for i = 1, #keys do
-        local bucket = Hostility.ClientCache.buckets[keys[i]]
-        if bucket then
-            for _, entry in pairs(bucket) do
-                local candidate = entry and entry.zombie or nil
-                local valid = candidate ~= nil
-                if valid then
-                    valid = not candidate:isDead()
-                        and math.abs((candidate:getZ() or 0) - (zz or 0)) <= floorTolerance
-                end
-
-                if valid then
-                    local entryValid = isAttackableClientTarget(candidate, entry.npcData)
-                    if not entryValid then
-                        Hostility.RemoveClientTarget(entry.uuid or entry.bodyID)
-                    else
-                        local dx = candidate:getX() - zx
-                        local dy = candidate:getY() - zy
-                        local distSq = (dx * dx) + (dy * dy)
-                        if distSq <= radiusSq and (bestDistSq == nil or distSq < bestDistSq) then
-                            bestEntry = entry
-                            bestDistSq = distSq
-                        end
-                    end
-                else
-                    Hostility.RemoveClientTarget(entry.uuid or entry.bodyID)
-                end
-            end
-        end
+    local spatialIndex = ensureSpatialIndex()
+    if not spatialIndex then
+        return nil, 9999
     end
 
-    return bestEntry, bestDistSq and math.sqrt(bestDistSq) or 9999
+    local bestEntry, bestDistance = DTNPCSpatialCache.FindNearest(
+        spatialIndex,
+        zx,
+        zy,
+        zz,
+        safeRadius,
+        {
+            floorTolerance = floorTolerance,
+            predicate = function(entry)
+                local candidate = entry and entry.zombie or nil
+                if not candidate or candidate:isDead() then
+                    Hostility.RemoveClientTarget(entry and (entry.uuid or entry.bodyID) or nil)
+                    return false
+                end
+                local entryValid = isAttackableClientTarget(candidate, entry.npcData)
+                if entryValid ~= true then
+                    Hostility.RemoveClientTarget(entry and (entry.uuid or entry.bodyID) or nil)
+                    return false
+                end
+                local dx = candidate:getX() - zx
+                local dy = candidate:getY() - zy
+                local distSq = (dx * dx) + (dy * dy)
+                return distSq <= radiusSq
+            end,
+        }
+    )
+
+    return bestEntry, bestDistance or 9999
 end
 
 local function setZombieNoLungeAttack(zombie, enabled)

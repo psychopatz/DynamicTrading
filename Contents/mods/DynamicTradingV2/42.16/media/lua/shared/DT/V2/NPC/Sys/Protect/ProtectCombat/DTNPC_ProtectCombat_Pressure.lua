@@ -16,6 +16,8 @@ local isDTNPCHostileToNPC = Internal.IsDTNPCHostileToNPC
 
 Internal.ProtectCombatRhythmResetMs = 4500
 
+local ZOMBIE_SCAN_CACHE_REBUILD_MS = 150
+
 local function rollInt(minValue, maxValue)
     local safeMin = math.floor(tonumber(minValue) or 0)
     local safeMax = math.floor(tonumber(maxValue) or safeMin)
@@ -28,9 +30,84 @@ local function rollInt(minValue, maxValue)
     return safeMin + ZombRand((safeMax - safeMin) + 1)
 end
 
+local function getTimeMs()
+    if getTimeInMillis then
+        local value = tonumber(getTimeInMillis())
+        if value and value > 0 then
+            return math.floor(value)
+        end
+    end
+
+    local gt = getGameTime and getGameTime() or nil
+    if gt and gt.getWorldAgeHours then
+        return math.floor((tonumber(gt:getWorldAgeHours()) or 0) * 3600000)
+    end
+
+    return 0
+end
+
+local function ensureZombieSpatialIndex()
+    Internal.ProtectZombieSpatialIndex = Internal.ProtectZombieSpatialIndex or (
+        DTNPCSpatialCache and DTNPCSpatialCache.New and DTNPCSpatialCache.New({
+            cellSize = 8,
+        })
+    ) or nil
+
+    return Internal.ProtectZombieSpatialIndex
+end
+
+local function isZombieSpatialCandidate(candidate)
+    if not candidate or candidate:isDead() then
+        return false
+    end
+
+    local modData = candidate:getModData()
+    return not (modData and modData.IsDTNPC)
+end
+
+local function rebuildZombieSpatialIndex(force)
+    local index = ensureZombieSpatialIndex()
+    if not index then
+        return nil
+    end
+
+    local currentTime = getTimeMs()
+    if force ~= true
+        and index.lastRebuildAt
+        and index.lastRebuildAt > 0
+        and (currentTime - index.lastRebuildAt) < ZOMBIE_SCAN_CACHE_REBUILD_MS then
+        return index
+    end
+
+    DTNPCSpatialCache.Clear(index)
+    index.needsFullRebuild = false
+
+    local cell = getCell and getCell() or nil
+    local zombieList = cell and cell:getZombieList() or nil
+    if zombieList then
+        for i = 0, zombieList:size() - 1 do
+            local candidate = zombieList:get(i)
+            if isZombieSpatialCandidate(candidate) then
+                local candidateID = getZombieRuntimeID(candidate)
+                if candidateID then
+                    DTNPCSpatialCache.Upsert(index, candidateID, {
+                        candidate = candidate,
+                        x = candidate:getX(),
+                        y = candidate:getY(),
+                        z = candidate:getZ() or 0,
+                    })
+                end
+            end
+        end
+    end
+
+    index.lastRebuildAt = currentTime
+    return index
+end
+
 local function getNearbyZombiePressure(originX, originY, originZ, radius, excludedIDs)
-    local zombieList = getCell() and getCell():getZombieList() or nil
-    if not zombieList then
+    local index = rebuildZombieSpatialIndex(false)
+    if not index then
         return {
             count = 0,
             closest = 9999,
@@ -47,30 +124,34 @@ local function getNearbyZombiePressure(originX, originY, originZ, radius, exclud
     local weightedY = 0
     local totalWeight = 0
 
-    for i = 0, zombieList:size() - 1 do
-        local candidate = zombieList:get(i)
-        if candidate and not candidate:isDead() then
-            local modData = candidate:getModData()
-            if not (modData and modData.IsDTNPC)
-                and math.abs((candidate:getZ() or 0) - (originZ or 0)) <= DTNPCProtect.CONFIG.FloorTolerance then
-                local candidateID = getZombieRuntimeID(candidate)
-                if not (excludedIDs and excludedIDs[candidateID]) then
-                    local dx = candidate:getX() - originX
-                    local dy = candidate:getY() - originY
-                    local distSq = (dx * dx) + (dy * dy)
-                    if distSq <= radiusSq then
-                        local dist = math.sqrt(distSq)
-                        local weight = 1 / math.max(0.25, dist)
-                        count = count + 1
-                        closest = math.min(closest, dist)
-                        weightedX = weightedX + (candidate:getX() * weight)
-                        weightedY = weightedY + (candidate:getY() * weight)
-                        totalWeight = totalWeight + weight
-                    end
-                end
-            end
+    DTNPCSpatialCache.ForEachNearby(index, originX, originY, safeRadius, function(entry, key)
+        local candidate = entry and entry.candidate or nil
+        if not candidate or candidate:isDead() then
+            DTNPCSpatialCache.Remove(index, key)
+            return false
         end
-    end
+        if math.abs((candidate:getZ() or 0) - (originZ or 0)) > DTNPCProtect.CONFIG.FloorTolerance then
+            return false
+        end
+        if excludedIDs and excludedIDs[key] then
+            return false
+        end
+
+        local dx = candidate:getX() - originX
+        local dy = candidate:getY() - originY
+        local distSq = (dx * dx) + (dy * dy)
+        if distSq <= radiusSq then
+            local dist = math.sqrt(distSq)
+            local weight = 1 / math.max(0.25, dist)
+            count = count + 1
+            closest = math.min(closest, dist)
+            weightedX = weightedX + (candidate:getX() * weight)
+            weightedY = weightedY + (candidate:getY() * weight)
+            totalWeight = totalWeight + weight
+        end
+
+        return false
+    end)
 
     return {
         count = count,
@@ -186,6 +267,14 @@ function DTNPCProtect.GetNearbyZombiePressure(zombie, radius, excludedIDs)
     return getNearbyZombiePressure(zombie:getX(), zombie:getY(), zombie:getZ(), radius, excludedIDs)
 end
 
+function DTNPCProtect.RebuildZombieSpatialIndex(force)
+    return rebuildZombieSpatialIndex(force == true)
+end
+
+function DTNPCProtect.GetZombieSpatialIndex(force)
+    return rebuildZombieSpatialIndex(force == true)
+end
+
 function DTNPCProtect.GetNearbyHostilePressure(zombie, npcData, radius, excludedIDs)
     if not zombie or not npcData then
         return {
@@ -257,6 +346,8 @@ local function resetCombatRhythmBucket(rhythm)
 end
 
 Internal.ProtectCombatRollInt = rollInt
+Internal.RebuildZombieSpatialIndex = rebuildZombieSpatialIndex
+Internal.GetZombieSpatialIndex = ensureZombieSpatialIndex
 Internal.GetNearbyZombiePressureAt = getNearbyZombiePressure
 Internal.GetNearbyHostilePressureAt = getNearbyHostilePressure
 Internal.ResolveCombatTargetKey = resolveCombatTargetKey

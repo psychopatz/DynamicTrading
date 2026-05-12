@@ -50,9 +50,8 @@ function DTNPCProtect.SelectNearestZombie(zombie, npcData, radius, anchorTarget,
     local keepRadius = searchRadius + DTNPCProtect.CONFIG.StickyRadiusBonus
     local anchorSearchRadius = tonumber(anchorRadius)
     local anchorKeepRadius = anchorSearchRadius and (anchorSearchRadius + DTNPCProtect.CONFIG.StickyRadiusBonus) or nil
-    local cell = getCell and getCell() or nil
-    local zombieList = cell and cell:getZombieList() or nil
-    if not zombieList then
+    local zombieIndex = DTNPCProtect.GetZombieSpatialIndex and DTNPCProtect.GetZombieSpatialIndex(false) or nil
+    if not zombieIndex then
         DTNPCProtect.ClearCombatTarget(npcData)
         return nil, 9999
     end
@@ -75,49 +74,57 @@ function DTNPCProtect.SelectNearestZombie(zombie, npcData, radius, anchorTarget,
     local immediateTarget = nil
     local immediateDistance = 9999
 
-    for i = 0, zombieList:size() - 1 do
-        local candidate = zombieList:get(i)
-        if candidate and candidate ~= zombie and not candidate:isDead() then
-            local modData = candidate:getModData()
-            if not (modData and modData.IsDTNPC)
-                and math.abs((candidate:getZ() or 0) - zz) <= DTNPCProtect.CONFIG.FloorTolerance
-                and hasLineOfSight
-                and hasLineOfSight(zombie, candidate) then
-                local candidateX = candidate:getX()
-                local candidateY = candidate:getY()
-                local candidateZ = candidate:getZ() or 0
-                local dx = candidateX - zx
-                local dy = candidateY - zy
-                local dist = math.sqrt((dx * dx) + (dy * dy))
-                local candidateID = getZombieRuntimeID(candidate)
-                local anchorDist = getAnchorDistance(candidateX, candidateY, candidateZ, ax, ay, az)
-                local withinAnchorAcquire = anchorSearchRadius == nil
-                    or (anchorDist ~= nil and anchorDist <= anchorSearchRadius)
-                local withinAnchorKeep = anchorKeepRadius == nil
-                    or (anchorDist ~= nil and anchorDist <= anchorKeepRadius)
-
-                if withinAnchorAcquire and dist <= immediateRadius and dist < immediateDistance then
-                    immediateTarget = candidate
-                    immediateDistance = dist
-                end
-
-                if (dist <= searchRadius and withinAnchorAcquire)
-                    or (currentTargetID and candidateID == currentTargetID and dist <= keepRadius and withinAnchorKeep) then
-                    upsertZombieCandidate(candidates, candidateMap, {
-                        candidate = candidate,
-                        id = candidateID,
-                        x = candidateX,
-                        y = candidateY,
-                        z = candidateZ,
-                        dist = dist,
-                        acquire = dist <= searchRadius and withinAnchorAcquire,
-                        keep = currentTargetID and candidateID == currentTargetID and dist <= keepRadius and withinAnchorKeep or false,
-                        isCurrent = currentTargetID and candidateID == currentTargetID or false,
-                    })
-                end
+    local queryRadius = math.max(searchRadius, keepRadius, immediateRadius)
+    DTNPCSpatialCache.ForEachNearby(zombieIndex, zx, zy, queryRadius, function(entry, key)
+        local candidate = entry and entry.candidate or nil
+        if not candidate or candidate == zombie or candidate:isDead() then
+            if key then
+                DTNPCSpatialCache.Remove(zombieIndex, key)
             end
+            return false
         end
-    end
+        if math.abs((candidate:getZ() or 0) - zz) > DTNPCProtect.CONFIG.FloorTolerance then
+            return false
+        end
+        if not (hasLineOfSight and hasLineOfSight(zombie, candidate)) then
+            return false
+        end
+
+        local candidateX = candidate:getX()
+        local candidateY = candidate:getY()
+        local candidateZ = candidate:getZ() or 0
+        local dx = candidateX - zx
+        local dy = candidateY - zy
+        local dist = math.sqrt((dx * dx) + (dy * dy))
+        local candidateID = getZombieRuntimeID(candidate)
+        local anchorDist = getAnchorDistance(candidateX, candidateY, candidateZ, ax, ay, az)
+        local withinAnchorAcquire = anchorSearchRadius == nil
+            or (anchorDist ~= nil and anchorDist <= anchorSearchRadius)
+        local withinAnchorKeep = anchorKeepRadius == nil
+            or (anchorDist ~= nil and anchorDist <= anchorKeepRadius)
+
+        if withinAnchorAcquire and dist <= immediateRadius and dist < immediateDistance then
+            immediateTarget = candidate
+            immediateDistance = dist
+        end
+
+        if (dist <= searchRadius and withinAnchorAcquire)
+            or (currentTargetID and candidateID == currentTargetID and dist <= keepRadius and withinAnchorKeep) then
+            upsertZombieCandidate(candidates, candidateMap, {
+                candidate = candidate,
+                id = candidateID,
+                x = candidateX,
+                y = candidateY,
+                z = candidateZ,
+                dist = dist,
+                acquire = dist <= searchRadius and withinAnchorAcquire,
+                keep = currentTargetID and candidateID == currentTargetID and dist <= keepRadius and withinAnchorKeep or false,
+                isCurrent = currentTargetID and candidateID == currentTargetID or false,
+            })
+        end
+
+        return false
+    end)
 
     local chosenCurrent, chosenNearest = chooseBestZombieCandidates(candidates, currentTargetID)
     if chosenCurrent then
