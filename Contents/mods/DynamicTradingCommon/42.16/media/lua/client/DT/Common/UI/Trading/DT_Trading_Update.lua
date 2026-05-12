@@ -111,11 +111,7 @@ function DT_TradingWindow:update()
             end
 
             if player then
-                if msg.sound then
-                    self.dataProvider:playSound(msg.sound)
-                else
-                    self.dataProvider:playSound("DT_RadioRandom")
-                end
+                self:playQueuedTradeMessageAudio(msg)
             end
 
             table.remove(self.msgQueue, 1)

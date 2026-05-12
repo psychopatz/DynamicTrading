@@ -3,6 +3,8 @@
 -- Unique vocal effects for NPCs based on identity and gender.
 -- ==============================================================================
 
+require "DT/Common/Dialogue/DT_Dialogue_Vocals"
+
 DTNPCHostility = DTNPCHostility or {}
 
 local Hostility = DTNPCHostility
@@ -10,49 +12,51 @@ local Internal = Hostility.Internal or {}
 
 Hostility.Internal = Internal
 
---- Plays a unique hurt sound for an NPC based on their identity seed and gender.
---- Uses pitch variation and voice sets to ensure many unique "voices" from vanilla assets.
+--- Plays a unique vocal sound for an NPC based on their identity seed and gender.
 --- @param zombie IsoZombie
 --- @param npcData table
---- @param type string # "Hurt", "Incap", or "Death"
-function Hostility.PlayHurtSound(zombie, npcData, type)
-    if not zombie or not npcData then
-        return
+--- @param cueType string # "Hurt", "Incap", "Death", "Effort", "Chat", "Sigh", "Ambient", "State"
+--- @param options table|nil
+function Hostility.PlayVocal(zombie, npcData, cueType, options)
+    local soundSystem = DynamicTrading
+        and DynamicTrading.Dialogue
+        and DynamicTrading.Dialogue.Vocals
+
+    if soundSystem and soundSystem.PlayVocal then
+        return soundSystem.PlayVocal(zombie, npcData, cueType, options)
     end
 
-    local seed = tonumber(npcData.identitySeed) or 1
-    local isFemale = npcData.isFemale == true
-    local sex = isFemale and "Female" or "Male"
-    type = type or "Hurt"
-    
-    -- Select Voice Set based on identity (Consistently unique for this NPC)
-    local voiceSet = "V" .. (1 + (seed % 4))
-    
-    -- Select Sound Script Template
-    local soundName = "DTNPC_" .. sex .. "_" .. voiceSet .. "_" .. type
-
-    -- Add variety for Hurt sounds (Pick a random hit type each time)
-    if type == "Hurt" then
-        local hitPool = {"Blunt", "Scratch", "Lacerate"}
-        local hitType = hitPool[1 + ZombRand(#hitPool)]
-        soundName = soundName .. "_" .. hitType
-    end
-
-    local emitter = zombie:getEmitter()
-    if emitter then
-        local soundID = emitter:playSound(soundName)
-        
-        -- Apply granular pitch variation on top of the voice set baseline
-        -- Variation range: 0.95 to 1.05 (Subtle enough to not break the voice set)
-        local microPitch = 0.95 + (seed % 11) * 0.01
-        
-        if soundID and soundID ~= 0 and emitter.setPitch then
-            emitter:setPitch(soundID, microPitch)
-        end
-    end
+    return nil
 end
 
---- Specialized helper for death vocalizations.
+-- Backward compatibility for existing calls
+function Hostility.PlayHurtSound(zombie, npcData, type)
+    Hostility.PlayVocal(zombie, npcData, type)
+end
+
 function Hostility.PlayDeathSound(zombie, npcData)
-    Hostility.PlayHurtSound(zombie, npcData, "Death")
+    Hostility.PlayVocal(zombie, npcData, "Death")
+end
+
+--- A modular method to display ambient text and play a randomized vocal SFX.
+--- @param zombie IsoZombie
+--- @param npcData table
+--- @param text string|nil # If nil, only the vocal plays.
+--- @param vocalType string|nil # The category (Chat, Sigh, etc.). If nil, only text displays.
+--- @param sentiment string|nil # For text notice (e.g., "neutral", "warning").
+function Hostility.Say(zombie, npcData, text, vocalType, sentiment)
+    if not zombie or not npcData then return end
+
+    -- 1. Display Text (if provided)
+    if text and text ~= "" then
+        if DTNPCProtect and DTNPCProtect.PushCompanionNotice then
+            DTNPCProtect.PushCompanionNotice(zombie, npcData, text, sentiment or "neutral", vocalType)
+            return
+        end
+    end
+
+    -- 2. Play Vocal (if provided)
+    if vocalType then
+        Hostility.PlayVocal(zombie, npcData, vocalType)
+    end
 end

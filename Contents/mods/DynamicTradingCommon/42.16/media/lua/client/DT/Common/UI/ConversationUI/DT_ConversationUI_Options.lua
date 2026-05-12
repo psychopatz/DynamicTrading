@@ -623,7 +623,7 @@ function DT_ConversationUI:onOptionListMouseDown(x, y)
     end
 
     if chatText and chatText ~= "" then
-        ui:queueMessage(chatText, "Me", true, 0, "DT_RadioRandom")
+        ui:queuePlayerMessage(chatText)
     end
 
     if data.onSelect then

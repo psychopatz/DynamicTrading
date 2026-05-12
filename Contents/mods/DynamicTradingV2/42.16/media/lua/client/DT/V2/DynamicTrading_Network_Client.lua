@@ -193,7 +193,10 @@ local function OnSharedServerCommand(module, command, args)
                     ui:onTradeRequestFailed()
                 end
                 -- Show failure message
-                ui:queueMessage(args.msg or "Transaction Failed", true, false, 0, nil, "transaction")
+                ui:queueMessage(args.msg or "Transaction Failed", true, false, 0, nil, "transaction", ui.buildNPCTradeAudio and ui:buildNPCTradeAudio(args.msg or "Transaction Failed", {
+                    tag = "transaction",
+                    isError = true,
+                }) or nil)
                 if HaloTextHelper and getSpecificPlayer(0) then
                     HaloTextHelper.addTextWithArrow(getSpecificPlayer(0), args.msg or "Failed", true, HaloTextHelper.getColorRed())
                 end
@@ -238,20 +241,12 @@ emitTraderTransactionReply = function(ui, trader, isBuy, args)
         end
     end
 
-    ui:logLocal(npcMsg, false, false)
-    if ui.portraitPanel and ui.portraitPanel.pulseTradeAnimation then
-        ui.portraitPanel:pulseTradeAnimation()
-    end
-    if ui.dataProvider and ui.dataProvider.playSound then
-        ui.dataProvider:playSound("DT_Cashier")
-    elseif DT_AudioManager then
-        DT_AudioManager.PlaySound("DT_Cashier", false, 1.0)
-    elseif getSoundManager then
-        getSoundManager():PlaySound("DT_Cashier", false, 1.0)
-    end
-    if ui.resetIdleTimer then
-        ui:resetIdleTimer()
-    end
+    ui:queueMessage(npcMsg, false, false, 0, nil, "transaction", ui.buildNPCTradeAudio and ui:buildNPCTradeAudio(npcMsg, {
+        hook = "trading",
+        tag = "transaction",
+        uiSound = "DT_Cashier",
+        uiVolume = 1.0,
+    }) or nil)
 end
 
 Events.OnServerCommand.Add(OnSharedServerCommand)

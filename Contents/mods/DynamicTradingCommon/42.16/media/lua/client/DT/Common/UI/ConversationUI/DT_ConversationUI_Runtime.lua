@@ -5,6 +5,11 @@
 -- =============================================================================
 
 require "DT/Common/UI/ConversationUI/DT_ConversationUI_Core"
+require "DT/Common/Dialogue/DT_Dialogue_Vocals"
+
+local DialogueVocals = DynamicTrading
+    and DynamicTrading.Dialogue
+    and DynamicTrading.Dialogue.Vocals
 
 local function measureChatEntry(ui, entry)
     if not ui or not ui.chatList or not entry then
@@ -129,8 +134,13 @@ function DT_ConversationUI:update()
         else
             self:addMessage(msg.text, msg.author, msg.isPlayer, msg.style)
 
-            if msg.sound then
-                getSoundManager():PlaySound(msg.sound, false, 0.1)
+            local audio = msg.audio
+            if not audio and msg.sound then
+                audio = { uiSound = msg.sound, uiVolume = 0.1 }
+            end
+
+            if audio and DialogueVocals and DialogueVocals.PlaySpeechAudio then
+                DialogueVocals.PlaySpeechAudio(self.interactionObj, self:getInteractionNPCData(), audio)
             end
 
             table.remove(self.msgQueue, 1)
@@ -145,7 +155,101 @@ function DT_ConversationUI:update()
     end
 end
 
-function DT_ConversationUI:queueMessage(text, author, isPlayer, delay, sound, style)
+function DT_ConversationUI:getInteractionNPCData()
+    if self.cachedInteractionObj == self.interactionObj and self.cachedInteractionNPCData then
+        return self.cachedInteractionNPCData
+    end
+
+    local npcData = nil
+    if self.interactionObj and DTNPC and DTNPC.GetData then
+        npcData = DTNPC.GetData(self.interactionObj)
+    end
+
+    self.cachedInteractionObj = self.interactionObj
+    self.cachedInteractionNPCData = npcData
+    return npcData
+end
+
+function DT_ConversationUI:getDefaultPlayerMessageSound()
+    if self.isRadio then
+        return "DT_RadioRandom"
+    end
+
+    return nil
+end
+
+function DT_ConversationUI:getConversationTargetStatus()
+    return self.target and (self.target.status or self.target.currentStatus) or nil
+end
+
+function DT_ConversationUI:getConversationTargetState()
+    return self.target and (self.target.currentState or self.target.state) or nil
+end
+
+function DT_ConversationUI:getConversationDispositionHook()
+    if not DialogueVocals or not DialogueVocals.ResolveDispositionHook then
+        return nil
+    end
+
+    return DialogueVocals.ResolveDispositionHook(
+        self:getInteractionNPCData(),
+        self:getConversationTargetStatus(),
+        self:getConversationTargetState(),
+        self.target
+    )
+end
+
+function DT_ConversationUI:getDefaultGreetingVocalHook()
+    return self:getConversationDispositionHook() or "welcome"
+end
+
+function DT_ConversationUI:getDefaultFarewellVocalHook()
+    return self:getConversationDispositionHook() or "bye"
+end
+
+function DT_ConversationUI:getDefaultNPCSpeechAudio(payload)
+    if self.isRadio then
+        return {
+            uiSound = "DT_RadioRandom",
+            uiVolume = 0.1,
+        }
+    end
+
+    if not DialogueVocals or not DialogueVocals.BuildSpeechAudio then
+        return {
+            vocalType = payload and payload.vocalType or "Chat",
+            channel = "conversation_ui",
+            cooldownMs = 0,
+        }
+    end
+
+    return DialogueVocals.BuildSpeechAudio(
+        self:getInteractionNPCData(),
+        {
+            text = payload and payload.text or nil,
+            sentiment = payload and payload.sentiment or nil,
+            status = self:getConversationTargetStatus(),
+            state = self:getConversationTargetState(),
+            entry = payload,
+            soundName = payload and payload.soundName or nil,
+            vocalType = payload and payload.vocalType or nil,
+            hook = payload and payload.vocalHook or self:getConversationDispositionHook(),
+            channel = payload and payload.channel or "conversation_ui",
+            cooldownMs = payload and payload.cooldownMs or 0,
+        }
+    )
+end
+
+function DT_ConversationUI:queuePlayerMessage(text, delay, style)
+    if not text or text == "" then
+        return false
+    end
+
+    self:queueMessage(text, "Me", true, delay or 0, self:getDefaultPlayerMessageSound(), style)
+    return true
+end
+
+function DT_ConversationUI:queueMessage(text, author, isPlayer, delay, sound, style, audio)
     table.insert(self.msgQueue, {
         text = text,
         author = author,
@@ -153,6 +257,7 @@ function DT_ConversationUI:queueMessage(text, author, isPlayer, delay, sound, st
         delay = delay or 0,
         sound = sound,
         style = style,
+        audio = audio,
     })
 
     if self.updateNavigationButtons then
@@ -173,8 +278,29 @@ function DT_ConversationUI:speak(textOrPayload, style)
 
     local text = payload and payload.text or nil
     local author = payload and payload.author or self.target and self.target.name or "NPC"
-    local soundName = "DT_RadioRandom"
-    self:queueMessage(text, author, false, payload and payload.delay or DT_ConversationUI.TEXT_DELAY, soundName, payload and payload.style or nil)
+    local audio = nil
+    if payload and type(payload.audio) == "table" then
+        audio = payload.audio
+    else
+        audio = self:getDefaultNPCSpeechAudio(payload)
+        if audio and payload and payload.soundName then
+            audio.soundName = payload.soundName
+        end
+        if audio and payload and payload.vocalType then
+            audio.vocalType = payload.vocalType
+        end
+    end
+
+    local soundName = payload and (payload.sound or payload.uiSound) or nil
+    self:queueMessage(
+        text,
+        author,
+        false,
+        payload and payload.delay or DT_ConversationUI.TEXT_DELAY,
+        soundName,
+        payload and payload.style or nil,
+        audio
+    )
 end
 
 function DT_ConversationUI:rebuildChatLayout()

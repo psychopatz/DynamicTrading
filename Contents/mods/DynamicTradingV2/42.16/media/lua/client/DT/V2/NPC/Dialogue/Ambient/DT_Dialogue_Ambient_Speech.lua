@@ -10,9 +10,13 @@ DTNPCClient.AmbientDialogue = DTNPCClient.DialogueAmbient
 require "DT/Common/FlavorText/DT_FlavorText"
 require "DT/Common/FlavorText/DT_FlavorText_Bandits"
 require "DT/Common/FlavorText/DT_FlavorText_Combat"
+require "DT/Common/Dialogue/DT_Dialogue_Vocals"
 
 local Ambient = DTNPCClient.DialogueAmbient
 local Config = DTNPCClient.DialogueAmbientConfig or DTNPCClient.AmbientDialogueConfig
+local DialogueVocals = DynamicTrading
+    and DynamicTrading.Dialogue
+    and DynamicTrading.Dialogue.Vocals
 
 local function lower(value)
     return string.lower(tostring(value or ""))
@@ -35,7 +39,24 @@ local PROTECT_NOTICE_FALLBACKS = {
     ["Default:Searching"] = "Still looking.",
 }
 
-local function buildSpeechDataFromText(text, sentiment, zombie, currentTime)
+local function buildSpeechAudio(npcData, text, sentiment, status, state, entry, channel, cooldownMs)
+    if not DialogueVocals or not DialogueVocals.BuildSpeechAudio then
+        return nil
+    end
+
+    return DialogueVocals.BuildSpeechAudio(npcData, {
+        text = text,
+        sentiment = sentiment,
+        status = status,
+        state = state,
+        entry = entry,
+        hook = type(entry) == "table" and entry.vocalHook or nil,
+        channel = channel or "ambient_dialogue",
+        cooldownMs = cooldownMs or 1800,
+    })
+end
+
+local function buildSpeechDataFromText(text, sentiment, zombie, currentTime, audio)
     if not zombie or not text or text == "" then
         return nil
     end
@@ -50,6 +71,7 @@ local function buildSpeechDataFromText(text, sentiment, zombie, currentTime)
         z = zombie:getZ(),
         timestamp = currentTime,
         expireTime = currentTime + Config.DisplayTimeMs,
+        audio = audio,
     }
 end
 
@@ -112,7 +134,13 @@ local function buildRaidAmbientSpeechData(npcData, zombie, currentTime)
         return nil
     end
 
-    return buildSpeechDataFromText(text, sentiment, zombie, currentTime)
+    return buildSpeechDataFromText(
+        text,
+        sentiment,
+        zombie,
+        currentTime,
+        buildSpeechAudio(npcData, text, sentiment, npcData and npcData.status, npcData and npcData.state, nil, "ambient_dialogue", 2200)
+    )
 end
 
 function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
@@ -122,7 +150,22 @@ function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
 
     local text = npcData.protectNoticeText
     if text and text ~= "" then
-        return buildSpeechDataFromText(text, npcData.protectNoticeSentiment, zombie, currentTime)
+        return buildSpeechDataFromText(
+            text,
+            npcData.protectNoticeSentiment,
+            zombie,
+            currentTime,
+            buildSpeechAudio(
+                npcData,
+                text,
+                npcData.protectNoticeSentiment,
+                npcData.protectNoticeDialogueStatus,
+                npcData.protectNoticeDialogueState,
+                nil,
+                "protect_notice",
+                1200
+            )
+        )
     end
 
     local status = npcData.protectNoticeDialogueStatus
@@ -144,7 +187,13 @@ function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
             }
         )
         if entry and entry.dialogue and entry.dialogue ~= "" and entry.dialogue ~= "..." then
-            return buildSpeechDataFromText(entry.dialogue, entry.sentiment, zombie, currentTime)
+            return buildSpeechDataFromText(
+                entry.dialogue,
+                entry.sentiment,
+                zombie,
+                currentTime,
+                buildSpeechAudio(npcData, entry.dialogue, entry.sentiment, status, state, entry, "protect_notice", 1200)
+            )
         end
     end
 
@@ -153,7 +202,17 @@ function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
         PROTECT_NOTICE_FALLBACKS[fallbackKey] or "Staying alert.",
         npcData.protectNoticeSentiment or "neutral",
         zombie,
-        currentTime
+        currentTime,
+        buildSpeechAudio(
+            npcData,
+            PROTECT_NOTICE_FALLBACKS[fallbackKey] or "Staying alert.",
+            npcData.protectNoticeSentiment or "neutral",
+            status,
+            state,
+            nil,
+            "protect_notice",
+            1200
+        )
     )
 end
 
@@ -223,5 +282,11 @@ function Ambient.BuildSpeechData(npcData, zombie, currentTime)
         return nil
     end
 
-    return buildSpeechDataFromText(text, dialogueEntry.sentiment, zombie, currentTime)
+    return buildSpeechDataFromText(
+        text,
+        dialogueEntry.sentiment,
+        zombie,
+        currentTime,
+        buildSpeechAudio(npcData, text, dialogueEntry.sentiment, ambientStatus, ambientState, dialogueEntry, "ambient_dialogue", 2200)
+    )
 end

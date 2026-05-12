@@ -1,0 +1,176 @@
+module DynamicTrading
+{
+    // ==============================================================================
+    // DT_NPC_Sounds_Ambient.txt
+    // Scalable ambient vocal event definitions for NPCs.
+    // Categorized by behavior/mood for randomized selection.
+    // ==============================================================================
+
+    // ================================ MALE ================================
+
+    // --- Ambient Chat / Interaction ---
+    sound DTNPC_Male_V1_Chat_Hey { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Whisper/Hey, volume = 0.6, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Chat_Psst { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Whisper/Psst, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Chat_Cmon { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Lure/Cmon, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Chat_Angry { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Climb/Window, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Sigh_Bored { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Bored, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Sigh_Relieved { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Relieved, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Sigh_Sad { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Sad, volume = 0.5, pitch = 0.95 } }
+
+    // --- Involuntary / Ambient ---
+    sound DTNPC_Male_V1_Ambient_SneezeHeavy { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sneeze/Heavy, volume = 0.6, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Ambient_SneezeLight { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sneeze/Light, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Ambient_Hic { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Drunk/Hic, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Ambient_Shiver { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/FreezeShiver, volume = 0.4, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Ambient_Alone { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Death/Alone, volume = 0.8, pitch = 0.95 } }
+
+    // --- Action / State ---
+    sound DTNPC_Male_V1_State_Smoke { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Smoke, volume = 0.4, pitch = 0.95 } }
+    sound DTNPC_Male_V1_State_Vomit { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Vomit, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Male_V1_State_Sleep { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sleep, volume = 0.3, pitch = 0.95 } }
+    sound DTNPC_Male_V1_State_Exercise { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Exercise, volume = 0.6, pitch = 0.95 } }
+    sound DTNPC_Male_V1_State_JumpHigh { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Jump/High, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Male_V1_State_JumpLow { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Jump/Low, volume = 0.6, pitch = 0.95 } }
+
+    // --- Voice Set 2 (Male) ---
+    sound DTNPC_Male_V2_Chat_Hey { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Whisper/Hey, volume = 0.6, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Chat_Psst { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Whisper/Psst, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Chat_Cmon { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Lure/Cmon, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Chat_Angry { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Climb/Window, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Sigh_Bored { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Bored, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Sigh_Relieved { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Relieved, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Sigh_Sad { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Sad, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Ambient_SneezeHeavy { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sneeze/Heavy, volume = 0.6, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Ambient_SneezeLight { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sneeze/Light, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Ambient_Hic { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Drunk/Hic, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Ambient_Shiver { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/FreezeShiver, volume = 0.4, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Ambient_Alone { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Death/Alone, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Male_V2_State_Smoke { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Smoke, volume = 0.4, pitch = 1.00 } }
+    sound DTNPC_Male_V2_State_Vomit { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Vomit, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Male_V2_State_Sleep { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sleep, volume = 0.3, pitch = 1.00 } }
+    sound DTNPC_Male_V2_State_Exercise { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Exercise, volume = 0.6, pitch = 1.00 } }
+    sound DTNPC_Male_V2_State_JumpHigh { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Jump/High, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Male_V2_State_JumpLow { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Jump/Low, volume = 0.6, pitch = 1.00 } }
+
+    // --- Voice Set 3 (Male) ---
+    sound DTNPC_Male_V3_Chat_Hey { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Whisper/Hey, volume = 0.6, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Chat_Psst { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Whisper/Psst, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Chat_Cmon { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Lure/Cmon, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Chat_Angry { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Climb/Window, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Sigh_Bored { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Bored, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Sigh_Relieved { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Relieved, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Sigh_Sad { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Sad, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Ambient_SneezeHeavy { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sneeze/Heavy, volume = 0.6, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Ambient_SneezeLight { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sneeze/Light, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Ambient_Hic { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Drunk/Hic, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Ambient_Shiver { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/FreezeShiver, volume = 0.4, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Ambient_Alone { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Death/Alone, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Male_V3_State_Smoke { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Smoke, volume = 0.4, pitch = 1.05 } }
+    sound DTNPC_Male_V3_State_Vomit { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Vomit, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Male_V3_State_Sleep { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sleep, volume = 0.3, pitch = 1.05 } }
+    sound DTNPC_Male_V3_State_Exercise { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Exercise, volume = 0.6, pitch = 1.05 } }
+    sound DTNPC_Male_V3_State_JumpHigh { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Jump/High, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Male_V3_State_JumpLow { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Jump/Low, volume = 0.6, pitch = 1.05 } }
+
+    // --- Voice Set 4 (Male) ---
+    sound DTNPC_Male_V4_Chat_Hey { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Whisper/Hey, volume = 0.6, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Chat_Psst { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Whisper/Psst, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Chat_Cmon { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Lure/Cmon, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Chat_Angry { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Climb/Window, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Sigh_Bored { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Bored, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Sigh_Relieved { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Relieved, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Sigh_Sad { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sigh/Sad, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Ambient_SneezeHeavy { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sneeze/Heavy, volume = 0.6, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Ambient_SneezeLight { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sneeze/Light, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Ambient_Hic { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Drunk/Hic, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Ambient_Shiver { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/FreezeShiver, volume = 0.4, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Ambient_Alone { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Death/Alone, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Male_V4_State_Smoke { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Smoke, volume = 0.4, pitch = 1.10 } }
+    sound DTNPC_Male_V4_State_Vomit { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Vomit, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Male_V4_State_Sleep { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Sleep, volume = 0.3, pitch = 1.10 } }
+    sound DTNPC_Male_V4_State_Exercise { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Exercise, volume = 0.6, pitch = 1.10 } }
+    sound DTNPC_Male_V4_State_JumpHigh { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Jump/High, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Male_V4_State_JumpLow { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Jump/Low, volume = 0.6, pitch = 1.10 } }
+
+    // ================================ FEMALE ================================
+
+    // --- Ambient Chat / Interaction ---
+    sound DTNPC_Female_V1_Chat_Hey { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Shout/Hey, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Chat_Psst { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Whisper/Psst, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Chat_Cmon { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Lure/Cmon, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Chat_Angry { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Climb/Window, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Sigh_Bored { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Bored, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Sigh_Relieved { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Relieved, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Sigh_Sad { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Sad, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Ambient_SneezeHeavy { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sneeze/Heavy, volume = 0.6, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Ambient_SneezeLight { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sneeze/Light, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Ambient_Hic { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Drunk/Hic, volume = 0.5, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Ambient_Shiver { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/FreezeShiver, volume = 0.4, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Ambient_Alone { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Death/Alone, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Female_V1_State_Smoke { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Smoke, volume = 0.4, pitch = 0.95 } }
+    sound DTNPC_Female_V1_State_Vomit { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Vomit, volume = 0.8, pitch = 0.95 } }
+    sound DTNPC_Female_V1_State_Sleep { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sleep, volume = 0.3, pitch = 0.95 } }
+    sound DTNPC_Female_V1_State_Exercise { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Exercise, volume = 0.6, pitch = 0.95 } }
+    sound DTNPC_Female_V1_State_JumpHigh { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Jump/High, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Female_V1_State_JumpLow { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Jump/Low, volume = 0.6, pitch = 0.95 } }
+
+    // --- Voice Set 2 (Female) ---
+    sound DTNPC_Female_V2_Chat_Hey { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Shout/Hey, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Chat_Psst { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Whisper/Psst, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Chat_Cmon { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Lure/Cmon, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Chat_Angry { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Climb/Window, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Sigh_Bored { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Bored, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Sigh_Relieved { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Relieved, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Sigh_Sad { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Sad, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Ambient_SneezeHeavy { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sneeze/Heavy, volume = 0.6, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Ambient_SneezeLight { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sneeze/Light, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Ambient_Hic { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Drunk/Hic, volume = 0.5, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Ambient_Shiver { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/FreezeShiver, volume = 0.4, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Ambient_Alone { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Death/Alone, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Female_V2_State_Smoke { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Smoke, volume = 0.4, pitch = 1.00 } }
+    sound DTNPC_Female_V2_State_Vomit { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Vomit, volume = 0.8, pitch = 1.00 } }
+    sound DTNPC_Female_V2_State_Sleep { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sleep, volume = 0.3, pitch = 1.00 } }
+    sound DTNPC_Female_V2_State_Exercise { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Exercise, volume = 0.6, pitch = 1.00 } }
+    sound DTNPC_Female_V2_State_JumpHigh { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Jump/High, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Female_V2_State_JumpLow { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Jump/Low, volume = 0.6, pitch = 1.00 } }
+
+    // --- Voice Set 3 (Female) ---
+    sound DTNPC_Female_V3_Chat_Hey { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Shout/Hey, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Chat_Psst { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Whisper/Psst, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Chat_Cmon { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Lure/Cmon, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Chat_Angry { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Climb/Window, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Sigh_Bored { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Bored, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Sigh_Relieved { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Relieved, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Sigh_Sad { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Sad, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Ambient_SneezeHeavy { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sneeze/Heavy, volume = 0.6, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Ambient_SneezeLight { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sneeze/Light, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Ambient_Hic { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Drunk/Hic, volume = 0.5, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Ambient_Shiver { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/FreezeShiver, volume = 0.4, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Ambient_Alone { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Death/Alone, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Female_V3_State_Smoke { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Smoke, volume = 0.4, pitch = 1.05 } }
+    sound DTNPC_Female_V3_State_Vomit { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Vomit, volume = 0.8, pitch = 1.05 } }
+    sound DTNPC_Female_V3_State_Sleep { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sleep, volume = 0.3, pitch = 1.05 } }
+    sound DTNPC_Female_V3_State_Exercise { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Exercise, volume = 0.6, pitch = 1.05 } }
+    sound DTNPC_Female_V3_State_JumpHigh { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Jump/High, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Female_V3_State_JumpLow { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Jump/Low, volume = 0.6, pitch = 1.05 } }
+
+    // --- Voice Set 4 (Female) ---
+    sound DTNPC_Female_V4_Chat_Hey { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Shout/Hey, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Chat_Psst { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Whisper/Psst, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Chat_Cmon { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Lure/Cmon, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Chat_Angry { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Climb/Window, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Sigh_Bored { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Bored, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Sigh_Relieved { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Relieved, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Sigh_Sad { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sigh/Sad, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Ambient_SneezeHeavy { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sneeze/Heavy, volume = 0.6, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Ambient_SneezeLight { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sneeze/Light, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Ambient_Hic { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Drunk/Hic, volume = 0.5, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Ambient_Shiver { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/FreezeShiver, volume = 0.4, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Ambient_Alone { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Death/Alone, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Female_V4_State_Smoke { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Smoke, volume = 0.4, pitch = 1.10 } }
+    sound DTNPC_Female_V4_State_Vomit { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Vomit, volume = 0.8, pitch = 1.10 } }
+    sound DTNPC_Female_V4_State_Sleep { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Sleep, volume = 0.3, pitch = 1.10 } }
+    sound DTNPC_Female_V4_State_Exercise { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Exercise, volume = 0.6, pitch = 1.10 } }
+    sound DTNPC_Female_V4_State_JumpHigh { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Jump/High, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Female_V4_State_JumpLow { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Jump/Low, volume = 0.6, pitch = 1.10 } }
+}

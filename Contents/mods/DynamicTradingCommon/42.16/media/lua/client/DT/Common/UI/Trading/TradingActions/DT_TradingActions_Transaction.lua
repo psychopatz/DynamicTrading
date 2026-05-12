@@ -217,7 +217,10 @@ function DT_TradingWindow:onAction()
             self:queueMessage(playerMsg, false, true, 0, nil, "transaction")
 
             local failMsg = self.dataProvider:getTransactionMessage(trader, true, diagArgs)
-            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom", "transaction")
+            self:queueMessage(failMsg, true, false, 10, nil, "transaction", self.buildNPCTradeAudio and self:buildNPCTradeAudio(failMsg, {
+                tag = "transaction",
+                isError = true,
+            }) or nil)
 
             return
         end
@@ -231,7 +234,10 @@ function DT_TradingWindow:onAction()
             self:queueMessage(playerMsg, false, true, 0, nil, "transaction")
 
             local failMsg = self.dataProvider:getTransactionMessage(trader, true, diagArgs)
-            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom", "transaction")
+            self:queueMessage(failMsg, true, false, 10, nil, "transaction", self.buildNPCTradeAudio and self:buildNPCTradeAudio(failMsg, {
+                tag = "transaction",
+                isError = true,
+            }) or nil)
 
             return
         end
@@ -249,7 +255,10 @@ function DT_TradingWindow:onAction()
                 self:queueMessage(playerMsg, false, true, 0, nil, "transaction")
 
                 local failMsg = self.dataProvider:getTransactionMessage(trader, false, diagArgs)
-                self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom", "transaction")
+                self:queueMessage(failMsg, true, false, 10, nil, "transaction", self.buildNPCTradeAudio and self:buildNPCTradeAudio(failMsg, {
+                    tag = "transaction",
+                    isError = true,
+                }) or nil)
                 return
             end
 
@@ -317,7 +326,10 @@ function DT_TradingWindow:onAction()
             self:queueMessage(playerMsg, false, true, 0, nil, "transaction")
 
             local failMsg = self.dataProvider:getTransactionMessage(trader, false, diagArgs)
-            self:queueMessage(failMsg, true, false, 10, "DT_RadioRandom", "transaction")
+            self:queueMessage(failMsg, true, false, 10, nil, "transaction", self.buildNPCTradeAudio and self:buildNPCTradeAudio(failMsg, {
+                tag = "transaction",
+                isError = true,
+            }) or nil)
 
             return
         end

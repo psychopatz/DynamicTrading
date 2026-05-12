@@ -81,7 +81,10 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
             ui:queueMessage(introMsg, false, true, 0)
 
             local greeting = dataProvider:getGreeting(trader)
-            ui:queueMessage(greeting, false, false, 20)
+            ui:queueMessage(greeting, false, false, 20, nil, "greeting", ui:buildNPCTradeAudio(greeting, {
+                hook = "welcome",
+                tag = "greeting",
+            }))
         end
     end
 

@@ -29,7 +29,10 @@ local function normalizeAmbientEntry(entry)
 
     return {
         dialogue = dialogue,
-        sentiment = entry.sentiment or entry[2] or "neutral"
+        sentiment = entry.sentiment or entry[2] or "neutral",
+        vocalType = entry.vocalType or entry.voiceCue or entry.soundCue or entry[3],
+        vocalHook = entry.vocalHook or entry.voiceHook or entry.hook or entry[4],
+        soundName = entry.soundName,
     }
 end
 

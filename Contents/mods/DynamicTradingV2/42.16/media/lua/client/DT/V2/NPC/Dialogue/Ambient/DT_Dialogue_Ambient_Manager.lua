@@ -7,8 +7,23 @@ DTNPCClient = DTNPCClient or {}
 DTNPCClient.DialogueAmbient = DTNPCClient.DialogueAmbient or DTNPCClient.AmbientDialogue or {}
 DTNPCClient.AmbientDialogue = DTNPCClient.DialogueAmbient
 
+require "DT/Common/Dialogue/DT_Dialogue_Vocals"
+
 local Ambient = DTNPCClient.DialogueAmbient
 local Config = DTNPCClient.DialogueAmbientConfig or DTNPCClient.AmbientDialogueConfig
+local DialogueVocals = DynamicTrading
+    and DynamicTrading.Dialogue
+    and DynamicTrading.Dialogue.Vocals
+
+local function playSpeechAudio(zombie, npcData, speechData)
+    if not zombie or not speechData or not speechData.audio then
+        return
+    end
+
+    if DialogueVocals and DialogueVocals.PlaySpeechAudio then
+        DialogueVocals.PlaySpeechAudio(zombie, npcData, speechData.audio)
+    end
+end
 
 function ISDTNPCAmbientDialogueManager:initialize()
     ISUIElement.initialise(self)
@@ -141,6 +156,7 @@ function ISDTNPCAmbientDialogueManager:update()
                     tracked.lastProtectNoticeSerial = currentNoticeSerial
                     if noticeSpeech then
                         noticeSpeech.zombie = zombie
+                        playSpeechAudio(zombie, npcData, noticeSpeech)
                         self.speechList[uuid] = noticeSpeech
                         Ambient.ScheduleRepeatSpeak(tracked, currentTime)
                     end
@@ -155,6 +171,7 @@ function ISDTNPCAmbientDialogueManager:update()
                     local speechData = Ambient.BuildSpeechData(npcData, zombie, currentTime)
                     if speechData then
                         speechData.zombie = zombie
+                        playSpeechAudio(zombie, npcData, speechData)
                         self.speechList[uuid] = speechData
                         if isDebugEnabled() then
                             DynamicTrading.Log(

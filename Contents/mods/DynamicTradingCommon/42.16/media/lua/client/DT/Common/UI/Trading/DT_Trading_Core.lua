@@ -1,8 +1,14 @@
 -- =============================================================================
 -- CLASS DEFINITION
 -- =============================================================================
+require "DT/Common/Dialogue/DT_Dialogue_Vocals"
+
 DT_TradingWindow = DT_TradingWindow or ISCollapsableWindow:derive("DT_TradingWindow")
 DT_TradingWindow.instance = nil
+
+local DialogueVocals = DynamicTrading
+    and DynamicTrading.Dialogue
+    and DynamicTrading.Dialogue.Vocals
 
 local function nowMs()
     if getTimeInMillis then
@@ -69,7 +75,7 @@ function DT_TradingWindow:initialise()
     self.wasRaining = false
     self.wasFoggy = false
 
-    -- Structure: { text="", isError=false, isPlayer=false, delay=0, sound=nil }
+    -- Structure: { text="", isError=false, isPlayer=false, delay=0, sound=nil, audio=nil }
     self.msgQueue = {}
     self.typingTick = 0
 end
@@ -215,7 +221,7 @@ function DT_TradingWindow:onAuthoritativeTradeSync()
     self.tradePendingButtonTitle = nil
 end
 
-function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName, tag)
+function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName, tag, audio)
     if tag then
         for _, msg in ipairs(self.msgQueue) do
             if msg.tag == tag then
@@ -230,8 +236,114 @@ function DT_TradingWindow:queueMessage(text, isError, isPlayer, delay, soundName
         isPlayer = isPlayer or false,
         delay = delay or 0,
         sound = soundName,
-        tag = tag
+        tag = tag,
+        audio = audio,
     })
+end
+
+function DT_TradingWindow:isRadioTradeSession()
+    if self.radioObj and instanceof and instanceof(self.radioObj, "InventoryItem") then
+        return true
+    end
+
+    local trader = self:getCurrentTrader()
+    if trader and trader.npcRef then
+        return false
+    end
+
+    return self.radioObj ~= nil and not (trader and trader.npcRef)
+end
+
+function DT_TradingWindow:getTradeSpeaker()
+    local trader = self:getCurrentTrader()
+    local npcRef = trader and trader.npcRef or nil
+    local npcData = nil
+
+    if npcRef and DTNPC and DTNPC.GetData then
+        npcData = DTNPC.GetData(npcRef)
+    end
+
+    return trader, npcRef, npcData
+end
+
+function DT_TradingWindow:getTradeDispositionHook(trader, npcData)
+    if not DialogueVocals or not DialogueVocals.ResolveDispositionHook then
+        return nil
+    end
+
+    return DialogueVocals.ResolveDispositionHook(
+        npcData,
+        trader and trader.status or nil,
+        trader and trader.currentState or nil,
+        trader
+    )
+end
+
+function DT_TradingWindow:buildNPCTradeAudio(text, options)
+    local opts = type(options) == "table" and options or {}
+    if self:isRadioTradeSession() then
+        return {
+            uiSound = opts.uiSound or opts.soundName or "DT_RadioRandom",
+            uiVolume = opts.uiVolume or 0.1,
+        }
+    end
+
+    if not DialogueVocals or not DialogueVocals.BuildSpeechAudio then
+        return nil
+    end
+
+    local trader, npcRef, npcData = self:getTradeSpeaker()
+    if not npcRef and not npcData then
+        return {
+            uiSound = opts.uiSound or opts.soundName or "DT_RadioRandom",
+            uiVolume = opts.uiVolume or 0.1,
+        }
+    end
+
+    local hook = self:getTradeDispositionHook(trader, npcData) or opts.hook
+    if not hook then
+        if opts.tag == "transaction" then
+            hook = opts.isError and "angry" or "trading"
+        elseif opts.tag == "greeting" then
+            hook = "welcome"
+        elseif opts.tag == "farewell" then
+            hook = "bye"
+        elseif opts.tag == "sellask" then
+            hook = "trading"
+        end
+    end
+
+    return DialogueVocals.BuildSpeechAudio(npcData, {
+        text = text,
+        sentiment = opts.sentiment,
+        status = trader and trader.status or nil,
+        state = trader and trader.currentState or nil,
+        entry = trader,
+        hook = hook,
+        uiSound = opts.uiSound,
+        uiVolume = opts.uiVolume,
+        soundName = opts.soundName,
+        vocalType = opts.vocalType,
+        channel = opts.channel or ("trading_" .. tostring(opts.tag or "window")),
+        cooldownMs = opts.cooldownMs or 0,
+    })
+end
+
+function DT_TradingWindow:playQueuedTradeMessageAudio(msg)
+    if not msg then
+        return nil
+    end
+
+    local _, npcRef, npcData = self:getTradeSpeaker()
+    if msg.audio and DialogueVocals and DialogueVocals.PlaySpeechAudio then
+        return DialogueVocals.PlaySpeechAudio(npcRef, npcData, msg.audio)
+    end
+
+    if self.dataProvider and self.dataProvider.playSound then
+        self.dataProvider:playSound(msg.sound or "DT_RadioRandom")
+    end
+
+    return nil
 end
 
 function DT_TradingWindow:getCurrentTrader()

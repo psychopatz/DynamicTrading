@@ -132,7 +132,10 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
                 ui:queueMessage(playerMsg, false, true, 0)
 
                 local npcMsg = self:getSellAskDialogue(trader)
-                ui:queueMessage(npcMsg, false, false, 30)
+                ui:queueMessage(npcMsg, false, false, 30, nil, "sellask", ui.buildNPCTradeAudio and ui:buildNPCTradeAudio(npcMsg, {
+                    hook = "trading",
+                    tag = "sellask",
+                }) or nil)
             end
         end
     end

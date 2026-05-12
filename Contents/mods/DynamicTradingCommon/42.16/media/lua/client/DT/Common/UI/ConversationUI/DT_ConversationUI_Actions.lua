@@ -135,7 +135,10 @@ function DT_ConversationUI.Open(traderObj, initialText, initialOptions, isRadio,
     end
 
     if initialText then
-        ui:speak(initialText)
+        ui:speak({
+            text = initialText,
+            vocalHook = ui.getDefaultGreetingVocalHook and ui:getDefaultGreetingVocalHook() or "welcome",
+        })
     end
 
     if initialOptions then
@@ -255,7 +258,7 @@ function DT_ConversationUI:queueFooterActionDialogue(footerAction, isExitAction)
     end
 
     if playerMessage and playerMessage ~= "" then
-        self:queueMessage(playerMessage, "Me", true, 0, "DT_RadioRandom", playerStyle)
+        self:queuePlayerMessage(playerMessage, 0, playerStyle)
         queuedAny = true
     end
 
@@ -265,6 +268,7 @@ function DT_ConversationUI:queueFooterActionDialogue(footerAction, isExitAction)
             text = npcDialogue,
             delay = queuedAny and (DT_ConversationUI.TEXT_DELAY or 30) or 0,
             style = type(footerAction) == "table" and footerAction.npcStyle or nil,
+            vocalHook = self.getDefaultFarewellVocalHook and self:getDefaultFarewellVocalHook() or "bye",
         })
         queuedAny = true
     end

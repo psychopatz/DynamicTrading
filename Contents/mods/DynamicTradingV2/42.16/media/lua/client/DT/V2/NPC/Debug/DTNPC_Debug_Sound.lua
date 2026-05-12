@@ -100,10 +100,60 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
                 end
             end)
 
-            subMenu:addOption("Test Bandage Sound", npc, function(n)
-                if DTNPCHostility and DTNPCHostility.PlayHurtSound then
-                    DTNPCHostility.PlayHurtSound(n, npcData, "Bandage")
+            subMenu:addOption("Test Bandage", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.PlayVocal then
+                    DTNPCHostility.PlayVocal(n, npcData, "Bandage")
                     n:setHaloNote("SFX: Bandage (" .. voiceSet .. ")", 100, 255, 100, 300)
+                end
+            end)
+
+            -- --- New Ambient Chatter Tests ---
+            local ambientOption = subMenu:addOption("Test Ambient Chatter")
+            local ambientMenu = context:getNew(subMenu)
+            subMenu:addSubMenu(ambientOption, ambientMenu)
+            
+            ambientMenu:addOption("Test Hey (Chat + Text)", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.Say then
+                    DTNPCHostility.Say(n, npcData, "Hey!", "Chat")
+                end
+            end)
+
+            ambientMenu:addOption("Test Sigh", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.Say then
+                    DTNPCHostility.Say(n, npcData, "...sigh...", "Sigh")
+                end
+            end)
+
+            ambientMenu:addOption("Test Sneeze (Ambient)", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.PlayVocal then
+                    DTNPCHostility.PlayVocal(n, npcData, "Ambient")
+                    n:setHaloNote("SFX: Ambient/Sneeze", 200, 200, 255, 300)
+                end
+            end)
+
+            ambientMenu:addOption("Test State (Jump/Sleep/Smoke)", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.PlayVocal then
+                    DTNPCHostility.PlayVocal(n, npcData, "State")
+                    n:setHaloNote("SFX: State", 200, 255, 200, 300)
+                end
+            end)
+
+            ambientMenu:addOption("Test Alone (Ambient)", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.Say then
+                    DTNPCHostility.Say(n, npcData, "I'm all alone...", "Ambient")
+                end
+            end)
+
+            ambientMenu:addOption("Test Angry (Chat Pool)", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.Say then
+                    DTNPCHostility.Say(n, npcData, "Damm it!", "Chat")
+                end
+            end)
+
+            ambientMenu:addOption("Test Specific: Angry", npc, function(n)
+                if DTNPCHostility and DTNPCHostility.PlayVocal then
+                    DTNPCHostility.PlayVocal(n, npcData, "Chat_Angry")
+                    n:setHaloNote("SFX: Angry", 255, 100, 100, 300)
                 end
             end)
         end

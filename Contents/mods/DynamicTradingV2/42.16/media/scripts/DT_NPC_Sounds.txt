@@ -14,7 +14,7 @@ module DynamicTrading {
     sound DTNPC_Male_V1_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Death/Eaten, volume = 0.9, pitch = 0.95 } }
     sound DTNPC_Male_V1_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/DeathFall, volume = 1.0, pitch = 0.95 } }
     sound DTNPC_Male_V1_Effort { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Effort/Heavy, volume = 0.7, pitch = 0.95 } }
-    sound DTNPC_Male_V1_Bandage { category = Object, loop = false, is3D = true, clip { event = Remote/Character/Voice/Male/ApplyBandage, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Male_V1_Bandage { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/ApplyBandage, volume = 0.7, pitch = 0.95 } }
 
     // --- Voice Set 2 (Male) ---
     sound DTNPC_Male_V2_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromHitBlunt, volume = 0.8, pitch = 1.00 } }
@@ -23,7 +23,7 @@ module DynamicTrading {
     sound DTNPC_Male_V2_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Death/Eaten, volume = 0.9, pitch = 1.00 } }
     sound DTNPC_Male_V2_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/DeathFall, volume = 1.0, pitch = 1.00 } }
     sound DTNPC_Male_V2_Effort { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Effort/Heavy, volume = 0.7, pitch = 1.00 } }
-    sound DTNPC_Male_V2_Bandage { category = Object, loop = false, is3D = true, clip { event = Remote/Character/Voice/Male/ApplyBandage, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Male_V2_Bandage { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/ApplyBandage, volume = 0.7, pitch = 1.00 } }
 
     // --- Voice Set 3 (Male) ---
     sound DTNPC_Male_V3_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromHitBlunt, volume = 0.8, pitch = 1.05 } }
@@ -32,7 +32,7 @@ module DynamicTrading {
     sound DTNPC_Male_V3_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Death/Eaten, volume = 0.9, pitch = 1.05 } }
     sound DTNPC_Male_V3_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/DeathFall, volume = 1.0, pitch = 1.05 } }
     sound DTNPC_Male_V3_Effort { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Effort/Heavy, volume = 0.7, pitch = 1.05 } }
-    sound DTNPC_Male_V3_Bandage { category = Object, loop = false, is3D = true, clip { event = Remote/Character/Voice/Male/ApplyBandage, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Male_V3_Bandage { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/ApplyBandage, volume = 0.7, pitch = 1.05 } }
 
     // --- Voice Set 4 (Male) ---
     sound DTNPC_Male_V4_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Pain/FromHitBlunt, volume = 0.8, pitch = 1.10 } }
@@ -41,7 +41,7 @@ module DynamicTrading {
     sound DTNPC_Male_V4_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Death/Eaten, volume = 0.9, pitch = 1.10 } }
     sound DTNPC_Male_V4_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/DeathFall, volume = 1.0, pitch = 1.10 } }
     sound DTNPC_Male_V4_Effort { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/Effort/Heavy, volume = 0.7, pitch = 1.10 } }
-    sound DTNPC_Male_V4_Bandage { category = Object, loop = false, is3D = true, clip { event = Remote/Character/Voice/Male/ApplyBandage, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Male_V4_Bandage { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Male/ApplyBandage, volume = 0.7, pitch = 1.10 } }
 
 
     // ================================ FEMALE ================================
@@ -53,7 +53,7 @@ module DynamicTrading {
     sound DTNPC_Female_V1_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Death/Eaten, volume = 0.9, pitch = 0.95 } }
     sound DTNPC_Female_V1_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/DeathFall, volume = 1.0, pitch = 0.95 } }
     sound DTNPC_Female_V1_Effort { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Effort/Heavy, volume = 0.7, pitch = 0.95 } }
-    sound DTNPC_Female_V1_Bandage { category = Object, loop = false, is3D = true, clip { event = Remote/Character/Voice/Female/ApplyBandage, volume = 0.7, pitch = 0.95 } }
+    sound DTNPC_Female_V1_Bandage { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/ApplyBandage, volume = 0.7, pitch = 0.95 } }
 
     // --- Voice Set 2 (Female) ---
     sound DTNPC_Female_V2_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromHitBlunt, volume = 0.8, pitch = 1.00 } }
@@ -62,7 +62,7 @@ module DynamicTrading {
     sound DTNPC_Female_V2_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Death/Eaten, volume = 0.9, pitch = 1.00 } }
     sound DTNPC_Female_V2_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/DeathFall, volume = 1.0, pitch = 1.00 } }
     sound DTNPC_Female_V2_Effort { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Effort/Heavy, volume = 0.7, pitch = 1.00 } }
-    sound DTNPC_Female_V2_Bandage { category = Object, loop = false, is3D = true, clip { event = Remote/Character/Voice/Female/ApplyBandage, volume = 0.7, pitch = 1.00 } }
+    sound DTNPC_Female_V2_Bandage { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/ApplyBandage, volume = 0.7, pitch = 1.00 } }
 
     // --- Voice Set 3 (Female) ---
     sound DTNPC_Female_V3_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromHitBlunt, volume = 0.8, pitch = 1.05 } }
@@ -71,7 +71,7 @@ module DynamicTrading {
     sound DTNPC_Female_V3_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Death/Eaten, volume = 0.9, pitch = 1.05 } }
     sound DTNPC_Female_V3_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/DeathFall, volume = 1.0, pitch = 1.05 } }
     sound DTNPC_Female_V3_Effort { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Effort/Heavy, volume = 0.7, pitch = 1.05 } }
-    sound DTNPC_Female_V3_Bandage { category = Object, loop = false, is3D = true, clip { event = Remote/Character/Voice/Female/ApplyBandage, volume = 0.7, pitch = 1.05 } }
+    sound DTNPC_Female_V3_Bandage { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/ApplyBandage, volume = 0.7, pitch = 1.05 } }
 
     // --- Voice Set 4 (Female) ---
     sound DTNPC_Female_V4_Hurt_Blunt { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Pain/FromHitBlunt, volume = 0.8, pitch = 1.10 } }
@@ -80,5 +80,5 @@ module DynamicTrading {
     sound DTNPC_Female_V4_Incap { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Death/Eaten, volume = 0.9, pitch = 1.10 } }
     sound DTNPC_Female_V4_Death { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/DeathFall, volume = 1.0, pitch = 1.10 } }
     sound DTNPC_Female_V4_Effort { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/Effort/Heavy, volume = 0.7, pitch = 1.10 } }
-    sound DTNPC_Female_V4_Bandage { category = Object, loop = false, is3D = true, clip { event = Remote/Character/Voice/Female/ApplyBandage, volume = 0.7, pitch = 1.10 } }
+    sound DTNPC_Female_V4_Bandage { category = Object, loop = false, is3D = true, clip { event = Character/Voice/Female/ApplyBandage, volume = 0.7, pitch = 1.10 } }
 }

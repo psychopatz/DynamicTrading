@@ -36,7 +36,7 @@ local function isProtectDebugEnabled(options)
     return false
 end
 
-function DTNPCProtect.PushCompanionNotice(zombie, npcData, text, sentiment)
+function DTNPCProtect.PushCompanionNotice(zombie, npcData, text, sentiment, vocalType)
     DTNPCProtect.EnsureDataDefaults(npcData)
     if not npcData or not text or text == "" then
         return false
@@ -49,6 +49,11 @@ function DTNPCProtect.PushCompanionNotice(zombie, npcData, text, sentiment)
     npcData.protectNoticeDialogueState = nil
 
     syncProtectNotice(zombie, npcData)
+
+    -- Integrate vocalization if provided
+    if vocalType and DTNPCHostility and DTNPCHostility.PlayVocal then
+        DTNPCHostility.PlayVocal(zombie, npcData, vocalType)
+    end
 
     return true
 end
