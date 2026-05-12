@@ -740,10 +740,6 @@ function DynamicTrading.AddItem(uniqueID, data)
     DynamicTrading.Config.MasterList[uniqueID] = data
     DynamicTrading.Config.ItemRegistryRevision = (tonumber(DynamicTrading.Config.ItemRegistryRevision) or 0) + 1
 
-    if DynamicTrading.ItemUsabilityRanker and DynamicTrading.ItemUsabilityRanker.Invalidate then
-        DynamicTrading.ItemUsabilityRanker.Invalidate("item_registry_changed")
-    end
-
     if isDebugEnabled() then
         DynamicTrading.Log("DTCommons", "Init", "Item", "Registered Item: " .. tostring(uniqueID))
     end

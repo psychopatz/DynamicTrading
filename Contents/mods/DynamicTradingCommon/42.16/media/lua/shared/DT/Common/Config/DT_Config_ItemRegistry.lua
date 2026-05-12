@@ -11,9 +11,6 @@ function DynamicTrading.AddItem(id, data)
     end
     DynamicTrading.Config.MasterList[id] = data
     DynamicTrading.Config.ItemRegistryRevision = (tonumber(DynamicTrading.Config.ItemRegistryRevision) or 0) + 1
-    if DynamicTrading.ItemUsabilityRanker and DynamicTrading.ItemUsabilityRanker.Invalidate then
-        DynamicTrading.ItemUsabilityRanker.Invalidate("item_registry_changed")
-    end
 end
 
 -- Batch Item Loader 
