@@ -47,13 +47,6 @@ function DT_LightSystem.SpawnBurst(x, y, z, r, g, b, radius, durationTicks)
     })
 end
 
---- Specialized helper for NPC muzzle flashes
---- @param zombie IsoZombie
-function DT_LightSystem.MuzzleFlash(zombie)
-    if not zombie or isServer() then return end
-    DT_LightSystem.SpawnBurst(zombie:getX(), zombie:getY(), zombie:getZ(), 1.0, 0.9, 0.35, 10, 3)
-end
-
 --- Tick handler for light lifecycle
 local function updateLights()
     local cell = getCell()
