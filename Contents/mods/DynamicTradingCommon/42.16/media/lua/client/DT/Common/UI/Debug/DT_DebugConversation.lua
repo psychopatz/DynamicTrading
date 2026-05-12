@@ -7,7 +7,7 @@ if not isDebugEnabled() then return end
 
 require "DT/Common/UI/ConversationUI/ConversationUI"
 require "DT/Common/Contacts/DT_TraderContacts"
-require "DT/Common/UI/Contacts/DT_ContactsWindow"
+require "DT/Common/UI/Contacts/ContactsWindow/DT_ContactsWindow"
 require "DT/Common/UI/Contacts/DT_ContactsConversation"
 
 local DebugDialogue = {}

@@ -1,6 +1,6 @@
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
-require "DT/Common/UI/Contacts/DT_ContactsWindow"
+require "DT/Common/UI/Contacts/ContactsWindow/DT_ContactsWindow"
 pcall(require, "DT/Common/UI/ConversationUI/DT_ConversationQuestOffer")
 
 DT_RadioScannerActionPanel = ISPanel:derive("DT_RadioScannerActionPanel")
