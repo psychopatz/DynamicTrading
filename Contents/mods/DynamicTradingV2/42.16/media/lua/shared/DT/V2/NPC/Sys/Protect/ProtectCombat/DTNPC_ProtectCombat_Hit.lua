@@ -10,6 +10,80 @@ local Internal = DTNPCProtect.Internal
 local getAttackWeaponItem = Internal.ProtectCombatGetAttackWeaponItem
 local playSuccessfulHitSound = Internal.ProtectCombatPlaySuccessfulHitSound
 
+local function nowMillis()
+    if getTimeInMillis then
+        local value = tonumber(getTimeInMillis())
+        if value and value > 0 then
+            return math.floor(value)
+        end
+    end
+    return 0
+end
+
+function DTNPCProtect.ApplyZombieShove(zombie, npcData, targetZombie, options)
+    if not zombie or not npcData or not targetZombie or targetZombie:isDead() then
+        return false
+    end
+
+    local targetModData = targetZombie.getModData and targetZombie:getModData() or nil
+    if targetModData and targetModData.IsDTNPC == true then
+        return false
+    end
+    if targetZombie.getVariableBoolean and targetZombie:getVariableBoolean("Bandit") then
+        return false
+    end
+
+    local capable = true
+    if DTNPCProtect.IsCombatCapable then
+        capable = DTNPCProtect.IsCombatCapable(zombie, npcData) == true
+    end
+    if not capable then
+        return false
+    end
+
+    options = type(options) == "table" and options or {}
+
+    if targetZombie.setAttackedBy then
+        targetZombie:setAttackedBy(zombie)
+    end
+    if targetZombie.setPlayerAttackPosition and targetZombie.testDotSide then
+        targetZombie:setPlayerAttackPosition(targetZombie:testDotSide(zombie))
+    end
+    if targetZombie.setHitFromBehind and zombie.isBehind then
+        local ok, behind = pcall(function()
+            return zombie:isBehind(targetZombie)
+        end)
+        if ok then
+            targetZombie:setHitFromBehind(behind == true)
+        end
+    end
+    if targetZombie.setHitForce then
+        targetZombie:setHitForce(math.max(1.0, tonumber(options.hitForce) or 1.15))
+    end
+    if targetZombie.setStaggerBack then
+        pcall(targetZombie.setStaggerBack, targetZombie, true)
+    end
+    if targetZombie.setKnockedDown then
+        targetZombie:setKnockedDown(true)
+    end
+    if targetZombie.pathToCharacter then
+        targetZombie:pathToCharacter(zombie)
+    end
+
+    local currentTime = nowMillis()
+    local retreatLockMs = math.max(150, tonumber(options.retreatLockMs) or 900)
+    npcData.damageRetreatUntil = math.max(tonumber(npcData.damageRetreatUntil) or 0, currentTime + retreatLockMs)
+    npcData.damageRetreatFromX = targetZombie:getX()
+    npcData.damageRetreatFromY = targetZombie:getY()
+    npcData._dtLastZombieShoveAt = currentTime
+
+    if DTNPC and DTNPC.SetMeleeCombatIdleState then
+        DTNPC.SetMeleeCombatIdleState(zombie, npcData)
+    end
+
+    return true
+end
+
 function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     if not zombie or not target or target:isDead() then
         return false, false

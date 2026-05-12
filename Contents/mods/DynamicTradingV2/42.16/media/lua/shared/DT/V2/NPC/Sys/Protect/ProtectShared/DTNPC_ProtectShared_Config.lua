@@ -27,6 +27,7 @@ DTNPCProtect.CONFIG = DTNPCProtect.CONFIG or {
     MeleeCrowdPenalty = 0.8,
     MeleeCrowdClosestPenalty = 0.7,
     MeleeCrowdDangerRadius = 2.4,
+    OverwhelmAdjacentThreshold = 3,
     MeleeCrowdDangerThreshold = 3,
     MeleeCrowdSevereThreshold = 4,
     MeleeRecentZombieDamageWindowMs = 4500,

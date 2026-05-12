@@ -61,6 +61,14 @@ function DTNPCClient.OnTick()
         end
     end
 
+    DTNPCClient.hostilityCacheRebuildCounter = (DTNPCClient.hostilityCacheRebuildCounter or 0) + 1
+    if DTNPCClient.hostilityCacheRebuildCounter >= 300 then
+        DTNPCClient.hostilityCacheRebuildCounter = 0
+        if DTNPCHostility and DTNPCHostility.RebuildClientTargetCache then
+            DTNPCHostility.RebuildClientTargetCache()
+        end
+    end
+
     DTNPCClient.visualCheckCounter = (DTNPCClient.visualCheckCounter or 0) + 1
     if DTNPCClient.visualCheckCounter < DTNPCClient.VISUAL_CHECK_RATE then return end
     DTNPCClient.visualCheckCounter = 0
@@ -293,6 +301,10 @@ end
 
 function DTNPCClient.OnZombieRemoved(zombie)
     if not zombie then return end
+
+    if DTNPCHostility and DTNPCHostility.RemoveClientTarget then
+        DTNPCHostility.RemoveClientTarget(zombie)
+    end
     
     local modData = zombie:getModData()
     local uuid = modData.DTNPC_UUID
@@ -310,13 +322,21 @@ function DTNPCClient.OnZombieUpdate(zombie)
         return
     end
 
+    local modData = zombie:getModData()
+    local isDTNPCBody = modData and (modData.IsDTNPC == true or modData.DTNPC_UUID ~= nil)
+    local isBanditBody = zombie:getVariableBoolean("Bandit")
+
     if DTNPCClient.ApplySafetyToMarkedZombie then
         DTNPCClient.ApplySafetyToMarkedZombie(zombie)
     end
 
+    if isDTNPCBody and DTNPCHostility and DTNPCHostility.UpsertClientTarget then
+        local npcData = modData and (modData.DTNPC_Data or modData.DTNPCBrain) or nil
+        DTNPCHostility.UpsertClientTarget(zombie, npcData)
+    end
+
     -- Proactive NPC interactions (Doors/Windows)
     if DTNPCMobility and DTNPCMobility.UpdateProactiveInteractions then
-        local modData = zombie:getModData()
         local uuid = modData and modData.DTNPC_UUID
         local cached = uuid and DTNPCClient.NPCCache and DTNPCClient.NPCCache[uuid]
         local npcData = cached and cached.npcData or (modData and (modData.DTNPC_Data or modData.DTNPCBrain))
@@ -328,9 +348,6 @@ function DTNPCClient.OnZombieUpdate(zombie)
 
     -- Zombie-NPC Hostility (Targeting and Attack Simulation)
     if DTNPCHostility then
-        local modData = zombie:getModData()
-        local isDTNPCBody = modData and (modData.IsDTNPC == true or modData.DTNPC_UUID ~= nil)
-        local isBanditBody = zombie:getVariableBoolean("Bandit")
         if not isDTNPCBody and not isBanditBody then
             if DTNPCHostility.UpdateZombieTargeting then
                 DTNPCHostility.UpdateZombieTargeting(zombie)
