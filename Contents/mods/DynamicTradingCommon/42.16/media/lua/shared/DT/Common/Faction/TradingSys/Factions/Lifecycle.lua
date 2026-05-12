@@ -17,6 +17,7 @@ local deferredBootstrapTickCounter = 0
 local deferredTownQueue = {}
 local EXPLORATION_DATA_KEY = "DynamicTrading_Exploration"
 local townVisitTickCounter = 0
+local processDeferredTownQueue
 
 if IS_SERVER_RUNTIME then
     require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem"
@@ -324,13 +325,20 @@ local function handleVisitedTown(player, townName, reason)
         return 0
     end
 
+    local immediateProcessed = processDeferredTownQueue(
+        tostring(reason or "exploration") .. ":" .. tostring(normalizedTown),
+        math.max(1, promoted),
+        false
+    )
+
     DynamicTrading.Log(
         "DTCommons",
         "Faction",
         "Exploration",
         "Town " .. tostring(townName)
             .. " moved to the front of the deferred simulation queue during " .. tostring(reason or "exploration")
-            .. "; it will now mature through normal queue processing instead of spawning instantly."
+            .. "; immediateProcessed=" .. tostring(immediateProcessed)
+            .. "; remainingDeferred=" .. tostring(#deferredTownQueue)
     )
     return promoted
 end
@@ -365,7 +373,7 @@ local function updateExplorationDrivenTownGeneration()
     return processed
 end
 
-local function processDeferredTownQueue(reason, maxEntries, randomize)
+processDeferredTownQueue = function(reason, maxEntries, randomize)
     if #deferredTownQueue == 0 then
         return 0
     end

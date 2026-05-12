@@ -31,8 +31,14 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     local weaponItem = getAttackWeaponItem(npcData, attackType)
     local isPlayerTarget = instanceof(target, "IsoPlayer")
     local targetModData = target.getModData and target:getModData() or nil
-    local targetNPCData = targetModData and (targetModData.DTNPC_Data or targetModData.DTNPCBrain) or nil
-    local isDTNPCTarget = targetModData and targetModData.IsDTNPC == true and targetNPCData ~= nil
+    local targetUUID = targetModData and targetModData.DTNPC_UUID or nil
+    local targetNPCData = (DTNPC and DTNPC.GetData and DTNPC.GetData(target))
+        or (targetModData and (targetModData.DTNPC_Data or targetModData.DTNPCBrain))
+        or (targetUUID and DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[targetUUID])
+        or nil
+    local isDTNPCTarget = targetNPCData ~= nil
+        and targetModData ~= nil
+        and (targetModData.IsDTNPC == true or targetUUID ~= nil)
 
     damage = DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem)
     local hitEffects = DT_DamageSystem.CalculateHitEffects(npcData, target, damage, attackType)

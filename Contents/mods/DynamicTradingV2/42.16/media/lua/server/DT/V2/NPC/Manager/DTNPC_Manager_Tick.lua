@@ -506,7 +506,12 @@ function DTNPCManager.OnTick()
     
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
-        if zombie and not zombie:isDead() then
+        if zombie and zombie:isDead() then
+            local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
+            if uuid and DTNPCLifecycle and DTNPCLifecycle.HandleZombieDead then
+                DTNPCLifecycle.HandleZombieDead(zombie)
+            end
+        elseif zombie then
             local uuid = DTNPCManager.GetUUIDFromZombie(zombie)
             
             if uuid then

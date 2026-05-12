@@ -3,6 +3,8 @@
 -- Context menu entry for testing NPC vocalizations.
 -- ==============================================================================
 
+require "DT/V2/NPC/Debug/DTNPC_Debug_SoundUI"
+
 local function getNPCData(zombie)
     if not zombie then return nil end
     if DTNPC and DTNPC.GetData then
@@ -58,11 +60,17 @@ local function OnFillWorldObjectContextMenu(playerNum, context, worldObjects, te
         end
     end
 
-    if #npcList > 0 then
-        local debugMain = context:addOption("Debug: NPC Vocal System")
-        local mainSub = context:getNew(context)
-        context:addSubMenu(debugMain, mainSub)
+    local debugMain = context:addOption("Debug: NPC Vocal System")
+    local mainSub = context:getNew(context)
+    context:addSubMenu(debugMain, mainSub)
 
+    mainSub:addOption("[UI] Open Vocal Debug...", nil, function()
+        if DTNPC_Debug_SoundUI and DTNPC_Debug_SoundUI.ToggleWindow then
+            DTNPC_Debug_SoundUI.ToggleWindow()
+        end
+    end)
+
+    if #npcList > 0 then
         for _, npc in ipairs(npcList) do
             local npcData = getNPCData(npc)
             local name = npcData and npcData.name or "Survivor"

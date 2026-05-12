@@ -28,6 +28,13 @@ function DTNPCLogic.ProcessNPC(zombie)
         return
     end
 
+    if zombie.isDead and zombie:isDead() then
+        if DTNPCLifecycle and DTNPCLifecycle.HandleZombieDead then
+            DTNPCLifecycle.HandleZombieDead(zombie)
+        end
+        return
+    end
+
     if DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
         DTNPCProtect.EnsureDataDefaults(npcData)
     end

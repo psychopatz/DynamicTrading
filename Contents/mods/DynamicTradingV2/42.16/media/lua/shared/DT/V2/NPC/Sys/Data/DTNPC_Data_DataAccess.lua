@@ -12,6 +12,7 @@ function DTNPC.MarkBodyOwnership(zombie, npcData)
     if not modData then return nil end
 
     modData.IsDTNPC = true
+    modData.DTNPCZombieDeadHandled = nil
 
     if npcData then
         modData.DTNPC_Data = npcData

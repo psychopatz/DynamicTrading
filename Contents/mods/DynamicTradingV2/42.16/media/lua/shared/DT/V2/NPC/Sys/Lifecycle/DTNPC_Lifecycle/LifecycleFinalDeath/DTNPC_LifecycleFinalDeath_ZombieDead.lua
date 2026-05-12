@@ -9,6 +9,11 @@ DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 local internal = DTNPCLifecycle.Internal
 
 function DTNPCLifecycle.HandleZombieDead(zombie)
+    local modData = zombie and zombie.getModData and zombie:getModData() or nil
+    if modData and modData.DTNPCZombieDeadHandled == true then
+        return
+    end
+
     local uuid = internal.getUUIDFromZombie(zombie)
     local zombieRuntimeID = DTNPC_ZombieAggro and DTNPC_ZombieAggro._internal and DTNPC_ZombieAggro._internal.getZombieRuntimeID
         and DTNPC_ZombieAggro._internal.getZombieRuntimeID(zombie)
@@ -21,6 +26,9 @@ function DTNPCLifecycle.HandleZombieDead(zombie)
     local removalContext = internal.buildKillerContext(attacker)
 
     if uuid and DTNPCManager and DTNPCManager.Data and DTNPCManager.Data[uuid] then
+        if modData then
+            modData.DTNPCZombieDeadHandled = true
+        end
         local npcData = DTNPCManager.Data[uuid]
         DynamicTrading.Log(
             "DTV2",
