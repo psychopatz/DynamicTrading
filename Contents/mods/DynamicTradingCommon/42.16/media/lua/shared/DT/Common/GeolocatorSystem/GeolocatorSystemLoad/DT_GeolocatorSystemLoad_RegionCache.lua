@@ -46,15 +46,10 @@ return function(context)
         }
     end
 
-    local function collectLegacySeedTowns(results, seen)
-        if type(DT_FactionLocations) ~= "table" then
-            return
-        end
-
-        for townName, locations in pairs(DT_FactionLocations) do
-            if type(locations) == "table" and #locations > 0 then
-                addUniqueRegion(results, seen, townName)
-            end
+    local function collectRegisteredSeedTowns(results, seen)
+        local registry = DT_GeolocatorSystem.Registry or {}
+        for _, town in ipairs(registry.Towns or {}) do
+            addUniqueRegion(results, seen, town.name)
         end
     end
 
@@ -192,6 +187,10 @@ return function(context)
     end
 
     function DT_GeolocatorSystem.GetSeedTowns()
+        if DT_GeolocatorSystem.EnsureRegionRegistryBuilt then
+            DT_GeolocatorSystem.EnsureRegionRegistryBuilt()
+        end
+
         DT_GeolocatorSystem.RefreshRegionCache()
 
         local results = {}
@@ -202,7 +201,7 @@ return function(context)
             end
         end
 
-        collectLegacySeedTowns(results, seen)
+        collectRegisteredSeedTowns(results, seen)
 
         if #results == 0 then
             for _, building in ipairs(DT_GeolocatorSystem.Buildings or {}) do

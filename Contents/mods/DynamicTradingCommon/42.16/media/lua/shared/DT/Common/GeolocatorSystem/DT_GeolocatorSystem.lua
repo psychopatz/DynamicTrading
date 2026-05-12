@@ -8,7 +8,7 @@ DT_GeolocatorSystem.Config = DT_GeolocatorSystem.Config or {}
 
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_Data"
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_Settings"
-require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_MapData"
+require "DT/Common/GeolocatorSystem/GeolocatorSystemRegistry/DT_GeolocatorSystemRegistry"
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_BuildingLogic"
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_ZoneLogic"
 require "DT/Common/GeolocatorSystem/GeolocatorSystemLocation/DT_GeolocatorSystemLocation"

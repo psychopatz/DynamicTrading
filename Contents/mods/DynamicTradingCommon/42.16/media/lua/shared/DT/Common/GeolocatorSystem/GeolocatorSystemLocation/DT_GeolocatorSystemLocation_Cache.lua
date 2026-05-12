@@ -41,6 +41,10 @@ return function(context)
     end
 
     function DT_GeolocatorSystem.InitCache()
+        if DT_GeolocatorSystem.EnsureRegionRegistryBuilt then
+            DT_GeolocatorSystem.EnsureRegionRegistryBuilt()
+        end
+
         if DT_GeolocatorSystem.CacheInitialized then
             return
         end
@@ -48,7 +52,8 @@ return function(context)
         DT_GeolocatorSystem.ActiveLocations = {}
         DT_GeolocatorSystem.LocationIndex = {}
 
-        for _, location in ipairs(DT_GeolocatorSystem.KnownLocations or {}) do
+        local registry = DT_GeolocatorSystem.Registry or {}
+        for _, location in ipairs(registry.Locations or {}) do
             upsertLocation(location)
         end
 

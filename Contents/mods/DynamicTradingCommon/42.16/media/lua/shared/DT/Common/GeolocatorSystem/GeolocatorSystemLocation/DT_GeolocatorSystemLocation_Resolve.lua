@@ -52,12 +52,17 @@ return function(context)
     end
 
     function DT_GeolocatorSystem.GetCountyName(x, y)
+        if DT_GeolocatorSystem.EnsureRegionRegistryBuilt then
+            DT_GeolocatorSystem.EnsureRegionRegistryBuilt()
+        end
+
         local location = DT_GeolocatorSystem.GetLocation(x, y)
         if location and location.longName then
             return location.longName
         end
 
-        for _, county in ipairs(DT_GeolocatorSystem.Counties or {}) do
+        local registry = DT_GeolocatorSystem.Registry or {}
+        for _, county in ipairs(registry.Counties or {}) do
             if x >= county.bounds.minX and x <= county.bounds.maxX and y >= county.bounds.minY and y <= county.bounds.maxY then
                 return county.name
             end
@@ -67,6 +72,10 @@ return function(context)
     end
 
     function DT_GeolocatorSystem.GetTownName(x, y)
+        if DT_GeolocatorSystem.EnsureRegionRegistryBuilt then
+            DT_GeolocatorSystem.EnsureRegionRegistryBuilt()
+        end
+
         local location = DT_GeolocatorSystem.GetLocation(x, y)
         if location and location.shortName then
             return location.shortName
@@ -91,7 +100,8 @@ return function(context)
             end
         end
 
-        for _, town in ipairs(DT_GeolocatorSystem.Towns or {}) do
+        local registry = DT_GeolocatorSystem.Registry or {}
+        for _, town in ipairs(registry.Towns or {}) do
             if x >= town.minX and x <= town.maxX and y >= town.minY and y <= town.maxY then
                 return town.name
             end
