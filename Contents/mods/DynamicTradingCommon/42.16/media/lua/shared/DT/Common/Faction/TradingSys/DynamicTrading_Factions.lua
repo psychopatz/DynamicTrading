@@ -19,7 +19,7 @@
 -- =============================================================================
 -- 1. LOAD SUB-MODULES
 -- =============================================================================
-local Lifecycle   = require "DT/Common/Faction/TradingSys/Factions/Lifecycle"
+local Lifecycle   = require "DT/Common/Faction/TradingSys/Factions/Lifecycle/DT_Lifecycle"
 local DT_SimulationLogic  = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic"
 local Interaction = require "DT/Common/Faction/TradingSys/Factions/Interaction"
 local PlayerOwnership = require "DT/Common/Faction/TradingSys/Factions/PlayerOwnership/PlayerOwnership"
