@@ -1,0 +1,7 @@
+local context = require "DT/Common/GeolocatorSystem/GeolocatorSystemLocation/DT_GeolocatorSystemLocation_Context"
+
+require "DT/Common/GeolocatorSystem/GeolocatorSystemLocation/DT_GeolocatorSystemLocation_Cache"(context)
+require "DT/Common/GeolocatorSystem/GeolocatorSystemLocation/DT_GeolocatorSystemLocation_Spatial"(context)
+require "DT/Common/GeolocatorSystem/GeolocatorSystemLocation/DT_GeolocatorSystemLocation_Resolve"(context)
+
+return DT_GeolocatorSystem
