@@ -69,6 +69,7 @@ function Internal.ApplyActivationState(uuid, npcData, square, target, options)
     npcData.departureTargetX = nil
     npcData.departureTargetY = nil
     npcData.departureTargetZ = nil
+    npcData.departureMode = nil
     npcData.departureBlockedTicks = nil
     npcData.departureStuckLastX = nil
     npcData.departureStuckLastY = nil

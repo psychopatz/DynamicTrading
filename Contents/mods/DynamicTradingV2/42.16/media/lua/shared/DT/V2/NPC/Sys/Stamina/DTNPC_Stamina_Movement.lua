@@ -30,6 +30,9 @@ local function getMovementDrainRate(profile)
     if mode == "travel" or mode == "goto" or mode == "departure" then
         return 5.5
     end
+    if mode == "incap_crawl" then
+        return 5.2
+    end
     return 5.2
 end
 
@@ -71,8 +74,7 @@ function Stamina.BuildMovementProfile(zombie, npcData, options)
     local mode = tostring(options.mode or "travel")
     local moveExhausted = npcData._dtMoveExhaustedActive == true
 
-    local resumeThreshold = tonumber(Internal.MoveExhaustResumeRatio) or 0.40
-    local pauseThreshold = tonumber(Internal.MoveExhaustPauseRatio) or 0.25
+    local staminaStateProfile, pauseThreshold, resumeThreshold = Internal.resolveMovementThresholds(options.profileKey)
 
     if mode ~= "retreat" then
         if moveExhausted and ratio < resumeThreshold then
@@ -80,8 +82,10 @@ function Stamina.BuildMovementProfile(zombie, npcData, options)
         elseif ratio <= pauseThreshold then
             exhausted = true
             npcData._dtMoveExhaustedActive = true
+            npcData._dtMoveExhaustedProfileKey = staminaStateProfile and staminaStateProfile.key or tostring(options.profileKey or mode)
         else
             npcData._dtMoveExhaustedActive = false
+            npcData._dtMoveExhaustedProfileKey = nil
         end
 
         if exhausted then
@@ -149,17 +153,37 @@ function Stamina.BuildMovementProfile(zombie, npcData, options)
         state = "fresh"
     end
 
+    local dtWalkType = isRunning and "Run" or "Walk"
+    local animSpeed = isRunning and 1.2 or 1.0
+    local walkType = not isRunning and "1" or "1"
+    local crawl = false
+    if DTNPCMobility and DTNPCMobility.GetLocomotionProfile then
+        local locomotionProfile = DTNPCMobility.GetLocomotionProfile(options.profileKey)
+        if type(locomotionProfile) == "table" then
+            dtWalkType = locomotionProfile.dtWalkType or dtWalkType
+            animSpeed = tonumber(locomotionProfile.animSpeed) or animSpeed
+            walkType = locomotionProfile.walkType ~= nil and locomotionProfile.walkType or walkType
+            crawl = locomotionProfile.crawl == true
+        end
+    end
+
     return {
         baseSpeed = baseSpeed,
         speed = resolvedSpeed,
         requestedRun = requestedRun,
         isRunning = isRunning,
-        animSpeed = isRunning and 1.2 or 1.0,
-        dtWalkType = isRunning and "Run" or "Walk",
+        animSpeed = animSpeed,
+        dtWalkType = dtWalkType,
+        walkType = walkType,
+        crawl = crawl,
         mode = mode,
         ratio = ratio,
         state = state,
         exhausted = exhausted,
+        profileKey = staminaStateProfile and staminaStateProfile.key or tostring(options.profileKey or "default"),
+        drainMultiplier = tonumber(staminaStateProfile and staminaStateProfile.drainMultiplier) or 1.0,
+        pauseThreshold = pauseThreshold,
+        resumeThreshold = resumeThreshold,
     }
 end
 
@@ -179,9 +203,13 @@ function Stamina.ApplyMovementTick(zombie, npcData, profile, result)
     local currentState = npcData.staminaState
     local maxValue = math.max(1, tonumber(npcData.staminaMax) or 1)
     local currentValue = tonumber(npcData.staminaCurrent) or maxValue
+    local pauseThreshold = tonumber(profile.pauseThreshold) or tonumber(Internal.MoveExhaustPauseRatio) or 0.25
+    local resumeThreshold = tonumber(profile.resumeThreshold) or tonumber(Internal.MoveExhaustResumeRatio) or 0.40
+    local drainMultiplier = tonumber(profile.drainMultiplier) or 1.0
+    npcData._dtLastMoveProfileKey = profile.profileKey
 
     if result.moved == true then
-        local drainRate = getMovementDrainRate(profile) * (1 - (normalized * 0.2))
+        local drainRate = getMovementDrainRate(profile) * drainMultiplier * (1 - (normalized * 0.2))
         if profile.requestedRun == true then
             drainRate = drainRate * 1.15
         end
@@ -190,20 +218,23 @@ function Stamina.ApplyMovementTick(zombie, npcData, profile, result)
         end
         markVisible(npcData, 4200)
 
-        if currentValue <= (maxValue * 0.11) then
-            if profile.mode == "follow" then
-                npcData._dtMoveExhaustedActive = true
-            end
+        if currentValue <= (maxValue * pauseThreshold) then
+            npcData._dtMoveExhaustedActive = true
+            npcData._dtMoveExhaustedProfileKey = profile.profileKey
             local currentSlowUntil = tonumber(npcData._dtSprintSlowUntil) or 0
             if currentSlowUntil <= currentTime then
                 npcData._dtSprintSlowUntil = currentTime + getBreatherMs(npcData)
                 pushCue(zombie, npcData, "CatchBreath", "warning", 6500)
             end
+        elseif currentValue <= (maxValue * math.max(0.34, math.min(0.70, resumeThreshold))) then
+            if profile.mode == "follow" then
+                npcData._dtMoveExhaustedActive = true
+                npcData._dtMoveExhaustedProfileKey = profile.profileKey
+            end
+            pushCue(zombie, npcData, "StaminaSlow", "warning", 6500)
         elseif profile.mode == "follow" and currentValue <= (maxValue * (tonumber(Internal.MoveExhaustPauseRatio) or 0.25)) then
             npcData._dtMoveExhaustedActive = true
             pushCue(zombie, npcData, "CatchBreath", "warning", 6500)
-        elseif currentValue <= (maxValue * 0.34) and currentState ~= "winded" then
-            pushCue(zombie, npcData, "StaminaSlow", "warning", 6500)
         end
     else
         local recoverRate = getMovementRecoverRate(profile, result.moved == true) * (1 + (normalized * 0.18))
@@ -216,15 +247,16 @@ function Stamina.ApplyMovementTick(zombie, npcData, profile, result)
     end
 
     local ratio = Stamina.GetRatio(npcData)
-    if npcData._dtMoveExhaustedActive == true and ratio >= (tonumber(Internal.MoveExhaustResumeRatio) or 0.40) then
+    if npcData._dtMoveExhaustedActive == true and ratio >= resumeThreshold then
         npcData._dtMoveExhaustedActive = false
+        npcData._dtMoveExhaustedProfileKey = nil
     end
     local nextState = profile.state
-    if ratio > 0.7 and (tonumber(npcData._dtSprintSlowUntil) or 0) <= currentTime then
+    if ratio >= math.min(0.90, resumeThreshold + 0.22) and (tonumber(npcData._dtSprintSlowUntil) or 0) <= currentTime then
         nextState = "fresh"
-    elseif ratio > 0.42 and (tonumber(npcData._dtSprintSlowUntil) or 0) <= currentTime then
+    elseif ratio >= resumeThreshold and (tonumber(npcData._dtSprintSlowUntil) or 0) <= currentTime then
         nextState = "steady"
-    elseif (tonumber(npcData._dtSprintSlowUntil) or 0) > currentTime or ratio <= 0.18 then
+    elseif (tonumber(npcData._dtSprintSlowUntil) or 0) > currentTime or ratio <= pauseThreshold then
         nextState = "recovering"
     else
         nextState = "winded"

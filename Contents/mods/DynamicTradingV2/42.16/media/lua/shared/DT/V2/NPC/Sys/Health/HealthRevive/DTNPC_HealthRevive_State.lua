@@ -136,6 +136,7 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
 
     local canRevive, info = DTNPCHealth.CanPlayerRevive(playerObj, npcData, {
         ignoreItems = options.ignoreItems == true,
+        requiredFullType = options.requiredFullType,
     })
     if not canRevive then
         return false, info
@@ -152,12 +153,16 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
     if options.skipConsume ~= true then
         local consumed
         local removedOk
-        removedOk, consumed = DTNPCHealth.ConsumeReviveItems(playerObj, requiredCount)
+        removedOk, consumed = DTNPCHealth.ConsumeReviveItems(playerObj, requiredCount, options.requiredFullType)
         if not removedOk then
             return false, {
                 reason = "need_supplies",
                 requiredCount = requiredCount,
-                availableCount = DTNPCHealth.CountReviveItems and DTNPCHealth.CountReviveItems(playerObj) or consumed or 0,
+                availableCount = DTNPCHealth.CountReviveItems
+                    and DTNPCHealth.CountReviveItems(playerObj, options.requiredFullType)
+                    or consumed
+                    or 0,
+                requiredFullType = options.requiredFullType,
             }
         end
         consumedCount = consumed or requiredCount

@@ -188,6 +188,7 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         or (motionHint and motionHint.crawl == true)
     local isWeakenedDeparture = tostring(npcData.healthState or "") == "Weakened"
         and tostring(npcData.state or "") == "Departure"
+    local hintedWalkType = motionHint and tostring(motionHint.dtWalkType or "") or ""
     if not isRunning and zombie.isRunning then
         local ok, result = pcall(zombie.isRunning, zombie)
         isRunning = isMoving and ok and result == true or false
@@ -206,15 +207,18 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
             animSpeed = 0.28
             dtWalkType = "Crawl"
         else
-            moveAnim = isRunning and "Run" or "Walk"
+            moveAnim = hintedWalkType ~= "" and hintedWalkType or (isRunning and "Run" or "Walk")
             animSpeed = isRunning and 1.2
                 or (isWeakenedDeparture and (tonumber(DTNPCHealth and DTNPCHealth.WEAKENED_DEPARTURE_ANIM_SPEED) or 0.82) or 1.0)
-            walkType = "1"
-            dtWalkType = moveAnim
+            walkType = motionHint and motionHint.walkType ~= nil and tostring(motionHint.walkType) or "1"
+            dtWalkType = hintedWalkType ~= "" and hintedWalkType or moveAnim
         end
     elseif isCrawling then
         walkType = ""
         dtWalkType = "Crawl"
+    elseif isWeakenedDeparture and hintedWalkType ~= "" then
+        walkType = motionHint and motionHint.walkType ~= nil and tostring(motionHint.walkType) or "1"
+        dtWalkType = hintedWalkType
     end
 
     local posData = {
@@ -251,6 +255,7 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         animSpeed = animSpeed,
         walkType = walkType,
         dtWalkType = dtWalkType,
+        locomotionProfileKey = motionHint and motionHint.profileKey or nil,
         motionHint = motionHint and {
             fromX = motionHint.fromX,
             fromY = motionHint.fromY,
@@ -261,6 +266,9 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
             durationMs = motionHint.durationMs,
             crawl = motionHint.crawl == true,
             running = motionHint.running == true,
+            dtWalkType = motionHint.dtWalkType,
+            walkType = motionHint.walkType,
+            profileKey = motionHint.profileKey,
         } or nil,
         specialActionKind = specialActionKind,
         specialActionUntil = specialActionUntil,

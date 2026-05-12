@@ -12,8 +12,6 @@ local PAUSE_MIN_MS = 900
 local PAUSE_MAX_MS = 2200
 local NEXT_PAUSE_MIN_MS = 1300
 local NEXT_PAUSE_MAX_MS = 3200
-local CRAWL_SPEED_MULT = 0.38
-
 local function getTimeMs()
     if getTimeInMillis then
         return getTimeInMillis()
@@ -49,11 +47,9 @@ end
 
 local function applyCrawlAnimation(zombie, moving)
     DTNPCMobility.SetLocomotionState(zombie, {
+        profileKey = DTNPCHealth and DTNPCHealth.INCAP_CRAWL_PROFILE_KEY or "incap_crawl",
         moving = moving == true,
-        crawl = true,
-        dtWalkType = "Crawl",
         animSpeed = moving and 0.28 or 0.0,
-        isRunning = false,
     })
 end
 
@@ -150,22 +146,33 @@ DTNPCLogic.Behaviors["Incapacitated"] = function(zombie, npcData, target, dist)
         return
     end
 
-    local speed = DynamicTrading.GetNPCRunSpeed() * CRAWL_SPEED_MULT
-    local moved = DTNPCMobility.MoveByDirection(zombie, npcData, {
+    local crawlProfile = DTNPCMobility and DTNPCMobility.GetLocomotionProfile
+        and DTNPCMobility.GetLocomotionProfile(DTNPCHealth and DTNPCHealth.INCAP_CRAWL_PROFILE_KEY or "incap_crawl")
+        or nil
+    local speed = DynamicTrading.GetNPCRunSpeed() * (tonumber(crawlProfile and crawlProfile.speedMultiplier) or 0.38)
+    local moved, moveState = DTNPCMobility.MoveByDirection(zombie, npcData, {
         dirX = dx,
         dirY = dy,
         speed = speed,
+        staminaMode = "incap_crawl",
+        profileKey = DTNPCHealth and DTNPCHealth.INCAP_CRAWL_PROFILE_KEY or "incap_crawl",
         blockCounterKey = "incapBlockedTicks",
         stuckTicks = 14,
-        anim = {
-            crawl = true,
-            dtWalkType = "Crawl",
-            animSpeed = 0.28,
-            isRunning = false,
-        },
     })
 
     npcData.isMovingState = moved == true
+    if moveState == "exhausted" then
+        npcData.incapStrugglePauseUntil = math.max(
+            tonumber(npcData.incapStrugglePauseUntil) or 0,
+            nowMs + 1800
+        )
+        npcData.incapNextPauseAt = math.max(
+            tonumber(npcData.incapNextPauseAt) or 0,
+            nowMs + 2600
+        )
+        applyCrawlAnimation(zombie, false)
+        return
+    end
     if not moved then
         applyCrawlAnimation(zombie, false)
     end

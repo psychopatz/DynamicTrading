@@ -18,6 +18,7 @@ require "DT/Common/FlavorText/DT_FlavorText"
 require "DT/Common/FlavorText/DT_FlavorText_Stamina"
 
 require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina_Shared"
+require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina_Profiles"
 require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina_Cues"
 require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina_Movement"
 require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina_Passive"

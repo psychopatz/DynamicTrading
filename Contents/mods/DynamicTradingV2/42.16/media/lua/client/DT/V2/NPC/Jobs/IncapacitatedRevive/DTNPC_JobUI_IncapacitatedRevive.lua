@@ -17,6 +17,7 @@ ReviveUI.State = ReviveUI.State or {}
 
 pcall(require, "DT/V2/NPC/UI/DTNPC_WaveHiInteraction")
 require "DT/V2/NPC/Jobs/IncapacitatedRevive/DTNPC_JobUI_IncapacitatedRevive_Context"
+require "DT/V2/NPC/Jobs/IncapacitatedRevive/DTNPC_JobUI_IncapacitatedRevive_TimedAction"
 require "DT/V2/NPC/Jobs/IncapacitatedRevive/DTNPC_JobUI_IncapacitatedRevive_Conversation"
 require "DT/V2/NPC/Jobs/IncapacitatedRevive/DTNPC_JobUI_IncapacitatedRevive_Events"
 require "DT/V2/NPC/Jobs/IncapacitatedRevive/DTNPC_JobUI_IncapacitatedRevive_Registry"

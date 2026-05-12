@@ -26,13 +26,20 @@ function Internal.getMovementAnimName(options, moving)
     return "Walk"
 end
 
-function Internal.applyEngineWalkType(zombie, moveAnim)
+function Internal.applyEngineWalkType(zombie, moveAnim, options)
     if not zombie then
         return
     end
 
-    if moveAnim == "Walk" or moveAnim == "Run" then
-        Internal.safeCall(zombie, "setWalkType", moveAnim)
+    local resolved = nil
+    if type(options) == "table" and options.engineWalkType ~= nil and tostring(options.engineWalkType) ~= "" then
+        resolved = tostring(options.engineWalkType)
+    elseif moveAnim and moveAnim ~= "" and moveAnim ~= "Crawl" then
+        resolved = tostring(moveAnim)
+    end
+
+    if resolved and resolved ~= "" then
+        Internal.safeCall(zombie, "setWalkType", resolved)
     end
 end
 
@@ -57,6 +64,9 @@ function Mobility.SetLocomotionState(zombie, options)
     end
 
     options = type(options) == "table" and options or {}
+    if Mobility.ResolveLocomotionStateOptions then
+        options = Mobility.ResolveLocomotionStateOptions(options)
+    end
     local moving = options.moving == true
     local animSpeed = Internal.getAnimSpeed(options)
     local moveAnim = Internal.getMovementAnimName(options, moving)
@@ -80,7 +90,7 @@ function Mobility.SetLocomotionState(zombie, options)
     zombie:setVariable("MovementSpeed", moving and animSpeed or 0.0)
     zombie:setVariable("WalkSpeed", moving and math.max(0.1, animSpeed) or 0.0)
     zombie:setVariable("RunSpeed", moving and math.max(0.1, animSpeed) or 0.0)
-    Internal.applyEngineWalkType(zombie, moveAnim)
+    Internal.applyEngineWalkType(zombie, moveAnim, options)
 
     if options.walkType ~= nil then
         zombie:setVariable("WalkType", tostring(options.walkType))

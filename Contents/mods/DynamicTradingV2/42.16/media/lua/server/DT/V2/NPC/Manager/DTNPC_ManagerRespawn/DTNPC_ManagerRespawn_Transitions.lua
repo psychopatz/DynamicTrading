@@ -166,6 +166,7 @@ local function clearDepartureRuntime(npcData, keepStatusData)
     npcData.departureLastDirY = nil
     npcData.departureStartedAt = nil
     npcData.departureForceDespawnAt = nil
+    npcData.departureMode = nil
     npcData.departureTimeoutVisibleLogged = nil
     npcData.departureRecruitModeLogged = nil
     npcData.departureRecruitObserverLostLogged = nil
@@ -614,6 +615,24 @@ function DTNPCManager.TryStartLiveDeparture(uuid, requestedReturnStatus, travelH
     local npcData = (DTNPCManager.Data and DTNPCManager.Data[uuid]) or DynamicTrading_Roster.GetSoul(uuid)
     if not npcData then return false end
 
+    return DTNPCManager.StartLiveDepartureFromBody(
+        uuid,
+        zombie,
+        npcData,
+        requestedReturnStatus,
+        travelHours,
+        targetX,
+        targetY,
+        targetZ,
+        nil
+    )
+end
+
+function DTNPCManager.StartLiveDepartureFromBody(uuid, zombie, npcData, requestedReturnStatus, travelHours, targetX, targetY, targetZ, departureMode)
+    if not uuid or not zombie or not npcData then
+        return false
+    end
+
     local currentHours = getGameTime():getWorldAgeHours()
     local awayReturnTime = currentHours + (travelHours or 0)
     local nextStatus = requestedReturnStatus or "Resting"
@@ -628,6 +647,7 @@ function DTNPCManager.TryStartLiveDeparture(uuid, requestedReturnStatus, travelH
     npcData.departureTargetX = targetX
     npcData.departureTargetY = targetY
     npcData.departureTargetZ = targetZ or 0
+    npcData.departureMode = departureMode
     npcData.departureBlockedTicks = 0
     npcData.departureStuckLastX = nil
     npcData.departureStuckLastY = nil
@@ -680,7 +700,6 @@ function DTNPCManager.TryStartLiveDeparture(uuid, requestedReturnStatus, travelH
     )
     return true
 end
-
 function DTNPCManager.ProcessAwayTransitions()
     if not DynamicTrading_Roster then return end
 

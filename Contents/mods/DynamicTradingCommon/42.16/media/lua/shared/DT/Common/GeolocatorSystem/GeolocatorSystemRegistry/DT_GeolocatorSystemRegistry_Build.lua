@@ -136,12 +136,34 @@ local function containsActivatedMod(modID)
     return false
 end
 
+local function eachCollectionValue(values, callback)
+    if not values or type(callback) ~= "function" then
+        return
+    end
+
+    if type(values) == "table" then
+        for _, value in ipairs(values) do
+            callback(value)
+        end
+        return
+    end
+
+    if values.size and values.get then
+        local size = tonumber(values:size()) or 0
+        for i = 0, size - 1 do
+            callback(values:get(i))
+        end
+    end
+end
+
 local function hasActivatedWorldMap(definition, worldMaps)
-    if #worldMaps == 0 then
+    if not worldMaps or #worldMaps == 0 then
         return false
     end
 
     local normalize = DT_GeolocatorSystem.NormalizeGeolocatorRegistryKey or normalizeKey
+    local activation = definition and definition.activation or {}
+    local modIDs = activation.modIDs or {}
     local activeMaps = buildWorldMapSet()
     for _, worldMap in ipairs(worldMaps) do
         if activeMaps[normalize(worldMap)] then
@@ -149,16 +171,20 @@ local function hasActivatedWorldMap(definition, worldMaps)
         end
     end
 
-    if #definition.activation.modIDs == 0 or not getMapFoldersForMod then
+    if #modIDs == 0 or not getMapFoldersForMod then
         return false
     end
 
-    for _, modID in ipairs(definition.activation.modIDs) do
+    for _, modID in ipairs(modIDs) do
         local folders = getMapFoldersForMod(modID) or {}
-        for _, folder in ipairs(folders) do
+        local matched = false
+        eachCollectionValue(folders, function(folder)
             if activeMaps[normalize(folder)] then
-                return true
+                matched = true
             end
+        end)
+        if matched then
+            return true
         end
     end
 

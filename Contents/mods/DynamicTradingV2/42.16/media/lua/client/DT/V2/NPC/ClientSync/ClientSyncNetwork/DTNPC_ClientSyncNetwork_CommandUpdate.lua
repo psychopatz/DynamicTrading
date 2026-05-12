@@ -58,8 +58,11 @@ local function applyRemoteLocomotion(zombie, args)
     zombie:setRunning(isRunning and moving)
     zombie:setVariable("WalkType", walkType)
 
-    if zombie.setWalkType and (moveAnim == "Walk" or moveAnim == "Run") then
-        pcall(zombie.setWalkType, zombie, moveAnim)
+    if zombie.setWalkType and not isCrawling then
+        local engineWalkType = (dtWalkType ~= "" and dtWalkType) or moveAnim
+        if engineWalkType ~= "" then
+            pcall(zombie.setWalkType, zombie, engineWalkType)
+        end
     end
     if zombie.setSpeedMod then
         pcall(zombie.setSpeedMod, zombie, 1)
@@ -151,6 +154,9 @@ function Handlers.HandleUpdatePosition(args)
         if args.healthState ~= nil then
             cached.npcData.healthState = args.healthState
         end
+        if args.locomotionProfileKey ~= nil then
+            cached.npcData._dtLocomotionProfileKey = args.locomotionProfileKey
+        end
         if args.isMoving ~= nil then
             cached.npcData.isMovingState = args.isMoving == true
         end
@@ -216,6 +222,9 @@ function Handlers.HandleUpdatePosition(args)
                 end
                 if args.healthState ~= nil then
                     zombieData.healthState = args.healthState
+                end
+                if args.locomotionProfileKey ~= nil then
+                    zombieData._dtLocomotionProfileKey = args.locomotionProfileKey
                 end
                 if args.health then
                     zombieData.health = args.health

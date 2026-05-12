@@ -24,7 +24,7 @@ function internal.completeDeparture(zombie, npcData, reason)
         returnTime = getGameTime():getWorldAgeHours() + travelHours
     end
 
-    internal.stopDepartureAnimation(zombie)
+    internal.stopDepartureAnimation(zombie, npcData)
 
     if not isClient() and DTNPCManager and DTNPCManager.CompleteLiveDeparture then
         return DTNPCManager.CompleteLiveDeparture(uuid, npcData, zombie, reason)

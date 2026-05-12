@@ -13,7 +13,17 @@ DTNPCServerCoreControl.Internal = DTNPCServerCoreControl.Internal or {}
 if isClient() and not isServer() then return end
 
 local Handlers = DTNPCServerCoreCommands.Handlers
-local ControlInternal = DTNPCServerCoreControl.Internal
+
+local function formatReviveItemLabel(fullType)
+    local raw = tostring(fullType or "")
+    local label = raw:match("^[^%.]+%.(.+)$") or raw
+    label = label:gsub("(%l)(%u)", "%1 %2")
+    label = label:gsub("Sheets", "Sheets")
+    if label == "" then
+        return "bandages or rags"
+    end
+    return label
+end
 
 local function sendReviveResult(playerObj, payload)
     if not playerObj or not DynamicTrading or not DynamicTrading.ServerHelpers or not DynamicTrading.ServerHelpers.SendResponse then
@@ -73,6 +83,60 @@ local function awardReviveReputation(playerObj, npcData)
     return false
 end
 
+local function getNearestActivePlayer(zombie)
+    if not zombie or not DTNPCManager or not DTNPCManager.GetActivePlayers then
+        return nil
+    end
+
+    local bestPlayer = nil
+    local bestDist = nil
+    local zx = zombie:getX()
+    local zy = zombie:getY()
+    local zz = zombie:getZ()
+
+    for _, playerObj in ipairs(DTNPCManager.GetActivePlayers()) do
+        if playerObj and math.abs((playerObj:getZ() or 0) - zz) <= 1 then
+            local dx = zx - playerObj:getX()
+            local dy = zy - playerObj:getY()
+            local dist = math.sqrt((dx * dx) + (dy * dy))
+            if not bestDist or dist < bestDist then
+                bestDist = dist
+                bestPlayer = playerObj
+            end
+        end
+    end
+
+    return bestPlayer, bestDist
+end
+
+local function computeReviveEscapeTarget(zombie, npcData)
+    if not zombie then
+        return nil, nil, nil
+    end
+
+    local targetDist = tonumber(DTNPCHealth and DTNPCHealth.REVIVE_ESCAPE_TARGET_DIST) or 20
+    local nearestPlayer = getNearestActivePlayer(zombie)
+    local dirX = tonumber(npcData and npcData.lastFleeX) or 0
+    local dirY = tonumber(npcData and npcData.lastFleeY) or 0
+
+    if nearestPlayer then
+        dirX = zombie:getX() - nearestPlayer:getX()
+        dirY = zombie:getY() - nearestPlayer:getY()
+    end
+
+    local len = math.sqrt((dirX * dirX) + (dirY * dirY))
+    if len <= 0.001 then
+        dirX = 1
+        dirY = 0
+        len = 1
+    end
+
+    dirX = dirX / len
+    dirY = dirY / len
+
+    return zombie:getX() + (dirX * targetDist), zombie:getY() + (dirY * targetDist), zombie:getZ()
+end
+
 local function startReviveDeparture(uuid, zombie, npcData)
     local nextStatus = "Resting"
     local walkHours = SandboxVars
@@ -81,16 +145,36 @@ local function startReviveDeparture(uuid, zombie, npcData)
         or 1.0
     local home = npcData and npcData.homeCoords or nil
 
-    if home and DTNPCManager and DTNPCManager.TryStartLiveDeparture
-        and DTNPCManager.TryStartLiveDeparture(uuid, nextStatus, walkHours, home.x, home.y, home.z or 0) then
+    if home and home.x ~= nil and home.y ~= nil
+        and DTNPCManager and DTNPCManager.StartLiveDepartureFromBody
+        and DTNPCManager.StartLiveDepartureFromBody(
+            uuid,
+            zombie,
+            npcData,
+            nextStatus,
+            walkHours,
+            home.x,
+            home.y,
+            home.z or 0,
+            "revive_home"
+        ) then
         return true, "live_departure"
     end
 
-    local currentHours = getGameTime() and getGameTime():getWorldAgeHours() or 0
-    local returnTime = currentHours + walkHours
-    if ControlInternal and ControlInternal.RemoveLiveNPCToStatus then
-        ControlInternal.RemoveLiveNPCToStatus(uuid, zombie, npcData, "Away", returnTime, nextStatus)
-        return true, "safe_remove"
+    local targetX, targetY, targetZ = computeReviveEscapeTarget(zombie, npcData)
+    if targetX and DTNPCManager and DTNPCManager.StartLiveDepartureFromBody
+        and DTNPCManager.StartLiveDepartureFromBody(
+            uuid,
+            zombie,
+            npcData,
+            nextStatus,
+            walkHours,
+            targetX,
+            targetY,
+            targetZ or 0,
+            "revive_escape"
+        ) then
+        return true, "escape_departure"
     end
 
     return false, "departure_failed"
@@ -98,6 +182,7 @@ end
 
 Handlers.ReviveRequest = function(playerObj, args)
     local uuid = args and args.uuid or nil
+    local requiredFullType = args and args.requiredFullType ~= nil and tostring(args.requiredFullType) or nil
     if not playerObj or not uuid then
         return
     end
@@ -130,13 +215,16 @@ Handlers.ReviveRequest = function(playerObj, args)
     local canRevive = false
     local info = nil
     if DTNPCHealth and DTNPCHealth.CanPlayerRevive then
-        canRevive, info = DTNPCHealth.CanPlayerRevive(playerObj, npcData)
+        canRevive, info = DTNPCHealth.CanPlayerRevive(playerObj, npcData, {
+            requiredFullType = requiredFullType,
+        })
     end
     if not canRevive then
         local reason = info and info.reason or "revive_rejected"
         local message = "You can't help them right now."
         if reason == "need_supplies" then
-            message = "You need " .. tostring(info.requiredCount or "?") .. " bandages or rags to revive them."
+            local itemLabel = formatReviveItemLabel(requiredFullType)
+            message = "You need " .. tostring(info.requiredCount or "?") .. " " .. tostring(itemLabel) .. " to revive them."
         elseif reason == "excluded_target" then
             message = "They won't accept your help."
         elseif reason == "not_incapacitated" then
@@ -149,12 +237,14 @@ Handlers.ReviveRequest = function(playerObj, args)
             reason = reason,
             requiredCount = info and info.requiredCount or nil,
             availableCount = info and info.availableCount or nil,
+            requiredFullType = requiredFullType,
         })
         return
     end
 
     local revived, result = DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, {
         deferSync = true,
+        requiredFullType = requiredFullType,
     })
     if not revived then
         sendReviveResult(playerObj, {
@@ -164,6 +254,7 @@ Handlers.ReviveRequest = function(playerObj, args)
             reason = result and result.reason or "revive_failed",
             requiredCount = result and result.requiredCount or nil,
             availableCount = result and result.availableCount or nil,
+            requiredFullType = requiredFullType,
         })
         return
     end
@@ -183,5 +274,6 @@ Handlers.ReviveRequest = function(playerObj, args)
         consumedCount = result and result.consumedCount or nil,
         reputationAwarded = tonumber(DTNPCHealth and DTNPCHealth.REVIVE_REPUTATION_REWARD) or 5,
         departureMode = departureMode,
+        requiredFullType = requiredFullType,
     })
 end

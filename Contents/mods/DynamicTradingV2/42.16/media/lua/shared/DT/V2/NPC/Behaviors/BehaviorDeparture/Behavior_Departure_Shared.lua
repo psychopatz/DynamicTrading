@@ -16,6 +16,19 @@ internal.STUCK_TICKS = 15
 internal.STUCK_ABORT_TICKS = 60
 internal.RECOVERY_STEP_DIST = 5
 
+function internal.isWeakenedDeparture(npcData)
+    return tostring(npcData and npcData.healthState or "") == "Weakened"
+        and tostring(npcData and npcData.state or "") == "Departure"
+end
+
+function internal.getDepartureLocomotionProfileKey(npcData)
+    if internal.isWeakenedDeparture(npcData) then
+        return DTNPCHealth and DTNPCHealth.WEAKENED_CROUCH_PROFILE_KEY or "weakened_crouch"
+    end
+
+    return "default"
+end
+
 function internal.isColonyRecruitmentDeparture(npcData)
     if not npcData then
         return false
@@ -79,7 +92,15 @@ function internal.forceRunAnimation(zombie)
     zombie:setRunning(true)
 end
 
-function internal.stopDepartureAnimation(zombie)
+function internal.stopDepartureAnimation(zombie, npcData)
+    if zombie and internal.isWeakenedDeparture(npcData) and DTNPCMobility and DTNPCMobility.SetLocomotionState then
+        DTNPCMobility.SetLocomotionState(zombie, {
+            profileKey = internal.getDepartureLocomotionProfileKey(npcData),
+            moving = false,
+        })
+        return
+    end
+
     zombie:setVariable("bMoving", false)
     zombie:setVariable("isMoving", false)
     zombie:setVariable("Speed", 0.0)
@@ -102,6 +123,7 @@ function internal.clearDepartureRuntime(npcData)
     npcData.departureLastDirY = nil
     npcData.departureStartedAt = nil
     npcData.departureForceDespawnAt = nil
+    npcData.departureMode = nil
     npcData.departureTimeoutVisibleLogged = nil
     npcData.departureRecruitModeLogged = nil
     npcData.departureRecruitObserverLostLogged = nil

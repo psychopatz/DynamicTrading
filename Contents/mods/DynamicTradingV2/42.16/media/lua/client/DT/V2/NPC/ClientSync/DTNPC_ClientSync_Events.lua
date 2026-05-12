@@ -316,6 +316,68 @@ function DTNPCClient.OnZombieRemoved(zombie)
     end
 end
 
+local function getForcedProfileKey(npcData)
+    local profileKey = npcData and npcData._dtLocomotionProfileKey or nil
+    if profileKey and profileKey ~= "" then
+        return tostring(profileKey)
+    end
+
+    if npcData and tostring(npcData.state or "") == "Incapacitated" then
+        return DTNPCHealth and DTNPCHealth.INCAP_CRAWL_PROFILE_KEY or "incap_crawl"
+    end
+
+    if npcData
+        and tostring(npcData.state or "") == "Departure"
+        and tostring(npcData.healthState or "") == "Weakened" then
+        return DTNPCHealth and DTNPCHealth.WEAKENED_CROUCH_PROFILE_KEY or "weakened_crouch"
+    end
+
+    return nil
+end
+
+local function enforceRemoteLocomotionProfile(zombie, npcData)
+    if not zombie or type(npcData) ~= "table" or not DTNPCMobility or not DTNPCMobility.GetLocomotionProfile then
+        return
+    end
+
+    local profileKey = getForcedProfileKey(npcData)
+    if not profileKey then
+        return
+    end
+
+    local profile = DTNPCMobility.GetLocomotionProfile(profileKey)
+    if type(profile) ~= "table" then
+        return
+    end
+
+    local moving = npcData.isMovingState == true
+    local dtWalkType = tostring(profile.dtWalkType or "")
+
+    zombie:setVariable("DTNPC", true)
+    zombie:setVariable("bMoving", moving)
+    zombie:setVariable("isMoving", moving)
+    zombie:setVariable("DTWalkType", dtWalkType)
+    zombie:setVariable("WalkType", profile.walkType ~= nil and tostring(profile.walkType) or "")
+
+    if profile.crawl == true then
+        zombie:setVariable("bBecomeCrawler", false)
+        zombie:setVariable("bCrawling", false)
+        zombie:setVariable("FallOnFront", false)
+        zombie:setVariable("DTNPCMoveAnim", moving and "Crawl" or "")
+        return
+    end
+
+    if moving then
+        zombie:setVariable("DTNPCMoveAnim", dtWalkType ~= "" and dtWalkType or "Walk")
+    elseif dtWalkType == "SneakWalk" then
+        zombie:setVariable("DTNPCMoveAnim", "")
+    end
+
+    if dtWalkType ~= "" and zombie.setWalkType then
+        pcall(zombie.setWalkType, zombie, dtWalkType)
+    end
+end
+
 function DTNPCClient.OnZombieUpdate(zombie)
     if not zombie or zombie:isDead() then
         DTNPCClient.OnZombieRemoved(zombie)
@@ -333,6 +395,7 @@ function DTNPCClient.OnZombieUpdate(zombie)
     if isDTNPCBody and DTNPCHostility and DTNPCHostility.UpsertClientTarget then
         local npcData = modData and (modData.DTNPC_Data or modData.DTNPCBrain) or nil
         DTNPCHostility.UpsertClientTarget(zombie, npcData)
+        enforceRemoteLocomotionProfile(zombie, npcData)
     end
 
     -- Proactive NPC interactions (Doors/Windows)

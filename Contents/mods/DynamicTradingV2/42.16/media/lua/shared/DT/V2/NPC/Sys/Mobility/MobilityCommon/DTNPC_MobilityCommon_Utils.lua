@@ -242,6 +242,9 @@ function Internal.rememberMotion(npcData, fromX, fromY, toX, toY, options)
             or math.max(40, math.floor((math.max(0.001, tonumber(options.speed) or 0.04) / 0.04) * 70)),
         crawl = options.crawl == true,
         running = options.isRunning == true,
+        dtWalkType = options.dtWalkType ~= nil and tostring(options.dtWalkType) or nil,
+        walkType = options.walkType ~= nil and tostring(options.walkType) or nil,
+        profileKey = options.profileKey ~= nil and tostring(options.profileKey) or nil,
     }
 end
 

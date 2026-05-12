@@ -55,6 +55,7 @@ function Mobility.MoveByDirection(zombie, npcData, options)
             desiredRun = options.desiredRun == true,
             anim = options.anim,
             mode = options.staminaMode,
+            profileKey = options.profileKey,
         })
         or nil
     local anim = Internal.buildAnimOverride(options.anim, movementProfile)

@@ -20,9 +20,6 @@ function Stamina.ProcessPassive(zombie, npcData, state)
     if type(npcData) ~= "table" then
         return false
     end
-    if tostring(state or npcData.state or "") == "Incapacitated" then
-        return false
-    end
 
     Stamina.EnsureDefaults(npcData)
 
@@ -40,6 +37,7 @@ function Stamina.ProcessPassive(zombie, npcData, state)
     local normalized = getSkillNormalized(npcData)
     local ratioBefore = Stamina.GetRatio(npcData)
     local recoverRate = 10.5 -- Increased to compensate for zombie hostility
+    local stateName = tostring(state or npcData.state or "")
 
     local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
     local multiplier = tonumber(sandbox and sandbox.NPCStaminaRegenMultiplier) or 1.0
@@ -47,10 +45,14 @@ function Stamina.ProcessPassive(zombie, npcData, state)
 
     if npcData.isMovingState == true then
         recoverRate = recoverRate * 0.25 -- Roughly 1.1 / 4.3
-    elseif tostring(state or "") == "Attack" or tostring(state or "") == "AttackRange" then
+    elseif stateName == "Attack" or stateName == "AttackRange" then
         recoverRate = recoverRate * 0.46 -- Roughly 2.0 / 4.3
-    elseif tostring(state or "") == "ProtectMelee" or tostring(state or "") == "ProtectRanged" then
+    elseif stateName == "ProtectMelee" or stateName == "ProtectRanged" then
         recoverRate = recoverRate * 0.51 -- Roughly 2.2 / 4.3
+    end
+    if stateName == "Incapacitated" then
+        local profile = Stamina.GetMovementStateProfile and Stamina.GetMovementStateProfile("incap_crawl") or nil
+        recoverRate = recoverRate * (tonumber(profile and profile.passiveRecoverMultiplier) or 0.32)
     end
 
     if Stamina.IsMeleeFatigued(npcData) then
@@ -60,9 +62,14 @@ function Stamina.ProcessPassive(zombie, npcData, state)
     adjustCurrent(npcData, recoverRate * (1 + (normalized * 0.18)) * elapsed)
 
     local ratioAfter = Stamina.GetRatio(npcData)
-    local resumeThreshold = tonumber(Internal.MoveExhaustResumeRatio) or 0.40
+    local activeProfileKey = npcData._dtMoveExhaustedProfileKey or npcData._dtLastMoveProfileKey
+    if stateName == "Incapacitated" then
+        activeProfileKey = "incap_crawl"
+    end
+    local _, _, resumeThreshold = Internal.resolveMovementThresholds(activeProfileKey)
     if npcData._dtMoveExhaustedActive == true and ratioAfter >= resumeThreshold then
         npcData._dtMoveExhaustedActive = false
+        npcData._dtMoveExhaustedProfileKey = nil
     end
     if ratioAfter > ratioBefore and ratioAfter < 0.995 then
         markVisible(npcData, 2600)
@@ -73,10 +80,11 @@ function Stamina.ProcessPassive(zombie, npcData, state)
         npcData._dtSprintSlowUntil = 0
     end
 
-    if slowUntil > currentTime or ratioAfter <= 0.18 then
+    local lowThreshold = stateName == "Incapacitated" and 0.60 or 0.18
+    if slowUntil > currentTime or ratioAfter <= lowThreshold then
         setStaminaState(npcData, "recovering")
         npcData._dtSprintMode = "recovering"
-    elseif ratioAfter <= 0.4 then
+    elseif ratioAfter <= (stateName == "Incapacitated" and 0.75 or 0.4) then
         setStaminaState(npcData, "winded")
         npcData._dtSprintMode = "winded"
     elseif ratioAfter <= 0.68 then

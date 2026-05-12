@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode x_extends="DTNPCWalkBase.xml">
+    <m_Name>DTNPCSneakWalk</m_Name>
+    <m_AnimName>Bob_WalkSneak</m_AnimName>
+    <m_Priority>1</m_Priority>
+    <m_Conditions>
+        <m_Name>DTNPC</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>true</m_Value>
+    </m_Conditions>
+    <m_Conditions>
+        <m_Name>bMoving</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>true</m_Value>
+    </m_Conditions>
+    <m_Conditions>
+        <m_Name>DTNPCMoveAnim</m_Name>
+        <m_Type>STRING</m_Type>
+        <m_StringValue>SneakWalk</m_StringValue>
+    </m_Conditions>
+    <m_Events>
+        <m_EventName>Footstep</m_EventName>
+        <m_TimePc>0.15</m_TimePc>
+        <m_ParameterValue>walk</m_ParameterValue>
+    </m_Events>
+    <m_Events>
+        <m_EventName>Footstep</m_EventName>
+        <m_TimePc>0.60</m_TimePc>
+        <m_ParameterValue>walk</m_ParameterValue>
+    </m_Events>
+</animNode>

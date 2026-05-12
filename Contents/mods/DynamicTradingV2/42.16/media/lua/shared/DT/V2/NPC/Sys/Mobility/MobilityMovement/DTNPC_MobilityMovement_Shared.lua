@@ -13,10 +13,12 @@ Mobility.Internal = Internal
 function Internal.applyMovementState(zombie, anim)
     Mobility.SetLocomotionState(zombie, {
         moving = true,
+        profileKey = anim and anim.profileKey or nil,
         isRunning = anim and anim.isRunning == true,
         animSpeed = anim and anim.animSpeed or nil,
         walkType = anim and anim.walkType or nil,
         dtWalkType = anim and anim.dtWalkType or nil,
+        engineWalkType = anim and anim.engineWalkType or nil,
         idleState = anim and anim.idleState or nil,
         crawl = anim and anim.crawl == true or false,
     })
@@ -34,9 +36,13 @@ function Internal.buildAnimOverride(anim, profile)
         end
     end
     if type(profile) == "table" then
+        merged.profileKey = profile.profileKey or merged.profileKey
         merged.isRunning = profile.isRunning == true
         merged.animSpeed = tonumber(profile.animSpeed) or merged.animSpeed
         merged.dtWalkType = profile.dtWalkType or merged.dtWalkType
+        merged.engineWalkType = profile.engineWalkType or merged.engineWalkType
+        merged.walkType = profile.walkType ~= nil and profile.walkType or merged.walkType
+        merged.crawl = profile.crawl == true or merged.crawl == true
     end
 
     return merged

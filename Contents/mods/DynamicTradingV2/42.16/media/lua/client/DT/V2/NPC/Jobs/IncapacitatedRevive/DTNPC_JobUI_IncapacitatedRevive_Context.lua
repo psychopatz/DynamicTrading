@@ -45,13 +45,56 @@ function ReviveUI.CountSupplies(playerObj)
     return 0
 end
 
-function ReviveUI.RememberPending(ui, npc, playerObj, npcData)
+function ReviveUI.GetSupplyEntries(playerObj)
+    if DTNPCHealth and DTNPCHealth.GetReviveItemEntries then
+        return DTNPCHealth.GetReviveItemEntries(playerObj)
+    end
+    return {}
+end
+
+function ReviveUI.CountSupplyType(playerObj, fullType)
+    if DTNPCHealth and DTNPCHealth.CountReviveItems then
+        return tonumber(DTNPCHealth.CountReviveItems(playerObj, fullType)) or 0
+    end
+    return 0
+end
+
+function ReviveUI.RememberPending(ui, npc, playerObj, npcData, fullType)
     ReviveUI.pendingRequest = {
         ui = ui,
         npc = npc,
         player = playerObj,
         uuid = npcData and npcData.uuid or nil,
+        requiredFullType = fullType,
     }
+end
+
+function ReviveUI.GetEntryDisplayName(entry)
+    if type(entry) ~= "table" then
+        return "Medical Supply"
+    end
+    return tostring(entry.displayName or entry.fullType or "Medical Supply")
+end
+
+function ReviveUI.GetEntryTexture(entry)
+    local sampleItem = type(entry) == "table" and entry.sampleItem or nil
+    if sampleItem and sampleItem.getTex then
+        return sampleItem:getTex()
+    end
+    return nil
+end
+
+function ReviveUI.CanUseEntry(entry, requiredCount)
+    local available = tonumber(entry and entry.count) or 0
+    local needed = math.max(1, math.floor(tonumber(requiredCount) or 1))
+    return available >= needed
+end
+
+function ReviveUI.FormatEntryLabel(entry, requiredCount)
+    local displayName = ReviveUI.GetEntryDisplayName(entry)
+    local available = tonumber(entry and entry.count) or 0
+    local needed = math.max(1, math.floor(tonumber(requiredCount) or 1))
+    return tostring(displayName) .. " (" .. tostring(available) .. "/" .. tostring(needed) .. ")"
 end
 
 function ReviveUI.FormatSupplyText(requiredCount, availableCount)

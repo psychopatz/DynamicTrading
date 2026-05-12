@@ -46,4 +46,11 @@ DTNPCJobUI.Register({
         ReviveUI.ShowReviveConversation(ui, npc, playerObj, npcData)
         return true
     end,
+    addContextMenuOptions = function(context, ui, npc, playerObj, npcData)
+        if not context or not npc or not playerObj or not ReviveUI.AddContextMenuOptions then
+            return false
+        end
+
+        return ReviveUI.AddContextMenuOptions(context, ui, npc, playerObj, npcData) == true
+    end,
 })

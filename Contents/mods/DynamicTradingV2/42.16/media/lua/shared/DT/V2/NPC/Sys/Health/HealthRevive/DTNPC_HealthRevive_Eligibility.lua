@@ -105,7 +105,8 @@ function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
         requiredCount = nil
     end
 
-    local availableCount = playerObj and DTNPCHealth.CountReviveItems and DTNPCHealth.CountReviveItems(playerObj) or 0
+    local requiredFullType = options.requiredFullType ~= nil and tostring(options.requiredFullType) or nil
+    local availableCount = playerObj and DTNPCHealth.CountReviveItems and DTNPCHealth.CountReviveItems(playerObj, requiredFullType) or 0
     local ignoreItems = options.ignoreItems == true
 
     if playerObj and not ignoreItems and requiredCount and availableCount < requiredCount then
@@ -114,6 +115,7 @@ function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
             healthState = healthState,
             requiredCount = requiredCount,
             availableCount = availableCount,
+            requiredFullType = requiredFullType,
         }
     end
 
@@ -122,5 +124,6 @@ function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
         healthState = healthState,
         requiredCount = requiredCount,
         availableCount = availableCount,
+        requiredFullType = requiredFullType,
     }
 end

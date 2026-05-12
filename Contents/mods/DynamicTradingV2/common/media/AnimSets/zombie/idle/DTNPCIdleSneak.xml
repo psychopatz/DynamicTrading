@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animNode>
+    <m_Name>DTNPCIdleSneak</m_Name>
+    <m_AnimName>Bob_IdleSneak</m_AnimName>
+    <m_BlendTime>0.20</m_BlendTime>
+    <m_randomAdvanceFraction>0.20</m_randomAdvanceFraction>
+    <m_Conditions>
+        <m_Name>DTNPC</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>true</m_Value>
+    </m_Conditions>
+    <m_Conditions>
+        <m_Name>bMoving</m_Name>
+        <m_Type>BOOL</m_Type>
+        <m_Value>false</m_Value>
+    </m_Conditions>
+    <m_Conditions>
+        <m_Name>DTWalkType</m_Name>
+        <m_Type>STRING</m_Type>
+        <m_StringValue>SneakWalk</m_StringValue>
+    </m_Conditions>
+    <m_Conditions>
+        <m_Name>DTIdleState</m_Name>
+        <m_Type>STRING</m_Type>
+        <m_Value>0</m_Value>
+    </m_Conditions>
+</animNode>
