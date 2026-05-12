@@ -23,6 +23,7 @@ if IS_SERVER_RUNTIME then
     require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem"
     require "DT/Common/Faction/Templates/BaseSpawn/DT_FactionLocationManager"
     require "DT/Common/Faction/Templates/FactionNames/DT_FactionNames"
+    require "DT/Common/Faction/TradingSys/Factions/DT_FactionRespawnState"
 end
 
 local function buildTownFactionID(townName)
@@ -185,6 +186,34 @@ local function buildExistingTownCounts(data)
     return counts
 end
 
+local function buildExistingCountyCounts(data)
+    local counts = {}
+
+    for id, faction in pairs(data or {}) do
+        if id ~= "Independent"
+            and type(faction) == "table"
+            and faction.excludeFromPopulationPool ~= true
+            and faction.excludeFromFactionCap ~= true
+            and faction.isSystemFaction ~= true
+            and faction.systemFaction ~= true then
+            local homeCoords = type(faction.homeCoords) == "table" and faction.homeCoords or nil
+            local countyName = (homeCoords and homeCoords.county) or nil
+            if (not countyName or countyName == "")
+                and homeCoords
+                and DT_GeolocatorSystem
+                and DT_GeolocatorSystem.GetCountyName then
+                countyName = DT_GeolocatorSystem.GetCountyName(homeCoords.x, homeCoords.y)
+            end
+            local key = normalizeTownKey(countyName)
+            if key then
+                counts[key] = (counts[key] or 0) + 1
+            end
+        end
+    end
+
+    return counts
+end
+
 local function collectPriorityTownKeys()
     local keys = {}
     if not DT_GeolocatorSystem or not DT_GeolocatorSystem.GetLocation then
@@ -204,6 +233,11 @@ local function collectPriorityTownKeys()
     return keys
 end
 
+local function getStartupFactionsPerTown()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    return math.max(0, tonumber(sandbox and sandbox.MaxFactionsPerTown) or 2)
+end
+
 local function scheduleMissingTownPopulation(data)
     for index = #deferredTownQueue, 1, -1 do
         deferredTownQueue[index] = nil
@@ -215,7 +249,7 @@ local function scheduleMissingTownPopulation(data)
 
     local existingCounts = buildExistingTownCounts(data)
     local priorityTownKeys = collectPriorityTownKeys()
-    local maxFactions = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.MaxFactionsPerTown) or 2
+    local startupFactionsPerTown = getStartupFactionsPerTown()
     local memberCount = (SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.FactionStartPop) or 3
     local priorityCount = 0
 
@@ -224,7 +258,7 @@ local function scheduleMissingTownPopulation(data)
         local factionSeed = (type(townData) == "table" and townData.id) or townID
         local townKey = normalizeTownKey(spawnTown) or normalizeTownKey(townID)
         local existing = townKey and (existingCounts[townKey] or 0) or 0
-        local missing = math.max(0, maxFactions - existing)
+        local missing = math.max(0, startupFactionsPerTown - existing)
         local priority = townKey and priorityTownKeys[townKey] or false
 
         for _ = 1, missing do
@@ -380,26 +414,37 @@ processDeferredTownQueue = function(reason, maxEntries, randomize)
 
     local limit = math.max(1, tonumber(maxEntries) or 1)
     local processed = 0
+    local scanned = 0
+    local initialQueueSize = #deferredTownQueue
 
-    while processed < limit and #deferredTownQueue > 0 do
+    while processed < limit and #deferredTownQueue > 0 and scanned < initialQueueSize do
         local index = randomize and (ZombRand(#deferredTownQueue) + 1) or 1
         local entry = table.remove(deferredTownQueue, index)
         if entry then
-            DynamicTrading.Log(
-                "DTCommons",
-                "Faction",
-                "Queue",
-                "Processing deferred town entry town=" .. tostring(entry.spawnTown)
-                    .. " priority=" .. tostring(entry.priority)
-                    .. " source=" .. tostring(entry.queueSource or "unknown")
-                    .. " reason=" .. tostring(reason or "deferred")
-            )
-            local factionID = tostring(entry.factionSeed) .. "_" .. tostring(100000 + ZombRand(900000))
-            Lifecycle.CreateFaction(factionID, {
-                town = entry.spawnTown,
-                memberCount = entry.memberCount,
-            })
-            processed = processed + 1
+            scanned = scanned + 1
+            local townBlocked = DT_FactionRespawnState
+                and DT_FactionRespawnState.IsTownOnCooldown
+                and DT_FactionRespawnState.IsTownOnCooldown(entry.spawnTown)
+
+            if townBlocked then
+                deferredTownQueue[#deferredTownQueue + 1] = entry
+            else
+                DynamicTrading.Log(
+                    "DTCommons",
+                    "Faction",
+                    "Queue",
+                    "Processing deferred town entry town=" .. tostring(entry.spawnTown)
+                        .. " priority=" .. tostring(entry.priority)
+                        .. " source=" .. tostring(entry.queueSource or "unknown")
+                        .. " reason=" .. tostring(reason or "deferred")
+                )
+                local factionID = tostring(entry.factionSeed) .. "_" .. tostring(100000 + ZombRand(900000))
+                Lifecycle.CreateFaction(factionID, {
+                    town = entry.spawnTown,
+                    memberCount = entry.memberCount,
+                })
+                processed = processed + 1
+            end
         end
     end
 

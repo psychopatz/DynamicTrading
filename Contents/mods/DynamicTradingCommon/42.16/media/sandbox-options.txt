@@ -317,6 +317,16 @@ option DynamicTrading.MaxFactionsPerTown
     translation = DynamicTrading.MaxFactionsPerTown,
 }
 
+option DynamicTrading.MaxFactionsPerCounty
+{
+    type = integer,
+    default = 6,
+    min = 1,
+    max = 30,
+    page = DynamicTradingSimulation,
+    translation = DynamicTrading.MaxFactionsPerCounty,
+}
+
 option DynamicTrading.FactionRespawnChance
 {
     type = integer,
@@ -325,6 +335,36 @@ option DynamicTrading.FactionRespawnChance
     max = 100,
     page = DynamicTradingSimulation,
     translation = DynamicTrading.FactionRespawnChance,
+}
+
+option DynamicTrading.FactionRespawnDelayDays
+{
+    type = integer,
+    default = 30,
+    min = 0,
+    max = 365,
+    page = DynamicTradingSimulation,
+    translation = DynamicTrading.FactionRespawnDelayDays,
+}
+
+option DynamicTrading.FactionRespawnBaseAvoidDays
+{
+    type = integer,
+    default = 45,
+    min = 0,
+    max = 365,
+    page = DynamicTradingSimulation,
+    translation = DynamicTrading.FactionRespawnBaseAvoidDays,
+}
+
+option DynamicTrading.FactionRespawnBaseReuseChance
+{
+    type = integer,
+    default = 5,
+    min = 0,
+    max = 100,
+    page = DynamicTradingSimulation,
+    translation = DynamicTrading.FactionRespawnBaseReuseChance,
 }
 
 option DynamicTrading.FactionConsumptionMult

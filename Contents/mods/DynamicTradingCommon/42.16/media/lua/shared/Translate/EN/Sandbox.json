@@ -98,11 +98,23 @@
     "Sandbox_DynamicTrading.FactionDeathThreshold": "Faction: Starvation Limit (Days)",
     "Sandbox_DynamicTrading.FactionDeathThreshold_tooltip": "How many days a faction can go without food before members start dying rapidly.",
 
-    "Sandbox_DynamicTrading.MaxFactionsPerTown": "Max Factions Per Town",
-    "Sandbox_DynamicTrading.MaxFactionsPerTown_tooltip": "The maximum number of distinct factions that can exist in a single town at once.",
+    "Sandbox_DynamicTrading.MaxFactionsPerTown": "Startup Factions Per Town",
+    "Sandbox_DynamicTrading.MaxFactionsPerTown_tooltip": "How many factions each town tries to seed during new-game startup and player-driven town discovery.",
+
+    "Sandbox_DynamicTrading.MaxFactionsPerCounty": "County Faction Capacity",
+    "Sandbox_DynamicTrading.MaxFactionsPerCounty_tooltip": "How much room a county has for long-term system-generated replacement factions after wipes and collapse.",
 
     "Sandbox_DynamicTrading.FactionRespawnChance": "Faction Respawn Chance (%)",
     "Sandbox_DynamicTrading.FactionRespawnChance_tooltip": "Daily chance for a new faction to arrive in a town if the number of existing factions is below the limit.",
+
+    "Sandbox_DynamicTrading.FactionRespawnDelayDays": "Faction Respawn Delay (Days)",
+    "Sandbox_DynamicTrading.FactionRespawnDelayDays_tooltip": "Minimum in-game days before a wiped town can receive a replacement faction again.",
+
+    "Sandbox_DynamicTrading.FactionRespawnBaseAvoidDays": "Avoid Previous Base (Days)",
+    "Sandbox_DynamicTrading.FactionRespawnBaseAvoidDays_tooltip": "How long respawned factions should strongly avoid recently abandoned homes in the same town.",
+
+    "Sandbox_DynamicTrading.FactionRespawnBaseReuseChance": "Previous Base Reuse Chance (%)",
+    "Sandbox_DynamicTrading.FactionRespawnBaseReuseChance_tooltip": "Small chance for a respawned faction to reclaim a recently abandoned base instead of taking a fresh one.",
 
     "Sandbox_DynamicTrading.FactionConsumptionMult": "Faction Consumption Multiplier",
     "Sandbox_DynamicTrading.FactionConsumptionMult_tooltip": "Global multiplier applied to faction resource consumption during simulation.",

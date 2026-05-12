@@ -5,6 +5,7 @@
 -- ==============================================================================
 
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem"
+require "DT/Common/Faction/TradingSys/Factions/DT_FactionRespawnState"
 
 DT_FactionLocationManager = {}
 
@@ -34,6 +35,17 @@ local function resolveTownName(targetTown)
     end
 
     return targetTown
+end
+
+local function resolveCountyName(x, y, fallback)
+    local county = DT_GeolocatorSystem
+        and DT_GeolocatorSystem.GetCountyName
+        and DT_GeolocatorSystem.GetCountyName(x, y)
+        or nil
+    if county and county ~= "" and county ~= "Unknown County" then
+        return county
+    end
+    return fallback
 end
 
 local function matchesLocation(candidate, targetTown)
@@ -105,6 +117,12 @@ local function appendUniqueBuildings(target, seen, buildings)
     end
 end
 
+local function appendEntries(target, entries)
+    for _, entry in ipairs(entries or {}) do
+        target[#target + 1] = entry
+    end
+end
+
 local function collectCandidateBuildings(targetTown, resolvedTown, resolvedLocation)
     local candidates = {}
     local seen = {}
@@ -161,6 +179,46 @@ local function collectAvailableBuildings(candidateBuildings, targetTown, resolve
     return available
 end
 
+local function buildSelectionPool(targetTown, available)
+    local fresh = {}
+    local recent = {}
+    local recentAllowed = {}
+    local reuseChance = DT_FactionRespawnState
+        and DT_FactionRespawnState.GetRecentBaseReuseChance
+        and DT_FactionRespawnState.GetRecentBaseReuseChance()
+        or 0
+
+    for _, entry in ipairs(available or {}) do
+        local recentRecord = DT_FactionRespawnState
+            and DT_FactionRespawnState.GetRecentHomeRecord
+            and DT_FactionRespawnState.GetRecentHomeRecord(targetTown or entry.town, entry)
+            or nil
+
+        if recentRecord then
+            entry.recentHomeRecord = recentRecord
+            recent[#recent + 1] = entry
+            if reuseChance > 0 and ZombRand(100) < reuseChance then
+                recentAllowed[#recentAllowed + 1] = entry
+            end
+        else
+            fresh[#fresh + 1] = entry
+        end
+    end
+
+    if #fresh > 0 then
+        local pool = {}
+        appendEntries(pool, fresh)
+        appendEntries(pool, recentAllowed)
+        return pool, #fresh, #recent, #recentAllowed, #recentAllowed > 0 and "fresh_with_recent_reuse" or "fresh_only"
+    end
+
+    if #recent > 0 then
+        return recent, 0, #recent, 0, "recent_fallback"
+    end
+
+    return available or {}, 0, 0, 0, "unfiltered"
+end
+
 function DT_FactionLocationManager.AssignHome(factionID, targetTown)
     if factionID == "Independent" or factionID == "Factionless" then
         return nil
@@ -202,7 +260,8 @@ function DT_FactionLocationManager.AssignHome(factionID, targetTown)
             x = forcedBuilding.cx,
             y = forcedBuilding.cy,
             z = 0,
-            town = resolveTownName(forcedBuilding.town) or forcedBuilding.town
+            town = resolveTownName(forcedBuilding.town) or forcedBuilding.town,
+            county = resolveCountyName(forcedBuilding.cx, forcedBuilding.cy, forcedBuilding.county)
         }
     end
 
@@ -221,15 +280,33 @@ function DT_FactionLocationManager.AssignHome(factionID, targetTown)
         return nil
     end
 
-    local choice = available[ZombRand(#available) + 1]
-    DynamicTrading.Log("DTCommons", "Faction", "Logic", "Faction [" .. factionID .. "] dynamically assigned to: " .. choice.name)
+    local selectionPool, freshCount, recentCount, recentAllowedCount, selectionMode = buildSelectionPool(resolvedTown or targetTown, available)
+    if #selectionPool <= 0 then
+        selectionPool = available
+        selectionMode = "fallback_unfiltered"
+    end
+
+    local choice = selectionPool[ZombRand(#selectionPool) + 1]
+    local reuseTag = choice and choice.recentHomeRecord and " reusedRecentHome=true" or ""
+    DynamicTrading.Log(
+        "DTCommons",
+        "Faction",
+        "Logic",
+        "Faction [" .. factionID .. "] dynamically assigned to: " .. choice.name
+            .. " selectionMode=" .. tostring(selectionMode)
+            .. " freshChoices=" .. tostring(freshCount)
+            .. " recentChoices=" .. tostring(recentCount)
+            .. " recentAllowed=" .. tostring(recentAllowedCount)
+            .. reuseTag
+    )
 
     return {
         name = choice.name,
         x = choice.coords.x,
         y = choice.coords.y,
         z = choice.coords.z,
-        town = choice.town
+        town = choice.town,
+        county = resolveCountyName(choice.coords.x, choice.coords.y, choice.county)
     }
 end
 
@@ -249,7 +326,8 @@ function DT_FactionLocationManager.GetDynamicAvailableBases(targetTown, takenLoc
             table.insert(available, {
                 name = building.name or "Building",
                 coords = { x = building.cx, y = building.cy, z = 0 },
-                town = resolveTownName(building.town) or building.town
+                town = resolveTownName(building.town) or building.town,
+                county = resolveCountyName(building.cx, building.cy, building.county)
             })
         end
     end
@@ -284,10 +362,13 @@ function DT_FactionLocationManager.RegisterDynamicTowns()
     local sourceLocations = (DT_GeolocatorSystem and DT_GeolocatorSystem.ActiveLocations) or {}
     for _, location in ipairs(sourceLocations) do
         if location.id and not DT_FactionLocations[location.id] then
+            local centerX = math.floor(((tonumber(location.startX) or 0) + (tonumber(location.endX) or 0)) / 2)
+            local centerY = math.floor(((tonumber(location.startY) or 0) + (tonumber(location.endY) or 0)) / 2)
             DT_FactionLocations[location.id] = {
                 id = location.id,
                 name = location.shortName or location.id,
                 longName = location.longName,
+                county = resolveCountyName(centerX, centerY, nil),
                 isDynamic = true,
             }
             count = count + 1
