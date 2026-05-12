@@ -8,7 +8,7 @@ require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/Config"
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Events/DT_EventManager"
-require "DT/Common/Logging/DT_GameplayLogs"
+require "DT/Common/Logging/GameplayLogs/DT_GameplayLogs"
 require "DT/Common/Logging/Registry/DT_FactionLogEvents"
 
 local DT_SimulationLogic = {}
