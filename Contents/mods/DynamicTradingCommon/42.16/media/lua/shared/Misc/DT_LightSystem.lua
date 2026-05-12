@@ -47,6 +47,46 @@ function DT_LightSystem.SpawnBurst(x, y, z, r, g, b, radius, durationTicks)
     })
 end
 
+function DT_LightSystem.MuzzleFlash(character, options)
+    if not character or not getCell() then
+        return false
+    end
+
+    options = type(options) == "table" and options or {}
+
+    local x = tonumber(options.x)
+    local y = tonumber(options.y)
+    local z = tonumber(options.z)
+    local squareZ = tonumber(options.squareZ)
+
+    if (not x or not y or not z) and DT_FirearmUtils and DT_FirearmUtils.GetMuzzlePosition then
+        x, y, z = DT_FirearmUtils.GetMuzzlePosition(character)
+    end
+
+    if not x or not y or not z then
+        x = character:getX()
+        y = character:getY()
+        z = character:getZ()
+    end
+
+    if not squareZ then
+        squareZ = character:getZ()
+    end
+
+    DT_LightSystem.SpawnBurst(
+        x,
+        y,
+        squareZ,
+        tonumber(options.r) or 1.0,
+        tonumber(options.g) or 0.46,
+        tonumber(options.b) or 0.14,
+        tonumber(options.radius) or 18,
+        tonumber(options.durationTicks) or 1
+    )
+
+    return true
+end
+
 --- Tick handler for light lifecycle
 local function updateLights()
     local cell = getCell()
@@ -58,7 +98,9 @@ local function updateLights()
             local flashEntry = BurstStorage[i]
             flashEntry.ticksRemaining = flashEntry.ticksRemaining - 1
             if flashEntry.ticksRemaining <= 0 then
-                cell:removeLamppost(flashEntry.light)
+                if flashEntry.light then
+                    cell:removeLamppost(flashEntry.light)
+                end
                 table.remove(BurstStorage, i)
             end
         end

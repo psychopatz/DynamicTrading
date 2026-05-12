@@ -6,6 +6,13 @@
 DT_FirearmUtils = DT_FirearmUtils or {}
 DT_FirearmUtils.MuzzleOffsetCache = DT_FirearmUtils.MuzzleOffsetCache or {}
 
+local SHOTGUN_RELOAD_TYPES = {}
+if WeaponReloadType then
+    SHOTGUN_RELOAD_TYPES[WeaponReloadType.SHOTGUN] = true
+    SHOTGUN_RELOAD_TYPES[WeaponReloadType.DOUBLE_BARREL_SHOTGUN] = true
+    SHOTGUN_RELOAD_TYPES[WeaponReloadType.DOUBLE_BARREL_SHOTGUN_SAWN] = true
+end
+
 --- Calculates the precise world position of a firearm's muzzle tip.
 --- Leverages B42 model attachments if available, with robust fallbacks.
 --- @param character IsoGameCharacter
@@ -73,6 +80,45 @@ function DT_FirearmUtils.GetMuzzlePosition(character)
     local finalZ = z + offsetUp
 
     return finalX, finalY, finalZ
+end
+
+local function radiansToDegrees(radians)
+    return radians * 57.29577951308232
+end
+
+function DT_FirearmUtils.GetShotDirectionDegrees(character)
+    if not character then
+        return 0
+    end
+
+    if character.getDirectionAngle then
+        local direction = tonumber(character:getDirectionAngle())
+        if direction then
+            return direction
+        end
+    end
+
+    if character.getAnimAngleRadians then
+        local radians = tonumber(character:getAnimAngleRadians())
+        if radians then
+            return radiansToDegrees(radians)
+        end
+    end
+
+    return 0
+end
+
+function DT_FirearmUtils.GetProjectileCount(weaponItem)
+    if not weaponItem or not weaponItem.getWeaponReloadType then
+        return 1
+    end
+
+    local reloadType = weaponItem:getWeaponReloadType()
+    if SHOTGUN_RELOAD_TYPES[reloadType] then
+        return 5
+    end
+
+    return 1
 end
 
 return DT_FirearmUtils

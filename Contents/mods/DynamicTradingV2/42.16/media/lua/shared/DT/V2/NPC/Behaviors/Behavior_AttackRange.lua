@@ -48,7 +48,9 @@ local function performRangedShot(zombie, npcData, target, stats, shotSpecs)
     end
 
     if DT_FirearmSystem and DT_FirearmSystem.FireShot then
-        DT_FirearmSystem.FireShot(zombie, target:getX(), target:getY(), target:getZ())
+        DT_FirearmSystem.FireShot(zombie, target:getX(), target:getY(), target:getZ(), {
+            weaponItem = shotSpecs.weaponItem,
+        })
     end
 
     local isMoving = zombie:isMoving()

@@ -9,6 +9,7 @@ DTNPCLogic.BehaviorTrading = DTNPCLogic.BehaviorTrading or {}
 
 local Trading = DTNPCLogic.BehaviorTrading
 require "Misc/DT_LightSystem"
+require "DT/V2/Systems/Firearm/DT_FirearmSystem"
 local DANGER_RETREAT_SPEED = 0.068
 local DANGER_REACTION_DELAY = 18
 
@@ -37,8 +38,10 @@ local function performRangedShot(zombie, npcData, target, stats, shotSpecs, move
         emitter:playSound(shotSpecs.shellSound)
     end
 
-    if DT_LightSystem and DT_LightSystem.MuzzleFlash then
-        DT_LightSystem.MuzzleFlash(zombie)
+    if DT_FirearmSystem and DT_FirearmSystem.FireShot then
+        DT_FirearmSystem.FireShot(zombie, target:getX(), target:getY(), target:getZ(), {
+            weaponItem = shotSpecs.weaponItem,
+        })
     end
 
     local hitChance = moved and stats.hitMove or stats.hitStill
