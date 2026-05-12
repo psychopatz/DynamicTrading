@@ -1,4 +1,4 @@
-require "Utils/DT_ConfigManager"
+require "Utils/ConfigManager/DT_ConfigManager"
 require "DT/Common/UI/ManualUI/DT_ManualUI_Definition"
 
 DynamicTrading = DynamicTrading or {}

@@ -1,6 +1,6 @@
 DT_ManualUI_Utils = DT_ManualUI_Utils or {}
 
-require "Utils/DT_ConfigManager"
+require "Utils/ConfigManager/DT_ConfigManager"
 
 -- Reusable string wrapper for all manual UI text
 function DT_ManualUI_Utils.WrapManualText(text, maxWidth, font)

@@ -4,7 +4,7 @@
 -- Data-agnostic: Register categories via DT_AudioManager.RegisterCategory
 -- =============================================================================
 
-require "Utils/DT_ConfigManager"
+require "Utils/ConfigManager/DT_ConfigManager"
 
 DT_AudioManager = {}
 

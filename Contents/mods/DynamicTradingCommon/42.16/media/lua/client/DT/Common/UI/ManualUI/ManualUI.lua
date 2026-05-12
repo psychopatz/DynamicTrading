@@ -4,7 +4,7 @@ require "ISUI/ISButton"
 require "ISUI/ISLabel"
 require "ISUI/ISTextEntryBox"
 require "Utils/DT_StringUtils"
-require "Utils/DT_ConfigManager"
+require "Utils/ConfigManager/DT_ConfigManager"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manuals = DynamicTrading.Manuals or {}

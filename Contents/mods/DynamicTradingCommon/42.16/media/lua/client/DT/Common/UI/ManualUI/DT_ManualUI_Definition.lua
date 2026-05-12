@@ -1,5 +1,5 @@
 require "ISUI/ISCollapsableWindow"
-require "Utils/DT_ConfigManager"
+require "Utils/ConfigManager/DT_ConfigManager"
 
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.Manuals = DynamicTrading.Manuals or {}

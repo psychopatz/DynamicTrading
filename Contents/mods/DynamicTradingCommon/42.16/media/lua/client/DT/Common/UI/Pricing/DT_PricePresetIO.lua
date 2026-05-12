@@ -2,7 +2,7 @@
 -- DYNAMIC TRADING: PRICE PRESET IMPORT / EXPORT
 -- =============================================================================
 
-require "Utils/DT_ConfigManager"
+require "Utils/ConfigManager/DT_ConfigManager"
 
 DT_PricePresetIO = DT_PricePresetIO or {}
 
