@@ -11,7 +11,7 @@ require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Stock"
 require "DT/Common/Faction/TradingSys/DynamicTrading_Engine"
 require "DT/Common/ServerHelpers/ServerHelpers"
-require "DT/Common/Pricing/DT_PriceConfig"
+require "DT/Common/Pricing/PriceConfig/DT_PriceConfig"
 
 local DataHandlers = {}
 local Handlers = {}

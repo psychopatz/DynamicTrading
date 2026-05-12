@@ -642,7 +642,7 @@ end
 
 -- CORE MODULES
 require "DT/Common/DT_Logger"
-require "DT/Common/Pricing/DT_PriceConfig"
+require "DT/Common/Pricing/PriceConfig/DT_PriceConfig"
 
 if LuaEventManager then
     if not LuaEventManager.OnDynamicTradingDailySimulation then
