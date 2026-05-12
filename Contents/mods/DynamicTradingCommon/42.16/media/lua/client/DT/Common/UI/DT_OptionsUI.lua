@@ -14,7 +14,7 @@ require "ISSliderPanel"
 require "Utils/ConfigManager/DT_ConfigManager"
 require "DT/Common/Utils/DT_AudioManager"
 require "DT/Common/UI/ManualUI/ManualUI"
-require "DT/Common/UI/Pricing/DT_PricingOptionsTab"
+require "DT/Common/UI/Pricing/PricingOptionsTab/DT_PricingOptionsTab"
 
 DT_OptionsUI = ISCollapsableWindow:derive("DT_OptionsUI")
 DT_OptionsUI.instance = nil

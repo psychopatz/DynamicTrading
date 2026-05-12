@@ -157,7 +157,9 @@ function DTNPC_Debug_SoundUI:createChildren()
                     for _, methodName in ipairs({"getName", "getEventName", "getEvent", "name"}) do
                         local success, result = pcall(function() 
                             if methodName == "name" then return sound.name end
-                            return sound[methodName](sound) 
+                            local m = sound[methodName]
+                            if m then return m(sound) end
+                            return nil
                         end)
                         if success and result and result ~= "" then
                             soundName = tostring(result)
