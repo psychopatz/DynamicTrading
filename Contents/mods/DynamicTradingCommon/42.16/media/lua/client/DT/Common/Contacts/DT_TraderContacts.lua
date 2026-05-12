@@ -18,7 +18,7 @@ DT_TraderContacts.VISIT_REPUTATION_COST = 2
 
 require "DT/Common/Contacts/DT_TraderContacts/DT_TraderContacts_Core"
 require "DT/Common/Contacts/DT_TraderContacts/DT_TraderContacts_Persistence"
-require "DT/Common/Contacts/DT_TraderContacts/DT_TraderContacts_Runtime"
+require "DT/Common/Contacts/DT_TraderContacts/TraderContactsRuntime/DT_TraderContacts_Runtime"
 require "DT/Common/Contacts/DT_TraderContacts/DT_TraderContacts_Events"
 
 return DT_TraderContacts

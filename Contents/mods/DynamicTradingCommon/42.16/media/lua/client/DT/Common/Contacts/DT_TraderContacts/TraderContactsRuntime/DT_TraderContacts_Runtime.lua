@@ -1,0 +1,8 @@
+local Internal = DT_TraderContacts.Internal
+
+require "DT/Common/Contacts/DT_TraderContacts/TraderContactsRuntime/DT_TraderContacts_Runtime_Shared"
+require "DT/Common/Contacts/DT_TraderContacts/TraderContactsRuntime/DT_TraderContacts_Runtime_Roster"
+require "DT/Common/Contacts/DT_TraderContacts/TraderContactsRuntime/DT_TraderContacts_Runtime_Refresh"
+require "DT/Common/Contacts/DT_TraderContacts/TraderContactsRuntime/DT_TraderContacts_Runtime_Status"
+require "DT/Common/Contacts/DT_TraderContacts/TraderContactsRuntime/DT_TraderContacts_Runtime_Visit"
+require "DT/Common/Contacts/DT_TraderContacts/TraderContactsRuntime/DT_TraderContacts_Runtime_Presentation"
