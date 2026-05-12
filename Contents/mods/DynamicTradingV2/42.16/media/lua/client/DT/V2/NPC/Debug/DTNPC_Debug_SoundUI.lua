@@ -143,36 +143,15 @@ function DTNPC_Debug_SoundUI:createChildren()
     y = y + 25
 
     local btnDump = ISButton:new(pad, y, btnWidth, btnHeight, "Dump All Audio Keys to file", self, function(self)
-        local allSounds = getScriptManager():getAllGameSounds()
+        local allSounds = getFMODEventPathList()
         local fileWriter = getFileWriter("DT_Audio_Dump.txt", true, false)
         if fileWriter then
             fileWriter:write("========== DT AUDIO DUMP ==========\n")
-            fileWriter:write("Found " .. tostring(allSounds:size()) .. " sound events.\n\n")
-            for i = 0, allSounds:size() - 1 do
-                local sound = allSounds:get(i)
-                local soundName = "Unknown"
-                if sound then
-                    -- Test common GameSoundScript getter methods safely since Kahlua hides methods from type()
-                    local hasFound = false
-                    for _, methodName in ipairs({"getName", "getEventName", "getEvent", "name"}) do
-                        local success, result = pcall(function() 
-                            if methodName == "name" then return sound.name end
-                            local m = sound[methodName]
-                            if m then return m(sound) end
-                            return nil
-                        end)
-                        if success and result and result ~= "" then
-                            soundName = tostring(result)
-                            hasFound = true
-                            break
-                        end
-                    end
-                    
-                    if not hasFound then
-                        soundName = tostring(sound)
-                    end
+            if allSounds then
+                fileWriter:write("Found " .. tostring(allSounds:size()) .. " sound events.\n\n")
+                for i = 0, allSounds:size() - 1 do
+                    fileWriter:write(tostring(allSounds:get(i)) .. "\n")
                 end
-                fileWriter:write(tostring(soundName) .. "\n")
             end
             fileWriter:close()
             local p = getSpecificPlayer(0)
