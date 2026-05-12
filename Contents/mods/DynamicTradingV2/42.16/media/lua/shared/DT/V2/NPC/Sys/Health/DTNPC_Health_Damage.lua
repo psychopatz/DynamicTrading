@@ -16,6 +16,34 @@ local function shouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker,
     return false
 end
 
+local function shouldPlayHurtVocal(combatHealth, attacker, context)
+    if not combatHealth or combatHealth.current <= 0 then
+        return false
+    end
+
+    context = type(context) == "table" and context or {}
+    if context.suppressHurtVocal == true then
+        return false
+    end
+
+    local source = tostring(context.source or "")
+    local attackerType = internal.getAttackerType(attacker)
+
+    -- Engine fallback damage may inherit stale attackedBy attribution and create false vocal hits.
+    if source == "engine_fallback" then
+        return false
+    end
+
+    if attackerType == "zombie" then
+        if source == "zombie_lease" then
+            return true
+        end
+        return context.confirmedZombieHit == true
+    end
+
+    return attackerType ~= nil
+end
+
 function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
     local incapped = DTNPCLifecycle
         and DTNPCLifecycle.EnterIncapacitated
@@ -57,11 +85,13 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
 
     local damage = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
     local now = internal.nowMillis()
+    local source = tostring(context.source or "")
 
     internal.capturePlayerAttacker(npcData, attacker)
 
     combatHealth.lastDamageAt = now
     combatHealth.lastDamageAmount = damage
+    combatHealth.lastDamageSource = source ~= "" and source or nil
     combatHealth.lastAttackerType = internal.getAttackerType(attacker)
     combatHealth.lastAttackerID = internal.getAttackerID(attacker)
 
@@ -95,7 +125,9 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
     end
 
     -- Play unique hurt sound based on character identity
-    if combatHealth.current > 0 and DTNPCHostility and DTNPCHostility.PlayHurtSound then
+    if shouldPlayHurtVocal(combatHealth, attacker, context)
+        and DTNPCHostility
+        and DTNPCHostility.PlayHurtSound then
         DTNPCHostility.PlayHurtSound(zombie, npcData, "Hurt")
     end
 
@@ -126,10 +158,12 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
 
     local damage = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
     local now = internal.nowMillis()
+    local source = tostring(context.source or "")
 
     internal.capturePlayerAttacker(npcData, attacker)
     combatHealth.lastDamageAt = now
     combatHealth.lastDamageAmount = damage
+    combatHealth.lastDamageSource = source ~= "" and source or nil
     combatHealth.lastAttackerType = internal.getAttackerType(attacker)
     combatHealth.lastAttackerID = internal.getAttackerID(attacker)
 
