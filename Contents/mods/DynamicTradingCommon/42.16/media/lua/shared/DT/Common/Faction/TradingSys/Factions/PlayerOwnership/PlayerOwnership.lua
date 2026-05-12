@@ -3,7 +3,7 @@ require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
 local PlayerOwnership = {}
 local Internal = {}
 
-require("DT/Common/Faction/TradingSys/Factions/PlayerOwnership/PlayerOwnership_CoreLogic")(PlayerOwnership, Internal)
+require("DT/Common/Faction/TradingSys/Factions/PlayerOwnership/PlayerOwnershipCoreLogic/PlayerOwnership_CoreLogic")(PlayerOwnership, Internal)
 require("DT/Common/Faction/TradingSys/Factions/PlayerOwnership/PlayerOwnership_WorkerLogic")(PlayerOwnership, Internal)
 require("DT/Common/Faction/TradingSys/Factions/PlayerOwnership/PlayerOwnership_TradeLogic")(PlayerOwnership, Internal)
 require("DT/Common/Faction/TradingSys/Factions/PlayerOwnership/PlayerOwnership_RegencyLogic")(PlayerOwnership, Internal)
