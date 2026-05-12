@@ -9,7 +9,7 @@ require "DT/Common/UI/Trading/TradingItemUtils/DT_TradingItemUtils_Fluids"
 require "DT/Common/UI/Trading/TradingItemUtils/DT_TradingItemUtils_Display"
 require "DT/Common/UI/Trading/TradingItemUtils/DT_TradingItemUtils_Price"
 require "DT/Common/UI/Trading/TradingItemUtils/DT_TradingItemUtils_ItemSearch"
-require "DT/Common/UI/Trading/TradingItemUtils/DT_TradingItemUtils_SellScan"
+require "DT/Common/UI/Trading/TradingSellScan/DT_TradingSellScan"
 require "DT/Common/UI/Trading/TradingItemUtils/DT_TradingItemUtils_BuyScan"
 
 return DT_TradingItemUtils
