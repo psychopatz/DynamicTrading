@@ -82,6 +82,10 @@ function EscortUI.RememberConversation(ui, npc, player, npcData, context)
 end
 
 function EscortUI.CountBandages(player)
+    if DTNPCHealth and DTNPCHealth.CountReviveItems then
+        return tonumber(DTNPCHealth.CountReviveItems(player)) or 0
+    end
+
     if DynamicObjectives and DynamicObjectives.MedicalItemUtils and DynamicObjectives.MedicalItemUtils.CountBandageItems then
         return tonumber(DynamicObjectives.MedicalItemUtils.CountBandageItems(player)) or 0
     end

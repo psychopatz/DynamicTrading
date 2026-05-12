@@ -90,5 +90,11 @@
     "Sandbox_DynamicTrading.NPCStaminaRegenMultiplier_tooltip": "Scales how quickly NPCs recover stamina when resting or active. 1.0 is default, higher values recover faster.",
 
     "Sandbox_DynamicTrading.NPCStaminaThreshold": "NPC Stamina Exhaustion Threshold",
-    "Sandbox_DynamicTrading.NPCStaminaThreshold_tooltip": "The stamina percentage (0.05 to 0.95) at which an exhausted NPC can resume normal activity. Default is 0.40 (40%)."
+    "Sandbox_DynamicTrading.NPCStaminaThreshold_tooltip": "The stamina percentage (0.05 to 0.95) at which an exhausted NPC can resume normal activity. Default is 0.40 (40%).",
+
+    "Sandbox_DynamicTrading.ReviveCostMin": "Revive Supply Cost (Min)",
+    "Sandbox_DynamicTrading.ReviveCostMin_tooltip": "Minimum number of bandages or ripped sheets required to revive a non-hostile incapacitated NPC.",
+
+    "Sandbox_DynamicTrading.ReviveCostMax": "Revive Supply Cost (Max)",
+    "Sandbox_DynamicTrading.ReviveCostMax_tooltip": "Maximum number of bandages or ripped sheets required to revive a non-hostile incapacitated NPC."
 }

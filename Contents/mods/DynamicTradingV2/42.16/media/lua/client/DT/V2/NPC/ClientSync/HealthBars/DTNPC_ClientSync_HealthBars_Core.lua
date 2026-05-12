@@ -101,6 +101,12 @@ function Helpers.isIncapacitatedState(npcData)
     return npcData and npcData.state == "Incapacitated"
 end
 
+function Helpers.isWeakenedState(npcData)
+    return npcData
+        and tostring(npcData.healthState or "") == "Weakened"
+        and tostring(npcData.state or "") ~= "Incapacitated"
+end
+
 function Helpers.getIncapacitatedBarColor(currentTime)
     local pulse = (math.sin(currentTime / 140) + 1) * 0.5
     return {
@@ -108,6 +114,15 @@ function Helpers.getIncapacitatedBarColor(currentTime)
         g = 0.03 + (0.04 * pulse),
         b = 0.03 + (0.04 * pulse),
         a = 0.8 + (0.2 * pulse),
+    }
+end
+
+function Helpers.getWeakenedBarColor()
+    return {
+        r = 0.88,
+        g = 0.58,
+        b = 0.16,
+        a = 0.92,
     }
 end
 
@@ -120,6 +135,7 @@ function Helpers.isCombatState(npcData)
         or state == "AttackRange"
         or state == "Flee"
         or state == "Incapacitated"
+        or Helpers.isWeakenedState(npcData)
 end
 
 function Helpers.getNameColor(npcData, uuid)

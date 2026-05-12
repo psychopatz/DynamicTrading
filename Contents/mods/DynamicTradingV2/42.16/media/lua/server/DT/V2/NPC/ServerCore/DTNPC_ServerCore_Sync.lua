@@ -186,9 +186,14 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
     local isRunning = isMoving and motionHint and motionHint.running == true or false
     local isCrawling = tostring(npcData.state or "") == "Incapacitated"
         or (motionHint and motionHint.crawl == true)
+    local isWeakenedDeparture = tostring(npcData.healthState or "") == "Weakened"
+        and tostring(npcData.state or "") == "Departure"
     if not isRunning and zombie.isRunning then
         local ok, result = pcall(zombie.isRunning, zombie)
         isRunning = isMoving and ok and result == true or false
+    end
+    if isWeakenedDeparture then
+        isRunning = false
     end
 
     local moveAnim = ""
@@ -202,7 +207,8 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
             dtWalkType = "Crawl"
         else
             moveAnim = isRunning and "Run" or "Walk"
-            animSpeed = isRunning and 1.2 or 1.0
+            animSpeed = isRunning and 1.2
+                or (isWeakenedDeparture and (tonumber(DTNPCHealth and DTNPCHealth.WEAKENED_DEPARTURE_ANIM_SPEED) or 0.82) or 1.0)
             walkType = "1"
             dtWalkType = moveAnim
         end
@@ -227,6 +233,7 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         combatHealthBandageDirty = npcData.combatHealth and npcData.combatHealth.bandageDirty or nil,
         combatHealthBandageTier = npcData.combatHealth and npcData.combatHealth.bandageTier or nil,
         combatHealthBandageItemFullType = npcData.combatHealth and npcData.combatHealth.bandageItemFullType or nil,
+        healthState = npcData.healthState,
         state = npcData.state,
         status = npcData.status,
         combatOrder = npcData.combatOrder,

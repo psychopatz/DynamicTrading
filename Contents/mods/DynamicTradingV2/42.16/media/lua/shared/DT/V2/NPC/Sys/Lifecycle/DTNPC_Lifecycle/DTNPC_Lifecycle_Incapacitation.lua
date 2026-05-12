@@ -94,10 +94,22 @@ function DTNPCLifecycle.ConvertDeathToIncapacitated(zombie, uuid, npcData, remov
     npcData.tasks = {}
     npcData.requestedReturnStatus = "Resting"
     npcData.removalRequested = nil
+    if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.clearReviveState then
+        DTNPCHealth.Internal.clearReviveState(npcData, false)
+    else
+        npcData.healthState = nil
+        npcData.reviveData = nil
+        npcData.reviveHelperID = nil
+        npcData.reviveHelperOnlineID = nil
+        npcData.reviveHelperUsername = nil
+    end
     npcData.incapStrugglePauseUntil = nil
     npcData.incapNextPauseAt = nil
     npcData.lastFleeX = nil
     npcData.lastFleeY = nil
+    if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.prepareIncapacitatedReviveData then
+        DTNPCHealth.Internal.prepareIncapacitatedReviveData(npcData)
+    end
 
     internal.saveSoulIfAvailable(uuid, npcData)
     local incapRemovalContext = DTNPCLifecycle.WithIncapacitationCorpseCleanupContext(removalContext, corpseX, corpseY, corpseZ)

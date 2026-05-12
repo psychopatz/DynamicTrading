@@ -42,6 +42,13 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
     local quest = EscortUI.GetActiveEscortQuest(player, context.traderId, context.incidentId)
     local summary = EscortUI.BuildEscortStatusText(player, npcData, context, quest)
     local bandageCount = EscortUI.CountBandages(player)
+    local requiredCount = DTNPCHealth and DTNPCHealth.GetReviveRequirement and DTNPCHealth.GetReviveRequirement(npcData) or nil
+    local healLabel = "Heal Up (Need supplies)"
+    if requiredCount and requiredCount > 0 then
+        healLabel = "Heal Up (" .. tostring(bandageCount) .. "/" .. tostring(requiredCount) .. ")"
+    elseif bandageCount > 0 then
+        healLabel = "Heal Up (" .. tostring(bandageCount) .. ")"
+    end
 
     ui:speak(overrideSpeech or "We're moving. Keep me alive and get me back to base.")
     local options = {
@@ -92,11 +99,11 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
             end,
         },
         {
-            text = bandageCount > 0 and ("Heal Up (" .. tostring(bandageCount) .. ")") or "Heal Up (Need bandage)",
+            text = healLabel,
             message = "",
             onSelect = function(innerUI)
                 if bandageCount <= 0 then
-                    innerUI:speak("Bring me a bandage, adhesive bandage, or clean rag first.")
+                    innerUI:speak("Bring bandages or ripped sheets first.")
                     EscortUI.ShowEscortConversation(
                         innerUI,
                         npc,

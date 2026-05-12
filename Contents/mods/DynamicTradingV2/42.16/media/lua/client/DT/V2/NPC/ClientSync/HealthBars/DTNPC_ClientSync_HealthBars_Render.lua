@@ -75,6 +75,7 @@ function ISDTNPCHealthBarManager:render()
                     local hpRatio = Helpers.getHealthRatio(barData.currentHp, barData.maxHp)
                     local hpColor = barData.isIncapacitated
                         and Helpers.getIncapacitatedBarColor(currentTime)
+                        or (barData.isWeakened and Helpers.getWeakenedBarColor())
                         or Helpers.getColorForRatio(hpRatio)
                     local barLeft = screenX - (barWidth / 2)
                     local barTop = screenY - barYOffset
@@ -110,9 +111,9 @@ function ISDTNPCHealthBarManager:render()
                         barWidth + (Constants.PADDING * 2),
                         barHeight + (Constants.PADDING * 2),
                         alpha,
-                        barData.isIncapacitated and math.min(1, hpColor.r + 0.08) or 0.4,
-                        barData.isIncapacitated and hpColor.g or 0.4,
-                        barData.isIncapacitated and hpColor.b or 0.4
+                        (barData.isIncapacitated or barData.isWeakened) and math.min(1, hpColor.r + 0.08) or 0.4,
+                        (barData.isIncapacitated or barData.isWeakened) and hpColor.g or 0.4,
+                        (barData.isIncapacitated or barData.isWeakened) and hpColor.b or 0.4
                     )
 
                     -- Calculate total width for [Heart Icon] + [Gap] + [HP Text]

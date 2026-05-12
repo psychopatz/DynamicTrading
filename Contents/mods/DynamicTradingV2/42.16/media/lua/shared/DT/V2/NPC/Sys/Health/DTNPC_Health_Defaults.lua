@@ -28,6 +28,20 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if type(npcData.combatHealth) ~= "table" then
         npcData.combatHealth = {}
     end
+    if npcData.healthState ~= nil and tostring(npcData.healthState) ~= "Weakened" then
+        npcData.healthState = nil
+    end
+    if type(npcData.reviveData) ~= "table" then
+        npcData.reviveData = npcData.reviveData ~= nil and {} or npcData.reviveData
+    end
+    if type(npcData.reviveData) == "table" then
+        local requiredCount = tonumber(npcData.reviveData.requiredItemCount) or 0
+        if requiredCount > 0 then
+            npcData.reviveData.requiredItemCount = math.max(1, math.floor(requiredCount))
+        else
+            npcData.reviveData.requiredItemCount = nil
+        end
+    end
     if npcData._dtHealthDefaultsActive then
         return npcData.combatHealth
     end
@@ -131,6 +145,7 @@ function DTNPCHealth.EnsureDefaults(npcData)
     combatHealth.skillBonus = skillBonus
     combatHealth.max = maxHealth
     if npcData.incapState == "Active" then
+        npcData.healthState = nil
         combatHealth.enabled = false
         combatHealth.engineProtected = true
         combatHealth.current = math.max(

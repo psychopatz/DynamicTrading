@@ -97,5 +97,6 @@ end
 
 require "DT/V2/NPC/Jobs/TravelCompanion/JobUITravelCompanion/DTNPC_JobUI_TravelCompanion"
 require "DT/V2/NPC/Jobs/TraderNeeds/JobUITraderHelpEscort/DTNPC_JobUI_TraderHelpEscort"
+require "DT/V2/NPC/Jobs/IncapacitatedRevive/DTNPC_JobUI_IncapacitatedRevive"
 require "DT/V2/NPC/Bandits/DTNPC_Bandits"
 require "DT/V2/NPC/Jobs/Bandits/DTNPC_JobUI_Bandit"

@@ -119,6 +119,9 @@ function DTNPCLogic.ProcessNPC(zombie)
     if DTNPCHealth and DTNPCHealth.ProcessPassiveRestRegen then
         DTNPCHealth.ProcessPassiveRestRegen(zombie, npcData)
     end
+    if DTNPCHealth and DTNPCHealth.ProcessWeakenedRecovery then
+        DTNPCHealth.ProcessWeakenedRecovery(zombie, npcData)
+    end
 
     if HIGH_SPEED_STATES[state] then
         DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)

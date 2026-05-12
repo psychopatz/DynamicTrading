@@ -148,6 +148,9 @@ function Handlers.HandleUpdatePosition(args)
         if args.state then
             cached.npcData.state = args.state
         end
+        if args.healthState ~= nil then
+            cached.npcData.healthState = args.healthState
+        end
         if args.isMoving ~= nil then
             cached.npcData.isMovingState = args.isMoving == true
         end
@@ -210,6 +213,9 @@ function Handlers.HandleUpdatePosition(args)
                 zombieData.combatHealth = type(zombieData.combatHealth) == "table" and zombieData.combatHealth or {}
                 if args.state then
                     zombieData.state = args.state
+                end
+                if args.healthState ~= nil then
+                    zombieData.healthState = args.healthState
                 end
                 if args.health then
                     zombieData.health = args.health

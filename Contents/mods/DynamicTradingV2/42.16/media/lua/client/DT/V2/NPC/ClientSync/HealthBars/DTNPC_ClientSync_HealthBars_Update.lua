@@ -147,6 +147,7 @@ function ISDTNPCHealthBarManager:update()
                         staminaMax = tracked.staminaMax,
                         staminaState = tracked.staminaState,
                         isIncapacitated = tracked.isIncapacitated,
+                        isWeakened = tracked.isWeakened,
                         hasActiveBandage = tracked.hasActiveBandage,
                         bandageIconTexture = tracked.bandageIconTexture,
                         previousHp = tracked.currentHp,
@@ -166,6 +167,7 @@ function ISDTNPCHealthBarManager:update()
                     barData.staminaMax = tracked.staminaMax
                     barData.staminaState = tracked.staminaState
                     barData.isIncapacitated = tracked.isIncapacitated
+                    barData.isWeakened = tracked.isWeakened
                     barData.hasActiveBandage = tracked.hasActiveBandage
                     barData.bandageIconTexture = tracked.bandageIconTexture
                     barData.name = tracked.name or barData.name or "Unknown"

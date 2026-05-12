@@ -53,7 +53,11 @@ function DTNPC_ActiveNearbyListPanel:refresh()
                     distText = string.format(" [%.0fm]", dist)
                 end
                 
-                local stateText = " [" .. (npcData.state or "Idle") .. "]"
+                local stateLabel = npcData.state or "Idle"
+                if tostring(npcData.healthState or "") == "Weakened" then
+                    stateLabel = stateLabel .. "|Weakened"
+                end
+                local stateText = " [" .. stateLabel .. "]"
                 local hpText = ""
                 if npcData.combatHealth and npcData.combatHealth.max then
                     hpText = string.format(" [HP %d/%d]", math.floor(tonumber(npcData.combatHealth.current) or 0), math.floor(tonumber(npcData.combatHealth.max) or 0))
@@ -66,6 +70,7 @@ function DTNPC_ActiveNearbyListPanel:refresh()
                 local color = {r=1, g=1, b=1, a=1}
                 if npcData.state == "Follow" then color = {r=0, g=0.8, b=1, a=1}
                 elseif npcData.state == "Incapacitated" then color = {r=1, g=0.55, b=0.15, a=1}
+                elseif tostring(npcData.healthState or "") == "Weakened" then color = {r=0.95, g=0.72, b=0.18, a=1}
                 elseif npcData.state == "Stay" or npcData.state == "Guard" then color = {r=1, g=1, b=0, a=1}
                 elseif npcData.isHostile then color = {r=1, g=0.2, b=0.2, a=1}
                 end

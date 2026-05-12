@@ -243,3 +243,23 @@ option DynamicTrading.NPCStaminaThreshold
     page = DynamicTradingNPC,
     translation = DynamicTrading.NPCStaminaThreshold,
 }
+
+option DynamicTrading.ReviveCostMin
+{
+    type = integer,
+    default = 1,
+    min = 1,
+    max = 10,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.ReviveCostMin,
+}
+
+option DynamicTrading.ReviveCostMax
+{
+    type = integer,
+    default = 3,
+    min = 1,
+    max = 10,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.ReviveCostMax,
+}

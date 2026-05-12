@@ -26,6 +26,15 @@ local function setIncapacitatedState(zombie, npcData)
     npcData.tasks = {}
     npcData.requestedReturnStatus = "Resting"
     npcData.removalRequested = nil
+    if internal.clearReviveState then
+        internal.clearReviveState(npcData, false)
+    else
+        npcData.healthState = nil
+        npcData.reviveData = nil
+        npcData.reviveHelperID = nil
+        npcData.reviveHelperOnlineID = nil
+        npcData.reviveHelperUsername = nil
+    end
     npcData.incapStrugglePauseUntil = nil
     npcData.incapNextPauseAt = nil
     npcData.lastFleeX = nil
@@ -67,6 +76,9 @@ local function setIncapacitatedState(zombie, npcData)
     npcData.health = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
     npcData.lastHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
     npcData.lastCustomDamageHandledAt = combatHealth.lastDamageAt
+    if internal.prepareIncapacitatedReviveData then
+        internal.prepareIncapacitatedReviveData(npcData)
+    end
 
     zombie:setTarget(nil)
     if not zombie:isUseless() then

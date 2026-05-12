@@ -12,6 +12,7 @@ local internal = DTNPCLogic.Internal.Departure
 
 DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
     local isRecruitmentDeparture = internal.isColonyRecruitmentDeparture(npcData)
+    local weakenedDeparture = tostring(npcData and npcData.healthState or "") == "Weakened"
     local observer = nil
     local observerDist = 9999
     if isRecruitmentDeparture and target and instanceof and instanceof(target, "IsoPlayer") then
@@ -93,20 +94,26 @@ DTNPCLogic.Behaviors["Departure"] = function(zombie, npcData, target, dist)
         zombie:setRunning(false)
     end
 
+    local speedMult = weakenedDeparture
+        and (tonumber(DTNPCHealth and DTNPCHealth.WEAKENED_DEPARTURE_SPEED_MULT) or 0.55)
+        or 1.0
+    local animSpeed = weakenedDeparture
+        and (tonumber(DTNPCHealth and DTNPCHealth.WEAKENED_DEPARTURE_ANIM_SPEED) or 0.82)
+        or 1.2
     local moved, moveState = DTNPCMobility.MoveByDirection(zombie, npcData, {
         dirX = dx,
         dirY = dy,
-        speed = DynamicTrading.GetNPCRunSpeed(),
+        speed = DynamicTrading.GetNPCRunSpeed() * speedMult,
         staminaMode = "departure",
-        desiredRun = true,
+        desiredRun = weakenedDeparture ~= true,
         allowObstacleInteract = not isRecruitmentDeparture,
         allowDamageRetreat = true,
         blockCounterKey = "departureBlockedTicks",
         stuckTicks = internal.STUCK_TICKS,
         anim = {
-            animSpeed = 1.2,
-            isRunning = true,
-            dtWalkType = "Run",
+            animSpeed = animSpeed,
+            isRunning = weakenedDeparture ~= true,
+            dtWalkType = weakenedDeparture and "Walk" or "Run",
         },
     })
 

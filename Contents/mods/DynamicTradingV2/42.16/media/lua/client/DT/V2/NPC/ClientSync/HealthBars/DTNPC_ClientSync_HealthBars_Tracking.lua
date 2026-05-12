@@ -36,6 +36,7 @@ local function touchTrackedEntry(entry, zombie, npcData, bodyInstanceID, current
     if npcData then
         entry.npcData = npcData
         entry.isIncapacitated = Helpers.isIncapacitatedState(npcData) or false
+        entry.isWeakened = Helpers.isWeakenedState(npcData) or false
         entry.hasActiveBandage = Helpers.hasActiveBandage(npcData) or false
         entry.bandageIconTexture = entry.hasActiveBandage and Helpers.getBandageIconTexture(npcData) or nil
         Helpers.cacheNameMetrics(entry, npcData.name)
@@ -73,6 +74,7 @@ local function getTrackedEntry(uuid)
         staminaMax = 0,
         staminaState = "fresh",
         isIncapacitated = false,
+        isWeakened = false,
         hasActiveBandage = false,
         bandageIconTexture = nil,
         visibleUntil = 0,
