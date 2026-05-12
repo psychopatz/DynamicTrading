@@ -16,6 +16,6 @@ require "DT/Common/UI/Pricing/PricingOptionsTab/DT_PricingOptionsTab_Search"
 require "DT/Common/UI/Pricing/PricingOptionsTab/DT_PricingOptionsTab_Detail"
 require "DT/Common/UI/Pricing/PricingOptionsTab/DT_PricingOptionsTab_Layout"
 require "DT/Common/UI/Pricing/PricingOptionsTab/DT_PricingOptionsTab_Lifecycle"
-require "DT/Common/UI/Pricing/PricingOptionsTab/DT_PricingOptionsTab_Create"
+require "DT/Common/UI/Pricing/PricingOptionsCreate/DT_PricingOptionsCreate"
 
 return DT_PricingOptionsTab
