@@ -15,7 +15,7 @@ require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_LocationLogic"
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_ScanLogic"
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_WildernessScanLogic"
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_RoadScanLogic"
-require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_LoadLogic"
+require "DT/Common/GeolocatorSystem/GeolocatorSystemLoad/DT_GeolocatorSystem_LoadLogic"
 require "DT/Common/GeolocatorSystem/DT_GeolocatorSystem_DebugLogic"
 
 DTM = DT_GeolocatorSystem
