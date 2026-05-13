@@ -86,12 +86,12 @@ function DTNPCProtect.CreateLoadoutWeaponItem(npcData, slot)
     end
 
     local currentCondition = tonumber(loadout[conditionKey])
+    local maxCondition = item.getConditionMax and tonumber(item:getConditionMax()) or nil
     if currentCondition ~= nil and currentCondition <= 0 then
         return nil
     end
-    if currentCondition ~= nil and item.setCondition then
-        local maxCondition = item.getConditionMax and tonumber(item:getConditionMax()) or nil
-        local appliedCondition = math.max(0, math.floor(currentCondition))
+    if item.setCondition and maxCondition and maxCondition > 0 then
+        local appliedCondition = currentCondition ~= nil and math.max(0, math.floor(currentCondition)) or maxCondition
         if maxCondition and appliedCondition > maxCondition then
             appliedCondition = maxCondition
         end

@@ -83,9 +83,17 @@ option DynamicTrading.TownTraderWanderChance
 option DynamicTrading.NPCWeaponDurability
 {
     type = boolean,
-    default = true,
+    default = false,
     page = DynamicTrading,
     translation = DynamicTrading.NPCWeaponDurability,
+}
+
+option DynamicTrading.NPCToolDurability
+{
+    type = boolean,
+    default = true,
+    page = DynamicTrading,
+    translation = DynamicTrading.NPCToolDurability,
 }
 
 option DynamicTrading.NPCBaseHealthMultiplier

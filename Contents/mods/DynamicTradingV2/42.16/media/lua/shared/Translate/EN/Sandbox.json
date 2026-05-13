@@ -44,6 +44,9 @@
     "Sandbox_DynamicTrading.NPCWeaponDurability": "Roster NPC Weapon Durability",
     "Sandbox_DynamicTrading.NPCWeaponDurability_tooltip": "If enabled, only player-roster NPCs consume weapon durability in combat. World NPCs never use this mechanic.",
 
+    "Sandbox_DynamicTrading.NPCToolDurability": "Roster NPC Tool Durability",
+    "Sandbox_DynamicTrading.NPCToolDurability_tooltip": "If enabled, player-roster NPC tool and utility items tracked by colony systems can lose condition or charges from work. Disable it to freeze colony tool wear and drainable usage.",
+
     "Sandbox_DynamicTrading.NPCBaseHealthMultiplier": "NPC Base Health Multiplier",
     "Sandbox_DynamicTrading.NPCBaseHealthMultiplier_tooltip": "Scales the archetype base HP used by DT NPC custom health. 1.0 = default values, 2.0 = double base HP before skill bonuses.",
 
