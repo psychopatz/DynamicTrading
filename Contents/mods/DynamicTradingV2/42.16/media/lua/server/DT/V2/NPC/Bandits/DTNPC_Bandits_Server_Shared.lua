@@ -380,7 +380,11 @@ function Shared.sendBanditCommand(player, command, args)
     if DynamicTrading and DynamicTrading.ServerHelpers and DynamicTrading.ServerHelpers.SendResponse then
         DynamicTrading.ServerHelpers.SendResponse(player, "DTNPC", command, args or {})
     else
-        sendServerCommand(player, "DTNPC", command, args or {})
+        local payload = args or {}
+        if DTNPCServerCore and DTNPCServerCore.SanitizeNetworkData then
+            payload = DTNPCServerCore.SanitizeNetworkData(payload)
+        end
+        sendServerCommand(player, "DTNPC", command, payload)
     end
 end
 

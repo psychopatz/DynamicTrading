@@ -53,7 +53,11 @@ Handlers.RequestFullSync = function(player)
         return
     end
 
-    sendServerCommand(player, "DTNPC", "SyncAllNPCs", { npcs = DTNPCManager.Data })
+    local payload = { npcs = DTNPCManager.Data }
+    if DTNPCServerCore.SanitizeNetworkData then
+        payload = DTNPCServerCore.SanitizeNetworkData(payload)
+    end
+    sendServerCommand(player, "DTNPC", "SyncAllNPCs", payload)
     DynamicTrading.Log("DTV2", "NPC", "Sync", "Sent full database (" .. DTNPCManager.GetTableSize(DTNPCManager.Data) .. " NPCs) to: " .. player:getUsername())
 end
 
@@ -115,12 +119,16 @@ Handlers.RequestNearbySync = function(player, args)
         end
     end
 
-    sendServerCommand(player, "DTNPC", "SyncNearbyNPCs", {
+    local payload = {
         nearby = nearby,
         metadata = metadata,
         nearRadius = nearRadius,
         metadataRadius = metadataRadius,
-    })
+    }
+    if DTNPCServerCore.SanitizeNetworkData then
+        payload = DTNPCServerCore.SanitizeNetworkData(payload)
+    end
+    sendServerCommand(player, "DTNPC", "SyncNearbyNPCs", payload)
 
     DynamicTrading.Log(
         "DTV2",

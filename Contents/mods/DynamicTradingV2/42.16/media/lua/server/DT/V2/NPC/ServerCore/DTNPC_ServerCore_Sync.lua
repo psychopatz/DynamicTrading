@@ -15,6 +15,69 @@ DTNPCServerCore.BROADCAST_RANGES = DTNPCServerCore.BROADCAST_RANGES or {
     FAR = 500,
 }
 
+if not DTNPCServerCore.SanitizeNetworkData then
+    local function sanitizeNetworkKey(key)
+        local keyType = type(key)
+        if keyType == "string" or keyType == "number" then
+            return key
+        end
+        if keyType == "boolean" then
+            return tostring(key)
+        end
+        return nil
+    end
+
+    local function sanitizeNetworkValue(value, seen, depth)
+        local valueType = type(value)
+        if valueType == "nil" then
+            return nil
+        end
+        if valueType == "string" or valueType == "boolean" then
+            return value
+        end
+        if valueType == "number" then
+            if value ~= value then
+                return 0
+            end
+            return value
+        end
+        if valueType ~= "table" then
+            return nil
+        end
+
+        local safeDepth = math.floor(tonumber(depth) or 0)
+        if safeDepth > 32 then
+            return nil
+        end
+
+        seen = seen or {}
+        if seen[value] then
+            return nil
+        end
+        seen[value] = true
+
+        local copy = {}
+        for key, child in pairs(value) do
+            local safeKey = sanitizeNetworkKey(key)
+            local safeChild = sanitizeNetworkValue(child, seen, safeDepth + 1)
+            if safeKey ~= nil and safeChild ~= nil then
+                copy[safeKey] = safeChild
+            end
+        end
+
+        seen[value] = nil
+        return copy
+    end
+
+    function DTNPCServerCore.SanitizeNetworkData(data)
+        local safeData = sanitizeNetworkValue(data or {}, nil, 0)
+        if type(safeData) == "table" then
+            return safeData
+        end
+        return {}
+    end
+end
+
 local function getActivePlayers()
     if DTNPCManager and DTNPCManager.GetActivePlayers then
         return DTNPCManager.GetActivePlayers()
@@ -34,6 +97,7 @@ end
 local function sendToNearbyPlayers(command, data, x, y, z, range)
     local players = getActivePlayers()
     local sent = 0
+    local safeData = DTNPCServerCore.SanitizeNetworkData and DTNPCServerCore.SanitizeNetworkData(data) or (data or {})
 
     for _, player in ipairs(players) do
         local dx = player:getX() - x
@@ -43,7 +107,7 @@ local function sendToNearbyPlayers(command, data, x, y, z, range)
 
         -- Strict visibility: only nearby players get world-sync data.
         if math.abs(dz) <= 1 and dist <= range then
-            sendServerCommand(player, "DTNPC", command, data)
+            sendServerCommand(player, "DTNPC", command, safeData)
             sent = sent + 1
         end
     end
@@ -113,7 +177,7 @@ function DTNPCServerCore.SyncToAllClients(zombie, npcData)
         end
     else
         -- Single Player fallback
-        triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
+        triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", DTNPCServerCore.SanitizeNetworkData(syncData))
         DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC: " .. (npcData.name or uuid) .. " at " .. syncData.x .. "," .. syncData.y)
     end
 end
@@ -141,10 +205,10 @@ function DTNPCServerCore.SyncToPlayer(player, zombie, npcData)
     }
     
     if isServer() or isClient() then
-        sendServerCommand(player, "DTNPC", "SyncNPC", syncData)
+        sendServerCommand(player, "DTNPC", "SyncNPC", DTNPCServerCore.SanitizeNetworkData(syncData))
     else
         -- Single Player fallback
-        triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", syncData)
+        triggerEvent("OnServerCommand", "DTNPC", "SyncNPC", DTNPCServerCore.SanitizeNetworkData(syncData))
     end
     
     DynamicTrading.Log("DTV2", "NPC", "Sync", "Synced NPC to player: " .. (npcData.name or uuid))
@@ -338,10 +402,10 @@ function DTNPCServerCore.NotifyRemoval(uuid, bodyInstanceID, name, removalReason
     end
     
     if isServer() then
-        sendServerCommand("DTNPC", "RemoveNPC", data)
+        sendServerCommand("DTNPC", "RemoveNPC", DTNPCServerCore.SanitizeNetworkData(data))
     else
         -- Single Player fallback
-        triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", data)
+        triggerEvent("OnServerCommand", "DTNPC", "RemoveNPC", DTNPCServerCore.SanitizeNetworkData(data))
     end
     
     DynamicTrading.Log(
@@ -362,8 +426,8 @@ function DTNPCServerCore.NotifyInstanceRemoval(uuid, bodyInstanceID, presenceRev
     }
 
     if isServer() then
-        sendServerCommand("DTNPC", "RemoveNPCInstance", data)
+        sendServerCommand("DTNPC", "RemoveNPCInstance", DTNPCServerCore.SanitizeNetworkData(data))
     else
-        triggerEvent("OnServerCommand", "DTNPC", "RemoveNPCInstance", data)
+        triggerEvent("OnServerCommand", "DTNPC", "RemoveNPCInstance", DTNPCServerCore.SanitizeNetworkData(data))
     end
 end

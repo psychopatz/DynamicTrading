@@ -923,7 +923,11 @@ function DTNPCLootSearch.SendSyncToCommander(npcData, worker, sourceKey, autoOpe
     end
 
     state.lastSyncAt = currentTime
-    sendServerCommand(player, "DTNPC", "LootSearchSync", DTNPCLootSearch.BuildSyncPayload(npcData, sourceKey, autoOpen, player))
+    local payload = DTNPCLootSearch.BuildSyncPayload(npcData, sourceKey, autoOpen, player)
+    if DTNPCServerCore and DTNPCServerCore.SanitizeNetworkData then
+        payload = DTNPCServerCore.SanitizeNetworkData(payload)
+    end
+    sendServerCommand(player, "DTNPC", "LootSearchSync", payload)
     return true
 end
 

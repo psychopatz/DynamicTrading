@@ -37,7 +37,11 @@ function DTNPCLootSearchServer.Open(player, args)
     end
 
     local worker = DTNPCLootSearch.ResolveWorker(npcData)
-    sendServerCommand(player, "DTNPC", "LootSearchSync", DTNPCLootSearch.BuildSyncPayload(npcData, nil, true, player))
+    local payload = DTNPCLootSearch.BuildSyncPayload(npcData, nil, true, player)
+    if DTNPCServerCore and DTNPCServerCore.SanitizeNetworkData then
+        payload = DTNPCServerCore.SanitizeNetworkData(payload)
+    end
+    sendServerCommand(player, "DTNPC", "LootSearchSync", payload)
     DTNPCLootSearch.SendSyncToCommander(npcData, worker, nil, true)
     return true
 end
@@ -75,6 +79,10 @@ function DTNPCLootSearchServer.Collect(player, args)
         }, true)
     end
 
-    sendServerCommand(player, "DTNPC", "LootSearchSync", DTNPCLootSearch.BuildSyncPayload(npcData, sourceKey, true, player))
+    local payload = DTNPCLootSearch.BuildSyncPayload(npcData, sourceKey, true, player)
+    if DTNPCServerCore and DTNPCServerCore.SanitizeNetworkData then
+        payload = DTNPCServerCore.SanitizeNetworkData(payload)
+    end
+    sendServerCommand(player, "DTNPC", "LootSearchSync", payload)
     return true
 end

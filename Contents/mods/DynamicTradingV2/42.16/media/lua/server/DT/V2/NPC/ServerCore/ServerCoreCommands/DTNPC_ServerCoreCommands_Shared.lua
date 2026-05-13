@@ -36,6 +36,9 @@ function Internal.SendCompanionNotice(player, reason)
         return
     end
 
+    if DTNPCServerCore and DTNPCServerCore.SanitizeNetworkData then
+        payload = DTNPCServerCore.SanitizeNetworkData(payload)
+    end
     sendServerCommand(player, "DColony", "ColonyNotice", payload)
 end
 
