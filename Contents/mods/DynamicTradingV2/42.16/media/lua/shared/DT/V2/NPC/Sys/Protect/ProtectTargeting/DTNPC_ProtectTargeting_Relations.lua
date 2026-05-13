@@ -170,6 +170,24 @@ local function isDTNPCHostileToNPC(npcData, targetData)
         return false
     end
 
+    local leftFaction = tostring(npcData.factionID or "")
+    local rightFaction = tostring(targetData.factionID or "")
+    if isBanditLike(npcData) and isBanditLike(targetData) then
+        if leftFaction == "" or rightFaction == "" or leftFaction == rightFaction then
+            return false
+        end
+    end
+
+    if leftFaction ~= ""
+        and rightFaction ~= ""
+        and leftFaction ~= "Independent"
+        and rightFaction ~= "Independent"
+        and leftFaction ~= "Factionless"
+        and rightFaction ~= "Factionless"
+        and leftFaction == rightFaction then
+        return false
+    end
+
     if isCompanionLike(npcData) and targetData.isHostile == true then
         return true
     end
@@ -188,9 +206,6 @@ local function isDTNPCHostileToNPC(npcData, targetData)
     if targetData.isHostile == true and targetData.combatTargetID then
         return true
     end
-
-    local leftFaction = tostring(npcData.factionID or "")
-    local rightFaction = tostring(targetData.factionID or "")
     if leftFaction ~= "" and rightFaction ~= "" and leftFaction ~= rightFaction then
         if targetData.raidHostileFaction == true or npcData.raidHostileFaction == true then
             return true
