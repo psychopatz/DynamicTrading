@@ -219,8 +219,8 @@ local function getNearbyHostilePressure(originX, originY, originZ, radius, npcDa
                             candidateID = "dtnpc:" .. tostring(targetUUID)
                         end
                     elseif DTModPatchesBandits
-                        and DTModPatchesBandits.IsHostileBanditsNPC
-                        and DTModPatchesBandits.IsHostileBanditsNPC(candidate) then
+                        and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC
+                        and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC(candidate, npcData) then
                         hostile = true
                         candidateID = DTModPatchesBandits.BuildBanditsCombatTargetID
                             and DTModPatchesBandits.BuildBanditsCombatTargetID(candidate)

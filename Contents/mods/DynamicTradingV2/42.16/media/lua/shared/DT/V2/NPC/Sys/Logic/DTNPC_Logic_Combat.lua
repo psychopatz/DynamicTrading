@@ -180,9 +180,11 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             local hostile = true
             if DTNPCProtect
                 and DTNPCProtect.Internal
-                and DTNPCProtect.Internal.isDTNPCHostileToNPC then
-                hostile = DTNPCProtect.Internal.isDTNPCHostileToNPC(npcData, attackerData)
-                    or DTNPCProtect.Internal.isDTNPCHostileToNPC(attackerData, npcData)
+                and (DTNPCProtect.Internal.IsDTNPCHostileToNPC or DTNPCProtect.Internal.isDTNPCHostileToNPC) then
+                local isDTNPCHostileToNPC = DTNPCProtect.Internal.IsDTNPCHostileToNPC
+                    or DTNPCProtect.Internal.isDTNPCHostileToNPC
+                hostile = isDTNPCHostileToNPC(npcData, attackerData)
+                    or isDTNPCHostileToNPC(attackerData, npcData)
             end
 
             if hostile then
@@ -219,8 +221,8 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
                 zombie:setAttackedBy(nil)
             end
         elseif DTModPatchesBandits
-            and DTModPatchesBandits.IsHostileBanditsNPC
-            and DTModPatchesBandits.IsHostileBanditsNPC(attacker) then
+            and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC
+            and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC(attacker, npcData) then
             if DTNPCLogic.RememberHostileChaseOrigin then
                 DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
             end

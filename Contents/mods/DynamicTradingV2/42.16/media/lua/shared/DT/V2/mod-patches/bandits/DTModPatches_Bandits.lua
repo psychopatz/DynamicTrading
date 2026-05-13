@@ -9,6 +9,12 @@ DTModPatchesBandits.Internal = DTModPatchesBandits.Internal or {}
 local Patch = DTModPatchesBandits
 local Internal = Patch.Internal
 
+Internal.banditTargetCache = Internal.banditTargetCache or {}
+Internal.banditProvocations = Internal.banditProvocations or {}
+
+local BANDIT_TARGET_CACHE_BUCKET_MS = 250
+local BANDIT_PROVOCATION_TTL_MS = 15000
+
 local function hasActivatedMod(modID)
     local activated = getActivatedMods and getActivatedMods() or nil
     return activated and activated.contains and activated:contains(modID) or false
@@ -24,6 +30,170 @@ local function getZombieModData(zombie)
     end
 
     return zombie:getModData()
+end
+
+local function normalizeText(value)
+    if value == nil then
+        return nil
+    end
+
+    local text = tostring(value)
+    if text == "" then
+        return nil
+    end
+
+    return text
+end
+
+local function nowMillis()
+    if getTimeInMillis then
+        return getTimeInMillis()
+    end
+
+    return math.floor((os.time() or 0) * 1000)
+end
+
+local function currentTargetCacheBucket()
+    return math.floor(nowMillis() / BANDIT_TARGET_CACHE_BUCKET_MS)
+end
+
+local function getNPCCombatIdentity(npcData)
+    if type(npcData) ~= "table" then
+        return nil
+    end
+
+    local factionID = normalizeText(npcData.factionID)
+    if factionID and factionID ~= "Independent" and factionID ~= "Factionless" then
+        return "faction:" .. factionID
+    end
+
+    local ownerID = npcData.masterID or npcData.ownerOnlineID
+    if ownerID ~= nil then
+        return "owner-id:" .. tostring(ownerID)
+    end
+
+    local ownerName = normalizeText(npcData.master or npcData.ownerUsername or npcData.dcCompanionOwner)
+    if ownerName then
+        return "owner-name:" .. ownerName
+    end
+
+    local uuid = normalizeText(npcData.uuid)
+    if uuid then
+        return "uuid:" .. uuid
+    end
+
+    return nil
+end
+
+local function isBanditTargetCacheEntryValid(entry, expectedID)
+    if type(entry) ~= "table" then
+        return false
+    end
+
+    local candidate = entry.zombie
+    if not candidate or candidate.isDead == nil or candidate:isDead() then
+        return false
+    end
+
+    if not Patch.IsBanditsNPC(candidate) then
+        return false
+    end
+
+    local candidateID = Patch.GetBanditZombieID(candidate)
+    if candidateID == nil then
+        return false
+    end
+
+    return tostring(candidateID) == tostring(expectedID)
+end
+
+local function getCachedBanditTarget(idText)
+    local entry = Internal.banditTargetCache[idText]
+    if not isBanditTargetCacheEntryValid(entry, idText) then
+        Internal.banditTargetCache[idText] = nil
+        return nil
+    end
+
+    local bucket = currentTargetCacheBucket()
+    if tonumber(entry.bucket) ~= bucket then
+        Internal.banditTargetCache[idText] = nil
+        return nil
+    end
+
+    return entry.zombie
+end
+
+local function rememberCachedBanditTarget(idText, zombie)
+    if not idText or not zombie then
+        return zombie
+    end
+
+    Internal.banditTargetCache[idText] = {
+        zombie = zombie,
+        bucket = currentTargetCacheBucket(),
+    }
+    return zombie
+end
+
+local function ensureBanditCustomLoaded()
+    if Internal.banditCustomLoadAttempted == true then
+        return BanditCustom ~= nil
+    end
+
+    Internal.banditCustomLoadAttempted = true
+
+    if not BanditCustom then
+        pcall(require, "BanditCustom")
+    end
+
+    if BanditCustom and BanditCustom.Load then
+        pcall(BanditCustom.Load)
+    end
+
+    return BanditCustom ~= nil
+end
+
+local function getBanditClanDataByID(clanID)
+    clanID = normalizeText(clanID)
+    if not clanID then
+        return nil
+    end
+
+    if not BanditCustom and not ensureBanditCustomLoaded() then
+        return nil
+    end
+
+    if BanditCustom and BanditCustom.ClanGet then
+        local ok, clanData = pcall(BanditCustom.ClanGet, clanID)
+        if ok and type(clanData) == "table" then
+            return clanData
+        end
+    end
+
+    if BanditCustom and type(BanditCustom.clanData) == "table" then
+        return BanditCustom.clanData[clanID]
+    end
+
+    return nil
+end
+
+local function getBanditClanFriendlyFlag(zombie)
+    local clanData = Patch.GetBanditClanData(zombie)
+    local spawnData = type(clanData) == "table" and clanData.spawn or nil
+    if type(spawnData) == "table" and spawnData.friendly ~= nil then
+        return spawnData.friendly == true
+    end
+
+    return nil
+end
+
+local function pruneExpiredProvocations()
+    local cutoff = nowMillis()
+    for key, record in pairs(Internal.banditProvocations) do
+        if type(record) ~= "table" or tonumber(record.expiresAt) == nil or cutoff >= tonumber(record.expiresAt) then
+            Internal.banditProvocations[key] = nil
+        end
+    end
 end
 
 local function getZombieVariableBoolean(zombie, variableName)
@@ -101,6 +271,63 @@ function Patch.GetBanditBrain(zombie)
     return modData and modData.brain or nil
 end
 
+function Patch.GetBanditClanID(zombie)
+    local brain = Patch.GetBanditBrain(zombie)
+    return brain and normalizeText(brain.cid) or nil
+end
+
+function Patch.GetBanditClanData(zombieOrClanID)
+    local clanID = nil
+
+    if type(zombieOrClanID) == "string" then
+        clanID = zombieOrClanID
+    else
+        clanID = Patch.GetBanditClanID(zombieOrClanID)
+    end
+
+    return getBanditClanDataByID(clanID)
+end
+
+function Patch.GetBanditClanName(zombie)
+    local clanData = Patch.GetBanditClanData(zombie)
+    local general = type(clanData) == "table" and clanData.general or nil
+    return general and normalizeText(general.name) or nil
+end
+
+function Patch.IsPeacefulBanditsClan(zombie)
+    return getBanditClanFriendlyFlag(zombie) == true
+end
+
+function Patch.IsAggressiveBanditsClan(zombie)
+    local friendly = getBanditClanFriendlyFlag(zombie)
+    if friendly ~= nil then
+        return friendly == false
+    end
+
+    local brain = Patch.GetBanditBrain(zombie)
+    return brain and brain.hostile == true or false
+end
+
+function Patch.GetBanditsAggressionState(zombie)
+    if not Patch.IsBanditsNPC(zombie) then
+        return "none"
+    end
+
+    if Patch.IsAggressiveBanditsClan(zombie) then
+        return "aggressive"
+    end
+
+    if Patch.IsPeacefulBanditsClan(zombie) then
+        return "peaceful"
+    end
+
+    if Patch.IsHostileBanditsNPC(zombie) then
+        return "hostile"
+    end
+
+    return "unknown"
+end
+
 function Patch.IsHostileBanditsNPC(zombie)
     local brain = Patch.GetBanditBrain(zombie)
     return brain and (brain.hostile == true or brain.hostileP == true) or false
@@ -115,11 +342,102 @@ function Patch.BuildBanditsCombatTargetID(zombie)
     return "bandits:" .. tostring(zombieID)
 end
 
+function Patch.InvalidateBanditsNPC(zombieOrID)
+    local key = nil
+
+    if type(zombieOrID) == "string" or type(zombieOrID) == "number" then
+        key = tostring(zombieOrID)
+    else
+        local zombieID = Patch.GetBanditZombieID(zombieOrID)
+        if zombieID ~= nil then
+            key = tostring(zombieID)
+        end
+    end
+
+    if key ~= nil then
+        Internal.banditTargetCache[key] = nil
+        Internal.banditProvocations["bandits:" .. key] = nil
+    end
+end
+
+function Patch.NoteBanditsProvokedByDTNPC(zombie, npcData)
+    local combatTargetID = Patch.BuildBanditsCombatTargetID(zombie)
+    local combatIdentity = getNPCCombatIdentity(npcData)
+    if not combatTargetID or not combatIdentity then
+        return false
+    end
+
+    pruneExpiredProvocations()
+    Internal.banditProvocations[combatTargetID] = {
+        attackerIdentity = combatIdentity,
+        attackerUUID = type(npcData) == "table" and normalizeText(npcData.uuid) or nil,
+        clanID = Patch.GetBanditClanID(zombie),
+        expiresAt = nowMillis() + BANDIT_PROVOCATION_TTL_MS,
+    }
+
+    return true
+end
+
+function Patch.TryWakeProvokedBanditsNPC(zombie)
+    if not Patch.IsBanditsNPC(zombie) or not Bandit or not Bandit.SetProgram then
+        return false
+    end
+
+    local ok = pcall(Bandit.SetProgram, zombie, "Bandit", {})
+    return ok == true
+end
+
+function Patch.IsBanditsProvokedAgainstNPC(zombie, npcData)
+    local combatTargetID = Patch.BuildBanditsCombatTargetID(zombie)
+    if not combatTargetID then
+        return false
+    end
+
+    pruneExpiredProvocations()
+
+    local record = Internal.banditProvocations[combatTargetID]
+    if type(record) ~= "table" then
+        return false
+    end
+
+    local combatIdentity = getNPCCombatIdentity(npcData)
+    if not combatIdentity then
+        return false
+    end
+
+    return normalizeText(record.attackerIdentity) == combatIdentity
+end
+
+function Patch.ShouldBanditsNPCBeHostileToDTNPC(zombie, npcData)
+    if not Patch.IsBanditsNPC(zombie) then
+        return false
+    end
+
+    if Patch.IsBanditsProvokedAgainstNPC(zombie, npcData) then
+        return true
+    end
+
+    if Patch.IsAggressiveBanditsClan(zombie) then
+        return true
+    end
+
+    if Patch.IsPeacefulBanditsClan(zombie) then
+        return false
+    end
+
+    return Patch.IsHostileBanditsNPC(zombie)
+end
+
 function Patch.FindBanditsNPCByCombatID(combatTargetID)
     local text = tostring(combatTargetID or "")
     local idText = string.match(text, "^bandits:(.+)$")
     if not idText or idText == "" then
         return nil
+    end
+
+    local cached = getCachedBanditTarget(idText)
+    if cached then
+        return cached
     end
 
     local zombieList = getCell and getCell() and getCell():getZombieList() or nil
@@ -132,7 +450,7 @@ function Patch.FindBanditsNPCByCombatID(combatTargetID)
         if candidate and not candidate:isDead() and Patch.IsBanditsNPC(candidate) then
             local candidateID = Patch.GetBanditZombieID(candidate)
             if candidateID ~= nil and tostring(candidateID) == idText then
-                return candidate
+                return rememberCachedBanditTarget(idText, candidate)
             end
         end
     end

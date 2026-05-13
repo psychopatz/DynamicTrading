@@ -145,8 +145,17 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
         for i = 0, zombieList:size() - 1 do
             local candidate = zombieList:get(i)
             if candidate and candidate ~= zombie and not candidate:isDead() then
-                local modData = candidate:getModData()
-                if modData and modData.IsDTNPC == true then
+                local candidateZ = candidate:getZ() or 0
+                if math.abs(candidateZ - zz) <= DTNPCProtect.CONFIG.FloorTolerance then
+                    local candidateX = candidate:getX()
+                    local candidateY = candidate:getY()
+                    local dx = candidateX - zx
+                    local dy = candidateY - zy
+                    local distSq = (dx * dx) + (dy * dy)
+                    local withinRelevantRadius = distSq <= (keepRadius * keepRadius)
+                    local modData = candidate:getModData()
+
+                    if modData and modData.IsDTNPC == true and withinRelevantRadius then
                     local targetNPCData = nil
                     local targetUUID = nil
                     if getDTNPCDataFromZombie then
@@ -159,44 +168,34 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
                         and isDTNPCHostileToNPC(npcData, targetNPCData)
                         and hasLineOfSight
                         and hasLineOfSight(zombie, candidate) then
-                        local candidateZ = candidate:getZ() or 0
-                        if math.abs(candidateZ - zz) <= DTNPCProtect.CONFIG.FloorTolerance then
                             evaluateCandidate(
                                 candidate,
                                 "dtnpc:" .. tostring(targetUUID),
                                 "dtnpc",
-                                candidate:getX(),
-                                candidate:getY(),
+                                candidateX,
+                                candidateY,
                                 candidateZ
                             )
-                        end
                     end
-                elseif DTModPatchesBandits
-                    and DTModPatchesBandits.IsHostileBanditsNPC
-                    and DTModPatchesBandits.IsHostileBanditsNPC(candidate)
-                    and hasLineOfSight
-                    and hasLineOfSight(zombie, candidate) then
-                    local candidateZ = candidate:getZ() or 0
-                    if math.abs(candidateZ - zz) <= DTNPCProtect.CONFIG.FloorTolerance then
+                    elseif withinRelevantRadius
+                        and DTModPatchesBandits
+                        and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC
+                        and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC(candidate, npcData)
+                        and hasLineOfSight
+                        and hasLineOfSight(zombie, candidate) then
                         evaluateCandidate(
                             candidate,
                             buildBanditsTargetID(candidate),
                             "bandits",
-                            candidate:getX(),
-                            candidate:getY(),
+                            candidateX,
+                            candidateY,
                             candidateZ
                         )
-                    end
-                elseif not (modData and modData.IsDTNPC)
-                    and hasLineOfSight
-                    and hasLineOfSight(zombie, candidate) then
-                    local candidateZ = candidate:getZ() or 0
-                    if math.abs(candidateZ - zz) <= DTNPCProtect.CONFIG.FloorTolerance then
-                        local candidateX = candidate:getX()
-                        local candidateY = candidate:getY()
-                        local dx = candidateX - zx
-                        local dy = candidateY - zy
-                        local dist = math.sqrt((dx * dx) + (dy * dy))
+                    elseif not (modData and modData.IsDTNPC)
+                        and withinRelevantRadius
+                        and hasLineOfSight
+                        and hasLineOfSight(zombie, candidate) then
+                        local dist = math.sqrt(distSq)
                         local candidateID = getZombieRuntimeID(candidate)
                         local anchorDist = getAnchorDistance(candidateX, candidateY, candidateZ, ax, ay, az)
                         local withinAnchorAcquire = anchorSearchRadius == nil
@@ -223,7 +222,6 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
                                 keep = currentTargetID and candidateID == currentTargetID and dist <= keepRadius and withinAnchorKeep or false,
                                 isCurrent = currentTargetID and candidateID == currentTargetID or false,
                             })
-                        end
                     end
                 end
             end

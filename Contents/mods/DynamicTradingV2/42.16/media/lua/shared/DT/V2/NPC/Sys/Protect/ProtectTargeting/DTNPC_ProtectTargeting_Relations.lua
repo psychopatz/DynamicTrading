@@ -220,5 +220,6 @@ Internal.GetFactionReputationForPlayer = getFactionReputationForPlayer
 Internal.IsHostilePlayerForNPC = isHostilePlayerForNPC
 Internal.GetDTNPCDataFromZombie = getDTNPCDataFromZombie
 Internal.IsDTNPCHostileToNPC = isDTNPCHostileToNPC
+Internal.isDTNPCHostileToNPC = isDTNPCHostileToNPC
 
 DTNPCProtect.IsDTNPCHostileToNPC = isDTNPCHostileToNPC

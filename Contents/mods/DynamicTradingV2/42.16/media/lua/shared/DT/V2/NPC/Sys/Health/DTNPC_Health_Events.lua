@@ -3,6 +3,8 @@
 -- Event hooks for DT NPC health handling.
 -- ==============================================================================
 
+require "DT/V2/mod-patches/bandits/DTModPatches_Bandits"
+
 DTNPCHealth = DTNPCHealth or {}
 DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
@@ -45,6 +47,24 @@ local function onWeaponHitCharacter(attacker, target, weapon, damage)
         return
     end
     if not instanceof or not instanceof(target, "IsoZombie") then
+        return
+    end
+
+    if DTModPatchesBandits
+        and DTModPatchesBandits.IsBanditsNPC
+        and DTModPatchesBandits.IsBanditsNPC(target) then
+        local attackerModData = attacker and attacker.getModData and attacker:getModData() or nil
+        if attackerModData and attackerModData.IsDTNPC == true then
+            local attackerData = (DTNPC and DTNPC.GetData and DTNPC.GetData(attacker))
+                or attackerModData.DTNPC_Data
+                or attackerModData.DTNPCBrain
+            if attackerData and DTModPatchesBandits.NoteBanditsProvokedByDTNPC then
+                DTModPatchesBandits.NoteBanditsProvokedByDTNPC(target, attackerData)
+                if DTModPatchesBandits.TryWakeProvokedBanditsNPC then
+                    DTModPatchesBandits.TryWakeProvokedBanditsNPC(target)
+                end
+            end
+        end
         return
     end
 

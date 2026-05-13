@@ -31,16 +31,20 @@ local function countEntries(tbl)
 end
 
 local function refreshBanditZombieCounters()
-    if not BanditZombie then
+    if type(BanditZombie) ~= "table" then
         return
     end
 
-    BanditZombie.CacheLightBCnt = countEntries(BanditZombie.CacheLightB)
-    BanditZombie.CacheLightZCnt = countEntries(BanditZombie.CacheLightZ)
+    if type(BanditZombie.CacheLightB) == "table" then
+        BanditZombie.CacheLightBCnt = countEntries(BanditZombie.CacheLightB)
+    end
+    if type(BanditZombie.CacheLightZ) == "table" then
+        BanditZombie.CacheLightZCnt = countEntries(BanditZombie.CacheLightZ)
+    end
 end
 
 function Patch.ScrubBanditCachesForZombie(zombie)
-    if not Patch.IsActive() or not BanditZombie or not Patch.IsDTNPC(zombie) then
+    if not Patch.IsActive() or type(BanditZombie) ~= "table" or not Patch.IsDTNPC(zombie) then
         return false
     end
 
@@ -50,26 +54,30 @@ function Patch.ScrubBanditCachesForZombie(zombie)
     end
 
     local removed = false
-    local lightEntry = BanditZombie.CacheLight and BanditZombie.CacheLight[zombieID] or nil
+    local cache = type(BanditZombie.Cache) == "table" and BanditZombie.Cache or nil
+    local cacheLight = type(BanditZombie.CacheLight) == "table" and BanditZombie.CacheLight or nil
+    local cacheLightZ = type(BanditZombie.CacheLightZ) == "table" and BanditZombie.CacheLightZ or nil
+    local cacheLightB = type(BanditZombie.CacheLightB) == "table" and BanditZombie.CacheLightB or nil
+    local lightEntry = cacheLight and cacheLight[zombieID] or nil
     local hasCompatMirror = type(lightEntry) == "table"
         and lightEntry.isDTNPC == true
         and type(lightEntry.brain) == "table"
         and lightEntry.brain.dtCompat == true
 
-    if BanditZombie.Cache and BanditZombie.Cache[zombieID] and not hasCompatMirror then
-        BanditZombie.Cache[zombieID] = nil
+    if cache and cache[zombieID] and not hasCompatMirror then
+        cache[zombieID] = nil
         removed = true
     end
-    if BanditZombie.CacheLight and BanditZombie.CacheLight[zombieID] and not hasCompatMirror then
-        BanditZombie.CacheLight[zombieID] = nil
+    if cacheLight and cacheLight[zombieID] and not hasCompatMirror then
+        cacheLight[zombieID] = nil
         removed = true
     end
-    if BanditZombie.CacheLightZ and BanditZombie.CacheLightZ[zombieID] then
-        BanditZombie.CacheLightZ[zombieID] = nil
+    if cacheLightZ and cacheLightZ[zombieID] then
+        cacheLightZ[zombieID] = nil
         removed = true
     end
-    if BanditZombie.CacheLightB and BanditZombie.CacheLightB[zombieID] then
-        BanditZombie.CacheLightB[zombieID] = nil
+    if cacheLightB and cacheLightB[zombieID] then
+        cacheLightB[zombieID] = nil
         removed = true
     end
 
@@ -150,7 +158,7 @@ local function shouldExposeDTNPCToBanditCombat(zombie, npcData)
 end
 
 function Patch.PublishDTNPCToBanditCombatCache(zombie, npcData)
-    if not Patch.IsActive() or not BanditZombie or not Patch.IsDTNPC(zombie) then
+    if not Patch.IsActive() or type(BanditZombie) ~= "table" or not Patch.IsDTNPC(zombie) then
         return false
     end
 
