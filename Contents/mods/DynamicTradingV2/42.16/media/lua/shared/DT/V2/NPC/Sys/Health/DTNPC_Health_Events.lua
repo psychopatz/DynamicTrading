@@ -60,9 +60,6 @@ local function onWeaponHitCharacter(attacker, target, weapon, damage)
                 or attackerModData.DTNPCBrain
             if attackerData and DTModPatchesBandits.NoteBanditsProvokedByDTNPC then
                 DTModPatchesBandits.NoteBanditsProvokedByDTNPC(target, attackerData)
-                if DTModPatchesBandits.TryWakeProvokedBanditsNPC then
-                    DTModPatchesBandits.TryWakeProvokedBanditsNPC(target)
-                end
             end
         end
         return

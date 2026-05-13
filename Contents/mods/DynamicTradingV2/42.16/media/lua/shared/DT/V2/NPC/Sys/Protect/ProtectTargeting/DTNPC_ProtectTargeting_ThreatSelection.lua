@@ -156,18 +156,18 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
                     local modData = candidate:getModData()
 
                     if modData and modData.IsDTNPC == true and withinRelevantRadius then
-                    local targetNPCData = nil
-                    local targetUUID = nil
-                    if getDTNPCDataFromZombie then
-                        targetNPCData, targetUUID = getDTNPCDataFromZombie(candidate)
-                    end
-                    if targetNPCData
-                        and targetUUID
-                        and targetUUID ~= npcData.uuid
-                        and isDTNPCHostileToNPC
-                        and isDTNPCHostileToNPC(npcData, targetNPCData)
-                        and hasLineOfSight
-                        and hasLineOfSight(zombie, candidate) then
+                        local targetNPCData = nil
+                        local targetUUID = nil
+                        if getDTNPCDataFromZombie then
+                            targetNPCData, targetUUID = getDTNPCDataFromZombie(candidate)
+                        end
+                        if targetNPCData
+                            and targetUUID
+                            and targetUUID ~= npcData.uuid
+                            and isDTNPCHostileToNPC
+                            and isDTNPCHostileToNPC(npcData, targetNPCData)
+                            and hasLineOfSight
+                            and hasLineOfSight(zombie, candidate) then
                             evaluateCandidate(
                                 candidate,
                                 "dtnpc:" .. tostring(targetUUID),
@@ -176,7 +176,7 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
                                 candidateY,
                                 candidateZ
                             )
-                    end
+                        end
                     elseif withinRelevantRadius
                         and DTModPatchesBandits
                         and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC
@@ -222,6 +222,7 @@ function DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, anchorTarget,
                                 keep = currentTargetID and candidateID == currentTargetID and dist <= keepRadius and withinAnchorKeep or false,
                                 isCurrent = currentTargetID and candidateID == currentTargetID or false,
                             })
+                        end
                     end
                 end
             end

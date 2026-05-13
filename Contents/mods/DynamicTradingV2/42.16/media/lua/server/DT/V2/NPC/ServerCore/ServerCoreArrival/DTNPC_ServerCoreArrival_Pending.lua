@@ -41,6 +41,26 @@ function DTNPCServerCore.ActivateArrivalByUUID(uuid, options)
         return false, nil, nil, "unknown_uuid"
     end
 
+    if npcData.incapState == "Active" or tostring(npcData.state or "") == "Incapacitated" then
+        DTNPCServerCore.ClearPendingArrival(npcData)
+        Internal.SaveSoul(uuid, npcData)
+
+        if zombie and not zombie:isDead() then
+            return true, zombie, npcData, "incapacitated_live_body"
+        end
+
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Arrival",
+            "Skipped arrival activation for incapacitated NPC: "
+                .. tostring(npcData.name or uuid)
+                .. " uuid=" .. tostring(uuid)
+                .. " bodyInstanceID=" .. tostring(npcData.currentBodyInstanceID)
+        )
+        return false, nil, npcData, "incapacitated"
+    end
+
     local target = Internal.ResolveArrivalTarget(options, npcData)
     if not target then
         if tostring(options.invalidTargetBehavior or "") == "return_home" then

@@ -221,8 +221,11 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
                 zombie:setAttackedBy(nil)
             end
         elseif DTModPatchesBandits
-            and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC
-            and DTModPatchesBandits.ShouldBanditsNPCBeHostileToDTNPC(attacker, npcData) then
+            and DTModPatchesBandits.IsBanditsNPC
+            and DTModPatchesBandits.IsBanditsNPC(attacker) then
+            if DTModPatchesBandits.NoteBanditsAggressionAgainstDTNPC then
+                DTModPatchesBandits.NoteBanditsAggressionAgainstDTNPC(attacker, npcData)
+            end
             if DTNPCLogic.RememberHostileChaseOrigin then
                 DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
             end

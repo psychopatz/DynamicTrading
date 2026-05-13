@@ -360,7 +360,7 @@ function Patch.InvalidateBanditsNPC(zombieOrID)
     end
 end
 
-function Patch.NoteBanditsProvokedByDTNPC(zombie, npcData)
+local function noteBanditsProvocation(zombie, npcData)
     local combatTargetID = Patch.BuildBanditsCombatTargetID(zombie)
     local combatIdentity = getNPCCombatIdentity(npcData)
     if not combatTargetID or not combatIdentity then
@@ -378,13 +378,16 @@ function Patch.NoteBanditsProvokedByDTNPC(zombie, npcData)
     return true
 end
 
-function Patch.TryWakeProvokedBanditsNPC(zombie)
-    if not Patch.IsBanditsNPC(zombie) or not Bandit or not Bandit.SetProgram then
-        return false
-    end
+function Patch.NoteBanditsProvokedByDTNPC(zombie, npcData)
+    return noteBanditsProvocation(zombie, npcData)
+end
 
-    local ok = pcall(Bandit.SetProgram, zombie, "Bandit", {})
-    return ok == true
+function Patch.NoteBanditsAggressionAgainstDTNPC(zombie, npcData)
+    return noteBanditsProvocation(zombie, npcData)
+end
+
+function Patch.TryWakeProvokedBanditsNPC(zombie)
+    return false
 end
 
 function Patch.IsBanditsProvokedAgainstNPC(zombie, npcData)
@@ -417,6 +420,10 @@ function Patch.ShouldBanditsNPCBeHostileToDTNPC(zombie, npcData)
         return true
     end
 
+    if Patch.IsHostileBanditsNPC(zombie) then
+        return true
+    end
+
     if Patch.IsAggressiveBanditsClan(zombie) then
         return true
     end
@@ -425,7 +432,7 @@ function Patch.ShouldBanditsNPCBeHostileToDTNPC(zombie, npcData)
         return false
     end
 
-    return Patch.IsHostileBanditsNPC(zombie)
+    return false
 end
 
 function Patch.FindBanditsNPCByCombatID(combatTargetID)

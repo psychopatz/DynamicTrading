@@ -112,7 +112,17 @@ DTNPCLogic.Behaviors["Guard"] = function(zombie, npcData)
         return
     end
 
-    if not DTNPCProtect then
+    if npcData.incapState == "Active" or npcData.state == "Incapacitated" then
+        local incapacitatedBehavior = DTNPCLogic.Behaviors["Incapacitated"]
+        if incapacitatedBehavior then
+            incapacitatedBehavior(zombie, npcData)
+        end
+        return
+    end
+
+    if not DTNPCProtect
+        or not DTNPCProtect.SelectNearestThreat
+        or not DTNPCProtect.RememberStationaryPost then
         DTNPCLogic.Stationary.Run(zombie, npcData)
         return
     end

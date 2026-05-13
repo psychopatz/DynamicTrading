@@ -84,15 +84,25 @@ function DTNPCHealth.InitializeForSpawn(zombie, npcData, options)
     local initialEngineHealth, desiredEngineHealth, deferRestore = internal.resolveSpawnHealthPlan(npcData, combatHealth, options)
 
     if npcData.incapState == "Active" then
+        local currentTime = internal.nowMillis()
+        local existingCurrent = tonumber(combatHealth.current)
+        local existingGraceUntil = tonumber(combatHealth.incapGraceUntil) or 0
+        local preserveGrace = existingGraceUntil > currentTime
+
         combatHealth.enabled = false
         combatHealth.engineProtected = true
-        combatHealth.current = math.max(
-            tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1,
-            tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01
+        combatHealth.current = internal.clamp(
+            existingCurrent
+                or math.max(
+                    tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1,
+                    tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01
+                ),
+            tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01,
+            tonumber(combatHealth.max) or existingCurrent or (tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1)
         )
-        combatHealth.incapGraceUntil = internal.nowMillis() + DTNPCHealth.INCAP_GRACE_WINDOW_MS
+        combatHealth.incapGraceUntil = preserveGrace and existingGraceUntil or 0
         combatHealth.lastEngineHealth = initialEngineHealth
-        if deferRestore then
+        if deferRestore and preserveGrace then
             internal.scheduleDeferredSpawnRestore(combatHealth, desiredEngineHealth, spawnReason .. "_incap")
         else
             internal.clearDeferredSpawnRestore(combatHealth)
@@ -113,6 +123,8 @@ function DTNPCHealth.InitializeForSpawn(zombie, npcData, options)
                 .. " desiredEngineHealth=" .. tostring(desiredEngineHealth)
                 .. " deferred=" .. tostring(deferRestore)
                 .. " graceUntil=" .. tostring(combatHealth.incapGraceUntil)
+                .. " preservedGrace=" .. tostring(preserveGrace)
+                .. " customCurrent=" .. tostring(combatHealth.current)
                 .. " incapState=" .. tostring(npcData.incapState)
         )
         return combatHealth
