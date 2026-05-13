@@ -110,16 +110,32 @@ local function isFriendlyAuthorityPlayer(npcData, player)
     return false
 end
 
-local function isWeaponDurabilitySandboxEnabled()
-    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
-    if sandbox and sandbox.NPCWeaponDurability ~= nil then
-        return sandbox.NPCWeaponDurability ~= false
+local function getDynamicColoniesSandbox()
+    return SandboxVars and SandboxVars.DynamicColonies or nil
+end
+
+local function isDynamicColoniesToggleEnabled(key)
+    local sandbox = getDynamicColoniesSandbox()
+    if sandbox and sandbox[key] ~= nil then
+        return sandbox[key] ~= false
     end
-    return true
+    return false
+end
+
+local function isWeaponDurabilitySandboxEnabled()
+    return isDynamicColoniesToggleEnabled("PlayerOwnedNPCWeaponDurability")
+end
+
+local function isAmmoConsumptionSandboxEnabled()
+    return isDynamicColoniesToggleEnabled("PlayerOwnedNPCAmmoConsumption")
 end
 
 local function shouldConsumeWeaponDurabilityRaw(npcData)
     return isPlayerOwnedTraderRaw(npcData) and isWeaponDurabilitySandboxEnabled()
+end
+
+local function shouldConsumeAmmoRaw(npcData)
+    return isPlayerOwnedTraderRaw(npcData) and isAmmoConsumptionSandboxEnabled()
 end
 
 Internal.syncProtectNotice = syncProtectNotice
@@ -127,4 +143,6 @@ Internal.buildProtectDebugSummary = buildProtectDebugSummary
 Internal.isPlayerOwnedTraderRaw = isPlayerOwnedTraderRaw
 Internal.isFriendlyAuthorityPlayer = isFriendlyAuthorityPlayer
 Internal.isWeaponDurabilitySandboxEnabled = isWeaponDurabilitySandboxEnabled
+Internal.isAmmoConsumptionSandboxEnabled = isAmmoConsumptionSandboxEnabled
 Internal.shouldConsumeWeaponDurabilityRaw = shouldConsumeWeaponDurabilityRaw
+Internal.shouldConsumeAmmoRaw = shouldConsumeAmmoRaw

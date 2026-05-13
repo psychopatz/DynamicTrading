@@ -35,8 +35,13 @@ function DTNPCProtect.IsPlayerOwnedTrader(npcData)
     return Internal.isPlayerOwnedTraderRaw(npcData)
 end
 
+function DTNPCProtect.ShouldConsumeAmmo(npcData)
+    DTNPCProtect.EnsureDataDefaults(npcData)
+    return Internal.shouldConsumeAmmoRaw(npcData)
+end
+
 function DTNPCProtect.IsFiniteAmmoTrader(npcData)
-    return DTNPCProtect.IsPlayerOwnedTrader(npcData)
+    return DTNPCProtect.ShouldConsumeAmmo(npcData)
 end
 
 function DTNPCProtect.ShouldConsumeWeaponDurability(npcData)
