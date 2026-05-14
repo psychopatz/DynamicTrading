@@ -43,7 +43,7 @@ local function buildLocalScanCache(playerObj, npcData)
     end
 
     if not DTNPCLootDebug or not DTNPCLootDebug.ScanNearbySources then
-        pcall(require, "DT/V2/NPC/Behaviors/Behavior_LootNearby")
+        pcall(require, "DT/V2/NPC/Behaviors/BehaviorLootNearby/Behavior_LootNearby")
     end
     if not DTNPCLootDebug or not DTNPCLootDebug.ScanNearbySources then
         return nil
