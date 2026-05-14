@@ -29,7 +29,7 @@ local function getWorkerCarryState(npcData)
     end
 
     if not DTNPCLootSearch or not DTNPCLootSearch.GetWorkerCarryState then
-        pcall(require, "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Shared")
+        pcall(require, "DT/V2/NPC/LootSearch/LootSearchShared/DTNPC_LootSearchShared")
     end
     if DTNPCLootSearch and DTNPCLootSearch.GetWorkerCarryState then
         return DTNPCLootSearch.GetWorkerCarryState(npcData)

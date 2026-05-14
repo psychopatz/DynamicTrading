@@ -11,7 +11,7 @@ end
 
 DTNPCLootSearchServer.Loaded = true
 
-require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Shared"
+require "DT/V2/NPC/LootSearch/LootSearchShared/DTNPC_LootSearchShared"
 
 local function copyTable(value)
     if type(value) ~= "table" then

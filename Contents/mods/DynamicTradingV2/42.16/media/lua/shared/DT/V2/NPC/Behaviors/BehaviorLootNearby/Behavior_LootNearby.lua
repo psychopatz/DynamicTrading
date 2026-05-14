@@ -21,7 +21,7 @@ LootNearby.Constants = LootNearby.Constants or {}
 
 require "DT/V2/NPC/Sys/DTNPC_Protect"
 require "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility"
-require "DT/V2/NPC/LootSearch/DTNPC_LootSearch_Shared"
+require "DT/V2/NPC/LootSearch/LootSearchShared/DTNPC_LootSearchShared"
 require "DT/V2/NPC/Behaviors/Behavior_AntiStuck"
 
 pcall(require, "DC/Common/Colony/ColonyRegistry/DC_ColonyRegistry")
