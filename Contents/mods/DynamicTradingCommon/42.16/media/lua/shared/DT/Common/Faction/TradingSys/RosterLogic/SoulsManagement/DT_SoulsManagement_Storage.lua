@@ -1,3 +1,5 @@
+require "DT/Common/NPC/ColonyResidents/DT_ColonyResidents"
+
 local MOD_DATA_KEY = DynamicTrading_Roster.MOD_DATA_KEY
 
 local function stripMovementSpeed(npcData)
@@ -44,6 +46,15 @@ local function normalizeSoulAbstraction(npcData)
         return npcData
     end
 
+    if DT_ColonyResidents and DT_ColonyResidents.NormalizeSoulFlags then
+        DT_ColonyResidents.NormalizeSoulFlags(npcData)
+    end
+
+    if DT_ColonyResidents and DT_ColonyResidents.IsResidentSoul and DT_ColonyResidents.IsResidentSoul(npcData) then
+        npcData.abstractResident = false
+        return npcData
+    end
+
     local shouldAbstract = (npcData.abstractResident == true) or isAbstractNomadFaction(npcData.factionID)
     npcData.abstractResident = shouldAbstract == true
     return npcData
@@ -84,6 +95,10 @@ function DynamicTrading_Roster.ShouldAbstractSoulAtRest(soulLike)
 
     local status = tostring(soul.status or "Resting")
     if status ~= "Resting" then
+        return false
+    end
+
+    if DT_ColonyResidents and DT_ColonyResidents.IsResidentSoul and DT_ColonyResidents.IsResidentSoul(soul) then
         return false
     end
 
@@ -164,6 +179,12 @@ function DynamicTrading_Roster.SaveSoul(uuid, npcData)
         identitySeed = npcData.identitySeed or 1,
         linkedWorkerID = npcData.linkedWorkerID,
         ownerUsername = npcData.ownerUsername,
+        dcResident = npcData.dcResident == true,
+        dcResidentOwnerUsername = npcData.dcResidentOwnerUsername,
+        dcResidentColonyId = npcData.dcResidentColonyId,
+        dcResidentWorkerID = npcData.dcResidentWorkerID,
+        dcResidentRole = npcData.dcResidentRole,
+        dcResidentHomeMode = npcData.dcResidentHomeMode,
         isPlayerFactionTrader = npcData.isPlayerFactionTrader == true,
         abstractResident = npcData.abstractResident == true,
         canRecruit = npcData.canRecruit ~= false,

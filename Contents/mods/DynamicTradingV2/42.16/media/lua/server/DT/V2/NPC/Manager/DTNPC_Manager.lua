@@ -10,6 +10,7 @@ DTNPCManager.PendingRegistrations = DTNPCManager.PendingRegistrations or {}
 DTNPCManager.BodyInstanceIDToUUID = DTNPCManager.BodyInstanceIDToUUID or {}
 
 require "DT/Common/Faction/TradingSys/RosterLogic/DT_RosterLogic"
+require "DT/V2/NPC/ColonyResidents/DTNPC_ColonyResidents"
 
 -- Helper for SP/MP Compatibility
 function DTNPCManager.GetActivePlayers()
