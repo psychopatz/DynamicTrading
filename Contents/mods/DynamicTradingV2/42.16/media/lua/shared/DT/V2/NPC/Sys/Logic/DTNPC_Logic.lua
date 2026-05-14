@@ -22,7 +22,7 @@ require "DT/V2/NPC/Sys/Data/DTNPC_Data"
 
 require "DT/V2/NPC/Behaviors/Behavior_GoTo"
 require "DT/V2/NPC/Behaviors/BehaviorAttack/Behavior_Attack"
-require "DT/V2/NPC/Behaviors/Behavior_AttackRange"
+require "DT/V2/NPC/Behaviors/BehaviorAttackRange/Behavior_AttackRange"
 require "DT/V2/NPC/Behaviors/Behavior_Flee"
 require "DT/V2/NPC/Behaviors/Behavior_Follow"
 require "DT/V2/NPC/Behaviors/Behavior_Protect"
