@@ -112,6 +112,9 @@ local function removeDuplicateLocalZombies(uuid, keepBodyInstanceID)
         if zombie and not zombie:isDead() and doesZombieMatchUUID(zombie, uuid) then
             local bodyInstanceID = zombie:getPersistentOutfitID()
             if bodyInstanceID ~= keepBodyInstanceID then
+                if DTNPCClient.UncacheLiveZombie then
+                    DTNPCClient.UncacheLiveZombie(uuid, bodyInstanceID)
+                end
                 zombie:removeFromWorld()
                 zombie:removeFromSquare()
             end
@@ -125,6 +128,9 @@ function DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
     
     local modData = zombie:getModData()
     local uuid = npcData.uuid
+    if uuid and DTNPCClient.CacheLiveZombie then
+        DTNPCClient.CacheLiveZombie(uuid, zombie)
+    end
     
     local needsVisuals = true
     if npcData.visualID and modData.DTNPCVisualID == npcData.visualID then
@@ -216,6 +222,16 @@ function DTNPCClient.ApplySafetyToMarkedZombie(zombie, npcData)
 end
 
 function DTNPCClient.FindZombieByUUID(uuid)
+    if DTNPCClient.GetLiveZombieByUUID then
+        local cachedZombie = DTNPCClient.GetLiveZombieByUUID(uuid)
+        if cachedZombie and doesZombieMatchUUID(cachedZombie, uuid) then
+            return cachedZombie
+        end
+        if cachedZombie == nil and DTNPCClient.UncacheLiveZombie then
+            DTNPCClient.UncacheLiveZombie(uuid, nil)
+        end
+    end
+
     local cell = getCell()
     if not cell then return nil end
 
@@ -233,11 +249,24 @@ function DTNPCClient.FindZombieByUUID(uuid)
         end
     end
 
+    if bestZombie and DTNPCClient.CacheLiveZombie then
+        DTNPCClient.CacheLiveZombie(uuid, bestZombie)
+    end
     return bestZombie
 end
 
 function DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
     if not bodyInstanceID then return nil end
+
+    if DTNPCClient.GetLiveZombieByBodyInstanceID then
+        local cachedZombie = DTNPCClient.GetLiveZombieByBodyInstanceID(bodyInstanceID)
+        if cachedZombie and not cachedZombie:isDead() and cachedZombie:getPersistentOutfitID() == bodyInstanceID then
+            return cachedZombie
+        end
+        if cachedZombie == nil and DTNPCClient.UncacheLiveZombie then
+            DTNPCClient.UncacheLiveZombie(nil, bodyInstanceID)
+        end
+    end
 
     local cell = getCell()
     if not cell then return nil end
@@ -248,6 +277,11 @@ function DTNPCClient.FindZombieByBodyInstanceID(bodyInstanceID)
     for i = 0, zombieList:size() - 1 do
         local zombie = zombieList:get(i)
         if zombie and not zombie:isDead() and zombie:getPersistentOutfitID() == bodyInstanceID then
+            local modData = zombie:getModData()
+            local uuid = modData and modData.DTNPC_UUID or DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID]
+            if uuid and DTNPCClient.CacheLiveZombie then
+                DTNPCClient.CacheLiveZombie(uuid, zombie)
+            end
             return zombie
         end
     end

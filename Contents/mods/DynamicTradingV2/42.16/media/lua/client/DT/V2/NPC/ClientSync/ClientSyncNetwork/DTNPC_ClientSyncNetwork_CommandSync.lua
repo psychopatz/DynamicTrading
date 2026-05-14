@@ -68,6 +68,9 @@ function Handlers.HandleSyncNPC(args)
     local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
     local cached = DTNPCClient.NPCCache[uuid]
     if zombie then
+        if DTNPCClient.CacheLiveZombie then
+            DTNPCClient.CacheLiveZombie(uuid, zombie)
+        end
         DTNPCClient.ApplyVisualsToNPC(zombie, args.npcData)
         DTNPCClient.ReconcilePosition(zombie, args.x, args.y, args.z)
         DTNPCClient.ProcessedZombies[uuid] = true
@@ -116,6 +119,9 @@ function Handlers.HandleSyncAllNPCs(args)
 
             local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
             if zombie then
+                if DTNPCClient.CacheLiveZombie then
+                    DTNPCClient.CacheLiveZombie(uuid, zombie)
+                end
                 DTNPCClient.ApplyVisualsToNPC(zombie, npcData)
                 DTNPCClient.ProcessedZombies[uuid] = true
 
@@ -156,6 +162,9 @@ function Handlers.HandleSyncNearbyNPCs(args)
                 local zombie = Helpers.FindZombieByIdentifiers(uuid, bodyInstanceID)
                 local cached = DTNPCClient.NPCCache[uuid]
                 if zombie then
+                    if DTNPCClient.CacheLiveZombie then
+                        DTNPCClient.CacheLiveZombie(uuid, zombie)
+                    end
                     DTNPCClient.ApplyVisualsToNPC(zombie, npcData.npcData)
                     DTNPCClient.ReconcilePosition(zombie, x, y, z)
                     DTNPCClient.ProcessedZombies[uuid] = true

@@ -111,6 +111,9 @@ function Handlers.HandleRemoveNPC(args)
     if removeCache then
         DTNPCClient.RemoveFromCache(uuid, bodyInstanceID)
     elseif bodyInstanceID and DTNPCClient.BodyInstanceIDToUUID and DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] == uuid then
+        if DTNPCClient.UncacheLiveZombie then
+            DTNPCClient.UncacheLiveZombie(uuid, bodyInstanceID)
+        end
         DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = nil
     end
 
@@ -153,6 +156,9 @@ function Handlers.HandleRemoveNPCInstance(args)
 
     if DTNPCClient.BodyInstanceIDToUUID and DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] == uuid then
         DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = nil
+    end
+    if DTNPCClient.UncacheLiveZombie then
+        DTNPCClient.UncacheLiveZombie(uuid, bodyInstanceID)
     end
 
     local tracked = DTNPCClient.HealthBarTracked and uuid and DTNPCClient.HealthBarTracked[uuid] or nil

@@ -12,8 +12,32 @@ DTNPCManager.TickRuntime = DTNPCManager.TickRuntime or {}
 
 local tickInternal = DTNPCManager.TickInternal
 local tickRuntime = DTNPCManager.TickRuntime
+tickRuntime.WorldSweepBuckets = tickRuntime.WorldSweepBuckets or { phase = 0 }
 
-local function processZombieTracking(zombie, uuid, savedData, players, shouldBroadcast)
+local function isPotentialDTNPCZombie(zombie)
+    if not zombie then
+        return false
+    end
+
+    local modData = zombie:getModData()
+    if modData and (modData.DTNPC_UUID or modData.IsDTNPC or modData.DTNPC_Data or modData.DTNPCBrain) then
+        return true
+    end
+
+    local bodyInstanceID = zombie:getPersistentOutfitID()
+    return bodyInstanceID ~= nil
+        and DTNPCManager.BodyInstanceIDToUUID ~= nil
+        and DTNPCManager.BodyInstanceIDToUUID[bodyInstanceID] ~= nil
+end
+
+local function isZombieBucketActive(zombie, phase, divisor)
+    local numericDivisor = math.max(1, math.floor(tonumber(divisor) or 1))
+    local bodyInstanceID = zombie and zombie.getPersistentOutfitID and tonumber(zombie:getPersistentOutfitID()) or 0
+    bodyInstanceID = math.max(0, math.floor(bodyInstanceID or 0))
+    return ((bodyInstanceID + math.max(0, math.floor(tonumber(phase) or 0))) % numericDivisor) == 0
+end
+
+local function processZombieTracking(zombie, uuid, savedData, players, shouldBroadcast, runDistanceRefresh, runRepairCheck)
     if DTNPC and DTNPC.ApplySafetyFlags then
         DTNPC.ApplySafetyFlags(zombie, savedData, { clearPlayerTarget = true })
     elseif DTNPC and DTNPC.ApplyCharacterFlags then
@@ -55,7 +79,7 @@ local function processZombieTracking(zombie, uuid, savedData, players, shouldBro
 
     DTNPC_SpatialHash.InsertNPC(uuid, newX, newY, newZ, nil)
 
-    if #players > 0 then
+    if runDistanceRefresh and #players > 0 then
         DTNPC_DistanceFrequency.UpdateNPC(uuid, newX, newY, players)
     end
 
@@ -64,16 +88,18 @@ local function processZombieTracking(zombie, uuid, savedData, players, shouldBro
         zombie:setTarget(nil)
     end
 
-    local modData = zombie:getModData()
-    local needsRepair = (not modData.IsDTNPC)
-        or (modData.DTNPC_UUID ~= uuid)
-        or (not modData.DTNPC_Data)
-        or (not modData.DTNPCVisualID)
-        or (modData.DTNPCVisualID == 0)
-        or (savedData.visualID and modData.DTNPCVisualID ~= savedData.visualID)
+    if runRepairCheck then
+        local modData = zombie:getModData()
+        local needsRepair = (not modData.IsDTNPC)
+            or (modData.DTNPC_UUID ~= uuid)
+            or (not modData.DTNPC_Data)
+            or (not modData.DTNPCVisualID)
+            or (modData.DTNPCVisualID == 0)
+            or (savedData.visualID and modData.DTNPCVisualID ~= savedData.visualID)
 
-    if needsRepair and DTNPCManager.ReclaimZombie then
-        DTNPCManager.ReclaimZombie(zombie, savedData, "tick-repair")
+        if needsRepair and DTNPCManager.ReclaimZombie then
+            DTNPCManager.ReclaimZombie(zombie, savedData, "tick-repair")
+        end
     end
 
     if shouldBroadcast and DTNPCServerCore and DTNPCServerCore.BroadcastPosition then
@@ -111,7 +137,7 @@ local function adoptExistingZombie(zombie, uuid, rosterData, players)
     return DTNPCManager.Data[uuid]
 end
 
-local function processZombie(zombie, players, shouldBroadcast)
+local function processZombie(zombie, players, shouldBroadcast, bucketPhase)
     if zombie and zombie:isDead() then
         local deadUUID = DTNPCManager.GetUUIDFromZombie(zombie)
         if deadUUID and DTNPCLifecycle and DTNPCLifecycle.HandleZombieDead then
@@ -121,6 +147,10 @@ local function processZombie(zombie, players, shouldBroadcast)
     end
 
     if not zombie then
+        return
+    end
+
+    if not isPotentialDTNPCZombie(zombie) then
         return
     end
 
@@ -138,7 +168,15 @@ local function processZombie(zombie, players, shouldBroadcast)
     end
 
     if savedData then
-        processZombieTracking(zombie, uuid, savedData, players, shouldBroadcast)
+        processZombieTracking(
+            zombie,
+            uuid,
+            savedData,
+            players,
+            shouldBroadcast,
+            shouldBroadcast or isZombieBucketActive(zombie, bucketPhase, 2),
+            isZombieBucketActive(zombie, bucketPhase, 4)
+        )
     end
 end
 
@@ -146,6 +184,26 @@ function DTNPCManager.OnTick()
     local counters = tickRuntime.Counters
     local flags = tickRuntime.Flags
     local constants = tickRuntime.Constants
+    local cachedCell = nil
+    local cachedZombieList = nil
+    local cachedPlayers = nil
+
+    local function getWorldZombieList()
+        if cachedZombieList ~= nil then
+            return cachedZombieList
+        end
+
+        cachedCell = cachedCell or getCell()
+        cachedZombieList = cachedCell and cachedCell:getZombieList() or false
+        return cachedZombieList ~= false and cachedZombieList or nil
+    end
+
+    local function getActivePlayers()
+        if cachedPlayers == nil then
+            cachedPlayers = DTNPCManager.GetActivePlayers()
+        end
+        return cachedPlayers
+    end
 
     counters.tickCounter = counters.tickCounter + 1
     counters.positionBroadcastCounter = counters.positionBroadcastCounter + 1
@@ -215,12 +273,13 @@ function DTNPCManager.OnTick()
         DTNPCServerCore.ProcessPendingArrivals()
     end
 
+    local shellCleanupRan = false
     if counters.shellCleanupCheckCounter >= constants.SHELL_CLEANUP_CHECK_RATE then
         counters.shellCleanupCheckCounter = 0
-        local shellCell = getCell()
-        local shellZombieList = shellCell and shellCell:getZombieList() or nil
+        local shellZombieList = getWorldZombieList()
         if shellZombieList then
-            tickInternal.CleanupNearbyAbstractSoulShells(shellZombieList, DTNPCManager.GetActivePlayers())
+            tickInternal.CleanupNearbyAbstractSoulShells(shellZombieList, getActivePlayers())
+            shellCleanupRan = true
         end
     end
 
@@ -237,20 +296,21 @@ function DTNPCManager.OnTick()
         DynamicTrading_TradeScheduler.NormalizeRosterState(nil, getGameTime():getWorldAgeHours())
     end
 
-    local cell = getCell()
-    if not cell then
-        return
-    end
-
-    local zombieList = cell:getZombieList()
+    local zombieList = getWorldZombieList()
     if not zombieList then
         return
     end
 
-    local players = DTNPCManager.GetActivePlayers()
-    tickInternal.CleanupNearbyAbstractSoulShells(zombieList, players)
+    local players = getActivePlayers()
+    if not shellCleanupRan then
+        tickInternal.CleanupNearbyAbstractSoulShells(zombieList, players)
+    end
+
+    local bucketState = tickRuntime.WorldSweepBuckets
+    bucketState.phase = (math.max(0, math.floor(tonumber(bucketState.phase) or 0)) + 1) % 32
+    local bucketPhase = bucketState.phase
 
     for i = 0, zombieList:size() - 1 do
-        processZombie(zombieList:get(i), players, shouldBroadcast)
+        processZombie(zombieList:get(i), players, shouldBroadcast, bucketPhase)
     end
 end

@@ -98,15 +98,17 @@ local function sendToNearbyPlayers(command, data, x, y, z, range)
     local players = getActivePlayers()
     local sent = 0
     local safeData = DTNPCServerCore.SanitizeNetworkData and DTNPCServerCore.SanitizeNetworkData(data) or (data or {})
+    local rangeSq = math.max(0, tonumber(range) or 0)
+    rangeSq = rangeSq * rangeSq
 
     for _, player in ipairs(players) do
         local dx = player:getX() - x
         local dy = player:getY() - y
         local dz = player:getZ() - z
-        local dist = math.sqrt(dx * dx + dy * dy)
+        local distSq = (dx * dx) + (dy * dy)
 
         -- Strict visibility: only nearby players get world-sync data.
-        if math.abs(dz) <= 1 and dist <= range then
+        if math.abs(dz) <= 1 and distSq <= rangeSq then
             sendServerCommand(player, "DTNPC", command, safeData)
             sent = sent + 1
         end

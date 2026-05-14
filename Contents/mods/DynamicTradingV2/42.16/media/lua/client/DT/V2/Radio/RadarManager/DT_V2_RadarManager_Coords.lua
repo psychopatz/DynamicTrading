@@ -6,20 +6,9 @@
 local RadarManager = DT_V2_RadarManager
 
 function RadarManager.GetTraderCoords(uuid)
-    local cell = getCell()
-    if cell then
-        local zombieList = cell:getZombieList()
-        if zombieList then
-            for i = 0, zombieList:size() - 1 do
-                local zombie = zombieList:get(i)
-                if zombie then
-                    local modData = zombie:getModData()
-                    if modData.DTNPC_UUID == uuid then
-                        return zombie:getX(), zombie:getY(), zombie:getZ(), true
-                    end
-                end
-            end
-        end
+    local zombie = DTNPCClient and DTNPCClient.FindZombieByUUID and DTNPCClient.FindZombieByUUID(uuid) or nil
+    if zombie then
+        return zombie:getX(), zombie:getY(), zombie:getZ(), true
     end
 
     local rosterData = RadarManager.GetRosterData()

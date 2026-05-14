@@ -26,6 +26,8 @@ local SEARCH_ITEM_LIMIT = 48
 local SEARCH_SYNC_COOLDOWN_MS = 1000
 local SEARCH_RECENT_COLLECT_TTL_MS = 4000
 local SEARCH_VISUAL_COLLECT_MS = 2000
+local SEARCH_SCAN_CACHE_TTL_MS = 400
+local SEARCH_SCAN_BUCKET_SIZE = 2
 
 local function lower(value)
     return string.lower(tostring(value or ""))
@@ -416,10 +418,13 @@ function DTNPCLootSearch.EnsureState(npcData)
     state.collectEventCounter = math.max(0, math.floor(tonumber(state.collectEventCounter) or 0))
     state.lastCollectEvent = type(state.lastCollectEvent) == "table" and state.lastCollectEvent or nil
     state.visualCollectTarget = type(state.visualCollectTarget) == "table" and state.visualCollectTarget or nil
+    state.scanCacheNonce = math.max(0, math.floor(tonumber(state.scanCacheNonce) or 0))
     pruneRecentCollects(state)
     getVisualCollectTarget(state)
     return state
 end
+
+DTNPCLootSearch.RuntimeScanCache = DTNPCLootSearch.RuntimeScanCache or {}
 
 local function appendItemEntry(items, invItem, sourceKey, prefix, limit, includeRuntimeRefs)
     if not invItem or #items >= limit then
@@ -455,6 +460,41 @@ local function appendItemEntry(items, invItem, sourceKey, prefix, limit, include
     end
 end
 
+local function getLootConfigSignature(config)
+    return table.concat({
+        tostring(config and config.radius or 0),
+        tostring(config and config.includeLooseWorldItems == true),
+        tostring(config and config.includeGroundContainers == true),
+        tostring(config and config.includeFurnitureContainers == true),
+        tostring(config and config.includeCorpseContainers == true),
+        tostring(config and config.includeVehicleContainers == true),
+    }, "|")
+end
+
+local function getAnchorBucketValue(value)
+    return math.floor((tonumber(value) or 0) / SEARCH_SCAN_BUCKET_SIZE)
+end
+
+local function getScanCacheKey(anchor, npcData, config, includeRuntimeRefs, expandItems)
+    if not anchor then
+        return nil
+    end
+
+    local state = DTNPCLootSearch.EnsureState(npcData)
+    return table.concat({
+        tostring(npcData and npcData.uuid or "global"),
+        tostring(getAnchorBucketValue(anchor:getX())),
+        tostring(getAnchorBucketValue(anchor:getY())),
+        tostring(math.floor(tonumber(anchor:getZ()) or 0)),
+        getLootConfigSignature(config),
+        includeRuntimeRefs == true and "runtime" or "plain",
+        expandItems == false and "summary" or "detail",
+        tostring(state.scanCacheNonce or 0),
+        tostring(SEARCH_SOURCE_LIMIT),
+        tostring(SEARCH_ITEM_LIMIT),
+    }, "|")
+end
+
 local function serializeSource(source)
     local items = {}
     for _, item in ipairs(source.items or {}) do
@@ -481,7 +521,11 @@ local function serializeSource(source)
 end
 
 local function addSource(result, source, limit)
-    if not source or #(source.items or {}) <= 0 or #result >= limit then
+    if not source or #result >= limit then
+        return
+    end
+
+    if source.hasItems ~= true and #(source.items or {}) <= 0 then
         return
     end
 
@@ -493,7 +537,66 @@ local function addSource(result, source, limit)
     result[#result + 1] = source
 end
 
-function DTNPCLootSearch.ScanNearbySources(anchor, npcData, includeRuntimeRefs)
+local function createSource(sourceKey, kind, label, x, y, z, distance, stopDistance)
+    return {
+        key = sourceKey,
+        kind = kind,
+        label = label,
+        x = x,
+        y = y,
+        z = z,
+        distance = distance,
+        stopDistance = stopDistance,
+        items = {},
+        hasItems = false,
+        itemsExpanded = false,
+    }
+end
+
+function DTNPCLootSearch.ExpandSourceItems(source, includeRuntimeRefs)
+    if type(source) ~= "table" then
+        return nil
+    end
+
+    if source.itemsExpanded == true then
+        return source
+    end
+
+    local items = {}
+    if source.kind == "bag" then
+        local bagItem = source.runtimeBagItem
+        local inventory = bagItem and bagItem.getInventory and bagItem:getInventory() or nil
+        local bagItems = inventory and inventory.getItems and inventory:getItems() or nil
+        if bagItems then
+            for bagIndex = 0, bagItems:size() - 1 do
+                appendItemEntry(items, bagItems:get(bagIndex), source.key, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
+                if #items >= SEARCH_ITEM_LIMIT then
+                    break
+                end
+            end
+        end
+    elseif source.kind == "groundItem" then
+        appendItemEntry(items, source.runtimeItem, source.key, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
+    else
+        local container = source.runtimeContainer
+        local containerItems = container and container.getItems and container:getItems() or nil
+        if containerItems then
+            for itemIndex = 0, containerItems:size() - 1 do
+                appendItemEntry(items, containerItems:get(itemIndex), source.key, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
+                if #items >= SEARCH_ITEM_LIMIT then
+                    break
+                end
+            end
+        end
+    end
+
+    source.items = items
+    source.hasItems = #items > 0
+    source.itemsExpanded = true
+    return source
+end
+
+local function buildScanSources(anchor, npcData, includeRuntimeRefs, expandItems)
     if not anchor then
         return {}
     end
@@ -530,39 +633,33 @@ function DTNPCLootSearch.ScanNearbySources(anchor, npcData, includeRuntimeRefs)
 
                             if item and inventory and lower(item.getCategory and item:getCategory() or "") == "container" and config.includeGroundContainers then
                                 local sourceKey = "bag:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(item:getID())
-                                local source = {
-                                    key = sourceKey,
-                                    kind = "bag",
-                                    label = getItemDisplayName(item),
-                                    x = x,
-                                    y = y,
-                                    z = anchorZ,
-                                    distance = distance,
-                                    items = {},
-                                }
+                                local source = createSource(sourceKey, "bag", getItemDisplayName(item), x, y, anchorZ, distance, SEARCH_GROUND_STOP_DISTANCE)
+                                source.runtimeBagItem = includeRuntimeRefs == true and item or nil
+
                                 local bagItems = inventory.getItems and inventory:getItems() or nil
-                                if bagItems then
+                                if bagItems and bagItems:size() > 0 then
+                                    source.hasItems = true
+                                end
+                                if expandItems and bagItems then
                                     for bagIndex = 0, bagItems:size() - 1 do
                                         appendItemEntry(source.items, bagItems:get(bagIndex), sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
                                         if #source.items >= SEARCH_ITEM_LIMIT then
                                             break
                                         end
                                     end
+                                    source.itemsExpanded = true
+                                    source.hasItems = #source.items > 0
                                 end
                                 addSource(sources, source, SEARCH_SOURCE_LIMIT)
                             elseif item and not inventory and config.includeLooseWorldItems then
                                 local sourceKey = "groundItem:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(item:getID())
-                                local source = {
-                                    key = sourceKey,
-                                    kind = "groundItem",
-                                    label = "Ground Item",
-                                    x = x,
-                                    y = y,
-                                    z = anchorZ,
-                                    distance = distance,
-                                    items = {},
-                                }
-                                appendItemEntry(source.items, item, sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
+                                local source = createSource(sourceKey, "groundItem", "Ground Item", x, y, anchorZ, distance, SEARCH_GROUND_STOP_DISTANCE)
+                                source.runtimeItem = includeRuntimeRefs == true and item or nil
+                                source.hasItems = true
+                                if expandItems then
+                                    appendItemEntry(source.items, item, sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
+                                    source.itemsExpanded = true
+                                end
                                 addSource(sources, source, SEARCH_SOURCE_LIMIT)
                             end
                         end
@@ -583,21 +680,27 @@ function DTNPCLootSearch.ScanNearbySources(anchor, npcData, includeRuntimeRefs)
                                 local items = container and container.getItems and container:getItems() or nil
                                 if items and items:size() > 0 then
                                     local sourceKey = "world:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(objectIndex) .. ":" .. tostring(containerIndex)
-                                    local source = {
-                                        key = sourceKey,
-                                        kind = "world",
-                                        label = container.getType and tostring(container:getType()) or "Container",
-                                        x = x,
-                                        y = y,
-                                        z = anchorZ,
-                                        distance = distance,
-                                        items = {},
-                                    }
-                                    for itemIndex = 0, items:size() - 1 do
-                                        appendItemEntry(source.items, items:get(itemIndex), sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
-                                        if #source.items >= SEARCH_ITEM_LIMIT then
-                                            break
+                                    local source = createSource(
+                                        sourceKey,
+                                        "world",
+                                        container.getType and tostring(container:getType()) or "Container",
+                                        x,
+                                        y,
+                                        anchorZ,
+                                        distance,
+                                        SEARCH_WORLD_STOP_DISTANCE
+                                    )
+                                    source.runtimeContainer = includeRuntimeRefs == true and container or nil
+                                    source.hasItems = true
+                                    if expandItems then
+                                        for itemIndex = 0, items:size() - 1 do
+                                            appendItemEntry(source.items, items:get(itemIndex), sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
+                                            if #source.items >= SEARCH_ITEM_LIMIT then
+                                                break
+                                            end
                                         end
+                                        source.itemsExpanded = true
+                                        source.hasItems = #source.items > 0
                                     end
                                     addSource(sources, source, SEARCH_SOURCE_LIMIT)
                                 end
@@ -618,21 +721,18 @@ function DTNPCLootSearch.ScanNearbySources(anchor, npcData, includeRuntimeRefs)
                             local items = container and container.getItems and container:getItems() or nil
                             if items and items:size() > 0 then
                                 local sourceKey = "corpse:" .. tostring(x) .. ":" .. tostring(y) .. ":" .. tostring(anchorZ) .. ":" .. tostring(staticObject:getID())
-                                local source = {
-                                    key = sourceKey,
-                                    kind = "corpse",
-                                    label = "Corpse",
-                                    x = x,
-                                    y = y,
-                                    z = anchorZ,
-                                    distance = distance,
-                                    items = {},
-                                }
-                                for itemIndex = 0, items:size() - 1 do
-                                    appendItemEntry(source.items, items:get(itemIndex), sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
-                                    if #source.items >= SEARCH_ITEM_LIMIT then
-                                        break
+                                local source = createSource(sourceKey, "corpse", "Corpse", x, y, anchorZ, distance, SEARCH_CORPSE_STOP_DISTANCE)
+                                source.runtimeContainer = includeRuntimeRefs == true and container or nil
+                                source.hasItems = true
+                                if expandItems then
+                                    for itemIndex = 0, items:size() - 1 do
+                                        appendItemEntry(source.items, items:get(itemIndex), sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
+                                        if #source.items >= SEARCH_ITEM_LIMIT then
+                                            break
+                                        end
                                     end
+                                    source.itemsExpanded = true
+                                    source.hasItems = #source.items > 0
                                 end
                                 addSource(sources, source, SEARCH_SOURCE_LIMIT)
                             end
@@ -651,21 +751,27 @@ function DTNPCLootSearch.ScanNearbySources(anchor, npcData, includeRuntimeRefs)
                             local items = container and container.getItems and container:getItems() or nil
                             if items and items:size() > 0 then
                                 local sourceKey = "vehicle:" .. tostring(vehicleID) .. ":" .. tostring(partIndex)
-                                local source = {
-                                    key = sourceKey,
-                                    kind = "vehicle",
-                                    label = container.getType and tostring(container:getType()) or "Vehicle",
-                                    x = x,
-                                    y = y,
-                                    z = anchorZ,
-                                    distance = distance,
-                                    items = {},
-                                }
-                                for itemIndex = 0, items:size() - 1 do
-                                    appendItemEntry(source.items, items:get(itemIndex), sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
-                                    if #source.items >= SEARCH_ITEM_LIMIT then
-                                        break
+                                local source = createSource(
+                                    sourceKey,
+                                    "vehicle",
+                                    container.getType and tostring(container:getType()) or "Vehicle",
+                                    x,
+                                    y,
+                                    anchorZ,
+                                    distance,
+                                    SEARCH_VEHICLE_STOP_DISTANCE
+                                )
+                                source.runtimeContainer = includeRuntimeRefs == true and container or nil
+                                source.hasItems = true
+                                if expandItems then
+                                    for itemIndex = 0, items:size() - 1 do
+                                        appendItemEntry(source.items, items:get(itemIndex), sourceKey, "", SEARCH_ITEM_LIMIT, includeRuntimeRefs == true)
+                                        if #source.items >= SEARCH_ITEM_LIMIT then
+                                            break
+                                        end
                                     end
+                                    source.itemsExpanded = true
+                                    source.hasItems = #source.items > 0
                                 end
                                 addSource(sources, source, SEARCH_SOURCE_LIMIT)
                             end
@@ -689,15 +795,55 @@ function DTNPCLootSearch.ScanNearbySources(anchor, npcData, includeRuntimeRefs)
     return sources
 end
 
+function DTNPCLootSearch.GetCachedNearbySources(anchor, npcData, includeRuntimeRefs, expandItems)
+    if not anchor then
+        return {}
+    end
+
+    local config = normalizeConfig(npcData)
+    local cacheKey = getScanCacheKey(anchor, npcData, config, includeRuntimeRefs, expandItems ~= false)
+    local currentTime = nowMillis()
+    if (tonumber(DTNPCLootSearch.RuntimeScanCacheLastPruneAt) or 0) + SEARCH_SCAN_CACHE_TTL_MS <= currentTime then
+        for key, entry in pairs(DTNPCLootSearch.RuntimeScanCache) do
+            if (tonumber(entry and entry.expiresAt) or 0) <= currentTime then
+                DTNPCLootSearch.RuntimeScanCache[key] = nil
+            end
+        end
+        DTNPCLootSearch.RuntimeScanCacheLastPruneAt = currentTime
+    end
+    local cacheEntry = cacheKey and DTNPCLootSearch.RuntimeScanCache[cacheKey] or nil
+    if cacheEntry and (tonumber(cacheEntry.expiresAt) or 0) > currentTime then
+        return cacheEntry.sources or {}
+    end
+
+    local sources = buildScanSources(anchor, npcData, includeRuntimeRefs == true, expandItems ~= false)
+    if cacheKey then
+        DTNPCLootSearch.RuntimeScanCache[cacheKey] = {
+            expiresAt = currentTime + SEARCH_SCAN_CACHE_TTL_MS,
+            sources = sources,
+        }
+    end
+    return sources
+end
+
+function DTNPCLootSearch.InvalidateNearbySources(anchor, npcData)
+    local state = DTNPCLootSearch.EnsureState(npcData)
+    state.scanCacheNonce = math.max(0, math.floor(tonumber(state.scanCacheNonce) or 0)) + 1
+end
+
+function DTNPCLootSearch.ScanNearbySources(anchor, npcData, includeRuntimeRefs)
+    return DTNPCLootSearch.GetCachedNearbySources(anchor, npcData, includeRuntimeRefs == true, true)
+end
+
 function DTNPCLootSearch.SelectNextUndiscoveredSource(anchor, npcData)
     if not DTNPCLootSearch.IsDynamicColoniesCompanion(npcData) then
         return nil
     end
     local state = DTNPCLootSearch.EnsureState(npcData)
-    local sources = DTNPCLootSearch.ScanNearbySources(anchor, npcData, true)
+    local sources = DTNPCLootSearch.GetCachedNearbySources(anchor, npcData, true, false)
     for _, source in ipairs(sources) do
         if not state.searchedSources[source.key] then
-            return source
+            return DTNPCLootSearch.ExpandSourceItems(source, true)
         end
     end
     return nil
@@ -708,10 +854,10 @@ function DTNPCLootSearch.FindSourceByKey(anchor, npcData, sourceKey)
         return nil
     end
 
-    local sources = DTNPCLootSearch.ScanNearbySources(anchor, npcData, true)
+    local sources = DTNPCLootSearch.GetCachedNearbySources(anchor, npcData, true, false)
     for _, source in ipairs(sources) do
         if source.key == sourceKey then
-            return source
+            return DTNPCLootSearch.ExpandSourceItems(source, true)
         end
     end
     return nil
@@ -844,7 +990,7 @@ end
 local function buildSyncSources(anchor, npcData, state)
     local sources = {}
     if anchor then
-        local scannedSources = DTNPCLootSearch.ScanNearbySources(anchor, npcData, false)
+        local scannedSources = DTNPCLootSearch.GetCachedNearbySources(anchor, npcData, false, true)
         for _, source in ipairs(scannedSources or {}) do
             sources[#sources + 1] = serializeSource(source)
         end
@@ -1135,6 +1281,10 @@ function DTNPCLootSearch.TryCollectQueuedItems(zombie, npcData, worker, apis, so
         state.pendingCollects[source.key] = remaining
     else
         state.pendingCollects[source.key] = nil
+    end
+
+    if stateChanged then
+        DTNPCLootSearch.InvalidateNearbySources(nil, npcData)
     end
 
     local refreshed = DTNPCLootSearch.FindSourceByKey({
