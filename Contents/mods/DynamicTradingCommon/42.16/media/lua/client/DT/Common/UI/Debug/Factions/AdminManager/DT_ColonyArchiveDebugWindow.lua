@@ -23,6 +23,20 @@ local function isDynamicColoniesActive()
     return rawget(_G, "DC_Colony") ~= nil
 end
 
+local function getDynamicColoniesDebugWindow()
+    local windowClass = rawget(_G, "DC_DebugArchiveWindow")
+    if windowClass then
+        return windowClass
+    end
+
+    local ok = pcall(require, "DC/UI/Colony/DebugArchive/DC_DebugArchiveWindow")
+    if ok then
+        return rawget(_G, "DC_DebugArchiveWindow")
+    end
+
+    return nil
+end
+
 local function trim(value)
     return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
@@ -53,6 +67,26 @@ end
 local function isArchiveState(faction)
     local state = getLeadershipState(faction)
     return state == "AdminReview" or state == "Archived"
+end
+
+local function resolveDebugOwnerUsername(faction)
+    if type(faction) ~= "table" then
+        return ""
+    end
+
+    local leader = trim(faction.leaderUsername)
+    local previousLeader = trim(faction.previousLeaderUsername)
+    local owner = leader
+
+    if owner == "" or string.find(owner, "^AdminReview_", 1, false) then
+        owner = previousLeader
+    end
+
+    if owner == "" then
+        owner = leader
+    end
+
+    return owner
 end
 
 local function getPlayerColonyEntries(factionData)
@@ -207,6 +241,11 @@ function DT_ColonyArchiveDebugWindow:createChildren()
     self.btnDelete.backgroundColor = { r = 0.6, g = 0.18, b = 0.18, a = 1 }
     self:addChild(self.btnDelete)
 
+    self.btnColonyDebug = ISButton:new(self.width - pad - btnW - 130, btnY, 120, 25, "COLONY DEBUG", self, DT_ColonyArchiveDebugWindow.onColonyDebugClick)
+    self.btnColonyDebug:initialise()
+    self.btnColonyDebug.backgroundColor = { r = 0.22, g = 0.28, b = 0.58, a = 1 }
+    self:addChild(self.btnColonyDebug)
+
     self.btnClose = ISButton:new(self.width - pad - btnW, btnY, btnW, 25, "CLOSE", self, function(window)
         window:setVisible(false)
         window:removeFromUIManager()
@@ -320,11 +359,16 @@ function DT_ColonyArchiveDebugWindow:updateControls()
     local coloniesActive = isDynamicColoniesActive()
     local hasSelection = faction ~= nil
     local archiveState = hasSelection and isArchiveState(faction)
+    local debugWindow = hasSelection and getDynamicColoniesDebugWindow() or nil
+    local debugOwner = hasSelection and resolveDebugOwnerUsername(faction) or ""
 
     if self.btnRestore then self.btnRestore:setEnable(coloniesActive and hasSelection) end
     if self.btnReview then self.btnReview:setEnable(coloniesActive and hasSelection and not archiveState) end
     if self.btnArchive then self.btnArchive:setEnable(coloniesActive and hasSelection and getLeadershipState(faction) ~= "Archived") end
     if self.btnDelete then self.btnDelete:setEnable(coloniesActive and hasSelection and archiveState) end
+    if self.btnColonyDebug then
+        self.btnColonyDebug:setEnable(coloniesActive and hasSelection and debugWindow ~= nil and debugOwner ~= "")
+    end
 end
 
 function DT_ColonyArchiveDebugWindow:announce(message)
@@ -373,6 +417,30 @@ function DT_ColonyArchiveDebugWindow:onDeleteClick()
     end
     DT_FactionDebugActions.deletePlayerFactionArchive(faction.id)
     self:refreshList()
+end
+
+function DT_ColonyArchiveDebugWindow:onColonyDebugClick()
+    local faction = self:getSelectedFaction()
+    if not faction then
+        self:announce("Select a colony first.")
+        return
+    end
+
+    local debugWindow = getDynamicColoniesDebugWindow()
+    if not debugWindow or not debugWindow.Open then
+        self:announce("Dynamic Colonies debugger window is not available.")
+        return
+    end
+
+    local ownerUsername = resolveDebugOwnerUsername(faction)
+    if ownerUsername == "" then
+        self:announce("This colony has no valid owner username for debugging.")
+        return
+    end
+
+    debugWindow.Open(self, {
+        ownerUsername = ownerUsername,
+    })
 end
 
 if not DT_ColonyArchiveDebugWindow.EventsAdded then
