@@ -89,6 +89,12 @@
     "Sandbox_DynamicTrading.NPCStaminaThreshold": "NPC Stamina Exhaustion Threshold",
     "Sandbox_DynamicTrading.NPCStaminaThreshold_tooltip": "The stamina percentage (0.05 to 0.95) at which an exhausted NPC can resume normal activity. Default is 0.40 (40%).",
 
+    "Sandbox_DynamicTrading.NPCMeleeStaminaCost": "NPC Melee Stamina Cost",
+    "Sandbox_DynamicTrading.NPCMeleeStaminaCost_tooltip": "Base stamina cost for each melee swing at skill level 0. Higher melee skill lowers this cost, down to about 10% at level 20.",
+
+    "Sandbox_DynamicTrading.NPCRangedStaminaCost": "NPC Ranged Stamina Cost",
+    "Sandbox_DynamicTrading.NPCRangedStaminaCost_tooltip": "Base stamina cost for each shot at skill level 0. Higher shooting skill lowers this cost, down to about 10% at level 20.",
+
     "Sandbox_DynamicTrading.ReviveCostMin": "Revive Supply Cost (Min)",
     "Sandbox_DynamicTrading.ReviveCostMin_tooltip": "Minimum number of bandages or ripped sheets required to revive a non-hostile incapacitated NPC.",
 

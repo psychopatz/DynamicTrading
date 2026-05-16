@@ -207,6 +207,7 @@ function Handlers.HandleUpdatePosition(args)
         cached.npcData._dtSprintMode = args.sprintMode
         cached.npcData._dtSprintSlowUntil = args.sprintSlowUntil
         cached.npcData._dtMeleeFatigueUntil = args.meleeFatigueUntil
+        cached.npcData._dtRangedFatigueUntil = args.rangedFatigueUntil
         if bodyInstanceID then
             DTNPCClient.BodyInstanceIDToUUID[bodyInstanceID] = uuid
             cached.npcData.currentBodyInstanceID = bodyInstanceID
@@ -300,6 +301,7 @@ function Handlers.HandleUpdatePosition(args)
                 zombieData._dtSprintMode = args.sprintMode
                 zombieData._dtSprintSlowUntil = args.sprintSlowUntil
                 zombieData._dtMeleeFatigueUntil = args.meleeFatigueUntil
+                zombieData._dtRangedFatigueUntil = args.rangedFatigueUntil
             end
 
             if not DTNPCClient.LocalControlled[uuid] then

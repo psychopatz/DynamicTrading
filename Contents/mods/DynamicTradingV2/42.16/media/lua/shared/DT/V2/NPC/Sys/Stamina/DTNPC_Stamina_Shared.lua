@@ -9,8 +9,12 @@ DTNPCStamina.Internal = DTNPCStamina.Internal or {}
 local Stamina = DTNPCStamina
 local Internal = DTNPCStamina.Internal
 
+local function getSandbox()
+    return SandboxVars and SandboxVars.DynamicTrading or nil
+end
+
 local function getSandboxThreshold()
-    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    local sandbox = getSandbox()
     return tonumber(sandbox and sandbox.NPCStaminaThreshold) or 0.40
 end
 
@@ -45,8 +49,29 @@ local function getSkillAverage(npcData)
     return ((tonumber(melee) or 0) + (tonumber(shooting) or 0)) * 0.5
 end
 
+local function getAttackSkillLevel(npcData, attackType)
+    local skillID = attackType == "ranged" and "Shooting" or "Melee"
+    return DTNPCProtect and DTNPCProtect.GetSkillLevel and DTNPCProtect.GetSkillLevel(npcData, skillID) or 0
+end
+
 local function getSkillNormalized(npcData)
     return clamp(getSkillAverage(npcData) / 20, 0, 1)
+end
+
+local function getAttackSkillNormalized(npcData, attackType)
+    return clamp(getAttackSkillLevel(npcData, attackType) / 20, 0, 1)
+end
+
+local function getAttackBaseCost(attackType)
+    local sandbox = getSandbox()
+    local key = attackType == "ranged" and "NPCRangedStaminaCost" or "NPCMeleeStaminaCost"
+    return math.max(0, tonumber(sandbox and sandbox[key]) or 30)
+end
+
+local function getAttackDrainAmount(npcData, attackType)
+    local normalized = getAttackSkillNormalized(npcData, attackType)
+    local baseCost = getAttackBaseCost(attackType)
+    return math.max(0, baseCost * (1 - (normalized * 0.9))), normalized, baseCost
 end
 
 local function getMaxStaminaForSkills(npcData)
@@ -136,6 +161,7 @@ function Stamina.EnsureDefaults(npcData)
     npcData._dtSprintMode = npcData._dtSprintMode or "fresh"
     npcData._dtSprintSlowUntil = tonumber(npcData._dtSprintSlowUntil) or 0
     npcData._dtMeleeFatigueUntil = tonumber(npcData._dtMeleeFatigueUntil) or 0
+    npcData._dtRangedFatigueUntil = tonumber(npcData._dtRangedFatigueUntil) or 0
     npcData._dtStaminaVisibleUntil = tonumber(npcData._dtStaminaVisibleUntil) or 0
 
     return npcData.staminaCurrent, npcData.staminaMax
@@ -151,6 +177,10 @@ Internal.nowMillis = nowMillis
 Internal.clamp = clamp
 Internal.getSkillAverage = getSkillAverage
 Internal.getSkillNormalized = getSkillNormalized
+Internal.getAttackSkillLevel = getAttackSkillLevel
+Internal.getAttackSkillNormalized = getAttackSkillNormalized
+Internal.getAttackBaseCost = getAttackBaseCost
+Internal.getAttackDrainAmount = getAttackDrainAmount
 Internal.getElapsedSeconds = getElapsedSeconds
 Internal.markVisible = markVisible
 Internal.setStaminaState = setStaminaState

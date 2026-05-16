@@ -353,6 +353,7 @@ function DTNPCServerCore.BroadcastPosition(zombie, npcData, forceUpdate)
         sprintMode = npcData._dtSprintMode,
         sprintSlowUntil = npcData._dtSprintSlowUntil,
         meleeFatigueUntil = npcData._dtMeleeFatigueUntil,
+        rangedFatigueUntil = npcData._dtRangedFatigueUntil,
         tier = tier
     }
     

@@ -236,6 +236,26 @@ option DynamicTrading.NPCStaminaThreshold
     translation = DynamicTrading.NPCStaminaThreshold,
 }
 
+option DynamicTrading.NPCMeleeStaminaCost
+{
+    type = double,
+    default = 30.0,
+    min = 0.0,
+    max = 100.0,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.NPCMeleeStaminaCost,
+}
+
+option DynamicTrading.NPCRangedStaminaCost
+{
+    type = double,
+    default = 30.0,
+    min = 0.0,
+    max = 100.0,
+    page = DynamicTradingNPC,
+    translation = DynamicTrading.NPCRangedStaminaCost,
+}
+
 option DynamicTrading.ReviveCostMin
 {
     type = integer,

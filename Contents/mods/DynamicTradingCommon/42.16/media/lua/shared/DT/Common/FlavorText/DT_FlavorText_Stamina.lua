@@ -23,3 +23,11 @@ DynamicTrading.FlavorText.RegisterTable("CompanionCombat", "MeleeFatigue", "EN",
     "Too tired to keep chaining hits.",
     "Need a beat before I go back in.",
 })
+
+DynamicTrading.FlavorText.RegisterTable("CompanionCombat", "RangedFatigue", "EN", {
+    "Need a second before I line up another shot.",
+    "Hands are shaky. Falling back a step.",
+    "Breathing's off. Give me a moment.",
+    "Can't keep firing like this.",
+    "Need to steady myself before I shoot again.",
+})

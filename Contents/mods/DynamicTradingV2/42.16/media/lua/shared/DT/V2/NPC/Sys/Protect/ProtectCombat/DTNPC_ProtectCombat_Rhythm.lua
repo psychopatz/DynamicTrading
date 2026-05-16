@@ -106,15 +106,31 @@ function DTNPCProtect.GetCombatRecovery(npcData, attackType, target)
     end
 
     local profile = DTNPCProtect.GetCombatRhythmProfile(npcData, attackType)
-    if attackType == "melee" and DTNPCStamina and DTNPCStamina.IsMeleeFatigued and DTNPCStamina.IsMeleeFatigued(npcData) then
-        local untilTime = DTNPCStamina.GetMeleeRecoveryUntil and DTNPCStamina.GetMeleeRecoveryUntil(npcData) or 0
-        npcData.combatRecoveryUntil = untilTime
-        return true, {
-            untilTime = untilTime,
-            distance = math.max((profile and profile.recoveryDistance or 1.6) + 0.85, 2.5),
-            profile = profile,
-            reason = "stamina",
-        }
+    if DTNPCStamina then
+        local isFatigued = nil
+        local getRecoveryUntil = nil
+        local recoveryExtraDistance = attackType == "ranged" and 0.35 or 0.85
+        local recoveryMinDistance = attackType == "ranged" and 4.5 or 2.5
+        local recoveryBaseDistance = attackType == "ranged" and 6.25 or 1.6
+
+        if attackType == "ranged" then
+            isFatigued = DTNPCStamina.IsRangedFatigued
+            getRecoveryUntil = DTNPCStamina.GetRangedRecoveryUntil
+        else
+            isFatigued = DTNPCStamina.IsMeleeFatigued
+            getRecoveryUntil = DTNPCStamina.GetMeleeRecoveryUntil
+        end
+
+        if isFatigued and isFatigued(npcData) then
+            local untilTime = getRecoveryUntil and getRecoveryUntil(npcData) or 0
+            npcData.combatRecoveryUntil = untilTime
+            return true, {
+                untilTime = untilTime,
+                distance = math.max((profile and profile.recoveryDistance or recoveryBaseDistance) + recoveryExtraDistance, recoveryMinDistance),
+                profile = profile,
+                reason = "stamina",
+            }
+        end
     end
 
     local rhythm = getCombatRhythmBucket(npcData)
@@ -178,6 +194,8 @@ function DTNPCProtect.RecordCombatAttack(zombie, npcData, attackType, target)
 
     if attackType == "melee" and DTNPCStamina and DTNPCStamina.ConsumeMeleeAttack then
         DTNPCStamina.ConsumeMeleeAttack(zombie, npcData)
+    elseif attackType == "ranged" and DTNPCStamina and DTNPCStamina.ConsumeRangedAttack then
+        DTNPCStamina.ConsumeRangedAttack(zombie, npcData)
     end
 
     if DTNPC_ZombieAggro and DTNPC_ZombieAggro.EmitCombatNoise then

@@ -55,7 +55,9 @@ function Stamina.ProcessPassive(zombie, npcData, state)
         recoverRate = recoverRate * (tonumber(profile and profile.passiveRecoverMultiplier) or 0.32)
     end
 
-    if Stamina.IsMeleeFatigued(npcData) then
+    local meleeFatigued = Stamina.IsMeleeFatigued and Stamina.IsMeleeFatigued(npcData)
+    local rangedFatigued = Stamina.IsRangedFatigued and Stamina.IsRangedFatigued(npcData)
+    if meleeFatigued or rangedFatigued then
         recoverRate = math.max(recoverRate, 4.8 * multiplier)
     end
 
