@@ -13,6 +13,135 @@ function DT_FactionInfoWindow:getFontScale()
     return "Small"
 end
 
+local function trimFactionName(value)
+    local text = tostring(value or "")
+    text = string.gsub(text, "^%s+", "")
+    text = string.gsub(text, "%s+$", "")
+    return text
+end
+
+local function getCurrentPlayerCharacterName(player)
+    if player and player.getDescriptor then
+        local descriptor = player:getDescriptor()
+        if descriptor and descriptor.getForename then
+            local forename = trimFactionName(descriptor:getForename())
+            local surname = trimFactionName(descriptor.getSurname and descriptor:getSurname() or "")
+            local fullName = trimFactionName(forename .. " " .. surname)
+            if fullName ~= "" then
+                return fullName
+            end
+            if forename ~= "" then
+                return forename
+            end
+        end
+    end
+
+    if player and player.getUsername then
+        local username = trimFactionName(player:getUsername())
+        if username ~= "" then
+            return username
+        end
+    end
+
+    return "My Faction"
+end
+
+function DT_FactionInfoWindow:openOwnedFactionManagementWindow()
+    if DC_System and DC_System.OpenWindow then
+        DC_System.OpenWindow()
+    end
+end
+
+function DT_FactionInfoWindow:submitOwnedFactionName(action, name)
+    local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
+    if not player then
+        return
+    end
+
+    local command = action == "rename" and "RenamePlayerFaction" or "CreatePlayerFaction"
+    local args = { name = trimFactionName(name) }
+
+    if isClient() and not isServer() then
+        sendClientCommand(player, "DynamicTrading_V2", command, args)
+        return
+    end
+
+    if not DynamicTrading_Factions then
+        return
+    end
+
+    local ok = false
+    local message = nil
+    if action == "rename" and DynamicTrading_Factions.RenamePlayerFaction then
+        ok, message = DynamicTrading_Factions.RenamePlayerFaction(player, args.name)
+    elseif DynamicTrading_Factions.CreatePlayerFaction then
+        ok, message = DynamicTrading_Factions.CreatePlayerFaction(player, args.name)
+    end
+
+    if self.refreshList then
+        self:refreshList()
+    end
+    if ok and self.pendingOpenOwnedFactionWindowAfterAction then
+        self.pendingOpenOwnedFactionWindowAfterAction = nil
+        self:openOwnedFactionManagementWindow()
+    elseif not ok then
+        self.pendingOpenOwnedFactionWindowAfterAction = nil
+        if DT_PlayerFactionMembersModal and DT_PlayerFactionMembersModal.instance and message then
+            DT_PlayerFactionMembersModal.instance:setStatus(message)
+        end
+    end
+end
+
+function DT_FactionInfoWindow:promptOwnedFactionName(action, ownedStatus)
+    if not DT_PlayerFactionNameModal or not DT_PlayerFactionNameModal.Open then
+        return
+    end
+
+    local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
+    if not player then
+        return
+    end
+
+    local defaultName = nil
+    if action == "rename" then
+        defaultName = trimFactionName(ownedStatus and ownedStatus.faction and ownedStatus.faction.name or "")
+    end
+    if defaultName == nil or defaultName == "" then
+        defaultName = getCurrentPlayerCharacterName(player)
+    end
+
+    DT_PlayerFactionNameModal.Open({
+        title = action == "rename" and "Rename Faction" or "Create Faction",
+        promptText = action == "rename"
+            and "Choose a new name for your faction."
+            or "Choose a name for your new faction.",
+        confirmLabel = action == "rename" and "Rename" or "Create",
+        defaultValue = defaultName,
+        onConfirm = function(name)
+            self.pendingOpenOwnedFactionWindowAfterAction = action == "create"
+            self:submitOwnedFactionName(action, name)
+        end
+    })
+end
+
+function DT_FactionInfoWindow:maybeAutoPromptFactionCreation(status)
+    local ownerUsername = status and (status.memberUsername or status.ownerUsername or status.authorityOwner) or nil
+    ownerUsername = trimFactionName(ownerUsername)
+    if ownerUsername == "" then
+        return
+    end
+
+    DT_FactionInfoWindow.autoPromptedFactionOwners = DT_FactionInfoWindow.autoPromptedFactionOwners or {}
+    if DT_FactionInfoWindow.autoPromptedFactionOwners[ownerUsername] then
+        return
+    end
+
+    if status and not status.faction and status.canCreate then
+        DT_FactionInfoWindow.autoPromptedFactionOwners[ownerUsername] = true
+        self:promptOwnedFactionName("create", status)
+    end
+end
+
 function DT_FactionInfoWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
 
@@ -272,6 +401,7 @@ function DT_FactionInfoWindow:updateOwnedFactionStatus(status, selectedFaction)
     if self.footerPanel and self.footerPanel.updateOwnedFactionStatus then
         self.footerPanel:updateOwnedFactionStatus(status)
     end
+    self:maybeAutoPromptFactionCreation(status)
 end
 
 function DT_FactionInfoWindow:onRadarButton()
@@ -287,13 +417,21 @@ function DT_FactionInfoWindow:onFactionMembersButton(ownedStatus)
 end
 
 function DT_FactionInfoWindow:onOwnedFactionButton(ownedStatus)
-    if ownedStatus and not ownedStatus.faction and ownedStatus.canCreate and DC_System and DC_System.PromptCreateFaction then
-        DC_System.PromptCreateFaction()
+    if ownedStatus and not ownedStatus.faction and ownedStatus.canCreate then
+        self:promptOwnedFactionName("create", ownedStatus)
         return
     end
 
-    if DC_System and DC_System.OpenWindow then
-        DC_System.OpenWindow()
+    self:openOwnedFactionManagementWindow()
+end
+
+function DT_FactionInfoWindow:onRenameFactionButton(ownedStatus)
+    if not ownedStatus or not ownedStatus.faction then
+        return
+    end
+
+    if ownedStatus.permissions and ownedStatus.permissions.canRenameFaction == true then
+        self:promptOwnedFactionName("rename", ownedStatus)
     end
 end
 

@@ -41,7 +41,7 @@ function DT_PlayerFactionNameModal:createChildren()
     self.hintLabel:instantiate()
     self:addChild(self.hintLabel)
 
-    self.btnConfirm = ISButton:new(pad, self.height - 38, 100, 24, "Create", self, self.onConfirm)
+    self.btnConfirm = ISButton:new(pad, self.height - 38, 100, 24, tostring(self.confirmLabel or "Create"), self, self.onConfirm)
     self.btnConfirm:initialise()
     self.btnConfirm:instantiate()
     self:addChild(self.btnConfirm)
@@ -87,6 +87,7 @@ function DT_PlayerFactionNameModal.Open(args)
     modal.title = tostring(args.title or "Create Faction")
     modal.promptText = tostring(args.promptText or "Enter a faction name.")
     modal.defaultValue = trimName(args.defaultValue or "")
+    modal.confirmLabel = tostring(args.confirmLabel or "Create")
     modal.onConfirmCallback = args.onConfirm
 
     if modal.promptLabel then
@@ -94,6 +95,9 @@ function DT_PlayerFactionNameModal.Open(args)
     end
     if modal.nameEntry then
         modal.nameEntry:setText(modal.defaultValue)
+    end
+    if modal.btnConfirm and modal.btnConfirm.setTitle then
+        modal.btnConfirm:setTitle(modal.confirmLabel)
     end
 
     modal:setVisible(true)
@@ -114,6 +118,7 @@ function DT_PlayerFactionNameModal:new(x, y, width, height)
     o.resizable = false
     o.promptText = "Enter a faction name."
     o.defaultValue = ""
+    o.confirmLabel = "Create"
     o.onConfirmCallback = nil
     return o
 end

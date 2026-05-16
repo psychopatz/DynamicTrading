@@ -28,6 +28,25 @@ local function getPrewarmState()
     return State.companionInventoryPrewarm
 end
 
+local function applyWarehouseInventoryPresentation(worker)
+    local window = DC_SupplyWindow and DC_SupplyWindow.instance or nil
+    if not window then
+        return
+    end
+
+    local workerName = tostring(worker and (worker.name or worker.workerID) or "Worker")
+    local title = "Warehouse Inventory - " .. workerName
+    if window.setTitle then
+        window:setTitle(title)
+    else
+        window.title = title
+    end
+
+    if window.updateStatus then
+        window:updateStatus("Viewing warehouse inventory details...")
+    end
+end
+
 local function openPendingCompanionInventory(entry)
     local workerToOpen = CompanionUI.ResolveCompanionWorkerByID(entry.workerID)
     if not workerToOpen or not workerToOpen.workerID or not DC_SupplyWindow or not DC_SupplyWindow.Open then
@@ -39,9 +58,7 @@ local function openPendingCompanionInventory(entry)
         requireCanonicalWorkerDetail = true,
         forceRefresh = true,
     })
-    if DC_SupplyWindow.instance and DC_SupplyWindow.instance.updateStatus then
-        DC_SupplyWindow.instance:updateStatus("Loading full inventory details...")
-    end
+    applyWarehouseInventoryPresentation(workerToOpen)
 
     if DynamicTrading and DynamicTrading.DebugPerformance == true then
         CompanionUI.DebugCompanionUI(
@@ -149,7 +166,7 @@ function CompanionUI.OpenCompanionInventory(ui, worker, npc, npcData)
 
     local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
     if player and player.setHaloNote then
-        player:setHaloNote("Loading companion inventory...", 170, 210, 255, 180)
+        player:setHaloNote("Loading warehouse inventory...", 170, 210, 255, 180)
     end
 
     if CompanionUI.IsWorkerDetailWarm(resolvedWorker) then
@@ -162,9 +179,7 @@ function CompanionUI.OpenCompanionInventory(ui, worker, npc, npcData)
             requireCanonicalWorkerDetail = true,
             forceRefresh = true,
         })
-        if DC_SupplyWindow.instance and DC_SupplyWindow.instance.updateStatus then
-            DC_SupplyWindow.instance:updateStatus("Refreshing inventory details...")
-        end
+        applyWarehouseInventoryPresentation(resolvedWorker)
         return true
     end
 

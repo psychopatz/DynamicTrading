@@ -123,6 +123,62 @@ function PlayerOwnership_Utils.getWorkersForOwner(ownerUsername)
     return {}
 end
 
+function PlayerOwnership_Utils.getOwnerBuildingsSummary(ownerUsername)
+    if DT_Buildings and DT_Buildings.GetOwnerSummary then
+        return DT_Buildings.GetOwnerSummary(ownerUsername)
+    end
+    return nil
+end
+
+local function getSummaryBuildingEntry(summary, buildingName)
+    if type(summary) ~= "table" then
+        return nil
+    end
+
+    if type(summary.buildings) == "table" and type(summary.buildings[buildingName]) == "table" then
+        return summary.buildings[buildingName]
+    end
+
+    if type(summary[buildingName]) == "table" then
+        return summary[buildingName]
+    end
+
+    return nil
+end
+
+function PlayerOwnership_Utils.getSummaryBuildingCount(summary, buildingName)
+    if type(summary) ~= "table" or not buildingName or buildingName == "" then
+        return 0
+    end
+
+    local counts = summary.buildingCounts
+    if type(counts) == "table" and tonumber(counts[buildingName]) ~= nil then
+        return math.max(0, math.floor(tonumber(counts[buildingName]) or 0))
+    end
+
+    local entry = getSummaryBuildingEntry(summary, buildingName)
+    if type(entry) == "table" then
+        if tonumber(entry.completedCount) ~= nil then
+            return math.max(0, math.floor(tonumber(entry.completedCount) or 0))
+        end
+        if tonumber(entry.count) ~= nil then
+            return math.max(0, math.floor(tonumber(entry.count) or 0))
+        end
+        if tonumber(entry.level) ~= nil then
+            return math.max(0, math.floor(tonumber(entry.level) or 0))
+        end
+        if entry.built == true or entry.complete == true then
+            return 1
+        end
+    end
+
+    return 0
+end
+
+function PlayerOwnership_Utils.hasCompletedHeadquarters(summary)
+    return PlayerOwnership_Utils.getSummaryBuildingCount(summary, "Headquarters") > 0
+end
+
 function PlayerOwnership_Utils.appendUnique(array, value)
     if not value then
         return

@@ -25,6 +25,9 @@ function DT_FactionInfoFooterPanel:prerender()
     if self.btnOwnedFaction then
         self.btnOwnedFaction:setX(self.width - self.btnOwnedFaction:getWidth() - 10)
     end
+    if self.btnRenameFaction and self.btnRenameFaction:getIsVisible() then
+        self.btnRenameFaction:setX(self.btnOwnedFaction:getX() - self.btnRenameFaction:getWidth() - 10)
+    end
 end
 
 function DT_FactionInfoFooterPanel:createChildren()
@@ -63,9 +66,20 @@ function DT_FactionInfoFooterPanel:createChildren()
     self.btnOwnedFaction:setAnchorBottom(true)
     self:addChild(self.btnOwnedFaction)
 
+    self.btnRenameFaction = ISButton:new(self.width - (btnWidth * 2) - 20, 10, btnWidth, btnHeight, "Rename Faction", self, self.onRenameFactionButton)
+    self.btnRenameFaction:initialise()
+    self.btnRenameFaction:instantiate()
+    self.btnRenameFaction:setAnchorLeft(false)
+    self.btnRenameFaction:setAnchorRight(true)
+    self.btnRenameFaction:setAnchorTop(false)
+    self.btnRenameFaction:setAnchorBottom(true)
+    self.btnRenameFaction:setVisible(false)
+    self:addChild(self.btnRenameFaction)
+
     -- Hide management if Dynamic Colonies is missing
     if not isDynamicColoniesActive() then
         self.btnOwnedFaction:setVisible(false)
+        self.btnRenameFaction:setVisible(false)
     end
 end
 
@@ -79,14 +93,25 @@ function DT_FactionInfoFooterPanel:updateOwnedFactionStatus(status)
     if self.btnOwnedFaction then
         if not isDynamicColoniesActive() then
             self.btnOwnedFaction:setVisible(false)
+            if self.btnRenameFaction then
+                self.btnRenameFaction:setVisible(false)
+            end
         elseif status and not status.faction and status.canCreate then
-            self.btnOwnedFaction:setTitle("Create Faction")
+            self.btnOwnedFaction:setTitle("Set Up Faction")
             self.btnOwnedFaction:setEnable(true)
             self.btnOwnedFaction:setVisible(true)
+            if self.btnRenameFaction then
+                self.btnRenameFaction:setVisible(false)
+            end
         else
             self.btnOwnedFaction:setTitle("Open Colony Management")
             self.btnOwnedFaction:setEnable(true)
             self.btnOwnedFaction:setVisible(true)
+            if self.btnRenameFaction then
+                local canRename = status and status.faction and status.permissions and status.permissions.canRenameFaction == true
+                self.btnRenameFaction:setVisible(canRename == true)
+                self.btnRenameFaction:setEnable(canRename == true)
+            end
         end
     end
 
@@ -120,6 +145,12 @@ end
 function DT_FactionInfoFooterPanel:onOwnedFactionButton()
     if self.parent and self.parent.onOwnedFactionButton then
         self.parent:onOwnedFactionButton(self.ownedStatus)
+    end
+end
+
+function DT_FactionInfoFooterPanel:onRenameFactionButton()
+    if self.parent and self.parent.onRenameFactionButton then
+        self.parent:onRenameFactionButton(self.ownedStatus)
     end
 end
 

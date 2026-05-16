@@ -203,6 +203,49 @@ function CompanionUI.GetCompanionWorker(ui, npc, npcData)
     return nil
 end
 
+function CompanionUI.IsPlayerZoneResident(npcData, worker)
+    if not npcData and not worker then
+        return false
+    end
+
+    if tostring(npcData and npcData.state or "") == "PlayerZone" then
+        return true
+    end
+
+    local linkedWorkerID = npcData and npcData.linkedWorkerID or worker and worker.workerID or nil
+    if linkedWorkerID == nil then
+        return false
+    end
+
+    return tostring(npcData and npcData.dcCompanionJob or "") ~= "TravelCompanion"
+end
+
+function CompanionUI.GetWorkerOwnerUsername(worker, npcData)
+    return CompanionUI.NormalizeText(
+        worker and worker.ownerUsername
+            or npcData and (npcData.dcResidentOwnerUsername or npcData.dcCompanionOwner or npcData.ownerUsername or npcData.master)
+            or nil
+    )
+end
+
+function CompanionUI.GetOwnedFactionForWorker(worker, npcData)
+    if not DynamicTrading_Factions or not DynamicTrading_Factions.GetPlayerFaction then
+        return nil
+    end
+
+    local ownerUsername = CompanionUI.GetWorkerOwnerUsername(worker, npcData)
+    if not ownerUsername then
+        return nil
+    end
+
+    local faction = DynamicTrading_Factions.GetPlayerFaction(ownerUsername)
+    if type(faction) == "table" and faction.playerOwned == true then
+        return faction
+    end
+
+    return nil
+end
+
 function CompanionUI.IsLegacyTravelCompanion(player, npcData)
     if not player or not npcData then
         return false

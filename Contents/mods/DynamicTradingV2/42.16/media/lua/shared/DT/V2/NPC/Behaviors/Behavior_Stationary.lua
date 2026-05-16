@@ -47,7 +47,10 @@ local function canUseAmbientAutoDefense(npcData)
 
     local state = npcData.state or "Idle"
     local status = npcData.status or ""
-    return state == "Trading" or status == "Trading" or status == "Resting"
+    return state == "Trading"
+        or state == "PlayerZone"
+        or status == "Trading"
+        or status == "Resting"
 end
 
 local function getStationaryCombatAnchorTarget(zombie, npcData)

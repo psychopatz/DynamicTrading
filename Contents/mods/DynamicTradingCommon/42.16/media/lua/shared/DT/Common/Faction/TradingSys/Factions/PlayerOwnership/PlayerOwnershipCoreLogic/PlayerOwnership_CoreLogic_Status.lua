@@ -8,6 +8,8 @@ return function(context)
     local isWorkerLiving = context.isWorkerLiving
     local isWorkerRegistryAvailable = context.isWorkerRegistryAvailable
     local isDynamicColoniesActive = context.isDynamicColoniesActive
+    local getOwnerBuildingsSummary = context.getOwnerBuildingsSummary
+    local hasCompletedHeadquarters = context.hasCompletedHeadquarters
 
     function Public.BuildOwnedFactionStatus(ownerUsername)
         local owner = getOwnerUsername(ownerUsername)
@@ -41,6 +43,8 @@ return function(context)
             faction = Public.RefreshPlayerFaction(faction.id) or nil
         end
         local authorityOwner = faction and getOwnerUsername(faction.leaderUsername) or owner
+        local buildingsSummary = getOwnerBuildingsSummary(authorityOwner)
+        local headquartersReady = hasCompletedHeadquarters(buildingsSummary)
         local workers = registryReady and getWorkersForOwner(authorityOwner) or {}
         local livingWorkers = {}
         for _, worker in ipairs(workers) do
@@ -52,18 +56,30 @@ return function(context)
         local role = getFactionRole(faction, owner)
         local permissions = context.buildPermissions(faction, owner)
         local linkedWorkers = faction and context.buildFactionWorkerSummaries(faction) or {}
-        local buildingsSummary = DT_Buildings and DT_Buildings.GetOwnerSummary and DT_Buildings.GetOwnerSummary(authorityOwner) or nil
         local workerCount = registryReady and #livingWorkers or (faction and math.max(tonumber(faction.memberCount) or 0, #(faction.linkedWorkerIDs or {})) or 0)
+        local canCreate = faction == nil and registryReady and headquartersReady and #livingWorkers >= 1
+
+        local createBlockedReason = nil
+        if faction then
+            createBlockedReason = "already_has_faction"
+        elseif not registryReady then
+            createBlockedReason = "syncing"
+        elseif not headquartersReady then
+            createBlockedReason = "headquarters_required"
+        elseif #livingWorkers < 1 then
+            createBlockedReason = "needs_recruit"
+        end
 
         return {
             ownerUsername = authorityOwner,
             memberUsername = owner,
             authorityOwner = authorityOwner,
             dynamicColoniesActive = true,
-            canCreate = faction == nil and registryReady and #livingWorkers >= 1,
+            canCreate = canCreate,
             workerCount = workerCount,
             faction = faction,
             buildings = buildingsSummary,
+            headquartersReady = headquartersReady,
             linkedWorkers = linkedWorkers,
             role = role,
             isLeader = role == "leader",
@@ -73,7 +89,7 @@ return function(context)
             inviteUsernames = faction and copyArray(faction.inviteUsernames) or {},
             pendingInvites = Public.GetPendingInvites(owner),
             leadershipState = faction and tostring(faction.leadershipState or "Active") or nil,
-            createBlockedReason = faction and "already_has_faction" or ((not registryReady) and "syncing" or (#livingWorkers < 1 and "needs_recruit" or nil))
+            createBlockedReason = createBlockedReason
         }
     end
 end

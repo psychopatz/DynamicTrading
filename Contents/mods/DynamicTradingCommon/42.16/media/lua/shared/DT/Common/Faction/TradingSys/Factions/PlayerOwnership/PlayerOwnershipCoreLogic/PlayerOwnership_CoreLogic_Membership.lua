@@ -14,6 +14,8 @@ return function(context)
     local buildFactionHome = context.buildFactionHome
     local appendUnique = context.appendUnique
     local isAdminReview = context.isAdminReview
+    local getOwnerBuildingsSummary = context.getOwnerBuildingsSummary
+    local hasCompletedHeadquarters = context.hasCompletedHeadquarters
 
     function Public.CreatePlayerFaction(player, rawName)
         local coloniesOk, coloniesMessage = context.requireDynamicColonies()
@@ -26,7 +28,17 @@ return function(context)
             return false, "You already control a faction.", nil
         end
 
-        local isValid, nameOrReason = Public.ValidateFactionName(rawName)
+        local buildingsSummary = getOwnerBuildingsSummary(owner)
+        if not hasCompletedHeadquarters(buildingsSummary) then
+            return false, "Finish your headquarters before founding a faction.", nil
+        end
+
+        local desiredName = trimName(rawName)
+        if desiredName == "" then
+            desiredName = owner
+        end
+
+        local isValid, nameOrReason = Public.ValidateFactionName(desiredName)
         if not isValid then
             return false, nameOrReason, nil
         end
@@ -65,6 +77,42 @@ return function(context)
 
         local faction = Public.RefreshPlayerFaction(factionID)
         return faction ~= nil, faction and "Faction founded." or "Faction creation failed.", faction
+    end
+
+    function Public.RenamePlayerFaction(player, rawName)
+        local coloniesOk, coloniesMessage = context.requireDynamicColonies()
+        if not coloniesOk then
+            return false, coloniesMessage, nil
+        end
+
+        local owner = getOwnerUsername(player)
+        local faction = Public.GetPlayerFaction(owner)
+        if not Public.IsPlayerFaction(faction) then
+            return false, "Player faction not found.", nil
+        end
+        if getFactionRole(faction, owner) ~= "leader" then
+            return false, "Only the faction leader can rename this faction.", faction
+        end
+        if isAdminReview(faction) then
+            return false, "This faction is waiting for admin review.", faction
+        end
+
+        local desiredName = trimName(rawName)
+        if desiredName == "" then
+            desiredName = owner
+        end
+
+        local isValid, nameOrReason = Public.ValidateFactionName(desiredName, faction.id)
+        if not isValid then
+            return false, nameOrReason, faction
+        end
+
+        faction.name = nameOrReason
+        context.syncFactionToColony(faction, { createIfMissing = true })
+        ModData.transmit(Utils.MOD_DATA_KEY)
+        return true, "Faction renamed.", faction, {
+            leaderUsername = faction.leaderUsername
+        }
     end
 
     function Public.InvitePlayerToFaction(player, targetUsername)

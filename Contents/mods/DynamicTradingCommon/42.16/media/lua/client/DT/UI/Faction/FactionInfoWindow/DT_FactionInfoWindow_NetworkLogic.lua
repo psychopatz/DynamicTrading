@@ -149,6 +149,12 @@ local function onServerCommand(module, command, args)
             and args.message then
             DT_PlayerFactionMembersModal.instance:setStatus(args.message)
         end
+        if DT_FactionInfoWindow.instance and args and args.success and DT_FactionInfoWindow.instance.pendingOpenOwnedFactionWindowAfterAction then
+            DT_FactionInfoWindow.instance.pendingOpenOwnedFactionWindowAfterAction = nil
+            DT_FactionInfoWindow.instance:openOwnedFactionManagementWindow()
+        elseif DT_FactionInfoWindow.instance and args and not args.success then
+            DT_FactionInfoWindow.instance.pendingOpenOwnedFactionWindowAfterAction = nil
+        end
         if DT_FactionInfoWindow.instance
             and DT_FactionInfoWindow.instance:getIsVisible()
             and DT_FactionInfoWindow.selectedFaction then

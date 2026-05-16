@@ -276,7 +276,7 @@ function WaveHi.ResolveCategory(player, npc, npcData, handler)
         return "Resting"
     end
 
-    if containsAny(stateBlob, { "working", "guard", "patrol", "watch", "protect", "lootnearby", "scavenge", "build", "farm", "fish" }) then
+    if containsAny(stateBlob, { "working", "playerzone", "guard", "patrol", "watch", "protect", "lootnearby", "scavenge", "build", "farm", "fish" }) then
         return "Working"
     end
 

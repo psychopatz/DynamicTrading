@@ -273,7 +273,7 @@ function CompanionUI.AddCompanionContextMenu(context, ui, npc, player, npcData)
     end
 
     if worker or (npcData and npcData.linkedWorkerID) then
-        CompanionUI.AddCompanionContextAction(rootMenu, "Manage Inventory", function()
+        CompanionUI.AddCompanionContextAction(rootMenu, "Warehouse Inventory", function()
             CompanionUI.OpenCompanionInventory(ui, worker, npc, npcData)
         end)
     end

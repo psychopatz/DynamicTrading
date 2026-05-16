@@ -50,6 +50,13 @@ return function(context)
         end, "Faction creation failed.")
     end
 
+    Handlers.RenamePlayerFaction = function(player, args)
+        args = args or {}
+        runColonyAction(player, function()
+            return DynamicTrading_Factions.RenamePlayerFaction(player, args.name)
+        end, "Faction rename failed.")
+    end
+
     Handlers.InvitePlayerToFaction = function(player, args)
         args = args or {}
         runColonyAction(player, function()

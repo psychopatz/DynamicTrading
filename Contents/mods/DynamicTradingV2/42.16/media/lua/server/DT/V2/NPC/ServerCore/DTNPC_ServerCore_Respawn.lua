@@ -259,6 +259,8 @@ function DTNPCServerCore.RespawnNPC(npcData, uuid)
         npcData.state = resolveTradingRespawnState(npcData, preserveContactVisitFollow, preserveBanditEncounterState)
     elseif status == "Working" then
         npcData.state = preserveCompanionControl and npcData.state or "Guard"
+    elseif npcData.linkedWorkerID ~= nil then
+        npcData.state = "PlayerZone"
     else
         npcData.state = "Idle"
     end

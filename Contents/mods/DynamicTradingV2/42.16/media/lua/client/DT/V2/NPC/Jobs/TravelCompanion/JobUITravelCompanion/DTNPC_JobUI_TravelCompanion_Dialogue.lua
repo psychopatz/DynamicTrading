@@ -18,7 +18,12 @@ modules.Dialogue = true
 
 function CompanionUI.OpenCompanionDialogue(npc, player)
     if DTNPC_TraderDialogue_Hub and DTNPC_TraderDialogue_Hub.Init then
-        DTNPC_TraderDialogue_Hub.Init(nil, npc, player)
+        local npcData = CompanionUI.GetNPCData(npc)
+        local worker = CompanionUI.GetCompanionWorker(nil, npc, npcData)
+        local isResident = CompanionUI.IsPlayerZoneResident(npcData, worker)
+        DTNPC_TraderDialogue_Hub.Init(nil, npc, player, {
+            initialGreeting = isResident and "Need something from the colony?" or nil
+        })
         return true
     end
     return false
@@ -44,6 +49,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
     local commander = CompanionUI.GetCommanderUsername(npcData, worker)
     local commanderText = "Commander: " .. tostring(commander or "No commander")
     local usesCommandAuthority = worker ~= nil and tostring(npcData and npcData.dcCompanionJob or "") == "TravelCompanion"
+    local isResident = CompanionUI.IsPlayerZoneResident(npcData, worker)
     if usesCommandAuthority and not CompanionUI.IsLocalCommander(player, npcData, worker) then
         local options = {
             {
@@ -123,7 +129,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
         text = "Chat",
         message = "How are you holding up?",
         onSelect = function(innerUI)
-            innerUI:speak("I'm with you. Just say the word.")
+            innerUI:speak(isResident and "Holding the zone. Just point me where you need me." or "I'm with you. Just say the word.")
             CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
         end
     }
@@ -451,15 +457,15 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
 
     if worker then
         options[#options + 1] = {
-            text = "Manage Inventory",
-            message = "Let me check what you're carrying.",
+            text = "Warehouse Inventory",
+            message = "Open your warehouse inventory.",
             onSelect = function(innerUI)
                 if CompanionUI.OpenCompanionInventory(innerUI, worker, npc, CompanionUI.GetNPCData(npc)) then
                     return
                 else
-                    innerUI:speak("I couldn't open my inventory right now.")
+                    innerUI:speak("I couldn't open the warehouse inventory right now.")
                     CompanionUI.DebugCompanionUI(
-                        "Manage Inventory failed workerID="
+                        "Warehouse Inventory failed workerID="
                             .. tostring(worker and worker.workerID or nil)
                             .. " linkedWorkerID="
                             .. tostring(CompanionUI.GetNPCData(npc) and CompanionUI.GetNPCData(npc).linkedWorkerID or nil)

@@ -125,6 +125,12 @@ function Internal.ApplyActivationState(uuid, npcData, square, target, options)
         end
     end
 
+    if npcData.linkedWorkerID ~= nil
+        and (npcData.state == nil or npcData.state == "" or npcData.state == "Idle")
+        and mode ~= "companion_follow" then
+        npcData.state = "PlayerZone"
+    end
+
     if options.returnTime ~= nil then
         npcData.returnTime = options.returnTime
     end

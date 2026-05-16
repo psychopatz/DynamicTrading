@@ -176,11 +176,18 @@ function DT_ConversationUI:getFactionName(traderObj, faction)
         return faction.name
     end
 
+    if DT_TraderContacts and DT_TraderContacts.GetFactionDisplayName then
+        local displayName = DT_TraderContacts.GetFactionDisplayName(traderObj)
+        if displayName and displayName ~= "" then
+            return tostring(displayName)
+        end
+    end
+
     if traderObj.factionID == "Independent" then
         return "Independent Traders"
     end
 
-    return "Unknown Faction"
+    return tostring(traderObj.factionID)
 end
 
 function DT_ConversationUI:refreshFactionInfo()

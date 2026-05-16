@@ -32,14 +32,24 @@ DTNPCJobUI.Register({
         return CompanionUI.IsLegacyTravelCompanion(player, npcData)
     end,
     getTalkLabel = function(ui, npc, player, npcData, defaultName)
-        return "Talk to Companion " .. tostring(defaultName or (npcData and npcData.name) or "Survivor")
+        local worker = CompanionUI.GetCompanionWorker(ui, npc, npcData)
+        local name = tostring(defaultName or (npcData and npcData.name) or "Survivor")
+        if CompanionUI.IsPlayerZoneResident(npcData, worker) then
+            return "Talk to Colony Resident " .. name
+        end
+        return "Talk to Companion " .. name
     end,
     getTraderProxyPatch = function(ui, npc, player, npcData)
+        local worker = CompanionUI.GetCompanionWorker(ui, npc, npcData)
+        local faction = CompanionUI.GetOwnedFactionForWorker(worker, npcData)
         return {
+            factionID = faction and faction.id or (npcData and npcData.factionID) or nil,
+            factionName = faction and faction.name or nil,
             linkedWorkerID = npcData and npcData.linkedWorkerID or nil,
             master = npcData and npcData.master or nil,
             masterID = npcData and npcData.masterID or nil,
-            isCompanion = true,
+            isCompanion = CompanionUI.IsPlayerZoneResident(npcData, worker) ~= true,
+            isPlayerResident = CompanionUI.IsPlayerZoneResident(npcData, worker),
         }
     end,
     generateOptions = function(ui, npc, player, npcData)

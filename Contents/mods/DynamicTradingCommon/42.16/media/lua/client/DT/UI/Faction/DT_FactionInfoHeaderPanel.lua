@@ -72,7 +72,9 @@ function DT_FactionInfoHeaderPanel:updateOwnedFactionStatus(status, selectedFact
     elseif status and status.faction then
         self.lblStatus:setName("Your faction: " .. tostring(status.faction.name or status.faction.id) .. " | " .. tostring(status.faction.leadershipState or "Active"))
     elseif status and status.canCreate then
-        self.lblStatus:setName("Eligible to create a player-owned faction")
+        self.lblStatus:setName("Headquarters ready. Name your faction to claim the colony.")
+    elseif status and status.createBlockedReason == "headquarters_required" then
+        self.lblStatus:setName("Finish your headquarters before founding a faction")
     else
         self.lblStatus:setName("Global Faction Overview")
     end
