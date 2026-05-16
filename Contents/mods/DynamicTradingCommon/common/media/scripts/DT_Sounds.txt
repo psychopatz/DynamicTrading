@@ -33,5 +33,27 @@ module Base
         }
     }
 
+    sound DC_FactionIn
+    {
+        category = UI,
+        is3D = false,
+        clip
+        {
+            file = media/sound/map/DC_FactionIn.ogg,
+            volume = 0.45,
+        }
+    }
+
+    sound DC_FactionOut
+    {
+        category = UI,
+        is3D = false,
+        clip
+        {
+            file = media/sound/map/DC_FactionOut.ogg,
+            volume = 0.45,
+        }
+    }
+
 
 }

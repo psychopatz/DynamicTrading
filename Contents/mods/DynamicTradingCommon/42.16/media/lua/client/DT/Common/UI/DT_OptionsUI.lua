@@ -15,6 +15,7 @@ require "Utils/ConfigManager/DT_ConfigManager"
 require "DT/Common/Utils/DT_AudioManager"
 require "DT/Common/UI/ManualUI/ManualUI"
 require "DT/Common/UI/Pricing/PricingOptionsTab/DT_PricingOptionsTab"
+require "DT/Common/Faction/DT_FactionDiscoveryBannerEditor"
 
 DT_OptionsUI = ISCollapsableWindow:derive("DT_OptionsUI")
 DT_OptionsUI.instance = nil
@@ -153,6 +154,32 @@ function DT_OptionsUI:createGeneralChildren(panel)
 
     local opacityHint = ISLabel:new(pad, y + 28, 20, "0% is fully transparent unless Disable Transparency is enabled. 100% is the strongest backdrop.", 0.72, 0.72, 0.72, 1, UIFont.Small, true)
     panel:addChild(opacityHint)
+    y = y + 64
+
+    local bannerTitle = ISLabel:new(pad, y, 20, "Faction Discovery Banner", 1, 1, 1, 1, UIFont.Small, true)
+    panel:addChild(bannerTitle)
+
+    local bannerHint = ISLabel:new(
+        pad,
+        y + 22,
+        20,
+        "Edit the on-screen RPG-style discovery banner position used for entering, leaving, and discovering faction bases.",
+        0.72,
+        0.72,
+        0.72,
+        1,
+        UIFont.Small,
+        true
+    )
+    panel:addChild(bannerHint)
+
+    self.btnEditFactionBanner = ISButton:new(pad, y + 44, 180, 24, "Edit Banner Position", self, function()
+        if DynamicTrading and DynamicTrading.FactionDiscoveryBannerEditor and DynamicTrading.FactionDiscoveryBannerEditor.Open then
+            DynamicTrading.FactionDiscoveryBannerEditor.Open()
+        end
+    end)
+    self.btnEditFactionBanner:initialise()
+    panel:addChild(self.btnEditFactionBanner)
 end
 
 function DT_OptionsUI:onGeneralTick(index, selected)

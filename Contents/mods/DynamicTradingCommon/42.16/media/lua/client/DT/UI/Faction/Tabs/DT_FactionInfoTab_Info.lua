@@ -6,6 +6,7 @@
 require "ISUI/ISPanel"
 require "ISUI/ISRichTextPanel"
 require "DT/UI/Faction/Tabs/DT_FactionEventLogPanel"
+require "DT/Common/Faction/DT_FactionBasePresentation"
 
 DT_FactionInfoTab_Info = ISPanel:derive("DT_FactionInfoTab_Info")
 
@@ -109,7 +110,18 @@ function DT_FactionInfoTab_Info:updateData(f)
                 text = text .. " Route Anchor: " .. tostring(f.homeCoords.name) .. " <LINE> "
             end
         elseif f.homeCoords then
-            text = text .. " Base: " .. f.homeCoords.name .. " (" .. f.homeCoords.x .. "," .. f.homeCoords.y .. "," .. f.homeCoords.z .. ") <LINE> "
+            local presentation = DynamicTrading
+                and DynamicTrading.FactionBasePresentation
+                and DynamicTrading.FactionBasePresentation.GetProfile
+                and DynamicTrading.FactionBasePresentation.GetProfile(f)
+                or nil
+            local baseLabel = presentation and presentation.label or tostring(f.homeCoords.name or "Unknown Base")
+            local structureName = presentation and presentation.structureName or tostring(f.homeCoords.name or "Unknown Structure")
+            local flavor = presentation and presentation.flavor or "An improvised foothold reclaimed from the dead."
+
+            text = text .. " Base: " .. tostring(baseLabel) .. " (" .. tostring(f.homeCoords.x) .. "," .. tostring(f.homeCoords.y) .. "," .. tostring(f.homeCoords.z) .. ") <LINE> "
+            text = text .. " Structure: " .. tostring(structureName) .. " <LINE> "
+            text = text .. " <RGB:0.65,0.65,0.65> " .. tostring(flavor) .. " <LINE> "
         else
             text = text .. " Base: NOMADIC (Roaming) <LINE> "
         end

@@ -11,6 +11,24 @@ function DT_ConfigManager.getWindowState(winID)
     return windows[winID]
 end
 
+function DT_ConfigManager.clearWindowState(winID)
+    local windows = internal.ensureWindows()
+    windows[winID] = nil
+    DT_ConfigManager.save()
+end
+
+function DT_ConfigManager.setFactionDiscoveryBannerState(x, y, w, h)
+    DT_ConfigManager.setWindowState("FactionDiscoveryBanner", x, y, w, h)
+end
+
+function DT_ConfigManager.getFactionDiscoveryBannerState()
+    return DT_ConfigManager.getWindowState("FactionDiscoveryBanner")
+end
+
+function DT_ConfigManager.clearFactionDiscoveryBannerState()
+    DT_ConfigManager.clearWindowState("FactionDiscoveryBanner")
+end
+
 function DT_ConfigManager.setLastManualLocation(manualId, pageId, sectionId)
     DT_ConfigManager.settings.lastManualId = tostring(manualId or "")
     DT_ConfigManager.settings.lastManualPageId = tostring(pageId or "")

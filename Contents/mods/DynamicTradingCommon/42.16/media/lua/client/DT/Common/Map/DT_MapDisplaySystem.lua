@@ -77,6 +77,25 @@ local function normalizeOwnedSymbolIDs(symbolIDs)
     return normalized
 end
 
+local function appendOwnedMarker(target, marker)
+    if type(marker) ~= "table" then
+        return
+    end
+
+    target[#target + 1] = marker
+end
+
+local function deriveOwnedMarkersFromSymbols(ownedSymbolIDs)
+    local ownedMarkers = {}
+    for symbolID in pairs(ownedSymbolIDs or {}) do
+        appendOwnedMarker(ownedMarkers, {
+            kind = "texture",
+            symbolID = symbolID,
+        })
+    end
+    return ownedMarkers
+end
+
 local function getProviderOwnedSymbolIDs(provider, state)
     if not provider then
         return {}
@@ -92,36 +111,149 @@ local function getProviderOwnedSymbolIDs(provider, state)
     return normalizeOwnedSymbolIDs(symbolIDs)
 end
 
-local function clearProviderSymbols(symbols, ownedSymbolIDs)
-    local hasOwnedSymbols = false
-    for _ in pairs(ownedSymbolIDs or {}) do
-        hasOwnedSymbols = true
-        break
+local function getProviderOwnedMarkers(provider, state)
+    if state and type(state.renderedOwnedMarkers) == "table" and #state.renderedOwnedMarkers > 0 then
+        return state.renderedOwnedMarkers
     end
 
+    local ownedMarkers = provider and provider.getOwnedMarkers and provider.getOwnedMarkers(state) or nil
+    if type(ownedMarkers) == "table" and #ownedMarkers > 0 then
+        return ownedMarkers
+    end
+
+    return deriveOwnedMarkersFromSymbols(getProviderOwnedSymbolIDs(provider, state))
+end
+
+local function markerMatchesTextSymbol(marker, symbol)
+    if type(marker) ~= "table" or not symbol or not symbol.isText or not symbol:isText() then
+        return false
+    end
+
+    local markerText = tostring(marker.text or "")
+    if markerText == "" then
+        return false
+    end
+
+    local symbolText = symbol.getUntranslatedText and symbol:getUntranslatedText() or nil
+    if symbolText == nil and symbol.getTranslatedText then
+        symbolText = symbol:getTranslatedText()
+    end
+    if tostring(symbolText or "") ~= markerText then
+        return false
+    end
+
+    if marker.layerID ~= nil and symbol.getLayerID and tostring(symbol:getLayerID() or "") ~= tostring(marker.layerID) then
+        return false
+    end
+
+    if marker.x ~= nil and symbol.getWorldX and tonumber(symbol:getWorldX()) ~= tonumber(marker.x) then
+        return false
+    end
+    if marker.y ~= nil and symbol.getWorldY and tonumber(symbol:getWorldY()) ~= tonumber(marker.y) then
+        return false
+    end
+
+    return true
+end
+
+local function markerMatchesTextureSymbol(marker, symbol)
+    if type(marker) ~= "table" or not symbol or not symbol.getSymbolID then
+        return false
+    end
+
+    local symbolID = symbol:getSymbolID()
+    if not (symbolID and tostring(symbolID) == tostring(marker.symbolID or "")) then
+        return false
+    end
+
+    if marker.x ~= nil and symbol.getWorldX and tonumber(symbol:getWorldX()) ~= tonumber(marker.x) then
+        return false
+    end
+    if marker.y ~= nil and symbol.getWorldY and tonumber(symbol:getWorldY()) ~= tonumber(marker.y) then
+        return false
+    end
+
+    return true
+end
+
+local function clearProviderSymbols(symbols, ownedMarkers)
+    local hasOwnedSymbols = type(ownedMarkers) == "table" and #ownedMarkers > 0
     if not symbols or not hasOwnedSymbols then
         return
     end
 
     for index = symbols:getSymbolCount() - 1, 0, -1 do
         local symbol = symbols:getSymbolByIndex(index)
-        if symbol and symbol.getSymbolID then
-            local symbolID = symbol:getSymbolID()
-            if symbolID and ownedSymbolIDs[symbolID] then
+        if symbol then
+            local shouldRemove = false
+            for _, marker in ipairs(ownedMarkers) do
+                if marker.kind == "text" then
+                    shouldRemove = markerMatchesTextSymbol(marker, symbol)
+                else
+                    shouldRemove = markerMatchesTextureSymbol(marker, symbol)
+                end
+                if shouldRemove then
+                    break
+                end
+            end
+
+            if shouldRemove then
                 symbols:removeSymbolByIndex(index)
             end
         end
     end
 end
 
-local function drawMarkers(symbols, markers)
+local function buildOwnedMarkersFromDrawnMarkers(markers)
+    local ownedMarkers = {}
+
     for _, marker in ipairs(markers or {}) do
-        if marker and marker.symbolID and marker.x ~= nil and marker.y ~= nil then
-            local symbol = symbols:addTexture(
-                tostring(marker.symbolID),
-                math.floor(tonumber(marker.x) or 0),
-                math.floor(tonumber(marker.y) or 0)
-            )
+        if type(marker) == "table" then
+            if marker.type == "text" and marker.text and marker.text ~= "" then
+                appendOwnedMarker(ownedMarkers, {
+                    kind = "text",
+                    text = tostring(marker.text),
+                    layerID = marker.layerID,
+                    x = tonumber(marker.x) or 0,
+                    y = tonumber(marker.y) or 0,
+                })
+            elseif marker.symbolID then
+                appendOwnedMarker(ownedMarkers, {
+                    kind = "texture",
+                    symbolID = tostring(marker.symbolID),
+                    x = tonumber(marker.x) or 0,
+                    y = tonumber(marker.y) or 0,
+                })
+            end
+        end
+    end
+
+    return ownedMarkers
+end
+
+local function drawMarkers(symbols, markers)
+    local drawnMarkers = {}
+    for _, marker in ipairs(markers or {}) do
+        if marker and marker.x ~= nil and marker.y ~= nil then
+            local symbol = nil
+            local worldX = math.floor(tonumber(marker.x) or 0)
+            local worldY = math.floor(tonumber(marker.y) or 0)
+
+            if marker.type == "text" and marker.text and marker.text ~= "" and symbols.addUntranslatedText then
+                symbol = symbols:addUntranslatedText(
+                    tostring(marker.text),
+                    tostring(marker.layerID or "text-building"),
+                    worldX,
+                    worldY
+                )
+            elseif marker.symbolID then
+                symbol = symbols:addTexture(
+                    tostring(marker.symbolID),
+                    worldX,
+                    worldY
+                )
+            end
+
             if symbol then
                 symbol:setAnchor(tonumber(marker.anchorX) or 0.5, tonumber(marker.anchorY) or 0.5)
                 symbol:setRGBA(
@@ -132,9 +264,30 @@ local function drawMarkers(symbols, markers)
                 )
                 symbol:setScale(tonumber(marker.scale) or ((ISMap and ISMap.SCALE) or 1))
                 symbol:setVisible(marker.visible ~= false)
+                if symbol.setApplyZoom then
+                    symbol:setApplyZoom(marker.applyZoom ~= false)
+                end
+                if symbol.setMinZoom then
+                    symbol:setMinZoom(tonumber(marker.minZoom) or 0)
+                end
+                if symbol.setMaxZoom then
+                    symbol:setMaxZoom(tonumber(marker.maxZoom) or 24)
+                end
+                if symbol.setMatchPerspective then
+                    symbol:setMatchPerspective(marker.matchPerspective == true)
+                end
+                if symbol.setRotation then
+                    symbol:setRotation(tonumber(marker.rotation) or 0)
+                end
+                if symbol.setUserDefined then
+                    symbol:setUserDefined(false)
+                end
+                drawnMarkers[#drawnMarkers + 1] = marker
             end
         end
     end
+
+    return buildOwnedMarkersFromDrawnMarkers(drawnMarkers)
 end
 
 function MapDisplay.GetProviderState(providerID)
@@ -164,7 +317,7 @@ function MapDisplay.UnregisterProvider(providerID)
 
     local playerObj = getLocalPlayer()
     local symbols = playerObj and getSymbolsAPI(playerObj) or nil
-    clearProviderSymbols(symbols, getProviderOwnedSymbolIDs(entry.provider, entry.state))
+    clearProviderSymbols(symbols, getProviderOwnedMarkers(entry.provider, entry.state))
     MapDisplay.providers[providerID] = nil
 end
 
@@ -208,15 +361,16 @@ local function updateProviderMarkers(symbols, provider, state, playerObj)
 
     state.updateCounter = 0
 
-    local ownedSymbolIDs = getProviderOwnedSymbolIDs(provider, state)
-    clearProviderSymbols(symbols, ownedSymbolIDs)
+    local ownedMarkers = getProviderOwnedMarkers(provider, state)
+    clearProviderSymbols(symbols, ownedMarkers)
+    state.renderedOwnedMarkers = {}
 
     if provider.isEnabled and not provider.isEnabled(playerObj, state) then
         return
     end
 
     local markers = provider.getMarkers and provider.getMarkers(playerObj, state) or {}
-    drawMarkers(symbols, markers)
+    state.renderedOwnedMarkers = drawMarkers(symbols, markers)
 end
 
 local function providerNeedsMarkerUpdate(provider, state)

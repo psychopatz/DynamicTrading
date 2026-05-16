@@ -1,8 +1,0 @@
-{
-	"mcpServers": {
-		"pz-mcp-server": {
-			"command": "node",
-			"args": ["/home/psychopatz/Desktop/Projects/MCP/pz-mcp-server/dist/index.js"]
-		}
-	}
-}
