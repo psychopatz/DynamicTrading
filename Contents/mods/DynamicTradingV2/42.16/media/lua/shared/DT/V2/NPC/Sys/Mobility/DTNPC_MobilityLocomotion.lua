@@ -11,11 +11,11 @@ local Internal = Mobility.Internal or {}
 Mobility.Internal = Internal
 
 function Internal.getMovementAnimName(options, moving)
-    if options and options.crawl == true then
-        return "Crawl"
-    end
     if not moving then
         return ""
+    end
+    if options and options.crawl == true then
+        return "Crawl"
     end
     if options and options.dtWalkType ~= nil and tostring(options.dtWalkType) ~= "" then
         return tostring(options.dtWalkType)
@@ -77,11 +77,9 @@ function Mobility.SetLocomotionState(zombie, options)
         zombie:setVariable("DTIdleState", "0")
     end
 
-    if options.crawl == true then
-        zombie:setVariable("bBecomeCrawler", true)
-        zombie:setVariable("bCrawling", true)
-        zombie:setVariable("FallOnFront", true)
-    elseif options.crawl ~= nil or moving ~= true then
+    -- Fake crawl is driven by DTWalkType/DTNPCMoveAnim. Forcing vanilla crawler flags
+    -- causes posture snaps with the teleported/interpolated NPC pipeline.
+    if options.crawl ~= nil or moving ~= true then
         zombie:setVariable("bBecomeCrawler", false)
         zombie:setVariable("bCrawling", false)
         zombie:setVariable("FallOnFront", false)

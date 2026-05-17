@@ -114,7 +114,7 @@ local function handleLinkedResidentDamage(zombie, npcData, attacker)
     npcData.combatTargetID = nil
     npcData.combatTargetType = nil
     npcData.tasks = {}
-    npcData.state = tostring(npcData.dcCanFight == true and (npcData.dcBehaviorState or "Patrol") or "ColonyCower")
+    npcData.state = tostring(npcData.dcCanFight == true and (npcData.dcBehaviorState or "Patrol") or (npcData.dcBehaviorState or "ColonyIdle"))
     zombie:setTarget(nil)
     zombie:setAttackedBy(nil)
     return true

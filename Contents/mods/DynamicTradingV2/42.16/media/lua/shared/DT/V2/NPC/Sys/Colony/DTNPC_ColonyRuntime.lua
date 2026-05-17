@@ -72,7 +72,7 @@ function Runtime.GetBehaviorState(npcData)
     if dutyMode == "work" or dutyMode == "patient" then
         return "ColonyWork"
     end
-    return "ColonyCower"
+    return "ColonyIdle"
 end
 
 function Runtime.GetHomePoint(npcData)
