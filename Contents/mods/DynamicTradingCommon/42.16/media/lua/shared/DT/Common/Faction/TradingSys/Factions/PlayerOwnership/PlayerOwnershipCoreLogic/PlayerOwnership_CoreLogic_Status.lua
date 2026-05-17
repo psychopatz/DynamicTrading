@@ -10,6 +10,7 @@ return function(context)
     local isDynamicColoniesActive = context.isDynamicColoniesActive
     local getOwnerBuildingsSummary = context.getOwnerBuildingsSummary
     local hasCompletedHeadquarters = context.hasCompletedHeadquarters
+    local isAuthority = context.isAuthority
 
     function Public.BuildOwnedFactionStatus(ownerUsername)
         local owner = getOwnerUsername(ownerUsername)
@@ -39,6 +40,10 @@ return function(context)
 
         local registryReady = isWorkerRegistryAvailable()
         local faction = Public.GetPlayerFaction(owner)
+        if not faction and registryReady and isAuthority() and Public.EnsurePlayerFaction then
+            local _, _, ensuredFaction = Public.EnsurePlayerFaction(owner)
+            faction = ensuredFaction or Public.GetPlayerFaction(owner)
+        end
         if faction then
             faction = Public.RefreshPlayerFaction(faction.id) or nil
         end
@@ -88,6 +93,10 @@ return function(context)
             memberUsernames = faction and copyArray(faction.memberUsernames) or {},
             inviteUsernames = faction and copyArray(faction.inviteUsernames) or {},
             pendingInvites = Public.GetPendingInvites(owner),
+            needsNamingPrompt = faction
+                and faction.needsNamingConfirmation == true
+                and role == "leader"
+                or false,
             leadershipState = faction and tostring(faction.leadershipState or "Active") or nil,
             createBlockedReason = createBlockedReason
         }

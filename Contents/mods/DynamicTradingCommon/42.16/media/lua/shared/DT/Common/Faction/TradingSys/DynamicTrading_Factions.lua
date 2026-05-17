@@ -47,6 +47,7 @@ DynamicTrading_Factions.AllocateTraderBudget = Interaction.AllocateTraderBudget
 DynamicTrading_Factions.ReturnTraderBudget = Interaction.ReturnTraderBudget
 -- Player-owned factions
 DynamicTrading_Factions.CreatePlayerFaction         = PlayerOwnership.CreatePlayerFaction
+DynamicTrading_Factions.EnsurePlayerFaction         = PlayerOwnership.EnsurePlayerFaction
 DynamicTrading_Factions.RenamePlayerFaction         = PlayerOwnership.RenamePlayerFaction
 DynamicTrading_Factions.GetPlayerFaction            = PlayerOwnership.GetPlayerFaction
 DynamicTrading_Factions.GetPlayerFactionID          = PlayerOwnership.GetPlayerFactionID

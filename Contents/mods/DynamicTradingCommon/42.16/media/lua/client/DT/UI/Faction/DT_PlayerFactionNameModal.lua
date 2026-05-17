@@ -84,7 +84,7 @@ function DT_PlayerFactionNameModal.Open(args)
         DT_PlayerFactionNameModal.instance = modal
     end
 
-    modal.title = tostring(args.title or "Create Faction")
+    modal.title = tostring(args.title or "Faction Name")
     modal.promptText = tostring(args.promptText or "Enter a faction name.")
     modal.defaultValue = trimName(args.defaultValue or "")
     modal.confirmLabel = tostring(args.confirmLabel or "Create")
@@ -114,7 +114,7 @@ function DT_PlayerFactionNameModal:new(x, y, width, height)
     local o = ISCollapsableWindow:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.title = "Create Faction"
+    o.title = "Faction Name"
     o.resizable = false
     o.promptText = "Enter a faction name."
     o.defaultValue = ""

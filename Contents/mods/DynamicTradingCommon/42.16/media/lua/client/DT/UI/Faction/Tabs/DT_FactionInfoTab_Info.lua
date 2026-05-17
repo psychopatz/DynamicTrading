@@ -11,12 +11,18 @@ require "DT/Common/Faction/DT_FactionBasePresentation"
 DT_FactionInfoTab_Info = ISPanel:derive("DT_FactionInfoTab_Info")
 
 local function isNomadicFaction(faction)
+    local home = type(faction) == "table" and type(faction.homeCoords) == "table" and faction.homeCoords or nil
+    local homeName = tostring(home and home.name or "")
     return type(faction) == "table"
         and (faction.isNomadic == true
             or tostring(faction.id or "") == "Independent"
             or tostring(faction.id or "") == "Bandits"
             or tostring(faction.factionType or "") == "independent"
-            or tostring(faction.factionType or "") == "bandit")
+            or tostring(faction.factionType or "") == "bandit"
+            or (faction.playerOwned == true and faction.baseConfigured == false)
+            or tostring(faction.town or "") == "Nomad"
+            or homeName == "Nomadic"
+            or homeName == "Nomadic Route")
 end
 
 function DT_FactionInfoTab_Info:new(x, y, width, height)
@@ -106,7 +112,11 @@ function DT_FactionInfoTab_Info:updateData(f)
         text = text .. " <RGB:0.8,0.8,0.8> Town: " .. tostring(f.town or "N/A") .. " <LINE> "
         if isNomadicFaction(f) then
             text = text .. " Mobility: Nomadic / No fixed base <LINE> "
-            if f.homeCoords and f.homeCoords.name and tostring(f.homeCoords.name) ~= "" and tostring(f.homeCoords.name) ~= "Nomadic" then
+            if f.homeCoords
+                and f.homeCoords.name
+                and tostring(f.homeCoords.name) ~= ""
+                and tostring(f.homeCoords.name) ~= "Nomadic"
+                and tostring(f.homeCoords.name) ~= "Nomadic Route" then
                 text = text .. " Route Anchor: " .. tostring(f.homeCoords.name) .. " <LINE> "
             end
         elseif f.homeCoords then

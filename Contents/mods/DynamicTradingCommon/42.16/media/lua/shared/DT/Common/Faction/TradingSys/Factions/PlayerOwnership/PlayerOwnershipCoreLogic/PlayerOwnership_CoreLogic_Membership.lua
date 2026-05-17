@@ -16,6 +16,103 @@ return function(context)
     local isAdminReview = context.isAdminReview
     local getOwnerBuildingsSummary = context.getOwnerBuildingsSummary
     local hasCompletedHeadquarters = context.hasCompletedHeadquarters
+    local getOnlinePlayerByUsername = context.getOnlinePlayerByUsername
+    local getCharacterName = context.getCharacterName
+    local isAuthority = context.isAuthority
+
+    local function buildLivingWorkerIDs(workers)
+        local linkedWorkerIDs = {}
+        for _, worker in ipairs(workers or {}) do
+            if isWorkerLiving(worker) then
+                linkedWorkerIDs[#linkedWorkerIDs + 1] = worker.workerID
+            end
+        end
+        return linkedWorkerIDs
+    end
+
+    local function createOwnedFaction(owner, desiredName, workers, player, needsNamingConfirmation)
+        local linkedWorkerIDs = buildLivingWorkerIDs(workers)
+        if #linkedWorkerIDs < 1 then
+            return false, "You need at least one living recruit before founding a faction.", nil
+        end
+
+        local factionID = "player_" .. sanitizeID(owner)
+        local homeCoords = buildFactionHome(player or owner, workers, owner)
+        DynamicTrading_Factions.CreateFaction(factionID, {
+            playerOwned = true,
+            leaderUsername = owner,
+            leadershipState = "Active",
+            regencyReason = nil,
+            controlMode = "HybridManual",
+            name = desiredName,
+            town = homeCoords.town,
+            homeCoords = homeCoords,
+            baseConfigured = homeCoords.baseConfigured == true,
+            memberCount = #linkedWorkerIDs,
+            memberUsernames = {},
+            inviteUsernames = {},
+            linkedWorkerIDs = linkedWorkerIDs,
+            tradeEligibleWorkerIDs = {},
+            activeTradeWorkerIDs = {},
+            tradeWorkerSouls = {},
+            needsNamingConfirmation = needsNamingConfirmation == true,
+            createdDay = getGameTime() and getGameTime():getDaysSurvived() or 0
+        })
+
+        local faction = Public.RefreshPlayerFaction(factionID)
+        return faction ~= nil, faction and "Faction founded." or "Faction creation failed.", faction
+    end
+
+    local function tryCandidateName(rawName)
+        local ok, nameOrReason = Public.ValidateFactionName(rawName)
+        if ok then
+            return nameOrReason
+        end
+        return nil, nameOrReason
+    end
+
+    local function buildSuffixedName(baseName, suffixIndex)
+        local suffix = " " .. tostring(suffixIndex)
+        local maxBaseLength = math.max(1, 32 - #suffix)
+        local truncated = trimName(string.sub(trimName(baseName), 1, maxBaseLength))
+        if truncated == "" then
+            truncated = "Faction"
+        end
+        return truncated .. suffix
+    end
+
+    local function resolveAutoFactionName(owner, player)
+        local candidates = {}
+        local characterName = getCharacterName(player)
+        if characterName and characterName ~= "" then
+            candidates[#candidates + 1] = characterName
+        end
+        if owner ~= "" and owner ~= characterName then
+            candidates[#candidates + 1] = owner
+        end
+        candidates[#candidates + 1] = "Player Colony"
+
+        for _, baseName in ipairs(candidates) do
+            local normalizedBase = trimName(baseName)
+            if normalizedBase ~= "" then
+                local resolvedName, failureReason = tryCandidateName(normalizedBase)
+                if resolvedName then
+                    return resolvedName
+                end
+
+                if failureReason == "That faction name is already in use." or failureReason == "Faction name must be 32 characters or less." then
+                    for index = 2, 99 do
+                        resolvedName = tryCandidateName(buildSuffixedName(normalizedBase, index))
+                        if resolvedName then
+                            return resolvedName
+                        end
+                    end
+                end
+            end
+        end
+
+        return nil
+    end
 
     function Public.CreatePlayerFaction(player, rawName)
         local coloniesOk, coloniesMessage = context.requireDynamicColonies()
@@ -44,39 +141,85 @@ return function(context)
         end
 
         local workers = getWorkersForOwner(owner)
-        local linkedWorkerIDs = {}
-        for _, worker in ipairs(workers) do
-            if isWorkerLiving(worker) then
-                linkedWorkerIDs[#linkedWorkerIDs + 1] = worker.workerID
-            end
-        end
-        if #linkedWorkerIDs < 1 then
-            return false, "You need at least one living recruit before founding a faction.", nil
+        return createOwnedFaction(owner, nameOrReason, workers, player, false)
+    end
+
+    function Public.EnsurePlayerFaction(ownerOrPlayer, options)
+        options = options or {}
+        if not isAuthority() then
+            local existingOwner = getOwnerUsername(ownerOrPlayer)
+            return false, "Faction creation is authority-only.", Public.GetPlayerFaction(existingOwner), {
+                ownerUsername = existingOwner,
+                created = false,
+                needsNamingPrompt = false
+            }
         end
 
-        local factionID = "player_" .. sanitizeID(owner)
-        local homeCoords = buildFactionHome(player, workers)
-        DynamicTrading_Factions.CreateFaction(factionID, {
-            playerOwned = true,
-            leaderUsername = owner,
-            leadershipState = "Active",
-            regencyReason = nil,
-            controlMode = "HybridManual",
-            name = nameOrReason,
-            town = homeCoords.town,
-            homeCoords = homeCoords,
-            memberCount = #linkedWorkerIDs,
-            memberUsernames = {},
-            inviteUsernames = {},
-            linkedWorkerIDs = linkedWorkerIDs,
-            tradeEligibleWorkerIDs = {},
-            activeTradeWorkerIDs = {},
-            tradeWorkerSouls = {},
-            createdDay = getGameTime() and getGameTime():getDaysSurvived() or 0
-        })
+        local coloniesOk, coloniesMessage = context.requireDynamicColonies()
+        if not coloniesOk then
+            return false, coloniesMessage, nil, {
+                ownerUsername = getOwnerUsername(ownerOrPlayer),
+                created = false,
+                needsNamingPrompt = false
+            }
+        end
 
-        local faction = Public.RefreshPlayerFaction(factionID)
-        return faction ~= nil, faction and "Faction founded." or "Faction creation failed.", faction
+        local owner = getOwnerUsername(ownerOrPlayer)
+        local existingFaction = Public.GetPlayerFaction(owner)
+        if existingFaction then
+            existingFaction = Public.RefreshPlayerFaction(existingFaction.id) or existingFaction
+            return true, "Faction already exists.", existingFaction, {
+                ownerUsername = owner,
+                created = false,
+                needsNamingPrompt = existingFaction.needsNamingConfirmation == true,
+                defaultName = existingFaction.name,
+                leaderUsername = existingFaction.leaderUsername
+            }
+        end
+
+        local buildingsSummary = getOwnerBuildingsSummary(owner)
+        if not hasCompletedHeadquarters(buildingsSummary) then
+            return false, "Finish your headquarters before founding a faction.", nil, {
+                ownerUsername = owner,
+                created = false,
+                needsNamingPrompt = false
+            }
+        end
+
+        local workers = getWorkersForOwner(owner)
+        local livingWorkerIDs = buildLivingWorkerIDs(workers)
+        if #livingWorkerIDs < 1 then
+            return false, "You need at least one living recruit before founding a faction.", nil, {
+                ownerUsername = owner,
+                created = false,
+                needsNamingPrompt = false
+            }
+        end
+
+        local player = nil
+        if type(ownerOrPlayer) == "table" and ownerOrPlayer.getUsername then
+            player = ownerOrPlayer
+        else
+            player = getOnlinePlayerByUsername(owner)
+        end
+
+        local desiredName = resolveAutoFactionName(owner, player)
+        if not desiredName then
+            return false, "Unable to determine a valid temporary faction name.", nil, {
+                ownerUsername = owner,
+                created = false,
+                needsNamingPrompt = false
+            }
+        end
+
+        local ok, message, faction = createOwnedFaction(owner, desiredName, workers, player, true)
+        return ok, message, faction, {
+            ownerUsername = owner,
+            created = ok == true,
+            needsNamingPrompt = ok == true,
+            defaultName = desiredName,
+            leaderUsername = faction and faction.leaderUsername or owner
+        }
     end
 
     function Public.RenamePlayerFaction(player, rawName)
@@ -108,6 +251,7 @@ return function(context)
         end
 
         faction.name = nameOrReason
+        faction.needsNamingConfirmation = nil
         context.syncFactionToColony(faction, { createIfMissing = true })
         ModData.transmit(Utils.MOD_DATA_KEY)
         return true, "Faction renamed.", faction, {

@@ -27,6 +27,13 @@ function PlayerOwnership_Utils.getOwnerUsername(ownerUsername)
     return tostring(ownerUsername or "local")
 end
 
+function PlayerOwnership_Utils.isAuthority()
+    if isClient and isClient() and not (isServer and isServer()) then
+        return false
+    end
+    return true
+end
+
 function PlayerOwnership_Utils.trimName(value)
     local text = tostring(value or "")
     text = string.gsub(text, "^%s+", "")
@@ -123,9 +130,51 @@ function PlayerOwnership_Utils.getWorkersForOwner(ownerUsername)
     return {}
 end
 
+function PlayerOwnership_Utils.getOnlinePlayerByUsername(ownerUsername)
+    local owner = PlayerOwnership_Utils.getOwnerUsername(ownerUsername)
+    if owner == "" then
+        return nil
+    end
+
+    local onlinePlayers = getOnlinePlayers and getOnlinePlayers() or nil
+    if onlinePlayers then
+        for index = 0, onlinePlayers:size() - 1 do
+            local player = onlinePlayers:get(index)
+            if player and PlayerOwnership_Utils.getOwnerUsername(player) == owner then
+                return player
+            end
+        end
+    end
+
+    local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
+    if player and PlayerOwnership_Utils.getOwnerUsername(player) == owner then
+        return player
+    end
+
+    return nil
+end
+
+function PlayerOwnership_Utils.getCharacterName(player)
+    if player and player.getDescriptor then
+        local descriptor = player:getDescriptor()
+        if descriptor and descriptor.getForename then
+            local forename = PlayerOwnership_Utils.trimName(descriptor:getForename())
+            local surname = PlayerOwnership_Utils.trimName(descriptor.getSurname and descriptor:getSurname() or "")
+            local fullName = PlayerOwnership_Utils.trimName(forename .. " " .. surname)
+            if fullName ~= "" then
+                return fullName
+            end
+            if forename ~= "" then
+                return forename
+            end
+        end
+    end
+    return nil
+end
+
 function PlayerOwnership_Utils.getOwnerBuildingsSummary(ownerUsername)
-    if DT_Buildings and DT_Buildings.GetOwnerSummary then
-        return DT_Buildings.GetOwnerSummary(ownerUsername)
+    if DC_Buildings and DC_Buildings.GetOwnerSummary then
+        return DC_Buildings.GetOwnerSummary(ownerUsername)
     end
     return nil
 end
@@ -264,40 +313,75 @@ function PlayerOwnership_Utils.getFactionRole(faction, username)
     return nil
 end
 
-function PlayerOwnership_Utils.buildFactionHome(player, workers)
+function PlayerOwnership_Utils.buildFactionHome(ownerOrPlayer, workers, fallbackOwnerUsername)
+    local owner = PlayerOwnership_Utils.getOwnerUsername(fallbackOwnerUsername or ownerOrPlayer)
+    local player = ownerOrPlayer
+    if type(player) ~= "table" or not player.getX or not player.getY then
+        player = PlayerOwnership_Utils.getOnlinePlayerByUsername(owner)
+    end
+
     local x = nil
     local y = nil
     local z = 0
 
-    if player and player.getX and player.getY then
+    if DC_ZoneRealBase and DC_ZoneRealBase.ResolveBaseTarget and owner ~= "" then
+        local target = DC_ZoneRealBase.ResolveBaseTarget(owner)
+        if type(target) == "table" and tonumber(target.x) ~= nil and tonumber(target.y) ~= nil then
+            x = math.floor(tonumber(target.x) or 0)
+            y = math.floor(tonumber(target.y) or 0)
+            z = math.floor(tonumber(target.z) or 0)
+        end
+    end
+
+    if x ~= nil and y ~= nil then
+        local town = "Unknown"
+        if DTM and DTM.GetTownName then
+            local resolvedTown = DTM.GetTownName(x, y)
+            if resolvedTown and resolvedTown ~= "" then
+                town = resolvedTown
+            end
+        end
+
+        return {
+            name = "Player HQ",
+            x = x,
+            y = y,
+            z = z,
+            town = town,
+            baseConfigured = true
+        }
+    end
+
+    if (x == nil or y == nil) and type(workers) == "table" then
+        for _, worker in ipairs(workers) do
+            local nextX = tonumber(worker and worker.homeX) or tonumber(worker and worker.workX)
+            local nextY = tonumber(worker and worker.homeY) or tonumber(worker and worker.workY)
+            if nextX ~= nil and nextY ~= nil then
+                x = math.floor(nextX)
+                y = math.floor(nextY)
+                z = math.floor(tonumber(worker.homeZ) or tonumber(worker.workZ) or 0)
+                break
+            end
+        end
+    end
+
+    if (x == nil or y == nil) and player and player.getX and player.getY then
         x = math.floor(player:getX())
         y = math.floor(player:getY())
         z = math.floor((player.getZ and player:getZ()) or 0)
-    elseif workers and workers[1] then
-        local worker = workers[1]
-        x = math.floor(tonumber(worker.homeX) or tonumber(worker.workX) or 0)
-        y = math.floor(tonumber(worker.homeY) or tonumber(worker.workY) or 0)
-        z = math.floor(tonumber(worker.homeZ) or tonumber(worker.workZ) or 0)
     end
 
     if x == nil or y == nil then
         x, y, z = 0, 0, 0
     end
 
-    local town = "Unknown"
-    if DTM and DTM.GetTownName then
-        local resolvedTown = DTM.GetTownName(x, y)
-        if resolvedTown and resolvedTown ~= "" then
-            town = resolvedTown
-        end
-    end
-
     return {
-        name = "Player HQ",
+        name = "Nomadic Route",
         x = x,
         y = y,
         z = z,
-        town = town
+        town = "Nomad",
+        baseConfigured = false
     }
 end
 

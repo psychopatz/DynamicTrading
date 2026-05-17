@@ -111,10 +111,10 @@ function DT_FactionInfoWindow:promptOwnedFactionName(action, ownedStatus)
     end
 
     DT_PlayerFactionNameModal.Open({
-        title = action == "rename" and "Rename Faction" or "Create Faction",
+        title = action == "rename" and "Rename Faction" or "Faction Name",
         promptText = action == "rename"
             and "Choose a new name for your faction."
-            or "Choose a name for your new faction.",
+            or "Enter a faction name.",
         confirmLabel = action == "rename" and "Rename" or "Create",
         defaultValue = defaultName,
         onConfirm = function(name)
@@ -125,21 +125,7 @@ function DT_FactionInfoWindow:promptOwnedFactionName(action, ownedStatus)
 end
 
 function DT_FactionInfoWindow:maybeAutoPromptFactionCreation(status)
-    local ownerUsername = status and (status.memberUsername or status.ownerUsername or status.authorityOwner) or nil
-    ownerUsername = trimFactionName(ownerUsername)
-    if ownerUsername == "" then
-        return
-    end
-
-    DT_FactionInfoWindow.autoPromptedFactionOwners = DT_FactionInfoWindow.autoPromptedFactionOwners or {}
-    if DT_FactionInfoWindow.autoPromptedFactionOwners[ownerUsername] then
-        return
-    end
-
-    if status and not status.faction and status.canCreate then
-        DT_FactionInfoWindow.autoPromptedFactionOwners[ownerUsername] = true
-        self:promptOwnedFactionName("create", status)
-    end
+    return
 end
 
 function DT_FactionInfoWindow:createChildren()
@@ -401,7 +387,6 @@ function DT_FactionInfoWindow:updateOwnedFactionStatus(status, selectedFaction)
     if self.footerPanel and self.footerPanel.updateOwnedFactionStatus then
         self.footerPanel:updateOwnedFactionStatus(status)
     end
-    self:maybeAutoPromptFactionCreation(status)
 end
 
 function DT_FactionInfoWindow:onRadarButton()
@@ -417,11 +402,6 @@ function DT_FactionInfoWindow:onFactionMembersButton(ownedStatus)
 end
 
 function DT_FactionInfoWindow:onOwnedFactionButton(ownedStatus)
-    if ownedStatus and not ownedStatus.faction and ownedStatus.canCreate then
-        self:promptOwnedFactionName("create", ownedStatus)
-        return
-    end
-
     self:openOwnedFactionManagementWindow()
 end
 

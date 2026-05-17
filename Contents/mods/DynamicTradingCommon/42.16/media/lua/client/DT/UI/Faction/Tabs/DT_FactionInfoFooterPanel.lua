@@ -96,15 +96,15 @@ function DT_FactionInfoFooterPanel:updateOwnedFactionStatus(status)
             if self.btnRenameFaction then
                 self.btnRenameFaction:setVisible(false)
             end
-        elseif status and not status.faction and status.canCreate then
-            self.btnOwnedFaction:setTitle("Set Up Faction")
+        elseif status and not status.faction and (status.canCreate or status.createBlockedReason == "syncing") then
+            self.btnOwnedFaction:setTitle("Claim Syncing")
             self.btnOwnedFaction:setEnable(true)
             self.btnOwnedFaction:setVisible(true)
             if self.btnRenameFaction then
                 self.btnRenameFaction:setVisible(false)
             end
         else
-            self.btnOwnedFaction:setTitle("Open Colony Management")
+            self.btnOwnedFaction:setTitle(status and status.needsNamingPrompt == true and "Finalize Faction" or "Open Colony Management")
             self.btnOwnedFaction:setEnable(true)
             self.btnOwnedFaction:setVisible(true)
             if self.btnRenameFaction then

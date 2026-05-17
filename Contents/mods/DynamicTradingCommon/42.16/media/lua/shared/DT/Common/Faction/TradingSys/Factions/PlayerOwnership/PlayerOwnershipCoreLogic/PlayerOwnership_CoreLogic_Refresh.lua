@@ -102,12 +102,16 @@ return function(context)
         end
 
         local owner = getOwnerUsername(faction.leaderUsername)
+        local ownerWorkers = getWorkersForOwner(owner)
         faction.linkedWorkerIDs = faction.linkedWorkerIDs or {}
         faction.tradeEligibleWorkerIDs = faction.tradeEligibleWorkerIDs or {}
         faction.activeTradeWorkerIDs = faction.activeTradeWorkerIDs or {}
         faction.tradeWorkerSouls = faction.tradeWorkerSouls or {}
         faction.controlMode = faction.controlMode or "HybridManual"
         faction.leadershipState = faction.leadershipState or "Active"
+        faction.homeCoords = context.buildFactionHome(owner, ownerWorkers, owner)
+        faction.baseConfigured = faction.homeCoords and faction.homeCoords.baseConfigured == true or false
+        faction.town = faction.homeCoords and faction.homeCoords.town or faction.town
 
         if not context.syncLinkedWorkersFromOwner(faction, owner) then
             faction.memberCount = math.max(tonumber(faction.memberCount) or 0, #(faction.linkedWorkerIDs or {}))

@@ -70,9 +70,13 @@ function DT_FactionInfoHeaderPanel:updateOwnedFactionStatus(status, selectedFact
     elseif self.selectedFaction then
         self.lblStatus:setName("Viewing " .. tostring(self.selectedFaction.name or self.selectedFaction.id or "Faction"))
     elseif status and status.faction then
-        self.lblStatus:setName("Your faction: " .. tostring(status.faction.name or status.faction.id) .. " | " .. tostring(status.faction.leadershipState or "Active"))
+        if status.needsNamingPrompt == true then
+            self.lblStatus:setName("Your colony is claimed as " .. tostring(status.faction.name or status.faction.id) .. ". Rename it to finalize the faction name.")
+        else
+            self.lblStatus:setName("Your faction: " .. tostring(status.faction.name or status.faction.id) .. " | " .. tostring(status.faction.leadershipState or "Active"))
+        end
     elseif status and status.canCreate then
-        self.lblStatus:setName("Headquarters ready. Name your faction to claim the colony.")
+        self.lblStatus:setName("Headquarters ready. Colony claim is syncing.")
     elseif status and status.createBlockedReason == "headquarters_required" then
         self.lblStatus:setName("Finish your headquarters before founding a faction")
     else
