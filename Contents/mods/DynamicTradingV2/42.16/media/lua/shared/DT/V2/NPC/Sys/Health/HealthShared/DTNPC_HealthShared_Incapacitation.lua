@@ -86,19 +86,27 @@ local function setIncapacitatedState(zombie, npcData)
     end
     zombie:setPath2(nil)
     zombie:setRunning(false)
-    zombie:setVariable("bBecomeCrawler", false)
-    zombie:setVariable("bCrawling", false)
-    zombie:setVariable("FallOnFront", false)
-    zombie:setVariable("bMoving", false)
-    zombie:setVariable("isMoving", false)
-    zombie:setVariable("DTNPCMoveAnim", "")
-    zombie:setVariable("DTNPCAnimSpeed", 0.0)
-    zombie:setVariable("MovementSpeed", 0.0)
-    zombie:setVariable("WalkSpeed", 0.0)
-    zombie:setVariable("RunSpeed", 0.0)
-    zombie:setVariable("Speed", 0.0)
-    zombie:setVariable("WalkType", "")
-    zombie:setVariable("DTWalkType", "Crawl")
+    if DTNPCMobility and DTNPCMobility.SetLocomotionState then
+        DTNPCMobility.SetLocomotionState(zombie, {
+            profileKey = DTNPCHealth and DTNPCHealth.INCAP_CRAWL_PROFILE_KEY or "incap_crawl",
+            moving = false,
+            animSpeed = 0.0,
+        })
+    else
+        zombie:setVariable("bBecomeCrawler", false)
+        zombie:setVariable("bCrawling", true)
+        zombie:setVariable("FallOnFront", true)
+        zombie:setVariable("bMoving", false)
+        zombie:setVariable("isMoving", false)
+        zombie:setVariable("DTNPCMoveAnim", "")
+        zombie:setVariable("DTNPCAnimSpeed", 0.0)
+        zombie:setVariable("MovementSpeed", 0.0)
+        zombie:setVariable("WalkSpeed", 0.0)
+        zombie:setVariable("RunSpeed", 0.0)
+        zombie:setVariable("Speed", 0.0)
+        zombie:setVariable("WalkType", "")
+        zombie:setVariable("DTWalkType", "Crawl")
+    end
     internal.clearBandageAnimVariables(zombie)
     zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
     zombie:resetModelNextFrame()

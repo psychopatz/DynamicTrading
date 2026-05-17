@@ -118,6 +118,7 @@ local function shouldAlertFromLocalThreat(zombie, npcData, targetPoint)
         reason = "local_threat",
         target = target,
     })
+    DTNPCColonyRuntime.PushAlertNotice(zombie, npcData, "civilian", target)
     return true
 end
 

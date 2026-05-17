@@ -1,6 +1,10 @@
 DTNPCColonyRuntime = DTNPCColonyRuntime or {}
 
+require "DT/Common/FlavorText/DT_FlavorText"
+require "DT/Common/FlavorText/DT_FlavorText_ColonyAlert"
+
 local Runtime = DTNPCColonyRuntime
+Runtime.ALERT_NOTICE_COOLDOWN_MS = Runtime.ALERT_NOTICE_COOLDOWN_MS or 5000
 
 local function buildPoint(source)
     if type(source) ~= "table" then
@@ -175,6 +179,85 @@ function Runtime.ShouldSenseThreat(npcData, cooldownMs)
         npcData.dcSenseThreatAfterMs = now + math.max(250, math.floor(tonumber(cooldownMs) or 1200))
     end
     return true
+end
+
+local function getThreatIdentity(target)
+    if not target then
+        return nil
+    end
+
+    if target.getModData then
+        local modData = target:getModData()
+        local brain = modData and (modData.DTNPC_Data or modData.DTNPCBrain) or nil
+        if modData and modData.DTNPC_UUID then
+            return "dtnpc:" .. tostring(modData.DTNPC_UUID)
+        end
+        if brain and brain.uuid then
+            return "dtnpc:" .. tostring(brain.uuid)
+        end
+    end
+
+    if instanceof and instanceof(target, "IsoZombie") then
+        return "zombie:" .. tostring(target.getOnlineID and target:getOnlineID() or target)
+    end
+
+    if target.getOnlineID then
+        local onlineID = target:getOnlineID()
+        if onlineID ~= nil then
+            return "online:" .. tostring(onlineID)
+        end
+    end
+
+    return tostring(target)
+end
+
+local function getThreatFlavorKind(role, target)
+    local prefix = role == "guard" and "ColonyGuard" or "ColonyCivilian"
+
+    if target and instanceof and instanceof(target, "IsoZombie") then
+        return prefix .. "SpotZombie"
+    end
+
+    if target and target.getModData then
+        local modData = target:getModData()
+        local brain = modData and (modData.DTNPC_Data or modData.DTNPCBrain) or nil
+        if brain and tostring(brain.factionID or "") == "Bandits" then
+            return prefix .. "SpotBandits"
+        end
+    end
+
+    return prefix .. "SpotHostile"
+end
+
+function Runtime.PushAlertNotice(zombie, npcData, role, target)
+    if not zombie or type(npcData) ~= "table" or not DTNPCProtect or not DTNPCProtect.PushCompanionNotice then
+        return false
+    end
+
+    local now = getTimeInMillis and getTimeInMillis() or 0
+    local targetID = getThreatIdentity(target)
+    local keyPrefix = role == "guard" and "dcGuardAlertNotice" or "dcCivilianAlertNotice"
+    local lastAt = tonumber(npcData[keyPrefix .. "At"]) or 0
+    local lastTargetID = npcData[keyPrefix .. "TargetID"]
+    if lastAt > 0 and (now - lastAt) < Runtime.ALERT_NOTICE_COOLDOWN_MS then
+        if targetID == nil or tostring(lastTargetID or "") == tostring(targetID or "") then
+            return false
+        end
+    end
+
+    local flavorKind = getThreatFlavorKind(role, target)
+    local line = DynamicTrading
+        and DynamicTrading.FlavorText
+        and DynamicTrading.FlavorText.GetRandom
+        and DynamicTrading.FlavorText.GetRandom("CompanionCombat", flavorKind)
+        or ""
+    if not line or line == "" then
+        line = role == "guard" and "Contact on the perimeter. Engaging." or "Enemy sighted! Guards, now!"
+    end
+
+    npcData[keyPrefix .. "At"] = now
+    npcData[keyPrefix .. "TargetID"] = targetID
+    return DTNPCProtect.PushCompanionNotice(zombie, npcData, line, "warning", "Chat")
 end
 
 function Runtime.SyncBehaviorIdentity(npcData)

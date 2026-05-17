@@ -101,6 +101,15 @@ local function handleLinkedResidentDamage(zombie, npcData, attacker)
         })
     end
 
+    if DTNPCColonyRuntime and DTNPCColonyRuntime.PushAlertNotice then
+        DTNPCColonyRuntime.PushAlertNotice(
+            zombie,
+            npcData,
+            npcData.dcCanFight == true and "guard" or "civilian",
+            attacker
+        )
+    end
+
     npcData.isHostile = false
     npcData.combatTargetID = nil
     npcData.combatTargetType = nil

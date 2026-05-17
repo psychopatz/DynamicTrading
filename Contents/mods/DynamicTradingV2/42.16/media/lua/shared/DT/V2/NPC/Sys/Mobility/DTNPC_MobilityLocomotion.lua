@@ -77,7 +77,11 @@ function Mobility.SetLocomotionState(zombie, options)
         zombie:setVariable("DTIdleState", "0")
     end
 
-    if options.crawl ~= nil or moving ~= true then
+    if options.crawl == true then
+        zombie:setVariable("bBecomeCrawler", moving)
+        zombie:setVariable("bCrawling", true)
+        zombie:setVariable("FallOnFront", true)
+    elseif options.crawl ~= nil or moving ~= true then
         zombie:setVariable("bBecomeCrawler", false)
         zombie:setVariable("bCrawling", false)
         zombie:setVariable("FallOnFront", false)

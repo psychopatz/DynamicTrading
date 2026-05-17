@@ -134,6 +134,7 @@ DTNPCLogic.Behaviors["ColonyCower"] = function(zombie, npcData)
                 reason = "local_threat",
                 target = threat,
             })
+            DTNPCColonyRuntime.PushAlertNotice(zombie, npcData, "civilian", threat)
         end
     end
 

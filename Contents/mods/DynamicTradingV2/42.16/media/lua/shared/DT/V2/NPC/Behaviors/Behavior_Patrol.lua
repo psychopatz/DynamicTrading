@@ -139,6 +139,7 @@ local function engageFromPost(zombie, npcData, point)
         reason = "guard_contact",
         target = target,
     })
+    DTNPCColonyRuntime.PushAlertNotice(zombie, npcData, "guard", target)
 
     local previousState = npcData.state
     npcData.state = "Guard"
