@@ -73,6 +73,7 @@ function DTNPCHealth.InitializeForSpawn(zombie, npcData, options)
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
     local resetCurrent = options.resetCurrent == true
     local spawnReason = tostring(options.spawnReason or "spawn")
+    npcData.bodyRecoveryRetryAt = nil
     combatHealth.lastDamageAt = 0
     combatHealth.lastDamageAmount = 0
     combatHealth.pendingFallbackIgnoreAmount = 0

@@ -8,6 +8,19 @@ DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 
 local internal = DTNPCLifecycle.Internal
 
+local function hasTerminalDeathRequest(npcData)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return true
+    end
+
+    local combatHealth = type(npcData.combatHealth) == "table" and npcData.combatHealth or nil
+    return (tonumber(combatHealth and combatHealth.incapFinalKillRequestedAt) or 0) > 0
+end
+
 function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, context)
     local modData = zombie and zombie.getModData and zombie:getModData() or nil
     if modData then
@@ -19,7 +32,7 @@ function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, co
     if not uuid or not liveData then
         return false
     end
-    if liveData.incapState ~= "Active" then
+    if liveData.incapState ~= "Active" and not hasTerminalDeathRequest(liveData) then
         return false
     end
 

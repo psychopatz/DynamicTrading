@@ -50,6 +50,19 @@ local function getFactionID(npcData)
     return tostring(npcData and npcData.factionID or "")
 end
 
+local function hasTerminalDeathRequest(npcData)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return true
+    end
+
+    local combatHealth = type(npcData.combatHealth) == "table" and npcData.combatHealth or nil
+    return (tonumber(combatHealth and combatHealth.incapFinalKillRequestedAt) or 0) > 0
+end
+
 local function isThreatOrBlockedState(state)
     state = tostring(state or "")
     return state == "Attack"
@@ -221,10 +234,10 @@ local function isSameFactionRescueCandidate(rescuerData, targetData)
     if rescuerData.uuid == nil or targetData.uuid == nil or rescuerData.uuid == targetData.uuid then
         return false
     end
-    if tostring(targetData.status or "") == "Dead" or tonumber(targetData.deathFinalizedAt) then
+    if hasTerminalDeathRequest(targetData) then
         return false
     end
-    if tostring(rescuerData.status or "") == "Dead" or tonumber(rescuerData.deathFinalizedAt) then
+    if hasTerminalDeathRequest(rescuerData) then
         return false
     end
     if rescuerData.incapState == "Active" or targetData.incapState ~= "Active" then
@@ -255,7 +268,7 @@ local function canRescuerAttempt(npcData, state)
     if (internal.isRemoteClient and internal.isRemoteClient()) or npcData.state == "ReviveAlly" then
         return false
     end
-    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+    if hasTerminalDeathRequest(npcData) then
         return false
     end
     if isThreatOrBlockedState(state or npcData.state) then

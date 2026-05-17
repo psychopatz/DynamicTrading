@@ -11,11 +11,11 @@ local Internal = Mobility.Internal or {}
 Mobility.Internal = Internal
 
 function Internal.getMovementAnimName(options, moving)
-    if not moving then
-        return ""
-    end
     if options and options.crawl == true then
         return "Crawl"
+    end
+    if not moving then
+        return ""
     end
     if options and options.dtWalkType ~= nil and tostring(options.dtWalkType) ~= "" then
         return tostring(options.dtWalkType)
@@ -78,7 +78,7 @@ function Mobility.SetLocomotionState(zombie, options)
     end
 
     if options.crawl == true then
-        zombie:setVariable("bBecomeCrawler", moving)
+        zombie:setVariable("bBecomeCrawler", true)
         zombie:setVariable("bCrawling", true)
         zombie:setVariable("FallOnFront", true)
     elseif options.crawl ~= nil or moving ~= true then

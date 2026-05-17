@@ -8,6 +8,16 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function hasNearbyThreat(zombie, npcData)
+    if not zombie or not npcData or not DTNPCProtect or not DTNPCProtect.SelectNearestThreat then
+        return false
+    end
+
+    local radius = 10
+    local threat = DTNPCProtect.SelectNearestThreat(zombie, npcData, radius, zombie, radius, true)
+    return threat ~= nil
+end
+
 function internal.startSelfBandage(zombie, npcData, resumeState, options)
     if not zombie or not npcData then
         return false
@@ -80,6 +90,11 @@ function DTNPCHealth.ShouldSelfBandage(npcData)
         return false
     end
 
+    if npcData.raidHostileFaction == true
+        or (npcData.banditGroupID ~= nil and npcData.banditLeaving ~= true) then
+        return false
+    end
+
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
     if not combatHealth or combatHealth.enabled ~= true then
         return false
@@ -89,11 +104,20 @@ function DTNPCHealth.ShouldSelfBandage(npcData)
         return false
     end
 
+    local now = internal.nowMillis()
+    if npcData.isHostile == true
+        or npcData.combatTargetID ~= nil
+        or npcData.combatTargetType ~= nil
+        or ((tonumber(combatHealth.lastDamageAt) or 0) > 0
+            and (now - (tonumber(combatHealth.lastDamageAt) or 0)) < (tonumber(DTNPCHealth.SELF_BANDAGE_COMBAT_COOLDOWN_MS) or 12000)) then
+        return false
+    end
+
     if combatHealth.activeBandage == true and combatHealth.bandageDirty ~= true then
         return false
     end
 
-    if (tonumber(combatHealth.bandageActionUntil) or 0) > internal.nowMillis() then
+    if (tonumber(combatHealth.bandageActionUntil) or 0) > now then
         return true
     end
 
@@ -119,6 +143,9 @@ function DTNPCHealth.TryEnterSelfBandage(zombie, npcData, currentState)
     end
 
     if not internal.isBandageVisibleOpportunity(zombie) then
+        return false
+    end
+    if hasNearbyThreat(zombie, npcData) then
         return false
     end
 

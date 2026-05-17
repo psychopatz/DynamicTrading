@@ -8,6 +8,19 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function hasTerminalDeathRequest(npcData)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return true
+    end
+
+    local combatHealth = type(npcData.combatHealth) == "table" and npcData.combatHealth or nil
+    return (tonumber(combatHealth and combatHealth.incapFinalKillRequestedAt) or 0) > 0
+end
+
 local function ensureReviveDataTable(npcData)
     if type(npcData) ~= "table" then
         return nil
@@ -77,7 +90,7 @@ function DTNPCHealth.CanReviveTarget(npcData, options)
     if type(npcData) ~= "table" then
         return false, { reason = "invalid_target" }
     end
-    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+    if hasTerminalDeathRequest(npcData) then
         return false, { reason = "dead_target" }
     end
 

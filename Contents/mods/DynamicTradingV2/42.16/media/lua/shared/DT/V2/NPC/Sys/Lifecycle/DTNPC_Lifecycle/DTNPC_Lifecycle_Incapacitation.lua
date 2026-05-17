@@ -8,14 +8,33 @@ DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 
 local internal = DTNPCLifecycle.Internal
 
+local function hasTerminalDeathRequest(npcData)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return true
+    end
+
+    local combatHealth = type(npcData.combatHealth) == "table" and npcData.combatHealth or nil
+    return (tonumber(combatHealth and combatHealth.incapFinalKillRequestedAt) or 0) > 0
+end
+
 function DTNPCLifecycle.EnterIncapacitated(zombie, npcData, attacker, context)
     if not zombie or not npcData or internal.isRemoteClient() then
         return false
     end
 
     local combatHealth = DTNPCHealth and DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
-    if not combatHealth or combatHealth.zeroHpMode ~= "Incapacitated" then
+    if not combatHealth then
         return false
+    end
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return false
+    end
+    if npcData.incapState == "Active" or tostring(npcData.state or "") == "Incapacitated" then
+        return true
     end
 
     if attacker and zombie.setAttackedBy then
@@ -71,6 +90,9 @@ end
 
 function DTNPCLifecycle.ConvertDeathToIncapacitated(zombie, uuid, npcData, removalContext)
     if not zombie or not uuid or not npcData then
+        return false
+    end
+    if hasTerminalDeathRequest(npcData) then
         return false
     end
 
@@ -132,6 +154,9 @@ end
 
 function DTNPCLifecycle.PreserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData)
     if not zombie or not uuid or not npcData or npcData.incapState ~= "Active" then
+        return false
+    end
+    if hasTerminalDeathRequest(npcData) then
         return false
     end
 

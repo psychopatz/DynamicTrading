@@ -11,7 +11,8 @@ local internal = DTNPCHealth.Internal
 DTNPCHealth.REVIVE_DEFAULT_COST_MIN = DTNPCHealth.REVIVE_DEFAULT_COST_MIN or 1
 DTNPCHealth.REVIVE_DEFAULT_COST_MAX = DTNPCHealth.REVIVE_DEFAULT_COST_MAX or 3
 DTNPCHealth.REVIVE_INITIAL_HP_RATIO = DTNPCHealth.REVIVE_INITIAL_HP_RATIO or 0.25
-DTNPCHealth.WEAKENED_RECOVERY_RATIO = DTNPCHealth.WEAKENED_RECOVERY_RATIO or 0.50
+DTNPCHealth.WEAKENED_THRESHOLD_RATIO = DTNPCHealth.WEAKENED_THRESHOLD_RATIO or 0.30
+DTNPCHealth.WEAKENED_RECOVERY_RATIO = DTNPCHealth.WEAKENED_RECOVERY_RATIO or DTNPCHealth.WEAKENED_THRESHOLD_RATIO
 DTNPCHealth.WEAKENED_DEPARTURE_SPEED_MULT = DTNPCHealth.WEAKENED_DEPARTURE_SPEED_MULT or 0.55
 DTNPCHealth.WEAKENED_DEPARTURE_ANIM_SPEED = DTNPCHealth.WEAKENED_DEPARTURE_ANIM_SPEED or 0.82
 DTNPCHealth.WEAKENED_CROUCH_PROFILE_KEY = DTNPCHealth.WEAKENED_CROUCH_PROFILE_KEY or "weakened_crouch"
@@ -25,6 +26,10 @@ DTNPCHealth.ALLY_REVIVE_THREAT_RADIUS = DTNPCHealth.ALLY_REVIVE_THREAT_RADIUS or
 DTNPCHealth.ALLY_REVIVE_ACTION_DURATION_MS = DTNPCHealth.ALLY_REVIVE_ACTION_DURATION_MS or 3500
 DTNPCHealth.ALLY_REVIVE_LEASE_MS = DTNPCHealth.ALLY_REVIVE_LEASE_MS or 6000
 DTNPCHealth.ALLY_REVIVE_RETRY_DELAY_MS = DTNPCHealth.ALLY_REVIVE_RETRY_DELAY_MS or 5000
+DTNPCHealth.BODY_RECOVERY_RETRY_MS = DTNPCHealth.BODY_RECOVERY_RETRY_MS or 2000
+DTNPCHealth.PREMATURE_DEATH_RECOVERY_WINDOW_MS = DTNPCHealth.PREMATURE_DEATH_RECOVERY_WINDOW_MS or 8000
+DTNPCHealth.PREMATURE_DEATH_RECOVERY_MAX_CHAIN = DTNPCHealth.PREMATURE_DEATH_RECOVERY_MAX_CHAIN or 2
+DTNPCHealth.SELF_BANDAGE_COMBAT_COOLDOWN_MS = DTNPCHealth.SELF_BANDAGE_COMBAT_COOLDOWN_MS or 12000
 DTNPCHealth.REVIVE_VALID_ITEM_TYPES = DTNPCHealth.REVIVE_VALID_ITEM_TYPES or {
     "Base.RippedSheets",
     "Base.AlcoholRippedSheets",
@@ -65,13 +70,31 @@ function DTNPCHealth.GetHealthState(npcData)
     if not npcData then
         return nil
     end
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return "Dead"
+    end
     if npcData.incapState == "Active" or tostring(npcData.state or "") == "Incapacitated" then
         return "Incapacitated"
     end
-    if tostring(npcData.healthState or "") == "Weakened" then
+    local explicit = tostring(npcData.healthState or "")
+    if explicit == "Weakened" or explicit == "Healthy" then
+        return explicit
+    end
+
+    local current = DTNPCHealth.GetCurrentHP and DTNPCHealth.GetCurrentHP(npcData) or nil
+    local maxHealth = DTNPCHealth.GetMaxHP and DTNPCHealth.GetMaxHP(npcData) or nil
+    if current ~= nil and maxHealth ~= nil and maxHealth > 0 then
+        local ratio = current / maxHealth
+        if ratio <= (tonumber(DTNPCHealth.WEAKENED_THRESHOLD_RATIO) or 0.30) then
+            return "Weakened"
+        end
+        return "Healthy"
+    end
+
+    if explicit == "Weakened" then
         return "Weakened"
     end
-    return nil
+    return "Healthy"
 end
 
 function DTNPCHealth.GetReviveRequirement(npcData)

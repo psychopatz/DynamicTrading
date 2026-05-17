@@ -127,6 +127,29 @@ function DTNPCLogic.ProcessNPC(zombie)
         DTNPCHealth.ProcessWeakenedRecovery(zombie, npcData)
     end
 
+    local customCurrent = tonumber(combatHealth and combatHealth.current) or nil
+    local minDamage = tonumber(DTNPCHealth and DTNPCHealth.MIN_DAMAGE) or 0.01
+    if customCurrent ~= nil
+        and customCurrent <= minDamage
+        and npcData.incapState ~= "Active"
+        and tostring(npcData.state or "") ~= "Incapacitated"
+        and tostring(npcData.status or "") ~= "Dead"
+        and not tonumber(npcData.deathFinalizedAt)
+        and DTNPCLifecycle
+        and DTNPCLifecycle.EnterIncapacitated then
+        local enteredIncap = DTNPCLifecycle.EnterIncapacitated(zombie, npcData, zombie.getAttackedBy and zombie:getAttackedBy() or nil, {
+            source = "logic_zero_hp_guard",
+        })
+        if enteredIncap then
+            state = "Incapacitated"
+            combatHealth = DTNPCHealth and DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or combatHealth
+        end
+    end
+
+    if DTNPCHealth and DTNPCHealth.ApplyHealthVisualPosture then
+        DTNPCHealth.ApplyHealthVisualPosture(zombie, npcData)
+    end
+
     if HIGH_SPEED_STATES[state] then
         DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
     else

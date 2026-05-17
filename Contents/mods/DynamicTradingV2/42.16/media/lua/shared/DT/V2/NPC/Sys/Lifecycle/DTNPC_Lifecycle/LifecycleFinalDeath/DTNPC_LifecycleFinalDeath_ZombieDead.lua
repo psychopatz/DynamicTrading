@@ -8,6 +8,19 @@ DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 
 local internal = DTNPCLifecycle.Internal
 
+local function hasTerminalDeathRequest(npcData)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return true
+    end
+
+    local combatHealth = type(npcData.combatHealth) == "table" and npcData.combatHealth or nil
+    return (tonumber(combatHealth and combatHealth.incapFinalKillRequestedAt) or 0) > 0
+end
+
 function DTNPCLifecycle.HandleZombieDead(zombie)
     local modData = zombie and zombie.getModData and zombie:getModData() or nil
     if modData and modData.DTNPCZombieDeadHandled == true then
@@ -30,6 +43,25 @@ function DTNPCLifecycle.HandleZombieDead(zombie)
             modData.DTNPCZombieDeadHandled = true
         end
         local npcData = DTNPCManager.Data[uuid]
+        local deadBodyInstanceID = zombie and zombie.getPersistentOutfitID and zombie:getPersistentOutfitID() or nil
+        local currentBodyInstanceID = npcData and npcData.currentBodyInstanceID or nil
+        if currentBodyInstanceID ~= nil
+            and deadBodyInstanceID ~= nil
+            and tostring(currentBodyInstanceID) ~= tostring(deadBodyInstanceID) then
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Warn",
+                "Ignoring stale dead body for "
+                    .. tostring(npcData.name or uuid)
+                    .. " uuid=" .. tostring(uuid)
+                    .. " deadBodyInstanceID=" .. tostring(deadBodyInstanceID)
+                    .. " currentBodyInstanceID=" .. tostring(currentBodyInstanceID)
+            )
+            zombie:removeFromWorld()
+            zombie:removeFromSquare()
+            return
+        end
         DynamicTrading.Log(
             "DTV2",
             "NPC",
@@ -74,7 +106,11 @@ function DTNPCLifecycle.HandleZombieDead(zombie)
             return
         end
 
-        if npcData.incapState == "Active" and DTNPCLifecycle.PreserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData) then
+        local terminalDeathRequested = hasTerminalDeathRequest(npcData)
+
+        if npcData.incapState == "Active"
+            and not terminalDeathRequested
+            and DTNPCLifecycle.PreserveSuspiciousIncapacitatedDeath(zombie, uuid, npcData) then
             return
         end
 
@@ -87,7 +123,7 @@ function DTNPCLifecycle.HandleZombieDead(zombie)
                 }
             end
         end
-        if npcData.incapState == "Active" then
+        if npcData.incapState == "Active" or terminalDeathRequested then
             DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, removalContext)
             return
         end

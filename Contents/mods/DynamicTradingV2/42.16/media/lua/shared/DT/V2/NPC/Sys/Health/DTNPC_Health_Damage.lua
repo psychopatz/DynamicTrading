@@ -77,6 +77,19 @@ function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
         and DTNPCLifecycle.EnterIncapacitated
         and DTNPCLifecycle.EnterIncapacitated(zombie, npcData, attacker, context)
         or false
+
+    if not incapped and DTNPCHealth and DTNPCHealth.EnsureDefaults then
+        local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
+        if combatHealth and combatHealth.current <= (tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01) then
+            if DTNPCHealth.Internal and DTNPCHealth.Internal.setIncapacitatedState then
+                DTNPCHealth.Internal.setIncapacitatedState(zombie, npcData)
+                if DTNPCHealth.Internal.syncHealth then
+                    DTNPCHealth.Internal.syncHealth(zombie, npcData, true)
+                end
+                incapped = true
+            end
+        end
+    end
     
     if not incapped and DTNPCHostility and DTNPCHostility.PlayDeathSound then
         DTNPCHostility.PlayDeathSound(zombie, npcData)
@@ -145,6 +158,9 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
     local currentBefore = internal.clamp(tonumber(combatHealth.current) or combatHealth.max, 0, combatHealth.max)
     local appliedDamage = math.min(damage, currentBefore)
     combatHealth.current = internal.clamp(currentBefore - damage, 0, combatHealth.max)
+    if internal.syncDerivedHealthState then
+        internal.syncDerivedHealthState(npcData, combatHealth)
+    end
 
     internal.applyPlayerDamageReputationPenalty(npcData, combatHealth, attacker, appliedDamage)
     raiseLinkedWorkerAlert(zombie, npcData, attacker, context)
@@ -217,6 +233,7 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
         combatHealth.current = 0
         combatHealth.incapGraceUntil = 0
         combatHealth.incapFinalKillRequestedAt = now
+        npcData.healthState = nil
         npcData.health = 0
         npcData.lastHealth = 0
         combatHealth.lastEngineHealth = 0
@@ -230,6 +247,9 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
     local currentBefore = internal.clamp(tonumber(combatHealth.current) or combatHealth.max, 0, combatHealth.max)
     local appliedDamage = math.min(damage, currentBefore)
     combatHealth.current = internal.clamp(currentBefore - damage, 0, combatHealth.max)
+    if internal.syncDerivedHealthState then
+        internal.syncDerivedHealthState(npcData, combatHealth)
+    end
     internal.applyPlayerDamageReputationPenalty(npcData, combatHealth, attacker, appliedDamage)
     raiseLinkedWorkerAlert(nil, npcData, attacker, context)
 

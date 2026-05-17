@@ -8,6 +8,38 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function syncDerivedHealthState(npcData, combatHealth)
+    if type(npcData) ~= "table" then
+        return nil
+    end
+
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        npcData.healthState = nil
+        return nil
+    end
+
+    if npcData.incapState == "Active" or tostring(npcData.state or "") == "Incapacitated" then
+        npcData.healthState = nil
+        return "Incapacitated"
+    end
+
+    combatHealth = type(combatHealth) == "table" and combatHealth or npcData.combatHealth
+    local current = tonumber(combatHealth and combatHealth.current) or nil
+    local maxHealth = tonumber(combatHealth and combatHealth.max) or nil
+    if current ~= nil and maxHealth ~= nil and maxHealth > 0 then
+        local ratio = current / maxHealth
+        if ratio <= (tonumber(DTNPCHealth.WEAKENED_THRESHOLD_RATIO) or 0.30) then
+            npcData.healthState = "Weakened"
+            return "Weakened"
+        end
+    end
+
+    npcData.healthState = "Healthy"
+    return "Healthy"
+end
+
+internal.syncDerivedHealthState = syncDerivedHealthState
+
 function DTNPCHealth.ComputeMaxHP(npcData)
     local archetypeID = tostring(npcData and npcData.archetypeID or "General")
     local baseTemplate = tonumber(DTNPCHealth.BASE_HP_BY_ARCHETYPE[archetypeID]) or tonumber(DTNPCHealth.BASE_HP_BY_ARCHETYPE.General) or 120
@@ -34,8 +66,6 @@ function DTNPCHealth.EnsureDefaults(npcData)
         npcData.healthState = nil
         npcData.reviveData = nil
         npcData.incapState = nil
-    elseif npcData.healthState ~= nil and tostring(npcData.healthState) ~= "Weakened" then
-        npcData.healthState = nil
     end
     if not isDeadState and type(npcData.reviveData) ~= "table" then
         npcData.reviveData = npcData.reviveData ~= nil and {} or npcData.reviveData
@@ -179,6 +209,7 @@ function DTNPCHealth.EnsureDefaults(npcData)
     else
         combatHealth.current = internal.clamp(combatHealth.current, 0, combatHealth.max)
         combatHealth.incapGraceUntil = 0
+        syncDerivedHealthState(npcData, combatHealth)
     end
 
     npcData._dtHealthDefaultsActive = nil

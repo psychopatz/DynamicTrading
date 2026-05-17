@@ -8,6 +8,19 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function getCurrentMoveState(zombie, npcData)
+    if type(npcData) == "table" and npcData.isMovingState == true then
+        return true
+    end
+    if zombie and zombie.getVariableBoolean then
+        local ok, value = pcall(zombie.getVariableBoolean, zombie, "bMoving")
+        if ok and value == true then
+            return true
+        end
+    end
+    return false
+end
+
 local function clearReviveState(npcData, keepRequirement)
     if type(npcData) ~= "table" then
         return
@@ -175,7 +188,6 @@ local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, 
     combatHealth.bandageAnimVariant = nil
 
     npcData.incapState = nil
-    npcData.healthState = "Weakened"
     npcData.state = resolveReviveResumeState(npcData)
     npcData.preIncapState = nil
     npcData.preIncapStatus = nil
@@ -227,6 +239,9 @@ local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, 
 
     npcData.health = combatHealth.lastEngineHealth
     npcData.lastHealth = combatHealth.lastEngineHealth
+    if internal.syncDerivedHealthState then
+        internal.syncDerivedHealthState(npcData, combatHealth)
+    end
     return true, {
         requiredCount = reviveData and reviveData.requiredItemCount or requiredCount,
         consumedCount = tonumber(consumedCount) or 0,
@@ -317,24 +332,53 @@ function DTNPCHealth.ProcessWeakenedRecovery(zombie, npcData)
         npcData.healthState = nil
         return false
     end
-    if tostring(npcData.healthState or "") ~= "Weakened" then
+    local beforeState = tostring(DTNPCHealth.GetHealthState and DTNPCHealth.GetHealthState(npcData) or npcData.healthState or "")
+    local combatHealth = DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
+    if internal.syncDerivedHealthState then
+        internal.syncDerivedHealthState(npcData, combatHealth)
+    end
+    local afterState = tostring(DTNPCHealth.GetHealthState and DTNPCHealth.GetHealthState(npcData) or npcData.healthState or "")
+    if beforeState ~= afterState and (internal.syncAndPersistHealth or internal.persistHealthSnapshot) then
+        if internal.syncAndPersistHealth and zombie then
+            internal.syncAndPersistHealth(zombie, npcData, true, true)
+        elseif internal.persistHealthSnapshot then
+            internal.persistHealthSnapshot(npcData, true)
+        end
+        return true
+    end
+    return false
+end
+
+function DTNPCHealth.ApplyHealthVisualPosture(zombie, npcData)
+    if not zombie or not npcData or not DTNPCMobility or not DTNPCMobility.SetLocomotionState then
         return false
     end
-    if npcData.incapState == "Active" or tostring(npcData.state or "") == "Incapacitated" then
-        npcData.healthState = nil
+
+    local stateName = tostring(npcData.state or "")
+    if stateName == "Bandage" then
+        return false
+    end
+
+    local healthState = DTNPCHealth.GetHealthState and DTNPCHealth.GetHealthState(npcData) or nil
+    local moving = getCurrentMoveState(zombie, npcData)
+
+    if healthState == "Incapacitated" then
+        DTNPCMobility.SetLocomotionState(zombie, {
+            profileKey = DTNPCHealth and DTNPCHealth.INCAP_CRAWL_PROFILE_KEY or "incap_crawl",
+            moving = moving,
+            animSpeed = moving and nil or 0.0,
+        })
         return true
     end
 
-    local ratio = DTNPCHealth.GetHealthRatio and DTNPCHealth.GetHealthRatio(npcData) or 0
-    if ratio < DTNPCHealth.WEAKENED_RECOVERY_RATIO then
-        return false
+    if healthState == "Weakened" and moving ~= true then
+        DTNPCMobility.SetLocomotionState(zombie, {
+            profileKey = DTNPCHealth and DTNPCHealth.WEAKENED_CROUCH_PROFILE_KEY or "weakened_crouch",
+            moving = false,
+            animSpeed = 0.0,
+        })
+        return true
     end
 
-    clearReviveState(npcData, false)
-    if internal.syncAndPersistHealth and zombie then
-        internal.syncAndPersistHealth(zombie, npcData, true, true)
-    elseif internal.persistHealthSnapshot then
-        internal.persistHealthSnapshot(npcData, true)
-    end
-    return true
+    return false
 end

@@ -65,6 +65,7 @@ function DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attac
     combatHealth.current = 0
     combatHealth.incapGraceUntil = 0
     combatHealth.incapFinalKillRequestedAt = currentTime
+    npcData.healthState = nil
     combatHealth.lastDamageAt = currentTime
     combatHealth.lastDamageAmount = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
     combatHealth.lastAttackerType = internal.getAttackerType(attacker)

@@ -65,11 +65,26 @@ function DTNPCLifecycle.ShouldIgnoreFriendlyFire(zombie, npcData, combatHealth, 
 end
 
 function DTNPCLifecycle.ShouldIgnoreMultiplayerEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, source)
-    if not isServer or not isServer() then
+    if not internal.isDedicatedServer or internal.isDedicatedServer() ~= true then
         return false
     end
 
+    local attackerType = internal.getAttackerType and internal.getAttackerType(attacker) or nil
+    local recentSource = tostring(combatHealth and combatHealth.lastDamageSource or "")
+    local recentDamageAt = tonumber(combatHealth and combatHealth.lastDamageAt) or 0
     local now = internal.nowMillis()
+    local recentWindowMs = 2000
+    local hasRecentClientWeaponReport = recentDamageAt > 0
+        and (now - recentDamageAt) <= recentWindowMs
+        and (
+            recentSource == "client_weapon_hit_report"
+            or recentSource == "client_weapon_hit_report_dead_body"
+        )
+
+    if attackerType ~= "player" and hasRecentClientWeaponReport ~= true then
+        return false
+    end
+
     local lastLogAt = tonumber(combatHealth and combatHealth.lastMultiplayerEngineDeltaIgnoredAt) or 0
     if combatHealth and now - lastLogAt > MULTIPLAYER_ENGINE_DELTA_LOG_COOLDOWN_MS then
         combatHealth.lastMultiplayerEngineDeltaIgnoredAt = now
@@ -83,7 +98,7 @@ function DTNPCLifecycle.ShouldIgnoreMultiplayerEngineDelta(zombie, npcData, comb
                 .. " source=" .. tostring(source or "engine_fallback")
                 .. " previousHealth=" .. tostring(previousHealth)
                 .. " currentHealth=" .. tostring(currentHealth)
-                .. " attackerType=" .. tostring(internal.getAttackerType(attacker))
+                .. " attackerType=" .. tostring(attackerType)
                 .. " attackerID=" .. tostring(internal.getAttackerID(attacker))
         )
     end
