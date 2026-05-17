@@ -54,11 +54,36 @@ return function(context)
 
         faction.memberUsernames = ensureUniqueUsernames(faction.memberUsernames)
         faction.inviteUsernames = ensureUniqueUsernames(faction.inviteUsernames)
+        faction.memberReputation = type(faction.memberReputation) == "table" and faction.memberReputation or {}
 
         local leader = getOwnerUsername(faction.leaderUsername)
         faction.leaderUsername = leader
         removeValue(faction.memberUsernames, leader)
         removeValue(faction.inviteUsernames, leader)
+
+        local activeMembers = {}
+        if leader ~= "" then
+            activeMembers[leader] = true
+            faction.memberReputation[leader] = tonumber(faction.memberReputation[leader]) or 100
+        end
+
+        for _, username in ipairs(faction.memberUsernames) do
+            local member = getOwnerUsername(username)
+            if member ~= "" then
+                activeMembers[member] = true
+                faction.memberReputation[member] = tonumber(faction.memberReputation[member]) or 100
+            end
+        end
+
+        for username, _ in pairs(faction.memberReputation) do
+            local normalized = getOwnerUsername(username)
+            if normalized == "" or activeMembers[normalized] ~= true then
+                faction.memberReputation[username] = nil
+            elseif normalized ~= username then
+                faction.memberReputation[normalized] = tonumber(faction.memberReputation[username]) or 100
+                faction.memberReputation[username] = nil
+            end
+        end
     end
 
     function context.buildPermissions(faction, username)
@@ -167,6 +192,10 @@ return function(context)
         colonyData.ownerUsername = colonyOwner ~= "" and colonyOwner or colonyData.ownerUsername
         colonyData.leaderUsername = leader
         colonyData.memberUsernames = copyArray(faction.memberUsernames)
+        colonyData.memberReputation = {}
+        for username, reputation in pairs(faction.memberReputation or {}) do
+            colonyData.memberReputation[username] = tonumber(reputation) or 100
+        end
         colonyData.inviteUsernames = copyArray(faction.inviteUsernames)
         colonyData.dynamicTradingFactionID = faction.id
         colonyData.leadershipState = tostring(faction.leadershipState or "Active")
@@ -205,6 +234,10 @@ return function(context)
             summary.ownerUsername = colonyData.ownerUsername
             summary.leaderUsername = colonyData.leaderUsername
             summary.memberUsernames = copyArray(colonyData.memberUsernames)
+            summary.memberReputation = {}
+            for username, reputation in pairs(colonyData.memberReputation or {}) do
+                summary.memberReputation[username] = tonumber(reputation) or 100
+            end
             summary.leadershipState = colonyData.leadershipState
             summary.dynamicTradingFactionID = faction.id
         end

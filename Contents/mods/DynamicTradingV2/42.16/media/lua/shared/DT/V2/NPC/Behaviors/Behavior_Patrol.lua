@@ -11,6 +11,26 @@ require "DT/V2/NPC/Sys/Colony/DTNPC_ColonyRuntime"
 
 local PATROL_SPEED = 0.04
 local STOP_DISTANCE = 0.5
+local PATROL_PAUSE_MIN_MS = 2200
+local PATROL_PAUSE_MAX_MS = 5200
+local PATROL_MOVE_GAP_MIN_MS = 700
+local PATROL_MOVE_GAP_MAX_MS = 2200
+
+local function nowMs()
+    if getTimeInMillis then
+        return getTimeInMillis()
+    end
+    return math.floor((getGameTime():getWorldAgeHours() or 0) * 3600000)
+end
+
+local function randomRange(minValue, maxValue)
+    local minNumber = math.floor(tonumber(minValue) or 0)
+    local maxNumber = math.floor(tonumber(maxValue) or minNumber)
+    if maxNumber <= minNumber then
+        return minNumber
+    end
+    return minNumber + ZombRand((maxNumber - minNumber) + 1)
+end
 
 local function createPointTarget(point)
     if type(point) ~= "table" then
@@ -123,7 +143,7 @@ local function engageFromPost(zombie, npcData, point)
         zombie,
         npcData,
         tonumber(npcData.guardEngageRadius) or 12,
-        createPointTarget(point),
+        zombie,
         tonumber(npcData.guardLeashRadius) or tonumber(npcData.guardEngageRadius) or 12,
         true
     )
@@ -152,6 +172,17 @@ local function engageFromPost(zombie, npcData, point)
     return true
 end
 
+local function isAlertRelevant(zombie, npcData, alert)
+    if not zombie or type(alert) ~= "table" or alert.x == nil or alert.y == nil then
+        return false
+    end
+
+    local radius = math.max(1, tonumber(npcData and npcData.guardEngageRadius) or 12)
+    local dx = zombie:getX() - tonumber(alert.x)
+    local dy = zombie:getY() - tonumber(alert.y)
+    return ((dx * dx) + (dy * dy)) <= (radius * radius)
+end
+
 DTNPCLogic.Behaviors["Patrol"] = function(zombie, npcData)
     if not zombie or not npcData then
         return
@@ -171,8 +202,9 @@ DTNPCLogic.Behaviors["Patrol"] = function(zombie, npcData)
         return
     end
 
-    local posts = DTNPCColonyRuntime.GetPerimeterPosts(npcData)
+    local posts = DTNPCColonyRuntime.GetPatrolRoutePoints(npcData)
     local alert = DTNPCColonyRuntime.GetAlert(npcData)
+    local alertRelevant = alert and isAlertRelevant(zombie, npcData, alert) or false
     if #posts <= 0 then
         local fallback = DTNPCColonyRuntime.GetSafePoint(npcData, DTNPCColonyRuntime.GetWorker(npcData))
         if fallback then
@@ -185,16 +217,22 @@ DTNPCLogic.Behaviors["Patrol"] = function(zombie, npcData)
     end
 
     local postIndex = math.max(1, math.min(#posts, math.floor(tonumber(npcData.dcGuardPostIndex) or 1)))
-    if alert and alert.x ~= nil and alert.y ~= nil then
+    if alertRelevant then
         postIndex = DTNPCColonyRuntime.GetNearestPostIndex(posts, alert.x, alert.y)
+        npcData.dcPatrolPauseUntilMs = nil
+        npcData.dcPatrolNextMoveAtMs = nil
     elseif npcData.dcAnchorRevision ~= npcData.dcAppliedAnchorRevision then
         postIndex = DTNPCColonyRuntime.GetNearestPostIndex(posts, zombie:getX(), zombie:getY())
         npcData.dcAppliedAnchorRevision = npcData.dcAnchorRevision
+        npcData.dcPatrolPauseUntilMs = nil
+        npcData.dcPatrolNextMoveAtMs = nil
     end
 
     npcData.dcGuardPostIndex = postIndex
     local currentPost = posts[postIndex]
     if engageFromPost(zombie, npcData, currentPost) then
+        npcData.dcPatrolPauseUntilMs = nil
+        npcData.dcPatrolNextMoveAtMs = nil
         return
     end
 
@@ -203,11 +241,50 @@ DTNPCLogic.Behaviors["Patrol"] = function(zombie, npcData)
     local distSq = (dx * dx) + (dy * dy)
     if distSq <= (STOP_DISTANCE * STOP_DISTANCE) then
         stopMovement(zombie)
-        zombie:faceLocation(currentPost.x, currentPost.y)
-        if not alert and #posts > 1 then
-            npcData.dcGuardPostIndex = (postIndex % #posts) + 1
+        if alertRelevant and alert.x ~= nil and alert.y ~= nil then
+            zombie:faceLocation(alert.x, alert.y)
+        else
+            local nextPost = posts[#posts > 1 and ((postIndex % #posts) + 1) or postIndex] or currentPost
+            zombie:faceLocation(nextPost.x, nextPost.y)
         end
+
+        if #posts <= 1 then
+            return
+        end
+
+        local now = nowMs()
+        local pauseUntil = tonumber(npcData.dcPatrolPauseUntilMs) or 0
+        if pauseUntil <= 0 then
+            pauseUntil = now + randomRange(
+                tonumber(npcData.dcPatrolPauseMinMs) or PATROL_PAUSE_MIN_MS,
+                tonumber(npcData.dcPatrolPauseMaxMs) or PATROL_PAUSE_MAX_MS
+            )
+            npcData.dcPatrolPauseUntilMs = pauseUntil
+            return
+        end
+
+        if now < pauseUntil then
+            return
+        end
+
+        npcData.dcPatrolPauseUntilMs = nil
+        npcData.dcGuardPostIndex = (postIndex % #posts) + 1
+        npcData.dcPatrolNextMoveAtMs = now + randomRange(
+            tonumber(npcData.dcPatrolMoveGapMinMs) or PATROL_MOVE_GAP_MIN_MS,
+            tonumber(npcData.dcPatrolMoveGapMaxMs) or PATROL_MOVE_GAP_MAX_MS
+        )
         return
+    end
+
+    if not alertRelevant then
+        local nextMoveAt = tonumber(npcData.dcPatrolNextMoveAtMs) or 0
+        if nextMoveAt > 0 then
+            if nowMs() < nextMoveAt then
+                stopMovement(zombie)
+                return
+            end
+            npcData.dcPatrolNextMoveAtMs = nil
+        end
     end
 
     applyPatrolPost(npcData, currentPost)

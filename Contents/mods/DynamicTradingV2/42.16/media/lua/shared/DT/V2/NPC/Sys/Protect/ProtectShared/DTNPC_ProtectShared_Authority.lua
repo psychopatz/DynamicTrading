@@ -72,6 +72,51 @@ local function isPlayerOwnedTraderRaw(npcData)
     return npcData.linkedWorkerID ~= nil
 end
 
+local function getOwnedFactionForUsername(username)
+    local owner = tostring(username or "")
+    if owner == "" then
+        return nil
+    end
+    if not (DynamicTrading_Factions and DynamicTrading_Factions.GetPlayerFaction) then
+        return nil
+    end
+
+    local ok, faction = pcall(DynamicTrading_Factions.GetPlayerFaction, owner)
+    if ok and type(faction) == "table" and faction.playerOwned == true then
+        return faction
+    end
+    return nil
+end
+
+local function getOwnedFactionForNPC(npcData)
+    if not npcData then
+        return nil
+    end
+
+    if DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
+        local factionID = tostring(npcData.factionID or "")
+        if factionID ~= "" and factionID ~= "Independent" then
+            local ok, faction = pcall(DynamicTrading_Factions.GetFaction, factionID)
+            if ok and type(faction) == "table" and faction.playerOwned == true then
+                return faction
+            end
+        end
+    end
+
+    return getOwnedFactionForUsername(npcData.ownerUsername)
+end
+
+local function isFriendlyOwnedFactionMember(npcData, username)
+    local playerFaction = getOwnedFactionForUsername(username)
+    local npcFaction = getOwnedFactionForNPC(npcData)
+    if not playerFaction or not npcFaction then
+        return false
+    end
+
+    return tostring(playerFaction.id or "") ~= ""
+        and tostring(playerFaction.id or "") == tostring(npcFaction.id or "")
+end
+
 local function isFriendlyAuthorityPlayer(npcData, player)
     if not npcData or not player or not instanceof or not instanceof(player, "IsoPlayer") then
         return false
@@ -105,6 +150,10 @@ local function isFriendlyAuthorityPlayer(npcData, player)
         if leaderUsername and tostring(leaderUsername) == username then
             return true
         end
+    end
+
+    if isFriendlyOwnedFactionMember(npcData, username) then
+        return true
     end
 
     return false

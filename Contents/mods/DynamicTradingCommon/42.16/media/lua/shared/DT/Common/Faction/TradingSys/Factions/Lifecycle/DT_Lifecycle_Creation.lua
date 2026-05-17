@@ -78,6 +78,7 @@ return function(context)
                 previousLeaderUsername = initialData.previousLeaderUsername,
                 controlMode = initialData.controlMode or (initialData.playerOwned and "HybridManual" or nil),
                 memberUsernames = initialData.memberUsernames or {},
+                memberReputation = initialData.memberReputation or {},
                 inviteUsernames = initialData.inviteUsernames or {},
                 linkedWorkerIDs = initialData.linkedWorkerIDs or {},
                 tradeEligibleWorkerIDs = initialData.tradeEligibleWorkerIDs or {},

@@ -38,6 +38,41 @@ local function createPointTarget(x, y, z)
     }
 end
 
+local function applyResidentGuardPost(npcData)
+    if type(npcData) ~= "table" or npcData.linkedWorkerID == nil then
+        return
+    end
+    if tostring(npcData.dcDutyMode or "") ~= "guard" then
+        return
+    end
+
+    local work = npcData.workCoords
+    if type(work) ~= "table" or work.x == nil or work.y == nil then
+        return
+    end
+
+    local desiredX = tonumber(work.x)
+    local desiredY = tonumber(work.y)
+    local desiredZ = tonumber(work.z) or 0
+    local anchorRevision = tostring(npcData.dcAnchorRevision or "")
+    if tonumber(npcData.stationaryPostX) == desiredX
+        and tonumber(npcData.stationaryPostY) == desiredY
+        and tonumber(npcData.stationaryPostZ) == desiredZ
+        and tostring(npcData.stationaryPostState or "") == "Guard"
+        and tostring(npcData.dcAppliedGuardAnchorRevision or "") == anchorRevision then
+        return
+    end
+
+    npcData.stationaryPostX = desiredX
+    npcData.stationaryPostY = desiredY
+    npcData.stationaryPostZ = desiredZ
+    npcData.stationaryPostState = "Guard"
+    npcData.anchorX = desiredX
+    npcData.anchorY = desiredY
+    npcData.anchorZ = desiredZ
+    npcData.dcAppliedGuardAnchorRevision = anchorRevision
+end
+
 local function getDistance(ax, ay, bx, by)
     local dx = (tonumber(ax) or 0) - (tonumber(bx) or 0)
     local dy = (tonumber(ay) or 0) - (tonumber(by) or 0)
@@ -126,6 +161,8 @@ DTNPCLogic.Behaviors["Guard"] = function(zombie, npcData)
         DTNPCLogic.Stationary.Run(zombie, npcData)
         return
     end
+
+    applyResidentGuardPost(npcData)
 
     local postX, postY = nil, nil
     if DTNPCProtect.GetStationaryPost then

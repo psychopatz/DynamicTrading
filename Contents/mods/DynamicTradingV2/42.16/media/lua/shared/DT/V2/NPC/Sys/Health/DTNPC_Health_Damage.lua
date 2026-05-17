@@ -98,6 +98,42 @@ function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
     return incapped
 end
 
+function DTNPCHealth.ForceZeroHPTransition(zombie, npcData, attacker, context)
+    if not zombie or not npcData or internal.isRemoteClient() then
+        return false
+    end
+
+    local combatHealth = DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
+    if not combatHealth then
+        return false
+    end
+
+    context = type(context) == "table" and context or {}
+    combatHealth.current = 0
+    combatHealth.lastDamageAt = internal.nowMillis()
+    combatHealth.lastDamageSource = tostring(context.source or "forced_zero_hp_gate")
+    npcData.health = 0
+    npcData.lastHealth = 0
+
+    if internal.syncDerivedHealthState then
+        internal.syncDerivedHealthState(npcData, combatHealth)
+    end
+
+    if attacker and zombie.setAttackedBy then
+        zombie:setAttackedBy(attacker)
+    end
+
+    if zombie.setHealth then
+        zombie:setHealth(0)
+    end
+
+    local handled = DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
+    if handled and npcData.incapState == "Active" and zombie.setHealth then
+        zombie:setHealth(DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER)
+    end
+    return handled
+end
+
 function DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, amount, attacker, context)
     if DTNPCLifecycle and DTNPCLifecycle.HandleIncapacitatedDamage then
         return DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attacker, context)

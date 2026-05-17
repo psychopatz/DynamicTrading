@@ -153,6 +153,12 @@ local function isFriendlyFollowerOrProtectorHit(npcData, attacker)
     local state = tostring(npcData.state or "")
     local combatOrder = tostring(npcData.combatOrder or "")
     local shouldProtect = internal.isFollowerOrProtectorState(state) or internal.isFollowerOrProtectorState(combatOrder)
+    if not shouldProtect and DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isPlayerOwnedTraderRaw then
+        local ok, isPlayerOwnedTrader = pcall(DTNPCProtect.Internal.isPlayerOwnedTraderRaw, npcData)
+        if ok and isPlayerOwnedTrader == true then
+            shouldProtect = true
+        end
+    end
     if npcData.incapState == "Active" and internal.isFollowerOrProtectorState(tostring(npcData.preIncapState or "")) then
         shouldProtect = true
     end

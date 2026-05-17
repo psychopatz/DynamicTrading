@@ -50,6 +50,9 @@ return function(context)
             baseConfigured = homeCoords.baseConfigured == true,
             memberCount = #linkedWorkerIDs,
             memberUsernames = {},
+            memberReputation = {
+                [owner] = 100,
+            },
             inviteUsernames = {},
             linkedWorkerIDs = linkedWorkerIDs,
             tradeEligibleWorkerIDs = {},

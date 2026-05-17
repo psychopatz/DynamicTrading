@@ -135,9 +135,9 @@ function DTNPCLogic.ProcessNPC(zombie)
         and tostring(npcData.state or "") ~= "Incapacitated"
         and tostring(npcData.status or "") ~= "Dead"
         and not tonumber(npcData.deathFinalizedAt)
-        and DTNPCLifecycle
-        and DTNPCLifecycle.EnterIncapacitated then
-        local enteredIncap = DTNPCLifecycle.EnterIncapacitated(zombie, npcData, zombie.getAttackedBy and zombie:getAttackedBy() or nil, {
+        and DTNPCHealth
+        and DTNPCHealth.ForceZeroHPTransition then
+        local enteredIncap = DTNPCHealth.ForceZeroHPTransition(zombie, npcData, zombie.getAttackedBy and zombie:getAttackedBy() or nil, {
             source = "logic_zero_hp_guard",
         })
         if enteredIncap then

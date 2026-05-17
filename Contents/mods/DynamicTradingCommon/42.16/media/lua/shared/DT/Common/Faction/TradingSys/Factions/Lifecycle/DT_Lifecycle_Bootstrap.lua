@@ -226,6 +226,7 @@ return function(context)
                 end
                 f.previousLeaderUsername = f.previousLeaderUsername or nil
                 f.memberUsernames = type(f.memberUsernames) == "table" and f.memberUsernames or {}
+                f.memberReputation = type(f.memberReputation) == "table" and f.memberReputation or {}
                 f.inviteUsernames = type(f.inviteUsernames) == "table" and f.inviteUsernames or {}
                 f.linkedWorkerIDs = type(f.linkedWorkerIDs) == "table" and f.linkedWorkerIDs or {}
                 f.tradeEligibleWorkerIDs = type(f.tradeEligibleWorkerIDs) == "table" and f.tradeEligibleWorkerIDs or {}

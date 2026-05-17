@@ -129,6 +129,40 @@ function Runtime.GetPerimeterPosts(npcData)
     }) or {}
 end
 
+function Runtime.GetPatrolRoutePoints(npcData)
+    local owner = Runtime.GetOwnerUsername(npcData)
+    if owner == "" or not DC_Colony or not DC_Colony.Defense then
+        return {}
+    end
+
+    local defense = DC_Colony.Defense
+    local runtime = defense.GetRuntime and defense.GetRuntime(owner) or nil
+    local zoneRevision = defense.GetZoneRevision and tostring(defense.GetZoneRevision(owner)) or "0"
+    if type(runtime) == "table" then
+        if runtime.patrolRoutePoints == nil or tostring(runtime.patrolRouteRevision or "") ~= zoneRevision then
+            runtime.patrolRoutePoints = DC_ZoneRealBase
+                and DC_ZoneRealBase.ResolvePatrolRoutePoints
+                and DC_ZoneRealBase.ResolvePatrolRoutePoints(owner, {
+                    passableRadius = 1,
+                    edgeInset = 1,
+                    spacing = 6,
+                })
+                or {}
+            runtime.patrolRouteRevision = zoneRevision
+        end
+        return runtime.patrolRoutePoints or {}
+    end
+
+    return DC_ZoneRealBase
+        and DC_ZoneRealBase.ResolvePatrolRoutePoints
+        and DC_ZoneRealBase.ResolvePatrolRoutePoints(owner, {
+            passableRadius = 1,
+            edgeInset = 1,
+            spacing = 6,
+        })
+        or {}
+end
+
 function Runtime.GetNearestPostIndex(posts, x, y)
     local bestIndex = nil
     local bestDist = nil

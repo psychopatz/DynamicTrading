@@ -12,6 +12,14 @@ return function(context)
     local hasCompletedHeadquarters = context.hasCompletedHeadquarters
     local isAuthority = context.isAuthority
 
+    local function copyReputationMap(source)
+        local copied = {}
+        for username, reputation in pairs(source or {}) do
+            copied[username] = tonumber(reputation) or 100
+        end
+        return copied
+    end
+
     function Public.BuildOwnedFactionStatus(ownerUsername)
         local owner = getOwnerUsername(ownerUsername)
         local coloniesActive = isDynamicColoniesActive()
@@ -91,6 +99,7 @@ return function(context)
             isMember = role == "member",
             permissions = permissions,
             memberUsernames = faction and copyArray(faction.memberUsernames) or {},
+            memberReputation = faction and copyReputationMap(faction.memberReputation) or {},
             inviteUsernames = faction and copyArray(faction.inviteUsernames) or {},
             pendingInvites = Public.GetPendingInvites(owner),
             needsNamingPrompt = faction
