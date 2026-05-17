@@ -44,6 +44,34 @@ local function shouldPlayHurtVocal(combatHealth, attacker, context)
     return attackerType ~= nil
 end
 
+local function raiseLinkedWorkerAlert(zombie, npcData, attacker, context)
+    if not npcData or npcData.linkedWorkerID == nil or not DC_Colony or not DC_Colony.Defense or not DC_Colony.Defense.RaiseAlert then
+        return
+    end
+
+    local point = nil
+    if attacker and attacker.getX and attacker.getY then
+        point = {
+            x = math.floor(attacker:getX()),
+            y = math.floor(attacker:getY()),
+            z = math.floor(attacker.getZ and attacker:getZ() or 0),
+        }
+    elseif zombie and zombie.getX and zombie.getY then
+        point = {
+            x = math.floor(zombie:getX()),
+            y = math.floor(zombie:getY()),
+            z = math.floor(zombie.getZ and zombie:getZ() or 0),
+        }
+    end
+
+    DC_Colony.Defense.RaiseAlert(npcData.ownerUsername, {
+        source = "DTNPCHealth",
+        reason = tostring(context and context.source or "damage"),
+        target = attacker,
+        point = point,
+    })
+end
+
 function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
     local incapped = DTNPCLifecycle
         and DTNPCLifecycle.EnterIncapacitated
@@ -119,6 +147,7 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
     combatHealth.current = internal.clamp(currentBefore - damage, 0, combatHealth.max)
 
     internal.applyPlayerDamageReputationPenalty(npcData, combatHealth, attacker, appliedDamage)
+    raiseLinkedWorkerAlert(zombie, npcData, attacker, context)
 
     if attacker and zombie.setAttackedBy then
         zombie:setAttackedBy(attacker)
@@ -201,6 +230,7 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
     local appliedDamage = math.min(damage, currentBefore)
     combatHealth.current = internal.clamp(currentBefore - damage, 0, combatHealth.max)
     internal.applyPlayerDamageReputationPenalty(npcData, combatHealth, attacker, appliedDamage)
+    raiseLinkedWorkerAlert(nil, npcData, attacker, context)
 
     DynamicTrading.Log(
         "DTV2",

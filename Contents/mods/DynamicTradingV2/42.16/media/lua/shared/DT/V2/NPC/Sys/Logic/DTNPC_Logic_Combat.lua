@@ -80,6 +80,37 @@ local function getDTNPCAttackerData(attacker)
     return attackerData, uuid
 end
 
+local function handleLinkedResidentDamage(zombie, npcData, attacker)
+    if not npcData
+        or npcData.linkedWorkerID == nil
+        or npcData.dcResident ~= true
+        or npcData.dcCompanionActive == true then
+        return false
+    end
+
+    if DC_Colony and DC_Colony.Defense and DC_Colony.Defense.RaiseAlert then
+        DC_Colony.Defense.RaiseAlert(npcData.ownerUsername, {
+            source = "DTNPCLogic",
+            reason = "resident_hit",
+            target = attacker,
+            point = {
+                x = math.floor(zombie:getX()),
+                y = math.floor(zombie:getY()),
+                z = math.floor(zombie:getZ()),
+            },
+        })
+    end
+
+    npcData.isHostile = false
+    npcData.combatTargetID = nil
+    npcData.combatTargetType = nil
+    npcData.tasks = {}
+    npcData.state = tostring(npcData.dcCanFight == true and (npcData.dcBehaviorState or "Patrol") or "ColonyCower")
+    zombie:setTarget(nil)
+    zombie:setAttackedBy(nil)
+    return true
+end
+
 function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged)
     if not zombie or not npcData then
         return
@@ -94,6 +125,10 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
     end
 
     local attacker = zombie:getAttackedBy()
+
+    if wasDamaged and attacker and handleLinkedResidentDamage(zombie, npcData, attacker) then
+        return
+    end
 
     if wasDamaged and attacker and instanceof(attacker, "IsoPlayer") then
         if not isValidPlayerDamageAttribution(npcData, attacker) then

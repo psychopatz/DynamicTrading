@@ -6,7 +6,12 @@
 DTNPC = DTNPC or {}
 
 local function isStationaryState(state)
-    return state == "Stay" or state == "Guard" or state == "Idle" or state == "PlayerZone" or state == "Trading" or state == "Bandage"
+    return state == "Stay"
+        or state == "Guard"
+        or state == "Idle"
+        or state == "PlayerZone"
+        or state == "Trading"
+        or state == "Bandage"
 end
 
 local function isManualControlState(state)
@@ -25,6 +30,9 @@ local function isManualControlState(state)
         or state == "ProtectRanged"
         or state == "ProtectMelee"
         or state == "ProtectAuto"
+        or state == "Patrol"
+        or state == "ColonyWork"
+        or state == "ColonyCower"
         or state == "Departure"
         or state == "Incapacitated"
 end
@@ -129,6 +137,9 @@ local function shouldClearVanillaTarget(npcData)
         or state == "ProtectMelee"
         or state == "ProtectAuto"
         or state == "Guard"
+        or state == "Patrol"
+        or state == "ColonyWork"
+        or state == "ColonyCower"
         or state == "PlayerZone"
         or state == "LootNearby"
         or state == "Stay"
@@ -176,7 +187,7 @@ local function normalizeCompanionHostility(npcData)
         elseif npcData.master ~= nil or npcData.masterID ~= nil then
             npcData.state = "Follow"
         elseif npcData.linkedWorkerID ~= nil then
-            npcData.state = "PlayerZone"
+            npcData.state = tostring(npcData.dcBehaviorState or "PlayerZone")
         else
             npcData.state = "Guard"
         end
