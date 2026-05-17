@@ -77,6 +77,9 @@ function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
     if type(npcData) ~= "table" then
         return false, { reason = "invalid_target" }
     end
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return false, { reason = "dead_target" }
+    end
 
     local healthState = DTNPCHealth.GetHealthState and DTNPCHealth.GetHealthState(npcData) or nil
     if healthState ~= "Incapacitated" then

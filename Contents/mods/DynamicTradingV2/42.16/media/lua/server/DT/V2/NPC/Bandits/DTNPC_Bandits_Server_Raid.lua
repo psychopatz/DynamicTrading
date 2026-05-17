@@ -55,7 +55,10 @@ function Raid.getRestingFactionMembers(factionID)
     for _, uuid in ipairs(members) do
         local registry = roster.Souls and roster.Souls[uuid] or nil
         local soul = getSoulData(uuid) or registry
-        if soul and soul.status == "Resting" and soul.status ~= "Dead" then
+        if soul
+            and soul.status == "Resting"
+            and soul.status ~= "Dead"
+            and not tonumber(soul.deathFinalizedAt) then
             resting[#resting + 1] = {
                 uuid = uuid,
                 soul = soul,
@@ -87,6 +90,9 @@ end
 
 local function markSoulForRaid(uuid, npcData)
     if not uuid or not npcData or not DynamicTrading_Roster then return end
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return
+    end
     if DynamicTrading_Roster.UpdateSoulStatus then
         DynamicTrading_Roster.UpdateSoulStatus(uuid, "Working", 0, nil)
     end
@@ -97,6 +103,9 @@ end
 
 local function restoreSoulAfterFailedRaid(uuid, npcData)
     if not uuid or not npcData or not DynamicTrading_Roster then return end
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return
+    end
     npcData.status = "Resting"
     npcData.state = "Idle"
     npcData.isHostile = false
@@ -114,6 +123,9 @@ end
 
 function Raid.returnRaidSoulToResting(uuid, npcData)
     if not uuid or not npcData or not DynamicTrading_Roster then return end
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return
+    end
     npcData.status = "Resting"
     npcData.state = "Idle"
     npcData.returnTime = 0
@@ -142,6 +154,9 @@ local function createRaidDataFromSoul(player, groupID, factionID, raidMember, di
     local uuid = raidMember and raidMember.uuid or nil
     local gen = raidMember and raidMember.soul or nil
     if not uuid or not gen then return nil end
+    if tostring(gen.status or "") == "Dead" or tonumber(gen.deathFinalizedAt) then
+        return nil
+    end
 
     gen.uuid = uuid
     gen.factionID = factionID

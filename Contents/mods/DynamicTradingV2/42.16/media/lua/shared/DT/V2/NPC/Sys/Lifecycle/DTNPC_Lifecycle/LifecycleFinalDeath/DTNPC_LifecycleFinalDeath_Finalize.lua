@@ -9,6 +9,11 @@ DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 local internal = DTNPCLifecycle.Internal
 
 function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, context)
+    local modData = zombie and zombie.getModData and zombie:getModData() or nil
+    if modData then
+        modData.DTNPCZombieDeadHandled = true
+    end
+
     local uuid = (npcData and npcData.uuid) or internal.getUUIDFromZombie(zombie)
     local liveData = internal.getLiveNPCData(uuid, npcData)
     if not uuid or not liveData then
@@ -29,6 +34,25 @@ function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, co
     if removalContext and removalContext.killerUsername and liveData.factionID and liveData.factionID ~= "Independent" then
         if DynamicTrading and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
             DynamicTrading.GameplayLogs.AddFactionEvent(liveData.factionID, DynamicTrading.GameplayEvents.MEMBER_KILLED_BY_PLAYER, { removalContext.killerUsername, liveData.name or "A member" })
+        end
+    end
+
+    if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.markTerminalDeathState then
+        DTNPCHealth.Internal.markTerminalDeathState(liveData)
+    else
+        liveData.status = "Dead"
+        liveData.state = "Dead"
+        liveData.incapState = nil
+        liveData.healthState = nil
+        liveData.reviveData = nil
+        liveData.health = 0
+        liveData.lastHealth = 0
+        if type(liveData.combatHealth) == "table" then
+            liveData.combatHealth.current = 0
+            liveData.combatHealth.enabled = false
+            liveData.combatHealth.engineProtected = false
+            liveData.combatHealth.incapGraceUntil = 0
+            liveData.combatHealth.lastEngineHealth = 0
         end
     end
 

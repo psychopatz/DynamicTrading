@@ -62,6 +62,7 @@ function DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attac
     end
 
     combatHealth.engineProtected = false
+    combatHealth.current = 0
     combatHealth.incapGraceUntil = 0
     combatHealth.incapFinalKillRequestedAt = currentTime
     combatHealth.lastDamageAt = currentTime

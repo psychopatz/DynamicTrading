@@ -214,6 +214,7 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
         end
 
         combatHealth.engineProtected = false
+        combatHealth.current = 0
         combatHealth.incapGraceUntil = 0
         combatHealth.incapFinalKillRequestedAt = now
         npcData.health = 0

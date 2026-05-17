@@ -109,10 +109,27 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         end
 
         if status == "Dead" then
-            npcData.incapState = nil
-            npcData.preIncapStatus = nil
-            npcData.incapStrugglePauseUntil = nil
-            npcData.incapNextPauseAt = nil
+            if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.markTerminalDeathState then
+                DTNPCHealth.Internal.markTerminalDeathState(npcData)
+            else
+                npcData.status = "Dead"
+                npcData.state = "Dead"
+                npcData.incapState = nil
+                npcData.healthState = nil
+                npcData.reviveData = nil
+                npcData.preIncapStatus = nil
+                npcData.incapStrugglePauseUntil = nil
+                npcData.incapNextPauseAt = nil
+                npcData.health = 0
+                npcData.lastHealth = 0
+                if type(npcData.combatHealth) == "table" then
+                    npcData.combatHealth.current = 0
+                    npcData.combatHealth.enabled = false
+                    npcData.combatHealth.engineProtected = false
+                    npcData.combatHealth.incapGraceUntil = 0
+                    npcData.combatHealth.lastEngineHealth = 0
+                end
+            end
         end
 
         if status == "Dead" or (status ~= "Away" and status ~= "Trading") then
@@ -141,6 +158,8 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
         registry.status = status
         registry.state = npcData and npcData.state or registry.state
         registry.incapState = npcData and npcData.incapState or registry.incapState
+        registry.health = npcData and ((npcData.combatHealth and npcData.combatHealth.current) or npcData.health) or registry.health
+        registry.combatHealthCurrent = npcData and npcData.combatHealth and npcData.combatHealth.current or registry.combatHealthCurrent
         registry.returnTime = returnTime
         registry.returnStatus = returnStatus
         registry.presenceRevision = npcData and npcData.presenceRevision or registry.presenceRevision

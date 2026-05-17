@@ -25,16 +25,22 @@ function DTNPCHealth.EnsureDefaults(npcData)
         return nil
     end
 
+    local isDeadState = tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) ~= nil
+
     if type(npcData.combatHealth) ~= "table" then
         npcData.combatHealth = {}
     end
-    if npcData.healthState ~= nil and tostring(npcData.healthState) ~= "Weakened" then
+    if isDeadState then
+        npcData.healthState = nil
+        npcData.reviveData = nil
+        npcData.incapState = nil
+    elseif npcData.healthState ~= nil and tostring(npcData.healthState) ~= "Weakened" then
         npcData.healthState = nil
     end
-    if type(npcData.reviveData) ~= "table" then
+    if not isDeadState and type(npcData.reviveData) ~= "table" then
         npcData.reviveData = npcData.reviveData ~= nil and {} or npcData.reviveData
     end
-    if type(npcData.reviveData) == "table" then
+    if not isDeadState and type(npcData.reviveData) == "table" then
         local requiredCount = tonumber(npcData.reviveData.requiredItemCount) or 0
         if requiredCount > 0 then
             npcData.reviveData.requiredItemCount = math.max(1, math.floor(requiredCount))
@@ -144,7 +150,19 @@ function DTNPCHealth.EnsureDefaults(npcData)
     combatHealth.baseMax = baseMax
     combatHealth.skillBonus = skillBonus
     combatHealth.max = maxHealth
-    if npcData.incapState == "Active" then
+    if isDeadState then
+        combatHealth.enabled = false
+        combatHealth.engineProtected = false
+        combatHealth.current = 0
+        combatHealth.incapGraceUntil = 0
+        combatHealth.lastEngineHealth = 0
+        internal.clearActiveBandage(combatHealth, false)
+        combatHealth.bandageActionUntil = 0
+        combatHealth.bandageAnimFallbackUntil = 0
+        combatHealth.bandageRetryAt = 0
+        combatHealth.bandageResumeState = nil
+        combatHealth.bandageAnimVariant = nil
+    elseif npcData.incapState == "Active" then
         npcData.healthState = nil
         combatHealth.enabled = false
         combatHealth.engineProtected = true

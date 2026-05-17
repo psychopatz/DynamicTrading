@@ -32,6 +32,64 @@ end
 
 internal.clearReviveState = clearReviveState
 
+local function markTerminalDeathState(npcData)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    clearReviveState(npcData, false)
+
+    npcData.status = "Dead"
+    npcData.state = "Dead"
+    npcData.healthState = nil
+    npcData.incapState = nil
+    npcData.preIncapState = nil
+    npcData.preIncapStatus = nil
+    npcData.preIncapMaster = nil
+    npcData.preIncapMasterID = nil
+    npcData.requestedReturnStatus = nil
+    npcData.returnTime = 0
+    npcData.returnStatus = nil
+    npcData.master = nil
+    npcData.masterID = nil
+    npcData.isHostile = false
+    npcData.tasks = {}
+    npcData.incapStrugglePauseUntil = nil
+    npcData.incapNextPauseAt = nil
+    npcData.lastFleeX = nil
+    npcData.lastFleeY = nil
+    npcData.reviveHelperID = nil
+    npcData.reviveHelperOnlineID = nil
+    npcData.reviveHelperUsername = nil
+    npcData.health = 0
+    npcData.lastHealth = 0
+    npcData.deathFinalizedAt = internal.nowMillis and internal.nowMillis() or 0
+
+    local combatHealth = type(npcData.combatHealth) == "table" and npcData.combatHealth or nil
+    if combatHealth then
+        combatHealth.enabled = false
+        combatHealth.engineProtected = false
+        combatHealth.current = 0
+        combatHealth.lastEngineHealth = 0
+        combatHealth.pendingFallbackIgnoreAmount = 0
+        combatHealth.pendingFallbackIgnoreUntil = 0
+        combatHealth.incapGraceUntil = 0
+        combatHealth.incapFinalKillRequestedAt = npcData.deathFinalizedAt
+        if internal.clearActiveBandage then
+            internal.clearActiveBandage(combatHealth, false)
+        end
+        combatHealth.bandageActionUntil = 0
+        combatHealth.bandageAnimFallbackUntil = 0
+        combatHealth.bandageRetryAt = 0
+        combatHealth.bandageResumeState = nil
+        combatHealth.bandageAnimVariant = nil
+    end
+
+    return true
+end
+
+internal.markTerminalDeathState = markTerminalDeathState
+
 local function getPlayerIdentity(playerObj)
     if not playerObj then
         return nil, nil
@@ -130,6 +188,9 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
     if type(npcData) ~= "table" then
         return false, { reason = "invalid_target" }
     end
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        return false, { reason = "dead_target" }
+    end
     if internal.isRemoteClient and internal.isRemoteClient() then
         return false, { reason = "remote_client" }
     end
@@ -188,6 +249,11 @@ end
 
 function DTNPCHealth.ProcessWeakenedRecovery(zombie, npcData)
     if not npcData or (internal.isRemoteClient and internal.isRemoteClient()) then
+        return false
+    end
+    if tostring(npcData.status or "") == "Dead" or tonumber(npcData.deathFinalizedAt) then
+        clearReviveState(npcData, false)
+        npcData.healthState = nil
         return false
     end
     if tostring(npcData.healthState or "") ~= "Weakened" then
