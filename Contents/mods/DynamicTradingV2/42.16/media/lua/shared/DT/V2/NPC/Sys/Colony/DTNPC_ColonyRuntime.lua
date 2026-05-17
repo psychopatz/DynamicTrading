@@ -304,4 +304,6 @@ function Runtime.SyncBehaviorIdentity(npcData)
     return desiredState
 end
 
+require "DT/V2/NPC/Sys/Colony/DTNPC_ColonyRuntime_CorpseRemoval"
+
 return Runtime

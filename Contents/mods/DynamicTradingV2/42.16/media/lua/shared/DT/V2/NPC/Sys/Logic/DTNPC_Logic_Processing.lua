@@ -19,6 +19,7 @@ local HIGH_SPEED_STATES = {
     Guard = true,
     Patrol = true,
     ColonyWork = true,
+    ColonyCorpseRemoval = true,
     ColonyCower = true,
     ReviveAlly = true,
     LootNearby = true,
