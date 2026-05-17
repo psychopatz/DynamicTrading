@@ -20,6 +20,7 @@ local HIGH_SPEED_STATES = {
     Patrol = true,
     ColonyWork = true,
     ColonyCower = true,
+    ReviveAlly = true,
     LootNearby = true,
     Departure = true,
     Incapacitated = true,
@@ -162,6 +163,17 @@ function DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
             master = nil
             dist = 9999
         end
+    end
+
+    if state ~= "Bandage"
+        and state ~= "Incapacitated"
+        and state ~= "Departure"
+        and DTNPCHealth
+        and DTNPCHealth.TryEnterAllyRevive
+        and DTNPCHealth.TryEnterAllyRevive(zombie, npcData, state) then
+        state = npcData.state or "ReviveAlly"
+        master = nil
+        dist = 9999
     end
 
     local behaviorFunc = DTNPCLogic.Behaviors[state]

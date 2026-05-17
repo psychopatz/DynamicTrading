@@ -17,11 +17,22 @@ local function clearReviveState(npcData, keepRequirement)
     npcData.reviveHelperID = nil
     npcData.reviveHelperOnlineID = nil
     npcData.reviveHelperUsername = nil
+    npcData.allyReviveTargetUUID = nil
+    npcData.allyRevivePhase = nil
+    npcData.allyReviveActionUntil = nil
+    npcData.allyReviveLeaseUntil = nil
+    npcData.allyReviveResumeState = nil
+    npcData.allyReviveRetryAt = nil
+    npcData.allyReviveNoticeAt = nil
+    npcData.allyReviveSearchAfterAt = nil
 
     if keepRequirement == true then
         if type(npcData.reviveData) ~= "table" then
             npcData.reviveData = {}
         end
+        npcData.reviveData.allyReviveLeaseUUID = nil
+        npcData.reviveData.allyReviveLeaseUntil = nil
+        npcData.reviveData.allyReviveLeaseState = nil
         npcData.reviveData.revivedAt = nil
         npcData.reviveData.consumedItemCount = nil
         npcData.reviveData.lastOutcome = nil
@@ -92,15 +103,52 @@ internal.markTerminalDeathState = markTerminalDeathState
 
 local function getPlayerIdentity(playerObj)
     if not playerObj then
-        return nil, nil
+        return nil
     end
 
     local username = playerObj.getUsername and playerObj:getUsername() or nil
     local onlineID = playerObj.getOnlineID and playerObj:getOnlineID() or nil
-    return username, onlineID
+    return {
+        id = username or (onlineID ~= nil and tostring(onlineID) or nil),
+        username = username,
+        onlineID = onlineID,
+    }
 end
 
-local function applyReviveState(zombie, npcData, playerObj, requiredCount, consumedCount)
+local function resolveReviveResumeState(npcData)
+    if type(npcData) ~= "table" then
+        return "Idle"
+    end
+
+    if npcData.linkedWorkerID ~= nil and DTNPCColonyRuntime and DTNPCColonyRuntime.SyncBehaviorIdentity then
+        local ok, result = pcall(DTNPCColonyRuntime.SyncBehaviorIdentity, npcData)
+        if ok and tostring(result or "") ~= "" then
+            return tostring(result)
+        end
+    end
+
+    local preIncapState = tostring(npcData.preIncapState or "")
+    if preIncapState ~= ""
+        and preIncapState ~= "Incapacitated"
+        and preIncapState ~= "Attack"
+        and preIncapState ~= "AttackRange"
+        and preIncapState ~= "Flee"
+        and preIncapState ~= "Dead" then
+        return preIncapState
+    end
+
+    if npcData.master ~= nil or npcData.masterID ~= nil then
+        return "Follow"
+    end
+
+    if npcData.guardCombatOrder ~= nil or npcData.stationaryPostX ~= nil then
+        return "Guard"
+    end
+
+    return "Idle"
+end
+
+local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, consumedCount)
     local combatHealth = DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
     if not combatHealth then
         return false, { reason = "missing_health" }
@@ -128,7 +176,7 @@ local function applyReviveState(zombie, npcData, playerObj, requiredCount, consu
 
     npcData.incapState = nil
     npcData.healthState = "Weakened"
-    npcData.state = tostring(npcData.state or "") == "Incapacitated" and "Idle" or (npcData.state or "Idle")
+    npcData.state = resolveReviveResumeState(npcData)
     npcData.preIncapState = nil
     npcData.preIncapStatus = nil
     npcData.preIncapMaster = nil
@@ -143,12 +191,15 @@ local function applyReviveState(zombie, npcData, playerObj, requiredCount, consu
         reviveData.revivedAt = internal.nowMillis and internal.nowMillis() or 0
         reviveData.consumedItemCount = math.max(0, math.floor(tonumber(consumedCount) or 0))
         reviveData.lastOutcome = "success"
+        reviveData.allyReviveLeaseUUID = nil
+        reviveData.allyReviveLeaseUntil = nil
+        reviveData.allyReviveLeaseState = nil
     end
 
-    local username, onlineID = getPlayerIdentity(playerObj)
-    npcData.reviveHelperID = username or (onlineID ~= nil and tostring(onlineID) or nil)
-    npcData.reviveHelperUsername = username
-    npcData.reviveHelperOnlineID = onlineID
+    helperIdentity = type(helperIdentity) == "table" and helperIdentity or nil
+    npcData.reviveHelperID = helperIdentity and helperIdentity.id or nil
+    npcData.reviveHelperUsername = helperIdentity and helperIdentity.username or nil
+    npcData.reviveHelperOnlineID = helperIdentity and helperIdentity.onlineID or nil
 
     if zombie then
         zombie:setTarget(nil)
@@ -199,11 +250,16 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
         ignoreItems = options.ignoreItems == true,
         requiredFullType = options.requiredFullType,
     })
+    if options.allowNPC == true then
+        canRevive, info = DTNPCHealth.CanReviveTarget(npcData, {
+            allowExcludedTarget = options.allowExcludedTarget == true,
+        })
+    end
     if not canRevive then
         return false, info
     end
 
-    local requiredCount = tonumber(info and info.requiredCount) or nil
+    local requiredCount = tonumber(options.requiredCount) or tonumber(info and info.requiredCount) or nil
     if (not requiredCount or requiredCount <= 0) and internal.prepareIncapacitatedReviveData then
         local reviveData = internal.prepareIncapacitatedReviveData(npcData)
         requiredCount = tonumber(reviveData and reviveData.requiredItemCount) or 1
@@ -229,7 +285,12 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
         consumedCount = consumed or requiredCount
     end
 
-    local revived, result = applyReviveState(zombie, npcData, playerObj, requiredCount, consumedCount)
+    local helperIdentity = options.helperIdentity
+    if type(helperIdentity) ~= "table" then
+        helperIdentity = getPlayerIdentity(playerObj)
+    end
+
+    local revived, result = applyReviveState(zombie, npcData, helperIdentity, requiredCount, consumedCount)
     if not revived then
         return false, result
     end

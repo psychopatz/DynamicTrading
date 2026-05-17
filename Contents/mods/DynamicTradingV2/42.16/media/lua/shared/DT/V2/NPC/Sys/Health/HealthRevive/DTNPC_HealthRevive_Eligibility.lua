@@ -71,7 +71,7 @@ end
 
 internal.prepareIncapacitatedReviveData = prepareIncapacitatedReviveData
 
-function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
+function DTNPCHealth.CanReviveTarget(npcData, options)
     options = type(options) == "table" and options or {}
 
     if type(npcData) ~= "table" then
@@ -89,7 +89,7 @@ function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
         }
     end
 
-    if isReviveExcludedNPC(npcData) then
+    if options.allowExcludedTarget ~= true and isReviveExcludedNPC(npcData) then
         return false, {
             reason = "excluded_target",
             healthState = healthState,
@@ -125,6 +125,38 @@ function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
     return true, {
         reason = "ok",
         healthState = healthState,
+        requiredCount = requiredCount,
+    }
+end
+
+function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
+    options = type(options) == "table" and options or {}
+
+    local canRevive, info = DTNPCHealth.CanReviveTarget(npcData, {
+        allowExcludedTarget = false,
+    })
+    if not canRevive then
+        return false, info
+    end
+
+    local requiredCount = tonumber(info and info.requiredCount) or nil
+    local requiredFullType = options.requiredFullType ~= nil and tostring(options.requiredFullType) or nil
+    local availableCount = playerObj and DTNPCHealth.CountReviveItems and DTNPCHealth.CountReviveItems(playerObj, requiredFullType) or 0
+    local ignoreItems = options.ignoreItems == true
+
+    if playerObj and not ignoreItems and requiredCount and availableCount < requiredCount then
+        return false, {
+            reason = "need_supplies",
+            healthState = info and info.healthState or nil,
+            requiredCount = requiredCount,
+            availableCount = availableCount,
+            requiredFullType = requiredFullType,
+        }
+    end
+
+    return true, {
+        reason = "ok",
+        healthState = info and info.healthState or nil,
         requiredCount = requiredCount,
         availableCount = availableCount,
         requiredFullType = requiredFullType,

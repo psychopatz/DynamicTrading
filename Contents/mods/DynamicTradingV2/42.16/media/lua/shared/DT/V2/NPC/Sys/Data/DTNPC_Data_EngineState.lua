@@ -33,6 +33,7 @@ local function isManualControlState(state)
         or state == "Patrol"
         or state == "ColonyWork"
         or state == "ColonyCower"
+        or state == "ReviveAlly"
         or state == "Departure"
         or state == "Incapacitated"
 end
@@ -140,6 +141,7 @@ local function shouldClearVanillaTarget(npcData)
         or state == "Patrol"
         or state == "ColonyWork"
         or state == "ColonyCower"
+        or state == "ReviveAlly"
         or state == "PlayerZone"
         or state == "LootNearby"
         or state == "Stay"
