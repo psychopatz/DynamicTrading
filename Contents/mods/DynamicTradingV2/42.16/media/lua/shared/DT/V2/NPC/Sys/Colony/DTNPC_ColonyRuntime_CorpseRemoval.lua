@@ -167,20 +167,55 @@ local function getCellSquare(x, y, z)
     return cell:getGridSquare(x, y, z or 0)
 end
 
+local function forEachCorpseOnSquare(square, callback)
+    if not square or type(callback) ~= "function" then
+        return
+    end
+
+    local seen = {}
+    local deadBodies = square.getDeadBodys and square:getDeadBodys() or nil
+    if deadBodies then
+        for index = 0, deadBodies:size() - 1 do
+            local corpse = deadBodies:get(index)
+            if corpse ~= nil and not seen[corpse] then
+                seen[corpse] = true
+                callback(corpse)
+            end
+        end
+    end
+
+    local staticObjects = square.getStaticMovingObjects and square:getStaticMovingObjects() or nil
+    if staticObjects then
+        for index = 0, staticObjects:size() - 1 do
+            local corpse = staticObjects:get(index)
+            if corpse ~= nil and not seen[corpse] and instanceof and instanceof(corpse, "IsoDeadBody") then
+                seen[corpse] = true
+                callback(corpse)
+            end
+        end
+    end
+end
+
 local function removeCorpseFromWorld(corpse)
     if not corpse then
         return false
     end
 
+    local square = corpse.getSquare and corpse:getSquare() or nil
+    if square and square.transmitRemoveItemFromSquare then
+        pcall(function()
+            square:transmitRemoveItemFromSquare(corpse)
+        end)
+    end
     pcall(function()
         corpse:removeFromWorld()
     end)
     pcall(function()
         corpse:removeFromSquare()
     end)
-    if isServer and isServer() and corpse.transmitRemoveItemFromSquare then
+    if corpse.setSquare then
         pcall(function()
-            corpse:transmitRemoveItemFromSquare()
+            corpse:setSquare(nil)
         end)
     end
     return true
@@ -272,12 +307,9 @@ local function processScan(runtime, owner)
 
                 if not isInsideZone(scan.dumpZone, x, y, z) then
                     local square = getCellSquare(x, y, z)
-                    local objects = square and square.getStaticMovingObjects and square:getStaticMovingObjects() or nil
-                    if objects then
-                        for objectIndex = 0, objects:size() - 1 do
-                            registerCandidate(scan, objects:get(objectIndex), x, y, z)
-                        end
-                    end
+                    forEachCorpseOnSquare(square, function(corpse)
+                        registerCandidate(scan, corpse, x, y, z)
+                    end)
                 end
 
                 scan.x = scan.x + 1
@@ -394,17 +426,18 @@ local function findCorpseByToken(token, x, y, z, radius)
     for sx = x - searchRadius, x + searchRadius do
         for sy = y - searchRadius, y + searchRadius do
             local square = getCellSquare(sx, sy, z)
-            local objects = square and square.getStaticMovingObjects and square:getStaticMovingObjects() or nil
-            if objects then
-                for objectIndex = 0, objects:size() - 1 do
-                    local corpse = objects:get(objectIndex)
-                    if corpse and corpse.getModData then
-                        local modData = corpse:getModData()
-                        if tostring(modData and modData.DC_CorpseRemovalToken or "") == tostring(token) then
-                            return corpse
-                        end
-                    end
+            local foundCorpse = nil
+            forEachCorpseOnSquare(square, function(corpse)
+                if foundCorpse or not (corpse and corpse.getModData) then
+                    return
                 end
+                local modData = corpse:getModData()
+                if tostring(modData and modData.DC_CorpseRemovalToken or "") == tostring(token) then
+                    foundCorpse = corpse
+                end
+            end)
+            if foundCorpse then
+                return foundCorpse
             end
         end
     end
@@ -443,14 +476,19 @@ local function positionCorpseOnSquare(corpse, point, square)
 
     removeCorpseFromWorld(corpse)
     pcall(function()
-        corpse:setX(point.x + 0.5)
+        corpse:setX(point.x)
     end)
     pcall(function()
-        corpse:setY(point.y + 0.5)
+        corpse:setY(point.y)
     end)
     if corpse.setZ then
         pcall(function()
             corpse:setZ(point.z)
+        end)
+    end
+    if corpse.setSquare then
+        pcall(function()
+            corpse:setSquare(square)
         end)
     end
     if corpse.setCurrentSquare then
@@ -468,13 +506,36 @@ local function positionCorpseOnSquare(corpse, point, square)
         end)
     end
 
-    local ok = pcall(function()
-        corpse:addToWorld()
-    end)
-    if not ok then
+    local added = false
+    if square.addCorpse then
+        added = pcall(function()
+            square:addCorpse(corpse, false)
+        end)
+    end
+    if not added then
+        added = pcall(function()
+            corpse:addToWorld()
+        end)
+    end
+    if not added then
         return false
     end
 
+    if corpse.invalidateCorpse then
+        pcall(function()
+            corpse:invalidateCorpse()
+        end)
+    end
+    if corpse.setInvalidateNextRender then
+        pcall(function()
+            corpse:setInvalidateNextRender(true)
+        end)
+    end
+    if corpse.transmitModData then
+        pcall(function()
+            corpse:transmitModData()
+        end)
+    end
     if isServer and isServer() and corpse.transmitCompleteItemToClients then
         pcall(function()
             corpse:transmitCompleteItemToClients()
@@ -482,6 +543,7 @@ local function positionCorpseOnSquare(corpse, point, square)
     end
     return true
 end
+
 
 local function appendWorkerLog(worker, message)
     local registry = DC_Colony and DC_Colony.Registry or nil
@@ -622,15 +684,15 @@ function Runtime.PickupCorpseRemovalTask(npcData, task)
         return false
     end
 
-    removeCorpseFromWorld(corpse)
-
     claim.state = "carried"
     claim.expiresAt = nowMillis() + Runtime.CORPSE_CARRIED_TTL_MS
-    claim.corpse = corpse
     claim.lastX = task.source.x
     claim.lastY = task.source.y
     claim.lastZ = task.source.z or 0
     runtime.candidates[task.token] = nil
+    claim.corpse = corpse
+
+    removeCorpseFromWorld(corpse)
     return true
 end
 

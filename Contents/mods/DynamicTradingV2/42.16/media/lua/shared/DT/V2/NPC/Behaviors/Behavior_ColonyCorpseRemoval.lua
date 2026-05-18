@@ -69,6 +69,33 @@ local function stopMovement(zombie)
     zombie:setRunning(false)
 end
 
+local function stopWorkAnim(zombie, npcData)
+    if not zombie then
+        return
+    end
+
+    zombie:setVariable("LootPosition", "")
+    if type(npcData) == "table" then
+        npcData.dcCorpseWorkAnimActive = nil
+    end
+end
+
+local function startWorkAnim(zombie, npcData)
+    if not zombie or type(npcData) ~= "table" then
+        return
+    end
+
+    if npcData.dcCorpseWorkAnimActive == true then
+        return
+    end
+
+    npcData.dcCorpseWorkAnimActive = true
+    zombie:setVariable("LootPosition", "Low")
+    if zombie.reportEvent then
+        zombie:reportEvent("EventLootItem")
+    end
+end
+
 local function moveToPoint(zombie, npcData, point, speed)
     local target = createPointTarget(point)
     if not target then
@@ -152,10 +179,12 @@ local function clearTask(npcData)
     npcData.dcCorpseRemovalTask = nil
     npcData.dcCorpsePickupStartMs = nil
     npcData.dcCorpseDropStartMs = nil
+    npcData.dcCorpseWorkAnimActive = nil
 end
 
 local function abortTask(zombie, npcData)
     local task = type(npcData and npcData.dcCorpseRemovalTask) == "table" and npcData.dcCorpseRemovalTask or nil
+    stopWorkAnim(zombie, npcData)
     if task and DTNPCColonyRuntime.AbortCorpseRemovalTask then
         DTNPCColonyRuntime.AbortCorpseRemovalTask(npcData, task, {
             x = zombie:getX(),
@@ -208,6 +237,7 @@ DTNPCLogic.Behaviors["ColonyCorpseRemoval"] = function(zombie, npcData)
     end
 
     if not task then
+        stopWorkAnim(zombie, npcData)
         stopMovement(zombie)
         zombie:faceLocation(dumpPoint.x, dumpPoint.y)
         return
@@ -227,14 +257,17 @@ DTNPCLogic.Behaviors["ColonyCorpseRemoval"] = function(zombie, npcData)
             local pickupStartedAt = floorNumber(npcData.dcCorpsePickupStartMs) or 0
             if pickupStartedAt <= 0 then
                 npcData.dcCorpsePickupStartMs = getTimeInMillis and getTimeInMillis() or 0
+                startWorkAnim(zombie, npcData)
                 return
             end
 
+            startWorkAnim(zombie, npcData)
             if ((getTimeInMillis and getTimeInMillis() or 0) - pickupStartedAt) < PICKUP_DWELL_MS then
                 return
             end
 
             npcData.dcCorpsePickupStartMs = nil
+            stopWorkAnim(zombie, npcData)
             if DTNPCColonyRuntime.PickupCorpseRemovalTask and DTNPCColonyRuntime.PickupCorpseRemovalTask(npcData, task) then
                 task.phase = "to_dump"
                 return
@@ -245,11 +278,13 @@ DTNPCLogic.Behaviors["ColonyCorpseRemoval"] = function(zombie, npcData)
         end
 
         npcData.dcCorpsePickupStartMs = nil
+        stopWorkAnim(zombie, npcData)
         moveToPoint(zombie, npcData, task.source, MOVE_SPEED)
         return
     end
 
     if task.phase == "to_dump" then
+        stopWorkAnim(zombie, npcData)
         if DTNPCColonyRuntime.RefreshCorpseRemovalTask then
             DTNPCColonyRuntime.RefreshCorpseRemovalTask(npcData, task, "carried", zombie)
         end
@@ -286,5 +321,6 @@ DTNPCLogic.Behaviors["ColonyCorpseRemoval"] = function(zombie, npcData)
     end
 
     clearTask(npcData)
+    stopWorkAnim(zombie, npcData)
     stopMovement(zombie)
 end
