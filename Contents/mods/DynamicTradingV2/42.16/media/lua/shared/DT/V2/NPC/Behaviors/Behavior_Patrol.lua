@@ -87,6 +87,8 @@ local function moveToPoint(zombie, npcData, point)
     local moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
         target = target,
         speed = PATROL_SPEED,
+        navigationMode = "planned",
+        plannerProfile = "colony",
         staminaMode = "colony_patrol",
         desiredRun = false,
         stopDistance = STOP_DISTANCE,

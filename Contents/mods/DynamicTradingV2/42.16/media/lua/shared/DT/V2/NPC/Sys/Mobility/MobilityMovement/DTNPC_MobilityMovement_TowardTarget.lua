@@ -37,6 +37,42 @@ function Mobility.MoveTowardTarget(zombie, npcData, options)
         return true, "arrived", len
     end
 
+    local navigationState = nil
+    local navigationTarget = target
+    local movementGoalX = tx
+    local movementGoalY = ty
+    local movementGoalZ = tonumber(target.getZ and target:getZ() or zombie:getZ()) or zombie:getZ()
+    if Mobility.ResolveNavigationTarget then
+        navigationState = Mobility.ResolveNavigationTarget(zombie, npcData, target, options)
+        if navigationState and navigationState.teleported == true then
+            return true, navigationState.state or "leash_teleport", len
+        end
+        if navigationState and navigationState.active == true then
+            if not navigationState.target then
+                Mobility.Stop(zombie, options.anim)
+                return false, navigationState.state or "route_wait", len
+            end
+
+            navigationState.actualTarget = target
+            navigationState.stopDistance = stopDistance
+            navigationTarget = navigationState.target
+            movementGoalX = tonumber(navigationState.goalX or (navigationTarget.getX and navigationTarget:getX()) or tx) or tx
+            movementGoalY = tonumber(navigationState.goalY or (navigationTarget.getY and navigationTarget:getY()) or ty) or ty
+            movementGoalZ = tonumber(navigationState.goalZ or (navigationTarget.getZ and navigationTarget:getZ()) or movementGoalZ) or movementGoalZ
+            dx = movementGoalX - zx
+            dy = movementGoalY - zy
+            local waypointDistance = math.sqrt((dx * dx) + (dy * dy))
+            if waypointDistance <= 0.001 then
+                if navigationState.routeComplete == true and len <= (stopDistance + 0.45) then
+                    Mobility.Stop(zombie, options.anim)
+                    return true, "arrived", len
+                end
+                dx = tx - zx
+                dy = ty - zy
+            end
+        end
+    end
+
     local forcedRetreat = nil
     if options.allowDamageRetreat ~= false then
         forcedRetreat = Mobility.GetForcedRetreat(zombie, npcData, options)
@@ -91,17 +127,25 @@ function Mobility.MoveTowardTarget(zombie, npcData, options)
         faceTargetWhileMoving = options.faceTargetWhileMoving,
         staminaMode = options.staminaMode,
         desiredRun = options.desiredRun == true,
-        goalX = tx,
-        goalY = ty,
-        progressGoalX = tx,
-        progressGoalY = ty,
-        closeDoorTarget = options.target,
+        goalX = movementGoalX,
+        goalY = movementGoalY,
+        progressGoalX = movementGoalX,
+        progressGoalY = movementGoalY,
+        closeDoorTarget = navigationTarget,
         closeDoorSafeRadius = options.closeDoorSafeRadius,
         allowDamageRetreat = options.allowDamageRetreat ~= false,
         damageRetreatDistance = options.damageRetreatDistance,
         damageRetreatLockMs = options.damageRetreatLockMs,
         steeringAngles = options.steeringAngles,
     })
+
+    if navigationState and navigationState.active == true and Mobility.HandleNavigationResult then
+        local handled, handledState = Mobility.HandleNavigationResult(zombie, npcData, navigationState, state, len)
+        if handledState then
+            moved = handled == true
+            state = handledState
+        end
+    end
 
     if not moved and len <= (stopDistance + 0.35) then
         Mobility.Stop(zombie, options.anim)

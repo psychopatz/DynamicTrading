@@ -126,6 +126,8 @@ function DTNPCLootSearch.MoveTowardSource(zombie, npcData, source)
     return DTNPCMobility.MoveTowardTarget(zombie, npcData, {
         target = target,
         speed = DynamicTrading.GetNPCWalkSpeed and DynamicTrading.GetNPCWalkSpeed() or 0.035,
+        navigationMode = "planned",
+        plannerProfile = "colony",
         staminaMode = "travel",
         desiredRun = false,
         stopDistance = tonumber(source.stopDistance) or Constants.SEARCH_STOP_DISTANCE,

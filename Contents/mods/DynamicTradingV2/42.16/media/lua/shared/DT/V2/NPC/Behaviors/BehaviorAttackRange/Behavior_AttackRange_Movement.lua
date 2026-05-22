@@ -138,9 +138,12 @@ function BehaviorAttackRange.ApplyMovement(zombie, npcData, target, tx, ty, move
     zombie:setVariable("DTIdleState", "0")
     local moved, moveState
     if moveDir > 0 then
+        local navMode = (tonumber(npcData.attackRangeBlockedTicks) or 0) >= 2 and "planned" or "direct"
         moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
             target = target,
             speed = movement.currentSpeed,
+            navigationMode = navMode,
+            plannerProfile = "combat_short",
             staminaMode = "pursuit",
             desiredRun = false,
             stopDistance = movement.desiredMin + 0.1,

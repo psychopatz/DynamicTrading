@@ -181,9 +181,12 @@ function DTNPCLogic.HandleHostileLostSight(zombie, npcData, target, dist, option
     )
     if lastSeenTarget and elapsed <= chaseMs then
         local speed = tonumber(options.speed) or 0.045
+        local navMode = (tonumber(npcData.hostileSearchBlockedTicks) or 0) >= 2 and "planned" or "direct"
         DTNPCMobility.MoveTowardTarget(zombie, npcData, {
             target = lastSeenTarget,
             speed = speed,
+            navigationMode = navMode,
+            plannerProfile = "combat_short",
             staminaMode = "pursuit",
             desiredRun = false,
             stopDistance = 0.7,

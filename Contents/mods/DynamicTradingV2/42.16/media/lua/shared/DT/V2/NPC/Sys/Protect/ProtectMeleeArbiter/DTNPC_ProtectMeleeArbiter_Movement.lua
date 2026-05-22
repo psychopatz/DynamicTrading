@@ -11,13 +11,17 @@ local DEFAULT_SPEED = Internal.MeleeArbiterDefaultSpeed
 
 local function moveTowardTarget(zombie, npcData, target, stats, stopDistance, options)
     local speed = stats.chaseSpeed or options.defaultSpeed or DEFAULT_SPEED
+    local blockCounterKey = options.blockCounterKey
+    local navMode = (tonumber(blockCounterKey and npcData[blockCounterKey]) or 0) >= 2 and "planned" or "direct"
     local moved, state, distance = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
         target = target,
         speed = speed,
+        navigationMode = navMode,
+        plannerProfile = "combat_short",
         staminaMode = "melee_pursuit",
         desiredRun = speed > 0.06,
         stopDistance = stopDistance,
-        blockCounterKey = options.blockCounterKey,
+        blockCounterKey = blockCounterKey,
         stuckTicks = options.stuckTicks or 10,
         anchorX = options.anchorX,
         anchorY = options.anchorY,

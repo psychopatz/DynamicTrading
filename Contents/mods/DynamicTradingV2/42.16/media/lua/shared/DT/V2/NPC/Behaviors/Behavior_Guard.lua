@@ -106,6 +106,8 @@ local function moveBackToPost(zombie, npcData)
     local moved, state = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
         target = createPointTarget(postX, postY, postZ),
         speed = tonumber(npcData.guardReturnSpeed) or GUARD_RETURN_SPEED,
+        navigationMode = "planned",
+        plannerProfile = "colony",
         staminaMode = "return",
         desiredRun = false,
         stopDistance = GUARD_RETURN_STOP_DISTANCE,

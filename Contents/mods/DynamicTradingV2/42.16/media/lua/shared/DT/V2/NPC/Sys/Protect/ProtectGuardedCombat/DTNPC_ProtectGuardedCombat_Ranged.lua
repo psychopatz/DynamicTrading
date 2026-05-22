@@ -141,9 +141,13 @@ function DTNPCProtect.ExecuteGuardedRangedCombat(zombie, npcData, target, target
         zombie:setVariable("DTIdleState", "0")
         local moveState = nil
         if moveDir > 0 and DTNPCMobility and DTNPCMobility.MoveTowardTarget then
+            local blockedCount = tonumber(npcData[options.blockCounterKey or "guardBlockedTicks"]) or 0
+            local navMode = blockedCount >= 2 and "planned" or "direct"
             moved, moveState = DTNPCMobility.MoveTowardTarget(zombie, npcData, {
                 target = target,
                 speed = moveSpeed,
+                navigationMode = navMode,
+                plannerProfile = "combat_short",
                 staminaMode = "pursuit",
                 desiredRun = false,
                 stopDistance = desiredMin + 0.1,
