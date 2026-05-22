@@ -9,6 +9,20 @@ DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 local internal = DTNPCLifecycle.Internal
 local MULTIPLAYER_ENGINE_DELTA_LOG_COOLDOWN_MS = 15000
 
+local function hasRecentAuthoritativeClientWeaponReport(combatHealth, now)
+    local recentSource = tostring(combatHealth and combatHealth.lastDamageSource or "")
+    local recentDamageAt = tonumber(combatHealth and combatHealth.lastDamageAt) or 0
+    local recentWindowMs = 2000
+
+    now = tonumber(now) or internal.nowMillis()
+    return recentDamageAt > 0
+        and (now - recentDamageAt) <= recentWindowMs
+        and (
+            recentSource == "client_weapon_hit_report"
+            or recentSource == "client_weapon_hit_report_dead_body"
+        )
+end
+
 local function restoreAfterIgnoredFriendlyFire(zombie, npcData, combatHealth)
     if not npcData then
         return
@@ -65,25 +79,12 @@ function DTNPCLifecycle.ShouldIgnoreFriendlyFire(zombie, npcData, combatHealth, 
 end
 
 function DTNPCLifecycle.ShouldIgnoreMultiplayerEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, source)
-    if not internal.isDedicatedServer or internal.isDedicatedServer() ~= true then
+    if not isServer or not isServer() then
         return false
     end
 
-    local attackerType = internal.getAttackerType and internal.getAttackerType(attacker) or nil
-    local recentSource = tostring(combatHealth and combatHealth.lastDamageSource or "")
-    local recentDamageAt = tonumber(combatHealth and combatHealth.lastDamageAt) or 0
     local now = internal.nowMillis()
-    local recentWindowMs = 2000
-    local hasRecentClientWeaponReport = recentDamageAt > 0
-        and (now - recentDamageAt) <= recentWindowMs
-        and (
-            recentSource == "client_weapon_hit_report"
-            or recentSource == "client_weapon_hit_report_dead_body"
-        )
-
-    if attackerType ~= "player" and hasRecentClientWeaponReport ~= true then
-        return false
-    end
+    local attackerType = internal.getAttackerType and internal.getAttackerType(attacker) or nil
 
     local lastLogAt = tonumber(combatHealth and combatHealth.lastMultiplayerEngineDeltaIgnoredAt) or 0
     if combatHealth and now - lastLogAt > MULTIPLAYER_ENGINE_DELTA_LOG_COOLDOWN_MS then
@@ -116,6 +117,109 @@ function DTNPCLifecycle.ShouldIgnoreMultiplayerEngineDelta(zombie, npcData, comb
         DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
     end
 
+    return true
+end
+
+local function shouldIgnorePostReviveEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, source)
+    if not zombie or not npcData or type(combatHealth) ~= "table" then
+        return false
+    end
+
+    local now = internal.nowMillis()
+    local graceUntil = tonumber(combatHealth.postReviveGraceUntil) or 0
+    if graceUntil <= 0 or now >= graceUntil then
+        return false
+    end
+
+    if attacker ~= nil or hasRecentAuthoritativeClientWeaponReport(combatHealth, now) then
+        return false
+    end
+
+    local lastLogAt = tonumber(combatHealth.lastPostReviveEngineDeltaIgnoredAt) or 0
+    if now - lastLogAt > MULTIPLAYER_ENGINE_DELTA_LOG_COOLDOWN_MS then
+        combatHealth.lastPostReviveEngineDeltaIgnoredAt = now
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Warn",
+            "Ignored attacker-less post-revive engine health delta for "
+                .. tostring(npcData and (npcData.name or npcData.uuid) or "Unknown")
+                .. " uuid=" .. tostring(npcData and npcData.uuid or nil)
+                .. " source=" .. tostring(source or "engine_fallback")
+                .. " previousHealth=" .. tostring(previousHealth)
+                .. " currentHealth=" .. tostring(currentHealth)
+                .. " graceUntil=" .. tostring(graceUntil)
+        )
+    end
+
+    if DTNPCHealth and DTNPCHealth.RestoreEngineBuffer then
+        DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
+    end
+    return true
+end
+
+local function shouldIgnoreSpawnEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, source)
+    if not zombie or not npcData or type(combatHealth) ~= "table" then
+        return false
+    end
+    if not isServer or isServer() ~= true then
+        return false
+    end
+    if attacker ~= nil then
+        return false
+    end
+
+    local now = internal.nowMillis()
+    if hasRecentAuthoritativeClientWeaponReport(combatHealth, now) then
+        return false
+    end
+
+    local spawnedAt = tonumber(combatHealth.spawnInitializedAt) or 0
+    if spawnedAt <= 0 then
+        return false
+    end
+
+    local ageMs = now - spawnedAt
+    local guardWindowMs = math.max(1000, tonumber(DTNPCHealth and DTNPCHealth.SPAWN_FALLBACK_GUARD_MS) or 12000)
+    if ageMs < 0 or ageMs > guardWindowMs then
+        return false
+    end
+
+    local delta = math.max(0, (tonumber(previousHealth) or 0) - (tonumber(currentHealth) or 0))
+    if delta <= (tonumber(DTNPCHealth and DTNPCHealth.MIN_DAMAGE) or 0.01) then
+        return false
+    end
+
+    local lastDamageAt = tonumber(combatHealth.lastDamageAt) or 0
+    local recentDamageWindowMs = 1200
+    if lastDamageAt > 0 and (now - lastDamageAt) <= recentDamageWindowMs then
+        return false
+    end
+
+    local lastSource = tostring(combatHealth.lastDamageSource or "")
+    local currentCustom = tonumber(combatHealth.current) or 0
+    local maxCustom = tonumber(combatHealth.max) or 0
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Warn",
+        "Ignored suspicious spawn-time engine health delta for "
+            .. tostring(npcData and (npcData.name or npcData.uuid) or "Unknown")
+            .. " uuid=" .. tostring(npcData and npcData.uuid or nil)
+            .. " source=" .. tostring(source or "engine_fallback")
+            .. " previousHealth=" .. tostring(previousHealth)
+            .. " currentHealth=" .. tostring(currentHealth)
+            .. " delta=" .. tostring(delta)
+            .. " spawnAgeMs=" .. tostring(ageMs)
+            .. " customCurrent=" .. tostring(currentCustom)
+            .. " customMax=" .. tostring(maxCustom)
+            .. " lastDamageSource=" .. tostring(lastSource)
+    )
+
+    if DTNPCHealth and DTNPCHealth.RestoreEngineBuffer then
+        DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
+    end
     return true
 end
 
@@ -222,6 +326,14 @@ function DTNPCLifecycle.ProcessEngineHealthDelta(zombie, npcData)
                 .. " spawnAgeMs=" .. tostring(internal.nowMillis() - (tonumber(combatHealth.spawnInitializedAt) or 0))
         )
         DTNPCHealth.RestoreEngineBuffer(zombie, npcData)
+        return false, false
+    end
+
+    if shouldIgnoreSpawnEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, "engine_fallback") then
+        return false, false
+    end
+
+    if shouldIgnorePostReviveEngineDelta(zombie, npcData, combatHealth, currentHealth, previousHealth, attacker, "engine_fallback") then
         return false, false
     end
 

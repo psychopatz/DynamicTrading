@@ -67,6 +67,7 @@ local function setIncapacitatedState(zombie, npcData)
     combatHealth.pendingFallbackIgnoreAmount = 0
     combatHealth.pendingFallbackIgnoreUntil = 0
     combatHealth.incapGraceUntil = incapacitatedAt + DTNPCHealth.INCAP_GRACE_WINDOW_MS
+    combatHealth.postReviveGraceUntil = 0
     combatHealth.lastEngineHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
     internal.clearActiveBandage(combatHealth, false)
     combatHealth.bandageActionUntil = 0

@@ -56,6 +56,30 @@ end
 
 internal.clearReviveState = clearReviveState
 
+local function clearReviveCombatCarryover(npcData, combatHealth, revivedAt)
+    if type(combatHealth) ~= "table" then
+        return
+    end
+
+    revivedAt = tonumber(revivedAt) or 0
+    combatHealth.lastDamageAt = 0
+    combatHealth.lastDamageAmount = 0
+    combatHealth.lastDamageSource = nil
+    combatHealth.lastAttackerType = nil
+    combatHealth.lastAttackerID = nil
+    combatHealth.pendingFallbackIgnoreAmount = 0
+    combatHealth.pendingFallbackIgnoreUntil = 0
+    combatHealth.incapGraceUntil = 0
+    combatHealth.postReviveGraceUntil = revivedAt + math.max(0, tonumber(DTNPCHealth.POST_REVIVE_GRACE_WINDOW_MS) or 2500)
+    combatHealth.lastRevivedAt = revivedAt
+
+    if type(npcData) == "table" then
+        npcData.lastPlayerAttackerUsername = nil
+        npcData.lastPlayerAttackerOnlineID = nil
+        npcData.lastPlayerAttackedAt = nil
+    end
+end
+
 local function markTerminalDeathState(npcData)
     if type(npcData) ~= "table" then
         return false
@@ -98,6 +122,8 @@ local function markTerminalDeathState(npcData)
         combatHealth.pendingFallbackIgnoreAmount = 0
         combatHealth.pendingFallbackIgnoreUntil = 0
         combatHealth.incapGraceUntil = 0
+        combatHealth.postReviveGraceUntil = 0
+        combatHealth.lastRevivedAt = 0
         combatHealth.incapFinalKillRequestedAt = npcData.deathFinalizedAt
         if internal.clearActiveBandage then
             internal.clearActiveBandage(combatHealth, false)
@@ -172,14 +198,13 @@ local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, 
         tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01,
         math.floor((maxHealth * DTNPCHealth.REVIVE_INITIAL_HP_RATIO) + 0.5)
     )
+    local revivedAt = internal.nowMillis and internal.nowMillis() or 0
 
     combatHealth.enabled = true
     combatHealth.engineProtected = true
     combatHealth.current = internal.clamp(targetCurrent, tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01, maxHealth)
     combatHealth.lastEngineHealth = tonumber(combatHealth.engineBuffer) or tonumber(DTNPCHealth.DEFAULT_ENGINE_BUFFER) or 1000
-    combatHealth.pendingFallbackIgnoreAmount = 0
-    combatHealth.pendingFallbackIgnoreUntil = 0
-    combatHealth.incapGraceUntil = 0
+    clearReviveCombatCarryover(npcData, combatHealth, revivedAt)
     internal.clearActiveBandage(combatHealth, false)
     combatHealth.bandageActionUntil = 0
     combatHealth.bandageAnimFallbackUntil = 0
@@ -195,12 +220,12 @@ local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, 
     npcData.preIncapMasterID = nil
     npcData.requestedReturnStatus = nil
     npcData.isMovingState = false
-    npcData.lastCustomDamageHandledAt = internal.nowMillis and internal.nowMillis() or 0
+    npcData.lastCustomDamageHandledAt = revivedAt
 
     local reviveData = internal.prepareIncapacitatedReviveData and internal.prepareIncapacitatedReviveData(npcData) or internal.ensureReviveDataTable(npcData)
     if reviveData then
         reviveData.requiredItemCount = math.max(1, math.floor(tonumber(requiredCount) or tonumber(reviveData.requiredItemCount) or 1))
-        reviveData.revivedAt = internal.nowMillis and internal.nowMillis() or 0
+        reviveData.revivedAt = revivedAt
         reviveData.consumedItemCount = math.max(0, math.floor(tonumber(consumedCount) or 0))
         reviveData.lastOutcome = "success"
         reviveData.allyReviveLeaseUUID = nil

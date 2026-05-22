@@ -8,6 +8,25 @@ DTNPCLifecycle.Internal = DTNPCLifecycle.Internal or {}
 
 local internal = DTNPCLifecycle.Internal
 
+local function hasRecentAuthoritativeClientWeaponReport(combatHealth, now)
+    local recentSource = tostring(combatHealth and combatHealth.lastDamageSource or "")
+    local recentDamageAt = tonumber(combatHealth and combatHealth.lastDamageAt) or 0
+    local recentWindowMs = 2000
+
+    now = tonumber(now) or internal.nowMillis()
+    return recentDamageAt > 0
+        and (now - recentDamageAt) <= recentWindowMs
+        and (
+            recentSource == "client_weapon_hit_report"
+            or recentSource == "client_weapon_hit_report_dead_body"
+        )
+end
+
+local function isAttackerlessEngineFallbackSource(combatHealth)
+    local recentSource = tostring(combatHealth and combatHealth.lastDamageSource or "")
+    return recentSource == "engine_fallback" or recentSource == "incap_engine_fallback"
+end
+
 local function hasTerminalDeathRequest(npcData)
     if type(npcData) ~= "table" then
         return false
@@ -54,9 +73,19 @@ local function isCredibleCombatDeath(zombie, npcData, combatHealth)
     end
 
     local now = internal.nowMillis()
+    local postReviveGraceUntil = tonumber(combatHealth.postReviveGraceUntil) or 0
+    if postReviveGraceUntil > now and not hasRecentAuthoritativeClientWeaponReport(combatHealth, now) then
+        return false
+    end
+
     local recentDamageAt = tonumber(combatHealth.lastDamageAt) or 0
     local recentDamageWindowMs = 3000
     local hasRecentDamage = recentDamageAt > 0 and (now - recentDamageAt) <= recentDamageWindowMs
+    if hasRecentDamage
+        and isAttackerlessEngineFallbackSource(combatHealth)
+        and not hasRecentAuthoritativeClientWeaponReport(combatHealth, now) then
+        return false
+    end
     if hasRecentDamage then
         return true
     end

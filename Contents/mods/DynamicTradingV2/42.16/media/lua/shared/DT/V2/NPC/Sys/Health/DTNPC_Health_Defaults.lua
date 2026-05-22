@@ -116,6 +116,8 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if combatHealth.pendingFallbackIgnoreAmount == nil then combatHealth.pendingFallbackIgnoreAmount = 0 end
     if combatHealth.pendingFallbackIgnoreUntil == nil then combatHealth.pendingFallbackIgnoreUntil = 0 end
     if combatHealth.incapGraceUntil == nil then combatHealth.incapGraceUntil = 0 end
+    if combatHealth.postReviveGraceUntil == nil then combatHealth.postReviveGraceUntil = 0 end
+    if combatHealth.lastRevivedAt == nil then combatHealth.lastRevivedAt = 0 end
     if combatHealth.selfBandageThreshold == nil then combatHealth.selfBandageThreshold = DTNPCHealth.SELF_BANDAGE_THRESHOLD_RATIO end
     if combatHealth.selfBandageApplyDurationMs == nil then combatHealth.selfBandageApplyDurationMs = DTNPCHealth.SELF_BANDAGE_APPLY_DURATION_MS end
     if combatHealth.bandageUnlimited == nil then combatHealth.bandageUnlimited = not internal.isPlayerOwnedNPC(npcData) end
@@ -185,6 +187,8 @@ function DTNPCHealth.EnsureDefaults(npcData)
         combatHealth.engineProtected = false
         combatHealth.current = 0
         combatHealth.incapGraceUntil = 0
+        combatHealth.postReviveGraceUntil = 0
+        combatHealth.lastRevivedAt = 0
         combatHealth.lastEngineHealth = 0
         internal.clearActiveBandage(combatHealth, false)
         combatHealth.bandageActionUntil = 0
@@ -200,6 +204,7 @@ function DTNPCHealth.EnsureDefaults(npcData)
             tonumber(DTNPCHealth.INCAP_CUSTOM_HP) or 1,
             tonumber(DTNPCHealth.MIN_DAMAGE) or 0.01
         )
+        combatHealth.postReviveGraceUntil = 0
         internal.clearActiveBandage(combatHealth, false)
         combatHealth.bandageActionUntil = 0
         combatHealth.bandageAnimFallbackUntil = 0
