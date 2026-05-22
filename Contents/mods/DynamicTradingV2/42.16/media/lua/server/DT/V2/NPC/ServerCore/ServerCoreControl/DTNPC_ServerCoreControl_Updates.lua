@@ -11,6 +11,27 @@ if isClient() and not isServer() then return end
 
 local Internal = DTNPCServerCoreControl.Internal
 
+function Internal.SyncSpatialHash(uuid, npcData)
+    if not uuid or type(npcData) ~= "table" then
+        return
+    end
+    if not DTNPC_SpatialHash or not DTNPC_SpatialHash.InsertNPC then
+        return
+    end
+    if tostring(npcData.status or "") == "Dead" then
+        return
+    end
+
+    local x = tonumber(npcData.lastX or npcData.x or (npcData.homeCoords and npcData.homeCoords.x))
+    local y = tonumber(npcData.lastY or npcData.y or (npcData.homeCoords and npcData.homeCoords.y))
+    local z = tonumber(npcData.lastZ or npcData.z or (npcData.homeCoords and npcData.homeCoords.z) or 0)
+    if x == nil or y == nil then
+        return
+    end
+
+    DTNPC_SpatialHash.InsertNPC(tostring(uuid), x, y, z, nil)
+end
+
 function Internal.PersistNPCUpdate(uuid, zombie, npcData, shouldBroadcast)
     if not uuid or not npcData then
         return false
@@ -34,6 +55,7 @@ function Internal.PersistNPCUpdate(uuid, zombie, npcData, shouldBroadcast)
     if DynamicTrading_Roster and DynamicTrading_Roster.SaveSoul then
         DynamicTrading_Roster.SaveSoul(tostring(uuid), npcData)
     end
+    Internal.SyncSpatialHash(uuid, npcData)
 
     if zombie and DTNPCServerCore.SyncToAllClients then
         DTNPCServerCore.SyncToAllClients(zombie, npcData)
@@ -78,6 +100,7 @@ function DTNPCServerCore.UpdateNPCByUUID(uuid, updates, shouldBroadcast)
     end
 
     if not changed then
+        Internal.SyncSpatialHash(normalizedUUID, npcData)
         return false, npcData
     end
 
