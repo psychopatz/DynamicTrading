@@ -96,12 +96,11 @@ local function resolveResumeState(npcData)
         end
     end
 
-    if npcData.master ~= nil or npcData.masterID ~= nil then
-        return "Follow"
-    end
-
-    if npcData.stationaryPostX ~= nil or npcData.guardCombatOrder ~= nil then
-        return "Guard"
+    if DTNPCRoles and DTNPCRoles.ResolveDefaultState then
+        local ok, state = pcall(DTNPCRoles.ResolveDefaultState, npcData)
+        if ok and tostring(state or "") ~= "" then
+            return tostring(state)
+        end
     end
 
     return "Idle"
@@ -352,6 +351,13 @@ local function hasThreatNearTarget(targetZombie, targetData)
 end
 
 local function consumeReviveSupply(npcData)
+    if DTNPCRoles and DTNPCRoles.ShouldRequireItems then
+        local ok, shouldRequire = pcall(DTNPCRoles.ShouldRequireItems, npcData, "revive")
+        if ok and shouldRequire ~= true then
+            return true
+        end
+    end
+
     local combatHealth = DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
     if not combatHealth then
         return false

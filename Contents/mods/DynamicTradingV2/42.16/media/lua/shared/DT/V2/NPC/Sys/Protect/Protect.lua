@@ -13,6 +13,7 @@ end
 
 DTNPCProtect.EntryLoaded = true
 
+require "DT/V2/NPC/Sys/Roles/DTNPC_Roles"
 require "DT/V2/NPC/Sys/Protect/ProtectShared/DTNPC_ProtectShared"
 require "DT/V2/NPC/Sys/Protect/DTNPC_ProtectProfile_logic"
 require "DT/V2/NPC/Sys/Protect/ProtectLoadout/DTNPC_ProtectLoadout"

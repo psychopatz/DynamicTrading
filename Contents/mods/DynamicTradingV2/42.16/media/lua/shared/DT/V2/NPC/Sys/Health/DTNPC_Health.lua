@@ -99,6 +99,7 @@ DTNPCHealth.RESTING_REGEN_INTERVAL_MS = DTNPCHealth.RESTING_REGEN_INTERVAL_MS or
 DTNPCHealth.RESTING_REGEN_PER_TICK = DTNPCHealth.RESTING_REGEN_PER_TICK or 0.5
 DTNPCHealth.DEFAULT_RESTING_REGEN_MULTIPLIER = DTNPCHealth.DEFAULT_RESTING_REGEN_MULTIPLIER or 1.0
 
+require "DT/V2/NPC/Sys/Roles/DTNPC_Roles"
 require "DT/V2/NPC/Sys/Health/HealthShared/DTNPC_HealthShared"
 require "DT/V2/NPC/Sys/Health/DTNPC_Health_Defaults"
 require "DT/V2/NPC/Sys/Health/HealthRevive/DTNPC_HealthRevive"

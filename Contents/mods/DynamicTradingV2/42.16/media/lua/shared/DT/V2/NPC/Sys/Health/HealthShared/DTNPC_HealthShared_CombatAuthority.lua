@@ -8,6 +8,24 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function hasFriendlyPlayerAuthority(npcData, playerObj)
+    if DTNPCRoles and DTNPCRoles.CanUsePlayerAuthority then
+        local ok, result = pcall(DTNPCRoles.CanUsePlayerAuthority, npcData, playerObj)
+        if ok then
+            return result == true
+        end
+    end
+
+    if DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isFriendlyAuthorityPlayer then
+        local ok, result = pcall(DTNPCProtect.Internal.isFriendlyAuthorityPlayer, npcData, playerObj)
+        if ok then
+            return result == true
+        end
+    end
+
+    return false
+end
+
 local function getAttackerType(attacker)
     if not attacker then
         return nil
@@ -143,7 +161,12 @@ local function isFriendlyFollowerOrProtectorHit(npcData, attacker)
         return false
     end
 
-    if not internal.isColonyOwnedCompanionNPC
+    if DTNPCRoles and DTNPCRoles.ResolveContext then
+        local ok, context = pcall(DTNPCRoles.ResolveContext, npcData)
+        if not (ok and type(context) == "table" and context.isColonyOwned == true) then
+            return false
+        end
+    elseif not internal.isColonyOwnedCompanionNPC
         or not internal.isColonyOwnedCompanionNPC(npcData) then
         return false
     end
@@ -151,9 +174,9 @@ local function isFriendlyFollowerOrProtectorHit(npcData, attacker)
     local state = tostring(npcData.state or "")
     local combatOrder = tostring(npcData.combatOrder or "")
     local shouldProtect = internal.isFollowerOrProtectorState(state) or internal.isFollowerOrProtectorState(combatOrder)
-    if not shouldProtect and DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isPlayerOwnedTraderRaw then
-        local ok, isPlayerOwnedTrader = pcall(DTNPCProtect.Internal.isPlayerOwnedTraderRaw, npcData)
-        if ok and isPlayerOwnedTrader == true then
+    if not shouldProtect and DTNPCRoles and DTNPCRoles.ResolveContext then
+        local ok, context = pcall(DTNPCRoles.ResolveContext, npcData)
+        if ok and type(context) == "table" and context.isPlayerOwned == true then
             shouldProtect = true
         end
     end
@@ -169,11 +192,8 @@ local function isFriendlyFollowerOrProtectorHit(npcData, attacker)
         return true
     end
 
-    if DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isFriendlyAuthorityPlayer then
-        local ok, isFriendlyAuthority = pcall(DTNPCProtect.Internal.isFriendlyAuthorityPlayer, npcData, attacker)
-        if ok and isFriendlyAuthority == true then
-            return true
-        end
+    if hasFriendlyPlayerAuthority(npcData, attacker) then
+        return true
     end
 
     return false
@@ -202,11 +222,8 @@ local function applyPlayerDamageReputationPenalty(npcData, combatHealth, attacke
         return
     end
 
-    if DTNPCProtect and DTNPCProtect.Internal and DTNPCProtect.Internal.isFriendlyAuthorityPlayer then
-        local ok, isFriendlyAuthority = pcall(DTNPCProtect.Internal.isFriendlyAuthorityPlayer, npcData, attacker)
-        if ok and isFriendlyAuthority == true then
-            return
-        end
+    if hasFriendlyPlayerAuthority(npcData, attacker) then
+        return
     end
 
     local resolvedDamage = math.max(0, tonumber(appliedDamage) or 0)

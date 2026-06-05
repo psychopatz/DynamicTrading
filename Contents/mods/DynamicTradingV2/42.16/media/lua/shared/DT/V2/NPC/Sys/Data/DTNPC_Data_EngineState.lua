@@ -22,6 +22,7 @@ local function isManualControlState(state)
     return state == "GoTo"
         or state == "Flee"
         or state == "Follow"
+        or state == "ReturnHome"
         or state == "LootNearby"
         or state == "Attack"
         or state == "AttackRange"
@@ -152,6 +153,7 @@ local function shouldClearVanillaTarget(npcData)
         or state == "Idle"
         or state == "Trading"
         or state == "GoTo"
+        or state == "ReturnHome"
         or state == "Flee"
         or state == "Bandage" then
         return true

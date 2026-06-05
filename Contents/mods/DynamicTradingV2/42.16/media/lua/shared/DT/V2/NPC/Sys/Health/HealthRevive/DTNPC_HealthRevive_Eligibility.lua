@@ -8,6 +8,17 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function shouldRequireReviveItems(npcData)
+    if DTNPCRoles and DTNPCRoles.ShouldRequireItems then
+        local ok, result = pcall(DTNPCRoles.ShouldRequireItems, npcData, "revive")
+        if ok then
+            return result == true
+        end
+    end
+
+    return true
+end
+
 local function hasTerminalDeathRequest(npcData)
     if type(npcData) ~= "table" then
         return false
@@ -122,16 +133,21 @@ function DTNPCHealth.CanReviveTarget(npcData, options)
     end
 
     local requiredFullType = options.requiredFullType ~= nil and tostring(options.requiredFullType) or nil
-    local availableCount = playerObj and DTNPCHealth.CountReviveItems and DTNPCHealth.CountReviveItems(playerObj, requiredFullType) or 0
+    local playerObj = options.playerObj
     local ignoreItems = options.ignoreItems == true
+    local requireItems = shouldRequireReviveItems(npcData) and not ignoreItems
+    local availableCount = requireItems and playerObj and DTNPCHealth.CountReviveItems
+        and DTNPCHealth.CountReviveItems(playerObj, requiredFullType)
+        or 0
 
-    if playerObj and not ignoreItems and requiredCount and availableCount < requiredCount then
+    if requireItems and playerObj and requiredCount and availableCount < requiredCount then
         return false, {
             reason = "need_supplies",
             healthState = healthState,
             requiredCount = requiredCount,
             availableCount = availableCount,
             requiredFullType = requiredFullType,
+            requiresItems = true,
         }
     end
 
@@ -139,6 +155,9 @@ function DTNPCHealth.CanReviveTarget(npcData, options)
         reason = "ok",
         healthState = healthState,
         requiredCount = requiredCount,
+        availableCount = availableCount,
+        requiredFullType = requiredFullType,
+        requiresItems = requireItems,
     }
 end
 
@@ -147,31 +166,20 @@ function DTNPCHealth.CanPlayerRevive(playerObj, npcData, options)
 
     local canRevive, info = DTNPCHealth.CanReviveTarget(npcData, {
         allowExcludedTarget = false,
+        ignoreItems = options.ignoreItems == true,
+        requiredFullType = options.requiredFullType,
+        playerObj = playerObj,
     })
     if not canRevive then
         return false, info
     end
 
-    local requiredCount = tonumber(info and info.requiredCount) or nil
-    local requiredFullType = options.requiredFullType ~= nil and tostring(options.requiredFullType) or nil
-    local availableCount = playerObj and DTNPCHealth.CountReviveItems and DTNPCHealth.CountReviveItems(playerObj, requiredFullType) or 0
-    local ignoreItems = options.ignoreItems == true
-
-    if playerObj and not ignoreItems and requiredCount and availableCount < requiredCount then
-        return false, {
-            reason = "need_supplies",
-            healthState = info and info.healthState or nil,
-            requiredCount = requiredCount,
-            availableCount = availableCount,
-            requiredFullType = requiredFullType,
-        }
-    end
-
     return true, {
         reason = "ok",
         healthState = info and info.healthState or nil,
-        requiredCount = requiredCount,
-        availableCount = availableCount,
-        requiredFullType = requiredFullType,
+        requiredCount = info and info.requiredCount or nil,
+        availableCount = info and info.availableCount or 0,
+        requiredFullType = info and info.requiredFullType or nil,
+        requiresItems = info and info.requiresItems or false,
     }
 end

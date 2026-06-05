@@ -42,11 +42,16 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
     local quest = EscortUI.GetActiveEscortQuest(player, context.traderId, context.incidentId)
     local summary = EscortUI.BuildEscortStatusText(player, npcData, context, quest)
     local bandageCount = EscortUI.CountBandages(player)
+    local reviveInfo = DTNPCHealth and DTNPCHealth.CanPlayerRevive and ({ DTNPCHealth.CanPlayerRevive(player, npcData, {
+        ignoreItems = true,
+    }) }) or nil
+    local reviveData = reviveInfo and reviveInfo[2] or nil
+    local requiresItems = reviveData and reviveData.requiresItems == true
     local requiredCount = DTNPCHealth and DTNPCHealth.GetReviveRequirement and DTNPCHealth.GetReviveRequirement(npcData) or nil
-    local healLabel = "Heal Up (Need supplies)"
-    if requiredCount and requiredCount > 0 then
+    local healLabel = requiresItems and "Heal Up (Need supplies)" or "Help Up"
+    if requiresItems and requiredCount and requiredCount > 0 then
         healLabel = "Heal Up (" .. tostring(bandageCount) .. "/" .. tostring(requiredCount) .. ")"
-    elseif bandageCount > 0 then
+    elseif requiresItems and bandageCount > 0 then
         healLabel = "Heal Up (" .. tostring(bandageCount) .. ")"
     end
 
@@ -122,7 +127,7 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
             text = healLabel,
             message = "",
             onSelect = function(innerUI)
-                if bandageCount <= 0 then
+                if requiresItems and bandageCount <= 0 then
                     innerUI:speak("Bring bandages or ripped sheets first.")
                     EscortUI.ShowEscortConversation(
                         innerUI,
@@ -142,7 +147,7 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
                     player,
                     EscortUI.GetNPCData(npc) or npcData,
                     EscortUI.GetIncidentContext(player, EscortUI.GetNPCData(npc) or npcData),
-                    "Hold still. Use the bandage and keep moving."
+                    requiresItems and "Hold still. Use the bandage and keep moving." or "Hold still. I'll get you moving again."
                 )
             end,
         },

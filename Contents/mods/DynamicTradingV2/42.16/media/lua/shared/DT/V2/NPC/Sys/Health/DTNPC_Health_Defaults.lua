@@ -120,7 +120,13 @@ function DTNPCHealth.EnsureDefaults(npcData)
     if combatHealth.lastRevivedAt == nil then combatHealth.lastRevivedAt = 0 end
     if combatHealth.selfBandageThreshold == nil then combatHealth.selfBandageThreshold = DTNPCHealth.SELF_BANDAGE_THRESHOLD_RATIO end
     if combatHealth.selfBandageApplyDurationMs == nil then combatHealth.selfBandageApplyDurationMs = DTNPCHealth.SELF_BANDAGE_APPLY_DURATION_MS end
-    if combatHealth.bandageUnlimited == nil then combatHealth.bandageUnlimited = not internal.isPlayerOwnedNPC(npcData) end
+    if combatHealth.bandageUnlimited == nil then
+        if DTNPCRoles and DTNPCRoles.ShouldRequireItems then
+            combatHealth.bandageUnlimited = DTNPCRoles.ShouldRequireItems(npcData, "bandage") ~= true
+        else
+            combatHealth.bandageUnlimited = not internal.isPlayerOwnedNPC(npcData)
+        end
+    end
     if combatHealth.bandageCharges == nil and combatHealth.bandageUnlimited ~= true then
         combatHealth.bandageCharges = DTNPCHealth.PLAYER_OWNED_DEFAULT_BANDAGE_CHARGES
     end
@@ -259,6 +265,13 @@ function DTNPCHealth.HasUsableBandageSupply(npcData)
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
     if not combatHealth then
         return false
+    end
+
+    if DTNPCRoles and DTNPCRoles.ShouldRequireItems then
+        local ok, shouldRequire = pcall(DTNPCRoles.ShouldRequireItems, npcData, "bandage")
+        if ok and shouldRequire ~= true then
+            return true
+        end
     end
 
     if combatHealth.bandageUnlimited == true then

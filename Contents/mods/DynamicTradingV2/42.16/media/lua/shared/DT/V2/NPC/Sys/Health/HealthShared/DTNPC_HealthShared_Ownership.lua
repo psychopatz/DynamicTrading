@@ -9,57 +9,23 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 local internal = DTNPCHealth.Internal
 
 local function isColonyOwnedCompanionNPC(npcData)
-    if not npcData then
-        return false
+    if DTNPCRoles and DTNPCRoles.ResolveContext then
+        local ok, context = pcall(DTNPCRoles.ResolveContext, npcData)
+        if ok and type(context) == "table" then
+            return context.isColonyOwned == true
+        end
     end
 
-    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
-        return false
-    end
-    if npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil then
-        return false
-    end
-
-    return tostring(npcData.linkedWorkerID or "") ~= ""
+    return type(npcData) == "table" and tostring(npcData.linkedWorkerID or "") ~= ""
 end
 
 internal.isColonyOwnedCompanionNPC = isColonyOwnedCompanionNPC
 
 local function isPlayerOwnedNPC(npcData)
-    if not npcData then
-        return false
-    end
-
-    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
-        return false
-    end
-    if npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil then
-        return false
-    end
-
-    if DTNPCProtect and DTNPCProtect.IsPlayerOwnedTrader then
-        local ok, result = pcall(DTNPCProtect.IsPlayerOwnedTrader, npcData)
-        if ok and result == true then
-            return true
-        end
-    end
-
-    if npcData.isPlayerFactionTrader == true then
-        return true
-    end
-
-    if npcData.masterID ~= nil then
-        return true
-    end
-
-    if npcData.master and tostring(npcData.master) ~= "" then
-        return true
-    end
-
-    if DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
-        local faction = DynamicTrading_Factions.GetFaction(npcData.factionID)
-        if faction and faction.playerOwned == true then
-            return true
+    if DTNPCRoles and DTNPCRoles.ResolveContext then
+        local ok, context = pcall(DTNPCRoles.ResolveContext, npcData)
+        if ok and type(context) == "table" then
+            return context.isPlayerOwned == true
         end
     end
 

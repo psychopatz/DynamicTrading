@@ -176,12 +176,11 @@ local function resolveReviveResumeState(npcData)
         return preIncapState
     end
 
-    if npcData.master ~= nil or npcData.masterID ~= nil then
-        return "Follow"
-    end
-
-    if npcData.guardCombatOrder ~= nil or npcData.stationaryPostX ~= nil then
-        return "Guard"
+    if DTNPCRoles and DTNPCRoles.ResolveDefaultState then
+        local ok, state = pcall(DTNPCRoles.ResolveDefaultState, npcData)
+        if ok and tostring(state or "") ~= "" then
+            return tostring(state)
+        end
     end
 
     return "Idle"
@@ -293,6 +292,9 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
     if options.allowNPC == true then
         canRevive, info = DTNPCHealth.CanReviveTarget(npcData, {
             allowExcludedTarget = options.allowExcludedTarget == true,
+            ignoreItems = options.ignoreItems == true,
+            requiredFullType = options.requiredFullType,
+            playerObj = playerObj,
         })
     end
     if not canRevive then
@@ -307,7 +309,8 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
     requiredCount = math.max(1, math.floor(requiredCount or 1))
 
     local consumedCount = 0
-    if options.skipConsume ~= true then
+    local requireItems = info and info.requiresItems == true
+    if options.skipConsume ~= true and requireItems then
         local consumed
         local removedOk
         removedOk, consumed = DTNPCHealth.ConsumeReviveItems(playerObj, requiredCount, options.requiredFullType)

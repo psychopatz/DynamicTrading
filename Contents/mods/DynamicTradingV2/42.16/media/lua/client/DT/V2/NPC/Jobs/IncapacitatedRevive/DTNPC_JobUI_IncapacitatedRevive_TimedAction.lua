@@ -29,7 +29,7 @@ end
 local DTNPCReviveBandageAction = ISBaseTimedAction:derive("DTNPCReviveBandageAction")
 
 function DTNPCReviveBandageAction:isValid()
-    if not self.character or not self.npc or not self.itemFullType or self.itemFullType == "" then
+    if not self.character or not self.npc then
         return false
     end
 
@@ -38,10 +38,17 @@ function DTNPCReviveBandageAction:isValid()
         return false
     end
 
-    local canRevive = DTNPCHealth.CanPlayerRevive(self.character, npcData, {
-        requiredFullType = self.itemFullType,
+    local canRevive, info = DTNPCHealth.CanPlayerRevive(self.character, npcData, {
+        requiredFullType = self.itemFullType ~= "" and self.itemFullType or nil,
     })
     if canRevive ~= true then
+        return false
+    end
+
+    if info and info.requiresItems ~= true then
+        return true
+    end
+    if not self.itemFullType or self.itemFullType == "" then
         return false
     end
 
@@ -84,7 +91,7 @@ function DTNPCReviveBandageAction:perform()
 
     sendClientCommand(self.character, "DTNPC", "ReviveRequest", {
         uuid = npcData and npcData.uuid or nil,
-        requiredFullType = self.itemFullType,
+        requiredFullType = self.itemFullType ~= "" and self.itemFullType or nil,
     })
 
     ISBaseTimedAction.perform(self)
@@ -107,7 +114,7 @@ end
 ReviveUI.TimedActionClass = DTNPCReviveBandageAction
 
 function ReviveUI.StartTimedRevive(playerObj, npc, fullType, requiredCount)
-    if not playerObj or not npc or not fullType or not ReviveUI.TimedActionClass then
+    if not playerObj or not npc or not ReviveUI.TimedActionClass then
         return false
     end
 
@@ -140,8 +147,17 @@ function ReviveUI.AddContextMenuOptions(context, ui, npc, playerObj, npcData)
         return false
     end
 
+    local requiresItems = info and info.requiresItems == true
     local requiredCount = tonumber(info and info.requiredCount) or tonumber(ReviveUI.GetRequiredCount(npcData)) or 1
     local name = tostring(npcData.name or "Survivor")
+
+    if not requiresItems then
+        context:addOption("Help Up " .. name, nil, function()
+            ReviveUI.StartTimedRevive(playerObj, npc, nil, 1)
+        end)
+        return true
+    end
+
     local rootOption = context:addOption("Bandage " .. name)
     local subMenu = context:getNew(context)
     context:addSubMenu(rootOption, subMenu)

@@ -35,10 +35,15 @@ function ReviveUI.ShowReviveConversation(ui, npc, playerObj, npcData, overrideSp
         return
     end
 
+    local reviveInfo = ReviveUI.GetReviveInfo(playerObj, npcData, true)
+    local requiresItems = reviveInfo and reviveInfo.requiresItems == true
     local requiredCount = tonumber(ReviveUI.GetRequiredCount(npcData)) or 1
-    local plea = "Please... if you've got bandages or rags, help me."
-    if requiredCount > 1 then
-        plea = "Please... I need " .. tostring(requiredCount) .. " bandages or rags, or I'm done for."
+    local plea = "Please... help me up."
+    if requiresItems then
+        plea = "Please... if you've got bandages or rags, help me."
+        if requiredCount > 1 then
+            plea = "Please... I need " .. tostring(requiredCount) .. " bandages or rags, or I'm done for."
+        end
     end
 
     ui:speak(overrideSpeech or plea)
@@ -48,8 +53,14 @@ function ReviveUI.ShowReviveConversation(ui, npc, playerObj, npcData, overrideSp
             message = "",
             onSelect = function(innerUI)
                 local liveNPCData = ReviveUI.GetNPCData(npc) or npcData
+                local liveInfo = ReviveUI.GetReviveInfo(playerObj, liveNPCData, true)
+                local liveRequiresItems = liveInfo and liveInfo.requiresItems == true
                 local required = tonumber(ReviveUI.GetRequiredCount(liveNPCData)) or requiredCount or 1
-                innerUI:speak("Bandages or ripped sheets. Use the context menu and make it quick. I need " .. tostring(required) .. ".")
+                if liveRequiresItems then
+                    innerUI:speak("Bandages or ripped sheets. Use the context menu and make it quick. I need " .. tostring(required) .. ".")
+                else
+                    innerUI:speak("Just get me back on my feet. Use the context menu and be quick.")
+                end
                 innerUI:updateOptions(buildLeaveOptions())
             end,
         },

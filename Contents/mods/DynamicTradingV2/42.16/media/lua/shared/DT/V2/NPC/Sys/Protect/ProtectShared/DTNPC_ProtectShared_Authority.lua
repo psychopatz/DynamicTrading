@@ -43,33 +43,14 @@ local function buildProtectDebugSummary(npcData)
 end
 
 local function isPlayerOwnedTraderRaw(npcData)
-    if not npcData then
-        return false
-    end
-
-    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
-        return false
-    end
-
-    if npcData.isPlayerFactionTrader == true then
-        return true
-    end
-
-    if npcData.masterID ~= nil then
-        return true
-    end
-    if npcData.master and tostring(npcData.master) ~= "" then
-        return true
-    end
-
-    if DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
-        local faction = DynamicTrading_Factions.GetFaction(npcData.factionID)
-        if faction and faction.playerOwned == true then
-            return true
+    if DTNPCRoles and DTNPCRoles.ResolveContext then
+        local ok, context = pcall(DTNPCRoles.ResolveContext, npcData)
+        if ok and type(context) == "table" then
+            return context.isPlayerOwned == true
         end
     end
 
-    return npcData.linkedWorkerID ~= nil
+    return type(npcData) == "table" and npcData.linkedWorkerID ~= nil
 end
 
 local function getOwnedFactionForUsername(username)
@@ -118,42 +99,11 @@ local function isFriendlyOwnedFactionMember(npcData, username)
 end
 
 local function isFriendlyAuthorityPlayer(npcData, player)
-    if not npcData or not player or not instanceof or not instanceof(player, "IsoPlayer") then
-        return false
-    end
-
-    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
-        return false
-    end
-
-    local playerID = player.getOnlineID and player:getOnlineID() or nil
-    if playerID ~= nil and npcData.masterID ~= nil and tonumber(npcData.masterID) == tonumber(playerID) then
-        return true
-    end
-
-    local username = player.getUsername and player:getUsername() or nil
-    if not username or username == "" then
-        return false
-    end
-
-    if npcData.master and tostring(npcData.master) == username then
-        return true
-    end
-
-    if npcData.ownerUsername and tostring(npcData.ownerUsername) == username then
-        return true
-    end
-
-    if DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
-        local faction = DynamicTrading_Factions.GetFaction(npcData.factionID)
-        local leaderUsername = faction and (faction.leaderUsername or faction.ownerUsername) or nil
-        if leaderUsername and tostring(leaderUsername) == username then
-            return true
+    if DTNPCRoles and DTNPCRoles.CanUsePlayerAuthority then
+        local ok, result = pcall(DTNPCRoles.CanUsePlayerAuthority, npcData, player)
+        if ok then
+            return result == true
         end
-    end
-
-    if isFriendlyOwnedFactionMember(npcData, username) then
-        return true
     end
 
     return false
@@ -180,10 +130,22 @@ local function isAmmoConsumptionSandboxEnabled()
 end
 
 local function shouldConsumeWeaponDurabilityRaw(npcData)
+    if DTNPCRoles and DTNPCRoles.ShouldRequireItems then
+        local ok, shouldRequire = pcall(DTNPCRoles.ShouldRequireItems, npcData, "durability")
+        if ok then
+            return shouldRequire == true and isWeaponDurabilitySandboxEnabled()
+        end
+    end
     return isPlayerOwnedTraderRaw(npcData) and isWeaponDurabilitySandboxEnabled()
 end
 
 local function shouldConsumeAmmoRaw(npcData)
+    if DTNPCRoles and DTNPCRoles.ShouldRequireItems then
+        local ok, shouldRequire = pcall(DTNPCRoles.ShouldRequireItems, npcData, "ammo")
+        if ok then
+            return shouldRequire == true and isAmmoConsumptionSandboxEnabled()
+        end
+    end
     return isPlayerOwnedTraderRaw(npcData) and isAmmoConsumptionSandboxEnabled()
 end
 

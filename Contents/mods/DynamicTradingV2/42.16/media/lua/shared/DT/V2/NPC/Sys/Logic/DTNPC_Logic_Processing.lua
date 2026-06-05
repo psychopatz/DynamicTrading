@@ -11,6 +11,7 @@ local HIGH_SPEED_STATES = {
     Attack = true,
     AttackRange = true,
     Follow = true,
+    ReturnHome = true,
     TradingDefenseRanged = true,
     TradingDefenseMelee = true,
     ProtectRanged = true,
@@ -198,6 +199,17 @@ function DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
         state = npcData.state or "ReviveAlly"
         master = nil
         dist = 9999
+    end
+
+    if state ~= "ReturnHome"
+        and DTNPCNeeds
+        and DTNPCNeeds.Evaluate then
+        local maintenanceState = DTNPCNeeds.Evaluate(zombie, npcData, state)
+        if maintenanceState then
+            state = npcData.state or maintenanceState
+            master = nil
+            dist = 9999
+        end
     end
 
     local behaviorFunc = DTNPCLogic.Behaviors[state]
