@@ -1,0 +1,10 @@
+DT_Text_DTNPC_Notice_TL = {
+    DTNPC_Notice_Protect_NoFirearmSwitchMelee = "Walang handang baril. Lumilipat sa melee.",
+    DTNPC_Notice_Protect_NoMeleeSwitchRanged = "Walang handang sandata sa malapitan. Lumilipat sa baril.",
+    DTNPC_Notice_Protect_NoWeaponsCover = "Hindi kita mapoprotektahan, wala akong magagamit na mga armas.",
+    DTNPC_Notice_Protect_NoUsableFirearm = "Hindi kita mapoprotektahan. Walang magagamit na baril.",
+    DTNPC_Notice_Protect_NoMeleeWeapon = "Hindi mapoprotektahan ng malapitan. Walang sandatang melee.",
+    DTNPC_Notice_Guard_NoWeapons = "Hindi makabantay, walang magagamit na mga armas.",
+    DTNPC_Notice_Guard_NoFirearm = "Walang handang baril para sa pagbabantay.",
+    DTNPC_Notice_Guard_NoMelee = "Walang handang sandata sa malapitan para sa pagbabantay.",
+}

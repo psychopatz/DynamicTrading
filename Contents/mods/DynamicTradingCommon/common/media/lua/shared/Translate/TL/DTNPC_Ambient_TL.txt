@@ -1,0 +1,10 @@
+DT_Text_DTNPC_Ambient_TL = {
+    DTNPC_Ambient_Protect_Attack = "Nandiyan na.",
+    DTNPC_Ambient_Protect_AttackRange = "Sinasaklawan kita.",
+    DTNPC_Ambient_Protect_Reloading = "Nagkakarga.",
+    DTNPC_Ambient_Protect_CrowdRefuse = "Masyado silang marami. Aatras muna ako.",
+    DTNPC_Ambient_Protect_NoAmmo = "Wala na akong bala.",
+    DTNPC_Ambient_Protect_Return = "Bumabalik na sa'yo.",
+    DTNPC_Ambient_Protect_Looking = "Tinitingnan ang huling lugar.",
+    DTNPC_Ambient_Protect_Searching = "Naghahanap pa rin.",
+}

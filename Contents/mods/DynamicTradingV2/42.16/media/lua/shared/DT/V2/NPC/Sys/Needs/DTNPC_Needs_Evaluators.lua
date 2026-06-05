@@ -100,6 +100,33 @@ local function evaluateReturnHome(zombie, npcData, currentState)
     return "ReturnHome"
 end
 
+local function evaluateCorpseCleanup(zombie, npcData, currentState)
+    if type(npcData) ~= "table" or currentState ~= "Idle" then
+        return nil
+    end
+
+    if isBlockedState(npcData, currentState) then
+        return nil
+    end
+
+    if not DTNPCCorpseCleanup or DTNPCCorpseCleanup.CanAutonomousCleanup == nil then
+        return nil
+    end
+
+    if DTNPCCorpseCleanup.CanAutonomousCleanup(npcData) ~= true then
+        return nil
+    end
+
+    if DTNPCCorpseCleanup.HasAvailableTask and DTNPCCorpseCleanup.HasAvailableTask(npcData, {
+        mode = "ai",
+    }) == true then
+        return "CorpseCleanup"
+    end
+
+    return nil
+end
+
+DTNPCNeeds.RegisterEvaluator("corpse_cleanup", evaluateCorpseCleanup)
 DTNPCNeeds.RegisterEvaluator("return_home", evaluateReturnHome)
 DTNPCNeeds.RegisterEvaluator("clean_clothes", function()
     return nil

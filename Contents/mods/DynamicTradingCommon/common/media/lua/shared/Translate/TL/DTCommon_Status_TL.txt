@@ -1,0 +1,18 @@
+DT_Text_DTCommon_Status_TL = {
+    DTCommon_Status_Unknown = "Hindi alam ang katayuan",
+    DTCommon_Status_Deceased = "Katayuan: Patay na",
+    DTCommon_Status_DeceasedFlavor = "Katayuan: Patay na ({flavor})",
+    DTCommon_Status_ReturningHome = "Katayuan: Umuuwi na",
+    DTCommon_Status_MovingTowardArea = "Katayuan: Patungo sa iyong lugar",
+    DTCommon_Status_MovingTowardAreaEta = "Katayuan: Patungo sa iyong lugar (ETA {eta})",
+    DTCommon_Status_RestingAtBase = "Nagpapahinga sa base",
+    DTCommon_Status_CalledFollowing = "Tinawag at sumusunod",
+    DTCommon_Status_CalledTrading = "Tinawag at nakikipagkalakalan",
+    DTCommon_Status_TradingInField = "Nakikipagkalakalan sa labang",
+    DTCommon_Status_EnRouteTrade = "Papunta para makipagkalakalan",
+    DTCommon_Status_Value = "Katayuan: {value}",
+    DTCommon_Status_Permanent = "Katayuan: Permanente",
+    DTCommon_Status_DepartingNow = "Katayuan: Umaalis na...",
+    DTCommon_Status_LeavingMinutes = "Katayuan: Aalis sa ({minutes}m)",
+    DTCommon_Status_LeavingHours = "Katayuan: Aalis sa ({hours}h)",
+}

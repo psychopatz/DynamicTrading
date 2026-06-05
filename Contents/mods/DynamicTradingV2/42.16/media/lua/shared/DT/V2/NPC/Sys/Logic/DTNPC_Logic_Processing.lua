@@ -12,6 +12,7 @@ local HIGH_SPEED_STATES = {
     AttackRange = true,
     Follow = true,
     ReturnHome = true,
+    CorpseCleanup = true,
     TradingDefenseRanged = true,
     TradingDefenseMelee = true,
     ProtectRanged = true,
@@ -202,6 +203,7 @@ function DTNPCLogic.ExecuteBehavior(zombie, npcData, state, wasDamaged)
     end
 
     if state ~= "ReturnHome"
+        and state ~= "CorpseCleanup"
         and DTNPCNeeds
         and DTNPCNeeds.Evaluate then
         local maintenanceState = DTNPCNeeds.Evaluate(zombie, npcData, state)
