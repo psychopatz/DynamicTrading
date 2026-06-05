@@ -42,6 +42,8 @@ local PROTECT_NOTICE_FALLBACKS = {
     ["Companion:CrowdRefuse"] = { key = "DTNPC_Ambient_Protect_CrowdRefuse", fallback = "Too many of them. Backing off." },
     ["Companion:NoAmmo"] = { key = "DTNPC_Ambient_Protect_NoAmmo", fallback = "I'm out of ammo." },
     ["Companion:Return"] = { key = "DTNPC_Ambient_Protect_Return", fallback = "Back with you." },
+    ["CorpseCleanup:Start"] = { key = "DTNPC_Ambient_CorpseCleanup_Start", fallback = "Cleaning this up." },
+    ["CorpseCleanup:Finish"] = { key = "DTNPC_Ambient_CorpseCleanup_Finish", fallback = "Area's clear." },
     ["Default:Looking"] = { key = "DTNPC_Ambient_Protect_Looking", fallback = "Checking the last spot." },
     ["Default:Searching"] = { key = "DTNPC_Ambient_Protect_Searching", fallback = "Still looking." },
 }

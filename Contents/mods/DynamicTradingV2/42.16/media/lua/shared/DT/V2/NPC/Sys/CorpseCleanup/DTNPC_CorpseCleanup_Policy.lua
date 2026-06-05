@@ -20,13 +20,16 @@ local function resolveColonyPolicy(npcData)
     }
 end
 
-local function resolveAIPolicy(npcData)
+local function resolveAIPolicy(npcData, allowDebugForce)
     if type(npcData) ~= "table" or not DTNPCRoles or not DTNPCRoles.ResolveContext then
         return nil
     end
 
     local context = DTNPCRoles.ResolveContext(npcData)
-    if context.isAIFaction ~= true or context.isPlayerOwned == true or context.isHostileFaction == true then
+    if context.isPlayerOwned == true then
+        return nil
+    end
+    if allowDebugForce ~= true and (context.isAIFaction ~= true or context.isHostileFaction == true) then
         return nil
     end
 
@@ -44,14 +47,15 @@ end
 
 function Cleanup.ResolvePolicy(npcData, context)
     local requested = tostring(context and context.mode or "")
+    local allowDebugForce = context and context.allowDebugForce == true
     if requested == "colony" then
         return resolveColonyPolicy(npcData)
     end
     if requested == "ai" then
-        return resolveAIPolicy(npcData)
+        return resolveAIPolicy(npcData, allowDebugForce)
     end
 
-    return resolveColonyPolicy(npcData) or resolveAIPolicy(npcData)
+    return resolveColonyPolicy(npcData) or resolveAIPolicy(npcData, allowDebugForce)
 end
 
 function Cleanup.GetCleanupAnchor(npcData, context)

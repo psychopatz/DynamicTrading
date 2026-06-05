@@ -109,6 +109,22 @@ function Menu.OnForceBandage(player, npc)
     player:Say("Force bandage: " .. tostring(npcData.name or npcData.uuid))
 end
 
+function Menu.OnForceCorpseCleanup(player, npc)
+    if not npc or not player then return end
+
+    local npcData = Menu.GetNPCData(npc)
+    if not npcData or not npcData.uuid then
+        player:Say("Corpse cleanup test unavailable for this NPC.")
+        return
+    end
+
+    sendClientCommand(player, "DTNPC", "DebugForceCorpseCleanup", {
+        uuid = npcData.uuid,
+    })
+
+    player:Say("Force corpse cleanup: " .. tostring(npcData.name or npcData.uuid))
+end
+
 function Menu.OnDebugBandageInfo(player, npc)
     if not npc or not player then return end
 

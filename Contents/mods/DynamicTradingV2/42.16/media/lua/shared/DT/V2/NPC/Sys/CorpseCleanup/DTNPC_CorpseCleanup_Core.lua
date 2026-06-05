@@ -105,6 +105,7 @@ function Cleanup.AcquireTask(npcData, context)
 
     local task = claimEntry(scope, npcData, bestEntry)
     task.policyMode = policy.mode
+    task.allowDebugForce = context and context.allowDebugForce == true or false
     return task
 end
 
@@ -115,6 +116,7 @@ function Cleanup.RefreshTask(npcData, task, zombie)
 
     local policy = Cleanup.ResolvePolicy(npcData, {
         mode = task.policyMode,
+        allowDebugForce = task.allowDebugForce == true,
     })
     local scope = Internal.getScope(policy and policy.scopeKey)
     local claim = refreshClaim(scope, npcData, task, task.phase)
@@ -138,6 +140,7 @@ function Cleanup.AbortTask(npcData, task, zombie)
 
     local policy = Cleanup.ResolvePolicy(npcData, {
         mode = task.policyMode,
+        allowDebugForce = task.allowDebugForce == true,
     })
     local scope = Internal.getScope(policy and policy.scopeKey)
     local claim = scope and scope.claims and scope.claims[task.token] or nil
@@ -161,6 +164,7 @@ function Cleanup.CommitTask(npcData, task, zombie)
 
     local policy = Cleanup.ResolvePolicy(npcData, {
         mode = task.policyMode,
+        allowDebugForce = task.allowDebugForce == true,
     })
     local scope = Internal.getScope(policy and policy.scopeKey)
     local claim = scope and scope.claims and scope.claims[task.token] or nil

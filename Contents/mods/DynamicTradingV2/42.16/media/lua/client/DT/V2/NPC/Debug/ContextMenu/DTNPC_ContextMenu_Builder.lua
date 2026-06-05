@@ -228,6 +228,7 @@ function DTNPCMenu.OnFillWorldObjectContextMenu(playerNum, context, worldObjects
                 debugSub:addOption("TEST: Give Held Weapon [" .. tostring(heldWeaponLabel) .. "]", npc, Menu.OnDebugGiveHeldWeapon, player)
             end
             debugSub:addOption("TEST: Force Bandage", player, Menu.OnForceBandage, npc)
+            debugSub:addOption("TEST: Force Corpse Cleanup", player, Menu.OnForceCorpseCleanup, npc)
             debugSub:addOption("TEST: Force Ambient Speech", player, Menu.OnForceAmbientDialogue, npc)
             debugSub:addOption("DEBUG: Print Bandage Info", player, Menu.OnDebugBandageInfo, npc)
             debugSub:addOption("DEBUG: Print Ambient Dialogue Info", player, Menu.OnDebugAmbientDialogue, npc)

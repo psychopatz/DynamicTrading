@@ -8,6 +8,7 @@ require "DT/V2/NPC/Sys/CorpseCleanup/DTNPC_CorpseCleanup"
 local MOVE_SPEED = 0.036
 local STOP_DISTANCE = 0.6
 local CLEANUP_DWELL_MS = 900
+local CLEANUP_AMBIENT_COOLDOWN_MS = 12000
 
 local function createPointTarget(point)
     if type(point) ~= "table" then
@@ -137,6 +138,65 @@ local function floorNumber(value)
     return math.floor(tonumber(value) or 0)
 end
 
+local function nowMillis()
+    return floorNumber(getTimeInMillis and getTimeInMillis() or 0) or 0
+end
+
+local function clearCleanupDebugForce(npcData)
+    if not npcData then
+        return
+    end
+
+    npcData.debugForceCorpseCleanupUntil = nil
+    npcData.debugForceCorpseCleanupMode = nil
+    npcData.dcCorpseCleanupResumeState = nil
+end
+
+local function isCleanupDebugForced(npcData, policyMode)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    local expiresAt = floorNumber(npcData.debugForceCorpseCleanupUntil) or 0
+    if expiresAt <= 0 then
+        return false
+    end
+
+    local currentTime = nowMillis()
+    if currentTime > 0 and currentTime > expiresAt then
+        clearCleanupDebugForce(npcData)
+        return false
+    end
+
+    local forcedMode = tostring(npcData.debugForceCorpseCleanupMode or "")
+    local requestedMode = tostring(policyMode or "")
+    return forcedMode == "" or requestedMode == "" or forcedMode == requestedMode
+end
+
+local function pushCleanupAmbientCue(zombie, npcData, cueState)
+    if not zombie
+        or type(npcData) ~= "table"
+        or not cueState
+        or cueState == ""
+        or not DTNPCProtect
+        or not DTNPCProtect.PushCompanionAmbientCue then
+        return false
+    end
+
+    local currentTime = nowMillis()
+    npcData._corpseCleanupAmbientTimes = type(npcData._corpseCleanupAmbientTimes) == "table"
+        and npcData._corpseCleanupAmbientTimes
+        or {}
+
+    local lastTime = floorNumber(npcData._corpseCleanupAmbientTimes[cueState]) or 0
+    if currentTime > 0 and lastTime > 0 and (currentTime - lastTime) < CLEANUP_AMBIENT_COOLDOWN_MS then
+        return false
+    end
+
+    npcData._corpseCleanupAmbientTimes[cueState] = currentTime
+    return DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, "CorpseCleanup", cueState) == true
+end
+
 local function clearTask(npcData)
     if not npcData then
         return
@@ -148,6 +208,11 @@ local function clearTask(npcData)
 end
 
 local function resolveResumeState(npcData, fallback)
+    local cleanupResumeState = tostring(npcData and npcData.dcCorpseCleanupResumeState or "")
+    if cleanupResumeState ~= "" and cleanupResumeState ~= "CorpseCleanup" and cleanupResumeState ~= "ColonyCorpseRemoval" then
+        return cleanupResumeState
+    end
+
     local resumeState = tostring(npcData and npcData.returnHomeResumeState or "")
     if resumeState ~= "" and resumeState ~= "ReturnHome" then
         return resumeState
@@ -176,6 +241,7 @@ function DTNPCLogic.RunCorpseCleanupBehavior(zombie, npcData, options)
     end
 
     local policyMode = options.policyMode or (options.colony == true and "colony" or nil)
+    local debugForced = isCleanupDebugForced(npcData, policyMode)
     if options.colony == true and not DTNPCColonyRuntime.IsLinkedResident(npcData) then
         if DTNPCLogic.Behaviors["PlayerZone"] then
             DTNPCLogic.Behaviors["PlayerZone"](zombie, npcData)
@@ -191,21 +257,25 @@ function DTNPCLogic.RunCorpseCleanupBehavior(zombie, npcData, options)
             syncStateChange(zombie, npcData)
             return
         end
-    elseif DTNPCCorpseCleanup.CanAutonomousCleanup(npcData) ~= true then
+    elseif not debugForced and DTNPCCorpseCleanup.CanAutonomousCleanup(npcData) ~= true then
         abortTask(zombie, npcData)
-        npcData.state = resolveResumeState(npcData, "Idle")
+        local resumeState = resolveResumeState(npcData, "Idle")
+        clearCleanupDebugForce(npcData)
+        npcData.state = resumeState
         syncStateChange(zombie, npcData)
         return
     end
 
     local anchorPoint = DTNPCCorpseCleanup.GetCleanupAnchor(npcData, {
         mode = policyMode,
+        allowDebugForce = debugForced,
     })
 
     local task = type(npcData.dcCorpseCleanupTask) == "table" and npcData.dcCorpseCleanupTask or nil
     if not task and DTNPCCorpseCleanup.AcquireTask then
         task = DTNPCCorpseCleanup.AcquireTask(npcData, {
             mode = policyMode,
+            allowDebugForce = debugForced,
         })
         npcData.dcCorpseCleanupTask = task
     end
@@ -217,7 +287,9 @@ function DTNPCLogic.RunCorpseCleanupBehavior(zombie, npcData, options)
             zombie:faceLocation(anchorPoint.x, anchorPoint.y)
         end
         if options.colony ~= true then
-            npcData.state = resolveResumeState(npcData, "Idle")
+            local resumeState = resolveResumeState(npcData, "Idle")
+            clearCleanupDebugForce(npcData)
+            npcData.state = resumeState
             syncStateChange(zombie, npcData)
         end
         return
@@ -236,25 +308,31 @@ function DTNPCLogic.RunCorpseCleanupBehavior(zombie, npcData, options)
             zombie:faceLocation(task.source.x, task.source.y)
             local startedAt = floorNumber(npcData.dcCorpsePickupStartMs) or 0
             if startedAt <= 0 then
-                npcData.dcCorpsePickupStartMs = getTimeInMillis and getTimeInMillis() or 0
+                npcData.dcCorpsePickupStartMs = nowMillis()
                 startWorkAnim(zombie, npcData)
+                pushCleanupAmbientCue(zombie, npcData, "Start")
                 return
             end
 
             startWorkAnim(zombie, npcData)
-            if ((getTimeInMillis and getTimeInMillis() or 0) - startedAt) < CLEANUP_DWELL_MS then
+            if (nowMillis() - startedAt) < CLEANUP_DWELL_MS then
                 return
             end
 
             stopWorkAnim(zombie, npcData)
             local ok = DTNPCCorpseCleanup.CommitTask and DTNPCCorpseCleanup.CommitTask(npcData, task, zombie) or false
+            if ok == true then
+                pushCleanupAmbientCue(zombie, npcData, "Finish")
+            end
             clearTask(npcData)
             if options.colony == true then
                 stopMovement(zombie)
                 return
             end
 
-            npcData.state = resolveResumeState(npcData, ok == true and "Idle" or "Idle")
+            local resumeState = resolveResumeState(npcData, "Idle")
+            clearCleanupDebugForce(npcData)
+            npcData.state = resumeState
             syncStateChange(zombie, npcData)
             return
         end
@@ -267,7 +345,9 @@ function DTNPCLogic.RunCorpseCleanupBehavior(zombie, npcData, options)
 
     abortTask(zombie, npcData)
     if options.colony ~= true then
-        npcData.state = resolveResumeState(npcData, "Idle")
+        local resumeState = resolveResumeState(npcData, "Idle")
+        clearCleanupDebugForce(npcData)
+        npcData.state = resumeState
         syncStateChange(zombie, npcData)
     end
 end

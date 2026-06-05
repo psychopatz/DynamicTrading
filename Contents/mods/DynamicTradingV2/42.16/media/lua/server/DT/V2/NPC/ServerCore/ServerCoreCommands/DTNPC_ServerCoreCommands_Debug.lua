@@ -255,3 +255,85 @@ Handlers.DebugForceBandage = function(player, args)
             .. " | state=" .. tostring(npcData.state)
     )
 end
+
+Handlers.DebugForceCorpseCleanup = function(player, args)
+    if not player or not args or not args.uuid then
+        return
+    end
+
+    local zombie, npcData = nil, nil
+    if DTNPCServerCore and DTNPCServerCore.GetNPCDataByUUID then
+        zombie, npcData = DTNPCServerCore.GetNPCDataByUUID(args.uuid)
+    end
+    if not zombie or not npcData then
+        DynamicTrading.Log("DTV2", "NPC", "Warn", "DebugForceCorpseCleanup for unknown UUID: " .. tostring(args.uuid))
+        return
+    end
+
+    local targetState = "CorpseCleanup"
+    local policyMode = "ai"
+    local currentState = tostring(npcData.state or "Idle")
+    local hasHome = type(npcData.homeCoords) == "table"
+        and tonumber(npcData.homeCoords.x) ~= nil
+        and tonumber(npcData.homeCoords.y) ~= nil
+
+    if npcData.linkedWorkerID ~= nil and tostring(npcData.ownerUsername or "") ~= "" then
+        targetState = "ColonyCorpseRemoval"
+        policyMode = "colony"
+    elseif hasHome ~= true then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Debug",
+            "DebugForceCorpseCleanup refused: no home anchor for " .. tostring(npcData.name or args.uuid)
+        )
+        return
+    end
+
+    npcData.dcCorpseCleanupTask = nil
+    npcData.dcCorpsePickupStartMs = nil
+    npcData.dcCorpseWorkAnimActive = nil
+    npcData.dcCorpseBlockedTicks = 0
+
+    local now = getTimeInMillis and tonumber(getTimeInMillis()) or 0
+    now = math.floor(now or 0)
+    if targetState == "CorpseCleanup" then
+        npcData.debugForceCorpseCleanupUntil = now + 20000
+        npcData.debugForceCorpseCleanupMode = policyMode
+        if currentState ~= "CorpseCleanup" and currentState ~= "ColonyCorpseRemoval" then
+            npcData.dcCorpseCleanupResumeState = currentState
+        end
+    else
+        npcData.debugForceCorpseCleanupUntil = nil
+        npcData.debugForceCorpseCleanupMode = nil
+        npcData.dcCorpseCleanupResumeState = nil
+    end
+
+    local available = DTNPCCorpseCleanup
+        and DTNPCCorpseCleanup.HasAvailableTask
+        and DTNPCCorpseCleanup.HasAvailableTask(npcData, {
+            mode = policyMode,
+            allowDebugForce = targetState == "CorpseCleanup",
+        })
+        or false
+
+    if DTNPCServerCore and DTNPCServerCore.UpdateNPCByUUID then
+        DTNPCServerCore.UpdateNPCByUUID(args.uuid, {
+            state = targetState,
+            debugForceCorpseCleanupUntil = npcData.debugForceCorpseCleanupUntil,
+            debugForceCorpseCleanupMode = npcData.debugForceCorpseCleanupMode,
+            dcCorpseCleanupResumeState = npcData.dcCorpseCleanupResumeState,
+        }, true)
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Debug",
+        "DebugForceCorpseCleanup: " .. tostring(player:getUsername())
+            .. " -> " .. tostring(npcData.name or args.uuid)
+            .. " | state=" .. tostring(targetState)
+            .. " | mode=" .. tostring(policyMode)
+            .. " | available=" .. tostring(available == true)
+    )
+end
