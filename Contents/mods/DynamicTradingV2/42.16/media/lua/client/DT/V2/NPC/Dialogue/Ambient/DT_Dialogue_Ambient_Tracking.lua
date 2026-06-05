@@ -92,6 +92,9 @@ function Ambient.GetTrackedEntry(uuid)
         nextSpeakAt = nil,
         wasInRange = false,
         lastProtectNoticeSerial = -1,
+        lastAmbientSpeechAt = 0,
+        lastAmbientSpeechKey = nil,
+        lastAmbientSpeechText = nil,
     }
     DTNPCClient.DialogueAmbientTracked[uuid] = entry
     DTNPCClient.AmbientDialogueTracked = DTNPCClient.DialogueAmbientTracked

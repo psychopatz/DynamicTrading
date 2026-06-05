@@ -6,6 +6,8 @@
 DTNPCHealth = DTNPCHealth or {}
 DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
+pcall(require, "DT/V2/NPC/Sys/Mobility/DTNPC_Mobility")
+
 local internal = DTNPCHealth.Internal
 
 local function createPointTarget(x, y, z)
@@ -160,6 +162,46 @@ local function clearRescuerState(npcData)
     npcData.allyReviveSearchAfterAt = nil
 end
 
+local function clearTargetReviveHold(targetZombie, targetData)
+    if type(targetData) ~= "table" then
+        return
+    end
+
+    targetData.reviveAssistHoldUntil = nil
+    targetData.reviveAssistRescuerUUID = nil
+    if targetZombie then
+        targetZombie:setTarget(nil)
+        targetZombie:setAttackedBy(nil)
+    end
+end
+
+local function applyTargetReviveHold(rescuerData, targetZombie, targetData, untilTime)
+    if type(targetData) ~= "table" then
+        return false
+    end
+
+    local holdUntil = math.max(tonumber(untilTime) or 0, (internal.nowMillis and internal.nowMillis() or 0) + 800)
+    targetData.reviveAssistHoldUntil = holdUntil
+    targetData.reviveAssistRescuerUUID = tostring(rescuerData and rescuerData.uuid or "")
+    targetData.incapStrugglePauseUntil = holdUntil
+    targetData.incapNextPauseAt = holdUntil + math.max(1200, math.floor(tonumber(DTNPCHealth.ALLY_REVIVE_RETRY_DELAY_MS) or 5000) / 2)
+    targetData.lastFleeX = nil
+    targetData.lastFleeY = nil
+    targetData.isMovingState = false
+
+    if targetZombie then
+        targetZombie:setTarget(nil)
+        targetZombie:setAttackedBy(nil)
+        targetZombie:setPath2(nil)
+        targetZombie:setRunning(false)
+        if DTNPCMobility and DTNPCMobility.Stop then
+            DTNPCMobility.Stop(targetZombie)
+        end
+    end
+
+    return true
+end
+
 local function cancelRescue(zombie, npcData, targetData, reason, retryDelayMs, options)
     if type(npcData) ~= "table" then
         return false
@@ -169,6 +211,7 @@ local function cancelRescue(zombie, npcData, targetData, reason, retryDelayMs, o
 
     if type(targetData) == "table" then
         releaseLease(targetData, npcData.uuid, options.forceLeaseRelease == true)
+        clearTargetReviveHold(options.targetZombie, targetData)
     end
 
     clearRescuerState(npcData)
@@ -520,6 +563,7 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
             fullSync = true,
             forceSave = true,
             forceLeaseRelease = true,
+            targetZombie = targetZombie,
         })
         return { action = "abort", reason = "invalid_target" }
     end
@@ -529,6 +573,7 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
             cancelRescue(zombie, npcData, targetData, "lease_lost", 1500, {
                 fullSync = true,
                 forceSave = true,
+                targetZombie = targetZombie,
             })
             return { action = "abort", reason = "lease_lost" }
         end
@@ -540,6 +585,7 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
         cancelRescue(zombie, npcData, targetData, "threatened", 2500, {
             fullSync = true,
             forceSave = true,
+            targetZombie = targetZombie,
         })
         return { action = "abort", reason = "threatened", threat = threat }
     end
@@ -549,6 +595,7 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
         cancelRescue(zombie, npcData, targetData, "need_supplies", 5000, {
             fullSync = true,
             forceSave = true,
+            targetZombie = targetZombie,
         })
         return { action = "abort", reason = "need_supplies" }
     end
@@ -579,8 +626,18 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
         if tostring(npcData.allyRevivePhase or "") ~= "apply" then
             npcData.allyRevivePhase = "apply"
             npcData.allyReviveActionUntil = now + math.max(1000, math.floor(tonumber(DTNPCHealth.ALLY_REVIVE_ACTION_DURATION_MS) or 3500))
+            applyTargetReviveHold(npcData, targetZombie, targetData, npcData.allyReviveActionUntil + 900)
+            DynamicTrading.Log(
+                "DTV2",
+                "NPC",
+                "Revive",
+                "Ally revive apply started rescuer=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+                    .. " target=" .. tostring(targetData.name or targetData.uuid or "Unknown")
+                    .. " holdUntil=" .. tostring(npcData.allyReviveActionUntil + 900)
+            )
             pushReviveNotice(zombie, npcData, "Hang on. I'm getting you up.")
             syncState(zombie, npcData, false, true)
+            syncState(targetZombie, targetData, false, false)
             return {
                 action = "apply",
                 point = {
@@ -595,6 +652,7 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
 
     actionUntil = tonumber(npcData.allyReviveActionUntil) or 0
     if actionUntil > now then
+        applyTargetReviveHold(npcData, targetZombie, targetData, actionUntil + 900)
         return {
             action = "apply",
             point = {
@@ -610,6 +668,7 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
         cancelRescue(zombie, npcData, targetData, "consume_failed", 5000, {
             fullSync = true,
             forceSave = true,
+            targetZombie = targetZombie,
         })
         return { action = "abort", reason = "consume_failed" }
     end
@@ -629,9 +688,18 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
         deferSync = false,
     })
     if not revived then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Revive",
+            "Ally revive failed rescuer=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+                .. " target=" .. tostring(targetData.name or targetData.uuid or "Unknown")
+                .. " reason=" .. tostring(result and result.reason or "revive_failed")
+        )
         cancelRescue(zombie, npcData, targetData, result and result.reason or "revive_failed", 3000, {
             fullSync = true,
             forceSave = true,
+            targetZombie = targetZombie,
         })
         return { action = "abort", reason = result and result.reason or "revive_failed" }
     end
@@ -640,11 +708,36 @@ function DTNPCHealth.ProcessAllyRevive(zombie, npcData)
         targetData.reviveData.lastOutcome = "ally_success"
     end
 
+    clearTargetReviveHold(targetZombie, targetData)
+    if DTNPCHealth.ApplyHealthVisualPosture then
+        DTNPCHealth.ApplyHealthVisualPosture(targetZombie, targetData)
+    end
+    if DTNPC and DTNPC.ApplyCharacterFlags then
+        DTNPC.ApplyCharacterFlags(targetZombie, targetData)
+    end
+    if DTNPC and DTNPC.ApplySafetyFlags then
+        DTNPC.ApplySafetyFlags(targetZombie, targetData, { clearPlayerTarget = true })
+    end
+    if DTNPCHealth and DTNPCHealth.RequestSync then
+        DTNPCHealth.RequestSync(targetZombie, targetData, true)
+    end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Revive",
+        "Ally revive success rescuer=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " target=" .. tostring(targetData.name or targetData.uuid or "Unknown")
+            .. " state=" .. tostring(result and result.state or targetData.state or "nil")
+            .. " hp=" .. tostring(result and result.currentHP or targetData.combatHealth and targetData.combatHealth.current or "nil")
+    )
+
     pushReviveNotice(zombie, npcData, "Back on your feet.")
     cancelRescue(zombie, npcData, targetData, "completed", 0, {
         fullSync = true,
         forceSave = true,
         forceLeaseRelease = true,
+        targetZombie = targetZombie,
     })
     syncState(targetZombie, targetData, true, true)
     return {

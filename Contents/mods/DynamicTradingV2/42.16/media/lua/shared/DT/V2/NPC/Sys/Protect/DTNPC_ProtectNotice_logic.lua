@@ -64,6 +64,16 @@ function DTNPCProtect.PushCompanionAmbientCue(zombie, npcData, dialogueStatus, d
         return false
     end
 
+    local currentTime = nowMillis()
+    local cooldown = math.max(0, tonumber(DTNPCProtect.CONFIG.NoticeCooldownMs) or 4000)
+    local cueKey = tostring(dialogueStatus) .. ":" .. tostring(dialogueState)
+    npcData._protectAmbientCueTimes = type(npcData._protectAmbientCueTimes) == "table" and npcData._protectAmbientCueTimes or {}
+    local lastTime = tonumber(npcData._protectAmbientCueTimes[cueKey]) or 0
+    if currentTime > 0 and lastTime > 0 and (currentTime - lastTime) < cooldown then
+        return false
+    end
+    npcData._protectAmbientCueTimes[cueKey] = currentTime
+
     npcData.protectNoticeSerial = (tonumber(npcData.protectNoticeSerial) or 0) + 1
     npcData.protectNoticeText = nil
     npcData.protectNoticeSentiment = "neutral"

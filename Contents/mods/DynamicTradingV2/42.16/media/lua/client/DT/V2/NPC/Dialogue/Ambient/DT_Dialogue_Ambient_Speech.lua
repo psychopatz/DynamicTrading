@@ -56,7 +56,7 @@ local function buildSpeechAudio(npcData, text, sentiment, status, state, entry, 
     })
 end
 
-local function buildSpeechDataFromText(text, sentiment, zombie, currentTime, audio)
+local function buildSpeechDataFromText(text, sentiment, zombie, currentTime, audio, speechKey)
     if not zombie or not text or text == "" then
         return nil
     end
@@ -72,6 +72,7 @@ local function buildSpeechDataFromText(text, sentiment, zombie, currentTime, aud
         timestamp = currentTime,
         expireTime = currentTime + Config.DisplayTimeMs,
         audio = audio,
+        speechKey = speechKey,
     }
 end
 
@@ -139,7 +140,8 @@ local function buildRaidAmbientSpeechData(npcData, zombie, currentTime)
         sentiment,
         zombie,
         currentTime,
-        buildSpeechAudio(npcData, text, sentiment, npcData and npcData.status, npcData and npcData.state, nil, "ambient_dialogue", 2200)
+        buildSpeechAudio(npcData, text, sentiment, npcData and npcData.status, npcData and npcData.state, nil, "ambient_dialogue", 2200),
+        tostring(category) .. ":" .. tostring(kind)
     )
 end
 
@@ -164,7 +166,8 @@ function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
                 nil,
                 "protect_notice",
                 1200
-            )
+            ),
+            "protect_text:" .. tostring(text)
         )
     end
 
@@ -192,7 +195,8 @@ function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
                 entry.sentiment,
                 zombie,
                 currentTime,
-                buildSpeechAudio(npcData, entry.dialogue, entry.sentiment, status, state, entry, "protect_notice", 1200)
+                buildSpeechAudio(npcData, entry.dialogue, entry.sentiment, status, state, entry, "protect_notice", 1200),
+                "protect_entry:" .. tostring(status) .. ":" .. tostring(state)
             )
         end
     end
@@ -212,7 +216,8 @@ function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
             nil,
             "protect_notice",
             1200
-        )
+        ),
+        "protect_fallback:" .. tostring(status) .. ":" .. tostring(state)
     )
 end
 
@@ -287,6 +292,7 @@ function Ambient.BuildSpeechData(npcData, zombie, currentTime)
         dialogueEntry.sentiment,
         zombie,
         currentTime,
-        buildSpeechAudio(npcData, text, dialogueEntry.sentiment, ambientStatus, ambientState, dialogueEntry, "ambient_dialogue", 2200)
+        buildSpeechAudio(npcData, text, dialogueEntry.sentiment, ambientStatus, ambientState, dialogueEntry, "ambient_dialogue", 2200),
+        tostring(ambientStatus) .. ":" .. tostring(ambientState)
     )
 end

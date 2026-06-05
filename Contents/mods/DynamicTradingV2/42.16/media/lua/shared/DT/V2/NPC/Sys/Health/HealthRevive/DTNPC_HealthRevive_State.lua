@@ -213,12 +213,22 @@ local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, 
 
     npcData.incapState = nil
     npcData.state = resolveReviveResumeState(npcData)
+    npcData.reviveAssistHoldUntil = nil
+    npcData.reviveAssistRescuerUUID = nil
     npcData.preIncapState = nil
     npcData.preIncapStatus = nil
     npcData.preIncapMaster = nil
     npcData.preIncapMasterID = nil
     npcData.requestedReturnStatus = nil
     npcData.isMovingState = false
+    npcData.incapStrugglePauseUntil = nil
+    npcData.incapNextPauseAt = nil
+    npcData.lastFleeX = nil
+    npcData.lastFleeY = nil
+    npcData.removalRequested = nil
+    npcData.attackTimer = 0
+    npcData.reactionTimer = 0
+    npcData.tasks = {}
     npcData.lastCustomDamageHandledAt = revivedAt
 
     local reviveData = internal.prepareIncapacitatedReviveData and internal.prepareIncapacitatedReviveData(npcData) or internal.ensureReviveDataTable(npcData)
@@ -270,6 +280,8 @@ local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, 
         requiredCount = reviveData and reviveData.requiredItemCount or requiredCount,
         consumedCount = tonumber(consumedCount) or 0,
         healthState = npcData.healthState,
+        currentHP = tonumber(combatHealth.current) or 0,
+        state = tostring(npcData.state or "Idle"),
     }
 end
 
@@ -298,6 +310,14 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
         })
     end
     if not canRevive then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Revive",
+            "Revive rejected target=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+                .. " helper=" .. tostring(playerObj and playerObj.getUsername and playerObj:getUsername() or options.helperIdentity and options.helperIdentity.username or "NPC")
+                .. " reason=" .. tostring(info and info.reason or "invalid")
+        )
         return false, info
     end
 
@@ -335,6 +355,14 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
 
     local revived, result = applyReviveState(zombie, npcData, helperIdentity, requiredCount, consumedCount)
     if not revived then
+        DynamicTrading.Log(
+            "DTV2",
+            "NPC",
+            "Revive",
+            "Revive apply failed target=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+                .. " helper=" .. tostring(helperIdentity and helperIdentity.username or "NPC")
+                .. " reason=" .. tostring(result and result.reason or "missing_health")
+        )
         return false, result
     end
 
@@ -347,6 +375,16 @@ function DTNPCHealth.TryReviveNPC(zombie, npcData, playerObj, options)
     elseif internal.persistHealthSnapshot then
         internal.persistHealthSnapshot(npcData, true)
     end
+
+    DynamicTrading.Log(
+        "DTV2",
+        "NPC",
+        "Revive",
+        "Revive committed target=" .. tostring(npcData.name or npcData.uuid or "Unknown")
+            .. " helper=" .. tostring(helperIdentity and helperIdentity.username or "NPC")
+            .. " state=" .. tostring(npcData.state or "Idle")
+            .. " hp=" .. tostring(result and result.currentHP or "nil")
+    )
 
     return true, result
 end
