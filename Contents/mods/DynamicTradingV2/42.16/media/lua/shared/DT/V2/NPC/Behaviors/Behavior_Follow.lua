@@ -12,13 +12,24 @@ require "DT/V2/NPC/Sys/Stamina/DTNPC_Stamina"
 require "DT/V2/NPC/Behaviors/Behavior_AntiStuck"
 
 -- MOVEMENT CONFIGURATION
-local STOP_THRESHOLD_START = 7.0
-local STOP_THRESHOLD_END   = 5.4
 local TELEPORT_DIST = 50
 local STUCK_TICKS = 15
 
 -- Speeds
 local FOLLOW_SPEED_PHYSICAL = 0.075
+
+local FOLLOW_SPACING_PROFILES = {
+    near = {
+        key = "near",
+        startDistance = 7.0,
+        stopDistance = 5.4,
+    },
+    far = {
+        key = "far",
+        startDistance = 11.5,
+        stopDistance = 9.2,
+    },
+}
 
 -- ==============================================================================
 -- 1. UTILITIES
@@ -28,6 +39,30 @@ local function getDist(x1, y1, x2, y2)
     local dx = x1 - x2
     local dy = y1 - y2
     return math.sqrt(dx * dx + dy * dy)
+end
+
+local function normalizeFollowSpacingMode(mode)
+    local text = string.lower(tostring(mode or ""))
+    if text == "far" then
+        return "far"
+    end
+    if text == "near" then
+        return "near"
+    end
+    return nil
+end
+
+local function resolveFollowSpacingProfile(npcData)
+    local requested = normalizeFollowSpacingMode(npcData and npcData.followSpacingMode or nil)
+    if not requested and npcData and npcData.doObjectiveEscortActive == true then
+        requested = "far"
+    end
+
+    local profile = requested and FOLLOW_SPACING_PROFILES[requested] or FOLLOW_SPACING_PROFILES.near
+    if npcData then
+        npcData.followSpacingMode = profile.key
+    end
+    return profile
 end
 
 local function isTileSafe(x, y, z)
@@ -156,6 +191,9 @@ end
 -- ==============================================================================
 
 DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
+    local spacingProfile = resolveFollowSpacingProfile(npcData)
+    local stopThresholdStart = spacingProfile.startDistance
+    local stopThresholdEnd = spacingProfile.stopDistance
     
     -- CRITICAL FIX: Clear anchor when following
     -- This prevents rubber banding when switching from Stay to Follow
@@ -180,11 +218,11 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
     local shouldMove = npcData.isMovingState
 
     if npcData.isMovingState then
-        if dist <= STOP_THRESHOLD_END then
+        if dist <= stopThresholdEnd then
             shouldMove = false
         end
     else
-        if dist >= STOP_THRESHOLD_START then
+        if dist >= stopThresholdStart then
             shouldMove = true
         end
     end
@@ -246,7 +284,7 @@ DTNPCLogic.Behaviors["Follow"] = function(zombie, npcData, target, dist)
         allowLeashTeleport = true,
         staminaMode = "follow",
         desiredRun = false,
-        stopDistance = STOP_THRESHOLD_END,
+        stopDistance = stopThresholdEnd,
         allowObstacleInteract = true,
         allowDamageRetreat = true,
         blockCounterKey = "followBlockedTicks",

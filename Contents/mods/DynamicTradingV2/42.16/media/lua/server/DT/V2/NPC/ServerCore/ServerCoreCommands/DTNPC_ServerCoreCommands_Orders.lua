@@ -13,6 +13,17 @@ if isClient() and not isServer() then return end
 local Internal = DTNPCServerCoreCommands.Internal
 local Handlers = DTNPCServerCoreCommands.Handlers
 
+local function normalizeFollowSpacingMode(mode)
+    local text = string.lower(tostring(mode or ""))
+    if text == "far" then
+        return "far"
+    end
+    if text == "near" then
+        return "near"
+    end
+    return nil
+end
+
 local function applyFallbackOrder(player, obj, npcData, args, escortLocked)
     npcData.state = args.state
     npcData.tasks = {}
@@ -38,6 +49,10 @@ local function applyFallbackOrder(player, obj, npcData, args, escortLocked)
         npcData.combatOrder = (args.state == "ProtectRanged" or args.state == "ProtectMelee" or args.state == "ProtectAuto") and args.state or nil
         npcData.guardCombatOrder = nil
         npcData.guardAttackMode = nil
+        local followSpacingMode = normalizeFollowSpacingMode(args.followSpacingMode)
+        if args.state == "Follow" and followSpacingMode then
+            npcData.followSpacingMode = followSpacingMode
+        end
         DynamicTrading.Log("DTV2", "NPC", "Order", "Master assigned for " .. args.state .. " order: " .. npcData.master)
     elseif args.state == "Guard" then
         npcData.combatOrder = nil

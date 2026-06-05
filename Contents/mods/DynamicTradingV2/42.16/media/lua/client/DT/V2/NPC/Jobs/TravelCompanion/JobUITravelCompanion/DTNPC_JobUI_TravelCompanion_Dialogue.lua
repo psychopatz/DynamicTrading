@@ -138,17 +138,64 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
         text = "Follow Me",
         message = "Stay close and move with me.",
         onSelect = function(innerUI)
-            if CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", {
-                state = "Follow",
-                returnStatus = "Resting",
-            }) then
-                innerUI:speak("I'll stay close.")
+            local latestData = CompanionUI.GetNPCData(npc) or npcData
+            local followLabel = CompanionUI.GetFollowSpacingLabel and CompanionUI.GetFollowSpacingLabel(latestData) or "Near"
+            if CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData)) then
+                innerUI:speak("I'll follow on " .. string.lower(tostring(followLabel)) .. " spacing.")
             else
                 innerUI:speak("I couldn't follow you right now.")
             end
             CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
         end
     }
+
+    if npcData and tostring(npcData.state or "") == "Follow" then
+        options[#options + 1] = {
+            text = "Follow Method",
+            message = "Choose how closely to tail you.",
+            onSelect = function(innerUI)
+                local latestData = CompanionUI.GetNPCData(npc) or npcData
+                local currentMode = CompanionUI.GetFollowSpacingMode and CompanionUI.GetFollowSpacingMode(latestData) or "near"
+                innerUI:speak("Current follow method: " .. (currentMode == "far" and "Far" or "Near") .. ".")
+                local followOptions = {
+                    {
+                        text = CompanionUI.BuildModeOptionLabel("Near", currentMode == "near", false),
+                        message = "Stay tighter on my position.",
+                        onSelect = function(modeUI)
+                            if CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData, {
+                                followSpacingMode = "near",
+                            })) then
+                                modeUI:speak("Near spacing set.")
+                            else
+                                modeUI:speak("I couldn't change follow method right now.")
+                            end
+                            CompanionUI.GenerateRootOptions(modeUI, npc, player, worker)
+                        end
+                    },
+                    {
+                        text = CompanionUI.BuildModeOptionLabel("Far", currentMode == "far", false),
+                        message = "Give me more room during fights.",
+                        onSelect = function(modeUI)
+                            if CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData, {
+                                followSpacingMode = "far",
+                            })) then
+                                modeUI:speak("Far spacing set.")
+                            else
+                                modeUI:speak("I couldn't change follow method right now.")
+                            end
+                            CompanionUI.GenerateRootOptions(modeUI, npc, player, worker)
+                        end
+                    },
+                }
+                local footerAction = CompanionUI.BuildLeaveFooterAction()
+                local _, navBlock = CompanionUI.AttachNavigationBlock(followOptions, footerAction, {
+                    debugLabel = "CompanionFollowMethod",
+                    requireExplicitNavigation = true,
+                })
+                innerUI:updateOptions(followOptions, navBlock)
+            end
+        }
+    end
 
     options[#options + 1] = {
         text = "Hold Position",

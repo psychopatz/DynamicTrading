@@ -8,6 +8,23 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function isColonyOwnedCompanionNPC(npcData)
+    if not npcData then
+        return false
+    end
+
+    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
+        return false
+    end
+    if npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil then
+        return false
+    end
+
+    return tostring(npcData.linkedWorkerID or "") ~= ""
+end
+
+internal.isColonyOwnedCompanionNPC = isColonyOwnedCompanionNPC
+
 local function isPlayerOwnedNPC(npcData)
     if not npcData then
         return false
@@ -46,7 +63,7 @@ local function isPlayerOwnedNPC(npcData)
         end
     end
 
-    return npcData.linkedWorkerID ~= nil
+    return isColonyOwnedCompanionNPC(npcData)
 end
 
 internal.isPlayerOwnedNPC = isPlayerOwnedNPC

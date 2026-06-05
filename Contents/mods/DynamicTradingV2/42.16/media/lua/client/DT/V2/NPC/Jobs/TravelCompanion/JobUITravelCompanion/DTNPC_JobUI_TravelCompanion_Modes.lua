@@ -16,6 +16,25 @@ end
 
 modules.Modes = true
 
+function CompanionUI.NormalizeFollowSpacingMode(mode)
+    local text = string.lower(tostring(mode or ""))
+    if text == "far" then
+        return "far"
+    end
+    if text == "near" then
+        return "near"
+    end
+    return nil
+end
+
+function CompanionUI.GetFollowSpacingMode(npcData)
+    return CompanionUI.NormalizeFollowSpacingMode(npcData and npcData.followSpacingMode or nil) or "near"
+end
+
+function CompanionUI.GetFollowSpacingLabel(npcData)
+    return CompanionUI.GetFollowSpacingMode(npcData) == "far" and "Far" or "Near"
+end
+
 function CompanionUI.GetAttackTypeLabel(npcData)
     local combatOrder = npcData and npcData.combatOrder or nil
     if combatOrder ~= "ProtectAuto" and combatOrder ~= "ProtectRanged" and combatOrder ~= "ProtectMelee" then

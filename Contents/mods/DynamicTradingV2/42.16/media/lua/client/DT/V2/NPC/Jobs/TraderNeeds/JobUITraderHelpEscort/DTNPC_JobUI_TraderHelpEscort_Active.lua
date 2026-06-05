@@ -67,11 +67,13 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
             end,
         },
         {
-            text = "Follow",
+            text = "Follow Near",
             message = "",
             onSelect = function(innerUI)
                 rememberPendingAction(innerUI, npc, player)
-                EscortUI.SendEscortAction(player, context, "follow")
+                EscortUI.SendEscortAction(player, context, "follow", {
+                    followSpacingMode = "near",
+                })
                 EscortUI.ShowEscortConversation(
                     innerUI,
                     npc,
@@ -79,6 +81,24 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
                     EscortUI.GetNPCData(npc) or npcData,
                     EscortUI.GetIncidentContext(player, EscortUI.GetNPCData(npc) or npcData),
                     "Stay close. I'll follow your lead."
+                )
+            end,
+        },
+        {
+            text = "Follow Far",
+            message = "",
+            onSelect = function(innerUI)
+                rememberPendingAction(innerUI, npc, player)
+                EscortUI.SendEscortAction(player, context, "follow", {
+                    followSpacingMode = "far",
+                })
+                EscortUI.ShowEscortConversation(
+                    innerUI,
+                    npc,
+                    player,
+                    EscortUI.GetNPCData(npc) or npcData,
+                    EscortUI.GetIncidentContext(player, EscortUI.GetNPCData(npc) or npcData),
+                    "Give me more room. I'll trail you from farther back."
                 )
             end,
         },

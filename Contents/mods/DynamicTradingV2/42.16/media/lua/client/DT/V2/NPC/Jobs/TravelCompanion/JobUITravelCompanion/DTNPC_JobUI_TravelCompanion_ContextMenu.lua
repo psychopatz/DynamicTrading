@@ -27,6 +27,37 @@ function CompanionUI.AddDisabledContextAction(menu, label)
     end
 end
 
+function CompanionUI.AddFollowMethodContextMenu(parentMenu, npc, player)
+    local option = parentMenu:addOption("Follow Method")
+    local subMenu = parentMenu:getNew(parentMenu)
+    parentMenu:addSubMenu(option, subMenu)
+
+    local liveData = CompanionUI.GetNPCData(npc)
+    local currentMode = CompanionUI.GetFollowSpacingMode and CompanionUI.GetFollowSpacingMode(liveData) or "near"
+
+    CompanionUI.AddCompanionContextAction(
+        subMenu,
+        CompanionUI.BuildModeOptionLabel("Near", currentMode == "near", false),
+        function()
+            local latestData = CompanionUI.GetNPCData(npc) or liveData
+            CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData, {
+                followSpacingMode = "near",
+            }))
+        end
+    )
+
+    CompanionUI.AddCompanionContextAction(
+        subMenu,
+        CompanionUI.BuildModeOptionLabel("Far", currentMode == "far", false),
+        function()
+            local latestData = CompanionUI.GetNPCData(npc) or liveData
+            CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData, {
+                followSpacingMode = "far",
+            }))
+        end
+    )
+end
+
 function CompanionUI.AddAttackTypeContextMenu(parentMenu, npc, player)
     local option = parentMenu:addOption("Attack Type")
     local subMenu = parentMenu:getNew(parentMenu)
@@ -219,11 +250,13 @@ function CompanionUI.AddCompanionContextMenu(context, ui, npc, player, npcData)
     end
 
     CompanionUI.AddCompanionContextAction(rootMenu, "Follow Me", function()
-        CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", {
-            state = "Follow",
-            returnStatus = "Resting",
-        })
+        local latestData = CompanionUI.GetNPCData(npc) or liveData
+        CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData))
     end)
+
+    if liveData and tostring(liveData.state or "") == "Follow" then
+        CompanionUI.AddFollowMethodContextMenu(rootMenu, npc, player)
+    end
 
     CompanionUI.AddCompanionContextAction(rootMenu, "Hold Position", function()
         CompanionUI.IssueCompanionStateOrder(player, npc, "Stay", {

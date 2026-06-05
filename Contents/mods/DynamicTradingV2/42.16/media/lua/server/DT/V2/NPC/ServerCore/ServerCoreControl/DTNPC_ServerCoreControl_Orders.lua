@@ -11,6 +11,17 @@ if isClient() and not isServer() then return end
 
 local Internal = DTNPCServerCoreControl.Internal
 
+local function normalizeFollowSpacingMode(mode)
+    local text = string.lower(tostring(mode or ""))
+    if text == "far" then
+        return "far"
+    end
+    if text == "near" then
+        return "near"
+    end
+    return nil
+end
+
 function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
     if not uuid or type(args) ~= "table" then
         return false, nil
@@ -28,6 +39,7 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
     end
 
     local state = tostring(args.state or npcData.state or "Idle")
+    local requestedFollowSpacingMode = normalizeFollowSpacingMode(args.followSpacingMode)
     local masterUsername, masterID = Internal.NormalizeController(controller)
     local usesMaster = state == "Follow"
         or state == "Flee"
@@ -161,6 +173,11 @@ function DTNPCServerCore.IssueOrderByUUID(uuid, controller, args)
 
     if npcData.requestedReturnStatus ~= requestedReturnStatus then
         npcData.requestedReturnStatus = requestedReturnStatus
+        changed = true
+    end
+
+    if state == "Follow" and requestedFollowSpacingMode and npcData.followSpacingMode ~= requestedFollowSpacingMode then
+        npcData.followSpacingMode = requestedFollowSpacingMode
         changed = true
     end
 

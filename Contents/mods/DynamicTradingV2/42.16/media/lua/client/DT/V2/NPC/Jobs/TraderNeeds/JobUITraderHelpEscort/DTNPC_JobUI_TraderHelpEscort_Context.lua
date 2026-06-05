@@ -93,17 +93,25 @@ function EscortUI.CountBandages(player)
     return 0
 end
 
-function EscortUI.SendEscortAction(player, context, action)
+function EscortUI.SendEscortAction(player, context, action, extraArgs)
     if not player or not context or not context.traderId or not sendClientCommand then
         return false
     end
 
-    sendClientCommand(player, "DynamicObjectives", "EscortObjectiveAction", {
+    local payload = {
         hookId = EscortUI.HOOK_ID,
         incidentId = context.incidentId,
         traderId = context.traderId,
         action = action,
-    })
+    }
+    extraArgs = type(extraArgs) == "table" and extraArgs or nil
+    if extraArgs then
+        for key, value in pairs(extraArgs) do
+            payload[key] = value
+        end
+    end
+
+    sendClientCommand(player, "DynamicObjectives", "EscortObjectiveAction", payload)
 
     return true
 end

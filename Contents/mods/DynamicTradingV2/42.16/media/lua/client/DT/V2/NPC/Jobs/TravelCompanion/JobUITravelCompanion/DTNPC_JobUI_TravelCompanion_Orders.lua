@@ -69,6 +69,11 @@ function CompanionUI.UpdateCompanionState(player, npc, state, extraArgs)
         npcData.guardAttackMode = npcData.guardAttackMode
     end
 
+    local followSpacingMode = CompanionUI.NormalizeFollowSpacingMode and CompanionUI.NormalizeFollowSpacingMode(extraArgs and extraArgs.followSpacingMode or nil) or nil
+    if followSpacingMode then
+        npcData.followSpacingMode = followSpacingMode
+    end
+
     if state == "Follow" or state == "ProtectAuto" or state == "ProtectRanged" or state == "ProtectMelee" then
         npcData.master = player and player.getUsername and player:getUsername() or npcData.master
         npcData.masterID = player and player.getOnlineID and player:getOnlineID() or npcData.masterID
@@ -92,6 +97,21 @@ function CompanionUI.UpdateCompanionState(player, npc, state, extraArgs)
     npcData.tasks = {}
     CompanionUI.AttachNPCData(npc, npcData)
     return true
+end
+
+function CompanionUI.BuildFollowOrderArgs(npcData, extraArgs)
+    local args = type(extraArgs) == "table" and extraArgs or {}
+    local followSpacingMode = CompanionUI.NormalizeFollowSpacingMode
+        and CompanionUI.NormalizeFollowSpacingMode(args.followSpacingMode or (npcData and npcData.followSpacingMode) or nil)
+        or nil
+
+    args.state = "Follow"
+    args.returnStatus = args.returnStatus or "Resting"
+    if followSpacingMode then
+        args.followSpacingMode = followSpacingMode
+    end
+
+    return args
 end
 
 function CompanionUI.PlayCompanionCommandCue(player, cueKey)

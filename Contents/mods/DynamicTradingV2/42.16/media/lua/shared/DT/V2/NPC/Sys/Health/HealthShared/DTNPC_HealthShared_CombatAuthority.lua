@@ -143,10 +143,8 @@ local function isFriendlyFollowerOrProtectorHit(npcData, attacker)
         return false
     end
 
-    if npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
-        return false
-    end
-    if npcData.raidHostileFaction == true or npcData.banditGroupID ~= nil then
+    if not internal.isColonyOwnedCompanionNPC
+        or not internal.isColonyOwnedCompanionNPC(npcData) then
         return false
     end
 

@@ -14,6 +14,74 @@ pcall(require, "DT/V2/NPC/Jobs/DTNPC_JobUI")
 
 DTNPC_TraderDialogue_Hub = {}
 
+local function normalizeFollowSpacingMode(mode)
+    local text = string.lower(tostring(mode or ""))
+    if text == "far" then
+        return "far"
+    end
+    if text == "near" then
+        return "near"
+    end
+    return nil
+end
+
+local function getFollowSpacingMode(npcData)
+    local mode = normalizeFollowSpacingMode(npcData and npcData.followSpacingMode or nil)
+    if mode then
+        return mode
+    end
+    if npcData and npcData.doObjectiveEscortActive == true then
+        return "far"
+    end
+    return "near"
+end
+
+local function isPlayerFollowingOwner(player, npcData)
+    if not player or not npcData then
+        return false
+    end
+
+    if tostring(npcData.state or "") ~= "Follow" then
+        return false
+    end
+
+    local playerID = player.getOnlineID and player:getOnlineID() or nil
+    if playerID ~= nil and npcData.masterID ~= nil and tonumber(npcData.masterID) == tonumber(playerID) then
+        return true
+    end
+
+    local username = player.getUsername and player:getUsername() or nil
+    if not username or username == "" then
+        return false
+    end
+
+    return tostring(npcData.master or "") == username
+end
+
+local function issueFollowSpacingOrder(player, npc, npcData, followSpacingMode)
+    if not player or not npc or not npcData or not npcData.uuid or not sendClientCommand then
+        return false
+    end
+
+    local mode = normalizeFollowSpacingMode(followSpacingMode)
+    if not mode then
+        return false
+    end
+
+    sendClientCommand(player, "DTNPC", "Order", {
+        uuid = npcData.uuid,
+        state = "Follow",
+        followSpacingMode = mode,
+        returnStatus = npcData.requestedReturnStatus or "Resting",
+    })
+
+    npcData.followSpacingMode = mode
+    if DTNPC and DTNPC.AttachData then
+        DTNPC.AttachData(npc, npcData)
+    end
+    return true
+end
+
 local function buildNavigationBlock(footerAction, overrides)
     if DT_ConversationUI and DT_ConversationUI.BuildNavigationBlock then
         return DT_ConversationUI.BuildNavigationBlock(footerAction, overrides)
@@ -432,6 +500,61 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             openTraderQuestOffer(conversationUI, npc, player, npcData)
         end
     })
+
+    if isPlayerFollowingOwner(player, npcData) then
+        table.insert(options, {
+            text = "Follow Method",
+            message = "Adjust how closely you trail me.",
+            onSelect = function(conversationUI)
+                local liveData = DTNPC.GetData(npc) or npcData
+                local currentMode = getFollowSpacingMode(liveData)
+                conversationUI:speak("Current follow method: " .. (currentMode == "far" and "Far" or "Near") .. ".")
+                local followOptions = {
+                    {
+                        text = currentMode == "near" and "Near [ACTIVE]" or "Near",
+                        message = "Stay tighter on my position.",
+                        onSelect = function(nextUI)
+                            local latestData = DTNPC.GetData(npc) or liveData
+                            if issueFollowSpacingOrder(player, npc, latestData, "near") then
+                                nextUI:speak("Near spacing set.")
+                            else
+                                nextUI:speak("I couldn't change follow method right now.")
+                            end
+                            DTNPC_TraderDialogue_Hub.GenerateOptions(nextUI, npc, player)
+                        end
+                    },
+                    {
+                        text = currentMode == "far" and "Far [ACTIVE]" or "Far",
+                        message = "Give me more room during fights.",
+                        onSelect = function(nextUI)
+                            local latestData = DTNPC.GetData(npc) or liveData
+                            if issueFollowSpacingOrder(player, npc, latestData, "far") then
+                                nextUI:speak("Far spacing set.")
+                            else
+                                nextUI:speak("I couldn't change follow method right now.")
+                            end
+                            DTNPC_TraderDialogue_Hub.GenerateOptions(nextUI, npc, player)
+                        end
+                    },
+                }
+
+                local footerAction = buildBackFooterAction({
+                    onSelect = function(nextUI)
+                        DTNPC_TraderDialogue_Hub.GenerateOptions(nextUI, npc, player)
+                    end
+                })
+                local navBlock = buildNavigationBlock(footerAction, {
+                    debugLabel = "TraderHubFollowMethod",
+                    requireExplicitNavigation = true,
+                })
+                followOptions._dtFooterAction = footerAction
+                followOptions._dtNavigationBlock = navBlock
+                conversationUI:updateOptions(followOptions, {
+                    navigationBlock = navBlock,
+                })
+            end
+        })
+    end
     
     -- OPTION 2: TRADE (Always Visible)
     local isTrading = false
