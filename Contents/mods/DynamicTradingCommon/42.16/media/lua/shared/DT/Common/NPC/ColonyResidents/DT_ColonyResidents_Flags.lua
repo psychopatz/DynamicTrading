@@ -14,6 +14,7 @@ function Residents.IsResidentSoul(soulLike)
     return soulLike.dcResident == true
         or soulLike.dcResidentWorkerID ~= nil
         or isNonEmptyString(soulLike.dcResidentColonyId)
+        or soulLike.linkedWorkerID ~= nil
 end
 
 function Residents.NormalizeSoulFlags(soulLike)
