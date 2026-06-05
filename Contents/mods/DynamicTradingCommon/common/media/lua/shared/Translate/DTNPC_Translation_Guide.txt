@@ -1,12 +1,14 @@
-Dynamic Trading NPC Translation Guide
-====================================
+Dynamic Trading Translation Guide
+=================================
 
 Source of truth
-- Add reusable NPC translation entries under `Contents/mods/DynamicTradingCommon/common/media/lua/shared/Translate/<LANG>/`.
+- Add reusable translation entries under `Contents/mods/DynamicTradingCommon/common/media/lua/shared/Translate/<LANG>/`.
 - Do not add visible NPC UI or dialogue English directly inside `DynamicTradingV2` logic files.
+- Do not add visible shared/common UI English directly inside `DynamicTradingCommon` client helpers.
 
 Key rules
 - Use semantic stable keys such as `DTNPC_UI_FollowMethod` or `DTNPC_Dialogue_EscortOffer`.
+- Use `DTCommon_*` keys for shared trading, contacts, and faction UI that future versions will reuse.
 - Do not build translated sentences with string concatenation.
 - Use placeholders like `{name}`, `{count}`, `{required}`, `{mode}`.
 - Keep random flavor pools in translation-managed assets, not inline Lua fallback strings.
@@ -16,6 +18,8 @@ Domain files
 - `DTNPC_Dialogue_<LANG>.txt`: structured conversation lines and prompts.
 - `DTNPC_Notice_<LANG>.txt`: fixed notice strings and fallback warnings.
 - `DTNPC_Ambient_<LANG>.txt`: ambient fallback lines and short bark text.
+- `DTCommon_UI_<LANG>.txt`: shared trading, faction, and reusable common UI labels.
+- `DTCommon_Status_<LANG>.txt`: reusable status strings and ETA/state formatting.
 
 Lua usage
 - Resolve text through `DynamicTrading.Text.Get(key, params, fallback)`.
@@ -23,3 +27,4 @@ Lua usage
 
 Validation
 - Run `.agent/scripts/check_v2_npc_translation_strings.sh` to flag new inline user-facing strings in the v2 NPC client/shared paths.
+- Run `.agent/scripts/check_common_translation_strings.sh` to flag new inline user-facing strings in common trading, contacts, and faction UI paths.

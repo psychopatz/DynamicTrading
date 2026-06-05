@@ -1,5 +1,12 @@
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 function DT_TradingWindow:getSellDisplayName(data, qty)
-    local itemName = data and (data.displayName or data.name) or "Item"
+    local itemName = data and (data.displayName or data.name) or T("DTCommon_UI_Trading_Item", nil, "Item")
     local amount = tonumber(qty) or 1
     if amount > 1 then
         return itemName .. " x" .. amount
@@ -190,10 +197,10 @@ function DT_TradingWindow:onAction()
 
             if (buyLimit.qty or 0) > 0 then
                 DT_Trading_QuantityModal.Show({
-                    title = "Buy Multiple",
-                    promptText = "Buy multiple items with live inflation pricing.",
-                    actionLabel = "BUY",
-                    rangeLabelPrefix = "Stock",
+                    title = T("DTCommon_UI_Trading_BuyMultiple", nil, "Buy Multiple"),
+                    promptText = T("DTCommon_UI_Trading_BuyMultiplePrompt", nil, "Buy multiple items with live inflation pricing."),
+                    actionLabel = T("DTCommon_UI_Trading_BuyAction", nil, "BUY"),
+                    rangeLabelPrefix = T("DTCommon_UI_Trading_Stock", nil, "Stock"),
                     itemName = d.displayName or d.name,
                     unitPrice = d.price,
                     availableQty = tonumber(d.qty) or 0,
@@ -264,9 +271,15 @@ function DT_TradingWindow:onAction()
 
             if DT_Trading_QuantityModal then
                 DT_Trading_QuantityModal.Show({
-                    title = self:isGiftMode() and "Gift Multiple" or "Sell Multiple",
-                    promptText = self:isGiftMode() and "Choose how many items to offer as a gift." or nil,
-                    actionLabel = self:isGiftMode() and "GIFT" or "SELL",
+                    title = self:isGiftMode()
+                        and T("DTCommon_UI_Trading_GiftMultiple", nil, "Gift Multiple")
+                        or T("DTCommon_UI_Trading_SellMultiple", nil, "Sell Multiple"),
+                    promptText = self:isGiftMode()
+                        and T("DTCommon_UI_Trading_GiftMultiplePrompt", nil, "Choose how many items to offer as a gift.")
+                        or nil,
+                    actionLabel = self:isGiftMode()
+                        and T("DTCommon_UI_Trading_GiftAction", nil, "GIFT")
+                        or T("DTCommon_UI_Trading_SellAction", nil, "SELL"),
                     itemName = d.displayName or d.name,
                     unitPrice = d.price,
                     availableQty = groupedQty,

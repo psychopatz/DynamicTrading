@@ -7,6 +7,13 @@ require "ISUI/ISSliderPanel"
 DT_Trading_QuantityModal = ISCollapsableWindow:derive("DT_Trading_QuantityModal")
 DT_Trading_QuantityModal.instance = nil
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 function DT_Trading_QuantityModal:initialise()
     ISCollapsableWindow.initialise(self)
     self:setResizable(false)
@@ -21,15 +28,18 @@ function DT_Trading_QuantityModal:createChildren()
     self.currentQty = self.currentQty or 1
     self.lastQtyText = tostring(self.currentQty)
     self.ignoreSliderChange = false
-    self.actionLabel = tostring(self.actionLabel or "SELL")
-    self.rangeLabelPrefix = tostring(self.rangeLabelPrefix or "Available")
+    self.actionLabel = tostring(self.actionLabel or T("DTCommon_UI_Trading_SellAction", nil, "SELL"))
+    self.rangeLabelPrefix = tostring(self.rangeLabelPrefix or T("DTCommon_UI_Trading_Available", nil, "Available"))
 
-    self.promptLabel = ISLabel:new(pad, contentY, 20, tostring(self.promptText or "Trade identical items in one transaction."), 1, 1, 1, 1, UIFont.Small, true)
+    self.promptLabel = ISLabel:new(pad, contentY, 20, tostring(self.promptText or T("DTCommon_UI_Trading_TradeIdenticalPrompt", nil, "Trade identical items in one transaction.")), 1, 1, 1, 1, UIFont.Small, true)
     self.promptLabel:initialise()
     self.promptLabel:instantiate()
     self:addChild(self.promptLabel)
 
-    local itemText = tostring(self.itemName or "Item") .. " | $" .. tostring(self.unitPrice or 0) .. " each"
+    local itemText = T("DTCommon_UI_Trading_ItemEach", {
+        name = tostring(self.itemName or T("DTCommon_UI_Trading_Item", nil, "Item")),
+        price = tostring(self.unitPrice or 0),
+    }, tostring(self.itemName or "Item") .. " | $" .. tostring(self.unitPrice or 0) .. " each")
     self.itemLabel = ISLabel:new(pad, contentY + 22, 20, itemText, 0.85, 0.85, 0.85, 1, UIFont.Small, true)
     self.itemLabel:initialise()
     self.itemLabel:instantiate()
@@ -41,7 +51,7 @@ function DT_Trading_QuantityModal:createChildren()
     self:addChild(self.rangeLabel)
 
     local sliderY = contentY + 68
-    self.sliderLabel = ISLabel:new(pad, sliderY + 2, 20, "Qty", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
+    self.sliderLabel = ISLabel:new(pad, sliderY + 2, 20, T("DTCommon_UI_Trading_Qty", nil, "Qty"), 0.8, 0.8, 0.8, 1, UIFont.Small, true)
     self.sliderLabel:initialise()
     self.sliderLabel:instantiate()
     self:addChild(self.sliderLabel)
@@ -77,7 +87,7 @@ function DT_Trading_QuantityModal:createChildren()
     self.btnPlus:instantiate()
     self:addChild(self.btnPlus)
 
-    self.btnMax = ISButton:new(pad + 172, qtyY, 60, 24, "MAX", self, self.onMax)
+    self.btnMax = ISButton:new(pad + 172, qtyY, 60, 24, T("DTCommon_UI_Trading_Max", nil, "MAX"), self, self.onMax)
     self.btnMax:initialise()
     self.btnMax:instantiate()
     self:addChild(self.btnMax)
@@ -87,12 +97,12 @@ function DT_Trading_QuantityModal:createChildren()
     self.totalLabel:instantiate()
     self:addChild(self.totalLabel)
 
-    self.btnCancel = ISButton:new(pad, self.height - 38, 100, 24, "CANCEL", self, self.onCancel)
+    self.btnCancel = ISButton:new(pad, self.height - 38, 100, 24, T("DTCommon_UI_Trading_Cancel", nil, "CANCEL"), self, self.onCancel)
     self.btnCancel:initialise()
     self.btnCancel:instantiate()
     self:addChild(self.btnCancel)
 
-    self.btnConfirm = ISButton:new(self.width - 110, self.height - 38, 100, 24, "SELL", self, self.onConfirm)
+    self.btnConfirm = ISButton:new(self.width - 110, self.height - 38, 100, 24, T("DTCommon_UI_Trading_SellAction", nil, "SELL"), self, self.onConfirm)
     self.btnConfirm:initialise()
     self.btnConfirm:instantiate()
     self:addChild(self.btnConfirm)
@@ -161,12 +171,16 @@ function DT_Trading_QuantityModal:updateLabels()
     end
 
     if self.rangeLabel then
-        local rangeText = self.rangeLabelPrefix .. ": " .. tostring(availableQty) .. " | Max this trade: " .. tostring(maxQty)
+        local rangeText = T(
+            "DTCommon_UI_Trading_RangeLabel",
+            { label = self.rangeLabelPrefix, available = availableQty, max = maxQty },
+            self.rangeLabelPrefix .. ": " .. tostring(availableQty) .. " | Max this trade: " .. tostring(maxQty)
+        )
         self.rangeLabel:setName(rangeText)
     end
 
     if self.totalLabel then
-        self.totalLabel:setName("Total: $" .. tostring(total))
+        self.totalLabel:setName(T("DTCommon_UI_Trading_Total", { total = total }, "Total: $" .. tostring(total)))
     end
 
     if self.sliderValueLabel then
@@ -252,14 +266,14 @@ function DT_Trading_QuantityModal.Show(args)
     local y = (getCore():getScreenHeight() - height) / 2
 
     local modal = DT_Trading_QuantityModal:new(x, y, width, height)
-    modal.title = tostring(args.title or "Sell Multiple")
-    modal.promptText = tostring(args.promptText or "Trade identical items in one transaction.")
-    modal.itemName = tostring(args.itemName or "Item")
+    modal.title = tostring(args.title or T("DTCommon_UI_Trading_SellMultiple", nil, "Sell Multiple"))
+    modal.promptText = tostring(args.promptText or T("DTCommon_UI_Trading_TradeIdenticalPrompt", nil, "Trade identical items in one transaction."))
+    modal.itemName = tostring(args.itemName or T("DTCommon_UI_Trading_Item", nil, "Item"))
     modal.unitPrice = tonumber(args.unitPrice) or 0
     modal.availableQty = tonumber(args.availableQty) or 1
     modal.maxQty = math.max(1, tonumber(args.maxQty) or modal.availableQty)
-    modal.actionLabel = tostring(args.actionLabel or "SELL")
-    modal.rangeLabelPrefix = tostring(args.rangeLabelPrefix or "Available")
+    modal.actionLabel = tostring(args.actionLabel or T("DTCommon_UI_Trading_SellAction", nil, "SELL"))
+    modal.rangeLabelPrefix = tostring(args.rangeLabelPrefix or T("DTCommon_UI_Trading_Available", nil, "Available"))
     modal.callbackTarget = args.target
     modal.callbackFunc = args.callback
     modal.previewTarget = args.previewTarget or args.target

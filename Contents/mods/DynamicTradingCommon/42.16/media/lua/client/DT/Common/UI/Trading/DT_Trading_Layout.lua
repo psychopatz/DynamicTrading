@@ -3,6 +3,13 @@
 local RIGHT_MARGIN = 10
 local PADDING = 10
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function getLeftColumnWidth(window)
     return math.max(220, math.min(320, math.floor(window.width * 0.33)))
 end
@@ -62,33 +69,33 @@ function DT_TradingWindow:createChildren()
 
     local centerX = getColumnCenterX(self)
 
-    self.lblName = ISLabel:new(centerX, 0, 25, "Loading...", 1, 1, 1, 1, UIFont.Medium, true)
+    self.lblName = ISLabel:new(centerX, 0, 25, T("DTCommon_UI_Trading_Loading", nil, "Loading..."), 1, 1, 1, 1, UIFont.Medium, true)
     self.lblName.center = true
     self:addChild(self.lblName)
 
-    self.lblArchetype = ISLabel:new(centerX, 0, 20, "Survivor", 1.0, 0.8, 0.2, 1, UIFont.Small, true)
+    self.lblArchetype = ISLabel:new(centerX, 0, 20, T("DTCommon_UI_Trading_Survivor", nil, "Survivor"), 1.0, 0.8, 0.2, 1, UIFont.Small, true)
     self.lblArchetype.center = true
     self:addChild(self.lblArchetype)
 
-    self.lblSignal = ISLabel:new(centerX, 0, 16, "Signal: ...", 0.5, 0.5, 0.5, 1, UIFont.Small, true)
+    self.lblSignal = ISLabel:new(centerX, 0, 16, T("DTCommon_Status_Permanent", nil, "Status: Permanent"), 0.5, 0.5, 0.5, 1, UIFont.Small, true)
     self.lblSignal.center = true
     self:addChild(self.lblSignal)
 
-    self.lblTraderBudget = ISLabel:new(centerX, 0, 25, "Trader Budget: $0", 1.0, 0.8, 0.2, 1, UIFont.Medium, true)
+    self.lblTraderBudget = ISLabel:new(centerX, 0, 25, T("DTCommon_UI_Trading_TraderBudget", { amount = 0 }, "Trader Budget: $0"), 1.0, 0.8, 0.2, 1, UIFont.Medium, true)
     self.lblTraderBudget.center = true
     self:addChild(self.lblTraderBudget)
 
-    self.lblInfo = ISLabel:new(centerX, 0, 25, "Wallet: $0", 0.2, 1.0, 0.2, 1, UIFont.Medium, true)
+    self.lblInfo = ISLabel:new(centerX, 0, 25, T("DTCommon_UI_Trading_Wallet", { amount = 0 }, "Wallet: $0"), 0.2, 1.0, 0.2, 1, UIFont.Medium, true)
     self.lblInfo.center = true
     self:addChild(self.lblInfo)
 
-    self.btnAsk = ISButton:new(20, 0, leftColW - 20, 25, "Talk", self, self.onAsk)
+    self.btnAsk = ISButton:new(20, 0, leftColW - 20, 25, T("DTCommon_UI_Trading_Talk", nil, "Talk"), self, self.onAsk)
     self.btnAsk:initialise()
     self.btnAsk.backgroundColor = { r = 0.2, g = 0.2, b = 0.4, a = 1.0 }
     self.btnAsk:setVisible(true)
     self:addChild(self.btnAsk)
 
-    self.btnLock = ISButton:new(20, 0, leftColW - 20, 25, "LOCK ITEM", self, self.onToggleLock)
+    self.btnLock = ISButton:new(20, 0, leftColW - 20, 25, T("DTCommon_UI_Trading_LockItem", nil, "LOCK ITEM"), self, self.onToggleLock)
     self.btnLock:initialise()
     self.btnLock.backgroundColor = { r = 0.4, g = 0.4, b = 0.1, a = 1.0 }
     self.btnLock:setEnable(false)
@@ -192,17 +199,17 @@ function DT_TradingWindow:createChildren()
 
             local isLocked = item.item.isLocked == true
             if sellQty > 1 then
-                ui.btnLock:setTitle("LOCK ITEM")
+                ui.btnLock:setTitle(T("DTCommon_UI_Trading_LockItem", nil, "LOCK ITEM"))
                 ui.btnLock:setEnable(false)
                 ui.btnLock:setVisible(false)
                 ui.btnAction:setEnable(true)
             elseif isLocked then
-                ui.btnLock:setTitle("UNLOCK ITEM")
+                ui.btnLock:setTitle(T("DTCommon_UI_Trading_UnlockItem", nil, "UNLOCK ITEM"))
                 ui.btnLock:setVisible(true)
                 ui.btnLock:setEnable(true)
                 ui.btnAction:setEnable(false)
             else
-                ui.btnLock:setTitle("LOCK ITEM")
+                ui.btnLock:setTitle(T("DTCommon_UI_Trading_LockItem", nil, "LOCK ITEM"))
                 ui.btnLock:setVisible(true)
                 ui.btnLock:setEnable(true)
                 ui.btnAction:setEnable(true)
@@ -211,7 +218,7 @@ function DT_TradingWindow:createChildren()
 
         if ui.tradeRequestPending and ui.btnAction then
             ui.btnAction:setEnable(false)
-            ui.btnAction:setTitle("PROCESSING...")
+            ui.btnAction:setTitle(T("DTCommon_UI_Trading_Processing", nil, "PROCESSING..."))
         end
     end
 

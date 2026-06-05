@@ -7,6 +7,13 @@ function DT_FactionInfoWindow:initialise()
     self.fontScale = "Medium"
 end
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 function DT_FactionInfoWindow:getFontScale()
     if self.width > 1400 then return "Large" end
     if self.width > 1000 then return "Medium" end
@@ -43,7 +50,7 @@ local function getCurrentPlayerCharacterName(player)
         end
     end
 
-    return "My Faction"
+    return T("DTCommon_UI_Faction_MyFaction", nil, "My Faction")
 end
 
 function DT_FactionInfoWindow:openOwnedFactionManagementWindow()
@@ -111,11 +118,15 @@ function DT_FactionInfoWindow:promptOwnedFactionName(action, ownedStatus)
     end
 
     DT_PlayerFactionNameModal.Open({
-        title = action == "rename" and "Rename Faction" or "Faction Name",
+        title = action == "rename"
+            and T("DTCommon_UI_Faction_RenameTitle", nil, "Rename Faction")
+            or T("DTCommon_UI_Faction_NameTitle", nil, "Faction Name"),
         promptText = action == "rename"
-            and "Choose a new name for your faction."
-            or "Enter a faction name.",
-        confirmLabel = action == "rename" and "Rename" or "Create",
+            and T("DTCommon_UI_Faction_RenamePrompt", nil, "Choose a new name for your faction.")
+            or T("DTCommon_UI_Faction_NamePrompt", nil, "Enter a faction name."),
+        confirmLabel = action == "rename"
+            and T("DTCommon_UI_Faction_Rename", nil, "Rename")
+            or T("DTCommon_UI_Faction_Create", nil, "Create"),
         defaultValue = defaultName,
         onConfirm = function(name)
             self.pendingOpenOwnedFactionWindowAfterAction = action == "create"
@@ -210,42 +221,42 @@ function DT_FactionInfoWindow:createChildren()
     self.tabInfo:initialise()
     self.tabInfo:setAnchorRight(true)
     self.tabInfo:setAnchorBottom(true)
-    self.panel:addView("Info", self.tabInfo)
+    self.panel:addView(T("DTCommon_UI_Faction_Info", nil, "Info"), self.tabInfo)
     
     -- Reputation Tab
     self.tabReputation = DT_FactionInfoTab_Reputation:new(0, 0, tabWidth, contentHeight)
     self.tabReputation:initialise()
     self.tabReputation:setAnchorRight(true)
     self.tabReputation:setAnchorBottom(true)
-    self.panel:addView("Reputation", self.tabReputation)
+    self.panel:addView(T("DTCommon_UI_Faction_Reputation", nil, "Reputation"), self.tabReputation)
     
     -- Economics Tab (Was Events)
     self.tabEconomics = DT_FactionInfoTab_Economics:new(0, 0, tabWidth, contentHeight)
     self.tabEconomics:initialise()
     self.tabEconomics:setAnchorRight(true)
     self.tabEconomics:setAnchorBottom(true)
-    self.panel:addView("Economics", self.tabEconomics)
+    self.panel:addView(T("DTCommon_UI_Faction_Economics", nil, "Economics"), self.tabEconomics)
 
     -- Calendar Tab
     self.tabCalendar = DT_FactionInfoTab_Calendar:new(0, 0, tabWidth, contentHeight)
     self.tabCalendar:initialise()
     self.tabCalendar:setAnchorRight(true)
     self.tabCalendar:setAnchorBottom(true)
-    self.panel:addView("Calendar", self.tabCalendar)
+    self.panel:addView(T("DTCommon_UI_Faction_Calendar", nil, "Calendar"), self.tabCalendar)
     
     -- Stockpiles Tab
     self.tabStockpiles = DT_FactionInfoTab_Stockpiles:new(0, 0, tabWidth, contentHeight)
     self.tabStockpiles:initialise()
     self.tabStockpiles:setAnchorRight(true)
     self.tabStockpiles:setAnchorBottom(true)
-    self.panel:addView("Stockpiles", self.tabStockpiles)
+    self.panel:addView(T("DTCommon_UI_Faction_Stockpiles", nil, "Stockpiles"), self.tabStockpiles)
     
     -- Population Tab
     self.tabPopulation = DT_FactionInfoTab_Population:new(0, 0, tabWidth, contentHeight)
     self.tabPopulation:initialise()
     self.tabPopulation:setAnchorRight(true)
     self.tabPopulation:setAnchorBottom(true)
-    self.panel:addView("Population", self.tabPopulation)
+    self.panel:addView(T("DTCommon_UI_Faction_Population", nil, "Population"), self.tabPopulation)
 
     -- Infrastructure Tab (Requires Dynamic Colonies)
     if getActivatedMods():contains("DynamicColonies") then
@@ -253,7 +264,7 @@ function DT_FactionInfoWindow:createChildren()
         self.tabInfrastructure:initialise()
         self.tabInfrastructure:setAnchorRight(true)
         self.tabInfrastructure:setAnchorBottom(true)
-        self.panel:addView("Infrastructure", self.tabInfrastructure)
+        self.panel:addView(T("DTCommon_UI_Faction_Infrastructure", nil, "Infrastructure"), self.tabInfrastructure)
     end
     
     self:refreshList()
@@ -371,7 +382,7 @@ function DT_FactionInfoWindow:update()
             if not activeDevice then
                 self:close()
                 if HaloTextHelper then
-                    HaloTextHelper.addTextWithArrow(player, "Signal Lost (Radio Off/Missing)", true, HaloTextHelper.getColorRed())
+                    HaloTextHelper.addTextWithArrow(player, T("DTCommon_UI_Faction_SignalLost", nil, "Signal Lost (Radio Off/Missing)"), true, HaloTextHelper.getColorRed())
                 end
             else
                 self.device = activeDevice
@@ -419,7 +430,7 @@ function DT_FactionInfoWindow:new(x, y, width, height)
     local o = ISCollapsableWindow:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.title = "Faction Intelligence"
+    o.title = T("DTCommon_UI_Faction_Intelligence", nil, "Faction Intelligence")
     o.resizable = true
     return o
 end

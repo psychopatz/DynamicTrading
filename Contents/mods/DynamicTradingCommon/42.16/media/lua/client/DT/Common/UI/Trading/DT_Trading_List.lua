@@ -3,6 +3,13 @@ require "Utils/DT_StringUtils"
 
 local SellScanInternal = DT_TradingItemUtils.Internal
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function copyCategoryOrder(categories, shouldSort)
     local ordered = {}
     for _, category in ipairs(categories or {}) do
@@ -18,14 +25,18 @@ end
 
 local function buildLoadingText(session)
     if not session then
-        return "Scanning inventory..."
+        return T("DTCommon_UI_Trading_ScanningInventory", nil, "Scanning inventory...")
     end
 
     if session.completed then
-        return "Inventory scan complete."
+        return T("DTCommon_UI_Trading_InventoryScanComplete", nil, "Inventory scan complete.")
     end
 
-    return "Scanning inventory... " .. tostring(session.processedCount or 0) .. " items checked"
+    return T(
+        "DTCommon_UI_Trading_ScanningInventoryProgress",
+        { count = tostring(session.processedCount or 0) },
+        "Scanning inventory... " .. tostring(session.processedCount or 0) .. " items checked"
+    )
 end
 
 function DT_TradingWindow.drawItem(listbox, y, item, alt)
@@ -36,7 +47,7 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
     if d.isPlaceholder then
         listbox:drawRect(0, y, width, height, 0.25, 0.08, 0.08, 0.12)
         listbox:drawRectBorder(0, y, width, height, 0.15, 0.7, 0.8, 1.0)
-        listbox:drawText(d.text or "Loading...", 10, y + (height / 2) - 7, 0.78, 0.88, 1.0, 1, UIFont.Small)
+        listbox:drawText(d.text or T("DTCommon_UI_Trading_Loading", nil, "Loading..."), 10, y + (height / 2) - 7, 0.78, 0.88, 1.0, 1, UIFont.Small)
         return y + height
     end
 
@@ -82,7 +93,7 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
 
     local statusSuffix = d.statusSuffix or ""
     local isRotten = d.isRotten or false
-    local itemName = d.displayName or d.name or "Unknown Item"
+    local itemName = d.displayName or d.name or T("DTCommon_UI_Trading_UnknownItem", nil, "Unknown Item")
 
     if isRotten then
         nameColor = { r = 0.8, g = 0.3, b = 0.3 }
@@ -108,7 +119,7 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
 
     if isLocked then
         local nameWid = TextManager.instance:MeasureStringX(listbox.font, displayName)
-        listbox:drawText("(LOCKED)", 50 + nameWid, y + 12, 1, 0.2, 0.2, 1, listbox.font)
+        listbox:drawText(T("DTCommon_UI_Trading_Locked", nil, "(LOCKED)"), 50 + nameWid, y + 12, 1, 0.2, 0.2, 1, listbox.font)
     end
 
     local priceR, priceG, priceB = DT_TradingItemUtils.getPriceColors(d, isLocked)
@@ -116,12 +127,12 @@ function DT_TradingWindow.drawItem(listbox, y, item, alt)
     if d.isBuy then
         local qty = tonumber(d.qty) or 0
         if qty <= 0 then
-            listbox:drawText("(SOLD OUT)", width - 140, y + 12, 1.0, 0.2, 0.2, 1, UIFont.Small)
+            listbox:drawText(T("DTCommon_UI_Trading_SoldOut", nil, "(SOLD OUT)"), width - 140, y + 12, 1.0, 0.2, 0.2, 1, UIFont.Small)
         else
-            listbox:drawText("Stock: " .. qty, width - 140, y + 12, 0.7, 0.7, 0.7, 1, listbox.font)
+            listbox:drawText(T("DTCommon_UI_Trading_StockCount", { qty = qty }, "Stock: " .. qty), width - 140, y + 12, 0.7, 0.7, 0.7, 1, listbox.font)
         end
     elseif sellQty > 1 then
-        listbox:drawText("x" .. sellQty, width - 120, y + 12, 0.7, 0.7, 0.7, 1, listbox.font)
+        listbox:drawText(T("DTCommon_UI_Trading_SellQuantity", { qty = sellQty }, "x" .. sellQty), width - 120, y + 12, 0.7, 0.7, 0.7, 1, listbox.font)
     end
 
     listbox:drawText("$" .. tostring(d.price), width - 60, y + 12, priceR, priceG, priceB, 1, listbox.font)
@@ -139,7 +150,7 @@ function DT_TradingWindow:showPlaceholderRow(text, oldScroll)
     self.btnAction:setEnable(false)
     self.btnAction:setTitle(self:getDefaultActionTitle())
     if self.btnLock then
-        self.btnLock:setTitle("LOCK ITEM")
+        self.btnLock:setTitle(T("DTCommon_UI_Trading_LockItem", nil, "LOCK ITEM"))
         self.btnLock:setEnable(false)
         self.btnLock:setVisible(false)
     end
@@ -217,20 +228,20 @@ function DT_TradingWindow:restoreSelectionAndButtons()
             if sellQty > 1 then
                 self.btnAction:setEnable(true)
                 if self.btnLock then
-                    self.btnLock:setTitle("LOCK ITEM")
+                    self.btnLock:setTitle(T("DTCommon_UI_Trading_LockItem", nil, "LOCK ITEM"))
                     self.btnLock:setEnable(false)
                     self.btnLock:setVisible(false)
                 end
             elseif isCurrentlyLocked then
                 if self.btnLock then
-                    self.btnLock:setTitle("UNLOCK ITEM")
+                    self.btnLock:setTitle(T("DTCommon_UI_Trading_UnlockItem", nil, "UNLOCK ITEM"))
                     self.btnLock:setVisible(true)
                     self.btnLock:setEnable(true)
                 end
                 self.btnAction:setEnable(false)
             else
                 if self.btnLock then
-                    self.btnLock:setTitle("LOCK ITEM")
+                    self.btnLock:setTitle(T("DTCommon_UI_Trading_LockItem", nil, "LOCK ITEM"))
                     self.btnLock:setVisible(true)
                     self.btnLock:setEnable(true)
                 end
@@ -240,7 +251,7 @@ function DT_TradingWindow:restoreSelectionAndButtons()
 
         if self.tradeRequestPending and self.btnAction then
             self.btnAction:setEnable(false)
-            self.btnAction:setTitle("PROCESSING...")
+            self.btnAction:setTitle(T("DTCommon_UI_Trading_Processing", nil, "PROCESSING..."))
         end
     else
         self.listbox.selected = -1
@@ -249,7 +260,7 @@ function DT_TradingWindow:restoreSelectionAndButtons()
         self.btnAction:setEnable(false)
         self.btnAction:setTitle(self:getDefaultActionTitle())
         if self.btnLock then
-            self.btnLock:setTitle("LOCK ITEM")
+            self.btnLock:setTitle(T("DTCommon_UI_Trading_LockItem", nil, "LOCK ITEM"))
             self.btnLock:setEnable(false)
             self.btnLock:setVisible(false)
         end
@@ -297,7 +308,7 @@ function DT_TradingWindow:rebuildCategorizedList(categorized, categories, option
     end
 
     if #self.listbox.items <= 0 then
-        self:showPlaceholderRow(options.emptyText or "No items available.", oldScroll)
+        self:showPlaceholderRow(options.emptyText or T("DTCommon_UI_Trading_NoItemsAvailable", nil, "No items available."), oldScroll)
         return
     end
 
@@ -308,7 +319,7 @@ end
 function DT_TradingWindow:refreshSellScanProgress(forceRefresh, oldScroll)
     local session = self.sellScanSession
     if not session then
-        self:showPlaceholderRow("Scanning inventory...", oldScroll)
+        self:showPlaceholderRow(T("DTCommon_UI_Trading_ScanningInventory", nil, "Scanning inventory..."), oldScroll)
         return
     end
 
@@ -317,12 +328,12 @@ function DT_TradingWindow:refreshSellScanProgress(forceRefresh, oldScroll)
     end
 
     local loadingText = nil
-    local emptyText = "No sellable items available."
+    local emptyText = T("DTCommon_UI_Trading_NoSellableItemsAvailable", nil, "No sellable items available.")
     if not session.completed then
         loadingText = buildLoadingText(session)
         emptyText = loadingText
     elseif session.reusedCachedResults then
-        emptyText = "No sellable items available."
+        emptyText = T("DTCommon_UI_Trading_NoSellableItemsAvailable", nil, "No sellable items available.")
     end
 
     self:rebuildCategorizedList(session.categorized, session.categories, {
@@ -362,7 +373,7 @@ function DT_TradingWindow:populateList()
     if self.btnAsk then
         local config = dataProvider:getAskButtonConfig(self.isBuying)
         if config then
-            self.btnAsk:setTitle(config.title or "Talk")
+            self.btnAsk:setTitle(config.title or T("DTCommon_UI_Trading_Talk", nil, "Talk"))
             self.btnAsk:setVisible(config.visible ~= false)
             self.btnAsk:setEnable(true)
         else
@@ -387,7 +398,7 @@ function DT_TradingWindow:populateList()
             oldScroll = oldScroll,
             sortCategories = true,
             sortItems = true,
-            emptyText = "No items available.",
+            emptyText = T("DTCommon_UI_Trading_NoItemsAvailable", nil, "No items available."),
         })
     else
         local player = getSpecificPlayer(0)

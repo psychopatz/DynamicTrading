@@ -7,6 +7,13 @@ require "ISUI/ISTextEntryBox"
 DT_PlayerFactionMembersModal = ISCollapsableWindow:derive("DT_PlayerFactionMembersModal")
 DT_PlayerFactionMembersModal.instance = nil
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function trimName(value)
     local text = tostring(value or "")
     text = string.gsub(text, "^%s+", "")
@@ -90,7 +97,7 @@ function DT_PlayerFactionMembersModal:createChildren()
     local th = self:titleBarHeight()
     local contentY = th + pad
 
-    self.summaryLabel = ISLabel:new(pad, contentY, 20, "Faction membership", 1, 1, 1, 1, UIFont.Small, true)
+    self.summaryLabel = ISLabel:new(pad, contentY, 20, T("DTCommon_UI_Faction_Membership", nil, "Faction membership"), 1, 1, 1, 1, UIFont.Small, true)
     self.summaryLabel:initialise()
     self:addChild(self.summaryLabel)
 
@@ -113,35 +120,35 @@ function DT_PlayerFactionMembersModal:createChildren()
     self:addChild(self.statusLabel)
 
     local buttonY = self.height - 70
-    self.btnInvite = ISButton:new(pad, buttonY, 90, 24, "Invite", self, self.onInvite)
+    self.btnInvite = ISButton:new(pad, buttonY, 90, 24, T("DTCommon_UI_Faction_Invite", nil, "Invite"), self, self.onInvite)
     self.btnInvite:initialise()
     self:addChild(self.btnInvite)
 
-    self.btnAccept = ISButton:new(pad + 96, buttonY, 90, 24, "Accept", self, self.onAcceptInvite)
+    self.btnAccept = ISButton:new(pad + 96, buttonY, 90, 24, T("DTCommon_UI_Faction_Accept", nil, "Accept"), self, self.onAcceptInvite)
     self.btnAccept:initialise()
     self:addChild(self.btnAccept)
 
-    self.btnDecline = ISButton:new(pad + 192, buttonY, 90, 24, "Decline", self, self.onDeclineInvite)
+    self.btnDecline = ISButton:new(pad + 192, buttonY, 90, 24, T("DTCommon_UI_Faction_Decline", nil, "Decline"), self, self.onDeclineInvite)
     self.btnDecline:initialise()
     self:addChild(self.btnDecline)
 
-    self.btnKick = ISButton:new(pad + 288, buttonY, 90, 24, "Kick/Revoke", self, self.onKickOrRevoke)
+    self.btnKick = ISButton:new(pad + 288, buttonY, 90, 24, T("DTCommon_UI_Faction_KickRevoke", nil, "Kick/Revoke"), self, self.onKickOrRevoke)
     self.btnKick:initialise()
     self:addChild(self.btnKick)
 
-    self.btnTransfer = ISButton:new(pad + 384, buttonY, 120, 24, "Transfer", self, self.onTransfer)
+    self.btnTransfer = ISButton:new(pad + 384, buttonY, 120, 24, T("DTCommon_UI_Faction_Transfer", nil, "Transfer"), self, self.onTransfer)
     self.btnTransfer:initialise()
     self:addChild(self.btnTransfer)
 
-    self.btnLeave = ISButton:new(pad, buttonY + 32, 150, 24, "Leave Faction", self, self.onLeaveOrAbandon)
+    self.btnLeave = ISButton:new(pad, buttonY + 32, 150, 24, T("DTCommon_UI_Faction_Leave", nil, "Leave Faction"), self, self.onLeaveOrAbandon)
     self.btnLeave:initialise()
     self:addChild(self.btnLeave)
 
-    self.btnKickRetain = ISButton:new(pad + 160, buttonY + 32, 120, 24, "Kick + Keep", self, self.onKickRetain)
+    self.btnKickRetain = ISButton:new(pad + 160, buttonY + 32, 120, 24, T("DTCommon_UI_Faction_KickKeep", nil, "Kick + Keep"), self, self.onKickRetain)
     self.btnKickRetain:initialise()
     self:addChild(self.btnKickRetain)
 
-    self.btnClose = ISButton:new(self.width - 110, buttonY + 32, 100, 24, "Close", self, self.onClose)
+    self.btnClose = ISButton:new(self.width - 110, buttonY + 32, 100, 24, T("DTCommon_UI_Faction_Close", nil, "Close"), self, self.onClose)
     self.btnClose:initialise()
     self:addChild(self.btnClose)
 end
@@ -167,14 +174,14 @@ function DT_PlayerFactionMembersModal:buildRows(status)
         rows[#rows + 1] = {
             type = "leader",
             username = faction.leaderUsername,
-            text = "Leader: " .. tostring(faction.leaderUsername or "Unknown")
+            text = T("DTCommon_UI_Faction_LeaderRow", { name = tostring(faction.leaderUsername or T("DTCommon_UI_Faction_DefaultLeader", nil, "Unknown")) }, "Leader: " .. tostring(faction.leaderUsername or "Unknown"))
         }
 
         for _, username in ipairs(status.memberUsernames or {}) do
             rows[#rows + 1] = {
                 type = "member",
                 username = username,
-                text = "Member: " .. tostring(username)
+                text = T("DTCommon_UI_Faction_MemberRow", { name = tostring(username) }, "Member: " .. tostring(username))
             }
         end
 
@@ -182,7 +189,7 @@ function DT_PlayerFactionMembersModal:buildRows(status)
             rows[#rows + 1] = {
                 type = "invite",
                 username = username,
-                text = "Pending invite: " .. tostring(username)
+                text = T("DTCommon_UI_Faction_PendingInviteRow", { name = tostring(username) }, "Pending invite: " .. tostring(username))
             }
         end
 
@@ -191,7 +198,7 @@ function DT_PlayerFactionMembersModal:buildRows(status)
                 rows[#rows + 1] = {
                     type = "online",
                     username = username,
-                    text = "Online player: " .. tostring(username)
+                    text = T("DTCommon_UI_Faction_OnlinePlayerRow", { name = tostring(username) }, "Online player: " .. tostring(username))
                 }
             end
         end
@@ -201,7 +208,14 @@ function DT_PlayerFactionMembersModal:buildRows(status)
                 type = "pendingInvite",
                 factionID = invite.factionID,
                 username = invite.leaderUsername,
-                text = "Invite: " .. tostring(invite.name or invite.factionID) .. " by " .. tostring(invite.leaderUsername or "Unknown")
+                text = T(
+                    "DTCommon_UI_Faction_InviteRow",
+                    {
+                        faction = tostring(invite.name or invite.factionID),
+                        leader = tostring(invite.leaderUsername or T("DTCommon_UI_Faction_DefaultLeader", nil, "Unknown"))
+                    },
+                    "Invite: " .. tostring(invite.name or invite.factionID) .. " by " .. tostring(invite.leaderUsername or "Unknown")
+                )
             }
         end
     end
@@ -219,7 +233,7 @@ function DT_PlayerFactionMembersModal:refresh()
 
     if not isDynamicColoniesActive() then
         if self.summaryLabel then
-            self.summaryLabel:setName("Dynamic Colonies is required for player faction membership.")
+            self.summaryLabel:setName(T("DTCommon_UI_Faction_DynamicColoniesRequired", nil, "Dynamic Colonies is required for player faction membership."))
         end
         self:updateButtons()
         return
@@ -230,16 +244,24 @@ function DT_PlayerFactionMembersModal:refresh()
     if self.summaryLabel then
         if faction then
             self.summaryLabel:setName(
-                tostring(faction.name or faction.id or "Faction")
-                .. " | Role: "
-                .. tostring(status.role or "none")
-                .. " | Leader: "
-                .. tostring(faction.leaderUsername or "Unknown")
+                T(
+                    "DTCommon_UI_Faction_Summary",
+                    {
+                        name = tostring(faction.name or faction.id or T("DTCommon_UI_Faction_DefaultFaction", nil, "Faction")),
+                        role = tostring(status.role or T("DTCommon_UI_Faction_DefaultRole", nil, "none")),
+                        leader = tostring(faction.leaderUsername or T("DTCommon_UI_Faction_DefaultLeader", nil, "Unknown"))
+                    },
+                    tostring(faction.name or faction.id or "Faction")
+                        .. " | Role: "
+                        .. tostring(status.role or "none")
+                        .. " | Leader: "
+                        .. tostring(faction.leaderUsername or "Unknown")
+                )
             )
         elseif status.pendingInvites and #status.pendingInvites > 0 then
-            self.summaryLabel:setName("Pending colony invitations")
+            self.summaryLabel:setName(T("DTCommon_UI_Faction_PendingInvitations", nil, "Pending colony invitations"))
         else
-            self.summaryLabel:setName("No player faction or pending invitations.")
+            self.summaryLabel:setName(T("DTCommon_UI_Faction_None", nil, "No player faction or pending invitations."))
         end
     end
 
@@ -294,10 +316,10 @@ function DT_PlayerFactionMembersModal:updateButtons()
     end
     if self.btnLeave then
         if faction and status.isLeader then
-            self.btnLeave:setTitle("Abandon Leadership")
+            self.btnLeave:setTitle(T("DTCommon_UI_Faction_AbandonLeadership", nil, "Abandon Leadership"))
             self.btnLeave:setEnable(#(status.memberUsernames or {}) == 0)
         else
-            self.btnLeave:setTitle("Leave Faction")
+            self.btnLeave:setTitle(T("DTCommon_UI_Faction_Leave", nil, "Leave Faction"))
             self.btnLeave:setEnable(faction ~= nil and status.isMember == true)
         end
     end
@@ -306,11 +328,11 @@ end
 function DT_PlayerFactionMembersModal:onInvite()
     local username = self:getTargetUsername()
     if username == "" then
-        self:setStatus("Enter or select a username to invite.")
+        self:setStatus(T("DTCommon_UI_Faction_EnterOrSelectUsername", nil, "Enter or select a username to invite."))
         return
     end
     sendFactionCommand("InvitePlayerToFaction", { username = username })
-    self:setStatus("Invitation request sent.")
+    self:setStatus(T("DTCommon_UI_Faction_InvitationRequestSent", nil, "Invitation request sent."))
 end
 
 function DT_PlayerFactionMembersModal:onAcceptInvite()
@@ -319,7 +341,7 @@ function DT_PlayerFactionMembersModal:onAcceptInvite()
         return
     end
     sendFactionCommand("AcceptFactionInvite", { factionID = row.factionID })
-    self:setStatus("Accept request sent.")
+    self:setStatus(T("DTCommon_UI_Faction_AcceptRequestSent", nil, "Accept request sent."))
 end
 
 function DT_PlayerFactionMembersModal:onDeclineInvite()
@@ -328,7 +350,7 @@ function DT_PlayerFactionMembersModal:onDeclineInvite()
         return
     end
     sendFactionCommand("DeclineFactionInvite", { factionID = row.factionID })
-    self:setStatus("Decline request sent.")
+    self:setStatus(T("DTCommon_UI_Faction_DeclineRequestSent", nil, "Decline request sent."))
 end
 
 function DT_PlayerFactionMembersModal:onKickOrRevoke()
@@ -337,7 +359,7 @@ function DT_PlayerFactionMembersModal:onKickOrRevoke()
         return
     end
     sendFactionCommand("KickFactionMember", { username = username, workerTransferAction = "return" })
-    self:setStatus("Membership update sent.")
+    self:setStatus(T("DTCommon_UI_Faction_MembershipUpdateSent", nil, "Membership update sent."))
 end
 
 function DT_PlayerFactionMembersModal:onKickRetain()
@@ -346,7 +368,7 @@ function DT_PlayerFactionMembersModal:onKickRetain()
         return
     end
     sendFactionCommand("KickFactionMember", { username = username, workerTransferAction = "retain" })
-    self:setStatus("Membership update sent. Transferred workers will stay with the faction.")
+    self:setStatus(T("DTCommon_UI_Faction_MembershipUpdateRetain", nil, "Membership update sent. Transferred workers will stay with the faction."))
 end
 
 function DT_PlayerFactionMembersModal:onTransfer()
@@ -355,17 +377,17 @@ function DT_PlayerFactionMembersModal:onTransfer()
         return
     end
     sendFactionCommand("TransferFactionLeadership", { username = username })
-    self:setStatus("Leadership transfer request sent.")
+    self:setStatus(T("DTCommon_UI_Faction_LeadershipTransferSent", nil, "Leadership transfer request sent."))
 end
 
 function DT_PlayerFactionMembersModal:onLeaveOrAbandon()
     local status = self:getStatus() or {}
     if status.isLeader then
         sendFactionCommand("AbandonFactionLeadership", {})
-        self:setStatus("Abandon leadership request sent.")
+        self:setStatus(T("DTCommon_UI_Faction_AbandonLeadershipSent", nil, "Abandon leadership request sent."))
     else
         sendFactionCommand("LeavePlayerFaction", {})
-        self:setStatus("Leave request sent.")
+        self:setStatus(T("DTCommon_UI_Faction_LeaveRequestSent", nil, "Leave request sent."))
     end
 end
 
@@ -426,7 +448,7 @@ function DT_PlayerFactionMembersModal:new(x, y, width, height)
     local o = ISCollapsableWindow:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.title = "Colony Members"
+    o.title = T("DTCommon_UI_Faction_MembersTitle", nil, "Colony Members")
     o.resizable = false
     o.status = nil
     o.selectedRow = nil

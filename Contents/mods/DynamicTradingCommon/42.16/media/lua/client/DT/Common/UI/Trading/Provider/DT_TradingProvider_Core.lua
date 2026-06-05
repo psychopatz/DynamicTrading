@@ -7,6 +7,13 @@
 DynamicTrading = DynamicTrading or {}
 DynamicTrading.TradingProvider = DynamicTrading.TradingProvider or {}
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function getLocalPlayer()
     if getPlayer then
         local player = getPlayer()
@@ -45,7 +52,7 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
 
     if provider.getFavorStatus == nil then
         function provider:getFavorStatus(trader)
-            return { canRequest = true, tooltip = "Return to conversation" }
+            return { canRequest = true, tooltip = T("DTCommon_UI_Trading_ReturnToConversation", nil, "Return to conversation") }
         end
     end
 
@@ -53,10 +60,15 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
         function provider:getAskButtonConfig(isBuying)
             local sessionContext = self.getTradeSessionContext and self:getTradeSessionContext() or nil
             if sessionContext and sessionContext.transactionKind == "gift" and not isBuying then
-                return { title = "Return to Talk", visible = true }
+                return { title = T("DTCommon_UI_Trading_ReturnToTalk", nil, "Return to Talk"), visible = true }
             end
 
-            return { title = isBuying and "Talk" or "Ask What They Want", visible = true }
+            return {
+                title = isBuying
+                    and T("DTCommon_UI_Trading_Talk", nil, "Talk")
+                    or T("DTCommon_UI_Trading_AskWhatTheyWant", nil, "Ask What They Want"),
+                visible = true
+            }
         end
     end
 
@@ -161,24 +173,24 @@ function DynamicTrading.TradingProvider.AttachCore(provider)
             if DynamicTrading.Archetypes and DynamicTrading.Archetypes[archetype] then
                 return DynamicTrading.Archetypes[archetype].name
             end
-            return archetype or "Survivor"
+            return archetype or T("DTCommon_UI_Trading_Survivor", nil, "Survivor")
         end
     end
 
     if provider.getWindowTitle == nil then
         function provider:getWindowTitle(trader)
-            if not trader then return "Trading" end
+            if not trader then return T("DTCommon_UI_Trading_Trading", nil, "Trading") end
             local sessionContext = self.getTradeSessionContext and self:getTradeSessionContext(trader and trader.traderID, trader and trader.archetype) or nil
             if sessionContext and sessionContext.windowTitle and sessionContext.windowTitle ~= "" then
                 return tostring(sessionContext.windowTitle)
             end
 
-            local name = trader.name or "Unknown"
-            local archName = self.getArchetypeName and self:getArchetypeName(trader.archetype) or (trader.archetype or "Survivor")
+            local name = trader.name or T("DTCommon_UI_Trading_Unknown", nil, "Unknown")
+            local archName = self.getArchetypeName and self:getArchetypeName(trader.archetype) or (trader.archetype or T("DTCommon_UI_Trading_Survivor", nil, "Survivor"))
             if sessionContext and sessionContext.transactionKind == "gift" then
-                return name .. " - Gift"
+                return T("DTCommon_UI_Trading_WindowTitleGift", { name = name }, name .. " - Gift")
             end
-            return name .. " - " .. archName
+            return T("DTCommon_UI_Trading_WindowTitleArchetype", { name = name, archetype = archName }, name .. " - " .. archName)
         end
     end
 

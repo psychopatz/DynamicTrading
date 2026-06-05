@@ -5,6 +5,8 @@ local Text = DynamicTrading.Text
 
 Text.Tables = Text.Tables or {}
 Text.FallbackDomains = Text.FallbackDomains or {
+    "DTCommon_UI",
+    "DTCommon_Status",
     "DTNPC_UI",
     "DTNPC_Dialogue",
     "DTNPC_Notice",

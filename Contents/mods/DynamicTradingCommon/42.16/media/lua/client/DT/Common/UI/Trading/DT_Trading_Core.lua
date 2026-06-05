@@ -10,6 +10,13 @@ local DialogueVocals = DynamicTrading
     and DynamicTrading.Dialogue
     and DynamicTrading.Dialogue.Vocals
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function nowMs()
     if getTimeInMillis then
         return math.floor(tonumber(getTimeInMillis()) or 0)
@@ -108,26 +115,26 @@ end
 
 function DT_TradingWindow:getDefaultActionTitle()
     if self.isBuying then
-        return "BUY ITEM"
+        return T("DTCommon_UI_Trading_BuyItem", nil, "BUY ITEM")
     end
 
     if self:isGiftMode() then
-        return "GIFT ITEM"
+        return T("DTCommon_UI_Trading_GiftItem", nil, "GIFT ITEM")
     end
 
-    return "SELL ITEM"
+    return T("DTCommon_UI_Trading_SellItem", nil, "SELL ITEM")
 end
 
 function DT_TradingWindow:getModeTabTitle(isBuying)
     if isBuying then
-        return "BUY FROM TRADER"
+        return T("DTCommon_UI_Trading_BuyFromTrader", nil, "BUY FROM TRADER")
     end
 
     if self:isGiftMode() then
-        return "GIFT TO NPC"
+        return T("DTCommon_UI_Trading_GiftToNpc", nil, "GIFT TO NPC")
     end
 
-    return "SELL TO TRADER"
+    return T("DTCommon_UI_Trading_SellToTrader", nil, "SELL TO TRADER")
 end
 
 function DT_TradingWindow:getActionButtonTitle(data)
@@ -137,21 +144,29 @@ function DT_TradingWindow:getActionButtonTitle(data)
 
     local price = tonumber(data.price) or 0
     if self.isBuying then
-        return "BUY ($" .. tostring(price) .. ")"
+        return T("DTCommon_UI_Trading_BuyPrice", { price = price }, "BUY ($" .. tostring(price) .. ")")
     end
 
     local qty = tonumber(data.qty) or 1
     if self:isGiftMode() then
         if qty > 1 then
-            return "GIFT x" .. tostring(qty) .. " (Value $" .. tostring(price) .. " EA)"
+            return T(
+                "DTCommon_UI_Trading_GiftValueEach",
+                { qty = qty, price = price },
+                "GIFT x" .. tostring(qty) .. " (Value $" .. tostring(price) .. " EA)"
+            )
         end
-        return "GIFT (Value $" .. tostring(price) .. ")"
+        return T("DTCommon_UI_Trading_GiftValue", { price = price }, "GIFT (Value $" .. tostring(price) .. ")")
     end
 
     if qty > 1 then
-        return "SELL x" .. tostring(qty) .. " ($" .. tostring(price) .. " EA)"
+        return T(
+            "DTCommon_UI_Trading_SellPriceEach",
+            { qty = qty, price = price },
+            "SELL x" .. tostring(qty) .. " ($" .. tostring(price) .. " EA)"
+        )
     end
-    return "SELL ($" .. tostring(price) .. ")"
+    return T("DTCommon_UI_Trading_SellPrice", { price = price }, "SELL ($" .. tostring(price) .. ")")
 end
 
 function DT_TradingWindow:refreshTradeLabels()
@@ -187,7 +202,7 @@ function DT_TradingWindow:beginTradeRequest()
     if self.btnAction then
         self.tradePendingButtonTitle = self.btnAction.title or self:getDefaultActionTitle()
         self.btnAction:setEnable(false)
-        self.btnAction:setTitle("PROCESSING...")
+        self.btnAction:setTitle(T("DTCommon_UI_Trading_Processing", nil, "PROCESSING..."))
     end
     return true
 end

@@ -1,3 +1,10 @@
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 function DT_TradingWindow:setTradingMode(isBuying)
     local trader = self:getCurrentTrader()
     self:coerceTradeMode(trader)
@@ -36,7 +43,7 @@ function DT_TradingWindow:setTradingMode(isBuying)
     if self.btnAsk then
         local config = self.dataProvider:getAskButtonConfig(self.isBuying)
         if config then
-            self.btnAsk:setTitle(config.title or "Talk")
+            self.btnAsk:setTitle(config.title or T("DTCommon_UI_Trading_Talk", nil, "Talk"))
             self.btnAsk:setVisible(config.visible ~= false)
             self.btnAsk:setEnable(true)
         else

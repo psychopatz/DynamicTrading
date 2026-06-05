@@ -1,6 +1,13 @@
 -- =============================================================================
 -- WINDOW MANAGEMENT
 -- =============================================================================
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvider)
     if DT_TradingWindow.instance then
         DT_TradingWindow.instance:close()
@@ -50,7 +57,7 @@ function DT_TradingWindow.ToggleWindow(traderID, archetype, radioObj, dataProvid
     if dataProvider.getWindowTitle then
         ui:setTitle(dataProvider:getWindowTitle(trader))
     else
-        ui:setTitle("Trading Window")
+        ui:setTitle(T("DTCommon_UI_Trading_WindowTitle", nil, "Trading Window"))
     end
 
     if dataProvider.getDefaultTradingMode then

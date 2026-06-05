@@ -6,6 +6,13 @@ require "ISUI/ISTextEntryBox"
 DT_PlayerFactionNameModal = ISCollapsableWindow:derive("DT_PlayerFactionNameModal")
 DT_PlayerFactionNameModal.instance = nil
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function trimName(value)
     local text = tostring(value or "")
     text = string.gsub(text, "^%s+", "")
@@ -26,7 +33,7 @@ function DT_PlayerFactionNameModal:createChildren()
     local contentY = th + pad
     local contentWidth = self.width - (pad * 2)
 
-    self.promptLabel = ISLabel:new(pad, contentY, 20, tostring(self.promptText or "Enter a faction name."), 1, 1, 1, 1, UIFont.Small, true)
+    self.promptLabel = ISLabel:new(pad, contentY, 20, tostring(self.promptText or T("DTCommon_UI_Faction_NamePrompt", nil, "Enter a faction name.")), 1, 1, 1, 1, UIFont.Small, true)
     self.promptLabel:initialise()
     self.promptLabel:instantiate()
     self:addChild(self.promptLabel)
@@ -36,17 +43,17 @@ function DT_PlayerFactionNameModal:createChildren()
     self.nameEntry:instantiate()
     self:addChild(self.nameEntry)
 
-    self.hintLabel = ISLabel:new(pad, contentY + 60, 20, "1-32 characters. Unique display name.", 0.75, 0.75, 0.75, 1, UIFont.Small, true)
+    self.hintLabel = ISLabel:new(pad, contentY + 60, 20, T("DTCommon_UI_Faction_NameHint", nil, "1-32 characters. Unique display name."), 0.75, 0.75, 0.75, 1, UIFont.Small, true)
     self.hintLabel:initialise()
     self.hintLabel:instantiate()
     self:addChild(self.hintLabel)
 
-    self.btnConfirm = ISButton:new(pad, self.height - 38, 100, 24, tostring(self.confirmLabel or "Create"), self, self.onConfirm)
+    self.btnConfirm = ISButton:new(pad, self.height - 38, 100, 24, tostring(self.confirmLabel or T("DTCommon_UI_Faction_Create", nil, "Create")), self, self.onConfirm)
     self.btnConfirm:initialise()
     self.btnConfirm:instantiate()
     self:addChild(self.btnConfirm)
 
-    self.btnCancel = ISButton:new(self.width - 110, self.height - 38, 100, 24, "Cancel", self, self.onCancel)
+    self.btnCancel = ISButton:new(self.width - 110, self.height - 38, 100, 24, T("DTCommon_UI_Faction_Cancel", nil, "Cancel"), self, self.onCancel)
     self.btnCancel:initialise()
     self.btnCancel:instantiate()
     self:addChild(self.btnCancel)
@@ -84,10 +91,10 @@ function DT_PlayerFactionNameModal.Open(args)
         DT_PlayerFactionNameModal.instance = modal
     end
 
-    modal.title = tostring(args.title or "Faction Name")
-    modal.promptText = tostring(args.promptText or "Enter a faction name.")
+    modal.title = tostring(args.title or T("DTCommon_UI_Faction_NameTitle", nil, "Faction Name"))
+    modal.promptText = tostring(args.promptText or T("DTCommon_UI_Faction_NamePrompt", nil, "Enter a faction name."))
     modal.defaultValue = trimName(args.defaultValue or "")
-    modal.confirmLabel = tostring(args.confirmLabel or "Create")
+    modal.confirmLabel = tostring(args.confirmLabel or T("DTCommon_UI_Faction_Create", nil, "Create"))
     modal.onConfirmCallback = args.onConfirm
 
     if modal.promptLabel then
@@ -114,11 +121,11 @@ function DT_PlayerFactionNameModal:new(x, y, width, height)
     local o = ISCollapsableWindow:new(x, y, width, height)
     setmetatable(o, self)
     self.__index = self
-    o.title = "Faction Name"
+    o.title = T("DTCommon_UI_Faction_NameTitle", nil, "Faction Name")
     o.resizable = false
-    o.promptText = "Enter a faction name."
+    o.promptText = T("DTCommon_UI_Faction_NamePrompt", nil, "Enter a faction name.")
     o.defaultValue = ""
-    o.confirmLabel = "Create"
+    o.confirmLabel = T("DTCommon_UI_Faction_Create", nil, "Create")
     o.onConfirmCallback = nil
     return o
 end
