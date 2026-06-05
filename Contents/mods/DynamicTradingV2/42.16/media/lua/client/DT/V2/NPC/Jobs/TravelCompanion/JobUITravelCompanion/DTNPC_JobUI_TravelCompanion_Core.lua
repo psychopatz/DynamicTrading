@@ -3,6 +3,8 @@
 -- Shared state bootstrap for the travel companion job UI.
 -- ==============================================================================
 
+require "DT/Common/Text/DT_Text"
+
 DTNPC_JobUI_TravelCompanion = DTNPC_JobUI_TravelCompanion or {}
 
 local CompanionUI = DTNPC_JobUI_TravelCompanion
@@ -47,6 +49,18 @@ function CompanionUI.DebugCompanionUI(message)
     if DynamicTrading and DynamicTrading.Log then
         DynamicTrading.Log("DTV2", "NPC", "CompanionUI", tostring(message or ""))
     end
+end
+
+function CompanionUI.T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+
+    if fallback then
+        return DynamicTrading.Text and DynamicTrading.Text.Format and DynamicTrading.Text.Format(fallback, params) or fallback
+    end
+
+    return tostring(key or "")
 end
 
 function CompanionUI.NowMs()

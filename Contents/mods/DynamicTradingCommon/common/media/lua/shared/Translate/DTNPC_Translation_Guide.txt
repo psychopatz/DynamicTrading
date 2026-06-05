@@ -1,0 +1,25 @@
+Dynamic Trading NPC Translation Guide
+====================================
+
+Source of truth
+- Add reusable NPC translation entries under `Contents/mods/DynamicTradingCommon/common/media/lua/shared/Translate/<LANG>/`.
+- Do not add visible NPC UI or dialogue English directly inside `DynamicTradingV2` logic files.
+
+Key rules
+- Use semantic stable keys such as `DTNPC_UI_FollowMethod` or `DTNPC_Dialogue_EscortOffer`.
+- Do not build translated sentences with string concatenation.
+- Use placeholders like `{name}`, `{count}`, `{required}`, `{mode}`.
+- Keep random flavor pools in translation-managed assets, not inline Lua fallback strings.
+
+Domain files
+- `DTNPC_UI_<LANG>.txt`: labels, buttons, context menus, tooltips.
+- `DTNPC_Dialogue_<LANG>.txt`: structured conversation lines and prompts.
+- `DTNPC_Notice_<LANG>.txt`: fixed notice strings and fallback warnings.
+- `DTNPC_Ambient_<LANG>.txt`: ambient fallback lines and short bark text.
+
+Lua usage
+- Resolve text through `DynamicTrading.Text.Get(key, params, fallback)`.
+- Prefer local wrappers like `CompanionUI.T(...)` or `EscortUI.T(...)` when a subsystem already exposes one.
+
+Validation
+- Run `.agent/scripts/check_v2_npc_translation_strings.sh` to flag new inline user-facing strings in the v2 NPC client/shared paths.

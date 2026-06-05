@@ -10,6 +10,13 @@ BanditClient.Internal = BanditClient.Internal or {}
 BanditClient.Internal.Helpers = BanditClient.Internal.Helpers or {}
 local Helpers = BanditClient.Internal.Helpers
 
+local function T(key, params, fallback)
+    return DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+        and DynamicTrading.Text.Get(key, params, fallback)
+        or fallback
+        or tostring(key or "")
+end
+
 local function shouldKeepBanditConversationOpen(ui, invalidReason)
     if not ui or ui.isBanditDemand ~= true then
         return false
@@ -64,26 +71,26 @@ function BanditClient.ShowDemand(ui, player, demand)
         local footerAction = Helpers.buildActiveDemandFooterAction(ui)
         local options = {
             {
-                text = "Hand over " .. amountText,
-                message = "Fine. Take it.",
+                text = T("DTNPC_UI_HandOver", { target = amountText }, "Hand over {target}"),
+                message = T("DTNPC_Dialogue_BanditFineTakeIt", nil, "Fine. Take it."),
                 onSelect = function(nextUI)
                     Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
                     nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
-                    Helpers.setWaitingOptions(nextUI, "Handing it over...", Helpers.buildCompletedDemandFooterAction(nextUI))
+                    Helpers.setWaitingOptions(nextUI, T("DTNPC_Dialogue_BanditHandingOver", nil, "Handing it over..."), Helpers.buildCompletedDemandFooterAction(nextUI))
                     Helpers.sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
                 end
             },
             {
-                text = "Refuse",
-                message = "No.",
+                text = T("DTNPC_UI_Refuse", nil, "Refuse"),
+                message = T("DTNPC_Dialogue_BanditNo", nil, "No."),
                 style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
                 onSelect = function(nextUI)
                     Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditRefuseSent = true
                     nextUI:speak(Helpers.pickDialogueLine("Refuse", nil, nextUI))
-                    Helpers.setWaitingOptions(nextUI, "They are turning hostile...")
+                    Helpers.setWaitingOptions(nextUI, T("DTNPC_Dialogue_BanditTurningHostile", nil, "They are turning hostile..."))
                     Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
             }
@@ -99,26 +106,26 @@ function BanditClient.ShowDemand(ui, player, demand)
         local footerAction = Helpers.buildActiveDemandFooterAction(ui)
         local options = {
             {
-                text = "Hand over " .. itemName,
-                message = "Take it and leave.",
+                text = T("DTNPC_UI_HandOver", { target = itemName }, "Hand over {target}"),
+                message = T("DTNPC_Dialogue_BanditTakeItLeave", nil, "Take it and leave."),
                 onSelect = function(nextUI)
                     Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
                     nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
-                    Helpers.setWaitingOptions(nextUI, "Handing it over...", Helpers.buildCompletedDemandFooterAction(nextUI))
+                    Helpers.setWaitingOptions(nextUI, T("DTNPC_Dialogue_BanditHandingOver", nil, "Handing it over..."), Helpers.buildCompletedDemandFooterAction(nextUI))
                     Helpers.sendBanditCommand(player, "BanditDemandPay", { groupID = groupID })
                 end
             },
             {
-                text = "Refuse",
-                message = "No.",
+                text = T("DTNPC_UI_Refuse", nil, "Refuse"),
+                message = T("DTNPC_Dialogue_BanditNo", nil, "No."),
                 style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
                 onSelect = function(nextUI)
                     Helpers.disarmIdleWarning(nextUI)
                     nextUI.banditRefuseSent = true
                     nextUI:speak(Helpers.pickDialogueLine("Refuse", nil, nextUI))
-                    Helpers.setWaitingOptions(nextUI, "They are turning hostile...")
+                    Helpers.setWaitingOptions(nextUI, T("DTNPC_Dialogue_BanditTurningHostile", nil, "They are turning hostile..."))
                     Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
                 end
             }
@@ -132,7 +139,7 @@ function BanditClient.ShowDemand(ui, player, demand)
     if demand.kind == "tribute" then
         local footerAction = Helpers.buildActiveDemandFooterAction(ui)
         ui:speak(Helpers.pickDialogueLine("Tribute", {
-            ["1"] = Helpers.normalize(demand.factionName) or "our faction",
+            ["1"] = Helpers.normalize(demand.factionName) or T("DTNPC_Dialogue_BanditTributeFaction", nil, "our faction"),
         }, ui))
 
         local options = {}
@@ -145,7 +152,7 @@ function BanditClient.ShowDemand(ui, player, demand)
                     nextUI.banditPaymentSent = true
                     nextUI.keepOpenOnInvalidInteraction = true
                     nextUI:speak(Helpers.pickDialogueLine("Accept", nil, nextUI))
-                    Helpers.setWaitingOptions(nextUI, "Working the bribe...", Helpers.buildCompletedDemandFooterAction(nextUI))
+                    Helpers.setWaitingOptions(nextUI, T("DTNPC_Dialogue_BanditWorkingBribe", nil, "Working the bribe..."), Helpers.buildCompletedDemandFooterAction(nextUI))
                     Helpers.sendBanditCommand(player, "BanditDemandPay", {
                         groupID = groupID,
                         tier = tier.tier,
@@ -155,14 +162,14 @@ function BanditClient.ShowDemand(ui, player, demand)
         end
 
         options[#options + 1] = {
-            text = "Refuse",
-            message = "No tribute.",
+            text = T("DTNPC_UI_Refuse", nil, "Refuse"),
+            message = T("DTNPC_Dialogue_BanditNoTribute", nil, "No tribute."),
             style = { bgColor = { 0.35, 0.12, 0.10, 1.0 }, borderColor = { 0.75, 0.25, 0.18, 1.0 } },
             onSelect = function(nextUI)
                 Helpers.disarmIdleWarning(nextUI)
                 nextUI.banditRefuseSent = true
                 nextUI:speak(Helpers.pickDialogueLine("Refuse", nil, nextUI))
-                Helpers.setWaitingOptions(nextUI, "They are turning hostile...")
+                Helpers.setWaitingOptions(nextUI, T("DTNPC_Dialogue_BanditTurningHostile", nil, "They are turning hostile..."))
                 Helpers.sendBanditCommand(player, "BanditDemandRefuse", { groupID = groupID, reason = "refused" })
             end
         }

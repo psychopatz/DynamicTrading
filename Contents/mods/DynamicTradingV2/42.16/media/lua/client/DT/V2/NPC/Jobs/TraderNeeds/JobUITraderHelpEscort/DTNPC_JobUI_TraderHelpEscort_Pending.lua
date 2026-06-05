@@ -20,7 +20,7 @@ modules.Pending = true
 
 function EscortUI.ShowUnavailable(ui, message)
     EscortUI.activeConversation = nil
-    ui:speak(message or "This rescue call is no longer available.")
+    ui:speak(message or EscortUI.T("DTNPC_Dialogue_EscortUnavailable", nil, "This rescue call is no longer available."))
 
     local options = {}
     local footerAction = Helpers.buildExitFooterAction()
@@ -38,14 +38,14 @@ function EscortUI.ShowPendingConversation(ui, npc, player, npcData, context)
     local offer = EscortUI.GetOffer(player, context) or {}
     local incident = context and context.incident or nil
     if not incident then
-        EscortUI.ShowUnavailable(ui, offer.unavailable or "This rescue call is gone.")
+        EscortUI.ShowUnavailable(ui, offer.unavailable or EscortUI.T("DTNPC_Dialogue_EscortUnavailableGone", nil, "This rescue call is gone."))
         return
     end
 
-    ui:speak(offer.offer or "I need an escort back to base.")
+    ui:speak(offer.offer or EscortUI.T("DTNPC_Dialogue_EscortOffer", nil, "I need an escort back to base."))
     local options = {
         {
-            text = (offer.choiceLabels and offer.choiceLabels.accept) or "Accept",
+            text = (offer.choiceLabels and offer.choiceLabels.accept) or EscortUI.T("DTNPC_UI_Accept", nil, "Accept"),
             message = "",
             onSelect = function(innerUI)
                 EscortUI.pendingRequest = {
@@ -55,11 +55,11 @@ function EscortUI.ShowPendingConversation(ui, npc, player, npcData, context)
                     incidentId = context.incidentId,
                     traderId = context.traderId,
                 }
-                innerUI:speak("Stay with me. I'm ready when you are.")
+                innerUI:speak(EscortUI.T("DTNPC_Dialogue_EscortAccept", nil, "Stay with me. I'm ready when you are."))
 
                 local waitingOptions = {
                     {
-                        text = "Working...",
+                        text = EscortUI.T("DTNPC_UI_Working", nil, "Working..."),
                         message = "",
                         onSelect = function() end,
                     },
@@ -80,10 +80,10 @@ function EscortUI.ShowPendingConversation(ui, npc, player, npcData, context)
             end,
         },
         {
-            text = (offer.choiceLabels and offer.choiceLabels.details) or "Details",
+            text = (offer.choiceLabels and offer.choiceLabels.details) or EscortUI.T("DTNPC_UI_Details", nil, "Details"),
             message = "",
             onSelect = function(innerUI)
-                innerUI:speak(offer.details or "Guide the trader home and keep them alive.")
+                innerUI:speak(offer.details or EscortUI.T("DTNPC_Dialogue_EscortDetails", nil, "Guide the trader home and keep them alive."))
 
                 local detailOptions = {}
                 local footerAction = Helpers.buildBackFooterAction({
@@ -99,10 +99,10 @@ function EscortUI.ShowPendingConversation(ui, npc, player, npcData, context)
             end,
         },
         {
-            text = (offer.choiceLabels and offer.choiceLabels.decline) or "Decline",
+            text = (offer.choiceLabels and offer.choiceLabels.decline) or EscortUI.T("DTNPC_UI_Decline", nil, "Decline"),
             message = "",
             onSelect = function(innerUI)
-                innerUI:speak(offer.decline or "Then I keep hiding in here.")
+                innerUI:speak(offer.decline or EscortUI.T("DTNPC_Dialogue_EscortDecline", nil, "Then I keep hiding in here."))
 
                 local doneOptions = {}
                 local footerAction = Helpers.buildExitFooterAction()

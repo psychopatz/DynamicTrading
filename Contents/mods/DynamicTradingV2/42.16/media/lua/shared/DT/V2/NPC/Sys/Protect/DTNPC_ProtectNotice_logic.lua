@@ -12,6 +12,13 @@ local syncProtectNotice = Internal.syncProtectNotice
 local protectLog = Internal.protectLog
 local buildProtectDebugSummary = Internal.buildProtectDebugSummary
 
+local function T(key, params, fallback)
+    return DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+        and DynamicTrading.Text.Get(key, params, fallback)
+        or fallback
+        or tostring(key or "")
+end
+
 local function isProtectDebugEnabled(options)
     if options and options.issue == true then
         if DTNPCProtect.CONFIG.CombatIssueLogging == true then
@@ -88,29 +95,29 @@ end
 function DTNPCProtect.BuildFallbackNotice(requestedState, resolvedState)
     -- Protect state transitions
     if resolvedState == "ProtectMelee" and requestedState == "ProtectRanged" then
-        return "No firearm ready. Switching to melee.", "warning"
+        return T("DTNPC_Notice_Protect_NoFirearmSwitchMelee", nil, "No firearm ready. Switching to melee."), "warning"
     end
     if resolvedState == "ProtectRanged" and requestedState == "ProtectMelee" then
-        return "No melee weapon ready. Switching to ranged.", "warning"
+        return T("DTNPC_Notice_Protect_NoMeleeSwitchRanged", nil, "No melee weapon ready. Switching to ranged."), "warning"
     end
     if requestedState == "ProtectAuto" then
-        return "Can't cover you, I got no available weapons.", "warning"
+        return T("DTNPC_Notice_Protect_NoWeaponsCover", nil, "Can't cover you, I got no available weapons."), "warning"
     end
     if requestedState == "ProtectRanged" then
-        return "Can't cover you. No usable firearm.", "warning"
+        return T("DTNPC_Notice_Protect_NoUsableFirearm", nil, "Can't cover you. No usable firearm."), "warning"
     end
     if requestedState == "ProtectMelee" then
-        return "Can't protect up close. No melee weapon.", "warning"
+        return T("DTNPC_Notice_Protect_NoMeleeWeapon", nil, "Can't protect up close. No melee weapon."), "warning"
     end
     -- Guard state fallbacks
     if requestedState == "GuardAuto" then
-        return "Can't guard, no available weapons.", "warning"
+        return T("DTNPC_Notice_Guard_NoWeapons", nil, "Can't guard, no available weapons."), "warning"
     end
     if requestedState == "GuardRanged" then
-        return "No firearm ready for guard duty.", "warning"
+        return T("DTNPC_Notice_Guard_NoFirearm", nil, "No firearm ready for guard duty."), "warning"
     end
     if requestedState == "GuardMelee" then
-        return "No melee weapon ready for guard duty.", "warning"
+        return T("DTNPC_Notice_Guard_NoMelee", nil, "No melee weapon ready for guard duty."), "warning"
     end
     return nil, nil
 end

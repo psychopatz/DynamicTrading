@@ -89,7 +89,7 @@ function CompanionUI.GetDisplayNameForFullType(fullType)
         end
     end
 
-    return tostring(fullType or "Medical Supply")
+    return tostring(fullType or CompanionUI.T("DTNPC_UI_UseMedicalSupply", nil, "Medical Supply"))
 end
 
 function CompanionUI.AddMedicalSupplySummary(supplies, byFullType, entry)
@@ -150,12 +150,14 @@ end
 
 function CompanionUI.GetPatchUpLabel(worker)
     if not worker then
-        return "Patch Up", 1
+        return CompanionUI.T("DTNPC_UI_PatchUp", nil, "Patch Up"), 1
     end
 
     local _, total = CompanionUI.CollectMedicalSupplies(worker)
     if total <= 0 then
-        return "Patch Up (No medicine)", total
+        return CompanionUI.T("DTNPC_UI_PatchUpNoMedicine", nil, "Patch Up (No medicine)"), total
     end
-    return "Patch Up (" .. tostring(total) .. " medical)", total
+    return CompanionUI.T("DTNPC_UI_PatchUpMedicalCount", {
+        count = tostring(total),
+    }, "Patch Up ({count} medical)"), total
 end

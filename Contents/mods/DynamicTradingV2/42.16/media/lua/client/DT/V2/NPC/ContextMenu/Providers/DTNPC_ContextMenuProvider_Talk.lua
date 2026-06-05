@@ -5,6 +5,13 @@
 
 DTNPCContextMenu = DTNPCContextMenu or {}
 
+local function T(key, params, fallback)
+    return DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+        and DynamicTrading.Text.Get(key, params, fallback)
+        or fallback
+        or tostring(key or "")
+end
+
 local function addTalkOption(context, ui, npc, player, npcData)
     if not context or not npc or not player then
         return
@@ -13,7 +20,9 @@ local function addTalkOption(context, ui, npc, player, npcData)
     local name = npcData and npcData.name or "Survivor"
     local talkLabel = DTNPCJobUI and DTNPCJobUI.GetTalkLabel
         and DTNPCJobUI.GetTalkLabel(ui, npc, player, npcData, name)
-        or ("Talk to " .. tostring(name))
+        or T("DTNPC_UI_TalkToName", {
+            name = tostring(name),
+        }, "Talk to {name}")
 
     local option = context:addOption(talkLabel, npc, function(targetNPC)
         if DTNPC_TraderDialogue_Hub and DTNPC_TraderDialogue_Hub.Init then

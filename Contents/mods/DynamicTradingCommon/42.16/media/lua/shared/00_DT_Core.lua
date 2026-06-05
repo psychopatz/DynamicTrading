@@ -17,6 +17,8 @@ DynamicTrading.Config.NPCMovement = DynamicTrading.Config.NPCMovement or {
 
 DynamicTrading.Archetypes = DynamicTrading.Archetypes or {}
 
+require "DT/Common/Text/DT_Text"
+
 DynamicTrading.Manuals = DynamicTrading.Manuals or {
     Registry = {},
     Order = {},

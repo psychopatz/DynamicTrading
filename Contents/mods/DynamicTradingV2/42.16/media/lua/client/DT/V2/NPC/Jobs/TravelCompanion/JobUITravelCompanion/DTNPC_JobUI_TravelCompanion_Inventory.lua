@@ -166,7 +166,7 @@ function CompanionUI.OpenCompanionInventory(ui, worker, npc, npcData)
 
     local player = getSpecificPlayer and getSpecificPlayer(0) or getPlayer and getPlayer() or nil
     if player and player.setHaloNote then
-        player:setHaloNote("Loading warehouse inventory...", 170, 210, 255, 180)
+        player:setHaloNote(CompanionUI.T("DTNPC_UI_LoadingWarehouseInventory", nil, "Loading warehouse inventory..."), 170, 210, 255, 180)
     end
 
     if CompanionUI.IsWorkerDetailWarm(resolvedWorker) then

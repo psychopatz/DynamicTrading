@@ -48,17 +48,24 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
     local reviveData = reviveInfo and reviveInfo[2] or nil
     local requiresItems = reviveData and reviveData.requiresItems == true
     local requiredCount = DTNPCHealth and DTNPCHealth.GetReviveRequirement and DTNPCHealth.GetReviveRequirement(npcData) or nil
-    local healLabel = requiresItems and "Heal Up (Need supplies)" or "Help Up"
+    local healLabel = requiresItems
+        and EscortUI.T("DTNPC_UI_HealUpNeedSupplies", nil, "Heal Up (Need supplies)")
+        or EscortUI.T("DTNPC_UI_HelpUp", nil, "Help Up")
     if requiresItems and requiredCount and requiredCount > 0 then
-        healLabel = "Heal Up (" .. tostring(bandageCount) .. "/" .. tostring(requiredCount) .. ")"
+        healLabel = EscortUI.T("DTNPC_UI_HealUpCountOfRequired", {
+            count = tostring(bandageCount),
+            required = tostring(requiredCount),
+        }, "Heal Up ({count}/{required})")
     elseif requiresItems and bandageCount > 0 then
-        healLabel = "Heal Up (" .. tostring(bandageCount) .. ")"
+        healLabel = EscortUI.T("DTNPC_UI_HealUpCount", {
+            count = tostring(bandageCount),
+        }, "Heal Up ({count})")
     end
 
-    ui:speak(overrideSpeech or "We're moving. Keep me alive and get me back to base.")
+    ui:speak(overrideSpeech or EscortUI.T("DTNPC_Dialogue_EscortIntro", nil, "We're moving. Keep me alive and get me back to base."))
     local options = {
         {
-            text = "Status",
+            text = EscortUI.T("DTNPC_UI_Status", nil, "Status"),
             message = "",
             onSelect = function(innerUI)
                 EscortUI.ShowEscortConversation(
@@ -67,12 +74,12 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
                     player,
                     EscortUI.GetNPCData(npc) or npcData,
                     EscortUI.GetIncidentContext(player, EscortUI.GetNPCData(npc) or npcData),
-                    summary or "Keep the trader alive and moving."
+                    summary or EscortUI.T("DTNPC_Dialogue_EscortSummary", nil, "Keep the trader alive and moving.")
                 )
             end,
         },
         {
-            text = "Follow Near",
+            text = EscortUI.T("DTNPC_UI_FollowNear", nil, "Follow Near"),
             message = "",
             onSelect = function(innerUI)
                 rememberPendingAction(innerUI, npc, player)
@@ -85,12 +92,12 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
                     player,
                     EscortUI.GetNPCData(npc) or npcData,
                     EscortUI.GetIncidentContext(player, EscortUI.GetNPCData(npc) or npcData),
-                    "Stay close. I'll follow your lead."
+                    EscortUI.T("DTNPC_Dialogue_EscortFollowNear", nil, "Stay close. I'll follow your lead.")
                 )
             end,
         },
         {
-            text = "Follow Far",
+            text = EscortUI.T("DTNPC_UI_FollowFar", nil, "Follow Far"),
             message = "",
             onSelect = function(innerUI)
                 rememberPendingAction(innerUI, npc, player)
@@ -103,12 +110,12 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
                     player,
                     EscortUI.GetNPCData(npc) or npcData,
                     EscortUI.GetIncidentContext(player, EscortUI.GetNPCData(npc) or npcData),
-                    "Give me more room. I'll trail you from farther back."
+                    EscortUI.T("DTNPC_Dialogue_EscortFollowFar", nil, "Give me more room. I'll trail you from farther back.")
                 )
             end,
         },
         {
-            text = "Stay",
+            text = EscortUI.T("DTNPC_UI_HoldPosition", nil, "Stay"),
             message = "",
             onSelect = function(innerUI)
                 rememberPendingAction(innerUI, npc, player)
@@ -119,7 +126,7 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
                     player,
                     EscortUI.GetNPCData(npc) or npcData,
                     EscortUI.GetIncidentContext(player, EscortUI.GetNPCData(npc) or npcData),
-                    "I'll hold here until you move me again."
+                    EscortUI.T("DTNPC_Dialogue_EscortStay", nil, "I'll hold here until you move me again.")
                 )
             end,
         },
@@ -128,7 +135,7 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
             message = "",
             onSelect = function(innerUI)
                 if requiresItems and bandageCount <= 0 then
-                    innerUI:speak("Bring bandages or ripped sheets first.")
+                    innerUI:speak(EscortUI.T("DTNPC_Dialogue_EscortNeedSupplies", nil, "Bring bandages or ripped sheets first."))
                     EscortUI.ShowEscortConversation(
                         innerUI,
                         npc,
@@ -147,7 +154,9 @@ function EscortUI.ShowEscortConversation(ui, npc, player, npcData, context, over
                     player,
                     EscortUI.GetNPCData(npc) or npcData,
                     EscortUI.GetIncidentContext(player, EscortUI.GetNPCData(npc) or npcData),
-                    requiresItems and "Hold still. Use the bandage and keep moving." or "Hold still. I'll get you moving again."
+                    requiresItems
+                        and EscortUI.T("DTNPC_Dialogue_EscortPatchWithSupplies", nil, "Hold still. Use the bandage and keep moving.")
+                        or EscortUI.T("DTNPC_Dialogue_EscortPatchWithoutSupplies", nil, "Hold still. I'll get you moving again.")
                 )
             end,
         },

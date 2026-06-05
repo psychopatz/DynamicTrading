@@ -14,6 +14,13 @@ pcall(require, "DT/V2/NPC/Jobs/DTNPC_JobUI")
 
 DTNPC_TraderDialogue_Hub = {}
 
+local function T(key, params, fallback)
+    return DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+        and DynamicTrading.Text.Get(key, params, fallback)
+        or fallback
+        or tostring(key or "")
+end
+
 local function normalizeFollowSpacingMode(mode)
     local text = string.lower(tostring(mode or ""))
     if text == "far" then
@@ -234,7 +241,7 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
     end
     
     if not (DynamicObjectives and DynamicObjectives.Quests and DynamicObjectives.Quests.BuildTraderQuestOffer) then
-        ui:speak("I am not handing out jobs right now.")
+        ui:speak(T("DTNPC_Dialogue_NotHandingOutJobs", nil, "I am not handing out jobs right now."))
         reopenTraderDialogueOptions(ui, npc, player)
         return
     end
@@ -243,7 +250,9 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
     local offer = DynamicObjectives.Quests.BuildTraderQuestOffer(player, traderContext)
     if not offer then
         local resting = traderContext.currentState == "Resting"
-        ui:speak(resting and "No work from me right now. Check back later." or "I only hand out work when I am settled down.")
+        ui:speak(resting
+            and T("DTNPC_Dialogue_NoWorkRightNow", nil, "No work from me right now. Check back later.")
+            or T("DTNPC_Dialogue_WorkOnlyWhenSettled", nil, "I only hand out work when I am settled down."))
         reopenTraderDialogueOptions(ui, npc, player)
         return
     end
@@ -295,8 +304,8 @@ local function openTraderQuestOffer(ui, npc, player, npcData)
             }
         elseif currentOffer.activeQuest then
             options[#options + 1] = {
-                text = "How's it going?",
-                message = "Remind me where I am on that job.",
+                text = T("DTNPC_Dialogue_HowsItGoing", nil, "How's it going?"),
+                message = T("DTNPC_Dialogue_RemindJob", nil, "Remind me where I am on that job."),
                 onSelect = function(nextUI)
                     nextUI:speak(currentOffer.progressSummary or currentOffer.resolvedDialogue.active)
                     showOfferOptions(nextUI, currentOffer)
@@ -450,7 +459,7 @@ function DTNPC_TraderDialogue_Hub.Init(ui, npc, player, initOptions)
         greeting = DynamicTrading.DialogueManager.GenerateGreeting(ui.target)
     end
     if not greeting then
-        greeting = "Hello. What can I do for you?"
+        greeting = T("DTNPC_Dialogue_DefaultGreeting", nil, "Hello. What can I do for you?")
     end
     if initialPlayerMessage and initialPlayerMessage.text and type(greeting) == "table" and greeting.delay == nil then
         greeting = cloneMessagePayload(greeting)
@@ -482,8 +491,8 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     
     -- OPTION 1: CHAT (First implementation)
     table.insert(options, {
-        text = "Chat",
-        message = "Got a minute to talk?",
+        text = T("DTNPC_UI_Chat", nil, "Chat"),
+        message = T("DTNPC_Dialogue_GotMinuteToTalk", nil, "Got a minute to talk?"),
         onSelect = function(conversationUI)
             DT_ConversationChatMenus.OpenTraderChat(conversationUI, {
                 onBack = function(backUI)
@@ -494,8 +503,8 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     })
     
     table.insert(options, {
-        text = "Any work?",
-        message = "Got any work for me?",
+        text = T("DTNPC_UI_AnyWork", nil, "Any work?"),
+        message = T("DTNPC_Dialogue_GotWorkForMe", nil, "Got any work for me?"),
         onSelect = function(conversationUI)
             openTraderQuestOffer(conversationUI, npc, player, npcData)
         end
@@ -503,35 +512,41 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
 
     if isPlayerFollowingOwner(player, npcData) then
         table.insert(options, {
-            text = "Follow Method",
-            message = "Adjust how closely you trail me.",
+            text = T("DTNPC_UI_FollowMethod", nil, "Follow Method"),
+            message = T("DTNPC_Dialogue_AdjustTrailDistance", nil, "Adjust how closely you trail me."),
             onSelect = function(conversationUI)
                 local liveData = DTNPC.GetData(npc) or npcData
                 local currentMode = getFollowSpacingMode(liveData)
-                conversationUI:speak("Current follow method: " .. (currentMode == "far" and "Far" or "Near") .. ".")
+                conversationUI:speak(T("DTNPC_Dialogue_CurrentFollowMethod", {
+                    mode = currentMode == "far" and T("DTNPC_UI_Far", nil, "Far") or T("DTNPC_UI_Near", nil, "Near"),
+                }, "Current follow method: {mode}."))
                 local followOptions = {
                     {
-                        text = currentMode == "near" and "Near [ACTIVE]" or "Near",
-                        message = "Stay tighter on my position.",
+                        text = currentMode == "near"
+                            and T("DTNPC_UI_ModeActive", { label = T("DTNPC_UI_Near", nil, "Near") }, "{label} [ACTIVE]")
+                            or T("DTNPC_UI_Near", nil, "Near"),
+                        message = T("DTNPC_Dialogue_StayTighter", nil, "Stay tighter on my position."),
                         onSelect = function(nextUI)
                             local latestData = DTNPC.GetData(npc) or liveData
                             if issueFollowSpacingOrder(player, npc, latestData, "near") then
-                                nextUI:speak("Near spacing set.")
+                                nextUI:speak(T("DTNPC_Dialogue_NearSpacingSet", nil, "Near spacing set."))
                             else
-                                nextUI:speak("I couldn't change follow method right now.")
+                                nextUI:speak(T("DTNPC_Dialogue_CouldNotChangeFollowMethod", nil, "I couldn't change follow method right now."))
                             end
                             DTNPC_TraderDialogue_Hub.GenerateOptions(nextUI, npc, player)
                         end
                     },
                     {
-                        text = currentMode == "far" and "Far [ACTIVE]" or "Far",
-                        message = "Give me more room during fights.",
+                        text = currentMode == "far"
+                            and T("DTNPC_UI_ModeActive", { label = T("DTNPC_UI_Far", nil, "Far") }, "{label} [ACTIVE]")
+                            or T("DTNPC_UI_Far", nil, "Far"),
+                        message = T("DTNPC_Dialogue_GiveMeRoomDuringFights", nil, "Give me more room during fights."),
                         onSelect = function(nextUI)
                             local latestData = DTNPC.GetData(npc) or liveData
                             if issueFollowSpacingOrder(player, npc, latestData, "far") then
-                                nextUI:speak("Far spacing set.")
+                                nextUI:speak(T("DTNPC_Dialogue_FarSpacingSet", nil, "Far spacing set."))
                             else
-                                nextUI:speak("I couldn't change follow method right now.")
+                                nextUI:speak(T("DTNPC_Dialogue_CouldNotChangeFollowMethod", nil, "I couldn't change follow method right now."))
                             end
                             DTNPC_TraderDialogue_Hub.GenerateOptions(nextUI, npc, player)
                         end
@@ -578,8 +593,8 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     
     -- [CHANGE] We now insert the option regardless of isTrading status
     table.insert(options, {
-        text = "Trade",
-        message = "Let's see what you've got.",
+        text = T("DTNPC_UI_Trade", nil, "Trade"),
+        message = T("DTNPC_Dialogue_LetsSeeWhatYouGot", nil, "Let's see what you've got."),
         style = isTrading and { bgColor = {0.8, 0.7, 0.1, 0.4} } or nil,
         onSelect = function(ui)
             -- [CHANGE] Logic check happens here instead
@@ -609,7 +624,7 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
                     
                     -- Request stock generation, then open window
                     DynamicTrading.Log("DTV2", "Dialog", "Trade", "Requesting stock generation...")
-                    ui:speak("Let me check what I have in stock...")
+                    ui:speak(T("DTNPC_Dialogue_CheckingStock", nil, "Let me check what I have in stock..."))
                     
                     -- Request stock from server
                     local args = { traderID = traderID }
@@ -627,14 +642,14 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
             else
                 -- FAILURE: Refusal Dialogue
                 local refusals = {
-                    "I'm not open for business right now. Just resting.",
-                    "Shop's closed. I need a break.",
-                    "Can't you see I'm busy? Come back later.",
-                    "I'm off the clock. Stop bothering me.",
-                    "Not now. Check back in a bit.",
-                    "I don't have my stock organized yet.",
-                    "Stop bothering me, I'm resting.",
-                    "I'm just holding onto this spot for now. No trading."
+                    T("DTNPC_Dialogue_RefusalResting", nil, "I'm not open for business right now. Just resting."),
+                    T("DTNPC_Dialogue_RefusalClosed", nil, "Shop's closed. I need a break."),
+                    T("DTNPC_Dialogue_RefusalBusy", nil, "Can't you see I'm busy? Come back later."),
+                    T("DTNPC_Dialogue_RefusalOffClock", nil, "I'm off the clock. Stop bothering me."),
+                    T("DTNPC_Dialogue_RefusalCheckBack", nil, "Not now. Check back in a bit."),
+                    T("DTNPC_Dialogue_RefusalStockNotReady", nil, "I don't have my stock organized yet."),
+                    T("DTNPC_Dialogue_RefusalStopBothering", nil, "Stop bothering me, I'm resting."),
+                    T("DTNPC_Dialogue_RefusalHoldingSpot", nil, "I'm just holding onto this spot for now. No trading.")
                 }
                 
                 -- Pick a random refusal
@@ -648,8 +663,8 @@ function DTNPC_TraderDialogue_Hub.GenerateOptions(ui, npc, player)
     })
     
     table.insert(options, {
-        text = "Contacts",
-        message = "Let me check my contacts.",
+        text = T("DTNPC_UI_Contacts", nil, "Contacts"),
+        message = T("DTNPC_Dialogue_CheckContacts", nil, "Let me check my contacts."),
         onSelect = function(conversationUI)
             local selectTraderID = conversationUI and conversationUI.target and (conversationUI.target.uuid or conversationUI.target.traderID or conversationUI.target.id) or nil
             DT_ContactsWindow.Open({ selectTraderID = selectTraderID })
@@ -714,14 +729,14 @@ local function OnTick()
     
     -- Provide status update to player every few seconds
     if elapsed > 0.005 and not pending.hasSpokenShortWait then
-        pending.ui:speak("Still looking for it, just a second...")
+        pending.ui:speak(T("DTNPC_Dialogue_StillLooking", nil, "Still looking for it, just a second..."))
         pending.hasSpokenShortWait = true
     end
     
     if gt and elapsed > 0.08 then
         DynamicTrading.Log("DTV2", "Dialog", "Trade", "Stock request timed out")
         if uiValid then
-            pending.ui:speak("Sorry, I'm having trouble with my inventory right now.")
+            pending.ui:speak(T("DTNPC_Dialogue_InventoryTrouble", nil, "Sorry, I'm having trouble with my inventory right now."))
         end
         clearInteractionPose(pending.npc)
         DTNPC_TraderDialogue_Hub.PendingTrade = nil

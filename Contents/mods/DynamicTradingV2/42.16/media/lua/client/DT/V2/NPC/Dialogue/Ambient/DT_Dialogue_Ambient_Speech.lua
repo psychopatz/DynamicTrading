@@ -18,6 +18,13 @@ local DialogueVocals = DynamicTrading
     and DynamicTrading.Dialogue
     and DynamicTrading.Dialogue.Vocals
 
+local function T(key, params, fallback)
+    return DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+        and DynamicTrading.Text.Get(key, params, fallback)
+        or fallback
+        or tostring(key or "")
+end
+
 local function lower(value)
     return string.lower(tostring(value or ""))
 end
@@ -29,14 +36,14 @@ local function isProtectAmbientState(state)
 end
 
 local PROTECT_NOTICE_FALLBACKS = {
-    ["Companion:Attack"] = "On it.",
-    ["Companion:AttackRange"] = "Covering you.",
-    ["Companion:Reloading"] = "Reloading.",
-    ["Companion:CrowdRefuse"] = "Too many of them. Backing off.",
-    ["Companion:NoAmmo"] = "I'm out of ammo.",
-    ["Companion:Return"] = "Back with you.",
-    ["Default:Looking"] = "Checking the last spot.",
-    ["Default:Searching"] = "Still looking.",
+    ["Companion:Attack"] = { key = "DTNPC_Ambient_Protect_Attack", fallback = "On it." },
+    ["Companion:AttackRange"] = { key = "DTNPC_Ambient_Protect_AttackRange", fallback = "Covering you." },
+    ["Companion:Reloading"] = { key = "DTNPC_Ambient_Protect_Reloading", fallback = "Reloading." },
+    ["Companion:CrowdRefuse"] = { key = "DTNPC_Ambient_Protect_CrowdRefuse", fallback = "Too many of them. Backing off." },
+    ["Companion:NoAmmo"] = { key = "DTNPC_Ambient_Protect_NoAmmo", fallback = "I'm out of ammo." },
+    ["Companion:Return"] = { key = "DTNPC_Ambient_Protect_Return", fallback = "Back with you." },
+    ["Default:Looking"] = { key = "DTNPC_Ambient_Protect_Looking", fallback = "Checking the last spot." },
+    ["Default:Searching"] = { key = "DTNPC_Ambient_Protect_Searching", fallback = "Still looking." },
 }
 
 local function buildSpeechAudio(npcData, text, sentiment, status, state, entry, channel, cooldownMs)
@@ -202,14 +209,16 @@ function Ambient.BuildProtectNoticeSpeechData(npcData, zombie, currentTime)
     end
 
     local fallbackKey = tostring(status) .. ":" .. tostring(state)
+    local fallbackEntry = PROTECT_NOTICE_FALLBACKS[fallbackKey]
+    local fallbackText = fallbackEntry and T(fallbackEntry.key, nil, fallbackEntry.fallback) or T("DTNPC_Ambient_Protect_Searching", nil, "Staying alert.")
     return buildSpeechDataFromText(
-        PROTECT_NOTICE_FALLBACKS[fallbackKey] or "Staying alert.",
+        fallbackText,
         npcData.protectNoticeSentiment or "neutral",
         zombie,
         currentTime,
         buildSpeechAudio(
             npcData,
-            PROTECT_NOTICE_FALLBACKS[fallbackKey] or "Staying alert.",
+            fallbackText,
             npcData.protectNoticeSentiment or "neutral",
             status,
             state,

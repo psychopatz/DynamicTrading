@@ -15,6 +15,13 @@ DTNPCLootSearchWindow = ISCollapsableWindow:derive("DTNPCLootSearchWindow")
 
 local LootSearchList = ISScrollingListBox:derive("LootSearchList")
 
+local function T(key, params, fallback)
+    return DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+        and DynamicTrading.Text.Get(key, params, fallback)
+        or fallback
+        or tostring(key or "")
+end
+
 local function formatWeightValue(value)
     local numeric = tonumber(value)
     if not numeric then
@@ -166,22 +173,22 @@ function DTNPCLootSearchWindow:createChildren()
     local controlX = pad + listW + gap
     local itemX = controlX + controlW + gap
 
-    self.refreshButton = ISButton:new(pad, topY, buttonW, buttonH, "Refresh", self, self.onRefresh)
+    self.refreshButton = ISButton:new(pad, topY, buttonW, buttonH, T("DTNPC_UI_Refresh", nil, "Refresh"), self, self.onRefresh)
     self.refreshButton:initialise()
     self.refreshButton:instantiate()
     self:addChild(self.refreshButton)
 
-    self.collectButton = ISButton:new(pad + buttonW + gap, topY, buttonW + 20, buttonH, "Collect", self, self.onCollect)
+    self.collectButton = ISButton:new(pad + buttonW + gap, topY, buttonW + 20, buttonH, T("DTNPC_UI_Collect", nil, "Collect"), self, self.onCollect)
     self.collectButton:initialise()
     self.collectButton:instantiate()
     self:addChild(self.collectButton)
 
-    self.blacklistButton = ISButton:new(pad + (buttonW * 2) + 28, topY, 130, buttonH, "Toggle Blacklist", self, self.onToggleBlacklist)
+    self.blacklistButton = ISButton:new(pad + (buttonW * 2) + 28, topY, 130, buttonH, T("DTNPC_UI_ToggleBlacklist", nil, "Toggle Blacklist"), self, self.onToggleBlacklist)
     self.blacklistButton:initialise()
     self.blacklistButton:instantiate()
     self:addChild(self.blacklistButton)
 
-    self.modeButton = ISButton:new(pad + (buttonW * 2) + 166, topY, 130, buttonH, "Follow Me", self, self.onToggleMode)
+    self.modeButton = ISButton:new(pad + (buttonW * 2) + 166, topY, 130, buttonH, T("DTNPC_UI_FollowMe", nil, "Follow Me"), self, self.onToggleMode)
     self.modeButton:initialise()
     self.modeButton:instantiate()
     self:addChild(self.modeButton)
@@ -335,7 +342,7 @@ function DTNPCLootSearchWindow:populateItems(source)
             label = label .. " [" .. tostring(item.fullType) .. "]"
         end
         if isBlacklisted then
-            label = label .. " [BLACKLISTED]"
+            label = label .. " [" .. T("DTNPC_UI_Blacklisted", nil, "BLACKLISTED") .. "]"
         end
         self:addLine(
             self.itemList,
@@ -362,7 +369,7 @@ function DTNPCLootSearchWindow:populateStatus(cache)
     local selectedItem = self:getSelectedItem()
     local workerCarry = cache and cache.workerCarry or nil
     local detail = table.concat({
-        " <RGB:0.95,0.95,0.95> Field Notes <LINE> ",
+        " <RGB:0.95,0.95,0.95> " .. T("DTNPC_UI_FieldNotes", nil, "Field Notes") .. " <LINE> ",
         " <RGB:0.70,0.90,1.00> State: " .. tostring(cache and cache.state or "?")
             .. " | Loot Status: " .. tostring(cache and cache.status or "?")
             .. " | Sources: " .. tostring(cache and #(cache.sources or {}) or 0) .. " <LINE> ",
@@ -388,7 +395,9 @@ end
 function DTNPCLootSearchWindow:updateModeButton(cache)
     local isSearching = tostring(cache and cache.state or self.npcData and self.npcData.state or "") == "LootNearby"
     if self.modeButton then
-        self.modeButton:setTitle(isSearching and "Follow Me" or "Start Search")
+        self.modeButton:setTitle(isSearching
+            and T("DTNPC_UI_FollowMe", nil, "Follow Me")
+            or T("DTNPC_UI_StartSearch", nil, "Start Search"))
     end
 end
 
@@ -406,7 +415,7 @@ function DTNPCLootSearchWindow:getCache()
 
     return {
         uuid = self.npcData and self.npcData.uuid or nil,
-        npcName = self.npcData and self.npcData.name or "Companion",
+        npcName = self.npcData and self.npcData.name or T("DTNPC_UI_CompanionOrdersForName", { name = "Companion" }, "Companion"),
         state = self.npcData and self.npcData.state or nil,
         status = self.npcData and self.npcData.dcLootStatus or nil,
         workerCarry = getWorkerCarryState(self.npcData),
@@ -425,7 +434,9 @@ function DTNPCLootSearchWindow:refreshFromCache(cache)
         self.npcData.state = cache.state or self.npcData.state
         self.npcData.dcLootStatus = cache.status or self.npcData.dcLootStatus
     end
-    self.title = "Loot Search - " .. tostring(cache.npcName or self.npcData and self.npcData.name or "Companion")
+    self.title = T("DTNPC_UI_LootSearchTitleNpc", {
+        name = tostring(cache.npcName or self.npcData and self.npcData.name or "Companion"),
+    }, "Loot Search - {name}")
     self:populateSources(cache)
     self:populateItems(self:getSelectedSource())
     self:populateStatus(cache)
@@ -461,7 +472,7 @@ function DTNPCLootSearchWindow:promptFullInventoryReturnHome(cache)
         self.fullInventoryPromptOpen = false
         if button and button.internal == "YES" then
             DTNPCLootSearchClient.RequestReturnHomeForDeposit(playerObj, self.npcData)
-            playerObj:Say("Head home and unload at the warehouse.")
+            playerObj:Say(T("DTNPC_Dialogue_LootReturnHomeUnload", nil, "Head home and unload at the warehouse."))
         end
     end
 
@@ -500,7 +511,7 @@ function DTNPCLootSearchWindow:onCollect()
     end
 
     if #selectedKeys <= 0 then
-        playerObj:Say("Select at least one non-blacklisted item.")
+        playerObj:Say(T("DTNPC_UI_SelectAtLeastOneNonBlacklisted", nil, "Select at least one non-blacklisted item."))
         return
     end
 
@@ -514,7 +525,9 @@ function DTNPCLootSearchWindow:onToggleBlacklist()
         return
     end
     local enabled = DTNPCLootSearchClient.ToggleBlacklist(playerObj, item.fullType)
-    playerObj:Say(enabled and ("Blacklisted " .. tostring(item.displayName or item.fullType)) or ("Removed blacklist for " .. tostring(item.displayName or item.fullType)))
+    playerObj:Say(enabled
+        and T("DTNPC_UI_BlacklistedItem", { name = tostring(item.displayName or item.fullType) }, "Blacklisted {name}")
+        or T("DTNPC_UI_RemovedBlacklist", { name = tostring(item.displayName or item.fullType) }, "Removed blacklist for {name}"))
     self:populateItems(self:getSelectedSource())
     self:populateSources(self:getCache())
 end
@@ -531,13 +544,13 @@ function DTNPCLootSearchWindow:onToggleMode()
             if DTNPC_CommandEmotes and DTNPC_CommandEmotes.Play then
                 DTNPC_CommandEmotes.Play(playerObj, "Follow")
             end
-            playerObj:Say("Returning to follow mode.")
+            playerObj:Say(T("DTNPC_UI_ReturningToFollowMode", nil, "Returning to follow mode."))
         else
             self.npcData.state = "LootNearby"
             if DTNPC_CommandEmotes and DTNPC_CommandEmotes.Play then
                 DTNPC_CommandEmotes.Play(playerObj, "LootNearby")
             end
-            playerObj:Say("Starting loot search.")
+            playerObj:Say(T("DTNPC_UI_StartingLootSearch", nil, "Starting loot search."))
         end
         self:updateModeButton(self:getCache())
     end
@@ -557,9 +570,9 @@ function DTNPCLootSearchWindow:render()
     self:drawRectBorder(layout.itemX or 10, layout.contentY or 0, layout.itemW or 0, layout.contentH or 0, 0.25, 1, 1, 1)
     self:drawRectBorder(layout.pad or 10, layout.bottomY or 0, self.width - ((layout.pad or 10) * 2), layout.bottomH or 0, 0.22, 1, 1, 1)
 
-    self:drawText("Nearby Loot Sources", layout.sourceX or 10, headerY, 0.94, 0.96, 1, 1, UIFont.Medium)
+    self:drawText(T("DTNPC_UI_NearbyLootSources", nil, "Nearby Loot Sources"), layout.sourceX or 10, headerY, 0.94, 0.96, 1, 1, UIFont.Medium)
     self:drawText(
-        tostring(#(self:getCache().sources or {})) .. " sources in current search session",
+        T("DTNPC_UI_SourceCount", { count = tostring(#(self:getCache().sources or {})) }, "{count} sources in current search session"),
         layout.sourceX or 10,
         subHeaderY,
         0.7,
@@ -569,9 +582,9 @@ function DTNPCLootSearchWindow:render()
         UIFont.Small
     )
 
-    self:drawText("Selectable Loot", layout.itemX or 10, headerY, 0.94, 0.96, 1, 1, UIFont.Medium)
+    self:drawText(T("DTNPC_UI_SelectableLoot", nil, "Selectable Loot"), layout.itemX or 10, headerY, 0.94, 0.96, 1, 1, UIFont.Medium)
     self:drawText(
-        "Click rows to mark items for collection",
+        T("DTNPC_UI_ClickRowsToMarkItems", nil, "Click rows to mark items for collection"),
         layout.itemX or 10,
         subHeaderY,
         0.7,
@@ -581,8 +594,8 @@ function DTNPCLootSearchWindow:render()
         UIFont.Small
     )
 
-    self:drawText("Actions", (layout.controlX or 0) + 28, headerY + 6, 0.9, 0.9, 0.9, 1, UIFont.Small)
-    self:drawText("Field Notes", layout.pad or 10, (layout.bottomY or 0) - 20, 0.94, 0.96, 1, 1, UIFont.Medium)
+    self:drawText(T("DTNPC_UI_Actions", nil, "Actions"), (layout.controlX or 0) + 28, headerY + 6, 0.9, 0.9, 0.9, 1, UIFont.Small)
+    self:drawText(T("DTNPC_UI_FieldNotes", nil, "Field Notes"), layout.pad or 10, (layout.bottomY or 0) - 20, 0.94, 0.96, 1, 1, UIFont.Medium)
 end
 
 function DTNPCLootSearchWindow:new(x, y, width, height, playerNum, npcData)
@@ -593,7 +606,7 @@ function DTNPCLootSearchWindow:new(x, y, width, height, playerNum, npcData)
     o.npcData = type(npcData) == "table" and npcData or nil
     o.resizable = true
     o.pin = true
-    o.title = "Loot Search"
+    o.title = T("DTNPC_UI_LootSearchTitle", nil, "Loot Search")
     o.selectedItemsBySource = {}
     o.backgroundColor = { r = 0, g = 0, b = 0, a = 0.38 }
     o.borderColor = { r = 1, g = 1, b = 1, a = 0.16 }

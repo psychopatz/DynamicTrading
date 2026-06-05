@@ -5,6 +5,13 @@
 
 DTNPCContextMenu = DTNPCContextMenu or {}
 
+local function T(key, params, fallback)
+    return DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+        and DynamicTrading.Text.Get(key, params, fallback)
+        or fallback
+        or tostring(key or "")
+end
+
 local function normalizeFollowSpacingMode(mode)
     local text = string.lower(tostring(mode or ""))
     if text == "far" then
@@ -79,18 +86,32 @@ local function addFollowMethodOption(context, ui, npc, player, npcData)
 
     local name = tostring(npcData and npcData.name or "Survivor")
     local currentMode = getFollowSpacingMode(npcData)
-    local rootOption = context:addOption("Follow Method: " .. name)
+    local rootOption = context:addOption(T("DTNPC_UI_FollowMethodForName", {
+        name = name,
+    }, "Follow Method: {name}"))
     local subMenu = context:getNew(context)
     context:addSubMenu(rootOption, subMenu)
 
-    subMenu:addOption(currentMode == "near" and "Near [ACTIVE]" or "Near", npc, function(targetNPC)
+    subMenu:addOption(
+        currentMode == "near"
+            and T("DTNPC_UI_ModeActive", { label = T("DTNPC_UI_Near", nil, "Near") }, "{label} [ACTIVE]")
+            or T("DTNPC_UI_Near", nil, "Near"),
+        npc,
+        function(targetNPC)
         local liveData = DTNPCContextMenu.GetNPCData(targetNPC) or npcData
         issueFollowSpacingOrder(player, targetNPC, liveData, "near")
-    end)
-    subMenu:addOption(currentMode == "far" and "Far [ACTIVE]" or "Far", npc, function(targetNPC)
+        end
+    )
+    subMenu:addOption(
+        currentMode == "far"
+            and T("DTNPC_UI_ModeActive", { label = T("DTNPC_UI_Far", nil, "Far") }, "{label} [ACTIVE]")
+            or T("DTNPC_UI_Far", nil, "Far"),
+        npc,
+        function(targetNPC)
         local liveData = DTNPCContextMenu.GetNPCData(targetNPC) or npcData
         issueFollowSpacingOrder(player, targetNPC, liveData, "far")
-    end)
+        end
+    )
 end
 
 DTNPCContextMenu.RegisterProvider({

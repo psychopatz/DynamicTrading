@@ -10,20 +10,30 @@ if isServer() and not isClient() then return end
 DTNPC_TradingHandler = DTNPC_TradingHandler or {}
 DTNPC_TradingHandler.PendingTrades = DTNPC_TradingHandler.PendingTrades or {}
 
+local function T(key, params, fallback)
+    return DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+        and DynamicTrading.Text.Get(key, params, fallback)
+        or fallback
+        or tostring(key or "")
+end
+
 -- Helper to display stock in the UI speech
 function DTNPC_TradingHandler.DisplayStock(ui, id, stockData)
     if not ui then return end
     
-    local debugStr = "I got these items:\n"
+    local debugStr = T("DTNPC_Dialogue_TradingDisplayHeader", nil, "I got these items:\n")
     if stockData and stockData[id] and stockData[id].items then
         local hasItems = false
         for k, v in pairs(stockData[id].items) do
-            debugStr = debugStr .. k .. " Quantity: " .. tostring(v.qty) .. "\n"
+            debugStr = debugStr .. T("DTNPC_Dialogue_TradingItemQuantity", {
+                name = tostring(k),
+                qty = tostring(v.qty),
+            }, "{name} Quantity: {qty}\n")
             hasItems = true
         end
-        if not hasItems then debugStr = debugStr .. "Nothing at the moment." end
+        if not hasItems then debugStr = debugStr .. T("DTNPC_Dialogue_TradingNothing", nil, "Nothing at the moment.") end
     else
-        debugStr = debugStr .. "Empty"
+        debugStr = debugStr .. T("DTNPC_Dialogue_TradingEmpty", nil, "Empty")
     end
     ui:speak(debugStr)
 end
@@ -47,7 +57,7 @@ function DTNPC_TradingHandler.InitiateTrade(ui, npc, player)
     else
         -- No stock, request generation
         if ui then
-            ui:speak("Let me see what I have...")
+            ui:speak(T("DTNPC_Dialogue_TradingCheckingStock", nil, "Let me see what I have..."))
         end
         
         -- Register as pending
@@ -103,7 +113,7 @@ local function OnTick()
         elseif (currentHours - data.startTime) > 0.005 then 
             DTNPC_TradingHandler.PendingTrades[id] = nil
             if uiValid then
-                data.ui:speak("Sorry, I'm having trouble checking my inventory right now.")
+                data.ui:speak(T("DTNPC_Dialogue_TradingInventoryTrouble", nil, "Sorry, I'm having trouble checking my inventory right now."))
             end
             DynamicTrading.Log("DTV2", "Trading", "Timeout", "Timeout for " .. tostring(id))
         

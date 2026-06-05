@@ -22,7 +22,7 @@ function CompanionUI.OpenCompanionDialogue(npc, player)
         local worker = CompanionUI.GetCompanionWorker(nil, npc, npcData)
         local isResident = CompanionUI.IsPlayerZoneResident(npcData, worker)
         DTNPC_TraderDialogue_Hub.Init(nil, npc, player, {
-            initialGreeting = isResident and "Need something from the colony?" or nil
+            initialGreeting = isResident and CompanionUI.T("DTNPC_Dialogue_NeedSomethingFromColony", nil, "Need something from the colony?") or nil
         })
         return true
     end
@@ -47,7 +47,9 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
 
     local npcData = CompanionUI.GetNPCData(npc)
     local commander = CompanionUI.GetCommanderUsername(npcData, worker)
-    local commanderText = "Commander: " .. tostring(commander or "No commander")
+    local commanderText = CompanionUI.T("DTNPC_UI_CommanderLabel", {
+        name = tostring(commander or CompanionUI.T("DTNPC_UI_NoCommander", nil, "No commander")),
+    }, "Commander: {name}")
     local usesCommandAuthority = worker ~= nil and tostring(npcData and npcData.dcCompanionJob or "") == "TravelCompanion"
     local isResident = CompanionUI.IsPlayerZoneResident(npcData, worker)
     if usesCommandAuthority and not CompanionUI.IsLocalCommander(player, npcData, worker) then
@@ -56,15 +58,17 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                 text = commanderText,
                 message = "",
                 onSelect = function(innerUI)
-                    innerUI:speak(commander and ("I'm taking orders from " .. commander .. ".") or "No one is commanding me right now.")
+                    innerUI:speak(commander
+                        and CompanionUI.T("DTNPC_Dialogue_TakingOrdersFrom", { name = commander }, "I'm taking orders from {name}.")
+                        or CompanionUI.T("DTNPC_Dialogue_NoOneCommanding", nil, "No one is commanding me right now."))
                     CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
                 end
             },
             {
-                text = "Chat",
-                message = "How are you holding up?",
+                text = CompanionUI.T("DTNPC_UI_Chat", nil, "Chat"),
+                message = CompanionUI.T("DTNPC_Dialogue_HowHoldingUp", nil, "How are you holding up?"),
                 onSelect = function(innerUI)
-                    innerUI:speak("I'm here, but command has to be claimed first.")
+                    innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CommandClaimFirst", nil, "I'm here, but command has to be claimed first."))
                     CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
                 end
             }
@@ -72,8 +76,8 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
 
         if worker and CompanionUI.CanClaimCommand(player, npc) then
             options[#options + 1] = {
-                text = "Claim Command",
-                message = "I'm taking command. Follow my lead.",
+                text = CompanionUI.T("DTNPC_UI_ClaimCommand", nil, "Claim Command"),
+                message = CompanionUI.T("DTNPC_Dialogue_TakingCommand", nil, "I'm taking command. Follow my lead."),
                 onSelect = function(innerUI)
                     if CompanionUI.SendClaimCommand(worker) then
                         CompanionUI.PlayCompanionCommandCue(player, "ClaimCommand")
@@ -84,20 +88,20 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                             liveData.masterID = player and player.getOnlineID and player:getOnlineID() or liveData.masterID
                             CompanionUI.AttachNPCData(npc, liveData)
                         end
-                        innerUI:speak("Command claimed. I'll follow you.")
+                        innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CommandClaimed", nil, "Command claimed. I'll follow you."))
                         CompanionUI.RefreshCompanionWorker(worker)
                     else
-                        innerUI:speak("I couldn't claim command right now.")
+                        innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotClaimCommand", nil, "I couldn't claim command right now."))
                     end
                     CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
                 end
             }
         else
             options[#options + 1] = {
-                text = "Move closer to claim command.",
+                text = CompanionUI.T("DTNPC_UI_MoveCloserClaim", nil, "Move closer to claim command."),
                 message = "",
                 onSelect = function(innerUI)
-                    innerUI:speak("Move within a few steps, then claim command.")
+                    innerUI:speak(CompanionUI.T("DTNPC_Dialogue_MoveWithinStepsClaim", nil, "Move within a few steps, then claim command."))
                     CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
                 end
             }
@@ -119,31 +123,35 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
             text = commanderText,
             message = "",
             onSelect = function(innerUI)
-                innerUI:speak("You're my current commander.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_YouAreCommander", nil, "You're my current commander."))
                 CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
             end
         }
     end
 
     options[#options + 1] = {
-        text = "Chat",
-        message = "How are you holding up?",
+        text = CompanionUI.T("DTNPC_UI_Chat", nil, "Chat"),
+        message = CompanionUI.T("DTNPC_Dialogue_HowHoldingUp", nil, "How are you holding up?"),
         onSelect = function(innerUI)
-            innerUI:speak(isResident and "Holding the zone. Just point me where you need me." or "I'm with you. Just say the word.")
+            innerUI:speak(isResident
+                and CompanionUI.T("DTNPC_Dialogue_HoldingZone", nil, "Holding the zone. Just point me where you need me.")
+                or CompanionUI.T("DTNPC_Dialogue_ImWithYou", nil, "I'm with you. Just say the word."))
             CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
         end
     }
 
     options[#options + 1] = {
-        text = "Follow Me",
-        message = "Stay close and move with me.",
+        text = CompanionUI.T("DTNPC_UI_FollowMe", nil, "Follow Me"),
+        message = CompanionUI.T("DTNPC_Dialogue_StayCloseMoveWithMe", nil, "Stay close and move with me."),
         onSelect = function(innerUI)
             local latestData = CompanionUI.GetNPCData(npc) or npcData
             local followLabel = CompanionUI.GetFollowSpacingLabel and CompanionUI.GetFollowSpacingLabel(latestData) or "Near"
             if CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData)) then
-                innerUI:speak("I'll follow on " .. string.lower(tostring(followLabel)) .. " spacing.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_FollowingWithSpacing", {
+                    mode = string.lower(tostring(followLabel)),
+                }, "I'll follow on {mode} spacing."))
             else
-                innerUI:speak("I couldn't follow you right now.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotFollow", nil, "I couldn't follow you right now."))
             end
             CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
         end
@@ -151,37 +159,41 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
 
     if npcData and tostring(npcData.state or "") == "Follow" then
         options[#options + 1] = {
-            text = "Follow Method",
-            message = "Choose how closely to tail you.",
+            text = CompanionUI.T("DTNPC_UI_FollowMethod", nil, "Follow Method"),
+            message = CompanionUI.T("DTNPC_Dialogue_ChooseTrailDistance", nil, "Choose how closely to tail you."),
             onSelect = function(innerUI)
                 local latestData = CompanionUI.GetNPCData(npc) or npcData
                 local currentMode = CompanionUI.GetFollowSpacingMode and CompanionUI.GetFollowSpacingMode(latestData) or "near"
-                innerUI:speak("Current follow method: " .. (currentMode == "far" and "Far" or "Near") .. ".")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CurrentFollowMethod", {
+                    mode = currentMode == "far"
+                        and CompanionUI.T("DTNPC_UI_Far", nil, "Far")
+                        or CompanionUI.T("DTNPC_UI_Near", nil, "Near"),
+                }, "Current follow method: {mode}."))
                 local followOptions = {
                     {
-                        text = CompanionUI.BuildModeOptionLabel("Near", currentMode == "near", false),
-                        message = "Stay tighter on my position.",
+                        text = CompanionUI.BuildModeOptionLabel(CompanionUI.T("DTNPC_UI_Near", nil, "Near"), currentMode == "near", false),
+                        message = CompanionUI.T("DTNPC_Dialogue_StayTighter", nil, "Stay tighter on my position."),
                         onSelect = function(modeUI)
                             if CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData, {
                                 followSpacingMode = "near",
                             })) then
-                                modeUI:speak("Near spacing set.")
+                                modeUI:speak(CompanionUI.T("DTNPC_Dialogue_NearSpacingSet", nil, "Near spacing set."))
                             else
-                                modeUI:speak("I couldn't change follow method right now.")
+                                modeUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotChangeFollowMethod", nil, "I couldn't change follow method right now."))
                             end
                             CompanionUI.GenerateRootOptions(modeUI, npc, player, worker)
                         end
                     },
                     {
-                        text = CompanionUI.BuildModeOptionLabel("Far", currentMode == "far", false),
-                        message = "Give me more room during fights.",
+                        text = CompanionUI.BuildModeOptionLabel(CompanionUI.T("DTNPC_UI_Far", nil, "Far"), currentMode == "far", false),
+                        message = CompanionUI.T("DTNPC_Dialogue_GiveMeRoomDuringFights", nil, "Give me more room during fights."),
                         onSelect = function(modeUI)
                             if CompanionUI.IssueCompanionStateOrder(player, npc, "Follow", CompanionUI.BuildFollowOrderArgs(latestData, {
                                 followSpacingMode = "far",
                             })) then
-                                modeUI:speak("Far spacing set.")
+                                modeUI:speak(CompanionUI.T("DTNPC_Dialogue_FarSpacingSet", nil, "Far spacing set."))
                             else
-                                modeUI:speak("I couldn't change follow method right now.")
+                                modeUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotChangeFollowMethod", nil, "I couldn't change follow method right now."))
                             end
                             CompanionUI.GenerateRootOptions(modeUI, npc, player, worker)
                         end
@@ -198,25 +210,25 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
     end
 
     options[#options + 1] = {
-        text = "Hold Position",
-        message = "Stay put until I tell you otherwise.",
+        text = CompanionUI.T("DTNPC_UI_HoldPosition", nil, "Hold Position"),
+        message = CompanionUI.T("DTNPC_Dialogue_StayPutUntilTold", nil, "Stay put until I tell you otherwise."),
         onSelect = function(innerUI)
             if CompanionUI.IssueCompanionStateOrder(player, npc, "Stay", {
                 state = "Stay",
                 clearGuardMode = true,
                 returnStatus = "Resting",
             }) then
-                innerUI:speak("I'll hold here.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_HoldHere", nil, "I'll hold here."))
             else
-                innerUI:speak("I couldn't hold position right now.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotHoldPosition", nil, "I couldn't hold position right now."))
             end
             CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
         end
     }
 
     options[#options + 1] = {
-        text = "Guard Position",
-        message = "Hold this area and engage nearby threats.",
+        text = CompanionUI.T("DTNPC_UI_GuardPosition", nil, "Guard Position"),
+        message = CompanionUI.T("DTNPC_Dialogue_GuardAreaThreats", nil, "Hold this area and engage nearby threats."),
         onSelect = function(innerUI)
             local liveData = CompanionUI.GetNPCData(npc)
             if CompanionUI.IssueCompanionStateOrder(player, npc, "Guard", {
@@ -224,17 +236,19 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                 guardCombatOrder = (liveData and (liveData.guardCombatOrder or liveData.guardAttackMode)) or "GuardAuto",
                 returnStatus = "Resting",
             }) then
-                innerUI:speak("I'll guard this position.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_GuardPositionSet", nil, "I'll guard this position."))
             else
-                innerUI:speak("I couldn't take up guard duty right now.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotGuard", nil, "I couldn't take up guard duty right now."))
             end
             CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
         end
     }
 
     options[#options + 1] = {
-        text = (npcData and npcData.state == "LootNearby") and "Stop Loot Search" or "Search Nearby Loot",
-        message = "Search nearby sources, reveal their contents, then tell me what to collect.",
+        text = (npcData and npcData.state == "LootNearby")
+            and CompanionUI.T("DTNPC_UI_StopLootSearch", nil, "Stop Loot Search")
+            or CompanionUI.T("DTNPC_UI_SearchNearbyLoot", nil, "Search Nearby Loot"),
+        message = CompanionUI.T("DTNPC_Dialogue_SearchNearbyExplain", nil, "Search nearby sources, reveal their contents, then tell me what to collect."),
         onSelect = function(innerUI)
             local liveData = CompanionUI.GetNPCData(npc)
             if liveData and liveData.state == "LootNearby" then
@@ -242,9 +256,9 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                     state = "Stay",
                     returnStatus = "Resting",
                 }) then
-                    innerUI:speak("Looting paused.")
+                    innerUI:speak(CompanionUI.T("DTNPC_Dialogue_LootingPaused", nil, "Looting paused."))
                 else
-                    innerUI:speak("I couldn't stop looting right now.")
+                    innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotStopLooting", nil, "I couldn't stop looting right now."))
                 end
                 CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
                 return
@@ -259,10 +273,10 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                 combatOrder = CompanionUI.GetLootCombatOrder(liveData),
                 returnStatus = "Resting",
             }) then
-                innerUI:speak("I'll search nearby sources and wait for your pickup orders.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_LootNearbyStarted", nil, "I'll search nearby sources and wait for your pickup orders."))
                 CompanionUI.OpenLootSearchWindow(player, liveData)
             else
-                innerUI:speak("I couldn't start looting right now.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotStartLooting", nil, "I couldn't start looting right now."))
             end
             CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
         end
@@ -271,41 +285,41 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
     local patchUpLabel, patchUpSupplyTotal = CompanionUI.GetPatchUpLabel(worker)
     options[#options + 1] = {
         text = patchUpLabel,
-        message = "Take a moment to bandage yourself.",
+        message = CompanionUI.T("DTNPC_Dialogue_PatchYourself", nil, "Take a moment to bandage yourself."),
         onSelect = function(innerUI)
             local sent = CompanionUI.SendPatchUpOrder(player, npc)
             if sent then
                 if patchUpSupplyTotal > 0 then
-                    innerUI:speak("I'll patch myself up.")
+                    innerUI:speak(CompanionUI.T("DTNPC_Dialogue_PatchingSelf", nil, "I'll patch myself up."))
                 else
-                    innerUI:speak("I don't have any bandages or rags packed.")
+                    innerUI:speak(CompanionUI.T("DTNPC_Dialogue_NoBandagesPacked", nil, "I don't have any bandages or rags packed."))
                 end
             else
-                innerUI:speak("I couldn't patch up right now.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotPatchUp", nil, "I couldn't patch up right now."))
             end
             CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
         end
     }
 
     options[#options + 1] = {
-        text = "Attack Type",
-        message = "Let's talk combat.",
+        text = CompanionUI.T("DTNPC_UI_AttackType", nil, "Attack Type"),
+        message = CompanionUI.T("DTNPC_Dialogue_LetsTalkCombat", nil, "Let's talk combat."),
         onSelect = function(innerUI)
             local liveData = CompanionUI.GetNPCData(npc)
             local currentLabel = CompanionUI.GetAttackTypeLabel(liveData)
             local currentMode = CompanionUI.GetAttackTypeMode(liveData)
             local ammoSnapshot = CompanionUI.GetRangedAmmoSnapshot(liveData)
             local showAmmo = ammoSnapshot.hasRangedWeapon and (currentMode == "ProtectAuto" or currentMode == "ProtectRanged")
-            innerUI:speak("Current attack type: " .. currentLabel .. ".")
+            innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CurrentAttackType", { mode = currentLabel }, "Current attack type: {mode}."))
             local attackOptions = {
                 {
                     text = CompanionUI.BuildModeOptionLabel(
-                        "Auto",
+                        CompanionUI.T("DTNPC_UI_Auto", nil, "Auto"),
                         currentMode == "ProtectAuto",
                         showAmmo and currentMode == "ProtectAuto",
                         ammoSnapshot
                     ),
-                    message = "Use whichever weapon fits the fight.",
+                    message = CompanionUI.T("DTNPC_Dialogue_UseBestWeapon", nil, "Use whichever weapon fits the fight."),
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "ProtectAuto", "auto"),
                     onSelect = function(choiceUI)
                         if CompanionUI.IssueCompanionStateOrder(player, npc, "ProtectAuto", {
@@ -313,21 +327,21 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                             combatOrder = "ProtectAuto",
                             returnStatus = "Resting",
                         }) then
-                            choiceUI:speak("I'll switch between range and melee as needed.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_SwitchAttackAuto", nil, "I'll switch between range and melee as needed."))
                         else
-                            choiceUI:speak("I couldn't switch attack type right now.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotSwitchAttackType", nil, "I couldn't switch attack type right now."))
                         end
                         CompanionUI.GenerateRootOptions(choiceUI, npc, player, worker)
                     end
                 },
                 {
                     text = CompanionUI.BuildModeOptionLabel(
-                        "Ranged",
+                        CompanionUI.T("DTNPC_UI_Ranged", nil, "Ranged"),
                         currentMode == "ProtectRanged",
                         showAmmo and currentMode == "ProtectRanged",
                         ammoSnapshot
                     ),
-                    message = "Cover me from range.",
+                    message = CompanionUI.T("DTNPC_Dialogue_CoverMeFromRange", nil, "Cover me from range."),
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "ProtectRanged", "ranged"),
                     onSelect = function(choiceUI)
                         if CompanionUI.IssueCompanionStateOrder(player, npc, "ProtectRanged", {
@@ -335,16 +349,16 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                             combatOrder = "ProtectRanged",
                             returnStatus = "Resting",
                         }) then
-                            choiceUI:speak("I'll keep some distance and cover you.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_SwitchAttackRanged", nil, "I'll keep some distance and cover you."))
                         else
-                            choiceUI:speak("I couldn't switch attack type right now.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotSwitchAttackType", nil, "I couldn't switch attack type right now."))
                         end
                         CompanionUI.GenerateRootOptions(choiceUI, npc, player, worker)
                     end
                 },
                 {
-                    text = CompanionUI.BuildModeOptionLabel("Melee", currentMode == "ProtectMelee", false, ammoSnapshot),
-                    message = "Stay close and fight up front.",
+                    text = CompanionUI.BuildModeOptionLabel(CompanionUI.T("DTNPC_UI_Melee", nil, "Melee"), currentMode == "ProtectMelee", false, ammoSnapshot),
+                    message = CompanionUI.T("DTNPC_Dialogue_StayCloseFightFront", nil, "Stay close and fight up front."),
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "ProtectMelee", "melee"),
                     onSelect = function(choiceUI)
                         if CompanionUI.IssueCompanionStateOrder(player, npc, "ProtectMelee", {
@@ -352,9 +366,9 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                             combatOrder = "ProtectMelee",
                             returnStatus = "Resting",
                         }) then
-                            choiceUI:speak("I'll stay close and handle threats up front.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_SwitchAttackMelee", nil, "I'll stay close and handle threats up front."))
                         else
-                            choiceUI:speak("I couldn't switch attack type right now.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotSwitchAttackType", nil, "I couldn't switch attack type right now."))
                         end
                         CompanionUI.GenerateRootOptions(choiceUI, npc, player, worker)
                     end
@@ -374,24 +388,24 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
     }
 
     options[#options + 1] = {
-        text = "Guard Attack Type",
-        message = "How should you fight while guarding?",
+        text = CompanionUI.T("DTNPC_UI_GuardAttackType", nil, "Guard Attack Type"),
+        message = CompanionUI.T("DTNPC_Dialogue_HowGuardFight", nil, "How should you fight while guarding?"),
         onSelect = function(innerUI)
             local liveData = CompanionUI.GetNPCData(npc)
             local currentLabel = CompanionUI.GetGuardAttackTypeLabel(liveData)
             local currentMode = CompanionUI.GetGuardAttackTypeMode(liveData)
             local ammoSnapshot = CompanionUI.GetRangedAmmoSnapshot(liveData)
             local showAmmo = ammoSnapshot.hasRangedWeapon and (currentMode == "GuardAuto" or currentMode == "GuardRanged")
-            innerUI:speak("Current guard attack type: " .. currentLabel .. ".")
+            innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CurrentGuardAttackType", { mode = currentLabel }, "Current guard attack type: {mode}."))
             local guardOptions = {
                 {
                     text = CompanionUI.BuildModeOptionLabel(
-                        "Auto",
+                        CompanionUI.T("DTNPC_UI_Auto", nil, "Auto"),
                         currentMode == "GuardAuto",
                         showAmmo and currentMode == "GuardAuto",
                         ammoSnapshot
                     ),
-                    message = "Use whichever weapon fits the threat while guarding.",
+                    message = CompanionUI.T("DTNPC_Dialogue_UseBestGuardWeapon", nil, "Use whichever weapon fits the threat while guarding."),
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "GuardAuto", "auto"),
                     onSelect = function(choiceUI)
                         if CompanionUI.IssueCompanionStateOrder(player, npc, "Guard", {
@@ -399,21 +413,21 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                             guardCombatOrder = "GuardAuto",
                             returnStatus = "Resting",
                         }) then
-                            choiceUI:speak("I'll guard this spot and adapt as needed.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_SwitchGuardAuto", nil, "I'll guard this spot and adapt as needed."))
                         else
-                            choiceUI:speak("I couldn't switch guard attack type right now.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotSwitchGuardAttackType", nil, "I couldn't switch guard attack type right now."))
                         end
                         CompanionUI.GenerateRootOptions(choiceUI, npc, player, worker)
                     end
                 },
                 {
                     text = CompanionUI.BuildModeOptionLabel(
-                        "Ranged",
+                        CompanionUI.T("DTNPC_UI_Ranged", nil, "Ranged"),
                         currentMode == "GuardRanged",
                         showAmmo and currentMode == "GuardRanged",
                         ammoSnapshot
                     ),
-                    message = "Guard from a distance.",
+                    message = CompanionUI.T("DTNPC_Dialogue_GuardFromDistance", nil, "Guard from a distance."),
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "GuardRanged", "ranged"),
                     onSelect = function(choiceUI)
                         if CompanionUI.IssueCompanionStateOrder(player, npc, "Guard", {
@@ -421,16 +435,16 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                             guardCombatOrder = "GuardRanged",
                             returnStatus = "Resting",
                         }) then
-                            choiceUI:speak("I'll hold this spot and engage from range.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_SwitchGuardRanged", nil, "I'll hold this spot and engage from range."))
                         else
-                            choiceUI:speak("I couldn't switch guard attack type right now.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotSwitchGuardAttackType", nil, "I couldn't switch guard attack type right now."))
                         end
                         CompanionUI.GenerateRootOptions(choiceUI, npc, player, worker)
                     end
                 },
                 {
-                    text = CompanionUI.BuildModeOptionLabel("Melee", currentMode == "GuardMelee", false, ammoSnapshot),
-                    message = "Hold the line up close.",
+                    text = CompanionUI.BuildModeOptionLabel(CompanionUI.T("DTNPC_UI_Melee", nil, "Melee"), currentMode == "GuardMelee", false, ammoSnapshot),
+                    message = CompanionUI.T("DTNPC_Dialogue_HoldLineUpClose", nil, "Hold the line up close."),
                     style = CompanionUI.BuildModeOptionStyle(currentMode == "GuardMelee", "melee"),
                     onSelect = function(choiceUI)
                         if CompanionUI.IssueCompanionStateOrder(player, npc, "Guard", {
@@ -438,9 +452,9 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                             guardCombatOrder = "GuardMelee",
                             returnStatus = "Resting",
                         }) then
-                            choiceUI:speak("I'll hold this spot and fight up close.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_SwitchGuardMelee", nil, "I'll hold this spot and fight up close."))
                         else
-                            choiceUI:speak("I couldn't switch guard attack type right now.")
+                            choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotSwitchGuardAttackType", nil, "I couldn't switch guard attack type right now."))
                         end
                         CompanionUI.GenerateRootOptions(choiceUI, npc, player, worker)
                     end
@@ -461,12 +475,12 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
 
     if usesCommandAuthority then
         options[#options + 1] = {
-            text = "Transfer Command",
-            message = "I'm assigning you to someone else.",
+            text = CompanionUI.T("DTNPC_UI_TransferCommand", nil, "Transfer Command"),
+            message = CompanionUI.T("DTNPC_Dialogue_AssigningSomeoneElse", nil, "I'm assigning you to someone else."),
             onSelect = function(innerUI)
                 local candidates = CompanionUI.CollectTransferCandidates(player, worker)
                 if #candidates == 0 then
-                    innerUI:speak("There isn't another faction member to transfer command to.")
+                    innerUI:speak(CompanionUI.T("DTNPC_Dialogue_NoTransferCandidates", nil, "There isn't another faction member to transfer command to."))
                     CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
                     return
                 end
@@ -475,14 +489,14 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                 for _, username in ipairs(candidates) do
                     choices[#choices + 1] = {
                         text = tostring(username),
-                        message = "Report to " .. tostring(username) .. ".",
+                        message = CompanionUI.T("DTNPC_Dialogue_ReportTo", { name = tostring(username) }, "Report to {name}."),
                         onSelect = function(choiceUI)
                             if CompanionUI.SendTransferCommand(worker, username) then
                                 CompanionUI.PlayCompanionCommandCue(player, "TransferCommand")
-                                choiceUI:speak("Command transferred to " .. tostring(username) .. ".")
+                                choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_CommandTransferred", { name = tostring(username) }, "Command transferred to {name}."))
                                 CompanionUI.RefreshCompanionWorker(worker)
                             else
-                                choiceUI:speak("I couldn't transfer command right now.")
+                                choiceUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotTransferCommand", nil, "I couldn't transfer command right now."))
                             end
                             CompanionUI.GenerateRootOptions(choiceUI, npc, player, worker)
                         end
@@ -504,13 +518,13 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
 
     if worker then
         options[#options + 1] = {
-            text = "Warehouse Inventory",
-            message = "Open your warehouse inventory.",
+            text = CompanionUI.T("DTNPC_UI_WarehouseInventory", nil, "Warehouse Inventory"),
+            message = CompanionUI.T("DTNPC_Dialogue_OpenWarehouseInventory", nil, "Open your warehouse inventory."),
             onSelect = function(innerUI)
                 if CompanionUI.OpenCompanionInventory(innerUI, worker, npc, CompanionUI.GetNPCData(npc)) then
                     return
                 else
-                    innerUI:speak("I couldn't open the warehouse inventory right now.")
+                    innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotOpenWarehouse", nil, "I couldn't open the warehouse inventory right now."))
                     CompanionUI.DebugCompanionUI(
                         "Warehouse Inventory failed workerID="
                             .. tostring(worker and worker.workerID or nil)
@@ -524,14 +538,14 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
     end
 
     options[#options + 1] = {
-        text = "Go Home",
-        message = "Head back home and stand down.",
+        text = CompanionUI.T("DTNPC_UI_GoHome", nil, "Go Home"),
+        message = CompanionUI.T("DTNPC_Dialogue_HeadBackHome", nil, "Head back home and stand down."),
         onSelect = function(innerUI)
             local workerCommandSent = worker and CompanionUI.SendCompanionHome(worker) or true
             local returnOrderSent = CompanionUI.OrderCompanionReturnHome(player, npc)
             if workerCommandSent and returnOrderSent then
                 CompanionUI.PlayCompanionCommandCue(player, "GoHome")
-                innerUI:speak("Understood. I'll head home.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_GoingHome", nil, "Understood. I'll head home."))
                 local doneOptions = {}
                 local footerAction = CompanionUI.BuildExitFooterAction()
                 local _, navBlock = CompanionUI.AttachNavigationBlock(doneOptions, footerAction, {
@@ -541,7 +555,7 @@ function CompanionUI.GenerateRootOptions(ui, npc, player, worker)
                 })
                 innerUI:updateOptions(doneOptions, navBlock)
             else
-                innerUI:speak("I couldn't head home right now.")
+                innerUI:speak(CompanionUI.T("DTNPC_Dialogue_CouldNotGoHome", nil, "I couldn't head home right now."))
                 CompanionUI.GenerateRootOptions(innerUI, npc, player, worker)
             end
         end

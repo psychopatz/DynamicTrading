@@ -152,19 +152,25 @@ function ReviveUI.AddContextMenuOptions(context, ui, npc, playerObj, npcData)
     local name = tostring(npcData.name or "Survivor")
 
     if not requiresItems then
-        context:addOption("Help Up " .. name, nil, function()
+        context:addOption(ReviveUI.T("DTNPC_UI_HelpUpName", {
+            name = name,
+        }, "Help Up {name}"), nil, function()
             ReviveUI.StartTimedRevive(playerObj, npc, nil, 1)
         end)
         return true
     end
 
-    local rootOption = context:addOption("Bandage " .. name)
+    local rootOption = context:addOption(ReviveUI.T("DTNPC_UI_BandageName", {
+        name = name,
+    }, "Bandage {name}"))
     local subMenu = context:getNew(context)
     context:addSubMenu(rootOption, subMenu)
 
     local entries = ReviveUI.GetSupplyEntries(playerObj)
     if #entries == 0 then
-        ReviveUI.AddDisabledContextAction(subMenu, "Need " .. tostring(requiredCount) .. " bandages or rags")
+        ReviveUI.AddDisabledContextAction(subMenu, ReviveUI.T("DTNPC_UI_NeedBandagesCount", {
+            count = tostring(requiredCount),
+        }, "Need {count} bandages or rags"))
         return true
     end
 
@@ -187,7 +193,7 @@ function ReviveUI.AddContextMenuOptions(context, ui, npc, playerObj, npcData)
     end
 
     if not hasUsableEntry then
-        ReviveUI.AddDisabledContextAction(subMenu, "You need one matching material type for the full treatment")
+        ReviveUI.AddDisabledContextAction(subMenu, ReviveUI.T("DTNPC_UI_NeedMatchingMaterial", nil, "You need one matching material type for the full treatment"))
     end
 
     return true

@@ -32,7 +32,9 @@ function CompanionUI.GetFollowSpacingMode(npcData)
 end
 
 function CompanionUI.GetFollowSpacingLabel(npcData)
-    return CompanionUI.GetFollowSpacingMode(npcData) == "far" and "Far" or "Near"
+    return CompanionUI.GetFollowSpacingMode(npcData) == "far"
+        and CompanionUI.T("DTNPC_UI_Far", nil, "Far")
+        or CompanionUI.T("DTNPC_UI_Near", nil, "Near")
 end
 
 function CompanionUI.GetAttackTypeLabel(npcData)
@@ -44,15 +46,15 @@ function CompanionUI.GetAttackTypeLabel(npcData)
         end
     end
     if combatOrder == "ProtectAuto" then
-        return "Auto"
+        return CompanionUI.T("DTNPC_UI_Auto", nil, "Auto")
     end
     if combatOrder == "ProtectRanged" then
-        return "Ranged"
+        return CompanionUI.T("DTNPC_UI_Ranged", nil, "Ranged")
     end
     if combatOrder == "ProtectMelee" then
-        return "Melee"
+        return CompanionUI.T("DTNPC_UI_Melee", nil, "Melee")
     end
-    return "Balanced"
+    return CompanionUI.T("DTNPC_UI_Balanced", nil, "Balanced")
 end
 
 function CompanionUI.GetAttackTypeMode(npcData)
@@ -72,15 +74,15 @@ end
 function CompanionUI.GetGuardAttackTypeLabel(npcData)
     local guardOrder = npcData and (npcData.guardCombatOrder or npcData.guardAttackMode) or nil
     if guardOrder == "GuardAuto" then
-        return "Auto"
+        return CompanionUI.T("DTNPC_UI_Auto", nil, "Auto")
     end
     if guardOrder == "GuardRanged" then
-        return "Ranged"
+        return CompanionUI.T("DTNPC_UI_Ranged", nil, "Ranged")
     end
     if guardOrder == "GuardMelee" then
-        return "Melee"
+        return CompanionUI.T("DTNPC_UI_Melee", nil, "Melee")
     end
-    return "Auto"
+    return CompanionUI.T("DTNPC_UI_Auto", nil, "Auto")
 end
 
 function CompanionUI.GetGuardAttackTypeMode(npcData)
@@ -135,7 +137,6 @@ function CompanionUI.BuildModeOptionLabel(baseLabel, isActive, includeAmmo, ammo
         return label
     end
 
-    label = label .. " [ACTIVE]"
     if includeAmmo then
         local ammoLabel = nil
         if type(ammoInfo) == "table" then
@@ -144,9 +145,18 @@ function CompanionUI.BuildModeOptionLabel(baseLabel, isActive, includeAmmo, ammo
         if not ammoLabel then
             ammoLabel = tostring(math.max(0, tonumber(ammoInfo) or 0))
         end
-        label = label .. " (Ammo: " .. tostring(ammoLabel) .. ")"
+        return CompanionUI.T(
+            "DTNPC_UI_ModeActiveAmmo",
+            {
+                label = label,
+                ammo = ammoLabel,
+            },
+            "{label} [ACTIVE] (Ammo: {ammo})"
+        )
     end
-    return label
+    return CompanionUI.T("DTNPC_UI_ModeActive", {
+        label = label,
+    }, "{label} [ACTIVE]")
 end
 
 function CompanionUI.BuildModeOptionStyle(isActive, modeKey)

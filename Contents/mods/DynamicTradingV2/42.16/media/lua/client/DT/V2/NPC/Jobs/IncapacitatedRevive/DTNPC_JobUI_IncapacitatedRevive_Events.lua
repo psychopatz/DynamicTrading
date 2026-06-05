@@ -18,7 +18,7 @@ modules.Events = true
 
 local function sayReviveResult(npc, npcData, playerObj, args)
     if args and args.success == true then
-        local thankYouLine = "Thank you. I can make it home from here."
+        local thankYouLine = ReviveUI.T("DTNPC_Dialogue_ReviveThankYou", nil, "Thank you. I can make it home from here.")
         if DTNPC_WaveHiInteraction and DTNPC_WaveHiInteraction.BuildPlanForEmote then
             local plan = DTNPC_WaveHiInteraction.BuildPlanForEmote("thankyou", playerObj, npc, npcData)
             thankYouLine = plan and plan.introGreeting and plan.introGreeting.text
@@ -35,9 +35,9 @@ local function sayReviveResult(npc, npcData, playerObj, args)
     end
 
     if playerObj and playerObj.setHaloNote then
-        playerObj:setHaloNote(tostring(args and args.message or "You couldn't help them right now."), 255, 190, 120, 220)
+        playerObj:setHaloNote(tostring(args and args.message or ReviveUI.T("DTNPC_Dialogue_ReviveCouldNotHelp", nil, "You couldn't help them right now.")), 255, 190, 120, 220)
     elseif playerObj and playerObj.Say then
-        playerObj:Say(tostring(args and args.message or "You couldn't help them right now."))
+        playerObj:Say(tostring(args and args.message or ReviveUI.T("DTNPC_Dialogue_ReviveCouldNotHelp", nil, "You couldn't help them right now.")))
     end
 end
 
@@ -69,7 +69,7 @@ local function onServerCommand(module, command, args)
         return
     end
 
-    pending.ui:speak(args.message or "You couldn't help them right now.")
+    pending.ui:speak(args.message or ReviveUI.T("DTNPC_Dialogue_ReviveCouldNotHelp", nil, "You couldn't help them right now."))
     ReviveUI.ShowReviveConversation(pending.ui, pending.npc, pending.player, npcData or {})
 end
 

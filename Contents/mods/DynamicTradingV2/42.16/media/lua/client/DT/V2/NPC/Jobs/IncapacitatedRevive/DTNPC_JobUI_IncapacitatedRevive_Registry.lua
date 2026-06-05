@@ -35,7 +35,9 @@ DTNPCJobUI.Register({
         return canRevive == true or (info and info.reason == "need_supplies")
     end,
     getTalkLabel = function(ui, npc, playerObj, npcData, defaultName)
-        return "Help Incapacitated " .. tostring(defaultName or (npcData and npcData.name) or "Survivor")
+        return ReviveUI.T("DTNPC_UI_HelpIncapacitatedName", {
+            name = tostring(defaultName or (npcData and npcData.name) or "Survivor"),
+        }, "Help Incapacitated {name}")
     end,
     generateOptions = function(ui, npc, playerObj, npcData)
         npcData = npcData or ReviveUI.GetNPCData(npc)

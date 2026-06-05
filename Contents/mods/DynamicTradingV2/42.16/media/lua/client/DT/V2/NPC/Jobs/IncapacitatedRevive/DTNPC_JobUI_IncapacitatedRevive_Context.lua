@@ -3,6 +3,8 @@
 -- Runtime data and helper accessors for revive conversations.
 -- ==============================================================================
 
+require "DT/Common/Text/DT_Text"
+
 DTNPC_JobUI_IncapacitatedRevive = DTNPC_JobUI_IncapacitatedRevive or {}
 
 local ReviveUI = DTNPC_JobUI_IncapacitatedRevive
@@ -15,6 +17,18 @@ if modules.Context then
 end
 
 modules.Context = true
+
+function ReviveUI.T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+
+    if fallback then
+        return DynamicTrading.Text and DynamicTrading.Text.Format and DynamicTrading.Text.Format(fallback, params) or fallback
+    end
+
+    return tostring(key or "")
+end
 
 function ReviveUI.GetNPCData(npc)
     return npc and DTNPC and DTNPC.GetData and DTNPC.GetData(npc) or nil
@@ -71,9 +85,9 @@ end
 
 function ReviveUI.GetEntryDisplayName(entry)
     if type(entry) ~= "table" then
-        return "Medical Supply"
+        return ReviveUI.T("DTNPC_UI_UseMedicalSupply", nil, "Medical Supply")
     end
-    return tostring(entry.displayName or entry.fullType or "Medical Supply")
+    return tostring(entry.displayName or entry.fullType or ReviveUI.T("DTNPC_UI_UseMedicalSupply", nil, "Medical Supply"))
 end
 
 function ReviveUI.GetEntryTexture(entry)
@@ -94,12 +108,21 @@ function ReviveUI.FormatEntryLabel(entry, requiredCount)
     local displayName = ReviveUI.GetEntryDisplayName(entry)
     local available = tonumber(entry and entry.count) or 0
     local needed = math.max(1, math.floor(tonumber(requiredCount) or 1))
-    return tostring(displayName) .. " (" .. tostring(available) .. "/" .. tostring(needed) .. ")"
+    return ReviveUI.T("DTNPC_UI_MedicalSupplyLabel", {
+        name = tostring(displayName),
+        available = tostring(available),
+        required = tostring(needed),
+    }, "{name} ({available}/{required})")
 end
 
 function ReviveUI.FormatSupplyText(requiredCount, availableCount)
     if requiredCount and requiredCount > 0 then
-        return tostring(availableCount or 0) .. "/" .. tostring(requiredCount) .. " supplies"
+        return ReviveUI.T("DTNPC_UI_SuppliesCountRequired", {
+            count = tostring(availableCount or 0),
+            required = tostring(requiredCount),
+        }, "{count}/{required} supplies")
     end
-    return tostring(availableCount or 0) .. " supplies"
+    return ReviveUI.T("DTNPC_UI_SuppliesCount", {
+        count = tostring(availableCount or 0),
+    }, "{count} supplies")
 end

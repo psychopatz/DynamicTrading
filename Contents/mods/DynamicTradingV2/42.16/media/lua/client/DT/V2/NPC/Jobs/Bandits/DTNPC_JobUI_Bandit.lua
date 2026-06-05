@@ -41,7 +41,9 @@ local function buildFallbackExitNavigation()
         })
         or {
             kind = "leave",
-            title = "Exit",
+            title = DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get
+                and DynamicTrading.Text.Get("DTNPC_UI_Exit", nil, "Exit")
+                or "Exit",
             silent = true,
             suppressDefaultMessage = true,
             suppressExitEmote = true,
@@ -77,15 +79,19 @@ if DTNPCJobUI and DTNPCJobUI.Register then
                 and (npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits")
                 or false
             if helpers and helpers.isBanditHouseRoamEncounterEligible and helpers.isBanditHouseRoamEncounterEligible(npcData) then
-                return isTrueBandit and "Bribe" or "Negotiate"
+                return isTrueBandit
+                    and DynamicTrading.Text.Get("DTNPC_UI_Bribe", nil, "Bribe")
+                    or DynamicTrading.Text.Get("DTNPC_UI_Negotiate", nil, "Negotiate")
             end
             if helpers and helpers.isNegotiableHostileEncounter and helpers.isNegotiableHostileEncounter(npcData, player) then
-                return isTrueBandit and "Bribe" or "Negotiate"
+                return isTrueBandit
+                    and DynamicTrading.Text.Get("DTNPC_UI_Bribe", nil, "Bribe")
+                    or DynamicTrading.Text.Get("DTNPC_UI_Negotiate", nil, "Negotiate")
             end
             if tostring(npcData and npcData.tradeCycleMode or "") == "hostile_bribe" then
-                return "Negotiate"
+                return DynamicTrading.Text.Get("DTNPC_UI_Negotiate", nil, "Negotiate")
             end
-            return "Answer Demand"
+            return DynamicTrading.Text.Get("DTNPC_UI_AnswerDemand", nil, "Answer Demand")
         end,
 
         getTraderProxyPatch = function(ui, npc, player, npcData)
@@ -115,7 +121,8 @@ if DTNPCJobUI and DTNPCJobUI.Register then
             end
 
             local helpers = getHelpers()
-            ui:speak(helpers and helpers.pickDialogueLine and helpers.pickDialogueLine("Approach", nil, npcData) or "That's close enough.")
+            ui:speak(helpers and helpers.pickDialogueLine and helpers.pickDialogueLine("Approach", nil, npcData)
+                or DynamicTrading.Text.Get("DTNPC_Dialogue_BanditApproach", nil, "That's close enough."))
             local options = {}
             local footerAction, navBlock = buildFallbackExitNavigation()
             options._dtFooterAction = footerAction
