@@ -257,6 +257,24 @@ function Vocals.ResolveVocalSoundName(npcData, cueType, options)
     return soundName, profile
 end
 
+local function collapseVariantPoolCue(cueType)
+    local normalizedCue = normalizeString(cueType)
+    if not normalizedCue then
+        return cueType
+    end
+
+    local baseCue = string.match(normalizedCue, "^([%a]+)_[%w]+$")
+    if not baseCue then
+        return normalizedCue
+    end
+
+    if baseCue == "Chat" or baseCue == "Sigh" or baseCue == "Ambient" then
+        return baseCue
+    end
+
+    return normalizedCue
+end
+
 function Vocals.PlayUISound(soundName, baseVolume)
     local safeSoundName = normalizeString(soundName)
     if not safeSoundName then
@@ -465,6 +483,10 @@ function Vocals.BuildSpeechAudio(npcData, options)
         )
     end
 
+    if opts.preferVariantPool == true or (opts.channel == "ambient_dialogue" and opts.preferVariantPool ~= false) then
+        audio.preferVariantPool = true
+    end
+
     if not audio.uiSound and not audio.vocalType and not audio.soundName then
         return nil
     end
@@ -482,7 +504,11 @@ function Vocals.PlaySpeechAudio(zombie, npcData, audio)
     end
 
     if audio.vocalType or audio.soundName then
-        return Vocals.PlayVocal(zombie, npcData, audio.vocalType or "Chat", audio)
+        local cueType = audio.vocalType or "Chat"
+        if audio.preferVariantPool == true then
+            cueType = collapseVariantPoolCue(cueType)
+        end
+        return Vocals.PlayVocal(zombie, npcData, cueType, audio)
     end
 
     return nil

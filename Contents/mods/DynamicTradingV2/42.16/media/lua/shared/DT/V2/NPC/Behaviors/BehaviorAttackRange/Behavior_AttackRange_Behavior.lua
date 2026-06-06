@@ -47,11 +47,7 @@ DTNPCLogic.Behaviors["AttackRange"] = function(zombie, npcData, target, dist)
     end
 
     BehaviorAttackRange.EnsureManualControl(zombie)
-    if BehaviorAttackRange.IsPlayerTarget(target) then
-        zombie:setTarget(nil)
-    else
-        zombie:setTarget(target)
-    end
+    zombie:setTarget(nil)
 
     local tx = target:getX()
     local ty = target:getY()

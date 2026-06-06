@@ -77,9 +77,6 @@ local function ensureManualControl(zombie, target, options)
     end
     zombie:setPath2(nil)
     zombie:setTarget(nil)
-    if target and not isPlayerTarget(target) then
-        zombie:setTarget(target)
-    end
 end
 
 Internal.ResetMeleeArbiterMoveState = resetMoveState

@@ -109,6 +109,34 @@ function Ambient.BuildCustomSpeechData(text, sentiment, zombie, currentTime, npc
     )
 end
 
+function Ambient.BuildFallbackAmbientAudio(npcData)
+    if not npcData or not DialogueVocals or not DialogueVocals.BuildSpeechAudio then
+        return nil
+    end
+
+    local state = tostring(npcData.state or "")
+    local sentiment = tostring(npcData.sentiment or "")
+    local vocalType = "Chat"
+    if state == "Resting" then
+        vocalType = "Sigh"
+    elseif state == "Guard" then
+        vocalType = "Chat"
+    elseif npcData.isBandit == true or tostring(npcData.factionID or "") == "Bandits" then
+        vocalType = "Chat"
+        sentiment = sentiment ~= "" and sentiment or "warning"
+    end
+
+    return DialogueVocals.BuildSpeechAudio(npcData, {
+        sentiment = sentiment ~= "" and sentiment or nil,
+        status = npcData.status,
+        state = npcData.state,
+        vocalType = vocalType,
+        channel = "ambient_dialogue",
+        cooldownMs = 2200,
+        preferVariantPool = true,
+    })
+end
+
 local function getRaidAmbientCategory(npcData)
     if not npcData then
         return nil

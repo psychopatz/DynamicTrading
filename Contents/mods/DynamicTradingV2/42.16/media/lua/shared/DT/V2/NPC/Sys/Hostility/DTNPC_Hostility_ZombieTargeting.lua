@@ -421,14 +421,13 @@ function Hostility.UpdateZombieTargeting(zombie)
     end
 
     local targetZombie = selectedEntry.zombie
-    if zombie.pathToCharacter then
+    if targetZombie and zombie.pathToLocation then
+        zombie:pathToLocation(targetZombie:getX(), targetZombie:getY(), targetZombie:getZ())
+    elseif targetZombie and zombie.pathToCharacter then
         zombie:pathToCharacter(targetZombie)
     end
     if zombie.setTarget then
-        zombie:setTarget(targetZombie)
-    end
-    if zombie.addAggro then
-        zombie:addAggro(targetZombie, 1.0)
+        zombie:setTarget(nil)
     end
 
     setZombieNoLungeAttack(zombie, selectedDist <= getKeepRadius())

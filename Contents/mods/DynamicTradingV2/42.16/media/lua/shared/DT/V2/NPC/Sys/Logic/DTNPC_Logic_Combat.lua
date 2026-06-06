@@ -203,7 +203,7 @@ local function startZombieRetaliation(zombie, npcData, attacker)
         DTNPCStamina.ForceCombatResume(npcData, "melee", 0.26)
     end
 
-    zombie:setTarget(attacker)
+    zombie:setTarget(nil)
     zombie:setAttackedBy(nil)
     return true
 end
@@ -505,7 +505,7 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
                 npcData.combatTargetID = "dtnpc:" .. tostring(attackerUUID)
                 npcData.combatTargetType = "dtnpc"
 
-                zombie:setTarget(attacker)
+                zombie:setTarget(nil)
                 zombie:setAttackedBy(nil)
                 DynamicTrading.Log(
                     "DTV2",
@@ -545,7 +545,7 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
                 or nil
             npcData.combatTargetType = "bandits"
 
-            zombie:setTarget(attacker)
+            zombie:setTarget(nil)
             zombie:setAttackedBy(nil)
             DynamicTrading.Log(
                 "DTV2",

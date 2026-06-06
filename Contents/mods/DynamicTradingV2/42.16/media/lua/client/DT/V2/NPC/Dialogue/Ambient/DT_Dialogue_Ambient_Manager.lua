@@ -16,6 +16,15 @@ local DialogueVocals = DynamicTrading
     and DynamicTrading.Dialogue
     and DynamicTrading.Dialogue.Vocals
 
+local function collapseAmbientCue(cueType)
+    local normalizedCue = tostring(cueType or "")
+    local baseCue = string.match(normalizedCue, "^([%a]+)_[%w]+$")
+    if baseCue == "Chat" or baseCue == "Sigh" or baseCue == "Ambient" then
+        return baseCue
+    end
+    return normalizedCue ~= "" and normalizedCue or "Chat"
+end
+
 local function isAmbientTextLogEnabled()
     if DT_ConfigManager and DT_ConfigManager.isAmbientTextLogsEnabled then
         return DT_ConfigManager.isAmbientTextLogsEnabled() == true
@@ -32,12 +41,45 @@ end
 
 local function playSpeechAudio(zombie, npcData, speechData)
     if not zombie or not speechData or not speechData.audio then
-        return
+        return false
     end
 
     if DialogueVocals and DialogueVocals.PlaySpeechAudio then
-        DialogueVocals.PlaySpeechAudio(zombie, npcData, speechData.audio)
+        local played = DialogueVocals.PlaySpeechAudio(zombie, npcData, speechData.audio)
+        if played then
+            return true
+        end
     end
+
+    if DTNPCHostility and DTNPCHostility.PlayVocal and speechData.audio.vocalType then
+        local cueType = speechData.audio.vocalType
+        if speechData.audio.preferVariantPool == true then
+            cueType = collapseAmbientCue(cueType)
+        end
+        return DTNPCHostility.PlayVocal(zombie, npcData, cueType, speechData.audio) ~= nil
+    end
+
+    return false
+end
+
+local function maybePlayRangeEnterAudio(tracked, zombie, npcData, currentTime)
+    if not tracked or not zombie or not npcData then
+        return false
+    end
+
+    local lastAt = tonumber(tracked.lastEntryAudioAt) or 0
+    if lastAt > 0 and (currentTime - lastAt) < 6500 then
+        return false
+    end
+
+    local fallbackAudio = Ambient.BuildFallbackAmbientAudio and Ambient.BuildFallbackAmbientAudio(npcData) or nil
+    if not fallbackAudio then
+        return false
+    end
+
+    tracked.lastEntryAudioAt = currentTime
+    playSpeechAudio(zombie, npcData, { audio = fallbackAudio })
+    return true
 end
 
 function ISDTNPCAmbientDialogueManager:initialize()
@@ -177,6 +219,10 @@ function ISDTNPCAmbientDialogueManager:update()
                     end
                 end
 
+                if not tracked.wasInRange and npcData then
+                    maybePlayRangeEnterAudio(tracked, zombie, npcData, currentTime)
+                end
+
                 if not tracked.wasInRange or not tracked.nextSpeakAt then
                     Ambient.ScheduleInitialSpeak(tracked, currentTime)
                 end
@@ -201,6 +247,10 @@ function ISDTNPCAmbientDialogueManager:update()
                         end
                         Ambient.ScheduleRepeatSpeak(tracked, currentTime)
                     else
+                        local fallbackAudio = Ambient.BuildFallbackAmbientAudio and Ambient.BuildFallbackAmbientAudio(npcData) or nil
+                        if fallbackAudio then
+                            playSpeechAudio(zombie, npcData, { audio = fallbackAudio })
+                        end
                         if isAmbientDebugEnabled() then
                             DynamicTrading.Log(
                                 "DTV2",
@@ -210,6 +260,7 @@ function ISDTNPCAmbientDialogueManager:update()
                                     .. tostring(npcData.name or uuid)
                                     .. " [" .. tostring(npcData.status or "Default")
                                     .. "/" .. tostring(npcData.state or "Default") .. "]"
+                                    .. (fallbackAudio and " (played pooled fallback vocal)" or "")
                             )
                         end
                         Ambient.ScheduleRepeatSpeak(tracked, currentTime)

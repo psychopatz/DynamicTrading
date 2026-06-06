@@ -37,11 +37,7 @@ function BehaviorAttack.RunLegacyWakeup(zombie, target, dist)
     end
 
     if target then
-        if BehaviorAttack.IsPlayerTarget(target) then
-            zombie:setTarget(nil)
-        else
-            zombie:setTarget(target)
-        end
+        zombie:setTarget(nil)
 
         local shouldRun = (tonumber(dist) or 9999) > 3.0 or target:isRunning() or target:isSprinting()
         zombie:setRunning(shouldRun)

@@ -108,11 +108,7 @@ DTNPCLogic.Behaviors["Attack"] = function(zombie, npcData, target, dist)
     end
 
     BehaviorAttack.EnsureManualControl(zombie)
-    if BehaviorAttack.IsPlayerTarget(target) then
-        zombie:setTarget(nil)
-    else
-        zombie:setTarget(target)
-    end
+    zombie:setTarget(nil)
 
     if DTNPCProtect and DTNPCProtect.ExecuteMeleeCombat then
         DTNPCProtect.ExecuteMeleeCombat(zombie, npcData, target, {
