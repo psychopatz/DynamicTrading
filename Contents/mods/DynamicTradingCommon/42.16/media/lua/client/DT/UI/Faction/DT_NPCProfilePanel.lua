@@ -8,6 +8,13 @@ require "DT/UI/Shared/DT_UIUtils"
 
 DT_NPCProfilePanel = ISPanel:derive("DT_NPCProfilePanel")
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 function DT_NPCProfilePanel:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
@@ -42,7 +49,7 @@ function DT_NPCProfilePanel:setNPC(soul, uuid)
     end
     
     -- ID Truncation
-    self.displayID = uuid or "N/A"
+    self.displayID = uuid or T("DTCommon_UI_Faction_NotAvailable", nil, "N/A")
     if #self.displayID > 24 then
         self.displayID = string.sub(self.displayID, 1, 12) .. "..." .. string.sub(self.displayID, -8)
     end
@@ -64,7 +71,7 @@ function DT_NPCProfilePanel:prerender()
     
     -- Draw placeholder if nothing selected
     if not self.soul then
-        local text = "<< SELECT AN INDIVIDUAL TO VIEW PROFILE >>"
+        local text = T("DTCommon_UI_Faction_SelectIndividualProfile", nil, "<< SELECT AN INDIVIDUAL TO VIEW PROFILE >>")
         self:drawTextCentre(text, self.width/2, self.height/2 - 10, 0.5, 0.5, 0.5, 0.6, UIFont.Medium)
         return
     end
@@ -81,21 +88,22 @@ function DT_NPCProfilePanel:prerender()
     end
 
     -- Draw Info
-    self:drawText("NPC PROFILE", textX, currY, 1, 0.8, 0, 1, UIFont.Large)
+    self:drawText(T("DTCommon_UI_Faction_NpcProfile", nil, "NPC PROFILE"), textX, currY, 1, 0.8, 0, 1, UIFont.Large)
     currY = currY + 30
     
     local nameColor = DT_UIUtils.GetTraderReputationColor
         and DT_UIUtils.GetTraderReputationColor(self.uuid, self.soul and self.soul.factionID, { alpha = 1 })
         or { r = 0.9, g = 0.9, b = 0.9, a = 1 }
-    self:drawText("Name:", textX, currY, 0.75, 0.75, 0.75, 1, UIFont.Medium)
-    self:drawText(self.soul.name or "Unknown", textX + 52, currY, nameColor.r, nameColor.g, nameColor.b, nameColor.a or 1, UIFont.Medium)
+    self:drawText(T("DTCommon_UI_Faction_NameLabel", nil, "Name:"), textX, currY, 0.75, 0.75, 0.75, 1, UIFont.Medium)
+    self:drawText(self.soul.name or T("DTCommon_UI_Faction_DefaultLeader", nil, "Unknown"), textX + 52, currY, nameColor.r, nameColor.g, nameColor.b, nameColor.a or 1, UIFont.Medium)
     currY = currY + 25
 
-    self:drawText("Archetype: " .. (self.archName or "Unknown"), textX, currY, 0.9, 0.9, 0.9, 1, UIFont.Medium)
+    self:drawText(T("DTCommon_UI_Faction_ArchetypeLabel", { archetype = tostring(self.archName or T("DTCommon_UI_Faction_DefaultLeader", nil, "Unknown")) }, "Archetype: " .. tostring(self.archName or "Unknown")), textX, currY, 0.9, 0.9, 0.9, 1, UIFont.Medium)
     
     -- Draw ID at bottom right
     if self.displayID then
-        local idW = getTextManager():MeasureStringX(UIFont.Small, "ID: " .. self.displayID)
-        self:drawText("ID: " .. self.displayID, self.width - idW - 10, self.height - 25, 0.5, 0.5, 0.5, 0.8, UIFont.Small)
+        local idText = T("DTCommon_UI_Faction_IdLabel", { id = tostring(self.displayID) }, "ID: " .. tostring(self.displayID))
+        local idW = getTextManager():MeasureStringX(UIFont.Small, idText)
+        self:drawText(idText, self.width - idW - 10, self.height - 25, 0.5, 0.5, 0.5, 0.8, UIFont.Small)
     end
 end

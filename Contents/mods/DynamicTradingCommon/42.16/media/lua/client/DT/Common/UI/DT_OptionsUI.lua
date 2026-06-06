@@ -20,9 +20,16 @@ require "DT/Common/Faction/DT_FactionDiscoveryBannerEditor"
 DT_OptionsUI = ISCollapsableWindow:derive("DT_OptionsUI")
 DT_OptionsUI.instance = nil
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 -- Configuration Holder (Registries)
 DT_OptionsUI.config = {
-    title = "Dynamic Trading Settings",
+    title = T("DTCommon_UI_Options_Title", nil, "Dynamic Trading Settings"),
     audioCategories = {}, -- { {label="Radio", configKey="Radio", exampleSound="DT_RadioRandom"} }
     generalSettings = {}  -- { {label="Show Sidebar", configKey="showSidebar", callback:func} }
 }
@@ -92,14 +99,14 @@ function DT_OptionsUI:createChildren()
     end
 
     -- 4. Add Panels to Tabs
-    self.tabs:addView("General", self.panelGeneral)
-    self.tabs:addView("Audio", self.panelAudio)
-    self.tabs:addView("Manuals", self.panelManuals)
+    self.tabs:addView(T("DTCommon_UI_Options_TabGeneral", nil, "General"), self.panelGeneral)
+    self.tabs:addView(T("DTCommon_UI_Options_TabAudio", nil, "Audio"), self.panelAudio)
+    self.tabs:addView(T("DTCommon_UI_Options_TabManuals", nil, "Manuals"), self.panelManuals)
     if self.panelPricing then
-        self.tabs:addView("Pricing", self.panelPricing)
+        self.tabs:addView(T("DTCommon_UI_Options_TabPricing", nil, "Pricing"), self.panelPricing)
     end
     
-    self.tabs:activateView("General")
+    self.tabs:activateView(T("DTCommon_UI_Options_TabGeneral", nil, "General"))
 end
 
 -- =============================================================================
@@ -109,7 +116,7 @@ function DT_OptionsUI:createGeneralChildren(panel)
     local pad = 20
     local y = 20
     
-    local lbl = ISLabel:new(pad, y, 20, "Interface Settings", 1, 1, 1, 1, UIFont.Medium, true)
+    local lbl = ISLabel:new(pad, y, 20, T("DTCommon_UI_Options_InterfaceSettings", nil, "Interface Settings"), 1, 1, 1, 1, UIFont.Medium, true)
     panel:addChild(lbl)
     y = y + 35
 
@@ -130,12 +137,12 @@ function DT_OptionsUI:createGeneralChildren(panel)
         panel:addChild(self.tickGeneral)
         y = y + math.max(34, (#DT_OptionsUI.config.generalSettings * 28) + 8)
     else
-        local noSettings = ISLabel:new(pad, y, 20, "No general settings registered.", 1, 0.5, 0.5, 0.5, UIFont.Small, true)
+        local noSettings = ISLabel:new(pad, y, 20, T("DTCommon_UI_Options_NoGeneralSettings", nil, "No general settings registered."), 1, 0.5, 0.5, 0.5, UIFont.Small, true)
         panel:addChild(noSettings)
         y = y + 34
     end
 
-    local opacityTitle = ISLabel:new(pad, y + 4, 20, "Conversation Background", 1, 1, 1, 1, UIFont.Small, true)
+    local opacityTitle = ISLabel:new(pad, y + 4, 20, T("DTCommon_UI_Options_ConversationBackground", nil, "Conversation Background"), 1, 1, 1, 1, UIFont.Small, true)
     panel:addChild(opacityTitle)
 
     local currentOpacity = math.floor((DT_ConfigManager.getConversationOverlayOpacity() or 1.0) * 100 + 0.5)
@@ -152,18 +159,18 @@ function DT_OptionsUI:createGeneralChildren(panel)
     self.sliderConversationOpacity:setValues(0, 100, 5, 5)
     panel:addChild(self.sliderConversationOpacity)
 
-    local opacityHint = ISLabel:new(pad, y + 28, 20, "0% is fully transparent unless Disable Transparency is enabled. 100% is the strongest backdrop.", 0.72, 0.72, 0.72, 1, UIFont.Small, true)
+    local opacityHint = ISLabel:new(pad, y + 28, 20, T("DTCommon_UI_Options_OpacityHint", nil, "0% is fully transparent unless Disable Transparency is enabled. 100% is the strongest backdrop."), 0.72, 0.72, 0.72, 1, UIFont.Small, true)
     panel:addChild(opacityHint)
     y = y + 64
 
-    local bannerTitle = ISLabel:new(pad, y, 20, "Faction Discovery Banner", 1, 1, 1, 1, UIFont.Small, true)
+    local bannerTitle = ISLabel:new(pad, y, 20, T("DTCommon_UI_Options_FactionDiscoveryBanner", nil, "Faction Discovery Banner"), 1, 1, 1, 1, UIFont.Small, true)
     panel:addChild(bannerTitle)
 
     local bannerHint = ISLabel:new(
         pad,
         y + 22,
         20,
-        "Edit the on-screen RPG-style discovery banner position used for entering, leaving, and discovering faction bases.",
+        T("DTCommon_UI_Options_BannerHint", nil, "Edit the on-screen RPG-style discovery banner position used for entering, leaving, and discovering faction bases."),
         0.72,
         0.72,
         0.72,
@@ -173,7 +180,7 @@ function DT_OptionsUI:createGeneralChildren(panel)
     )
     panel:addChild(bannerHint)
 
-    self.btnEditFactionBanner = ISButton:new(pad, y + 44, 180, 24, "Edit Banner Position", self, function()
+    self.btnEditFactionBanner = ISButton:new(pad, y + 44, 180, 24, T("DTCommon_UI_Options_EditBannerPosition", nil, "Edit Banner Position"), self, function()
         if DynamicTrading and DynamicTrading.FactionDiscoveryBannerEditor and DynamicTrading.FactionDiscoveryBannerEditor.Open then
             DynamicTrading.FactionDiscoveryBannerEditor.Open()
         end
@@ -206,7 +213,7 @@ function DT_OptionsUI:createAudioChildren(panel)
     local pad = 20
     local y = 20
     
-    local lbl = ISLabel:new(pad, y, 20, "Volume Mixer", 1, 1, 1, 1, UIFont.Medium, true)
+    local lbl = ISLabel:new(pad, y, 20, T("DTCommon_UI_Options_VolumeMixer", nil, "Volume Mixer"), 1, 1, 1, 1, UIFont.Medium, true)
     panel:addChild(lbl)
     y = y + 35
 
@@ -247,7 +254,7 @@ function DT_OptionsUI:createAudioChildren(panel)
     end
 
     -- Always show master
-    AddSlider("Master:", "Master", nil)
+    AddSlider(T("DTCommon_UI_Options_MasterVolume", nil, "Master:"), "Master", nil)
 
     -- Show registered categories
     for _, cat in ipairs(DT_OptionsUI.config.audioCategories) do
@@ -261,16 +268,16 @@ function DT_OptionsUI:createManualChildren(panel)
     local manuals = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.GetOrderedLibraryManuals and DynamicTrading.Manuals.GetOrderedLibraryManuals() or {}
     local whatsNew = DynamicTrading and DynamicTrading.Manuals and DynamicTrading.Manuals.GetLatestWhatsNewManual and DynamicTrading.Manuals.GetLatestWhatsNewManual() or nil
 
-    local lbl = ISLabel:new(pad, y, 20, "Game Manuals", 1, 1, 1, 1, UIFont.Medium, true)
+    local lbl = ISLabel:new(pad, y, 20, T("DTCommon_UI_Options_GameManuals", nil, "Game Manuals"), 1, 1, 1, 1, UIFont.Medium, true)
     panel:addChild(lbl)
     y = y + 35
 
-    local description = ISLabel:new(pad, y, 20, "Open the manual browser, jump to the latest update notes, or browse the manuals that match your active DT modules.", 0.8, 0.8, 0.8, 1, UIFont.Small, true)
+    local description = ISLabel:new(pad, y, 20, T("DTCommon_UI_Options_ManualsDescription", nil, "Open the manual browser, jump to the latest update notes, or browse the manuals that match your active DT modules."), 0.8, 0.8, 0.8, 1, UIFont.Small, true)
     panel:addChild(description)
     y = y + 30
 
     if whatsNew then
-        local openWhatsNew = ISButton:new(pad, y, 180, 28, "Open What's New", self, function()
+        local openWhatsNew = ISButton:new(pad, y, 180, 28, T("DTCommon_UI_Options_OpenWhatsNew", nil, "Open What's New"), self, function()
             DynamicTrading.Manuals.OpenUpdates({ manualId = whatsNew.id, pageId = whatsNew.startPageId })
         end)
         openWhatsNew:initialise()
@@ -278,7 +285,7 @@ function DT_OptionsUI:createManualChildren(panel)
         y = y + 40
     end
 
-    local openLibrary = ISButton:new(pad, y, 180, 28, "Open Manual Library", self, function()
+    local openLibrary = ISButton:new(pad, y, 180, 28, T("DTCommon_UI_Options_OpenManualLibrary", nil, "Open Manual Library"), self, function()
         DynamicTrading.Manuals.Open({ library = true })
     end)
     openLibrary:initialise()
@@ -300,7 +307,7 @@ function DT_OptionsUI:createManualChildren(panel)
     end
 
     if not hasManuals then
-        local emptyLabel = ISLabel:new(pad, y, 20, "No manuals registered yet.", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
+        local emptyLabel = ISLabel:new(pad, y, 20, T("DTCommon_UI_Options_NoManuals", nil, "No manuals registered yet."), 0.7, 0.7, 0.7, 1, UIFont.Small, true)
         panel:addChild(emptyLabel)
     end
 end

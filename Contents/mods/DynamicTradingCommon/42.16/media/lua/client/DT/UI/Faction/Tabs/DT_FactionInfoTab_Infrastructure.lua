@@ -10,6 +10,13 @@ local BuildingDefs = require "DT/Common/ColonyEconomy/Buildings/DT_BuildingDefs"
 
 DT_FactionInfoTab_Infrastructure = ISPanel:derive("DT_FactionInfoTab_Infrastructure")
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function isNomadicFaction(faction)
     return type(faction) == "table"
         and (faction.isNomadic == true
@@ -103,21 +110,24 @@ function DT_FactionInfoTab_Infrastructure:doDrawItem(y, item, alt)
 
         -- Draw Title
         local statusColor = {r=0.2, g=0.8, b=0.2, a=1}
-        local statusText = "Operational"
+        local statusText = T("DTCommon_UI_Faction_Infrastructure_Operational", nil, "Operational")
 
         if b.level == 0 then
-            statusText = "Constructing"
+            statusText = T("DTCommon_UI_Faction_Infrastructure_Constructing", nil, "Constructing")
             statusColor = {r=1, g=0.6, b=0, a=1}
         elseif b.hp and b.maxHp and b.hp < b.maxHp then
-            statusText = "Damaged"
+            statusText = T("DTCommon_UI_Faction_Infrastructure_Damaged", nil, "Damaged")
             statusColor = {r=1, g=0.4, b=0, a=1}
             if b.hp <= 0 then
-                statusText = "DESTROYED"
+                statusText = T("DTCommon_UI_Faction_Infrastructure_Destroyed", nil, "DESTROYED")
                 statusColor = {r=1, g=0, b=0, a=1}
             end
         end
 
-        local title = data.name .. " (Lvl " .. b.level .. ")"
+        local title = T("DTCommon_UI_Faction_Infrastructure_Level", {
+            name = tostring(data.name),
+            level = tostring(b.level)
+        }, tostring(data.name) .. " (Lvl " .. tostring(b.level) .. ")")
         lb:drawText(title, textX, y + 10, 1, 1, 1, 1, UIFont.Medium)
         
         -- Draw Status
@@ -125,11 +135,11 @@ function DT_FactionInfoTab_Infrastructure:doDrawItem(y, item, alt)
         
         -- Draw Workers info
         local workers = b.workers and #b.workers or 0
-        lb:drawText("| Workers: " .. workers, textX + 100, y + 32, 0.6, 0.6, 0.6, 1, UIFont.Small)
+        lb:drawText(T("DTCommon_UI_Faction_Infrastructure_Workers", { count = tostring(workers) }, "| Workers: " .. tostring(workers)), textX + 100, y + 32, 0.6, 0.6, 0.6, 1, UIFont.Small)
 
         -- Draw Effect
         if data.effect and data.effect ~= "" then
-            lb:drawText("Effect: " .. data.effect, textX, y + 52, 0.5, 0.5, 0.5, 1, UIFont.Small)
+            lb:drawText(T("DTCommon_UI_Faction_Infrastructure_Effect", { effect = tostring(data.effect) }, "Effect: " .. tostring(data.effect)), textX, y + 52, 0.5, 0.5, 0.5, 1, UIFont.Small)
         end
         
         -- Separator line
@@ -151,28 +161,30 @@ function DT_FactionInfoTab_Infrastructure:updateData(f)
         local isBandit = tostring(f.id or "") == "Bandits" or tostring(f.factionType or "") == "bandit"
         self.listbox:addItem("Nomadic Info", {
             isHeader = true,
-            text = isBandit and "NOMADIC RAIDERS" or "NOMADIC NETWORK"
+            text = isBandit
+                and T("DTCommon_UI_Faction_Infrastructure_NomadicRaiders", nil, "NOMADIC RAIDERS")
+                or T("DTCommon_UI_Faction_Infrastructure_NomadicNetwork", nil, "NOMADIC NETWORK")
         })
         self.listbox:addItem("Nomadic Text", {
             isSubHeader = true,
             text = isBandit
-                and "This faction survives through moving raider cells, temporary camps, and occupied houses."
-                or "This faction operates as a nomadic trading network."
+                and T("DTCommon_UI_Faction_Infrastructure_BanditNomadicDesc", nil, "This faction survives through moving raider cells, temporary camps, and occupied houses.")
+                or T("DTCommon_UI_Faction_Infrastructure_NomadicDesc", nil, "This faction operates as a nomadic trading network.")
         })
         self.listbox:addItem("Nomadic Text 2", {
             isSubHeader = true,
-            text = "They do not maintain permanent settlements or fixed infrastructure."
+            text = T("DTCommon_UI_Faction_Infrastructure_NoFixedBase", nil, "They do not maintain permanent settlements or fixed infrastructure.")
         })
         return
     end
 
     -- Header
-    self.listbox:addItem("Header", { isHeader = true, text = "COLONY INFRASTRUCTURE" })
+    self.listbox:addItem("Header", { isHeader = true, text = T("DTCommon_UI_Faction_Infrastructure_Header", nil, "COLONY INFRASTRUCTURE") })
     
     -- Status Tag
-    local statusText = "Operational Status: NOMINAL"
+    local statusText = T("DTCommon_UI_Faction_Infrastructure_StatusNominal", nil, "Operational Status: NOMINAL")
     if f.penalties and (f.penalties.dehydrated or f.penalties.sick or f.penalties.vulnerable) then
-        statusText = "Operational Status: COMPROMISED"
+        statusText = T("DTCommon_UI_Faction_Infrastructure_StatusCompromised", nil, "Operational Status: COMPROMISED")
     end
     self.listbox:addItem("Status", { isSubHeader = true, text = statusText, height = 25 })
 
@@ -187,14 +199,14 @@ function DT_FactionInfoTab_Infrastructure:updateData(f)
             local b = f.buildings[bName]
             local def = BuildingDefs[bName]
             local effect = ""
-            if bName == "Greenhouse" then effect = "10 Water -> 1 Food per worker daily."
-            elseif bName == "WaterGenerator" then effect = "Produces Fresh Water daily."
-            elseif bName == "ElectricityGenerator" then effect = "Generates Fuel and Power."
-            elseif bName == "Workshop" then effect = "Produces Ammo and +20% Production."
-            elseif bName == "Laboratory" then effect = "Synthesizes Medical Supplies."
-            elseif bName == "Infirmary" then effect = "Provides passive Health Regeneration."
-            elseif bName == "Barracks" then effect = "+2 Population and Recruitment ×2."
-            elseif bName == "Barricade" then effect = "Defensive barrier against hordes."
+            if bName == "Greenhouse" then effect = T("DTCommon_UI_Faction_Infrastructure_Effect_Greenhouse", nil, "10 Water -> 1 Food per worker daily.")
+            elseif bName == "WaterGenerator" then effect = T("DTCommon_UI_Faction_Infrastructure_Effect_WaterGenerator", nil, "Produces Fresh Water daily.")
+            elseif bName == "ElectricityGenerator" then effect = T("DTCommon_UI_Faction_Infrastructure_Effect_ElectricityGenerator", nil, "Generates Fuel and Power.")
+            elseif bName == "Workshop" then effect = T("DTCommon_UI_Faction_Infrastructure_Effect_Workshop", nil, "Produces Ammo and +20% Production.")
+            elseif bName == "Laboratory" then effect = T("DTCommon_UI_Faction_Infrastructure_Effect_Laboratory", nil, "Synthesizes Medical Supplies.")
+            elseif bName == "Infirmary" then effect = T("DTCommon_UI_Faction_Infrastructure_Effect_Infirmary", nil, "Provides passive Health Regeneration.")
+            elseif bName == "Barracks" then effect = T("DTCommon_UI_Faction_Infrastructure_Effect_Barracks", nil, "+2 Population and Recruitment ×2.")
+            elseif bName == "Barricade" then effect = T("DTCommon_UI_Faction_Infrastructure_Effect_Barricade", nil, "Defensive barrier against hordes.")
             end
 
             self.listbox:addItem(bName, {
@@ -207,17 +219,17 @@ function DT_FactionInfoTab_Infrastructure:updateData(f)
             })
         end
     else
-        self.listbox:addItem("Empty", { isSubHeader = true, text = "No infrastructure data found." })
+        self.listbox:addItem("Empty", { isSubHeader = true, text = T("DTCommon_UI_Faction_Infrastructure_NoData", nil, "No infrastructure data found.") })
     end
 
     -- Security
-    self.listbox:addItem("Security Header", { isHeader = true, text = "SECURITY STATUS" })
+    self.listbox:addItem("SecurityHeader", { isHeader = true, text = T("DTCommon_UI_Faction_Infrastructure_SecurityHeader", nil, "SECURITY STATUS") })
     local days = f.daysSinceLastHorde or 0
-    self.listbox:addItem("HordeDays", { isSubHeader = true, text = "Days since last horde: " .. days, height = 25 })
+    self.listbox:addItem("HordeDays", { isSubHeader = true, text = T("DTCommon_UI_Faction_Infrastructure_DaysSinceHorde", { days = tostring(days) }, "Days since last horde: " .. tostring(days)), height = 25 })
     
     local barricade = f.buildings and f.buildings.Barricade
     if barricade then
         local pct = math.floor((barricade.hp / (barricade.maxHp or 1)) * 100)
-        self.listbox:addItem("Integrity", { isSubHeader = true, text = "Perimeter Integrity: " .. pct .. "%", height = 25 })
+        self.listbox:addItem("Integrity", { isSubHeader = true, text = T("DTCommon_UI_Faction_Infrastructure_PerimeterIntegrity", { percent = tostring(pct) }, "Perimeter Integrity: " .. tostring(pct) .. "%"), height = 25 })
     end
 end

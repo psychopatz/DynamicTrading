@@ -9,6 +9,13 @@ require "ISUI/ISButton"
 
 DT_FactionEventLogPanel = ISPanel:derive("DT_FactionEventLogPanel")
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function isBanditFaction(faction)
     return type(faction) == "table"
         and (tostring(faction.id or "") == "Bandits"
@@ -150,7 +157,7 @@ function DT_FactionEventLogPanel:updateData(f)
             color = "<RGB:1.0,1.0,0.4> "
         end
         local timeStr = entry.time or entry.t or ""
-        text = text .. "<RGB:0.5,0.5,0.5> [" .. timeStr .. "] " .. color .. (textStr or "Unknown event") .. " <LINE> "
+        text = text .. "<RGB:0.5,0.5,0.5> [" .. timeStr .. "] " .. color .. (textStr or T("DTCommon_UI_Faction_UnknownEvent", nil, "Unknown event")) .. " <LINE> "
     end
 
     self.richText:setText(text)

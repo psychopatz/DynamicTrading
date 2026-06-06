@@ -4,6 +4,13 @@ require "DT/Common/Faction/TradingSys/RosterLogic/TradeScheduler/DT_RosterLogic_
 
 DT_FactionInfoTab_Calendar = ISPanel:derive("DT_FactionInfoTab_Calendar")
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function getScaleTags(tab)
     local scale = "Medium"
     if tab.parent and tab.parent.parent and tab.parent.parent.fontScale then
@@ -31,17 +38,17 @@ end
 
 local function formatWindowLabel(window, currentTradingDay)
     if not window then
-        return "No scheduled run"
+        return T("DTCommon_UI_Faction_NoScheduledRun", nil, "No scheduled run")
     end
 
     local dayDelta = (window.tradingDay or 0) - (currentTradingDay or 0)
-    local dayLabel = "Trading Day +" .. tostring(dayDelta)
+    local dayLabel = T("DTCommon_UI_Faction_TradingDayOffset", { offset = tostring(dayDelta) }, "Trading Day +" .. tostring(dayDelta))
     if dayDelta == 0 then
-        dayLabel = "Today"
+        dayLabel = T("DTCommon_UI_Faction_Today", nil, "Today")
     elseif dayDelta == 1 then
-        dayLabel = "Tomorrow"
+        dayLabel = T("DTCommon_UI_Faction_Tomorrow", nil, "Tomorrow")
     elseif dayDelta < 0 then
-        dayLabel = "Earlier"
+        dayLabel = T("DTCommon_UI_Faction_Earlier", nil, "Earlier")
     end
 
     return string.format(
@@ -93,7 +100,7 @@ function DT_FactionInfoTab_Calendar:updateData(f, rosterData)
     end
 
     if not f then
-        self.richText:setText(" <RGB:0.6,0.6,0.6> No faction selected.")
+        self.richText:setText(" <RGB:0.6,0.6,0.6> " .. T("DTCommon_UI_Faction_NoFactionSelected", nil, "No faction selected."))
         return
     end
 
@@ -110,9 +117,9 @@ function DT_FactionInfoTab_Calendar:updateData(f, rosterData)
     end
 
     if f.isV1 and (not rosterData or type(rosterData.Souls) ~= "table" or not hasSouls) then
-        local legacyText = " <RGB:1,0.8,0> <SIZE:" .. titleTag .. "> Trading Calendar <SIZE:" .. bodyTag .. "> <LINE> "
-        legacyText = legacyText .. " <RGB:0.8,0.8,0.8> Current Trading Day: " .. tostring(currentTradingDay) .. " <LINE> <LINE> "
-        legacyText = legacyText .. " <RGB:0.6,0.6,0.6> Legacy V1 radio data does not expose a roster-backed faction schedule on this client yet. The deterministic scheduler is active on the server runtime, but this fallback view can only show the shared trading-day anchor until roster sync is available."
+        local legacyText = " <RGB:1,0.8,0> <SIZE:" .. titleTag .. "> " .. T("DTCommon_UI_Faction_TradingCalendar", nil, "Trading Calendar") .. " <SIZE:" .. bodyTag .. "> <LINE> "
+        legacyText = legacyText .. " <RGB:0.8,0.8,0.8> " .. T("DTCommon_UI_Faction_CurrentTradingDay", { day = tostring(currentTradingDay) }, "Current Trading Day: " .. tostring(currentTradingDay)) .. " <LINE> <LINE> "
+        legacyText = legacyText .. " <RGB:0.6,0.6,0.6> " .. T("DTCommon_UI_Faction_V1CalendarFallback", nil, "Legacy V1 radio data does not expose a roster-backed faction schedule on this client yet. The deterministic scheduler is active on the server runtime, but this fallback view can only show the shared trading-day anchor until roster sync is available.")
         self.richText:setText(legacyText)
         self.richText:paginate()
         return
@@ -121,35 +128,40 @@ function DT_FactionInfoTab_Calendar:updateData(f, rosterData)
     local plan = DynamicTrading_TradeScheduler.BuildFactionPlan(f.id, rosterData, currentHours, f)
     local windows = DynamicTrading_TradeScheduler.GetUpcomingWindows(f.id, 5, currentHours)
 
-    local text = " <RGB:1,0.8,0> <SIZE:" .. titleTag .. "> Trading Calendar <SIZE:" .. bodyTag .. "> <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Faction: " .. tostring(f.name or f.id or "Unknown") .. " <LINE> "
-    text = text .. " Current Trading Day: " .. tostring(plan.tradingDay or currentTradingDay) .. " <LINE> <LINE> "
+    local text = " <RGB:1,0.8,0> <SIZE:" .. titleTag .. "> " .. T("DTCommon_UI_Faction_TradingCalendar", nil, "Trading Calendar") .. " <SIZE:" .. bodyTag .. "> <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> " .. T("DTCommon_UI_Faction_NameRow", { name = tostring(f.name or f.id or T("DTCommon_UI_Faction_DefaultLeader", nil, "Unknown")) }, "Faction: " .. tostring(f.name or f.id or "Unknown")) .. " <LINE> "
+    text = text .. " " .. T("DTCommon_UI_Faction_CurrentTradingDay", { day = tostring(plan.tradingDay or currentTradingDay) }, "Current Trading Day: " .. tostring(plan.tradingDay or currentTradingDay)) .. " <LINE> <LINE> "
 
-    text = text .. " <RGB:0.4,0.8,1> CURRENT WINDOW: <LINE> "
+    text = text .. " <RGB:0.4,0.8,1> " .. T("DTCommon_UI_Faction_CurrentWindow", nil, "CURRENT WINDOW:") .. " <LINE> "
     text = text .. " <RGB:0.8,0.8,0.8> " .. formatWindowLabel(plan.window, currentTradingDay) .. " <LINE> "
     if plan.isWindowActive then
-        text = text .. " <RGB:0.2,1,0.2> Status: Active dispatch window <LINE> "
+        text = text .. " <RGB:0.2,1,0.2> " .. T("DTCommon_UI_Faction_StatusActiveDispatch", nil, "Status: Active dispatch window") .. " <LINE> "
     else
-        text = text .. " <RGB:0.75,0.75,0.75> Status: Waiting for next dispatch window <LINE> "
+        text = text .. " <RGB:0.75,0.75,0.75> " .. T("DTCommon_UI_Faction_StatusWaitingDispatch", nil, "Status: Waiting for next dispatch window") .. " <LINE> "
     end
     if not plan.autoEnabled then
-        text = text .. " <RGB:1,0.65,0.25> Automatic scheduling is paused until this player faction enters Regency. <LINE> "
+        text = text .. " <RGB:1,0.65,0.25> " .. T("DTCommon_UI_Faction_AutoSchedulingPaused", nil, "Automatic scheduling is paused until this player faction enters Regency.") .. " <LINE> "
     end
 
-    text = text .. " <LINE> <RGB:0.4,0.8,1> ROTATION SUMMARY: <LINE> "
-    text = text .. " <RGB:0.8,0.8,0.8> Candidate Roster: " .. tostring(plan.totalCount or 0) .. " <LINE> "
-    text = text .. " Eligible Pool: " .. tostring(plan.eligibleCount or 0) .. " <LINE> "
-    text = text .. " Active Traders: " .. tostring(plan.activeCount or 0) .. " / " .. tostring(plan.maxConcurrentCount or 0) .. " <LINE> "
-    text = text .. " Window Target: " .. tostring(plan.targetCount or 0) .. " <LINE> "
-    text = text .. " Seeded Intensity: " .. tostring(plan.intensityPercent or 0) .. "% <LINE> "
+    text = text .. " <LINE> <RGB:0.4,0.8,1> " .. T("DTCommon_UI_Faction_RotationSummary", nil, "ROTATION SUMMARY:") .. " <LINE> "
+    text = text .. " <RGB:0.8,0.8,0.8> " .. T("DTCommon_UI_Faction_CandidateRoster", { count = tostring(plan.totalCount or 0) }, "Candidate Roster: " .. tostring(plan.totalCount or 0)) .. " <LINE> "
+    text = text .. " " .. T("DTCommon_UI_Faction_EligiblePool", { count = tostring(plan.eligibleCount or 0) }, "Eligible Pool: " .. tostring(plan.eligibleCount or 0)) .. " <LINE> "
+    text = text .. " " .. T("DTCommon_UI_Faction_ActiveTraders", {
+        active = tostring(plan.activeCount or 0),
+        max = tostring(plan.maxConcurrentCount or 0)
+    }, "Active Traders: " .. tostring(plan.activeCount or 0) .. " / " .. tostring(plan.maxConcurrentCount or 0)) .. " <LINE> "
+    text = text .. " " .. T("DTCommon_UI_Faction_WindowTarget", { count = tostring(plan.targetCount or 0) }, "Window Target: " .. tostring(plan.targetCount or 0)) .. " <LINE> "
+    text = text .. " " .. T("DTCommon_UI_Faction_SeededIntensity", { percent = tostring(plan.intensityPercent or 0) }, "Seeded Intensity: " .. tostring(plan.intensityPercent or 0) .. "%") .. " <LINE> "
 
-    text = text .. " <LINE> <RGB:0.4,0.8,1> UPCOMING WINDOWS: <LINE> "
+    text = text .. " <LINE> <RGB:0.4,0.8,1> " .. T("DTCommon_UI_Faction_UpcomingWindows", nil, "UPCOMING WINDOWS:") .. " <LINE> "
     for index, window in ipairs(windows) do
-        local prefix = (index == 1 and plan.isWindowActive) and "Now" or ("Run " .. tostring(index))
+        local prefix = (index == 1 and plan.isWindowActive)
+            and T("DTCommon_UI_Faction_Now", nil, "Now")
+            or T("DTCommon_UI_Faction_RunIndex", { index = tostring(index) }, "Run " .. tostring(index))
         text = text .. " <RGB:0.8,0.8,0.8> " .. prefix .. ": " .. formatWindowLabel(window, currentTradingDay) .. " <LINE> "
     end
 
-    text = text .. " <LINE> <RGB:0.55,0.55,0.55> Automatic faction windows are seeded from trading day and faction identity. Restarting the world will not reshuffle the schedule; only the live state of already-active traders is resumed."
+    text = text .. " <LINE> <RGB:0.55,0.55,0.55> " .. T("DTCommon_UI_Faction_CalendarFooter", nil, "Automatic faction windows are seeded from trading day and faction identity. Restarting the world will not reshuffle the schedule; only the live state of already-active traders is resumed.")
 
     self.richText:setText(text)
     self.richText:paginate()
