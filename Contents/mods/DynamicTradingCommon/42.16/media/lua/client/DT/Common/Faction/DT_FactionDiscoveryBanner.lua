@@ -45,6 +45,24 @@ local function easeInOutQuad(t)
     return 1 - math.pow(-2 * t + 2, 2) / 2
 end
 
+local function getPalette(variant)
+    if tostring(variant or "") == "collapse" then
+        return {
+            border = { r = 0.95, g = 0.18, b = 0.14 },
+            accent = { r = 0.95, g = 0.18, b = 0.14 },
+            title = { r = 1.0, g = 0.42, b = 0.36 },
+            subtitle = { r = 0.95, g = 0.88, b = 0.82 },
+        }
+    end
+
+    return {
+        border = { r = 0.95, g = 0.78, b = 0.28 },
+        accent = { r = 0.95, g = 0.78, b = 0.28 },
+        title = { r = 1.0, g = 0.92, b = 0.52 },
+        subtitle = { r = 0.92, g = 0.92, b = 0.92 },
+    }
+end
+
 local function getScreenRect()
     local core = getCore()
     return core:getScreenWidth(), core:getScreenHeight()
@@ -109,10 +127,12 @@ function Banner.ClearSavedRect()
     end
 end
 
-function BannerPanel:setMessage(title, subtitle, duration)
+function BannerPanel:setMessage(title, subtitle, duration, options)
+    options = type(options) == "table" and options or {}
     local requestedHold = tonumber(duration) or Banner.DEFAULT_HOLD_DURATION
     self.titleText = tostring(title or "")
     self.subtitleText = tostring(subtitle or "")
+    self.variant = tostring(options.variant or "default")
     self.phase = "entering"
     self.phaseTime = 0
     self.holdDuration = math.min(Banner.MAX_HOLD_DURATION, math.max(0.2, requestedHold))
@@ -124,6 +144,7 @@ end
 function BannerPanel:setPreviewMessage(title, subtitle)
     self.titleText = tostring(title or "")
     self.subtitleText = tostring(subtitle or "")
+    self.variant = "default"
     self.phase = "preview"
     self.phaseTime = 0
     self.holdDuration = -1
@@ -208,6 +229,7 @@ end
 
 function BannerPanel:prerender()
     local state = self:getVisualState()
+    local palette = getPalette(self.variant)
     local scaledW = math.floor(self.width * state.bgScale + 0.5)
     local scaledH = math.floor(self.height * state.bgScale + 0.5)
     local drawX = math.floor((self.width - scaledW) / 2)
@@ -218,8 +240,8 @@ function BannerPanel:prerender()
     end
 
     self:drawRect(drawX, drawY, scaledW, scaledH, state.bgAlpha, 0.05, 0.05, 0.05)
-    self:drawRectBorder(drawX, drawY, scaledW, scaledH, 0.92 * state.rootAlpha, 0.95, 0.78, 0.28)
-    self:drawRect(drawX + 12, drawY + 12, math.max(16, scaledW - 24), 2, state.accentAlpha, 0.95, 0.78, 0.28)
+    self:drawRectBorder(drawX, drawY, scaledW, scaledH, 0.92 * state.rootAlpha, palette.border.r, palette.border.g, palette.border.b)
+    self:drawRect(drawX + 12, drawY + 12, math.max(16, scaledW - 24), 2, state.accentAlpha, palette.accent.r, palette.accent.g, palette.accent.b)
 
     if self.editorMode then
         self:drawTextCentre("Drag to reposition", self.width / 2, drawY + scaledH - 20, 0.78, 0.78, 0.78, 0.95, UIFont.Small)
@@ -228,6 +250,7 @@ end
 
 function BannerPanel:render()
     local state = self:getVisualState()
+    local palette = getPalette(self.variant)
     local titleY = 18 + state.panelOffsetY + state.titleOffsetY
     local subtitleY = 50 + state.panelOffsetY + state.subtitleOffsetY
 
@@ -239,9 +262,9 @@ function BannerPanel:render()
         tostring(self.titleText or ""),
         self.width / 2,
         titleY,
-        1.0,
-        0.92,
-        0.52,
+        palette.title.r,
+        palette.title.g,
+        palette.title.b,
         state.titleAlpha,
         UIFont.Large
     )
@@ -249,9 +272,9 @@ function BannerPanel:render()
         tostring(self.subtitleText or ""),
         self.width / 2,
         subtitleY,
-        0.92,
-        0.92,
-        0.92,
+        palette.subtitle.r,
+        palette.subtitle.g,
+        palette.subtitle.b,
         state.subtitleAlpha,
         UIFont.Small
     )
@@ -339,6 +362,7 @@ function BannerPanel:new(x, y, width, height, options)
     options = options or {}
     o.titleText = ""
     o.subtitleText = ""
+    o.variant = "default"
     o.phase = options.editorMode == true and "preview" or "idle"
     o.phaseTime = 0
     o.holdDuration = Banner.DEFAULT_HOLD_DURATION
@@ -381,14 +405,14 @@ function Banner.ApplySavedPosition()
     panel:moveToClamped(x, y)
 end
 
-function Banner.ShowMessage(title, subtitle, duration)
+function Banner.ShowMessage(title, subtitle, duration, options)
     local panel = Banner.EnsureInstance()
     if not panel then
         return
     end
 
     Banner.ApplySavedPosition()
-    panel:setMessage(title, subtitle, duration or Banner.DEFAULT_HOLD_DURATION)
+    panel:setMessage(title, subtitle, duration or Banner.DEFAULT_HOLD_DURATION, options)
 end
 
 return Banner

@@ -22,6 +22,16 @@ local function getSandbox()
     return SandboxVars and SandboxVars.DynamicTrading or {}
 end
 
+local function isLedgerDebugEnabled()
+    return DynamicTrading and DynamicTrading.Debug == true
+end
+
+local function debugLog(stage, message)
+    if isLedgerDebugEnabled() and DynamicTrading and DynamicTrading.Log then
+        DynamicTrading.Log("DTCommons", "FactionBaseLedger", tostring(stage or "Debug"), tostring(message or ""))
+    end
+end
+
 local function normalizeTownKey(value)
     if DT_GeolocatorSystem and DT_GeolocatorSystem.NormalizeLocationKey then
         return DT_GeolocatorSystem.NormalizeLocationKey(value)
@@ -126,6 +136,10 @@ function Public.GetRecentBaseReuseChance()
     return clamp(tonumber(sandbox.FactionRespawnBaseReuseChance) or 5, 0, 100)
 end
 
+function Public.IsDebugEnabled()
+    return isLedgerDebugEnabled()
+end
+
 function Public.GetTownCooldownRemainingDays(townName)
     local townKey = normalizeTownKey(townName)
     if not townKey then
@@ -181,6 +195,21 @@ function Public.RecordAbandonedHome(factionID, factionData, reason)
             lastFactionID = tostring(factionID or ""),
             reason = tostring(reason or "unknown"),
         }
+
+        debugLog(
+            "Record",
+            "Recorded abandoned base key="
+                .. tostring(homeKey)
+                .. " town="
+                .. tostring(townName)
+                .. " faction="
+                .. tostring(factionID)
+                .. " reason="
+                .. tostring(reason or "unknown")
+                .. " reuseChance="
+                .. tostring(Public.GetRecentBaseReuseChance())
+                .. "%"
+        )
     end
 
     if ModData.transmit then
@@ -235,4 +264,114 @@ function Public.GetRecentHomeRecord(townName, homeEntry)
 
     record.ageDays = ageDays
     return record
+end
+
+function Public.GetDebugSnapshot()
+    local data = Public.EnsureData()
+    local snapshot = {
+        nowDay = getCurrentWorldDay(),
+        avoidDays = Public.GetRecentBaseAvoidDays(),
+        reuseChance = Public.GetRecentBaseReuseChance(),
+        cooldownDays = Public.GetRespawnCooldownDays(),
+        townCooldowns = {},
+        baseHistory = {},
+    }
+
+    for townKey, cooldownUntilDay in pairs(data.townCooldowns or {}) do
+        snapshot.townCooldowns[townKey] = {
+            cooldownUntilDay = tonumber(cooldownUntilDay) or 0,
+            remainingDays = math.max(0, (tonumber(cooldownUntilDay) or 0) - snapshot.nowDay),
+        }
+    end
+
+    for townKey, townEntries in pairs(data.baseHistory or {}) do
+        local rows = {}
+        if type(townEntries) == "table" then
+            pruneTownHistoryEntries(townEntries)
+            for homeKey, entry in pairs(townEntries) do
+                if type(entry) == "table" then
+                    local ageDays = math.max(0, snapshot.nowDay - (tonumber(entry.lastReleasedDay) or 0))
+                    rows[#rows + 1] = {
+                        key = tostring(homeKey),
+                        name = tostring(entry.name or "Unknown"),
+                        x = normalizeCoord(entry.x),
+                        y = normalizeCoord(entry.y),
+                        z = normalizeCoord(entry.z),
+                        town = tostring(entry.town or townKey),
+                        lastReleasedDay = tonumber(entry.lastReleasedDay) or 0,
+                        ageDays = ageDays,
+                        lastFactionID = tostring(entry.lastFactionID or ""),
+                        reason = tostring(entry.reason or "unknown"),
+                        eligibleForAvoidance = ageDays <= snapshot.avoidDays,
+                    }
+                end
+            end
+        end
+        snapshot.baseHistory[townKey] = rows
+    end
+
+    return snapshot
+end
+
+function Public.DumpDebug(maxRows, force)
+    if not DynamicTrading or not DynamicTrading.Log then
+        return false
+    end
+    if force ~= true and not isLedgerDebugEnabled() then
+        return false
+    end
+
+    local snapshot = Public.GetDebugSnapshot()
+    local limit = math.max(1, math.floor(tonumber(maxRows) or 40))
+    local printed = 0
+
+    DynamicTrading.Log(
+        "DTCommons",
+        "FactionBaseLedger",
+        "Dump",
+        "nowDay="
+            .. tostring(snapshot.nowDay)
+            .. " avoidDays="
+            .. tostring(snapshot.avoidDays)
+            .. " reuseChance="
+            .. tostring(snapshot.reuseChance)
+            .. "%"
+            .. " cooldownDays="
+            .. tostring(snapshot.cooldownDays)
+    )
+
+    for townKey, rows in pairs(snapshot.baseHistory or {}) do
+        for _, entry in ipairs(rows or {}) do
+            if printed >= limit then
+                return true
+            end
+            printed = printed + 1
+            DynamicTrading.Log(
+                "DTCommons",
+                "FactionBaseLedger",
+                "Dump",
+                "town="
+                    .. tostring(townKey)
+                    .. " base="
+                    .. tostring(entry.name)
+                    .. " coords="
+                    .. tostring(entry.x)
+                    .. ","
+                    .. tostring(entry.y)
+                    .. ","
+                    .. tostring(entry.z)
+                    .. " ageDays="
+                    .. tostring(entry.ageDays)
+                    .. " faction="
+                    .. tostring(entry.lastFactionID)
+                    .. " reason="
+                    .. tostring(entry.reason)
+            )
+        end
+    end
+
+    if printed == 0 then
+        DynamicTrading.Log("DTCommons", "FactionBaseLedger", "Dump", "No abandoned faction base records.")
+    end
+    return true
 end

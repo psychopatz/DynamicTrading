@@ -55,5 +55,16 @@ module Base
         }
     }
 
+    sound DT_Healed
+    {
+        category = Object,
+        is3D = true,
+        clip
+        {
+            file = media/sound/npc/DT_Healed.ogg,
+            volume = 0.65,
+        }
+    }
+
 
 }

@@ -53,6 +53,80 @@ local function isColonyRecruitmentAway(status, returnStatus, npcData)
     return tostring(returnStatus or "") == "ColonyRecruitment"
 end
 
+local function isLivingSoulRecord(soul)
+    if type(soul) ~= "table" then
+        return false
+    end
+
+    local status = tostring(soul.status or "")
+    local state = tostring(soul.state or "")
+    if status == "Dead" or state == "Dead" or tonumber(soul.deathFinalizedAt) then
+        return false
+    end
+
+    local combatHealth = tonumber(soul.combatHealthCurrent)
+    if combatHealth ~= nil and combatHealth <= 0 and status ~= "Away" and status ~= "Trading" then
+        return false
+    end
+
+    local health = tonumber(soul.health)
+    if health ~= nil and health <= 0 and status ~= "Away" and status ~= "Trading" then
+        return false
+    end
+
+    return true
+end
+
+local function refreshNonPlayerFactionPopulationFromRoster(factionID, data)
+    if not factionID or not DynamicTrading_Factions or not DynamicTrading_Factions.GetFaction then
+        return false
+    end
+
+    local faction = DynamicTrading_Factions.GetFaction(factionID)
+    if not faction or faction.playerOwned == true then
+        return false
+    end
+
+    local members = data and data.FactionMembers and data.FactionMembers[factionID] or nil
+    local souls = data and data.Souls or nil
+    local living = 0
+    local dead = 0
+    local index
+
+    if type(members) == "table" and type(souls) == "table" then
+        for index = 1, #members do
+            local soul = souls[members[index]]
+            if type(soul) == "table" then
+                if isLivingSoulRecord(soul) then
+                    living = living + 1
+                else
+                    dead = dead + 1
+                end
+            end
+        end
+    end
+
+    local changed = false
+    if tonumber(faction.memberCount) ~= living then
+        faction.memberCount = living
+        changed = true
+    end
+
+    if living <= 0
+        and (dead > 0 or (type(members) == "table" and #members <= 0))
+        and DynamicTrading_Factions.AuditFactionExtinction then
+        if DynamicTrading_Factions.AuditFactionExtinction(factionID, { reason = "roster_extinction" }) then
+            changed = true
+        end
+    end
+
+    if changed and ModData and ModData.transmit then
+        ModData.transmit("DynamicTrading_Factions")
+    end
+
+    return changed
+end
+
 function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, returnStatus)
     local npcData = DynamicTrading_Roster.GetSoul(uuid)
     if npcData then
@@ -186,6 +260,9 @@ function DynamicTrading_Roster.UpdateSoulStatus(uuid, status, returnTime, return
 
     local linkedWorkerID = (npcData and npcData.linkedWorkerID) or (data.Souls[uuid] and data.Souls[uuid].linkedWorkerID) or nil
     local factionID = (npcData and npcData.factionID) or (data.Souls[uuid] and data.Souls[uuid].factionID) or nil
+    if factionID then
+        refreshNonPlayerFactionPopulationFromRoster(factionID, data)
+    end
     if linkedWorkerID and factionID and DynamicTrading_Factions and DynamicTrading_Factions.GetFaction then
         local faction = DynamicTrading_Factions.GetFaction(factionID)
         if faction and faction.playerOwned then

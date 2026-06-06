@@ -1,6 +1,7 @@
 local VirtualStore = require "DT/Common/ColonyEconomy/VirtualStore/DT_VirtualStore"
 local BuildingLogic = require "DT/Common/ColonyEconomy/Buildings/DT_BuildingLogic"
 local HordeLogic = require "DT/Common/ColonyEconomy/Horde/DT_HordeLogic"
+local FactionCollapse = require "DT/Common/Faction/TradingSys/Factions/DT_FactionCollapse"
 
 local TownSim = {}
 
@@ -146,10 +147,11 @@ function TownSim.Process(faction, id, data)
         
         if factionActive and DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddFactionEvent then
             DynamicTrading.GameplayLogs.AddFactionEvent(id, DynamicTrading.GameplayEvents.FACTION_DYING, {})
-            -- Global broadcast via Radio module for collapse
-            if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddRadioEvent then
-                DynamicTrading.GameplayLogs.AddRadioEvent(DynamicTrading.GameplayEvents.FACTION_COLLAPSED, {faction.name or "Unknown Colony"})
-            end
+        end
+
+        if factionActive and (tonumber(faction.memberCount) or 0) <= 0 then
+            FactionCollapse.CollapseFaction(id, faction, { reason = "town_collapse" })
+            return faction, false, { mults = mults, buildingProd = buildingProd }
         end
     end
 

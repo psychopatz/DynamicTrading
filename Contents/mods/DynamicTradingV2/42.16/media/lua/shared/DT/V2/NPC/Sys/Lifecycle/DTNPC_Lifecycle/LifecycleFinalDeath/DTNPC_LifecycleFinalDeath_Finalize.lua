@@ -80,7 +80,11 @@ function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, co
         manualCorpseCreated = DTNPCLifecycle.CreateCorpseFromZombie(zombie, liveData, "incapacitated_final_kill") == true
         finalKillContext.manualCorpseCreated = manualCorpseCreated
     end
+    local deathFactionID = liveData.factionID
     DTNPCManager.RemoveData(uuid, "Dead", nil, nil, finalKillContext)
+    if deathFactionID and DynamicTrading_Factions and DynamicTrading_Factions.AuditFactionExtinction then
+        DynamicTrading_Factions.AuditFactionExtinction(deathFactionID, { reason = "member_killed" })
+    end
 
     if finalKillContext.forcedLiveBodyRemoval == true and zombie and not (zombie.isDead and zombie:isDead()) then
         DynamicTrading.Log(

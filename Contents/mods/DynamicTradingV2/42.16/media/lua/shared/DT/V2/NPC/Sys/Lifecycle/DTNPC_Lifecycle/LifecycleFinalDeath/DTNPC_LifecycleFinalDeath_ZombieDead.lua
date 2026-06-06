@@ -144,7 +144,11 @@ function DTNPCLifecycle.HandleZombieDead(zombie)
 
         DynamicTrading.Log("DTV2", "NPC", "Lifecycle", "NPC Died: " .. (npcData.name or uuid))
         DTNPCLifecycle.DropDeathMoney(zombie, npcData, removalContext)
+        local deathFactionID = npcData.factionID
         DTNPCManager.RemoveData(uuid, "Dead", nil, nil, removalContext)
+        if deathFactionID and DynamicTrading_Factions and DynamicTrading_Factions.AuditFactionExtinction then
+            DynamicTrading_Factions.AuditFactionExtinction(deathFactionID, { reason = "member_killed" })
+        end
     else
         DynamicTrading.Log("DTV2", "NPC", "Warn", "Unregister ignored zombie with no authoritative UUID; refusing outfit-ID fallback.")
     end

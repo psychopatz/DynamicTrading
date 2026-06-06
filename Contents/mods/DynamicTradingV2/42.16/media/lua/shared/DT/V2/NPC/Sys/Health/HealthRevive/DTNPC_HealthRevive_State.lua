@@ -189,6 +189,51 @@ local function resolveReviveResumeState(npcData)
     return "Idle"
 end
 
+local function playReviveSuccessSound(zombie)
+    local soundName = tostring(DTNPCHealth and DTNPCHealth.REVIVE_SUCCESS_SOUND or "DT_Healed")
+    if soundName == "" then
+        return false
+    end
+
+    local emitter = zombie and zombie.getEmitter and zombie:getEmitter() or nil
+    if emitter and emitter.playSound then
+        emitter:playSound(soundName)
+        return true
+    end
+
+    if zombie and zombie.playSound then
+        zombie:playSound(soundName)
+        return true
+    end
+
+    local square = zombie and zombie.getSquare and zombie:getSquare() or nil
+    local soundManager = getSoundManager and getSoundManager() or nil
+    if square and soundManager and soundManager.PlayWorldSound then
+        soundManager:PlayWorldSound(soundName, square, 0, 8, 1.0, false)
+        return true
+    end
+
+    return false
+end
+
+local function pushReviveThankYouNotice(zombie, npcData, helperIdentity)
+    if not zombie or type(npcData) ~= "table" then
+        return false
+    end
+
+    local helperName = type(helperIdentity) == "table" and tostring(helperIdentity.username or "") or ""
+    local line = "Thank you. I can make it home from here."
+    if helperName ~= "" then
+        line = "Thank you, " .. helperName .. ". I can make it home from here."
+    end
+
+    if DTNPCProtect and DTNPCProtect.PushCompanionNotice then
+        return DTNPCProtect.PushCompanionNotice(zombie, npcData, line, "friendly", "Chat")
+    end
+
+    return false
+end
+
 local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, consumedCount)
     local combatHealth = DTNPCHealth.EnsureDefaults and DTNPCHealth.EnsureDefaults(npcData) or nil
     if not combatHealth then
@@ -282,6 +327,8 @@ local function applyReviveState(zombie, npcData, helperIdentity, requiredCount, 
     if zombie and DTNPC and DTNPC.MarkBodyOwnership then
         DTNPC.MarkBodyOwnership(zombie, npcData)
     end
+    pushReviveThankYouNotice(zombie, npcData, helperIdentity)
+    playReviveSuccessSound(zombie)
     return true, {
         requiredCount = reviveData and reviveData.requiredItemCount or requiredCount,
         consumedCount = tonumber(consumedCount) or 0,

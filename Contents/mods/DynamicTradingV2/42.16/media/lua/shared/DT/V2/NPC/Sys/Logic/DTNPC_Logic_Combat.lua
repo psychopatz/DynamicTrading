@@ -43,6 +43,27 @@ local function getPlayerAttackerIdentity(attacker)
     return nil
 end
 
+local function getPlayerRuntimeTargetID(player)
+    if DTNPCProtect
+        and DTNPCProtect.Internal
+        and DTNPCProtect.Internal.getPlayerRuntimeID then
+        return DTNPCProtect.Internal.getPlayerRuntimeID(player)
+    end
+
+    return getPlayerAttackerIdentity(player) or ("player:" .. tostring(player))
+end
+
+local function isHostilePlayerForNPC(npcData, player)
+    local resolver = DTNPCProtect
+        and DTNPCProtect.Internal
+        and DTNPCProtect.Internal.IsHostilePlayerForNPC
+        or nil
+    if type(resolver) == "function" then
+        return resolver(npcData, player) == true
+    end
+    return false
+end
+
 local function isValidPlayerDamageAttribution(npcData, attacker)
     if not npcData or not attacker or not instanceof or not instanceof(attacker, "IsoPlayer") then
         return false
@@ -78,6 +99,229 @@ local function getDTNPCAttackerData(attacker)
         attackerData = DTNPCManager.Data[uuid]
     end
     return attackerData, uuid
+end
+
+local function isVanillaZombieAttacker(attacker)
+    if not attacker or not instanceof or not instanceof(attacker, "IsoZombie") then
+        return false
+    end
+    if attacker.isDead and attacker:isDead() then
+        return false
+    end
+
+    local modData = attacker.getModData and attacker:getModData() or nil
+    if modData and modData.IsDTNPC == true then
+        return false
+    end
+
+    if DTModPatchesBandits
+        and DTModPatchesBandits.IsBanditsNPC
+        and DTModPatchesBandits.IsBanditsNPC(attacker) then
+        return false
+    end
+
+    return true
+end
+
+local function getObjectDistance(left, right)
+    if not left or not right or not left.getX or not left.getY or not right.getX or not right.getY then
+        return nil
+    end
+
+    local dx = right:getX() - left:getX()
+    local dy = right:getY() - left:getY()
+    return math.sqrt((dx * dx) + (dy * dy))
+end
+
+local function canSeeHostilePlayer(zombie, player)
+    if not zombie or not player then
+        return false
+    end
+
+    local lineOfSight = DTNPCProtect
+        and DTNPCProtect.Internal
+        and DTNPCProtect.Internal.HasLineOfSight
+        or (DTNPCProtect and DTNPCProtect.HasLineOfSight)
+        or nil
+    if type(lineOfSight) == "function" then
+        return lineOfSight(zombie, player) == true
+    end
+
+    return true
+end
+
+local function startZombieRetaliation(zombie, npcData, attacker)
+    if not isVanillaZombieAttacker(attacker) then
+        return false
+    end
+
+    if DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
+        DTNPCProtect.EnsureDataDefaults(npcData)
+    end
+
+    local hasMelee = DTNPCProtect
+        and DTNPCProtect.HasUsableMeleeLoadout
+        and DTNPCProtect.HasUsableMeleeLoadout(npcData)
+        or false
+    local hasRanged = DTNPCProtect
+        and DTNPCProtect.HasUsableRangedLoadout
+        and DTNPCProtect.HasUsableRangedLoadout(npcData)
+        or false
+    if not hasMelee and not hasRanged then
+        return false
+    end
+
+    if DTNPCLogic.RememberHostileChaseOrigin then
+        DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
+    end
+
+    local dist = getObjectDistance(zombie, attacker)
+    local nextState = "Attack"
+    if DTNPCProtect and DTNPCProtect.ResolveHostileCombatState then
+        nextState = DTNPCProtect.ResolveHostileCombatState(npcData, "Attack", dist)
+    end
+
+    npcData.state = nextState
+    npcData.isHostile = true
+    npcData.tasks = {}
+    npcData.hostileNoTargetSince = nil
+    npcData.hostileNoTargetCooldownMs = nil
+    npcData.hostileChaseCooldownUntil = nil
+    npcData.banditPassiveFleeEligibleAt = nil
+    npcData.meleeCombatPhaseUntil = 0
+    npcData.damageRetreatUntil = 0
+
+    local zombieID = DTNPCProtect
+        and DTNPCProtect.Internal
+        and DTNPCProtect.Internal.getZombieRuntimeID
+        and DTNPCProtect.Internal.getZombieRuntimeID(attacker)
+        or tostring(attacker)
+    npcData.combatTargetID = tostring(zombieID)
+    npcData.combatTargetType = "zombie"
+
+    if nextState == "Attack" and DTNPCStamina and DTNPCStamina.ForceCombatResume then
+        DTNPCStamina.ForceCombatResume(npcData, "melee", 0.26)
+    end
+
+    zombie:setTarget(attacker)
+    zombie:setAttackedBy(nil)
+    return true
+end
+
+local function hasUsableCombatLoadout(npcData)
+    if DTNPCProtect and DTNPCProtect.EnsureDataDefaults then
+        DTNPCProtect.EnsureDataDefaults(npcData)
+    end
+
+    local hasMelee = DTNPCProtect
+        and DTNPCProtect.HasUsableMeleeLoadout
+        and DTNPCProtect.HasUsableMeleeLoadout(npcData)
+        or false
+    local hasRanged = DTNPCProtect
+        and DTNPCProtect.HasUsableRangedLoadout
+        and DTNPCProtect.HasUsableRangedLoadout(npcData)
+        or false
+
+    return hasMelee or hasRanged
+end
+
+local function findHostilePlayerTarget(zombie, npcData, preferredTarget)
+    local searchRadius = tonumber(DTNPCProtect and DTNPCProtect.CONFIG and DTNPCProtect.CONFIG.ScanRadius) or 12
+
+    if preferredTarget
+        and instanceof
+        and instanceof(preferredTarget, "IsoPlayer")
+        and not preferredTarget:isDead()
+        and isHostilePlayerForNPC(npcData, preferredTarget)
+        and canSeeHostilePlayer(zombie, preferredTarget) then
+        local preferredDist = getObjectDistance(zombie, preferredTarget) or 9999
+        if preferredDist <= searchRadius or npcData.isHostile == true then
+            return preferredTarget, preferredDist
+        end
+    end
+
+    local players = DTNPCLogic.GetActivePlayers and DTNPCLogic.GetActivePlayers() or {}
+    local bestPlayer = nil
+    local bestDist = 9999
+    local i
+    for i = 1, #players do
+        local player = players[i]
+        if player
+            and not player:isDead()
+            and isHostilePlayerForNPC(npcData, player)
+            and canSeeHostilePlayer(zombie, player) then
+            local dist = getObjectDistance(zombie, player) or 9999
+            if dist <= searchRadius and dist < bestDist then
+                bestPlayer = player
+                bestDist = dist
+            end
+        end
+    end
+
+    if not bestPlayer then
+        local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+        if player
+            and not player:isDead()
+            and isHostilePlayerForNPC(npcData, player)
+            and canSeeHostilePlayer(zombie, player) then
+            local dist = getObjectDistance(zombie, player) or 9999
+            if dist <= searchRadius then
+                bestPlayer = player
+                bestDist = dist
+            end
+        end
+    end
+
+    return bestPlayer, bestDist
+end
+
+local function startHostilePlayerEngagement(zombie, npcData, target, dist)
+    if not zombie or not npcData or not target or not instanceof or not instanceof(target, "IsoPlayer") then
+        return false
+    end
+    if target:isDead() or not isHostilePlayerForNPC(npcData, target) then
+        return false
+    end
+    if not hasUsableCombatLoadout(npcData) then
+        return false
+    end
+
+    dist = tonumber(dist) or getObjectDistance(zombie, target)
+    local nextState = "Attack"
+    if DTNPCProtect and DTNPCProtect.ResolveHostileCombatState then
+        nextState = DTNPCProtect.ResolveHostileCombatState(npcData, "Attack", dist)
+    end
+
+    if npcData.state == nextState and npcData.combatTargetType == "player" then
+        return false
+    end
+
+    if DTNPCLogic.RememberHostileChaseOrigin then
+        DTNPCLogic.RememberHostileChaseOrigin(zombie, npcData)
+    end
+
+    npcData.state = nextState
+    npcData.isHostile = true
+    npcData.tasks = {}
+    npcData.hostileNoTargetSince = nil
+    npcData.hostileNoTargetCooldownMs = nil
+    npcData.hostileChaseCooldownUntil = nil
+    npcData.banditPassiveFleeEligibleAt = nil
+    npcData.combatTargetID = getPlayerRuntimeTargetID(target)
+    npcData.combatTargetType = "player"
+    npcData.lastPlayerAttackerUsername = target.getUsername and target:getUsername() or nil
+    npcData.lastPlayerAttackerOnlineID = target.getOnlineID and target:getOnlineID() or nil
+    npcData.lastPlayerAttackedAt = getTimeInMillis and getTimeInMillis() or nil
+    npcData.meleeCombatPhaseUntil = 0
+    npcData.damageRetreatUntil = 0
+
+    if nextState == "Attack" and DTNPCStamina and DTNPCStamina.ForceCombatResume then
+        DTNPCStamina.ForceCombatResume(npcData, "melee", 0.26)
+    end
+
+    zombie:setTarget(nil)
+    zombie:setAttackedBy(nil)
+    return true
 end
 
 local function handleLinkedResidentDamage(zombie, npcData, attacker)
@@ -139,6 +383,11 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
         return
     end
 
+    local hostilePlayer, hostilePlayerDist = findHostilePlayerTarget(zombie, npcData, master)
+    if hostilePlayer and startHostilePlayerEngagement(zombie, npcData, hostilePlayer, hostilePlayerDist) then
+        return
+    end
+
     if wasDamaged and attacker and instanceof(attacker, "IsoPlayer") then
         if not isValidPlayerDamageAttribution(npcData, attacker) then
             zombie:setAttackedBy(nil)
@@ -166,7 +415,8 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             end
         end
 
-        if (master and attacker == master) or isFriendlyAuthorityPlayer(npcData, attacker) then
+        local npcIsHostileToPlayer = npcData.isHostile == true and npcData.combatTargetType == "player"
+        if not npcIsHostileToPlayer and ((master and attacker == master) or isFriendlyAuthorityPlayer(npcData, attacker)) then
             DynamicTrading.Log(
                 "DTV2",
                 "NPC",
@@ -178,7 +428,9 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             return
         end
 
-        if not npcData.isHostile then
+        if not npcData.isHostile
+            or (npcData.state ~= "Attack" and npcData.state ~= "AttackRange")
+            or npcData.combatTargetType ~= "player" then
             local dist = nil
             if attacker.getX and attacker.getY and zombie.getX and zombie.getY then
                 local dx = attacker:getX() - zombie:getX()
@@ -199,6 +451,8 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
             npcData.tasks = {}
             npcData.hostileNoTargetSince = nil
             npcData.hostileNoTargetCooldownMs = nil
+            npcData.combatTargetID = getPlayerRuntimeTargetID(attacker)
+            npcData.combatTargetType = "player"
 
             local attackerName = attacker:getUsername() or "Unknown Player"
             DynamicTrading.Log(
@@ -209,16 +463,16 @@ function DTNPCLogic.CheckForCombatInitiation(zombie, npcData, master, wasDamaged
                     .. " using state=" .. tostring(nextState)
             )
 
-            if not isPlayerTarget(attacker) then
-                zombie:setTarget(attacker)
-            else
-                zombie:setTarget(nil)
-            end
+            zombie:setTarget(nil)
             zombie:setAttackedBy(nil)
         end
     end
 
     if wasDamaged and attacker then
+        if startZombieRetaliation(zombie, npcData, attacker) then
+            return
+        end
+
         local attackerData, attackerUUID = getDTNPCAttackerData(attacker)
         if attackerData and attackerUUID ~= npcData.uuid then
             local hostile = true

@@ -41,6 +41,8 @@ end
 -- =============================================================================
 -- DEBUG & ADMIN COMMANDS
 -- =============================================================================
+require "DT/Common/Faction/TradingSys/Factions/DT_FactionRespawnState"
+
 Handlers.DebugCommand = function(player, args)
     if not hasAdminAccess(player) then 
         DynamicTrading.Log("DTCommons", "Error", "Security", "Unauthorized DebugCommand attempt by " .. tostring(player and player:getUsername() or "unknown"))
@@ -82,6 +84,34 @@ Handlers.DebugCommand = function(player, args)
         DynamicTrading_Factions.Init()
         ModData.transmit(key)
         DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="All Factions Wiped & Repopulated" })
+
+    elseif action == "DumpFactionBaseLedger" then
+        if DT_FactionRespawnState and DT_FactionRespawnState.DumpDebug then
+            DT_FactionRespawnState.DumpDebug(tonumber(args.limit) or 80, true)
+        end
+        DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", { success=true, reason="Faction base ledger dumped to logs" })
+
+    elseif action == "TeleportToFactionBase" then
+        local x = tonumber(args.x)
+        local y = tonumber(args.y)
+        local z = tonumber(args.z) or 0
+        if x and y and player and player.setX and player.setY and player.setZ then
+            player:setX(x)
+            player:setY(y)
+            player:setZ(z)
+            if player.setLx then player:setLx(x) end
+            if player.setLy then player:setLy(y) end
+            if player.setLz then player:setLz(z) end
+            DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+                success = true,
+                reason = "Teleported to base: " .. tostring(args.name or "Unknown")
+            })
+        else
+            DynamicTrading.ServerHelpers.SendResponse(player, COMMAND_MODULE, "TradeResult", {
+                success = false,
+                reason = "Invalid base teleport coordinates"
+            })
+        end
 
     elseif action == "ForceRestock" then
         -- Reset restock timers for a specific trader

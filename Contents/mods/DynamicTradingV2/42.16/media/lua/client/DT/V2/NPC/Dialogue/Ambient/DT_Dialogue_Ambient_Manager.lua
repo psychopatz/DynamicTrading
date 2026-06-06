@@ -8,12 +8,27 @@ DTNPCClient.DialogueAmbient = DTNPCClient.DialogueAmbient or DTNPCClient.Ambient
 DTNPCClient.AmbientDialogue = DTNPCClient.DialogueAmbient
 
 require "DT/Common/Dialogue/DT_Dialogue_Vocals"
+require "Utils/ConfigManager/DT_ConfigManager"
 
 local Ambient = DTNPCClient.DialogueAmbient
 local Config = DTNPCClient.DialogueAmbientConfig or DTNPCClient.AmbientDialogueConfig
 local DialogueVocals = DynamicTrading
     and DynamicTrading.Dialogue
     and DynamicTrading.Dialogue.Vocals
+
+local function isAmbientTextLogEnabled()
+    if DT_ConfigManager and DT_ConfigManager.isAmbientTextLogsEnabled then
+        return DT_ConfigManager.isAmbientTextLogsEnabled() == true
+    end
+    return false
+end
+
+local function isAmbientDebugEnabled()
+    return DynamicTrading
+        and DynamicTrading.Debug == true
+        and DynamicTrading.Log
+        and isAmbientTextLogEnabled()
+end
 
 local function playSpeechAudio(zombie, npcData, speechData)
     if not zombie or not speechData or not speechData.audio then
@@ -23,45 +38,6 @@ local function playSpeechAudio(zombie, npcData, speechData)
     if DialogueVocals and DialogueVocals.PlaySpeechAudio then
         DialogueVocals.PlaySpeechAudio(zombie, npcData, speechData.audio)
     end
-end
-
-local function shouldThrottleAmbientSpeech(manager, tracked, speechData, currentTime)
-    if not tracked or not speechData then
-        return false
-    end
-
-    local globalCooldownUntil = tonumber(manager.globalAmbientCooldownUntil) or 0
-    if globalCooldownUntil > 0 and currentTime < globalCooldownUntil then
-        return true
-    end
-
-    local lastSpeechAt = tonumber(tracked.lastAmbientSpeechAt) or 0
-    local speechKey = tostring(speechData.speechKey or "")
-    local lastSpeechKey = tostring(tracked.lastAmbientSpeechKey or "")
-    if speechKey ~= "" and speechKey == lastSpeechKey and lastSpeechAt > 0
-        and (currentTime - lastSpeechAt) < math.max(0, tonumber(Config.StateRepeatCooldownMs) or 0) then
-        return true
-    end
-
-    local currentText = tostring(speechData.text or "")
-    local lastText = tostring(tracked.lastAmbientSpeechText or "")
-    if currentText ~= "" and currentText == lastText and lastSpeechAt > 0
-        and (currentTime - lastSpeechAt) < math.max(0, tonumber(Config.TextRepeatCooldownMs) or 0) then
-        return true
-    end
-
-    return false
-end
-
-local function rememberAmbientSpeech(manager, tracked, speechData, currentTime)
-    if not tracked or not speechData then
-        return
-    end
-
-    tracked.lastAmbientSpeechAt = currentTime
-    tracked.lastAmbientSpeechKey = speechData.speechKey
-    tracked.lastAmbientSpeechText = speechData.text
-    manager.globalAmbientCooldownUntil = currentTime + math.max(0, tonumber(Config.GlobalAmbientCooldownMs) or 0)
 end
 
 function ISDTNPCAmbientDialogueManager:initialize()
@@ -209,29 +185,23 @@ function ISDTNPCAmbientDialogueManager:update()
                 if shouldSpeak and npcData then
                     local speechData = Ambient.BuildSpeechData(npcData, zombie, currentTime)
                     if speechData then
-                        local throttled = shouldThrottleAmbientSpeech(self, tracked, speechData, currentTime)
-                        if throttled then
-                            Ambient.ScheduleRepeatSpeak(tracked, currentTime)
-                        else
-                            speechData.zombie = zombie
-                            playSpeechAudio(zombie, npcData, speechData)
-                            self.speechList[uuid] = speechData
-                            rememberAmbientSpeech(self, tracked, speechData, currentTime)
-                            if isDebugEnabled() then
-                                DynamicTrading.Log(
-                                    "DTV2",
-                                    "NPC",
-                                    "Ambient",
-                                    "Queued Ambient for " .. tostring(npcData.name or uuid)
-                                        .. " [" .. tostring(npcData.status or "Default")
-                                        .. "/" .. tostring(npcData.state or "Default")
-                                        .. "] -> " .. tostring(speechData.text)
-                                )
-                            end
-                            Ambient.ScheduleRepeatSpeak(tracked, currentTime)
+                        speechData.zombie = zombie
+                        playSpeechAudio(zombie, npcData, speechData)
+                        self.speechList[uuid] = speechData
+                        if isAmbientDebugEnabled() then
+                            DynamicTrading.Log(
+                                "DTV2",
+                                "NPC",
+                                "Ambient",
+                                "Queued Ambient for " .. tostring(npcData.name or uuid)
+                                    .. " [" .. tostring(npcData.status or "Default")
+                                    .. "/" .. tostring(npcData.state or "Default")
+                                    .. "] -> " .. tostring(speechData.text)
+                            )
                         end
+                        Ambient.ScheduleRepeatSpeak(tracked, currentTime)
                     else
-                        if isDebugEnabled() then
+                        if isAmbientDebugEnabled() then
                             DynamicTrading.Log(
                                 "DTV2",
                                 "NPC",
@@ -281,7 +251,6 @@ function ISDTNPCAmbientDialogueManager:new(playerIndex, player)
     o.renderWidth = getPlayerScreenWidth(playerIndex)
     o.renderHeight = getPlayerScreenHeight(playerIndex)
     o.updateCounter = 0
-    o.globalAmbientCooldownUntil = 0
     o.speechList = {}
     o:setCapture(false)
 

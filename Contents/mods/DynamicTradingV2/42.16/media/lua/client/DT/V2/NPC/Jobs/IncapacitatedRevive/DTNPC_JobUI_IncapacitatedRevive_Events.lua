@@ -16,14 +16,46 @@ end
 
 modules.Events = true
 
+local function playReviveSuccessSound(npc)
+    local soundName = tostring(DTNPCHealth and DTNPCHealth.REVIVE_SUCCESS_SOUND or "DT_Healed")
+    if soundName == "" then
+        return false
+    end
+
+    local emitter = npc and npc.getEmitter and npc:getEmitter() or nil
+    if emitter and emitter.playSound then
+        emitter:playSound(soundName)
+        return true
+    end
+
+    if npc and npc.playSound then
+        npc:playSound(soundName)
+        return true
+    end
+
+    local square = npc and npc.getSquare and npc:getSquare() or nil
+    local soundManager = getSoundManager and getSoundManager() or nil
+    if square and soundManager and soundManager.PlayWorldSound then
+        soundManager:PlayWorldSound(soundName, square, 0, 8, 1.0, false)
+        return true
+    end
+
+    return false
+end
+
 local function sayReviveResult(npc, npcData, playerObj, args)
     if args and args.success == true then
+        playReviveSuccessSound(npc)
         local thankYouLine = ReviveUI.T("DTNPC_Dialogue_ReviveThankYou", nil, "Thank you. I can make it home from here.")
         if DTNPC_WaveHiInteraction and DTNPC_WaveHiInteraction.BuildPlanForEmote then
             local plan = DTNPC_WaveHiInteraction.BuildPlanForEmote("thankyou", playerObj, npc, npcData)
             thankYouLine = plan and plan.introGreeting and plan.introGreeting.text
                 or plan and plan.npcLine
                 or thankYouLine
+        end
+
+        if DTNPCProtect and DTNPCProtect.PushCompanionNotice then
+            DTNPCProtect.PushCompanionNotice(npc, npcData or {}, thankYouLine, "friendly", "Chat")
         end
 
         if DTNPCHostility and DTNPCHostility.Say then

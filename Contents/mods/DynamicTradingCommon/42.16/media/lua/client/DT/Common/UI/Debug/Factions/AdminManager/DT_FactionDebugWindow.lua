@@ -9,6 +9,8 @@ require "ISUI/ISCollapsableWindow"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugData"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugRenderers"
 require "DT/Common/UI/Debug/Factions/AdminManager/DT_FactionDebugActions"
+require "DT/Common/UI/Debug/Factions/BaseLedger/DT_FactionBaseLedgerWindow"
+pcall(require, "DT/Common/FactionZones/DT_FactionBaseZones")
 
 DT_FactionDebugWindow = ISCollapsableWindow:derive("DT_FactionDebugWindow")
 
@@ -105,7 +107,7 @@ local function getControlPanelMetrics(totalWidth)
 
     local factionInnerW = controlWidth - (CONTROL_GAP * 2)
     local factionTopHeight = getFlowHeight(4, factionInnerW, 110, SMALL_BUTTON_HEIGHT, CONTROL_GAP)
-    local factionBottomHeight = getFlowHeight(2, factionInnerW, 150, SMALL_BUTTON_HEIGHT, CONTROL_GAP)
+    local factionBottomHeight = getFlowHeight(4, factionInnerW, 150, SMALL_BUTTON_HEIGHT, CONTROL_GAP)
     local factionControlHeight = SECTION_INNER_PAD + SECTION_HEADER_HEIGHT + 6 + factionTopHeight + CONTROL_GAP + factionBottomHeight + SECTION_INNER_PAD
 
     local rosterInnerW = rosterControlWidth - (CONTROL_GAP * 2)
@@ -427,6 +429,16 @@ function DT_FactionDebugWindow:createChildren()
     self.btnMerchant.backgroundColor = {r=0, g=0.5, b=0.5, a=1}
     self.factionControlPanel:addChild(self.btnMerchant)
 
+    self.btnBaseOverlay = ISButton:new(0, 0, 100, 20, "BASE OVERLAY: OFF", self, DT_FactionDebugWindow.onBaseOverlayClick)
+    self.btnBaseOverlay:initialise()
+    self.btnBaseOverlay.backgroundColor = {r=0.18, g=0.30, b=0.36, a=1}
+    self.factionControlPanel:addChild(self.btnBaseOverlay)
+
+    self.btnBaseLedger = ISButton:new(0, 0, 100, 20, "BASE LEDGER", self, DT_FactionDebugWindow.onBaseLedgerClick)
+    self.btnBaseLedger:initialise()
+    self.btnBaseLedger.backgroundColor = {r=0.36, g=0.26, b=0.12, a=1}
+    self.factionControlPanel:addChild(self.btnBaseLedger)
+
     -- 8. ROSTER ACTIONS
     self.btnLocate = ISButton:new(0, 0, 150, 25, "LOCATE NPC", self, DT_FactionDebugWindow.onLocateClick)
     self.btnLocate:initialise()
@@ -554,6 +566,8 @@ function DT_FactionDebugWindow:layoutChildren()
     layoutButtonFlow(CONTROL_GAP, factionActionsY, factionInnerW, {
         self.btnForceEvent,
         self.btnMerchant,
+        self.btnBaseOverlay,
+        self.btnBaseLedger,
     }, 150, SMALL_BUTTON_HEIGHT, CONTROL_GAP)
 
     self.rosterActionsLabel:setX(CONTROL_GAP)
@@ -599,6 +613,83 @@ function DT_FactionDebugWindow:layoutChildren()
     end
 end
 
+function DT_FactionDebugWindow:updateBaseOverlayButton()
+    if not self.btnBaseOverlay then
+        return
+    end
+
+    local enabled = self.baseOverlayEnabled == true and self.selectedFaction ~= nil
+    self.btnBaseOverlay:setTitle(enabled and "BASE OVERLAY: ON" or "BASE OVERLAY: OFF")
+    if enabled then
+        self.btnBaseOverlay.backgroundColor = {r=0.12, g=0.42, b=0.32, a=1}
+    else
+        self.btnBaseOverlay.backgroundColor = {r=0.18, g=0.30, b=0.36, a=1}
+    end
+end
+
+local function getOverlayPlayer()
+    local player = getSpecificPlayer and getSpecificPlayer(0) or nil
+    if not player and getPlayer then
+        player = getPlayer()
+    end
+    return player
+end
+
+local function highlightZoneRect(player, row)
+    if not player or not addAreaHighlightForPlayer then
+        return
+    end
+
+    local rect = row and row.rect or nil
+    if type(rect) ~= "table" then
+        return
+    end
+
+    local color = row.color or {}
+    local x1 = tonumber(rect[1])
+    local y1 = tonumber(rect[2])
+    local x2 = tonumber(rect[3])
+    local y2 = tonumber(rect[4])
+    if x1 == nil or y1 == nil or x2 == nil or y2 == nil then
+        return
+    end
+
+    addAreaHighlightForPlayer(
+        player:getPlayerNum(),
+        math.floor(math.min(x1, x2)),
+        math.floor(math.min(y1, y2)),
+        math.floor(math.max(x1, x2)),
+        math.floor(math.max(y1, y2)),
+        math.floor(tonumber(rect[5]) or 0),
+        tonumber(color.r) or 1,
+        tonumber(color.g) or 1,
+        tonumber(color.b) or 1,
+        tonumber(color.a) or 0.35
+    )
+end
+
+function DT_FactionDebugWindow:renderBaseWorldOverlay()
+    if self.baseOverlayEnabled ~= true or not self.selectedFaction then
+        return
+    end
+
+    local zoneAPI = DynamicTrading and DynamicTrading.FactionBaseZones or nil
+    local rows = zoneAPI and zoneAPI.GetDebugRows and zoneAPI.GetDebugRows(self.selectedFaction) or nil
+    if type(rows) ~= "table" or #rows <= 0 then
+        return
+    end
+
+    local player = getOverlayPlayer()
+    for _, row in ipairs(rows) do
+        highlightZoneRect(player, row)
+    end
+end
+
+function DT_FactionDebugWindow:prerender()
+    ISCollapsableWindow.prerender(self)
+    self:renderBaseWorldOverlay()
+end
+
 -- ==========================================================
 -- DATA MANAGEMENT
 -- ==========================================================
@@ -617,6 +708,8 @@ end
 function DT_FactionDebugWindow:populateList(factionData)
     if not factionData then return end
     self.listbox:clear()
+    self.selectedFaction = nil
+    self:updateBaseOverlayButton()
     
     local sorted = DT_FactionDebugData.getSortedFactionList(factionData)
     for _, entry in ipairs(sorted) do
@@ -666,6 +759,8 @@ end
 -- ==========================================================
 function DT_FactionDebugWindow:onFactionSelected(item)
     local faction = item
+    self.selectedFaction = faction
+    self:updateBaseOverlayButton()
     
     -- Update details panel
     local text = DT_FactionDebugData.formatFactionDetails(faction)
@@ -681,7 +776,10 @@ function DT_FactionDebugWindow:onFactionSelected(item)
     self.btnGrantContact.enable = false
     
     -- Use cached roster data
-    local rosterData = DT_FactionDebugData.cachedRosterData or ModData.get("DynamicTrading_Roster")
+    local rosterData = DT_FactionDebugData.cachedRosterData
+    if (not (isClient() and not isServer())) and not rosterData then
+        rosterData = ModData.get("DynamicTrading_Roster")
+    end
     
     if rosterData then
         local roster = DT_FactionDebugData.getRosterForFaction(faction.id, rosterData)
@@ -700,7 +798,7 @@ function DT_FactionDebugWindow:onFactionSelected(item)
                     DT_FactionDebugWindow.instance:onFactionSelected(selected.item)
                 end
             end
-        end)
+        end, 0, DT_FactionDebugData.ROSTER_PAGE_LIMIT or 40)
     end
 end
 
@@ -752,6 +850,17 @@ function DT_FactionDebugWindow:onForceEventClick()
     local f = self.listbox.items[self.listbox.selected]
     if f then
         DT_FactionDebugActions.showEventSelection(f.item.id, getMouseX(), getMouseY())
+    end
+end
+
+function DT_FactionDebugWindow:onBaseOverlayClick()
+    self.baseOverlayEnabled = self.baseOverlayEnabled ~= true
+    self:updateBaseOverlayButton()
+end
+
+function DT_FactionDebugWindow:onBaseLedgerClick()
+    if DT_FactionBaseLedgerWindow and DT_FactionBaseLedgerWindow.Open then
+        DT_FactionBaseLedgerWindow.Open()
     end
 end
 
@@ -811,10 +920,13 @@ function DT_FactionDebugWindow:new(x, y, width, height)
     o.borderColor = {r=1, g=1, b=1, a=1}
     o.moveWithMouse = true
     o.resizable = true
+    o.baseOverlayEnabled = false
     return o
 end
 
 function DT_FactionDebugWindow:close()
+    self.baseOverlayEnabled = false
+    self:updateBaseOverlayButton()
     self:setVisible(false)
     self:removeFromUIManager()
     DT_FactionDebugWindow.instance = nil

@@ -23,6 +23,7 @@ local TownSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/F
 local IndependentSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/FactionTypes/DT_SimLogic_Independent"
 local PlayerSim = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/FactionTypes/DT_SimLogic_Player"
 local VirtualStore = require "DT/Common/ColonyEconomy/VirtualStore/DT_VirtualStore"
+local FactionCollapse = require "DT/Common/Faction/TradingSys/Factions/DT_FactionCollapse"
 
 -- ==========================================================
 -- DAILY SIMULATION
@@ -49,6 +50,13 @@ function DT_SimulationLogic.UpdateDaily()
         end
 
         local factionActive = faction ~= nil
+
+        if factionActive then
+            if FactionCollapse.AuditFactionExtinction(id, { reason = "roster_extinction" }) then
+                faction = data[id]
+                factionActive = false
+            end
+        end
 
         if factionActive then
             if DynamicTrading.Events and DynamicTrading.Events.UpdateFaction then
@@ -94,7 +102,8 @@ function DT_SimulationLogic.UpdateDaily()
                     end
                     if not playerHandled then
                         DynamicTrading.Log("Colony", "Faction", "Logic", "Faction ["..(faction.name or id).."] has DIED OUT")
-                        table.insert(factionsToRemove, id)
+                        FactionCollapse.CollapseFaction(id, faction, { reason = "population_depleted" })
+                        factionActive = false
                     end
                 end
             end

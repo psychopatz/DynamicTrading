@@ -28,6 +28,7 @@ Discovery.runtime = Discovery.runtime or {
 
 local DiscoveryProvider = {
     updateIntervalTicks = 30,
+    requiresLiveMapAPI = true,
 }
 
 local function getLocalPlayer()
@@ -178,6 +179,34 @@ local function playCue(soundName)
     elseif getSoundManager then
         getSoundManager():PlaySound(soundName, false, 1.0)
     end
+end
+
+local function onServerCommand(module, command, args)
+    if tostring(module or "") ~= "DynamicTrading" or tostring(command or "") ~= "FactionCollapseBanner" then
+        return
+    end
+
+    args = type(args) == "table" and args or {}
+    local title = trim(args.title or "")
+    if title == "" then
+        return
+    end
+
+    if DiscoveryBanner and DiscoveryBanner.ShowMessage then
+        DiscoveryBanner.ShowMessage(
+            title,
+            trim(args.subtitle or ""),
+            tonumber(args.duration) or 4.5,
+            { variant = tostring(args.variant or "collapse") }
+        )
+    else
+        local playerObj = getLocalPlayer()
+        if HaloTextHelper and playerObj then
+            HaloTextHelper.addText(playerObj, title)
+        end
+    end
+
+    playCue(tostring(args.sound or "DT_HordeWarning"))
 end
 
 local function forceMarkerRefresh()
@@ -538,6 +567,7 @@ if not Discovery.eventsAdded then
     Events.OnTick.Add(Discovery.OnTick)
     Events.OnCreatePlayer.Add(Discovery.OnCreatePlayer)
     Events.OnGameStart.Add(Discovery.OnGameStart)
+    Events.OnServerCommand.Add(onServerCommand)
     Discovery.eventsAdded = true
 end
 

@@ -23,6 +23,7 @@ local Lifecycle   = require "DT/Common/Faction/TradingSys/Factions/Lifecycle/DT_
 local DT_SimulationLogic  = require "DT/Common/Faction/TradingSys/Factions/SimulationLogic/DT_SimulationLogic"
 local Interaction = require "DT/Common/Faction/TradingSys/Factions/Interaction"
 local PlayerOwnership = require "DT/Common/Faction/TradingSys/Factions/PlayerOwnership/PlayerOwnership"
+local FactionCollapse = require "DT/Common/Faction/TradingSys/Factions/DT_FactionCollapse"
 
 -- =============================================================================
 -- 2. MERGE INTO GLOBAL API
@@ -37,6 +38,9 @@ DynamicTrading_Factions.GenerateRoster    = Lifecycle.GenerateRoster
 
 -- Simulation
 DynamicTrading_Factions.UpdateDaily       = DT_SimulationLogic.UpdateDaily
+DynamicTrading_Factions.AuditFactionExtinction = FactionCollapse.AuditFactionExtinction
+DynamicTrading_Factions.CollapseFaction   = FactionCollapse.CollapseFaction
+DynamicTrading_Factions.IsFactionCollapsed = FactionCollapse.IsCollapsed
 
 -- Interaction
 DynamicTrading_Factions.GetFaction        = Interaction.GetFaction

@@ -82,12 +82,16 @@ function DT_DebugNetworkAdapter.sendDebugAction(action, args)
     return DT_DebugNetworkAdapter.sendCommand("DebugCommand", payload)
 end
 
-function DT_DebugNetworkAdapter.requestFactionData()
-    return DT_DebugNetworkAdapter.sendCommand("RequestFactionData", {})
+function DT_DebugNetworkAdapter.requestFactionData(args)
+    return DT_DebugNetworkAdapter.sendCommand("RequestFactionData", args or {})
 end
 
-function DT_DebugNetworkAdapter.requestFactionRoster(factionID)
-    return DT_DebugNetworkAdapter.sendCommand("RequestFactionRoster", { factionID = factionID })
+function DT_DebugNetworkAdapter.requestFactionRoster(factionID, offset, limit)
+    return DT_DebugNetworkAdapter.sendCommand("RequestFactionRoster", {
+        factionID = factionID,
+        offset = offset,
+        limit = limit,
+    })
 end
 
 function DT_DebugNetworkAdapter.generateStock(traderID)

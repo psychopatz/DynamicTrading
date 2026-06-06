@@ -5,6 +5,7 @@
 -- ==============================================================================
 
 require "DT/Common/UI/Debug/Shared/DT_DebugNetworkAdapter"
+pcall(require, "DT/Common/FactionZones/DT_FactionBaseZones")
 
 DT_FactionDebugData = DT_FactionDebugData or {}
 
@@ -13,6 +14,15 @@ DT_FactionDebugData = DT_FactionDebugData or {}
 -- ==========================================================
 DT_FactionDebugData.cachedFactionData = nil
 DT_FactionDebugData.cachedRosterData = nil
+DT_FactionDebugData.cachedRosterPages = DT_FactionDebugData.cachedRosterPages or {}
+DT_FactionDebugData.ROSTER_PAGE_LIMIT = 40
+
+local function isDebugUIEnabled()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    return (sandbox and sandbox.Debug == true)
+        or (sandbox and sandbox.NPCDebug == true)
+        or (sandbox and sandbox.NPCProtectDebug == true)
+end
 
 -- ==========================================================
 -- DATA REFRESH
@@ -36,10 +46,16 @@ function DT_FactionDebugData.refreshFactionList(callback)
     return factionData
 end
 
-function DT_FactionDebugData.refreshRosterForFaction(factionID, callback)
+function DT_FactionDebugData.refreshRosterForFaction(factionID, callback, offset, limit)
     if isClient() and not isServer() then
-        DynamicTrading.Log("DTCommons", "Debug", "UI", "Requesting detailed roster for faction: " .. tostring(factionID))
-        DT_DebugNetworkAdapter.requestFactionRoster(factionID)
+        if isDebugUIEnabled() then
+            DynamicTrading.Log("DTCommons", "Debug", "UI", "Requesting detailed roster for faction: " .. tostring(factionID))
+        end
+        DT_DebugNetworkAdapter.requestFactionRoster(
+            factionID,
+            offset ~= nil and math.max(0, math.floor(tonumber(offset) or 0)) or nil,
+            limit ~= nil and math.max(1, math.floor(tonumber(limit) or DT_FactionDebugData.ROSTER_PAGE_LIMIT)) or nil
+        )
         if callback then
             DT_FactionDebugData.pendingRosterCallback = callback
         end
@@ -109,12 +125,44 @@ function DT_FactionDebugData.formatFactionDetails(faction)
     local text = " <RGB:1,1,0> TITLE: " .. (faction.name or "Unknown") .. " <LINE> "
     text = text .. " <RGB:1,1,1> ID: " .. (faction.id or "N/A") .. " <LINE> "
     text = text .. "Town: " .. tostring(faction.town or "N/A") .. " <LINE> "
+    text = text .. "State: " .. tostring(faction.state or "N/A") .. " | Pop: " .. tostring(faction.memberCount or "N/A") .. " <LINE> "
     
     if faction.homeCoords then
         text = text .. "Base: " .. faction.homeCoords.name .. " <LINE> "
         text = text .. "Coords: " .. faction.homeCoords.x .. "," .. faction.homeCoords.y .. "," .. faction.homeCoords.z .. " <LINE> "
     else
         text = text .. "Base: NOMADIC <LINE> "
+    end
+
+    if faction.collapsed == true or tostring(faction.state or "") == "Collapsed" then
+        text = text .. " <LINE> <RGB:1,0.25,0.2> COLLAPSE DATA: <LINE> "
+        text = text .. " <RGB:0.7,0.7,0.7> - Reason: <RGB:1,1,1> " .. tostring(faction.collapseReason or "unknown") .. " <LINE> "
+        text = text .. " <RGB:0.7,0.7,0.7> - Last Event: <RGB:1,1,1> " .. tostring(faction.collapseLastEvent or "N/A") .. " <LINE> "
+        text = text .. " <RGB:0.7,0.7,0.7> - Collapsed At: <RGB:1,1,1> " .. tostring(faction.collapsedAt or "N/A") .. "h <LINE> "
+    end
+
+    local zoneAPI = DynamicTrading and DynamicTrading.FactionBaseZones or nil
+    local zoneRows = zoneAPI and zoneAPI.GetDebugRows and zoneAPI.GetDebugRows(faction) or {}
+    if #zoneRows > 0 then
+        text = text .. " <LINE> <RGB:0.4,0.8,1> BASE OVERLAY ZONES: <LINE> "
+        for _, row in ipairs(zoneRows) do
+            local rect = row.rect or {}
+            local point = row.point or {}
+            text = text
+                .. " <RGB:0.7,0.7,0.7> - "
+                .. tostring(row.label or row.zoneType or row.id or "Zone")
+                .. ": <RGB:1,1,1> "
+                .. tostring(rect[1] or "?")
+                .. ","
+                .. tostring(rect[2] or "?")
+                .. " to "
+                .. tostring(rect[3] or "?")
+                .. ","
+                .. tostring(rect[4] or "?")
+                .. " @ "
+                .. tostring(rect[5] or point.z or 0)
+                .. " <LINE> "
+        end
     end
     
     text = text .. "ColonyWealth: <RGB:0.2,1,0.2> $" .. tostring(faction.ColonyWealth or 0) .. " <LINE> "
@@ -180,11 +228,22 @@ function DT_FactionDebugData.handleServerResponse(command, args)
     elseif command == "SyncFactionRoster" then
         -- Detailed souls for a specific faction arrived (MP)
         local factionID = args.factionID
-        local souls = args.souls
-        
+        local souls = args.souls or args.soulsPage or {}
+        local members = args.members or args.membersPage or {}
+
         DT_FactionDebugData.cachedRosterData = DT_FactionDebugData.cachedRosterData or {}
         DT_FactionDebugData.cachedRosterData.Souls = DT_FactionDebugData.cachedRosterData.Souls or {}
-        
+        DT_FactionDebugData.cachedRosterData.FactionMembers = DT_FactionDebugData.cachedRosterData.FactionMembers or {}
+        DT_FactionDebugData.cachedRosterData.FactionMembers[factionID] = members
+        DT_FactionDebugData.cachedRosterPages[tostring(factionID)] = {
+            factionID = factionID,
+            offset = math.max(0, math.floor(tonumber(args.offset) or 0)),
+            limit = math.max(1, math.floor(tonumber(args.limit) or DT_FactionDebugData.ROSTER_PAGE_LIMIT)),
+            totalMembers = math.max(0, math.floor(tonumber(args.totalMembers) or #members)),
+            members = members,
+            souls = souls,
+        }
+
         -- Merge the new souls into our cache
         for uuid, soul in pairs(souls) do
             DT_FactionDebugData.cachedRosterData.Souls[uuid] = soul
