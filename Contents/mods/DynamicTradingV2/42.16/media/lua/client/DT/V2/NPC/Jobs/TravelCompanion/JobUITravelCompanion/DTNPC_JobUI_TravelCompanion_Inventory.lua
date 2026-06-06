@@ -35,7 +35,7 @@ local function applyWarehouseInventoryPresentation(worker)
     end
 
     local workerName = tostring(worker and (worker.name or worker.workerID) or "Worker")
-    local title = "Warehouse Inventory - " .. workerName
+    local title = CompanionUI.T("DTNPC_UI_WarehouseInventoryName", { name = workerName }, "Warehouse Inventory - " .. workerName)
     if window.setTitle then
         window:setTitle(title)
     else

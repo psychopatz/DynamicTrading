@@ -9,6 +9,13 @@ require "DT/Common/UI/RadioScanner/DT_RadioScannerWindow"
 
 local RadarManager = DT_V2_RadarManager
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function DT_RadioScanResponse(key, ...)
     return DynamicTrading.FlavorText.GetValue("RadioScan", "Responses", key, ...)
 end
@@ -223,7 +230,7 @@ function RadarManager.Scan(player, device)
     local currentHour = getGameTime():getTimeOfDay()
     local gateDisabled = SandboxVars.DynamicTrading and SandboxVars.DynamicTrading.DisableNightScanGate == true
     if not gateDisabled and (currentHour >= 22.0 or currentHour < 5.0) then
-        player:Say("There is nothing but static. Broadcasters must be resting till morning.")
+        player:Say(T("DTNPC_UI_RadarNothingButStatic", nil, "There is nothing but static. Broadcasters must be resting till morning."))
         if HaloTextHelper then
             HaloTextHelper.addTextWithArrow(player, "Traders Offline (10PM - 5AM)", true, HaloTextHelper.getColorRed())
         end
@@ -248,7 +255,7 @@ function RadarManager.Scan(player, device)
 
     if canScan ~= true then
         local waitMinutes = math.max(1, math.ceil(remainingMinutes or 0))
-        player:Say("The receiver is still cooling down. " .. tostring(waitMinutes) .. "m remaining.")
+        player:Say(T("DTNPC_UI_ReceiverCoolingDown", { time = waitMinutes }, "The receiver is still cooling down. " .. tostring(waitMinutes) .. "m remaining."))
 
         if DT_RadioScannerWindow and DT_RadioScannerWindow.instance and DT_RadioScannerWindow.instance.signalDisplayPanel then
             DT_RadioScannerWindow.instance.signalDisplayPanel:pulseStatic(350)
@@ -305,7 +312,7 @@ function RadarManager.Scan(player, device)
     local effectiveRange = range * globalRangeMult
 
     if scanLimit <= 0 then
-        player:Say("All signal channels are occupied. Unlock or clear a signal before rescanning.")
+        player:Say(T("DTNPC_UI_SignalChannelsOccupied", nil, "All signal channels are occupied. Unlock or clear a signal before rescanning."))
         if DynamicTrading.GameplayLogs and DynamicTrading.GameplayLogs.AddPlayerRadioEvent then
             DynamicTrading.GameplayLogs.AddPlayerRadioEvent(player, DynamicTrading.GameplayEvents.SIGNAL_MEMORY_FULL, {})
         end

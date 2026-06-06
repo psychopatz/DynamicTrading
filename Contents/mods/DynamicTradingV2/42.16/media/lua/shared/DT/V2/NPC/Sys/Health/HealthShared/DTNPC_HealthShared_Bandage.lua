@@ -8,6 +8,13 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function isCombatState(state)
     return state == "Attack"
         or state == "AttackRange"
@@ -46,7 +53,7 @@ local function getBandageTierDef(tierID)
     end
 
     return "clean_rag", {
-        label = "Clean Rag",
+        label = T("DTNPC_UI_CleanRag", nil, "Clean Rag"),
         iconFullType = "Base.RippedSheets",
         totalHeal = 20,
         applyHeal = 2,

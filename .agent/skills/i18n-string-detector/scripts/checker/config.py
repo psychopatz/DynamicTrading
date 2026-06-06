@@ -67,6 +67,10 @@ SKIP_LINE_PATTERNS: list[str] = [
     r"ZombieLua",
     r"SandboxVars\.",
     r"ISUIElement",
+    r"\bDEBUG\b",                      # literal DEBUG in code
+    r"\bTEST\b",                       # literal TEST in code
+    r'["\']DEBUG:',                    # "DEBUG: ..."
+    r'["\']TEST:',                     # "TEST: ..."
 ]
 SKIP_LINE_RE = re.compile("|".join(SKIP_LINE_PATTERNS))
 
@@ -109,5 +113,5 @@ LUA_STRING_RE = re.compile(
 # Shared — paths to exclude from ALL scanning
 # A file is excluded if the 'Manuals' folder appears under 'common' in its path.
 # ---------------------------------------------------------------------------
-EXCLUDED_FOLDER_NAMES: list[str] = ["Manuals"]
+EXCLUDED_FOLDER_NAMES: list[str] = ["Manuals", "Debug"]
 EXCLUDED_UNDER_FOLDER: str = "common"

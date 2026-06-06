@@ -8,6 +8,13 @@ require "ISUI/ISRichTextPanel"
 
 DT_FactionEconomics_EventList = ISPanel:derive("DT_FactionEconomics_EventList")
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 -- mode: "Flash", "Meta", "Seasonal"
 function DT_FactionEconomics_EventList:new(x, y, width, height, mode)
     local o = ISPanel:new(x, y, width, height)
@@ -85,7 +92,7 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
     local seasonalEnabled = sandbox.AllowSeasonalEvents ~= false
 
     if self.mode == "Flash" then
-        text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> FACTION FLASH EVENTS <SIZE:" .. bodySize .. "> <LINE> <LINE> "
+        text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> " .. T("DTCommon_UI_Economics_FlashEventsHeader", nil, "FACTION FLASH EVENTS <SIZE:") .. titleSize .. "> " .. T("DTCommon_UI_Economics_FlashEventsHeader_BodySize", nil, " <SIZE:") .. bodySize .. "> <LINE> <LINE> "
         local flashEvents = f.ActiveFlashEvents or {}
         if #flashEvents == 0 and f.ActiveFlashEvent and f.ActiveFlashEvent.id then
             flashEvents = {
@@ -106,13 +113,13 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
                 end
             end
         else
-            text = text .. " <RGB:0.6,0.6,0.6> No specific faction alerts active. <LINE> "
+            text = text .. " <RGB:0.6,0.6,0.6> " .. T("DTCommon_UI_Economics_NoFlashEvents", nil, "No specific faction alerts active.") .. " <LINE> "
         end
 
     elseif self.mode == "Meta" then
-        text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> GLOBAL MEGA-TRENDS <SIZE:" .. bodySize .. "> <LINE> <LINE> "
+        text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> " .. T("DTCommon_UI_Economics_MegaTrendsHeader", nil, "GLOBAL MEGA-TRENDS <SIZE:") .. titleSize .. "> " .. T("DTCommon_UI_Economics_MegaTrendsHeader_BodySize", nil, " <SIZE:") .. bodySize .. "> <LINE> <LINE> "
         if not metaEnabled then
-            text = text .. " <RGB:1,0.7,0.2> Meta events are disabled by sandbox settings. <LINE> "
+            text = text .. " <RGB:1,0.7,0.2> " .. T("DTCommon_UI_Economics_MetaEventsDisabled", nil, "Meta events are disabled by sandbox settings.") .. " <LINE> "
         else
             local count = 0
             for _, eventDef in ipairs(activeEventsList) do
@@ -122,14 +129,14 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
                 end
             end
             if count == 0 then
-                text = text .. " <RGB:0.6,0.6,0.6> No major global trends affecting the world. <LINE> "
+                text = text .. " <RGB:0.6,0.6,0.6> " .. T("DTCommon_UI_Economics_NoMetaEvents", nil, "No major global trends affecting the world.") .. " <LINE> "
             end
         end
 
     elseif self.mode == "Seasonal" then
-        text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> SEASONAL SHIFTS <SIZE:" .. bodySize .. "> <LINE> <LINE> "
+        text = " <RGB:1,1,1> <SIZE:" .. titleSize .. "> " .. T("DTCommon_UI_Economics_SeasonalHeader", nil, "SEASONAL SHIFTS <SIZE:") .. titleSize .. "> " .. T("DTCommon_UI_Economics_SeasonalHeader_BodySize", nil, " <SIZE:") .. bodySize .. "> <LINE> <LINE> "
         if not seasonalEnabled then
-            text = text .. " <RGB:1,0.7,0.2> Seasonal events are disabled by sandbox settings. <LINE> "
+            text = text .. " <RGB:1,0.7,0.2> " .. T("DTCommon_UI_Economics_SeasonalEventsDisabled", nil, "Seasonal events are disabled by sandbox settings.") .. " <LINE> "
         else
             local count = 0
             for _, eventDef in ipairs(activeEventsList) do
@@ -139,7 +146,7 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
                 end
             end
             if count == 0 then
-                text = text .. " <RGB:0.6,0.6,0.6> Seasonal conditions are currently stable. <LINE> "
+                text = text .. " <RGB:0.6,0.6,0.6> " .. T("DTCommon_UI_Economics_NoSeasonalEvents", nil, "Seasonal conditions are currently stable.") .. " <LINE> "
             end
         end
     end
@@ -149,7 +156,7 @@ function DT_FactionEconomics_EventList:updateData(f, fontScale)
 end
 
 function DT_FactionEconomics_EventList:formatEventDetails(def, expires, size)
-    if not def then return " <RGB:1,0,0> [ERROR: Event Definition Missing] <LINE> " end
+    if not def then return " <RGB:1,0,0> " .. T("DTCommon_UI_Economics_ErrorMissingDef", nil, "[ERROR: Event Definition Missing]") .. " <LINE> " end
 
     local text = ""
     
@@ -171,9 +178,9 @@ function DT_FactionEconomics_EventList:formatEventDetails(def, expires, size)
     -- Expiry / Timing
     if expires and expires > 0 then
         local expColor = (expires < 12) and " <RGB:1,0,0> " or " <RGB:0.6,0.6,0.6> "
-        text = text .. "    " .. expColor .. "Expires in: " .. string.format("%.1f", expires) .. " hours <LINE> "
+        text = text .. "    " .. expColor .. T("DTCommon_UI_Economics_ExpiresIn", nil, "Expires in: ") .. string.format("%.1f", expires) .. " " .. T("DTCommon_UI_Economics_Hours", nil, "hours") .. " <LINE> "
     elseif expires == -1 then
-         text = text .. "    <RGB:0.6,0.6,0.6> Status: Active <LINE> "
+         text = text .. "    <RGB:0.6,0.6,0.6> " .. T("DTCommon_UI_Economics_StatusActive", nil, "Status: Active") .. " <LINE> "
     end
     
     -- Description
@@ -184,7 +191,7 @@ function DT_FactionEconomics_EventList:formatEventDetails(def, expires, size)
 
     -- SECTION 1: MARKET EFFECTS
     if def.effects then
-        text = text .. "    <RGB:0.4,0.8,1> [ MARKET INFLUENCE ] <LINE> "
+        text = text .. "    <RGB:0.4,0.8,1> " .. T("DTCommon_UI_Economics_MarketInfluence", nil, "[ MARKET INFLUENCE ]") .. " <LINE> "
         for tag, impact in pairs(def.effects) do
             local priceStr = ""
             if impact.price then
@@ -215,7 +222,7 @@ function DT_FactionEconomics_EventList:formatEventDetails(def, expires, size)
 
     -- SECTION 2: FACTION IMPACTS
     if def.factionImpact then
-        text = text .. "    <RGB:0.8,0.4,1> [ FACTION IMPACT ] <LINE> "
+        text = text .. "    <RGB:0.8,0.4,1> " .. T("DTCommon_UI_Economics_FactionImpact", nil, "[ FACTION IMPACT ]") .. " <LINE> "
         
         if def.factionImpact.wealthAdd then
             local color = (def.factionImpact.wealthAdd > 0) and " <RGB:0,1,0> " or " <RGB:1,0,0> "

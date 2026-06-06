@@ -3,6 +3,13 @@ require "ISUI/ISButton"
 
 DT_FactionInfoFooterPanel = ISPanel:derive("DT_FactionInfoFooterPanel")
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function isDynamicColoniesActive()
     local activated = getActivatedMods and getActivatedMods() or nil
     return activated and activated.contains and activated:contains("DynamicColonies") or false
@@ -37,7 +44,7 @@ function DT_FactionInfoFooterPanel:createChildren()
     local btnHeight = 24
     
     -- 1. Trader Radar Button
-    self.btnRadar = ISButton:new(10, 10, btnWidth, btnHeight, "Trader Radar", self, self.onRadarButton)
+    self.btnRadar = ISButton:new(10, 10, btnWidth, btnHeight, T("DTCommon_UI_Faction_TraderRadar", nil, "Trader Radar"), self, self.onRadarButton)
     self.btnRadar:initialise()
     self.btnRadar:instantiate()
     self.btnRadar:setAnchorLeft(true)
@@ -47,7 +54,7 @@ function DT_FactionInfoFooterPanel:createChildren()
     self:addChild(self.btnRadar)
 
     -- 2. Colony Members Button
-    self.btnFactionMembers = ISButton:new(10 + btnWidth + 10, 10, btnWidth, btnHeight, "Colony Members", self, self.onFactionMembersButton)
+    self.btnFactionMembers = ISButton:new(10 + btnWidth + 10, 10, btnWidth, btnHeight, T("DTCommon_UI_Faction_ColonyMembers", nil, "Colony Members"), self, self.onFactionMembersButton)
     self.btnFactionMembers:initialise()
     self.btnFactionMembers:instantiate()
     self.btnFactionMembers:setAnchorLeft(true)
@@ -57,7 +64,7 @@ function DT_FactionInfoFooterPanel:createChildren()
     self:addChild(self.btnFactionMembers)
 
     -- 3. Colony Management Button (Right aligned)
-    self.btnOwnedFaction = ISButton:new(self.width - btnWidth - 10, 10, btnWidth, btnHeight, "Open Colony Management", self, self.onOwnedFactionButton)
+    self.btnOwnedFaction = ISButton:new(self.width - btnWidth - 10, 10, btnWidth, btnHeight, T("DTCommon_UI_Faction_OpenManagement", nil, "Open Colony Management"), self, self.onOwnedFactionButton)
     self.btnOwnedFaction:initialise()
     self.btnOwnedFaction:instantiate()
     self.btnOwnedFaction:setAnchorLeft(false)
@@ -66,7 +73,7 @@ function DT_FactionInfoFooterPanel:createChildren()
     self.btnOwnedFaction:setAnchorBottom(true)
     self:addChild(self.btnOwnedFaction)
 
-    self.btnRenameFaction = ISButton:new(self.width - (btnWidth * 2) - 20, 10, btnWidth, btnHeight, "Rename Faction", self, self.onRenameFactionButton)
+    self.btnRenameFaction = ISButton:new(self.width - (btnWidth * 2) - 20, 10, btnWidth, btnHeight, T("DTCommon_UI_Faction_RenameFaction", nil, "Rename Faction"), self, self.onRenameFactionButton)
     self.btnRenameFaction:initialise()
     self.btnRenameFaction:instantiate()
     self.btnRenameFaction:setAnchorLeft(false)
@@ -97,14 +104,14 @@ function DT_FactionInfoFooterPanel:updateOwnedFactionStatus(status)
                 self.btnRenameFaction:setVisible(false)
             end
         elseif status and not status.faction and (status.canCreate or status.createBlockedReason == "syncing") then
-            self.btnOwnedFaction:setTitle("Claim Syncing")
+            self.btnOwnedFaction:setTitle(T("DTCommon_UI_Faction_ClaimSyncing", nil, "Claim Syncing"))
             self.btnOwnedFaction:setEnable(true)
             self.btnOwnedFaction:setVisible(true)
             if self.btnRenameFaction then
                 self.btnRenameFaction:setVisible(false)
             end
         else
-            self.btnOwnedFaction:setTitle(status and status.needsNamingPrompt == true and "Finalize Faction" or "Open Colony Management")
+            self.btnOwnedFaction:setTitle(status and status.needsNamingPrompt == true and T("DTCommon_UI_Faction_FinalizeFaction", nil, "Finalize Faction") or T("DTCommon_UI_Faction_OpenManagement", nil, "Open Colony Management"))
             self.btnOwnedFaction:setEnable(true)
             self.btnOwnedFaction:setVisible(true)
             if self.btnRenameFaction then
@@ -121,7 +128,7 @@ function DT_FactionInfoFooterPanel:updateOwnedFactionStatus(status)
         if not isDynamicColoniesActive() then
             self.btnFactionMembers:setVisible(false)
         elseif hasFaction or pendingCount > 0 then
-            self.btnFactionMembers:setTitle(pendingCount > 0 and not hasFaction and "Faction Invites" or "Colony Members")
+            self.btnFactionMembers:setTitle(pendingCount > 0 and not hasFaction and T("DTCommon_UI_Faction_Invites", nil, "Faction Invites") or T("DTCommon_UI_Faction_ColonyMembers", nil, "Colony Members"))
             self.btnFactionMembers:setEnable(true)
             self.btnFactionMembers:setVisible(true)
         else

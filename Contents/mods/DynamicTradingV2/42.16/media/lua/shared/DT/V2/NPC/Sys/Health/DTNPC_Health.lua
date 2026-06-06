@@ -13,6 +13,13 @@ end
 
 DTNPCHealth.EntryLoaded = true
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 DTNPCHealth.BASE_HP_BY_ARCHETYPE = DTNPCHealth.BASE_HP_BY_ARCHETYPE or {
     General = 120,
     Teacher = 110,
@@ -71,7 +78,7 @@ DTNPCHealth.HEALTH_PERSIST_INTERVAL_MS = DTNPCHealth.HEALTH_PERSIST_INTERVAL_MS 
 DTNPCHealth.DEFAULT_BANDAGE_TIER = DTNPCHealth.DEFAULT_BANDAGE_TIER or "clean_rag"
 DTNPCHealth.BANDAGE_TIERS = DTNPCHealth.BANDAGE_TIERS or {
     clean_rag = {
-        label = "Clean Rag",
+        label = T("DTNPC_UI_CleanRag", nil, "Clean Rag"),
         iconFullType = "Base.RippedSheets",
         totalHeal = 20,
         applyHeal = 2,
@@ -79,7 +86,7 @@ DTNPCHealth.BANDAGE_TIERS = DTNPCHealth.BANDAGE_TIERS or {
         regenIntervalMs = 2000,
     },
     sterilized_rag = {
-        label = "Sterilized Rag",
+        label = T("DTNPC_UI_SterilizedRag", nil, "Sterilized Rag"),
         iconFullType = "Base.AlcoholRippedSheets",
         totalHeal = 28,
         applyHeal = 3,
@@ -87,7 +94,7 @@ DTNPCHealth.BANDAGE_TIERS = DTNPCHealth.BANDAGE_TIERS or {
         regenIntervalMs = 2000,
     },
     bandage = {
-        label = "Bandage",
+        label = T("DTNPC_UI_BandageLabel", nil, "Bandage"),
         iconFullType = "Base.Bandage",
         totalHeal = 36,
         applyHeal = 4,

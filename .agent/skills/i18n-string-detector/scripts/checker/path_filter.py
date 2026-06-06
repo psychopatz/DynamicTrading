@@ -10,18 +10,10 @@ from .config import EXCLUDED_FOLDER_NAMES, EXCLUDED_UNDER_FOLDER
 
 
 def is_excluded(path: Path) -> bool:
-    """
-    Return True if this Lua file must be skipped by ALL scanners.
-
-    Current rules:
-    - Any file inside a 'Manuals' folder that lives under 'common' in its path.
-      e.g. common/media/lua/shared/DT/V2/Manuals/…
-    """
-    parts = path.parts
-    for i, part in enumerate(parts):
+    """Return True if this Lua file must be skipped by ALL scanners."""
+    for part in path.parts:
         if part in EXCLUDED_FOLDER_NAMES:
-            if EXCLUDED_UNDER_FOLDER in parts[:i]:
-                return True
+            return True
     return False
 
 

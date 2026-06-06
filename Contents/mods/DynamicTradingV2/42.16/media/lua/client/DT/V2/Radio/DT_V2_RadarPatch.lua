@@ -12,6 +12,13 @@ local original_createChildren = ISRadioWindow.createChildren
 local original_close = ISRadioWindow.close
 local original_readFromObject = ISRadioWindow.readFromObject
 
+local function T(key, params, fallback)
+    if DynamicTrading and DynamicTrading.Text and DynamicTrading.Text.Get then
+        return DynamicTrading.Text.Get(key, params, fallback)
+    end
+    return fallback or tostring(key or "")
+end
+
 local function getWidgetX(widget)
     if widget and widget.getX then
         return widget:getX()
@@ -357,7 +364,7 @@ local function ensureSignalControls(window)
         end
 
         if isColoniesActive then
-            window.btnColonyManagement = ISButton:new(0, 0, 110, 22, "Colony Management", window, function(radioWindow)
+            window.btnColonyManagement = ISButton:new(0, 0, 110, 22, T("DTNPC_UI_ColonyManagement", nil, "Colony Management"), window, function(radioWindow)
                 if DC_MainWindow and DC_MainWindow.ToggleWindow then
                     DC_MainWindow.ToggleWindow(radioWindow.device)
                 end
@@ -377,7 +384,7 @@ local function ensureSignalControls(window)
     end
 
     if not window.btnTraderScan then
-        window.btnTraderScan = ISButton:new(0, 0, 110, 22, "Scan", window, function(radioWindow)
+        window.btnTraderScan = ISButton:new(0, 0, 110, 22, T("DTNPC_UI_Scan", nil, "Scan"), window, function(radioWindow)
             if not isRadioOperationalFromWindow(radioWindow) then
                 return
             end
@@ -413,7 +420,7 @@ local function ensureSignalControls(window)
     end
 
     if not window.btnTraderList then
-        window.btnTraderList = ISButton:new(0, 0, 110, 22, "Access Radio", window, function(radioWindow)
+        window.btnTraderList = ISButton:new(0, 0, 110, 22, T("DTNPC_UI_AccessRadio", nil, "Access Radio"), window, function(radioWindow)
             if DT_RadioScannerWindow then
                 DT_RadioScannerWindow.ToggleWindow(radioWindow.device)
             end
@@ -637,14 +644,15 @@ function ISRadioWindow:prerender()
         self.btnTraderList.enable = operational
 
         if not isEffectivelyDisabled then
-            self.btnTraderScan:setTitle("Scan")
+            self.btnTraderScan:setTitle(T("DTNPC_UI_Scan", nil, "Scan"))
             self.btnTraderScan.textColor = { r = 1, g = 1, b = 1, a = 1 }
             self.btnTraderScan.backgroundColor = { r = 0.2, g = 0.5, b = 0.2, a = 0.8 }
         else
             if isCooldownBlocked then
-                self.btnTraderScan:setTitle("Wait (" .. tostring(math.max(1, math.ceil(remainingMinutes or 0))) .. "m)")
+                local waitMin = math.max(1, math.ceil(remainingMinutes or 0))
+                self.btnTraderScan:setTitle(T("DTNPC_UI_WaitMinutes", { time = waitMin }, "Wait (" .. tostring(waitMin) .. "m)"))
             else
-                self.btnTraderScan:setTitle("Scan")
+                self.btnTraderScan:setTitle(T("DTNPC_UI_Scan", nil, "Scan"))
             end
 
             self.btnTraderScan.textColor = { r = 1, g = 1, b = 1, a = 1 }
