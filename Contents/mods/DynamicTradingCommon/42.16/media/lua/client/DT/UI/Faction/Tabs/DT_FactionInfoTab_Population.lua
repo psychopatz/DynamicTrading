@@ -21,6 +21,30 @@ local function getDisplayStatus(soul)
     return status
 end
 
+local function isLivingSoul(soul)
+    if type(soul) ~= "table" then
+        return false
+    end
+
+    local status = tostring(soul.status or "")
+    local state = tostring(soul.state or "")
+    if status == "Dead" or state == "Dead" or tonumber(soul.deathFinalizedAt) then
+        return false
+    end
+
+    local combatHealth = tonumber(soul.combatHealthCurrent)
+    if combatHealth ~= nil and combatHealth <= 0 and status ~= "Away" and status ~= "Trading" then
+        return false
+    end
+
+    local health = tonumber(soul.health)
+    if health ~= nil and health <= 0 and status ~= "Away" and status ~= "Trading" then
+        return false
+    end
+
+    return true
+end
+
 local function buildWorkerSoul(worker, factionID)
     return {
         name = worker.name,
@@ -322,20 +346,30 @@ function DT_FactionInfoTab_Population:updateData(f, rosterData)
         local members = rosterData.FactionMembers and rosterData.FactionMembers[f.id]
         if members and #members > 0 then
             local hasSouls = false
+            local hasLivingSouls = false
             for _, uuid in ipairs(members) do
                 local soul = rosterData.Souls and rosterData.Souls[uuid]
                 if soul then
-                    local dataEntry = { soul = soul, uuid = uuid, worker = nil }
-                    self.rosterlist:addItem(soul.name or uuid, dataEntry)
-                    rememberSelection(dataEntry)
                     hasSouls = true
+                    if isLivingSoul(soul) then
+                        local dataEntry = { soul = soul, uuid = uuid, worker = nil }
+                        self.rosterlist:addItem(soul.name or uuid, dataEntry)
+                        rememberSelection(dataEntry)
+                        hasLivingSouls = true
+                    end
                 end
             end
-            
+
+            if hasSouls and not hasLivingSouls then
+                self.rosterlist:addItem("No living members remain.", nil)
+            end
+
             -- [MP] Placeholder if data hasn't arrived from server yet
             if not hasSouls and isClient() and not isServer() then
                 self.rosterlist:addItem("Syncing Frequency...", nil)
             end
+        elseif tonumber(f.memberCount or 0) <= 0 and tostring(f.state or "") == "Collapsed" then
+            self.rosterlist:addItem("Faction collapsed. No living members remain.", nil)
         end
     end
 

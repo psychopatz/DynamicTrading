@@ -73,6 +73,16 @@ function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, co
     end
 
     DynamicTrading.Log("DTV2", "NPC", "Lifecycle", "Incapacitated NPC killed for good: " .. (liveData.name or uuid))
+    if DTNPCHostility and DTNPCHostility.PlayDeathSound then
+        DTNPCHostility.PlayDeathSound(zombie, liveData)
+    end
+    if DTNPC_ZombieAggro and DTNPC_ZombieAggro.EmitVocalNoise then
+        DTNPC_ZombieAggro.EmitVocalNoise(zombie, liveData, "Death", {
+            radius = 22,
+            volume = 1.2,
+            cooldownMs = 0,
+        })
+    end
     DTNPCLifecycle.DropDeathMoney(zombie, liveData, removalContext)
     local finalKillContext = DTNPCLifecycle.WithFinalKillContext(zombie, removalContext)
     local manualCorpseCreated = false

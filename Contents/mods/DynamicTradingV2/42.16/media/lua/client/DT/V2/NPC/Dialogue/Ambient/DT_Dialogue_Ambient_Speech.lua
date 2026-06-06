@@ -85,8 +85,28 @@ local function buildSpeechDataFromText(text, sentiment, zombie, currentTime, aud
     }
 end
 
-function Ambient.BuildCustomSpeechData(text, sentiment, zombie, currentTime)
-    return buildSpeechDataFromText(text, sentiment or "neutral", zombie, currentTime or getTimeInMillis())
+function Ambient.BuildCustomSpeechData(text, sentiment, zombie, currentTime, npcData)
+    local safeText = tostring(text or "")
+    local safeSentiment = sentiment or "neutral"
+    local timestamp = currentTime or getTimeInMillis()
+    local liveNPCData = npcData or (Ambient.GetNPCData and Ambient.GetNPCData(zombie)) or nil
+    return buildSpeechDataFromText(
+        safeText,
+        safeSentiment,
+        zombie,
+        timestamp,
+        buildSpeechAudio(
+            liveNPCData,
+            safeText,
+            safeSentiment,
+            liveNPCData and liveNPCData.status or nil,
+            liveNPCData and liveNPCData.state or nil,
+            nil,
+            "ambient_dialogue",
+            1200
+        ),
+        "custom:" .. safeSentiment .. ":" .. safeText
+    )
 end
 
 local function getRaidAmbientCategory(npcData)

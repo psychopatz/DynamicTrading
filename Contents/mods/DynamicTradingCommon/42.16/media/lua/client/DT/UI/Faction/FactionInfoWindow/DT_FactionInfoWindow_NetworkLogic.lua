@@ -23,6 +23,9 @@ local function onServerCommand(module, command, args)
 
             -- Populate
             DT_FactionInfoWindow.instance:populateList(args.factions, args.roster)
+            if DT_FactionInfoWindow.instance.refreshSelectedFactionView then
+                DT_FactionInfoWindow.instance:refreshSelectedFactionView(false)
+            end
         end
     elseif command == "SyncFactionRoster" then
         -- Detailed souls for a specific faction arrived
@@ -71,6 +74,9 @@ local function onServerCommand(module, command, args)
                 end
                 if DT_FactionInfoWindow.instance.tabCalendar then
                     DT_FactionInfoWindow.instance.tabCalendar:updateData(DT_FactionInfoWindow.selectedFaction, DT_FactionInfoWindow.cachedRosterData)
+                end
+                if DT_FactionInfoWindow.instance.refreshSelectedFactionView then
+                    DT_FactionInfoWindow.instance:refreshSelectedFactionView(false)
                 end
             end
         end
@@ -174,13 +180,16 @@ local function onFactionWindowModDataUpdated(key)
         local factionData = DT_FactionInfoWindow.resolveFactionData()
         local rosterData = DT_FactionInfoWindow.resolveRosterData()
         DT_FactionInfoWindow.instance:populateList(factionData, rosterData)
+        if DT_FactionInfoWindow.instance.refreshSelectedFactionView then
+            DT_FactionInfoWindow.instance:refreshSelectedFactionView(false)
+        end
         return
     end
 
     if key == "DynamicTrading_Engine_v2" or key == factionLogsKey or key == "DynamicTrading_Logs_Factions" then
         local panel = DT_FactionInfoWindow.instance.panel
         if panel then
-            local activeView = panel:getActiveView()
+            local activeView = DT_FactionInfoWindow.GetTabContentView and DT_FactionInfoWindow.GetTabContentView(panel:getActiveView()) or panel:getActiveView()
             if activeView and activeView.updateData then
                 local rosterData = DT_FactionInfoWindow.resolveRosterData()
                 activeView:updateData(DT_FactionInfoWindow.selectedFaction, rosterData)

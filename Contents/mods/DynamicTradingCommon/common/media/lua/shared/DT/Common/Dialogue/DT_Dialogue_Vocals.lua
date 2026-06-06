@@ -201,6 +201,23 @@ function Vocals.GetVoiceProfile(npcData)
     return cached
 end
 
+local function getVoiceSetBasePitch(profile)
+    local voiceSet = profile and tostring(profile.voiceSet or "") or ""
+    if voiceSet == "V1" then
+        return 0.95
+    end
+    if voiceSet == "V2" then
+        return 1.00
+    end
+    if voiceSet == "V3" then
+        return 1.05
+    end
+    if voiceSet == "V4" then
+        return 1.10
+    end
+    return 1.00
+end
+
 function Vocals.ResolveVocalSoundName(npcData, cueType, options)
     local opts = type(options) == "table" and options or nil
     local explicitSoundName = opts and normalizeString(opts.soundName) or nil
@@ -284,7 +301,10 @@ function Vocals.PlayVocal(zombie, npcData, cueType, options)
     end
 
     local soundID = emitter:playSound(soundName)
-    local pitch = tonumber(opts and opts.pitch) or (profile and profile.microPitch) or nil
+    local pitch = tonumber(opts and opts.pitch) or nil
+    if pitch == nil and profile then
+        pitch = getVoiceSetBasePitch(profile) * (tonumber(profile.microPitch) or 1.0)
+    end
     if soundID and soundID ~= 0 and pitch and emitter.setPitch then
         emitter:setPitch(soundID, pitch)
     end

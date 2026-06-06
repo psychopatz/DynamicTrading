@@ -129,6 +129,13 @@ function DTNPCHealth.HandleZeroHP(zombie, npcData, attacker, context)
     if not incapped and DTNPCHostility and DTNPCHostility.PlayDeathSound then
         DTNPCHostility.PlayDeathSound(zombie, npcData)
     end
+    if not incapped and DTNPC_ZombieAggro and DTNPC_ZombieAggro.EmitVocalNoise then
+        DTNPC_ZombieAggro.EmitVocalNoise(zombie, npcData, "Death", {
+            radius = 22,
+            volume = 1.2,
+            cooldownMs = 0,
+        })
+    end
     
     return incapped
 end

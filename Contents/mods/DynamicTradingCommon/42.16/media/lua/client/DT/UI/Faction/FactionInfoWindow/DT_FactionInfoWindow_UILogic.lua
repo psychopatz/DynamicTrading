@@ -20,6 +20,73 @@ function DT_FactionInfoWindow:getFontScale()
     return "Small"
 end
 
+function DT_FactionInfoWindow.GetTabContentView(view)
+    if not view then
+        return nil
+    end
+    if view.updateData then
+        return view
+    end
+    if view.view and view.view.updateData then
+        return view.view
+    end
+    if view.panel and view.panel.updateData then
+        return view.panel
+    end
+    return view
+end
+
+function DT_FactionInfoWindow:GetSelectedListFaction()
+    if not self.listbox or not self.listbox.items then
+        return nil
+    end
+
+    local selected = tonumber(self.listbox.selected) or 0
+    local entry = selected > 0 and self.listbox.items[selected] or nil
+    return entry and entry.item or nil
+end
+
+function DT_FactionInfoWindow:refreshSelectedFactionView(requestRoster)
+    local currentListFaction = self:GetSelectedListFaction()
+    local faction = currentListFaction or DT_FactionInfoWindow.selectedFaction
+    if not faction then
+        return false
+    end
+
+    DT_FactionInfoWindow.selectedFaction = faction
+    self.selectedFaction = faction
+
+    local roster = DT_FactionInfoWindow.resolveRosterData and DT_FactionInfoWindow.resolveRosterData()
+        or DT_FactionInfoWindow.lastRosterData
+        or {}
+    DT_FactionInfoWindow.lastRosterData = roster
+
+    if self.updateOwnedFactionStatus then
+        self:updateOwnedFactionStatus(DT_FactionInfoWindow.cachedOwnedFactionStatus, faction)
+    end
+    if self.tabInfo and self.tabInfo.updateData then
+        self.tabInfo:updateData(faction, roster)
+    end
+
+    local activeView = self.panel and DT_FactionInfoWindow.GetTabContentView(self.panel:getActiveView()) or nil
+    if activeView and activeView.updateData then
+        activeView:updateData(faction, roster)
+        if activeView.onResize then
+            activeView:onResize()
+        end
+    end
+
+    if requestRoster == true
+        and isClient()
+        and not isServer()
+        and not faction.isV1
+        and not faction.playerOwned then
+        sendClientCommand(getSpecificPlayer(0), "DynamicTrading_V2", "RequestFactionRoster", { factionID = faction.id })
+    end
+
+    return true
+end
+
 local function trimFactionName(value)
     local text = tostring(value or "")
     text = string.gsub(text, "^%s+", "")
@@ -206,11 +273,17 @@ function DT_FactionInfoWindow:createChildren()
     
     -- Sync Active View logic override
     self.panel.onActivateView = function(view)
-        if view and view.updateData then
+        if DT_FactionInfoWindow.instance and DT_FactionInfoWindow.instance.refreshSelectedFactionView then
+            DT_FactionInfoWindow.instance:refreshSelectedFactionView(false)
+            return
+        end
+        local contentView = DT_FactionInfoWindow.GetTabContentView(view)
+        if contentView and contentView.updateData then
             local f = DT_FactionInfoWindow.selectedFaction
             local roster = DT_FactionInfoWindow.lastRosterData or DT_FactionInfoWindow.resolveRosterData()
-            view:updateData(f, roster)
-            if view.onResize then view:onResize() end
+            DT_FactionInfoWindow.lastRosterData = roster
+            contentView:updateData(f, roster)
+            if contentView.onResize then contentView:onResize() end
         end
     end
 
@@ -300,14 +373,13 @@ function DT_FactionInfoWindow:onResize()
         end
         
         -- Update active tab
-        local activeView = self.panel:getActiveView()
+        local activeView = DT_FactionInfoWindow.GetTabContentView(self.panel:getActiveView())
         if activeView then
             activeView:setWidth(self.panel:getWidth())
             activeView:setHeight(self.panel:getHeight() - self.panel.tabHeight)
             if activeView.onResize then activeView:onResize() end
-            if activeView.updateData then
-                 local rosterData = DT_FactionInfoWindow.cachedRosterData or ModData.get("DynamicTrading_Roster") or {}
-                 activeView:updateData(DT_FactionInfoWindow.selectedFaction, rosterData)
+            if activeView.updateData and self.refreshSelectedFactionView then
+                 self:refreshSelectedFactionView(false)
             end
         end
     end
@@ -365,6 +437,7 @@ function DT_FactionInfoWindow.Open(device)
 end
 
 function DT_FactionInfoWindow:close()
+    DT_FactionInfoWindow.lastRosterData = nil
     self:setVisible(false)
     self:removeFromUIManager()
 end

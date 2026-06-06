@@ -95,3 +95,41 @@ function DTNPC_ZombieAggro.EmitCombatNoise(zombie, npcData, attackType)
     npcData.combatNoiseNextAt = now + cooldownMs
     return emitted
 end
+
+function DTNPC_ZombieAggro.EmitVocalNoise(zombie, npcData, cueType, options)
+    if not isAuthoritativeSide() or not zombie or not npcData then
+        return false
+    end
+
+    local opts = type(options) == "table" and options or {}
+    local radius = tonumber(opts.radius)
+    local volume = tonumber(opts.volume)
+    local cooldownMs = tonumber(opts.cooldownMs)
+
+    if cueType == "Death" then
+        radius = radius or 22
+        volume = volume or 1.2
+        cooldownMs = cooldownMs or 0
+    elseif cueType == "Incap" then
+        radius = radius or 10
+        volume = volume or 0.5
+        cooldownMs = cooldownMs or 700
+    else
+        radius = radius or 12
+        volume = volume or 0.6
+        cooldownMs = cooldownMs or 400
+    end
+
+    local now = nowMillis()
+    local throttleKey = "_dtVocalNoiseNextAt_" .. tostring(cueType or "generic")
+    local nextAllowed = tonumber(npcData[throttleKey]) or 0
+    if cooldownMs > 0 and nextAllowed > now then
+        return false
+    end
+
+    local emitted = emitWorldSound(zombie:getX(), zombie:getY(), zombie:getZ(), math.max(5, radius), volume, zombie)
+    if cooldownMs > 0 then
+        npcData[throttleKey] = now + cooldownMs
+    end
+    return emitted
+end

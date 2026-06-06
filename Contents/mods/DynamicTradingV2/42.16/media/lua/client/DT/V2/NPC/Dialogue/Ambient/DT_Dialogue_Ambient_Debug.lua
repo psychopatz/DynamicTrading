@@ -8,6 +8,9 @@ DTNPCClient.DialogueAmbient = DTNPCClient.DialogueAmbient or DTNPCClient.Ambient
 DTNPCClient.AmbientDialogue = DTNPCClient.DialogueAmbient
 
 local Ambient = DTNPCClient.DialogueAmbient
+local DialogueVocals = DynamicTrading
+    and DynamicTrading.Dialogue
+    and DynamicTrading.Dialogue.Vocals
 
 local function queueSpeechData(manager, zombie, npcData, speechData)
     if not manager or not zombie or not npcData or not speechData then
@@ -16,6 +19,9 @@ local function queueSpeechData(manager, zombie, npcData, speechData)
 
     speechData.zombie = zombie
     manager.speechList[npcData.uuid or tostring(zombie:getPersistentOutfitID())] = speechData
+    if speechData.audio and DialogueVocals and DialogueVocals.PlaySpeechAudio then
+        DialogueVocals.PlaySpeechAudio(zombie, npcData, speechData.audio)
+    end
     if DTNPCClient.TrackNPCForAmbientDialogue then
         DTNPCClient.TrackNPCForAmbientDialogue(zombie, npcData, npcData.uuid, zombie:getPersistentOutfitID())
     end
@@ -135,6 +141,6 @@ function DTNPCClient.QueueAmbientSpeechForNPC(zombie, text, sentiment, playerInd
         return false
     end
 
-    local speechData = Ambient.BuildCustomSpeechData(speechText, sentiment or "neutral", zombie, getTimeInMillis())
+    local speechData = Ambient.BuildCustomSpeechData(speechText, sentiment or "neutral", zombie, getTimeInMillis(), npcData)
     return queueSpeechData(manager, zombie, npcData, speechData)
 end
