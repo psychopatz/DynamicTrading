@@ -7,6 +7,13 @@ DTNPCHealth = DTNPCHealth or {}
 DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
+local TRUSTED_EXPLICIT_DAMAGE_SOURCES = {
+    weapon_hit_event = true,
+    client_weapon_hit_report = true,
+    client_weapon_hit_report_dead_body = true,
+    zombie_lease = true,
+    dt_npc_combat = true,
+}
 
 local function hasFriendlyPlayerAuthority(npcData, playerObj)
     if DTNPCRoles and DTNPCRoles.CanUsePlayerAuthority then
@@ -78,6 +85,12 @@ local function getAttackerID(attacker)
 end
 
 internal.getAttackerID = getAttackerID
+
+local function isTrustedExplicitDamageSource(source)
+    return TRUSTED_EXPLICIT_DAMAGE_SOURCES[tostring(source or "")] == true
+end
+
+internal.isTrustedExplicitDamageSource = isTrustedExplicitDamageSource
 
 local function getResolvedSkillLevelForHealth(npcData, skillID)
     if not npcData or not skillID then

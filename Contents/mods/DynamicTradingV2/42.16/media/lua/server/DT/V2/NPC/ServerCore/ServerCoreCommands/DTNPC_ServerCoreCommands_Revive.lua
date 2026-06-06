@@ -34,6 +34,59 @@ local function sendReviveResult(playerObj, payload)
     return true
 end
 
+local function getReviveTarget(uuid)
+    if not uuid or not DTNPCServerCore.GetNPCDataByUUID then
+        return nil, nil
+    end
+    return DTNPCServerCore.GetNPCDataByUUID(uuid)
+end
+
+local function setPlayerReviveLease(npcData, playerObj, durationMs)
+    if type(npcData) ~= "table" then
+        return false
+    end
+
+    if type(npcData.reviveData) ~= "table" then
+        npcData.reviveData = {}
+    end
+
+    local now = DTNPCHealth
+        and DTNPCHealth.Internal
+        and DTNPCHealth.Internal.nowMillis
+        and DTNPCHealth.Internal.nowMillis()
+        or (getTimeInMillis and getTimeInMillis() or 0)
+    local reviveData = npcData.reviveData
+    reviveData.playerReviveLeaseUntil = now + math.max(1000, math.floor(tonumber(durationMs) or 5000))
+    reviveData.playerReviveLeaseUsername = playerObj and playerObj.getUsername and playerObj:getUsername() or nil
+    reviveData.playerReviveLeaseOnlineID = playerObj and playerObj.getOnlineID and playerObj:getOnlineID() or nil
+    return true
+end
+
+local function clearPlayerReviveLease(npcData, playerObj)
+    local reviveData = type(npcData) == "table" and type(npcData.reviveData) == "table" and npcData.reviveData or nil
+    if not reviveData then
+        return false
+    end
+
+    local username = playerObj and playerObj.getUsername and playerObj:getUsername() or nil
+    local onlineID = playerObj and playerObj.getOnlineID and playerObj:getOnlineID() or nil
+    if reviveData.playerReviveLeaseUsername ~= nil
+        and username ~= nil
+        and tostring(reviveData.playerReviveLeaseUsername) ~= tostring(username) then
+        return false
+    end
+    if reviveData.playerReviveLeaseOnlineID ~= nil
+        and onlineID ~= nil
+        and tonumber(reviveData.playerReviveLeaseOnlineID) ~= tonumber(onlineID) then
+        return false
+    end
+
+    reviveData.playerReviveLeaseUntil = nil
+    reviveData.playerReviveLeaseUsername = nil
+    reviveData.playerReviveLeaseOnlineID = nil
+    return true
+end
+
 local function isWithinReviveRange(playerObj, zombie)
     if not playerObj or not zombie then
         return false
@@ -187,11 +240,7 @@ Handlers.ReviveRequest = function(playerObj, args)
         return
     end
 
-    local zombie = nil
-    local npcData = nil
-    if DTNPCServerCore.GetNPCDataByUUID then
-        zombie, npcData = DTNPCServerCore.GetNPCDataByUUID(uuid)
-    end
+    local zombie, npcData = getReviveTarget(uuid)
     if not zombie or not npcData then
         sendReviveResult(playerObj, {
             success = false,
@@ -225,6 +274,8 @@ Handlers.ReviveRequest = function(playerObj, args)
         if reason == "need_supplies" then
             local itemLabel = formatReviveItemLabel(requiredFullType)
             message = "You need " .. tostring(info.requiredCount or "?") .. " " .. tostring(itemLabel) .. " to revive them."
+        elseif reason == "already_helped" then
+            message = "Someone is already helping them."
         elseif reason == "excluded_target" then
             message = "They won't accept your help."
         elseif reason == "not_incapacitated" then
@@ -247,6 +298,7 @@ Handlers.ReviveRequest = function(playerObj, args)
         requiredFullType = requiredFullType,
     })
     if not revived then
+        clearPlayerReviveLease(npcData, playerObj)
         sendReviveResult(playerObj, {
             success = false,
             uuid = uuid,
@@ -276,4 +328,42 @@ Handlers.ReviveRequest = function(playerObj, args)
         departureMode = departureMode,
         requiredFullType = requiredFullType,
     })
+end
+
+Handlers.ReviveStart = function(playerObj, args)
+    local uuid = args and args.uuid or nil
+    if not playerObj or not uuid then
+        return
+    end
+
+    local zombie, npcData = getReviveTarget(uuid)
+    if not zombie or not npcData or not isWithinReviveRange(playerObj, zombie) then
+        return
+    end
+
+    local canRevive = DTNPCHealth and DTNPCHealth.CanPlayerRevive and DTNPCHealth.CanPlayerRevive(playerObj, npcData, {
+        ignoreItems = true,
+    }) or false
+    if canRevive then
+        setPlayerReviveLease(npcData, playerObj, tonumber(args.durationMs) or 8000)
+        if DTNPCHealth.RequestSync then
+            DTNPCHealth.RequestSync(zombie, npcData, false)
+        end
+    end
+end
+
+Handlers.ReviveCancel = function(playerObj, args)
+    local uuid = args and args.uuid or nil
+    if not playerObj or not uuid then
+        return
+    end
+
+    local zombie, npcData = getReviveTarget(uuid)
+    if not npcData then
+        return
+    end
+
+    if clearPlayerReviveLease(npcData, playerObj) and zombie and DTNPCHealth and DTNPCHealth.RequestSync then
+        DTNPCHealth.RequestSync(zombie, npcData, false)
+    end
 end

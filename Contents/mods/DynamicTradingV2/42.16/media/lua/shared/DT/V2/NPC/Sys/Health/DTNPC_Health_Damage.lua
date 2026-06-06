@@ -8,6 +8,41 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 
 local internal = DTNPCHealth.Internal
 
+local function resolveIncomingDamage(amount, context)
+    local baseAmount = math.max(0, tonumber(amount) or 0)
+    if baseAmount <= 0 then
+        return 0, 1.0
+    end
+
+    context = type(context) == "table" and context or nil
+    if context and context.damageScaled == true then
+        return math.max(DTNPCHealth.MIN_DAMAGE, baseAmount), tonumber(context.damageTakenMultiplier) or 1.0
+    end
+
+    local multiplier = internal.getNPCDamageTakenMultiplier and internal.getNPCDamageTakenMultiplier() or 1.0
+    multiplier = math.max(0, tonumber(multiplier) or 1.0)
+    local resolvedDamage = baseAmount * multiplier
+
+    if context then
+        context.damageScaled = true
+        context.damageTakenMultiplier = multiplier
+        context.rawDamage = baseAmount
+    end
+
+    return math.max(DTNPCHealth.MIN_DAMAGE, resolvedDamage), multiplier
+end
+
+local function shouldQueueFallbackIgnore(context)
+    context = type(context) == "table" and context or {}
+    if context.queueFallbackIgnore == false then
+        return false
+    end
+
+    return internal.isTrustedExplicitDamageSource
+        and internal.isTrustedExplicitDamageSource(context.source)
+        or false
+end
+
 local function shouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker, context)
     if DTNPCLifecycle and DTNPCLifecycle.ShouldIgnoreFriendlyFire then
         return DTNPCLifecycle.ShouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker, context)
@@ -146,8 +181,14 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
         return false, false
     end
 
+    if internal.resolveAuthoritativeNPCContext then
+        zombie, npcData = internal.resolveAuthoritativeNPCContext(zombie, npcData)
+    end
+
+    context = type(context) == "table" and context or {}
     if npcData.incapState == "Active" then
-        return DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, amount, attacker, context)
+        local incapDamage = resolveIncomingDamage(amount, context)
+        return DTNPCHealth.HandleIncapacitatedDamage(zombie, npcData, incapDamage, attacker, context)
     end
 
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
@@ -155,12 +196,11 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
         return false, false
     end
 
-    context = type(context) == "table" and context or {}
     if shouldIgnoreFriendlyFire(zombie, npcData, combatHealth, attacker, context) then
         return true, false
     end
 
-    local damage = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
+    local damage, takenMultiplier = resolveIncomingDamage(amount, context)
     local now = internal.nowMillis()
     local source = tostring(context.source or "")
 
@@ -172,7 +212,7 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
     combatHealth.lastAttackerType = internal.getAttackerType(attacker)
     combatHealth.lastAttackerID = internal.getAttackerID(attacker)
 
-    if context.queueFallbackIgnore ~= false then
+    if shouldQueueFallbackIgnore(context) then
         internal.queueFallbackIgnore(combatHealth, damage)
     end
 
@@ -184,6 +224,8 @@ function DTNPCHealth.ApplyDamage(zombie, npcData, amount, attacker, context)
             .. " uuid=" .. tostring(npcData.uuid)
             .. " source=" .. tostring(context and context.source or "unknown")
             .. " damage=" .. tostring(damage)
+            .. " rawDamage=" .. tostring(context.rawDamage or amount)
+            .. " takenMultiplier=" .. tostring(takenMultiplier)
             .. " attackerType=" .. tostring(internal.getAttackerType(attacker))
             .. " attackerID=" .. tostring(internal.getAttackerID(attacker))
             .. " customBefore=" .. tostring(combatHealth.current)
@@ -227,6 +269,11 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
         return false, false
     end
 
+    local zombie = nil
+    if internal.resolveAuthoritativeNPCContext then
+        zombie, npcData = internal.resolveAuthoritativeNPCContext(nil, npcData)
+    end
+
     context = type(context) == "table" and context or {}
     local combatHealth = DTNPCHealth.EnsureDefaults(npcData)
     if not combatHealth then
@@ -237,7 +284,7 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
         return true, false
     end
 
-    local damage = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
+    local damage, takenMultiplier = resolveIncomingDamage(amount, context)
     local now = internal.nowMillis()
     local source = tostring(context.source or "")
 
@@ -262,6 +309,7 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
                     .. " damage=" .. tostring(damage)
                     .. " graceUntil=" .. tostring(graceUntil)
             )
+            internal.syncAndPersistHealth(zombie, npcData, false, true)
             return true, false
         end
 
@@ -273,6 +321,7 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
         npcData.health = 0
         npcData.lastHealth = 0
         combatHealth.lastEngineHealth = 0
+        internal.syncAndPersistHealth(zombie, npcData, true, true)
         return true, true
     end
 
@@ -297,6 +346,8 @@ function DTNPCHealth.ApplyDamageToDataOnly(npcData, amount, attacker, context)
             .. " uuid=" .. tostring(npcData.uuid)
             .. " source=" .. tostring(context.source or "unknown")
             .. " damage=" .. tostring(damage)
+            .. " rawDamage=" .. tostring(context.rawDamage or amount)
+            .. " takenMultiplier=" .. tostring(takenMultiplier)
             .. " customBefore=" .. tostring(currentBefore)
             .. " customAfter=" .. tostring(combatHealth.current)
             .. " customMax=" .. tostring(combatHealth.max)

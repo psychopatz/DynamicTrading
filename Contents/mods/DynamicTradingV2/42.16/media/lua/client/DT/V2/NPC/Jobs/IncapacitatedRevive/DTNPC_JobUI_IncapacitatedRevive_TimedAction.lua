@@ -69,6 +69,12 @@ function DTNPCReviveBandageAction:update()
 end
 
 function DTNPCReviveBandageAction:start()
+    local npcData = ReviveUI.GetNPCData(self.npc)
+    sendClientCommand(self.character, "DTNPC", "ReviveStart", {
+        uuid = npcData and npcData.uuid or nil,
+        durationMs = (tonumber(self.maxTime) or 0) * 50 + 3000,
+    })
+
     self:setActionAnim(getCharacterBandageAnim())
     if self.character and self.character.reportEvent then
         self.character:reportEvent("EventBandage")
@@ -82,6 +88,10 @@ function DTNPCReviveBandageAction:start()
 end
 
 function DTNPCReviveBandageAction:stop()
+    local npcData = ReviveUI.GetNPCData(self.npc)
+    sendClientCommand(self.character, "DTNPC", "ReviveCancel", {
+        uuid = npcData and npcData.uuid or nil,
+    })
     ISBaseTimedAction.stop(self)
 end
 

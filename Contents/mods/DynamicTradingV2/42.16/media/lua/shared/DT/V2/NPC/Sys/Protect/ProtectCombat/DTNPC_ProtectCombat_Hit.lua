@@ -10,6 +10,17 @@ local Internal = DTNPCProtect.Internal
 local getAttackWeaponItem = Internal.ProtectCombatGetAttackWeaponItem
 local playSuccessfulHitSound = Internal.ProtectCombatPlaySuccessfulHitSound
 
+local function clamp(value, minValue, maxValue)
+    local numeric = tonumber(value) or minValue
+    if numeric < minValue then
+        return minValue
+    end
+    if numeric > maxValue then
+        return maxValue
+    end
+    return numeric
+end
+
 local function nowMillis()
     if getTimeInMillis then
         local value = tonumber(getTimeInMillis())
@@ -18,6 +29,145 @@ local function nowMillis()
         end
     end
     return 0
+end
+
+local function addBodyPartCandidate(parts, partType, weight)
+    if partType then
+        parts[#parts + 1] = {
+            partType = partType,
+            weight = math.max(1, tonumber(weight) or 1),
+        }
+    end
+end
+
+local function choosePlayerHitBodyPart(bodyDamage)
+    if not bodyDamage or not bodyDamage.getBodyPart or not BodyPartType then
+        return nil
+    end
+
+    local parts = {}
+    addBodyPartCandidate(parts, BodyPartType.Torso_Upper, 5)
+    addBodyPartCandidate(parts, BodyPartType.Torso_Lower, 4)
+    addBodyPartCandidate(parts, BodyPartType.UpperArm_L, 2)
+    addBodyPartCandidate(parts, BodyPartType.UpperArm_R, 2)
+    addBodyPartCandidate(parts, BodyPartType.ForeArm_L, 2)
+    addBodyPartCandidate(parts, BodyPartType.ForeArm_R, 2)
+    addBodyPartCandidate(parts, BodyPartType.UpperLeg_L, 2)
+    addBodyPartCandidate(parts, BodyPartType.UpperLeg_R, 2)
+    addBodyPartCandidate(parts, BodyPartType.LowerLeg_L, 1)
+    addBodyPartCandidate(parts, BodyPartType.LowerLeg_R, 1)
+    addBodyPartCandidate(parts, BodyPartType.Head, 1)
+
+    local totalWeight = 0
+    for i = 1, #parts do
+        totalWeight = totalWeight + parts[i].weight
+    end
+    if totalWeight <= 0 then
+        return nil
+    end
+
+    local roll = ZombRand and ZombRand(totalWeight) or math.floor(totalWeight * 0.5)
+    local cursor = 0
+    for i = 1, #parts do
+        cursor = cursor + parts[i].weight
+        if roll < cursor then
+            return bodyDamage:getBodyPart(parts[i].partType)
+        end
+    end
+
+    return bodyDamage:getBodyPart(BodyPartType.Torso_Upper)
+end
+
+local function setBodyPartBleeding(bodyPart, seconds)
+    if not bodyPart or not bodyPart.setBleedingTime then
+        return false
+    end
+
+    local current = tonumber(bodyPart.getBleedingTime and bodyPart:getBleedingTime() or 0) or 0
+    bodyPart:setBleedingTime(math.max(current, tonumber(seconds) or 0))
+    return true
+end
+
+local function arePlayerWoundsEnabled()
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    if sandbox and sandbox.NPCPlayerWounds ~= nil then
+        return sandbox.NPCPlayerWounds == true
+    end
+    return true
+end
+
+local function addPlayerWoundEffects(bodyPart, attackType, damage, weaponItem)
+    if not bodyPart then
+        return
+    end
+
+    local resolvedDamage = math.max(0, tonumber(damage) or 0)
+    if bodyPart.setAdditionalPain then
+        local currentPain = tonumber(bodyPart.getAdditionalPain and bodyPart:getAdditionalPain() or 0) or 0
+        bodyPart:setAdditionalPain(math.min(100, currentPain + math.max(3, resolvedDamage * 0.35)))
+    end
+
+    local isRanged = attackType == "ranged"
+    local maxWeaponDamage = weaponItem and weaponItem.getMaxDamage and tonumber(weaponItem:getMaxDamage()) or 0
+    local heavyMelee = attackType == "melee" and maxWeaponDamage >= 1.2
+    if isRanged or heavyMelee or resolvedDamage >= 12 then
+        setBodyPartBleeding(bodyPart, isRanged and 45 or 25)
+    end
+
+    if bodyPart.setCutTime and (heavyMelee or resolvedDamage >= 16) then
+        local currentCut = tonumber(bodyPart.getCutTime and bodyPart:getCutTime() or 0) or 0
+        bodyPart:setCutTime(math.max(currentCut, 8))
+    elseif bodyPart.setScratchTime and attackType == "melee" then
+        local currentScratch = tonumber(bodyPart.getScratchTime and bodyPart:getScratchTime() or 0) or 0
+        bodyPart:setScratchTime(math.max(currentScratch, 6))
+    end
+end
+
+local function reducePlayerOverallHealth(target, bodyDamage, damage, attackType)
+    if not target or not bodyDamage then
+        return false, false
+    end
+
+    local resolvedDamage = math.max(0, tonumber(damage) or 0)
+    if resolvedDamage <= 0 then
+        return false, false
+    end
+
+    local healthLoss = resolvedDamage * (attackType == "ranged" and 0.42 or 0.34)
+    healthLoss = clamp(healthLoss, 0.65, attackType == "ranged" and 22 or 16)
+    local killed = false
+    local changed = false
+
+    if bodyDamage.getOverallBodyHealth and bodyDamage.setOverallBodyHealth then
+        local currentHealth = tonumber(bodyDamage:getOverallBodyHealth()) or 100
+        local newHealth = math.max(0, currentHealth - healthLoss)
+        bodyDamage:setOverallBodyHealth(newHealth)
+        killed = newHealth <= 0
+        changed = true
+    elseif bodyDamage.ReduceGeneralHealth then
+        bodyDamage:ReduceGeneralHealth(healthLoss)
+        local currentHealth = bodyDamage.getOverallBodyHealth and tonumber(bodyDamage:getOverallBodyHealth()) or nil
+        killed = currentHealth ~= nil and currentHealth <= 0
+        changed = true
+    elseif target.getHealth and target.setHealth then
+        local currentHealth = tonumber(target:getHealth()) or 1
+        target:setHealth(math.max(0, currentHealth - (healthLoss / 100)))
+        killed = target.getHealth and (tonumber(target:getHealth()) or 0) <= 0 or false
+        changed = true
+    end
+
+    return changed, killed
+end
+
+local function syncPlayerDamage(target, bodyDamage)
+    if bodyDamage and bodyDamage.Update then
+        bodyDamage:Update()
+    end
+    if target and target.sendPlayerStatsPacket then
+        pcall(function()
+            target:sendPlayerStatsPacket()
+        end)
+    end
 end
 
 function DTNPCProtect.ApplyZombieShove(zombie, npcData, targetZombie, options)
@@ -102,6 +252,7 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
     local attackType = options.attackType or "generic"
     local damage = math.max(0.05, tonumber(options.damage) or 0.1)
     local applied = false
+    local forceKilled = false
     local weaponItem = getAttackWeaponItem(npcData, attackType)
     local isPlayerTarget = instanceof(target, "IsoPlayer")
     local targetModData = target.getModData and target:getModData() or nil
@@ -114,7 +265,9 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
         and targetModData ~= nil
         and (targetModData.IsDTNPC == true or targetUUID ~= nil)
 
-    damage = DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem)
+    if damage <= 0.1 then
+        damage = DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem)
+    end
     local hitEffects = DT_DamageSystem.CalculateHitEffects(npcData, target, damage, attackType)
     damage = hitEffects.damage
 
@@ -128,12 +281,7 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
 
     if isPlayerTarget then
         local bodyDamage = target.getBodyDamage and target:getBodyDamage() or nil
-        local bodyPart = bodyDamage
-            and bodyDamage.getBodyPart
-            and BodyPartType
-            and BodyPartType.Torso_Upper
-            and bodyDamage:getBodyPart(BodyPartType.Torso_Upper)
-            or nil
+        local bodyPart = choosePlayerHitBodyPart(bodyDamage)
 
         if bodyPart and bodyPart.AddDamage then
             local appliedDamage = damage
@@ -146,14 +294,15 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
                 if bodyPart.setHaveBullet then
                     bodyPart:setHaveBullet(true, 0)
                 end
-                if bodyPart.setBleedingTime then
-                    bodyPart:setBleedingTime(math.max(10, tonumber(bodyPart.getBleedingTime and bodyPart:getBleedingTime() or 0) or 0))
-                end
             end
 
-            if bodyDamage.Update then
-                bodyDamage:Update()
+            if arePlayerWoundsEnabled() then
+                addPlayerWoundEffects(bodyPart, attackType, appliedDamage, weaponItem)
             end
+
+            local _, killedByHealth = reducePlayerOverallHealth(target, bodyDamage, appliedDamage, attackType)
+            forceKilled = killedByHealth == true
+            syncPlayerDamage(target, bodyDamage)
             if target.setAttackedBy then
                 target:setAttackedBy(zombie)
             end
@@ -238,7 +387,7 @@ function DTNPCProtect.ApplyCombatHit(zombie, npcData, target, options)
         applied = true
     end
 
-    local killed = target:isDead() or target:getHealth() <= 0
+    local killed = forceKilled or target:isDead() or target:getHealth() <= 0
     if killed then
         if not target:isDead() then
             target:Kill(zombie)

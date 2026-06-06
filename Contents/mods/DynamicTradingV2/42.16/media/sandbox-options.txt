@@ -90,6 +90,34 @@ option DynamicTrading.NPCBaseHealthMultiplier
     translation = DynamicTrading.NPCBaseHealthMultiplier,
 }
 
+option DynamicTrading.NPCDamageTakenMultiplier
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 10.0,
+    page = DynamicTrading,
+    translation = DynamicTrading.NPCDamageTakenMultiplier,
+}
+
+option DynamicTrading.NPCDamageDealtMultiplier
+{
+    type = double,
+    default = 1.0,
+    min = 0.1,
+    max = 10.0,
+    page = DynamicTrading,
+    translation = DynamicTrading.NPCDamageDealtMultiplier,
+}
+
+option DynamicTrading.NPCPlayerWounds
+{
+    type = boolean,
+    default = true,
+    page = DynamicTrading,
+    translation = DynamicTrading.NPCPlayerWounds,
+}
+
 option DynamicTrading.EnableBanditAmbushes
 {
     type = boolean,

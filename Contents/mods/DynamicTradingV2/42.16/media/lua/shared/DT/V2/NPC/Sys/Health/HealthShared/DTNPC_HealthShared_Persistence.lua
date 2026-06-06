@@ -9,23 +9,35 @@ DTNPCHealth.Internal = DTNPCHealth.Internal or {}
 local internal = DTNPCHealth.Internal
 
 local function syncHealth(zombie, npcData, fullSync)
-    if not zombie or not npcData or not npcData.uuid then
+    if not npcData or not npcData.uuid then
         return
     end
     if not DTNPCServerCore then
         return
     end
 
-    local ownedZombie = DTNPCServerCore.FindZombieByUUID and DTNPCServerCore.FindZombieByUUID(npcData.uuid) or nil
-    if ownedZombie ~= zombie then
+    local resolvedZombie = zombie
+    local resolvedData = npcData
+    if internal.resolveAuthoritativeNPCContext then
+        resolvedZombie, resolvedData = internal.resolveAuthoritativeNPCContext(zombie, npcData)
+    end
+    if not resolvedData or not resolvedData.uuid then
+        return
+    end
+    if not resolvedZombie and DTNPCServerCore.FindZombieByUUID then
+        resolvedZombie = DTNPCServerCore.FindZombieByUUID(tostring(resolvedData.uuid))
+    end
+    if not resolvedZombie or not resolvedData then
         return
     end
 
     if fullSync == true and DTNPCServerCore.SyncToAllClients then
-        DTNPCServerCore.SyncToAllClients(zombie, npcData)
+        DTNPCServerCore.SyncToAllClients(resolvedZombie, resolvedData)
     end
-    if DTNPCServerCore.BroadcastPosition then
-        DTNPCServerCore.BroadcastPosition(zombie, npcData, true)
+    if DTNPCServerCore.BroadcastState then
+        DTNPCServerCore.BroadcastState(resolvedZombie, resolvedData, false)
+    elseif DTNPCServerCore.BroadcastPosition then
+        DTNPCServerCore.BroadcastPosition(resolvedZombie, resolvedData, true)
     end
 end
 

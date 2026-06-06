@@ -44,6 +44,15 @@
     "Sandbox_DynamicTrading.NPCBaseHealthMultiplier": "NPC Base Health Multiplier",
     "Sandbox_DynamicTrading.NPCBaseHealthMultiplier_tooltip": "Scales the archetype base HP used by DT NPC custom health. 1.0 = default values, 2.0 = double base HP before skill bonuses.",
 
+    "Sandbox_DynamicTrading.NPCDamageTakenMultiplier": "NPC Damage Taken Multiplier",
+    "Sandbox_DynamicTrading.NPCDamageTakenMultiplier_tooltip": "Scales real damage applied to DT NPC virtual HP. Lower than 1.0 makes them tankier, higher than 1.0 makes them easier to kill.",
+
+    "Sandbox_DynamicTrading.NPCDamageDealtMultiplier": "NPC Damage Dealt Multiplier",
+    "Sandbox_DynamicTrading.NPCDamageDealtMultiplier_tooltip": "Scales damage dealt by DT NPC melee and ranged attacks without changing their max HP.",
+
+    "Sandbox_DynamicTrading.NPCPlayerWounds": "NPC Player Wounds",
+    "Sandbox_DynamicTrading.NPCPlayerWounds_tooltip": "If enabled, DT NPC attacks can cause bleeding, cuts, scratches, and pain on players in addition to reducing overall health.",
+
     "Sandbox_DynamicTrading.EnableBanditAmbushes": "Enable Bandit Ambushes",
     "Sandbox_DynamicTrading.EnableBanditAmbushes_tooltip": "Allows no-base hostile bandit groups to ambush players and demand money or items. Debug/admin spawning still works when disabled.",
 

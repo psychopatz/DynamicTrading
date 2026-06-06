@@ -20,6 +20,22 @@ function DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attac
         return false, false
     end
 
+    local resolvedDamage = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
+    local takenMultiplier = tonumber(context.damageTakenMultiplier) or nil
+    if context.damageScaled ~= true then
+        if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.getNPCDamageTakenMultiplier then
+            takenMultiplier = math.max(0, tonumber(DTNPCHealth.Internal.getNPCDamageTakenMultiplier()) or 1.0)
+        else
+            takenMultiplier = 1.0
+        end
+        resolvedDamage = math.max(DTNPCHealth.MIN_DAMAGE, resolvedDamage * takenMultiplier)
+        context.damageScaled = true
+        context.damageTakenMultiplier = takenMultiplier
+        context.rawDamage = tonumber(amount) or 0
+    else
+        takenMultiplier = tonumber(takenMultiplier) or 1.0
+    end
+
     local currentTime = internal.nowMillis()
     local graceUntil = tonumber(combatHealth.incapGraceUntil) or 0
 
@@ -39,7 +55,9 @@ function DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attac
         "HandleIncapacitatedDamage name=" .. tostring(npcData.name or npcData.uuid or "Unknown")
             .. " uuid=" .. tostring(npcData.uuid)
             .. " source=" .. tostring(context and context.source or "unknown")
-            .. " amount=" .. tostring(amount)
+            .. " amount=" .. tostring(resolvedDamage)
+            .. " rawAmount=" .. tostring(context.rawDamage or amount)
+            .. " takenMultiplier=" .. tostring(takenMultiplier)
             .. " attackerType=" .. tostring(internal.getAttackerType(attacker))
             .. " attackerID=" .. tostring(internal.getAttackerID(attacker))
             .. " currentTime=" .. tostring(currentTime)
@@ -48,7 +66,7 @@ function DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attac
 
     if currentTime < graceUntil then
         combatHealth.lastDamageAt = currentTime
-        combatHealth.lastDamageAmount = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
+        combatHealth.lastDamageAmount = resolvedDamage
         combatHealth.lastAttackerType = internal.getAttackerType(attacker)
         combatHealth.lastAttackerID = internal.getAttackerID(attacker)
         combatHealth.lastEngineHealth = DTNPCHealth.INCAP_GRACE_ENGINE_BUFFER
@@ -67,7 +85,7 @@ function DTNPCLifecycle.HandleIncapacitatedDamage(zombie, npcData, amount, attac
     combatHealth.incapFinalKillRequestedAt = currentTime
     npcData.healthState = nil
     combatHealth.lastDamageAt = currentTime
-    combatHealth.lastDamageAmount = math.max(DTNPCHealth.MIN_DAMAGE, tonumber(amount) or 0)
+    combatHealth.lastDamageAmount = resolvedDamage
     combatHealth.lastAttackerType = internal.getAttackerType(attacker)
     combatHealth.lastAttackerID = internal.getAttackerID(attacker)
 

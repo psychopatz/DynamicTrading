@@ -5,6 +5,20 @@
 
 DT_DamageSystem = DT_DamageSystem or {}
 
+local function getNPCDamageDealtMultiplier()
+    if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.getNPCDamageDealtMultiplier then
+        return math.max(0, tonumber(DTNPCHealth.Internal.getNPCDamageDealtMultiplier()) or 1.0)
+    end
+
+    local sandbox = SandboxVars and SandboxVars.DynamicTrading or nil
+    local configured = sandbox and tonumber(sandbox.NPCDamageDealtMultiplier) or nil
+    if configured and configured >= 0 then
+        return configured
+    end
+
+    return 1.0
+end
+
 function DT_DamageSystem.rollWeaponDamage(item)
     if not item then return 0.5 end
     local minDamage = item.getMinDamage and tonumber(item:getMinDamage()) or nil
@@ -25,6 +39,7 @@ end
 
 function DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem)
     local baseDamage = DT_DamageSystem.rollWeaponDamage(weaponItem)
+    local dealtMultiplier = getNPCDamageDealtMultiplier()
     
     if attackType == "ranged" then
         local shootingSkill = 5
@@ -35,7 +50,7 @@ function DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem)
         -- Ranged multiplier: 15.0x to 25.0x based on skill
         -- This ensures bullets are impactful against 100-health targets.
         local multiplier = 15.0 + (normalized * 10.0)
-        return baseDamage * multiplier
+        return baseDamage * multiplier * dealtMultiplier
     end
 
     if attackType == "melee" then
@@ -46,10 +61,10 @@ function DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem)
         local normalized = math.min(math.max(meleeSkill, 0), 20) / 20
         -- Melee multiplier: Retain original (0.8 to 1.7x)
         local multiplier = 0.8 + (normalized * 0.9)
-        return baseDamage * multiplier
+        return baseDamage * multiplier * dealtMultiplier
     end
 
-    return baseDamage
+    return baseDamage * dealtMultiplier
 end
 
 function DT_DamageSystem.CalculateHitEffects(shooter, target, damage, attackType)

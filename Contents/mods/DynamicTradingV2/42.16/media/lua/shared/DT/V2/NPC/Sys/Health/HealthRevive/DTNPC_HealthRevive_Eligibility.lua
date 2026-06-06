@@ -19,6 +19,38 @@ local function shouldRequireReviveItems(npcData)
     return true
 end
 
+local function isPlayerReviveLeaseHeldByAnotherPlayer(npcData, playerObj)
+    local reviveData = type(npcData) == "table" and type(npcData.reviveData) == "table" and npcData.reviveData or nil
+    if not reviveData then
+        return false
+    end
+
+    local now = internal.nowMillis and internal.nowMillis() or 0
+    local leaseUntil = tonumber(reviveData.playerReviveLeaseUntil) or 0
+    if leaseUntil <= now then
+        return false
+    end
+
+    if not playerObj then
+        return true
+    end
+
+    local username = playerObj.getUsername and playerObj:getUsername() or nil
+    local onlineID = playerObj.getOnlineID and playerObj:getOnlineID() or nil
+    if reviveData.playerReviveLeaseUsername ~= nil
+        and username ~= nil
+        and tostring(reviveData.playerReviveLeaseUsername) ~= tostring(username) then
+        return true
+    end
+    if reviveData.playerReviveLeaseOnlineID ~= nil
+        and onlineID ~= nil
+        and tonumber(reviveData.playerReviveLeaseOnlineID) ~= tonumber(onlineID) then
+        return true
+    end
+
+    return false
+end
+
 local function hasTerminalDeathRequest(npcData)
     if type(npcData) ~= "table" then
         return false
@@ -116,6 +148,13 @@ function DTNPCHealth.CanReviveTarget(npcData, options)
     if options.allowExcludedTarget ~= true and isReviveExcludedNPC(npcData) then
         return false, {
             reason = "excluded_target",
+            healthState = healthState,
+        }
+    end
+
+    if isPlayerReviveLeaseHeldByAnotherPlayer(npcData, options.playerObj) then
+        return false, {
+            reason = "already_helped",
             healthState = healthState,
         }
     end

@@ -105,6 +105,15 @@ DTNPCLogic.Behaviors["Incapacitated"] = function(zombie, npcData, target, dist)
     end
 
     local nowMs = getTimeMs()
+    if DTNPCHealth and DTNPCHealth.IsReviveHelpActive and DTNPCHealth.IsReviveHelpActive(npcData) then
+        npcData.incapStrugglePauseUntil = math.max(tonumber(npcData.incapStrugglePauseUntil) or 0, nowMs + 1000)
+        npcData.incapNextPauseAt = math.max(tonumber(npcData.incapNextPauseAt) or 0, nowMs + ZombRand(NEXT_PAUSE_MIN_MS, NEXT_PAUSE_MAX_MS))
+        npcData.lastFleeX = nil
+        npcData.lastFleeY = nil
+        applyCrawlAnimation(zombie, false)
+        return
+    end
+
     local reviveHoldUntil = tonumber(npcData.reviveAssistHoldUntil) or 0
     if reviveHoldUntil > nowMs then
         npcData.incapStrugglePauseUntil = reviveHoldUntil

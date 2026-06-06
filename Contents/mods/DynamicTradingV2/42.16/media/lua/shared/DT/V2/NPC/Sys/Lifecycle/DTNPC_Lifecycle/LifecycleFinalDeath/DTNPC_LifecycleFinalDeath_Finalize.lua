@@ -32,6 +32,9 @@ function DTNPCLifecycle.FinalizeIncapacitatedDeath(zombie, npcData, attacker, co
     if not uuid or not liveData then
         return false
     end
+    if (tonumber(liveData.deathFinalizedAt) or 0) > 0 or tostring(liveData.status or "") == "Dead" then
+        return true
+    end
     if liveData.incapState ~= "Active" and not hasTerminalDeathRequest(liveData) then
         return false
     end
