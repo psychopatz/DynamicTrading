@@ -50,7 +50,12 @@ local function nowMillis()
         return getTimeInMillis()
     end
 
-    return math.floor((os.time() or 0) * 1000)
+    local gameTime = getGameTime and getGameTime() or nil
+    if gameTime and gameTime.getWorldAgeHours then
+        return math.floor((tonumber(gameTime:getWorldAgeHours()) or 0) * 3600000)
+    end
+
+    return 0
 end
 
 local function currentTargetCacheBucket()
@@ -471,6 +476,129 @@ local function compatibilityLog(level, message)
     end
 end
 
+local function getDTNPCData(zombie)
+    if not Patch.IsDTNPC(zombie) then
+        return nil
+    end
+
+    local modData = getZombieModData(zombie)
+    local npcData = (DTNPC and DTNPC.GetData and DTNPC.GetData(zombie))
+        or (modData and (modData.DTNPC_Data or modData.DTNPCBrain))
+        or nil
+    if npcData then
+        return npcData
+    end
+
+    local uuid = modData and normalizeText(modData.DTNPC_UUID) or nil
+    if uuid and DTNPCManager and type(DTNPCManager.Data) == "table" then
+        return DTNPCManager.Data[uuid]
+    end
+
+    return nil
+end
+
+local function resolveBanditsSkillLevel(brain, attackType)
+    if attackType == "ranged" then
+        local accuracyBoost = tonumber(brain and brain.accuracyBoost) or 0
+        return math.max(0, math.min(20, 10 + (accuracyBoost * 1.25)))
+    end
+
+    local strengthBoost = math.max(0.25, tonumber(brain and brain.strengthBoost) or 1.0)
+    return math.max(0, math.min(20, 8 + ((strengthBoost - 1.0) * 8.0)))
+end
+
+local function resolveBanditsBaseDamage(weaponItem, attackType, brain)
+    if not DT_DamageSystem then
+        pcall(require, "Misc/DT_DamageSystem")
+    end
+
+    if attackType == "melee" then
+        local fullType = weaponItem and weaponItem.getFullType and weaponItem:getFullType() or nil
+        local strengthBoost = math.max(0.25, tonumber(brain and brain.strengthBoost) or 1.0)
+        if fullType == "Base.BareHands" then
+            return 0.35 * strengthBoost
+        end
+        if DT_DamageSystem and DT_DamageSystem.rollWeaponDamage then
+            return DT_DamageSystem.rollWeaponDamage(weaponItem) * strengthBoost
+        end
+        return math.max(0.35, (tonumber(weaponItem and weaponItem.getMaxDamage and weaponItem:getMaxDamage()) or 0.5) * strengthBoost)
+    end
+
+    if DT_DamageSystem and DT_DamageSystem.rollWeaponDamage then
+        return DT_DamageSystem.rollWeaponDamage(weaponItem)
+    end
+
+    local minDamage = tonumber(weaponItem and weaponItem.getMinDamage and weaponItem:getMinDamage()) or nil
+    local maxDamage = tonumber(weaponItem and weaponItem.getMaxDamage and weaponItem:getMaxDamage()) or nil
+    if minDamage and maxDamage then
+        return math.max(0.1, (minDamage + maxDamage) * 0.5)
+    end
+
+    return math.max(0.1, maxDamage or minDamage or 0.5)
+end
+
+local function applyBanditsDamageToDTNPC(attacker, target, weaponItem, attackType, source, brain)
+    if not attacker or not target or not DTNPCHealth or not DTNPCHealth.ApplyDamage then
+        return false, false
+    end
+
+    local npcData = getDTNPCData(target)
+    if not npcData then
+        return false, false
+    end
+
+    if not DT_DamageSystem then
+        pcall(require, "Misc/DT_DamageSystem")
+    end
+    if not DT_DamageSystem or not DT_DamageSystem.GetScaledDamage then
+        return false, false
+    end
+
+    local skillLevel = resolveBanditsSkillLevel(brain, attackType)
+    local baseDamage = resolveBanditsBaseDamage(weaponItem, attackType, brain)
+    local damage = DT_DamageSystem.GetScaledDamage(nil, attackType, weaponItem, {
+        baseDamage = baseDamage,
+        skillLevel = skillLevel,
+        applyDealtMultiplier = false,
+    })
+
+    if target.setAttackedBy then
+        target:setAttackedBy(attacker)
+    end
+    if target.setPlayerAttackPosition and target.testDotSide then
+        target:setPlayerAttackPosition(target:testDotSide(attacker))
+    end
+    if target.setHitFromBehind and attacker.isBehind then
+        local ok, hitFromBehind = pcall(function()
+            return attacker:isBehind(target)
+        end)
+        if ok then
+            target:setHitFromBehind(hitFromBehind == true)
+        end
+    end
+    if target.setHitReaction then
+        target:setHitReaction(attackType == "ranged" and "ShotBelly" or "HitReaction")
+    end
+
+    if Patch.NoteBanditsAggressionAgainstDTNPC then
+        Patch.NoteBanditsAggressionAgainstDTNPC(attacker, npcData)
+    end
+
+    local applied, killed = DTNPCHealth.ApplyDamage(target, npcData, damage, attacker, {
+        source = source,
+        attackType = attackType,
+        weapon = weaponItem,
+        weaponFullType = weaponItem and weaponItem.getFullType and weaponItem:getFullType() or nil,
+        queueFallbackIgnore = false,
+    })
+
+    if applied and BanditCompatibility and BanditCompatibility.Splash then
+        BanditCompatibility.Splash(target, weaponItem, attacker)
+    end
+
+    return applied, killed
+end
+
 local function wrapCompatibilityFlag(functionName)
     if not BanditCompatibility or type(functionName) ~= "string" then
         return false
@@ -501,6 +629,112 @@ local function wrapCompatibilityFlag(functionName)
     Internal.wrappedCompatibilityFns = Internal.wrappedCompatibilityFns or {}
     Internal.wrappedCompatibilityFns[functionName] = true
     return true
+end
+
+local function wrapBanditUtilsHit()
+    if Internal.banditUtilsHitWrapped == true then
+        return true
+    end
+
+    local loaded = BanditUtils ~= nil
+    if not loaded then
+        loaded = pcall(require, "BanditUtils")
+    end
+    if not loaded or not BanditUtils or type(BanditUtils.Hit) ~= "function" then
+        return false
+    end
+
+    Internal.originalBanditUtilsHit = Internal.originalBanditUtilsHit or BanditUtils.Hit
+    BanditUtils.Hit = function(shooter, item, victim, damageSplit)
+        if Patch.IsDTNPC(victim) then
+            local brain = BanditBrain and BanditBrain.Get and BanditBrain.Get(shooter) or nil
+            local applied = applyBanditsDamageToDTNPC(shooter, victim, item, "ranged", "bandits_ranged", brain)
+            if applied == true then
+                return true
+            end
+        end
+
+        return Internal.originalBanditUtilsHit(shooter, item, victim, damageSplit)
+    end
+
+    Internal.banditUtilsHitWrapped = true
+    return true
+end
+
+local function wrapZombieActionSmack()
+    if Internal.banditSmackWrapped == true then
+        return true
+    end
+
+    local loaded = type(ZombieActions) == "table"
+        and type(ZombieActions.Smack) == "table"
+        and type(ZombieActions.Smack.onWorking) == "function"
+    if not loaded then
+        pcall(require, "ZombieActions/ZASmack")
+        loaded = type(ZombieActions) == "table"
+            and type(ZombieActions.Smack) == "table"
+            and type(ZombieActions.Smack.onWorking) == "function"
+    end
+    if not loaded then
+        return false
+    end
+
+    Internal.originalBanditSmackOnWorking = Internal.originalBanditSmackOnWorking or ZombieActions.Smack.onWorking
+    ZombieActions.Smack.onWorking = function(bandit, task)
+        local enemy = BanditZombie and BanditZombie.Cache and BanditZombie.Cache[task and task.eid] or nil
+        if not enemy or not Patch.IsDTNPC(enemy) then
+            return Internal.originalBanditSmackOnWorking(bandit, task)
+        end
+
+        bandit:faceLocationF(task.x, task.y)
+        local bumpType = bandit:getBumpType()
+        if bumpType ~= task.anim then
+            return false
+        end
+
+        if not task.hit and task.time <= task.attackTime then
+            task.hit = true
+
+            local asn = bandit:getActionStateName()
+            if asn == "getup"
+                or asn == "getup-fromonback"
+                or asn == "getup-fromonfront"
+                or asn == "getup-fromsitting"
+                or asn == "staggerback"
+                or asn == "staggerback-knockeddown" then
+                return false
+            end
+
+            if Bandit and Bandit.UpdateTask then
+                Bandit.UpdateTask(bandit, task)
+            end
+
+            local item = BanditCompatibility and BanditCompatibility.InstanceItem and BanditCompatibility.InstanceItem(task.weapon) or nil
+            if item then
+                local brainBandit = BanditBrain and BanditBrain.Get and BanditBrain.Get(bandit) or nil
+                local brainEnemy = BanditBrain and BanditBrain.Get and BanditBrain.Get(enemy) or nil
+                if not BanditUtils or not BanditUtils.AreEnemies or BanditUtils.AreEnemies(brainEnemy, brainBandit) then
+                    applyBanditsDamageToDTNPC(bandit, enemy, item, "melee", "bandits_melee", brainBandit)
+                end
+            end
+        end
+
+        return false
+    end
+
+    Internal.banditSmackWrapped = true
+    return true
+end
+
+function Patch.ApplyCombatDamageShim()
+    if not Patch.IsActive() then
+        return false
+    end
+
+    local wrappedHit = wrapBanditUtilsHit()
+    local wrappedSmack = wrapZombieActionSmack()
+    Internal.combatDamageShimApplied = wrappedHit == true and wrappedSmack == true
+    return Internal.combatDamageShimApplied
 end
 
 function Patch.ApplyEarlyShim()
@@ -536,16 +770,23 @@ local function tryApplyEarlyShim()
     Patch.ApplyEarlyShim()
 end
 
+local function tryApplyCombatDamageShim()
+    Patch.ApplyCombatDamageShim()
+end
+
 if not Internal.bootstrapInstalled then
     Internal.bootstrapInstalled = true
     tryApplyEarlyShim()
+    tryApplyCombatDamageShim()
 
     if Events then
         if Events.OnGameBoot then
             Events.OnGameBoot.Add(tryApplyEarlyShim)
+            Events.OnGameBoot.Add(tryApplyCombatDamageShim)
         end
         if Events.OnGameStart then
             Events.OnGameStart.Add(tryApplyEarlyShim)
+            Events.OnGameStart.Add(tryApplyCombatDamageShim)
         end
     end
 end

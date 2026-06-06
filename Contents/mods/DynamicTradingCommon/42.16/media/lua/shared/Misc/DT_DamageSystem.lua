@@ -5,6 +5,12 @@
 
 DT_DamageSystem = DT_DamageSystem or {}
 
+DT_DamageSystem.DEFAULT_SKILL_LEVEL = DT_DamageSystem.DEFAULT_SKILL_LEVEL or 5
+DT_DamageSystem.RANGED_MULTIPLIER_MIN = DT_DamageSystem.RANGED_MULTIPLIER_MIN or 15.0
+DT_DamageSystem.RANGED_MULTIPLIER_MAX = DT_DamageSystem.RANGED_MULTIPLIER_MAX or 25.0
+DT_DamageSystem.MELEE_MULTIPLIER_MIN = DT_DamageSystem.MELEE_MULTIPLIER_MIN or 8.0
+DT_DamageSystem.MELEE_MULTIPLIER_MAX = DT_DamageSystem.MELEE_MULTIPLIER_MAX or 14.0
+
 local function getNPCDamageDealtMultiplier()
     if DTNPCHealth and DTNPCHealth.Internal and DTNPCHealth.Internal.getNPCDamageDealtMultiplier then
         return math.max(0, tonumber(DTNPCHealth.Internal.getNPCDamageDealtMultiplier()) or 1.0)
@@ -37,34 +43,74 @@ function DT_DamageSystem.rollWeaponDamage(item)
     return (minDamage + maxDamage) * 0.5
 end
 
-function DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem)
-    local baseDamage = DT_DamageSystem.rollWeaponDamage(weaponItem)
-    local dealtMultiplier = getNPCDamageDealtMultiplier()
-    
+local function clamp(value, minValue, maxValue)
+    local numeric = tonumber(value) or minValue
+    if numeric < minValue then
+        return minValue
+    end
+    if numeric > maxValue then
+        return maxValue
+    end
+    return numeric
+end
+
+local function resolveSkillLevel(npcData, attackType, options)
+    options = type(options) == "table" and options or {}
+    local explicitLevel = tonumber(options.skillLevel)
+    if explicitLevel ~= nil then
+        return clamp(explicitLevel, 0, 20)
+    end
+
+    local skillID = attackType == "ranged" and "Shooting" or "Melee"
+    local fallback = tonumber(DT_DamageSystem.DEFAULT_SKILL_LEVEL) or 5
+    if npcData and DTNPCProtect and DTNPCProtect.GetSkillLevel then
+        fallback = DTNPCProtect.GetSkillLevel(npcData, skillID)
+    end
+
+    return clamp(fallback, 0, 20)
+end
+
+local function resolveAttackMultiplier(attackType, normalized, options)
+    options = type(options) == "table" and options or {}
+    local minMultiplier = nil
+    local maxMultiplier = nil
+
     if attackType == "ranged" then
-        local shootingSkill = 5
-        if npcData and DTNPCProtect and DTNPCProtect.GetSkillLevel then
-            shootingSkill = DTNPCProtect.GetSkillLevel(npcData, "Shooting")
-        end
-        local normalized = math.min(math.max(shootingSkill, 0), 20) / 20
-        -- Ranged multiplier: 15.0x to 25.0x based on skill
-        -- This ensures bullets are impactful against 100-health targets.
-        local multiplier = 15.0 + (normalized * 10.0)
-        return baseDamage * multiplier * dealtMultiplier
+        minMultiplier = tonumber(options.minMultiplier) or tonumber(DT_DamageSystem.RANGED_MULTIPLIER_MIN) or 15.0
+        maxMultiplier = tonumber(options.maxMultiplier) or tonumber(DT_DamageSystem.RANGED_MULTIPLIER_MAX) or 25.0
+    elseif attackType == "melee" then
+        minMultiplier = tonumber(options.minMultiplier) or tonumber(DT_DamageSystem.MELEE_MULTIPLIER_MIN) or 8.0
+        maxMultiplier = tonumber(options.maxMultiplier) or tonumber(DT_DamageSystem.MELEE_MULTIPLIER_MAX) or 14.0
+    else
+        minMultiplier = tonumber(options.minMultiplier) or 1.0
+        maxMultiplier = tonumber(options.maxMultiplier) or minMultiplier
     end
 
-    if attackType == "melee" then
-        local meleeSkill = 5
-        if npcData and DTNPCProtect and DTNPCProtect.GetSkillLevel then
-            meleeSkill = DTNPCProtect.GetSkillLevel(npcData, "Melee")
-        end
-        local normalized = math.min(math.max(meleeSkill, 0), 20) / 20
-        -- Melee multiplier: Retain original (0.8 to 1.7x)
-        local multiplier = 0.8 + (normalized * 0.9)
-        return baseDamage * multiplier * dealtMultiplier
+    if maxMultiplier < minMultiplier then
+        maxMultiplier = minMultiplier
     end
 
-    return baseDamage * dealtMultiplier
+    return minMultiplier + ((maxMultiplier - minMultiplier) * normalized)
+end
+
+function DT_DamageSystem.GetScaledDamage(npcData, attackType, weaponItem, options)
+    options = type(options) == "table" and options or {}
+
+    local baseDamage = tonumber(options.baseDamage)
+    if baseDamage == nil then
+        baseDamage = DT_DamageSystem.rollWeaponDamage(weaponItem)
+    end
+    baseDamage = math.max(0, baseDamage)
+
+    local dealtMultiplier = 1.0
+    if options.applyDealtMultiplier ~= false then
+        dealtMultiplier = getNPCDamageDealtMultiplier()
+    end
+
+    local skillLevel = resolveSkillLevel(npcData, attackType, options)
+    local normalized = skillLevel / 20
+    local attackMultiplier = resolveAttackMultiplier(attackType, normalized, options)
+    return baseDamage * attackMultiplier * dealtMultiplier
 end
 
 function DT_DamageSystem.CalculateHitEffects(shooter, target, damage, attackType)
