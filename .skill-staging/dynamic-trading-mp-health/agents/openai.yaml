@@ -1,4 +1,0 @@
-interface:
-  display_name: "Dynamic Trading MP Health"
-  short_description: "DTNPC MP health guardrails"
-  default_prompt: "Use $dynamic-trading-mp-health to investigate DynamicTrading DTNPC multiplayer health, incapacitation, revive, or engine-fallback regressions."
