@@ -1,0 +1,12 @@
+name=Dynamic Trading V1
+id=DynamicTrading
+description=Permanently Disabled
+author=Psychopatz
+poster=poster.png
+icon=icon.png
+require=\DynamicTradingCommon
+incompatible=\DynamicTradingV2
+loadModAfter=\DynamicTradingCommon
+category=features
+version=1.0.0
+versionMax=42.11
