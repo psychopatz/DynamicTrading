@@ -1,0 +1,16 @@
+{
+    "DTCommon_Trade_BuyOne": "Buy 1",
+    "DTCommon_Trade_SellOne": "Sell 1",
+    "DTCommon_Trade_Close": "Close",
+    "DTCommon_Trade_Budget": "Budget: $%s",
+    "DTCommon_Trade_NoStock": "No stock available",
+    "DTCommon_Trade_Complete": "Trade complete.",
+    "DTCommon_Trade_Buying": "Buying...",
+    "DTCommon_Trade_Selling": "Selling...",
+    "DTCommon_Trade_Rejected": "Trade rejected.",
+    "DTHoomans_Debug_SpawnTrader": "[Debug] Spawn Trader",
+    "DTHoomans_Debug_TraderManager_Title": "Trader Manager",
+    "DTHoomans_Debug_TraderManager_Description": "List, process, locate, teleport, and open spawned trader caravans.",
+    "DTHoomans_Trade": "Trade",
+    "DTAbstract_Radio_ContactCaravanTrader": "[Radio] Contact Caravan Trader"
+}

@@ -1,0 +1,5 @@
+{
+    "Sandbox_DTHoomans": "Dynamic Trading Hoomans",
+    "Sandbox_DTHoomans.CaravanMemberCount": "Trading Caravan Members",
+    "Sandbox_DTHoomans.CaravanMemberCount_tooltip": "How many members a trading caravan travels with: one trader followed by guards. The same number drives the debug spawn, the roaming caravans in the world, and the caravan's carrying capacity, so a larger caravan also carries more stock."
+}

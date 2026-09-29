@@ -1,0 +1,16 @@
+{
+    "DTCommon_Trade_BuyOne": "Bumili ng 1",
+    "DTCommon_Trade_SellOne": "Magbenta ng 1",
+    "DTCommon_Trade_Close": "Isara",
+    "DTCommon_Trade_Budget": "Badyet: $%s",
+    "DTCommon_Trade_NoStock": "Walang paninda",
+    "DTCommon_Trade_Complete": "Tapos na ang palitan.",
+    "DTCommon_Trade_Buying": "Bumibili...",
+    "DTCommon_Trade_Selling": "Naglilipat...",
+    "DTCommon_Trade_Rejected": "Hindi tinanggap ang palitan.",
+    "DTHoomans_Debug_SpawnTrader": "[Debug] Spawn Trader",
+    "DTHoomans_Debug_TraderManager_Title": "Tagapamahala ng Trader",
+    "DTHoomans_Debug_TraderManager_Description": "Ilista, iproseso, hanapin, i-teleport, at buksan ang mga caravan trader.",
+    "DTHoomans_Trade": "Makipagpalitan",
+    "DTAbstract_Radio_ContactCaravanTrader": "[Radio] Contact Caravan Trader"
+}

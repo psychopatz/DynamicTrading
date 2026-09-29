@@ -1,0 +1,9 @@
+name=Dynamic Trading Abstract Access
+id=DTAbstract
+description=Optional remote and radio access to Dynamic Trading traders.
+author=Psychopatz
+category=features
+version=0.1.0
+versionMin=42.20
+require=DTCommon,MarketSense
+loadModAfter=DTCommon,MarketSense

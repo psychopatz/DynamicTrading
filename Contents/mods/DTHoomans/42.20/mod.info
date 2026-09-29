@@ -1,0 +1,9 @@
+name=Dynamic Trading Hoomans
+id=DTHoomans
+description=Project Hoomans physical trader and caravan integration.
+author=Psychopatz
+category=features
+version=0.1.0
+versionMin=42.20
+require=DTCommon,ProjectHoomans
+loadModAfter=DTCommon,ProjectHoomans

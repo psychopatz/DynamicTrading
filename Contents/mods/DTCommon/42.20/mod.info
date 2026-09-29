@@ -1,0 +1,8 @@
+name=Dynamic Trading Common
+id=DTCommon
+description=Shared Dynamic Trading trader, stock, and transaction foundation.
+author=Psychopatz
+category=features
+version=0.1.0
+versionMin=42.20
+require=PsychopatzCore,MarketSense
