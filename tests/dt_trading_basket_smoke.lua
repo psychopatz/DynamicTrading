@@ -173,6 +173,11 @@ package.preload["PsychopatzCore/Economy/PsychopatzCurrency"] =
 local record = { v = 1, b = 100, a = 1 }
 local snapshotCount = 0
 local storageFailSave = false
+PsychopatzCore = {
+    RadioDeviceState = {
+        FindActivePlayerDevice = function() return {} end,
+    },
+}
 DTCommon = {
     OP_BUY = "BUY",
     OP_SELL = "SELL",
@@ -476,4 +481,9 @@ physical.canAdd = function(_, quantity, _, adjustment)
 end
 
 T.truthy(snapshotCount > 0, "accepted trade refreshes snapshot")
+PsychopatzCore.RadioDeviceState.FindActivePlayerDevice = function() return nil end
+local deniedSnapshot, deniedReason = Service.Snapshot("trader-kestrel", player)
+T.falsy(deniedSnapshot, "abstract snapshot requires an active radio")
+T.equal(deniedReason, "radio_required",
+    "abstract snapshot reports the device denial")
 T.finish("dt_trading_basket")

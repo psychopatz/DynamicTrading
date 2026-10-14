@@ -12,5 +12,11 @@
     "DTHoomans_Debug_TraderManager_Title": "Trader Manager",
     "DTHoomans_Debug_TraderManager_Description": "List, process, locate, teleport, and open spawned trader caravans.",
     "DTHoomans_Trade": "Trade",
-    "DTAbstract_Radio_ContactCaravanTrader": "[Radio] Contact Caravan Trader"
+    "DTAbstract_Radio_ContactCaravanTrader": "[Radio] Contact Caravan Trader",
+    "DTCommon_Radio_TraderScanner": "TRADERS",
+    "DTCommon_Radio_NoTraders": "NO TRADERS",
+    "DTCommon_Radio_Ready": "TRADER SCANNER",
+    "DTCommon_Radio_RequestSent": "TRADE REQUEST SENT",
+    "DTCommon_Radio_TradeDenied": "TRADE DENIED: %s",
+    "DTCommon_Radio_Unavailable": "TRADING UNAVAILABLE"
 }

@@ -1,27 +1,43 @@
 # Reusable PsychopatzCore Radio OS — Progress Ledger
 
 **Planning update:** 2026-10-15
-**Baseline at planning:** DynamicTrading `da480d5ef91e18bbbcdfe80c79e5523356e13cca`; PsychopatzCore `ff7ce885eed29fa5f42b1a5223e39144982c8049`. Actual HEAD may advance; recheck.
-**Current phase:** R0 fresh cross-repo audit — **not started by Luna**.
-**Next chunk:** R0: inspect current statuses/HEAD of Core, Hoomans and DynamicTrading; source-audit existing RadioDeviceState/RadioActions/PortraitPanel and Hoomans contacts; verify six DTAbstract PNGs/manifest; run initial cross-repo regression and capture failings, then continue to R1 moving assets and UI ownership into Core.
+**Baseline at planning:** DynamicTrading `da480d5ef91e18bbbcdfe80c79e5523356e13cca`; PsychopatzCore `ff7ce885eed29fa5f42b1a5223e39144982c8049`. Rechecked before implementation; unrelated worktree changes were preserved.
 
-## Already present (source/asset-level)
+## Current status
 
-- Core already supplies radio device state, generic vanilla-radio action host and generic portrait panel. These will be extended, not duplicated.
-- ProjectHoomans has WorldDiscovery `radio_scan`, `radio_ambient` and `call_contact` actions as discovery mechanics, plus separate NPC conversation systems. Integration as a Core radio contact provider is **not** yet implemented.
-- DynamicTrading/DTAbstract has six committed walkie PNG atlases (Shells=6 devices, Core=25 UI sprites, Buttons=36, Icons=32, Indicators=25, Overlays=8); alpha transparency locally checked in earlier asset builds. The art is color-reduced and tiny LCD openings remain a UX risk.
-- DTAbstract holds a disabled-by-default walkie preview with Home/Contacts/Scanner placeholders and the six-skin manifest. It is **not** a live contact/trade OS.
-- DTCommon already owns trader service/trade window, including current Project Hoomans trade UI handoff; DTHoomans already has merchant/guard conversational context. Preserve these.
+R0–R7 are implemented and verified at source, asset, and offline-Lua levels. Native singleplayer, dedicated multiplayer, and profiler acceptance remain open for user-run in-game verification. R9 cleanup/readiness is therefore not complete; this ledger does not claim production readiness.
 
-## Updated architecture and outstanding work
+## Commits
 
-- **Core owns entire reusable radio device/OS/contacts UI/atlas system. DTCommon does not own Radio OS**. Core may not depend on DynamicTrading or PNC; consumers register their own apps/providers.
-- Existing previous Dynamic Trading plan incorrectly instructed Luna to migrate assets to DTCommon. That plan is superseded; R1 destination is psychopatzCore.
-- No production Core-owned atlas, app/contact-provider API, working Hoomans contact integration, trader scanner, authentication hardening or radio call/chat integration yet.
-- TraderService's `record.a==1` present access behavior requires server-side radio/remote validation to prevent unauthorized trader snapshots and settlement.
-- No native B42 SP/MP Radio OS testing evidenced; all gates remain open. HAM/manpack assets are not available; defer those families.
-- Small source LCD screen rectangles ~72–83×55–61 may need native zoom/layout changes.
+- PsychopatzCore: `832a7e7` (`Add reusable radio OS foundation`)
+- ProjectHoomans: `c96cadda` (`Integrate Hoomans contacts with radio OS`)
+- DynamicTrading: pending final ledger commit for this milestone.
 
-## Progress hygiene
+## Completed checkpoints
 
-After each successful chunk record current phase, actual verification/test class and commands, exact commits/push result in each owning repo, blockers and next safe chunk. Do not inflate this file with command transcripts or claim native success from offline mocks. Keep DynamicTrading `GOAL_PROMPT.md` for the separate trading MVP untouched. Continue automatically after each coherent safe commit.
+- **R0 — audit:** Core `RadioDeviceState`, `RadioActions`, `RadioSignalHost`, `PortraitPanel`, Hoomans discovery/call boundaries, and DTCommon/DTAbstract/DTHoomans trade paths were audited. Native Build 42 `ISRadioWindow` device fields and Core Java/UI drawing signatures were checked separately. Graph coverage was checked for the relevant indexed code; excluded media paths were read directly.
+- **R1 — shared assets:** six walkie skins, six atlases plus compact source, generators, validation tests, and the manifest now live under Core `42.20/media/ui/psychopatz/radio` and `UI/Radio/OS`. Pixel equivalence and six LCD alpha cutouts passed. DTAbstract retains a thin manifest/preview fallback during compatibility transition.
+- **R2/R3 — Core OS:** bounded model, namespaced app/provider registry, device registry, translation facade, renderer, clipped LCD, navigation/input, generic Contacts/detail/portrait slot, Settings, and extension pages were split into Core modules. Custom-app movement has a regression smoke. Core has no consumer dependency.
+- **R4 — Hoomans:** `projecthoomans:contacts` translates the authoritative bounded WorldDiscovery snapshot and delegates `call_contact`; refresh is event-driven and discovery is not represented as speech. The old duplicate Contacts radio action was removed.
+- **R5/R6 — trading:** DTCommon registers the bounded Trader Scanner app; DTAbstract registers the remote trader provider and uses the existing V2 `OpenTrader` handoff. Abstract snapshot/commit access now requires a real active Core radio; stale/forged client mode is not an authority source.
+- **R7 — physical trading:** DTHoomans registers a physical-only nearby merchant provider. It filters live bodies, Hoomans `trader` role, faction binding, READY state, and distance on the client for presentation; the server rechecks live body, role, faction, position, and distance at snapshot/commit. Guard referral remains separate. Nearby in-person access does not require a radio; remote abstract access does.
+- **Localization:** Core `EN/TL Core.json` and DTCommon `EN/TL Trading.json` are valid and key-parity checked. Core/DT/Hoomans UI strings use shared translation facades.
+
+## Evidence
+
+- **Asset:** Core manifest smoke: 6 device skins / 132 sprites; deterministic builders are pixel-equivalent; six shell alpha-hole validations pass; copied atlas hashes match the DTAbstract sources.
+- **Offline Lua:** Core registry/window/action/manifest smokes pass; DT scanner/provider/access focused tests pass 7/7; Hoomans targeted discovery tests pass 9/9 and its provider smoke passes 1/1. The complete DT suite is 12/13 with only the pre-existing caravan-contract assertion failing. New Core, DT, and Hoomans Lua paths compile with `luac`; new paths pass the applicable Kahlua and i18n checks. The Core OS token scan leaves only the intentional manifest data file over the 2,000-token threshold.
+- **Translation:** Core and DTCommon EN/TL catalogs parse with equal key sets; pz-verify i18n reports no hardcoded UI strings in the new Core OS, DTCommon scanner, DTHoomans provider, or Hoomans adapter.
+- **Native SP/MP:** user-run in-game acceptance checklist provided; screenshots/logs are still pending. Offline mocks are not native evidence.
+- **Profiler:** user-run combined radio/contact/trader workload is still pending.
+
+## Known limitations / baseline failures
+
+- Core composition smoke currently fails its pre-existing profiler bootstrap load-order assertion (`tests/psychopatz_core_composition_smoke.lua:80`); the new radio OS is client-only and does not modify shared composition order.
+- DynamicTrading full suite has the pre-existing `dt_caravan_contract_smoke.lua` assertion for missing `groupSize = GROUP_SIZE`; all other 12 of 13 discovered tests pass after the radio security gate fixtures were updated with an active-radio mock.
+- Offline translation smokes may log the expected `getModFileReader_unavailable` message; catalog parsing/parity and fallback behavior pass.
+- Native Build 42 UI load, dedicated MP, reconnect/walk-away/device-off cases, and performance measurements remain acceptance gates.
+
+## Next chunk
+
+Record the exact commits, then incorporate user-run native SP/MP/profiler evidence. Keep the legacy DTAbstract preview fallback until Core-only and combined native consumers are verified; do not claim readiness before R8 passes.

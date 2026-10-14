@@ -55,6 +55,11 @@ package.preload["PsychopatzCore/Inventory/PsychopatzInventoryConstants"] =
 package.preload["PsychopatzCore/Economy/PsychopatzCurrency"] =
     function() return {} end
 
+PsychopatzCore = {
+    RadioDeviceState = {
+        FindActivePlayerDevice = function() return {} end,
+    },
+}
 DTCommon = {
     OP_BUY = "BUY",
     OP_SELL = "SELL",

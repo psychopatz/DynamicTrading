@@ -1,5 +1,74 @@
 DTHoomans = DTHoomans or {}
 
+-- DTCommon calls this server-side hook for physical trade access. The
+-- merchant role, live body and distance all come from Project Hoomans; the
+-- client-side Core contact list is never an authorization source.
+function DTHoomans.ValidateTraderAccess(player, record)
+    local npcID = record and (record.p or record.l) or nil
+    local registry = PNC and PNC.Registry or nil
+    local factions = PNC and PNC.Factions or nil
+    local body
+    local affiliation
+    local px
+    local py
+    local nx
+    local ny
+    local ok
+    local dead
+    if not player or not npcID or not registry
+        or type(registry.GetLiveZombie) ~= "function"
+    then
+        return false, "merchant_not_present"
+    end
+    ok, body = pcall(registry.GetLiveZombie, npcID)
+    if not ok then body = nil end
+    if not body then return false, "merchant_not_present" end
+    if type(body.isDead) == "function" then
+        ok, dead = pcall(body.isDead, body)
+        if not ok or dead == true then
+            return false, "merchant_unavailable"
+        end
+    end
+    if not factions or type(factions.GetNPCAffiliation) ~= "function" then
+        return false, "merchant_role_unavailable"
+    end
+    ok, affiliation = pcall(factions.GetNPCAffiliation, npcID)
+    if not ok then affiliation = nil end
+    if type(affiliation) ~= "table"
+        or tostring(affiliation.role or "") ~= "trader"
+    then
+        return false, "merchant_role_invalid"
+    end
+    if record.g and affiliation.factionID
+        and tostring(record.g) ~= tostring(affiliation.factionID)
+    then
+        return false, "merchant_faction_mismatch"
+    end
+    if player.getX then
+        ok, px = pcall(player.getX, player)
+        px = ok and tonumber(px) or nil
+    end
+    if player.getY then
+        ok, py = pcall(player.getY, player)
+        py = ok and tonumber(py) or nil
+    end
+    if body.getX then
+        ok, nx = pcall(body.getX, body)
+        nx = ok and tonumber(nx) or nil
+    end
+    if body.getY then
+        ok, ny = pcall(body.getY, body)
+        ny = ok and tonumber(ny) or nil
+    end
+    if not px or not py or not nx or not ny then
+        return false, "merchant_position_unavailable"
+    end
+    if (px - nx) * (px - nx) + (py - ny) * (py - ny) > 36 then
+        return false, "access_denied"
+    end
+    return true
+end
+
 local Service = DTCommon and DTCommon.TraderService
 local MAX_DEBUG_ROW_DIAGNOSTICS = 32
 local MAX_REFERRAL_REQUESTS = 64

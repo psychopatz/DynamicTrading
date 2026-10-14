@@ -12,5 +12,11 @@
     "DTHoomans_Debug_TraderManager_Title": "Tagapamahala ng Trader",
     "DTHoomans_Debug_TraderManager_Description": "Ilista, iproseso, hanapin, i-teleport, at buksan ang mga caravan trader.",
     "DTHoomans_Trade": "Makipagpalitan",
-    "DTAbstract_Radio_ContactCaravanTrader": "[Radio] Contact Caravan Trader"
+    "DTAbstract_Radio_ContactCaravanTrader": "[Radio] Contact Caravan Trader",
+    "DTCommon_Radio_TraderScanner": "MGA TRADER",
+    "DTCommon_Radio_NoTraders": "WALANG TRADER",
+    "DTCommon_Radio_Ready": "SCANNER NG TRADER",
+    "DTCommon_Radio_RequestSent": "NAIPADALA ANG REQUEST SA TRADER",
+    "DTCommon_Radio_TradeDenied": "TINANGGIHAN ANG TRADE: %s",
+    "DTCommon_Radio_Unavailable": "HINDI MAGAMIT ANG TRADING"
 }

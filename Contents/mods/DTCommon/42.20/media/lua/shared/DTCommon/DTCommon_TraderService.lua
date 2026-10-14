@@ -291,17 +291,36 @@ local function nearby(player, npcID)
     return (px - nx) * (px - nx) + (py - ny) * (py - ny) <= 36
 end
 
--- `a` is a server-created capability for an abstract/radio trader.  A local
--- settlement has a=0 and must prove a live trader body is nearby; a guessed
--- trader ID cannot open that path remotely.
+local function hasActiveRadio(player)
+    local state = PsychopatzCore and PsychopatzCore.RadioDeviceState
+    if not state or type(state.FindActivePlayerDevice) ~= "function" then
+        return false
+    end
+    local ok, device = pcall(state.FindActivePlayerDevice, player)
+    return ok and device ~= nil
+end
+
+-- `a` is a server-created capability for an abstract/radio trader. It still
+-- requires a real active player radio on the authoritative side. A physical
+-- trader must prove a live nearby body; a guessed trader ID cannot open that
+-- path remotely. DTHoomans may add stricter role/presence checks.
 local function validateAccess(player, record)
     local status = tostring(record and record.s or DTCommon.STATUS_READY)
     if status ~= tostring(DTCommon.STATUS_READY) then
         return false, "trader_unavailable"
     end
-    if tonumber(record and record.a) == 1 then return true end
     local npcID = record and (record.p or record.l)
-    if npcID and nearby(player, npcID) then return true end
+    if npcID and nearby(player, npcID) then
+        local dthoomans = rawget(_G, "DTHoomans")
+        if dthoomans and type(dthoomans.ValidateTraderAccess) == "function" then
+            return dthoomans.ValidateTraderAccess(player, record)
+        end
+        return true
+    end
+    if tonumber(record and record.a) == 1 then
+        if not hasActiveRadio(player) then return false, "radio_required" end
+        return true
+    end
     return false, "access_denied"
 end
 

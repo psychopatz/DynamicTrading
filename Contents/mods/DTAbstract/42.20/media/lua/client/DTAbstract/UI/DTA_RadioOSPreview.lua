@@ -4,7 +4,13 @@
 -- or explicitly call DTAbstract.RadioOS.OpenPreview(playerNum, fullType).
 require "ISUI/ISPanel"
 require "ISUI/ISButton"
-local Assets = require "DTAbstract/UI/DTA_Walkie_Manifest"
+-- PsychopatzCore owns the authoritative device-skin geometry. Keep the
+-- DTAbstract manifest only as an offline/legacy fallback for preview tests.
+local manifestLoaded, Assets = pcall(require,
+    "PsychopatzCore/UI/Radio/OS/PsychopatzRadioManifest")
+if not manifestLoaded or type(Assets) ~= "table" then
+    Assets = require "DTAbstract/UI/DTA_Walkie_Manifest"
+end
 
 DTAbstract = DTAbstract or {}
 DTAbstract.RadioOS = DTAbstract.RadioOS or {}

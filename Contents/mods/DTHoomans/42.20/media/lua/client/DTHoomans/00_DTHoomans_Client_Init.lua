@@ -2,6 +2,7 @@ require "DTHoomans/DTHoomans_Context"
 require "DTHoomans/DTHoomans_DebugTraderWindow"
 require "DTHoomans/DTHoomans_DebugSpawnMenu"
 require "DTHoomans/DTHoomans_Client"
+require "DTHoomans/DTHoomans_RadioOS"
 
 -- Register the trader manager in the shared PsychopatzCore Debug Hub. The
 -- context menu remains only a shortcut to that hub.

@@ -3,6 +3,12 @@ DTAbstract.Client = DTAbstract.Client or {}
 
 local function hasRadio(player)
     if not DTAbstract.RequireRadio then return true end
+    local radioState = PsychopatzCore and PsychopatzCore.RadioDeviceState
+    if radioState and type(radioState.FindActivePlayerDevice) == "function"
+        and radioState.FindActivePlayerDevice(player)
+    then
+        return true
+    end
     local inventory = player and player.getInventory and player:getInventory() or nil
     if not inventory or type(inventory.containsTypeRecurse) ~= "function" then
         return false
