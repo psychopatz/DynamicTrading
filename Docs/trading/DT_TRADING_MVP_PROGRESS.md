@@ -49,7 +49,7 @@ Validated 2026-10-14 after a safe fetch of `origin/main`; all four repositories 
 - Trader creation now seeds at most 8 compact Core records from MarketSense’s public known-item and availability APIs. Configured defaults are only preferred fixture types after the same availability and quote validation; they do not provide prices.
 - Non-`Base` installed candidates are preferred when available, so eligible Workshop items do not require DT registration. Currency and unavailable/invalid-price entries are excluded.
 - A force-rebuild retry occurs only when the public catalog is empty during first-time creation; snapshots never rebuild or rescan the catalog.
-- Host seed smoke and the real native seed fixture pass (9 assertions, zero actionable errors). Restart retention of a created trader’s persisted stock still needs a dedicated native restart check.
+- Host seed smoke and the real native seed fixture pass (9 assertions, zero actionable errors). The native two-phase write/reload fixture also passes: bounded stock, budget, and MarketSense-valued snapshot rows survive the same disposable cache restart.
 
 ## Next Chunk
 
@@ -57,7 +57,7 @@ T6 — use the disposable real PZ facilities to attempt the native SP player tra
 
 ## T6 — open
 
-The native server boot, MarketSense adapter, and bounded seed fixtures pass with activation order `PsychopatzCore → MarketSense → DTCommon → DTAbstract → ProjectHoomans → DTHoomans` and zero actionable errors. This proves loading, quote-boundary, and first-time seed behavior only. Native SP player settlement, native MP settlement/reconnect/replay, save/reload trade conservation, and measured snapshot/commit performance remain unverified.
+The native server boot, MarketSense adapter, bounded seed, and write/reload fixtures pass with activation order `PsychopatzCore → MarketSense → DTCommon → DTAbstract → ProjectHoomans → DTHoomans` and zero actionable errors. This proves loading, quote-boundary, first-time seed, and trader-stock persistence behavior. Native SP player settlement, native MP settlement/reconnect/replay, and measured snapshot/commit performance remain unverified.
 
 ## Remaining defects and evidence limits
 
