@@ -39,7 +39,7 @@ local function onClientCommand(module, command, player, args)
     args = type(args) == "table" and args or {}
     if command == "RequestTrader" then
         log("INFO", "snapshot_request trader=" .. tostring(args.traderID))
-        local snapshot, reason = Service.Snapshot(args.traderID)
+        local snapshot, reason = Service.Snapshot(args.traderID, player)
         log("INFO", "snapshot_response trader=" .. tostring(args.traderID)
             .. " items=" .. tostring(snapshot and #(snapshot.items or {}) or 0)
             .. " reason=" .. tostring(reason))

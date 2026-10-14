@@ -474,7 +474,7 @@ local function sendSpawnResult(player, ok, status, caravan)
         return
     end
     snapshot = Service and Service.Snapshot
-        and Service.Snapshot(traderID) or nil
+        and Service.Snapshot(traderID, player) or nil
     send(player, "TraderSpawned", {
         accepted = true,
         traderID = traderID,

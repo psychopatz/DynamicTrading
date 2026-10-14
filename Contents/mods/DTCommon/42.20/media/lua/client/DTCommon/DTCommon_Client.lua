@@ -113,6 +113,7 @@ function Client.SubmitTrade(traderID, operation, fullType, quantity)
         fullType = fullType,
         quantity = quantity,
         observedStockVersion = snapshot.stockVersion,
+        observedQuoteRevision = snapshot.quoteRevision,
     })
     return true
 end
@@ -134,6 +135,7 @@ function Client.SubmitTradeBasket(traderID, buyRows, sellRows)
         buyRows = buyRows or {},
         sellRows = sellRows or {},
         observedStockVersion = snapshot.stockVersion,
+        observedQuoteRevision = snapshot.quoteRevision,
     })
     return true
 end
