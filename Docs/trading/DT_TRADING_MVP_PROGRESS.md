@@ -4,18 +4,18 @@
 
 ## Current state
 
-T0 is complete. T1/T3 implementation slices, the T4 server/UI bridge, and the T5 MarketSense seed are committed. The MVP is **not ready**: native SP/MP player settlement and T6 acceptance remain open.
+T0 is complete. T1/T3 implementation slices, the T4 server/UI bridge, and the T5 MarketSense seed are committed. Project Hoomans trade-result/footer feedback is fixed and pushed as `ded1acb9`. The MVP is **not ready**: native SP/MP player settlement and T6 acceptance remain open.
 
 ## Checked-out inputs
 
-Validated 2026-10-14 after a safe fetch of `origin/main`; all four repositories were clean and at the fetched remote tip before editing.
+Validated 2026-10-14 after a safe fetch of `origin/main`; existing uncommitted DynamicTrading/PsychopatzCore work was preserved. Project Hoomans UI changes were committed and pushed separately.
 
 | Repository | HEAD | Evidence scope |
 |---|---|---|
-| DynamicTrading | `c9d5f8c8f88d5dd8c6230b6d53a67e74b76d6634` | current V2 rewrite |
+| DynamicTrading | `337caddd3b71` | current V2 rewrite |
 | MarketSense | `32a73836a2bf7de52cb36d75bd1f368ffbd445a5` | public definition/instance pricing APIs |
-| ProjectHoomans | `00f33efd417b9959978e7049c4453f22403200fd` | trade-mode window and inventory rows |
-| PsychopatzCore | `473b1eebb7c13181045f08dbdbd79912d43ba0fd` | inventory/currency primitives |
+| ProjectHoomans | `ded1acb9cf7d` | trade-mode window, result feedback, and inventory rows |
+| PsychopatzCore | `7609e992bcca` | inventory/currency primitives |
 
 ## T0 — complete
 
@@ -42,6 +42,7 @@ Validated 2026-10-14 after a safe fetch of `origin/main`; all four repositories 
 
 - Hoomans trade endpoint consumes authoritative `sellRows`, hides unavailable sell prices, preserves item identities, rejects counted stacks in trade rows, and submits only the identities selected from an aggregate row.
 - Hoomans trade/storage/transaction focused tests pass, including aggregate-row identity trimming. The standalone UI smoke remains harness-limited because it has no native `ISUI/ISPanel` module.
+- Trade footer now reserves a visible status row, shows trader budget, explains player receive/pay direction, and exposes asynchronous server rejection text; commit `ded1acb9` is pushed.
 - Real UI screenshot and end-to-end SP/MP player evidence are not claimed.
 
 ## T5 — implemented; native seed smoke passes
@@ -53,7 +54,7 @@ Validated 2026-10-14 after a safe fetch of `origin/main`; all four repositories 
 
 ## Next Chunk
 
-T6 — use the disposable real PZ facilities to attempt the native SP player trade loop and a restart-persistence check, then measure the seed/snapshot/commit boundaries. If the player/MP path is unavailable in the harness, record the exact gate as native-unverified and keep the focused host evidence separate.
+T6 — user-run manual native SP/MP player trade loop, restart/replay checks, and measured seed/snapshot/commit boundaries; no headless harness.
 
 ## T6 — open
 
@@ -64,5 +65,6 @@ The native server boot, MarketSense adapter, bounded seed, and write/reload fixt
 - The full DynamicTrading suite still has one unrelated/pre-existing `dt_caravan_contract_smoke.lua` text-contract failure (`groupSize = GROUP_SIZE`); focused V2 and seed tests pass.
 - Native runs report optional missing `AnimSets/actiongroups` directories for several staged mods, but the harness reports zero actionable errors and a clean server exit.
 - Test-only `package.preload` lines are intentionally rejected by `pz_verify` as PZ sandbox violations; changed production files have zero Kahlua errors.
+- Manual native runtime evidence currently proves the request reaches DTCommon and returns `trader_budget_exhausted` for the `$1139` Katana sale; successful settlement remains unverified.
 
 **Completion status: NOT COMPLETE.**
