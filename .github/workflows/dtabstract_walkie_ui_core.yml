@@ -1,0 +1,42 @@
+name: Build DTAbstract Radio UI Core
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/build_dtabstract_walkie_ui_core.py'
+      - '.github/workflows/dtabstract_walkie_ui_core.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-ui-core:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pixel-art builder
+        run: python -m pip install 'Pillow==12.3.0'
+      - name: Build validated transparent UI atlas
+        run: |
+          python tools/build_dtabstract_walkie_ui_core.py \
+            --output Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/ui/DTA_Walkie_UI_Core.png
+      - name: Commit generated texture if changed
+        shell: bash
+        run: |
+          set -eu
+          git add -- Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/ui/DTA_Walkie_UI_Core.png
+          if git diff --cached --quiet; then
+            echo "Generated UI Core texture is up to date"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(dt-abstract): generate Walkie UI Core PNG'
+          git push origin HEAD:main
