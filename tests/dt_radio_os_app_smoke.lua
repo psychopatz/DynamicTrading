@@ -53,7 +53,28 @@ local window = {
     customState = {},
     scale = 1,
     screenColors = function() return { r = 1, g = 1, b = 1, a = 1 } end,
-    drawScreenHeader = function() end,
+    drawScreenHeader = function()
+        return { metrics = { x = 0, width = 240, lineHeight = 12 },
+            contentY = 20 }
+    end,
+    headerLayout = function()
+        return { metrics = { x = 0, width = 240, lineHeight = 12 },
+            contentY = 20 }
+    end,
+    screenListLayout = function(_, count, _, selected, header)
+        return { first = selected or 1, visible = math.min(count, 2),
+            rowHeight = 13, x = 0, y = header.contentY, width = 240,
+            metrics = { scale = 1 } }
+    end,
+    screenRowRect = function(_, layout, offset)
+        return { x = layout.x, y = layout.y + offset * layout.rowHeight,
+            w = layout.width, h = 12 }
+    end,
+    isInside = function(_, rect, x, y)
+        return x >= rect.x and x <= rect.x + rect.w
+            and y >= rect.y and y <= rect.y + rect.h
+    end,
+    drawSprite = function() end,
     drawTextClipped = function() end,
     drawRect = function() end,
 }
@@ -62,7 +83,10 @@ T.equal(app.open(context, window), "custom", "scanner opens a custom Core page")
 T.equal(#window.customState.traderRows, 2,
     "scanner combines only namespaced trader providers")
 app.render(context, window, { x = 0, y = 0, w = 256, h = 160 })
-T.truthy(app.onSelect(context, window), "scanner delegates the selected trade")
+local hit = app.hitTest(context, window, 12, 21)
+T.truthy(hit and hit.index, "scanner row is directly clickable")
+T.truthy(app.onScreenClick(context, window, hit),
+    "scanner delegates a clicked trade row")
 T.equal(invoked.providerID, "dynamictrading:physical_traders",
     "selected row keeps its owning provider")
 T.equal(invoked.actionID, "dynamictrading:trade",

@@ -40,6 +40,11 @@ PsychopatzCore.RadioOS.RegisterContactProvider({
 
 Registration should allow plugin removal/unload, deterministic ordering, a bounded contact model, provider-owned status and action capabilities. A Core contact entry may contain a generic optional portrait descriptor but must not carry PNC records, merchant stock or large ModData. Namespaced IDs prevent contacts from multiple mods colliding. Core widgets display actual provider facts rather than generating artificial signal/battery/contact permissions.
 
+The DTCommon trader app uses Core's optional `hitTest` and `onScreenClick`
+presentation callbacks so a visible trader row is directly clickable. The callback
+only selects the bounded provider snapshot and then delegates through the existing
+V2 `OpenTrader` path; it does not create a second trade screen or authorize access.
+
 ## Server authority / sessions
 
 Core radio device inspection is a shared utility and UI precondition. **Every consequential action is validated by the owning server service.** The client may request a contact/scan/call/trade; it may never self-assert authorization, NPC proximity, radio power, trader access, mode, prices or inventory state.

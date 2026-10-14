@@ -79,36 +79,39 @@ local function render(context, window, screen)
     local state = window.customState
     local rows = ensureRows(context, window)
     local color = window:screenColors()
-    window:drawScreenHeader(
+    local header = window:drawScreenHeader(
         T("DTCommon_Radio_TraderScanner", "TRADERS"),
         state.statusText or T("DTCommon_Radio_Ready", "TRADER SCANNER"))
     if #rows == 0 then
         window:drawTextClipped(T("DTCommon_Radio_NoTraders", "NO TRADERS"),
-            screen.x + 4 * window.scale, screen.y + 32 * window.scale,
-            screen.w - 8 * window.scale, color)
+            header.metrics.x, header.contentY, header.metrics.width, color)
         return
     end
     local index = math.max(1, math.min(#rows, state.traderIndex or 1))
     state.traderIndex = index
-    local first = math.floor((index - 1) / VISIBLE_ROWS)
-        * VISIBLE_ROWS + 1
-    for offset = 0, VISIBLE_ROWS - 1 do
+    local layout = window:screenListLayout(#rows, VISIBLE_ROWS, index, header)
+    local first = layout.first
+    for offset = 0, layout.visible - 1 do
         local row = rows[first + offset]
-        if not row then break end
-        local y = screen.y + (29 + offset * 13) * window.scale
+        local rect = window:screenRowRect(layout, offset)
+        if not row or not rect then break end
         local selected = first + offset == index
         if selected then
-            window:drawRect(screen.x + 2 * window.scale, y - window.scale,
-                screen.w - 4 * window.scale, 12 * window.scale, 0.3,
+            window:drawSprite("listrow_green_selected", rect.x, rect.y,
+                rect.w, rect.h, 0.9)
+            window:drawRect(rect.x, rect.y, rect.w, rect.h, 0.2,
                 color.r * 0.2, color.g * 0.2, color.b * 0.2)
+        else
+            window:drawSprite("listrow_green_idle", rect.x, rect.y,
+                rect.w, rect.h, 0.65)
         end
         local rowColor = selected and color
             or { r = color.r * 0.62, g = color.g * 0.62,
                 b = color.b * 0.62, a = 1 }
         window:drawTextClipped(row.title or row.id,
-            screen.x + 5 * window.scale, y,
-            screen.w - 10 * window.scale, rowColor,
-            math.floor(screen.w / (7 * window.scale)))
+            rect.x + math.max(2, math.floor(layout.metrics.scale)), rect.y,
+            rect.w - math.max(2, math.floor(layout.metrics.scale)) * 2,
+            rowColor)
     end
 end
 
@@ -137,6 +140,31 @@ local function onSelect(context, window)
     return accepted
 end
 
+local function hitTest(context, window, x, y)
+    local rows = ensureRows(context, window)
+    if #rows == 0 or type(window.screenListLayout) ~= "function" then
+        return nil
+    end
+    local state = window.customState
+    local header = window:headerLayout(
+        state.statusText or T("DTCommon_Radio_Ready", "TRADER SCANNER"))
+    local layout = window:screenListLayout(#rows, VISIBLE_ROWS,
+        state.traderIndex or 1, header)
+    for offset = 0, layout.visible - 1 do
+        local rect = window:screenRowRect(layout, offset)
+        if window:isInside(rect, x, y) then
+            return { index = layout.first + offset }
+        end
+    end
+    return nil
+end
+
+local function onScreenClick(context, window, value)
+    local index = type(value) == "table" and tonumber(value.index) or nil
+    if index then window.customState.traderIndex = index end
+    return onSelect(context, window)
+end
+
 local definition = {
     id = APP_ID,
     ownerModID = "DTCommon",
@@ -151,6 +179,8 @@ local definition = {
         return "custom"
     end,
     render = render,
+    hitTest = hitTest,
+    onScreenClick = onScreenClick,
     onMove = onMove,
     onSelect = onSelect,
     isAvailable = function(context)
