@@ -11,7 +11,7 @@ R0–R7 are implemented and verified at source, asset, and offline-Lua levels. N
 
 - PsychopatzCore: `832a7e7` (`Add reusable radio OS foundation`)
 - ProjectHoomans: `c96cadda` (`Integrate Hoomans contacts with radio OS`)
-- DynamicTrading: pending final ledger commit for this milestone.
+- DynamicTrading implementation: `d7fed399` (`Integrate trading with reusable radio OS`).
 
 ## Completed checkpoints
 
