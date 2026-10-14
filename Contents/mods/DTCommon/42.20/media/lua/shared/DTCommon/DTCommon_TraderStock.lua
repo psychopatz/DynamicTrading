@@ -7,6 +7,24 @@ local Storage = DTCommon.Storage
 local Support = DTCommon.TraderSupport
 local INITIAL_STOCK_LIMIT = 8
 
+local function tradeAudit()
+    local audit = rawget(DTCommon, "TradeAudit")
+    return type(audit) == "table" and audit or nil
+end
+
+local function auditIsEnabled(audit)
+    return audit and type(audit.IsEnabled) == "function"
+        and audit.IsEnabled() == true
+end
+
+local function recordPrice(audit, enabled, fullType, inventoryItem,
+    result, details)
+    if enabled and audit and type(audit.RecordPrice) == "function" then
+        audit.RecordPrice(fullType, inventoryItem, result, details)
+    end
+    return result
+end
+
 local function unavailable(fullType, reason)
     return {
         ok = false,
@@ -46,54 +64,85 @@ end
 -- validates the returned primitive and applies its trade margin below.
 function Stock.Price(fullType, inventoryItem)
     local api = rawget(_G, "MarketSense")
+    local audit = tradeAudit()
+    local auditEnabled = auditIsEnabled(audit)
     local details
     local ok
     local price
+    local timer
     fullType = tostring(fullType or "")
-    if fullType == "" then return unavailable(fullType, "item_required") end
+    if fullType == "" then
+        return recordPrice(audit, auditEnabled, fullType, inventoryItem,
+            unavailable(fullType, "item_required"), nil)
+    end
     if isCurrency(fullType) then
-        return unavailable(fullType, "currency_not_tradeable")
+        return recordPrice(audit, auditEnabled, fullType, inventoryItem,
+            unavailable(fullType, "currency_not_tradeable"), nil)
     end
     if type(api) ~= "table" then
-        return unavailable(fullType, "marketsense_unavailable")
+        return recordPrice(audit, auditEnabled, fullType, inventoryItem,
+            unavailable(fullType, "marketsense_unavailable"), nil)
+    end
+    if audit and type(audit.BeginTimer) == "function" then
+        timer = audit.BeginTimer(audit.METRIC_MARKETSENSE_PRICE)
     end
     if inventoryItem ~= nil then
         if type(api.GetPriceDetailsForInstance) ~= "function" then
-            return unavailable(fullType, "instance_price_api_unavailable")
+            if timer and type(audit.FinishTimer) == "function" then
+                audit.FinishTimer(audit.METRIC_MARKETSENSE_PRICE, timer)
+            end
+            return recordPrice(audit, auditEnabled, fullType, inventoryItem,
+                unavailable(fullType, "instance_price_api_unavailable"), nil)
         end
         ok, details = pcall(
             api.GetPriceDetailsForInstance,
             fullType,
             inventoryItem,
-            false
+            auditEnabled
         )
     else
         if type(api.GetPriceDetails) ~= "function" then
-            return unavailable(fullType, "definition_price_api_unavailable")
+            if timer and type(audit.FinishTimer) == "function" then
+                audit.FinishTimer(audit.METRIC_MARKETSENSE_PRICE, timer)
+            end
+            return recordPrice(audit, auditEnabled, fullType, inventoryItem,
+                unavailable(fullType, "definition_price_api_unavailable"), nil)
         end
-        ok, details = pcall(api.GetPriceDetails, fullType, false)
+        ok, details = pcall(api.GetPriceDetails, fullType, auditEnabled)
+    end
+    if timer and type(audit.FinishTimer) == "function" then
+        audit.FinishTimer(audit.METRIC_MARKETSENSE_PRICE, timer)
     end
     if not ok or type(details) ~= "table" then
-        return unavailable(fullType, "price_details_unavailable")
+        return recordPrice(audit, auditEnabled, fullType, inventoryItem,
+            unavailable(fullType, "price_details_unavailable"), details)
     end
     price = finitePositive(details.price)
     if not price or price < 1 then
-        return unavailable(fullType, "price_unavailable")
+        return recordPrice(audit, auditEnabled, fullType, inventoryItem,
+            unavailable(fullType, "price_unavailable"), details)
     end
-    return {
+    return recordPrice(audit, auditEnabled, fullType, inventoryItem, {
         ok = true,
         status = "OK",
         fullType = fullType,
         intrinsicPrice = price,
         source = inventoryItem ~= nil and "instance" or "definition",
-    }
+    }, details)
 end
 
 function Stock.Quote(fullType, operation, inventoryItem)
     local price = Stock.Price(fullType, inventoryItem)
+    local audit = tradeAudit()
+    local auditEnabled = auditIsEnabled(audit)
     local unitPrice
     operation = string.upper(tostring(operation or DTCommon.OP_BUY))
-    if not price.ok then return price end
+    if not price.ok then
+        if auditEnabled and type(audit.RecordQuote) == "function" then
+            audit.RecordQuote(fullType, operation, price)
+        end
+        return price
+    end
     if operation == DTCommon.OP_SELL then
         unitPrice = math.floor(price.intrinsicPrice * 0.5)
         -- This floor applies only after a valid positive MarketSense price.
@@ -101,10 +150,17 @@ function Stock.Quote(fullType, operation, inventoryItem)
     elseif operation == DTCommon.OP_BUY then
         unitPrice = price.intrinsicPrice
     else
-        return unavailable(price.fullType, "operation_not_supported")
+        local result = unavailable(price.fullType, "operation_not_supported")
+        if auditEnabled and type(audit.RecordQuote) == "function" then
+            audit.RecordQuote(fullType, operation, result)
+        end
+        return result
     end
     price.operation = operation
     price.unitPrice = unitPrice
+    if auditEnabled and type(audit.RecordQuote) == "function" then
+        audit.RecordQuote(fullType, operation, price)
+    end
     return price
 end
 
@@ -263,17 +319,23 @@ end
 function Stock.SnapshotItems(record, existingStore)
     local store = existingStore
     local reason
+    local audit = tradeAudit()
+    local auditEnabled = auditIsEnabled(audit)
     if not store then store, reason = Storage.LoadInventory(record) end
     if not store then return {}, reason end
     local items = {}
+    local scanned = 0
+    local accepted = 0
     local iterator = store:iterate()
     local itemRecord = iterator()
     while itemRecord do
         local fullType = Inventory.getItemFullType(itemRecord[1])
         if fullType then
+            scanned = scanned + 1
             local buyQuote = Stock.Quote(fullType, DTCommon.OP_BUY)
             local sellQuote = Stock.Quote(fullType, DTCommon.OP_SELL)
             if buyQuote.ok and sellQuote.ok then
+                accepted = accepted + 1
                 items[#items + 1] = {
                     fullType = tostring(fullType),
                     quantity = math.max(1, math.floor(tonumber(itemRecord[2]) or 1)),
@@ -284,6 +346,9 @@ function Stock.SnapshotItems(record, existingStore)
         end
         itemRecord = iterator()
     end
+    if auditEnabled and type(audit.RecordScan) == "function" then
+        audit.RecordScan("trader_stock", scanned, accepted, #items)
+    end
     return items
 end
 
@@ -293,6 +358,10 @@ end
 function Stock.SnapshotSellRows(physical)
     local rows = {}
     local byKey = {}
+    local audit = tradeAudit()
+    local auditEnabled = auditIsEnabled(audit)
+    local scanned = 0
+    local accepted = 0
     local iterator
     local item
     if not physical or type(physical.iterate) ~= "function" then
@@ -301,11 +370,13 @@ function Stock.SnapshotSellRows(physical)
     iterator = physical:iterate()
     item = iterator()
     while item do
+        scanned = scanned + 1
         local fullType = tostring(itemValue(item, "getFullType", "") or "")
         local itemID = tostring(itemValue(item, "getID", "") or "")
         if fullType ~= "" and itemID ~= "" and not isCurrency(fullType) then
             local quote = Stock.Quote(fullType, DTCommon.OP_SELL, item)
             if quote.ok then
+                accepted = accepted + 1
                 local quantity = math.max(1, math.floor(
                     tonumber(itemValue(item, "getCount", 1)) or 1))
                 local key = fullType .. "\031" .. tostring(quote.unitPrice)
@@ -327,6 +398,9 @@ function Stock.SnapshotSellRows(physical)
             end
         end
         item = iterator()
+    end
+    if auditEnabled and type(audit.RecordScan) == "function" then
+        audit.RecordScan("player_sell_rows", scanned, accepted, #rows)
     end
     return rows
 end
