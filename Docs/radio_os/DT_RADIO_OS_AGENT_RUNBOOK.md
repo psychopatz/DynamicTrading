@@ -97,3 +97,10 @@ Keep `Docs/radio_os/DT_RADIO_OS_PROGRESS.md` compact: current phase, implemented
 - Each device has its own editable high-resolution master and full transparent shell PNG, screen aperture and content geometry. Models may have different proportions and controls. Shared UI atlases stay shared; do not duplicate apps or icon sets per radio.
 - **Art approval boundary:** do not silently substitute new artwork or upscale legacy compact source as a "high-res" replacement. Do safe audits, manifest/test refactor and artist-ready specs unattended; require reviewed/approved source imagery before production skin substitution. Preserve legacy fallback and previous compositor/zoom code.
 - Source status verified at plan time: `psychopatzCore/main` `13d8aef`, `DynamicTrading/main` `0672ddb`, Hoomans `c96cadda` (refresh HEAD). A0–A8 plan is in Core-owned `Docs/radio_os/CORE_RADIO_DEVICE_ASSETS.md`.
+
+
+## Confirmed PsychopatzCore media-path convention (2026-10-15)
+
+The project already stores reusable `Radio/Signal_found` and Conversation backgrounds under `PsychopatzCore/common/media/ui`. As requested, active Core Radio OS texture PNGs were **moved byte-for-byte** from `42.20/media/ui/psychopatz/radio` to `common/media/ui/psychopatz/radio`, with unchanged virtual `getTexture("media/ui/psychopatz/radio/...")` names. Any new walkie, HAM, manpack, condition-variant or animated LED runtime PNG must be exported to `Contents/mods/PsychopatzCore/common/media/ui/` using actual package-relative virtual texture paths. Version-specific Lua remains under `42.20/media/lua` where appropriate.
+
+Eleven unapproved 1254x1254 original concept sheets have **not** been pushed as binaries. Their validated import target is `Contents/mods/PsychopatzCore/common/media/ui/Radio/DeviceConcepts/`, strictly **non-runtime staging**; they are not sliced and must not be registered as renderable skins before validation. The compact legacy 341px builder input belongs in `art_source/radio/legacy`, not a runtime texture path. Source provenance and native gameplay acceptance remain separate gates. No PZ Headless Harness.

@@ -106,3 +106,10 @@ HAM/manpack are **mandatory target families**, not aspirational later families. 
 Variant art (pristine/scratched/worn/dirty/damaged) remains cosmetic and layered/editable; deriving it from actual InventoryItem condition is only after validation, with compact fallback and no new large ModData persistence. Source authenticity, alpha LCD holes, layered compositor and scale/input transform must be checked per model. A high-resolution-looking PNG produced solely by upscaling the compact legacy sheet is not a fidelity improvement.
 
 **Scope boundary:** this documentation change prepares image production; it does not replace or generate any game texture. Preserve current Dynamic Trading V2 shop/settlement logic, Project Hoomans contacts and Core shared Radio OS. No headless harness; offline art tests plus normal game evidence only.
+
+
+## Confirmed PsychopatzCore media-path convention (2026-10-15)
+
+The project already stores reusable `Radio/Signal_found` and Conversation backgrounds under `PsychopatzCore/common/media/ui`. As requested, active Core Radio OS texture PNGs were **moved byte-for-byte** from `42.20/media/ui/psychopatz/radio` to `common/media/ui/psychopatz/radio`, with unchanged virtual `getTexture("media/ui/psychopatz/radio/...")` names. Any new walkie, HAM, manpack, condition-variant or animated LED runtime PNG must be exported to `Contents/mods/PsychopatzCore/common/media/ui/` using actual package-relative virtual texture paths. Version-specific Lua remains under `42.20/media/lua` where appropriate.
+
+Eleven unapproved 1254x1254 original concept sheets have **not** been pushed as binaries. Their validated import target is `Contents/mods/PsychopatzCore/common/media/ui/Radio/DeviceConcepts/`, strictly **non-runtime staging**; they are not sliced and must not be registered as renderable skins before validation. The compact legacy 341px builder input belongs in `art_source/radio/legacy`, not a runtime texture path. Source provenance and native gameplay acceptance remain separate gates. No PZ Headless Harness.

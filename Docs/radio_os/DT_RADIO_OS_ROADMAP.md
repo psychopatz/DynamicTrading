@@ -118,3 +118,10 @@ Remove obsolete DTAbstract preview/art copies **only after** verified migration 
 ## Per-chunk checkpoint
 
 Report U# (or historical R#), owning repo(s), exact files/behavior, test commands and evidence class (source/asset/Lua/normal-game native SP/native MP/profiler), commit SHA + push status, remaining blockers, precise Next Chunk. Continue automatically without repeated consent for safe work.
+
+
+## Confirmed PsychopatzCore media-path convention (2026-10-15)
+
+The project already stores reusable `Radio/Signal_found` and Conversation backgrounds under `PsychopatzCore/common/media/ui`. As requested, active Core Radio OS texture PNGs were **moved byte-for-byte** from `42.20/media/ui/psychopatz/radio` to `common/media/ui/psychopatz/radio`, with unchanged virtual `getTexture("media/ui/psychopatz/radio/...")` names. Any new walkie, HAM, manpack, condition-variant or animated LED runtime PNG must be exported to `Contents/mods/PsychopatzCore/common/media/ui/` using actual package-relative virtual texture paths. Version-specific Lua remains under `42.20/media/lua` where appropriate.
+
+Eleven unapproved 1254x1254 original concept sheets have **not** been pushed as binaries. Their validated import target is `Contents/mods/PsychopatzCore/common/media/ui/Radio/DeviceConcepts/`, strictly **non-runtime staging**; they are not sliced and must not be registered as renderable skins before validation. The compact legacy 341px builder input belongs in `art_source/radio/legacy`, not a runtime texture path. Source provenance and native gameplay acceptance remain separate gates. No PZ Headless Harness.
