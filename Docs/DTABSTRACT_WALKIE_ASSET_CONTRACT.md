@@ -81,10 +81,10 @@ the earlier illustrative coordinates in the Lua manifest.
 All six screen rectangles were checked to contain only alpha=0 pixels; the
 separate alignment preview verified the visible shell/button locations.
 
-**Publication status:** this source commit does not include the binary PNG or
+**Publication status (superseded):** the earlier source commit did not include the binary PNG or
 the original input concept art. The asset must be transferred separately to
 `Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/shells/DTA_Walkie_Shells.png`
-before enabling the skin in-game. Never claim the artwork is installed just
+before enabling the skin in-game (see update below). Never claim the artwork is installed just
 because manifest tests pass.
 
 To reproduce from the original approved concept sheet:
@@ -97,3 +97,40 @@ The manifest shell rectangles are unchanged at 256×432 each.
 The display cutouts now range from roughly 72–83 px wide and 55–61 px tall,
 so the portrait must be bounded/cropped carefully. Future art with larger
 LCD holes must regenerate both atlas and manifest together.
+
+
+## Update — compact source + reproducible production PNG
+
+The repository now includes an **artist-derived compact source** at
+\`Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/shells/DTA_Walkie_Shells_CompactSource.png\`
+and a build script \`tools/build_dtabstract_walkie_shells_compact.py\`.
+
+The source is a **341×341, color-reduced copy** of the approved six-walkie
+shell atlas, created to transfer the binary through the connected GitHub
+API. This preserves the designs but loses some original shading/detail.
+It is *not* the earlier full-fidelity 1024×1024 artwork. Keep the local
+original as the artistic master; it may replace the compact source later
+if a full-size asset transfer becomes available.
+
+\`DTA_Walkie_Shells.png\` is a **1024×1024 runtime texture** produced from
+that source. The build performs nearest-neighbor scaling and re-cuts
+the six screen rectangles so that every viewport defined by the Lua
+manifest has alpha=0. Shell rectangles remain 256×432. This enables
+renderer smoke tests with actual committed artwork.
+
+To regenerate:
+
+\`\`\`sh
+python -m pip install Pillow==12.3.0
+python tools/build_dtabstract_walkie_shells_compact.py
+\`\`\`
+
+GitHub Actions \`.github/workflows/dtabstract_walkie_shells.yml\`
+produces and commits the production PNG. Check its run result and
+actual blob before declaring deployment complete.
+
+**Important:** screen cutouts are intentionally very small in the art
+(72–83×55–61 at source scale). A real Radio OS should use a validated,
+uniform display scale and compact/paginated app views. A portrait will
+require tight clipping. Do not claim native PZ runtime testing based on
+the successful Python image build.

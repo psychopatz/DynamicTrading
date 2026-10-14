@@ -1,0 +1,49 @@
+name: Build DTAbstract Walkie Shells
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/build_dtabstract_walkie_shells_compact.py'
+      - '.github/workflows/dtabstract_walkie_shells.yml'
+      - 'Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/shells/DTA_Walkie_Shells_CompactSource.png'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dtabstract-walkie-shells
+  cancel-in-progress: false
+
+jobs:
+  generate-shells:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install atlas builder
+        run: python -m pip install 'Pillow==12.3.0'
+      - name: Build and validate all six walkie shells
+        run: |
+          python tools/build_dtabstract_walkie_shells_compact.py \
+            --output Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/shells/DTA_Walkie_Shells.png
+      - name: Commit generated PNG if changed
+        shell: bash
+        run: |
+          set -eu
+          git add -- Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/shells/DTA_Walkie_Shells.png
+          if git diff --cached --quiet; then
+            echo "Walkie Shells PNG is already current"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(dt-abstract): generate production Walkie Shells PNG'
+          git pull --rebase origin main
+          git push origin HEAD:main
