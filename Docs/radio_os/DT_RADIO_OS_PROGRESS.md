@@ -53,6 +53,13 @@ R0–R7 were implemented and tested at source/asset/offline-Lua levels, **but na
 4. Repeat the Core, Hoomans, and trading flows on a dedicated multiplayer server with the same mod set, including reconnect and two independent players.
 5. With the Core profiler GUI connected, capture a workload that opens Contacts and Traders, moves through rows, performs a trade, moves out of range, and reconnects. Preserve screenshots or bounded profiler summaries plus the relevant `console.txt` error scan.
 
+## U0 — Radio OS UI stabilization slice (2026-10-15)
+
+- PsychopatzCore `737e3dd` (`Stabilize Radio OS window interactions and LCD layout`) adds player-local position/scale persistence, resolution clamping, uniform aspect-ratio resizing, shell-region dragging, native-host hiding/restoration, measured/clipped LCD typography, responsive row pagination, atlas-backed Home/list/button/status rendering, and direct screen hit-testing for Core pages and extension apps. The window smoke now covers drag, resize, restore, host replacement, Home/Contacts rows, provider actions, and custom-app screen callbacks.
+- DynamicTrading `6e6b50e0` (`Make trader scanner rows directly clickable`) adds responsive trader-row rendering and direct row hit-testing while preserving the existing provider and V2 `OpenTrader` handoff. The DT app smoke covers the click path.
+- Evidence class: source audit, offline Lua, `luac`, asset manifest, `git diff --check`, and PZ verifier. Core focused radio tests and DT focused radio tests pass; PZ verification reports zero hardcoded UI strings and zero Kahlua issues in changed paths. Native SP/MP and profiler evidence remain pending.
+- The task-referenced `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md` was not present in the checked-out workspace, so this slice follows the supplied U-roadmap text plus the available Core/DT contracts. Do not treat that missing document as native acceptance evidence.
+
 ## Known limitations / baseline failures
 
 - Core composition smoke currently fails its pre-existing profiler bootstrap load-order assertion (`tests/psychopatz_core_composition_smoke.lua:80`); the new radio OS is client-only and does not modify shared composition order.
@@ -62,4 +69,4 @@ R0–R7 were implemented and tested at source/asset/offline-Lua levels, **but na
 
 ## Next chunk
 
-**Superseded by immediate priority above.** Begin **U0**, then implement U1–U4 and continue U5–U7 as safely possible. Use normal PZ for native acceptance, not the PZ Headless Harness. Preserve compatibility and don't claim readiness before native UI and integration passes.
+Continue U1–U4 offline stabilization as safely possible, then use normal Project Zomboid gameplay for native acceptance. Do not use the PZ Headless Harness or claim readiness before native UI and integration passes.
