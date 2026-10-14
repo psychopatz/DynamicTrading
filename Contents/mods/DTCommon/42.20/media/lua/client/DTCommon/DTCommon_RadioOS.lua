@@ -1,7 +1,3 @@
--- DTCommon-owned Trader Scanner app for the Core Radio OS.
--- Providers own eligibility; this app only renders bounded rows and hands
--- Trade actions back to the registered provider / existing V2 client path.
-
 local loaded, OS = pcall(require,
     "PsychopatzCore/UI/Radio/OS/PsychopatzRadioOS")
 if not loaded or type(OS) ~= "table"
@@ -14,6 +10,8 @@ DTCommon = DTCommon or {}
 local APP_ID = "dynamictrading:traders"
 local MAX_ROWS = 64
 local VISIBLE_ROWS = 5
+local PAGE_SIZE = 12
+local MAX_PROVIDER_PAGES = math.ceil(MAX_ROWS / PAGE_SIZE) + 1
 
 local function T(key, fallback)
     if DTCommon.T then return DTCommon.T(key, fallback) end
@@ -25,21 +23,43 @@ local function isTraderProvider(provider)
         == "dynamictrading:"
 end
 
+local function rowKey(row)
+    return tostring(row and row.providerID or "") .. ":"
+        .. tostring(row and row.id or "")
+end
+
 local function refresh(window, context)
     local state = window.customState
+    local previous = state.traderRows
+        and state.traderRows[state.traderIndex or 1] or nil
+    local previousKey = previous and rowKey(previous) or nil
     local rows = {}
+    local seen = {}
     for _, provider in ipairs(OS.ListContactProviders(context)) do
         if isTraderProvider(provider) then
-            local ok, page = OS.ListContacts(provider.id, context, {
-                offset = 0,
-                limit = 12,
-                sort = "title",
-            })
-            if ok and page then
-                for _, entry in ipairs(page.contacts or {}) do
+            local offset = 0
+            for _ = 1, MAX_PROVIDER_PAGES do
+                if #rows >= MAX_ROWS then break end
+                local ok, page = OS.ListContacts(provider.id, context, {
+                    offset = offset,
+                    limit = PAGE_SIZE,
+                    sort = "title",
+                })
+                if not ok or not page then break end
+                local entries = page.contacts or {}
+                for _, entry in ipairs(entries) do
                     if #rows >= MAX_ROWS then break end
-                    rows[#rows + 1] = entry
+                    local key = rowKey(entry)
+                    if not seen[key] then
+                        seen[key] = true
+                        rows[#rows + 1] = entry
+                    end
                 end
+                local nextOffset = tonumber(page.nextOffset)
+                if #entries == 0 or not nextOffset or nextOffset <= offset then
+                    break
+                end
+                offset = math.floor(nextOffset)
             end
         end
         if #rows >= MAX_ROWS then break end
@@ -55,7 +75,16 @@ local function refresh(window, context)
     end)
     state.traderRows = rows
     state.traderRevision = OS.GetRegistryRevision()
-    state.traderIndex = math.max(1, math.min(#rows,
+    local selectedIndex
+    if previousKey then
+        for index, row in ipairs(rows) do
+            if rowKey(row) == previousKey then
+                selectedIndex = index
+                break
+            end
+        end
+    end
+    state.traderIndex = selectedIndex or math.max(1, math.min(#rows,
         tonumber(state.traderIndex) or 1))
 end
 

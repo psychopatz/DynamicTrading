@@ -53,20 +53,20 @@ R0–R7 were implemented and tested at source/asset/offline-Lua levels, **but na
 4. Repeat the Core, Hoomans, and trading flows on a dedicated multiplayer server with the same mod set, including reconnect and two independent players.
 5. With the Core profiler GUI connected, capture a workload that opens Contacts and Traders, moves through rows, performs a trade, moves out of range, and reconnects. Preserve screenshots or bounded profiler summaries plus the relevant `console.txt` error scan.
 
-## U0 — Radio OS UI stabilization slice (2026-10-15)
+## U0–U4 — Radio OS UI stabilization slice (2026-10-15)
 
-- PsychopatzCore `737e3dd` (`Stabilize Radio OS window interactions and LCD layout`) adds player-local position/scale persistence, resolution clamping, uniform aspect-ratio resizing, shell-region dragging, native-host hiding/restoration, measured/clipped LCD typography, responsive row pagination, atlas-backed Home/list/button/status rendering, and direct screen hit-testing for Core pages and extension apps. The window smoke now covers drag, resize, restore, host replacement, Home/Contacts rows, provider actions, and custom-app screen callbacks.
-- DynamicTrading `6e6b50e0` (`Make trader scanner rows directly clickable`) adds responsive trader-row rendering and direct row hit-testing while preserving the existing provider and V2 `OpenTrader` handoff. The DT app smoke covers the click path.
-- Evidence class: source audit, offline Lua, `luac`, asset manifest, `git diff --check`, and PZ verifier. Core focused radio tests and DT focused radio tests pass; PZ verification reports zero hardcoded UI strings and zero Kahlua issues in changed paths. Native SP/MP and profiler evidence remain pending.
-- The task-referenced `psychopatzCore/Docs/radio_os/CORE_RADIO_OS_UI_STABILIZATION.md` was not present in the checked-out workspace, so this slice follows the supplied U-roadmap text plus the available Core/DT contracts. Do not treat that missing document as native acceptance evidence.
+- Canonical `CORE_RADIO_OS_UI_STABILIZATION.md` was fetched from Core origin at `2d6c4e2` and read before this continuation. The implementation follows its U0–U4 requirements; native gates remain open.
+- PsychopatzCore `c59286a` (`Stabilize Radio OS window interactions and LCD layout`) plus `87d16a3` (`Harden Radio OS geometry, paging, and sprite caching`) add frameless shell-region dragging, uniform ratio resizing, resolution clamping, player/device-family/skin-scoped geometry persistence, native-host hiding/restoration, measured/clipped LCD typography, responsive pagination, cached atlas sprite definitions/textures, direct screen hit-testing, bounded contact-provider paging, selection preservation, and a separate portrait/contact-detail module.
+- DynamicTrading `6e6b50e0` (`Make trader scanner rows directly clickable`) keeps the trader scanner on the existing V2 provider handoff and adds direct row hit-testing. `80227347` records the preceding progress checkpoint; the current focused smoke also covers bounded provider pagination.
+- Focused evidence: Core window/registry/action/manifest smokes pass; Core and DT changed Lua files pass `luac`; Core and DT focused Radio OS/provider smokes pass; `git diff --check` passes; PZ verification reports zero hardcoded UI strings and zero Kahlua issues in changed paths. Core token scan now leaves only the pre-existing manifest data file above the warning threshold. Native SP/MP and profiler evidence remain pending.
+- Offline translation mocks may log the expected `getModFileReader_unavailable` message. Offline tests are not native evidence.
 
 ## Known limitations / baseline failures
 
 - Core composition smoke currently fails its pre-existing profiler bootstrap load-order assertion (`tests/psychopatz_core_composition_smoke.lua:80`); the new radio OS is client-only and does not modify shared composition order.
-- DynamicTrading full suite has the pre-existing `dt_caravan_contract_smoke.lua` assertion for missing `groupSize = GROUP_SIZE`; all other 12 of 13 discovered tests pass after the radio security gate fixtures were updated with an active-radio mock.
-- Offline translation smokes may log the expected `getModFileReader_unavailable` message; catalog parsing/parity and fallback behavior pass.
-- Native Build 42 UI load, dedicated MP, reconnect/walk-away/device-off cases, and performance measurements remain acceptance gates.
+- DynamicTrading full-suite execution remains non-green for pre-existing/configuration cases: `dt_caravan_contract_smoke.lua` lacks `groupSize = GROUP_SIZE`; the Hoomans bridge fixture path is absent; `tests/test_DTA_RadioOSPreview.lua` has its existing invocation assertion; and `test_config` exits without output. Focused Radio OS tests pass.
+- Native Build 42 UI load, six-device visual/manual acceptance, dedicated MP/reconnect, walk-away/device-off, portrait rendering, and profiler measurements remain open. No headless harness was used.
 
 ## Next chunk
 
-Continue U1–U4 offline stabilization as safely possible, then use normal Project Zomboid gameplay for native acceptance. Do not use the PZ Headless Harness or claim readiness before native UI and integration passes.
+Run the concise native SP/MP acceptance handoff when normal Project Zomboid gameplay is available, attach screenshots and relevant `console.txt` evidence, then close U5–U7 only from real native results. Keep the legacy DTAbstract preview fallback until Core-only and combined native consumers are verified; do not claim readiness before the native gates pass.

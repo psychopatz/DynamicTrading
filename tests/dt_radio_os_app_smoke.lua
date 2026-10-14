@@ -2,6 +2,7 @@ local T = require "tests/support/test"
 
 local app
 local invoked
+local remoteCalls = 0
 local providers = {
     { id = "dynamictrading:remote_traders" },
     { id = "dynamictrading:physical_traders" },
@@ -13,12 +14,29 @@ local OS = {
     UnregisterApp = function() end,
     ListContactProviders = function() return providers end,
     GetRegistryRevision = function() return 3 end,
-    ListContacts = function(providerID)
+    ListContacts = function(providerID, _, page)
         if providerID == "projecthoomans:contacts" then
             return true, { contacts = {
                 { id = "npc:guard", title = "Guard", providerID = providerID,
                     actions = {} },
             } }
+        end
+        if providerID == "dynamictrading:remote_traders" then
+            remoteCalls = remoteCalls + 1
+            if page and page.offset == 1 then
+                return true, { contacts = {
+                    { id = "remote:two", title = "Trader Two",
+                        providerID = providerID,
+                        actions = { { id = "dynamictrading:trade",
+                            label = "Trade" } } },
+                } }
+            end
+            return true, { contacts = {
+                { id = "remote:one", title = "Trader One",
+                    providerID = providerID,
+                    actions = { { id = "dynamictrading:trade",
+                        label = "Trade" } } },
+            }, nextOffset = 1 }
         end
         return true, { contacts = {
             { id = providerID .. ":one", title = "Trader One",
@@ -80,8 +98,9 @@ local window = {
 }
 local context = { active = true }
 T.equal(app.open(context, window), "custom", "scanner opens a custom Core page")
-T.equal(#window.customState.traderRows, 2,
+T.equal(#window.customState.traderRows, 3,
     "scanner combines only namespaced trader providers")
+T.equal(remoteCalls, 2, "scanner follows bounded provider pagination")
 app.render(context, window, { x = 0, y = 0, w = 256, h = 160 })
 local hit = app.hitTest(context, window, 12, 21)
 T.truthy(hit and hit.index, "scanner row is directly clickable")
