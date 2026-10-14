@@ -1,0 +1,47 @@
+name: Build DTAbstract Radio Buttons
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/build_dtabstract_walkie_buttons.py'
+      - '.github/workflows/dtabstract_walkie_buttons.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dtabstract-walkie-buttons
+  cancel-in-progress: false
+
+jobs:
+  generate-buttons:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install image builder
+        run: python -m pip install 'Pillow==12.3.0'
+      - name: Build and validate modular buttons atlas
+        run: |
+          python tools/build_dtabstract_walkie_buttons.py \
+            --output Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/ui/DTA_Walkie_Buttons.png
+      - name: Commit generated PNG if changed
+        shell: bash
+        run: |
+          set -eu
+          git add -- Contents/mods/DTAbstract/42.20/media/ui/dtabstract/radio/ui/DTA_Walkie_Buttons.png
+          if git diff --cached --quiet; then
+            echo "Walkie Buttons PNG already matches generator"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(dt-abstract): generate modular Walkie Buttons PNG'
+          git pull --rebase origin main
+          git push origin HEAD:main
